@@ -24,26 +24,36 @@ ld = 5
 tanh(x) = (exp(x) - exp(-x))/(exp(x) + exp(-x))
 #relu(x) = max(0,x)
 
+#size of Wb
+Wb_siz = (5+ld)*ld+1
+
+#this is always a 3 layer network - maybe change that
+function build_netw(Wb)
+	#Wb contains the weights for all the layers
+	W1 = reshape(Wb[1:2*ld],ld,2);
+	b1 = Wb[2*ld+1:3*ld];
+	W2 = reshape(Wb[3*ld+1:(3+ld)*ld],ld,ld);
+	b2 = Wb[(3+ld)*ld+1:(4+ld)*ld];
+	W3 = reshape(Wb[(4+ld)*ld+1:(5+ld)*ld],1,ld);
+	b3 = Wb[(5+ld)*ld+1];
+	function est(τ)
+		#first layer
+		layer1 = tanh.(W1 * τ .+ b1)
+		#second layer
+		layer2 = tanh.(W2 * layer1.+ b2)
+		#third layer (linear activation)
+        	return (W3 * layer2 .+ b3)[1]
+	end
+end
+
 #build NN model
 function model(x)
 	y = x[1]; t = x[2];
 	
 	function loss(Wb)
 		#Wb contains the weights for all the layers
-		W1 = reshape(Wb[1:2*ld],ld,2); 
-		b1 = Wb[2*ld+1:3*ld]; 
-		W2 = reshape(Wb[3*ld+1:(3+ld)*ld],ld,ld); 
-		b2 = Wb[(3+ld)*ld+1:(4+ld)*ld];
-		W3 = reshape(Wb[(4+ld)*ld+1:(5+ld)*ld],1,ld);
-		b3 = Wb[(5+ld)*ld+1];
-		function est(τ) 
-			#first layer
-			layer1 = tanh.(W1 * τ .+ b1)
-			#second layer
-			layer2 = tanh.(W2 * layer1.+ b2)
-			#third layer (linear activation)
-			return (W3 * layer2 .+ b3)[1]
-		end
+		network = build_netw(Wb)
+		est(τ) = network(τ)
 		#compute vector for every element in the batch 
 		vals = [[0 1; -1 0] * ForwardDiff.gradient(est,y[1:2,i]) for i in 1:size(y)[2]]
 		#compute loss  
@@ -55,7 +65,7 @@ end
 η = .001
 
 #initialise weights
-Wb = randn((5+ld)*ld+1)
+Wb = randn(Wb_siz)
 
 #make 100 learning runs
 runs = 10000
@@ -72,20 +82,8 @@ for j in 1:runs
 end
 
 #learned Hamiltonian
-function H_est(τ)
-	W1 = reshape(Wb[1:2*ld],ld,2);
-	b1 = Wb[2*ld+1:3*ld];
-	W2 = reshape(Wb[3*ld+1:(3+ld)*ld],ld,ld);
-	b2 = Wb[(3+ld)*ld+1:(4+ld)*ld];
-	W3 = reshape(Wb[(4+ld)*ld+1:(5+ld)*ld],1,ld);
-	b3 = Wb[(5+ld)*ld+1];
-	#first layer
-	layer1 = tanh.(W1 * τ .+ b1)
-	#second layer
-	layer2 = tanh.(W2 * layer1.+ b2)
-	#third layer (linear activation)
-	return (W3 * layer2 .+ b3)[1]
-end
+network = build_netw(Wb)
+H_est(τ) = network(τ)
 
 
 ##########all that follows are just diagnostics (especially plots)
@@ -116,8 +114,10 @@ end
 
 
 #initial value(s) -> plot a few trajectories to check e-conservation
-y0 = [[1,0],[0,1.2],[.5,0],[0,.25]]
+y0 = [[1,0],[0,1.2],[.5,0],[0,.25],[0,1.5]]
+#number of steps for rk4
 steps = 2000
+#one period is π long - so make 4 turns
 dt = 4*π/steps
 
 for k in y0
