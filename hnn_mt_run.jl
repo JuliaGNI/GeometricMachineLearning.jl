@@ -18,10 +18,8 @@ dat = [[ξ,γ] for ξ in rang, γ in rang]
 #compute the value of the vector field 
 target = [dH_expr(elem) for elem in dat]
 
-
 #learning rate
 η = .001
-
 
 #layer dimension/width
 ld = 5
@@ -34,7 +32,7 @@ Wb = randn(Wb_siz)
 step = include("step_fun.jl")
 loss = include("loss.jl")
 
-#make 10000 learning runs
+#make 2000 learning runs
 runs = 2000
 batch_size = 10
 arr_loss = zeros(runs)
