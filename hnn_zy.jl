@@ -1,6 +1,6 @@
 using Zygote
 using StaticArrays
-using ForwardDiff
+
 
 #define Hamiltonian
 H(y) = .5 * sum(y.^2)
@@ -44,14 +44,17 @@ function model(x)
 			#second layer
 			layer2 = tanh.(W2 * layer1.+ b2)
 			#third layer (linear activation)
-			return (W3 * layer2 .+ b3)[1]
+			return sum(W3 * layer2 .+ b3)
 		end
 		#compute values (vals) for vector field components
 		function vals(κ)
-			@SVector([ [0 1; -1 0] * gradient(χ -> est(χ),κ)[1] ])
+			 [0 1; -1 0] * gradient(χ -> est(χ),κ)[1] 
 		end
-		#compute loss  
-		return map(range_t -> sum([sum((t[1:2,i] - vals(y[1:2,i])[1]).^2) for i in 1:range_t]),size(t)[2])
+		return sum((vals(y)-t).^2)
+		##compute loss 
+		#partial loss for one data point
+		loss_p(i) = sum((vals(y[1:2,i])-t[1:2,i]).^2)
+		return sum([loss_p(i) for i in axes(y,2)])
 	end	
 end
 
@@ -65,15 +68,13 @@ Wb = randn((5+ld)*ld+1)
 runs = 100
 arr_loss = zeros(runs)
 total_loss = model((dat,target))
-for j in 1:runs
+@time for j in 1:runs
 	#select 10 points at random (one batch)
 	local index = rand(1:num^2,10)
-	local dat_loc = dat[1:2,index]
-	local target_loc = target[1:2,index]
-	local loss = model((dat_loc,target_loc))
-	#this works when ForwardDiff is used!!!
-	#global Wb .-= η .* gradient(χ -> loss(χ),Wb)[1]	
-	global Wb .-= η .* ForwardDiff.gradient(loss,Wb) 
+	local loss = model((dat[1:2,index],target[1:2,index]))
+	#the two following lines give different results -> very frustrating 
+	#global Wb .-= η .* gradient(χ -> loss(χ),Wb)[1]	 
+	global Wb .-= η .* ForwardDiff.gradient(loss,Wb)
 	arr_loss[j] = total_loss(Wb)
 end
 
