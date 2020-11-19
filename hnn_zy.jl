@@ -46,9 +46,11 @@ function model(x)
 			return (W3 * layer2 .+ b3)[1]
 		end
 		#compute vector for every element in the batch 
-		vals = @SVector [[0 1; -1 0] * gradient(χ -> est(χ),y[1:2,i])[1] for i in axes(y,2)]
+		function vals(κ)
+			@SVector([ [0 1; -1 0] * gradient(χ -> est(χ),κ)[1] ])
+		end
 		#compute loss  
-		return sum([sum((t[1:2,i] - vals[i]).^2) for i in axes(t,2)])
+		return sum([sum((t[1:2,i] - vals(y[1:2,i])[1]).^2) for i in axes(t,2)])
 	end	
 end
 
