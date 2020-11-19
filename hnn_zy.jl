@@ -46,7 +46,7 @@ function model(x)
 			#third layer (linear activation)
 			return (W3 * layer2 .+ b3)[1]
 		end
-		#compute vector for every element in the batch 
+		#compute values (vals) for vector field components
 		function vals(κ)
 			@SVector([ [0 1; -1 0] * gradient(χ -> est(χ),κ)[1] ])
 		end
@@ -62,7 +62,7 @@ end
 Wb = randn((5+ld)*ld+1)
 
 #make 100 learning runs
-runs = 1000
+runs = 100
 arr_loss = zeros(runs)
 total_loss = model((dat,target))
 for j in 1:runs
@@ -72,7 +72,8 @@ for j in 1:runs
 	local target_loc = target[1:2,index]
 	local loss = model((dat_loc,target_loc))
 	#this works when ForwardDiff is used!!!
-	global Wb .-= η .* gradient(χ -> loss(χ),Wb)[1]	
+	#global Wb .-= η .* gradient(χ -> loss(χ),Wb)[1]	
+	global Wb .-= η .* ForwardDiff.gradient(loss,Wb) 
 	arr_loss[j] = total_loss(Wb)
 end
 
