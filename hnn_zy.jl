@@ -51,7 +51,7 @@ function model(x)
 			@SVector([ [0 1; -1 0] * gradient(χ -> est(χ),κ)[1] ])
 		end
 		#compute loss  
-		return sum([sum((t[1:2,i] - vals(y[1:2,i])[1]).^2) for i in axes(t,2)])
+		return map(range_t -> sum([sum((t[1:2,i] - vals(y[1:2,i])[1]).^2) for i in 1:range_t]),size(t)[2])
 	end	
 end
 
@@ -71,7 +71,8 @@ for j in 1:runs
 	local dat_loc = dat[1:2,index]
 	local target_loc = target[1:2,index]
 	local loss = model((dat_loc,target_loc))
-	global Wb .-= η .* ForwardDiff.gradient(loss,Wb)	
+	#this works when ForwardDiff is used!!!
+	global Wb .-= η .* gradient(χ -> loss(χ),Wb)[1]	
 	arr_loss[j] = total_loss(Wb)
 end
 
