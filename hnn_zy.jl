@@ -1,5 +1,6 @@
 using Zygote
 using StaticArrays
+using ForwardDiff
 
 #define Hamiltonian
 H(y) = .5 * sum(y.^2)
@@ -61,7 +62,7 @@ end
 Wb = randn((5+ld)*ld+1)
 
 #make 100 learning runs
-runs = 100
+runs = 1000
 arr_loss = zeros(runs)
 total_loss = model((dat,target))
 for j in 1:runs
@@ -70,7 +71,7 @@ for j in 1:runs
 	local dat_loc = dat[1:2,index]
 	local target_loc = target[1:2,index]
 	local loss = model((dat_loc,target_loc))
-	global Wb .-= η .* gradient(χ -> loss(χ),Wb)[1]	
+	global Wb .-= η .* ForwardDiff.gradient(loss,Wb)	
 	arr_loss[j] = total_loss(Wb)
 end
 
@@ -94,8 +95,8 @@ end
 ##########all that follows are just diagnostics (especially plots)
 
 #compute field
-field_sc(τ) = [0 1; -1 0] * gradient(γ -> H_est(γ),τ)
-field(τ) = [[0 1; -1 0] * gradient(γ -> H_est(γ),τ[1:2,i]) for i in 1:size(τ)[2]]
+field_sc(τ) = [0 1; -1 0] * gradient(γ -> H_est(γ),τ)[1]
+field(τ) = [[0 1; -1 0] * gradient(γ -> H_est(γ),τ[1:2,i])[1] for i in 1:size(τ)[2]]
 
 using Plots
 
