@@ -1,6 +1,4 @@
 using Zygote
-using StaticArrays
-
 
 #define Hamiltonian
 H(y) = .5 * sum(y.^2)
@@ -22,10 +20,6 @@ target = dH(dat)
 #layer dimension
 ld = 5
 
-#activation functions
-tanh(x) = (exp(x) - exp(-x))/(exp(x) + exp(-x))
-#relu(x) = max(0,x)
-
 #build NN model
 function model(x)
 	y = x[1]; t = x[2];
@@ -40,17 +34,16 @@ function model(x)
 		b3 = Wb[(5+ld)*ld+1];
 		function est(τ) 
 			#first layer
-			layer1 = tanh.(W1 * τ .+ b1)
+			layer1 = Base.tanh.(W1 * τ .+ b1)
 			#second layer
-			layer2 = tanh.(W2 * layer1.+ b2)
+			layer2 = Base.tanh.(W2 * layer1.+ b2)
 			#third layer (linear activation)
 			return sum(W3 * layer2 .+ b3)
 		end
 		#compute values (vals) for vector field components
 		function vals(κ)
 			 [0 1; -1 0] * gradient(χ -> est(χ),κ)[1] 
-		end
-		return sum((vals(y)-t).^2)
+		end	
 		##compute loss 
 		#partial loss for one data point
 		loss_p(i) = sum((vals(y[1:2,i])-t[1:2,i]).^2)
@@ -58,23 +51,23 @@ function model(x)
 	end	
 end
 
+
 #learning rate
 η = .001
 
 #initialise weights
 Wb = randn((5+ld)*ld+1)
 
-#make 100 learning runs
-runs = 100
+#make 1000 learning runs
+runs = 2000
 arr_loss = zeros(runs)
 total_loss = model((dat,target))
-@time for j in 1:runs
+for j in 1:runs
 	#select 10 points at random (one batch)
 	local index = rand(1:num^2,10)
 	local loss = model((dat[1:2,index],target[1:2,index]))
-	#the two following lines give different results -> very frustrating 
-	#global Wb .-= η .* gradient(χ -> loss(χ),Wb)[1]	 
-	global Wb .-= η .* ForwardDiff.gradient(loss,Wb)
+	#Compute gradient step; the second line works, first one doesn't  
+	global Wb .-= η .* gradient(χ -> loss(χ),Wb)[1]
 	arr_loss[j] = total_loss(Wb)
 end
 
