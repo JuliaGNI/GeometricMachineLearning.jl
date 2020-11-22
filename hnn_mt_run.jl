@@ -2,21 +2,10 @@ using ModelingToolkit
 
 @variables y[1:2]
 
-#define Hamiltonian
-H = .5 * sum(y.^2)
+#get data set
+include("data.jl")
+dat, target = get_data_set()
 
-#compute differential equations  
-dH = [0 1;-1 0] * ModelingToolkit.gradient(H,y)
-#function for dH
-dH_expr = build_function(dH,y)[1] |> eval
-
-#get data set:
-num = 10
-#range in which the data should be in
-rang = range(-1.2,stop=1.2,length=num)
-dat = [[ξ,γ] for ξ in rang, γ in rang]
-#compute the value of the vector field 
-target = [dH_expr(elem) for elem in dat]
 
 #learning rate
 η = .001
@@ -36,10 +25,10 @@ loss = include("loss.jl")
 runs = 2000
 batch_size = 10
 arr_loss = zeros(runs)
-@time for j in 1:runs 
+for j in 1:runs 
         #select 10 points at random (one batch)
-        local index = rand(1:num^2,batch_size)
-        global Wb .-= η .* sum([step(dat[i],target[i],Wb) for i in index])
+        local index = rand(axes(dat,2),batch_size)
+        global Wb .-= η .* sum([step(dat[1:2,i],target[1:2,i],Wb) for i in index])
         arr_loss[j] = sum([loss(dat[i],target[i],Wb) for i in index])
 end
 
@@ -67,11 +56,11 @@ vector_field = build_function(vector_field_sym,y)[1] |> eval
 using Plots
 
 #plot vector field
-dat_x = [dat[i][1] for i=1:num^2]
-dat_y = [dat[i][2] for i=1:num^2]
-field_val = [vector_field(dat[i]) for i=1:num^2]
-field_x = [field_val[i][1] for i=1:num^2]
-field_y = [field_val[i][2] for i=1:num^2]
+dat_x = [dat[1,i] for i in axes(dat,2)]
+dat_y = [dat[2,i] for i in axes(dat,2)]
+field_val = [vector_field(dat[1:2,i]) for i in axes(dat,2)]
+field_x = [field_val[i][1] for i in axes(dat,2)]
+field_y = [field_val[i][2] for i in axes(dat,2)]
 plt = quiver(dat_x,dat_y,quiver=(field_x,field_y))
 
 
