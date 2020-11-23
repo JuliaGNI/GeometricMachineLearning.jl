@@ -5,28 +5,32 @@ using Zygote
 include("utils.jl")
 
 #get data set (includes dat & target)
-include("data.jl")
+include("plots_data/data.jl")
 dat, target = get_data_set()
 
-#layer dimension
+#layer dimension/width
 ld = 5
 
-#size of Wb
-Wb_siz = (5+ld)*ld+1
+#number of inputs/dimension of system
+n_in = 2
 
-#learning rate
-η = .001
+#size of Wb: first layer + second layer + third layer
+Wb_siz = (n_in*ld + ld) + (ld*ld + ld) + (ld + 1)
 
 #initialise weights
 Wb = randn(Wb_siz)
 
 function get_batch(batch_size=10)
 	#select a number of points at random (one batch)
-	index = rand(axes(dat,2),batch_size)
-	dat_loc = dat[1:2,index]
-	target_loc = target[1:2,index]
+	index = rand(axes(dat,2), batch_size)
+	dat_loc = dat[1:n_in, index]
+	target_loc = target[1:n_in, index]
 	return((dat_loc, target_loc))
 end
+
+
+#learning rate
+η = .001
 
 #do a copule learning runs
 runs = 1000
@@ -47,9 +51,9 @@ end
 network = build_netw(Wb)
 H_est(τ) = network(τ)
 #compute field
-field(τ) = [[0 1; -1 0] * ForwardDiff.gradient(H_est,τ[1:2,i]) for i in axes(τ,2)]
+field(τ) = [[0 1; -1 0] * ForwardDiff.gradient(H_est,τ[1:n_in,i]) for i in axes(τ,2)]
 
 ##########all that follows are just diagnostics (especially plots)
-#include("plots.jl")
+#include("plots_data/plots.jl")
 
 		
