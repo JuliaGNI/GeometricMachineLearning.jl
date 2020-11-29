@@ -10,8 +10,12 @@ model = Chain(	Dense(n_in, ld, NNlib.tanh),
 		Dense(ld, 1, NNlib.tanh))
 
 
+#model parameters, i.e. W & b
+Wb = params(model)
+
+
 #function that computes the loss and training step
-function double_grad(g, xy)
+function double_grad(g,xy)
 	#compute gradient of "Hamiltonian", i.e. vector field
 	dgw(τ) = [0 1; -1 0] * gradient(ξ -> sum(g(ξ)), τ)[1]
 	#compute loss
@@ -20,9 +24,9 @@ function double_grad(g, xy)
 	#sum up loss
 	loss(ξ,γ) = sum([loss_sing(ξ,γ,i) for i in axes(ξ,2)])	
 	
-	#get model parameters, i.e. W & b
-	W = params(g)
-	gs = gradient(() -> loss(xy[1],xy[2]),W)
+	#model parameters
+	mp = params(model)	
+	gs = gradient(() -> loss(xy[1],xy[2]),mp)
 end
 
 #get data set
@@ -37,20 +41,16 @@ function get_batch(batch_size=10)
 	return((dat_loc, target_loc))
 end
 
-
-#model parameters, i.e. W & b
-Wb = params(model)
-
 #learning rate
 η = .001
 
 #do a copule learning runs
-runs = 100
+runs = 1000
 for j in 1:runs
 	#gradient step
-	step = double_grad(model, get_batch()) 
+	step = double_grad(model,get_batch()) 
 	#make gradient steps for all the Wbs
-	[(global Wb[i] .-= η .* step[Wb[i]]) for i in length(Wb)]
+	[(global Wb[i] .-= η .* step[Wb[i]]) for i in 1:length(Wb)]
 end	
 
 #compute vector field
