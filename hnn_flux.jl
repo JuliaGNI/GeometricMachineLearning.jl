@@ -72,7 +72,7 @@ model, data, target, total_loss = train_flux_hnn(n_in, ld, η, runs)
 # @time model, data, target, total_loss = train_flux_hnn(n_in, ld, η, runs)
 
 #profile training
-#run with julia --track-allocation=user flux_example.jl
+#run with julia --track-allocation=user hnn_flux.jl
 # Profile.clear()
 # Profile.clear_malloc_data()
 # @profile model, data, target, total_loss = train_flux_hnn(n_in, ld, η, runs)
