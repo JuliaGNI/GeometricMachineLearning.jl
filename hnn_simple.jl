@@ -38,7 +38,7 @@ function field(χ, model)
 	[0 1; -1 0] * Zygote.gradient(χ -> sum(network(χ, model)), χ)[1]
 end
 
-function training!(model, data, target, η, nruns, loss, gloss)
+function training!(model, data, target, η, nruns, loss, loss_gradient)
 	arr_loss = zeros(nruns)
 
 	@showprogress 1 "Training..." for j in 1:nruns
@@ -46,7 +46,7 @@ function training!(model, data, target, η, nruns, loss, gloss)
 		batch_data, batch_target = get_batch(data, target)
 
 		#compute loss function for a certain batch
-		model_grad = gloss(batch_data, batch_target, model)
+		model_grad = loss_gradient(batch_data, batch_target, model)
 		for i in eachindex(model, model_grad)
 			for (m, dm) in zip(model[i], model_grad[i])
 				m .-= η .* dm
@@ -65,7 +65,7 @@ function train_hnn(n_in, ld, η, runs, DT=Float64)
 	model = (
 		(W = randn(DT, ld, n_in), b = randn(DT, ld)),
 		(W = randn(DT, ld, ld),   b = randn(DT, ld)),
-		(W = randn(DT, 1,  ld),                ),
+		(W = randn(DT, 1,  ld),                    ),
 	)
 
 	#loss for single data point

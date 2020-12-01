@@ -1,60 +1,76 @@
 using ModelingToolkit
 
-#layer dimension/width
-ld = 5
+#settings and common functionality
+include("common.jl")
 
-#number of inputs/dimension of system
-n_in = 2
+#evaluate neural network
+function network(τ, model)
+	#first layer
+	layer1 = tanh.(model[1].W * τ .+ model[1].b)
 
-#size of Wb: first layer + second layer + third layer
-Wb_siz = (n_in*ld + ld) + (ld*ld + ld) + (ld + 1)
+	#second layer
+	layer2 = tanh.(model[2].W * layer1 .+ model[2].b)
 
-#variables are data, NNcoeff & targets
-@variables y[1:n_in] Wb[1:Wb_siz] t[1:n_in]
-@derivatives dy'~y dW'~Wb
+	#third layer (linear activation)
+	return model[3].W * layer2
+end
 
-#indices for Wb
-i1 = n_in*ld
-i2 = i1 + ld
-i3 = i2 + ld*ld
-i4 = i3 + ld
-i5 = i4 + ld
+#generate code for neural network
+function generate_mt_hnn(n_in, ld)
+    #input and training variables
+    @variables y[1:n_in]  t[1:n_in]
 
-#build neural network
-W1 = reshape(Wb[1:i1], ld, n_in)
-b1 = Wb[i1+1:i2];
-W2 = reshape(Wb[i2+1:i3], ld, ld);
-b2 = Wb[i3+1:i4];
-W3 = reshape(Wb[i4+1:i5],1,ld);
-b3 = Wb[i5+1];
-#first layer
-layer1 = Base.tanh.(W1 * y .+ b1)
-#second layer
-layer2 = Base.tanh.(W2 * layer1 .+ b2)
-#output layer/estimate for Hamiltonian
-est = sum(W3 * layer2 .+ b3)
+    #initialise weights
+    @variables W1[1:ld, 1:n_in]  b1[1:ld]
+    @variables W2[1:ld, 1:ld]    b2[1:ld]
+    @variables W3[1:1,  1:ld]
 
+	model = (
+		(W = W1, b = b1),
+		(W = W2, b = b2),
+		(W = W3,       ),
+    )
 
-#compute vector field
-vector_field = [0 1; -1 0] * ModelingToolkit.gradient(est,y)
+    #derivatives
+    @derivatives dy'~y
+    @derivatives dW1'~W1  db1'~b1
+    @derivatives dW2'~W2  db2'~b2
+    @derivatives dW3'~W3
 
-loss = sum((vector_field-t).^2)
+    #output layer/estimate for Hamiltonian
+    est = sum(network(y, model))
 
-#gradient_step
-step = ModelingToolkit.gradient(loss,Wb)
+    #compute vector field
+    field = [0 1; -1 0] * ModelingToolkit.gradient(est, y)
 
-#build functions 
-step_fun = build_function(step,y,t,Wb)[1]
-field = build_function(vector_field,y,t,Wb)[1]
+	#compute loss  
+    loss = sum((field .- t).^2)
 
+    #gradient_step
+    step = (
+        (W = reshape(ModelingToolkit.gradient(loss, vec(W1)), 1:ld, 1:n_in), b = ModelingToolkit.gradient(loss, b1)),
+        (W = reshape(ModelingToolkit.gradient(loss, vec(W2)), 1:ld, 1:ld),   b = ModelingToolkit.gradient(loss, b2)),
+        (W = reshape(ModelingToolkit.gradient(loss, vec(W3)), 1:1,  1:ld),   ),
+    )
 
-#####save functions -> mt_fun ... ModelingToolkit functions 
-write("step_fun.jl",string(step_fun))
-write("field.jl",string(field))
+    #build functions 
+    fun_est   = build_function(est,   y,    expand(model)...)
+    fun_field = build_function(field, y,    expand(model)...)[1]
+    fun_loss  = build_function(loss,  y, t, expand(model)...)
+    fun_step  = build_function(step,  y, t, expand(model)...)
 
-#scalar functions
-write("loss.jl",string(build_function(loss,y,t,Wb)))
-write("est.jl",string(build_function(est,y,t,Wb)))
+	return (fun_est, fun_loss, fun_step, fun_field)
+end
 
+# build functions for neural network
+(fun_est, fun_loss, fun_step, fun_field) = generate_mt_hnn(n_in, ld)
 
-		
+function get_string(expr)
+    replace(replace(replace(string(expr), r"#= [^*\s]* =#" => ""), r"\n[\s]*\n" => "\n"), "Num" => "")
+end
+
+# save function code to file -> mt_fun ... ModelingToolkit functions 
+write("est.jl",   get_string(fun_est))
+write("field.jl", get_string(fun_field))
+write("loss.jl",  get_string(fun_loss))
+write("step.jl",  get_string(fun_step))
