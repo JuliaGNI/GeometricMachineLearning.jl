@@ -3,11 +3,14 @@ using Zygote
 # using Profile
 using ProgressMeter
 
+#this file contains the function that evaluates the network
+include("utils/networks.jl")
+
 #this contains the functions for generating the training data
-include("plots_data/data.jl")
+include("utils/data.jl")
 
 #this contains the functions for generating the plots
-include("plots_data/plots.jl")
+include("utils/plots.jl")
 
 #layer dimension/width
 const ld = 5
@@ -20,18 +23,6 @@ const η = .001
 
 #number of training runs
 const runs = 1000
-
-#evaluate neural network
-function network(τ, model)
-	#first layer
-	layer1 = tanh.(model[1].W * τ .+ model[1].b)
-
-	#second layer
-	layer2 = tanh.(model[2].W * layer1 .+ model[2].b)
-
-	#third layer (linear activation)
-	return model[3].W * layer2
-end
 
 #compute vector field
 function field(χ, model)

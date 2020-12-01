@@ -3,10 +3,10 @@ using ModelingToolkit
 using ProgressMeter
 
 #this contains the functions for generating the training data
-include("plots_data/data.jl")
+include("utils/data.jl")
 
 #this contains the functions for generating the plots
-include("plots_data/plots.jl")
+include("utils/plots.jl")
 
 #load ModelingToolkit generated functions
 est   = include("mt_fun/est.jl")
