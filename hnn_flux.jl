@@ -82,4 +82,4 @@ H_est(τ) = sum(model(τ))
 # dH_est(τ) = [[0 1; -1 0] * ForwardDiff.gradient(H_est,x) for x in τ]
 
 #plot results
-plot_network(H, H_est, total_loss; filename="flux.png")
+plot_network(H, H_est, total_loss; filename="hnn_flux.png")
