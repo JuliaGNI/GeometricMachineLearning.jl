@@ -1,5 +1,6 @@
-using ForwardDiff
+using Distances
 using Zygote
+# using Profile
 using ProgressMeter
 
 #this contains the functions for generating the training data
@@ -29,12 +30,12 @@ function network(τ, model)
 	layer2 = tanh.(model[2].W * layer1 .+ model[2].b)
 
 	#third layer (linear activation)
-	return sum(model[3].W * layer2)
+	return model[3].W * layer2
 end
 
 #compute vector field
 function field(χ, model)
-	[0 1; -1 0] * Zygote.gradient(χ -> network(χ, model), χ)[1]
+	[0 1; -1 0] * Zygote.gradient(χ -> sum(network(χ, model)), χ)[1]
 end
 
 function training!(model, data, target, η, nruns, loss, gloss)
@@ -59,28 +60,28 @@ function training!(model, data, target, η, nruns, loss, gloss)
 	return arr_loss
 end
 
-function train_hnn(n_in, ld, η, runs)
+function train_hnn(n_in, ld, η, runs, DT=Float64)
 	#initialise weights
 	model = (
-		(W = randn(ld, n_in), b = randn(ld)),
-		(W = randn(ld, ld),   b = randn(ld)),
-		(W = randn(1,  ld),                ),
+		(W = randn(DT, ld, n_in), b = randn(DT, ld)),
+		(W = randn(DT, ld, ld),   b = randn(DT, ld)),
+		(W = randn(DT, 1,  ld),                ),
 	)
 
 	#loss for single data point
-	loss_p(y, t, model) = sum((field(y, model) .- t).^2)
+	loss_sing(ξ, γ, model) = sqeuclidean(field(ξ, model), γ)
 
 	#compute loss  
-	loss(Y, T, model) = mapreduce( yt -> loss_p(yt..., model), +, zip(Y,T))
+	loss(ξ, γ, model) = mapreduce(i -> loss_sing(ξ[i], γ[i], model), +, eachindex(ξ,γ))
 
 	#compute gradient of loss
-	gloss(Y, T, model) = Zygote.gradient(W -> loss(Y, T, W), model)[1]
+	loss_gradient(Y, T, model) = Zygote.gradient(M -> loss(Y, T, M), model)[1]
 
 	#get data set
 	data, target = get_data_set()
 
 	#perform training (returns array that contains the total loss for each training step)
-	total_loss = training!(model, data, target, η, runs, loss, gloss)
+	total_loss = training!(model, data, target, η, runs, loss, loss_gradient)
 
 	return (model, data, target, total_loss)
 end
@@ -88,8 +89,18 @@ end
 #train network
 model, data, target, total_loss = train_hnn(n_in, ld, η, runs)
 
+#time training (after warmup)
+# train_hnn(n_in, ld, η, 1)
+# @time model, data, target, total_loss = train_hnn(n_in, ld, η, runs)
+
+#profile training
+#run with julia --track-allocation=user hnn.jl
+# Profile.clear()
+# Profile.clear_malloc_data()
+# @profile model, data, target, total_loss = train_hnn(n_in, ld, η, runs)
+
 #learned Hamiltonian & vector field
-H_est(τ) = network(τ, model)
+H_est(τ) = sum(network(τ, model))
 # dH_est(τ) = field(τ, model)
 
 #plot results
