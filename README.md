@@ -1,4 +1,4 @@
-# Simple model for learning Hamiltonians 
+# Simple Julia Models for Learning Hamiltonian Dynamics
 
 **hnn_simple.jl** implements a simple handmade neural network including the learning steps. Here [**Zygote**](https://github.com/FluxML/Zygote.jl) or [**ForwardDiff**](https://github.com/JuliaDiff/ForwardDiff.jl) can be used to compute the gradient of the loss with respect to the weights of the NN.
 
@@ -9,11 +9,3 @@
 **utils/data.jl** contains functions that generate the data set.
 **utils/networks.jl** builds the network that estimates the Hamiltonian and computes the vector field with **Zygote**.
 **utils/plots.jl** performs a few plots that demonstrate energy conservation.
-
-
-## Things left to do
-
-- Implement the HNN example using [**Knet**](https://github.com/denizyuret/Knet.jl).
-- Implement [Lagrangian Neural Networks](https://arxiv.org/abs/2003.04630).
-- Generalize the symplectic matrix to arbitrary dimensions (instead of [0 1; -1 0]).
-
