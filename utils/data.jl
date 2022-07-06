@@ -1,7 +1,7 @@
 using Zygote
 
 #define Hamiltonian
-H(x) = sum(x[1]^2 + x[2]^2) / 2
+H(x) = x[2]^2 / 2 - cos(x[1])
 
 #compute vector field  
 dH(x) = [0 1;-1 0] * Zygote.gradient(χ -> H(χ), x)[1]
