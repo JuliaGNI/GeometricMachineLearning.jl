@@ -1,4 +1,7 @@
-# Simple Julia Models for Learning Hamiltonian Dynamics
+# GeometricMachineLearning
+
+
+## Simple Julia Models for Learning Hamiltonian Dynamics
 
 **hnn_simple.jl** implements a simple handmade neural network including the learning steps. Here [**Zygote**](https://github.com/FluxML/Zygote.jl) or [**ForwardDiff**](https://github.com/JuliaDiff/ForwardDiff.jl) can be used to compute the gradient of the loss with respect to the weights of the NN.
 
