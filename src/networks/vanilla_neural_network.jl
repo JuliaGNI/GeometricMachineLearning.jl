@@ -15,16 +15,34 @@ struct VanillaNeuralNetwork{DataType <: Number, NetworkType <: NeuralNetworkType
 end
 
 
+function apply!(output::AbstractVector, input::AbstractVector, network::VanillaNeuralNetwork{DT}) where {DT}
+    temp = merge( input, ( zeros(DT, output_size(layer)) for layer in network.layers) )
 
-function apply!(output::AbstractVector, input::AbstractVector, network::VanillaNeuralNetwork)
-    # Implement application of vanilla network
-    # ...
+    for i in eachindex(network.layers)
+        apply!(temp[i+1], temp[i], network.layers[i])
+    end
+
+    return output .= temp[end]
 end
 
-function apply!(output::AbstractVector, input::AbstractVector, network::Inverse{DT,NNT}) where {DT, NNT <: VanillaNeuralNetwork{DT}}
+function apply!(output::AbstractVector, input::AbstractVector, network::VanillaNeuralNetwork{DT,NNT}) where {DT, NNT <: FixedWidthNetwork}
+    @assert length(axes(input)) == length(axes(output))
+
+    temp = zero(output)
+    output .= input
+
+    for layer in network.layers
+        temp .= output
+        apply!(output, temp, layer)
+    end
+
+    return output
+end
+
+# function apply!(output::AbstractVector, input::AbstractVector, network::Inverse{DT,NNT}) where {DT, NNT <: VanillaNeuralNetwork{DT}}
     # Implement application of inverse vanilla network
     # ...
-end
+# end
 
 function train!(network::VanillaNeuralNetwork, data)
     # Implement training of vanilla network
