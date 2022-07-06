@@ -16,6 +16,6 @@ module GeometricMachineLearning
     include("networks/inverse_neural_network.jl")
     include("networks/vanilla_neural_network.jl")
 
-    export train, apply, jacobian
+    export train!, apply!, jacobian!
 
 end
