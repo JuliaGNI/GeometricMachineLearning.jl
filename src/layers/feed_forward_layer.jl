@@ -5,7 +5,7 @@ struct FeedForwardLayer{DT,N,M,ST,WT,BT} <: NeuralNetworkLayer{DT,N,M}
     b::BT
 
     function FeedForwardLayer(σ, W::AbstractMatrix{DT}, b::AbstractVector{DT}) where {DT}
-        @assert length(axes(W,1)) == lenght(axes(b,1))
+        @assert length(axes(W,1)) == length(axes(b,1))
         new{DT, length(axes(W,2)), length(axes(W,1)), typeof(σ), typeof(W), typeof(b)}
     end
 end
