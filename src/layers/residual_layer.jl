@@ -11,8 +11,6 @@ struct ResidualLayer{DT, N, M, ST, WT <: AbstractMatrix{DT}, BT <: AbstractVecto
     end
 end
 
-(layer::ResidualLayer)(output, input) = apply!(output, input, layer)
-
 function apply!(output::AbstractVector, input::AbstractVector, layer::ResidualLayer)
     mul!(output, layer.W, input)
     output .+= layer.b

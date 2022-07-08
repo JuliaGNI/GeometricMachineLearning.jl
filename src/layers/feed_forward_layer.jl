@@ -11,8 +11,6 @@ struct FeedForwardLayer{DT, N, M, ST, WT <: AbstractMatrix{DT}, BT <: AbstractVe
     end
 end
 
-(layer::FeedForwardLayer)(output, input) = apply!(output, input, layer)
-
 function apply!(output::AbstractVector, input::AbstractVector, layer::FeedForwardLayer)
     mul!(output, layer.W, input)
     output .+= layer.b
