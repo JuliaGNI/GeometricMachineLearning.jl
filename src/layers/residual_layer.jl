@@ -11,6 +11,8 @@ struct ResidualLayer{DT,N,M,ST,WT,BT,GT} <: NeuralNetworkLayer{DT,N,M}
     end
 end
 
+(layer::ResidualLayer)(output, input) = apply!(output, input, layer)
+
 function apply!(output::AbstractVector, input::AbstractVector, layer::ResidualLayer)
     mul!(output, layer.W, input)
     output .+= layer.b

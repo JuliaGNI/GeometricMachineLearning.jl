@@ -11,6 +11,8 @@ struct FeedForwardLayer{DT,N,M,ST,WT,BT,GT} <: NeuralNetworkLayer{DT,N,M}
     end
 end
 
+(layer::FeedForwardLayer)(output, input) = apply!(output, input, layer)
+
 function apply!(output::AbstractVector, input::AbstractVector, layer::FeedForwardLayer)
     mul!(output, layer.W, input)
     output .+= layer.b
