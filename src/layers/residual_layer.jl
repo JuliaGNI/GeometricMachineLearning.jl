@@ -6,7 +6,7 @@ struct ResidualLayer{DT,N,M,ST,WT,BT,GT} <: NeuralNetworkLayer{DT,N,M}
     gradient::GT
 
     function ResidualLayer(σ, W::AbstractMatrix{DT}, b::AbstractVector{DT}, gradient) where {DT}
-        @assert length(axes(W,1)) == lenght(axes(b,1))
+        @assert length(axes(W,1)) == length(axes(b,1))
         new{DT, length(axes(W,2)), length(axes(W,1)), typeof(σ), typeof(W), typeof(b), typeof(gradient)}(σ,W,b,gradient)
     end
 end
