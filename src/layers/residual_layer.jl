@@ -1,5 +1,5 @@
 
-struct ResidualLayer{DT,N,M,ST,WT,BT,GT} <: NeuralNetworkLayer{DT,N,M}
+struct ResidualLayer{DT, N, M, ST, WT <: AbstractMatrix{DT}, BT <: AbstractVector{DT}, GT} <: NeuralNetworkLayer{DT,N,M}
     σ::ST
     W::WT
     b::BT
