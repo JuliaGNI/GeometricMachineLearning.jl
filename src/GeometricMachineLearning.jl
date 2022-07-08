@@ -1,5 +1,7 @@
 module GeometricMachineLearning
 
+    using LinearAlgebra
+
     export AbstractLayer
     export FeedForwardLayer
     export ResidualLayer
