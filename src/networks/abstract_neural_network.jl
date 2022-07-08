@@ -1,5 +1,5 @@
 
-abstract type AbstractNeuralNetwork{DT <: Number} end
+abstract type AbstractNeuralNetwork end
 
 function apply! end
 function train! end

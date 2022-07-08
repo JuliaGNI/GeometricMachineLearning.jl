@@ -6,16 +6,16 @@ struct FixedWidthNetwork <: NeuralNetworkType end
 struct AutoEncoderNetwork <: NeuralNetworkType end
 
 
-struct VanillaNeuralNetwork{DataType <: Number, NetworkType <: NeuralNetworkType, LayersType <: Tuple} <: AbstractNeuralNetwork{DataType}
+struct VanillaNeuralNetwork{NetworkType <: NeuralNetworkType, LayersType <: Tuple} <: AbstractNeuralNetwork
     layers::LayersType
 
-    function VanillaNeuralNetwork{DT}(nn_type::NeuralNetworkType, layers...) where {DT}
-        new{DT, typeof(nn_type), typeof(layers)}(layers)
+    function VanillaNeuralNetwork(nn_type::NeuralNetworkType, layers...)
+        new{typeof(nn_type), typeof(layers)}(layers)
     end
 end
 
 
-function apply!(output::AbstractVector, input::AbstractVector, network::VanillaNeuralNetwork{DT}) where {DT}
+function apply!(output::AbstractVector{DT}, input::AbstractVector, network::VanillaNeuralNetwork) where {DT}
     temp = merge( input, ( zeros(DT, output_size(layer)) for layer in network.layers) )
 
     for i in eachindex(network.layers)
@@ -25,7 +25,7 @@ function apply!(output::AbstractVector, input::AbstractVector, network::VanillaN
     return output .= temp[end]
 end
 
-function apply!(output::AbstractVector, input::AbstractVector, network::VanillaNeuralNetwork{DT,NNT}) where {DT, NNT <: FixedWidthNetwork}
+function apply!(output::AbstractVector, input::AbstractVector, network::VanillaNeuralNetwork{NNT}) where {NNT <: FixedWidthNetwork}
     @assert length(axes(input)) == length(axes(output))
 
     temp = zero(output)

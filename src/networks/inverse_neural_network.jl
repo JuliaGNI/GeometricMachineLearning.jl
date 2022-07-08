@@ -1,13 +1,13 @@
 
-struct Inverse{DT, NNT <: AbstractNeuralNetwork{DT}} <: AbstractNeuralNetwork{DT}
+struct Inverse{NNT <: AbstractNeuralNetwork} <: AbstractNeuralNetwork
     network::NNT
 
-    function Inverse(network::NNT) where {DT, NNT <: AbstractNeuralNetwork{DT}}
-        new{DT,NNT}(network)
+    function Inverse(network::NNT) where {NNT <: AbstractNeuralNetwork}
+        new{NNT}(network)
     end
 end
 
 
-function apply!(::AbstractVector, ::AbstractVector, ::Inverse{DT,NNT}) where {DT,NNT}
+function apply!(::AbstractVector, ::AbstractVector, ::Inverse{NNT}) where {NNT}
     error("Inverse not supported by network type ", NNT)
 end
