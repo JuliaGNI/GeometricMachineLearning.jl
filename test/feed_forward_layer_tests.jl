@@ -8,3 +8,8 @@ o1 = zero(i)
 o2 = zero(i)
 
 @test l(o1, i) == apply!(o2, i, l) == 3*i
+
+
+lin = LinearFeedForwardLayer(ones(2,2), ones(2), x -> 1)
+
+@test apply!(o1, i, l) == apply!(o2, i, lin)

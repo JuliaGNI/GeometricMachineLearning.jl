@@ -2,8 +2,11 @@ module GeometricMachineLearning
 
     using LinearAlgebra
 
+    include("activations/abstract_activation_function.jl")
+    include("activations/identity.jl")
+
     export AbstractLayer
-    export FeedForwardLayer
+    export FeedForwardLayer, LinearFeedForwardLayer
     export ResidualLayer
 
     include("layers/abstract_layer.jl")

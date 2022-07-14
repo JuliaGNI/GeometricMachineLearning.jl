@@ -16,3 +16,13 @@ function apply!(output::AbstractVector, input::AbstractVector, layer::FeedForwar
     output .+= layer.b
     output .= layer.σ.(output)
 end
+
+
+const LinearFeedForwardLayer{DT, N, M, WT <: AbstractMatrix{DT}, BT <: AbstractVector{DT}, GT} = FeedForwardLayer{DT, N, M, <: IdentityActivation, WT, BT, GT}
+
+LinearFeedForwardLayer(W, b, gradient) = FeedForwardLayer(IdentityActivation(), W, b, gradient)
+
+function apply!(output::AbstractVector, input::AbstractVector, layer::LinearFeedForwardLayer)
+    mul!(output, layer.W, input)
+    output .+= layer.b
+end
