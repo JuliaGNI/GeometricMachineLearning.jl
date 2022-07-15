@@ -1,6 +1,7 @@
 
 using SafeTestsets
 
+@safetestset "Arrays                                                                          " begin include("array_tests.jl") end
 @safetestset "Abstract Layer                                                                  " begin include("abstract_layer_tests.jl") end
 @safetestset "Feed Forward Layer                                                              " begin include("feed_forward_layer_tests.jl") end
 @safetestset "Residual Layer                                                                  " begin include("residual_layer_tests.jl") end
