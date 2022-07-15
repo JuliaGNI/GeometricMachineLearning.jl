@@ -13,7 +13,7 @@ end
 
 function apply!(output::AbstractVector, input::AbstractVector, layer::FeedForwardLayer)
     mul!(output, layer.W, input)
-    output .+= layer.b
+    add!(output, layer.b)
     output .= layer.σ.(output)
 end
 
@@ -24,5 +24,5 @@ LinearFeedForwardLayer(W, b, gradient) = FeedForwardLayer(IdentityActivation(), 
 
 function apply!(output::AbstractVector, input::AbstractVector, layer::LinearFeedForwardLayer)
     mul!(output, layer.W, input)
-    output .+= layer.b
+    add!(output, layer.b)
 end

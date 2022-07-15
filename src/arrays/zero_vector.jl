@@ -18,3 +18,5 @@ function LinearAlgebra.mul!(out::AbstractVector, A::AbstractMatrix, z::ZeroVecto
     @assert length(axes(A,2)) == length(z)
     out .= 0
 end
+
+add!(x::AbstractVector, ::ZeroVector) = x

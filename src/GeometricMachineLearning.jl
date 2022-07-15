@@ -5,6 +5,7 @@ module GeometricMachineLearning
     include("activations/abstract_activation_function.jl")
     include("activations/identity.jl")
 
+    include("arrays/add.jl")
     include("arrays/block_identity_lower.jl")
     include("arrays/block_identity_upper.jl")
     include("arrays/zero_vector.jl")

@@ -13,7 +13,7 @@ end
 
 function apply!(output::AbstractVector, input::AbstractVector, layer::ResidualLayer)
     mul!(output, layer.W, input)
-    output .+= layer.b
+    add!(output, layer.b)
     output .= layer.σ.(output)
     output .+= input
 end
