@@ -21,7 +21,7 @@ end
 
 
 #residual layer that changes q
-struct SympActLayer_p{DT, N, M, ST, KT <: AbstractMatrix{DT}, BT <: AbstractVector{DT}, GT} <: NeuralNetworkLayer{DT,N,M}
+struct SympActLayer_q{DT, N, M, ST, KT <: AbstractMatrix{DT}, BT <: AbstractVector{DT}, GT} <: NeuralNetworkLayer{DT,N,M}
     σ::ST
     K::KT
     b::BT
