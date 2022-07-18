@@ -3,7 +3,7 @@ module GeometricMachineLearning
     using LinearAlgebra
 
     include("activations/abstract_activation_function.jl")
-    include("activations/identity.jl")
+    include("activations/identity_activation.jl")
 
     include("arrays/add.jl")
     include("arrays/block_identity_lower.jl")
