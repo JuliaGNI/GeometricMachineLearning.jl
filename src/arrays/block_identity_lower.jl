@@ -16,6 +16,7 @@ end
 SymmetricBlockIdentityLowerMatrix(W::AbstractMatrix) = BlockIdentityLowerMatrix(W .+ W')
 
 Base.parent(A::BlockIdentityLowerMatrix) = A.S
+Base.size(A::BlockIdentityLowerMatrix) = 2 .* size(A.S)
 
 function LinearAlgebra.mul!(out::AbstractVector, A::BlockIdentityLowerMatrix, z::AbstractVector)
     @assert length(out) == length(z) == 2*length(axes(A.S,2))
