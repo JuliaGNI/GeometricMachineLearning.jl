@@ -1,17 +1,17 @@
 
 # residual layer that changes p
-const LinearSympNetLayerP = LinearFeedForwardLayer
+const LinearSymplecticLayerP = LinearFeedForwardLayer
 
-function LinearSympNetLayerP(W, gradient)
+function LinearSymplecticLayerP(W, gradient)
     S = SymmetricBlockIdentityLowerMatrix(W)
     b = ZeroVector(eltype(W), 2*length(axes(W,1)))
     LinearFeedForwardLayer(S, b, gradient)
 end
 
 # residual layer that changes q
-const LinearSympNetLayerQ = LinearFeedForwardLayer(W, b, gradient)
+const LinearSymplecticLayerQ = LinearFeedForwardLayer(W, b, gradient)
 
-function LinearSympNetLayerQ(W, gradient)
+function LinearSymplecticLayerQ(W, gradient)
     S = SymmetricBlockIdentityUpperMatrix(W)
     b = ZeroVector(eltype(W), 2*length(axes(W,1)))
     LinearFeedForwardLayer(S, b, gradient)
