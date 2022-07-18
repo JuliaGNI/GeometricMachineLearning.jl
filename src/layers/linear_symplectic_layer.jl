@@ -1,6 +1,6 @@
 
 # residual layer that changes p
-const LinearSymplecticLayerP{DT, N, M, WT <: AbstractMatrix{DT}, BT <: AbstractVector{DT}, GT} = LinearFeedForwardLayer{DT, N, M, WT, BT, GT}
+const LinearSymplecticLayerP{DT, N, M, WT <: BlockIdentityLowerMatrix{DT}, GT} = LinearFeedForwardLayer{DT, N, M, WT, <: ZeroVector, GT}
 
 function LinearSymplecticLayerP(W, gradient)
     S = SymmetricBlockIdentityLowerMatrix(W)
@@ -9,7 +9,7 @@ function LinearSymplecticLayerP(W, gradient)
 end
 
 # residual layer that changes q
-const LinearSymplecticLayerQ{DT, N, M, WT <: AbstractMatrix{DT}, BT <: AbstractVector{DT}, GT} = LinearFeedForwardLayer{DT, N, M, WT, BT, GT}
+const LinearSymplecticLayerQ{DT, N, M, WT <: BlockIdentityUpperMatrix{DT}, GT} = LinearFeedForwardLayer{DT, N, M, WT, <: ZeroVector, GT}
 
 function LinearSymplecticLayerQ(W, gradient)
     S = SymmetricBlockIdentityUpperMatrix(W)

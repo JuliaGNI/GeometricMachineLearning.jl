@@ -13,10 +13,12 @@ module GeometricMachineLearning
     export AbstractLayer
     export FeedForwardLayer, LinearFeedForwardLayer
     export ResidualLayer
+    export LinearSymplecticLayerP, LinearSymplecticLayerQ
 
     include("layers/abstract_layer.jl")
     include("layers/feed_forward_layer.jl")
     include("layers/residual_layer.jl")
+    include("layers/linear_symplectic_layer.jl")
 
     export AbstractNeuralNetwork
     export VanillaNeuralNetwork
