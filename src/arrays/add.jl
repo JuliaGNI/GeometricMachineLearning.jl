@@ -1,10 +1,10 @@
 
 function add!(x::AbstractArray, b::AbstractArray)
-    @assert shape(x) == shape(b)
+    @assert axes(x) == axes(b)
     x .+= b
 end
 
 function add!(x::AbstractArray, a::AbstractArray, b::AbstractArray)
-    @assert shape(x) == shape(a) == shape(b)
+    @assert axes(x) == axes(a) == axes(b)
     x .= a .+ b
 end
