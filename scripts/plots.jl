@@ -1,4 +1,3 @@
-using GeometricIntegrators
 using LaTeXStrings
 using Plots
 

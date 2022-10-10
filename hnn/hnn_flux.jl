@@ -5,10 +5,10 @@ using ForwardDiff
 using ProgressMeter
 
 #this contains the functions for generating the training data
-include("utils/data.jl")
+include("../scripts/data.jl")
 
 #this contains the functions for generating the plots
-include("utils/plots.jl")
+include("../scripts/plots.jl")
 
 #layer dimension/width
 const ld = 5

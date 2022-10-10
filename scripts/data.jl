@@ -19,9 +19,3 @@ function get_data_set(num=10, xymin=-1.2, xymax=+1.2)
 
 	return (data, target)
 end
-
-#select a number of points at random (one b	atch)
-function get_batch(data, target, batch_size=10)
-	index = rand(eachindex(data), batch_size)
-	return (data[index], target[index])
-end

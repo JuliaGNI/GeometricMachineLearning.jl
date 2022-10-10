@@ -2,19 +2,19 @@ using ModelingToolkit
 using ProgressMeter
 
 #this contains the functions for generating the training data
-include("utils/data.jl")
+include("../scripts/data.jl")
 
 #this contains the functions for generating the plots
-include("utils/plots.jl")
+include("../scripts/plots.jl")
 
 #load ModelingToolkit generated functions
-est   = include("mt_fun/est.jl")
-field = include("mt_fun/field.jl")
-loss  = include("mt_fun/loss.jl")
-step  = include("mt_fun/step.jl")
+est   = include("../mt_fun/est.jl")
+field = include("../mt_fun/field.jl")
+loss  = include("../mt_fun/loss.jl")
+step  = include("../mt_fun/step.jl")
 
 #settings and common functionality
-include("mt_fun/common.jl")
+include("../mt_fun/common.jl")
 
 #learning rate
 const η = .001

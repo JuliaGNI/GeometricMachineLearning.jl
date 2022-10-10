@@ -4,13 +4,14 @@ using Zygote
 using ProgressMeter
 
 #this file contains the function that evaluates the network
-include("utils/networks.jl")
+include("networks.jl")
 
 #this contains the functions for generating the training data
-include("utils/data.jl")
+include("../scripts/data.jl")
+include("../src/training.jl")
 
 #this contains the functions for generating the plots
-include("utils/plots.jl")
+include("../scripts/plots.jl")
 
 #layer dimension/width
 const ld = 5
