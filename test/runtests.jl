@@ -8,3 +8,4 @@ using SafeTestsets
 @safetestset "Symplectic Layers                                                               " begin include("symplectic_layer_tests.jl") end
 @safetestset "Abstract Neural Network                                                         " begin include("abstract_neural_network_tests.jl") end
 @safetestset "Vanilla Neural Network                                                          " begin include("vanilla_neural_network_tests.jl") end
+@safetestset "Hamiltonian Neural Network                                                      " begin include("hamiltonian_neural_network_tests.jl") end
