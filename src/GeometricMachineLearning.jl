@@ -2,6 +2,9 @@ module GeometricMachineLearning
 
     using LinearAlgebra
 
+    include("gradient.jl")
+    include("training.jl")
+
     include("activations/abstract_activation_function.jl")
     include("activations/identity_activation.jl")
 
@@ -21,12 +24,14 @@ module GeometricMachineLearning
     include("layers/linear_symplectic_layer.jl")
 
     export AbstractNeuralNetwork
-    export VanillaNeuralNetwork
+    export HamiltonianNeuralNetwork
     export Inverse
+    export VanillaNeuralNetwork
 
     include("networks/abstract_neural_network.jl")
     include("networks/inverse_neural_network.jl")
     include("networks/vanilla_neural_network.jl")
+    include("networks/hamiltonian_neural_network.jl")
 
     export train!, apply!, jacobian!
 
