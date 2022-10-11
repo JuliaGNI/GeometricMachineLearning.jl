@@ -7,6 +7,12 @@ using Zygote
 
 
 # define some custom apply methods for Chain and Dense
+# that use Tuples for parameters instead of NamedTuples
+# and do not return a state but only the results of each
+# layer and the whole chain
+# splitting of Lux's return tuple of (result, state) as well
+# as symbolic indexing of NamedTuples does not work when
+# computing two derivatives with Zygote
 
 @generated function Lux.applychain(layers::NamedTuple{fields}, x, ps::Tuple, st::NamedTuple{fields}) where {fields}
     N = length(fields)
