@@ -28,16 +28,16 @@ end
     return Expr(:block, calls...)
 end
 
-# @generated function hnnapply(layers::NamedTuple{fields}, x, ps::NamedTuple{fields}, st::NamedTuple{fields}) where {fields}
-#   N = length(fields)
-#   x_symbols = vcat([:x], [gensym() for _ in 1:N])
-#   calls = [:(($(x_symbols[i + 1])) = hnnapply(layers.$(fields[i]),
-#                                               $(x_symbols[i]),
-#                                               ps.$(fields[i]),
-#                                               st.$(fields[i]))) for i in 1:N]
-#   push!(calls, :(return $(x_symbols[N + 1])))
-#   return Expr(:block, calls...)
-# end
+@generated function hnnapply(layers::NamedTuple{fields}, x, ps::NamedTuple{fields}, st::NamedTuple{fields}) where {fields}
+  N = length(fields)
+  x_symbols = vcat([:x], [gensym() for _ in 1:N])
+  calls = [:(($(x_symbols[i + 1])) = hnnapply(layers.$(fields[i]),
+                                              $(x_symbols[i]),
+                                              ps.$(fields[i]),
+                                              st.$(fields[i]))) for i in 1:N]
+  push!(calls, :(return $(x_symbols[N + 1])))
+  return Expr(:block, calls...)
+end
 
 @inline hnnapply(c::Chain, x, ps, st::NamedTuple) = hnnapply(c.layers, x, ps, st)
 
@@ -79,30 +79,30 @@ hnn_loss(model, x, y, params, state) = mapreduce(i -> loss_sing(model, x[i], y[i
 hnn_loss_gradient(model, loss, x, y, params, state) = Zygote.gradient(p -> loss(model, x, y, p, state), params)[1]
 
 
-function train_flux_hnn(model, loss, ps, st, data, target, runs, η=0.001)
+function train_flux_hnn(model, loss, params, state, data, target, runs, η=0.001)
     # create array to store total loss
     total_loss = zeros(runs)
 
-    params = Tuple([Tuple(x) for x in ps])
+    params_tuple = Tuple([Tuple(x) for x in params])
 
     # do a couple learning runs
     @showprogress 1 "Training..." for j in 1:runs
         # gradient step
         batch = ceil.(Int, rand(10))
-        params_grad = hnn_loss_gradient(model, loss, data[batch], target[batch], params, st)
+        params_grad = hnn_loss_gradient(model, loss, data[batch], target[batch], params, state)
 
         # make gradient steps for all the model parameters W & b
-        for i in eachindex(params, params_grad)
-            for (p, dp) in zip(params[i], params_grad[i])
+        for i in eachindex(params_tuple, params_grad)
+            for (p, dp) in zip(params_tuple[i], params_grad[i])
                 p .-= η .* dp
             end
         end
 
         # total loss i.e. loss computed over all data
-        total_loss[j] = loss(model, data, target, params, st)
+        total_loss[j] = loss(model, data, target, params, state)
     end
 
-    return (model, data, target, ps, st, total_loss)
+    return (model, data, target, params, state, total_loss)
 end
 
 train_flux_hnn(model, hnn_loss, ps, st, data, target, 1)
