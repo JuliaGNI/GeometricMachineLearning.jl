@@ -41,7 +41,7 @@ function train_flux_hnn(model,ps,st,data,target,runs)
         @showprogress 1 "Training..." for j in 1:runs
                 #gradient step
                 batch = ceil.(Int,rand(10))
-                step = loss_gradient(moel,data[batch],target[batch],ps,st)
+                step = loss_gradient(model,data[batch],target[batch],ps,st)
 
                 #make gradient steps for all the model parameters W & b
                 for Wb in ps
@@ -55,3 +55,4 @@ function train_flux_hnn(model,ps,st,data,target,runs)
         return (model, data, target, ps, st, total_loss)
 end
 
+train_flux_hnn(model,ps,st,data,target,1)
