@@ -34,8 +34,7 @@ module GeometricMachineLearning
     include("networks/abstract_neural_network.jl")
     include("networks/inverse_neural_network.jl")
     include("networks/vanilla_neural_network.jl")
-    include("networks/hamiltonian_neural_network.jl")
-
+    
     export train!, apply!, jacobian!
 
 end
