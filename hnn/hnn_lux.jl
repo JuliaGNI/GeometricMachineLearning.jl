@@ -1,5 +1,4 @@
 using Distances
-using ForwardDiff
 using Lux
 using Optimisers
 using ProgressMeter
@@ -7,20 +6,12 @@ using Random
 using Zygote
 
 
-# define some custom apply methods for chains and dense layers
+# define some custom apply methods for Chain and Dense
 
-@inline function hnnapply(d::Dense{false}, x::AbstractVecOrMat, ps, st::NamedTuple)
-    return d.activation.(ps[1] * x)
-end
-
-@inline function hnnapply(d::Dense{true}, x::AbstractVector, ps, st::NamedTuple)
-    return d.activation.(ps[1] * x .+ vec(ps[2]))
-end
-
-@generated function hnnapply(layers::NamedTuple{fields}, x, ps::Tuple, st::NamedTuple{fields}) where {fields}
+@generated function Lux.applychain(layers::NamedTuple{fields}, x, ps::Tuple, st::NamedTuple{fields}) where {fields}
     N = length(fields)
     x_symbols = vcat([:x], [gensym() for _ in 1:N])
-    calls = [:(($(x_symbols[i + 1])) = hnnapply(layers.$(fields[i]),
+    calls = [:(($(x_symbols[i + 1])) = Lux.apply(layers.$(fields[i]),
                                                 $(x_symbols[i]),
                                                 ps[$i],
                                                 st.$(fields[i]))) for i in 1:N]
@@ -28,18 +19,13 @@ end
     return Expr(:block, calls...)
 end
 
-@generated function hnnapply(layers::NamedTuple{fields}, x, ps::NamedTuple{fields}, st::NamedTuple{fields}) where {fields}
-  N = length(fields)
-  x_symbols = vcat([:x], [gensym() for _ in 1:N])
-  calls = [:(($(x_symbols[i + 1])) = hnnapply(layers.$(fields[i]),
-                                              $(x_symbols[i]),
-                                              ps.$(fields[i]),
-                                              st.$(fields[i]))) for i in 1:N]
-  push!(calls, :(return $(x_symbols[N + 1])))
-  return Expr(:block, calls...)
+@inline function Lux.apply(d::Dense{false}, x::AbstractVecOrMat, ps::Tuple, st::NamedTuple)
+    return d.activation.(ps[1] * x)
 end
 
-@inline hnnapply(c::Chain, x, ps, st::NamedTuple) = hnnapply(c.layers, x, ps, st)
+@inline function Lux.apply(d::Dense{true}, x::AbstractVector, ps::Tuple, st::NamedTuple)
+    return d.activation.(ps[1] * x .+ vec(ps[2]))
+end
 
 
 # generate data
@@ -60,8 +46,13 @@ model = Chain(Dense(2,  ld, act),
 ps, st = Lux.setup(Random.default_rng(), model)
 
 # define Hamiltonian via evaluation of network
-function hnn(model, x, params, state)
-    y = hnnapply(model, x, params, state)
+function hnn(model, x, params::Tuple, state)
+    y = Lux.apply(model, x, params, state)
+    return sum(y)
+end
+
+function hnn(model, x, params::NamedTuple, state)
+    y, st = Lux.apply(model, x, params, state)
     return sum(y)
 end
 
@@ -79,17 +70,18 @@ hnn_loss(model, x, y, params, state) = mapreduce(i -> loss_sing(model, x[i], y[i
 hnn_loss_gradient(model, loss, x, y, params, state) = Zygote.gradient(p -> loss(model, x, y, p, state), params)[1]
 
 
-function train_flux_hnn(model, loss, params, state, data, target, runs, η=0.001)
+function train_lux_hnn(model, loss, params, state, data, target, runs, η=0.001)
     # create array to store total loss
     total_loss = zeros(runs)
 
+    # convert parameters to tuple
     params_tuple = Tuple([Tuple(x) for x in params])
 
     # do a couple learning runs
     @showprogress 1 "Training..." for j in 1:runs
         # gradient step
         batch = ceil.(Int, rand(10))
-        params_grad = hnn_loss_gradient(model, loss, data[batch], target[batch], params, state)
+        params_grad = hnn_loss_gradient(model, loss, data[batch], target[batch], params_tuple, state)
 
         # make gradient steps for all the model parameters W & b
         for i in eachindex(params_tuple, params_grad)
@@ -105,4 +97,4 @@ function train_flux_hnn(model, loss, params, state, data, target, runs, η=0.001
     return (model, data, target, params, state, total_loss)
 end
 
-train_flux_hnn(model, hnn_loss, ps, st, data, target, 1)
+train_lux_hnn(model, hnn_loss, ps, st, data, target, 1)
