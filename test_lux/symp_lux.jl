@@ -38,7 +38,7 @@ function Lux.parameterlength(d::Grad{full_grad}) where {full_grad}
 end
 Lux.statelength(d::Grad) = 0
 
-@inline function (d::Grad{false})(x::AbstractVecOrMat, ps, st::NamedTuple)
+@inline function (d::Grad{false})(x::AbstractVector, ps, st::NamedTuple)
         return vcat(x[1:d.dim] + ps.scale.*d.activation.(x[d.dim+1:2*d.dim],
                                                          x[d.dim+1:2*d.dim]), st)
 end
