@@ -11,7 +11,7 @@ struct SymmetricMatrix{T, AT <: AbstractMatrix{T}} <: AbstractMatrix{T}
     end
 end
 
-getindex(A::SymmetricMatrix,inds...) = getindex(A.S,inds...)
+#getindex(A::SymmetricMatrix,inds...) = getindex(A.S,inds...)
 
 
 Base.parent(A::SymmetricMatrix) = A.S
