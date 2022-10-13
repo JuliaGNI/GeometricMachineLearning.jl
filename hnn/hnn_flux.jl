@@ -4,6 +4,7 @@ using ForwardDiff
 # using Profile
 using ProgressMeter
 
+using Flux: params
 using GeometricMachineLearning: get_batch
 
 
