@@ -11,6 +11,9 @@ struct SymmetricMatrix{T, AT <: AbstractMatrix{T}} <: AbstractMatrix{T}
     end
 end
 
+getindex(A::SymmetricMatrix,inds...) = getindex(A.S,inds...)
+
+
 Base.parent(A::SymmetricMatrix) = A.S
 Base.size(A::SymmetricMatrix) = size(parent(A))
 
@@ -23,5 +26,12 @@ function LinearAlgebra.mul!(out::AbstractVector, A::SymmetricMatrix, z::Abstract
     return out
 end
 
+Base.:*(A::SymmetricMatrix, B::AbstractVector) = A.S * B + A.S' * B
+Base.:*(A::AbstractVector, B::SymmetricMatrix) = A * B.S + A * B.S'
+
 Base.:*(A::SymmetricMatrix, B::AbstractVecOrMat) = A.S * B + A.S' * B
 Base.:*(A::AbstractVecOrMat, B::SymmetricMatrix) = A * B.S + A * B.S'
+
+
+
+
