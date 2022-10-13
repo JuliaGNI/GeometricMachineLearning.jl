@@ -4,6 +4,9 @@ using ForwardDiff
 # using Profile
 using ProgressMeter
 
+using GeometricMachineLearning: get_batch
+
+
 #this contains the functions for generating the training data
 include("../scripts/data.jl")
 
@@ -27,7 +30,7 @@ function train_flux_hnn(n_in, ld, η, runs)
 	#build model: three layers with tanh activation
 	model = Chain(Dense(n_in, ld, NNlib.tanh),
                   Dense(ld,   ld, NNlib.tanh),
-                  Dense(ld,    1, NNlib.tanh))
+                  Dense(ld,    1; bias=false))
 
 	#compute gradient of "Hamiltonian", i.e. vector field
 	field(τ) = [0 1; -1 0] * gradient(ξ -> sum(model(ξ)), τ)[1]
