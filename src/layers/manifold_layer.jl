@@ -20,7 +20,7 @@ function Lux.initialparameters(d::SympSt)
     return (weight=d.init_weight(),)
 end
 
-Lux.initialstates(d::SympSt) = NamedTuple()
+Lux.initialstates(d::SympSt) = NamedTuple(Manifold=true,ManifoldType=Manifolds.SymplecticStiefel)
 
 function Lux.parameterlength(d::SympSt)
         return (4*d.dim_out - 2*d.dim_in + 1)*d.dim_in
@@ -28,11 +28,11 @@ end
 Lux.statelength(d::SympSt) = 0
 
 @inline function(d::SympSt{false})(x::AbstractVecOrMat, ps, st::NamedTuple)
-    return ps.weight*x
+    return ps.weight*x,st
 end
 
 #maybe pick the symplectic inverse here
 @inline function(d::SympSt{true})(x::AbstractVecOrMat, ps, st::NamedTuple)
-    return ps.weight'*x
+    return ps.weight'*x,st
 end 
 
