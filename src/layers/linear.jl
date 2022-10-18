@@ -3,7 +3,7 @@ using Random
 using NNlib
 using LinearAlgebra
 
-include("../src/arrays/symmetric.jl")
+include("../arrays/symmetric.jl")
 
 
 #activation layer
@@ -14,30 +14,31 @@ end
 
 #change random number generator to make SymmetricMatrix
 function Linear(dim::Int; change_q::Bool=true, init_weight=Lux.glorot_uniform)
+        iseven(dim) || error("Dimension must be even!")
         return Linear{change_q, typeof(init_weight)}(init_weight, dim)
 end
 
 function Lux.initialparameters(rng::AbstractRNG, d::Linear)
-    return (weight=SymmetricMatrix(d.init_weight(rng, d.dim, d.dim)),)
+    return (weight=SymmetricMatrix(d.init_weight(rng, d.dim÷2, d.dim÷2)),)
 end
 
 Lux.initialstates(rng::AbstractRNG, d::Linear) = NamedTuple()
 
 #somewhat tricky because of the parametrization of a symmetric matrix
 function Lux.parameterlength(d::Linear{change_q}) where {change_q}
-        return (Linear.dim+1)*Linear.dim÷2
+        return (d.dim÷2+1)*d.dim÷4
 end
 
 @inline function(d::Linear{true})(x::AbstractVecOrMat, ps, st::NamedTuple)
-        return vcat(x[1:d.dim] + ps.weight*x[d.dim+1:2*d.dim], x[d.dim+1:2*d.dim]),st
+        return vcat(x[1:(d.dim÷2)] + ps.weight*x[(d.dim÷2+1):d.dim], x[(d.dim÷2+1):d.dim]),st
 end
 
 @inline function(d::Linear{false})(x::AbstractVecOrMat, ps, st::NamedTuple)
-        return vcat(x[1:d.dim], x[d.dim+1:2*d.dim] + ps.weight*x[1:d.dim]),st
+        return vcat(x[1:(d.dim÷2)], x[(d.dim÷2+1):d.dim] + ps.weight*x[1:(d.dim÷2)]),st
 end
 
 ###short test
-dummy_model = Linear(2,change_q=false)
+dummy_model = Linear(4,change_q=false)
 ps,st = Lux.setup(Random.default_rng(), dummy_model)
 print(dummy_model(ones(4),ps,st)[1])
 
