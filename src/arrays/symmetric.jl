@@ -26,6 +26,8 @@ function LinearAlgebra.mul!(out::AbstractVector, A::SymmetricMatrix, z::Abstract
     return out
 end
 
+Base.getindex(A::SymmetricMatrix, i, j) = A.S[i,j] + A.S[j,i]
+
 Base.:*(A::SymmetricMatrix, B::AbstractVector) = A.S * B + A.S' * B
 Base.:*(A::AbstractVector, B::SymmetricMatrix) = A * B.S + A * B.S'
 
