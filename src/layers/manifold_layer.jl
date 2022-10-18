@@ -12,8 +12,10 @@ end
 
 #maybe implement another random number generator
 function SymplecticStiefelLayer(dim_in::Int, dim_out::Int; inverse::Bool = false)
+    iseven(dim_in) && iseven(dim_out) || error("Dimension must be even.")
+    dim_in ≤ dim_out || error("Output dimension must be bigger than input dimension.")
     M = Manifolds.SymplecticStiefel(dim_out, dim_in)
-    init_weight = () -> rand(M, 1)[1]
+    init_weight = () -> rand(M)
     SymplecticStiefelLayer{inverse, typeof(init_weight), typeof(M)}(dim_in, dim_out, M, init_weight)
 end
 
@@ -35,7 +37,25 @@ Lux.statelength(d::SymplecticStiefelLayer) = 0
     ps.weight * x, st
 end
 
-#maybe pick the symplectic inverse here
+symplectic_flip(x::AbstractVector,n::Int) = iseven(n) ? vcat(x[(n÷2+1):n],-x[1:(n÷2)]) : error("Dimension must be even.")
+
+
 @inline function (d::SymplecticStiefelLayer{true})(x::AbstractVecOrMat, ps, st::NamedTuple)
-    ps.weight' * x, st
+    -symplectic_flip(ps.weight' * symplectic_flip(x,d.dim_out),d.dim_in), st
 end
+
+
+##tests
+
+using Zygote
+using Random
+
+
+model1 = SymplecticStiefelLayer(10,20;inverse=true)
+ps, st = Lux.setup(Random.default_rng(),model1)
+gradient(p -> sum(Lux.apply(model1, rand(20), p, st)[1]), ps)[1]
+
+
+model2 = Chain(Gradient(200,1000),Gradient(200,500),SymplecticStiefelLayer(20,200;inverse=true),Gradient(20,50))
+ps, st = Lux.setup(Random.default_rng(),model2)
+gradient(p -> sum(Lux.apply(model2, rand(200), p, st)[1]), ps)[1]
