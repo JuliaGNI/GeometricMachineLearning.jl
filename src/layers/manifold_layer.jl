@@ -1,14 +1,24 @@
 using Lux
 using Random
+using LinearAlgebra
 
+import SparseArrays
 import Manifolds
 
+"""
+n is input dimension (small);
+N is output dimension (big)
+"""
 struct SymplecticStiefelLayer{inverse, F1, MT <: Manifolds.SymplecticStiefel} <: Lux.AbstractExplicitLayer
-    dim_in::Int
-    dim_out::Int
+    dim_n::Int
+    dim_N::Int
     manifold::MT
     initial_weight::F1
+    sympl_in::SparseArrays.SparseMatrixCSC
+    sympl_out::SparseArrays.SparseMatrixCSC
 end
+
+make_sympl_mat(n) = hcat(vcat(zeros(n÷2,n÷2),-I(n÷2)),vcat(I(n÷2),zeros(n÷2,n÷2)))
 
 #maybe implement another random number generator
 function SymplecticStiefelLayer(dim_in::Int, dim_out::Int; inverse::Bool = false)
@@ -16,7 +26,8 @@ function SymplecticStiefelLayer(dim_in::Int, dim_out::Int; inverse::Bool = false
     dim_in ≤ dim_out || error("Output dimension must be bigger than input dimension.")
     M = Manifolds.SymplecticStiefel(dim_out, dim_in)
     init_weight = () -> rand(M)
-    SymplecticStiefelLayer{inverse, typeof(init_weight), typeof(M)}(dim_in, dim_out, M, init_weight)
+    SymplecticStiefelLayer{inverse, typeof(init_weight), typeof(M)}(dim_in, dim_out, M, init_weight,
+    make_sympl_mat(dim_in), make_sympl_mat(dim_out))
 end
 
 function Lux.initialparameters(RNG::AbstractRNG, d::SymplecticStiefelLayer)
@@ -37,11 +48,9 @@ Lux.statelength(d::SymplecticStiefelLayer) = 0
     ps.weight * x, st
 end
 
-symplectic_flip(x::AbstractVector,n::Int) = iseven(n) ? vcat(x[(n÷2+1):n],-x[1:(n÷2)]) : error("Dimension must be even.")
-
 
 @inline function (d::SymplecticStiefelLayer{true})(x::AbstractVecOrMat, ps, st::NamedTuple)
-    -symplectic_flip(ps.weight' * symplectic_flip(x,d.dim_out),d.dim_in), st
+    -d.sympl_in * ps.weight' * d.sympl_out * x, st
 end
 
 
