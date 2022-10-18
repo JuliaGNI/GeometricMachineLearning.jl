@@ -1,4 +1,4 @@
 
-struct IdentityActivation <: ActivationFunction end
+struct IdentityActivation <: AbstractActivationFunction end
 
 (::IdentityActivation)(x) = x

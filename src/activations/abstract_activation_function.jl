@@ -1,2 +1,2 @@
 
-abstract type ActivationFunction end
+abstract type AbstractActivationFunction end
