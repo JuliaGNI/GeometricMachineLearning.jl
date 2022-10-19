@@ -18,7 +18,7 @@ function apply!(o::StandardOptimizer, x, dx, st::NamedTuple)
                 x[layer][obj] .-= o.η * dx[layer][obj]
             end 
         else
-            Manifolds.retract_caley!(st[layer].ManifoldType(size(ps[layer].weight)...), 
+            Manifolds.retract_caley!(st[layer].Manifold, 
             x[layer].weight, x[layer].weight, -o.η * dx[layer].weight)
         end
     end

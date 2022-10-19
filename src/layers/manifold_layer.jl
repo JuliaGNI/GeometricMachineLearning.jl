@@ -35,14 +35,14 @@ function Lux.initialparameters(RNG::AbstractRNG, d::SymplecticStiefelLayer)
 end
 
 function Lux.initialstates(RNG::AbstractRNG, d::SymplecticStiefelLayer)
-    (Manifold = true, ManifoldType = Manifolds.SymplecticStiefel)
+    (IsManifold = true, Manifold = d.manifold)
 end
 
 function Lux.parameterlength(d::SymplecticStiefelLayer)
     (4 * d.dim_N - 2 * d.dim_n + 1) * d.dim_n
 end
 
-Lux.statelength(d::SymplecticStiefelLayer) = 0
+Lux.statelength(d::SymplecticStiefelLayer) = 2
 
 @inline function (d::SymplecticStiefelLayer{false})(x::AbstractVecOrMat, ps, st::NamedTuple)
     ps.weight * x, st
