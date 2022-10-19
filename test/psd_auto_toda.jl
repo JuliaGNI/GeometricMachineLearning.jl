@@ -7,6 +7,10 @@ using Lux
 import ForwardDiff
 
 include("misc.jl")
+include("../src/optimizers/AbstractOptimizer.jl")
+include("../src/optimizers/StandardOptimizer.jl")
+include("../src/layers/gradient.jl")
+include("../src/layers/manifold_layer.jl")
 
 N = 10
 
