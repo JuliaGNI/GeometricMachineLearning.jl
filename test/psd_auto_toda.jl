@@ -2,6 +2,7 @@ using Plots
 using LinearAlgebra
 using Zygote 
 using NLsolve
+using Lux
 
 import ForwardDiff
 
@@ -113,28 +114,43 @@ nn_total = Chain(nn_in,nn_out)
 ps, st = Lux.setup(Random.default_rng(), nn_total)
 
 o = StandardOptimizer(1f-5)
-g = gradient(p -> norm(z_vec - Lux.apply(nn_total, z_vec, p, st)[1]), ps)
+
+#implement mini-batching!
+g = gradient(p -> norm(z_vec[:,1] - Lux.apply(nn_total, z_vec[:,1], p, st)[1]), ps)[1]
 apply!(o, ps, g, st)
 
-ps_in = (layer_1=ps[1],layer_2=ps[2],layer_3=ps[3])
-st_in = (layer_1=st[1],layer_2=st[2],layer_3=st[3])
+function reduce_named_tuple(ntuple, indexset)
+
+    vals = (ntuple[indexset[k]] for k in eachindex(indexset) )
+    
+    keys = (Symbol("layer_"*string(k)) for k in eachindex(indexset))
+    
+    return (; zip(keys, vals)... )
+    
+end
+
+ps_in = reduce_named_tuple(ps, 1:4)
+st_in = reduce_named_tuple(ps, 1:4)
 
 
-function X_nn(ξ,ps_in,st_in,c,l,Δx,link_matrix,J_n)
-    return J_n*gradient(ξ₁ -> H(Lux.apply(nn_in,ξ₁, ps_in, st_in)[1],c,l,Δx,link_matrix),ξ)[1]
+ps_out = reduce_named_tuple(ps, 5:8)
+st_out = reduce_named_tuple(st, 5:8)
+
+
+function X_nn(ξ,ps_out,st_out,c,l,Δx,link_matrix,J_n)
+    return J_n*gradient(ξ₁ -> H(Lux.apply(nn_out,ξ₁, ps_out, st_out)[1],c,l,Δx,link_matrix),ξ)[1]
 end
 
 J_n = make_J(n_m)
 
-ξ_init_nn = Π(z_init,Aa,X)
-ξ_vec_nn = zeros(2*n_m,n_steps+1)
+ξ_init_nn = Lux.apply(nn_in, z_init, ps_in, st_in)[1]
+ξ_vec_nn = zeros(2*n_m, n_steps+1)
 ξ_vec_nn[:,1] = ξ_init_nn
 
 for it in 1:n_steps
-        f(ξ) = ξ - ξ_vec_nn[:,it] - step_size*X_nn(.5*(ξ+ξ_vec_nn[:,it]),ps_in,st_in,c,l,Δx,link_matrix,J_n)
+        f(ξ) = ξ - ξ_vec_nn[:,it] - step_size*X_nn(.5*(ξ+ξ_vec_nn[:,it]),ps_out,st_out,c,l,Δx,link_matrix,J_n)
         ξ_vec_nn[:,it+1] = nlsolve(f,ξ_vec_nn[:,it],autodiff=:finite).zero
 end
-
 
 #err_nn = .5*(sum((z_vec-Ξ(ξ_vec_nn,Aa,X)).^2,dims=1).^.5)
 #p_nn = plot(vec(err_nn./abs_val))
@@ -143,8 +159,4 @@ end
 #    plot((U₁*ξ_vec₁)[1:N,i],yrange=[0,1])
 #end
 #gif(anim1,"toda_pod",fps=10)
-
-
-
-
 
