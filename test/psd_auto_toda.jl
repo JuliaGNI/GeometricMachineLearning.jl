@@ -149,7 +149,7 @@ J_n = make_J(n_m)
 
 for it in 1:n_steps
         f(ξ) = ξ - ξ_vec_nn[:,it] - step_size*X_nn(.5*(ξ+ξ_vec_nn[:,it]),ps_out,st_out,c,l,Δx,link_matrix,J_n)
-        ξ_vec_nn[:,it+1] = nlsolve(f,ξ_vec_nn[:,it],autodiff=:finite).zero
+        ξ_vec_nn[:,it+1] = nlsolve(f,ξ_vec_nn[:,it],autodiff=:forward).zero
 end
 
 #err_nn = .5*(sum((z_vec-Ξ(ξ_vec_nn,Aa,X)).^2,dims=1).^.5)
