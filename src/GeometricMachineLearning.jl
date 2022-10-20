@@ -18,12 +18,14 @@ module GeometricMachineLearning
 
     export AbstractLayer
     export FeedForwardLayer, LinearFeedForwardLayer
+    export Gradient
     export ResidualLayer
     export LinearSymplecticLayerP, LinearSymplecticLayerQ
     export SymplecticStiefelLayer
 
     include("layers/abstract_layer.jl")
     include("layers/feed_forward_layer.jl")
+    include("layers/gradient.jl")
     include("layers/residual_layer.jl")
     include("layers/linear_symplectic_layer.jl")
     include("layers/manifold_layer.jl")
