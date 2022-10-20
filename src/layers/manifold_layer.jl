@@ -52,22 +52,3 @@ end
 @inline function (d::SymplecticStiefelLayer{true})(x::AbstractVecOrMat, ps, st::NamedTuple)
     -d.sympl_in * ps.weight' * d.sympl_out * x, st
 end
-
-
-##tests
-
-using Zygote
-using Random
-
-
-model1 = SymplecticStiefelLayer(10,20;inverse=true)
-ps, st = Lux.setup(Random.default_rng(),model1)
-g₁ =  gradient(p -> sum(Lux.apply(model1, rand(20), p, st)[1]), ps)[1]
-
-
-model2 = Chain(Gradient(200,1000),Gradient(200,500),SymplecticStiefelLayer(20,200;inverse=true),Gradient(20,50))
-ps, st = Lux.setup(Random.default_rng(),model2)
-g₂ =  gradient(p -> sum(Lux.apply(model2, rand(200), p, st)[1]), ps)[1]
-
-o = StandardOptimizer()
-apply!(o, ps, g₂, st)

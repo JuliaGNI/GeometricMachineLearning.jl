@@ -39,4 +39,10 @@ module GeometricMachineLearning
     
     export train!, apply!, jacobian!
 
+    include("optimizers/AbstractOptimizer.jl")
+    include("optimizers/StandardOptimizer.jl")
+
+    export StandardOptimizer
+    export init
+
 end

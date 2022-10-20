@@ -1,18 +1,40 @@
+using GeometricMachineLearning
 using Lux
-using Zygote
 using Random
+using Zygote
 
-include("../src/optimizers/AbstractOptimizer.jl")
-include("../src/optimizers/StandardOptimizer.jl")
-include("../src/layers/gradient.jl")
-include("../src/layers/manifold_layer.jl")
+m = 20
+n = 200
+x = rand(n)
 
+optim = StandardOptimizer(1e-5)
+state = init(optim, x)
+model = Chain(Gradient(n, 2n), SymplecticStiefelLayer(m, n; inverse = true))
 
-model = Chain(Gradient(10,20), SymplecticStiefelLayer(4,10;inverse=true))
 ps, st = Lux.setup(Random.default_rng(), model)
+g = gradient(p -> sum(Lux.apply(model, x, p, st)[1]), ps)[1]
+@time apply!(optim, state, model, ps, g)
 
-o = StandardOptimizer(1e-5)
+ps, st = Lux.setup(Random.default_rng(), model)
+g = gradient(p -> sum(Lux.apply(model, x, p, st)[1]), ps)[1]
+@time apply!(optim, state, model, ps, g)
 
-g = gradient(p -> sum(Lux.apply(model, rand(10), p, st)[1]), ps)[1]
 
-apply!(o, ps, g, st)
+# Tests
+
+optim = StandardOptimizer()
+
+layer = SymplecticStiefelLayer(m, n; inverse = true)
+ps, st = Lux.setup(Random.default_rng(), layer)
+x = rand(n)
+g = gradient(p -> sum(Lux.apply(layer, x, p, st)[1]), ps)[1]
+
+
+model = Chain(Gradient(200, 1000), Gradient(200, 500),
+               SymplecticStiefelLayer(20, 200; inverse = true), Gradient(20, 50))
+ps, st = Lux.setup(Random.default_rng(), model)
+x₂ = rand(200)
+g₂ = gradient(p -> sum(Lux.apply(model, x₂, p, st)[1]), ps)[1]
+
+state = init(optim, x₂)
+apply!(optim, state, model, ps, g₂)

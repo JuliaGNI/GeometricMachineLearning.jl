@@ -2,24 +2,28 @@
 Define the Standard optimizer, i.e. W ← W - η*∇f(W)
 Or the riemannian manifold equivalent, if applicable.
 """
-
 struct StandardOptimizer{T} <: AbstractOptimizer
     η::T
+    StandardOptimizer(η = 1e-2) = new{typeof(η)}(η)
 end
-StandardOptimizer(η = 1f-2) = StandardOptimizer{typeof(η)}(η)
 
-function apply!(o::StandardOptimizer, x, dx, st::NamedTuple)
-    layer_names = keys(st)
-    i = 0
-    for layer in layer_names
-        i += 1
-        if isempty(st[layer])
-            for obj in keys(ps[layer])
-                x[layer][obj] .-= o.η * dx[layer][obj]
-            end 
-        else
-            Manifolds.retract_caley!(st[layer].Manifold, 
-            x[layer].weight, x[layer].weight, -o.η * dx[layer].weight)
-        end
+init(o::StandardOptimizer, x) = nothing
+
+
+function update_layer!(o::StandardOptimizer, state, ::Lux.AbstractExplicitLayer, x, dx)
+    for obj in keys(x)
+        x[obj] .-= o.η * dx[obj]
+    end 
+end
+
+function update_layer!(o::StandardOptimizer, state, l::SymplecticStiefelLayer, x, dx)
+    Manifolds.retract_caley!(l.manifold, x.weight, x.weight, -o.η * dx.weight)
+end
+
+function apply!(o::StandardOptimizer, state, model, x, dx)
+    for layer in keys(model)
+        update_layer!(o, state, model[layer], x[layer], dx[layer])
     end
 end
+
+apply!(o::StandardOptimizer, state, model::Chain, x, dx) = apply!(o, state, model.layers, x, dx)
