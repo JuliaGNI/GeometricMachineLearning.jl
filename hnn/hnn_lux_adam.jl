@@ -107,7 +107,7 @@ function train_lux_hnn(model, loss, params, state, data, target, runs, η)
     states = init_adam(model)
     # do a couple learning runs
     @showprogress 1 "Training..." for j in 1:runs
-        # gradient step
+        # gradient step - you should probably divide through batch size
         params_grad = hnn_loss_gradient(model, loss, get_batch(data, target)...,
                                         params_tuple, state)
 
@@ -141,4 +141,4 @@ dhnn_est(ξ) = hnn_vf(model, ξ, params, state)
 
 include("../scripts/plots.jl")
 
-plot_network(H, hnn_est, total_loss; filename = "hnn_lux.png")
+plot_network(H, hnn_est, total_loss; filename = "hnn_lux_adam.png")

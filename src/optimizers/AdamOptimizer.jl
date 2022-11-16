@@ -23,11 +23,11 @@ function update_layer!(o::AdamOptimizer, state, ::Lux.AbstractExplicitLayer, x, 
 end
 
 function update_layer!(o::AdamOptimizer, state, model::Lux.Chain, x, dx)
-    for i in length(model)
+    for i in 1:length(model)
         update_layer!(o, (state[1][i], state[2][i], state[3]), model[i], x[i], dx[i])
     end
-    print(state[3])
-    state[3] += 1
+    #hacky, fix this!
+    state = (state[1], state[2], state[3] + 1)
 end
 
 function apply!(o::AdamOptimizer, state, model::Lux.Chain, x, dx)
