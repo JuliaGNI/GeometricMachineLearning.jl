@@ -12,22 +12,27 @@ end
 
 init(o::AdamOptimizer, x) = nothing
 
+#normally it should be "obj in keys(x)"; but this isn't possible because of HNN hack
 function update_layer!(o::AdamOptimizer, state, ::Lux.AbstractExplicitLayer, x, dx)
-    for obj in keys(x)
-        state[1] .= o.ρ₁ * state[1] + (1 - o.ρ₁) * dx
-        state[2] .= o.ρ₂ * state[2] + (1 - o.ρ₂) * dx .^ 2
-        x[obj] .-= o.η * (1 - o.ρ₁^state[3]) * state[1] ./
-                   (sqrt.((1 - o.ρ₂^state[3]) * state[2]) + o.δ)
+    for obj in 1:length(x)
+        state[1][obj] .= o.ρ₁ * state[1][obj] + (1.0 - o.ρ₁) * dx[obj]
+        state[2][obj] .= o.ρ₂ * state[2][obj] + (1.0 - o.ρ₂) * dx[obj] .^ 2
+        x[obj] .-= o.η * (1.0 - o.ρ₁^state[3]) * state[1][obj] ./
+                   (sqrt.((1.0 - o.ρ₂^state[3]) * state[2][obj]) .+ o.δ)
     end
 end
 
 function update_layer!(o::AdamOptimizer, state, model::Lux.Chain, x, dx)
     for i in length(model)
-        update_layer!(o, (state[1][i],state[2][i],state[3]),model[i],x[1],dx[2])
+        update_layer!(o, (state[1][i], state[2][i], state[3]), model[i], x[i], dx[i])
     end
-    state[3] .+= 1
+    print(state[3])
+    state[3] += 1
 end
 
+function apply!(o::AdamOptimizer, state, model::Lux.Chain, x, dx)
+    update_layer!(o, state, model, x, dx)
+end
 
 #initialize Adam
 function init_adam!(::Lux.AbstractExplicitLayer, x::NamedTuple)
@@ -38,7 +43,7 @@ end
 
 function init_adam!(model::Lux.Chain, x::NamedTuple)
     for index in 1:length(model)
-        init_adam(model[index], x[index])
+        init_adam!(model[index], x[index])
     end
 end
 

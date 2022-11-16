@@ -5,7 +5,8 @@ using ProgressMeter
 using Random
 using Zygote
 
-using GeometricMachineLearning: get_batch, StandardOptimizer
+using GeometricMachineLearning: get_batch
+using GeometricMachineLearning
 
 # define some custom apply methods for Chain and Dense
 # that use Tuples for parameters instead of NamedTuples
@@ -110,7 +111,7 @@ function train_lux_hnn(model, loss, params, state, data, target, runs, η)
         params_grad = hnn_loss_gradient(model, loss, get_batch(data, target)...,
                                         params_tuple, state)
 
-        update_layer!(o, states, model, params, params_grad)
+        apply!(o, states, model, params, params_grad)
 
         # total loss i.e. loss computed over all data
         total_loss[j] = loss(model, data, target, params, state)
