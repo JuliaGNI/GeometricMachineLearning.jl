@@ -9,21 +9,24 @@ end
 
 init(o::StandardOptimizer, x) = nothing
 
-
 function update_layer!(o::StandardOptimizer, state, ::Lux.AbstractExplicitLayer, x, dx)
     for obj in keys(x)
         x[obj] .-= o.η * dx[obj]
-    end 
-end
-
-function update_layer!(o::StandardOptimizer, state, l::SymplecticStiefelLayer, x, dx)
-    Manifolds.retract_caley!(l.manifold, x.weight, x.weight, -o.η * dx.weight)
-end
-
-function apply!(o::StandardOptimizer, state, model, x, dx)
-    for layer in keys(model)
-        update_layer!(o, state, model[layer], x[layer], dx[layer])
     end
 end
 
-apply!(o::StandardOptimizer, state, model::Chain, x, dx) = apply!(o, state, model.layers, x, dx)
+#Riemannian Gradient: ∇f(U)UᵀU+JU(∇f(U))^TJU
+function r_grad(e_grad, U, J)
+    e_grad * U' * U + J * U * e_grad' * J * U
+end
+
+function update_layer!(o::StandardOptimizer, state, l::SymplecticStiefelLayer, x, dx)
+    Manifolds.retract_caley!(l.manifold, x.weight, x.weight,
+                             -o.η * r_grad(dx.weight, x.weight, l.sympl_out))
+end
+
+function apply!(o::StandardOptimizer, state, model::Chain, x, dx)
+    for i in 1:length(model)
+        update_layer!(o, state, model[i], x[i], dx[i])
+    end
+end
