@@ -5,36 +5,22 @@ using Zygote
 
 m = 20
 n = 200
-x = rand(n)
+x = rand(2 * n)
 
-optim = StandardOptimizer(1e-5)
-state = init(optim, x)
-model = Chain(Gradient(n, 2n), SymplecticStiefelLayer(m, n; inverse = true))
+model = Chain(Gradient(2 * n, 4 * n), Gradient(2 * n), SymplecticStiefelLayer(2 * m, 2 * n; inverse = true))
 
+### Test for StandardOptimizer
+#note! optimizer and network state are not the same!
+optim = StandardOptimizer(1e-3)
 ps, st = Lux.setup(Random.default_rng(), model)
 g = gradient(p -> sum(Lux.apply(model, x, p, st)[1]), ps)[1]
-@time apply!(optim, state, model, ps, g)
+@time apply!(optim, nothing, model, ps, g)
 
+### Test for MomentumOptimizer
+optim = MomentumOptimizer(1e-3,1e-2)
 ps, st = Lux.setup(Random.default_rng(), model)
+#hacky for the moment!!!!!!!!!1 fix!!!!!
+model2 = Chain(Gradient(2 * n, 4 * n), Gradient(2 * n), SymplecticStiefelLayer(2 * n, 2 * n; inverse = true))
+state = init_momentum(model2)
 g = gradient(p -> sum(Lux.apply(model, x, p, st)[1]), ps)[1]
 @time apply!(optim, state, model, ps, g)
-
-
-# Tests
-
-optim = StandardOptimizer()
-
-layer = SymplecticStiefelLayer(m, n; inverse = true)
-ps, st = Lux.setup(Random.default_rng(), layer)
-x = rand(n)
-g = gradient(p -> sum(Lux.apply(layer, x, p, st)[1]), ps)[1]
-
-
-model = Chain(Gradient(200, 1000), Gradient(200, 500),
-               SymplecticStiefelLayer(20, 200; inverse = true), Gradient(20, 50))
-ps, st = Lux.setup(Random.default_rng(), model)
-x₂ = rand(200)
-g₂ = gradient(p -> sum(Lux.apply(model, x₂, p, st)[1]), ps)[1]
-
-state = init(optim, x₂)
-apply!(optim, state, model, ps, g₂)

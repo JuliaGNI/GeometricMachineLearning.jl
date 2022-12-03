@@ -43,8 +43,14 @@ module GeometricMachineLearning
 
     include("optimizers/AbstractOptimizer.jl")
     include("optimizers/StandardOptimizer.jl")
+    include("optimizers/AdamOptimizer.jl")
+    include("optimizers/MomentumOptimizer.jl")
 
     export StandardOptimizer
+    export AdamOptimizer
+    export MomentumOptimizer
     export init
+    export init_adam
+    export init_momentum
 
 end
