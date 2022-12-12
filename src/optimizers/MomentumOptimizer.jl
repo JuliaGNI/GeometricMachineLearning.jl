@@ -25,16 +25,16 @@ end
 
 #sympl_out saves the ``big'' Js. 
 function update_layer!(o::MomentumOptimizer, state, l::SymplecticStiefelLayer, x, dx)
-    state.weight .-= o.α *
-                     horizontal_lift(x.weight, r_grad(x.weight, dx.weight, l.sympl_out),
-                                     l.sympl_out)
+    state.weight .= o.α * state.weight -
+                    horizontal_lift(x.weight, r_grad(x.weight, dx.weight, l.sympl_out),
+                                    l.sympl_out)
     Manifolds.retract_caley!(l.manifold, x.weight, x.weight, o.η * state.weight * x.weight)
 end
 
 function update_layer!(o::MomentumOptimizer, state, ::Lux.AbstractExplicitLayer, x, dx)
     for obj in keys(x)
-        state[obj] .-= o.α * dx[obj]
-        x[obj] .+= o.η * dx[obj]
+        state[obj] .= o.α * state[obj] - dx[obj]
+        x[obj] .+= o.η * state[obj]
     end
 end
 
