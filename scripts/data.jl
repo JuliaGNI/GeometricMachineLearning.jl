@@ -3,8 +3,9 @@ using Zygote
 #define Hamiltonian
 H(x) = x[2]^2 / 2 - cos(x[1])
 
-#compute vector field  
-dH(x) = [0 1;-1 0] * Zygote.gradient(χ -> H(χ), x)[1]
+#compute vector field
+∇H(x) = Zygote.gradient(χ -> H(χ), x)[1]
+dH(x) = [0 1;-1 0] * ∇H(x)
 
 #get data set (includes dat & target)
 function get_data_set(num=10, xymin=-1.2, xymax=+1.2)
@@ -15,7 +16,7 @@ function get_data_set(num=10, xymin=-1.2, xymax=+1.2)
 	data = [[x,y] for x in rang, y in rang]
 
 	#compute the value of the vector field 
-	target = dH.(data)
+	target = ∇H.(data)
 
 	return (data, target)
 end
