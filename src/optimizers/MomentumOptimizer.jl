@@ -10,7 +10,9 @@ struct MomentumOptimizer{T} <: AbstractOptimizer
     MomentumOptimizer(η = 1e-3, α = 1e-2) = new{typeof(η)}(η, α)
 end
 
-init(o::MomentumOptimizer, x) = nothing
+function setup(o::MomentumOptimizer, x)
+
+end
 
 #SymplecticMatrix is included in Manifolds.jl -> this is probably not very efficient
 function horizontal_lift(U, Δ, J)
@@ -26,9 +28,9 @@ end
 #sympl_out saves the ``big'' Js. 
 function update_layer!(o::MomentumOptimizer, state, l::SymplecticStiefelLayer, x, dx)
     state.weight .= o.α * state.weight -
-                    horizontal_lift(x.weight, r_grad(x.weight, dx.weight, l.sympl_out),
+                    horizontal_lift(x.weight, r_grad(dx.weight, x.weight, l.sympl_out),
                                     l.sympl_out)
-    Manifolds.retract_caley!(l.manifold, x.weight, x.weight, o.η * state.weight * x.weight)
+    Manifolds.retract_caley!(l.manifold, x.weight, copy(x.weight), o.η * state.weight * x.weight)
 end
 
 function update_layer!(o::MomentumOptimizer, state, ::Lux.AbstractExplicitLayer, x, dx)

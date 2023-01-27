@@ -7,7 +7,7 @@ struct StandardOptimizer{T} <: AbstractOptimizer
     StandardOptimizer(η = 1e-2) = new{typeof(η)}(η)
 end
 
-init(o::StandardOptimizer, x) = nothing
+setup(o::StandardOptimizer, x) = NamedTuple()
 
 function update_layer!(o::StandardOptimizer, state, ::Lux.AbstractExplicitLayer, x, dx)
     for obj in keys(x)
@@ -21,7 +21,7 @@ function r_grad(e_grad, U, J)
 end
 
 function update_layer!(o::StandardOptimizer, state, l::SymplecticStiefelLayer, x, dx)
-    Manifolds.retract_caley!(l.manifold, x.weight, x.weight,
+    Manifolds.retract_caley!(l.manifold, x.weight, copy(x.weight),
                              -o.η * r_grad(dx.weight, x.weight, l.sympl_out))
 end
 
