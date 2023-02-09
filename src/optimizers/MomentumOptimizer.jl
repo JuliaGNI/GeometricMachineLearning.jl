@@ -4,14 +4,40 @@ V ← α*V - ∇f(W)
 W ← W + η*V
 Or the riemannian manifold equivalent, if applicable.
 """
-struct MomentumOptimizer{T} <: AbstractOptimizer
+mutable struct MomentumOptimizer{T} <: AbstractOptimizer
     η::T
     α::T
     MomentumOptimizer(η = 1e-3, α = 1e-2) = new{typeof(η)}(η, α)
 end
 
-function setup(o::MomentumOptimizer, x)
+function setup(o::MomentumOptimizer, model::Lux.AbstractExplicitLayer, x, dx)
+    #this stores the previous x-steps for manifold layers
+    x_prev = []
+    indices = init_prev!(model, x_prev, x)
+    names = ntuple(i -> Symbol("layer_$(indices[i])"), length(indices))
+    layers = NamedTuple{names}(x_prev)
+    #make standard optimization step (frist iteration)
+    o₂ = StandardOptimizer(o.η)
+    apply!(o₂, nothing, model, x, dx)
+    #merge everything
+    fun1(a, b) = NamedTuple{(:momentum, :prev_step)}((a, b))
+    NamedTuple(mergewith(fun1, Dict(pairs(dx)), Dict(pairs(layers))))
+end
 
+function init_prev!(::Lux.AbstractExplicitLayer, x_prev, x, indices, index)
+end
+
+function init_prev!(::SymplecticStiefelLayer, x_prev, x, indices, index)
+    push!(x_prev, x)
+    push!(indices, index)
+end
+
+function init_prev!(model::Lux.Chain, x_prev, x)
+    indices = []
+    for index in 1:length(model)
+        init_prev!(model[index], x_prev, x[index], indices, index)
+    end
+    indices
 end
 
 #SymplecticMatrix is included in Manifolds.jl -> this is probably not very efficient
@@ -20,17 +46,17 @@ function horizontal_lift(U, Δ, J)
     Δ * U_inv * U' + J * U * U_inv * Δ' * (I - J' * U * U_inv * U' * J) * J
 end
 
-#Riemannian Gradient: ∇f(U)UᵀU+JU(∇f(U))^TJU
-#function r_grad(U, e_grad, J)
-#   e_grad * U' * U + J * U * e_grad' * J * U
-#end
-
 #sympl_out saves the ``big'' Js. 
 function update_layer!(o::MomentumOptimizer, state, l::SymplecticStiefelLayer, x, dx)
-    state.weight .= o.α * state.weight -
-                    horizontal_lift(x.weight, r_grad(dx.weight, x.weight, l.sympl_out),
-                                    l.sympl_out)
-    Manifolds.retract_caley!(l.manifold, x.weight, copy(x.weight), o.η * state.weight * x.weight)
+    state.momentum.weight .= (o.α *
+                              horizontal_lift(state.prev_step.weight, state.momentum.weight,
+                                              l.sympl_out) -
+                              horizontal_lift(x.weight,
+                                              r_grad(dx.weight, x.weight, l.sympl_out),
+                                              l.sympl_out)) * x.weight
+    state.prev_step.weight .= copy(x.weight)
+    Manifolds.retract_caley!(l.manifold, x.weight, copy(x.weight),
+                             o.η * state.momentum.weight)
 end
 
 function update_layer!(o::MomentumOptimizer, state, ::Lux.AbstractExplicitLayer, x, dx)
@@ -42,33 +68,11 @@ end
 
 function update_layer!(o::MomentumOptimizer, state, model::Lux.Chain, x, dx)
     for i in 1:length(model)
-        update_layer!(o, state[i], model[i], x[i], dx[i])
+        layer_name = Symbol("layer_$i")
+        update_layer!(o, state[layer_name], model[i], x[layer_name], dx[layer_name])
     end
 end
 
 function apply!(o::MomentumOptimizer, state, model::Lux.Chain, x, dx)
     update_layer!(o, state, model, x, dx)
-end
-
-#initialize Adam
-function init_momentum!(::Lux.AbstractExplicitLayer, x::NamedTuple)
-    for obj in x
-        obj .= zeros(size(obj))
-    end
-end
-
-function init_momentum!(l::SymplecticStiefelLayer, x::NamedTuple)
-    x.weight .= zeros(l.dim_N, l.dim_N)
-end
-
-function init_momentum!(model::Lux.Chain, x::NamedTuple)
-    for index in 1:length(model)
-        init_momentum!(model[index], x[index])
-    end
-end
-
-function init_momentum(model::Lux.AbstractExplicitLayer)
-    ps, st = Lux.setup(Random.default_rng(), model)
-    init_momentum!(model, ps)
-    return ps
 end

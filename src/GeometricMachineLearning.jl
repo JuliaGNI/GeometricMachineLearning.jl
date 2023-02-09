@@ -52,5 +52,5 @@ module GeometricMachineLearning
     export init
     export init_adam
     export init_momentum
-
+    export setup
 end
