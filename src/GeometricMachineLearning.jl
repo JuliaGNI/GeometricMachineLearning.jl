@@ -1,6 +1,8 @@
 module GeometricMachineLearning
 
+    using BandedMatrices
     using LinearAlgebra
+
 
     include("gradient.jl")
     include("training.jl")
@@ -8,12 +10,13 @@ module GeometricMachineLearning
     include("activations/abstract_activation_function.jl")
     include("activations/identity_activation.jl")
 
-    export SymmetricMatrix
+    export SymmetricMatrix, SymplecticMatrix
 
     include("arrays/add.jl")
     include("arrays/block_identity_lower.jl")
     include("arrays/block_identity_upper.jl")
     include("arrays/symmetric.jl")
+    include("arrays/symplectic.jl")
     include("arrays/zero_vector.jl")
 
     export AbstractLayer

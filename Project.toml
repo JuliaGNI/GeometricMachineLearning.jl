@@ -4,6 +4,7 @@ authors = ["Michael Kraus <michael.kraus@ipp.mpg.de>"]
 version = "0.1.0"
 
 [deps]
+BandedMatrices = "aae01518-5342-5314-be14-df237901396f"
 Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"

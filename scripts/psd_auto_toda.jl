@@ -18,7 +18,7 @@ c = .1
 l = 1
 Δx = l/N
 
-J_N = make_J(N)
+J_N = SymplecticMatrix(N)
 link_matrix  = zeros(N,N)
 link_matrix[1,N] = 1
 for i in 2:N link_matrix[i,i-1] = 1 end
@@ -145,7 +145,7 @@ function X_nn(ξ,ps_out,st_out,c,l,Δx,link_matrix,J_n)
     return J_n*gradient(ξ₁ -> H(Lux.apply(nn_out,ξ₁, ps_out, st_out)[1],c,l,Δx,link_matrix),ξ)[1]
 end
 
-J_n = make_J(n_m)
+J_n = SymplecticMatrix(n_m)
 
 ξ_init_nn = Lux.apply(nn_in, z_init, ps_in, st_in)[1]
 ξ_vec_nn = zeros(2*n_m, n_steps+1)

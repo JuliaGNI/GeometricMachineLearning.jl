@@ -18,7 +18,6 @@ struct SymplecticStiefelLayer{inverse, F1, MT <: Manifolds.SymplecticStiefel} <:
     sympl_out::SparseArrays.SparseMatrixCSC
 end
 
-make_sympl_mat(n) = hcat(vcat(zeros(n÷2,n÷2),-I(n÷2)),vcat(I(n÷2),zeros(n÷2,n÷2)))
 
 #maybe implement another random number generator
 function SymplecticStiefelLayer(dim_n::Int, dim_N::Int; inverse::Bool = false)
@@ -27,7 +26,7 @@ function SymplecticStiefelLayer(dim_n::Int, dim_N::Int; inverse::Bool = false)
     M = Manifolds.SymplecticStiefel(dim_N, dim_n)
     init_weight = () -> rand(M)
     SymplecticStiefelLayer{inverse, typeof(init_weight), typeof(M)}(dim_n, dim_N, M, init_weight,
-    make_sympl_mat(dim_n), make_sympl_mat(dim_N))
+    SymplecticMatrix(dim_n÷2), SymplecticMatrix(dim_N÷2))
 end
 
 function Lux.initialparameters(RNG::AbstractRNG, d::SymplecticStiefelLayer)
