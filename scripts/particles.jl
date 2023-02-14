@@ -1,14 +1,14 @@
-using Pkg
-Pkg.activate("../.")
+
 using GeometricMachineLearning
+using HDF5
+using LinearAlgebra
 using Lux
+using Printf
 using Random
 using Zygote
-using LinearAlgebra
-using HDF5
-using Printf
 
-fpath = "../../ReducedBasisMethods.jl/runs/BoT_Np5e4_k_010_050_np_10_T25.h5"
+
+fpath = "../ReducedBasisMethods/runs/BoT_Np5e4_k_010_050_np_10_T25.h5"
 file = h5open(fpath, "r")
 snapshots = read(file, "snapshots")
 X = snapshots["X"]
@@ -25,7 +25,7 @@ for i in 1:time_steps
 end
 
 #PSD  PSD_err
-fpath_proj = "../../ReducedBasisMethods.jl/runs/BoT_Np5e4_k_010_050_np_10_T25_projections.h5"
+fpath_proj = "../ReducedBasisMethods/runs/BoT_Np5e4_k_010_050_np_10_T25_projections.h5"
 file = h5open(fpath_proj, "r")
 Ψ_PSD = read(file, "Ψp")[:, 1:m]
 PSD_err = 0

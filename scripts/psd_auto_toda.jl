@@ -1,19 +1,16 @@
-using Plots
+
+using GeometricMachineLearning
 using LinearAlgebra
-using Zygote 
-using NLsolve
 using Lux
+using NLsolve
+using Plots
+using Random
+using Zygote 
 
 import ForwardDiff
 
-include("misc.jl")
-include("../src/optimizers/AbstractOptimizer.jl")
-include("../src/optimizers/StandardOptimizer.jl")
-include("../src/layers/gradient.jl")
-include("../src/layers/manifold_layer.jl")
 
 N = 10
-
 c = .1
 l = 1
 Δx = l/N
