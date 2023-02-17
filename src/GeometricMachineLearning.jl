@@ -2,6 +2,7 @@ module GeometricMachineLearning
 
     using BandedMatrices
     using LinearAlgebra
+    using Random
 
 
     include("gradient.jl")

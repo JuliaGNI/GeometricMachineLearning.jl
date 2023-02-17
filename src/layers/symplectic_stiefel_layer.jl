@@ -1,4 +1,4 @@
-using Lux
+
 using Random
 using LinearAlgebra
 
@@ -50,4 +50,8 @@ end
 
 @inline function (d::SymplecticStiefelLayer{true})(x::AbstractVecOrMat, ps, st::NamedTuple)
     -d.sympl_in * ps.weight' * d.sympl_out * x, st
+end
+
+function update_layer!(l::SymplecticStiefelLayer, x, dx, η)
+    Manifolds.retract_caley!(l.manifold, x.weight, copy(x.weight), η * dx)
 end

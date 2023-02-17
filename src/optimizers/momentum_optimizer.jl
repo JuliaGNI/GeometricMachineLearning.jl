@@ -52,27 +52,15 @@ function update_layer!(o::MomentumOptimizer, state, l::SymplecticStiefelLayer, x
                               horizontal_lift(state.prev_step.weight, state.momentum.weight,
                                               l.sympl_out) -
                               horizontal_lift(x.weight,
-                                              r_grad(dx.weight, x.weight, l.sympl_out),
+                                              riemannian_gradient(dx.weight, x.weight, l.sympl_out),
                                               l.sympl_out)) * x.weight
     state.prev_step.weight .= copy(x.weight)
-    Manifolds.retract_caley!(l.manifold, x.weight, copy(x.weight),
-                             o.η * state.momentum.weight)
+    update_layer!(l, x, state.momentum.weight, o.η)
 end
 
-function update_layer!(o::MomentumOptimizer, state, ::Lux.AbstractExplicitLayer, x, dx)
+function update_layer!(o::MomentumOptimizer, state, layer::Lux.AbstractExplicitLayer, x, dx)
     for obj in keys(x)
         state[obj] .= o.α * state[obj] - dx[obj]
-        x[obj] .+= o.η * state[obj]
     end
-end
-
-function update_layer!(o::MomentumOptimizer, state, model::Lux.Chain, x, dx)
-    for i in 1:length(model)
-        layer_name = Symbol("layer_$i")
-        update_layer!(o, state[layer_name], model[i], x[layer_name], dx[layer_name])
-    end
-end
-
-function apply!(o::MomentumOptimizer, state, model::Lux.Chain, x, dx)
-    update_layer!(o, state, model, x, dx)
+    update_layer!(layer, x, state, o.η)
 end
