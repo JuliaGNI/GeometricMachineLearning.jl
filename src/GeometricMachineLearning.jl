@@ -33,12 +33,18 @@ module GeometricMachineLearning
     include("layers/linear_symplectic_layer.jl")
     include("layers/symplectic_stiefel_layer.jl")
 
-    export AbstractNeuralNetwork
+
+    include("architectures/architectures.jl")
+    include("backends/backends.jl")
+
+    export LuxBackend
+
+    include("backends/lux.jl")
     export HamiltonianNeuralNetwork
+    export AbstractNeuralNetwork
     export Inverse
     export VanillaNeuralNetwork
 
-    include("networks/abstract_neural_network.jl")
     include("networks/inverse_neural_network.jl")
     include("networks/vanilla_neural_network.jl")
     
