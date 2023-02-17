@@ -26,11 +26,14 @@ const nruns = 1000
 # create HNN
 hnn = HamiltonianNeuralNetwork(ninput; nhidden = ln, width = ld)
 
+# create Lux network
+nn = NeuralNetwork(hnn, LuxBackend())
+
 # get data set
 data, target = get_data_set()
 
 # perform training (returns array that contains the total loss for each training step)
-total_loss = train!(hnn, data, target; ntraining = nruns, learning_rate = η)
+total_loss = train!(nn, data, target; ntraining = nruns, learning_rate = η)
 
 #time training (after warmup)
 # total_loss = train!(hnn, data, target; ntraining = nruns, learning_rate = η)

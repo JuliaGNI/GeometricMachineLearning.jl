@@ -8,34 +8,6 @@ using Zygote
 using GeometricMachineLearning: get_batch
 
 
-# define some custom apply methods for Chain and Dense
-# that use Tuples for parameters instead of NamedTuples
-# and do not return a state but only the results of each
-# layer and the whole chain
-# splitting of Lux's return tuple of (result, state) as well
-# as symbolic indexing of NamedTuples does not work when
-# computing two derivatives with Zygote
-
-@generated function Lux.applychain(layers::NamedTuple{fields}, x, ps::Tuple, st::NamedTuple{fields}) where {fields}
-    N = length(fields)
-    x_symbols = vcat([:x], [gensym() for _ in 1:N])
-    calls = [:(($(x_symbols[i + 1])) = Lux.apply(layers.$(fields[i]),
-                                                $(x_symbols[i]),
-                                                ps[$i],
-                                                st.$(fields[i]))) for i in 1:N]
-    push!(calls, :(return $(x_symbols[N + 1])))
-    return Expr(:block, calls...)
-end
-
-@inline function Lux.apply(d::Dense{false}, x::AbstractVecOrMat, ps::Tuple, st::NamedTuple)
-    return d.activation.(ps[1] * x)
-end
-
-@inline function Lux.apply(d::Dense{true}, x::AbstractVector, ps::Tuple, st::NamedTuple)
-    return d.activation.(ps[1] * x .+ vec(ps[2]))
-end
-
-
 # generate data
 include("../scripts/data.jl")
 

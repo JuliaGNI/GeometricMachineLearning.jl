@@ -42,7 +42,15 @@ module GeometricMachineLearning
     export LuxBackend
 
     include("backends/lux.jl")
+
+    # set default backend in NeuralNetwork constructor
+    NeuralNetwork(arch::AbstractArchitecture; kwargs...) = NeuralNetwork(arch, LuxBackend(); kwargs...)
+
+    export NeuralNetwork
     export HamiltonianNeuralNetwork
+
+    include("architectures/hamiltonian_neural_network.jl")
+
     export AbstractNeuralNetwork
     export Inverse
     export VanillaNeuralNetwork
