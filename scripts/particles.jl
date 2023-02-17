@@ -15,7 +15,7 @@ X = snapshots["X"]
 V = snapshots["V"]
 
 _, n, time_steps, par = size(X)
-m = 5
+m = 10
 
 norm_fac = 0
 for i in 1:time_steps
@@ -126,8 +126,8 @@ end
 
 optim = MomentumOptimizer(1e-3, 5e-1)
 g = gradient(p -> loss_minibatch(p, st_all), ps_all)[1]
-state = setup(optim, reconstr, ps_all, g)
-n_runs = Int(3e3)
+state = MomentumOptimizerCache(optim, reconstr, ps_all, g)
+n_runs = Int(1e2)
 err_vec = zeros(n_runs + 1)
 
 err_vec[1] = loss_total(ps_all, st_all)

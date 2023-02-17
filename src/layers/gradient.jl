@@ -1,5 +1,10 @@
 import Lux
 
+#=
+If full_grad is true, then the Gradient layer also has a bias
+=#
+
+
 #activation layer
 struct Gradient{full_grad, change_q, F1, F2, F3, F4} <: Lux.AbstractExplicitLayer
         activation::F1
