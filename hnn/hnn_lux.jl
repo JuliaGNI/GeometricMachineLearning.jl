@@ -22,11 +22,21 @@ const η = .001
 # number of training runs
 const nruns = 1000
 
+# input dimension
+const dimin = 2
+
 # layer width
-const ld = 5
+const width = 5
+
+# network depth
+const depth = 3
 
 # activation function
 const act = tanh
+
+# create HNN architecture
+arch = HamiltonianNeuralNetwork(dimin, width, depth, act)
+
 
 # create model
 model = Chain(Dense(2,  ld, act),
