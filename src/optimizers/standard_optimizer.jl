@@ -2,7 +2,7 @@
 Define the Standard optimizer, i.e. W ← W - η*∇f(W)
 Or the riemannian manifold equivalent, if applicable.
 """
-struct StandardOptimizer{T} <: AbstractOptimizer
+mutable struct StandardOptimizer{T} <: AbstractOptimizer
     η::T
     StandardOptimizer(η = 1e-2) = new{typeof(η)}(η)
 end
@@ -10,11 +10,11 @@ end
 setup(::StandardOptimizer, x) = NamedTuple()
 
 function update_layer!(o::StandardOptimizer, state, layer::Lux.AbstractExplicitLayer, x, dx)
-    update_layer!(layer, x, dx, o.η)
+    update_layer!(layer, x, dx, -o.η)
 end
 
 function update_layer!(o::StandardOptimizer, state, layer::ManifoldLayer, x, dx)
-    update_layer!(layer, x, riemannian_gradient(dx.weight, x.weight, layer.sympl_out), o.η)
+    update_layer!(layer, x, riemannian_gradient(dx.weight, x.weight, layer.sympl_out), -o.η)
 end
 
 #Riemannian Gradient: ∇f(U)UᵀU+JU(∇f(U))^TJU
