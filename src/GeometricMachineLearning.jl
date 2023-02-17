@@ -2,6 +2,7 @@ module GeometricMachineLearning
 
     using BandedMatrices
     using LinearAlgebra
+    using NNlib
     using Random
 
 
@@ -23,6 +24,7 @@ module GeometricMachineLearning
     export AbstractLayer
     export FeedForwardLayer, LinearFeedForwardLayer
     export Gradient
+    export Linear
     export ResidualLayer
     export LinearSymplecticLayerP, LinearSymplecticLayerQ
     export SymplecticStiefelLayer
@@ -30,6 +32,7 @@ module GeometricMachineLearning
     include("layers/abstract_layer.jl")
     include("layers/feed_forward_layer.jl")
     include("layers/gradient.jl")
+    include("layers/linear.jl")
     include("layers/residual_layer.jl")
     include("layers/linear_symplectic_layer.jl")
     include("layers/manifold_layer.jl")

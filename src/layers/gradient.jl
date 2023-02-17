@@ -1,8 +1,4 @@
-using Lux
-using Random
-using NNlib
-
-
+import Lux
 
 #activation layer
 struct Gradient{full_grad, change_q, F1, F2, F3, F4} <: Lux.AbstractExplicitLayer
@@ -69,12 +65,5 @@ end
         return vcat(x[1:(d.dim÷2)], x[(d.dim÷2+1):d.dim] + ps.weight' * 
                         (ps.scale .* d.activation(ps.weight*x[1:(d.dim÷2)] .+ vec(ps.bias)))), st
 end
-
-###short test
-dummy_model = Gradient(4,6,tanh,change_q=false)
-ps,st = Lux.setup(Random.default_rng(), dummy_model)
-dummy_model(ones(4),ps,st)[1]
-
-
 
 

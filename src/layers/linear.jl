@@ -1,10 +1,4 @@
-using Lux
-using Random
-using NNlib
-using LinearAlgebra
-
-include("../arrays/symmetric.jl")
-
+import Lux
 
 #activation layer
 struct Linear{change_q, F1} <: Lux.AbstractExplicitLayer
@@ -36,12 +30,3 @@ end
 @inline function(d::Linear{false})(x::AbstractVecOrMat, ps, st::NamedTuple)
         return vcat(x[1:(d.dim÷2)], x[(d.dim÷2+1):d.dim] + ps.weight*x[1:(d.dim÷2)]),st
 end
-
-###short test
-dummy_model = Linear(4,change_q=false)
-ps,st = Lux.setup(Random.default_rng(), dummy_model)
-print(dummy_model(ones(4),ps,st)[1])
-
-
-
-
