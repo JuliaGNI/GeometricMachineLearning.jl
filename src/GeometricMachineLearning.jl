@@ -31,6 +31,7 @@ module GeometricMachineLearning
     include("layers/gradient.jl")
     include("layers/residual_layer.jl")
     include("layers/linear_symplectic_layer.jl")
+    include("layers/manifold_layer.jl")
     include("layers/symplectic_stiefel_layer.jl")
 
 

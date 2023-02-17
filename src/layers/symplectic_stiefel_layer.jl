@@ -9,7 +9,7 @@ import Manifolds
 n is input dimension (small);
 N is output dimension (big)
 """
-struct SymplecticStiefelLayer{inverse, F1, MT <: Manifolds.SymplecticStiefel} <: Lux.AbstractExplicitLayer
+struct SymplecticStiefelLayer{inverse, F1, MT <: Manifolds.SymplecticStiefel} <: ManifoldLayer
     dim_n::Int
     dim_N::Int
     manifold::MT
