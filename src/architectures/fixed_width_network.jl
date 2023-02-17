@@ -1,0 +1,2 @@
+
+struct FixedWidthNetwork <: AbstractArchitecture end

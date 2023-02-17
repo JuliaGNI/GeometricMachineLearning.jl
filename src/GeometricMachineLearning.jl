@@ -39,6 +39,8 @@ module GeometricMachineLearning
     include("layers/symplectic_stiefel_layer.jl")
 
 
+    export AbstractNeuralNetwork
+
     include("architectures/architectures.jl")
     include("backends/backends.jl")
 
@@ -52,15 +54,11 @@ module GeometricMachineLearning
     export NeuralNetwork
     export HamiltonianNeuralNetwork
 
+    include("architectures/autoencoder.jl")
+    include("architectures/fixed_width_network.jl")
     include("architectures/hamiltonian_neural_network.jl")
+    include("architectures/variable_width_network.jl")
 
-    export AbstractNeuralNetwork
-    export Inverse
-    export VanillaNeuralNetwork
-
-    include("networks/inverse_neural_network.jl")
-    include("networks/vanilla_neural_network.jl")
-    
     export train!, apply!, jacobian!
 
     include("optimizers/Abstract_optimizer.jl")
@@ -75,4 +73,5 @@ module GeometricMachineLearning
     export init_adam
     export init_momentum
     export setup
+
 end

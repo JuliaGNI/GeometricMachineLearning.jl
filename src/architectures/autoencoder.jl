@@ -1,0 +1,2 @@
+
+struct AutoEncoder <: AbstractArchitecture end
