@@ -30,7 +30,7 @@ function update_layer!(o::MomentumOptimizer, state::MomentumOptimizerLayerCache,
 end
 
 function update_layer!(o::MomentumOptimizer, state::MomentumOptimizerLayerCache,
-                       ::Lux.AbstractExplicitLayer, x, dx)
+                       layer::Lux.AbstractExplicitLayer, x, dx)
     for obj in keys(x)
         state.momentum[obj] .= o.α * state.momentum[obj] - dx[obj]
     end
