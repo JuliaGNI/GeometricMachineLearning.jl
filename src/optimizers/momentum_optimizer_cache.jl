@@ -7,7 +7,7 @@ If it is a chain, then it saves two named tuples with momentum and prev_step inf
 TODO: Dispatch over optimizer! Define one type OptimizerCache!!
 """
 
-function _init_cache(o::AbstractOptimizer, model::Lux.AbstractExplicitLayer, x, dx)
+function _init_cache(o::AbstractOptimizer, model::Lux.AbstractExplicitLayer, x::NamedTuple, dx::NamedTuple)
     o₂ = StandardOptimizer(o.η)
     update_layer!(o₂, nothing, model, x, dx)
     dx
@@ -27,19 +27,20 @@ mutable struct MomentumOptimizerLayerCache{MT <: NamedTuple,
     end
 
     function MomentumOptimizerLayerCache(o::AbstractOptimizer,
-                                         model::SymplecticStiefelLayer, x,
-                                         dx)
+                                         model::SymplecticStiefelLayer, x::NamedTuple,
+                                         dx::NamedTuple)
         prev_step = deepcopy(x)
         momentum = _init_cache(o, model, x, dx)
         new{typeof(momentum), typeof(prev_step)}(momentum, prev_step)
     end
 end
 
-mutable struct MomentumOptimizerCache
+#TODO: give this a different name than ``state'' - already used for an instance of AbstractOptimizerCache!!
+mutable struct MomentumOptimizerCache <: AbstractOptimizerCache
     n_layer::Int
     state::NamedTuple
 
-    function MomentumOptimizerCache(o::AbstractOptimizer, model::Lux.Chain, x, dx)
+    function MomentumOptimizerCache(o::AbstractOptimizer, model::Lux.Chain, x::NamedTuple, dx::NamedTuple)
         state = NamedTuple()
         n_layer = length(model)
         for i in 1:n_layer

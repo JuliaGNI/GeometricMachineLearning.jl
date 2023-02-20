@@ -61,17 +61,18 @@ module GeometricMachineLearning
 
     export train!, apply!, jacobian!
 
-    include("optimizers/abstract_optimizer.jl")
     include("optimizers/abstract_optimizer_cache.jl")
+    include("optimizers/abstract_optimizer.jl")
     include("optimizers/momentum_optimizer_cache.jl")
     include("optimizers/standard_optimizer.jl")
     include("optimizers/adam_optimizer.jl")
     include("optimizers/momentum_optimizer.jl")
 
     export StandardOptimizer
-    export AdamOptimizer
+    #export AdamOptimizer
     export MomentumOptimizer
     
+    #export AbstractOptimizerCache
     export MomentumOptimizerLayerCache
     export MomentumOptimizerCache
 

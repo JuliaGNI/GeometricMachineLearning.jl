@@ -21,7 +21,7 @@ function NeuralNetwork(arch::AbstractArchitecture, back::LuxBackend)
     LuxNeuralNetwork(arch, model, params, state)
 end
 
-function(nn::LuxNeuralNetwork)(x)
+function(nn::LuxNeuralNetwork)(x::AbstractVecOrMat)
     # apply network
     y, st = Lux.apply(nn.model, x, nn.params, nn.state)
     
@@ -33,9 +33,9 @@ function(nn::LuxNeuralNetwork)(x)
 end
 
 
-function update_layer!(::Lux.AbstractExplicitLayer, x, dx, η)
+function update_layer!(::Lux.AbstractExplicitLayer, x::NamedTuple, dx::NamedTuple, η::AbstractFloat)
     for obj in keys(x)
-        x[obj] .-= η * dx[obj]
+        x[obj] .+= η * dx[obj]
     end
 end
 

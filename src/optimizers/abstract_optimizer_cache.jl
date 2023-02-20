@@ -1,1 +1,1 @@
-abstract type AbstractOptimizerCache end 
+abstract type AbstractOptimizerCache end

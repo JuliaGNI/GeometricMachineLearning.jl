@@ -9,15 +9,18 @@ end
 
 setup(::StandardOptimizer, x) = NamedTuple()
 
-function update_layer!(o::StandardOptimizer, state, layer::Lux.AbstractExplicitLayer, x, dx)
+function update_layer!(o::StandardOptimizer, state, layer::Lux.AbstractExplicitLayer,
+                       x::NamedTuple, dx::NamedTuple)
     update_layer!(layer, x, dx, -o.η)
 end
 
-function update_layer!(o::StandardOptimizer, state, layer::ManifoldLayer, x, dx)
-    update_layer!(layer, x, riemannian_gradient(dx.weight, x.weight, layer.sympl_out), -o.η)
+function update_layer!(o::StandardOptimizer, state, layer::ManifoldLayer, x::NamedTuple,
+                       dx::NamedTuple)
+    update_layer!(layer, x, riemannian_gradient(x.weight, dx.weight, layer.sympl_out), -o.η)
 end
 
+#TODO: Put this & horizontal_lift into a separate file 
 #Riemannian Gradient: ∇f(U)UᵀU+JU(∇f(U))^TJU
-function riemannian_gradient(e_grad, U, J)
-    e_grad * U' * U + J * U * e_grad' * J * U
+function riemannian_gradient(U::AbstractMatrix, e_grad::AbstractMatrix, J::AbstractMatrix)
+    (weight = e_grad * U' * U + J * U * e_grad' * J * U,)
 end
