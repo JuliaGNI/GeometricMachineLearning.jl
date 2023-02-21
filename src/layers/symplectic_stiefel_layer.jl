@@ -44,14 +44,22 @@ end
 
 Lux.statelength(d::SymplecticStiefelLayer) = 2
 
-@inline function (d::SymplecticStiefelLayer{false})(x::AbstractVecOrMat, ps::NamedTuple, st::NamedTuple)
+@inline function (d::SymplecticStiefelLayer{false})(x::AbstractVecOrMat, ps::NamedTuple,
+                                                    st::NamedTuple)
     ps.weight * x, st
 end
 
-@inline function (d::SymplecticStiefelLayer{true})(x::AbstractVecOrMat, ps::NamedTuple, st::NamedTuple)
+@inline function (d::SymplecticStiefelLayer{true})(x::AbstractVecOrMat, ps::NamedTuple,
+                                                   st::NamedTuple)
     -d.sympl_in * ps.weight' * d.sympl_out * x, st
 end
 
-function update_layer!(l::SymplecticStiefelLayer, x::NamedTuple, dx::NamedTuple, η::AbstractFloat)
+function update_layer!(l::SymplecticStiefelLayer, x::NamedTuple, dx::NamedTuple,
+                       η::AbstractFloat)
     Manifolds.retract_caley!(l.manifold, x.weight, copy(x.weight), η * dx.weight)
+end
+
+#returns symplecticity violation
+function check_symplecticity(l::SymplecticStiefelLayer, x::NamedTuple)
+    norm(x.weight' * l.sympl_out * x.weight - l.sympl_in) / (2 * l.dim_n)
 end

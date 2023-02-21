@@ -77,6 +77,7 @@ module GeometricMachineLearning
     export MomentumOptimizerCache
 
     export apply!
+    export check_symplecticity
     #export init
     #export init_adam
     #export init_momentum

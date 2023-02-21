@@ -7,7 +7,6 @@ using Printf
 using Random
 using Zygote
 
-
 fpath = "../ReducedBasisMethods/runs/BoT_Np5e4_k_010_050_np_10_T25.h5"
 file = h5open(fpath, "r")
 snapshots = read(file, "snapshots")
@@ -128,7 +127,7 @@ end
 optim = MomentumOptimizer(1e-3, 5e-1)
 g = gradient(p -> loss_minibatch(p, st_all), ps_all)[1]
 cache = MomentumOptimizerCache(optim, reconstr, ps_all, g)
-n_runs = Int(1e2)
+n_runs = Int(5e1)
 err_vec = zeros(n_runs + 1)
 
 err_vec[1] = loss_total(ps_all, st_all)
@@ -151,4 +150,14 @@ err_vec[1] = loss_total(ps_all, st_all)
 end
 
 @printf "PSD error: %.5e. " PSD_err
-@printf "SAE error: %.5e" err_vec[end]
+@printf "SAE error: %.5e\n" err_vec[end]
+
+function print_symplecticity(::Lux.AbstractExplicitLayer, ::NamedTuple)
+end
+function print_symplecticity(l::SymplecticStiefelLayer, x::NamedTuple)
+    @printf "Error in symplecticity: %.5e.\n" check_symplecticity(l, x)
+end
+
+for i in 1:length(reconstr)
+    print_symplecticity(reconstr[i], ps_all[i])
+end
