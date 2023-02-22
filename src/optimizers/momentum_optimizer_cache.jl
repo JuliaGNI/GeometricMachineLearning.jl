@@ -21,7 +21,7 @@ mutable struct MomentumOptimizerLayerCache{MT <: NamedTuple,
 
     function MomentumOptimizerLayerCache(o::AbstractOptimizer,
                                          model::Lux.AbstractExplicitLayer,
-                                         x, dx)
+                                         x::NamedTuple, dx::NamedTuple)
         momentum = _init_cache(o, model, x, dx)
         new{typeof(momentum), Nothing}(momentum, nothing)
     end
