@@ -16,7 +16,7 @@ struct SymplecticStiefelLayer{inverse, F1, MT <: Manifolds.SymplecticStiefel} <:
     sympl_out::SparseArrays.SparseMatrixCSC
 end
 
-#maybe implement another random number generator
+#maybe implement another random number generator; TODO: maybe rename this to reflect that the dimensions are 2n & 2N
 function SymplecticStiefelLayer(dim_n::Int, dim_N::Int; inverse::Bool = false)
     iseven(dim_n) && iseven(dim_N) || error("Dimension must be even.")
     dim_n ≤ dim_N || error("Output dimension must be bigger than input dimension.")

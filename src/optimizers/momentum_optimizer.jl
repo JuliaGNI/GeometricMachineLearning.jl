@@ -12,7 +12,7 @@ end
 
 #TODO: put this and riemannian_gradient into a separate file (functions associated with the Stiefel Manifold! - probably a good idea to generalize this to other manifolds!)
 function horizontal_lift(U::AbstractMatrix, Δ::AbstractMatrix, J::AbstractMatrix)
-    U_inv = (U' * U)^-1
+    U_inv = inv(U' * U)
     Δ * U_inv * U' + J * U * U_inv * Δ' * (I - J' * U * U_inv * U' * J) * J
 end
 

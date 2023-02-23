@@ -54,3 +54,13 @@ mutable struct MomentumOptimizerCache <: AbstractOptimizerCache
         new(n_layer, state)
     end
 end
+
+
+#TODO: put this into another file and add an inital update!!!!
+struct StandardOptimizerCache <: AbstractOptimizerCache
+    a::Nothing
+    function StandardOptimizerCache(::AbstractOptimizer, ::Lux.Chain, ::NamedTuple,
+                                    ::NamedTuple)
+        nothing
+    end
+end

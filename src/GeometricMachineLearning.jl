@@ -78,6 +78,8 @@ module GeometricMachineLearning
 
     export apply!
     export check_symplecticity
+    export riemannian_gradient
+    export horizontal_lift
     #export init
     #export init_adam
     #export init_momentum
