@@ -7,7 +7,7 @@ Currently, it only implements a custom `mul!` method, exploiting this structure.
 The first index is the row index, the second one the column index
 """
 
-struct TriangularLowerMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
+mutable struct TriangularLowerMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
     S::AT
     n::Int
 
@@ -28,7 +28,16 @@ struct TriangularLowerMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
 
 end 
 
-    
+
+#implementing getindex automatically defines all matrix multiplications! (but probably not in the most efficient way)
+function Base.getindex(A::TriangularLowerMatrix,i,j)
+    if j ≥ i
+        return zero(eltype(A))
+    end
+    return A.S[(i-2)*(i-1)÷2+j]
+end
+
+
 Base.parent(A::TriangularLowerMatrix) = A.S
 Base.size(A::TriangularLowerMatrix) = (A.n,A.n)
     
@@ -51,13 +60,43 @@ function LinearAlgebra.mul!(out::AbstractMatrix, A::TriangularLowerMatrix, Z::Ab
     return out 
 end
 
+function LinearAlgebra.mul!(out::AbstractMatrix, z::Adjoint{T,<:AbstractVector} where T, A::TriangularLowerMatrix) #where T <: Union{Int,AbstractFloat}
+    @assert size(out)[1] == 1
+    @assert size(out)[2] == A.n == size(z)[2]
 
-function Base.getindex(A::TriangularLowerMatrix,i,j)
-    if j ≥ i
-        return zero(eltype(A))
+    out = zeros(size(out))
+
+    for i in 2:(A.n-1)
+        out[1:i] += z[i]*A.S[(i*(i-1)÷2+1):(i*(i+1)÷2)]
     end
-    return A.S[(i-2)*(i-1)÷2+j]
+    return out 
 end
 
+
+function LinearAlgebra.mul!(out::AbstractMatrix, Z::AbstractMatrix, A::TriangularLowerMatrix)
+    @assert size(out)[1] == size(Z)[1]
+    @assert size(out)[2] == A.n == size(Z)[2]
+
+    out = zeros(size(out))
+
+    for j in 1:size(out)[1]
+        out[j,:] = mul!(out[j,:]',Z[j,:]',A)
+    end
+    out
+end
+
+function flat_matrix_to_adjoint(flat_matrix)
+    @assert size(flat_matrix)[1] == 1
+    out = zeros(length(flat_matrix))'
+    out[1:length(flat_matrix)] = flat_matrix
+    out 
+end
+
+
+#this is probably done as default in LinearAlgebra!
 Base.:*(A::TriangularLowerMatrix, z::AbstractVector) = mul!(zeros(length(z)),A,z)
 Base.:*(A::TriangularLowerMatrix, Z::AbstractMatrix) = mul!(zeros(A.n,size(Z)[2]),A,Z)
+Base.:*(z::Adjoint{T,<:AbstractVector} where T, A::TriangularLowerMatrix) = mul!(zeros(size(z)),z,A)
+Base.:*(Z::AbstractMatrix, A::TriangularLowerMatrix) = mul!(zeros(size(Z)[1],A.n),Z,A)
+#how to get rid of this conflict?
+#Base.:*(A::TriangularLowerMatrix,B::TriangularLowerMatrix) = 
