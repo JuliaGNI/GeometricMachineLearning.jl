@@ -4,7 +4,9 @@ A `TriangularLowerMatrix` is a matrix
 | S  0 |
 Currently, it only implements a custom `mul!` method, exploiting this structure.
 
-The first index is the row index, the second one the column index
+The first index is the row index, the second one the column index.
+
+TODO: Check how LinearAlgebra implements matrix multiplication!
 """
 
 mutable struct TriangularLowerMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
@@ -79,8 +81,8 @@ function LinearAlgebra.mul!(out::AbstractMatrix, Z::AbstractMatrix, A::Triangula
 
     out = zeros(size(out))
 
-    for j in 1:size(out)[1]
-        out[j,:] = mul!(out[j,:]',Z[j,:]',A)
+    for j in axes(out,1)
+        @views out[j,:] = mul!(out[j,:]',Z[j,:]',A)
     end
     out
 end
@@ -98,5 +100,5 @@ Base.:*(A::TriangularLowerMatrix, z::AbstractVector) = mul!(zeros(length(z)),A,z
 Base.:*(A::TriangularLowerMatrix, Z::AbstractMatrix) = mul!(zeros(A.n,size(Z)[2]),A,Z)
 Base.:*(z::Adjoint{T,<:AbstractVector} where T, A::TriangularLowerMatrix) = mul!(zeros(size(z)),z,A)
 Base.:*(Z::AbstractMatrix, A::TriangularLowerMatrix) = mul!(zeros(size(Z)[1],A.n),Z,A)
-#how to get rid of this conflict?
-#Base.:*(A::TriangularLowerMatrix,B::TriangularLowerMatrix) = 
+#should implement specific matrix multiplication
+#Base.:*(A::TriangularLowerMatrix,B::TriangularLowerMatrix) = *(A::TriangularLowerMatrix,B::AbstractMatrix)

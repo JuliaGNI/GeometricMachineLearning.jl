@@ -1,7 +1,7 @@
 """
 A `TriangularUpperMatrix` is a matrix
+| 0  S |
 | 0  0 |
-| S  0 |
 Currently, it only implements a custom `mul!` method, exploiting this structure.
 
 The first index is the row index, the second one the column index.

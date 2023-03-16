@@ -21,6 +21,8 @@ mutable struct SkewSymMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
         n = size(S)[1]
         @assert size(S)[2] == n
         S_vec = zeros(n*(n-1)÷2)
+        #make the input skew-symmetric if it isn't already
+        S = .5*(S - S')
         #map the sub-diagonal elements to a vector 
         for i in 2:n
             S_vec[((i-1)*(i-2)÷2+1):(i*(i-1)÷2)] = S[i,1:(i-1)]
