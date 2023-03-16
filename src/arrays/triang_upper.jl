@@ -43,15 +43,16 @@ end
 Base.parent(A::TriangularUpperMatrix) = A.S
 Base.size(A::TriangularUpperMatrix) = (A.n,A.n)
 
-#=
+
 function LinearAlgebra.mul!(out::AbstractVector, A::TriangularUpperMatrix, z::AbstractVector)
     @assert length(out) == length(z) == A.n
     
-    out[1] = 0
+    out = zeros(size(out))
 
-    for i in 1:(A.n-1)
-        out[i+1] = z[1:i]'*A.S[(i*(i-1)÷2+1):(i*(i+1)÷2)]
+    for i in 2:(A.n-1)
+        out[1:i] += z[i]*A.S[(i*(i-1)÷2+1):(i*(i+1)÷2)]
     end
+
         
     return out
 end
@@ -67,10 +68,10 @@ function LinearAlgebra.mul!(out::AbstractMatrix, z::Adjoint{T,<:AbstractVector} 
     @assert size(out)[1] == 1
     @assert size(out)[2] == A.n == size(z)[2]
 
-    out = zeros(size(out))
+    out[1] = 0
 
-    for i in 2:(A.n-1)
-        out[1:i] += z[i]*A.S[(i*(i-1)÷2+1):(i*(i+1)÷2)]
+    for i in 1:(A.n-1)
+        out[i+1] = z[1:i]'*A.S[(i*(i-1)÷2+1):(i*(i+1)÷2)]
     end
     return out 
 end
@@ -103,4 +104,3 @@ Base.:*(z::Adjoint{T,<:AbstractVector} where T, A::TriangularUpperMatrix) = mul!
 Base.:*(Z::AbstractMatrix, A::TriangularUpperMatrix) = mul!(zeros(size(Z)[1],A.n),Z,A)
 #should implement specific matrix multiplication
 #Base.:*(A::TriangularUpperMatrix,B::TriangularUpperMatrix) = *(A::TriangularUpperMatrix,B::AbstractMatrix)
-=#
