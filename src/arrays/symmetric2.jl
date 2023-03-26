@@ -5,6 +5,11 @@ A `SymmetricMatrix` is a matrix
 
 The first index is the row index, the second one the column index.
 
+If the constructor is called with a matrix as input it returns a symmetric matrix via the projection 
+A ↦ .5*(A + Aᵀ). 
+This is a projection defined via the canonical metric (A,B) ↦ tr(AᵀB).
+
+TODO: Overload Adjoint operation for SymmetricMatrix!! (Aᵀ = A)
 TODO: Check how LinearAlgebra implements matrix multiplication!
 """
 
@@ -33,13 +38,22 @@ end
 
 
 #implementing getindex automatically defines all matrix multiplications! (but probably not in the most efficient way)
-function Base.getindex(A::SymmetricMatrix,i,j)
+function Base.getindex(A::SymmetricMatrix,i::Int,j::Int)
     if i ≥ j
         return A.S[((i-1)*i)÷2+j]
     end
     return A.S[(j-1)*j÷2+i]
 end
 
-
 Base.parent(A::SymmetricMatrix) = A.S
 Base.size(A::SymmetricMatrix) = (A.n,A.n)
+
+function Base.:+(A::SymmetricMatrix, B::SymmetricMatrix) 
+    @assert A.n == B.n  
+    SymmetricMatrix(A.S + B.S, A.n)
+end
+
+function Base.:-(A::SymmetricMatrix, B::SymmetricMatrix)
+    @assert A.n == B.n
+    SymmetricMatrix(A.S - B.S, A.n)
+end
