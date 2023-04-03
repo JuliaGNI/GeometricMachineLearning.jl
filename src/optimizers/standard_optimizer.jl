@@ -18,9 +18,3 @@ function update_layer!(o::StandardOptimizer, state, layer::ManifoldLayer, x::Nam
                        dx::NamedTuple)
     update_layer!(layer, x, riemannian_gradient(x.weight, dx.weight, layer.sympl_out), -o.η)
 end
-
-#TODO: Put this & horizontal_lift into a separate file 
-#Riemannian Gradient: ∇f(U)UᵀU+JU(∇f(U))^TJU
-function riemannian_gradient(U::AbstractMatrix, e_grad::AbstractMatrix, J::AbstractMatrix)
-    (weight = e_grad * U' * U + J * U * e_grad' * J * U,)
-end
