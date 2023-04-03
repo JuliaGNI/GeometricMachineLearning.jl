@@ -2,7 +2,11 @@
 A `SkewSymMatrix` is a matrix
 | 0 -S |
 | S  0 |
-Currently, it only implements a custom `mul!` method, exploiting this structure.
+
+
+If the constructor is called with a matrix as input it returns a symmetric matrix via the projection 
+A ↦ .5*(A - Aᵀ). 
+This is a projection defined via the canonical metric (A,B) ↦ tr(AᵀB).
 
 The first index is the row index, the second one the column index.
 
@@ -32,9 +36,9 @@ mutable struct SkewSymMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
 
 end 
 
-
+#somehow ranges (i.e. A[1:n, 1:n]) only work if I specify that i and j are indices!!!
 #implementing getindex automatically defines all matrix multiplications! (but probably not in the most efficient way)
-function Base.getindex(A::SkewSymMatrix,i,j)
+function Base.getindex(A::SkewSymMatrix, i::Int, j::Int)
     if j == i
         return zero(eltype(A))
     end

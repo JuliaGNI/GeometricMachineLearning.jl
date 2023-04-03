@@ -1,4 +1,3 @@
-
 using GeometricMachineLearning
 using HDF5
 using LinearAlgebra
@@ -134,19 +133,19 @@ function loss_total(ps_all, st_all)
     loss_total / norm_fac
 end
 
-optim = StandardOptimizer(1e-3)
-#optim = MomentumOptimizer(1e-3, 5e-1)
+#optim = StandardOptimizer(1e-3)
+optim = MomentumOptimizer(1e-3, 5e-1)
 g = gradient(p -> loss_minibatch(p, st_all), ps_all)[1]
 #TODO: dispatch over the optimizer
-cache = StandardOptimizerCache(optim, reconstr, ps_all, g)
-n_runs = Int(1e1)
+cache = MomentumOptimizerCache(optim, reconstr, ps_all, g)
+n_runs = Int(1e3)
 err_vec = zeros(n_runs + 1)
 
 err_vec[1] = loss_total(ps_all, st_all)
 @time for i in 1:n_runs
     local g = gradient(p -> loss_minibatch(p, st_all), ps_all)[1]
-    apply!(optim, nothing, reconstr, ps_all, g)
-    #apply!(optim, cache, reconstr, ps_all, g)
+    #apply!(optim, nothing, reconstr, ps_all, g)
+    apply!(optim, cache, reconstr, ps_all, g)
     err_vec[i + 1] = loss_total(ps_all, st_all)
     println("error is $(err_vec[i+1])")
     if (err_vec[i + 1] - err_vec[i]) / err_vec[i] < -0.1

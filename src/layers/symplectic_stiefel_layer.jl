@@ -54,9 +54,10 @@ end
     -d.sympl_in * ps.weight' * d.sympl_out * x, st
 end
 
+#TODO: implement cayley retraction your self and also the derivative (parallel transport)
 function update_layer!(l::SymplecticStiefelLayer, x::NamedTuple, dx::NamedTuple,
                        η::AbstractFloat)
-    Manifolds.retract_caley!(l.manifold, x.weight, copy(x.weight), η * dx.weight)
+    Manifolds.retract_cayley!(l.manifold, x.weight, copy(x.weight), dx.weight, η)
 end
 
 #returns symplecticity violation

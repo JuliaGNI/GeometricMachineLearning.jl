@@ -9,7 +9,7 @@ TODO: Check how LinearAlgebra implements matrix multiplication!
 """
 
 #-> AbstractVecOrMat!!
-mutable struct SymplecticLieAlgMatrix{T, AT <: AbstractVector{T}, BT <: AbstractMatrix{T}} <: AbstractMatrix{T}
+struct SymplecticLieAlgMatrix{T, AT <: AbstractVector{T}, BT <: AbstractMatrix{T}} <: AbstractMatrix{T}
     B::AT
     C::AT
     A::BT
@@ -35,7 +35,7 @@ mutable struct SymplecticLieAlgMatrix{T, AT <: AbstractVector{T}, BT <: Abstract
             B_vec[(i*(i-1)÷2+1):(i*(i+1)÷2)] = 0.5*(S[1:n,(n+1):2*n][i,1:i] + S[1:n,(n+1):2*n][1:i,i])
             C_vec[(i*(i-1)÷2+1):(i*(i+1)÷2)] = 0.5*(S[(n+1):2*n,1:n][i,1:i] + S[(n+1):2*n,1:n][1:i,i])
         end
-        A_mat = S[1:n,1:n]
+        A_mat = .5*(S[1:n,1:n] - S[(n+1):2*n,(n+1):2*n]') 
         new{eltype(S),typeof(B_vec),typeof(A_mat)}(B_vec,C_vec,A_mat,n)
     end
 
@@ -76,7 +76,13 @@ function Adam_div(A::SymplecticLieAlgMatrix,B::SymplecticLieAlgMatrix)
     SymplecticLieAlgMatrix(A.B./B.B,A.C./B.C,A.A./B.A,A.n)
 end
 
-⊙(A::SymplecticLieAlgMatrix) = SymplecticLieAlgMatrix(A.B.^2,A.C.^2,A.A.^2,A.n)
+⊙(A::SymplecticLieAlgMatrix) = SymplecticLieAlgMatrix(A.B.^2, A.C.^2, A.A.^2, A.n)
+
+function ⊙!(A::SymplecticLieAlgMatrix) 
+    A.B .= A.B.^2
+    A.C .= A.C.^2
+    A.A .= A.A.^2
+end
 
 Base.:√(A::SymplecticLieAlgMatrix) = SymplecticLieAlgMatrix(sqrt.(A.B),sqrt.(A.C),sqrt.(A.A),A.n)
 

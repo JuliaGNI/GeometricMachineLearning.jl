@@ -25,3 +25,5 @@ new_val = f(ps)
 @printf "Before optimization: %.5e. " old_val
 @printf "After initialization: %.5e. " post_init_val
 @printf "After optimization: %.5e. " new_val
+
+
