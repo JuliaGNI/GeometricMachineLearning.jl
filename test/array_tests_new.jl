@@ -10,9 +10,12 @@ TODO: Add routine & test for symplectic conjugate
 """
 
 include("../src/arrays/symmetric2.jl")
+include("../src/arrays/skew_sym.jl")
+include("../src/arrays/stiefel_lie_alg_hor.jl")
 include("../src/arrays/symplectic_lie_alg2.jl")
+include("../src/arrays/auxiliary.jl")
 include("../src/arrays/symplectic.jl")
-include("../src/arrays/sympl_st_E_ts.jl")
+#include("../src/arrays/sympl_st_E_ts.jl")
 include("../src/arrays/sympl_lie_alg_hor.jl")
 
 #check if symmetric matrix works for 1×1 matrices 
@@ -20,7 +23,7 @@ W = rand(1,1)
 S = SymmetricMatrix(W)
 @test abs(W[1,1] - S[1,1]) < 1e-10
 
-#check if matrix addition & subtraction works   
+#check if built-in projection, matrix addition & subtraction works   
 function sym_mat_add_sub_test(n)
     symmetrize(W) = .5*(W + W')
     W₁ = rand(n,n)
@@ -38,32 +41,56 @@ function sym_mat_add_sub_test(n)
         end
     end 
 end
-
-#check if matrix is ∈ 𝔤
-function sympl_lie_alg_test(N)
-    W = rand(2*N, 2*N)
-    JN = SymplecticMatrix(N)
-    S = SymplecticLieAlgMatrix(W)
-    for i in 1:(2*N)
-        for j in 1:(2*N)
-            @test abs(S[i,j] + (JN'*S'*JN)[i,j]) < 1e-10
-        end 
+function skew_mat_add_sub_test(n)
+    anti_symmetrize(W) = .5*(W - W')
+    W₁ = rand(n,n)
+    S₁ = SkewSymMatrix(W₁)
+    W₂ = rand(n,n)
+    S₂ = SkewSymMatrix(W₂)
+    S₃ = S₁ + S₂
+    S₄ = S₁ - S₂
+    @test typeof(S₃) <: SkewSymMatrix
+    @test typeof(S₄) <: SkewSymMatrix
+    for i in 1:n
+        for j in 1:n
+            @test abs(anti_symmetrize(W₁ + W₂)[i,j] - S₃[i,j]) < 1e-10
+            @test abs(anti_symmetrize(W₁ - W₂)[i,j] - S₄[i,j]) < 1e-10
+        end
     end 
 end
 
-#check if SymplecticLieAlgMatrix is closed under addition and subtraction
-function sympl_lie_alg_add_sub_test(N)
-    W₁ = rand(2*N,2*N)
-    W₂ = rand(2*N,2*N)
+#check if matrix is ∈ 𝔤 (check if the vector space projection works), addition & subtraction
+function sympl_lie_alg_add_sub_test(n)
+    J = SymplecticMatrix(n)
+    symplectisize(W) = .5*(W - J'*W'*J)
+    W₁ = rand(2*n,2*n)
     S₁ = SymplecticLieAlgMatrix(W₁)
+    W₂ = rand(2*n,2*n)
     S₂ = SymplecticLieAlgMatrix(W₂)
     S₃ = S₁ + S₂
     S₄ = S₁ - S₂
     @test typeof(S₃) <: SymplecticLieAlgMatrix
     @test typeof(S₄) <: SymplecticLieAlgMatrix
+    for i in 1:(2*n)
+        for j in 1:(2*n)
+            @test abs(symplectisize(W₁ + W₂)[i,j] - S₃[i,j]) < 1e-10
+            @test abs(symplectisize(W₁ - W₂)[i,j] - S₄[i,j]) < 1e-10
+        end
+    end 
 end
 
-#test symplectic projection
+#test Stiefel manifold projection test 
+function stiefel_proj_test(N,n)
+    In = I(n)
+    E = StiefelProjection(N, n, Float64)
+    for i in 1:n
+        for j in 1:n
+            @test abs((E'*E)[i,j] - In[i,j]) < 1e-10
+        end
+    end
+end
+
+#test symplectic projection (this is just the E matrix)
 function sympl_proj_test(N, n)
     JN = SymplecticMatrix(N)
     Jn = SymplecticMatrix(n)
@@ -75,24 +102,47 @@ function sympl_proj_test(N, n)
     end
 end
 
-#test horizontal lift of Lie Algebra
-function hor_lift_test(N,n)
-    E = SymplecticProjection(N, n, Float64)
-    #element of 𝔤
-    S = SymplecticLieAlgMatrix(rand(2*N, 2*N))
-    #compute projection onto 𝔤ʰ
-    Sʰ = SymplecticLieAlgHorMatrix(S,n)
-    #test projection
+
+function stiefel_lie_alg_add_sub_test(N, n)
+    E = StiefelProjection(N, n)
+    projection(W::SkewSymMatrix) = W - (I - E*E')*W*(I - E*E')
+    W₁ = SkewSymMatrix(rand(N,N))
+    S₁ = StiefelLieAlgHorMatrix(W₁,n)
+    W₂ = SkewSymMatrix(rand(N,N))
+    S₂ = StiefelLieAlgHorMatrix(W₂,n)
+    S₃ = S₁ + S₂
+    S₄ = S₁ - S₂
+    @test typeof(S₃) <: StiefelLieAlgHorMatrix
+    @test typeof(S₄) <: StiefelLieAlgHorMatrix
+    for i in 1:N
+        for j in 1:N
+            @test abs(projection(W₁ + W₂)[i,j] - S₃[i,j]) < 1e-10
+            @test abs(projection(W₁ - W₂)[i,j] - S₄[i,j]) < 1e-10
+        end
+    end 
+end
+
+#check if matrix is ∈ 𝔤 (check if the vector space projection works), addition & subtraction
+function sympl_lie_alg_add_sub_test(N, n)
+    J = SymplecticMatrix(n)
+    E = SymplecticProjection(N, n)
+    projection(W::SymplecticLieAlgMatrix) = W - (I - E*E')*W*(I - E*E')
+    W₁ = SymplecticLieAlgMatrix(rand(2*N,2*N))
+    S₁ = SymplecticLieAlgHorMatrix(W₁,n)
+    W₂ = SymplecticLieAlgMatrix(rand(2*N,2*N))
+    S₂ = SymplecticLieAlgHorMatrix(W₂,n)
+    S₃ = S₁ + S₂
+    S₄ = S₁ - S₂
+    @test typeof(S₃) <: SymplecticLieAlgHorMatrix
+    @test typeof(S₄) <: SymplecticLieAlgHorMatrix
     for i in 1:(2*N)
         for j in 1:(2*N)
-            #compute projection
-            πS = πₑ(S*E)
-            #compute lift
-            πS_lifted = SymplecticLieAlgHorMatrix(πS)
-            @test abs(πS_lifted[i,j] - Sʰ[i,j]) < 1e-10
+            @test abs(projection(W₁ + W₂)[i,j] - S₃[i,j]) < 1e-10
+            @test abs(projection(W₁ - W₂)[i,j] - S₄[i,j]) < 1e-10
         end
-    end
+    end 
 end
+
 
 #TODO: tests for ADAM functions
 
@@ -107,8 +157,10 @@ n_vec = min.(n_vec, N_vec)
 
 for (N, n) ∈ zip(N_vec, n_vec)
     sym_mat_add_sub_test(N)
-    sympl_lie_alg_test(N)
+    skew_mat_add_sub_test(N)
     sympl_lie_alg_add_sub_test(N)
+    stiefel_proj_test(N,n)
     sympl_proj_test(N,n)
-    hor_lift_test(N,n)
+    stiefel_lie_alg_add_sub_test(N,n)
+    sympl_lie_alg_add_sub_test(N,n)
 end

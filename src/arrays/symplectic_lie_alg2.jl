@@ -27,7 +27,7 @@ mutable struct SymplecticLieAlgMatrix{T, AT <: AbstractMatrix{T}, BT <: Symmetri
         @assert size(S)[2] == n2
         n = n2÷2
 
-        A = S[1:n,1:n]
+        A = 0.5*(S[1:n,1:n] - S[(n+1):n2, (n+1):n2]')
         B = SymmetricMatrix(S[1:n,(n+1):n2])
         C = SymmetricMatrix(S[(n+1):n2,1:n])
   

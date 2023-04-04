@@ -51,3 +51,13 @@ end
 
 Base.parent(A::SkewSymMatrix) = A.S
 Base.size(A::SkewSymMatrix) = (A.n,A.n)
+
+function Base.:+(A::SkewSymMatrix, B::SkewSymMatrix)
+    @assert A.n == B.n 
+    SkewSymMatrix(A.S + B.S, A.n) 
+end 
+
+function Base.:-(A::SkewSymMatrix, B::SkewSymMatrix)
+    @assert A.n == B.n 
+    SkewSymMatrix(A.S - B.S, A.n) 
+end 

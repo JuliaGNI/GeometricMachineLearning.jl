@@ -14,8 +14,14 @@ In practice this is implemented through the Gram Schmidt process, with the auxil
 mutable struct StiefelManifold{T, AT <: AbstractMatrix{T}} <: AbstractMatrix{T}
     A::AT
     function StiefelManifold(A::AbstractMatrix)
-        @assert size(A)[1] > size(A)[2]
+        @assert size(A)[1] ≥ size(A)[2]
         new{eltype(A), typeof(A)}(A)
+    end
+    #this draws a random element from U(StiefelManifold)
+    function StiefelManifold(N::Int,n::Int)
+        @assert N ≥ n
+        A = randn(N,n)
+        new{eltype(A), typeof(A)}(A*inv(sqrt(A'*A)))
     end
 end
 
@@ -29,6 +35,37 @@ function check(A::StiefelManifold, tol=1e-12)
     print("Test passed.\n") 
 end
 
+mutable struct SymplecticStiefelManifold{T, AT <: AbstractMatrix{T}} <: AbstractMatrix{T}
+    A::AT
+    function SymplecticStiefelManifold(A::AbstractMatrix)
+        @assert iseven(size(A)[1])
+        @assert iseven(size(A)[2])
+        @assert size(A)[1] ≥ size(A)[2]
+        new{eltype(A), typeof(A)}(A)
+    end
+    #this draws a random element from U(SymplecticStiefelManifold); this doesn't work!
+    function SymplecticStiefelManifold(N::Int,n::Int)
+        @assert N ≥ n
+        A = randn(2*N,2*n)
+        JN = SymplecticMatrix(N)
+        Jn = SymplecticMatrix(n)
+        new{eltype(A), typeof(A)}(A*inv(sqrt(Jn*A'*JN'*A)))
+    end
+end
+
+Base.size(A::SymplecticStiefelManifold) = size(A.A)
+Base.parent(A::SymplecticStiefelManifold) = A.A 
+Base.getindex(A::SymplecticStiefelManifold, i::Int, j::Int) = A.A[i,j]
+
+
+function check(A::SymplecticStiefelManifold, tol=1e-12)
+    N = size(A)[1]÷2
+    n = size(A)[2]÷2
+    @assert norm(A'*Symplectic(N)*A - Symplectic(n)) < tol
+    print("Test passed.\n") 
+end
+
+
 #start index indicates if the orthonormalization is started at positon 0
 function gram_schmidt!(A::AbstractMatrix, start=1)
     n = size(A)[1]
@@ -37,11 +74,17 @@ function gram_schmidt!(A::AbstractMatrix, start=1)
     for i in start:n 
         vec = A[1:n,i]
         for j in 1:(i-1)
-            vec = vec - vec'*A[1:N,j]*A[1:N,j]
+            vec = vec - vec'*A[1:n,j]*A[1:n,j]
         end
-        A[1:N, i] = norm(vec)^-1*vec 
+        A[1:n, i] = norm(vec)^-1*vec 
     end
 end 
+
+#this "normalizes" 2 vectors according to the symplectic form (e,f) -> e'*J*f
+function normalize(e::AbstractVector ,f::AbstractVector , J::AbstractMatrix)
+    fac = e'*J*f
+    (sign(fac)/sqrt(abs(fac))*e, 1/sqrt(abs(fac))*f)
+end
 
 function sympl_gram_schmidt!(A::AbstractMatrix, J::AbstractMatrix, start=1)
     n = size(A)[1]
@@ -53,11 +96,10 @@ function sympl_gram_schmidt!(A::AbstractMatrix, J::AbstractMatrix, start=1)
         vec₁ = A[1:(2*n),i]
         vec₂ = A[1:(2*n),n+i]
         for j in 1:(i-1)
-            vec₁ = vec₁ - (A[1:(2*n),j]'*J*vec₁)*A[1:(2*n),j] - (vec₁'*J*A[1:(2*n),n+j])*A[1:(2*n),n+j]
-            vec₂ = vec₂ - (A[1:(2*n),j]'*J*vec₂)*A[1:(2*n),j] - (vec₂'*J*A[1:(2*n),n+j])*A[1:(2*n),n+j]
+            vec₁ = vec₁ - (A[1:(2*n),j]'*J*vec₁)*A[1:(2*n),n+j] - (vec₁'*J*A[1:(2*n),n+j])*A[1:(2*n),j]
+            vec₂ = vec₂ - (A[1:(2*n),j]'*J*vec₂)*A[1:(2*n),n+j] - (vec₂'*J*A[1:(2*n),n+j])*A[1:(2*n),j]
         end
-        A[1:(2*n),i] =      norm(vec₁)^-1*vec₁
-        A[1:(2*n),n+i] =    norm(vec₂)^-1*vec₂ 
+        A[1:(2*n),i], A[1:(2*n),n+i]  =  normalize(vec₁, vec₂, J)
     end
 end 
 

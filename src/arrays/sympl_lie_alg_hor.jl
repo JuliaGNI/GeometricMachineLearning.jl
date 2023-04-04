@@ -56,6 +56,8 @@ mutable struct SymplecticLieAlgHorMatrix{T, AT <: AbstractMatrix{T}, ST <: Symme
         )
     end
 
+    #I probably don't need this bit!!
+    #=
     function SymplecticLieAlgHorMatrix(S::πₑ)
         new{eltype(S.A), typeof(S.A), typeof(S.B)}(
             S.A,
@@ -69,6 +71,7 @@ mutable struct SymplecticLieAlgHorMatrix{T, AT <: AbstractMatrix{T}, ST <: Symme
             S.n
         )
     end
+    =#
 end 
 
 
@@ -124,7 +127,7 @@ function Base.:+(S₁::SymplecticLieAlgHorMatrix, S₂::SymplecticLieAlgHorMatri
     @assert S₁.n == S₂.n  
     @assert S₁.N == S₂.N
     SymplecticLieAlgHorMatrix(
-        S₁.A₁ + S₂.A₂,
+        S₁.A₁ + S₂.A₁,
         S₁.A₂ + S₂.A₂,
         S₁.A₃ + S₂.A₃,
         S₁.B₁ + S₂.B₁,
@@ -140,7 +143,7 @@ function Base.:-(S₁::SymplecticLieAlgHorMatrix, S₂::SymplecticLieAlgHorMatri
     @assert S₁.n == S₂.n  
     @assert S₁.N == S₂.N
     SymplecticLieAlgHorMatrix(
-        S₁.A₁ - S₂.A₂,
+        S₁.A₁ - S₂.A₁,
         S₁.A₂ - S₂.A₂,
         S₁.A₃ - S₂.A₃,
         S₁.B₁ - S₂.B₁,

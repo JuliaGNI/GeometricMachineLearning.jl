@@ -85,4 +85,3 @@ function ⊙!(A::SymplecticLieAlgMatrix)
 end
 
 Base.:√(A::SymplecticLieAlgMatrix) = SymplecticLieAlgMatrix(sqrt.(A.B),sqrt.(A.C),sqrt.(A.A),A.n)
-
