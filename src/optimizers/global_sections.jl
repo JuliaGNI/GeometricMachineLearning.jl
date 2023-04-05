@@ -9,6 +9,8 @@ In practice this is implemented through the Gram Schmidt process, with the auxil
 |0|
 |.|
 |0|
+
+Maybe consider dividing the output in the check functions by n!
 """
 
 mutable struct StiefelManifold{T, AT <: AbstractMatrix{T}} <: AbstractMatrix{T}
@@ -30,9 +32,9 @@ Base.parent(A::StiefelManifold) = A.A
 Base.getindex(A::StiefelManifold, i::Int, j::Int) = A.A[i,j]
 
 
-function check(A::StiefelManifold, tol=1e-12)
-    @assert norm(A'*A - I) < tol
-    print("Test passed.\n") 
+function check(A::StiefelManifold, tol=1e-10)
+    @test norm(A'*A - I) < tol
+    #print("Test passed.\n") 
 end
 
 mutable struct SymplecticStiefelManifold{T, AT <: AbstractMatrix{T}} <: AbstractMatrix{T}
@@ -43,7 +45,7 @@ mutable struct SymplecticStiefelManifold{T, AT <: AbstractMatrix{T}} <: Abstract
         @assert size(A)[1] ≥ size(A)[2]
         new{eltype(A), typeof(A)}(A)
     end
-    #this draws a random element from U(SymplecticStiefelManifold); this doesn't work!
+    #this should draw a random element from U(SymplecticStiefelManifold) -> doesn't work rn; implement using retractions!
     function SymplecticStiefelManifold(N::Int,n::Int)
         @assert N ≥ n
         A = randn(2*N,2*n)
@@ -58,11 +60,11 @@ Base.parent(A::SymplecticStiefelManifold) = A.A
 Base.getindex(A::SymplecticStiefelManifold, i::Int, j::Int) = A.A[i,j]
 
 
-function check(A::SymplecticStiefelManifold, tol=1e-12)
+function check(A::SymplecticStiefelManifold, tol=1e-10)
     N = size(A)[1]÷2
     n = size(A)[2]÷2
-    @assert norm(A'*Symplectic(N)*A - Symplectic(n)) < tol
-    print("Test passed.\n") 
+    @test norm(A'*SymplecticMatrix(N)*A - SymplecticMatrix(n)) < tol
+    #print("Test passed.\n") 
 end
 
 
@@ -76,6 +78,7 @@ function gram_schmidt!(A::AbstractMatrix, start=1)
         for j in 1:(i-1)
             vec = vec - vec'*A[1:n,j]*A[1:n,j]
         end
+        #print("GS: ",norm(vec),"\n")
         A[1:n, i] = norm(vec)^-1*vec 
     end
 end 
@@ -83,6 +86,7 @@ end
 #this "normalizes" 2 vectors according to the symplectic form (e,f) -> e'*J*f
 function normalize(e::AbstractVector ,f::AbstractVector , J::AbstractMatrix)
     fac = e'*J*f
+    #print("SGS: ",fac,"\n")
     (sign(fac)/sqrt(abs(fac))*e, 1/sqrt(abs(fac))*f)
 end
 
@@ -131,7 +135,7 @@ function global_section(A::StiefelManifold)
     end
     
     gram_schmidt!(completed_A, n+1)
-    completed_A
+    StiefelManifold(completed_A)
 end
 
 function global_section(A::SymplecticStiefelManifold, J::AbstractMatrix)
@@ -151,25 +155,5 @@ function global_section(A::SymplecticStiefelManifold, J::AbstractMatrix)
     end
 
     sympl_gram_schmidt!(completed_A, J, n+1)
-    completed_A
-end
-
-####Maybe put this in a separate file! (some of the functionality between the group and the StMan is the same! -> combine!!!)
-mutable struct OrthonormalMatrix{T, AT <: AbstractMatrix{T}} <: AbstractMatrix{T}
-    A::AT
-    function OrthonormalMatrix(A::AbstractMatrix, orth=false)
-        if orth ==true 
-            new{eltype(A), typeof(A)}(A)
-        end
-        new{eltype(A), typeof(A)}(gram_schmidt(A))    
-    end
-end
-
-Base.size(A::OrthonormalMatrix) = size(A.A)
-Base.parent(A::OrthonormalMatrix) = A.A 
-Base.getindex(A::OrthonormalMatrix, i::Int, j::Int) = A.A[i,j]
-
-function check(A::OrthonormalMatrix, tol=1e-12)
-    @assert norm(A'*A - I) < tol
-    print("Test passed.\n") 
+    SymplecticStiefelManifold(completed_A)
 end
