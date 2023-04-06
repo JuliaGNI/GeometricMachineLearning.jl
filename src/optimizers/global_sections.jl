@@ -67,13 +67,12 @@ function check(A::SymplecticStiefelManifold, tol=1e-10)
     #print("Test passed.\n") 
 end
 
-
 #start index indicates if the orthonormalization is started at positon 0
 function gram_schmidt!(A::AbstractMatrix, start=1)
     n = size(A)[1]
-    @assert size(A)[2] == n 
+    @assert size(A)[2] ≤ n 
     
-    for i in start:n 
+    for i in start:size(A)[2] 
         vec = A[1:n,i]
         for j in 1:(i-1)
             vec = vec - vec'*A[1:n,j]*A[1:n,j]
@@ -92,11 +91,11 @@ end
 
 function sympl_gram_schmidt!(A::AbstractMatrix, J::AbstractMatrix, start=1)
     n = size(A)[1]
-    @assert size(A)[2] == n 
-    @assert iseven(n)
+    @assert size(A)[2] ≤ n 
+    @assert iseven(n) 
     n ÷= 2
 
-    for i in start:n 
+    for i in start:size(A)[2] 
         vec₁ = A[1:(2*n),i]
         vec₂ = A[1:(2*n),n+i]
         for j in 1:(i-1)
