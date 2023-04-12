@@ -8,35 +8,13 @@ using LinearAlgebra
 using BandedMatrices
 using Test
 
+include("../src/optimizers/orthogonalization_procedures.jl")
 include("../src/optimizers/global_sections.jl")
 include("../src/arrays/symplectic.jl")
 include("../src/arrays/skew_sym.jl")
 include("../src/arrays/symmetric2.jl")
 include("../src/arrays/symplectic_lie_alg2.jl")
 include("../src/optimizers/retractions.jl")
-
-N = 10
-n = 5
-
-function gram_schmidt_test(N)
-    A = randn(N, N)
-    A_orth = gram_schmidt(A)
-    check(StiefelManifold(A_orth))
-end
-
-#the matrices are sampled using the Cayley transform at the moment! 
-#implement sampling in the type SymplecticLieAlgMatrix!
-function sympl_gram_schmidt_test(N)
-    J = SymplecticMatrix(N)
-    A = randn(2*N, 2*N)
-    A = SymplecticLieAlgMatrix(A)
-    A = Cayley(A)
-    check(A)
-    #add perturbation
-    A += 0.05*randn(2*N, 2*N)
-    A_sympl = sympl_gram_schmidt(A, J)
-    check(SymplecticStiefelManifold(A_sympl))
-end
 
 function stiefel_completion_test(N,n)
     A = StiefelManifold(N,n)

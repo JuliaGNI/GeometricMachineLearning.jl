@@ -20,6 +20,8 @@ module GeometricMachineLearning
     include("arrays/symmetric.jl")
     include("arrays/symplectic.jl")
     include("arrays/zero_vector.jl")
+    include("arrays/symmetric2.jl")
+    include("arrays/sympl_lie_alg_hor.jl")
 
     export AbstractLayer
     export FeedForwardLayer, LinearFeedForwardLayer

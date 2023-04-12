@@ -12,6 +12,7 @@ In practice this is implemented through the Gram Schmidt process, with the auxil
 
 Maybe consider dividing the output in the check functions by n!
 """
+include("orthogonalization_procedures.jl")
 
 mutable struct StiefelManifold{T, AT <: AbstractMatrix{T}} <: AbstractMatrix{T}
     A::AT
@@ -65,57 +66,6 @@ function check(A::SymplecticStiefelManifold, tol=1e-10)
     n = size(A)[2]÷2
     @test norm(A'*SymplecticMatrix(N)*A - SymplecticMatrix(n)) < tol
     #print("Test passed.\n") 
-end
-
-#start index indicates if the orthonormalization is started at positon 0
-function gram_schmidt!(A::AbstractMatrix, start=1)
-    n = size(A)[1]
-    @assert size(A)[2] ≤ n 
-    
-    for i in start:size(A)[2] 
-        vec = A[1:n,i]
-        for j in 1:(i-1)
-            vec = vec - vec'*A[1:n,j]*A[1:n,j]
-        end
-        #print("GS: ",norm(vec),"\n")
-        A[1:n, i] = norm(vec)^-1*vec 
-    end
-end 
-
-#this "normalizes" 2 vectors according to the symplectic form (e,f) -> e'*J*f
-function normalize(e::AbstractVector ,f::AbstractVector , J::AbstractMatrix)
-    fac = e'*J*f
-    #print("SGS: ",fac,"\n")
-    (sign(fac)/sqrt(abs(fac))*e, 1/sqrt(abs(fac))*f)
-end
-
-function sympl_gram_schmidt!(A::AbstractMatrix, J::AbstractMatrix, start=1)
-    n = size(A)[1]
-    @assert size(A)[2] ≤ n 
-    @assert iseven(n) 
-    n ÷= 2
-
-    for i in start:size(A)[2] 
-        vec₁ = A[1:(2*n),i]
-        vec₂ = A[1:(2*n),n+i]
-        for j in 1:(i-1)
-            vec₁ = vec₁ - (A[1:(2*n),j]'*J*vec₁)*A[1:(2*n),n+j] - (vec₁'*J*A[1:(2*n),n+j])*A[1:(2*n),j]
-            vec₂ = vec₂ - (A[1:(2*n),j]'*J*vec₂)*A[1:(2*n),n+j] - (vec₂'*J*A[1:(2*n),n+j])*A[1:(2*n),j]
-        end
-        A[1:(2*n),i], A[1:(2*n),n+i]  =  normalize(vec₁, vec₂, J)
-    end
-end 
-
-function gram_schmidt(A::AbstractMatrix, start=1)
-    B = deepcopy(A)
-    gram_schmidt!(B, start)
-    B
-end
-
-function sympl_gram_schmidt(A::AbstractMatrix, J::AbstractMatrix, start=1)
-    B = deepcopy(A)
-    sympl_gram_schmidt!(B, J, start)
-    B
 end
 
 #orthonormal complection -> the complementing vectors could also be sampled!!
