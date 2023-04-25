@@ -1,4 +1,4 @@
 
 abstract type AbstractArchitecture end
 
-function NeuralNetwork end
+function chain end

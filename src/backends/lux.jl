@@ -1,7 +1,7 @@
 
 import Lux
 
-struct LuxBackend end
+struct LuxBackend <: AbstractBackend end
 
 struct LuxNeuralNetwork{AT,MT,PT,ST} <: AbstractNeuralNetwork
     architecture::AT
