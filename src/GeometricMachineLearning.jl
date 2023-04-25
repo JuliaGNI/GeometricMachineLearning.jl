@@ -15,12 +15,13 @@ module GeometricMachineLearning
     export SymmetricMatrix, SymplecticMatrix
 
     include("arrays/add.jl")
+    include("arrays/zero_vector.jl")
+    
     include("arrays/block_identity_lower.jl")
     include("arrays/block_identity_upper.jl")
-    include("arrays/symmetric.jl")
-    include("arrays/symplectic.jl")
-    include("arrays/zero_vector.jl")
     include("arrays/symmetric2.jl")
+    include("arrays/symplectic.jl")
+    include("arrays/symplectic_lie_alg2.jl")
     include("arrays/sympl_lie_alg_hor.jl")
 
     export AbstractLayer
