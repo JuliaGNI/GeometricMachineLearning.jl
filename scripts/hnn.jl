@@ -3,7 +3,7 @@ using GeometricMachineLearning
 
 
 # this contains the functions for generating the training data
-include("data.jl")
+include("pendulum.jl")
 
 # this contains the functions for generating the plots
 # include("plots.jl")
