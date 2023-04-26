@@ -22,6 +22,7 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 [compat]
 Distances = "0.10"
 ForwardDiff = "0.10"
+HDF5 = "0.16"
 Lux = "0.4"
 Manifolds = "0.8"
 Optimisers = "0.2"
