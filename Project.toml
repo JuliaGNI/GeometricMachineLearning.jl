@@ -20,15 +20,18 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
+BandedMatrices = "0.17"
 Distances = "0.10"
 ForwardDiff = "0.10"
+HDF5 = "0.16"
 Lux = "0.4"
 Manifolds = "0.8"
+NLsolve = "4"
 NNlib = "0.8"
 Optimisers = "0.2"
 ProgressMeter = "1"
 Zygote = "0.6"
-julia = "1.6"
+julia = "1.8"
 
 [extras]
 Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
