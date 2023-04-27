@@ -9,7 +9,7 @@ using GeometricMachineLearning: get_batch
 
 
 # generate data
-include("../scripts/data.jl")
+include("../scripts/pendulum.jl")
 
 data, target = get_data_set()
 # data = reshape(data,100,1)

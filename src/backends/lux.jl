@@ -21,7 +21,7 @@ function NeuralNetwork(arch::AbstractArchitecture, back::LuxBackend)
     LuxNeuralNetwork(arch, model, params, state)
 end
 
-function(nn::LuxNeuralNetwork)(x::AbstractVecOrMat)
+function(nn::LuxNeuralNetwork)(x)# x::AbstractVecOrMat
     # apply network
     y, st = Lux.apply(nn.model, x, nn.params, nn.state)
     

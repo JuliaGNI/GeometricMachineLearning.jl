@@ -4,7 +4,8 @@ using Zygote
 
 # define Hamiltonian
 H(x) = x[2]^2 / 2 + (1-cos(x[1]))
-H(t, q, p, params) = H([q[1], p[1]])
+H(q, p) = H([q[1], p[1]])
+H(t, q, p, params) = H(q, p)
 
 # compute vector field
 ∇H(x) = Zygote.gradient(χ -> H(χ), x)[1]
@@ -28,7 +29,7 @@ function get_data_set(num=10, xymin=-1.2, xymax=+1.2)
 	data = [[x,y] for x in rang, y in rang]
 
 	#compute the value of the vector field 
-	target = ∇H.(data)
+	target = dH.(data)
 
 	return (data, target)
 end

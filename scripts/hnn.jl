@@ -1,7 +1,6 @@
 # using Profile
 using GeometricMachineLearning
 
-
 # this contains the functions for generating the training data
 include("pendulum.jl")
 
@@ -45,9 +44,6 @@ total_loss = train!(nn, data, target; ntraining = nruns, learning_rate = η)
 # Profile.clear_malloc_data()
 # @profile total_loss = train!(hnn, data, target; ntraining = nruns, learning_rate = η)
 
-#learned Hamiltonian & vector field
-H_est(τ) = sum(apply(τ, hnn))
-# dH_est(τ) = vectorfield(τ, hnn)
-
-#plot results
-# plot_network(H, H_est, total_loss; filename="hnn_simple.png")
+# plot results
+include("plots.jl")
+plot_hnn(H, nn, total_loss; filename="hnn_pendulum.png")
