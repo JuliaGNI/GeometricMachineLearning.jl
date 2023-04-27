@@ -1,7 +1,7 @@
 using LaTeXStrings
 using Plots
 
-function plot_network(H, H̃, total_loss; xmin=-1.2, xmax=+1.2, ymin=-1.2, ymax=+1.2, nsamples=100, filename=nothing)
+function plot_hnn(H, H̃, total_loss; xmin=-1.2, xmax=+1.2, ymin=-1.2, ymax=+1.2, nsamples=100, filename=nothing)
     #get offset of learned Hamiltonian
     H̃₀ = H̃([0,0])
 

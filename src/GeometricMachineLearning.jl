@@ -1,9 +1,12 @@
 module GeometricMachineLearning
 
     using BandedMatrices
+    using Distances
     using LinearAlgebra
     using NNlib
+    using ProgressMeter
     using Random
+    using Zygote
 
 
     include("gradient.jl")
