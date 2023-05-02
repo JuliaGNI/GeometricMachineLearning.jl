@@ -14,5 +14,5 @@ end
 
 #gradient for the Stiefel Manifold
 function grad(Y::StiefelManifold, e_grad::AbstractMatrix)
-    e_grad - Y*e_grad'*Y
+    e_grad - Y*(e_grad'*Y)
 end

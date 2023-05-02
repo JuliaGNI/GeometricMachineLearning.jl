@@ -2,33 +2,18 @@
 This implements some basic retractions.
 """
 
-function Cayley(A::AbstractMatrix)
-    N = size(A)[1] 
-    (I(N) - .5*A)*inv(I(N) - .5*A)
+#geodesics for the Euclidean metric
+function Exp_euc(B::StiefelLieAlgHorMatrix, η::AbstractFloat)
+    hcat(vcat(I(B.n), zeros(B.N-B.n,B.n)), vcat(B.A, B.B))*
+        exp(η*hcat(vcat(B.A, I(n)), vcat(B.A*B.A-B.B'*B.B, B.A)))*StiefelProjection(B.N, B.n)*
+        exp(-η*B.A)
+end
+function Exp_euc(Y::StiefelManifold, Δ::AbstractMatrix, η::AbstractFloat)
+    A = Y'*Δ
+    N, n = size(Y)
+    hcat(Y, Δ)*(exp(η*hcat(vcat(A, I(n)), vcat(-Δ'*Δ, A)))*StiefelProjection(2*n, n))*exp(-η*A)
 end
 
-function Cayley(A::SkewSymMatrix)
-    StiefelManifold(Cayley(Matrix(B)))
+Exp(Y::StiefelManifold, Δ::AbstractMatrix, η::AbstractFloat)
+
 end
-
-function Cayley(A::SymplecticLieAlgMatrix)
-    SymplecticStiefelManifold(Cayley(Matrix(A)))
-end
-
-function Exp(A::SkewSymMatrix)
-    StiefelManifold(exp(A))
-end
-
-function Exp(A::SymplecticLieAlgMatrix)
-    SymplecticStiefelManifold(exp(A))
-end 
-
-#geodesic retrations
-function Geo(A::SkewSymMatrix)
-end
-
-function Geo(A::SymplecticLieAlgMatrix)
-end
-
-#function Cayley(U::StiefelManifold,::SymplecticLieAlgHorMatrix)
-#end 

@@ -33,7 +33,10 @@ mutable struct SkewSymMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
         end
         new{eltype(S),typeof(S_vec)}(S_vec,n)
     end
-
+    
+    function SkewSymMatrix(n::Int)
+        new{Float64, AbstractVector{Float64}}(randn(n*(n-1)÷2),n)
+    end
 end 
 
 #somehow ranges (i.e. A[1:n, 1:n]) only work if I specify that i and j are indices!!!
