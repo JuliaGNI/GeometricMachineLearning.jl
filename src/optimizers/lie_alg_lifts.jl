@@ -4,11 +4,11 @@ This implements lifts from the base manifold to the Lie algebra.
 think about introducing a lift object containing HD and the lifted element of the Lie algebra!!
 """
 
-Ω(Y::StiefelManifold, Δ::AbstractMatrix) = (I - .5*Y*Y')*Δ*Y' - Y*Δ'*(I - .5*Y*Y')
+Ω(Y::StiefelManifold, Δ::AbstractMatrix) = SkewSymMatrix((I - .5*Y*Y')*Δ*Y') 
 
 #this is not very efficient - just used for testing purposes
-function global_rep_test(Y::StiefelManifold, V::AbstractMatrix)
-    B = Ω(Y, V)
+function global_rep_test(Y::StiefelManifold, Δ::AbstractMatrix)
+    B = Ω(Y, Δ)
     #find complement for global section
     N, n = size(Y)
     A = randn(N, N-n)

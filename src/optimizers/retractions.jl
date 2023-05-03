@@ -14,6 +14,20 @@ function Exp_euc(Y::StiefelManifold, Δ::AbstractMatrix, η::AbstractFloat)
     hcat(Y, Δ)*(exp(η*hcat(vcat(A, I(n)), vcat(-Δ'*Δ, A)))*StiefelProjection(2*n, n))*exp(-η*A)
 end
 
-Exp(Y::StiefelManifold, Δ::AbstractMatrix, η::AbstractFloat)
+function Exp(B::StiefelLieAlgHorMatrix)
+    N, n = B.N, B.n
+    E = StiefelProjection(N, n)
+    #expression from which matrix exponential and inverse have to be computed
+    exponent = hcat(vcat(.5*B.A, .25*B.A^2 - B.B'*B.B), vcat(I(n), .5*B.A))
+    StiefelManifold(
+        E + hcat(vcat(.5*B.A, B.B), E)*(exponent\(exp(exponent) - I(2*n)))*vcat(I(n), .5*B.A)
+    )
+end
 
+Exp(B::StiefelLieAlgHorMatrix, η::AbstractFloat) = Exp(η*B)
+
+
+function Exp(Y::StiefelManifold, Δ::AbstractMatrix, η::AbstractFloat)
+    HD, B = global_rep(Y, Δ)
+    apply_λ(Y, HD,  Exp(B, η))
 end

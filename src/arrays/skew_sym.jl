@@ -64,3 +64,9 @@ function Base.:-(A::SkewSymMatrix, B::SkewSymMatrix)
     @assert A.n == B.n 
     SkewSymMatrix(A.S - B.S, A.n) 
 end 
+
+function Base.:*(A::SkewSymMatrix, α::Union{Int,AbstractFloat})
+    SkewSymMatrix( α*A.S, A.n)
+end
+
+Base.:*(α::Union{Int,AbstractFloat}, A::SkewSymMatrix) = A*α

@@ -72,3 +72,9 @@ function Base.:-(A::StiefelLieAlgHorMatrix, B::StiefelLieAlgHorMatrix)
                             A.N,
                             A.n)
 end
+
+function Base.:*(A::StiefelLieAlgHorMatrix, α::Union{Int,AbstractFloat})
+    StiefelLieAlgHorMatrix( α*A.A, α*A.B, A.N, A.n)
+end
+
+Base.:*(α::Union{Int,AbstractFloat}, A::StiefelLieAlgHorMatrix) = A*α
