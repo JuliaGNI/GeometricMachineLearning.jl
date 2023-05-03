@@ -17,7 +17,7 @@ end
 
 function exponential_retraction₂(Y::StiefelManifold, Δ::AbstractMatrix, η)
     N, n = size(Y)
-    #@time HD, B = global_rep(Y, Δ)
+    HD, B = global_rep(Y, Δ)
     E = StiefelProjection(N, n)
     Y₂ = StiefelManifold(exp(η*B - zeros(size(Y,1),size(Y,1)))*E)
     apply_λ(Y, HD, Y₂)

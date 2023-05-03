@@ -13,7 +13,7 @@ mutable struct StiefelManifold{T, AT <: AbstractMatrix{T}} <: AbstractMatrix{T}
     function StiefelManifold(N::Int,n::Int)
         @assert N ≥ n
         A = randn(N,n)
-        new{eltype(A), typeof(A)}(householderQ(A))
+        new{eltype(A), typeof(A)}(householderQ!(A))
     end
 end
 

@@ -23,7 +23,7 @@ end
 #Base.'(HD::HouseDecom)
 
 #NOTE: this is O(3) instead of O(2) -> should only be used for testing purposes!
-function householderQ(A::AbstractMatrix)
+function householderQ!(A::AbstractMatrix)
     n, m = size(A)
     @assert n ≥ m
     Q = zeros(n,n)
@@ -41,6 +41,12 @@ function householderQ(A::AbstractMatrix)
         Q[1:n,i:n] = Q[1:n,i:n]*H
     end
     Q[1:n,1:m]
+end
+
+function householderQ(A::AbstractMatrix)
+    R = copy(A)
+    Q = householderQ!(R)
+    return Q, R
 end
 
 #Algorithm taken from https://www.ams.org/notices/200705/fea-mezzadri-web.pdf ... with modifications!
