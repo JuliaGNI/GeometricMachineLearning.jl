@@ -4,7 +4,7 @@ V ← α*V - ∇f(W)
 W ← W + η*V
 Or the riemannian manifold equivalent, if applicable.
 """
-mutable struct MomentumOptimizer{T} <: AbstractOptimizer
+mutable struct MomentumOptimizer{T} <: AbstractOptimizer_w_Cache
     η::T
     α::T
     cache:: MomentumOptimizerCache
@@ -13,7 +13,7 @@ end
     
 function setup_Optimiser!(o::MomentumOptimizer, model::Lux.Chain, x::NamedTuple, ∇Loss::Function)
     dx = ∇Loss(x)
-    o.cache = Setup_MomentumOptimizerCache(o::AbstractOptimizer, model::Lux.Chain, x::NamedTuple, dx::NamedTuple)
+    Setup_MomentumOptimizerCache!(o::AbstractOptimizer, model::Lux.Chain, x::NamedTuple, dx::NamedTuple)
     return 
 end
 

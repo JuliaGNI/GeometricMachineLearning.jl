@@ -7,6 +7,7 @@ module GeometricMachineLearning
     using ProgressMeter
     using Random
     using Zygote
+    using StatsBase
 
 
     include("gradient.jl")
@@ -59,12 +60,15 @@ module GeometricMachineLearning
 
     export NeuralNetwork
     export HamiltonianNeuralNetwork
+    export SympNet
+    export LASympNet
+    export GSympNet
 
     include("architectures/autoencoder.jl")
     include("architectures/fixed_width_network.jl")
     include("architectures/hamiltonian_neural_network.jl")
     include("architectures/variable_width_network.jl")
-    #include("architectures/sympnet.jl")
+    include("architectures/sympnet.jl")
 
     export train!, apply!, jacobian!
 
