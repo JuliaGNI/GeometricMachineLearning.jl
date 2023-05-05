@@ -13,9 +13,18 @@ function _init_cache(o::AbstractOptimizer, model::Lux.AbstractExplicitLayer, x::
     dx
 end
 
+mutable struct MomentumOptimizerCache <: AbstractOptimizerCache
+    n_layer::Int
+    state::NamedTuple
+
+    function MomentumOptimizerCache()
+        new(0, NamedTuple())
+    end
+
+end
+
 mutable struct MomentumOptimizerLayerCache{MT <: NamedTuple,
-                                           PT <: Union{Nothing, NamedTuple}} <:
-               AbstractOptimizerCache
+                                           PT <: Union{Nothing, NamedTuple}} <: AbstractOptimizerCache
     momentum::MT
     prev_step::PT
 
@@ -35,25 +44,30 @@ mutable struct MomentumOptimizerLayerCache{MT <: NamedTuple,
     end
 end
 
-#TODO: give this a different name than ``state'' - already used for an instance of AbstractOptimizerCache!!
-mutable struct MomentumOptimizerCache <: AbstractOptimizerCache
-    n_layer::Int
-    state::NamedTuple
 
-    function MomentumOptimizerCache(o::AbstractOptimizer, model::Lux.Chain, x::NamedTuple, dx::NamedTuple)
-        state = NamedTuple()
-        n_layer = length(model)
-        for i in 1:n_layer
-            layer_name = Symbol("layer_$i")
-            state = merge(state,
-                          NamedTuple{(layer_name,)}((MomentumOptimizerLayerCache(o,
-                                                                                 model[i],
-                                                                                 x[i],
-                                                                                 dx[i]),)))
-        end
-        new(n_layer, state)
+function Setup_MomentumOptimizerCache!(o::AbstractOptimizer, model::Lux.Chain, x::NamedTuple, dx::NamedTuple)
+    state = NamedTuple()
+    n_layer = length(model)
+    for i in 1:n_layer
+        layer_name = Symbol("layer_$i")
+        state = merge(state,
+                      NamedTuple{(layer_name,)}((MomentumOptimizerLayerCache(o,
+                                                                             model[i],
+                                                                             x[i],
+                                                                             dx[i]),)))
     end
+    o.cache.n_layer = n_layer
+    o.cache.state = state
+    return 
 end
+
+
+
+
+
+
+
+
 
 
 #TODO: put this into another file and add an inital update!!!!
