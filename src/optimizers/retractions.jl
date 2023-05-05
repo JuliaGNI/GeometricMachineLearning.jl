@@ -1,6 +1,14 @@
 """
 This implements some basic retractions.
 """
+abstract type AbstractRetraction end 
+
+struct Cayley <: AbstractRetraction end
+
+struct Geodesic <: AbstractRetraction end
+
+#function retraction(d::ManifoldLayer{Geodesic})
+#end
 
 #geodesics for the Euclidean metric
 function Exp_euc(B::StiefelLieAlgHorMatrix, η::AbstractFloat)
@@ -20,12 +28,11 @@ function Exp(B::StiefelLieAlgHorMatrix)
     #expression from which matrix exponential and inverse have to be computed
     exponent = hcat(vcat(.5*B.A, .25*B.A^2 - B.B'*B.B), vcat(I(n), .5*B.A))
     StiefelManifold(
-        E + hcat(vcat(.5*B.A, B.B), E)*(exponent\(exp(exponent) - I(2*n)))*vcat(I(n), .5*B.A)
+        E + hcat(vcat(.5*B.A, B.B), E)*a_ps(exponent)*vcat(I(n), .5*B.A)
     )
 end
 
 Exp(B::StiefelLieAlgHorMatrix, η::AbstractFloat) = Exp(η*B)
-
 
 function Exp(Y::StiefelManifold, Δ::AbstractMatrix, η::AbstractFloat)
     HD, B = global_rep(Y, Δ)

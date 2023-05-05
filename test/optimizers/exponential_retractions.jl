@@ -2,6 +2,8 @@ using Test
 using LinearAlgebra
 using Printf
 
+using Random
+
 include("../../src/arrays/skew_sym.jl")
 include("../../src/arrays/stiefel_lie_alg_hor.jl")
 include("../../src/optimizers/householder.jl")
@@ -9,6 +11,7 @@ include("../../src/optimizers/manifold_types.jl")
 include("../../src/optimizers/lie_alg_lifts.jl")
 include("../../src/arrays/auxiliary.jl")
 include("../../src/optimizers/retractions.jl")
+include("../../src/optimizers/auxiliary.jl")
 
 #NOTE: zeros have to be added because exp() is not defined for SkewSymMatrix or StiefelLieAlgHorMatrix!!!
 function exponential_retraction₁(Y::StiefelManifold, Δ::AbstractMatrix, η)
@@ -24,13 +27,9 @@ function exponential_retraction₂(Y::StiefelManifold, Δ::AbstractMatrix, η)
 end
 
 
-N_max = 500
-n_max = 10
-num = 10
-N_vec = Int.(ceil.(rand(num)*N_max))
-n_vec = Int.(ceil.(rand(num)*n_max))
-n_vec = min.(n_vec, N_vec)
-ε = 1e-12
+N_vec = 2 .^ collect(7:12)
+n_vec = 2 .^ collect(1:6)
+ε = 1e-11
 η = .1
 
 for (N, n) ∈ zip(N_vec, n_vec)

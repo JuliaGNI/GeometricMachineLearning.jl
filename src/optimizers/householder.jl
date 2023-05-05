@@ -27,7 +27,9 @@ function householderQ!(A::AbstractMatrix)
     n, m = size(A)
     @assert n ≥ m
     Q = zeros(n,n)
-    for i in 1:n Q[i,i] = 1. end 
+    for i in 1:n 
+        Q[i,i] = 1
+    end 
     for i in 1:m 
         v = A[i:n, i]
         v = v/norm(v)
@@ -50,27 +52,68 @@ function householderQ(A::AbstractMatrix)
 end
 
 #Algorithm taken from https://www.ams.org/notices/200705/fea-mezzadri-web.pdf ... with modifications!
-function householder!(A::AbstractMatrix)
+function householder_old1!(A::AbstractMatrix)
     n, m = size(A)
     τ = zeros(m)
     for i = 1:m 
-        norm_v = norm(A[i:n,i])
-        s = sign(A[i,i])
-        u₁ = A[i,i] + s*norm_v
-        w = A[i:n,i]/u₁
+        @views norm_v = norm(A[i:n,i])
+        @views s = sign(A[i,i])
+        @views u₁ = A[i,i] + s*norm_v
+        @views w = A[i:n,i]/u₁
         w[1] = 1
-        A[i+1:n,i] = w[2:end]
+        @views A[i+1:n,i] = w[2:end]
         A[i,i] = -s*norm_v
         τ[i] = s*u₁/norm_v
-        A[i:n, i+1:m] = A[i:n, i+1:m] - (τ[i]*w)*(w'*A[i:n, i+1:m])
+        @views A[i:n, i+1:m] .-= τ[i]*w*(w'*A[i:n, i+1:m])
+    end
+    τ
+end 
+
+#Algorithm taken from https://www.ams.org/notices/200705/fea-mezzadri-web.pdf ... with modifications!
+function householder_old2!(A::AbstractMatrix)
+    n, m = size(A)
+    τ = zeros(m)
+    for i = 1:m 
+        @views norm_v = norm(A[i:n,i])
+        @views s = sign(A[i,i])
+        @views u₁ = A[i,i] + s*norm_v
+        @views A[i+1:n, i] .*= inv(u₁)
+        A[i,i] = -s*norm_v
+        τ[i] = s*u₁/norm_v
+        @views A[i, i+1:m] .-= τ[i]*(A[i, i+1:m] + (A[i+1:n, i]'*A[i+1:n, i+1:m])')
+        @views A[i+1:n, i+1:m] .-= τ[i]/(1 - τ[i])*A[i+1:n, i]*(A[i+1:n, i]'*A[i+1:n, i+1:m] + A[i, i+1:m]')
+    end
+    τ
+end 
+
+function householder!(A::AbstractMatrix{T}) where T
+    n, m = size(A)
+    τ = zeros(T, m)
+    b = zeros(T, m-1)
+    C = zeros(T, n-1, m-1)
+    for i = 1:m 
+        @views b̃ = b[1:m-i]
+        @views C̃ = C[1:n-i, 1:m-i]
+        @views norm_v = norm(A[i:n,i])
+        @views s = sign(A[i,i])
+        @views u₁ = A[i,i] + s*norm_v
+        @views A[i+1:n, i] .*= inv(u₁)
+        A[i,i] = -s*norm_v
+        τ[i] = s*u₁/norm_v
+        @views w = A[i+1:n, i]
+        @views mul!(b̃, A[i+1:n, i+1:m]', w) 
+        @views A[i, i+1:m] .-= τ[i] .* (A[i, i+1:m] + b̃)
+        @views b̃ .+= A[i, i+1:m]
+        @views mul!(C̃, w, b̃')
+        @views A[i+1:n, i+1:m] .-= τ[i]/(1 - τ[i]) .* C̃
     end
     τ
 end 
 
 function householder(A::AbstractMatrix)
-    B = copy(A)
-    τ = householder!(B)
-    (B, τ)
+    QR = copy(A)
+    τ = householder!(QR)
+    (QR, τ)
 end
 
 #This defines QX (where Q is not square!!!)
@@ -81,7 +124,7 @@ function (HD::HouseDecom{false})(X)
     X_out = vcat(X, zeros(n-m, m2))
     for i = m:-1:1
         w = vcat(1., HD.QR[i+1:n,i])
-        X_out[i:n, :] = X_out[i:n, :] - (HD.τ[i]*w)*(w'*X_out[i:n, :])
+        @views X_out[i:n, :] .-= (HD.τ[i]*w)*(w'*X_out[i:n, :])
     end
     X_out
 end
@@ -94,7 +137,7 @@ function (HD::HouseDecom{true})(X)
     X_out = copy(X)
     for i = 1:m 
         w = vcat(1., HD.QR[i+1:end,i])
-        X_out[i:n,:] = X_out[i:n,:] - (HD.τ[i]*w)*(w'*X_out[i:n,:])
+        @views X_out[i:n,:] .-= (HD.τ[i]*w)*(w'*X_out[i:n,:])
     end
     X_out[1:m, :]
 end 

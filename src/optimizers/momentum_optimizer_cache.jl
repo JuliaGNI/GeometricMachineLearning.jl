@@ -27,7 +27,7 @@ mutable struct MomentumOptimizerLayerCache{MT <: NamedTuple,
     end
 
     function MomentumOptimizerLayerCache(o::AbstractOptimizer,
-                                         model::SymplecticStiefelLayer, x::NamedTuple,
+                                         model::ManifoldLayer, x::NamedTuple, 
                                          dx::NamedTuple)
         prev_step = deepcopy(x)
         momentum = _init_cache(o, model, x, dx)
@@ -61,6 +61,6 @@ struct StandardOptimizerCache <: AbstractOptimizerCache
     a::Nothing
     function StandardOptimizerCache(::AbstractOptimizer, ::Lux.Chain, ::NamedTuple,
                                     ::NamedTuple)
-        nothing
+        new{Nothing}(nothing)
     end
 end

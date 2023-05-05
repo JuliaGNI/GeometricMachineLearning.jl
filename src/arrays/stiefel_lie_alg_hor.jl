@@ -37,6 +37,10 @@ mutable struct StiefelLieAlgHorMatrix{T, AT <: SkewSymMatrix{T}, ST <: AbstractM
         B = A[(n+1):N,1:n]
         new{eltype(A),typeof(A), typeof(B)}(A_small, B, N, n)
     end
+
+    #option to draw a random element
+    function StiefelLieAlgHorMatrix(rng::AbstractRNG, N::Int, n::Int)
+    end
 end 
 
 Base.parent(A::StiefelLieAlgHorMatrix) = (A, B)
