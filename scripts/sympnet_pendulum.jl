@@ -50,15 +50,20 @@ end
 # define momentum optimizer and initialize
 o = MomentumOptimizer(1e-2, 0.5)
 # initial gradients for calling Cache constructor
-dp_in = Zygote.gradient(ps -> loss(ps, q, p), ps)[1]
-cache = MomentumOptimizerCache(o, model, ps, dp_in)
+∇Loss(ps)= Zygote.gradient(ps -> loss(ps, q, p), ps)[1]
+#cache = MomentumOptimizerCache(o, model, ps, dp_in)
+
+
+setup_Optimiser!(o, model, ps, ∇Loss)
+
 
 # training 
 println("initial loss: ", full_loss(ps, q, p))
 training_steps = 1000
 for i in 1:training_steps
     dp = Zygote.gradient(ps -> loss(ps, q, p), ps)[1]
-    apply!(o, cache, model, ps, dp)
+    #apply!(o, cache, model, ps, dp)
+    apply!(o, model, ps, dp)
 end 
 println("final loss: ", full_loss(ps, q, p))
 
