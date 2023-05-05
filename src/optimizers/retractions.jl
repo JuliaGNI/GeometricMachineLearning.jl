@@ -7,8 +7,14 @@ struct Cayley <: AbstractRetraction end
 
 struct Geodesic <: AbstractRetraction end
 
-#function retraction(d::ManifoldLayer{Geodesic})
-#end
+function retraction(d::ManifoldLayer{Geodesic}, B::StiefelLieAlgHorMatrix)
+end
+
+function application(d::ManifoldLayer, λ::HouseDecom, Y::StiefelManifold, Y₂::StiefelManifold)
+end
+
+function application(d::ManifoldLayer, λ::LinearAlgebra.QRCompactWYQ, Y::StiefelManifold, Y₂::StiefelManifold)
+end
 
 #geodesics for the Euclidean metric
 function Exp_euc(B::StiefelLieAlgHorMatrix, η::AbstractFloat)

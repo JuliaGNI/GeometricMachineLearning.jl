@@ -11,6 +11,8 @@ In practice this is implemented through the Gram Schmidt process, with the auxil
 |0|
 
 Maybe consider dividing the output in the check functions by n!
+
+Implement a general global section here!!!! Tₓ𝔐 → G×𝔤 !!!!!!
 """
 include("orthogonalization_procedures.jl")
 
