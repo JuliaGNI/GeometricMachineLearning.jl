@@ -64,6 +64,7 @@ module GeometricMachineLearning
     include("architectures/fixed_width_network.jl")
     include("architectures/hamiltonian_neural_network.jl")
     include("architectures/variable_width_network.jl")
+    #include("architectures/sympnet.jl")
 
     export train!, apply!, jacobian!
 
@@ -71,13 +72,14 @@ module GeometricMachineLearning
     include("optimizers/abstract_optimizer.jl")
     include("optimizers/momentum_optimizer_cache.jl")
     include("optimizers/standard_optimizer.jl")
-    include("optimizers/adam_optimizer.jl")
+    #include("optimizers/adam_optimizer.jl")
     include("optimizers/momentum_optimizer.jl")
 
     export StandardOptimizer
     #export AdamOptimizer
     export MomentumOptimizer
     
+    export setup_Optimiser!
     #export AbstractOptimizerCache
     export MomentumOptimizerLayerCache
     export MomentumOptimizerCache
