@@ -16,3 +16,11 @@ end
 function grad(Y::StiefelManifold, e_grad::AbstractMatrix)
     e_grad - Y*(e_grad'*Y)
 end
+
+function grad(ps::NamedTuple, dx::NamedTuple)
+    dx
+end
+
+function grad(ps::NamedTuple{(:weight,), Tuple{AT}} dx::NamedTuple{(:weight,), Tuple{BT}}) where {AT <: Manifold, BT <: AbstractMatrix}
+    (weight = grad(ps.weight, dx.weight), )
+end

@@ -2,8 +2,9 @@
 maybe consider dividing the output in the check functions by n!
 TODO: Implement sampling procedures!!
 """
+abstract type Manifold <: AbstractMatrix end
 
-mutable struct StiefelManifold{T, AT <: AbstractMatrix{T}} <: AbstractMatrix{T}
+mutable struct StiefelManifold{T, AT <: AbstractMatrix{T}} <: Manifold
     A::AT
     function StiefelManifold(A::AbstractMatrix)
         @assert size(A)[1] ≥ size(A)[2]
@@ -13,7 +14,8 @@ mutable struct StiefelManifold{T, AT <: AbstractMatrix{T}} <: AbstractMatrix{T}
     function StiefelManifold(N::Int,n::Int)
         @assert N ≥ n
         A = randn(N,n)
-        new{eltype(A), typeof(A)}(householderQ!(A))
+        #new{eltype(A), typeof(A)}(householderQ!(A))
+        new{eltype(A), typeof(A)}(qr(A).Q[1:N, 1:n])
     end
 end
 
@@ -24,10 +26,9 @@ Base.getindex(A::StiefelManifold, i::Int, j::Int) = A.A[i,j]
 
 function check(A::StiefelManifold, tol=1e-10)
     @test norm(A'*A - I) < tol
-    #print("Test passed.\n") 
 end
 
-mutable struct SymplecticStiefelManifold{T, AT <: AbstractMatrix{T}} <: AbstractMatrix{T}
+mutable struct SymplecticStiefelManifold{T, AT <: AbstractMatrix{T}} <: Manifold
     A::AT
     function SymplecticStiefelManifold(A::AbstractMatrix)
         @assert iseven(size(A)[1])
