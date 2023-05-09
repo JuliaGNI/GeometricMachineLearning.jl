@@ -10,18 +10,23 @@ mutable struct StiefelManifold{T, AT <: AbstractMatrix{T}} <: Manifold
         @assert size(A)[1] ≥ size(A)[2]
         new{eltype(A), typeof(A)}(A)
     end
-    #this draws a random element from U(StiefelManifold)
-    function StiefelManifold(N::Int,n::Int)
-        @assert N ≥ n
-        A = randn(N,n)
-        #new{eltype(A), typeof(A)}(householderQ!(A))
-        new{eltype(A), typeof(A)}(qr(A).Q[1:N, 1:n])
-    end
 end
 
 Base.size(A::StiefelManifold) = size(A.A)
 Base.parent(A::StiefelManifold) = A.A 
 Base.getindex(A::StiefelManifold, i::Int, j::Int) = A.A[i,j]
+
+#TODO: check the distribution this is coming from - related to the Haar measure ???
+function Base.rand(rng::Random.AbstractRNG, ::Type{StiefelManifold{T}}, N::Int, n::Int) where T
+    @assert N ≥ n
+    A = randn(rng, T, N, n)
+    StiefelManifold(qr(A).Q[1:N, 1:n])
+end
+
+function Base.rand(rng::TrivialInitRNG, ::Type{StiefelManifold{T}}, N::Int, n::Int) where T
+    @assert N ≥ n 
+    zeros(StiefelLieAlgHorMatrix{T}, N, n)
+end
 
 
 function check(A::StiefelManifold, tol=1e-10)

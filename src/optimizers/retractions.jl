@@ -1,5 +1,7 @@
 """
 This implements some basic retractions.
+
+TODO: test for Cayley vs Exp
 """
 abstract type AbstractRetraction end 
 
@@ -7,12 +9,20 @@ struct Cayley <: AbstractRetraction end
 
 struct Geodesic <: AbstractRetraction end
 
-function retraction(d::ManifoldLayer{Geodesic}, B::StiefelLieAlgHorMatrix)
-    Exp(B)
+#function retraction(d::ManifoldLayer{Geodesic}, B::StiefelLieAlgHorMatrix)
+#    Exp(B)
+#end
+
+function retraction(d::ManifoldLayer{Geodesic}, B::NamedTuple{(:weight, ), Tuple{AT}}) where AT <: StiefelLieAlgHorMatrix
+    (weight = Exp(B.weight),)
 end
 
-function retraction(d::Lux.AbstractExplicitLayer, dx::NamedTuple)
-    dx
+function retraction(d::ManifoldLayer{Cayley}, B::NamedTuple{(:weight, ), Tuple{AT}}) where AT <: StiefelLieAlgHorMatrix
+    (weight = Cayley(B.weight),)
+end
+
+function retraction(d::Lux.AbstractExplicitLayer, gx::NamedTuple)
+    gx
 end
 
 #geodesics for the Euclidean metric -> probably can get rid of this, there is no obvious advantage in keeping this (maybe for testing)!
@@ -33,7 +43,7 @@ function Exp(B::StiefelLieAlgHorMatrix)
     #expression from which matrix exponential and inverse have to be computed
     exponent = hcat(vcat(.5*B.A, .25*B.A^2 - B.B'*B.B), vcat(I(n), .5*B.A))
     StiefelManifold(
-        E + hcat(vcat(.5*B.A, B.B), E)*a_ps(exponent)*vcat(I(n), .5*B.A)
+        E + hcat(vcat(.5*B.A, B.B), E)*𝔄(exponent)*vcat(I(n), .5*B.A)
     )
 end
 

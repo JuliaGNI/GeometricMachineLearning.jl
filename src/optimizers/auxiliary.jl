@@ -4,7 +4,7 @@ This implements exponential and inverse mappings.
 
 
 #computes A^-1(exp(A) - I)
-function a_ps(A::AbstractMatrix{T}) where T
+function 𝔄(A::AbstractMatrix{T}) where T
     n = size(A, 1)
     B = one(A)
     C = one(A)
@@ -21,6 +21,6 @@ function a_ps(A::AbstractMatrix{T}) where T
     C
 end
 
-function Base.exp(X::AbstractMatrix{T}, Y::AbstractMatrix{T}) where T
+function 𝔄exp(X::AbstractMatrix{T}, Y::AbstractMatrix{T}) where T
     I + X*A_PS(Y'*X)*Y'
 end

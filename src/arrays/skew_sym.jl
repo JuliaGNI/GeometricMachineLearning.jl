@@ -33,10 +33,7 @@ mutable struct SkewSymMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
         end
         new{eltype(S),typeof(S_vec)}(S_vec,n)
     end
-    
-    function SkewSymMatrix(n::Int)
-        new{Float64, AbstractVector{Float64}}(randn(n*(n-1)÷2),n)
-    end
+    #SkewSymMatrix(T<:AbstractFloat, n::Int) = SkewSymMatrix(n, T)
 end 
 
 #somehow ranges (i.e. A[1:n, 1:n]) only work if I specify that i and j are indices!!!
@@ -70,3 +67,21 @@ function Base.:*(A::SkewSymMatrix, α::Union{Int,AbstractFloat})
 end
 
 Base.:*(α::Union{Int,AbstractFloat}, A::SkewSymMatrix) = A*α
+
+function Base.zeros(::Type{SkewSymMatrix{T}}, n::Int) where T
+    SkewSymMatrix(zeros(T, n*(n-1)÷2), n)
+end
+    
+function Base.zeros(::Type{SkewSymMatrix}, n::Int)
+    SkewSymMatrix(zeros(n*(n-1)÷2), n)
+end
+
+function Base.rand(rng::Random.AbstractRNG, ::Type{SkewSymMatrix{T}}, n::Int) where T
+    SkewSymMatrix(rand(rng, T, n*(n-1)÷2),n)
+end
+
+function Base.rand(rng::Random.AbstractRNG, ::Type{SkewSymMatrix}, n::Int)
+    SkewSymMatrix(rand(rng, n*(n-1)÷2), n)
+end
+
+#TODO: make defaults when no rng is specified!!! (prbabaly rng ← Random.default_rng())

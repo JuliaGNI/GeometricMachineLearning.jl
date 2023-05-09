@@ -46,15 +46,21 @@ function global_section(d::StiefelLayer, Y::StiefelManifold)
 end
 
 #this is an application G×𝔐 → 𝔐
-function (λY::GlobalSection{StiefelLayer})(Y₂::StiefelManifold)
+function apply(λY::GlobalSection{StiefelLayer}, Y₂::StiefelManifold)
     N, n = size(λY.Y.weight)
     StiefelManifold(
         λY.Y*Y₂[1:n,1:n] + λY.λ*vcat(Y₂[n+1:N,1:n], zeros(n, n))
     )
 end
-(λY::GlobalSection{StiefelLayer})(Y₂::NamedTuple) = (weight = λY(Y₂.weight), )
+function apply(λY::GlobalSection{AT}, Y₂::NamedTuple{(:weight,), Tuple{BT}}) where {AT <: StiefelLayer, BT <: StiefelManifold}
+    (weight = λY(Y₂.weight), )
+end
+#this is less secure!
+#function apply(λY::GlobalSection{AT}, Y₂::NamedTuple{(:weight,), Tuple{BT}}) where {AT <: ManifoldLayer, BT <: Manifold}
+#    (weight = λY(Y₂.weight), )
+#end
 
-function (λY::GlobalSection)(ps₂::NamedTuple)
+function apply(λY::GlobalSection, ps₂::NamedTuple)
     for key in keys(λY.Y)
         λY.Y[key] += ps₂[key]
     end

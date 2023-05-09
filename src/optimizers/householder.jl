@@ -1,4 +1,4 @@
-"""
+s"""
 Implementation of the regular Householder and the symplectic Householder reflection.
 
 The multiplications here are different from what is normally done with Householder transforms and specific for our optimizers!
