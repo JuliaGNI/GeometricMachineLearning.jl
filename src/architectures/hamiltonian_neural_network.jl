@@ -41,28 +41,22 @@ end
 
 
 # evaulation of the Hamiltonian Neural Network
-(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork})(x, params) = hnn(nn.model, x, params, nn.state)
-(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork})(x) = nn(x, nn.params)
+(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork})(x, params = nn.params) = hnn(nn.model, x, params, nn.state)
 
 # gradient of the Hamiltonian Neural Network
-gradient(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, params) = Zygote.gradient(ξ -> nn(ξ, params), x)[1]
-gradient(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x) = gradient(nn, x, nn.params)
+gradient(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, params = nn.params) = Zygote.gradient(ξ -> nn(ξ, params), x)[1]
 
 # vector field of the Hamiltonian Neural Network
-vectorfield(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, params) = [0 1; -1 0] * gradient(nn, x, params)
-vectorfield(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x) = vectorfield(nn, x, nn.params)
+vectorfield(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, params = nn.params) = [0 1; -1 0] * gradient(nn, x, params)
 
 # loss for a single datum
-loss_single(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, y, params) = sqeuclidean(vectorfield(nn, x, params), y)
-loss_single(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, y) = loss_single(nn, x, y, nn.params)
+loss_single(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, y, params = nn.params) = sqeuclidean(vectorfield(nn, x, params), y)
 
 # total loss
-loss(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, y, params) = mapreduce(i -> loss_single(nn, x[i], y[i], params), +, eachindex(x,y))
-loss(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, y) = loss(nn, x, y, nn.params)
+loss(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, y, params = nn.params) = mapreduce(i -> loss_single(nn, x[i], y[i], params), +, eachindex(x,y))
 
 # loss gradient
-loss_gradient(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, y, params) = Zygote.gradient(p -> loss(nn, x, y, p), params)[1]
-loss_gradient(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, y) = loss_gradient(nn, x, y, nn.params)
+loss_gradient(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, y, params = nn.params) = Zygote.gradient(p -> loss(nn, x, y, p), params)[1]
 
 
 
