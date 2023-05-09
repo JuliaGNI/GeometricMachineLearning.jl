@@ -27,21 +27,8 @@ function chain(nn::HamiltonianNeuralNetwork, ::LuxBackend)
 end
 
 
-
-# define Hamiltonian via evaluation of network
-function hnn(model, x, params::Tuple, state)
-    y = Lux.apply(model, x, params, state)
-    return sum(y)
-end
-
-function hnn(model, x, params::NamedTuple, state)
-    y, st = Lux.apply(model, x, params, state)
-    return sum(y)
-end
-
-
 # evaulation of the Hamiltonian Neural Network
-(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork})(x, params = nn.params) = hnn(nn.model, x, params, nn.state)
+(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork})(x, params = nn.params) = sum(apply(nn, x, params))
 
 # gradient of the Hamiltonian Neural Network
 gradient(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, params = nn.params) = Zygote.gradient(ξ -> nn(ξ, params), x)[1]
