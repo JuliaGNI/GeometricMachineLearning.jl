@@ -56,12 +56,12 @@ end
 # Evaluation of the neural network
 
 function sympnet_eval(model, q, p, params::Tuple, state)
-    y = Lux.apply(model, [q,p], params, state)
+    y = Lux.apply(model, [q...,p...], params, state)
     return y
 end
 
 function sympnet_eval(model, q, p, params::NamedTuple, state)
-    y, st = Lux.apply(model, [q,p], params, state)
+    y, st = Lux.apply(model, [q...,p...], params, state)
     return y
 end
 
@@ -72,11 +72,11 @@ end
 
 function loss(nn::LuxNeuralNetwork{<:SympNet}, q, p, params = nn.params, batch_size = 10)
     loss = 0
-    #Index = 1:batch_size #sample(2:length(q), batch_size, replace = false)
+    #Index = sample(2:length(q), batch_size, replace = false)
     for i in 1:batch_size
-        index = Int(ceil(rand()*lastindex(q)))
-        qp_new = nn(q[index-1], p[index-1], params)
-        loss += norm(qp_new - [q[index], p[index]])
+        index = Int(ceil(rand()*(size(q,1)-1)))+1
+        qp_new = nn(q[index-1,:], p[index-1,:], params)
+        loss += norm(qp_new-[q[index,:]..., p[index,:]...])
     end
     loss
 end
@@ -84,9 +84,9 @@ end
 function full_loss(nn::LuxNeuralNetwork{<:SympNet}, q, p, params = nn.params)
     loss = 0
     #Index = 1:batch_size #sample(2:length(q), batch_size, replace = false)
-    for index in 2:lastindex(q)
-        qp_new = nn(q[index-1], p[index-1], params)
-        loss += norm(qp_new - [q[index], p[index]])
+    for index in 2:size(q,1)
+        qp_new = nn(q[index-1,:], p[index-1,:], params)
+        loss += norm(qp_new - [q[index,:]..., p[index,:]...])
     end
     loss
 end
@@ -122,19 +122,21 @@ end
 
 function Iterate_Sympnet(nn::LuxNeuralNetwork{<:SympNet}, q0, p0; n_points = DEFAULT_SIZE_RESULTS)
 
+    n_dim = length(q0)
+    
     # Array to store the predictions
-    q_learned = [zeros(lastindex(q0) for _ in 1:n_points)]
-    p_learned = [zeros(lastindex(p0) for _ in 1:n_points)]
-
+    q_learned = zeros(n_points,n_dim)
+    p_learned = zeros(n_points,n_dim)
+    
     # Initialisation
-    q_learned[1] = q0
-    p_learned[1] = p0
-
+    q_learned[1,:] = q0
+    p_learned[1,:] = p0
+    
     #Computation of phase space
     for i in 2:n_points
-        qp_learned =  nn(q_learned[i-1], p_learned[i-1])
-        q_learned[i] = qp_learned[1:lastindex(q0)]
-        p_learned[i] = qp_learned[(1+lastindex(p0)):end]
+        qp_learned =  nn(q_learned[i-1,:], p_learned[i-1,:])
+        q_learned[i,:] = qp_learned[1:n_dim]
+        p_learned[i,:] = qp_learned[(1+n_dim):end]
     end
 
     return q_learned, p_learned
