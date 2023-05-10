@@ -7,18 +7,17 @@ struct StiefelLayer{F1, F2} <: ManifoldLayer
     init_weight::F2
 end
 
-function StiefelLayer(N::Int, n::Int; init_weight=Lux.glorot_uniform, retraction=Exp)
-    return StiefelLayer{typeof(init_weight), typeof(retraction)}(N, n, initial_weight, retraction)
+function StiefelLayer(N::Int, n::Int; init_weight=Lux.glorot_uniform, retraction=Geodesic)
+    return StiefelLayer{typeof(retraction), typeof(init_weight)}(N, n, retraction, init_weight)
 end
 
 function Lux.initialparameters(rng::AbstractRNG, d::StiefelLayer)
-    B = StiefelLieAlgHorMatrix(
-        SkewSymMatrix(d.init_weight(rng, d.n*(d.n-1)÷2), d.n),
-        d.init_weight(rng, d.N, d.n), 
-        d.N,
-        d.n
-    )
-    (weight = d.retraction(B), )
+    A = d.init_weight(rng, d.N, d.n)
+    (weight = StiefelManifold(LinearAlgebra.qr(A).Q[1:d.N, 1:d.n]), )
+end
+
+function Lux.initialparameters(rng::TrivialInitRNG, d::StiefelLayer)
+    (weight = zeros(StiefelLieAlgHorMatrix{Float32}, d.N, d.n), )
 end
 
 Lux.initialstates(rng::AbstractRNG, d::StiefelLayer) = NamedTuple()

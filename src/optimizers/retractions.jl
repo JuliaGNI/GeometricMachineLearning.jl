@@ -4,24 +4,20 @@ This implements some basic retractions.
 TODO: test for Cayley vs Exp
 TODO: adapt AT <: StiefelLieAlgHorMatrix for the general case!
 """
-abstract type AbstractRetraction end 
-
-struct Cayley <: AbstractRetraction end
-
-struct Geodesic <: AbstractRetraction end
-
-function retraction(d::ManifoldLayer{Geodesic}, B::NamedTuple{(:weight, ), Tuple{AT}}) where AT <: StiefelLieAlgHorMatrix
-    (weight = Geodesic(B.weight),)
-end
-
-function retraction(d::ManifoldLayer{Cayley}, B::NamedTuple{(:weight, ), Tuple{AT}}) where AT <: StiefelLieAlgHorMatrix
-    (weight = Cayley(B.weight),)
-end
 
 #fallback function -> maybe put into another file!
 function retraction(d::Lux.AbstractExplicitLayer, gx::NamedTuple)
     gx
 end
+
+function retraction(d::StiefelLayer{Geodesic}, B::NamedTuple{(:weight, ), Tuple{AT}}) where AT <: StiefelLieAlgHorMatrix
+    (weight = Geodesic(B.weight),)
+end
+
+function retraction(d::StiefelLayer{Cayley}, B::NamedTuple{(:weight, ), Tuple{AT}}) where AT <: StiefelLieAlgHorMatrix
+    (weight = Cayley(B.weight),)
+end
+
 
 function Geodesic(B::StiefelLieAlgHorMatrix)
     N, n = B.N, B.n

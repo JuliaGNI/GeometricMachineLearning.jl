@@ -8,6 +8,12 @@ module GeometricMachineLearning
     using Random
     using Zygote
 
+    import Lux
+
+    include("rng/trivial_rng.jl")
+
+    export TrivialInitRNG
+
     #are these needed?
     include("gradient.jl")
     include("training.jl")
@@ -19,8 +25,8 @@ module GeometricMachineLearning
     include("arrays/add.jl")
     include("arrays/zero_vector.jl")
     
-    #include("arrays/block_identity_lower.jl")
-    #include("arrays/block_identity_upper.jl")
+    include("arrays/block_identity_lower.jl")
+    include("arrays/block_identity_upper.jl")
     include("arrays/symmetric.jl")
     include("arrays/symplectic.jl")
     include("arrays/symplectic_lie_alg.jl")
@@ -40,6 +46,12 @@ module GeometricMachineLearning
     export LinearSymplecticLayerP, LinearSymplecticLayerQ
     export SymplecticStiefelLayer
 
+    include("manifolds/stiefel_manifold.jl")
+    include("manifolds/symplectic_manifold.jl")
+    include("manifolds/abstract_manifold.jl")
+
+    export StiefelManifold, SymplecticStiefelManifold, Manifold
+
     include("layers/abstract_layer.jl")
     include("layers/feed_forward_layer.jl")
     include("layers/gradient.jl")
@@ -47,10 +59,15 @@ module GeometricMachineLearning
     include("layers/residual_layer.jl")
     include("layers/linear_symplectic_layer.jl")
     include("layers/manifold_layer.jl")
-    include("layers/symplectic_stiefel_layer.jl")
+    include("optimizers/retraction_types.jl")
+    include("layers/stiefel_layer.jl")
+    include("optimizers/retractions.jl")
 
+    #include("layers/symplectic_stiefel_layer.jl")
 
+    export StiefelLayer, ManifoldLayer
     export AbstractNeuralNetwork
+    export retraction
 
     include("architectures/architectures.jl")
     include("backends/backends.jl")
@@ -74,14 +91,14 @@ module GeometricMachineLearning
 
     include("optimizers/abstract_optimizer.jl")
     include("optimizers/optimizer_layer_caches.jl")
-    include("optimizers/optimizer_cache.jl")
     include("optimizers/standard_optimizer.jl")
     include("optimizers/momentum_optimizer.jl")
-
     include("optimizers/adam_optimizer.jl")
+    include("optimizers/optimizer_cache.jl")
 
     export TrivialInitRNG
-
+    
+    export AbstractOptimizer
     export StandardOptimizer, StandardLayerCache
     export MomentumOptimizer, MomentumLayerCache
     export AdamOptimizer, AdamLayerCache

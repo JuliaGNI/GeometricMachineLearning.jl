@@ -48,17 +48,16 @@ function full_loss(ps, q, p)
 end 
 
 # define momentum optimizer and initialize
-o = MomentumOptimizer(1e-2, 0.5)
+o = AdamOptimizer()
 # initial gradients for calling Cache constructor
-dp_in = Zygote.gradient(ps -> loss(ps, q, p), ps)[1]
-cache = MomentumOptimizerCache(o, model, ps, dp_in)
+Cache = init_optimizer_cache(model, o)
 
 # training 
 println("initial loss: ", full_loss(ps, q, p))
 training_steps = 1000
 for i in 1:training_steps
     dp = Zygote.gradient(ps -> loss(ps, q, p), ps)[1]
-    apply!(o, cache, model, ps, dp)
+    optimization_step!(o, model, ps, dp)
 end 
 println("final loss: ", full_loss(ps, q, p))
 

@@ -2,13 +2,13 @@ using LinearAlgebra
 using Test
 
 using BandedMatrices
-
+using GeometricMachineLearning
 """
 𝔤ʰ is the horizontal part of 𝔤, i.e. A ∈ 𝔤ʰ ⟺ AEE⁺ = A.
 
 TODO: Add routine & test for symplectic conjugate
 """
-
+#=
 include("../src/arrays/symmetric2.jl")
 include("../src/arrays/skew_sym.jl")
 include("../src/arrays/stiefel_lie_alg_hor.jl")
@@ -17,6 +17,7 @@ include("../src/arrays/auxiliary.jl")
 include("../src/arrays/symplectic.jl")
 #include("../src/arrays/sympl_st_E_ts.jl")
 include("../src/arrays/sympl_lie_alg_hor.jl")
+=#
 
 #check if symmetric matrix works for 1×1 matrices 
 W = rand(1,1)

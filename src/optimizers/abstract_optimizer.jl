@@ -18,3 +18,8 @@ function optimization_step!(o::AbstractOptimizer, model::Lux.Chain, ps::NamedTup
         optimization_step(o, model[i], ps[key], dx[key])
     end
 end
+
+function optimization_step!(o::AbstractOptimizer, model::Lux.Chain, ps::NamedTuple, loss)
+    dx = Zygote.gradient(ps -> loss(ps, q, p), ps)[1]
+    optimization_step!(o, model, ps, dx)
+end 
