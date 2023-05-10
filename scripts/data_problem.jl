@@ -1,27 +1,16 @@
-println("Begin Import Module")
 using Plots
 using Zygote
 using  GeometricIntegrators
-using Distances
 using LinearAlgebra
 
-println("End Import Module")
 
 dict_problem = Dict(
     "pendulum" => (x-> x[2]^2 / 2 + (1-cos(x[1])),1),
     "Hénon_Heiles" => (x-> x[3]^2/(2) + x[4]^2/(2) + x[1]^2/2 + x[2]^2/2 + (x[1]^2*x[2]-x[2]^3/3),2)
 )
 
-function x_to_qp(x)
-    n_dim = length(x)
-    q = x[1:n_dim÷2]
-    p = x[1+n_dim÷2:n_dim]
-    return (q,p)
-end
-
-
 # get data set (includes data & target)
-function get_data_set2(nameproblem, num=10, qpmin=-1.2, qpmax=+1.2)
+function get_hamiltonian_data(nameproblem, num=10, qpmin=-1.2, qpmax=+1.2)
 
     #get the Hamiltonien corresponding to name_problem
     H, n_dim = dict_problem[nameproblem]
@@ -52,9 +41,9 @@ function get_data_set2(nameproblem, num=10, qpmin=-1.2, qpmax=+1.2)
 end
 
 
-function problem_data(nameproblem, tspan = (0., 100.), tstep = 0.1, q₀ = .1*randn(1), p₀ = .1*randn(1))
+function get_phase_space_data(nameproblem, q0, p0, tspan = (0., 100.), tstep = 0.1)
     
-    #get the Hamiltonien corresponding to name_problem   
+    # get the Hamiltonien corresponding to name_problem   
     H_problem, n_dim = dict_problem[nameproblem] 
 
     H2(q, p) = H_problem([q..., p...])
@@ -70,10 +59,6 @@ function problem_data(nameproblem, tspan = (0., 100.), tstep = 0.1, q₀ = .1*ra
     end
 
     h(t, q, p, params) = H2(q,p)
-    
-    #initial data depending on the dimension
-    q0 = vcat([q₀ for i in 1:n_dim]...)
-    p0 = vcat([p₀ for i in 1:n_dim]...)
 
     # simulate data with geometric Integrators
     ode = HODEProblem(v, f, h, tspan, tstep, q0, p0)
@@ -81,8 +66,9 @@ function problem_data(nameproblem, tspan = (0., 100.), tstep = 0.1, q₀ = .1*ra
     # sol = integrate(ode, SymplecticEulerA())
     sol = integrate(ode, SymplecticTableau(TableauExplicitEuler()))
 
-    q = sol.q[:,1]
-    p = sol.p[:,1]
+    # results are give into a matrix where q[i,j] is the ith step of the jth component of q 
+    q = hcat([sol.q[:,i] for i in 1:n_dim]...)
+    p = hcat([sol.p[:,i] for i in 1:n_dim]...)
 
     return (q, p)
 end

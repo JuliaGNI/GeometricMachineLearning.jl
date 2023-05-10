@@ -71,6 +71,7 @@ module GeometricMachineLearning
     include("architectures/sympnet.jl")
 
     export train!, apply!, jacobian!
+    export Iterate_Sympnet
 
     include("optimizers/abstract_optimizer_cache.jl")
     include("optimizers/abstract_optimizer.jl")
