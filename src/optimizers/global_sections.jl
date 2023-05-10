@@ -15,16 +15,17 @@ Maybe consider dividing the output in the check functions by n!
 Implement a general global section here!!!! Tₓ𝔐 → G×𝔤 !!!!!! (think about random initialization!)
 """
 #global section maps an element of the manifold to its associated Lie group!
-struct GlobalSection{AT <: Lux.AbstractExplicitLayer}
-    Y::NamedTuple
-    λ::Union{NamedTuple, Nothing}
+struct GlobalSection{AT<:Lux.AbstractExplicitLayer, BT<:NamedTuple, CT<:Union{NamedTuple,Nothing}}
+    Y::BT
+    λ::CT
 
     function GlobalSection(d::Lux.AbstractExplicitLayer, ps::NamedTuple)
-        new{typeof{d}}(ps, nothing)
+        new{typeof(d), typeof(ps), Nothing}(ps, nothing)
     end
 
     function GlobalSection(d::ManifoldLayer, ps::NamedTuple{(:weight,), Tuple{BT}}) where BT <: Manifold
-       new{typeof(d)}(ps, global_section(ps)) 
+        B = global_section(ps)
+       new{typeof(d), typeof(ps), typeof(B)}(ps, B) 
     end
 end
 
@@ -43,13 +44,13 @@ function apply(λY::GlobalSection, ps₂::NamedTuple)
     end
 end
 
-function global_rep(λY::GlobalSection{AT<:ManifoldLayer}, gx::NamedTuple)
+function global_rep(::AT, λY::GlobalSection{AT}, gx::NamedTuple) where AT<:ManifoldLayer
     (weight = global_rep(λY, gx.weight), )
 end
 
 
 ##auxiliary function 
-function global_rep(λY::GlobalSection, gx::NamedTuple)
+function global_rep(::Lux.AbstractExplicitLayer, λY::GlobalSection, gx::NamedTuple)
     gx
 end
 

@@ -50,14 +50,14 @@ end
 # define momentum optimizer and initialize
 o = AdamOptimizer()
 # initial gradients for calling Cache constructor
-Cache = init_optimizer_cache(model, o)
+cache = init_optimizer_cache(model, o)
 
 # training 
 println("initial loss: ", full_loss(ps, q, p))
 training_steps = 1000
 for i in 1:training_steps
     dp = Zygote.gradient(ps -> loss(ps, q, p), ps)[1]
-    optimization_step!(o, model, ps, dp)
+    optimization_step!(o, model, ps, cache, dp)
 end 
 println("final loss: ", full_loss(ps, q, p))
 

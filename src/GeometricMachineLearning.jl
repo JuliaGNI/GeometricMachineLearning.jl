@@ -89,19 +89,25 @@ module GeometricMachineLearning
 
     export train!, apply!, jacobian!
 
-    include("optimizers/abstract_optimizer.jl")
+    include("optimizers/global_sections.jl")
     include("optimizers/optimizer_layer_caches.jl")
+    include("optimizers/abstract_optimizer.jl")
     include("optimizers/standard_optimizer.jl")
     include("optimizers/momentum_optimizer.jl")
     include("optimizers/adam_optimizer.jl")
     include("optimizers/optimizer_cache.jl")
 
+    export GlobalSection
+    export global_rep
+
     export TrivialInitRNG
     
-    export AbstractOptimizer
+    export AbstractOptimizer, AbstractLayerCache
     export StandardOptimizer, StandardLayerCache
     export MomentumOptimizer, MomentumLayerCache
     export AdamOptimizer, AdamLayerCache
+
+    export ⊙², √ᵉˡᵉ, /ᵉˡᵉ, scalar_add
 
     export update!
     export check
