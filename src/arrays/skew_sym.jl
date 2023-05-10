@@ -62,11 +62,15 @@ function Base.:-(A::SkewSymMatrix, B::SkewSymMatrix)
     SkewSymMatrix(A.S - B.S, A.n) 
 end 
 
-function Base.:*(A::SkewSymMatrix, α::Union{Int,AbstractFloat})
-    SkewSymMatrix( α*A.S, A.n)
+function Base.:-(A::SkewSymMatrix)
+    SkewSymMatrix(-A.S, A.n)
 end
 
-Base.:*(α::Union{Int,AbstractFloat}, A::SkewSymMatrix) = A*α
+function Base.:*(A::SkewSymMatrix, α::Real)
+    SkewSymMatrix(α*A.S, A.n)
+end
+
+Base.:*(α::Real, A::SkewSymMatrix) = A*α
 
 function Base.zeros(::Type{SkewSymMatrix{T}}, n::Int) where T
     SkewSymMatrix(zeros(T, n*(n-1)÷2), n)
@@ -85,3 +89,27 @@ function Base.rand(rng::Random.AbstractRNG, ::Type{SkewSymMatrix}, n::Int)
 end
 
 #TODO: make defaults when no rng is specified!!! (prbabaly rng ← Random.default_rng())
+function Base.rand(type::Type{SkewSymMatrix{T}}, n::Integer) where T
+    rand(Random.default_rng(), type, n)
+end
+
+function Base.rand(type::Type{SkewSymMatrix}, n::Integer)
+    rand(Random.default_rng(), type, n)
+end
+
+#these are Adam operations:
+function scalar_add(A::SkewSymMatrix, δ::Real)
+    SkewSymMatrix(A.S .+ δ, A.n)
+end
+
+#element-wise squares and square root (for Adam)
+function ⊙²(A::SkewSymMatrix)
+    SkewSymMatrix(A.S.^2, A.n)
+end
+function √ᵉˡᵉ(A::SkewSymMatrix)
+    SkewSymMatrix(sqrt.(A.S), A.n)
+end
+function /ᵉˡᵉ(A::SkewSymMatrix, B::SkewSymMatrix)
+    @assert A.n == B.n 
+    SkewSymMatrix(A.S ./ B.S, A.n)
+end

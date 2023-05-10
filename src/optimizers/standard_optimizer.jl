@@ -4,17 +4,15 @@ Or the riemannian manifold equivalent, if applicable.
 """
 mutable struct StandardOptimizer{T} <: AbstractOptimizer
     η::T
-    StandardOptimizer(η = 1e-2) = new{typeof(η)}(η)
+    t::Integer
+    StandardOptimizer(η = 1e-2) = new{typeof(η)}(η,0)
 end
 
-setup(::StandardOptimizer, x) = NamedTuple()
-
-function update_layer!(o::StandardOptimizer, state, layer::Lux.AbstractExplicitLayer,
-                       x::NamedTuple, dx::NamedTuple)
-    update_layer!(layer, x, dx, -o.η)
-end
-
-function update_layer!(o::StandardOptimizer, state, layer::ManifoldLayer, x::NamedTuple,
-                       dx::NamedTuple)
-    update_layer!(layer, x, riemannian_gradient(x.weight, dx.weight, layer.sympl_out), -o.η)
+#update for single layer
+function update!(o::StandardOptimizer, ::StandardLayerCache, B::NamedTuple)
+    #o.t += 1
+    for key in keys(B)
+        B[key] = -η*B[key]
+    end
+    B
 end

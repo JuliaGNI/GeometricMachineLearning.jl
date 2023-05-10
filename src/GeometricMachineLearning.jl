@@ -8,24 +8,29 @@ module GeometricMachineLearning
     using Random
     using Zygote
 
-
+    #are these needed?
     include("gradient.jl")
     include("training.jl")
 
     include("activations/abstract_activation_function.jl")
     include("activations/identity_activation.jl")
 
-    export SymmetricMatrix, SymplecticMatrix
 
     include("arrays/add.jl")
     include("arrays/zero_vector.jl")
     
-    include("arrays/block_identity_lower.jl")
-    include("arrays/block_identity_upper.jl")
-    include("arrays/symmetric2.jl")
+    #include("arrays/block_identity_lower.jl")
+    #include("arrays/block_identity_upper.jl")
+    include("arrays/symmetric.jl")
     include("arrays/symplectic.jl")
-    include("arrays/symplectic_lie_alg2.jl")
+    include("arrays/symplectic_lie_alg.jl")
     include("arrays/sympl_lie_alg_hor.jl")
+    include("arrays/skew_sym.jl")
+    include("arrays/stiefel_lie_alg_hor.jl")
+
+    export SymmetricMatrix, SymplecticMatrix, SkewSymMatrix
+    export StiefelLieAlgHorMatrix
+    export SymplecticLieAlgMatrix, SymplecticLieAlgHorMatrix
 
     export AbstractLayer
     export FeedForwardLayer, LinearFeedForwardLayer
@@ -67,27 +72,23 @@ module GeometricMachineLearning
 
     export train!, apply!, jacobian!
 
-    include("optimizers/abstract_optimizer_cache.jl")
     include("optimizers/abstract_optimizer.jl")
-    include("optimizers/momentum_optimizer_cache.jl")
+    include("optimizers/optimizer_layer_caches.jl")
+    include("optimizers/optimizer_cache.jl")
     include("optimizers/standard_optimizer.jl")
-    include("optimizers/adam_optimizer.jl")
     include("optimizers/momentum_optimizer.jl")
 
-    export StandardOptimizer
-    #export AdamOptimizer
-    export MomentumOptimizer
-    
-    #export AbstractOptimizerCache
-    export MomentumOptimizerLayerCache
-    export MomentumOptimizerCache
+    include("optimizers/adam_optimizer.jl")
 
-    export apply!
-    export check_symplecticity
-    export riemannian_gradient
-    export horizontal_lift
-    #export init
-    #export init_adam
-    #export init_momentum
+    export TrivialInitRNG
+
+    export StandardOptimizer, StandardLayerCache
+    export MomentumOptimizer, MomentumLayerCache
+    export AdamOptimizer, AdamLayerCache
+
+    export update!
+    export check
+    export init_optimizer_cache
+    export optimization_step!
 
 end

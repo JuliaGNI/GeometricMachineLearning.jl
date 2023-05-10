@@ -2,7 +2,6 @@
 This implements exponential and inverse mappings.
 """
 
-
 #computes A^-1(exp(A) - I)
 function 𝔄(A::AbstractMatrix{T}) where T
     n = size(A, 1)

@@ -1,19 +1,20 @@
 
 abstract type AbstractOptimizer end
 
-
-function apply!(o::AbstractOptimizer, cache::Nothing, model::Lux.Chain, x::NamedTuple,
-                dx::NamedTuple)
-    for i in 1:length(model)
-        #for i in eachindex(model, x, dx)
-        update_layer!(o, cache, model[i], x[i], dx[i])
-    end
+function optimization_step!(o::AbstractOptimizer, d::Lux.AbstractExplicitLayer, ps::NamedTuple, dx::NamedTuple)
+    gx = rgrad(d, ps, dx)
+    λY = GlobalSection(d, ps)
+    B = globalrep(d, λY, gx)
+    update!(o, C, B)
+    ps = retraction(d, B)
+    apply(λY, ps)
 end
 
-function apply!(o::AbstractOptimizer, cache::AbstractOptimizerCache, model::Lux.Chain,
-                x::NamedTuple, dx::NamedTuple)
-    for i in 1:length(model)
-        #layer_name = Symbol("layer_$i")
-        update_layer!(o, cache.state[i], model[i], x[i], dx[i])
+function optimization_step!(o::AbstractOptimizer, model::Lux.Chain, ps::NamedTuple, dx::NamedTuple)
+    o.t += 1
+    i = 0
+    for key in keys(model)
+        i += 1
+        optimization_step(o, model[i], ps[key], dx[key])
     end
 end
