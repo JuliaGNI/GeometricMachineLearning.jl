@@ -7,7 +7,7 @@ using Lux
 #Lux is needed for this flatten operation -> should be removed!
 import Flux, Zygote
 
-train_x, train_y = MNIST.traindata()
+train_x, train_y = MNIST(split=:train)[:]
 #for visualization
 #using ImageInTerminal, ImageShow
 #convert2image(MNIST, train_x[:,:,1])
@@ -31,12 +31,6 @@ end
 function loss_sing(ps, train_x, train_y, index)
     loss_sing(ps, train_x[:, index], train_y[:, index])    
 end
-function loss(ps, train_x, train_y, batch_size=10)
-    num = size(train_x,2)
-    indices = Int.(ceil.(rand(batch_size)*num))
-    mapreduce(index -> loss_sing(ps, train_x, train_y, index), +, indices)
-end
-
 function full_loss(ps, train_x, train_y)
     num = size(train_x, 2)
     mapreduce(index -> loss_sing(ps, train_x, train_y, index), +, 1:num)
@@ -46,7 +40,7 @@ o = AdamOptimizer()
 cache = init_optimizer_cache(Ψᵉ, o)
 println("initial loss: ", full_loss(ps, train_x, train_y))
 
-training_steps = 1000000
+training_steps = 100000
 
 loss_closure(ps) = loss(ps, train_x, train_y)
 num = size(train_x,2)
