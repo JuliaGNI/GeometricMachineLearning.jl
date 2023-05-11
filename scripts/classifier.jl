@@ -25,8 +25,11 @@ train_y = Flux.onehotbatch(train_y, 0:9)
 ps, st = Lux.setup(Random.default_rng(), Ψᵉ) # .|> gpu
 
 #loss_sing
+function loss_sing(ps, x, y)
+    norm(Lux.apply(Ψᵉ, x, ps, st)[1] - y)
+end
 function loss_sing(ps, train_x, train_y, index)
-    norm(Lux.apply(Ψᵉ, train_x[:, index], ps, st)[1] - train_y[:, index])
+    loss_sing(ps, train_x[:, index], train_y[:, index])    
 end
 function loss(ps, train_x, train_y, batch_size=10)
     num = size(train_x,2)
@@ -43,12 +46,38 @@ o = AdamOptimizer()
 cache = init_optimizer_cache(Ψᵉ, o)
 println("initial loss: ", full_loss(ps, train_x, train_y))
 
-training_steps = 3
+training_steps = 100
+
 loss_closure(ps) = loss(ps, train_x, train_y)
+num = size(train_x,2)
+batch_size = 10
+
+function Base.:+(dx₁::NamedTuple, dx₂::NamedTuple)
+    keys₁ = keys(dx₁)
+    @assert keys₁ == keys(dx₂)
+    dx_sum = NamedTuple()
+    for key in keys₁
+        dx_sum = merge(dx_sum, NamedTuple{(key,)}((dx₁[key] + dx₂[key],)))
+    end
+    dx_sum
+end
+
 for i in 1:training_steps
     #@time dp = Zygote.gradient(loss_closure, ps)[1]
-    @time l, pb = Zygote.pullback(loss_closure, ps)
-    @time dp = pb(one(l))[1]
+
+    index₁ = Int(ceil(rand()*num))
+    x = train_x[:, index₁]
+    y = train_y[:, index₁]
+    l, pb = Zygote.pullback(ps -> loss_sing(ps, x, y), ps)
+    dp = pb(one(l))[1]
+
+    indices = Int.(ceil.(rand(batch_size -1)*num))
+    @time for index in indices
+        x = train_x[:, index]
+        y = train_y[:, index]
+        l, pb = Zygote.pullback(ps -> loss_sing(ps, x, y), ps)
+        dp += pb(one(l))[1]
+    end
     optimization_step!(o, Ψᵉ, ps, cache, dp)
 end
 println("final loss: ", full_loss(ps, train_x, train_y))
