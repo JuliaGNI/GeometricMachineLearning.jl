@@ -33,10 +33,12 @@ module GeometricMachineLearning
     include("arrays/sympl_lie_alg_hor.jl")
     include("arrays/skew_sym.jl")
     include("arrays/stiefel_lie_alg_hor.jl")
+    include("arrays/auxiliary.jl")
 
     export SymmetricMatrix, SymplecticMatrix, SkewSymMatrix
     export StiefelLieAlgHorMatrix
     export SymplecticLieAlgMatrix, SymplecticLieAlgHorMatrix
+    export StiefelProjection, SymplecticProjection
 
     export AbstractLayer
     export FeedForwardLayer, LinearFeedForwardLayer

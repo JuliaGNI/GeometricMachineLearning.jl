@@ -20,9 +20,4 @@ mutable struct MomentumLayerCache{T, AT <: NamedTuple} <:AbstractLayerCache
     end
 end
 
-struct StandardLayerCache <: AbstractLayerCache
-    B::Nothing
-    function StandardLayerCache(d::Lux.AbstractExplicitLayer)
-        new(nothing)
-    end
-end
+struct StandardLayerCache <: AbstractLayerCache end

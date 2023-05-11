@@ -40,7 +40,7 @@ end
 
 function apply(λY::GlobalSection, ps₂::NamedTuple)
     for key in keys(λY.Y)
-        λY.Y[key] += ps₂[key]
+        λY.Y[key] .+= ps₂[key]
     end
 end
 
