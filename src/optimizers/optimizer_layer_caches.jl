@@ -5,8 +5,8 @@ mutable struct AdamLayerCache{T, AT <: NamedTuple} <:AbstractLayerCache
     B₂::AT
 
     function AdamLayerCache(d::Lux.AbstractExplicitLayer)
-        B₁ = Lux.setup(TrivialInitRNG(), d)[1]
-        B₂ = Lux.setup(TrivialInitRNG(), d)[1]
+        B₁, _ = Lux.setup(TrivialInitRNG(), d) .|> Lux.gpu
+        B₂, _ = Lux.setup(TrivialInitRNG(), d) .|> Lux.gpu
         new{eltype(B₁), typeof(B₁)}(B₁, B₂)
     end
 end
@@ -21,3 +21,4 @@ mutable struct MomentumLayerCache{T, AT <: NamedTuple} <:AbstractLayerCache
 end
 
 struct StandardLayerCache <: AbstractLayerCache end
+StandardLayerCache(::Lux.AbstractExplicitLayer) = StandardLayerCache()

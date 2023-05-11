@@ -6,7 +6,7 @@ TODO: adapt AT <: StiefelLieAlgHorMatrix for the general case!
 """
 
 #fallback function -> maybe put into another file!
-function retraction(d::Lux.AbstractExplicitLayer, gx::NamedTuple)
+function retraction(::Lux.AbstractExplicitLayer, gx::NamedTuple)
     gx
 end
 

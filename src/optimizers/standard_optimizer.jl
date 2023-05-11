@@ -12,7 +12,7 @@ end
 function update!(o::StandardOptimizer, ::StandardLayerCache, B::NamedTuple)
     #o.t += 1
     for key in keys(B)
-        B[key] = -η*B[key]
+        B[key] .= -o.η*B[key]
     end
     B
 end

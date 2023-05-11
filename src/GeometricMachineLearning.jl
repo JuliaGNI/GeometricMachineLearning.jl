@@ -17,6 +17,10 @@ module GeometricMachineLearning
     #are these needed?
     include("gradient.jl")
     include("training.jl")
+    include("utils.jl")
+
+    #+ operation has been overloaded to work with NamedTuples!
+    export + 
 
     include("activations/abstract_activation_function.jl")
     include("activations/identity_activation.jl")
