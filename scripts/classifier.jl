@@ -22,20 +22,11 @@ train_y = Flux.onehotbatch(train_y, 0:9)
     Dense(16,10, Lux.σ)
     )
 
-#decoder layer
-Ψᵈ = Chain(
-    Dense(10, 16, tanh),
-    Dense(16, 16, tanh),
-    Dense(16, 28*28, Lux.σ)
-)
-
-const model = Chain(Ψᵉ, Ψᵈ)
-
-ps, st = Lux.setup(Random.default_rng(), model) # .|> gpu
+ps, st = Lux.setup(Random.default_rng(), Ψᵉ) # .|> gpu
 
 #loss_sing
 function loss_sing(ps, train_x, train_y, index)
-    norm(Lux.apply(model, train_x[:, index], ps, st)[1] - train_x[:, index])
+    norm(Lux.apply(Ψᵉ, train_x[:, index], ps, st)[1] - train_y[:, index])
 end
 function loss(ps, train_x, train_y, batch_size=10)
     num = size(train_x,2)
@@ -44,17 +35,12 @@ function loss(ps, train_x, train_y, batch_size=10)
 end
 
 function full_loss(ps, train_x, train_y)
-    loss = 0 
-    num = size(train_x,2)
-    for i in 1:num
-        pic_new = Lux.apply(model, train_x[:, i], ps, st)[1]
-        loss += norm(pic_new - train_x[:, i])
-    end
-    loss 
+    num = size(train_x, 2)
+    mapreduce(index -> loss_sing(ps, train_x, train_y, index), +, 1:num)
 end
 
 o = AdamOptimizer()
-cache = init_optimizer_cache(model, o)
+cache = init_optimizer_cache(Ψᵉ, o)
 println("initial loss: ", full_loss(ps, train_x, train_y))
 
 training_steps = 3
@@ -63,6 +49,6 @@ for i in 1:training_steps
     #@time dp = Zygote.gradient(loss_closure, ps)[1]
     @time l, pb = Zygote.pullback(loss_closure, ps)
     @time dp = pb(one(l))[1]
-    optimization_step!(o, model, ps, cache, dp)
+    optimization_step!(o, Ψᵉ, ps, cache, dp)
 end
 println("final loss: ", full_loss(ps, train_x, train_y))
