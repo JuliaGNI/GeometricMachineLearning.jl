@@ -27,7 +27,10 @@ print("\n Optimization steps in Lux: \n")
     dp = Zygote.gradient(ps -> LinearAlgebra.norm(Lux.apply(model, dat[1], ps, st)[1] .- dat[2])^2, ps)[1]
     data_red = data[2:end]
     for dat in data_red
-        dp = GeometricMachineLearning._add(dp, Zygote.gradient(ps -> LinearAlgebra.norm(Lux.apply(model, dat[1], ps, st)[1] .- dat[2])^2, ps)[1])
+        dp = GeometricMachineLearning._add(
+            dp, 
+            Zygote.gradient(ps -> LinearAlgebra.norm(Lux.apply(model, dat[1], ps, st)[1] .- dat[2])^2, ps)[1]
+            )
     end
     GeometricMachineLearning.optimization_step!(optim, model, ps, cache, dp)
 end

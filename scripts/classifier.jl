@@ -9,18 +9,22 @@ using Lux
 import Flux, Zygote
 
 train_x, train_y = MNIST(split=:train)[:]
+test_x, test_y = MNIST(split=:test)[:]
+
 #for visualization
 #using ImageInTerminal, ImageShow
 #convert2image(MNIST, train_x[:,:,1])
 
 train_x = Flux.flatten(train_x) #|> gpu
 train_y = Flux.onehotbatch(train_y, 0:9) #|> gpu
+test_x = Flux.flatten(test_x) #|> gpu
+test_y = Flux.onehotbatch(test_y, 0:9) #|> gpu
 
 #encoder layer
 Ψᵉ = Chain(
-    Dense(28*28, 10, tanh),
-    Dense(10, 64, tanh),
-    Dense(64,10, Lux.σ)
+    Dense(28*28, 64, tanh),
+    Dense(64, 64, tanh),
+    Dense(64, 10, Lux.σ)
     )
 
 ps, st = Lux.setup(Random.default_rng(), Ψᵉ)  .|> gpu
@@ -48,13 +52,12 @@ cache = init_optimizer_cache(Ψᵉ, o)
 println("initial loss: ", full_loss(ps, train_x, train_y)/num)
 
 @showprogress "Training network ..." for i in 1:training_steps
-    #@time dp = Zygote.gradient(loss_closure, ps)[1]
-
     index₁ = Int(ceil(rand()*num))
     x = train_x[:, index₁] |> gpu
     y = train_y[:, index₁] |> gpu
     l, pb = Zygote.pullback(ps -> loss_sing(ps, x, y), ps)
     dp = pb(one(l))[1]
+    #dp = Zyogte.gradient(ps -> loss_sing(ps, x, y), ps)[1]
 
     indices = Int.(ceil.(rand(batch_size -1)*num))
     for index in indices
@@ -66,3 +69,5 @@ println("initial loss: ", full_loss(ps, train_x, train_y)/num)
     optimization_step!(o, Ψᵉ, ps, cache, dp)
 end
 println("final loss: ", full_loss(ps, train_x, train_y)/num)
+
+println("\nfinal test loss: ", full_loss(ps, test_x, test_y)/size(test_x, 2))

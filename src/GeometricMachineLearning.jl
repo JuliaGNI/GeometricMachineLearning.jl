@@ -52,9 +52,9 @@ module GeometricMachineLearning
     export LinearSymplecticLayerP, LinearSymplecticLayerQ
     export SymplecticStiefelLayer
 
+    include("manifolds/abstract_manifold.jl")
     include("manifolds/stiefel_manifold.jl")
     include("manifolds/symplectic_manifold.jl")
-    include("manifolds/abstract_manifold.jl")
 
     export StiefelManifold, SymplecticStiefelManifold, Manifold
 
@@ -68,10 +68,11 @@ module GeometricMachineLearning
     include("optimizers/retraction_types.jl")
     include("layers/stiefel_layer.jl")
     include("optimizers/retractions.jl")
+    include("layers/multi_head_attention.jl")
 
     #include("layers/symplectic_stiefel_layer.jl")
-
     export StiefelLayer, ManifoldLayer
+    export MultiHeadAttention
     export AbstractNeuralNetwork
     export retraction
 
@@ -119,5 +120,7 @@ module GeometricMachineLearning
     export check
     export init_optimizer_cache
     export optimization_step!
+
+    include("rng/random_funcs.jl")
 
 end

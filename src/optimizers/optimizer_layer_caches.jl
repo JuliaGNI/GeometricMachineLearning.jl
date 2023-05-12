@@ -15,7 +15,7 @@ mutable struct MomentumLayerCache{T, AT <: NamedTuple} <:AbstractLayerCache
     B::AT
 
     function MomentumLayerCache(d::Lux.AbstractExplicitLayer)
-        B = Lux.setup(TrivialInitRNG(), d)[1]
+        B, _ = Lux.setup(TrivialInitRNG(), d) .|> Lux.gpu
         new{eltype(B), typeof(B)}(B)
     end
 end

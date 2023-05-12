@@ -19,6 +19,10 @@ function optimization_step!(o::AbstractOptimizer, model::Lux.Chain, ps::NamedTup
     end
 end
 
+#add a routine that can deal with a single layer (no Lux.Chain)
+#function optimization_step!(o::AbstractOptimizer, model::Lux.AbstractExplicitLayer, ps::NamedTuple, cache::NamedTuple, dx::NamedTuple)
+#end
+
 function optimization_step!(o::AbstractOptimizer, model::Lux.Chain, ps::NamedTuple, loss)
     dx = Zygote.gradient(ps -> loss(ps), ps)[1]
     optimization_step!(o, model, ps, dx)

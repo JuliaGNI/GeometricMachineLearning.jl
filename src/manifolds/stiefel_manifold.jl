@@ -2,7 +2,7 @@
 maybe consider dividing the output in the check functions by n!
 TODO: Implement sampling procedures!!
 """
-mutable struct StiefelManifold{T, AT <: AbstractMatrix{T}} <: AbstractMatrix{T}
+mutable struct StiefelManifold{T, AT <: AbstractMatrix{T}} <: Manifold{T}
     A::AT
     function StiefelManifold(A::AbstractMatrix)
         @assert size(A)[1] ≥ size(A)[2]
@@ -36,7 +36,7 @@ function Base.rand(::Type{StiefelManifold}, N::Integer, n::Integer)
 end
 
 #probably don't need this! 
-function Base.rand(rng::TrivialInitRNG, ::Type{StiefelManifold{T}}, N::Int, n::Int) where T
+function Base.rand(::TrivialInitRNG, ::Type{StiefelManifold{T}}, N::Int, n::Int) where T
     @assert N ≥ n 
     zeros(StiefelLieAlgHorMatrix{T}, N, n)
 end

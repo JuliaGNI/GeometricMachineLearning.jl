@@ -1,14 +1,14 @@
 #retraction is more general! function on layer!
 
 struct StiefelLayer{F1, F2} <: ManifoldLayer
-    N::Int
-    n::Int
+    N::Integer
+    n::Integer
     retraction::F1
     init_weight::F2
 end
 
-function StiefelLayer(N::Int, n::Int; init_weight=Lux.glorot_uniform, retraction=Geodesic)
-    return StiefelLayer{typeof(retraction), typeof(init_weight)}(N, n, retraction, init_weight)
+function StiefelLayer(N::Integer, n::Integer; init_weight=Lux.glorot_uniform, retraction=Geodesic)
+    StiefelLayer{typeof(retraction), typeof(init_weight)}(N, n, retraction, init_weight)
 end
 
 function Lux.initialparameters(rng::AbstractRNG, d::StiefelLayer)
@@ -16,13 +16,13 @@ function Lux.initialparameters(rng::AbstractRNG, d::StiefelLayer)
     (weight = StiefelManifold(LinearAlgebra.qr(A).Q[1:d.N, 1:d.n]), )
 end
 
-function Lux.initialparameters(rng::TrivialInitRNG, d::StiefelLayer)
+function Lux.initialparameters(::TrivialInitRNG, d::StiefelLayer)
     (weight = zeros(StiefelLieAlgHorMatrix{Float32}, d.N, d.n), )
 end
 
-Lux.initialstates(rng::AbstractRNG, d::StiefelLayer) = NamedTuple()
+#Lux.initialstates(::AbstractRNG, ::StiefelLayer) = NamedTuple()
 
-Lux.parameterlength(d::StiefelLayer) = d.n*(d.n-1)÷2 + d.N*d.n
+Lux.parameterlength(d::StiefelLayer) = d.n*(d.n-1)÷2 + (d.N-d.n)*d.n
 
 Lux.statelength(d::StiefelLayer) = 0
 

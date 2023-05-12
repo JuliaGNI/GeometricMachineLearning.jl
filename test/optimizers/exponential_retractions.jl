@@ -4,14 +4,7 @@ using Printf
 
 using Random
 
-include("../../src/arrays/skew_sym.jl")
-include("../../src/arrays/stiefel_lie_alg_hor.jl")
-include("../../src/optimizers/householder.jl")
-include("../../src/optimizers/manifold_types.jl")
-include("../../src/optimizers/lie_alg_lifts.jl")
-include("../../src/arrays/auxiliary.jl")
-include("../../src/optimizers/retractions.jl")
-include("../../src/optimizers/auxiliary.jl")
+using GeometricMachineLearning
 
 #NOTE: zeros have to be added because exp() is not defined for SkewSymMatrix or StiefelLieAlgHorMatrix!!!
 function exponential_retraction₁(Y::StiefelManifold, Δ::AbstractMatrix, η)

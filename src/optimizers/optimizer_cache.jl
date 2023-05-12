@@ -19,3 +19,5 @@ function init_optimizer_cache(model::Lux.Chain, o::AbstractOptimizer)
     end
     cache
 end
+
+#add a routine to make this work for single layers (not just Lux.Chains)
