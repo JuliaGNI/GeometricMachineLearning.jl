@@ -65,5 +65,3 @@ q_learned, p_learned = Iterate_Sympnet(nn, q0, p0; n_points = size(data_q,1))
 
 plot(plt, q_learned[:,1], p_learned[:,1], label="Learned trajectory.")
 savefig("sympnet_pendulum_Architecture_test.png")
-
-using LaTeXStrings

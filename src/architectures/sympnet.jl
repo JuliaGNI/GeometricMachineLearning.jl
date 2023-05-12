@@ -55,18 +55,7 @@ end
 
 # Evaluation of the neural network
 
-function sympnet_eval(model, q, p, params::Tuple, state)
-    y = Lux.apply(model, [q...,p...], params, state)
-    return y
-end
-
-function sympnet_eval(model, q, p, params::NamedTuple, state)
-    y, st = Lux.apply(model, [q...,p...], params, state)
-    return y
-end
-
-(nn::LuxNeuralNetwork{<:SympNet})(q, p, params = nn.params) = sympnet_eval(nn.model, q, p, params, nn.state)
-
+(nn::LuxNeuralNetwork{<:SympNet})(q, p, params = nn.params) = apply(nn, [q...,p...],params)
 
 # Loss function
 

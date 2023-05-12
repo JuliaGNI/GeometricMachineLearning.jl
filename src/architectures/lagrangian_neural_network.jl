@@ -43,17 +43,17 @@ end
 ∇q∇q̇L(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, q, q̇, params = nn.params) = ∇∇L(nn,q, q̇, params)[1:length(q),(1+length(q̇)):end] 
 
 # loss for a single datum
-loss_single(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, q, q̇, qdotdot, params = nn.params) = sqeuclidean(qdotdot, inv(∇q̇∇q̇L(nn, q, q̇, params))*(∇qL(nn, q, q̇, params) - ∇q∇qdotL(nn, q, q̇, params)))
+loss_single(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, q, q̇, qdotdot, params = nn.params) = sqeuclidean(qdotdot, inv(∇q̇∇q̇L(nn, q, q̇, params))*(∇qL(nn, q, q̇, params) - ∇q∇q̇L(nn, q, q̇, params))) #inv(∇q̇∇q̇L(nn, q, q̇, params))*(∇qL(nn, q, q̇, params) - ∇q∇q̇L(nn, q, q̇, params))
 
 # total loss
-loss(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, q, q̇, qdotdot, params = nn.params) = mapreduce(i -> loss_single(nn, q[i,:], q̇[i,:],qdotdot[i,:], params), +, eachindex(q[:,1],q̇[:,1],qdotdot[:,1]))
+loss(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, qq̇, qdotdot, params = nn.params) = mapreduce(i -> loss_single(nn, qq̇[i][1], qq̇[i][2],qdotdot[i], params), +, eachindex(qq̇))
 
 # loss gradient
-loss_gradient(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, q, q̇, qdotdot, params = nn.params) = Zygote.gradient(p -> loss(nn, q, q̇, qdotdot, p), params)[1]
+loss_gradient(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, qq̇, qdotdot, params = nn.params) = Zygote.gradient(p -> loss(nn, qq̇, qdotdot, p), params)[1]
 
 # training
 
-function train!(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, data_q, data_q̇, target_qdotdot; ntraining = DEFAULT_LNN_NRUNS, learning_rate = DEFAULT_LNN_LEARNING_RATE, batch_size = DEFAULT_BATCH_SIZE)
+function train!(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, data_qq̇, target_qdotdot; ntraining = DEFAULT_LNN_NRUNS, learning_rate = DEFAULT_LNN_LEARNING_RATE, batch_size = DEFAULT_BATCH_SIZE)
     # create array to store total loss
     total_loss = zeros(ntraining)
 
@@ -64,8 +64,8 @@ function train!(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, data_q, data_q�
     @showprogress 1 "Training..." for j in 1:ntraining
 
         # gradient step
-        index = rand(axes(data_q,1), batch_size)
-        params_grad = loss_gradient(nn, data_q[index], data_q̇[index], target_qdotdot[index], params_tuple)
+        index = rand(eachindex(data_qq̇), batch_size)
+        params_grad = loss_gradient(nn, data_qq̇[index], target_qdotdot[index], params_tuple)
 
         # make gradient steps for all the model parameters W & b
         for i in eachindex(params_tuple, params_grad)
@@ -75,7 +75,7 @@ function train!(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, data_q, data_q�
         end
 
         # total loss i.e. loss computed over all data
-        total_loss[j] = loss(nn, data_q, data_q̇, target_qdotdot)
+        total_loss[j] = loss(nn, data_qq̇, target_qdotdot)
     end
 
     return total_loss
