@@ -20,7 +20,7 @@ module GeometricMachineLearning
     include("utils.jl")
 
     #+ operation has been overloaded to work with NamedTuples!
-    export + 
+    export _add
 
     include("activations/abstract_activation_function.jl")
     include("activations/identity_activation.jl")

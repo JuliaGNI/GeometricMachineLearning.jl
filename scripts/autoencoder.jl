@@ -50,10 +50,10 @@ o = AdamOptimizer()
 cache = init_optimizer_cache(model, o)
 println("initial loss: ", full_loss(ps, train_x, train_y))
 
-training_steps = 3000
+training_steps = 100
 
 num = size(train_x, 2)
-batch_size = 5
+batch_size = 10
 
 for i in 1:training_steps
     #@time dp = Zygote.gradient(loss_closure, ps)[1]
@@ -69,7 +69,7 @@ for i in 1:training_steps
         x = train_x[:, index] 
         y = train_y[:, index] 
         l, pb = Zygote.pullback(ps -> loss_sing(ps, x, y), ps)
-        dp += pb(one(l))[1]
+        dp = _add(dp, pb(one(l))[1])
     end
     optimization_step!(o, Ψᵉ, ps, cache, dp)
 end
