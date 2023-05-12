@@ -60,6 +60,7 @@ module GeometricMachineLearning
 
     export NeuralNetwork
     export HamiltonianNeuralNetwork
+    export LagrangianNeuralNetwork
     export SympNet
     export LASympNet
     export GSympNet
@@ -67,6 +68,7 @@ module GeometricMachineLearning
     include("architectures/autoencoder.jl")
     include("architectures/fixed_width_network.jl")
     include("architectures/hamiltonian_neural_network.jl")
+    include("architectures/lagrangian_neural_network.jl")
     include("architectures/variable_width_network.jl")
     include("architectures/sympnet.jl")
 
