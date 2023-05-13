@@ -15,7 +15,7 @@ Maybe consider dividing the output in the check functions by n!
 Implement a general global section here!!!! Tₓ𝔐 → G×𝔤 !!!!!! (think about random initialization!)
 """
 #global section maps an element of the manifold to its associated Lie group!
-struct GlobalSection{T, AT} where {T<:AbstractVecOrMat}
+struct GlobalSection{T, AT} 
     Y::AT
     #for now the only lift that is implemented is the Stiefel one - these types will have to be expanded!
     λ::Union{LinearAlgebra.QRCompactWYQ, Nothing}
@@ -32,7 +32,7 @@ function GlobalSection(ps::NamedTuple)
 end
 
 #this is an application G×𝔐 → 𝔐
-function apply_section(λY::GlobalSection{T, AT}, Y₂::AT) where {AT<:StiefelManifold}
+function apply_section(λY::GlobalSection{T, AT}, Y₂::AT) where {T, AT<:StiefelManifold}
     N, n = size(λY.Y)
     @assert (N, n) == size(Y₂)
     StiefelManifold(
@@ -56,7 +56,7 @@ function global_rep(λY::GlobalSection, gx::AbstractVecOrMat)
     gx
 end
 
-function global_rep(λY::GlobalSection{T, AT}, Δ::AbstractMatrix) where {AT<:StiefelManifold}
+function global_rep(λY::GlobalSection{T, AT}, Δ::AbstractMatrix) where {T, AT<:StiefelManifold}
     N, n = size(λY.Y)
     B = StiefelLieAlgHorMatrix(
         SkewSymMatrix(λY.Y'*Δ),

@@ -10,16 +10,24 @@ function retraction(::Lux.AbstractExplicitLayer, gx::NamedTuple)
     gx
 end
 
-function retraction(d::StiefelLayer{Geodesic}, B::NamedTuple{(:weight, ), Tuple{AT}}) where AT <: StiefelLieAlgHorMatrix
-    (weight = Geodesic(B.weight),)
+function retraction(::StiefelLayer{Geodesic}, B::NamedTuple{(:weight, ), Tuple{AT}}) where AT <: StiefelLieAlgHorMatrix
+    (weight = geodesic(B.weight),)
 end
 
-function retraction(d::StiefelLayer{Cayley}, B::NamedTuple{(:weight, ), Tuple{AT}}) where AT <: StiefelLieAlgHorMatrix
-    (weight = Cayley(B.weight),)
+function retraction(::StiefelLayer{Cayley}, B::NamedTuple{(:weight, ), Tuple{AT}}) where AT <: StiefelLieAlgHorMatrix
+    (weight = cayley(B.weight),)
 end
 
+function retraction(::MultiHeadAttention{true, Geodesic}, B::NamedTuple)
+    geodesic(B)
+end
 
-function Geodesic(B::StiefelLieAlgHorMatrix)
+function retraction(::MultiHeadAttention{true, Cayley}, B::NamedTuple)
+    cayley(B)
+end
+
+geodesic(B::NamedTuple) = apply_toNT(B, geodesic)
+function geodesic(B::StiefelLieAlgHorMatrix)
     N, n = B.N, B.n
     E = StiefelProjection(N, n)
     #expression from which matrix exponential and inverse have to be computed
@@ -29,14 +37,8 @@ function Geodesic(B::StiefelLieAlgHorMatrix)
     )
 end
 
-#Exp(B::StiefelLieAlgHorMatrix, η::AbstractFloat) = Exp(η*B)
-
-#function Geodesic(Y::StiefelManifold, Δ::AbstractMatrix, η::AbstractFloat)
-#    HD, B = global_rep(Y, Δ)
-#    apply_λ(Y, HD,  Exp(B, η))
-#end
-
-function Cayley(B::StiefelLieAlgHorMatrix)
+cayley(B::NamedTuple) = apply_toNT(B, cayley)
+function cayley(B::StiefelLieAlgHorMatrix)
     N, n = B.N, B.n
     E = StiefelProjection(N, n)
     exponent = I - .5*hcat(vcat(.5*B.A, .25*B.A^2 - B.B'*B.B), vcat(I(n), .5*B.A))

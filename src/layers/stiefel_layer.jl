@@ -3,12 +3,12 @@
 struct StiefelLayer{F1, F2} <: ManifoldLayer
     N::Integer
     n::Integer
-    retraction::F1
+    Retraction::F1
     init_weight::F2
 end
 
-function StiefelLayer(N::Integer, n::Integer; init_weight=Lux.glorot_uniform, retraction=Geodesic)
-    StiefelLayer{typeof(retraction), typeof(init_weight)}(N, n, retraction, init_weight)
+function StiefelLayer(N::Integer, n::Integer; init_weight=Lux.glorot_uniform, Retraction::AbstractRetraction=Geodesic())
+    StiefelLayer{typeof(Retraction), typeof(init_weight)}(N, n, retraction, init_weight)
 end
 
 function Lux.initialparameters(rng::AbstractRNG, d::StiefelLayer)

@@ -38,7 +38,7 @@ end
 function apply_toNT(o::AbstractOptimizer, ps₁::NamedTuple, ps₂::NamedTuple, fun_name)    
     keys₁ = keys(ps₁)
     @assert keys₁ == keys(ps₂)
-    ps_applied = NamedTuple
+    ps_applied = NamedTuple()
     for key in keys(ps)
         ps_applied = merge(ps_applied, NamedTuple{(key, )}((fun_name(o, ps₁[key], ps₂[key]), )))
     end

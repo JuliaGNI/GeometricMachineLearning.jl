@@ -10,6 +10,10 @@ module GeometricMachineLearning
 
     import Lux
 
+    #this defines empty retraction type structs (doesn't rely on anything)
+    include("optimizers/retraction_types.jl")
+
+
     include("rng/trivial_rng.jl")
 
     export TrivialInitRNG
@@ -65,9 +69,7 @@ module GeometricMachineLearning
     include("layers/residual_layer.jl")
     include("layers/linear_symplectic_layer.jl")
     include("layers/manifold_layer.jl")
-    include("optimizers/retraction_types.jl")
     include("layers/stiefel_layer.jl")
-    include("optimizers/retractions.jl")
     include("layers/multi_head_attention.jl")
 
     #include("layers/symplectic_stiefel_layer.jl")
@@ -102,7 +104,7 @@ module GeometricMachineLearning
     include("optimizers/standard_optimizer.jl")
     include("optimizers/momentum_optimizer.jl")
     include("optimizers/adam_optimizer.jl")
-    #include("optimizers/optimizer_cache.jl")
+    include("optimizers/retractions.jl")
 
     export GlobalSection, apply_section
     export global_rep
@@ -113,6 +115,9 @@ module GeometricMachineLearning
     export StandardOptimizer, StandardCache
     export MomentumOptimizer, MomentumCache
     export AdamOptimizer, AdamCache
+
+    export Geodesic, Cayley
+    export retraction
 
     export ⊙², √ᵉˡᵉ, /ᵉˡᵉ, scalar_add
 

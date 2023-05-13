@@ -4,7 +4,7 @@ function Lux.glorot_uniform(rng::TrivialInitRNG, dims::Integer...; gain = 1)
 end
  
 function Lux.glorot_uniform(rng::TrivialInitRNG, ::Type{StiefelManifold}, N, n; gain = 1)
-    rand(rng, StiefelManifold, Float32, N, n)
+    rand(rng, StiefelManifold{Float32}, N, n)
 end
 
 function Lux.glorot_uniform(rng::AbstractRNG, ::Type{StiefelManifold}, N, n; gain = 1)

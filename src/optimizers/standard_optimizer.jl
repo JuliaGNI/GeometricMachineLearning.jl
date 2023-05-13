@@ -8,11 +8,16 @@ mutable struct StandardOptimizer{T} <: AbstractOptimizer
     StandardOptimizer(η = 1e-2) = new{typeof(η)}(η,0)
 end
 
-#update for single layer
-function update!(o::StandardOptimizer, ::StandardLayerCache, B::NamedTuple)
-    #o.t += 1
-    for key in keys(B)
-        B[key] .= -o.η*B[key]
-    end
-    B
+function update!(o::StandardOptimizer, ::StandardCache, B::AbstractMatrix)
+    B = -o.η*B
 end
+
+
+#update for single layer
+#function update!(o::StandardOptimizer, ::StandardLayerCache, B::NamedTuple)
+#    #o.t += 1
+#    for key in keys(B)
+#        B[key] .= -o.η*B[key]
+#    end
+#    B
+#end

@@ -41,6 +41,7 @@ function Base.rand(::TrivialInitRNG, ::Type{StiefelManifold{T}}, N::Int, n::Int)
     zeros(StiefelLieAlgHorMatrix{T}, N, n)
 end
 
+
 function rgrad(Y::StiefelManifold, e_grad::AbstractMatrix)
     e_grad - Y*(e_grad'*Y)
 end
