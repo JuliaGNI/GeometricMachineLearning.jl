@@ -1,108 +1,96 @@
 """
 This implements global sections for the Stiefel manifold and the Symplectic Stiefel manifold. 
 
-In practice this is implemented through the Gram Schmidt process, with the auxiliary column vectors given by: 
+In practice this is implemented using Householder reflections, with the auxiliary column vectors given by: 
 |0|
 |0|
 |.|
-|1| ith spot for i in (n+1) to N 
+|1| ith spot for i in (n+1) to N (or with random columns)
 |0|
 |.|
 |0|
 
 Maybe consider dividing the output in the check functions by n!
+
+Implement a general global section here!!!! Tₓ𝔐 → G×𝔤 !!!!!! (think about random initialization!)
 """
-include("orthogonalization_procedures.jl")
+#global section maps an element of the manifold to its associated Lie group!
+struct GlobalSection{AT<:Lux.AbstractExplicitLayer, BT<:NamedTuple, CT<:Union{NamedTuple,Nothing}}
+    Y::BT
+    λ::CT
 
-mutable struct StiefelManifold{T, AT <: AbstractMatrix{T}} <: AbstractMatrix{T}
-    A::AT
-    function StiefelManifold(A::AbstractMatrix)
-        @assert size(A)[1] ≥ size(A)[2]
-        new{eltype(A), typeof(A)}(A)
+    function GlobalSection(d::Lux.AbstractExplicitLayer, ps::NamedTuple)
+        new{typeof(d), typeof(ps), Nothing}(ps, nothing)
     end
-    #this draws a random element from U(StiefelManifold)
-    function StiefelManifold(N::Int,n::Int)
-        @assert N ≥ n
-        A = randn(N,n)
-        new{eltype(A), typeof(A)}(A*inv(sqrt(A'*A)))
-    end
-end
 
-Base.size(A::StiefelManifold) = size(A.A)
-Base.parent(A::StiefelManifold) = A.A 
-Base.getindex(A::StiefelManifold, i::Int, j::Int) = A.A[i,j]
-
-
-function check(A::StiefelManifold, tol=1e-10)
-    @test norm(A'*A - I) < tol
-    #print("Test passed.\n") 
-end
-
-mutable struct SymplecticStiefelManifold{T, AT <: AbstractMatrix{T}} <: AbstractMatrix{T}
-    A::AT
-    function SymplecticStiefelManifold(A::AbstractMatrix)
-        @assert iseven(size(A)[1])
-        @assert iseven(size(A)[2])
-        @assert size(A)[1] ≥ size(A)[2]
-        new{eltype(A), typeof(A)}(A)
-    end
-    #this should draw a random element from U(SymplecticStiefelManifold) -> doesn't work rn; implement using retractions!
-    function SymplecticStiefelManifold(N::Int,n::Int)
-        @assert N ≥ n
-        A = randn(2*N,2*n)
-        JN = SymplecticMatrix(N)
-        Jn = SymplecticMatrix(n)
-        new{eltype(A), typeof(A)}(A*inv(sqrt(Jn*A'*JN'*A)))
+    function GlobalSection(d::ManifoldLayer, ps::NamedTuple{(:weight,), Tuple{BT}}) where BT <: Manifold
+        B = global_section(ps)
+       new{typeof(d), typeof(ps), typeof(B)}(ps, B) 
     end
 end
 
-Base.size(A::SymplecticStiefelManifold) = size(A.A)
-Base.parent(A::SymplecticStiefelManifold) = A.A 
-Base.getindex(A::SymplecticStiefelManifold, i::Int, j::Int) = A.A[i,j]
-
-
-function check(A::SymplecticStiefelManifold, tol=1e-10)
-    N = size(A)[1]÷2
-    n = size(A)[2]÷2
-    @test norm(A'*SymplecticMatrix(N)*A - SymplecticMatrix(n)) < tol
-    #print("Test passed.\n") 
+function global_section(d::ManifoldLayer, ps::NamedTuple{(:weight,), Tuple{BT}}) where BT <: Manifold
+    (weight = global_section(d, ps.weight), )
 end
 
-#orthonormal complection -> the complementing vectors could also be sampled!!
-function global_section(A::StiefelManifold)
-    N = size(A)[1]
-    n = size(A)[2]
-
-    completed_A = zeros(N,N)
-    
-    for i in 1:n 
-        completed_A[1:N, i] = A[1:N, i]
-    end
-
-    for i in (n+1):N 
-        completed_A[i,i] = 1.
-    end
-    
-    gram_schmidt!(completed_A, n+1)
-    StiefelManifold(completed_A)
+#maybe define a mapping StiefelManifold ↦ StiefelLayer to make this safe!
+function apply(λY::GlobalSection{AT}, Y₂::NamedTuple{(:weight,), Tuple{BT}}) where {AT <: ManifoldLayer, BT <: Manifold}
+    (weight = apply(λY, Y₂.weight), )
 end
 
-function global_section(A::SymplecticStiefelManifold, J::AbstractMatrix)
-    N = size(A)[1]÷2
-    n = size(A)[2]÷2
-
-    completed_A = zeros(N,N)
-
-    for i in 1:n
-        completed_A[1:(2*N), i] = A[1:(2*N), i]
-        completed_A[1:(2*N), N+i] = A[1:(2*N), n+i]
+function apply(λY::GlobalSection, ps₂::NamedTuple)
+    for key in keys(λY.Y)
+        λY.Y[key] .+= ps₂[key]
     end
+end
 
-    for i in (n+1):N 
-        completed_A[i, i] = 1.
-        completed_A[N+i,N+i] = 1.
-    end
+function global_rep(::AT, λY::GlobalSection{AT}, gx::NamedTuple) where AT<:ManifoldLayer
+    (weight = global_rep(λY, gx.weight), )
+end
 
-    sympl_gram_schmidt!(completed_A, J, n+1)
-    SymplecticStiefelManifold(completed_A)
+
+##auxiliary function 
+function global_rep(::Lux.AbstractExplicitLayer, λY::GlobalSection, gx::NamedTuple)
+    gx
+end
+
+###### the following are particular to the Stifel manifold, may be further generalized!!
+#function to improve readability when dealing with NamedTuple:
+function Base.:*(λ::NamedTuple{(:weight,), Tuple{AT}}, x::AbstractVecOrMat) where AT <: LinearAlgebra.QRCompactWYQ
+    λ.weight*x
+end
+
+#this is an application G×𝔐 → 𝔐
+function apply(λY::GlobalSection{StiefelLayer}, Y₂::StiefelManifold)
+    N, n = size(λY.Y.weight)
+    StiefelManifold(
+        λY.Y*Y₂[1:n,1:n] + λY.λ*vcat(Y₂[n+1:N,1:n], zeros(n, n))
+    )
+end
+
+function global_rep(λY::GlobalSection{StiefelLayer}, Δ::AbstractMatrix)
+    N, n = size(λY.Y.weight)
+    B = StiefelLieAlgHorMatrix(
+        SkewSymMatrix(Y'*Δ),
+        (λY.λ'*Δ)[1:N-n,1:n], 
+        N, 
+        n
+    )
+    B
+end
+
+#I might actually not need this!
+Ω₁(Y::StiefelManifold, Δ::AbstractMatrix) = SkewSymMatrix(2*(I - .5*Y*Y')*Δ*Y') 
+#TODO: perform calculations in-place, don't allocate so much!
+function Ω(Y::StiefelManifold, Δ::AbstractMatrix)
+    N = size(Y,1)
+    B̃ = zeros(N, N)
+    mul!(B̃, Δ, Y')
+    B̂ = zero(B̃)
+    mul!(B̂, Y, Y')
+    rmul!(B̂, -.5)
+    @views B̂ .+= one(B̂)
+    B = zero(B̂)
+    mul!(B, B̂, B̃)
+    SkewSymMatrix(B)
 end

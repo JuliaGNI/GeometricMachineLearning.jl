@@ -52,7 +52,3 @@ function sympl_gram_schmidt(A::AbstractMatrix, J::AbstractMatrix, start=1)
     sympl_gram_schmidt!(B, J, start)
     B
 end
-
-function householder!(A::AbstractMatrix, start = 1)
-    
-end

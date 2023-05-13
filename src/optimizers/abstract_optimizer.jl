@@ -1,22 +1,27 @@
+
 abstract type AbstractOptimizer end
 
-abstract type AbstractOptimizer_w_Cache <: AbstractOptimizer end
-
-function setup_Optimiser!(o::AbstractOptimizer, model::Lux.Chain, x::NamedTuple, ∇Loss::Function)
-    error("setup_Optimiser not implemented for layer type ", typeof(o))
+function optimization_step!(o::AbstractOptimizer, d::Lux.AbstractExplicitLayer, ps::NamedTuple, C::AbstractLayerCache, dx::NamedTuple)
+    gx = rgrad(d, ps, dx)
+    λY = GlobalSection(d, ps)
+    B = global_rep(d, λY, gx)
+    update!(o, C, B)
+    ps = retraction(d, B)
+    apply(λY, ps)
 end
 
-function apply!(o::AbstractOptimizer, model::Lux.Chain, x::NamedTuple, dx::NamedTuple)
-    for i in 1:length(model)
-        #for i in eachindex(model, x, dx)
-        update_layer!(o, Nothing, model[i], x[i], dx[i])
+function optimization_step!(o::AbstractOptimizer, model::Lux.Chain, ps::NamedTuple, cache::NamedTuple, dx::NamedTuple)
+    o.t += 1
+    i = 0
+    for key in keys(model)
+        i += 1
+        optimization_step!(o, model[i], ps[key], cache[key], dx[key])
     end
 end
 
-function apply!(o::AbstractOptimizer_w_Cache, model::Lux.Chain, x::NamedTuple, dx::NamedTuple)
-    for i in 1:length(model)
-        #layer_name = Symbol("layer_$i")
-        update_layer!(o, o.cache.state[i], model[i], x[i], dx[i])
-    end
-end
+function optimization_step!(o::AbstractOptimizer, model::Lux.Chain, ps::NamedTuple, loss)
+    dx = Zygote.gradient(ps -> loss(ps), ps)[1]
+    optimization_step!(o, model, ps, dx)
+end 
 
+rgrad(d::Lux.AbstractExplicitLayer, ps::NamedTuple, dx::NamedTuple) = dx
