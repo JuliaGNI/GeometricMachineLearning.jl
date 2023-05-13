@@ -10,19 +10,19 @@ function retraction(::Lux.AbstractExplicitLayer, gx::NamedTuple)
     gx
 end
 
-function retraction(::StiefelLayer{Geodesic}, B::NamedTuple{(:weight, ), Tuple{AT}}) where AT <: StiefelLieAlgHorMatrix
+function retraction(::StiefelLayer{Geodesic()}, B::NamedTuple{(:weight, ), Tuple{AT}}) where AT <: StiefelLieAlgHorMatrix
     (weight = geodesic(B.weight),)
 end
 
-function retraction(::StiefelLayer{Cayley}, B::NamedTuple{(:weight, ), Tuple{AT}}) where AT <: StiefelLieAlgHorMatrix
+function retraction(::StiefelLayer{Cayley()}, B::NamedTuple{(:weight, ), Tuple{AT}}) where AT <: StiefelLieAlgHorMatrix
     (weight = cayley(B.weight),)
 end
 
-function retraction(::MultiHeadAttention{true, Geodesic}, B::NamedTuple)
+function retraction(::MultiHeadAttention{true, Geodesic()}, B::NamedTuple)
     geodesic(B)
 end
 
-function retraction(::MultiHeadAttention{true, Cayley}, B::NamedTuple)
+function retraction(::MultiHeadAttention{true, Cayley()}, B::NamedTuple)
     cayley(B)
 end
 

@@ -6,7 +6,7 @@ end
 
 function MultiHeadAttention(dim::Integer, n_heads::Integer; Stiefel::Bool=false, Retraction::AbstractRetraction=Geodesic(), init_weight=Lux.glorot_uniform)
     @assert dim % n_heads == 0
-    MultiHeadAttention{Stiefel, typeof{Retraction}, typeof(init_weight)}(dim, n_heads, init_weight)
+    MultiHeadAttention{Stiefel, Retraction, typeof(init_weight)}(dim, n_heads, init_weight)
 end
 
 Lux.parameterlength(d::StiefelLayer{false}) = 3*d.dim^2

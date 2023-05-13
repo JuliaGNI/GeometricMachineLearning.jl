@@ -104,6 +104,7 @@ module GeometricMachineLearning
     include("optimizers/standard_optimizer.jl")
     include("optimizers/momentum_optimizer.jl")
     include("optimizers/adam_optimizer.jl")
+    include("optimizers/auxiliary.jl")
     include("optimizers/retractions.jl")
 
     export GlobalSection, apply_section
