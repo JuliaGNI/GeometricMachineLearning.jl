@@ -7,26 +7,43 @@ module GeometricMachineLearning
     using ProgressMeter
     using Random
     using Zygote
-    using StatsBase
+
+    import Lux
+
+    export TrivialInitRNG
+
+
+    include("rng/trivial_rng.jl")
 
 
     include("gradient.jl")
     include("training.jl")
 
+    #+ operation has been overloaded to work with NamedTuples!
+    export _add
+
+    include("utils.jl")
+
     include("activations/abstract_activation_function.jl")
     include("activations/identity_activation.jl")
 
-    export SymmetricMatrix, SymplecticMatrix
+    export SymmetricMatrix, SymplecticMatrix, SkewSymMatrix
+    export StiefelLieAlgHorMatrix
+    export SymplecticLieAlgMatrix, SymplecticLieAlgHorMatrix
+    export StiefelProjection, SymplecticProjection
 
     include("arrays/add.jl")
     include("arrays/zero_vector.jl")
     
     include("arrays/block_identity_lower.jl")
     include("arrays/block_identity_upper.jl")
-    include("arrays/symmetric2.jl")
+    include("arrays/symmetric.jl")
     include("arrays/symplectic.jl")
-    include("arrays/symplectic_lie_alg2.jl")
+    include("arrays/symplectic_lie_alg.jl")
     include("arrays/sympl_lie_alg_hor.jl")
+    include("arrays/skew_sym.jl")
+    include("arrays/stiefel_lie_alg_hor.jl")
+    include("arrays/auxiliary.jl")
 
     export AbstractLayer
     export FeedForwardLayer, LinearFeedForwardLayer
@@ -35,6 +52,12 @@ module GeometricMachineLearning
     export ResidualLayer
     export LinearSymplecticLayerP, LinearSymplecticLayerQ
     export SymplecticStiefelLayer
+    export StiefelLayer, ManifoldLayer
+    export AbstractNeuralNetwork
+
+    export retraction
+    export GlobalSection
+    export global_rep
 
     include("layers/abstract_layer.jl")
     include("layers/feed_forward_layer.jl")
@@ -43,7 +66,9 @@ module GeometricMachineLearning
     include("layers/residual_layer.jl")
     include("layers/linear_symplectic_layer.jl")
     include("layers/manifold_layer.jl")
-    include("layers/symplectic_stiefel_layer.jl")
+    include("optimizers/retraction_types.jl")
+    include("layers/stiefel_layer.jl")
+    include("optimizers/retractions.jl")
 
 
     export AbstractNeuralNetwork
@@ -75,28 +100,28 @@ module GeometricMachineLearning
     export train!, apply!, jacobian!
     export Iterate_Sympnet
 
-    include("optimizers/abstract_optimizer_cache.jl")
+    include("optimizers/global_sections.jl")
+    include("optimizers/optimizer_layer_caches.jl")
     include("optimizers/abstract_optimizer.jl")
-    include("optimizers/momentum_optimizer_cache.jl")
-    include("optimizers/standard_optimizer.jl")
+    #include("optimizers/standard_optimizer.jl")
+    #include("optimizers/momentum_optimizer.jl")
     #include("optimizers/adam_optimizer.jl")
-    include("optimizers/momentum_optimizer.jl")
+    include("optimizers/optimizer_cache.jl")
 
-    export StandardOptimizer
-    #export AdamOptimizer
-    export MomentumOptimizer
-    
-    export setup_Optimiser!
-    #export AbstractOptimizerCache
-    export MomentumOptimizerLayerCache
-    export MomentumOptimizerCache
+    include("optimizers/optimiser.jl")
+    include("optimizers/method_optimizer.jl")
 
-    export apply!
-    export check_symplecticity
-    export riemannian_gradient
-    export horizontal_lift
-    #export init
-    #export init_adam
-    #export init_momentum
+
+    export AbstractOptimizer, AbstractLayerCache
+    export GradientOptimizer, StandardLayerCache
+    export MomentumOptimizer, MomentumLayerCache
+    export AdamOptimizer, AdamLayerCache
+
+    export ⊙², /ᵉˡᵉ, scalar_add, √ᵉˡᵉ
+
+    export update!
+    export check
+    export init_optimizer_cache
+    export optimization_step!
 
 end

@@ -6,27 +6,25 @@ const DEFAULT_SIZE_RESULTS = 10
 # Structure
 abstract type SympNet{AT,OPT} <: AbstractArchitecture end
 
-struct LASympNet{AT,OPT} <: SympNet{AT,OPT} 
+struct LASympNet{AT,OPT} <: SympNet{AT} 
     dim::Int
     nhidden::Int
     act::AT
-    opt::OPT
 
-    function LASympNet(dim, opt; nhidden=1, activation=tanh) #default opt ?
-        new{typeof(activation),typeof(opt)}(dim, width, nhidden, activation, opt)
+    function LASympNet(dim; nhidden=1, activation=tanh) #default opt ?
+        new{typeof(activation)}(dim, width, nhidden, activation)
     end
 
 end
 
-struct GSympNet{AT,OPT} <: SympNet{AT,OPT} 
+struct GSympNet{AT} <: SympNet{AT} 
     dim::Int
     width::Int
     nhidden::Int
     act::AT
-    opt::OPT
 
-    function GSympNet(dim, opt; width=dim, nhidden=1, activation=tanh) #default opt ?
-        new{typeof(activation),typeof(opt)}(dim, width, nhidden, activation, opt)
+    function GSympNet(dim; width=dim, nhidden=1, activation=tanh) 
+        new{typeof(activation)}(dim, width, nhidden, activation)
     end
 end
 
@@ -87,19 +85,19 @@ end
 
 # Training
 
-function train!(nn::LuxNeuralNetwork{<:SympNet}, data_q, data_p; ntraining = DEFAULT_SYMPNET_NRUNS, batch_size = DEFAULT_BATCH_SIZE)
+function train!(nn::LuxNeuralNetwork{<:SympNet}, m::AbstractMethodOptimiser, data_q, data_p; ntraining = DEFAULT_SYMPNET_NRUNS, batch_size = DEFAULT_BATCH_SIZE)
     
-    #initialisation of optimiser
-    ∇Loss(params=nn.params) = grad_loss(nn, data_q, data_p, params, batch_size)
-    setup_Optimiser!(nn.architecture.opt, nn.model, nn.params, ∇Loss)
-    
+    #creation of optimiser
+    opt = Optimiser(m,nn.model)
+
     # create array to store total loss
     total_loss = zeros(ntraining)
 
     # Learning runs
     @showprogress 1 "Training..." for j in 1:ntraining
         dp = grad_loss(nn, data_q, data_p, nn.params, batch_size)
-        apply!(nn.architecture.opt, nn.model, nn.params, dp)
+        #apply!(nn.architecture.opt, nn.model, nn.params, dp)
+        optimization_step!(opt, nn.model, nn.params, dp)
         total_loss[j] = full_loss(nn, data_q, data_p)
     end
 

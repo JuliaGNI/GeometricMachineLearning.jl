@@ -46,7 +46,7 @@ opt = MomentumOptimizer(1e-2, 0.5)
 
 
 # Creation of the architecture
-sympnet = GSympNet(ninput, opt; width=ld, nhidden=ln, activation=act)
+sympnet = GSympNet(ninput, width=ld, nhidden=ln, activation=act)
 
 
 # create Lux network
@@ -54,7 +54,7 @@ nn = NeuralNetwork(sympnet, LuxBackend())
 
 
 # perform training (returns array that contains the total loss for each training step)
-total_loss = train!(nn, data_q, data_p; ntraining = nruns)
+total_loss = train!(nn, opt, data_q, data_p; ntraining = nruns)
 
 
 #predictions

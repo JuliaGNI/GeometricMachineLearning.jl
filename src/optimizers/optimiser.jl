@@ -1,27 +1,15 @@
 
-#######################################################################################
-#MethodOptimiser
-
 abstract type AbstractMethodOptimiser end
-
-abstract type AbstractOptimizerCache end
-
-const OptimizerCache = Union{AbstractOptimizerCache,Missing}
-
-mutable struct GradientOptimizer{T} <: AbstractMethodOptimiser
-    η::T
-    GradientOptimizer(η = 1e-2) = new{typeof(η)}(η)
-end
-
+using Lux
 #######################################################################################
 #Optimiser
 
-struct Optimiser{MT<:AbstractMethodOptimiser, CT<:OptimizerCache}
+struct Optimiser{MT<:AbstractMethodOptimiser, CT<:NamedTuple}
     method::MT
     cache::CT
 
-    function Optimiser(m::AbstractMethodOptimiser)
-        cache = init_cache(m)
+    function Optimiser(m::AbstractMethodOptimiser, model::Lux.Chain)
+        cache = init_optimizer_cache(m, model)
         new{typeof(m),typeof(cache)}(m,cache)
     end
 end
@@ -29,9 +17,51 @@ end
 #######################################################################################
 #init_cache
 
-init_cache(m::GradientOptimizer) = missing
+"""
+This initializes the cache for the entire chain
+"""
+
+layer_cache(::GradientOptimizer, d::Lux.AbstractExplicitLayer) = StandardLayerCache(d)  #GradientLayerCache
+layer_cache(::MomentumOptimizer, d::Lux.AbstractExplicitLayer) = MomentumLayerCache(d)
+layer_cache(::AdamOptimizer, d::Lux.AbstractExplicitLayer) = AdamLayerCache(d)
+
+function init_optimizer_cache(m::AbstractMethodOptimiser, model::Lux.Chain)
+    layers = keys(model)
+    cache = NamedTuple()
+    i = 0
+    for layer in layers
+         i += 1
+        layer_cacheᵢ = layer_cache(m, model[i])
+        cache = merge(cache, 
+                NamedTuple{(layer, )}((layer_cacheᵢ,))
+                )
+    end
+    cache
+end
 
 #######################################################################################
-#apply
+#optimization step function
 
+function optimization_step!(m::AbstractMethodOptimiser, d::Lux.AbstractExplicitLayer, ps::NamedTuple, C::AbstractLayerCache, dx::NamedTuple)
+    gx = rgrad(d, ps, dx)
+    λY = GlobalSection(d, ps)
+    B = global_rep(d, λY, gx)
+    update!(m, C, B)
+    ps = retraction(d, B)
+    apply(λY, ps)
+end
+
+function optimization_step!(o::Optimizer, model::Lux.Chain, ps::NamedTuple, dx::NamedTuple)
+    o.t += 1
+    i = 0
+    for key in keys(model)
+        i += 1
+        optimization_step!(o.method, model[i], ps[key], o.cache[key], dx[key])
+    end
+end
+
+function optimization_step!(o::Optimizer, model::Lux.Chain, ps::NamedTuple, loss)
+    dx = Zygote.gradient(ps -> loss(ps), ps)[1]
+    optimization_step!(o, model, ps, dx)
+end 
 
