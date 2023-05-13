@@ -46,12 +46,3 @@ function update_layer!(o::MomentumOptimizer, state::MomentumOptimizerLayerCache,
     update_layer!(layer, x, state.momentum, o.η)
 end
 
-#=
-function apply!(o::MomentumOptimizer, state::MomentumOptimizerCache, model::Lux.Chain, x::NamedTuple,
-                dx::NamedTuple)
-    for i in 1:length(model)
-        layer_name = Symbol("layer_$i")
-        update_layer!(o, state.state[layer_name], model[i], x[layer_name], dx[layer_name])
-    end
-end
-=#

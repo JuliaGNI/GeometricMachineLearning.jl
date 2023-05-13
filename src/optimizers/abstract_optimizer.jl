@@ -1,4 +1,3 @@
-
 abstract type AbstractOptimizer end
 
 abstract type AbstractOptimizer_w_Cache <: AbstractOptimizer end
@@ -20,3 +19,4 @@ function apply!(o::AbstractOptimizer_w_Cache, model::Lux.Chain, x::NamedTuple, d
         update_layer!(o, o.cache.state[i], model[i], x[i], dx[i])
     end
 end
+
