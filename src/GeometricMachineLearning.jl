@@ -59,6 +59,10 @@ module GeometricMachineLearning
     export GlobalSection
     export global_rep
 
+    include("manifolds/stiefel_manifold.jl")
+    include("manifolds/symplectic_manifold.jl")
+    include("manifolds/abstract_manifold.jl")
+
     include("layers/abstract_layer.jl")
     include("layers/feed_forward_layer.jl")
     include("layers/gradient.jl")
@@ -69,6 +73,26 @@ module GeometricMachineLearning
     include("optimizers/retraction_types.jl")
     include("layers/stiefel_layer.jl")
     include("optimizers/retractions.jl")
+
+
+    include("optimizers/global_sections.jl")
+    include("optimizers/optimizer_layer_caches.jl")
+    include("optimizers/abstract_optimizer.jl")
+    #include("optimizers/standard_optimizer.jl")
+    #include("optimizers/momentum_optimizer.jl")
+    #include("optimizers/adam_optimizer.jl")
+    #include("optimizers/optimizer_cache.jl")
+
+    export AbstractOptimizer, AbstractLayerCache
+    export GradientOptimizer, StandardLayerCache
+    export MomentumOptimizer, MomentumLayerCache
+    export AdamOptimizer, AdamLayerCache
+
+    export Optimiser, AbstractMethodOptimiser
+    include("optimizers/method_optimizer.jl")
+    include("optimizers/optimiser.jl")
+   
+    
 
 
     export AbstractNeuralNetwork
@@ -99,23 +123,6 @@ module GeometricMachineLearning
 
     export train!, apply!, jacobian!
     export Iterate_Sympnet
-
-    include("optimizers/global_sections.jl")
-    include("optimizers/optimizer_layer_caches.jl")
-    include("optimizers/abstract_optimizer.jl")
-    #include("optimizers/standard_optimizer.jl")
-    #include("optimizers/momentum_optimizer.jl")
-    #include("optimizers/adam_optimizer.jl")
-    include("optimizers/optimizer_cache.jl")
-
-    include("optimizers/optimiser.jl")
-    include("optimizers/method_optimizer.jl")
-
-
-    export AbstractOptimizer, AbstractLayerCache
-    export GradientOptimizer, StandardLayerCache
-    export MomentumOptimizer, MomentumLayerCache
-    export AdamOptimizer, AdamLayerCache
 
     export ⊙², /ᵉˡᵉ, scalar_add, √ᵉˡᵉ
 

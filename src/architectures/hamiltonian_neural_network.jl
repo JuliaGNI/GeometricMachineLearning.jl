@@ -1,6 +1,6 @@
 
 const DEFAULT_HNN_NRUNS = 1000
-const DEFAULT_HNN_LEARNING_RATE = .001
+const DEFAULT_BATCH_SIZE = 10
 
 
 struct HamiltonianNeuralNetwork{AT} <: AbstractArchitecture
@@ -47,27 +47,39 @@ loss_gradient(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, y, params = n
 
 
 
-function train!(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, data, target; ntraining = DEFAULT_HNN_NRUNS, learning_rate = DEFAULT_HNN_LEARNING_RATE)
+function train!(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, m::AbstractMethodOptimiser, data_qp, target; ntraining = DEFAULT_HNN_NRUNS, batch_size = DEFAULT_BATCH_SIZE)
     # create array to store total loss
     total_loss = zeros(ntraining)
+
+    #creation of optimiser
+    opt = Optimizer(m,nn.model)
 
     # convert parameters to tuple
     params_tuple = Tuple([Tuple(x) for x in nn.params])
 
-    # do a couple learning runs
+    learning_rate = 0.01
+    # Learning runs
     @showprogress 1 "Training..." for j in 1:ntraining
-        # gradient step
-        params_grad = loss_gradient(nn, get_batch(data, target)..., params_tuple)
 
+        index = rand(eachindex(data_qp), batch_size)
+        params_grad = loss_gradient(nn, data_qp[index], target[index], params_tuple) #loss_gradient(nn, get_batch(data_qp, target)..., params_tuple)
+
+        optimization_step!(opt, nn.model, nn.params, params_grad)
+
+        #=
         # make gradient steps for all the model parameters W & b
         for i in eachindex(params_tuple, params_grad)
             for (p, dp) in zip(params_tuple[i], params_grad[i])
                 p .-= learning_rate .* dp
             end
         end
+        =#
+        # gradient step
+        #index = rand(eachindex(data_qp), batch_size)
+        #dp = loss_gradient(nn, data_qp[index], target[index], params_tuple)
 
-        # total loss i.e. loss computed over all data
-        total_loss[j] = loss(nn, data, target)
+        #optimization_step!(opt, nn.model, nn.params, dp)
+        total_loss[j] = loss(nn, data_qp, target)
     end
 
     return total_loss

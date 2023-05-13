@@ -1,14 +1,12 @@
 
-abstract type AbstractMethodOptimiser end
-using Lux
 #######################################################################################
 #Optimiser
 
-struct Optimiser{MT<:AbstractMethodOptimiser, CT<:NamedTuple}
+struct Optimizer{MT<:AbstractMethodOptimiser, CT<:NamedTuple}
     method::MT
     cache::CT
 
-    function Optimiser(m::AbstractMethodOptimiser, model::Lux.Chain)
+    function Optimizer(m::AbstractMethodOptimiser, model::Lux.Chain)
         cache = init_optimizer_cache(m, model)
         new{typeof(m),typeof(cache)}(m,cache)
     end
@@ -52,7 +50,7 @@ function optimization_step!(m::AbstractMethodOptimiser, d::Lux.AbstractExplicitL
 end
 
 function optimization_step!(o::Optimizer, model::Lux.Chain, ps::NamedTuple, dx::NamedTuple)
-    o.t += 1
+    o.method.t += 1
     i = 0
     for key in keys(model)
         i += 1

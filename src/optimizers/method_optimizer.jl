@@ -42,7 +42,7 @@ end
 function update!(o::MomentumOptimizer, C::MomentumLayerCache, B::NamedTuple)
     #o.t += 1
     for key in keys(B)
-        C.B[key] .= α*C.B[key] + B[key]
+        C.B[key] .= o.α*C.B[key] + B[key]
         B[key] .= -o.η*C.B[key]
     end 
     B

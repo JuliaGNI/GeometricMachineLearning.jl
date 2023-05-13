@@ -4,9 +4,9 @@ const DEFAULT_BATCH_SIZE = 10
 const DEFAULT_SIZE_RESULTS = 10
 
 # Structure
-abstract type SympNet{AT,OPT} <: AbstractArchitecture end
+abstract type SympNet{AT} <: AbstractArchitecture end
 
-struct LASympNet{AT,OPT} <: SympNet{AT} 
+struct LASympNet{AT} <: SympNet{AT} 
     dim::Int
     nhidden::Int
     act::AT
@@ -88,7 +88,7 @@ end
 function train!(nn::LuxNeuralNetwork{<:SympNet}, m::AbstractMethodOptimiser, data_q, data_p; ntraining = DEFAULT_SYMPNET_NRUNS, batch_size = DEFAULT_BATCH_SIZE)
     
     #creation of optimiser
-    opt = Optimiser(m,nn.model)
+    opt = Optimizer(m,nn.model)
 
     # create array to store total loss
     total_loss = zeros(ntraining)
@@ -96,7 +96,7 @@ function train!(nn::LuxNeuralNetwork{<:SympNet}, m::AbstractMethodOptimiser, dat
     # Learning runs
     @showprogress 1 "Training..." for j in 1:ntraining
         dp = grad_loss(nn, data_q, data_p, nn.params, batch_size)
-        #apply!(nn.architecture.opt, nn.model, nn.params, dp)
+        
         optimization_step!(opt, nn.model, nn.params, dp)
         total_loss[j] = full_loss(nn, data_q, data_p)
     end

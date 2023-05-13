@@ -155,25 +155,29 @@ function Base.:-(S₁::SymplecticLieAlgHorMatrix, S₂::SymplecticLieAlgHorMatri
         )
 end
 
+#First define this function for symmetric.jl!!!!
+#function scalar_add(A::SymplecticLieAlgHorMatrix, δ::Real)
+#    SymplecticLieAlgHorMatrix()
+#end
 
 #function Base.:./(A::SymplecticLieAlgMatrix,B::SymplecticLieAlgMatrix)
-function Adam_div(S₁::SymplecticLieAlgHorMatrix,S₂::SymplecticLieAlgHorMatrix, δ=1e-8)
+function /ᵉˡᵉ(S₁::SymplecticLieAlgHorMatrix,S₂::SymplecticLieAlgHorMatrix)
     @assert S₁.n == S₂.n
     @assert S₁.N == S₂.N
     SymplecticLieAlgMatrix(
-        S₁.A₁/(S₂.A₁ .+ δ), 
-        S₁.A₂/(S₂.A₂ .+ δ),
-        S₁.A₃/(S₂.A₃ .+ δ),
-        SymmetricMatrix(S₁.B₁.S/(S₂.B₁.S .+ δ),n), 
-        S₁.B₂/(S₂.B₂ .+ δ),
-        SymmetricMatrix(S₁.B₁.S/(S₂.B₁.S .+ δ),n), 
-        S₁.C₂/(S₂.C₂ .+ δ),
+        S₁.A₁/S₂.A₁, 
+        S₁.A₂/S₂.A₂,
+        S₁.A₃/S₂.A₃,
+        SymmetricMatrix(S₁.B₁.S/S₂.B₁.S,n), 
+        S₁.B₂/S₂.B₂,
+        SymmetricMatrix(S₁.B₁.S/S₂.B₁.S,n), 
+        S₁.C₂/S₂.C₂,
         N,
         n
         )
 end
 
-function ⊙(S::SymplecticLieAlgHorMatrix)
+function ⊙²(S::SymplecticLieAlgHorMatrix)
     SymplecticLieAlgMatrix(
         S.A₁.^2, 
         S.A₂.^2,
@@ -187,7 +191,7 @@ function ⊙(S::SymplecticLieAlgHorMatrix)
         )
 end
 
-function Base.:√(S::SymplecticLieAlgHorMatrix) 
+function √ᵉˡᵉ(S::SymplecticLieAlgHorMatrix) 
     SymplecticLieAlgMatrix(
         sqrt.(S.A₁), 
         sqrt.(S.A₂),

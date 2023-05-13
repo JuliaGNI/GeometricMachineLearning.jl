@@ -86,7 +86,7 @@ end
 function get_phase_space_data(nameproblem, q₀, p₀, tspan = (0., 100.), tstep = 0.1)
     
     # get the Hamiltonien corresponding to name_problem   
-    H_problem, n_dim = dict_problem[nameproblem] 
+    H_problem, n_dim = dict_problem_H[nameproblem] 
 
     q,p = compute_phase_space(H_problem, q₀, p₀, tspan, tstep)
 

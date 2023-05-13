@@ -15,5 +15,5 @@ function Base.getindex(E::StiefelProjection,i,j)
     return 0. 
 end 
    
-Base.parent(E::StiefelProjection) = (E.N,E.n)
-Base.size(E::StiefelProjection) = (E.N,E.n)
+Base.parent(E::StiefelProjection) = (E.N, E.n)
+Base.size(E::StiefelProjection) = (E.N, E.n)

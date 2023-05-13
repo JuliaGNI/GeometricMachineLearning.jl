@@ -33,7 +33,7 @@ mutable struct SkewSymMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
         end
         new{eltype(S),typeof(S_vec)}(S_vec,n)
     end
-
+    #SkewSymMatrix(T<:AbstractFloat, n::Int) = SkewSymMatrix(n, T)
 end 
 
 #somehow ranges (i.e. A[1:n, 1:n]) only work if I specify that i and j are indices!!!
@@ -61,3 +61,55 @@ function Base.:-(A::SkewSymMatrix, B::SkewSymMatrix)
     @assert A.n == B.n 
     SkewSymMatrix(A.S - B.S, A.n) 
 end 
+
+function Base.:-(A::SkewSymMatrix)
+    SkewSymMatrix(-A.S, A.n)
+end
+
+function Base.:*(A::SkewSymMatrix, α::Real)
+    SkewSymMatrix(α*A.S, A.n)
+end
+
+Base.:*(α::Real, A::SkewSymMatrix) = A*α
+
+function Base.zeros(::Type{SkewSymMatrix{T}}, n::Int) where T
+    SkewSymMatrix(zeros(T, n*(n-1)÷2), n)
+end
+    
+function Base.zeros(::Type{SkewSymMatrix}, n::Int)
+    SkewSymMatrix(zeros(n*(n-1)÷2), n)
+end
+
+function Base.rand(rng::Random.AbstractRNG, ::Type{SkewSymMatrix{T}}, n::Int) where T
+    SkewSymMatrix(rand(rng, T, n*(n-1)÷2),n)
+end
+
+function Base.rand(rng::Random.AbstractRNG, ::Type{SkewSymMatrix}, n::Int)
+    SkewSymMatrix(rand(rng, n*(n-1)÷2), n)
+end
+
+#TODO: make defaults when no rng is specified!!! (prbabaly rng ← Random.default_rng())
+function Base.rand(type::Type{SkewSymMatrix{T}}, n::Integer) where T
+    rand(Random.default_rng(), type, n)
+end
+
+function Base.rand(type::Type{SkewSymMatrix}, n::Integer)
+    rand(Random.default_rng(), type, n)
+end
+
+#these are Adam operations:
+function scalar_add(A::SkewSymMatrix, δ::Real)
+    SkewSymMatrix(A.S .+ δ, A.n)
+end
+
+#element-wise squares and square root (for Adam)
+function ⊙²(A::SkewSymMatrix)
+    SkewSymMatrix(A.S.^2, A.n)
+end
+function √ᵉˡᵉ(A::SkewSymMatrix)
+    SkewSymMatrix(sqrt.(A.S), A.n)
+end
+function /ᵉˡᵉ(A::SkewSymMatrix, B::SkewSymMatrix)
+    @assert A.n == B.n 
+    SkewSymMatrix(A.S ./ B.S, A.n)
+end

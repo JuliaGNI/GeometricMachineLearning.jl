@@ -22,6 +22,10 @@ const η = .001
 # number of training runs
 const nruns = 1000
 
+# Optimiser
+opt = MomentumOptimizer(1e-2, 0.5)
+
+
 # create HNN
 hnn = HamiltonianNeuralNetwork(ninput; nhidden = ln, width = ld)
 
@@ -32,7 +36,7 @@ nn = NeuralNetwork(hnn, LuxBackend())
 data, target = get_data_set()
 
 # perform training (returns array that contains the total loss for each training step)
-total_loss = train!(nn, data, target; ntraining = nruns, learning_rate = η)
+total_loss = train!(nn, opt, data, target; ntraining = nruns)
 
 #time training (after warmup)
 # total_loss = train!(hnn, data, target; ntraining = nruns, learning_rate = η)

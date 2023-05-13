@@ -9,7 +9,7 @@ using Lux
 
 include("data_problem.jl")
 
-nameproblem = "pendulum"
+nameproblem = :pendulum
 q0 = [0.2]
 p0 = [0.8]
 
@@ -18,7 +18,7 @@ p0 = [0.8]
 #q0 = [0.3,-0.3]
 #p0 = [0.3,0.15]
 
-_, n_dim = dict_problem[nameproblem]
+_, n_dim = dict_problem_H[nameproblem]
 
 data_q, data_p = get_phase_space_data(nameproblem, q0, p0, (0,6pi),0.01)
 
