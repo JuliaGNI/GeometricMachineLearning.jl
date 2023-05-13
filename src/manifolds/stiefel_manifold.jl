@@ -55,3 +55,7 @@ function global_section(Y::StiefelManifold)
     A = A - Y*Y'*A
     qr(A).Q[1:N, 1:N-n]
 end
+
+function global_section(Y::AbstractVecOrMat)
+    nothing
+end

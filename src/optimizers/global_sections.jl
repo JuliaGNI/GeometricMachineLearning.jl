@@ -15,68 +15,55 @@ Maybe consider dividing the output in the check functions by n!
 Implement a general global section here!!!! Tₓ𝔐 → G×𝔤 !!!!!! (think about random initialization!)
 """
 #global section maps an element of the manifold to its associated Lie group!
-struct GlobalSection{AT<:Lux.AbstractExplicitLayer, BT<:NamedTuple, CT<:Union{NamedTuple,Nothing}}
-    Y::BT
-    λ::CT
+struct GlobalSection{T, AT} where {T<:AbstractVecOrMat}
+    Y::AT
+    #for now the only lift that is implemented is the Stiefel one - these types will have to be expanded!
+    λ::Union{LinearAlgebra.QRCompactWYQ, Nothing}
 
-    function GlobalSection(d::Lux.AbstractExplicitLayer, ps::NamedTuple)
-        new{typeof(d), typeof(ps), Nothing}(ps, nothing)
-    end
-
-    function GlobalSection(d::ManifoldLayer, ps::NamedTuple{(:weight,), Tuple{BT}}) where BT <: Manifold
-        B = global_section(ps)
-       new{typeof(d), typeof(ps), typeof(B)}(ps, B) 
+    function GlobalSection(Y::AbstractVecOrMat)
+        λ = global_section(Y)
+       new{eltype(Y), typeof(Y)}(Y, λ) 
     end
 end
 
-function global_section(d::ManifoldLayer, ps::NamedTuple{(:weight,), Tuple{BT}}) where BT <: Manifold
-    (weight = global_section(d, ps.weight), )
-end
 
-#maybe define a mapping StiefelManifold ↦ StiefelLayer to make this safe!
-function apply(λY::GlobalSection{AT}, Y₂::NamedTuple{(:weight,), Tuple{BT}}) where {AT <: ManifoldLayer, BT <: Manifold}
-    (weight = apply(λY, Y₂.weight), )
-end
-
-function apply(λY::GlobalSection, ps₂::NamedTuple)
-    for key in keys(λY.Y)
-        λY.Y[key] .+= ps₂[key]
-    end
-end
-
-function global_rep(::AT, λY::GlobalSection{AT}, gx::NamedTuple) where AT<:ManifoldLayer
-    (weight = global_rep(λY, gx.weight), )
-end
-
-
-##auxiliary function 
-function global_rep(::Lux.AbstractExplicitLayer, λY::GlobalSection, gx::NamedTuple)
-    gx
-end
-
-###### the following are particular to the Stifel manifold, may be further generalized!!
-#function to improve readability when dealing with NamedTuple:
-function Base.:*(λ::NamedTuple{(:weight,), Tuple{AT}}, x::AbstractVecOrMat) where AT <: LinearAlgebra.QRCompactWYQ
-    λ.weight*x
+function GlobalSection(ps::NamedTuple)
+    apply_toNT(ps, GlobalSection)
 end
 
 #this is an application G×𝔐 → 𝔐
-function apply(λY::GlobalSection{StiefelLayer}, Y₂::StiefelManifold)
-    N, n = size(λY.Y.weight)
+function apply_section(λY::GlobalSection{T, AT}, Y₂::AT) where {AT<:StiefelManifold}
+    N, n = size(λY.Y)
+    @assert (N, n) == size(Y₂)
     StiefelManifold(
         λY.Y*Y₂[1:n,1:n] + λY.λ*vcat(Y₂[n+1:N,1:n], zeros(n, n))
     )
 end
+function apply_section(λY::GlobalSection, Y₂::AbstractVecOrMat)
+    λY.Y + Y₂
+end
 
-function global_rep(λY::GlobalSection{StiefelLayer}, Δ::AbstractMatrix)
-    N, n = size(λY.Y.weight)
+function apply_section(λY::NamedTuple, Y₂::NamedTuple)
+    apply_toNT(λY, Y₂, apply_section)
+end
+
+function global_rep(λY::NamedTuple, gx::NamedTuple)
+    apply_toNT(λY, gx, global_rep)
+end
+
+##auxiliary function 
+function global_rep(λY::GlobalSection, gx::AbstractVecOrMat)
+    gx
+end
+
+function global_rep(λY::GlobalSection{T, AT}, Δ::AbstractMatrix) where {AT<:StiefelManifold}
+    N, n = size(λY.Y)
     B = StiefelLieAlgHorMatrix(
-        SkewSymMatrix(Y'*Δ),
+        SkewSymMatrix(λY.Y'*Δ),
         (λY.λ'*Δ)[1:N-n,1:n], 
         N, 
         n
     )
-    B
 end
 
 #I might actually not need this!

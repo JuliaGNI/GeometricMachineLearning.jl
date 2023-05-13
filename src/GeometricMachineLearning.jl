@@ -20,7 +20,7 @@ module GeometricMachineLearning
     include("utils.jl")
 
     #+ operation has been overloaded to work with NamedTuples!
-    export _add
+    export _add, apply_toNT
 
     include("activations/abstract_activation_function.jl")
     include("activations/identity_activation.jl")
@@ -97,28 +97,28 @@ module GeometricMachineLearning
     export train!, apply!, jacobian!
 
     include("optimizers/global_sections.jl")
-    include("optimizers/optimizer_layer_caches.jl")
+    include("optimizers/optimizer_caches.jl")
     include("optimizers/abstract_optimizer.jl")
     include("optimizers/standard_optimizer.jl")
     include("optimizers/momentum_optimizer.jl")
     include("optimizers/adam_optimizer.jl")
-    include("optimizers/optimizer_cache.jl")
+    #include("optimizers/optimizer_cache.jl")
 
-    export GlobalSection
+    export GlobalSection, apply_section
     export global_rep
 
     export TrivialInitRNG
     
-    export AbstractOptimizer, AbstractLayerCache
-    export StandardOptimizer, StandardLayerCache
-    export MomentumOptimizer, MomentumLayerCache
-    export AdamOptimizer, AdamLayerCache
+    export AbstractOptimizer, AbstractCache
+    export StandardOptimizer, StandardCache
+    export MomentumOptimizer, MomentumCache
+    export AdamOptimizer, AdamCache
 
     export ⊙², √ᵉˡᵉ, /ᵉˡᵉ, scalar_add
 
     export update!
     export check
-    export init_optimizer_cache
+    #export init_optimizer_cache
     export optimization_step!
 
     include("rng/random_funcs.jl")
