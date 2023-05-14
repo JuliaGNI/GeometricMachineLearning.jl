@@ -1,3 +1,7 @@
+"""
+This is a ResNet layer, not a residual layer!!!! should be removed anyway!!!
+"""
+
 
 struct ResidualLayer{DT, N, M, ST, WT <: AbstractMatrix{DT}, BT <: AbstractVector{DT}, GT} <: NeuralNetworkLayer{DT,N,M}
     σ::ST

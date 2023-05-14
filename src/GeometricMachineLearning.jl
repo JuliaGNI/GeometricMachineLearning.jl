@@ -66,15 +66,18 @@ module GeometricMachineLearning
     include("layers/feed_forward_layer.jl")
     include("layers/gradient.jl")
     include("layers/linear.jl")
-    include("layers/residual_layer.jl")
+    include("layers/resnet.jl")
     include("layers/linear_symplectic_layer.jl")
     include("layers/manifold_layer.jl")
     include("layers/stiefel_layer.jl")
     include("layers/multi_head_attention.jl")
+    include("layers/transformer.jl")
+
 
     #include("layers/symplectic_stiefel_layer.jl")
     export StiefelLayer, ManifoldLayer
     export MultiHeadAttention
+    export Transformer
     export AbstractNeuralNetwork
     export retraction
 
