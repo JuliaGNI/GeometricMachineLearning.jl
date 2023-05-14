@@ -8,7 +8,7 @@ mutable struct AdamCache{T, AT <: AbstractMatrix} <: AbstractCache
     end
 end
 
-mutable struct MomentumCache{T, AT <: NamedTuple} <:AbstractCache
+mutable struct MomentumCache{T, AT <: AbstractMatrix} <:AbstractCache
     B::AT
     function MomentumCache(B::AbstractMatrix)
         new{eltype(B), typeof(B)}(B)
@@ -16,33 +16,40 @@ mutable struct MomentumCache{T, AT <: NamedTuple} <:AbstractCache
 end
 
 struct StandardCache <: AbstractCache end
-StandardLayerCache(::AbstractMatrix) = StandardCache()
+StandardCache(::AbstractMatrix) = StandardCache()
 
-function AdamCache(dx₁::NamedTuple, dx₂::NamedTuple)
-    apply_toNT(dx₁, dx₂, AdamCache)
+function setup_adam_cache(B₁::NamedTuple, B₂::NamedTuple)
+    apply_toNT(B₁, B₂, setup_adam_cache)
 end
 
-function MomentumCache(dx::NamedTuple)
-    apply_toNT(dx, MomentumCache)
+setup_adam_cache(B₁::AbstractMatrix, B₂::AbstractMatrix) = AdamCache(B₁, B₂)
+
+
+function setup_momentum_cache(dx::NamedTuple)
+    apply_toNT(dx, setup_momentum_cache)
 end
 
-function StandardCache(dx::NamedTuple)
-    apply_toNT(dx, StandardLayerCache)
+setup_momentum_cache(B::AbstractMatrix) = MomentumCache(B)
+
+function setup_standard_cache(dx::NamedTuple)
+    apply_toNT(dx, setup_standard_cache)
 end
 
-function AdamCache(d::Lux.AbstractExplicitLayer)
-    B₁ = Lux.setup(TrivialInitRNG(), d) .|> gpu
-    B₂ = Lux.setup(TrivialInitRNG(), d) .|> gpu
-    AdamCache(B₁, B₂)
+setup_standard_cache(B::AbstractMatrix) = StandardCache(B)
+
+function setup_adam_cache(d::Lux.AbstractExplicitLayer)
+    B₁, _ = Lux.setup(TrivialInitRNG(), d) #.|> gpu
+    B₂, _ = Lux.setup(TrivialInitRNG(), d) #.|> gpu
+    setup_adam_cache(B₁, B₂)
 end
 
-function MomentumCache(d::Lux.AbstractExplicitLayer)
-    B = Lux.setup(TrivialInitRNG(), d) .|> gpu
-    MomentumCache(B)
+function setup_momentum_cache(d::Lux.AbstractExplicitLayer)
+    B, _ = Lux.setup(TrivialInitRNG(), d) #.|> gpu
+    setup_momentum_cache(B)
 end
 
 #TODO: make this more efficient! you don't need to call the entire setup to initialize an empty NamedTuple!!!
-function StandardCache(d::Lux.AbstractExplicitLayer)
-    B = Lux.setup(TrivialInitRNG(), d) .|> gpu
-    StandardLayerCache(B)
+function setup_standard_cache(d::Lux.AbstractExplicitLayer)
+    B, _ = Lux.setup(TrivialInitRNG(), d) #.|> gpu
+    setup_standard_cache(B)
 end

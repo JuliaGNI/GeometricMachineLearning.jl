@@ -10,19 +10,19 @@ function retraction(::Lux.AbstractExplicitLayer, gx::NamedTuple)
     gx
 end
 
-function retraction(::StiefelLayer{Geodesic()}, B::NamedTuple{(:weight, ), Tuple{AT}}) where AT <: StiefelLieAlgHorMatrix
+function retraction(::StiefelLayer{Geodesic}, B::NamedTuple{(:weight, ), Tuple{AT}}) where AT <: StiefelLieAlgHorMatrix
     (weight = geodesic(B.weight),)
 end
 
-function retraction(::StiefelLayer{Cayley()}, B::NamedTuple{(:weight, ), Tuple{AT}}) where AT <: StiefelLieAlgHorMatrix
+function retraction(::StiefelLayer{Cayley}, B::NamedTuple{(:weight, ), Tuple{AT}}) where AT <: StiefelLieAlgHorMatrix
     (weight = cayley(B.weight),)
 end
 
-function retraction(::MultiHeadAttention{true, Geodesic()}, B::NamedTuple)
+function retraction(::MultiHeadAttention{true, Geodesic}, B::NamedTuple)
     geodesic(B)
 end
 
-function retraction(::MultiHeadAttention{true, Cayley()}, B::NamedTuple)
+function retraction(::MultiHeadAttention{true, Cayley}, B::NamedTuple)
     cayley(B)
 end
 
@@ -45,7 +45,7 @@ function cayley(B::StiefelLieAlgHorMatrix)
     StiefelManifold(
         (I + .5*B)*
         (
-            E + hcat(vcat(.25*B.A, .5*B.B), vcat(0.5*I(n), zero(B.B)))*(vcat(I(n), 0.5*B.A)/exponent)
+            E + hcat(vcat(.25*B.A, .5*B.B), vcat(0.5*I(n), zero(B.B)))*(exponent \ vcat(I(n), 0.5*B.A))
             )
     )
 end

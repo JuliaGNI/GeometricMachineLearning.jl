@@ -124,7 +124,7 @@ module GeometricMachineLearning
 
     export update!
     export check
-    #export init_optimizer_cache
+    export init_optimizer_cache
     export optimization_step!
 
     include("rng/random_funcs.jl")
