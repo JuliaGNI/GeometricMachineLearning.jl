@@ -52,11 +52,11 @@ end
 
 function global_section(Y::StiefelManifold)
     N, n = size(Y)
-    A = randn(eltype(Y), N-n, n)
+    A = randn(eltype(Y), N, N-n)
     A = A - Y*Y'*A
-    qr(A).Q[1:N, 1:N-n]
+    qr(A).Q#[1:N, 1:N-n]
 end
 
-function global_section(Y::AbstractVecOrMat)
+function global_section(::AbstractVecOrMat)
     nothing
 end
