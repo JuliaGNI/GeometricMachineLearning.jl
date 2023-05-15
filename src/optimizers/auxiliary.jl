@@ -4,7 +4,6 @@ This implements exponential and inverse mappings.
 
 #computes A^-1(exp(A) - I)
 function 𝔄(A::AbstractMatrix{T}) where T
-    n = size(A, 1)
     B = one(A)
     C = one(A)
     B_temp = zero(A)
@@ -12,7 +11,7 @@ function 𝔄(A::AbstractMatrix{T}) where T
     while norm(B) > eps(T)
         mul!(B_temp, B, A)
         B .= B_temp
-        rmul!(B, inv(i))
+        rmul!(B, T(inv(i)))
         C += B
         i += 1 
     end
