@@ -43,7 +43,7 @@ end
 
 num = size(train_x,2)
 batch_size = 64
-training_steps = 10000
+training_steps = 100
 
 
 o = AdamOptimizer()
