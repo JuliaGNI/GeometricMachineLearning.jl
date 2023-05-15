@@ -17,21 +17,21 @@ mutable struct SkewSymMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
     S::AT
     n::Int
 
-    function SkewSymMatrix(S::AbstractVector,n::Int)
+    function SkewSymMatrix(S::AbstractVector{T},n::Int) where {T}
         @assert length(S) == n*(n-1)÷2
-        new{eltype(S),typeof(S)}(S,n)
+        new{T,typeof(S)}(S,n)
     end
-    function SkewSymMatrix(S::AbstractMatrix)
-        n = size(S)[1]
-        @assert size(S)[2] == n
-        S_vec = zeros(n*(n-1)÷2)
+    function SkewSymMatrix(S::AbstractMatrix{T}) where {T}
+        n = size(S, 1)
+        @assert size(S, 2) == n
+        S_vec = zeros(T, n*(n-1)÷2)
         #make the input skew-symmetric if it isn't already
         S = .5*(S - S')
         #map the sub-diagonal elements to a vector 
         for i in 2:n
             S_vec[((i-1)*(i-2)÷2+1):(i*(i-1)÷2)] = S[i,1:(i-1)]
         end
-        new{eltype(S),typeof(S_vec)}(S_vec,n)
+        new{T,typeof(S_vec)}(S_vec, n)
     end
     #SkewSymMatrix(T<:AbstractFloat, n::Int) = SkewSymMatrix(n, T)
 end 
@@ -56,6 +56,11 @@ function Base.:+(A::SkewSymMatrix, B::SkewSymMatrix)
     @assert A.n == B.n 
     SkewSymMatrix(A.S + B.S, A.n) 
 end 
+
+function add!(C::SkewSymMatrix, A::SkewSymMatrix, B::SkewSymMatrix)
+    @assert A.n == B.n == C.n
+    add!(C.S, A.S, B.S)
+end
 
 function Base.:-(A::SkewSymMatrix, B::SkewSymMatrix)
     @assert A.n == B.n 
@@ -113,3 +118,9 @@ function /ᵉˡᵉ(A::SkewSymMatrix, B::SkewSymMatrix)
     @assert A.n == B.n 
     SkewSymMatrix(A.S ./ B.S, A.n)
 end
+
+function LinearAlgebra.mul!(C::SkewSymMatrix, A::SkewSymMatrix, α::Real)
+    mul!(C.S, A.S, α)
+end
+LinearAlgebra.mul!(C::SkewSymMatrix, α::Real, A::SkewSymMatrix) = mul!(C, A, α)
+LinearAlgebra.rmul!(C::SkewSymMatrix, α::Real) = mul!(C, C, α)
