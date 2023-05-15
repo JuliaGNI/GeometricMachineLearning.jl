@@ -27,14 +27,14 @@ test_y = Flux.onehotbatch(test_y, 0:9) #|> gpu
     Dense(64, 10, Lux.σ)
     )
 
-ps, st = Lux.setup(Random.default_rng(), Ψᵉ)  .|> gpu
+ps, st = Lux.setup(Random.default_rng(), Ψᵉ)  #.|> gpu
 
 #loss_sing
 function loss_sing(ps, x, y)
     norm(Lux.apply(Ψᵉ, x, ps, st)[1] - y)
 end
 function loss_sing(ps, train_x, train_y, index)
-    loss_sing(ps, train_x[:, index] |>gpu, train_y[:, index] |> gpu)    
+    loss_sing(ps, train_x[:, index], train_y[:, index])    
 end
 function full_loss(ps, train_x, train_y)
     num = size(train_x, 2)
@@ -53,16 +53,15 @@ println("initial loss: ", full_loss(ps, train_x, train_y)/num)
 
 @showprogress "Training network ..." for i in 1:training_steps
     index₁ = Int(ceil(rand()*num))
-    x = train_x[:, index₁] |> gpu
-    y = train_y[:, index₁] |> gpu
+    x = train_x[:, index₁] #|> gpu
+    y = train_y[:, index₁] #|> gpu
     l, pb = Zygote.pullback(ps -> loss_sing(ps, x, y), ps)
     dp = pb(one(l))[1]
-    #dp = Zyogte.gradient(ps -> loss_sing(ps, x, y), ps)[1]
 
     indices = Int.(ceil.(rand(batch_size -1)*num))
     for index in indices
-        x = train_x[:, index] |> gpu
-        y = train_y[:, index] |> gpu
+        x = train_x[:, index] #|> gpu
+        y = train_y[:, index] #|> gpu
         l, pb = Zygote.pullback(ps -> loss_sing(ps, x, y), ps)
         dp = _add(dp, pb(one(l))[1])
     end

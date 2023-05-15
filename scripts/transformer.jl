@@ -43,7 +43,7 @@ end
 
 num = length(train_x)
 batch_size = 64
-training_steps = 10
+training_steps = 1000
 
 o = AdamOptimizer()
 cache = init_optimizer_cache(Ψᵉ, o)
