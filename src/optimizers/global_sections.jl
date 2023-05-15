@@ -39,12 +39,28 @@ function apply_section(λY::GlobalSection{T, AT}, Y₂::AT) where {T, AT<:Stiefe
         λY.Y*Y₂[1:n,1:n] + λY.λ*vcat(Y₂[n+1:N,1:n], zeros(n, n))
     )
 end
+
+function apply_section!(Y::AT, λY::GlobalSection{T, AT}, Y₂::AT) where {T, AT<:StiefelManifold}
+    N, n = size(λY.Y)
+    @assert (N, n) == size(Y₂) == size(Y)
+    Y.A .= λY.Y*Y₂[1:n,1:n] + λY.λ*vcat(Y₂[n+1:N,1:n], zeros(n, n))
+end
+
+
 function apply_section(λY::GlobalSection, Y₂::AbstractVecOrMat)
     λY.Y + Y₂
 end
 
+function apply_section!(Y::AT, λY::GlobalSection{T, AT}, Y₂::AT) where {T, AT<:AbstractVecOrMat{T}}
+    Y .= Y₂ + λY.Y
+end
+
 function apply_section(λY::NamedTuple, Y₂::NamedTuple)
     apply_toNT(λY, Y₂, apply_section)
+end
+
+function apply_section!(Y::NamedTuple, λY::NamedTuple, Y₂::NamedTuple)
+    apply_toNT(Y, λY, Y₂, apply_section!)
 end
 
 function global_rep(λY::NamedTuple, gx::NamedTuple)
@@ -52,13 +68,13 @@ function global_rep(λY::NamedTuple, gx::NamedTuple)
 end
 
 ##auxiliary function 
-function global_rep(λY::GlobalSection, gx::AbstractVecOrMat)
+function global_rep(::GlobalSection, gx::AbstractVecOrMat)
     gx
 end
 
 function global_rep(λY::GlobalSection{T, AT}, Δ::AbstractMatrix) where {T, AT<:StiefelManifold}
     N, n = size(λY.Y)
-    B = StiefelLieAlgHorMatrix(
+    StiefelLieAlgHorMatrix(
         SkewSymMatrix(λY.Y'*Δ),
         (λY.λ'*Δ)[1:N-n,1:n], 
         N, 
