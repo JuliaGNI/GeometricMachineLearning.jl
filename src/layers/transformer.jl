@@ -4,8 +4,8 @@ The architecture for a "transformer encoder" is essentially taken from arXiv:201
 """
 default_retr = Geodesic()
 function Transformer(dim::Integer, n_heads::Integer, L::Integer; 
-    Stiefel::Bool=false, Retraction=default_retr, init_weight=Lux.glorot_uniform, init_bias=Lux.zeros32, use_bias=true)
+    activation=tanh, Stiefel::Bool=false, Retraction=default_retr, init_weight=Lux.glorot_uniform, init_bias=Lux.zeros32, use_bias=true)
 
-    model = Chain(Tuple(map(_ -> (MultiHeadAttention(dim, n_heads, Stiefel=Stiefel, Retraction=Retraction, init_weight=Lux.glorot_uniform), 
-    ResNet(dim, dim, init_weight=Lux.glorot_uniform, init_bias=init.bias, use_bias=use_bias)), 1:L))...)
+    model = Lux.Chain(Tuple(map(_ -> (MultiHeadAttention(dim, n_heads, Stiefel=Stiefel, Retraction=Retraction, init_weight=init_weight), 
+    ResNet(dim, activation, init_weight=init_weight, init_bias=init_bias, use_bias=use_bias)), 1:L))...)
 end
