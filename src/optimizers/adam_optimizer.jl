@@ -8,13 +8,13 @@ mutable struct AdamOptimizer{T<:Real} <: AbstractOptimizer
     ρ₂::T
     δ::T
     t::Int
-    AdamOptimizer(η = 1e-3, ρ₁ = 0.9, ρ₂ = 0.99, δ = 1e-8) = new{typeof(η)}(η, ρ₁, ρ₂, δ, 0)
+    AdamOptimizer(η = Float32(1e-3), ρ₁ = Float32(0.9), ρ₂ = Float32(0.99), δ = Float32(1e-8)) = new{typeof(η)}(η, ρ₁, ρ₂, δ, 0)
 end
 
 function update!(o::AdamOptimizer, C::AdamCache, B::AbstractVecOrMat)
-    C.B₁ = (o.ρ₁ - o.ρ₁^o.t)/(1 - o.ρ₁^o.t)*C.B₁ + (1 - o.ρ₁)/(1 - o.ρ₁^o.t)*B
-    C.B₂ = (o.ρ₂ - o.ρ₂^o.t)/(1 - o.ρ₂^o.t)*C.B₂ .+ (1 - o.ρ₂)/(1 - o.ρ₂^o.t)*⊙²(B)
-    B = (-o.η)*(/ᵉˡᵉ(C.B₁, scalar_add(√ᵉˡᵉ(C.B₂), o.δ)))
+    add!(C.B₁, (o.ρ₁ - o.ρ₁^o.t)/(1 - o.ρ₁^o.t)*C.B₁, (1 - o.ρ₁)/(1 - o.ρ₁^o.t)*B)
+    add!(C.B₂, (o.ρ₂ - o.ρ₂^o.t)/(1 - o.ρ₂^o.t)*C.B₂, (1 - o.ρ₂)/(1 - o.ρ₂^o.t)*⊙²(B))
+    mul!(B, -o.η, /ᵉˡᵉ(C.B₁, scalar_add(√ᵉˡᵉ(C.B₂), o.δ)))
 end
 
 #fallbacks: 

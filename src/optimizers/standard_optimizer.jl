@@ -9,7 +9,7 @@ mutable struct StandardOptimizer{T<:Real} <: AbstractOptimizer
 end
 
 function update!(o::StandardOptimizer, ::StandardCache, B::AbstractMatrix)
-    B = -o.η*B
+    rmul!(B, -o.η)
 end
 
 init_optimizer_cache(d::Lux.AbstractExplicitLayer, ::StandardOptimizer) = setup_standard_cache(d)
