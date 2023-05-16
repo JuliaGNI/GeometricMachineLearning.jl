@@ -57,6 +57,9 @@ function train!(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, m::AbstractMet
     # convert parameters to tuple
     params_tuple = Tuple([Tuple(x) for x in nn.params])
 
+    keys_1 = keys(nn.params)
+    keys_2 = [keys(x) for x in values(nn.params)]
+
     learning_rate = 0.01
     # Learning runs
     @showprogress 1 "Training..." for j in 1:ntraining
@@ -64,7 +67,9 @@ function train!(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, m::AbstractMet
         index = rand(eachindex(data_qp), batch_size)
         params_grad = loss_gradient(nn, data_qp[index], target[index], params_tuple) #loss_gradient(nn, get_batch(data_qp, target)..., params_tuple)
 
-        optimization_step!(opt, nn.model, nn.params, params_grad)
+        dp = NamedTuple(zip(keys_1,[NamedTuple(zip(k,x)) for (k,x) in zip(keys_2,params_grad)]))
+
+        optimization_step!(opt, nn.model, nn.params, dp)
 
         #=
         # make gradient steps for all the model parameters W & b

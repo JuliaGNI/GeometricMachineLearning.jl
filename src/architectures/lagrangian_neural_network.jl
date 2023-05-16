@@ -60,6 +60,9 @@ function train!(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, data_qq̇, targ
     # convert parameters to tuple
     params_tuple = Tuple([Tuple(x) for x in nn.params])
 
+    keys_1 = keys(nn.params)
+    keys_2 = [keys(x) for x in values(nn.params)]
+
     # do a couple learning runs
     @showprogress 1 "Training..." for j in 1:ntraining
 

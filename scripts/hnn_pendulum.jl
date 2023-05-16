@@ -8,7 +8,7 @@ include("pendulum.jl")
 # include("plots.jl")
 
 # layer dimension/width
-const ld = 5
+const ld = 2
 
 # hidden layers
 const ln = 1
@@ -23,7 +23,7 @@ const η = .001
 const nruns = 1000
 
 # Optimiser
-opt = MomentumOptimizer(1e-2, 0.5)
+opt = GradientOptimizer(1e-2)
 
 
 # create HNN
@@ -51,3 +51,23 @@ total_loss = train!(nn, opt, data, target; ntraining = nruns)
 # plot results
 include("plots.jl")
 plot_hnn(H, nn, total_loss; filename="hnn_pendulum.png")
+
+
+
+#=test
+
+pp = nn.params
+
+p = Tuple([Tuple(x) for x in pp])
+
+keys_1 = keys(pp)
+keys_2 = [keys(x) for x in values(pp)]
+
+ppr = NamedTuple(zip(keys_1,[NamedTuple(zip(k,x)) for (k,x) in zip(keys_2,p)]))
+
+
+
+f(x) = nn([1,2],x)
+df(x) = Zygote.gradient(f,x)[1]
+
+=#
