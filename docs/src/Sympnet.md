@@ -48,4 +48,4 @@ lasympnet = LASympNet(ninput, nhidden=ln, activation=act)
 nn = NeuralNetwork(gsympnet, LuxBackend())
 ```
 
-We have to define an optimizer wich will be use in the training of the SympNet. For more details on optimizer, please see the corresponding documentation [Optimizer.jl](./Optimizer.md)
+We have to define an optimizer wich will be use in the training of the SympNet. For more details on optimizer, please see the corresponding documentation [Optimizer.md](./Optimizer.md)
