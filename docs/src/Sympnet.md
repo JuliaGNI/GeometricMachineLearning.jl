@@ -56,7 +56,7 @@ SympNet (noted $\Phi$ in the following) is so an integrator from $\mathbb{R}^{d}
  K^T \mathrm{diag}(a)\sigma(Kq+b)+p
  \end{pmatrix}.$$
  
-The parameters of this layer are the matrix of weights $K\in\mathbb{R}^{n\times d}$, the bias $b\in\mathbb{R}^{n}$ and the scale vector $a\in\mathbb{R}^{n}$. The idea is that $\hat{\sigma}^{K,a,b}$ can approximate any function of the form $\nabla V$, hence the name of this layer. 
+The parameters of this layer are the scale matrix $K\in\mathbb{R}^{n\times d}$, the bias $b\in\mathbb{R}^{n}$ and the vector of weights $a\in\mathbb{R}^{n}$. The idea is that $\hat{\sigma}^{K,a,b}$ can approximate any function of the form $\nabla V$, hence the name of this layer. The integer $n$ is called the width of the gradient layer.
  
  If we note by $\mathcal{M}^G$ the set of gradient layers, a G-SympNet is a function of the form $\Psi=g_k \circ g_{k-1} \circ \cdots \circ g_1$ where $(g_i)_{1\leq i\leq k} \subset (\mathcal{M}^G)^k$
 
@@ -64,7 +64,7 @@ The parameters of this layer are the matrix of weights $K\in\mathbb{R}^{n\times 
 
 We give now properly the universal approximation for both architectures. But let us give few defintions before. 
  
-Let $U$ be an open set of $\mathbb{R}^{2d}$, and let us note by $SP^r(U)$ the set of $C^r$ smooth symplectic map on $U$. Let us give a topology on the  set of $C^r$ smooth map from a compact K of $\mathbb{R}^{n}$ to $\mathbb{R}^{n}$ for any positive intergers $n$ through the norm
+Let $U$ be an open set of $\mathbb{R}^{2d}$, and let us note by $SP^r(U)$ the set of $C^r$ smooth symplectic map on $U$. Let us give a topology on the  set of $C^r$ smooth map from a compacta K of $\mathbb{R}^{n}$ to $\mathbb{R}^{n}$ for any positive intergers $n$ through the norm
 
 $$||f||_{C^r(K,\mathbb{R}^{n})} = \underset{|\alpha|\leq r}{\sum} \underset{1\leq i \leq n}{\max}\underset{x\in K}{\sup} |D^\alpha f_i(x)|$$ where the differential operator $D^\alpha$ is defined for maps of $C^r(\mathbb{R}^{n},\mathbb{R})$ by 
 $$D^\alpha f = \frac{\partial^{|\alpha|} f}{\partial x_1^{\alpha_1}...x_n^{\alpha_n}}$$ with $|\alpha| = \alpha_1 +...+ \alpha_n$. 
@@ -89,24 +89,47 @@ __Example of r-finite functions__
 
 ## SympNet with `GeometricMachineLearning.jl` <a id="SympNet_with_GeometricMachineLearning"></a>
 
+
 With `GeometricMachineLearning.jl`, it is really easy to implement and train a SympNet. The steps are the following :
 - __Create the architecture__ in one line with the function `GSympNet` or `LASympNet`,
 - __Create the neural networks__ depending a backend (e.g. with Lux),
 - __Create an optimizer__ for the training step,
 - __Train__ the neural networks with the `train!`function.
+- 
+Both LA-SympNet and G-SympNet architectures can be generated in one line with `GeometricMachineLearning.jl`.
 
-Both LA-SympNet and G-SympNet architectures can be generated in one line with `GeometricMachineLearning.jl`. To create a G-SympNet, one needs to write
+### LA-SympNet
+
+### G-SympNet
+
+ To create a G-SympNet, one needs to write
 
 ```julia
-gsympnet = GSympNet(dim; width=dim, nhidden=1, activation=tanh, init_uplow=[true,false], init_weight=Lux.glorot_uniform, init_bias=Lux.zeros32, init_scale=Lux.glorot_uniform) 
+gsympnet = GSympNet(dim; width=dim, nhidden=1, activation=tanh, init_uplow=[true,false], init_weight=Lux.glorot_uniform, 
+init_bias=Lux.zeros32, init_scale=Lux.glorot_uniform) 
 ```
+`GSympNet` takes one obligatory argument:
+- __dim__ : the dimensiom of the phase space,
 
+and severals keywords argument :
+- __width__ : the width for all the gradients layers with default value set to dim to have width$\geq$dim,
+- __nhidden__ : the number of gradient layers with default value set to 1,
+- __activation__ : the activation function for all the gradients layers with default value set to tanh,
+- __init_uplow__: a vector of boolean whose the ith coordinate is true only if all the gradient layers in (i mod `length(init_uplow)`)-th position is up (for example the default value is [true,false] which represents an alternation of up and low gradient layers),
+- __init_weight__: the function which gives the way to initialize the vector of weights $a$,
+- __init_bias__: the function which gives the way to initialize the vector of bias $b$,
+- __init_scale__: the function which gives the way to initialize the scale matrix $K$.
+The default value of the last three keyword arguments uses Lux functions.
 
+### Loss function
 To train the SympNet, one need data along a trajectory such that the model is trained to perform an integration an the optimization is global. These datas are $(Q,P)$ where $Q[i,j]$ (respectively P[i,j]) is the real number $q_j(t_i)$ which is the j-th cordinates of the generalized position (respicitvely momentum) at the i-th time step. One also need a loss function defined as :
 
 $$Loss(Q,P) = \underset{i}{\sum} d(\Phi(Q[i,-],P[i,-]), [Q[i,-] P[i,-]]^T)$$
 where $d$ is a distance on $\mathbb{R}^d$.
 
+
+
+## Examples
 
 Let us see how to use it on severals examples.
 
