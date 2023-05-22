@@ -27,17 +27,38 @@ SympNet (noted $\Phi$ in the following) is so an integrator from $\mathbb{R}^{d}
  
  #### G-SympNet
  
- G-SympNets are an alternative to LA-SympNet. They are constituated with only one kind of layers called gradient layers. A gradient layers is a symplectic map from $\mathbb{R}^{2d}$ to $\mathbb{R}^{2d}$ defined by 
+ G-SympNets are an alternative to LA-SympNet. They are constituated with only one kind of layers called gradient layers. For a given activation function $\sigma$ and an interger $n\geq d$, a gradient layers is a symplectic map from $\mathbb{R}^{2d}$ to $\mathbb{R}^{2d}$ defined by
  
- $$\mathcal{G}_{up}= 
- \begin{pmatrix} 
- I&K^Tdiag(a)\sigma()  \\ 
+ $$\mathcal{G}^{up}  \begin{pmatrix}  q  \\  
+ p  \end{pmatrix} =  
+  \begin{bmatrix} 
+ I&\hat{\sigma}^{K,a,b}  \\ 
  0&I
- \end{pmatrix}$$
+ \end{bmatrix} \begin{pmatrix}  q  \\  
+ p  \end{pmatrix} :=
+ \begin{pmatrix} 
+  K^T \mathrm{diag}(a)\sigma(Kp+b)+q \\ 
+  p
+ \end{pmatrix},$$
  
- The idea is that $\hat{\sigma}_{K,a,b}$ can approximate any function of the form $\nabla V$, hence the name of this layer. 
+ or
  
- If we note by $\mathcal{M}_G_$ the set of gradient layers, a G-SympNet is a function of the form $\Psi=g_k \circ g_{k-1} \circ \cdots \circ u_1$ where $(u_i)_{1\leq i\leq k} \subset \mathcal{M}^k$
+ $$\mathcal{G}^{low}  \begin{pmatrix}  q  \\  
+ p  \end{pmatrix} =  
+  \begin{bmatrix} 
+ I&0  \\ 
+ \hat{\sigma}^{K,a,b}&I
+ \end{bmatrix} \begin{pmatrix}  q  \\  
+ p  \end{pmatrix}
+ :=
+ \begin{pmatrix} 
+ q \\ 
+ K^T \mathrm{diag}(a)\sigma(Kq+b)+p
+ \end{pmatrix}.$$
+ 
+The parameters of this layer are the matrix of weights $K\in\mathbb{R}^{n\times d}$, the bias $b\in\mathbb{R}^{n}$ and the scale vector $a\in\mathbb{R}^{n}$. The idea is that $\hat{\sigma}^{K,a,b}$ can approximate any function of the form $\nabla V$, hence the name of this layer. 
+ 
+ If we note by $\mathcal{M}^G$ the set of gradient layers, a G-SympNet is a function of the form $\Psi=g_k \circ g_{k-1} \circ \cdots \circ g_1$ where $(g_i)_{1\leq i\leq k} \subset (\mathcal{M}^G)^k$
 
 ### Universal approximation theorems <a name="Theorems"></a>
 
@@ -53,7 +74,7 @@ __Definition__ Let $\sigma$ a real map and $r\in \mathbb{N}$. $\sigma$ is r-fini
 
 __Definition__ Let $m,n,r\in \mathbb{N}$ with $m,n>0$ be given, $U$ an open set of $\mathbb{R^m}$, and $I,J\subset C^r(U,\mathbb{R^n}$. We say $J$ is r-uniformly dense on compacta in $I$ if $J \subset I$ and for any $f\in I$, $\epsilon>0$, and any compacta $K\subset U$, there exists $g\in J$ such that $||f-g||_{C^r(K,\mathbb{R}^{n})} < \epsilon$.
 
-We can know gives the theorems.
+We can now gives the theorems.
 
 __Theorem (Approximation theorem for LA-SympNet)__ For any positive interger $r>0$ and open set $U\in \mathbb{R}^{2d}$, the set of LA-SympNet is r-uniformly dense on compacta in $SP^r(U)$ if the activation function $\sigma$ is r-finite.
 
@@ -74,8 +95,11 @@ With `GeometricMachineLearning.jl`, it is really easy to implement and train a S
 - __Create an optimizer__ for the training step,
 - __Train__ the neural networks with the `train!`function.
 
-The creation of NeuralNetwork 
-Both LA-SympNet and G-SympNet architectures can be generated in one line with 
+Both LA-SympNet and G-SympNet architectures can be generated in one line with `GeometricMachineLearning.jl`. To create a G-SympNet, one needs to write
+
+```julia
+gsympnet = GSympNet(dim; width=dim, nhidden=1, activation=tanh, init_uplow=[true,false], init_weight=Lux.glorot_uniform, init_bias=Lux.zeros32, init_scale=Lux.glorot_uniform) 
+```
 
 
 To train the SympNet, one need data along a trajectory such that the model is trained to perform an integration an the optimization is global. These datas are $(Q,P)$ where $Q[i,j]$ (respectively P[i,j]) is the real number $q_j(t_i)$ which is the j-th cordinates of the generalized position (respicitvely momentum) at the i-th time step. One also need a loss function defined as :
@@ -133,6 +157,6 @@ total_loss = train!(nn, opt, data_q, data_p; ntraining = nruns, batch_size = nba
 ```
 The train function will change the parameters of the neural networks and gives an a vector containing the evolution of the value of the loss function during the training. Default values for the arguments `ntraining` and `batch_size` are respectively $1000$ and $10$.
 
-The trainings data `data_q` and `data_p` must be a Matrix of $\mathbb{R}^{n\times d}$ where $n$ is the lenght of data and $d$ is the half of the dimension of the system, i.e `data_q[i,j]` is $q_j(t_i)$ where $(t_1,...,t_n)$ are the corresponding time of the training data.
+The trainings data `data_q` and `data_p` must be matrices of $\mathbb{R}^{n\times d}$ where $n$ is the lenght of data and $d$ is the half of the dimension of the system, i.e `data_q[i,j]` is $q_j(t_i)$ where $(t_1,...,t_n)$ are the corresponding time of the training data.
 
 
