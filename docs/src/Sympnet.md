@@ -1,4 +1,4 @@
-# SympNet Documenation
+# SympNet Documentation
 
 Here is the documentation about the SympNets architecture that the package `GeometricMachineLearning.jl` offers. 
 
@@ -24,6 +24,46 @@ SympNet (noted $\Phi$ in the following) is so an integrator from $\mathbb{R}^{d}
  With `GeometricMachineLearning.jl`, it is possible to implement two types of arhchitecture which are LA-SympNet and G-SympNet. 
  
  #### LA-SympNet
+ 
+ LA-SympNets are made of the alternation of two types of layers, symplectic linear layers and symplectic activation layers.  For a given integer $n$, a linear layer is defined by
+ 
+ $$\mathcal{L}^{n,up}  \begin{pmatrix}  q  \\  
+ p  \end{pmatrix} =  
+  \begin{pmatrix} 
+ I&S^n/0  \\ 
+ 0/S^n&I
+ \end{pmatrix} \cdots 
+  \begin{pmatrix} 
+ I&0  \\ 
+ S^2&I
+ \end{pmatrix}
+   \begin{pmatrix} 
+ I&S^1  \\ 
+ 0&I
+ \end{pmatrix}
+ \begin{pmatrix}  q  \\  
+ p  \end{pmatrix},$$
+ 
+ or 
+ 
+  $$\mathcal{L}^{n,loz}  \begin{pmatrix}  q  \\  
+ p  \end{pmatrix} =  
+  \begin{pmatrix} 
+ I&S^n/0  \\ 
+ 0/S^n&I
+ \end{pmatrix} \cdots 
+  \begin{pmatrix} 
+ I&S^2  \\ 
+ 0&I
+ \end{pmatrix}
+ \begin{pmatrix} 
+ I&0  \\ 
+ S^1&I
+ \end{pmatrix}
+ \begin{pmatrix}  q  \\  
+ p  \end{pmatrix}.$$
+ 
+ The integer $n$ is the width of the linear layer. If $n\geq9$, we know that the linear layers represent any linear symplectic map so that $n$ need not be larger than 9. We note the set of linear layers $\mathcal{M}^L$. This type of layers plays the role of  traditional linear layers.
  
  #### G-SympNet
  
@@ -95,7 +135,7 @@ With `GeometricMachineLearning.jl`, it is really easy to implement and train a S
 - __Create the neural networks__ depending a backend (e.g. with Lux),
 - __Create an optimizer__ for the training step,
 - __Train__ the neural networks with the `train!`function.
-- 
+
 Both LA-SympNet and G-SympNet architectures can be generated in one line with `GeometricMachineLearning.jl`.
 
 ### LA-SympNet
