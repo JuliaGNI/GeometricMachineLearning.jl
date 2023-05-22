@@ -2,17 +2,24 @@
 
 Here is the documentation about the SympNets architecture that the package `GeometricMachineLearning.jl` offers. 
 
-## Quick overview of the theory of SympNet
+- [Quick overview of the theory of SympNet](#Quick_overview_of_the_theory_of_SympNet)
+  - [Principle](#Principle)
+  - [Architecture of SympNets](#Architecture)
+  - [Universal approximation theorems](#Theorems)
+- [SympNet with `GeometricMachineLearning.jl`](#SympNet_with_GeometricMachineLearning)
 
-### Principle
+
+## Quick overview of the theory of SympNet <a name="Quick_overview_of_the_theory_of_SympNet"></a>
+
+### Principle <a name="Principle"></a>
 
 SympNets is a new type of neural network proposing a new approach to compute the trajectory of an Hamiltonian system in phase space. Let us denote by $(q,p)=(q_1,...,q_d,p_1,....p_d)\in \mathbb{R}^{2d}$ the phase space with $q\in \mathbb{R}^{d}$ the gereralized position and 
 $p\in \mathbb{R}^{d}$ the generalized momentum. Given a physical problem, SympNets takes a phase space element $(q,p)$ and aims to compute the next position $(q',p')$ of the trajectory in phase space a time step later while preserving the well known symplectic structure of Hamiltonian systems.
 The way SympNet preserve the symplectic structure is really specific and characterizes it as this preseving is intrinsic of the neural network. Indeed, SympNet is not made with traditional layers but with symplectic layers (decribe later) modifyng the traditional universal approximation theorem into a symplectic one : SympNet is able to approach any symplectic function providing conditions on an activation function.
 
-SympNet (noted $\Phi$ in the following) is so an integrator preserving symplecticity wich can compute, from an initial condition $(q_0,p_0)$, a sequence of phase space elements of a trajectory $(q_n,p_n)=\Phi(q_{n-1},p_{n-1})=...=\Phi^n(q_0,p_0)$. The time step between predictions is not a parameter we can choose but is related to the temporal frequency of the training data. SympNet can handle both  temporally regular data, i.e with a fix time step between data, and temporally irregular data, i.e with variable time step. 
+SympNet (noted $\Phi$ in the following) is so an integrator from $\mathbb{R}^{d} \times \mathbb{R}^{d}$ to $\mathbb{R}^{d} \times \mathbb{R}^{d}$ preserving symplecticity wich can compute, from an initial condition $(q_0,p_0)$, a sequence of phase space elements of a trajectory $(q_n,p_n)=\Phi(q_{n-1},p_{n-1})=...=\Phi^n(q_0,p_0)$. The time step between predictions is not a parameter we can choose but is related to the temporal frequency of the training data. SympNet can handle both  temporally regular data, i.e with a fix time step between data, and temporally irregular data, i.e with variable time step. 
 
- ### Architecture of SympNets
+ ### Architecture of SympNets <a name="Architecture"></a>
  
  With `GeometricMachineLearning.jl`, it is possible to implement two types of arhchitecture which are LA-SympNet and G-SympNet. 
  
@@ -32,7 +39,7 @@ SympNet (noted $\Phi$ in the following) is so an integrator preserving symplecti
  
  If we note by $\mathcal{M}_G_$ the set of gradient layers, a G-SympNet is a function of the form $\Psi=g_k \circ g_{k-1} \circ \cdots \circ u_1$ where $(u_i)_{1\leq i\leq k} \subset \mathcal{M}^k$
 
-### Universal approximation theorems
+### Universal approximation theorems <a name="Theorems"></a>
 
 We give now properly the universal approximation for both architectures. But let us give few defintions before. 
  
@@ -52,11 +59,32 @@ __Theorem (Approximation theorem for LA-SympNet)__ For any positive interger $r>
 
 __Theorem (Approximation theorem for G-SympNet)__ For any positive interger $r>0$ and open set $U\in \mathbb{R}^{2d}$, the set of G-SympNet is r-uniformly dense on compacta in $SP^r(U)$ if the activation function $\sigma$ is r-finite.
 
-These two theorems are at odds with the well-foundedness of the SympNets. We know that the sigmoid function and tanh function are r-finite for any positve interger $r$.
+These two theorems are at odds with the well-foundedness of the SympNets. 
 
-## SympNet with `GeometricMachineLearning.jl`
+__Example of r-finite functions__
+- sigmoid $\sigma(x)=\frac{1}{1+e^{-x}}$ for any positve interger $r$, 
+- tanh $\tanh(x)=\frac{e^x-e^{-x}}{e^x+e^{-x}}$ for any positve interger $r$ 
 
-With `GeometricMachineLearning.jl`, it is really easy to implement and train a SympNet. Let us see how to use it on severals examples.
+
+## SympNet with `GeometricMachineLearning.jl` <a id="SympNet_with_GeometricMachineLearning"></a>
+
+With `GeometricMachineLearning.jl`, it is really easy to implement and train a SympNet. The steps are the following :
+- __Create the architecture__ in one line with the function `GSympNet` or `LASympNet`,
+- __Create the neural networks__ depending a backend (e.g. with Lux),
+- __Create an optimizer__ for the training step,
+- __Train__ the neural networks with the `train!`function.
+
+The creation of NeuralNetwork 
+Both LA-SympNet and G-SympNet architectures can be generated in one line with 
+
+
+To train the SympNet, one need data along a trajectory such that the model is trained to perform an integration an the optimization is global. These datas are $(Q,P)$ where $Q[i,j]$ (respectively P[i,j]) is the real number $q_j(t_i)$ which is the j-th cordinates of the generalized position (respicitvely momentum) at the i-th time step. One also need a loss function defined as :
+
+$$Loss(Q,P) = \underset{i}{\sum} d(\Phi(Q[i,-],P[i,-]), [Q[i,-] P[i,-]]^T)$$
+where $d$ is a distance on $\mathbb{R}^d$.
+
+
+Let us see how to use it on severals examples.
 
 ### Example of a pendulum
 Let us begin with an esay example, the pendulum system, the Hamiltonian of which is $$H:(q,p)\in\mathbb{R}^2 \mapsto \frac{1}{2}p^2-cos(q) \in \mathbb{R}.$$
