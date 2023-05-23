@@ -25,7 +25,7 @@ SympNet (noted $\Phi$ in the following) is so an integrator from $\mathbb{R}^{d}
  
  #### LA-SympNet
  
- LA-SympNets are made of the alternation of two types of layers, symplectic linear layers and symplectic activation layers.  For a given integer $n$, a linear layer is defined by
+ LA-SympNets are made of the alternation of two types of layers, symplectic linear layers and symplectic activation layers.  For a given integer $n$, a symplectic linear layer is defined by
  
  $$\mathcal{L}^{n,up}  \begin{pmatrix}  q  \\  
  p  \end{pmatrix} =  
@@ -42,15 +42,15 @@ SympNet (noted $\Phi$ in the following) is so an integrator from $\mathbb{R}^{d}
  0&I
  \end{pmatrix}
  \begin{pmatrix}  q  \\  
- p  \end{pmatrix},$$
+ p  \end{pmatrix} + b,$$
  
  or 
  
-  $$\mathcal{L}^{n,loz}  \begin{pmatrix}  q  \\  
+  $$\mathcal{L}^{n,low}  \begin{pmatrix}  q  \\  
  p  \end{pmatrix} =  
   \begin{pmatrix} 
- I&S^n/0  \\ 
- 0/S^n&I
+ I&0/S^n  \\ 
+ S^n/0&I
  \end{pmatrix} \cdots 
   \begin{pmatrix} 
  I&S^2  \\ 
@@ -61,9 +61,44 @@ SympNet (noted $\Phi$ in the following) is so an integrator from $\mathbb{R}^{d}
  S^1&I
  \end{pmatrix}
  \begin{pmatrix}  q  \\  
- p  \end{pmatrix}.$$
+ p  \end{pmatrix} + b.$$
  
- The integer $n$ is the width of the linear layer. If $n\geq9$, we know that the linear layers represent any linear symplectic map so that $n$ need not be larger than 9. We note the set of linear layers $\mathcal{M}^L$. This type of layers plays the role of  traditional linear layers.
+The parameters to learn are the symmetric matrices $S^i\in\mathbb{R}^{d\times d}$ and the bias $b\in\mathbb{R}^{2d}$. The integer $n$ is the width of the symplectic linear layer. If $n\geq9$, we know that the symplectic linear layers represent any linear symplectic map so that $n$ need not be larger than 9. We note the set of symplectic linear layers $\mathcal{M}^L$. This type of layers plays the role of standard linear layers. 
+
+For a given activation function $\sigma$, a symplectic activation layer is defined by
+
+ $$\mathcal{A}^{up}  \begin{pmatrix}  q  \\  
+ p  \end{pmatrix} =  
+  \begin{bmatrix} 
+ I&\hat{\sigma}^{a}  \\ 
+ 0&I
+ \end{bmatrix} \begin{pmatrix}  q  \\  
+ p  \end{pmatrix} :=
+ \begin{pmatrix} 
+  \mathrm{diag}(a)\sigma(p)+q \\ 
+  p
+ \end{pmatrix},$$
+ 
+ or
+ 
+ $$\mathcal{A}^{low}  \begin{pmatrix}  q  \\  
+ p  \end{pmatrix} =  
+  \begin{bmatrix} 
+ I&0  \\ 
+ \hat{\sigma}^{a}&I
+ \end{bmatrix} \begin{pmatrix}  q  \\  
+ p  \end{pmatrix}
+ :=
+ \begin{pmatrix} 
+ q \\ 
+ \mathrm{diag}(a)\sigma(q)+p
+ \end{pmatrix}.$$
+ 
+ The parameters to learn are the weights $a\in\mathbb{R^{d}}$. This type of layers plays the role of standard activation layers layers. We note the set of symplectic activation layers $\mathcal{M}^A$. 
+ 
+ A LA-SympNet is a function of the form $\Psi=l_{k+1} \circ a_{k} \circ v_{k} \circ \cdots \circ a_1 \circ l_1$ where $(l_i)_{1\leq i\leq k+1} \subset (\mathcal{M}^L)^{k+1}$ and  
+ 
+ $(a_i)_{1\leq i\leq k} \subset (\mathcal{M}^A)^{k}$.
  
  #### G-SympNet
  
