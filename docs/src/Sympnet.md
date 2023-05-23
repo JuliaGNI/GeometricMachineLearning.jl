@@ -286,6 +286,6 @@ Then we can make prediction. Let's compare the initial datas with a prediction s
 q_learned, p_learned = Iterate_Sympnet(nn, q0, p0; n_points = size(data_q,1))
 ```
 
-
+![](../Images/sympnet_pendulum_Architecture.png)
 
 
