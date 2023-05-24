@@ -6,13 +6,19 @@ const DEFAULT_SIZE_RESULTS = 10
 # Structure
 abstract type SympNet{AT} <: AbstractArchitecture end
 
-struct LASympNet{AT} <: SympNet{AT} 
+struct LASympNet{AT,T1,T2,T3} <: SympNet{AT} 
     dim::Int
+    width::Int
     nhidden::Int
     act::AT
+    init_uplow_linear::Vector{Bool}
+    init_uplow_act::Vector{Bool}
+    init_sym_matrices::T1
+    init_bias::T2
+    init_weight::T3
 
-    function LASympNet(dim; nhidden=1, activation=tanh) #default opt ?
-        new{typeof(activation)}(dim, width, nhidden, activation)
+    function LASympNet(dim; width=9, nhidden=1, activation=tanh, init_uplow_linear=[true,false], init_uplow_act=[true,false],init_sym_matrices=Lux.glorot_uniform, init_bias=Lux.zeros32, init_weight=Lux.glorot_uniform) 
+        new{typeof(activation),typeof(init_sym_matrices),typeof(init_bias),typeof(init_weight)}(dim, min(width,9), nhidden, activation, init_uplow_linear, init_uplow_act, init_sym_matrices, init_bias, init_weight)
     end
 
 end
@@ -45,7 +51,7 @@ end
 function chain(nn::LASympNet, ::LuxBackend)
     couple_layers = []
     for _ in 1:nhidden
-        push!(couple_layers,Linear(nn.dim))
+        push!(couple_layers,Linear(nn.dim,init_weight=nn.init_weight))
         push!(couple_layers,Gradient(nn.dim, nn.dim, nn.act, full_grad = false))
     end
     

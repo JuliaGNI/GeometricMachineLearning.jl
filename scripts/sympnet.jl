@@ -25,7 +25,7 @@ data_q, data_p = get_phase_space_data(nameproblem, q0, p0, (0,6pi),0.01)
 
 #plt = plot(data_q[:,1], data_p[:,1], label="Training data.")
 
-plt = plot(data_q[:,1], data_p[:,1], label="Training data.")
+plt = plot(data_q[:,1], data_p[:,1], label="Training data.",linewidth = 3)
 
 
 
@@ -34,11 +34,11 @@ const ninput = 2*n_dim
 # layer dimension/width
 const ld = 10
 # hidden layers
-const ln = 2
+const ln = 4
 # activation function
 const act = tanh
 # number of training runs
-const nruns = 1000
+const nruns = 10000
 
 
 # Optimiser
@@ -62,6 +62,14 @@ q_learned, p_learned = Iterate_Sympnet(nn, q0, p0; n_points = size(data_q,1))
 
 
 #Plots
+using LaTeXStrings
 
-plot(plt, q_learned[:,1], p_learned[:,1], label="Learned trajectory.")
+
+plot!(plt, q_learned[:,1], p_learned[:,1], label="Learned trajectory.", linewidth = 3, guidefontsize=18, tickfontsize=10)
+title!("G-SympNet prediction for the simple pendulum")
+xlabel!(L"q")
+
+ylabel!(L"p")
+
+
 savefig("sympnet_pendulum_Architecture_test.png")
