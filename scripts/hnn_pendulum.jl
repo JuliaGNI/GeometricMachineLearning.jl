@@ -8,23 +8,20 @@ include("pendulum.jl")
 # include("plots.jl")
 
 # layer dimension/width
-const ld = 2
+const ld = 15
 
 # hidden layers
-const ln = 1
+const ln = 4
 
 # number of inputs/dimension of system
 const ninput = 2
 
-# learning rate
-const η = .001
-
 # number of training runs
-const nruns = 1000
+const nruns = 10000
 
 # Optimiser
-opt = GradientOptimizer(1e-2)
-
+#opt = GradientOptimizer(1e-2)
+opt = MomentumOptimizer(1e-2,0.5)
 
 # create HNN
 hnn = HamiltonianNeuralNetwork(ninput; nhidden = ln, width = ld)
@@ -53,21 +50,3 @@ include("plots.jl")
 plot_hnn(H, nn, total_loss; filename="hnn_pendulum.png")
 
 
-
-#=test
-
-pp = nn.params
-
-p = Tuple([Tuple(x) for x in pp])
-
-keys_1 = keys(pp)
-keys_2 = [keys(x) for x in values(pp)]
-
-ppr = NamedTuple(zip(keys_1,[NamedTuple(zip(k,x)) for (k,x) in zip(keys_2,p)]))
-
-
-
-f(x) = nn([1,2],x)
-df(x) = Zygote.gradient(f,x)[1]
-
-=#

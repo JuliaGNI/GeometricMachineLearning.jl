@@ -17,21 +17,25 @@ struct LASympNet{AT} <: SympNet{AT}
 
 end
 
-struct GSympNet{AT} <: SympNet{AT} 
+struct GSympNet{AT,T1,T2,T3} <: SympNet{AT} 
     dim::Int
     width::Int
     nhidden::Int
     act::AT
+    init_uplow::Vector{Bool}
+    init_weight::T1
+    init_bias::T2
+    init_scale::T3
 
-    function GSympNet(dim; width=dim, nhidden=1, activation=tanh) 
-        new{typeof(activation)}(dim, width, nhidden, activation)
+    function GSympNet(dim; width=dim, nhidden=1, activation=tanh, init_uplow=[true,false], init_weight=Lux.glorot_uniform, init_bias=Lux.zeros32, init_scale=Lux.glorot_uniform) 
+        new{typeof(activation),typeof(init_weight),typeof(init_bias),typeof(init_scale)}(dim, width, nhidden, activation, init_uplow, init_weight, init_bias, init_scale)
     end
 end
 
 # Chain function
 function chain(nn::GSympNet, ::LuxBackend)
     inner_layers = Tuple(
-        [Gradient(nn.dim, nn.width, nn.act, change_q = (i%2==1)) for i in 1:nn.nhidden]
+        [Gradient(nn.dim, nn.width, nn.act, change_q = nn.init_uplow[Int64((i-1)%length(nn.init_uplow)+1)], init_weight=nn.init_weight, init_bias=nn.init_bias, init_scale=nn.init_scale) for i in 1:nn.nhidden]
     )
     Lux.Chain(
         inner_layers...

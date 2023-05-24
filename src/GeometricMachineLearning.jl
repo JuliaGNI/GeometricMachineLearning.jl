@@ -124,7 +124,7 @@ module GeometricMachineLearning
     export train!, apply!, jacobian!
     export Iterate_Sympnet
 
-    export ⊙², /ᵉˡᵉ, scalar_add, √ᵉˡᵉ
+    #export ⊙², /ᵉˡᵉ, scalar_add, √ᵉˡᵉ
 
     export update!
     export check
