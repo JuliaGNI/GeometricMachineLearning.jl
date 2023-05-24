@@ -25,7 +25,8 @@ SympNet (noted $\Phi$ in the following) is so an integrator from $\mathbb{R}^{d}
  
  #### LA-SympNet
  
- LA-SympNets are made of the alternation of two types of layers, symplectic linear layers and symplectic activation layers.  For a given integer $n$, a symplectic linear layer is defined by
+ LA-SympNets are made of the alternation of two types of layers, sy
+![](../Images/sympnet_pendulum_Architecture.png)mplectic linear layers and symplectic activation layers.  For a given integer $n$, a symplectic linear layer is defined by
  
  $$\mathcal{L}^{n,up}  \begin{pmatrix}  q  \\  
  p  \end{pmatrix} =  
