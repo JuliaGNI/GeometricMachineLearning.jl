@@ -134,7 +134,7 @@ For a given activation function $\sigma$, a symplectic activation layer is defin
  
 The parameters of this layer are the scale matrix $K\in\mathbb{R}^{n\times d}$, the bias $b\in\mathbb{R}^{n}$ and the vector of weights $a\in\mathbb{R}^{n}$. The idea is that $\hat{\sigma}^{K,a,b}$ can approximate any function of the form $\nabla V$, hence the name of this layer. The integer $n$ is called the width of the gradient layer.
  
- If we note by $\mathcal{M}^G$ the set of gradient layers, a G-SympNet is a function of the form $\Psi=g_k \circ g_{k-1} \circ \cdots \circ g_1$ where $(g_i)_{1\leq i\leq k} \subset (\mathcal{M}^G)^k$
+ If we note by $\mathcal{M}^G$ the set of gradient layers, a G-SympNet is a function of the form $\Psi=g_k \circ g_{k-1} \circ \cdots \circ g_1$ where $(g_i)_{1\leq i\leq k} \subset (\mathcal{M}^G)^k$.
 
 ### Universal approximation theorems <a name="Theorems"></a>
 
@@ -160,7 +160,7 @@ These two theorems are at odds with the well-foundedness of the SympNets.
 
 __Example of r-finite functions__
 - sigmoid $\sigma(x)=\frac{1}{1+e^{-x}}$ for any positve interger $r$, 
-- tanh $\tanh(x)=\frac{e^x-e^{-x}}{e^x+e^{-x}}$ for any positve interger $r$ 
+- tanh $\tanh(x)=\frac{e^x-e^{-x}}{e^x+e^{-x}}$ for any positve interger $r$. 
 
 
 ## SympNet with `GeometricMachineLearning.jl` <a id="SympNet_with_GeometricMachineLearning"></a>
@@ -243,7 +243,7 @@ const ninput = 2
 # layer dimension for gradient module 
 const ld = 10 
 # hidden layers
-const ln = 2
+const ln = 4
 # activation function
 const act = tanh
 
@@ -269,7 +269,7 @@ We can now perform the training of the neural networks. The syntax is the follow
 
 ```julia
 # number of training runs
-const nruns = 1000
+const nruns = 10000
 # Batchsize used to compute the gradient of the loss function with respect to the parameters of the neural networks.
 const nbatch = 10
 
