@@ -25,28 +25,24 @@ end
 
 
 @inline function (d::Gradient{false,true})(z::Tuple{AbstractFloat, AbstractFloat}, ps::Tuple, st::NamedTuple)
-    size(x)[1] == d.dim || error("Dimension mismatch.")
-    return vcat(z[1] + ps[3].*d.activation.(z[2]),
+    (z[1] + sum(ps[3]*d.activation(z[2])),
                     z[2])
 end
 
 @inline function (d::Gradient{false,false})(z::Tuple{AbstractFloat, AbstractFloat}, ps::Tuple, st::NamedTuple)
-    size(x)[1] == d.dim || error("Dimension mismatch.")
-    return vcat(z[1], z[2] + ps[3].*
-            d.activation.(z[1]))
+    (z[1], z[2] + sum(ps[3]*
+            d.activation(z[1])))
 end
 
 @inline function (d::Gradient{true,true})(z::Tuple{AbstractFloat, AbstractFloat}, ps::Tuple, st::NamedTuple)
-    size(x)[1] == d.dim || error("Dimension mismatch.")
-    return vcat(z[1] + ps[1]' * 
-                (ps[3] .* d.activation.(ps[1] * z[2] .+ vec(ps[2]))), 
+    (z[1] + sum(ps[1]' * 
+                (ps[3].*d.activation.(ps[1] * z[2] + vec(ps[2])))), 
                     z[2])
 end
 
 @inline function(d::Gradient{true,false})(z::Tuple{AbstractFloat, AbstractFloat}, ps::Tuple, st::NamedTuple)
-    size(x)[1] == d.dim || error("Dimension mismatch.")
-    return vcat(z[1], z[2] + ps[1]' * 
-                    (ps[3] .* d.activation(ps[1]*z[1] .+ vec(ps[2]))))
+    (z[1], z[2] + sum(ps[1]' * 
+                    (ps[3] .* d.activation.(ps[1]*z[1] + vec(ps[2])))))
 end
 
 

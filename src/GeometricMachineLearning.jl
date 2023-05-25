@@ -26,6 +26,10 @@ module GeometricMachineLearning
     #+ operation has been overloaded to work with NamedTuples!
     export _add, apply_toNT, split_and_flatten, add!
 
+    include("embeddings/sin_cos.jl")
+
+    export sc_embed
+
     include("activations/abstract_activation_function.jl")
     include("activations/identity_activation.jl")
 
@@ -72,6 +76,7 @@ module GeometricMachineLearning
     include("layers/stiefel_layer.jl")
     include("layers/multi_head_attention.jl")
     include("layers/transformer.jl")
+    include("layers/embedding.jl")
 
 
     #include("layers/symplectic_stiefel_layer.jl")
@@ -80,9 +85,11 @@ module GeometricMachineLearning
     export Transformer
     export AbstractNeuralNetwork
     export retraction
+    export Embedding
 
     include("architectures/architectures.jl")
     include("backends/backends.jl")
+    include("backends/normal_forms_workaround.jl")
 
     export LuxBackend
 
