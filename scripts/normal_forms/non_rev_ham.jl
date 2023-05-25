@@ -22,11 +22,13 @@ f(z::AbstractVecOrMat) = [3*z[1]*z[2]^2, -z[2]^3]
 f(z::Tuple) = (3*z[1]*z[2]^2, -z[2]^3)
 expA(θ) = [cos(θ) -sin(θ); sin(θ) cos(θ)]
 
+expA(θ, qp::AbstractVector) = [cos(θ)*qp[1] - sin(θ)*qp[2], cos(θ)*qp[2] + sin(θ)*qp[1]]
 expA(θ, qp::Tuple) = (cos(θ)*qp[1] - sin(θ)*qp[2], cos(θ)*qp[2] + sin(θ)*qp[1])
 
 fτᵋ(z, ps_τ) = τᵋ(z, ps_τ, st_τ) |> f 
 #const 
 θpoints = range(0, 2*π, 100)[1:end-1]
+Πₐf(z) = sum(expA(-θ, f(expA(θ, z))) for θ in θpoints) / length(θpoints)
 Πₐfτᵋ(z, ps_τ) = sum([expA(-θ, fτᵋ(expA(θ, z), ps_τ))...] for θ in θpoints) / length(θpoints)
 
 function Jτᵋ(z, ps_τ)
@@ -48,12 +50,22 @@ function ΠₐJτᵋ(z, ps_τ)
     sum(expA(-θ)*Jτᵋ(expA(θ, z), ps_τ)*expA(θ) for θ in θpoints) / length(θpoints)
 end
 
+function pretraining_data_F(batch_size=100)
+    qp_points = [[4*rand()-2, 4*rand()-2] for _ in 1:batch_size]
+    Π_f = [Πₐf(qp) for qp in qp_points]
+    return qp_points, Π_f
+end
+
 function init_data_F(ps_τ, batch_size=100)
     qp_points = [(4*rand()-2, 4*rand()-2) for _ in 1:batch_size]
     Π_Jτ = [ΠₐJτᵋ(qp, ps_τ) for qp in qp_points]
     Π_fτ = [Πₐfτᵋ(qp, ps_τ) for qp in qp_points]
     qp_points = [[qp...] for qp in qp_points] # convert to Vectors to feed through Fᵋ
     return qp_points, Π_Jτ, Π_fτ
+end
+
+function pretraining_loss_F(ps_F, qp, Π_f)
+    norm(Fᵋ(qp, ps_F) - Π_f)
 end
 
 function loss_F(ps_F, qp, Π_Jτ, Π_fτ)
@@ -143,8 +155,38 @@ update_tuple!(ps_τ_tuple, ps_τ)
 loss_F_arr = zeros(n_epoch)
 loss_τ_arr = zeros(n_epoch)
 
-#=
+
 ProgressMeter.@showprogress for i in 1:n_epoch
+    data_F = init_data_F(ps_τ_tuple, batch_size)
+    loss_F_arr[i], g_F = reduce(_add, [Zygote.withgradient(ps -> loss_F(ps, data_F[1][i], data_F[2][i], data_F[3][i]),ps_F_tuple) for i in 1:batch_size])
+
+    g_F = NamedTuple(zip(keys_F_1,[NamedTuple(zip(k, x ./ batch_size)) for (k,x) in zip(keys_F_2, g_F[1])]))
+    optimization_step!(o, Hᵋ, ps_F, cache_F, g_F)
+    update_tuple!(ps_F_tuple, ps_F)
+
+    data_τ =  init_data_τ(ps_F_tuple, batch_size, 0)
+    loss_τ_arr[i], g_τ = reduce(_add, [Zygote.withgradient(ps -> loss_τ(ps, data_τ[1][i], data_τ[2][i], 0), ps_τ_tuple) for i in 1:batch_size])
+    g_τ = NamedTuple(zip(keys_τ_1,[NamedTuple(zip(k, x ./ batch_size)) for (k,x) in zip(keys_τ_2, g_τ[1])]))
+    optimization_step!(o, τᵋ, ps_τ, cache_τ, g_τ)
+    update_tuple!(ps_τ_tuple, ps_τ)
+end
+
+
+#=
+ProgressMeter.@showprogress for i in 1:n_epoch÷2
+    data_F = pretraining_data_F(batch_size)
+    loss_F_arr[i], g_F = reduce(_add, [Zygote.withgradient(ps -> pretraining_loss_F(ps, data_F[1][i], data_F[2][i]), ps_F_tuple) for i in 1:batch_size])
+
+    g_F = NamedTuple(zip(keys_F_1,[NamedTuple(zip(k, x ./ batch_size)) for (k,x) in zip(keys_F_2, g_F[1])]))
+    optimization_step!(o, Hᵋ, ps_F, cache_F, g_F)
+    update_tuple!(ps_F_tuple, ps_F)
+
+    data_τ =  init_data_τ(ps_F_tuple, batch_size)
+    loss_τ_arr[i] = sum(loss_τ(ps_τ_tuple, data_τ[1][i], data_τ[2][i]) for i in 1:batch_size)
+end
+
+
+ProgressMeter.@showprogress for i in n_epoch÷2:n_epoch
     data_F = init_data_F(ps_τ_tuple, batch_size)
     loss_F_arr[i], g_F = reduce(_add, [Zygote.withgradient(ps -> loss_F(ps, data_F[1][i], data_F[2][i], data_F[3][i]),ps_F_tuple) for i in 1:batch_size])
 
@@ -159,28 +201,3 @@ ProgressMeter.@showprogress for i in 1:n_epoch
     update_tuple!(ps_τ_tuple, ps_τ)
 end
 =#
-
-ProgressMeter.@showprogress for i in 1:n_epoch÷2
-    data_F = init_data_F(ps_τ_tuple, batch_size)
-    loss_F_arr[i], g_F = reduce(_add, [Zygote.withgradient(ps -> loss_F(ps, data_F[1][i], data_F[2][i], data_F[3][i]),ps_F_tuple) for i in 1:batch_size])
-
-    g_F = NamedTuple(zip(keys_F_1,[NamedTuple(zip(k, x ./ batch_size)) for (k,x) in zip(keys_F_2, g_F[1])]))
-    optimization_step!(o, Hᵋ, ps_F, cache_F, g_F)
-    update_tuple!(ps_F_tuple, ps_F)
-
-    data_τ =  init_data_τ(ps_F_tuple, batch_size)
-    loss_τ_arr[i] = sum(loss_τ(ps_τ_tuple, data_τ[1][i], data_τ[2][i]) for i in 1:batch_size)
-end
-
-
-ProgressMeter.@showprogress for i in n_epoch÷2:n_epoch
-    data_F = init_data_F(ps_τ_tuple, batch_size)
-    loss_F_arr[i] = sum(loss_F(ps_F_tuple, data_F[1][i], data_F[2][i], data_F[3][i]) for i in 1:batch_size)
-
-    data_τ =  init_data_τ(ps_F_tuple, batch_size)
-    loss_τ_arr[i], g_τ = reduce(_add, [Zygote.withgradient(ps -> loss_τ(ps, data_τ[1][i], data_τ[2][i]), ps_τ_tuple) for i in 1:batch_size])
-    g_τ = NamedTuple(zip(keys_τ_1,[NamedTuple(zip(k, x ./ batch_size)) for (k,x) in zip(keys_τ_2, g_τ[1])]))
-    optimization_step!(o, τᵋ, ps_τ, cache_τ, g_τ)
-    update_tuple!(ps_τ_tuple, ps_τ)
-end
-
