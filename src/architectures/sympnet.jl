@@ -17,7 +17,7 @@ struct LASympNet{AT,T1,T2,T3} <: SympNet{AT}
     init_bias::T2
     init_weight::T3
 
-    function LASympNet(dim; width=9, nhidden=1, activation=tanh, init_uplow_linear=[true,false], init_uplow_act=[true,false],init_sym_matrices=Lux.glorot_uniform, init_bias=Lux.zeros32, init_weight=Lux.glorot_uniform) 
+    function LASympNet(dim; width=9, nhidden=0, activation=tanh, init_uplow_linear=[true,false], init_uplow_act=[true,false],init_sym_matrices=Lux.glorot_uniform, init_bias=Lux.zeros32, init_weight=Lux.glorot_uniform) 
         new{typeof(activation),typeof(init_sym_matrices),typeof(init_bias),typeof(init_weight)}(dim, min(width,9), nhidden, activation, init_uplow_linear, init_uplow_act, init_sym_matrices, init_bias, init_weight)
     end
 
@@ -50,14 +50,19 @@ end
 
 function chain(nn::LASympNet, ::LuxBackend)
     couple_layers = []
-    for _ in 1:nhidden
-        push!(couple_layers,Linear(nn.dim,init_weight=nn.init_weight))
-        push!(couple_layers,Gradient(nn.dim, nn.dim, nn.act, full_grad = false))
+    for i in 1:nn.nhidden
+        for j in 1:nn.width
+            push!(couple_layers, Linear(nn.dim, change_q = nn.init_uplow_linear[Int64((i-1+j-1)%length(nn.init_uplow_linear)+1)], bias=(j==nn.width), init_weight=nn.init_sym_matrices, init_bias=nn.init_bias))
+        end
+        push!(couple_layers,Gradient(nn.dim, nn.dim, nn.act, full_grad = false, change_q = nn.init_uplow_act[Int64((i-1)%length(nn.init_uplow_act)+1)], init_weight=nn.init_weight))
+    end
+
+    for j in 1:nn.width
+        push!(couple_layers, Linear(nn.dim, change_q = nn.init_uplow_linear[Int64((nn.nhidden+1-1+j-1)%length(nn.init_uplow_linear)+1)], bias=(j==nn.width), init_weight=nn.init_sym_matrices, init_bias=nn.init_bias))
     end
     
     Lux.Chain(
-        couple_layers...,
-        Linear(nn.dim)
+        couple_layers...
     )
 end
 
