@@ -6,11 +6,7 @@ TODO: find correct expression for Riemannian gradient for the canonical metric!
 
 using Test
 using LinearAlgebra
-
-include("../../src/optimizers/householder.jl")
-include("../../src/optimizers/manifold_types.jl")
-include("../../src/optimizers/riemannian_gradients.jl")
-include("../../src/arrays/skew_sym.jl")
+using GeometricMachineLearning
 
 #Riemannian metric for the Stiefel manifold -> this is probably not needed explicitly!
 function riemannian_metric(Y::StiefelManifold, Δ₁, Δ₂)
@@ -25,7 +21,7 @@ function stiefel_riemannian_gradient_test(N::Int, n::Int, ε = 1e-12)
     V = SkewSymMatrix(randn(N,N))*Y
     #sample element from T*𝔐 (cotangent space):
     A = randn(N,n)
-    @test norm(tr(A'*V) - riemannian_metric(Y, grad(Y, A), V)) < ε
+    @test norm(tr(A'*V) - metric(Y, rgrad(Y, A), V)) < ε
 end
 
 N_max = 20

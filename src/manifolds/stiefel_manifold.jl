@@ -46,6 +46,10 @@ function rgrad(Y::StiefelManifold, e_grad::AbstractMatrix)
     e_grad - Y*(e_grad'*Y)
 end
 
+function metric(Y::StiefelManifold, Δ₁::AbstractMatrix, Δ₂::AbstractMatrix)
+    LinearAlgebra.tr(Δ₁*(I - .5*Y'*Y)*Δ₂)
+end
+
 function check(A::StiefelManifold)
     norm(A'*A - I)
 end
