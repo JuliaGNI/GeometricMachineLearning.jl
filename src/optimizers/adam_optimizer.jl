@@ -2,12 +2,14 @@
 Define the Adam Optimizer (no riemannian version yet!)
 Algorithm and suggested defaults are taken from (Goodfellow et al., 2016, page 301).
 """
+
 mutable struct AdamOptimizer{T<:Real} <: AbstractOptimizer
     η::T
     ρ₁::T
     ρ₂::T
     δ::T
     t::Int
+
     AdamOptimizer(η = Float32(1e-3), ρ₁ = Float32(0.9), ρ₂ = Float32(0.99), δ = Float32(1e-8)) = new{typeof(η)}(η, ρ₁, ρ₂, δ, 0)
 end
 
@@ -24,3 +26,4 @@ end
 scalar_add(A::AbstractMatrix, δ::Real) = A .+ δ
 
 init_optimizer_cache(d::Lux.AbstractExplicitLayer, ::AdamOptimizer) = setup_adam_cache(d)
+

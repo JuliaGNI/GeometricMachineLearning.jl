@@ -17,3 +17,4 @@ end
 function Base.rand(::TrivialInitRNG, T::Type{X}, d::Integer, dims::Integer...) where X
     zeros(T, d, dims...)
 end
+

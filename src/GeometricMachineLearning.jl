@@ -26,8 +26,14 @@ module GeometricMachineLearning
     #+ operation has been overloaded to work with NamedTuples!
     export _add, apply_toNT, split_and_flatten, add!
 
+    #+ operation has been overloaded to work with NamedTuples!
+    export _add
+
+    include("utils.jl")
+
     include("activations/abstract_activation_function.jl")
     include("activations/identity_activation.jl")
+
 
 
     include("arrays/add.jl")
@@ -43,11 +49,6 @@ module GeometricMachineLearning
     include("arrays/stiefel_lie_alg_hor.jl")
     include("arrays/auxiliary.jl")
 
-    export SymmetricMatrix, SymplecticMatrix, SkewSymMatrix
-    export StiefelLieAlgHorMatrix
-    export SymplecticLieAlgMatrix, SymplecticLieAlgHorMatrix
-    export StiefelProjection, SymplecticProjection
-
     export AbstractLayer
     export FeedForwardLayer, LinearFeedForwardLayer
     export Gradient
@@ -55,6 +56,16 @@ module GeometricMachineLearning
     export ResidualLayer
     export LinearSymplecticLayerP, LinearSymplecticLayerQ
     export SymplecticStiefelLayer
+    export StiefelLayer, ManifoldLayer
+    export AbstractNeuralNetwork
+
+    export retraction
+    export GlobalSection
+    export global_rep
+
+    include("manifolds/stiefel_manifold.jl")
+    include("manifolds/symplectic_manifold.jl")
+    include("manifolds/abstract_manifold.jl")
 
     include("manifolds/abstract_manifold.jl")
     include("manifolds/stiefel_manifold.jl")
@@ -72,6 +83,10 @@ module GeometricMachineLearning
     include("layers/stiefel_layer.jl")
     include("layers/multi_head_attention.jl")
     include("layers/transformer.jl")
+
+    export Optimiser, AbstractMethodOptimiser
+    include("optimizers/method_optimizer.jl")
+    include("optimizers/optimiser.jl")
 
 
     #include("layers/symplectic_stiefel_layer.jl")
@@ -93,13 +108,20 @@ module GeometricMachineLearning
 
     export NeuralNetwork
     export HamiltonianNeuralNetwork
+    export LagrangianNeuralNetwork
+    export SympNet
+    export LASympNet
+    export GSympNet
 
     include("architectures/autoencoder.jl")
     include("architectures/fixed_width_network.jl")
     include("architectures/hamiltonian_neural_network.jl")
+    include("architectures/lagrangian_neural_network.jl")
     include("architectures/variable_width_network.jl")
+    include("architectures/sympnet.jl")
 
     export train!, apply!, jacobian!
+    export Iterate_Sympnet
 
     include("optimizers/global_sections.jl")
     include("optimizers/optimizer_caches.jl")

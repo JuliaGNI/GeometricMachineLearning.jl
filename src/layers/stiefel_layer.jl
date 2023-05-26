@@ -17,6 +17,13 @@ function Lux.initialparameters(rng::AbstractRNG, d::StiefelLayer)
     (weight = StiefelManifold(LinearAlgebra.qr(A).Q[1:d.N, 1:d.n]), )
 end
 
+function Lux.initialparameters(rng::TrivialInitRNG, d::StiefelLayer)
+    (weight = zeros(StiefelLieAlgHorMatrix{Float32}, d.N, d.n), )
+end
+
+Lux.initialstates(rng::AbstractRNG, d::StiefelLayer) = NamedTuple()
+
+Lux.parameterlength(d::StiefelLayer) = d.n*(d.n-1)÷2 + d.N*d.n
 function Lux.initialparameters(::TrivialInitRNG, d::StiefelLayer)
     (weight = zeros(StiefelLieAlgHorMatrix{Float32}, d.N, d.n), )
 end

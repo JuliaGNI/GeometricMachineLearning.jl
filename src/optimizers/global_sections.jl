@@ -26,7 +26,6 @@ struct GlobalSection{T, AT}
     end
 end
 
-
 function GlobalSection(ps::NamedTuple)
     apply_toNT(ps, GlobalSection)
 end

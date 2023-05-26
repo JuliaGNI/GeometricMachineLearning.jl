@@ -38,7 +38,7 @@ function apply(nn::LuxNeuralNetwork, x, params::NamedTuple)
     y, st = Lux.apply(nn.model, x, params, nn.state)
     
     # update state
-    nn.state .= st
+    #nn.state .= st
 
     # sum output to obtain (scalar) result
     return y

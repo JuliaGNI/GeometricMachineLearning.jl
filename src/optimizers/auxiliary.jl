@@ -12,6 +12,7 @@ function 𝔄(A::AbstractMatrix{T}) where T
         mul!(B_temp, B, A)
         B .= B_temp
         rmul!(B, T(inv(i)))
+
         C += B
         i += 1 
     end
