@@ -4,9 +4,10 @@ Some tests for the Householder reflections.
 
 using LinearAlgebra
 using Test
+using GeometricMachineLearning
 
+#this is still included for now as it tests the Householder decomposition (same as LinearAlgebra.qr but we are using the LinearAlgebra routine at the moment)
 include("../src/optimizers/householder.jl")
-include("../src/optimizers/manifold_types.jl")
 
 function is_upper_triangular(A::AbstractMatrix, ε=1e-12)
     N, M = size(A)
