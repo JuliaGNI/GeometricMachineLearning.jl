@@ -1,9 +1,6 @@
 using Test 
 using LinearAlgebra
-
-include("../src/arrays/skew_sym.jl")
-include("../src/arrays/stiefel_lie_alg_hor.jl")
-include("../src/optimizers/global_sections.jl")
+using GeometricMachineLearning
 
 N = 5
 A = rand(N,N)
