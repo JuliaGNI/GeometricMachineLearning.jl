@@ -1,39 +1,61 @@
 """
-A `SymmetricMatrix` is a matrix W + W'
-Currently, it only implements custom `mul!` and `*` methods, exploiting this structure.
+A `SymmetricMatrix` is a matrix
+| a  S |
+| S  b |
+
+The first index is the row index, the second one the column index.
+
+If the constructor is called with a matrix as input it returns a symmetric matrix via the projection 
+A ↦ .5*(A + Aᵀ). 
+This is a projection defined via the canonical metric (A,B) ↦ tr(AᵀB).
+
+TODO: Overload Adjoint operation for SymmetricMatrix!! (Aᵀ = A)
+TODO: Check how LinearAlgebra implements matrix multiplication!
 """
-struct SymmetricMatrix{T, AT <: AbstractMatrix{T}} <: AbstractMatrix{T}
+
+mutable struct SymmetricMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
     S::AT
+    n::Int
 
-    function SymmetricMatrix(S::AbstractMatrix)
-        @assert length(axes(S,1)) == length(axes(S,2))
-        new{eltype(S), typeof(S)}(S)
+    function SymmetricMatrix(S::AbstractVector,n::Int)
+        @assert length(S) == n*(n+1)÷2
+        new{eltype(S),typeof(S)}(S,n)
     end
+    function SymmetricMatrix(S::AbstractMatrix)
+        n = size(S)[1]
+        @assert size(S)[2] == n
+        S_vec = zeros(n*(n+1)÷2)
+        #make the input symmetric if it isn't already
+        S = .5*(S + S')
+        #map the sub-diagonal elements to a vector 
+        for i in 1:n
+            S_vec[(i*(i-1)÷2+1):(i*(i+1)÷2)] = S[i,1:i]
+        end
+        new{eltype(S),typeof(S_vec)}(S_vec,n)
+    end
+
+end 
+
+
+#implementing getindex automatically defines all matrix multiplications! (but probably not in the most efficient way)
+function Base.getindex(A::SymmetricMatrix,i::Int,j::Int)
+    if i ≥ j
+        return A.S[((i-1)*i)÷2+j]
+    end
+    return A.S[(j-1)*j÷2+i]
 end
-
-#getindex(A::SymmetricMatrix,inds...) = getindex(A.S,inds...)
-
 
 Base.parent(A::SymmetricMatrix) = A.S
-Base.size(A::SymmetricMatrix) = size(parent(A))
+Base.size(A::SymmetricMatrix) = (A.n,A.n)
 
-function LinearAlgebra.mul!(out::AbstractVector, A::SymmetricMatrix, z::AbstractVector)
-    @assert length(out) == length(z) == length(axes(A.S,1)) == length(axes(A.S,2))
-
-    mul!(out, A.S, z)
-    mul!(out, A.S', z, 1, 1)
-
-    return out
+function Base.:+(A::SymmetricMatrix, B::SymmetricMatrix) 
+    @assert A.n == B.n  
+    SymmetricMatrix(A.S + B.S, A.n)
 end
 
-Base.getindex(A::SymmetricMatrix, i, j) = A.S[i,j] + A.S[j,i]
+function Base.:-(A::SymmetricMatrix, B::SymmetricMatrix)
+    @assert A.n == B.n
+    SymmetricMatrix(A.S - B.S, A.n)
+end
 
-Base.:*(A::SymmetricMatrix, B::AbstractVector) = A.S * B + A.S' * B
-Base.:*(A::AbstractVector, B::SymmetricMatrix) = A * B.S + A * B.S'
-
-Base.:*(A::SymmetricMatrix, B::AbstractVecOrMat) = A.S * B + A.S' * B
-Base.:*(A::AbstractVecOrMat, B::SymmetricMatrix) = A * B.S + A * B.S'
-
-
-
-
+#TODO: implement functions as in SkewSymMatrix!!

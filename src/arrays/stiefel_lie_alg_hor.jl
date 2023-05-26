@@ -20,10 +20,10 @@ mutable struct StiefelLieAlgHorMatrix{T, AT <: SkewSymMatrix{T}, ST <: AbstractM
     N::Int
     n::Int 
 
+    #maybe modify this - you don't need N & n as inputs!
     function StiefelLieAlgHorMatrix(A::SkewSymMatrix, B::AbstractMatrix, N::Int, n::Int)
-        n = A.n 
-        N = size(B)[1] + n
-        @assert size(B)[2] == n
+        @assert n == A.n == size(B,2) 
+        @assert N == size(B,1) + n
         @assert eltype(A) == eltype(B)
 
         new{eltype(A), typeof(A), typeof(B)}(A, B, N, n)
@@ -72,3 +72,76 @@ function Base.:-(A::StiefelLieAlgHorMatrix, B::StiefelLieAlgHorMatrix)
                             A.N,
                             A.n)
 end
+
+function add!(C::StiefelLieAlgHorMatrix, A::StiefelLieAlgHorMatrix, B::StiefelLieAlgHorMatrix)
+    @assert A.N == B.N == C.N
+    @assert A.n == B.n == C.n 
+    add!(C.A, A.A, B.A) 
+    add!(C.B, A.B, B.B)  
+end
+
+function Base.:-(A::StiefelLieAlgHorMatrix)
+    StiefelLieAlgHorMatrix(-A.A, -A.B, A.N, A.n)
+end
+
+function Base.:*(A::StiefelLieAlgHorMatrix, α::Real)
+    StiefelLieAlgHorMatrix( α*A.A, α*A.B, A.N, A.n)
+end
+
+Base.:*(α::Real, A::StiefelLieAlgHorMatrix) = A*α
+
+function Base.zeros(::Type{StiefelLieAlgHorMatrix{T}}, N::Integer, n::Integer) where T
+    StiefelLieAlgHorMatrix(
+        zeros(SkewSymMatrix{T}, n),
+        zeros(T, N-n, n),
+        N, 
+        n
+    )
+end
+    
+function Base.zeros(::Type{StiefelLieAlgHorMatrix}, N::Integer, n::Integer)
+    StiefelLieAlgHorMatrix(
+        zeros(SkewSymMatrix, n),
+        zeros(N-n, n),
+        N, 
+        n
+    )
+end
+
+function Base.rand(rng::Random.AbstractRNG, ::Type{StiefelLieAlgHorMatrix{T}}, N::Integer, n::Integer) where T
+    StiefelLieAlgHorMatrix(rand(rng, SkewSymMatrix{T}, n), rand(rng, T, N-n, n), N, n)
+end
+
+function Base.rand(rng::Random.AbstractRNG, ::Type{StiefelLieAlgHorMatrix}, N::Integer, n::Integer)
+    StiefelLieAlgHorMatrix(rand(rng, SkewSymMatrix, n), rand(rng, N-n, n), N, n)
+end
+
+function Base.rand(::Type{StiefelLieAlgHorMatrix{T}}, N::Integer, n::Integer) where T
+    rand(Random.default_rng(), StiefelLieAlgHorMatrix{T}, N, n)
+end
+
+function Base.rand(::Type{StiefelLieAlgHorMatrix}, N::Integer, n::Integer)
+    rand(Random.default_rng(), StiefelLieAlgHorMatrix, N, n)
+end
+
+function scalar_add(A::StiefelLieAlgHorMatrix, δ::Real)
+    StiefelLieAlgHorMatrix(scalar_add(A.A, δ), A.B .+ δ, A.N, A.n)
+end
+
+#define these functions more generally! (maybe make a fallback script!!)
+function ⊙²(A::StiefelLieAlgHorMatrix)
+    StiefelLieAlgHorMatrix(⊙²(A.A), A.B.^2, A.N, A.n)
+end
+function √ᵉˡᵉ(A::StiefelLieAlgHorMatrix)
+    StiefelLieAlgHorMatrix(√ᵉˡᵉ(A.A), sqrt.(A.B), A.N, A.n)
+end
+function /ᵉˡᵉ(A::StiefelLieAlgHorMatrix, B::StiefelLieAlgHorMatrix)
+    StiefelLieAlgHorMatrix(/ᵉˡᵉ(A.A, B.A), A.B./B.B, A.N, A.n)
+end 
+
+function LinearAlgebra.mul!(C::StiefelLieAlgHorMatrix, A::StiefelLieAlgHorMatrix, α::Real)
+    mul!(C.A, A.A, α)
+    mul!(C.B, A.B, α)
+end
+LinearAlgebra.mul!(C::StiefelLieAlgHorMatrix, α::Real, A::StiefelLieAlgHorMatrix) = mul!(C, A, α)
+LinearAlgebra.rmul!(C::StiefelLieAlgHorMatrix, α::Real) = mul!(C, C, α)

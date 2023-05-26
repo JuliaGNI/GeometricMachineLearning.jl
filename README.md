@@ -7,4 +7,8 @@
 [![CI](https://github.com/JuliaGNI/GeometricMachineLearning.jl/workflows/CI/badge.svg)](https://github.com/JuliaGNI/GeometricMachineLearning.jl/actions?query=workflow:CI)
 [![Codecov Status](https://codecov.io/gh/JuliaGNI/GeometricMachineLearning.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaGNI/GeometricMachineLearning.jl)
 
-This package implements various scientific machine learning models that aim at learning dynamical systems with geometric structure, such as Hamiltonian (symplectic) or Lagrangian (variational) systems.
+`GeometricMachineLearning.jl` offers a flexible tool for designing neural networks for dynamical systems with geometric structure, such as Hamiltonian (symplectic) or Lagrangian (variational) systems.
+
+At its core every neural network comprises three components: a neural network architecture, a loss function and an optimizer. 
+
+Traditionally, physical properties have been encoded into the loss function (PiNN approach), but in `GeometricMachineLearning.jl` this is exclusively done through the architectures and the optimizers of the neural network, thus giving theoretical guarentees that these properties are actually preserved.

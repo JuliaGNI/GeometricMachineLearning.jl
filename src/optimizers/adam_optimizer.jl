@@ -2,49 +2,25 @@
 Define the Adam Optimizer (no riemannian version yet!)
 Algorithm and suggested defaults are taken from (Goodfellow et al., 2016, page 301).
 """
-struct AdamOptimizer{T} <: AbstractOptimizer
+mutable struct AdamOptimizer{T<:Real} <: AbstractOptimizer
     η::T
     ρ₁::T
     ρ₂::T
     δ::T
-    AdamOptimizer(η = 1e-3, ρ₁ = 0.9, ρ₂ = 0.99, δ = 1e-8) = new{typeof(η)}(η, ρ₁, ρ₂, δ)
+    t::Int
+    AdamOptimizer(η = Float32(1e-3), ρ₁ = Float32(0.9), ρ₂ = Float32(0.99), δ = Float32(1e-8)) = new{typeof(η)}(η, ρ₁, ρ₂, δ, 0)
 end
 
-init(o::AdamOptimizer, x) = nothing
-
-#normally it should be "obj in keys(x)"; but this isn't possible because of HNN hack
-function update_layer!(o::AdamOptimizer, state, ::Lux.AbstractExplicitLayer, x, dx)
-    for obj in eachindex(x)
-        state[1][obj] .= o.ρ₁ * state[1][obj] + (1.0 - o.ρ₁) * dx[obj]
-        state[2][obj] .= o.ρ₂ * state[2][obj] + (1.0 - o.ρ₂) * dx[obj] .^ 2
-        x[obj] .-= o.η * (1.0 - o.ρ₁^state[3]) * state[1][obj] ./
-                   (sqrt.((1.0 - o.ρ₂^state[3]) * state[2][obj]) .+ o.δ)
-    end
+function update!(o::AdamOptimizer, C::AdamCache, B::AbstractVecOrMat)
+    add!(C.B₁, (o.ρ₁ - o.ρ₁^o.t)/(1 - o.ρ₁^o.t)*C.B₁, (1 - o.ρ₁)/(1 - o.ρ₁^o.t)*B)
+    add!(C.B₂, (o.ρ₂ - o.ρ₂^o.t)/(1 - o.ρ₂^o.t)*C.B₂, (1 - o.ρ₂)/(1 - o.ρ₂^o.t)*⊙²(B))
+    mul!(B, -o.η, /ᵉˡᵉ(C.B₁, scalar_add(√ᵉˡᵉ(C.B₂), o.δ)))
 end
 
-function apply!(o::AdamOptimizer, state, model::Lux.Chain, x, dx)
-    for i in eachindex(model)
-        update_layer!(o, (state[1][i], state[2][i], state[3]), model[i], x[i], dx[i])
-    end
-    #hacky, fix this!
-    state = (state[1], state[2], state[3] + 1)
-end
+#fallbacks: 
+⊙²(A::AbstractMatrix) = A.^2
+√ᵉˡᵉ(A::AbstractMatrix) = sqrt.(A)
+/ᵉˡᵉ(A::AbstractMatrix, B::AbstractMatrix) = A./B
+scalar_add(A::AbstractMatrix, δ::Real) = A .+ δ
 
-#initialize Adam
-function init_adam!(::Lux.AbstractExplicitLayer, x::NamedTuple)
-    for obj in x
-        obj .= zeros(size(obj))
-    end
-end
-
-function init_adam(model::Lux.AbstractExplicitLayer)
-    ps, st = Lux.setup(Random.default_rng(), model)
-    init_adam!(model, ps)
-    (ps, deepcopy(ps), 1)
-end
-
-function init_adam!(model::Lux.Chain, x::NamedTuple)
-    for index in eachindex(model)
-        init_adam!(model[index], x[index])
-    end
-end
+init_optimizer_cache(d::Lux.AbstractExplicitLayer, ::AdamOptimizer) = setup_adam_cache(d)
