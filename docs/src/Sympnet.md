@@ -190,8 +190,8 @@ and severals keywords argument :
 - __width__ : the width for all the symplectic linear layers with default value set to 9 (if width>9, width is set to 9),
 - __nhidden__ : the number of pairs of symplectic linear and activation layers with default value set to 0 (i.e LA-SympNet is a single symplectic linear layer),
 - __activation__ : the activation function for all the symplectic activations layers with default value set to tanh,
-- __init_uplow_linear__ : a vector of boolean whose the ith coordinate is true only if all the symplectic linear layers in (i mod `length(init_uplow)`)-th position is up (for example the default value is [true,false] which represents an alternation of up and low symplectic linear layers),
-- __init_uplow_act__ : a vector of boolean whose the ith coordinate is true only if all the symplectic activation layers in (i mod `length(init_uplow)`)-th position is up (for example the default value is [true,false] which represents an alternation of up and low symplectic activation layers),
+- __init_uplow_linear__ : a vector of boolean whose the ith coordinate is true only if all the symplectic linear layers in (i mod `length(init_uplow_linear)`)-th position is up (for example the default value is [true,false] which represents an alternation of up and low symplectic linear layers),
+- __init_uplow_act__ : a vector of boolean whose the ith coordinate is true only if all the symplectic activation layers in (i mod `length(init_uplow_act)`)-th position is up (for example the default value is [true,false] which represents an alternation of up and low symplectic activation layers),
 - __init_sym_matrices__: the function which gives the way to initialize the symmetric matrices $S^i$ of symplectic linear layers,
 - __init_bias__: the function which gives the way to initialize the vector of bias $b$,
 - __init_weight__: the function which gives the way to initialize the weight $a$.
@@ -225,7 +225,6 @@ To train the SympNet, one need data along a trajectory such that the model is tr
 
 $$Loss(Q,P) = \underset{i}{\sum} d(\Phi(Q[i,-],P[i,-]), [Q[i,-] P[i,-]]^T)$$
 where $d$ is a distance on $\mathbb{R}^d$.
-
 
 
 ## Examples
