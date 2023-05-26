@@ -18,7 +18,3 @@ function Base.rand(::TrivialInitRNG, T::Type{X}, d::Integer, dims::Integer...) w
     zeros(T, d, dims...)
 end
 
-#Lux is always working with single precision!
-function Lux.glorot_uniform(rng::TrivialInitRNG, dims::Integer...; gain = 1)
-    rand(rng, Float32, dims...)
-end

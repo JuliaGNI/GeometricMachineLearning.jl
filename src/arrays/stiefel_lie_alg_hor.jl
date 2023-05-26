@@ -73,6 +73,14 @@ function Base.:-(A::StiefelLieAlgHorMatrix, B::StiefelLieAlgHorMatrix)
                             A.n)
 end
 
+function add!(C::StiefelLieAlgHorMatrix, A::StiefelLieAlgHorMatrix, B::StiefelLieAlgHorMatrix)
+    @assert A.N == B.N == C.N
+    @assert A.n == B.n == C.n 
+    add!(C.A, A.A, B.A) 
+    add!(C.B, A.B, B.B)  
+end
+
+
 function Base.:-(A::StiefelLieAlgHorMatrix)
     StiefelLieAlgHorMatrix(-A.A, -A.B, A.N, A.n)
 end
@@ -83,7 +91,7 @@ end
 
 Base.:*(α::Real, A::StiefelLieAlgHorMatrix) = A*α
 
-function Base.zeros(::Type{StiefelLieAlgHorMatrix{T}}, N::Int, n::Int) where T
+function Base.zeros(::Type{StiefelLieAlgHorMatrix{T}}, N::Integer, n::Integer) where T
     StiefelLieAlgHorMatrix(
         zeros(SkewSymMatrix{T}, n),
         zeros(T, N-n, n),
@@ -92,7 +100,7 @@ function Base.zeros(::Type{StiefelLieAlgHorMatrix{T}}, N::Int, n::Int) where T
     )
 end
     
-function Base.zeros(::Type{StiefelLieAlgHorMatrix}, n::Int)
+function Base.zeros(::Type{StiefelLieAlgHorMatrix}, N::Integer, n::Integer)
     StiefelLieAlgHorMatrix(
         zeros(SkewSymMatrix, n),
         zeros(N-n, n),
@@ -102,7 +110,7 @@ function Base.zeros(::Type{StiefelLieAlgHorMatrix}, n::Int)
 end
 
 function Base.rand(rng::Random.AbstractRNG, ::Type{StiefelLieAlgHorMatrix{T}}, N::Integer, n::Integer) where T
-    StiefelLieAlgHorMatrix(rand(rng, SkewSymMatrix{T}, n), rand(rng, N-n, n), N, n)
+    StiefelLieAlgHorMatrix(rand(rng, SkewSymMatrix{T}, n), rand(rng, T, N-n, n), N, n)
 end
 
 function Base.rand(rng::Random.AbstractRNG, ::Type{StiefelLieAlgHorMatrix}, N::Integer, n::Integer)
@@ -118,7 +126,7 @@ function Base.rand(::Type{StiefelLieAlgHorMatrix}, N::Integer, n::Integer)
 end
 
 function scalar_add(A::StiefelLieAlgHorMatrix, δ::Real)
-    StiefelLieAlgHorMatrix(scalar_add(A.A, δ), A.B .+ δ, N, n)
+    StiefelLieAlgHorMatrix(scalar_add(A.A, δ), A.B .+ δ, A.N, A.n)
 end
 
 #define these functions more generally! (maybe make a fallback script!!)
@@ -126,8 +134,16 @@ function ⊙²(A::StiefelLieAlgHorMatrix)
     StiefelLieAlgHorMatrix(⊙²(A.A), A.B.^2, A.N, A.n)
 end
 function √ᵉˡᵉ(A::StiefelLieAlgHorMatrix)
-    StiefelLieAlgHorMatrix(√ᵉˡᵉ(A), sqrt.(A.B), A.N, A.n)
+    StiefelLieAlgHorMatrix(√ᵉˡᵉ(A.A), sqrt.(A.B), A.N, A.n)
 end
 function /ᵉˡᵉ(A::StiefelLieAlgHorMatrix, B::StiefelLieAlgHorMatrix)
     StiefelLieAlgHorMatrix(/ᵉˡᵉ(A.A, B.A), A.B./B.B, A.N, A.n)
 end 
+
+function LinearAlgebra.mul!(C::StiefelLieAlgHorMatrix, A::StiefelLieAlgHorMatrix, α::Real)
+    mul!(C.A, A.A, α)
+    mul!(C.B, A.B, α)
+end
+LinearAlgebra.mul!(C::StiefelLieAlgHorMatrix, α::Real, A::StiefelLieAlgHorMatrix) = mul!(C, A, α)
+LinearAlgebra.rmul!(C::StiefelLieAlgHorMatrix, α::Real) = mul!(C, C, α)
+

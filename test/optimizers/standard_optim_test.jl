@@ -16,6 +16,9 @@ old_val = f(ps)
 optim = StandardOptimizer(1e-3)
 g = Zygote.gradient(f, ps)[1]
 ps1 = deepcopy(ps)
+
+#This has to be changed to work with the new optimizers syntax!
+#=
 apply!(optim, nothing, model, ps1, g)
 new_val = f(ps1)
 @printf "Before optimization: %.5e. " old_val
@@ -28,3 +31,4 @@ for layer_number in 1:length(model)
 end
 new_val_manual = f(ps)
 @printf "After manuel optimization %.5e" new_val_manual
+=#

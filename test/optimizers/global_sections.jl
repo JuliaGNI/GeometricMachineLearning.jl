@@ -8,13 +8,10 @@ using LinearAlgebra
 using BandedMatrices
 using Test
 
-include("../src/optimizers/orthogonalization_procedures.jl")
-include("../src/optimizers/global_sections.jl")
-include("../src/arrays/symplectic.jl")
-include("../src/arrays/skew_sym.jl")
-include("../src/arrays/symmetric2.jl")
-include("../src/arrays/symplectic_lie_alg2.jl")
-include("../src/optimizers/retractions.jl")
+using GeometricMachineLearning
+
+#this should be removed (maybe Gram Schmidt should be removed alltogether - Householder much much better)
+include("../../src/orthogonalization_procedures/gram_schmidt.jl")
 
 function stiefel_completion_test(N,n)
     A = StiefelManifold(N,n)

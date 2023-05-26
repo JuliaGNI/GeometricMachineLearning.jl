@@ -36,7 +36,6 @@ mutable struct SymmetricMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
 
 end 
 
-
 #implementing getindex automatically defines all matrix multiplications! (but probably not in the most efficient way)
 function Base.getindex(A::SymmetricMatrix,i::Int,j::Int)
     if i ≥ j
@@ -65,3 +64,5 @@ function Base.setindex!(A::SymmetricMatrix{T},a::T,i::Int,j::Int) where{T}
         A.S[(j-1)*j÷2+i] = a
     end
 end
+
+

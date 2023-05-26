@@ -2,7 +2,8 @@
 maybe consider dividing the output in the check functions by n!
 TODO: Implement sampling procedures!!
 """
-mutable struct StiefelManifold{T, AT <: AbstractMatrix{T}} <: AbstractMatrix{T}
+
+mutable struct StiefelManifold{T, AT <: AbstractMatrix{T}} <: Manifold{T}
     A::AT
     function StiefelManifold(A::AbstractMatrix)
         @assert size(A)[1] ≥ size(A)[2]
@@ -36,7 +37,8 @@ function Base.rand(::Type{StiefelManifold}, N::Integer, n::Integer)
 end
 
 #probably don't need this! 
-function Base.rand(rng::TrivialInitRNG, ::Type{StiefelManifold{T}}, N::Int, n::Int) where T
+
+function Base.rand(::TrivialInitRNG, ::Type{StiefelManifold{T}}, N::Int, n::Int) where T
     @assert N ≥ n 
     zeros(StiefelLieAlgHorMatrix{T}, N, n)
 end
@@ -45,13 +47,21 @@ function rgrad(Y::StiefelManifold, e_grad::AbstractMatrix)
     e_grad - Y*(e_grad'*Y)
 end
 
+function metric(Y::StiefelManifold, Δ₁::AbstractMatrix, Δ₂::AbstractMatrix)
+    LinearAlgebra.tr(Δ₁*(I - .5*Y'*Y)*Δ₂)
+end
+
 function check(A::StiefelManifold)
     norm(A'*A - I)
 end
 
 function global_section(Y::StiefelManifold)
     N, n = size(Y)
-    A = randn(eltype(Y), N-n, n)
+    A = randn(eltype(Y), N, N-n)
     A = A - Y*Y'*A
-    qr(A).Q[1:N, 1:N-n]
+    qr(A).Q#[1:N, 1:N-n]
+end
+
+function global_section(::AbstractVecOrMat)
+    nothing
 end
