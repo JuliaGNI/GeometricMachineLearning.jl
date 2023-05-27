@@ -58,4 +58,10 @@ function Base.:-(A::SymmetricMatrix, B::SymmetricMatrix)
     SymmetricMatrix(A.S - B.S, A.n)
 end
 
-#TODO: implement functions as in SkewSymMatrix!!
+function Base.setindex!(A::SymmetricMatrix{T},a::T,i::Int,j::Int) where{T}
+    if i ≥ j
+        A.S[(i-1)*i÷2+j] = a
+    else
+        A.S[(j-1)*j÷2+i] = a
+    end
+end

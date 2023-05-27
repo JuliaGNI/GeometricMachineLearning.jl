@@ -11,6 +11,7 @@ using LinearAlgebra
 dict_problem_H= Dict(
     :pendulum => (x-> x[2]^2 / 2 + (1-cos(x[1])),1),
     :Hénon_Heiles => (x-> x[3]^2/(2) + x[4]^2/(2) + x[1]^2/2 + x[2]^2/2 + (x[1]^2*x[2]-x[2]^3/3),2)
+    #:three_body_system =>(,)
 )
 
 # Lagrangian Dictionary
@@ -93,6 +94,32 @@ function get_phase_space_data(nameproblem, q₀, p₀, tspan = (0., 100.), tstep
     return (q, p)
 end
 
+
+function get_phase_space_multiple_trajectoy(nameproblem; singlematrix = true, n_trajectory = 1, n_points = 10, tstep = 0.1, qmin = -0.2, pmin = -0.2, qmax = 0.2, pmax = 0.2)
+
+    # get the Hamiltonien corresponding to name_problem   
+    H_problem, n_dim = dict_problem_H[nameproblem] 
+
+    #define timespan
+    tspan=(0.,n_points*tstep)
+
+    #compute phase space for each trajectory staring from a random point
+    trajectory_q = [zeros(n_points+1,n_dim) for _ in 1:n_trajectory]
+    trajectory_p = [zeros(n_points+1,n_dim) for _ in 1:n_trajectory]
+    for i in 1:n_trajectory
+        q₀ = [rand()*(qmax-qmin)+qmin for _ in 1:n_dim]
+        p₀ = [rand()*(pmax-pmin)+pmin for _ in 1:n_dim]
+        trajectory_q[i],trajectory_p[i] = compute_phase_space(H_problem, q₀, p₀, tspan, tstep)
+    end
+
+    if singlematrix
+        data_q = vcat(trajectory_q...)
+        data_p = vcat(trajectory_p...)
+        return data_q,data_p
+    else 
+        return trajectory_q,trajectory_p
+    end
+end
 
 ###############################################################################
 # compute phase space from the Hamiltonian
