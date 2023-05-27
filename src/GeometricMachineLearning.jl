@@ -14,9 +14,13 @@ module GeometricMachineLearning
     include("optimizers/retraction_types.jl")
 
 
-    include("rng/trivial_rng.jl")
-
     export TrivialInitRNG
+
+    include("rng/trivial_rng.jl")
+    
+
+
+    
 
     #are these needed?
     include("gradient.jl")
@@ -29,16 +33,13 @@ module GeometricMachineLearning
     #+ operation has been overloaded to work with NamedTuples!
     export _add
 
-    include("utils.jl")
-
     include("activations/abstract_activation_function.jl")
     include("activations/identity_activation.jl")
 
 
-
+    #INCLUDE ARRAYS
     include("arrays/add.jl")
     include("arrays/zero_vector.jl")
-    
     include("arrays/block_identity_lower.jl")
     include("arrays/block_identity_upper.jl")
     include("arrays/symmetric.jl")
@@ -49,6 +50,22 @@ module GeometricMachineLearning
     include("arrays/stiefel_lie_alg_hor.jl")
     include("arrays/auxiliary.jl")
 
+    export retraction
+    export GlobalSection
+    export global_rep
+
+
+    #INCLUDE MANIFOLDS
+    include("manifolds/abstract_manifold.jl")
+    include("manifolds/stiefel_manifold.jl")
+    include("manifolds/symplectic_manifold.jl")
+
+    export Manifold
+    export StiefelManifold
+    export SymplecticStiefelManifold
+    
+    #INCLUDE LAYERS
+    #include("layers/symplectic_stiefel_layer.jl")
     export AbstractLayer
     export FeedForwardLayer, LinearFeedForwardLayer
     export Gradient
@@ -57,21 +74,11 @@ module GeometricMachineLearning
     export LinearSymplecticLayerP, LinearSymplecticLayerQ
     export SymplecticStiefelLayer
     export StiefelLayer, ManifoldLayer
+    
+    export MultiHeadAttention
+    export Transformer
     export AbstractNeuralNetwork
-
     export retraction
-    export GlobalSection
-    export global_rep
-
-    include("manifolds/stiefel_manifold.jl")
-    include("manifolds/symplectic_manifold.jl")
-    include("manifolds/abstract_manifold.jl")
-
-    include("manifolds/abstract_manifold.jl")
-    include("manifolds/stiefel_manifold.jl")
-    include("manifolds/symplectic_manifold.jl")
-
-    export StiefelManifold, SymplecticStiefelManifold, Manifold
 
     include("layers/abstract_layer.jl")
     include("layers/feed_forward_layer.jl")
@@ -84,35 +91,60 @@ module GeometricMachineLearning
     include("layers/multi_head_attention.jl")
     include("layers/transformer.jl")
 
-    export Optimiser, AbstractMethodOptimiser
-    include("optimizers/method_optimizer.jl")
-    include("optimizers/optimiser.jl")
 
+    #INCLUDE OPTIMIZERS
+    export AbstractMethodOptimiser, AbstractCache
+    export GradientOptimizer, GradientCache
+    export MomentumOptimizer, MomentumCache
+    export AdamOptimizer, AdamCache
 
-    #include("layers/symplectic_stiefel_layer.jl")
-    export StiefelLayer, ManifoldLayer
-    export MultiHeadAttention
-    export Transformer
-    export AbstractNeuralNetwork
+    export Optimiser
+    export optimization_step!
+    export init_optimizer_cache
+
+    include("optimizers/optimizer_caches.jl")
+    include("optimizers/Method_Optimizer/abstract_method_optimizer.jl")
+    include("optimizers/Method_Optimizer/gradient_optimizer.jl")
+    include("optimizers/Method_Optimizer/momentum_optimizer.jl")        
+    include("optimizers/Method_Optimizer/adam_optimizer.jl")
+    include("optimizers/optimizer.jl")
+
+    export GlobalSection, apply_section
+    export global_rep
+    export TrivialInitRNG
+    export Geodesic, Cayley
     export retraction
+    export ⊙², √ᵉˡᵉ, /ᵉˡᵉ, scalar_add
+    export update!
+    export check
+
+    include("optimizers/global_sections.jl")
+    include("optimizers/auxiliary.jl")
+    include("optimizers/retractions.jl")
+\
+    #INCLUDE BACKENDS
+    export AbstractNeuralNetwork
+    export LuxBackend
+    export NeuralNetwork
 
     include("architectures/architectures.jl")
     include("backends/backends.jl")
-
-    export LuxBackend
-
     include("backends/lux.jl")
 
     # set default backend in NeuralNetwork constructor
     NeuralNetwork(arch::AbstractArchitecture; kwargs...) = NeuralNetwork(arch, LuxBackend(); kwargs...)
 
-    export NeuralNetwork
+    #INCLUDE ARCHITECTURES
     export HamiltonianNeuralNetwork
     export LagrangianNeuralNetwork
     export SympNet
     export LASympNet
     export GSympNet
 
+    export train!, apply!, jacobian!
+    export Iterate_Sympnet
+
+    include("architectures/architectures.jl")
     include("architectures/autoencoder.jl")
     include("architectures/fixed_width_network.jl")
     include("architectures/hamiltonian_neural_network.jl")
@@ -120,38 +152,9 @@ module GeometricMachineLearning
     include("architectures/variable_width_network.jl")
     include("architectures/sympnet.jl")
 
-    export train!, apply!, jacobian!
-    export Iterate_Sympnet
 
-    include("optimizers/global_sections.jl")
-    include("optimizers/optimizer_caches.jl")
-    include("optimizers/abstract_optimizer.jl")
-    include("optimizers/standard_optimizer.jl")
-    include("optimizers/momentum_optimizer.jl")
-    include("optimizers/adam_optimizer.jl")
-    include("optimizers/auxiliary.jl")
-    include("optimizers/retractions.jl")
-
-    export GlobalSection, apply_section
-    export global_rep
-
-    export TrivialInitRNG
-    
-    export AbstractOptimizer, AbstractCache
-    export StandardOptimizer, StandardCache
-    export MomentumOptimizer, MomentumCache
-    export AdamOptimizer, AdamCache
-
-    export Geodesic, Cayley
-    export retraction
-
-    export ⊙², √ᵉˡᵉ, /ᵉˡᵉ, scalar_add
-
-    export update!
-    export check
-    export init_optimizer_cache
-    export optimization_step!
 
     include("rng/random_funcs.jl")
 
+    
 end
