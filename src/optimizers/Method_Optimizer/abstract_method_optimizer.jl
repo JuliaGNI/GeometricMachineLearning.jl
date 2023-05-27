@@ -1,0 +1,3 @@
+abstract type AbstractMethodOptimiser end
+
+
