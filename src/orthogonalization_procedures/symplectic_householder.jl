@@ -1,63 +1,55 @@
-N = 5
-M = 4
-
-A = rand(2*N, 2*M)
-
-function compute_a2(A, ν=1)
-    N, M = size(A).÷2
-    if ν > M
-        print("\nfuck!!!\n")
-    end
-    v₁ = copy(A[:,ν])
-    v₂ = copy(A[:,M+ν])
-    α = v₁[1:N]'*v₂[N+1:2*N] - v₁[N+1:2*N]'*v₂[1:N]
-    a2 = α/(v₂[N+1]/v₁[1] - v₂[1]*v₁[N+1]/v₁[1]^2)
-    if a2 < 0
-        v₁, v₂, a2, ν =  compute_a2(A, ν+1)
-    end
-    return v₁, v₂, a2, ν
-end
-
-#rotate matrix into the format where two columns are zeroed out
-function zero_rot!(A)
-    N, M = size(A).÷2
-    v₁, v₂, a2, ν = compute_a2(A)
-    a = √(a2)
-    b = v₂[1]/v₁[1]*a
-    c = v₁[N+1]/v₁[1]*a
-    d = v₂[N+1]/v₁[1]*a
-    #factor by which the symplectic Householder has to be multiplied - implement this!
-    #fac = 2*α - ...
-    v₁[1] -= a 
-    v₁[N+1] -= c 
-    v₂[1] -= b
-    v₂[N+1] -= d
-    α = v₁[1:N]'*v₂[N+1:2*N] - v₁[N+1:2*N]'*v₂[1:N]
-    #LinearAlgebra.rmul!(v₁, -1.)
-    #LinearAlgebra.rmul!(v₂, -1.)
-    V = hcat(v₁, v₂)
-    VJ = hcat(vcat(v₂[N+1:2*N]', -v₁[N+1:2*N]'), vcat(-v₂[1:N]', v₁[1:N]'))
-    A .-= 2/α*V*(VJ*A)
-    ν, V
-end
-
-function factorize!(A, ν=(), V=())
-    N, M = size(A).÷2
-    print(N," ", M)
-    if M > 0
-        ν₁, V₁ = zero_rot!(A)
-        index = vcat(1:(ν₁-1),(ν₁+1):M)
-        index = vcat(index, index .+ M)
-        @views A_new = A[vcat(2:N, N+2:2*N), index]
-        ν, V =  factorize!(A_new, ν, V)
-        return (ν₁, ν...), (V₁, V...)
-    end
-    ν, V    
-end
-
 """
 this algorithm is taken (and adjusted) from https://doi.org/10.1016/j.laa.2008.02.029
 """
+struct Sympl_Householder_Decom{T, AT, VT} <: LinearAlgebra.Factorization where {AT<:AbstractMatrix, VT<:AbstractVector}
+    A::AT
+    c₁::VT
+    c₂::VT 
+    ρ::VT
+    ν::VT
+    μ::VT
+    function Sympl_Householder_Decom(A::AbsractMatrix{T}, c₁::AbstractVector{T}, 
+        c₂::AbstractVector{T}, ρ::AbstractVector{T}, ν::AbstractVector{T}, μ::AbstractVector{T})
+        new{T, typeof(A), typeof(c₁)}(A, c₁, c₂, ρ, ν, μ)
+    end
+end
+
+function sqr!(A::AbstractMatrix{T}) where {T}
+    N2, M2 = size(A)
+    @assert iseven(N2)
+    @assert iseven(M2)
+    N = N2÷2
+    M = M2÷2
+    c₁ = zeros(T, M)
+    c₂ = zeros(T, M)
+    ρ = zeros(T, M)
+    ν = zeros(T, M)
+    μ = zeros(T, M)
+    for i in 1:M
+        row_ind = vcat(i:N, (N+i):N2)
+        @views a = A[row_ind, i]
+        @views b = A[row_ind, N+i]
+        c₁[i], c₂[i], ρ[i], ν[i], μ[i] = symplectic_householder!(a, b)
+        #apply Householder to rest of matrix
+        if i < M
+            col_ind = vcat((i+1):M, (M+i+1):M2)
+            @views ̃A = A[row_ind, col_ind]
+            ̃A += c₁[i]*J
+        end
+        for j in (i+1):M
+            row_ind = vcat(i:N, (N+i):N2)
+            A[row_ind, j] .+= c₁[i]*J(a, A[row_ind, i])*a
+            A[row_ind, j] .+= c₂[i]*J(b, A[row_ind, i])*b
+        end
+    end
+    Sympl_Householder_Decom(A, c₁, c₂, ρ, ν, μ)
+end
+
+function sqr(A::AbstractMatrix{T}) where {T}
+    A_copy = copy(A)
+    sqr!(A_copy)
+end
+
 
 function J(a::AbstractVector, b::AbstractVector)
     N2 = length(a)
@@ -81,13 +73,13 @@ function symplectic_householder!(a::AbstractVector, b::AbstractVector)
     b .+= c₁*J(a,b)*a 
     ν = b[N+1]
     ξ = sqrt(LinearAlgebra.norm(b)^2 - b[1]^2 - ν^2)
-    #μ = b[1] + ξ 
+    #look at the choice of pre-sign!
     s = +1.
-    c₂ = -s /(ξ*ν)
+    c₂ = s /(ξ*ν)
     LinearAlgebra.rmul!(b, -1)
     b[1] =  s*ξ 
     b[N+1] = 0.
-    c₁, c₂
+    c₁, c₂, ρ, ν, μ
 end
 
 function symplectic_householder(a::AbstractVector, b::AbstractVector)
@@ -95,14 +87,29 @@ function symplectic_householder(a::AbstractVector, b::AbstractVector)
     symplectic_householder!(a_copy, b_copy)..., a_copy, b_copy
 end
 
-function symplectic_householder!(A::AbstractMatrix)
+function symplectic_householder_step!(A::AbstractMatrix)
     N2, M2 = size(A)
     @assert iseven(M2)
     N = N2÷2
     M = M2÷2
-    c₁, c₂, v₁, v₂ = symplectic_householder(A[:,1], A[:,M+1])
+    c₁, c₂, _, _, _, v₁, v₂ = symplectic_householder(A[:,1], A[:,M+1])
     for i in 1:M2
         A[:,i] .+= c₁*J(v₁, A[:,i])*v₁
         A[:,i] .+= c₂*J(v₂, A[:,i])*v₂
     end
 end
+
+function symplectic_householder_full!(A::AbstractMatrix)
+    N2, M2 = size(A)
+    @assert iseven(M2)
+    @assert iseven(N2)
+    N = N2÷2
+    M = M2÷2
+    for i in ((1:M) .+ 1)
+        row_ind = vcat((i-1):N, (N+i-1):N2)
+        col_ind = vcat((i-1):M, (M+i-1):M2)
+        @views A_temp = A[row_ind, col_ind]
+        symplectic_householder_step!(A_temp)
+    end
+end
+
