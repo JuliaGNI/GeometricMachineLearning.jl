@@ -1,4 +1,3 @@
-
 abstract type AbstractOptimizer end
 
 function optimization_step!(o::AbstractOptimizer, d::Lux.AbstractExplicitLayer, ps::NamedTuple, C::NamedTuple, dx::NamedTuple)

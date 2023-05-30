@@ -61,6 +61,7 @@ module GeometricMachineLearning
     include("manifolds/symplectic_manifold.jl")
 
     export StiefelManifold, SymplecticStiefelManifold, Manifold
+    export rgrad, metric
 
     include("layers/abstract_layer.jl")
     include("layers/feed_forward_layer.jl")
