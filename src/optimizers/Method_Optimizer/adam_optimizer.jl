@@ -3,7 +3,7 @@ Define the Adam Optimizer (no riemannian version yet!)
 Algorithm and suggested defaults are taken from (Goodfellow et al., 2016, page 301).
 """
 
-mutable struct AdamOptimizer{T<:Real} <: AbstractOptimizer
+mutable struct AdamOptimizer{T<:Real} <: AbstractMethodOptimiser
     η::T
     ρ₁::T
     ρ₂::T

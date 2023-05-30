@@ -1,6 +1,5 @@
 # Importe module
 using GeometricMachineLearning
-using Lux
 
 #Import Data
 #include("pendulum.jl")
@@ -9,20 +8,20 @@ using Lux
 
 include("data_problem.jl")
 
-#nameproblem = :pendulum
-#q0 = [0.2]
-#p0 = [0.8]
+nameproblem = :pendulum
+q0 = [0.2]
+p0 = [0.8]
 
 
-nameproblem = :Hénon_Heiles
-q0 = [0.3,-0.3]
-p0 = [0.3,0.15]
+#nameproblem = :Hénon_Heiles
+#q0 = [0.3,-0.3]
+#p0 = [0.3,0.15]
 
 _, n_dim = dict_problem_H[nameproblem]
 
 #data_q, data_p = get_phase_space_data(nameproblem, q0, p0, (0,100pi),0.01)
-n_trajectory = 1000
-data_q, data_p = get_phase_space_multiple_trajectoy(nameproblem, singlematrix = true, n_trajectory = n_trajectory, n_points = 30, tstep = 0.01)
+n_trajectory = 100
+data_q, data_p = get_phase_space_multiple_trajectoy(nameproblem, singlematrix = true, n_trajectory = n_trajectory, n_points = 30, tstep = 0.1)
 
 
 #=
@@ -39,11 +38,11 @@ const ninput = 2*n_dim
 # layer dimension/width
 const ld = 10
 # hidden layers
-const ln = 20
+const ln = 2
 # activation function
 const act = tanh
 # number of training runs
-const nruns = 1000
+const nruns = 10000
 # batch size
 const batch_size = 10
 
@@ -70,7 +69,7 @@ q_learned, p_learned = Iterate_Sympnet(nn, q0, p0; n_points = size(data_q,1))
 #Plots
 using LaTeXStrings
 
-data_q, data_p = get_phase_space_data(nameproblem, q0, p0, (0,6pi),0.01)
+data_q, data_p = get_phase_space_data(nameproblem, q0, p0, (0,6pi),0.1)
 
 plt_qp = plot(data_q[:,1], data_p[:,1], label="Training data.",linewidth = 3,mk=*)
 plot!(plt_qp, q_learned[:,1], p_learned[:,1], label="Learned trajectory.", linewidth = 3, guidefontsize=18, tickfontsize=10, size=(1000,800), legendfontsize=15, titlefontsize=15)
