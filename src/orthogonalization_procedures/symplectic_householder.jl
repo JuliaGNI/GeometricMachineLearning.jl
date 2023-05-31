@@ -14,10 +14,10 @@ struct SymplecticHouseholderDecom{T, AT<:AbstractMatrix{T}, VT<:AbstractVector{T
     end
 end
 
-struct Sfac{T, ST} <: AbstractMatrix{T} where {ST<:SymplecticHouseholderDecom{T}}
+struct Sfac{inverse, T, ST} <: AbstractMatrix{T} where {inverse, ST<:SymplecticHouseholderDecom{T}}
     Λ::ST
-    function Sfac(Λ::SymplecticHouseholderDecom{T}) where T
-        new{T, typeof(Λ)}(Λ)
+    function Sfac(Λ::SymplecticHouseholderDecom{T}, inverse::Bool=false) where T
+        new{inverse, T, typeof(Λ)}(Λ)
     end
 end
 
@@ -27,20 +27,99 @@ function Base.size(S::Sfac)
 end
 
 #this is incredibly inefficient but may not be needed.
-function Base.getindex(S::Sfac, i::Integer, j::Integer)
+function Base.getindex(S::Sfac{false}, i::Integer, j::Integer)
     S_mat = one(ones(size(S)...))
-    apply_S!(S.Λ, S_mat)
+    apply_S_left!(S_mat, S.Λ)
+    S_mat[i, j]
+end
+function Base.getindex(S::Sfac{true}, i::Integer, j::Integer)
+    S_mat = one(ones(size(S)...))
+    apply_S_inverse_left!(S_mat, S.Λ)
     S_mat[i, j]
 end
 
-function Base.:*(S::Sfac, B::AbstractMatrix)
-    apply_S(S.Λ, B)
+function Base.inv(S::Sfac{false})
+    Sfac(S.Λ, true)
+end
+function Base.inv(S::Sfac{true})
+    Sfac(S.Λ, false)
 end
 
-function Base.:*(B::AbstractMatrix, S::Sfac)
+struct Rfac{T, ST} <: AbstractMatrix{T} where {ST<:SymplecticHouseholderDecom{T}}
+    Λ::ST
+    function Rfac(Λ::SymplecticHouseholderDecom{T}) where T
+        new{T, typeof(Λ)}(Λ)
+    end
 end
 
-function sqr!(A::AbstractMatrix{T}) where {T}
+function Base.size(R::Rfac)
+    size(R.Λ.A)
+end
+
+function Base.getindex(R::Rfac, i::Integer, j::Integer)
+    N, M = size(R.Λ.A).÷2
+    if j ≤ M
+        if i == j 
+            return R.Λ.ρ[i]
+        end
+        if i < j 
+            return R.Λ.A[i, j]
+        end
+        if i ≤ N
+            return 0.
+        end
+        if i < (N+j)
+            return R.Λ.A[i, j]
+        end
+        return 0.
+    end
+    if i == (j-M)
+        return R.Λ.μ[i]
+    end
+    if i == (j-M+N)
+        return R.Λ.ν[i-N]
+    end
+    if i < (j-M)
+        return R.Λ.A[i,j]
+    end
+    if i ≤ N
+        return 0.
+    end
+    if i < (j-M+N) 
+        return R.Λ.A[i,j]
+    end
+    return 0.
+end
+
+function Base.:*(S::Sfac{false}, B::AbstractMatrix)
+    apply_S_left(S.Λ, B)
+end
+
+function Base.:*(S::Sfac{false}, b::AbstractVector)
+    apply_S_left(S.Λ, b)
+end
+
+function Base.:*(S::Sfac{true}, B::AbstractMatrix)
+    apply_S_inverse_left(S.Λ, B)
+end
+
+function Base.:*(S::Sfac{true}, B::AbstractVector)
+    apply_S_inverse_left(S.Λ, b)
+end
+
+function Base.:*(B::AbstractMatrix, S::Sfac{false})
+    apply_S_right(B, S.Λ)
+end
+
+struct SR{T, ST, RT} <: LinearAlgebra.Factorization{T} where {inverse, ST<:Sfac{inverse, T}, RT<:Rfac{T}}
+    S::ST
+    R::RT
+    function SR(S::Sfac{inverse, T}, R::Rfac{T}) where {inverse, T}
+        new{T, typeof(S), typeof(R)}(S, R)
+    end
+end
+
+function sr!(A::AbstractMatrix{T}) where {T}
     N2, M2 = size(A)
     @assert iseven(N2)
     @assert iseven(M2)
@@ -59,21 +138,62 @@ function sqr!(A::AbstractMatrix{T}) where {T}
         #apply Householder to rest of matrix
         for j in (i+1):M
             row_ind = vcat(i:N, (N+i):N2)
-            A[row_ind, j] .+= c₁[i]*J(a, A[row_ind, i])*a
-            A[row_ind, j] .+= c₂[i]*J(b, A[row_ind, i])*b
+            A[row_ind, j] .+= c₁[i]*J(a, A[row_ind, j])*a
+            A[row_ind, j] .+= c₂[i]*J(b, A[row_ind, j])*b
+            A[row_ind, j+M] .+= c₁[i]*J(a, A[row_ind, j+M])*a
+            A[row_ind, j+M] .+= c₂[i]*J(b, A[row_ind, j+M])*b
         end
     end
-    SymplecticHouseholderDecom(A, c₁, c₂, ρ, ν, μ)
+    Λ = SymplecticHouseholderDecom(A, c₁, c₂, ρ, ν, μ)
+    SR(Sfac(Λ), Rfac(Λ))
 end
 
-function sqr(A::AbstractMatrix{T}) where {T}
+function sr(A::AbstractMatrix{T}) where {T}
     A_copy = copy(A)
-    sqr!(A_copy)
+    sr!(A_copy)
 end
 
-function apply_S!(Λ::SymplecticHouseholderDecom, B::AbstractMatrix)
+function apply_S_left!(b::AbstractVector, Λ::SymplecticHouseholderDecom)
     N, M = size(Λ.A).÷2
     for j in M:-1:1
+        row_ind = vcat(j:N, (N+j):(2*N))
+        @views v₁ = Λ.A[row_ind, j]
+        @views v₂ = Λ.A[row_ind, j+M]
+        b[row_ind] .-= Λ.c₂[j]*J(v₂, b[row_ind])*v₂
+        b[row_ind] .-= Λ.c₁[j]*J(v₁, b[row_ind])*v₁
+    end
+    B
+end
+
+function apply_S_left!(B::AbstractMatrix, Λ::SymplecticHouseholderDecom)
+    N, M = size(Λ.A).÷2
+    for j in M:-1:1
+        row_ind = vcat(j:N, (N+j):(2*N))
+        @views v₁ = Λ.A[row_ind, j]
+        @views v₂ = Λ.A[row_ind, j+M]
+        for i in 1:size(B, 2)
+            B[row_ind, i] .-= Λ.c₂[j]*J(v₂, B[row_ind, i])*v₂
+            B[row_ind, i] .-= Λ.c₁[j]*J(v₁, B[row_ind, i])*v₁
+        end
+    end
+    B
+end
+
+function apply_S_inverse_left!(b::AbstractVector, Λ::SymplecticHouseholderDecom)
+    N, M = size(Λ.A).÷2
+    for j in 1:M
+        row_ind = vcat(j:N, (N+j):(2*N))
+        @views v₁ = Λ.A[row_ind, j]
+        @views v₂ = Λ.A[row_ind, j+M]
+        b[row_ind] .+= Λ.c₁[j]*J(v₁, b[row_ind])*v₁
+        b[row_ind] .+= Λ.c₂[j]*J(v₂, b[row_ind])*v₂
+    end
+    B
+end
+
+function apply_S_inverse_left!(B::AbstractMatrix, Λ::SymplecticHouseholderDecom)
+    N, M = size(Λ.A).÷2
+    for j in 1:M
         row_ind = vcat(j:N, (N+j):(2*N))
         @views v₁ = Λ.A[row_ind, j]
         @views v₂ = Λ.A[row_ind, j+M]
@@ -85,9 +205,41 @@ function apply_S!(Λ::SymplecticHouseholderDecom, B::AbstractMatrix)
     B
 end
 
-function apply_S(Λ::SymplecticHouseholderDecom, B::AbstractMatrix)
+function apply_S_right!(B::AbstractMatrix, Λ::SymplecticHouseholderDecom)
+    N, M = size(Λ.A).÷2
+    @assert size(B, 2) == 2*N
+    for j in 1:M
+        row_ind = vcat(j:N, (N+j):(2*N))
+        @views v₁ = Λ.A[row_ind, j]
+        @views v₂ = Λ.A[row_ind, j+M]
+        for i in 1:size(B, 1)
+            @views b = B[i, row_ind]
+            fac₁ = -Λ.c₁[j]*b'*v₁
+            b[1:(N+1-j)] .-= fac₁*v₁[(N+2-j):(2*N+2-2*j)]
+            b[(N+2-j):(2*N+2-2*j)] .+= fac₁*v₁[1:(N+1-j)]
+            fac₂ = -Λ.c₂[j]*b'*v₂
+            b[1:(N+1-j)] .-= fac₂*v₂[(N+2-j):(2*N+2-2*j)]
+            b[(N+2-j):(2*N+2-2*j)] .+= fac₂*v₂[1:(N+1-j)]
+        end
+    end
+    B
+end
+
+function apply_S_left(Λ::SymplecticHouseholderDecom, B::AbstractArray)
     B_copy = copy(B)
-    apply_S!(Λ, B_copy)
+    apply_S_left!(B_copy, Λ)
+    B_copy
+end
+
+function apply_S_inverse_left(Λ::SymplecticHouseholderDecom, B::AbstractArray)
+    B_copy = copy(B)
+    apply_S_inverse_left!(B_copy, Λ)
+    B_copy
+end
+
+function apply_S_right(B::AbstractArray, Λ::SymplecticHouseholderDecom)
+    B_copy = copy(B)
+    apply_S_right!(B_copy, Λ)
     B_copy
 end
 
