@@ -8,16 +8,16 @@ include("pendulum.jl")
 # include("plots.jl")
 
 # layer dimension/width
-const ld = 15
+const ld = 5
 
 # hidden layers
-const ln = 4
+const ln = 3
 
 # number of inputs/dimension of system
 const ninput = 2
 
 # number of training runs
-const nruns = 10000
+const nruns = 1000
 
 # Optimiser
 #opt = GradientOptimizer(1e-2)
