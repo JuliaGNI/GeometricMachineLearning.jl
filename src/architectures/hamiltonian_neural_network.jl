@@ -60,7 +60,6 @@ function train!(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, m::AbstractMet
     keys_1 = keys(nn.params)
     keys_2 = [keys(x) for x in values(nn.params)]
 
-    learning_rate = 0.01
     # Learning runs
     @showprogress 1 "Training..." for j in 1:ntraining
 
@@ -79,11 +78,7 @@ function train!(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, m::AbstractMet
             end
         end
         =#
-        # gradient step
-        #index = rand(eachindex(data_qp), batch_size)
-        #dp = loss_gradient(nn, data_qp[index], target[index], params_tuple)
 
-        #optimization_step!(opt, nn.model, nn.params, dp)
         total_loss[j] = loss(nn, data_qp, target)
     end
 

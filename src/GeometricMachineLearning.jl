@@ -11,15 +11,12 @@ module GeometricMachineLearning
     import Lux
 
     #this defines empty retraction type structs (doesn't rely on anything)
-    include("optimizers/retraction_types.jl")
+    include("optimizers/useful_functions/retraction_types.jl")
 
 
     export TrivialInitRNG
 
     include("rng/trivial_rng.jl")
-    
-
-
     
 
     #are these needed?
@@ -118,9 +115,9 @@ module GeometricMachineLearning
     export update!
     export check
 
-    include("optimizers/global_sections.jl")
-    include("optimizers/auxiliary.jl")
-    include("optimizers/retractions.jl")
+    include("optimizers/useful_functions/global_sections.jl")
+    include("optimizers/useful_functions/auxiliary.jl")
+    include("optimizers/useful_functions/retractions.jl")
 \
     #INCLUDE BACKENDS
     export AbstractNeuralNetwork
