@@ -264,7 +264,7 @@ function symplectic_householder!(a::AbstractVector, b::AbstractVector)
     LinearAlgebra.rmul!(a, -1)
     b .+= c₁*J(a,b)*a 
     ν = b[N+1]
-    ξ = sqrt(LinearAlgebra.norm(b)^2 - b[1]^2 - ν^2)
+    ξ = sqrt(abs(LinearAlgebra.norm(b)^2 - b[1]^2 - ν^2))
     #look at the choice of pre-sign!
     s = +1.
     μ = b[1] + s*ξ
