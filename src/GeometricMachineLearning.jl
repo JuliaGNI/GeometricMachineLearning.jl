@@ -43,7 +43,7 @@ module GeometricMachineLearning
     include("arrays/stiefel_lie_alg_hor.jl")
     include("arrays/auxiliary.jl")
 
-    export SymmetricMatrix, SymplecticMatrix, SkewSymMatrix
+    export SymmetricMatrix, SymplecticPotential, SkewSymMatrix
     export StiefelLieAlgHorMatrix
     export SymplecticLieAlgMatrix, SymplecticLieAlgHorMatrix
     export StiefelProjection, SymplecticProjection
@@ -132,5 +132,10 @@ module GeometricMachineLearning
     export optimization_step!
 
     include("rng/random_funcs.jl")
+
+    include("orthogonalization_procedures/symplectic_householder.jl")
+
+    #symplectic Householder routine 
+    export sr, sr!
 
 end
