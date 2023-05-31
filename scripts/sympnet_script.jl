@@ -42,7 +42,7 @@ const ln = 2
 # activation function
 const act = tanh
 # number of training runs
-const nruns = 1000
+const nruns = 10000
 # batch size
 const batch_size = 10
 
