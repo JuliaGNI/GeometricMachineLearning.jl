@@ -114,7 +114,7 @@ module GeometricMachineLearning
     export TrivialInitRNG
     export Geodesic, Cayley
     export retraction
-    export ⊙², √ᵉˡᵉ, /ᵉˡᵉ, scalar_add
+    #export ⊙², √ᵉˡᵉ, /ᵉˡᵉ, scalar_add
     export update!
     export check
 
