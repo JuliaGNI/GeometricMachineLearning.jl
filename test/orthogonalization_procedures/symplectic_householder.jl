@@ -39,13 +39,13 @@ function SR_test(N, M, tol)
     A = randn(2*N, 2*M)
     SR = sr(A)
     @test rectangular_error(SR.R) < tol
-    @test symplecticity_error(SR.S) < tol
+    @test symplecticity_error(SR.S)/(N*N) < tol
     @test typeof(inv(SR.S)) <: GeometricMachineLearning.Sfac 
-    @test LinearAlgebra.norm(inv(SR.S)*A - SR.R) < tol
-    @test LinearAlgebra.norm(A - SR.S*SR.R) < tol 
+    @test LinearAlgebra.norm(inv(SR.S)*A - SR.R)/(N*M) < tol
+    @test LinearAlgebra.norm(A - SR.S*SR.R)/(N*M) < tol 
 end
 
-tol = 1e-5
+tol = 1e-10
 N_max = 10
 
 for N = 1:N_max
