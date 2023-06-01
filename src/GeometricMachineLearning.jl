@@ -37,10 +37,10 @@ module GeometricMachineLearning
     include("arrays/block_identity_upper.jl")
     include("arrays/symmetric.jl")
     include("arrays/symplectic.jl")
-    include("arrays/symplectic_lie_alg.jl")
-    include("arrays/sympl_lie_alg_hor.jl")
+    include("arrays/symplectic_lie_algebra.jl")
+    include("arrays/symplectic_stiefel_lie_algebra_horizontal.jl")
     include("arrays/skew_sym.jl")
-    include("arrays/stiefel_lie_alg_hor.jl")
+    include("arrays/stiefel_lie_algebra_horizontal.jl")
     include("arrays/auxiliary.jl")
 
     export SymmetricMatrix, SymplecticPotential, SkewSymMatrix
