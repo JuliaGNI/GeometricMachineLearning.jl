@@ -39,7 +39,7 @@ module GeometricMachineLearning
     include("arrays/symplectic.jl")
     include("arrays/symplectic_lie_algebra.jl")
     include("arrays/symplectic_lie_algebra_horizontal.jl")
-    include("arrays/skew_sym.jl")
+    include("arrays/skew_symmetric.jl")
     include("arrays/stiefel_lie_algebra_horizontal.jl")
     include("arrays/auxiliary.jl")
 
