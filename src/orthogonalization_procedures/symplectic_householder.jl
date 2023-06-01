@@ -103,7 +103,7 @@ function Base.:*(S::Sfac{true}, B::AbstractMatrix)
     apply_S_inverse_left(S.Λ, B)
 end
 
-function Base.:*(S::Sfac{true}, B::AbstractVector)
+function Base.:*(S::Sfac{true}, b::AbstractVector)
     apply_S_inverse_left(S.Λ, b)
 end
 
@@ -261,16 +261,22 @@ function symplectic_householder!(a::AbstractVector, b::AbstractVector)
     ρ = sign(a[1])*LinearAlgebra.norm(a)
     c₁ = 1/(ρ*a[N+1])
     a[1] -= ρ
-    LinearAlgebra.rmul!(a, -1)
+    #LinearAlgebra.rmul!(a, -1)
+    if N == 1
+        μν = b + c₁*J(a,b)*a
+        b[1] = 0
+        b[2] = 0
+        return c₁, 0, ρ, μν[2], μν[1]
+    end
     b .+= c₁*J(a,b)*a 
     ν = b[N+1]
-    ξ = sqrt(abs(LinearAlgebra.norm(b)^2 - b[1]^2 - ν^2))
+    ξ = sqrt(LinearAlgebra.norm(b)^2 - b[1]^2 - ν^2)
     #look at the choice of pre-sign!
     s = +1.
     μ = b[1] + s*ξ
     c₂ = s /(ξ*ν)
-    LinearAlgebra.rmul!(b, -1)
-    b[1] =  s*ξ 
+    #LinearAlgebra.rmul!(b, -1)
+    b[1] =  -s*ξ 
     b[N+1] = 0.
     c₁, c₂, ρ, ν, μ
 end

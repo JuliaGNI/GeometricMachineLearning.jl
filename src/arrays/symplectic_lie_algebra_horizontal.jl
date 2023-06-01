@@ -55,28 +55,9 @@ mutable struct SymplecticLieAlgHorMatrix{T, AT <: AbstractMatrix{T}, ST <: Symme
             n
         )
     end
-
-    #I probably don't need this bit!!
-    #=
-    function SymplecticLieAlgHorMatrix(S::πₑ)
-        new{eltype(S.A), typeof(S.A), typeof(S.B)}(
-            S.A,
-            -S.H,
-            S.C,
-            S.B,
-            S.D,
-            S.E,
-            S.G,
-            S.N,
-            S.n
-        )
-    end
-    =#
 end 
 
 
-#implementing getindex automatically defines all matrix multiplications! (but probably not in the most efficient way)
-#implementing getindex automatically defines all matrix multiplications! (but probably not in the most efficient way)
 function A_index(A₁::AbstractMatrix, A₂::AbstractMatrix, A₃::AbstractMatrix, n, i, j)
     if i ≤ n
         if j ≤ n 
@@ -155,39 +136,148 @@ function Base.:-(S₁::SymplecticLieAlgHorMatrix, S₂::SymplecticLieAlgHorMatri
         )
 end
 
-#First define this function for symmetric.jl!!!!
-#function scalar_add(A::SymplecticLieAlgHorMatrix, δ::Real)
-#    SymplecticLieAlgHorMatrix()
-#end
+function add!(C::SymplecticLieAlgHorMatrix, A::SymplecticLieAlgHorMatrix, B::SymplecticLieAlgHorMatrix)
+    @assert A.N == B.N == C.N
+    @assert A.n == B.n == C.n 
+    add!(C.A₁, A.A₁, B.A₁),
+    add!(C.A₂, A.A₂, B.A₂),
+    add!(C.A₃, A.A₃, B.A₃),
+    add!(C.B₁, A.B₁, B.B₁),
+    add!(C.B₂, A.B₂, B.B₂),
+    add!(C.C₁, A.C₁, B.C₁),
+    add!(C.C₂, A.C₂, B.C₂)
+end
+
+function Base.:-(S::SymplecticLieAlgHorMatrix)
+    SymplecticLieAlgHorMatrix(
+        -S.A₁,
+        -S.A₂, 
+        -S.A₃, 
+        -S.B₁, 
+        -S.B₂, 
+        -S.C₁, 
+        -S.C₂, 
+        S.N,
+        S.n 
+    )
+end
+
+function Base.:*(S::SymplecticLieAlgHorMatrix, α::Real)
+    SymplecticLieAlgHorMatrix(
+        α*S.A₁,
+        α*S.A₂, 
+        α*S.A₃, 
+        α*S.B₁, 
+        α*S.B₂, 
+        α*S.C₁, 
+        α*S.C₂, 
+        S.N,
+        S.n 
+    )
+end
+
+Base.:*(α::Real, A::SymplecticLieAlgHorMatrix) = A*α
+
+function Base.zeros(::Type{SymplecticLieAlgHorMatrix{T}}, N::Integer, n::Integer) where T
+    SymplecticLieAlgHorMatrix(
+        zeros(T, n, n),
+        zeros(T, N-n, n),
+        zeros(T, N-n, n),
+        zeros(SymmetricMatrix{T}, n),
+        zeros(T, N-n, n),
+        zeros(SymmetricMatrix{T},n),
+        zeros(T, N-n, n),
+        N, 
+        n
+    )
+end
+    
+function Base.zeros(::Type{SymplecticLieAlgHorMatrix}, N::Integer, n::Integer) 
+    SymplecticLieAlgHorMatrix(
+        zeros(n, n),
+        zeros(N-n, n),
+        zeros(N-n, n),
+        zeros(SymmetricMatrix, n),
+        zeros(N-n, n),
+        zeros(SymmetricMatrix, n),
+        zeros(N-n, n),
+        N, 
+        n
+    )
+end
+
+
+function Base.rand(::Type{SymplecticLieAlgHorMatrix{T}}, N::Integer, n::Integer) where T
+    SymplecticLieAlgHorMatrix(
+        rand(T, n, n),
+        rand(T, N-n, n),
+        rand(T, N-n, n),
+        rand(SymmetricMatrix{T}, n),
+        rand(T, N-n, n),
+        rand(SymmetricMatrix{T},n),
+        rand(T, N-n, n),
+        N, 
+        n
+    )
+end
+    
+function Base.rand(::Type{SymplecticLieAlgHorMatrix}, N::Integer, n::Integer)
+    SymplecticLieAlgHorMatrix(
+        rand(n, n),
+        rand(N-n, n),
+        rand(N-n, n),
+        rand(SymmetricMatrix, n),
+        rand(N-n, n),
+        rand(SymmetricMatrix, n),
+        rand(N-n, n),
+        N, 
+        n
+    )
+end
+
+function scalar_add(S::SymplecticLieAlgHorMatrix, δ::Real)
+    SymplecticLieAlgHorMatrix(
+        S.A₁ .+ δ,
+        S.A₂ .+ δ, 
+        S.A₃ .+ δ, 
+        scalar_add(S.B₁, δ), 
+        S.B₂ .+ δ, 
+        scalar_add(S.C₁, δ), 
+        S.C₂ .+ δ, 
+        S.N,
+        S.n 
+    )
+end
+
 
 #function Base.:./(A::SymplecticLieAlgMatrix,B::SymplecticLieAlgMatrix)
 function /ᵉˡᵉ(S₁::SymplecticLieAlgHorMatrix,S₂::SymplecticLieAlgHorMatrix)
     @assert S₁.n == S₂.n
     @assert S₁.N == S₂.N
-    SymplecticLieAlgMatrix(
-        S₁.A₁/S₂.A₁, 
-        S₁.A₂/S₂.A₂,
+    SymplecticLieAlgHorMatrix(
+        S₁.A₁./S₂.A₁, 
+        S₁.A₂./S₂.A₂,
         S₁.A₃/S₂.A₃,
-        SymmetricMatrix(S₁.B₁.S/S₂.B₁.S,n), 
-        S₁.B₂/S₂.B₂,
-        SymmetricMatrix(S₁.B₁.S/S₂.B₁.S,n), 
+        /ᵉˡᵉ(S₁.B₁, S₂.B₁), 
+        S₁.B₂./S₂.B₂,
+        /ᵉˡᵉ(S₁.C₁, S₂.C₁), 
         S₁.C₂/S₂.C₂,
-        N,
-        n
+        S₁.N,
+        S₁.n
         )
 end
 
 function ⊙²(S::SymplecticLieAlgHorMatrix)
-    SymplecticLieAlgMatrix(
+    SymplecticLieHorAlgMatrix(
         S.A₁.^2, 
         S.A₂.^2,
         S.A₃.^2,
-        SymmetricMatrix(S.B₁.S.^2,n), 
+        ⊙²(S.B₁), 
         S.B₂.^2,
-        SymmetricMatrix(S.B₁.S.^2,n), 
+        ⊙²(S.C₁), 
         S.C₂.^2,
-        N,
-        n
+        S.N,
+        S.n
         )
 end
 
@@ -196,11 +286,11 @@ function √ᵉˡᵉ(S::SymplecticLieAlgHorMatrix)
         sqrt.(S.A₁), 
         sqrt.(S.A₂),
         sqrt.(S.A₃),
-        SymmetricMatrix(sqrt.(S.B₁.S),n), 
+        √ᵉˡᵉ(S.B₁), 
         sqrt.(S.B₂),
-        SymmetricMatrix(sqrt.(S.B₁.S),n), 
+        √ᵉˡᵉ(S.B₁), 
         sqrt.(S.C₂),
-        N,
-        n
+        S.N,
+        S.n
         )
 end

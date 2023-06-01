@@ -35,7 +35,6 @@ function Base.rand(::Type{StiefelManifold}, N::Integer, n::Integer)
     StiefelManifold(qr!(A).Q[1:N, 1:n])
 end
 
-#probably don't need this! 
 function Base.rand(::TrivialInitRNG, ::Type{StiefelManifold{T}}, N::Int, n::Int) where T
     @assert N ≥ n 
     zeros(StiefelLieAlgHorMatrix{T}, N, n)
