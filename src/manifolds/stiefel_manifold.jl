@@ -46,7 +46,7 @@ function rgrad(Y::StiefelManifold, e_grad::AbstractMatrix)
 end
 
 function metric(Y::StiefelManifold, Δ₁::AbstractMatrix, Δ₂::AbstractMatrix)
-    LinearAlgebra.tr(Δ₁*(I - .5*Y'*Y)*Δ₂)
+    LinearAlgebra.tr(Δ₁'*(I - .5*Y*Y')*Δ₂)
 end
 
 function check(A::StiefelManifold)
@@ -57,7 +57,7 @@ function global_section(Y::StiefelManifold)
     N, n = size(Y)
     A = randn(eltype(Y), N, N-n)
     A = A - Y*Y'*A
-    qr!(A).Q#[1:N, 1:N-n]
+    qr!(A).Q
 end
 
 function global_section(::AbstractVecOrMat)
