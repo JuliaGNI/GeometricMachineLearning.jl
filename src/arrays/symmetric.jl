@@ -36,8 +36,6 @@ mutable struct SymmetricMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
 
 end 
 
-
-#implementing getindex automatically defines all matrix multiplications! (but probably not in the most efficient way)
 function Base.getindex(A::SymmetricMatrix,i::Int,j::Int)
     if i ≥ j
         return A.S[((i-1)*i)÷2+j]
@@ -45,17 +43,79 @@ function Base.getindex(A::SymmetricMatrix,i::Int,j::Int)
     return A.S[(j-1)*j÷2+i]
 end
 
+
 Base.parent(A::SymmetricMatrix) = A.S
 Base.size(A::SymmetricMatrix) = (A.n,A.n)
 
-function Base.:+(A::SymmetricMatrix, B::SymmetricMatrix) 
-    @assert A.n == B.n  
-    SymmetricMatrix(A.S + B.S, A.n)
+function Base.:+(A::SymmetricMatrix, B::SymmetricMatrix)
+    @assert A.n == B.n 
+    SymmetricMatrix(A.S + B.S, A.n) 
+end 
+
+function add!(C::SymmetricMatrix, A::SymmetricMatrix, B::SymmetricMatrix)
+    @assert A.n == B.n == C.n
+    add!(C.S, A.S, B.S)
 end
 
 function Base.:-(A::SymmetricMatrix, B::SymmetricMatrix)
-    @assert A.n == B.n
-    SymmetricMatrix(A.S - B.S, A.n)
+    @assert A.n == B.n 
+    SymmetricMatrix(A.S - B.S, A.n) 
+end 
+
+function Base.:-(A::SymmetricMatrix)
+    SymmetricMatrix(-A.S, A.n)
 end
 
-#TODO: implement functions as in SkewSymMatrix!!
+function Base.:*(A::SymmetricMatrix, α::Real)
+    SymmetricMatrix(α*A.S, A.n)
+end
+
+Base.:*(α::Real, A::SymmetricMatrix) = A*α
+
+function Base.zeros(::Type{SymmetricMatrix{T}}, n::Int) where T
+    SymmetricMatrix(zeros(T, n*(n+1)÷2), n)
+end
+    
+function Base.zeros(::Type{SymmetricMatrix}, n::Int)
+    SymmetricMatrix(zeros(n*(n+1)÷2), n)
+end
+
+function Base.rand(rng::Random.AbstractRNG, ::Type{SymmetricMatrix{T}}, n::Int) where T
+    SymmetricMatrix(rand(rng, T, n*(n+1)÷2),n)
+end
+
+function Base.rand(rng::Random.AbstractRNG, ::Type{SymmetricMatrix}, n::Int)
+    SymmetricMatrix(rand(rng, n*(n+1)÷2), n)
+end
+
+#TODO: make defaults when no rng is specified!!! (prbabaly rng ← Random.default_rng())
+function Base.rand(type::Type{SymmetricMatrix{T}}, n::Integer) where T
+    rand(Random.default_rng(), type, n)
+end
+
+function Base.rand(type::Type{SymmetricMatrix}, n::Integer)
+    rand(Random.default_rng(), type, n)
+end
+
+#these are Adam operations:
+function scalar_add(A::SymmetricMatrix, δ::Real)
+    SymmetricMatrix(A.S .+ δ, A.n)
+end
+
+#element-wise squares and square root (for Adam)
+function ⊙²(A::SymmetricMatrix)
+    SymmetricMatrix(A.S.^2, A.n)
+end
+function √ᵉˡᵉ(A::SymmetricMatrix)
+    SymmetricMatrix(sqrt.(A.S), A.n)
+end
+function /ᵉˡᵉ(A::SymmetricMatrix, B::SymmetricMatrix)
+    @assert A.n == B.n 
+    SymmetricMatrix(A.S ./ B.S, A.n)
+end
+
+function LinearAlgebra.mul!(C::SymmetricMatrix, A::SymmetricMatrix, α::Real)
+    mul!(C.S, A.S, α)
+end
+LinearAlgebra.mul!(C::SymmetricMatrix, α::Real, A::SymmetricMatrix) = mul!(C, A, α)
+LinearAlgebra.rmul!(C::SymmetricMatrix, α::Real) = mul!(C, C, α)
