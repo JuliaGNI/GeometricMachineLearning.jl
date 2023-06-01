@@ -15,11 +15,11 @@ mutable struct SymplecticLieAlgMatrix{T, AT <: AbstractMatrix{T}, BT <: Symmetri
     C::BT
     n::Int
 
-    function SymplecticLieAlgMatrix(A::AbstractMatrix, B::SymmetricMatrix, C::SymmetricMatrix, n)
+    function SymplecticLieAlgMatrix(A::AbstractMatrix{T}, B::SymmetricMatrix{T}, C::SymmetricMatrix{T}, n) where {T}
         @assert eltype(B) == eltype(C) == eltype(A)
         @assert B.n == C.n == n
         @assert size(A) == (n,n)
-        new{eltype(B),typeof(A),typeof(B)}(A,B,C,n)
+        new{T,typeof(A),typeof(B)}(A,B,C,n)
     end
     function SymplecticLieAlgMatrix(S::AbstractMatrix)
         n2 = size(S)[1]
@@ -74,6 +74,15 @@ function Base.:-(S₁::SymplecticLieAlgMatrix, S₂::SymplecticLieAlgMatrix)
         S₁.C - S₂.C, 
         S₁.n
         )
+end
+
+function Base.:-(S::SymplecticLieAlgMatrix)
+    SymplecticLieAlgMatrix(
+        -S.A, 
+        -S.B, 
+        -S.C,
+        S.n
+    )
 end
 
 

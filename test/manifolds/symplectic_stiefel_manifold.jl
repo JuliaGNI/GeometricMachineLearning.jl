@@ -21,3 +21,7 @@ print("ErrFloat128: ", check₃, "\n")
 S = global_section(U);
 
 LinearAlgebra.norm((inv(S)*U)[vcat(1:(N-n), (N+1):(2*N-n)), :])
+
+J = SymplecticPotential(N÷2)
+Δ = rgrad(U, rand(eltype(U), N, n), J)
+Δ'*J*U + U'*J*Δ
