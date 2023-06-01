@@ -48,6 +48,11 @@ module GeometricMachineLearning
     export SymplecticLieAlgMatrix, SymplecticLieAlgHorMatrix
     export StiefelProjection, SymplecticProjection
 
+    include("orthogonalization_procedures/symplectic_householder.jl")
+
+    #symplectic Householder routine 
+    export sr, sr!
+
     export AbstractLayer
     export FeedForwardLayer, LinearFeedForwardLayer
     export Gradient
@@ -58,7 +63,7 @@ module GeometricMachineLearning
 
     include("manifolds/abstract_manifold.jl")
     include("manifolds/stiefel_manifold.jl")
-    include("manifolds/symplectic_manifold.jl")
+    include("manifolds/symplectic_stiefel_manifold.jl")
 
     export StiefelManifold, SymplecticStiefelManifold, Manifold
     export rgrad, metric
@@ -132,10 +137,5 @@ module GeometricMachineLearning
     export optimization_step!
 
     include("rng/random_funcs.jl")
-
-    include("orthogonalization_procedures/symplectic_householder.jl")
-
-    #symplectic Householder routine 
-    export sr, sr!
 
 end

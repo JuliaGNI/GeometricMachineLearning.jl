@@ -70,7 +70,3 @@ function global_section(U::SymplecticStiefelManifold)
     A = A - U*J₂*U'*J₁'*A
     sr!(A).S
 end
-
-function global_section(::AbstractVecOrMat)
-    nothing
-end
