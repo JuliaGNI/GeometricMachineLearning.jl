@@ -45,7 +45,7 @@ function Base.rand(::TrivialInitRNG, ::Type{SymplecticStiefelManifold{T}}, N::In
     zeros(SymplecticLieAlgHorMatrix{T}, N, n)
 end
 
-function rgrad(U::SymplecticStiefelManifold, e_grad::AbstractMatrix, J::AbstractMatrix=SymplecticPotential(size(U,1)÷2))
+function rgrad(U::SymplecticStiefelManifold, e_grad::AbstractMatrix, J::AbstractMatrix=SymplecticPotential(eltype(U),size(U,1)÷2))
     e_grad * (U' * U) + J * U * (e_grad' * J * U)
 end
 

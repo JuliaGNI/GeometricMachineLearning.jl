@@ -1,27 +1,29 @@
 using GeometricMachineLearning
-using GeometricMachineLearning: global_section
+using GeometricMachineLearning: global_section, Ω
 using Quadmath: Float128
+
+import LinearAlgebra
 
 N = 50
 n = 5
 
-U = rand(SymplecticStiefelManifold, 2*N, 2*n)
-check₁ = check(U)
+function symplectic_stiefel_manifold_tests(T, N, n)
+    U = rand(SymplecticStiefelManifold{T}, 2*N, 2*n)
+    check_val = check(U)
+    print("ErrSympl",T,": ", check_val, "\n")
+    S = global_section(U)
+    global_section_error = LinearAlgebra.norm((inv(S)*U)[vcat(1:(N-n), (N+1):(2*N-n)), :])
+    print("ErrGlobalSection",T,": ", global_section_error, "\n")
+    
+    J = SymplecticPotential(eltype(U), N)
+    Δ = rgrad(U, rand(eltype(U), 2*N, 2*n), J)
+    print("error in vector space property", T, ": ", LinearAlgebra.norm(Δ'*J*U + U'*J*Δ), "\n")
+    print("error lie algebra lift", T ,": ", LinearAlgebra.norm(Ω(U, Δ)*U - Δ), "\n")
+end
 
-U = rand(SymplecticStiefelManifold{Float32}, 2*N, 2*n)
-check₂ = check(U)
+@time symplectic_stiefel_manifold_tests(Float32, N, n)
+print("\n")
+@time symplectic_stiefel_manifold_tests(Float64, N, n)
+print("\n")
+@time symplectic_stiefel_manifold_tests(Float128, N, n)
 
-U = rand(SymplecticStiefelManifold{Float128}, 2*N, 2*n)
-check₃ = check(U)
-
-print("ErrFloat64: ", check₁, "\n")
-print("ErrFloat32: ", check₂, "\n")
-print("ErrFloat128: ", check₃, "\n")
-
-S = global_section(U);
-
-LinearAlgebra.norm((inv(S)*U)[vcat(1:(N-n), (N+1):(2*N-n)), :])
-
-J = SymplecticPotential(N÷2)
-Δ = rgrad(U, rand(eltype(U), N, n), J)
-Δ'*J*U + U'*J*Δ

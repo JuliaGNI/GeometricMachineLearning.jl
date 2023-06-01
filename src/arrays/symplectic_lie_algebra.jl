@@ -21,13 +21,13 @@ mutable struct SymplecticLieAlgMatrix{T, AT <: AbstractMatrix{T}, BT <: Symmetri
         @assert size(A) == (n,n)
         new{T,typeof(A),typeof(B)}(A,B,C,n)
     end
-    function SymplecticLieAlgMatrix(S::AbstractMatrix)
-        n2 = size(S)[1]
+    function SymplecticLieAlgMatrix(S::AbstractMatrix{T}) where {T}
+        n2 = size(S, 1)
         @assert iseven(n2)
-        @assert size(S)[2] == n2
+        @assert size(S, 2) == n2
         n = n2÷2
 
-        A = 0.5*(S[1:n,1:n] - S[(n+1):n2, (n+1):n2]')
+        A = T(0.5)*(S[1:n,1:n] - S[(n+1):n2, (n+1):n2]')
         B = SymmetricMatrix(S[1:n,(n+1):n2])
         C = SymmetricMatrix(S[(n+1):n2,1:n])
   
