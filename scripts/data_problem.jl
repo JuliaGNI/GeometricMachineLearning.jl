@@ -21,6 +21,7 @@ dict_problem_L = Dict(
 )
 
 
+
 ###########################################################################
 # get data of a problem for HNN (results is (data = (q,p), target = (q̇,ṗ)))
 
@@ -153,4 +154,27 @@ function compute_phase_space(H_problem, q₀, p₀, tspan = (0., 100.), tstep = 
     p = hcat([sol.p[:,i] for i in 1:n_dim]...)
 
     return (q, p)
+end
+
+
+###############################################################################
+# get structure data for multiple trajectory
+
+function get_multiple_trajectory_structure(nameproblem; singlematrix = true, n_trajectory = 1, n_points = 10, tstep = 0.1, qmin = -0.2, pmin = -0.2, qmax = 0.2, pmax = 0.2)
+
+    pre_data_q, pre_data_p = get_phase_space_multiple_trajectoy(nameproblem; singlematrix, n_trajectory, n_points, tstep, qmin, pmin, qmax, pmax)
+
+    pre_data = [pred_data_q, pre_data_p]
+
+    data = storing_data(tstep, n_trajectory, data)
+
+    Create_empty_data = 
+
+    Add_qp(Data, i, q, p) = Data[]
+
+
+    Get_Δt(Data) = Data.Δt
+    
+
+    return data_trajectory(Data, Create_empty_data, Add_qp, Get_Δt,Get_nb_trajectory,Get_length_trajectory,Get_p,Get_q)
 end
