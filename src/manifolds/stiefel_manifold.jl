@@ -14,7 +14,7 @@ end
 function Base.rand(rng::Random.AbstractRNG, ::Type{StiefelManifold{T}}, N::Integer, n::Integer) where T
     @assert N ≥ n
     A = randn(rng, T, N, n)
-    StiefelManifold(qr(A).Q[1:N, 1:n])
+    StiefelManifold(qr!(A).Q[1:N, 1:n])
 end
 
 function Base.rand(rng::Random.AbstractRNG, ::Type{StiefelManifold}, N::Integer, n::Integer)
@@ -26,13 +26,13 @@ end
 function Base.rand(::Type{StiefelManifold{T}}, N::Integer, n::Integer) where T
     @assert N ≥ n
     A = randn(T, N, n)
-    StiefelManifold(qr(A).Q[1:N, 1:n])
+    StiefelManifold(qr!(A).Q[1:N, 1:n])
 end
 
 function Base.rand(::Type{StiefelManifold}, N::Integer, n::Integer)
     @assert N ≥ n 
     A = randn(N, n)
-    StiefelManifold(qr(A).Q[1:N, 1:n])
+    StiefelManifold(qr!(A).Q[1:N, 1:n])
 end
 
 #probably don't need this! 
