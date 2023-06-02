@@ -11,7 +11,8 @@ function symplectic_stiefel_manifold_tests(T, N, n)
     U = rand(SymplecticStiefelManifold{T}, 2*N, 2*n)
     check_val = check(U)
     print("ErrSympl",T,": ", check_val, "\n")
-    S = global_section(U)
+    #this is the version using symplectic Householder reflections
+    S = global_section₂(U)
     global_section_error = LinearAlgebra.norm((inv(S)*U)[vcat(1:(N-n), (N+1):(2*N-n)), :])
     print("ErrGlobalSection",T,": ", global_section_error, "\n")
     

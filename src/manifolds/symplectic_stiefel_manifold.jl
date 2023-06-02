@@ -7,7 +7,7 @@ mutable struct SymplecticStiefelManifold{T, AT <: AbstractMatrix{T}} <: Manifold
     function SymplecticStiefelManifold(A::AbstractMatrix)
         @assert iseven(size(A)[1])
         @assert iseven(size(A)[2])
-        @assert size(A)[1] ≥ size(A)[2]
+        @assert size(A,1) ≥ size(A,2)
         new{eltype(A), typeof(A)}(A)
     end
 end
@@ -63,10 +63,21 @@ function check(U::SymplecticStiefelManifold{T}) where {T}
 end
 
 function global_section(U::SymplecticStiefelManifold)
+    N, n = size(U).÷2
+    A = rand(eltype(U), N, N-n)
+    for i in 1:n 
+        A = A - U[1:N,i]*(U[1:N,i]'*A)
+        A = A - U[(N+1):2*N,i]*(U[(N+1):2*N,i]'*A)
+    end
+    qr!(A).Q
+end
+
+
+function global_section(U::SymplecticStiefelManifold)
     N2, n2 = size(U)
     A = randn(eltype(U), N2, N2-n2)
     J₁ = SymplecticPotential(N2÷2)
     J₂ = SymplecticPotential(n2÷2)
-    A = A - U*J₂*U'*J₁'*A
+    A -= U*J₂*U'*J₁'*A
     sr!(A).S
 end
