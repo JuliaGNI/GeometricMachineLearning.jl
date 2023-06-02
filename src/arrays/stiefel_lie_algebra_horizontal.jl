@@ -21,12 +21,11 @@ mutable struct StiefelLieAlgHorMatrix{T, AT <: SkewSymMatrix{T}, ST <: AbstractM
     n::Int 
 
     #maybe modify this - you don't need N & n as inputs!
-    function StiefelLieAlgHorMatrix(A::SkewSymMatrix, B::AbstractMatrix, N::Int, n::Int)
+    function StiefelLieAlgHorMatrix(A::SkewSymMatrix{T}, B::AbstractMatrix{T}, N::Int, n::Int) where {T}
         @assert n == A.n == size(B,2) 
         @assert N == size(B,1) + n
-        @assert eltype(A) == eltype(B)
 
-        new{eltype(A), typeof(A), typeof(B)}(A, B, N, n)
+        new{T, typeof(A), typeof(B)}(A, B, N, n)
     end 
 
     function StiefelLieAlgHorMatrix(A::SkewSymMatrix, n::Int)
