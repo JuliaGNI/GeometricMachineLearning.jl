@@ -41,7 +41,7 @@ end
 Base.parent(A::StiefelLieAlgHorMatrix) = (A, B)
 Base.size(A::StiefelLieAlgHorMatrix) = (A.N, A.N)
 
-function Base.getindex(A::StiefelLieAlgHorMatrix, i, j)
+function Base.getindex(A::StiefelLieAlgHorMatrix{T}, i, j) where {T}
     if i ≤ A.n
         if j ≤ A.n 
             return A.A[i, j]
@@ -51,7 +51,7 @@ function Base.getindex(A::StiefelLieAlgHorMatrix, i, j)
     if j ≤ A.n 
         return A.B[i - A.n, j]
     end
-    return zero(eltype(A))
+    return T(0.)
 end
 
 function Base.:+(A::StiefelLieAlgHorMatrix, B::StiefelLieAlgHorMatrix)
