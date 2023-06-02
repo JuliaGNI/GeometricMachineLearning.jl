@@ -18,6 +18,14 @@ function retraction(::StiefelLayer{Cayley}, B::NamedTuple{(:weight, ), Tuple{AT}
     (weight = cayley(B.weight),)
 end
 
+function retraction(::PSDLayer{inverse, Geodesic}, B::NamedTuple) where {inverse}
+    geodesic(B)
+end
+
+function retraction(::PSDLayer{inverse, Cayley}, B::NamedTuple) where {inverse}
+    cayley(B)
+end
+
 function retraction(::MultiHeadAttention{true, Geodesic}, B::NamedTuple)
     geodesic(B)
 end
