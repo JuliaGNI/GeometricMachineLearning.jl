@@ -94,7 +94,7 @@ end
 optim = AdamOptimizer()
 #TODO: dispatch over the optimizer
 cache = init_optimizer_cache(reconstr, optim)
-n_runs = Int(1e3)
+n_runs = Int(2e3)
 err_vec = zeros(n_runs + 1)
 
 err_vec[1] = loss_total(ps_all, st_all)
