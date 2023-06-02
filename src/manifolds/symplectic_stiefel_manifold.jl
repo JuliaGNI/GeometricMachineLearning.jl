@@ -62,16 +62,6 @@ function check(U::SymplecticStiefelManifold{T}) where {T}
     norm(U'*SymplecticPotential(T, N)*U - SymplecticPotential(T, n))
 end
 
-function global_section(U::SymplecticStiefelManifold)
-    N, n = size(U).÷2
-    A = rand(eltype(U), N, N-n)
-    for i in 1:n 
-        A = A - U[1:N,i]*(U[1:N,i]'*A)
-        A = A - U[(N+1):2*N,i]*(U[(N+1):2*N,i]'*A)
-    end
-    qr!(A).Q
-end
-
 
 function global_section(U::SymplecticStiefelManifold)
     N2, n2 = size(U)

@@ -78,10 +78,12 @@ module GeometricMachineLearning
     include("layers/stiefel_layer.jl")
     include("layers/multi_head_attention.jl")
     include("layers/transformer.jl")
+    include("layers/psd_like_layer.jl")
 
 
     #include("layers/symplectic_stiefel_layer.jl")
     export StiefelLayer, ManifoldLayer
+    export PSDLayer
     export MultiHeadAttention
     export Transformer
     export AbstractNeuralNetwork
