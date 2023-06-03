@@ -2,7 +2,7 @@ using Plots
 using Zygote
 using  GeometricIntegrators
 using LinearAlgebra
-
+using GeometricMachineLearning
 
 
 #################################################################################################
@@ -160,21 +160,47 @@ end
 ###############################################################################
 # get structure data for multiple trajectory
 
-function get_multiple_trajectory_structure(nameproblem; singlematrix = true, n_trajectory = 1, n_points = 10, tstep = 0.1, qmin = -0.2, pmin = -0.2, qmax = 0.2, pmax = 0.2)
 
-    pre_data_q, pre_data_p = get_phase_space_multiple_trajectoy(nameproblem; singlematrix, n_trajectory, n_points, tstep, qmin, pmin, qmax, pmax)
+struct storing_data{T}
+    Δt::Float64
+    nb_trajectory::Int
+    data::T
+end
 
-    pre_data = [pred_data_q, pre_data_p]
 
-    data = storing_data(tstep, n_trajectory, data)
+function get_multiple_trajectory_structure(nameproblem; n_trajectory = 1, n_points = 10, tstep = 0.1, qmin = -0.2, pmin = -0.2, qmax = 0.2, pmax = 0.2)
 
-    Create_empty_data = 
+    
+    # get the Hamiltonien corresponding to name_problem   
+    H_problem, n_dim = dict_problem_H[nameproblem] 
 
-    Add_qp(Data, i, q, p) = Data[]
+    #define timespan
+    tspan=(0.,n_points*tstep)
+    
+    #compute phase space for each trajectory staring from a random point
+    pre_data = NamedTuple()
+    
+    for i in 1:n_trajectory
 
+        q₀ = [rand()*(qmax-qmin)+qmin for _ in 1:n_dim]
+        p₀ = [rand()*(pmax-pmin)+pmin for _ in 1:n_dim]
+        q, p = compute_phase_space(H_problem, q₀, p₀, tspan, tstep)
+
+        Data = [(q[n], p[n]) for n in 1:size(q,1)]
+
+
+        nt = NamedTuple{(Symbol("Trajectory_"*string(i)),)}(((data = Data, len = n_points+1),))
+
+        pre_data = merge(pre_data,nt)
+    end
+    
+    data = storing_data(tstep, n_trajectory, pre_data)
 
     Get_Δt(Data) = Data.Δt
-    
+    Get_nb_trajectory(Data) = Data.nb_trajectory
+    Get_length_trajectory(Data, i) = Data.data[Symbol("Trajectory_"*string(i))][:len]
+    Get_p(Data, i, n) = Data.data[Symbol("Trajectory_"*string(i))][:data][n][1]
+    Get_q(Data, i, n) = Data.data[Symbol("Trajectory_"*string(i))][:data][n][2]
 
-    return data_trajectory(Data, Create_empty_data, Add_qp, Get_Δt,Get_nb_trajectory,Get_length_trajectory,Get_p,Get_q)
+    return data_trajectory(data, Get_nb_trajectory, Get_length_trajectory, Get_p, Get_q, Get_Δt)
 end

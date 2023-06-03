@@ -118,6 +118,17 @@ module GeometricMachineLearning
     include("optimizers/useful_functions/global_sections.jl")
     include("optimizers/useful_functions/auxiliary.jl")
     include("optimizers/useful_functions/retractions.jl")
+
+
+
+    #INCLUDE DATA TRAINING strcuture
+    export Training_data
+    export data_trajectory, data_sampled, dataTarget
+    export get_batch_multiple_trajectory
+
+    include("data_training.jl")
+
+
 \
     #INCLUDE BACKENDS
     export AbstractNeuralNetwork
@@ -130,6 +141,10 @@ module GeometricMachineLearning
 
     # set default backend in NeuralNetwork constructor
     NeuralNetwork(arch::AbstractArchitecture; kwargs...) = NeuralNetwork(arch, LuxBackend(); kwargs...)
+
+    export Hnn_training_integrator
+    export SEulerA
+    export ExactIntegrator
 
     #INCLUDE ARCHITECTURES
     export HamiltonianNeuralNetwork

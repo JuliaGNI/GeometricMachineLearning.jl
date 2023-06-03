@@ -58,7 +58,7 @@ sympnet = GSympNet(ninput, width=ld, nhidden=ln, activation=act)
 nn = NeuralNetwork(sympnet, LuxBackend())
 
 # perform training (returns array that contains the total loss for each training step)
-total_loss = train!(nn, opt, data_q, data_p; ntraining = nruns, batch_size=batch_size)
+#=total_loss = train!(nn, opt, data_q, data_p; ntraining = nruns, batch_size=batch_size)
 
 #predictions
 q_learned, p_learned = Iterate_Sympnet(nn, q0, p0; n_points = size(data_q,1))
@@ -95,3 +95,4 @@ plt = plot(plt_qp, plt_loss, layout = l)
 savefig("sympnet_henon_heiles.png")
 
 
+=#
