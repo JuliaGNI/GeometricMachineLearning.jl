@@ -29,7 +29,7 @@ mutable struct StiefelLieAlgHorMatrix{T, AT <: SkewSymMatrix{T}, ST <: AbstractM
     end 
 
     function StiefelLieAlgHorMatrix(A::AbstractMatrix, n::Int)
-        N = A.n 
+        N = size(A, 1)
         @assert N ≥ n 
 
         A_small = 2*SkewSymMatrix(A[1:n,1:n])

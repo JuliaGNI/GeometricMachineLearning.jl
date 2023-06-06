@@ -41,11 +41,13 @@ module GeometricMachineLearning
     include("arrays/symplectic_lie_algebra_horizontal.jl")
     include("arrays/skew_symmetric.jl")
     include("arrays/stiefel_lie_algebra_horizontal.jl")
+    include("arrays/grassmann_lie_algebra_horizontal.jl")
     include("arrays/auxiliary.jl")
 
     export SymmetricMatrix, SymplecticPotential, SkewSymMatrix
     export StiefelLieAlgHorMatrix
     export SymplecticLieAlgMatrix, SymplecticLieAlgHorMatrix
+    export GrassmannLieAlgHorMatrix
     export StiefelProjection, SymplecticProjection
 
     include("orthogonalization_procedures/symplectic_householder.jl")

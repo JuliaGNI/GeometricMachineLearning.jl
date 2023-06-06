@@ -46,6 +46,17 @@ function geodesic(B::StiefelLieAlgHorMatrix{T}) where T
     )
 end
 
+function geodesic(B::GrassmannLieAlgHorMatrix{T}) where T
+    N, n = B.N, B.n
+    E = StiefelProjection(N, n, T)
+    #expression from which matrix exponential and inverse have to be computed
+    unit = One(n, T)
+    exponent = hcat(vcat(zeros(T, n, n), - B.B'*B.B), vcat(unit, zeros(n, n)))
+    GrassmannManifold(
+        E + hcat(vcat(zeros(T, n, n), B.B), E)*𝔄(exponent)*E
+    )
+end
+
 cayley(B::NamedTuple) = apply_toNT(B, cayley)
 function cayley(B::StiefelLieAlgHorMatrix{T}) where T
     N, n = B.N, B.n
