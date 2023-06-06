@@ -28,11 +28,11 @@ mutable struct StiefelLieAlgHorMatrix{T, AT <: SkewSymMatrix{T}, ST <: AbstractM
         new{T, typeof(A), typeof(B)}(A, B, N, n)
     end 
 
-    function StiefelLieAlgHorMatrix(A::SkewSymMatrix, n::Int)
+    function StiefelLieAlgHorMatrix(A::AbstractMatrix, n::Int)
         N = A.n 
         @assert N ≥ n 
 
-        A_small = SkewSymMatrix(A[1:n,1:n])
+        A_small = 2*SkewSymMatrix(A[1:n,1:n])
         B = A[(n+1):N,1:n]
         new{eltype(A),typeof(A), typeof(B)}(A_small, B, N, n)
     end
