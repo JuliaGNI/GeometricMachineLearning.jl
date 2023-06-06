@@ -42,19 +42,15 @@ function Base.rand(::TrivialInitRNG{T}, ::Type{GrassmannManifold}, N::Int, n::In
 end
 
 function rgrad(Y::GrassmannManifold, e_grad::AbstractMatrix)
-    e_grad - Y*Y'*e_grad'
+    e_grad - Y*inv(Y'*Y)*(Y'*e_grad)
 end
 
 function metric(Y::GrassmannManifold, Δ₁::AbstractMatrix, Δ₂::AbstractMatrix)
-    LinearAlgebra.tr(Δ₁'*(I - Y*Y')*Δ₂)
+    LinearAlgebra.tr(Δ₁'*(I - Y*inv(Y'*Y)*Y')*Δ₂)
 end
 
 function global_section(Y::GrassmannManifold)
     N, n = size(Y)
     A = randn(eltype(Y), N, N-n)
     A - Y*inv(Y'*Y)*Y'*A
-end
-
-function global_section(::AbstractVecOrMat)
-    nothing
 end
