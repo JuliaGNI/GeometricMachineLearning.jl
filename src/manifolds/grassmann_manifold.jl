@@ -52,5 +52,6 @@ end
 function global_section(Y::GrassmannManifold)
     N, n = size(Y)
     A = randn(eltype(Y), N, N-n)
-    A - Y*inv(Y'*Y)*Y'*A
+    #A - Y*inv(Y'*Y)*Y'*A
+    qr!(hcat(Y, A)).Q
 end
