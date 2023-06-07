@@ -42,7 +42,7 @@ abstract type Hnn_training_integrator end
 struct SEuler{TD,TL} <: Hnn_training_integrator
     sqdist::TD
     loss::TL
-    type::bool #if true it is SEulerA, else SEulerB
+    type::Bool #if true it is SEulerA, else SEulerB
 
     function SEuler(;sqdist = sqeuclidean, type = true)
 
