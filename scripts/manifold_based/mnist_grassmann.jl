@@ -23,4 +23,23 @@ end
 train_y = Flux.onehotbatch(train_y, 0:9) #|> gpu
 test_y = Flux.onehotbatch(test_y, 0:9) #|> gpu
 
-#model = GrassmannLayer()
+#this uses a local coordinate representation of the Grassmannian to compute the loss
+function grassmann_based_loss(Y::AbstractMatrix, y::AbstractVector)
+    norm(reshape(σ.(Y*inv(Y[6:7,1:5])), 10) - y)
+end
+
+function grassmann_based_loss(ps::NamedTuple, t)
+    grassmann_based_loss(Lux.apply(model, train_x_tuple[t]), train_y[:, t])
+end
+
+model = GrassmannLayer(157, 7)
+ps, st = Lux.setup(Random.default_rng(), model)
+
+optim = AdamOptimizer()
+cache = init_optimizer_cache(optim, model)
+
+function training(n_steps = 100, batch_size=10)
+    for step in 1:n_steps
+        g = Zygote.gradient(ps -> grassmann_based_loss(ps, batch))
+    end
+end
