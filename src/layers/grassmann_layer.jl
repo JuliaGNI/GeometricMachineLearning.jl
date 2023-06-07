@@ -3,13 +3,12 @@
 struct GrassmannLayer{F1, F2} <: ManifoldLayer
     N::Integer
     n::Integer
-    Retraction::F1
     init_weight::F2
 end
 
 default_retr = Geodesic()
 function GrassmannLayer(N::Integer, n::Integer; init_weight=Lux.glorot_uniform, Retraction::AbstractRetraction=default_retr)
-    GrassmannLayer{typeof(Retraction), typeof(init_weight)}(N, n, retraction, init_weight)
+    GrassmannLayer{typeof(Retraction), typeof(init_weight)}(N, n, init_weight)
 end
 
 function Lux.initialparameters(rng::AbstractRNG, d::GrassmannLayer)

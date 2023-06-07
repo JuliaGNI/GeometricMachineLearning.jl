@@ -9,7 +9,7 @@ end
 
 default_retr = Geodesic()
 function StiefelLayer(N::Integer, n::Integer; init_weight=Lux.glorot_uniform, Retraction::AbstractRetraction=default_retr)
-    StiefelLayer{typeof(Retraction), typeof(init_weight)}(N, n, retraction, init_weight)
+    StiefelLayer{typeof(Retraction), typeof(init_weight)}(N, n, init_weight)
 end
 
 function Lux.initialparameters(rng::AbstractRNG, d::StiefelLayer)
