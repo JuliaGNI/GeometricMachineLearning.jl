@@ -30,11 +30,3 @@ Lux.statelength(d::StiefelLayer) = 0
 function (d::StiefelLayer)(x::AbstractVecOrMat, ps, st::NamedTuple)
     ps.weight*x, st
 end
-
-function retraction(d::StiefelLayer{Geodesic}, B::StiefelLieAlgHorMatrix)
-    Exp(B)
-end
-
-function retraction(d::StiefelLayer{Geodesic}, B::NamedTuple)
-    retraction(d, B.weight)
-end
