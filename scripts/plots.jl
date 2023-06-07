@@ -8,13 +8,13 @@ function plot_hnn(H, H̃, total_loss; xmin=-1.2, xmax=+1.2, ymin=-1.2, ymax=+1.2
     #plot contour lines of Hamiltonian
     X = range(xmin, stop=xmax, length=nsamples)
     Y = range(ymin, stop=ymax, length=nsamples)
-    plt_cnt = contour(X, Y, [H([x,y]) for x in X, y in Y], linewidth = 0, fill = true, levels = 7, c = cgrad(:default, rev = true))
+    plt_cnt = contour(X, Y, [H([x,y]) for y in Y, x in X], linewidth = 0, fill = true, levels = 7, c = cgrad(:default, rev = true))
 
     #plot contour lines of learned Hamiltonian
-    contour!(plt_cnt, X, Y, [H̃([x,y]) - H̃₀ for x in X, y in Y], linecolor = :black)
+    contour!(plt_cnt, X, Y, [H̃([x,y]) - H̃₀ for y in Y, x in X], linecolor = :black)
 
     #plot contours of error of Hamiltonian
-    plt_err = contourf(X, Y, [H̃([x,y]) - H̃₀ - H([x,y]) for x in X, y in Y])
+    plt_err = contourf(X, Y, [H̃([x,y]) - H̃₀ - H([x,y]) for y in Y, x in X])
 
     # plot total loss
     plt_loss = plot(total_loss, xguide="n(training)", yguide="Total Loss", legend=false, size=(1000,800))

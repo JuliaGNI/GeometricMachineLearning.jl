@@ -14,7 +14,7 @@ dict_problem_H= Dict(
     #:three_body_system =>(,)
 )
 
-# Lagrangian Dictionary
+# Lagrangian DictionaryHH
 
 dict_problem_L = Dict(
     :pendulum => (x-> x[2]^2 / 2 - (1-cos(x[1])),1),
@@ -199,8 +199,64 @@ function get_multiple_trajectory_structure(nameproblem; n_trajectory = 1, n_poin
     Get_Δt(Data) = Data.Δt
     Get_nb_trajectory(Data) = Data.nb_trajectory
     Get_length_trajectory(Data, i) = Data.data[Symbol("Trajectory_"*string(i))][:len]
-    Get_p(Data, i, n) = Data.data[Symbol("Trajectory_"*string(i))][:data][n][1]
     Get_q(Data, i, n) = Data.data[Symbol("Trajectory_"*string(i))][:data][n][2]
+    Get_p(Data, i, n) = Data.data[Symbol("Trajectory_"*string(i))][:data][n][1]
 
-    return data_trajectory(data, Get_nb_trajectory, Get_length_trajectory, Get_p, Get_q, Get_Δt)
+    return data_trajectory(data, Get_nb_trajectory, Get_length_trajectory, Get_q, Get_p, Get_Δt)
+end
+
+function get_multiple_trajectory_structure_with_target(nameproblem; n_trajectory = 1, n_points = 10, tstep = 0.1, qmin = -0.2, pmin = -0.2, qmax = 0.2, pmax = 0.2)
+
+    
+    # get the Hamiltonien corresponding to name_problem   
+    H_problem, n_dim = dict_problem_H[nameproblem] 
+    
+    # compute vector field
+    ∇H(x) = Zygote.gradient(H,x)[1]
+
+    I = Diagonal(ones(n_dim))
+    Z = zeros(n_dim,n_dim)
+    symplectic_matrix = [Z I;-I Z]
+
+    dH(x) = symplectic_matrix * ∇H(x)
+
+    #define timespan
+    tspan=(0.,n_points*tstep)
+    
+    #compute phase space for each trajectory staring from a random point
+    pre_data = NamedTuple()
+    Target = NamedTuple()
+    
+    for i in 1:n_trajectory
+
+        q₀ = [rand()*(qmax-qmin)+qmin for _ in 1:n_dim]
+        p₀ = [rand()*(pmax-pmin)+pmin for _ in 1:n_dim]
+        q, p = compute_phase_space(H_problem, q₀, p₀, tspan, tstep)
+
+        Data = [(q[n], p[n]) for n in 1:size(q,1)]
+        data_calc = [[q[n]..., p[n]...] for n in 1:size(q,1)]
+
+        nt = NamedTuple{(Symbol("Trajectory_"*string(i)),)}(((data = Data, len = n_points+1),))
+
+        pre_data = merge(pre_data,nt)
+
+        calc = dH.(data_calc)
+        pre_target = [(calc[n][1:n_dim], calc[n][1+n_dim:end]) for n in 1:size(q,1)]
+        ntt = NamedTuple{(Symbol("Trajectory_"*string(i)),)}(((target = pre_target, len = n_points+1),))
+        Target = merge(Target,ntt)
+
+    end
+    
+    data = storing_data(tstep, n_trajectory, pre_data)
+
+    Get_Δt(Data) = Data.Δt
+    Get_nb_trajectory(Data) = Data.nb_trajectory
+    Get_length_trajectory(Data, i) = Data.data[Symbol("Trajectory_"*string(i))][:len]
+    Get_q(Data, i, n) = Data.data[Symbol("Trajectory_"*string(i))][:data][n][1]
+    Get_p(Data, i, n) = Data.data[Symbol("Trajectory_"*string(i))][:data][n][2]
+
+    Get_q̇(Target,i,n)= Target[Symbol("Trajectory_"*string(i))][:target][n][1][1]
+    Get_ṗ(Target,i,n)= Target[Symbol("Trajectory_"*string(i))][:target][n][2][1]
+
+    return dataTarget(data_trajectory(data, Get_nb_trajectory, Get_length_trajectory, Get_q, Get_p, Get_Δt), Target, Get_q̇, Get_ṗ)
 end

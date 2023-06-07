@@ -1,6 +1,5 @@
 
 const DEFAULT_HNN_NRUNS = 1000
-const DEFAULT_BATCH_SIZE = 10
 
 
 struct HamiltonianNeuralNetwork{AT} <: AbstractArchitecture
@@ -39,21 +38,30 @@ vectorfield(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, params = nn.par
 
 abstract type Hnn_training_integrator end
 
-struct SEulerA{TD,TL} <: Hnn_training_integrator
+
+struct SEuler{TD,TL} <: Hnn_training_integrator
     sqdist::TD
     loss::TL
+    type::bool #if true it is SEulerA, else SEulerB
 
-    function SEulerA(;sqdist = sqeuclidean)
+    function SEuler(;sqdist = sqeuclidean, type = true)
 
-        function loss_single(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, qₙ, qₙ₊₁, pₙ, pₙ₊₁, Δt, params = nn.params)
+        function loss_single_A(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, qₙ, qₙ₊₁, pₙ, pₙ₊₁, Δt, params = nn.params)
             dH = vectorfield(nn, [qₙ₊₁...,pₙ...], params)
             sqdist(dH[1],(qₙ₊₁-qₙ)/Δt) + sqdist(dH[2],(pₙ₊₁-pₙ)/Δt)
         end
+        
+        function loss_single_B(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, qₙ, qₙ₊₁, pₙ, pₙ₊₁, Δt, params = nn.params)
+            dH = vectorfield(nn, [qₙ...,pₙ₊₁...], params)
+            sqdist(dH[1],(qₙ₊₁-qₙ)/Δt) + sqdist(dH[2],(pₙ₊₁-pₙ)/Δt)
+        end
+        
+        loss_single = type ? loss_single_A : loss_single_B
 
-        loss(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, data::data_trajectory, index_batch, params = nn.params) = 
+        loss(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, data::data_trajectory, index_batch = get_batch(data), params = nn.params) = 
         mapreduce(x->loss_single(nn, data.get_q(x[1],x[2]), data.get_q(x[1],x[2]+1), data.get_p(x[1],x[2]), data.get_p(x[1],x[2]+1), data.get_Δt(), params),+, index_batch)       
 
-        new{typeof(sqdist),typeof(loss)}(sqdist, loss)
+        new{typeof(sqdist),typeof(loss)}(sqdist, loss, type)
     end
 end
 
@@ -63,25 +71,31 @@ struct ExactIntegrator{TD,TL} <: Hnn_training_integrator
 
     function ExactIntegrator(;sqdist = sqeuclidean)
 
-        loss_single(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, qₙ, pₙ, q̇ₙ, ṗₙ, params = nn.params) = sqeuclidean(vectorfield(nn, [qₙ...,pₙ...], params), [q̇ₙ..., ṗₙ...])
+        function loss_single(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, qₙ, pₙ, q̇ₙ, ṗₙ, params = nn.params)
+            dH = vectorfield(nn, [qₙ...,pₙ...], params)
+           sqdist(dH[1],q̇ₙ) + sqdist(dH[2],ṗₙ)
+        end
 
-        loss(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, data::dataTarget{data_trajectory}, index_batch, params = nn.params) = 
-        mapreduce(x->loss_single(nn, data.data.get_q(x[1],x[2]), data.data.get_p(x[1],x[2]), data.get_q̇(x[1],x[2]), data.get_ṗ(x[1],x[2]), params), +, index_batch)
+        #loss_single(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, qₙ, pₙ, q̇ₙ, ṗₙ, params = nn.params) = sqdist(vectorfield(nn, [qₙ...,pₙ...], params),[q̇ₙ...,ṗₙ...])
 
-        loss(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, data::dataTarget{data_sampled}, index_batch, params = nn.params) = 
-        mapreduce(n->loss_single(nn, data.data.get_q(n), data.data.get_p(n), data.get_q̇(n), data.get_ṗ(n), params), +, index_batch)
+        loss(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, datat::dataTarget{data_trajectory}, index_batch = get_batch(datat), params = nn.params) =
+        mapreduce(x->loss_single(nn, datat.data.get_q(x[1],x[2]), datat.data.get_p(x[1],x[2]), datat.get_q̇(x[1],x[2]), datat.get_ṗ(x[1],x[2]), params), +, index_batch)
+        
+        loss(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, datat::dataTarget{data_sampled}, index_batch = get_batch(datat), params = nn.params) = 
+        mapreduce(n->loss_single(nn, datat.data.get_q(n), datat.data.get_p(n), datat.get_q̇(n), datat.get_ṗ(n), params), +, index_batch)
 
         new{typeof(sqdist),typeof(loss)}(sqdist, loss)
     end
 end
 
-
+default_integrator(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, data::data_trajectory) = SEuler()
+default_integrator(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, data::dataTarget) = ExactIntegrator()
 
 # loss gradient
 loss_gradient(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, data, loss, index_batch, params = nn.params) = Zygote.gradient(p -> loss(nn, data, index_batch, p), params)[1]
 
 
-function train!(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, m::AbstractMethodOptimiser, data::Training_data; ntraining = DEFAULT_HNN_NRUNS, hti::Hnn_training_integrator, batch_size_t)
+function train!(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, m::AbstractMethodOptimiser, data::Training_data; ntraining = DEFAULT_HNN_NRUNS, hti::Hnn_training_integrator = default_integrator(nn, data), batch_size_t = default_index_batch(data))
     # create array to store total loss
     total_loss = zeros(ntraining)
 
@@ -105,7 +119,7 @@ function train!(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, m::AbstractMet
 
         optimization_step!(opt, nn.model, nn.params, dp)
 
-        total_loss[j] = 0 #hti.loss(nn, data, get_batch_multiple_trajectory(data, (data.get_nb_trajectory(), max([data.get_length_trajectory(i) for i in 1:data.get_nb_trajectory()]...))), params = nn.params)
+        total_loss[j] = hti.loss(nn, data)
     end
 
     return total_loss

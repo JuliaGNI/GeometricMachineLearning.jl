@@ -7,6 +7,14 @@ function Base.:+(a::Float64, b::Tuple{Float64})
     return a+x
 end
 
+function Base.:+(a::Vector{Float64}, b::Tuple{Float64})
+    x, = b
+    y, = a
+    return y+x
+end
+
+Zygote.OneElement(t1::Tuple{Float64}, t2::Tuple{Int64}, t3::Tuple{Base.OneTo{Int64}}) = Zygote.OneElement(t1[1], t2, t3)
+
 #Data structure
 
 abstract type Training_data end
@@ -21,7 +29,7 @@ struct data_trajectory <: Training_data
     get_q::Function
     get_p::Function
     
-    function data_trajectory(Data, Get_nb_trajectory::Function, Get_length_trajectory::Function, Get_p::Function, Get_q::Function, Get_Δt::Function = NothingFunction())
+    function data_trajectory(Data, Get_nb_trajectory::Function, Get_length_trajectory::Function, Get_q::Function, Get_p::Function, Get_Δt::Function = NothingFunction())
         get_Δt() = Get_Δt(Data)
         get_nb_trajectory() = Get_nb_trajectory(Data)
         get_length_trajectory(i) = Get_length_trajectory(Data, i)
@@ -37,7 +45,7 @@ struct data_sampled <: Training_data
     get_q::Function
     get_p::Function
     
-    function data_sampled(Data, Get_nb_point::Function, Get_p::Function, Get_q::Function)
+    function data_sampled(Data, Get_nb_point::Function, Get_q::Function, Get_p::Function)
         get_nb_point() = Get_nb_point(Data)
         get_q(n) = Get_q(Data,n)
         get_p(n) = Get_p(Data,n)
@@ -91,4 +99,12 @@ get_batch(data::data_sampled, batch_size::Int = data.get_nb_point()) = rand(1:da
 
 get_batch(data::dataTarget, batch_size_t::Union{Tuple{Int64,Int64},Int64}) = get_batch(data.data, batch_size_t)
 
+get_batch(data::dataTarget) = get_batch(data.data)
 
+
+
+const DEFAULT_BATCH_SIZE = 10
+const DEFAULT_BATCH_NB_TAJECTORY= 1
+default_index_batch(::data_trajectory) = (1, DEFAULT_BATCH_SIZE)
+default_index_batch(::data_sampled) = DEFAULT_BATCH_SIZE
+default_index_batch(datat::dataTarget) = default_index_batch(datat.data)
