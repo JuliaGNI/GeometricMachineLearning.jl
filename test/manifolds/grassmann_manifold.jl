@@ -20,6 +20,7 @@ function global_section_test(T, N::Integer, n::Integer)
     norm(Y - πQ*πQ'*Y)
 end
 
+
 function tangent_space_rep(T, N::Integer, n::Integer)
     Y = rand(GrassmannManifold{T}, N, n)
     Δ = rgrad(Y, randn(T, N, n))
@@ -34,11 +35,18 @@ function gloabl_tangent_space_representation(T, N::Integer, n::Integer)
     global_rep(λY, Δ)
 end
 
+function coordinate_chart_rep(T, N::Integer, n::Integer)
+    Y = rand(GrassmannManifold{T}, N, n)
+    Y.A = Y.A*inv(Y.A[1:n, 1:n])
+    Y
+end
+
 function run_tests(T, N, n)
     display(check_gradient(T, N, n))
     display(global_section_test(T, N, n))
     display(tangent_space_rep(T, N, n))
     display(gloabl_tangent_space_representation(T, N, n))
+    display(coordinate_chart_rep(T, N, n))
 end
 
 run_tests(Float32, 10, 4)
