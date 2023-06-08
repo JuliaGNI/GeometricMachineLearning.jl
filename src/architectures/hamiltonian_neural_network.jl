@@ -59,7 +59,7 @@ struct SEuler{TD,TL} <: Hnn_training_integrator
         loss_single = type ? loss_single_A : loss_single_B
 
         loss(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, data::data_trajectory, index_batch = get_batch(data), params = nn.params) = 
-        mapreduce(x->loss_single(nn, data.get_q(x[1],x[2]), data.get_q(x[1],x[2]+1), data.get_p(x[1],x[2]), data.get_p(x[1],x[2]+1), data.get_Δt(), params),+, index_batch)       
+        mapreduce(x->loss_single(nn, data.get_data[:q](x[1],x[2]), data.get_data[:q](x[1],x[2]+1), data.get_data[:p](x[1],x[2]), data.get_data[:p](x[1],x[2]+1), data.get_Δt(), params),+, index_batch)       
 
         new{typeof(sqdist),typeof(loss)}(sqdist, loss, type)
     end
@@ -76,13 +76,11 @@ struct ExactIntegrator{TD,TL} <: Hnn_training_integrator
            sqdist(dH[1],q̇ₙ) + sqdist(dH[2],ṗₙ)
         end
 
-        #loss_single(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, qₙ, pₙ, q̇ₙ, ṗₙ, params = nn.params) = sqdist(vectorfield(nn, [qₙ...,pₙ...], params),[q̇ₙ...,ṗₙ...])
-
         loss(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, datat::dataTarget{data_trajectory}, index_batch = get_batch(datat), params = nn.params) =
-        mapreduce(x->loss_single(nn, datat.data.get_q(x[1],x[2]), datat.data.get_p(x[1],x[2]), datat.get_q̇(x[1],x[2]), datat.get_ṗ(x[1],x[2]), params), +, index_batch)
+        mapreduce(x->loss_single(nn, datat.get_data[:q](x[1],x[2]), datat.get_data[:p](x[1],x[2]), datat.get_target[:q̇](x[1],x[2]), datat.get_target[:ṗ](x[1],x[2]), params), +, index_batch)
         
         loss(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, datat::dataTarget{data_sampled}, index_batch = get_batch(datat), params = nn.params) = 
-        mapreduce(n->loss_single(nn, datat.data.get_q(n), datat.data.get_p(n), datat.get_q̇(n), datat.get_ṗ(n), params), +, index_batch)
+        mapreduce(n->loss_single(nn, datat.get_data[:q](n), datat.get_data[:p](n), datat.get_target[:q̇](n), datat.get_target[:ṗ](n), params), +, index_batch)
 
         new{typeof(sqdist),typeof(loss)}(sqdist, loss)
     end

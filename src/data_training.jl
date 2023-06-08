@@ -26,49 +26,77 @@ struct data_trajectory <: Training_data
     get_Δt::Function
     get_nb_trajectory::Function
     get_length_trajectory::Function
-    get_q::Function
-    get_p::Function
+    get_data::Dict{Symbol, <:Function}
     
-    function data_trajectory(Data, Get_nb_trajectory::Function, Get_length_trajectory::Function, Get_q::Function, Get_p::Function, Get_Δt::Function = NothingFunction())
+    function data_trajectory(Data; Get_Δt::Function = NothingFunction(), Get_nb_trajectory::Function, Get_length_trajectory::Function,  Get_data::Dict{Symbol, <:Function})
         get_Δt() = Get_Δt(Data)
         get_nb_trajectory() = Get_nb_trajectory(Data)
         get_length_trajectory(i) = Get_length_trajectory(Data, i)
-        get_q(i,n) = Get_q(Data,i,n)
-        get_p(i,n) = Get_p(Data,i,n)
-        new(get_Δt, get_nb_trajectory, get_length_trajectory, get_q, get_p)
+        get_data = Dict([(key, (i,n)->value(Data,i,n)) for (key,value) in Get_data])
+        new(get_Δt, get_nb_trajectory, get_length_trajectory, get_data)
     end
+
+    function data_trajectory(Data; Get_data::Dict{Symbol, <:Function})
+        
+        @assert haskey(Get_data, :Δt)
+        @assert haskey(Get_data, :nb_trajectory)
+        @assert haskey(Get_data, :length_trajectory)
+
+        get_Δt() = Get_data[:Δt](Data)
+        get_nb_trajectory() = Get_data[:nb_trajectory](Data)
+        get_length_trajectory(i) = Get_data[:length_trajectory](Data, i)
+       
+        get_data = Dict([(key, (i,n)->value(Data,i,n)) for (key,value) in copy_get_data])
+
+        delete!(get_data, :Δt)
+        delete!(get_data, :nb_trajectory)
+        delete!(get_data, :length_trajectory)
+
+        new(get_Δt, get_nb_trajectory, get_length_trajectory, get_data)
+    end
+
 end
+
 
 
 struct data_sampled <: Training_data
     get_nb_point::Function
-    get_q::Function
-    get_p::Function
-    
-    function data_sampled(Data, Get_nb_point::Function, Get_q::Function, Get_p::Function)
+    get_data::Dict{Symbol, <:Function}
+
+    function data_sampled(Data, Get_nb_point::Function, Get_data::Dict{Symbol, <:Function})
         get_nb_point() = Get_nb_point(Data)
-        get_q(n) = Get_q(Data,n)
-        get_p(n) = Get_p(Data,n)
-        new(get_nb_point, get_q, get_p)
+        get_data = Dict([(key, (i,n)->value(Data,i,n)) for (key,value) in Get_data])
+        new(get_nb_point, get_data)
     end
+    
+    function data_sampled(Data, Get_data::Dict{Symbol, <:Function})
+            
+        @assert haskey(Get_data, :nb_points)
+        get_nb_point() = Get_data[:nb_points](Data)
+
+        get_data = Dict([(key, n->value(Data,n)) for (key,value) in Get_data])
+        
+        delete!(get_data, :nb_points)
+
+        new(get_nb_point, get_data)
+    end
+
 end
 
 
 struct dataTarget{T<:Training_data} <: Training_data
     data::T
-    get_q̇::Function
-    get_ṗ::Function
+    get_data::Dict{Symbol, <:Function}
+    get_target::Dict{Symbol, <:Function}
 
-    function dataTarget(data::data_trajectory, Target, Get_q̇::Function, Get_ṗ::Function)
-        get_q̇(i,n) = Get_q̇(Target,i,n)
-        get_ṗ(i,n) = Get_ṗ(Target,i,n)
-        new{typeof(data)}(data, get_q̇, get_ṗ)
+    function dataTarget(data::data_trajectory, Target, Get_target::Dict{Symbol, <:Function})
+        get_target = Dict([(key, (i,n)->value(Target,i,n)) for (key,value) in Get_target])
+        new{typeof(data)}(data, data.get_data, get_target)
     end
-
-    function dataTarget(data::data_sampled, Target, Get_q̇::Function, Get_ṗ::Function)
-        get_q̇(n) = Get_q̇(Target,n)
-        get_ṗ(n) = Get_ṗ(Target,n)
-        new{typeof(data)}(data, get_q̇, get_ṗ)
+    
+    function dataTarget(data::data_sampled, Target, Get_target::Dict{Symbol, <:Function})
+        get_target = Dict([(key, n->value(Target,n)) for (key,value) in Get_target])
+        new{typeof(data)}(data, data.get_data, get_target)
     end
 end
 

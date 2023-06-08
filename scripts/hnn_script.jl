@@ -39,13 +39,21 @@ nameproblem = :pendulum
 
 
 Data,Target = get_HNN_data(nameproblem)
-Get_nb_point(Data) = length(Data)
-Get_q(Data,n) = Data[n][1]
-Get_p(Data,n) = Data[n][2]
-Get_q̇(Target,n) = Target[n][1]
-Get_ṗ(Target,n) = Target[n][2]
-pdata = data_sampled(Data, Get_nb_point, Get_q, Get_p)
-data = dataTarget(pdata, Target, Get_q̇, Get_ṗ)
+
+
+Get_Data = Dict(
+    :nb_points => Data -> length(Data),
+    :q => (Data,n) -> Data[n][1],
+    :p => (Data,n) -> Data[n][2]
+)
+pdata = data_sampled(Data, Get_Data)
+
+Get_Target = Dict(
+    :q̇ => (Target,n) -> Target[n][1],
+    :ṗ => (Target,n) -> Target[n][2],
+)
+
+data = dataTarget(pdata, Target, Get_Target)
 
 println("End generating data")
 

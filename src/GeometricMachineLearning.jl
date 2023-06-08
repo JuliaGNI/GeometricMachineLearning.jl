@@ -143,8 +143,10 @@ module GeometricMachineLearning
     NeuralNetwork(arch::AbstractArchitecture; kwargs...) = NeuralNetwork(arch, LuxBackend(); kwargs...)
 
     export Hnn_training_integrator
+    export Lnn_training_integrator
     export SEuler
     export ExactIntegrator
+    export ExactIntegratorLNN
 
     #INCLUDE ARCHITECTURES
     export HamiltonianNeuralNetwork

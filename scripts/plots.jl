@@ -14,7 +14,8 @@ function plot_hnn(H, H̃, total_loss; xmin=-1.2, xmax=+1.2, ymin=-1.2, ymax=+1.2
     contour!(plt_cnt, X, Y, [H̃([x,y]) - H̃₀ for y in Y, x in X], linecolor = :black)
 
     #plot contours of error of Hamiltonian
-    plt_err = contourf(X, Y, [H̃([x,y]) - H̃₀ - H([x,y]) for y in Y, x in X])
+    m = max( [H([x,y]) for y in Y, x in X]...)
+    plt_err = contourf(X, Y, 100*[(H̃([x,y]) - H̃₀ - H([x,y]))/m for y in Y, x in X])
 
     # plot total loss
     plt_loss = plot(total_loss, xguide="n(training)", yguide="Total Loss", legend=false, size=(1000,800))
