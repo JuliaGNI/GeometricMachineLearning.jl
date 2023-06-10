@@ -35,7 +35,7 @@ function grassmann_based_loss(ps::NamedTuple, x::AbstractMatrix, y::AbstractVect
     grassmann_based_loss(Lux.apply(model, x, ps, st)[1], y)
 end
 
-model = Lux.Chain(GrassmannLayer(157, 7, Transpose=true), Lux.Dense(7, 7, use_bias=false))
+model = Lux.Chain(GrassmannLayer(157, 7, Transpose=true), GrassmannLayer(7, 7))
 ps, st = Lux.setup(Random.default_rng(), model)
 
 optim = AdamOptimizer()
@@ -43,7 +43,7 @@ cache = init_optimizer_cache(model, optim)
 
 #optim.t = 1
 
-function training(n_steps = 500, batch_size=10)
+function training(n_steps = 10000, batch_size=200)
     loss_array = zeros(n_steps)
     @showprogress for step in 1:n_steps
         batch₁ = Int(ceil(length(train_x_tuple)*rand()))
@@ -60,7 +60,7 @@ function training(n_steps = 500, batch_size=10)
             loss += loss_and_gradient[1]
             add!(grad, grad, loss_and_gradient[2][1])
         end
-        loss_array[step] = loss
+        loss_array[step] = loss/batch_size
         optimization_step!(optim, model, ps, cache, grad)
     end
     loss_array

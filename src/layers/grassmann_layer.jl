@@ -12,7 +12,7 @@ function GrassmannLayer(N::Integer, n::Integer; init_weight=Lux.glorot_uniform, 
 end
 
 function Lux.initialparameters(rng::AbstractRNG, d::GrassmannLayer)
-    (weight = Lux.glorot_uniform(rng, GrassmannManifold, d.N, d.n), )
+    (weight = d.init_weight(rng, GrassmannManifold, d.N, d.n), )
 end
 
 #Lux.initialstates(::AbstractRNG, ::GrassmannLayer) = NamedTuple()
