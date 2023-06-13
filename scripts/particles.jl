@@ -94,7 +94,7 @@ end
 optim = AdamOptimizer()
 #TODO: dispatch over the optimizer
 cache = init_optimizer_cache(reconstr, optim)
-n_runs = Int(2e3)
+n_runs = Int(5e3)
 err_vec = zeros(n_runs + 1)
 
 err_vec[1] = loss_total(ps_all, st_all)
@@ -103,11 +103,15 @@ err_vec[1] = loss_total(ps_all, st_all)
     #apply!(optim, nothing, reconstr, ps_all, g)
     optimization_step!(optim, reconstr, ps_all, cache, g)
     err_vec[i + 1] = loss_total(ps_all, st_all)
-    println("error is $(err_vec[i+1])")
+    #println("error is $(err_vec[i+1])")
 end
 
 @printf "PSD error: %.5e. " PSD_err
 @printf "SAE error: %.5e\n" err_vec[end]
+
+p = plot(0:n_runs, ones(n_runs+1)*PSD_err, label="PSD error", colour="red",size=(800,500))
+plot!(p, 0:n_runs, err_vec, label="Training loss", linewidth=2, size=(800,500), colour=1)
+png(p, "SAE_PSD_comp")
 
 #=
 function print_symplecticity(::Lux.AbstractExplicitLayer, ::NamedTuple)
