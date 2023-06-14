@@ -5,7 +5,7 @@ using GeometricMachineLearning
 include("../data_problem.jl")
 
 
-function HNN_TARGET(;nameproblem::Symbol = :pendulum, opt =  MomentumOptimizer(1e-3,0.5), integrator::Hnn_training_integrator = )
+function HNN(integrator::Hnn_training_integrator, data::Training_data, nameproblem::Symbol = :pendulum, opt =  MomentumOptimizer(1e-3,0.5))
     
     _, n_dim = dict_problem_H[nameproblem]
 

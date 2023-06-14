@@ -1,13 +1,36 @@
 # using Profile
 using GeometricMachineLearning
 
-macro test_error(f,g)
-    println(g,f)
-    
+# this contains the functions for generating the training data
+include("../data_problem.jl")
+
+macro testerror(f, args...)
+    quote
+        try 
+            $(esc(:( $f($(args...)))))
+            printstyled("Test Passed"; bold = true, color = :green)
+            println()
+        catch e
+            printstyled("Test Failed"; bold = true, color = :red)
+            println()
+        end
+    end
 end
 
-function test(x)
-    @assert !(x<0) "x must be possitive"
-    x>1 || @warn "x plu grand que 1"
-    nothing
-end
+
+#HNN(integrator::Hnn_training_integrator, data::Training_data, nameproblem::Symbol = :pendulum, opt =  MomentumOptimizer(1e-3,0.5))
+
+
+
+printstyled("Test of optimizer methods"; bold = true, underline = true)
+println()
+
+
+#@testerror HNN integrator data nameproblem opt
+printstyled("Test of integrators and data"; bold = true, underline = true)
+println()
+
+
+printstyled("Test of differents problem"; bold = true, underline = true)
+println()
+
