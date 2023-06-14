@@ -13,8 +13,8 @@ snapshots = read(file, "snapshots")
 X = snapshots["X"]
 V = snapshots["V"]
 
-_, n, time_steps, par = size(X)
-m = 10
+_, N, time_steps, par = size(X)
+n = 10
 
 norm_fac = 0
 for i in 1:time_steps
@@ -26,7 +26,7 @@ end
 #PSD  PSD_err
 fpath_proj = "../ReducedBasisMethods/runs/BoT_Np5e4_k_010_050_np_10_T25_projections.h5"
 file = h5open(fpath_proj, "r")
-Ψ_PSD = read(file, "Ψp")[:, 1:m]
+Ψ_PSD = read(file, "Ψp")[:, 1:n]
 PSD_err = 0
 for i in 1:time_steps
     for j in 1:par
@@ -39,28 +39,28 @@ end
 PSD_err = PSD_err / norm_fac
 
 relu(x) = max.(0, x)
-Ψ_enc = Chain(Gradient(2 * n, 4 * n, relu; change_q = true),
-              Gradient(2 * n, 4 * n, relu; change_q = false),
-              PSDLayer(2 * n, 100; inverse = true),
+Ψ_enc = Chain(Gradient(2 * N, 4 * N, relu; change_q = true),
+              Gradient(2 * N, 4 * N, relu; change_q = false),
+              PSDLayer(2 * N, 100; inverse = true),
               Gradient(100, 200, relu; change_q = true),
               Gradient(100, 200, relu; change_q = false),
               PSDLayer(100, 50; inverse = true),
               Gradient(50, 200, relu; change_q = true),
               Gradient(50, 200, relu; change_q = false),
-              PSDLayer(50, 2 * m; inverse = true),
-              Gradient(2 * m, 4 * m, relu; change_q = false),
-              Gradient(2 * m, 4 * m, relu; change_q = true))
-Ψ_dec = Chain(Gradient(2 * m, 4 * m, relu; change_q = false),
-              Gradient(2 * m, 4 * m, relu; change_q = true),
-              PSDLayer(50, 2 * m),
+              PSDLayer(50, 2 * n; inverse = true),
+              Gradient(2 * n, 4 * n, relu; change_q = false),
+              Gradient(2 * n, 4 * n, relu; change_q = true))
+Ψ_dec = Chain(Gradient(2 * n, 4 * n, relu; change_q = false),
+              Gradient(2 * n, 4 * n, relu; change_q = true),
+              PSDLayer(50, 2 * n),
               Gradient(50, 200, relu; change_q = false),
               Gradient(50, 200, relu; change_q = true),
               PSDLayer(100, 50),
               Gradient(100, 200, relu; change_q = false),
               Gradient(100, 200, relu; change_q = true),
-              PSDLayer(2 * n, 100),
-              Gradient(2 * n, 4 * n, relu; change_q = false),
-              Gradient(2 * n, 4 * n, relu; change_q = true))
+              PSDLayer(2 * N, 100),
+              Gradient(2 * N, 4 * N, relu; change_q = false),
+              Gradient(2 * N, 4 * N, relu; change_q = true))
 reconstr = Chain(Ψ_enc, Ψ_dec)
 ps_all, st_all = Lux.setup(Random.default_rng(), reconstr)
 
