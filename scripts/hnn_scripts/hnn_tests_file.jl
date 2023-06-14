@@ -25,11 +25,9 @@ end
 printstyled("Test of optimizer methods"; bold = true, underline = true)
 println()
 
-
 #@testerror HNN integrator data nameproblem opt
 printstyled("Test of integrators and data"; bold = true, underline = true)
 println()
-
 
 printstyled("Test of differents problem"; bold = true, underline = true)
 println()
