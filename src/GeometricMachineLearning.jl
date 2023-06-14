@@ -11,12 +11,13 @@ module GeometricMachineLearning
     import Lux
 
     #this defines empty retraction type structs (doesn't rely on anything)
-    include("optimizers/retraction_types.jl")
+    include("optimizers/useful_functions/retraction_types.jl")
 
-
-    include("rng/trivial_rng.jl")
 
     export TrivialInitRNG
+
+    include("rng/trivial_rng.jl")
+    
 
     #are these needed?
     include("gradient.jl")
@@ -26,13 +27,16 @@ module GeometricMachineLearning
     #+ operation has been overloaded to work with NamedTuples!
     export _add, apply_toNT, split_and_flatten, add!
 
+    #+ operation has been overloaded to work with NamedTuples!
+    export _add
+
     include("activations/abstract_activation_function.jl")
     include("activations/identity_activation.jl")
 
 
+    #INCLUDE ARRAYS
     include("arrays/add.jl")
     include("arrays/zero_vector.jl")
-    
     include("arrays/block_identity_lower.jl")
     include("arrays/block_identity_upper.jl")
     include("arrays/symmetric.jl")
@@ -55,6 +59,7 @@ module GeometricMachineLearning
     #symplectic Householder routine 
     export sr, sr!
 
+
     export AbstractLayer
     export FeedForwardLayer, LinearFeedForwardLayer
     export Gradient
@@ -70,6 +75,7 @@ module GeometricMachineLearning
 
     export StiefelManifold, SymplecticStiefelManifold, GrassmannManifold, Manifold
     export rgrad, metric
+
 
     include("layers/abstract_layer.jl")
     include("layers/feed_forward_layer.jl")
@@ -91,57 +97,70 @@ module GeometricMachineLearning
     export MultiHeadAttention
     export Transformer
     export AbstractNeuralNetwork
+
+    #INCLUDE OPTIMIZERS
+    export AbstractMethodOptimiser, AbstractCache
+    export GradientOptimizer, GradientCache
+    export MomentumOptimizer, MomentumCache
+    export AdamOptimizer, AdamCache
+
+    export Optimizer
+    export optimization_step!
+    export init_optimizer_cache
+
+    include("optimizers/optimizer_caches.jl")
+    include("optimizers/Method_Optimizer/abstract_method_optimizer.jl")
+    include("optimizers/Method_Optimizer/gradient_optimizer.jl")
+    include("optimizers/Method_Optimizer/momentum_optimizer.jl")        
+    include("optimizers/Method_Optimizer/adam_optimizer.jl")
+    include("optimizers/optimizer.jl")
+
+    export GlobalSection, apply_section
+    export global_rep
+    export TrivialInitRNG
+    export Geodesic, Cayley
     export retraction
+    #export ⊙², √ᵉˡᵉ, /ᵉˡᵉ, scalar_add
+    export update!
+    export check
+
+    include("optimizers/useful_functions/global_sections.jl")
+    include("optimizers/useful_functions/auxiliary.jl")
+    include("optimizers/useful_functions/retractions.jl")
+\
+    #INCLUDE BACKENDS
+    export AbstractNeuralNetwork
+    export LuxBackend
+    export NeuralNetwork
 
     include("architectures/architectures.jl")
     include("backends/backends.jl")
-
-    export LuxBackend
-
     include("backends/lux.jl")
 
     # set default backend in NeuralNetwork constructor
     NeuralNetwork(arch::AbstractArchitecture; kwargs...) = NeuralNetwork(arch, LuxBackend(); kwargs...)
 
-    export NeuralNetwork
+    #INCLUDE ARCHITECTURES
     export HamiltonianNeuralNetwork
+    export LagrangianNeuralNetwork
+    export SympNet
+    export LASympNet
+    export GSympNet
 
+    export train!, apply!, jacobian!
+    export Iterate_Sympnet
+
+    include("architectures/architectures.jl")
     include("architectures/autoencoder.jl")
     include("architectures/fixed_width_network.jl")
     include("architectures/hamiltonian_neural_network.jl")
+    include("architectures/lagrangian_neural_network.jl")
     include("architectures/variable_width_network.jl")
+    include("architectures/sympnet.jl")
 
-    export train!, apply!, jacobian!
 
-    include("optimizers/global_sections.jl")
-    include("optimizers/optimizer_caches.jl")
-    include("optimizers/abstract_optimizer.jl")
-    include("optimizers/standard_optimizer.jl")
-    include("optimizers/momentum_optimizer.jl")
-    include("optimizers/adam_optimizer.jl")
-    include("optimizers/auxiliary.jl")
-    include("optimizers/retractions.jl")
-
-    export GlobalSection, apply_section
-    export global_rep
-
-    export TrivialInitRNG
-    
-    export AbstractOptimizer, AbstractCache
-    export StandardOptimizer, StandardCache
-    export MomentumOptimizer, MomentumCache
-    export AdamOptimizer, AdamCache
-
-    export Geodesic, Cayley
-    export retraction
-
-    export ⊙², √ᵉˡᵉ, /ᵉˡᵉ, scalar_add
-
-    export update!
-    export check
-    export init_optimizer_cache
-    export optimization_step!
 
     include("rng/random_funcs.jl")
 
+    
 end

@@ -4,7 +4,7 @@ V ← α*V - ∇f(W)
 W ← W + η*V
 Or the riemannian manifold equivalent, if applicable.
 """
-mutable struct MomentumOptimizer{T<:Real} <: AbstractOptimizer
+mutable struct MomentumOptimizer{T<:Real} <: AbstractMethodOptimiser
     η::T
     α::T
     t::Int
@@ -18,3 +18,4 @@ function update!(o::MomentumOptimizer, C::MomentumCache, B::AbstractMatrix)
 end
 
 init_optimizer_cache(d::Lux.AbstractExplicitLayer, ::MomentumOptimizer) = setup_momentum_cache(d)
+

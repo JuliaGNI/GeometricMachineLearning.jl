@@ -2,6 +2,7 @@
 maybe consider dividing the output in the check functions by n!
 TODO: Implement sampling procedures!!
 """
+
 mutable struct StiefelManifold{T, AT <: AbstractMatrix{T}} <: Manifold{T}
     A::AT
     function StiefelManifold(A::AbstractMatrix)

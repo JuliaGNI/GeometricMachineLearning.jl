@@ -21,16 +21,32 @@ function NeuralNetwork(arch::AbstractArchitecture, back::LuxBackend)
     LuxNeuralNetwork(arch, model, params, state)
 end
 
-function(nn::LuxNeuralNetwork)(x)# x::AbstractVecOrMat
+function apply(nn::LuxNeuralNetwork, x, params::Tuple)
     # apply network
-    y, st = Lux.apply(nn.model, x, nn.params, nn.state)
+    # y, st = Lux.apply(nn.model, x, params, nn.state)
+    y = Lux.apply(nn.model, x, params, nn.state)
     
     # update state
-    nn.state .= st
+    # nn.state .= st
 
     # sum output to obtain (scalar) result
-    return sum(y)
+    return y
 end
+
+function apply(nn::LuxNeuralNetwork, x, params::NamedTuple)
+    # apply network
+    y, st = Lux.apply(nn.model, x, params, nn.state)
+    
+    # update state
+    #nn.state .= st
+
+    # sum output to obtain (scalar) result
+    return y
+end
+
+apply(nn::LuxNeuralNetwork, x) = apply(nn, x, nn.params)
+
+(nn::LuxNeuralNetwork)(x, args...) = apply(nn, x, args...)
 
 
 function update_layer!(::Lux.AbstractExplicitLayer, x::NamedTuple, dx::NamedTuple, η::AbstractFloat)

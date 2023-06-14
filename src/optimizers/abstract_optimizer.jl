@@ -1,5 +1,6 @@
 abstract type AbstractOptimizer end
 
+
 function optimization_step!(o::AbstractOptimizer, d::Lux.AbstractExplicitLayer, ps::NamedTuple, C::NamedTuple, dx::NamedTuple)
     gx = rgrad(ps, dx)
     λY = GlobalSection(ps)
@@ -24,7 +25,7 @@ end
 
 function optimization_step!(o::AbstractOptimizer, model::Lux.Chain, ps::NamedTuple, loss)
     dx = Zygote.gradient(ps -> loss(ps), ps)[1]
-    optimization_step(o, model, ps, dx)
+    optimization_step!(o, model, ps, dx)
 end 
 
 rgrad(ps::NamedTuple, dx::NamedTuple) = apply_toNT(ps, dx, rgrad)

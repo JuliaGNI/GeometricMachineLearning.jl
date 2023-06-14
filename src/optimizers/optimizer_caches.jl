@@ -1,4 +1,9 @@
+#This files contains Cache's structure
+
 abstract type AbstractCache end
+
+#############################################################################
+# All the definitions of the caches
 
 mutable struct AdamCache{T, AT <: AbstractMatrix} <: AbstractCache
     B₁::AT
@@ -15,27 +20,19 @@ mutable struct MomentumCache{T, AT <: AbstractMatrix} <:AbstractCache
     end
 end
 
-struct StandardCache <: AbstractCache end
-StandardCache(::AbstractMatrix) = StandardCache()
+struct GradientCache <: AbstractCache end
+GradientCache(::AbstractMatrix) = GradientCache()
 
-function setup_adam_cache(B₁::NamedTuple, B₂::NamedTuple)
-    apply_toNT(B₁, B₂, setup_adam_cache)
-end
+#############################################################################
+# All the setup_cache functions 
+
+setup_adam_cache(B₁::NamedTuple, B₂::NamedTuple) = apply_toNT(B₁, B₂, setup_adam_cache)
+setup_momentum_cache(dx::NamedTuple) = apply_toNT(dx, setup_momentum_cache)
+setup_gradient_cache(dx::NamedTuple) = apply_toNT(dx, setup_gradient_cache)
 
 setup_adam_cache(B₁::AbstractMatrix, B₂::AbstractMatrix) = AdamCache(B₁, B₂)
-
-
-function setup_momentum_cache(dx::NamedTuple)
-    apply_toNT(dx, setup_momentum_cache)
-end
-
 setup_momentum_cache(B::AbstractMatrix) = MomentumCache(B)
-
-function setup_standard_cache(dx::NamedTuple)
-    apply_toNT(dx, setup_standard_cache)
-end
-
-setup_standard_cache(B::AbstractMatrix) = StandardCache(B)
+setup_gradient_cache(B::AbstractMatrix) = StandardCache(B)
 
 function setup_adam_cache(d::Lux.AbstractExplicitLayer)
     B₁, _ = Lux.setup(TrivialInitRNG(), d) #.|> Lux.gpu
@@ -49,7 +46,7 @@ function setup_momentum_cache(d::Lux.AbstractExplicitLayer)
 end
 
 #TODO: make this more efficient! you don't need to call the entire setup to initialize an empty NamedTuple!!!
-function setup_standard_cache(d::Lux.AbstractExplicitLayer)
-    B, _ = Lux.setup(TrivialInitRNG(), d) #.|> Lux.gpu
-    setup_standard_cache(B)
+function setup_gradient_cache(d::Lux.AbstractExplicitLayer)
+    B, _ = Lux.setup(TrivialInitRNG(), d) #.|> gpu
+    setup_gradient_cache(B)
 end

@@ -36,6 +36,7 @@ mutable struct SymmetricMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
 
 end 
 
+
 function Base.getindex(A::SymmetricMatrix,i::Int,j::Int)
     if i ≥ j
         return A.S[((i-1)*i)÷2+j]
@@ -61,6 +62,14 @@ function Base.:-(A::SymmetricMatrix, B::SymmetricMatrix)
     @assert A.n == B.n 
     SymmetricMatrix(A.S - B.S, A.n) 
 end 
+
+function Base.setindex!(A::SymmetricMatrix{T},a::T,i::Int,j::Int) where{T}
+    if i ≥ j
+        A.S[(i-1)*i÷2+j] = a
+    else
+        A.S[(j-1)*j÷2+i] = a
+    end
+end
 
 function Base.:-(A::SymmetricMatrix)
     SymmetricMatrix(-A.S, A.n)

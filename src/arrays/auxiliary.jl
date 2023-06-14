@@ -16,6 +16,7 @@ function Base.getindex(::StiefelProjection{T},i,j) where T
 end 
    
 Base.parent(E::StiefelProjection) = (E.N, E.n)
+
 Base.size(E::StiefelProjection) = (E.N, E.n)
 
 struct One{T} <: AbstractMatrix{T}
@@ -31,3 +32,4 @@ if i == j
 end 
 Base.parent(mat::One) = (mat.n)
 Base.size(mat::One) = (mat.n, mat.n)
+

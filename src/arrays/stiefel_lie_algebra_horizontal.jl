@@ -79,6 +79,7 @@ function add!(C::StiefelLieAlgHorMatrix, A::StiefelLieAlgHorMatrix, B::StiefelLi
     add!(C.B, A.B, B.B)  
 end
 
+
 function Base.:-(A::StiefelLieAlgHorMatrix)
     StiefelLieAlgHorMatrix(-A.A, -A.B, A.N, A.n)
 end
@@ -144,3 +145,4 @@ function LinearAlgebra.mul!(C::StiefelLieAlgHorMatrix, A::StiefelLieAlgHorMatrix
 end
 LinearAlgebra.mul!(C::StiefelLieAlgHorMatrix, α::Real, A::StiefelLieAlgHorMatrix) = mul!(C, A, α)
 LinearAlgebra.rmul!(C::StiefelLieAlgHorMatrix, α::Real) = mul!(C, C, α)
+

@@ -11,16 +11,17 @@ include("pendulum.jl")
 const ld = 5
 
 # hidden layers
-const ln = 1
+const ln = 3
 
 # number of inputs/dimension of system
 const ninput = 2
 
-# learning rate
-const η = .001
-
 # number of training runs
 const nruns = 1000
+
+# Optimiser
+#opt = GradientOptimizer(1e-2)
+opt = MomentumOptimizer(1e-2,0.5)
 
 # create HNN
 hnn = HamiltonianNeuralNetwork(ninput; nhidden = ln, width = ld)
@@ -32,7 +33,7 @@ nn = NeuralNetwork(hnn, LuxBackend())
 data, target = get_data_set()
 
 # perform training (returns array that contains the total loss for each training step)
-total_loss = train!(nn, data, target; ntraining = nruns, learning_rate = η)
+total_loss = train!(nn, opt, data, target; ntraining = nruns)
 
 #time training (after warmup)
 # total_loss = train!(hnn, data, target; ntraining = nruns, learning_rate = η)
@@ -47,3 +48,5 @@ total_loss = train!(nn, data, target; ntraining = nruns, learning_rate = η)
 # plot results
 include("plots.jl")
 plot_hnn(H, nn, total_loss; filename="hnn_pendulum.png")
+
+
