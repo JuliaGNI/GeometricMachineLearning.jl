@@ -2,6 +2,7 @@ struct NothingFunction <: Function end
 (::NothingFunction)(args...) = nothing
 is_NothingFunction(f::Function) = typeof(f)==NothingFunction
 
+
 function Base.:+(a::Float64, b::Tuple{Float64})
     x, = b
     return a+x
@@ -28,7 +29,7 @@ struct data_trajectory <: Training_data
     get_length_trajectory::Function
     get_data::Dict{Symbol, <:Function}
     
-    function data_trajectory(Data; Get_Δt::Function = NothingFunction(), Get_nb_trajectory::Function, Get_length_trajectory::Function,  Get_data::Dict{Symbol, <:Function})
+    function data_trajectory(Data, Get_nb_trajectory::Function, Get_length_trajectory::Function,  Get_data::Dict{Symbol, <:Function}, Get_Δt::Function = NothingFunction())
         get_Δt() = Get_Δt(Data)
         get_nb_trajectory() = Get_nb_trajectory(Data)
         get_length_trajectory(i) = Get_length_trajectory(Data, i)
@@ -36,7 +37,7 @@ struct data_trajectory <: Training_data
         new(get_Δt, get_nb_trajectory, get_length_trajectory, get_data)
     end
 
-    function data_trajectory(Data; Get_data::Dict{Symbol, <:Function})
+    function data_trajectory(Data, Get_data::Dict{Symbol, <:Function})
         
         @assert haskey(Get_data, :Δt)
         @assert haskey(Get_data, :nb_trajectory)
@@ -46,7 +47,7 @@ struct data_trajectory <: Training_data
         get_nb_trajectory() = Get_data[:nb_trajectory](Data)
         get_length_trajectory(i) = Get_data[:length_trajectory](Data, i)
        
-        get_data = Dict([(key, (i,n)->value(Data,i,n)) for (key,value) in copy_get_data])
+        get_data = Dict([(key, (i,n)->value(Data,i,n)) for (key,value) in Get_data])
 
         delete!(get_data, :Δt)
         delete!(get_data, :nb_trajectory)
@@ -56,8 +57,6 @@ struct data_trajectory <: Training_data
     end
 
 end
-
-
 
 struct data_sampled <: Training_data
     get_nb_point::Function
@@ -103,9 +102,9 @@ end
 
 # Get_batch functions
 
-function get_batch(data::data_trajectory, batch_size_t::Tuple{Int64,Int64})
+function get_batch(data::data_trajectory, batch_size_t::Tuple{Int64,Int64,Int64})
 
-    batch_nb_trajectory, batch_size = batch_size_t
+    batch_nb_trajectory, batch_size, size_sequence = batch_size_t
     
     l = data.get_nb_trajectory()
     index_trajectory = rand(1:l, min(batch_nb_trajectory,l))
@@ -113,7 +112,7 @@ function get_batch(data::data_trajectory, batch_size_t::Tuple{Int64,Int64})
     index_qp = []
     for i in index_trajectory
         l_i = data.get_length_trajectory(i)
-        push!(index_qp, [(i,j) for j in rand(1:l_i-1, min(l_i, batch_size)÷2)])
+        push!(index_qp, [(i,j) for j in rand(1:l_i-size_sequence+1, min(l_i, batch_size)÷size_sequence)])
     end
 
     index_batch= vcat(index_qp...)
@@ -125,7 +124,7 @@ get_batch(data::data_trajectory) = vcat([[(i,j) for j in 1:2:data.get_length_tra
 
 get_batch(data::data_sampled, batch_size::Int = data.get_nb_point()) = rand(1:data.get_nb_point(), batch_size)
 
-get_batch(data::dataTarget, batch_size_t::Union{Tuple{Int64,Int64},Int64}) = get_batch(data.data, batch_size_t)
+get_batch(data::dataTarget, batch_size_t::Union{Tuple{Int64,Int64,Int64},Int64}) = get_batch(data.data, batch_size_t)
 
 get_batch(data::dataTarget) = get_batch(data.data)
 
@@ -133,6 +132,6 @@ get_batch(data::dataTarget) = get_batch(data.data)
 
 const DEFAULT_BATCH_SIZE = 10
 const DEFAULT_BATCH_NB_TAJECTORY= 1
-default_index_batch(::data_trajectory) = (1, DEFAULT_BATCH_SIZE)
+default_index_batch(::data_trajectory) = (1, DEFAULT_BATCH_SIZE, 3)
 default_index_batch(::data_sampled) = DEFAULT_BATCH_SIZE
 default_index_batch(datat::dataTarget) = default_index_batch(datat.data)

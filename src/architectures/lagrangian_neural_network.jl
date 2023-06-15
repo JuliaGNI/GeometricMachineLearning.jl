@@ -30,7 +30,7 @@ end
 (nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork})(x, params = nn.params) = sum(apply(nn, x, params))
 
 # gradient of the Lagrangian Neural Network
-∇qL(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, q, q̇, params = nn.params) = Zygote.gradient(x->nn(x, params), [q...,q̇...])[1][1:length(q)]
+∇L(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, x, params = nn.params) = Zygote.gradient(x->nn(x, params), x)[1]
 
 # hessian of the Lagrangian Neural Network
 ∇∇L(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, q, q̇, params = nn.params) = Zygote.hessian(x->nn(x, params),[q...,q̇...])
@@ -41,6 +41,29 @@ end
 
 abstract type Lnn_training_integrator end
 
+
+struct VariationalMidPointLNN{TD,TL} <: Lnn_training_integrator
+    sqdist::TD
+    loss::TL
+
+    function VariationalMidPointLNN(;sqdist = sqeuclidean)
+
+        function loss_single(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, qₙ, qₙ₊₁, qₙ₊₂, Δt, params = nn.params)
+            DL = ∇L(nn, [(qₙ₊₁+qₙ₊₂)/2..., (qₙ₊₁-qₙ)/Δt...] , params)
+            DL₁ = 0.5 * DL[1:length(qₙ)] - 1/Δt * DL[length(qₙ)+1:end]
+            DL₂ = 0.5 * DL[1:length(qₙ)] + 1/Δt * DL[length(qₙ)+1:end]
+            sqdist(DL₁,-DL₂)
+        end
+
+        loss(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, datat::data_trajectory, index_batch = get_batch(datat), params = nn.params) =
+        mapreduce(x->loss_single(nn, datat.get_data[:q](x[1],x[2]), datat.get_data[:q](x[1],x[2]+1), datat.get_data[:q](x[1],x[2]+2), datat.get_Δt(), params), +, index_batch)
+
+        new{typeof(sqdist),typeof(loss)}(sqdist, loss)
+    end
+end
+
+
+
 struct ExactIntegratorLNN{TD,TL} <: Lnn_training_integrator
     sqdist::TD
     loss::TL
@@ -48,7 +71,7 @@ struct ExactIntegratorLNN{TD,TL} <: Lnn_training_integrator
     function ExactIntegratorLNN(;sqdist = sqeuclidean)
 
         function loss_single(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, qₙ, q̇ₙ, q̈ₙ, params = nn.params)
-            sqdist(q̈ₙ, ∇q∇q̇L(nn, qₙ, q̇ₙ, params))  #inv(∇q̇∇q̇L(nn, qₙ, q̇ₙ, params))*(∇qL(nn, qₙ, q̇ₙ, params) - ∇q∇q̇L(nn, qₙ, q̇ₙ, params))
+            sum(∇q∇q̇L(nn,qₙ, q̇ₙ, params))  #inv(∇q̇∇q̇L(nn, qₙ, q̇ₙ, params))*(∇qL(nn, qₙ, q̇ₙ, params) - ∇q∇q̇L(nn, qₙ, q̇ₙ, params))
         end
 
         loss(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, datat::dataTarget{data_trajectory}, index_batch = get_batch(datat), params = nn.params) =
@@ -62,9 +85,10 @@ struct ExactIntegratorLNN{TD,TL} <: Lnn_training_integrator
 end
 
 default_integrator(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, data::dataTarget) = ExactIntegratorLNN()
+default_integrator(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, data::data_trajectory) = VariationalMidPointLNN()
 
 # loss gradient
-loss_gradient(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, data, loss, index_batch, params = nn.params) = ForwardDiff.gradient(p -> loss(nn, data, index_batch, p), params)[1]
+loss_gradient(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, data, loss, index_batch, params = nn.params) = Zygote.gradient(p -> loss(nn, data, index_batch,p), params)[1]
 
 
 # training
@@ -85,6 +109,8 @@ function train!(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, m::AbstractMeth
     # Learning runs
     @showprogress 1 "Training..." for j in 1:ntraining
 
+        println(j)
+
         index_batch = get_batch(data, batch_size_t)
     
         params_grad = loss_gradient(nn, data, lti.loss, index_batch, params_tuple) 
@@ -98,3 +124,62 @@ function train!(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, m::AbstractMeth
 
     return total_loss
 end
+
+
+
+###### utils for ForwardDiff.gradient
+#=
+function MatrixToVector(M)
+    return ([M...], size(M)...)
+end
+
+function VectorToMatrix(V,n,m)
+    @assert length(V)== n*m
+    reshape(V,(n,m))
+end
+
+function TupleMatrixToVector(TM)
+    V = vcat([MatrixToVector(x)[1] for x in TM]...)
+    STM = vcat([MatrixToVector(x)[2:3] for x in TM]...)
+    return V,STM
+end
+
+function drop!(V,s)
+    A = copy(V[1:s])
+    deleteat!(V,1:s)
+    return A
+end
+
+function sizeTuple(ts)
+    sum([prod(t) for t in ts])
+end
+
+function VectorToTupleMatrix(V, STM)
+    A = copy(V)
+    Tuple([VectorToMatrix(drop!(A,n*m),n,m) for (n,m) in STM])
+end
+
+function TupleTupleMatrixToVector(TTM)
+    V = vcat([TupleMatrixToVector(TM)[1] for TM in TTM]...)
+    STTM = vcat([TupleMatrixToVector(TM)[2] for TM in TTM])
+    return V, STTM
+end
+
+function VectorToTupleTupleMatrix(V,STTM)
+    A = copy(V)
+    Tuple([VectorToTupleMatrix(drop!(A, sizeTuple(STM)), STM) for STM in STTM])
+end
+
+function ForwardDiff.gradient(f::Any, T<:Tuple)
+
+    STTM = TupleTupleMatrixToVector(T)[2]
+    
+    π_TtoA(TTM) = TupleTupleMatrixToVector(TTM)
+
+    π_AtoT(V) = VectorToTupleTupleMatrix(V,STTM)
+
+    g = f∘π_AtoT
+
+    π_AtoT(ForwardDiff.gradient(g, π_TtoA(T)))
+end
+=#

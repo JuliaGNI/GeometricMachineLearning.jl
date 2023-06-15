@@ -39,10 +39,11 @@ vectorfield(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, params = nn.par
 abstract type Hnn_training_integrator end
 
 
-struct SEuler{TD,TL} <: Hnn_training_integrator
+struct SEuler{TD,TL,TA} <: Hnn_training_integrator
     sqdist::TD
     loss::TL
     type::Bool #if true it is SEulerA, else SEulerB
+    assert::TA
 
     function SEuler(;sqdist = sqeuclidean, type = true)
 
@@ -59,15 +60,23 @@ struct SEuler{TD,TL} <: Hnn_training_integrator
         loss_single = type ? loss_single_A : loss_single_B
 
         loss(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, data::data_trajectory, index_batch = get_batch(data), params = nn.params) = 
-        mapreduce(x->loss_single(nn, data.get_data[:q](x[1],x[2]), data.get_data[:q](x[1],x[2]+1), data.get_data[:p](x[1],x[2]), data.get_data[:p](x[1],x[2]+1), data.get_Δt(), params),+, index_batch)       
+        mapreduce(x->loss_single(nn, data.get_data[:q](x[1],x[2]), data.get_data[:q](x[1],x[2]+1), data.get_data[:p](x[1],x[2]), data.get_data[:p](x[1],x[2]+1), data.get_Δt(), params),+, index_batch) 
+        
+        function assert(data::Training_data)
+            @assert !(typeof(data) <: data_sampled) "Need trajectories data!"
+            @assert !(typeof(data) <: dataTarget{data_sampled}) "Need trajectories data!"
+            typeof(data) <: dataTarget{data_sampled} &&  @warn "Target are not needed!"
+            nothing
+        end
 
-        new{typeof(sqdist),typeof(loss)}(sqdist, loss, type)
+        new{typeof(sqdist),typeof(loss),typeof(assert)}(sqdist, loss, type, assert)
     end
 end
 
-struct ExactIntegrator{TD,TL} <: Hnn_training_integrator
+struct ExactIntegrator{TD,TL,TA} <: Hnn_training_integrator
     sqdist::TD
     loss::TL
+    assert::TA
 
     function ExactIntegrator(;sqdist = sqeuclidean)
 
@@ -82,7 +91,12 @@ struct ExactIntegrator{TD,TL} <: Hnn_training_integrator
         loss(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, datat::dataTarget{data_sampled}, index_batch = get_batch(datat), params = nn.params) = 
         mapreduce(n->loss_single(nn, datat.get_data[:q](n), datat.get_data[:p](n), datat.get_target[:q̇](n), datat.get_target[:ṗ](n), params), +, index_batch)
 
-        new{typeof(sqdist),typeof(loss)}(sqdist, loss)
+        function assert(data::Training_data)
+            @assert !(typeof(data) <: dataTarget) "Need targets for data!"
+            nothing
+        end
+
+        new{typeof(sqdist),typeof(loss),typeof(assert)}(sqdist, loss, assert)
     end
 end
 
@@ -94,6 +108,10 @@ loss_gradient(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, data, loss, inde
 
 
 function train!(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, m::AbstractMethodOptimiser, data::Training_data; ntraining = DEFAULT_HNN_NRUNS, hti::Hnn_training_integrator = default_integrator(nn, data), batch_size_t = default_index_batch(data))
+    
+    #verify that shape of data depending of the ExactIntegrator
+    hti.assert(data)
+
     # create array to store total loss
     total_loss = zeros(ntraining)
 

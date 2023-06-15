@@ -9,6 +9,7 @@ L,n_dim = dict_problem_L[nameproblem]
 
 println("Begin generating data")
 
+#=
 Data, Target = get_LNN_data(nameproblem)
 
 Get_Data = Dict(
@@ -23,6 +24,17 @@ Get_Target = Dict(
 )
 
 data = dataTarget(pdata, Target, Get_Target)
+=#
+
+Data = get_multiple_trajectory_structure_Lagrangian(nameproblem; n_trajectory = 2, n_points = 10)
+
+Get_Data = Dict(
+    :Δt => Data -> Data[1][1],
+    :nb_trajectory => Data -> Data[2][1],
+    :length_trajectory => (Data,i) -> Data[3][1],
+    :q => (Data,i,n) -> Data[3+i][n],
+)
+data = data_trajectory(Data, Get_Data)
 
 println("End generating data")
 
@@ -45,7 +57,8 @@ lnn = LagrangianNeuralNetwork(ninput; nhidden = ln, width = ld)
 nn = NeuralNetwork(lnn, LuxBackend())
 
 #training method
-hti = ExactIntegratorLNN()
+#hti = ExactIntegratorLNN() 
+hti = VariationalMidPointLNN()
 
 # Optimiser
 opt = MomentumOptimizer(1e-3,0.5)

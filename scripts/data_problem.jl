@@ -202,7 +202,7 @@ function get_multiple_trajectory_structure(nameproblem; n_trajectory = 1, n_poin
     Get_q(Data, i, n) = Data.data[Symbol("Trajectory_"*string(i))][:data][n][2]
     Get_p(Data, i, n) = Data.data[Symbol("Trajectory_"*string(i))][:data][n][1]
 
-    return data_trajectory(data, Get_nb_trajectory, Get_length_trajectory, Get_q, Get_p, Get_Δt)
+    return data #data_trajectory(data, Get_nb_trajectory, Get_length_trajectory, Get_q, Get_p, Get_Δt)
 end
 
 function get_multiple_trajectory_structure_with_target(nameproblem; n_trajectory = 1, n_points = 10, tstep = 0.1, qmin = -0.2, pmin = -0.2, qmax = 0.2, pmax = 0.2)
@@ -259,4 +259,35 @@ function get_multiple_trajectory_structure_with_target(nameproblem; n_trajectory
     Get_ṗ(Target,i,n)= Target[Symbol("Trajectory_"*string(i))][:target][n][2][1]
 
     return dataTarget(data_trajectory(data, Get_nb_trajectory, Get_length_trajectory, Get_q, Get_p, Get_Δt), Target, Get_q̇, Get_ṗ)
+end
+
+
+function get_multiple_trajectory_structure_Lagrangian(nameproblem; n_trajectory = 1, n_points = 10, tstep = 0.1, qmin = -0.2, pmin = -0.2, qmax = 0.2, pmax = 0.2)
+
+    
+    # get the Hamiltonien corresponding to name_problem   
+    H_problem, n_dim = dict_problem_L[nameproblem] 
+
+    #define timespan
+    tspan=(0.,n_points*tstep)
+    
+    #compute phase space for each trajectory staring from a random point
+    pre_data = []
+    push!(pre_data,[tstep])
+    push!(pre_data,[n_trajectory])
+    push!(pre_data, [n_points+1])
+    
+    
+    for i in 1:n_trajectory
+
+        q₀ = [rand()*(qmax-qmin)+qmin for _ in 1:n_dim]
+        p₀ = [rand()*(pmax-pmin)+pmin for _ in 1:n_dim]
+        q, p = compute_phase_space(H_problem, q₀, p₀, tspan, tstep)
+
+        Data = [q[n] for n in 1:size(q,1)]
+
+        pre_data = push!(pre_data,Data)
+    end
+
+    return pre_data 
 end

@@ -7,6 +7,7 @@ module GeometricMachineLearning
     using ProgressMeter
     using Random
     using Zygote
+    using ForwardDiff
 
     import Lux
 
@@ -147,6 +148,7 @@ module GeometricMachineLearning
     export SEuler
     export ExactIntegrator
     export ExactIntegratorLNN
+    export VariationalMidPointLNN
 
     #INCLUDE ARCHITECTURES
     export HamiltonianNeuralNetwork
