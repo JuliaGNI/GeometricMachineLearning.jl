@@ -8,20 +8,59 @@ using GeometricMachineLearning
 
 include("data_problem.jl")
 
-nameproblem = :pendulum
-q0 = [0.2]
-p0 = [0.8]
+function SYMPNET(integrator::SympNetIntegrator, data::Training_data, nameproblem::Symbol = :pendulum, opt =  MomentumOptimizer(1e-3,0.5))
+    
+    _, n_dim = dict_problem_H[nameproblem]
+
+    # layer dimension/width
+    ld = 10
+
+    # hidden layers
+    ln = 2
+
+    # number of inputs/dimension of system
+    ninput = 2*n_dim
+
+    # number of training runs
+    nruns = 3
+
+    # activation function
+    act = tanh
+
+    # create SympNet
+    sympnet = GSympNet(ninput, width=ld, nhidden=ln, activation=act)
+
+    # create Lux network
+    nn = NeuralNetwork(sympnet, LuxBackend())
+
+    # perform training (returns array that contains the total loss for each training step)
+    total_loss = train!(nn, opt, data; ntraining = nruns, hti = integrator)
+
+    return nn, total_loss
+end
 
 
-#nameproblem = :Hénon_Heiles
-#q0 = [0.3,-0.3]
-#p0 = [0.3,0.15]
+Data = get_multiple_trajectory_structure(:pendulum; n_trajectory = 2, n_points = 3, tstep = 0.1, qmin = -1.2, pmin = -1.2, qmax = 1.2, pmax = 1.2)
 
-_, n_dim = dict_problem_H[nameproblem]
+Get_Data = Dict(
+    :Δt => Data -> Data.Δt,
+    :nb_trajectory => Data -> Data.nb_trajectory,
+    :length_trajectory => (Data,i) -> Data.data[Symbol("Trajectory_"*string(i))][:len],
+    :q => (Data,i,n) -> Data.data[Symbol("Trajectory_"*string(i))][:data][n][1],
+    :p => (Data,i,n) -> Data.data[Symbol("Trajectory_"*string(i))][:data][n][2],
+)
+data2 = data_trajectory(Data, Get_Data)
+
+SYMPNET(BaseIntegrator(), data2, :pendulum, MomentumOptimizer())
+
+
+
+
+#_, n_dim = dict_problem_H[nameproblem]
 
 #data_q, data_p = get_phase_space_data(nameproblem, q0, p0, (0,100pi),0.01)
-n_trajectory = 100
-data_q, data_p = get_phase_space_multiple_trajectoy(nameproblem, singlematrix = true, n_trajectory = n_trajectory, n_points = 30, tstep = 0.1)
+#n_trajectory = 100
+#data_q, data_p = get_phase_space_multiple_trajectoy(nameproblem, singlematrix = true, n_trajectory = n_trajectory, n_points = 30, tstep = 0.1)
 
 
 #=
@@ -33,40 +72,14 @@ return plt
 =#
 
 
-# number of inputs/dimension of system
-const ninput = 2*n_dim
-# layer dimension/width
-const ld = 10
-# hidden layers
-const ln = 2
-# activation function
-const act = tanh
-# number of training runs
-const nruns = 10000
-# batch size
-const batch_size = 10
-
-
-# Optimiser
-opt = MomentumOptimizer(1e-2, 0.5)
-
-# Creation of the architecture
-#sympnet = GSympNet(ninput, width=ld, nhidden=ln, activation=act)
-sympnet = GSympNet(ninput, width=ld, nhidden=ln, activation=act)
-
-# create Lux network
-nn = NeuralNetwork(sympnet, LuxBackend())
-
-# perform training (returns array that contains the total loss for each training step)
-#=total_loss = train!(nn, opt, data_q, data_p; ntraining = nruns, batch_size=batch_size)
-
-#predictions
-q_learned, p_learned = Iterate_Sympnet(nn, q0, p0; n_points = size(data_q,1))
 
 
 
 
-#Plots
+
+
+
+#=Plots
 using LaTeXStrings
 
 data_q, data_p = get_phase_space_data(nameproblem, q0, p0, (0,6pi),0.1)
@@ -93,6 +106,4 @@ plt = plot(plt_qp, plt_loss, layout = l)
 
 
 savefig("sympnet_henon_heiles.png")
-
-
 =#

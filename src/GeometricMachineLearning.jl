@@ -149,6 +149,8 @@ module GeometricMachineLearning
     export ExactIntegrator
     export ExactIntegratorLNN
     export VariationalMidPointLNN
+    export SympNetIntegrator
+    export BaseIntegrator
 
     #INCLUDE ARCHITECTURES
     export HamiltonianNeuralNetwork

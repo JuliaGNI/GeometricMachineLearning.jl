@@ -70,8 +70,48 @@ end
 
 (nn::LuxNeuralNetwork{<:SympNet})(q, p, params = nn.params) = apply(nn, [q...,p...],params)
 
-# Loss function
+abstract type SympNetIntegrator end
 
+struct BaseIntegrator{TD,TL,TA}<:SympNetIntegrator
+    sqdist::TD
+    loss::TL
+    assert::TA
+    min_length_trajectory::Int
+
+    function BaseIntegrator(;sqdist = sqeuclidean)
+
+        min_length_trajectory = 2
+
+        function loss_single(nn::LuxNeuralNetwork{<:SympNet}, qₙ, pₙ, qₙ₊₁, pₙ₊₁, params = nn.params)
+            sqdist(nn(qₙ,pₙ,params),[qₙ₊₁...,pₙ₊₁])
+        end
+
+        loss(nn::LuxNeuralNetwork{<:SympNet}, datat::data_trajectory, index_batch = get_batch(datat), params = nn.params) =
+        mapreduce(x->loss_single(nn, datat.get_data[:q](x[1],x[2]), datat.get_data[:p](x[1],x[2]), datat.get_data[:q](x[1],x[2]+1), datat.get_data[:p](x[1],x[2]+1), params), +, index_batch)
+        
+        function assert(data::Training_data)
+            typeof(data) <: dataTarget{data_trajectory} &&  @warn "Target are not needed!"
+            @assert !(typeof(data) <: data_sampled) "Need trajectories data!"
+            @assert !(typeof(data) <: dataTarget{data_sampled}) "Need trajectories data!"
+            
+            @assert haskey(data.get_data, :q)
+            @assert haskey(data.get_data, :p)
+
+            nothing
+        end
+
+        new{typeof(sqdist),typeof(loss),typeof(assert)}(sqdist, loss, assert, min_length_trajectory)
+    end
+    
+end
+
+default_integrator(nn::LuxNeuralNetwork{<:SympNet}, data::data_trajectory) = BaseIntegrator()
+
+# loss gradient
+loss_gradient(nn::LuxNeuralNetwork{<:SympNet}, data, loss, index_batch, params = nn.params) = Zygote.gradient(p -> loss(nn, data, index_batch, p), params)[1]
+
+# Loss function
+#=
 function loss(nn::LuxNeuralNetwork{<:SympNet}, q, p, params = nn.params, batch_size = 10)
     loss = 0
     #Index = sample(2:length(q), batch_size, replace = false)
@@ -118,7 +158,36 @@ function train!(nn::LuxNeuralNetwork{<:SympNet}, m::AbstractMethodOptimiser, dat
 
     return total_loss
 end
+=#
 
+function train!(nn::LuxNeuralNetwork{<:SympNet}, m::AbstractMethodOptimiser, data::Training_data; ntraining = DEFAULT_SYMPNET_NRUNS, hti::SympNetIntegrator = default_integrator(nn, data), batch_size_t = default_index_batch(data), showprogress::Bool = false)
+    
+    #verify that shape of data depending of the ExactIntegrator
+    hti.assert(data)
+
+    # create array to store total loss
+    total_loss = zeros(ntraining)
+
+    #creation of optimiser
+    opt = Optimizer(m,nn.model)
+
+    # Learning runs
+    p = Progress(ntraining; enabled = showprogress)
+    for j in 1:ntraining
+
+        index_batch = get_batch(data, batch_size_t)
+
+        dp = loss_gradient(nn, data, hti.loss, index_batch, nn.params) 
+
+        #optimization_step!(opt, nn.model, nn.params, dp)
+
+        total_loss[j] = hti.loss(nn, data)
+
+        next!(p)
+    end
+
+    return total_loss
+end
 
 # Results
 

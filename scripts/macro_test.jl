@@ -1,5 +1,5 @@
 macro testerror(f, args...)
-    printstyled(center_align_text(string(eval(f)),17) * "|"; bold = true)
+    printstyled(center_align_text(string(eval(f)),14) * " |"; bold = true)
     for e in args
         if typeof(eval(e)) == Symbol
             text = string(eval(e))

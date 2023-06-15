@@ -1,13 +1,41 @@
 #import module
 using GeometricMachineLearning
 
-# Import data
-include("data_problem.jl")
+# this contains the functions for generating the training data
+include("../data_problem.jl")
 
-nameproblem = :pendulum
-L,n_dim = dict_problem_L[nameproblem]
 
-println("Begin generating data")
+function LNN(integrator::Lnn_training_integrator, data::Training_data, nameproblem::Symbol = :pendulum, opt =  MomentumOptimizer(1e-3,0.5))
+    
+    _, n_dim = dict_problem_L[nameproblem]
+
+    # layer dimension/width
+    ld = 5
+
+    # hidden layers
+    ln = 3
+
+    # number of inputs/dimension of system
+    ninput = 2*n_dim
+
+    # number of training runs
+    nruns = 3
+
+    # create HNN
+    hnn = HamiltonianNeuralNetwork(ninput; nhidden = ln, width = ld)
+
+    # create lNN
+    lnn = LagrangianNeuralNetwork(ninput; nhidden = ln, width = ld)
+
+    # create Lux network
+    nn = NeuralNetwork(lnn, LuxBackend())
+
+    # perform training (returns array that contains the total loss for each training step)
+    total_loss = train!(nn, opt, data; ntraining = nruns, lti = integrator)
+
+    return nn, total_loss
+end
+
 
 #=
 Data, Target = get_LNN_data(nameproblem)
@@ -24,7 +52,7 @@ Get_Target = Dict(
 )
 
 data = dataTarget(pdata, Target, Get_Target)
-=#
+
 
 Data = get_multiple_trajectory_structure_Lagrangian(nameproblem; n_trajectory = 2, n_points = 10)
 
@@ -36,39 +64,13 @@ Get_Data = Dict(
 )
 data = data_trajectory(Data, Get_Data)
 
-println("End generating data")
-
-# layer dimension/width
-const ld = 5
-
-# hidden layers
-const ln = 1
-
-# number of inputs/dimension of system
-const ninput = n_dim*2
-
-# number of training runs
-const nruns = 1000
-
-# create HNN
-lnn = LagrangianNeuralNetwork(ninput; nhidden = ln, width = ld)
-
-# create Lux network
-nn = NeuralNetwork(lnn, LuxBackend())
-
-#training method
-#hti = ExactIntegratorLNN() 
-hti = VariationalMidPointLNN()
-
-# Optimiser
-opt = MomentumOptimizer(1e-3,0.5)
+=#
 
 
-# perform training (returns array that contains the total loss for each training step)
-total_loss = train!(nn, opt, data; ntraining = nruns, lti = hti)
+
 
 # plot results
-include("plots.jl")
-plot_hnn(L, nn, total_loss; filename="lnn_pendulum.png", xmin=-1.2, xmax=+1.2, ymin=-1.2, ymax=+1.2)
+#include("plots.jl")
+#plot_hnn(L, nn, total_loss; filename="lnn_pendulum.png", xmin=-1.2, xmax=+1.2, ymin=-1.2, ymax=+1.2)
 
 

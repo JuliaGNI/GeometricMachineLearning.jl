@@ -33,10 +33,13 @@ end
 gradient(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, params = nn.params) = Zygote.gradient(ξ -> nn(ξ, params), x)[1]
 
 # vector field of the Hamiltonian Neural Network
-I = Diagonal(ones(n_dim))
-Z = zeros(n_dim,n_dim)
-symplectic_matrix = [Z I;-I Z]
-vectorfield(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, params = nn.params) = symplectic_matrix * gradient(nn, x, params)
+function vectorfield(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, params = nn.params) 
+    n_dim = length(x)÷2
+    I = Diagonal(ones(n_dim))
+    Z = zeros(n_dim,n_dim)
+    symplectic_matrix = [Z I;-I Z]
+    return symplectic_matrix * gradient(nn, x, params)
+end
 
 
 abstract type Hnn_training_integrator end
@@ -69,6 +72,9 @@ struct SEuler{TD,TL,TA} <: Hnn_training_integrator
             typeof(data) <: dataTarget{data_trajectory} &&  @warn "Target are not needed!"
             @assert !(typeof(data) <: data_sampled) "Need trajectories data!"
             @assert !(typeof(data) <: dataTarget{data_sampled}) "Need trajectories data!"
+
+            @assert haskey(data.get_data, :q)
+            @assert haskey(data.get_data, :p)
             
             nothing
         end
@@ -97,6 +103,12 @@ struct ExactIntegrator{TD,TL,TA} <: Hnn_training_integrator
 
         function assert(data::Training_data)
             @assert (typeof(data) <: dataTarget) "Need targets for data!"
+
+            @assert haskey(data.get_data, :q)
+            @assert haskey(data.get_data, :p)
+            @assert haskey(data.get_target, :q̇)
+            @assert haskey(data.get_target, :ṗ)
+            
             nothing
         end
 
@@ -111,7 +123,7 @@ default_integrator(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, data::dataT
 loss_gradient(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, data, loss, index_batch, params = nn.params) = Zygote.gradient(p -> loss(nn, data, index_batch, p), params)[1]
 
 
-function train!(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, m::AbstractMethodOptimiser, data::Training_data; ntraining = DEFAULT_HNN_NRUNS, hti::Hnn_training_integrator = default_integrator(nn, data), batch_size_t = default_index_batch(data))
+function train!(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, m::AbstractMethodOptimiser, data::Training_data; ntraining = DEFAULT_HNN_NRUNS, hti::Hnn_training_integrator = default_integrator(nn, data), batch_size_t = default_index_batch(data), showprogress::Bool = false)
     
     #verify that shape of data depending of the ExactIntegrator
     hti.assert(data)
@@ -129,8 +141,9 @@ function train!(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, m::AbstractMet
     keys_2 = [keys(x) for x in values(nn.params)]
 
     # Learning runs
-    @showprogress 1 "Training..." for j in 1:ntraining
-
+    #@showprogress 1 "Training..." for j in 1:ntraining
+    p = Progress(ntraining; enabled = showprogress)
+    for j in 1:ntraining
         index_batch = get_batch(data, batch_size_t)
 
         params_grad = loss_gradient(nn, data, hti.loss, index_batch, params_tuple) 
@@ -140,6 +153,8 @@ function train!(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, m::AbstractMet
         optimization_step!(opt, nn.model, nn.params, dp)
 
         total_loss[j] = hti.loss(nn, data)
+
+        next!(p)
     end
 
     return total_loss
