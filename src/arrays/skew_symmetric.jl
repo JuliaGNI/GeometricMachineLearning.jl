@@ -26,25 +26,14 @@ mutable struct SkewSymMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
         @assert size(S, 2) == n
         S_vec = zeros(T, n*(n-1)÷2)
         #make the input skew-symmetric if it isn't already
-        S = .5*(S - S')
+        S = T(.5)*(S - S')
+        #this is disgusting and should be removed! Here because indexing for GPUs not supported.
+        S_cpu = Matrix{T}(S)
         #map the sub-diagonal elements to a vector 
         for i in 2:n
-            S_vec[((i-1)*(i-2)÷2+1):(i*(i-1)÷2)] = S[i,1:(i-1)]
+            S_vec[((i-1)*(i-2)÷2+1):(i*(i-1)÷2)] = S_cpu[i,1:(i-1)]
         end
-        new{T,typeof(S_vec)}(S_vec, n)
-    end
-
-    function SkewSymMatrix(S::CuArray{T, 2}) where {T}
-        n = size(S, 1)
-        @assert size(S, 2) == n
-        S_vec = zeros(T, n*(n-1)÷2)
-        #make the input skew-symmetric if it isn't already
-        S = .5*(S - S')
-        #map the sub-diagonal elements to a vector 
-        for i in 2:n
-            S_vec[((i-1)*(i-2)÷2+1):(i*(i-1)÷2)] = S[i,1:(i-1)]
-        end
-        S_vec₂ = CuArray(S_vec)
+        S_vec₂ = Base.typename(typeof(S)).wrapper{eltype(S), 1}(S_vec)
         new{T,typeof(S_vec₂)}(S_vec₂, n)
     end
 end 
@@ -136,6 +125,8 @@ end
 LinearAlgebra.mul!(C::SkewSymMatrix, α::Real, A::SkewSymMatrix) = mul!(C, A, α)
 LinearAlgebra.rmul!(C::SkewSymMatrix, α::Real) = mul!(C, C, α)
 
+#=
 function CUDA.cu(A::SkewSymMatrix)
     SkewSymMatrix(CUDA.cu(A.S), A.n)
 end
+=#

@@ -9,17 +9,20 @@ function test_symmetric(N)
     A = randn(N, N)
     B = randn(N, N)
 
+    A_cu = A |> cu
+    B_cu = B |> cu
+
     A₁ = LinearAlgebra.Symmetric(A) 
     B₁ = LinearAlgebra.Symmetric(B)
 
     A₂ = GeometricMachineLearning.SymmetricMatrix(A)    
     B₂ = GeometricMachineLearning.SymmetricMatrix(B)
 
-    A_cu₁ = A₁ |> cu
-    B_cu₁ = B₁ |> cu
+    A_cu₁ = LinearAlgebra.Symmetric(A_cu) 
+    B_cu₁ = LinearAlgebra.Symmetric(B_cu)
 
-    A_cu₂ = A₂ |> cu 
-    B_cu₂ = B₂ |> cu 
+    A_cu₂ = GeometricMachineLearning.SymmetricMatrix(A_cu)
+    B_cu₂ = GeometricMachineLearning.SymmetricMatrix(B_cu)
 
     @test (typeof(A_cu₂ + B_cu₂) <: GeometricMachineLearning.SymmetricMatrix{T, CuArray{T, 1, CUDA.Mem.DeviceBuffer}} where {T})
 
