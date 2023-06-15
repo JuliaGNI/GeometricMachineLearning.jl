@@ -34,6 +34,19 @@ mutable struct SymmetricMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
         new{T, typeof(S_vec)}(S_vec, n)
     end
 
+    function SymmetricMatrix(S::CuArray{T, 2}) where {T}
+        n = size(S)[1]
+        @assert size(S)[2] == n
+        S_vec = zeros(T, n*(n+1)÷2)
+        #make the input symmetric if it isn't already
+        S = T(.5)*(S + S')
+        #map the sub-diagonal elements to a vector 
+        for i in 1:n
+            S_vec[(i*(i-1)÷2+1):(i*(i+1)÷2)] = S[i,1:i]
+        end
+        S_vec₂ = CuArray(S_vec)
+        new{T, typeof(S_vec₂)}(S_vec₂, n)
+    end
 end 
 
 
@@ -128,3 +141,7 @@ function LinearAlgebra.mul!(C::SymmetricMatrix, A::SymmetricMatrix, α::Real)
 end
 LinearAlgebra.mul!(C::SymmetricMatrix, α::Real, A::SymmetricMatrix) = mul!(C, A, α)
 LinearAlgebra.rmul!(C::SymmetricMatrix, α::Real) = mul!(C, C, α)
+
+function CUDA.cu(A::SymmetricMatrix)
+    SymmetricMatrix(CUDA.cu(A.S), A.n)
+end

@@ -7,6 +7,7 @@ module GeometricMachineLearning
     using ProgressMeter
     using Random
     using Zygote
+    using CUDA
 
     import Lux
 
