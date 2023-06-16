@@ -32,7 +32,7 @@ setup_gradient_cache(dx::NamedTuple) = apply_toNT(dx, setup_gradient_cache)
 
 setup_adam_cache(B₁::AbstractMatrix, B₂::AbstractMatrix) = AdamCache(B₁, B₂)
 setup_momentum_cache(B::AbstractMatrix) = MomentumCache(B)
-setup_gradient_cache(B::AbstractMatrix) = StandardCache(B)
+setup_gradient_cache(B::AbstractMatrix) = GradientCache(B)
 
 function setup_adam_cache(d::Lux.AbstractExplicitLayer)
     B₁, _ = Lux.setup(TrivialInitRNG(), d) #.|> gpu

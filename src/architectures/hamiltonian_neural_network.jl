@@ -33,7 +33,10 @@ end
 gradient(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, params = nn.params) = Zygote.gradient(ξ -> nn(ξ, params), x)[1]
 
 # vector field of the Hamiltonian Neural Network
-vectorfield(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, params = nn.params) = [0 1; -1 0] * gradient(nn, x, params)
+I = Diagonal(ones(n_dim))
+Z = zeros(n_dim,n_dim)
+symplectic_matrix = [Z I;-I Z]
+vectorfield(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, params = nn.params) = symplectic_matrix * gradient(nn, x, params)
 
 
 abstract type Hnn_training_integrator end
@@ -63,9 +66,10 @@ struct SEuler{TD,TL,TA} <: Hnn_training_integrator
         mapreduce(x->loss_single(nn, data.get_data[:q](x[1],x[2]), data.get_data[:q](x[1],x[2]+1), data.get_data[:p](x[1],x[2]), data.get_data[:p](x[1],x[2]+1), data.get_Δt(), params),+, index_batch) 
         
         function assert(data::Training_data)
+            typeof(data) <: dataTarget{data_trajectory} &&  @warn "Target are not needed!"
             @assert !(typeof(data) <: data_sampled) "Need trajectories data!"
             @assert !(typeof(data) <: dataTarget{data_sampled}) "Need trajectories data!"
-            typeof(data) <: dataTarget{data_sampled} &&  @warn "Target are not needed!"
+            
             nothing
         end
 
@@ -92,7 +96,7 @@ struct ExactIntegrator{TD,TL,TA} <: Hnn_training_integrator
         mapreduce(n->loss_single(nn, datat.get_data[:q](n), datat.get_data[:p](n), datat.get_target[:q̇](n), datat.get_target[:ṗ](n), params), +, index_batch)
 
         function assert(data::Training_data)
-            @assert !(typeof(data) <: dataTarget) "Need targets for data!"
+            @assert (typeof(data) <: dataTarget) "Need targets for data!"
             nothing
         end
 

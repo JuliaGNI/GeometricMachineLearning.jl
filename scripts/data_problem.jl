@@ -196,11 +196,7 @@ function get_multiple_trajectory_structure(nameproblem; n_trajectory = 1, n_poin
     
     data = storing_data(tstep, n_trajectory, pre_data)
 
-    Get_Δt(Data) = Data.Δt
-    Get_nb_trajectory(Data) = Data.nb_trajectory
-    Get_length_trajectory(Data, i) = Data.data[Symbol("Trajectory_"*string(i))][:len]
-    Get_q(Data, i, n) = Data.data[Symbol("Trajectory_"*string(i))][:data][n][2]
-    Get_p(Data, i, n) = Data.data[Symbol("Trajectory_"*string(i))][:data][n][1]
+
 
     return data #data_trajectory(data, Get_nb_trajectory, Get_length_trajectory, Get_q, Get_p, Get_Δt)
 end
