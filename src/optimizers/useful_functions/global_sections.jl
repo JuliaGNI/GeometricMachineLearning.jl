@@ -84,9 +84,11 @@ end
 
 function global_rep(λY::GlobalSection{T, AT}, Δ::AbstractMatrix{T}) where {T, AT<:StiefelManifold{T}}
     N, n = size(λY.Y)
+    #temporary workaround 
+    projection_matrix = typeof(Δ)(hcat(zeros(T, N-n, n), One(N-n)))
     StiefelLieAlgHorMatrix(
-        SkewSymMatrix(λY.Y'*Δ),
-        (λY.λ'*Δ)[1:N-n,1:n], 
+        SkewSymMatrix(λY.Y.A'*Δ),
+        projection_matrix*(λY.λ'*Δ), 
         N, 
         n
     )
@@ -94,8 +96,10 @@ end
 
 function global_rep(λY::GlobalSection{T, AT}, Δ::AbstractMatrix{T}) where {T, AT<:GrassmannManifold{T}}
     N, n = size(λY.Y)
+    #temporary workaround 
+    projection_matrix = typeof(Δ)(hcat(zeros(T, N-n, n), One(N-n)))
     GrassmannLieAlgHorMatrix(
-        (λY.λ'*Δ)[n+1:N,1:n],
+        projection_matrix*(λY.λ'*Δ),
         N,
         n
     )

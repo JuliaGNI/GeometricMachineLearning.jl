@@ -27,6 +27,14 @@ function test_global_section(T, N, n)
 
     #result of QR decomposition
     @test (typeof(λY_gpu.λ) <: LinearAlgebra.QRPackedQ{T, AT} where {T, AT<:AbstractGPUMatrix{T}})
+
+    @printf "GlobalTangent for cpu: "
+    @time B = global_rep(λY, A_vec)
+
+    @printf "GlobalTangent for gpu: "
+    @time B_gpu = global_rep(λY_gpu, A_gpu_vec)
+
+    @test (typeof(B_gpu) <: GeometricMachineLearning.StiefelLieAlgHorMatrix{T, GeometricMachineLearning.SkewSymMatrix{T, VT}, AT} where {T, VT <: AbstractGPUVector{T}, AT <: AbstractGPUMatrix{T}})
 end
 
 T = Float32
