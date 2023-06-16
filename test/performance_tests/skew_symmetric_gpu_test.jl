@@ -1,30 +1,29 @@
 import LinearAlgebra
 import GeometricMachineLearning
-using CUDA
+import CUDA
+using GPUArrays
 using Printf
 using Test
 
+gpu(A::AbstractArray) = GeometricMachineLearning.convert_to_gpu(CUDA.device(), A)
 
 function test_skew_symmetric(N)
     A = randn(N, N)
     B = randn(N, N)
 
-    A_cu = A |> cu 
-    B_cu = B |> cu
-
     A₂ = GeometricMachineLearning.SkewSymMatrix(A)    
     B₂ = GeometricMachineLearning.SkewSymMatrix(B)
 
-    A_cu₂ = GeometricMachineLearning.SkewSymMatrix(A_cu)
-    B_cu₂ = GeometricMachineLearning.SkewSymMatrix(B_cu)
+    A_gpu₂ = A₂ |> gpu 
+    B_gpu₂ = B₂ |> gpu 
 
-    @test (typeof(A_cu₂ + B_cu₂) <: GeometricMachineLearning.SkewSymMatrix{T, CuArray{T, 1, CUDA.Mem.DeviceBuffer}} where {T})
+    @test (typeof(A_gpu₂ + B_gpu₂) <: GeometricMachineLearning.SkewSymMatrix{T, VT} where {T, VT<:AbstractGPUVector{T}})
 
     @printf "GeometricMachineLearning cpu:  " 
     @time A₂ + B₂;
 
     @printf "GeometricMachineLearning gpu:  " 
-    @time A_cu₂ + B_cu₂;
+    @time A_gpu₂ + B_gpu₂;
 
 end
 

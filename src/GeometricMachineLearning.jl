@@ -10,7 +10,7 @@ module GeometricMachineLearning
     using KernelAbstractions
     using CUDAKernels
 
-    import Lux
+    import Lux, CUDA
 
     #this defines empty retraction type structs (doesn't rely on anything)
     include("optimizers/useful_functions/retraction_types.jl")
@@ -27,7 +27,7 @@ module GeometricMachineLearning
     include("utils.jl")
 
     #+ operation has been overloaded to work with NamedTuples!
-    export _add, apply_toNT, split_and_flatten, add!
+    export _add, apply_toNT, split_and_flatten, add!, convert_to_gpu 
 
     #+ operation has been overloaded to work with NamedTuples!
     export _add

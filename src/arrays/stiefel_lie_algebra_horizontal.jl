@@ -21,20 +21,20 @@ mutable struct StiefelLieAlgHorMatrix{T, AT <: SkewSymMatrix{T}, ST <: AbstractM
     n::Int 
 
     #maybe modify this - you don't need N & n as inputs!
-    function StiefelLieAlgHorMatrix(A::SkewSymMatrix{T}, B::AbstractMatrix{T}, N::Int, n::Int) where {T}
+    function StiefelLieAlgHorMatrix(A::SkewSymMatrix{T}, B::AbstractMatrix{T}, N::Integer, n::Integer) where {T}
         @assert n == A.n == size(B,2) 
         @assert N == size(B,1) + n
 
         new{T, typeof(A), typeof(B)}(A, B, N, n)
     end 
 
-    function StiefelLieAlgHorMatrix(A::AbstractMatrix, n::Int)
+    function StiefelLieAlgHorMatrix(A::AbstractMatrix, n::Integer)
         N = size(A, 1)
         @assert N ≥ n 
 
         A_small = 2*SkewSymMatrix(A[1:n,1:n])
         B = A[(n+1):N,1:n]
-        new{eltype(A),typeof(A), typeof(B)}(A_small, B, N, n)
+        new{eltype(A),typeof(A_small), typeof(B)}(A_small, B, N, n)
     end
 end 
 
@@ -146,3 +146,11 @@ end
 LinearAlgebra.mul!(C::StiefelLieAlgHorMatrix, α::Real, A::StiefelLieAlgHorMatrix) = mul!(C, A, α)
 LinearAlgebra.rmul!(C::StiefelLieAlgHorMatrix, α::Real) = mul!(C, C, α)
 
+function convert_to_gpu(dev::GPUDevice, A::StiefelLieAlgHorMatrix)
+    StiefelLieAlgHorMatrix(
+        convert_to_gpu(dev, A.A),
+        convert_to_gpu(dev, A.B),
+        A.N,
+        A.n
+    )
+end

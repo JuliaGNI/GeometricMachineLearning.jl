@@ -47,24 +47,24 @@ function Base.rand(::TrivialInitRNG{T}, ::Type{StiefelManifold}, N::Int, n::Int)
 end
 
 function rgrad(Y::StiefelManifold, e_grad::AbstractMatrix)
-    e_grad - Y*(e_grad'*Y)
+    e_grad - Y.A*(e_grad'*Y.A)
 end
 
 function metric(Y::StiefelManifold, Δ₁::AbstractMatrix, Δ₂::AbstractMatrix)
-    LinearAlgebra.tr(Δ₁'*(I - .5*Y*Y')*Δ₂)
+    LinearAlgebra.tr(Δ₁'*(I - .5*Y.A*Y.A')*Δ₂)
 end
 
-function check(A::StiefelManifold)
-    norm(A'*A - I)
+function check(Y::StiefelManifold)
+    norm(Y.A'*Y.A - I)
 end
 
 function global_section(Y::StiefelManifold)
     N, n = size(Y)
-    A = randn(eltype(Y), N, N-n)
-    A = A - Y*Y'*A
+    A = typeof(Y.A)(randn(eltype(Y), N, N-n))
+    A = A - Y.A*Y.A'*A
     qr!(A).Q
 end
 
-function global_section(::AbstractVecOrMat)
-    nothing
+function convert_to_gpu(dev::GPUDevice, Y::StiefelManifold)
+    StiefelManifold(convert_to_gpu(dev, Y.A))
 end

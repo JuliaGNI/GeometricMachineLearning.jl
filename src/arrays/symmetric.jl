@@ -131,8 +131,7 @@ end
 LinearAlgebra.mul!(C::SymmetricMatrix, α::Real, A::SymmetricMatrix) = mul!(C, A, α)
 LinearAlgebra.rmul!(C::SymmetricMatrix, α::Real) = mul!(C, C, α)
 
-#=
-function CUDA.cu(A::SymmetricMatrix)
-    SymmetricMatrix(CUDA.cu(A.S), A.n)
+
+function convert_to_gpu(dev::GPUDevice, A::SymmetricMatrix)
+    SymmetricMatrix(convert_to_gpu(dev, A.S), A.n)
 end
-=#

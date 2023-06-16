@@ -18,7 +18,7 @@ Implement a general global section here!!!! Tₓ𝔐 → G×𝔤 !!!!!! (think a
 struct GlobalSection{T, AT} 
     Y::AT
     #for now the only lift that is implemented is the Stiefel one - these types will have to be expanded!
-    λ::Union{LinearAlgebra.QRCompactWYQ, Nothing}
+    λ::Union{LinearAlgebra.QRCompactWYQ, LinearAlgebra.QRPackedQ, Nothing}
 
     function GlobalSection(Y::AbstractVecOrMat)
         λ = global_section(Y)

@@ -62,3 +62,15 @@ end
 function add!(dx₁::NamedTuple, dx₂::NamedTuple, dx₃::NamedTuple)
     apply_toNT(dx₁, dx₂, dx₃, add!)
 end
+
+#The following are fallback functions - maybe you want to put them into a separate file
+
+function global_section(::AbstractVecOrMat)
+    nothing
+end
+
+function convert_to_gpu(dev::CUDA.CuDevice, A::AbstractArray)
+    CUDA.cu(A)
+end
+
+const GPUDevice = Union{CUDA.CuDevice}
