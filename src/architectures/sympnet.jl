@@ -1,6 +1,5 @@
 #Default constants
 const DEFAULT_SYMPNET_NRUNS = 1000
-const DEFAULT_BATCH_SIZE = 10
 const DEFAULT_SIZE_RESULTS = 10
 
 # Structure
@@ -68,7 +67,7 @@ end
 
 # Evaluation of the neural network
 
-(nn::LuxNeuralNetwork{<:SympNet})(q, p, params = nn.params) = apply(nn, [q...,p...],params)
+(nn::LuxNeuralNetwork{<:SympNet})(x, params = nn.params) = apply(nn, x,params)
 
 abstract type SympNetIntegrator end
 
@@ -83,12 +82,13 @@ struct BaseIntegrator{TD,TL,TA}<:SympNetIntegrator
         min_length_trajectory = 2
 
         function loss_single(nn::LuxNeuralNetwork{<:SympNet}, qₙ, pₙ, qₙ₊₁, pₙ₊₁, params = nn.params)
-            sqdist(nn(qₙ,pₙ,params),[qₙ₊₁...,pₙ₊₁])
+            q̃ₙ₊₁,p̃ₙ₊₁ = nn([qₙ...,pₙ...],params)
+            sqdist(q̃ₙ₊₁,qₙ₊₁) + sqdist(p̃ₙ₊₁,pₙ₊₁)
         end
 
         loss(nn::LuxNeuralNetwork{<:SympNet}, datat::data_trajectory, index_batch = get_batch(datat), params = nn.params) =
-        mapreduce(x->loss_single(nn, datat.get_data[:q](x[1],x[2]), datat.get_data[:p](x[1],x[2]), datat.get_data[:q](x[1],x[2]+1), datat.get_data[:p](x[1],x[2]+1), params), +, index_batch)
-        
+        mapreduce(x->loss_single(nn, Zygote.ignore(datat.get_data[:q](x[1],x[2])), Zygote.ignore(datat.get_data[:p](x[1],x[2])), Zygote.ignore(datat.get_data[:q](x[1],x[2]+1)), Zygote.ignore(datat.get_data[:p](x[1],x[2]+1)), params), +, index_batch)
+
         function assert(data::Training_data)
             typeof(data) <: dataTarget{data_trajectory} &&  @warn "Target are not needed!"
             @assert !(typeof(data) <: data_sampled) "Need trajectories data!"
@@ -179,7 +179,7 @@ function train!(nn::LuxNeuralNetwork{<:SympNet}, m::AbstractMethodOptimiser, dat
 
         dp = loss_gradient(nn, data, hti.loss, index_batch, nn.params) 
 
-        #optimization_step!(opt, nn.model, nn.params, dp)
+        optimization_step!(opt, nn.model, nn.params, dp)
 
         total_loss[j] = hti.loss(nn, data)
 
@@ -205,7 +205,7 @@ function Iterate_Sympnet(nn::LuxNeuralNetwork{<:SympNet}, q0, p0; n_points = DEF
     
     #Computation of phase space
     for i in 2:n_points
-        qp_learned =  nn(q_learned[i-1,:], p_learned[i-1,:])
+        qp_learned =  nn([q_learned[i-1,:]..., p_learned[i-1,:]...])
         q_learned[i,:] = qp_learned[1:n_dim]
         p_learned[i,:] = qp_learned[(1+n_dim):end]
     end

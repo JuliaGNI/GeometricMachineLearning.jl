@@ -141,7 +141,6 @@ function train!(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, m::AbstractMet
     keys_2 = [keys(x) for x in values(nn.params)]
 
     # Learning runs
-    #@showprogress 1 "Training..." for j in 1:ntraining
     p = Progress(ntraining; enabled = showprogress)
     for j in 1:ntraining
         index_batch = get_batch(data, batch_size_t)

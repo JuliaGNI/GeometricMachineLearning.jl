@@ -6,7 +6,7 @@ macro testerror(f, args...)
         else
             text = print_type_without_brace(eval(e))
         end
-        printstyled(center_align_text(text,20) * "|"; bold = true)
+        printstyled(center_align_text(text,30) * "|"; bold = true)
     end
     printstyled("|"; bold = true)
 
@@ -17,7 +17,7 @@ macro testerror(f, args...)
     catch e
         printstyled(center_align_text("Failed",10); bold = true, color = :red)
         print(": ")
-        printstyled(e; bold = true, color = :red)
+        #printstyled(e; bold = true, color = :red)
         print("\n")
     end
 end
@@ -29,10 +29,10 @@ macro testseterrors(exprs)
     
     printstyled("Type of test:"; bold = true, underline = true) 
     printstyled(" ||"; bold = true) 
-    printstyled(center_align_text("Integrator",20) * "|"; bold = true)
-    printstyled(center_align_text("Type of Data",20) * "|"; bold = true)
-    printstyled(center_align_text("Problem",20) * "|"; bold = true)
-    printstyled(center_align_text("Optimiser",20) * "||"; bold = true)
+    printstyled(center_align_text("Integrator",30) * "|"; bold = true)
+    printstyled(center_align_text("Type of Data",30) * "|"; bold = true)
+    printstyled(center_align_text("Problem",30) * "|"; bold = true)
+    printstyled(center_align_text("Optimiser",30) * "||"; bold = true)
     printstyled(center_align_text("Result",10) * "|\n"; bold = true)
 
     eval(exprs)

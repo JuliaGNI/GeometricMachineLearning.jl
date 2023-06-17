@@ -22,7 +22,7 @@ function SYMPNET(integrator::SympNetIntegrator, data::Training_data, nameproblem
     ninput = 2*n_dim
 
     # number of training runs
-    nruns = 3
+    nruns = 1000
 
     # activation function
     act = tanh
@@ -40,7 +40,9 @@ function SYMPNET(integrator::SympNetIntegrator, data::Training_data, nameproblem
 end
 
 
-Data = get_multiple_trajectory_structure(:pendulum; n_trajectory = 2, n_points = 3, tstep = 0.1, qmin = -1.2, pmin = -1.2, qmax = 1.2, pmax = 1.2)
+#=
+
+Data = get_multiple_trajectory_structure(:pendulum; n_trajectory = 1, n_points = 1000, tstep = 0.1, qmin = -1.2, pmin = -1.2, qmax = 1.2, pmax = 1.2)
 
 Get_Data = Dict(
     :Δt => Data -> Data.Δt,
@@ -51,38 +53,20 @@ Get_Data = Dict(
 )
 data2 = data_trajectory(Data, Get_Data)
 
-SYMPNET(BaseIntegrator(), data2, :pendulum, MomentumOptimizer())
+nn, total_loss = SYMPNET(BaseIntegrator(), data2, :pendulum, MomentumOptimizer())
 
+q0 = [0.5]
+p0 = [0.7]
 
+#predictions
+q_learned, p_learned = Iterate_Sympnet(nn, q0, p0; n_points = 100)
 
-
-#_, n_dim = dict_problem_H[nameproblem]
-
-#data_q, data_p = get_phase_space_data(nameproblem, q0, p0, (0,100pi),0.01)
-#n_trajectory = 100
-#data_q, data_p = get_phase_space_multiple_trajectoy(nameproblem, singlematrix = true, n_trajectory = n_trajectory, n_points = 30, tstep = 0.1)
-
-
-#=
-plt = plot(data_q[1][:,1], data_q[1][:,2], label="Training data.",linewidth = 3)
-for j in 2:n_trajectory
-    plot!(data_q[j][:,1], data_q[j][:,2], label="Training data.",linewidth = 3)
-end
-return plt
-=#
-
-
-
-
-
-
-
-
-
-#=Plots
+using Plots
 using LaTeXStrings
 
-data_q, data_p = get_phase_space_data(nameproblem, q0, p0, (0,6pi),0.1)
+nameproblem = :pendulum
+
+data_q, data_p = get_phase_space_data(nameproblem, q0, p0, (0,2pi),0.1)
 
 plt_qp = plot(data_q[:,1], data_p[:,1], label="Training data.",linewidth = 3,mk=*)
 plot!(plt_qp, q_learned[:,1], p_learned[:,1], label="Learned trajectory.", linewidth = 3, guidefontsize=18, tickfontsize=10, size=(1000,800), legendfontsize=15, titlefontsize=15)

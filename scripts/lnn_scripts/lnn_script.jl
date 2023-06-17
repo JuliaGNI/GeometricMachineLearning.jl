@@ -21,9 +21,6 @@ function LNN(integrator::Lnn_training_integrator, data::Training_data, nameprobl
     # number of training runs
     nruns = 3
 
-    # create HNN
-    hnn = HamiltonianNeuralNetwork(ninput; nhidden = ln, width = ld)
-
     # create lNN
     lnn = LagrangianNeuralNetwork(ninput; nhidden = ln, width = ld)
 
@@ -38,34 +35,18 @@ end
 
 
 #=
-Data, Target = get_LNN_data(nameproblem)
+Data = get_multiple_trajectory_structure(:pendulum; n_trajectory = 2, n_points = 3, tstep = 0.1, qmin = -1.2, pmin = -1.2, qmax = 1.2, pmax = 1.2)
 
 Get_Data = Dict(
-    :nb_points => Data -> length(Data),
-    :q => (Data,n) -> Data[n][1][1],
-    :q̇ => (Data,n) -> Data[n][2][1]
-)
-pdata = data_sampled(Data, Get_Data)
-
-Get_Target = Dict(
-    :q̈ => (Target,n) -> Target[n][1],
-)
-
-data = dataTarget(pdata, Target, Get_Target)
-
-
-Data = get_multiple_trajectory_structure_Lagrangian(nameproblem; n_trajectory = 2, n_points = 10)
-
-Get_Data = Dict(
-    :Δt => Data -> Data[1][1],
-    :nb_trajectory => Data -> Data[2][1],
-    :length_trajectory => (Data,i) -> Data[3][1],
-    :q => (Data,i,n) -> Data[3+i][n],
+    :Δt => Data -> Data.Δt,
+    :nb_trajectory => Data -> Data.nb_trajectory,
+    :length_trajectory => (Data,i) -> Data.data[Symbol("Trajectory_"*string(i))][:len],
+    :q => (Data,i,n) -> Data.data[Symbol("Trajectory_"*string(i))][:data][n][1],
 )
 data = data_trajectory(Data, Get_Data)
 
+LNN(VariationalMidPointLNN(), data, :pendulum, MomentumOptimizer())
 =#
-
 
 
 

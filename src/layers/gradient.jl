@@ -46,29 +46,54 @@ function Lux.parameterlength(d::Gradient{full_grad}) where {full_grad}
 end
 Lux.statelength(d::Gradient) = 0
 
-@inline function (d::Gradient{false,true})(x::AbstractVecOrMat, ps, st::NamedTuple)
+@inline function (d::Gradient{false,true})(x::AbstractVecOrMat, ps::NamedTuple, st::NamedTuple)
         size(x)[1] == d.dim || error("Dimension mismatch.")
         return vcat(x[1:(d.dim÷2)] + ps.scale.*d.activation.(x[(d.dim÷2+1):d.dim]),
                         x[(d.dim÷2+1):d.dim]), st
 end
 
-@inline function (d::Gradient{false,false})(x::AbstractVecOrMat, ps, st::NamedTuple)
+@inline function (d::Gradient{false,false})(x::AbstractVecOrMat, ps::NamedTuple, st::NamedTuple)
         size(x)[1] == d.dim || error("Dimension mismatch.")
         return vcat(x[1:(d.dim÷2)], x[(d.dim÷2+1):d.dim] + ps.scale.*
                 d.activation.(x[1:(d.dim÷2)])),st
 end
 
-@inline function (d::Gradient{true,true})(x::AbstractVecOrMat, ps, st::NamedTuple)
+@inline function (d::Gradient{true,true})(x::AbstractVecOrMat, ps::NamedTuple, st::NamedTuple)
         size(x)[1] == d.dim || error("Dimension mismatch.")
         return vcat(x[1:(d.dim÷2)] + ps.weight' * 
                     (ps.scale .* d.activation.(ps.weight * x[(d.dim÷2+1):d.dim] .+ vec(ps.bias))), 
                         x[(d.dim÷2+1):d.dim]), st
 end
 
-@inline function(d::Gradient{true,false})(x::AbstractVecOrMat, ps, st::NamedTuple)
+@inline function(d::Gradient{true,false})(x::AbstractVecOrMat, ps::NamedTuple, st::NamedTuple)
         size(x)[1] == d.dim || error("Dimension mismatch.")
         return vcat(x[1:(d.dim÷2)], x[(d.dim÷2+1):d.dim] + ps.weight' * 
                         (ps.scale .* d.activation(ps.weight*x[1:(d.dim÷2)] .+ vec(ps.bias)))), st
 end
 
+
+@inline function (d::Gradient{false,true})(x::AbstractVecOrMat, ps::Tuple, st::NamedTuple)
+        size(x)[1] == d.dim || error("Dimension mismatch.")
+        return vcat(x[1:(d.dim÷2)] + ps[3].*d.activation.(x[(d.dim÷2+1):d.dim]),
+                        x[(d.dim÷2+1):d.dim])
+end
+
+@inline function (d::Gradient{false,false})(x::AbstractVecOrMat, ps::Tuple, st::NamedTuple)
+        size(x)[1] == d.dim || error("Dimension mismatch.")
+        return vcat(x[1:(d.dim÷2)], x[(d.dim÷2+1):d.dim] + ps[3].*
+                d.activation.(x[1:(d.dim÷2)]))
+end
+
+@inline function (d::Gradient{true,true})(x::AbstractVecOrMat, ps::Tuple, st::NamedTuple)
+        size(x)[1] == d.dim || error("Dimension mismatch.")
+        return vcat(x[1:(d.dim÷2)] + ps[1]' * 
+                    (ps[3] .* d.activation.(ps[1] * x[(d.dim÷2+1):d.dim] .+ vec(ps[2]))), 
+                        x[(d.dim÷2+1):d.dim])
+end
+
+@inline function(d::Gradient{true,false})(x::AbstractVecOrMat, ps::Tuple, st::NamedTuple)
+        size(x)[1] == d.dim || error("Dimension mismatch.")
+        return vcat(x[1:(d.dim÷2)], x[(d.dim÷2+1):d.dim] + ps[1]' * 
+                        (ps[3] .* d.activation(ps[1]*x[1:(d.dim÷2)] .+ vec(ps[2]))))
+end
 

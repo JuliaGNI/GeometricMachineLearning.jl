@@ -59,6 +59,18 @@ Get_Target = Dict(
 
 data3 = dataTarget(pdata, Target, Get_Target)
 
+#Data LNN without target
+Data = get_multiple_trajectory_structure(:pendulum; n_trajectory = 2, n_points = 3, tstep = 0.1, qmin = -1.2, pmin = -1.2, qmax = 1.2, pmax = 1.2)
+
+Get_Data = Dict(
+    :Δt => Data -> Data.Δt,
+    :nb_trajectory => Data -> Data.nb_trajectory,
+    :length_trajectory => (Data,i) -> Data.data[Symbol("Trajectory_"*string(i))][:len],
+    :q => (Data,i,n) -> Data.data[Symbol("Trajectory_"*string(i))][:data][n][1],
+)
+data3 = data_trajectory(Data, Get_Data)
+
+
 @testseterrors begin
 
     @testerror HNN ExactIntegrator() data :pendulum MomentumOptimizer()
@@ -73,9 +85,13 @@ data3 = dataTarget(pdata, Target, Get_Target)
     @testerror SYMPNET BaseIntegrator() data2 :pendulum AdamOptimizer()
     @testerror SYMPNET BaseIntegrator() data2 :pendulum GradientOptimizer()
 
-    #@testerror LNN ExactIntegrator() data3 :pendulum MomentumOptimizer()
-    #@testerror LNN ExactIntegrator() data3 :pendulum AdamOptimizer()
-    #@testerror LNN ExactIntegrator() data3 :pendulum GradientOptimizer()
+    @testerror LNN ExactIntegrator() data3 :pendulum MomentumOptimizer()
+    @testerror LNN ExactIntegrator() data3 :pendulum AdamOptimizer()
+    @testerror LNN ExactIntegrator() data3 :pendulum GradientOptimizer()
+
+    @testerror LNN VariationalMidPointLNN() data3 :pendulum MomentumOptimizer()
+    @testerror LNN VariationalMidPointLNN() data3 :pendulum AdamOptimizer()
+    @testerror LNN VariationalMidPointLNN() data3 :pendulum GradientOptimizer()
 
 end
 

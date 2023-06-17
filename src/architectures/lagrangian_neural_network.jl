@@ -42,9 +42,10 @@ end
 abstract type Lnn_training_integrator end
 
 
-struct VariationalMidPointLNN{TD,TL} <: Lnn_training_integrator
+struct VariationalMidPointLNN{TD,TL,TA} <: Lnn_training_integrator
     sqdist::TD
     loss::TL
+    assert::TA
 
     function VariationalMidPointLNN(;sqdist = sqeuclidean)
 
@@ -56,17 +57,28 @@ struct VariationalMidPointLNN{TD,TL} <: Lnn_training_integrator
         end
 
         loss(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, datat::data_trajectory, index_batch = get_batch(datat), params = nn.params) =
-        mapreduce(x->loss_single(nn, datat.get_data[:q](x[1],x[2]), datat.get_data[:q](x[1],x[2]+1), datat.get_data[:q](x[1],x[2]+2), datat.get_Δt(), params), +, index_batch)
+        mapreduce(x->loss_single(Zygote.ignore(nn), Zygote.ignore(datat.get_data[:q](x[1],x[2])), Zygote.ignore(datat.get_data[:q](x[1],x[2]+1)), Zygote.ignore(datat.get_data[:q](x[1],x[2]+2)), Zygote.ignore(datat.get_Δt()), params), +, index_batch)
 
-        new{typeof(sqdist),typeof(loss)}(sqdist, loss)
+        function assert(data::Training_data)
+            typeof(data) <: dataTarget{data_trajectory} &&  @warn "Target are not needed!"
+            @assert !(typeof(data) <: data_sampled) "Need trajectories data!"
+            @assert !(typeof(data) <: dataTarget{data_sampled}) "Need trajectories data!"
+
+            @assert haskey(data.get_data, :q)
+      
+            nothing
+        end
+        
+        new{typeof(sqdist),typeof(loss),typeof(assert)}(sqdist, loss, assert)
     end
 end
 
 
 
-struct ExactIntegratorLNN{TD,TL} <: Lnn_training_integrator
+struct ExactIntegratorLNN{TD,TL,TA} <: Lnn_training_integrator
     sqdist::TD
     loss::TL
+    assert::TA
 
     function ExactIntegratorLNN(;sqdist = sqeuclidean)
 
@@ -80,7 +92,17 @@ struct ExactIntegratorLNN{TD,TL} <: Lnn_training_integrator
         loss(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, datat::dataTarget{data_sampled}, index_batch = get_batch(datat), params = nn.params) = 
         mapreduce(n->loss_single(nn, datat.get_data[:q](n), datat.get_data[:q̇](n), datat.get_target[:q̈](n), params), +, index_batch)
 
-        new{typeof(sqdist),typeof(loss)}(sqdist, loss)
+        function assert(data::Training_data)
+            @assert (typeof(data) <: dataTarget) "Need targets for data!"
+
+            @assert haskey(data.get_data, :q)
+            @assert haskey(data.get_target, :q̇)
+            @assert haskey(data.get_target, :q̈)
+            
+            nothing
+        end
+
+        new{typeof(sqdist),typeof(loss),typeof(assert)}(sqdist, loss, assert)
     end
 end
 
@@ -92,7 +114,10 @@ loss_gradient(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, data, loss, index
 
 
 # training
-function train!(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, m::AbstractMethodOptimiser, data::Training_data; ntraining = DEFAULT_HNN_NRUNS, lti::Lnn_training_integrator = default_integrator(nn, data), batch_size_t = default_index_batch(data))
+function train!(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, m::AbstractMethodOptimiser, data::Training_data; ntraining = DEFAULT_HNN_NRUNS, lti::Lnn_training_integrator = default_integrator(nn, data), batch_size_t = default_index_batch(data), showprogress::Bool = false)
+    
+    #verify that shape of data depending of the ExactIntegrator
+    lti.assert(data)
     
     # create array to store total loss
     total_loss = zeros(ntraining)
@@ -107,7 +132,8 @@ function train!(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, m::AbstractMeth
     keys_2 = [keys(x) for x in values(nn.params)]
 
     # Learning runs
-    @showprogress 1 "Training..." for j in 1:ntraining
+    p = Progress(ntraining; enabled = showprogress)
+    for j in 1:ntraining
 
         println(j)
 
@@ -120,66 +146,9 @@ function train!(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, m::AbstractMeth
         optimization_step!(opt, nn.model, nn.params, dp)
     
         total_loss[j] = lti.loss(nn, data)
+
+        next!(p)
     end
 
     return total_loss
 end
-
-
-
-###### utils for ForwardDiff.gradient
-#=
-function MatrixToVector(M)
-    return ([M...], size(M)...)
-end
-
-function VectorToMatrix(V,n,m)
-    @assert length(V)== n*m
-    reshape(V,(n,m))
-end
-
-function TupleMatrixToVector(TM)
-    V = vcat([MatrixToVector(x)[1] for x in TM]...)
-    STM = vcat([MatrixToVector(x)[2:3] for x in TM]...)
-    return V,STM
-end
-
-function drop!(V,s)
-    A = copy(V[1:s])
-    deleteat!(V,1:s)
-    return A
-end
-
-function sizeTuple(ts)
-    sum([prod(t) for t in ts])
-end
-
-function VectorToTupleMatrix(V, STM)
-    A = copy(V)
-    Tuple([VectorToMatrix(drop!(A,n*m),n,m) for (n,m) in STM])
-end
-
-function TupleTupleMatrixToVector(TTM)
-    V = vcat([TupleMatrixToVector(TM)[1] for TM in TTM]...)
-    STTM = vcat([TupleMatrixToVector(TM)[2] for TM in TTM])
-    return V, STTM
-end
-
-function VectorToTupleTupleMatrix(V,STTM)
-    A = copy(V)
-    Tuple([VectorToTupleMatrix(drop!(A, sizeTuple(STM)), STM) for STM in STTM])
-end
-
-function ForwardDiff.gradient(f::Any, T<:Tuple)
-
-    STTM = TupleTupleMatrixToVector(T)[2]
-    
-    π_TtoA(TTM) = TupleTupleMatrixToVector(TTM)
-
-    π_AtoT(V) = VectorToTupleTupleMatrix(V,STTM)
-
-    g = f∘π_AtoT
-
-    π_AtoT(ForwardDiff.gradient(g, π_TtoA(T)))
-end
-=#
