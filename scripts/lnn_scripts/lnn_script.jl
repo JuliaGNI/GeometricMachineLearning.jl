@@ -19,7 +19,7 @@ function LNN(integrator::Lnn_training_integrator, data::Training_data, nameprobl
     ninput = 2*n_dim
 
     # number of training runs
-    nruns = 3
+    nruns = 1000
 
     # create lNN
     lnn = LagrangianNeuralNetwork(ninput; nhidden = ln, width = ld)
@@ -28,14 +28,14 @@ function LNN(integrator::Lnn_training_integrator, data::Training_data, nameprobl
     nn = NeuralNetwork(lnn, LuxBackend())
 
     # perform training (returns array that contains the total loss for each training step)
-    total_loss = train!(nn, opt, data; ntraining = nruns, lti = integrator)
+    total_loss = train!(nn, opt, data; ntraining = nruns, lti = integrator, showprogress = true)
 
     return nn, total_loss
 end
 
 
-#=
-Data = get_multiple_trajectory_structure(:pendulum; n_trajectory = 2, n_points = 3, tstep = 0.1, qmin = -1.2, pmin = -1.2, qmax = 1.2, pmax = 1.2)
+
+Data = get_multiple_trajectory_structure(:pendulum; n_trajectory = 20, n_points = 1000, tstep = 0.1, qmin = -1.2, pmin = -1.2, qmax = 1.2, pmax = 1.2)
 
 Get_Data = Dict(
     :Δt => Data -> Data.Δt,
@@ -45,13 +45,13 @@ Get_Data = Dict(
 )
 data = data_trajectory(Data, Get_Data)
 
-LNN(VariationalMidPointLNN(), data, :pendulum, MomentumOptimizer())
-=#
+nn, total_loss = LNN(VariationalMidPointLNN(), data, :pendulum, MomentumOptimizer())
 
 
 
 # plot results
-#include("plots.jl")
-#plot_hnn(L, nn, total_loss; filename="lnn_pendulum.png", xmin=-1.2, xmax=+1.2, ymin=-1.2, ymax=+1.2)
+include("../plots.jl")  
+L, n_dim = dict_problem_L[:pendulum]
+plot_hnn(L, nn, total_loss; filename="lnn_pendulum.png", xmin=-1.2, xmax=+1.2, ymin=-1.2, ymax=+1.2)
 
 

@@ -50,14 +50,14 @@ struct VariationalMidPointLNN{TD,TL,TA} <: Lnn_training_integrator
     function VariationalMidPointLNN(;sqdist = sqeuclidean)
 
         function loss_single(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, qₙ, qₙ₊₁, qₙ₊₂, Δt, params = nn.params)
-            DL = ∇L(nn, [(qₙ₊₁+qₙ₊₂)/2..., (qₙ₊₁-qₙ)/Δt...] , params)
-            DL₁ = 0.5 * DL[1:length(qₙ)] - 1/Δt * DL[length(qₙ)+1:end]
-            DL₂ = 0.5 * DL[1:length(qₙ)] + 1/Δt * DL[length(qₙ)+1:end]
+            DL = ∇L(nn, Zygote.ignore([(qₙ₊₁+qₙ₊₂)/2..., (qₙ₊₁-qₙ)/Δt...]) , params)
+            DL₁ = DL[1:length(qₙ)] 
+            DL₂ = DL[length(qₙ)+1:end]
             sqdist(DL₁,-DL₂)
         end
 
         loss(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, datat::data_trajectory, index_batch = get_batch(datat), params = nn.params) =
-        mapreduce(x->loss_single(Zygote.ignore(nn), Zygote.ignore(datat.get_data[:q](x[1],x[2])), Zygote.ignore(datat.get_data[:q](x[1],x[2]+1)), Zygote.ignore(datat.get_data[:q](x[1],x[2]+2)), Zygote.ignore(datat.get_Δt()), params), +, index_batch)
+        mapreduce(x->loss_single(nn, Zygote.ignore(datat.get_data[:q](x[1],x[2])), Zygote.ignore(datat.get_data[:q](x[1],x[2]+1)), Zygote.ignore(datat.get_data[:q](x[1],x[2]+2)), Zygote.ignore(datat.get_Δt()), params), +, index_batch)
 
         function assert(data::Training_data)
             typeof(data) <: dataTarget{data_trajectory} &&  @warn "Target are not needed!"

@@ -168,7 +168,7 @@ struct storing_data{T}
 end
 
 
-function get_multiple_trajectory_structure(nameproblem; n_trajectory = 1, n_points = 10, tstep = 0.1, qmin = -0.2, pmin = -0.2, qmax = 0.2, pmax = 0.2)
+function get_multiple_trajectory_structure(nameproblem; n_trajectory = 1, n_points = 10, tstep = 0.1, qmin = -1.2, pmin = -1.2, qmax = 1.2, pmax = 1.2)
 
     
     # get the Hamiltonien corresponding to name_problem   
