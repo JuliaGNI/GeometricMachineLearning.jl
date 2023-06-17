@@ -135,8 +135,6 @@ function train!(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, m::AbstractMeth
     p = Progress(ntraining; enabled = showprogress)
     for j in 1:ntraining
 
-        println(j)
-
         index_batch = get_batch(data, batch_size_t)
     
         params_grad = loss_gradient(nn, data, lti.loss, index_batch, params_tuple) 

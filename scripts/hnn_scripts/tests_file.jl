@@ -68,7 +68,7 @@ Get_Data = Dict(
     :length_trajectory => (Data,i) -> Data.data[Symbol("Trajectory_"*string(i))][:len],
     :q => (Data,i,n) -> Data.data[Symbol("Trajectory_"*string(i))][:data][n][1],
 )
-data3 = data_trajectory(Data, Get_Data)
+data4 = data_trajectory(Data, Get_Data)
 
 
 @testseterrors begin
@@ -89,9 +89,9 @@ data3 = data_trajectory(Data, Get_Data)
     @testerror LNN ExactIntegrator() data3 :pendulum AdamOptimizer()
     @testerror LNN ExactIntegrator() data3 :pendulum GradientOptimizer()
 
-    @testerror LNN VariationalMidPointLNN() data3 :pendulum MomentumOptimizer()
-    @testerror LNN VariationalMidPointLNN() data3 :pendulum AdamOptimizer()
-    @testerror LNN VariationalMidPointLNN() data3 :pendulum GradientOptimizer()
+    @testerror LNN VariationalMidPointLNN() data4 :pendulum MomentumOptimizer()
+    @testerror LNN VariationalMidPointLNN() data4 :pendulum AdamOptimizer()
+    @testerror LNN VariationalMidPointLNN() data4 :pendulum GradientOptimizer()
 
 end
 
