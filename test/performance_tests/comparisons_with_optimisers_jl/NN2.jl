@@ -1,7 +1,8 @@
 
 using Pkg
-cd("./SplineNN")
-Pkg.activate(".")
+#cd("../../../SplineFEEC.jl")
+#cd("../../../SplineNN")
+Pkg.activate("../../../../SplineFEEC.jl")
 
 
 using MLUtils: DataLoader,splitobs
@@ -14,7 +15,7 @@ using StaticArrays
 using SplineFEEC
 using Lux
 using Random
-using Plots
+using Plots    
 using Statistics
 using Flux:loadmodel!,loadparams!
 using GeometricMachineLearning
@@ -188,8 +189,8 @@ begin
     # opt = Optimisers.ADAM(initial_lr)
     # st_opt = Optimisers.setup(opt, ps)
 
-    o = AdamOptimizer(0.001,0.9,0.99)
-    cache = GeometricMachineLearning.init_optimizer_cache(model, o)
+    method = GeometricMachineLearning.AdamOptimizer(0.001,0.9,0.99)
+    opt = GeometricMachineLearning.Optimizer(method, model)
 
     # lr_list = range(start = initial_lr,stop = 0.0005*initial_lr,length=n_epochs)
 
@@ -212,7 +213,7 @@ begin
             gs = gradient(p -> weak_loss(x, y, model, p, st)[1], ps)[1]
             # gs = gradient(p -> weak_loss2(x, y, model, p, st)[1], ps)[1]
             # gs = gradient(p -> weak_loss3(x, y, model, p, st)[1], ps)[1]
-            optimization_step!(o, model, ps, cache, gs)
+            GeometricMachineLearning.optimization_step!(opt, model, ps, gs)
 
             # weak_error_per_sample += weak_loss3(x, y, model, ps, st)[1]/train_loader_len
             weak_error_per_sample += weak_loss(x, y, model, ps, st)[1]/train_loader_len
