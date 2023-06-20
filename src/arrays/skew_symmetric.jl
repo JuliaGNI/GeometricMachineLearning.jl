@@ -125,6 +125,15 @@ end
 LinearAlgebra.mul!(C::SkewSymMatrix, α::Real, A::SkewSymMatrix) = mul!(C, A, α)
 LinearAlgebra.rmul!(C::SkewSymMatrix, α::Real) = mul!(C, C, α)
 
-function convert_to_gpu(dev::GPUDevice, A::SkewSymMatrix)
-    SkewSymMatrix(convert_to_gpu(dev, A.S), A.n)
+
+function convert_to_dev(dev::Device, A::SkewSymMatrix)
+    SkewSymMatrix(convert_to_dev(dev, A.S), A.n)
+end
+
+#this should not be needed! ask Michael!
+function convert_to_dev(dev::CUDA.CuDevice, A::SkewSymMatrix)
+    SkewSymMatrix(convert_to_dev(dev, A.S), A.n)
+end
+function convert_to_dev(dev::CPUDevice, A::SkewSymMatrix)
+    SkewSymMatrix(convert_to_dev(dev, A.S), A.n)
 end

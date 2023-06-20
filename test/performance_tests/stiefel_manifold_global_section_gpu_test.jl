@@ -6,41 +6,35 @@ using GPUArrays
 
 import LinearAlgebra
 
-#specify device
-gpu(A::AbstractArray) = GeometricMachineLearning.convert_to_gpu(CUDA.device(), A)
+function test_global_section(dev, T, N, n)
+    map_to_dev(A::AbstractArray) = GeometricMachineLearning.convert_to_dev(dev, A)
 
-function test_global_section(T, N, n)
-    Y = rand(StiefelManifold{T}, N, n)
-    Y_gpu = Y |> gpu 
+    Y = rand(StiefelManifold{T}, N, n) |> map_to_dev
 
-    A = rand(T, N, n)
-    A_gpu = A |> gpu 
+    A = rand(T, N, n) |> map_to_dev
 
-    A_vec = rgrad(Y, A)
-    A_gpu_vec = rgrad(Y_gpu, A_gpu)
+    A_vec = rgrad(Y, A) 
 
-    @printf "GlobalSection for cpu: "
+    @printf "GlobalSection: "
     @time λY = GlobalSection(Y)
-    
-    @printf "GlobalSection for gpu: "
-    @time λY_gpu = GlobalSection(Y_gpu)
 
-    #result of QR decomposition
-    @test (typeof(λY_gpu.λ) <: LinearAlgebra.QRPackedQ{T, AT} where {T, AT<:AbstractGPUMatrix{T}})
-
-    @printf "GlobalTangent for cpu: "
+    @printf "GlobalTangent: "
     @time B = global_rep(λY, A_vec)
 
-    @printf "GlobalTangent for gpu: "
-    @time B_gpu = global_rep(λY_gpu, A_gpu_vec)
+    if dev == CUDA.device()
+        @test (typeof(λY.λ) <: LinearAlgebra.QRPackedQ{T, AT} where {T, AT<:AbstractGPUMatrix{T}})
+        @test (typeof(B) <: GeometricMachineLearning.StiefelLieAlgHorMatrix{T, GeometricMachineLearning.SkewSymMatrix{T, VT}, AT} where {T, VT <: AbstractGPUVector{T}, AT <: AbstractGPUMatrix{T}})
 
-    @test (typeof(B_gpu) <: GeometricMachineLearning.StiefelLieAlgHorMatrix{T, GeometricMachineLearning.SkewSymMatrix{T, VT}, AT} where {T, VT <: AbstractGPUVector{T}, AT <: AbstractGPUMatrix{T}})
+    end
 end
 
 T = Float32
 for N = 1000:1000:5000
     n = N÷10
     print("N = ", N, " and n = ", n, "\n")
-    test_global_section(T, N, n)
+    @printf "GeometricMachineLearning cpu:  \n"
+    test_global_section(GeometricMachineLearning.CPUDevice(), T, N, n)
+    @printf "GeometricMachineLearning gpu:  \n"
+    test_global_section(CUDA.device(), T, N, n)
     print("\n")
 end

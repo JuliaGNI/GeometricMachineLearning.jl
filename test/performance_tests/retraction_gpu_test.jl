@@ -5,25 +5,27 @@ using Test
 using GPUArrays
 using CUDA 
 
-gpu(A::AbstractArray) = GeometricMachineLearning.convert_to_gpu(CUDA.device(), A)
+function test_retraction(dev, T, N, n)
+    map_to_dev(A::AbstractArray) = GeometricMachineLearning.convert_to_dev(dev, A)
 
-function test_retraction(T, N, n)
-    B = rand(StiefelLieAlgHorMatrix{T}, N, n)
-    B_gpu = B |> gpu
+    B = rand(StiefelLieAlgHorMatrix{T}, N, n) |> map_to_dev
+    B = B |> map_to_dev
 
-    @printf "cpu geodesic retraction:  "
     @time Y = geodesic(B)
 
-    @printf "gpu geodesic retraction:  "
-    @time Y_gpu = geodesic(B_gpu)
-
-    @test (typeof(Y_gpu) <: StiefelManifold{T, AT} where {T, AT <: AbstractGPUMatrix})
+    if dev == CUDA.device()
+        @test (typeof(Y) <: StiefelManifold{T, AT} where {T, AT <: AbstractGPUMatrix})
+    end
 end
 
 T = Float32
 for N = 1000:1000:5000
     n = N÷10
     print("N = ", N, " and n = ", n, "\n")
-    test_retraction(T, N, n)
+    @printf "GeometricMachineLearning cpu: "
+    test_retraction(GeometricMachineLearning.CPUDevice(), T, N, n)
+
+    @printf "GeometricMachineLearning gpu: "
+    test_retraction(CUDA.device(), T, N, n)
     print("\n")
 end

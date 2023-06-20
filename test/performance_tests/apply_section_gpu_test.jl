@@ -2,31 +2,31 @@ using GeometricMachineLearning
 using CUDA
 using Test
 using GPUArrays  
+using Printf
 
-gpu(A::AbstractArray) = GeometricMachineLearning.convert_to_gpu(CUDA.device(), A)
+function test_apply_section(dev, T, N, n)
+    map_to_dev(A::AbstractArray) = GeometricMachineLearning.convert_to_dev(dev, A)
 
-function test_apply_section(T, N, n)
-    Y₁ = rand(StiefelManifold{T}, N, n)
-    Y₂ = rand(StiefelManifold{T}, N, n)
-
-    Y_gpu₁ = Y₁ |> gpu 
-    Y_gpu₂ = Y₂ |> gpu 
+    Y₁ = rand(StiefelManifold{T}, N, n) |> map_to_dev
+    Y₂ = rand(StiefelManifold{T}, N, n) |> map_to_dev
 
     λY = GlobalSection(Y₁)
     
-    λY_gpu = GlobalSection(Y_gpu₁)
-
     @time Y₃ = apply_section(λY, Y₂)
 
-    @time Y_gpu₃ =  apply_section(λY_gpu, Y_gpu₂)
-
-    @test (typeof(Y_gpu₃) <: StiefelManifold{T, AT} where {T, AT<:AbstractGPUMatrix})
+    if dev == CUDA.device()
+        @test (typeof(Y₃) <: StiefelManifold{T, AT} where {T, AT<:AbstractGPUMatrix})
+    end
 end
+
 
 T = Float32
 for N = 1000:1000:5000
     n = N÷10
     print("N = ", N, " and n = ", n, "\n")
-    test_apply_section(T, N, n)
+    @printf "GeometricMachineLearning cpu:  \n"
+    test_apply_section(GeometricMachineLearning.CPUDevice(), T, N, n)
+    @printf "GeometricMachineLearning gpu:  \n"
+    test_apply_section(CUDA.device(), T, N, n)
     print("\n")
 end

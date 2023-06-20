@@ -5,30 +5,28 @@ using GPUArrays
 using Printf
 using Test
 
-gpu(A::AbstractArray) = GeometricMachineLearning.convert_to_gpu(CUDA.device(), A)
-
-function test_skew_symmetric(N)
+function test_skew_symmetric(dev::GeometricMachineLearning.Device, N)
     A = randn(N, N)
     B = randn(N, N)
 
-    A₂ = GeometricMachineLearning.SkewSymMatrix(A)    
-    B₂ = GeometricMachineLearning.SkewSymMatrix(B)
+    map_to_dev(A::AbstractArray) = GeometricMachineLearning.convert_to_dev(dev, A)
 
-    A_gpu₂ = A₂ |> gpu 
-    B_gpu₂ = B₂ |> gpu 
+    A₂ = GeometricMachineLearning.SkewSymMatrix(A) |> map_to_dev
+    B₂ = GeometricMachineLearning.SkewSymMatrix(B) |> map_to_dev
 
-    @test (typeof(A_gpu₂ + B_gpu₂) <: GeometricMachineLearning.SkewSymMatrix{T, VT} where {T, VT<:AbstractGPUVector{T}})
+    if dev == CUDA.device()
+        @test (typeof(A₂ + B₂) <: GeometricMachineLearning.SkewSymMatrix{T, VT} where {T, VT<:AbstractGPUVector{T}})
+    end
 
-    @printf "GeometricMachineLearning cpu:  " 
     @time A₂ + B₂;
-
-    @printf "GeometricMachineLearning gpu:  " 
-    @time A_gpu₂ + B_gpu₂;
-
 end
 
 for N = 1000:1000:5000
     print("N = ", N, "\n")
-    test_skew_symmetric(N)
+    @printf "GeometricMachineLearning cpu: "
+    test_skew_symmetric(GeometricMachineLearning.CPUDevice(), N)
+
+    @printf "GeometricMachineLearning gpu: "
+    test_skew_symmetric(CUDA.device(), N)
     print("\n")
 end

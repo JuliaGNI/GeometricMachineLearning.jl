@@ -27,7 +27,10 @@ module GeometricMachineLearning
     include("utils.jl")
 
     #+ operation has been overloaded to work with NamedTuples!
-    export _add, apply_toNT, split_and_flatten, add!, convert_to_gpu 
+    export _add, apply_toNT, split_and_flatten, add!
+    
+    #GPU specific operations
+    export convert_to_dev, Device
 
     #+ operation has been overloaded to work with NamedTuples!
     export _add

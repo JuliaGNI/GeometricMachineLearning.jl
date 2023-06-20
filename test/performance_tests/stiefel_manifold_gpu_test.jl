@@ -5,32 +5,24 @@ using GPUArrays
 using Printf
 using Test
 
-#specify device
-gpu(A::AbstractArray) = GeometricMachineLearning.convert_to_gpu(CUDA.device(), A)
 
-function test_stiefel_manifold(T, N, n)
-    Y = rand(GeometricMachineLearning.StiefelManifold{T}, N, n)
+function test_stiefel_manifold(dev, T, N, n)
+    map_to_dev(A::AbstractArray) = GeometricMachineLearning.convert_to_dev(dev, A)
 
-    Y_gpu = Y |> gpu 
+    Y = rand(GeometricMachineLearning.StiefelManifold{T}, N, n) |> map_to_dev
 
-    @test (typeof(Y_gpu) <: GeometricMachineLearning.StiefelManifold{T, AT} where {T, AT <: AbstractGPUMatrix{T}})
-
-    @printf "StiefelManifold cpu check:  " 
+    @printf "StiefelManifold check: " 
     @time GeometricMachineLearning.check(Y)
 
-    @printf "StiefelManifold gpu check:  " 
-    @time GeometricMachineLearning.check(Y_gpu)
+    A = rand(T, N, n) |> map_to_dev
 
-    A = rand(T, N, n)
-    A_gpu = A |> gpu 
-
-    @printf "Riemannian gradient cpu:   "
+    @printf "Riemannian gradient:   "
     @time A_vec = GeometricMachineLearning.rgrad(Y, A)
 
-    @printf "Riemannian gradient gpu:   "
-    @time A_vec_gpu = GeometricMachineLearning.rgrad(Y_gpu, A_gpu)
-
-    @test (typeof(A_vec_gpu) <: AbstractGPUMatrix)
+    if dev == CUDA.device()
+        @test (typeof(Y) <: GeometricMachineLearning.StiefelManifold{T, AT} where {T, AT <: AbstractGPUMatrix{T}})
+        @test (typeof(A_vec) <: AbstractGPUMatrix)
+    end
 end
 
 
@@ -38,6 +30,9 @@ T = Float32
 for N = 1000:1000:5000
     n = N÷10
     print("N = ", N, " and n = ", n, "\n")
-    test_stiefel_manifold(T, N, n)
+    @printf "GeometricMachineLearning cpu:  \n"
+    test_stiefel_manifold(GeometricMachineLearning.CPUDevice(), T, N, n)
+    @printf "GeometricMachineLearning gpu:  \n"
+    test_stiefel_manifold(CUDA.device(), T, N, n)
     print("\n")
 end

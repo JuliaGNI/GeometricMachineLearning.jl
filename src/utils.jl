@@ -69,8 +69,19 @@ function global_section(::AbstractVecOrMat)
     nothing
 end
 
-function convert_to_gpu(dev::CUDA.CuDevice, A::AbstractArray)
+
+struct CPUDevice end 
+
+const Device = Union{CUDA.CuDevice, CPUDevice}
+
+function convert_to_dev(::CUDA.CuDevice, A::AbstractArray)
     CUDA.cu(A)
 end
 
-const GPUDevice = Union{CUDA.CuDevice}
+function convert_to_dev(::CPUDevice, A::AbstractVector)
+    Vector(A)
+end
+
+function convert_to_dev(::CPUDevice, A::AbstractMatrix)
+    Matrix(A)
+end
