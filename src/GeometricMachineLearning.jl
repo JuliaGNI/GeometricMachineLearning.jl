@@ -30,7 +30,7 @@ module GeometricMachineLearning
     export _add, apply_toNT, split_and_flatten, add!
     
     #GPU specific operations
-    export convert_to_dev, Device
+    export convert_to_dev, Device, CPUDevice
 
     #+ operation has been overloaded to work with NamedTuples!
     export _add

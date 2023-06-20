@@ -25,5 +25,5 @@ end
 /ᵉˡᵉ(A::AbstractMatrix, B::AbstractMatrix) = A./B
 scalar_add(A::AbstractMatrix, δ::Real) = A .+ δ
 
-init_optimizer_cache(d::Lux.AbstractExplicitLayer, ::AdamOptimizer) = setup_adam_cache(d)
-
+init_optimizer_cache(dev::Device, d::Lux.AbstractExplicitLayer, ::AdamOptimizer) = setup_adam_cache(dev, d)
+init_optimizer_cache(d::Lux.AbstractExplicitLayer, opt::AdamOptimizer) = init_optimizer_cache(CPUDevice(), d, opt)

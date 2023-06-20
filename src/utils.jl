@@ -85,3 +85,12 @@ end
 function convert_to_dev(::CPUDevice, A::AbstractMatrix)
     Matrix(A)
 end
+
+
+function Lux.setup(dev::Device, rng::Random.AbstractRNG, d::Lux.AbstractExplicitLayer)
+    map_to_dev(A::AbstractArray) = convert_to_dev(dev, A)
+    map_to_dev(ps::NamedTuple) = apply_toNT(ps, map_to_dev)
+    ps, st = Lux.setup(rng, d) 
+    ps = map_to_dev(ps)
+    ps, st
+end
