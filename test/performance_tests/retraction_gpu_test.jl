@@ -17,7 +17,7 @@ function test_retraction(T, N, n)
     @printf "gpu geodesic retraction:  "
     @time Y_gpu = geodesic(B_gpu)
 
-    @test typeof(Y_gpu <: StiefelManifold{T, AT} where {T, AT <: AbstractGPUMatrix})
+    @test (typeof(Y_gpu) <: StiefelManifold{T, AT} where {T, AT <: AbstractGPUMatrix})
 end
 
 T = Float32
