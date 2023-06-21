@@ -8,7 +8,6 @@ module GeometricMachineLearning
     using Random
     using Zygote
     using KernelAbstractions
-    using CUDAKernels
 
     import Lux, CUDA
 
