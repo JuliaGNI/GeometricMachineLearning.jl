@@ -2,6 +2,7 @@ using Lux, Zygote, CUDA, Random, GeometricMachineLearning, Test, GPUArrays
 
 model = Chain(Dense(10, 20, tanh), Dense(20,20, tanh), Dense(20,5, use_bias=false))
 
+
 function test_differential(dev::Device, T)
     ps, st = Lux.setup(dev, Random.default_rng(), model)
     @time dg = Zygote.gradient(ps -> sum(Lux.apply(model, convert_to_dev(dev, rand(T, 10)), ps, st)[1]), ps)[1]
