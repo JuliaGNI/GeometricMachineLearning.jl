@@ -5,7 +5,7 @@ using GeometricMachineLearning
 include("../data_problem.jl")
 
 
-function LNN(integrator::Lnn_training_integrator, data::Training_data, nameproblem::Symbol = :pendulum, opt =  MomentumOptimizer(1e-3,0.5))
+function LNN(integrator::LnnTrainingIntegrator, data::AbstractTrainingData, nameproblem::Symbol = :pendulum, opt =  MomentumOptimizer(1e-3,0.5))
     
     _, n_dim = dict_problem_L[nameproblem]
 
@@ -28,7 +28,7 @@ function LNN(integrator::Lnn_training_integrator, data::Training_data, nameprobl
     nn = NeuralNetwork(lnn, LuxBackend())
 
     # perform training (returns array that contains the total loss for each training step)
-    total_loss = train!(nn, opt, data; ntraining = nruns, lti = integrator, showprogress = true)
+    total_loss = train!(nn, opt, data; ntraining = nruns, ti = integrator, showprogress = true)
 
     return nn, total_loss
 end
@@ -43,15 +43,13 @@ Get_Data = Dict(
     :length_trajectory => (Data,i) -> Data.data[Symbol("Trajectory_"*string(i))][:len],
     :q => (Data,i,n) -> Data.data[Symbol("Trajectory_"*string(i))][:data][n][1],
 )
-data = data_trajectory(Data, Get_Data)
+data = DataTrajectory(Data, Get_Data)
 
-nn, total_loss = LNN(VariationalMidPointLNN(), data, :pendulum, MomentumOptimizer())
-
+nn, total_loss = LNN(VariationalMidPointIntegrator(), data, :pendulum, MomentumOptimizer())
 
 
 # plot results
 include("../plots.jl")  
 L, n_dim = dict_problem_L[:pendulum]
 plot_hnn(L, nn, total_loss; filename="lnn_pendulum.png", xmin=-1.2, xmax=+1.2, ymin=-1.2, ymax=+1.2)
-
 

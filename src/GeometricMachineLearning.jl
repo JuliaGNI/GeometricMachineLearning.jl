@@ -121,16 +121,17 @@ module GeometricMachineLearning
     include("optimizers/useful_functions/retractions.jl")
 
 
+    #ASSERTION FUNCTION 
+    export assert
 
-    #INCLUDE DATA TRAINING strcuture
-    export Training_data
-    export data_trajectory, data_sampled, dataTarget
-    export get_batch_multiple_trajectory
+    #INCLUDE DATA TRAINING STRUCTURE
+    export AbstractTrainingData
+    export DataTrajectory, DataSampled, DataTarget
+    
+    include("data/data_training.jl")
+    include("data/batch.jl")
 
-    include("data_training.jl")
 
-
-\
     #INCLUDE BACKENDS
     export AbstractNeuralNetwork
     export LuxBackend
@@ -143,6 +144,7 @@ module GeometricMachineLearning
     # set default backend in NeuralNetwork constructor
     NeuralNetwork(arch::AbstractArchitecture; kwargs...) = NeuralNetwork(arch, LuxBackend(); kwargs...)
 
+    
     export Hnn_training_integrator
     export Lnn_training_integrator
     export SEuler
@@ -169,6 +171,49 @@ module GeometricMachineLearning
     include("architectures/lagrangian_neural_network.jl")
     include("architectures/variable_width_network.jl")
     include("architectures/sympnet.jl")
+
+    #INCLUDE TRAINING integrator
+
+    export AbstractTrainingIntegrator
+    export HnnTrainingIntegrator
+    export LnnTrainingIntegrator
+    export SympNetTrainingIntegrator
+
+    export TrainingIntegrator
+
+    export loss_single, loss, loss_gradient
+    export train!
+
+    include("training/train.jl")
+
+    export SymplecticEuler
+    export _SymplecticEulerA, _SymplecticEulerB
+    export SymplecticEulerA, SymplecticEulerB
+
+    include("training/hnn_training/symplectic_euler.jl")
+
+    export HnnExactIntegrator
+
+    include("training/hnn_training/hnn_exact_integrator.jl")
+
+    export VariationalIntegrator
+    export VariationalMidPointIntegrator
+
+    include("training/lnn_training/variational_integrator.jl")
+
+    export LnnExactIntegrator
+
+    include("training/lnn_training/lnn_exact_integrator.jl")
+
+    export BasicSympNetIntegrator
+
+    include("training/sympnet_training/sympnet_basic_integrator.jl")
+
+    export default_integrator
+    
+    include("training/default_integrator.jl")
+
+
 
 
 

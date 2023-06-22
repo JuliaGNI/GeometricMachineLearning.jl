@@ -8,7 +8,7 @@ using GeometricMachineLearning
 
 include("data_problem.jl")
 
-function SYMPNET(integrator::SympNetIntegrator, data::Training_data, nameproblem::Symbol = :pendulum, opt =  MomentumOptimizer(1e-3,0.5))
+function SYMPNET(integrator::SympNetTrainingIntegrator, data::AbstractTrainingData, nameproblem::Symbol = :pendulum, opt =  MomentumOptimizer(1e-3,0.5))
     
     _, n_dim = dict_problem_H[nameproblem]
 
@@ -34,14 +34,14 @@ function SYMPNET(integrator::SympNetIntegrator, data::Training_data, nameproblem
     nn = NeuralNetwork(sympnet, LuxBackend())
 
     # perform training (returns array that contains the total loss for each training step)
-    total_loss = train!(nn, opt, data; ntraining = nruns, hti = integrator)
+    total_loss = train!(nn, opt, data; ntraining = nruns, ti = integrator)
 
     return nn, total_loss
 end
 
 
-#=
 
+#=
 Data = get_multiple_trajectory_structure(:pendulum; n_trajectory = 1, n_points = 1000, tstep = 0.1, qmin = -1.2, pmin = -1.2, qmax = 1.2, pmax = 1.2)
 
 Get_Data = Dict(
@@ -51,9 +51,9 @@ Get_Data = Dict(
     :q => (Data,i,n) -> Data.data[Symbol("Trajectory_"*string(i))][:data][n][1],
     :p => (Data,i,n) -> Data.data[Symbol("Trajectory_"*string(i))][:data][n][2],
 )
-data2 = data_trajectory(Data, Get_Data)
+data2 = DataTrajectory(Data, Get_Data)
 
-nn, total_loss = SYMPNET(BaseIntegrator(), data2, :pendulum, MomentumOptimizer())
+nn, total_loss = SYMPNET(BasicSympNetIntegrator(), data2, :pendulum, MomentumOptimizer())
 
 q0 = [0.5]
 p0 = [0.7]

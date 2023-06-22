@@ -5,7 +5,7 @@ using GeometricMachineLearning
 include("../data_problem.jl")
 
 
-function HNN(integrator::Hnn_training_integrator, data::Training_data, nameproblem::Symbol = :pendulum, opt =  MomentumOptimizer(1e-3,0.5))
+function HNN(integrator::HnnTrainingIntegrator, data::AbstractTrainingData, nameproblem::Symbol = :pendulum, opt =  MomentumOptimizer(1e-3,0.5))
     
     _, n_dim = dict_problem_H[nameproblem]
 
@@ -28,12 +28,32 @@ function HNN(integrator::Hnn_training_integrator, data::Training_data, nameprobl
     nn = NeuralNetwork(hnn, LuxBackend())
 
     # perform training (returns array that contains the total loss for each training step)
-    total_loss = train!(nn, opt, data; ntraining = nruns, hti = integrator)
+    total_loss = train!(nn, opt, data; ntraining = nruns, ti = integrator, showprogress = false)
 
     return nn, total_loss
 end
 
 
-# plot results
-#include("plots.jl")
-#plot_hnn(H, nn, total_loss; filename="hnn_pendulum.png", xmin=-1.2, xmax=+1.2, ymin=-1.2, ymax=+1.2)
+#=
+Data,Target = get_HNN_data(:pendulum)
+
+Get_Data = Dict(
+    :nb_points => Data -> length(Data),
+    :q => (Data,n) -> Data[n][1],
+    :p => (Data,n) -> Data[n][2]
+)
+pdata = DataSampled(Data, Get_Data)
+
+Get_Target = Dict(
+    :q̇ => (Target,n) -> Target[n][1],
+    :ṗ => (Target,n) -> Target[n][2],
+)
+
+data = DataTarget(pdata, Target, Get_Target)
+
+HNN(HnnExactIntegrator(), data,  :pendulum, MomentumOptimizer())
+
+include("../plots.jl")
+
+plot_hnn(H, nn, total_loss; filename="hnn_pendulum.png", xmin=-1.2, xmax=+1.2, ymin=-1.2, ymax=+1.2)
+=#
