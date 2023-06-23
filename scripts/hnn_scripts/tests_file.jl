@@ -73,25 +73,25 @@ data4 = DataTrajectory(Data, Get_Data)
 
 @testseterrors begin
 
-    @testerror HNN HnnExactIntegrator() data :pendulum MomentumOptimizer()
-    @testerror HNN HnnExactIntegrator() data :pendulum AdamOptimizer()
-    @testerror HNN HnnExactIntegrator() data :pendulum GradientOptimizer()
+    @testerror HNN ExactHnn() data :pendulum MomentumOptimizer()
+    @testerror HNN ExactHnn() data :pendulum AdamOptimizer()
+    @testerror HNN ExactHnn() data :pendulum GradientOptimizer()
 
-    @testerror HNN SymplecticEulerA() data2 :pendulum MomentumOptimizer()
-    @testerror HNN SymplecticEulerA() data2 :pendulum AdamOptimizer()
-    @testerror HNN SymplecticEulerA() data2 :pendulum GradientOptimizer()
+    @testerror HNN SEulerA() data2 :pendulum MomentumOptimizer()
+    @testerror HNN SEulerA() data2 :pendulum AdamOptimizer()
+    @testerror HNN SEulerA() data2 :pendulum GradientOptimizer()
 
-    @testerror SYMPNET BasicSympNetIntegrator() data2 :pendulum MomentumOptimizer()
-    @testerror SYMPNET BasicSympNetIntegrator() data2 :pendulum AdamOptimizer()
-    @testerror SYMPNET BasicSympNetIntegrator() data2 :pendulum GradientOptimizer()
+    @testerror SYMPNET BasicSympNet() data2 :pendulum MomentumOptimizer()
+    @testerror SYMPNET BasicSympNet() data2 :pendulum AdamOptimizer()
+    @testerror SYMPNET BasicSympNet() data2 :pendulum GradientOptimizer()
 
-    @testerror LNN LnnExactIntegrator() data3 :pendulum MomentumOptimizer()
-    @testerror LNN LnnExactIntegrator() data3 :pendulum AdamOptimizer()
-    @testerror LNN LnnExactIntegrator() data3 :pendulum GradientOptimizer()
+    @testerror LNN ExactLnn() data3 :pendulum MomentumOptimizer()
+    @testerror LNN ExactLnn() data3 :pendulum AdamOptimizer()
+    @testerror LNN ExactLnn() data3 :pendulum GradientOptimizer()
 
-    @testerror LNN VariationalMidPointIntegrator() data4 :pendulum MomentumOptimizer()
-    @testerror LNN VariationalMidPointIntegrator() data4 :pendulum AdamOptimizer()
-    @testerror LNN VariationalMidPointIntegrator() data4 :pendulum GradientOptimizer()
+    @testerror LNN VariaMidPoint() data4 :pendulum MomentumOptimizer()
+    @testerror LNN VariaMidPoint() data4 :pendulum AdamOptimizer()
+    @testerror LNN VariaMidPoint() data4 :pendulum GradientOptimizer()
 
 end
 

@@ -4,8 +4,9 @@ abstract type SymplecticEuler <: HnnTrainingIntegrator end
 struct SymplecticEulerA <: SymplecticEuler end
 struct SymplecticEulerB <: SymplecticEuler end
 
-#SymplecticEulerA(;sqdist = sqeuclidean) = TrainingIntegrator(_SymplecticEulerA(), sqdist)
-#SymplecticEulerB(;sqdist = sqeuclidean) = TrainingIntegrator(_SymplecticEulerB(), sqdist)
+SEuler(;sqdist = sqeuclidean) =  SEulerA(sqdist = sqdist)
+SEulerA(;sqdist = sqeuclidean) = TrainingIntegrator(SymplecticEulerA(), sqdist = sqdist)
+SEulerB(;sqdist = sqeuclidean) = TrainingIntegrator(SymplecticEulerB(), sqdist =sqdist)
 
             
 function loss_single(::SymplecticEulerA, nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, qₙ, qₙ₊₁, pₙ, pₙ₊₁, Δt, params = nn.params)
@@ -20,8 +21,11 @@ end
 
 
 loss(ti::SymplecticEuler, nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, data::DataTrajectory, index_batch = get_batch(data), params = nn.params) = 
-mapreduce(x->loss_single(Zygote.ignore(ti), nn, data.get_data[:q](x[1],x[2]), data.get_data[:q](x[1],x[2]+1), data.get_data[:p](x[1],x[2]), data.get_data[:p](x[1],x[2]+1), data.get_Δt(), params),+, index_batch)
+mapreduce(x->loss_single(Zygote.ignore(ti), nn, get_data(data,:q,x[1],x[2]), get_data(data,:q,x[1],x[2]+1), get_data(data,:p, x[1],x[2]), get_data(data,:p,x[1],x[2]+1), get_Δt(data), params),+, index_batch)
 
-data_goal(::SymplecticEuler) = DataTrajectory
+data_goal(::SymplecticEuler) = (test_data_trajectory,)
 
 required_key(::SymplecticEuler) = (:q,:p)
+
+min_length_batch(::SymplecticEuler) = 2
+

@@ -8,7 +8,7 @@ using GeometricMachineLearning
 
 include("data_problem.jl")
 
-function SYMPNET(integrator::SympNetTrainingIntegrator, data::AbstractTrainingData, nameproblem::Symbol = :pendulum, opt =  MomentumOptimizer(1e-3,0.5))
+function SYMPNET(integrator::TrainingIntegrator{<:SympNetTrainingIntegrator}, data::AbstractTrainingData, nameproblem::Symbol = :pendulum, opt =  MomentumOptimizer(1e-3,0.5))
     
     _, n_dim = dict_problem_H[nameproblem]
 
@@ -22,8 +22,8 @@ function SYMPNET(integrator::SympNetTrainingIntegrator, data::AbstractTrainingDa
     ninput = 2*n_dim
 
     # number of training runs
-    nruns = 1000
-
+    nruns = 3
+    
     # activation function
     act = tanh
 

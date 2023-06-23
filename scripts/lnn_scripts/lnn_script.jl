@@ -5,7 +5,7 @@ using GeometricMachineLearning
 include("../data_problem.jl")
 
 
-function LNN(integrator::LnnTrainingIntegrator, data::AbstractTrainingData, nameproblem::Symbol = :pendulum, opt =  MomentumOptimizer(1e-3,0.5))
+function LNN(integrator::TrainingIntegrator{<:LnnTrainingIntegrator}, data::AbstractTrainingData, nameproblem::Symbol = :pendulum, opt =  MomentumOptimizer(1e-3,0.5))
     
     _, n_dim = dict_problem_L[nameproblem]
 
@@ -19,7 +19,7 @@ function LNN(integrator::LnnTrainingIntegrator, data::AbstractTrainingData, name
     ninput = 2*n_dim
 
     # number of training runs
-    nruns = 1000
+    nruns = 3
 
     # create lNN
     lnn = LagrangianNeuralNetwork(ninput; nhidden = ln, width = ld)
@@ -34,7 +34,7 @@ function LNN(integrator::LnnTrainingIntegrator, data::AbstractTrainingData, name
 end
 
 
-
+#=
 Data = get_multiple_trajectory_structure(:pendulum; n_trajectory = 20, n_points = 1000, tstep = 0.1, qmin = -1.2, pmin = -1.2, qmax = 1.2, pmax = 1.2)
 
 Get_Data = Dict(
@@ -52,4 +52,4 @@ nn, total_loss = LNN(VariationalMidPointIntegrator(), data, :pendulum, MomentumO
 include("../plots.jl")  
 L, n_dim = dict_problem_L[:pendulum]
 plot_hnn(L, nn, total_loss; filename="lnn_pendulum.png", xmin=-1.2, xmax=+1.2, ymin=-1.2, ymax=+1.2)
-
+=#

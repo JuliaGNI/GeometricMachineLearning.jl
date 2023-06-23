@@ -120,13 +120,21 @@ module GeometricMachineLearning
     include("optimizers/useful_functions/auxiliary.jl")
     include("optimizers/useful_functions/retractions.jl")
 
+    #INCLUDE ABSTRACT TRAINING integrator
+    export AbstractTrainingIntegrator
+    export TrainingIntegrator
+    export loss_single, loss
 
-    #ASSERTION FUNCTION 
-    export assert
+    export HnnTrainingIntegrator
+    export LnnTrainingIntegrator
+    export SympNetTrainingIntegrator
+
+    include("training/abstract_training_integrator.jl")
 
     #INCLUDE DATA TRAINING STRUCTURE
     export AbstractTrainingData
     export DataTrajectory, DataSampled, DataTarget
+    export get_length_trajectory, get_Δt, get_nb_point, get_nb_trajectory, get_data, get_target
     
     include("data/data_training.jl")
     include("data/batch.jl")
@@ -173,39 +181,35 @@ module GeometricMachineLearning
     include("architectures/sympnet.jl")
 
     #INCLUDE TRAINING integrator
-
-    export AbstractTrainingIntegrator
-    export HnnTrainingIntegrator
-    export LnnTrainingIntegrator
-    export SympNetTrainingIntegrator
-
-    export TrainingIntegrator
-
-    export loss_single, loss, loss_gradient
+    export loss_gradient
     export train!
 
     include("training/train.jl")
 
     export SymplecticEuler
-    export _SymplecticEulerA, _SymplecticEulerB
     export SymplecticEulerA, SymplecticEulerB
+    export SEuler, SEulerA, SEulerB
 
     include("training/hnn_training/symplectic_euler.jl")
 
     export HnnExactIntegrator
+    export ExactHnn
 
     include("training/hnn_training/hnn_exact_integrator.jl")
 
     export VariationalIntegrator
     export VariationalMidPointIntegrator
+    export VariaMidPoint
 
     include("training/lnn_training/variational_integrator.jl")
 
     export LnnExactIntegrator
+    export ExactLnn
 
     include("training/lnn_training/lnn_exact_integrator.jl")
 
     export BasicSympNetIntegrator
+    export BasicSympNet
 
     include("training/sympnet_training/sympnet_basic_integrator.jl")
 
@@ -214,6 +218,8 @@ module GeometricMachineLearning
     include("training/default_integrator.jl")
 
 
+    #INCLUDE ASSERTION Function
+    include("training/assertion.jl")
 
 
 

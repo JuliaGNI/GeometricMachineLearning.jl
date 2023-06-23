@@ -191,6 +191,7 @@ function ⊙²(S::SymplecticLieAlgHorMatrix)
         )
 end
 
+#=
 function √ᵉˡᵉ(S::SymplecticLieAlgHorMatrix) 
     SymplecticLieAlgMatrix(
         sqrt.(S.A₁), 
@@ -204,3 +205,4 @@ function √ᵉˡᵉ(S::SymplecticLieAlgHorMatrix)
         n
         )
 end
+=#

@@ -1,51 +1,15 @@
-abstract type  AbstractTrainingIntegrator end
 
-abstract type HnnTrainingIntegrator <: AbstractTrainingIntegrator end
-abstract type LnnTrainingIntegrator <: AbstractTrainingIntegrator end
-abstract type SympNetTrainingIntegrator <: AbstractTrainingIntegrator end
-
-function loss end
-function loss_single end
-
-# Structure 
-
-#Define common strucutre integrator
-struct TrainingIntegrator{TIT,TD}
-    type::TIT
-    sqdist::TD
-end
-
-type(ti::TrainingIntegrator) = ti.type
-
-
-# Assertion for good usage of training integrator
-
-required_key(ti::AbstractTrainingIntegrator) = @warn "No recquired_key functions for "*string(typeof(ti))*"!"
-
-data_goal(ti::AbstractTrainingIntegrator) = @warn "No data recquirement for "*string(typeof(ti))*". Errors may occur."; nothing
-
-function assert(ti::AbstractTrainingIntegrator, data::AbstractTrainingData)
-    #assert(data_goal(ti), data)
-
-    for key in required_key(ti)
-        @assert (haskey(data.get_data, key) || haskey(data.get_target, key)) "You forgot the key "*string(key)*"!"
-    end
-
-end
-
-
-
-
+const DEFAULT_NRUNS = 1000
 
 #loss gradient
 loss_gradient(nn::LuxNeuralNetwork{<:AbstractArchitecture}, ti::AbstractTrainingIntegrator, data, index_batch, params = nn.params) = Zygote.gradient(p -> loss(ti, nn, data, index_batch, p), params)[1]
 
-const DEFAULT_NRUNS = 1000
 
-function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, m::AbstractMethodOptimiser, data::AbstractTrainingData; ntraining = DEFAULT_NRUNS, ti::AbstractTrainingIntegrator = default_integrator(nn, data), batch_size_t = default_index_batch(data), showprogress::Bool = false)
+#train function
+function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, m::AbstractMethodOptimiser, data::AbstractTrainingData; ntraining = DEFAULT_NRUNS, ti::TrainingIntegrator{<:AbstractTrainingIntegrator} = default_integrator(nn, data), batch_size_t = default_index_batch(data,type(ti)), showprogress::Bool = false)
     
     #verify that shape of data depending of the ExactIntegrator
-    assert(ti, data)
+    assert(type(ti), data)
 
     # create array to store total loss
     total_loss = zeros(ntraining)
@@ -54,20 +18,20 @@ function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, m::AbstractMethodO
     opt = Optimizer(m, nn.model)
 
     # transform parameters (if needed) to match with Zygote
-    params_tuple, keys =  pretransform(ti, nn.params)
+    params_tuple, keys =  pretransform(type(ti), nn.params)
 
     # Learning runs
     p = Progress(ntraining; enabled = showprogress)
     for j in 1:ntraining
         index_batch = get_batch(data, batch_size_t)
 
-        params_grad = loss_gradient(nn, ti, data, index_batch, params_tuple) 
+        params_grad = loss_gradient(nn, type(ti), data, index_batch, params_tuple) 
 
-        dp = posttransform(ti, params_grad, keys)
+        dp = posttransform(type(ti), params_grad, keys)
 
         optimization_step!(opt, nn.model, nn.params, dp)
 
-        total_loss[j] = loss(ti, nn, data)
+        total_loss[j] = loss(type(ti), nn, data)
 
         next!(p)
     end
@@ -77,8 +41,8 @@ end
 
 
 pretransform(::AbstractTrainingIntegrator, params::NamedTuple) = params, nothing
-posttransform(::AbstractTrainingIntegrator, params,  args...) = params
 
+posttransform(::AbstractTrainingIntegrator, params,  args...) = params
 
 
 TuppleNeededTrainingIntegrator = Union{HnnTrainingIntegrator, LnnTrainingIntegrator}

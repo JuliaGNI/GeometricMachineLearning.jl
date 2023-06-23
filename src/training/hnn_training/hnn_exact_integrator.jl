@@ -1,5 +1,6 @@
 struct HnnExactIntegrator <: HnnTrainingIntegrator end
 
+ExactHnn(;sqdist = sqeuclidean) = TrainingIntegrator(HnnExactIntegrator(); sqdist = sqdist)
 
 function loss_single(::HnnExactIntegrator, nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, qₙ, pₙ, q̇ₙ, ṗₙ, params = nn.params)
     dH = vectorfield(nn, [qₙ...,pₙ...], params)
@@ -8,12 +9,13 @@ end
 
 
 loss(ti::HnnExactIntegrator, nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, datat::DataTarget{DataTrajectory}, index_batch = get_batch(datat), params = nn.params) =
-mapreduce(x->loss_single(ti, nn, datat.get_data[:q](x[1],x[2]), datat.get_data[:p](x[1],x[2]), datat.get_target[:q̇](x[1],x[2]), datat.get_target[:ṗ](x[1],x[2]), params), +, index_batch)
+mapreduce(x->loss_single(ti, nn, get_data(datat, :q,x[1],x[2]), get_data(datat,:p,x[1],x[2]), get_target(datat,:q̇,x[1],x[2]), get_target(datat,:ṗ,x[1],x[2]), params), +, index_batch)
     
 
 loss(ti::HnnExactIntegrator, nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, datat::DataTarget{DataSampled}, index_batch = get_batch(datat), params = nn.params) = 
-mapreduce(n->loss_single(ti, nn, datat.get_data[:q](n), datat.get_data[:p](n), datat.get_target[:q̇](n), datat.get_target[:ṗ](n), params), +, index_batch)
+mapreduce(n->loss_single(ti, nn, get_data(datat,:q,n), get_data(datat,:p,n), get_target(datat,:q̇,n), get_target(datat,:ṗ,n), params), +, index_batch)
 
 
 required_key(::HnnExactIntegrator) = (:q,:p, :q̇, :ṗ)
 
+data_goal(::HnnExactIntegrator) = (test_data_target,)
