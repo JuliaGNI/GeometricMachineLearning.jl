@@ -222,6 +222,12 @@ module GeometricMachineLearning
     include("training/assertion.jl")
 
 
+    #INCLUDE PROBLEM 
+    export HNNProblem, LNNProblem
+
+    include(integrator/problem_hnn.jl)
+    include(integrator/problem_lnn.jl)
+
 
     include("rng/random_funcs.jl")
 
