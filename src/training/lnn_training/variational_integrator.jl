@@ -2,7 +2,7 @@ abstract type VariationalIntegrator <: LnnTrainingIntegrator end
 struct VariationalMidPointIntegrator <: VariationalIntegrator end
 struct VariationalTrapezIntegrator <: VariationalIntegrator end
 
-VariaMidPoint(;sqdist = sqeucliedan) = TrainingIntegrator(VariationalMidPointIntegrator(); sqdist = sqdist)
+VariaMidPoint(;sqdist = sqeuclidean) = TrainingIntegrator(VariationalMidPointIntegrator(); sqdist = sqdist)
 
 
 # discrete langrangian

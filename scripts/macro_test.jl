@@ -1,7 +1,7 @@
 macro testerror(f, args...)
     printstyled(center_align_text(string(eval(f)),14) * " |"; bold = true)
     for e in args
-        if typeof(eval(e)) == Symbol
+        if typeof(eval(e)) == Symbol || typeof(eval(e)) == TrainingIntegrator
             text = string(eval(e))
         else
             text = print_type_without_brace(eval(e))

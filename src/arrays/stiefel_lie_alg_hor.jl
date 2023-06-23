@@ -133,9 +133,9 @@ end
 function ⊙²(A::StiefelLieAlgHorMatrix)
     StiefelLieAlgHorMatrix(⊙²(A.A), A.B.^2, A.N, A.n)
 end
-function √ᵉˡᵉ(A::StiefelLieAlgHorMatrix)
-    StiefelLieAlgHorMatrix(√ᵉˡᵉ(A.A), sqrt.(A.B), A.N, A.n)
-end
+#function √ᵉˡᵉ(A::StiefelLieAlgHorMatrix)
+#    StiefelLieAlgHorMatrix(√ᵉˡᵉ(A.A), sqrt.(A.B), A.N, A.n)
+#end
 function /ᵉˡᵉ(A::StiefelLieAlgHorMatrix, B::StiefelLieAlgHorMatrix)
     StiefelLieAlgHorMatrix(/ᵉˡᵉ(A.A, B.A), A.B./B.B, A.N, A.n)
 end 

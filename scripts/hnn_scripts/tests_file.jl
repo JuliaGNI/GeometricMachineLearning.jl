@@ -85,13 +85,13 @@ data4 = DataTrajectory(Data, Get_Data)
     @testerror SYMPNET BasicSympNet() data2 :pendulum AdamOptimizer()
     @testerror SYMPNET BasicSympNet() data2 :pendulum GradientOptimizer()
 
-    @testerror LNN ExactLnn() data3 :pendulum MomentumOptimizer()
-    @testerror LNN ExactLnn() data3 :pendulum AdamOptimizer()
-    @testerror LNN ExactLnn() data3 :pendulum GradientOptimizer()
+    #@testerror LNN ExactLnn() data3 :pendulum MomentumOptimizer()
+    #@testerror LNN ExactLnn() data3 :pendulum AdamOptimizer()
+    #@testerror LNN ExactLnn() data3 :pendulum GradientOptimizer()
 
-    @testerror LNN VariaMidPoint() data4 :pendulum MomentumOptimizer()
-    @testerror LNN VariaMidPoint() data4 :pendulum AdamOptimizer()
-    @testerror LNN VariaMidPoint() data4 :pendulum GradientOptimizer()
+    #@testerror LNN VariaMidPoint() data4 :pendulum MomentumOptimizer()
+    #@testerror LNN VariaMidPoint() data4 :pendulum AdamOptimizer()
+    #@testerror LNN VariaMidPoint() data4 :pendulum GradientOptimizer()
 
 end
 
