@@ -1,5 +1,10 @@
 module GeometricMachineLearning
 
+    using Reexport
+    include("../../GeometricIntegrators.jl/src/GeometricIntegrators.jl")
+    using GeometricIntegrators
+    
+
     using BandedMatrices
     using Distances
     using LinearAlgebra
@@ -222,11 +227,24 @@ module GeometricMachineLearning
     include("training/assertion.jl")
 
 
-    #INCLUDE PROBLEM 
+    #INCLUDE PROBLEMS
     export HNNProblem, LNNProblem
 
-    include(integrator/problem_hnn.jl)
-    include(integrator/problem_lnn.jl)
+    include("integrator/problem_hnn.jl")
+    include("integrator/problem_lnn.jl")
+    
+    #INCLUDE INTEGRATOR 
+    export NeuralNetIntegrator
+    export NeuralNetMethod
+
+    include("integrator/integrator.jl")
+
+    #INCLUDE INTEGRATION METHOD
+    export  SympNetMethod
+
+    include("integrator/sympnet_integrator.jl")
+
+
 
 
     include("rng/random_funcs.jl")

@@ -18,6 +18,10 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+GeometricBase = "9a0b12b7-583b-4f04-aa1f-d8551b6addc9"
+GeometricEquations = "c85262ba-a08a-430a-b926-d29770767bf2"
+GeometricSolutions = "7843afe4-64f4-4df4-9231-049495c56661"
 
 [compat]
 BandedMatrices = "0.17"
@@ -32,6 +36,10 @@ ProgressMeter = "1"
 Zygote = "0.6"
 julia = "1.8"
 StatsBase = "0.33.21"
+Reexport = "1.0"
+GeometricBase = "0.5, 0.6"
+GeometricEquations = "0.9"
+GeometricSolutions = "0.3"
 
 [extras]
 Lux = "b2108857-7c20-44ae-9111-449ecde12c47"

@@ -79,3 +79,9 @@ end
 Zygote.OneElement(t1::Tuple{Float64}, t2::Tuple{Int64}, t3::Tuple{Base.OneTo{Int64}}) = Zygote.OneElement(t1[1], t2, t3)
 
 Base.haskey(::Nothing, key::Core.Any) = false
+
+
+function type_without_brace(var)
+    type_str = string(typeof(var))
+    replace(type_str, r"\{.*\}"=>"")
+end
