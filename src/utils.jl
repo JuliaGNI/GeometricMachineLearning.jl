@@ -58,3 +58,7 @@ function add!(C::AbstractVecOrMat, A::AbstractVecOrMat, B::AbstractVecOrMat)
     @assert size(A) == size(B) == size(C)
     C .= A + B
 end
+
+function add!(dx₁::NamedTuple, dx₂::NamedTuple, dx₃::NamedTuple)
+    apply_toNT(dx₁, dx₂, dx₃, add!)
+end

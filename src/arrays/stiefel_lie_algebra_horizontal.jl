@@ -21,19 +21,18 @@ mutable struct StiefelLieAlgHorMatrix{T, AT <: SkewSymMatrix{T}, ST <: AbstractM
     n::Int 
 
     #maybe modify this - you don't need N & n as inputs!
-    function StiefelLieAlgHorMatrix(A::SkewSymMatrix, B::AbstractMatrix, N::Int, n::Int)
+    function StiefelLieAlgHorMatrix(A::SkewSymMatrix{T}, B::AbstractMatrix{T}, N::Int, n::Int) where {T}
         @assert n == A.n == size(B,2) 
         @assert N == size(B,1) + n
-        @assert eltype(A) == eltype(B)
 
-        new{eltype(A), typeof(A), typeof(B)}(A, B, N, n)
+        new{T, typeof(A), typeof(B)}(A, B, N, n)
     end 
 
-    function StiefelLieAlgHorMatrix(A::SkewSymMatrix, n::Int)
-        N = A.n 
+    function StiefelLieAlgHorMatrix(A::AbstractMatrix, n::Int)
+        N = size(A, 1)
         @assert N ≥ n 
 
-        A_small = SkewSymMatrix(A[1:n,1:n])
+        A_small = 2*SkewSymMatrix(A[1:n,1:n])
         B = A[(n+1):N,1:n]
         new{eltype(A),typeof(A), typeof(B)}(A_small, B, N, n)
     end
@@ -42,7 +41,7 @@ end
 Base.parent(A::StiefelLieAlgHorMatrix) = (A, B)
 Base.size(A::StiefelLieAlgHorMatrix) = (A.N, A.N)
 
-function Base.getindex(A::StiefelLieAlgHorMatrix, i, j)
+function Base.getindex(A::StiefelLieAlgHorMatrix{T}, i, j) where {T}
     if i ≤ A.n
         if j ≤ A.n 
             return A.A[i, j]
@@ -52,7 +51,7 @@ function Base.getindex(A::StiefelLieAlgHorMatrix, i, j)
     if j ≤ A.n 
         return A.B[i - A.n, j]
     end
-    return zero(eltype(A))
+    return T(0.)
 end
 
 function Base.:+(A::StiefelLieAlgHorMatrix, B::StiefelLieAlgHorMatrix)

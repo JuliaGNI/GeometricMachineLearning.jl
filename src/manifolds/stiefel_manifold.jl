@@ -15,30 +15,33 @@ end
 function Base.rand(rng::Random.AbstractRNG, ::Type{StiefelManifold{T}}, N::Integer, n::Integer) where T
     @assert N ≥ n
     A = randn(rng, T, N, n)
-    StiefelManifold(qr(A).Q[1:N, 1:n])
+    StiefelManifold(qr!(A).Q[1:N, 1:n])
 end
 
 function Base.rand(rng::Random.AbstractRNG, ::Type{StiefelManifold}, N::Integer, n::Integer)
     @assert N ≥ n 
     A = randn(rng, N, n)
-    StiefelManifold(qr(A).Q[1:N, 1:n])
+    StiefelManifold(qr!(A).Q[1:N, 1:n])
 end
 
 function Base.rand(::Type{StiefelManifold{T}}, N::Integer, n::Integer) where T
     @assert N ≥ n
     A = randn(T, N, n)
-    StiefelManifold(qr(A).Q[1:N, 1:n])
+    StiefelManifold(qr!(A).Q[1:N, 1:n])
 end
 
 function Base.rand(::Type{StiefelManifold}, N::Integer, n::Integer)
     @assert N ≥ n 
     A = randn(N, n)
-    StiefelManifold(qr(A).Q[1:N, 1:n])
+    StiefelManifold(qr!(A).Q[1:N, 1:n])
 end
 
-#probably don't need this! 
+#function Base.rand(::TrivialInitRNG, ::Type{StiefelManifold{T}}, N::Int, n::Int) where T
+#@assert N ≥ n 
+#    zeros(StiefelLieAlgHorMatrix{T}, N, n)
+#end
 
-function Base.rand(::TrivialInitRNG, ::Type{StiefelManifold{T}}, N::Int, n::Int) where T
+function Base.rand(::TrivialInitRNG{T}, ::Type{StiefelManifold}, N::Int, n::Int) where {T<:AbstractFloat}
     @assert N ≥ n 
     zeros(StiefelLieAlgHorMatrix{T}, N, n)
 end
@@ -48,7 +51,7 @@ function rgrad(Y::StiefelManifold, e_grad::AbstractMatrix)
 end
 
 function metric(Y::StiefelManifold, Δ₁::AbstractMatrix, Δ₂::AbstractMatrix)
-    LinearAlgebra.tr(Δ₁*(I - .5*Y'*Y)*Δ₂)
+    LinearAlgebra.tr(Δ₁'*(I - .5*Y*Y')*Δ₂)
 end
 
 function check(A::StiefelManifold)
@@ -59,7 +62,7 @@ function global_section(Y::StiefelManifold)
     N, n = size(Y)
     A = randn(eltype(Y), N, N-n)
     A = A - Y*Y'*A
-    qr(A).Q#[1:N, 1:N-n]
+    qr!(A).Q
 end
 
 function global_section(::AbstractVecOrMat)

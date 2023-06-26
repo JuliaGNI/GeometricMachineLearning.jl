@@ -35,16 +35,17 @@ setup_momentum_cache(B::AbstractMatrix) = MomentumCache(B)
 setup_gradient_cache(B::AbstractMatrix) = StandardCache(B)
 
 function setup_adam_cache(d::Lux.AbstractExplicitLayer)
-    B₁, _ = Lux.setup(TrivialInitRNG(), d) #.|> gpu
-    B₂, _ = Lux.setup(TrivialInitRNG(), d) #.|> gpu
+    B₁, _ = Lux.setup(TrivialInitRNG(), d) #.|> Lux.gpu
+    B₂, _ = Lux.setup(TrivialInitRNG(), d) #.|> Lux.gpu
     setup_adam_cache(B₁, B₂)
 end
 
 function setup_momentum_cache(d::Lux.AbstractExplicitLayer)
-    B, _ = Lux.setup(TrivialInitRNG(), d) #.|> gpu
+    B, _ = Lux.setup(TrivialInitRNG(), d) #.|> Lux.gpu
     setup_momentum_cache(B)
 end
 
+#TODO: make this more efficient! you don't need to call the entire setup to initialize an empty NamedTuple!!!
 function setup_gradient_cache(d::Lux.AbstractExplicitLayer)
     B, _ = Lux.setup(TrivialInitRNG(), d) #.|> gpu
     setup_gradient_cache(B)

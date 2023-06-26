@@ -8,4 +8,6 @@ function Transformer(dim::Integer, n_heads::Integer, L::Integer;
 
     model = Lux.Chain(Tuple(map(_ -> (MultiHeadAttention(dim, n_heads, Stiefel=Stiefel, Retraction=Retraction, init_weight=init_weight), 
     ResNet(dim, activation, init_weight=init_weight, init_bias=init_bias, use_bias=use_bias)), 1:L))...)
+
+    model
 end

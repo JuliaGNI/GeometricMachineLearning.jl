@@ -1,7 +1,7 @@
 """
 Implements a positional embedding for transformers as in the original paper (Attention is all you need: arXiv:1706.03762) with sines and cosines:
-P_{i,2j} = 	sin(i/10000^{2j/K}) = sin(i⋅λ²ʲ),
-P_{i,2j+1} =cos(i/10000^{2j/K}) = cos(i⋅λ²ʲ) with λ(K) ≡ λ := 10000^{-2/K} = 10^{-8/K}.
+P_{i,2j} = 	sin(i/10000^{2j/K}) = sin(i⋅λʲ),
+P_{i,2j+1} =cos(i/10000^{2j/K}) = cos(i⋅λʲ) with λ(K) ≡ λ := 10000^{-2/K} = 10^{-8/K}.
 The bigger K, the smaller the decay of the frequency; e.g. λ(20) ≈ 0.5.
 
 The mapping can also be seen as: 
@@ -18,43 +18,29 @@ e ... embedding dimension
 T ... number of times steps
 """
 
-λ_con(K::Int) = 10. ^(-8. /K)
+λ_con(K::Integer, T=Float32) = T(10.) ^(T(-8.) * T(inv(K)))
 
-function Mat₁(λ::AbstractFloat, e::Int, T::Int)
-	@assert isodd(e)
-	time_vec = 1:T
-	red_dim_vec = 1:e
-	λ_vec = λ.^((1:e).÷2)
-	return time_vec*λ_vec'
-end
-
-#function that performs P_{i,j} ↦ sin(P_{i,j}) for even j and P_{i,j} ↦ cos(P_{i,j}) for odd j.
-function trig_apply!(M::AbstractMatrix)
-	for i in 1:(size(M)[1])
-		for j in 1:(size(M)[2])
-			if iseven(j)
-				M[i,j] = sin(M[i,j])
-       		else
-       			M[i,j] = cos(M[i,j])
-       		end
-       	end
+function sc_embed(λ::T, dim::Integer, t_final::Integer) where T
+	mat = zeros(T, dim, t_final)
+	for i=1:dim
+		for pos=1:t_final
+			if iseven(i)
+				mat[i,pos] = sin(pos*λ^(i÷2))
+			else
+				mat[i,pos] = cos(pos*λ^(i÷2))
+			end
+		end
 	end
+	mat
 end
-function trig_apply(M::AbstractMatrix)
-	M₂ = deepcopy(M)
-	trig_apply!(M₂)
-	return M₂
-end
+sc_embed(dim::Integer, t_final::Integer, T=Float32) = sc_embed(λ_con(dim, T), dim, t_final)
 
-#complete sine-cosine embedding.
-function SC_embed(λ::AbstractFloat, e::Int, T::Int)
-	M = Mat₁(λ,e,T)
-	return trig_apply(M)
+function sc_embed(A::AbstractMatrix{T}) where T
+	A + sc_embed(size(A)..., T)
 end
-SC_embed(K::Int, e::Int, T::Int) = SC_embed(λ_con(K), e, T)
 
 #don't need quiver for any of this stuff!!!!
-
+#=
 function Ξ_plot!(fig, Ξ; args...)
 	T, e = size(Ξ)
     #convert into the right format for quiver, Ξᵥ = [col₁, col₂, …, colₑ]
@@ -87,4 +73,4 @@ function Ξ_plot₂(Ξ)
 	end
 	return fig
 end
-
+=#
