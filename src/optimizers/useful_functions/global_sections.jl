@@ -47,7 +47,7 @@ function apply_section!(Y::AT, λY::GlobalSection{T, AT}, Y₂::AT) where {T, AT
     @assert (N, n) == size(Y₂) == size(Y)
     #temporary solution for the moment 
     projection_matrix₁ = typeof(Y₂.A)(hcat(One(n, T), zeros(T, n, N-n)))
-    projection_matrix₂ = typeof(Δ)(hcat(zeros(T, N-n, n), One(N-n, T)))
+    projection_matrix₂ = typeof(Y₂.A)(hcat(zeros(T, N-n, n), One(N-n, T)))
 
     Y.A .= λY.Y*(projection_matrix₁*Y₂) + λY.λ*vcat(projection_matrix₂*Y₂, typeof(Y₂.A)(zeros(T, n, n)))
 end
