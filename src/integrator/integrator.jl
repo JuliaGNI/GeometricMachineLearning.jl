@@ -1,5 +1,3 @@
-using GeometricIntegrators
-
 abstract type NeuralNetMethod <: GeometricMethod end
 
 
@@ -13,7 +11,7 @@ struct NeuralNetIntegrator{PT, MT, CT, SST} <: DeterministicIntegrator
         problem::AbstractProblem, 
         integratormethod::GeometricMethod;
         method = initmethod(integratormethod, problem),
-        caches = CacheDict(problem, method),
+        caches = 0, #CacheDict(problem, method),
         solstp = SolutionStep(problem, method)
         )
 
@@ -55,5 +53,5 @@ tableau(int::NeuralNetIntegrator) = tableau(method(int))
 =#
 
 
-initial_guess!(::SolutionStep, ::AbstractProblem, ::GeometricMethod, ::CacheDict) = nothing
+initial_guess!(::SolutionStep, ::AbstractProblem, ::GeometricMethod, cache) = nothing #::CacheDict
 initial_guess!(int::NeuralNetIntegrator) = initial_guess!(solstep(int), problem(int), method(int), caches(int))

@@ -7,7 +7,9 @@ function method(nn::LuxNeuralNetwork{<:SympNet})
     function nnₛₚₗᵢₜ(q,p)
         qp = nn([q...,p...])
         (qp[1::length(q)], qp[1+length(q):end])
+    end
     SympNetMethod(nnₛₚₗᵢₜ)
+end
 
 const IntegratorSympNet{DT,TT} = NeuralNetIntegrator{<:Union{HODEProblem{DT,TT}}, <:SympNetMethod}
 
