@@ -282,14 +282,14 @@ function ⊙²(S::SymplecticLieAlgHorMatrix)
 end
 
 #=
-function √ᵉˡᵉ(S::SymplecticLieAlgHorMatrix) 
+function RACᵉˡᵉ(S::SymplecticLieAlgHorMatrix) 
     SymplecticLieAlgMatrix(
         sqrt.(S.A₁), 
         sqrt.(S.A₂),
         sqrt.(S.A₃),
-        √ᵉˡᵉ(S.B₁), 
+        RACᵉˡᵉ(S.B₁), 
         sqrt.(S.B₂),
-        √ᵉˡᵉ(S.B₁), 
+        RACᵉˡᵉ(S.B₁), 
         sqrt.(S.C₂),
         S.N,
         S.n

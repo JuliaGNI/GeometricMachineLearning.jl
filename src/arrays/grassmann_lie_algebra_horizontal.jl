@@ -124,7 +124,7 @@ end
 function ⊙²(A::GrassmannLieAlgHorMatrix)
     GrassmannLieAlgHorMatrix(A.B.^2, A.N, A.n)
 end
-function √ᵉˡᵉ(A::GrassmannLieAlgHorMatrix)
+function RACᵉˡᵉ(A::GrassmannLieAlgHorMatrix)
     GrassmannLieAlgHorMatrix(sqrt.(A.B), A.N, A.n)
 end
 function /ᵉˡᵉ(A::GrassmannLieAlgHorMatrix, B::GrassmannLieAlgHorMatrix)
