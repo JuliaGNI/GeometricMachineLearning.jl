@@ -75,13 +75,13 @@ end
 #this is for GPU support (doesn't support indexing arrays); for now only CUDA!!
 
 function assign_first_half!(q, x)
-        i = threadIdx().x
+        i = CUDA.threadIdx().x
         q[i] = x[i]
         return 
 end
 
 function assign_second_half!(p, x, N)
-        i = threadIdx().x
+        i = CUDA.threadIdx().x
         p[i] = x[i+N]
         return 
 end
