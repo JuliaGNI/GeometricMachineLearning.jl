@@ -6,6 +6,13 @@ think about introducing a lift object containing HD and the lifted element of th
 
 Ω(Y::StiefelManifold, Δ::AbstractMatrix) = SkewSymMatrix((I - .5*Y*Y')*Δ*Y') 
 
+function Ω(U::SymplecticStiefelManifold{T}, Δ::AbstractMatrix{T}) where {T} 
+    J_mat = SymplecticPotential(T, size(U,1)÷2)
+    SymplecticLieAlgMatrix(
+        Δ*inv(U'*U)*U' + J*U*inv(U'U)*Δ'(I + J*U*inv(U'*U)*U'*J)*J
+    )
+end
+
 #this is not very efficient - just used for testing purposes
 function global_rep_test(Y::StiefelManifold, Δ::AbstractMatrix)
     B = Ω(Y, Δ)
@@ -20,18 +27,6 @@ function global_rep_test(Y::StiefelManifold, Δ::AbstractMatrix)
     return (HD, B)
 end
 
-#does the same as the above function - with the difference in the output format!!!! (no overhead!)
-function global_rep_old(Y::StiefelManifold, Δ::AbstractMatrix)
-    B = Ω(Y, Δ)
-    #find complement for global section
-    N, n = size(Y)
-    A = randn(N, N-n)
-    A = A - Y*Y'*A
-    HD = HouseDecom(A)
-    QTB = HD'(B)
-    B = StiefelLieAlgHorMatrix(SkewSymMatrix(Y'*B*Y), QTB*Y, N, n)
-    return (HD, B)
-end
 
 function global_rep(Y::StiefelManifold, Δ::AbstractMatrix)
     B = Ω(Y, Δ)

@@ -33,11 +33,8 @@ mutable struct SkewSymMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
         end
         new{T,typeof(S_vec)}(S_vec, n)
     end
-    #SkewSymMatrix(T<:AbstractFloat, n::Int) = SkewSymMatrix(n, T)
 end 
 
-#somehow ranges (i.e. A[1:n, 1:n]) only work if I specify that i and j are indices!!!
-#implementing getindex automatically defines all matrix multiplications! (but probably not in the most efficient way)
 function Base.getindex(A::SkewSymMatrix, i::Int, j::Int)
     if j == i
         return zero(eltype(A))

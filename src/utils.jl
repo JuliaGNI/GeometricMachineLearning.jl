@@ -59,7 +59,6 @@ function add!(C::AbstractVecOrMat, A::AbstractVecOrMat, B::AbstractVecOrMat)
     C .= A + B
 end
 
-
 struct NothingFunction <: Function end
 (::NothingFunction)(args...) = nothing
 is_NothingFunction(f::Function) = typeof(f)==NothingFunction
@@ -79,3 +78,8 @@ end
 Zygote.OneElement(t1::Tuple{Float64}, t2::Tuple{Int64}, t3::Tuple{Base.OneTo{Int64}}) = Zygote.OneElement(t1[1], t2, t3)
 
 Base.haskey(::Nothing, key::Core.Any) = false
+
+function add!(dx₁::NamedTuple, dx₂::NamedTuple, dx₃::NamedTuple)
+    apply_toNT(dx₁, dx₂, dx₃, add!)
+end
+
