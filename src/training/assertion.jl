@@ -9,7 +9,7 @@ function assert(ti::AbstractTrainingIntegrator, data::AbstractTrainingData)
         type_data(data)
     end
     for key in required_key(ti)
-        @assert (haskey(get_data(data), key) || haskey(get_target(data), key)) "You forgot the key "*string(key)*"!"
+        @assert (_haskey(get_data(data), key) || _haskey(get_target(data), key)) "You forgot the key "*string(key)*"!"
     end
 
 end

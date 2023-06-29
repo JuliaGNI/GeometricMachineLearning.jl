@@ -78,7 +78,8 @@ end
 
 Zygote.OneElement(t1::Tuple{Float64}, t2::Tuple{Int64}, t3::Tuple{Base.OneTo{Int64}}) = Zygote.OneElement(t1[1], t2, t3)
 
-Base.haskey(::Nothing, key::Core.Any) = false
+_haskey(::Nothing, key::Core.Any) = false
+_haskey(a, b) = Base.haskey(a, b)
 
 
 function type_without_brace(var)
