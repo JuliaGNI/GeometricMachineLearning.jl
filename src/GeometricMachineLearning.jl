@@ -1,12 +1,6 @@
 module GeometricMachineLearning
 
-    using Reexport
 
-    include("../../GeometricIntegrators.jl/src/GeometricIntegrators.jl")
-    @reexport using .GeometricIntegrators
-
-    import GeometricEquations: State
-    
 
 
     using BandedMatrices

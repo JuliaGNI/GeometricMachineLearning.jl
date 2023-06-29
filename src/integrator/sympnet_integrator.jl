@@ -32,5 +32,12 @@ function integrate_step!(int::IntegratorSympNet)
 
 end
 
-
 timestep(::NeuralNetMethod ) = 0.1
+
+#=
+function integrate(nn; kwargs...)
+    integrator = Integrator(problem(nn), method(nn); kwargs...)
+    solution = Solution(problem(nn); kwargs...)
+    integrate!(solution, integrator)
+end
+=#
