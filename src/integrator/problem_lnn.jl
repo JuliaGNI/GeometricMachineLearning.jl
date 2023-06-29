@@ -1,6 +1,6 @@
 # This file contains the functions to create the corresponding problem to lnn which is LODEProblem
 
-function LNNProblem(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, g, tspan::Tuple, tstep::Real, ics::NamedTuple; invariants = NullInvariants(), parameters = NullParameters(), periodicity = NullPeriodicity(), v̄ = _lode_default_v̄, f̄ = f)
+function LNNProblem(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, g, tspan::Tuple, tstep::Real, ics::NamedTuple; kwargs...)
     
     Lₛₚₗᵢₜ(q,v) = nn([q...,v...])
 
@@ -24,9 +24,7 @@ function LNNProblem(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, g, tspan::T
     function lagrangian(t, q, v, params)
         Lₛₚₗᵢₜ(q,v)
     end
-    
-    equ = LODE(p, f, g, ω, v̄, f̄, lagrangian, invariants, parameter_types(parameters), periodicity)
-    GeometricProblem(equ, tspan, tstep, ics, parameters)
+    LODEProblem(p, f, g, ω, lagrangian, tspan, tstep, ics; kwargs...)
 end
 
 function LNNProblem(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, tspan::Tuple, tstep::Real, ics::NamedTuple; kwargs...)

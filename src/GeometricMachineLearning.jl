@@ -238,10 +238,9 @@ module GeometricMachineLearning
     include("integrator/problem_lnn.jl")
     
     #INCLUDE INTEGRATOR 
-    export NeuralNetIntegrator
     export NeuralNetMethod
 
-    include("integrator/integrator.jl")
+    include("integrator/abstract_neural_net_method.jl")
 
     #INCLUDE INTEGRATION METHOD
     export  SympNetMethod

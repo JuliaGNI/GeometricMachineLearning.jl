@@ -1,4 +1,5 @@
 
+
 struct SympNetMethod{TN <: LuxNeuralNetwork{<:SympNet}} <: NeuralNetMethod 
     nn::TN
 end
@@ -11,12 +12,13 @@ function method(nn::LuxNeuralNetwork{<:SympNet})
     SympNetMethod(nnₛₚₗᵢₜ)
 end
 
-const IntegratorSympNet{DT,TT} = NeuralNetIntegrator{<:Union{HODEProblem{DT,TT}}, <:SympNetMethod}
+const IntegratorSympNet{DT,TT} = Integrator{<:Union{HODEProblem{DT,TT}}, <:SympNetMethod}
 
 function integrate_step!(int::IntegratorSympNet)
 
     # compute how may times to compose nn ()
-    nb_comp = tstep(problem(int))÷timestep(method(int))
+    @assert tstep(problem(int)) % timestep(method(int)) == 0 
+    nb_comp = tstep(problem(int)) ÷ timestep(method(int))
 
     _q = solstep(int).q
     _p = solstep(int).p
