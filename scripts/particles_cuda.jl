@@ -76,19 +76,18 @@ function loss_random(Z, ps_all, st_all)
     loss(z, ps_all, st_all)
 end
 
-loss_minibatch(Z, ps_all, st_all, batch_size=10) = mapreduce(i -> loss_random(Z, ps_all, st_all), +, 1:batch_size)
+loss_minibatch(Z, ps_all, st_all, batch_size=10) = mapreduce(i -> loss_random(Z, ps_all, st_all), +, 1:batch_size)/batch_size
 
-loss_total(Z, ps_all, st_all) = mapreduce(i -> loss(Z[i], ps_all, st_all), +, 1:time_steps)
+loss_total(Z, ps_all, st_all) = mapreduce(i -> loss(Z[i], ps_all, st_all), +, 1:length(Z))/length(Z)
 
-function loss_total(ps_all, st_all)
-    loss_total = 0
-    for i in 1:time_steps
-        for j in 1:par
-            loss_total += loss(hcat(X[:, :, i, j], V[:, :, i, j])', ps_all, st_all)
-        end
-    end
-    loss_total / norm_fac
+#=
+z_temp = Z[1]
+function kernel(x)
+    x[threadIdx().x] = loss(z_temp, ps_all, st_all)
+    return 
 end
+=#
+
 
 #optim = StandardOptimizer(1e-3)
 optim = AdamOptimizer()
