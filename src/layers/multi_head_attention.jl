@@ -63,12 +63,12 @@ function Lux.initialparameters(rng::AbstractRNG, d::MultiHeadAttention{true})
     (PQ=PQ, PK=PK, PV=PV)
 end
 
-function Lux.apply(d::MultiHeadAttention, x::AbstractVecOrMat, ps::NamedTuple, st::NamedTuple)
+function Lux.apply(d::MultiHeadAttention, x::AbstractVecOrMat{T}, ps::NamedTuple, st::NamedTuple) where T
     Dₕ = d.dim ÷ d.n_heads
     dim, input_length = size(x)
     @assert dim == d.dim
 
-    output = zeros(0, input_length)
+    output = zeros(T, 0, input_length) #|> Lux.gpu
     for i in 1:d.n_heads
         key = Symbol("head_"*string(i))
         output = vcat(output, ps.PV[key]'*x*Lux.softmax((ps.PQ[key]'*x)'*(ps.PK[key]'*x)))

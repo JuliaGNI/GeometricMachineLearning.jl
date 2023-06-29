@@ -20,6 +20,7 @@ Returns a symplectic matrix of size 2n x 2n
 Returns the symplectic projection matrix E of the Stiefel manifold, i.e. π: Sp(2N) → Sp(2n,2N), A ↦ AE
 
 """
+#=
 function SymplecticMatrix(n::Int, T::DataType=Float64)
     BandedMatrix((n => ones(T,n), -n => -ones(T,n)), (2n,2n))
 end
@@ -36,6 +37,16 @@ I & 0 \\
 \end{pmatrix}
 ```
 """
+=#
+
+function SymplecticPotential(n::Int, T::DataType=Float64)
+    J = zeros(T, 2*n, 2*n)
+    J[1:n, (n+1):2*n] = one(ones(T, n, n))
+    J[(n+1):2*n, 1:n] = -one(ones(T, n, n))
+    J
+end
+
+SymplecticPotential(T::DataType, n::Int) = SymplecticPotential(n, T)
 
 struct SymplecticProjection{T} <: AbstractMatrix{T}
     N::Int

@@ -59,7 +59,6 @@ function add!(C::AbstractVecOrMat, A::AbstractVecOrMat, B::AbstractVecOrMat)
     C .= A + B
 end
 
-
 struct NothingFunction <: Function end
 (::NothingFunction)(args...) = nothing
 is_NothingFunction(f::Function) = typeof(f)==NothingFunction
@@ -86,3 +85,10 @@ function type_without_brace(var)
     type_str = string(typeof(var))
     replace(type_str, r"\{.*\}"=>"")
 end
+
+
+function add!(dx₁::NamedTuple, dx₂::NamedTuple, dx₃::NamedTuple)
+    apply_toNT(dx₁, dx₂, dx₃, add!)
+end
+
+

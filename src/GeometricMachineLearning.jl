@@ -51,28 +51,25 @@ module GeometricMachineLearning
     include("arrays/block_identity_upper.jl")
     include("arrays/symmetric.jl")
     include("arrays/symplectic.jl")
-    include("arrays/symplectic_lie_alg.jl")
-    include("arrays/sympl_lie_alg_hor.jl")
-    include("arrays/skew_sym.jl")
-    include("arrays/stiefel_lie_alg_hor.jl")
+    include("arrays/symplectic_lie_algebra.jl")
+    include("arrays/symplectic_lie_algebra_horizontal.jl")
+    include("arrays/skew_symmetric.jl")
+    include("arrays/stiefel_lie_algebra_horizontal.jl")
+    include("arrays/grassmann_lie_algebra_horizontal.jl")
     include("arrays/auxiliary.jl")
 
-    export retraction
-    export GlobalSection
-    export global_rep
+    export SymmetricMatrix, SymplecticPotential, SkewSymMatrix
+    export StiefelLieAlgHorMatrix
+    export SymplecticLieAlgMatrix, SymplecticLieAlgHorMatrix
+    export GrassmannLieAlgHorMatrix
+    export StiefelProjection, SymplecticProjection
+
+    include("orthogonalization_procedures/symplectic_householder.jl")
+
+    #symplectic Householder routine 
+    export sr, sr!
 
 
-    #INCLUDE MANIFOLDS
-    include("manifolds/abstract_manifold.jl")
-    include("manifolds/stiefel_manifold.jl")
-    include("manifolds/symplectic_manifold.jl")
-
-    export Manifold
-    export StiefelManifold
-    export SymplecticStiefelManifold
-    
-    #INCLUDE LAYERS
-    #include("layers/symplectic_stiefel_layer.jl")
     export AbstractLayer
     export FeedForwardLayer, LinearFeedForwardLayer
     export Gradient
@@ -80,12 +77,15 @@ module GeometricMachineLearning
     export ResidualLayer
     export LinearSymplecticLayerP, LinearSymplecticLayerQ
     export SymplecticStiefelLayer
-    export StiefelLayer, ManifoldLayer
-    
-    export MultiHeadAttention
-    export Transformer
-    export AbstractNeuralNetwork
-    export retraction
+
+    include("manifolds/abstract_manifold.jl")
+    include("manifolds/stiefel_manifold.jl")
+    include("manifolds/symplectic_stiefel_manifold.jl")
+    include("manifolds/grassmann_manifold.jl")
+
+    export StiefelManifold, SymplecticStiefelManifold, GrassmannManifold, Manifold
+    export rgrad, metric
+
 
     include("layers/abstract_layer.jl")
     include("layers/feed_forward_layer.jl")
@@ -95,9 +95,18 @@ module GeometricMachineLearning
     include("layers/linear_symplectic_layer.jl")
     include("layers/manifold_layer.jl")
     include("layers/stiefel_layer.jl")
+    include("layers/grassmann_layer.jl")
     include("layers/multi_head_attention.jl")
     include("layers/transformer.jl")
+    include("layers/psd_like_layer.jl")
 
+
+    #include("layers/symplectic_stiefel_layer.jl")
+    export StiefelLayer, GrassmannLayer, ManifoldLayer
+    export PSDLayer
+    export MultiHeadAttention
+    export Transformer
+    export AbstractNeuralNetwork
 
     #INCLUDE OPTIMIZERS
     export AbstractMethodOptimiser, AbstractCache
@@ -105,7 +114,7 @@ module GeometricMachineLearning
     export MomentumOptimizer, MomentumCache
     export AdamOptimizer, AdamCache
 
-    export Optimiser
+    export Optimizer
     export optimization_step!
     export init_optimizer_cache
 
