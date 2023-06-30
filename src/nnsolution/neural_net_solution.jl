@@ -2,41 +2,23 @@ using GeometricIntegrators
 
 struct UnknownProblem <: AbstractProblem end
 
-struct SingleHistory{TP <: TrainingParameters, TD}
-    parameters::TP
-    datashape::TD
-    size_data::Int
-    loss::TL
+#=
+    NeuralNetSolution structure is designed to store the results of a training on a neural network. It includes :
+        - nn: the AbstractNeuralNetwork trained,
+        - problem: the AbstractProblem on which was trained the AbstractNeuralNetwork if it is known (else it is UnknownProblem),
+        - tstep: the time step of between consecutive data points if there is one (nothing else),
+        - loss: a vector containing the loss during the training,
+        - history: an History which contains the last training on the AbstractNeuralNetwork.
 
-    SingleHistory(parameters, datashape, size_data, loss) = new{typeof{parameters}, typeof{datashape}, typeof(loss)}(parameters, datashape, size_data, loss)
-end
+    A NeuralNetSolution can so be put as argument of train! to perform a new training on the AbstractNeuralNetwork.
+=#
 
-mutable struct History
-    data::NamedTuple
-    size::Int
-    last::SingleHistory
-
-    function History(sg::SingleHistory)
-        history = NamedTuple{(Symbol("training_"*string(size_history)),)}(sg)
-        new(history, 1, sg)
-    end
-end
-
-size_history(history) = history.size
-last(history) = history.last 
-
-function _add(history::History, sg::SingleHistory)
-    history.size += 1 
-    history.last = sg
-    history.data = merge(history.data, NamedTuple{(Symbol("training_"*string(size_history)),)}(sg))
-end
-
-struct NeuralNetSolution{TNN <: AbstractNeuralNetwork, TP <: AbstractProblem, TL}
+struct NeuralNetSolution{TNN <: AbstractNeuralNetwork, TP <: AbstractProblem, Tstep <: Union{Nothing, real}, TL}
     nn::TNN
     problem::TP
-    tstep::Real
+    tstep::Tstep
     loss::TL
-    history::NamedTuple
+    history::History
 
     function NeuralNetSolution(nn::AbstractNeuralNetwork, loss::Real, sh::SingleHistory, problem::GeometricProblem = UnknownProblem, tstep::Real = isUnknown(problem) ? nothing : tstep(problem))
         new{typeof(nn), typeof(problem), typeof(loss)}(nn, problem, loss, tstep, History(sh))
@@ -49,7 +31,6 @@ end
 
 update_history(nns::NeuralNetSolution, sg::SingleHistory) = _add(nns.history, sg)
 
-
 @inline nn(nns::NeuralNetSolution) = nns.nn
 @inline problem(nns::NeuralNetSolution) = nns.problem
 @inline tstep(nns::NeuralNetSolution) = nns.tstep
@@ -57,13 +38,4 @@ update_history(nns::NeuralNetSolution, sg::SingleHistory) = _add(nns.history, sg
 @inline history(nns::NeuralNetSolution) = nns.history.data
 @inline size_history(nns::NeuralNetSolution) = nns.history.size
 
-
-
-
-
-
-problem(::AbstractTrainingData) = UnknownProblem
-tstep(::AbstractTrainingData) = nothing
-shape(::AbstractTrainingData) = nothing
-size(::AbstractTrainingData) = 0
-
+set_sizemax_history(nns::NeuralNetSolution, sizemax::Int) = _set_sizemax_history(nns.history, sizemax)

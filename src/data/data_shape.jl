@@ -1,7 +1,12 @@
+
 abstract type AbstractDataShape end
 
-struct SampledData <: AbstractDataShape end
+"""
+    struct TrajectoryData
 
+cool
+
+"""
 struct TrajectoryData <:  AbstractDataShape
     Δt::Union{Real,Nothing}
     nb_trajectory::Int
@@ -23,7 +28,7 @@ struct TrajectoryData <:  AbstractDataShape
        
         new(Δt, nb_trajectory, length_trajectory)
     end
-end
+end #
 
 
 struct SampledData <:  AbstractDataShape
@@ -39,3 +44,16 @@ struct SampledData <:  AbstractDataShape
         new(nb_point)
     end
 end
+
+@inline get_Δt(::AbstractDataShape) = nothing
+@inline get_nb_trajectory(::AbstractDataShape) = nothing 
+@inline get_nb_point(::AbstractDataShape) = nothing
+@inline get_length_trajectory(::AbstractDataShape, args...) = nothing
+@inline get_data(::AbstractDataShape, args...) = nothing
+
+@inline get_Δt(data::TrajectoryData) = data.Δt
+@inline get_nb_trajectory(data::TrajectoryData) = data.nb_trajectory
+@inline get_length_trajectory(data::TrajectoryData, i::Int) = data.length_trajectory[i]
+
+
+@inline get_nb_point(data::SampledData) = data.get_nb_point()

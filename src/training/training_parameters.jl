@@ -1,8 +1,9 @@
-#= TrainingParameters brings together all the parameters required for training, which are :
-   - nruns: number of iterations for training
-   - method: the training integrator used in the loss function
-   - mopt: the method of optimization
-   - bs: the size of the subset of data used at each stage and chosen at random to calculate the loss.
+#= 
+    TrainingParameters brings together all the parameters required for training, which are :
+        - nruns: number of iterations for training,
+        - method: the training integrator used in the loss function,
+        - mopt: the method of optimization,
+        - bs: the size of the subset of data used at each stage and chosen at random to calculate the loss.
 =#
 
 struct TrainingParameters{TM, TO, Tbatch}

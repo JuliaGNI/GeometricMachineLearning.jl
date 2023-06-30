@@ -1,4 +1,9 @@
-
+#=
+    SingleTrainingSet gathers all information ready for a train. It contains
+        - nn : an AbstractNeuralNetwork
+        - tp : a TrainingParameters
+        - data : an AbstractTrainingData
+=#
 
 struct SingleTrainingSet{TN <: AbstractNeuralNetwork, TP<:TrainingParameters , TD<: AbstractTrainingData}
     nn::TN

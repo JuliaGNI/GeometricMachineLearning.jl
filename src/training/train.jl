@@ -1,12 +1,32 @@
-
 const DEFAULT_NRUNS = 1000
 
-#loss gradient
+# The loss gradient function working for all types of arguments
 loss_gradient(nn::LuxNeuralNetwork{<:AbstractArchitecture}, ti::AbstractTrainingIntegrator, data, index_batch, params = nn.params) = Zygote.gradient(p -> loss(ti, nn, data, index_batch, p), params)[1]
 
+####################################################################################
+## Training on (LuxNeuralNetwork, AbstractTrainingData, AbstractMethodOptimiser, TrainingIntegrator, nruns, batch_size )
+####################################################################################
 
-#train function
-function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, m::AbstractMethodOptimiser, data::AbstractTrainingData; ntraining = DEFAULT_NRUNS, ti::TrainingIntegrator{<:AbstractTrainingIntegrator} = default_integrator(nn, data), batch_size_t = default_index_batch(data,type(ti)), showprogress::Bool = false)
+"""
+    train!(...)
+
+Perform a training of a neural networks on data using given method a training integrator
+
+Different ways of use:
+
+    train!(neuralnetwork, data, optimizer = GradientOptimizer(1e-2), training_method; nruns = 1000, batch_size = default(data, type), showprogress = false )
+
+# Arguments
+- `neuralnetwork::LuxNeuralNetwork` : the neural net work using LuxBackend
+- `data` : the data (see [`TrainingData`](@ref))
+- `optimizer = GradientOptimizer`: the optimization method (see [`Optimizer`](@ref))
+- `training_method` : specify the loss function used 
+- `nruns` : number of iteration through the process with default value 
+- `batch_size` : size of batch of data used for each step
+
+
+"""
+function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, data::AbstractTrainingData, m::AbstractMethodOptimiser, ti::TrainingIntegrator{<:AbstractTrainingIntegrator} = default_integrator(nn, data); ntraining = DEFAULT_NRUNS, batch_size_t = default_index_batch(data,type(ti)), showprogress::Bool = false)
     
     #verify that shape of data depending of the ExactIntegrator
     assert(type(ti), data)
@@ -39,10 +59,24 @@ function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, m::AbstractMethodO
     return total_loss
 end
 
+####################################################################################
+## Training on (LuxNeuralNetwork, AbstractTrainingData, TrainingParameters)
+####################################################################################
 
+"""
+```julia
+train!(neuralnetwork, data, optimizer, training_method; nruns = 1000, batch_size, showprogress = false )
+```
+
+# Arguments
+- `neuralnetwork::LuxNeuralNetwork` : the neural net work using LuxBackend
+- `data::AbstractTrainingData` : the data
+- ``
+
+"""
 function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, data::AbstractTrainingData, tp::TrainingParameters; showprogress::Bool = false)
 
-    total_loss = train!(nn, opt(tp), data; ntraining = nruns(tp), ti = method(tp), batch_size_t = batch_size(tp), showprogress = showprogress)
+    total_loss = train!(nn, data, opt(tp), method(tp); ntraining = nruns(tp), batch_size_t = batch_size(tp), showprogress = showprogress)
 
     sh = SingleHistory(tp, shape(data), size(data), total_loss)
     
@@ -50,13 +84,26 @@ function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, data::AbstractTrai
 
 end
 
+####################################################################################
+## Training on a SingleTrainingSet structure
+####################################################################################
 
-function train!(nns::NeuralNetSolution, data::AbstractTrainingData, tp::TrainingParameters; showprogress::Bool = false)
+function train!(sts::SingleTrainingSet; kwarsg...)
+
+    train!(nn(sts), data(sts), parameters(sts); kwarsg...)
+
+end
+
+####################################################################################
+## Training on a NeuralNetSolution with AbstractTrainingData and TrainingParameters
+####################################################################################
+
+function train!(nns::NeuralNetSolution, data::AbstractTrainingData, tp::TrainingParameters; kwarsg...)
 
     @assert tstep(data) == tstep(nns) || tstep(nns) == nothing || tstep(data) == nothing
     @assert problem(data) == problem(nns) || problem(nns) == nothing || problem(data) == nothing
     
-    total_loss = train!(nn(nns), opt(tp), data; ntraining = nruns(tp), ti = method(tp), batch_size_t = batch_size(tp), showprogress = showprogress)
+    total_loss = train!(nn(nns), data, opt(tp), method(tp); ntraining = nruns(tp), batch_size_t = batch_size(tp), showprogress = showprogress)
 
     sh = SingleHistory(tp, shape(data), size(data), total_loss)
 
@@ -66,6 +113,13 @@ function train!(nns::NeuralNetSolution, data::AbstractTrainingData, tp::Training
 
 end
 
+function train!(nns::NeuralNetSolution, sts::SingleTrainingSet; kwarsg...)
+
+    @assert nn(sts) == nn(nns)
+    
+    train!(nns::NeuralNetSolution, data(sts), parameters(sts); kwarsg...)
+
+end
 
 
 
