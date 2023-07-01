@@ -40,28 +40,29 @@ function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, m::AbstractMethodO
 end
 
 
-pretransform(::AbstractTrainingIntegrator, params::NamedTuple) = params, nothing
+function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, data::AbstractTrainingData, tp::TrainingParameters; showprogress::Bool = false)
 
-posttransform(::AbstractTrainingIntegrator, params,  args...) = params
+    total_loss = train!(nn, opt(tp), data; ntraining = nruns(tp), ti = method(tp), batch_size_t = batch_size(tp), showprogress = showprogress)
 
+    sh = SingleHistory(tp, shape(data), size(data), total_loss)
+    
+    NeuralNetSolution(nn, total_loss, sh, problem(data), tstep(data))
 
-TuppleNeededTrainingIntegrator = Union{HnnTrainingIntegrator, LnnTrainingIntegrator}
-
-function pretransform(::TuppleNeededTrainingIntegrator, params::NamedTuple)
-
-    # convert parameters to tuple
-    params_tuple = Tuple([Tuple(x) for x in params])
-
-    keys_1 = keys(params)
-    keys_2 = [keys(x) for x in values(params)]
-
-    params_tuple, (keys_1, keys_2)
 end
 
 
-function posttransform(::HnnTrainingIntegrator, params_grad::Tuple, keys)
+function train!(nns::NeuralNetSolution, data::AbstractTrainingData, tp::TrainingParameters; showprogress::Bool = false)
 
-    NamedTuple(zip(keys[1],[NamedTuple(zip(k,x)) for (k,x) in zip(keys[2],params_grad)]))
+    @assert tstep(data) == tstep(nns) || tstep(nns) == nothing || tstep(data) == nothing
+    @assert problem(data) == problem(nns) || problem(nns) == nothing || problem(data) == nothing
+    
+    total_loss = train!(nn(nns), opt(tp), data; ntraining = nruns(tp), ti = method(tp), batch_size_t = batch_size(tp), showprogress = showprogress)
+
+    sh = SingleHistory(tp, shape(data), size(data), total_loss)
+
+    new_history = _update(nns(history), sh)
+    
+    NeuralNetSolution(nn(nns), total_loss, new_history, problem(nns), tstep(nns))
 
 end
 
