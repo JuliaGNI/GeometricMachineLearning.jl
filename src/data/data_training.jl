@@ -1,118 +1,50 @@
 abstract type AbstractTrainingData end
 
 
-# Data structure 
+struct TrainingData{TK <: AbstractGiven, TS <: AbstractDataShape, TP <: AbstractProblem, TG <: NamedTuple, TN <: Base.Callable} <: AbstractTrainingData 
+    problem::TP
+    shape::TS
+    get::TG
+    symbols::TK
+    dim::Int
+    noisemaker::TN
 
-struct DataTrajectory <:  AbstractTrainingData
-    get_Δt::Base.Callable
-    get_nb_trajectory::Base.Callable
-    get_length_trajectory::Base.Callable
-    get_data::Dict{Symbol, <:Base.Callable}
-    
-    function DataTrajectory(Data, _get_nb_trajectory::Base.Callable, _get_length_trajectory::Base.Callable,  _get_data::Dict{Symbol, <:Base.Callable}, _get_Δt::Base.Callable = NothingBase.Callable())
-        get_Δt() = _get_Δt(Data)
-        get_nb_trajectory() = _get_nb_trajectory(Data)
-        get_length_trajectory(i) = _get_length_trajectory(Data, i)
-        get_data = Dict([(key, (i,n)->value(Data,i,n)) for (key,value) in _get_data])
-        new(get_Δt, get_nb_trajectory, get_length_trajectory, get_data)
+    function TrainingData(problem::AbstractProblem, shape::AbstractDataShape, get::NamedTuple, symbols::AbstractGiven, dim::Int, noisemaker::Base.Callable)
+        new{typeof(symbols),typeof(shape), typeof(problem), typeof(get), typeof(noisemaker)}(problem, shape, get, symbols, dim, noisemaker)
     end
 
-    function DataTrajectory(Data, _get_data::Dict{Symbol, <:Base.Callable})
+end
+
+function TrainingData(data, _get_data::Dict{Symbol, <:Base.Callable}, problem = UnknownProblem; noisemaker =  NothingFunction)
         
-        @assert haskey(_get_data, :Δt)
-        @assert haskey(_get_data, :nb_trajectory)
-        @assert haskey(_get_data, :length_trajectory)
+    @assert haskey(_get_data, :shape)
+    shape = _get_data[:shape](data, _get_data)
 
-        get_Δt() = _get_data[:Δt](Data)
-        get_nb_trajectory() = _get_data[:nb_trajectory](Data)
-        get_length_trajectory(i) = _get_data[:length_trajectory](Data, i)
-       
-        get_data = Dict([(key, (i,n)->value(Data,i,n)) for (key,value) in _get_data])
+    delete!(_get_data, :shape)
 
-        delete!(get_data, :Δt)
-        delete!(get_data, :nb_trajectory)
-        delete!(get_data, :length_trajectory)
+    get = NamedTuple([(key, (args...)->value(Data,args...)) for (key,value) in _get_data])
 
-        new(get_Δt, get_nb_trajectory, get_length_trajectory, get_data)
-    end
-end
-
-
-struct DataSampled <:  AbstractTrainingData
-    get_nb_point::Base.Callable
-    get_data::Dict{Symbol, <:Base.Callable}
-
-    function DataSampled(Data, _get_nb_point::Base.Callable, _get_data::Dict{Symbol, <:Base.Callable})
-        get_nb_point() = _get_nb_point(Data)
-        get_data = Dict([(key, (i,n)->value(Data,i,n)) for (key,value) in _get_data])
-        new(get_nb_point, get_data)
-    end
+    symbols = DataSymbol(Tuple(keys(get)))
     
-    function DataSampled(Data, _get_data::Dict{Symbol, <:Base.Callable})
-            
-        @assert haskey(_get_data, :nb_points)
-        get_nb_point() = _get_data[:nb_points](Data)
+    dim = length(get[Tuple(keys(get))[1]])
 
-        get_data = Dict([(key, n->value(Data,n)) for (key,value) in _get_data])
-        
-        delete!(get_data, :nb_points)
+    TrainingData(problem, shape, get, symbols, dim, noisemaker)
+end
 
-        new(get_nb_point, get_data)
-    end
+function TrainingData(data::TrainingData; noisemaker =  NothingFunction)
+    is_NothingFunction(noisemaker) ? data :  TrainingData(problem(data), shape(data), get(data), symbols(data), dim(data), noisemaker)
 end
 
 
-struct DataTarget{T<: AbstractTrainingData} <:  AbstractTrainingData
-    data::T
-    get_target::Dict{Symbol, <:Base.Callable}
+@inline problem(data::TrainingData) = data.problem
+@inline shape(data::TrainingData) = data.shape
+@inline get(data::TrainingData) = data.get
+@inline symbols(data::TrainingData) = data.keys
+@inline dim(data::TrainingData) = data.dim
+@inline noisemaker(data::TrainingData) = data.noisemaker
 
-    function DataTarget(data::DataTrajectory, Target, _get_target::Dict{Symbol, <:Base.Callable})
-        get_target = Dict([(key, (i,n)->value(Target,i,n)) for (key,value) in _get_target])
-        new{typeof(data)}(data, get_target)
-    end
-    
-    function DataTarget(data::DataSampled, Target, _get_target::Dict{Symbol, <:Base.Callable})
-        get_target = Dict([(key, n->value(Target,n)) for (key,value) in _get_target])
-        new{typeof(data)}(data, get_target)
-    end
-end
+@inline get_Δt(data::TrainingData) = get_Δt(data.shape)
+@inline get_nb_trajectory(data::TrainingData) = get_nb_trajectory(data.shape)
+@inline get_length_trajectory(data::TrainingData, i::Int) = get_length_trajectory(data.shape, i)
+@inline get_data(data::TrainingData, s::Symbol, args) = data.get[s](args...)
 
-
-# Useful function
-get_Δt(::AbstractTrainingData) = nothing
-get_nb_trajectory(::AbstractTrainingData) = nothing 
-get_nb_point(::AbstractTrainingData) = nothing
-get_length_trajectory(::AbstractTrainingData, args...) = nothing
-get_data(::AbstractTrainingData, args...) = nothing
-get_target(::AbstractTrainingData, args...) = nothing
-
-get_Δt(data::DataTrajectory) = data.get_Δt()
-get_nb_trajectory(data::DataTrajectory) = data.get_nb_trajectory()
-get_length_trajectory(data::DataTrajectory, i::Int) = data.get_length_trajectory(i)
-get_data(data::DataTrajectory, s::Symbol, i::Int, n::Int) = data.get_data[s](i,n)
-get_data(data::DataTrajectory) = data.get_data
-
-get_nb_point(data::DataSampled) = data.get_nb_point()
-get_data(data::DataSampled, s::Symbol, n::Int) = data.get_data[s](n)
-get_data(data::DataSampled) = data.get_data
-
-get_Δt(data::DataTarget) = get_Δt(data.data)
-get_nb_trajectory(data::DataTarget) = get_nb_trajectory(data.data)
-get_nb_point(data::DataTarget) = get_nb_point(data.data)
-get_length_trajectory(data::DataTarget, i::Int) = get_length_trajectory(data.data, i)
-get_data(data::DataTarget, s::Symbol, args...) = get_data(data.data, s, args...)
-get_target(data::DataTarget, s::Symbol, args...) = data.get_target[s](args...)
-get_data(data::DataTarget) = get_data(data.data)
-get_target(data::DataTarget) = data.get_target
-
-
-
-# Some assertion Base.Callables to check the type of input data (second argument) against the type of data required (first argument)
-test_data_trajectory(::Union{DataSampled, DataTarget{DataSampled}}) = @assert false "Require DataTrajectory!"
-test_data_trajectory(::DataTarget{DataTrajectory}) = @warn "Targets are not required!"
-test_data_sampled(::DataTarget) = @warn "Targets are not required!"
-test_data_target(::Union{DataTrajectory, DataSampled}) = @assert false "Required targets for data!"
-
-test_data_trajectory(::AbstractTrainingData) = nothing
-test_data_sampled(::AbstractTrainingData) = nothing
-test_data_target(::AbstractTrainingData) = nothing

@@ -1,12 +1,20 @@
+#=
+    AbstractDataShape contains the shape of data which can be :
+        - a TrajectoryData,
+        - a SampledData.
+    This structure is helful to know how are organised the data.
+=#
 
 abstract type AbstractDataShape end
 
-"""
-    struct TrajectoryData
+#=
+    TrajectoryData is a shape of data which represents severals trajectories, i.e a set of sequences of point separated by a timestep. 
+    It contains
+        - Δt : the time step,
+        - nb_trajectory : the number of trajectory,
+        - length_trajectory : an array which contains the length of each trajectories.
+=#
 
-cool
-
-"""
 struct TrajectoryData <:  AbstractDataShape
     Δt::Union{Real,Nothing}
     nb_trajectory::Int
@@ -28,11 +36,16 @@ struct TrajectoryData <:  AbstractDataShape
        
         new(Δt, nb_trajectory, length_trajectory)
     end
-end #
+end
 
+#=
+   SampledData is a shape of data which represents data without any kind of link between them. 
+    It contains just
+        - nb_point : the size of data.
+=#
 
 struct SampledData <:  AbstractDataShape
-    get_nb_point::Base.Callable
+    nb_point::Int
   
     function SampledData(Data, _get_data::Dict{Symbol, <:Base.Callable})
             
@@ -54,6 +67,5 @@ end
 @inline get_Δt(data::TrajectoryData) = data.Δt
 @inline get_nb_trajectory(data::TrajectoryData) = data.nb_trajectory
 @inline get_length_trajectory(data::TrajectoryData, i::Int) = data.length_trajectory[i]
-
 
 @inline get_nb_point(data::SampledData) = data.get_nb_point()
