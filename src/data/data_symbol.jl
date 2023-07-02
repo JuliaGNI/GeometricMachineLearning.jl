@@ -27,8 +27,12 @@ function reduce(::DataSymbol{T}, s₂::DataSymbol{M}) where {T<:AbstractDataSymb
     T <: M ? s₂ : @error "Impossible to reduce "*string(T)*" in "*string(M)*" !"
 end
 
+#=
+   DataSymbol(keys; kwargs...) give a DataSymbol{T} where T is the smaler (in sens of <:) type of AbstractDataSymbol
+   the symbols of which are includes in keys.
+=#
 
-function DataSymbol(keys::NamedTuple; symbol = DataSymbol{AbstractDataSymbol}())
+function DataSymbol(keys::Tuple; symbol = DataSymbol{AbstractDataSymbol}())
     for subtype in subtypes(type(symbol))
         if data_symbol(DataSymbol{subtype}()) == keys
             return DataSymbol{subtype}

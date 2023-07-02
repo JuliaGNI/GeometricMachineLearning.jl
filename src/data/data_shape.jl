@@ -69,3 +69,6 @@ end
 @inline get_length_trajectory(data::TrajectoryData, i::Int) = data.length_trajectory[i]
 
 @inline get_nb_point(data::SampledData) = data.get_nb_point()
+
+@inline next(i,j) = (i,j+1)
+@inline next(i) = (i+1,)

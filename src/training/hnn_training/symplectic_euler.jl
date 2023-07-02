@@ -20,8 +20,8 @@ function loss_single(::SymplecticEulerB, nn::LuxNeuralNetwork{<:HamiltonianNeura
 end
 
 
-loss(ti::SymplecticEuler, nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, data::DataTrajectory, index_batch = get_batch(data), params = nn.params) = 
-mapreduce(x->loss_single(Zygote.ignore(ti), nn, get_data(data,:q,x[1],x[2]), get_data(data,:q,x[1],x[2]+1), get_data(data,:p, x[1],x[2]), get_data(data,:p,x[1],x[2]+1), get_Δt(data), params),+, index_batch)
+loss(ti::SymplecticEuler, nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, data::TrainingData{DataSymbol{<:PhaseSpaceSymbol}}, index_batch = get_batch(data), params = nn.params) = 
+mapreduce((args...)->loss_single(Zygote.ignore(ti), nn, get_data(data,:q, args...), get_data(data,:q, next(args...)...), get_data(data,:p, args...), get_data(data,:p,next(args...)), get_Δt(data), params),+, index_batch)
 
 data_goal(::SymplecticEuler) = (test_data_trajectory,)
 

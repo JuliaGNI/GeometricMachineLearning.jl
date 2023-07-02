@@ -1,7 +1,7 @@
 const DEFAULT_NRUNS = 1000
 
 # The loss gradient function working for all types of arguments
-loss_gradient(nn::LuxNeuralNetwork{<:AbstractArchitecture}, ti::AbstractTrainingIntegrator, data, index_batch, params = nn.params) = Zygote.gradient(p -> loss(ti, nn, data, index_batch, p), params)[1]
+loss_gradient(nn::LuxNeuralNetwork{<:AbstractArchitecture}, ti::AbstractTrainingIntegrator, data::AbstractTrainingData, index_batch, params = nn.params) = Zygote.gradient(p -> loss(ti, nn, data, index_batch, p), params)[1]
 
 ####################################################################################
 ## Training on (LuxNeuralNetwork, AbstractTrainingData, AbstractMethodOptimiser, TrainingIntegrator, nruns, batch_size )

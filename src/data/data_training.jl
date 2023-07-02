@@ -1,7 +1,7 @@
 abstract type AbstractTrainingData end
 
 
-struct TrainingData{TK <: AbstractGiven, TS <: AbstractDataShape, TP <: AbstractProblem, TG <: NamedTuple, TN <: Base.Callable} <: AbstractTrainingData 
+struct TrainingData{TK <: DataSymbol, TS <: AbstractDataShape, TP <: AbstractProblem, TG <: NamedTuple, TN <: Base.Callable} <: AbstractTrainingData 
     problem::TP
     shape::TS
     get::TG
@@ -9,7 +9,7 @@ struct TrainingData{TK <: AbstractGiven, TS <: AbstractDataShape, TP <: Abstract
     dim::Int
     noisemaker::TN
 
-    function TrainingData(problem::AbstractProblem, shape::AbstractDataShape, get::NamedTuple, symbols::AbstractGiven, dim::Int, noisemaker::Base.Callable)
+    function TrainingData(problem::AbstractProblem, shape::AbstractDataShape, get::NamedTuple, symbols::DataSymbol, dim::Int, noisemaker::Base.Callable)
         new{typeof(symbols),typeof(shape), typeof(problem), typeof(get), typeof(noisemaker)}(problem, shape, get, symbols, dim, noisemaker)
     end
 

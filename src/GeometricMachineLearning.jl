@@ -1,8 +1,5 @@
 module GeometricMachineLearning
 
-
-
-
     using BandedMatrices
     using Distances
     using LinearAlgebra
@@ -25,7 +22,6 @@ module GeometricMachineLearning
 
     #are these needed?
     include("gradient.jl")
-    include("training.jl")
     include("utils.jl")
 
     #+ operation has been overloaded to work with NamedTuples!
@@ -144,11 +140,26 @@ module GeometricMachineLearning
     include("training/abstract_training_integrator.jl")
 
     #INCLUDE DATA TRAINING STRUCTURE
+    export AbstractDataShape, TrajectoryData, SampledData
+    export get_length_trajectory, get_Δt, get_nb_point, get_nb_trajectory, get_data
+
+    include("data/data_shape.jl")
+
+    export AbstractDataSymbol
+    export PositionSymbol, PhaseSpaceSymbol, DerivativePhaseSpaceSymbol, PosVeloAccSymbol, PosVeloSymbol
+    export DataSymbol
+    export reduce, type, data_symbol
+
+    include("data/data_symbol.jl")
+
     export AbstractTrainingData
-    export DataTrajectory, DataSampled, DataTarget
-    export get_length_trajectory, get_Δt, get_nb_point, get_nb_trajectory, get_data, get_target
-    
+    export TrainingData
+    export problem, shape, get, symbols, dim, noisemaker
+
     include("data/data_training.jl")
+
+    export get_batch
+    
     include("data/batch.jl")
 
 
@@ -163,16 +174,6 @@ module GeometricMachineLearning
 
     # set default backend in NeuralNetwork constructor
     NeuralNetwork(arch::AbstractArchitecture; kwargs...) = NeuralNetwork(arch, LuxBackend(); kwargs...)
-
-    
-    export Hnn_training_integrator
-    export Lnn_training_integrator
-    export SEuler
-    export ExactIntegrator
-    export ExactIntegratorLNN
-    export VariationalMidPointLNN
-    export SympNetIntegrator
-    export BaseIntegrator
 
     #INCLUDE ARCHITECTURES
     export HamiltonianNeuralNetwork
@@ -192,7 +193,35 @@ module GeometricMachineLearning
     include("architectures/variable_width_network.jl")
     include("architectures/sympnet.jl")
 
+
+    #INCLUDE TRAINING parameters
+
+    export TrainingParameters
+
+    include("training/training_parameters.jl")
+
+    #INCLUDE NEURALNET SOLUTION
+
+    export SingleHistory, History
+    export size, last, sizemax
+
+    include("nnsolution/history.jl")
+
+    export NeuralNetSolution
+    export nn, problem, tstep, loss, history, size_history
+    export set_sizemax_history
+    
+    include("nnsolution/neural_net_solution.jl")
+
+
     #INCLUDE TRAINING integrator
+
+    export SingleTrainingSet
+
+    include("training/training_set.jl")
+
+    include("training/nn_parameters_transformation.jl")
+
     export loss_gradient
     export train!
 
