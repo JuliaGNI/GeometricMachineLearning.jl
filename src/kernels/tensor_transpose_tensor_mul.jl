@@ -16,7 +16,7 @@ This implements the operation (A,B) -> A'*B for two tensors
 end
 
 # Creating a wrapper kernel for launching with error checks
-function tensor_tensor_mul!(c, a, b)
+function tensor_transpose_tensor_mul!(c, a, b)
     @assert size(a)[3] == size(b)[3]
     @assert size(a)[1] == size(b)[1]
 
