@@ -12,7 +12,8 @@ module GeometricMachineLearning
 
     import Lux, CUDA
 
-    include("custom_neural_networks/auxiliary_kernels/tensor_mat_mul.jl")
+    include("src/kernels/tensor_mat_mul.jl")
+    #export tensor_mat_mul
 
     #this defines empty retraction type structs (doesn't rely on anything)
     include("optimizers/useful_functions/retraction_types.jl")
