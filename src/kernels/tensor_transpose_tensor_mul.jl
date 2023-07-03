@@ -8,7 +8,7 @@ This implements the operation (A,B) -> A'*B for two tensors
 
     # creating a temporary sum variable for matrix multiplication
     tmp_sum = zero(eltype(c))
-    for l = 1:size(a)[2]
+    for l = 1:size(a)[1]
         tmp_sum += a[l, i, k] * b[l, j, k]
     end
 
