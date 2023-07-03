@@ -2,14 +2,16 @@ module GeometricMachineLearning
 
     using BandedMatrices
     using Distances
+    using ForwardDiff
+    using GPUArrays
+    using KernelAbstractions
     using LinearAlgebra
     using NNlib
     using ProgressMeter
     using Random
     using Zygote
-    using ForwardDiff
 
-    import Lux
+    import Lux, CUDA
 
     #this defines empty retraction type structs (doesn't rely on anything)
     include("optimizers/useful_functions/retraction_types.jl")
@@ -27,6 +29,9 @@ module GeometricMachineLearning
 
     #+ operation has been overloaded to work with NamedTuples!
     export _add, apply_toNT, split_and_flatten, add!
+    
+    #GPU specific operations
+    export convert_to_dev, Device, CPUDevice
 
     #+ operation has been overloaded to work with NamedTuples!
     export _add

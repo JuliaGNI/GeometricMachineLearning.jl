@@ -18,7 +18,7 @@ Implement a general global section here!!!! Tₓ𝔐 → G×𝔤 !!!!!! (think a
 struct GlobalSection{T, AT} 
     Y::AT
     #for now the only lift that is implemented is the Stiefel one - these types will have to be expanded!
-    λ::Union{LinearAlgebra.QRCompactWYQ, Nothing}
+    λ::Union{LinearAlgebra.QRCompactWYQ, LinearAlgebra.QRPackedQ, Nothing}
 
     function GlobalSection(Y::AbstractVecOrMat)
         λ = global_section(Y)
@@ -34,15 +34,22 @@ end
 function apply_section(λY::GlobalSection{T, AT}, Y₂::AT) where {T, AT<:StiefelManifold{T}}
     N, n = size(λY.Y)
     @assert (N, n) == size(Y₂)
+    #temporary solution for the moment 
+    projection_matrix₁ = typeof(Y₂.A)(hcat(One(n, T), zeros(T, n, N-n)))
+    projection_matrix₂ = typeof(Y₂.A)(hcat(zeros(T, N-n, n), One(N-n, T)))
     StiefelManifold(
-        λY.Y*Y₂[1:n,1:n] + λY.λ*vcat(Y₂[n+1:N,1:n], zeros(n, n))
+        λY.Y.A*(projection_matrix₁*Y₂.A) + λY.λ*vcat(projection_matrix₂*Y₂.A, typeof(Y₂.A)(zeros(T, n, n)))
     )
 end
 
 function apply_section!(Y::AT, λY::GlobalSection{T, AT}, Y₂::AT) where {T, AT<:StiefelManifold{T}}
     N, n = size(λY.Y)
     @assert (N, n) == size(Y₂) == size(Y)
-    Y.A .= λY.Y*Y₂[1:n,1:n] + λY.λ*vcat(Y₂[n+1:N,1:n], zeros(n, n))
+    #temporary solution for the moment 
+    projection_matrix₁ = typeof(Y₂.A)(hcat(One(n, T), zeros(T, n, N-n)))
+    projection_matrix₂ = typeof(Y₂.A)(hcat(zeros(T, N-n, n), One(N-n, T)))
+
+    Y.A .= λY.Y*(projection_matrix₁*Y₂) + λY.λ*vcat(projection_matrix₂*Y₂, typeof(Y₂.A)(zeros(T, n, n)))
 end
 
 function apply_section(λY::GlobalSection{T, AT}, Y₂::AT) where {T, AT<:GrassmannManifold{T}}
@@ -84,9 +91,11 @@ end
 
 function global_rep(λY::GlobalSection{T, AT}, Δ::AbstractMatrix{T}) where {T, AT<:StiefelManifold{T}}
     N, n = size(λY.Y)
+    #temporary workaround 
+    projection_matrix = typeof(Δ)(hcat(zeros(T, N-n, n), One(N-n, T)))
     StiefelLieAlgHorMatrix(
-        SkewSymMatrix(λY.Y'*Δ),
-        (λY.λ'*Δ)[1:N-n,1:n], 
+        SkewSymMatrix(λY.Y.A'*Δ),
+        projection_matrix*(λY.λ'*Δ), 
         N, 
         n
     )
@@ -94,8 +103,10 @@ end
 
 function global_rep(λY::GlobalSection{T, AT}, Δ::AbstractMatrix{T}) where {T, AT<:GrassmannManifold{T}}
     N, n = size(λY.Y)
+    #temporary workaround 
+    projection_matrix = typeof(Δ)(hcat(zeros(T, N-n, n), One(N-n, T)))
     GrassmannLieAlgHorMatrix(
-        (λY.λ'*Δ)[n+1:N,1:n],
+        projection_matrix*(λY.λ'*Δ),
         N,
         n
     )

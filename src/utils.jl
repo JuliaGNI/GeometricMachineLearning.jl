@@ -83,3 +83,34 @@ function add!(dx₁::NamedTuple, dx₂::NamedTuple, dx₃::NamedTuple)
     apply_toNT(dx₁, dx₂, dx₃, add!)
 end
 
+#The following are fallback functions - maybe you want to put them into a separate file
+
+function global_section(::AbstractVecOrMat)
+    nothing
+end
+
+
+struct CPUDevice end 
+
+const Device = Union{CUDA.CuDevice, CPUDevice}
+
+function convert_to_dev(::CUDA.CuDevice, A::AbstractArray)
+    CUDA.cu(A)
+end
+
+function convert_to_dev(::CPUDevice, A::AbstractVector)
+    Vector(A)
+end
+
+function convert_to_dev(::CPUDevice, A::AbstractMatrix)
+    Matrix(A)
+end
+
+
+function Lux.setup(dev::Device, rng::Random.AbstractRNG, d::Lux.AbstractExplicitLayer)
+    map_to_dev(A::AbstractArray) = convert_to_dev(dev, A)
+    map_to_dev(ps::NamedTuple) = apply_toNT(ps, map_to_dev)
+    ps, st = Lux.setup(rng, d) 
+    ps = map_to_dev(ps)
+    ps, st
+end

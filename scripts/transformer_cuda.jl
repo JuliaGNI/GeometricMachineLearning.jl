@@ -2,8 +2,8 @@
 TODO: Add a better predictor at the end! It should set the biggest value of the softmax to 1 and the rest to zero!
 """
 
-using GeometricMachineLearning, LinearAlgebra, ProgressMeter, Plots
-import Lux, Zygote, Random, MLDatasets, Flux, Lux.gpu
+using GeometricMachineLearning, LinearAlgebra, ProgressMeter, Plots, CUDA
+import Lux, Zygote, Random, MLDatasets, Flux
 
 #MNIST images are 28×28, so a sequence_length of 16 = 4² means the image patches are of size 7² = 49
 image_dim = 28
@@ -16,12 +16,12 @@ train_x, train_y = MLDatasets.MNIST(split=:train)[:]
 test_x, test_y = MLDatasets.MNIST(split=:test)[:]
 
 #preprocessing steps 
-train_x =   Tuple(map(i -> sc_embed(split_and_flatten(train_x[:,:,i], patch_length)) #=|> gpu=#, 1:size(train_x,3)))
-test_x =    Tuple(map(i -> sc_embed(split_and_flatten(test_x[:,:,i], patch_length)) #=|> gpu=#, 1:size(test_x,3)))
+train_x =   Tuple(map(i -> split_and_flatten(train_x[:,:,i], patch_length) |> cu, 1:size(train_x,3)))
+test_x =    Tuple(map(i -> split_and_flatten(test_x[:,:,i], patch_length) |> cu, 1:size(test_x,3)))
 
 #implement this encoding yourself!
-train_y = Flux.onehotbatch(train_y, 0:9) #|> gpu
-test_y = Flux.onehotbatch(test_y, 0:9) #|> gpu
+train_y = Tuple(map(i -> Flux.onehotbatch(train_y[i, :], 0:9) |> cu, 1:size(train_y, 1)))
+test_y = Tuple(map(i -> Flux.onehotbatch(test_y[i, :], 0:9) |> cu, 1:size(test_y, 1)))
 
 
 #encoder layer - final layer has to be added for evaluation purposes!
@@ -39,15 +39,15 @@ test_y = Flux.onehotbatch(test_y, 0:9) #|> gpu
 
 #err_freq is the frequency with which the error is computed (e.g. every 100 steps)
 function transformer_training(Ψᵉ::Lux.Chain, batch_size=64, training_steps=10000, err_freq=100, o=AdamOptimizer())
-    ps, st = Lux.setup(Random.default_rng(), Ψᵉ) #.|> gpu  
+    ps, st = Lux.setup(CUDA.device(), Random.default_rng(), Ψᵉ) 
 
     #loss_sing
     #note that the loss here is the first column of the output of the entire model; similar to what was done in the ViT paper.
     function loss_sing(ps, x, y)
-        norm(Lux.apply(Ψᵉ, x, ps, st)[1][:,1] - y)
+        norm(sum(Lux.apply(Ψᵉ, x, ps, st)[1], dims=2)/size(x, 2) - y)
     end
     function loss_sing(ps, train_x, train_y, index)
-        loss_sing(ps, train_x[index], train_y[:, index])    
+        loss_sing(ps, train_x[index], train_y[index])    
     end
     function full_loss(ps, train_x, train_y)
         num = length(train_x)
@@ -64,20 +64,21 @@ function transformer_training(Ψᵉ::Lux.Chain, batch_size=64, training_steps=10
 
     @showprogress "Training network ..." for i in 1:training_steps
         index₁ = Int(ceil(rand()*num))
-        x = train_x[index₁] #|> gpu
-        y = train_y[:, index₁] #|> gpu
+        x = train_x[index₁]
+        y = train_y[index₁] 
         l, pb = Zygote.pullback(ps -> loss_sing(ps, x, y), ps)
         dp = pb(one(l))[1]
-        #dp = Zyogte.gradient(ps -> loss_sing(ps, x, y), ps)[1]
 
         indices = Int.(ceil.(rand(batch_size -1)*num))
         for index in indices
-            x = train_x[index] #|> gpu
-            y = train_y[:, index] #|> gpu
+            x = train_x[index] 
+            y = train_y[index] 
             l, pb = Zygote.pullback(ps -> loss_sing(ps, x, y), ps)
             dp = _add(dp, pb(one(l))[1])
         end
-        optimization_step!(o, Ψᵉ, ps, cache, dp)    
+
+        optimizer_instance = Optimizer(CUDA.device(), o, Ψᵉ)
+        optimization_step!(optimizer_instance, Ψᵉ, ps, dp)    
         if i%err_freq == 0
             loss_array[1+i÷err_freq] = full_loss(ps, train_x, train_y)/num
         end

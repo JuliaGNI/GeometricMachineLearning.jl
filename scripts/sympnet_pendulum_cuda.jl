@@ -9,6 +9,7 @@ using Lux
 using Plots
 using Zygote
 using ProgressMeter
+using CUDA
 
 import Random 
 
@@ -17,6 +18,8 @@ import Random
 include("pendulum.jl")
 q, p = pendulum_data()
 plt = plot(q, p, label="Training data.")
+q = q |> cu 
+p = p |> cu
 
 # Sympnet model 
 model = Chain(  Gradient(2, 10, tanh),
@@ -25,13 +28,23 @@ model = Chain(  Gradient(2, 10, tanh),
                 Gradient(2, 10, tanh; change_q=false)
                 )
 
-ps, st = Lux.setup(Random.default_rng(), model)
+ps, st = Lux.setup(CUDA.device(), Random.default_rng(), model)
 
-function loss_sing(ps, q, p, index)
-    qp_new = Lux.apply(model, [q[index-1], p[index-1]], ps, st)[1]
-    norm(qp_new - [q[index], p[index]])
+function get_z_from_qp!(z, q, p, index)
+    i = threadIdx().x 
+    z[i] = q[index]
+    z[i + 1] = p[index]
+    return
 end
 
+function loss_sing(ps, q, p, index) 
+    z = CUDA.zeros(2)
+    z_applied = CUDA.zeros(2)
+    @cuda threads=length(q) get_z_from_qp!(z, q, p, index-1)
+    @cuda threads=length(q) get_z_from_qp!(z_applied, q, p, index)
+    qp_new = Lux.apply(model, z, ps, st)[1]
+    norm(qp_new - z_applied)
+end
 
 # defines a loss function 
 function loss(ps, q, p, batch_size=10)
