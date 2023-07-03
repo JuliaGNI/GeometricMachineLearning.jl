@@ -111,7 +111,7 @@ function Lux.apply(d::MultiHeadAttention{Stiefel, Retraction, true}, x::Abstract
         mat_tensor_mul!(K_tensor, ps.PK[key]', x)
         mat_tensor_mul!(V_tensor, ps.PV[key]', x)
         tensor_transpose_tensor_mul!(QK_tensor, Q_tensor, K_tensor)
-        tensor_tensor_mul!(final_output, V_tensor, Lux.softmax(QK_tensor))
+        tensor_tensor_mul!(single_head_output, V_tensor, Lux.softmax(QK_tensor))
         output = vcat(single_head_output, V_tensor, Lux.softmax(QK_tensor)) 
         KernelAbstractions.synchronize(backend)
     end
@@ -140,7 +140,7 @@ function Lux.apply(d::MultiHeadAttention{Stiefel, Retraction, false}, x::Abstrac
         mat_tensor_mul!(K_tensor, ps.PK[key]', x)
         mat_tensor_mul!(V_tensor, ps.PV[key]', x)
         tensor_transpose_tensor_mul!(QK_tensor, Q_tensor, K_tensor)
-        tensor_tensor_mul!(final_output, V_tensor, Lux.softmax(QK_tensor))
+        tensor_tensor_mul!(single_head_output, V_tensor, Lux.softmax(QK_tensor))
         output = vcat(single_head_output, V_tensor, Lux.softmax(QK_tensor)) 
         KernelAbstractions.synchronize(backend)
     end
