@@ -190,7 +190,7 @@ function ⊙(S::SymplecticLieAlgHorMatrix)
         )
 end
 
-function Base.:√(S::SymplecticLieAlgHorMatrix) 
+function Base.:RAC(S::SymplecticLieAlgHorMatrix) 
     SymplecticLieAlgMatrix(
         sqrt.(S.A₁), 
         sqrt.(S.A₂),
