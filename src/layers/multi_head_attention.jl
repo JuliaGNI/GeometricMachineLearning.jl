@@ -5,7 +5,7 @@ struct MultiHeadAttention{Stiefel, Retraction, add_connection, F1} <: Lux.Abstra
 end
 
 default_retr = Geodesic()
-function MultiHeadAttention(dim::Integer, n_heads::Integer; Stiefel::Bool=false, Retraction::AbstractRetraction=default_retr add_connection=true, init_weight=Lux.glorot_uniform)
+function MultiHeadAttention(dim::Integer, n_heads::Integer; Stiefel::Bool=false, Retraction::AbstractRetraction=default_retr, add_connection::Bool=true, init_weight=Lux.glorot_uniform)
     @assert dim % n_heads == 0
     MultiHeadAttention{Stiefel, typeof(Retraction), add_connection, typeof(init_weight)}(dim, n_heads, init_weight)
 end
@@ -136,5 +136,5 @@ function Lux.apply(d::MultiHeadAttention{Stiefel, Retraction, false}, x::Abstrac
         output = vcat(output, V_tensor*Lux.softmax(Q_tensor'*K_tensor))
         KernelAbstractions.synchronize(backend)
     end
-    x, st
+    output, st
 end
