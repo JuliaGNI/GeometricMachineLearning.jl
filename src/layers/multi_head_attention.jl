@@ -92,7 +92,7 @@ end
 function Lux.apply(d::MultiHeadAttention{Stiefel, Retraction, true}, x::AbstractArray{T, 3}, ps::NamedTuple, st::NamedTuple) where {Stiefel, Retraction, T} 
     Dₕ = d.dim ÷ d.n_heads
     dim, input_length, number_data = size(x)
-    @assert dim == d.dim
+    @assert dim == d.dimoutput
     
     backend = KernelAbstractions.get_backend(x)
 
@@ -101,6 +101,8 @@ function Lux.apply(d::MultiHeadAttention{Stiefel, Retraction, true}, x::Abstract
     Q_tensor = KernelAbstractions.zeros(backend, T, Dₕ, input_length, number_data)
     K_tensor = KernelAbstractions.zeros(backend, T, Dₕ, input_length, number_data)
     V_tensor = KernelAbstractions.zeros(backend, T, Dₕ, input_length, number_data)
+    QK_tensor = KernelAbstractions.zeros(backend, T, input_length, input_length, number_data)
+    single_head_output = KernelAbstractions.zeros(backend, T, Dₕ, input_length, number_data)
 
     for i in 1:d.n_heads 
         key = Symbol("head_"*string(i))
@@ -108,7 +110,9 @@ function Lux.apply(d::MultiHeadAttention{Stiefel, Retraction, true}, x::Abstract
         mat_tensor_mul!(Q_tensor, ps.PQ[key]', x)
         mat_tensor_mul!(K_tensor, ps.PK[key]', x)
         mat_tensor_mul!(V_tensor, ps.PV[key]', x)
-        output = vcat(output, V_tensor*Lux.softmax(Q_tensor'*K_tensor))
+        tensor_transpose_tensor_mul!(QK_tensor, Q_tensor, K_tensor)
+        tensor_tensor_mul!(final_output, V_tensor, Lux.softmax(QK_tensor))
+        output = vcat(single_head_output, V_tensor, Lux.softmax(QK_tensor)) 
         KernelAbstractions.synchronize(backend)
     end
     x + output, st
@@ -117,7 +121,7 @@ end
 function Lux.apply(d::MultiHeadAttention{Stiefel, Retraction, false}, x::AbstractArray{T, 3}, ps::NamedTuple, st::NamedTuple) where {Stiefel, Retraction, T} 
     Dₕ = d.dim ÷ d.n_heads
     dim, input_length, number_data = size(x)
-    @assert dim == d.dim
+    @assert dim == d.dimoutput
     
     backend = KernelAbstractions.get_backend(x)
 
