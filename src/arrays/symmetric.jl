@@ -115,7 +115,7 @@ end
 function ⊙²(A::SymmetricMatrix)
     SymmetricMatrix(A.S.^2, A.n)
 end
-function √ᵉˡᵉ(A::SymmetricMatrix)
+function RACᵉˡᵉ(A::SymmetricMatrix)
     SymmetricMatrix(sqrt.(A.S), A.n)
 end
 function /ᵉˡᵉ(A::SymmetricMatrix, B::SymmetricMatrix)

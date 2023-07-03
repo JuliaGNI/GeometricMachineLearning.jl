@@ -1,8 +1,4 @@
 
-const DEFAULT_HNN_NRUNS = 1000
-const DEFAULT_BATCH_SIZE = 10
-
-
 struct HamiltonianNeuralNetwork{AT} <: AbstractArchitecture
     dimin::Int
     width::Int
@@ -34,53 +30,11 @@ end
 gradient(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, params = nn.params) = Zygote.gradient(ξ -> nn(ξ, params), x)[1]
 
 # vector field of the Hamiltonian Neural Network
-vectorfield(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, params = nn.params) = [0 1; -1 0] * gradient(nn, x, params)
-
-# loss for a single datum
-loss_single(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, y, params = nn.params) = sqeuclidean(vectorfield(nn, x, params), y)
-
-# total loss
-loss(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, y, params = nn.params) = mapreduce(i -> loss_single(nn, x[i], y[i], params), +, eachindex(x,y))
-
-# loss gradient
-loss_gradient(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, y, params = nn.params) = Zygote.gradient(p -> loss(nn, x, y, p), params)[1]
-
-
-
-function train!(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, m::AbstractMethodOptimiser, data_qp, target; ntraining = DEFAULT_HNN_NRUNS, batch_size = DEFAULT_BATCH_SIZE)
-    # create array to store total loss
-    total_loss = zeros(ntraining)
-
-    #creation of optimiser
-    opt = Optimizer(m,nn.model)
-
-    # convert parameters to tuple
-    params_tuple = Tuple([Tuple(x) for x in nn.params])
-
-    keys_1 = keys(nn.params)
-    keys_2 = [keys(x) for x in values(nn.params)]
-
-    # Learning runs
-    @showprogress 1 "Training..." for j in 1:ntraining
-
-        index = rand(eachindex(data_qp), batch_size)
-        params_grad = loss_gradient(nn, data_qp[index], target[index], params_tuple) #loss_gradient(nn, get_batch(data_qp, target)..., params_tuple)
-
-        dp = NamedTuple(zip(keys_1,[NamedTuple(zip(k,x)) for (k,x) in zip(keys_2,params_grad)]))
-
-        optimization_step!(opt, nn.model, nn.params, dp)
-
-        #=
-        # make gradient steps for all the model parameters W & b
-        for i in eachindex(params_tuple, params_grad)
-            for (p, dp) in zip(params_tuple[i], params_grad[i])
-                p .-= learning_rate .* dp
-            end
-        end
-        =#
-
-        total_loss[j] = loss(nn, data_qp, target)
-    end
-
-    return total_loss
+function vectorfield(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, params = nn.params) 
+    n_dim = length(x)÷2
+    I = Diagonal(ones(n_dim))
+    Z = zeros(n_dim,n_dim)
+    symplectic_matrix = [Z I;-I Z]
+    return symplectic_matrix * gradient(nn, x, params)
 end
+
