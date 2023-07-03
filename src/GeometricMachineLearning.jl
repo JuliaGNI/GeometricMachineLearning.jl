@@ -14,6 +14,7 @@ module GeometricMachineLearning
 
     include("kernels/tensor_mat_mul.jl")
     include("kernels/tensor_tensor_mul.jl")
+    include("tensor_transpose_tensor_mul.jl")
     include("kernels/mat_tensor_mul.jl")
     #export tensor_mat_mul
 
