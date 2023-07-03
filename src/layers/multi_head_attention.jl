@@ -92,7 +92,7 @@ end
 function Lux.apply(d::MultiHeadAttention{Stiefel, Retraction, true}, x::AbstractArray{T, 3}, ps::NamedTuple, st::NamedTuple) where {Stiefel, Retraction, T} 
     Dₕ = d.dim ÷ d.n_heads
     dim, input_length, number_data = size(x)
-    @assert dim == d.dimoutput
+    @assert dim == d.dim
     
     backend = KernelAbstractions.get_backend(x)
 
