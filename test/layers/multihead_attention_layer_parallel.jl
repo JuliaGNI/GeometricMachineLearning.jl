@@ -26,3 +26,7 @@ end
 train_y = Flux.onehotbatch(train_y, 0:9) 
 test_y = Flux.onehotbatch(test_y, 0:9)
 
+model = MultiHeadAttention(49, 7)
+ps, st = Lux.setup(Random.default_rng(), model)
+
+Lux.apply(model, train_x_reshaped[:,:,1:2], ps, st)
