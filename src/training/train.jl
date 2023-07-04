@@ -29,7 +29,7 @@ Different ways of use:
 function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, data::AbstractTrainingData, m::AbstractMethodOptimiser, ti::TrainingIntegrator{<:AbstractTrainingIntegrator} = default_integrator(nn, data); ntraining = DEFAULT_NRUNS, batch_size_t = default_index_batch(data,type(ti)), showprogress::Bool = false)
     
     #verify that shape of data depending of the ExactIntegrator
-    assert(type(ti), data)
+    #assert(type(ti), data)
 
     # create array to store total loss
     total_loss = zeros(ntraining)

@@ -15,18 +15,18 @@ struct TrainingData{TK <: DataSymbol, TS <: AbstractDataShape, TP <: AbstractPro
 
 end
 
-function TrainingData(data, _get_data::Dict{Symbol, <:Base.Callable}, problem = UnknownProblem; noisemaker =  NothingFunction)
+function TrainingData(data, _get_data::Dict{Symbol, <:Any}, problem = UnknownProblem(); noisemaker =  NothingFunction)
         
     @assert haskey(_get_data, :shape)
     shape = _get_data[:shape](data, _get_data)
 
     delete!(_get_data, :shape)
 
-    get = NamedTuple([(key, (args...)->value(Data,args...)) for (key,value) in _get_data])
+    get = NamedTuple([(key, (args...)->value(data,args...)) for (key,value) in _get_data])
 
     symbols = DataSymbol(Tuple(keys(get)))
     
-    dim = length(get[Tuple(keys(get))[1]])
+    dim = 2 #length(get[Tuple(keys(get))[1]])
 
     TrainingData(problem, shape, get, symbols, dim, noisemaker)
 end
@@ -39,12 +39,13 @@ end
 @inline problem(data::TrainingData) = data.problem
 @inline shape(data::TrainingData) = data.shape
 @inline get(data::TrainingData) = data.get
-@inline symbols(data::TrainingData) = data.keys
+@inline symbols(data::TrainingData) = data.symbols
 @inline dim(data::TrainingData) = data.dim
 @inline noisemaker(data::TrainingData) = data.noisemaker
 
 @inline get_Δt(data::TrainingData) = get_Δt(data.shape)
 @inline get_nb_trajectory(data::TrainingData) = get_nb_trajectory(data.shape)
 @inline get_length_trajectory(data::TrainingData, i::Int) = get_length_trajectory(data.shape, i)
+@inline get_nb_point(data::TrainingData) = get_nb_point(data.shape)
 @inline get_data(data::TrainingData, s::Symbol, args) = data.get[s](args...)
 

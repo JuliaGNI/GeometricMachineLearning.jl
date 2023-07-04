@@ -6,7 +6,7 @@
         - loss: the loss during training.
 =#
 
-struct SingleHistory{TP <: TrainingParameters, TD}
+struct SingleHistory{TP <: TrainingParameters, TD, TL}
     parameters::TP
     datashape::TD
     size_data::Int

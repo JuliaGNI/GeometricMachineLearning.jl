@@ -20,7 +20,7 @@ struct TrajectoryData <:  AbstractDataShape
     nb_trajectory::Int
     length_trajectory::AbstractArray{Int}
     
-    function TrajectoryData(Data, _get_data::Dict{Symbol, <:Base.Callable})
+    function TrajectoryData(Data, _get_data::Dict{Symbol, <:Any})
         
         @assert haskey(_get_data, :nb_trajectory)
         @assert haskey(_get_data, :length_trajectory)
@@ -47,7 +47,7 @@ end
 struct SampledData <:  AbstractDataShape
     nb_point::Int
   
-    function SampledData(Data, _get_data::Dict{Symbol, <:Base.Callable})
+    function SampledData(Data, _get_data::Dict{Symbol, <:Any})
             
         @assert haskey(_get_data, :nb_points)
         nb_point = _get_data[:nb_points](Data)
@@ -67,8 +67,7 @@ end
 @inline get_Δt(data::TrajectoryData) = data.Δt
 @inline get_nb_trajectory(data::TrajectoryData) = data.nb_trajectory
 @inline get_length_trajectory(data::TrajectoryData, i::Int) = data.length_trajectory[i]
-
-@inline get_nb_point(data::SampledData) = data.get_nb_point()
+@inline get_nb_point(data::SampledData) = data.nb_point
 
 @inline next(i,j) = (i,j+1)
 @inline next(i) = (i+1,)

@@ -31,9 +31,8 @@ end
 @inline nn(sts::SingleTrainingSet)= sts.nn
 @inline parameters(sts::SingleTrainingSet)= sts.tp
 @inline data(sts::SingleTrainingSet)= sts.data
+@inline size(ts::TrainingSets) = ts.size
 
-@inline size(ts::TrainingSets) = ts.size
-@inline size(ts::TrainingSets) = ts.size
 
 Base.getindex(ts::TrainingSets, n::Int) = ts.tab[n]
 Base.setindex!(ts::TrainingSets, value::SingleTrainingSet, n::Int) = ts.tab[n] = value

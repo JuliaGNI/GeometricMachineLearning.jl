@@ -19,6 +19,8 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
+GeometricEquations = "c85262ba-a08a-430a-b926-d29770767bf2"
+InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 
 [compat]
 BandedMatrices = "0.17"
@@ -34,6 +36,7 @@ ProgressMeter = "1"
 StatsBase = "0.33, 0.34"
 Zygote = "0.6"
 julia = "1.8"
+GeometricEquations = "0.9"
 
 [extras]
 Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
@@ -44,6 +47,8 @@ Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 GeometricEquations = "c85262ba-a08a-430a-b926-d29770767bf2"
 GeometricProblems = "18cb22b4-ad41-5c80-9c5f-710df63fbdc9"
 RungeKutta = "fb486d5c-30a0-4a8a-8415-a8b4ace5a6f7"
+
+
 
 [targets]
 test = ["Lux", "Random", "SafeTestsets", "Test"]

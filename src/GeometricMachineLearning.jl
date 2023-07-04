@@ -1,5 +1,8 @@
 module GeometricMachineLearning
 
+    using GeometricEquations
+    #using GeometricIntegrators
+
     using BandedMatrices
     using Distances
     using LinearAlgebra
@@ -8,6 +11,7 @@ module GeometricMachineLearning
     using Random
     using Zygote
     using ForwardDiff
+    using InteractiveUtils
 
     import Lux
 
@@ -242,17 +246,17 @@ module GeometricMachineLearning
     export VariationalMidPointIntegrator
     export VariaMidPoint
 
-    include("training/lnn_training/variational_integrator.jl")
+    #include("training/lnn_training/variational_integrator.jl")
 
     export LnnExactIntegrator
     export ExactLnn
 
-    include("training/lnn_training/lnn_exact_integrator.jl")
+    #include("training/lnn_training/lnn_exact_integrator.jl")
 
     export BasicSympNetIntegrator
     export BasicSympNet
 
-    include("training/sympnet_training/sympnet_basic_integrator.jl")
+    #include("training/sympnet_training/sympnet_basic_integrator.jl")
 
     export default_integrator
     
@@ -272,12 +276,12 @@ module GeometricMachineLearning
     #INCLUDE INTEGRATOR 
     export NeuralNetMethod
 
-    include("integrator/abstract_neural_net_method.jl")
+    #include("integrator/abstract_neural_net_method.jl")
 
     #INCLUDE INTEGRATION METHOD
     export  SympNetMethod
 
-    include("integrator/sympnet_integrator.jl")
+    #include("integrator/sympnet_integrator.jl")
 
 
 

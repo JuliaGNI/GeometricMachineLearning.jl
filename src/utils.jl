@@ -92,3 +92,4 @@ function add!(dx₁::NamedTuple, dx₂::NamedTuple, dx₃::NamedTuple)
 end
 
 
+struct UnknownProblem <: AbstractProblem end

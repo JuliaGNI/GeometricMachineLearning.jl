@@ -1,7 +1,3 @@
-using GeometricIntegrators
-
-struct UnknownProblem <: AbstractProblem end
-
 #=
     NeuralNetSolution structure is designed to store the results of a training on a neural network. It includes :
         - nn: the AbstractNeuralNetwork trained,
@@ -13,7 +9,7 @@ struct UnknownProblem <: AbstractProblem end
     A NeuralNetSolution can so be put as argument of train! to perform a new training on the AbstractNeuralNetwork.
 =#
 
-struct NeuralNetSolution{TNN <: AbstractNeuralNetwork, TP <: AbstractProblem, Tstep <: Union{Nothing, real}, TL}
+struct NeuralNetSolution{TNN <: AbstractNeuralNetwork, TP <: AbstractProblem, Tstep <: Union{Nothing, Real}, TL}
     nn::TNN
     problem::TP
     tstep::Tstep
@@ -21,11 +17,11 @@ struct NeuralNetSolution{TNN <: AbstractNeuralNetwork, TP <: AbstractProblem, Ts
     history::History
 
     function NeuralNetSolution(nn::AbstractNeuralNetwork, loss::Real, sh::SingleHistory, problem::GeometricProblem = UnknownProblem, tstep::Real = isUnknown(problem) ? nothing : tstep(problem))
-        new{typeof(nn), typeof(problem), typeof(loss)}(nn, problem, loss, tstep, History(sh))
+        new{typeof(nn), typeof(problem), typeof(tstep), typeof(loss)}(nn, problem, loss, tstep, History(sh))
     end
 
     function NeuralNetSolution(nn::AbstractNeuralNetwork, loss::Real, h::History, problem::GeometricProblem = UnknownProblem, tstep::Real = isUnknown(problem) ? nothing : tstep(problem))
-        new{typeof(nn), typeof(problem), typeof(loss)}(nn, problem, loss, tstep, h)
+        new{typeof(nn), typeof(problem), typeof(tstep), typeof(loss)}(nn, problem, loss, tstep, h)
     end
 end
 
