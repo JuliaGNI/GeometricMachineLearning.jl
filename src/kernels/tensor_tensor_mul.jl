@@ -20,3 +20,10 @@ function tensor_tensor_mul!(c, a, b)
     kernel! = tensor_tensor_mul_kernel!(backend)
     kernel!(c, a, b, ndrange=size(c)) 
 end
+
+function tensor_tensor_mul(A::AbstractArray{T, 3}, B::AbstractArray{T, 3}) where T
+    backend = KernelAbstractions.get_backend(A)
+    C = KernelAbstractions.zeros(backend, T, size(A)[1], size(B)[2], size(A)[3])
+    tensor_tensor_mul!(C, A, B)
+    C
+end
