@@ -63,7 +63,7 @@ struct NothingFunction <: Function end
 (::NothingFunction)(args...) = nothing
 is_NothingFunction(f::Function) = typeof(f)==NothingFunction
 
-
+#=
 function Base.:+(a::Float64, b::Tuple{Float64})
     x, = b
     return a+x
@@ -74,8 +74,10 @@ function Base.:+(a::Vector{Float64}, b::Tuple{Float64})
     y, = a
     return y+x
 end
+=#
 
-Zygote.OneElement(t1::Tuple{Float64}, t2::Tuple{Int64}, t3::Tuple{Base.OneTo{Int64}}) = Zygote.OneElement(t1[1], t2, t3)
+
+#Zygote.OneElement(t1::Tuple{Float64}, t2::Tuple{Int64}, t3::Tuple{Base.OneTo{Int64}}) = Zygote.OneElement(t1[1], t2, t3)
 
 _haskey(::Nothing, key::Core.Any) = false
 _haskey(a, b) = Base.haskey(a, b)
@@ -91,5 +93,9 @@ function add!(dx₁::NamedTuple, dx₂::NamedTuple, dx₃::NamedTuple)
     apply_toNT(dx₁, dx₂, dx₃, add!)
 end
 
-
+abstract type AbstractProblem end
 struct UnknownProblem <: AbstractProblem end
+
+
+
+_setdiff(t₁::Tuple,t₂::Tuple) = tuple(setdiff(Set(t₁),Set(t₂))...)

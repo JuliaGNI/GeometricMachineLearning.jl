@@ -1,6 +1,6 @@
 using Plots
 using Zygote
-using  GeometricIntegrators
+#using  GeometricIntegrators
 using LinearAlgebra
 using GeometricMachineLearning
 

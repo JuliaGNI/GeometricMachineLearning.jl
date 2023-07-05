@@ -56,6 +56,9 @@ function update_layer!(::Lux.AbstractExplicitLayer, x::NamedTuple, dx::NamedTupl
 end
 
 
+@inline dim(nn::LuxNeuralNetwork) = dim(nn.arch)
+
+
 # define some custom apply methods for Chain and Dense
 # that use Tuples for parameters instead of NamedTuples
 # and do not return a state but only the results of each

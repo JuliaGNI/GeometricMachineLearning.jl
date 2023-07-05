@@ -46,7 +46,7 @@ get_batch(data::TrainingData{T,TrajectoryData} where T) = vcat([[(i,j) for j in 
 
 function get_batch(data::TrainingData{T,SampledData} where T, batch_size::Int = get_nb_point(data)) 
     
-    #@assert get_nb_point(data) >= batch_size
+    @assert get_nb_point(data) >= batch_size
 
     rand(1:get_nb_point(data), batch_size)
 end

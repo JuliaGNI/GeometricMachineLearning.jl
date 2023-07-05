@@ -1,6 +1,6 @@
 module GeometricMachineLearning
 
-    using GeometricEquations
+    #using GeometricEquations
     #using GeometricIntegrators
 
     using BandedMatrices
@@ -246,17 +246,17 @@ module GeometricMachineLearning
     export VariationalMidPointIntegrator
     export VariaMidPoint
 
-    #include("training/lnn_training/variational_integrator.jl")
+    include("training/lnn_training/variational_integrator.jl")
 
     export LnnExactIntegrator
     export ExactLnn
 
-    #include("training/lnn_training/lnn_exact_integrator.jl")
+    include("training/lnn_training/lnn_exact_integrator.jl")
 
     export BasicSympNetIntegrator
     export BasicSympNet
 
-    #include("training/sympnet_training/sympnet_basic_integrator.jl")
+    include("training/sympnet_training/sympnet_basic_integrator.jl")
 
     export default_integrator
     
@@ -270,8 +270,8 @@ module GeometricMachineLearning
     #INCLUDE PROBLEMS
     export HNNProblem, LNNProblem
 
-    include("integrator/problem_hnn.jl")
-    include("integrator/problem_lnn.jl")
+    #include("integrator/problem_hnn.jl")
+    #include("integrator/problem_lnn.jl")
     
     #INCLUDE INTEGRATOR 
     export NeuralNetMethod

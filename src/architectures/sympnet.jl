@@ -18,6 +18,8 @@ struct LASympNet{AT,T1,T2,T3} <: SympNet{AT}
 
 end
 
+@inline dim(arch::LASympNet) = arch.dim
+
 struct GSympNet{AT,T1,T2,T3} <: SympNet{AT} 
     dim::Int
     width::Int
@@ -32,6 +34,9 @@ struct GSympNet{AT,T1,T2,T3} <: SympNet{AT}
         new{typeof(activation),typeof(init_weight),typeof(init_bias),typeof(init_scale)}(dim, width, nhidden, activation, init_uplow, init_weight, init_bias, init_scale)
     end
 end
+
+
+@inline dim(arch::GSympNet) = arch.dim
 
 # Chain function
 function chain(nn::GSympNet, ::LuxBackend)

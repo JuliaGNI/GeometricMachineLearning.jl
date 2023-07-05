@@ -9,3 +9,6 @@ chain(::AbstractArchitecture, ::AbstractBackend)
 ```
 """
 function chain end
+
+
+@inline dim(arch::AbstractArchitecture) = @error "You forgot to implement dim for "*string(typeof(arch))*"."

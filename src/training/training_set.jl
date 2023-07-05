@@ -15,7 +15,7 @@ struct SingleTrainingSet{TN <: AbstractNeuralNetwork, TP<:TrainingParameters , T
     end
 end
 
-SingleTrainingSet(nn::AbstractNeuralNetwork, tp::TrainingParameters, datashape::NamedTuple, problem::GeometricProblem, data) = SingleTrainingSet(nn, tp, TrainingData(data, datashape, problem))
+SingleTrainingSet(nn::AbstractNeuralNetwork, tp::TrainingParameters, datashape::NamedTuple, problem::AbstractProblem, data) = SingleTrainingSet(nn, tp, TrainingData(data, datashape, problem))
 
 SingleTrainingSet(sts::SingleTrainingSet; nn::AbstractNeuralNetwork = nn(sts), tp::TrainingParameters = parameters(sts), data::AbstractTrainingData = data(sts)) = SingleTrainingSet(nn, tp, data)
 

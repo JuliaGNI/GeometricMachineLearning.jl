@@ -2,8 +2,7 @@ abstract type VariationalIntegrator <: LnnTrainingIntegrator end
 struct VariationalMidPointIntegrator <: VariationalIntegrator end
 struct VariationalTrapezIntegrator <: VariationalIntegrator end
 
-VariaMidPoint(;sqdist = sqeuclidean) = TrainingIntegrator(VariationalMidPointIntegrator(); sqdist = sqdist)
-
+VariaMidPoint(;sqdist = sqeuclidean) = TrainingIntegrators{VariationalMidPointIntegrator, PositionSymbol, TrajectorydData, typeof(sqdist)}(sqdist)
 
 # discrete langrangian
 discrete_lagrangian(::VariationalMidPointIntegrator, nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, qₙ, qₙ₊₁, Δt, params = nn.params) =  nn([(qₙ₊₁+qₙ)/2..., (qₙ₊₁-qₙ)/Δt...], params)
@@ -20,11 +19,7 @@ function loss_single(ti::VariationalIntegrator, nn::LuxNeuralNetwork{<:Lagrangia
     sqeuclidean(DL1,-DL2)
 end
 
-loss(ti::VariationalMidPointIntegrator, nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, datat::DataTrajectory, index_batch = get_batch(datat), params = nn.params) =
-mapreduce(x->loss_single(ti, nn, Zygote.ignore(get_data(datat,:q,x[1],x[2])), Zygote.ignore(get_data(datat,:q,x[1],x[2]+1)), Zygote.ignore(get_data(datat,:q,x[1],x[2]+2)), Zygote.ignore(get_Δt(datat)), params), +, index_batch)
-
-required_key(::VariationalMidPointIntegrator) = (:q,)
+loss(ti::VariationalMidPointIntegrator, nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, data::TrainingData{DataSymbol{<:PositionSymbol}}, index_batch = get_batch(datat), params = nn.params) =
+mapreduce((args...)->loss_single(ti, nn, Zygote.ignore(get_data(datat,:q, args...)), Zygote.ignore(get_data(datat,:q, next(args...)...)), Zygote.ignore(get_data(datat,:q,next(next(args...)...)...)), Zygote.ignore(get_Δt(datat)), params), +, index_batch)
 
 min_length_batch(::VariationalIntegrator) = 3
-
-data_goal(::VariationalIntegrator) = (test_data_trajectory,)

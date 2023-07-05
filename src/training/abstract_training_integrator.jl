@@ -9,11 +9,10 @@ function loss_single end
 
 
 #Define common strucutre integrator
-struct TrainingIntegrator{TIT,TD}
-    type::TIT
+struct TrainingIntegrator{TIT<:AbstractTrainingIntegrator, TSymbol<:AbstractDataSymbol, TShape<:AbstractDataShape, TD}
     sqdist::TD
-
-    TrainingIntegrator(type;sqdist = sqeuclidean) = new{typeof(type),typeof(sqdist)}(type, sqdist)
 end
 
-type(ti::TrainingIntegrator) = ti.type
+@inline type(::TrainingIntegrator{T}) where T<: AbstractTrainingIntegrator = T
+@inline symbols(::TrainingIntegrator{T,Symbols}) where {T<: AbstractTrainingIntegrator, Symbols<:AbstractDataSymbol} = Symbols
+@inline shape(::TrainingIntegrator{T,Symbols, Shape}) where {T<: AbstractTrainingIntegrator, Symbols<:AbstractDataSymbol, Shape<:AbstarctDataShape} = Shape

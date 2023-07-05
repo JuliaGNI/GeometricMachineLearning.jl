@@ -1,7 +1,6 @@
 abstract type AbstractTrainingData end
 
-
-struct TrainingData{TK <: DataSymbol, TS <: AbstractDataShape, TP <: AbstractProblem, TG <: NamedTuple, TN <: Base.Callable} <: AbstractTrainingData 
+struct TrainingData{TK <: DataSymbol, TS <: AbstractDataShape, TP <: AbstractProblem, TG <: Dict{Symbol, <:Base.Callable}, TN <: Base.Callable} <: AbstractTrainingData 
     problem::TP
     shape::TS
     get::TG
@@ -22,17 +21,17 @@ function TrainingData(data, _get_data::Dict{Symbol, <:Any}, problem = UnknownPro
 
     delete!(_get_data, :shape)
 
-    get = NamedTuple([(key, (args...)->value(data,args...)) for (key,value) in _get_data])
+    get = Dict([(key, (args...)->value(data,args...)) for (key,value) in _get_data])
 
     symbols = DataSymbol(Tuple(keys(get)))
     
-    dim = 2 #length(get[Tuple(keys(get))[1]])
+    dim = length(get[1](_index_first(shape)))
 
     TrainingData(problem, shape, get, symbols, dim, noisemaker)
 end
 
-function TrainingData(data::TrainingData; noisemaker =  NothingFunction)
-    is_NothingFunction(noisemaker) ? data :  TrainingData(problem(data), shape(data), get(data), symbols(data), dim(data), noisemaker)
+function TrainingData(data::TrainingData; shape = shape(data), get = get(data), symbols = symbols(data), noisemaker =  NothingFunction)
+    is_NothingFunction(noisemaker) ? data :  TrainingData(problem(data), shape, get, symbols, dim(data), noisemaker)
 end
 
 
@@ -40,6 +39,7 @@ end
 @inline shape(data::TrainingData) = data.shape
 @inline get(data::TrainingData) = data.get
 @inline symbols(data::TrainingData) = data.symbols
+@inline data_symbols(data::TrainingData) = data.symbols
 @inline dim(data::TrainingData) = data.dim
 @inline noisemaker(data::TrainingData) = data.noisemaker
 
@@ -49,3 +49,58 @@ end
 @inline get_nb_point(data::TrainingData) = get_nb_point(data.shape)
 @inline get_data(data::TrainingData, s::Symbol, args) = data.get[s](args...)
 
+@inline eachindex(data::TrainingData) = eachindex(data.shape)
+
+
+function reshape_intoSampledData!(data::TrainingData)
+
+    new_shape = reshape_intoSampledData!(shape(data))
+
+    #Creating a dictionary and imposing its type
+    new_get = Dict(:a,x->x)
+    delete!(new_get, :a)
+
+    for s in data_symbols(symbols(data))
+        v = []
+        for x in eachindex(data)
+            push!(v, get_data(data,s, x...))
+        end
+        new_get[s] = n -> v[n]
+    end
+
+    TrainingData(data; shape = new_shape, get = new_get)
+end
+
+
+function reduce_symbols!(data::TrainingData, symbol::DataSymbol)
+
+    #compute the symetric difference of old and new symbols
+    toberemoved = reduce(symbols(data), symbol)
+
+    #clean get
+    clean_get!(data, toberemoved)
+
+    TrainingData(data; symbols = symbol)
+end
+
+
+function transform_symbols!(data::TrainingData, symbol::DataSymbol)
+
+    #compute the symetric difference of old and new symbols
+    toberemoved = transform(symbols(data), symbol)
+
+
+
+    #clean get
+    clean_get!(data, toberemoved)
+
+    TrainingData(data; symbols = symbol)
+
+end
+
+
+function clean_get(data::TrainingData, toberemoved::Tuple{Vararg{Symbol}})
+    for s in toberemoved
+        delete!(get(data), s)
+    end
+end

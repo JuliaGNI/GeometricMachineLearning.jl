@@ -10,16 +10,16 @@ function HNN(integrator::TrainingIntegrator{<:HnnTrainingIntegrator}, data::Abst
     _, n_dim = dict_problem_H[nameproblem]
 
     # layer dimension/width
-    ld = 5
+    ld = 1
 
     # hidden layers
-    ln = 3
+    ln = 0
 
     # number of inputs/dimension of system
     ninput = 2*n_dim
 
     # number of training runs
-    nruns = 1000
+    nruns = 10
 
     # create HNN
     hnn = HamiltonianNeuralNetwork(ninput; nhidden = ln, width = ld)
@@ -28,29 +28,33 @@ function HNN(integrator::TrainingIntegrator{<:HnnTrainingIntegrator}, data::Abst
     nn = NeuralNetwork(hnn, LuxBackend())
 
     # perform training (returns array that contains the total loss for each training step)
-    total_loss = train!(nn, data, opt, integrator; ntraining = nruns, showprogress = true)
+    total_loss = 0#train!(nn, data, opt, integrator; ntraining = nruns, showprogress = true)
 
     return nn, total_loss
 end
 
 
 
-_Data,Target = get_HNN_data(:pendulum)
-Data=(_Data, Target)
+Data= get_HNN_data(:pendulum)
 Get_Data = Dict(
     :shape => SampledData,
-    :nb_points => Data -> length(Data),
+    :nb_points => Data -> length(Data[1]),
     :q => (Data,n) -> Data[1][n][1],
     :p => (Data,n) -> Data[1][n][2],
     :q̇ => (Data,n) -> Data[2][n][1],
     :ṗ => (Data,n) -> Data[2][n][2],
 )
-
 data = TrainingData(Data, Get_Data)
 
-symbols(data)
 
 nn, total_loss = HNN(ExactHnn(), data,  :pendulum, MomentumOptimizer())
+index_batch = get_batch(data, 10)
+
+loss_gradient(nn, type(ExactHnn()), data, index_batch, nn.params)
+
+
+
+
 
 #include("../plots.jl")
 
