@@ -1,5 +1,9 @@
 using GeometricMachineLearning, LinearAlgebra, ProgressMeter, Plots, Test
-import Lux, Zygote, Random, MLDatasets, Flux, Lux.gpu
+using CUDA
+
+import Lux, Zygote, Random, MLDatasets, Flux, Lux.gpu, KernelAbstractions
+
+backend = CUDA.CUDABackend()
 
 #MNIST images are 28×28, so a sequence_length of 16 = 4² means the image patches are of size 7² = 49
 image_dim = 28
@@ -27,16 +31,16 @@ train_y = Flux.onehotbatch(train_y, 0:9)
 test_y = Flux.onehotbatch(test_y, 0:9)
 
 model = MultiHeadAttention(patch_length^2, n_heads)
-ps, st = Lux.setup(Random.default_rng(), model)
+ps, st = Lux.setup(CUDA.device(), Random.default_rng(), model)
 
-n_data = 10000
+n_data = 60000
 
-@time output1 = Lux.apply(model, train_x_reshaped[:,:,1:n_data], ps, st)[1]
+@time output1 = Lux.apply(model, train_x_reshaped[:,:,1:n_data] |> cu, ps, st)[1]
 
-output2 = zeros(patch_length^2, patch_number, n_data)
+output2 = KernelAbstractions.zeros(backend, eltype(train_x), patch_length^2, patch_number, n_data)
 
 @time for i in 1:n_data
-    output2[:, :, i] = Lux.apply(model, train_x_reshaped[:, :, i], ps, st)[1]
+    output2[:, :, i] = Matrix(Lux.apply(model, train_x_reshaped[:, :, i] |> cu, ps, st)[1])
 end
 
 @test isapprox(output1, output2)
