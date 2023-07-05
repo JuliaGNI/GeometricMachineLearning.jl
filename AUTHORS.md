@@ -17,4 +17,5 @@ The following people contributed to GeometricMachineLearning and are listed in a
 
 * Tobias M. Blickhan
 * Benedikt Brantner
+* Théo Duez
 * Michael Kraus
