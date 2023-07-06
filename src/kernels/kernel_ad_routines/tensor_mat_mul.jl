@@ -16,8 +16,8 @@ function ChainRulesCore.rrule(::typeof(tensor_mat_mul), A::AbstractArray{T, 3}, 
     return C, tensor_mat_mul_pullback
 end
 
-GeometricMachineLearning.tensor_mat_mul(A::Thunk, B::AbstractMatrix) = Thunk(() -> tensor_mat_mul(unthunk(A), B))
+tensor_mat_mul(A::Thunk, B::AbstractMatrix) = Thunk(() -> tensor_mat_mul(unthunk(A), B))
 
-function GeometricMachineLearning.tensor_transpose_tensor_mul(A::AbstractArray{T, 3}, B::Thunk) where T 
+function tensor_transpose_tensor_mul(A::AbstractArray{T, 3}, B::Thunk) where T 
     Thunk(() -> tensor_transpose_tensor_mul(A, unthunk(B)))
 end
