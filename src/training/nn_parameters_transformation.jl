@@ -17,7 +17,7 @@ function pretransform(::TuppleNeededTrainingIntegrator, params::NamedTuple)
 end
 
 
-function posttransform(::HnnTrainingIntegrator, params_grad::Tuple, keys)
+function posttransform(::TuppleNeededTrainingIntegrator, params_grad::Tuple, keys)
 
     NamedTuple(zip(keys[1],[NamedTuple(zip(k,x)) for (k,x) in zip(keys[2],params_grad)]))
 

@@ -6,7 +6,7 @@
         - It then checks that the symbols in the data match those required by the method. If the symbols don't match, we first try a reduction, then we try a transformation to convert the data.
 =#
 
-function assert(ti::AbstractTrainingIntegrator, data::AbstractTrainingData)
+function matching(ti::AbstractTrainingIntegrator, data::AbstractTrainingData)
 
     if shape(ti) != typeof(shape(data))
 

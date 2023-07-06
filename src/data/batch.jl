@@ -3,6 +3,9 @@ const DEFAULT_BATCH_NB_TAJECTORY= 1
 
 min_length_batch(ti::AbstractTrainingIntegrator) = 1
 
+
+default_index_batch(::AbstractTrainingIntegrator{<:AbstractDataSymbol, <:SampledData})  = DEFAULT_BATCH_SIZE
+default_index_batch(ti::AbstractTrainingIntegrator{<:AbstractDataSymbol, <:TrajectorydData})  = (1, DEFAULT_BATCH_SIZE, min_length_batch(ti))
 default_index_batch(::TrainingData{T,TrajectoryData} where T, ti::AbstractTrainingIntegrator) = (1, DEFAULT_BATCH_SIZE, min_length_batch(ti))
 default_index_batch(::TrainingData{T,SampledData} where T, ::AbstractTrainingIntegrator) = DEFAULT_BATCH_SIZE
 
@@ -51,6 +54,7 @@ function get_batch(data::TrainingData{T,SampledData} where T, batch_size::Int = 
     rand(1:get_nb_point(data), batch_size)
 end
 
+get_batch(data::TrainingData{T,SampledData} where T) = 1:get_nb_point(data)
 
 
 

@@ -12,13 +12,13 @@ struct TrainingParameters{TM, TO, Tbatch}
     mopt::TO
     bs::Tbatch
 
-    function TrainingParameters(nruns, method, mopt = default_optimizer(); bs = default_index_batch(method))
-        new{typeof(method), typeof(mopt), typeof(bs)}(nruns, method, mopt, bs)
+    function TrainingParameters(nruns, method, mopt = default_optimizer(); batch_size = default_index_batch(method))
+        new{typeof(method), typeof(mopt), typeof(bs)}(nruns, method, mopt, batch_size)
     end
 end
 
-function TrainingParameters(tp::TrainingParameters; nruns = nruns(tp), method = method(tp), opt = opt(tp), bs = batchsize(tp))
-    TrainingParameters(nruns, method, opt; bs = bs)
+function TrainingParameters(tp::TrainingParameters; nruns = nruns(tp), method = method(tp), opt = opt(tp), batch_size = batchsize(tp))
+    TrainingParameters(nruns, method, opt; batch_size = batch_size)
 end
 
 @inline nruns(tp::TrainingParameters) = tp.nruns
@@ -28,3 +28,4 @@ end
 
 
 
+TrainingIntegrators{HnnExactIntegrator, DerivativePhaseSpaceSymbol, SampledData, typeof(sqdist)}(sqdist)

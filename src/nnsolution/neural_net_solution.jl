@@ -35,3 +35,6 @@ update_history(nns::NeuralNetSolution, sg::SingleHistory) = _add(nns.history, sg
 @inline size_history(nns::NeuralNetSolution) = nns.history.size
 
 set_sizemax_history(nns::NeuralNetSolution, sizemax::Int) = _set_sizemax_history(nns.history, sizemax)
+
+
+

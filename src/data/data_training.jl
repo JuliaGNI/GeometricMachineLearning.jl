@@ -14,9 +14,11 @@ struct TrainingData{TK <: DataSymbol, TS <: AbstractDataShape, TP <: AbstractPro
 
 end
 
-function TrainingData(data, _get_data::Dict{Symbol, <:Any}, problem = UnknownProblem(); noisemaker =  NothingFunction)
-        
-    @assert haskey(_get_data, :shape)
+function TrainingData(data, get_data::Dict{Symbol, <:Any}, problem = UnknownProblem(); noisemaker =  NothingFunction)
+    
+    _get_data = copy(get_data)
+    
+    @assert haskey(get_data, :shape)
     shape = _get_data[:shape](data, _get_data)
 
     delete!(_get_data, :shape)
@@ -85,6 +87,9 @@ end
 
 
 function transform_symbols!(data::TrainingData, symbol::DataSymbol)
+
+    #check if it is possible to do the transformation
+    
 
     #compute the symetric difference of old and new symbols
     toberemoved = transform(symbols(data), symbol)

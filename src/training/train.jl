@@ -32,7 +32,7 @@ function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, data::AbstractTrai
     @assert dim(nn) == dim(data)
 
     #verify that shape of data depending of the ExactIntegrator
-    #assert(type(ti), data)
+    matching(type(ti), data)
 
     # create array to store total loss
     total_loss = zeros(ntraining)
@@ -88,13 +88,23 @@ function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, data::AbstractTrai
 end
 
 ####################################################################################
-## Training on a SingleTrainingSet structure
+## Training on a TrainingSet structure
 ####################################################################################
 
-function train!(sts::SingleTrainingSet; kwarsg...)
+train!(ts::TrainingSet; kwarsg...) = train!(nn(ts), data(ts), parameters(ts); kwarsg...)
 
-    train!(nn(sts), data(sts), parameters(sts); kwarsg...)
+train!(ts::TrainingSet...; kwarsg...) = train!(EnsembleTraining(ts...); kwarsg...)
 
+####################################################################################
+## Training on a EnsembleTraining structure
+####################################################################################
+
+function train!(ets::EnsembleTraining; kwarsg...)
+    enns = EnsembleNeuralnetSolution()
+    for ts in ets
+        push!(enns,train!(ts::TrainingSet; kwarsg...))
+    end
+    enns
 end
 
 ####################################################################################
@@ -116,11 +126,11 @@ function train!(nns::NeuralNetSolution, data::AbstractTrainingData, tp::Training
 
 end
 
-function train!(nns::NeuralNetSolution, sts::SingleTrainingSet; kwarsg...)
+function train!(nns::NeuralNetSolution, ts::TrainingSet; kwarsg...)
 
-    @assert nn(sts) == nn(nns)
+    @assert nn(ts) == nn(nns)
     
-    train!(nns::NeuralNetSolution, data(sts), parameters(sts); kwarsg...)
+    train!(nns::NeuralNetSolution, data(ts), parameters(ts); kwarsg...)
 
 end
 
