@@ -9,6 +9,7 @@ module GeometricMachineLearning
     using Zygote
     using GPUArrays
     using KernelAbstractions
+    using ChainRulesCore
 
     import Lux, CUDA
 
