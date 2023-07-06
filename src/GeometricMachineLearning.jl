@@ -15,7 +15,10 @@ module GeometricMachineLearning
     include("kernels/tensor_mat_mul.jl")
     include("kernels/tensor_tensor_mul.jl")
     include("kernels/tensor_transpose_tensor_mul.jl")
+    include("kernels/tensor_transpose_mat_mul.jl")
     include("kernels/mat_tensor_mul.jl")
+
+    include("kernels/kernel_ad_routines/tensor_matrix_multiplication.jl")
     #export tensor_mat_mul
 
     #this defines empty retraction type structs (doesn't rely on anything)
