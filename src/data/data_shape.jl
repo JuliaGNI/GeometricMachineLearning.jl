@@ -73,9 +73,6 @@ end
 @inline get_length_trajectory(data::TrajectoryData, i::Int) = data.length_trajectory[i]
 @inline get_nb_point(data::SampledData) = data.nb_point
 
-@inline next(i,j) = (i,j+1)
-@inline next(i) = (i+1,)
-
 @inline _index_first(:AbstractDataShape) = nothing
 @inline _index_first(:TrajectoryData) = (1,1)
 @inline _index_first(:SampledData) = 1
@@ -88,9 +85,7 @@ reshape_intoSampledData!(data::AbstractDataShape) = @error "It is not possible t
 reshape_intoSampledData!(data::SampledData) = data
 reshape_intoSampledData!(data::TrajectoryData) = SampledData(sum([get_length_trajectory(data,i) for i in 1:get_nb_trajectory(data)]...))
 
-iterate(data::AbstractDataShape, state = 1, args...) = nothing 
-iterate(data::SampledData, state = 1, s::Symbol) = state > get_nb_point(data) ? nothing : ()
-iterate(data::TrajectoryData, state = 1, s::Symbol) = 
+
 
     
  

@@ -15,6 +15,13 @@ struct SingleHistory{TP <: TrainingParameters, TD, TL}
     SingleHistory(parameters, datashape, size_data, loss) = new{typeof{parameters}, typeof{datashape}, typeof(loss)}(parameters, datashape, size_data, loss)
 end
 
+function show(sh::SingleHistory, head = true)
+    if head
+
+    end
+    
+end
+
 
 #=
     History structure is designed to store all the past results. It includes :
@@ -26,32 +33,35 @@ end
 
 
 mutable struct History
-    data::Dict{Symbol, SingleHistory}
+    data::AbstractArray{SingleHistory}
     last::SingleHistory
     size::Int
     sizemax::Int
+    nbtraining::Int
 
-    function History(sg::SingleHistory; sizemax = 10)
+    function History(sg::SingleHistory; sizemax = 100)
         history = Dict()
         new(history, sg, 0, sizemax)
     end
 end
 
-
-
-@inline size(history::History) = history.size
+@inline data(history::History) = history.data
 @inline last(history::History) = history.last 
+@inline size(history::History) = history.size
 @inline sizemax(history::History) = history.sizemax
+@inline nbtraining(history::History) = history.nbtraining
+
+Base.getindex(history::History, n::Int) = data(history)[n]
+Base.iterate(history::History, state = 1) = state > size(history) ? nothing : (history[state],state+1)
 
 function _add(history::History, sg::SingleHistory)
     
-    history.size += 1 
+    history.nbtraining += 1 
 
-    if history.size > history.sizemax
-        delete!(history.data, Symbol("training_"*string(history.size - history.sizemax)))
-    end
-    
-    history.data[Symbol("training_"*string(size_history))] = history.last
+    history.size == history.sizemax ? popfirst!(history.data) : history.size += 1
+
+    push!(history.data, history.last)
+        
     history.last = sg
     
 end
@@ -61,11 +71,20 @@ function _set_sizemax_history(history::History, sizemax::Int)
 
     @assert sizemax >= 0
 
-    previous_sizemax = history.sizemax
     history.sizemax = sizemax
 
-    for i in (history.size - previous_sizemax + 1):(history.size - history.sizemax + 1)
-        delete!(history.data, Symbol("training_"*string(i)))
+    for _ in 1:(size(history)-sizemax(history))
+        popfirst!(history.data)
     end
+
+    history.size = history.size - max(history.size - history.sizemax, 0)
+
+end
+
+
+function show(history::History)
+    println("Print of history : ")
+    println("-------------------")
+    println("Last training :", )
 
 end

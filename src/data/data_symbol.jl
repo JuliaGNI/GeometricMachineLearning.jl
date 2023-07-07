@@ -15,21 +15,23 @@ struct DataSymbol{T <: AbstractDataSymbol} end
 type(::DataSymbol{T}) where T<: AbstractDataSymbol = T
 
 
-data_symbol(::DataSymbol{AbstractDataSymbol}) = nothing
-data_symbol(::DataSymbol{PositionSymbol}) = (:q,)
-data_symbol(::DataSymbol{PhaseSpaceSymbol}) = (:q,:p)
-data_symbol(::DataSymbol{DerivativePhaseSpaceSymbol}) = (:q,:p,:q̇,:ṗ)
-data_symbol(::DataSymbol{PosVeloSymbol}) = (:q,:q̇)
-data_symbol(::DataSymbol{PosVeloAccSymbol}) = (:q,:q̇,:q̈)
+symbols(::DataSymbol{AbstractDataSymbol}) = nothing
+symbols(::DataSymbol{PositionSymbol}) = (:q,)
+symbols(::DataSymbol{PhaseSpaceSymbol}) = (:q,:p)
+symbols(::DataSymbol{DerivativePhaseSpaceSymbol}) = (:q,:p,:q̇,:ṗ)
+symbols(::DataSymbol{PosVeloSymbol}) = (:q,:q̇)
+symbols(::DataSymbol{PosVeloAccSymbol}) = (:q,:q̇,:q̈)
 
 
 function can_reduce(::DataSymbol{T}, s₂::DataSymbol{M}) where {T<:AbstractDataSymbol, M  <:AbstractDataSymbol}
     T <: M ? true : false
 end
 
-function reduce(s₁::DataSymbol{T}, s₂::DataSymbol{M}) where {T<:AbstractDataSymbol, M  <:AbstractDataSymbol}
-    T <: M ? _setdiff(s₁,s₂) : @error "Impossible to reduce "*string(T)*" in "*string(M)*" !"
+function symboldiff(s₁::DataSymbol, s₂::DataSymbol) 
+    _tuplediff(symbols(s₁),symbols(s₂))
 end
+
+
 
 transform(::DataSymbol{T}, ::DataSymbol{U}) where {T<:AbstractDataSymbol,U<:AbstractDataSymbol} = @error "No method to convert "*string(T)*" in "*string(M)*" !"
 
@@ -43,9 +45,9 @@ can_transform(::DataSymbol{T}, ::DataSymbol{U}) where {T<:AbstractDataSymbol,U<:
 
 function DataSymbol(keys::Tuple; symbol = DataSymbol{AbstractDataSymbol}())
     for subtype in subtypes(type(symbol))
-        if data_symbol(DataSymbol{subtype}()) == keys
+        if symbols(DataSymbol{subtype}()) == keys
             return DataSymbol{subtype}
-        elseif data_symbol(DataSymbol{subtype}()) ⊆ keys
+        elseif symbols(DataSymbol{subtype}()) ⊆ keys
             return DataSymbol(keys; symbol = DataSymbol{subtype}())
         end
     end
@@ -53,3 +55,20 @@ function DataSymbol(keys::Tuple; symbol = DataSymbol{AbstractDataSymbol}())
 end
 
 
+#=
+    Some exceptions that need to be catch in the matching function.
+=#
+
+struct ReductionSymbolError <: Exception
+    input_symbol::AbstractDataSymbol
+    focus_symbol::AbstractDataSymbol
+end
+
+Base.showerror(io::IO, e::ReductionSymbolError) = print(io, String(e.input_symbol), "can not be reduced in", String(e.focus_symbol), " !")
+
+struct TransformationSymbolError <: Exception
+    input_symbol::AbstractDataSymbol
+    focus_symbol::AbstractDataSymbol
+end
+
+Base.showerror(io::IO, e::TransformationSymbolError) = print(io, String(e.input_symbol), "can not be transformed in", String(e.focus_symbol), " !")

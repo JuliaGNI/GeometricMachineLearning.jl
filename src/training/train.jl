@@ -26,10 +26,13 @@ Different ways of use:
 
 
 """
-function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, data::AbstractTrainingData, m::AbstractMethodOptimiser, ti::TrainingIntegrator{<:AbstractTrainingIntegrator} = default_integrator(nn, data); ntraining = DEFAULT_NRUNS, batch_size_t = default_index_batch(data,type(ti)), showprogress::Bool = false)
+function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, data::AbstractTrainingData, m::AbstractMethodOptimiser, ti::TrainingIntegrator{<:AbstractTrainingIntegrator} = default_integrator(nn, data); ntraining = DEFAULT_NRUNS, batch_size = default_index_batch(data,type(ti)), showprogress::Bool = false)
     
     #verify that dimension of data and input of nn match
     @assert dim(nn) == dim(data)
+
+    #check batch_size with respect to data
+    check_batch_size(data, batch_size)
 
     #verify that shape of data depending of the ExactIntegrator
     matching(type(ti), data)
@@ -46,7 +49,7 @@ function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, data::AbstractTrai
     # Learning runs
     p = Progress(ntraining; enabled = showprogress)
     for j in 1:ntraining
-        index_batch = get_batch(data, batch_size_t)
+        index_batch = get_batch(data, batch_size; check = false)
 
         params_grad = loss_gradient(nn, type(ti), data, index_batch, params_tuple) 
 
@@ -79,7 +82,9 @@ train!(neuralnetwork, data, optimizer, training_method; nruns = 1000, batch_size
 """
 function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, data::AbstractTrainingData, tp::TrainingParameters; showprogress::Bool = false)
 
-    total_loss = train!(nn, data, opt(tp), method(tp); ntraining = nruns(tp), batch_size_t = batch_size(tp), showprogress = showprogress)
+    bs = batch_size(tp) === nothing ? default_index_batch(data,type(method(tp))) : batch_size(tp)
+
+    total_loss = train!(nn, data, opt(tp), method(tp); ntraining = nruns(tp), batch_size =  bs, showprogress = showprogress)
 
     sh = SingleHistory(tp, shape(data), size(data), total_loss)
     

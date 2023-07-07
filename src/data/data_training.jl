@@ -25,7 +25,7 @@ function TrainingData(data, get_data::Dict{Symbol, <:Any}, problem = UnknownProb
 
     get = Dict([(key, (args...)->value(data,args...)) for (key,value) in _get_data])
 
-    symbols = DataSymbol(Tuple(keys(get)))
+    symbols = DataSymbol(Tuple(keys(get)...))
     
     dim = length(get[1](_index_first(shape)))
 
@@ -40,8 +40,8 @@ end
 @inline problem(data::TrainingData) = data.problem
 @inline shape(data::TrainingData) = data.shape
 @inline get(data::TrainingData) = data.get
-@inline symbols(data::TrainingData) = data.symbols
 @inline data_symbols(data::TrainingData) = data.symbols
+@inline symbols(data::TrainingData) = symbols(data_symbols(data))
 @inline dim(data::TrainingData) = data.dim
 @inline noisemaker(data::TrainingData) = data.noisemaker
 
@@ -62,7 +62,7 @@ function reshape_intoSampledData!(data::TrainingData)
     new_get = Dict(:a,x->x)
     delete!(new_get, :a)
 
-    for s in data_symbols(symbols(data))
+    for s in symbols(data_symbols(data))
         v = []
         for x in eachindex(data)
             push!(v, get_data(data,s, x...))
@@ -76,8 +76,11 @@ end
 
 function reduce_symbols!(data::TrainingData, symbol::DataSymbol)
 
+    #test if it cab be reduced
+    can_reduce(data_symbols(data), symbol) ? nothing : throw(ReductionSymbolError(type(data_symbols(data)), type(symbol)))
+
     #compute the symetric difference of old and new symbols
-    toberemoved = reduce(symbols(data), symbol)
+    toberemoved = symboldiff(data_symbols(data), symbol)
 
     #clean get
     clean_get!(data, toberemoved)

@@ -15,8 +15,6 @@ struct TrainingSet{TN <: AbstractNeuralNetwork, TP<:TrainingParameters , TD<: Ab
     end
 end
 
-TrainingSet(nn::AbstractNeuralNetwork, tp::TrainingParameters, datashape::NamedTuple, problem::AbstractProblem, data) = TrainingSet(nn, tp, TrainingData(data, datashape, problem))
-
 TrainingSet(ts::TrainingSet; nn::AbstractNeuralNetwork = nn(ts), tp::TrainingParameters = parameters(ts), data::AbstractTrainingData = data(ts)) = TrainingSet(nn, tp, data)
 
 @inline nn(ts::TrainingSet)= ts.nn

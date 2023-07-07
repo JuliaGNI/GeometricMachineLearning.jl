@@ -1,5 +1,5 @@
 #=
-    EnsembleTraining gathers in a structure severals TrainingSet. This strcutre is mutable so that we can add new TrainingSet easily. 
+    EnsembleTraining gathers in one structure severals TrainingSet. This structure is mutable so that we can add new TrainingSet easily. 
 =#
 
 mutable struct EnsembleTraining{TS <:AbstractArray{TrainingSet}}

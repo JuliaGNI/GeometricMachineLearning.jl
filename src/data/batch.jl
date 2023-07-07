@@ -1,13 +1,18 @@
 const DEFAULT_BATCH_SIZE = 10
-const DEFAULT_BATCH_NB_TAJECTORY= 1
+const DEFAULT_BATCH_NB_TAJECTORY= 2
 
 min_length_batch(ti::AbstractTrainingIntegrator) = 1
 
-
-default_index_batch(::AbstractTrainingIntegrator{<:AbstractDataSymbol, <:SampledData})  = DEFAULT_BATCH_SIZE
-default_index_batch(ti::AbstractTrainingIntegrator{<:AbstractDataSymbol, <:TrajectorydData})  = (1, DEFAULT_BATCH_SIZE, min_length_batch(ti))
 default_index_batch(::TrainingData{T,TrajectoryData} where T, ti::AbstractTrainingIntegrator) = (1, DEFAULT_BATCH_SIZE, min_length_batch(ti))
 default_index_batch(::TrainingData{T,SampledData} where T, ::AbstractTrainingIntegrator) = DEFAULT_BATCH_SIZE
+
+
+function get_batch(data::TrainingData{T,S}, batch_size_t) where {T,S}
+    @warn "No match between the shape of data and the shape of batch_size. \n\
+            "*String(S)*" recquires "*String(typeof(default_index_batch(data)))*".\n\
+            Default batch_size : "*String(default_index_batch(data))*"is used."
+    get_batch(data)
+end
 
 
 #=
@@ -22,10 +27,12 @@ default_index_batch(::TrainingData{T,SampledData} where T, ::AbstractTrainingInt
     The trajectories selected and the points are randomly choosen with uniform law.  
 =#
 
-function get_batch(data::TrainingData{T,TrajectoryData} where T, batch_size_t::Tuple{Int64,Int64,Int64})
+function get_batch(data::TrainingData{T,TrajectoryData} where T, batch_size::Tuple{Int64,Int64,Int64}; check = true)
 
-    batch_nb_trajectory, batch_size, size_sequence = batch_size_t
-    
+    batch_nb_trajectory, batch_size, size_sequence = batch_size
+
+    check ? check_batch_size(data, batch_size) : nothing
+
     l = get_nb_trajectory(data)
     index_trajectory = rand(1:l, min(batch_nb_trajectory,l))
 
@@ -40,6 +47,12 @@ function get_batch(data::TrainingData{T,TrajectoryData} where T, batch_size_t::T
     return index_batch
 end
 
+get_batch(data::TrainingData{T,TrajectoryData} where T, batch_size::Tuple{Int64,Int64}; check = true) = get_batch(data, (batch_size...,); check = true)
+
+
+
+
+
 get_batch(data::TrainingData{T,TrajectoryData} where T) = vcat([[(i,j) for j in 1:2:get_length_trajectory(data, i)-1] for i in 1:1:get_nb_trajectory(data)]...)
 
 #=
@@ -47,15 +60,31 @@ get_batch(data::TrainingData{T,TrajectoryData} where T) = vcat([[(i,j) for j in 
     the batch index.
 =#
 
-function get_batch(data::TrainingData{T,SampledData} where T, batch_size::Int = get_nb_point(data)) 
+function get_batch(data::TrainingData{T,SampledData} where T, batch_size::Int = get_nb_point(data); check = true) 
     
-    @assert get_nb_point(data) >= batch_size
+    check ? check_batch_size(data, batch_size) : nothing
 
     rand(1:get_nb_point(data), batch_size)
 end
 
 get_batch(data::TrainingData{T,SampledData} where T) = 1:get_nb_point(data)
 
+
+
+function check_batch_size(data::TrainingData{T,TrajectoryData} where T, batch_size::Tuple{Int64,Int64,Int64})
+    if batch_nb_trajectory > get_nb_trajectory(data)
+        batch_nb_trajectory = get_nb_trajectory(data)
+        @warn "The number of trajectory in the batch is greater than the number of trajectory in data.\
+            \n"*String(batch_size_t)*" is replaced by "*String(())
+    end
+end
+
+function check_batch_size(data::TrainingData{T,SampledData} where T, batch_size::Tuple{Int64,Int64,Int64})
+     if batch_size > get_nb_point(data)
+        @warn "The size of batch is greater than the size of data.\
+        \n"*String(batch_size_t)*" is replaced by "*String(get_nb_point(data))*"."
+     end
+end
 
 
 

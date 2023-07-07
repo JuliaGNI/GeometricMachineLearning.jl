@@ -75,13 +75,7 @@ function Base.:+(a::Vector{Float64}, b::Tuple{Float64})
     return y+x
 end
 =#
-
-
 #Zygote.OneElement(t1::Tuple{Float64}, t2::Tuple{Int64}, t3::Tuple{Base.OneTo{Int64}}) = Zygote.OneElement(t1[1], t2, t3)
-
-_haskey(::Nothing, key::Core.Any) = false
-_haskey(a, b) = Base.haskey(a, b)
-
 
 function type_without_brace(var)
     type_str = string(typeof(var))
@@ -96,6 +90,7 @@ end
 abstract type AbstractProblem end
 struct UnknownProblem <: AbstractProblem end
 
+_tuplediff(t₁::Tuple,t₂::Tuple) = tuple(setdiff(Set(t₁),Set(t₂))...)
 
-
-_setdiff(t₁::Tuple,t₂::Tuple) = tuple(setdiff(Set(t₁),Set(t₂))...)
+@inline next(i::Int,j::Int) = (i,j+1)
+@inline next(i::Int) = (i+1,)

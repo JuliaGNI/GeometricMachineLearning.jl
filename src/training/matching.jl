@@ -1,6 +1,6 @@
 
 #=
-    The Assert function checks the correspondence between the training method, the form of the data and the symbols in the data. 
+    The matching function checks the correspondence between the training method, the form of the data and the symbols in the data. 
         - It first checks the correspondence between the shape of the data and that required by the method. If sample data is required but trajectory data is provided,
            the shape of the training data is converted into the correct shape.
         - It then checks that the symbols in the data match those required by the method. If the symbols don't match, we first try a reduction, then we try a transformation to convert the data.
@@ -21,16 +21,20 @@ function matching(ti::AbstractTrainingIntegrator, data::AbstractTrainingData)
 
     if symbols(ti) != type(symbols(data))
 
-        if can_reduce(symbols(data), DataSymbol{symbols(ti)}())
+        try reduce_symbols!(data, DataSymbol{symbols(ti)}())
 
-            reduce_symbols!(data, DataSymbol{symbols(ti)}())
+        catch
+        
+            try Transform_symbols!(data, DataSymbol{symbols(ti)}()) 
+                
+                println("Automatic trnasformatiom ")
+            catch 
 
-        elseif can_transform(symbols(data), symbols(ti))
+                @assert symbols(ti) == type(symbols(data))
 
-            transform_symbols!(data, DataSymbol{symbols(ti)}())
-
-        else
-            @assert symbols(ti) == type(symbols(data))
+            end
         end
     end
 end
+
+

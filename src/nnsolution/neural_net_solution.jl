@@ -31,10 +31,12 @@ update_history(nns::NeuralNetSolution, sg::SingleHistory) = _add(nns.history, sg
 @inline problem(nns::NeuralNetSolution) = nns.problem
 @inline tstep(nns::NeuralNetSolution) = nns.tstep
 @inline loss(nns::NeuralNetSolution) = nns.loss
+
 @inline history(nns::NeuralNetSolution) = nns.history.data
-@inline size_history(nns::NeuralNetSolution) = nns.history.size
+@inline size_history(nns::NeuralNetSolution) = size(nns.history)
+@inline last(nns::NeuralNetSolution) = last(nns.history)
+@inline nbtraining(nns::NeuralNetSolution) =  nbtraining(nns.history)
 
 set_sizemax_history(nns::NeuralNetSolution, sizemax::Int) = _set_sizemax_history(nns.history, sizemax)
 
-
-
+@inline show_history(nns::NeuralNetSolution) = show(history(nns))
