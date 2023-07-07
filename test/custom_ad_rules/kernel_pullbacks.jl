@@ -1,9 +1,10 @@
-using GeometricMachineLearning: tensor_mat_mul, mat_tensor_mul
+using GeometricMachineLearning: tensor_mat_mul, mat_tensor_mul, tensor_tensor_mul
 using ChainRulesTestUtils
 
 function main(first_dim, second_dim, third_dim, third_tensor_dim)
     test_rrule(tensor_mat_mul, rand(first_dim, second_dim, third_tensor_dim), rand(second_dim, third_dim))
     test_rrule(mat_tensor_mul, rand(first_dim, second_dim), rand(second_dim, third_dim, third_tensor_dim))
+    test_rrule(tensor_tensor_mul, rand(first_dim, second_dim, third_tensor_dim), rand(second_dim, third_dim, third_tensor_dim))
     #compute the derivative with FiniteDifferences.jl
 end
 
