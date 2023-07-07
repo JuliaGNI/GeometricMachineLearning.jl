@@ -52,9 +52,12 @@ end
 @inline get_data(data::TrainingData, s::Symbol, args) = data.get[s](args...)
 
 @inline eachindex(data::TrainingData) = eachindex(data.shape)
+@inline eachindex(ti::AbstractTrainingIntegrator, data::TrainingData) = eachindex(ti, data.shape)
+
+@inline copy(data::TrainingData) = TrainingData(data)
 
 
-function reshape_intoSampledData!(data::TrainingData)
+function reshape_intoSampledData(data::TrainingData)
 
     new_shape = reshape_intoSampledData!(shape(data))
 
@@ -74,6 +77,7 @@ function reshape_intoSampledData!(data::TrainingData)
 end
 
 
+
 function reduce_symbols!(data::TrainingData, symbol::DataSymbol)
 
     #test if it cab be reduced
@@ -82,10 +86,12 @@ function reduce_symbols!(data::TrainingData, symbol::DataSymbol)
     #compute the symetric difference of old and new symbols
     toberemoved = symboldiff(data_symbols(data), symbol)
 
-    #clean get
-    clean_get!(data, toberemoved)
+    new_data = TrainingData(data; symbols = symbol)
 
-    TrainingData(data; symbols = symbol)
+    #clean get
+    clean_get!(new_data, toberemoved)
+
+    new_data
 end
 
 
@@ -107,7 +113,7 @@ function transform_symbols!(data::TrainingData, symbol::DataSymbol)
 end
 
 
-function clean_get(data::TrainingData, toberemoved::Tuple{Vararg{Symbol}})
+function clean_get!(data::TrainingData, toberemoved::Tuple{Vararg{Symbol}})
     for s in toberemoved
         delete!(get(data), s)
     end

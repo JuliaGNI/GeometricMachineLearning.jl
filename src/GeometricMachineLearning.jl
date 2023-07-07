@@ -134,13 +134,12 @@ module GeometricMachineLearning
 
     #INCLUDE ABSTRACT TRAINING integrator
     export AbstractTrainingIntegrator
-    export TrainingIntegrator
     export loss_single, loss
-
+    
     export HnnTrainingIntegrator
     export LnnTrainingIntegrator
     export SympNetTrainingIntegrator
-
+    
     include("training/abstract_training_integrator.jl")
 
     #INCLUDE DATA TRAINING STRUCTURE
@@ -156,6 +155,14 @@ module GeometricMachineLearning
 
     include("data/data_symbol.jl")
 
+    #INCLUDE TRAINING INTEGRATOR
+
+    export TrainingIntegrator
+    export type, symbol, shape
+    
+    include("training/training_integrator.jl")
+
+     #INCLUDE DATA TRAINING STRUCTURE
     export AbstractTrainingData
     export TrainingData
     export problem, shape, get, symbols, dim, noisemaker
@@ -165,7 +172,6 @@ module GeometricMachineLearning
     export get_batch
     
     include("data/batch.jl")
-
 
     #INCLUDE BACKENDS
     export AbstractNeuralNetwork
@@ -189,7 +195,6 @@ module GeometricMachineLearning
     export train!, apply!, jacobian!
     export Iterate_Sympnet
 
-    include("architectures/architectures.jl")
     include("architectures/autoencoder.jl")
     include("architectures/fixed_width_network.jl")
     include("architectures/hamiltonian_neural_network.jl")
@@ -206,8 +211,10 @@ module GeometricMachineLearning
 
     #INCLUDE NEURALNET SOLUTION
 
-    export SingleHistory, History
-    export size, last, sizemax
+    export SingleHistor
+    export parameters, datashape, size, loss
+    export History
+    export data, size, last, sizemax, nbtraining, show
 
     include("nnsolution/history.jl")
 
@@ -217,12 +224,24 @@ module GeometricMachineLearning
     
     include("nnsolution/neural_net_solution.jl")
 
+    export EnsembleNeuralNetSolution
+    export size, push!, merge!
+
+    include("nnsolution/neural_net_solution_ensemble.jl")
 
     #INCLUDE TRAINING integrator
 
     export SingleTrainingSet
+    export nn, parameters, data
 
     include("training/training_set.jl")
+
+    export EnsembleTraining
+    export size, isnnShared, isParametersShared, isDataShared
+    export nn, parameters, data
+    export push!, merge!
+
+    include("training/ensemble_training.jl")
 
     include("training/nn_parameters_transformation.jl")
 
@@ -264,7 +283,8 @@ module GeometricMachineLearning
 
 
     #INCLUDE ASSERTION Function
-    include("training/assertion.jl")
+    export matching
+    include("training/matching.jl")
 
 
     #INCLUDE PROBLEMS

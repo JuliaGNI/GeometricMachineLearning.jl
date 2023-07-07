@@ -7,8 +7,8 @@ function loss_single(::BasicSympNetIntegrator, nn::LuxNeuralNetwork{<:SympNet}, 
     sqeuclidean(q̃ₙ₊₁,qₙ₊₁) + sqeuclidean(p̃ₙ₊₁,pₙ₊₁)
 end
 
-loss(ti::BasicSympNetIntegrator, nn::LuxNeuralNetwork{<:SympNet}, datat::TrainingData{<:DataSymbol{<:PhaseSpaceSymbol}}, index_batch = get_batch(datat), params = nn.params) =
-mapreduce((args...)->loss_single(ti, nn, Zygote.ignore(get_data(datat,:q, args...)), Zygote.ignore(get_data(datat,:p, args...)), Zygote.ignore(get_data(datat,:q, next(args...)...)), Zygote.ignore(get_data(datat,:p, next(args...)...)), params), +, index_batch)
+loss(ti::BasicSympNetIntegrator, nn::LuxNeuralNetwork{<:SympNet}, data::TrainingData{<:DataSymbol{<:PhaseSpaceSymbol}}, index_batch = eachindex(ti, data), params = nn.params) =
+mapreduce((args...)->loss_single(ti, nn, Zygote.ignore(get_data(data,:q, args...)), Zygote.ignore(get_data(data,:p, args...)), Zygote.ignore(get_data(data,:q, next(args...)...)), Zygote.ignore(get_data(data,:p, next(args...)...)), params), +, index_batch)
 
 min_length_batch(::BasicSympNetIntegrator) = 3
 

@@ -18,6 +18,7 @@ mutable struct EnsembleTraining{TS <:AbstractArray{TrainingSet}}
         for ts in args
             push!(et,ts)
         end
+    end
 end
 
 @inline size(et::EnsembleTraining) = et.size

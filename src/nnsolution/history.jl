@@ -15,12 +15,10 @@ struct SingleHistory{TP <: TrainingParameters, TD, TL}
     SingleHistory(parameters, datashape, size_data, loss) = new{typeof{parameters}, typeof{datashape}, typeof(loss)}(parameters, datashape, size_data, loss)
 end
 
-function show(sh::SingleHistory, head = true)
-    if head
-
-    end
-    
-end
+@inline parameters(sh::SingleHistory) = sh.parameters
+@inline datashape(sh::SingleHistory) = sh.datashape
+@inline size(sh::SingleHistory) = sh.size_data
+@inline loss(sh::SingleHistory) = sh.loss
 
 
 #=
@@ -60,7 +58,7 @@ function _add(history::History, sg::SingleHistory)
 
     history.size == history.sizemax ? popfirst!(history.data) : history.size += 1
 
-    push!(history.data, history.last)
+    pushfirst!(history.data, history.last)
         
     history.last = sg
     
@@ -74,7 +72,7 @@ function _set_sizemax_history(history::History, sizemax::Int)
     history.sizemax = sizemax
 
     for _ in 1:(size(history)-sizemax(history))
-        popfirst!(history.data)
+        pop!(history.data)
     end
 
     history.size = history.size - max(history.size - history.sizemax, 0)
@@ -83,8 +81,31 @@ end
 
 
 function show(history::History)
-    println("Print of history : ")
-    println("-------------------")
-    println("Last training :", )
+    printstyled(center_align_text("Print of history",100)*"\n"; bold = true)
+    printstyled(repeat("-", 111)*"\n"; bold = true)
+    printstyled("Trainings   ||"; bold = true)
+    printstyled(center_align_text("Nruns",10) * "|"; bold = true)
+    printstyled(center_align_text("Method",15) * "|"; bold = true)
+    printstyled(center_align_text("Optimizer",15) * "|"; bold = true)
+    printstyled(center_align_text("Batch Size",15) * "|"; bold = true)
+    printstyled(center_align_text("Shape",15) * "|"; bold = true)
+    printstyled(center_align_text("Size",10) * "|"; bold = true)
+    printstyled(center_align_text("Loss",10) * "|\n"; bold = true)
+
+    printstyled(center_align_text("Last",13) * "|"; bold = true)
+    print_singglehistory(last(history))
+    println()
+
+    c = nbtraining(history)
+    for sh in history
+        printstyled("Trainings   ||"; bold = true)
+        printstyled(center_align_text(nruns(parameters(sh)),10) * "|"; bold = true)
+        printstyled(center_align_text(method(parameters(sh)),15) * "|"; bold = true)
+        printstyled(center_align_text(opt(parameters(sh)),15) * "|"; bold = true)
+        printstyled(center_align_text("Batch Size",15) * "|"; bold = true)
+        printstyled(center_align_text("Shape",15) * "|"; bold = true)
+        printstyled(center_align_text("Size",10) * "|"; bold = true)
+        printstyled(center_align_text("Loss",10) * "|\n"; bold = true)
+    end
 
 end

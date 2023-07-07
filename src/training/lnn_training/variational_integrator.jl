@@ -19,7 +19,7 @@ function loss_single(ti::VariationalIntegrator, nn::LuxNeuralNetwork{<:Lagrangia
     sqeuclidean(DL1,-DL2)
 end
 
-loss(ti::VariationalMidPointIntegrator, nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, data::TrainingData{DataSymbol{<:PositionSymbol}}, index_batch = get_batch(datat), params = nn.params) =
-mapreduce((args...)->loss_single(ti, nn, Zygote.ignore(get_data(datat,:q, args...)), Zygote.ignore(get_data(datat,:q, next(args...)...)), Zygote.ignore(get_data(datat,:q,next(next(args...)...)...)), Zygote.ignore(get_Δt(datat)), params), +, index_batch)
+loss(ti::VariationalMidPointIntegrator, nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, data::TrainingData{DataSymbol{<:PositionSymbol}}, index_batch = eachindex(ti, data), params = nn.params) =
+mapreduce((args...)->loss_single(ti, nn, Zygote.ignore(get_data(data,:q, args...)), Zygote.ignore(get_data(data,:q, next(args...)...)), Zygote.ignore(get_data(data,:q,next(next(args...)...)...)), Zygote.ignore(get_Δt(data)), params), +, index_batch)
 
 min_length_batch(::VariationalIntegrator) = 3

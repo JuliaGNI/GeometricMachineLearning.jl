@@ -1,9 +1,6 @@
 using GeometricMachineLearning
 using Test
 
-
-
-
 # Test for TrainingParameters
 
 nruns = 10
@@ -73,7 +70,7 @@ training_data = TrainingData(data, get_data)
 @test eachindex(training_data) == [(1,1),(1,2),(1,3),(2,1),(2,2),(2,3)]
 
 
-sampled_data = reshape_intoSampledData!(training_data)
+sampled_data = reshape_intoSampledData(training_data)
 
 @test problem(sampled_data)         == Unknownproblem
 @test typeof(shape(sampled_data))   == SampledData
@@ -105,10 +102,17 @@ reduced_data = reduce_symbols(sampled_data, DataSymbol((:q,)))
 
 # Test Batch
 
-@test get_batch(training_data, (2))
+index_batch = get_batch(training_data, (1,2,2))
+@test length(index_batch) == 2
+for i in index_batch
+    x,y = i 
+    @test 1<= x <= get_nb_trajectory (training_data)
+    @test (1<= y <= get_length_trajectory (training_data, x)-1 \
+            && (x,y+1) ∈ index_batch ) || (2<= y <= get_length_trajectory (training_data, x) \
+            && (x,y-1) ∈ index_batch )
+end
 
-# Test Mathcing
-
+#default index batch ?
 
 
 # Test for TrainingSet

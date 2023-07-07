@@ -94,3 +94,13 @@ _tuplediff(t₁::Tuple,t₂::Tuple) = tuple(setdiff(Set(t₁),Set(t₂))...)
 
 @inline next(i::Int,j::Int) = (i,j+1)
 @inline next(i::Int) = (i+1,)
+
+function center_align_text(text,width)
+    padding = max(0, width - length(text))
+    left_padding = repeat(" ",padding ÷2)
+    right_padding = repeat(" ", padding - length(left_padding))
+    aligned_text = left_padding * text * right_padding
+    return aligned_text
+end
+
+const ∞ = Inf

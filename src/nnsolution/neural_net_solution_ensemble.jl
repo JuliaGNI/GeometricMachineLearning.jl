@@ -2,7 +2,7 @@
     EnsembleNeuralNetSolution gathers severals NeuralNetSolution. It is the results given by a training of an EnsembleTraining.
 =#
 
-mutable struct EnsembleNeuralNetSolution{TNNS <: AbstarctArray{<:NeuralNetSolution}}
+mutable struct EnsembleNeuralNetSolution{TNNS <: AbstractArray{<:NeuralNetSolution}}
     tab::TNNS
     size::Int
 
@@ -15,6 +15,7 @@ mutable struct EnsembleNeuralNetSolution{TNNS <: AbstarctArray{<:NeuralNetSoluti
         for nns in args
             push!(enns,nns)
         end
+    end
 end
 
 @inline size(enns::EnsembleNeuralNetSolution) = enns.size
