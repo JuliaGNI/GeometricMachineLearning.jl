@@ -27,7 +27,7 @@ end
 
 function tensor_tensor_transpose_mul(A::AbstractArray{T, 3}, B::AbstractArray{T, 3}) where T
     backend = KernelAbstractions.get_backend(A)
-    C = KernelAbstractions.zeros(backend, T, size(A)[2], size(B)[2], size(A)[3])
+    C = KernelAbstractions.zeros(backend, T, size(A)[1], size(B)[1], size(A)[3])
     tensor_tensor_transpose_mul!(C, A, B)
     C
 end
