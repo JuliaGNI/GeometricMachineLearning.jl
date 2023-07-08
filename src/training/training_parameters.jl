@@ -13,7 +13,7 @@ struct TrainingParameters{TM, TO, Tbatch}
     bs::Tbatch
 
     function TrainingParameters(nruns, method, mopt = default_optimizer(); batch_size = nothing)
-        new{typeof(method), typeof(mopt), typeof(bs)}(nruns, method, mopt, batch_size)
+        new{typeof(method), typeof(mopt), typeof(batch_size)}(nruns, method, mopt, batch_size)
     end
 end
 
@@ -23,6 +23,6 @@ end
 
 @inline nruns(tp::TrainingParameters) = tp.nruns
 @inline method(tp::TrainingParameters) = tp.method
-@inline opt(tp::TrainingParameters) = tp.opt
+@inline opt(tp::TrainingParameters) = tp.mopt
 @inline batchsize(tp::TrainingParameters) = tp.bs
 

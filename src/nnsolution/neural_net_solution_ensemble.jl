@@ -18,18 +18,18 @@ mutable struct EnsembleNeuralNetSolution{TNNS <: AbstractArray{<:NeuralNetSoluti
     end
 end
 
-@inline size(enns::EnsembleNeuralNetSolution) = enns.size
+@inline Base.size(enns::EnsembleNeuralNetSolution) = enns.size
 
 Base.getindex(enns::EnsembleNeuralNetSolution, n::Int) = enns.tab[n]
 Base.setindex!(enns::EnsembleNeuralNetSolution, value::NeuralNetSolution, n::Int) = enns.tab[n] = value
 Base.iterate(enns::EnsembleNeuralNetSolution, state = 1) = state > size(enns) ? nothing : (enns[state], state+1)
 
-function push!(enns::EnsembleNeuralNetSolution, nns::NeuralNetSolution)
+function Base.push!(enns::EnsembleNeuralNetSolution, nns::NeuralNetSolution)
     enns.size += 1
     push!(enns.tab, nns)
 end
 
-function merge!(enns₁::EnsembleNeuralNetSolution, enns₂::EnsembleNeuralNetSolution)
+function Base.merge!(enns₁::EnsembleNeuralNetSolution, enns₂::EnsembleNeuralNetSolution)
     enns₁.size += enns₂.size
     for nns in enns₂
         push!(enns.tab, nns)

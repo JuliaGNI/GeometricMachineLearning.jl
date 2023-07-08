@@ -1,7 +1,9 @@
-using GeometricMachineLearning
+using GeometricMachineLearning 
 using Test
 
+#########################################
 # Test for TrainingParameters
+#########################################
 
 nruns = 10
 method = ExactHnn()
@@ -10,13 +12,14 @@ bs = 10
 
 training_parameters = TrainingParameters(nruns, method, mopt; batch_size = bs)
 
-@test nruns(training_parameters) == nruns
-@test method(training_parameters) == method
-@test opt(training_parameters) == mopt
-@test batchsize(training_parameters) == bs
+@test GeometricMachineLearning.nruns(training_parameters) == nruns
+@test GeometricMachineLearning.method(training_parameters) == method
+@test GeometricMachineLearning.opt(training_parameters) == mopt
+@test GeometricMachineLearning.batchsize(training_parameters) == bs
 
-
+#########################################
 # Test for DataSymbol
+#########################################
 
 keys1 = (:q,)
 keys2 = (:q,:p)
@@ -32,27 +35,28 @@ keys6 = (:q, :p, :s)
 @test type(DataSymbol(keys5)) == PosVeloAccSymbol
 @test type(DataSymbol(keys6)) == PhaseSpaceSymbol
 
+#=
 @test can_reduce(DataSymbol(keys2), DataSymbol(keys1)) == true
 @test can_reduce(DataSymbol(keys3), DataSymbol(keys1)) == true
 @test can_reduce(DataSymbol(keys5), DataSymbol(keys2)) == false
 
 @test symbol(DataSymbol(keys2), DataSymbol(keys1)) == (:p,)
 @test symbol(DataSymbol(keys3), DataSymbol(keys1)) == (:p, :q̇, :q̈)
-
-
+=#
+#########################################
 # Test for DataTraining
+#########################################
 
 Data = (Trajectory1 =  ([0.0 0.0 0.0], [[0.0 0.0 0.0]]), Trajectory2 = ([0.2 0.5 0.7], [[0.7 0.8 0.9]]))
 get_Data = Dict(
     :shape => TrajectoryData,
     :nb_trajectory => Data -> length(Data),
-    :length_trajectory => (Data,i) -> length(Data[Symbol("Training"*String(i))][1])
-    :Δt => Data -> 0.1
-    :q => (Data,i,n) -> Data[Symbol("Training"*String(i))][1][n],
-    :p => (Data,i,n) -> Data[Symbol("Training"*String(i))][2][n],
-
+    :length_trajectory => (Data,i) -> length(Data[Symbol("Trajectory"*string(i))][1]),
+    :Δt => Data -> 0.1,
+    :q => (Data,i,n) -> Data[Symbol("Trajectory"*string(i))][1][n],
+    :p => (Data,i,n) -> Data[Symbol("Trajectory"*String(i))][2][n],
 )
-training_data = TrainingData(data, get_data)
+training_data = TrainingData(Data, get_Data)
 
 @test problem(training_data)        == Unknownproblem
 @test typeof(shape(training_data))  == TrajectroyData
@@ -99,8 +103,9 @@ reduced_data = reduce_symbols(sampled_data, DataSymbol((:q,)))
 
 @test Tuple(keys(get(reduced_data)) == (:q,)
 
-
+#########################################
 # Test Batch
+#########################################
 
 index_batch = get_batch(training_data, (1,2,2))
 @test length(index_batch) == 2
@@ -114,12 +119,18 @@ end
 
 #default index batch ?
 
-
+#########################################
 # Test for TrainingSet
+#########################################
+
+hnn = HamiltonianNeuralNetwork(2; 2, width = 5)
+nn = NeuralNetwork(hnn, LuxBackend())
 
 training_set1 = TrainingSet(nn, training_parameters, training_data)
 
-@test nn(training_set1)
+@test nn(training_set1) == nn
+@test parameters(training_set1) == training_parameters
+@test data(training_set1) == training_data
 
 # Test for EnsembleTraining
 

@@ -34,7 +34,7 @@ update_history(nns::NeuralNetSolution, sg::SingleHistory) = _add(nns.history, sg
 
 @inline history(nns::NeuralNetSolution) = nns.history.data
 @inline size_history(nns::NeuralNetSolution) = size(nns.history)
-@inline last(nns::NeuralNetSolution) = last(nns.history)
+@inline Base.last(nns::NeuralNetSolution) = last(nns.history)
 @inline nbtraining(nns::NeuralNetSolution) =  nbtraining(nns.history)
 
 set_sizemax_history(nns::NeuralNetSolution, sizemax::Int) = _set_sizemax_history(nns.history, sizemax)

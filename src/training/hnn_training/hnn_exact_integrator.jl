@@ -1,6 +1,6 @@
 struct HnnExactIntegrator <: HnnTrainingIntegrator end
 
-ExactHnn(;sqdist = sqeuclidean) = TrainingIntegrators{HnnExactIntegrator, DerivativePhaseSpaceSymbol, SampledData, typeof(sqdist)}(sqdist)
+ExactHnn(;sqdist = sqeuclidean) = TrainingIntegrator{HnnExactIntegrator, DerivativePhaseSpaceSymbol, SampledData, typeof(sqdist)}(sqdist)
 
 function loss_single(::HnnExactIntegrator, nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, qₙ, pₙ, q̇ₙ, ṗₙ, params = nn.params)
     dH = vectorfield(nn, [qₙ...,pₙ...], params)

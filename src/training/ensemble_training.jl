@@ -21,7 +21,7 @@ mutable struct EnsembleTraining{TS <:AbstractArray{TrainingSet}}
     end
 end
 
-@inline size(et::EnsembleTraining) = et.size
+@inline Base.size(et::EnsembleTraining) = et.size
 
 @inline isnnShared(et::EnsembleTraining) = et.shared_nn
 @inline isParametersShared(et::EnsembleTraining) = et.shared_tp
@@ -35,7 +35,7 @@ Base.getindex(et::EnsembleTraining, n::Int) = et.tab[n]
 Base.setindex!(et::EnsembleTraining, value::TrainingSet, n::Int) = et.tab[n] = value
 Base.iterate(et::EnsembleTraining, state = 1) = state > size(et) ? nothing : (et[state], state+1)
 
-function push!(et::EnsembleTraining, ts::TrainingSet)
+function Base.push!(et::EnsembleTraining, ts::TrainingSet)
     et.size += 1
     isnnShared(et) && nn(et) == nn(ts) ? nothing : et.shared_nn = false
     isParametersShared(et) && parameters(et) == parameters(ts) ? nothing : et.shared_parameters = false
@@ -43,7 +43,7 @@ function push!(et::EnsembleTraining, ts::TrainingSet)
     push!(et.tab, ts)
 end
 
-function merge!(et₁::EnsembleTraining, et₂::EnsembleTraining)
+function Base.merge!(et₁::EnsembleTraining, et₂::EnsembleTraining)
     et₁.size += et₂.size
     isnnShared(et₁) && isnnShared(et₂) && nn(et₁) == nn(et₂) ? nothing : et₁.shared_nn = false
     isParametersShared(et₁) && isParametersShared(et₂) && parameters(et₁) == parameters(et₂) ? nothing : et₁.shared_parameters = false

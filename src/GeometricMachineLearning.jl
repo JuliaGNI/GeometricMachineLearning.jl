@@ -151,7 +151,7 @@ module GeometricMachineLearning
     export AbstractDataSymbol
     export PositionSymbol, PhaseSpaceSymbol, DerivativePhaseSpaceSymbol, PosVeloAccSymbol, PosVeloSymbol
     export DataSymbol
-    export reduce, type, data_symbol
+    export can_reduce, type, symbols, symboldiff
 
     include("data/data_symbol.jl")
 
@@ -165,7 +165,7 @@ module GeometricMachineLearning
      #INCLUDE DATA TRAINING STRUCTURE
     export AbstractTrainingData
     export TrainingData
-    export problem, shape, get, symbols, dim, noisemaker
+    export problem, shape, get, symbols, dim, noisemaker, data_symbols
 
     include("data/data_training.jl")
 

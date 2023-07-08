@@ -23,9 +23,9 @@ function TrainingData(data, get_data::Dict{Symbol, <:Any}, problem = UnknownProb
 
     delete!(_get_data, :shape)
 
-    get = Dict([(key, (args...)->value(data,args...)) for (key,value) in _get_data])
+    @show get = Dict([(key, (args...)->value(data,args...)) for (key,value) in _get_data])
 
-    symbols = DataSymbol(Tuple(keys(get)...))
+    symbols = DataSymbol(Tuple(keys(get)))
     
     dim = length(get[1](_index_first(shape)))
 
@@ -51,10 +51,10 @@ end
 @inline get_nb_point(data::TrainingData) = get_nb_point(data.shape)
 @inline get_data(data::TrainingData, s::Symbol, args) = data.get[s](args...)
 
-@inline eachindex(data::TrainingData) = eachindex(data.shape)
-@inline eachindex(ti::AbstractTrainingIntegrator, data::TrainingData) = eachindex(ti, data.shape)
+@inline Base.eachindex(data::TrainingData) = eachindex(data.shape)
+@inline Base.eachindex(ti::AbstractTrainingIntegrator, data::TrainingData) = eachindex(ti, data.shape)
 
-@inline copy(data::TrainingData) = TrainingData(data)
+@inline Base.copy(data::TrainingData) = TrainingData(data)
 
 
 function reshape_intoSampledData(data::TrainingData)

@@ -2,7 +2,7 @@ abstract type VariationalIntegrator <: LnnTrainingIntegrator end
 struct VariationalMidPointIntegrator <: VariationalIntegrator end
 struct VariationalTrapezIntegrator <: VariationalIntegrator end
 
-VariaMidPoint(;sqdist = sqeuclidean) = TrainingIntegrators{VariationalMidPointIntegrator, PositionSymbol, TrajectorydData, typeof(sqdist)}(sqdist)
+VariaMidPoint(;sqdist = sqeuclidean) = TrainingIntegrator{VariationalMidPointIntegrator, PositionSymbol, TrajectorydData, typeof(sqdist)}(sqdist)
 
 # discrete langrangian
 discrete_lagrangian(::VariationalMidPointIntegrator, nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, qₙ, qₙ₊₁, Δt, params = nn.params) =  nn([(qₙ₊₁+qₙ)/2..., (qₙ₊₁-qₙ)/Δt...], params)

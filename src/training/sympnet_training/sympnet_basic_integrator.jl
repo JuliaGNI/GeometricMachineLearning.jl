@@ -1,6 +1,6 @@
 struct BasicSympNetIntegrator <: SympNetTrainingIntegrator end
 
-BasicSympNet(;sqdist = sqeuclidean) = TrainingIntegrators{BasicSympNetIntegrator, PhaseSpaceSymbol, TrajectoryData, typeof(sqdist)}(sqdist)
+BasicSympNet(;sqdist = sqeuclidean) = TrainingIntegrator{BasicSympNetIntegrator, PhaseSpaceSymbol, TrajectoryData, typeof(sqdist)}(sqdist)
 
 function loss_single(::BasicSympNetIntegrator, nn::LuxNeuralNetwork{<:SympNet}, qₙ, pₙ, qₙ₊₁, pₙ₊₁, params = nn.params)
     q̃ₙ₊₁,p̃ₙ₊₁ = nn([qₙ...,pₙ...],params)

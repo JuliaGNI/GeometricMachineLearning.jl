@@ -5,8 +5,8 @@ struct SymplecticEulerA <: SymplecticEuler end
 struct SymplecticEulerB <: SymplecticEuler end
 
 SEuler(;sqdist = sqeuclidean) =  SEulerA(sqdist = sqdist)
-SEulerA(;sqdist = sqeuclidean) = TrainingIntegrators{SymplecticEulerA, PhaseSpaceSymbol, TrajectoryData, typeof(sqdist)}(sqdist)
-SEulerB(;sqdist = sqeuclidean) = TrainingIntegrators{SymplecticEulerB, PhaseSpaceSymbol, TrajectoryData, typeof(sqdist)}(sqdist)
+SEulerA(;sqdist = sqeuclidean) = TrainingIntegrator{SymplecticEulerA, PhaseSpaceSymbol, TrajectoryData, typeof(sqdist)}(sqdist)
+SEulerB(;sqdist = sqeuclidean) = TrainingIntegrator{SymplecticEulerB, PhaseSpaceSymbol, TrajectoryData, typeof(sqdist)}(sqdist)
 
             
 function loss_single(::SymplecticEulerA, nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, qₙ, qₙ₊₁, pₙ, pₙ₊₁, Δt, params = nn.params)

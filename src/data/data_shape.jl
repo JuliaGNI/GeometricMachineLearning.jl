@@ -77,12 +77,12 @@ end
 @inline _index_first(::TrajectoryData) = (1,1)
 @inline _index_first(::SampledData) = 1
 
-@inline eachindex(::AbstractDataShape) = nothing
-@inline eachindex(data::TrajectoryData) = vcat([[(i,j) for j in  get_length_trajectory(data,i)] for i in get_nb_trajectory(data)]...)
-@inline eachindex(data::SampledData) = 1:get_nb_point(data)
+@inline Base.eachindex(::AbstractDataShape) = nothing
+@inline Base.eachindex(data::TrajectoryData) = vcat([[(i,j) for j in  get_length_trajectory(data,i)] for i in get_nb_trajectory(data)]...)
+@inline Base.eachindex(data::SampledData) = 1:get_nb_point(data)
 
-@inline eachindex(ti::AbstractTrainingIntegrator, data::TrajectoryData) = vcat([[(i,j) for j in  get_length_trajectory(data,i)-min_length_batch(ti)] for i in get_nb_trajectory(data)]...)
-@inline eachindex(::AbstractTrainingIntegrator, data::SampledData) = 1:get_nb_point(data)
+@inline Base.eachindex(ti::AbstractTrainingIntegrator, data::TrajectoryData) = vcat([[(i,j) for j in  get_length_trajectory(data,i)-min_length_batch(ti)] for i in get_nb_trajectory(data)]...)
+@inline Base.eachindex(::AbstractTrainingIntegrator, data::SampledData) = 1:get_nb_point(data)
 
 reshape_intoSampledData!(data::AbstractDataShape) = @error "It is not possible to convert "*string(typeof(data))*" into SampledData."
 reshape_intoSampledData!(data::SampledData) = data

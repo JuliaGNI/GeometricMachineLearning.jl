@@ -44,8 +44,8 @@ mutable struct History
 end
 
 @inline data(history::History) = history.data
-@inline last(history::History) = history.last 
-@inline size(history::History) = history.size
+@inline Base.last(history::History) = history.last 
+@inline Base.size(history::History) = history.size
 @inline sizemax(history::History) = history.sizemax
 @inline nbtraining(history::History) = history.nbtraining
 
@@ -80,7 +80,7 @@ function _set_sizemax_history(history::History, sizemax::Int)
 end
 
 
-function show(history::History)
+function Base.show(history::History)
     printstyled(center_align_text("Print of history",100)*"\n"; bold = true)
     printstyled(repeat("-", 111)*"\n"; bold = true)
     printstyled("Trainings   ||"; bold = true)

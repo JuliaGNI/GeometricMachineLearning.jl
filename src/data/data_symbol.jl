@@ -46,7 +46,7 @@ can_transform(::DataSymbol{T}, ::DataSymbol{U}) where {T<:AbstractDataSymbol,U<:
 function DataSymbol(keys::Tuple; symbol = DataSymbol{AbstractDataSymbol}())
     for subtype in subtypes(type(symbol))
         if symbols(DataSymbol{subtype}()) == keys
-            return DataSymbol{subtype}
+            return DataSymbol{subtype}()
         elseif symbols(DataSymbol{subtype}()) ⊆ keys
             return DataSymbol(keys; symbol = DataSymbol{subtype}())
         end
