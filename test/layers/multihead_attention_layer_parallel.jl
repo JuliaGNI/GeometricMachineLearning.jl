@@ -33,7 +33,7 @@ test_y = Flux.onehotbatch(test_y, 0:9)
 model = MultiHeadAttention(patch_length^2, n_heads)
 ps, st = Lux.setup(CUDA.device(), Random.default_rng(), model)
 
-n_data = 60000
+n_data = 6000
 
 @time output1 = Lux.apply(model, train_x_reshaped[:,:,1:n_data] |> cu, ps, st)[1]
 
