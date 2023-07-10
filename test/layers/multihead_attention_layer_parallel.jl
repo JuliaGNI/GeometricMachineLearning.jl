@@ -33,14 +33,29 @@ test_y = Flux.onehotbatch(test_y, 0:9)
 model = MultiHeadAttention(patch_length^2, n_heads)
 ps, st = Lux.setup(CUDA.device(), Random.default_rng(), model)
 
-n_data = 6000
+const n_data = 6000
 
-@time output1 = Lux.apply(model, train_x_reshaped[:,:,1:n_data] |> cu, ps, st)[1]
+function main(n_data)
 
-output2 = KernelAbstractions.zeros(backend, eltype(train_x), patch_length^2, patch_number, n_data)
+    @time output1 = Lux.apply(model, train_x_reshaped[:,:,1:n_data] |> cu, ps, st)[1]
 
-@time for i in 1:n_data
-    output2[:, :, i] = Matrix(Lux.apply(model, train_x_reshaped[:, :, i] |> cu, ps, st)[1])
+    output2 = KernelAbstractions.zeros(backend, eltype(train_x), patch_length^2, patch_number, n_data)
+
+    @time for i in 1:n_data
+        output2[:, :, i] = Matrix(Lux.apply(model, train_x_reshaped[:, :, i] |> cu, ps, st)[1])
+    end
+
+    @test isapprox(output1, output2)
 end
 
-@test isapprox(output1, output2)
+function main₂(n_data)
+    @time output1 = Zygote.gradient(ps -> norm(Lux.apply(model, train_x_reshaped[:,:,1:n_data] |> cu, ps, st)[1]), ps)[1]
+end
+
+
+for n_data = 10000:10000:60000
+    print("n_data = ", n_data, "\n")
+    main(n_data)
+    main₂(n_data)
+    print("\n")
+end
