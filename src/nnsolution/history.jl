@@ -12,7 +12,7 @@ struct SingleHistory{TP <: TrainingParameters, TD, TL}
     size_data::Int
     loss::TL
 
-    SingleHistory(parameters, datashape, size_data, loss) = new{typeof{parameters}, typeof{datashape}, typeof(loss)}(parameters, datashape, size_data, loss)
+    SingleHistory(parameters, datashape, size_data, loss) = new{typeof(parameters), typeof(datashape), typeof(loss)}(parameters, datashape, size_data, loss)
 end
 
 @inline parameters(sh::SingleHistory) = sh.parameters

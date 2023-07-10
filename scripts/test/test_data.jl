@@ -100,13 +100,12 @@ for i in index_batch
     @test 1<= y <= get_length_trajectory(training_data, x)
 end
 
-
 ti = BasicSympNet()
-@test complete_batch_size(training_data, type(ti)(), (2,8,2))   == (2,8,2)
-@test complete_batch_size(training_data, type(ti)(), (2,8))     == (2,8,2)
-@test complete_batch_size(training_data, type(ti)(), 8)         == (2,8,2)
-@test complete_batch_size(training_data, type(ti)(), missing)   == (1, 3, 2)
-@test complete_batch_size(sampled_data, type(ti)(), 5)          == 5
-@test complete_batch_size(sampled_data, type(ti)(), missing)    == 6
+@test complete_batch_size(training_data, ti, (2,8,2))   == (2,8,2)
+@test complete_batch_size(training_data, ti, (2,8))     == (2,8,2)
+@test complete_batch_size(training_data, ti, 8)         == (2,8,2)
+@test complete_batch_size(training_data, ti, missing)   == (1, 2, 2)
+@test complete_batch_size(sampled_data, ti, 5)          == 5
+@test complete_batch_size(sampled_data, ti, missing)    == 6
 
 

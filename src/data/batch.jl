@@ -1,13 +1,13 @@
 const DEFAULT_BATCH_SIZE = 10
 const DEFAULT_BATCH_NB_TAJECTORY= 2
 
-complete_batch_size(::TrainingData{T,TrajectoryData} where T, ti::AbstractTrainingIntegrator, bs::Tuple{Int64, Int64, Int64}) = bs
-complete_batch_size(::TrainingData{T,TrajectoryData} where T, ti::AbstractTrainingIntegrator, bs::Tuple{Int64, Int64}) = (bs..., min_length_batch(ti))
-complete_batch_size(data::TrainingData{T,TrajectoryData} where T, ti::AbstractTrainingIntegrator, bs::Tuple{Int64}) = (get_nb_trajectory(data), bs..., min_length_batch(ti))
-complete_batch_size(data::TrainingData{T,TrajectoryData} where T, ti::AbstractTrainingIntegrator, bs::Int64) = (get_nb_trajectory(data), bs, min_length_batch(ti))
-complete_batch_size(data::TrainingData{T,TrajectoryData} where T, ti::AbstractTrainingIntegrator, ::Missing) = (1, min(DEFAULT_BATCH_SIZE, min_length(data) ), min_length_batch(ti))
-complete_batch_size(::TrainingData{T,SampledData} where T, ::AbstractTrainingIntegrator, bs::Int64) = bs
-complete_batch_size(data::TrainingData{T,SampledData} where T, ::AbstractTrainingIntegrator, ::Missing) = min(DEFAULT_BATCH_SIZE, get_nb_point(data))
+complete_batch_size(::TrainingData{T,TrajectoryData} where T, ti::TrainingIntegrator, bs::Tuple{Int64, Int64, Int64}) = bs
+complete_batch_size(::TrainingData{T,TrajectoryData} where T, ti::TrainingIntegrator, bs::Tuple{Int64, Int64}) = (bs..., min_length_batch(ti))
+complete_batch_size(data::TrainingData{T,TrajectoryData} where T, ti::TrainingIntegrator, bs::Tuple{Int64}) = (get_nb_trajectory(data), bs..., min_length_batch(ti))
+complete_batch_size(data::TrainingData{T,TrajectoryData} where T, ti::TrainingIntegrator, bs::Int64) = (get_nb_trajectory(data), bs, min_length_batch(ti))
+complete_batch_size(data::TrainingData{T,TrajectoryData} where T, ti::TrainingIntegrator, ::Missing) = (1, min(DEFAULT_BATCH_SIZE, min_length(data))-min_length_batch(ti)+1, min_length_batch(ti))
+complete_batch_size(::TrainingData{T,SampledData} where T, ::TrainingIntegrator, bs::Int64) = bs
+complete_batch_size(data::TrainingData{T,SampledData} where T, ::TrainingIntegrator, ::Missing) = min(DEFAULT_BATCH_SIZE, get_nb_point(data))
 
 
 #=

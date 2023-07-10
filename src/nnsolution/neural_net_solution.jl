@@ -16,11 +16,11 @@ struct NeuralNetSolution{TNN <: AbstractNeuralNetwork, TP <: AbstractProblem, Ts
     loss::TL
     history::History
 
-    function NeuralNetSolution(nn::AbstractNeuralNetwork, loss::Real, sh::SingleHistory, problem::AbstractProblem = UnknownProblem, tstep::Real = isUnknown(problem) ? nothing : tstep(problem))
+    function NeuralNetSolution(nn::AbstractNeuralNetwork, loss, sh::SingleHistory, problem::AbstractProblem = UnknownProblem, tstep::Real = isUnknown(problem) ? nothing : tstep(problem))
         new{typeof(nn), typeof(problem), typeof(tstep), typeof(loss)}(nn, problem, loss, tstep, History(sh))
     end
 
-    function NeuralNetSolution(nn::AbstractNeuralNetwork, loss::Real, h::History, problem::AbstractProblem = UnknownProblem, tstep::Real = isUnknown(problem) ? nothing : tstep(problem))
+    function NeuralNetSolution(nn::AbstractNeuralNetwork, loss, h::History, problem::AbstractProblem = UnknownProblem, tstep::Real = isUnknown(problem) ? nothing : tstep(problem))
         new{typeof(nn), typeof(problem), typeof(tstep), typeof(loss)}(nn, problem, loss, tstep, h)
     end
 end

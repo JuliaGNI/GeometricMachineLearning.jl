@@ -35,10 +35,10 @@ function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, data_in::AbstractT
     @assert dim(nn) == dim(data)
 
     # create an appropriate batch size by filling in missing values with default values
-    bs = complete_batch_size(data, type(ti), batch_size)
+    bs = complete_batch_size(data, ti, batch_size)
 
     # check batch_size with respect to data
-    check_batch_size(data, batch_size)
+    check_batch_size(data, bs)
 
     # verify that shape of data depending of the ExactIntegrator
     matching(ti, data)
@@ -50,7 +50,7 @@ function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, data_in::AbstractT
     opt = Optimizer(m, nn.model)
 
     # transform parameters (if needed) to match with Zygote
-    params_tuple, keys =  pretransform(type(ti), nn.params)
+    params_tuple, keys =  pretransform(type(ti)(), nn.params)
 
     # Learning runs
     p = Progress(ntraining; enabled = showprogress)
@@ -59,7 +59,7 @@ function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, data_in::AbstractT
 
         params_grad = loss_gradient(nn, type(ti)(), data, index_batch, params_tuple) 
 
-        dp = posttransform(type(ti), params_grad, keys)
+        dp = posttransform(type(ti)(), params_grad, keys)
 
         optimization_step!(opt, nn.model, nn.params, dp)
 

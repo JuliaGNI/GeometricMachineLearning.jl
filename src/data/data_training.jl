@@ -67,11 +67,14 @@ end
 @inline noisemaker(data::TrainingData) = data.noisemaker
 
 @inline get_Δt(data::TrainingData) = get_Δt(data.shape)
+@inline tstep(data::TrainingData) = get_Δt(data.shape)
 @inline get_nb_trajectory(data::TrainingData) = get_nb_trajectory(data.shape)
 @inline get_length_trajectory(data::TrainingData, i::Int) = get_length_trajectory(data.shape, i)
 @inline get_length_trajectory(data::TrainingData) = get_length_trajectory(data.shape)
 @inline get_nb_point(data::TrainingData) = get_nb_point(data.shape)
 @inline get_data(data::TrainingData, s::Symbol, args...) = data.get[s](args...)
+
+@inline Base.size(data::TrainingData) = size(shape(data))
 
 @inline Base.eachindex(data::TrainingData) = eachindex(data.shape)
 @inline Base.eachindex(ti::AbstractTrainingIntegrator, data::TrainingData) = eachindex(ti, data.shape)

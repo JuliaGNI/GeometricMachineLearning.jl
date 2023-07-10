@@ -17,13 +17,13 @@ function matching(ti::TrainingIntegrator, data::AbstractTrainingData)
         end
     end
     # matching between the symbols required by the method and those given
-    if symbols(ti) != type(symbols(data))
+    if symbols(ti) != type(data_symbols(data))
         try reduce_symbols!(data, DataSymbol{symbols(ti)}())
         catch
             try Transform_symbols!(data, DataSymbol{symbols(ti)}()) 
                 println("Automatic transformatiom ")
             catch 
-                @assert symbols(ti) == type(symbols(data))
+                @assert symbols(ti) == type(data_symbols(data))
             end
         end
     end
