@@ -17,8 +17,8 @@ end
 
 # Creating a wrapper kernel for launching with error checks
 function tensor_transpose_tensor_transpose_mul!(C, A, B)
-    @assert size(A)[3] == size(B)[3]
-    @assert size(A)[1] == size(B)[2]
+    @assert axes(A, 3) == axes(B, 3)
+    @assert axes(A, 1) == axes(B, 2)
 
     backend = KernelAbstractions.get_backend(A)
     kernel! = tensor_transpose_tensor_transpose_mul_kernel!(backend)

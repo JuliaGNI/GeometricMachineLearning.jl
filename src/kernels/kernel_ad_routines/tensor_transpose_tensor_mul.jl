@@ -9,10 +9,17 @@ function ChainRulesCore.rrule(::typeof(tensor_transpose_tensor_mul), A::Abstract
     function tensor_transpose_tensor_mul_pullback(C_diff)
         f̄ = NoTangent()
         #tensor_transpose_mat_mul
-        A_diff = @thunk tensor_transpose_tensor_transpose_mul(C_diff, B)
+        A_diff = @thunk tensor_tensor_transpose_mul(B, C_diff)
         B_diff = @thunk tensor_tensor_mul(A, C_diff)
         return f̄, A_diff, B_diff
     end
     return C, tensor_transpose_tensor_mul_pullback
 end
    
+function tensor_tensor_transpose_mul(A::AbstractArray{T, 3}, B::Thunk) where T 
+    Thunk(() -> tensor_tensor_transpose_mul(A, unthunk(B)))
+end
+
+function tensor_tensor_mul(A::AbstractArray{T, 3}, B::Thunk) where T 
+    Thunk(() -> tensor_tensor_mul(A, unthunk(B)))
+end
