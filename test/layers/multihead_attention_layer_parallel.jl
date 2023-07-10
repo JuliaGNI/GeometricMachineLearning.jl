@@ -1,4 +1,4 @@
-using GeometricMachineLearning, LinearAlgebra, ProgressMeter, Plots, Test
+using GeometricMachineLearning, LinearAlgebra, ProgressMeter, Test
 using CUDA
 
 import Lux, Zygote, Random, MLDatasets, Flux, Lux.gpu, KernelAbstractions
