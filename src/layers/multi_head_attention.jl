@@ -173,3 +173,11 @@ import ChainRules
 function ChainRules._adjoint_mat_pullback(y::AbstractArray{T, 3}, proj) where T 
     (NoTangent(), proj(tensor_transpose(y)))
 end
+
+function mat_tensor_mul(Y::AT, x::AbstractArray{T, 3}) where {T, BT <: AbstractArray{T}, ST <: StiefelManifold{T, BT}, AT <: Adjoint{T, ST}}
+    mat_tensor_mul(Y.parent.A', x)
+end
+
+function mat_tensor_mul(Y::StiefelManifold, x::AbstractArray{T, 3})
+    mat_tensor_mul(Y.A, x)
+end
