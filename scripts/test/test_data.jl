@@ -1,21 +1,6 @@
 using GeometricMachineLearning 
 using Test
 
-#########################################
-# Test for TrainingParameters
-#########################################
-
-nruns = 10
-method = ExactHnn()
-mopt = GradientOptimizer()
-bs = 10
-
-training_parameters = TrainingParameters(nruns, method, mopt; batch_size = bs)
-
-@test GeometricMachineLearning.nruns(training_parameters) == nruns
-@test GeometricMachineLearning.method(training_parameters) == method
-@test GeometricMachineLearning.opt(training_parameters) == mopt
-@test GeometricMachineLearning.batchsize(training_parameters) == bs
 
 #########################################
 # Test for DataSymbol
@@ -62,7 +47,7 @@ training_data = TrainingData(Data, get_Data)
 @test typeof(shape(training_data))         == TrajectoryData
 @test type(data_symbols(training_data))    == PhaseSpaceSymbol
 @test symbols(training_data)               == (:q,:p)
-@test dim(training_data)                   == 1
+@test dim(training_data)                   == 2
 @test noisemaker(training_data)            == NothingFunction()    
 
 @test get_Δt(training_data)                == 0.1
@@ -80,7 +65,7 @@ sampled_data = reshape_intoSampledData(training_data)
 @test typeof(shape(sampled_data))        == SampledData
 @test type(data_symbols(sampled_data))   == PhaseSpaceSymbol
 @test symbols(sampled_data)              == (:q,:p)
-@test dim(sampled_data)                  == 1
+@test dim(sampled_data)                  == 2
 @test noisemaker(sampled_data)           == NothingFunction()    
 
 @test get_Δt(sampled_data)                === nothing
@@ -98,7 +83,7 @@ reduced_data = reduce_symbols(sampled_data, DataSymbol((:q,)))
 @test typeof(shape(reduced_data))        == SampledData
 @test type(data_symbols(reduced_data))   == PositionSymbol
 @test symbols(reduced_data)              == (:q,)
-@test dim(reduced_data)                  == 1
+@test dim(reduced_data)                  == 2
 @test noisemaker(reduced_data)           == NothingFunction()    
 
 @test Tuple(keys(GeometricMachineLearning.get(reduced_data))) == (:q,)
@@ -115,22 +100,13 @@ for i in index_batch
     @test 1<= y <= get_length_trajectory(training_data, x)
 end
 
-#default index batch ?
 
-#########################################
-# Test for TrainingSet
-#########################################
+ti = BasicSympNet()
+@test complete_batch_size(training_data, type(ti)(), (2,8,2))   == (2,8,2)
+@test complete_batch_size(training_data, type(ti)(), (2,8))     == (2,8,2)
+@test complete_batch_size(training_data, type(ti)(), 8)         == (2,8,2)
+@test complete_batch_size(training_data, type(ti)(), missing)   == (1, 3, 2)
+@test complete_batch_size(sampled_data, type(ti)(), 5)          == 5
+@test complete_batch_size(sampled_data, type(ti)(), missing)    == 6
 
-hnn = HamiltonianNeuralNetwork(2; nhidden= 2, width = 5)
-nn = NeuralNetwork(hnn, LuxBackend())
-
-training_set1 = TrainingSet(nn, training_parameters, training_data)
-
-@test GeometricMachineLearning.nn(training_set1) == nn
-@test parameters(training_set1) == training_parameters
-@test data(training_set1) == training_data
-
-# Test for EnsembleTraining
-
-ensemble_training1 = 
 

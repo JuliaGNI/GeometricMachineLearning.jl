@@ -12,13 +12,21 @@ struct TrainingParameters{TM, TO, Tbatch}
     mopt::TO
     bs::Tbatch
 
-    function TrainingParameters(nruns, method, mopt = default_optimizer(); batch_size = nothing)
+    function TrainingParameters(nruns, method, mopt = default_optimizer(); batch_size = missing)
         new{typeof(method), typeof(mopt), typeof(batch_size)}(nruns, method, mopt, batch_size)
     end
 end
 
 function TrainingParameters(tp::TrainingParameters; nruns = nruns(tp), method = method(tp), opt = opt(tp), batch_size = batchsize(tp))
     TrainingParameters(nruns, method, opt; batch_size = batch_size)
+end
+
+function TrainingParameters(nn::LuxNeuralNetwork, data::AbstractTrainingData)
+    nruns = DEFAULT_NRUNS
+    method = default_integrator(nn, data)
+    mopt = default_optimizer()
+    batch_size = complete_batch_size(data, method, missing)
+    TrainingParameters(nruns, method, mopt; batch_size = batch_size)
 end
 
 @inline nruns(tp::TrainingParameters) = tp.nruns

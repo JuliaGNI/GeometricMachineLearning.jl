@@ -27,13 +27,34 @@ function TrainingData(data, get_data::Dict{Symbol, <:Any}, problem = UnknownProb
 
     symbols = DataSymbol(Tuple(keys(get)))
     
-    dim = length(get[Tuple(keys(get))[1]](_index_first(shape)...))
+    dim = 2 * sum( length(get[Tuple(keys(get))[1]](_index_first(shape)...)))
+    #dim = sum(length(value(_index_first(shape)...) for value in values(get)))
 
     TrainingData(problem, shape, get, symbols, dim, noisemaker)
 end
 
-function TrainingData(data::TrainingData; shape = shape(data), get = get(data), symbols = data_symbols(data), noisemaker =  NothingFunction())
-    TrainingData(problem(data), shape, get, symbols, dim(data), noisemaker)
+function TrainingData(data::TrainingData; shape = shape(data), get = get(data), symbols = data_symbols(data), dim = dim(data), noisemaker =  NothingFunction())
+    TrainingData(problem(data), shape, get, symbols, dim, noisemaker)
+end
+
+
+function TrainingData(es::EnsembleSolution)
+
+    data = solution(es)
+
+    get_data = Dict(
+        :shape => TrajectoryData,
+        :nb_trajectory => Data -> length(Data),
+        :length_trajectory => (Data,i) -> 4,
+        :Δt => Data -> 4,
+    )
+
+    
+     problem = problem(es)
+
+
+  TrainingData(data, get_data, problem)
+
 end
 
 
@@ -57,6 +78,7 @@ end
 
 @inline Base.copy(data::TrainingData) = TrainingData(data)
 
+@inline min_length(data::TrainingData) = min_length(data.shape)
 
 function reshape_intoSampledData(data::TrainingData)
 
@@ -87,6 +109,9 @@ function reduce_symbols(data::TrainingData, symbol::DataSymbol)
 
     #compute the symetric difference of old and new symbols
     toberemoved = symboldiff(data_symbols(data), symbol)
+
+    #new dimention
+    #dim = dim(data) - sum(length(get_data(value, _index_first(shape)...) for value in toberemoved))
 
     new_data = TrainingData(data; symbols = symbol)
 

@@ -35,7 +35,7 @@ function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, data_in::AbstractT
     @assert dim(nn) == dim(data)
 
     # create an appropriate batch size by filling in missing values with default values
-    bs = complete_batch_size(data, ti, batch_size)
+    bs = complete_batch_size(data, type(ti), batch_size)
 
     # check batch_size with respect to data
     check_batch_size(data, batch_size)
@@ -57,13 +57,13 @@ function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, data_in::AbstractT
     for j in 1:ntraining
         index_batch = get_batch(data, bs; check = false)
 
-        params_grad = loss_gradient(nn, type(ti), data, index_batch, params_tuple) 
+        params_grad = loss_gradient(nn, type(ti)(), data, index_batch, params_tuple) 
 
         dp = posttransform(type(ti), params_grad, keys)
 
         optimization_step!(opt, nn.model, nn.params, dp)
 
-        total_loss[j] = loss(type(ti), nn, data)
+        total_loss[j] = loss(type(ti)(), nn, data)
 
         next!(p)
     end
@@ -88,7 +88,7 @@ train!(neuralnetwork, data, optimizer, training_method; nruns = 1000, batch_size
 """
 function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, data::AbstractTrainingData, tp::TrainingParameters; showprogress::Bool = false)
 
-    bs = batch_size(tp) === nothing ? default_index_batch(data,type(method(tp))) : batch_size(tp)
+    bs = complete_batch_size(data, method(tp), batchsize(tp))
 
     total_loss = train!(nn, data, opt(tp), method(tp); ntraining = nruns(tp), batch_size =  bs, showprogress = showprogress)
 

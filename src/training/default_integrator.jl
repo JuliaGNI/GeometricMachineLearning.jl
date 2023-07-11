@@ -10,8 +10,7 @@ default_integrator(::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, ::TrainingDat
 
 default_integrator(::LuxNeuralNetwork{<:SympNet}, ::TrainingData{<:PhaseSpaceSymbol, TrajectoryData}) = BasicSympNet()
 
-default_integrator(::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, ::TrainingData{<:PositionSymbol, <:SampledData}) = VariationalMidPointIntegrator()
-default_integrator(::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, ::TrainingData{<:PosVeloSymbol, <:TrajectoryData}) = VariationalMidPointIntegrator()
+default_integrator(::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, ::TrainingData{<:PositionSymbol, <:TrajectoryData}) = VariationalMidPointIntegrator()
 default_integrator(::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, ::TrainingData{<:PosVeloAccSymbol, <:TrajectoryData} ) = LnnExactIntegrator()
 default_integrator(::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, ::TrainingData{<:PosVeloAccSymbol, <:SampledData} ) = LnnExactIntegrator()
 

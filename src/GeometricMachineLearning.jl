@@ -171,7 +171,7 @@ module GeometricMachineLearning
 
     include("data/data_training.jl")
 
-    export get_batch
+    export get_batch, complete_batch_size
     
     include("data/batch.jl")
 
@@ -204,6 +204,9 @@ module GeometricMachineLearning
     include("architectures/variable_width_network.jl")
     include("architectures/sympnet.jl")
 
+    export default_arch
+
+    include("architectures/default_architecture.jl")
 
     #INCLUDE TRAINING parameters
 

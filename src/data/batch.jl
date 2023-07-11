@@ -5,11 +5,11 @@ min_length_batch(ti::AbstractTrainingIntegrator) = 1
 
 complete_batch_size(::TrainingData{T,TrajectoryData} where T, ti::AbstractTrainingIntegrator, bs::Tuple{Int64, Int64, Int64}) = bs
 complete_batch_size(::TrainingData{T,TrajectoryData} where T, ti::AbstractTrainingIntegrator, bs::Tuple{Int64, Int64}) = (bs..., min_length_batch(ti))
-complete_batch_size(data::TrainingData{T,TrajectoryData} where T, ti::AbstractTrainingIntegrator, bs::Tuple{Int64}) = (1:get_nb_trajectory(data), bs..., min_length_batch(ti))
-complete_batch_size(data::TrainingData{T,TrajectoryData} where T, ti::AbstractTrainingIntegrator, bs::Int64) = (1:get_nb_trajectory(data), bs, min_length_batch(ti))
-complete_batch_size(::TrainingData{T,TrajectoryData} where T, ti::AbstractTrainingIntegrator, ::Missing) = (1, min(DEFAULT_BATCH_SIZE, ), min_length_batch(ti))
+complete_batch_size(data::TrainingData{T,TrajectoryData} where T, ti::AbstractTrainingIntegrator, bs::Tuple{Int64}) = (get_nb_trajectory(data), bs..., min_length_batch(ti))
+complete_batch_size(data::TrainingData{T,TrajectoryData} where T, ti::AbstractTrainingIntegrator, bs::Int64) = (get_nb_trajectory(data), bs, min_length_batch(ti))
+complete_batch_size(data::TrainingData{T,TrajectoryData} where T, ti::AbstractTrainingIntegrator, ::Missing) = (1, min(DEFAULT_BATCH_SIZE, min_length(data) ), min_length_batch(ti))
 complete_batch_size(::TrainingData{T,SampledData} where T, ::AbstractTrainingIntegrator, bs::Int64) = bs
-complete_batch_size(::TrainingData{T,SampledData} where T, ::AbstractTrainingIntegrator, bs::Missing) = min(DEFAULT_BATCH_SIZE, get_nb_point(data))
+complete_batch_size(data::TrainingData{T,SampledData} where T, ::AbstractTrainingIntegrator, ::Missing) = min(DEFAULT_BATCH_SIZE, get_nb_point(data))
 
 
 #=
@@ -54,6 +54,10 @@ function get_batch(data::TrainingData{T,TrajectoryData} where T, batch_size_t::T
     return index_batch
 end
 
+get_batch(data::TrainingData{T,TrajectoryData} where T, batch_size::Tuple{Int64, Int64}; kwargs...) = get_batch(data, (batch_size...,1); kwargs...)
+
+get_batch(data::TrainingData{T,TrajectoryData} where T, batch_size::Int64; kwargs...) = get_batch(data, (get_nb_trajectory(data),batch_size,1); kwargs...)
+    
 
 #=
     The get_batch function for data with shape of  SampledData gives just a subsequence of 1:get_nb_point(data) of selected points to form

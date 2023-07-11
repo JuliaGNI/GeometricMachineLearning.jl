@@ -10,5 +10,5 @@ end
 loss(ti::BasicSympNetIntegrator, nn::LuxNeuralNetwork{<:SympNet}, data::TrainingData{<:DataSymbol{<:PhaseSpaceSymbol}}, index_batch = eachindex(ti, data), params = nn.params) =
 mapreduce((args...)->loss_single(ti, nn, Zygote.ignore(get_data(data,:q, args...)), Zygote.ignore(get_data(data,:p, args...)), Zygote.ignore(get_data(data,:q, next(args...)...)), Zygote.ignore(get_data(data,:p, next(args...)...)), params), +, index_batch)
 
-min_length_batch(::BasicSympNetIntegrator) = 3
+min_length_batch(::BasicSympNetIntegrator) = 2
 
