@@ -72,6 +72,6 @@ end
 @inline function Lux.apply(d::ResNet{true}, x::AbstractArray, ps, st::NamedTuple)
     sz = size(x)
     x_reshaped = reshape(x, sz[1], :)
-    return x + (reshape(Lux.__apply_activation(d.activation, ps.weight * x_reshaped .+ ps.bias),
-                    d.dim, sz[2:end]...), st)
+    return x + reshape(Lux.__apply_activation(d.activation, ps.weight * x_reshaped .+ ps.bias),
+                    d.dim, sz[2:end]...), st
 end
