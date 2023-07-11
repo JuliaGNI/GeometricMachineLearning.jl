@@ -1,15 +1,13 @@
 module GeometricMachineLearning
 
-    using GeometricBase
-    using GeometricEquations
-    using GeometricIntegrators
-    import GeometricIntegrators.Integrators: method
-    
-
+    using AbstractNetworks
     using BandedMatrices
     using ChainRulesCore
     using Distances
     using ForwardDiff
+    using GeometricBase
+    using GeometricEquations
+    using GeometricIntegrators
     using GPUArrays
     using KernelAbstractions
     using LinearAlgebra
@@ -22,6 +20,9 @@ module GeometricMachineLearning
 
 
     import Lux, CUDA
+    import AbstractNetworks: add!, IdentityActivation, ZeroVector
+    import GeometricIntegrators.Integrators: method
+
 
     include("kernels/tensor_mat_mul.jl")
     include("kernels/tensor_tensor_mul.jl")
@@ -57,16 +58,8 @@ module GeometricMachineLearning
     #GPU specific operations
     export convert_to_dev, Device, CPUDevice
 
-    #+ operation has been overloaded to work with NamedTuples!
-    export _add
-
-    include("activations/abstract_activation_function.jl")
-    include("activations/identity_activation.jl")
-
 
     #INCLUDE ARRAYS
-    include("arrays/add.jl")
-    include("arrays/zero_vector.jl")
     include("arrays/block_identity_lower.jl")
     include("arrays/block_identity_upper.jl")
     include("arrays/symmetric.jl")
@@ -90,7 +83,6 @@ module GeometricMachineLearning
     export sr, sr!
 
 
-    export AbstractLayer
     export FeedForwardLayer, LinearFeedForwardLayer
     export Gradient
     export Linear
