@@ -20,6 +20,7 @@ module GeometricMachineLearning
     include("kernels/tensor_transpose_mat_mul.jl")
     include("kernels/tensor_transpose_tensor_transpose_mul.jl")
     include("kernels/mat_tensor_mul.jl")
+    include("kernels/tensor_transpose.jl")
 
     include("kernels/kernel_ad_routines/tensor_mat_mul.jl")
     include("kernels/kernel_ad_routines/mat_tensor_mul.jl")
