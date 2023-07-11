@@ -7,3 +7,5 @@ end
 @inline symbols(::TrainingIntegrator{T,Symbols}) where {T<: AbstractTrainingIntegrator, Symbols<:AbstractDataSymbol} = Symbols
 @inline shape(::TrainingIntegrator{T,Symbols, Shape}) where {T<: AbstractTrainingIntegrator, Symbols<:AbstractDataSymbol, Shape<:AbstractDataShape} = Shape
 
+
+min_length_batch(ti::TrainingIntegrator) = min_length_batch(type(ti)())

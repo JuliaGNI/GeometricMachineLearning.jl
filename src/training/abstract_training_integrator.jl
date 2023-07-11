@@ -8,4 +8,4 @@ function loss end
 function loss_single end
 
 
-
+min_length_batch(ti::AbstractTrainingIntegrator) = 1

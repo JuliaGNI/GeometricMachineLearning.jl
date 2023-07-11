@@ -1,8 +1,6 @@
 const DEFAULT_BATCH_SIZE = 10
 const DEFAULT_BATCH_NB_TAJECTORY= 2
 
-min_length_batch(ti::AbstractTrainingIntegrator) = 1
-
 complete_batch_size(::TrainingData{T,TrajectoryData} where T, ti::AbstractTrainingIntegrator, bs::Tuple{Int64, Int64, Int64}) = bs
 complete_batch_size(::TrainingData{T,TrajectoryData} where T, ti::AbstractTrainingIntegrator, bs::Tuple{Int64, Int64}) = (bs..., min_length_batch(ti))
 complete_batch_size(data::TrainingData{T,TrajectoryData} where T, ti::AbstractTrainingIntegrator, bs::Tuple{Int64}) = (get_nb_trajectory(data), bs..., min_length_batch(ti))

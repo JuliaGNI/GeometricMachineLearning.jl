@@ -101,7 +101,4 @@ merge!(ensemble_training, ensemble_training2)
 @test data(ensemble_training) == training_data
 
 
-#########################################
-# Test for matching
-#########################################
 

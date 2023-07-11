@@ -160,6 +160,7 @@ module GeometricMachineLearning
 
     export TrainingIntegrator
     export type, symbol, shape
+    export min_length_batch
     
     include("training/training_integrator.jl")
 
@@ -216,7 +217,7 @@ module GeometricMachineLearning
 
     #INCLUDE NEURALNET SOLUTION
 
-    export SingleHistor
+    export SingleHistory
     export parameters, datashape, loss
     export History
     export data, last, sizemax, nbtraining, show
