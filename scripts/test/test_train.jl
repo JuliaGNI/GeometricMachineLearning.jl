@@ -1,4 +1,20 @@
+using GeometricMachineLearning
 include("macro_testerror.jl")
+
+#########################################
+# some data 
+
+Data = (Trajectory1 =  ([0.0 0.0 0.0], [0.0 0.0 0.0]), Trajectory2 = ([0.2 0.5 0.7], [0.7 0.8 0.9]))
+get_Data = Dict(
+    :shape => TrajectoryData,
+    :nb_trajectory => Data -> length(Data),
+    :length_trajectory => (Data,i) -> length(Data[Symbol("Trajectory"*string(i))][1]),
+    :Δt => Data -> 0.1,
+    :q => (Data,i,n) -> Data[Symbol("Trajectory"*string(i))][1][n],
+    :p => (Data,i,n) -> Data[Symbol("Trajectory"*string(i))][2][n],
+)
+training_data = TrainingData(Data, get_Data)
+
 
 #########################################
 # Test for TrainingParameters
@@ -45,7 +61,7 @@ training_set2 = TrainingSet(nn2, training_parameters, training_data)
 
 ensemble_training = EnsembleTraining()
 
-@test size(ensemble_training) == 0
+@test GeometricMachineLearning.size(ensemble_training) == 0
 @test isnnShared(ensemble_training) == false
 @test isParametersShared(ensemble_training) == false
 @test isDataShared(ensemble_training) == false
@@ -70,7 +86,7 @@ push!(ensemble_training, training_set1)
 @test data(ensemble_training) == training_data
 
 ensemble_training2 = EnsembleTraining(training_set2)
-merge!(ensemble_training1, ensemble_training2)
+merge!(ensemble_training, ensemble_training2)
 
 @test size(ensemble_training) == 2
 @test isnnShared(ensemble_training) == false
@@ -86,11 +102,6 @@ merge!(ensemble_training1, ensemble_training2)
 
 
 #########################################
-# Test for default_integrator
-#########################################
-
-
-
-#########################################
 # Test for matching
 #########################################
+

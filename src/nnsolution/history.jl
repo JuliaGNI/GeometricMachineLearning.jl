@@ -17,7 +17,7 @@ end
 
 @inline parameters(sh::SingleHistory) = sh.parameters
 @inline datashape(sh::SingleHistory) = sh.datashape
-@inline size(sh::SingleHistory) = sh.size_data
+@inline Base.size(sh::SingleHistory) = sh.size_data
 @inline loss(sh::SingleHistory) = sh.loss
 
 

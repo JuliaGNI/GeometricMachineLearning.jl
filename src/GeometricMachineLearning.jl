@@ -217,9 +217,9 @@ module GeometricMachineLearning
     #INCLUDE NEURALNET SOLUTION
 
     export SingleHistor
-    export parameters, datashape, size, loss
+    export parameters, datashape, loss
     export History
-    export data, size, last, sizemax, nbtraining, show
+    export data, last, sizemax, nbtraining, show
 
     include("nnsolution/history.jl")
 
@@ -230,7 +230,7 @@ module GeometricMachineLearning
     include("nnsolution/neural_net_solution.jl")
 
     export EnsembleNeuralNetSolution
-    export size, push!, merge!
+    export push!, merge!
 
     include("nnsolution/neural_net_solution_ensemble.jl")
 
@@ -242,9 +242,9 @@ module GeometricMachineLearning
     include("training/training_set.jl")
 
     export EnsembleTraining
-    export size, isnnShared, isParametersShared, isDataShared
+    export isnnShared, isParametersShared, isDataShared
     export nn, parameters, data
-    export push!, merge!
+    export push!, merge!, size
 
     include("training/ensemble_training.jl")
 

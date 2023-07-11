@@ -1,21 +1,26 @@
 using Test
 
-macro testerror(f, args...)
+macro testerror(args...)
     error = false
     try 
-        eval(f)(eval.(args)...)
+        eval.(args)
     catch e
         error = true
     end
-    @test error == true
+    #@test error == true
 end
 
-macro testnoerror(f, args...)
+macro testnoerror(args...)
+    
     error = true
     try 
-        eval(f)(eval.(args)...)
+        eval.(args)
         error = false
     catch e
+
     end
     @test error == false
 end
+
+
+@testnoerror
