@@ -94,15 +94,21 @@ function Lux.apply(d::MultiHeadAttention{Stiefel, Retraction, true}, x::Abstract
     dim, input_length, number_data = size(x)
     @assert dim == d.dim
     
-    backend = KernelAbstractions.get_backend(x)
+    #backend = KernelAbstractions.get_backend(x)
 
-    output = KernelAbstractions.zeros(backend, T, 0, input_length, number_data)
+    #output = KernelAbstractions.zeros(backend, T, 0, input_length, number_data)
+    output = similar(x, 0, input_length, number_data)
 
-    Q_tensor = KernelAbstractions.zeros(backend, T, Dₕ, input_length, number_data)
-    K_tensor = KernelAbstractions.zeros(backend, T, Dₕ, input_length, number_data)
-    V_tensor = KernelAbstractions.zeros(backend, T, Dₕ, input_length, number_data)
-    QK_tensor = KernelAbstractions.zeros(backend, T, input_length, input_length, number_data)
-    single_head_output = KernelAbstractions.zeros(backend, T, Dₕ, input_length, number_data)
+    #Q_tensor = KernelAbstractions.zeros(backend, T, Dₕ, input_length, number_data)
+    Q_tensor = similar(x, Dₕ, input_length, number_data)
+    #K_tensor = KernelAbstractions.zeros(backend, T, Dₕ, input_length, number_data)
+    K_tensor = similar(x, Dₕ, input_length, number_data)
+    #V_tensor = KernelAbstractions.zeros(backend, T, Dₕ, input_length, number_data)
+    V_tensor = similar(x, Dₕ, input_length, number_data)
+    #QK_tensor = KernelAbstractions.zeros(backend, T, input_length, input_length, number_data)
+    QK_tensor = similar(x, input_length, input_length, number_data)
+    #single_head_output = KernelAbstractions.zeros(backend, T, Dₕ, input_length, number_data)
+    single_head_output = similar(x, Dₕ, input_length, number_data)
 
     for i in 1:d.n_heads 
         key = Symbol("head_"*string(i))
@@ -128,15 +134,21 @@ function Lux.apply(d::MultiHeadAttention{Stiefel, Retraction, false}, x::Abstrac
     dim, input_length, number_data = size(x)
     @assert dim == d.dimoutput
     
-    backend = KernelAbstractions.get_backend(x)
+    #backend = KernelAbstractions.get_backend(x)
 
-    output = KernelAbstractions.zeros(backend, T, 0, input_length, number_data)
+    #output = KernelAbstractions.zeros(backend, T, 0, input_length, number_data)
+    output = similar(x, 0, input_length, number_data)
 
-    Q_tensor = KernelAbstractions.zeros(backend, T, Dₕ, input_length, number_data)
-    K_tensor = KernelAbstractions.zeros(backend, T, Dₕ, input_length, number_data)
-    V_tensor = KernelAbstractions.zeros(backend, T, Dₕ, input_length, number_data)
-    QK_tensor = KernelAbstractions.zeros(backend, T, input_length, input_length, number_data)
-    single_head_output = KernelAbstractions.zeros(backend, T, Dₕ, input_length, number_data)
+    #Q_tensor = KernelAbstractions.zeros(backend, T, Dₕ, input_length, number_data)
+    Q_tensor = similar(x, Dₕ, input_length, number_data)
+    #K_tensor = KernelAbstractions.zeros(backend, T, Dₕ, input_length, number_data)
+    K_tensor = similar(x, Dₕ, input_length, number_data)
+    #V_tensor = KernelAbstractions.zeros(backend, T, Dₕ, input_length, number_data)
+    V_tensor = similar(x, Dₕ, input_length, number_data)
+    #QK_tensor = KernelAbstractions.zeros(backend, T, input_length, input_length, number_data)
+    QK_tensor = similar(x, input_length, input_length, number_data)
+    #single_head_output = KernelAbstractions.zeros(backend, T, Dₕ, input_length, number_data)
+    single_head_output = similar(x, Dₕ, input_length, number_data)
 
     for i in 1:d.n_heads 
         key = Symbol("head_"*string(i))
@@ -155,4 +167,9 @@ function Lux.apply(d::MultiHeadAttention{Stiefel, Retraction, false}, x::Abstrac
         #KernelAbstractions.synchronize(backend)
     end
     output, st
+end
+
+import ChainRules
+function ChainRules._adjoint_mat_pullback(y::AbstractArray{T, 3}, proj) where T 
+    (NoTangent(), proj(tensor_transpose(y)))
 end
