@@ -21,7 +21,7 @@ function TrainingSet(es::EnsembleSolution)
     data = TrainingData(es)
     arch = default_arch(data, dim(data))
     nn = NeuralNetwork(arch, LuxBackend())
-    tp = TrainingParameters(data)
+    tp = TrainingParameters(nn, data)
     TrainingSet(nn, tp, data)
 end
 

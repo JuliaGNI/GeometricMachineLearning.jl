@@ -41,6 +41,7 @@ get_Data = Dict(
     :q => (Data,i,n) -> Data[Symbol("Trajectory"*string(i))][1][n],
     :p => (Data,i,n) -> Data[Symbol("Trajectory"*string(i))][2][n],
 )
+
 training_data = TrainingData(Data, get_Data)
 
 @test problem(training_data)               == UnknownProblem()
@@ -58,7 +59,6 @@ training_data = TrainingData(Data, get_Data)
 
 @test eachindex(training_data) == [(1,1),(1,2),(1,3),(2,1),(2,2),(2,3)]
 
-
 sampled_data = reshape_intoSampledData(training_data)
 
 @test problem(sampled_data)              == UnknownProblem()
@@ -75,7 +75,6 @@ sampled_data = reshape_intoSampledData(training_data)
 @test get_data(sampled_data, :p, 4)        == 0.7
 
 @test eachindex(sampled_data) == [1,2,3,4,5,6]
-
 
 reduced_data = reduce_symbols(sampled_data, DataSymbol((:q,)))
 

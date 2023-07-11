@@ -16,12 +16,12 @@ struct NeuralNetSolution{TNN <: AbstractNeuralNetwork, TP <: AbstractProblem, Ts
     loss::TL
     history::History
 
-    function NeuralNetSolution(nn::AbstractNeuralNetwork, loss, sh::SingleHistory, problem::AbstractProblem = UnknownProblem, tstep::Real = isUnknown(problem) ? nothing : tstep(problem))
-        new{typeof(nn), typeof(problem), typeof(tstep), typeof(loss)}(nn, problem, loss, tstep, History(sh))
+    function NeuralNetSolution(nn::AbstractNeuralNetwork, sh::SingleHistory, loss, problem::AbstractProblem = UnknownProblem, tstep::Real = isUnknown(problem) ? nothing : tstep(problem))
+        new{typeof(nn), typeof(problem), typeof(tstep), typeof(loss)}(nn, problem, tstep, loss, History(sh))
     end
 
-    function NeuralNetSolution(nn::AbstractNeuralNetwork, loss, h::History, problem::AbstractProblem = UnknownProblem, tstep::Real = isUnknown(problem) ? nothing : tstep(problem))
-        new{typeof(nn), typeof(problem), typeof(tstep), typeof(loss)}(nn, problem, loss, tstep, h)
+    function NeuralNetSolution(nn::AbstractNeuralNetwork, h::History, loss, problem::AbstractProblem = UnknownProblem, tstep::Real = isUnknown(problem) ? nothing : tstep(problem))
+        new{typeof(nn), typeof(problem), typeof(tstep), typeof(loss)}(nn, problem, tstep, loss, h)
     end
 end
 
@@ -29,10 +29,10 @@ update_history(nns::NeuralNetSolution, sg::SingleHistory) = _add(nns.history, sg
 
 @inline nn(nns::NeuralNetSolution) = nns.nn
 @inline problem(nns::NeuralNetSolution) = nns.problem
-@inline tstep(nns::NeuralNetSolution) = nns.tstep
+@inline GeometricBase.tstep(nns::NeuralNetSolution) = nns.tstep
 @inline loss(nns::NeuralNetSolution) = nns.loss
 
-@inline history(nns::NeuralNetSolution) = nns.history.data
+@inline history(nns::NeuralNetSolution) = nns.history
 @inline size_history(nns::NeuralNetSolution) = size(nns.history)
 @inline Base.last(nns::NeuralNetSolution) = last(nns.history)
 @inline nbtraining(nns::NeuralNetSolution) =  nbtraining(nns.history)

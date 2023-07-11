@@ -12,8 +12,6 @@ struct Optimizer{MT<:AbstractMethodOptimiser, CT<:NamedTuple}
     end
 end
 
-default_optimizer() = GradientOptimizer()
-
 #######################################################################################
 #optimization step function
 

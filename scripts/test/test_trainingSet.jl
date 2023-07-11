@@ -32,7 +32,6 @@ training_parameters = TrainingParameters(nruns, method, mopt; batch_size = bs)
 @test GeometricMachineLearning.opt(training_parameters) == mopt
 @test GeometricMachineLearning.batchsize(training_parameters) == bs
 
-
 #########################################
 # Test for TrainingSet
 #########################################

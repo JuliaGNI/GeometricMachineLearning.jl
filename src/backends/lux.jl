@@ -10,6 +10,8 @@ struct LuxNeuralNetwork{AT,MT,PT,ST} <: AbstractNeuralNetwork
     state::ST
 end
 
+@inline arch(luxnn::LuxNeuralNetwork) = luxnn.architecture
+
 function NeuralNetwork(arch::AbstractArchitecture, back::LuxBackend)
     # create model
     model = chain(arch, back::LuxBackend)

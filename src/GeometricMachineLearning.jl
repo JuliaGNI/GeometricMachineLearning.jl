@@ -1,6 +1,7 @@
 module GeometricMachineLearning
 
-    #using GeometricEquations
+    using GeometricBase
+    using GeometricEquations
     #using GeometricIntegrators
 
     using BandedMatrices
@@ -180,6 +181,7 @@ module GeometricMachineLearning
     export AbstractNeuralNetwork
     export LuxBackend
     export NeuralNetwork
+    export arch
 
     include("architectures/architectures.jl")
     include("backends/backends.jl")
@@ -208,6 +210,10 @@ module GeometricMachineLearning
     export default_arch
 
     include("architectures/default_architecture.jl")
+
+    export default_optimizer
+
+    include("optimizers/default_optimizer.jl")
 
     #INCLUDE TRAINING parameters
 
@@ -296,8 +302,8 @@ module GeometricMachineLearning
     #INCLUDE PROBLEMS
     export HNNProblem, LNNProblem
 
-    #include("integrator/problem_hnn.jl")
-    #include("integrator/problem_lnn.jl")
+    include("integrator/problem_hnn.jl")
+    include("integrator/problem_lnn.jl")
     
     #INCLUDE INTEGRATOR 
     export NeuralNetMethod

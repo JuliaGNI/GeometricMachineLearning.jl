@@ -17,7 +17,7 @@ macro testnoerror(args...)
         eval.(args)
         error = false
     catch e
-
+        println(e)
     end
     @test error == false
 end

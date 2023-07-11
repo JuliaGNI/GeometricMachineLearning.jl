@@ -67,7 +67,7 @@ end
 @inline noisemaker(data::TrainingData) = data.noisemaker
 
 @inline get_Δt(data::TrainingData) = get_Δt(data.shape)
-@inline tstep(data::TrainingData) = get_Δt(data.shape)
+@inline GeometricBase.tstep(data::TrainingData) = get_Δt(data.shape)
 @inline get_nb_trajectory(data::TrainingData) = get_nb_trajectory(data.shape)
 @inline get_length_trajectory(data::TrainingData, i::Int) = get_length_trajectory(data.shape, i)
 @inline get_length_trajectory(data::TrainingData) = get_length_trajectory(data.shape)
@@ -112,9 +112,6 @@ function reduce_symbols(data::TrainingData, symbol::DataSymbol)
 
     #compute the symetric difference of old and new symbols
     toberemoved = symboldiff(data_symbols(data), symbol)
-
-    #new dimention
-    #dim = dim(data) - sum(length(get_data(value, _index_first(shape)...) for value in toberemoved))
 
     new_data = TrainingData(data; symbols = symbol)
 

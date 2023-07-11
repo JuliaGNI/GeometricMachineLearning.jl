@@ -38,8 +38,8 @@ mutable struct History
     nbtraining::Int
 
     function History(sg::SingleHistory; sizemax = 100)
-        history = Dict()
-        new(history, sg, 0, sizemax)
+        history = Vector{SingleHistory}[]
+        new(history, sg, 0, sizemax,1)
     end
 end
 
@@ -71,7 +71,7 @@ function _set_sizemax_history(history::History, sizemax::Int)
 
     history.sizemax = sizemax
 
-    for _ in 1:(size(history)-sizemax(history))
+    for _ in 1:(size(history)-history.sizemax)
         pop!(history.data)
     end
 

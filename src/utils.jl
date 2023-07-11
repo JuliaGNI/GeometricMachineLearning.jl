@@ -87,7 +87,7 @@ function add!(dx₁::NamedTuple, dx₂::NamedTuple, dx₃::NamedTuple)
     apply_toNT(dx₁, dx₂, dx₃, add!)
 end
 
-abstract type AbstractProblem end
+#abstract type AbstractProblem end
 struct EnsembleSolution end
 struct UnknownProblem <: AbstractProblem end
 

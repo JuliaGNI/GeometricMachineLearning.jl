@@ -4,6 +4,29 @@ using Test
 include("generation_of_data.jl")
 include("macro_testerror.jl")
 
+
+#########################################
+# Test copy data
+#########################################
+
+
+#########################################
+# Test complete_batch_size
+#########################################
+
+
+#########################################
+# Test check_batch_size
+#########################################
+
+#########################################
+# Test matching
+#########################################
+
+
+
+
+
 #########################################
 # Test the basic train! function
 #########################################
@@ -26,32 +49,31 @@ batch_size = (1,2)
 
 training_parameters = TrainingParameters(nruns, method, mopt; batch_size = batch_size)
 
-neural_net_solution = train!(nn, training_data, training_parameters)
+@testnoerror neural_net_solution = train!(nn, training_data, training_parameters)
 
 #########################################
 # Test train! with TrainingSet
 #########################################
 
 training_set1 = TrainingSet(nn, training_parameters, training_data)
-training_set2 = TrainingSet(nn, training_parameters, training_data)
 
-ensemble_nns = train!(training_set1, training_set2)
+@testnoerror ensemble_nns = train!(training_set1)
 
 #########################################
 # Test train! with EnsembleTraining
 #########################################
 
-ensemble_training = EnsembleTraining(training_set1, training_set2)
+ensemble_training = EnsembleTraining(training_set1, training_set1)
 
-ensemble_nns = train!(ensemble_training)
-
+@testnoerror ensemble_nns = train!(ensemble_training)
 
 #########################################
 # Test train! with NeuralNetSolution
 #########################################
 
-train!(nns::NeuralNetSolution, data::AbstractTrainingData, tp::TrainingParameters)
+#=
+train!(nns::NeuralNetSolution, training_data, training_parameters)
 
 train!(nns::NeuralNetSolution, ts::TrainingSet)
-
+=#
 

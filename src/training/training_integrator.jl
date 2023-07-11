@@ -1,5 +1,5 @@
 #Define common strucutre integrator
-struct TrainingIntegrator{TIT<:AbstractTrainingIntegrator, TSymbol<:AbstractDataSymbol, TShape<:AbstractDataShape, TD}
+struct TrainingIntegrator{TIT<:AbstractTrainingIntegrator, TSymbol<:AbstractDataSymbol, TShape<:AbstractDataShape, TD} <:AbstractTrainingIntegrator
     sqdist::TD
 end
 

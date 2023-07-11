@@ -57,13 +57,13 @@ function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, data_in::AbstractT
     for j in 1:ntraining
         index_batch = get_batch(data, bs; check = false)
 
-        params_grad = loss_gradient(nn, type(ti)(), data, index_batch, params_tuple) 
+        params_grad = loss_gradient(nn, ti, data, index_batch, params_tuple) 
 
         dp = posttransform(type(ti)(), params_grad, keys)
 
         optimization_step!(opt, nn.model, nn.params, dp)
 
-        total_loss[j] = loss(type(ti)(), nn, data)
+        total_loss[j] = loss(ti, nn, data)
 
         next!(p)
     end
@@ -94,7 +94,7 @@ function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, data::AbstractTrai
 
     sh = SingleHistory(tp, shape(data), size(data), total_loss)
     
-    NeuralNetSolution(nn, total_loss, sh, problem(data), tstep(data))
+    NeuralNetSolution(nn, sh, total_loss, problem(data), tstep(data))
 
 end
 
@@ -111,7 +111,7 @@ train!(ts::TrainingSet...; kwarsg...) = train!(EnsembleTraining(ts...); kwarsg..
 ####################################################################################
 
 function train!(ets::EnsembleTraining; kwarsg...)
-    enns = EnsembleNeuralnetSolution()
+    enns = EnsembleNeuralNetSolution()
     for ts in ets
         push!(enns,train!(ts::TrainingSet; kwarsg...))
     end
@@ -127,14 +127,11 @@ function train!(nns::NeuralNetSolution, data::AbstractTrainingData, tp::Training
     @assert tstep(data) == tstep(nns) || tstep(nns) == nothing || tstep(data) == nothing
     @assert problem(data) == problem(nns) || problem(nns) == nothing || problem(data) == nothing
     
-    total_loss = train!(nn(nns), data, opt(tp), method(tp); ntraining = nruns(tp), batch_size_t = batch_size(tp), showprogress = showprogress)
+    total_loss = train!(nn(nns), data, opt(tp), method(tp); ntraining = nruns(tp), batch_size = batchsize(tp))
 
     sh = SingleHistory(tp, shape(data), size(data), total_loss)
 
-    new_history = _update(nns(history), sh)
-    
-    NeuralNetSolution(nn(nns), total_loss, new_history, problem(nns), tstep(nns))
-
+    update_history(nns, sh)
 end
 
 function train!(nns::NeuralNetSolution, ts::TrainingSet; kwarsg...)
