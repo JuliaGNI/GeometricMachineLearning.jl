@@ -20,7 +20,7 @@ function tensor_transpose!(C, A)
     kernel!(C, A, ndrange=size(C))
 end
 
-function tensor_transpose(A)
+function tensor_transpose(A::AbstractArray{T, 3}) where T 
     sizeA = size(A)
     backend = KernelAbstractions.get_backend(A)
     C = KernelAbstractions.zeros(backend, T, sizeA[2], sizeA[1], sizeA[3])
