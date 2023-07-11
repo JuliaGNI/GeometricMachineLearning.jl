@@ -71,6 +71,7 @@ end
 @inline get_Δt(data::TrajectoryData) = data.Δt
 @inline get_nb_trajectory(data::TrajectoryData) = data.nb_trajectory
 @inline get_length_trajectory(data::TrajectoryData, i::Int) = data.length_trajectory[i]
+@inline get_length_trajectory(data::TrajectoryData) = data.length_trajectory
 @inline get_nb_point(data::SampledData) = data.nb_point
 
 @inline _index_first(::AbstractDataShape) = nothing
@@ -78,7 +79,7 @@ end
 @inline _index_first(::SampledData) = 1
 
 @inline Base.eachindex(::AbstractDataShape) = nothing
-@inline Base.eachindex(data::TrajectoryData) = vcat([[(i,j) for j in  get_length_trajectory(data,i)] for i in get_nb_trajectory(data)]...)
+@inline Base.eachindex(data::TrajectoryData) = vcat([[(i,j) for j in  1:get_length_trajectory(data,i)] for i in 1:get_nb_trajectory(data)]...)
 @inline Base.eachindex(data::SampledData) = 1:get_nb_point(data)
 
 @inline Base.eachindex(ti::AbstractTrainingIntegrator, data::TrajectoryData) = vcat([[(i,j) for j in  get_length_trajectory(data,i)-min_length_batch(ti)] for i in get_nb_trajectory(data)]...)
@@ -86,6 +87,6 @@ end
 
 reshape_intoSampledData!(data::AbstractDataShape) = @error "It is not possible to convert "*string(typeof(data))*" into SampledData."
 reshape_intoSampledData!(data::SampledData) = data
-reshape_intoSampledData!(data::TrajectoryData) = SampledData(sum([get_length_trajectory(data,i) for i in 1:get_nb_trajectory(data)]...))
+reshape_intoSampledData!(data::TrajectoryData) = SampledData(sum([get_length_trajectory(data,i) for i in 1:get_nb_trajectory(data)]))
 
 

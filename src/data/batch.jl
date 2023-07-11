@@ -34,11 +34,11 @@ end
     The trajectories selected and the points are randomly choosen with uniform law.  
 =#
 
-function get_batch(data::TrainingData{T,TrajectoryData} where T, batch_size::Tuple{Int64,Int64,Int64}; check = true)
+function get_batch(data::TrainingData{T,TrajectoryData} where T, batch_size_t::Tuple{Int64,Int64,Int64}; check = true)
 
-    batch_nb_trajectory, batch_size, size_sequence = batch_size
+    batch_nb_trajectory, batch_size, size_sequence = batch_size_t
 
-    check ? check_batch_size(data, batch_size) : nothing
+    check ? check_batch_size(data, batch_size_t) : nothing
 
     l = get_nb_trajectory(data)
     index_trajectory = rand(1:l, min(batch_nb_trajectory, l))
@@ -81,7 +81,7 @@ function check_batch_size(data::TrainingData{T,TrajectoryData} where T, batch_si
         @warn "The number of trajectory in the batch is greater than the number of trajectory in data.\
             \nTherefore, the batch is done on "*string(nb_trajectory)*" trajectories instead of "*string(batch_nb_trajectory)*"."
     end
-    nb = length([i for i in 1: nb_trajectory if get_length_trajectory(i) <  batch_size])
+    nb = length([i for i in 1: nb_trajectory if get_length_trajectory(data, i) <  batch_size])
     if nb > 0
         @warn "The size of data to take inside each selected trajectory is greater than the size of "*string(nb)*"/"*string(nb_trajectory)*" trajectories in data.\
             \nFor those, "*string(batch_size)*" is replaced by their respectives sizes."

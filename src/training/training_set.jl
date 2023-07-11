@@ -11,7 +11,7 @@ struct TrainingSet{TN <: AbstractNeuralNetwork, TP<:TrainingParameters , TD<: Ab
     data::TD
 
     function TrainingSet(nn::AbstractNeuralNetwork, tp::TrainingParameters, data::AbstractTrainingData)
-        new{typeof(nn), typeof(tp), typeof(dada)}(nn,tp,data)
+        new{typeof(nn), typeof(tp), typeof(data)}(nn,tp,data)
     end
 end
 
@@ -20,4 +20,5 @@ TrainingSet(ts::TrainingSet; nn::AbstractNeuralNetwork = nn(ts), tp::TrainingPar
 @inline nn(ts::TrainingSet)= ts.nn
 @inline parameters(ts::TrainingSet)= ts.tp
 @inline data(ts::TrainingSet)= ts.data
+
 

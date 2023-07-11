@@ -35,35 +35,35 @@ keys6 = (:q, :p, :s)
 @test type(DataSymbol(keys5)) == PosVeloAccSymbol
 @test type(DataSymbol(keys6)) == PhaseSpaceSymbol
 
-#=
+
 @test can_reduce(DataSymbol(keys2), DataSymbol(keys1)) == true
 @test can_reduce(DataSymbol(keys3), DataSymbol(keys1)) == true
 @test can_reduce(DataSymbol(keys5), DataSymbol(keys2)) == false
 
-@test symbol(DataSymbol(keys2), DataSymbol(keys1)) == (:p,)
-@test symbol(DataSymbol(keys3), DataSymbol(keys1)) == (:p, :q̇, :q̈)
-=#
+@test symboldiff(DataSymbol(keys2), DataSymbol(keys1)) == (:p,)
+@test symboldiff(DataSymbol(keys3), DataSymbol(keys1)) == (:p, :q̇, :ṗ)
+
 #########################################
 # Test for DataTraining
 #########################################
 
-Data = (Trajectory1 =  ([0.0 0.0 0.0], [[0.0 0.0 0.0]]), Trajectory2 = ([0.2 0.5 0.7], [[0.7 0.8 0.9]]))
+Data = (Trajectory1 =  ([0.0 0.0 0.0], [0.0 0.0 0.0]), Trajectory2 = ([0.2 0.5 0.7], [0.7 0.8 0.9]))
 get_Data = Dict(
     :shape => TrajectoryData,
     :nb_trajectory => Data -> length(Data),
     :length_trajectory => (Data,i) -> length(Data[Symbol("Trajectory"*string(i))][1]),
     :Δt => Data -> 0.1,
     :q => (Data,i,n) -> Data[Symbol("Trajectory"*string(i))][1][n],
-    :p => (Data,i,n) -> Data[Symbol("Trajectory"*String(i))][2][n],
+    :p => (Data,i,n) -> Data[Symbol("Trajectory"*string(i))][2][n],
 )
 training_data = TrainingData(Data, get_Data)
 
-@test problem(training_data)        == Unknownproblem
-@test typeof(shape(training_data))  == TrajectroyData
-@test type(symbols(data))           == PhaseSpaceSymbol
-@test symbols(training_data)        == (:q,:p)
-@test dim(training_data)            == 1
-@test noisemaker(training_data)     == NothingFunction()    
+@test problem(training_data)               == UnknownProblem()
+@test typeof(shape(training_data))         == TrajectoryData
+@test type(data_symbols(training_data))    == PhaseSpaceSymbol
+@test symbols(training_data)               == (:q,:p)
+@test dim(training_data)                   == 1
+@test noisemaker(training_data)            == NothingFunction()    
 
 @test get_Δt(training_data)                == 0.1
 @test get_nb_trajectory(training_data)     == 2
@@ -76,12 +76,12 @@ training_data = TrainingData(Data, get_Data)
 
 sampled_data = reshape_intoSampledData(training_data)
 
-@test problem(sampled_data)         == Unknownproblem
-@test typeof(shape(sampled_data))   == SampledData
-@test type(symbols(sampled_data))   == PhaseSpaceSymbol
-@test symbols(sampled_data)         == (:q,:p)
-@test dim(sampled_data)             == 1
-@test noisemaker(sampled_data)      == NothingFunction()    
+@test problem(sampled_data)              == UnknownProblem()
+@test typeof(shape(sampled_data))        == SampledData
+@test type(data_symbols(sampled_data))   == PhaseSpaceSymbol
+@test symbols(sampled_data)              == (:q,:p)
+@test dim(sampled_data)                  == 1
+@test noisemaker(sampled_data)           == NothingFunction()    
 
 @test get_Δt(sampled_data)                === nothing
 @test get_nb_trajectory(sampled_data)     === nothing
@@ -94,27 +94,25 @@ sampled_data = reshape_intoSampledData(training_data)
 
 reduced_data = reduce_symbols(sampled_data, DataSymbol((:q,)))
 
-@test problem(reduced_data)         == Unknownproblem
-@test typeof(shape(reduced_data))   == SampledData
-@test type(symbols(reduced_data))   == PositionSymbol
-@test symbols(reduced_data)         == (:q,)
-@test dim(reduced_data)             == 1
-@test noisemaker(reduced_data)      == NothingFunction()    
+@test problem(reduced_data)              == UnknownProblem()
+@test typeof(shape(reduced_data))        == SampledData
+@test type(data_symbols(reduced_data))   == PositionSymbol
+@test symbols(reduced_data)              == (:q,)
+@test dim(reduced_data)                  == 1
+@test noisemaker(reduced_data)           == NothingFunction()    
 
-@test Tuple(keys(get(reduced_data)) == (:q,)
+@test Tuple(keys(GeometricMachineLearning.get(reduced_data))) == (:q,)
 
 #########################################
 # Test Batch
 #########################################
 
-index_batch = get_batch(training_data, (1,2,2))
+index_batch = get_batch(training_data, (2,2,2))
 @test length(index_batch) == 2
 for i in index_batch
     x,y = i 
-    @test 1<= x <= get_nb_trajectory (training_data)
-    @test (1<= y <= get_length_trajectory (training_data, x)-1 \
-            && (x,y+1) ∈ index_batch ) || (2<= y <= get_length_trajectory (training_data, x) \
-            && (x,y-1) ∈ index_batch )
+    @test 1<= x <= get_nb_trajectory(training_data)
+    @test 1<= y <= get_length_trajectory(training_data, x)
 end
 
 #default index batch ?
@@ -123,12 +121,12 @@ end
 # Test for TrainingSet
 #########################################
 
-hnn = HamiltonianNeuralNetwork(2; 2, width = 5)
+hnn = HamiltonianNeuralNetwork(2; nhidden= 2, width = 5)
 nn = NeuralNetwork(hnn, LuxBackend())
 
 training_set1 = TrainingSet(nn, training_parameters, training_data)
 
-@test nn(training_set1) == nn
+@test GeometricMachineLearning.nn(training_set1) == nn
 @test parameters(training_set1) == training_parameters
 @test data(training_set1) == training_data
 

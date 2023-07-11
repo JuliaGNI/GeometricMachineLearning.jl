@@ -26,6 +26,7 @@ module GeometricMachineLearning
 
     #are these needed?
     include("gradient.jl")
+    export UnknownProblem, NothingFunction
     include("utils.jl")
 
     #+ operation has been overloaded to work with NamedTuples!
@@ -166,6 +167,7 @@ module GeometricMachineLearning
     export AbstractTrainingData
     export TrainingData
     export problem, shape, get, symbols, dim, noisemaker, data_symbols
+    export reduce_symbols, reshape_intoSampledData
 
     include("data/data_training.jl")
 
@@ -231,7 +233,7 @@ module GeometricMachineLearning
 
     #INCLUDE TRAINING integrator
 
-    export SingleTrainingSet
+    export TrainingSet
     export nn, parameters, data
 
     include("training/training_set.jl")
