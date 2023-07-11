@@ -178,6 +178,6 @@ function mat_tensor_mul(Y::AT, x::AbstractArray{T, 3}) where {T, BT <: AbstractA
     mat_tensor_mul(Y.parent.A', x)
 end
 
-function mat_tensor_mul(Y::StiefelManifold, x::AbstractArray{T, 3})
+function mat_tensor_mul(Y::StiefelManifold, x::AbstractArray{T, 3}) where T 
     mat_tensor_mul(Y.A, x)
 end
