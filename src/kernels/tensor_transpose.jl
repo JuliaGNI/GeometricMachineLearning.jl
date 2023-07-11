@@ -16,7 +16,7 @@ function tensor_transpose!(C, A)
     @assert sizeA[2] == sizeC[1]
 
     backend = KernelAbstractions.get_backend(A)
-    kernel! = tensor_transpose!(backend)
+    kernel! = tensor_transpose_kernel!(backend)
     kernel!(C, A, ndrange=size(C))
 end
 
