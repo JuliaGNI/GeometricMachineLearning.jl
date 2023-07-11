@@ -12,7 +12,7 @@ end
 
 @inline arch(luxnn::LuxNeuralNetwork) = luxnn.architecture
 
-function NeuralNetwork(arch::AbstractArchitecture, back::LuxBackend)
+function NeuralNetwork(arch::Architecture, back::LuxBackend)
     # create model
     model = chain(arch, back::LuxBackend)
 

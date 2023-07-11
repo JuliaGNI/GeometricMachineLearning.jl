@@ -20,6 +20,8 @@ module GeometricMachineLearning
 
 
     import Lux, CUDA
+
+    import AbstractNetworks: Architecture, Chain, NeuralNetwork
     import AbstractNetworks: add!, IdentityActivation, ZeroVector
     import GeometricIntegrators.Integrators: method
 
@@ -196,17 +198,22 @@ module GeometricMachineLearning
     include("data/batch.jl")
 
     #INCLUDE BACKENDS
-    export AbstractNeuralNetwork
     export LuxBackend
     export NeuralNetwork
     export arch
 
-    include("architectures/architectures.jl")
     include("backends/backends.jl")
     include("backends/lux.jl")
 
-    # set default backend in NeuralNetwork constructor
-    NeuralNetwork(arch::AbstractArchitecture; kwargs...) = NeuralNetwork(arch, LuxBackend(); kwargs...)
+    
+    export Hnn_training_integrator
+    export Lnn_training_integrator
+    export SEuler
+    export ExactIntegrator
+    export ExactIntegratorLNN
+    export VariationalMidPointLNN
+    export SympNetIntegrator
+    export BaseIntegrator
 
     #INCLUDE ARCHITECTURES
     export HamiltonianNeuralNetwork

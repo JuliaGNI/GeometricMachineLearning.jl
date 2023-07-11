@@ -1,5 +1,5 @@
 # Structure
-abstract type SympNet{AT} <: AbstractArchitecture end
+abstract type SympNet{AT} <: Architecture end
 
 struct LASympNet{AT,T1,T2,T3} <: SympNet{AT} 
     dim::Int

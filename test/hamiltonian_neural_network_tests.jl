@@ -1,5 +1,6 @@
+using AbstractNetworks
 using GeometricMachineLearning
-using Lux
+using KernelAbstractions
 using Test
 
 
@@ -19,14 +20,12 @@ const act = tanh
 arch = HamiltonianNeuralNetwork(dimin; width=width, nhidden=nhidden, activation=act)
 
 # create Lux network
-nn = NeuralNetwork(arch, LuxBackend())
-
-# @test nn == NeuralNetwork(arch)
+nn = NeuralNetwork(arch, CPU(), Float64)
 
 # create model for comparison
-model = Chain(Dense(dimin, width, act),
-              Dense(width, width, act),
-              Dense(width, 1; use_bias=false))
+model = Chain(AbstractNetworks.Dense(dimin, width, act),
+              AbstractNetworks.Dense(width, width, act),
+              AbstractNetworks.Linear(width, 1; use_bias=false))
 
 # initialize Lux params and state
 # TODO: Need to seed RNG in order to compare params and state with nn
