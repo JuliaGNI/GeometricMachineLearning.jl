@@ -130,10 +130,10 @@ module GeometricMachineLearning
     export init_optimizer_cache
 
     include("optimizers/optimizer_caches.jl")
-    include("optimizers/Method_Optimizer/abstract_method_optimizer.jl")
-    include("optimizers/Method_Optimizer/gradient_optimizer.jl")
-    include("optimizers/Method_Optimizer/momentum_optimizer.jl")        
-    include("optimizers/Method_Optimizer/adam_optimizer.jl")
+    include("optimizers/optimizer_method.jl")
+    include("optimizers/gradient_optimizer.jl")
+    include("optimizers/momentum_optimizer.jl")        
+    include("optimizers/adam_optimizer.jl")
     include("optimizers/optimizer.jl")
 
     export GlobalSection, apply_section
