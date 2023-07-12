@@ -2,7 +2,7 @@
 Define the Gradient optimizer, i.e. W ← W - η*∇f(W)
 Or the riemannian manifold equivalent, if applicable.
 """
-mutable struct GradientOptimizer{T<:Real} <: AbstractMethodOptimiser
+struct GradientOptimizer{T<:Real} <: AbstractMethodOptimiser
     η::T
     t::Integer
     GradientOptimizer(η = 1e-2) = new{typeof(η)}(η,0)
