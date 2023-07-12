@@ -1,6 +1,7 @@
 module GeometricMachineLearning
 
     using BandedMatrices
+    using ChainRulesCore
     using Distances
     using ForwardDiff
     using GPUArrays
@@ -13,9 +14,23 @@ module GeometricMachineLearning
 
     import Lux, CUDA
 
+    include("kernels/tensor_mat_mul.jl")
+    include("kernels/tensor_tensor_mul.jl")
+    include("kernels/tensor_transpose_tensor_mul.jl")
+    include("kernels/tensor_tensor_transpose_mul.jl")
+    include("kernels/tensor_transpose_mat_mul.jl")
+    include("kernels/tensor_transpose_tensor_transpose_mul.jl")
+    include("kernels/mat_tensor_mul.jl")
+    include("kernels/tensor_transpose.jl")
+
+    include("kernels/kernel_ad_routines/tensor_mat_mul.jl")
+    include("kernels/kernel_ad_routines/mat_tensor_mul.jl")
+    include("kernels/kernel_ad_routines/tensor_tensor_mul.jl")
+    include("kernels/kernel_ad_routines/tensor_transpose_tensor_mul.jl")
+    #export tensor_mat_mul
+
     #this defines empty retraction type structs (doesn't rely on anything)
     include("optimizers/useful_functions/retraction_types.jl")
-
 
     export TrivialInitRNG
 
