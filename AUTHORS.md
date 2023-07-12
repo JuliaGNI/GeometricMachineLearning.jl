@@ -6,9 +6,9 @@ GeometricMachineLearning' development is coordinated by a group of *principal de
 
 * [Michael Kraus](https://www.michael-kraus.org/),
   Max Planck Institute for Plasma Physics, Garching, Germany
-* Tobias M. Blickhan,
-  Max Planck Institute for Plasma Physics, Garching, Germany
 * Benedikt Brantner,
+  Max Planck Institute for Plasma Physics, Garching, Germany
+* Théo Duez,
   Max Planck Institute for Plasma Physics, Garching, Germany
 
 ## Contributors
@@ -17,4 +17,5 @@ The following people contributed to GeometricMachineLearning and are listed in a
 
 * Tobias M. Blickhan
 * Benedikt Brantner
+* Théo Duez
 * Michael Kraus

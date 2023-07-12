@@ -1,15 +1,16 @@
 module GeometricMachineLearning
 
     using BandedMatrices
+    using ChainRulesCore
     using Distances
+    using ForwardDiff
+    using GPUArrays
+    using KernelAbstractions
     using LinearAlgebra
     using NNlib
     using ProgressMeter
     using Random
     using Zygote
-    using GPUArrays
-    using KernelAbstractions
-    using ChainRulesCore
 
     import Lux, CUDA
 
@@ -147,7 +148,27 @@ module GeometricMachineLearning
     include("optimizers/useful_functions/global_sections.jl")
     include("optimizers/useful_functions/auxiliary.jl")
     include("optimizers/useful_functions/retractions.jl")
-\
+
+    #INCLUDE ABSTRACT TRAINING integrator
+    export AbstractTrainingIntegrator
+    export TrainingIntegrator
+    export loss_single, loss
+
+    export HnnTrainingIntegrator
+    export LnnTrainingIntegrator
+    export SympNetTrainingIntegrator
+
+    include("training/abstract_training_integrator.jl")
+
+    #INCLUDE DATA TRAINING STRUCTURE
+    export AbstractTrainingData
+    export DataTrajectory, DataSampled, DataTarget
+    export get_length_trajectory, get_Δt, get_nb_point, get_nb_trajectory, get_data, get_target
+    
+    include("data/data_training.jl")
+    include("data/batch.jl")
+
+
     #INCLUDE BACKENDS
     export AbstractNeuralNetwork
     export LuxBackend
@@ -159,6 +180,16 @@ module GeometricMachineLearning
 
     # set default backend in NeuralNetwork constructor
     NeuralNetwork(arch::AbstractArchitecture; kwargs...) = NeuralNetwork(arch, LuxBackend(); kwargs...)
+
+    
+    export Hnn_training_integrator
+    export Lnn_training_integrator
+    export SEuler
+    export ExactIntegrator
+    export ExactIntegratorLNN
+    export VariationalMidPointLNN
+    export SympNetIntegrator
+    export BaseIntegrator
 
     #INCLUDE ARCHITECTURES
     export HamiltonianNeuralNetwork
@@ -177,6 +208,47 @@ module GeometricMachineLearning
     include("architectures/lagrangian_neural_network.jl")
     include("architectures/variable_width_network.jl")
     include("architectures/sympnet.jl")
+
+    #INCLUDE TRAINING integrator
+    export loss_gradient
+    export train!
+
+    include("training/train.jl")
+
+    export SymplecticEuler
+    export SymplecticEulerA, SymplecticEulerB
+    export SEuler, SEulerA, SEulerB
+
+    include("training/hnn_training/symplectic_euler.jl")
+
+    export HnnExactIntegrator
+    export ExactHnn
+
+    include("training/hnn_training/hnn_exact_integrator.jl")
+
+    export VariationalIntegrator
+    export VariationalMidPointIntegrator
+    export VariaMidPoint
+
+    include("training/lnn_training/variational_integrator.jl")
+
+    export LnnExactIntegrator
+    export ExactLnn
+
+    include("training/lnn_training/lnn_exact_integrator.jl")
+
+    export BasicSympNetIntegrator
+    export BasicSympNet
+
+    include("training/sympnet_training/sympnet_basic_integrator.jl")
+
+    export default_integrator
+    
+    include("training/default_integrator.jl")
+
+
+    #INCLUDE ASSERTION Function
+    include("training/assertion.jl")
 
 
 
