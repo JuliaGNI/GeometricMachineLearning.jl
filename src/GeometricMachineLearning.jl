@@ -30,7 +30,7 @@ module GeometricMachineLearning
     #export tensor_mat_mul
 
     #this defines empty retraction type structs (doesn't rely on anything)
-    include("optimizers/useful_functions/retraction_types.jl")
+    include("optimizers/utils/retraction_types.jl")
 
     export TrivialInitRNG
 
@@ -145,9 +145,9 @@ module GeometricMachineLearning
     export update!
     export check
 
-    include("optimizers/useful_functions/global_sections.jl")
-    include("optimizers/useful_functions/auxiliary.jl")
-    include("optimizers/useful_functions/retractions.jl")
+    include("optimizers/utils/global_sections.jl")
+    include("optimizers/utils/auxiliary.jl")
+    include("optimizers/utils/retractions.jl")
 
     #INCLUDE ABSTRACT TRAINING integrator
     export AbstractTrainingIntegrator
