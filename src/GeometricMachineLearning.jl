@@ -22,9 +22,10 @@ module GeometricMachineLearning
     import Lux, CUDA
 
     import AbstractNetworks: Architecture, Chain, NeuralNetwork
-    import AbstractNetworks: add!, IdentityActivation, ZeroVector
-    import GeometricIntegrators.Integrators: method
+    import AbstractNetworks: add!, update!
+    import AbstractNetworks: IdentityActivation, ZeroVector
 
+    import GeometricIntegrators.Integrators: method
 
     export CPU, GPU
     export Chain, NeuralNetwork

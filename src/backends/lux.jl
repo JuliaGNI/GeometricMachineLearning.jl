@@ -51,7 +51,7 @@ apply(nn::LuxNeuralNetwork, x) = apply(nn, x, nn.params)
 (nn::LuxNeuralNetwork)(x, args...) = apply(nn, x, args...)
 
 
-function update_layer!(::Lux.AbstractExplicitLayer, x::NamedTuple, dx::NamedTuple, η::AbstractFloat)
+function update!(::Lux.AbstractExplicitLayer, x::NamedTuple, dx::NamedTuple, η::AbstractFloat)
     for obj in keys(x)
         x[obj] .+= η * dx[obj]
     end
