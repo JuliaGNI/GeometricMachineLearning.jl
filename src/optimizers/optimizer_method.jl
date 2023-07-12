@@ -1,3 +1,3 @@
-abstract type AbstractMethodOptimiser end
+abstract type OptimizerMethod end
 
 

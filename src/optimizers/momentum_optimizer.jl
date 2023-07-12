@@ -4,7 +4,7 @@ V ← α*V - ∇f(W)
 W ← W + η*V
 Or the riemannian manifold equivalent, if applicable.
 """
-struct MomentumOptimizer{T<:Real} <: AbstractMethodOptimiser
+struct MomentumOptimizer{T<:Real} <: OptimizerMethod
     η::T
     α::T
     t::Int

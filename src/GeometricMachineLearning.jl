@@ -120,7 +120,7 @@ module GeometricMachineLearning
     export AbstractNeuralNetwork
 
     #INCLUDE OPTIMIZERS
-    export AbstractMethodOptimiser, AbstractCache
+    export OptimizerMethod, AbstractCache
     export GradientOptimizer, GradientCache
     export MomentumOptimizer, MomentumCache
     export AdamOptimizer, AdamCache

@@ -6,7 +6,7 @@ loss_gradient(nn::LuxNeuralNetwork{<:AbstractArchitecture}, ti::AbstractTraining
 
 
 #train function
-function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, m::AbstractMethodOptimiser, data::AbstractTrainingData; ntraining = DEFAULT_NRUNS, ti::TrainingIntegrator{<:AbstractTrainingIntegrator} = default_integrator(nn, data), batch_size_t = default_index_batch(data,type(ti)), showprogress::Bool = false)
+function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, m::OptimizerMethod, data::AbstractTrainingData; ntraining = DEFAULT_NRUNS, ti::TrainingIntegrator{<:AbstractTrainingIntegrator} = default_integrator(nn, data), batch_size_t = default_index_batch(data,type(ti)), showprogress::Bool = false)
     
     #verify that shape of data depending of the ExactIntegrator
     assert(type(ti), data)
