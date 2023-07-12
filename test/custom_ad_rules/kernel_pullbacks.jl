@@ -12,12 +12,14 @@ end
 
 const dim_range = 10
 const num_tests = 10
-for _ in 1:num_tests
-    first_dim = Int(ceil(dim_range*rand()))
-    second_dim = Int(ceil(dim_range*rand()))
-    third_dim = Int(ceil(dim_range*rand()))
-    third_tensor_dim = Int(ceil(dim_range*rand()))
-    print("dims are : (", first_dim, ", ", second_dim, ", ", third_dim, ", ", third_tensor_dim, ")\n")
-    main(first_dim, second_dim, third_dim, third_tensor_dim)
-    print("\n")
+function test(verbose=false)
+    for _ in 1:num_tests
+        first_dim = Int(ceil(dim_range*rand()))
+        second_dim = Int(ceil(dim_range*rand()))
+        third_dim = Int(ceil(dim_range*rand()))
+        third_tensor_dim = Int(ceil(dim_range*rand()))
+        verbose ? printn("dims are : (", first_dim, ", ", second_dim, ", ", third_dim, ", ", third_tensor_dim, ")") : nothing
+        main(first_dim, second_dim, third_dim, third_tensor_dim)
+        verbose ? printn() : nothing
+    end
 end
