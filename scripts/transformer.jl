@@ -56,7 +56,7 @@ function transformer_training(Ψᵉ::Lux.Chain, batch_size=64, training_steps=10
 
     num = length(train_x)
 
-    cache = init_optimizer_cache(Ψᵉ, o) 
+    cache = init_optimizer_cache(o, ps)
 
     loss_array = zeros(training_steps÷err_freq + 1)
     loss_array[1] = full_loss(ps, train_x, train_y)/num

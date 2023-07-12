@@ -57,7 +57,7 @@ function transformer_training(Ψᵉ::Lux.Chain, batch_size=64, training_steps=10
 
     num = length(train_x)
 
-    optimizer_instance = Optimizer(CUDA.device(), o, Ψᵉ)
+    optimizer_instance = Optimizer(o, ps)
 
     println("initial test loss: ", full_loss(Ψᵉ, ps, st, test_x, test_y)/length(test_x), "\n")
 

@@ -26,7 +26,7 @@ _add(A::AbstractArray, B::AbstractArray) = A + B
 _similar(x) = similar(x)
 
 function _similar(x::Tuple)
-    Tuple(similar(_x) for _x in x)
+    Tuple(_similar(_x) for _x in x)
 end
 
 function _similar(x::NamedTuple)

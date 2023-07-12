@@ -5,16 +5,10 @@
 struct Optimizer{MT<:OptimizerMethod, CT<:NamedTuple}
     method::MT
     cache::CT
+end
 
-    function Optimizer(m::OptimizerMethod, model::Lux.AbstractExplicitLayer)
-        cache = init_optimizer_cache(model, m)
-        new{typeof(m),typeof(cache)}(m,cache)
-    end
-    
-    function Optimizer(dev::Device, m::OptimizerMethod, model::Lux.AbstractExplicitLayer)
-        cache = init_optimizer_cache(dev, model, m)
-        new{typeof(m),typeof(cache)}(m,cache)
-    end
+function Optimizer(m::OptimizerMethod, x)
+    Optimizer(m, init_optimizer_cache(m, x))
 end
 
 

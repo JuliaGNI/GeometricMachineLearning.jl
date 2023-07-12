@@ -17,5 +17,4 @@ function update!(o::MomentumOptimizer, C::MomentumCache, B::AbstractMatrix)
     mul!(B, -o.η, C.B)
 end
 
-init_optimizer_cache(dev::Device ,d::Lux.AbstractExplicitLayer, ::MomentumOptimizer) = setup_momentum_cache(dev, d)
-init_optimizer_cache(d::Lux.AbstractExplicitLayer, opt::MomentumOptimizer) = init_optimizer_cache(CPUDevice(), d, opt)
+init_optimizer_cache(opt::MomentumOptimizer, x) = setup_momentum_cache(x)
