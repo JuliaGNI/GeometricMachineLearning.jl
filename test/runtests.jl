@@ -1,7 +1,7 @@
 
 using SafeTestsets
 
-@safetestset "Arrays                                                                          " begin include("array_tests.jl") end
+@safetestset "Arrays                                                                          " begin include("arrays/array_tests.jl") end
 @safetestset "Gradient Layer                                                                  " begin include("layers/gradient_layer_tests.jl") end
 @safetestset "Symplectic Layers                                                               " begin include("layers/symplectic_layer_tests.jl") end
 @safetestset "Hamiltonian Neural Network                                                      " begin include("hamiltonian_neural_network_tests.jl") end
