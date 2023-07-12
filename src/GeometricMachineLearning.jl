@@ -26,6 +26,10 @@ module GeometricMachineLearning
     import GeometricIntegrators.Integrators: method
 
 
+    export CPU, GPU
+    export Chain, NeuralNetwork
+
+    
     include("kernels/tensor_mat_mul.jl")
     include("kernels/tensor_tensor_mul.jl")
     include("kernels/tensor_transpose_tensor_mul.jl")
