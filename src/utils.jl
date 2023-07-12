@@ -22,6 +22,18 @@ _add(dx₁::NamedTuple, dx₂::NamedTuple) = apply_toNT(dx₁, dx₂, _add)
 _add(A::AbstractArray, B::AbstractArray) = A + B 
 
 
+# overloaded similar operation to work with NamedTuples
+_similar(x) = similar(x)
+
+function _similar(x::Tuple)
+    Tuple(similar(_x) for _x in x)
+end
+
+function _similar(x::NamedTuple)
+    NamedTuple{keys(x)}(_similar(values(x)))
+end
+
+
 #second argumen pl is "patch length"
 #this splits the image into patches of size pl×pl and then arranges them into a matrix,
 #the columns of the matrix give the patch number.
