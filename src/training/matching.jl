@@ -8,25 +8,28 @@
 
 function matching(ti::TrainingIntegrator, data::AbstractTrainingData)
 
+    new_data = data
+
     # matching between the shape required by the method and the one given
-    if shape(ti) != typeof(shape(data))
+    if shape(ti) != typeof(shape(new_data))
         if shape(ti) == SampledData
-            reshape_intoSampledData!(data)
+            new_data = reshape_intoSampledData(new_data)
         else 
-            @assert shape(ti) == typeof(shape(data))
+            @assert shape(ti) == typeof(shape(new_data))
         end
     end
     # matching between the symbols required by the method and those given
-    if symbols(ti) != type(data_symbols(data))
-        try reduce_symbols!(data, DataSymbol{symbols(ti)}())
+    if symbols(ti) != type(data_symbols(new_data))
+        try new_data = reduce_symbols(new_data, DataSymbol{symbols(ti)}())
         catch
-            try Transform_symbols!(data, DataSymbol{symbols(ti)}()) 
+            try new_data = Transform_symbols(new_data, DataSymbol{symbols(ti)}()) 
                 println("Automatic transformatiom ")
             catch 
-                @assert symbols(ti) == type(data_symbols(data))
+                @assert symbols(ti) == type(data_symbols(new_data))
             end
         end
     end
+    new_data
 end
 
 

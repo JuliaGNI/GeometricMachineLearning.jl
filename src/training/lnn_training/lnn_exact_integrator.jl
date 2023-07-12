@@ -3,7 +3,7 @@ struct LnnExactIntegrator <: LnnTrainingIntegrator end
 ExactLnn(;sqdist = sqeuclidean) = TrainingIntegrator{LnnExactIntegrator, PosVeloAccSymbol, SampledData, typeof(sqdist)}(sqdist)
 
 function loss_single(::TrainingIntegrator{LnnExactIntegrator}, nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, qₙ, q̇ₙ, q̈ₙ, params = nn.params)
-    sum(∇q∇q̇L(nn,qₙ, q̇ₙ, params))  #inv(∇q̇∇q̇L(nn, qₙ, q̇ₙ, params))*(∇qL(nn, qₙ, q̇ₙ, params) - ∇q∇q̇L(nn, qₙ, q̇ₙ, params))
+    abs(sum(∇q∇q̇L(nn,qₙ, q̇ₙ, params)))  #inv(∇q̇∇q̇L(nn, qₙ, q̇ₙ, params))*(∇qL(nn, qₙ, q̇ₙ, params) - ∇q∇q̇L(nn, qₙ, q̇ₙ, params))
 end
 
 loss(ti::TrainingIntegrator{LnnExactIntegrator}, nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, data::TrainingData{<:DataSymbol{<:PosVeloAccSymbol}}, index_batch = eachindex(ti, data), params = nn.params) =

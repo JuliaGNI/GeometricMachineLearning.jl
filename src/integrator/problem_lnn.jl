@@ -28,7 +28,7 @@ function LNNProblem(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, g, tspan::T
 end
 
 function LNNProblem(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, tspan::Tuple, tstep::Real, ics::NamedTuple; kwargs...)
-    LNNProblem(nn, _lode_default_g, tspan, tstep, ics; kwargs...)
+    LNNProblem(nn, GeometricEquations._lode_default_g, tspan, tstep, ics; kwargs...)
 end
 
 function LNNProblem(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, g, tspan::Tuple, tstep::Real, q₀::State, p₀::State, λ₀::State = zero(q₀); kwargs...)
@@ -37,5 +37,5 @@ function LNNProblem(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, g, tspan::T
 end
 
 function LNNProblem(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, tspan::Tuple, tstep::Real, q₀::State, p₀::State, λ₀::State = zero(q₀); kwargs...)
-    LNNProblem(nn, _lode_default_g, tspan, tstep, q₀, p₀, λ₀; kwargs...)
+    LNNProblem(nn, GeometricEquations. _lode_default_g, tspan, tstep, q₀, p₀, λ₀; kwargs...)
 end

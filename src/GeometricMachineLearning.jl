@@ -163,6 +163,7 @@ module GeometricMachineLearning
     export type, symbol, shape
     export min_length_batch
     
+    
     include("training/training_integrator.jl")
 
      #INCLUDE DATA TRAINING STRUCTURE
@@ -170,7 +171,8 @@ module GeometricMachineLearning
     export TrainingData
     export problem, shape, get, symbols, dim, noisemaker, data_symbols
     export reduce_symbols, reshape_intoSampledData
-
+    export aresame
+    
     include("data/data_training.jl")
 
     export get_batch, complete_batch_size

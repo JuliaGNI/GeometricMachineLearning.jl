@@ -1,7 +1,7 @@
 
 
-struct SympNetMethod{TN <: LuxNeuralNetwork{<:SympNet}} <: NeuralNetMethod 
-    nn::TN
+struct SympNetMethod{TN <: NeuralNetSolution{<: LuxNeuralNetwork{<:SympNet}}} <: NeuralNetMethod 
+    nns::TN
 end
 
 function method(nn::LuxNeuralNetwork{<:SympNet})
@@ -24,20 +24,11 @@ function integrate_step!(int::IntegratorSympNet)
     _p = solstep(int).p
 
     for _ in 1:nb_comp
-        _q, _p = method(int).nn(_q,_p)
+        _q, _p = nn(method(int).nns)(_q,_p)
     end
 
     solstep(int).q = _q
     solstep(int).p = _p
-
 end
 
-timestep(::NeuralNetMethod ) = 0.1
 
-#=
-function integrate(nn; kwargs...)
-    integrator = Integrator(problem(nn), method(nn); kwargs...)
-    solution = Solution(problem(nn); kwargs...)
-    integrate!(solution, integrator)
-end
-=#

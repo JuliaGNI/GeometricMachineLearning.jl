@@ -41,7 +41,7 @@ function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, data_in::AbstractT
     check_batch_size(data, bs)
 
     # verify that shape of data depending of the ExactIntegrator
-    matching(ti, data)
+    data = matching(ti, data)
 
     # create array to store total loss
     total_loss = zeros(ntraining)

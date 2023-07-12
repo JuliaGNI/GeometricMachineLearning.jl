@@ -28,7 +28,6 @@ function TrainingData(data, get_data::Dict{Symbol, <:Any}, problem = UnknownProb
     symbols = DataSymbol(Tuple(keys(get)))
     
     dim = 2 * sum( length(get[Tuple(keys(get))[1]](_index_first(shape)...)))
-    #dim = sum(length(value(_index_first(shape)...) for value in values(get)))
 
     TrainingData(problem, shape, get, symbols, dim, noisemaker)
 end
@@ -83,6 +82,33 @@ end
 
 @inline min_length(data::TrainingData) = min_length(data.shape)
 
+function aresame(data1::TrainingData, data2::TrainingData)
+    test_prob = problem(data1) == problem(data2)
+    test_shape = shape(data1) == shape(data2)
+    test_symbols = data_symbols(data1) == data_symbols(data2)
+    test_dim  = dim(data1) == dim(data2)
+    test_nmk = noisemaker(data1) == noisemaker(data2)
+
+    test_get = true
+    if test_shape && test_symbols
+        for s in symbols(data1)
+            for arg in eachindex(data1)
+                test_get = get_data(data1, s, arg...) == get_data(data2, s, arg...)
+                if !test_get
+                    break
+                end
+            end
+            if !test_get
+                break
+            end
+        end
+    else
+        test_get = false
+    end
+    
+    test_prob && test_shape && test_symbols && test_dim && test_nmk && test_get
+end
+
 function reshape_intoSampledData(data::TrainingData)
 
     new_shape = reshape_intoSampledData!(shape(data))
@@ -122,7 +148,7 @@ function reduce_symbols(data::TrainingData, symbol::DataSymbol)
 end
 
 
-function transform_symbols!(data::TrainingData, symbol::DataSymbol)
+function transform_symbols(data::TrainingData, symbol::DataSymbol)
 
     #check if it is possible to do the transformation
     

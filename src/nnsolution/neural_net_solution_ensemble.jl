@@ -32,6 +32,6 @@ end
 function Base.merge!(enns₁::EnsembleNeuralNetSolution, enns₂::EnsembleNeuralNetSolution)
     enns₁.size += enns₂.size
     for nns in enns₂
-        push!(enns.tab, nns)
+        push!(enns₁.tab, nns)
     end
 end

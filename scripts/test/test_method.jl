@@ -2,7 +2,7 @@ using GeometricMachineLearning
 using Test
 
 include("macro_testerror.jl")
-include("generation_of_data.jl")
+include("data_generation.jl")
 
 hnn = NeuralNetwork(HamiltonianNeuralNetwork(2))
 sympnet = NeuralNetwork(GSympNet(2))
@@ -44,8 +44,8 @@ exactlnn = ExactLnn()
 @test symbols(exactlnn) == PosVeloAccSymbol
 @test shape(exactlnn)   == SampledData
 @test min_length_batch(exactlnn) == 1
-#@test typeof(loss(exactlnn, lnn, sam_accposvel_data)) <: Real
-#@test loss(exactlnn, lnn, sam_accposvel_data) > 0
+@test typeof(loss(exactlnn, lnn, sam_accposvel_data)) <: Real
+@test loss(exactlnn, lnn, sam_accposvel_data) > 0
 
 midpointlnn = VariaMidPoint()
 
@@ -65,7 +65,7 @@ midpointlnn = VariaMidPoint()
 @test type(default_integrator(hnn, sam_dps_data)) == HnnExactIntegrator
 @test type(default_integrator(sympnet, tra_ps_data)) == BasicSympNetIntegrator
 @test type(default_integrator(lnn, tra_pos_data)) == VariationalMidPointIntegrator
-#@test type(default_integrator(lnn, sam_accposvel_data)) == LnnExactIntegrator
+@test type(default_integrator(lnn, sam_accposvel_data)) == LnnExactIntegrator
 
 
 

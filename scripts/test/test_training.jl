@@ -1,31 +1,8 @@
 using GeometricMachineLearning
 using Test
 
-include("generation_of_data.jl")
+include("data_generation.jl")
 include("macro_testerror.jl")
-
-
-#########################################
-# Test copy data
-#########################################
-
-
-#########################################
-# Test complete_batch_size
-#########################################
-
-
-#########################################
-# Test check_batch_size
-#########################################
-
-#########################################
-# Test matching
-#########################################
-
-
-
-
 
 #########################################
 # Test the basic train! function
@@ -71,9 +48,7 @@ ensemble_training = EnsembleTraining(training_set1, training_set1)
 # Test train! with NeuralNetSolution
 #########################################
 
-#=
-train!(nns::NeuralNetSolution, training_data, training_parameters)
+@testnoerror train!(neural_net_solution, training_data, training_parameters)
 
-train!(nns::NeuralNetSolution, ts::TrainingSet)
-=#
+@testnoerror train!(neural_net_solution, training_set1)
 

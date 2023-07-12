@@ -1,7 +1,7 @@
 using GeometricMachineLearning
 using Test
 
-include("generation_of_data.jl")
+include("data_generation.jl")
 include("macro_testerror.jl")
 
 #########################################
@@ -106,16 +106,7 @@ push!(ensemble_nnsolution, neural_net_solution)
 
 @test size(ensemble_nnsolution) == 3
 
-#=
-Base.getindex(enns::EnsembleNeuralNetSolution, n::Int) = enns.tab[n]
-Base.setindex!(enns::EnsembleNeuralNetSolution, value::NeuralNetSolution, n::Int) = enns.tab[n] = value
-Base.iterate(enns::EnsembleNeuralNetSolution, state = 1) = state > size(enns) ? nothing : (enns[state], state+1)
+merge!(ensemble_nnsolution, ensemble_nnsolution)
 
+@test size(ensemble_nnsolution) == 6
 
-function Base.merge!(enns₁::EnsembleNeuralNetSolution, enns₂::EnsembleNeuralNetSolution)
-    enns₁.size += enns₂.size
-    for nns in enns₂
-        push!(enns.tab, nns)
-    end
-end
-=#
