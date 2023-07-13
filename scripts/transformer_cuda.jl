@@ -8,7 +8,7 @@ import Lux, Zygote, Random, MLDatasets, Flux
 image_dim = 28
 patch_length = 7
 n_heads = 7
-n_layers = 16
+n_layers = 8
 patch_number = (image_dim÷patch_length)^2
 
 train_x, train_y = MLDatasets.MNIST(split=:train)[:]
@@ -43,9 +43,11 @@ test_y = Flux.onehotbatch(test_y, 0:9)
 )
 
 # err_freq is the frequency with which the error is computed (e.g. every 100 steps)
-function transformer_training(Ψᵉ::Lux.Chain, batch_size=64, training_steps=10000, err_freq=100, o=AdamOptimizer())
+function transformer_training(Ψᵉ::Lux.Chain, batch_size=64, n_epochs=10, o=AdamOptimizer())
     ps, st = Lux.setup(CUDA.device(), Random.default_rng(), Ψᵉ) 
 
+    steps_in_one_epoch = Int(ceil(60000/batch_size))
+    training_steps = n_epochs*steps_in_one_epoch
     # loss_sing
     function loss(ps, x, y)
         x_eval = Lux.apply(Ψᵉ, x |> cu, ps, st)[1]
@@ -55,7 +57,7 @@ function transformer_training(Ψᵉ::Lux.Chain, batch_size=64, training_steps=10
 
     num = size(train_x_reshaped, 3)
 
-    loss_array = zeros(training_steps÷err_freq + 1)
+    loss_array = zeros(training_steps÷n_epochs + 1)
     loss_array[1] = loss(ps, train_x_reshaped |> cu, train_y |> cu)
     println("initial loss: ", loss_array[1])
 
@@ -69,8 +71,9 @@ function transformer_training(Ψᵉ::Lux.Chain, batch_size=64, training_steps=10
         dp = Zygote.gradient(ps -> loss(ps, x_batch, y_batch), ps)[1]
 
         optimization_step!(optimizer_instance, Ψᵉ, ps, dp)    
-        if i%err_freq == 0
-            loss_array[1+i÷err_freq] = loss(ps, train_x_reshaped |> cu, train_y |> cu)
+        if i%steps_in_one_epoch == 0
+            loss_array[1+i÷steps_in_one_epoch] = loss(ps, train_x_reshaped |> cu, train_y |> cu)
+            println("Current loss is: ",loss_array[1+i÷steps_in_one_epoch])
         end
     end
     println("final loss: ", loss_array[end])
@@ -79,14 +82,12 @@ function transformer_training(Ψᵉ::Lux.Chain, batch_size=64, training_steps=10
     loss_array
 end
 
-batch_size = 128
-n_epochs = 10
-training_steps = n_epochs*Int(ceil(60000/batch_size))
-err_freq = 1
+batch_size = 512
+n_epochs = 100
 o = AdamOptimizer()
 
-loss_array₁ = transformer_training(Ψᵉ₁, batch_size, training_steps, err_freq, o)
-loss_array₂ = transformer_training(Ψᵉ₂, batch_size, training_steps, err_freq, o)
+loss_array₁ = transformer_training(Ψᵉ₁, batch_size, n_epochs, o)
+loss_array₂ = transformer_training(Ψᵉ₂, batch_size, n_epochs, o)
 
 #=
 steps = vcat(1:err_freq:training_steps, training_steps+1) .- 1
