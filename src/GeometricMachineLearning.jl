@@ -109,6 +109,7 @@ module GeometricMachineLearning
     include("layers/multi_head_attention.jl")
     include("layers/transformer.jl")
     include("layers/psd_like_layer.jl")
+    include("layers/classification.jl")
 
 
     #include("layers/symplectic_stiefel_layer.jl")
@@ -117,6 +118,7 @@ module GeometricMachineLearning
     export MultiHeadAttention
     export Transformer
     export AbstractNeuralNetwork
+    export Classification
 
     #INCLUDE OPTIMIZERS
     export AbstractMethodOptimiser, AbstractCache
