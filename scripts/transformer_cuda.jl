@@ -1,102 +1,94 @@
 """
-TODO: Add a better predictor at the end! It should set the biggest value of the softmax to 1 and the rest to zero!
+Short script for comparative study of transformer and Stiefel-transformer on MNIST. CUDA version.
 """
 
-using GeometricMachineLearning, LinearAlgebra, ProgressMeter, Plots, CUDA
+using GeometricMachineLearning, LinearAlgebra, ProgressMeter, CUDA #, Plots
 import Lux, Zygote, Random, MLDatasets, Flux
 
-#MNIST images are 28×28, so a sequence_length of 16 = 4² means the image patches are of size 7² = 49
 image_dim = 28
 patch_length = 7
 n_heads = 7
-n_layers = 5
+n_layers = 16
 patch_number = (image_dim÷patch_length)^2
 
 train_x, train_y = MLDatasets.MNIST(split=:train)[:]
 test_x, test_y = MLDatasets.MNIST(split=:test)[:]
 
-#preprocessing steps 
-train_x =   Tuple(map(i -> split_and_flatten(train_x[:,:,i], patch_length) |> cu, 1:size(train_x,3)))
-test_x =    Tuple(map(i -> split_and_flatten(test_x[:,:,i], patch_length) |> cu, 1:size(test_x,3)))
+train_x_reshaped = zeros(Float32, patch_length^2, patch_number, size(train_x, 3))
+test_x_reshaped = zeros(Float32, patch_length^2, patch_number, size(test_x, 3))
 
-#implement this encoding yourself!
-train_y = Tuple(map(i -> Flux.onehotbatch(train_y[i, :], 0:9) |> cu, 1:size(train_y, 1)))
-test_y = Tuple(map(i -> Flux.onehotbatch(test_y[i, :], 0:9) |> cu, 1:size(test_y, 1)))
+# preprocessing steps (also perform rescaling so that the images have values between 0 and 1)
+for i in 1:size(train_x, 3)
+    train_x_reshaped[:, :, i] = split_and_flatten(train_x[:, :, i], patch_length)/255
+end
+for i in 1:size(test_x, 3)
+    test_x_reshaped[:, :, i] = split_and_flatten(test_x[:, :, i], patch_length)/255
+end
 
+# implement this encoding yourself!
+train_y = Flux.onehotbatch(train_y, 0:9) 
+test_y = Flux.onehotbatch(test_y, 0:9)
 
-#encoder layer - final layer has to be added for evaluation purposes!
+# encoder layer - final layer has to be added for evaluation purposes!
 Ψᵉ₁ = Lux.Chain(
     #Embedding(patch_length^2, patch_number),
-    Transformer(patch_length^2, n_heads, n_layers, Stiefel=false),
-    Lux.Dense(patch_length^2, 10, Lux.σ, use_bias=false)
+    Transformer(patch_length^2, n_heads, n_layers, add_connection=false, Stiefel=false),
+    Classification(patch_length^2, 10, use_bias=false)
 )
 
 Ψᵉ₂ = Lux.Chain(
-    #Embedding(patch_length^2, patch_number),
-    Transformer(patch_length^2, n_heads, n_layers, Stiefel=true),
-    Lux.Dense(patch_length^2, 10, Lux.σ, use_bias=false)
+    # Embedding(patch_length^2, patch_number),
+    Transformer(patch_length^2, n_heads, n_layers, add_connection=false, Stiefel=true),
+    Classification(patch_length^2, 10, use_bias=false)
 )
 
-#err_freq is the frequency with which the error is computed (e.g. every 100 steps)
+# err_freq is the frequency with which the error is computed (e.g. every 100 steps)
 function transformer_training(Ψᵉ::Lux.Chain, batch_size=64, training_steps=10000, err_freq=100, o=AdamOptimizer())
     ps, st = Lux.setup(CUDA.device(), Random.default_rng(), Ψᵉ) 
 
-    #loss_sing
-    #note that the loss here is the first column of the output of the entire model; similar to what was done in the ViT paper.
-    function loss_sing(ps, x, y)
-        norm(sum(Lux.apply(Ψᵉ, x, ps, st)[1], dims=2)/size(x, 2) - y)
-    end
-    function loss_sing(ps, train_x, train_y, index)
-        loss_sing(ps, train_x[index], train_y[index])    
-    end
-    function full_loss(ps, train_x, train_y)
-        num = length(train_x)
-        mapreduce(index -> loss_sing(ps, train_x, train_y, index), +, 1:num)    
+    # loss_sing
+    function loss(ps, x, y)
+        x_eval = Lux.apply(Ψᵉ, x |> cu, ps, st)[1]
+        #compute the norm of the missclassification divided by the squre root of the batch size
+        norm(x_eval - (y |> cu))/sqrt(size(y, 2))
     end
 
-    num = length(train_x)
-
-    cache = init_optimizer_cache(Ψᵉ, o) 
+    num = size(train_x_reshaped, 3)
 
     loss_array = zeros(training_steps÷err_freq + 1)
-    loss_array[1] = full_loss(ps, train_x, train_y)/num
+    loss_array[1] = loss(ps, train_x_reshaped |> cu, train_y |> cu)
     println("initial loss: ", loss_array[1])
 
+    optimizer_instance = Optimizer(CUDA.device(), o, Ψᵉ)
+
     @showprogress "Training network ..." for i in 1:training_steps
-        index₁ = Int(ceil(rand()*num))
-        x = train_x[index₁]
-        y = train_y[index₁] 
-        l, pb = Zygote.pullback(ps -> loss_sing(ps, x, y), ps)
-        dp = pb(one(l))[1]
+        indices = Int.(ceil.(rand(batch_size)*num))
+        x_batch = train_x_reshaped[:, :, indices] |> cu 
+        y_batch = train_y[:, indices] |> cu
 
-        indices = Int.(ceil.(rand(batch_size -1)*num))
-        for index in indices
-            x = train_x[index] 
-            y = train_y[index] 
-            l, pb = Zygote.pullback(ps -> loss_sing(ps, x, y), ps)
-            dp = _add(dp, pb(one(l))[1])
-        end
+        dp = Zygote.gradient(ps -> loss(ps, x_batch, y_batch), ps)[1]
 
-        optimizer_instance = Optimizer(CUDA.device(), o, Ψᵉ)
         optimization_step!(optimizer_instance, Ψᵉ, ps, dp)    
         if i%err_freq == 0
-            loss_array[1+i÷err_freq] = full_loss(ps, train_x, train_y)/num
+            loss_array[1+i÷err_freq] = loss(ps, train_x_reshaped |> cu, train_y |> cu)
         end
     end
     println("final loss: ", loss_array[end])
-    println("final test loss: ", full_loss(ps, test_x, test_y)/length(test_x),"\n")
+    println("final test loss: ", loss(ps, test_x_reshaped |> cu, test_y |> cu),"\n")
 
     loss_array
 end
 
-batch_size = 16
-training_steps = 10000
-err_freq = 100
+batch_size = 128
+n_epochs = 10
+training_steps = n_epochs*Int(ceil(60000/batch_size))
+err_freq = 1
 o = AdamOptimizer()
 
 loss_array₁ = transformer_training(Ψᵉ₁, batch_size, training_steps, err_freq, o)
 loss_array₂ = transformer_training(Ψᵉ₂, batch_size, training_steps, err_freq, o)
 
+#=
 steps = vcat(1:err_freq:training_steps, training_steps+1) .- 1
 
 p₁ = plot(steps, loss_array₁, label="Regular weights", linewidth=2, size=(800,500))
@@ -113,3 +105,4 @@ plot!(p₂, steps, loss_array₂, label="Adam Optimizer",linewidth=2)
 plot!(p₂, steps, loss_array₄, label="Momentum Optimizer",linewidth=2)
 ylims!(0.,2.2)
 png(p₂, "transformer_stiefel_ad_mom_stan")
+=#
