@@ -30,7 +30,7 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 [compat]
 BandedMatrices = "0.17"
 CUDA = "4"
-ChainRulesTestUtils = "1"
+ChainRulesCore = "1"
 Distances = "0.10"
 Flux = "0.13"
 ForwardDiff = "0.10"
