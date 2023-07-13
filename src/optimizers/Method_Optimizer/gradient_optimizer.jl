@@ -12,5 +12,6 @@ function update!(o::GradientOptimizer, ::GradientCache, B::AbstractMatrix)
     rmul!(B, -o.η)
 end
 
-init_optimizer_cache(d::Lux.AbstractExplicitLayer, ::GradientOptimizer) = setup_gradient_cache(d)
+init_optimizer_cache(dev::Device, d::Lux.AbstractExplicitLayer, ::GradientOptimizer) = setup_standard_cache(dev, d)
+init_optimizer_cache(d::Lux.AbstractExplicitLayer, opt::GradientOptimizer) = setup_standard_cache(CPUDevice(), d, opt)
 

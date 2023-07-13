@@ -71,6 +71,59 @@ end
                         (ps.scale .* d.activation(ps.weight*x[1:(d.dim÷2)] .+ vec(ps.bias)))), st
 end
 
+#######
+#this is for GPU support (doesn't support indexing arrays); for now only CUDA!!
+
+function assign_first_half!(q, x)
+        i = CUDA.threadIdx().x
+        q[i] = x[i]
+        return 
+end
+
+function assign_second_half!(p, x, N)
+        i = CUDA.threadIdx().x
+        p[i] = x[i+N]
+        return 
+end
+
+function assign_q_and_p(x, N)
+        q = CUDA.zeros(eltype(x), N)
+        p = CUDA.zeros(eltype(x), N)
+        CUDA.@cuda threads=N assign_first_half!(q, x)
+        CUDA.@cuda threads=N assign_second_half!(p, x, N)
+        q, p
+end
+
+@inline function (d::Gradient{false,true})(x::AbstractGPUVecOrMat, ps, st::NamedTuple)
+        size(x)[1] == d.dim || error("Dimension mismatch.")
+        N = d.dim÷2
+        q, p = assign_q_and_p(x, N)
+        return vcat(q + ps.scale.*d.activation.(p), p), st
+end
+
+@inline function (d::Gradient{false,false})(x::AbstractGPUVecOrMat, ps, st::NamedTuple)
+        size(x)[1] == d.dim || error("Dimension mismatch.")
+        N = d.dim÷2 
+        q, p = assign_q_and_p(x, N)
+        return vcat(q, p + ps.scale.*d.activation.(q)),st
+end
+
+@inline function (d::Gradient{true,true})(x::AbstractGPUVecOrMat, ps, st::NamedTuple)
+        size(x)[1] == d.dim || error("Dimension mismatch.")
+        N = d.dim÷2 
+        q, p = assign_q_and_p(x, N)
+        return vcat(q + ps.weight' * 
+                (ps.scale .* d.activation.(ps.weight * p .+ vec(ps.bias))), 
+                        p), st
+end
+
+@inline function(d::Gradient{true,false})(x::AbstractGPUVecOrMat, ps, st::NamedTuple)
+        size(x)[1] == d.dim || error("Dimension mismatch.")
+        N = d.dim÷2 
+        q, p = assign_q_and_p(x, N)
+        return vcat(q, p + ps.weight' * 
+                        (ps.scale .* d.activation(ps.weight*q .+ vec(ps.bias)))), st
+end
 
 @inline function (d::Gradient{false,true})(x::AbstractVecOrMat, ps::Tuple, st::NamedTuple)
         size(x)[1] == d.dim || error("Dimension mismatch.")

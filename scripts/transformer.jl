@@ -15,7 +15,6 @@ patch_number = (image_dim÷patch_length)^2
 train_x, train_y = MLDatasets.MNIST(split=:train)[:]
 test_x, test_y = MLDatasets.MNIST(split=:test)[:]
 
-
 #preprocessing steps 
 train_x =   Tuple(map(i -> sc_embed(split_and_flatten(train_x[:,:,i], patch_length)) #=|> gpu=#, 1:size(train_x,3)))
 test_x =    Tuple(map(i -> sc_embed(split_and_flatten(test_x[:,:,i], patch_length)) #=|> gpu=#, 1:size(test_x,3)))

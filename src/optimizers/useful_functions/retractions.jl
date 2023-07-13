@@ -41,22 +41,24 @@ end
 
 geodesic(B::NamedTuple) = apply_toNT(B, geodesic)
 
+#you will have to fix the scalar indexing problem wrt to SkewSymMatrix!
 function geodesic(B::StiefelLieAlgHorMatrix{T}) where T
     N, n = B.N, B.n
-    E = StiefelProjection(N, n, T)
+    E = typeof(B.B)(StiefelProjection(N, n, T))
     #expression from which matrix exponential and inverse have to be computed
-    unit = One(n, T)
-    exponent = hcat(vcat(T(.5)*B.A, T(.25)*B.A^2 - B.B'*B.B), vcat(unit, T(.5)*B.A))
+    unit = typeof(B.B)(I(n))
+    A_mat = typeof(B.B)(SkewSymMatrix(Vector(B.A.S), n))
+    exponent = hcat(vcat(T(.5)*A_mat, T(.25)*A_mat^2 - B.B'*B.B), vcat(unit, T(.5)*A_mat))
     StiefelManifold(
-        E + hcat(vcat(T(.5)*B.A, B.B), E)*𝔄(exponent)*vcat(unit, T(.5)*B.A)
+        E + hcat(vcat(T(.5)*A_mat, B.B), E)*𝔄(exponent)*vcat(unit, T(.5)*A_mat)
     )
 end
 
 function geodesic(B::GrassmannLieAlgHorMatrix{T}) where T
     N, n = B.N, B.n
-    E = StiefelProjection(N, n, T)
+    E = typeof(B.B)(StiefelProjection(N, n, T))
     #expression from which matrix exponential and inverse have to be computed
-    unit = One(n, T)
+    unit = typeof(B.B)(I(n))
     exponent = hcat(vcat(zeros(T, n, n), - B.B'*B.B), vcat(unit, zeros(T, n, n)))
     GrassmannManifold(
         E + (hcat(vcat(zeros(T, n, n), B.B), E)*𝔄(exponent))[1:N, 1:n]
