@@ -1,4 +1,5 @@
 using GeometricMachineLearning, LinearAlgebra, ProgressMeter
+using GeometricMachineLearning: ResNet
 import Zygote, Random, MLDatasets, Flux 
 
 using GeometricMachineLearning, LinearAlgebra, ProgressMeter, CUDA #, Plots
@@ -28,22 +29,20 @@ end
 train_y = Flux.onehotbatch(train_y, 0:9) 
 test_y = Flux.onehotbatch(test_y, 0:9)
 
-model₀ = Lux.Chain(Lux.Dense(49, 49, tanh), Classification(patch_length^2, 10, use_bias=false))
-model₁ = Lux.Chain( MultiHeadAttention(patch_length^2, n_heads, add_connection=false, Stiefel=false),
-                    MultiHeadAttention(patch_length^2, n_heads, add_connection=false, Stiefel=false),
+L = 2
+
+model₀ = Lux.Chain(Tuple(map(_ -> ResNet(49, tanh), 1:L))..., Classification(patch_length^2, 10, use_bias=false))
+model₁ = Lux.Chain( Transformer(patch_length^2, n_heads, L, add_connection=false, Stiefel=false),
                     Classification(patch_length^2, 10, use_bias=false))
-model₂ = Lux.Chain(MultiHeadAttention(patch_length^2, n_heads, add_connection=true, Stiefel=false),
-                    MultiHeadAttention(patch_length^2, n_heads, add_connection=true, Stiefel=false),
+model₂ = Lux.Chain(Transformer(patch_length^2, n_heads, L, add_connection=true, Stiefel=false),
                     Classification(patch_length^2, 10, use_bias=false))
-model₃ = Lux.Chain(MultiHeadAttention(patch_length^2, n_heads, add_connection=false, Stiefel=true),
-                    MultiHeadAttention(patch_length^2, n_heads, add_connection=false, Stiefel=true),
+model₃ = Lux.Chain(Transformer(patch_length^2, n_heads, L, add_connection=false, Stiefel=true),
                     Classification(patch_length^2, 10, use_bias=false))
-model₄ = Lux.Chain(MultiHeadAttention(patch_length^2, n_heads, add_connection=true, Stiefel=true),
-                    MultiHeadAttention(patch_length^2, n_heads, add_connection=true, Stiefel=true),
+model₄ = Lux.Chain(Transformer(patch_length^2, n_heads, L, add_connection=true, Stiefel=true),
                     Classification(patch_length^2, 10, use_bias=false))
 
 const num = 60000
-function training(model::Lux.Chain, batch_size=128, n_epochs=1, o=AdamOptimizer())
+function training(model::Lux.Chain, batch_size=1024, n_epochs=10, o=AdamOptimizer())
     ps, st = Lux.setup(CUDA.device(), Random.default_rng(), model)
 
     function loss(ps, x, y)
@@ -79,3 +78,10 @@ loss_array₁ = training(model₁)
 loss_array₂ = training(model₂)
 loss_array₃ = training(model₃)
 loss_array₄ = training(model₄)
+
+using Plots 
+p = plot(loss_array₀, label="0")
+plot!(p, loss_array₁, label="1")
+plot!(p, loss_array₂, label="2")
+plot!(p, loss_array₃, label="3")
+plot!(p, loss_array₄, label="4")
