@@ -14,8 +14,8 @@ function HNNProblem(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, tspan, tst
         f .= - ∇Hₛₚₗᵢₜ(q,p)[1]
     end
 
-    function hamiltonian(t, q, params) 
-        Hₛₚₗᵢₜ(q[1], q[2])
+    function hamiltonian(t, q, p, params) 
+        Hₛₚₗᵢₜ(q, p)
     end
     HODEProblem(v, f, hamiltonian, tspan, tstep, ics; kwargs...)
 end
@@ -24,4 +24,7 @@ function HNNProblem(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, tspan, tst
     ics = (q = q₀, p = p₀)
     HNNProblem(nn, tspan, tstep, ics; kwargs...)
 end
+
+
+
 

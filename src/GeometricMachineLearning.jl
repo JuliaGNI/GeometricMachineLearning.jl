@@ -2,7 +2,7 @@ module GeometricMachineLearning
 
     using GeometricBase
     using GeometricEquations
-    #using GeometricIntegrators
+    using GeometricIntegrators
 
     using BandedMatrices
     using Distances
@@ -308,12 +308,12 @@ module GeometricMachineLearning
     #INCLUDE INTEGRATOR 
     export NeuralNetMethod
 
-    #include("integrator/abstract_neural_net_method.jl")
+    include("integrator/abstract_neural_net_method.jl")
 
     #INCLUDE INTEGRATION METHOD
     export  SympNetMethod
 
-    #include("integrator/sympnet_integrator.jl")
+    include("integrator/sympnet_integrator.jl")
 
 
 

@@ -21,6 +21,7 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 GeometricEquations = "c85262ba-a08a-430a-b926-d29770767bf2"
 GeometricBase = "9a0b12b7-583b-4f04-aa1f-d8551b6addc9"
+GeometricIntegrators = "dcce2d33-59f6-5b8d-9047-0defad88ae06"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 
 [compat]
