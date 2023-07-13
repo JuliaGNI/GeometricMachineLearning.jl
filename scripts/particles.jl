@@ -7,7 +7,9 @@ using Random
 using Zygote
 using ProgressMeter
 
-fpath = "../ReducedBasisMethods/runs/BoT_Np5e4_k_010_050_np_10_T25.h5"
+import CUDA
+
+fpath = "../../ReducedBasisMethods/runs/BoT_Np5e4_k_010_050_np_10_T25.h5"
 file = h5open(fpath, "r")
 snapshots = read(file, "snapshots")
 X = snapshots["X"]
@@ -24,7 +26,7 @@ for i in 1:time_steps
 end
 
 #PSD  PSD_err
-fpath_proj = "../ReducedBasisMethods/runs/BoT_Np5e4_k_010_050_np_10_T25_projections.h5"
+fpath_proj = "../../ReducedBasisMethods/runs/BoT_Np5e4_k_010_050_np_10_T25_projections.h5"
 file = h5open(fpath_proj, "r")
 Ψ_PSD = read(file, "Ψp")[:, 1:n]
 PSD_err = 0
@@ -62,7 +64,7 @@ relu(x) = max.(0, x)
               Gradient(2 * N, 4 * N, relu; change_q = false),
               Gradient(2 * N, 4 * N, relu; change_q = true))
 reconstr = Chain(Ψ_enc, Ψ_dec)
-ps_all, st_all = Lux.setup(Random.default_rng(), reconstr)
+ps_all, st_all = Lux.setup(CUDA.device(), Random.default_rng(), reconstr)
 
 
 function loss(x, ps_all, st_all)
@@ -93,7 +95,7 @@ end
 #optim = StandardOptimizer(1e-3)
 optim = AdamOptimizer()
 #TODO: dispatch over the optimizer
-cache = init_optimizer_cache(reconstr, optim)
+cache = init_optimizer_cache(CUDA.device(), reconstr, optim)
 n_runs = Int(5e3)
 err_vec = zeros(n_runs + 1)
 
