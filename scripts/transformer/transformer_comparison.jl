@@ -43,15 +43,19 @@ test_y_encoded = encode_y(test_y)
 L = 4
 
 use_softmax=true
-model₀ = Lux.Chain(Tuple(map(_ -> ResNet(49, tanh), 1:L))..., Classification(patch_length^2, 10, use_bias=false, use_average=false, use_softmax=use_softmax))
-#model₁ = Lux.Chain( Transformer(patch_length^2, n_heads, L, add_connection=false, Stiefel=false),
-#                    Classification(patch_length^2, 10, use_bias=false, use_average=false, use_softmax=use_softmax))
-model₂ = Lux.Chain(Transformer(patch_length^2, n_heads, L, add_connection=true, Stiefel=false),
-                    Classification(patch_length^2, 10, use_bias=false, use_average=false, use_softmax=use_softmax))
-#model₃ = Lux.Chain(Transformer(patch_length^2, n_heads, L, add_connection=false, Stiefel=true),
-#                    Classification(patch_length^2, 10, use_bias=false, use_average=false, use_softmax=use_softmax))
-model₄ = Lux.Chain(Transformer(patch_length^2, n_heads, L, add_connection=true, Stiefel=true),
-                    Classification(patch_length^2, 10, use_bias=false, use_average=false, use_softmax=use_softmax))
+
+#named tuple of models that are compared
+models = (
+    model₀ = Lux.Chain(Tuple(map(_ -> ResNet(49, tanh), 1:L))..., Classification(patch_length^2, 10, use_bias=false, use_average=false, use_softmax=use_softmax)),
+    #model₁ = Lux.Chain( Transformer(patch_length^2, n_heads, L, add_connection=false, Stiefel=false),
+    #                    Classification(patch_length^2, 10, use_bias=false, use_average=false, use_softmax=use_softmax)),
+    model₂ = Lux.Chain(Transformer(patch_length^2, n_heads, L, add_connection=true, Stiefel=false),
+                        Classification(patch_length^2, 10, use_bias=false, use_average=false, use_softmax=use_softmax)),
+    #model₃ = Lux.Chain(Transformer(patch_length^2, n_heads, L, add_connection=false, Stiefel=true),
+    #                    Classification(patch_length^2, 10, use_bias=false, use_average=false, use_softmax=use_softmax)),
+    model₄ = Lux.Chain(Transformer(patch_length^2, n_heads, L, add_connection=true, Stiefel=true),
+                     Classification(patch_length^2, 10, use_bias=false, use_average=false, use_softmax=use_softmax))
+)
 
 const num = 60000
 function training(model::Lux.Chain, batch_size=32, n_epochs=.01, o=AdamOptimizer(), enable_cuda=false, give_training_error=false)
@@ -96,16 +100,12 @@ function training(model::Lux.Chain, batch_size=32, n_epochs=.01, o=AdamOptimizer
 end
 
 batch_size = 64
-n_epochs = 3
+n_epochs = .1
 o = AdamOptimizer(0.01f0, 0.9f0, 0.99f0, 1.0f-8)
 enable_cuda = false
 give_training_error = false
 
-loss_array₀ = training(model₀, batch_size, n_epochs, o, enable_cuda, give_training_error)
-#loss_array₁ = training(model₁, batch_size, n_epochs, o, enable_cuda, give_training_error)
-loss_array₂ = training(model₂, batch_size, n_epochs, o, enable_cuda, give_training_error)
-#loss_array₃ = training(model₃, batch_size, n_epochs, o, enable_cuda, give_training_error)
-loss_array₄ = training(model₄, batch_size, n_epochs, o, enable_cuda, give_training_error)
+loss_arrays = NamedTuple{keys(models)}(Tuple(training(model, batch_size, n_epochs, o, enable_cuda, give_training_error) for model in models))
 
 function plot_stuff()
     p = plot(loss_array₀, label="0")
