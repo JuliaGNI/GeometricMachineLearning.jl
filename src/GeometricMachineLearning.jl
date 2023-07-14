@@ -3,6 +3,7 @@ module GeometricMachineLearning
     using GeometricBase
     using GeometricEquations
     using GeometricIntegrators
+    
 
     using BandedMatrices
     using Distances
@@ -175,7 +176,7 @@ module GeometricMachineLearning
     
     include("data/data_training.jl")
 
-    export get_batch, complete_batch_size
+    export get_batch, complete_batch_size, check_batch_size
     
     include("data/batch.jl")
 
@@ -309,11 +310,13 @@ module GeometricMachineLearning
     
     #INCLUDE INTEGRATOR 
     export NeuralNetMethod
+    export method
 
     include("integrator/abstract_neural_net_method.jl")
 
     #INCLUDE INTEGRATION METHOD
     export  SympNetMethod
+    export integrate, integrate_step!
 
     include("integrator/sympnet_integrator.jl")
 

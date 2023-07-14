@@ -86,8 +86,3 @@ reduced_data = reduce_symbols(sampled_data, DataSymbol((:q,)))
 @test noisemaker(reduced_data)           == NothingFunction()    
 
 @test Tuple(keys(GeometricMachineLearning.get(reduced_data))) == (:q,)
-
-
-#########################################
-# Test copy data
-#########################################

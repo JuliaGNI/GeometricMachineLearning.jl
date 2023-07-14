@@ -9,10 +9,10 @@ include("macro_testerror.jl")
 #########################################
 
 training_data = tra_ps_data
-nn = NeuralNetwork(GSympNet(2))
+nn = NeuralNetwork(GSympNet(2; nhidden=2))
 mopt = GradientOptimizer()
 method = BasicSympNet()
-nruns = 0
+nruns = 10
 batch_size = (1,2)
 
 @testnoerror total_loss = train!(nn, training_data, mopt, method; ntraining = nruns, batch_size = batch_size)
@@ -52,3 +52,22 @@ ensemble_training = EnsembleTraining(training_set1, training_set1)
 
 @testnoerror train!(neural_net_solution, training_set1)
 
+
+
+#########################################
+# Test train! for all training methods
+#########################################
+
+hnn = NeuralNetwork(HamiltonianNeuralNetwork(2))
+exacthnn = ExactHnn()
+sympeuler = SEuler()
+
+@testnoerror  train!(hnn, sam_dps_data, mopt, exacthnn; ntraining = nruns)
+@testnoerror  train!(hnn, tra_ps_data, mopt, sympeuler; ntraining = nruns)
+
+lnn = NeuralNetwork(LagrangianNeuralNetwork(2))
+exactlnn = ExactLnn()
+midpointlnn = VariaMidPoint()
+
+#@testnoerror  train!(lnn, sam_accposvel_data, mopt, exactlnn; ntraining = nruns)
+#@testnoerror  train!(lnn, tra_pos_data, mopt, exactlnn; ntraining = nruns)

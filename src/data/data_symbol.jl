@@ -14,7 +14,6 @@ struct DataSymbol{T <: AbstractDataSymbol} end
 
 type(::DataSymbol{T}) where T<: AbstractDataSymbol = T
 
-
 symbols(::DataSymbol{AbstractDataSymbol}) = nothing
 symbols(::DataSymbol{PositionSymbol}) = (:q,)
 symbols(::DataSymbol{PhaseSpaceSymbol}) = (:q,:p)
@@ -27,16 +26,11 @@ function can_reduce(::DataSymbol{T}, s₂::DataSymbol{M}) where {T<:AbstractData
     T <: M ? true : false
 end
 
+can_transform(::DataSymbol{T}, ::DataSymbol{U}) where {T<:AbstractDataSymbol,U<:AbstractDataSymbol} = false
+
 function symboldiff(s₁::DataSymbol, s₂::DataSymbol) 
     _tuplediff(symbols(s₁),symbols(s₂))
 end
-
-
-
-transform(::DataSymbol{T}, ::DataSymbol{U}) where {T<:AbstractDataSymbol,U<:AbstractDataSymbol} = @error "No method to convert "*string(T)*" in "*string(M)*" !"
-
-can_transform(::DataSymbol{T}, ::DataSymbol{U}) where {T<:AbstractDataSymbol,U<:AbstractDataSymbol} = false
-
 
 #=
    DataSymbol(keys; kwargs...) give a DataSymbol{T} where T is the smaler (in sens of <:) type of AbstractDataSymbol

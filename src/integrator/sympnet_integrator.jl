@@ -1,34 +1,41 @@
 
 
-struct SympNetMethod{TN <: NeuralNetSolution{<: LuxNeuralNetwork{<:SympNet}}} <: NeuralNetMethod 
-    nns::TN
+struct SympNetMethod{TN <: LuxNeuralNetwork{<:SympNet}, tType <: Real} <: NeuralNetMethod 
+    nn::TN
+    Δt ::tType
 end
 
-function method(nn::LuxNeuralNetwork{<:SympNet})
-    function nnₛₚₗᵢₜ(q,p)
-        qp = nn([q...,p...])
-        (qp[1::length(q)], qp[1+length(q):end])
-    end
-    SympNetMethod(nnₛₚₗᵢₜ)
+function method(nns::NeuralNetSolution{<: LuxNeuralNetwork{<:SympNet}})
+    SympNetMethod(nn(nns), tstep(nns))
 end
+
 
 const IntegratorSympNet{DT,TT} = Integrator{<:Union{HODEProblem{DT,TT}}, <:SympNetMethod}
 
-function integrate_step!(int::IntegratorSympNet)
 
+function GeometricIntegrators.integrate(nns::NeuralNetSolution; kwargs...)
+    integrate(problem(nns), method(nns); kwargs...)
+end
+
+
+function GeometricIntegrators.integrate_step!(int::IntegratorSympNet)
+
+    #=
     # compute how may times to compose nn ()
-    @assert tstep(problem(int)) % timestep(method(int)) == 0 
-    nb_comp = tstep(problem(int)) ÷ timestep(method(int))
+    @assert  method(nns).Δt % timestep(int) == 0 
+    nb_comp =  method(nns).Δt ÷ timestep(int)
 
     _q = solstep(int).q
     _p = solstep(int).p
 
     for _ in 1:nb_comp
-        _q, _p = nn(method(int).nns)(_q,_p)
+        _qp = nn(method(int).nns)([_q...,_p...])
+        _q, _p = (_qp[1::length(_q)], _qp[1+length(_q):end])
     end
 
     solstep(int).q = _q
     solstep(int).p = _p
+    =#
 end
 
 

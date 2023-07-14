@@ -7,7 +7,6 @@ using GeometricProblems.HarmonicOscillator: reference_solution
 
 
 
-
 const t₀ = 0.0
 const Δt = 0.1
 const nt = 10
@@ -43,6 +42,7 @@ const reference_solution_p = ω * A * cos(ω * Δt * nt + ϕ)
 #creer l'object ensemble solution
 
 #creer le training data associé
+data_training = TrainingData(ensemble_solution)
 
 #entrainer
 

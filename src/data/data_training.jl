@@ -33,27 +33,21 @@ function TrainingData(data, get_data::Dict{Symbol, <:Any}, problem = UnknownProb
 end
 
 function TrainingData(data::TrainingData; shape = shape(data), get = get(data), symbols = data_symbols(data), dim = dim(data), noisemaker =  NothingFunction())
-    TrainingData(problem(data), shape, get, symbols, dim, noisemaker)
+    TrainingData(problem(data), shape, copy(get), symbols, dim, noisemaker)
 end
 
 
 function TrainingData(es::EnsembleSolution)
-
-    data = solution(es)
-
     get_data = Dict(
         :shape => TrajectoryData,
         :nb_trajectory => Data -> length(Data),
         :length_trajectory => (Data,i) -> 4,
         :Δt => Data -> 4,
     )
-
-    
-     problem = problem(es)
-
-
-  TrainingData(data, get_data, problem)
-
+    for s in es.problem.ics
+        get_data[s] = (Data, i, n) => solution(es,i)[n][s]
+    end
+    TrainingData(es.s, get_data, problem(es))
 end
 
 
@@ -82,32 +76,6 @@ end
 
 @inline min_length(data::TrainingData) = min_length(data.shape)
 
-function aresame(data1::TrainingData, data2::TrainingData)
-    test_prob = problem(data1) == problem(data2)
-    test_shape = shape(data1) == shape(data2)
-    test_symbols = data_symbols(data1) == data_symbols(data2)
-    test_dim  = dim(data1) == dim(data2)
-    test_nmk = noisemaker(data1) == noisemaker(data2)
-
-    test_get = true
-    if test_shape && test_symbols
-        for s in symbols(data1)
-            for arg in eachindex(data1)
-                test_get = get_data(data1, s, arg...) == get_data(data2, s, arg...)
-                if !test_get
-                    break
-                end
-            end
-            if !test_get
-                break
-            end
-        end
-    else
-        test_get = false
-    end
-    
-    test_prob && test_shape && test_symbols && test_dim && test_nmk && test_get
-end
 
 function reshape_intoSampledData(data::TrainingData)
 
@@ -139,6 +107,7 @@ function reduce_symbols(data::TrainingData, symbol::DataSymbol)
     #compute the symetric difference of old and new symbols
     toberemoved = symboldiff(data_symbols(data), symbol)
 
+    #create new data
     new_data = TrainingData(data; symbols = symbol)
 
     #clean get
@@ -151,12 +120,12 @@ end
 function transform_symbols(data::TrainingData, symbol::DataSymbol)
 
     #check if it is possible to do the transformation
-    
+    can_transform(data_symbols(data), symbol) ? nothing : throw(TransformationSymbolError(type(data_symbols(data)), type(symbol)))
 
     #compute the symetric difference of old and new symbols
-    toberemoved = transform(symbols(data), symbol)
+    toberemoved = symboldiff(data_symbols(data), symbol)
 
-
+    # MUST BE CODED
 
     #clean get
     clean_get!(data, toberemoved)

@@ -63,7 +63,7 @@ struct NothingFunction <: Function end
 (::NothingFunction)(args...) = nothing
 is_NothingFunction(f::Function) = typeof(f)==NothingFunction
 
-#=
+
 function Base.:+(a::Float64, b::Tuple{Float64})
     x, = b
     return a+x
@@ -74,7 +74,7 @@ function Base.:+(a::Vector{Float64}, b::Tuple{Float64})
     y, = a
     return y+x
 end
-=#
+
 #Zygote.OneElement(t1::Tuple{Float64}, t2::Tuple{Int64}, t3::Tuple{Base.OneTo{Int64}}) = Zygote.OneElement(t1[1], t2, t3)
 
 function type_without_brace(var)

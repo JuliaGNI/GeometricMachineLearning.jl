@@ -19,6 +19,7 @@ exacthnn = ExactHnn()
 @test shape(exacthnn)   == SampledData
 @test min_length_batch(exacthnn) == 1
 @test typeof(loss(exacthnn, hnn, sam_dps_data)) <: Real
+@test loss(exacthnn, hnn, sam_dps_data) > 0
 
 sympeuler = SEuler()
 
@@ -27,7 +28,7 @@ sympeuler = SEuler()
 @test shape(sympeuler)   == TrajectoryData
 @test min_length_batch(sympeuler) == 2
 @test typeof(loss(sympeuler, hnn, tra_ps_data)) <: Real
-@test loss(sympeuler, hnn, tra_ps_data) > 0 
+@test loss(sympeuler, hnn, tra_ps_data) > 0
 
 msympnet = BasicSympNet()
 
@@ -56,6 +57,7 @@ midpointlnn = VariaMidPoint()
 #@test typeof(loss(midpointlnn, lnn, tra_pos_data)) <: Real
 #@test loss(midpointlnn, lnn, tra_pos_data) > 0
 
+
 #########################################
 # Test for default_integrator
 #########################################
@@ -66,7 +68,3 @@ midpointlnn = VariaMidPoint()
 @test type(default_integrator(sympnet, tra_ps_data)) == BasicSympNetIntegrator
 @test type(default_integrator(lnn, tra_pos_data)) == VariationalMidPointIntegrator
 @test type(default_integrator(lnn, sam_accposvel_data)) == LnnExactIntegrator
-
-
-
-

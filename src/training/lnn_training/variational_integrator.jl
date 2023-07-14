@@ -8,14 +8,14 @@ VariaMidPoint(;sqdist = sqeuclidean) = TrainingIntegrator{VariationalMidPointInt
 discrete_lagrangian(::TrainingIntegrator{VariationalMidPointIntegrator}, nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, qₙ, qₙ₊₁, Δt, params = nn.params) =  nn([(qₙ₊₁+qₙ)/2..., (qₙ₊₁-qₙ)/Δt...], params)
 
 # gradient of discrete Lagrangian
-DL(discrete_lagrangian, ti::TrainingIntegrator{<:VariationalIntegrator}, nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, qₙ, qₙ₊₁, Δt,  params = nn.params) = Zygote.gradient((qₙ,qₙ₊₁)->discrete_lagrangian(ti, nn, qₙ, qₙ₊₁, Δt, params), qₙ, qₙ₊₁)
-DL₁(discrete_lagrangian, ti::TrainingIntegrator{<:VariationalIntegrator}, nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, qₙ, qₙ₊₁, Δt, params = nn.params) = DL(discrete_lagrangian, ti, nn, qₙ, qₙ₊₁, Δt, params)[1:length(qₙ)]
-DL₂(discrete_lagrangian, ti::TrainingIntegrator{<:VariationalIntegrator}, nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, qₙ, qₙ₊₁, Δt, params = nn.params) = DL(discrete_lagrangian, ti, nn, qₙ, qₙ₊₁, Δt, params)[1+length(qₙ):end]
+DL(ti::TrainingIntegrator{<:VariationalIntegrator}, nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, qₙ, qₙ₊₁, Δt,  params = nn.params) = Zygote.gradient((qₙ,qₙ₊₁)->discrete_lagrangian(ti, nn, qₙ, qₙ₊₁, Δt, params), qₙ, qₙ₊₁)
+DL₁(ti::TrainingIntegrator{<:VariationalIntegrator}, nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, qₙ, qₙ₊₁, Δt, params = nn.params) = DL(ti, nn, qₙ, qₙ₊₁, Δt, params)[1:length(qₙ)]
+DL₂(ti::TrainingIntegrator{<:VariationalIntegrator}, nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, qₙ, qₙ₊₁, Δt, params = nn.params) = DL(ti, nn, qₙ, qₙ₊₁, Δt, params)[1+length(qₙ):end]
 
 
 function loss_single(ti::TrainingIntegrator{<:VariationalIntegrator}, nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, qₙ, qₙ₊₁, qₙ₊₂, Δt, params = nn.params)
-    DL1 = DL₁(discrete_lagrangian, ti, nn, qₙ₊₁, qₙ₊₂, Δt, params)
-    DL2 = DL₂(discrete_lagrangian, ti, nn, qₙ, qₙ₊₁, Δt,params)
+    DL1 = DL₁(ti, nn, qₙ₊₁, qₙ₊₂, Δt, params)
+    DL2 = DL₂(ti, nn, qₙ, qₙ₊₁, Δt,params)
     sqeuclidean(DL1,-DL2)
 end
 

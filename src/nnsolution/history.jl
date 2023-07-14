@@ -43,13 +43,13 @@ mutable struct History
     end
 end
 
-@inline data(history::History) = history.data
+@inline hdata(history::History) = history.data
 @inline Base.last(history::History) = history.last 
 @inline Base.size(history::History) = history.size
 @inline sizemax(history::History) = history.sizemax
 @inline nbtraining(history::History) = history.nbtraining
 
-Base.getindex(history::History, n::Int) = data(history)[n]
+Base.getindex(history::History, n::Int) = hdata(history)[n]
 Base.iterate(history::History, state = 1) = state > size(history) ? nothing : (history[state],state+1)
 
 function _add(history::History, sg::SingleHistory)

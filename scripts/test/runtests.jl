@@ -16,34 +16,34 @@ include("macro_testerror.jl")
 @safetestset "Problem & Integrators                                                           " begin include("test_integrator.jl") end
 
 #=
-I implemented severals new features in the code through new structures. It deals with :
-- data,
-- training method,
-- new structures to prepare training,
-- new structures to gathers the results of training,
-- some functions to create HNN problem, LNN problem and to integrate a SympNet.
+I have implemented several new features in the code using new structures. These concern :
+- the data,
+- the training method (mainly reorganisation),
+- new structures for preparing the training
+- new structures for collecting training results,
+- functions for creating HNN and LNN problems and for integrating a SympNet.
 
-First, in the folder "data", there is now :
-- batch.jl : it does appropriately batch for data with default values,
-- data_symbol.jl : it contains tree types to match key of data and functionalities which depend on,
-- data_shape.jl : depending on if data are trajectories or just sampled,
-- data_training.jl : the big structure with shape, data, symbol, problem, etc.
+First of all, in the 'data' folder, there is now :
+- batch.jl: it makes an appropriate batch for data with default values,
+- data_symbol.jl : it contains tree types to correspond to the key of the data and the functionalities which depend on it,
+- data_shape.jl: depending on whether the data are trajectories or simply sampled,
+- data_training.jl: the main structure with the shape, data, symbol, problem, etc.
 
-Then, to prepare trainings, there is now :
-- training_paramters.jl : it gathers method, opt, batch size, nruns,
-- training_set.jl : it gathers a neural network, a training parameters, and data,
-- ensemble_training.jl : it gathers severals training sets.
-The train! function can be applied on all of those structures.
+Then, to prepare the training sessions, there is now :
+- training_paramters.jl: this contains the method, opt, batch size and nruns,
+- training_set.jl: this contains a neural network, training parameters and data,
+- ensemble_training.jl: brings together several training sets.
+The train! function can be applied to all these structures.
 
-Finally, when we train a neural network, it gives a new structure called NeuralNetSolution localized in neural_net_solution.jl
-which includes the nn, the problem, the trained neural network, the loss during the training process and a structure history wich memories
-all the previous training on the neural network, that is to we can apply train! directly on a NeuralNetSolution. 
-EnsembleNeuralNetSolution gathers severals NeuralNetSolution, as a result for example of the application of train! on an
+Finally, training a neural network produces a new structure called NeuralNetSolution located in neural_net_solution.jl
+which includes the nn, the problem, the neural network trained, the loss during the training process and a history of the structure which stores
+all previous training of the neural network, i.e. you can apply train! directly to a NeuralNetSolution. 
+EnsembleNeuralNetSolution brings together several NeuralNetSolutions, resulting for example from the application of train! to an ensemble training.
 ensemble training.
 
-I created my own test folder with its own runtests.jl that should be merged in the existing one (but I don't know if it is up to date or not).
-Severals minors tests are missing like :
-- the check_batch_size functionality,
-- Architecture,
-and probaby others functionality that I didn't see. My own test folder is located in "script".
+I have created my own test folder with its own runtests.jl which should be merged with the existing one (but I don't know if it's up to date or not).
+Several minor tests are missing such as:
+- check_batch_size functionality,
+- architecture,
+and probably other features I haven't seen. My own test folder is located in "script".
 =#

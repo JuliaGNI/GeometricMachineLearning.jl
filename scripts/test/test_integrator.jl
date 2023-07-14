@@ -2,6 +2,8 @@ using GeometricMachineLearning
 using GeometricEquations
 using Test
 
+include("data_generation.jl")
+
 t₀ = 0.
 t₁ = 1.
 q₀ = [0.5]
@@ -43,12 +45,23 @@ prob_lnn = LNNProblem(lnn, tspan, Δt, ics)
 
 prob_lnn2 = LNNProblem(lnn, tspan, Δt, q₀, p₀)
 
-#@test prob_lnn == prob_lnn2
+#@test prob_lnn == prob_lnn2 why ??????
 
 #########################################
 # Test for SympNetMethod Integrator
 #########################################
 
+training_data = TrainingData(Data_traps , get_Data_traps, prob_hnn)
+neuralnet = NeuralNetwork(GSympNet(2))
+mopt = GradientOptimizer()
+method = BasicSympNet()
+nruns = 0
+batch_size = (1,2)
+training_parameters = TrainingParameters(nruns, method, mopt; batch_size = batch_size)
+
+neural_net_solution = train!(neuralnet, training_data, training_parameters)
+
+integrate(neural_net_solution)
 
 
 
