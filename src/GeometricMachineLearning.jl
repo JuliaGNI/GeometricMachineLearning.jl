@@ -318,7 +318,7 @@ module GeometricMachineLearning
     export  SympNetMethod
     export integrate, integrate_step!
 
-    include("integrator/sympnet_integrator.jl")
+    #include("integrator/sympnet_integrator.jl")
 
 
 
