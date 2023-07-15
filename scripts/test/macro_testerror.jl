@@ -21,4 +21,3 @@ macro testnoerror(args...)
     end
     @test error == false
 end
-
