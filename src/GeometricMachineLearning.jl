@@ -192,7 +192,7 @@ module GeometricMachineLearning
      #INCLUDE DATA TRAINING STRUCTURE
     export AbstractTrainingData
     export TrainingData
-    export problem, shape, get, symbols, dim, noisemaker, data_symbols
+    export problem, shape, symbols, dim, noisemaker, data_symbols
     export reduce_symbols, reshape_intoSampledData
     export aresame
     
@@ -340,7 +340,7 @@ module GeometricMachineLearning
     export  SympNetMethod
     export integrate, integrate_step!
 
-    #include("integrator/sympnet_integrator.jl")
+    include("integrator/sympnet_integrator.jl")
 
 
 
