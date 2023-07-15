@@ -7,7 +7,7 @@ macro testerror(args...)
     catch e
         error = true
     end
-    #@test error == true
+    @test error == true
 end
 
 macro testnoerror(args...)
@@ -23,4 +23,3 @@ macro testnoerror(args...)
 end
 
 
-@testnoerror

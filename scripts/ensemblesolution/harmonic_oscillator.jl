@@ -6,10 +6,10 @@ using GeometricProblems.HarmonicOscillator
 using GeometricProblems.HarmonicOscillator: harmonic_oscillator_hode_ensemble
 
 
-#creer l'object ensemble solution
+#create the object ensemble_solution
 ensemble_solution = harmonic_oscillator_hode_ensemble()
 
-#creer le training data associé
+#create the data associated
 data_training = TrainingData(ensemble_solution)
 
 @test problem(training_data)               == UnknownProblem()
@@ -25,6 +25,23 @@ data_training = TrainingData(ensemble_solution)
 @test get_nb_point(training_data)         === nothing
 
 @test Tuple(keys(GeometricMachineLearning.get(training_data))) ==(:q, :p)
+
+#creating a training sets
+sympnet = GSympNet(dim(data_training); nhidden = 3)
+nruns = 1000
+method = BasicSympNet()
+mopt = MomentumOptimizer()
+training_paramters = TrainingParameters(nruns, method, mopt)
+
+training_set = TrainingSet(sympnet, training_parameters, training_data)
+
+#training of the neural network
+neural_net_solution = train!(training_set)
+
+
+
+
+
 
 
 
