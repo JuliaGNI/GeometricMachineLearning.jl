@@ -1,7 +1,7 @@
 
 using SafeTestsets
 
-@safetestset "Arrays                                                                          " begin include("arrays/array_tests_new.jl") end
+@safetestset "Arrays                                                                          " begin include("arrays/array_tests.jl") end
 @safetestset "Abstract Layer                                                                  " begin include("layers/abstract_layer_tests.jl") end
 @safetestset "Feed Forward Layer                                                              " begin include("layers/feed_forward_layer_tests.jl") end
 @safetestset "Gradient Layer                                                                  " begin include("layers/gradient_layer_tests.jl") end
