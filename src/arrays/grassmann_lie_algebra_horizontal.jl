@@ -100,6 +100,9 @@ function Base.zeros(::Type{GrassmannLieAlgHorMatrix}, N::Integer, n::Integer)
     )
 end
 
+Base.similar(A::GrassmannLieAlgHorMatrix, dims::Union{Integer, AbstractUnitRange}...) = zeros(typeof(A), dims...)
+Base.similar(A::GrassmannLieAlgHorMatrix) = zeros(typeof(A), A.N, A.n)
+
 function Base.rand(rng::Random.AbstractRNG, ::Type{GrassmannLieAlgHorMatrix{T}}, N::Integer, n::Integer) where T
     GrassmannLieAlgHorMatrix(rand(rng, T, N-n, n), N, n)
 end

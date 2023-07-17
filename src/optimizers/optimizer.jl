@@ -2,26 +2,20 @@
 #######################################################################################
 #Optimiser
 
-struct Optimizer{MT<:AbstractMethodOptimiser, CT<:NamedTuple}
+struct Optimizer{MT<:OptimizerMethod, CT<:NamedTuple}
     method::MT
     cache::CT
+end
 
-    function Optimizer(m::AbstractMethodOptimiser, model::Lux.AbstractExplicitLayer)
-        cache = init_optimizer_cache(model, m)
-        new{typeof(m),typeof(cache)}(m,cache)
-    end
-    
-    function Optimizer(dev::Device, m::AbstractMethodOptimiser, model::Lux.AbstractExplicitLayer)
-        cache = init_optimizer_cache(dev, model, m)
-        new{typeof(m),typeof(cache)}(m,cache)
-    end
+function Optimizer(m::OptimizerMethod, x)
+    Optimizer(m, init_optimizer_cache(m, x))
 end
 
 
 #######################################################################################
 #optimization step function
 
-function optimization_step!(m::AbstractMethodOptimiser, d::Lux.AbstractExplicitLayer, ps::NamedTuple, C::NamedTuple, dx::NamedTuple)
+function optimization_step!(m::OptimizerMethod, d::Lux.AbstractExplicitLayer, ps::NamedTuple, C::NamedTuple, dx::NamedTuple)
     gx = rgrad(ps, dx)
     λY = GlobalSection(ps)
     B = global_rep(λY, gx)
@@ -55,17 +49,10 @@ function rgrad(Y::AbstractVecOrMat, dx::AbstractVecOrMat)
     dx
 end
 
-function update!(m::AbstractMethodOptimiser, C::NamedTuple, B::NamedTuple)
+function update!(m::OptimizerMethod, C::NamedTuple, B::NamedTuple)
     apply_toNT(m, C, B, update!)
 end
 
-function apply_toNT(m::AbstractMethodOptimiser, ps₁::NamedTuple, ps₂::NamedTuple, fun_name)    
-    keys₁ = keys(ps₁)
-    @assert keys₁ == keys(ps₂)
-    ps_applied = NamedTuple()
-    for key in keys(ps₁)
-        ps_applied = merge(ps_applied, NamedTuple{(key, )}((fun_name(m, ps₁[key], ps₂[key]), )))
-    end
-    ps_applied
+function apply_toNT(m::OptimizerMethod, ps₁::NamedTuple, ps₂::NamedTuple, fun_name)    
+    apply_toNT(ps₁, ps₂, (ps₁, ps₂) -> fun(m, ps₁, ps₂))
 end
-

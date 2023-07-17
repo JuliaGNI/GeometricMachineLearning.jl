@@ -35,14 +35,8 @@ function rgrad(Y::AbstractVecOrMat, dx::AbstractVecOrMat)
     dx
 end
 
-function apply_toNT(o::AbstractOptimizer, ps₁::NamedTuple, ps₂::NamedTuple, fun_name)    
-    keys₁ = keys(ps₁)
-    @assert keys₁ == keys(ps₂)
-    ps_applied = NamedTuple()
-    for key in keys(ps₁)
-        ps_applied = merge(ps_applied, NamedTuple{(key, )}((fun_name(o, ps₁[key], ps₂[key]), )))
-    end
-    ps_applied
+function apply_toNT(o::AbstractOptimizer, ps₁::NamedTuple, ps₂::NamedTuple, fun)
+    apply_toNT(ps₁, ps₂, (ps₁, ps₂) -> fun(o, ps₁, ps₂))
 end
 
 function update!(o::AbstractOptimizer, C::NamedTuple, B::NamedTuple)

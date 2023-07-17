@@ -3,37 +3,35 @@
 @inline tuplejoin(x, y) = (x..., y...)
 @inline tuplejoin(x, y, z...) = tuplejoin(tuplejoin(x, y), z...)
 
-function apply_toNT(ps::NamedTuple, fun_name)
-    ps_applied = NamedTuple()
-    for key in keys(ps)
-        ps_applied = merge(ps_applied, NamedTuple{(key, )}((fun_name(ps[key]), )))
-    end
-    ps_applied
+function apply_toNT(ps::NamedTuple, fun)
+    NamedTuple{keys(ps)}(fun(p) for p in ps)
 end
 
-function apply_toNT(ps₁::NamedTuple, ps₂::NamedTuple, fun_name)    
-    keys₁ = keys(ps₁)
-    @assert keys₁ == keys(ps₂)
-    ps_applied = NamedTuple()
-    for key in keys(ps₁)
-        ps_applied = merge(ps_applied, NamedTuple{(key, )}((fun_name(ps₁[key], ps₂[key]), )))
-    end
-    ps_applied
+function apply_toNT(ps₁::NamedTuple, ps₂::NamedTuple, fun)
+    @assert keys(ps₁) == keys(ps₂)
+    NamedTuple{keys(ps₁)}(fun(p...) for p in zip(ps₁, ps₂))
 end
 
-function apply_toNT(ps₁::NamedTuple, ps₂::NamedTuple, ps₃::NamedTuple, fun_name)    
-    keys₁ = keys(ps₁)
-    @assert keys₁ == keys(ps₂) == keys(ps₃)
-    ps_applied = NamedTuple()
-    for key in keys(ps₁)
-        ps_applied = merge(ps_applied, NamedTuple{(key, )}((fun_name(ps₁[key], ps₂[key], ps₃[key]), )))
-    end
-    ps_applied
+function apply_toNT(ps₁::NamedTuple, ps₂::NamedTuple, ps₃::NamedTuple, fun)
+    @assert keys(ps₁) == keys(ps₂) == keys(ps₃)
+    NamedTuple{keys(ps₁)}(fun(p...) for p in zip(ps₁, ps₂, ps₃))
 end
 
-#overloaded + operation to work with NamedTuples
+# overloaded + operation to work with NamedTuples
 _add(dx₁::NamedTuple, dx₂::NamedTuple) = apply_toNT(dx₁, dx₂, _add)
 _add(A::AbstractArray, B::AbstractArray) = A + B 
+
+
+# overloaded similar operation to work with NamedTuples
+_similar(x) = similar(x)
+
+function _similar(x::Tuple)
+    Tuple(_similar(_x) for _x in x)
+end
+
+function _similar(x::NamedTuple)
+    NamedTuple{keys(x)}(_similar(values(x)))
+end
 
 
 #second argumen pl is "patch length"

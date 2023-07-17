@@ -92,7 +92,7 @@ end
 #optim = StandardOptimizer(1e-3)
 optim = AdamOptimizer()
 #TODO: dispatch over the optimizer
-cache = init_optimizer_cache(CUDA.device(), reconstr, optim)
+cache = init_optimizer_cache(optim, ps_all)
 n_runs = Int(5e3)
 err_vec = zeros(n_runs + 1)
 

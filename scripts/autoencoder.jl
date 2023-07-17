@@ -47,7 +47,7 @@ function full_loss(ps, train_x, train_y)
 end
 
 o = AdamOptimizer()
-cache = init_optimizer_cache(model, o)
+cache = init_optimizer_cache(o, ps)
 println("initial loss: ", full_loss(ps, train_x, train_y))
 
 training_steps = 100

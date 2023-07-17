@@ -55,7 +55,7 @@ end
 # define momentum optimizer and initialize
 method = AdamOptimizer()
 # initial gradients for calling Cache constructor
-opt = Optimizer(method, model)
+opt = Optimizer(method, ps)
 
 # training 
 println("initial loss: ", full_loss(ps, q, p))

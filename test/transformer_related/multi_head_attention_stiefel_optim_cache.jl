@@ -8,13 +8,15 @@ Dₕ = dim÷8
 tol = eps(Float32)
 
 d = MultiHeadAttention(dim, n_heads, Stiefel=true)
+ps, st = Lux.setup(TrivialInitRNG(), d)
 
 o₁ = AdamOptimizer()
 o₂ = MomentumOptimizer()
-o₃ = StandardOptimizer()
-cache_adam = init_optimizer_cache(d, o₁)
-cache_momentum = init_optimizer_cache(d, o₂)
-cache_standard = init_optimizer_cache(d, o₃)
+o₃ = GradientOptimizer()
+
+cache_adam = init_optimizer_cache(o₁, ps)
+cache_momentum = init_optimizer_cache(o₂, ps)
+cache_standard = init_optimizer_cache(o₃, ps)
 
 function check_adam_cache(C::AbstractCache) 
     @test typeof(C) <: AdamCache 
@@ -34,12 +36,12 @@ function check_momentum_cache(C::AbstractCache)
 end
 check_momentum_cache(B::NamedTuple) = apply_toNT(B, check_momentum_cache)
 
-function check_standard_cache(C::AbstractCache)
-    @test typeof(C) <: StandardCache 
+function check_gradient_cache(C::AbstractCache)
+    @test typeof(C) <: GradientCache 
     @test propertynames(C) == ()
 end
-check_standard_cache(B::NamedTuple) = apply_toNT(B, check_standard_cache)
+check_gradient_cache(B::NamedTuple) = apply_toNT(B, check_gradient_cache)
 
 check_adam_cache(cache_adam)
 check_momentum_cache(cache_momentum)
-check_standard_cache(cache_standard)
+check_gradient_cache(cache_standard)
