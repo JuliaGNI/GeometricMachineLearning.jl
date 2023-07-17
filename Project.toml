@@ -8,9 +8,7 @@ BandedMatrices = "aae01518-5342-5314-be14-df237901396f"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 ChainRules = "082447d4-558c-5d27-93f4-14fc19e9eca2"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-ChainRulesTestUtils = "cdddcdb0-9152-4a09-a978-84456f9df70a"
 Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
-Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 GPUArrays = "0c68f7d7-f131-5f86-a1c3-88cf8149b2d7"
 HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
@@ -32,9 +30,7 @@ BandedMatrices = "0.17"
 CUDA = "4"
 ChainRules = "1"
 ChainRulesCore = "1"
-ChainRulesTestUtils = "1"
 Distances = "0.10"
-Flux = "0.13"
 ForwardDiff = "0.10"
 GPUArrays = "8"
 HDF5 = "0.16"
@@ -49,10 +45,11 @@ Zygote = "0.6"
 julia = "1.8"
 
 [extras]
+ChainRulesTestUtils = "cdddcdb0-9152-4a09-a978-84456f9df70a"
 Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Lux", "Random", "SafeTestsets", "Test"]
+test = ["ChainRulesTestUtils", "Lux", "Random", "SafeTestsets", "Test"]
