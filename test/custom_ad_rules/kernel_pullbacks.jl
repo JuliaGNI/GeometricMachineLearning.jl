@@ -2,6 +2,8 @@ using GeometricMachineLearning: tensor_mat_mul, mat_tensor_mul, tensor_tensor_mu
 using ChainRulesTestUtils
 using Printf
 
+const verbose = false
+
 function main(first_dim, second_dim, third_dim, third_tensor_dim)
     test_rrule(tensor_mat_mul, rand(first_dim, second_dim, third_tensor_dim), rand(second_dim, third_dim))
     test_rrule(mat_tensor_mul, rand(first_dim, second_dim), rand(second_dim, third_dim, third_tensor_dim))
@@ -17,7 +19,7 @@ for _ in 1:num_tests
     second_dim = Int(ceil(dim_range*rand()))
     third_dim = Int(ceil(dim_range*rand()))
     third_tensor_dim = Int(ceil(dim_range*rand()))
-    print("dims are : (", first_dim, ", ", second_dim, ", ", third_dim, ", ", third_tensor_dim, ")\n")
+    verbose && println("dims are : (", first_dim, ", ", second_dim, ", ", third_dim, ", ", third_tensor_dim, ")")
     main(first_dim, second_dim, third_dim, third_tensor_dim)
-    print("\n")
+    verbose && println()
 end
