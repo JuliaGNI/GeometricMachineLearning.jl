@@ -35,6 +35,8 @@ module GeometricMachineLearning
 
     include("rng/trivial_rng.jl")
     
+    export sc_embed, sc_embed!
+    include("embeddings/sin_cos.jl")
 
     #are these needed?
     include("gradient.jl")

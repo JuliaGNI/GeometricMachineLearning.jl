@@ -30,8 +30,8 @@ function sc_embed!(A::AbstractMatrix{T}, λ::T) where T
 	end
 end
 
-function sc_embed!(A::AbstractMatrix{T}) 
-	sc_embed!(A, λ_fac(size(A)...), T)
+function sc_embed!(A::AbstractMatrix{T}) where T 
+	sc_embed!(A, λ_fac(size(A,2), T))
 end
 
 function sc_embed(A::AbstractMatrix)
