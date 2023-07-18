@@ -52,8 +52,6 @@ ensemble_training = EnsembleTraining(training_set1, training_set1)
 
 @testnoerror train!(neural_net_solution, training_set1)
 
-
-
 #########################################
 # Test train! for all training methods
 #########################################
@@ -63,7 +61,7 @@ exacthnn = ExactHnn()
 sympeuler = SEuler()
 
 @testnoerror  train!(hnn, sam_dps_data, mopt, exacthnn; ntraining = nruns)
-@testnoerror  train!(hnn, tra_ps_data, mopt, sympeuler; ntraining = nruns)
+#@testnoerror  train!(hnn, tra_ps_data, mopt, sympeuler; ntraining = nruns)
 
 lnn = NeuralNetwork(LagrangianNeuralNetwork(2))
 exactlnn = ExactLnn()

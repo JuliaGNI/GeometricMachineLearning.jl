@@ -3,6 +3,7 @@ module GeometricMachineLearning
     using GeometricBase
     using GeometricEquations
     using GeometricIntegrators
+    import GeometricIntegrators.Integrators: method
     
 
     using BandedMatrices
