@@ -52,7 +52,7 @@ end
 
 #check if matrix is ∈ 𝔤 (check if the vector space projection works), addition & subtraction
 function sympl_lie_alg_add_sub_test(n)
-    J = SymplecticMatrix(n)
+    J = SymplecticPotential(n)
     symplectisize(W) = .5*(W - J'*W'*J)
     W₁ = rand(2*n,2*n)
     S₁ = SymplecticLieAlgMatrix(W₁)
@@ -83,8 +83,8 @@ end
 
 #test symplectic projection (this is just the E matrix)
 function sympl_proj_test(N, n)
-    JN = SymplecticMatrix(N)
-    Jn = SymplecticMatrix(n)
+    JN = SymplecticPotential(N)
+    Jn = SymplecticPotential(n)
     E = SymplecticProjection(N, n, Float64)
     for i in 1:(2*n)
         for j in 1:(2*n) 
@@ -115,7 +115,7 @@ end
 
 #check if matrix is ∈ 𝔤 (check if the vector space projection works), addition & subtraction
 function sympl_lie_alg_add_sub_test(N, n)
-    J = SymplecticMatrix(n)
+    J = SymplecticPotential(n)
     E = SymplecticProjection(N, n)
     projection(W::SymplecticLieAlgMatrix) = W - (I - E*E')*W*(I - E*E')
     W₁ = SymplecticLieAlgMatrix(rand(2*N,2*N))

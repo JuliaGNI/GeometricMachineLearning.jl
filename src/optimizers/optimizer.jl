@@ -10,6 +10,11 @@ struct Optimizer{MT<:AbstractMethodOptimiser, CT<:NamedTuple}
         cache = init_optimizer_cache(model, m)
         new{typeof(m),typeof(cache)}(m,cache)
     end
+    
+    function Optimizer(dev::Device, m::AbstractMethodOptimiser, model::Lux.AbstractExplicitLayer)
+        cache = init_optimizer_cache(dev, model, m)
+        new{typeof(m),typeof(cache)}(m,cache)
+    end
 end
 
 #######################################################################################

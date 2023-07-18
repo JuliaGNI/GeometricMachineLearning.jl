@@ -32,7 +32,7 @@ function TrainingData(data, get_data::Dict{Symbol, <:Any}, problem = UnknownProb
     TrainingData(problem, shape, get, symbols, dim, noisemaker)
 end
 
-function TrainingData(data::TrainingData; shape = shape(data), get = get(data), symbols = data_symbols(data), dim = dim(data), noisemaker =  NothingFunction())
+function TrainingData(data::TrainingData; shape = shape(data), get = get_data(data), symbols = data_symbols(data), dim = dim(data), noisemaker =  NothingFunction())
     TrainingData(problem(data), shape, copy(get), symbols, dim, noisemaker)
 end
 
@@ -53,7 +53,7 @@ end
 
 @inline problem(data::TrainingData) = data.problem
 @inline shape(data::TrainingData) = data.shape
-@inline get(data::TrainingData) = data.get
+@inline get_data(data::TrainingData) = data.get
 @inline data_symbols(data::TrainingData) = data.symbols
 @inline symbols(data::TrainingData) = symbols(data_symbols(data))
 @inline dim(data::TrainingData) = data.dim
@@ -137,6 +137,6 @@ end
 
 function clean_get!(data::TrainingData, toberemoved::Tuple{Vararg{Symbol}})
     for s in toberemoved
-        delete!(get(data), s)
+        delete!(get_data(data), s)
     end
 end

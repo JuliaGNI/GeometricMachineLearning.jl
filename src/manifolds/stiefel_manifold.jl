@@ -36,6 +36,13 @@ function Base.rand(::Type{StiefelManifold}, N::Integer, n::Integer)
     StiefelManifold(qr!(A).Q[1:N, 1:n])
 end
 
+Base.:*(Y::StiefelManifold, B::AbstractMatrix) = Y.A*B
+Base.:*(B::AbstractMatrix, Y::StiefelManifold) = B*Y.A
+#this is needed for the implementation of MultiHeadAttention
+function Base.:*(Y::Adjoint{T, StiefelManifold{T, AT}}, B::AbstractMatrix) where {T, AT<:AbstractGPUMatrix{T}}
+    Y.parent.A'*B 
+end
+
 #function Base.rand(::TrivialInitRNG, ::Type{StiefelManifold{T}}, N::Int, n::Int) where T
 #@assert N ≥ n 
 #    zeros(StiefelLieAlgHorMatrix{T}, N, n)
@@ -47,24 +54,32 @@ function Base.rand(::TrivialInitRNG{T}, ::Type{StiefelManifold}, N::Int, n::Int)
 end
 
 function rgrad(Y::StiefelManifold, e_grad::AbstractMatrix)
-    e_grad - Y*(e_grad'*Y)
+    e_grad - Y.A*(e_grad'*Y.A)
 end
 
 function metric(Y::StiefelManifold, Δ₁::AbstractMatrix, Δ₂::AbstractMatrix)
-    LinearAlgebra.tr(Δ₁'*(I - .5*Y*Y')*Δ₂)
+    LinearAlgebra.tr(Δ₁'*(I - .5*Y.A*Y.A')*Δ₂)
 end
 
-function check(A::StiefelManifold)
-    norm(A'*A - I)
+function check(Y::StiefelManifold)
+    norm(Y.A'*Y.A - I)
 end
 
 function global_section(Y::StiefelManifold)
     N, n = size(Y)
-    A = randn(eltype(Y), N, N-n)
-    A = A - Y*Y'*A
+    A = typeof(Y.A)(randn(eltype(Y), N, N-n))
+    A = A - Y.A*Y.A'*A
     qr!(A).Q
 end
 
-function global_section(::AbstractVecOrMat)
-    nothing
+function convert_to_dev(dev::Device, Y::StiefelManifold)
+    StiefelManifold(convert_to_dev(dev, Y.A))
+end
+
+#same problem again 
+function convert_to_dev(dev::CUDA.CuDevice, Y::StiefelManifold)
+    StiefelManifold(convert_to_dev(dev, Y.A))
+end
+function convert_to_dev(dev::CPUDevice, Y::StiefelManifold)
+    StiefelManifold(convert_to_dev(dev, Y.A))
 end

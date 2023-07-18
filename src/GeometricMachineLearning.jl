@@ -3,10 +3,15 @@ module GeometricMachineLearning
     using GeometricBase
     using GeometricEquations
     using GeometricIntegrators
+    import GeometricIntegrators.Integrators: method
     
 
     using BandedMatrices
+    using ChainRulesCore
     using Distances
+    using ForwardDiff
+    using GPUArrays
+    using KernelAbstractions
     using LinearAlgebra
     using NNlib
     using ProgressMeter
@@ -15,11 +20,26 @@ module GeometricMachineLearning
     using ForwardDiff
     using InteractiveUtils
 
-    import Lux
+
+    import Lux, CUDA
+
+    include("kernels/tensor_mat_mul.jl")
+    include("kernels/tensor_tensor_mul.jl")
+    include("kernels/tensor_transpose_tensor_mul.jl")
+    include("kernels/tensor_tensor_transpose_mul.jl")
+    include("kernels/tensor_transpose_mat_mul.jl")
+    include("kernels/tensor_transpose_tensor_transpose_mul.jl")
+    include("kernels/mat_tensor_mul.jl")
+    include("kernels/tensor_transpose.jl")
+
+    include("kernels/kernel_ad_routines/tensor_mat_mul.jl")
+    include("kernels/kernel_ad_routines/mat_tensor_mul.jl")
+    include("kernels/kernel_ad_routines/tensor_tensor_mul.jl")
+    include("kernels/kernel_ad_routines/tensor_transpose_tensor_mul.jl")
+    #export tensor_mat_mul
 
     #this defines empty retraction type structs (doesn't rely on anything)
     include("optimizers/useful_functions/retraction_types.jl")
-
 
     export TrivialInitRNG
 
@@ -33,6 +53,9 @@ module GeometricMachineLearning
 
     #+ operation has been overloaded to work with NamedTuples!
     export _add, apply_toNT, split_and_flatten, add!
+    
+    #GPU specific operations
+    export convert_to_dev, Device, CPUDevice
 
     #+ operation has been overloaded to work with NamedTuples!
     export _add
@@ -170,7 +193,7 @@ module GeometricMachineLearning
      #INCLUDE DATA TRAINING STRUCTURE
     export AbstractTrainingData
     export TrainingData
-    export problem, shape, get, symbols, dim, noisemaker, data_symbols
+    export problem, shape, symbols, dim, noisemaker, data_symbols
     export reduce_symbols, reshape_intoSampledData
     export aresame
     
@@ -318,7 +341,7 @@ module GeometricMachineLearning
     export  SympNetMethod
     export integrate, integrate_step!
 
-    #include("integrator/sympnet_integrator.jl")
+    include("integrator/sympnet_integrator.jl")
 
 
 

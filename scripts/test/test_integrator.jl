@@ -3,6 +3,7 @@ using GeometricEquations
 using Test
 
 include("data_generation.jl")
+include("macro_testerror.jl")
 
 t₀ = 0.
 t₁ = 1.
@@ -17,7 +18,7 @@ tspan = (t₀, t₁)
 # Test for HNNProblem
 #########################################
 
-hnn = NeuralNetwork(HamiltonianNeuralNetwork(1))
+hnn = NeuralNetwork(HamiltonianNeuralNetwork(2))
 ics = (q = q₀, p = p₀)
 
 prob_hnn = HNNProblem(hnn, tspan, Δt, ics)
@@ -34,7 +35,7 @@ prob_hnn2 = HNNProblem(hnn, tspan, Δt, q₀, p₀)
 # Test for LNNProblem
 #########################################
 
-lnn = NeuralNetwork(LagrangianNeuralNetwork(1))
+lnn = NeuralNetwork(LagrangianNeuralNetwork(2))
 ics = (q = q₀, p = p₀, λ = λ₀)
 
 prob_lnn = LNNProblem(lnn, tspan, Δt, ics)
@@ -43,9 +44,9 @@ prob_lnn = LNNProblem(lnn, tspan, Δt, ics)
 @test typeof(prob_lnn) <: LODEProblem
 @test equtype(prob_lnn) == LODE
 
-prob_lnn2 = LNNProblem(lnn, tspan, Δt, q₀, p₀)
+prob_lnn2 = LNNProblem(lnn, tspan, Δt, q₀, p₀, λ₀)
 
-#@test prob_lnn == prob_lnn2 why ??????
+#@test prob_lnn == prob_lnn2
 
 #########################################
 # Test for SympNetMethod Integrator
@@ -61,7 +62,8 @@ training_parameters = TrainingParameters(nruns, method, mopt; batch_size = batch
 
 neural_net_solution = train!(neuralnet, training_data, training_parameters)
 
-#integrate(neural_net_solution)
+@testnoerror sol = integrate(neural_net_solution)
+
 
 
 
