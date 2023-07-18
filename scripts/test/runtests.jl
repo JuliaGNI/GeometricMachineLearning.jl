@@ -39,11 +39,10 @@ Finally, training a neural network produces a new structure called NeuralNetSolu
 which includes the nn, the problem, the neural network trained, the loss during the training process and a history of the structure which stores
 all previous training of the neural network, i.e. you can apply train! directly to a NeuralNetSolution. 
 EnsembleNeuralNetSolution brings together several NeuralNetSolutions, resulting for example from the application of train! to an ensemble training.
-ensemble training.
 
 I have created my own test folder with its own runtests.jl which should be merged with the existing one (but I don't know if it's up to date or not).
 Several minor tests are missing such as:
 - check_batch_size functionality,
 - architecture,
-and probably other features I haven't seen. My own test folder is located in "script".
+and probably other features I haven't seen. My own test folder is located in "script". 
 =#

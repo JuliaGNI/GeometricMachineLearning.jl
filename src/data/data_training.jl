@@ -44,10 +44,10 @@ function TrainingData(es::EnsembleSolution)
         :length_trajectory => (Data,i) -> 4,
         :Δt => Data -> 4,
     )
-    for s in es.problem.ics
-        get_data[s] = (Data, i, n) => solution(es,i)[n][s]
+    for s in keys(es.problem.ics[1])
+        get_data[s] = (es, i, n) -> solution(es,i)[n][s]
     end
-    TrainingData(es.s, get_data, problem(es))
+    TrainingData(es, get_data, es.problem)
 end
 
 
