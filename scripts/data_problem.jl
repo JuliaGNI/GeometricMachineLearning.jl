@@ -1,6 +1,6 @@
 using Plots
 using Zygote
-using  GeometricIntegrators
+#using  GeometricIntegrators
 using LinearAlgebra
 using GeometricMachineLearning
 
@@ -146,8 +146,8 @@ function compute_phase_space(H_problem, q₀, p₀, tspan = (0., 100.), tstep = 
     # simulate data with geometric Integrators
     ode = HODEProblem(v, f, h, tspan, tstep, q₀, p₀)
 
-    # sol = integrate(ode, SymplecticEulerA())
-    sol = integrate(ode, SymplecticTableau(TableauExplicitEuler()))
+    #return sol = integrate(ode, SymplecticEulerA())
+    return sol = integrate(ode, SymplecticTableau(TableauExplicitEuler()))
 
     # results are give into a matrix where q[i,j] is the ith step of the jth component of q 
     q = hcat([sol.q[:,i] for i in 1:n_dim]...)

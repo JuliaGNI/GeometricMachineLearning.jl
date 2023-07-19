@@ -10,16 +10,16 @@ function HNN(integrator::TrainingIntegrator{<:HnnTrainingIntegrator}, data::Abst
     _, n_dim = dict_problem_H[nameproblem]
 
     # layer dimension/width
-    ld = 5
+    ld = 1
 
     # hidden layers
-    ln = 3
+    ln = 0
 
     # number of inputs/dimension of system
     ninput = 2*n_dim
 
     # number of training runs
-    nruns = 3
+    nruns = 10
 
     # create HNN
     hnn = HamiltonianNeuralNetwork(ninput; nhidden = ln, width = ld)
@@ -28,33 +28,36 @@ function HNN(integrator::TrainingIntegrator{<:HnnTrainingIntegrator}, data::Abst
     nn = NeuralNetwork(hnn, LuxBackend())
 
     # perform training (returns array that contains the total loss for each training step)
-    total_loss = train!(nn, opt, data; ntraining = nruns, ti = integrator, showprogress = false)
+    total_loss = 0#train!(nn, data, opt, integrator; ntraining = nruns, showprogress = true)
 
     return nn, total_loss
 end
 
 
 
-Data,Target = get_HNN_data(:pendulum)
-
+Data= get_HNN_data(:pendulum)
 Get_Data = Dict(
-    :nb_points => Data -> length(Data),
-    :q => (Data,n) -> Data[n][1],
-    :p => (Data,n) -> Data[n][2]
+    :shape => SampledData,
+    :nb_points => Data -> length(Data[1]),
+    :q => (Data,n) -> Data[1][n][1],
+    :p => (Data,n) -> Data[1][n][2],
+    :q̇ => (Data,n) -> Data[2][n][1],
+    :ṗ => (Data,n) -> Data[2][n][2],
 )
-pdata = DataSampled(Data, Get_Data)
+data = TrainingData(Data, Get_Data)
 
-Get_Target = Dict(
-    :q̇ => (Target,n) -> Target[n][1],
-    :ṗ => (Target,n) -> Target[n][2],
-)
-
-data = DataTarget(pdata, Target, Get_Target)
 
 nn, total_loss = HNN(ExactHnn(), data,  :pendulum, MomentumOptimizer())
+index_batch = get_batch(data, 10)
 
-include("../plots.jl")
+loss_gradient(nn, type(ExactHnn()), data, index_batch, nn.params)
 
-H,_ = dict_problem_H[:pendulum]
 
-plot_hnn(H, nn, total_loss; filename="hnn_pendulum.png", xmin=-1.2, xmax=+1.2, ymin=-1.2, ymax=+1.2)
+
+
+
+#include("../plots.jl")
+
+#H,_ = dict_problem_H[:pendulum]
+
+#plot_hnn(H, nn, total_loss; filename="hnn_pendulum.png", xmin=-1.2, xmax=+1.2, ymin=-1.2, ymax=+1.2)

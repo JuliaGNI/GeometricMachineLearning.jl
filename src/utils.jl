@@ -73,13 +73,35 @@ function Base.:+(a::Vector{Float64}, b::Tuple{Float64})
     return y+x
 end
 
-Zygote.OneElement(t1::Tuple{Float64}, t2::Tuple{Int64}, t3::Tuple{Base.OneTo{Int64}}) = Zygote.OneElement(t1[1], t2, t3)
+#Zygote.OneElement(t1::Tuple{Float64}, t2::Tuple{Int64}, t3::Tuple{Base.OneTo{Int64}}) = Zygote.OneElement(t1[1], t2, t3)
 
-Base.haskey(::Nothing, key::Core.Any) = false
+function type_without_brace(var)
+    type_str = string(typeof(var))
+    replace(type_str, r"\{.*\}"=>"")
+end
+
 
 function add!(dx₁::NamedTuple, dx₂::NamedTuple, dx₃::NamedTuple)
     apply_toNT(dx₁, dx₂, dx₃, add!)
 end
+
+struct EnsembleSolution end
+struct UnknownProblem <: AbstractProblem end
+
+_tuplediff(t₁::Tuple,t₂::Tuple) = tuple(setdiff(Set(t₁),Set(t₂))...)
+
+@inline next(i::Int,j::Int) = (i,j+1)
+@inline next(i::Int) = (i+1,)
+
+function center_align_text(text,width)
+    padding = max(0, width - length(text))
+    left_padding = repeat(" ",padding ÷2)
+    right_padding = repeat(" ", padding - length(left_padding))
+    aligned_text = left_padding * text * right_padding
+    return aligned_text
+end
+
+const ∞ = Inf
 
 #The following are fallback functions - maybe you want to put them into a separate file
 
@@ -112,3 +134,4 @@ function Lux.setup(dev::Device, rng::Random.AbstractRNG, d::Lux.AbstractExplicit
     ps = map_to_dev(ps)
     ps, st
 end
+

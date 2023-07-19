@@ -11,7 +11,6 @@ function Optimizer(m::OptimizerMethod, x)
     Optimizer(m, init_optimizer_cache(m, x))
 end
 
-
 #######################################################################################
 #optimization step function
 

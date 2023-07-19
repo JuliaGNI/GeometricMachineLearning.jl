@@ -1,5 +1,11 @@
 module GeometricMachineLearning
 
+    using GeometricBase
+    using GeometricEquations
+    using GeometricIntegrators
+    import GeometricIntegrators.Integrators: method
+    
+
     using BandedMatrices
     using ChainRulesCore
     using Distances
@@ -11,6 +17,9 @@ module GeometricMachineLearning
     using ProgressMeter
     using Random
     using Zygote
+    using ForwardDiff
+    using InteractiveUtils
+
 
     import Lux, CUDA
 
@@ -39,7 +48,7 @@ module GeometricMachineLearning
 
     #are these needed?
     include("gradient.jl")
-    include("training.jl")
+    export UnknownProblem, NothingFunction
     include("utils.jl")
 
     #+ operation has been overloaded to work with NamedTuples!
@@ -151,28 +160,54 @@ module GeometricMachineLearning
 
     #INCLUDE ABSTRACT TRAINING integrator
     export AbstractTrainingIntegrator
-    export TrainingIntegrator
     export loss_single, loss
-
+    
     export HnnTrainingIntegrator
     export LnnTrainingIntegrator
     export SympNetTrainingIntegrator
-
+    
     include("training/abstract_training_integrator.jl")
 
     #INCLUDE DATA TRAINING STRUCTURE
+    export AbstractDataShape, TrajectoryData, SampledData
+    export get_length_trajectory, get_Δt, get_nb_point, get_nb_trajectory, get_data
+
+    include("data/data_shape.jl")
+
+    export AbstractDataSymbol
+    export PositionSymbol, PhaseSpaceSymbol, DerivativePhaseSpaceSymbol, PosVeloAccSymbol, PosVeloSymbol
+    export DataSymbol
+    export can_reduce, type, symbols, symboldiff
+
+    include("data/data_symbol.jl")
+
+    #INCLUDE TRAINING INTEGRATOR
+
+    export TrainingIntegrator
+    export type, symbol, shape
+    export min_length_batch
+    
+    
+    include("training/training_integrator.jl")
+
+     #INCLUDE DATA TRAINING STRUCTURE
     export AbstractTrainingData
-    export DataTrajectory, DataSampled, DataTarget
-    export get_length_trajectory, get_Δt, get_nb_point, get_nb_trajectory, get_data, get_target
+    export TrainingData
+    export problem, shape, symbols, dim, noisemaker, data_symbols
+    export reduce_symbols, reshape_intoSampledData
+    export aresame
     
     include("data/data_training.jl")
-    include("data/batch.jl")
 
+    export get_batch, complete_batch_size, check_batch_size
+    
+    include("data/batch.jl")
 
     #INCLUDE BACKENDS
     export AbstractNeuralNetwork
     export LuxBackend
     export NeuralNetwork
+    export arch
 
     include("architectures/architectures.jl")
     include("backends/backends.jl")
@@ -180,16 +215,6 @@ module GeometricMachineLearning
 
     # set default backend in NeuralNetwork constructor
     NeuralNetwork(arch::AbstractArchitecture; kwargs...) = NeuralNetwork(arch, LuxBackend(); kwargs...)
-
-    
-    export Hnn_training_integrator
-    export Lnn_training_integrator
-    export SEuler
-    export ExactIntegrator
-    export ExactIntegratorLNN
-    export VariationalMidPointLNN
-    export SympNetIntegrator
-    export BaseIntegrator
 
     #INCLUDE ARCHITECTURES
     export HamiltonianNeuralNetwork
@@ -201,7 +226,6 @@ module GeometricMachineLearning
     export train!, apply!, jacobian!
     export Iterate_Sympnet
 
-    include("architectures/architectures.jl")
     include("architectures/autoencoder.jl")
     include("architectures/fixed_width_network.jl")
     include("architectures/hamiltonian_neural_network.jl")
@@ -209,7 +233,56 @@ module GeometricMachineLearning
     include("architectures/variable_width_network.jl")
     include("architectures/sympnet.jl")
 
+    export default_arch
+
+    include("architectures/default_architecture.jl")
+
+    export default_optimizer
+
+    include("optimizers/default_optimizer.jl")
+
+    #INCLUDE TRAINING parameters
+
+    export TrainingParameters
+
+    include("training/training_parameters.jl")
+
+    #INCLUDE NEURALNET SOLUTION
+
+    export SingleHistory
+    export parameters, datashape, loss
+    export History
+    export data, last, sizemax, nbtraining, show
+
+    include("nnsolution/history.jl")
+
+    export NeuralNetSolution
+    export nn, problem, tstep, loss, history, size_history
+    export set_sizemax_history
+    
+    include("nnsolution/neural_net_solution.jl")
+
+    export EnsembleNeuralNetSolution
+    export push!, merge!
+
+    include("nnsolution/neural_net_solution_ensemble.jl")
+
     #INCLUDE TRAINING integrator
+
+    export TrainingSet
+    export nn, parameters, data
+
+    include("training/training_set.jl")
+
+    export EnsembleTraining
+    export isnnShared, isParametersShared, isDataShared
+    export nn, parameters, data
+    export push!, merge!, size
+
+    include("training/ensemble_training.jl")
+
+    include("training/nn_parameters_transformation.jl")
+
     export loss_gradient
     export train!
 
@@ -248,7 +321,28 @@ module GeometricMachineLearning
 
 
     #INCLUDE ASSERTION Function
-    include("training/assertion.jl")
+    export matching
+    include("training/matching.jl")
+
+
+    #INCLUDE PROBLEMS
+    export HNNProblem, LNNProblem
+
+    include("integrator/problem_hnn.jl")
+    include("integrator/problem_lnn.jl")
+    
+    #INCLUDE INTEGRATOR 
+    export NeuralNetMethod
+    export method
+
+    include("integrator/abstract_neural_net_method.jl")
+
+    #INCLUDE INTEGRATION METHOD
+    export  SympNetMethod
+    export integrate, integrate_step!
+
+    include("integrator/sympnet_integrator.jl")
+
 
 
 

@@ -8,12 +8,4 @@ function loss end
 function loss_single end
 
 
-#Define common strucutre integrator
-struct TrainingIntegrator{TIT,TD}
-    type::TIT
-    sqdist::TD
-
-    TrainingIntegrator(type;sqdist = sqeuclidean) = new{typeof(type),typeof(sqdist)}(type, sqdist)
-end
-
-type(ti::TrainingIntegrator) = ti.type
+min_length_batch(ti::AbstractTrainingIntegrator) = 1

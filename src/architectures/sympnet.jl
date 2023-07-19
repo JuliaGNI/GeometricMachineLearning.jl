@@ -18,6 +18,8 @@ struct LASympNet{AT,T1,T2,T3} <: SympNet{AT}
 
 end
 
+@inline dim(arch::LASympNet) = arch.dim
+
 struct GSympNet{AT,T1,T2,T3} <: SympNet{AT} 
     dim::Int
     width::Int
@@ -28,10 +30,13 @@ struct GSympNet{AT,T1,T2,T3} <: SympNet{AT}
     init_bias::T2
     init_scale::T3
 
-    function GSympNet(dim; width=dim, nhidden=1, activation=tanh, init_uplow=[true,false], init_weight=Lux.glorot_uniform, init_bias=Lux.zeros32, init_scale=Lux.glorot_uniform) 
+    function GSympNet(dim; width=dim, nhidden=2, activation=tanh, init_uplow=[true,false], init_weight=Lux.glorot_uniform, init_bias=Lux.zeros32, init_scale=Lux.glorot_uniform) 
         new{typeof(activation),typeof(init_weight),typeof(init_bias),typeof(init_scale)}(dim, width, nhidden, activation, init_uplow, init_weight, init_bias, init_scale)
     end
 end
+
+
+@inline dim(arch::GSympNet) = arch.dim
 
 # Chain function
 function chain(nn::GSympNet, ::LuxBackend)

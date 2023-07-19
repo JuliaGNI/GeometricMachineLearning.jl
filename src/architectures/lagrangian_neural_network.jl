@@ -13,6 +13,8 @@ struct LagrangianNeuralNetwork{AT} <: AbstractArchitecture
     end
 end
 
+@inline dim(arch::LagrangianNeuralNetwork) = arch.dimin
+
 function chain(nn::LagrangianNeuralNetwork, ::LuxBackend)
     inner_layers = Tuple(
         [Lux.Dense(nn.width, nn.width, nn.act) for _ in 1:nn.nhidden]
