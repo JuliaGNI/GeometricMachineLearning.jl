@@ -85,7 +85,7 @@ train!(neuralnetwork, data, optimizer, training_method; nruns = 1000, batch_size
 - ``
 
 """
-function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, data::AbstractTrainingData, tp::TrainingParameters; showprogress::Bool = false)
+function train!(nn::LuxNeuralNetwork{<:Architecture}, data::AbstractTrainingData, tp::TrainingParameters; showprogress::Bool = false)
 
     bs = complete_batch_size(data, method(tp), batchsize(tp))
 
