@@ -5,10 +5,11 @@
 struct Optimizer{MT<:OptimizerMethod, CT<:NamedTuple}
     method::MT
     cache::CT
+    step::Int
 end
 
 function Optimizer(m::OptimizerMethod, x)
-    Optimizer(m, init_optimizer_cache(m, x))
+    Optimizer(m, init_optimizer_cache(m, x), 0)
 end
 
 #######################################################################################
@@ -24,7 +25,7 @@ function optimization_step!(m::OptimizerMethod, d::Lux.AbstractExplicitLayer, ps
 end
 
 function optimization_step!(o::Optimizer, model::Lux.Chain, ps::NamedTuple, dx::NamedTuple)
-    o.method.t += 1
+    o.step += 1
     i = 0
     for key in keys(model)
         i += 1

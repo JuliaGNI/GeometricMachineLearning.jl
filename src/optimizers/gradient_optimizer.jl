@@ -4,8 +4,7 @@ Or the riemannian manifold equivalent, if applicable.
 """
 struct GradientOptimizer{T<:Real} <: OptimizerMethod
     η::T
-    t::Integer
-    GradientOptimizer(η = 1e-2) = new{typeof(η)}(η,0)
+    GradientOptimizer(η = 1e-2) = new{typeof(η)}(η)
 end
 
 function update!(o::GradientOptimizer, ::GradientCache, B::AbstractMatrix)

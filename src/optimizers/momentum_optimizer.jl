@@ -7,8 +7,7 @@ Or the riemannian manifold equivalent, if applicable.
 struct MomentumOptimizer{T<:Real} <: OptimizerMethod
     η::T
     α::T
-    t::Int
-    MomentumOptimizer(η = 1e-3, α = 1e-2) = new{typeof(η)}(η, α, 0)
+    MomentumOptimizer(η = 1e-3, α = 1e-2) = new{typeof(η)}(η, α)
 end
 
 #update for weights

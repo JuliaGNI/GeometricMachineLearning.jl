@@ -8,9 +8,8 @@ struct AdamOptimizer{T<:Real} <: OptimizerMethod
     ρ₁::T
     ρ₂::T
     δ::T
-    t::Int
 
-    AdamOptimizer(η = Float32(1e-3), ρ₁ = Float32(0.9), ρ₂ = Float32(0.99), δ = Float32(1e-8)) = new{typeof(η)}(η, ρ₁, ρ₂, δ, 0)
+    AdamOptimizer(η = Float32(1e-3), ρ₁ = Float32(0.9), ρ₂ = Float32(0.99), δ = Float32(1e-8)) = new{typeof(η)}(η, ρ₁, ρ₂, δ)
 end
 
 function update!(o::AdamOptimizer, C::AdamCache, B::AbstractVecOrMat)
