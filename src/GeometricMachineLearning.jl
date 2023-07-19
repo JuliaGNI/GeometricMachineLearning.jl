@@ -155,7 +155,7 @@ module GeometricMachineLearning
     export check
 
     include("optimizers/utils/global_sections.jl")
-    include("optimizers/utils/auxiliary.jl")
+    include("optimizers/utils/modified_exponential.jl")
     include("optimizers/utils/retractions.jl")
 
     #INCLUDE ABSTRACT TRAINING integrator
