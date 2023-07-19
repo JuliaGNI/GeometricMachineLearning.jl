@@ -52,13 +52,13 @@ function chain(nn::LASympNet, ::LuxBackend)
     couple_layers = []
     for i in 1:nn.nhidden
         for j in 1:nn.width
-            push!(couple_layers, Linear(nn.dim, change_q = nn.init_uplow_linear[Int64((i-1+j-1)%length(nn.init_uplow_linear)+1)], bias=(j==nn.width), init_weight=nn.init_sym_matrices, init_bias=nn.init_bias))
+            push!(couple_layers, LinearSymplectic(nn.dim, change_q = nn.init_uplow_linear[Int64((i-1+j-1)%length(nn.init_uplow_linear)+1)], bias=(j==nn.width), init_weight=nn.init_sym_matrices, init_bias=nn.init_bias))
         end
         push!(couple_layers,Gradient(nn.dim, nn.dim, nn.act, full_grad = false, change_q = nn.init_uplow_act[Int64((i-1)%length(nn.init_uplow_act)+1)], init_weight=nn.init_weight))
     end
 
     for j in 1:nn.width
-        push!(couple_layers, Linear(nn.dim, change_q = nn.init_uplow_linear[Int64((nn.nhidden+1-1+j-1)%length(nn.init_uplow_linear)+1)], bias=(j==nn.width), init_weight=nn.init_sym_matrices, init_bias=nn.init_bias))
+        push!(couple_layers, LinearSymplectic(nn.dim, change_q = nn.init_uplow_linear[Int64((nn.nhidden+1-1+j-1)%length(nn.init_uplow_linear)+1)], bias=(j==nn.width), init_weight=nn.init_sym_matrices, init_bias=nn.init_bias))
     end
     
     Lux.Chain(

@@ -14,13 +14,13 @@ end
 
 function Chain(nn::HamiltonianNeuralNetwork)
     inner_layers = Tuple(
-        [AbstractNeuralNetworks.Dense(nn.width, nn.width, nn.act) for _ in 1:nn.nhidden]
+        [Dense(nn.width, nn.width, nn.act) for _ in 1:nn.nhidden]
     )
 
-    AbstractNeuralNetworks.Chain(
-        AbstractNeuralNetworks.Dense(nn.dimin, nn.width, nn.act),
+    Chain(
+        Dense(nn.dimin, nn.width, nn.act),
         inner_layers...,
-        AbstractNeuralNetworks.Linear(nn.width, 1; use_bias = false)
+        Linear(nn.width, 1; use_bias = false)
     )
 end
 

@@ -22,6 +22,7 @@ module GeometricMachineLearning
     import Lux, CUDA
 
     import AbstractNeuralNetworks: Architecture, Chain, NeuralNetwork
+    import AbstractNeuralNetworks: Dense, Linear
     import AbstractNeuralNetworks: IdentityActivation, ZeroVector
     import AbstractNeuralNetworks: add!, update!
 
@@ -29,6 +30,7 @@ module GeometricMachineLearning
 
     export CPU, GPU
     export Chain, NeuralNetwork
+    export Dense, Linear
 
     
     include("kernels/tensor_mat_mul.jl")
@@ -109,7 +111,7 @@ module GeometricMachineLearning
     include("layers/abstract_layer.jl")
     include("layers/feed_forward_layer.jl")
     include("layers/gradient.jl")
-    include("layers/linear.jl")
+    include("layers/linear_symplectic.jl")
     include("layers/resnet.jl")
     include("layers/linear_symplectic_layer.jl")
     include("layers/manifold_layer.jl")
