@@ -85,7 +85,6 @@ function add!(dx₁::NamedTuple, dx₂::NamedTuple, dx₃::NamedTuple)
     apply_toNT(dx₁, dx₂, dx₃, add!)
 end
 
-struct EnsembleSolution end
 struct UnknownProblem <: AbstractProblem end
 
 _tuplediff(t₁::Tuple,t₂::Tuple) = tuple(setdiff(Set(t₁),Set(t₂))...)
