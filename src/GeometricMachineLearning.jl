@@ -1,6 +1,6 @@
 module GeometricMachineLearning
 
-    using AbstractNetworks
+    using AbstractNeuralNetworks
     using BandedMatrices
     using ChainRulesCore
     using Distances
@@ -21,9 +21,9 @@ module GeometricMachineLearning
 
     import Lux, CUDA
 
-    import AbstractNetworks: Architecture, Chain, NeuralNetwork
-    import AbstractNetworks: add!, update!
-    import AbstractNetworks: IdentityActivation, ZeroVector
+    import AbstractNeuralNetworks: Architecture, Chain, NeuralNetwork
+    import AbstractNeuralNetworks: IdentityActivation, ZeroVector
+    import AbstractNeuralNetworks: add!, update!
 
     import GeometricIntegrators.Integrators: method
 

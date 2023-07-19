@@ -25,7 +25,7 @@ Different ways of use:
 - `batch_size` : size of batch of data used for each step
 
 """
-function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, data_in::AbstractTrainingData, m::OptimizerMethod, ti::TrainingIntegrator{<:AbstractTrainingIntegrator} = default_integrator(nn, data); ntraining = DEFAULT_NRUNS, batch_size = missing, showprogress::Bool = false)
+function train!(nn::LuxNeuralNetwork{<:Architecture}, data_in::AbstractTrainingData, m::OptimizerMethod, ti::TrainingIntegrator{<:AbstractTrainingIntegrator} = default_integrator(nn, data); ntraining = DEFAULT_NRUNS, batch_size = missing, showprogress::Bool = false)
 
     # copy of data in the event of modification
     data = copy(data_in)
