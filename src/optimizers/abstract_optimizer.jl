@@ -10,15 +10,6 @@ function optimization_step!(o::AbstractOptimizer, d::Lux.AbstractExplicitLayer, 
     apply_section!(ps, λY, ps₂)
 end
 
-function optimization_step!(o::AbstractOptimizer, model::Lux.Chain, ps::NamedTuple, C::NamedTuple, dx::NamedTuple)
-    o.t += 1
-    i = 0
-    for key in keys(model)
-        i += 1
-        optimization_step!(o, model[i], ps[key], C[key], dx[key])
-    end
-end
-
 #add a routine that can deal with a single layer (no Lux.Chain)
 #function optimization_step!(o::AbstractOptimizer, model::Lux.AbstractExplicitLayer, ps::NamedTuple, cache::NamedTuple, dx::NamedTuple)
 #end
