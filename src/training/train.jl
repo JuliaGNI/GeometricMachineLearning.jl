@@ -24,9 +24,20 @@ Different ways of use:
 - `nruns` : number of iteration through the process with default value 
 - `batch_size` : size of batch of data used for each step
 
-
 """
 function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, data_in::AbstractTrainingData, m::AbstractMethodOptimiser, ti::TrainingIntegrator{<:AbstractTrainingIntegrator} = default_integrator(nn, data); ntraining = DEFAULT_NRUNS, batch_size = missing, showprogress::Bool = false)
+
+    # copy of data in the event of modification
+    data = copy(data_in)
+
+    # verify that dimension of data and input of nn match
+    @assert dim(nn) == dim(data)
+
+    # create an appropriate batch size by filling in missing values with default values
+    bs = complete_batch_size(data, ti, batch_size)
+
+#train function
+function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, m::AbstractMethodOptimiser, data::AbstractTrainingData; ntraining = DEFAULT_NRUNS, ti::TrainingIntegrator{<:AbstractTrainingIntegrator} = default_integrator(nn, data), batch_size_t = default_index_batch(data,type(ti)), showprogress::Bool = false)
     
     # copy of data in the event of modification
     data = copy(data_in)
@@ -124,10 +135,9 @@ end
 
 function train!(nns::NeuralNetSolution, data::AbstractTrainingData, tp::TrainingParameters; kwarsg...)
 
-    @assert tstep(data) == tstep(nns) || tstep(nns) == nothing || tstep(data) == nothing
-    @assert problem(data) == problem(nns) || problem(nns) == nothing || problem(data) == nothing
-    
-    total_loss = train!(nn(nns), data, opt(tp), method(tp); ntraining = nruns(tp), batch_size = batchsize(tp))
+function pretransform(::TuppleNeededTrainingIntegrator, params::NamedTuple)
+
+train!(ts::TrainingSet...; kwarsg...) = train!(EnsembleTraining(ts...); kwarsg...)
 
     sh = SingleHistory(tp, shape(data), size(data), total_loss)
 

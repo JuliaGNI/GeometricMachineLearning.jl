@@ -2,7 +2,7 @@
 Define the Gradient optimizer, i.e. W ← W - η*∇f(W)
 Or the riemannian manifold equivalent, if applicable.
 """
-mutable struct GradientOptimizer{T<:Real} <: AbstractMethodOptimiser
+struct GradientOptimizer{T<:Real} <: OptimizerMethod
     η::T
     t::Integer
     GradientOptimizer(η = 1e-2) = new{typeof(η)}(η,0)
@@ -12,6 +12,4 @@ function update!(o::GradientOptimizer, ::GradientCache, B::AbstractMatrix)
     rmul!(B, -o.η)
 end
 
-init_optimizer_cache(dev::Device, d::Lux.AbstractExplicitLayer, ::GradientOptimizer) = setup_gradient_cache(dev, d)
-init_optimizer_cache(d::Lux.AbstractExplicitLayer, opt::GradientOptimizer) = init_optimizer_cache(CPUDevice(), d, opt)
-
+init_optimizer_cache(opt::GradientOptimizer, x) = setup_gradient_cache(x)

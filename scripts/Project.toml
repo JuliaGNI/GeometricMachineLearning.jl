@@ -1,4 +1,5 @@
 [deps]
+Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 GeometricIntegrators = "dcce2d33-59f6-5b8d-9047-0defad88ae06"
 GeometricMachineLearning = "194d25b2-d3f5-49f0-af24-c124f4aa80cc"
 LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"

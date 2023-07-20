@@ -68,7 +68,7 @@ function apply_section(λY::GlobalSection{T}, Y₂::AbstractVecOrMat{T}) where {
     λY.Y + Y₂
 end
 
-function apply_section!(Y::AT, λY::GlobalSection{T, AT}, Y₂::AT) where {T, AT<:AbstractVecOrMat{T}}
+function apply_section!(Y::AT, λY::GlobalSection{T, AT}, Y₂::AbstractVecOrMat{T}) where {T, AT<:AbstractVecOrMat{T}}
     Y .= Y₂ + λY.Y
 end
 

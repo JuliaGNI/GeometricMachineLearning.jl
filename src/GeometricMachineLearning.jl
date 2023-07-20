@@ -39,7 +39,7 @@ module GeometricMachineLearning
     #export tensor_mat_mul
 
     #this defines empty retraction type structs (doesn't rely on anything)
-    include("optimizers/useful_functions/retraction_types.jl")
+    include("optimizers/utils/retraction_types.jl")
 
     export TrivialInitRNG
 
@@ -129,7 +129,7 @@ module GeometricMachineLearning
     export AbstractNeuralNetwork
 
     #INCLUDE OPTIMIZERS
-    export AbstractMethodOptimiser, AbstractCache
+    export OptimizerMethod, AbstractCache
     export GradientOptimizer, GradientCache
     export MomentumOptimizer, MomentumCache
     export AdamOptimizer, AdamCache
@@ -139,10 +139,10 @@ module GeometricMachineLearning
     export init_optimizer_cache
 
     include("optimizers/optimizer_caches.jl")
-    include("optimizers/Method_Optimizer/abstract_method_optimizer.jl")
-    include("optimizers/Method_Optimizer/gradient_optimizer.jl")
-    include("optimizers/Method_Optimizer/momentum_optimizer.jl")        
-    include("optimizers/Method_Optimizer/adam_optimizer.jl")
+    include("optimizers/optimizer_method.jl")
+    include("optimizers/gradient_optimizer.jl")
+    include("optimizers/momentum_optimizer.jl")        
+    include("optimizers/adam_optimizer.jl")
     include("optimizers/optimizer.jl")
 
     export GlobalSection, apply_section
@@ -154,9 +154,9 @@ module GeometricMachineLearning
     export update!
     export check
 
-    include("optimizers/useful_functions/global_sections.jl")
-    include("optimizers/useful_functions/auxiliary.jl")
-    include("optimizers/useful_functions/retractions.jl")
+    include("optimizers/utils/global_sections.jl")
+    include("optimizers/utils/auxiliary.jl")
+    include("optimizers/utils/retractions.jl")
 
     #INCLUDE ABSTRACT TRAINING integrator
     export AbstractTrainingIntegrator
