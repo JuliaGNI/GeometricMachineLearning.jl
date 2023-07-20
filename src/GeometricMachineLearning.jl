@@ -112,7 +112,7 @@ module GeometricMachineLearning
     include("layers/transformer.jl")
     include("layers/psd_like_layer.jl")
     include("layers/classification.jl")
-
+    include("layers/transformer_postprocessing.jl")
 
     #include("layers/symplectic_stiefel_layer.jl")
     export StiefelLayer, GrassmannLayer, ManifoldLayer
