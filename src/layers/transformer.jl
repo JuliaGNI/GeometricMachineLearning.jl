@@ -7,7 +7,7 @@ function Transformer(dim::Integer, n_heads::Integer, L::Integer;
     activation=tanh, Stiefel::Bool=false, Retraction=default_retr, init_weight=Lux.glorot_uniform, init_bias=Lux.zeros32, use_bias=true, add_connection=true)
 
     model = Lux.Chain(Tuple(map(_ -> (MultiHeadAttention(dim, n_heads, Stiefel=Stiefel, Retraction=Retraction, init_weight=init_weight, add_connection=add_connection), 
-				      PostProcessing(dim, activation, init_weight=init_weight, init_bias=init_bias)), 1:L)...))
+				      PostProcessing(dim, activation, init_weight=init_weight, init_bias=init_bias)), 1:L))...)
 
     model
 end
