@@ -4,7 +4,7 @@ const DEFAULT_NRUNS = 1000
 loss_gradient(nn::LuxNeuralNetwork{<:AbstractArchitecture}, ti::AbstractTrainingIntegrator, data::AbstractTrainingData, index_batch, params = nn.params) = Zygote.gradient(p -> loss(ti, nn, data, index_batch, p), params)[1]
 
 ####################################################################################
-## Training on (LuxNeuralNetwork, AbstractTrainingData, AbstractMethodOptimiser, TrainingIntegrator, nruns, batch_size )
+## Training on (LuxNeuralNetwork, AbstractTrainingData, OptimizerMethod, TrainingIntegrator, nruns, batch_size )
 ####################################################################################
 
 """
@@ -25,20 +25,8 @@ Different ways of use:
 - `batch_size` : size of batch of data used for each step
 
 """
-function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, data_in::AbstractTrainingData, m::AbstractMethodOptimiser, ti::TrainingIntegrator{<:AbstractTrainingIntegrator} = default_integrator(nn, data); ntraining = DEFAULT_NRUNS, batch_size = missing, showprogress::Bool = false)
+function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, data_in::AbstractTrainingData, m::OptimizerMethod, ti::TrainingIntegrator{<:AbstractTrainingIntegrator} = default_integrator(nn, data); ntraining = DEFAULT_NRUNS, batch_size = missing, showprogress::Bool = false)
 
-    # copy of data in the event of modification
-    data = copy(data_in)
-
-    # verify that dimension of data and input of nn match
-    @assert dim(nn) == dim(data)
-
-    # create an appropriate batch size by filling in missing values with default values
-    bs = complete_batch_size(data, ti, batch_size)
-
-#train function
-function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, m::AbstractMethodOptimiser, data::AbstractTrainingData; ntraining = DEFAULT_NRUNS, ti::TrainingIntegrator{<:AbstractTrainingIntegrator} = default_integrator(nn, data), batch_size_t = default_index_batch(data,type(ti)), showprogress::Bool = false)
-    
     # copy of data in the event of modification
     data = copy(data_in)
 
@@ -133,11 +121,13 @@ end
 ## Training on a NeuralNetSolution with AbstractTrainingData and TrainingParameters
 ####################################################################################
 
+
 function train!(nns::NeuralNetSolution, data::AbstractTrainingData, tp::TrainingParameters; kwarsg...)
 
-function pretransform(::TuppleNeededTrainingIntegrator, params::NamedTuple)
-
-train!(ts::TrainingSet...; kwarsg...) = train!(EnsembleTraining(ts...); kwarsg...)
+    @assert tstep(data) == tstep(nns) || tstep(nns) == nothing || tstep(data) == nothing
+    @assert problem(data) == problem(nns) || problem(nns) == nothing || problem(data) == nothing
+    
+    total_loss = train!(nn(nns), data, opt(tp), method(tp); ntraining = nruns(tp), batch_size = batchsize(tp))
 
     sh = SingleHistory(tp, shape(data), size(data), total_loss)
 
@@ -151,6 +141,3 @@ function train!(nns::NeuralNetSolution, ts::TrainingSet; kwarsg...)
     train!(nns::NeuralNetSolution, data(ts), parameters(ts); kwarsg...)
 
 end
-
-
-
