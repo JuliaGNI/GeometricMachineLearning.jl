@@ -6,6 +6,7 @@ using Test
 using GeometricProblems.HarmonicOscillator
 using GeometricProblems.HarmonicOscillator: harmonic_oscillator_hode_ensemble, exact_solution, exact_solution_q, exact_solution_p
 
+include("plots.jl")
 
 #create the object ensemble_solution
 ensemble_problem = harmonic_oscillator_hode_ensemble()
@@ -20,7 +21,7 @@ end
 #create the data associated
 training_data = TrainingData(ensemble_solution)
 
-@test GeometricMachineLearning.problem(training_data)               == ensemble_problem
+@test GeometricMachineLearning.problem(training_data)   == ensemble_problem
 @test typeof(shape(training_data))         == TrajectoryData
 @test type(data_symbols(training_data))    == PhaseSpaceSymbol
 @test symbols(training_data)               == (:q,:p)
@@ -49,15 +50,18 @@ neural_net_solution = train!(training_set; showprogress = true)
 
 q = []
 p = []
-qp = [0.0, 0.0]
+qp = [0.2, 0.4]
 for i in 1:1000
     global qp
     qp = neural_net_solution.nn(qp)
     push!(q,qp[1])
     push!(p,qp[2])
 end
-using Plots
-plot(q,p)
+
+prediction = (q=q, p=p)
+
+plots(training_data, prediction)
+
 
 #integrate
 #prediction = integrate(neural_net_solution)
