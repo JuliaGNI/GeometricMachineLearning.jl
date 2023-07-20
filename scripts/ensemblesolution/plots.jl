@@ -1,7 +1,7 @@
 using Plots
 using LaTeXStrings
 
-function plots(data::TrainingData, prediction::NamedTuple{<:AbstractArray}, batch_nb_trajectory::Int = get_nb_trajectory(data))
+function plots(data::TrainingData, prediction::NamedTuple, batch_nb_trajectory::Int = get_nb_trajectory(data))
 
     plt = plot([get_data(data,:q, 1,n) for n in 1:get_length_trajectory(data,1)], [get_data(data,:p, 1,n) for n in 1:get_length_trajectory(data,1)], label="Training data.",linewidth = 3,mk=*)
 

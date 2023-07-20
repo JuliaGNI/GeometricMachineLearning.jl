@@ -60,7 +60,7 @@ end
 
 prediction = (q=q, p=p)
 
-plots(training_data, prediction)
+plots(training_data, prediction, 4)
 
 
 #integrate
