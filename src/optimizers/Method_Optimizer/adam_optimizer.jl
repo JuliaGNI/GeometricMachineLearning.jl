@@ -20,10 +20,10 @@ function update!(o::AdamOptimizer, C::AdamCache, B::AbstractVecOrMat)
 end
 
 #fallbacks: 
-⊙²(A::AbstractMatrix) = A.^2
-√ᵉˡᵉ(A::AbstractMatrix) = sqrt.(A)
-/ᵉˡᵉ(A::AbstractMatrix, B::AbstractMatrix) = A./B
-scalar_add(A::AbstractMatrix, δ::Real) = A .+ δ
+⊙²(A::AbstractVecOrMat) = A.^2
+√ᵉˡᵉ(A::AbstractVecOrMat) = sqrt.(A)
+/ᵉˡᵉ(A::AbstractVecOrMat, B::AbstractVecOrMat) = A./B
+scalar_add(A::AbstractVecOrMat, δ::Real) = A .+ δ
 
 init_optimizer_cache(dev::Device, d::Lux.AbstractExplicitLayer, ::AdamOptimizer) = setup_adam_cache(dev, d)
 init_optimizer_cache(d::Lux.AbstractExplicitLayer, opt::AdamOptimizer) = init_optimizer_cache(CPUDevice(), d, opt)
