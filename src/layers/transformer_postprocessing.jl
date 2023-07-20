@@ -23,9 +23,9 @@ end
 Lux.statelength(d::ResNet) = 0
 
 function Lux.apply(d::PostProcessing, x::AbstractVecOrMat, ps::NamedTuple, st::NamedTuple)
-    return x + ps.weight2*d.activation(ps.weight1*x + ps.bias1) + ps.bias2, st
+    return x + ps.weight2*d.activation.(ps.weight1*x + ps.bias1) + ps.bias2, st
 end
 
 function Lux.apply(d::PostProcessing, x::AbstractArray{T, 3}, ps::NamedTuple, st::NamedTuple) where T 
-	return x + mat_tensor_mul(ps.weight2, d.activation(mat_tensor_mul(ps.weight1, x) .+ ps.bias1)) .+ ps.bias2, st
+	return x + mat_tensor_mul(ps.weight2, d.activation.(mat_tensor_mul(ps.weight1, x) .+ ps.bias1)) .+ ps.bias2, st
 end
