@@ -19,9 +19,9 @@ function update!(o::AdamOptimizer, C::AdamCache, B::AbstractVecOrMat)
 end
 
 #fallbacks: 
-⊙²(A::AbstractMatrix) = A.^2
-racᵉˡᵉ(A::AbstractMatrix) = sqrt.(A)
-/ᵉˡᵉ(A::AbstractMatrix, B::AbstractMatrix) = A./B
-scalar_add(A::AbstractMatrix, δ::Real) = A .+ δ
+⊙²(A::AbstractVecOrMat) = A.^2
+racᵉˡᵉ(A::AbstractVecOrMat) = sqrt.(A)
+/ᵉˡᵉ(A::AbstractVecOrMat, B::AbstractVecOrMat) = A./B
+scalar_add(A::AbstractVecOrMat, δ::Real) = A .+ δ
 
 init_optimizer_cache(opt::AdamOptimizer, x) = setup_adam_cache(x)
