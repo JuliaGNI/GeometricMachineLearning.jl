@@ -19,11 +19,11 @@ function exact_solution(prob::Union{PODEProblem,HODEProblem})
 end
 
 
-A(t, q, p, params) = sqrt(q^2 + p^2 / params.k) * sgn(-p)
-ϕ(t, q, p, params) = acos(q / A(t, q, p, params))
+A(t, q, p, params) = sqrt(q^2 + p^2 / params.k)
+ϕ(t, q, p, params) = atan(p/q/params.ω)#acos(q / A(t, q, p, params))
 
-exact_solution_q(t, q, p, params) = A(t, q, p, params) * cos(params.ω * t + ϕ(t, q, p, params))
-exact_solution_p(t, q, p, params) = - params.ω * A(t, q, p, params) * sin(params.ω * t + ϕ(t, q, p, params))
+exact_solution_q(t, q, p, params) = A(t, q, p, params) * cos(params.ω * t - ϕ(t, q, p, params))
+exact_solution_p(t, q, p, params) = - params.ω * A(t, q, p, params) * sin(params.ω * t - ϕ(t, q, p, params))
 
 exact_solution_q(t, q::AbstractVector, p::AbstractVector, params) = exact_solution_q(t, q[1], p[1], params)
 exact_solution_p(t, q::AbstractVector, p::AbstractVector, params) = exact_solution_p(t, q[1], p[1], params)
