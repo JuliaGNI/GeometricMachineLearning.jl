@@ -43,7 +43,7 @@ function Chain(nn::GSympNet)
     inner_layers = Tuple(
         [Gradient(nn.dim, nn.width, nn.act, change_q = nn.init_uplow[Int64((i-1)%length(nn.init_uplow)+1)], init_weight=nn.init_weight, init_bias=nn.init_bias, init_scale=nn.init_scale) for i in 1:nn.nhidden]
     )
-    Lux.Chain(
+    Chain(
         inner_layers...
     )
 end

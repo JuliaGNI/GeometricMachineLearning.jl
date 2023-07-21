@@ -27,7 +27,7 @@ struct GlobalSection{T, AT}
 end
 
 function GlobalSection(ps::NamedTuple)
-    apply_toNT(ps, GlobalSection)
+    apply_toNT(GlobalSection, ps)
 end
 
 #this is an application G×𝔐 → 𝔐
@@ -73,15 +73,15 @@ function apply_section!(Y::AT, λY::GlobalSection{T, AT}, Y₂::AbstractVecOrMat
 end
 
 function apply_section(λY::NamedTuple, Y₂::NamedTuple)
-    apply_toNT(λY, Y₂, apply_section)
+    apply_toNT(apply_section, λY, Y₂)
 end
 
 function apply_section!(Y::NamedTuple, λY::NamedTuple, Y₂::NamedTuple)
-    apply_toNT(Y, λY, Y₂, apply_section!)
+    apply_toNT(apply_section!, Y, λY, Y₂)
 end
 
 function global_rep(λY::NamedTuple, gx::NamedTuple)
-    apply_toNT(λY, gx, global_rep)
+    apply_toNT(global_rep, λY, gx)
 end
 
 ##auxiliary function 

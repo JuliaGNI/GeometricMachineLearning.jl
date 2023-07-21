@@ -1,6 +1,6 @@
 # This file contains the functions to create the corresponding problem to hnn which is HODEProblem
 
-function HNNProblem(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, tspan, tstep, ics::NamedTuple; kwargs...)
+function HNNProblem(nn::NeuralNetwork{<:HamiltonianNeuralNetwork}, tspan, tstep, ics::NamedTuple; kwargs...)
 
     Hₛₚₗᵢₜ(q, p) = nn([q..., p...])
 
@@ -20,7 +20,7 @@ function HNNProblem(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, tspan, tst
     HODEProblem(v, f, hamiltonian, tspan, tstep, ics; kwargs...)
 end
 
-function HNNProblem(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, tspan, tstep, q₀::State, p₀::State; kwargs...)
+function HNNProblem(nn::NeuralNetwork{<:HamiltonianNeuralNetwork}, tspan, tstep, q₀::State, p₀::State; kwargs...)
     ics = (q = q₀, p = p₀)
     HNNProblem(nn, tspan, tstep, ics; kwargs...)
 end

@@ -56,7 +56,7 @@ function train!(nn::NeuralNetwork{<:Architecture}, data_in::AbstractTrainingData
     for j in 1:ntraining
         index_batch = get_batch(data, bs; check = false)
 
-        params_grad = loss_gradient(nn, ti, data, index_batch,  nn.params) 
+        params_grad = nn.params #loss_gradient(nn, ti, data, index_batch,  nn.params) 
 
         #dp = posttransform(type(ti)(), params_grad, keys)
 

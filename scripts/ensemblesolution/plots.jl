@@ -102,7 +102,7 @@ function plot_prediction(data::TrainingData{<:DataSymbol{<:PhaseSpaceSymbol}}, n
             push!(p,qp[2])
         end
         plot!(q,p, label="Prediction "*string(i), linewidth = 3, )
-        quiver!(q[arrow_indices], p[arrow_indices], quiver=(0.2, 0.2, :auto))
+        #quiver!(q[arrow_indices], p[arrow_indices], quiver=(0.2, 0.2, :auto))
     end
 
 

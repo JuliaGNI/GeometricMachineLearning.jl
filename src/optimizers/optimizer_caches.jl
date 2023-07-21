@@ -21,15 +21,21 @@ mutable struct MomentumCache{T, AT <: AbstractArray{T}} <:AbstractCache
 end
 
 struct GradientCache <: AbstractCache end
-GradientCache(::AbstractMatrix) = GradientCache()
+GradientCache(::AbstractArray) = GradientCache()
 
 #############################################################################
 # All the setup_cache functions 
 
-setup_adam_cache(dx::NamedTuple) = apply_toNT(dx, setup_adam_cache)
-setup_momentum_cache(dx::NamedTuple) = apply_toNT(dx, setup_momentum_cache)
-setup_gradient_cache(dx::NamedTuple) = apply_toNT(dx, setup_gradient_cache)
+setup_adam_cache(dx::NamedTuple) = apply_toNT(setup_adam_cache, dx)
+setup_momentum_cache(dx::NamedTuple) = apply_toNT(setup_momentum_cache, dx)
+setup_gradient_cache(dx::NamedTuple) = apply_toNT(setup_gradient_cache, dx)
 
-setup_adam_cache(B::AbstractMatrix) = AdamCache(B)
-setup_momentum_cache(B::AbstractMatrix) = MomentumCache(B)
-setup_gradient_cache(B::AbstractMatrix) = GradientCache(B)
+setup_adam_cache(dx::Tuple) = Tuple([setup_adam_cache(x) for x in dx])
+setup_momentum_cache(dx::Tuple) = Tuple([setup_momentum_cache(x) for x in dx])
+setup_gradient_cache(dx::Tuple) = Tuple([setup_gradient_cache(x) for x in dx])
+
+setup_adam_cache(B::AbstractArray) = AdamCache(B)
+setup_momentum_cache(B::AbstractArray) = MomentumCache(B)
+setup_gradient_cache(B::AbstractArray) = GradientCache(B)
+
+

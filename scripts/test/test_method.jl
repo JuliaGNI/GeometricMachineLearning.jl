@@ -5,7 +5,7 @@ include("macro_testerror.jl")
 include("data_generation.jl")
 
 hnn = NeuralNetwork(HamiltonianNeuralNetwork(2), Float64)
-#sympnet = NeuralNetwork(GSympNet(2), Float64)
+sympnet = NeuralNetwork(GSympNet(2), Float64)
 lnn = NeuralNetwork(LagrangianNeuralNetwork(2), Float64)
 
 #########################################
@@ -36,8 +36,8 @@ msympnet = BasicSympNet()
 @test symbols(msympnet) == PhaseSpaceSymbol
 @test shape(msympnet)   == TrajectoryData
 @test min_length_batch(msympnet) == 2
-#@test typeof(loss(msympnet, sympnet, tra_ps_data)) <: Real
-#@test loss(msympnet, sympnet, tra_ps_data) > 0
+@test typeof(loss(msympnet, sympnet, tra_ps_data)) <: Real
+@test loss(msympnet, sympnet, tra_ps_data) > 0
 
 exactlnn = ExactLnn()
 
@@ -65,6 +65,6 @@ midpointlnn = VariaMidPoint()
 @testerror type(default_integrator(sympnet, tra_pos_data))
 @test type(default_integrator(hnn, tra_ps_data)) == SymplecticEulerA
 @test type(default_integrator(hnn, sam_dps_data)) == HnnExactIntegrator
-#@test type(default_integrator(sympnet, tra_ps_data)) == BasicSympNetIntegrator
+@test type(default_integrator(sympnet, tra_ps_data)) == BasicSympNetIntegrator
 @test type(default_integrator(lnn, tra_pos_data)) == VariationalMidPointIntegrator
 @test type(default_integrator(lnn, sam_accposvel_data)) == LnnExactIntegrator

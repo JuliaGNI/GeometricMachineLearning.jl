@@ -18,7 +18,7 @@ tspan = (t₀, t₁)
 # Test for HNNProblem
 #########################################
 
-hnn = NeuralNetwork(HamiltonianNeuralNetwork(2))
+hnn = NeuralNetwork(HamiltonianNeuralNetwork(2), Float64)
 ics = (q = q₀, p = p₀)
 
 prob_hnn = HNNProblem(hnn, tspan, Δt, ics)
@@ -35,7 +35,7 @@ prob_hnn2 = HNNProblem(hnn, tspan, Δt, q₀, p₀)
 # Test for LNNProblem
 #########################################
 
-lnn = NeuralNetwork(LagrangianNeuralNetwork(2))
+lnn = NeuralNetwork(LagrangianNeuralNetwork(2), Float64)
 ics = (q = q₀, p = p₀, λ = λ₀)
 
 prob_lnn = LNNProblem(lnn, tspan, Δt, ics)
@@ -53,7 +53,7 @@ prob_lnn2 = LNNProblem(lnn, tspan, Δt, q₀, p₀, λ₀)
 #########################################
 
 training_data = TrainingData(Data_traps , get_Data_traps, prob_hnn)
-neuralnet = NeuralNetwork(GSympNet(2))
+neuralnet = NeuralNetwork(GSympNet(2), Float64)
 mopt = GradientOptimizer()
 method = BasicSympNet()
 nruns = 0
