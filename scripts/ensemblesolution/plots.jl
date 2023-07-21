@@ -71,7 +71,7 @@ end
 function plot_prediction(data::TrainingData{<:DataSymbol{<:PhaseSpaceSymbol}}, nns::NeuralNetSolution, initial_cond::AbstractArray; scale = 1)
 
     plt = plot(size=(1000,800), titlefontsize=15, legendfontsize=10, guidefontsize=14)
-
+    arrow_indices = [10, 20, 30, 40, 50, 60, 70, 80, 90]
     i=0
     for qp0 in initial_cond
         i+=1
@@ -86,6 +86,7 @@ function plot_prediction(data::TrainingData{<:DataSymbol{<:PhaseSpaceSymbol}}, n
             push!(p,qp[2])
         end
         plot!(q,p, label="Prediction "*string(i), linewidth = 3, )
+        quiver!(q[arrow_indices], p[arrow_indices], quiver=(0.2, 0.2, :auto))
     end
 
     xlabel!(L"q")

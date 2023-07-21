@@ -4,7 +4,34 @@ using GeometricEquations
 using Test
 
 using GeometricProblems.HarmonicOscillator
-using GeometricProblems.HarmonicOscillator: harmonic_oscillator_hode_ensemble, exact_solution, exact_solution_q, exact_solution_p
+using GeometricProblems.HarmonicOscillator: harmonic_oscillator_hode_ensemble# exact_solution, exact_solution_q, exact_solution_p
+
+
+sgn(x) = x>=0 ? 1 : -1
+
+function exact_solution(prob::Union{PODEProblem,HODEProblem})
+    sol = GeometricSolution(prob)
+    for n in eachtimestep(sol)
+        sol.q[n] = [exact_solution_q(sol.t[n], sol.q[0], sol.p[0], GeometricEquations.parameters(prob))]
+        sol.p[n] = [exact_solution_p(sol.t[n], sol.q[0], sol.p[0], GeometricEquations.parameters(prob))]
+    end
+    return sol
+end
+
+
+A(t, q, p, params) = sqrt(q^2 + p^2 / params.k) * sgn(-p)
+ϕ(t, q, p, params) = acos(q / A(t, q, p, params))
+
+exact_solution_q(t, q, p, params) = A(t, q, p, params) * cos(params.ω * t + ϕ(t, q, p, params))
+exact_solution_p(t, q, p, params) = - params.ω * A(t, q, p, params) * sin(params.ω * t + ϕ(t, q, p, params))
+
+exact_solution_q(t, q::AbstractVector, p::AbstractVector, params) = exact_solution_q(t, q[1], p[1], params)
+exact_solution_p(t, q::AbstractVector, p::AbstractVector, params) = exact_solution_p(t, q[1], p[1], params)
+
+exact_solution_q(t, x::AbstractVector, params) = exact_solution_q(t, x[1], x[2], params)
+exact_solution_p(t, x::AbstractVector, params) = exact_solution_p(t, x[1], x[2], params)
+exact_solution(t, x::AbstractVector, params) = [exact_solution_q(t, x, params), exact_solution_p(t, x, params)]
+
 
 include("plots.jl")
 
@@ -36,10 +63,10 @@ training_data = TrainingData(ensemble_solution)
 @test Tuple(keys(GeometricMachineLearning.get_data(training_data))) ==(:p, :q)
 
 #creating a training sets
-sympnet = NeuralNetwork(GSympNet(dim(training_data); nhidden = 4))
-nruns = 1000
+sympnet = NeuralNetwork(GSympNet(dim(training_data); nhidden = 4, width = 10))
+nruns = 10000
 method = BasicSympNet()
-mopt = MomentumOptimizer()
+mopt = AdamOptimizer()
 training_parameters = TrainingParameters(nruns, method, mopt)
 
 training_set = TrainingSet(sympnet, training_parameters, training_data)
@@ -48,13 +75,10 @@ training_set = TrainingSet(sympnet, training_parameters, training_data)
 neural_net_solution = train!(training_set; showprogress = true)
 
 
-plot_result(training_data, neural_net_solution; batch_nb_trajectory = 10)
+plot_result(training_data, neural_net_solution; batch_nb_trajectory = 10, filename = "GSympNet 4-10 on Harmonic Oscillator")
 
 #integrate
 #prediction = integrate(neural_net_solution)
-
-
-
 
 
 
