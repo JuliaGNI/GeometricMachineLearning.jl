@@ -1,6 +1,7 @@
 using GeometricMachineLearning
 using GeometricSolutions
 using GeometricEquations
+using GeometricEquations
 using Test
 
 using GeometricProblems.HarmonicOscillator
@@ -32,6 +33,22 @@ exact_solution_q(t, x::AbstractVector, params) = exact_solution_q(t, x[1], x[2],
 exact_solution_p(t, x::AbstractVector, params) = exact_solution_p(t, x[1], x[2], params)
 exact_solution(t, x::AbstractVector, params) = [exact_solution_q(t, x, params), exact_solution_p(t, x, params)]
 
+A(t, q, p, params) = sqrt(q^2 + p^2 / params.k) * sgn(-p)
+ϕ(t, q, p, params) = acos(q / A(t, q, p, params))
+
+exact_solution_q(t, q, p, params) = A(t, q, p, params) * cos(params.ω * t + ϕ(t, q, p, params))
+exact_solution_p(t, q, p, params) = - params.ω * A(t, q, p, params) * sin(params.ω * t + ϕ(t, q, p, params))
+
+exact_solution_q(t, q::AbstractVector, p::AbstractVector, params) = exact_solution_q(t, q[1], p[1], params)
+exact_solution_p(t, q::AbstractVector, p::AbstractVector, params) = exact_solution_p(t, q[1], p[1], params)
+
+exact_solution_q(t, x::AbstractVector, params) = exact_solution_q(t, x[1], x[2], params)
+exact_solution_p(t, x::AbstractVector, params) = exact_solution_p(t, x[1], x[2], params)
+exact_solution(t, x::AbstractVector, params) = [exact_solution_q(t, x, params), exact_solution_p(t, x, params)]
+
+#create the object ensemble_solution
+ensemble_problem = harmonic_oscillator_hode_ensemble()
+ensemble_solution =  EnsembleSolution(ensemble_problem)
 
 include("plots.jl")
 
@@ -79,15 +96,6 @@ plot_result(training_data, neural_net_solution; batch_nb_trajectory = 10, filena
 
 #integrate
 #prediction = integrate(neural_net_solution)
-
-
-
-
-
-
-
-
-
 
 
 

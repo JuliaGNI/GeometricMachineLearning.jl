@@ -43,6 +43,8 @@ function TrainingData(es::EnsembleSolution)
         :nb_trajectory => Data -> length(Data),
         :length_trajectory => (Data,i) -> ntime(es),
         :Δt => Data -> tstep(es),
+        :length_trajectory => (Data,i) -> ntime(es),
+        :Δt => Data -> tstep(es),
     )
     for s in keys(es.problem.ics[1])
         get_data[s] = (es, i, n) -> solution(es,i)[n-1][s]

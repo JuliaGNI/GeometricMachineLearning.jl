@@ -1,10 +1,10 @@
 const DEFAULT_NRUNS = 1000
 
 # The loss gradient function working for all types of arguments
-loss_gradient(nn::LuxNeuralNetwork{<:AbstractArchitecture}, ti::AbstractTrainingIntegrator, data::AbstractTrainingData, index_batch, params = nn.params) = Zygote.gradient(p -> loss(ti, nn, data, index_batch, p), params)[1]
+loss_gradient(nn::LuxNeuralNetwork{<:Architecture}, ti::AbstractTrainingIntegrator, data::AbstractTrainingData, index_batch, params = nn.params) = Zygote.gradient(p -> loss(ti, nn, data, index_batch, p), params)[1]
 
 ####################################################################################
-## Training on (LuxNeuralNetwork, AbstractTrainingData, AbstractMethodOptimiser, TrainingIntegrator, nruns, batch_size )
+## Training on (LuxNeuralNetwork, AbstractTrainingData, OptimizerMethod, TrainingIntegrator, nruns, batch_size )
 ####################################################################################
 
 """
@@ -24,10 +24,9 @@ Different ways of use:
 - `nruns` : number of iteration through the process with default value 
 - `batch_size` : size of batch of data used for each step
 
-
 """
-function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, data_in::AbstractTrainingData, m::AbstractMethodOptimiser, ti::TrainingIntegrator{<:AbstractTrainingIntegrator} = default_integrator(nn, data); ntraining = DEFAULT_NRUNS, batch_size = missing, showprogress::Bool = false)
-    
+function train!(nn::LuxNeuralNetwork{<:Architecture}, data_in::AbstractTrainingData, m::OptimizerMethod, ti::TrainingIntegrator{<:AbstractTrainingIntegrator} = default_integrator(nn, data); ntraining = DEFAULT_NRUNS, batch_size = missing, showprogress::Bool = false)
+
     # copy of data in the event of modification
     data = copy(data_in)
 
@@ -86,7 +85,7 @@ train!(neuralnetwork, data, optimizer, training_method; nruns = 1000, batch_size
 - ``
 
 """
-function train!(nn::LuxNeuralNetwork{<:AbstractArchitecture}, data::AbstractTrainingData, tp::TrainingParameters; showprogress::Bool = false)
+function train!(nn::LuxNeuralNetwork{<:Architecture}, data::AbstractTrainingData, tp::TrainingParameters; showprogress::Bool = false)
 
     bs = complete_batch_size(data, method(tp), batchsize(tp))
 
@@ -122,6 +121,7 @@ end
 ## Training on a NeuralNetSolution with AbstractTrainingData and TrainingParameters
 ####################################################################################
 
+
 function train!(nns::NeuralNetSolution, data::AbstractTrainingData, tp::TrainingParameters; kwarsg...)
 
     @assert tstep(data) == tstep(nns) || tstep(nns) == nothing || tstep(data) == nothing
@@ -141,6 +141,3 @@ function train!(nns::NeuralNetSolution, ts::TrainingSet; kwarsg...)
     train!(nns::NeuralNetSolution, data(ts), parameters(ts); kwarsg...)
 
 end
-
-
-

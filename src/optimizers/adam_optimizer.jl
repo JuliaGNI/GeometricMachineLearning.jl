@@ -3,14 +3,13 @@ Define the Adam Optimizer (no riemannian version yet!)
 Algorithm and suggested defaults are taken from (Goodfellow et al., 2016, page 301).
 """
 
-mutable struct AdamOptimizer{T<:Real} <: AbstractMethodOptimiser
+struct AdamOptimizer{T<:Real} <: OptimizerMethod
     η::T
     ρ₁::T
     ρ₂::T
     δ::T
-    t::Int
 
-    AdamOptimizer(η = Float32(1e-3), ρ₁ = Float32(0.9), ρ₂ = Float32(0.99), δ = Float32(1e-8)) = new{typeof(η)}(η, ρ₁, ρ₂, δ, 0)
+    AdamOptimizer(η = Float32(1e-3), ρ₁ = Float32(0.9), ρ₂ = Float32(0.99), δ = Float32(1e-8)) = new{typeof(η)}(η, ρ₁, ρ₂, δ)
 end
 
 function update!(o::AdamOptimizer, C::AdamCache, B::AbstractVecOrMat)
@@ -25,5 +24,4 @@ racᵉˡᵉ(A::AbstractMatrix) = sqrt.(A)
 /ᵉˡᵉ(A::AbstractMatrix, B::AbstractMatrix) = A./B
 scalar_add(A::AbstractMatrix, δ::Real) = A .+ δ
 
-init_optimizer_cache(dev::Device, d::Lux.AbstractExplicitLayer, ::AdamOptimizer) = setup_adam_cache(dev, d)
-init_optimizer_cache(d::Lux.AbstractExplicitLayer, opt::AdamOptimizer) = init_optimizer_cache(CPUDevice(), d, opt)
+init_optimizer_cache(opt::AdamOptimizer, x) = setup_adam_cache(x)

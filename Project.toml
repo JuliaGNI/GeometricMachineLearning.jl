@@ -4,13 +4,12 @@ authors = ["Michael Kraus <michael.kraus@ipp.mpg.de>"]
 version = "0.1.0"
 
 [deps]
+AbstractNeuralNetworks = "60874f82-5ada-4c70-bd1c-fa6be7711c8a"
 BandedMatrices = "aae01518-5342-5314-be14-df237901396f"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 ChainRules = "082447d4-558c-5d27-93f4-14fc19e9eca2"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-ChainRulesTestUtils = "cdddcdb0-9152-4a09-a978-84456f9df70a"
 Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
-Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 GPUArrays = "0c68f7d7-f131-5f86-a1c3-88cf8149b2d7"
 HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
@@ -32,20 +31,19 @@ GeometricIntegrators = "dcce2d33-59f6-5b8d-9047-0defad88ae06"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 
 [compat]
+AbstractNeuralNetworks = "0.1"
 BandedMatrices = "0.17"
 CUDA = "4"
 ChainRules = "1"
 ChainRulesCore = "1"
-ChainRulesTestUtils = "1"
 Distances = "0.10"
-Flux = "0.13"
 ForwardDiff = "0.10"
 GPUArrays = "8"
 HDF5 = "0.16"
 KernelAbstractions = "0.9"
-Lux = "0.4"
+Lux = "0.4, 0.5"
 NLsolve = "4"
-NNlib = "0.8"
+NNlib = "0.8, 0.9"
 Optimisers = "0.2"
 ProgressMeter = "1"
 StatsBase = "0.33, 0.34"
@@ -54,6 +52,7 @@ julia = "1.8"
 
 
 [extras]
+ChainRulesTestUtils = "cdddcdb0-9152-4a09-a978-84456f9df70a"
 Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
@@ -66,5 +65,5 @@ RungeKutta = "fb486d5c-30a0-4a8a-8415-a8b4ace5a6f7"
 
 
 [targets]
-test = ["Lux", "Random", "SafeTestsets", "Test"]
+test = ["ChainRulesTestUtils", "Lux", "Random", "SafeTestsets", "Test"]
 

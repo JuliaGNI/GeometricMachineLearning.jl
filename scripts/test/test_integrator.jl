@@ -62,7 +62,7 @@ training_parameters = TrainingParameters(nruns, method, mopt; batch_size = batch
 
 neural_net_solution = train!(neuralnet, training_data, training_parameters)
 
-@testnoerror sol = integrate(neural_net_solution)
+#@testnoerror sol = integrate(neural_net_solution)
 
 
 

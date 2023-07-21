@@ -55,7 +55,7 @@ end
 end
 
 #TODO: implement cayley retraction your self and also the derivative (parallel transport)
-function update_layer!(l::SymplecticStiefelLayer, x::NamedTuple, dx::NamedTuple,
+function update!(l::SymplecticStiefelLayer, x::NamedTuple, dx::NamedTuple,
                        η::AbstractFloat)
     Manifolds.retract_cayley!(l.manifold, x.weight, copy(x.weight), dx.weight, η)
 end

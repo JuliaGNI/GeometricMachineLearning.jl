@@ -1,15 +1,13 @@
 module GeometricMachineLearning
 
-    using GeometricBase
-    using GeometricEquations
-    using GeometricIntegrators
-    import GeometricIntegrators.Integrators: method
-    
-
+    using AbstractNeuralNetworks
     using BandedMatrices
     using ChainRulesCore
     using Distances
     using ForwardDiff
+    using GeometricBase
+    using GeometricEquations
+    using GeometricIntegrators
     using GPUArrays
     using KernelAbstractions
     using LinearAlgebra
@@ -23,6 +21,18 @@ module GeometricMachineLearning
 
     import Lux, CUDA
 
+    import AbstractNeuralNetworks: Architecture, Chain, NeuralNetwork
+    import AbstractNeuralNetworks: Dense, Linear
+    import AbstractNeuralNetworks: IdentityActivation, ZeroVector
+    import AbstractNeuralNetworks: add!, update!
+
+    import GeometricIntegrators.Integrators: method
+
+    export CPU, GPU
+    export Chain, NeuralNetwork
+    export Dense, Linear
+
+    
     include("kernels/tensor_mat_mul.jl")
     include("kernels/tensor_tensor_mul.jl")
     include("kernels/tensor_transpose_tensor_mul.jl")
@@ -39,7 +49,7 @@ module GeometricMachineLearning
     #export tensor_mat_mul
 
     #this defines empty retraction type structs (doesn't rely on anything)
-    include("optimizers/useful_functions/retraction_types.jl")
+    include("optimizers/utils/retraction_types.jl")
 
     export TrivialInitRNG
 
@@ -57,16 +67,8 @@ module GeometricMachineLearning
     #GPU specific operations
     export convert_to_dev, Device, CPUDevice
 
-    #+ operation has been overloaded to work with NamedTuples!
-    export _add
-
-    include("activations/abstract_activation_function.jl")
-    include("activations/identity_activation.jl")
-
 
     #INCLUDE ARRAYS
-    include("arrays/add.jl")
-    include("arrays/zero_vector.jl")
     include("arrays/block_identity_lower.jl")
     include("arrays/block_identity_upper.jl")
     include("arrays/symmetric.jl")
@@ -90,7 +92,6 @@ module GeometricMachineLearning
     export sr, sr!
 
 
-    export AbstractLayer
     export FeedForwardLayer, LinearFeedForwardLayer
     export Gradient
     export Linear
@@ -110,7 +111,7 @@ module GeometricMachineLearning
     include("layers/abstract_layer.jl")
     include("layers/feed_forward_layer.jl")
     include("layers/gradient.jl")
-    include("layers/linear.jl")
+    include("layers/linear_symplectic.jl")
     include("layers/resnet.jl")
     include("layers/linear_symplectic_layer.jl")
     include("layers/manifold_layer.jl")
@@ -129,7 +130,7 @@ module GeometricMachineLearning
     export AbstractNeuralNetwork
 
     #INCLUDE OPTIMIZERS
-    export AbstractMethodOptimiser, AbstractCache
+    export OptimizerMethod, AbstractCache
     export GradientOptimizer, GradientCache
     export MomentumOptimizer, MomentumCache
     export AdamOptimizer, AdamCache
@@ -139,10 +140,10 @@ module GeometricMachineLearning
     export init_optimizer_cache
 
     include("optimizers/optimizer_caches.jl")
-    include("optimizers/Method_Optimizer/abstract_method_optimizer.jl")
-    include("optimizers/Method_Optimizer/gradient_optimizer.jl")
-    include("optimizers/Method_Optimizer/momentum_optimizer.jl")        
-    include("optimizers/Method_Optimizer/adam_optimizer.jl")
+    include("optimizers/optimizer_method.jl")
+    include("optimizers/gradient_optimizer.jl")
+    include("optimizers/momentum_optimizer.jl")        
+    include("optimizers/adam_optimizer.jl")
     include("optimizers/optimizer.jl")
 
     export GlobalSection, apply_section
@@ -154,9 +155,9 @@ module GeometricMachineLearning
     export update!
     export check
 
-    include("optimizers/useful_functions/global_sections.jl")
-    include("optimizers/useful_functions/auxiliary.jl")
-    include("optimizers/useful_functions/retractions.jl")
+    include("optimizers/utils/global_sections.jl")
+    include("optimizers/utils/auxiliary.jl")
+    include("optimizers/utils/retractions.jl")
 
     #INCLUDE ABSTRACT TRAINING integrator
     export AbstractTrainingIntegrator
@@ -204,17 +205,22 @@ module GeometricMachineLearning
     include("data/batch.jl")
 
     #INCLUDE BACKENDS
-    export AbstractNeuralNetwork
     export LuxBackend
     export NeuralNetwork
     export arch
 
-    include("architectures/architectures.jl")
     include("backends/backends.jl")
     include("backends/lux.jl")
 
-    # set default backend in NeuralNetwork constructor
-    NeuralNetwork(arch::AbstractArchitecture; kwargs...) = NeuralNetwork(arch, LuxBackend(); kwargs...)
+    
+    export Hnn_training_integrator
+    export Lnn_training_integrator
+    export SEuler
+    export ExactIntegrator
+    export ExactIntegratorLNN
+    export VariationalMidPointLNN
+    export SympNetIntegrator
+    export BaseIntegrator
 
     #INCLUDE ARCHITECTURES
     export HamiltonianNeuralNetwork

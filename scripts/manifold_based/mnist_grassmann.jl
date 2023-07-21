@@ -39,7 +39,7 @@ model = Lux.Chain(GrassmannLayer(157, 7, Transpose=true), GrassmannLayer(7, 7))
 ps, st = Lux.setup(Random.default_rng(), model)
 
 optim = AdamOptimizer()
-cache = init_optimizer_cache(model, optim)
+cache = init_optimizer_cache(optim, ps)
 
 #optim.t = 1
 

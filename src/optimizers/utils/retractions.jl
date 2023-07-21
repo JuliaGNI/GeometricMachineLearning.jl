@@ -66,6 +66,7 @@ function geodesic(B::GrassmannLieAlgHorMatrix{T}) where T
 end
 
 cayley(B::NamedTuple) = apply_toNT(B, cayley)
+
 function cayley(B::StiefelLieAlgHorMatrix{T}) where T
     N, n = B.N, B.n
     E = StiefelProjection(N, n, T)

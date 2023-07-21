@@ -56,7 +56,7 @@ function transformer_training(Ψᵉ::Lux.Chain, batch_size=64, training_steps=10
 
     num = length(train_x)
 
-    cache = init_optimizer_cache(Ψᵉ, o) 
+    cache = init_optimizer_cache(o, ps)
 
     loss_array = zeros(training_steps÷err_freq + 1)
     loss_array[1] = full_loss(ps, train_x, train_y)/num
@@ -77,8 +77,8 @@ function transformer_training(Ψᵉ::Lux.Chain, batch_size=64, training_steps=10
             dp = _add(dp, pb(one(l))[1])
         end
 
-        optimizer_instance = Optimizer(CUDA.device(), o, Ψᵉ)
-        optimization_step!(optimizer_instance, Ψᵉ, ps, dp)    
+        optimizer_instance = Optimizer(o, ps)
+        optimization_step!(optimizer_instance, Ψᵉ, ps, dp)
         if i%err_freq == 0
             loss_array[1+i÷err_freq] = full_loss(ps, train_x, train_y)/num
         end

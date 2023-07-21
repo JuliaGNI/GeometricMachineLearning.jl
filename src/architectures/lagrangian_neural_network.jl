@@ -2,7 +2,7 @@
 const DEFAULT_LNN_NRUNS = 1000
 
 
-struct LagrangianNeuralNetwork{AT} <: AbstractArchitecture
+struct LagrangianNeuralNetwork{AT} <: Architecture
     dimin::Int
     width::Int
     nhidden::Int

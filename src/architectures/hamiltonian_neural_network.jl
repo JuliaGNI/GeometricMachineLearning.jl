@@ -1,5 +1,5 @@
 
-struct HamiltonianNeuralNetwork{AT} <: AbstractArchitecture
+struct HamiltonianNeuralNetwork{AT} <: Architecture
     dimin::Int
     width::Int
     nhidden::Int
@@ -12,15 +12,15 @@ end
 
 @inline dim(arch::HamiltonianNeuralNetwork) = arch.dimin
 
-function chain(nn::HamiltonianNeuralNetwork, ::LuxBackend)
+function Chain(nn::HamiltonianNeuralNetwork)
     inner_layers = Tuple(
-        [Lux.Dense(nn.width, nn.width, nn.act) for _ in 1:nn.nhidden]
+        [Dense(nn.width, nn.width, nn.act) for _ in 1:nn.nhidden]
     )
 
-    Lux.Chain(
-        Lux.Dense(nn.dimin, nn.width, nn.act),
+    Chain(
+        Dense(nn.dimin, nn.width, nn.act),
         inner_layers...,
-        Lux.Dense(nn.width, 1; use_bias=false)
+        Linear(nn.width, 1; use_bias = false)
     )
 end
 

@@ -47,7 +47,7 @@ training_steps = 100
 
 
 o = AdamOptimizer()
-cache = init_optimizer_cache(Ψᵉ, o)
+cache = init_optimizer_cache(o, ps)
 
 println("initial loss: ", full_loss(ps, train_x, train_y)/num)
 
