@@ -1,26 +1,26 @@
 #=
     TrainingSet gathers all information ready for a train. It contains
-        - nn : an AbstractNeuralNetwork
+        - nn : an NeuralNetwork
         - tp : a TrainingParameters
         - data : an AbstractTrainingData
 =#
 
-struct TrainingSet{TN <: AbstractNeuralNetwork, TP<:TrainingParameters , TD<: AbstractTrainingData}
+struct TrainingSet{TN <: NeuralNetwork, TP<:TrainingParameters , TD<: AbstractTrainingData}
     nn::TN
     tp::TP
     data::TD
 
-    function TrainingSet(nn::AbstractNeuralNetwork, tp::TrainingParameters, data::AbstractTrainingData)
+    function TrainingSet(nn::NeuralNetwork, tp::TrainingParameters, data::AbstractTrainingData)
         new{typeof(nn), typeof(tp), typeof(data)}(nn,tp,data)
     end
 end
 
-TrainingSet(ts::TrainingSet; nn::AbstractNeuralNetwork = nn(ts), tp::TrainingParameters = parameters(ts), data::AbstractTrainingData = data(ts)) = TrainingSet(nn, tp, data)
+TrainingSet(ts::TrainingSet; nn::NeuralNetwork = nn(ts), tp::TrainingParameters = parameters(ts), data::AbstractTrainingData = data(ts)) = TrainingSet(nn, tp, data)
 
 function TrainingSet(es::EnsembleSolution)
     data = TrainingData(es)
     arch = default_arch(data, dim(data))
-    nn = NeuralNetwork(arch, LuxBackend())
+    nn = NeuralNetwork(arch, Float64)
     tp = TrainingParameters(nn, data)
     TrainingSet(nn, tp, data)
 end

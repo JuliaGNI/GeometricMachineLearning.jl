@@ -15,31 +15,28 @@ end
 
 @inline dim(arch::LagrangianNeuralNetwork) = arch.dimin
 
-function chain(nn::LagrangianNeuralNetwork, ::LuxBackend)
+function Chain(nn::LagrangianNeuralNetwork)
     inner_layers = Tuple(
-        [Lux.Dense(nn.width, nn.width, nn.act) for _ in 1:nn.nhidden]
+        [Dense(nn.width, nn.width, nn.act) for _ in 1:nn.nhidden]
     )
 
-    Lux.Chain(
-        Lux.Dense(nn.dimin, nn.width, nn.act),
+   Chain(
+        Dense(nn.dimin, nn.width, nn.act),
         inner_layers...,
-        Lux.Dense(nn.width, 1; use_bias=false)
+        Linear(nn.width, 1; use_bias = false)
     )
 end
 
 
-# evaluation of the Lagrangian Neural Network
-(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork})(x, params = nn.params) = sum(apply(nn, x, params))
-
 # gradient of the Lagrangian Neural Network
-∇L(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, x, params = nn.params) = Zygote.gradient(x->nn(x, params), x)[1]
+∇L(nn::NeuralNetwork{<:LagrangianNeuralNetwork}, x, params = nn.params) = Zygote.gradient(x->sum(nn(x, params)), x)[1]
 
 # hessian of the Lagrangian Neural Network
-∇∇L(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, q, q̇, params = nn.params) = Zygote.hessian(x->nn(x, params),[q...,q̇...])
+∇∇L(nn::NeuralNetwork{<:LagrangianNeuralNetwork}, q, q̇, params = nn.params) = Zygote.hessian(x->sum(nn(x, params)),[q...,q̇...])
 
-∇q̇∇q̇L(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, q, q̇, params = nn.params) = ∇∇L(nn, q, q̇, params)[(1+length(q̇)):end,(1+length(q̇)):end] 
+∇q̇∇q̇L(nn::NeuralNetwork{<:LagrangianNeuralNetwork}, q, q̇, params = nn.params) = ∇∇L(nn, q, q̇, params)[(1+length(q̇)):end,(1+length(q̇)):end] 
 
-∇q∇q̇L(nn::LuxNeuralNetwork{<:LagrangianNeuralNetwork}, q, q̇, params = nn.params) = ∇∇L(nn, q, q̇, params)[1:length(q),(1+length(q̇)):end] 
+∇q∇q̇L(nn::NeuralNetwork{<:LagrangianNeuralNetwork}, q, q̇, params = nn.params) = ∇∇L(nn, q, q̇, params)[1:length(q),(1+length(q̇)):end] 
 
 
 

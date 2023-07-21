@@ -24,15 +24,11 @@ function Chain(nn::HamiltonianNeuralNetwork)
     )
 end
 
-
-# evaulation of the Hamiltonian Neural Network
-(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork})(x, params = nn.params) = sum(apply(nn, x, params))
-
 # gradient of the Hamiltonian Neural Network
-gradient(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, params = nn.params) = Zygote.gradient(ξ -> nn(ξ, params), x)[1]
+gradient(nn::NeuralNetwork{<:HamiltonianNeuralNetwork}, x, params = nn.params) = Zygote.gradient(ξ -> sum(nn(ξ, params)), x)[1]
 
 # vector field of the Hamiltonian Neural Network
-function vectorfield(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, params = nn.params) 
+function vectorfield(nn::NeuralNetwork{<:HamiltonianNeuralNetwork}, x, params = nn.params) 
     n_dim = length(x)÷2
     I = Diagonal(ones(n_dim))
     Z = zeros(n_dim,n_dim)

@@ -1,7 +1,7 @@
 const DEFAULT_NRUNS = 1000
 
 # The loss gradient function working for all types of arguments
-loss_gradient(nn::LuxNeuralNetwork{<:Architecture}, ti::AbstractTrainingIntegrator, data::AbstractTrainingData, index_batch, params = nn.params) = Zygote.gradient(p -> loss(ti, nn, data, index_batch, p), params)[1]
+loss_gradient(nn::NeuralNetwork{<:Architecture}, ti::AbstractTrainingIntegrator, data::AbstractTrainingData, index_batch, params = nn.params) = Zygote.gradient(p -> loss(ti, nn, data, index_batch, p), params)[1]
 
 ####################################################################################
 ## Training on (LuxNeuralNetwork, AbstractTrainingData, OptimizerMethod, TrainingIntegrator, nruns, batch_size )
@@ -25,7 +25,7 @@ Different ways of use:
 - `batch_size` : size of batch of data used for each step
 
 """
-function train!(nn::LuxNeuralNetwork{<:Architecture}, data_in::AbstractTrainingData, m::OptimizerMethod, ti::TrainingIntegrator{<:AbstractTrainingIntegrator} = default_integrator(nn, data); ntraining = DEFAULT_NRUNS, batch_size = missing, showprogress::Bool = false)
+function train!(nn::NeuralNetwork{<:Architecture}, data_in::AbstractTrainingData, m::OptimizerMethod, ti::TrainingIntegrator{<:AbstractTrainingIntegrator} = default_integrator(nn, data); ntraining = DEFAULT_NRUNS, batch_size = missing, showprogress::Bool = false)
 
     # copy of data in the event of modification
     data = copy(data_in)
@@ -46,21 +46,21 @@ function train!(nn::LuxNeuralNetwork{<:Architecture}, data_in::AbstractTrainingD
     total_loss = zeros(ntraining)
 
     #creation of optimiser
-    opt = Optimizer(m, nn.model)
+    opt = Optimizer(m, nn.params)
 
     # transform parameters (if needed) to match with Zygote
-    params_tuple, keys =  pretransform(type(ti)(), nn.params)
+    #params_tuple, keys =  pretransform(type(ti)(), nn.params)
 
     # Learning runs
     p = Progress(ntraining; enabled = showprogress)
     for j in 1:ntraining
         index_batch = get_batch(data, bs; check = false)
 
-        params_grad = loss_gradient(nn, ti, data, index_batch, params_tuple) 
+        params_grad = loss_gradient(nn, ti, data, index_batch,  nn.params) 
 
-        dp = posttransform(type(ti)(), params_grad, keys)
+        #dp = posttransform(type(ti)(), params_grad, keys)
 
-        optimization_step!(opt, nn.model, nn.params, dp)
+        optimization_step!(opt, nn.model, nn.params, params_grad)
 
         total_loss[j] = loss(ti, nn, data)
 
@@ -85,7 +85,7 @@ train!(neuralnetwork, data, optimizer, training_method; nruns = 1000, batch_size
 - ``
 
 """
-function train!(nn::LuxNeuralNetwork{<:Architecture}, data::AbstractTrainingData, tp::TrainingParameters; showprogress::Bool = false)
+function train!(nn::NeuralNetwork{<:Architecture}, data::AbstractTrainingData, tp::TrainingParameters; showprogress::Bool = false)
 
     bs = complete_batch_size(data, method(tp), batchsize(tp))
 

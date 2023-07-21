@@ -58,7 +58,7 @@ function update!(::Lux.AbstractExplicitLayer, x::NamedTuple, dx::NamedTuple, η:
 end
 
 
-@inline dim(nn::LuxNeuralNetwork) = dim(nn.architecture)
+@inline dim(nn::NeuralNetwork) = dim(nn.architecture)
 
 
 

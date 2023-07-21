@@ -5,7 +5,7 @@ using GeometricEquations
 using Test
 
 using GeometricProblems.HarmonicOscillator
-using GeometricProblems.HarmonicOscillator: harmonic_oscillator_hode_ensemble# exact_solution, exact_solution_q, exact_solution_p
+using GeometricProblems.HarmonicOscillator: harmonic_oscillator_hode_ensemble, hamiltonian# exact_solution, exact_solution_q, exact_solution_p
 
 
 sgn(x) = x>=0 ? 1 : -1
@@ -92,7 +92,7 @@ training_set = TrainingSet(sympnet, training_parameters, training_data)
 neural_net_solution = train!(training_set; showprogress = true)
 
 
-plot_result(training_data, neural_net_solution; batch_nb_trajectory = 10, filename = "GSympNet 4-10 on Harmonic Oscillator")
+plot_result(training_data, neural_net_solution, hamiltonian; batch_nb_trajectory = 10, filename = "GSympNet 4-10 on Harmonic Oscillator")
 
 #integrate
 #prediction = integrate(neural_net_solution)
