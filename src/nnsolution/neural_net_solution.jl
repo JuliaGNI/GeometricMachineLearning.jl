@@ -28,7 +28,8 @@ end
 update_history(nns::NeuralNetSolution, sg::SingleHistory) = _add(nns.history, sg)
 
 @inline nn(nns::NeuralNetSolution) = nns.nn
-@inline problem(nns::NeuralNetSolution) = nns.problem
+@inline problem(nns::NeuralNetSolution{T,<:GeometricProblem} where T) = nns.problem
+@inline problem(nns::NeuralNetSolution{T,<:GeometricEnsemble} where T) = GeometricEquations.problem(nns.problem,1)
 @inline GeometricBase.tstep(nns::NeuralNetSolution) = nns.tstep
 @inline loss(nns::NeuralNetSolution) = nns.loss
 

@@ -45,7 +45,7 @@ function TrainingData(es::EnsembleSolution)
         :Δt => Data -> tstep(es),
     )
     for s in keys(es.problem.ics[1])
-        get_data[s] = (es, i, n) -> solution(es,i)[n][s]
+        get_data[s] = (es, i, n) -> solution(es,i)[n-1][s]
     end
     TrainingData(es, get_data, es.problem)
 end

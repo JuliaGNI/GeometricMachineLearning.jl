@@ -1,24 +1,138 @@
 using Plots
 using LaTeXStrings
+using StatsBase
 
-function plots(data::TrainingData, prediction::NamedTuple, batch_nb_trajectory::Int = get_nb_trajectory(data))
 
-    plt = plot([get_data(data,:q, 1,n) for n in 1:get_length_trajectory(data,1)], [get_data(data,:p, 1,n) for n in 1:get_length_trajectory(data,1)], label="Training data.",linewidth = 3,mk=*)
 
-    for i in 2:min(get_nb_trajectory(data), batch_nb_trajectory)
-        plot!([get_data(data,:q, i, n) for n in 1:get_length_trajectory(data,i)], [get_data(data,:p, i,n) for n in 1:get_length_trajectory(data,i)], label="Training data.",linewidth = 3,mk=*)
+
+function plot_data(data::TrainingData{<:DataSymbol{<:PhaseSpaceSymbol}}, title::String = ""; index::AbstractArray = 1:get_nb_trajectory(data))
+
+    plt = plot(size=(1000,1000), titlefontsize=15, guidefontsize=14)
+
+    for i in index
+        plot!(vcat([get_data(data,:q, i, n) for n in 1:get_length_trajectory(data,i)]...), vcat([get_data(data,:p, i,n) for n in 1:get_length_trajectory(data,i)]...), label="Training data "*string(i),linewidth = 3,mk=*)
     end
 
+    title!(title)
 
-    plot!(plt, prediction[:q], prediction[:p], label="Learned trajectory.", linewidth = 3, guidefontsize=18, tickfontsize=10, size=(1000,800), legendfontsize=15, titlefontsize=15)
-    title!("G-SympNet prediction for the simple pendulum")
     xlabel!(L"q")
+    xlims!((-3.5,3.5))
     ylabel!(L"p")
+    ylims!((-2.5,2.5))
+
     plot!(legend=:outerbottom,legendcolumns=2)
+
+    return plt
+     
+end
+
+
+function plot_verification(data::TrainingData{<:DataSymbol{<:PhaseSpaceSymbol}}, nns::NeuralNetSolution; index::AbstractArray = [1])
+
+    plt = plot(size=(1000,800), titlefontsize=15, legendfontsize=10, guidefontsize=14)
+
+    for i in index
+        plot!(vcat([get_data(data,:q, i, n) for n in 1:get_length_trajectory(data,i)]...), vcat([get_data(data,:p, i,n) for n in 1:get_length_trajectory(data,i)]...), label="Training data "*string(i),linewidth = 3,mk=*)
+        q = []
+        p = []
+        qp = [get_data(data,:q,i,1)..., get_data(data,:p,i,1)...]
+        push!(q,qp[1])
+        push!(p,qp[2])
+        for _ in 2:get_length_trajectory(data,i)
+            qp = nns.nn(qp)
+            push!(q,qp[1])
+            push!(p,qp[2])
+        end
+        scatter!(q,p, label="Learned trajectory "*string(i), mode="markers+lines", ma = 0.8)
+    end
+
+    xlabel!(L"q")
+    xlims!((-3.5,3.5))
+    ylabel!(L"p")
+    ylims!((-2.5,2.5))
+
+    title!("Verifications")
+
+    plot!(legend=:outerbottom,legendcolumns=2)
+
+    return plt
+end
+
+
+function plot_loss()
+
     
-    
+
 end
 
 
 
 
+function plot_prediction(data::TrainingData{<:DataSymbol{<:PhaseSpaceSymbol}}, nns::NeuralNetSolution, initial_cond::AbstractArray; scale = 1)
+
+    plt = plot(size=(1000,800), titlefontsize=15, legendfontsize=10, guidefontsize=14)
+
+    i=0
+    for qp0 in initial_cond
+        i+=1
+        q = []
+        p = []
+        qp = qp0
+        push!(q,qp[1])
+        push!(p,qp[2])
+        for _ in 2:100
+            qp = nns.nn(qp)
+            push!(q,qp[1])
+            push!(p,qp[2])
+        end
+        plot!(q,p, label="Prediction "*string(i), linewidth = 3, )
+    end
+
+    xlabel!(L"q")
+    xlims!((-3.5*scale,3.5*scale))
+    ylabel!(L"p")
+    ylims!((-2.5*scale,2.5*scale))
+
+    title!("Predictions")
+
+    plot!(legend=:outerbottom,legendcolumns=2)
+
+    return plt
+end
+
+function plot_result(data::TrainingData, nns::NeuralNetSolution; batch_nb_trajectory::Int = get_nb_trajectory(data), batch_verif::Int = 3, filename = nothing, nb_prediction = 2)
+
+    plt_data = plot_data(data, "Datas"; index = sort!(sample(1:get_nb_trajectory(data), batch_nb_trajectory, replace = false)))
+
+    plt_verif = plot_verification(data, nns; index = sort!(sample(1:get_nb_trajectory(data), batch_verif, replace = false)))
+
+    initial_conditions = [(q = get_data(data,:q,i,1), p = get_data(data,:p,i,1)) for i in 1:get_nb_trajectory(data)]
+    min_q = min([initial_conditions[i][:q] for i in 1:get_nb_trajectory(data)]...)
+    min_p = min([initial_conditions[i][:p] for i in 1:get_nb_trajectory(data)]...)
+    max_q = max([initial_conditions[i][:q] for i in 1:get_nb_trajectory(data)]...)
+    max_p = max([initial_conditions[i][:p] for i in 1:get_nb_trajectory(data)]...)
+
+    initial_cond = [[linear_trans(rand(), min_q, max_q)..., linear_trans(rand(), min_p, max_p)...] for _ in 1:nb_prediction]
+
+    plt_pred = plot_prediction(data, nns, initial_cond)
+
+    initial_cond_far = [[linear_trans(rand(), 10*min_q, 10*max_q)..., linear_trans(rand(), 10*min_p, 10*max_p)...] for _ in 1:nb_prediction]
+
+    plt_farpred = plot_prediction(data, nns, initial_cond_far; scale = 10)
+
+
+    l = @layout grid(2, 2)
+
+    plt = plot(plt_data, plt_verif, plt_pred, plt_farpred, layout = l)
+
+
+    if filename !== nothing
+        savefig(filename)
+    end
+
+    return plt
+end
+
+
+
+linear_trans(x,a,b) = x * (b-a) + a

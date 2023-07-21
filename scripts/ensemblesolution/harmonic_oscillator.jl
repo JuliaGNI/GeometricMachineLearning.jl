@@ -9,7 +9,7 @@ using GeometricProblems.HarmonicOscillator: harmonic_oscillator_hode_ensemble, e
 include("plots.jl")
 
 #create the object ensemble_solution
-ensemble_problem = harmonic_oscillator_hode_ensemble()
+ensemble_problem = harmonic_oscillator_hode_ensemble(tspan = (0.0,4.0))
 ensemble_solution =  EnsembleSolution(ensemble_problem)
 
 
@@ -30,14 +30,14 @@ training_data = TrainingData(ensemble_solution)
 
 @test get_Δt(training_data)                    == 0.1
 @test get_nb_trajectory(training_data)         == 100
-@test get_length_trajectory(training_data)[1]  == 10
+@test get_length_trajectory(training_data)[1]  == 40
 @test get_nb_point(training_data)              === nothing
 
 @test Tuple(keys(GeometricMachineLearning.get_data(training_data))) ==(:p, :q)
 
 #creating a training sets
-sympnet = NeuralNetwork(GSympNet(dim(training_data); nhidden = 3))
-nruns = 10000
+sympnet = NeuralNetwork(GSympNet(dim(training_data); nhidden = 4))
+nruns = 1000
 method = BasicSympNet()
 mopt = MomentumOptimizer()
 training_parameters = TrainingParameters(nruns, method, mopt)
@@ -48,20 +48,7 @@ training_set = TrainingSet(sympnet, training_parameters, training_data)
 neural_net_solution = train!(training_set; showprogress = true)
 
 
-q = []
-p = []
-qp = [0.2, 0.4]
-for i in 1:1000
-    global qp
-    qp = neural_net_solution.nn(qp)
-    push!(q,qp[1])
-    push!(p,qp[2])
-end
-
-prediction = (q=q, p=p)
-
-plots(training_data, prediction, 4)
-
+plot_result(training_data, neural_net_solution; batch_nb_trajectory = 10)
 
 #integrate
 #prediction = integrate(neural_net_solution)
