@@ -33,3 +33,9 @@ setup_gradient_cache(dx::NamedTuple) = apply_toNT(dx, setup_gradient_cache)
 setup_adam_cache(B::AbstractMatrix) = AdamCache(B)
 setup_momentum_cache(B::AbstractMatrix) = MomentumCache(B)
 setup_gradient_cache(B::AbstractMatrix) = GradientCache(B)
+
+
+function similar(Y::StiefelManifold{T}) where T 
+    N, n = size(Y)
+    zeros(StiefelLieAlgHorMatrix{T}, N, n)
+end
