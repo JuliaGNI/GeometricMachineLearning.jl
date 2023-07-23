@@ -16,7 +16,7 @@ end
 mutable struct MomentumCache{T, AT <: AbstractArray{T}} <:AbstractCache
     B::AT
     function MomentumCache(B::AbstractArray)
-        new{eltype(B), typeof(B)}(similar(B))
+        new{eltype(B), typeof(similar(B))}(zero(B))
     end
 end
 
