@@ -24,4 +24,4 @@ racᵉˡᵉ(A::AbstractVecOrMat) = sqrt.(A)
 /ᵉˡᵉ(A::AbstractVecOrMat, B::AbstractVecOrMat) = A./B
 scalar_add(A::AbstractVecOrMat, δ::Real) = A .+ δ
 
-init_optimizer_cache(opt::AdamOptimizer, x) = setup_adam_cache(x)
+init_optimizer_cache(::AdamOptimizer, x) = setup_adam_cache(x)
