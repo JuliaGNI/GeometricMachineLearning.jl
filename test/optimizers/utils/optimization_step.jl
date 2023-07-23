@@ -31,16 +31,14 @@ function optimization_step(N, n)
     @test typeof(ps.layer_1.Y) <: StiefelManifold
     for key1 in keys(ps)
         for key2 in keys(ps[key1])
-            println(key2)
             @test norm(ps[key1][key2] - ps2[key1][key2]) > 1f-6
         end
     end
 end
 
 N_max = 10
-for N = 2:N_max
+for N = 4:N_max
     for n = 1:N
-        println(N, n)
         optimization_step(N, n)
     end
 end
