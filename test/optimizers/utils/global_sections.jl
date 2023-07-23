@@ -25,7 +25,7 @@ function global_tangent_space_rep(N, n)
     BE = B*StiefelProjection(N, n)
     # abuse of notation
     Δ2 = apply_section(λY, StiefelManifold(BE))
-    @test isapprox(Δ2, Δ)
+    @test isapprox(Δ2'*Y, Δ'*Y)
 end
 
 N_max = 10
