@@ -11,7 +11,7 @@ struct MomentumOptimizer{T<:Real} <: OptimizerMethod
 end
 
 #update for weights
-function update!(o::MomentumOptimizer, C::MomentumCache, B::AbstractMatrix)
+function update!(o::MomentumOptimizer, C::MomentumCache, B::AbstractVecOrMat)
     add!(C.B, o.α*C.B, B)
     mul!(B, -o.η, C.B)
 end

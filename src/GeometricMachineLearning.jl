@@ -140,10 +140,10 @@ module GeometricMachineLearning
 
     include("optimizers/optimizer_caches.jl")
     include("optimizers/optimizer_method.jl")
+    include("optimizers/optimizer.jl")
     include("optimizers/gradient_optimizer.jl")
     include("optimizers/momentum_optimizer.jl")        
     include("optimizers/adam_optimizer.jl")
-    include("optimizers/optimizer.jl")
 
     export GlobalSection, apply_section
     export global_rep
@@ -155,7 +155,7 @@ module GeometricMachineLearning
     export check
 
     include("optimizers/utils/global_sections.jl")
-    include("optimizers/utils/auxiliary.jl")
+    include("optimizers/utils/modified_exponential.jl")
     include("optimizers/utils/retractions.jl")
 
     #INCLUDE ABSTRACT TRAINING integrator
