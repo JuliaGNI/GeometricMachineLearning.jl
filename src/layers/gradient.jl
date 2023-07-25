@@ -5,33 +5,29 @@ If full_grad is true, then the Gradient layer also has a bias
 =#
 
 #activation layer
-struct Gradient{M, N, full_grad, change_q, F1, F2, F3, F4} <: AbstractExplicitLayer{M, N}
-        activation::F1
-        init_weight::F2
-        init_bias::F3
-        init_scale::F4
+struct Gradient{M, N, full_grad, change_q, TA} <: AbstractExplicitLayer{M, N}
+        activation::TA
 end
 
 #check: input is even; make dim2 an optional argument for full_grad=false
-function Gradient(dim::Int, dim2::Int=dim, activation=identity; init_weight=Lux.glorot_uniform,
-                init_bias=Lux.zeros32, init_scale=Lux.glorot_uniform, full_grad::Bool=true,
-                change_q::Bool=true, allow_fast_activation::Bool=true)
+function Gradient(dim::Int, dim2::Int=dim, activation=identity;full_grad::Bool=true, change_q::Bool=true, allow_fast_activation::Bool=true)
+
         activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
+        
         iseven(dim) && iseven(dim2) || error("Dimensions must be even!")
         dim2 ≥ dim || error("Second dimension should be bigger than the first!")
-        dtype = (dim, dim2, full_grad, change_q, typeof(activation), typeof(init_weight), typeof(init_bias), 
-                 typeof(init_scale))
-        return Gradient{dtype...}(activation, init_weight, init_bias, init_scale)
+
+        return Gradient{dim, dim2, full_grad, change_q, typeof(activation)}(activation)
 end
 
 
-function initialparameters(backend::Backend, ::Type{T}, d::Gradient{M, N,full_grad}; rng::AbstractRNG = Random.default_rng()) where {M, N, full_grad, T}
+function initialparameters(backend::Backend, ::Type{T}, d::Gradient{M, N,full_grad}; rng::AbstractRNG = Random.default_rng(), init_weight=Lux.glorot_uniform, init_bias=Lux.zeros32, init_scale=Lux.glorot_uniform ) where {M, N, full_grad, T}
         if full_grad
-                return (weight=d.init_weight(rng, N÷2, N÷2),
-                        bias=d.init_bias(rng, N÷2, 1),
-                        scale=d.init_scale(rng,N÷2,1))
+                return (weight=init_weight(rng, N÷2, N÷2),
+                        bias=init_bias(rng, N÷2, 1),
+                        scale=init_scale(rng,N÷2,1))
         else
-                return (scale=d.init_scale(rng, M÷2, 1),)
+                return (scale=init_scale(rng, M÷2, 1),)
         end
 end
 
@@ -143,4 +139,5 @@ end
         return vcat(x[1:(M÷2)], x[(M÷2+1):M] + ps[1]' * 
                         (ps[3] .* d.activation(ps[1]*x[1:(M÷2)] .+ vec(ps[2]))))
 end
+
 
