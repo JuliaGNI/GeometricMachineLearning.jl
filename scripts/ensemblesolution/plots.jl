@@ -81,8 +81,8 @@ function plot_prediction(data::TrainingData{<:DataSymbol{<:PhaseSpaceSymbol}}, n
     ylabel!(L"p")
     ylims!((ymin,ymax))
 
-    X = range(xmin, stop=xmax, length=nsamples)
-    Y = range(ymin, stop=ymax, length=nsamples)
+    X = range(xmin, stop=xmax, length=100)
+    Y = range(ymin, stop=ymax, length=100)
     contour!(X, Y, [H([x,y]) for y in Y, x in X], linewidth = 0, fill = true, levels = 7, c = cgrad(:default, rev = true))
 
 

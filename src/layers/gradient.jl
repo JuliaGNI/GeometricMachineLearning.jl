@@ -23,7 +23,7 @@ end
 
 function initialparameters(backend::Backend, ::Type{T}, d::Gradient{M, N,full_grad}; rng::AbstractRNG = Random.default_rng(), init_weight=Lux.glorot_uniform, init_bias=Lux.zeros32, init_scale=Lux.glorot_uniform ) where {M, N, full_grad, T}
         if full_grad
-                return (weight=init_weight(rng, N÷2, N÷2),
+                return (weight=init_weight(rng, N÷2, M÷2),
                         bias=init_bias(rng, N÷2, 1),
                         scale=init_scale(rng,N÷2,1))
         else
