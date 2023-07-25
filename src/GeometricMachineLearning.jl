@@ -25,6 +25,7 @@ module GeometricMachineLearning
     import AbstractNeuralNetworks: Dense, Linear
     import AbstractNeuralNetworks: IdentityActivation, ZeroVector
     import AbstractNeuralNetworks: add!, update!, initialparameters
+    import AbstractNeuralNetworks: layer
 
     import GeometricIntegrators.Integrators: method
 

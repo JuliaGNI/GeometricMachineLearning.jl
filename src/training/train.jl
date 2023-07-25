@@ -48,17 +48,12 @@ function train!(nn::NeuralNetwork{<:Architecture}, data_in::AbstractTrainingData
     #creation of optimiser
     opt = Optimizer(m, nn.params)
 
-    # transform parameters (if needed) to match with Zygote
-    #params_tuple, keys =  pretransform(type(ti)(), nn.params)
-
     # Learning runs
     p = Progress(ntraining; enabled = showprogress)
     for j in 1:ntraining
         index_batch = get_batch(data, bs; check = false)
 
         params_grad = nn.params #loss_gradient(nn, ti, data, index_batch,  nn.params) 
-
-        #dp = posttransform(type(ti)(), params_grad, keys)
 
         optimization_step!(opt, nn.model, nn.params, params_grad)
 

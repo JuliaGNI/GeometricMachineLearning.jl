@@ -2,7 +2,7 @@
 
 function LNNProblem(nn::NeuralNetwork{<:LagrangianNeuralNetwork}, g, tspan::Tuple, tstep::Real, ics::NamedTuple; kwargs...)
     
-    Lₛₚₗᵢₜ(q,v) = nn([q...,v...])
+    Lₛₚₗᵢₜ(q,v) = sum(nn([q...,v...]))
 
     ∇Lₛₚₗᵢₜ(q,v) = Zygote.gradient(Lₛₚₗᵢₜ, q, v)
     

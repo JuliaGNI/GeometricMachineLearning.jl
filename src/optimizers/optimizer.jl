@@ -2,7 +2,7 @@
 #######################################################################################
 #Optimiser
 
-mutable struct Optimizer{MT<:OptimizerMethod, CT<:NamedTuple}
+mutable struct Optimizer{MT<:OptimizerMethod, CT<:Tuple}
     method::MT
     cache::CT
     step::Int
@@ -16,7 +16,7 @@ end
 #######################################################################################
 #optimization step function
 
-function optimization_step!(o::Optimizer, d::Lux.AbstractExplicitLayer, ps::NamedTuple, C::NamedTuple, dx::NamedTuple)
+function optimization_step!(o::Optimizer, d::AbstractExplicitLayer, ps::NamedTuple, C::NamedTuple, dx::NamedTuple)
     gx = rgrad(ps, dx)
     λY = GlobalSection(ps)
     B = global_rep(λY, gx)
@@ -27,8 +27,8 @@ end
 
 function optimization_step!(o::Optimizer, model::Chain, ps::Tuple, dx::Tuple)
     o.step += 1
-    for i in eachindex(model)
-        optimization_step!(o.method, model[i], ps[i], o.cache[i], dx[i])
+    for i in 1:length(model)
+        optimization_step!(o, layer(model,i), ps[i], o.cache[i], dx[i])
     end
 end
 

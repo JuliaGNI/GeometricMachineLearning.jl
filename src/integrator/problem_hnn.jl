@@ -2,7 +2,7 @@
 
 function HNNProblem(nn::NeuralNetwork{<:HamiltonianNeuralNetwork}, tspan, tstep, ics::NamedTuple; kwargs...)
 
-    Hₛₚₗᵢₜ(q, p) = nn([q..., p...])
+    Hₛₚₗᵢₜ(q, p) = sum(nn([q..., p...]))
 
     ∇Hₛₚₗᵢₜ(q, p) = Zygote.gradient(Hₛₚₗᵢₜ, q, p)
 

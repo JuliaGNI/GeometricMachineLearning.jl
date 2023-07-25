@@ -5,10 +5,8 @@ If full_grad is true, then the Gradient layer also has a bias
 =#
 
 #activation layer
-struct Gradient{full_grad, change_q, F1, F2, F3, F4} <: Lux.AbstractExplicitLayer
+struct Gradient{M, N, full_grad, change_q, F1, F2, F3, F4} <: AbstractExplicitLayer{M, N}
         activation::F1
-        dim::Int
-        dim2::Int
         init_weight::F2
         init_bias::F3
         init_scale::F4
@@ -21,51 +19,51 @@ function Gradient(dim::Int, dim2::Int=dim, activation=identity; init_weight=Lux.
         activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
         iseven(dim) && iseven(dim2) || error("Dimensions must be even!")
         dim2 ≥ dim || error("Second dimension should be bigger than the first!")
-        dtype = (full_grad, change_q, typeof(activation), typeof(init_weight), typeof(init_bias), 
+        dtype = (dim, dim2, full_grad, change_q, typeof(activation), typeof(init_weight), typeof(init_bias), 
                  typeof(init_scale))
-        return Gradient{dtype...}(activation, dim, dim2, init_weight, init_bias, init_scale)
+        return Gradient{dtype...}(activation, init_weight, init_bias, init_scale)
 end
 
 
-function initialparameters(backend::Backend, ::Type{T}, d::Gradient{full_grad}; rng::AbstractRNG = Random.default_rng()) where {full_grad, T}
+function initialparameters(backend::Backend, ::Type{T}, d::Gradient{M, N,full_grad}; rng::AbstractRNG = Random.default_rng()) where {M, N, full_grad, T}
         if full_grad
-                return (weight=d.init_weight(rng, d.dim2÷2, d.dim÷2),
-                        bias=d.init_bias(rng, d.dim2÷2, 1),
-                        scale=d.init_scale(rng,d.dim2÷2,1))
+                return (weight=d.init_weight(rng, N÷2, N÷2),
+                        bias=d.init_bias(rng, N÷2, 1),
+                        scale=d.init_scale(rng,N÷2,1))
         else
-                return (scale=d.init_scale(rng, d.dim÷2, 1),)
+                return (scale=d.init_scale(rng, M÷2, 1),)
         end
 end
 
 
-function parameterlength(d::Gradient{full_grad}) where {full_grad}
-        return full_grad ? d.dim2÷2 * (d.dim÷2 + 2) : d.dim÷2
+function parameterlength(d::Gradient{M, N, full_grad}) where {M, N, full_grad}
+        return full_grad ? N÷2 * (M÷2 + 2) : M÷2
 end
 
 
-@inline function (d::Gradient{false,true})(x::AbstractVecOrMat, ps::NamedTuple)
-        size(x)[1] == d.dim || error("Dimension mismatch.")
-        return vcat(x[1:(d.dim÷2)] + ps.scale.*d.activation.(x[(d.dim÷2+1):d.dim]),
-                        x[(d.dim÷2+1):d.dim])
+@inline function (d::Gradient{M, N, false,true})(x::AbstractVecOrMat, ps::NamedTuple)  where {M, N}
+        size(x)[1] == M || error("Dimension mismatch.")
+        return vcat(x[1:(M÷2)] + ps.scale.*d.activation.(x[(M÷2+1):M]),
+                        x[(M÷2+1):M])
 end
 
-@inline function (d::Gradient{false,false})(x::AbstractVecOrMat, ps::NamedTuple)
-        size(x)[1] == d.dim || error("Dimension mismatch.")
-        return vcat(x[1:(d.dim÷2)], x[(d.dim÷2+1):d.dim] + ps.scale.*
-                d.activation.(x[1:(d.dim÷2)]))
+@inline function (d::Gradient{M, N, false,false})(x::AbstractVecOrMat, ps::NamedTuple) where {M, N}
+        size(x)[1] == M || error("Dimension mismatch.")
+        return vcat(x[1:(M÷2)], x[(M÷2+1):M] + ps.scale.*
+                d.activation.(x[1:(M÷2)]))
 end
 
-@inline function (d::Gradient{true,true})(x::AbstractVecOrMat, ps::NamedTuple)
-        size(x)[1] == d.dim || error("Dimension mismatch.")
-        return vcat(x[1:(d.dim÷2)] + ps.weight' * 
-                    (ps.scale .* d.activation.(ps.weight * x[(d.dim÷2+1):d.dim] .+ vec(ps.bias))), 
-                        x[(d.dim÷2+1):d.dim])
+@inline function (d::Gradient{M, N, true,true})(x::AbstractVecOrMat, ps::NamedTuple) where {M, N}
+        size(x)[1] == M || error("Dimension mismatch.")
+        return vcat(x[1:(M÷2)] + ps.weight' * 
+                    (ps.scale .* d.activation.(ps.weight * x[(M÷2+1):M] .+ vec(ps.bias))), 
+                        x[(M÷2+1):M])
 end
 
-@inline function(d::Gradient{true,false})(x::AbstractVecOrMat, ps::NamedTuple)
-        size(x)[1] == d.dim || error("Dimension mismatch.")
-        return vcat(x[1:(d.dim÷2)], x[(d.dim÷2+1):d.dim] + ps.weight' * 
-                        (ps.scale .* d.activation(ps.weight*x[1:(d.dim÷2)] .+ vec(ps.bias))))
+@inline function(d::Gradient{M, N, true,false})(x::AbstractVecOrMat, ps::NamedTuple) where {M, N}
+        size(x)[1] == M || error("Dimension mismatch.")
+        return vcat(x[1:(M÷2)], x[(M÷2+1):M] + ps.weight' * 
+                        (ps.scale .* d.activation(ps.weight*x[1:(M÷2)] .+ vec(ps.bias))))
 end
 
 #######
@@ -91,58 +89,58 @@ function assign_q_and_p(x, N)
         q, p
 end
 
-@inline function (d::Gradient{false,true})(x::AbstractGPUVecOrMat, ps)
-        size(x)[1] == d.dim || error("Dimension mismatch.")
-        N = d.dim÷2
-        q, p = assign_q_and_p(x, N)
+@inline function (d::Gradient{M, N, false,true})(x::AbstractGPUVecOrMat, ps) where {M, N}
+        size(x)[1] == M || error("Dimension mismatch.")
+        N2 = M÷2
+        q, p = assign_q_and_p(x, N2)
         return vcat(q + ps.scale.*d.activation.(p), p)
 end
 
-@inline function (d::Gradient{false,false})(x::AbstractGPUVecOrMat, ps)
-        size(x)[1] == d.dim || error("Dimension mismatch.")
-        N = d.dim÷2 
-        q, p = assign_q_and_p(x, N)
+@inline function (d::Gradient{M, N, false,false})(x::AbstractGPUVecOrMat, ps) where {M, N}
+        size(x)[1] == M || error("Dimension mismatch.")
+        N2 = M÷2 
+        q, p = assign_q_and_p(x, N2)
         return vcat(q, p + ps.scale.*d.activation.(q))
 end
 
-@inline function (d::Gradient{true,true})(x::AbstractGPUVecOrMat, ps)
-        size(x)[1] == d.dim || error("Dimension mismatch.")
-        N = d.dim÷2 
-        q, p = assign_q_and_p(x, N)
+@inline function (d::Gradient{M, N, true,true})(x::AbstractGPUVecOrMat, ps) where {M, N}
+        size(x)[1] == M || error("Dimension mismatch.")
+        N2 = M÷2 
+        q, p = assign_q_and_p(x, N2)
         return vcat(q + ps.weight' * 
                 (ps.scale .* d.activation.(ps.weight * p .+ vec(ps.bias))), p)
 end
 
-@inline function(d::Gradient{true,false})(x::AbstractGPUVecOrMat, ps)
-        size(x)[1] == d.dim || error("Dimension mismatch.")
-        N = d.dim÷2 
-        q, p = assign_q_and_p(x, N)
+@inline function(d::Gradient{M, N, true,false})(x::AbstractGPUVecOrMat, ps) where {M, N}
+        size(x)[1] == M || error("Dimension mismatch.")
+        N2 = M÷2 
+        q, p = assign_q_and_p(x, N2)
         return vcat(q, p + ps.weight' * 
                         (ps.scale .* d.activation(ps.weight*q .+ vec(ps.bias))))
 end
 
-@inline function (d::Gradient{false,true})(x::AbstractVecOrMat, ps::Tuple)
-        size(x)[1] == d.dim || error("Dimension mismatch.")
-        return vcat(x[1:(d.dim÷2)] + ps[3].*d.activation.(x[(d.dim÷2+1):d.dim]),
-                        x[(d.dim÷2+1):d.dim])
+@inline function (d::Gradient{M, N, false,true})(x::AbstractVecOrMat, ps::Tuple) where {M, N}
+        size(x)[1] == M || error("Dimension mismatch.")
+        return vcat(x[1:(M÷2)] + ps[3].*d.activation.(x[(M÷2+1):M]),
+                        x[(M÷2+1):M])
 end
 
-@inline function (d::Gradient{false,false})(x::AbstractVecOrMat, ps::Tuple)
-        size(x)[1] == d.dim || error("Dimension mismatch.")
-        return vcat(x[1:(d.dim÷2)], x[(d.dim÷2+1):d.dim] + ps[3].*
-                d.activation.(x[1:(d.dim÷2)]))
+@inline function (d::Gradient{M, N, false,false})(x::AbstractVecOrMat, ps::Tuple) where {M, N}
+        size(x)[1] == M || error("Dimension mismatch.")
+        return vcat(x[1:(M÷2)], x[(M÷2+1):M] + ps[3].*
+                d.activation.(x[1:(M÷2)]))
 end
 
-@inline function (d::Gradient{true,true})(x::AbstractVecOrMat, ps::Tuple)
-        size(x)[1] == d.dim || error("Dimension mismatch.")
-        return vcat(x[1:(d.dim÷2)] + ps[1]' * 
-                    (ps[3] .* d.activation.(ps[1] * x[(d.dim÷2+1):d.dim] .+ vec(ps[2]))), 
-                        x[(d.dim÷2+1):d.dim])
+@inline function (d::Gradient{M, N, true,true})(x::AbstractVecOrMat, ps::Tuple) where {M, N}
+        size(x)[1] == M || error("Dimension mismatch.")
+        return vcat(x[1:(M÷2)] + ps[1]' * 
+                    (ps[3] .* d.activation.(ps[1] * x[(M÷2+1):M] .+ vec(ps[2]))), 
+                        x[(M÷2+1):M])
 end
 
-@inline function(d::Gradient{true,false})(x::AbstractVecOrMat, ps::Tuple)
-        size(x)[1] == d.dim || error("Dimension mismatch.")
-        return vcat(x[1:(d.dim÷2)], x[(d.dim÷2+1):d.dim] + ps[1]' * 
-                        (ps[3] .* d.activation(ps[1]*x[1:(d.dim÷2)] .+ vec(ps[2]))))
+@inline function(d::Gradient{M, N, true,false})(x::AbstractVecOrMat, ps::Tuple) where {M, N}
+        size(x)[1] == M || error("Dimension mismatch.")
+        return vcat(x[1:(M÷2)], x[(M÷2+1):M] + ps[1]' * 
+                        (ps[3] .* d.activation(ps[1]*x[1:(M÷2)] .+ vec(ps[2]))))
 end
 
