@@ -9,14 +9,14 @@ mutable struct AdamCache{T, AT <: AbstractArray{T}} <: AbstractCache
     B₁::AT
     B₂::AT 
     function AdamCache(B::AbstractArray)
-        new{eltype(B), typeof(B)}(similar(B), similar(B))
+        new{eltype(B), typeof(similar(B))}(zero(B), zero(B))
     end
 end
 
 mutable struct MomentumCache{T, AT <: AbstractArray{T}} <:AbstractCache
     B::AT
     function MomentumCache(B::AbstractArray)
-        new{eltype(B), typeof(B)}(similar(B))
+        new{eltype(B), typeof(similar(B))}(zero(B))
     end
 end
 
@@ -37,5 +37,17 @@ setup_gradient_cache(dx::Tuple) = Tuple([setup_gradient_cache(x) for x in dx])
 setup_adam_cache(B::AbstractArray) = AdamCache(B)
 setup_momentum_cache(B::AbstractArray) = MomentumCache(B)
 setup_gradient_cache(B::AbstractArray) = GradientCache(B)
+
+
+
+function Base.similar(Y::StiefelManifold{T}) where T 
+    N, n = size(Y)
+    zeros(StiefelLieAlgHorMatrix{T}, N, n)
+end
+
+function Base.zero(Y::StiefelManifold{T}) where T 
+    N, n = size(Y)
+    zeros(StiefelLieAlgHorMatrix{T}, N, n)
+end
 
 

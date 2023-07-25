@@ -112,7 +112,7 @@ function ⊙²(A::SkewSymMatrix)
     SkewSymMatrix(A.S.^2, A.n)
 end
 function racᵉˡᵉ(A::SkewSymMatrix)
-    #SkewSymMatrix(sqrt.(A.S), A.n)
+    SkewSymMatrix(sqrt.(A.S), A.n)
 end
 function /ᵉˡᵉ(A::SkewSymMatrix, B::SkewSymMatrix)
     @assert A.n == B.n 

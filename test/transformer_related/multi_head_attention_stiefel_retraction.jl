@@ -1,3 +1,7 @@
+"""
+TODO: change this test so that it works with the new interface/framework!
+"""
+
 import Random, Test, Lux, LinearAlgebra
 
 using GeometricMachineLearning, Test

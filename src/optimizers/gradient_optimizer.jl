@@ -7,7 +7,7 @@ struct GradientOptimizer{T<:Real} <: OptimizerMethod
     GradientOptimizer(η = 1e-2) = new{typeof(η)}(η)
 end
 
-function update!(o::GradientOptimizer, ::GradientCache, B::AbstractMatrix)
+function update!(o::GradientOptimizer, ::GradientCache, B::AbstractVecOrMat)
     rmul!(B, -o.η)
 end
 
