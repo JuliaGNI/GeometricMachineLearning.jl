@@ -1,0 +1,3 @@
+# Grassmann Manifold 
+
+An element of the Grassmann manifold $G(n,N)$ is a vector subspace $\sub\mathbb{R}^N$ of dimension $n$, and each such subspace can be represented by a full-rank matrix $A\in\mathbb{R}^{N\times{}n}$ and the full space takes the form $G(n,N) = \mathbb{R}^{N\times{}n}/~$ where the equivalence relation is $A~B \iff \exists{}C\in\mathbb{R}^{n\times{}n}\text{ s.t. }AC = B$. One can find a parametrization of the manifold the following way: Because the matrix $A$ has full rank, there have to be $n$ independent columns in it: $i_1, \ldots, i_n$. For simplicity assume that $i_1 = 1, i_2=2, \ldots, i_n=n$ and denote the matrix made up by these columns $C$. Then the mapping to a coordinate chart is: $AC^{-1}$ and the last $N-n$ columns are the coordinates.
