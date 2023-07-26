@@ -36,10 +36,21 @@ function Base.rand(::Type{StiefelManifold}, N::Integer, n::Integer)
     StiefelManifold(qr!(A).Q[1:N, 1:n])
 end
 
+function Base.rand(backend::KernelAbstractions.Backend, rng:: Random.default_rng(), ::Type{T}, N::Integer, n::Integer)
+    @assert N ≥ n 
+    A = KernelAbstractions.allocate(backend, N, n)
+    Random.rand!(rng, A)
+    StiefelManifold(qr!(A).Q[1:N, 1:n])
+end
+
 Base.:*(Y::StiefelManifold, B::AbstractMatrix) = Y.A*B
 Base.:*(B::AbstractMatrix, Y::StiefelManifold) = B*Y.A
 #this is needed for the implementation of MultiHeadAttention
 function Base.:*(Y::Adjoint{T, StiefelManifold{T, AT}}, B::AbstractMatrix) where {T, AT<:AbstractGPUMatrix{T}}
+    Y.parent.A'*B 
+end
+
+function Base.:*(Y::Adjoint{T, StiefelManifold{T, AT}}, B::AbstractMatrix) where {T, AT<:AbstractMatrix{T}}
     Y.parent.A'*B 
 end
 
