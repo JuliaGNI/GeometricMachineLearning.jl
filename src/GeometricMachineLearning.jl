@@ -19,7 +19,7 @@ module GeometricMachineLearning
     using InteractiveUtils
 
 
-    import Lux, CUDA
+    import CUDA, Lux
 
     import AbstractNeuralNetworks: Architecture, Chain, NeuralNetwork, AbstractExplicitLayer
     import AbstractNeuralNetworks: Dense, Linear
@@ -93,7 +93,6 @@ module GeometricMachineLearning
     export sr, sr!
 
 
-    export FeedForwardLayer, LinearFeedForwardLayer
     export Gradient
     export Linear
     export ResidualLayer
@@ -108,13 +107,9 @@ module GeometricMachineLearning
     export StiefelManifold, SymplecticStiefelManifold, GrassmannManifold, Manifold
     export rgrad, metric
 
-
-    include("layers/abstract_layer.jl")
-    include("layers/feed_forward_layer.jl")
     include("layers/gradient.jl")
     include("layers/linear_symplectic.jl")
     include("layers/resnet.jl")
-    include("layers/linear_symplectic_layer.jl")
     include("layers/manifold_layer.jl")
     include("layers/stiefel_layer.jl")
     include("layers/grassmann_layer.jl")
@@ -128,7 +123,6 @@ module GeometricMachineLearning
     export PSDLayer
     export MultiHeadAttention
     export Transformer
-    export AbstractNeuralNetwork
 
     #INCLUDE OPTIMIZERS
     export OptimizerMethod, AbstractCache
