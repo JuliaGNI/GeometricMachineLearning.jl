@@ -19,7 +19,7 @@ function Base.rand(rng::Random.AbstractRNG, ::Type{StiefelManifold{T}}, N::Integ
 end
 
 function Base.rand(rng::Random.AbstractRNG, ::Type{StiefelManifold}, N::Integer, n::Integer)
-    rand(rng, ::Type{StiefelManifold{Float64}}, N, n)
+    rand(rng, StiefelManifold{Float64}, N, n)
 end
 
 function Base.rand(manifold_type::Type{StiefelManifold{T}}, N::Integer, n::Integer) where T
@@ -27,7 +27,7 @@ function Base.rand(manifold_type::Type{StiefelManifold{T}}, N::Integer, n::Integ
 end
 
 function Base.rand(::Type{StiefelManifold}, N::Integer, n::Integer)
-    rand(::Type{StiefelManifold{Float64}}, N, n)
+    rand(StiefelManifold{Float64}, N, n)
 end
 
 function Base.rand(backend::KernelAbstractions.Backend, rng::Random.AbstractRNG, ::Type{StiefelManifold{T}}, N::Integer, n::Integer) where T 
