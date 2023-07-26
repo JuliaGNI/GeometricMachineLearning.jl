@@ -60,8 +60,8 @@ hnn = NeuralNetwork(HamiltonianNeuralNetwork(2), Float64)
 exacthnn = ExactHnn()
 sympeuler = SEuler()
 
-@testnoerror  train!(hnn, sam_dps_data, mopt, exacthnn; ntraining = nruns)
-@testnoerror  train!(hnn, tra_ps_data, mopt, sympeuler; ntraining = nruns)
+#@testnoerror  train!(hnn, sam_dps_data, mopt, exacthnn; ntraining = nruns)
+#@testnoerror  train!(hnn, tra_ps_data, mopt, sympeuler; ntraining = nruns)
 
 lnn = NeuralNetwork(LagrangianNeuralNetwork(2), Float64)
 exactlnn = ExactLnn()

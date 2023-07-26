@@ -1,5 +1,3 @@
-import Lux
-
 #=
 If full_grad is true, then the Gradient layer also has a bias
 =#
@@ -10,7 +8,7 @@ struct Gradient{M, N, full_grad, change_q, TA} <: AbstractExplicitLayer{M, N}
 end
 
 #check: input is even; make dim2 an optional argument for full_grad=false
-function Gradient(dim::Int, dim2::Int=dim, activation=identity;full_grad::Bool=true, change_q::Bool=true, allow_fast_activation::Bool=true)
+function Gradient(dim::Int, dim2::Int=dim, activation = identity; full_grad::Bool=true, change_q::Bool=true, allow_fast_activation::Bool=true)
 
         activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
         
@@ -21,45 +19,51 @@ function Gradient(dim::Int, dim2::Int=dim, activation=identity;full_grad::Bool=t
 end
 
 
-function initialparameters(backend::Backend, ::Type{T}, d::Gradient{M, N,full_grad}; rng::AbstractRNG = Random.default_rng(), init_weight=Lux.glorot_uniform, init_bias=Lux.zeros32, init_scale=Lux.glorot_uniform ) where {M, N, full_grad, T}
-        if full_grad
-                return (weight=init_weight(rng, N÷2, M÷2),
-                        bias=init_bias(rng, N÷2, 1),
-                        scale=init_scale(rng,N÷2,1))
-        else
-                return (scale=init_scale(rng, M÷2, 1),)
-        end
+struct GlorotUniform <: AbstractNeuralNetworks.AbstractInitializer end
+
+(::GlorotUniform)(rng, x) = x .= sqrt(24.0 / sum(size(x))) .* (rand(rng, eltype(x), size(x)...) .- 0.5) 
+
+
+
+function initialparameters(backend::Backend, ::Type{T}, d::Gradient{M, N, true}; rng::AbstractRNG = Random.default_rng(), init_weight = GlorotUniform(), init_bias = ZeroInitializer(), init_scale = GlorotUniform()) where {M, N, T}
+        W = KernelAbstractions.zeros(backend, T, N÷2, M÷2)
+        b = KernelAbstractions.zeros(backend, T, N÷2, 1)
+        K = KernelAbstractions.zeros(backend, T, N÷2, 1)
+        init_weight(rng, W)
+        init_bias(rng, b)
+        init_scale(rng, K)
+        return (weight = W, bias = b, scale = K)
 end
 
+function initialparameters(backend::Backend, ::Type{T}, d::Gradient{M, N, false}; rng::AbstractRNG = Random.default_rng(), init_scale = GlorotUniform()) where {M, N, T}
+        K = KernelAbstractions.zeros(backend, T, M÷2, 1)
+        init_scale(rng, K)
+        return (scale = K,)
+end
 
-function parameterlength(d::Gradient{M, N, full_grad}) where {M, N, full_grad}
+function parameterlength(::Gradient{M, N, full_grad}) where {M, N, full_grad}
         return full_grad ? N÷2 * (M÷2 + 2) : M÷2
 end
 
 
 @inline function (d::Gradient{M, N, false,true})(x::AbstractVecOrMat, ps::NamedTuple)  where {M, N}
         size(x)[1] == M || error("Dimension mismatch.")
-        return vcat(x[1:(M÷2)] + ps.scale.*d.activation.(x[(M÷2+1):M]),
-                        x[(M÷2+1):M])
+        return vcat(x[1:(M÷2)] + ps.scale.*d.activation.(x[(M÷2+1):M]), x[(M÷2+1):M])
 end
 
 @inline function (d::Gradient{M, N, false,false})(x::AbstractVecOrMat, ps::NamedTuple) where {M, N}
         size(x)[1] == M || error("Dimension mismatch.")
-        return vcat(x[1:(M÷2)], x[(M÷2+1):M] + ps.scale.*
-                d.activation.(x[1:(M÷2)]))
+        return vcat(x[1:(M÷2)], x[(M÷2+1):M] + ps.scale.* d.activation.(x[1:(M÷2)]))
 end
 
 @inline function (d::Gradient{M, N, true,true})(x::AbstractVecOrMat, ps::NamedTuple) where {M, N}
         size(x)[1] == M || error("Dimension mismatch.")
-        return vcat(x[1:(M÷2)] + ps.weight' * 
-                    (ps.scale .* d.activation.(ps.weight * x[(M÷2+1):M] .+ vec(ps.bias))), 
-                        x[(M÷2+1):M])
+        return vcat(x[1:(M÷2)] + ps.weight' * (ps.scale .* d.activation.(ps.weight * x[(M÷2+1):M] .+ vec(ps.bias))), x[(M÷2+1):M])
 end
 
 @inline function(d::Gradient{M, N, true,false})(x::AbstractVecOrMat, ps::NamedTuple) where {M, N}
         size(x)[1] == M || error("Dimension mismatch.")
-        return vcat(x[1:(M÷2)], x[(M÷2+1):M] + ps.weight' * 
-                        (ps.scale .* d.activation(ps.weight*x[1:(M÷2)] .+ vec(ps.bias))))
+        return vcat(x[1:(M÷2)], x[(M÷2+1):M] + ps.weight' * (ps.scale .* d.activation(ps.weight*x[1:(M÷2)] .+ vec(ps.bias))))
 end
 
 #######
@@ -103,41 +107,34 @@ end
         size(x)[1] == M || error("Dimension mismatch.")
         N2 = M÷2 
         q, p = assign_q_and_p(x, N2)
-        return vcat(q + ps.weight' * 
-                (ps.scale .* d.activation.(ps.weight * p .+ vec(ps.bias))), p)
+        return vcat(q + ps.weight' * (ps.scale .* d.activation.(ps.weight * p .+ vec(ps.bias))), p)
 end
 
 @inline function(d::Gradient{M, N, true,false})(x::AbstractGPUVecOrMat, ps) where {M, N}
         size(x)[1] == M || error("Dimension mismatch.")
         N2 = M÷2 
         q, p = assign_q_and_p(x, N2)
-        return vcat(q, p + ps.weight' * 
-                        (ps.scale .* d.activation(ps.weight*q .+ vec(ps.bias))))
+        return vcat(q, p + ps.weight' * (ps.scale .* d.activation(ps.weight*q .+ vec(ps.bias))))
 end
 
 @inline function (d::Gradient{M, N, false,true})(x::AbstractVecOrMat, ps::Tuple) where {M, N}
         size(x)[1] == M || error("Dimension mismatch.")
-        return vcat(x[1:(M÷2)] + ps[3].*d.activation.(x[(M÷2+1):M]),
-                        x[(M÷2+1):M])
+        return vcat(x[1:(M÷2)] + ps[3].*d.activation.(x[(M÷2+1):M]), x[(M÷2+1):M])
 end
 
 @inline function (d::Gradient{M, N, false,false})(x::AbstractVecOrMat, ps::Tuple) where {M, N}
         size(x)[1] == M || error("Dimension mismatch.")
-        return vcat(x[1:(M÷2)], x[(M÷2+1):M] + ps[3].*
-                d.activation.(x[1:(M÷2)]))
+        return vcat(x[1:(M÷2)], x[(M÷2+1):M] + ps[3].* d.activation.(x[1:(M÷2)]))
 end
 
 @inline function (d::Gradient{M, N, true,true})(x::AbstractVecOrMat, ps::Tuple) where {M, N}
         size(x)[1] == M || error("Dimension mismatch.")
-        return vcat(x[1:(M÷2)] + ps[1]' * 
-                    (ps[3] .* d.activation.(ps[1] * x[(M÷2+1):M] .+ vec(ps[2]))), 
-                        x[(M÷2+1):M])
+        return vcat(x[1:(M÷2)] + ps[1]' * (ps[3] .* d.activation.(ps[1] * x[(M÷2+1):M] .+ vec(ps[2]))), x[(M÷2+1):M])
 end
 
 @inline function(d::Gradient{M, N, true,false})(x::AbstractVecOrMat, ps::Tuple) where {M, N}
         size(x)[1] == M || error("Dimension mismatch.")
-        return vcat(x[1:(M÷2)], x[(M÷2+1):M] + ps[1]' * 
-                        (ps[3] .* d.activation(ps[1]*x[1:(M÷2)] .+ vec(ps[2]))))
+        return vcat(x[1:(M÷2)], x[(M÷2+1):M] + ps[1]' * (ps[3] .* d.activation(ps[1]*x[1:(M÷2)] .+ vec(ps[2]))))
 end
 
 
