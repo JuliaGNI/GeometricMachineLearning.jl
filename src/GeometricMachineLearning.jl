@@ -26,14 +26,14 @@ module GeometricMachineLearning
     import AbstractNeuralNetworks: IdentityActivation, ZeroVector
     import AbstractNeuralNetworks: add!, update!
     import AbstractNeuralNetworks: layer
-    using AbstractNeuralNetworks: initialparameters
+    import AbstractNeuralNetworks: initialparameters
 
     import GeometricIntegrators.Integrators: method
 
     export CPU, GPU
     export Chain, NeuralNetwork
     export Dense, Linear
-
+    export initialparameters
     
     include("kernels/tensor_mat_mul.jl")
     include("kernels/tensor_tensor_mul.jl")
