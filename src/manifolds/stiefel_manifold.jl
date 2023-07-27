@@ -32,7 +32,7 @@ end
 
 function Base.rand(backend::KernelAbstractions.Backend, rng::Random.AbstractRNG, ::Type{StiefelManifold{T}}, N::Integer, n::Integer) where T 
     @assert N ≥ n 
-    A = KernelAbstractions.allocate(backend, N, n)
+    A = KernelAbstractions.allocate(backend, T, N, n)
     Random.rand!(rng, A)
     StiefelManifold(qr!(A).Q[1:N, 1:n])
 end
