@@ -20,21 +20,8 @@ function exact_solution(prob::Union{PODEProblem,HODEProblem})
 end
 
 
-A(t, q, p, params) = sqrt(q^2 + p^2 / params.k)
-ϕ(t, q, p, params) = atan(p/q/params.ω)#acos(q / A(t, q, p, params))
-
-exact_solution_q(t, q, p, params) = A(t, q, p, params) * cos(params.ω * t - ϕ(t, q, p, params))
-exact_solution_p(t, q, p, params) = - params.ω * A(t, q, p, params) * sin(params.ω * t - ϕ(t, q, p, params))
-
-exact_solution_q(t, q::AbstractVector, p::AbstractVector, params) = exact_solution_q(t, q[1], p[1], params)
-exact_solution_p(t, q::AbstractVector, p::AbstractVector, params) = exact_solution_p(t, q[1], p[1], params)
-
-exact_solution_q(t, x::AbstractVector, params) = exact_solution_q(t, x[1], x[2], params)
-exact_solution_p(t, x::AbstractVector, params) = exact_solution_p(t, x[1], x[2], params)
-exact_solution(t, x::AbstractVector, params) = [exact_solution_q(t, x, params), exact_solution_p(t, x, params)]
-
-A(t, q, p, params) = sqrt(q^2 + p^2 / params.k) * sgn(-p)
-ϕ(t, q, p, params) = acos(q / A(t, q, p, params))
+A(t, q, p, params) = q*sqrt(1+ p^2 / (params.k * q^2) )
+ϕ(t, q, p, params) = atan(-p/q/params.ω)#acos(q / A(t, q, p, params))
 
 exact_solution_q(t, q, p, params) = A(t, q, p, params) * cos(params.ω * t + ϕ(t, q, p, params))
 exact_solution_p(t, q, p, params) = - params.ω * A(t, q, p, params) * sin(params.ω * t + ϕ(t, q, p, params))
@@ -45,6 +32,8 @@ exact_solution_p(t, q::AbstractVector, p::AbstractVector, params) = exact_soluti
 exact_solution_q(t, x::AbstractVector, params) = exact_solution_q(t, x[1], x[2], params)
 exact_solution_p(t, x::AbstractVector, params) = exact_solution_p(t, x[1], x[2], params)
 exact_solution(t, x::AbstractVector, params) = [exact_solution_q(t, x, params), exact_solution_p(t, x, params)]
+
+
 
 #create the object ensemble_solution
 ensemble_problem = harmonic_oscillator_hode_ensemble()
