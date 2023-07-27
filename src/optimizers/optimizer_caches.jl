@@ -46,4 +46,4 @@ end
 function Base.zero(Y::GrassmannManifold{T}) where T 
     N, n = size(Y)
     zeros(GrassmannLieAlgHorMatrix{T}, N, n)
-endStiefelLieAlgHorMatrix
+end
