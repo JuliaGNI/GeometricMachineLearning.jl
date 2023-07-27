@@ -14,7 +14,7 @@ This also implements the projection:
 | B  0 | -> | B  0 |.
 """
 
-mutable struct GrassmannLieAlgHorMatrix{T, ST <: AbstractMatrix{T}} <: AbstractMatrix{T}
+mutable struct GrassmannLieAlgHorMatrix{T, ST <: AbstractMatrix{T}} <: AbstractLieAlgHorMatrix{T}
     B::ST
     N::Int
     n::Int 
@@ -127,7 +127,7 @@ end
 function ⊙²(A::GrassmannLieAlgHorMatrix)
     GrassmannLieAlgHorMatrix(A.B.^2, A.N, A.n)
 end
-function RACᵉˡᵉ(A::GrassmannLieAlgHorMatrix)
+function racᵉˡᵉ(A::GrassmannLieAlgHorMatrix)
     GrassmannLieAlgHorMatrix(sqrt.(A.B), A.N, A.n)
 end
 function /ᵉˡᵉ(A::GrassmannLieAlgHorMatrix, B::GrassmannLieAlgHorMatrix)
