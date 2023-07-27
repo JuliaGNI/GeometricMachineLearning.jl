@@ -13,7 +13,6 @@ function symbolicParams(M::AbstractArray, i::Int = 0)
     ((@variables $sname[Tuple([1:s for s in size(M)])...])[1],i+1)
 end
 
-
 function symbolicParams(nt::NamedTuple, i::Int = 0)
     if length(nt) == 1
         symb, j = symbolicParams(values(nt)[1], i)

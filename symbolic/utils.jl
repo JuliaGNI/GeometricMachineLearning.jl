@@ -23,3 +23,11 @@ function symplecticMatrix(n::Int)
     Z = zeros(n÷2,n÷2)
     [Z I;-I Z]
 end
+
+
+struct NotDefinedError <: Exception
+    f::Base.Callable
+    arg::Any
+end
+
+Base.showerror(io::IO, e::NotDefinedError) = print(io, string(e.f), " is not defined for ", string(typeof(e.arg)), " !")
