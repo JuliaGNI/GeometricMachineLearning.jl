@@ -1,6 +1,6 @@
 #retraction is more general! function on layer!
 
-struct StiefelLayer{N, M, reverse, retraction} <: ManifoldLayer{N, M, reverse} end
+struct StiefelLayer{N, M, reverse, retraction} <: ManifoldLayer{N, M, reverse, retraction} end
 
 default_retr = Geodesic()
 function StiefelLayer(N::Integer, n::Integer, Transpose::Bool=false, Retraction::AbstractRetraction=default_retr)

@@ -1,6 +1,6 @@
 #retraction is more general! function on layer!
 
-struct GrassmannLayer{N, M, reverse, retraction} <: ManifoldLayer{N, M, reverse} end
+struct GrassmannLayer{N, M, reverse, retraction} <: ManifoldLayer{N, M, reverse, retraction} end
 
 default_retr = Geodesic()
 function GrassmannLayer(N::Integer, n::Integer, Transpose::Bool=false, Retraction::AbstractRetraction=default_retr)
