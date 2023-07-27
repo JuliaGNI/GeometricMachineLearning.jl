@@ -9,7 +9,7 @@ struct AdamOptimizer{T<:Real} <: OptimizerMethod
     ρ₂::T
     δ::T
 
-    AdamOptimizer(η = Float32(1e-3), ρ₁ = Float32(0.9), ρ₂ = Float32(0.99), δ = 3f-7) = new{typeof(η)}(η, ρ₁, ρ₂, δ)
+    AdamOptimizer(η = 1f-3, ρ₁ = 9f-1, ρ₂ = 9.9f-1, δ = 3f-7) = new{typeof(η)}(η, ρ₁, ρ₂, δ)
 end
 
 function update!(o::Optimizer{<:AdamOptimizer{T}}, C::AdamCache, B::AbstractVecOrMat) where T
