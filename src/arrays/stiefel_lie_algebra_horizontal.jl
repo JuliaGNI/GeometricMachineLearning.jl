@@ -14,7 +14,9 @@ This also implements the projection:
 | B  D | -> | B  0 |.
 """
 
-mutable struct StiefelLieAlgHorMatrix{T, AT <: SkewSymMatrix{T}, ST <: AbstractMatrix{T}} <: AbstractMatrix{T}
+abstract type AbstractLieAlgHorMatrix{T} <: AbstractMatrix{T} end
+
+mutable struct StiefelLieAlgHorMatrix{T, AT <: SkewSymMatrix{T}, ST <: AbstractMatrix{T}} <: AbstractLieAlgHorMatrix{T}
     A::AT
     B::ST
     N::Int
