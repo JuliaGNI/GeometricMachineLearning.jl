@@ -40,14 +40,17 @@ setup_gradient_cache(B::AbstractArray) = GradientCache(B)
 
 
 
-function Base.similar(Y::StiefelManifold{T}) where T 
-    N, n = size(Y)
-    zeros(StiefelLieAlgHorMatrix{T}, N, n)
-end
+# function Base.similar(Y::StiefelManifold{T}) where T 
+#     N, n = size(Y)
+#     zeros(StiefelLieAlgHorMatrix{T}, N, n)
+# end
 
 function Base.zero(Y::StiefelManifold{T}) where T 
     N, n = size(Y)
     zeros(StiefelLieAlgHorMatrix{T}, N, n)
 end
 
-
+function Base.zero(Y::GrassmannManifold{T}) where T 
+    N, n = size(Y)
+    zeros(GrassmannLieAlgHorMatrix{T}, N, n)
+end
