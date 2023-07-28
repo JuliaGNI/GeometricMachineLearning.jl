@@ -1,7 +1,5 @@
-struct MultiHeadAttention{Stiefel, Retraction, add_connection, F1} <: Lux.AbstractExplicitLayer
-    dim::Integer
+struct MultiHeadAttention{M, N, Stiefel, Retraction, add_connection} <: AbstractExplicitLayer{M, N}
     n_heads::Integer
-    init_weight::F1
 end
 
 default_retr = Geodesic()
@@ -10,11 +8,11 @@ function MultiHeadAttention(dim::Integer, n_heads::Integer; Stiefel::Bool=false,
     MultiHeadAttention{Stiefel, typeof(Retraction), add_connection, typeof(init_weight)}(dim, n_heads, init_weight)
 end
 
-Lux.parameterlength(d::StiefelLayer{false}) = 3*d.dim^2
-Lux.parameterlength(d::StiefelLayer{true}) = 3*d.dim*(2*d.dim*d.n_heads - d.n_heads - d.dim)÷(2*d.n_heads^2)
+arameterlength(d::StiefelLayer{false}) = 3*d.dim^2
+parameterlength(d::StiefelLayer{true}) = 3*d.dim*(2*d.dim*d.n_heads - d.n_heads - d.dim)÷(2*d.n_heads^2)
 
 
-function Lux.initialparameters(rng::AbstractRNG, d::MultiHeadAttention{false})
+function initialparameters(rng::AbstractRNG, d::MultiHeadAttention{M, N, false})
     #number of "hidden" dimension (dimension of projection) 
     Dₕ = d.dim ÷ d.n_heads
     #projections for queries, keys and vectors.
@@ -39,7 +37,7 @@ function Lux.initialparameters(rng::AbstractRNG, d::MultiHeadAttention{false})
 end
 
 
-function Lux.initialparameters(rng::AbstractRNG, d::MultiHeadAttention{true})
+function initialparameters(rng::AbstractRNG, d::MultiHeadAttention{M, N, true})
     #number of "hidden" dimension (dimension of projection) 
     Dₕ = d.dim ÷ d.n_heads
     #projections for queries, keys and vectors.
@@ -63,8 +61,7 @@ function Lux.initialparameters(rng::AbstractRNG, d::MultiHeadAttention{true})
     (PQ=PQ, PK=PK, PV=PV)
 end
 
-function Lux.apply(d::MultiHeadAttention{Stiefel, Retraction, true}, x::AbstractMatrix{T}, ps::NamedTuple, st::NamedTuple) where {Stiefel, Retraction, T}
-    Dₕ = d.dim ÷ d.n_heads
+function (d::MultiHeadAttention{Stiefel, Retraction, true})(x::AbstractMatrix{T}, ps::NamedTuple) where {Stiefel, Retraction, T}
     dim, input_length = size(x)
     @assert dim == d.dim
 
@@ -73,11 +70,10 @@ function Lux.apply(d::MultiHeadAttention{Stiefel, Retraction, true}, x::Abstract
         key = Symbol("head_"*string(i))
         output = vcat(output, ps.PV[key]'*x*Lux.softmax((ps.PQ[key]'*x)'*(ps.PK[key]'*x)))
     end
-    x + output, st
+    x + output
 end
 
-function Lux.apply(d::MultiHeadAttention{Stiefel, Retraction, false}, x::AbstractMatrix{T}, ps::NamedTuple, st::NamedTuple) where {Stiefel, Retraction, T}
-    Dₕ = d.dim ÷ d.n_heads
+function (d::MultiHeadAttention{Stiefel, Retraction, false})(x::AbstractMatrix{T}, ps::NamedTuple, st::NamedTuple) where {Stiefel, Retraction, T}
     dim, input_length = size(x)
     @assert dim == d.dim
 
