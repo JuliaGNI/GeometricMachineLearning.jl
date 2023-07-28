@@ -1,7 +1,6 @@
-
-#######################################################################################
-#Optimiser
-
+"""
+Optimizer struct that stores the 'method' (i.e. Adam with corresponding hyperparameters), the cache and the optimization step.
+"""
 mutable struct Optimizer{MT<:OptimizerMethod, CT<:Tuple}
     method::MT
     cache::CT
@@ -14,7 +13,7 @@ end
 
 
 #######################################################################################
-#optimization step function
+# optimization step function
 
 function optimization_step!(o::Optimizer, d::AbstractExplicitLayer, ps::NamedTuple, C::NamedTuple, dx::NamedTuple)
     gx = rgrad(ps, dx)
@@ -39,7 +38,7 @@ end
 
 
 #######################################################################################
-#utils functions
+# utils functions (should probably be put somewhere else)
 
 rgrad(ps::NamedTuple, dx::NamedTuple) = apply_toNT(rgrad, ps, dx)
 
