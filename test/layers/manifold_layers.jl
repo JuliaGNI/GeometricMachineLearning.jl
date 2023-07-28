@@ -1,4 +1,4 @@
-using Test, LinearAlgebra
+using Test, LinearAlgebra, GeometricMachineLearning
 
 function stiefel_layer_test(T, N, M, tol=1f-1)
     model = Chain(StiefelLayer(N, M), StiefelLayer(N, N))
