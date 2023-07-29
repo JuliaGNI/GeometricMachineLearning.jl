@@ -10,5 +10,3 @@ end
 function update!(o::Optimizer{<:GradientOptimizer}, ::GradientCache, B::AbstractVecOrMat)
     rmul!(B, -o.method.η)
 end
-
-init_optimizer_cache(opt::GradientOptimizer, x) = setup_gradient_cache(x)

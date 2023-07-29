@@ -15,5 +15,3 @@ function update!(o::Optimizer{<:MomentumOptimizer}, C::MomentumCache, B::Abstrac
     add!(C.B, o.method.α*C.B, B)
     mul!(B, -o.method.η, C.B)
 end
-
-init_optimizer_cache(opt::MomentumOptimizer, x) = setup_momentum_cache(x)

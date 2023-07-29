@@ -1,8 +1,7 @@
 """
-Define the Adam Optimizer (no riemannian version yet!)
-Algorithm and suggested defaults are taken from (Goodfellow et al., 2016, page 301), except for δ because single precision is used!
+Defines the Adam Optimizer.
+Algorithm and suggested defaults are taken from (Goodfellow et al., 2016, page 301), except for δ, because single precision is used!
 """
-
 struct AdamOptimizer{T<:Real} <: OptimizerMethod
     η::T
     ρ₁::T
@@ -24,4 +23,8 @@ racᵉˡᵉ(A::AbstractVecOrMat) = sqrt.(A)
 /ᵉˡᵉ(A::AbstractVecOrMat, B::AbstractVecOrMat) = A./B
 scalar_add(A::AbstractVecOrMat, δ::Real) = A .+ δ
 
+"""
+Wrapper for the functions setup_adam_cache, setup_momentum_cache, setup_gradient_cache.
+These appear outside of optimizer_caches.jl because the OptimizerMethods first have to be defined.
+"""
 init_optimizer_cache(::AdamOptimizer, x) = setup_adam_cache(x)
