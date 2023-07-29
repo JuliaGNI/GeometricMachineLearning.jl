@@ -34,12 +34,12 @@ est = hnn(sinput, sparams)[1]
 
 field =  Symbolics.gradient(est, sinput)
 
-fun_est = build_function(est, sinput, develop(sparams)...)[2]
+fun_est = build_function(est, sinput, develop(sparams)...)
 
 fun_field = build_function(field, sinput, develop(sparams)...)[1]
 
 write("symbolic/field.jl", get_string(fun_field))
 
-eval(fun_field)([1,2], develop(hnn.params)...)
+eval(fun_field)([0.2,1.2], develop(hnn.params)...)
 
 

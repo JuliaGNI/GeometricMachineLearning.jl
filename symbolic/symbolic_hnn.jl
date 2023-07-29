@@ -1,6 +1,6 @@
-include("symbolic_neural_network.jl")
+include("abstract_symbolic_neuralnet.jl")
 
-struct SymbolicHNN{AT, ET, FT} <: SymbolicNeuralNetwork{AT, ET}
+struct SymbolicHNN{AT<:HamiltonianNeuralNetwork, ET, FT} <: AbstractSymbolicNeuralNetwork{AT, ET}
     nn::NeuralNetwork{AT}
     est::ET
     field::FT
@@ -17,7 +17,6 @@ end
 field(shnn::SymbolicHNN, x, params = params(shnn)) = shnn.field(x, develop(params)...)
 
 Symbolize(hnn::NeuralNetwork{<:HamiltonianNeuralNetwork}) = SymbolicHNN(hnn)
-
 
 
 function buildsymbolic(nn::NeuralNetwork{<:HamiltonianNeuralNetwork})
