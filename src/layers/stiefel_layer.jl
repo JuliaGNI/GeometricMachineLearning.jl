@@ -1,14 +1,17 @@
-#retraction is more general! function on layer!
-
-struct StiefelLayer{N, M, reverse, retraction} <: ManifoldLayer{N, M, reverse, retraction} end
+"""
+Defines a layer that performs simple multiplication with an element of the Stiefel manifold.
+"""
+struct StiefelLayer{M, N, retraction} <: ManifoldLayer{M, N, retraction} end
 
 default_retr = Geodesic()
-function StiefelLayer(N::Integer, n::Integer, Transpose::Bool=false, Retraction::AbstractRetraction=default_retr)
-    StiefelLayer{N, n, Transpose, typeof(Retraction)}()
+function StiefelLayer(n::Integer, N::Integer, Retraction::AbstractRetraction=default_retr)
+    StiefelLayer{n, N, typeof(Retraction)}()
 end
 
-function AbstractNeuralNetworks.initialparameters(backend::KernelAbstractions.Backend, ::Type{T}, d::StiefelLayer{N,M}; rng::AbstractRNG=Random.default_rng()) where {M,N,T}
-    (weight = rand(backend, rng, StiefelManifold{T}, N, M), )
+function AbstractNeuralNetworks.initialparameters(backend::KernelAbstractions.Backend, ::Type{T}, d::StiefelLayer{M,N}; rng::AbstractRNG=Random.default_rng()) where {M,N,T}
+    (weight = N > M ? rand(backend, rng, StiefelManifold{T}, N, M) : rand(backend, rng, StiefelManifold{T}, M, N), )
 end
 
-#Lux.parameterlength(d::StiefelLayer) = d.n*(d.n-1)÷2 + (d.N-d.n)*d.n
+function parameterlength(::StiefelLayer{M, N}) where {M, N}
+    N > M ? M*(M-1)÷2 + (N-M)*M : N*(N-1)÷2 + (M-N)*N
+end

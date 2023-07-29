@@ -1,7 +1,7 @@
 using Test, LinearAlgebra, GeometricMachineLearning
 
-function stiefel_layer_test(T, N, M, tol=1f-1)
-    model = Chain(StiefelLayer(N, M), StiefelLayer(N, N))
+function stiefel_layer_test(T, M, N, tol=1f-1)
+    model = Chain(StiefelLayer(M, N), StiefelLayer(N, N))
     ps = initialparameters(T, model)
     o = Optimizer(AdamOptimizer(T(1f0), T(5f-1), T(5f-1), T(3f-7)),ps)
 
@@ -13,11 +13,10 @@ function stiefel_layer_test(T, N, M, tol=1f-1)
     # check that the updated elements are on the Stiefel Manifold 
     @test typeof(ps[1].weight) <: StiefelManifold{T}
     @test typeof(ps[2].weight) <: StiefelManifold{T}
-    ps, ps_copy
 end
 
-function grassmann_layer_test(T, N, M, tol=1f-1)
-    model = Chain(GrassmannLayer(N, M), StiefelLayer(N, N))
+function grassmann_layer_test(T, M, N, tol=1f-1)
+    model = Chain(GrassmannLayer(M, N), StiefelLayer(N, N))
     ps = initialparameters(T, model)
     o = Optimizer(AdamOptimizer(T(1f0), T(5f-1), T(5f-1), T(3f-7)),ps)
 
@@ -37,8 +36,8 @@ N_max = 10
 for T in types
     for N = 3:N_max
         for M = 1:(N-2)
-            stiefel_layer_test(T, N, M) 
-            grassmann_layer_test(T, N, M)
+            stiefel_layer_test(T, M, N) 
+            grassmann_layer_test(T, M, N)
         end
     end
 end

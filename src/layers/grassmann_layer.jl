@@ -1,14 +1,17 @@
-#retraction is more general! function on layer!
-
-struct GrassmannLayer{N, M, reverse, retraction} <: ManifoldLayer{N, M, reverse, retraction} end
+"""
+Defines a layer that performs simple multiplication with an element of the Grassmann manifold.
+"""
+struct GrassmannLayer{M, N, retraction} <: ManifoldLayer{M, N, retraction} end
 
 default_retr = Geodesic()
-function GrassmannLayer(N::Integer, n::Integer, Transpose::Bool=false, Retraction::AbstractRetraction=default_retr)
-    GrassmannLayer{N, n, Transpose, typeof(Retraction)}()
+function GrassmannLayer(n::Integer, N::Integer, Retraction::AbstractRetraction=default_retr)
+    GrassmannLayer{n, N, typeof(Retraction)}()
 end
 
 function AbstractNeuralNetworks.initialparameters(backend::KernelAbstractions.Backend, ::Type{T}, d::GrassmannLayer{N,M}; rng::AbstractRNG=Random.default_rng()) where {M,N,T}
-    (weight = rand(backend, rng, GrassmannManifold{T}, N, M), )
+    (weight = N > M ? rand(backend, rng, GrassmannManifold{T}, N, M) : rand(backend, rng, GrassmannManifold{T}, M, N), )
 end
 
-#Lux.parameterlength(d::GrassmannLayer) = (d.N-d.n)*d.n
+function parameterlength(::GrassmannLayer{M, N}) where {M, N}
+    N > M ? (N - M)*M : (M - N):N
+end
