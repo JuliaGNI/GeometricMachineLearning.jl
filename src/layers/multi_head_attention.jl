@@ -1,21 +1,60 @@
+"""
+MultiHeadAttention (MHA) serves as a preprocessing step in the transformer. It reweights the input vectors bases on correlations within those data. 
+"""
 struct MultiHeadAttention{M, N, Stiefel, Retraction, add_connection} <: AbstractExplicitLayer{M, N}
     n_heads::Integer
 end
 
 default_retr = Geodesic()
-function MultiHeadAttention(dim::Integer, n_heads::Integer; Stiefel::Bool=false, Retraction::AbstractRetraction=default_retr, add_connection::Bool=true, init_weight=Lux.glorot_uniform)
+function MultiHeadAttention(dim::Integer, n_heads::Integer; Stiefel::Bool=false, Retraction::AbstractRetraction=default_retr, add_connection::Bool=true)
     @assert dim % n_heads == 0
-    MultiHeadAttention{Stiefel, typeof(Retraction), add_connection, typeof(init_weight)}(dim, n_heads, init_weight)
+    MultiHeadAttention{dim, dim, Stiefel, typeof(Retraction), add_connection}(n_heads)
 end
 
-arameterlength(d::StiefelLayer{false}) = 3*d.dim^2
-parameterlength(d::StiefelLayer{true}) = 3*d.dim*(2*d.dim*d.n_heads - d.n_heads - d.dim)÷(2*d.n_heads^2)
+function parameterlength(::StiefelLayer{M, M, false}) where M
+    3*M^2
+end
+
+function parameterlength(d::StiefelLayer{M, M, true}) where M
+    3*M*(2*M*d.n_heads - d.n_heads - M)÷(2*d.n_heads^2)
+end
+
+function initialparameters(backend::KernelAbstractions.Backend, T::Type, d::MultiHeadAttention{M, M, false}; rng::AbstractRNG=Random.default_rng(), initializer::AbstractNeuralNetworks.AbstractInitializer=GlorotUniform()) where {M}
+    # number of "hidden" dimension (dimension of projection) 
+    Dₕ = M ÷ d.n_heads
+    # projections for queries, keys and vectors.
+    PQ = NamedTuple()
+    PK = NamedTuple()
+    PV = NamedTuple()
+
+    for head in 1:d.n_heads
+        key = Symbol("head_"*string(head))
+        
+        PQ_weight = KernelAbstractions.allocate(backend, T, M, Dₕ)
+        PK_weight = KernelAbstractions.allocate(backend, T, M, Dₕ)
+        PV_weight = KernelAbstractions.allocate(backend, T, M, Dₕ)
+        initializer(rng, PQ_weight)
+        initializer(rng, PK_weight)
+        initializer(rng, PV_weight)
+
+        PQ = merge(PQ, 
+            NamedTuple{(key, )}((PQ_weight, ))
+            )
+        PK = merge(PK, 
+            NamedTuple{(key, )}((PK_weight, ))
+            )
+        PV = merge(PV, 
+            NamedTuple{(key, )}((PV_weight, ))
+            )
+    end
+    (PQ=PQ, PK=PK, PV=PV)
+end
 
 
-function initialparameters(rng::AbstractRNG, d::MultiHeadAttention{M, N, false})
-    #number of "hidden" dimension (dimension of projection) 
-    Dₕ = d.dim ÷ d.n_heads
-    #projections for queries, keys and vectors.
+function initialparameters(backend::KernelAbstractions.Backend, T::Type, d::MultiHeadAttention{M, M, true}; rng::AbstractRNG=Random.default_rng(), initializer::AbstractNeuralNetworks.AbstractInitializer=GlorotUniform()) where {M}
+    # number of "hidden" dimension (dimension of projection) 
+    Dₕ = M ÷ d.n_heads
+    # projections for queries, keys and vectors.
     PQ = NamedTuple()
     PK = NamedTuple()
     PV = NamedTuple()
@@ -24,46 +63,21 @@ function initialparameters(rng::AbstractRNG, d::MultiHeadAttention{M, N, false})
         key = Symbol("head_"*string(head))
         
         PQ = merge(PQ, 
-            NamedTuple{(key, )}((d.init_weight(rng, d.dim, Dₕ), ))
+            NamedTuple{(key, )}((rand(backend, rng, StiefelManifold{T}, M, Dₕ), ))
             )
         PK = merge(PK, 
-            NamedTuple{(key, )}((d.init_weight(rng, d.dim, Dₕ), ))
+            NamedTuple{(key, )}((rand(backend, rng, StiefelManifold{T}, M, Dₕ), ))
             )
         PV = merge(PV, 
-            NamedTuple{(key, )}((d.init_weight(rng, d.dim, Dₕ), ))
+            NamedTuple{(key, )}((rand(backend, rng, StiefelManifold{T}, M, Dₕ), ))
             )
     end
     (PQ=PQ, PK=PK, PV=PV)
 end
 
-
-function initialparameters(rng::AbstractRNG, d::MultiHeadAttention{M, N, true})
-    #number of "hidden" dimension (dimension of projection) 
-    Dₕ = d.dim ÷ d.n_heads
-    #projections for queries, keys and vectors.
-    PQ = NamedTuple()
-    PK = NamedTuple()
-    PV = NamedTuple()
-
-    for head in 1:d.n_heads
-        key = Symbol("head_"*string(head))
-        
-        PQ = merge(PQ, 
-            NamedTuple{(key, )}((d.init_weight(rng, StiefelManifold, d.dim, Dₕ), ))
-            )
-        PK = merge(PK, 
-            NamedTuple{(key, )}((d.init_weight(rng, StiefelManifold, d.dim, Dₕ), ))
-            )
-        PV = merge(PV, 
-            NamedTuple{(key, )}((d.init_weight(rng, StiefelManifold, d.dim, Dₕ), ))
-            )
-    end
-    (PQ=PQ, PK=PK, PV=PV)
-end
-
-function (d::MultiHeadAttention{Stiefel, Retraction, true})(x::AbstractMatrix{T}, ps::NamedTuple) where {Stiefel, Retraction, T}
+function (d::MultiHeadAttention{M, M, Stiefel, Retraction, true})(x::AbstractMatrix{T}, ps::NamedTuple) where {M, Stiefel, Retraction, T}
     dim, input_length = size(x)
-    @assert dim == d.dim
+    @assert dim == M
 
     output = typeof(x)(zeros(T, 0, input_length))
     for i in 1:d.n_heads
@@ -73,96 +87,75 @@ function (d::MultiHeadAttention{Stiefel, Retraction, true})(x::AbstractMatrix{T}
     x + output
 end
 
-function (d::MultiHeadAttention{Stiefel, Retraction, false})(x::AbstractMatrix{T}, ps::NamedTuple, st::NamedTuple) where {Stiefel, Retraction, T}
+function (d::MultiHeadAttention{M, M, Stiefel, Retraction, false})(x::AbstractMatrix{T}, ps::NamedTuple) where {M, Stiefel, Retraction, T}
     dim, input_length = size(x)
-    @assert dim == d.dim
+    @assert dim == M
 
     output = typeof(x)(zeros(T, 0, input_length))
     for i in 1:d.n_heads
         key = Symbol("head_"*string(i))
         output = vcat(output, ps.PV[key]'*x*Lux.softmax((ps.PQ[key]'*x)'*(ps.PK[key]'*x)))
     end
-    output, st
+    output
 end
 
-function Lux.apply(d::MultiHeadAttention{Stiefel, Retraction, true}, x::AbstractArray{T, 3}, ps::NamedTuple, st::NamedTuple) where {Stiefel, Retraction, T} 
-    Dₕ = d.dim ÷ d.n_heads
+function (d::MultiHeadAttention{M, M, Stiefel, Retraction, true})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, Stiefel, Retraction, T} 
+    Dₕ = M ÷ d.n_heads
     dim, input_length, number_data = size(x)
-    @assert dim == d.dim
+    @assert dim == M
     
-    #backend = KernelAbstractions.get_backend(x)
 
-    #output = KernelAbstractions.zeros(backend, T, 0, input_length, number_data)
     output = similar(x, 0, input_length, number_data)
 
-    #Q_tensor = KernelAbstractions.zeros(backend, T, Dₕ, input_length, number_data)
+    # initialize the results of various tensor matrix multiplications
     Q_tensor = similar(x, Dₕ, input_length, number_data)
-    #K_tensor = KernelAbstractions.zeros(backend, T, Dₕ, input_length, number_data)
     K_tensor = similar(x, Dₕ, input_length, number_data)
-    #V_tensor = KernelAbstractions.zeros(backend, T, Dₕ, input_length, number_data)
     V_tensor = similar(x, Dₕ, input_length, number_data)
-    #QK_tensor = KernelAbstractions.zeros(backend, T, input_length, input_length, number_data)
     QK_tensor = similar(x, input_length, input_length, number_data)
-    #single_head_output = KernelAbstractions.zeros(backend, T, Dₕ, input_length, number_data)
+
+    # this is the result of a single head attention block
     single_head_output = similar(x, Dₕ, input_length, number_data)
 
     for i in 1:d.n_heads 
         key = Symbol("head_"*string(i))
-        #use tensor_mat_mul for this computation
-        #mat_tensor_mul!(Q_tensor, ps.PQ[key]', x)
         Q_tensor = mat_tensor_mul(ps.PQ[key]', x)
-        #mat_tensor_mul!(K_tensor, ps.PK[key]', x)
         K_tensor = mat_tensor_mul(ps.PK[key]', x)
-        #mat_tensor_mul!(V_tensor, ps.PV[key]', x)
         V_tensor = mat_tensor_mul(ps.PV[key]', x)
-        #tensor_transpose_tensor_mul!(QK_tensor, Q_tensor, K_tensor)
         QK_tensor = tensor_transpose_tensor_mul(Q_tensor, K_tensor)
-        #tensor_tensor_mul!(single_head_output, V_tensor, Lux.softmax(QK_tensor))
+
         single_head_output = tensor_tensor_mul(V_tensor, Lux.softmax(QK_tensor))
         output = vcat(output, single_head_output) 
-        #KernelAbstractions.synchronize(backend)
+        # KernelAbstractions.synchronize(backend)
     end
-    x + output, st
+    x + output
 end
 
-function Lux.apply(d::MultiHeadAttention{Stiefel, Retraction, false}, x::AbstractArray{T, 3}, ps::NamedTuple, st::NamedTuple) where {Stiefel, Retraction, T} 
-    Dₕ = d.dim ÷ d.n_heads
+function (d::MultiHeadAttention{M, M, Stiefel, Retraction, false})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, Stiefel, Retraction, T} 
+    Dₕ = M ÷ d.n_heads
     dim, input_length, number_data = size(x)
-    @assert dim == d.dimoutput
+    @assert dim == M
     
-    #backend = KernelAbstractions.get_backend(x)
-
-    #output = KernelAbstractions.zeros(backend, T, 0, input_length, number_data)
     output = similar(x, 0, input_length, number_data)
 
-    #Q_tensor = KernelAbstractions.zeros(backend, T, Dₕ, input_length, number_data)
     Q_tensor = similar(x, Dₕ, input_length, number_data)
-    #K_tensor = KernelAbstractions.zeros(backend, T, Dₕ, input_length, number_data)
     K_tensor = similar(x, Dₕ, input_length, number_data)
-    #V_tensor = KernelAbstractions.zeros(backend, T, Dₕ, input_length, number_data)
     V_tensor = similar(x, Dₕ, input_length, number_data)
-    #QK_tensor = KernelAbstractions.zeros(backend, T, input_length, input_length, number_data)
     QK_tensor = similar(x, input_length, input_length, number_data)
-    #single_head_output = KernelAbstractions.zeros(backend, T, Dₕ, input_length, number_data)
+    
     single_head_output = similar(x, Dₕ, input_length, number_data)
 
     for i in 1:d.n_heads 
         key = Symbol("head_"*string(i))
-        #use tensor_mat_mul for this computation
-        #mat_tensor_mul!(Q_tensor, ps.PQ[key]', x)
         Q_tensor = mat_tensor_mul(ps.PQ[key]', x)
-        #mat_tensor_mul!(K_tensor, ps.PK[key]', x)
         K_tensor = mat_tensor_mul(ps.PK[key]', x)
-        #mat_tensor_mul!(V_tensor, ps.PV[key]', x)
         V_tensor = mat_tensor_mul(ps.PV[key]', x)
-        #tensor_transpose_tensor_mul!(QK_tensor, Q_tensor, K_tensor)
         QK_tensor = tensor_transpose_tensor_mul(Q_tensor, K_tensor)
-        #tensor_tensor_mul!(single_head_output, V_tensor, Lux.softmax(QK_tensor))
+
         single_head_output = tensor_tensor_mul(V_tensor, Lux.softmax(QK_tensor))
         output = vcat(output, single_head_output) 
-        #KernelAbstractions.synchronize(backend)
+        # KernelAbstractions.synchronize(backend)
     end
-    output, st
+    output
 end
 
 import ChainRules
