@@ -19,7 +19,7 @@ module GeometricMachineLearning
     using InteractiveUtils
 
 
-    import CUDA, Lux
+    import CUDA
 
     import AbstractNeuralNetworks: Architecture, Chain, NeuralNetwork, AbstractExplicitLayer
     import AbstractNeuralNetworks: Dense, Linear
@@ -53,7 +53,7 @@ module GeometricMachineLearning
     #export tensor_mat_mul
 
     #this defines empty retraction type structs (doesn't rely on anything)
-    include("optimizers/utils/retraction_types.jl")
+    include("optimizers/manifold_related/retraction_types.jl")
 
     export TrivialInitRNG
 
@@ -137,14 +137,13 @@ module GeometricMachineLearning
     export optimization_step!
     export init_optimizer_cache
 
-    include("optimizers/optimizer_caches.jl")
     include("optimizers/optimizer_method.jl")
+    include("optimizers/optimizer_caches.jl")
+    include("optimizers/optimizer.jl")
     include("optimizers/gradient_optimizer.jl")
     include("optimizers/momentum_optimizer.jl")        
     include("optimizers/adam_optimizer.jl")
     include("optimizers/init_optimizer_cache.jl")
-    include("optimizers/optimizer.jl")
-
 
     export GlobalSection, apply_section
     export global_rep
