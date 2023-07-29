@@ -9,6 +9,7 @@ $$
 with $V(p) = \sum_ia_i\Sigma(\sum_jk_{ij}p_j+b_i)$, where $\Sigma$ is the antiderivative of the activation function $\sigma$. Such layers are by construction symplectic.
 """
 struct Gradient{M, N, full_grad, change_q, AT} <: AbstractExplicitLayer{M, N}
+        second_dim::Integer
         activation::AT
 end
 
@@ -20,7 +21,7 @@ function Gradient(dim::Int, dim2::Int=dim, activation = identity; full_grad::Boo
         iseven(dim) && iseven(dim2) || error("Dimensions must be even!")
         dim2 ≥ dim || error("Second dimension should be bigger than the first!")
 
-        return Gradient{dim, dim2, full_grad, change_q, typeof(activation)}(activation)
+        return Gradient{dim, dim, full_grad, change_q, typeof(activation)}(dim2, activation)
 end
 
 
@@ -32,9 +33,9 @@ end
 
 
 function initialparameters(backend::Backend, ::Type{T}, d::Gradient{M, N, true}; rng::AbstractRNG = Random.default_rng(), init_weight = GlorotUniform(), init_bias = ZeroInitializer(), init_scale = GlorotUniform()) where {M, N, T}
-        K = KernelAbstractions.allocate(backend, T, N÷2, M÷2)
-        b = KernelAbstractions.allocate(backend, T, N÷2)
-        a = KernelAbstractions.allocate(backend, T, N÷2)
+        K = KernelAbstractions.allocate(backend, T, d.second_dim÷2, M÷2)
+        b = KernelAbstractions.allocate(backend, T, d.second_dim÷2)
+        a = KernelAbstractions.allocate(backend, T, d.second_dim÷2)
         init_weight(rng, K)
         init_bias(rng, b)
         init_scale(rng, a)
@@ -47,38 +48,35 @@ function initialparameters(backend::Backend, ::Type{T}, d::Gradient{M, N, false}
         return (scale = a,)
 end
 
-function parameterlength(::Gradient{M, N, full_grad}) where {M, N, full_grad}
-        return full_grad ? N÷2 * (M÷2 + 2) : M÷2
+function parameterlength(d::Gradient{M, M, full_grad}) where {M, full_grad}
+        return full_grad ? d.second_dim÷2 * (M÷2 + 2) : M÷2
 end
 
 
-@inline function (d::Gradient{M, N, false,true})(x::AbstractVecOrMat, ps) where {M, N}
+@inline function (d::Gradient{M, M, false,true})(x::AbstractVecOrMat, ps) where {M}
         size(x)[1] == M || error("Dimension mismatch.")
         N2 = M÷2
         q, p = assign_q_and_p(x, N2)
         return vcat(q + ps.scale.*d.activation.(p), p)
 end
 
-@inline function (d::Gradient{M, N, false,false})(x::AbstractVecOrMat, ps) where {M, N}
+@inline function (d::Gradient{M, M, false,false})(x::AbstractVecOrMat, ps) where {M}
         size(x)[1] == M || error("Dimension mismatch.")
         N2 = M÷2 
         q, p = assign_q_and_p(x, N2)
         return vcat(q, p + ps.scale.*d.activation.(q))
 end
 
-@inline function (d::Gradient{M, N, true,true})(x::AbstractVecOrMat, ps) where {M, N}
+@inline function (d::Gradient{M, M, true,true})(x::AbstractVecOrMat, ps) where {M}
         size(x)[1] == M || error("Dimension mismatch.")
         N2 = M÷2 
         q, p = assign_q_and_p(x, N2)
         return vcat(q + ps.weight' * (ps.scale .* d.activation.(ps.weight * p .+ ps.bias)), p)
 end
 
-@inline function(d::Gradient{M, N, true,false})(x::AbstractVecOrMat, ps) where {M, N}
+@inline function(d::Gradient{M, M, true,false})(x::AbstractVecOrMat, ps) where {M}
         size(x)[1] == M || error("Dimension mismatch.")
         N2 = M÷2 
         q, p = assign_q_and_p(x, N2)
         return vcat(q, p + ps.weight' * (ps.scale .* d.activation(ps.weight*q .+ ps.bias)))
 end
-
-
-
