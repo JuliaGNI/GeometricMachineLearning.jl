@@ -10,6 +10,7 @@ using SafeTestsets
 @safetestset "Transformer Networks #1                                                         " begin include("transformer_related/multi_head_attention_stiefel_optim_cache.jl") end
 @safetestset "Transformer Networks #2                                                         " begin include("transformer_related/multi_head_attention_stiefel_retraction.jl") end
 @safetestset "Transformer Networks #3                                                         " begin include("transformer_related/multi_head_attention_stiefel_setup.jl") end
+@safetestset "Transformer Networks #4                                                         " begin include("transformer_related/transformer_setup.jl") end
 @safetestset "Optimizer #1                                                                    " begin include("optimizers/utils/global_sections.jl") end
 @safetestset "Optimizer #2                                                                    " begin include("optimizers/utils/optimization_step.jl") end
 @safetestset "Optimizer #3                                                                    " begin include("optimizers/utils/modified_exponential.jl") end
