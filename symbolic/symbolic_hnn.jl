@@ -26,7 +26,7 @@ function buildsymbolic(nn::NeuralNetwork{<:HamiltonianNeuralNetwork})
     dimin = dim(nn.architecture)
 
     #compute the symplectic matrix
-    sympmatrix = symplecticMatrix(dimin)
+    sympmatrix = transposymplecticMatrix(dimin)
     
     # creates variables for the input
     @variables sinput[1:dimin]
@@ -35,13 +35,11 @@ function buildsymbolic(nn::NeuralNetwork{<:HamiltonianNeuralNetwork})
     sparams = symbolicParams(nn)
 
     est = nn(sinput, sparams)
-    
-    Dᵢₙₚᵤₜ = Differential(sinput)
-    
-    field =  sympmatrix * Dᵢₙₚᵤₜ(nn(sinput, sparams))
-    
+
+    field =  Symbolics.jacobian(est, sinput) * sympmatrix
+
     fun_est = build_function(est, sinput, develop(sparams)...)[2]
-    fun_field = build_function(field, sinput, develop(sparams)...)[2]
+    fun_field = build_function(field, sinput, develop(sparams)...)[1]
 
     return (fun_est, fun_field)
 

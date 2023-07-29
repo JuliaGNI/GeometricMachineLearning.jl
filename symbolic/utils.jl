@@ -18,9 +18,9 @@ function SymbolicName(arg, i)
 end
 
 
-function symplecticMatrix(n::Int) 
+function transposymplecticMatrix(n::Int) 
     I = Diagonal(ones(n÷2))
     Z = zeros(n÷2,n÷2)
-    [Z I;-I Z]
+    [Z -I; I Z]
 end
 

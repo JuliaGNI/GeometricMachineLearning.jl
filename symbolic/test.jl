@@ -5,6 +5,8 @@ using Symbolics
 using AbstractNeuralNetworks
 import AbstractNeuralNetworks: NeuralNetwork
 
+import GeometricMachineLearning: vectorfield
+
 include("utils.jl")
 
 include("symbolic_hnn.jl")
@@ -26,5 +28,9 @@ x = [0.5, 0.8]
 @time shnn(x)
 @time develop(params(shnn))
 @time hnn(x)
+
+#@test field(shnn,x) == vectorfield(hnn, x)
+@time field(shnn, x)
+@time vectorfield(hnn, x)
 
 
