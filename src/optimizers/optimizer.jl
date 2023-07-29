@@ -1,5 +1,7 @@
 """
 Optimizer struct that stores the 'method' (i.e. Adam with corresponding hyperparameters), the cache and the optimization step.
+
+It takes as input an optimization method and the parameters of a network. 
 """
 mutable struct Optimizer{MT<:OptimizerMethod, CT<:Tuple}
     method::MT
