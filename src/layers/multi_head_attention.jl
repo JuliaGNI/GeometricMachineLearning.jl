@@ -6,9 +6,9 @@ struct MultiHeadAttention{M, N, Stiefel, Retraction, add_connection} <: Abstract
 end
 
 default_retr = Geodesic()
-function MultiHeadAttention(dim::Integer, n_heads::Integer; Stiefel::Bool=false, Retraction::AbstractRetraction=default_retr, add_connection::Bool=true)
+function MultiHeadAttention(dim::Integer, n_heads::Integer; Stiefel::Bool=false, retraction::AbstractRetraction=default_retr, add_connection::Bool=true)
     @assert dim % n_heads == 0
-    MultiHeadAttention{dim, dim, Stiefel, typeof(Retraction), add_connection}(n_heads)
+    MultiHeadAttention{dim, dim, Stiefel, typeof(retraction), add_connection}(n_heads)
 end
 
 function parameterlength(::StiefelLayer{M, M, false}) where M
