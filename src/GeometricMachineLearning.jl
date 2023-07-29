@@ -153,9 +153,9 @@ module GeometricMachineLearning
     export update!
     export check
 
-    include("optimizers/utils/global_sections.jl")
-    include("optimizers/utils/modified_exponential.jl")
-    include("optimizers/utils/retractions.jl")
+    include("optimizers/manifold_related/global_sections.jl")
+    include("optimizers/manifold_related/modified_exponential.jl")
+    include("optimizers/manifold_related/retractions.jl")
 
     #INCLUDE ABSTRACT TRAINING integrator
     export AbstractTrainingIntegrator
