@@ -8,7 +8,7 @@ function Transformer(dim::Integer, n_heads::Integer, L::Integer;
     layers = ()
     for _ in 1:L
         layers = (layers..., MultiHeadAttention(dim, n_heads, Stiefel=Stiefel, retraction=retraction, add_connection=add_connection), 
-        ResNet(dim, activation, use_bias=use_bias) )
+        ResNet(dim, activation; use_bias=use_bias) )
     end
 
     Chain(layers...)

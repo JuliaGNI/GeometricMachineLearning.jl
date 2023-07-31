@@ -3,7 +3,7 @@ struct ResNet{M, N, use_bias, F1} <: AbstractExplicitLayer{M, N}
 end
 
 function Base.show(io::IO, d::ResNet{M, M, use_bias}) where {M, use_bias}
-    print(io, "ResNet($(d.dim) => $(d.dim)")
+    print(io, "ResNet($(M) => $(M)")
     (d.activation == identity) || print(io, ", $(d.activation)")
     use_bias || print(io, ", bias=false")
     return print(io, ")")
