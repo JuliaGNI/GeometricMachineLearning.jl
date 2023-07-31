@@ -18,7 +18,6 @@ module GeometricMachineLearning
     using ForwardDiff
     using InteractiveUtils
 
-
     import CUDA
 
     import AbstractNeuralNetworks: Architecture, Chain, NeuralNetwork, AbstractExplicitLayer
@@ -125,6 +124,7 @@ module GeometricMachineLearning
     export StiefelLayer, GrassmannLayer, ManifoldLayer
     export PSDLayer
     export MultiHeadAttention
+    export ResNet
     export Transformer
 
     #INCLUDE OPTIMIZERS
