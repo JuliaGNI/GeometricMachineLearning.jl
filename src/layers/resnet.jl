@@ -32,6 +32,10 @@ function parameterlength(::ResNet{M, M, use_bias}) where {M, use_bias}
     return use_bias ? M * (M + 1) : M * M
 end
 
+@inline function (d::ResNet{M, M, true})(x::AbstractVecOrMat, ps::NamedTuple) where {M}
+    return x + d.activation.(ps.weight * x .+ ps.bias)
+end
+
 @inline function (d::ResNet{M, M, false})(x::AbstractVecOrMat, ps::NamedTuple) where {M}
     return x + d.activation.(ps.weight * x)
 end
