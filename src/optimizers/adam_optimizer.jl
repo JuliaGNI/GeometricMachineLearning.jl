@@ -1,15 +1,14 @@
 """
-Define the Adam Optimizer (no riemannian version yet!)
-Algorithm and suggested defaults are taken from (Goodfellow et al., 2016, page 301), except for δ because single precision is used!
+Defines the Adam Optimizer.
+Algorithm and suggested defaults are taken from (Goodfellow et al., 2016, page 301), except for δ, because single precision is used!
 """
-
 struct AdamOptimizer{T<:Real} <: OptimizerMethod
     η::T
     ρ₁::T
     ρ₂::T
     δ::T
 
-    AdamOptimizer(η = Float32(1e-3), ρ₁ = Float32(0.9), ρ₂ = Float32(0.99), δ = 3f-7) = new{typeof(η)}(η, ρ₁, ρ₂, δ)
+    AdamOptimizer(η = 1f-3, ρ₁ = 9f-1, ρ₂ = 9.9f-1, δ = 3f-7) = new{typeof(η)}(η, ρ₁, ρ₂, δ)
 end
 
 function update!(o::Optimizer{<:AdamOptimizer{T}}, C::AdamCache, B::AbstractVecOrMat) where T
@@ -23,5 +22,3 @@ end
 racᵉˡᵉ(A::AbstractVecOrMat) = sqrt.(A)
 /ᵉˡᵉ(A::AbstractVecOrMat, B::AbstractVecOrMat) = A./B
 scalar_add(A::AbstractVecOrMat, δ::Real) = A .+ δ
-
-init_optimizer_cache(::AdamOptimizer, x) = setup_adam_cache(x)

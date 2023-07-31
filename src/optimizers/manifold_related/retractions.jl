@@ -7,7 +7,7 @@ TODO: adapt AT <: StiefelLieAlgHorMatrix for the general case!
 """
 
 #fallback function -> maybe put into another file!
-function retraction(::Lux.AbstractExplicitLayer, gx::NamedTuple)
+function retraction(::AbstractExplicitLayer, gx::NamedTuple)
     gx
 end
 
@@ -39,7 +39,7 @@ function retraction(::MultiHeadAttention{true, Cayley}, B::NamedTuple)
     cayley(B)
 end
 
-geodesic(B::NamedTuple) = apply_toNT(B, geodesic)
+geodesic(B::NamedTuple) = apply_toNT(geodesic, B)
 
 #you will have to fix the scalar indexing problem wrt to SkewSymMatrix!
 function geodesic(B::StiefelLieAlgHorMatrix{T}) where T
@@ -65,7 +65,7 @@ function geodesic(B::GrassmannLieAlgHorMatrix{T}) where T
     )
 end
 
-cayley(B::NamedTuple) = apply_toNT(B, cayley)
+cayley(B::NamedTuple) = apply_toNT(cayley, B)
 
 function cayley(B::StiefelLieAlgHorMatrix{T}) where T
     N, n = B.N, B.n

@@ -12,7 +12,7 @@ end
 
 @inline arch(luxnn::LuxNeuralNetwork) = luxnn.architecture
 
-function NeuralNetwork(arch::AbstractArchitecture, back::LuxBackend)
+function NeuralNetwork(arch::Architecture, back::LuxBackend)
     # create model
     model = chain(arch, back::LuxBackend)
 
@@ -51,14 +51,14 @@ apply(nn::LuxNeuralNetwork, x) = apply(nn, x, nn.params)
 (nn::LuxNeuralNetwork)(x, args...) = apply(nn, x, args...)
 
 
-function update_layer!(::Lux.AbstractExplicitLayer, x::NamedTuple, dx::NamedTuple, η::AbstractFloat)
+function update!(::Lux.AbstractExplicitLayer, x::NamedTuple, dx::NamedTuple, η::AbstractFloat)
     for obj in keys(x)
         x[obj] .+= η * dx[obj]
     end
 end
 
 
-@inline dim(nn::LuxNeuralNetwork) = dim(nn.architecture)
+@inline dim(nn::NeuralNetwork) = dim(nn.architecture)
 
 
 

@@ -9,17 +9,17 @@ SEulerA(;sqdist = sqeuclidean) = TrainingIntegrator{SymplecticEulerA, PhaseSpace
 SEulerB(;sqdist = sqeuclidean) = TrainingIntegrator{SymplecticEulerB, PhaseSpaceSymbol, TrajectoryData, typeof(sqdist)}(sqdist)
 
             
-function loss_single(::TrainingIntegrator{SymplecticEulerA}, nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, qₙ, qₙ₊₁, pₙ, pₙ₊₁, Δt, params = nn.params)
+function loss_single(::TrainingIntegrator{SymplecticEulerA}, nn::NeuralNetwork{<:HamiltonianNeuralNetwork}, qₙ, qₙ₊₁, pₙ, pₙ₊₁, Δt, params = nn.params)
     dH = vectorfield(nn, [qₙ₊₁...,pₙ...], params)
     sqeuclidean(dH[1],(qₙ₊₁-qₙ)/Δt) + sqeuclidean(dH[2],(pₙ₊₁-pₙ)/Δt)
 end
 
-function loss_single(::TrainingIntegrator{SymplecticEulerB}, nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, qₙ, qₙ₊₁, pₙ, pₙ₊₁, Δt, params = nn.params)
+function loss_single(::TrainingIntegrator{SymplecticEulerB}, nn::NeuralNetwork{<:HamiltonianNeuralNetwork}, qₙ, qₙ₊₁, pₙ, pₙ₊₁, Δt, params = nn.params)
     dH = vectorfield(nn, [qₙ...,pₙ₊₁...], params)
     sqeuclidean(dH[1],(qₙ₊₁-qₙ)/Δt) + sqeuclidean(dH[2],(pₙ₊₁-pₙ)/Δt)
 end
 
-loss(ti::TrainingIntegrator{<:SymplecticEuler}, nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, data::TrainingData{<:DataSymbol{<:PhaseSpaceSymbol}}, index_batch = eachindex(ti, data), params = nn.params) = 
+loss(ti::TrainingIntegrator{<:SymplecticEuler}, nn::NeuralNetwork{<:HamiltonianNeuralNetwork}, data::TrainingData{<:DataSymbol{<:PhaseSpaceSymbol}}, index_batch = eachindex(ti, data), params = nn.params) = 
 mapreduce(args->loss_single(Zygote.ignore(ti), nn, get_data(data,:q, args...), get_data(data,:q, next(args...)...), get_data(data,:p, args...), get_data(data,:p,next(args...)...), get_Δt(data), params),+, index_batch)
 
 min_length_batch(::SymplecticEuler) = 2

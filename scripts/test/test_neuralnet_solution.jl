@@ -9,7 +9,7 @@ include("macro_testerror.jl")
 #########################################
 
 training_data = tra_ps_data
-neuralnet = NeuralNetwork(GSympNet(2))
+neuralnet = NeuralNetwork(GSympNet(2), Float64)
 mopt = GradientOptimizer()
 method = SEuler()
 nruns = 0
@@ -93,7 +93,7 @@ last_sg3  = last(neural_net_solution)
 
 training_set1 = TrainingSet(neuralnet, training_parameters, training_data)
 
-neuralnet2 = NeuralNetwork(GSympNet(2; nhidden = 4))
+neuralnet2 = NeuralNetwork(GSympNet(2; nhidden = 4), Float64)
 training_set2 = TrainingSet(neuralnet2, training_parameters, training_data)
 
 ensemble_training = EnsembleTraining(training_set1, training_set2)

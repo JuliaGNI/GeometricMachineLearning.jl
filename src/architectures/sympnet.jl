@@ -1,5 +1,5 @@
 # Structure
-abstract type SympNet{AT} <: AbstractArchitecture end
+abstract type SympNet{AT} <: Architecture end
 
 struct LASympNet{AT,T1,T2,T3} <: SympNet{AT} 
     dim::Int
@@ -20,18 +20,15 @@ end
 
 @inline dim(arch::LASympNet) = arch.dim
 
-struct GSympNet{AT,T1,T2,T3} <: SympNet{AT} 
+struct GSympNet{AT} <: SympNet{AT} 
     dim::Int
     width::Int
     nhidden::Int
     act::AT
     init_uplow::Vector{Bool}
-    init_weight::T1
-    init_bias::T2
-    init_scale::T3
 
-    function GSympNet(dim; width=dim, nhidden=2, activation=tanh, init_uplow=[true,false], init_weight=Lux.glorot_uniform, init_bias=Lux.zeros32, init_scale=Lux.glorot_uniform) 
-        new{typeof(activation),typeof(init_weight),typeof(init_bias),typeof(init_scale)}(dim, width, nhidden, activation, init_uplow, init_weight, init_bias, init_scale)
+    function GSympNet(dim; width=dim, nhidden=2, activation=tanh, init_uplow=[true,false]) 
+        new{typeof(activation)}(dim, width, nhidden, activation, init_uplow,)
     end
 end
 
@@ -39,42 +36,37 @@ end
 @inline dim(arch::GSympNet) = arch.dim
 
 # Chain function
-function chain(nn::GSympNet, ::LuxBackend)
+function Chain(nn::GSympNet)
     inner_layers = Tuple(
-        [Gradient(nn.dim, nn.width, nn.act, change_q = nn.init_uplow[Int64((i-1)%length(nn.init_uplow)+1)], init_weight=nn.init_weight, init_bias=nn.init_bias, init_scale=nn.init_scale) for i in 1:nn.nhidden]
+        [Gradient(nn.dim, nn.width, nn.act, change_q = nn.init_uplow[Int64((i-1)%length(nn.init_uplow)+1)]) for i in 1:nn.nhidden]
     )
-    Lux.Chain(
+    Chain(
         inner_layers...
     )
 end
 
-function chain(nn::LASympNet, ::LuxBackend)
+function Chain(nn::LASympNet)
     couple_layers = []
     for i in 1:nn.nhidden
         for j in 1:nn.width
-            push!(couple_layers, Linear(nn.dim, change_q = nn.init_uplow_linear[Int64((i-1+j-1)%length(nn.init_uplow_linear)+1)], bias=(j==nn.width), init_weight=nn.init_sym_matrices, init_bias=nn.init_bias))
+            push!(couple_layers, LinearSymplectic(nn.dim, change_q = nn.init_uplow_linear[Int64((i-1+j-1)%length(nn.init_uplow_linear)+1)], bias=(j==nn.width), init_weight=nn.init_sym_matrices, init_bias=nn.init_bias))
         end
-        push!(couple_layers,Gradient(nn.dim, nn.dim, nn.act, full_grad = false, change_q = nn.init_uplow_act[Int64((i-1)%length(nn.init_uplow_act)+1)], init_weight=nn.init_weight))
+        push!(couple_layers,Gradient(nn.dim, nn.dim, nn.act, full_grad = false, change_q = nn.init_uplow_act[Int64((i-1)%length(nn.init_uplow_act)+1)]))
     end
 
     for j in 1:nn.width
-        push!(couple_layers, Linear(nn.dim, change_q = nn.init_uplow_linear[Int64((nn.nhidden+1-1+j-1)%length(nn.init_uplow_linear)+1)], bias=(j==nn.width), init_weight=nn.init_sym_matrices, init_bias=nn.init_bias))
+        push!(couple_layers, LinearSymplectic(nn.dim, change_q = nn.init_uplow_linear[Int64((nn.nhidden+1-1+j-1)%length(nn.init_uplow_linear)+1)], bias=(j==nn.width), init_weight=nn.init_sym_matrices, init_bias=nn.init_bias))
     end
     
-    Lux.Chain(
+    Chain(
         couple_layers...
     )
 end
 
-# Evaluation of the neural network
-
-(nn::LuxNeuralNetwork{<:SympNet})(x, params = nn.params) = apply(nn, x,params)
-
-
 
 # Results
 
-function Iterate_Sympnet(nn::LuxNeuralNetwork{<:SympNet}, q0, p0; n_points = DEFAULT_SIZE_RESULTS)
+function Iterate_Sympnet(nn::NeuralNetwork{<:SympNet}, q0, p0; n_points = DEFAULT_SIZE_RESULTS)
 
     n_dim = length(q0)
     

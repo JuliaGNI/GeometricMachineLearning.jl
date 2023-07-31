@@ -1,5 +1,5 @@
 
-struct HamiltonianNeuralNetwork{AT} <: AbstractArchitecture
+struct HamiltonianNeuralNetwork{AT} <: Architecture
     dimin::Int
     width::Int
     nhidden::Int
@@ -12,27 +12,23 @@ end
 
 @inline dim(arch::HamiltonianNeuralNetwork) = arch.dimin
 
-function chain(nn::HamiltonianNeuralNetwork, ::LuxBackend)
+function Chain(nn::HamiltonianNeuralNetwork)
     inner_layers = Tuple(
-        [Lux.Dense(nn.width, nn.width, nn.act) for _ in 1:nn.nhidden]
+        [Dense(nn.width, nn.width, nn.act) for _ in 1:nn.nhidden]
     )
 
-    Lux.Chain(
-        Lux.Dense(nn.dimin, nn.width, nn.act),
+    Chain(
+        Dense(nn.dimin, nn.width, nn.act),
         inner_layers...,
-        Lux.Dense(nn.width, 1; use_bias=false)
+        Linear(nn.width, 1; use_bias = false)
     )
 end
 
-
-# evaulation of the Hamiltonian Neural Network
-(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork})(x, params = nn.params) = sum(apply(nn, x, params))
-
 # gradient of the Hamiltonian Neural Network
-gradient(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, params = nn.params) = Zygote.gradient(ξ -> nn(ξ, params), x)[1]
+gradient(nn::NeuralNetwork{<:HamiltonianNeuralNetwork}, x, params = nn.params) = Zygote.gradient(ξ -> sum(nn(ξ, params)), x)[1]
 
 # vector field of the Hamiltonian Neural Network
-function vectorfield(nn::LuxNeuralNetwork{<:HamiltonianNeuralNetwork}, x, params = nn.params) 
+function vectorfield(nn::NeuralNetwork{<:HamiltonianNeuralNetwork}, x, params = nn.params) 
     n_dim = length(x)÷2
     I = Diagonal(ones(n_dim))
     Z = zeros(n_dim,n_dim)

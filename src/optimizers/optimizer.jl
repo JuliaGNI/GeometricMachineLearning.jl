@@ -1,8 +1,9 @@
+"""
+Optimizer struct that stores the 'method' (i.e. Adam with corresponding hyperparameters), the cache and the optimization step.
 
-#######################################################################################
-#Optimiser
-
-mutable struct Optimizer{MT<:OptimizerMethod, CT<:NamedTuple}
+It takes as input an optimization method and the parameters of a network. 
+"""
+mutable struct Optimizer{MT<:OptimizerMethod, CT<:Tuple}
     method::MT
     cache::CT
     step::Int
@@ -14,9 +15,9 @@ end
 
 
 #######################################################################################
-#optimization step function
+# optimization step function
 
-function optimization_step!(o::Optimizer, d::Lux.AbstractExplicitLayer, ps::NamedTuple, C::NamedTuple, dx::NamedTuple)
+function optimization_step!(o::Optimizer, d::AbstractExplicitLayer, ps::NamedTuple, C::NamedTuple, dx::NamedTuple)
     gx = rgrad(ps, dx)
     λY = GlobalSection(ps)
     B = global_rep(λY, gx)
@@ -25,25 +26,23 @@ function optimization_step!(o::Optimizer, d::Lux.AbstractExplicitLayer, ps::Name
     apply_section!(ps, λY, ps₂)
 end
 
-function optimization_step!(o::Optimizer, model::Lux.Chain, ps::NamedTuple, dx::NamedTuple)
+function optimization_step!(o::Optimizer, model::Chain, ps::Tuple, dx::Tuple)
     o.step += 1
-    i = 0
-    for key in keys(model)
-        i += 1
-        optimization_step!(o, model[i], ps[key], o.cache[key], dx[key])
+    for i in 1:length(model)
+        optimization_step!(o, layer(model,i), ps[i], o.cache[i], dx[i])
     end
 end
 
-function optimization_step!(o::Optimizer, model::Lux.Chain, ps::NamedTuple, loss)
+function optimization_step!(o::Optimizer, model::Chain, ps::Tuple, loss)
     dx = Zygote.gradient(ps -> loss(ps), ps)[1]
     optimization_step!(o, model, ps, dx)
 end 
 
 
 #######################################################################################
-#utils functions
+# utils functions (should probably be put somewhere else)
 
-rgrad(ps::NamedTuple, dx::NamedTuple) = apply_toNT(ps, dx, rgrad)
+rgrad(ps::NamedTuple, dx::NamedTuple) = apply_toNT(rgrad, ps, dx)
 
 function rgrad(Y::AbstractVecOrMat, dx::AbstractVecOrMat)
     @assert size(Y) == size(dx)
@@ -55,5 +54,5 @@ function update!(m::Optimizer, C::NamedTuple, B::NamedTuple)
 end
 
 function apply_toNT(m::Optimizer, ps₁::NamedTuple, ps₂::NamedTuple, fun_name)    
-    apply_toNT(ps₁, ps₂, (ps₁, ps₂) -> fun_name(m, ps₁, ps₂))
+    apply_toNT((ps₁, ps₂) -> fun_name(m, ps₁, ps₂), ps₁, ps₂)
 end
