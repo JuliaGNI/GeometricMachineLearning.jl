@@ -26,6 +26,7 @@ module GeometricMachineLearning
     import AbstractNeuralNetworks: add!, update!
     import AbstractNeuralNetworks: layer
     import AbstractNeuralNetworks: initialparameters
+    import AbstractNeuralNetworks: GlorotUniform
 
     import GeometricIntegrators.Integrators: method
 
