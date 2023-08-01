@@ -22,7 +22,7 @@ end
     p[i,j] = x[i+N,j]
 end
 
-function assign_q_and_p(x::Vector, N)
+function assign_q_and_p(x::AbstractVector, N)
     backend = KernelAbstractions.get_backend(x)
     q = KernelAbstractions.allocate(backend, eltype(x), N)
     p = KernelAbstractions.allocate(backend, eltype(x), N)
@@ -33,7 +33,7 @@ function assign_q_and_p(x::Vector, N)
     (q, p)
 end
 
-function assign_q_and_p(x::Matrix, N)
+function assign_q_and_p(x::AbstractMatrix, N)
     backend = KernelAbstractions.get_backend(x)
     q = KernelAbstractions.allocate(backend, eltype(x), N, size(x,2))
     p = KernelAbstractions.allocate(backend, eltype(x), N, size(x,2))
