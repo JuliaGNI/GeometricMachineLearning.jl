@@ -31,6 +31,13 @@ function Base.rand(::Type{GrassmannManifold}, N::Integer, n::Integer)
     GrassmannManifold(randn(N, n))
 end
 
+function Base.rand(backend::KernelAbstractions.Backend, rng::Random.AbstractRNG, ::Type{GrassmannManifold{T}}, N::Integer, n::Integer) where T
+    @assert N ≥ n 
+    A = KernelAbstractions.allocate(backend, T, N, n)
+    Random.randn!(rng, A)
+    GrassmannManifold(A)
+end
+
 #function Base.rand(::TrivialInitRNG, ::Type{GrassmannManifold{T}}, N::Int, n::Int) where T
 #@assert N ≥ n 
 #    zeros(StiefelLieAlgHorMatrix{T}, N, n)

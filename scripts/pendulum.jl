@@ -40,7 +40,7 @@ function pendulum_data(; tspan = (0., 100.), tstep = 0.1, q₀ = randn(1), p₀ 
     ode = HODEProblem(v, f, H, tspan, tstep, q₀, p₀)
 
     # sol = integrate(ode, SymplecticEulerA())
-    sol = integrate(ode, SymplecticTableau(TableauExplicitEuler()))
+    sol = integrate(ode, ImplicitMidpoint())
 
     q = sol.q[:,1]
     p = sol.p[:,1]

@@ -19,21 +19,23 @@ module GeometricMachineLearning
     using InteractiveUtils
 
 
-    import Lux, CUDA
+    import CUDA
 
     import AbstractNeuralNetworks: Architecture, Chain, NeuralNetwork, AbstractExplicitLayer
     import AbstractNeuralNetworks: Dense, Linear
     import AbstractNeuralNetworks: IdentityActivation, ZeroVector
-    import AbstractNeuralNetworks: add!, update!, initialparameters
+    import AbstractNeuralNetworks: add!, update!
     import AbstractNeuralNetworks: layer
+    import AbstractNeuralNetworks: initialparameters
 
     import GeometricIntegrators.Integrators: method
 
     export CPU, GPU
     export Chain, NeuralNetwork
     export Dense, Linear
-
+    export initialparameters
     
+    include("kernels/assign_q_and_p.jl")
     include("kernels/tensor_mat_mul.jl")
     include("kernels/tensor_tensor_mul.jl")
     include("kernels/tensor_transpose_tensor_mul.jl")
@@ -43,6 +45,7 @@ module GeometricMachineLearning
     include("kernels/mat_tensor_mul.jl")
     include("kernels/tensor_transpose.jl")
 
+    include("kernels/kernel_ad_routines/assign_q_and_p.jl")
     include("kernels/kernel_ad_routines/tensor_mat_mul.jl")
     include("kernels/kernel_ad_routines/mat_tensor_mul.jl")
     include("kernels/kernel_ad_routines/tensor_tensor_mul.jl")
@@ -50,7 +53,7 @@ module GeometricMachineLearning
     #export tensor_mat_mul
 
     #this defines empty retraction type structs (doesn't rely on anything)
-    include("optimizers/utils/retraction_types.jl")
+    include("optimizers/manifold_related/retraction_types.jl")
 
     export TrivialInitRNG
 
@@ -93,7 +96,6 @@ module GeometricMachineLearning
     export sr, sr!
 
 
-    export FeedForwardLayer, LinearFeedForwardLayer
     export Gradient
     export Linear
     export ResidualLayer
@@ -108,13 +110,9 @@ module GeometricMachineLearning
     export StiefelManifold, SymplecticStiefelManifold, GrassmannManifold, Manifold
     export rgrad, metric
 
-
-    include("layers/abstract_layer.jl")
-    include("layers/feed_forward_layer.jl")
     include("layers/gradient.jl")
     include("layers/linear_symplectic.jl")
     include("layers/resnet.jl")
-    include("layers/linear_symplectic_layer.jl")
     include("layers/manifold_layer.jl")
     include("layers/stiefel_layer.jl")
     include("layers/grassmann_layer.jl")
@@ -128,7 +126,6 @@ module GeometricMachineLearning
     export PSDLayer
     export MultiHeadAttention
     export Transformer
-    export AbstractNeuralNetwork
 
     #INCLUDE OPTIMIZERS
     export OptimizerMethod, AbstractCache
@@ -140,12 +137,13 @@ module GeometricMachineLearning
     export optimization_step!
     export init_optimizer_cache
 
-    include("optimizers/optimizer_caches.jl")
     include("optimizers/optimizer_method.jl")
+    include("optimizers/optimizer_caches.jl")
     include("optimizers/optimizer.jl")
     include("optimizers/gradient_optimizer.jl")
     include("optimizers/momentum_optimizer.jl")        
     include("optimizers/adam_optimizer.jl")
+    include("optimizers/init_optimizer_cache.jl")
 
     export GlobalSection, apply_section
     export global_rep
@@ -156,9 +154,9 @@ module GeometricMachineLearning
     export update!
     export check
 
-    include("optimizers/utils/global_sections.jl")
-    include("optimizers/utils/modified_exponential.jl")
-    include("optimizers/utils/retractions.jl")
+    include("optimizers/manifold_related/global_sections.jl")
+    include("optimizers/manifold_related/modified_exponential.jl")
+    include("optimizers/manifold_related/retractions.jl")
 
     #INCLUDE ABSTRACT TRAINING integrator
     export AbstractTrainingIntegrator
