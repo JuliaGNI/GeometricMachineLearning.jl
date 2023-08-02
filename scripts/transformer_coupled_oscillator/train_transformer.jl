@@ -1,9 +1,11 @@
 using GeometricMachineLearning, KernelAbstractions, LinearAlgebra, ProgressMeter, Zygote
 using ChainRulesCore
+using CUDA
+using Random
 
 include("generate_data.jl")
 
-backend = CPU()
+backend = CUDABackend()
 T = Float32
 
 data_raw = generate_data()
@@ -13,9 +15,9 @@ data = KernelAbstractions.allocate(backend, T, size(data_raw))
 copyto!(data, data_raw)
 
 attention_window = 8
-model = Chain(  MultiHeadAttention(dim,2,Stiefel=true),
+model = Chain(  MultiHeadAttention(dim,2,Stiefel=false),
                 ResNet(dim,tanh),
-                MultiHeadAttention(dim,2,Stiefel=true),
+                MultiHeadAttention(dim,2,Stiefel=false),
                 ResNet(dim))
 ps = initialparameters(backend, T, model)
 
@@ -61,8 +63,12 @@ end
 
 # draw batch (for one training step)
 function draw_batch!(batch::AbstractArray{T, 3}, output::AbstractMatrix{T}) where T
-    params = Int.(ceil.(n_params*rand(batch_size)))
-    time_steps = Int.(ceil.((n_time_steps-seq_length)*rand(batch_size)))
+	params = KernelAbstractions.allocate(backend, T, batch_size)
+	time_steps = KernelAbstractions.allocate(backend, T, batch_size)
+	rand!(Random.default_rng(), params)
+	rand!(Random.default_rng(), time_steps)
+	params = Int.(ceil.(n_params*params))
+    time_steps = Int.(ceil.((n_time_steps-seq_length)*time_steps)) 
     assign_batch!(batch, data, params, time_steps, ndrange=size(batch))
     assign_output!(output, data, params, time_steps, ndrange=size(output))
 end
@@ -98,10 +104,11 @@ end
 # using ChainRulesTestUtils
 # draw_batch!(batch, output)
 # test_rrule(assign_output_estimate, batch)
-n_training_steps = Int(ceil(n_epochs*n_time_steps/batch_size))
-@showprogress for i_ in 1:n_training_steps
+n_training_steps_per_epoch = Int(ceil(n_time_steps/batch_size))
+n_training_steps = n_epochs*n_training_steps_per_epoch
+@showprogress for t in 1:n_training_steps
     draw_batch!(batch, output)
     dx = Zygote.gradient(loss, ps)[1]
     optimization_step!(o, model, ps, dx)
-    print(loss(ps))
+    t % n_training_steps_per_epoch == 0 ? println(loss(ps)) : nothing
 end
