@@ -18,7 +18,7 @@ struct LASympNet{AT,T1,T2,T3} <: SympNet{AT}
 
 end
 
-@inline dim(arch::LASympNet) = arch.dim
+@inline AbstractNeuralNetworks.dim(arch::LASympNet) = arch.dim
 
 struct GSympNet{AT} <: SympNet{AT} 
     dim::Int

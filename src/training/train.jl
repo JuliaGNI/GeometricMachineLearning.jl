@@ -1,7 +1,7 @@
 const DEFAULT_NRUNS = 1000
 
 # The loss gradient function working for all types of arguments
-loss_gradient(nn::NeuralNetwork{<:Architecture}, ti::AbstractTrainingIntegrator, data::AbstractTrainingData, index_batch, params = nn.params) = Zygote.gradient(p -> loss(ti, nn, data, index_batch, p), params)[1]
+loss_gradient(nn::AbstractNeuralNetwork, ti::AbstractTrainingIntegrator, data::AbstractTrainingData, index_batch, params = params(nn)) = Zygote.gradient(p -> loss(ti, nn, data, index_batch, p), params)[1]
 
 ####################################################################################
 ## Training on (LuxNeuralNetwork, AbstractTrainingData, OptimizerMethod, TrainingIntegrator, nruns, batch_size )
@@ -25,7 +25,7 @@ Different ways of use:
 - `batch_size` : size of batch of data used for each step
 
 """
-function train!(nn::NeuralNetwork{<:Architecture}, data_in::AbstractTrainingData, m::OptimizerMethod, ti::TrainingIntegrator{<:AbstractTrainingIntegrator} = default_integrator(nn, data); ntraining = DEFAULT_NRUNS, batch_size = missing, showprogress::Bool = false)
+function train!(nn::AbstractNeuralNetwork, data_in::AbstractTrainingData, m::OptimizerMethod, ti::TrainingIntegrator{<:AbstractTrainingIntegrator} = default_integrator(nn, data); ntraining = DEFAULT_NRUNS, batch_size = missing, showprogress::Bool = false)
 
     # copy of data in the event of modification
     data = copy(data_in)
@@ -46,16 +46,16 @@ function train!(nn::NeuralNetwork{<:Architecture}, data_in::AbstractTrainingData
     total_loss = zeros(ntraining)
 
     #creation of optimiser
-    opt = Optimizer(m, nn.params)
+    opt = Optimizer(m, params(nn))
 
     # Learning runs
     p = Progress(ntraining; enabled = showprogress)
     for j in 1:ntraining
         index_batch = get_batch(data, bs; check = false)
 
-        params_grad = loss_gradient(nn, ti, data, index_batch,  nn.params) 
+        params_grad = loss_gradient(nn, ti, data, index_batch,  params(nn)) 
 
-        optimization_step!(opt, nn.model, nn.params, params_grad)
+        optimization_step!(opt, model(nn), params(nn), params_grad)
 
         total_loss[j] = loss(ti, nn, data)
 

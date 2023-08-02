@@ -13,7 +13,7 @@ struct LagrangianNeuralNetwork{AT} <: Architecture
     end
 end
 
-@inline dim(arch::LagrangianNeuralNetwork) = arch.dimin
+@inline AbstractNeuralNetworks.dim(arch::LagrangianNeuralNetwork) = arch.dimin
 
 function Chain(nn::LagrangianNeuralNetwork)
     inner_layers = Tuple(

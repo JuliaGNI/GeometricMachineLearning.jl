@@ -128,3 +128,11 @@ function Lux.setup(dev::Device, rng::Random.AbstractRNG, d::Lux.AbstractExplicit
     ps, st
 end
 =#
+
+#=
+(::Zygote.ProjectTo{Float64})(x::Tuple{Float64}) = only(x)
+
+(::Zygote.ProjectTo{AbstractArray})(x::Tuple{Vararg{Any}})  = [x...]
+
+Base.size(nt::NamedTuple) = (length(nt),)
+=#

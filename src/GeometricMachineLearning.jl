@@ -1,6 +1,8 @@
 module GeometricMachineLearning
 
     using AbstractNeuralNetworks
+    using SymbolicNeuralNetworks
+    using Symbolics
     using BandedMatrices
     using ChainRulesCore
     using Distances
@@ -21,12 +23,16 @@ module GeometricMachineLearning
 
     import CUDA
 
-    import AbstractNeuralNetworks: Architecture, Chain, NeuralNetwork, AbstractExplicitLayer
+    import AbstractNeuralNetworks: Architecture, Chain, NeuralNetwork, AbstractExplicitLayer, AbstractNeuralNetwork
     import AbstractNeuralNetworks: Dense, Linear
     import AbstractNeuralNetworks: IdentityActivation, ZeroVector
     import AbstractNeuralNetworks: add!, update!
     import AbstractNeuralNetworks: layer
     import AbstractNeuralNetworks: initialparameters
+    import AbstractNeuralNetworks: params, architecture, model, dim
+    
+    export params, architetcure, model
+    export dim
 
     import GeometricIntegrators.Integrators: method
 
