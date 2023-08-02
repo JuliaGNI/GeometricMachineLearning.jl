@@ -20,8 +20,8 @@ model = Chain(  MultiHeadAttention(dim,2,Stiefel=true),
 ps = initialparameters(backend, T, model)
 
 const seq_length = 20
-const batch_size = 50
-const n_epochs = 10
+const batch_size = 200
+const n_epochs = 1000
 
 o = Optimizer(AdamOptimizer(), ps)
 

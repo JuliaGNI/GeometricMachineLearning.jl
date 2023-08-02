@@ -19,8 +19,8 @@ function q̇(v, t, q, p, params)
 end
 
 function ṗ(f, t, q, p, params)
-    f[1] = -params.k1 * q[1] - params.k * (cos(10*q[1]) + 1) * (q[1] - q[2]) + params.k /2 * (q[1] - q[2])^2 * 10 * sin(10 * q[1])
-    f[2] = -params.k2 * q[2] + params.k * (cos(10*q[1]) + 1) * (q[1] - q[2]) 
+    f[1] = -params.k1 * q[1] - params.k * (q[1] - q[2]) #* (cos(10*q[1]) + 1) + params.k /2 * (q[1] - q[2])^2 * 10 * sin(10 * q[1])
+    f[2] = -params.k2 * q[2] + params.k * (q[1] - q[2]) #* (cos(10*q[1]) + 1) 
 end
 
 sols = []
