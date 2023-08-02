@@ -14,16 +14,26 @@ dim, n_params, n_time_steps = size(data_raw)
 data = KernelAbstractions.allocate(backend, T, size(data_raw))
 copyto!(data, data_raw)
 
+function relu(x::T) 
+	max(T(0.),x)
+end
 model = Chain(  MultiHeadAttention(dim,2,Stiefel=true),
-                ResNet(dim,tanh),
+                Gradient(dim,2*dim,change_q=true),
+		Gradient(dim,2*dim,change_q=false),
 		MultiHeadAttention(dim,2,Stiefel=true),
-		ResNet(dim, tanh), 
+		Gradient(dim,2*dim,change_q=false),
+		Gradient(dim,2*dim,change_q=true),
 		MultiHeadAttention(dim,2,Stiefel=true),
-                ResNet(dim))
+		Gradient(dim,2*dim,change_q=true),
+		Gradient(dim,2*dim,change_q=false),
+		MultiHeadAttention(dim,2,Stiefel=true),
+		Gradient(dim,2*dim,identity,change_q=true),
+		Gradient(dim,2*dim,identity,change_q=false)
+		)
 ps = initialparameters(backend, T, model)
 
 const seq_length = 10
-const batch_size = 200
+const batch_size = 500
 const n_epochs = 500
 
 o = Optimizer(AdamOptimizer(), ps)
