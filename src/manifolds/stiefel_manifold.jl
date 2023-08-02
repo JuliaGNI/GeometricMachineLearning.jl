@@ -23,7 +23,7 @@ function assign_columns(A::AbstractMatrix{T}, N::Integer, n::Integer) where T
     Y
 end
 
-#TODO: check the distribution this is coming from - related to the Haar measure ???
+# TODO: check the distribution this is coming from - related to the Haar measure ???
 function Base.rand(rng::Random.AbstractRNG, ::Type{StiefelManifold{T}}, N::Integer, n::Integer) where T
     @assert N ≥ n
     A = randn(rng, T, N, n)
