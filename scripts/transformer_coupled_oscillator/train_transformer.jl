@@ -14,16 +14,17 @@ dim, n_params, n_time_steps = size(data_raw)
 data = KernelAbstractions.allocate(backend, T, size(data_raw))
 copyto!(data, data_raw)
 
-attention_window = 8
-model = Chain(  MultiHeadAttention(dim,2,Stiefel=false),
+model = Chain(  MultiHeadAttention(dim,2,Stiefel=true),
                 ResNet(dim,tanh),
-                MultiHeadAttention(dim,2,Stiefel=false),
+		MultiHeadAttention(dim,2,Stiefel=true),
+		ResNet(dim, tanh), 
+		MultiHeadAttention(dim,2,Stiefel=true),
                 ResNet(dim))
 ps = initialparameters(backend, T, model)
 
-const seq_length = 20
+const seq_length = 10
 const batch_size = 200
-const n_epochs = 1000
+const n_epochs = 500
 
 o = Optimizer(AdamOptimizer(), ps)
 
