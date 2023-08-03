@@ -15,11 +15,12 @@ end
     i,j = @index(Global, NTuple)
     Y[i,j] = A[i,j]
 end
-function assign_columns(A::AbstractMatrix{T}, N::Integer, n::Integer) where T
-    backend = KernelAbstractions.get_backend(A)
+
+function assign_columns(Q::AbstractMatrix{T}, N::Integer, n::Integer) where T
+    backend = KernelAbstractions.get_backend(Q)
     Y = KernelAbstractions.allocate(backend, T, N, n)
     assign_columns! = assign_columns_kernel!(backend)
-    assign_columns!(Y, A, ndrange=size(Y))
+    assign_columns!(Y, Q, ndrange=size(Y))
     Y
 end
 
@@ -27,7 +28,7 @@ end
 function Base.rand(rng::Random.AbstractRNG, ::Type{StiefelManifold{T}}, N::Integer, n::Integer) where T
     @assert N ≥ n
     A = randn(rng, T, N, n)
-    StiefelManifold(assign_columns(qr!(A).Q, N, n))
+    StiefelManifold(assign_columns(typeof(A)(qr!(A).Q), N, n))
 end
 
 function Base.rand(rng::Random.AbstractRNG, ::Type{StiefelManifold}, N::Integer, n::Integer)

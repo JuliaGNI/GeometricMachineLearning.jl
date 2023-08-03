@@ -22,6 +22,16 @@ end
     p[i,j] = x[i+N,j]
 end
 
+@kernel function assign_first_half!(q::AbstractArray{T, 3}, x::AbstractArray{T, 3}) where T 
+    i,j,k = @index(Global, NTuple)
+    q[i,j,k] = x[i,j,k]
+end
+
+@kernel function assign_second_half!(p::AbstractArray{T, 3}, x::AbstractArray{T, 3}, N::Integer) where T 
+    i,j,k = @index(Global, NTuple)
+    p[i,j,k] = x[i+N,j,k]
+end
+
 function assign_q_and_p(x::AbstractVector, N)
     backend = KernelAbstractions.get_backend(x)
     q = KernelAbstractions.allocate(backend, eltype(x), N)
@@ -37,6 +47,17 @@ function assign_q_and_p(x::AbstractMatrix, N)
     backend = KernelAbstractions.get_backend(x)
     q = KernelAbstractions.allocate(backend, eltype(x), N, size(x,2))
     p = KernelAbstractions.allocate(backend, eltype(x), N, size(x,2))
+    q_kernel! = assign_first_half!(backend)
+    p_kernel! = assign_second_half!(backend)
+    q_kernel!(q, x, ndrange=size(q))
+    p_kernel!(p, x, N, ndrange=size(p))
+    (q, p)
+end
+
+function assign_q_and_p(x::AbstractArray{T, 3}, N) where T
+    backend = KernelAbstractions.get_backend(x)
+    q = KernelAbstractions.allocate(backend, T, N, size(x,2), size(x,3))
+    p = KernelAbstractions.allocate(backend, T, N, size(x,2), size(x,3))
     q_kernel! = assign_first_half!(backend)
     p_kernel! = assign_second_half!(backend)
     q_kernel!(q, x, ndrange=size(q))

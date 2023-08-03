@@ -100,6 +100,14 @@ function Base.zeros(::Type{GrassmannLieAlgHorMatrix}, N::Integer, n::Integer)
     )
 end
 
+function Base.zeros(backend::KernelAbstractions.Backend, ::Type{GrassmannLieAlgHorMatrix{T}}, N::Integer, n::Integer) where T 
+    GrassmannLieAlgHorMatrix(
+        KernelAbstractions.zeros(backend, T, N-n, n),
+        N, 
+        n
+    )
+end
+
 Base.similar(A::GrassmannLieAlgHorMatrix, dims::Union{Integer, AbstractUnitRange}...) = zeros(typeof(A), dims...)
 Base.similar(A::GrassmannLieAlgHorMatrix) = zeros(typeof(A), A.N, A.n)
 
