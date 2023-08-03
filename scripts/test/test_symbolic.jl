@@ -46,6 +46,7 @@ GeometricMachineLearning.loss_gradient(snn, method, training_data, index_batch)
 ########################################################################
 # Test train a SymbolicNeuralNetwork
 ########################################################################
+Base.size(nt::NamedTuple) = (length(nt),)
 
 total_loss = train!(snn, training_data, mopt, method; ntraining = nruns, batch_size = batch_size)
 
