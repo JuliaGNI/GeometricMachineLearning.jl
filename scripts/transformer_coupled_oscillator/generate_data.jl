@@ -11,7 +11,7 @@ initial_conditions_collection = ( (q=[1.,0.], p=[2.,0.]),
                     (q=[1.,0.], p=[1.,0.]),
                     (q=[1.,0.], p=[0.5,0.]))
 
-t_integration = 10000
+const t_integration = 10
 
 function q̇(v, t, q, p, params)
     v[1] = p[1]/params.m1
@@ -54,7 +54,7 @@ function assign_tensor(data_tensor, sols)
     assign_p!(data_tensor, sols, ndrange=dims)
 end
 
-function generate_data()
+function generate_data(params_collection=params_collection, initial_conditions=initial_conditions, t_integration=t_integration)
     sols = []
     for params in params_collection
         for initial_conditions in initial_conditions_collection
