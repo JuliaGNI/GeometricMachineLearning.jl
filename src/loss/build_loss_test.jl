@@ -90,7 +90,7 @@ function transposymplecticMatrix(n::Int)
     [Z -I; I Z]
 end
 
-nn= NeuralNetwork(HamiltonianNeuralNetwork(2, nhidden = 0), Float64)
+nn= NeuralNetwork(HamiltonianNeuralNetwork(2, nhidden = 1), Float64)
 _,v = build_hamiltonien(nn)
 evalv = eval(v)
 vectorfield(x, params) = evalv(x, develop(params)...)
@@ -123,17 +123,18 @@ end
 method = SEuler()
 A = [1,1,1,1,1]
 
-fun, ∇fun, rew∇fun = build_gradloss(method,nn, A...)
+@time fun, ∇fun, rew∇fun = build_gradloss(method,nn, A...)
 
 r1 = eval(Meta.parse(get_string(∇fun)))(1,1,1,1,1,develop(nn.params)...)
 
-r2 = eval(Meta.parse(get_string(rew∇fun)))(method, nn, A,nn.params)
+ff = eval(Meta.parse(get_string(rew∇fun)))
+@time r2 = ff(method, nn, A,nn.params)
 
 r1==r2
 
 
-#loss_path = Dict()
-#loss_path[:c] = 1
+loss_path = Dict()
+loss_path[:c] = 1
 
 
 function add_path(ti,nn)
@@ -147,9 +148,9 @@ function access_path(ti, nn)
     return string(loss_path[(typeof(ti), typeof(nn))])
 end
 
-add_path(method, nn)
+@time add_path(method, nn)
 
 path ="/home/theoduez/Documents/Julia/GeometricMachineLearning.jl/src/loss/write_loss_"
-write(path*access_path(method, nn)*".jl", get_string(rew∇fun))
+@time write(path*access_path(method, nn)*".jl", get_string(rew∇fun))
 
 #f = open("/home/theoduez/Documents/Julia/GeometricMachineLearning.jl/src/loss/write_loss.jl", "r")
