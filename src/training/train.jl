@@ -32,7 +32,7 @@ Different ways of use:
 function train!(nn::AbstractNeuralNetwork, data_in::AbstractTrainingData, m::OptimizerMethod, ti::TrainingIntegrator{<:AbstractTrainingIntegrator} = default_integrator(nn, data); ntraining = DEFAULT_NRUNS, batch_size = missing, showprogress::Bool = false, timer::Bool = false)
 
     # create a timer
-    const to = TimerOutput()
+    to = TimerOutput()
 
     # copy of data in the event of modification
     data = copy(data_in)
@@ -126,7 +126,7 @@ end
 ####################################################################################
 
 
-function train!(nns::NeuralNetSolution, data::AbstractTrainingData, tp::TrainingParameters; kwarsg...)
+function train!(nns::NeuralNetSolution, data::AbstractTrainingData, tp::TrainingParameters; kwargs...)
 
     @assert tstep(data) == tstep(nns) || tstep(nns) == nothing || tstep(data) == nothing
     @assert problem(data) == problem(nns) || problem(nns) == nothing || problem(data) == nothing
