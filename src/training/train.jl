@@ -29,7 +29,7 @@ Different ways of use:
 - `batch_size` : size of batch of data used for each step
 
 """
-function train!(nn::AbstractNeuralNetwork, data_in::AbstractTrainingData, m::OptimizerMethod, ti::TrainingMethod{<:AbstractTrainingIntegrator} = default_method(nn, data); ntraining = DEFAULT_NRUNS, batch_size = missing, showprogress::Bool = false, timer::Bool = false)
+function train!(nn::AbstractNeuralNetwork, data_in::AbstractTrainingData, m::OptimizerMethod, ti::TrainingMethod{<:AbstractTrainingMethod} = default_method(nn, data); ntraining = DEFAULT_NRUNS, batch_size = missing, showprogress::Bool = false, timer::Bool = false)
 
     # create a timer
     to = TimerOutput()
