@@ -7,8 +7,10 @@ function loss_single(::TrainingIntegrator{BasicSympNetIntegrator}, nn::NeuralNet
     sqeuclidean(q̃ₙ₊₁,qₙ₊₁) + sqeuclidean(p̃ₙ₊₁,pₙ₊₁)
 end
 
-loss(ti::TrainingIntegrator{BasicSympNetIntegrator}, nn::NeuralNetwork{<:SympNet}, data::TrainingData{<:DataSymbol{<:PhaseSpaceSymbol}}, index_batch = eachindex(ti, data), params = nn.params) =
-mapreduce(args->loss_single(ti, nn, Zygote.ignore(get_data(data,:q, args...)), Zygote.ignore(get_data(data,:p, args...)), Zygote.ignore(get_data(data,:q, next(args...)...)), Zygote.ignore(get_data(data,:p, next(args...)...)), params), +, index_batch)
-
 min_length_batch(::BasicSympNetIntegrator) = 2
 
+get_loss(::TrainingIntegrator{<:BasicSympNetIntegrator}, ::AbstractNeuralNetwork{<:SympNet}, data::TrainingData{<:DataSymbol{<:PhaseSpaceSymbol}}, args) = 
+(Zygote.ignore(get_data(data,:q, args...)), Zygote.ignore(get_data(data,:p, args...)), Zygote.ignore(get_data(data,:q, next(args...)...)), Zygote.ignore(get_data(data,:p, next(args...)...)))
+
+loss(ti::TrainingIntegrator{<:BasicSympNetIntegrator}, nn::AbstractNeuralNetwork{<:SympNet}, data::TrainingData{<:DataSymbol{<:PhaseSpaceSymbol}}, index_batch = eachindex(ti, data), params = nn.params) = 
+mapreduce(args->loss_single(Zygote.ignore(ti), nn, get_loss(ti, nn, data, args)..., params),+, index_batch)

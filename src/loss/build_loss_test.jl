@@ -58,6 +58,7 @@ function rewrite(fun, SV, SX, ti, nn)
     fun = Meta.parse(replace(string(fun), r"function .*" => string("function ∇loss_single(::",typeof(ti),", ::",typeof(nn) ,", sargs, nt)\n")))
 end
 
+
 function build_hamiltonien(nn::NeuralNetwork{<:HamiltonianNeuralNetwork})
 
     # dimenstion of the input
@@ -122,13 +123,33 @@ end
 method = SEuler()
 A = [1,1,1,1,1]
 
-
 fun, ∇fun, rew∇fun = build_gradloss(method,nn, A...)
 
 r1 = eval(Meta.parse(get_string(∇fun)))(1,1,1,1,1,develop(nn.params)...)
 
 r2 = eval(Meta.parse(get_string(rew∇fun)))(method, nn, A,nn.params)
 
-
-
 r1==r2
+
+
+#loss_path = Dict()
+#loss_path[:c] = 1
+
+
+function add_path(ti,nn)
+    if (typeof(method), typeof(nn)) ∉ keys(loss_path)
+        loss_path[(typeof(method), typeof(nn))] = loss_path[:c]
+        loss_path[:c] += 1
+    end
+end
+
+function access_path(ti, nn)
+    return string(loss_path[(typeof(ti), typeof(nn))])
+end
+
+add_path(method, nn)
+
+path ="/home/theoduez/Documents/Julia/GeometricMachineLearning.jl/src/loss/write_loss_"
+write(path*access_path(method, nn)*".jl", get_string(rew∇fun))
+
+#f = open("/home/theoduez/Documents/Julia/GeometricMachineLearning.jl/src/loss/write_loss.jl", "r")

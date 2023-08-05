@@ -19,7 +19,9 @@ function loss_single(ti::TrainingIntegrator{<:VariationalIntegrator}, nn::Neural
     sqeuclidean(DL1,-DL2)
 end
 
-loss(ti::TrainingIntegrator{VariationalMidPointIntegrator}, nn::NeuralNetwork{<:LagrangianNeuralNetwork}, data::TrainingData{<:DataSymbol{<:PositionSymbol}}, index_batch = eachindex(ti, data), params = nn.params) =
-mapreduce(args->loss_single(ti, nn, Zygote.ignore(get_data(data,:q, args...)), Zygote.ignore(get_data(data,:q, next(args...)...)), Zygote.ignore(get_data(data,:q,next(next(args...)...)...)), Zygote.ignore(get_Δt(data)), params), +, index_batch)
-
 min_length_batch(::VariationalIntegrator) = 3
+
+get_loss(::TrainingIntegrator{<:VariationalMidPointIntegrator}, ::AbstractNeuralNetwork{<:LagrangianNeuralNetwork}, data::TrainingData{<:DataSymbol{<:PositionSymbol}}, args) = (get_data(data,:q, args...), get_data(data,:q, next(args...)...), get_data(data,:q,next(next(args...)...)...), get_Δt(data))
+
+loss(ti::TrainingIntegrator{<:VariationalMidPointIntegrator}, nn::AbstractNeuralNetwork{<:LagrangianNeuralNetwork}, data::TrainingData{<:DataSymbol{<:PositionSymbol}}, index_batch = eachindex(ti, data), params = nn.params) = 
+mapreduce(args->loss_single(Zygote.ignore(ti), nn, get_loss(ti, nn, data, args)..., params),+, index_batch)

@@ -19,3 +19,19 @@ function build_gradloss(ti::TrainingIntegrator, nn::AbstractNeuralNetwork, args.
 end
 
 
+function rewrite(fun, SV, SX, ti, nn)
+    for e in develop(SV)
+        str_symbol = replace(string(e), r"\[.*"=>"")
+        track = get_track(SV, e, "nt")[2]
+        fun = Meta.parse(replace(string(fun), str_symbol => track))
+    end
+    for e in develop(SX)
+        str_symbol = replace(string(e), r"\[.*"=>"")
+        track = get_track(SX, e, "sargs")[2]
+        fun = Meta.parse(replace(string(fun), str_symbol => track))
+    end
+    #fun = Meta.parse(replace(string(fun), "SX" => "X"))
+    fun = Meta.parse(replace(string(fun), r"function .*" => string("function ∇loss_single(::",typeof(ti),", ::",typeof(nn) ,", sargs, nt)\n")))
+end
+
+

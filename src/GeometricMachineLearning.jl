@@ -19,6 +19,7 @@ module GeometricMachineLearning
     using Zygote
     using ForwardDiff
     using InteractiveUtils
+    using TimerOutputs
 
 
     import CUDA
