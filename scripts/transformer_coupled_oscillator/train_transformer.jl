@@ -15,21 +15,30 @@ data = KernelAbstractions.allocate(backend, T, size(data_raw))
 copyto!(data, data_raw)
 
 model = Chain(  MultiHeadAttention(dim,2,Stiefel=true),
-                Gradient(dim,5*dim,tanh,change_q=true),
-		Gradient(dim,5*dim,tanh,change_q=false),
+                Gradient(dim,10*dim,tanh,change_q=true),
+		Gradient(dim,10*dim,tanh,change_q=false),
 		MultiHeadAttention(dim,2,Stiefel=true),
-                Gradient(dim,5*dim,tanh,change_q=false),
-		Gradient(dim,5*dim,tanh,change_q=true), 
+                Gradient(dim,10*dim,tanh,change_q=false),
+		Gradient(dim,10*dim,tanh,change_q=true), 
 		MultiHeadAttention(dim,2,Stiefel=true),
-                Gradient(dim,5*dim,tanh,change_q=true),
-		Gradient(dim,5*dim,tanh,change_q=false),
-                Gradient(dim,5*dim,identity,change_q=true),
-		Gradient(dim,5*dim,identity,change_q=false))
+                Gradient(dim,10*dim,tanh,change_q=true),
+		Gradient(dim,10*dim,tanh,change_q=false),
+		MultiHeadAttention(dim,2,Stiefel=true),
+                Gradient(dim,10*dim,tanh,change_q=true),
+		Gradient(dim,10*dim,tanh,change_q=false),
+		MultiHeadAttention(dim,2,Stiefel=true),
+                Gradient(dim,10*dim,tanh,change_q=false),
+		Gradient(dim,10*dim,tanh,change_q=true), 
+		MultiHeadAttention(dim,2,Stiefel=true),
+                Gradient(dim,10*dim,tanh,change_q=true),
+		Gradient(dim,10*dim,tanh,change_q=false),
+                Gradient(dim,dim,identity,change_q=true),
+		Gradient(dim,dim,identity,change_q=false))
 ps = initialparameters(backend, T, model)
 
-const seq_length = 20
-const batch_size = 200
-const n_epochs = 500
+const seq_length = 100
+const batch_size = 500
+const n_epochs = 200
 
 o = Optimizer(AdamOptimizer(), ps)
 
