@@ -30,12 +30,13 @@ ps = initialparameters(backend, T, model)
 const seq_length = 20
 const batch_size = 200
 const n_epochs = 500
+const prediction_window = 1
 
 o = Optimizer(AdamOptimizer(), ps)
 
 batch = KernelAbstractions.allocate(backend, T, dim, seq_length, batch_size)
-output = KernelAbstractions.allocate(backend, T, dim, batch_size)
-output_estimate = KernelAbstractions.allocate(backend, T, dim, batch_size)
+output = prediction_window == 1 ? KernelAbstractions.allocate(backend, T, dim, batch_size) : KernelAbstractions.allocate(backend, T, dim, prediction_window, batch_size)
+output_estimate = prediction_window == 1 ? KernelAbstractions.allocate(backend, T, dim, batch_size) : KernelAbstractions.allocate(backend, T, dim, prediction_window, batch_size)
 
 # this kernel draws a batch based on arrays of parameters and time_steps
 @kernel function assign_batch_kernel!(batch::AbstractArray{T, 3}, data::AbstractArray{T, 3}, params, time_steps) where T
@@ -53,12 +54,22 @@ assign_batch! = assign_batch_kernel!(backend)
     param = params[j]
     output[i,j] = data[i,param,time_step+seq_length]
 end
+@kernel function assign_output_kernel!(output::AbstractArray{T, 3}, data::AbstractArray{T,3}, params, time_steps) where T 
+    i,j,k = @index(Global, NTuple)
+    time_step = time_steps[k]
+    param = params[k]
+    output[i,j,k] = data[i,param,time_step+seq_length+j-1]
+end
 assign_output! = assign_output_kernel!(backend)
 
 # this kernel assigns the output estimate
 @kernel function assign_output_estimate_kernel!(output_estimate::AbstractMatrix{T}, batch::AbstractArray{T,3}) where T
     i,j= @index(Global, NTuple)
     output_estimate[i,j] = batch[i,seq_length,j]
+end
+@kernel function assign_output_estimate_kernel!(output_estimate::AbstractArray{T}, batch::AbstractArray{T,3}) where T
+    i,j,k = @index(Global, NTuple)
+    output_estimate[i,j,k] = batch[i,seq_length-prediction_window+j,k]
 end
 assign_output_estimate! = assign_output_estimate_kernel!(backend)
 function assign_output_estimate(batch::AbstractArray{T, 3}) where T
@@ -82,7 +93,7 @@ end
 function loss(ps, batch::AbstractArray{T, 3}, output::AbstractMatrix{T}) where T 
     batch_output = model(batch, ps)
     output_estimate = assign_output_estimate(batch_output)
-    norm(output - output_estimate)/sqrt(batch_size)
+    norm(output - output_estimate)/sqrt(batch_size)/sqrt(prediction_window)
 end
 loss(ps) = loss(ps, batch, output)
 
