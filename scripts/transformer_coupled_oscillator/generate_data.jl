@@ -67,5 +67,5 @@ function generate_data(params_collection=params_collection, initial_conditions=i
     time_steps = length(sols[1].q)
     data_tensor = zeros(4, length(sols), time_steps)
     assign_tensor(data_tensor, sols)
-    data_tensor 
+    data_tensor
 end
