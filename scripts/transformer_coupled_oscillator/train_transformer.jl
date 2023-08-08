@@ -25,13 +25,23 @@ model = Chain(  MultiHeadAttention(dim,2,Stiefel=true),
 		Gradient(dim,5*dim,tanh,change_q=false),
                 Gradient(dim,5*dim,identity,change_q=true),
 		Gradient(dim,5*dim,identity,change_q=false))
-ps = initialparameters(backend, T, model)
 
+const transformer_dim = 20
+const num_heads = 4
 const seq_length = 20
-const batch_size = 200
 const n_epochs = 500
-const prediction_window = 1
+const batch_size = 128
+const prediction_window = 5
 
+model = Chain(  Dense(dim, transformer_dim, tanh),
+              MultiHeadAttention(transformer_dim, num_heads),
+              ResNet(transformer_dim, tanh),
+              MultiHeadAttention(transformer_dim, num_heads),
+              ResNet(transformer_dim, tanh),
+              Dense(transformer_dim, dim, identity)
+              )
+
+ps = initialparameters(backend, T, model)
 o = Optimizer(AdamOptimizer(), ps)
 
 batch = KernelAbstractions.allocate(backend, T, dim, seq_length, batch_size)
@@ -79,18 +89,18 @@ function assign_output_estimate(batch::AbstractArray{T, 3}) where T
 end
 
 # draw batch (for one training step)
-function draw_batch!(batch::AbstractArray{T, 3}, output::AbstractMatrix{T}) where T
+function draw_batch!(batch::AbstractArray{T, 3}, output::AbstractArray{T}) where T
 	params = KernelAbstractions.allocate(backend, T, batch_size)
 	time_steps = KernelAbstractions.allocate(backend, T, batch_size)
 	rand!(Random.default_rng(), params)
 	rand!(Random.default_rng(), time_steps)
 	params = Int.(ceil.(n_params*params))
-    time_steps = Int.(ceil.((n_time_steps-seq_length)*time_steps)) 
+    time_steps = Int.(ceil.((n_time_steps-seq_length+1-prediction_window)*time_steps)) 
     assign_batch!(batch, data, params, time_steps, ndrange=size(batch))
     assign_output!(output, data, params, time_steps, ndrange=size(output))
 end
 
-function loss(ps, batch::AbstractArray{T, 3}, output::AbstractMatrix{T}) where T 
+function loss(ps, batch::AbstractArray{T, 3}, output::AbstractArray{T}) where T 
     batch_output = model(batch, ps)
     output_estimate = assign_output_estimate(batch_output)
     norm(output - output_estimate)/sqrt(batch_size)/sqrt(prediction_window)
