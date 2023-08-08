@@ -19,8 +19,8 @@ end
 
 function initialparameters(backend::KernelAbstractions.Backend, T::Type, d::Attention{M, M, false}; rng::AbstractRNG=Random.default_rng(), initializer::AbstractNeuralNetworks.AbstractInitializer=GlorotUniform()) where {M}
     # transformations for queries and keys.
-    PQ_weight = KernelAbstractions.allocate(backend, T, M, Dₕ)
-    PK_weight = KernelAbstractions.allocate(backend, T, M, Dₕ)
+    PQ_weight = KernelAbstractions.allocate(backend, T, M, M)
+    PK_weight = KernelAbstractions.allocate(backend, T, M, M)
     initializer(rng, PQ_weight)
     initializer(rng, PK_weight)
     (PQ=PQ_weight, PK=PK_weight)
