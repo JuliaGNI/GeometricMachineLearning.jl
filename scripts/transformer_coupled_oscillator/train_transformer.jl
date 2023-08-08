@@ -5,7 +5,7 @@ using Random
 
 include("generate_data.jl")
 
-backend = CUDABackend()
+backend = CPU()
 T = Float32
 
 data_raw = generate_data()
@@ -16,19 +16,19 @@ copyto!(data, data_raw)
 
 model = Chain(  MultiHeadAttention(dim,2,Stiefel=true),
                 Gradient(dim,5*dim,tanh,change_q=true),
-		Gradient(dim,5*dim,tanh,change_q=false),
-		MultiHeadAttention(dim,2,Stiefel=true),
+		        Gradient(dim,5*dim,tanh,change_q=false),
+		        MultiHeadAttention(dim,2,Stiefel=true),
                 Gradient(dim,5*dim,tanh,change_q=false),
-		Gradient(dim,5*dim,tanh,change_q=true), 
-		MultiHeadAttention(dim,2,Stiefel=true),
+		        Gradient(dim,5*dim,tanh,change_q=true), 
+		        MultiHeadAttention(dim,2,Stiefel=true),
                 Gradient(dim,5*dim,tanh,change_q=true),
-		Gradient(dim,5*dim,tanh,change_q=false),
+		        Gradient(dim,5*dim,tanh,change_q=false),
                 Gradient(dim,5*dim,identity,change_q=true),
-		Gradient(dim,5*dim,identity,change_q=false))
+		        Gradient(dim,5*dim,identity,change_q=false))
 
 const transformer_dim = 20
 const num_heads = 4
-const seq_length = 20
+const seq_length = 50
 const n_epochs = 500
 const batch_size = 128
 const prediction_window = 5
@@ -46,7 +46,7 @@ o = Optimizer(AdamOptimizer(), ps)
 
 batch = KernelAbstractions.allocate(backend, T, dim, seq_length, batch_size)
 output = prediction_window == 1 ? KernelAbstractions.allocate(backend, T, dim, batch_size) : KernelAbstractions.allocate(backend, T, dim, prediction_window, batch_size)
-output_estimate = prediction_window == 1 ? KernelAbstractions.allocate(backend, T, dim, batch_size) : KernelAbstractions.allocate(backend, T, dim, prediction_window, batch_size)
+#output_estimate = prediction_window == 1 ? KernelAbstractions.allocate(backend, T, dim, batch_size) : KernelAbstractions.allocate(backend, T, dim, prediction_window, batch_size)
 
 # this kernel draws a batch based on arrays of parameters and time_steps
 @kernel function assign_batch_kernel!(batch::AbstractArray{T, 3}, data::AbstractArray{T, 3}, params, time_steps) where T
@@ -77,13 +77,13 @@ assign_output! = assign_output_kernel!(backend)
     i,j= @index(Global, NTuple)
     output_estimate[i,j] = batch[i,seq_length,j]
 end
-@kernel function assign_output_estimate_kernel!(output_estimate::AbstractArray{T}, batch::AbstractArray{T,3}) where T
+@kernel function assign_output_estimate_kernel!(output_estimate::AbstractArray{T, 3}, batch::AbstractArray{T,3}) where T
     i,j,k = @index(Global, NTuple)
     output_estimate[i,j,k] = batch[i,seq_length-prediction_window+j,k]
 end
 assign_output_estimate! = assign_output_estimate_kernel!(backend)
 function assign_output_estimate(batch::AbstractArray{T, 3}) where T
-    output_estimate = KernelAbstractions.allocate(backend, T, dim, batch_size)
+    output_estimate = prediction_window == 1 ? KernelAbstractions.allocate(backend, T, dim, batch_size) : KernelAbstractions.allocate(backend, T, dim, prediction_window, batch_size)
     assign_output_estimate!(output_estimate, batch, ndrange=size(output_estimate))
     output_estimate
 end
@@ -111,8 +111,12 @@ loss(ps) = loss(ps, batch, output)
     i,j = @index(Global, NTuple)
     zero_tensor[i,seq_length,j] = output_diff[i,j]
 end
+@kernel function augment_zeros_kernel!(zero_tensor::AbstractArray{T, 3}, output_diff::AbstractArray{T, 3}) where T 
+    i,j,k = @index(Global, NTuple)
+    zero_tensor[i,seq_length-prediction_window+j,k] = output_diff[i,j,k]
+end
 augment_zeros! = augment_zeros_kernel!(backend)
-function augment_zeros(output_diff::AbstractMatrix{T}) where T
+function augment_zeros(output_diff::AbstractArray{T}) where T
     zero_tensor = KernelAbstractions.zeros(backend, T, dim, seq_length, batch_size)
     augment_zeros!(zero_tensor, output_diff, ndrange=size(output_diff))
     zero_tensor
@@ -120,7 +124,7 @@ end
 
 function ChainRulesCore.rrule(::typeof(assign_output_estimate), batch::AbstractArray{T, 3}) where T
     output_estimate = assign_output_estimate(batch)
-    function assign_output_estimate_pullback(output_diff::AbstractMatrix)
+    function assign_output_estimate_pullback(output_diff::AbstractArray)
         f̄ = NoTangent()
         batch_diff = @thunk augment_zeros(output_diff)
         return f̄, batch_diff
