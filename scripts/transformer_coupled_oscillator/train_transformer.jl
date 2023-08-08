@@ -5,7 +5,7 @@ using Random
 
 include("generate_data.jl")
 
-backend = CPU()
+backend = CUDABackend()
 T = Float32
 
 data_raw = generate_data()
@@ -14,26 +14,26 @@ dim, n_params, n_time_steps = size(data_raw)
 data = KernelAbstractions.allocate(backend, T, size(data_raw))
 copyto!(data, data_raw)
 
-model = Chain(  MultiHeadAttention(dim,2,Stiefel=true),
-                Gradient(dim,5*dim,tanh,change_q=true),
-		        Gradient(dim,5*dim,tanh,change_q=false),
-		        MultiHeadAttention(dim,2,Stiefel=true),
-                Gradient(dim,5*dim,tanh,change_q=false),
-		        Gradient(dim,5*dim,tanh,change_q=true), 
-		        MultiHeadAttention(dim,2,Stiefel=true),
-                Gradient(dim,5*dim,tanh,change_q=true),
-		        Gradient(dim,5*dim,tanh,change_q=false),
-                Gradient(dim,5*dim,identity,change_q=true),
-		        Gradient(dim,5*dim,identity,change_q=false))
+model = Chain(  Attention(dim),
+                Gradient(dim,10*dim,tanh,change_q=true),
+		Gradient(dim,10*dim,tanh,change_q=false),
+		Attention(dim),
+                Gradient(dim,10*dim,tanh,change_q=false),
+		Gradient(dim,10*dim,tanh,change_q=true), 
+		Attention(dim),
+                Gradient(dim,10*dim,tanh,change_q=true),
+		Gradient(dim,10*dim,tanh,change_q=false),
+                Gradient(dim,10*dim,identity,change_q=true),
+		Gradient(dim,10*dim,identity,change_q=false))
 
-const transformer_dim = 20
-const num_heads = 4
-const seq_length = 50
-const n_epochs = 500
+const transformer_dim = 100
+const num_heads = 20
+const seq_length = 100
+const n_epochs = 10000
 const batch_size = 128
-const prediction_window = 5
+const prediction_window = 50
 
-model = Chain(  Dense(dim, transformer_dim, tanh),
+model = Chain(Dense(dim, transformer_dim, tanh),
               MultiHeadAttention(transformer_dim, num_heads),
               ResNet(transformer_dim, tanh),
               MultiHeadAttention(transformer_dim, num_heads),

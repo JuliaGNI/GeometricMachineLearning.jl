@@ -8,11 +8,11 @@ m1 = T(2.)
 m2 = T(1.)
 k1 = T(1.5)
 k2 = T(0.3)
-k = T.(0.0:1:4)
+k = T.(0.0:0.01:4)
 
 params_collection = Tuple([(m1=m1,m2=m2,k1=k1,k2=k2,k=k_val) for k_val in k])
 
-const t_integration = 100
+const t_integration = 1000
 const time_step = T(.4)
 
 function q̇(v, t, q, p, params)
