@@ -1,4 +1,4 @@
-using GeometricIntegrators, KernelAbstractions
+using GeometricIntegrators, KernelAbstractions, HDF5
 
 T = Float64
 
@@ -60,3 +60,6 @@ function generate_data(params_collection=params_collection, initial_conditions=i
     assign_tensor(data_tensor, sols)
     data_tensor
 end
+
+data = generate_data()
+#file = h5open("data", "w")
