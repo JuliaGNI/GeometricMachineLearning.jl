@@ -1,17 +1,19 @@
 using GeometricIntegrators, KernelAbstractions
 
-# here the second point mass is altered
-params_collection = (  (m1=2, m2=2, k1=1.5, k2=0.1, k=0.2),
-            (m1=2, m2=2, k1=1.5, k2=0.2, k=0.2),
-            (m1=2, m2=2, k1=1.5, k2=0.3, k=0.2),
-            (m1=2, m2=2, k1=1.5, k2=0.4, k=0.2)
-)
+T = Float64
 
-initial_conditions_collection = ( (q=[1.,0.], p=[2.,0.]),
-                    (q=[1.,0.], p=[1.,0.]),
-                    (q=[1.,0.], p=[0.5,0.]))
+initial_conditions_collection = ( (q=[T(1.),T(0.)], p=[T(2.),T(0.)]), )
 
-const t_integration = 10
+m1 = T(2.)
+m2 = T(1.)
+k1 = T(1.5)
+k2 = T(0.3)
+k = T.(0.0:1:4)
+
+params_collection = Tuple([(m1=m1,m2=m2,k1=k1,k2=k2,k=k_val) for k_val in k])
+
+const t_integration = 100
+const time_step = T(.4)
 
 function q̇(v, t, q, p, params)
     v[1] = p[1]/params.m1
@@ -27,17 +29,6 @@ function ṗ(f, t, q, p, params)
 	f[2] = -params.k2 * q[2] + params.k * (q[1] - q[2]) * sigmoid(q[1])
 end
 
-sols = []
-for params in params_collection
-    for initial_conditions in initial_conditions_collection
-        pode = PODEProblem(q̇, ṗ, (0.0, t_integration), .1, initial_conditions; parameters = params)
-        sol = integrate(pode,ImplicitMidpoint())
-        push!(sols, sol)
-    end
-end
-
-time_steps = length(sols[1].q)
-data_tensor = zeros(4, length(sols), time_steps)
 @kernel function create_tensor_kernel_q!(data_tensor, sols)
     i,j,k = @index(Global, NTuple)
     data_tensor[i,j,k] = sols[j].q[k-1][i]
@@ -58,7 +49,7 @@ function generate_data(params_collection=params_collection, initial_conditions=i
     sols = []
     for params in params_collection
         for initial_conditions in initial_conditions_collection
-            pode = PODEProblem(q̇, ṗ, (0.0, t_integration), .1, initial_conditions; parameters = params)
+            pode = PODEProblem(q̇, ṗ, (0.0, t_integration), time_step, initial_conditions; parameters = params)
             sol = integrate(pode,ImplicitMidpoint())
             push!(sols, sol)
         end
