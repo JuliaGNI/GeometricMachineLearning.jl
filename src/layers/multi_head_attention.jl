@@ -11,11 +11,11 @@ function MultiHeadAttention(dim::Integer, n_heads::Integer; Stiefel::Bool=false,
     MultiHeadAttention{dim, dim, Stiefel, typeof(retraction), add_connection}(n_heads)
 end
 
-function parameterlength(::StiefelLayer{M, M, false}) where M
+function parameterlength(::MultiHeadAttention{M, M, false}) where M
     3*M^2
 end
 
-function parameterlength(d::StiefelLayer{M, M, true}) where M
+function parameterlength(d::MultiHeadAttention{M, M, true}) where M
     3*M*(2*M*d.n_heads - d.n_heads - M)÷(2*d.n_heads^2)
 end
 
