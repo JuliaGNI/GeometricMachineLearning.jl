@@ -22,7 +22,7 @@ end
 function initialparameters(backend::KernelAbstractions.Backend, T::Type, d::MultiHeadAttention{M, M, false}; rng::AbstractRNG=Random.default_rng(), initializer::AbstractNeuralNetworks.AbstractInitializer=GlorotUniform()) where {M}
     # number of "hidden" dimension (dimension of projection) 
     Dₕ = M ÷ d.n_heads
-    # projections for queries, keys and vectors.
+    # projections for queries, keys and values.
     PQ = NamedTuple()
     PK = NamedTuple()
     PV = NamedTuple()
