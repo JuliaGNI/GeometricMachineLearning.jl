@@ -6,7 +6,6 @@ end
 
 default_retr = Geodesic()
 function Attention(dim::Integer; Stiefel::Bool=false, retraction::AbstractRetraction=default_retr, add_connection::Bool=true)
-    @assert dim % n_heads == 0
     Attention{dim, dim, Stiefel, typeof(retraction), add_connection}()
 end
 
