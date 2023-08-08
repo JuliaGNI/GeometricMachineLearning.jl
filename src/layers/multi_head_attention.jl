@@ -91,7 +91,7 @@ function (d::MultiHeadAttention{M, M, Stiefel, Retraction, false})(x::AbstractMa
     dim, input_length = size(x)
     @assert dim == M
 
-    output = typeof(x)(zeros(T, 0, input_length))
+    output = similar(x, 0, input_length)
     for i in 1:d.n_heads
         key = Symbol("head_"*string(i))
         output = vcat(output, ps.PV[key]'*x*Lux.softmax((ps.PQ[key]'*x)'*(ps.PK[key]'*x)))
