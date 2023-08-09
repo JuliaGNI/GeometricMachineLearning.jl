@@ -80,7 +80,11 @@ Base.:*(α::Real, A::SkewSymMatrix) = A*α
 function Base.zeros(::Type{SkewSymMatrix{T}}, n::Int) where T
     SkewSymMatrix(zeros(T, n*(n-1)÷2), n)
 end
-    
+
+function Base.zeros(backend::KernelAbstractions.Backend, ::Type{SkewSymMatrix{T}}, n::Int) where T
+	SkewSymMatrix(KernelAbstractions.zeros(backend, T, n*(n-1)÷2), n)
+end
+
 function Base.zeros(::Type{SkewSymMatrix}, n::Int)
     SkewSymMatrix(zeros(n*(n-1)÷2), n)
 end
