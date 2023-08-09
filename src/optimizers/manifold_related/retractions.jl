@@ -31,11 +31,11 @@ function retraction(::PSDLayer{inverse, Cayley}, B::NamedTuple) where {inverse}
     cayley(B)
 end
 
-function retraction(::MultiHeadAttention{true, Geodesic}, B::NamedTuple)
+function retraction(::MultiHeadAttention{M, M, true, Geodesic}, B::NamedTuple) where {M}
     geodesic(B)
 end
 
-function retraction(::MultiHeadAttention{true, Cayley}, B::NamedTuple)
+function retraction(::MultiHeadAttention{M, M, true, Cayley}, B::NamedTuple) where {M}
     cayley(B)
 end
 
