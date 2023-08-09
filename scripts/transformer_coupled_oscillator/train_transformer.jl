@@ -1,26 +1,25 @@
-using GeometricMachineLearning, KernelAbstractions, LinearAlgebra, ProgressMeter, Zygote
-using ChainRulesCore
+using GeometricMachineLearning, ProgressMeter, Zygote
+using KernelAbstractions
 using CUDA
 using Random
-
-include("generate_data.jl")
+using JLD2
 
 backend = CPU()
 T = Float32
 
-data_raw = generate_data()
+file = jldopen("data", "r")
+data_raw = file["tensor"]
 dim, n_params, n_time_steps = size(data_raw)
 
 data = KernelAbstractions.allocate(backend, T, size(data_raw))
 copyto!(data, data_raw)
 
-# I probably don't even have to declare all of the below as constant
-const transformer_dim = 20
-const num_heads = 4
-const seq_length = 50
-const n_epochs = 500
-const batch_size = 128
-const prediction_window = 5
+transformer_dim = 20
+num_heads = 4
+seq_length = 50
+n_epochs = 5
+batch_size = 128
+prediction_window = 5
 include("auxiliary_functions.jl")
 
 #=
@@ -61,3 +60,11 @@ for t in 1:n_training_steps
     optimization_step!(o, model, ps, dx)
     ProgressMeter.next!(progress_object; showvalues = [(:TrainingLoss,loss_val)])
 end
+
+map_to_cpu(ps::Tuple) = Tuple([map_to_cpu(layer) for layer in ps])
+map_to_cpu(layer::NamedTuple) = apply_toNT(map_to_cpu, layer)
+function map_to_cpu(A::AbstractArray{T}) where T
+    Array{T}(A)
+end
+
+jldsave("nn_model", model=model, ps=ps, seq_length=seq_length, prediction_window=prediction_window)
