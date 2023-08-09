@@ -85,8 +85,8 @@ end
 @inline Base.eachindex(data::TrajectoryData) = vcat([[(i,j) for j in  1:get_length_trajectory(data,i)] for i in 1:get_nb_trajectory(data)]...)
 @inline Base.eachindex(data::SampledData) = 1:get_nb_point(data)
 
-@inline Base.eachindex(ti::AbstractTrainingIntegrator, data::TrajectoryData) = vcat([[(i,j) for j in  1:get_length_trajectory(data,i)-min_length_batch(ti)+1] for i in 1:get_nb_trajectory(data)]...)
-@inline Base.eachindex(::AbstractTrainingIntegrator, data::SampledData) = 1:get_nb_point(data)
+@inline Base.eachindex(ti::AbstractTrainingMethod, data::TrajectoryData) = vcat([[(i,j) for j in  1:get_length_trajectory(data,i)-min_length_batch(ti)+1] for i in 1:get_nb_trajectory(data)]...)
+@inline Base.eachindex(::AbstractTrainingMethod, data::SampledData) = 1:get_nb_point(data)
 
 reshape_intoSampledData!(data::AbstractDataShape) = @error "It is not possible to convert "*string(typeof(data))*" into SampledData."
 reshape_intoSampledData!(data::SampledData) = data
