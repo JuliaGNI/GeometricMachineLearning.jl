@@ -13,6 +13,8 @@ function main(first_dim, second_dim, third_dim, third_tensor_dim)
     test_rrule(mat_tensor_mul, rand(first_dim, second_dim), rand(second_dim, third_dim, third_tensor_dim))
     test_rrule(tensor_tensor_mul, rand(first_dim, second_dim, third_tensor_dim), rand(second_dim, third_dim, third_tensor_dim))
     test_rrule(tensor_transpose_tensor_mul, rand(second_dim, first_dim, third_tensor_dim), rand(second_dim, third_dim, third_tensor_dim))
+    test_rrule(tensor_transpose, rand(first_dim, secon_dim, third_tensor_dim))
+    test_rrule(tensor_exponential, rand(first_dim, first_dim, third_tensor_dim))
     #compute the derivative with FiniteDifferences.jl
 end
 
