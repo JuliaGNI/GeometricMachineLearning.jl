@@ -17,8 +17,8 @@ copyto!(data, data_raw)
 function relu(x::T) 
 	max(T(0.),x)
 end
-model = Chain(  MultiHeadAttention(dim,2,Stiefel=true),
-                Gradient(dim,2*dim,change_q=true),
+model = Chain(  MultiHeadAttention(dim,2,Stiefel=true,
+    Gradient(dim,2*dim,change_q=true),
 		Gradient(dim,2*dim,change_q=false),
 		MultiHeadAttention(dim,2,Stiefel=true),
 		Gradient(dim,2*dim,change_q=false),
