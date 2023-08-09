@@ -1,3 +1,5 @@
+using KernelAbstractions, ChainRulesCore, LinearAlgebra
+
 batch = KernelAbstractions.allocate(backend, T, dim, seq_length, batch_size)
 output = KernelAbstractions.allocate(backend, T, dim, prediction_window, batch_size)
 #output_estimate = prediction_window == 1 ? KernelAbstractions.allocate(backend, T, dim, batch_size) : KernelAbstractions.allocate(backend, T, dim, prediction_window, batch_size)
