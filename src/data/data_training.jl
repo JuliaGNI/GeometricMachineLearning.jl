@@ -72,7 +72,7 @@ end
 @inline Base.size(data::TrainingData) = size(shape(data))
 
 @inline Base.eachindex(data::TrainingData) = eachindex(data.shape)
-@inline Base.eachindex(ti::AbstractTrainingIntegrator, data::TrainingData) = eachindex(ti, data.shape)
+@inline Base.eachindex(ti::AbstractTrainingMethod, data::TrainingData) = eachindex(ti, data.shape)
 
 @inline Base.copy(data::TrainingData) = TrainingData(data)
 

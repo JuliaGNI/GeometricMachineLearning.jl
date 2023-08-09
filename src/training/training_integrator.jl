@@ -1,11 +1,11 @@
-#Define common strucutre integrator
-struct TrainingIntegrator{TIT<:AbstractTrainingIntegrator, TSymbol<:AbstractDataSymbol, TShape<:AbstractDataShape, TD} <:AbstractTrainingIntegrator
+#Define common strucutre Method
+struct TrainingMethod{TIT<:AbstractTrainingMethod, TSymbol<:AbstractDataSymbol, TShape<:AbstractDataShape, TD} <:AbstractTrainingMethod
     sqdist::TD
 end
 
-@inline type(::TrainingIntegrator{T}) where T<: AbstractTrainingIntegrator = T
-@inline symbols(::TrainingIntegrator{T,Symbols}) where {T<: AbstractTrainingIntegrator, Symbols<:AbstractDataSymbol} = Symbols
-@inline shape(::TrainingIntegrator{T,Symbols, Shape}) where {T<: AbstractTrainingIntegrator, Symbols<:AbstractDataSymbol, Shape<:AbstractDataShape} = Shape
+@inline type(::TrainingMethod{T}) where T<: AbstractTrainingMethod = T
+@inline symbols(::TrainingMethod{T,Symbols}) where {T<: AbstractTrainingMethod, Symbols<:AbstractDataSymbol} = Symbols
+@inline shape(::TrainingMethod{T,Symbols, Shape}) where {T<: AbstractTrainingMethod, Symbols<:AbstractDataSymbol, Shape<:AbstractDataShape} = Shape
 
 
-min_length_batch(ti::TrainingIntegrator) = min_length_batch(type(ti)())
+min_length_batch(ti::TrainingMethod) = min_length_batch(type(ti)())

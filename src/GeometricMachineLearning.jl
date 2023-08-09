@@ -17,6 +17,7 @@ module GeometricMachineLearning
     using Zygote
     using ForwardDiff
     using InteractiveUtils
+    using TimerOutputs
 
     import CUDA
 
@@ -167,7 +168,7 @@ module GeometricMachineLearning
     export LnnTrainingIntegrator
     export SympNetTrainingIntegrator
     
-    include("training/abstract_training_integrator.jl")
+    include("training_method/abstract_training_method.jl")
 
     # INCLUDE DATA TRAINING STRUCTURE
     export AbstractDataShape, TrajectoryData, SampledData
@@ -298,32 +299,32 @@ module GeometricMachineLearning
     export SymplecticEulerA, SymplecticEulerB
     export SEuler, SEulerA, SEulerB
 
-    include("training/hnn_training/symplectic_euler.jl")
+    include("training_method/symplectic_euler.jl")
 
-    export HnnExactIntegrator
+    export HnnExactMethod
     export ExactHnn
 
-    include("training/hnn_training/hnn_exact_integrator.jl")
+    include("training_method/hnn_exact_method.jl")
 
-    export VariationalIntegrator
-    export VariationalMidPointIntegrator
+    export VariationalMethod
+    export VariationalMidPointMethod
     export VariaMidPoint
 
-    include("training/lnn_training/variational_integrator.jl")
+    include("training_method/variational_method.jl")
 
-    export LnnExactIntegrator
+    export LnnExactMethod
     export ExactLnn
 
-    include("training/lnn_training/lnn_exact_integrator.jl")
+    include("training_method/lnn_exact_method.jl")
 
-    export BasicSympNetIntegrator
+    export BasicSympNetMethod
     export BasicSympNet
 
-    include("training/sympnet_training/sympnet_basic_integrator.jl")
+    include("training_method/sympnet_basic_method.jl")
 
-    export default_integrator
+    export default_method
     
-    include("training/default_integrator.jl")
+    include("training/default_method.jl")
 
 
     # INCLUDE ASSERTION Function
