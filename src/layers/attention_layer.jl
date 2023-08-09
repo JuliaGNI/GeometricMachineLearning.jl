@@ -1,12 +1,21 @@
 """
 MultiHeadAttention (MHA) serves as a preprocessing step in the transformer. It reweights the input vectors bases on correlations within those data. 
 """
-struct Attention{M, N, Stiefel, Retraction, add_connection} <: AbstractExplicitLayer{M, N}
+struct Attention{M, N, Stiefel, Retraction, add_connection, FT} <: AbstractExplicitLayer{M, N}
+    activation::FT
 end
 
 default_retr = Geodesic()
-function Attention(dim::Integer; Stiefel::Bool=false, retraction::AbstractRetraction=default_retr, add_connection::Bool=true)
-    Attention{dim, dim, Stiefel, typeof(retraction), add_connection}()
+function orthonormal_activation(A::AbstractMatrix{T}) where T 
+    exp(A - A')
+end
+# TODO: This can be implemented more efficiently if you write one kernel for everything!
+function orthonormal_activation(A::AbstractArray{T, 3}) where T 
+    tensor_exponential(.5*(A - tensor_transpose(A)))
+end
+
+function Attention(dim::Integer, activation=orthonormal_activation; Stiefel::Bool=false, retraction::AbstractRetraction=default_retr, add_connection::Bool=true)
+    Attention{dim, dim, Stiefel, typeof(retraction), add_connection, typeof(activation)}()
 end
 
 function parameterlength(::Attention{M, M, false}) where M
@@ -37,14 +46,14 @@ function (d::Attention{M, M, Stiefel, Retraction, true})(x::AbstractMatrix{T}, p
     dim, input_length = size(x)
     @assert dim == M
 
-    x + x*Lux.softmax((ps.PQ*x)'*(ps.PK*x))
+    x + x*d.activation((ps.PQ*x)'*(ps.PK*x))
 end
 
 function (d::Attention{M, M, Stiefel, Retraction, false})(x::AbstractMatrix{T}, ps::NamedTuple) where {M, Stiefel, Retraction, T}
     dim, input_length = size(x)
     @assert dim == M
 
-    x*Lux.softmax((ps.PQ*x)'*(ps.PK*x))
+    x*d.activation((ps.PQ*x)'*(ps.PK*x))
 end
 
 function (d::Attention{M, M, Stiefel, Retraction, true})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, Stiefel, Retraction, T} 
@@ -54,7 +63,7 @@ function (d::Attention{M, M, Stiefel, Retraction, true})(x::AbstractArray{T, 3},
     Q_tensor = mat_tensor_mul(ps.PQ', x)
     K_tensor = mat_tensor_mul(ps.PK', x)
     QK_tensor = tensor_transpose_tensor_mul(Q_tensor, K_tensor)
-    x + tensor_tensor_mul(x, Lux.softmax(QK_tensor))
+    x + tensor_tensor_mul(x, d.activation(QK_tensor))
 end
 
 function (d::Attention{M, M, Stiefel, Retraction, false})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, Stiefel, Retraction, T} 
@@ -64,5 +73,5 @@ function (d::Attention{M, M, Stiefel, Retraction, false})(x::AbstractArray{T, 3}
     Q_tensor = mat_tensor_mul(ps.PQ', x)
     K_tensor = mat_tensor_mul(ps.PK', x)
     QK_tensor = tensor_transpose_tensor_mul(Q_tensor, K_tensor)
-    tensor_tensor_mul(x, Lux.softmax(QK_tensor))
+    tensor_tensor_mul(x, d.activation(QK_tensor))
 end
