@@ -2,25 +2,29 @@ using GeometricIntegrators, KernelAbstractions
 
 # here the second point mass is altered
 params_collection = (  (m1=2, m2=2, k1=1.5, k2=0.1, k=0.2),
-            (m1=2, m2=1, k1=1.5, k2=0.1, k=0.2),
-            (m1=2, m2=.5, k1=1.5, k2=0.1, k=0.2),
-            (m1=2, m2=.25, k1=1.5, k2=0.1, k=0.2)
+            (m1=2, m2=2, k1=1.5, k2=0.2, k=0.2),
+            (m1=2, m2=2, k1=1.5, k2=0.3, k=0.2),
+            (m1=2, m2=2, k1=1.5, k2=0.4, k=0.2)
 )
 
 initial_conditions_collection = ( (q=[1.,0.], p=[2.,0.]),
                     (q=[1.,0.], p=[1.,0.]),
                     (q=[1.,0.], p=[0.5,0.]))
 
-t_integration = 1000
+const t_integration = 10
 
 function q̇(v, t, q, p, params)
     v[1] = p[1]/params.m1
     v[2] = p[2]/params.m2
 end
 
+function sigmoid(x::T) where {T<:Real}
+	T(1)/(T(1) + exp(-x))
+end
+
 function ṗ(f, t, q, p, params)
-    f[1] = -params.k1 * q[1] - params.k * (q[1] - q[2]) #* (cos(10*q[1]) + 1) + params.k /2 * (q[1] - q[2])^2 * 10 * sin(10 * q[1])
-    f[2] = -params.k2 * q[2] + params.k * (q[1] - q[2]) #* (cos(10*q[1]) + 1) 
+	f[1] = -params.k1 * q[1] - params.k * (q[1] - q[2]) * sigmoid(q[1]) - params.k /2 * (q[1] - q[2])^2 * sigmoid(q[1])^2 * exp(-q[1])
+	f[2] = -params.k2 * q[2] + params.k * (q[1] - q[2]) * sigmoid(q[1])
 end
 
 sols = []
@@ -50,7 +54,7 @@ function assign_tensor(data_tensor, sols)
     assign_p!(data_tensor, sols, ndrange=dims)
 end
 
-function generate_data()
+function generate_data(params_collection=params_collection, initial_conditions=initial_conditions, t_integration=t_integration)
     sols = []
     for params in params_collection
         for initial_conditions in initial_conditions_collection
@@ -63,5 +67,5 @@ function generate_data()
     time_steps = length(sols[1].q)
     data_tensor = zeros(4, length(sols), time_steps)
     assign_tensor(data_tensor, sols)
-    data_tensor 
+    data_tensor
 end

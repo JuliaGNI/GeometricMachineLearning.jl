@@ -117,9 +117,13 @@ end
 # test_rrule(assign_output_estimate, batch)
 n_training_steps_per_epoch = Int(ceil(n_time_steps/batch_size))
 n_training_steps = n_epochs*n_training_steps_per_epoch
-@showprogress for t in 1:n_training_steps
+
+progress_object = Progress(n_training_steps; enabled=true)
+
+for t in 1:n_training_steps
     draw_batch!(batch, output)
-    dx = Zygote.gradient(loss, ps)[1]
+    loss_val, pullback = Zygote.pullback(loss, ps)
+    dx = pullback(1)[1]
     optimization_step!(o, model, ps, dx)
-    t % n_training_steps_per_epoch == 0 ? println(loss(ps)) : nothing
+    ProgressMeter.next!(progress_object; showvalues = [(:TrainingLoss,loss_val)])
 end

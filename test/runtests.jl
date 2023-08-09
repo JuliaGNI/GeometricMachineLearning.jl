@@ -17,3 +17,4 @@ using SafeTestsets
 @safetestset "Optimizer #1                                                                    " begin include("optimizers/utils/global_sections.jl") end
 @safetestset "Optimizer #2                                                                    " begin include("optimizers/utils/optimization_step.jl") end
 @safetestset "Optimizer #3                                                                    " begin include("optimizers/utils/modified_exponential.jl") end
+@safetestset "Optimizer #4                                                                    " begin include("optimizers/optimizer_convergence_tests/svd_optim.jl") end
