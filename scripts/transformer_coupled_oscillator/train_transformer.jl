@@ -46,6 +46,7 @@ model = Chain(  Dense(dim, transformer_dim, tanh),
 
 loss(ps) = loss(model, ps)
 ps = initialparameters(backend, T, model)
+
 o = Optimizer(AdamOptimizer(), ps)
 
 n_training_steps_per_epoch = Int(ceil(n_time_steps/batch_size))

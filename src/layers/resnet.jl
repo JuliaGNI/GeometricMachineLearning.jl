@@ -48,7 +48,6 @@ end
     return x + d.activation.(mat_tensor_mul(ps.weight, x) .+ ps.bias)
 end
 
-
 @inline function (d::Dense{M, N, true})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, N, T}
 	return d.σ.(mat_tensor_mul(ps.W, x) .+ ps.b)
 end

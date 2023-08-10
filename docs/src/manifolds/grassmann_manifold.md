@@ -6,7 +6,7 @@ An element of the Grassmann manifold $G(n,N)$ is a vector subspace $\subset\math
 
 The tangent space for this element can then be represented through matrices: 
 
-$$
+```math
 \begin{pmatrix}
     0 & \cdots & 0 \\
     \cdots & \cdots & \cdots \\ 
@@ -15,10 +15,10 @@ $$
     \cdots & \cdots & \cdots \\ 
     a_{(N-n)1} & \cdots & a_{(N-n)n}
 \end{pmatrix}.
-$$
+```
 
 The Grassmann manifold can also be seen as the Stiefel manifold modulo an equivalence class. This leads to the following (which is used for optimization):
 
-$$
+```math
 \mathfrak{g}^\mathrm{hor} = \mathfrak{g}^{\mathrm{hor},E} = \left\{\begin{pmatrix} 0 & -B^T \\ B & 0 \end{pmatrix}: \text{$B$ arbitrary}\right\}.
-$$
+```
