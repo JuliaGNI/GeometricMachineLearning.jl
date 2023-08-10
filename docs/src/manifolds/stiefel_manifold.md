@@ -1,13 +1,13 @@
 # Stiefel manifold 
 
-The Stiefel manifold $St(n, N)$ is the space of all orhtonormal frames in $\mathbb{R}^{N\times{}n}$, i.e. matrices $Y\in\mathbb{R}^{N\times{}n}$ s.t. $Y^TY = I$. It can also be seen as the orthonormal group $O(N)$ modulo an equivalence relation: $A\sim{}B\iff\exists{}C\text{ s.t. }AC = B$ for 
+The Stiefel manifold $St(n, N)$ is the space of all orthonormal frames in $\mathbb{R}^{N\times{}n}$, i.e. matrices $Y\in\mathbb{R}^{N\times{}n}$ s.t. $Y^TY = I$. It can also be seen as the orthonormal group $O(N)$ modulo an equivalence relation: $A\sim{}B\iff\exists{}C\text{ s.t. }AC = B$ for 
 
-$$
+```math
 C = \begin{pmatrix}
     I & 0 \\
     0 & Q 
 \end{pmatrix}
-$$
+```
 
 and $Q\in{}O(N-n)$, so the first $n$ columns of $A$ and $B$ are equivalent.
 
@@ -17,12 +17,12 @@ The function `rgrad` is a mapping that takes an element of $St(n,N)$ and a "Eucl
 
 What we use for optimizing on the Stiefel manifold (especially regarding the generalization of the Adam optimizer) is the tangent space to $E:=[e_1,\ldots,e_n]$. This consists of elements: 
 
-$$
+```math
 T_ESt(n,N) = \left\{\begin{pmatrix} A \\ B \end{pmatrix}: A\text{ skew-sym. and $B$ arbitrary}\right\}.
-$$
+```
 
 Further: 
 
-$$
+```math
 \mathfrak{g}^\mathrm{hor} = \mathfrak{g}^{\mathrm{hor},E} = \left\{\begin{pmatrix} A & -B^T \\ B & 0 \end{pmatrix}: A\text{ skew-sym. and $B$ arbitrary}\right\}.
-$$
+```

@@ -1,11 +1,11 @@
-pretransform(::AbstractTrainingIntegrator, params::NamedTuple) = params, nothing
+pretransform(::AbstractTrainingMethod, params::NamedTuple) = params, nothing
 
-posttransform(::AbstractTrainingIntegrator, params,  args...) = params
+posttransform(::AbstractTrainingMethod, params,  args...) = params
 
 
-TuppleNeededTrainingIntegrator = Union{HnnTrainingIntegrator, LnnTrainingIntegrator}
+TuppleNeededTrainingMethod = Union{HnnTrainingMethod, LnnTrainingMethod}
 
-function pretransform(::TuppleNeededTrainingIntegrator, params::NamedTuple)
+function pretransform(::TuppleNeededTrainingMethod, params::NamedTuple)
 
     # convert parameters to tuple
     params_tuple = Tuple([Tuple(x) for x in params])
@@ -17,7 +17,7 @@ function pretransform(::TuppleNeededTrainingIntegrator, params::NamedTuple)
 end
 
 
-function posttransform(::TuppleNeededTrainingIntegrator, params_grad::Tuple, keys)
+function posttransform(::TuppleNeededTrainingMethod, params_grad::Tuple, keys)
 
     NamedTuple(zip(keys[1],[NamedTuple(zip(k,x)) for (k,x) in zip(keys[2],params_grad)]))
 
