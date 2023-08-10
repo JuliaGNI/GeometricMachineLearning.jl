@@ -11,7 +11,7 @@ function orthonormal_activation(A::AbstractMatrix{T}) where T
 end
 # TODO: This can be implemented more efficiently if you write one kernel for everything!
 function orthonormal_activation(A::AbstractArray{T, 3}) where T 
-    tensor_exponential(.5*(A - tensor_transpose(A)))
+    tensor_exponential(T(.5)*(A - tensor_transpose(A)))
 end
 
 function Attention(dim::Integer, activation=orthonormal_activation; Stiefel::Bool=false, retraction::AbstractRetraction=default_retr, add_connection::Bool=true)
