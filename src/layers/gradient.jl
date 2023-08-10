@@ -72,3 +72,17 @@ end
         q, p = assign_q_and_p(x, N2)
         return vcat(q, p + ps.weight' * (ps.scale .* d.activation(ps.weight*q .+ ps.bias)))
 end
+
+@inline function(d::Gradient{M, M, true, true})(x::AbstractArray{T, 3}, ps) where {M, T}
+        size(x)[1] == M || error("Dimension mismatch.")
+        N2 = M÷2
+        q, p = assign_q_and_p(x, N2)
+        return vcat(q + mat_tensor_mul(ps.weight', ps.scale .* d.activation.(mat_tensor_mul(ps.weight, p) .+ ps.bias)),p)
+end
+
+@inline function(d::Gradient{M, M, true, false})(x::AbstractArray{T, 3}, ps) where {M, T}
+        size(x)[1] == M || error("Dimension mismatch.")
+        N2 = M÷2
+        q, p = assign_q_and_p(x, N2)
+        return vcat(q, p + mat_tensor_mul(ps.weight', ps.scale .* d.activation.(mat_tensor_mul(ps.weight, q) .+ ps.bias)))
+end
