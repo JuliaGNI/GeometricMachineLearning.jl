@@ -12,3 +12,7 @@ function ChainRulesCore.rrule(::typeof(tensor_transpose), A::AbstractArray{T, 3}
     end
     return C, tensor_transpose_pullback
 end
+
+function tensor_transpose(A::Thunk)
+    Thunk(() -> tensor_transpose(unthunk(A)))
+end
