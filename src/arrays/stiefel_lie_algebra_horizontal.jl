@@ -14,7 +14,9 @@ This also implements the projection:
 | B  D | -> | B  0 |.
 """
 
-mutable struct StiefelLieAlgHorMatrix{T, AT <: SkewSymMatrix{T}, ST <: AbstractMatrix{T}} <: AbstractMatrix{T}
+abstract type AbstractLieAlgHorMatrix{T} <: AbstractMatrix{T} end
+
+mutable struct StiefelLieAlgHorMatrix{T, AT <: SkewSymMatrix{T}, ST <: AbstractMatrix{T}} <: AbstractLieAlgHorMatrix{T}
     A::AT
     B::ST
     N::Int
@@ -107,6 +109,15 @@ function Base.zeros(::Type{StiefelLieAlgHorMatrix}, N::Integer, n::Integer)
         n
     )
 end
+
+function Base.zeros(backend::KernelAbstractions.Backend, ::Type{StiefelLieAlgHorMatrix{T}}, N::Integer, n::Integer) where T 
+	StiefelLieAlgHorMatrix(
+			       zeros(backend, SkewSymMatrix{T}, n), 
+			       KernelAbstractions.zeros(backend, T, N-n, n),
+							N,
+	n)
+end
+
 
 Base.similar(A::StiefelLieAlgHorMatrix, dims::Union{Integer, AbstractUnitRange}...) = zeros(StiefelLieAlgHorMatrix{eltype(A)}, dims...)
 Base.similar(A::StiefelLieAlgHorMatrix) = zeros(StiefelLieAlgHorMatrix{eltype(A)}, A.N, A.n)

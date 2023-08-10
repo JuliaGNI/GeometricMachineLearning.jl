@@ -1,11 +1,11 @@
 
 
-struct SympNetMethod{TN <: LuxNeuralNetwork{<:SympNet}, tType <: Real} <: NeuralNetMethod 
+struct SympNetMethod{TN <: NeuralNetwork{<:SympNet}, tType <: Real} <: NeuralNetMethod 
     nn::TN
     Δt ::tType
 end
 
-function method(nns::NeuralNetSolution{<: LuxNeuralNetwork{<:SympNet}})
+function method(nns::NeuralNetSolution{<: NeuralNetwork{<:SympNet}})
     SympNetMethod(nn(nns), tstep(nns))
 end
 

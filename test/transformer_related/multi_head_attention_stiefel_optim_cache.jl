@@ -7,16 +7,12 @@ n_heads = 8
 Dₕ = dim÷8
 tol = eps(Float32)
 
-d = MultiHeadAttention(dim, n_heads, Stiefel=true)
-ps, st = Lux.setup(TrivialInitRNG(), d)
+model = Chain(MultiHeadAttention(dim, n_heads), MultiHeadAttention(dim, n_heads, Stiefel=true))
+ps = initialparameters(CPU(), Float32, model)
 
-o₁ = AdamOptimizer()
-o₂ = MomentumOptimizer()
-o₃ = GradientOptimizer()
-
-cache_adam = init_optimizer_cache(o₁, ps)
-cache_momentum = init_optimizer_cache(o₂, ps)
-cache_standard = init_optimizer_cache(o₃, ps)
+o₁ = Optimizer(AdamOptimizer(), ps)
+o₂ = Optimizer(MomentumOptimizer(), ps)
+o₃ = Optimizer(GradientOptimizer(), ps)
 
 function check_adam_cache(C::AbstractCache) 
     @test typeof(C) <: AdamCache 
@@ -25,23 +21,23 @@ function check_adam_cache(C::AbstractCache)
     @test typeof(C.B₂) <: StiefelLieAlgHorMatrix
     @test LinearAlgebra.norm(C.B₁) < tol
     @test LinearAlgebra.norm(C.B₂) < tol
-end
-check_adam_cache(B::NamedTuple) = apply_toNT(B, check_adam_cache)
+end 
+check_adam_cache(B::NamedTuple) = apply_toNT(check_adam_cache, B)
 
 function check_momentum_cache(C::AbstractCache)
     @test typeof(C) <: MomentumCache 
-    @test propertynames(C) == (:B, )
+    @test propertynames(C) == (:B,)
     @test typeof(C.B) <: StiefelLieAlgHorMatrix
     @test LinearAlgebra.norm(C.B) < tol
 end
-check_momentum_cache(B::NamedTuple) = apply_toNT(B, check_momentum_cache)
+check_momentum_cache(B::NamedTuple) = apply_toNT(check_momentum_cache, B)
 
 function check_gradient_cache(C::AbstractCache)
     @test typeof(C) <: GradientCache 
     @test propertynames(C) == ()
 end
-check_gradient_cache(B::NamedTuple) = apply_toNT(B, check_gradient_cache)
+check_gradient_cache(B::NamedTuple) = apply_toNT(check_gradient_cache, B)
 
-check_adam_cache(cache_adam)
-check_momentum_cache(cache_momentum)
-check_gradient_cache(cache_standard)
+check_adam_cache(o₁.cache[2])
+check_momentum_cache(o₂.cache[2])
+check_gradient_cache(o₃.cache[2])

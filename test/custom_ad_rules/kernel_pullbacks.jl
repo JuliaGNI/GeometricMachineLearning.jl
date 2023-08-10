@@ -1,10 +1,14 @@
-using GeometricMachineLearning: tensor_mat_mul, mat_tensor_mul, tensor_tensor_mul, tensor_transpose_tensor_mul
+using GeometricMachineLearning: tensor_mat_mul, mat_tensor_mul, tensor_tensor_mul, tensor_transpose_tensor_mul, assign_q_and_p
 using ChainRulesTestUtils
 using Printf
 
 const verbose = false
 
 function main(first_dim, second_dim, third_dim, third_tensor_dim)
+    # the first two are tests for the splitting x -> (q, p) (vector and matrix)
+    test_rrule(assign_q_and_p, rand(first_dim*2), first_dim)
+    test_rrule(assign_q_and_p, rand(first_dim*2, second_dim), first_dim)
+    test_rrule(assign_q_and_p, rand(first_dim*2, second_dim, third_dim), first_dim)
     test_rrule(tensor_mat_mul, rand(first_dim, second_dim, third_tensor_dim), rand(second_dim, third_dim))
     test_rrule(mat_tensor_mul, rand(first_dim, second_dim), rand(second_dim, third_dim, third_tensor_dim))
     test_rrule(tensor_tensor_mul, rand(first_dim, second_dim, third_tensor_dim), rand(second_dim, third_dim, third_tensor_dim))

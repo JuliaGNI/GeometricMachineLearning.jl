@@ -1,15 +1,13 @@
 module GeometricMachineLearning
 
-    using GeometricBase
-    using GeometricEquations
-    using GeometricIntegrators
-    import GeometricIntegrators.Integrators: method
-    
-
+    using AbstractNeuralNetworks
     using BandedMatrices
     using ChainRulesCore
     using Distances
     using ForwardDiff
+    using GeometricBase
+    using GeometricEquations
+    using GeometricIntegrators
     using GPUArrays
     using KernelAbstractions
     using LinearAlgebra
@@ -19,10 +17,26 @@ module GeometricMachineLearning
     using Zygote
     using ForwardDiff
     using InteractiveUtils
+    using TimerOutputs
 
+    import CUDA
 
-    import Lux, CUDA
+    import AbstractNeuralNetworks: Architecture, Chain, NeuralNetwork, AbstractExplicitLayer
+    import AbstractNeuralNetworks: Dense, Linear
+    import AbstractNeuralNetworks: IdentityActivation, ZeroVector
+    import AbstractNeuralNetworks: add!, update!
+    import AbstractNeuralNetworks: layer
+    import AbstractNeuralNetworks: initialparameters
+    using AbstractNeuralNetworks: GlorotUniform
 
+    import GeometricIntegrators.Integrators: method
+
+    export CPU, GPU
+    export Chain, NeuralNetwork
+    export Dense, Linear
+    export initialparameters
+    
+    include("kernels/assign_q_and_p.jl")
     include("kernels/tensor_mat_mul.jl")
     include("kernels/tensor_tensor_mul.jl")
     include("kernels/tensor_transpose_tensor_mul.jl")
@@ -32,41 +46,34 @@ module GeometricMachineLearning
     include("kernels/mat_tensor_mul.jl")
     include("kernels/tensor_transpose.jl")
 
+    include("kernels/kernel_ad_routines/assign_q_and_p.jl")
     include("kernels/kernel_ad_routines/tensor_mat_mul.jl")
     include("kernels/kernel_ad_routines/mat_tensor_mul.jl")
     include("kernels/kernel_ad_routines/tensor_tensor_mul.jl")
     include("kernels/kernel_ad_routines/tensor_transpose_tensor_mul.jl")
-    #export tensor_mat_mul
+    # export tensor_mat_mul
 
-    #this defines empty retraction type structs (doesn't rely on anything)
-    include("optimizers/utils/retraction_types.jl")
+    # this defines empty retraction type structs (doesn't rely on anything)
+    include("optimizers/manifold_related/retraction_types.jl")
 
     export TrivialInitRNG
 
     include("rng/trivial_rng.jl")
     
 
-    #are these needed?
+    # are these needed?
     include("gradient.jl")
     export UnknownProblem, NothingFunction
     include("utils.jl")
 
-    #+ operation has been overloaded to work with NamedTuples!
+    # + operation has been overloaded to work with NamedTuples!
     export _add, apply_toNT, split_and_flatten, add!
     
-    #GPU specific operations
+    # GPU specific operations
     export convert_to_dev, Device, CPUDevice
 
-    #+ operation has been overloaded to work with NamedTuples!
-    export _add
 
-    include("activations/abstract_activation_function.jl")
-    include("activations/identity_activation.jl")
-
-
-    #INCLUDE ARRAYS
-    include("arrays/add.jl")
-    include("arrays/zero_vector.jl")
+    # INCLUDE ARRAYS
     include("arrays/block_identity_lower.jl")
     include("arrays/block_identity_upper.jl")
     include("arrays/symmetric.jl")
@@ -86,12 +93,10 @@ module GeometricMachineLearning
 
     include("orthogonalization_procedures/symplectic_householder.jl")
 
-    #symplectic Householder routine 
+    # symplectic Householder routine 
     export sr, sr!
 
 
-    export AbstractLayer
-    export FeedForwardLayer, LinearFeedForwardLayer
     export Gradient
     export Linear
     export ResidualLayer
@@ -106,13 +111,9 @@ module GeometricMachineLearning
     export StiefelManifold, SymplecticStiefelManifold, GrassmannManifold, Manifold
     export rgrad, metric
 
-
-    include("layers/abstract_layer.jl")
-    include("layers/feed_forward_layer.jl")
     include("layers/gradient.jl")
-    include("layers/linear.jl")
+    include("layers/linear_symplectic.jl")
     include("layers/resnet.jl")
-    include("layers/linear_symplectic_layer.jl")
     include("layers/manifold_layer.jl")
     include("layers/stiefel_layer.jl")
     include("layers/grassmann_layer.jl")
@@ -121,14 +122,14 @@ module GeometricMachineLearning
     include("layers/psd_like_layer.jl")
 
 
-    #include("layers/symplectic_stiefel_layer.jl")
+    # include("layers/symplectic_stiefel_layer.jl")
     export StiefelLayer, GrassmannLayer, ManifoldLayer
     export PSDLayer
     export MultiHeadAttention
+    export ResNet
     export Transformer
-    export AbstractNeuralNetwork
 
-    #INCLUDE OPTIMIZERS
+    # INCLUDE OPTIMIZERS
     export OptimizerMethod, AbstractCache
     export GradientOptimizer, GradientCache
     export MomentumOptimizer, MomentumCache
@@ -138,27 +139,28 @@ module GeometricMachineLearning
     export optimization_step!
     export init_optimizer_cache
 
-    include("optimizers/optimizer_caches.jl")
     include("optimizers/optimizer_method.jl")
+    include("optimizers/optimizer_caches.jl")
+    include("optimizers/optimizer.jl")
     include("optimizers/gradient_optimizer.jl")
     include("optimizers/momentum_optimizer.jl")        
     include("optimizers/adam_optimizer.jl")
-    include("optimizers/optimizer.jl")
+    include("optimizers/init_optimizer_cache.jl")
 
     export GlobalSection, apply_section
     export global_rep
     export TrivialInitRNG
     export Geodesic, Cayley
     export retraction
-    #export ⊙², √ᵉˡᵉ, /ᵉˡᵉ, scalar_add
+    # export ⊙², √ᵉˡᵉ, /ᵉˡᵉ, scalar_add
     export update!
     export check
 
-    include("optimizers/utils/global_sections.jl")
-    include("optimizers/utils/auxiliary.jl")
-    include("optimizers/utils/retractions.jl")
+    include("optimizers/manifold_related/global_sections.jl")
+    include("optimizers/manifold_related/modified_exponential.jl")
+    include("optimizers/manifold_related/retractions.jl")
 
-    #INCLUDE ABSTRACT TRAINING integrator
+    # INCLUDE ABSTRACT TRAINING integrator
     export AbstractTrainingIntegrator
     export loss_single, loss
     
@@ -166,9 +168,9 @@ module GeometricMachineLearning
     export LnnTrainingIntegrator
     export SympNetTrainingIntegrator
     
-    include("training/abstract_training_integrator.jl")
+    include("training_method/abstract_training_method.jl")
 
-    #INCLUDE DATA TRAINING STRUCTURE
+    # INCLUDE DATA TRAINING STRUCTURE
     export AbstractDataShape, TrajectoryData, SampledData
     export get_length_trajectory, get_Δt, get_nb_point, get_nb_trajectory, get_data
 
@@ -181,7 +183,7 @@ module GeometricMachineLearning
 
     include("data/data_symbol.jl")
 
-    #INCLUDE TRAINING INTEGRATOR
+    # INCLUDE TRAINING INTEGRATOR
 
     export TrainingIntegrator
     export type, symbol, shape
@@ -190,7 +192,7 @@ module GeometricMachineLearning
     
     include("training/training_integrator.jl")
 
-     #INCLUDE DATA TRAINING STRUCTURE
+     # INCLUDE DATA TRAINING STRUCTURE
     export AbstractTrainingData
     export TrainingData
     export problem, shape, symbols, dim, noisemaker, data_symbols
@@ -203,20 +205,25 @@ module GeometricMachineLearning
     
     include("data/batch.jl")
 
-    #INCLUDE BACKENDS
-    export AbstractNeuralNetwork
+    # INCLUDE BACKENDS
     export LuxBackend
     export NeuralNetwork
     export arch
 
-    include("architectures/architectures.jl")
     include("backends/backends.jl")
     include("backends/lux.jl")
 
-    # set default backend in NeuralNetwork constructor
-    NeuralNetwork(arch::AbstractArchitecture; kwargs...) = NeuralNetwork(arch, LuxBackend(); kwargs...)
+    
+    export Hnn_training_integrator
+    export Lnn_training_integrator
+    export SEuler
+    export ExactIntegrator
+    export ExactIntegratorLNN
+    export VariationalMidPointLNN
+    export SympNetIntegrator
+    export BaseIntegrator
 
-    #INCLUDE ARCHITECTURES
+    # INCLUDE ARCHITECTURES
     export HamiltonianNeuralNetwork
     export LagrangianNeuralNetwork
     export SympNet
@@ -241,13 +248,13 @@ module GeometricMachineLearning
 
     include("optimizers/default_optimizer.jl")
 
-    #INCLUDE TRAINING parameters
+    # INCLUDE TRAINING parameters
 
     export TrainingParameters
 
     include("training/training_parameters.jl")
 
-    #INCLUDE NEURALNET SOLUTION
+    # INCLUDE NEURALNET SOLUTION
 
     export SingleHistory
     export parameters, datashape, loss
@@ -267,7 +274,7 @@ module GeometricMachineLearning
 
     include("nnsolution/neural_net_solution_ensemble.jl")
 
-    #INCLUDE TRAINING integrator
+    # INCLUDE TRAINING integrator
 
     export TrainingSet
     export nn, parameters, data
@@ -292,52 +299,52 @@ module GeometricMachineLearning
     export SymplecticEulerA, SymplecticEulerB
     export SEuler, SEulerA, SEulerB
 
-    include("training/hnn_training/symplectic_euler.jl")
+    include("training_method/symplectic_euler.jl")
 
-    export HnnExactIntegrator
+    export HnnExactMethod
     export ExactHnn
 
-    include("training/hnn_training/hnn_exact_integrator.jl")
+    include("training_method/hnn_exact_method.jl")
 
-    export VariationalIntegrator
-    export VariationalMidPointIntegrator
+    export VariationalMethod
+    export VariationalMidPointMethod
     export VariaMidPoint
 
-    include("training/lnn_training/variational_integrator.jl")
+    include("training_method/variational_method.jl")
 
-    export LnnExactIntegrator
+    export LnnExactMethod
     export ExactLnn
 
-    include("training/lnn_training/lnn_exact_integrator.jl")
+    include("training_method/lnn_exact_method.jl")
 
-    export BasicSympNetIntegrator
+    export BasicSympNetMethod
     export BasicSympNet
 
-    include("training/sympnet_training/sympnet_basic_integrator.jl")
+    include("training_method/sympnet_basic_method.jl")
 
-    export default_integrator
+    export default_method
     
-    include("training/default_integrator.jl")
+    include("training/default_method.jl")
 
 
-    #INCLUDE ASSERTION Function
+    # INCLUDE ASSERTION Function
     export matching
     include("training/matching.jl")
 
 
-    #INCLUDE PROBLEMS
+    # INCLUDE PROBLEMS
     export HNNProblem, LNNProblem
 
     include("integrator/problem_hnn.jl")
     include("integrator/problem_lnn.jl")
     
-    #INCLUDE INTEGRATOR 
+    # INCLUDE INTEGRATOR 
     export NeuralNetMethod
     export method
 
     include("integrator/abstract_neural_net_method.jl")
 
-    #INCLUDE INTEGRATION METHOD
+    # INCLUDE INTEGRATION METHOD
     export  SympNetMethod
     export integrate, integrate_step!
 

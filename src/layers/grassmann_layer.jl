@@ -1,34 +1,17 @@
-#retraction is more general! function on layer!
-
-struct GrassmannLayer{F1, reverse, F2} <: ManifoldLayer
-    N::Integer
-    n::Integer
-    init_weight::F2
-end
+"""
+Defines a layer that performs simple multiplication with an element of the Grassmann manifold.
+"""
+struct GrassmannLayer{M, N, retraction} <: ManifoldLayer{M, N, retraction} end
 
 default_retr = Geodesic()
-function GrassmannLayer(N::Integer, n::Integer; init_weight=Lux.glorot_uniform, Retraction::AbstractRetraction=default_retr, Transpose::Bool=false)
-    GrassmannLayer{typeof(Retraction), Transpose, typeof(init_weight)}(N, n, init_weight)
+function GrassmannLayer(n::Integer, N::Integer, Retraction::AbstractRetraction=default_retr)
+    GrassmannLayer{n, N, typeof(Retraction)}()
 end
 
-function Lux.initialparameters(rng::AbstractRNG, d::GrassmannLayer)
-    (weight = d.init_weight(rng, GrassmannManifold, d.N, d.n), )
+function AbstractNeuralNetworks.initialparameters(backend::KernelAbstractions.Backend, ::Type{T}, d::GrassmannLayer{N,M}; rng::AbstractRNG=Random.default_rng()) where {M,N,T}
+    (weight = N > M ? rand(backend, rng, GrassmannManifold{T}, N, M) : rand(backend, rng, GrassmannManifold{T}, M, N), )
 end
 
-#Lux.initialstates(::AbstractRNG, ::GrassmannLayer) = NamedTuple()
-
-Lux.parameterlength(d::GrassmannLayer) = (d.N-d.n)*d.n
-
-Lux.statelength(d::GrassmannLayer) = 0
-
-function (d::GrassmannLayer{Retraction, false})(x::AbstractVecOrMat, ps::NamedTuple, st::NamedTuple) where {Retraction}
-    ps.weight*x, st
+function parameterlength(::GrassmannLayer{M, N}) where {M, N}
+    N > M ? (N - M)*M : (M - N):N
 end
-
-function (d::GrassmannLayer{Retraction, true})(x::AbstractVecOrMat, ps::NamedTuple, st::NamedTuple) where {Retraction}
-    ps.weight'*x, st
-end
-
-#function Lux.apply(d::GrassmannLayer, x::AbstractVecOrMat, ps::NamedTuple, st::NamedTuple)
-#    d(x, ps, st)
-#end

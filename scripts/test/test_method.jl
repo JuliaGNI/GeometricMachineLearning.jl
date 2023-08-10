@@ -4,17 +4,17 @@ using Test
 include("macro_testerror.jl")
 include("data_generation.jl")
 
-hnn = NeuralNetwork(HamiltonianNeuralNetwork(2))
-sympnet = NeuralNetwork(GSympNet(2))
-lnn = NeuralNetwork(LagrangianNeuralNetwork(2))
+hnn = NeuralNetwork(HamiltonianNeuralNetwork(2), Float64)
+sympnet = NeuralNetwork(GSympNet(2), Float64)
+lnn = NeuralNetwork(LagrangianNeuralNetwork(2), Float64)
 
 #########################################
-# Test for creation of TrainingIntegrator
+# Test for creation of TrainingMethod
 #########################################
 
 exacthnn = ExactHnn()
 
-@test type(exacthnn)    == HnnExactIntegrator
+@test type(exacthnn)    == HnnExactMethod
 @test symbols(exacthnn) == DerivativePhaseSpaceSymbol
 @test shape(exacthnn)   == SampledData
 @test min_length_batch(exacthnn) == 1
@@ -32,7 +32,7 @@ sympeuler = SEuler()
 
 msympnet = BasicSympNet()
 
-@test type(msympnet)    == BasicSympNetIntegrator
+@test type(msympnet)    == BasicSympNetMethod
 @test symbols(msympnet) == PhaseSpaceSymbol
 @test shape(msympnet)   == TrajectoryData
 @test min_length_batch(msympnet) == 2
@@ -41,7 +41,7 @@ msympnet = BasicSympNet()
 
 exactlnn = ExactLnn()
 
-@test type(exactlnn)    == LnnExactIntegrator
+@test type(exactlnn)    == LnnExactMethod
 @test symbols(exactlnn) == PosVeloAccSymbol
 @test shape(exactlnn)   == SampledData
 @test min_length_batch(exactlnn) == 1
@@ -50,7 +50,7 @@ exactlnn = ExactLnn()
 
 midpointlnn = VariaMidPoint()
 
-@test type(midpointlnn)    == VariationalMidPointIntegrator
+@test type(midpointlnn)    == VariationalMidPointMethod
 @test symbols(midpointlnn) == PositionSymbol
 @test shape(midpointlnn)   == TrajectoryData
 @test min_length_batch(midpointlnn) == 3
@@ -59,12 +59,12 @@ midpointlnn = VariaMidPoint()
 
 
 #########################################
-# Test for default_integrator
+# Test for default_Method
 #########################################
 
-@testerror type(default_integrator(sympnet, tra_pos_data))
-@test type(default_integrator(hnn, tra_ps_data)) == SymplecticEulerA
-@test type(default_integrator(hnn, sam_dps_data)) == HnnExactIntegrator
-@test type(default_integrator(sympnet, tra_ps_data)) == BasicSympNetIntegrator
-@test type(default_integrator(lnn, tra_pos_data)) == VariationalMidPointIntegrator
-@test type(default_integrator(lnn, sam_accposvel_data)) == LnnExactIntegrator
+@testerror type(default_Method(sympnet, tra_pos_data))
+@test type(default_method(hnn, tra_ps_data)) == SymplecticEulerA
+@test type(default_method(hnn, sam_dps_data)) == HnnExactMethod
+@test type(default_method(sympnet, tra_ps_data)) == BasicSympNetMethod
+@test type(default_method(lnn, tra_pos_data)) == VariationalMidPointMethod
+@test type(default_method(lnn, sam_accposvel_data)) == LnnExactMethod

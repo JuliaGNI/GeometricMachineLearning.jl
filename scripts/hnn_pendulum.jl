@@ -27,7 +27,7 @@ opt = MomentumOptimizer(1e-2,0.5)
 hnn = HamiltonianNeuralNetwork(ninput; nhidden = ln, width = ld)
 
 # create Lux network
-nn = NeuralNetwork(hnn, LuxBackend())
+nn = NeuralNetwork(hnn, CPU(), Float64)
 
 # get data set
 data, target = get_data_set()

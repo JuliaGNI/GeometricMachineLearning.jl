@@ -1,2 +1,2 @@
 
-struct AutoEncoder <: AbstractArchitecture end
+struct AutoEncoder <: Architecture end

@@ -1,35 +1,57 @@
-#This files contains Cache's structure
+"""
+AbstractCache has subtypes: 
+AdamCache
+MomentumCache
+GradientCache
 
+All of them can be initialized with providing an array (also supporting manifold types).
+"""
 abstract type AbstractCache end
 
 #############################################################################
 # All the definitions of the caches
 
-mutable struct AdamCache{T, AT <: AbstractArray{T}} <: AbstractCache
+struct AdamCache{T, AT <: AbstractArray{T}} <: AbstractCache
     B₁::AT
     B₂::AT 
     function AdamCache(B::AbstractArray)
-        new{eltype(B), typeof(B)}(similar(B), similar(B))
+        new{eltype(B), typeof(zero(B))}(zero(B), zero(B))
     end
 end
 
-mutable struct MomentumCache{T, AT <: AbstractArray{T}} <:AbstractCache
+struct MomentumCache{T, AT <: AbstractArray{T}} <:AbstractCache
     B::AT
     function MomentumCache(B::AbstractArray)
-        new{eltype(B), typeof(B)}(similar(B))
+        new{eltype(B), typeof(zero(B))}(zero(B))
     end
 end
 
 struct GradientCache <: AbstractCache end
-GradientCache(::AbstractMatrix) = GradientCache()
+GradientCache(::AbstractArray) = GradientCache()
 
 #############################################################################
 # All the setup_cache functions 
 
-setup_adam_cache(dx::NamedTuple) = apply_toNT(dx, setup_adam_cache)
-setup_momentum_cache(dx::NamedTuple) = apply_toNT(dx, setup_momentum_cache)
-setup_gradient_cache(dx::NamedTuple) = apply_toNT(dx, setup_gradient_cache)
+setup_adam_cache(ps::NamedTuple) = apply_toNT(setup_adam_cache, ps)
+setup_momentum_cache(ps::NamedTuple) = apply_toNT(setup_momentum_cache, ps)
+setup_gradient_cache(ps::NamedTuple) = apply_toNT(setup_gradient_cache, ps)
 
-setup_adam_cache(B::AbstractMatrix) = AdamCache(B)
-setup_momentum_cache(B::AbstractMatrix) = MomentumCache(B)
-setup_gradient_cache(B::AbstractMatrix) = GradientCache(B)
+setup_adam_cache(ps::Tuple) = Tuple([setup_adam_cache(x) for x in ps])
+setup_momentum_cache(ps::Tuple) = Tuple([setup_momentum_cache(x) for x in ps])
+setup_gradient_cache(ps::Tuple) = Tuple([setup_gradient_cache(x) for x in ps])
+
+setup_adam_cache(B::AbstractArray) = AdamCache(B)
+setup_momentum_cache(B::AbstractArray) = MomentumCache(B)
+setup_gradient_cache(B::AbstractArray) = GradientCache(B)
+
+function Base.zero(Y::StiefelManifold{T}) where T 
+    N, n = size(Y)
+    backend = KernelAbstractions.get_backend(Y.A)
+    zeros(backend, StiefelLieAlgHorMatrix{T}, N, n)
+end
+
+function Base.zero(Y::GrassmannManifold{T}) where T 
+    N, n = size(Y)
+    backend = KernelAbstractions.get_backend(Y.A)
+    zeros(backend, GrassmannLieAlgHorMatrix{T}, N, n)
+end

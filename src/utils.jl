@@ -3,22 +3,16 @@
 @inline tuplejoin(x, y) = (x..., y...)
 @inline tuplejoin(x, y, z...) = tuplejoin(tuplejoin(x, y), z...)
 
-function apply_toNT(ps::NamedTuple, fun)
-    NamedTuple{keys(ps)}(fun(p) for p in ps)
-end
 
-function apply_toNT(ps₁::NamedTuple, ps₂::NamedTuple, fun)
-    @assert keys(ps₁) == keys(ps₂)
-    NamedTuple{keys(ps₁)}(fun(p...) for p in zip(ps₁, ps₂))
-end
-
-function apply_toNT(ps₁::NamedTuple, ps₂::NamedTuple, ps₃::NamedTuple, fun)
-    @assert keys(ps₁) == keys(ps₂) == keys(ps₃)
-    NamedTuple{keys(ps₁)}(fun(p...) for p in zip(ps₁, ps₂, ps₃))
+function apply_toNT(fun, ps::NamedTuple...)
+    for p in ps
+        @assert keys(ps[1]) == keys(p)
+    end
+    NamedTuple{keys(ps[1])}(fun(p...) for p in zip(ps...))
 end
 
 # overloaded + operation to work with NamedTuples
-_add(dx₁::NamedTuple, dx₂::NamedTuple) = apply_toNT(dx₁, dx₂, _add)
+_add(dx₁::NamedTuple, dx₂::NamedTuple) = apply_toNT( _add, dx₁, dx₂)
 _add(A::AbstractArray, B::AbstractArray) = A + B 
 
 
@@ -82,7 +76,7 @@ end
 
 
 function add!(dx₁::NamedTuple, dx₂::NamedTuple, dx₃::NamedTuple)
-    apply_toNT(dx₁, dx₂, dx₃, add!)
+    apply_toNT(add!, dx₁, dx₂, dx₃)
 end
 
 struct UnknownProblem <: AbstractProblem end
@@ -125,7 +119,7 @@ function convert_to_dev(::CPUDevice, A::AbstractMatrix)
     Matrix(A)
 end
 
-
+#=
 function Lux.setup(dev::Device, rng::Random.AbstractRNG, d::Lux.AbstractExplicitLayer)
     map_to_dev(A::AbstractArray) = convert_to_dev(dev, A)
     map_to_dev(ps::NamedTuple) = apply_toNT(ps, map_to_dev)
@@ -133,4 +127,4 @@ function Lux.setup(dev::Device, rng::Random.AbstractRNG, d::Lux.AbstractExplicit
     ps = map_to_dev(ps)
     ps, st
 end
-
+=#
