@@ -185,7 +185,7 @@ __Example of r-finite functions__
 - tanh $\tanh(x)=\frac{e^x-e^{-x}}{e^x+e^{-x}}$ for any positive integer $r$. 
 
 
-## SympNet with `GeometricMachineLearning.jl` <a id="SympNet_with_GeometricMachineLearning"></a>
+## SympNet with `GeometricMachineLearning.jl`
 
 
 With `GeometricMachineLearning.jl`, it is really easy to implement and train a SympNet. The steps are the following :
