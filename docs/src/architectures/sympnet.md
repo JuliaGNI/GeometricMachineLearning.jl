@@ -25,8 +25,9 @@ SympNet (noted $\Phi$ in the following) is so an integrator from $\mathbb{R}^{d}
  
  #### LA-SympNet
  
- LA-SympNets are made of the alternation of two types of layers, sy
-![](../Images/sympnet_pendulum_Architecture.png)mplectic linear layers and symplectic activation layers.  For a given integer $n$, a symplectic linear layer is defined by
+ ![](../images/sympnet_pendulum_architecture.png)
+
+ LA-SympNets are made of the alternation of two types of layers, symplectic linear layers and symplectic activation layers.  For a given integer $n$, a symplectic linear layer is defined by
  
  $$\mathcal{L}^{n,up}  \begin{pmatrix}  q  \\  
  p  \end{pmatrix} =  
@@ -258,7 +259,7 @@ Then we can create the neraul networks depending on the backend. Here we will us
 # create Lux network
 nn = NeuralNetwork(gsympnet, LuxBackend())
 ```
-We have to define an optimizer wich will be use in the training of the SympNet. For more details on optimizer, please see the corresponding documentation [Optimizer.md](./Optimizer.md). For exemple, let us use a momentum optimizer :
+We have to define an optimizer wich will be use in the training of the SympNet. For more details on optimizer, please see the corresponding documentation [Optimizer.md](../optimizer.md). For exemple, let us use a momentum optimizer :
 
 ```julia
 # Optimiser
@@ -286,5 +287,4 @@ Then we can make prediction. Let's compare the initial datas with a prediction s
 q_learned, p_learned = Iterate_Sympnet(nn, q0, p0; n_points = size(data_q,1))
 ```
 
-![](../Images/sympnet_pendulum_Architecture_test.png)
-
+![](../images/sympnet_pendulum_test.png)
