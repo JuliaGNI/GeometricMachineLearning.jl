@@ -15,7 +15,7 @@ function orthonormal_activation(A::AbstractArray{T, 3}) where T
 end
 
 function Attention(dim::Integer, activation=orthonormal_activation; Stiefel::Bool=false, retraction::AbstractRetraction=default_retr, add_connection::Bool=true)
-    Attention{dim, dim, Stiefel, typeof(retraction), add_connection, typeof(activation)}()
+    Attention{dim, dim, Stiefel, typeof(retraction), add_connection, typeof(activation)}(activation)
 end
 
 function parameterlength(::Attention{M, M, false}) where M
