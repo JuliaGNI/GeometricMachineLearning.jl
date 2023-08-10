@@ -19,6 +19,7 @@ makedocs(;
 )
 
 deploydocs(;
-    repo = "github.com/JuliaGNI/GeometricMachineLearning.jl",
+    repo   = "github.com/JuliaGNI/GeometricMachineLearning.jl",
     devurl = "latest",
+    devbranch = "main",
 )
