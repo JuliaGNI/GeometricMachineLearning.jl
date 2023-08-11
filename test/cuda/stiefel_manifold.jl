@@ -18,4 +18,5 @@ function test_optimizer(T, N, n)
     @test typeof(ps[1].weight) <: StiefelManifold{T, <:CuArray{T, 2}}
     @test typeof(ps[2].weight) <: StiefelManifold{T, <:CuArray{T, 2}}
 
+    dx = ((weight=rand(backend, StiefelLieAlgHorMatrix{T}, N, n),), (weight=rand(backend, StiefelLieAlgHorMatrix{T}, N, n)))
 end

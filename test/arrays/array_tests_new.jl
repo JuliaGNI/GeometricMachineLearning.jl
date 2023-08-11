@@ -44,6 +44,15 @@ function skew_mat_add_sub_test(n)
     @test all(abs.(anti_symmetrize(W₁ - W₂) .- S₄) .< 1e-10)
 end
 
+# this function tests if the matrix multiplication for the SkewSym Matrix is the same as the implied one.
+function skew_mat_mul_test(n, T=Float64)
+    S = rand(SkewSymMatrix{T}, n)
+    A = rand(n, n)
+    SA1 = S*A 
+    SA2 = Matrix{T}(S)*A 
+    @test isapprox(SA1, SA2)
+end
+
 #check if matrix is ∈ 𝔤 (check if the vector space projection works), addition & subtraction
 function sympl_lie_alg_add_sub_test(n)
     J = SymplecticPotential(n)
@@ -126,6 +135,7 @@ n_vec = min.(n_vec, N_vec)
 for (N, n) ∈ zip(N_vec, n_vec)
     sym_mat_add_sub_test(N)
     skew_mat_add_sub_test(N)
+    skew_mat_mul_test(N)
     sympl_lie_alg_add_sub_test(N)
     stiefel_proj_test(N,n)
     sympl_proj_test(N,n)

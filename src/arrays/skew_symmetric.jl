@@ -25,11 +25,11 @@ mutable struct SkewSymMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
         n = size(S, 1)
         @assert size(S, 2) == n
         S_vec = zeros(T, n*(n-1)÷2)
-        #make the input skew-symmetric if it isn't already
+        # make the input skew-symmetric if it isn't already
         S = T(.5)*(S - S')
-        #this is disgusting and should be removed! Here because indexing for GPUs not supported.
+        # this is disgusting and should be removed! Here because indexing for GPUs not supported.
         S_cpu = Matrix{T}(S)
-        #map the sub-diagonal elements to a vector 
+        # map the sub-diagonal elements to a vector 
         for i in 2:n
             S_vec[((i-1)*(i-2)÷2+1):(i*(i-1)÷2)] = S_cpu[i,1:(i-1)]
         end
@@ -97,13 +97,23 @@ function Base.rand(rng::Random.AbstractRNG, ::Type{SkewSymMatrix}, n::Int)
     SkewSymMatrix(rand(rng, n*(n-1)÷2), n)
 end
 
-#TODO: make defaults when no rng is specified!!! (prbabaly rng ← Random.default_rng())
+# TODO: make defaults when no rng is specified!!! (prbabaly rng ← Random.default_rng())
 function Base.rand(type::Type{SkewSymMatrix{T}}, n::Integer) where T
     rand(Random.default_rng(), type, n)
 end
 
 function Base.rand(type::Type{SkewSymMatrix}, n::Integer)
     rand(Random.default_rng(), type, n)
+end
+
+function Base.rand(rng::AbstractRNG, backend::KernelAbstractions.Backend, type::Type{SkewSymMatrix{T}}, n::Integer) where T 
+    S = KernelAbstractions.allocate(backend, T, n*(n-1)÷2)
+    Random.rand!(rng, S)
+    SkewSymMatrix(S, n)
+end
+
+function Base.rand(backend::KernelAbstractions.Backend, type::Type{SkewSymMatrix{T}}, n::Integer) where T 
+    rand(Random.default_rng(), backend, type, n)
 end
 
 #these are Adam operations:
@@ -136,8 +146,38 @@ end
 
 #this should not be needed! ask Michael!
 function convert_to_dev(dev::CUDA.CuDevice, A::SkewSymMatrix)
+    warning("This function should not be called!")
     SkewSymMatrix(convert_to_dev(dev, A.S), A.n)
 end
 function convert_to_dev(dev::CPUDevice, A::SkewSymMatrix)
+    warning("This function should not be called!")
     SkewSymMatrix(convert_to_dev(dev, A.S), A.n)
+end
+
+function Base.:*(A::SkewSymMatrix{T}, B::AbstractMatrix{T}) where T
+    m1, m2 = size(B)
+    @assert m1 == A.n
+    backend = KernelAbstractions.get_backend(A)
+    C = KernelAbstractions.allocate(backend, T, A.n, m2)
+
+    skew_mat_mul! = skew_mat_mul_kernel!(backend)
+    skew_mat_mul!(C, A.S, B, A.n, ndrange=size(C))
+    C
+end
+
+@kernel function skew_mat_mul_kernel!(C::AbstractMatrix, S::AbstractVector{T}, B::AbstractMatrix{T}, n) where T
+    i,j = @index(Global, NTuple)
+
+    tmp_sum = zero(T)
+    for k = 1:(i-1)
+        tmp_sum +=  S[(i-2)*(i-1)÷2+k] * B[k, j]
+    end
+    for k = (i+1):n 
+        tmp_sum += -S[(k-2)*(k-1)÷2+i] * B[k, j]
+    end
+    C[i,j] = tmp_sum
+end
+
+function Base.:*(A::SkewSymMatrix, b::AbstractVector{T}) where T
+    A*reshape(b, size(b), 1)
 end
