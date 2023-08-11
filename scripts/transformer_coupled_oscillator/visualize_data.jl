@@ -39,3 +39,4 @@ end
 
 data = generate_data(params_collection, initial_conditions_collection, t_integration_plots)
 plot_curves(data, false)
+

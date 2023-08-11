@@ -32,7 +32,6 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 SymbolicNeuralNetworks = "aed23131-dcd0-47ca-8090-d21e605652e3"
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
-Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
 AbstractNeuralNetworks = "0.1"

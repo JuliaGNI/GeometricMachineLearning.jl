@@ -29,7 +29,7 @@ model = Chain(  MultiHeadAttention(dim,2,Stiefel=true,
 		MultiHeadAttention(dim,2,Stiefel=true),
 		Gradient(dim,2*dim,identity,change_q=true),
 		Gradient(dim,2*dim,identity,change_q=false)
-		)
+		))
 ps = initialparameters(backend, T, model)
 
 const seq_length = 10
