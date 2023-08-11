@@ -1,9 +1,9 @@
 
 
-mutable struct RNNLayer{M, N, TAO, TAM, TM} <: AbstractExplicitLayer{M, N}
+mutable struct RNNLayer{M, N, TAO, TAM, TS} <: AbstractExplicitLayer{M, N}
     g₁::TAO     # activation function with respect to output
     g₂::TAM     # activation function with respect to memory
-    aₜ₋₁::TM    # memory at the previous step
+    a₀::TS      # initial state
 end
 
 function RNNLayer(m::Int, n::Int, g₁ = identity, g₂ = g₁; allow_fast_activation::Bool=true)
@@ -11,9 +11,15 @@ function RNNLayer(m::Int, n::Int, g₁ = identity, g₂ = g₁; allow_fast_activ
     new{m, n, typeof(g₁), typeof(g₂)}(g₁, g₂)
 end
 
-function (layer::RNNLayer)(x::AbstractArray, ps::NamedTuple)
-    layer.aₜ₋₁ = layer.g₂(ps.Wₐₐ* layer.aₜ₋₁ + ps.Wₐₒ * x + ps.bₐ)
-    layer.g₁(ps.Wₒₐ* layer.aₜ₋₁ + ps.Wₒₒ * x + ps.bₒ)
+function (layer::RNNLayer)(x::AbstractArray, aₜ₋₁::AbstractArray, ps::NamedTuple)
+    aₜ = layer.g₂(ps.Wₐₐ* aₜ₋₁ + ps.Wₐₒ * x + ps.bₐ)
+    xₜ = layer.g₁(ps.Wₒₐ* aₜ + ps.Wₒₒ * x + ps.bₒ)
+    return (xₜ, aₜ)
+end
+
+function initialstate(backend::Backend, ::Type{T}, layer:: RNNLayer{M, N}; init_state = ZeroInitializer(), rng::AbstractRNG = Random.default_rng()) where {M,N,T}
+    _aₒ  = KernelAbstractions.allocate(backend, T, N)
+    init_state(rng, _aₒ)
 end
 
 function initialparameters(backend::Backend, ::Type{T}, layer:: RNNLayer{M, N}; init_weight = GlorotUniform(), init_bias = ZeroInitializer(), rng::AbstractRNG = Random.default_rng()) where {M,N,T}
