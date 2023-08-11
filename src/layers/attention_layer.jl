@@ -7,7 +7,7 @@ end
 
 default_retr = Geodesic()
 function orthonormal_activation(A::AbstractMatrix{T}) where T 
-    exp(A - A')
+    exp(T(0.5)*(A - A'))
 end
 # TODO: This can be implemented more efficiently if you write one kernel for everything!
 function orthonormal_activation(A::AbstractArray{T, 3}) where T 
