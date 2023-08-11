@@ -14,10 +14,19 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
+        "Architectures" => [
+            "SympNet" => "architectures/sympnet.md",
+        ],
+        "Manifolds" => [
+            "Grassmann" => "manifolds/grassmann_manifold.md",
+            "Stiefel" => "manifolds/stiefel_manifold.md",
+            ],
         "Library" => "library.md",
     ],
 )
 
 deploydocs(;
-    repo="github.com/JuliaGNI/GeometricMachineLearning.jl",
+    repo   = "github.com/JuliaGNI/GeometricMachineLearning.jl",
+    devurl = "latest",
+    devbranch = "main",
 )

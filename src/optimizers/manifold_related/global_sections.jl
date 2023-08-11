@@ -92,7 +92,7 @@ end
 function global_rep(λY::GlobalSection{T, AT}, Δ::AbstractMatrix{T}) where {T, AT<:StiefelManifold{T}}
     N, n = size(λY.Y)
     #temporary workaround 
-    projection_matrix = typeof(Δ)(hcat(zeros(T, N-n, n), One(N-n, T)))
+    projection_matrix = typeof(Δ)(hcat(One(N-n, T), zeros(T, N-n, n)))
     StiefelLieAlgHorMatrix(
         SkewSymMatrix(λY.Y.A'*Δ),
         projection_matrix*(λY.λ'*Δ), 

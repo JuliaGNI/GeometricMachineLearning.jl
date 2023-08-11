@@ -39,13 +39,6 @@ GradientQ(dim::Int, dim2::Int=dim, activation = identity; full_grad::Bool=true, 
 GradientP(dim::Int, dim2::Int=dim, activation = identity; full_grad::Bool=true, allow_fast_activation::Bool=true) = Gradient(dim, dim2, activation; full_grad = full_grad, change_q= false, allow_fast_activation = allow_fast_activation)
 
 
-struct GlorotUniform <: AbstractNeuralNetworks.AbstractInitializer end
-
-function (::GlorotUniform)(rng, x::AbstractVecOrMat{T}) where T
-        x .= sqrt(T(24.0) / sum(size(x))) * (rand(rng, T, size(x)...) .- T(0.5)) 
-end
-
-
 function initialparameters(backend::Backend, ::Type{T}, d::Gradient{M, N, true}; rng::AbstractRNG = Random.default_rng(), init_weight = GlorotUniform(), init_bias = ZeroInitializer(), init_scale = GlorotUniform()) where {M, N, T}
         K = KernelAbstractions.allocate(backend, T, d.second_dim÷2, M÷2)
         b = KernelAbstractions.allocate(backend, T, d.second_dim÷2)

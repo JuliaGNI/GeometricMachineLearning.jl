@@ -11,11 +11,24 @@ mutable struct StiefelManifold{T, AT <: AbstractMatrix{T}} <: Manifold{T}
     end
 end
 
-#TODO: check the distribution this is coming from - related to the Haar measure ???
+@kernel function assign_columns_kernel!(Y::AbstractMatrix{T}, A::AbstractMatrix{T}) where T
+    i,j = @index(Global, NTuple)
+    Y[i,j] = A[i,j]
+end
+
+function assign_columns(Q::AbstractMatrix{T}, N::Integer, n::Integer) where T
+    backend = KernelAbstractions.get_backend(Q)
+    Y = KernelAbstractions.allocate(backend, T, N, n)
+    assign_columns! = assign_columns_kernel!(backend)
+    assign_columns!(Y, Q, ndrange=size(Y))
+    Y
+end
+
+# TODO: check the distribution this is coming from - related to the Haar measure ???
 function Base.rand(rng::Random.AbstractRNG, ::Type{StiefelManifold{T}}, N::Integer, n::Integer) where T
     @assert N ≥ n
     A = randn(rng, T, N, n)
-    StiefelManifold(qr!(A).Q[1:N, 1:n])
+    StiefelManifold(assign_columns(typeof(A)(qr!(A).Q), N, n))
 end
 
 function Base.rand(rng::Random.AbstractRNG, ::Type{StiefelManifold}, N::Integer, n::Integer)
@@ -34,7 +47,7 @@ function Base.rand(backend::KernelAbstractions.Backend, rng::Random.AbstractRNG,
     @assert N ≥ n 
     A = KernelAbstractions.allocate(backend, T, N, n)
     Random.rand!(rng, A)
-    StiefelManifold(qr!(A).Q[1:N, 1:n])
+    StiefelManifold(assign_columns(typeof(A)(qr!(A).Q), N, n))
 end
 
 function Base.rand(backend::KernelAbstractions.Backend, manifold_type::Type{StiefelManifold{T}}, N::Integer, n::Integer) where T 
