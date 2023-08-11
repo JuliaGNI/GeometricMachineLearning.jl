@@ -1,7 +1,7 @@
 using KernelAbstractions, ChainRulesCore, LinearAlgebra
 
-batch = KernelAbstractions.allocate(backend, T, dim, seq_length, batch_size)
-output = KernelAbstractions.allocate(backend, T, dim, prediction_window, batch_size)
+batch = KernelAbstractions.allocate(backend, T, sys_dim, seq_length, batch_size)
+output = KernelAbstractions.allocate(backend, T, sys_dim, prediction_window, batch_size)
 #output_estimate = prediction_window == 1 ? KernelAbstractions.allocate(backend, T, dim, batch_size) : KernelAbstractions.allocate(backend, T, dim, prediction_window, batch_size)
 
 # this kernel draws a batch based on arrays of parameters and time_steps
@@ -29,7 +29,7 @@ assign_output! = assign_output_kernel!(backend)
 end
 assign_output_estimate! = assign_output_estimate_kernel!(backend)
 function assign_output_estimate(batch::AbstractArray{T, 3}, seq_length, prediction_window) where T
-    output_estimate = KernelAbstractions.allocate(backend, T, dim, prediction_window, batch_size)
+    output_estimate = KernelAbstractions.allocate(backend, T, sys_dim, prediction_window, batch_size)
     assign_output_estimate!(output_estimate, batch, seq_length, prediction_window, ndrange=size(output_estimate))
     output_estimate
 end
@@ -61,7 +61,7 @@ end
 augment_zeros! = augment_zeros_kernel!(backend)
 function augment_zeros(output_diff::AbstractArray{T, 3}, seq_length) where T
     dim, prediction_window, batch_size = size(output_diff)
-    zero_tensor = KernelAbstractions.zeros(backend, T, dim, seq_length, batch_size)
+    zero_tensor = KernelAbstractions.zeros(backend, T, sys_dim, seq_length, batch_size)
     augment_zeros!(zero_tensor, output_diff, seq_length, prediction_window, ndrange=size(output_diff))
     zero_tensor
 end

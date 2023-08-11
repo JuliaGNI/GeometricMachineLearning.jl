@@ -9,17 +9,17 @@ T = Float32
 
 file = jldopen("data", "r")
 data_raw = file["tensor"]
-dim, n_params, n_time_steps = size(data_raw)
+sys_dim, n_params, n_time_steps = size(data_raw)
 
 data = KernelAbstractions.allocate(backend, T, size(data_raw))
 copyto!(data, data_raw)
 
 transformer_dim = 20
 num_heads = 4
-seq_length = 50
-n_epochs = 5
+seq_length = 100
+n_epochs = 200
 batch_size = 128
-prediction_window = 5
+prediction_window = 50
 include("auxiliary_functions.jl")
 
 #=
@@ -36,12 +36,12 @@ model = Chain(  MultiHeadAttention(dim,2,Stiefel=true),
 		        Gradient(dim,5*dim,identity,change_q=false))
 =#
 
-model = Chain(  Dense(dim, transformer_dim, tanh),
+model = Chain(  Dense(sys_dim, transformer_dim, tanh),
               MultiHeadAttention(transformer_dim, num_heads),
               ResNet(transformer_dim, tanh),
               MultiHeadAttention(transformer_dim, num_heads),
               ResNet(transformer_dim, tanh),
-              Dense(transformer_dim, dim, identity)
+              Dense(transformer_dim, sys_dim, identity)
               )
 
 loss(ps) = loss(model, ps)
@@ -68,4 +68,4 @@ function map_to_cpu(A::AbstractArray{T}) where T
     Array{T}(A)
 end
 
-jldsave("nn_model", model=model, ps=ps, seq_length=seq_length, prediction_window=prediction_window)
+jldsave("nn_model", model=model, ps=ps, seq_length=seq_length, prediction_window=prediction_window, transformer_dim=transformer_dim, num_heads=num_heads)
