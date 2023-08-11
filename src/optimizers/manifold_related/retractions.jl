@@ -70,8 +70,8 @@ cayley(B::NamedTuple) = apply_toNT(cayley, B)
 function cayley(B::StiefelLieAlgHorMatrix{T}) where T
     N, n = B.N, B.n
     E = StiefelProjection(N, n, T)
-    unit = One(n, T)
-    unit2 = One(2*n, T)
+    unit = I(n)
+    unit2 = I(2*n)
     exponent = unit2 - T(.5)*hcat(vcat(T(.5)*B.A, T(.25)*B.A^2 - B.B'*B.B), vcat(unit, T(.5)*B.A))
     StiefelManifold(
         (One(N, T) + T(.5)*B)*
