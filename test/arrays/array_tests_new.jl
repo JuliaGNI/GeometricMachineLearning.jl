@@ -53,7 +53,15 @@ function skew_mat_mul_test(n, T=Float64)
     @test isapprox(SA1, SA2)
 end
 
-#check if matrix is ∈ 𝔤 (check if the vector space projection works), addition & subtraction
+function skew_mat_mul_test2(n, T=Float64)
+    S = rand(SkewSymMatrix{T}, n)
+    A = rand(n, n)
+    AS1 = A*S 
+    AS2 = A*Matrix{T}(S)
+    @test isapprox(SA1, SA2)
+end
+
+# check if matrix is ∈ 𝔤 (check if the vector space projection works), addition & subtraction
 function sympl_lie_alg_add_sub_test(n)
     J = SymplecticPotential(n)
     symplectisize(W) = .5*(W - J'*W'*J)
@@ -69,14 +77,14 @@ function sympl_lie_alg_add_sub_test(n)
     @test all(abs.(symplectisize(W₁ - W₂) .- S₄) .< 1e-10)
 end
 
-#test Stiefel manifold projection test 
+# test Stiefel manifold projection test 
 function stiefel_proj_test(N,n)
     In = I(n)
     E = StiefelProjection(N, n, Float64)
     @test all(abs.((E'*E) .- In) .< 1e-10)
 end
 
-#test symplectic projection (this is just the E matrix)
+# test symplectic projection (this is just the E matrix)
 function sympl_proj_test(N, n)
     JN = SymplecticPotential(N)
     Jn = SymplecticPotential(n)
@@ -100,7 +108,7 @@ function stiefel_lie_alg_add_sub_test(N, n)
     @test all(abs.(projection(W₁ - W₂) .- S₄) .< 1e-10)
 end
 
-#check if matrix is ∈ 𝔤 (check if the vector space projection works), addition & subtraction
+# check if matrix is ∈ 𝔤 (check if the vector space projection works), addition & subtraction
 function sympl_lie_alg_add_sub_test(N, n)
     J = SymplecticPotential(n)
     E = SymplecticProjection(N, n)
@@ -118,10 +126,10 @@ function sympl_lie_alg_add_sub_test(N, n)
 end
 
 
-#TODO: tests for ADAM functions
+# TODO: tests for ADAM functions
 
 
-#test everything for different n & N values
+# test everything for different n & N values
 Random.seed!(42)
 
 N_max = 20
@@ -136,6 +144,7 @@ for (N, n) ∈ zip(N_vec, n_vec)
     sym_mat_add_sub_test(N)
     skew_mat_add_sub_test(N)
     skew_mat_mul_test(N)
+    skew_mat_mult_test2(N)
     sympl_lie_alg_add_sub_test(N)
     stiefel_proj_test(N,n)
     sympl_proj_test(N,n)

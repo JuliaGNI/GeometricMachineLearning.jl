@@ -178,6 +178,10 @@ end
     C[i,j] = tmp_sum
 end
 
+function Base.:*(B::AbstractMatrix{T}, A::SkewSymMatrix{T}) where T 
+    (-A*B')'
+end
+
 function Base.:*(A::SkewSymMatrix, b::AbstractVector{T}) where T
     A*reshape(b, size(b), 1)
 end
