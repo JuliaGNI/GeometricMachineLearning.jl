@@ -1,8 +1,6 @@
 module GeometricMachineLearning
 
     using AbstractNeuralNetworks
-    using SymbolicNeuralNetworks
-    using Symbolics
     using BandedMatrices
     using ChainRulesCore
     using Distances
@@ -21,11 +19,11 @@ module GeometricMachineLearning
     using InteractiveUtils
     using TimerOutputs
 
-
     import CUDA
 
-    import AbstractNeuralNetworks: Architecture, Chain, NeuralNetwork, AbstractExplicitLayer, AbstractNeuralNetwork
-    import AbstractNeuralNetworks: Dense, Linear
+    import AbstractNeuralNetworks: Architecture, AbstractExplicitLayer, AbstractNeuralNetwork , NeuralNetwork
+    import AbstractNeuralNetworks: Chain, GridCell
+    import AbstractNeuralNetworks: Dense, Linear, Recurrent
     import AbstractNeuralNetworks: IdentityActivation, ZeroVector
     import AbstractNeuralNetworks: add!, update!
     import AbstractNeuralNetworks: layer
@@ -167,12 +165,12 @@ module GeometricMachineLearning
     include("optimizers/manifold_related/retractions.jl")
 
     #INCLUDE ABSTRACT TRAINING integrator
-    export AbstractTrainingIntegrator
+    export AbstractTrainingMethod
     export loss_single, loss
     
-    export HnnTrainingIntegrator
-    export LnnTrainingIntegrator
-    export SympNetTrainingIntegrator
+    export HnnTrainingMethod
+    export LnnTrainingMethod
+    export SympNetTrainingMethod
     
     include("training_method/abstract_training_method.jl")
 
@@ -191,7 +189,7 @@ module GeometricMachineLearning
 
     #INCLUDE TRAINING INTEGRATOR
 
-    export TrainingIntegrator
+    export TrainingMethod
     export type, symbol, shape
     export min_length_batch
     
@@ -219,22 +217,13 @@ module GeometricMachineLearning
     include("backends/backends.jl")
     include("backends/lux.jl")
 
-    
-    export Hnn_training_integrator
-    export Lnn_training_integrator
-    export SEuler
-    export ExactIntegrator
-    export ExactIntegratorLNN
-    export VariationalMidPointLNN
-    export SympNetIntegrator
-    export BaseIntegrator
-
     #INCLUDE ARCHITECTURES
     export HamiltonianNeuralNetwork
     export LagrangianNeuralNetwork
     export SympNet
     export LASympNet
     export GSympNet
+    export RecurrentNeuralNetwork
 
     export train!, apply!, jacobian!
     export Iterate_Sympnet
@@ -245,6 +234,7 @@ module GeometricMachineLearning
     include("architectures/lagrangian_neural_network.jl")
     include("architectures/variable_width_network.jl")
     include("architectures/sympnet.jl")
+    include("architectures/recurrent_neural_network.jl")
 
     export default_arch
 

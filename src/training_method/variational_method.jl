@@ -13,7 +13,7 @@ DL₁(ti::TrainingMethod{<:VariationalMethod}, nn::NeuralNetwork{<:LagrangianNeu
 DL₂(ti::TrainingMethod{<:VariationalMethod}, nn::NeuralNetwork{<:LagrangianNeuralNetwork}, qₙ, qₙ₊₁, Δt, params = nn.params) = DL(ti, nn, qₙ, qₙ₊₁, Δt, params)[1+length(qₙ):end]
 
 
-function loss_single(ti::TrainingMethod{<:VariationalMethod}, nn::NeuralNetwork{<:LagrangianNeuralNetwork}, qₙ, qₙ₊₁, qₙ₊₂, Δt, params = nn.params)
+function loss_single(ti::TrainingMethod{<:VariationalMethod}, nn::AbstractNeuralNetwork{<:LagrangianNeuralNetwork}, qₙ, qₙ₊₁, qₙ₊₂, Δt, params = nn.params)
     DL1 = DL₁(ti, nn, qₙ₊₁, qₙ₊₂, Δt, params)
     DL2 = DL₂(ti, nn, qₙ, qₙ₊₁, Δt,params)
     sqeuclidean(DL1,-DL2)
