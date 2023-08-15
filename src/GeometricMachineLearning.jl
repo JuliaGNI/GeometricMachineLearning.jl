@@ -46,6 +46,7 @@ module GeometricMachineLearning
     include("kernels/mat_tensor_mul.jl")
     include("kernels/tensor_transpose.jl")
     include("kernels/tensor_exponential.jl")
+    include("kernels/exponentials/tensor_exponential.jl")
 
     include("kernels/kernel_ad_routines/assign_q_and_p.jl")
     include("kernels/kernel_ad_routines/tensor_mat_mul.jl")

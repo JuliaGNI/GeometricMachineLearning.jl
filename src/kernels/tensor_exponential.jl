@@ -19,7 +19,7 @@ function tensor_exponential2(A::AbstractArray{T, 3}) where T
 end
 =#
 
-function tensor_exponential(A::AbstractArray{T, 3}) where T
+function tensor_exponential_old(A::AbstractArray{T, 3}) where T
     output = zero(A)
     m, m2, batch_size = size(A)
     for k in axes(A, 3)
