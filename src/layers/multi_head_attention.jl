@@ -11,18 +11,18 @@ function MultiHeadAttention(dim::Integer, n_heads::Integer; Stiefel::Bool=false,
     MultiHeadAttention{dim, dim, Stiefel, typeof(retraction), add_connection}(n_heads)
 end
 
-function parameterlength(::StiefelLayer{M, M, false}) where M
+function parameterlength(::MultiHeadAttention{M, M, false}) where M
     3*M^2
 end
 
-function parameterlength(d::StiefelLayer{M, M, true}) where M
+function parameterlength(d::MultiHeadAttention{M, M, true}) where M
     3*M*(2*M*d.n_heads - d.n_heads - M)÷(2*d.n_heads^2)
 end
 
 function initialparameters(backend::KernelAbstractions.Backend, T::Type, d::MultiHeadAttention{M, M, false}; rng::AbstractRNG=Random.default_rng(), initializer::AbstractNeuralNetworks.AbstractInitializer=GlorotUniform()) where {M}
     # number of "hidden" dimension (dimension of projection) 
     Dₕ = M ÷ d.n_heads
-    # projections for queries, keys and vectors.
+    # projections for queries, keys and values.
     PQ = NamedTuple()
     PK = NamedTuple()
     PV = NamedTuple()
@@ -91,7 +91,7 @@ function (d::MultiHeadAttention{M, M, Stiefel, Retraction, false})(x::AbstractMa
     dim, input_length = size(x)
     @assert dim == M
 
-    output = typeof(x)(zeros(T, 0, input_length))
+    output = similar(x, 0, input_length)
     for i in 1:d.n_heads
         key = Symbol("head_"*string(i))
         output = vcat(output, ps.PV[key]'*x*Lux.softmax((ps.PQ[key]'*x)'*(ps.PK[key]'*x)))
