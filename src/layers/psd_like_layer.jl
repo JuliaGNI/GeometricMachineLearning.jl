@@ -32,10 +32,18 @@ function (::PSDLayer{M, N})(x::AbstractVecOrMat, ps::NamedTuple) where {M, N}
     N > M ? vcat(ps.weight*q, ps.weight*p) : vcat(ps.weight'*q, ps.weight'*p)
 end
 
+function (::PSDLayer{M, N})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, N, T}
+    dim = size(x, 1)
+    @assert dim == M 
+
+    q, p = assign_q_and_p(x, dim÷2)
+    N > M ? vcat(mat_tensor_mul(ps.weight,q), mat_tensor_mul(ps.weight,p)) : vcat(mat_tensor_mul(ps.weight', q), mat_tensor_mul(ps.weight', p))
+end
+
 function retraction(::PSDLayer{N, M, Geodesic}, B::NamedTuple{(:weight,),Tuple{AT}}) where {N, M, AT<:StiefelLieAlgHorMatrix}
     geodesic(B)
 end
 
 function retraction(::PSDLayer{N, M, Cayley}, B::NamedTuple{(:weight,),Tuple{AT}}) where {N, M, AT<:StiefelLieAlgHorMatrix}
     cayley(B)
-end  
+end
