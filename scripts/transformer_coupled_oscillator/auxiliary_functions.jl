@@ -50,7 +50,7 @@ function loss(model, ps, batch::AbstractArray{T, 3}, output::AbstractArray{T}, s
     prediction_window = size(output, 2)
     batch_output = model(batch, ps)
     output_estimate = assign_output_estimate(batch_output, seq_length, prediction_window)
-    norm(output - output_estimate)/sqrt(batch_size)/sqrt(prediction_window)
+    norm(output - output_estimate)/T(sqrt(batch_size))/T(sqrt(prediction_window))
 end
 loss(model, ps) = loss(model, ps, batch, output, seq_length)
 
