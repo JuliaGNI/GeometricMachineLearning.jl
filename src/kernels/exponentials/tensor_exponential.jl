@@ -25,7 +25,8 @@ end
 function assign_ones!(output::AbstractArray{T, 3}) where T
     backend = KernelAbstractions.get_backend(output)
     assign_ones_backend! = assign_ones_kernel!(backend)
-    assign_ones_backend!(output, ndrange=size(output))
+    dims = (size(output,1), size(output,3))
+    assign_ones_backend!(output, ndrange=dims)
 end
 
 @kernel function assign_ones_kernel!(output::AbstractArray{T, 3}) where T 
