@@ -21,7 +21,9 @@ end
 =#
 
 function orthonormal_activation(A::AbstractArray{T, 3}) where T 
-    tensor_exponential(upper_triangular_asymmetrize(A))
+    A_ut = upper_triangular_asymmetrize(A)
+    fac = norm(A_ut)
+    tensor_exponential(A_ut/fac)
 end
 
 function Attention(dim::Integer, activation=orthonormal_activation; Stiefel::Bool=false, retraction::AbstractRetraction=default_retr, add_connection::Bool=true)
