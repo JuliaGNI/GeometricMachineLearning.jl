@@ -1,5 +1,5 @@
 function tensor_exponential(B::AbstractArray{T, 3}) where T 
-    m, m2, batch_size = size(B)
+    m, m2, m3 = size(B)
     @assert m == m2
     output = init_output(B)
     matrix_mul_tensor = copy(output)
@@ -11,7 +11,7 @@ function tensor_exponential(B::AbstractArray{T, 3}) where T
 
         matrix_mul_tensor = tensor_tensor_mul(matrix_mul_tensor, B)/step
         output += matrix_mul_tensor
-        norm(previous_step - output)/batch_size < eps(T) ? break : nothing
+        norm(previous_step - output)/m3 < eps(T) ? break : nothing
     end
     output
 end
