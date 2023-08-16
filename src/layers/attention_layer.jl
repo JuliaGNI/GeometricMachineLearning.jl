@@ -14,11 +14,9 @@ function orthonormal_activation_old(A::AbstractArray{T, 3}) where T
     tensor_exponential(T(.5)*(A - tensor_transpose(A)))
 end
 
-#=
 function orthonormal_activation(A::AbstractMatrix{T}) where T 
-    ...
+    reshape(orthonormal_activation(reshape(A, size(A)..., 1)), size(A)...)
 end
-=#
 
 function orthonormal_activation(A::AbstractArray{T, 3}) where T 
     A_ut = upper_triangular_asymmetrize(A)
@@ -58,14 +56,14 @@ function (d::Attention{M, M, Stiefel, Retraction, true})(x::AbstractMatrix{T}, p
     dim, input_length = size(x)
     @assert dim == M
 
-    x + x*d.activation((ps.PQ*x)'*(ps.PK*x))
+    x + x*d.activation((ps.PQ'*x)'*(ps.PK'*x))
 end
 
 function (d::Attention{M, M, Stiefel, Retraction, false})(x::AbstractMatrix{T}, ps::NamedTuple) where {M, Stiefel, Retraction, T}
     dim, input_length = size(x)
     @assert dim == M
 
-    x*d.activation((ps.PQ*x)'*(ps.PK*x))
+    x*d.activation((ps.PQ'*x)'*(ps.PK'*x))
 end
 
 function (d::Attention{M, M, Stiefel, Retraction, true})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, Stiefel, Retraction, T} 
