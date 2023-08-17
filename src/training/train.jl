@@ -3,7 +3,7 @@ const DEFAULT_NRUNS = 1000
 # The loss gradient function working for all types of arguments
 loss_gradient(nn::NeuralNetwork{<:Architecture}, ti::AbstractTrainingMethod, data::AbstractTrainingData, index_batch, params = nn.params) = Zygote.gradient(p -> loss(ti, nn, data, index_batch, p), params)[1]
 
-loss_gradient(loss, index_batch, params = nn.params) = Zygote.gradient(p -> loss(p, index_batch, params)[1]
+loss_gradient(loss, index_batch, params = nn.params) = Zygote.gradient(p -> loss(p, index_batch), params)[1]
 
 #loss_gradient(nn::SymbolicNeuralNetwork, ti::AbstractTrainingMethod, data::AbstractTrainingData, index_batch, params = params(nn)) = 
 #mapreduce(args->∇loss_single(ti, nn, get_loss(ti, nn, data, args)..., params), +, index_batch)
@@ -52,7 +52,8 @@ function train!(nn::AbstractNeuralNetwork, _data::AbstractTrainingData, m::Optim
     @timeit to "matching Data"  typeof(method) <: TrainingMethod ? (data = matching(method, data)) : nothing
 
     # creation of the loss function
-    loss(params, batch) =  typeof(method) <: TrainingMethod ? loss(method, nn, data, batch, params) : method(nn, data, batch, params)
+    Loss(params, batch) =  typeof(method) <: TrainingMethod ? loss(method, nn, data, batch, params) : method(nn, data, batch, params)
+    Loss() =  typeof(method) <: TrainingMethod ? loss(method, nn, data) : method(nn, data)
 
     # creation of optimiser
     @timeit to "Creation of Optimizer" opt = Optimizer(m, params(nn))
@@ -65,11 +66,11 @@ function train!(nn::AbstractNeuralNetwork, _data::AbstractTrainingData, m::Optim
     for j in 1:ntraining
         index_batch = get_batch(data, bs; check = false)
 
-        @timeit to "Computing Grad Loss" ∇params = loss_gradient(loss, index_batch,  params(nn)) 
+        @timeit to "Computing Grad Loss" ∇params = loss_gradient(Loss, index_batch,  params(nn)) 
 
         @timeit to "Performing Optimization step" optimization_step!(opt, model(nn), params(nn), ∇params)
 
-        total_loss[j] = loss(ti, nn, data)
+        total_loss[j] = Loss()
 
         next!(p)
     end

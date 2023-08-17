@@ -1,4 +1,4 @@
-using GeometricIntegrators, KernelAbstractions, JLD2
+using GeometricIntegrators, KernelAbstractions
 
 T = Float64
 
@@ -64,5 +64,5 @@ end
 
 data_tensor = generate_data()
 
-jldsave("data", tensor=data_tensor, params=params_collection, initial_conditions=initial_conditions_collection, 
-        time_interval=(0, t_integration), time_step=time_step)
+#jldsave("data", tensor=data_tensor, params=params_collection, initial_conditions=initial_conditions_collection, 
+#        time_interval=(0, t_integration), time_step=time_step)

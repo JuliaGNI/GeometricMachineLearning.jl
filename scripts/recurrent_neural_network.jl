@@ -5,6 +5,18 @@ using CUDA
 
 include("transformer_coupled_oscillator/generate_data.jl")
 
+generated_data = generate_data()
+
+get_data = Dict(
+    :shape => TrajectoryData,
+    :nb_trajectory => Data -> length(Data),
+    :length_trajectory => (Data,i) -> length(Data[Symbol("Trajectory"*string(i))][1]),
+    :Δt => Data -> 0.1,
+    :q => (Data,i,n) -> Data[Symbol("Trajectory"*string(i))][1][n],
+    :p => (Data,i,n) -> Data[Symbol("Trajectory"*string(i))][2][n],
+)
+data = TrainingData(generated_data, get_data)
+
 
 # Creation of the architecture
 
@@ -27,7 +39,10 @@ opt = AdamOptimizer()
 
 # Creation of the Loss Function
 
+function loss(nn, data, batch = default, params = nn.params)
 
+
+end
 
 # Paramters of the training 
 

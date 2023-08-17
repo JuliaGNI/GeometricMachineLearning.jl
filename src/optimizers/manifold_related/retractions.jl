@@ -11,6 +11,10 @@ function retraction(::AbstractExplicitLayer, gx::NamedTuple)
     gx
 end
 
+function retraction(::AbstractExplicitCell, gx::NamedTuple)
+    gx
+end
+
 function retraction(::StiefelLayer{Geodesic}, B::NamedTuple)
     geodesic(B)
 end
