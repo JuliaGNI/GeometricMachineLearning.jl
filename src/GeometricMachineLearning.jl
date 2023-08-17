@@ -49,12 +49,15 @@ module GeometricMachineLearning
     include("kernels/tensor_transpose_tensor_transpose_mul.jl")
     include("kernels/mat_tensor_mul.jl")
     include("kernels/tensor_transpose.jl")
+    include("kernels/tensor_exponential.jl")
 
     include("kernels/kernel_ad_routines/assign_q_and_p.jl")
     include("kernels/kernel_ad_routines/tensor_mat_mul.jl")
     include("kernels/kernel_ad_routines/mat_tensor_mul.jl")
     include("kernels/kernel_ad_routines/tensor_tensor_mul.jl")
     include("kernels/kernel_ad_routines/tensor_transpose_tensor_mul.jl")
+    include("kernels/kernel_ad_routines/tensor_transpose.jl")
+    include("kernels/kernel_ad_routines/tensor_exponential.jl")
     # export tensor_mat_mul
 
     # this defines empty retraction type structs (doesn't rely on anything)
@@ -122,6 +125,7 @@ module GeometricMachineLearning
     include("layers/stiefel_layer.jl")
     include("layers/grassmann_layer.jl")
     include("layers/multi_head_attention.jl")
+    include("layers/attention_layer.jl")
     include("layers/transformer.jl")
     include("layers/psd_like_layer.jl")
 
@@ -130,6 +134,7 @@ module GeometricMachineLearning
     export StiefelLayer, GrassmannLayer, ManifoldLayer
     export PSDLayer
     export MultiHeadAttention
+    export Attention
     export ResNet
     export Transformer
 

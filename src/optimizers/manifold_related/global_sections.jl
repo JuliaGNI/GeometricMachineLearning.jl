@@ -35,8 +35,8 @@ function apply_section(λY::GlobalSection{T, AT}, Y₂::AT) where {T, AT<:Stiefe
     N, n = size(λY.Y)
     @assert (N, n) == size(Y₂)
     #temporary solution for the moment 
-    projection_matrix₁ = typeof(Y₂.A)(hcat(One(n, T), zeros(T, n, N-n)))
-    projection_matrix₂ = typeof(Y₂.A)(hcat(zeros(T, N-n, n), One(N-n, T)))
+    projection_matrix₁ = typeof(Y₂.A)(hcat(I(n), zeros(T, n, N-n)))
+    projection_matrix₂ = typeof(Y₂.A)(hcat(zeros(T, N-n, n), I(N-n)))
     StiefelManifold(
         λY.Y.A*(projection_matrix₁*Y₂.A) + λY.λ*vcat(projection_matrix₂*Y₂.A, typeof(Y₂.A)(zeros(T, n, n)))
     )
@@ -46,8 +46,8 @@ function apply_section!(Y::AT, λY::GlobalSection{T, AT}, Y₂::AT) where {T, AT
     N, n = size(λY.Y)
     @assert (N, n) == size(Y₂) == size(Y)
     #temporary solution for the moment 
-    projection_matrix₁ = typeof(Y₂.A)(hcat(One(n, T), zeros(T, n, N-n)))
-    projection_matrix₂ = typeof(Y₂.A)(hcat(zeros(T, N-n, n), One(N-n, T)))
+    projection_matrix₁ = typeof(Y₂.A)(hcat(I(n), zeros(T, n, N-n)))
+    projection_matrix₂ = typeof(Y₂.A)(hcat(zeros(T, N-n, n), I(N-n)))
 
     Y.A .= λY.Y*(projection_matrix₁*Y₂) + λY.λ*vcat(projection_matrix₂*Y₂, typeof(Y₂.A)(zeros(T, n, n)))
 end
@@ -92,7 +92,7 @@ end
 function global_rep(λY::GlobalSection{T, AT}, Δ::AbstractMatrix{T}) where {T, AT<:StiefelManifold{T}}
     N, n = size(λY.Y)
     #temporary workaround 
-    projection_matrix = typeof(Δ)(hcat(One(N-n, T), zeros(T, N-n, n)))
+    projection_matrix = typeof(Δ)(hcat(I(N-n), zeros(T, N-n, n)))
     StiefelLieAlgHorMatrix(
         SkewSymMatrix(λY.Y.A'*Δ),
         projection_matrix*(λY.λ'*Δ), 
@@ -104,7 +104,7 @@ end
 function global_rep(λY::GlobalSection{T, AT}, Δ::AbstractMatrix{T}) where {T, AT<:GrassmannManifold{T}}
     N, n = size(λY.Y)
     #temporary workaround 
-    projection_matrix = typeof(Δ)(hcat(zeros(T, N-n, n), One(N-n, T)))
+    projection_matrix = typeof(Δ)(hcat(zeros(T, N-n, n), I(N-n)))
     GrassmannLieAlgHorMatrix(
         projection_matrix*(λY.λ'*Δ),
         N,

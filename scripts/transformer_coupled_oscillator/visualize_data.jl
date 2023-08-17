@@ -31,10 +31,10 @@ function plot_curves(data_tensor::AbstractArray{T, 3}, one_plot=true, psize=(150
     plot_q₂ = one_plot ? plot(t, q₂', size=psize) : plot(t, q₂', layout=(n_param_sets, 1), size=psize, label=labels, legend=:topright)
     plot_p₁ = one_plot ? plot(t, p₁', size=psize) : plot(t, p₁', layout=(n_param_sets, 1), size=psize, label=labels, legend=:topright)
     plot_p₂ = one_plot ? plot(t, p₂', size=psize) : plot(t, p₁', layout=(n_param_sets, 1), size=psize, label=labels, legend=:topright)
-    png(plot_q₁, "q1")
-    png(plot_q₂, "q2")
-    png(plot_p₁, "p1")
-    png(plot_p₂, "p2")
+    png(plot_q₁, "plots_of_data_set/q1")
+    png(plot_q₂, "plots_of_data_set/q2")
+    png(plot_p₁, "plots_of_data_set/p1")
+    png(plot_p₂, "plots_of_data_set/p2")
 end
 
 data = generate_data(params_collection, initial_conditions_collection, t_integration_plots)
