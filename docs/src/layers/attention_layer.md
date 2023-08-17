@@ -25,18 +25,18 @@ $$\tilde{Z} = \begin{pmatrix} q^{(1)}_1 \\ q^{(2)}_1 \\ \cdots \\ q^{(T)}_1 \\ q
 
 The symplectic structure on this big space is then: 
 
-$$\mathbb{J} =  \begin{pmatrix}
+$$\mathbb{J}=\begin{pmatrix}
     \mathbb{O}_{dT} & \mathbb{I}_{dT} \\
     -\mathbb{I}_{dT} & \mathbb{O}_{dT}
-\end{pmatrix}.$$. 
+\end{pmatrix}.$$
 
 Multiplying with the matrix $\Lambda(Z)$ from the right onto $[z^1, \ldots, z^T]$ corresponds to applying the sparse matrix 
 
 $$\tilde{\Lambda}(Z)=\left[
 \begin{array}{ccc}
-   \Lambda(Z) & \cdots & \mathbb{O} \\
+   \Lambda(Z) & \cdots & \mathbb{O}_T \\
    \vdots & \ddots & \vdots \\
-   \mathbb{O} & \cdots & \Lambda(Z) 
+   \mathbb{O}_T & \cdots & \Lambda(Z) 
    \end{array}
 \right]$$
 
