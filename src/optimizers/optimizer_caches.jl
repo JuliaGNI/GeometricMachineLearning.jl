@@ -32,9 +32,9 @@ GradientCache(::AbstractArray) = GradientCache()
 #############################################################################
 # All the setup_cache functions 
 
-setup_adam_cache(B::AbstractArray) = reshape([AdamCache(b) for b in B], size(B))
-setup_momentum_cache(B::AbstractArray) = reshape([MomentumCache(b) for b in B], size(B))
-setup_gradient_cache(B::AbstractArray) = reshape([GradientCache(b) for b in B], size(B))
+setup_adam_cache(B::AbstractArray) = reshape([setup_adam_cache(b) for b in B], size(B))
+setup_momentum_cache(B::AbstractArray) = reshape([setup_momentum_cache(b) for b in B], size(B))
+setup_gradient_cache(B::AbstractArray) = reshape([setup_gradient_cache(b) for b in B], size(B))
 
 setup_adam_cache(ps::NamedTuple) = apply_toNT(setup_adam_cache, ps)
 setup_momentum_cache(ps::NamedTuple) = apply_toNT(setup_momentum_cache, ps)

@@ -43,13 +43,13 @@ function train!(nn::AbstractNeuralNetwork, _data::AbstractTrainingData, m::Optim
     @assert dim(nn) == dim(data)
 
     # create an appropriate batch size by filling in missing values with default values
-    @timeit to "Complete BatchSize" typeof(method) <: TrainingMethod ? (bs = complete_batch_size(data, method, batch_size)) : nothing
+    bs = typeof(method) <: TrainingMethod ? (@timeit to "Complete BatchSize" complete_batch_size(data, method, batch_size)) : batch_size
 
     # check batch_size with respect to data
     @timeit to "Check BatchSize" check_batch_size(data, bs)
 
     # verify that shape of data depending of the Integrator
-    @timeit to "matching Data"  typeof(method) <: TrainingMethod ? (data = matching(method, data)) : nothing
+    typeof(method) <: TrainingMethod ? (@timeit to "matching Data"   data = matching(method, data)) : nothing
 
     # creation of the loss function
     Loss(params, batch) =  typeof(method) <: TrainingMethod ? loss(method, nn, data, batch, params) : method(nn, data, batch, params)
@@ -97,7 +97,7 @@ train!(neuralnetwork, data, optimizer, training_method; nruns = 1000, batch_size
 """
 function train!(nn::AbstractNeuralNetwork{<:Architecture}, data::AbstractTrainingData, tp::TrainingParameters; kwarsg...)
 
-    bs = complete_batch_size(data, method(tp), batchsize(tp))
+    bs = typeof(method) <: TrainingMethod ? complete_batch_size(data, method(tp), batchsize(tp)) : batchsize(tp) 
 
     total_loss = train!(nn, data, opt(tp), method(tp); ntraining = nruns(tp), batch_size =  bs, kwarsg...)
 

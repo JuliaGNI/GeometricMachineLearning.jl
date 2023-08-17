@@ -21,7 +21,7 @@ module GeometricMachineLearning
 
     import CUDA
 
-    import AbstractNeuralNetworks: Architecture, AbstractExplicitLayer, AbstractNeuralNetwork , NeuralNetwork
+    import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer, AbstractExplicitCell, AbstractNeuralNetwork , NeuralNetwork
     import AbstractNeuralNetworks: Chain, GridCell
     import AbstractNeuralNetworks: Dense, Linear, Recurrent
     import AbstractNeuralNetworks: IdentityActivation, ZeroVector
@@ -239,6 +239,7 @@ module GeometricMachineLearning
     export LASympNet
     export GSympNet
     export RecurrentNeuralNetwork
+    export LSTMNeuralNetwork
 
     export train!, apply!, jacobian!
     export Iterate_Sympnet
@@ -250,6 +251,7 @@ module GeometricMachineLearning
     include("architectures/variable_width_network.jl")
     include("architectures/sympnet.jl")
     include("architectures/recurrent_neural_network.jl")
+    include("architectures/LSTM_neural_network.jl")
 
     export default_arch
 

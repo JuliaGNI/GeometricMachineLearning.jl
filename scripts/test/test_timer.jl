@@ -14,4 +14,4 @@ mopt = GradientOptimizer()
 method = BasicSympNet()
 nruns = 1000
 
-train!(nn, training_data, mopt, method; ntraining = nruns, timer = true)
+@test_nowarn train!(nn, training_data, mopt, method; ntraining = nruns, timer = true)

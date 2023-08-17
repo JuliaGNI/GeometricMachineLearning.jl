@@ -3,7 +3,7 @@ Optimizer struct that stores the 'method' (i.e. Adam with corresponding hyperpar
 
 It takes as input an optimization method and the parameters of a network. 
 """
-mutable struct Optimizer{MT<:OptimizerMethod, CT<:Tuple}
+mutable struct Optimizer{MT<:OptimizerMethod, CT}
     method::MT
     cache::CT
     step::Int
@@ -33,7 +33,7 @@ function optimization_step!(o::Optimizer, model::Model, ps, dx)
     end
 end
 
-function optimization_step!(o::Optimizer, model::Model, ps, loss)
+function optimization_step!(o::Optimizer, model::Model, ps, loss::Base.Callable)
     dx = Zygote.gradient(ps -> loss(ps), ps)[1]
     optimization_step!(o, model, ps, dx)
 end 
