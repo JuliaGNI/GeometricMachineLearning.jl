@@ -23,7 +23,7 @@ function orthonormal_activation(A::AbstractArray{T, 3}) where T
     fac = ceil(norm(A_ut)/size(A,3))
     expA = tensor_exponential(A_ut/fac)
     expA_mul = copy(expA)
-    for 2:fac 
+    for _ in 2:fac 
         expA_mul = tensor_exponential(expA, expA_mul)
     end
     expA_mul
