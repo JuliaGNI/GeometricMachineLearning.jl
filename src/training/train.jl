@@ -43,19 +43,19 @@ function train!(nn::AbstractNeuralNetwork, _data::AbstractTrainingData, m::Optim
     @assert dim(nn) == dim(data)
 
     # create an appropriate batch size by filling in missing values with default values
-    typeof(method) <: TrainingMethod ? (@timeit to "Complete BatchSize" bs = complete_batch_size(data, method, batch_size)) : nothing
+    @timeit to "Complete BatchSize" typeof(method) <: TrainingMethod ? (bs = complete_batch_size(data, method, batch_size)) : nothing
 
     # check batch_size with respect to data
     @timeit to "Check BatchSize" check_batch_size(data, bs)
 
     # verify that shape of data depending of the Integrator
-    typeof(method) <: TrainingMethod ? data = matching(method, data) : nothing
+    @timeit to "matching Data"  typeof(method) <: TrainingMethod ? (data = matching(method, data)) : nothing
 
     # creation of the loss function
     loss(params, batch) =  typeof(method) <: TrainingMethod ? loss(method, nn, data, batch, params) : method(nn, data, batch, params)
 
     # creation of optimiser
-    opt = Optimizer(m, params(nn))
+    @timeit to "Creation of Optimizer" opt = Optimizer(m, params(nn))
 
     # creation of the array to store total loss
     total_loss = zeros(ntraining)
@@ -65,9 +65,9 @@ function train!(nn::AbstractNeuralNetwork, _data::AbstractTrainingData, m::Optim
     for j in 1:ntraining
         index_batch = get_batch(data, bs; check = false)
 
-        ∇params = loss_gradient(loss, index_batch,  params(nn)) 
+        @timeit to "Computing Grad Loss" ∇params = loss_gradient(loss, index_batch,  params(nn)) 
 
-        optimization_step!(opt, model(nn), params(nn), ∇params)
+        @timeit to "Performing Optimization step" optimization_step!(opt, model(nn), params(nn), ∇params)
 
         total_loss[j] = loss(ti, nn, data)
 
