@@ -3,6 +3,8 @@ const DEFAULT_NRUNS = 1000
 # The loss gradient function working for all types of arguments
 loss_gradient(nn::NeuralNetwork{<:Architecture}, ti::AbstractTrainingMethod, data::AbstractTrainingData, index_batch, params = nn.params) = Zygote.gradient(p -> loss(ti, nn, data, index_batch, p), params)[1]
 
+loss_gradient(loss, index_batch, params = nn.params) = Zygote.gradient(p -> loss(p, index_batch, params)[1]
+
 #loss_gradient(nn::SymbolicNeuralNetwork, ti::AbstractTrainingMethod, data::AbstractTrainingData, index_batch, params = params(nn)) = 
 #mapreduce(args->∇loss_single(ti, nn, get_loss(ti, nn, data, args)..., params), +, index_batch)
 
@@ -29,40 +31,43 @@ Different ways of use:
 - `batch_size` : size of batch of data used for each step
 
 """
-function train!(nn::AbstractNeuralNetwork, data_in::AbstractTrainingData, m::OptimizerMethod, ti::TrainingMethod{<:AbstractTrainingMethod} = default_method(nn, data); ntraining = DEFAULT_NRUNS, batch_size = missing, showprogress::Bool = false, timer::Bool = false)
+function train!(nn::AbstractNeuralNetwork, _data::AbstractTrainingData, m::OptimizerMethod, method = default_method(nn, data); ntraining = DEFAULT_NRUNS, batch_size = missing, showprogress::Bool = false, timer::Bool = false)
 
     # create a timer
     to = TimerOutput()
 
     # copy of data in the event of modification
-    data = copy(data_in)
+    data = copy(_data)
 
     # verify that dimension of data and input of nn match
     @assert dim(nn) == dim(data)
 
     # create an appropriate batch size by filling in missing values with default values
-    @timeit to "Complete BatchSize" bs = complete_batch_size(data, ti, batch_size)
+    typeof(method) <: TrainingMethod ? (@timeit to "Complete BatchSize" bs = complete_batch_size(data, method, batch_size)) : nothing
 
     # check batch_size with respect to data
     @timeit to "Check BatchSize" check_batch_size(data, bs)
 
-    # verify that shape of data depending of the ExactIntegrator
-    data = matching(ti, data)
+    # verify that shape of data depending of the Integrator
+    typeof(method) <: TrainingMethod ? data = matching(method, data) : nothing
 
-    # create array to store total loss
-    total_loss = zeros(ntraining)
+    # creation of the loss function
+    loss(params, batch) =  typeof(method) <: TrainingMethod ? loss(method, nn, data, batch, params) : method(nn, data, batch, params)
 
-    #creation of optimiser
+    # creation of optimiser
     opt = Optimizer(m, params(nn))
+
+    # creation of the array to store total loss
+    total_loss = zeros(ntraining)
 
     # Learning runs
     p = Progress(ntraining; enabled = showprogress)
     for j in 1:ntraining
         index_batch = get_batch(data, bs; check = false)
 
-        params_grad = loss_gradient(nn, ti, data, index_batch,  params(nn)) 
+        ∇params = loss_gradient(loss, index_batch,  params(nn)) 
 
-        optimization_step!(opt, model(nn), params(nn), params_grad)
+        optimization_step!(opt, model(nn), params(nn), ∇params)
 
         total_loss[j] = loss(ti, nn, data)
 
