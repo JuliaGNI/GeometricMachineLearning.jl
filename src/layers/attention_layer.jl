@@ -29,6 +29,11 @@ function orthonormal_activation(A::AbstractArray{T, 3}) where T
     expA_mul
 end
 
+function orthonormal_activation_cayley(A::AbstractArray{T, 3}) where T 
+    A_ut = upper_triangular_asymmetrize(A)
+    tensor_cayley(A_ut)
+end
+
 function Attention(dim::Integer, activation=orthonormal_activation; Stiefel::Bool=false, retraction::AbstractRetraction=default_retr, add_connection::Bool=false)
     Attention{dim, dim, Stiefel, typeof(retraction), add_connection, typeof(activation)}(activation)
 end
