@@ -62,7 +62,7 @@ function tensor_inverse(A::AbstractArray{T, 3}) where T
     total_length = size(A, 3)
     for k in 1:total_length 
         B = assign_matrix(A, k)
-        B_inv = inv(B)
+        B_inv = B\one(B)
         A_inv += assign_tensor(B_inv, total_length, k)
     end
     A_inv
