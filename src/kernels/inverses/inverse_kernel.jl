@@ -2,7 +2,7 @@
 For now this implements the inverse for a batch in serial (fix!!!)
 """
 
-using ChainRulesCore, KernelAbstractions, ChainRulesTestUtils
+using ChainRulesCore, KernelAbstractions
 
 @kernel function assign_matrix_kernel!(B::AbstractMatrix{T}, A::AbstractArray{T, 3}, k::Integer) where T 
     i, j = @index(Global, NTuple)
