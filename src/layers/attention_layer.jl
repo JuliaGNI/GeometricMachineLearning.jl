@@ -34,6 +34,11 @@ function orthonormal_activation_cayley(A::AbstractArray{T, 3}) where T
     tensor_cayley(A_ut)
 end
 
+function orthonormal_activation_cayley(A::AbstractMatrix{T}) where T 
+    reshape(orthonormal_activation_cayley(reshape(A, size(A)..., 1)), size(A)...)
+end
+
+
 function Attention(dim::Integer, activation=orthonormal_activation; Stiefel::Bool=false, retraction::AbstractRetraction=default_retr, add_connection::Bool=false)
     Attention{dim, dim, Stiefel, typeof(retraction), add_connection, typeof(activation)}(activation)
 end
