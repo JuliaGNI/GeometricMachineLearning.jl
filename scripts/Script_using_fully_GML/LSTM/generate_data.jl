@@ -8,7 +8,7 @@ m1 = T(2.)
 m2 = T(1.)
 k1 = T(1.5)
 k2 = T(0.3)
-k = T.(0.0:0.1:4)
+k = T(0.5) #k = T.(0.0:0.1:4)
 
 params_collection = Tuple([(m1=m1,m2=m2,k1=k1,k2=k2,k=k_val) for k_val in k])
 

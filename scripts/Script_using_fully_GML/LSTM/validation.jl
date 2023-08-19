@@ -33,7 +33,7 @@ m1 = T(2.)
 m2 = T(1.)
 k1 = T(1.5)
 k2 = T(0.3)
-k = T(3.5)
+k = T(0.5)
 params = (m1=m1, m2=m2, k1=k1, k2=k2, k=k)
 
 initial_conditions_val = (q=[T(1.),T(0.)], p=[T(2.),T(0.)])

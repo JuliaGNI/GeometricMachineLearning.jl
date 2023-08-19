@@ -29,7 +29,7 @@ dimin = 4
 dimout = 4
 ssize = (1, 6)
 
-arch = RecurrentNeuralNetwork(dimin, dimout, ssize)
+arch = LSTMNeuralNetwork(dimin, dimout, ssize)
 
 # Creation of the NeuralNetwork
 

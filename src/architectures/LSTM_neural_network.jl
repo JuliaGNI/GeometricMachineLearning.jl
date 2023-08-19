@@ -5,7 +5,7 @@ struct LSTMNeuralNetwork{TS, TAO, TAM} <: Architecture
     size::TS
     σ₀::TAO
     σ₋₁::TAM
-    function LSTMNetwork(dimin::Int, size::Tuple{<:Int, <:Int} = (1,1); dimst::Int = dimin, act0 = AbstractNeuralNetworks.SigmoidActivation(), act1 = tanh)
+    function LSTMNeuralNetwork(dimin::Int, size::Tuple{<:Int, <:Int} = (1,1); dimst::Int = dimin, act0 = AbstractNeuralNetworks.SigmoidActivation(), act1 = tanh)
         @assert size[1] > 0 && size[2] > 0
         new{typeof(size), typeof(act0), typeof(act1)}(dimin, dimst, size, act0, act1)
     end

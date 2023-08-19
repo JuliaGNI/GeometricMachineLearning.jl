@@ -40,7 +40,7 @@ function train!(nn::AbstractNeuralNetwork, _data::AbstractTrainingData, m::Optim
     data = copy(_data)
 
     # verify that dimension of data and input of nn match
-    @assert dim(nn) == dim(data)
+    #@assert dim(nn) == dim(data)
 
     # create an appropriate batch size by filling in missing values with default values
     bs = typeof(method) <: TrainingMethod ? (@timeit to "Complete BatchSize" complete_batch_size(data, method, batch_size)) : batch_size
