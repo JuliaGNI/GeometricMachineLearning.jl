@@ -13,10 +13,11 @@ n_heads = 8
 Dₕ = dim÷8
 tol = eps(Float32)
 T = Float32
+backend = KernelAbstractions.CPU()
 
 model = MultiHeadAttention(dim, n_heads, Stiefel=true)
 
-ps = initialparameters(KernelAbstractions.CPU(), T, model)
+ps = initialparameters(backend, T, model)
 
 cache = init_optimizer_cache(MomentumOptimizer(), ps)
 
