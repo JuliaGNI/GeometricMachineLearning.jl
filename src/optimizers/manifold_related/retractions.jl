@@ -49,7 +49,7 @@ function geodesic(B::StiefelLieAlgHorMatrix{T}) where T
     unit = typeof(B.B)(I(n))
     # delete this line eventually!!!
     # A_mat = typeof(B.B)(SkewSymMatrix(Vector(B.A.S), n))
-    A_mat = A
+    A_mat = B.A
     exponent = hcat(vcat(T(.5)*A_mat, T(.25)*A_mat^2 - B.B'*B.B), vcat(unit, T(.5)*A_mat))
     StiefelManifold(
         E + hcat(vcat(T(.5)*A_mat, B.B), E)*𝔄(exponent)*vcat(unit, T(.5)*A_mat)
