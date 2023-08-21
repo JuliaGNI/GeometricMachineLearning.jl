@@ -61,10 +61,6 @@ module GeometricMachineLearning
 
     # this defines empty retraction type structs (doesn't rely on anything)
     include("optimizers/manifold_related/retraction_types.jl")
-
-    export TrivialInitRNG
-
-    include("rng/trivial_rng.jl")
     
 
     # are these needed?
@@ -157,7 +153,6 @@ module GeometricMachineLearning
 
     export GlobalSection, apply_section
     export global_rep
-    export TrivialInitRNG
     export Geodesic, Cayley
     export retraction
     # export ⊙², √ᵉˡᵉ, /ᵉˡᵉ, scalar_add
@@ -360,8 +355,6 @@ module GeometricMachineLearning
 
 
 
-
-    include("rng/random_funcs.jl")
 
     
 end
