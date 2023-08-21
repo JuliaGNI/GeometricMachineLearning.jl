@@ -58,7 +58,7 @@ function skew_mat_mul_test2(n, T=Float64)
     A = rand(n, n)
     AS1 = A*S 
     AS2 = A*Matrix{T}(S)
-    @test isapprox(SA1, SA2)
+    @test isapprox(AS1, AS2)
 end
 
 # check if matrix is ∈ 𝔤 (check if the vector space projection works), addition & subtraction
@@ -144,7 +144,7 @@ for (N, n) ∈ zip(N_vec, n_vec)
     sym_mat_add_sub_test(N)
     skew_mat_add_sub_test(N)
     skew_mat_mul_test(N)
-    skew_mat_mult_test2(N)
+    skew_mat_mul_test2(N)
     sympl_lie_alg_add_sub_test(N)
     stiefel_proj_test(N,n)
     sympl_proj_test(N,n)
