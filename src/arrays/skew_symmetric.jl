@@ -185,3 +185,8 @@ end
 function Base.:*(A::SkewSymMatrix, b::AbstractVector{T}) where T
     A*reshape(b, size(b), 1)
 end
+
+# the first matrix is multiplied onto A2 in order for it to not be SkewSymMatrix!
+function Base.:*(A1::SkewSymMatrix{T}, A2::SkewSymMatrix{T}) where T 
+    A1*(I(A2.n)*A2) 
+end
