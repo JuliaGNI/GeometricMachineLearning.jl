@@ -21,7 +21,23 @@ For manifolds, after we obtained the Riemannian gradient (see e.g. the section o
 
 The general theory of Riemannian manifolds is rather complicated, but for the neural networks treated in `GeometricMachineLearning`, we only rely on optimization of matrix Lie groups and homogeneous spaces, which is much simpler. 
 
-For Lie groups each tangent space is isomorphic to its Lie algebra $\mathfrak{g}$.
+For Lie groups each tangent space is isomorphic to its Lie algebra $\mathfrak{g}\equiv{}T_\mathbb{I}G$. The geodesic map from $\mathfrak{g}$ to $G$, for matrix Lie groups with bi-invariant Riemannian metric, is simply the application of the matrix exponential $\exp$. Alternatively this can be replaced by the Cayley transform (see (Absil et al, 2008).)
+ 
+Starting from this basic map $\exp:\mathfrak{g}\to{}G$ we can build mappings for more complicated cases: 
+
+1. General tangent space to a Lie group $T_AG$: The geodesic map for an element $V\in{}T_AG$ is simply $A\exp(A^{-1}V)$.
+
+2. Special tangent space to a homogeneous space $T_E\mathcal{M}$: For $V=BE\in{}T_E\mathcal{M}$ the exponential map is simply $\exp(B)E$. 
+
+3. General tangent space to a homogeneous space $T_Y\mathcal{M}$ for $Y = AE$: For $V=ABE\in{}T_Y\mathcal{M}$ with $Y = AE$ the exponential map is simply $A\exp(B)E$. This is the general case with which we deal with.  
+
+What retraction in `GeometricMachineLearning` does is the map $\mathfrak{g}^\mathrm{hor}\to\mathcal{M}$, which is the second of the above points. To get the third from the second point, we simply have to multiply with a matrix. 
+
+
+### Word of caution
+
+Note that the $O(N)$, the Lie group corresponding to the Stiefel manifold, has a bi-invariant Riemannian metric associated with it: $(B_1,B_2)\mapsto \mathrm{Tr}(B_1^TB_2)$.
+For other Lie groups (e.g. the symplectic group) the situation is slightly more difficult (see (Bendokat et al, 2021).)
 
 ## References 
 
