@@ -26,14 +26,16 @@ data = TrainingData(generated_data, get_Data)
 # Creation of the architecture
 
 dimin = 4
-dimout = 4
 ssize = (1, 6)
 
-arch = LSTMNeuralNetwork(dimin, dimout, ssize)
+arch = LSTMNeuralNetwork(dimin, ssize)
 
 # Creation of the NeuralNetwork
 
 rnn = NeuralNetwork(arch, backend, T)
+
+using Test
+@test_nowarn rnn([[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]])
 
 # Creation of the Optimizer
 
