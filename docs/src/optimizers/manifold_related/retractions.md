@@ -6,10 +6,10 @@ Homogeneous spaces (i.e. the all the manifolds treated in `GeometricMachineLearn
 
 For the Stiefel manifold $St(n,N)$ this canonical element is 
 ```math
-C = \begin{pmatrix}
-    \mathbb{I} & \mathbb{O} \\
-    \mathbb{O} & \mathbb{0} 
-\end{pmatrix},
+E = \begin{bmatrix}
+    \mathbb{I}  \\
+    \mathbb{O}
+\end{bmatrix},
 ```
 where the matrices in the first row are $\in\mathbb{R}^{n\times{}n}$ and the matrices in the second row are $\in\mathbb{R}^{(N-n)\times{}n}$.
 
