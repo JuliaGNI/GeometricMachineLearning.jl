@@ -199,7 +199,7 @@ module GeometricMachineLearning
     export min_length_batch
     
     
-    include("training/training_method.jl")
+    include("training_method/training_method.jl")
 
      # INCLUDE DATA TRAINING STRUCTURE
     export AbstractTrainingData
