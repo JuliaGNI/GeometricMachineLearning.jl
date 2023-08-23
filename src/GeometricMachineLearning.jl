@@ -199,7 +199,7 @@ module GeometricMachineLearning
     export min_length_batch
     
     
-    include("training/training_integrator.jl")
+    include("training/training_method.jl")
 
      # INCLUDE DATA TRAINING STRUCTURE
     export AbstractTrainingData
@@ -222,15 +222,6 @@ module GeometricMachineLearning
     include("backends/backends.jl")
     include("backends/lux.jl")
 
-    
-    export Hnn_training_integrator
-    export Lnn_training_integrator
-    export SEuler
-    export ExactIntegrator
-    export ExactIntegratorLNN
-    export VariationalMidPointLNN
-    export SympNetIntegrator
-    export BaseIntegrator
 
     #INCLUDE ARCHITECTURES
     export HamiltonianNeuralNetwork
