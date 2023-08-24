@@ -1,4 +1,4 @@
-using GeometricMachineLearning: tensor_mat_mul, mat_tensor_mul, tensor_tensor_mul, tensor_transpose_tensor_mul, assign_q_and_p, tensor_transpose, allocate_matrix, allocate_tensor
+using GeometricMachineLearning: tensor_mat_mul, mat_tensor_mul, tensor_tensor_mul, tensor_transpose_tensor_mul, assign_q_and_p, tensor_transpose, assign_matrix, assign_tensor, assign_output_estimate
 using ChainRulesTestUtils
 using Printf
 
@@ -14,9 +14,9 @@ function main(first_dim, second_dim, third_dim, third_tensor_dim)
     test_rrule(tensor_tensor_mul, rand(first_dim, second_dim, third_tensor_dim), rand(second_dim, third_dim, third_tensor_dim))
     test_rrule(tensor_transpose_tensor_mul, rand(second_dim, first_dim, third_tensor_dim), rand(second_dim, third_dim, third_tensor_dim))
     test_rrule(tensor_transpose, rand(first_dim, second_dim, third_tensor_dim))
-    #test_rrule(allocate_matrix, rand(first_dim, first_dim, third_tensor_dim), third_tensor_dim)
-    test_rrule(allocate_tensor, rand(first_dim, first_dim), third_tensor_dim, third_tensor_dim)
-    #compute the derivative with FiniteDifferences.jl
+    test_rrule(assign_matrix, rand(first_dim, second_dim, third_tensor_dim), third_tensor_dim)
+    test_rrule(assign_tensor, rand(first_dim, second_dim), third_tensor_dim, 1)
+    test_rrule(assign_output_estimate, rand(first_dim, second_dim, third_tensor_dim), 1)
 end
 
 const dim_range = 10

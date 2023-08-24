@@ -45,9 +45,11 @@ geodesic(B::NamedTuple) = apply_toNT(geodesic, B)
 function geodesic(B::StiefelLieAlgHorMatrix{T}) where T
     N, n = B.N, B.n
     E = typeof(B.B)(StiefelProjection(N, n, T))
-    #expression from which matrix exponential and inverse have to be computed
+    # expression from which matrix exponential and inverse have to be computed
     unit = typeof(B.B)(I(n))
-    A_mat = typeof(B.B)(SkewSymMatrix(Vector(B.A.S), n))
+    # delete this line eventually!!!
+    # A_mat = typeof(B.B)(SkewSymMatrix(Vector(B.A.S), n))
+    A_mat = B.A
     exponent = hcat(vcat(T(.5)*A_mat, T(.25)*A_mat^2 - B.B'*B.B), vcat(unit, T(.5)*A_mat))
     StiefelManifold(
         E + hcat(vcat(T(.5)*A_mat, B.B), E)*𝔄(exponent)*vcat(unit, T(.5)*A_mat)
@@ -69,8 +71,8 @@ cayley(B::NamedTuple) = apply_toNT(cayley, B)
 
 function cayley(B::StiefelLieAlgHorMatrix{T}) where T
     N, n = B.N, B.n
-    E = StiefelProjection(N, n, T)
-    unit = I(n)
+    E = typeof(B.B)(StiefelProjection(N, n, T))
+    unit = typeof(B.B)(I(n))
     unit2 = I(2*n)
     exponent = unit2 - T(.5)*hcat(vcat(T(.5)*B.A, T(.25)*B.A^2 - B.B'*B.B), vcat(unit, T(.5)*B.A))
     StiefelManifold(

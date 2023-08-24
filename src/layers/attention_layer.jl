@@ -7,14 +7,31 @@ end
 
 default_retr = Geodesic()
 function orthonormal_activation(A::AbstractMatrix{T}) where T 
-    exp(T(0.5)*(A - A'))
-end
-# TODO: This can be implemented more efficiently if you write one kernel for everything!
-function orthonormal_activation(A::AbstractArray{T, 3}) where T 
-    tensor_exponential(T(.5)*(A - tensor_transpose(A)))
+    reshape(orthonormal_activation(reshape(A, size(A)..., 1)), size(A)...)
 end
 
-function Attention(dim::Integer, activation=orthonormal_activation; Stiefel::Bool=false, retraction::AbstractRetraction=default_retr, add_connection::Bool=true)
+function orthonormal_activation(A::AbstractArray{T, 3}) where T 
+    A_ut = upper_triangular_asymmetrize(A)
+    fac = ceil(norm(A_ut)/size(A,3))
+    expA = tensor_exponential(A_ut/fac)
+    expA_mul = copy(expA)
+    for _ in 2:fac 
+        expA_mul = tensor_tensor_mul(expA, expA_mul)
+    end
+    expA_mul
+end
+
+function orthonormal_activation_cayley(A::AbstractArray{T, 3}) where T 
+    A_ut = upper_triangular_asymmetrize(A)
+    tensor_cayley(A_ut)
+end
+
+function orthonormal_activation_cayley(A::AbstractMatrix{T}) where T 
+    reshape(orthonormal_activation_cayley(reshape(A, size(A)..., 1)), size(A)...)
+end
+
+
+function Attention(dim::Integer, activation=orthonormal_activation; Stiefel::Bool=false, retraction::AbstractRetraction=default_retr, add_connection::Bool=false)
     Attention{dim, dim, Stiefel, typeof(retraction), add_connection, typeof(activation)}(activation)
 end
 
@@ -46,14 +63,14 @@ function (d::Attention{M, M, Stiefel, Retraction, true})(x::AbstractMatrix{T}, p
     dim, input_length = size(x)
     @assert dim == M
 
-    x + x*d.activation((ps.PQ*x)'*(ps.PK*x))
+    x + x*d.activation((ps.PQ'*x)'*(ps.PK'*x))
 end
 
 function (d::Attention{M, M, Stiefel, Retraction, false})(x::AbstractMatrix{T}, ps::NamedTuple) where {M, Stiefel, Retraction, T}
     dim, input_length = size(x)
     @assert dim == M
 
-    x*d.activation((ps.PQ*x)'*(ps.PK*x))
+    x*d.activation((ps.PQ'*x)'*(ps.PK'*x))
 end
 
 function (d::Attention{M, M, Stiefel, Retraction, true})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, Stiefel, Retraction, T} 
@@ -75,3 +92,49 @@ function (d::Attention{M, M, Stiefel, Retraction, false})(x::AbstractArray{T, 3}
     QK_tensor = tensor_transpose_tensor_mul(Q_tensor, K_tensor)
     tensor_tensor_mul(x, d.activation(QK_tensor))
 end
+
+@kernel function upper_triangular_asymmetrize_kernel!(output::AbstractArray{T, 3}, input::AbstractArray{T, 3}) where T 
+    i,j,k = @index(Global, NTuple)
+    if i < j
+        output[i,j,k] = input[i,j,k]
+    elseif i > j 
+        output[i,j,k] = -input[j,i,k]
+    end
+end
+
+function upper_triangular_asymmetrize(A::AbstractArray{T, 3}) where T 
+    output = zero(A)
+    backend = KernelAbstractions.get_backend(A)
+    upper_triangular_asymmetrize! = upper_triangular_asymmetrize_kernel!(backend)
+    upper_triangular_asymmetrize!(output, A, ndrange=size(A))
+    output
+end
+
+@kernel function assign_upper_triangular_kernel!(output, input)
+    i,j,k = @index(Global, NTuple)
+    if i < j 
+        output[i,j,k] += input[i,j,k]
+    elseif i > j 
+        output[j,i,k] -= input[i,j,k] 
+    end
+end
+
+function assign_upper_triangular(A::AbstractArray{T, 3}) where T
+    output = zero(A)
+    backend = KernelAbstractions.get_backend(A)
+    assign_upper_triangular! = assign_upper_triangular_kernel!(backend)
+    assign_upper_triangular!(output, A, ndrange=size(A))
+    output
+end
+
+function ChainRulesCore.rrule(::typeof(upper_triangular_asymmetrize), A::AbstractArray{T, 3}) where T 
+    output = upper_triangular_asymmetrize(A)
+    function upper_triangular_asymmetrize_pullback(output_diff)
+        A_diff =  @thunk assign_upper_triangular(output_diff)
+        return NoTangent(), A_diff
+    end 
+    return output, upper_triangular_asymmetrize_pullback 
+end
+
+#upper_triangular_asymmetrize(output_diff::Thunk) = Thunk(() -> upper_triangular_asymmetrize(unthunk(output_diff)))
+assign_upper_triangular(output_diff::Thunk) = Thunk(() -> assign_upper_triangular(unthunk(output_diff)))
