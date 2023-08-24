@@ -28,11 +28,11 @@ module GeometricMachineLearning
     import AbstractNeuralNetworks: add!, update!
     import AbstractNeuralNetworks: layer
     import AbstractNeuralNetworks: initialparameters
+    import AbstractNeuralNetworks: parameterlength
     import AbstractNeuralNetworks: GlorotUniform
     import AbstractNeuralNetworks: params, architecture, model, dim
     export params, architetcure, model
     export dim
-    
     import GeometricIntegrators.Integrators: method
 
     export CPU, GPU
@@ -49,7 +49,8 @@ module GeometricMachineLearning
     include("kernels/tensor_transpose_tensor_transpose_mul.jl")
     include("kernels/mat_tensor_mul.jl")
     include("kernels/tensor_transpose.jl")
-    include("kernels/tensor_exponential.jl")
+    include("kernels/exponentials/tensor_exponential.jl")
+    include("kernels/inverses/inverse_kernel.jl")
 
     include("kernels/kernel_ad_routines/assign_q_and_p.jl")
     include("kernels/kernel_ad_routines/tensor_mat_mul.jl")
@@ -57,15 +58,12 @@ module GeometricMachineLearning
     include("kernels/kernel_ad_routines/tensor_tensor_mul.jl")
     include("kernels/kernel_ad_routines/tensor_transpose_tensor_mul.jl")
     include("kernels/kernel_ad_routines/tensor_transpose.jl")
-    include("kernels/kernel_ad_routines/tensor_exponential.jl")
     # export tensor_mat_mul
+
+    include("data_loader/tensor_assign.jl")
 
     # this defines empty retraction type structs (doesn't rely on anything)
     include("optimizers/manifold_related/retraction_types.jl")
-
-    export TrivialInitRNG
-
-    include("rng/trivial_rng.jl")
     
 
     # are these needed?
@@ -157,7 +155,6 @@ module GeometricMachineLearning
 
     export GlobalSection, apply_section
     export global_rep
-    export TrivialInitRNG
     export Geodesic, Cayley
     export retraction
     # export ⊙², √ᵉˡᵉ, /ᵉˡᵉ, scalar_add
@@ -355,8 +352,6 @@ module GeometricMachineLearning
 
 
 
-
-    include("rng/random_funcs.jl")
 
     
 end

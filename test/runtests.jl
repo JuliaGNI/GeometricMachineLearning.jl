@@ -1,7 +1,8 @@
 
 using SafeTestsets
 
-@safetestset "Arrays                                                                          " begin include("arrays/array_tests_new.jl") end
+@safetestset "Arrays #1                                                                       " begin include("arrays/array_tests.jl") end
+@safetestset "Arrays #2                                                                       " begin include("arrays/array_tests_old.jl") end
 @safetestset "Manifolds (Grassmann):                                                          " begin include("manifolds/grassmann_manifold.jl") end
 @safetestset "Gradient Layer                                                                  " begin include("layers/gradient_layer_tests.jl") end
 @safetestset "Hamiltonian Neural Network                                                      " begin include("hamiltonian_neural_network_tests.jl") end
@@ -18,6 +19,7 @@ using SafeTestsets
 @safetestset "Optimizer #2                                                                    " begin include("optimizers/utils/optimization_step.jl") end
 @safetestset "Optimizer #3                                                                    " begin include("optimizers/utils/modified_exponential.jl") end
 @safetestset "Optimizer #4                                                                    " begin include("optimizers/optimizer_convergence_tests/svd_optim.jl") end
+@safetestset "Optimizer #5                                                                    " begin include("optimizers/optimizer_convergence_tests/psd_optim.jl") end
 @safetestset "Data                                                                            " begin include("data/test_data.jl") end
 @safetestset "Batch                                                                           " begin include("data/test_batch.jl") end
 @safetestset "Method                                                                          " begin include("train!/test_method.jl") end
@@ -26,3 +28,4 @@ using SafeTestsets
 @safetestset "Training                                                                        " begin include("train!/test_training.jl") end
 @safetestset "NeuralNetSolution                                                               " begin include("train!/test_neuralnet_solution.jl") end
 @safetestset "Problem & Integrators                                                           " begin include("integrator/test_integrator.jl") end
+

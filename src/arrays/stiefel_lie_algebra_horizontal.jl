@@ -29,7 +29,7 @@ mutable struct StiefelLieAlgHorMatrix{T, AT <: SkewSymMatrix{T}, ST <: AbstractM
 
         new{T, typeof(A), typeof(B)}(A, B, N, n)
     end 
-
+    
     function StiefelLieAlgHorMatrix(A::AbstractMatrix, n::Integer)
         N = size(A, 1)
         @assert N ≥ n 
@@ -122,6 +122,16 @@ end
 Base.similar(A::StiefelLieAlgHorMatrix, dims::Union{Integer, AbstractUnitRange}...) = zeros(StiefelLieAlgHorMatrix{eltype(A)}, dims...)
 Base.similar(A::StiefelLieAlgHorMatrix) = zeros(StiefelLieAlgHorMatrix{eltype(A)}, A.N, A.n)
 
+function Base.rand(rng::Random.AbstractRNG, backend::KernelAbstractions.Backend, ::Type{StiefelLieAlgHorMatrix{T}}, N::Integer, n::Integer) where T 
+    B = KernelAbstractions.allocate(backend, T, N-n, n)
+    rand!(rng, B)
+    StiefelLieAlgHorMatrix(rand(rng, backend, SkewSymMatrix{T}, n), B, N, n)
+end
+
+function Base.rand(backend::KernelAbstractions.Backend, type::Type{StiefelLieAlgHorMatrix{T}}, N::Integer, n::Integer) where T 
+    rand(Random.default_rng(), backend, type, N, n)
+end
+
 function Base.rand(rng::Random.AbstractRNG, ::Type{StiefelLieAlgHorMatrix{T}}, N::Integer, n::Integer) where T
     StiefelLieAlgHorMatrix(rand(rng, SkewSymMatrix{T}, n), rand(rng, T, N-n, n), N, n)
 end
@@ -159,30 +169,3 @@ function LinearAlgebra.mul!(C::StiefelLieAlgHorMatrix, A::StiefelLieAlgHorMatrix
 end
 LinearAlgebra.mul!(C::StiefelLieAlgHorMatrix, α::Real, A::StiefelLieAlgHorMatrix) = mul!(C, A, α)
 LinearAlgebra.rmul!(C::StiefelLieAlgHorMatrix, α::Real) = mul!(C, C, α)
-
-function convert_to_dev(dev::Device, A::StiefelLieAlgHorMatrix)
-    StiefelLieAlgHorMatrix(
-        convert_to_dev(dev, A.A),
-        convert_to_dev(dev, A.B),
-        A.N,
-        A.n
-    )
-end
-
-#this shouldn't be needed! ask Michael!
-function convert_to_dev(dev::CUDA.CuDevice, A::StiefelLieAlgHorMatrix)
-    StiefelLieAlgHorMatrix(
-        convert_to_dev(dev, A.A),
-        convert_to_dev(dev, A.B),
-        A.N,
-        A.n
-    )
-end
-function convert_to_dev(dev::CPUDevice, A::StiefelLieAlgHorMatrix)
-    StiefelLieAlgHorMatrix(
-        convert_to_dev(dev, A.A),
-        convert_to_dev(dev, A.B),
-        A.N,
-        A.n
-    )
-end

@@ -6,53 +6,44 @@ One layer has the following shape:
 A = |0 Φ|, where Φ is an element of the regular Stiefel manifold. 
 """
 
-struct PSDLayer{inverse, Retraction, F1} <: Lux.AbstractExplicitLayer
-    N::Integer
-    n::Integer
-    init_weight::F1
+struct PSDLayer{M, N, Retraction} <: AbstractExplicitLayer{M, N}
 end
 
 default_retr = Geodesic()
-function PSDLayer(N2::Integer, n2::Integer; inverse::Bool=false, Retraction=default_retr, init_weight=Lux.glorot_uniform)
-    @assert iseven(N2)
-    @assert iseven(n2)
-    PSDLayer{inverse, typeof(Retraction), typeof(init_weight)}(N2÷2, n2÷2, init_weight)
+function PSDLayer(M::Integer, N::Integer; Retraction=default_retr)
+    @assert iseven(M)
+    @assert iseven(N)
+    PSDLayer{M, N, typeof(Retraction)}()
 end
 
-Lux.parameterlength(d::PSDLayer) = Int(d.n*(d.N - (d.n+1)/2))
+function parameterlength(::PSDLayer{M, N}) where {M, N}
+    M÷2*(N÷2 - (M÷2+1)÷2)
+end 
 
-function Lux.initialparameters(rng::AbstractRNG, d::PSDLayer)
-    (weight = d.init_weight(rng, StiefelManifold, d.N, d.n), )
+function initialparameters(backend::KernelAbstractions.Backend, T::Type, ::PSDLayer{M, N}, rng::AbstractRNG=Random.default_rng()) where {M, N}
+    (weight =  N > M ? rand(backend, rng, StiefelManifold{T}, N÷2, M÷2) : rand(backend, rng, StiefelManifold{T}, M÷2, N÷2), )
 end
 
-function Lux.apply(d::PSDLayer{false}, x::AbstractVector, ps::NamedTuple, st::NamedTuple)
-    @assert length(x) == 2*d.n
-    output₁ = zeros(d.N)
-    output₂ = zeros(d.N)
-    output₁ = ps.weight*x[1:d.n]
-    output₂ = ps.weight*x[(d.n+1):(2*d.n)]
-    vcat(output₁, output₂), st
+function (::PSDLayer{M, N})(x::AbstractVecOrMat, ps::NamedTuple) where {M, N}
+    dim = size(x, 1)
+    @assert dim == M 
+
+    q, p = assign_q_and_p(x, dim÷2)
+    N > M ? vcat(ps.weight*q, ps.weight*p) : vcat(ps.weight'*q, ps.weight'*p)
 end
 
-function Lux.apply(d::PSDLayer{false}, A::AbstractMatrix, ps::NamedTuple, st::NamedTuple)
-    @assert size(A, 1) == 2*d.n
-    output₁ = ps.weight*A[1:d.n, :]
-    output₂ = ps.weight*A[(d.n+1):(2*d.n), :]
-    vcat(output₁, output₂), st
+function (::PSDLayer{M, N})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, N, T}
+    dim = size(x, 1)
+    @assert dim == M 
+
+    q, p = assign_q_and_p(x, dim÷2)
+    N > M ? vcat(mat_tensor_mul(ps.weight,q), mat_tensor_mul(ps.weight,p)) : vcat(mat_tensor_mul(ps.weight', q), mat_tensor_mul(ps.weight', p))
 end
 
-function Lux.apply(d::PSDLayer{true}, x::AbstractVector, ps::NamedTuple, st::NamedTuple)
-    @assert length(x) == 2*d.N
-    output₁ = ps.weight'*x[1:d.N]
-    output₂ = ps.weight'*x[(d.N+1):(2*d.N)]
-    vcat(output₁, output₂), st
+function retraction(::PSDLayer{N, M, Geodesic}, B::NamedTuple{(:weight,),Tuple{AT}}) where {N, M, AT<:StiefelLieAlgHorMatrix}
+    geodesic(B)
 end
 
-function Lux.apply(d::PSDLayer{true}, A::AbstractMatrix, ps::NamedTuple, st::NamedTuple)
-    @assert size(A, 1) == 2*d.N
-    output₁ = ps.weight'*A[1:d.N, :]
-    output₂ = ps.weight'*A[(d.N+1):(2*d.N), :]
-    vcat(output₁, output₂), st
+function retraction(::PSDLayer{N, M, Cayley}, B::NamedTuple{(:weight,),Tuple{AT}}) where {N, M, AT<:StiefelLieAlgHorMatrix}
+    cayley(B)
 end
-
-(d::PSDLayer)(x::AbstractVecOrMat, ps::NamedTuple, st::NamedTuple) = Lux.apply(d, x, ps, st)

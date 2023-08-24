@@ -40,10 +40,6 @@ function Base.rand(::Type{SymplecticStiefelManifold}, N2::Integer, n2::Integer)
     SymplecticStiefelManifold(sr!(A).S[1:N2, vcat(1:n, (N+1):(N+n))])
 end
 
-function Base.rand(::TrivialInitRNG, ::Type{SymplecticStiefelManifold{T}}, N::Int, n::Int) where T
-    @assert N ≥ n 
-    zeros(SymplecticLieAlgHorMatrix{T}, N, n)
-end
 
 function rgrad(U::SymplecticStiefelManifold, e_grad::AbstractMatrix, J::AbstractMatrix=SymplecticPotential(eltype(U),size(U,1)÷2))
     e_grad * (U' * U) + J * U * (e_grad' * J * U)

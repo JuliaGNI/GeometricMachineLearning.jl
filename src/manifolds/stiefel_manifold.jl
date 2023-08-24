@@ -65,16 +65,6 @@ function Base.:*(Y::Adjoint{T, StiefelManifold{T, AT}}, B::AbstractMatrix) where
     Y.parent.A'*B 
 end
 
-#function Base.rand(::TrivialInitRNG, ::Type{StiefelManifold{T}}, N::Int, n::Int) where T
-#@assert N ≥ n 
-#    zeros(StiefelLieAlgHorMatrix{T}, N, n)
-#end
-
-function Base.rand(::TrivialInitRNG{T}, ::Type{StiefelManifold}, N::Int, n::Int) where {T<:AbstractFloat}
-    @assert N ≥ n 
-    zeros(StiefelLieAlgHorMatrix{T}, N, n)
-end
-
 function rgrad(Y::StiefelManifold, e_grad::AbstractMatrix)
     e_grad - Y.A*(e_grad'*Y.A)
 end
