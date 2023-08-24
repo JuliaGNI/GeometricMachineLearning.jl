@@ -6,14 +6,6 @@ struct Attention{M, N, Stiefel, Retraction, add_connection, FT} <: AbstractExpli
 end
 
 default_retr = Geodesic()
-function orthonormal_activation_old(A::AbstractMatrix{T}) where T 
-    exp(T(0.5)*(A - A'))
-end
-# TODO: This can be implemented more efficiently if you write one kernel for everything!
-function orthonormal_activation_old(A::AbstractArray{T, 3}) where T 
-    tensor_exponential(T(.5)*(A - tensor_transpose(A)))
-end
-
 function orthonormal_activation(A::AbstractMatrix{T}) where T 
     reshape(orthonormal_activation(reshape(A, size(A)..., 1)), size(A)...)
 end
