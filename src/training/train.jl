@@ -67,7 +67,7 @@ function train!(nn::AbstractNeuralNetwork, _data::AbstractTrainingData, m::Optim
 
         @timeit to "Performing Optimization step" optimization_step!(opt, model(nn), params(nn), ∇params)
 
-        total_loss[j] = Loss()
+        @timeit to "Computing Loss" total_loss[j] = Loss()
 
         next!(p)
     end
