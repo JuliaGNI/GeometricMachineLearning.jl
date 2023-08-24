@@ -1,7 +1,6 @@
 using GeometricMachineLearning
 using GeometricSolutions
 using GeometricEquations
-using GeometricEquations
 using Test
 
 using GeometricProblems.HarmonicOscillator

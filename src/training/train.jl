@@ -59,7 +59,7 @@ function train!(nn::AbstractNeuralNetwork, _data::AbstractTrainingData, m::Optim
     @timeit to "Creation of Optimizer" opt = Optimizer(m, params(nn))
 
     # creation of the array to store total loss
-    total_loss = zeros(ntraining)
+    total_loss = zeros(typeof(Loss()), ntraining)
 
     # Learning runs
     p = Progress(ntraining; enabled = showprogress)
