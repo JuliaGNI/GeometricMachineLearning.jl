@@ -38,15 +38,6 @@ function Base.rand(backend::KernelAbstractions.Backend, rng::Random.AbstractRNG,
     GrassmannManifold(A)
 end
 
-#function Base.rand(::TrivialInitRNG, ::Type{GrassmannManifold{T}}, N::Int, n::Int) where T
-#@assert N ≥ n 
-#    zeros(StiefelLieAlgHorMatrix{T}, N, n)
-#end
-
-function Base.rand(::TrivialInitRNG{T}, ::Type{GrassmannManifold}, N::Int, n::Int) where {T<:AbstractFloat}
-    @assert N ≥ n 
-    zeros(GrassmannLieAlgHorMatrix{T}, N, n)
-end
 
 function rgrad(Y::GrassmannManifold, e_grad::AbstractMatrix)
     e_grad - Y*inv(Y'*Y)*(Y'*e_grad)
