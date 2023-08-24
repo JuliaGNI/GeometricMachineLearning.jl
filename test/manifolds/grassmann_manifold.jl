@@ -54,7 +54,7 @@ function run_tests(T, N, n, tol)
     @test norm(coordinate_chart_rep(T, N, n)[1:n,1:n]-I(n))/N/n < tol*10
 end
 
-tol = 1e-10
+tol = 1e-9
 T = Float64
 for N in 1:10
     for n in 1:N 

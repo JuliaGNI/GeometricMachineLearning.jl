@@ -29,7 +29,7 @@ mutable struct StiefelLieAlgHorMatrix{T, AT <: SkewSymMatrix{T}, ST <: AbstractM
 
         new{T, typeof(A), typeof(B)}(A, B, N, n)
     end 
-
+    
     function StiefelLieAlgHorMatrix(A::AbstractMatrix, n::Integer)
         N = size(A, 1)
         @assert N ≥ n 
@@ -169,30 +169,3 @@ function LinearAlgebra.mul!(C::StiefelLieAlgHorMatrix, A::StiefelLieAlgHorMatrix
 end
 LinearAlgebra.mul!(C::StiefelLieAlgHorMatrix, α::Real, A::StiefelLieAlgHorMatrix) = mul!(C, A, α)
 LinearAlgebra.rmul!(C::StiefelLieAlgHorMatrix, α::Real) = mul!(C, C, α)
-
-function convert_to_dev(dev::Device, A::StiefelLieAlgHorMatrix)
-    StiefelLieAlgHorMatrix(
-        convert_to_dev(dev, A.A),
-        convert_to_dev(dev, A.B),
-        A.N,
-        A.n
-    )
-end
-
-#this shouldn't be needed! ask Michael!
-function convert_to_dev(dev::CUDA.CuDevice, A::StiefelLieAlgHorMatrix)
-    StiefelLieAlgHorMatrix(
-        convert_to_dev(dev, A.A),
-        convert_to_dev(dev, A.B),
-        A.N,
-        A.n
-    )
-end
-function convert_to_dev(dev::CPUDevice, A::StiefelLieAlgHorMatrix)
-    StiefelLieAlgHorMatrix(
-        convert_to_dev(dev, A.A),
-        convert_to_dev(dev, A.B),
-        A.N,
-        A.n
-    )
-end
