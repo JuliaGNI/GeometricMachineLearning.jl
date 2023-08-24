@@ -14,7 +14,7 @@ At its core every neural network comprises three components: a neural network ar
 Traditionally, physical properties have been encoded into the loss function (PiNN approach), but in `GeometricMachineLearning.jl` this is exclusively done through the architectures and the optimizers of the neural network, thus giving theoretical guarantees that these properties are actually preserved.
 
 Using the package is very straightforward and is very flexible with respect to the device (CPU, CUDA, ...) and the type (Float16, Float32, Float64, ...) you want to use. The following is a simple example that should learn a sine function:
-```
+```julia
 using GeometricMachineLearning
 using CUDA
 using Zygote
