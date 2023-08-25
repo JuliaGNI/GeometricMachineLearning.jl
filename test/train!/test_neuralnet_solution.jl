@@ -11,7 +11,7 @@ include("../macro_testerror.jl")
 training_data = tra_ps_data
 neuralnet = NeuralNetwork(GSympNet(2), Float64)
 mopt = GradientOptimizer()
-method = SEuler()
+method = BasicSympNet()
 nruns = 0
 batch_size = (1,2)
 
@@ -36,8 +36,8 @@ last_sg1  = last(neural_net_solution)
 @test loss(last_sg1)         == loss(neural_net_solution)
 
 
-training_parameters2 = TrainingParameters(2*nruns, ExactHnn(), AdamOptimizer())
-training_data2 = sam_dps_data
+training_parameters2 = TrainingParameters(2*nruns, BasicSympNet(), AdamOptimizer())
+training_data2 = training_data
 train!(neural_net_solution, training_data2, training_parameters2)
 
 @test nn(neural_net_solution)            == neuralnet
@@ -56,8 +56,8 @@ last_sg2  = last(neural_net_solution)
 @test size(last_sg2)         == size(training_data2)
 @test loss(last_sg2)         == loss(neural_net_solution)
 
-training_parameters3 = TrainingParameters(nruns, ExactHnn(), MomentumOptimizer())
-training_data3 = sam_dps_data
+training_parameters3 = TrainingParameters(nruns, BasicSympNet(), MomentumOptimizer())
+training_data3 = training_data
 train!(neural_net_solution, training_data3, training_parameters3)
 
 @test nn(neural_net_solution)            == neuralnet
