@@ -69,7 +69,6 @@ module GeometricMachineLearning
     
 
     # are these needed?
-    include("gradient.jl")
     export UnknownProblem, NothingFunction
     include("utils.jl")
 
