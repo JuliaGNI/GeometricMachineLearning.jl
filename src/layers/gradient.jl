@@ -85,5 +85,5 @@ end
         size(x)[1] == M || error("Dimension mismatch.")
         N2 = M÷2 
         q, p = assign_q_and_p(x, N2)
-        return vcat(q, p + ps.weight' * (ps.scale .* d.activation(ps.weight*q .+ ps.bias)))
+        return vcat(q, p + ps.weight' * (ps.scale .* d.activation.(ps.weight*q .+ ps.bias)))
 end
