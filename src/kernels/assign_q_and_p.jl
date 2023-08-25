@@ -33,7 +33,9 @@ end
 end
 
 function assign_q_and_p(x::AbstractVector, N)
-    backend = KernelAbstractions.get_backend(x)
+    backend = try KernelAbstractions.get_backend(x)
+    catch 
+        CPU() end
     q = KernelAbstractions.allocate(backend, eltype(x), N)
     p = KernelAbstractions.allocate(backend, eltype(x), N)
     q_kernel! = assign_first_half!(backend)
@@ -44,7 +46,9 @@ function assign_q_and_p(x::AbstractVector, N)
 end
 
 function assign_q_and_p(x::AbstractMatrix, N)
-    backend = KernelAbstractions.get_backend(x)
+    backend = try KernelAbstractions.get_backend(x)
+    catch 
+        CPU() end
     q = KernelAbstractions.allocate(backend, eltype(x), N, size(x,2))
     p = KernelAbstractions.allocate(backend, eltype(x), N, size(x,2))
     q_kernel! = assign_first_half!(backend)
@@ -55,7 +59,9 @@ function assign_q_and_p(x::AbstractMatrix, N)
 end
 
 function assign_q_and_p(x::AbstractArray{T, 3}, N) where T
-    backend = KernelAbstractions.get_backend(x)
+    backend = try KernelAbstractions.get_backend(x)
+    catch 
+        CPU() end
     q = KernelAbstractions.allocate(backend, T, N, size(x,2), size(x,3))
     p = KernelAbstractions.allocate(backend, T, N, size(x,2), size(x,3))
     q_kernel! = assign_first_half!(backend)
