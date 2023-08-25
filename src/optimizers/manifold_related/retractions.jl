@@ -39,6 +39,14 @@ function retraction(::MultiHeadAttention{M, M, true, Cayley}, B::NamedTuple) whe
     cayley(B)
 end
 
+function retraction(::Attention{M, M, true, Geodesic}, B::NamedTuple) where {M}
+    geodesic(B)
+end 
+
+function retraction(::Attention{M, M, true, Cayley}, B::NamedTuple) where {M}
+    cayley(B)
+end
+
 geodesic(B::NamedTuple) = apply_toNT(geodesic, B)
 
 #you will have to fix the scalar indexing problem wrt to SkewSymMatrix!
