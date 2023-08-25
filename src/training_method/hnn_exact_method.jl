@@ -7,6 +7,7 @@ function loss_single(::TrainingMethod{HnnExactMethod}, nn::NeuralNetwork{<:Hamil
     sqeuclidean(dH[1],q̇ₙ) + sqeuclidean(dH[2],ṗₙ)
 end
 
-loss(ti::TrainingMethod{HnnExactMethod}, nn::NeuralNetwork{<:HamiltonianNeuralNetwork}, data::TrainingData{<:DataSymbol{<:DerivativePhaseSpaceSymbol}}, index_batch = eachindex(ti, data), params = nn.params) = 
-mapreduce((args...)->loss_single(Zygote.ignore(ti), Zygote.ignore(nn), Zygote.ignore(get_data(data,:q, args...)), Zygote.ignore(get_data(data,:p, args...)), Zygote.ignore(get_data(data,:q̇, args...)), Zygote.ignore(get_data(data,:ṗ, args...)), params), +, index_batch)
+get_loss(::TrainingMethod{HnnExactMethod}, ::AbstractNeuralNetwork{<:HamiltonianNeuralNetwork}, data::TrainingData{<:DataSymbol{<:DerivativePhaseSpaceSymbol}}, args) = (Zygote.ignore(get_data(data,:q, args...)), Zygote.ignore(get_data(data,:p, args...)), Zygote.ignore(get_data(data,:q̇, args...)), Zygote.ignore(get_data(data,:ṗ, args...)))
 
+loss(ti::TrainingMethod{HnnExactMethod}, nn::NeuralNetwork{<:HamiltonianNeuralNetwork}, data::TrainingData{<:DataSymbol{<:DerivativePhaseSpaceSymbol}}, index_batch = eachindex(ti, data), params = nn.params) = 
+mapreduce(args->loss_single(Zygote.ignore(ti), nn, get_loss(ti, nn, data, args)..., params), +, index_batch)

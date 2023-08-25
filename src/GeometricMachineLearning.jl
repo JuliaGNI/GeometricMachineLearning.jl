@@ -21,15 +21,18 @@ module GeometricMachineLearning
 
     import CUDA
 
-    import AbstractNeuralNetworks: Architecture, Chain, NeuralNetwork, AbstractExplicitLayer
-    import AbstractNeuralNetworks: Dense, Linear
+    import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer, AbstractExplicitCell, AbstractNeuralNetwork , NeuralNetwork
+    import AbstractNeuralNetworks: Chain, GridCell
+    import AbstractNeuralNetworks: Dense, Linear, Recurrent
     import AbstractNeuralNetworks: IdentityActivation, ZeroVector
     import AbstractNeuralNetworks: add!, update!
     import AbstractNeuralNetworks: layer
     import AbstractNeuralNetworks: initialparameters
     import AbstractNeuralNetworks: parameterlength
-    using AbstractNeuralNetworks: GlorotUniform
-
+    import AbstractNeuralNetworks: GlorotUniform
+    import AbstractNeuralNetworks: params, architecture, model, dim
+    export params, architetcure, model
+    export dim
     import GeometricIntegrators.Integrators: method
 
     export CPU, GPU
@@ -64,7 +67,6 @@ module GeometricMachineLearning
     
 
     # are these needed?
-    include("gradient.jl")
     export UnknownProblem, NothingFunction
     include("utils.jl")
 
@@ -163,13 +165,13 @@ module GeometricMachineLearning
     include("optimizers/manifold_related/modified_exponential.jl")
     include("optimizers/manifold_related/retractions.jl")
 
-    # INCLUDE ABSTRACT TRAINING integrator
-    export AbstractTrainingIntegrator
+    #INCLUDE ABSTRACT TRAINING integrator
+    export AbstractTrainingMethod
     export loss_single, loss
     
-    export HnnTrainingIntegrator
-    export LnnTrainingIntegrator
-    export SympNetTrainingIntegrator
+    export HnnTrainingMethod
+    export LnnTrainingMethod
+    export SympNetTrainingMethod
     
     include("training_method/abstract_training_method.jl")
 
@@ -188,12 +190,12 @@ module GeometricMachineLearning
 
     # INCLUDE TRAINING INTEGRATOR
 
-    export TrainingIntegrator
+    export TrainingMethod
     export type, symbol, shape
     export min_length_batch
     
     
-    include("training/training_integrator.jl")
+    include("training_method/training_method.jl")
 
      # INCLUDE DATA TRAINING STRUCTURE
     export AbstractTrainingData
@@ -216,22 +218,15 @@ module GeometricMachineLearning
     include("backends/backends.jl")
     include("backends/lux.jl")
 
-    
-    export Hnn_training_integrator
-    export Lnn_training_integrator
-    export SEuler
-    export ExactIntegrator
-    export ExactIntegratorLNN
-    export VariationalMidPointLNN
-    export SympNetIntegrator
-    export BaseIntegrator
 
-    # INCLUDE ARCHITECTURES
+    #INCLUDE ARCHITECTURES
     export HamiltonianNeuralNetwork
     export LagrangianNeuralNetwork
     export SympNet
     export LASympNet
     export GSympNet
+    export RecurrentNeuralNetwork
+    export LSTMNeuralNetwork
 
     export train!, apply!, jacobian!
     export Iterate_Sympnet
@@ -242,6 +237,8 @@ module GeometricMachineLearning
     include("architectures/lagrangian_neural_network.jl")
     include("architectures/variable_width_network.jl")
     include("architectures/sympnet.jl")
+    include("architectures/recurrent_neural_network.jl")
+    include("architectures/LSTM_neural_network.jl")
 
     export default_arch
 

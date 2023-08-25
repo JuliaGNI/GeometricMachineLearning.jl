@@ -1,8 +1,34 @@
+# Convenient structure
+struct NothingFunction <: Function end
+(::NothingFunction)(args...) = nothing
+is_NothingFunction(f::Function) = typeof(f)==NothingFunction
+
+struct UnknownProblem <: AbstractProblem end
+
+const ∞ = Inf
+
+# Functions on typple and named tuple
+
+@inline next(i::Int,j::Int) = (i,j+1)
+@inline next(i::Int) = (i+1,)
 
 @inline tuplejoin(x) = x
 @inline tuplejoin(x, y) = (x..., y...)
 @inline tuplejoin(x, y, z...) = tuplejoin(tuplejoin(x, y), z...)
 
+
+rdevelop(x) = x
+rdevelop(t::Tuple{Any}) = [rdevelop(t[1])...]
+rdevelop(t::Tuple) = [rdevelop(t[1])..., rdevelop(t[2:end])...]
+rdevelop(t::NamedTuple) = vcat([[rdevelop(e)...] for e in t]...)
+
+develop(x) = [x]
+develop(t::Tuple{Any}) = [develop(t[1])...]
+develop(t::Tuple) = [develop(t[1])..., develop(t[2:end])...]
+develop(t::NamedTuple) = vcat([[develop(e)...] for e in t]...)
+
+
+_tuplediff(t₁::Tuple,t₂::Tuple) = tuple(setdiff(Set(t₁),Set(t₂))...)
 
 function apply_toNT(fun, ps::NamedTuple...)
     for p in ps
@@ -11,9 +37,29 @@ function apply_toNT(fun, ps::NamedTuple...)
     NamedTuple{keys(ps[1])}(fun(p...) for p in zip(ps...))
 end
 
-# overloaded + operation to work with NamedTuples
+# overloaded + operation 
 _add(dx₁::NamedTuple, dx₂::NamedTuple) = apply_toNT( _add, dx₁, dx₂)
 _add(A::AbstractArray, B::AbstractArray) = A + B 
+
+function add!(C::AbstractVecOrMat, A::AbstractVecOrMat, B::AbstractVecOrMat)
+    @assert size(A) == size(B) == size(C)
+    C .= A + B
+end
+
+function add!(dx₁::NamedTuple, dx₂::NamedTuple, dx₃::NamedTuple)
+    apply_toNT(add!, dx₁, dx₂, dx₃)
+end
+
+function Base.:+(a::Float64, b::Tuple{Float64})
+    x, = b
+    return a+x
+end
+
+function Base.:+(a::Vector{Float64}, b::Tuple{Float64})
+    x, = b
+    y, = a
+    return y+x
+end
 
 
 # overloaded similar operation to work with NamedTuples
@@ -26,7 +72,6 @@ end
 function _similar(x::NamedTuple)
     NamedTuple{keys(x)}(_similar(values(x)))
 end
-
 
 #second argumen pl is "patch length"
 #this splits the image into patches of size pl×pl and then arranges them into a matrix,
@@ -46,45 +91,13 @@ function split_and_flatten(image::AbstractMatrix, pl)
     hcat(Tuple(vcat(map(j -> map(i -> flatten(image[pl*(i-1)+1:pl*i,pl*(j-1)+1:pl*j,1]), 1:pnsq),1:pnsq)...))...)
 end
 
-function add!(C::AbstractVecOrMat, A::AbstractVecOrMat, B::AbstractVecOrMat)
-    @assert size(A) == size(B) == size(C)
-    C .= A + B
-end
 
-struct NothingFunction <: Function end
-(::NothingFunction)(args...) = nothing
-is_NothingFunction(f::Function) = typeof(f)==NothingFunction
-
-
-function Base.:+(a::Float64, b::Tuple{Float64})
-    x, = b
-    return a+x
-end
-
-function Base.:+(a::Vector{Float64}, b::Tuple{Float64})
-    x, = b
-    y, = a
-    return y+x
-end
-
-#Zygote.OneElement(t1::Tuple{Float64}, t2::Tuple{Int64}, t3::Tuple{Base.OneTo{Int64}}) = Zygote.OneElement(t1[1], t2, t3)
+# utils functions on string
 
 function type_without_brace(var)
     type_str = string(typeof(var))
     replace(type_str, r"\{.*\}"=>"")
 end
-
-
-function add!(dx₁::NamedTuple, dx₂::NamedTuple, dx₃::NamedTuple)
-    apply_toNT(add!, dx₁, dx₂, dx₃)
-end
-
-struct UnknownProblem <: AbstractProblem end
-
-_tuplediff(t₁::Tuple,t₂::Tuple) = tuple(setdiff(Set(t₁),Set(t₂))...)
-
-@inline next(i::Int,j::Int) = (i,j+1)
-@inline next(i::Int) = (i+1,)
 
 function center_align_text(text,width)
     padding = max(0, width - length(text))
@@ -94,14 +107,12 @@ function center_align_text(text,width)
     return aligned_text
 end
 
-const ∞ = Inf
 
 #The following are fallback functions - maybe you want to put them into a separate file
 
 function global_section(::AbstractVecOrMat)
     nothing
 end
-
 
 struct CPUDevice end 
 
@@ -118,13 +129,3 @@ end
 function convert_to_dev(::CPUDevice, A::AbstractMatrix)
     Matrix(A)
 end
-
-#=
-function Lux.setup(dev::Device, rng::Random.AbstractRNG, d::Lux.AbstractExplicitLayer)
-    map_to_dev(A::AbstractArray) = convert_to_dev(dev, A)
-    map_to_dev(ps::NamedTuple) = apply_toNT(ps, map_to_dev)
-    ps, st = Lux.setup(rng, d) 
-    ps = map_to_dev(ps)
-    ps, st
-end
-=#

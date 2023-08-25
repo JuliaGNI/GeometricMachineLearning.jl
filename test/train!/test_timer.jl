@@ -1,8 +1,8 @@
 using GeometricMachineLearning
 using Test
 
-include("data_generation.jl")
-include("macro_testerror.jl")
+include("../data/data_generation.jl")
+include("../macro_testerror.jl")
 
 #########################################
 # Test the basic train! function

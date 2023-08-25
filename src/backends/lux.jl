@@ -3,7 +3,7 @@ import Lux
 
 struct LuxBackend <: AbstractBackend end
 
-struct LuxNeuralNetwork{AT,MT,PT,ST} <: AbstractNeuralNetwork
+struct LuxNeuralNetwork{AT,MT,PT,ST} <: AbstractNeuralNetwork{AT}
     architecture::AT
     model::MT
     params::PT
@@ -58,7 +58,7 @@ function update!(::Lux.AbstractExplicitLayer, x::NamedTuple, dx::NamedTuple, η:
 end
 
 
-@inline dim(nn::NeuralNetwork) = dim(nn.architecture)
+@inline AbstractNeuralNetworks.dim(nn::NeuralNetwork) = dim(nn.architecture)
 
 
 

@@ -10,7 +10,7 @@ struct HamiltonianNeuralNetwork{AT} <: Architecture
     end
 end
 
-@inline dim(arch::HamiltonianNeuralNetwork) = arch.dimin
+@inline AbstractNeuralNetworks.dim(arch::HamiltonianNeuralNetwork) = arch.dimin
 
 function Chain(nn::HamiltonianNeuralNetwork)
     inner_layers = Tuple(
@@ -25,10 +25,10 @@ function Chain(nn::HamiltonianNeuralNetwork)
 end
 
 # gradient of the Hamiltonian Neural Network
-gradient(nn::NeuralNetwork{<:HamiltonianNeuralNetwork}, x, params = nn.params) = Zygote.gradient(ξ -> sum(nn(ξ, params)), x)[1]
+gradient(nn::AbstractNeuralNetwork{<:HamiltonianNeuralNetwork}, x, params = nn.params) = Zygote.gradient(ξ -> sum(nn(ξ, params)), x)[1]
 
 # vector field of the Hamiltonian Neural Network
-function vectorfield(nn::NeuralNetwork{<:HamiltonianNeuralNetwork}, x, params = nn.params) 
+function vectorfield(nn::AbstractNeuralNetwork{<:HamiltonianNeuralNetwork}, x, params = nn.params) 
     n_dim = length(x)÷2
     I = Diagonal(ones(n_dim))
     Z = zeros(n_dim,n_dim)

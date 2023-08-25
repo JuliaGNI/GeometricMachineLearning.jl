@@ -3,6 +3,12 @@ const DEFAULT_NRUNS = 1000
 # The loss gradient function working for all types of arguments
 loss_gradient(nn::NeuralNetwork{<:Architecture}, ti::AbstractTrainingMethod, data::AbstractTrainingData, index_batch, params = nn.params) = Zygote.gradient(p -> loss(ti, nn, data, index_batch, p), params)[1]
 
+loss_gradient(loss, index_batch, params = nn.params) = Zygote.gradient(p -> loss(p, index_batch), params)[1]
+
+#loss_gradient(nn::SymbolicNeuralNetwork, ti::AbstractTrainingMethod, data::AbstractTrainingData, index_batch, params = params(nn)) = 
+#mapreduce(args->∇loss_single(ti, nn, get_loss(ti, nn, data, args)..., params), +, index_batch)
+
+
 ####################################################################################
 ## Training on (LuxNeuralNetwork, AbstractTrainingData, OptimizerMethod, TrainingMethod, nruns, batch_size )
 ####################################################################################
@@ -25,42 +31,43 @@ Different ways of use:
 - `batch_size` : size of batch of data used for each step
 
 """
-function train!(nn::NeuralNetwork, data_in::AbstractTrainingData, m::OptimizerMethod, ti::TrainingMethod{<:AbstractTrainingMethod} = default_method(nn, data); ntraining = DEFAULT_NRUNS, batch_size = missing, showprogress::Bool = false, timer::Bool = false)
+function train!(nn::AbstractNeuralNetwork, _data::AbstractTrainingData, m::OptimizerMethod, method = default_method(nn, data); ntraining = DEFAULT_NRUNS, batch_size = missing, showprogress::Bool = false, timer::Bool = false)
 
     # create a timer
     to = TimerOutput()
 
     # copy of data in the event of modification
-    data = copy(data_in)
-
-    # verify that dimension of data and input of nn match
-    @assert dim(nn) == dim(data)
+    data = copy(_data)
 
     # create an appropriate batch size by filling in missing values with default values
-    @timeit to "Complete BatchSize" bs = complete_batch_size(data, ti, batch_size)
+    bs = typeof(method) <: TrainingMethod ? (@timeit to "Complete BatchSize" complete_batch_size(data, method, batch_size)) : batch_size
 
     # check batch_size with respect to data
     @timeit to "Check BatchSize" check_batch_size(data, bs)
 
-    # verify that shape of data depending of the ExactMethod
-    @timeit to "matching Data" data = matching(ti, data)
+    # verify that shape of data depending of the Integrator
+    typeof(method) <: TrainingMethod ? (@timeit to "matching Data"   data = matching(method, data)) : nothing
 
-    # create array to store total loss
-    total_loss = zeros(ntraining)
+    # creation of the loss function
+    Loss(params, batch) =  typeof(method) <: TrainingMethod ? loss(method, nn, data, batch, params) : method(nn, data, batch, params)
+    Loss() =  typeof(method) <: TrainingMethod ? loss(method, nn, data) : method(nn, data)
 
-    #creation of optimiser
-    @timeit to "Creation of Optimizer" opt = Optimizer(m, nn.params)
+    # creation of optimiser
+    @timeit to "Creation of Optimizer" opt = Optimizer(m, params(nn))
+
+    # creation of the array to store total loss
+    total_loss = zeros(typeof(Loss()), ntraining)
 
     # Learning runs
     p = Progress(ntraining; enabled = showprogress)
     for j in 1:ntraining
         index_batch = get_batch(data, bs; check = false)
 
-        @timeit to "Computing Grad Loss" params_grad = loss_gradient(nn, ti, data, index_batch,  nn.params) 
+        @timeit to "Computing Grad Loss" ∇params = loss_gradient(Loss, index_batch,  params(nn)) 
 
-        @timeit to "Performing Optimization step" optimization_step!(opt, nn.model, nn.params, params_grad)
+        @timeit to "Performing Optimization step" optimization_step!(opt, model(nn), params(nn), ∇params)
 
-        total_loss[j] = loss(ti, nn, data)
+        total_loss[j] = Loss()
 
         next!(p)
     end
@@ -85,11 +92,11 @@ train!(neuralnetwork, data, optimizer, training_method; nruns = 1000, batch_size
 - ``
 
 """
-function train!(nn::NeuralNetwork{<:Architecture}, data::AbstractTrainingData, tp::TrainingParameters; kwargs...)
+function train!(nn::AbstractNeuralNetwork{<:Architecture}, data::AbstractTrainingData, tp::TrainingParameters; kwarsg...)
 
-    bs = complete_batch_size(data, method(tp), batchsize(tp))
+    bs = typeof(method) <: TrainingMethod ? complete_batch_size(data, method(tp), batchsize(tp)) : batchsize(tp) 
 
-    total_loss = train!(nn, data, opt(tp), method(tp); ntraining = nruns(tp), batch_size =  bs, kwargs...)
+    total_loss = train!(nn, data, opt(tp), method(tp); ntraining = nruns(tp), batch_size =  bs, kwarsg...)
 
     sh = SingleHistory(tp, shape(data), size(data), total_loss)
     
@@ -122,12 +129,12 @@ end
 ####################################################################################
 
 
-function train!(nns::NeuralNetSolution, data::AbstractTrainingData, tp::TrainingParameters; kwarsg...)
+function train!(nns::NeuralNetSolution, data::AbstractTrainingData, tp::TrainingParameters; kwargs...)
 
     @assert tstep(data) == tstep(nns) || tstep(nns) == nothing || tstep(data) == nothing
     @assert problem(data) == problem(nns) || problem(nns) == nothing || problem(data) == nothing
     
-    total_loss = train!(nn(nns), data, opt(tp), method(tp); ntraining = nruns(tp), batch_size = batchsize(tp))
+    total_loss = train!(nn(nns), data, opt(tp), method(tp); ntraining = nruns(tp), batch_size = batchsize(tp), kwargs...)
 
     sh = SingleHistory(tp, shape(data), size(data), total_loss)
 

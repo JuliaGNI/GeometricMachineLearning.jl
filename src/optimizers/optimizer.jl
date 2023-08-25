@@ -3,7 +3,7 @@ Optimizer struct that stores the 'method' (i.e. Adam with corresponding hyperpar
 
 It takes as input an optimization method and the parameters of a network. 
 """
-mutable struct Optimizer{MT<:OptimizerMethod, CT<:Tuple}
+mutable struct Optimizer{MT<:OptimizerMethod, CT}
     method::MT
     cache::CT
     step::Int
@@ -17,7 +17,7 @@ end
 #######################################################################################
 # optimization step function
 
-function optimization_step!(o::Optimizer, d::AbstractExplicitLayer, ps::NamedTuple, C::NamedTuple, dx::NamedTuple)
+function optimization_step!(o::Optimizer, d::Union{AbstractExplicitLayer, AbstractExplicitCell}, ps::NamedTuple, C::NamedTuple, dx::NamedTuple)
     gx = rgrad(ps, dx)
     λY = GlobalSection(ps)
     B = global_rep(λY, gx)
@@ -26,14 +26,14 @@ function optimization_step!(o::Optimizer, d::AbstractExplicitLayer, ps::NamedTup
     apply_section!(ps, λY, ps₂)
 end
 
-function optimization_step!(o::Optimizer, model::Chain, ps::Tuple, dx::Tuple)
+function optimization_step!(o::Optimizer, model::Model, ps, dx)
     o.step += 1
-    for i in 1:length(model)
-        optimization_step!(o, layer(model,i), ps[i], o.cache[i], dx[i])
+    for (index, element) in zip(eachindex(model), model)
+        optimization_step!(o, element, ps[index...], o.cache[index...], dx[index...])
     end
 end
 
-function optimization_step!(o::Optimizer, model::Chain, ps::Tuple, loss)
+function optimization_step!(o::Optimizer, model::Model, ps, loss::Base.Callable)
     dx = Zygote.gradient(ps -> loss(ps), ps)[1]
     optimization_step!(o, model, ps, dx)
 end 

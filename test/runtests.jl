@@ -20,3 +20,12 @@ using SafeTestsets
 @safetestset "Optimizer #3                                                                    " begin include("optimizers/utils/modified_exponential.jl") end
 @safetestset "Optimizer #4                                                                    " begin include("optimizers/optimizer_convergence_tests/svd_optim.jl") end
 @safetestset "Optimizer #5                                                                    " begin include("optimizers/optimizer_convergence_tests/psd_optim.jl") end
+@safetestset "Data                                                                            " begin include("data/test_data.jl") end
+@safetestset "Batch                                                                           " begin include("data/test_batch.jl") end
+@safetestset "Method                                                                          " begin include("train!/test_method.jl") end
+@safetestset "Matching                                                                        " begin include("data/test_matching.jl") end
+@safetestset "TrainingSet                                                                     " begin include("train!/test_trainingSet.jl") end
+@safetestset "Training                                                                        " begin include("train!/test_training.jl") end
+@safetestset "NeuralNetSolution                                                               " begin include("train!/test_neuralnet_solution.jl") end
+@safetestset "Problem & Integrators                                                           " begin include("integrator/test_integrator.jl") end
+
