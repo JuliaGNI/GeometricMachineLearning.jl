@@ -26,9 +26,10 @@ struct GSympNet{AT} <: SympNet{AT}
     nhidden::Int
     act::AT
     init_uplow::Vector{Bool}
+    allow_fast_activation::Bool
 
-    function GSympNet(dim; width=dim, nhidden=2, activation=tanh, init_uplow=[true,false]) 
-        new{typeof(activation)}(dim, width, nhidden, activation, init_uplow,)
+    function GSympNet(dim; width=dim, nhidden=2, activation=tanh, init_uplow=[true,false], allow_fast_activation = true) 
+        new{typeof(activation)}(dim, width, nhidden, activation, init_uplow, allow_fast_activation)
     end
 end
 
@@ -38,7 +39,7 @@ end
 # Chain function
 function Chain(nn::GSympNet)
     inner_layers = Tuple(
-        [Gradient(nn.dim, nn.width, nn.act, change_q = nn.init_uplow[Int64((i-1)%length(nn.init_uplow)+1)]) for i in 1:nn.nhidden]
+        [Gradient(nn.dim, nn.width, nn.act; change_q = nn.init_uplow[Int64((i-1)%length(nn.init_uplow)+1)], allow_fast_activation = nn.allow_fast_activation) for i in 1:nn.nhidden]
     )
     Chain(
         inner_layers...
