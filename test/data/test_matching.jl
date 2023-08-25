@@ -1,7 +1,7 @@
 using GeometricMachineLearning 
 using Test
 
-include("macro_testerror.jl")
+include("../macro_testerror.jl")
 include("data_generation.jl")
 
 #########################################
