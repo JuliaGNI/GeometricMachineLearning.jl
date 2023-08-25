@@ -118,7 +118,6 @@ module GeometricMachineLearning
     export StiefelManifold, SymplecticStiefelManifold, GrassmannManifold, Manifold
     export rgrad, metric
 
-    include("layers/gradient.jl")
     include("layers/linear_symplectic.jl")
     include("layers/resnet.jl")
     include("layers/manifold_layer.jl")
