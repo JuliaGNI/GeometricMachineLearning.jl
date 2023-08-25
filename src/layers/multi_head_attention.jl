@@ -16,7 +16,7 @@ function parameterlength(::MultiHeadAttention{M, M, false}) where M
 end
 
 function parameterlength(d::MultiHeadAttention{M, M, true}) where M
-    3*M*(2*M*d.n_heads - d.n_heads - M)÷(2*d.n_heads^2)
+    Int(3*M^2 - 3*M*(M + d.n_heads)/(2*d.n_heads))
 end
 
 function initialparameters(backend::KernelAbstractions.Backend, T::Type, d::MultiHeadAttention{M, M, false}; rng::AbstractRNG=Random.default_rng(), initializer::AbstractNeuralNetworks.AbstractInitializer=GlorotUniform()) where {M}
