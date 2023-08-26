@@ -39,6 +39,7 @@ module GeometricMachineLearning
     export Chain, NeuralNetwork
     export Dense, Linear
     export initialparameters
+    export parameterlength
     
     include("kernels/assign_q_and_p.jl")
     include("kernels/tensor_mat_mul.jl")

@@ -1,8 +1,8 @@
 using GeometricMachineLearning, Test
 
 function test_resnet(M, batch_size=10, T=Float32)
-    model₁ = ResNet(M, tanh, use_bias=true)
-    model₂ = ResNet(M, tanh, use_bias=false)
+    model₁ = ResNet(M, tanh, use_bias=false)
+    model₂ = ResNet(M, tanh, use_bias=true)
     ps₁ = initialparameters(CPU(), T, model₁)
     ps₂ = initialparameters(CPU(), T, model₂) 
     @test parameterlength(model₁) == M^2
@@ -11,7 +11,7 @@ function test_resnet(M, batch_size=10, T=Float32)
     A₁ = A[:,:,1]
     # test if tensors work
     @test isapprox(model₁(A, ps₁)[:,:,1], model₁(A₁, ps₁))
-    @test isapprox(model₂(A, ps₂)[:,:,1], model₂(A₂, ps₂))
+    @test isapprox(model₂(A, ps₂)[:,:,1], model₂(A₁, ps₂))
 end
 
 types = (Float32, Float64)
