@@ -130,16 +130,3 @@ function LinearAlgebra.mul!(C::SymmetricMatrix, A::SymmetricMatrix, α::Real)
 end
 LinearAlgebra.mul!(C::SymmetricMatrix, α::Real, A::SymmetricMatrix) = mul!(C, A, α)
 LinearAlgebra.rmul!(C::SymmetricMatrix, α::Real) = mul!(C, C, α)
-
-
-function convert_to_dev(dev::Device, A::SymmetricMatrix)
-    SymmetricMatrix(convert_to_dev(dev, A.S), A.n)
-end
-
-#this should not be needed!
-function convert_to_dev(dev::CUDA.CuDevice, A::SymmetricMatrix)
-    SymmetricMatrix(convert_to_dev(dev, A.S), A.n)
-end
-function convert_to_dev(dev::CPUDevice, A::SymmetricMatrix)
-    SymmetricMatrix(convert_to_dev(dev, A.S), A.n)
-end
