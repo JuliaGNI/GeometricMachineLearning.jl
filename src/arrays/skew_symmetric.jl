@@ -139,21 +139,6 @@ end
 LinearAlgebra.mul!(C::SkewSymMatrix, α::Real, A::SkewSymMatrix) = mul!(C, A, α)
 LinearAlgebra.rmul!(C::SkewSymMatrix, α::Real) = mul!(C, C, α)
 
-
-function convert_to_dev(dev::Device, A::SkewSymMatrix)
-    SkewSymMatrix(convert_to_dev(dev, A.S), A.n)
-end
-
-#this should not be needed! ask Michael!
-function convert_to_dev(dev::CUDA.CuDevice, A::SkewSymMatrix)
-    warning("This function should not be called!")
-    SkewSymMatrix(convert_to_dev(dev, A.S), A.n)
-end
-function convert_to_dev(dev::CPUDevice, A::SkewSymMatrix)
-    warning("This function should not be called!")
-    SkewSymMatrix(convert_to_dev(dev, A.S), A.n)
-end
-
 function Base.:*(A::SkewSymMatrix{T}, B::AbstractMatrix{T}) where T
     m1, m2 = size(B)
     @assert m1 == A.n

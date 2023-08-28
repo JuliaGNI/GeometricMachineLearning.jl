@@ -83,15 +83,3 @@ function global_section(Y::StiefelManifold)
     A = A - Y.A*Y.A'*A
     qr!(A).Q
 end
-
-function convert_to_dev(dev::Device, Y::StiefelManifold)
-    StiefelManifold(convert_to_dev(dev, Y.A))
-end
-
-#same problem again 
-function convert_to_dev(dev::CUDA.CuDevice, Y::StiefelManifold)
-    StiefelManifold(convert_to_dev(dev, Y.A))
-end
-function convert_to_dev(dev::CPUDevice, Y::StiefelManifold)
-    StiefelManifold(convert_to_dev(dev, Y.A))
-end
