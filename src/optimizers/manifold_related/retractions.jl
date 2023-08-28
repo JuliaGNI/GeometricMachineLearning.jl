@@ -6,40 +6,31 @@ TODO: test for Cayley vs Exp
 TODO: adapt AT <: StiefelLieAlgHorMatrix for the general case!
 """
 
+abstract type LayerWithManifold{M, N, retraction} <: AbstractExplicitLayer{M, N}  end
+abstract type LayerWithOptionalManifold{M, N, Stiefel, retraction} <: AbstractExplicitLayer{M, N} end
+
 #fallback function -> maybe put into another file!
 function retraction(::AbstractExplicitLayer, gx::NamedTuple)
     gx
 end
 
+function retraction(::LayerWithManifold{M, N, Geodesic}, B::NamedTuple) where {M,N}
+    geodesic(B)
+end
+  
 function retraction(::AbstractExplicitCell, gx::NamedTuple)
     gx
 end
 
-function retraction(::StiefelLayer{Geodesic}, B::NamedTuple)
-    geodesic(B)
-end
-
-function retraction(::StiefelLayer{Cayley}, B::NamedTuple)
-    geodesic(B)
-end
-
-function retraction(::GrassmannLayer{Geodesic}, B::NamedTuple)
-    geodesic(B)
-end
-
-function retraction(::PSDLayer{inverse, Geodesic}, B::NamedTuple) where {inverse}
-    geodesic(B)
-end
-
-function retraction(::PSDLayer{inverse, Cayley}, B::NamedTuple) where {inverse}
+function retraction(::LayerWithManifold{M, N, Cayley}, B::NamedTuple) where {M,N}
     cayley(B)
 end
 
-function retraction(::MultiHeadAttention{M, M, true, Geodesic}, B::NamedTuple) where {M}
+function retraction(::LayerWithOptionalManifold{M, N, true, Geodesic}, B::NamedTuple) where {M,N}
     geodesic(B)
 end
 
-function retraction(::MultiHeadAttention{M, M, true, Cayley}, B::NamedTuple) where {M}
+function retraction(::LayerWithOptionalManifold{M, N, true, Cayley}, B::NamedTuple) where {M,N}
     cayley(B)
 end
 

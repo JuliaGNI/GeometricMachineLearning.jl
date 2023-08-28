@@ -1,7 +1,7 @@
 """
 MultiHeadAttention (MHA) serves as a preprocessing step in the transformer. It reweights the input vectors bases on correlations within those data. 
 """
-struct Attention{M, N, Stiefel, Retraction, add_connection, FT} <: AbstractExplicitLayer{M, N}
+struct Attention{M, N, Stiefel, retraction, add_connection, FT} <: LayerWithOptionalManifold{M, N, Stiefel, retraction}
     activation::FT
 end
 
@@ -31,7 +31,7 @@ function orthonormal_activation_cayley(A::AbstractMatrix{T}) where T
 end
 
 
-function Attention(dim::Integer, activation=orthonormal_activation; Stiefel::Bool=false, retraction::AbstractRetraction=default_retr, add_connection::Bool=false)
+function Attention(dim::Integer, activation=orthonormal_activation_cayley; Stiefel::Bool=false, retraction::AbstractRetraction=default_retr, add_connection::Bool=false)
     Attention{dim, dim, Stiefel, typeof(retraction), add_connection, typeof(activation)}(activation)
 end
 

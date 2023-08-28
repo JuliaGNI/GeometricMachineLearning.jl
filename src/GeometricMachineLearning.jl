@@ -39,6 +39,7 @@ module GeometricMachineLearning
     export Chain, NeuralNetwork
     export Dense, Linear
     export initialparameters
+    export parameterlength
     
     include("kernels/assign_q_and_p.jl")
     include("kernels/tensor_mat_mul.jl")
@@ -115,6 +116,18 @@ module GeometricMachineLearning
     export StiefelManifold, SymplecticStiefelManifold, GrassmannManifold, Manifold
     export rgrad, metric
 
+    include("optimizers/optimizer_method.jl")
+    include("optimizers/optimizer_caches.jl")
+    include("optimizers/optimizer.jl")
+    include("optimizers/gradient_optimizer.jl")
+    include("optimizers/momentum_optimizer.jl")        
+    include("optimizers/adam_optimizer.jl")
+    include("optimizers/init_optimizer_cache.jl")
+
+    include("optimizers/manifold_related/global_sections.jl")
+    include("optimizers/manifold_related/modified_exponential.jl")
+    include("optimizers/manifold_related/retractions.jl")
+
     include("layers/gradient.jl")
     include("layers/linear_symplectic.jl")
     include("layers/resnet.jl")
@@ -145,14 +158,6 @@ module GeometricMachineLearning
     export optimization_step!
     export init_optimizer_cache
 
-    include("optimizers/optimizer_method.jl")
-    include("optimizers/optimizer_caches.jl")
-    include("optimizers/optimizer.jl")
-    include("optimizers/gradient_optimizer.jl")
-    include("optimizers/momentum_optimizer.jl")        
-    include("optimizers/adam_optimizer.jl")
-    include("optimizers/init_optimizer_cache.jl")
-
     export GlobalSection, apply_section
     export global_rep
     export Geodesic, Cayley
@@ -161,12 +166,9 @@ module GeometricMachineLearning
     export update!
     export check
 
-    include("optimizers/manifold_related/global_sections.jl")
-    include("optimizers/manifold_related/modified_exponential.jl")
-    include("optimizers/manifold_related/retractions.jl")
-
     #INCLUDE ABSTRACT TRAINING integrator
     export AbstractTrainingMethod
+
     export loss_single, loss
     
     export HnnTrainingMethod
