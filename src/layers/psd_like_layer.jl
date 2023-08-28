@@ -6,8 +6,7 @@ One layer has the following shape:
 A = |0 Φ|, where Φ is an element of the regular Stiefel manifold. 
 """
 
-struct PSDLayer{M, N, Retraction} <: AbstractExplicitLayer{M, N}
-end
+struct PSDLayer{M, N, retraction} <: LayerWithManifold{M, N, retraction} end
 
 default_retr = Geodesic()
 function PSDLayer(M::Integer, N::Integer; Retraction=default_retr)

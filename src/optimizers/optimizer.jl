@@ -35,16 +35,9 @@ end
 
 function optimization_step!(o::Optimizer, model::AbstractExplicitLayer, ps, dx)
     o.step += 1
+
     optimization_step!(o, model, ps, o.cache, dx)
 end
-
-# This function has an uncomfortable Zygote dependency and I think we should remove it
-#=
-function optimization_step!(o::Optimizer, model::Model, ps, loss::Base.Callable)
-    dx = Zygote.gradient(ps -> loss(ps), ps)[1]
-    optimization_step!(o, model, ps, dx)
-end 
-=#
 
 #######################################################################################
 # utils functions (should probably be put somewhere else)

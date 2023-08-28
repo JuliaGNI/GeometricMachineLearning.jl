@@ -1,7 +1,7 @@
 """
 MultiHeadAttention (MHA) serves as a preprocessing step in the transformer. It reweights the input vectors bases on correlations within those data. 
 """
-struct Attention{M, N, Stiefel, Retraction, add_connection, FT} <: AbstractExplicitLayer{M, N}
+struct Attention{M, N, Stiefel, retraction, add_connection, FT} <: LayerWithOptionalManifold{M, N, Stiefel, retraction}
     activation::FT
 end
 

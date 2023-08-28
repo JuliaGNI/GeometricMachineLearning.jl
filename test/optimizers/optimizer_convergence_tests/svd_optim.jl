@@ -56,7 +56,6 @@ function train_network!(o::Optimizer, model::Chain, ps::Tuple, A::AbstractMatrix
     for _ in 1:train_steps
         dx = Zygote.gradient(error, ps)[1]
         optimization_step!(o, model, ps, dx)
-        #println(error(ps))
     end
     ps[1].weight, ps[2].weight, error(ps)
 end
