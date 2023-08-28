@@ -49,7 +49,7 @@ learned_trajectories = model(hcat(learned_trajectories, learned_trajectories)', 
 trajectory_to_plot = Matrix{Float32}(learned_trajectories)[1,:]
 plot(trajectory_to_plot)
 ```
-The optimization of the first layer is done on the Stiefel Manifold $St(5, 10)$, and the optimizer used is the manifold version of Adam (see (Brantner, 2023)).
+The optimization of the first layer is done on the Stiefel Manifold $St(n, N)$, and the optimizer used is the manifold version of Adam (see (Brantner, 2023)).
 
 ## References
 Brantner B. Generalizing Adam To Manifolds For Efficiently Training Transformers[J]. arXiv preprint arXiv:2305.16901, 2023.

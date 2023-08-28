@@ -35,9 +35,9 @@ end
 
 function optimization_step!(o::Optimizer, model::AbstractExplicitLayer, ps, dx)
     o.step += 1
-    optimization_step!(o, model, ps, o.cache[1], dx)
-end
 
+    optimization_step!(o, model, ps, o.cache, dx)
+end
 
 #######################################################################################
 # utils functions (should probably be put somewhere else)

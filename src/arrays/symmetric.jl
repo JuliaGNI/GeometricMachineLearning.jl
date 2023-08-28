@@ -25,11 +25,11 @@ mutable struct SymmetricMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
         n = size(S)[1]
         @assert size(S)[2] == n
         S_vec = zeros(T, n*(n+1)÷2)
-        #make the input symmetric if it isn't already
+        # make the input symmetric if it isn't already
         S = T(.5)*(S + S')
-        #this is disgusting and should be removed! Here because indexing for GPUs not supported.
+        # this is disgusting and should be removed! Here because indexing for GPUs not supported.
         S_cpu = Matrix{T}(S)
-        #map the sub-diagonal elements to a vector 
+        # map the sub-diagonal elements to a vector 
         for i in 1:n
             S_vec[(i*(i-1)÷2+1):(i*(i+1)÷2)] = S_cpu[i,1:i]
         end
@@ -38,14 +38,12 @@ mutable struct SymmetricMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
     end
 end 
 
-
 function Base.getindex(A::SymmetricMatrix,i::Int,j::Int)
     if i ≥ j
         return A.S[((i-1)*i)÷2+j]
     end
     return A.S[(j-1)*j÷2+i]
 end
-
 
 Base.parent(A::SymmetricMatrix) = A.S
 Base.size(A::SymmetricMatrix) = (A.n,A.n)
@@ -130,16 +128,3 @@ function LinearAlgebra.mul!(C::SymmetricMatrix, A::SymmetricMatrix, α::Real)
 end
 LinearAlgebra.mul!(C::SymmetricMatrix, α::Real, A::SymmetricMatrix) = mul!(C, A, α)
 LinearAlgebra.rmul!(C::SymmetricMatrix, α::Real) = mul!(C, C, α)
-
-
-function convert_to_dev(dev::Device, A::SymmetricMatrix)
-    SymmetricMatrix(convert_to_dev(dev, A.S), A.n)
-end
-
-#this should not be needed!
-function convert_to_dev(dev::CUDA.CuDevice, A::SymmetricMatrix)
-    SymmetricMatrix(convert_to_dev(dev, A.S), A.n)
-end
-function convert_to_dev(dev::CPUDevice, A::SymmetricMatrix)
-    SymmetricMatrix(convert_to_dev(dev, A.S), A.n)
-end

@@ -1,5 +1,5 @@
 """
-These may be useful for testing purposes, but you should get rid of them eventually! (Or move them to tests.)
+These may be useful for testing purposes, but are no longer used in src. 
 """
 
 
