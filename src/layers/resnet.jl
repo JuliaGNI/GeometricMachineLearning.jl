@@ -2,13 +2,6 @@ struct ResNet{M, N, use_bias, F1} <: AbstractExplicitLayer{M, N}
     activation::F1
 end
 
-function Base.show(io::IO, d::ResNet{M, M, use_bias}) where {M, use_bias}
-    print(io, "ResNet($(M) => $(M)")
-    (d.activation == identity) || print(io, ", $(d.activation)")
-    use_bias || print(io, ", bias=false")
-    return print(io, ")")
-end
-
 function ResNet(dim::IT, activation=identity; use_bias::Bool=true) where {IT<:Int}
     return ResNet{dim, dim, use_bias, typeof(activation)}(activation)
 end
