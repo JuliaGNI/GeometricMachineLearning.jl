@@ -26,17 +26,17 @@ function optimization_step!(o::Optimizer, d::Union{AbstractExplicitLayer, Abstra
     apply_section!(ps, λY, ps₂)
 end
 
-function optimization_step!(o::Optimizer, model::Model, ps, dx)
+function optimization_step!(o::Optimizer, model::Chain, ps, dx)
     o.step += 1
-    for (index, element) in zip(eachindex(model), model)
+    for (index, element) in zip(eachindex(model.layers), model)
         optimization_step!(o, element, ps[index...], o.cache[index...], dx[index...])
     end
 end
 
-function optimization_step!(o::Optimizer, model::Model, ps, loss::Base.Callable)
-    dx = Zygote.gradient(ps -> loss(ps), ps)[1]
-    optimization_step!(o, model, ps, dx)
-end 
+function optimization_step!(o::Optimizer, model::AbstractExplicitLayer, ps, dx)
+    o.step += 1
+    optimization_step!(o, model, ps, o.cache[1], dx)
+end
 
 
 #######################################################################################
