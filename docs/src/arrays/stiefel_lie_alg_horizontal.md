@@ -4,7 +4,7 @@ What we use to optimize Adam (and other algorithms) to manifolds is a **global t
 
 For the Stiefel manifold, the homogeneous space takes a simple form: 
 ```math 
-B = \begin{bmatrx}
+B = \begin{bmatrix}
     A & -B^T \\ 
     B & \mathbb{O}
 \end{bmatrix}.

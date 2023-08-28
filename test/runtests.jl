@@ -1,6 +1,7 @@
 
 using SafeTestsets
 
+@safetestset "Check parameterlength                                                           " begin include("parameterlength/check_parameterlengths.jl") end
 @safetestset "Arrays #1                                                                       " begin include("arrays/array_tests.jl") end
 @safetestset "Arrays #2                                                                       " begin include("arrays/array_tests_old.jl") end
 @safetestset "Manifolds (Grassmann):                                                          " begin include("manifolds/grassmann_manifold.jl") end
@@ -15,6 +16,7 @@ using SafeTestsets
 @safetestset "Transformer Networks #5                                                         " begin include("transformer_related/transformer_application.jl") end
 @safetestset "Transformer Networks #6                                                         " begin include("transformer_related/transformer_gradient.jl") end
 @safetestset "Transformer Networks #7                                                         " begin include("transformer_related/transformer_optimizer.jl") end
+@safetestset "Attention layer #1                                                              " begin include("attention_layer/attention_setup.jl") end
 @safetestset "Optimizer #1                                                                    " begin include("optimizers/utils/global_sections.jl") end
 @safetestset "Optimizer #2                                                                    " begin include("optimizers/utils/optimization_step.jl") end
 @safetestset "Optimizer #3                                                                    " begin include("optimizers/utils/modified_exponential.jl") end

@@ -31,7 +31,7 @@ function orthonormal_activation_cayley(A::AbstractMatrix{T}) where T
 end
 
 
-function Attention(dim::Integer, activation=orthonormal_activation; Stiefel::Bool=false, retraction::AbstractRetraction=default_retr, add_connection::Bool=false)
+function Attention(dim::Integer, activation=orthonormal_activation_cayley; Stiefel::Bool=false, retraction::AbstractRetraction=default_retr, add_connection::Bool=false)
     Attention{dim, dim, Stiefel, typeof(retraction), add_connection, typeof(activation)}(activation)
 end
 
