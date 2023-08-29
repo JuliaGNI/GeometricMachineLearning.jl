@@ -1,4 +1,4 @@
-# Horizontal component of the $\mathfrak{g}$
+# Horizontal component of the Lie algebra $\mathfrak{g}$
 
 What we use to optimize Adam (and other algorithms) to manifolds is a **global tangent space representation** of the homogeneous spaces. 
 
@@ -14,7 +14,7 @@ B = \begin{bmatrix}
 
 ### Vertical and horizontal components
 
-The Stiefel manifold is a homogeneous space obtained from $SO(N)$ by setting two matrices whose first $n$ columns conincide equivalent. 
+The Stiefel manifold is a homogeneous space obtained from $SO(N)$ by setting two matrices, whose first $n$ columns conincide, equivalent. 
 Another way of expressing this is: 
 ```math
 A_1 \sim A_2 \iff A_1E = A_2E
@@ -48,4 +48,4 @@ where $A\in\mathbb{R}^{n\times{}n}$ is skew-symmetric and $B\in\mathbb{R}^{N\tim
 
 ## Special functions
 
-You can also draw random elements of that form through e.g. `rand(CUDADevice(), StiefelLieAlgHorMatrix{Float32}, 10, 5)`. Where $N=10$ and $n=5$ in this example.
+You can also draw random elements from $\mathfrak{g}^\mathrm{hor}$ through e.g. `rand(CUDADevice(), StiefelLieAlgHorMatrix{Float32}, 10, 5)`. Where $N=10$ and $n=5$ in this example.
