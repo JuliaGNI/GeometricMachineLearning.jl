@@ -23,11 +23,11 @@ makedocs(;
             ],
         "Arrays" => [
             "Global Tangent Space" => "arrays/stiefel_lie_alg_horizontal.md",
-        ]
+        ],
         "Optimizers" => [
-            "Global Sections" => "manifold_related/global_sections.md",
-            "Retractions" => "manifold_related/retractions.md",
-            "Adam Optimizer" => "adam_optimizer.md",
+            "Global Sections" => "optimizers/manifold_related/global_sections.md",
+            "Retractions" => "optimizers/manifold_related/retractions.md",
+            "Adam Optimizer" => "optimizers/adam_optimizer.md",
             ],
         "Special Neural Network Layers" => [
             "Attention" => "layers/attention_layer.md"
