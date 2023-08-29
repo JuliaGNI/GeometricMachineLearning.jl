@@ -128,8 +128,7 @@ module GeometricMachineLearning
     include("optimizers/manifold_related/modified_exponential.jl")
     include("optimizers/manifold_related/retractions.jl")
 
-    include("layers/gradient.jl")
-    include("layers/linear_symplectic.jl")
+    include("layers/sympnets.jl")
     include("layers/resnet.jl")
     include("layers/manifold_layer.jl")
     include("layers/stiefel_layer.jl")
