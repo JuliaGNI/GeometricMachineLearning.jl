@@ -10,14 +10,20 @@ end
 
 @kernel function tensor_scalar_product_kernel!(a_diff::AbstractVector{T}, x::AbstractArray{T, 3}, b_diff::AbstractArray{T, 3}) where T 
     i, j, k = @index(Global, NTuple)
-    a[i] += x[i,j,k]*b_diff[i,j,k]
+    a_diff[i] += x[i,j,k]*b_diff[i,j,k]
 end
 
-function tensor_scalar_product(x::AbstractArrau{T, 3}, b_diff::AbstractArray{T, 3}) where T 
+function tensor_scalar_product(x::AbstractArray{T, 3}, b_diff::AbstractArray{T, 3}) where T 
     a_size = size(x, 1)
     backend = KernelAbstractions.get_backend(x)
     a_diff = KernelAbstractions.zeros(backend, T, a_size)
     tensor_scalar_product! = tensor_scalar_product_kernel!(backend)
-    tensor_scalar_product!(a_diff, x, b_diff)
+    tensor_scalar_product!(a_diff, x, b_diff, ndrange=size(x))
     a_diff
 end
+
+function tensor_scalar_product(x::AbstractArray{T, 3}, b_diff::Thunk) where T
+    Thunk(() -> tensor_scalar_product(x, unthunk(b_diff)))
+end
+
+vec_tensor_mul(a::AbstractVector, b_diff::Thunk) = Thunk(() -> vec_tensor_mul(a, unthunk(b_diff)))
