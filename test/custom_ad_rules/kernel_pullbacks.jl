@@ -17,6 +17,7 @@ function main(first_dim, second_dim, third_dim, third_tensor_dim)
     test_rrule(assign_matrix, rand(first_dim, second_dim, third_tensor_dim), third_tensor_dim)
     test_rrule(assign_tensor, rand(first_dim, second_dim), third_tensor_dim, 1)
     test_rrule(assign_output_estimate, rand(first_dim, second_dim, third_tensor_dim), 1)
+    test_rrule(vec_tensor_mul, rand(first_dim), rand(first_dim, second_dim, third_tensor_dim))
 end
 
 const dim_range = 10
