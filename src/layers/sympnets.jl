@@ -92,44 +92,55 @@ function parameterlength(::Linear{M, M}) where {M}
         (M÷2)^2 
 end
 
+custom_mat_mul(weight::AbstractMatrix, x::AbstractVecOrMat) = weight*x 
+function custom_mat_mul(weight::AbstractMatrix, x::AbstractArray{T, 3}) where T 
+        mat_tensor_mul(weight, x)
+end
+
+custom_vec_mul(scale::AbstractVector, x::AbstractVecOrMat) = scale .* x 
+function custom_vec_mul(scale::AbstractVector{T}, x::AbstractArray{T, 3}) where T 
+        vec_tensor_mul(scale, x)
+end
+
+
 @inline function (d::ActivationQ{M, M})(x::AbstractVecOrMat, ps) where {M}
         size(x)[1] == M || error("Dimension mismatch.")
         N2 = M÷2
         q, p = assign_q_and_p(x, N2)
-        return vcat(q + ps.scale.*d.activation.(p), p)
+        return vcat(q + custom_vec_mul(ps.scale,d.activation.(p)), p)
 end
 
 @inline function (d::ActivationP{M, M})(x::AbstractVecOrMat, ps) where {M}
         size(x)[1] == M || error("Dimension mismatch.")
         N2 = M÷2 
         q, p = assign_q_and_p(x, N2)
-        return vcat(q, p + ps.scale.*d.activation.(q))
+        return vcat(q, p + custom_vec_mul(ps.scale,d.activation.(q)))
 end
 
 @inline function (d::GradientQ{M, M})(x::AbstractVecOrMat, ps) where {M}
         size(x)[1] == M || error("Dimension mismatch.")
         N2 = M÷2 
         q, p = assign_q_and_p(x, N2)
-        return vcat(q + ps.weight' * (ps.scale .* d.activation.(ps.weight * p .+ ps.bias)), p)
+        return vcat(q + custom_mat_mul(ps.weight', (custom_vec_mul(ps.scale, d.activation.(custom_mat_mul(ps.weight, p) .+ ps.bias)))), p)
 end
 
 @inline function(d::GradientP{M, M})(x::AbstractVecOrMat, ps) where {M}
         size(x)[1] == M || error("Dimension mismatch.")
         N2 = M÷2 
         q, p = assign_q_and_p(x, N2)
-        return vcat(q, p + ps.weight' * (ps.scale .* d.activation(ps.weight*q .+ ps.bias)))
+        return vcat(q, p + custom_mat_mul(ps.weight', (custom_vec_mul(ps.scale, d.activation.(custom_mat_mul(ps.weight, q) .+ ps.bias)))))
 end
 
-@inline function (d::LinearQ{M, M})(x::AbstractArray, ps) where {M}
+@inline function (d::LinearQ{M, M})(x::AbstractVecOrMat, ps) where {M}
         size(x)[1] == M || error("Dimension mismatch.")
         N2 = M÷2 
         q, p = assign_q_and_p(x, N2)
-        vcat(q + ps.weight*p, p)
+        vcat(q + custom_mat_mul(ps.weight,p), p)
 end
 
-@inline function (d::LinearP{M, M})(x::AbstractArray, ps) where {M}
+@inline function (d::LinearP{M, M})(x::AbstractVecOrMat, ps) where {M}
         size(x)[1] == M || error("Dimension mismatch.")
         N2 = M÷2 
         q, p = assign_q_and_p(x, N2)
-        vcat(q, p + ps.weight*q)
+        vcat(q, p + custom_mat_mul(ps.weight,q))
 end
