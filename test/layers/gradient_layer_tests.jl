@@ -21,7 +21,7 @@ function test_gradient_layer_application(T, M, N, batch_size=10)
 end
 
 function test_gradient_layer_derivative_and_update(T, M, N, batch_size=10)
-    dummy_model = Chain(Gradient(M, N, tanh; change_q=false), Gradient(M, N, tanh; change_q=true))
+    dummy_model = Chain(GradientP(M, N, tanh), GradientQ(M, N, tanh))
     ps = initialparameters(CPU(), T, dummy_model)
     o = Optimizer(AdamOptimizer(T(0.1), T(.9), T(0.999), T(3e-7)), ps)
 
