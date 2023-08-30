@@ -25,6 +25,6 @@ function sympnet_tests(N, N2=2*N, second_dim=10, third_dim=10, T=Float32)
     @test isapprox(model₁(x_ten[:,:,1], ps₁), model₁(x_ten, ps₁)[:,:,1])
     @test isapprox(model₂(x_ten[:,:,1], ps₂), model₂(x_ten, ps₂)[:,:,1])
     @test isapprox(model₃(x_ten[:,:,1], ps₃), model₃(x_ten, ps₃)[:,:,1])
-endAbstractVecOrMat
+end
 
 sympnet_tests(10)
