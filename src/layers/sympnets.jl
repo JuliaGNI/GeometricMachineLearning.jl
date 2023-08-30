@@ -12,37 +12,55 @@ with $V(p) = \sum_ia_i\Sigma(\sum_jk_{ij}p_j+b_i)$, where $\Sigma$ is the antide
 
 For the linear layer, the activation and the bias are left out, and for the activation layer K and b are left out!
 """
-abstract type SympNet{M, N} <: AbstractExplicitLayer{M, N} end
+abstract type SympNetLayer{M, N} <: AbstractExplicitLayer{M, N} end
 
-abstract type Gradient{M, N, TA} <: SympNet{M, N} end
+abstract type Gradient{M, N, TA} <: SympNetLayer{M, N} end
 
 struct GradientQ{M, N, TA} <: Gradient{M, N, TA}
         second_dim::Integer
         activation::TA
+end
+function GradientQ(M, second_dim, activation)
+        GradientQ{M, M, typeof(activation)}(second_dim, activation)
 end
 
 struct GradientP{M, N, TA} <: Gradient{M, N, TA}
         second_dim::Integer
         activation::TA
 end
+function GradientP(M, second_dim, activation)
+        GradientP{M, M, typeof(activation)}(second_dim, activation)
+end
 
-abstract type Activation{M, N, TA} <: SympNet{M, N} end
+abstract type Activation{M, N, TA} <: SympNetLayer{M, N} end
 
 struct ActivationQ{M, N, TA} <: Activation{M, N, TA} 
         activation::TA
+end
+function ActivationQ(M, activation)
+        ActivationQ{M, M, typeof(activation)}(activation)
 end
 
 struct ActivationP{M, N, TA} <: Activation{M, N, TA} 
         activation::TA
 end
+function ActivationP(M, activation)
+        ActivationP{M, M, typeof(activation)}(activation)
+end
 
-abstract type Linear{M, N} <: SympNet{M, N} end
+abstract type LinearSympNetLayer{M, N} <: SympNetLayer{M, N} end
 
-struct LinearQ{M, N} <: SympNet{M, N} 
+struct LinearQ{M, N} <: LinearSympNetLayer{M, N} 
 end 
+function LinearQ(M)
+        LinearQ{M, M}()
+end
 
-struct LinearP{M, N} <: SympNet{M, N}
+struct LinearP{M, N} <: LinearSympNetLayer{M, N}
 end 
+function LinearP(M)
+        LinearP{M, M}()
+end
 
 # check: input is even; make dim2 an optional argument for full_grad=false
 function Gradient(dim::Int, dim2::Int=dim, activation = identity; full_grad::Bool=true, change_q::Bool=true, allow_fast_activation::Bool=true)
@@ -70,16 +88,16 @@ function initialparameters(backend::Backend, ::Type{T}, d::Gradient{M, M}; rng::
         return (weight=K, bias=b, scale=a)
 end
 
-function initialparameters(backend::Backend, ::Type{T}, d::Activation{M, M}; rng::AbstractRNG = Random.default_rng(), init_scale = GlorotUniform()) where {M, T}
-        a = KernelAbstractions.zeros(backend, T, M÷2, 1)
+function initialparameters(backend::Backend, ::Type{T}, ::Activation{M, M}; rng::AbstractRNG = Random.default_rng(), init_scale = GlorotUniform()) where {M, T}
+        a = KernelAbstractions.zeros(backend, T, M÷2)
         init_scale(rng, a)
         return (scale = a,)
 end
 
-function initialparameters(backend::Backend, ::Type{T}, d::Linear{M, M}; rng::AbstractRNG = Random.default_rng(), init_weight = GlorotUniform()) where {M, T}
+function initialparameters(backend::Backend, ::Type{T}, ::LinearSympNetLayer{M, M}; rng::AbstractRNG = Random.default_rng(), init_weight = GlorotUniform()) where {M, T}
         S = KernelAbstractions.allocate(backend, T, (M÷2)*(M÷2+1)÷2)
         init_weight(rng, S)
-        (weight=SymmetricMatrix(S), )
+        (weight=SymmetricMatrix(S, M÷2), )
 end
 
 function parameterlength(d::Gradient{M, M}) where {M}
@@ -91,7 +109,7 @@ function parameterlength(::Activation{M, M}) where {M}
 end
 
 function parameterlength(::Linear{M, M}) where {M}
-        (M÷2)^2 
+        (M÷2)*(M÷2+1)÷2
 end
 
 custom_mat_mul(weight::AbstractMatrix, x::AbstractVecOrMat) = weight*x 
@@ -99,48 +117,50 @@ function custom_mat_mul(weight::AbstractMatrix, x::AbstractArray{T, 3}) where T
         mat_tensor_mul(weight, x)
 end
 
-custom_vec_mul(scale::AbstractVector, x::AbstractVecOrMat) = scale .* x 
+function custom_vec_mul(scale::AbstractVector, x::AbstractVecOrMat) 
+        scale .* x 
+end
 function custom_vec_mul(scale::AbstractVector{T}, x::AbstractArray{T, 3}) where T 
         vec_tensor_mul(scale, x)
 end
 
 
-@inline function (d::ActivationQ{M, M})(x::AbstractVecOrMat, ps) where {M}
+@inline function (d::ActivationQ{M, M})(x::AbstractArray, ps) where {M}
         size(x)[1] == M || error("Dimension mismatch.")
         N2 = M÷2
         q, p = assign_q_and_p(x, N2)
-        return vcat(q + custom_vec_mul(ps.scale,d.activation.(p)), p)
+        return vcat(q + custom_vec_mul(ps.scale, d.activation.(p)), p)
 end
 
-@inline function (d::ActivationP{M, M})(x::AbstractVecOrMat, ps) where {M}
+@inline function (d::ActivationP{M, M})(x::AbstractArray, ps) where {M}
         size(x)[1] == M || error("Dimension mismatch.")
         N2 = M÷2 
         q, p = assign_q_and_p(x, N2)
-        return vcat(q, p + custom_vec_mul(ps.scale,d.activation.(q)))
+        return vcat(q, p + custom_vec_mul(ps.scale, d.activation.(q)))
 end
 
-@inline function (d::GradientQ{M, M})(x::AbstractVecOrMat, ps) where {M}
+@inline function (d::GradientQ{M, M})(x::AbstractArray, ps) where {M}
         size(x)[1] == M || error("Dimension mismatch.")
         N2 = M÷2 
         q, p = assign_q_and_p(x, N2)
         return vcat(q + custom_mat_mul(ps.weight', (custom_vec_mul(ps.scale, d.activation.(custom_mat_mul(ps.weight, p) .+ ps.bias)))), p)
 end
 
-@inline function(d::GradientP{M, M})(x::AbstractVecOrMat, ps) where {M}
+@inline function(d::GradientP{M, M})(x::AbstractArray, ps) where {M}
         size(x)[1] == M || error("Dimension mismatch.")
         N2 = M÷2 
         q, p = assign_q_and_p(x, N2)
         return vcat(q, p + custom_mat_mul(ps.weight', (custom_vec_mul(ps.scale, d.activation.(custom_mat_mul(ps.weight, q) .+ ps.bias)))))
 end
 
-@inline function (d::LinearQ{M, M})(x::AbstractVecOrMat, ps) where {M}
+@inline function (d::LinearQ{M, M})(x::AbstractArray, ps) where {M}
         size(x)[1] == M || error("Dimension mismatch.")
         N2 = M÷2 
         q, p = assign_q_and_p(x, N2)
         vcat(q + custom_mat_mul(ps.weight,p), p)
 end
 
-@inline function (d::LinearP{M, M})(x::AbstractVecOrMat, ps) where {M}
+@inline function (d::LinearP{M, M})(x::AbstractArray, ps) where {M}
         size(x)[1] == M || error("Dimension mismatch.")
         N2 = M÷2 
         q, p = assign_q_and_p(x, N2)
