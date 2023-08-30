@@ -1,14 +1,16 @@
 @doc raw"""
-The gradient layer from the SympNet paper (https://www.sciencedirect.com/science/article/abs/pii/S0893608020303063). 
+Implements the various layers from the SympNet paper: (https://www.sciencedirect.com/science/article/abs/pii/S0893608020303063). 
 Its components are of the form: 
-$$
+
+```math
 \begin{pmatrix}
         I & \nabla{}V \\ 0 & I 
 \end{pmatrix},
-$$
-with $V(p) = \sum_ia_i\Sigma(\sum_jk_{ij}p_j+b_i)$, where $\Sigma$ is the antiderivative of the activation function $\sigma$. Such layers are by construction symplectic.
+```
 
-TODO: Implement tensor version! Implement tests!
+with $V(p) = \sum_ia_i\Sigma(\sum_jk_{ij}p_j+b_i)$, where $\Sigma$ is the antiderivative of the activation function $\sigma$ (one-layer neural network). Such layers are by construction symplectic.
+
+For the linear layer, the activation and the bias are left out, and for the activation layer K and b are left out!
 """
 abstract type SympNet{M, N} <: AbstractExplicitLayer{M, N} end
 
@@ -75,9 +77,9 @@ function initialparameters(backend::Backend, ::Type{T}, d::Activation{M, M}; rng
 end
 
 function initialparameters(backend::Backend, ::Type{T}, d::Linear{M, M}; rng::AbstractRNG = Random.default_rng(), init_weight = GlorotUniform()) where {M, T}
-        K = KernelAbstractions.allocate(backend, T, d.second_dim÷2, M÷2)
-        init_weight(rng, K)
-        (weight=K, )
+        S = KernelAbstractions.allocate(backend, T, (M÷2)*(M÷2+1)÷2)
+        init_weight(rng, S)
+        (weight=SymmetricMatrix(S), )
 end
 
 function parameterlength(d::Gradient{M, M}) where {M}
