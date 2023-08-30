@@ -52,6 +52,7 @@ module GeometricMachineLearning
     include("kernels/tensor_transpose.jl")
     include("kernels/exponentials/tensor_exponential.jl")
     include("kernels/inverses/inverse_kernel.jl")
+    include("kernels/vec_tensor_mul.jl")
 
     include("kernels/kernel_ad_routines/assign_q_and_p.jl")
     include("kernels/kernel_ad_routines/tensor_mat_mul.jl")
@@ -59,6 +60,7 @@ module GeometricMachineLearning
     include("kernels/kernel_ad_routines/tensor_tensor_mul.jl")
     include("kernels/kernel_ad_routines/tensor_transpose_tensor_mul.jl")
     include("kernels/kernel_ad_routines/tensor_transpose.jl")
+    include("kernels/kernel_ad_routines/vec_tensor_mul.jl")
     # export tensor_mat_mul
 
     include("data_loader/tensor_assign.jl")
