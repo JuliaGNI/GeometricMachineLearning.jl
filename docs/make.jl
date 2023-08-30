@@ -21,6 +21,17 @@ makedocs(;
             "Grassmann" => "manifolds/grassmann_manifold.md",
             "Stiefel" => "manifolds/stiefel_manifold.md",
             ],
+        "Arrays" => [
+            "Global Tangent Space" => "arrays/stiefel_lie_alg_horizontal.md",
+        ],
+        "Optimizers" => [
+            "Global Sections" => "optimizers/manifold_related/global_sections.md",
+            "Retractions" => "optimizers/manifold_related/retractions.md",
+            "Adam Optimizer" => "optimizers/adam_optimizer.md",
+            ],
+        "Special Neural Network Layers" => [
+            "Attention" => "layers/attention_layer.md"
+        ],
         "Library" => "library.md",
     ],
 )
