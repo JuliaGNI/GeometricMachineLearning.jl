@@ -1,6 +1,6 @@
 # Retractions
 
-Retractions are a map from the ``horizontal part'' of the Lie algebra $\mathfrak{g}^\mathrm{hor}$ to the respective manifold (homogeneous space).
+Retractions are a map from the *horizontal part* of the Lie algebra $\mathfrak{g}^\mathrm{hor}$ to the respective manifold (homogeneous space).
 
 Homogeneous spaces (i.e. the all the manifolds treated in `GeometricMachineLearning`) have the structure $\mathcal{M} = G/\sim$, i.e. are a Lie group modulu an equivalence relation.  For us this equivalence relation is: two elements $A_1$ and $A_2$ are equivalent ($A_1 \sim A_2$) iff their application to the *canonical element* $E\in\mathcal{M}$ is the same, i.e. $A_1E = A_2E$. 
 
@@ -29,9 +29,9 @@ Starting from this basic map $\exp:\mathfrak{g}\to{}G$ we can build mappings for
 
 2. Special tangent space to a homogeneous space $T_E\mathcal{M}$: For $V=BE\in{}T_E\mathcal{M}$ the exponential map is simply $\exp(B)E$. 
 
-3. General tangent space to a homogeneous space $T_Y\mathcal{M}$ for $Y = AE$: For $V=ABE\in{}T_Y\mathcal{M}$ with $Y = AE$ the exponential map is simply $A\exp(B)E$. This is the general case with which we deal with.  
+3. General tangent space to a homogeneous space $T_Y\mathcal{M}$ for $Y = AE$: For $V=ABE\in{}T_Y\mathcal{M}$ with $Y = AE$ the exponential map is simply $A\exp(B)E$. This is the general case which we deal with.  
 
-What retraction in `GeometricMachineLearning` does is the map $\mathfrak{g}^\mathrm{hor}\to\mathcal{M}$, which is the second of the above points. To get the third from the second point, we simply have to multiply with a matrix. 
+The function `retraction` in `GeometricMachineLearning` performs $\mathfrak{g}^\mathrm{hor}\to\mathcal{M}$, which is the second of the above points. To get the third from the second point, we simply have to multiply with a matrix from the left. 
 
 
 ### Word of caution
