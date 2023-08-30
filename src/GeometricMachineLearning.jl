@@ -31,7 +31,7 @@ module GeometricMachineLearning
     import AbstractNeuralNetworks: parameterlength
     import AbstractNeuralNetworks: GlorotUniform
     import AbstractNeuralNetworks: params, architecture, model, dim
-    export params, architetcure, model
+    # export params, architetcure, model
     export dim
     import GeometricIntegrators.Integrators: method
 
@@ -62,6 +62,8 @@ module GeometricMachineLearning
     # export tensor_mat_mul
 
     include("data_loader/tensor_assign.jl")
+    include("data_loader/data_loader.jl")
+    export DataLoader, redraw_batch, loss
 
     # this defines empty retraction type structs (doesn't rely on anything)
     include("optimizers/manifold_related/retraction_types.jl")
@@ -96,12 +98,6 @@ module GeometricMachineLearning
     export GrassmannLieAlgHorMatrix
     export StiefelProjection, SymplecticProjection
 
-    include("orthogonalization_procedures/symplectic_householder.jl")
-
-    # symplectic Householder routine 
-    export sr, sr!
-
-
     export Gradient
     export Linear
     export ResidualLayer
@@ -110,7 +106,7 @@ module GeometricMachineLearning
 
     include("manifolds/abstract_manifold.jl")
     include("manifolds/stiefel_manifold.jl")
-    include("manifolds/symplectic_stiefel_manifold.jl")
+    # include("manifolds/symplectic_stiefel_manifold.jl")
     include("manifolds/grassmann_manifold.jl")
 
     export StiefelManifold, SymplecticStiefelManifold, GrassmannManifold, Manifold
