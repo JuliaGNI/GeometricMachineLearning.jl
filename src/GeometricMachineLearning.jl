@@ -105,6 +105,7 @@ module GeometricMachineLearning
 
 
     export Gradient
+    export GradientQ, GradientP, ActivationQ, ActivationP, LinearQ, LinearP
     export Linear
     export ResidualLayer
     export LinearSymplecticLayerP, LinearSymplecticLayerQ
