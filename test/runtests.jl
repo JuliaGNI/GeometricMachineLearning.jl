@@ -32,4 +32,4 @@ using SafeTestsets
 @safetestset "Training                                                                        " begin include("train!/test_training.jl") end
 @safetestset "NeuralNetSolution                                                               " begin include("train!/test_neuralnet_solution.jl") end
 @safetestset "Problem & Integrators                                                           " begin include("integrator/test_integrator.jl") end
-
+@safetestset "Data Loader #1                                                                  " begin include("data_loader/data_loader.jl") end

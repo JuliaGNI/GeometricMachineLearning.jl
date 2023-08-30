@@ -48,7 +48,7 @@ end
 """
 This function draws random time steps and parameters and based on these assign the batch and the output.
 """
-function draw_batch!(batch::AbstractArray{T, 3}, output::AbstractArray{T, 3}, data::AbstractArray{T, 3}, seq_length, prediction_window, n_params, n_time_steps) where T
+function draw_batch!(batch::AbstractArray{T, 3}, output::AbstractArray{T, 3}, data::AbstractArray{T, 3}, seq_length, batch_size, prediction_window, n_params, n_time_steps) where T
     backend = KernelAbstractions.get_backend(batch)
     params = KernelAbstractions.allocate(backend, T, batch_size)
 	time_steps = KernelAbstractions.allocate(backend, T, batch_size)
@@ -59,15 +59,7 @@ function draw_batch!(batch::AbstractArray{T, 3}, output::AbstractArray{T, 3}, da
     assign_batch! = assign_batch_kernel!(backend)
     assign_output! = assign_output_kernel!(backend)
     assign_batch!(batch, data, params, time_steps, ndrange=size(batch))
-    assign_output!(output, data, params, time_steps, ndrange=size(output))
-end
-
-function loss(model, ps, batch::AbstractArray{T, 3}, output::AbstractArray{T}) where T 
-    sys_dim, prediction_window, batch_size = size(output)
-    seq_length = size(batch, 2)
-    batch_output = model(batch, ps)
-    output_estimate = assign_output_estimate(batch_output, seq_length, prediction_window)
-    norm(output - output_estimate)/T(sqrt(batch_size))/T(sqrt(prediction_window))
+    assign_output!(output, data, params, time_steps, seq_length, ndrange=size(output))
 end
 
 """
