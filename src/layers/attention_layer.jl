@@ -110,6 +110,8 @@ function upper_triangular_asymmetrize(A::AbstractArray{T, 3}) where T
     output
 end
 
+### the functions starting from here are needed for computing the derivative. 
+
 @kernel function assign_upper_triangular_kernel!(output, input)
     i,j,k = @index(Global, NTuple)
     if i < j 
