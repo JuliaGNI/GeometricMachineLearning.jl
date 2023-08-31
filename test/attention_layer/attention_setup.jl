@@ -6,7 +6,7 @@ using LinearAlgebra: det
 function attention_tests(N, T=Float32)
     model₁ = Attention(N, Stiefel=false)
     model₂ = Attention(N, Stiefel=true)
-    model₃ = Attention(N, Stiefel=false, activation=orthonormal_activation)
+    model₃ = Attention(N, orthonormal_activation, Stiefel=false)
     # same as model₁, but with the add connection
     model₄ = Attention(N, Stiefel=false, add_connection=true)
 
