@@ -25,7 +25,7 @@ function attention_tests(N, T=Float32)
     @test isapprox(det₂, det₃)
     @test isapprox(det₃, det₄)
 
-    @test isapprox(model₁(A, ps₁), model₄(A, ps₁))
+    @test isapprox(model₁(A, ps₁), model₄(A, ps₁)-A)
 
     A = reshape(rand(SkewSymMatrix{T}, N), N, N, 1)
     @test isapprox(A, upper_triangular_asymmetrize(A))
