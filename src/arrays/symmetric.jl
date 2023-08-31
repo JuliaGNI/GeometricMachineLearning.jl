@@ -10,9 +10,7 @@ A ↦ .5*(A + Aᵀ).
 This is a projection defined via the canonical metric (A,B) ↦ tr(AᵀB).
 
 TODO: Overload Adjoint operation for SymmetricMatrix!! (Aᵀ = A)
-TODO: Check how LinearAlgebra implements matrix multiplication!
 """
-
 mutable struct SymmetricMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
     S::AT
     n::Integer
@@ -63,6 +61,7 @@ function Base.:-(A::SymmetricMatrix, B::SymmetricMatrix)
     SymmetricMatrix(A.S - B.S, A.n) 
 end 
 
+#=
 function Base.setindex!(A::SymmetricMatrix{T},a::T,i::Int,j::Int) where{T}
     if i ≥ j
         A.S[(i-1)*i÷2+j] = a
@@ -70,6 +69,7 @@ function Base.setindex!(A::SymmetricMatrix{T},a::T,i::Int,j::Int) where{T}
         A.S[(j-1)*j÷2+i] = a
     end
 end
+=#
 
 function Base.:-(A::SymmetricMatrix)
     SymmetricMatrix(-A.S, A.n)

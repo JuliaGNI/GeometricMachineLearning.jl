@@ -52,6 +52,7 @@ module GeometricMachineLearning
     include("kernels/tensor_transpose.jl")
     include("kernels/exponentials/tensor_exponential.jl")
     include("kernels/inverses/inverse_kernel.jl")
+    include("kernels/vec_tensor_mul.jl")
 
     include("kernels/kernel_ad_routines/assign_q_and_p.jl")
     include("kernels/kernel_ad_routines/tensor_mat_mul.jl")
@@ -59,6 +60,7 @@ module GeometricMachineLearning
     include("kernels/kernel_ad_routines/tensor_tensor_mul.jl")
     include("kernels/kernel_ad_routines/tensor_transpose_tensor_mul.jl")
     include("kernels/kernel_ad_routines/tensor_transpose.jl")
+    include("kernels/kernel_ad_routines/vec_tensor_mul.jl")
     # export tensor_mat_mul
 
     include("data_loader/tensor_assign.jl")
@@ -99,6 +101,7 @@ module GeometricMachineLearning
     export StiefelProjection, SymplecticProjection
 
     export Gradient
+    export GradientQ, GradientP, ActivationQ, ActivationP, LinearQ, LinearP
     export Linear
     export ResidualLayer
     export LinearSymplecticLayerP, LinearSymplecticLayerQ
@@ -124,8 +127,7 @@ module GeometricMachineLearning
     include("optimizers/manifold_related/modified_exponential.jl")
     include("optimizers/manifold_related/retractions.jl")
 
-    include("layers/gradient.jl")
-    include("layers/linear_symplectic.jl")
+    include("layers/sympnets.jl")
     include("layers/resnet.jl")
     include("layers/manifold_layer.jl")
     include("layers/stiefel_layer.jl")

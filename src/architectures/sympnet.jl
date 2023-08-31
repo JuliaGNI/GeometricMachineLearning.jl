@@ -55,7 +55,7 @@ function Chain(nn::LASympNet)
     end
 
     for j in 1:nn.width
-        push!(couple_layers, LinearSymplectic(nn.dim, change_q = nn.init_uplow_linear[Int64((nn.nhidden+1-1+j-1)%length(nn.init_uplow_linear)+1)], bias=(j==nn.width), init_weight=nn.init_sym_matrices, init_bias=nn.init_bias))
+        push!(couple_layers, LinearSymplecticLayer(nn.dim, change_q = nn.init_uplow_linear[Int64((nn.nhidden+1-1+j-1)%length(nn.init_uplow_linear)+1)], bias=(j==nn.width), init_weight=nn.init_sym_matrices, init_bias=nn.init_bias))
     end
     
     Chain(

@@ -48,4 +48,8 @@ where $A\in\mathbb{R}^{n\times{}n}$ is skew-symmetric and $B\in\mathbb{R}^{N\tim
 
 ## Special functions
 
-You can also draw random elements from $\mathfrak{g}^\mathrm{hor}$ through e.g. `rand(CUDADevice(), StiefelLieAlgHorMatrix{Float32}, 10, 5)`. Where $N=10$ and $n=5$ in this example.
+You can also draw random elements from $\mathfrak{g}^\mathrm{hor}$ through e.g. 
+```julia
+rand(CUDADevice(), StiefelLieAlgHorMatrix{Float32}, 10, 5)
+```
+In this example: $N=10$ and $n=5$.
