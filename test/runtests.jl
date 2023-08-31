@@ -7,6 +7,7 @@ using SafeTestsets
 @safetestset "Manifolds (Grassmann):                                                          " begin include("manifolds/grassmann_manifold.jl") end
 @safetestset "Gradient Layer                                                                  " begin include("layers/gradient_layer_tests.jl") end
 @safetestset "SympNet Layers                                                                  " begin include("layers/sympnet_layers_test.jl") end
+@safetestset "Test symplecticity of upscaling layer                                           " begin include("layers/sympnet_layers_test.jl") end 
 @safetestset "Hamiltonian Neural Network                                                      " begin include("hamiltonian_neural_network_tests.jl") end
 @safetestset "Manifold Neural Network Layers                                                  " begin include("layers/manifold_layers.jl") end
 @safetestset "Custom AD rules for kernels                                                     " begin include("custom_ad_rules/kernel_pullbacks.jl") end
