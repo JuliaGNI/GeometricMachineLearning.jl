@@ -285,7 +285,7 @@ Then we can create the neural networks depending on the backend. Here we will us
 # create Lux network
 nn = NeuralNetwork(gsympnet, LuxBackend())
 ```
-We have to define an optimizer which will be use in the training of the SympNet. For more details on optimizer, please see the corresponding documentation [Optimizer.md](../optimizer.md). For example, let us use a momentum optimizer :
+We have to define an optimizer which will be use in the training of the SympNet. For more details on optimizer, please see the corresponding documentation [Optimizer.md](../Optimizer.md). For example, let us use a momentum optimizer :
 
 ```julia
 # Optimiser
