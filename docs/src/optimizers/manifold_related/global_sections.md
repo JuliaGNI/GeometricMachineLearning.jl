@@ -21,4 +21,4 @@ In `GeometricMachineLearning` we do not deal with all vector space $\mathfrak{g}
 
 ## Optimization
 
-The output of `global_rep` is then used for all the optimization steps. See e.g. the documentation for `adam_optimizer`.
+The output of `global_rep` is then used for all the optimization steps. See e.g. the documentation on the [Adam optimizer](../adam_optimizer.md).
