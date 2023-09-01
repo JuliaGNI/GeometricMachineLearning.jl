@@ -24,7 +24,8 @@ makedocs(;
         "Arrays" => [
             "Global Tangent Space" => "arrays/stiefel_lie_alg_horizontal.md",
         ],
-        "Optimizers" => [
+        "Optimizers" => "Optimizer.md",
+        "Optimizer Utils" => [
             "Global Sections" => "optimizers/manifold_related/global_sections.md",
             "Retractions" => "optimizers/manifold_related/retractions.md",
             "Adam Optimizer" => "optimizers/adam_optimizer.md",
