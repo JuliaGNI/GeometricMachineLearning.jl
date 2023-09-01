@@ -1,4 +1,4 @@
-using GeometricMachineLearning: tensor_mat_mul, mat_tensor_mul, tensor_tensor_mul, tensor_transpose_tensor_mul, assign_q_and_p, tensor_transpose, assign_matrix, assign_tensor, assign_output_estimate, vec_tensor_mul
+using GeometricMachineLearning: tensor_mat_mul, mat_tensor_mul, tensor_tensor_mul, tensor_transpose_tensor_mul, assign_q_and_p, tensor_transpose, assign_matrix, assign_tensor, assign_output_estimate, vec_tensor_mul, upper_triangular_asymmetrize
 using ChainRulesTestUtils
 using Printf
 
@@ -18,6 +18,7 @@ function main(first_dim, second_dim, third_dim, third_tensor_dim)
     test_rrule(assign_tensor, rand(first_dim, second_dim), third_tensor_dim, 1)
     test_rrule(assign_output_estimate, rand(first_dim, second_dim, third_tensor_dim), 1)
     test_rrule(vec_tensor_mul, rand(first_dim), rand(first_dim, second_dim, third_tensor_dim))
+    test_rrule(upper_triangular_asymmetrize, rand(first_dim, first_dim, third_tensor_dim))
 end
 
 const dim_range = 10
