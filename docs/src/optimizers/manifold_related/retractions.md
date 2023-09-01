@@ -1,25 +1,19 @@
 # Retractions
 
-Retractions are a map from the *horizontal part* of the Lie algebra $\mathfrak{g}^\mathrm{hor}$ to the respective manifold (homogeneous space).
+Retractions are a map from the **horizontal component** of the Lie algebra $\mathfrak{g}^\mathrm{hor}$ to the respective manifold.
 
-Homogeneous spaces (i.e. the all the manifolds treated in `GeometricMachineLearning`) have the structure $\mathcal{M} = G/\sim$, i.e. are a Lie group modulu an equivalence relation.  For us this equivalence relation is: two elements $A_1$ and $A_2$ are equivalent ($A_1 \sim A_2$) iff their application to the *canonical element* $E\in\mathcal{M}$ is the same, i.e. $A_1E = A_2E$. 
+For optimization in neural networks (almost always first order) we solve a gradient flow equation 
 
-For the Stiefel manifold $St(n,N)$ this canonical element is 
 ```math
-E = \begin{bmatrix}
-    \mathbb{I}  \\
-    \mathbb{O}
-\end{bmatrix},
+\dot{W} = -\eta\cdot\mathrm{grad}_WL, 
 ```
-where the matrices in the first row are $\in\mathbb{R}^{n\times{}n}$ and the matrices in the second row are $\in\mathbb{R}^{(N-n)\times{}n}$.
-
-For optimization in neural networks (almost always first order) we solve a gradient flow equation $\dot{W} = -\eta\cdot\mathrm{grad}_WL$, where $\mathrm{grad}_WL$ is the *Riemannian gradient* of the loss function $L$ evaluated at position $W$.
+where $\mathrm{grad}_WL$ is the **Riemannian gradient** of the loss function $L$ evaluated at position $W$ and $\eta$ is the **learning rate**.
 
 If we deal with Euclidean spaces (vector spaces), then this gradient is just the result of an AD routine and we do not have to do anything else. 
 
-For manifolds, after we obtained the Riemannian gradient (see e.g. the section on Stiefel manifold for how this is done there), we have to solve a *geodesic equation*. This is a canonical ODE associated with any Riemannian manifold. 
+For manifolds, after we obtained the Riemannian gradient (see e.g. the section on [Stiefel manifold](../../manifolds/stiefel_manifold.md)), we have to solve a **geodesic equation**. This is a canonical ODE associated with any Riemannian manifold. 
 
-The general theory of Riemannian manifolds is rather complicated, but for the neural networks treated in `GeometricMachineLearning`, we only rely on optimization of matrix Lie groups and homogeneous spaces, which is much simpler. 
+The general theory of Riemannian manifolds is rather complicated, but for the neural networks treated in `GeometricMachineLearning`, we only rely on optimization of matrix Lie groups and [homogeneous spaces](../../manifolds/homogeneous_spaces.md), which is much simpler. 
 
 For Lie groups each tangent space is isomorphic to its Lie algebra $\mathfrak{g}\equiv{}T_\mathbb{I}G$. The geodesic map from $\mathfrak{g}$ to $G$, for matrix Lie groups with bi-invariant Riemannian metric, is simply the application of the matrix exponential $\exp$. Alternatively this can be replaced by the Cayley transform (see (Absil et al, 2008).)
  
