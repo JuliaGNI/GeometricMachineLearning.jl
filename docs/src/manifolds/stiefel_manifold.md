@@ -38,17 +38,3 @@ What was referred to as $\nabla{}L$ before can in practice be obtained with an A
 ```
 
  and $g$ is the Riemannian metric.
-
-What we use for optimizing on the Stiefel manifold (especially regarding the generalization of the Adam optimizer) is the tangent space to $E:=[e_1,\ldots,e_n]$. This consists of elements: 
-
-```math
-T_ESt(n,N) = \left\{\begin{bmatrix} A \\ B \end{bmatrix}: A\text{ skew-sym. and $B$ arbitrary}\right\}.
-```
-
-Further: 
-
-```math
-\mathfrak{g}^\mathrm{hor} = \mathfrak{g}^{\mathrm{hor},E} = \left\{\begin{bmatrix} A & -B^T \\ B & 0 \end{bmatrix}: A\text{ skew-sym. and $B$ arbitrary}\right\},
-```
-
-which is the [horizontal component](../arrays/stiefel_lie_alg_horizontal.md) of the Lie algebra at $E$.
