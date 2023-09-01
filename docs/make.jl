@@ -18,14 +18,16 @@ makedocs(;
             "SympNet" => "architectures/sympnet.md",
         ],
         "Manifolds" => [
+            "Homogeneous Spaces" => "manifolds/homogeneous_spaces.md",
             "Grassmann" => "manifolds/grassmann_manifold.md",
             "Stiefel" => "manifolds/stiefel_manifold.md",
             ],
         "Arrays" => [
             "Global Tangent Space" => "arrays/stiefel_lie_alg_horizontal.md",
         ],
-        "Optimizers" => "Optimizer.md",
-        "Optimizer Utils" => [
+        "Optimizer Framework" => "Optimizer.md",
+        "Optimizer Functions" => [
+            "Horizontal Lift" => "optimizers/manifold_related/horizontal_lift.md",
             "Global Sections" => "optimizers/manifold_related/global_sections.md",
             "Retractions" => "optimizers/manifold_related/retractions.md",
             "Adam Optimizer" => "optimizers/adam_optimizer.md",
