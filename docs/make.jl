@@ -19,8 +19,8 @@ makedocs(;
         ],
         "Manifolds" => [
             "Homogeneous Spaces" => "manifolds/homogeneous_spaces.md",
-            "Grassmann" => "manifolds/grassmann_manifold.md",
             "Stiefel" => "manifolds/stiefel_manifold.md",
+            "Grassmann" => "manifolds/grassmann_manifold.md",
             ],
         "Arrays" => [
             "Global Tangent Space" => "arrays/stiefel_lie_alg_horizontal.md",
