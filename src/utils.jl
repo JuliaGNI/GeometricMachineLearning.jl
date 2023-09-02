@@ -73,25 +73,6 @@ function _similar(x::NamedTuple)
     NamedTuple{keys(x)}(_similar(values(x)))
 end
 
-#second argumen pl is "patch length"
-#this splits the image into patches of size pl×pl and then arranges them into a matrix,
-#the columns of the matrix give the patch number.
-
-function flatten(image_patch::AbstractMatrix)
-    n, m = size(image_patch)
-    reshape(image_patch, n*m)
-end
-
-function split_and_flatten(image::AbstractMatrix, pl)
-    n, m = size(image)
-    @assert n == m
-    @assert n%pl == 0
-    #square root of patch number
-    pnsq = n ÷ pl
-    hcat(Tuple(vcat(map(j -> map(i -> flatten(image[pl*(i-1)+1:pl*i,pl*(j-1)+1:pl*j,1]), 1:pnsq),1:pnsq)...))...)
-end
-
-
 # utils functions on string
 
 function type_without_brace(var)
