@@ -17,7 +17,7 @@ In `GeometricMachineLearning`, `GlobalSection` takes an element of $Y\in{}St(n,N
 
 ## Computing the global tangent space representation based on a global section
 
-The output of the [horizontal lift](horizontal_lift.md) $\Omega$ is an element of $\mathfrak{g}^{\mathrm{hor},Y}$. For this mapping $\Omega(Y, B{}Y) = B$ if $B\in\mathfrak{g}^{\mathrm{hor},Y}$, i.e. there is **no information loss** and no projection is performed. We can map the $B\in\mathfrak{g}^{\mathfrm{hor},Y}$ to $\mathfrak{g}^\mathrm{hor}$ with $B\mapsto{}\lambda(Y)^{-1}B\lambda(Y)$.
+The output of the [horizontal lift](horizontal_lift.md) $\Omega$ is an element of $\mathfrak{g}^{\mathrm{hor},Y}$. For this mapping $\Omega(Y, B{}Y) = B$ if $B\in\mathfrak{g}^{\mathrm{hor},Y}$, i.e. there is **no information loss** and no projection is performed. We can map the $B\in\mathfrak{g}^{\mathrm{hor},Y}$ to $\mathfrak{g}^\mathrm{hor}$ with $B\mapsto{}\lambda(Y)^{-1}B\lambda(Y)$.
 
 The function `global_rep` performs both mappings at once[^1], i.e. it takes an instance of `GlobalSection` and an element of $T_YSt(n,N)$, and then returns an element of $\frak{g}^\mathrm{hor}\equiv$`StiefelLieAlgHorMatrix`.
 
