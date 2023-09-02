@@ -27,7 +27,11 @@ The Euclidean gradient of a function $L$ is equivalent to an element of the cota
 \langle\nabla{}L,\cdot\rangle:T_Y\mathcal{M} \to \mathbb{R}, \Delta \mapsto \sum_{ij}[\nabla{}L]_{ij}[\Delta]_{ij} = \mathrm{Tr}(\nabla{}L^T\Delta).
 ```
 
-We can then utilize the Riemannian metric on $\mathcal{M}$ to map the element from the cotangent space (i.e. $\nabla{}L$) to the tangent space. This element is called $\mathrm{grad}L$ here.
+We can then utilize the Riemannian metric on $\mathcal{M}$ to map the element from the cotangent space (i.e. $\nabla{}L$) to the tangent space. This element is called $\mathrm{grad}_{(\cdot)}L$ here. Explicitly, it is given by: 
+
+```math
+    \mathrm{grad}_YL = \nabla_YL - Y(\nabla_YL)^TY
+```
 
 ### `rgrad`
 
