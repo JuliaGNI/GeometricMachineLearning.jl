@@ -1,24 +1,31 @@
 # Global Sections
 
-The set of functions in `global_sections.jl` is closely related to the ones in `retractions.jl`. For simplicitly we freely discuss the Stiefel manifold as an example of a homogeneous space. The terminology here can be easily translated to other homogeneous spaces. 
-
-There are two steps to them: 
-1. A mapping from the homogeneous space $\mathcal{M}=G/\sim$ to the associated Lie group: $\mathcal{M}\to{}G$. This is done by a separate struct, called `GlobalSection`.
-2. A mapping from $T_Y\mathcal{M}\to\mathfrak{g}^\mathrm{hor}$, where $\frak{g}^\mathrm{hor}$ is the **horizontal component** to the Lie algebra (our **global tangent space representation**). See the section for `retractions.jl` for this. 
+**Global sections** are needed needed for the generalization of [Adam](../adam_optimizer.md) and other optimizers to [homogeneous spaces](../../manifolds/homogeneous_spaces.md). They are necessary to perform the two mappings represented represented by horizontal and vertical red lines in the section on the general [optimizer framework](../../Optimizer.md).
 
 ## Computing the global section
-For the Stiefel manifold, `GlobalSection` takes an element of $Y\in{}St(n,N)\equiv$`StiefelManifold{T}` and returns an instance of `GlobalSection{T, StiefelManifold{T}}`. This represents an element $A\in{}O(N)$ such that $AE = Y$. The application $O(N)\times{}St(n,N)\to{}St(n,N)$ is done with the functions `apply_section!` and `apply_section`.
+In differential geometry a **section** is always associated to some **bundle**, in our case this bundle is $\pi:G\to\mathcal{M},A\mapsto{}AE$. A section is a mapping $\mathcal{M}\to{}G$ for which $\pi$ is a left inverse, i.e. $\pi\circ\lambda = \mathrm{id}$. 
+
+For the Stiefel manifold $St(n, N)\subset\mathbb{R}^{N\times{}n}$ we compute the global section the following way: 
+1. Start with an element $Y\in{}St(n,N)$,
+2. Draw a random matrix $A\in\mathbb{R}^{N\times{}(N-n)}$,
+3. Remove the subspace spanned by $Y$ from the range of $A$: $A\gets{}A-YY^TA$
+4. Compute a **QR decomposition** of $A$ and take as section $\lambda(Y) = [Y, Q_{[1:N, 1:(N-n)]}]$.
+
+It is easy to check that $\lambda(Y)\in{}G=SO(N)$.
+
+In `GeometricMachineLearning`, `GlobalSection` takes an element of $Y\in{}St(n,N)\equiv$`StiefelManifold{T}` and returns an instance of `GlobalSection{T, StiefelManifold{T}}`. The application $O(N)\times{}St(n,N)\to{}St(n,N)$ is done with the functions `apply_section!` and `apply_section`.
 
 ## Computing the global tangent space representation based on a global section
 
-The function `global_rep` does the second step, so it takes an instance of `GlobalSection` and an element of $T_YSt(n,N)$ (simply represented through a matrix), and then returns an element of $\frak{g}^\mathrm{hor}\equiv$`StiefelLieAlgHorMatrix`.
+The output of the [horizontal lift](horizontal_lift.md) $\Omega$ is an element of $\mathfrak{g}^{\mathrm{hor},Y}$. For this mapping $\Omega(Y, B{}Y) = B$ if $B\in\mathfrak{g}^{\mathrm{hor},Y}$, i.e. there is **no information loss** and no projection is performed. We can map the $B\in\mathfrak{g}^{\mathfrm{hor},Y}$ to $\mathfrak{g}^\mathrm{hor}$ with $B\mapsto{}\lambda(Y)^{-1}B\lambda(Y)$.
 
-## Why do we need a `GlobalSection` to compute the global tangent space representation?
-
-For each element $Y\in\mathcal{M}$ we can perform a splitting $\mathfrak{g} = \mathfrak{g}^{\mathrm{hor}, Y}\oplus\mathfrak{g}^{\mathrm{ver}, Y}$, where the two subspaces are the **horizontal** and the **vertical** component of $\mathfrak{g}$ ate $Y$ respectively. For homogeneous spaces: $T_Y\mathcal{M} = \mathfrak{g}\cdot{}Y$, i.e. every tangent space to $\mathcal{M}$ can be expressed through the application of the Lie algebra to the relevant element. The vertical component consists of those elements of $\mathfrak{g}$ which are mapped to the zero element of $T_Y\mathcal{M}$, i.e. $\mathfrak{g}^{\mathrm{ver}, Y} := \mathrm{ker}(\mathfrak{g}\to{}T_Y\mathcal{M})$. The orthogonal complement of $\mathfrak{g}^{\mathrm{ver}, Y}$ is the horizontal component and is referred to by $\mathfrak{g}^{\mathrm{hor}, Y}$. This is naturally isomorphic to $T_Y\mathcal{M}$. 
-
-In `GeometricMachineLearning` we do not deal with all vector space $\mathfrak{g}^{\mathrm{hor}, Y}$, but only with $\mathfrak{g}^{\mathrm{hor}, E}\equiv\mathfrak{g}^\mathrm{hor}\equiv$`StiefelLieAlgHorMatrix`. This means we need another mapping $\mathfrak{g}^{\mathrm{hor}, Y}\to\mathfrak{g}^{\mathrm{hor}}$. `global_rep` is a composition of two mappings: $T_Y\mathcal{M} \to \mathfrak{g}^{\mathrm{hor}, Y} \to \mathfrak{g}^{\mathfrak{hor}}$. The second mapping is done through $V \to \lambda(Y)^{-1}V\lambda(Y)$, where $\lambda(Y)$ is a global section of $Y$, i.e. $\lambda(Y)\in{}G$ and $\lambda(Y)E = Y$.
+The function `global_rep` performs both mappings at once[^1], i.e. it takes an instance of `GlobalSection` and an element of $T_YSt(n,N)$, and then returns an element of $\frak{g}^\mathrm{hor}\equiv$`StiefelLieAlgHorMatrix`.
 
 ## Optimization
 
-The output of `global_rep` is then used for all the optimization steps. See e.g. the documentation on the [Adam optimizer](../adam_optimizer.md).
+The output of `global_rep` is then used for all the [optimization steps](../../Optimizer.md).
+
+## References 
+- Frankel, Theodore. The geometry of physics: an introduction. Cambridge university press, 2011.
+
+[^1]: For computational reasons.
