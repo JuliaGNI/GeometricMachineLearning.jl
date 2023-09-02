@@ -15,10 +15,7 @@ Note that this is independent of the chosen $E$.
 The tangent spaces of $\mathcal{M}$ are of the form $T_Y\mathcal{M} = \mathfrak{g}\cdot{}Y$, i.e. can be fully described through its Lie algebra. 
 Based on this we can perform a splitting of $\mathfrak{g}$ into two parts:
 
-1. The **vertical component** $\mathfrak{g}^{\mathrm{ver},Y}$ is the kernel of the map $\mathfrak{g}\to{}T_Y\mathcal{M}, V \mapsto VY$, i.e. 
-```math 
-    \mathfrak{g}^{\mathrm{ver},Y} = \{V\in\mathfrak{g}:VY = 0\}.
-```
+1. The **vertical component** $\mathfrak{g}^{\mathrm{ver},Y}$ is the kernel of the map $\mathfrak{g}\to{}T_Y\mathcal{M}, V \mapsto VY$, i.e. $\mathfrak{g}^{\mathrm{ver},Y} = \{V\in\mathfrak{g}:VY = 0\}.$
 
 2. The **horizontal component** $\mathfrak{g}^{\mathrm{hor},Y}$ is the orthogonal complement of $\mathfrak{g}^{\mathrm{ver},Y}$ in $\mathfrak{g}$. It is isomorphic to $T_Y\mathcal{M}$.
 
