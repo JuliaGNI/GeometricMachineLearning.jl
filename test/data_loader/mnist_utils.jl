@@ -1,0 +1,1 @@
+using GeometricMachineLearning: split_and_flatten
