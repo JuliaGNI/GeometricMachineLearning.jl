@@ -1,6 +1,6 @@
 # Stiefel manifold 
 
-The Stiefel manifold $St(n, N)$ is the space (a [homogeneous space](homogeneous_space.md)) of all orthonormal frames in $\mathbb{R}^{N\times{}n}$, i.e. matrices $Y\in\mathbb{R}^{N\times{}n}$ s.t. $Y^TY = \mathbb{I}_n$. It can also be seen as the special orthonormal group $SO(N)$ modulo an equivalence relation: $A\sim{}B\iff{}AE = BE$ for 
+The Stiefel manifold $St(n, N)$ is the space (a [homogeneous space](homogeneous_spaces.md)) of all orthonormal frames in $\mathbb{R}^{N\times{}n}$, i.e. matrices $Y\in\mathbb{R}^{N\times{}n}$ s.t. $Y^TY = \mathbb{I}_n$. It can also be seen as the special orthonormal group $SO(N)$ modulo an equivalence relation: $A\sim{}B\iff{}AE = BE$ for 
 
 ```math
 E = \begin{bmatrix}
