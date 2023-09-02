@@ -3,9 +3,9 @@ TODO: Add a better predictor at the end! It should set the biggest value of the 
 """
 
 using GeometricMachineLearning, LinearAlgebra, ProgressMeter, Plots, CUDA
-import Lux, Zygote, Random, MLDatasets, Flux
+import Zygote, MLDatasets
 
-#MNIST images are 28×28, so a sequence_length of 16 = 4² means the image patches are of size 7² = 49
+# MNIST images are 28×28, so a sequence_length of 16 = 4² means the image patches are of size 7² = 49
 image_dim = 28
 patch_length = 7
 n_heads = 7
@@ -15,13 +15,13 @@ patch_number = (image_dim÷patch_length)^2
 train_x, train_y = MLDatasets.MNIST(split=:train)[:]
 test_x, test_y = MLDatasets.MNIST(split=:test)[:]
 
-#preprocessing steps 
-train_x =   Tuple(map(i -> split_and_flatten(train_x[:,:,i], patch_length) |> cu, 1:size(train_x,3)))
-test_x =    Tuple(map(i -> split_and_flatten(test_x[:,:,i], patch_length) |> cu, 1:size(test_x,3)))
+# preprocessing steps 
+train_x =   Tuple(map(i -> split_and_flatten(train_x[:,:,i], patch_length), 1:size(train_x,3)))
+test_x =    Tuple(map(i -> split_and_flatten(test_x[:,:,i], patch_length), 1:size(test_x,3)))
 
-#implement this encoding yourself!
-train_y = Tuple(map(i -> Flux.onehotbatch(train_y[i, :], 0:9) |> cu, 1:size(train_y, 1)))
-test_y = Tuple(map(i -> Flux.onehotbatch(test_y[i, :], 0:9) |> cu, 1:size(test_y, 1)))
+# implement this encoding yourself!
+train_y = onehotbatch(train_y |> cu)
+test_y = onehotbatch(test_y |> cu)
 
 
 #encoder layer - final layer has to be added for evaluation purposes!
