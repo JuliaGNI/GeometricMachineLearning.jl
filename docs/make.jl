@@ -33,7 +33,8 @@ makedocs(;
             "Adam Optimizer" => "optimizers/adam_optimizer.md",
             ],
         "Special Neural Network Layers" => [
-            "Attention" => "layers/attention_layer.md"
+            "Attention" => "layers/attention_layer.md",
+            "Multihead Attention" => "layers/multihead_attention_layer.md",
         ],
         "Library" => "library.md",
     ],
