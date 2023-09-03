@@ -62,6 +62,18 @@ function draw_batch!(batch::AbstractArray{T, 3}, output::AbstractArray{T, 3}, da
     assign_output!(output, data, params, time_steps, seq_length, ndrange=size(output))
 end
 
+function draw_batch!(batch::AT, output::BT, data::AT, target::BT, batch_size, n_params) where {T, T2, AT<:AbstractArray{T, 3}, BT<:AbstractArray{T2, 3}}
+    backend = KernelAbstractions.get_backend(batch)
+    params = KernelAbstractions.allocate(backend, T, batch_size)
+    rand!(Random.default_rng(), params)
+    params = Int.(ceil.(n_params*params))
+    assign_batch! = assign_batch_kernel!(backend)
+    # for mnist this is fixed!
+    time_steps = KernelAbstractions.ones(backend, T2, batch_size)
+    assign_batch!(batch, data, params, time_steps, ndrange=size(batch))
+    assign_batch!(output, target, params, time_steps, ndrange=size(output))
+end
+
 """
 Used for differentiating assign_output_estimate (this appears in the loss). 
 """
