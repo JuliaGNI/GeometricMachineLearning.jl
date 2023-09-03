@@ -52,4 +52,4 @@ plot(trajectory_to_plot)
 The optimization of the first layer is done on the Stiefel Manifold $St(n, N)$, and the optimizer used is the manifold version of Adam (see (Brantner, 2023)).
 
 ## References
-Brantner B. Generalizing Adam To Manifolds For Efficiently Training Transformers[J]. arXiv preprint arXiv:2305.16901, 2023.
+- Brantner B. Generalizing Adam To Manifolds For Efficiently Training Transformers[J]. arXiv preprint arXiv:2305.16901, 2023.

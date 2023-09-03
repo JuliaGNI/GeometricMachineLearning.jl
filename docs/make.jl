@@ -18,19 +18,23 @@ makedocs(;
             "SympNet" => "architectures/sympnet.md",
         ],
         "Manifolds" => [
-            "Grassmann" => "manifolds/grassmann_manifold.md",
+            "Homogeneous Spaces" => "manifolds/homogeneous_spaces.md",
             "Stiefel" => "manifolds/stiefel_manifold.md",
+            "Grassmann" => "manifolds/grassmann_manifold.md",
             ],
         "Arrays" => [
             "Global Tangent Space" => "arrays/stiefel_lie_alg_horizontal.md",
         ],
-        "Optimizers" => [
+        "Optimizer Framework" => "Optimizer.md",
+        "Optimizer Functions" => [
+            "Horizontal Lift" => "optimizers/manifold_related/horizontal_lift.md",
             "Global Sections" => "optimizers/manifold_related/global_sections.md",
             "Retractions" => "optimizers/manifold_related/retractions.md",
             "Adam Optimizer" => "optimizers/adam_optimizer.md",
             ],
         "Special Neural Network Layers" => [
-            "Attention" => "layers/attention_layer.md"
+            "Attention" => "layers/attention_layer.md",
+            "Multihead Attention" => "layers/multihead_attention_layer.md",
         ],
         "Library" => "library.md",
     ],
