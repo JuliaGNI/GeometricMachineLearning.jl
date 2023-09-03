@@ -35,3 +35,4 @@ using SafeTestsets
 @safetestset "NeuralNetSolution                                                               " begin include("train!/test_neuralnet_solution.jl") end
 @safetestset "Problem & Integrators                                                           " begin include("integrator/test_integrator.jl") end
 @safetestset "Data Loader #1                                                                  " begin include("data_loader/data_loader.jl") end
+@safetestset "Data Loader #2                                                                  " begin include("data_loader/mnist_utils.jl") end
