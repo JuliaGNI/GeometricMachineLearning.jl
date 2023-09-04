@@ -13,9 +13,12 @@ GeometricMachineLearning.Chain(model::Chain, d::AbstractNeuralNetworks.AbstractE
 image_dim = 28
 patch_length = 7
 n_heads = 7
-n_layers = 10
+n_layers = 7
 patch_number = (image_dim÷patch_length)^2
 batch_size = 128
+activation = σ
+n_epochs = 1
+backend = CPU()
 
 train_x, train_y = MLDatasets.MNIST(split=:train)[:]
 test_x, test_y = MLDatasets.MNIST(split=:test)[:]
@@ -23,13 +26,13 @@ test_x, test_y = MLDatasets.MNIST(split=:test)[:]
 #encoder layer - final layer has to be added for evaluation purposes!
 Ψᵉ₁ = Chain(
     Transformer(patch_length^2, n_heads, n_layers, Stiefel=false),
-    Classification(patch_length^2, 10, softmax)
+    Classification(patch_length^2, 10, activation)
 )
 
 Ψᵉ₂ = Chain(
     #Embedding(patch_length^2, patch_number),
     Transformer(patch_length^2, n_heads, n_layers, Stiefel=true),
-    Classification(patch_length^2, 10, softmax)
+    Classification(patch_length^2, 10, activation)
 )
 
 
@@ -61,12 +64,11 @@ function transformer_training(Ψᵉ::Chain; backend=CPU(), n_training_steps=1000
     ps
 end
 
-n_epochs = 3
 # calculate number of epochs
 n_training_steps = Int(ceil(length(train_y)*n_epochs/batch_size))
 
-ps₁ = transformer_training(Ψᵉ₁, n_training_steps=n_training_steps)
-ps₂ = transformer_training(Ψᵉ₂, n_training_steps=n_training_steps)
+ps₁ = transformer_training(Ψᵉ₁, backend=backend, n_training_steps=n_training_steps)
+ps₂ = transformer_training(Ψᵉ₂, backend=backend, n_training_steps=n_training_steps)
 
 #loss_array₃ = transformer_training(Ψᵉ₂, batch_size, training_steps, err_freq, StandardOptimizer(0.001))
 #loss_array₄ = transformer_training(Ψᵉ₂, batch_size, training_steps, err_freq, MomentumOptimizer(0.001, 0.5))
