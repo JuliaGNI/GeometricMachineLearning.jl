@@ -8,7 +8,7 @@ function onehotbatch(target::AbstractVector{T}) where {T<:Integer}
     output = KernelAbstractions.zeros(backend, T, 10, length(target))
     assign_val! = assign_val_kernel!(backend)
     assign_val!(output, target, ndrange=length(target))
-    reshape(output, 10, 1, length(target))
+    reshape(output, 10, length(target), 1)
 end
 
 """
@@ -34,12 +34,12 @@ end
     i,j,k = @index(Global, NTuple)
     patch_index₁ = patch_index(i, j, patch_length, number_of_patches)
     patch_index₂ = within_patch_index(i, j, patch_length)
-    output[patch_index₂, patch_index₁, k] = input[i, j, k]
+    output[patch_index₂, k, patch_index₁] = input[i, j, k]
 end
 
 function split_and_flatten(input::AbstractArray{T, 3}, patch_length::Integer=7, number_of_patches::Integer=16) where T 
     backend = KernelAbstractions.get_backend(input)
-    output = KernelAbstractions.allocate(backend, T, patch_length^2, number_of_patches, size(input, 3))
+    output = KernelAbstractions.allocate(backend, T, patch_length^2, size(input, 3), number_of_patches)
     split_and_flatten! = split_and_flatten_kernel!(backend)
     split_and_flatten!(output, input, patch_length, number_of_patches, ndrange=size(input))
     output 
