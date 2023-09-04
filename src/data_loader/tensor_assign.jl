@@ -47,8 +47,24 @@ end
 
 """
 This function draws random time steps and parameters and based on these assign the batch and the output.
+
+For ODE DataLoader: 
+(i) batch input tensor to be written on
+(ii) batch output tensor to be written on 
+(iii) data tensor 
+
+For MNIST DataLoader:
+(i) batch input tensor to be written on
+(ii) batch output tensor to be written on 
+(iii) data tensor 
+(iv) target tensor
 """
-function draw_batch!(batch::AbstractArray{T, 3}, output::AbstractArray{T, 3}, data::AbstractArray{T, 3}, seq_length, batch_size, prediction_window, n_params, n_time_steps) where T
+function draw_batch!(batch::AbstractArray{T, 3}, output::AbstractArray{T, 3}, data::AbstractArray{T, 3}) where T
+    batch_size = size(batch, 3)
+    n_params = size(data, 2)
+    seq_length = size(batch, 2)
+    prediction_window = size(output, 2)
+    n_time_steps = size(data, 3)
     backend = KernelAbstractions.get_backend(batch)
     params = KernelAbstractions.allocate(backend, T, batch_size)
 	time_steps = KernelAbstractions.allocate(backend, T, batch_size)
@@ -62,7 +78,9 @@ function draw_batch!(batch::AbstractArray{T, 3}, output::AbstractArray{T, 3}, da
     assign_output!(output, data, params, time_steps, seq_length, ndrange=size(output))
 end
 
-function draw_batch!(batch::AT, output::BT, data::AT, target::BT, batch_size, n_params) where {T, T2, AT<:AbstractArray{T, 3}, BT<:AbstractArray{T2, 3}}
+function draw_batch!(batch::AT, output::BT, data::AT, target::BT) where {T, T2, AT<:AbstractArray{T, 3}, BT<:AbstractArray{T2, 3}}
+    batch_size = size(batch, 3)
+    n_params = size(data, 2)
     backend = KernelAbstractions.get_backend(batch)
     params = KernelAbstractions.allocate(backend, T, batch_size)
     rand!(Random.default_rng(), params)
