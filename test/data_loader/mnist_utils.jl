@@ -27,3 +27,7 @@ train_x, train_y = MLDatasets.MNIST(split=:train)[:]
 
 dl = DataLoader(train_x, train_y)
 redraw_batch(dl)
+
+model = Dense(49, 10)
+ps = initialparameters(CPU(), Float32, model)
+loss(model, ps, dl)
