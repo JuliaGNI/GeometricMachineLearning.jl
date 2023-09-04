@@ -44,7 +44,7 @@ function DataLoader(data::AbstractArray{T, 3}, seq_length=10, batch_size=32, out
 end
 
 # T and T1 are not the same because T1 is of Integer type
-function DataLoader(data::AbstractArray{T, 3}, target::AbstractVector{T1}, batch_size=32, patch_length=7) where {T, T1} 
+function DataLoader(data::AbstractArray{T, 3}, target::AbstractVector{T1}; batch_size=32, patch_length=7) where {T, T1} 
     @info "You provided a tensor and a vector as input. This will be treated as a classification problem (MNIST). Tensor axes: (i) & (ii) image axes and (iii) batch dimesnion."
     im_dim₁, im_dim₂, batch_size = size(data)
     @assert length(target) == batch_size 
