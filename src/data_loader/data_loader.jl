@@ -65,7 +65,7 @@ function redraw_batch(dl::DataLoader{T, AT, BT}) where {T, AT<:AbstractArray{T},
 end
 
 function redraw_batch(dl::DataLoader{T, AT, Nothing}) where {T, AT<:AbstractArray{T}}
-    draw_batch!(dl.batch, dl.output, dl.data, dl.target, dl.seq_length, dl.batch_size, dl.n_params)
+    draw_batch!(dl.batch, dl.output, dl.data, dl.target_tensor, dl.seq_length, dl.batch_size, dl.n_params)
 end
 
 function loss(model::Union{Chain, AbstractExplicitLayer}, ps::Union{Tuple, NamedTuple}, dl::DataLoader{T}) where T
