@@ -15,18 +15,14 @@ patch_number = (image_dim÷patch_length)^2
 train_x, train_y = MLDatasets.MNIST(split=:train)[:]
 test_x, test_y = MLDatasets.MNIST(split=:test)[:]
 
-# preprocessing steps 
-train_x =   Tuple(map(i -> split_and_flatten(train_x[:,:,i], patch_length), 1:size(train_x,3)))
-test_x =    Tuple(map(i -> split_and_flatten(test_x[:,:,i], patch_length), 1:size(test_x,3)))
+# call data loader
+dl = DataLoader(train_x, train_y, batch_size=128)
+dl_test = DataLoader(test_x, test_y, batch_size=length(test_y))
 
-# implement this encoding yourself!
-train_y = onehotbatch(train_y |> cu)
-test_y = onehotbatch(test_y |> cu)
-
+# Implement classification layer!!!
 
 #encoder layer - final layer has to be added for evaluation purposes!
 Ψᵉ₁ = Lux.Chain(
-    #Embedding(patch_length^2, patch_number),
     Transformer(patch_length^2, n_heads, n_layers, Stiefel=false),
     Lux.Dense(patch_length^2, 10, Lux.σ, use_bias=false)
 )
