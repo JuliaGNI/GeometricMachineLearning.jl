@@ -171,7 +171,7 @@ function Base.:*(A::SkewSymMatrix, b::AbstractVector{T}) where T
     A*reshape(b, size(b), 1)
 end
 
-@kernel function write_ones_kernel!(unit_matrix::AbstractMatrix{T})
+@kernel function write_ones_kernel!(unit_matrix::AbstractMatrix{T}) where T
     i, j = @index(Global, NTuple)
     unit_matrix[i, j] = one(T)
 end
