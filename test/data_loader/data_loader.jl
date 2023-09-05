@@ -4,7 +4,7 @@ function test_data_loader(sys_dim, n_time_steps, n_params, T=Float32)
     data = randn(T, sys_dim, n_time_steps, n_params)
     dl = DataLoader(data)
     dl_copy = deepcopy(dl)
-    redraw_batch(dl)
+    redraw_batch!(dl)
     @test dl !== dl_copy
 
     # first argument is sys_dim, second is number of heads, third is number of units
