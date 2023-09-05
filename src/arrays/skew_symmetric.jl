@@ -181,6 +181,7 @@ function Base.one(A::SkewSymMatrix{T}) where T
     unit_matrix = KernelAbstractions.zeros(backend, T, A.n, A.n)
     write_ones! = write_ones_kernel!(backend)
     write_ones!(unit_matrix, ndrange=size(unit_matrix))
+    unit_matrix
 end
 
 
