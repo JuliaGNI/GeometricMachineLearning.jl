@@ -173,7 +173,7 @@ end
 
 @kernel function write_ones_kernel!(unit_matrix::AbstractMatrix{T}) where T
     i = @index(Global)
-    unit_matrix[i] = one(T)
+    unit_matrix[i, i] = one(T)
 end
 
 function Base.one(A::SkewSymMatrix{T}) where T
