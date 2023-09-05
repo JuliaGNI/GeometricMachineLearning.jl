@@ -172,15 +172,15 @@ function Base.:*(A::SkewSymMatrix, b::AbstractVector{T}) where T
 end
 
 @kernel function write_ones_kernel!(unit_matrix::AbstractMatrix{T}) where T
-    i, j = @index(Global, NTuple)
-    unit_matrix[i, j] = one(T)
+    i = @index(Global)
+    unit_matrix[i] = one(T)
 end
 
 function Base.one(A::SkewSymMatrix{T}) where T
     backend = KernelAbstractions.get_backend(A.S)
     unit_matrix = KernelAbstractions.zeros(backend, T, A.n, A.n)
     write_ones! = write_ones_kernel!(backend)
-    write_ones!(unit_matrix, ndrange=size(unit_matrix))
+    write_ones!(unit_matrix, ndrange=A.n)
     unit_matrix
 end
 
