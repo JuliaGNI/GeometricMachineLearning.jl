@@ -6,6 +6,9 @@ TODO: test for Cayley vs Exp
 TODO: adapt AT <: StiefelLieAlgHorMatrix for the general case!
 """
 
+"""
+Additional types to make handling manifolds more readable.
+"""
 abstract type LayerWithManifold{M, N, retraction} <: AbstractExplicitLayer{M, N}  end
 abstract type LayerWithOptionalManifold{M, N, Stiefel, retraction} <: AbstractExplicitLayer{M, N} end
 
@@ -73,7 +76,7 @@ function cayley(B::StiefelLieAlgHorMatrix{T}) where T
     StiefelManifold(
         (One(N, T) + T(.5)*B)*
         (
-            E + hcat(vcat(T(.25)*B.A, T(.5)*B.B), vcat(T(0.5)*unit, zero(B.B)))*(exponent \ vcat(unit, T(0.5)*B.A))
+            E + hcat(vcat(T(.25)*B.A*one(B.A), T(.5)*B.B), vcat(T(0.5)*unit, zero(B.B)))*(exponent \ vcat(unit, T(0.5)*B.A*one(B.A)))
             )
     )
 end
