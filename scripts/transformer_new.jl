@@ -2,7 +2,7 @@
 TODO: Add a better predictor at the end! It should set the biggest value of the softmax to 1 and the rest to zero!
 """
 
-using GeometricMachineLearning, LinearAlgebra, ProgressMeter, Plots, CUDA, KernelAbstractions
+using GeometricMachineLearning, LinearAlgebra, ProgressMeter, Plots, CUDA
 using AbstractNeuralNetworks
 import Zygote, MLDatasets
 
@@ -54,7 +54,7 @@ function transformer_training(Ψᵉ::Chain; backend=CPU(), n_training_steps=1000
 
     progress_object = Progress(n_training_steps; enabled=true)
 
-    loss_array = KernelAbstractions.zeros(backend, eltype(train_x), n_training_steps)
+    loss_array = zeros(eltype(train_x), n_training_steps)
     for i in 1:n_training_steps
         redraw_batch!(dl)
         loss_val, pb = Zygote.pullback(ps -> loss(Ψᵉ, ps, dl), ps)
