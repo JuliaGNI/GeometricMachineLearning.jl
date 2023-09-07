@@ -19,7 +19,7 @@ n_layers = 16
 number_of_patch = (image_dim÷patch_length)^2
 batch_size = 512
 activation = softmax
-n_epochs = 20
+n_epochs = 2
 add_connection = false
 backend = CUDABackend()
 
@@ -46,7 +46,7 @@ function transformer_training(Ψᵉ::Chain; backend=CPU(), n_training_steps=1000
     dl = DataLoader(train_x, train_y, batch_size=batch_size)
     dl_test = DataLoader(test_x, test_y, batch_size=length(test_y))
 
-    ps = initialparameters(backend, eltype(dl.data), Ψᵉ) 
+    ps = initialparameters(backend, eltype(train_x), Ψᵉ) 
 
     optimizer_instance = Optimizer(o, ps)
 
@@ -54,6 +54,7 @@ function transformer_training(Ψᵉ::Chain; backend=CPU(), n_training_steps=1000
 
     progress_object = Progress(n_training_steps; enabled=true)
 
+    loss_array = KernelAbstractions.zeros(backend, eltype(train_x), n_training_steps)
     for i in 1:n_training_steps
         redraw_batch!(dl)
         loss_val, pb = Zygote.pullback(ps -> loss(Ψᵉ, ps, dl), ps)
@@ -61,18 +62,29 @@ function transformer_training(Ψᵉ::Chain; backend=CPU(), n_training_steps=1000
 
         optimization_step!(optimizer_instance, Ψᵉ, ps, dp)
         ProgressMeter.next!(progress_object; showvalues = [(:TrainingLoss, loss_val)])   
+        loss_array[i] = loss_val
     end
 
     println("final test loss: ", loss(Ψᵉ, ps, dl_test), "\n")
 
-    ps
+    ps, loss_array
 end
 
 # calculate number of epochs
 n_training_steps = Int(ceil(length(train_y)*n_epochs/batch_size))
 
-ps₁ = transformer_training(model1, backend=backend, n_training_steps=n_training_steps)
-ps₂ = transformer_training(model2, backend=backend, n_training_steps=n_training_steps)
+ps₁, loss_array₁ = transformer_training(model1, backend=backend, n_training_steps=n_training_steps)
+ps₂, loss_array₂ = transformer_training(model2, backend=backend, n_training_steps=n_training_steps)
 
-#loss_array₃ = transformer_training(Ψᵉ₂, batch_size, training_steps, err_freq, StandardOptimizer(0.001))
-#loss_array₄ = transformer_training(Ψᵉ₂, batch_size, training_steps, err_freq, MomentumOptimizer(0.001, 0.5))
+ps₃, loss_array₃ = transformer_training(model2, batch_size, training_steps, err_freq, GradientOptimizer(0.001))
+ps₄, loss_array₄ = transformer_training(model2, batch_size, training_steps, err_freq, MomentumOptimizer(0.001, 0.5))
+
+p₁ = plot(loss_array₁, color=1, label="Standard")
+plot!(p₁, loss_array₂, color=3, label="Stiefel")
+
+p₂ = plot(loss_array₂, color=3, label="Adam")
+plot!(p₂, loss_array₃, color=1, label="Gradient")
+plot!(p₂, loss_array₄, color=2, label="Momentum")
+
+png(p₁, "Stiefel_Regular")
+png(p₂, "Adam_Gradient_Momentum")
