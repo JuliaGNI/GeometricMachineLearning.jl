@@ -2,27 +2,35 @@ using Test
 using GeometricMachineLearning
 using GeometricMachineLearning: split_and_flatten
 using GeometricMachineLearning: patch_index
+using GeometricMachineLearning: within_patch_index
+using GeometricMachineLearning: index_conversion
 using MLDatasets
 import Zygote
 
 """
 This function tests if all the patch nubmers are assigned correctly, i.e. tests patch_index.
 """
-function test_correct_assignment(patch_length=7, number_of_patches=16)
-    count = zeros(16)
-    for i in 1:(Int(√number_of_patches)*patch_length)
-        for j in 1:(Int(√number_of_patches)*patch_length)
-            patch_index₁ =  patch_index(i,j,patch_length,number_of_patches)
-            count[patch_index₁] += 1
-        end 
-    end
+### Test if mapping is invertible
+function reverse_index(i::Integer, j::Integer, patch_length=7)
+    opt_i = i%patch_length==0 ? 1 : 0
+    within_patch_index = i%patch_length + opt_i*patch_length, (i÷patch_length - opt_i + 1)
 
-    for count_element in count
-        @test count_element == 49
+    sqrt_number_patches = 28÷patch_length
+    opt_j = j%sqrt_number_patches==0 ? 1 : 0 
+    patch_index = j%sqrt_number_patches + opt_j*sqrt_number_patches, (j÷sqrt_number_patches - opt_j + 1)
+    (patch_index[1]-1)*patch_length + within_patch_index[1], (patch_index[2]-1)*patch_length + within_patch_index[2]
+end 
+
+# test if this is the inverse of the other batch index conversion!
+patch_lengths = (2, 4, 7, 14)
+for patch_length in patch_lengths
+    number_of_patches = (28÷patch_length)^2
+      for i in 1:28 
+        for j in 1:28
+            @test reverse_index(index_conversion(i, j, patch_length, number_of_patches)..., patch_length) == (i, j)
+        end
     end
 end
-
-test_correct_assignment()
 
 function test_onehotbatch(V::AbstractVector{T}) where {T<:Integer} 
     V_encoded = onehotbatch(V)
@@ -32,19 +40,6 @@ function test_onehotbatch(V::AbstractVector{T}) where {T<:Integer}
 end
 
 test_onehotbatch([1, 2, 5, 0])
-
-function test_within_patch_index()
-    within_patch_indices = zeros(49)
-    for i in 1:28
-        for j in 1:28 
-            within_patch_indices[within_patch_index(i,j,7)] += 1
-        end
-    end
-    for within_patch_number in within_batch_indices 
-        @test within_patch_number == 16
-    end
-end
-
 ####### MNIST data set 
 
 train_x, train_y = MLDatasets.MNIST(split=:train)[:]
