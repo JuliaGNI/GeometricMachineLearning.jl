@@ -4,7 +4,6 @@ using GeometricMachineLearning: split_and_flatten
 using GeometricMachineLearning: patch_index
 using GeometricMachineLearning: within_patch_index
 using GeometricMachineLearning: index_conversion
-using MLDatasets
 import Zygote
 
 """
@@ -40,9 +39,11 @@ function test_onehotbatch(V::AbstractVector{T}) where {T<:Integer}
 end
 
 test_onehotbatch([1, 2, 5, 0])
-####### MNIST data set 
+####### MNIST-like data set 
 
-train_x, train_y = MLDatasets.MNIST(split=:train)[:]
+train_x = rand(Float32, 28,28,100)
+train_y = Int.(ceil.(10*rand(Float32, 100))) .- 1
+
 
 dl = DataLoader(train_x, train_y)
 redraw_batch!(dl)
