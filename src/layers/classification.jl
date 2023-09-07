@@ -26,8 +26,9 @@ function (d::Classification{M, N, true})(output::AbstractArray{T, 2}, ps::NamedT
 end
 
 function (d::Classification{M, N, false})(output::AbstractArray{T, 3}, ps::NamedTuple) where {M, N, T} 
-    d.activation(assign_output_estimate(mat_tensor_mul(ps.weight, output), 1)/size(output, 2))
+    d.activation(assign_output_estimate(mat_tensor_mul(ps.weight, output), 1))
 end
 
-#function (d::Classification{M, N, false})(output::AbstractArray{T, 2}, ps::NamedTuple) where {M, N, T} 
-#end
+function (d::Classification{M, N, false})(output::AbstractArray{T, 2}, ps::NamedTuple) where {M, N, T} 
+    d.activation(ps.weight*output[:,end:end])
+end
