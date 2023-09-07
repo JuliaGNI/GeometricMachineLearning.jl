@@ -8,32 +8,36 @@ import Zygote, MLDatasets
 
 # remove this after AbstractNeuralNetworks PR has been merged 
 GeometricMachineLearning.Chain(model::Chain, d::AbstractNeuralNetworks.AbstractExplicitLayer) = Chain(model.layers..., d)
+GeometricMachineLearning.Chain(d::AbstractNeuralNetworks.AbstractExplicitLayer, model::Chain) = Chain(d, model.layers...)
 
 # MNIST images are 28×28, so a sequence_length of 16 = 4² means the image patches are of size 7² = 49
 image_dim = 28
 patch_length = 7
+transformer_dim = 49
 n_heads = 7
-n_layers = 7
-patch_number = (image_dim÷patch_length)^2
-batch_size = 128
-activation = σ
-n_epochs = 1
-backend = CPU()
+n_layers = 16
+number_of_patch = (image_dim÷patch_length)^2
+batch_size = 512
+activation = softmax
+n_epochs = 20
+add_connection = false
+backend = CUDABackend()
 
 train_x, train_y = MLDatasets.MNIST(split=:train)[:]
 test_x, test_y = MLDatasets.MNIST(split=:test)[:]
+if backend == CUDABackend()
+	train_x = train_x |> cu 
+	test_x = test_x |> cu 
+	train_y = train_y |> cu 
+	test_y = test_y |> cu
+end
 
 #encoder layer - final layer has to be added for evaluation purposes!
-Ψᵉ₁ = Chain(
-    Transformer(patch_length^2, n_heads, n_layers, Stiefel=false),
-    Classification(patch_length^2, 10, activation)
-)
+model1 = Chain(Transformer(patch_length^2, n_heads, n_layers, Stiefel=false, add_connection=add_connection),
+	    Classification(patch_length^2, 10, activation))
 
-Ψᵉ₂ = Chain(
-    #Embedding(patch_length^2, patch_number),
-    Transformer(patch_length^2, n_heads, n_layers, Stiefel=true),
-    Classification(patch_length^2, 10, activation)
-)
+model2 = Chain(Transformer(patch_length^2, n_heads, n_layers, Stiefel=true, add_connection=add_connection),
+	    Classification(patch_length^2, 10, activation))
 
 
 # err_freq is the frequency with which the error is computed (e.g. every 100 steps)
@@ -67,8 +71,8 @@ end
 # calculate number of epochs
 n_training_steps = Int(ceil(length(train_y)*n_epochs/batch_size))
 
-ps₁ = transformer_training(Ψᵉ₁, backend=backend, n_training_steps=n_training_steps)
-ps₂ = transformer_training(Ψᵉ₂, backend=backend, n_training_steps=n_training_steps)
+ps₁ = transformer_training(model1, backend=backend, n_training_steps=n_training_steps)
+ps₂ = transformer_training(model2, backend=backend, n_training_steps=n_training_steps)
 
 #loss_array₃ = transformer_training(Ψᵉ₂, batch_size, training_steps, err_freq, StandardOptimizer(0.001))
 #loss_array₄ = transformer_training(Ψᵉ₂, batch_size, training_steps, err_freq, MomentumOptimizer(0.001, 0.5))
