@@ -2,7 +2,7 @@
 TODO: Add a better predictor at the end! It should set the biggest value of the softmax to 1 and the rest to zero!
 """
 
-using GeometricMachineLearning, LinearAlgebra, ProgressMeter, Plots, CUDA
+using GeometricMachineLearning, LinearAlgebra, ProgressMeter, Plots, CUDA, KernelAbstractions
 using AbstractNeuralNetworks
 import Zygote, MLDatasets
 
