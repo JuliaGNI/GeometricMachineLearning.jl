@@ -48,9 +48,9 @@ function geodesic(B::StiefelLieAlgHorMatrix{T}) where T
     # delete this line eventually!!!
     # A_mat = typeof(B.B)(SkewSymMatrix(Vector(B.A.S), n))
     A_mat = B.A
-    exponent = hcat(vcat(T(.5)*typeof(B.B)(A_mat), T(.25)*A_mat*A_mat - B.B'*B.B), vcat(unit, T(.5)*typeof(B.B)(A_mat)))
+    exponent = hcat(vcat(T(.5)*(A_mat*one(A_mat)), T(.25)*A_mat*A_mat - B.B'*B.B), vcat(unit, T(.5)*(A_mat*one(A_mat))))
     StiefelManifold(
-        E + hcat(vcat(T(.5)*A_mat, B.B), E)*𝔄(exponent)*vcat(unit, T(.5)*A_mat)
+        E + hcat(vcat(T(.5)*A_mat*one(A_mat), B.B), E)*𝔄(exponent)*vcat(unit, T(.5)*A_mat*one(A_mat))
     )
 end
 
@@ -72,7 +72,7 @@ function cayley(B::StiefelLieAlgHorMatrix{T}) where T
     E = typeof(B.B)(StiefelProjection(N, n, T))
     unit = typeof(B.B)(I(n))
     unit2 = I(2*n)
-    exponent = unit2 - T(.5)*hcat(vcat(T(.5)*B.A, T(.25)*B.A*B.A - B.B'*B.B), vcat(unit, T(.5)*B.A))
+    exponent = unit2 - T(.5)*hcat(vcat(T(.5)*B.A*one(B.A), T(.25)*B.A*B.A - B.B'*B.B), vcat(unit, T(.5)*B.A*one(B.A)))
     StiefelManifold(
         (One(N, T) + T(.5)*B)*
         (
