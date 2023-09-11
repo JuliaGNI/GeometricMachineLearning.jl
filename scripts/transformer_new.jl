@@ -3,93 +3,76 @@ TODO: Add a better predictor at the end! It should set the biggest value of the 
 """
 
 using GeometricMachineLearning, LinearAlgebra, ProgressMeter, Plots, CUDA
-import Lux, Zygote, Random, MLDatasets, Flux
+using AbstractNeuralNetworks
+import Zygote, MLDatasets
 
-#MNIST images are 28×28, so a sequence_length of 16 = 4² means the image patches are of size 7² = 49
+# remove this after AbstractNeuralNetworks PR has been merged 
+GeometricMachineLearning.Chain(model::Chain, d::AbstractNeuralNetworks.AbstractExplicitLayer) = Chain(model.layers..., d)
+GeometricMachineLearning.Chain(d::AbstractNeuralNetworks.AbstractExplicitLayer, model::Chain) = Chain(d, model.layers...)
+
+# MNIST images are 28×28, so a sequence_length of 16 = 4² means the image patches are of size 7² = 49
 image_dim = 28
 patch_length = 7
+transformer_dim = 49
 n_heads = 7
-n_layers = 5
-patch_number = (image_dim÷patch_length)^2
+n_layers = 16
+number_of_patch = (image_dim÷patch_length)^2
+batch_size = 512
+activation = softmax
+n_epochs = 20
+add_connection = false
+backend = CUDABackend()
 
 train_x, train_y = MLDatasets.MNIST(split=:train)[:]
 test_x, test_y = MLDatasets.MNIST(split=:test)[:]
-
-#preprocessing steps 
-train_x =   Tuple(map(i -> split_and_flatten(train_x[:,:,i], patch_length) |> cu, 1:size(train_x,3)))
-test_x =    Tuple(map(i -> split_and_flatten(test_x[:,:,i], patch_length) |> cu, 1:size(test_x,3)))
-
-#implement this encoding yourself!
-train_y = Tuple(map(i -> Flux.onehotbatch(train_y[i, :], 0:9) |> cu, 1:size(train_y, 1)))
-test_y = Tuple(map(i -> Flux.onehotbatch(test_y[i, :], 0:9) |> cu, 1:size(test_y, 1)))
-
+if backend == CUDABackend()
+	train_x = train_x |> cu 
+	test_x = test_x |> cu 
+	train_y = train_y |> cu 
+	test_y = test_y |> cu
+end
 
 #encoder layer - final layer has to be added for evaluation purposes!
-Ψᵉ₁ = Lux.Chain(
-    #Embedding(patch_length^2, patch_number),
-    Transformer(patch_length^2, n_heads, n_layers, Stiefel=false),
-    Lux.Dense(patch_length^2, 10, Lux.σ, use_bias=false)
-)
+model1 = Chain(Transformer(patch_length^2, n_heads, n_layers, Stiefel=false, add_connection=add_connection),
+	    Classification(patch_length^2, 10, activation))
 
-Ψᵉ₂ = Lux.Chain(
-    #Embedding(patch_length^2, patch_number),
-    Transformer(patch_length^2, n_heads, n_layers, Stiefel=true),
-    Lux.Dense(patch_length^2, 10, Lux.σ, use_bias=false)
-)
-
-function loss_sing(Ψᵉ, ps, st, x, y)
-    norm(sum(Lux.apply(Ψᵉ, x, ps, st)[1], dims=2)/size(x, 2) - y)
-end
-
-function loss_sing(Ψᵉ, ps, st, train_x, train_y, index)
-    loss_sing(Ψᵉ, ps, st, train_x[index], train_y[index])    
-end
-    
-function full_loss(Ψᵉ, ps, st, train_x, train_y)
-    num = length(train_x)
-    mapreduce(index -> loss_sing(Ψᵉ, ps, st, train_x, train_y, index), +, 1:num)    
-end
+model2 = Chain(Transformer(patch_length^2, n_heads, n_layers, Stiefel=true, add_connection=add_connection),
+	    Classification(patch_length^2, 10, activation))
 
 
-#err_freq is the frequency with which the error is computed (e.g. every 100 steps)
-function transformer_training(Ψᵉ::Lux.Chain, batch_size=64, training_steps=10000, o=AdamOptimizer())
-    ps, st = Lux.setup(CUDA.device(), Random.default_rng(), Ψᵉ) 
+# err_freq is the frequency with which the error is computed (e.g. every 100 steps)
+function transformer_training(Ψᵉ::Chain; backend=CPU(), n_training_steps=10000, o=AdamOptimizer())
+    # call data loader
+    dl = DataLoader(train_x, train_y, batch_size=batch_size)
+    dl_test = DataLoader(test_x, test_y, batch_size=length(test_y))
 
-    num = length(train_x)
+    ps = initialparameters(backend, eltype(dl.data), Ψᵉ) 
 
     optimizer_instance = Optimizer(o, ps)
 
-    println("initial test loss: ", full_loss(Ψᵉ, ps, st, test_x, test_y)/length(test_x), "\n")
+    println("initial test loss: ", loss(Ψᵉ, ps, dl_test), "\n")
 
-    @showprogress "Training network ..." for i in 1:training_steps
-        index₁ = Int(ceil(rand()*num))
-        x = train_x[index₁]
-        y = train_y[index₁] 
-        l, pb = Zygote.pullback(ps -> loss_sing(Ψᵉ, ps, st, x, y), ps)
-        dp = pb(one(l))[1]
+    progress_object = Progress(n_training_steps; enabled=true)
 
-        indices = Int.(ceil.(rand(batch_size -1)*num))
-        for index in indices
-            x = train_x[index] 
-            y = train_y[index] 
-            l, pb = Zygote.pullback(ps -> loss_sing(Ψᵉ, ps, st, x, y), ps)
-            dp = _add(dp, pb(one(l))[1])
-        end
+    for i in 1:n_training_steps
+        redraw_batch!(dl)
+        loss_val, pb = Zygote.pullback(ps -> loss(Ψᵉ, ps, dl), ps)
+        dp = pb(one(loss_val))[1]
 
-        optimization_step!(optimizer_instance, Ψᵉ, ps, dp)    
+        optimization_step!(optimizer_instance, Ψᵉ, ps, dp)
+        ProgressMeter.next!(progress_object; showvalues = [(:TrainingLoss, loss_val)])   
     end
 
-    println("final test loss: ", full_loss(Ψᵉ, ps, st, test_x, test_y)/length(test_x), "\n")
+    println("final test loss: ", loss(Ψᵉ, ps, dl_test), "\n")
 
     ps
 end
 
-batch_size = 100
-epochs = 10
-training_steps = Int(ceil(length(train_x)*epochs/batch_size))
+# calculate number of epochs
+n_training_steps = Int(ceil(length(train_y)*n_epochs/batch_size))
 
-ps₁ = transformer_training(Ψᵉ₁, batch_size, training_steps, AdamOptimizer())
-ps₂ = transformer_training(Ψᵉ₂, batch_size, training_steps, AdamOptimizer())
+ps₁ = transformer_training(model1, backend=backend, n_training_steps=n_training_steps)
+ps₂ = transformer_training(model2, backend=backend, n_training_steps=n_training_steps)
 
 #loss_array₃ = transformer_training(Ψᵉ₂, batch_size, training_steps, err_freq, StandardOptimizer(0.001))
 #loss_array₄ = transformer_training(Ψᵉ₂, batch_size, training_steps, err_freq, MomentumOptimizer(0.001, 0.5))

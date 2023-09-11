@@ -21,6 +21,7 @@ using SafeTestsets
 @safetestset "Transformer Networks #7                                                         " begin include("transformer_related/transformer_optimizer.jl") end
 @safetestset "Attention layer #1                                                              " begin include("attention_layer/attention_setup.jl") end
 @safetestset "(MultiHead)Attention                                                            " begin include("attention_layer/apply_multi_head_attention.jl") end
+@safetestset "Classification layer                                                            " begin include("layers/classification.jl") end
 @safetestset "Optimizer #1                                                                    " begin include("optimizers/utils/global_sections.jl") end
 @safetestset "Optimizer #2                                                                    " begin include("optimizers/utils/optimization_step.jl") end
 @safetestset "Optimizer #3                                                                    " begin include("optimizers/utils/modified_exponential.jl") end
@@ -35,3 +36,4 @@ using SafeTestsets
 @safetestset "NeuralNetSolution                                                               " begin include("train!/test_neuralnet_solution.jl") end
 @safetestset "Problem & Integrators                                                           " begin include("integrator/test_integrator.jl") end
 @safetestset "Data Loader #1                                                                  " begin include("data_loader/data_loader.jl") end
+@safetestset "Data Loader #2                                                                  " begin include("data_loader/mnist_utils.jl") end

@@ -112,12 +112,15 @@ end
 
 ### the functions starting from here are needed for computing the derivative. 
 
-@kernel function assign_upper_triangular_kernel!(output, input)
-    i,j,k = @index(Global, NTuple)
-    if i < j 
-        output[i,j,k] += input[i,j,k]
-    elseif i > j 
-        output[j,i,k] -= input[i,j,k] 
+@kernel function assign_upper_triangular_kernel!(output, input, size1, size2)
+    k = @index(Global)
+    for j in 1:size2 
+        for i = 1:(j-1)
+            output[i,j,k] += input[i,j,k]
+        end
+        for i = (j+1):size1
+            output[j,i,k] -= input[i,j,k] 
+        end
     end
 end
 
@@ -125,7 +128,7 @@ function assign_upper_triangular(A::AbstractArray{T, 3}) where T
     output = zero(A)
     backend = KernelAbstractions.get_backend(A)
     assign_upper_triangular! = assign_upper_triangular_kernel!(backend)
-    assign_upper_triangular!(output, A, ndrange=size(A))
+    assign_upper_triangular!(output, A, size(A, 1), size(A, 2), ndrange=size(A, 3))
     output
 end
 

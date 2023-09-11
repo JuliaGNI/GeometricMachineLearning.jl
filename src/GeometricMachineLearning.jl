@@ -34,6 +34,7 @@ module GeometricMachineLearning
     # export params, architetcure, model
     export dim
     import GeometricIntegrators.Integrators: method
+    import NNlib: σ, sigmoid, softmax
 
     export CPU, GPU
     export Chain, NeuralNetwork
@@ -41,6 +42,8 @@ module GeometricMachineLearning
     export initialparameters
     export parameterlength
     
+    export σ, sigmoid, softmax
+
     include("kernels/assign_q_and_p.jl")
     include("kernels/tensor_mat_mul.jl")
     include("kernels/tensor_tensor_mul.jl")
@@ -65,7 +68,8 @@ module GeometricMachineLearning
 
     include("data_loader/tensor_assign.jl")
     include("data_loader/data_loader.jl")
-    export DataLoader, redraw_batch, loss
+    include("data_loader/mnist_utils.jl")
+    export DataLoader, redraw_batch!, loss, onehotbatch
 
     # this defines empty retraction type structs (doesn't rely on anything)
     include("optimizers/manifold_related/retraction_types.jl")
@@ -136,7 +140,7 @@ module GeometricMachineLearning
     include("layers/attention_layer.jl")
     include("layers/transformer.jl")
     include("layers/psd_like_layer.jl")
-
+    include("layers/classification.jl")
 
     # include("layers/symplectic_stiefel_layer.jl")
     export StiefelLayer, GrassmannLayer, ManifoldLayer
@@ -145,6 +149,7 @@ module GeometricMachineLearning
     export Attention
     export ResNet
     export Transformer
+    export Classification
 
     # INCLUDE OPTIMIZERS
     export OptimizerMethod, AbstractCache

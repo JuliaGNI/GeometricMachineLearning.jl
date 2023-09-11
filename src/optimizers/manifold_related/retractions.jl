@@ -6,6 +6,9 @@ TODO: test for Cayley vs Exp
 TODO: adapt AT <: StiefelLieAlgHorMatrix for the general case!
 """
 
+"""
+Additional types to make handling manifolds more readable.
+"""
 abstract type LayerWithManifold{M, N, retraction} <: AbstractExplicitLayer{M, N}  end
 abstract type LayerWithOptionalManifold{M, N, Stiefel, retraction} <: AbstractExplicitLayer{M, N} end
 
@@ -45,9 +48,9 @@ function geodesic(B::StiefelLieAlgHorMatrix{T}) where T
     # delete this line eventually!!!
     # A_mat = typeof(B.B)(SkewSymMatrix(Vector(B.A.S), n))
     A_mat = B.A
-    exponent = hcat(vcat(T(.5)*A_mat, T(.25)*A_mat^2 - B.B'*B.B), vcat(unit, T(.5)*A_mat))
+    exponent = hcat(vcat(T(.5)*(A_mat*one(A_mat)), T(.25)*A_mat*A_mat - B.B'*B.B), vcat(unit, T(.5)*(A_mat*one(A_mat))))
     StiefelManifold(
-        E + hcat(vcat(T(.5)*A_mat, B.B), E)*𝔄(exponent)*vcat(unit, T(.5)*A_mat)
+        E + hcat(vcat(T(.5)*A_mat*one(A_mat), B.B), E)*𝔄(exponent)*vcat(unit, T(.5)*A_mat*one(A_mat))
     )
 end
 
@@ -69,11 +72,11 @@ function cayley(B::StiefelLieAlgHorMatrix{T}) where T
     E = typeof(B.B)(StiefelProjection(N, n, T))
     unit = typeof(B.B)(I(n))
     unit2 = I(2*n)
-    exponent = unit2 - T(.5)*hcat(vcat(T(.5)*B.A, T(.25)*B.A^2 - B.B'*B.B), vcat(unit, T(.5)*B.A))
+    exponent = unit2 - T(.5)*hcat(vcat(T(.5)*B.A*one(B.A), T(.25)*B.A*B.A - B.B'*B.B), vcat(unit, T(.5)*B.A*one(B.A)))
     StiefelManifold(
         (One(N, T) + T(.5)*B)*
         (
-            E + hcat(vcat(T(.25)*B.A, T(.5)*B.B), vcat(T(0.5)*unit, zero(B.B)))*(exponent \ vcat(unit, T(0.5)*B.A))
+            E + hcat(vcat(T(.25)*B.A*one(B.A), T(.5)*B.B), vcat(T(0.5)*unit, zero(B.B)))*(exponent \ vcat(unit, T(0.5)*B.A*one(B.A)))
             )
     )
 end
