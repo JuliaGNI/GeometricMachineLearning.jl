@@ -35,6 +35,7 @@ module GeometricMachineLearning
     export dim
     import GeometricIntegrators.Integrators: method
     import NNlib: σ, sigmoid, softmax
+    #import LogExpFunctions: softmax
 
     export CPU, GPU
     export Chain, NeuralNetwork
@@ -354,9 +355,5 @@ module GeometricMachineLearning
     export integrate, integrate_step!
 
     include("integrator/sympnet_integrator.jl")
-
-
-
-
-    
+ 
 end
