@@ -15,11 +15,11 @@ image_dim = 28
 patch_length = 7
 transformer_dim = 49
 n_heads = 7
-n_layers = 16
+n_layers = 10
 number_of_patch = (image_dim÷patch_length)^2
-batch_size = 512
+batch_size = 2048
 activation = softmax
-n_epochs = 20
+n_epochs = 1000
 add_connection = false
 backend = CUDABackend()
 
@@ -54,25 +54,36 @@ function transformer_training(Ψᵉ::Chain; backend=CPU(), n_training_steps=1000
 
     progress_object = Progress(n_training_steps; enabled=true)
 
+    loss_array = zeros(eltype(train_x), n_training_steps)
     for i in 1:n_training_steps
         redraw_batch!(dl)
+        # ask Michael to take a look at this. Probably not good for performance.
         loss_val, pb = Zygote.pullback(ps -> loss(Ψᵉ, ps, dl), ps)
         dp = pb(one(loss_val))[1]
 
         optimization_step!(optimizer_instance, Ψᵉ, ps, dp)
         ProgressMeter.next!(progress_object; showvalues = [(:TrainingLoss, loss_val)])   
+        loss_array[i] = loss_val
     end
 
     println("final test loss: ", loss(Ψᵉ, ps, dl_test), "\n")
 
-    ps
+    loss_array, ps
 end
 
 # calculate number of epochs
 n_training_steps = Int(ceil(length(train_y)*n_epochs/batch_size))
 
-ps₁ = transformer_training(model1, backend=backend, n_training_steps=n_training_steps)
-ps₂ = transformer_training(model2, backend=backend, n_training_steps=n_training_steps)
+loss_array2, ps2 = transformer_training(model2, backend=backend, n_training_steps=n_training_steps)
+loss_array1, ps1 = transformer_training(model1, backend=backend, n_training_steps=n_training_steps)
+loss_array3, ps3 = transformer_training(model2, backend=backend, n_training_steps=n_training_steps, o=GradientOptimizer(0.001))
+loss_array4, ps4 = transformer_training(model2, backend=backend, n_training_steps=n_training_steps, o=MomentumOptimizer(0.001, 0.5))
 
-#loss_array₃ = transformer_training(Ψᵉ₂, batch_size, training_steps, err_freq, StandardOptimizer(0.001))
-#loss_array₄ = transformer_training(Ψᵉ₂, batch_size, training_steps, err_freq, MomentumOptimizer(0.001, 0.5))
+p1 = plot(loss_array1, color=1, label="Regular weights", ylimits=(0.,1.4))
+plot!(p1, loss_array2, color=2, label="Weights on Stiefel Manifold")
+png(p1, "Stiefel_Regular")
+
+p2 = plot(loss_array2, color=2, label="Adam", ylimits=(0.,1.4))
+plot!(p2, loss_array3, color=1, label="Gradient")
+plot!(p2, loss_array4, color=3, label="Momentum")
+png(p2, "Adam_Gradient_Momentum")
