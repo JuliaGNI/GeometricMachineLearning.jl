@@ -24,7 +24,7 @@
     \coordinate[right of=R3, xshift=.5cm] (addition);
     \node[fit=(R2)(cache)(R3)(R4)(addition),draw, ultra thick, rounded corners, label=below:$\mathtt{optimization\_step(o, ::}\mathbb{R}^N\mathtt{,::}\mathbb{R}^N\mathtt{)}$] (optimization_step) {};
 
-    \draw[->] (R2) -- (R3) node[pos=.5, sloped, below] {Adam};
+    \draw[->] (R2) -- (cache) node[pos=.5, sloped, below] {Adam};
     \draw[->] (cache) -- (R3) node[pos=.5, sloped, above] {Adam};
     \draw[->] (R3) -- (R4) node[pos=.5, right] {Addition};
     \draw[->, mgreen] (R1) -- (R2) node[pos=.5, left] {\color{mgreen}AD};
