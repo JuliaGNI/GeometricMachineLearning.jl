@@ -82,7 +82,7 @@ function (d::MultiHeadAttention{M, M, Stiefel, Retraction, true})(x::AbstractMat
     output = typeof(x)(zeros(T, 0, input_length))
     for i in 1:d.n_heads
         key = Symbol("head_"*string(i))
-        output = vcat(output, ps.PV[key]'*x*Lux.softmax((ps.PQ[key]'*x)'*(ps.PK[key]'*x)))
+        output = vcat(output, ps.PV[key]'*x*softmax((ps.PQ[key]'*x)'*(ps.PK[key]'*x)/T(sqrt(dim))))
     end
     x + output
 end
@@ -94,7 +94,7 @@ function (d::MultiHeadAttention{M, M, Stiefel, Retraction, false})(x::AbstractMa
     output = similar(x, 0, input_length)
     for i in 1:d.n_heads
         key = Symbol("head_"*string(i))
-        output = vcat(output, ps.PV[key]'*x*Lux.softmax((ps.PQ[key]'*x)'*(ps.PK[key]'*x)))
+        output = vcat(output, ps.PV[key]'*x*softmax((ps.PQ[key]'*x)'*(ps.PK[key]'*x)/T(sqrt(dim))))
     end
     output
 end
@@ -123,7 +123,7 @@ function (d::MultiHeadAttention{M, M, Stiefel, Retraction, true})(x::AbstractArr
         V_tensor = mat_tensor_mul(ps.PV[key]', x)
         QK_tensor = tensor_transpose_tensor_mul(Q_tensor, K_tensor)
 
-        single_head_output = tensor_tensor_mul(V_tensor, Lux.softmax(QK_tensor))
+        single_head_output = tensor_tensor_mul(V_tensor, softmax(QK_tensor/T(sqrt(dim))))
         output = vcat(output, single_head_output) 
         # KernelAbstractions.synchronize(backend)
     end
@@ -151,7 +151,7 @@ function (d::MultiHeadAttention{M, M, Stiefel, Retraction, false})(x::AbstractAr
         V_tensor = mat_tensor_mul(ps.PV[key]', x)
         QK_tensor = tensor_transpose_tensor_mul(Q_tensor, K_tensor)
 
-        single_head_output = tensor_tensor_mul(V_tensor, Lux.softmax(QK_tensor))
+        single_head_output = tensor_tensor_mul(V_tensor, softmax(QK_tensor/T(sqrt(dim))))
         output = vcat(output, single_head_output) 
         # KernelAbstractions.synchronize(backend)
     end
