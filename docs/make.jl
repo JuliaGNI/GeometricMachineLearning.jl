@@ -42,7 +42,7 @@ makedocs(;
             "Routines" => "data_loader/data_loader.md",
         ],
         "Tutorials" =>[
-            "MNIST" => "../tutorials/mnist_tutorial.md",
+            "MNIST" => "tutorials/mnist_tutorial.md",
         ],
         "Library" => "library.md",
     ],
