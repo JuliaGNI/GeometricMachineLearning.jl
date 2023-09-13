@@ -23,13 +23,13 @@ A = [   0.06476993260924702 0.8369280855305259 0.6245358125914054 0.140729967064
         0.7317681833003449 0.9051355184962627 0.3376918522349117 0.436545092402125 0.3462196925686055   ]
 
 
-function svd_test(A, n, train_steps=1000, tol=1e-1)
+function svd_test(A, n, train_steps=1000, tol=1e-1; retraction=Cayley())
     N = size(A,1)
     U, Σ, Vt = svd(A)
     U_result = U[:, 1:n]
 
     err_best = norm(A - U_result*U_result'*A)
-    model = Chain(StiefelLayer(N, n), StiefelLayer(n, N))
+    model = Chain(StiefelLayer(N, n, retraction=retraction), StiefelLayer(n, N, retraction=retraction))
     ps = initialparameters(CPU(), Float64, model)
 
     o₁ = Optimizer(GradientOptimizer(0.01), ps)
@@ -60,4 +60,6 @@ function train_network!(o::Optimizer, model::Chain, ps::Tuple, A::AbstractMatrix
     ps[1].weight, ps[2].weight, error(ps)
 end
 
-svd_test(A, 3)
+for retraction in (Geodesic(), Cayley())
+    svd_test(A, 3, retraction=retraction)
+end
