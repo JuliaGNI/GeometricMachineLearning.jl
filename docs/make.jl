@@ -30,6 +30,8 @@ makedocs(;
             "Horizontal Lift" => "optimizers/manifold_related/horizontal_lift.md",
             "Global Sections" => "optimizers/manifold_related/global_sections.md",
             "Retractions" => "optimizers/manifold_related/retractions.md",
+            "Geodesic Retraction" => "optimizers/manifold_related/geodesic.md",
+            "Cayley Retraction" => "optimizers/manifold_related/cayley.md",
             "Adam Optimizer" => "optimizers/adam_optimizer.md",
             ],
         "Special Neural Network Layers" => [
