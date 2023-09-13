@@ -1,5 +1,16 @@
 # Retractions
 
+## Classical Definition
+Classically, retractions are defined as maps smooth maps 
+
+```math
+R: T\mathcal{M}\to\mathcal{M}:(x,v)\mapsto{}R_x(v)
+```
+
+such that each curve $c(t) := R_x(tv)$ satisfies $c(0) = x$ and $c'(0) = v$.
+
+## In `GeometricMachineLearning`
+
 Retractions are a map from the **horizontal component** of the Lie algebra $\mathfrak{g}^\mathrm{hor}$ to the respective manifold.
 
 For optimization in neural networks (almost always first order) we solve a gradient flow equation 
