@@ -70,7 +70,7 @@ module GeometricMachineLearning
     include("data_loader/tensor_assign.jl")
     include("data_loader/data_loader.jl")
     include("data_loader/mnist_utils.jl")
-    export DataLoader, redraw_batch!, loss, onehotbatch
+    export DataLoader, redraw_batch!, loss, onehotbatch, accuracy
 
     # this defines empty retraction type structs (doesn't rely on anything)
     include("optimizers/manifold_related/retraction_types.jl")

@@ -73,3 +73,13 @@ function loss(model::Union{Chain, AbstractExplicitLayer}, ps::Union{Tuple, Named
     output_estimate = assign_output_estimate(batch_output, dl.output_size)
     norm(dl.output - output_estimate)/T(sqrt(dl.batch_size))/T(sqrt(dl.output_size))
 end
+
+function accuracy(model::Chain, ps::Tuple, dl::DataLoader{T, AT, BT}) where {T, T2<:Integer, AT<:AbstractArray{T}, BT<:AbstractArray{T2}}
+    output_tensor = model(dl.batch, ps)
+    output_estimate = assign_output_estimate(output_tensor, dl.output_size)
+    backend = KernelAbstractions.get_backend(output_estimate)
+    tensor_of_maximum_elements = KernelAbstractions.zeros(backend, T2, size(output_estimate)...)
+    ind = argmax(output_estimate, dims=1)
+    tensor_of_maximum_elements[ind] .= T2(1)
+    (size(dl.output, 3)-sum(abs.(dl.output - tensor_of_maximum_elements))/T2(2))/size(dl.output, 3)
+end
