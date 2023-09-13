@@ -75,11 +75,12 @@ function cayley(B::StiefelLieAlgHorMatrix{T}) where T
     A_mat2 = B.A*B.A 
     BB = B.B'*B.B
 
-    exponent = hcat(vcat(unit - T(.5)*A_mat, BB - T(.25)*A_mat2), vcat(-unit, unit - T(.5)*A_mat))
+    exponent = hcat(vcat(unit - T(.25)*A_mat, T(.5)*BB - T(.125)*A_mat2), vcat(-T(.5)*unit, unit - T(.25)*A_mat))
     StiefelManifold(
-        hcat(vcat(T(.5)*A_mat, B.B), vcat(unit, zero(B.B)))*
+        E + 
+        T(.5)*hcat(vcat(T(.5)*A_mat, B.B), vcat(unit, zero(B.B)))*
         (
-            exponent \ (vcat(unit, T(0.5)*A_mat) + vcat(A_mat, T(0.5)*A_mat2 - BB))
+            vcat(unit, T(0.5)*A_mat) + exponent \ (vcat(unit, T(0.5)*A_mat) + vcat(T(0.5)*A_mat, T(0.25)*A_mat2 - T(0.5)*BB))
             )
     )
 end

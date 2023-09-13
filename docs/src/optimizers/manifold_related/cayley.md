@@ -19,26 +19,34 @@ C = \begin{bmatrix}
 \end{bmatrix} = \begin{bmatrix}  \frac{1}{2}A & \mathbb{I} \\ B & \mathbb{O} \end{bmatrix} \begin{bmatrix}  \mathbb{I} & \mathbb{O} \\ \frac{1}{2}A & -B^T  \end{bmatrix},
 ```
 
-where the second expression exploits the sparse structure of the array, i.e. it is a multiplication of a $N\times2n$ with a $2n\times{}N$ matrix. We can hence use the **Sherman-Morrison-Woodbury formula**:
+where the second expression exploits the sparse structure of the array, i.e. it is a multiplication of a $N\times2n$ with a $2n\times{}N$ matrix. We can hence use the **Sherman-Morrison-Woodbury formula** to obtain:
 
 ```math
-(\mathbb{I} - UV)^{-1} = \mathbb{I} + U(\mathbb{I} - VU)^{-1}V
+(\mathbb{I} - \frac{1}{2}UV)^{-1} = \mathbb{I} + \frac{1}{2}U(\mathbb{I} - \frac{1}{2}VU)^{-1}V
 ```
 
-So What we have to invert is the term 
+So what we have to invert is the term 
 
 ```math
-\mathbb{I} - \begin{bmatrix}  \mathbb{I} & \mathbb{O} \\ \frac{1}{2}A & -B^T  \end{bmatrix}\begin{bmatrix}  \frac{1}{2}A & \mathbb{I} \\ B & \mathbb{O} \end{bmatrix} = 
-\begin{bmatrix}  \mathbb{I} - \frac{1}{2}A & - \mathbb{I} \\ B^TB - \frac{1}{4}A^2 & \mathbb{I} - \frac{1}{2}A  \end{bmatrix}.
+\mathbb{I} - \frac{1}{2}\begin{bmatrix}  \mathbb{I} & \mathbb{O} \\ \frac{1}{2}A & -B^T  \end{bmatrix}\begin{bmatrix}  \frac{1}{2}A & \mathbb{I} \\ B & \mathbb{O} \end{bmatrix} = 
+\begin{bmatrix}  \mathbb{I} - \frac{1}{4}A & - \frac{1}{2}\mathbb{I} \\ \frac{1}{2}B^TB - \frac{1}{8}A^2 & \mathbb{I} - \frac{1}{4}A  \end{bmatrix}.
 ```
 
 The whole cayley transform is then: 
 
-$$
-\begin{bmatrix}  \frac{1}{2}A & \mathbb{I} \\ B & \mathbb{O} \end{bmatrix} \begin{bmatrix}  \mathbb{I} - \frac{1}{2}A & - \mathbb{I} \\ B^TB - \frac{1}{4}A^2 & \mathbb{I} - \frac{1}{2}A  \end{bmatrix}^{-1}  \begin{bmatrix}  \mathbb{I} & \mathbb{O} \\ \frac{1}{2}A & -B^T  \end{bmatrix}\left( E +  \begin{bmatrix}  \frac{1}{2}A & \mathbb{I} \\ B & \mathbb{O} \end{bmatrix} \begin{bmatrix}  \mathbb{I} \\ \frac{1}{2}A   \end{bmatrix}\ \right) = \\
+```math
+\left(\mathbb{I} + \frac{1}{2}\begin{bmatrix}  \frac{1}{2}A & \mathbb{I} \\ B & \mathbb{O} \end{bmatrix} \begin{bmatrix}  \mathbb{I} - \frac{1}{4}A & - \frac{1}{2}\mathbb{I} \\ \frac{1}{2}B^TB - \frac{1}{8}A^2 & \mathbb{I} - \frac{1}{4}A  \end{bmatrix}^{-1}  \begin{bmatrix}  \mathbb{I} & \mathbb{O} \\ \frac{1}{2}A & -B^T  \end{bmatrix} \right)\left( E +  \frac{1}{2}\begin{bmatrix}  \frac{1}{2}A & \mathbb{I} \\ B & \mathbb{O} \end{bmatrix} \begin{bmatrix}  \mathbb{I} \\ \frac{1}{2}A   \end{bmatrix}\ \right) = \\
 
-\begin{bmatrix}  \frac{1}{2}A & \mathbb{I} \\ B & \mathbb{O} \end{bmatrix} \begin{bmatrix}  \mathbb{I} - \frac{1}{2}A & - \mathbb{I} \\ B^TB - \frac{1}{4}A^2 & \mathbb{I} - \frac{1}{2}A  \end{bmatrix}^{-1}\left(  \begin{bmatrix} \mathbb{I} \\ \frac{1}{2}A \end{bmatrix} + \begin{bmatrix} A \\ \frac{1}{2}A^2 - B^TB \end{bmatrix}  \right).
-$$
+E + \frac{1}{2}\begin{bmatrix} \frac{1}{2}A & \mathbb{I} \\ B & \mathbb{O}  \end{bmatrix}\left(
+    \begin{bmatrix}  \mathbb{I} \\ \frac{1}{2}A   \end{bmatrix}  + 
+    \begin{bmatrix}  \mathbb{I} - \frac{1}{4}A & - \frac{1}{2}\mathbb{I} \\ \frac{1}{2}B^TB - \frac{1}{8}A^2 & \mathbb{I} - \frac{1}{4}A  \end{bmatrix}^{-1}\left(
+
+        \begin{bmatrix}  \mathbb{I} \\ \frac{1}{2}A   \end{bmatrix} + 
+        \begin{bmatrix} \frac{1}{2}A \\ \frac{1}{4}A^2 - \frac{1}{2}B^TB \end{bmatrix}
+
+    \right)
+    \right)
+```
 
 
 Note that for computational reason we compute $\mathrm{Cayley}(C)E$ instead of just the Cayley transform (see the section on [retractions](retractions.md)).
