@@ -1,11 +1,11 @@
 """
 Defines a layer that performs simple multiplication with an element of the Stiefel manifold.
 """
-struct StiefelLayer{M, N, retraction} <: ManifoldLayer{M, N, retraction} end
+struct StiefelLayer{M, N, Retraction} <: ManifoldLayer{M, N, Retraction} end
 
 default_retr = Geodesic()
-function StiefelLayer(n::Integer, N::Integer, Retraction::AbstractRetraction=default_retr)
-    StiefelLayer{n, N, typeof(Retraction)}()
+function StiefelLayer(n::Integer, N::Integer; retraction::AbstractRetraction=default_retr)
+    StiefelLayer{n, N, typeof(retraction)}()
 end
 
 function AbstractNeuralNetworks.initialparameters(backend::KernelAbstractions.Backend, ::Type{T}, d::StiefelLayer{M,N}; rng::AbstractRNG=Random.default_rng()) where {M,N,T}
