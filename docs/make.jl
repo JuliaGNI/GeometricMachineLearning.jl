@@ -36,6 +36,12 @@ makedocs(;
             "Attention" => "layers/attention_layer.md",
             "Multihead Attention" => "layers/multihead_attention_layer.md",
         ],
+        "Data Loader" =>[
+            "Routines" => "data_loader/data_loader.md",
+        ],
+        "Tutorials" =>[
+            "MNIST" => "../tutorials/mnist_tutorial.md",
+        ],
         "Library" => "library.md",
     ],
 )
