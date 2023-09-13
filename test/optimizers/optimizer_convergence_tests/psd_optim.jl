@@ -27,7 +27,7 @@ A = [   0.06476993260924702 0.8369280855305259 0.6245358125914054 0.140729967064
         0.7317681833003449 0.9051355184962627 0.3376918522349117 0.436545092402125 0.3462196925686055   ]
 
 
-function svd_test(A, n, train_steps=1000, tol=1e-1)
+function svd_test(A, n, train_steps=1000, tol=1e-1, retraction=Cayley())
     N2 = size(A,1)
     @assert iseven(N2)
     N = N2÷2
@@ -36,7 +36,7 @@ function svd_test(A, n, train_steps=1000, tol=1e-1)
     U_result = hcat(vcat(U_result_sing, zero(U_result_sing)), vcat(zero(U_result_sing), U_result_sing))
 
     err_best = norm(A - U_result*U_result'*A)
-    model = Chain(PSDLayer(2*N, 2*n), PSDLayer(2*n, 2*N))
+    model = Chain(PSDLayer(2*N, 2*n, retraction=retraction), PSDLayer(2*n, 2*N, retraction=retraction))
     ps = initialparameters(CPU(), Float64, model)
 
     o₁ = Optimizer(GradientOptimizer(0.01), ps)
@@ -68,4 +68,6 @@ function train_network!(o::Optimizer, model::Chain, ps::Tuple, A::AbstractMatrix
     ps[1].weight, ps[2].weight, error(ps)
 end
 
-svd_test(A, 4)
+for retraction in (Geodesic(), Cayley())
+    svd_test(A, 4, retraction=retraction)
+end
