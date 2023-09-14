@@ -68,6 +68,7 @@ module GeometricMachineLearning
     # export tensor_mat_mul
 
     include("data_loader/tensor_assign.jl")
+    include("data_loader/matrix_assign.jl")
     include("data_loader/data_loader.jl")
     include("data_loader/mnist_utils.jl")
     export DataLoader, redraw_batch!, loss, onehotbatch, accuracy
