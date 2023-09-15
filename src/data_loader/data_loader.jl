@@ -77,10 +77,19 @@ function redraw_batch!(dl::DataLoader{T, AT, Nothing}) where {T, AT<:AbstractArr
     draw_batch!(dl.batch, dl.output, dl.data)
 end
 
+function redraw_batch!(dl::DataLoader{T, AT, Nothing}) where {T, AT<:AbstractMatrix{T}}
+    draw_batch!(dl.batch, dl.data)
+end
+
 function loss(model::Union{Chain, AbstractExplicitLayer}, ps::Union{Tuple, NamedTuple}, dl::DataLoader{T}) where T
     batch_output = model(dl.batch, ps)
     output_estimate = assign_output_estimate(batch_output, dl.output_size)
     norm(dl.output - output_estimate)/T(sqrt(dl.batch_size))/T(sqrt(dl.output_size))
+end
+
+function loss(model::Chain, ps::Tuple, dl::DataLoader{T}) where T 
+    batch_output = model(dl.batch, ps)
+    norm(batch_output - dl.batch)/norm(dl.batch)
 end
 
 function accuracy(model::Chain, ps::Tuple, dl::DataLoader{T, AT, BT}) where {T, T2<:Integer, AT<:AbstractArray{T}, BT<:AbstractArray{T2}}
