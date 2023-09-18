@@ -41,6 +41,10 @@ makedocs(;
         "Data Loader" =>[
             "Routines" => "data_loader/data_loader.md",
         ],
+        "Reduced Order Modelling" =>[
+            "POD and Autoencoders" => "reduced_order_modeling/autoencoder.md",
+            "PSD and Symplectic Autoencoders" => "reduced_order_modeling/symplectic_autoencoder.md",
+        ],
         "Tutorials" =>[
             "MNIST" => "tutorials/mnist_tutorial.md",
         ],
