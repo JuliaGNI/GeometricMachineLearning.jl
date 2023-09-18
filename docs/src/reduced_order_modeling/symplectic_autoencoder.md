@@ -73,7 +73,13 @@ For details on the cotangent lift (and other methods for linear symplectic model
 
 ## Symplectic Autoencoders
 
-PSD suffers from the similar shortcomings as regular POD: it is a linear map and the approximation space $\tilde{\mathcal{M}}= \{\Psi^\mathrm{dec}(z_r)\in\mathbb{R}^{2N}:u_r\in\mathrm{R}^{2n}\}$ is strictly linear. For problems with slowly-decaying Kolmogorov $n$-width this leads to very poor approximations.  
+PSD suffers from the similar shortcomings as regular POD: it is a linear map and the approximation space $\tilde{\mathcal{M}}= \{\Psi^\mathrm{dec}(z_r)\in\mathbb{R}^{2N}:u_r\in\mathrm{R}^{2n}\}$ is strictly linear. For problems with slowly-decaying [Kolmogorov $n$-width](kolmogorov_n_width.md) this leads to very poor approximations.  
+
+In order to overcome this difficulty we use neural networks, more specifically [SympNets](../architectures/sympnet.md), together with cotangent lift-like matrices. The resulting architecture, symplectic autoencoders, are demonstrated in the following image: 
+
+![](../images/symplectic_autoencoder.png)
+
+So we alternate between SympNet and PSD layers. Because all the PSD layers are based on matrices $\Phi\in{}St(n,N)$ we have to [optimize on the Stiefel manifold](../Optimizer.md).
 
 
 ## References 
