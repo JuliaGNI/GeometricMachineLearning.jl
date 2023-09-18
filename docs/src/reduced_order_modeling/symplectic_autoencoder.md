@@ -40,6 +40,42 @@ Concretely this means:
 1. The encoder is a mapping from a high-dimensional symplectic space to a low-dimensional symplectic space, i.e. $\Psi^\mathrm{enc}:\mathbb{R}^{2N}\to\mathbb{R}^{2n}$ such that $\nabla\Psi^\mathrm{enc}\mathbb{J}_{2N}(\nabla\Psi^\mathrm{enc})^T = \mathbb{J}_{2n}$.
 2. The decoder is a mapping from a low-dimensional symplectic space to a high-dimensional symplectic space, i.e. $\Psi^\mathrm{dec}:\mathbb{R}^{2n}\to\mathbb{R}^{2N}$ such that $(\nabla\Psi^\mathrm{dec})^T\mathbb{J}_{2N}\nabla\Psi^\mathrm{dec} = \mathbb{J}_{2n}$.
 
+If these two maps are constrained to linear maps, then one can easily find good solutions with **proper symplectic decomposition** (PSD).
+
+## Proper Symplectic Decomposition
+
+For PSD the two mappings $\Psi^\mathrm{enc}$ and $\Psi^\mathrm{dec}$ are constrained to be linear, orthonormal (i.e. $\Psi^T\Psi = \mathbb{I}$) and symplectic. The easiest way to enforce this is through the so-called **cotangent lift**: 
+
+```math
+\Psi_\mathrm{CL} = 
+\begin{bmatrix} \Phi & \mathbb{O} \\ \mathbb{O} & \Phi \end{bmatrix},
+```
+and $\Phi\in{}St(n,N)\sub\mathbb{R}^{N\times{}n}$, i.e. is an element of the [Stiefel manifold](../manifolds/stiefel_manifold.md). If the [snapshot matrix](../data_loader/snapshot_matrix.md) is of the form: 
+
+```math
+M = \left[\begin{array}{c:c:c:c}
+\hat{q}_1(t_0) &  \hat{q}_1(t_1) & \quad\ldots\quad & \hat{q}_1(t_f) \\
+\hat{q}_2(t_0) &  \hat{q}_2(t_1) & \ldots & \hat{q}_2(t_f) \\
+\ldots & \ldots & \ldots & \ldots \\
+\hat{q}_N(t_0) &  \hat{q}_N(t_1) & \ldots & \hat{q}_N(t_f) \\
+\hat{p}_1(t_0) & \hat{p}_1(t_1) & \ldots & \hat{p}_1(t_f) \\
+\hat{p}_2(t_0) &  \hat{p}_2(t_1) & \ldots & \hat{p}_2(t_f) \\
+\ldots &  \ldots & \ldots & \ldots \\
+\hat{p}_{N}(t_0) &  \hat{p}_{N}(t_1) & \ldots & \hat{p}_{N}(t_f) \\
+\end{array}\right],
+```
+
+then $\Phi$ can be computed in a very straight-forward manner: 
+1. Rearrange the rows of the matrix $M$ such that we end up with a $N\times2(f+1)$ matrix: $\hat{M} := [M_q, M_p]$.
+2. Perform SVD: $\hat{M} = U\Sigma{}V^T$; set $\Phi\gets{}U\mathtt{[:,1:n]}$.
+
+For details on the cotangent lift (and other methods for linear symplectic model reduction) consult (Peng and Mohseni, 2016).
+
+## Symplectic Autoencoders
+
+PSD suffers from the similar shortcomings as regular POD: it is a linear map and the approximation space $\tilde{\mathcal{M}}= \{\Psi^\mathrm{dec}(z_r)\in\mathbb{R}^{2N}:u_r\in\mathrm{R}^{2n}\}$ is strictly linear. For problems with slowly-decaying Kolmogorov $n$-width this leads to very poor approximations.  
+
 
 ## References 
 - Buchfink, Patrick, Silke Glas, and Bernard Haasdonk. "Symplectic model reduction of Hamiltonian systems on nonlinear manifolds and approximation with weakly symplectic autoencoder." SIAM Journal on Scientific Computing 45.2 (2023): A289-A311.
+- Peng, Liqian, and Kamran Mohseni. "Symplectic model reduction of Hamiltonian systems." SIAM Journal on Scientific Computing 38.1 (2016): A1-A27.
