@@ -63,14 +63,14 @@ function (d::Attention{M, M, Stiefel, Retraction, true})(x::AbstractMatrix{T}, p
     dim, input_length = size(x)
     @assert dim == M
 
-    x + x*d.activation((ps.PQ'*x)'*(ps.PK'*x))
+    x + x*d.activation((ps.PQ'*x)'*(ps.PK'*x)/T(sqrt(M)))
 end
 
 function (d::Attention{M, M, Stiefel, Retraction, false})(x::AbstractMatrix{T}, ps::NamedTuple) where {M, Stiefel, Retraction, T}
     dim, input_length = size(x)
     @assert dim == M
 
-    x*d.activation((ps.PQ'*x)'*(ps.PK'*x))
+    x*d.activation((ps.PQ'*x)'*(ps.PK'*x)/T(sqrt(M)))
 end
 
 function (d::Attention{M, M, Stiefel, Retraction, true})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, Stiefel, Retraction, T} 
@@ -80,7 +80,7 @@ function (d::Attention{M, M, Stiefel, Retraction, true})(x::AbstractArray{T, 3},
     Q_tensor = mat_tensor_mul(ps.PQ', x)
     K_tensor = mat_tensor_mul(ps.PK', x)
     QK_tensor = tensor_transpose_tensor_mul(Q_tensor, K_tensor)
-    x + tensor_tensor_mul(x, d.activation(QK_tensor))
+    x + tensor_tensor_mul(x, d.activation(QK_tensor/T(sqrt(M))))
 end
 
 function (d::Attention{M, M, Stiefel, Retraction, false})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, Stiefel, Retraction, T} 
@@ -90,7 +90,7 @@ function (d::Attention{M, M, Stiefel, Retraction, false})(x::AbstractArray{T, 3}
     Q_tensor = mat_tensor_mul(ps.PQ', x)
     K_tensor = mat_tensor_mul(ps.PK', x)
     QK_tensor = tensor_transpose_tensor_mul(Q_tensor, K_tensor)
-    tensor_tensor_mul(x, d.activation(QK_tensor))
+    tensor_tensor_mul(x, d.activation(QK_tensor/T(sqrt(M))))
 end
 
 @kernel function upper_triangular_asymmetrize_kernel!(output::AbstractArray{T, 3}, input::AbstractArray{T, 3}) where T 
