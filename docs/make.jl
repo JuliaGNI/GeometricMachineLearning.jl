@@ -30,11 +30,25 @@ makedocs(;
             "Horizontal Lift" => "optimizers/manifold_related/horizontal_lift.md",
             "Global Sections" => "optimizers/manifold_related/global_sections.md",
             "Retractions" => "optimizers/manifold_related/retractions.md",
+            "Geodesic Retraction" => "optimizers/manifold_related/geodesic.md",
+            "Cayley Retraction" => "optimizers/manifold_related/cayley.md",
             "Adam Optimizer" => "optimizers/adam_optimizer.md",
             ],
         "Special Neural Network Layers" => [
             "Attention" => "layers/attention_layer.md",
             "Multihead Attention" => "layers/multihead_attention_layer.md",
+        ],
+        "Data Loader" =>[
+            "Routines" => "data_loader/data_loader.md",
+            "Snapshot matrix" => "data_loader/snapshot_matrix.md",
+        ],
+        "Reduced Order Modelling" =>[
+            "POD and Autoencoders" => "reduced_order_modeling/autoencoder.md",
+            "PSD and Symplectic Autoencoders" => "reduced_order_modeling/symplectic_autoencoder.md",
+            "Kolmogorov n-width" => "reduced_order_modeling/kolmogorov_n_width.md",
+        ],
+        "Tutorials" =>[
+            "MNIST" => "tutorials/mnist_tutorial.md",
         ],
         "Library" => "library.md",
     ],

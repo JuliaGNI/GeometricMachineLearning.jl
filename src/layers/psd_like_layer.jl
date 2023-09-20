@@ -5,14 +5,13 @@ One layer has the following shape:
     |Φ 0|
 A = |0 Φ|, where Φ is an element of the regular Stiefel manifold. 
 """
-
-struct PSDLayer{M, N, retraction} <: LayerWithManifold{M, N, retraction} end
+struct PSDLayer{M, N, Retraction} <: LayerWithManifold{M, N, Retraction} end
 
 default_retr = Geodesic()
-function PSDLayer(M::Integer, N::Integer; Retraction=default_retr)
+function PSDLayer(M::Integer, N::Integer; retraction=default_retr)
     @assert iseven(M)
     @assert iseven(N)
-    PSDLayer{M, N, typeof(Retraction)}()
+    PSDLayer{M, N, typeof(retraction)}()
 end
 
 function parameterlength(::PSDLayer{M, N}) where {M, N}

@@ -71,12 +71,16 @@ function cayley(B::StiefelLieAlgHorMatrix{T}) where T
     N, n = B.N, B.n
     E = typeof(B.B)(StiefelProjection(N, n, T))
     unit = typeof(B.B)(I(n))
-    unit2 = I(2*n)
-    exponent = unit2 - T(.5)*hcat(vcat(T(.5)*B.A*one(B.A), T(.25)*B.A*B.A - B.B'*B.B), vcat(unit, T(.5)*B.A*one(B.A)))
+    A_mat = B.A*one(B.A)
+    A_mat2 = B.A*B.A 
+    BB = B.B'*B.B
+
+    exponent = hcat(vcat(unit - T(.25)*A_mat, T(.5)*BB - T(.125)*A_mat2), vcat(-T(.5)*unit, unit - T(.25)*A_mat))
     StiefelManifold(
-        (One(N, T) + T(.5)*B)*
+        E + 
+        T(.5)*hcat(vcat(T(.5)*A_mat, B.B), vcat(unit, zero(B.B)))*
         (
-            E + hcat(vcat(T(.25)*B.A*one(B.A), T(.5)*B.B), vcat(T(0.5)*unit, zero(B.B)))*(exponent \ vcat(unit, T(0.5)*B.A*one(B.A)))
+            vcat(unit, T(0.5)*A_mat) + exponent \ (vcat(unit, T(0.5)*A_mat) + vcat(T(0.5)*A_mat, T(0.25)*A_mat2 - T(0.5)*BB))
             )
     )
 end
