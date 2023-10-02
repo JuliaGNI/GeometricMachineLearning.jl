@@ -7,6 +7,7 @@ using LinearAlgebra: svd, norm
 using ProgressMeter
 using Zygote
 using HDF5
+using CUDA
 
 include("vector_fields.jl")
 
@@ -14,7 +15,7 @@ T = Float64
 #μ_collection=T(5/12):T(.1):T(5/6)
 n = 5
 n_epochs = 2000
-backend = CPU()
+backend = CUDABackend()
 
 data = h5open("snapshot_matrix.h5", "r")["data"]
 data = reshape(data, size(data,1), size(data,2)*size(data,3))
@@ -37,7 +38,7 @@ model = Chain(  GradientQ(2*N, 2*N, activation),
                 GradientP(2*N, 2*N, activation)
 )
 
-ps = initialparameters(backend, Float32, model)
+ps = initialparameters(backend, T, model)
 loss(model, ps, dl)
 
 optimizer_instance = Optimizer(AdamOptimizer(), ps)
