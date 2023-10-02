@@ -109,7 +109,7 @@ function perform_integration_reduced(μ_val, n_time_steps, N=N, vec_field=build_
     integrate(ode, ImplicitMidpoint())
 end
 
-function compute_reduction_error(μ_val=T(0.51), n_time_steps)
+function compute_reduction_error(μ_val=T(0.51), n_time_steps=size(data,2))
     sol₁ = perform_integration_reduced(μ_val, n_time_steps, N, build_reduced_vector_field(μ_val, N))
     sol₂ = perform_integration_reduced(μ_val, n_time_steps, N, build_reduced_vector_field_psd(μ_val, N))
     sol₃ = perform_integration((μ=μ_val, N=N, Δx=T(1/(N-1))), n_time_steps)
