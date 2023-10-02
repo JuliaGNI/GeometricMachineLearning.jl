@@ -79,7 +79,7 @@ psᵈ = _cpu_convert(ps[6:end])
 
 function build_reduced_vector_field(μ_val, N=N)
     params = (μ=μ_val, N=N, Δx=T(1/(N-1)))
-    K = assemble_matrix(params.μ, params.Δx, params.N)
+    K = assemble_matrix(params.μ, params.Δx, params.N).parent
     full_mat = hcat(vcat(K + K', zero(K)), vcat(zero(K), one(K)))
     𝕁n = SymplecticPotential(n)
     function v_reduced(v, t, z, params)
@@ -90,7 +90,7 @@ end
 
 function build_reduced_vector_field_psd(μ_val, N=N)
     params = (μ=μ_val, N=N, Δx=T(1/(N-1)))
-    K = assemble_matrix(params.μ, params.Δx, params.N)
+    K = assemble_matrix(params.μ, params.Δx, params.N).parent
     full_mat = hcat(vcat(K + K', zero(K)), vcat(zero(K), one(K)))
     𝕁n = SymplecticPotential(n)
     function v_reduced(v, t, z, params)
