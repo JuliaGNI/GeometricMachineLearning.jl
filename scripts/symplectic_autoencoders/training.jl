@@ -119,7 +119,7 @@ function compute_reduction_error(μ_val=T(0.51), n_time_steps)
     end
     sol_matrix₂ = zeros(2*N, n_time_steps)
     for (t_ind,q) in zip(1:n_time_steps,sol₂.q)
-        sol_matrix₂[:, n_time_steps*μ_ind+t_ind] = PSD*
+        sol_matrix₂[:, n_time_steps*μ_ind+t_ind] = PSD*q
     end
     sol_matrix₃ = zeros(2*N, n_time_steps)
     for (t_ind,q,p) in zip(1:n_time_steps,sol₃.q,sol₃.p)
