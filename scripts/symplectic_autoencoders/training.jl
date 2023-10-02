@@ -88,25 +88,41 @@ function build_reduced_vector_field(μ_val, N=N)
     v_reduced
 end
 
-function perform_integration_reduced(μ_val, n_time_steps, N=N)
+function build_reduced_vector_field_psd(μ_val, N=N)
+    params = (μ=μ_val, N=N, Δx=T(1/(N-1)))
+    K = assemble_matrix(params.μ, params.Δx, params.N)
+    full_mat = hcat(vcat(K + K', zero(K)), vcat(zero(K), one(K)))
+    𝕁n = SymplecticPotential(n)
+    function v_reduced(v, t, z, params)
+        v .= 𝕁n * PSD' * full_mat * PSD *  z
+    end
+    v_reduced
+end
+
+function perform_integration_reduced(μ_val, n_time_steps, N=N, vec_field=build_reduced_vector_field(μ_val, N))
     tspan = (T(0),T(1))
     tstep = T((tspan[2] - tspan[1])/(n_time_steps-1))
     ics_offset = get_initial_condition(μ_val, N+2)
     ics = vcat(ics_offset.q.parent, ics_offset.p.parent)
     params = (μ=μ_val, N=N, Δx=T(1/(N-1)))
-    ode = ODEProblem(build_reduced_vector_field(μ_val, N), parameters=params, tspan, tstep, ics)
+    ode = ODEProblem(vec_field, parameters=params, tspan, tstep, ics)
     integrate(ode, ImplicitMidpoint())
 end
 
-function compute_reduction_error()
-    sol₁ = perform_integration_reduced(μ_val, n_time_steps, N)
-    sol₂ = perform_integration(params, n_time_steps)
-    sol_matrix₁ = zeros(2*sys_dim, n_time_steps)
-    for (t_ind,q) in zip(1:n_time_steps,sol.q)
-        sols_matrix[:, n_time_steps*μ_ind+t_ind] = q 
+function compute_reduction_error(μ_val=T(0.51), n_time_steps)
+    sol₁ = perform_integration_reduced(μ_val, n_time_steps, N, build_reduced_vector_field(μ_val, N))
+    sol₂ = perform_integration_reduced(μ_val, n_time_steps, N, build_reduced_vector_field_psd(μ_val, N))
+    sol₃ = perform_integration((μ=μ_val, N=N, Δx=T(1/(N-1))), n_time_steps)
+    sol_matrix₁ = zeros(2*N, n_time_steps)
+    for (t_ind,q) in zip(1:n_time_steps,sol₁.q)
+        sol_matrix₁[:, n_time_steps*μ_ind+t_ind] = Ψᵉ(q, psᵉ)
     end
-    sol_matrix₂ = zeros(2*sys_dim, n_time_steps)
-    for (t_ind,q,p) in zip(1:n_time_steps,sol.q,sol.p)
+    sol_matrix₂ = zeros(2*N, n_time_steps)
+    for (t_ind,q) in zip(1:n_time_steps,sol₂.q)
+        sol_matrix₂[:, n_time_steps*μ_ind+t_ind] = PSD*
+    end
+    sol_matrix₃ = zeros(2*N, n_time_steps)
+    for (t_ind,q,p) in zip(1:n_time_steps,sol₃.q,sol₃.p)
         sols_matrix[:, n_time_steps*μ_ind+t_ind] = vcat(q,p)
     end
     norm(sol_matrix₁ - sol_matrix₂)
