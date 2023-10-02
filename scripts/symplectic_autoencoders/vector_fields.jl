@@ -9,13 +9,13 @@ function v_f_hamiltonian(params)
     K = assemble_matrix(params.μ, params.Δx, params.N)
     function f(f, t, q, p, params)
         #f .= -(_mul(K + OffsetArray(K.parent', OffsetArrays.Origin(0)), q))
-        f .= - (K.parent + K.parent')*q
+        f .= - (K.parent + K.parent') * q / params.Δx
     end
     function v(v, t, q, p, params)
-        v .= params.Δx * p 
+        v .= params.Δx * p / params.Δx
     end
     function hamiltonian(t, q, p, params)
-        q'*K.parent*q + .5 * params.Δx * p'*p
+        q'*K.parent*q + eltype(q)(.5) * params.Δx * p'*p
     end
-    v, f, hamiltonian
+    (v, f, hamiltonian)
 end
