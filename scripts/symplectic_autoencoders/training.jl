@@ -1,5 +1,7 @@
 """
 Implement variational autoencoder!!! Up to now the variational property has not been included.
+
+Make the computation of the reduction error automatic! (this has to be done for many values!)
 """
 
 using GeometricMachineLearning 
@@ -14,7 +16,7 @@ include("vector_fields.jl")
 T = Float64
 #μ_collection=T(5/12):T(.1):T(5/6)
 n = 5
-n_epochs = 2000
+n_epochs = 200
 backend = CUDABackend()
 
 data = h5open("snapshot_matrix.h5", "r")["data"][:,:] |> cu
@@ -53,8 +55,26 @@ for _ in 1:n_training_iterations
     ProgressMeter.next!(progress_object; showvalues=[(:TrainingLoss, loss_val)])
 end
 
+function _cpu_convert(ps::Tuple)
+    output = ()
+    for elem in ps 
+        output = (output..., _cpu_convert(elem))
+    end
+    output
+end
+
+function _cpu_convert(ps::NamedTuple)
+    output = ()
+    for elem in ps
+        output = (output..., _cpu_convert(elem))
+    end
+    NamedTuple{keys(ps)}(output)
+end
+
+_cpu_convert(A::AbstractArray) = Array(A)
+
 Ψᵈ = Chain(model.layers[6:end])
-psᵈ = ps[6:end]
+psᵈ = _cpu_convert(ps[6:end])
 μ_test_vals = (T(0.51), T(0.625), T(0.74))
 
 function build_reduced_vector_field(μ_val, N=N)
@@ -82,7 +102,9 @@ function compute_reduction_error()
     sol₁ = perform_integration_reduced(μ_val, n_time_steps, N)
     sol₂ = perform_integration(params, n_time_steps)
     sol_matrix₁ = zeros(2*sys_dim, n_time_steps)
-        ...
+    for (t_ind,q) in zip(1:n_time_steps,sol.q)
+        sols_matrix[:, n_time_steps*μ_ind+t_ind] = q 
+    end
     sol_matrix₂ = zeros(2*sys_dim, n_time_steps)
     for (t_ind,q,p) in zip(1:n_time_steps,sol.q,sol.p)
         sols_matrix[:, n_time_steps*μ_ind+t_ind] = vcat(q,p)
