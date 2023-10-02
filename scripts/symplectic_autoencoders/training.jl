@@ -17,8 +17,7 @@ n = 5
 n_epochs = 2000
 backend = CUDABackend()
 
-data = h5open("snapshot_matrix.h5", "r")["data"]
-data = reshape(data, size(data,1), size(data,2)*size(data,3))
+data = h5open("snapshot_matrix.h5", "r")["data"][:,:] |> cu
 N = size(data,1)÷2
 dl = DataLoader(data)
 Φ = svd(hcat(data[1:N,:], data[(N+1):2*N,:])).U[:,1:n]
