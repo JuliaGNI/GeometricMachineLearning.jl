@@ -10,21 +10,29 @@ using ProgressMeter
 using Zygote
 using HDF5
 using CUDA
+using GeometricIntegrators
 
 include("vector_fields.jl")
+include("initial_condition.jl")
 
 T = Float64
 #μ_collection=T(5/12):T(.1):T(5/6)
 n = 5
 n_epochs = 200
-backend = CUDABackend()
 
-data = h5open("snapshot_matrix.h5", "r")["data"][:,:] |> cu
+backend, data = 
+try 
+    (CUDABackend(),
+    h5open("snapshot_matrix.h5", "r")["data"][:,:] |> cu)
+catch
+    (CPU(),
+    h5open("snapshot_matrix.h5", "r")["data"][:,:])
+end
+
 N = size(data,1)÷2
 dl = DataLoader(data)
 Φ = svd(hcat(data[1:N,:], data[(N+1):2*N,:])).U[:,1:n]
 PSD = hcat(vcat(Φ, zero(Φ)), vcat(zero(Φ), Φ))
-PSD_error = norm(data - PSD*PSD'*data)/norm(data)
 
 activation = tanh
 model = Chain(  GradientQ(2*N, 2*N, activation), 
@@ -73,57 +81,33 @@ end
 
 _cpu_convert(A::AbstractArray) = Array(A)
 
-Ψᵈ = Chain(model.layers[6:end])
+Ψᵉ = Chain(model.layers[1:5]...)
+psᵉ = _cpu_convert(ps[1:5])
+Ψᵈ = Chain(model.layers[6:end]...)
 psᵈ = _cpu_convert(ps[6:end])
+
+nn_encoder(z) = Ψᵉ(z, psᵉ)
+nn_decoder(ξ) = Ψᵈ(ξ, psᵈ)
+psd_encoder(z) = PSD'*z 
+psd_decoder(ξ) = PSD*ξ
+
+PSD_error = norm(data - psd_decoder(psd_encoder(data)))/norm(data)
+nn_error = norm(data - nn_decoder(nn_encoder(data)))/norm(data)
+
 μ_test_vals = (T(0.51), T(0.625), T(0.74))
 
-function build_reduced_vector_field(μ_val, N=N)
-    params = (μ=μ_val, N=N, Δx=T(1/(N-1)))
-    K = assemble_matrix(params.μ, params.Δx, params.N).parent
-    full_mat = hcat(vcat(K + K', zero(K)), vcat(zero(K), one(K)))
-    𝕁n = SymplecticPotential(n)
-    function v_reduced(v, t, z, params)
-        v .= 𝕁n * Zygote.jacobian(z -> Ψᵈ(z,psᵈ), z)[1]' * full_mat * Ψᵈ(z, psᵈ)
-    end
-    v_reduced
+# make sure you also store tspan and tstep in the future (in the HDF5 file!!!)
+function reduced_systems_for_wave_equation(μ_val, Ñ=(N-2), n=n, n_time_steps=n_time_steps; T=Float64, integrator=ImplicitMidpoint(), system_type=GeometricMachineLearning.Symplectic())
+    params = (μ=μ_val, Ñ=Ñ, Δx=T(1/(Ñ-1)))
+    tstep = T(1/(n_time_steps-1))
+    tspan = (T(0), T(1))
+    ics = get_initial_condition_vector(μ_val, Ñ)
+    nn_rs = ReducedSystem(N, n, nn_encoder, nn_decoder, v_field(params), params, tspan, tstep, ics, nn_error; T=T, integrator=integrator, system_type=system_type)
+    psd_rs = ReducedSystem(N, n, psd_encoder, psd_decoder, v_field(params), params, tspan, tstep, ics, PSD_error; T=T, integrator=integrator, system_type=system_type)
+    nn_rs, psd_rs
 end
 
-function build_reduced_vector_field_psd(μ_val, N=N)
-    params = (μ=μ_val, N=N, Δx=T(1/(N-1)))
-    K = assemble_matrix(params.μ, params.Δx, params.N).parent
-    full_mat = hcat(vcat(K + K', zero(K)), vcat(zero(K), one(K)))
-    𝕁n = SymplecticPotential(n)
-    function v_reduced(v, t, z, params)
-        v .= 𝕁n * PSD' * full_mat * PSD *  z
-    end
-    v_reduced
-end
-
-function perform_integration_reduced(μ_val, n_time_steps, N=N, vec_field=build_reduced_vector_field(μ_val, N))
-    tspan = (T(0),T(1))
-    tstep = T((tspan[2] - tspan[1])/(n_time_steps-1))
-    ics_offset = get_initial_condition(μ_val, N+2)
-    ics = vcat(ics_offset.q.parent, ics_offset.p.parent)
-    params = (μ=μ_val, N=N, Δx=T(1/(N-1)))
-    ode = ODEProblem(vec_field, parameters=params, tspan, tstep, ics)
-    integrate(ode, ImplicitMidpoint())
-end
-
-function compute_reduction_error(μ_val=T(0.51), n_time_steps=size(data,2))
-    sol₁ = perform_integration_reduced(μ_val, n_time_steps, N, build_reduced_vector_field(μ_val, N))
-    sol₂ = perform_integration_reduced(μ_val, n_time_steps, N, build_reduced_vector_field_psd(μ_val, N))
-    sol₃ = perform_integration((μ=μ_val, N=N, Δx=T(1/(N-1))), n_time_steps)
-    sol_matrix₁ = zeros(2*N, n_time_steps)
-    for (t_ind,q) in zip(1:n_time_steps,sol₁.q)
-        sol_matrix₁[:, n_time_steps*μ_ind+t_ind] = Ψᵉ(q, psᵉ)
-    end
-    sol_matrix₂ = zeros(2*N, n_time_steps)
-    for (t_ind,q) in zip(1:n_time_steps,sol₂.q)
-        sol_matrix₂[:, n_time_steps*μ_ind+t_ind] = PSD*q
-    end
-    sol_matrix₃ = zeros(2*N, n_time_steps)
-    for (t_ind,q,p) in zip(1:n_time_steps,sol₃.q,sol₃.p)
-        sols_matrix[:, n_time_steps*μ_ind+t_ind] = vcat(q,p)
-    end
-    norm(sol_matrix₁ - sol_matrix₂)
+function compute_reduction_errors(μ_val=T(0.51), n_time_steps=100)
+    nn_rs, psd_rs = reduced_systems_for_wave_equation(μ_val, N-2, n, n_time_steps)
+    (psd=compute_reduction_error(psd_rs), nn=compute_reduction_error(nn_rs))
 end
