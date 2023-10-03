@@ -207,7 +207,7 @@ module GeometricMachineLearning
      # INCLUDE DATA TRAINING STRUCTURE
     export AbstractTrainingData
     export TrainingData
-    export problem, shape, symbols, dim, noisemaker, data_symbols
+    export shape, symbols, dim, noisemaker, data_symbols # , problem
     export reduce_symbols, reshape_intoSampledData
     export aresame
     
@@ -266,7 +266,7 @@ module GeometricMachineLearning
     export SingleHistory
     export parameters, datashape, loss
     export History
-    export data, last, sizemax, nbtraining, show
+    export last, sizemax, nbtraining, show
 
     include("nnsolution/history.jl")
 
@@ -357,4 +357,8 @@ module GeometricMachineLearning
 
     include("integrator/sympnet_integrator.jl")
  
+    include("reduced_system/system_type.jl")
+    include("reduced_system/reduced_system.jl")
+
+    export ReducedSystem, compute_reduction_error
 end
