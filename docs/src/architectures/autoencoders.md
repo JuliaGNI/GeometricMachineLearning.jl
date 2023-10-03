@@ -25,6 +25,7 @@ where $\mathbf{x}^\mathrm{ref}(\mu) = \mathbf{x}(t_0;\mu) - \Psi^\mathrm{dec}\ci
 ## Symplectic reduced vector field 
 
 A **symplectic vector field** is one whose flow conserves the symplectic structure $\mathbb{J}$. This is equivalent[^1] to there existing a Hamiltonian $H$ s.t. the vector field $X$ can be written as $X = \mathbb{J}\nabla{}H$.
+
 [^1]: Technically speaking the definitions are equivalent only for simply-connected manifolds, so also for vector spaces.   
 
 If the full-order Hamiltonian is $H^\mathrm{full}\equiv{}H$ we can obtain another Hamiltonian on the reduces space by simply setting: 
