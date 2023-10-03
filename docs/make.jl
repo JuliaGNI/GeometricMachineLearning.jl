@@ -48,6 +48,7 @@ makedocs(;
             "Kolmogorov n-width" => "reduced_order_modeling/kolmogorov_n_width.md",
         ],
         "Tutorials" =>[
+            "Linear Wave Equation" => "tutorials/linear_wave_equation.md",
             "MNIST" => "tutorials/mnist_tutorial.md",
         ],
         "Library" => "library.md",
