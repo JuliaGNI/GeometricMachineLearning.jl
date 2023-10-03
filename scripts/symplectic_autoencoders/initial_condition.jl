@@ -36,6 +36,14 @@ function get_initial_condition(μ::T, Δx::T) where T
     (q=OffsetArray(u₀(Ω,μ), OffsetArrays.Origin(0)), p=OffsetArray(p(T(0),Ω,μ), OffsetArrays.Origin(0)))
 end
 
-function get_initial_condition(μ::T, N::Integer) where T 
-    get_initial_condition(μ, T(1/(N-1)))
+"""
+If you call this function with a Float and an Integer, then the integer will be interpreted as the number of nodes, i.e. degrees of freedom.
+"""
+function get_initial_condition(μ::T, Ñ::Integer) where T 
+    get_initial_condition(μ, T(1/(Ñ+1)))
+end
+
+function get_initial_condition_vector(μ::T, Ñ::Integer) where T 
+    ics_offset = get_initial_condition(μ, Ñ)
+    vcat(ics_offset.q.parent, ics_offset.p.parent)
 end
