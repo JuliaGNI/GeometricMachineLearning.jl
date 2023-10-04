@@ -36,7 +36,7 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
 AbstractNeuralNetworks = "0.1"
-BandedMatrices = "0.17"
+BandedMatrices = "0.17, 1"
 CUDA = "4"
 ChainRules = "1"
 ChainRulesCore = "1"
