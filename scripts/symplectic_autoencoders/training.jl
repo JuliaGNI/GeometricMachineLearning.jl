@@ -86,13 +86,46 @@ psᵉ = _cpu_convert(ps[1:5])
 Ψᵈ = Chain(model.layers[6:end]...)
 psᵈ = _cpu_convert(ps[6:end])
 
+PSD_cpu = _cpu_convert(PSD)
+
 nn_encoder(z) = Ψᵉ(z, psᵉ)
 nn_decoder(ξ) = Ψᵈ(ξ, psᵈ)
-psd_encoder(z) = PSD'*z 
-psd_decoder(ξ) = PSD*ξ
+psd_encoder(z) = PSD_cpu'*z 
+psd_decoder(ξ) = PSD_cpu*ξ
 
 psd_error = norm(data - psd_decoder(psd_encoder(data)))/norm(data)
 nn_error = norm(data - nn_decoder(nn_encoder(data)))/norm(data)
+
+μ_test_vals = (T(0.51), T(0.625), T(0.74))
+
+# make sure you also store tspan and tstep in the future (in the HDF5 file!!!)
+function reduced_systems_for_wave_equation(μ_val, Ñ=(N-2), n=n, n_time_steps=n_time_steps; T=Float64, integrator=ImplicitMidpoint(), system_type=GeometricMachineLearning.Symplectic())
+    params = (μ=μ_val, Ñ=Ñ, Δx=T(1/(Ñ-1)))
+    tstep = T(1/(n_time_steps-1))
+    tspan = (T(0), T(1))
+    ics = get_initial_condition_vector(μ_val, Ñ)
+    v_field_full = v_field(params)
+    nn_v_field_reduced = reduced_vector_field_from_full_explicit_vector_field(v_field_explicit(params), nn_decoder, N, n)
+    psd_v_field_reduced = reduced_vector_field_from_full_explicit_vector_field(v_field_explicit(params), psd_decoder, N, n)
+    nn_rs = ReducedSystem(N, n, nn_encoder, nn_decoder, v_field_full, nn_v_field_reduced, params, tspan, tstep, ics, nn_error; integrator=integrator, system_type=system_type)
+    psd_rs = ReducedSystem(N, n, psd_encoder, psd_decoder, v_field_full, psd_v_field_reduced, params, tspan, tstep, ics, psd_error; integrator=integrator, system_type=system_type)
+    nn_rs, psd_rs
+end
+
+function compute_reduction_errors(μ_val=T(0.51), n_time_steps=100)
+    nn_rs, psd_rs = reduced_systems_for_wave_equation(μ_val, N-2, n, n_time_steps)
+    (psd=compute_reduction_error(psd_rs), nn=compute_reduction_error(nn_rs))
+end
+PSD_cpu = _cpu_convert(PSD)
+
+nn_encoder(z) = Ψᵉ(z, psᵉ)
+nn_decoder(ξ) = Ψᵈ(ξ, psᵈ)
+psd_encoder(z) = PSD_cpu'*z 
+psd_decoder(ξ) = PSD_cpu*ξ
+
+data_cpu = _cpu_convert(data)
+psd_error = norm(data_cpu - psd_decoder(psd_encoder(data_cpu)))/norm(data_cpu)
+nn_error = norm(data_cpu - nn_decoder(nn_encoder(data_cpu)))/norm(data_cpu)
 
 μ_test_vals = (T(0.51), T(0.625), T(0.74))
 
