@@ -29,3 +29,13 @@ function v_field(params)
     end
     v 
 end
+
+function v_field_explicit(params)
+    K = assemble_matrix(params.μ, params.Δx, params.Ñ).parent 
+    full_mat = hcat(vcat(K + K', zero(K)), vcat(zero(K), one(K)*params.Δx))
+    𝕁N = SymplecticPotential(size(K, 1))
+    function v(t, q, params)
+        𝕁N*full_mat * q / params.Δx 
+    end
+    v 
+end
