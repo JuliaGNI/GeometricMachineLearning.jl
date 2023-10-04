@@ -126,8 +126,9 @@ end
 function plot_comparison_for_reconstructed_trajectories(trajectories, t_step=0)
     n_t_steps = length(trajectories.psd.t)
     t_step_index = Int(ceil(n_t_steps*t_step))
-    plot_object = plot(trajectories.full.q[t_step_index], label="Numerical solution")
-    plot!(plot_object, trajectories.psd.q[t_step_index], label="PSD")
-    plot!(plot_object, trajectories.nn.q[t_step_index], label="NN")
+    N = length(trajectories.full.q[t_step_index])÷2
+    plot_object = plot(trajectories.full.q[t_step_index][1:N], label="Numerical solution")
+    plot!(plot_object, trajectories.psd.q[t_step_index][1:N], label="PSD")
+    plot!(plot_object, trajectories.nn.q[t_step_index][1:N], label="NN")
     png(plot_object, "plots/comparison_for_time_step_"*string(t_step))
 end
