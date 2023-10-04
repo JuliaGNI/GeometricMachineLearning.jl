@@ -91,7 +91,7 @@ nn_decoder(ξ) = Ψᵈ(ξ, psᵈ)
 psd_encoder(z) = PSD'*z 
 psd_decoder(ξ) = PSD*ξ
 
-PSD_error = norm(data - psd_decoder(psd_encoder(data)))/norm(data)
+psd_error = norm(data - psd_decoder(psd_encoder(data)))/norm(data)
 nn_error = norm(data - nn_decoder(nn_encoder(data)))/norm(data)
 
 μ_test_vals = (T(0.51), T(0.625), T(0.74))
@@ -102,8 +102,11 @@ function reduced_systems_for_wave_equation(μ_val, Ñ=(N-2), n=n, n_time_steps=
     tstep = T(1/(n_time_steps-1))
     tspan = (T(0), T(1))
     ics = get_initial_condition_vector(μ_val, Ñ)
-    nn_rs = ReducedSystem(N, n, nn_encoder, nn_decoder, v_field(params), params, tspan, tstep, ics, nn_error; T=T, integrator=integrator, system_type=system_type)
-    psd_rs = ReducedSystem(N, n, psd_encoder, psd_decoder, v_field(params), params, tspan, tstep, ics, PSD_error; T=T, integrator=integrator, system_type=system_type)
+    v_field_full = v_field(params)
+    nn_v_field_reduced = reduced_vector_field_from_full_explicit_vector_field(v_field_explicit(params), nn_decoder, N, n)
+    psd_v_field_reduced = reduced_vector_field_from_full_explicit_vector_field(v_field_explicit(params), psd_decoder, N, n)
+    nn_rs = ReducedSystem(N, n, nn_encoder, nn_decoder, v_field_full, nn_v_field_reduced, params, tspan, tstep, ics, nn_error; integrator=integrator, system_type=system_type)
+    psd_rs = ReducedSystem(N, n, psd_encoder, psd_decoder, v_field_full, psd_v_field_reduced, params, tspan, tstep, ics, psd_error; integrator=integrator, system_type=system_type)
     nn_rs, psd_rs
 end
 
