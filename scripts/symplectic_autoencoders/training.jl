@@ -120,5 +120,14 @@ end
 
 function get_reconstructed_trajectories(μ_val=T(0.51), n_time_steps=size(data,2)/8)
     nn_rs, psd_rs = reduced_systems_for_wave_equation(μ_val, N-2, n, n_time_steps)
-    (psd=perform_integration_reduced(psd_rs), nn=perform_integration_reduced(nn_rs))  
+    (psd=perform_integration_reduced(psd_rs), nn=perform_integration_reduced(nn_rs), full=perform_integration_full(psd_rs))  
+end
+
+function plot_comparison_for_reconstructed_trajectories(trajectories, t_step=0)
+    n_t_steps = length(trajectories.psd.t)
+    t_step_index = Int(ceil(n_t_steps*t_step))
+    plot_object = plot(trajectories.full.q[t_step_index], label="Numerical solution")
+    plot!(plot_object, trajectories.psd.q[t_step_index], label="PSD")
+    plot!(plot_object, trajectories.nn.q[t_step_index], label="NN")
+    png(plot_object, "plots/comparison_for_time_step_"*string(t_step))
 end
