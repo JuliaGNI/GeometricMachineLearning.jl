@@ -119,6 +119,8 @@ end
 
 _cpu_convert(A::AbstractArray) = Array(A)
 
+_cpu_convert(Y::StiefelManifold) = StiefelManifold(_cpu_convert(Y.A))
+
 function get_reconstructed_trajectories(psd_rs, nn_rs)
     psd_time_series = perform_integration_reduced(psd_rs)
     nn_time_series = perform_integration_reduced(nn_rs)
