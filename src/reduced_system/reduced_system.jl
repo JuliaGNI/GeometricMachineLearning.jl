@@ -69,9 +69,13 @@ function perform_integration_full(rs::ReducedSystem)
 end
 
 function compute_reduction_error(rs::ReducedSystem)
+    sol_full = perform_integration_full(rs)
+    compute_reduction_error(rs, sol_full)
+end
+
+function compute_reduction_error(rs::ReducedSystem, sol_full)
     n_time_steps = Int(round((rs.tspan[2] - rs.tspan[1])/rs.tstep + 1))
     sol_red = perform_integration_reduced(rs)
-    sol_full = perform_integration_full(rs)
     sol_matrix_red = zeros(2*rs.N, n_time_steps)
     for (t_ind,q) in zip(1:n_time_steps,sol_red.q)
         sol_matrix_red[:, t_ind] = rs.decoder(q)

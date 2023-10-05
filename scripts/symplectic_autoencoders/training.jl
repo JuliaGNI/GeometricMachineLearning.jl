@@ -32,7 +32,7 @@ N = size(data,1)÷2
 dl = DataLoader(data)
 n_time_steps=size(data,2)/8
 n_epochs = 2000
-n_range = 2:20
+n_range = 2:2:20
 μ_range = (T(0.51), T(0.625), T(0.74))  
 
 function get_psd_encoder_decoder(; n=5)
@@ -144,7 +144,8 @@ end
 data_cpu = _cpu_convert(data)
 μ_errors = NamedTuple()
 for μ_test_val in μ_range
-
+    dummy_rs = get_reduced_model(nothing, nothing, nothing; n=1, μ_val=μ_test_val, Ñ=(N-2))
+    sol_full = perform_integration_full(dummy_rs)
     errors = NamedTuple()
     for n in n_range
 
@@ -157,7 +158,7 @@ for μ_test_val in μ_range
         psd_rs = get_reduced_model(psd_encoder, psd_decoder, psd_error; n=n, μ_val=μ_test_val, Ñ=(N-2))
         nn_rs = get_reduced_model(nn_encoder, nn_decoder, nn_error; n=n, μ_val=μ_test_val, Ñ=(N-2))
 
-        reduction_errors = (psd=compute_reduction_error(psd_rs), nn=compute_reduction_error(nn_rs))
+        reduction_errors = (psd=compute_reduction_error(psd_rs, sol_full), nn=compute_reduction_error(nn_rs, sol_full))
         projection_errors = (psd=psd_error, nn=nn_error)
         temp_errors = (reduction_error=reduction_errors, projection_error=projection_errors)
         errors = NamedTuple{(keys(errors)..., Symbol("n"*string(n)))}((values(errors)..., temp_errors))
