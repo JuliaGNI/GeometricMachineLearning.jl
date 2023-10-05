@@ -189,11 +189,11 @@ function plot_projection_reduction_errors(μ_errors)
             psd_projection_vals[it] = psd_projection_val
             psd_reduction_vals[it] = psd_reduction_val
         end
-        plot_object = plot(n_vals, psd_projection_vals, color=2, seriestype=:scatter, ylimits=(0,1)) #, label="PSD projection")
-        plot!(plot_object, n_vals, psd_reduction_vals, color=2, seriestype=:scatter, markershape=:cross) #,label="PSD reduction")
+        plot_object = plot(n_vals, psd_projection_vals, color=2, seriestype=:scatter, ylimits=(0,1), label="PSD projection")
+        plot!(plot_object, n_vals, psd_reduction_vals, color=2, seriestype=:scatter, markershape=:cross,label="PSD reduction")
 
-        plot!(plot_object, n_vals, nn_projection_vals, color=3, seriestype=:scatter) #, label="NN projection")        
-        plot!(plot_object, n_vals, nn_reduction_vals, color=3, seriestype=:scatter, markershape=:cross) #,label="NN reduction")
+        plot!(plot_object, n_vals, nn_projection_vals, color=3, seriestype=:scatter, label="NN projection")        
+        plot!(plot_object, n_vals, nn_reduction_vals, color=3, seriestype=:scatter, markershape=:cross,label="NN reduction")
         png(plot_object, μ)
     end
 end
