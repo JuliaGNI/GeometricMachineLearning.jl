@@ -31,8 +31,8 @@ T = Float64
 N = size(data,1)÷2
 dl = DataLoader(data)
 n_time_steps=size(data,2)/8
-n_epochs = 2000
-n_range = 2:2:20
+n_epochs = 200
+n_range = 2:7:20
 μ_range = (T(0.51), T(0.625), T(0.74))  
 
 function get_psd_encoder_decoder(; n=5)
@@ -195,7 +195,7 @@ function plot_projection_reduction_errors(μ_errors)
 
         plot!(plot_object, n_vals, nn_projection_vals, color=3, seriestype=:scatter, label="NN projection")        
         plot!(plot_object, n_vals, nn_reduction_vals, color=3, seriestype=:scatter, markershape=:cross,label="NN reduction")
-        png(plot_object, μ)
+        png(plot_object, "plots/mu"*μ[3:end])
     end
 end
 
