@@ -19,23 +19,30 @@ If we discretize $\mathcal{H}$ directly, to obtain a Hamiltonian on a finite-dim
 [^1]: This conserves the Hamiltonian structure of the system.
 
 ```math
-\mathcal{H}_h(z) = \sum_{i=1}^n\frac{\Delta{}x}{2}\bigg[p_i^2 + \mu^2\frac{(q_i - q_{i-1})^2 + (q_{i+1} - q_i)^2}{2\Delta{}x}\bigg] = z^TKz,
+\mathcal{H}_h(z) = \sum_{i=1}^{\tilde{N}}\frac{\Delta{}x}{2}\bigg[p_i^2 + \mu^2\frac{(q_i - q_{i-1})^2 + (q_{i+1} - q_i)^2}{2\Delta{}x}\bigg] = z^TKz,
 ```
 
 where the matrix $K$ contains elements of the form: 
 
 ```math
-k_{ij} = \begin{cases}  \frac{\mu^2}{4\Delta{}x} &\text{if $(i,j)\in\{(0,0),(N+1,N+1)\}$ }, \\
-    -\frac{\mu^2}{2\Delta{}x} & \text{if $(i,j)=(1,0)$ or $(i,j)=(N,N+1)$} \\
-    \frac{3\mu^2}{4\Delta{}x} & \text{if $(i,j)\in\{(1,1),(N,N)\}$} \\
-    \frac{\mu^2}{\Delta{}x} & \text{if $i=j$ and $i\in\{2,\ldots,(N-2)\}$} \\ 
-    -\frac{\mu^2}{2\Delta{}x} & \text{if $|i-j|=1$ and $i,j\notin\{0,n+1\}$} \\
+k_{ij} = \begin{cases}  \frac{\mu^2}{4\Delta{}x} &\text{if $(i,j)\in\{(0,0),(\tilde{N}+1,\tilde{N}+1)\}$ }, \\
+    -\frac{\mu^2}{2\Delta{}x} & \text{if $(i,j)=(1,0)$ or $(i,j)=(\tilde{N},\tilde{N}+1)$} \\
+    \frac{3\mu^2}{4\Delta{}x} & \text{if $(i,j)\in\{(1,1),(\tilde{N},\tilde{N})\}$} \\
+    \frac{\mu^2}{\Delta{}x} & \text{if $i=j$ and $i\in\{2,\ldots,(\tilde{N}-2)\}$} \\ 
+    -\frac{\mu^2}{2\Delta{}x} & \text{if $|i-j|=1$ and $i,j\notin\{0,\tilde{N}+1\}$} \\
                         0 & \text{else}.
                         \end{cases}
 ```
 
-The wave equation has a slowely-decaying [Kolmogorov $n$-width](../reduced_order_modeling/kolmogorov_n_width.md), which means linear methods like PSD will perform poorly.
+The vector field of the FOM is described by (see for example (Peng and Mohseni, 2016)):
+
+```math
+  \frac{dz}{dt} = \mathbb{J}_d\nabla_z\mathcal{H}_h = \mathbb{J}_d\begin{bmatrix}\mathbb{I} \\ K + K^T\end{bmatrix}z, \quad \mathbb{J}_d = \frac{\mathbb{J}_{2N}}{\Delta{}x}.
+```
+
+The wave equation has a slowely-decaying [Kolmogorov $n$-width](../reduced_order_modeling/kolmogorov_n_width.md) (see e.g. Greif and Urban, 2019), which means linear methods like PSD will perform poorly.
 
 ## References 
 - Buchfink, Patrick, Silke Glas, and Bernard Haasdonk. "Symplectic model reduction of Hamiltonian systems on nonlinear manifolds and approximation with weakly symplectic autoencoder." SIAM Journal on Scientific Computing 45.2 (2023): A289-A311.
 - Peng, Liqian, and Kamran Mohseni. "Symplectic model reduction of Hamiltonian systems." SIAM Journal on Scientific Computing 38.1 (2016): A1-A27.
+- Greif C, Urban K. Decay of the Kolmogorov N-width for wave problems[J]. Applied Mathematics Letters, 2019, 96: 216-222.
