@@ -86,3 +86,11 @@ function compute_reduction_error(rs::ReducedSystem, sol_full)
     end
     norm(sol_matrix_red - sol_matrix_full)/norm(sol_matrix_full)
 end
+
+function compute_projection_error(rs::ReducedSystem, sol_full)
+    sol_matrix_full = zeros(2*rs.N, n_time_steps)
+    for (t_ind,q) in zip(1:n_time_steps,sol_full.q)
+        sol_matrix_full[:, t_ind] = q
+    end
+    norm(rs.decoder(rs.encoder(sol_matrix_full)) - sol_matrix_full)/norm(sol_matrix_full)
+end

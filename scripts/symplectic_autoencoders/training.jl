@@ -33,7 +33,7 @@ dl = DataLoader(data)
 n_time_steps=size(data,2)/8
 n_epochs = 5000
 n_range = 2:1:10
-μ_range = (T(0.51), T(0.625), T(0.74))  
+μ_range = (T(0.51), T(0.625), T(0.74), T(0.81))  
 opt = AdamOptimizer(T.((0.001, 0.9, 0.99, 1e-8))...)
 retraction = Cayley()
 
@@ -162,14 +162,11 @@ for μ_test_val in μ_range
         psd_encoder, psd_decoder = get_psd_encoder_decoder(n=n)
         nn_encoder, nn_decoder = get_nn_encoder_decoder(n=n, n_epochs=n_epochs)
 
-        psd_error = norm(data_cpu - psd_decoder(psd_encoder(data_cpu)))/norm(data_cpu)
-        nn_error = norm(data_cpu - nn_decoder(nn_encoder(data_cpu)))/norm(data_cpu)
-
         psd_rs = get_reduced_model(psd_encoder, psd_decoder, psd_error; n=n, μ_val=μ_test_val, Ñ=(N-2))
         nn_rs = get_reduced_model(nn_encoder, nn_decoder, nn_error; n=n, μ_val=μ_test_val, Ñ=(N-2))
 
         reduction_errors = (psd=compute_reduction_error(psd_rs, sol_full), nn=compute_reduction_error(nn_rs, sol_full))
-        projection_errors = (psd=psd_error, nn=nn_error)
+        projection_errors = (psd=projection_error(psd_rs, sol_full), nn=projection_error(nn_rs, sol_full))
         temp_errors = (reduction_error=reduction_errors, projection_error=projection_errors)
         errors = NamedTuple{(keys(errors)..., Symbol("n"*string(n)))}((values(errors)..., temp_errors))
     end
