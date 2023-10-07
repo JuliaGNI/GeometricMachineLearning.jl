@@ -1,9 +1,16 @@
-"""
+@doc raw"""
 This is a PSD-like layer used for symplectic autoencoders. 
 One layer has the following shape:
 
-    |Φ 0|
-A = |0 Φ|, where Φ is an element of the regular Stiefel manifold. 
+```math
+A = \begin{bmatrix} \Phi & \mathbb{O} \\ \mathbb{O} & \Phi \end{bmatrix},
+```
+where $\Phi$ is an element of the Stiefel manifold $St(n, N)$.
+
+The constructor of PSDLayer is called by `PSDLayer(M, N; retraction=retraction)`: 
+- `M` is the input dimension.
+- `N` is the output dimension. 
+- `retraction` is an instance of a struct with supertype `AbstractRetraction`. The only options at the moment are `Geodesic()` and `Cayley()`.
 """
 struct PSDLayer{M, N, Retraction} <: LayerWithManifold{M, N, Retraction} end
 
