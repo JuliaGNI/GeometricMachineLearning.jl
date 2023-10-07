@@ -31,9 +31,11 @@ T = Float64
 N = size(data,1)÷2
 dl = DataLoader(data)
 n_time_steps=size(data,2)/8
-n_epochs = 200
-n_range = 2:7:20
+n_epochs = 2000
+n_range = 2:1:10
 μ_range = (T(0.51), T(0.625), T(0.74))  
+opt = AdamOptimizer(T.((0.001, 0.9, 0.99, 1e-8))...)
+retraction = Cayley()
 
 function get_psd_encoder_decoder(; n=5)
     Φ = svd(hcat(data[1:N,:], data[(N+1):2*N,:])).U[:,1:n]
@@ -45,19 +47,19 @@ function get_psd_encoder_decoder(; n=5)
     psd_encoder, psd_decoder
 end
 
-function get_nn_encoder_decoder(; n=5, n_epochs=500, activation=tanh, opt=AdamOptimizer(), T=T)
+function get_nn_encoder_decoder(; n=5, n_epochs=500, activation=tanh, opt=opt, T=T)
     Ψᵉ = Chain(
         GradientQ(2*N, 10*N, activation), 
         GradientP(2*N, 10*N, activation),
         GradientQ(2*N, 10*N, activation), 
         GradientP(2*N, 10*N, activation),
-        PSDLayer(2*N, 2*n)
+        PSDLayer(2*N, 2*n; retraction=retraction)
     )
 
     Ψᵈ = Chain(
         GradientQ(2*n, 10*n, activation), 
         GradientP(2*n, 10*n, activation),
-        PSDLayer(2*n, 2*N),
+        PSDLayer(2*n, 2*N; retraction=retraction),
         GradientQ(2*N, 2*N, activation)
         )
     model = Chain(  
@@ -74,10 +76,18 @@ function get_nn_encoder_decoder(; n=5, n_epochs=500, activation=tanh, opt=AdamOp
 
     for _ in 1:n_training_iterations
         redraw_batch!(dl)
-        loss_val, pb = Zygote.pullback(ps -> loss(model, ps, dl), ps)
+        loss_val, pb = try 
+            Zygote.pullback(ps -> loss(model, ps, dl), ps)
+        catch 
+            continue 
+        end
         dp = pb(one(loss_val))[1]
 
-        optimization_step!(optimizer_instance, model, ps, dp)
+        try 
+            optimization_step!(optimizer_instance, model, ps, dp)
+        catch
+            continue 
+        end
         ProgressMeter.next!(progress_object; showvalues=[(:TrainingLoss, loss_val)])
     end
 
@@ -190,11 +200,11 @@ function plot_projection_reduction_errors(μ_errors)
             psd_projection_vals[it] = psd_projection_val
             psd_reduction_vals[it] = psd_reduction_val
         end
-        plot_object = plot(n_vals, psd_projection_vals, color=2, seriestype=:scatter, ylimits=(0,1), label="PSD projection")
-        plot!(plot_object, n_vals, psd_reduction_vals, color=2, seriestype=:scatter, markershape=:cross,label="PSD reduction")
+        plot_object = plot(n_vals, psd_projection_vals, color=2, seriestype=:scatter, markershape=:cross, ylimits=(0,1), label="PSD projection")
+        plot!(plot_object, n_vals, psd_reduction_vals, color=2, seriestype=:scatter, label="PSD reduction")
 
-        plot!(plot_object, n_vals, nn_projection_vals, color=3, seriestype=:scatter, label="NN projection")        
-        plot!(plot_object, n_vals, nn_reduction_vals, color=3, seriestype=:scatter, markershape=:cross,label="NN reduction")
+        plot!(plot_object, n_vals, nn_projection_vals, color=3, seriestype=:scatter, markershape=:cross, label="NN projection")        
+        plot!(plot_object, n_vals, nn_reduction_vals, color=3, seriestype=:scatter, label="NN reduction")
         png(plot_object, "plots/mu"*μ[3:end])
     end
 end
