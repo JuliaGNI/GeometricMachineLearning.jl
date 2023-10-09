@@ -55,13 +55,6 @@ function plot_time_evolution(T=Float32; spacing=T(.01), time_step=T(0.25), μ=T(
     curves, curves_p, plot(Ω, curves, layout=(length(I), 1)), plot(Ω, curves_p, layout=(length(I), 1))
 end
 
-#=
-μ = Float32(5/12)
-data, data_p, plot_q, plot_p = plot_time_evolution(;μ=μ)
-png(plot_q, "q_data_for_μ="*string(μ))
-png(plot_p, "p_data_for_μ="*string(μ))
-=#
-
 function generate_data(T=Float32; spacing=T(.01), time_step=T(0.01), μ_collection=T(5/12):T(.1):T(5/6))
     Ω, I = get_domain(T, spacing, time_step)
     curves = zeros(T, 2*length(Ω), length(μ_collection), length(I))
@@ -77,7 +70,9 @@ function generate_data(T=Float32; spacing=T(.01), time_step=T(0.01), μ_collecti
     curves
 end
 
-function analytic_solution(T=Float64; N::Int=2048, n_time_steps=4000, μ_collection=T(5/12):T(.1):T(5/6))
+function analytic_solution(T=Float64; N::Int=2048, n_time_steps=4000, n_μ::Int=8)
+    μ_spacing = (T(5/6) - T(5/12))/(n_μ - 1)
+    μ_collection = T(5/12):μ_spacing:T(5/6)
     spacing = T(1/(N-1))
     time_step = T(1/(n_time_steps-1))
     generate_data(T; spacing=spacing, time_step=time_step, μ_collection=μ_collection)
