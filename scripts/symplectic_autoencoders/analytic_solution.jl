@@ -1,5 +1,6 @@
 """
-TODO: Implement p component!
+TODO: 
+- Rename this file to "analytic solution". 
 """
 
 using Plots, ForwardDiff
@@ -74,4 +75,10 @@ function generate_data(T=Float32; spacing=T(.01), time_step=T(0.01), μ_collecti
         end
     end
     curves
+end
+
+function analytic_solution(T=Float64; N::Int=2048, n_time_steps=4000, μ_collection=T(5/12):T(.1):T(5/6))
+    spacing = T(1/(N-1))
+    time_step = T(1/(n_time_steps-1))
+    generate_data(T; spacing=spacing, time_step=time_step, μ_collection=μ_collection)
 end
