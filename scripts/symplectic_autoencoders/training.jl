@@ -24,7 +24,7 @@ dl = DataLoader(data)
 n_time_steps=size(data,2)/8
 n_epochs = 10
 n_range = 2:1:10
-μ_range = (T(0.51), T(0.625), T(0.74), T(0.81))  
+μ_range = (T(0.51), T(0.625), T(0.64), T(0.47))  
 opt = AdamOptimizer(T.((0.001, 0.9, 0.99, 1e-8))...)
 retraction = Cayley()
 

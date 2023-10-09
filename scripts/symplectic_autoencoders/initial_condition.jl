@@ -11,7 +11,7 @@ function h(x::T) where T
 end
 
 function s(ξ, μ::T) where T
-    T(4) / μ * abs(ξ + T(.5)*(T(1) - μ))
+    T(28) * μ * abs(ξ + T(.5) * μ)
 end
 
 u₀(ξ, μ) = h(s(ξ, μ))

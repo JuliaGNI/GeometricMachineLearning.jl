@@ -5,6 +5,12 @@ TODO:
 
 using Plots, ForwardDiff
 
+T = Float64
+μ_left = T(5/12)
+μ_right = T(4/6)
+n_μ = 8
+μ_collection = μ_left:((μ_right-μ_left)/(n_μ-1)):μ_right
+
 function h(x::T) where T
     if T(0) ≤ x ≤ T(1)
         T(1) - T(1.5)*x^2 + T(.75)*x^3 
@@ -16,7 +22,7 @@ function h(x::T) where T
 end
 
 function s(ξ, μ::T) where T
-    T(4) / μ * abs(ξ + T(.5)*(T(1) - μ))
+    T(20) * μ * abs(ξ + T(.5)*μ)
 end
 
 u₀(ξ, μ) = h(s(ξ, μ))
@@ -55,7 +61,7 @@ function plot_time_evolution(T=Float32; spacing=T(.01), time_step=T(0.25), μ=T(
     curves, curves_p, plot(Ω, curves, layout=(length(I), 1)), plot(Ω, curves_p, layout=(length(I), 1))
 end
 
-function generate_data(T=Float32; spacing=T(.01), time_step=T(0.01), μ_collection=T(5/12):T(.1):T(5/6))
+function generate_data(T=Float32; spacing=T(.01), time_step=T(0.01), μ_collection=μ_collection)
     Ω, I = get_domain(T, spacing, time_step)
     curves = zeros(T, 2*length(Ω), length(μ_collection), length(I))
 
@@ -70,9 +76,9 @@ function generate_data(T=Float32; spacing=T(.01), time_step=T(0.01), μ_collecti
     curves
 end
 
-function analytic_solution(T=Float64; N::Int=2048, n_time_steps=4000, n_μ::Int=8)
-    μ_spacing = (T(5/6) - T(5/12))/(n_μ - 1)
-    μ_collection = T(5/12):μ_spacing:T(5/6)
+function analytic_solution(T=Float64; N::Int=2048, n_time_steps=4000, μ_left=μ_left, μ_right=μ_right, n_μ::Int=8)
+    μ_spacing = (T(μ_left) - T(μ_right))/(n_μ - 1)
+    μ_collection = T(μ_left):μ_spacing:T(μ_right)
     spacing = T(1/(N-1))
     time_step = T(1/(n_time_steps-1))
     generate_data(T; spacing=spacing, time_step=time_step, μ_collection=μ_collection)

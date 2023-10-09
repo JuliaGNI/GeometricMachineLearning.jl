@@ -8,13 +8,15 @@ using HDF5
 include("vector_fields.jl")
 include("initial_condition.jl")
 
-Ñ = 2048
+Ñ = 512
 T = Float64
 # params = (μ=T(.5), N=N, Δx=T(1/(N-1)))
 n_params = 2
-#ℙ = T(5/12):T((5/6-5/12)/(n_params-1)):T(5/6)
 n_time_steps = 4000
 p_zero = false
+
+μ_left = T(5/12)
+μ_right = T(4/6)
 
 function perform_integration(params, n_time_steps)
     tspan = (T(0),T(1))
@@ -50,7 +52,7 @@ function generate_and_safe_data(ℙ, n_time_steps, Ñ=Ñ, n_params=n_params, f
 end
 
 function generate_and_safe_data(;n_params::Integer=n_params, n_time_steps=n_time_steps, Ñ=Ñ,file_name="snapshot_matrix.h5")
-    ℙ = T(5/12):T((5/6-5/12)/(n_params-1)):T(5/6)
+    ℙ = T(μ_left):T((μ_right-μ_left)/(n_params-1)):T(μ_right)
     generate_and_safe_data(ℙ, n_time_steps, Ñ, n_params, file_name)
 end
 
