@@ -42,6 +42,33 @@ The vector field of the FOM is described by (see for example (Peng and Mohseni, 
 
 The wave equation has a slowely-decaying [Kolmogorov $n$-width](../reduced_order_modeling/kolmogorov_n_width.md) (see e.g. Greif and Urban, 2019), which means linear methods like PSD will perform poorly.
 
+## Using the Linear Wave Equation in Numerical Experiments 
+
+In order to use the linear wave equation in numerical experiments we have to pick suitable initial conditions. For this, consider the third-order spline: 
+
+```math
+h(s)  = \begin{cases}
+        1 - \frac{3}{2}s^2 + \frac{3}{4}s^3 & \text{if } 0 \leq s \leq 1 \\ 
+        \frac{1}{4}(2 - s)^3 & \text{if } 1 < s \leq 2 \\ 
+        0 & \text{else.} 
+\end{cases}
+```
+
+Plotted on the relevant domain it looks like this: 
+
+![](../images/third_degree_spline.png)
+
+Taking the above function $h(s)$ as a starting point, the initial conditions for the linear wave equations will now be constructed under the following considerations: 
+- the initial condition (i.e. the shape of the wave) should depend on the parameter of the vector field, i.e. $u_0(\mu)(\omega) = h(s(\omega, \mu))$.
+- the solutions of the linear wave equation will travel with speed $\mu$, and we should make sure that the wave does not **touch** the right boundary of the domain, i.e. 0.5. So the peak should be sharper for higher values of $\mu$ as the wave will travel faster.
+- the wave should start at the left boundary of the domain, i.e. at point 0.5, so to cover it as much as possible. 
+
+Based on this we end up with the following thoice of parametrized initial conditions: 
+
+```math 
+u_0(\mu)(\omega) = h(s(\omega, \mu)), \quad s(\omega, \mu) =  20 \mu  |\omega + \frac{\mu}{2}|.
+```
+
 ## References 
 - Buchfink, Patrick, Silke Glas, and Bernard Haasdonk. "Symplectic model reduction of Hamiltonian systems on nonlinear manifolds and approximation with weakly symplectic autoencoder." SIAM Journal on Scientific Computing 45.2 (2023): A289-A311.
 - Peng, Liqian, and Kamran Mohseni. "Symplectic model reduction of Hamiltonian systems." SIAM Journal on Scientific Computing 38.1 (2016): A1-A27.
