@@ -284,7 +284,7 @@ module GeometricMachineLearning
     # INCLUDE TRAINING integrator
 
     export TrainingSet
-    export nn, parameters, data
+    export nn, parameters # , data
 
     include("training/training_set.jl")
 
