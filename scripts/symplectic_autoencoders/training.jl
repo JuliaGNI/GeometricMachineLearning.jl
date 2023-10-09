@@ -2,6 +2,8 @@
 Implement variational autoencoder!!! Up to now the variational property has not been included.
 
 Make the computation of the reduction error automatic! (this has to be done for many values!)
+
+Also try using analytical data!!!
 """
 
 using GeometricMachineLearning 
@@ -16,26 +18,34 @@ using Plots
 include("vector_fields.jl")
 include("initial_condition.jl")
 
-#μ_collection=T(5/12):T(.1):T(5/6)
-
-backend, data = 
-try 
-    (CUDABackend(),
-    h5open("snapshot_matrix.h5", "r")["data"][:,:] |> cu)
-catch
-    (CPU(),
-    h5open("snapshot_matrix.h5", "r")["data"][:,:])
-end
-
 T = Float64
 N = size(data,1)÷2
 dl = DataLoader(data)
 n_time_steps=size(data,2)/8
-n_epochs = 5000
+n_epochs = 10
 n_range = 2:1:10
 μ_range = (T(0.51), T(0.625), T(0.74), T(0.81))  
 opt = AdamOptimizer(T.((0.001, 0.9, 0.99, 1e-8))...)
 retraction = Cayley()
+
+
+function gpu_backend()
+    h5 = h5open("snapshot_matrix.h5", "r")
+    (CUDABackend(), h5["data"][:,:] |> cu, h5["n_params"])
+end 
+
+function cpu_backend()
+    h5 = h5open("snapshot_matrix.h5", "r")
+    (CPU(), h5["data"][:,:], h5["n_params"])
+end 
+
+
+backend, data = 
+try 
+    gpu_backend()
+catch
+    cpu_backend()
+end
 
 function get_psd_encoder_decoder(; n=5)
     Φ = svd(hcat(data[1:N,:], data[(N+1):2*N,:])).U[:,1:n]
@@ -101,14 +111,14 @@ function get_nn_encoder_decoder(; n=5, n_epochs=500, activation=tanh, opt=opt, T
     nn_encoder, nn_decoder
 end
 
-function get_reduced_model(encoder, decoder, projection_error;n=5, μ_val=0.51, Ñ=(N-2), n_time_steps=n_time_steps, integrator=ImplicitMidpoint(), system_type=GeometricMachineLearning.Symplectic())
+function get_reduced_model(encoder, decoder;n=5, μ_val=0.51, Ñ=(N-2), n_time_steps=n_time_steps, integrator=ImplicitMidpoint(), system_type=GeometricMachineLearning.Symplectic())
     params = (μ=μ_val, Ñ=Ñ, Δx=T(1/(Ñ-1)))
     tstep = T(1/(n_time_steps-1))
     tspan = (T(0), T(1))
     ics = get_initial_condition_vector(μ_val, Ñ)
     v_field_full = v_field(params)
     v_field_reduced = reduced_vector_field_from_full_explicit_vector_field(v_field_explicit(params), decoder, N, n)
-    ReducedSystem(N, n, encoder, decoder, v_field_full, v_field_reduced, params, tspan, tstep, ics, projection_error; integrator=integrator, system_type=system_type)
+    ReducedSystem(N, n, encoder, decoder, v_field_full, v_field_reduced, params, tspan, tstep, ics; integrator=integrator, system_type=system_type)
 end
 
 function _cpu_convert(ps::Tuple)
@@ -154,7 +164,7 @@ end
 data_cpu = _cpu_convert(data)
 μ_errors = NamedTuple()
 for μ_test_val in μ_range
-    dummy_rs = get_reduced_model(nothing, nothing, nothing; n=1, μ_val=μ_test_val, Ñ=(N-2))
+    dummy_rs = get_reduced_model(nothing, nothing; n=1, μ_val=μ_test_val, Ñ=(N-2))
     sol_full = perform_integration_full(dummy_rs)
     errors = NamedTuple()
     for n in n_range
@@ -162,11 +172,11 @@ for μ_test_val in μ_range
         psd_encoder, psd_decoder = get_psd_encoder_decoder(n=n)
         nn_encoder, nn_decoder = get_nn_encoder_decoder(n=n, n_epochs=n_epochs)
 
-        psd_rs = get_reduced_model(psd_encoder, psd_decoder, psd_error; n=n, μ_val=μ_test_val, Ñ=(N-2))
-        nn_rs = get_reduced_model(nn_encoder, nn_decoder, nn_error; n=n, μ_val=μ_test_val, Ñ=(N-2))
+        psd_rs = get_reduced_model(psd_encoder, psd_decoder; n=n, μ_val=μ_test_val, Ñ=(N-2))
+        nn_rs = get_reduced_model(nn_encoder, nn_decoder; n=n, μ_val=μ_test_val, Ñ=(N-2))
 
         reduction_errors = (psd=compute_reduction_error(psd_rs, sol_full), nn=compute_reduction_error(nn_rs, sol_full))
-        projection_errors = (psd=projection_error(psd_rs, sol_full), nn=projection_error(nn_rs, sol_full))
+        projection_errors = (psd=compute_projection_error(psd_rs, sol_full), nn=compute_projection_error(nn_rs, sol_full))
         temp_errors = (reduction_error=reduction_errors, projection_error=projection_errors)
         errors = NamedTuple{(keys(errors)..., Symbol("n"*string(n)))}((values(errors)..., temp_errors))
     end
@@ -202,7 +212,7 @@ function plot_projection_reduction_errors(μ_errors)
 
         plot!(plot_object, n_vals, nn_projection_vals, color=3, seriestype=:scatter, markershape=:cross, label="NN projection")        
         plot!(plot_object, n_vals, nn_reduction_vals, color=3, seriestype=:scatter, label="NN reduction")
-        png(plot_object, "plots/mu"*μ[3:end])
+        png(plot_object, "plots/v2mu"*μ[3:end])
     end
 end
 
