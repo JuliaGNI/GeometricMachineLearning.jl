@@ -19,7 +19,7 @@ If we discretize $\mathcal{H}$ directly, to obtain a Hamiltonian on a finite-dim
 [^1]: This conserves the Hamiltonian structure of the system.
 
 ```math
-\mathcal{H}_h(z) = \sum_{i=1}^{\tilde{N}}\frac{\Delta{}x}{2}\bigg[p_i^2 + \mu^2\frac{(q_i - q_{i-1})^2 + (q_{i+1} - q_i)^2}{2\Delta{}x}\bigg] = z^TKz,
+\mathcal{H}_h(z) = \sum_{i=1}^{\tilde{N}}\frac{\Delta{}x}{2}\bigg[p_i^2 + \mu^2\frac{(q_i - q_{i-1})^2 + (q_{i+1} - q_i)^2}{2\Delta{}x^2}\bigg] = \frac{\Delta{}x}{2}p^Tp + q^TKq,
 ```
 
 where the matrix $K$ contains elements of the form: 
