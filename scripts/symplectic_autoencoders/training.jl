@@ -19,7 +19,6 @@ include("vector_fields.jl")
 include("initial_condition.jl")
 
 T = Float64
-N = size(data,1)÷2
 n_epochs = 10
 n_range = 2:1:10
 μ_range = (T(0.51), T(0.625), T(0.64), T(0.47))  
@@ -28,13 +27,23 @@ retraction = Cayley()
 
 
 function gpu_backend()
-    h5 = h5open("snapshot_matrix.h5", "r")
-    (CUDABackend(), h5["data"][:,:] |> cu, h5["n_params"])
+    data = h5open("snapshot_matrix.h5", "r") do file
+        read(file, "data")
+    end
+    n_params = h5open("snapshot_matrix.h5", "r") do file
+        read(file, "n_params")
+    end
+    (CUDABackend(), data |> cu, n_params)
 end 
 
 function cpu_backend()
-    h5 = h5open("snapshot_matrix.h5", "r")
-    (CPU(), h5["data"][:,:], h5["n_params"])
+    data = h5open("snapshot_matrix.h5", "r") do file
+        read(file, "data")
+    end
+    n_params = h5open("snapshot_matrix.h5", "r") do file
+        read(file, "n_params")
+    end
+    (CPU(), data, n_params)
 end 
 
 
@@ -46,7 +55,9 @@ catch
 end
 
 dl = DataLoader(data)
-n_time_steps=size(data,2) / n_params
+n_time_steps = size(data,2) / n_params
+N = size(data,1)÷2
+
 
 function get_psd_encoder_decoder(; n=5)
     Φ = svd(hcat(data[1:N,:], data[(N+1):2*N,:])).U[:,1:n]
