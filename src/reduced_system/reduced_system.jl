@@ -24,16 +24,15 @@ struct ReducedSystem{T, ST<:SystemType}
     tspan 
     tstep
     ics
-    projection_error
 
-    function ReducedSystem(N::Integer, n::Integer, encoder, decoder, full_vector_field, reduced_vector_field, params, tspan, tstep, ics, projection_error::T; integrator=ImplicitMidpoint(), system_type=Symplectic()) where T 
-        new{T, typeof(system_type)}(N, n, encoder, decoder, full_vector_field, reduced_vector_field, integrator, params, tspan, tstep, ics, projection_error)
+    function ReducedSystem(N::Integer, n::Integer, encoder, decoder, full_vector_field, reduced_vector_field, params, tspan, tstep, ics; integrator=ImplicitMidpoint(), system_type=Symplectic(), T=Float64) 
+        new{T, typeof(system_type)}(N, n, encoder, decoder, full_vector_field, reduced_vector_field, integrator, params, tspan, tstep, ics)
     end
 end
 
-function ReducedSystem(N::Integer, n::Integer, encoder, decoder, full_vector_field, params, tspan, tstep, ics, projection_error::T; integrator=ImplicitMidpoint(), system_type=Symplectic()) where T
+function ReducedSystem(N::Integer, n::Integer, encoder, decoder, full_vector_field, params, tspan, tstep, ics; integrator=ImplicitMidpoint(), system_type=Symplectic(), T=Float64) 
     ReducedSystem{T, typeof(system_type)}(
-        N, n, encoder, decoder, full_vector_field, build_reduced_vector_field(full_vector_field, decoder, N, n, T), integrator, params, tspan, tstep, ics, projection_error 
+        N, n, encoder, decoder, full_vector_field, build_reduced_vector_field(full_vector_field, decoder, N, n, T), integrator, params, tspan, tstep, ics
     )
 end
 
@@ -88,6 +87,7 @@ function compute_reduction_error(rs::ReducedSystem, sol_full)
 end
 
 function compute_projection_error(rs::ReducedSystem, sol_full)
+    n_time_steps = Int(round((rs.tspan[2] - rs.tspan[1])/rs.tstep + 1))
     sol_matrix_full = zeros(2*rs.N, n_time_steps)
     for (t_ind,q) in zip(1:n_time_steps,sol_full.q)
         sol_matrix_full[:, t_ind] = q
