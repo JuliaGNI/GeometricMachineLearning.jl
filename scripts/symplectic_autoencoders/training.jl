@@ -20,8 +20,6 @@ include("initial_condition.jl")
 
 T = Float64
 N = size(data,1)÷2
-dl = DataLoader(data)
-n_time_steps=size(data,2)/8
 n_epochs = 10
 n_range = 2:1:10
 μ_range = (T(0.51), T(0.625), T(0.64), T(0.47))  
@@ -40,12 +38,15 @@ function cpu_backend()
 end 
 
 
-backend, data = 
+backend, data, n_params = 
 try 
     gpu_backend()
 catch
     cpu_backend()
 end
+
+dl = DataLoader(data)
+n_time_steps=size(data,2) / n_params
 
 function get_psd_encoder_decoder(; n=5)
     Φ = svd(hcat(data[1:N,:], data[(N+1):2*N,:])).U[:,1:n]

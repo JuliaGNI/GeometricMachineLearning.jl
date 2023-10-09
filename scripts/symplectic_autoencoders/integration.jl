@@ -12,7 +12,7 @@ Ñ = 512
 T = Float64
 # params = (μ=T(.5), N=N, Δx=T(1/(N-1)))
 n_params = 2
-n_time_steps = 4000
+n_time_steps = 2000
 p_zero = false
 
 μ_left = T(5/12)
