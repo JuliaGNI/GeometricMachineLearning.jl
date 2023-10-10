@@ -1,9 +1,10 @@
 """
-Implement variational autoencoder!!! Up to now the variational property has not been included.
+TODO
 
-Make the computation of the reduction error automatic! (this has to be done for many values!)
-
-Also try using analytical data!!!
+- Implement variational autoencoder!!! Up to now the variational property has not been included.
+- Make the computation of the reduction error automatic! (this has to be done for many values!)
+- Also try using analytical data!!!
+- At the moment you are training every network 4 times. 好傻，笨蛋。
 """
 
 using GeometricMachineLearning 
@@ -19,9 +20,9 @@ include("vector_fields.jl")
 include("initial_condition.jl")
 
 T = Float64
-n_epochs = 10
-n_range = 2:1:10
-μ_range = (T(0.51), T(0.625), T(0.64), T(0.47))  
+n_epochs = 100
+n_range = 2:5:20
+μ_range = (T(0.51), )#T(0.625), T(0.64), T(0.47))  
 opt = AdamOptimizer(T.((0.001, 0.9, 0.99, 1e-8))...)
 retraction = Cayley()
 
@@ -82,7 +83,8 @@ function get_nn_encoder_decoder(; n=5, n_epochs=500, activation=tanh, opt=opt, T
         GradientQ(2*n, 10*n, activation), 
         GradientP(2*n, 10*n, activation),
         PSDLayer(2*n, 2*N; retraction=retraction),
-        GradientQ(2*N, 2*N, activation)
+        GradientQ(2*N, 2*N, activation),
+        GradientP(2*N, 2*N, activation)
         )
     model = Chain(  
                     Ψᵉ.layers..., 
@@ -224,7 +226,7 @@ function plot_projection_reduction_errors(μ_errors)
 
         plot!(plot_object, n_vals, nn_projection_vals, color=3, seriestype=:scatter, markershape=:cross, label="NN projection")        
         plot!(plot_object, n_vals, nn_reduction_vals, color=3, seriestype=:scatter, label="NN reduction")
-        png(plot_object, "plots/v2mu"*μ[3:end])
+        png(plot_object, "plots/v3mu"*μ[3:end])
     end
 end
 
