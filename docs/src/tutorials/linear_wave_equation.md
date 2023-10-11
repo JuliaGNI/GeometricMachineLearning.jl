@@ -63,7 +63,7 @@ Taking the above function $h(s)$ as a starting point, the initial conditions for
 - the solutions of the linear wave equation will travel with speed $\mu$, and we should make sure that the wave does not **touch** the right boundary of the domain, i.e. 0.5. So the peak should be sharper for higher values of $\mu$ as the wave will travel faster.
 - the wave should start at the left boundary of the domain, i.e. at point 0.5, so to cover it as much as possible. 
 
-Based on this we end up with the following thoice of parametrized initial conditions: 
+Based on this we end up with the following choice of parametrized initial conditions: 
 
 ```math 
 u_0(\mu)(\omega) = h(s(\omega, \mu)), \quad s(\omega, \mu) =  20 \mu  |\omega + \frac{\mu}{2}|.
