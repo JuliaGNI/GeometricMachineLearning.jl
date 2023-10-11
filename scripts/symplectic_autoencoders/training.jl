@@ -21,8 +21,8 @@ include("initial_condition.jl")
 
 T = Float64
 n_epochs = 100
-n_range = 2:5:20
-μ_range = (T(0.51), )#T(0.625), T(0.64), T(0.47))  
+n_range = 2:1:15
+μ_range = (T(0.51), T(0.625), T(0.55), T(0.47))  
 opt = AdamOptimizer(T.((0.001, 0.9, 0.99, 1e-8))...)
 retraction = Cayley()
 
@@ -83,9 +83,9 @@ function get_nn_encoder_decoder(; n=5, n_epochs=500, activation=tanh, opt=opt, T
         GradientQ(2*n, 10*n, activation), 
         GradientP(2*n, 10*n, activation),
         PSDLayer(2*n, 2*N; retraction=retraction),
-        GradientQ(2*N, 2*N, activation),
-        GradientP(2*N, 2*N, activation)
-        )
+        GradientQ(2*N, 2*N, activation)
+         )
+
     model = Chain(  
                     Ψᵉ.layers..., 
                     Ψᵈ.layers...
@@ -176,15 +176,33 @@ function plot_comparison_for_reconstructed_trajectories(trajectories, t_step=0)
 end
 
 data_cpu = _cpu_convert(data)
+
+function get_enocders_decoders(n_range)
+    encoders_decoders = NamedTuple()
+    for n in n_range
+        psd_encoder, psd_decoder = get_psd_encoder_decoder(n=n)
+        nn_encoder, nn_decoder = get_nn_encoder_decoder(n=n, n_epochs=n_epochs)
+        nn_ed = (encoder=nn_encoder, decoder=nn_decoder)
+        psd_ed = (encoder=psd_encoder, decoder=psd_decoder)
+        encoders_decoders_current = (nn=nn_ed, psd=psd_ed)
+        encoders_decoders = NamedTuple{(keys(encoders_decoders)..., Symbol("n"*string(n)))}((values(encoders_decoders)..., encoders_decoders_current))
+    end
+    encoders_decoders
+end
+
+encoders_decoders = get_enocders_decoders(n_range)
+
 μ_errors = NamedTuple()
 for μ_test_val in μ_range
     dummy_rs = get_reduced_model(nothing, nothing; n=1, μ_val=μ_test_val, Ñ=(N-2))
     sol_full = perform_integration_full(dummy_rs)
     errors = NamedTuple()
     for n in n_range
+        current_n_identifier = Symbol("n"*string(n))
 
-        psd_encoder, psd_decoder = get_psd_encoder_decoder(n=n)
-        nn_encoder, nn_decoder = get_nn_encoder_decoder(n=n, n_epochs=n_epochs)
+        encoders_decoders_current = encoders_decoders[current_n_identifier]
+        psd_encoder, psd_decoder = encoders_decoders_current.psd
+        nn_encoder, nn_decoder = encoders_decoders_current.nn
 
         psd_rs = get_reduced_model(psd_encoder, psd_decoder; n=n, μ_val=μ_test_val, Ñ=(N-2))
         nn_rs = get_reduced_model(nn_encoder, nn_decoder; n=n, μ_val=μ_test_val, Ñ=(N-2))
@@ -192,7 +210,7 @@ for μ_test_val in μ_range
         reduction_errors = (psd=compute_reduction_error(psd_rs, sol_full), nn=compute_reduction_error(nn_rs, sol_full))
         projection_errors = (psd=compute_projection_error(psd_rs, sol_full), nn=compute_projection_error(nn_rs, sol_full))
         temp_errors = (reduction_error=reduction_errors, projection_error=projection_errors)
-        errors = NamedTuple{(keys(errors)..., Symbol("n"*string(n)))}((values(errors)..., temp_errors))
+        errors = NamedTuple{(keys(errors)..., current_n_identifier)}((values(errors)..., temp_errors))
     end
 
     global μ_errors = NamedTuple{(keys(μ_errors)..., Symbol("μ"*string(μ_test_val)))}((values(μ_errors)..., errors))
