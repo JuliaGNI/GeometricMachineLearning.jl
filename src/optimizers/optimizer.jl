@@ -17,6 +17,18 @@ end
 #######################################################################################
 # optimization step function
 
+@doc raw"""
+Optimization for a single layer. 
+
+inputs: 
+- `o::Optimizer`
+- `d::Union{AbstractExplicitLayer, AbstractExplicitCell}`
+- `ps::NamedTuple`: the parameters 
+- `C::NamedTuple`: NamedTuple of the caches 
+- `dx::NamedTuple`: NamedTuple of the derivatives (output of AD routine)
+
+`ps`, `C` and `dx` must have the same keys. 
+"""
 function optimization_step!(o::Optimizer, d::Union{AbstractExplicitLayer, AbstractExplicitCell}, ps::NamedTuple, C::NamedTuple, dx::NamedTuple)
     gx = rgrad(ps, dx)
     λY = GlobalSection(ps)
@@ -26,14 +38,14 @@ function optimization_step!(o::Optimizer, d::Union{AbstractExplicitLayer, Abstra
     apply_section!(ps, λY, ps₂)
 end
 
-function optimization_step!(o::Optimizer, model::Chain, ps, dx)
+function optimization_step!(o::Optimizer, model::Chain, ps::Tuple, dx::Tuple)
     o.step += 1
-    for (index, element) in zip(eachindex(model.layers), model)
-        optimization_step!(o, element, ps[index...], o.cache[index...], dx[index...])
+    for (index, element) in zip(eachindex(model.layers), model.layers)
+        optimization_step!(o, element, ps[index], o.cache[index], dx[index])
     end
 end
 
-function optimization_step!(o::Optimizer, model::AbstractExplicitLayer, ps, dx)
+function optimization_step!(o::Optimizer, model::AbstractExplicitLayer, ps::NamedTuple, dx::NamedTuple)
     o.step += 1
 
     optimization_step!(o, model, ps, o.cache, dx)
