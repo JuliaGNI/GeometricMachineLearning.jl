@@ -1,7 +1,13 @@
-"""
+@doc raw"""
 Classification Layer that takes a matrix as an input and returns a vector that is used for MNIST classification. 
 
-TODO: Implement picking the last vector.
+It has the following arguments: 
+- `M`: input dimension 
+- `N`: output dimension 
+- `activation`: the activation function 
+
+And the following optional argument: 
+- `average`: If this is set to `true`, then the output is computed as $\frac{1}{N}\sum_{i=1}^N[input]_{\bullet{}i}$. If set to `false` (the default) it picks the last column of the input. 
 """
 struct Classification{M, N, average, FT} <: AbstractExplicitLayer{M, N}
     activation::FT
