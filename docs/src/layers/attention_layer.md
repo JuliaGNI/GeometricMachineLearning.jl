@@ -1,5 +1,19 @@
 # The Attention Layer
 
+The attention mechanism was originally applied for image and natural language processing (NLP) tasks. In (Bahdanau et al, 2014) ``additive'' attention is used: 
+
+```math
+(z_q, z_k) \mapsto v^T\sigma(Wz_q + Uz_k).
+```
+
+However ``multiplicative'' attention is more straightforward to interpret and cheaper to handle computationally: 
+
+```math
+(z_q, z_k) \mapsto z_q^TWz_k.
+```
+
+Regardless of the type of attention used, they all try to compute correlations among input sequences on whose basis further neural network-based computation is performed. 
+
 The attention layer (and the *orthonormal activation* function defined for it) was specifically designed to generalize transformers to symplectic data. 
 Usually a self-attention layer takes the following form: 
 
@@ -55,3 +69,13 @@ Multiplying with the matrix $\Lambda(Z)$ from the right onto $[z^1, \ldots, z^T]
 ```
 
 from the left onto the big vector. 
+
+
+## Historical Note 
+
+Attention was used before, but always in connection with **recurrent neural networks** (see (Luong et al, 2015) and (Bahdanau et al, 2014)). 
+
+
+## References 
+- Luong M T, Pham H, Manning C D. Effective approaches to attention-based neural machine translation[J]. arXiv preprint arXiv:1508.04025, 2015.
+- Bahdanau D, Cho K, Bengio Y. Neural machine translation by jointly learning to align and translate[J]. arXiv preprint arXiv:1409.0473, 2014.
