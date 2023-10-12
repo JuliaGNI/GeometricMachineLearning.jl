@@ -29,19 +29,29 @@ This should be used together with assign_batch_kernel!. It assigns the correspon
 end
 
 
-@kernel function assign_output_estimate_kernel!(output_estimate::AbstractArray{T, 3}, batch::AbstractArray{T,3}, seq_length, prediction_window) where T
+@kernel function assign_output_estimate_kernel!(output_estimate::AbstractArray{T, 3}, full_output::AbstractArray{T,3}, seq_length, prediction_window) where T
     i,j,k = @index(Global, NTuple)
-    output_estimate[i,j,k] = batch[i,seq_length-prediction_window+j,k]
+    output_estimate[i,j,k] = full_output[i,seq_length-prediction_window+j,k]
 end
+
+@doc raw"""
+The function `assign_output_estimate` is closely related to the transformer. It takes the last prediction_window columns of the output and uses is for the final prediction.
+i.e.
+```math
+\mathbb{R}^{N\times\mathtt{pw}}\to\mathbb{R}^{N\times\mathtt{pw}}, \begin{bmatrix} z^{(1)}_1 & \cdots z^{(T)}_1 \\ 
+                \cdots & \cdots \\ 
+                z^{(T - \mathtt{pw})}_n & \cdots & z^{(T})_n\end{bmatrix} \mapsto 
+                \begin{bmatrix} z^{(1)}_1 & \cdots z^{(T)}_1 \\ 
+                \cdots & \cdots \\ 
+                z^{(T - \mathtt{pw})}_n & \cdots & z^{(T})_n\end{bmatrix}     
+``` 
 """
-Closely related to the transformer. It takes the last prediction_window columns of the output and uses is for the final prediction.
-"""
-function assign_output_estimate(batch::AbstractArray{T, 3}, prediction_window) where T
-    sys_dim, seq_length, batch_size = size(batch)
-    backend = KernelAbstractions.get_backend(batch)
+function assign_output_estimate(full_output::AbstractArray{T, 3}, prediction_window) where T
+    sys_dim, seq_length, batch_size = size(full_output)
+    backend = KernelAbstractions.get_backend(full_output)
     output_estimate = KernelAbstractions.allocate(backend, T, sys_dim, prediction_window, batch_size)
-    assign_output_estimate! = assign_output_estimate_kernel!(KernelAbstractions.get_backend(batch))
-    assign_output_estimate!(output_estimate, batch, seq_length, prediction_window, ndrange=size(output_estimate))
+    assign_output_estimate! = assign_output_estimate_kernel!(KernelAbstractions.get_backend(full_output))
+    assign_output_estimate!(output_estimate, full_output, seq_length, prediction_window, ndrange=size(output_estimate))
     output_estimate
 end
 
@@ -109,9 +119,9 @@ function augment_zeros(output_diff::AbstractArray{T, 3}, seq_length) where T
     zero_tensor
 end
 
-function ChainRulesCore.rrule(::typeof(assign_output_estimate), batch::AbstractArray{T, 3}, prediction_window) where T
-    seq_length = size(batch, 2)
-    output_estimate = assign_output_estimate(batch, prediction_window)
+function ChainRulesCore.rrule(::typeof(assign_output_estimate), full_output::AbstractArray{T, 3}, prediction_window) where T
+    seq_length = size(full_output, 2)
+    output_estimate = assign_output_estimate(full_output, prediction_window)
     function assign_output_estimate_pullback(output_diff)
         f̄ = NoTangent()
         batch_diff = @thunk augment_zeros(output_diff, seq_length)
