@@ -37,3 +37,4 @@ using SafeTestsets
 @safetestset "Problem & Integrators                                                           " begin include("integrator/test_integrator.jl") end
 @safetestset "Data Loader #1                                                                  " begin include("data_loader/data_loader.jl") end
 @safetestset "Data Loader #2                                                                  " begin include("data_loader/mnist_utils.jl") end
+@safetestset "Data Loader #3 (Batch struct)                                                   " begin include("data_loader/batch.jl") end
