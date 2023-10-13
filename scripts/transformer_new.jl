@@ -21,16 +21,26 @@ batch_size = 2048
 activation = softmax
 n_epochs = 100
 add_connection = false
-backend = CPU()
 
 train_x, train_y = MLDatasets.MNIST(split=:train)[:]
 test_x, test_y = MLDatasets.MNIST(split=:test)[:]
-if backend == CUDABackend()
-	train_x = train_x |> cu 
-	test_x = test_x |> cu 
-	train_y = train_y |> cu 
-	test_y = test_y |> cu
+
+# use CUDA backend if available. else use CPU()
+backend, train_x, test_x, train_y, test_y = 
+    try
+        CUDABackend(),
+        train_x |> cu,
+        test_x |> cu,
+        train_y |> cu,
+        test_y |> cu
+    catch
+        CPU(), 
+        train_x, 
+        test_x, 
+        train_y, 
+        test_y
 end
+
 
 #encoder layer - final layer has to be added for evaluation purposes!
 model1 = Chain(Transformer(patch_length^2, n_heads, n_layers, Stiefel=false, add_connection=add_connection),
