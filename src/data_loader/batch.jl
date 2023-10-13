@@ -46,6 +46,12 @@ Optimize for an entire epoch. For this you have to supply:
 
 With the optional argument:
 - the loss, which takes the `model`, the parameters `ps` and an instance of `DataLoader` as input.
+
+The output of `optimize_for_one_epoch!` is the average loss over all batches of the epoch:
+```math
+output = \frac{1}{mathtt{steps\_per\_epoch}}\sum_{t=1}^mathtt{steps\_per\_epoch}loss(\theta^{(t-1)}).
+```
+This is done because any **reverse differentiation** routine always has two outputs: a pullback and the value of the function it is differentiating. In the case of zygote: `loss_value, pullback = Zygote.pullback(ps -> loss(ps), ps)` (if the loss only depends on the parameters).
 """
 function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTuple}, dl::DataLoader{T, AT, BT}, batch::Batch, loss) where {T, T1, AT<:AbstractArray{T, 3}, BT<:AbstractArray{T1, 3}}
     count = 0
