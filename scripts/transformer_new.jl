@@ -19,9 +19,9 @@ n_layers = 10
 number_of_patch = (image_dim÷patch_length)^2
 batch_size = 2048
 activation = softmax
-n_epochs = 1000
+n_epochs = 100
 add_connection = false
-backend = CUDABackend()
+backend = CPU()
 
 train_x, train_y = MLDatasets.MNIST(split=:train)[:]
 test_x, test_y = MLDatasets.MNIST(split=:test)[:]
@@ -41,43 +41,38 @@ model2 = Chain(Transformer(patch_length^2, n_heads, n_layers, Stiefel=true, add_
 
 
 # err_freq is the frequency with which the error is computed (e.g. every 100 steps)
-function transformer_training(Ψᵉ::Chain; backend=CPU(), n_training_steps=10000, o=AdamOptimizer())
+function transformer_training(Ψᵉ::Chain; backend=CPU(), n_epochs=100, opt=AdamOptimizer())
     # call data loader
-    dl = DataLoader(train_x, train_y, batch_size=batch_size)
-    dl_test = DataLoader(test_x, test_y, batch_size=length(test_y))
+    dl = DataLoader(train_x, train_y)
+    dl_test = DataLoader(test_x, test_y)
+    batch = Batch(batch_size)
 
-    ps = initialparameters(backend, eltype(dl.data), Ψᵉ) 
+    ps = initialparameters(backend, eltype(dl.input), Ψᵉ) 
 
-    optimizer_instance = Optimizer(o, ps)
+    optimizer_instance = Optimizer(opt, ps)
 
-    println("initial test loss: ", loss(Ψᵉ, ps, dl_test), "\n")
+    println("initial test loss: ", GeometricMachineLearning.loss(Ψᵉ, ps, dl_test), "\n")
 
-    progress_object = Progress(n_training_steps; enabled=true)
+    progress_object = Progress(n_epochs; enabled=true)
 
-    loss_array = zeros(eltype(train_x), n_training_steps)
-    for i in 1:n_training_steps
-        redraw_batch!(dl)
-        # ask Michael to take a look at this. Probably not good for performance.
-        loss_val, pb = Zygote.pullback(ps -> loss(Ψᵉ, ps, dl), ps)
-        dp = pb(one(loss_val))[1]
+    loss_array = zeros(eltype(train_x), n_epochs)
+    for i in 1:n_epochs
+        loss_val = optimize_for_one_epoch!(optimizer_instance, Ψᵉ, ps, dl, batch)
 
-        optimization_step!(optimizer_instance, Ψᵉ, ps, dp)
         ProgressMeter.next!(progress_object; showvalues = [(:TrainingLoss, loss_val)])   
         loss_array[i] = loss_val
     end
 
-    println("final test loss: ", loss(Ψᵉ, ps, dl_test), "\n")
+    println("final test loss: ", GeometricMachineLearning.loss(Ψᵉ, ps, dl_test), "\n")
 
     loss_array, ps
 end
 
-# calculate number of epochs
-n_training_steps = Int(ceil(length(train_y)*n_epochs/batch_size))
 
-loss_array2, ps2 = transformer_training(model2, backend=backend, n_training_steps=n_training_steps)
-loss_array1, ps1 = transformer_training(model1, backend=backend, n_training_steps=n_training_steps)
-loss_array3, ps3 = transformer_training(model2, backend=backend, n_training_steps=n_training_steps, o=GradientOptimizer(0.001))
-loss_array4, ps4 = transformer_training(model2, backend=backend, n_training_steps=n_training_steps, o=MomentumOptimizer(0.001, 0.5))
+loss_array2, ps2 = transformer_training(model2, backend=backend, n_epochs=n_epochs)
+loss_array1, ps1 = transformer_training(model1, backend=backend, n_epochs=n_epochs)
+loss_array3, ps3 = transformer_training(model2, backend=backend, n_epochs=n_epochs, opt=GradientOptimizer(0.001))
+loss_array4, ps4 = transformer_training(model2, backend=backend, n_epochs=n_epochs, opt=MomentumOptimizer(0.001, 0.5))
 
 p1 = plot(loss_array1, color=1, label="Regular weights", ylimits=(0.,1.4))
 plot!(p1, loss_array2, color=2, label="Weights on Stiefel Manifold")
