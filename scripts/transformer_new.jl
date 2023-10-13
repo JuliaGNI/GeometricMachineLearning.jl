@@ -49,7 +49,6 @@ model1 = Chain(Transformer(patch_length^2, n_heads, n_layers, Stiefel=false, add
 model2 = Chain(Transformer(patch_length^2, n_heads, n_layers, Stiefel=true, add_connection=add_connection),
 	    Classification(patch_length^2, 10, activation))
 
-
 # err_freq is the frequency with which the error is computed (e.g. every 100 steps)
 function transformer_training(Ψᵉ::Chain; backend=CPU(), n_epochs=100, opt=AdamOptimizer())
     # call data loader
@@ -61,9 +60,13 @@ function transformer_training(Ψᵉ::Chain; backend=CPU(), n_epochs=100, opt=Ada
 
     optimizer_instance = Optimizer(opt, ps)
 
-    println("initial test loss: ", GeometricMachineLearning.loss(Ψᵉ, ps, dl_test), "\n")
+    println("initial test accuracy: ", GeometricMachineLearning.accuracy(Ψᵉ, ps, dl_test), "\n")
 
     progress_object = Progress(n_epochs; enabled=true)
+
+    # use the `time` function to get the system time.
+    init_time = time()
+    total_time = init_time - time()
 
     loss_array = zeros(eltype(train_x), n_epochs)
     for i in 1:n_epochs
@@ -71,18 +74,21 @@ function transformer_training(Ψᵉ::Chain; backend=CPU(), n_epochs=100, opt=Ada
 
         ProgressMeter.next!(progress_object; showvalues = [(:TrainingLoss, loss_val)])   
         loss_array[i] = loss_val
+
+        # update runtime
+        total_time = init_time - time()
     end
 
-    println("final test loss: ", GeometricMachineLearning.loss(Ψᵉ, ps, dl_test), "\n")
+    println("final test accuracy: ", GeometricMachineLearning.accuracy(Ψᵉ, ps, dl_test), "\n")
 
-    loss_array, ps
+    loss_array, ps, total_time
 end
 
 
-loss_array2, ps2 = transformer_training(model2, backend=backend, n_epochs=n_epochs)
-loss_array1, ps1 = transformer_training(model1, backend=backend, n_epochs=n_epochs)
-loss_array3, ps3 = transformer_training(model2, backend=backend, n_epochs=n_epochs, opt=GradientOptimizer(0.001))
-loss_array4, ps4 = transformer_training(model2, backend=backend, n_epochs=n_epochs, opt=MomentumOptimizer(0.001, 0.5))
+loss_array2, ps2, total_time2 = transformer_training(model2, backend=backend, n_epochs=n_epochs)
+loss_array1, ps1, total_time1 = transformer_training(model1, backend=backend, n_epochs=n_epochs)
+loss_array3, ps3, total_time3 = transformer_training(model2, backend=backend, n_epochs=n_epochs, opt=GradientOptimizer(0.001))
+loss_array4, ps4, total_time4 = transformer_training(model2, backend=backend, n_epochs=n_epochs, opt=MomentumOptimizer(0.001, 0.5))
 
 p1 = plot(loss_array1, color=1, label="Regular weights", ylimits=(0.,1.4))
 plot!(p1, loss_array2, color=2, label="Weights on Stiefel Manifold")
@@ -92,3 +98,10 @@ p2 = plot(loss_array2, color=2, label="Adam", ylimits=(0.,1.4))
 plot!(p2, loss_array3, color=1, label="Gradient")
 plot!(p2, loss_array4, color=3, label="Momentum")
 png(p2, "Adam_Gradient_Momentum")
+
+display(
+    "Regular weights:   ", total_time1, "\n",
+    "Stiefel weights:   ", total_time2, "\n",
+    "GradientOptimizer: ", total_time3, "\n",
+    "MomentumOptimizer: ", total_time4, "\n"
+    )
