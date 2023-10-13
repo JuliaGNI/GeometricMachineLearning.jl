@@ -76,17 +76,17 @@ It takes as input:
 """
 function loss(model::Union{Chain, AbstractExplicitLayer}, ps::Union{Tuple, NamedTuple}, input::AT, output::BT) where {T, T1, AT<:AbstractArray{T, 3}, BT<:AbstractArray{T1, 3}}
     output_estimate = model(input, ps)
-    norm(output - output_estimate)/norm(output)/size(output, 2)/size(output, 3)
+    norm(output - output_estimate)/norm(output) # /T(sqrt(size(output, 2)*size(output, 3)))
 end
 
 function loss(model::Chain, ps::Tuple, input::BT) where {T, BT<:AbstractArray{T, 3}} 
     output_estimate = model(input, ps)
-    norm(output_estimate - input)/norm(input)/size(input, 2)/size(input, 3)
+    norm(output_estimate - input)/norm(input) # /T(sqrt(size(input, 2)*size(input, 3)))
 end
 
 function loss(model::Chain, ps::Tuple, input::BT) where {T, BT<:AbstractArray{T, 2}} 
     output_estimate = model(input, ps)
-    norm(output_estimate - input)/norm(input)/size(input, 2)
+    norm(output_estimate - input)/norm(input) # /T(sqrt(size(input, 2)))
 end
 
 @doc raw"""
