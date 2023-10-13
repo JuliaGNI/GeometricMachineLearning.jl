@@ -116,11 +116,12 @@ It takes as input:
 - `dl::DataLoader`
 """
 function accuracy(model::Chain, ps::Tuple, dl::DataLoader{T, AT, BT}) where {T, T1<:Integer, AT<:AbstractArray{T}, BT<:AbstractArray{T1}}
-    output_tensor = model(dl.data, ps)
+    output_tensor = model(dl.input, ps)
     output_estimate = assign_output_estimate(output_tensor, dl.output_time_steps)
     backend = KernelAbstractions.get_backend(output_estimate)
-    tensor_of_maximum_elements = KernelAbstractions.zeros(backend, T2, size(output_estimate)...)
+    tensor_of_maximum_elements = KernelAbstractions.zeros(backend, T1, size(output_estimate)...)
     ind = argmax(output_estimate, dims=1)
-    tensor_of_maximum_elements[ind] .= T2(1)
-    (size(dl.output, 3)-sum(abs.(dl.output - tensor_of_maximum_elements))/T2(2))/size(dl.output, 3)
+    # get tensor of maximum elements
+    tensor_of_maximum_elements[ind] .= T1(1)
+    (size(dl.output, 3)-sum(abs.(dl.output - tensor_of_maximum_elements))/T1(2))/size(dl.output, 3)
 end
