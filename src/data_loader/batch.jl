@@ -57,10 +57,10 @@ function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTu
     count = 0
     total_error = T(0)
     batches = batch(dl)
-    for batch_indices in batches 
+    @views for batch_indices in batches 
         count += 1
-        input_batch = @view dl.input[:, :, batch_indices]
-        output_batch = @view dl.output[:, :, batch_indices]
+        input_batch = dl.input[:, :, batch_indices]
+        output_batch = dl.output[:, :, batch_indices]
         loss_value, pullback = Zygote.pullback(ps -> loss(model, ps, input_batch, output_batch), ps)
         total_error += loss_value
         dp = pullback(one(loss_value))[1]
