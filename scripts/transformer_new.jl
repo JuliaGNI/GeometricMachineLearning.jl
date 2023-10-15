@@ -99,9 +99,14 @@ plot!(p2, loss_array3, color=1, label="Gradient")
 plot!(p2, loss_array4, color=3, label="Momentum")
 png(p2, "Adam_Gradient_Momentum")
 
-display(
-    "Regular weights:   ", total_time1, "\n",
-    "Stiefel weights:   ", total_time2, "\n",
-    "GradientOptimizer: ", total_time3, "\n",
-    "MomentumOptimizer: ", total_time4, "\n"
-    )
+text_string = 
+    "Regular weights:   " * string(total_time1) * "\n" *
+    "Stiefel weights:   " * string(total_time2) * "\n" *
+    "GradientOptimizer: " * string(total_time3) * "\n" *
+    "MomentumOptimizer: " * string(total_time4) * "\n"
+
+display(text_string)
+
+open("measure_times"*string(backend), "w") do file
+    write(file, text_string)
+end
