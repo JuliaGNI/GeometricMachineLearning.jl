@@ -87,24 +87,24 @@ end
 
 
 loss_array2, ps2, total_time2, accuracy_score2 = transformer_training(model2, backend=backend, n_epochs=n_epochs)
-loss_array1, ps1, total_time1 = transformer_training(model1, backend=backend, n_epochs=n_epochs)
+loss_array1, ps1, total_time1,  = transformer_training(model1, backend=backend, n_epochs=n_epochs)
 loss_array3, ps3, total_time3 = transformer_training(model2, backend=backend, n_epochs=n_epochs, opt=GradientOptimizer(0.001))
 loss_array4, ps4, total_time4 = transformer_training(model2, backend=backend, n_epochs=n_epochs, opt=MomentumOptimizer(0.001, 0.5))
 
-p1 = plot(loss_array1, color=1, label="Regular weights", ylimits=(0.,1.4))
-plot!(p1, loss_array2, color=2, label="Weights on Stiefel Manifold")
+p1 = plot(loss_array1, color=1, label="Regular weights", ylimits=(0.,1.4), linewidth=2)
+plot!(p1, loss_array2, color=2, label="Weights on Stiefel Manifold", linewidth=2)
 png(p1, "Stiefel_Regular")
 
-p2 = plot(loss_array2, color=2, label="Adam", ylimits=(0.,1.4))
-plot!(p2, loss_array3, color=1, label="Gradient")
-plot!(p2, loss_array4, color=3, label="Momentum")
+p2 = plot(loss_array2, color=2, label="Adam", ylimits=(0.,1.4), linewidth=2)
+plot!(p2, loss_array3, color=1, label="Gradient", linewidth=2)
+plot!(p2, loss_array4, color=3, label="Momentum", linewidth=2)
 png(p2, "Adam_Gradient_Momentum")
 
 text_string = 
-    "Regular weights:   time: " * string(total_time1) * " classification accuracy: " * "\n" *
-    "Stiefel weights:   " * string(total_time2) * "\n" *
-    "GradientOptimizer: " * string(total_time3) * "\n" *
-    "MomentumOptimizer: " * string(total_time4) * "\n"
+    "Regular weights:   time: " * string(total_time1) * " classification accuracy: " * string(accuracy_score1) * "\n" *
+    "Stiefel weights:   time: " * string(total_time2) * " classification accuracy: " * string(accuracy_score2) * "\n" *
+    "GradientOptimizer: time: " * string(total_time3) * " classification accuracy: " * string(accuracy_score3) * "\n" *
+    "MomentumOptimizer: time: " * string(total_time4) * " classification accuracy: " * string(accuracy_score4) * "\n"
 
 display(text_string)
 
