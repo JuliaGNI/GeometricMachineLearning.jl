@@ -79,13 +79,14 @@ function transformer_training(Ψᵉ::Chain; backend=CPU(), n_epochs=100, opt=Ada
         total_time = init_time - time()
     end
 
-    println("final test accuracy: ", GeometricMachineLearning.accuracy(Ψᵉ, ps, dl_test), "\n")
+    accuracy_score = GeometricMachineLearning.accuracy(Ψᵉ, ps, dl_test)
+    println("final test accuracy: ", accuracy_score, "\n")
 
-    loss_array, ps, total_time
+    loss_array, ps, total_time, accuracy_score
 end
 
 
-loss_array2, ps2, total_time2 = transformer_training(model2, backend=backend, n_epochs=n_epochs)
+loss_array2, ps2, total_time2, accuracy_score2 = transformer_training(model2, backend=backend, n_epochs=n_epochs)
 loss_array1, ps1, total_time1 = transformer_training(model1, backend=backend, n_epochs=n_epochs)
 loss_array3, ps3, total_time3 = transformer_training(model2, backend=backend, n_epochs=n_epochs, opt=GradientOptimizer(0.001))
 loss_array4, ps4, total_time4 = transformer_training(model2, backend=backend, n_epochs=n_epochs, opt=MomentumOptimizer(0.001, 0.5))
@@ -100,7 +101,7 @@ plot!(p2, loss_array4, color=3, label="Momentum")
 png(p2, "Adam_Gradient_Momentum")
 
 text_string = 
-    "Regular weights:   " * string(total_time1) * "\n" *
+    "Regular weights:   time: " * string(total_time1) * " classification accuracy: " * "\n" *
     "Stiefel weights:   " * string(total_time2) * "\n" *
     "GradientOptimizer: " * string(total_time3) * "\n" *
     "MomentumOptimizer: " * string(total_time4) * "\n"
