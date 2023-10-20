@@ -46,14 +46,13 @@ train_y = Int.(ceil.(10*rand(Float32, 100))) .- 1
 
 
 dl = DataLoader(train_x, train_y)
-redraw_batch!(dl)
 
 model = Dense(49, 10, tanh)
 ps = initialparameters(CPU(), Float32, model)
 loss₁ = loss(model, ps, dl)
 
 opt = Optimizer(GradientOptimizer(), ps)
-dx = Zygote.gradient(ps -> loss(model, ps, dl), ps)[1]
+dx = Zygote.gradient(ps -> GeometricMachineLearning.loss(model, ps, dl), ps)[1]
 optimization_step!(opt, model, ps, dx)
 loss₂ = loss(model, ps, dl)
 
