@@ -1,6 +1,6 @@
 # The Attention Layer
 
-The attention mechanism was originally applied for image and natural language processing (NLP) tasks. In (Bahdanau et al, 2014) ``additive'' attention is used: 
+The *attention* mechanism was originally applied for image and natural language processing (NLP) tasks. In (Bahdanau et al, 2014) ``additive'' attention is used: 
 
 ```math
 (z_q, z_k) \mapsto v^T\sigma(Wz_q + Uz_k).
@@ -12,9 +12,16 @@ However ``multiplicative'' attention is more straightforward to interpret and ch
 (z_q, z_k) \mapsto z_q^TWz_k.
 ```
 
-Regardless of the type of attention used, they all try to compute correlations among input sequences on whose basis further neural network-based computation is performed. 
+Regardless of the type of attention used, they all try to compute correlations among input sequences on whose basis further neural network-based computation is performed. So given two input sequences $(z_q^{(1)}, \ldots, z_q^{(T)})$ and $(z_k^{(1)}, \ldots, z_k^{(T)})$, various attention mechanisms always return an output $C\in\mathbb{R}^{T\times{}T}$ with entries $[C]_{ij} = \mathtt{attention}(z_q^{(i)}, z_k^{(j)}$.
 
-The attention layer (and the *orthonormal activation* function defined for it) was specifically designed to generalize transformers to symplectic data. 
+# Self Attention 
+
+
+
+
+## Attention in `GeometricMachineLearning`
+
+The attention layer (and the *orthonormal activation* function defined for it) in `GeometricMachineLearning` was specifically designed to generalize transformers to symplectic data. 
 Usually a self-attention layer takes the following form: 
 
 ```math
