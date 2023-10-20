@@ -34,7 +34,7 @@ end
 function test_onehotbatch(V::AbstractVector{T}) where {T<:Integer} 
     V_encoded = onehotbatch(V)
     for i in length(V)
-        @test sum(V_encoded[:,i]) == 1
+        @test sum(V_encoded[:,1,i]) == 1
     end
 end
 
@@ -47,13 +47,14 @@ train_y = Int.(ceil.(10*rand(Float32, 100))) .- 1
 
 dl = DataLoader(train_x, train_y)
 
-model = Dense(49, 10, tanh)
+activation_function(x) = tanh.(x)
+model = Classification(49, 10, activation_function)
 ps = initialparameters(CPU(), Float32, model)
-loss₁ = loss(model, ps, dl)
+loss₁ = GeometricMachineLearning.loss(model, ps, dl)
 
 opt = Optimizer(GradientOptimizer(), ps)
 dx = Zygote.gradient(ps -> GeometricMachineLearning.loss(model, ps, dl), ps)[1]
 optimization_step!(opt, model, ps, dx)
-loss₂ = loss(model, ps, dl)
+loss₂ = GeometricMachineLearning.loss(model, ps, dl)
 
 @test loss₂ < loss₁
