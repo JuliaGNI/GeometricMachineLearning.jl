@@ -87,9 +87,9 @@ end
 
 
 loss_array2, ps2, total_time2, accuracy_score2 = transformer_training(model2, backend=backend, n_epochs=n_epochs)
-loss_array1, ps1, total_time1,  = transformer_training(model1, backend=backend, n_epochs=n_epochs)
-loss_array3, ps3, total_time3 = transformer_training(model2, backend=backend, n_epochs=n_epochs, opt=GradientOptimizer(0.001))
-loss_array4, ps4, total_time4 = transformer_training(model2, backend=backend, n_epochs=n_epochs, opt=MomentumOptimizer(0.001, 0.5))
+loss_array1, ps1, total_time1, accurancy_score1  = transformer_training(model1, backend=backend, n_epochs=n_epochs)
+loss_array3, ps3, total_time3, accuracy_score3 = transformer_training(model2, backend=backend, n_epochs=n_epochs, opt=GradientOptimizer(0.001))
+loss_array4, ps4, total_time4, accuracy_score4 = transformer_training(model2, backend=backend, n_epochs=n_epochs, opt=MomentumOptimizer(0.001, 0.5))
 
 p1 = plot(loss_array1, color=1, label="Regular weights", ylimits=(0.,1.4), linewidth=2)
 plot!(p1, loss_array2, color=2, label="Weights on Stiefel Manifold", linewidth=2)
