@@ -19,7 +19,7 @@ n_layers = 16
 number_of_patch = (image_dim÷patch_length)^2
 batch_size = 2048
 activation = softmax
-n_epochs = 500
+n_epochs = 5
 add_connection = false
 
 train_x, train_y = MLDatasets.MNIST(split=:train)[:]
@@ -101,6 +101,7 @@ plot!(p2, loss_array4, color=3, label="Momentum", linewidth=2)
 png(p2, "Adam_Gradient_Momentum")
 
 text_string = 
+    "n_epochs: " * string(n_epochs) * "\n"
     "Regular weights:   time: " * string(total_time1) * " classification accuracy: " * string(accuracy_score1) * "\n" *
     "Stiefel weights:   time: " * string(total_time2) * " classification accuracy: " * string(accuracy_score2) * "\n" *
     "GradientOptimizer: time: " * string(total_time3) * " classification accuracy: " * string(accuracy_score3) * "\n" *
