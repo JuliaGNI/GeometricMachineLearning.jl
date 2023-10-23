@@ -14,8 +14,8 @@ GeometricMachineLearning.Chain(d::AbstractNeuralNetworks.AbstractExplicitLayer, 
 image_dim = 28
 patch_length = 7
 transformer_dim = 49
-n_heads = 1
-n_layers = 16
+n_heads = 7
+n_layers = 1
 number_of_patch = (image_dim÷patch_length)^2
 batch_size = 2048
 activation = softmax
