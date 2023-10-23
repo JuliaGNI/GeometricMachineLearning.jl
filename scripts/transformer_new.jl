@@ -19,7 +19,7 @@ n_layers = 16
 number_of_patch = (image_dim÷patch_length)^2
 batch_size = 2048
 activation = softmax
-n_epochs = 5
+n_epochs = 500
 add_connection = false
 
 train_x, train_y = MLDatasets.MNIST(split=:train)[:]
@@ -87,7 +87,7 @@ end
 
 
 loss_array2, ps2, total_time2, accuracy_score2 = transformer_training(model2, backend=backend, n_epochs=n_epochs)
-loss_array1, ps1, total_time1, accurancy_score1  = transformer_training(model1, backend=backend, n_epochs=n_epochs)
+loss_array1, ps1, total_time1, accuracy_score1 = transformer_training(model1, backend=backend, n_epochs=n_epochs)
 loss_array3, ps3, total_time3, accuracy_score3 = transformer_training(model2, backend=backend, n_epochs=n_epochs, opt=GradientOptimizer(0.001))
 loss_array4, ps4, total_time4, accuracy_score4 = transformer_training(model2, backend=backend, n_epochs=n_epochs, opt=MomentumOptimizer(0.001, 0.5))
 
