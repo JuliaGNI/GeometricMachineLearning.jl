@@ -10,17 +10,12 @@ struct Batch{seq_length}
     function Batch(batch_size, seq_length)
         new{true}(batch_size, seq_length)
     end
+
+    function Batch(batch_size::Integer)
+        new{false}(batch_size, nothing)
+    end
 end
 
-function Batch(batch_size::Integer)
-    Batch{false}(batch_size, nothing)
-end
-
-#=
-function Batch(batch_size, seq_length)
-    Batch{true}(batch_size, seq_length)
-end
-=#
 
 function (batch::Batch{false})(dl::DataLoader{T, AT}) where {T, AT<:AbstractArray{T}}
     indices = shuffle(1:dl.n_params)
