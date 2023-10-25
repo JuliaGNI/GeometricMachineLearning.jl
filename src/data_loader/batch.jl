@@ -1,5 +1,5 @@
 @doc raw"""
-`Batch`` is a struct with an associated functor that acts on `DataLoader`. 
+`Batch` is a struct with an associated functor that acts on `DataLoader`. 
 
 The functor returns indices that are then used in the optimization step (always for an entire epoch).
 """
@@ -8,12 +8,12 @@ struct Batch{seq_length}
     seq_length::Union{Nothing, Integer}
 end
 
-function Batch(batch_size::Integer)
-    Batch{false}(batch_size, nothing)
+function Batch(batch_size_input::Integer)
+    Batch{false}(batch_size_input, nothing)
 end
 
-function Batch(batch_size, seq_length)
-    Batch{true}(batch_size, seq_length)
+function Batch(batch_size_input, seq_length_input)
+    Batch{true}(batch_size_input, seq_length_input)
 end
 
 function (batch::Batch{false})(dl::DataLoader{T, AT}) where {T, AT<:AbstractArray{T}}
