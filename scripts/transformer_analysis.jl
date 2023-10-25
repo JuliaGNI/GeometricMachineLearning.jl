@@ -15,7 +15,7 @@ image_dim = 28
 patch_length = 7
 transformer_dim = 49
 n_heads = 7
-n_layers = 16
+n_layers = 1
 number_of_patch = (image_dim÷patch_length)^2
 batch_size = 2048
 activation = softmax
@@ -85,30 +85,7 @@ function transformer_training(Ψᵉ::Chain; backend=CPU(), n_epochs=100, opt=Ada
     loss_array, ps, total_time, accuracy_score
 end
 
-
+loss_array1, ps1, total_time1, accuracy_score1  = transformer_training(model1, backend=backend, n_epochs=n_epochs)
 loss_array2, ps2, total_time2, accuracy_score2 = transformer_training(model2, backend=backend, n_epochs=n_epochs)
-loss_array1, ps1, total_time1, accuracy_score1 = transformer_training(model1, backend=backend, n_epochs=n_epochs)
-loss_array3, ps3, total_time3, accuracy_score3 = transformer_training(model2, backend=backend, n_epochs=n_epochs, opt=GradientOptimizer(0.001))
-loss_array4, ps4, total_time4, accuracy_score4 = transformer_training(model2, backend=backend, n_epochs=n_epochs, opt=MomentumOptimizer(0.001, 0.5))
 
-p1 = plot(loss_array1, color=1, label="Regular weights", ylimits=(0.,1.4), linewidth=2)
-plot!(p1, loss_array2, color=2, label="Weights on Stiefel Manifold", linewidth=2)
-png(p1, "Stiefel_Regular")
-
-p2 = plot(loss_array2, color=2, label="Adam", ylimits=(0.,1.4), linewidth=2)
-plot!(p2, loss_array3, color=1, label="Gradient", linewidth=2)
-plot!(p2, loss_array4, color=3, label="Momentum", linewidth=2)
-png(p2, "Adam_Gradient_Momentum")
-
-text_string = 
-    "n_epochs: " * string(n_epochs) * "\n"
-    "Regular weights:   time: " * string(total_time1) * " classification accuracy: " * string(accuracy_score1) * "\n" *
-    "Stiefel weights:   time: " * string(total_time2) * " classification accuracy: " * string(accuracy_score2) * "\n" *
-    "GradientOptimizer: time: " * string(total_time3) * " classification accuracy: " * string(accuracy_score3) * "\n" *
-    "MomentumOptimizer: time: " * string(total_time4) * " classification accuracy: " * string(accuracy_score4) * "\n"
-
-display(text_string)
-
-open("measure_times"*string(backend), "w") do file
-    write(file, text_string)
-end
+#display(ps1.layer_1.PQ)

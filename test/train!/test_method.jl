@@ -1,5 +1,6 @@
 using GeometricMachineLearning
 using Test
+using GeometricMachineLearning: loss
 
 include("../macro_testerror.jl")
 include("../data/data_generation.jl")

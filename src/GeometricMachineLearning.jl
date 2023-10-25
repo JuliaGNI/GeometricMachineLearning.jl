@@ -67,12 +67,6 @@ module GeometricMachineLearning
     include("kernels/kernel_ad_routines/vec_tensor_mul.jl")
     # export tensor_mat_mul
 
-    include("data_loader/tensor_assign.jl")
-    include("data_loader/matrix_assign.jl")
-    include("data_loader/data_loader.jl")
-    include("data_loader/mnist_utils.jl")
-    export DataLoader, redraw_batch!, loss, onehotbatch, accuracy
-
     # this defines empty retraction type structs (doesn't rely on anything)
     include("optimizers/manifold_related/retraction_types.jl")
     
@@ -174,7 +168,7 @@ module GeometricMachineLearning
     #INCLUDE ABSTRACT TRAINING integrator
     export AbstractTrainingMethod
 
-    export loss_single, loss
+    export loss_single #, loss
     
     export HnnTrainingMethod
     export LnnTrainingMethod
@@ -264,14 +258,14 @@ module GeometricMachineLearning
     # INCLUDE NEURALNET SOLUTION
 
     export SingleHistory
-    export parameters, datashape, loss
+    export parameters, datashape
     export History
     export last, sizemax, nbtraining, show
 
     include("nnsolution/history.jl")
 
     export NeuralNetSolution
-    export nn, problem, tstep, loss, history, size_history
+    export nn, problem, tstep, history, size_history
     export set_sizemax_history
     
     include("nnsolution/neural_net_solution.jl")
@@ -356,6 +350,15 @@ module GeometricMachineLearning
     export integrate, integrate_step!
 
     include("integrator/sympnet_integrator.jl")
+
+    export DataLoader, onehotbatch, accuracy
+    export Batch, optimize_for_one_epoch!
+    include("data_loader/tensor_assign.jl")
+    include("data_loader/matrix_assign.jl")
+    include("data_loader/data_loader.jl")
+    include("data_loader/mnist_utils.jl")
+    include("data_loader/batch.jl")
+
  
     include("reduced_system/system_type.jl")
     include("reduced_system/reduced_system.jl")
