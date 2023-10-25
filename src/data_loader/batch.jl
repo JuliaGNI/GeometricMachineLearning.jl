@@ -8,20 +8,20 @@ struct Batch{seq_length}
     seq_length::Union{Nothing, Integer}
 end
 
-function Batch(batch_size_input::Integer)
-    Batch{false}(batch_size_input, nothing)
+function Batch(batch_size::Integer)
+    Batch{false}(batch_size, nothing)
 end
 
-function Batch(batch_size_input, seq_length_input)
-    Batch{true}(batch_size_input, seq_length_input)
+function Batch(batch_size, seq_length)
+    Batch{true}(batch_size, seq_length)
 end
 
-function (batch::Batch{false})(dl::DataLoader{T, AT}) where {T, AT<:AbstractArray{T}}
+function (batch_instance::Batch{false})(dl::DataLoader{T, AT}) where {T, AT<:AbstractArray{T}}
     indices = shuffle(1:dl.n_params)
-    n_batches = Int(ceil(dl.n_params/batch.batch_size))
+    n_batches = Int(ceil(dl.n_params/batch_instance.batch_size))
     batches = ()
     for batch_number in 1:(n_batches-1)
-        batches = (batches..., indices[(batch_number-1)*batch.batch_size + 1:batch_number*batch.batch_size])
+        batches = (batches..., indices[(batch_number-1)*batch_instance.batch_size + 1:batch_number*batch.batch_size])
     end
 
     # this is needed because the last batch may not have the full size
@@ -53,10 +53,10 @@ output = \frac{1}{mathtt{steps\_per\_epoch}}\sum_{t=1}^mathtt{steps\_per\_epoch}
 ```
 This is done because any **reverse differentiation** routine always has two outputs: a pullback and the value of the function it is differentiating. In the case of zygote: `loss_value, pullback = Zygote.pullback(ps -> loss(ps), ps)` (if the loss only depends on the parameters).
 """
-function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTuple}, dl::DataLoader{T, AT, BT}, batch::Batch, loss) where {T, T1, AT<:AbstractArray{T, 3}, BT<:AbstractArray{T1, 3}}
+function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTuple}, dl::DataLoader{T, AT, BT}, batch_instance::Batch, loss) where {T, T1, AT<:AbstractArray{T, 3}, BT<:AbstractArray{T1, 3}}
     count = 0
     total_error = T(0)
-    batches = batch(dl)
+    batches = batch_instance(dl)
     @views for batch_indices in batches 
         count += 1
         # these `copy`s should not be necessary! coming from a Zygote problem!
@@ -70,6 +70,6 @@ function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTu
     total_error/count
 end
 
-function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTuple}, dl::DataLoader{T, AT, BT}, batch::Batch) where {T, T1, AT<:AbstractArray{T, 3}, BT<:AbstractArray{T1, 3}}
-    optimize_for_one_epoch!(opt, model, ps, dl, batch, loss)
+function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTuple}, dl::DataLoader{T, AT, BT}, batch_instance::Batch) where {T, T1, AT<:AbstractArray{T, 3}, BT<:AbstractArray{T1, 3}}
+    optimize_for_one_epoch!(opt, model, ps, dl, batch_instance, loss)
 end
