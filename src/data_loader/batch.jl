@@ -16,7 +16,7 @@ hasseqlength(::Batch{<:Integer}) = true
 hasseqlength(::Batch{<:Nothing}) = false
 
 
-function (batch::Batch{false})(dl::DataLoader{T, AT}) where {T, AT<:AbstractArray{T}}
+function (batch::Batch{<:Nothing})(dl::DataLoader{T, AT}) where {T, AT<:AbstractArray{T}}
     indices = shuffle(1:dl.n_params)
     n_batches = Int(ceil(dl.n_params/batch.batch_size))
     batches = ()
@@ -30,7 +30,7 @@ function (batch::Batch{false})(dl::DataLoader{T, AT}) where {T, AT<:AbstractArra
 end
 
 #=
-function (batch::Batch{true})(dl::DataLoader{T, AT, Nothing}) where {T, AT<:AbstractArray{T, 3}}
+function (batch::Batch{<:Integer})(dl::DataLoader{T, AT, Nothing}) where {T, AT<:AbstractArray{T, 3}}
     n_starting_points = n_params
     ...
 end 
