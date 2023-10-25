@@ -3,18 +3,17 @@
 
 The functor returns indices that are then used in the optimization step (always for an entire epoch).
 """
-struct Batch{seq_length}
-    batch_size::Integer
-    seq_length::Union{Nothing, Integer}
+struct Batch{seq_type <: Union{Nothing, Integer}}
+    batch_size::Int
+    seq_length::seq_type
 
-    function Batch(batch_size, seq_length)
-        new{true}(batch_size, seq_length)
-    end
-
-    function Batch(batch_size::Integer)
-        new{false}(batch_size, nothing)
+    function Batch(batch_size, seq_length = nothing)
+        new{typeof(seq_length)}(batch_size, seq_length)
     end
 end
+
+hasseqlength(::Batch{<:Integer}) = true
+hasseqlength(::Batch{<:Nothing}) = false
 
 
 function (batch::Batch{false})(dl::DataLoader{T, AT}) where {T, AT<:AbstractArray{T}}
