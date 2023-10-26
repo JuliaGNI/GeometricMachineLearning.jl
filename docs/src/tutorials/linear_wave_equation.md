@@ -37,7 +37,7 @@ k_{ij} = \begin{cases}  \frac{\mu^2}{4\Delta{}x} &\text{if $(i,j)\in\{(0,0),(\ti
 The vector field of the FOM is described by (see for example (Peng and Mohseni, 2016)):
 
 ```math
-  \frac{dz}{dt} = \mathbb{J}_d\nabla_z\mathcal{H}_h = \mathbb{J}_d\begin{bmatrix}\mathbb{I} \\ K + K^T\end{bmatrix}z, \quad \mathbb{J}_d = \frac{\mathbb{J}_{2N}}{\Delta{}x}.
+  \frac{dz}{dt} = \mathbb{J}_d\nabla_z\mathcal{H}_h = \mathbb{J}_d\begin{bmatrix}\Delta{}x\mathbb{I}  & \mathbb{O} \\ \mathbb{O} & K + K^T\end{bmatrix}z, \quad \mathbb{J}_d = \frac{\mathbb{J}_{2N}}{\Delta{}x}.
 ```
 
 The wave equation has a slowely-decaying [Kolmogorov $n$-width](../reduced_order_modeling/kolmogorov_n_width.md) (see e.g. Greif and Urban, 2019), which means linear methods like PSD will perform poorly.
