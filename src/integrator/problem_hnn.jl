@@ -20,7 +20,7 @@ function HNNProblem(nn::NeuralNetwork{<:HamiltonianNeuralNetwork}, tspan, tstep,
     HODEProblem(v, f, hamiltonian, tspan, tstep, ics; kwargs...)
 end
 
-function HNNProblem(nn::NeuralNetwork{<:HamiltonianNeuralNetwork}, tspan, tstep, q₀::State, p₀::State; kwargs...)
+function HNNProblem(nn::NeuralNetwork{<:HamiltonianNeuralNetwork}, tspan, tstep, q₀::StateVariable, p₀::StateVariable; kwargs...)
     ics = (q = q₀, p = p₀)
     HNNProblem(nn, tspan, tstep, ics; kwargs...)
 end

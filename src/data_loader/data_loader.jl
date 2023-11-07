@@ -18,7 +18,7 @@ For drawing the batch, the sampling is done over n_params and n_time_steps (here
 
 If for the output we have a tensor whose second axis has length 1, we still store it as a tensor and not a matrix. This is because it is not necessarily of length 1. 
 
-TODO: Implement DataLoader that works well with GeometricEnsembles etc.
+TODO: Implement DataLoader that works well with EnsembleProblems etc.
 """
 struct DataLoader{T, AT<:AbstractArray{T}, OT<:Union{AbstractArray, Nothing}}
     input::AT

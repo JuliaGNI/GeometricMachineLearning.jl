@@ -33,7 +33,7 @@ module GeometricMachineLearning
     import AbstractNeuralNetworks: params, architecture, model, dim
     # export params, architetcure, model
     export dim
-    import GeometricIntegrators.Integrators: method
+    import GeometricIntegrators.Integrators: method, GeometricIntegrator
     import NNlib: σ, sigmoid, softmax
     #import LogExpFunctions: softmax
 

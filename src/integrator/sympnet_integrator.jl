@@ -10,15 +10,12 @@ function method(nns::NeuralNetSolution{<: NeuralNetwork{<:SympNet}})
 end
 
 
-const IntegratorSympNet{DT,TT} = Integrator{<:Union{HODEProblem{DT,TT}}, <:SympNetMethod}
-
-
-function GeometricIntegrators.integrate(nns::NeuralNetSolution; kwargs...)
+function GeometricIntegrators.Integrators.integrate(nns::NeuralNetSolution; kwargs...)
     integrate(problem(nns), method(nns); kwargs...)
 end
 
 
-function GeometricIntegrators.integrate_step!(int::IntegratorSympNet)
+function GeometricIntegrators.Integrators.integrate_step!(int::GeometricIntegrator{<:SympNetMethod, <:AbstractProblemPODE})
 
     # compute how may times to compose nn ()
     @assert  GeometricIntegrators.Integrators.method(int).Δt % GeometricIntegrators.timestep(int) == 0 
