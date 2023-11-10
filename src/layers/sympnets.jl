@@ -198,45 +198,65 @@ function custom_vec_mul(scale::AbstractVector{T}, x::AbstractArray{T, 3}) where 
         vec_tensor_mul(scale, x)
 end
 
-
-@inline function (d::ActivationQ{M, M})(x::AbstractArray, ps) where {M}
-        size(x)[1] == M || error("Dimension mismatch.")
-        N2 = M÷2
+@doc raw"""
+This function is used in the wrappers where the input to the SympNet layers is not a `NamedTuple` (as it should be) but an `Array`.
+"""
+function apply_layer_to_nt_and_return_array(d::SympNeteLayer{M, M}, ps) where {M}
         q, p = assign_q_and_p(x, N2)
-        return vcat(q + custom_vec_mul(ps.scale, d.activation.(p)), p)
+        output = d((q = q, p = p), ps)
+        return vcat(output.q, output.p)
 end
 
-@inline function (d::ActivationP{M, M})(x::AbstractArray, ps) where {M}
-        size(x)[1] == M || error("Dimension mismatch.")
-        N2 = M÷2 
-        q, p = assign_q_and_p(x, N2)
-        return vcat(q, p + custom_vec_mul(ps.scale, d.activation.(q)))
+@inline function (d::Activation{M, M})(x::NamedTuple, ps) where {M}
+        size(x.q, 1) == M÷2 || error("Dimension mismatch.")
+        return (q = x.q + custom_vec_mul(ps.scale, d.activation.(x.p)), p = x.p)
 end
 
-@inline function (d::GradientQ{M, M})(x::AbstractArray, ps) where {M}
-        size(x)[1] == M || error("Dimension mismatch.")
-        N2 = M÷2 
-        q, p = assign_q_and_p(x, N2)
-        return vcat(q + custom_mat_mul(ps.weight', (custom_vec_mul(ps.scale, d.activation.(custom_mat_mul(ps.weight, p) .+ ps.bias)))), p)
+@inline function (d::ActivationQ)(x::AbstractArray, ps)
+        apply_layer_to_nt_and_return_array(d, ps)
+end
+
+@inline function (d::ActivationP{M, M})(x::NamedTuple, ps) where {M}
+        size(x.q, 1) == M÷2 || error("Dimension mismatch.")
+        return (q = x.q, p = x.p + custom_vec_mul(ps.scale, d.activation.(x.q)))
+end
+
+@inline function (d::ActivationP)(x::AbstractArray, ps)
+        apply_layer_to_nt_and_return_array(d, ps)
+end
+
+@inline function (d::GradientQ{M, M})(x::NamedTuple, ps) where {M}
+        size(x.q, 1) == M÷2 || error("Dimension mismatch.")
+        (q = x.q + custom_mat_mul(ps.weight', (custom_vec_mul(ps.scale, d.activation.(custom_mat_mul(ps.weight, x.p) .+ ps.bias)))), p = x.p)     
+end
+
+@inline function (d::GradientQ)(x::AbstractArray, ps) 
+        apply_layer_to_nt_and_return_array(d, ps)
+end
+
+@inline function(d::GradientP{M, M})(x::NamedTuple, ps) where {M}
+        size(x.q, 1) == M÷2 || error("Dimension mismatch.")
+        (q = x.q, p = x.p + custom_mat_mul(ps.weight', (custom_vec_mul(ps.scale, d.activation.(custom_mat_mul(ps.weight, x.q) .+ ps.bias)))))
 end
 
 @inline function(d::GradientP{M, M})(x::AbstractArray, ps) where {M}
-        size(x)[1] == M || error("Dimension mismatch.")
-        N2 = M÷2 
-        q, p = assign_q_and_p(x, N2)
-        return vcat(q, p + custom_mat_mul(ps.weight', (custom_vec_mul(ps.scale, d.activation.(custom_mat_mul(ps.weight, q) .+ ps.bias)))))
+        apply_layer_to_nt_and_return_array(d, ps)
 end
 
-@inline function (d::LinearQ{M, M})(x::AbstractArray, ps) where {M}
-        size(x)[1] == M || error("Dimension mismatch.")
-        N2 = M÷2 
-        q, p = assign_q_and_p(x, N2)
-        vcat(q + custom_mat_mul(ps.weight,p), p)
+@inline function(d::LinearQ{M, M})(x::NamedTuple, ps) where {M}
+        size(x.q, 1) == M÷2 || error("Dimension mismatch.")
+        (x.q + custom_mat_mul(ps.weight, x.p), x.p)
 end
 
-@inline function (d::LinearP{M, M})(x::AbstractArray, ps) where {M}
-        size(x)[1] == M || error("Dimension mismatch.")
-        N2 = M÷2 
-        q, p = assign_q_and_p(x, N2)
-        vcat(q, p + custom_mat_mul(ps.weight,q))
+@inline function (d::LinearQ)(x::AbstractArray, ps)
+        apply_layer_to_nt_and_return_array(d, ps)
+end
+
+@inline function(d::LinearP{M, M})(x::NamedTuple, ps) where {M}
+        size(x.q, 1) == M÷2 || error("Dimension mismatch.")
+        (x.q, x.p + custom_mat_mul(ps.weight, x.q))
+end
+
+@inline function (d::LinearP)(x::AbstractArray, ps)
+        apply_layer_to_nt_and_return_array(d, ps)
 end
