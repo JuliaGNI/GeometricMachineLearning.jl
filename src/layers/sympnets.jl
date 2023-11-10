@@ -1,39 +1,73 @@
 @doc raw"""
-Implements the various layers from the SympNet paper: (https://www.sciencedirect.com/science/article/abs/pii/S0893608020303063). 
-Its components are of the form: 
+Implements the various layers from the SympNet paper: (https://www.sciencedirect.com/science/article/abs/pii/S0893608020303063). This is a super type of `Gradient`, `Activation` and `Linear`.
 
-```math
-\begin{pmatrix}
-        I & \nabla{}V \\ 0 & I 
-\end{pmatrix},
-```
-
-with $V(p) = \sum_ia_i\Sigma(\sum_jk_{ij}p_j+b_i)$, where $\Sigma$ is the antiderivative of the activation function $\sigma$ (one-layer neural network). Such layers are by construction symplectic.
-
-For the linear layer, the activation and the bias are left out, and for the activation layer K and b are left out!
+For the linear layer, the activation and the bias are left out, and for the activation layer $K$ and $b$ are left out!
 """
 abstract type SympNetLayer{M, N} <: AbstractExplicitLayer{M, N} end
 
+@doc raw"""
+Super type of `GradientQ` and `GradientP`.
+""" 
 abstract type Gradient{M, N, TA} <: SympNetLayer{M, N} end
 
+@doc raw"""
+The gradient layer that changes the $q$ component. It is of the form: 
+
+```math
+\begin{bmatrix}
+        \mathbb{I} & \nabla{}V \\ \mathbb{O} & \mathbb{I} 
+\end{bmatrix},
+```
+
+with $V(p) = \sum_ia_i\Sigma(\sum_jk_{ij}p_j+b_i)$, where $\Sigma$ is the antiderivative of the activation function $\sigma$ (one-layer neural network). Such layers are by construction symplectic.
+"""
 struct GradientQ{M, N, TA} <: Gradient{M, N, TA}
         second_dim::Integer
         activation::TA
 end
+
 function GradientQ(M, second_dim, activation)
         GradientQ{M, M, typeof(activation)}(second_dim, activation)
 end
 
+@doc raw"""
+The gradient layer that changes the $q$ component. It is of the form: 
+
+```math
+\begin{bmatrix}
+        \mathbb{I} & \mathbb{O} \\ \nabla{}V & \mathbb{I} 
+\end{bmatrix},
+```
+
+with $V(p) = \sum_ia_i\Sigma(\sum_jk_{ij}p_j+b_i)$, where $\Sigma$ is the antiderivative of the activation function $\sigma$ (one-layer neural network). Such layers are by construction symplectic.
+"""
 struct GradientP{M, N, TA} <: Gradient{M, N, TA}
         second_dim::Integer
         activation::TA
 end
+
 function GradientP(M, second_dim, activation)
         GradientP{M, M, typeof(activation)}(second_dim, activation)
 end
 
+@doc raw"""
+Super type of `ActivationQ` and `ActivationP`.
+"""
 abstract type Activation{M, N, TA} <: SympNetLayer{M, N} end
 
+@doc raw"""
+Performs:
+
+```math
+\begin{pmatrix}
+        q \\ p
+\end{pmatrix} \mapsto 
+\begin{pmatrix}
+        q + \mathrm{diag}(a)\sigma(p) \\ p
+\end{pmatrix}.
+```
+
+"""
 struct ActivationQ{M, N, TA} <: Activation{M, N, TA} 
         activation::TA
 end
@@ -41,6 +75,19 @@ function ActivationQ(M, activation)
         ActivationQ{M, M, typeof(activation)}(activation)
 end
 
+@doc raw"""
+Performs:
+
+```math
+\begin{pmatrix}
+        q \\ p
+\end{pmatrix} \mapsto 
+\begin{pmatrix}
+        q \\ p + \mathrm{diag}(a)\sigma(q)
+\end{pmatrix}.
+```
+
+"""
 struct ActivationP{M, N, TA} <: Activation{M, N, TA} 
         activation::TA
 end
@@ -48,21 +95,48 @@ function ActivationP(M, activation)
         ActivationP{M, M, typeof(activation)}(activation)
 end
 
+@doc raw"""
+Super type of `LinearQ` and `LinearP`.
+"""
 abstract type LinearSympNetLayer{M, N} <: SympNetLayer{M, N} end
 
+@doc raw"""
+Equivalent to a left multiplication by the matrix:
+```math
+\begin{pmatrix}
+\mathbb{I} & B \\ 
+\mathbb{O} & \mathbb{I}
+\end{pmatrix}, 
+```
+where $B$ is a symmetric matrix.
+"""
 struct LinearQ{M, N} <: LinearSympNetLayer{M, N} 
 end 
+
 function LinearQ(M)
         LinearQ{M, M}()
 end
 
+@doc raw"""
+Equivalent to a left multiplication by the matrix:
+```math
+\begin{pmatrix}
+\mathbb{I} & \mathbb{O} \\ 
+B & \mathbb{I}
+\end{pmatrix}, 
+```
+where $B$ is a symmetric matrix.
+"""
 struct LinearP{M, N} <: LinearSympNetLayer{M, N}
 end 
+
 function LinearP(M)
         LinearP{M, M}()
 end
 
-# check: input is even; make dim2 an optional argument for full_grad=false
+"""
+This is an old constructor and will be depricated. For `change_q=true` it is equivalent to `GradientQ`; for `change_q=false` it is equivalent to `GradientP`.
+"""
 function Gradient(dim::Int, dim2::Int=dim, activation = identity; full_grad::Bool=true, change_q::Bool=true, allow_fast_activation::Bool=true)
         @warn "You are calling the old constructor. This will be deprecated."
 
