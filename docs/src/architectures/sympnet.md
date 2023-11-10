@@ -71,7 +71,7 @@ or
   + b . 
 ```
 
-The learnable parameters are the symmetric matrices $S^i\in\mathbb{R}^{d\times d}$ and the bias $b\in\mathbb{R}^{2d}$. The integer $n$ is the width of the symplectic linear layer. If $n\geq5$, we know that the symplectic linear layers represent any linear symplectic map so that $n$ need not be larger than 5. We note the set of symplectic linear layers $\mathcal{M}^L$. This type of layers plays the role of standard linear layers. 
+The learnable parameters are the symmetric matrices $S^i\in\mathbb{R}^{d\times d}$ and the bias $b\in\mathbb{R}^{2d}$. The integer $n$ is the width of the symplectic linear layer. If $n\geq5$, we know that the symplectic linear layers represent any linear symplectic map so that $n$ need not be larger than 5 (see [[jin2022optimal](@cite)]). We note the set of symplectic linear layers $\mathcal{M}^L$. This type of layers plays the role of standard linear layers. 
 
 For a given activation function $\sigma$, a symplectic activation layer is defined by
 
@@ -106,15 +106,15 @@ For a given activation function $\sigma$, a symplectic activation layer is defin
  \end{pmatrix}.
 ```
  
-The parameters to learn are the weights $a\in\mathbb{R^{d}}$. This type of layers plays the role of standard activation layers layers. We note the set of symplectic activation layers $\mathcal{M}^A$. 
+The *scaling vector* $a\in\mathbb{R^{d}}$ constitutes the learnable weights. This type of layer plays the role of a standard activation layer. We denote the set of symplectic activation layers by $\mathcal{M}^A$. 
  
-A LA-SympNet is a function of the form $\Psi=l_{k+1} \circ a_{k} \circ v_{k} \circ \cdots \circ a_1 \circ l_1$ where $(l_i)_{1\leq i\leq k+1} \subset (\mathcal{M}^L)^{k+1}$ and  
+A $LA$-SympNet is a function of the form $\Psi=l_{k+1} \circ a_{k} \circ v_{k} \circ \cdots \circ a_1 \circ l_1$ where $(l_i)_{1\leq i\leq k+1} \subset (\mathcal{M}^L)^{k+1}$ and  
  
 $(a_i)_{1\leq i\leq k} \subset (\mathcal{M}^A)^{k}$.
  
- #### G-SympNet
+ #### $G$-SympNets
  
-G-SympNets are an alternative to LA-SympNet. They are constituated with only one kind of layers called gradient layers. For a given activation function $\sigma$ and an integer $n\geq d$, a gradient layers is a symplectic map from $\mathbb{R}^{2d}$ to $\mathbb{R}^{2d}$ defined by
+$G$-SympNets are an alternative to $LA$-SympNet. They are built with only one kind of layer, called *gradient layer*. For a given activation function $\sigma$ and an integer $n\geq d$, a gradient layers is a symplectic map from $\mathbb{R}^{2d}$ to $\mathbb{R}^{2d}$ defined by
  
 ```math
  \mathcal{G}^{up}  \begin{pmatrix}  q  \\  
@@ -147,39 +147,37 @@ or
  \end{pmatrix}.
 ```
 
-The parameters of this layer are the scale matrix $K\in\mathbb{R}^{n\times d}$, the bias $b\in\mathbb{R}^{n}$ and the vector of weights $a\in\mathbb{R}^{n}$. The idea is that $\hat{\sigma}^{K,a,b}$ can approximate any function of the form $\nabla V$, hence the name of this layer. The integer $n$ is called the width of the gradient layer.
+Note here the different roles played by round and square braces, the latter indicates a nonlinear operation as opposed to a regular vector or matrix. The parameters of this layer are the *scaling matrix* $K\in\mathbb{R}^{n\times d}$, the bias $b\in\mathbb{R}^{n}$ and the *scaling vector* $a\in\mathbb{R}^{n}$. The name ``gradient layer'' has its origin in the fact that the expression $[K^T\mathrm{diag}(a)\sigma(Kq+b)]_i = \sum_jk_{ji}a_j\sigma(\sum_\ell{}k_{j\ell}q_\ell+b_j)$ is the gradient of a function $\sum_ja_j\tilde{\sigma}(\sum_\ell{}k_{j\ell}q_\ell+b_j)$, where $\tilde{\sigma}$ is the antiderivative of $\sigma$.
  
-If we note by $\mathcal{M}^G$ the set of gradient layers, a G-SympNet is a function of the form $\Psi=g_k \circ g_{k-1} \circ \cdots \circ g_1$ where $(g_i)_{1\leq i\leq k} \subset (\mathcal{M}^G)^k$.
+If we denote by $\mathcal{M}^G$ the set of gradient layers, a $G$-SympNet is a function of the form $\Psi=g_k \circ g_{k-1} \circ \cdots \circ g_1$ where $(g_i)_{1\leq i\leq k} \subset (\mathcal{M}^G)^k$.
 
 ### Universal approximation theorems
 
-We give now properly the universal approximation for both architectures. But let us give few definitions before. 
+In order to state the \textit{universal approximation theorem} for both architectures we first need a few definitions:
  
-Let $U$ be an open set of $\mathbb{R}^{2d}$, and let us note by $SP^r(U)$ the set of $C^r$ smooth symplectic maps on $U$. Let us give a topology on the  set of $C^r$ smooth maps from a compact K of $\mathbb{R}^{n}$ to $\mathbb{R}^{n}$ for any positive integers $n$ through the norm
+Let $U$ be an open set of $\mathbb{R}^{2d}$, and let us denote by $\mathcal{SP}^r(U)$ the set of $C^r$ smooth symplectic maps on $U$. We now define a topology on $C^r(K, \mathbb{R}^n)$, the set of $C^r$-smooth maps from a compact set $K\subset\mathbb{R}^{n}$ to $\mathbb{R}^{n}$ through the norm
 
 ```math
-||f||_{C^r(K,\mathbb{R}^{n})} = \underset{|\alpha|\leq r}{\sum} \underset{1\leq i \leq n}{\max}\underset{x\in K}{\sup} |D^\alpha f_i(x)|
+||f||_{C^r(K,\mathbb{R}^{n})} = \underset{|\alpha|\leq r}{\sum} \underset{1\leq i \leq n}{\max}\underset{x\in K}{\sup} |D^\alpha f_i(x)|,
 ```
-where the differential operator $D^\alpha$ is defined for any map of $C^r(\mathbb{R}^{n},\mathbb{R})$ by 
+where the differential operator $D^\alpha$ is defined by 
 ```math
-D^\alpha f = \frac{\partial^{|\alpha|} f}{\partial x_1^{\alpha_1}...x_n^{\alpha_n}}
+D^\alpha f = \frac{\partial^{|\alpha|} f}{\partial x_1^{\alpha_1}...x_n^{\alpha_n}},
 ```
 with $|\alpha| = \alpha_1 +...+ \alpha_n$. 
 
-__Definition__ Let $\sigma$ a real map and $r\in \mathbb{N}$. $\sigma$ is r-finite if $\sigma\in C^r(\mathbb{R},\mathbb{R})$ and $\int |D^r\sigma(x)|dx <+\infty$.
+__Definition__ $\sigma$ is **$r$-finite** if $\sigma\in C^r(\mathbb{R},\mathbb{R})$ and $\int |D^r\sigma(x)|dx <+\infty$.
 
 
-__Definition__ Let $m,n,r\in \mathbb{N}$ with $m,n>0$ be given, $U$ an open set of $\mathbb{R}^m$, and $I,J\subset C^r(U,\mathbb{R}^n$. We say $J$ is r-uniformly dense on compacta in $I$ if $J \subset I$ and for any $f\in I$, $\epsilon>0$, and any compact $K\subset U$, there exists $g\in J$ such that $||f-g||_{C^r(K,\mathbb{R}^{n})} < \epsilon$.
+__Definition__ Let $m,n,r\in \mathbb{N}$ with $m,n>0$ be given, $U$ an open set of $\mathbb{R}^m$, and $I,J\subset C^r(U,\mathbb{R}^n$. We say $J$ is **$r$-uniformly dense on compacta in $I$** if $J \subset I$ and for any $f\in I$, $\epsilon>0$, and any compact $K\subset U$, there exists $g\in J$ such that $||f-g||_{C^r(K,\mathbb{R}^{n})} < \epsilon$.
 
-We can now gives the theorems.
+We can now state the universal approximation theorems:
 
-__Theorem (Approximation theorem for LA-SympNet)__ For any positive integer $r>0$ and open set $U\in \mathbb{R}^{2d}$, the set of LA-SympNet is r-uniformly dense on compacta in $SP^r(U)$ if the activation function $\sigma$ is r-finite.
+__Theorem (Approximation theorem for LA-SympNet)__ For any positive integer $r>0$ and open set $U\in \mathbb{R}^{2d}$, the set of $LA$-SympNet is $r$-uniformly dense on compacta in $SP^r(U)$ if the activation function $\sigma$ is $r$-finite.
 
-__Theorem (Approximation theorem for G-SympNet)__ For any positive integer $r>0$ and open set $U\in \mathbb{R}^{2d}$, the set of G-SympNet is r-uniformly dense on compacta in $SP^r(U)$ if the activation function $\sigma$ is r-finite.
+__Theorem (Approximation theorem for G-SympNet)__ For any positive integer $r>0$ and open set $U\in \mathbb{R}^{2d}$, the set of $G$-SympNet is $r$-uniformly dense on compacta in $SP^r(U)$ if the activation function $\sigma$ is $r$-finite.
 
-These two theorems are at odds with the well-foundedness of the SympNets. 
-
-__Example of r-finite functions__
+There are many $r$-finite activation functions commonly used in neural networks, for example:
 - sigmoid $\sigma(x)=\frac{1}{1+e^{-x}}$ for any positive integer $r$, 
 - tanh $\tanh(x)=\frac{e^x-e^{-x}}{e^x+e^{-x}}$ for any positive integer $r$. 
 
