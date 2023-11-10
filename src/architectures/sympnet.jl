@@ -1,4 +1,6 @@
-# Structure
+@doc raw"""
+SympNet type encompasses GSympNets and LASympnets.
+"""
 abstract type SympNet{AT} <: Architecture end
 
 struct LASympNet{AT,T1,T2,T3} <: SympNet{AT} 
