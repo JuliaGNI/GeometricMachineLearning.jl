@@ -1,26 +1,25 @@
 # SympNet
 
-This page documents the SympNet architecture and its implementation in `GeometricMachineLearning.jl`.
+This document discusses the SympNet architecture and its implementation in `GeometricMachineLearning.jl`.
 
 ## Quick overview of the theory of SympNet
 
 ### Principle
 
-SympNets is a new type of neural network proposing a new approach to compute the trajectory of an Hamiltonian system in phase space. Let us denote by $(q,p)=(q_1,...,q_d,p_1,....p_d)\in \mathbb{R}^{2d}$ the phase space with $q\in \mathbb{R}^{d}$ the generalized position and 
-$p\in \mathbb{R}^{d}$ the generalized momentum. Given a physical problem, SympNets takes a phase space element $(q,p)$ and aims to compute the next position $(q',p')$ of the trajectory in phase space a time step later while preserving the well known symplectic structure of Hamiltonian systems.
-The way SympNet preserve the symplectic structure is really specific and characterizes it as this preserving is intrinsic of the neural network. Indeed, SympNet is not made with traditional layers but with symplectic layers (described later) modifying the traditional universal approximation theorem into a symplectic one : SympNet is able to approach any symplectic function providing conditions on an activation function.
+SympNets (see [[jin2020sympnets](@cite)] for the eponymous paper) are a type of neural network proposing a new approach to compute the trajectory of a Hamiltonian system in phase space. Take $(q,p)=(q_1,\ldots,q_d,p_1,\ldots,p_d)^T\in \mathbb{R}^{2d}$ as the coordinates in phase space, where $q=(q_1, \ldots, q_d)\in \mathbb{R}^{d}$ is refered to as the *position* and $p=(p_1, \ldots, p_d)\in \mathbb{R}^{d}$ the *momentum*. Given a point $(q,p)$ in $\mathbb{R}^{2d}$ the SympNet aims to compute the *next position* $(q',p')$ and thus predicts the trajectory while preserving the *symplectic structure* of the system.
+SympNets are enforcing symplecticity strongly, meaning that this property is hard-coded into the network architecture. The layers are reminiscent of traditional neural network feedforward layers, but have a strong restriction imposed on them in order to be symplectic.
 
-SympNet (noted $\Phi$ in the following) is so an integrator from $\mathbb{R}^{d} \times \mathbb{R}^{d}$ to $\mathbb{R}^{d} \times \mathbb{R}^{d}$ preserving symplecticity which can compute, from an initial condition $(q_0,p_0)$, a sequence of phase space elements of a trajectory $(q_n,p_n)=\Phi(q_{n-1},p_{n-1})=...=\Phi^n(q_0,p_0)$. The time step between predictions is not a parameter we can choose but is related to the temporal frequency of the training data. SympNet can handle both  temporally regular data, i.e with a fix time step between data, and temporally irregular data, i.e with variable time step. 
+SympNets (denoted by $\Phi$ in the following) can be viewed as a ``symplectic integrator'' (see [[hairer2006geometric](@cite), [leimkuhler2004simulating](@cite)]). Its goal is to predict, based on an initial condition $((q^{(0)})^T,(p^{(0)})^T)^T$, a sequence of points in phase space $((q^{(0)})^T,(p^{(0)})^T)^T, ((q^{(1)})^T,(p^{(1)})^T)^T, \ldots, ((q^{(n)})^T,(p^{(n)})^T)^T$ that fit the training data as well as possible. The time step between predictions is not a parameter we can choose but is *related to the temporal frequency of the training data*. SympNet can handle both  temporally regular data, i.e with a fix time step between data, and temporally irregular data, i.e with variable time step. 
 
 ### Architecture of SympNets
 
-With `GeometricMachineLearning.jl`, it is possible to implement two types of architecture which are LA-SympNet and G-SympNet. 
+With `GeometricMachineLearning.jl`, it is possible to implement two types of SympNet architectures: $LA$-SympNets and $G$-SympNets. 
  
 #### LA-SympNet
 
-![](../images/sympnet_pendulum_architecture.png)
+![](../images/sympnet_architecture.png)
 
-LA-SympNets are made of the alternation of two types of layers, symplectic linear layers and symplectic activation layers.  For a given integer $n$, a symplectic linear layer is defined by
+$LA$-SympNets are made of the alternation of two types of layers, symplectic linear layers and symplectic activation layers.  For a given integer $n$, a symplectic linear layer is defined by
 
 ```math
 \mathcal{L}^{n,up}
@@ -72,7 +71,7 @@ or
   + b . 
 ```
 
-The parameters to learn are the symmetric matrices $S^i\in\mathbb{R}^{d\times d}$ and the bias $b\in\mathbb{R}^{2d}$. The integer $n$ is the width of the symplectic linear layer. If $n\geq9$, we know that the symplectic linear layers represent any linear symplectic map so that $n$ need not be larger than 9. We note the set of symplectic linear layers $\mathcal{M}^L$. This type of layers plays the role of standard linear layers. 
+The learnable parameters are the symmetric matrices $S^i\in\mathbb{R}^{d\times d}$ and the bias $b\in\mathbb{R}^{2d}$. The integer $n$ is the width of the symplectic linear layer. If $n\geq5$, we know that the symplectic linear layers represent any linear symplectic map so that $n$ need not be larger than 5. We note the set of symplectic linear layers $\mathcal{M}^L$. This type of layers plays the role of standard linear layers. 
 
 For a given activation function $\sigma$, a symplectic activation layer is defined by
 
