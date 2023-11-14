@@ -1,26 +1,18 @@
 pdf:
-	xelatex -shell-escape commuting-diagram
-	xelatex -shell-escape omega-orthogonal-projection
-	xelatex -shell-escape post-projection
-	xelatex -shell-escape post-projection-unstable
-	xelatex -shell-escape standard-projection
-	xelatex -shell-escape symmetric-projection-minus
-	xelatex -shell-escape symmetric-projection-plus
-	xelatex -shell-escape symplectic-projection-unstable
-	xelatex -shell-escape variation-continuous
-	xelatex -shell-escape variation-discrete
+	xelatex -shell-escape adam_optimizer
+	xelatex -shell-escape general_optimization
+	xelatex -shell-escape general_optimization_with_boundary
+	xelatex -shell-escape transformer_encoder
+	xelatex -shell-escape third_degree_spline
+	xelatex -shell-escape sympnet_architecture
 
 png:
-	pdftocairo  -png -r 150 -transp -singlefile  commuting-diagram.pdf               commuting-diagram              
-	pdftocairo  -png -r 150 -transp -singlefile  omega-orthogonal-projection.pdf     omega-orthogonal-projection    
-	pdftocairo  -png -r 150 -transp -singlefile  post-projection.pdf                 post-projection                
-	pdftocairo  -png -r 150 -transp -singlefile  post-projection-unstable.pdf        post-projection-unstable       
-	pdftocairo  -png -r 150 -transp -singlefile  standard-projection.pdf             standard-projection            
-	pdftocairo  -png -r 150 -transp -singlefile  symmetric-projection-minus.pdf      symmetric-projection-minus     
-	pdftocairo  -png -r 150 -transp -singlefile  symmetric-projection-plus.pdf       symmetric-projection-plus      
-	pdftocairo  -png -r 150 -transp -singlefile  symplectic-projection-unstable.pdf  symplectic-projection-unstable 
-	pdftocairo  -png -r 150 -transp -singlefile  variation-continuous.pdf            variation-continuous           
-	pdftocairo  -png -r 150 -transp -singlefile  variation-discrete.pdf              variation-discrete             
+	pdftocairo  -png -r 150 -transp -singlefile  adam_optimizer.pdf               	 	adam_optimizer              
+	pdftocairo  -png -r 150 -transp -singlefile  general_optimization.pdf		 	 	general_optimization   
+	pdftocairo  -png -r 150 -transp -singlefile  general_optimization_with_boundary.pdf general_optimization_with_boundary              
+	pdftocairo  -png -r 150 -transp -singlefile  transformer_encoder.pdf		        transformer_encoder   
+	pdftocairo  -png -r 150 -transp -singlefile  third_degree_spline.pdf	           	third_degree_spline          
+	pdftocairo	-png -r 150 -transp -singlefile	 sympnet_architecture.pdf				sympnet_architecture
 
 clean:
 	rm -f *.aux
