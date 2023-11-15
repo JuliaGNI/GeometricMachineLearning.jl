@@ -7,10 +7,10 @@ documenter:
 	julia --color=yes --project=. make.jl
 
 images:
-	$(MAKE) all   -C src/images
-	$(MAKE) clean -C src/images
+	$(MAKE) all   -C src/tikz
+	$(MAKE) clean -C src/tikz
 
 clean:
-	$(MAKE) empty -C src/images
+	$(MAKE) empty -C src/tikz
 	rm -Rf build
 	rm -Rf src/tutorial
