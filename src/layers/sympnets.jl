@@ -201,7 +201,7 @@ end
 @doc raw"""
 This function is used in the wrappers where the input to the SympNet layers is not a `NamedTuple` (as it should be) but an `Array`.
 """
-function apply_layer_to_nt_and_return_array(d::SympNeteLayer{M, M}, ps) where {M}
+function apply_layer_to_nt_and_return_array(d::SympNetLayer{M, M}, ps) where {M}
         q, p = assign_q_and_p(x, N2)
         output = d((q = q, p = p), ps)
         return vcat(output.q, output.p)
