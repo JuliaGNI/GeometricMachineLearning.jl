@@ -19,15 +19,15 @@ The gradient layer that changes the $q$ component. It is of the form:
 \end{bmatrix},
 ```
 
-with $V(p) = \sum_ia_i\Sigma(\sum_jk_{ij}p_j+b_i)$, where $\Sigma$ is the antiderivative of the activation function $\sigma$ (one-layer neural network). Such layers are by construction symplectic.
+with $V(p) = \sum_{i=1}^Ma_i\Sigma(\sum_jk_{ij}p_j+b_i)$, where $\Sigma$ is the antiderivative of the activation function $\sigma$ (one-layer neural network). We refer to $M$ as the *upscaling dimension*. Such layers are by construction symplectic.
 """
 struct GradientQ{M, N, TA} <: Gradient{M, N, TA}
         second_dim::Integer
         activation::TA
 end
 
-function GradientQ(M, second_dim, activation)
-        GradientQ{M, M, typeof(activation)}(second_dim, activation)
+function GradientQ(M, upscaling_dimension, activation)
+        GradientQ{M, M, typeof(activation)}(upscaling_dimension, activation)
 end
 
 @doc raw"""
@@ -39,15 +39,15 @@ The gradient layer that changes the $q$ component. It is of the form:
 \end{bmatrix},
 ```
 
-with $V(p) = \sum_ia_i\Sigma(\sum_jk_{ij}p_j+b_i)$, where $\Sigma$ is the antiderivative of the activation function $\sigma$ (one-layer neural network). Such layers are by construction symplectic.
+with $V(p) = \sum_{i=1}^Ma_i\Sigma(\sum_jk_{ij}p_j+b_i)$, where $\Sigma$ is the antiderivative of the activation function $\sigma$ (one-layer neural network). We refer to $M$ as the *upscaling dimension*. Such layers are by construction symplectic.
 """
 struct GradientP{M, N, TA} <: Gradient{M, N, TA}
         second_dim::Integer
         activation::TA
 end
 
-function GradientP(M, second_dim, activation)
-        GradientP{M, M, typeof(activation)}(second_dim, activation)
+function GradientP(M, upscaling_dimension, activation)
+        GradientP{M, M, typeof(activation)}(upscaling_dimension, activation)
 end
 
 @doc raw"""
