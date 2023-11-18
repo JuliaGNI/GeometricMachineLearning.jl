@@ -3,71 +3,129 @@ SympNet type encompasses GSympNets and LASympnets.
 """
 abstract type SympNet{AT} <: Architecture end
 
-struct LASympNet{AT,T1,T2,T3} <: SympNet{AT} 
+@doc raw"""
+`LASympNet` is called with **a single input argument**, the **system dimension**. Optional input arguments are: 
+- `depth::Int`: The number of linear layers that are applied. The default is 5.
+- `nhidden::Int`: The number of hidden layers (i.e. layers that are **not** input or output layers). The default is 2.
+- `activation`: The activation function that is applied. By default this is `tanh`.
+- `init_upper_linear::Bool`: Initialize the linear layer so that it first modifies the $q$-component. The default is `true`.
+- `init_upper_act::Bool`: Initialize the activation layer so that it first modifies the $q$-component. The default is `true`.
+"""
+struct LASympNet{AT, InitUpperLinear, InitUpperAct} <: SympNet{AT} where {InitUpperLinear, InitUpperAct}
     dim::Int
-    width::Int
+    depth::Int
     nhidden::Int
-    act::AT
-    init_uplow_linear::Vector{Bool}
-    init_uplow_act::Vector{Bool}
-    init_sym_matrices::T1
-    init_bias::T2
-    init_weight::T3
+    activation::AT
 
-    function LASympNet(dim; width=9, nhidden=0, activation=tanh, init_uplow_linear=[true,false], init_uplow_act=[true,false],init_sym_matrices=Lux.glorot_uniform, init_bias=Lux.zeros32, init_weight=Lux.glorot_uniform) 
-        new{typeof(activation),typeof(init_sym_matrices),typeof(init_bias),typeof(init_weight)}(dim, min(width,9), nhidden, activation, init_uplow_linear, init_uplow_act, init_sym_matrices, init_bias, init_weight)
+    function LASympNet(dim; depth=5, nhidden=2, activation=tanh, init_upper_linear=true, init_upper_act=true) 
+        new{typeof(activation), init_upper_linear, init_upper_act}(dim, min(depth,5), nhidden, activation)
     end
 
 end
 
 @inline AbstractNeuralNetworks.dim(arch::LASympNet) = arch.dim
 
-struct GSympNet{AT} <: SympNet{AT} 
+@doc raw"""
+`GSympNet` is called with **a single input argument**, the **system dimension**. Optional input arguments are: 
+- `upscaling_dimension::Int`: The *upscaling dimension* of the gradient layer. See the documentation for `GradientQ` and `GradientP` for further explanation. The default is `2*dim`.
+- `nhidden::Int`: The number of hidden layers (i.e. layers that are **not** input or output layers). The default is 2.
+- `activation`: The activation function that is applied. By default this is `tanh`.
+- `init_upper::Bool`: Initialize the gradient layer so that it first modifies the $q$-component. The default is `true`.
+"""
+struct GSympNet{AT, InitUpper} <: SympNet{AT} where {InitUpper} 
     dim::Int
-    width::Int
+    upscaling_dimension::Int
     nhidden::Int
     act::AT
-    init_uplow::Vector{Bool}
 
-    function GSympNet(dim; width=dim, nhidden=2, activation=tanh, init_uplow=[true,false]) 
-        new{typeof(activation)}(dim, width, nhidden, activation, init_uplow,)
+    function GSympNet(dim; upscaling_dimension=2*dim, nhidden=2, activation=tanh, init_upper=true) 
+        new{typeof(activation), init_upper}(dim, upscaling_dimension, nhidden, activation)
     end
 end
 
 
 @inline dim(arch::GSympNet) = arch.dim
 
-# Chain function
-function Chain(nn::GSympNet)
-    inner_layers = Tuple(
-        [Gradient(nn.dim, nn.width, nn.act, change_q = nn.init_uplow[Int64((i-1)%length(nn.init_uplow)+1)]) for i in 1:nn.nhidden]
-    )
-    Chain(
-        inner_layers...
-    )
+@doc raw"""
+`Chain` can also be called with a neural network as input.
+"""
+function Chain(nn::GSympNet{AT, true}) where {AT}
+    layers = ()
+    for i in 1:(nn.nhidden+1)
+        layers = (layers..., GradientQ(nn.dim, nn.upscaling_dimension, nn.act), GradientP(nn.dim, nn.upscaling_dimension, nn.act))
+    end
+    Chain(layers)
 end
 
-function Chain(nn::LASympNet)
-    couple_layers = []
-    for i in 1:nn.nhidden
-        for j in 1:nn.width
-            push!(couple_layers, LinearSymplectic(nn.dim, change_q = nn.init_uplow_linear[Int64((i-1+j-1)%length(nn.init_uplow_linear)+1)], bias=(j==nn.width), init_weight=nn.init_sym_matrices, init_bias=nn.init_bias))
+function Chain(nn::GSympNet{AT, false}) where {AT}
+    layers = ()
+    for i in 1:(nn.nhidden+1)
+        layers = (layers..., GradientP(nn.dim, nn.upscaling_dimension, nn.act), GradientQ(nn.dim, nn.upscaling_dimension, nn.act))
+    end
+    Chain(layers)
+end
+
+@doc raw"""
+Build a chain for an LASympnet for which `init_upper_linear` is `true` and `init_upper_act` is `false`.
+"""
+function Chain(nn::LASympNet{AT, true, false}) where {AT}
+    layers = ()
+    for i in 1:(nn.nhidden+1)
+        for j in 1:(depth)
+            layers = isodd(j) ? (layers..., LinearQ(nn.dim)) : (layers..., LinearP(nn.dim))
         end
-        push!(couple_layers,Gradient(nn.dim, nn.dim, nn.act, full_grad = false, change_q = nn.init_uplow_act[Int64((i-1)%length(nn.init_uplow_act)+1)]))
+        layers = (layers..., ActivationP(nn.dim, nn.activation))
+        layers = (layers..., ActivationQ(nn.dim, nn.activation))
     end
-
-    for j in 1:nn.width
-        push!(couple_layers, LinearSymplecticLayer(nn.dim, change_q = nn.init_uplow_linear[Int64((nn.nhidden+1-1+j-1)%length(nn.init_uplow_linear)+1)], bias=(j==nn.width), init_weight=nn.init_sym_matrices, init_bias=nn.init_bias))
-    end
-    
-    Chain(
-        couple_layers...
-    )
+    Chain(layers)
 end
 
+@doc raw"""
+Build a chain for an LASympnet for which `init_upper_linear` is `false` and `init_upper_act` is `true`.
+"""
+function Chain(nn::LASympNet{AT, false, true}) where {AT}
+    layers = ()
+    for i in 1:(nn.nhidden+1)
+        for j in 1:(depth)
+            layers = isodd(j) ? (layers..., LinearP(nn.dim)) : (layers..., LinearQ(nn.dim))
+        end
+        layers = (layers..., ActivationQ(nn.dim, nn.activation))
+        layers = (layers..., ActivationP(nn.dim, nn.activation))
+    end
+    Chain(layers)
+end
 
-# Results
+@doc raw"""
+Build a chain for an LASympnet for which `init_upper_linear` is `false` and `init_upper_act` is `false`.
+"""
+function Chain(nn::LASympNet{AT, false, false}) where {AT}
+    layers = ()
+    for i in 1:(nn.nhidden+1)
+        for j in 1:(depth)
+            layers = isodd(j) ? (layers..., LinearP(nn.dim)) : (layers..., LinearQ(nn.dim))
+        end
+        layers = (layers..., ActivationP(nn.dim, nn.activation))
+        layers = (layers..., ActivationQ(nn.dim, nn.activation))
+    end
+    Chain(layers)
+end
 
+@doc raw"""
+Build a chain for an LASympnet for which `init_upper_linear` is `true` and `init_upper_act` is `true`.
+"""
+function Chain(nn::LASympNet{AT, true, true}) where {AT}
+    layers = ()
+    for i in 1:(nn.nhidden+1)
+        for j in 1:(depth)
+            layers = isodd(j) ? (layers..., LinearQ(nn.dim)) : (layers..., LinearP(nn.dim))
+        end
+        layers = (layers..., ActivationQ(nn.dim, nn.activation))
+        layers = (layers..., ActivationP(nn.dim, nn.activation))
+    end
+    Chain(layers)
+end
+
+#=
 function Iterate_Sympnet(nn::NeuralNetwork{<:SympNet}, q0, p0; n_points = DEFAULT_SIZE_RESULTS)
 
     n_dim = length(q0)
@@ -89,3 +147,4 @@ function Iterate_Sympnet(nn::NeuralNetwork{<:SympNet}, q0, p0; n_points = DEFAUL
 
     return q_learned, p_learned
 end
+=#
