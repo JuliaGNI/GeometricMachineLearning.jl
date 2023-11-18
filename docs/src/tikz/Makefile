@@ -5,6 +5,7 @@ pdf:
 	xelatex -shell-escape transformer_encoder
 	xelatex -shell-escape third_degree_spline
 	xelatex -shell-escape sympnet_architecture
+	xelatex -shell-escape structs_visualization
 
 png:
 	pdftocairo  -png -r 150 -transp -singlefile  adam_optimizer.pdf               	 	adam_optimizer              
@@ -13,6 +14,7 @@ png:
 	pdftocairo  -png -r 150 -transp -singlefile  transformer_encoder.pdf		        transformer_encoder   
 	pdftocairo  -png -r 150 -transp -singlefile  third_degree_spline.pdf	           	third_degree_spline          
 	pdftocairo	-png -r 150 -transp -singlefile	 sympnet_architecture.pdf				sympnet_architecture
+	pdftocairo 	-png -r 150 -transp -singlefile  structs_visualization.pdf				structs_visualization
 
 clean:
 	rm -f *.aux
