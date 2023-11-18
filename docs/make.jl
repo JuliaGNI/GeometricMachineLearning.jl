@@ -1,8 +1,15 @@
 using GeometricMachineLearning
 using Documenter
+using DocumenterCitations
+# using Weave
 
+# this is copied from GI, not sure what it does ...
+# ENV["GKSwstype"] = "100"
+
+bib = CitationBibliography(joinpath(@__DIR__, "src", "GeometricMachineLearning.bib"))
 
 makedocs(;
+    plugins=[bib],
     modules=[GeometricMachineLearning],
     authors="Michael Kraus, Benedikt Brantner",
     repo="https://github.com/JuliaGNI/GeometricMachineLearning.jl/blob/{commit}{path}#L{line}",
@@ -52,6 +59,7 @@ makedocs(;
             "Linear Wave Equation" => "tutorials/linear_wave_equation.md",
             "MNIST" => "tutorials/mnist_tutorial.md",
         ],
+        "References" => "references.md",
         "Library" => "library.md",
     ],
 )
