@@ -4,7 +4,7 @@ In order to generalize neural network optimizers to [homogeneous spaces](manifol
 
 Starting from an element of the tangent space $T_Y\mathcal{M}$[^1], we need to perform two mappings to arrive at $\mathfrak{g}^\mathrm{hor}$, which we refer to by $\Omega$ and a red horizontal arrow:
 
-![](images/general_optimization_with_boundary.png)
+![](tikz/general_optimization_with_boundary.png)
 
 Here the mapping $\Omega$ is a [horizontal lift](optimizers/manifold_related/horizontal_lift.md) from the tangent space onto the **horizontal component of the Lie algebra at $Y$**. 
 
