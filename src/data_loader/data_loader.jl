@@ -1,20 +1,18 @@
 @doc raw"""
 Data Loader is a struct that creates an instance based on a tensor (or different input format) and is designed to make training convenient. 
 
-Implemented: 
-
 If the data loader is called with a single tensor, a batch_size and an output_size, then the batch is drawn randomly in the relevant range and the output is assigned accordingly.
 
 The fields of the struct are the following: 
 - `data`: The input data with axes (i) system dimension, (ii) number of parameters and (iii) number of time steps.
 - `output`: The tensor that contains the output (supervised learning) - this may be of type Nothing if the constructor is only called with one tensor (unsupervised learning).
-- `input_dim`: The ``dimension'' of the system, i.e. what is taken as input by a regular neural network.
+- `input_dim`: The *dimension* of the system, i.e. what is taken as input by a regular neural network.
 - `input_time_steps`: The length of the entire time series of the data
 - `n_params`: The number of parameters that are present in the data set (length of second axis)
 - `output_dim`: The dimension of the output tensor (first axis). 
-- `output_time_steps`: The size of the second axis of the output tensor (also called prediction_window, `output_size=1` in most cases)
+- `output_time_steps`: The size of the second axis of the output tensor (also called prediction_window, `output_time_steps=1` in most cases)
 
-For drawing the batch, the sampling is done over n_params and n_time_steps (here seq_length and output_size are also taken into account).
+For drawing the batch, the sampling is done over `n_params` and `input_time_steps` (here `output_dim` and `output_time_steps` are also taken into account).
 
 If for the output we have a tensor whose second axis has length 1, we still store it as a tensor and not a matrix. This is because it is not necessarily of length 1. 
 
@@ -64,6 +62,15 @@ function DataLoader(data::AbstractArray{T, 3}, target::AbstractVector{T1}; patch
         )
 end
 
+"""
+`DataLoader` for `NamedTuple` that has `q` and `p` as keys.
+
+TODO: printing of `@info` and `OffsetArrays`.
+"""
+function DataLoader(data::NamedTuple{(:q, :p), Tuple{AT, AT}}) where {AT<:AbstractArray}
+    (q = DataLoader(data.q), p = DataLoader(data.p))
+end
+
 @doc raw"""
 Computes the loss for a neural network and a data set. 
 The computed loss is $||output - \mathcal{NN}(input)||_F/\mathtt{size(output, 2)}/\mathtt{size(output, 3)}$, where $||A||_F := \sqrt{\sum_{i_1,\ldots,i_k}||a_{i_1,\ldots,i_k}^2}$ is the Frobenius norm.
@@ -89,6 +96,15 @@ function loss(model::Chain, ps::Tuple, input::BT) where {T, BT<:AbstractArray{T,
     norm(output_estimate - input)/norm(input) # /T(sqrt(size(input, 2)))
 end
 
+_diff(A, B) = A - B 
+nt_norm(A, B) = apply_toNT(_diff, A, B)
+nt_norm(A) = sum(apply_toNT(norm, A))
+
+function loss(model::Chain, ps::Tuple, input::NamedTuple, output::NamedTuple) 
+    output_estimate = model(input, ps)
+    nt_norm(nt_diff(output_estimate, output))/nt_norm(input)
+end
+
 @doc raw"""
 Alternative call of the loss function. This takes as input: 
 - `model`
@@ -105,6 +121,10 @@ end
 
 function loss(model::Chain, ps::Tuple, dl::DataLoader{T, BT, Nothing}) where {T, BT<:AbstractArray{T, 2}} 
     loss(model, ps, dl.input)
+end
+
+function loss(model::Chain, ps::Tuple, dl::NamedTuple)
+    loss(model, ps, (q=dl.q.input, p=dl.p.input))
 end
 
 @doc raw"""

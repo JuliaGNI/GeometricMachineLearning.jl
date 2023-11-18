@@ -15,7 +15,6 @@ end
 hasseqlength(::Batch{<:Integer}) = true
 hasseqlength(::Batch{<:Nothing}) = false
 
-
 function (batch::Batch{<:Nothing})(dl::DataLoader{T, AT}) where {T, AT<:AbstractArray{T}}
     indices = shuffle(1:dl.n_params)
     n_batches = Int(ceil(dl.n_params/batch.batch_size))
@@ -28,6 +27,8 @@ function (batch::Batch{<:Nothing})(dl::DataLoader{T, AT}) where {T, AT<:Abstract
     batches = (batches..., indices[( (n_batches-1) * batch.batch_size + 1 ):end])
     batches
 end
+
+(batch::Batch)(dl::NamedTuple) = batch(dl.q)
 
 #=
 function (batch::Batch{<:Integer})(dl::DataLoader{T, AT, Nothing}) where {T, AT<:AbstractArray{T, 3}}
@@ -72,4 +73,32 @@ end
 
 function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTuple}, dl::DataLoader{T, AT, BT}, batch::Batch) where {T, T1, AT<:AbstractArray{T, 3}, BT<:AbstractArray{T1, 3}}
     optimize_for_one_epoch!(opt, model, ps, dl, batch, loss)
+end
+
+"""
+TODO: make this work for higher dimensions!!!!
+"""
+function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTuple}, dl::NamedTuple, batch::Batch, loss) 
+    count = 0 
+    total_error = T(0)
+    batches = batch(dl)
+    @views for batch_indices in batches 
+        input_batch = (q=copy(dl.q.input[batch_indices]), p=copy(dl.p.input[batch_indices]))
+        # add +1 here !!!!
+        output_batch = (q=copy(dl.q.input[batch_indices]), p=copy(dl.p.input[batch_indices]))
+        loss_value, pullback = Zygote.pullback(ps -> loss(model, ps, input_batch, output_batch), ps)
+        total_error += loss_value 
+        dp = pullback(one(loss_value))[1]
+        optimization_step!(opt, model, ps, dp)
+    end
+    total_error/count
+end
+
+
+function (o::Optimizer)(nn::NeuralNetwork, dl::NamedTuple, n_epochs::Int, batch::Batch, loss)
+    loss_array = zeros(n_epochs)
+    for i in 1:n_epochs
+        loss_array[i] = optimize_for_one_epoch!(o, nn.model, nn.params, dl, batch, loss)
+    end
+    loss_array
 end
