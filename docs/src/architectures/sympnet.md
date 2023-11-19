@@ -303,6 +303,8 @@ Here we generate pendulum data with the script `GeometricMachineLearning/scripts
 include("../../scripts/pendulum.jl")
 # get data 
 qp_data = pendulum_data()
+# call the DataLoader
+dl = DataLoader(qp_data)
 ```
 
 We can now perform the training of the neural networks. The syntax is the following :
@@ -311,10 +313,12 @@ We can now perform the training of the neural networks. The syntax is the follow
 # number of training epochs
 const nepochs = 10
 # Batchsize used to compute the gradient of the loss function with respect to the parameters of the neural networks.
-const nbatch = 10
+const batch_size = 10
+
+batch = Batch(batch_size)
 
 # perform training (returns array that contains the total loss for each training step)
-total_loss = train!(nn, opt, data_q, data_p; ntraining = nruns, batch_size = nbatch)
+la_loss_array = la_opt(la_nn, dl, batch, nepochs)
 ```
 The train function will change the parameters of the neural networks and gives an a vector containing the evolution of the value of the loss function during the training. Default values for the arguments `ntraining` and `batch_size` are respectively $1000$ and $10$.
 
