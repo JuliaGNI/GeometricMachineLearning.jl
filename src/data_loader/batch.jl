@@ -87,7 +87,7 @@ end
 """
 TODO: make this work for higher dimensions!!!!
 """
-function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTuple}, dl::DataLoader{T, AT}, batch::Batch, loss) where AT<:NamedTuple
+function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTuple}, dl::DataLoader{T, AT}, batch::Batch, loss) where {T, AT<:NamedTuple}
     count = 0 
     total_error = T(0)
     batches = batch(dl)

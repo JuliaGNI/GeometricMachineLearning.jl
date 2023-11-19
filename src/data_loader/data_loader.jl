@@ -69,14 +69,14 @@ function DataLoader(data::NamedTuple{(:q, :p), Tuple{AT, AT}}) where {T, AT<:Abs
     @info "You have provided a NamedTuple with keys q and p; the data are matrices. This is interpreted as *symplectic data*."
     
     dim2, time_steps = size(data.q)
-    DataLoader{T, typeof(data)}(data, nothing, dim2*2, time_steps, n_params, nothing, output_time_steps)
+    DataLoader{T, typeof(data), Nothing}(data, nothing, dim2*2, time_steps, nothing, nothing, nothing)
 end
 
 function DataLoader(data::NamedTuple{(:q, :p), Tuple{AT, AT}}; output_time_steps=1) where {T, AT<:AbstractArray{T, 3}}
     @info "You have provided a NamedTuple with keys q and p; the data are tensors. This is interpreted as *symplectic data*."
     
     dim2, time_steps, n_params = size(data.q)
-    DataLoader{T, typeof(data)}(data, nothing, dim2*2, time_steps, n_params, nothing, output_time_steps)
+    DataLoader{T, typeof(data), Nothing}(data, nothing, dim2*2, time_steps, n_params, nothing, output_time_steps)
 end
 
 @doc raw"""

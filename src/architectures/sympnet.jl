@@ -54,7 +54,7 @@ function Chain(nn::GSympNet{AT, true}) where {AT}
     for i in 1:(nn.nhidden+1)
         layers = (layers..., GradientQ(nn.dim, nn.upscaling_dimension, nn.act), GradientP(nn.dim, nn.upscaling_dimension, nn.act))
     end
-    Chain(layers)
+    Chain(layers...)
 end
 
 function Chain(nn::GSympNet{AT, false}) where {AT}
@@ -62,7 +62,7 @@ function Chain(nn::GSympNet{AT, false}) where {AT}
     for i in 1:(nn.nhidden+1)
         layers = (layers..., GradientP(nn.dim, nn.upscaling_dimension, nn.act), GradientQ(nn.dim, nn.upscaling_dimension, nn.act))
     end
-    Chain(layers)
+    Chain(layers...)
 end
 
 @doc raw"""
@@ -71,13 +71,13 @@ Build a chain for an LASympnet for which `init_upper_linear` is `true` and `init
 function Chain(nn::LASympNet{AT, true, false}) where {AT}
     layers = ()
     for i in 1:(nn.nhidden+1)
-        for j in 1:(depth)
+        for j in 1:(nn.depth)
             layers = isodd(j) ? (layers..., LinearQ(nn.dim)) : (layers..., LinearP(nn.dim))
         end
         layers = (layers..., ActivationP(nn.dim, nn.activation))
         layers = (layers..., ActivationQ(nn.dim, nn.activation))
     end
-    Chain(layers)
+    Chain(layers...)
 end
 
 @doc raw"""
@@ -86,13 +86,13 @@ Build a chain for an LASympnet for which `init_upper_linear` is `false` and `ini
 function Chain(nn::LASympNet{AT, false, true}) where {AT}
     layers = ()
     for i in 1:(nn.nhidden+1)
-        for j in 1:(depth)
+        for j in 1:(nn.depth)
             layers = isodd(j) ? (layers..., LinearP(nn.dim)) : (layers..., LinearQ(nn.dim))
         end
         layers = (layers..., ActivationQ(nn.dim, nn.activation))
         layers = (layers..., ActivationP(nn.dim, nn.activation))
     end
-    Chain(layers)
+    Chain(layers...)
 end
 
 @doc raw"""
@@ -101,13 +101,13 @@ Build a chain for an LASympnet for which `init_upper_linear` is `false` and `ini
 function Chain(nn::LASympNet{AT, false, false}) where {AT}
     layers = ()
     for i in 1:(nn.nhidden+1)
-        for j in 1:(depth)
+        for j in 1:(nn.depth)
             layers = isodd(j) ? (layers..., LinearP(nn.dim)) : (layers..., LinearQ(nn.dim))
         end
         layers = (layers..., ActivationP(nn.dim, nn.activation))
         layers = (layers..., ActivationQ(nn.dim, nn.activation))
     end
-    Chain(layers)
+    Chain(layers...)
 end
 
 @doc raw"""
@@ -116,13 +116,13 @@ Build a chain for an LASympnet for which `init_upper_linear` is `true` and `init
 function Chain(nn::LASympNet{AT, true, true}) where {AT}
     layers = ()
     for i in 1:(nn.nhidden+1)
-        for j in 1:(depth)
+        for j in 1:(nn.depth)
             layers = isodd(j) ? (layers..., LinearQ(nn.dim)) : (layers..., LinearP(nn.dim))
         end
         layers = (layers..., ActivationQ(nn.dim, nn.activation))
         layers = (layers..., ActivationP(nn.dim, nn.activation))
     end
-    Chain(layers)
+    Chain(layers...)
 end
 
 #=
