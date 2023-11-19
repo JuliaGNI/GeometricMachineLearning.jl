@@ -1,24 +1,20 @@
 @doc raw"""
 Data Loader is a struct that creates an instance based on a tensor (or different input format) and is designed to make training convenient. 
 
-If the data loader is called with a single tensor, a batch_size and an output_size, then the batch is drawn randomly in the relevant range and the output is assigned accordingly.
-
 The fields of the struct are the following: 
 - `data`: The input data with axes (i) system dimension, (ii) number of parameters and (iii) number of time steps.
 - `output`: The tensor that contains the output (supervised learning) - this may be of type Nothing if the constructor is only called with one tensor (unsupervised learning).
 - `input_dim`: The *dimension* of the system, i.e. what is taken as input by a regular neural network.
 - `input_time_steps`: The length of the entire time series of the data
-- `n_params`: The number of parameters that are present in the data set (length of second axis)
+- `n_params`: The number of parameters that are present in the data set (length of third axis)
 - `output_dim`: The dimension of the output tensor (first axis). 
 - `output_time_steps`: The size of the second axis of the output tensor (also called prediction_window, `output_time_steps=1` in most cases)
-
-For drawing the batch, the sampling is done over `n_params` and `input_time_steps` (here `output_dim` and `output_time_steps` are also taken into account).
 
 If for the output we have a tensor whose second axis has length 1, we still store it as a tensor and not a matrix. This is because it is not necessarily of length 1. 
 
 TODO: Implement DataLoader that works well with EnsembleProblems etc.
 """
-struct DataLoader{T, AT<:AbstractArray{T}, OT<:Union{AbstractArray, Nothing}}
+struct DataLoader{T, AT<:Union{NamedTuple, AbstractArray{T}}, OT<:Union{AbstractArray, Nothing}}
     input::AT
     output::OT
     input_dim::Integer
@@ -62,13 +58,25 @@ function DataLoader(data::AbstractArray{T, 3}, target::AbstractVector{T1}; patch
         )
 end
 
-"""
+@doc raw"""
 `DataLoader` for `NamedTuple` that has `q` and `p` as keys.
 
-TODO: printing of `@info` and `OffsetArrays`.
+Here the dimension of the `DataLoader` (`input_dim`) is interpreted as the $q$- and $p$-dimension combined, i.e. if $q$ and $p$ both evolve on $\mathbb{R}^n$, then the dimension of the instance of `DataLoader` is $2n$.
+
+Here the number of time steps is the *length of the second axis* of the input. This means that for $(z^{(0)}, \ldots, z^{(T)})$ `input_time_steps=T+1`.
 """
-function DataLoader(data::NamedTuple{(:q, :p), Tuple{AT, AT}}) where {AT<:AbstractArray}
-    (q = DataLoader(data.q), p = DataLoader(data.p))
+function DataLoader(data::NamedTuple{(:q, :p), Tuple{AT, AT}}) where {T, AT<:AbstractMatrix{T}}
+    @info "You have provided a NamedTuple with keys q and p; the data are matrices. This is interpreted as *symplectic data*."
+    
+    dim2, time_steps = size(data.q)
+    DataLoader{T, typeof(data)}(data, nothing, dim2*2, time_steps, n_params, nothing, output_time_steps)
+end
+
+function DataLoader(data::NamedTuple{(:q, :p), Tuple{AT, AT}}; output_time_steps=1) where {T, AT<:AbstractArray{T, 3}}
+    @info "You have provided a NamedTuple with keys q and p; the data are tensors. This is interpreted as *symplectic data*."
+    
+    dim2, time_steps, n_params = size(data.q)
+    DataLoader{T, typeof(data)}(data, nothing, dim2*2, time_steps, n_params, nothing, output_time_steps)
 end
 
 @doc raw"""
@@ -123,8 +131,8 @@ function loss(model::Chain, ps::Tuple, dl::DataLoader{T, BT, Nothing}) where {T,
     loss(model, ps, dl.input)
 end
 
-function loss(model::Chain, ps::Tuple, dl::NamedTuple)
-    loss(model, ps, (q=dl.q.input, p=dl.p.input))
+function loss(model::Chain, ps::Tuple, dl::DataLoader{T, BT}) where {T, BT<:NamedTuple}
+    loss(model, ps, dl.data)
 end
 
 @doc raw"""
