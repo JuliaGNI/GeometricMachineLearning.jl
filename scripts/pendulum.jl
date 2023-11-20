@@ -43,9 +43,10 @@ function pendulum_data(; tspan = (0., 100.), tstep = 0.1, q0 = randn(1), p0 = ra
     # sol = integrate(ode, SymplecticEulerA())
     sol = integrate(ode, ImplicitMidpoint())
 
-    q = sol.q[:,1]
-    p = sol.p[:,1]
+    n_time_steps = length(sol.t)
+    q = reshape(sol.q[:,1].parent, 1, n_time_steps)
+    p = reshape(sol.p[:,1].parent, 1, n_time_steps)
 
     # return a NamedTuple of the parent arrays.
-    return (q=q.parent, p=p.parent)
+    return (q=q, p=p)
 end
