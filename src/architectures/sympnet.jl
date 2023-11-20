@@ -20,7 +20,6 @@ struct LASympNet{AT, InitUpperLinear, InitUpperAct} <: SympNet{AT} where {InitUp
     function LASympNet(dim; depth=5, nhidden=2, activation=tanh, init_upper_linear=true, init_upper_act=true) 
         new{typeof(activation), init_upper_linear, init_upper_act}(dim, min(depth,5), nhidden, activation)
     end
-
 end
 
 @inline AbstractNeuralNetworks.dim(arch::LASympNet) = arch.dim
