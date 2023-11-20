@@ -245,7 +245,7 @@ end
 
 @inline function(d::LinearQ{M, M})(x::NamedTuple, ps) where {M}
         size(x.q, 1) == M÷2 || error("Dimension mismatch.")
-        (x.q + custom_mat_mul(ps.weight, x.p), x.p)
+        (q = x.q + custom_mat_mul(ps.weight, x.p), p = x.p)
 end
 
 @inline function (d::LinearQ)(x::AbstractArray, ps)
@@ -254,7 +254,7 @@ end
 
 @inline function(d::LinearP{M, M})(x::NamedTuple, ps) where {M}
         size(x.q, 1) == M÷2 || error("Dimension mismatch.")
-        (x.q, x.p + custom_mat_mul(ps.weight, x.q))
+        (q = x.q, p = x.p + custom_mat_mul(ps.weight, x.q))
 end
 
 @inline function (d::LinearP)(x::AbstractArray, ps)
