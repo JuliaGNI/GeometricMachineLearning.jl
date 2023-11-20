@@ -35,9 +35,8 @@ function (batch::Batch{<:Nothing})(dl::DataLoader{T, AT}) where {T, BT<:Abstract
     for batch_number in 1:(n_batches-1)
         batches = (batches..., indices[(batch_number-1)*batch.batch_size + 1:batch_number*batch.batch_size])
     end
+    batches
 end
-
-(batch::Batch)(dl::NamedTuple) = batch(dl.q)
 
 #=
 function (batch::Batch{<:Integer})(dl::DataLoader{T, AT, Nothing}) where {T, AT<:AbstractArray{T, 3}}
@@ -92,9 +91,9 @@ function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTu
     total_error = T(0)
     batches = batch(dl)
     @views for batch_indices in batches 
-        input_batch = (q=copy(dl.q.input[batch_indices]), p=copy(dl.p.input[batch_indices]))
+        input_batch = (q=copy(dl.input.q[:,batch_indices]), p=copy(dl.input.p[:,batch_indices]))
         # add +1 here !!!!
-        output_batch = (q=copy(dl.q.input[batch_indices .+ 1]), p=copy(dl.p.input[batch_indices .+ 1]))
+        output_batch = (q=copy(dl.input.q[:,batch_indices.+1]), p=copy(dl.input.p[:,batch_indices.+1]))
         loss_value, pullback = Zygote.pullback(ps -> loss(model, ps, input_batch, output_batch), ps)
         total_error += loss_value 
         dp = pullback(one(loss_value))[1]
@@ -104,7 +103,7 @@ function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTu
 end
 
 
-function (o::Optimizer)(nn::NeuralNetwork, dl::NamedTuple, batch::Batch, n_epochs::Int, loss)
+function (o::Optimizer)(nn::NeuralNetwork, dl::DataLoader, batch::Batch, n_epochs::Int, loss)
     loss_array = zeros(n_epochs)
     for i in 1:n_epochs
         loss_array[i] = optimize_for_one_epoch!(o, nn.model, nn.params, dl, batch, loss)
@@ -112,6 +111,6 @@ function (o::Optimizer)(nn::NeuralNetwork, dl::NamedTuple, batch::Batch, n_epoch
     loss_array
 end
 
-function (o::Optimizer)(nn::NeuralNetwork, dl::NamedTuple, batch::Batch, n_epochs::Int)
+function (o::Optimizer)(nn::NeuralNetwork, dl::DataLoader, batch::Batch, n_epochs::Int)
     o(nn, dl, batch, n_epochs, loss)
 end
