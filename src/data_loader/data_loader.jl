@@ -63,20 +63,22 @@ end
 
 Here the dimension of the `DataLoader` (`input_dim`) is interpreted as the $q$- and $p$-dimension combined, i.e. if $q$ and $p$ both evolve on $\mathbb{R}^n$, then the dimension of the instance of `DataLoader` is $2n$.
 
-Here the number of time steps is the *length of the second axis* of the input. This means that for $(z^{(0)}, \ldots, z^{(T)})$ `input_time_steps=T+1`.
+Here the number of time steps is the *length of the second axis* of the input minus one. This means that for $(z^{(0)}, \ldots, z^{(T)})$ `input_time_steps=T`.
+
+TODO: implement the autocoder setting *in a good way*.
 """
 function DataLoader(data::NamedTuple{(:q, :p), Tuple{AT, AT}}) where {T, AT<:AbstractMatrix{T}}
     @info "You have provided a NamedTuple with keys q and p; the data are matrices. This is interpreted as *symplectic data*."
     
     dim2, time_steps = size(data.q)
-    DataLoader{T, typeof(data), Nothing}(data, nothing, dim2*2, time_steps, nothing, nothing, nothing)
+    DataLoader{T, typeof(data), Nothing}(data, nothing, dim2*2, time_steps-1, nothing, nothing, nothing)
 end
 
 function DataLoader(data::NamedTuple{(:q, :p), Tuple{AT, AT}}; output_time_steps=1) where {T, AT<:AbstractArray{T, 3}}
     @info "You have provided a NamedTuple with keys q and p; the data are tensors. This is interpreted as *symplectic data*."
     
     dim2, time_steps, n_params = size(data.q)
-    DataLoader{T, typeof(data), Nothing}(data, nothing, dim2*2, time_steps, n_params, nothing, output_time_steps)
+    DataLoader{T, typeof(data), Nothing}(data, nothing, dim2*2, time_steps-1, n_params, nothing, output_time_steps)
 end
 
 @doc raw"""
@@ -104,9 +106,8 @@ function loss(model::Chain, ps::Tuple, input::BT) where {T, BT<:AbstractArray{T,
     norm(output_estimate - input)/norm(input) # /T(sqrt(size(input, 2)))
 end
 
-_diff(A, B) = A - B 
-nt_norm(A, B) = apply_toNT(_diff, A, B)
-nt_norm(A) = sum(apply_toNT(norm, A))
+nt_diff(A, B) = (q = A.q - B.q, p = A.p - B.p)
+nt_norm(A) = norm(A.q) + norm(A.p)
 
 function loss(model::Chain, ps::Tuple, input::NamedTuple, output::NamedTuple) 
     output_estimate = model(input, ps)
