@@ -9,7 +9,11 @@ If the constructor is called with a matrix as input it returns a symmetric matri
 A ↦ .5*(A + Aᵀ). 
 This is a projection defined via the canonical metric (A,B) ↦ tr(AᵀB).
 
-TODO: Overload Adjoint operation for SymmetricMatrix!! (Aᵀ = A)
+TODO: 
+- Overload Adjoint operation for SymmetricMatrix!! (Aᵀ = A)
+- implement matrix and vector products (to also work on GPU)
+- implement zero initialization (for optimizer)
+- perform some tests (also with Zygote)
 """
 mutable struct SymmetricMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
     S::AT
