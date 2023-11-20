@@ -318,7 +318,7 @@ const batch_size = 10
 batch = Batch(batch_size)
 
 # perform training (returns array that contains the total loss for each training step)
-la_loss_array = la_opt(la_nn, dl, batch, nepochs)
+g_loss_array = g_opt(g_nn, dl, batch, nepochs)
 ```
 The train function will change the parameters of the neural networks and gives an a vector containing the evolution of the value of the loss function during the training. Default values for the arguments `ntraining` and `batch_size` are respectively $1000$ and $10$.
 
