@@ -10,6 +10,25 @@ Super type of `GradientQ` and `GradientP`.
 """ 
 abstract type Gradient{M, N, TA} <: SympNetLayer{M, N} end
 
+############ new layout, saves a struct!!! 
+struct GradientLayer{M, N, TA, C} <: SympNetLayer{M, N}
+        second_dim::Integer
+        activation::TA
+end
+
+const GradientLayerQ{M, N, TA} = GradientLayer{M, N, TA, :Q}
+const GradientLayerP{M, N, TA} = GradientLayer{M, N, TA, :P}
+
+function GradientLayerQ(M, upscaling_dimension, activation)
+        GradientLayer{M, M, typeof(activation), :Q}(upscaling_dimension, activation)
+end
+
+function GradientLayerP(M, upscaling_dimension, activation)
+        GradientLayer{M, M, typeof(activation), :P}(upscaling_dimension, activation)
+end
+
+
+
 @doc raw"""
 The gradient layer that changes the $q$ component. It is of the form: 
 
@@ -207,7 +226,7 @@ function apply_layer_to_nt_and_return_array(d::SympNetLayer{M, M}, ps) where {M}
         return vcat(output.q, output.p)
 end
 
-@inline function (d::Activation{M, M})(x::NamedTuple, ps) where {M}
+@inline function (d::ActivationQ{M, M})(x::NamedTuple, ps) where {M}
         size(x.q, 1) == M÷2 || error("Dimension mismatch.")
         return (q = x.q + custom_vec_mul(ps.scale, d.activation.(x.p)), p = x.p)
 end
