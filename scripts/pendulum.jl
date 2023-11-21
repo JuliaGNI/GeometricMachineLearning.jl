@@ -36,7 +36,7 @@ Generates data for a pendulum in 2d with optional arguments:
 - `q0`
 - `p0`
 """
-function pendulum_data(; tspan = (0., 100.), tstep = 0.1, q0 = randn(1), p0 = randn(1))
+function pendulum_data(; tspan = (0., 100.), T = Float64, tstep = T(0.1), q0 = T.(randn(1)), p0 = T.(randn(1)))
     # simulate data with geometric Integrators
     ode = HODEProblem(v, f, H, tspan, tstep, q0, p0)
 
