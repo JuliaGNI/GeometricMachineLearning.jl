@@ -194,17 +194,6 @@ function custom_vec_mul(scale::AbstractVector{T}, x::AbstractArray{T, 3}) where 
         vec_tensor_mul(scale, x)
 end
 
-@doc raw"""
-This function is used in the wrappers where the input to the SympNet layers is not a `NamedTuple` (as it should be) but an `AbstractArray`.
-
-It converts the Array to a `NamedTuple` (via `assign_q_and_p`), then calls the SympNet routine(s) and converts back to an `AbstractArray` (with `vcat`).
-"""
-function apply_layer_to_nt_and_return_array(d::SympNetLayer{M, M}, ps) where {M}
-        q, p = assign_q_and_p(x, N2)
-        output = d((q = q, p = p), ps)
-        return vcat(output.q, output.p)
-end
-
 @inline function (d::ActivationLayerQ{M, M})(x::NamedTuple, ps) where {M}
         size(x.q, 1) == M÷2 || error("Dimension mismatch.")
         return (q = x.q + custom_vec_mul(ps.scale, d.activation.(x.p)), p = x.p)
@@ -239,6 +228,17 @@ end
         (q = x.q, p = x.p + custom_mat_mul(ps.weight, x.q))
 end
 
+
+@doc raw"""
+This function is used in the wrappers where the input to the SympNet layers is not a `NamedTuple` (as it should be) but an `AbstractArray`.
+
+It converts the Array to a `NamedTuple` (via `assign_q_and_p`), then calls the SympNet routine(s) and converts back to an `AbstractArray` (with `vcat`).
+"""
+function apply_layer_to_nt_and_return_array(d::SympNetLayer{M, M}, ps) where {M}
+        q, p = assign_q_and_p(x, N2)
+        output = d((q = q, p = p), ps)
+        return vcat(output.q, output.p)
+end
 
 @doc raw"""
 This is called when a SympnetLayer is applied to a `NamedTuple`. It calls `apply_layer_to_nt_and_return_array`.
