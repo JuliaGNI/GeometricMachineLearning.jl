@@ -1,5 +1,8 @@
 @doc raw"""
 SympNet type encompasses GSympNets and LASympnets.
+
+TODO: 
+-[ ] add bias to `LASympNet`!
 """
 abstract type SympNet{AT} <: Architecture end
 
@@ -30,7 +33,7 @@ end
 
 @doc raw"""
 `GSympNet` is called with **a single input argument**, the **system dimension**. Optional input arguments are: 
-- `upscaling_dimension::Int`: The *upscaling dimension* of the gradient layer. See the documentation for `GradientQ` and `GradientP` for further explanation. The default is `2*dim`.
+- `upscaling_dimension::Int`: The *upscaling dimension* of the gradient layer. See the documentation for `GradientLayerQ` and `GradientLayerP` for further explanation. The default is `2*dim`.
 - `nhidden::Int`: The number of hidden layers (i.e. layers that are **not** input or output layers). The default is 2.
 - `activation`: The activation function that is applied. By default this is `tanh`.
 - `init_upper::Bool`: Initialize the gradient layer so that it first modifies the $q$-component. The default is `true`.
@@ -57,7 +60,7 @@ end
 function Chain(arch::GSympNet{AT, true}) where {AT}
     layers = ()
     for i in 1:(arch.nhidden+1)
-        layers = (layers..., GradientQ(arch.dim, arch.upscaling_dimension, arch.act), GradientP(arch.dim, arch.upscaling_dimension, arch.act))
+        layers = (layers..., GradientLayerQ(arch.dim, arch.upscaling_dimension, arch.act), GradientLayerP(arch.dim, arch.upscaling_dimension, arch.act))
     end
     Chain(layers...)
 end
@@ -65,7 +68,7 @@ end
 function Chain(arch::GSympNet{AT, false}) where {AT}
     layers = ()
     for i in 1:(arch.nhidden+1)
-        layers = (layers..., GradientP(arch.dim, arch.upscaling_dimension, arch.act), GradientQ(arch.dim, arch.upscaling_dimension, arch.act))
+        layers = (layers..., GradientLayerP(arch.dim, arch.upscaling_dimension, arch.act), GradientLayerQ(arch.dim, arch.upscaling_dimension, arch.act))
     end
     Chain(layers...)
 end
@@ -75,12 +78,15 @@ Build a chain for an LASympnet for which `init_upper_linear` is `true` and `init
 """
 function Chain(arch::LASympNet{AT, true, false}) where {AT}
     layers = ()
-    for i in 1:(arch.nhidden+1)
+    for i in 1:arch.nhidden
         for j in 1:(arch.depth)
-            layers = isodd(j) ? (layers..., LinearQ(arch.dim)) : (layers..., LinearP(arch.dim))
+            layers = isodd(j) ? (layers..., LinearLayerQ(arch.dim)) : (layers..., LinearLayerP(arch.dim))
         end
-        layers = (layers..., ActivationP(arch.dim, arch.activation))
-        layers = (layers..., ActivationQ(arch.dim, arch.activation))
+        layers = (layers..., ActivationLayerP(arch.dim, arch.activation))
+        layers = (layers..., ActivationLayerQ(arch.dim, arch.activation))
+    end
+    for j in 1:(arch.depth)
+        layers = isodd(j) ? (layers..., LinearLayerQ(arch.dim)) : (layers..., LinearLayerP(arch.dim))
     end
     Chain(layers...)
 end
@@ -90,12 +96,15 @@ Build a chain for an LASympnet for which `init_upper_linear` is `false` and `ini
 """
 function Chain(arch::LASympNet{AT, false, true}) where {AT}
     layers = ()
-    for i in 1:(arch.nhidden+1)
-        for j in 1:(arch.depth)
-            layers = isodd(j) ? (layers..., LinearP(arch.dim)) : (layers..., LinearQ(arch.dim))
+    for i in 1:arch.nhidden
+        for j in 1:arch.depth
+            layers = isodd(j) ? (layers..., LinearLayerP(arch.dim)) : (layers..., LinearLayerQ(arch.dim))
         end
-        layers = (layers..., ActivationQ(arch.dim, arch.activation))
-        layers = (layers..., ActivationP(arch.dim, arch.activation))
+        layers = (layers..., ActivationLayerQ(arch.dim, arch.activation))
+        layers = (layers..., ActivationLayerP(arch.dim, arch.activation))
+    end
+    for j in 1:(arch.depth)
+        layers = isodd(j) ? (layers..., LinearLayerP(arch.dim)) : (layers..., LinearLayerQ(arch.dim))
     end
     Chain(layers...)
 end
@@ -105,12 +114,15 @@ Build a chain for an LASympnet for which `init_upper_linear` is `false` and `ini
 """
 function Chain(arch::LASympNet{AT, false, false}) where {AT}
     layers = ()
-    for i in 1:(arch.nhidden+1)
-        for j in 1:(arch.depth)
-            layers = isodd(j) ? (layers..., LinearP(arch.dim)) : (layers..., LinearQ(arch.dim))
+    for i in 1:arch.nhidden
+        for j in 1:arch.depth
+            layers = isodd(j) ? (layers..., LinearLayerP(arch.dim)) : (layers..., LinearLayerQ(arch.dim))
         end
-        layers = (layers..., ActivationP(arch.dim, arch.activation))
-        layers = (layers..., ActivationQ(arch.dim, arch.activation))
+        layers = (layers..., ActivationLayerP(arch.dim, arch.activation))
+        layers = (layers..., ActivationLayerQ(arch.dim, arch.activation))
+    end
+    for j in 1:(arch.depth)
+        layers = isodd(j) ? (layers..., LinearLayerP(arch.dim)) : (layers..., LinearLayerQ(arch.dim))
     end
     Chain(layers...)
 end
@@ -120,12 +132,15 @@ Build a chain for an LASympnet for which `init_upper_linear` is `true` and `init
 """
 function Chain(arch::LASympNet{AT, true, true}) where {AT}
     layers = ()
-    for i in 1:(arch.nhidden+1)
-        for j in 1:(arch.depth)
-            layers = isodd(j) ? (layers..., LinearQ(arch.dim)) : (layers..., LinearP(arch.dim))
+    for i in 1:arch.nhidden
+        for j in 1:arch.depth
+            layers = isodd(j) ? (layers..., LinearLayerQ(arch.dim)) : (layers..., LinearLayerP(arch.dim))
         end
-        layers = (layers..., ActivationQ(arch.dim, arch.activation))
-        layers = (layers..., ActivationP(arch.dim, arch.activation))
+        layers = (layers..., ActivationLayerQ(arch.dim, arch.activation))
+        layers = (layers..., ActivationLayerP(arch.dim, arch.activation))
+    end
+    for j in 1:(arch.depth)
+        layers = isodd(j) ? (layers..., LinearLayerQ(arch.dim)) : (layers..., LinearLayerP(arch.dim))
     end
     Chain(layers...)
 end
