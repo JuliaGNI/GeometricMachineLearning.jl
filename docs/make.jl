@@ -3,8 +3,8 @@ using Documenter
 using DocumenterCitations
 # using Weave
 
-# this is copied from GI, not sure what it does ...
-# ENV["GKSwstype"] = "100"
+# this is necessary to avoid warnings. See https://documenter.juliadocs.org/dev/man/syntax/
+ENV["GKSwstype"] = "100"
 
 bib = CitationBibliography(joinpath(@__DIR__, "src", "GeometricMachineLearning.bib"))
 
