@@ -110,7 +110,7 @@ The second type of layer needed for $LA$-SympNets are so-called *activation laye
 ```
 The activation function $\sigma$ can be any nonlinearity (on which minor restrictions are imposed below). Here the *scaling vector* $a\in\mathbb{R^{d}}$ constitutes the learnable weights. We denote the set of symplectic activation layers by $\mathcal{M}^A$. 
  
-An $LA$-SympNet is a function of the form $\Psi=l_{k+1} \circ a_{k} \circ v_{k} \circ \cdots \circ a_1 \circ l_1$ where $(l_i)_{1\leq i\leq k+1} \subset (\mathcal{M}^L)^{k+1}$ and $(a_i)_{1\leq i\leq k} \subset (\mathcal{M}^A)^{k}$. We will refer to $k$ as the *number of hidden layers* of the SympNet[^1] and the number $n$ above as the *depth* of the linear layer.
+An $LA$-SympNet is a function of the form $\Psi=l_{k} \circ a_{k} \circ l_{k-1} \circ \cdots \circ a_1 \circ l_0$ where $(l_i)_{0\leq i\leq k} \subset (\mathcal{M}^L)^{k+1}$ and $(a_i)_{1\leq i\leq k} \subset (\mathcal{M}^A)^{k}$. We will refer to $k$ as the *number of hidden layers* of the SympNet[^1] and the number $n$ above as the *depth* of the linear layer.
 
 [^1]: Note that if $k=1$ then the $LA$-SympNet consists of only one linear layer.
  
@@ -149,9 +149,9 @@ or
  \end{pmatrix}.
 ```
 
-The parameters of this layer are the *scaling matrix* $K\in\mathbb{R}^{n\times d}$, the bias $b\in\mathbb{R}^{n}$ and the *scaling vector* $a\in\mathbb{R}^{n}$. The name ``gradient layer'' has its origin in the fact that the expression $[K^T\mathrm{diag}(a)\sigma(Kq+b)]_i = \sum_jk_{ji}a_j\sigma(\sum_\ell{}k_{j\ell}q_\ell+b_j)$ is the gradient of a function $\sum_ja_j\tilde{\sigma}(\sum_\ell{}k_{j\ell}q_\ell+b_j)$, where $\tilde{\sigma}$ is the antiderivative of $\sigma$.
+The parameters of this layer are the *scaling matrix* $K\in\mathbb{R}^{m\times d}$, the bias $b\in\mathbb{R}^{m}$ and the *scaling vector* $a\in\mathbb{R}^{m}$. The name "gradient layer" has its origin in the fact that the expression $[K^T\mathrm{diag}(a)\sigma(Kq+b)]_i = \sum_jk_{ji}a_j\sigma(\sum_\ell{}k_{j\ell}q_\ell+b_j)$ is the gradient of a function $\sum_ja_j\tilde{\sigma}(\sum_\ell{}k_{j\ell}q_\ell+b_j)$, where $\tilde{\sigma}$ is the antiderivative of $\sigma$. The first dimension of $K$ we refer to as the *upscaling dimension*.
  
-If we denote by $\mathcal{M}^G$ the set of gradient layers, a $G$-SympNet is a function of the form $\Psi=g_k \circ g_{k-1} \circ \cdots \circ g_1$ where $(g_i)_{1\leq i\leq k} \subset (\mathcal{M}^G)^k$.
+If we denote by $\mathcal{M}^G$ the set of gradient layers, a $G$-SympNet is a function of the form $\Psi=g_k \circ g_{k-1} \circ \cdots \circ g_0$ where $(g_i)_{0\leq i\leq k} \subset (\mathcal{M}^G)^k$. The index $k$ is again the *number of hidden layers*.
 
 Further note here the different roles played by round and square brackets: the latter indicates a nonlinear operation as opposed to a regular vector or matrix. 
 
@@ -184,6 +184,15 @@ __Theorem (Approximation theorem for G-SympNet)__ For any positive integer $r>0$
 There are many $r$-finite activation functions commonly used in neural networks, for example:
 - sigmoid $\sigma(x)=\frac{1}{1+e^{-x}}$ for any positive integer $r$, 
 - tanh $\tanh(x)=\frac{e^x-e^{-x}}{e^x+e^{-x}}$ for any positive integer $r$. 
+
+The universal approximation theorems state that we can, in principle, get arbitrarily close to any symplectomorphism defined on $\mathbb{R}^{2d}$. But this does not tell us anything about how to optimize the network. This is can be done with any common [neural network optimizer](../Optimizer.md) and these neural network optimizers always rely on a corresponding loss function.  
+
+## Loss function
+
+To train the SympNet, one need data along a trajectory such that the model is trained to perform an integration. These data are $(Q,P)$ where $Q[i,j]$ (respectively $P[i,j]$) is the real number $q_j(t_i)$ (respectively $p[i,j]$) which is the j-th coordinates of the generalized position (respectively momentum) at the i-th time step. One also need a loss function defined as :
+
+$$Loss(Q,P) = \underset{i}{\sum} d(\Phi(Q[i,-],P[i,-]), [Q[i,-] P[i,-]]^T)$$
+where $d$ is a distance on $\mathbb{R}^d$.
 
 See the [tutorial section](../tutorials/sympnet_tutorial.md) for an introduction into using SympNets with `GeometricMachineLearning.jl`.
 

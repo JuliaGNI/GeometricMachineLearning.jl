@@ -31,7 +31,7 @@
 \node[ffnnmodule, right of=qp0, align=center, xshift=5ex] (qp1) {$q^{(1)}$ \\ \\ $p^{(1)}$};
 \node[ffnnmodule, right of=qp1, align=center, xshift=5ex] (qp2) {$q^{(2)}$ \\ \\ $p^{(2)}$};
 \node[right of=qp2, align=center, xshift=5ex] (dots) { \\ $\cdots$ \\ };
-\node[right of=dots, ffnnmodule, align=center, xshift=5ex] (qpn) {$q^{(n)}$ \\ \\ $p^{(n)}$};
+\node[right of=dots, ffnnmodule, align=center, xshift=5ex] (qpn) {$q^{(k+1)}$ \\ \\ $p^{(k+1)}$};
 
 \coordinate[right of=qp0, xshift=1.5ex] (leftofqp1);
 \coordinate[right of=dots] (rightofdots);
@@ -50,13 +50,13 @@
 \draw[arrow] ([xshift=10ex] $(qp2.east)!0.5!(qp2.north east)$) -- ($(qpn.west)!0.5!(qpn.north west)$) node[midway, above] {\tiny id};
 \draw[arrow] ([xshift=10ex] $(qp2.east)!0.5!(qp2.south east)$) -- ($(qpn.west)!0.5!(qpn.south west)$) node[midway, below] {\tiny id};
  
-\draw[arrow] ($(qp0.east)!0.5!(qp0.north east)$) -- ([yshift=.3ex] $(qp1.west)!0.5!(qp1.south west)$) node[midway, below] {\tiny $T_1$};
+\draw[arrow] ($(qp0.east)!0.5!(qp0.north east)$) -- ([yshift=.3ex] $(qp1.west)!0.5!(qp1.south west)$) node[midway, below] {\tiny $T_0$};
 
-\draw[arrow] ($(qp1.east)!0.5!(qp1.south east)$) -- ([yshift=-.3ex] $(qp2.west)!0.5!(qp2.north west)$) node[midway, above] {\tiny $T_2$};
+\draw[arrow] ($(qp1.east)!0.5!(qp1.south east)$) -- ([yshift=-.3ex] $(qp2.west)!0.5!(qp2.north west)$) node[midway, above] {\tiny $T_1$};
 
-\draw[arrow] ($(qp2.east)!0.5!(qp2.north east)$) -- ([yshift=.3ex, xshift=7ex] $(qp2.east)!0.5!(qp2.south east)$) node[midway, below] {\tiny $T_3$};
+\draw[arrow] ($(qp2.east)!0.5!(qp2.north east)$) -- ([yshift=.3ex, xshift=7ex] $(qp2.east)!0.5!(qp2.south east)$) node[midway, below] {\tiny $T_2$};
 
-\draw[arrow] ([xshift=10ex] $(qp2.east)!0.5!(qp2.south east)$) -- ([yshift=-.3ex] $(qpn.west)!0.5!(qpn.north west)$) node[midway, above] {\tiny $T_n$};
+\draw[arrow] ([xshift=10ex] $(qp2.east)!0.5!(qp2.south east)$) -- ([yshift=-.3ex] $(qpn.west)!0.5!(qpn.north west)$) node[midway, above] {\tiny $T_k$};
 
 \end{tikzpicture}
 

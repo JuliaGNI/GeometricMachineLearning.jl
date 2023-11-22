@@ -1,67 +1,51 @@
-## SympNets with `GeometricMachineLearning.jl`
+# SympNets with `GeometricMachineLearning.jl`
 
 This page serves as a short introduction into using SympNets with `GeometricMachineLearning.jl`. For the general theory see [the theory section](../architectures/sympnet.md).
 
-With `GeometricMachineLearning.jl`, it is really easy to implement and train a SympNet. The steps are the following :
-- __Create the architecture__ in one line with the function `GSympNet` or `LASympNet`,
-- __Create the neural networks__ depending a backend (e.g. with Lux),
-- __Create an optimizer__ for the training step,
-- __Train__ the neural networks with the `train!`function.
+With `GeometricMachineLearning.jl` one can easily implement SympNets. The steps are the following :
+- __Specify the architecture__ with the functions `GSympNet` and `LASympNet`,
+- __Specify the type and the backend__ with `NeuralNetwork`,
+- __Pick an optimizer__ for training the network,
+- __Train__ the neural networks!
 
-Both LA-SympNet and G-SympNet architectures can be generated in one line with `GeometricMachineLearning.jl`.
+We discuss these points is some detail:
 
-### LA-SympNet
+## Specifying the architecture
 
-To create a LA-SympNet, one needs to write
+To call an $LA$-SympNet, one needs to write
 
 ```julia
-lasympnet = LASympNet(dim; width=5, nhidden=1, activation=tanh, init_uplow_linear=[true,false], 
-            init_uplow_act=[true,false],init_sym_matrices=Lux.glorot_uniform, init_bias=Lux.zeros32, 
-            init_weight=Lux.glorot_uniform) 
+lasympnet = LASympNet(dim; depth=5, nhidden=1, activation=tanh, init_upper_linear=true, init_upper_act=true) 
 ```
 `LASympNet` takes one obligatory argument:
-- __dim__ : the dimension of the phase space,
+- __dim__ : the dimension of the phase space (i.e. an integer) or optionally an instance of `DataLoader`. This latter option will be used below.
 
 and several keywords argument :
-- __width__ : the width for all the symplectic linear layers with default value set to 5 (if width>5, width is set to 5),
-- __nhidden__ : the number of pairs of symplectic linear and activation layers with default value set to 0 (i.e LA-SympNet is a single symplectic linear layer),
-- __activation__ : the activation function for all the symplectic activations layers with default value set to tanh,
-- __init_uplow_linear__ : a vector of boolean whose the ith coordinate is true only if all the symplectic linear layers in (i mod `length(init_uplow_linear)`)-th position is up (for example the default value is [true,false] which represents an alternation of up and low symplectic linear layers),
-- __init_uplow_act__ : a vector of boolean whose the ith coordinate is true only if all the symplectic activation layers in (i mod `length(init_uplow_act)`)-th position is up (for example the default value is [true,false] which represents an alternation of up and low symplectic activation layers),
-- __init_sym_matrices__: the function which gives the way to initialize the symmetric matrices $S^i$ of symplectic linear layers,
-- __init_bias__: the function which gives the way to initialize the vector of bias $b$,
-- __init_weight__: the function which gives the way to initialize the weight $a$.
-
-The default value of the last three keyword arguments uses Lux functions.
+- __depth__ : the depth for all the linear layers. The default value set to 5 (if width>5, width is set to 5). See the [theory section](../architectures/sympnet.md) for more details; there **depth** was called $n$.
+- __nhidden__ : the number of pairs of linear and activation layers with default value set to 1 (i.e the $LA$-SympNet is a composition of a linear layer, an activation layer and then again a single layer). 
+- __activation__ : the activation function for all the activations layers with default set to tanh,
+- __init_upper_linear__ : a boolean that indicates whether the first linear layer changes $q$ first. By default this is `true`.
+- __init_upper_act__ : a boolean that indicates whether the first activation layer changes $q$ first. By default this is `true`.
 
 ### G-SympNet
 
- To create a G-SympNet, one needs to write
+ To call a G-SympNet, one needs to write
 
 ```julia
-gsympnet = GSympNet(dim; width=dim, nhidden=1, activation=tanh, init_uplow=[true,false], init_weight=Lux.glorot_uniform, 
-init_bias=Lux.zeros32, init_scale=Lux.glorot_uniform) 
+gsympnet = GSympNet(dim; upscaling_dimension=2*dim, nhidden=2, activation=tanh, init_upper=true) 
 ```
 `GSympNet` takes one obligatory argument:
-- __dim__ : the dimension of the phase space,
+- __dim__ : the dimension of the phase space (i.e. an integer) or optionally an instance of `DataLoader`. This latter option will be used below.
 
 and severals keywords argument :
-- __width__ : the width for all the gradients layers with default value set to dim to have width$\geq$dim,
-- __nhidden__ : the number of gradient layers with default value set to 1,
-- __activation__ : the activation function for all the gradients layers with default value set to tanh,
-- __init_uplow__: a vector of boolean whose the ith coordinate is true only if all the gradient layers in (i mod `length(init_uplow)`)-th position is up (for example the default value is [true,false] which represents an alternation of up and low gradient layers),
-- __init_weight__: the function which gives the way to initialize the vector of weights $a$,
-- __init_bias__: the function which gives the way to initialize the vector of bias $b$,
-- __init_scale__: the function which gives the way to initialize the scale matrix $K$.
-
-The default value of the last three keyword arguments uses Lux functions.
+- __upscaling_dimension__: The first dimension of the matrix with which the input is multiplied. In the [theory section](../architectures/sympnet.md) this matrix is called $K$ and the *upscaling dimension* is called $m$.
+- __nhidden__: the number of gradient layers with default value set to 2.
+- __activation__ : the activation function for all the activations layers with default set to tanh.
+- __init_upper__ : a boolean that indicates whether the first gradient layer changes $q$ first. By default this is `true`.
 
 ### Loss function
 
-To train the SympNet, one need data along a trajectory such that the model is trained to perform an integration. These data are $(Q,P)$ where $Q[i,j]$ (respectively $P[i,j]$) is the real number $q_j(t_i)$ (respectively $p[i,j]$) which is the j-th coordinates of the generalized position (respectively momentum) at the i-th time step. One also need a loss function defined as :
-
-$$Loss(Q,P) = \underset{i}{\sum} d(\Phi(Q[i,-],P[i,-]), [Q[i,-] P[i,-]]^T)$$
-where $d$ is a distance on $\mathbb{R}^d$.
+The loss function described in the [theory section](../architectures/sympnet.md) is the default choice used in `GeometricMachineLearning.jl` for training SympNets.
 
 ## Data Structures in `GeometricMachineLearning.jl`
 
