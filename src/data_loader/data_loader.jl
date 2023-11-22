@@ -25,7 +25,7 @@ struct DataLoader{T, AT<:Union{NamedTuple, AbstractArray{T}}, OT<:Union{Abstract
 end
 
 """
-The DataLoader is called with a single tensor (**snapshot tensor**)
+The `DataLoader` is called with a single tensor (**snapshot tensor**)
 """
 function DataLoader(data::AbstractArray{T, 3}) where T
     @info "You have provided a tensor with three axes as input. They will be interpreted as \n (i) system dimension, (ii) number of time steps and (iii) number of params."
