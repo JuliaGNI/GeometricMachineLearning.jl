@@ -13,7 +13,7 @@ This is a projection defined via the canonical metric $(A,B) \mapsto \mathrm{tr}
 
 Internally the `struct` saves a vector $S$ of size $n(n+1)\div2$. The conversion is done the following way: 
 ```math
-[A]_{ij} = \begin{cases} S[( (i-1) i ) \div 2 + j] & \text{if $i\geq{}j$}\ 
+[A]_{ij} = \begin{cases} S[( (i-1) i ) \div 2 + j] & \text{if $i\geq{}j$}\\ 
                          S[( (j-1) j ) \div 2 + i] & \text{else}. \end{cases}
 ```
 
