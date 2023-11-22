@@ -6,23 +6,26 @@ This document discusses the SympNet architecture and its implementation in `Geom
 
 ### Principle
 
-SympNets (see [jin2020sympnets](@cite) for the eponymous paper) are a type of neural network proposing a new approach to compute the trajectory of a Hamiltonian system in phase space. Take $(q,p)=(q_1,\ldots,q_d,p_1,\ldots,p_d)^T\in \mathbb{R}^{2d}$ as the coordinates in phase space, where $q=(q_1, \ldots, q_d)\in \mathbb{R}^{d}$ is refered to as the *position* and $p=(p_1, \ldots, p_d)\in \mathbb{R}^{d}$ the *momentum*. Given a point $(q,p)$ in $\mathbb{R}^{2d}$ the SympNet aims to compute the *next position* $(q',p')$ and thus predicts the trajectory while preserving the *symplectic structure* of the system.
+SympNets (see [jin2020sympnets](@cite) for the eponymous paper) are a type of neural network that can model the trajectory of a Hamiltonian system in phase space. Take $(q^T,p^T)^T=(q_1,\ldots,q_d,p_1,\ldots,p_d)^T\in \mathbb{R}^{2d}$ as the coordinates in phase space, where $q=(q_1, \ldots, q_d)^T\in \mathbb{R}^{d}$ is refered to as the *position* and $p=(p_1, \ldots, p_d)^T\in \mathbb{R}^{d}$ the *momentum*. Given a point $(q^T,p^T)^T$ in $\mathbb{R}^{2d}$ the SympNet aims to compute the *next position* $((q')^T,(p')^T)^T$ and thus predicts the trajectory while preserving the *symplectic structure* of the system.
 SympNets are enforcing symplecticity strongly, meaning that this property is hard-coded into the network architecture. The layers are reminiscent of traditional neural network feedforward layers, but have a strong restriction imposed on them in order to be symplectic.
 
-SympNets (denoted by $\Phi$ in the following) can be viewed as a ``symplectic integrator'' (see [hairer2006geometric](@cite) and [leimkuhler2004simulating](@cite)). Its goal is to predict, based on an initial condition $((q^{(0)})^T,(p^{(0)})^T)^T$, a sequence of points in phase space $((q^{(0)})^T,(p^{(0)})^T)^T, ((q^{(1)})^T,(p^{(1)})^T)^T, \ldots, ((q^{(n)})^T,(p^{(n)})^T)^T$ that fit the training data as well as possible. The time step between predictions is not a parameter we can choose but is *related to the temporal frequency of the training data*. SympNet can handle both  temporally regular data, i.e with a fix time step between data, and temporally irregular data, i.e with variable time step. 
+SympNets can be viewed as a "symplectic integrator" (see [hairer2006geometric](@cite) and [leimkuhler2004simulating](@cite)). Their goal is to predict, based on an initial condition $((q^{(0)})^T,(p^{(0)})^T)^T$, a sequence of points in phase space that fit the training data as well as possible:
+```math
+\begin{pmatrix} q^{(0)} \\ p^{(0)} \end{pmatrix}, \cdots, \begin{pmatrix} \tilde{q}^{(1)} \\ \tilde{p}^{(1)} \end{pmatrix}, \cdots \begin{pmatrix} \tilde{q}^{(n)} \\ \tilde{p}^{(n)} \end{pmatrix}.
+```
+The tilde in the above equation indicates *predicted data*. The time step between predictions is not a parameter we can choose but is related to the *temporal frequency of the training data*. This means that if data is recorded in an interval of e.g. 0.1 seconds, then this will be the time step of our integrator.
 
 ### Architecture of SympNets
-
-With `GeometricMachineLearning.jl`, it is possible to implement two types of SympNet architectures: $LA$-SympNets and $G$-SympNets. 
- 
-#### LA-SympNet
-
 ![](../tikz/sympnet_architecture.png)
 
-$LA$-SympNets are made of the alternation of two types of layers, symplectic linear layers and symplectic activation layers.  For a given integer $n$, a symplectic linear layer is defined by
+There are two types of SympNet architectures: $LA$-SympNets and $G$-SympNets. 
+ 
+#### $LA$-SympNet
+
+The first type of SympNets, $LA$-SympNets, are obtained from composing two types of layers: *symplectic linear layers* and *symplectic activation layers*.  For a given integer $n$, a symplectic linear layer is defined by
 
 ```math
-\mathcal{L}^{n,up}
+\mathcal{L}^{n,q}
 \begin{pmatrix}
  q \\
  p \\
@@ -51,7 +54,7 @@ $LA$-SympNets are made of the alternation of two types of layers, symplectic lin
 or 
  
 ```math
-\mathcal{L}^{n,low}
+\mathcal{L}^{n,p}
 \begin{pmatrix}  q  \\  
  p  \end{pmatrix} =  
   \begin{pmatrix} 
@@ -71,12 +74,12 @@ or
   + b . 
 ```
 
-The learnable parameters are the symmetric matrices $S^i\in\mathbb{R}^{d\times d}$ and the bias $b\in\mathbb{R}^{2d}$. The integer $n$ is the width of the symplectic linear layer. If $n\geq5$, we know that the symplectic linear layers represent any linear symplectic map so that $n$ need not be larger than 5 (see [jin2022optimal](@cite)). We note the set of symplectic linear layers $\mathcal{M}^L$. This type of layers plays the role of standard linear layers. 
+The superscripts $q$ and $p$ indicate whether the $q$ or the $p$ part is changed. The learnable parameters are the symmetric matrices $S^i\in\mathbb{R}^{d\times d}$ and the bias $b\in\mathbb{R}^{2d}$. The integer $n$ is the width of the symplectic linear layer. It can be shown that five of these layers, i.e. $n\geq{}5$, can represent any linear symplectic map (see [jin2022optimal](@cite)), so $n$ need not be larger than five. We denote the set of symplectic linear layers by $\mathcal{M}^L$.
 
-For a given activation function $\sigma$, a symplectic activation layer is defined by
+The second type of layer needed for $LA$-SympNets are so-called *activation layers*:
 
 ```math
- \mathcal{A}^{up}  \begin{pmatrix}  q  \\  
+ \mathcal{A}^{q}  \begin{pmatrix}  q  \\  
  p  \end{pmatrix} =  
   \begin{bmatrix} 
  I&\hat{\sigma}^{a}  \\ 
@@ -89,10 +92,10 @@ For a given activation function $\sigma$, a symplectic activation layer is defin
  \end{pmatrix},
 ```
  
- or
+ and
  
 ```math
- \mathcal{A}^{low}  \begin{pmatrix}  q  \\  
+ \mathcal{A}^{p}  \begin{pmatrix}  q  \\  
  p  \end{pmatrix} =  
   \begin{bmatrix} 
  I&0  \\ 
@@ -105,8 +108,7 @@ For a given activation function $\sigma$, a symplectic activation layer is defin
  \mathrm{diag}(a)\sigma(q)+p
  \end{pmatrix}.
 ```
- 
-The *scaling vector* $a\in\mathbb{R^{d}}$ constitutes the learnable weights. This type of layer plays the role of a standard activation layer. We denote the set of symplectic activation layers by $\mathcal{M}^A$. 
+The activation function $\sigma$ can be any nonlinearity (on which minor restrictions are imposed below). Here the *scaling vector* $a\in\mathbb{R^{d}}$ constitutes the learnable weights. We denote the set of symplectic activation layers by $\mathcal{M}^A$. 
  
 A $LA$-SympNet is a function of the form $\Psi=l_{k+1} \circ a_{k} \circ v_{k} \circ \cdots \circ a_1 \circ l_1$ where $(l_i)_{1\leq i\leq k+1} \subset (\mathcal{M}^L)^{k+1}$ and $(a_i)_{1\leq i\leq k} \subset (\mathcal{M}^A)^{k}$.
  
@@ -145,13 +147,15 @@ or
  \end{pmatrix}.
 ```
 
-Note here the different roles played by round and square braces, the latter indicates a nonlinear operation as opposed to a regular vector or matrix. The parameters of this layer are the *scaling matrix* $K\in\mathbb{R}^{n\times d}$, the bias $b\in\mathbb{R}^{n}$ and the *scaling vector* $a\in\mathbb{R}^{n}$. The name ``gradient layer'' has its origin in the fact that the expression $[K^T\mathrm{diag}(a)\sigma(Kq+b)]_i = \sum_jk_{ji}a_j\sigma(\sum_\ell{}k_{j\ell}q_\ell+b_j)$ is the gradient of a function $\sum_ja_j\tilde{\sigma}(\sum_\ell{}k_{j\ell}q_\ell+b_j)$, where $\tilde{\sigma}$ is the antiderivative of $\sigma$.
+The parameters of this layer are the *scaling matrix* $K\in\mathbb{R}^{n\times d}$, the bias $b\in\mathbb{R}^{n}$ and the *scaling vector* $a\in\mathbb{R}^{n}$. The name ``gradient layer'' has its origin in the fact that the expression $[K^T\mathrm{diag}(a)\sigma(Kq+b)]_i = \sum_jk_{ji}a_j\sigma(\sum_\ell{}k_{j\ell}q_\ell+b_j)$ is the gradient of a function $\sum_ja_j\tilde{\sigma}(\sum_\ell{}k_{j\ell}q_\ell+b_j)$, where $\tilde{\sigma}$ is the antiderivative of $\sigma$.
  
 If we denote by $\mathcal{M}^G$ the set of gradient layers, a $G$-SympNet is a function of the form $\Psi=g_k \circ g_{k-1} \circ \cdots \circ g_1$ where $(g_i)_{1\leq i\leq k} \subset (\mathcal{M}^G)^k$.
 
+Further note here the different roles played by round and square brackets: the latter indicates a nonlinear operation as opposed to a regular vector or matrix. 
+
 ### Universal approximation theorems
 
-In order to state the \textit{universal approximation theorem} for both architectures we first need a few definitions:
+In order to state the *universal approximation theorem* for both architectures we first need a few definitions:
  
 Let $U$ be an open set of $\mathbb{R}^{2d}$, and let us denote by $\mathcal{SP}^r(U)$ the set of $C^r$ smooth symplectic maps on $U$. We now define a topology on $C^r(K, \mathbb{R}^n)$, the set of $C^r$-smooth maps from a compact set $K\subset\mathbb{R}^{n}$ to $\mathbb{R}^{n}$ through the norm
 
@@ -261,22 +265,24 @@ H:(q,p)\in\mathbb{R}^2 \mapsto \frac{1}{2}p^2-cos(q) \in \mathbb{R}.
 
 Here we generate pendulum data with the script `GeometricMachineLearning/scripts/pendulum.jl`:
 
-```@example
+```@example sympnet
 using GeometricMachineLearning
 
 # load script
-include("../../scripts/pendulum.jl")
+include("../../../scripts/pendulum.jl")
 # specify the data type
 type = Float16 
 # get data 
 qp_data = GeometricMachineLearning.apply_toNT(a -> type.(a), pendulum_data((q=[0.], p=[1.]); tspan=(0.,100.)))
 # call the DataLoader
 dl = DataLoader(qp_data)
+# this last line is a hack so as to not display the output # hide
+nothing # hide
 ```
 
 Next we specify the architectures. `GeometricMachineLearning.jl` provides useful defaults for all parameters although they can be specified manually (which is done in the following):
 
-```@example
+```@example sympnet
 # layer dimension for gradient module 
 const upscaling_dimension = 10
 # hidden layers
@@ -294,24 +300,26 @@ lasympnet = LASympNet(dl, nhidden=nhidden, activation=activation)
 backend = CPU()
 
 # initialize the networks
-la_nn = NeuralNetwork(lasympnet, backend, type)
+la_nn = NeuralNetwork(lasympnet, backend, type) 
 g_nn = NeuralNetwork(gsympnet, backend, type)
+nothing # hide
 ```
 
 *Remark*: We can also specify whether we would like to start with a layer that changes the $q$-component or one that changes the $p$-component. This can be done via the keywords `init_upper` for `GSympNet`, and `init_upper_linear` and `init_upper_act` for `LASympNet`.
 
 We have to define an optimizer which will be use in the training of the SympNet. For more details on optimizer, please see the [corresponding documentation](../Optimizer.md). In this example we use [Adam](../optimizers/adam_optimizer.md):
 
-```@example
+```@example sympnet
 # set up optimizer; for this we first need to specify the optimization method (argue for why we need the optimizer method)
 opt_method = AdamOptimizer(; T=type)
 la_opt = Optimizer(opt_method, la_nn)
 g_opt = Optimizer(opt_method, g_nn)
+nothing # hide
 ```
 
 We can now perform the training of the neural networks. The syntax is the following :
 
-```@example
+```@example sympnet
 # number of training epochs
 const nepochs = 1000
 # Batchsize used to compute the gradient of the loss function with respect to the parameters of the neural networks.
@@ -322,6 +330,14 @@ batch = Batch(batch_size)
 # perform training (returns array that contains the total loss for each training step)
 g_loss_array = g_opt(g_nn, dl, batch, nepochs)
 la_loss_array = la_opt(la_nn, dl, batch, nepochs)
+nothing # hide
+```
+
+We can also plot the training errors against the epoch (here the $y$-axis is in log-scale):
+```@example sympnet
+using Plots
+p1 = plot(g_loss_array, xlabel="Epoch", ylabel="Training error", label="G-SympNet", color=3, yaxis=:log)
+plot!(p1, la_loss_array, label="LA-SympNet", color=2)
 ```
 The train function will change the parameters of the neural networks and gives an a vector containing the evolution of the value of the loss function during the training. Default values for the arguments `ntraining` and `batch_size` are respectively $1000$ and $10$.
 
@@ -329,7 +345,7 @@ The trainings data `data_q` and `data_p` must be matrices of $\mathbb{R}^{n\time
 
 Then we can make prediction. Let's compare the initial data with a prediction starting from the same phase space point using the provided function Iterate_Sympnet:
 
-```@example
+```@example sympnet
 ics = (q=qp_data.q[:,1], p=qp_data.p[:,1])
 
 steps_to_plot = 200
@@ -339,9 +355,9 @@ la_trajectory = Iterate_Sympnet(la_nn, ics; n_points = steps_to_plot)
 g_trajectory = Iterate_Sympnet(g_nn, ics; n_points = steps_to_plot)
 
 using Plots
-p = plot(qp_data.q'[1:steps_to_plot], qp_data.p'[1:steps_to_plot], label="training data")
-plot!(p, la_trajectory.q', la_trajectory.p', label="LA Sympnet")
-plot!(p, g_trajectory.q', g_trajectory.p', label="G Sympnet")
+p2 = plot(qp_data.q'[1:steps_to_plot], qp_data.p'[1:steps_to_plot], label="training data")
+plot!(p2, la_trajectory.q', la_trajectory.p', label="LA Sympnet")
+plot!(p2, g_trajectory.q', g_trajectory.p', label="G Sympnet")
 ```
 
 We see that `GSympNet` gives an almost perfect math on the training data whereas `LASympNet` cannot even properly replicate the training data. It also takes longer to train `LASympNet`.
