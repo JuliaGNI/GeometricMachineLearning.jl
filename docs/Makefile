@@ -8,7 +8,6 @@ documenter:
 
 images:
 	$(MAKE) all   -C src/tikz
-	$(MAKE) clean -C src/tikz
 
 clean:
 	$(MAKE) empty -C src/tikz
