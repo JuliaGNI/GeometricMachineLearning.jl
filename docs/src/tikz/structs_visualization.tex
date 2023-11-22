@@ -25,10 +25,11 @@
 \begin{tikzpicture}[module/.style={draw, very thick, rounded corners, minimum width=8ex},
     abstract_type/.style={module, fill=mred!30},
     chain/.style={module, fill=mgreen!30},
-    architecture/.style={module, fill=mpurple!30},
+    constructor/.style={module, fill=morange!30},
     struct/.style={module, fill=mblue!30},
     arrow_exp/.style={-stealth, thick, rounded corners},
     arrow_imp/.style={-stealth, thick, rounded corners, dashed},
+    arrow_constructor/.style={arrow_exp, morange},
 ]
 %\node[module] (ann) {\texttt{AbstractNeuralNetworks.jl}};
 %\node[module, right of=ann, xshift=5cm] (gml) {\texttt{GeometricMachineLearning.jl}};
@@ -40,19 +41,19 @@
 \node[abstract_type, below of=al] (ael) {\texttt{AbstractExplicitLayer}};
 
 \node[abstract_type, left of=architecture, xshift=-3cm] (ann) {\texttt{AbstractNeuralNetwork}};
-\node[struct, below of=ann] (nn) {\texttt{AbstractNeuralNetwork}};
+\node[struct, below of=ann] (nn) {\texttt{NeuralNetwork}};
 
-\node[abstract_type, below of=ael, xshift=10cm, yshift=2cm] (sympnetlayer) {\texttt{SympNetLayer}};
-\node[abstract_type, below of=sympnetlayer, xshift=-5cm] (gradient) {\texttt{Gradient}};
-\node[abstract_type, below of=sympnetlayer] (activation) {\texttt{Activation}}; 
-\node[abstract_type, below of=sympnetlayer, xshift=5cm] (linear) {\texttt{LinearSympNetLayer}};
+\node[abstract_type, below of=ael, xshift=12cm, yshift=2cm] (sympnetlayer) {\texttt{SympNetLayer}};
+\node[struct, below of=sympnetlayer, xshift=-6cm] (gradient) {\texttt{GradientLayer}};
+\node[struct, below of=sympnetlayer] (activation) {\texttt{ActivationLayer}}; 
+\node[struct, below of=sympnetlayer, xshift=6.4cm] (linear) {\texttt{LinearLayer}};
 
-\node[struct, below of=gradient, xshift=-1cm] (gradientq) {\texttt{GradientQ}}; 
-\node[struct, below of=gradient, xshift=1cm] (gradientp) {\texttt{GradientP}}; 
-\node[struct, below of=activation, xshift=-1.2cm] (activationq) {\texttt{ActivationQ}};
-\node[struct, below of=activation, xshift=1.2cm] (activationp) {\texttt{ActivationP}};
-\node[struct, below of=linear, xshift=-1.cm] (linearq) {\texttt{LinearQ}};
-\node[struct, below of=linear, xshift=1.cm] (linearp) {\texttt{LinearP}};
+\node[constructor, below of=gradient, xshift=-1.5cm] (gradientq) {\texttt{GradientLayerQ}}; 
+\node[constructor, below of=gradient, xshift=1.5cm] (gradientp) {\texttt{GradientLayerP}}; 
+\node[constructor, below of=activation, xshift=-1.3cm] (activationq) {\texttt{ActivationLayerQ}};
+\node[constructor, below of=activation, xshift=2.0cm] (activationp) {\texttt{ActivationLayerP}};
+\node[constructor, below of=linear, xshift=-1.3cm] (linearq) {\texttt{LinearLayerQ}};
+\node[constructor, below of=linear, xshift=1.3cm] (linearp) {\texttt{LinearLayerP}};
 
 \node[abstract_type, below of=activationq, xshift=1cm, yshift=-2cm] (sympnetnetwork) {\texttt{SympNet}};
 \node[struct, below of=sympnetnetwork, xshift=-1cm] (gsympnet) {\texttt{GSympNet}};
@@ -66,12 +67,13 @@
 \draw[arrow_exp] (sympnetlayer) -- (activation); 
 \draw[arrow_exp] (sympnetlayer) -- (linear); 
 
-\draw[arrow_exp] (gradient) -- (gradientq);
-\draw[arrow_exp] (gradient) -- (gradientp); 
-\draw[arrow_exp] (activation) -- (activationq); 
-\draw[arrow_exp] (activation) -- (activationp);
-\draw[arrow_exp] (linear) -- (linearq);
-\draw[arrow_exp] (linear) -- (linearp);
+% arrows for the constructor
+\draw[arrow_constructor] (gradientq) -- (gradient);
+\draw[arrow_constructor] (gradientp) -- (gradient); 
+\draw[arrow_constructor] (activationq) -- (activation); 
+\draw[arrow_constructor] (activationp) -- (activation);
+\draw[arrow_constructor] (linearq) -- (linear);
+\draw[arrow_constructor] (linearp) -- (linear);
 
 \coordinate[right of=linearp, yshift=-.3cm] (right_of_linearp);
 \coordinate[below of=sympnetnetwork, yshift=-.5cm] (below_of_sympnet);
