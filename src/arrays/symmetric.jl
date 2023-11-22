@@ -41,6 +41,15 @@ mutable struct SymmetricMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
     end
 end 
 
+# I'm not 100% sure this is the best solution (needed for broadcasting operations ...)
+function Base.setindex!(A::SymmetricMatrix{T}, val::T, i::Int, j::Int) where T
+    if i ≥ j 
+        A.S[i * (i-1)÷2 + j] = val 
+    else
+        A.S[j * (j-1)÷2 + i] = val 
+    end
+end
+
 @kernel function assign_S_val_kernel!(S, A_sym, i)
     j = @index(Global)
     S[i * (i-1)÷2 + j] = A_sym[i, j]
@@ -137,7 +146,7 @@ end
 function ⊙²(A::SymmetricMatrix)
     SymmetricMatrix(A.S.^2, A.n)
 end
-function RACᵉˡᵉ(A::SymmetricMatrix)
+function racᵉˡᵉ(A::SymmetricMatrix)
     SymmetricMatrix(sqrt.(A.S), A.n)
 end
 function /ᵉˡᵉ(A::SymmetricMatrix, B::SymmetricMatrix)
