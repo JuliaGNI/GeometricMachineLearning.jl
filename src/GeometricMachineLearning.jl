@@ -81,7 +81,6 @@ module GeometricMachineLearning
     # GPU specific operations
     export convert_to_dev, Device, CPUDevice
 
-
     # INCLUDE ARRAYS
     include("arrays/block_identity_lower.jl")
     include("arrays/block_identity_upper.jl")
@@ -185,14 +184,14 @@ module GeometricMachineLearning
     export AbstractDataSymbol
     export PositionSymbol, PhaseSpaceSymbol, DerivativePhaseSpaceSymbol, PosVeloAccSymbol, PosVeloSymbol
     export DataSymbol
-    export can_reduce, type, symbols, symboldiff
+    export can_reduce, symbols, symboldiff
 
     include("data/data_symbol.jl")
 
     # INCLUDE TRAINING INTEGRATOR
 
     export TrainingMethod
-    export type, symbol, shape
+    export symbol, shape
     export min_length_batch
     
     
@@ -219,8 +218,24 @@ module GeometricMachineLearning
     include("backends/backends.jl")
     include("backends/lux.jl")
 
+    export DataLoader, onehotbatch, accuracy
+    export Batch, optimize_for_one_epoch!
+    include("data_loader/tensor_assign.jl")
+    include("data_loader/matrix_assign.jl")
+    include("data_loader/data_loader.jl")
+    include("data_loader/mnist_utils.jl")
+    include("data_loader/batch.jl")
 
     #INCLUDE ARCHITECTURES
+    include("architectures/sympnet.jl")
+    include("architectures/autoencoder.jl")
+    include("architectures/fixed_width_network.jl")
+    include("architectures/hamiltonian_neural_network.jl")
+    include("architectures/lagrangian_neural_network.jl")
+    include("architectures/variable_width_network.jl")
+    include("architectures/recurrent_neural_network.jl")
+    include("architectures/LSTM_neural_network.jl")
+
     export HamiltonianNeuralNetwork
     export LagrangianNeuralNetwork
     export SympNet
@@ -232,14 +247,6 @@ module GeometricMachineLearning
     export train!, apply!, jacobian!
     export Iterate_Sympnet
 
-    include("architectures/autoencoder.jl")
-    include("architectures/fixed_width_network.jl")
-    include("architectures/hamiltonian_neural_network.jl")
-    include("architectures/lagrangian_neural_network.jl")
-    include("architectures/variable_width_network.jl")
-    include("architectures/sympnet.jl")
-    include("architectures/recurrent_neural_network.jl")
-    include("architectures/LSTM_neural_network.jl")
 
     export default_arch
 
@@ -350,14 +357,6 @@ module GeometricMachineLearning
     export integrate, integrate_step!
 
     include("integrator/sympnet_integrator.jl")
-
-    export DataLoader, onehotbatch, accuracy
-    export Batch, optimize_for_one_epoch!
-    include("data_loader/tensor_assign.jl")
-    include("data_loader/matrix_assign.jl")
-    include("data_loader/data_loader.jl")
-    include("data_loader/mnist_utils.jl")
-    include("data_loader/batch.jl")
 
  
     include("reduced_system/system_type.jl")
