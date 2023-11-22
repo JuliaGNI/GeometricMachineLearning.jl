@@ -101,7 +101,7 @@ Next we specify the architectures. `GeometricMachineLearning.jl` provides useful
 # layer dimension for gradient module 
 const upscaling_dimension = 10
 # hidden layers
-const nhidden = 2
+const nhidden = 1
 # activation function
 const activation = tanh
 
