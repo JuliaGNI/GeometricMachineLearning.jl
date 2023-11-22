@@ -56,6 +56,7 @@ makedocs(;
             "Projection and Reduction Error" => "reduced_order_modeling/projection_reduction_errors.md",
         ],
         "Tutorials" =>[
+            "Sympnets" => "tutorials/sympnet_tutorial.md",
             "Linear Wave Equation" => "tutorials/linear_wave_equation.md",
             "MNIST" => "tutorials/mnist_tutorial.md",
         ],
