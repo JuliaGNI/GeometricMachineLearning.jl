@@ -234,9 +234,10 @@ This function is used in the wrappers where the input to the SympNet layers is n
 
 It converts the Array to a `NamedTuple` (via `assign_q_and_p`), then calls the SympNet routine(s) and converts back to an `AbstractArray` (with `vcat`).
 """
-function apply_layer_to_nt_and_return_array(d::SympNetLayer{M, M}, ps) where {M}
+function apply_layer_to_nt_and_return_array(x::AbstractArray, d::SympNetLayer{M, M}, ps) where {M}
+        N2 = size(x, 1)÷2
         q, p = assign_q_and_p(x, N2)
-        output = d((q = q, p = p), ps)
+        output = d((q=q, p=p), ps)
         return vcat(output.q, output.p)
 end
 
@@ -244,5 +245,5 @@ end
 This is called when a SympnetLayer is applied to a `NamedTuple`. It calls `apply_layer_to_nt_and_return_array`.
 """
 @inline function (d::SympNetLayer)(x::AbstractArray, ps)
-        apply_layer_to_nt_and_return_array(d, ps)
+        apply_layer_to_nt_and_return_array(x, d, ps)
 end

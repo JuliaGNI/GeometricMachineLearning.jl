@@ -32,7 +32,12 @@ end
     p[i,j,k] = x[i+N,j,k]
 end
 
-function assign_q_and_p(x::AbstractVector, N)
+@doc raw"""
+Allocates two new arrays `q` and `p` whose first dimension is half of that of the input `x`. This should also be supplied through the second argument `N`.
+
+The output is a `Tuple` containing `q` and `p`.
+"""
+function assign_q_and_p(x::AbstractVector, N::Int)
     backend = KernelAbstractions.get_backend(x)
     q = KernelAbstractions.allocate(backend, eltype(x), N)
     p = KernelAbstractions.allocate(backend, eltype(x), N)
@@ -43,7 +48,7 @@ function assign_q_and_p(x::AbstractVector, N)
     (q, p)
 end
 
-function assign_q_and_p(x::AbstractMatrix, N)
+function assign_q_and_p(x::AbstractMatrix, N::Int)
     backend = KernelAbstractions.get_backend(x)
     q = KernelAbstractions.allocate(backend, eltype(x), N, size(x,2))
     p = KernelAbstractions.allocate(backend, eltype(x), N, size(x,2))
@@ -54,7 +59,7 @@ function assign_q_and_p(x::AbstractMatrix, N)
     (q, p)
 end
 
-function assign_q_and_p(x::AbstractArray{T, 3}, N) where T
+function assign_q_and_p(x::AbstractArray{T, 3}, N::Int) where T
     backend = KernelAbstractions.get_backend(x)
     q = KernelAbstractions.allocate(backend, T, N, size(x,2), size(x,3))
     p = KernelAbstractions.allocate(backend, T, N, size(x,2), size(x,3))
