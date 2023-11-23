@@ -99,8 +99,7 @@ module GeometricMachineLearning
     export GrassmannLieAlgHorMatrix
     export StiefelProjection, SymplecticProjection
 
-    export Gradient
-    export GradientQ, GradientP, ActivationQ, ActivationP, LinearQ, LinearP
+    export GradientLayerQ, GradientLayerP, ActivationLayerQ, ActivationLayerP, LinearLayerQ, LinearLayerP
     export Linear
     export ResidualLayer
     export LinearSymplecticLayerP, LinearSymplecticLayerQ
