@@ -31,7 +31,6 @@ jobs:
       -name: Generate tikz pictures 
         run: |
           make all -C src/tikz
-          make clean -C src/tikz
       - name: Run doctests
         run: |
           julia --project=docs -e '
