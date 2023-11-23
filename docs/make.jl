@@ -18,6 +18,8 @@ makedocs(;
         prettyurls=get(ENV, "CI", "false") == "true",
         canonical="https://juliagni.github.io/GeometricMachineLearning.jl",
         assets=String[],
+        # specifies that we do not display the package name again (it's already in the logo)
+        sidebar_sitename=false,
     ),
     pages=[
         "Home" => "index.md",
