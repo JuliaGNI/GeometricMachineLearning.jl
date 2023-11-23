@@ -1,0 +1,13 @@
+name: "Generate Images for README.md"
+on: 
+  push:
+
+jobs:
+  runs-on: ubuntu-latest
+  steps:
+    uses: actions/checkout@v3
+    name: "Generate tikz images"
+      - run: |
+        make logo -C docs/src/tikz
+
+
