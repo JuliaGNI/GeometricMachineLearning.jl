@@ -7,8 +7,6 @@ pdf:
 	xelatex -shell-escape sympnet_architecture
 	xelatex -shell-escape structs_visualization
 	xelatex -shell-escape logo 
-	xelatex -shell-escape logo_with_name
-	xelatex -shell-escape logo_with_name_dark
 
 png:
 	pdftocairo  -png -r 150 -transp -singlefile  adam_optimizer.pdf               	 	adam_optimizer              
@@ -19,12 +17,16 @@ png:
 	pdftocairo	-png -r 150 -transp -singlefile	 sympnet_architecture.pdf				sympnet_architecture
 	pdftocairo 	-png -r 150 -transp -singlefile  structs_visualization.pdf				structs_visualization
 	pdftocairo 	-png -r 150 -transp -singlefile	 logo.pdf								logo 
+
+logo:
+	xelatex -shell-escape logo_with_name
+	xelatex -shell-escape logo_with_name_dark
+
 	pdftocairo 	-png -r 500 -transp -singlefile	 logo_with_name.pdf						logo_with_name 
 	pdftocairo 	-png -r 500 -transp -singlefile  logo_with_name_dark.pdf 				logo_with_name_dark
 
-move_logo:
-	mv logo_with_name.png 		../assets/logo.png
-	mv logo_with_name_dark.png 	../assets/logo_dark.png
+	cp logo_with_name.png 		../assets/logo.png
+	cp logo_with_name_dark.png 	../assets/logo_dark.png
 
 clean:
 	rm -f *.aux
@@ -39,4 +41,4 @@ empty: clean
 	rm -f *.svg
 	rm -f ../assets/*.png
 
-all: pdf png clean move_logo
+all: pdf png logo clean
