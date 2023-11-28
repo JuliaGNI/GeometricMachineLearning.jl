@@ -169,3 +169,54 @@ function LinearAlgebra.mul!(C::StiefelLieAlgHorMatrix, A::StiefelLieAlgHorMatrix
 end
 LinearAlgebra.mul!(C::StiefelLieAlgHorMatrix, α::Real, A::StiefelLieAlgHorMatrix) = mul!(C, A, α)
 LinearAlgebra.rmul!(C::StiefelLieAlgHorMatrix, α::Real) = mul!(C, C, α)
+
+function Base.vec(A::StiefelLieAlgHorMatrix)
+    vcat(vec(A.A), vec(A.B))
+end
+
+function StiefelLieAlgHorMatrix(V::AbstractVector, N::Int, n::Int)
+    # length of skew-symmetric matrix
+    skew_sym_size = n*(n-1)÷2
+    # size of matrix component 
+    matrix_size = (N-n)*n
+    @assert length(V) == skew_sym_size + matrix_size
+    StiefelLieAlgHorMatrix(
+        SkewSymMatrix(@view(V[1:skew_sym_size]), n),
+        reshape(@view(V[(skew_sym_size+1):(skew_sym_size+matrix_size)]), (N-n), n),
+        N, 
+        n
+    )
+end
+
+function Base.zero(B::StiefelLieAlgHorMatrix)
+    StiefelLieAlgHorMatrix(
+        zero(B.A),
+        zero(B.B),
+        B.N,
+        B.n
+    )
+end
+
+function KernelAbstractions.get_backend(B::StiefelLieAlgHorMatrix)
+    KernelAbstractions.get_backend(B.B)
+end
+
+# assign funciton; also implement this for other arrays! 
+function assign!(B::StiefelLieAlgHorMatrix{T}, C::StiefelLieAlgHorMatrix{T}) where T 
+    assign!(B.A, C.A)
+    B.B = C.B 
+end
+
+function Base.copy(B::StiefelLieAlgHorMatrix)
+    StiefelLieAlgHorMatrix(
+        copy(B.A),
+        copy(B.B),
+        B.N,
+        B.n
+    )
+end
+
+# fallback -> put this somewhere else!
+function assign!(A::AbstractArray, B::AbstractArray)
+    A = B 
+end
