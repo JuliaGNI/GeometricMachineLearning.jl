@@ -50,7 +50,7 @@ model2 = Chain(Transformer(patch_length^2, n_heads, n_layers, Stiefel=true, add_
 	    Classification(patch_length^2, 10, activation))
 
 # err_freq is the frequency with which the error is computed (e.g. every 100 steps)
-function transformer_training(Ψᵉ::Chain; backend=CPU(), n_epochs=100, opt=AdamOptimizer())
+function transformer_training(Ψᵉ::Chain; backend=backend, n_epochs=100, opt=AdamOptimizer())
     # call data loader
     dl = DataLoader(train_x, train_y)
     dl_test = DataLoader(test_x, test_y)
