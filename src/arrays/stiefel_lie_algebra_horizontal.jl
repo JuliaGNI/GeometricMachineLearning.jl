@@ -204,7 +204,7 @@ end
 # assign funciton; also implement this for other arrays! 
 function assign!(B::StiefelLieAlgHorMatrix{T}, C::StiefelLieAlgHorMatrix{T}) where T 
     assign!(B.A, C.A)
-    B.B = C.B 
+    B.B .= C.B 
 end
 
 function Base.copy(B::StiefelLieAlgHorMatrix)
@@ -218,5 +218,5 @@ end
 
 # fallback -> put this somewhere else!
 function assign!(A::AbstractArray, B::AbstractArray)
-    A = B 
+    A .= B 
 end
