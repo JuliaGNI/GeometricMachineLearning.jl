@@ -13,6 +13,10 @@ function Optimizer(m::OptimizerMethod, x)
     Optimizer(m, init_optimizer_cache(m, x), 0)
 end
 
+function Optimizer(m::OptimizerMethod, nn::NeuralNetwork)
+    Optimizer(m, nn.params)
+end
+
 #######################################################################################
 # optimization step function
 
