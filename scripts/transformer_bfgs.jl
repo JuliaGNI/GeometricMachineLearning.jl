@@ -15,9 +15,9 @@ image_dim = 28
 patch_length = 7
 transformer_dim = 49
 n_heads = 7
-n_layers = 16
+n_layers = 1
 number_of_patch = (image_dim÷patch_length)^2
-batch_size = 2048
+batch_size = 4096
 activation = softmax
 n_epochs = 500
 add_connection = false
@@ -41,7 +41,6 @@ backend, train_x, test_x, train_y, test_y =
         test_y
 end
 
-
 #encoder layer - final layer has to be added for evaluation purposes!
 model1 = Chain(Transformer(patch_length^2, n_heads, n_layers, Stiefel=false, add_connection=add_connection),
 	    Classification(patch_length^2, 10, activation))
@@ -50,7 +49,7 @@ model2 = Chain(Transformer(patch_length^2, n_heads, n_layers, Stiefel=true, add_
 	    Classification(patch_length^2, 10, activation))
 
 # err_freq is the frequency with which the error is computed (e.g. every 100 steps)
-function transformer_training(Ψᵉ::Chain; backend=backend, n_epochs=100, opt=BFGSOptimizer(1f-1))
+function transformer_training(Ψᵉ::Chain; backend=backend, n_epochs=100, opt=BFGSOptimizer(1f-3))
     # call data loader
     dl = DataLoader(train_x, train_y)
     dl_test = DataLoader(test_x, test_y)
@@ -85,20 +84,19 @@ function transformer_training(Ψᵉ::Chain; backend=backend, n_epochs=100, opt=B
     loss_array, ps, total_time, accuracy_score
 end
 
-
-loss_array2, ps2, total_time2, accuracy_score2 = transformer_training(model2, backend=backend, n_epochs=n_epochs, opt=BFGSOptimizer(1f-1))
-loss_array1, ps1, total_time1, accuracy_score1 = transformer_training(model1, backend=backend, n_epochs=n_epochs, opt=BFGSOptimizer(1f-1))
+loss_array1, ps1, total_time1, accuracy_score1 = transformer_training(model1, backend=backend, n_epochs=n_epochs, opt=BFGSOptimizer(1f-3))
+loss_array2, ps2, total_time2, accuracy_score2 = transformer_training(model2, backend=backend, n_epochs=n_epochs, opt=BFGSOptimizer(1f-3))
 loss_array3, ps3, total_time3, accuracy_score3 = transformer_training(model2, backend=backend, n_epochs=n_epochs, opt=GradientOptimizer(1f-3))
 loss_array4, ps4, total_time4, accuracy_score4 = transformer_training(model2, backend=backend, n_epochs=n_epochs, opt=AdamOptimizer())
 
 p1 = plot(loss_array1, color=1, label="Regular weights", ylimits=(0.,1.4), linewidth=2)
 plot!(p1, loss_array2, color=3, label="Weights on Stiefel Manifold", linewidth=2)
-png(p1, "Stiefel_Regular")
+png(p1, "BFGS_Stiefel_Regular")
 
 p2 = plot(loss_array2, color=3, label="BFGS", ylimits=(0.,1.4), linewidth=2)
 plot!(p2, loss_array3, color=1, label="Gradient", linewidth=2)
 plot!(p2, loss_array4, color=2, label="Adam", linewidth=2)
-png(p2, "Adam_Gradient_Momentum")
+png(p2, "BFGS_Gradient_Adam")
 
 text_string = 
     "n_epochs: " * string(n_epochs) * "\n"
