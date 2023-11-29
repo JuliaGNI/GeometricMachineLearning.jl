@@ -45,6 +45,9 @@ module GeometricMachineLearning
     
     export σ, sigmoid, softmax
 
+    # the functionality in the script doesn't require anything else defined in GML, but some of the other scripts in that folder do.
+    include("data_loader/data_loader.jl")
+
     include("kernels/assign_q_and_p.jl")
     include("kernels/tensor_mat_mul.jl")
     include("kernels/tensor_tensor_mul.jl")
@@ -230,6 +233,7 @@ module GeometricMachineLearning
     export GSympNet
     export RecurrentNeuralNetwork
     export LSTMNeuralNetwork
+    export ClassificationTransformer
 
     export train!, apply!, jacobian!
     export Iterate_Sympnet
@@ -242,6 +246,7 @@ module GeometricMachineLearning
     include("architectures/sympnet.jl")
     include("architectures/recurrent_neural_network.jl")
     include("architectures/LSTM_neural_network.jl")
+    include("architectures/transformer_neural_network.jl")
 
     export default_arch
 
@@ -357,7 +362,6 @@ module GeometricMachineLearning
     export Batch, optimize_for_one_epoch!
     include("data_loader/tensor_assign.jl")
     include("data_loader/matrix_assign.jl")
-    include("data_loader/data_loader.jl")
     include("data_loader/mnist_utils.jl")
     include("data_loader/batch.jl")
 
