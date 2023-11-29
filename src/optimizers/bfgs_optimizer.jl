@@ -3,8 +3,11 @@ This is an implementation of the Broyden-Fletcher-Goldfarb-Shanno (BFGS) optimiz
 """
 struct BFGSOptimizer{T<:Real} <: OptimizerMethod
     η::T
+    δ::T
 
-    BFGSOptimizer(η = 1f-2) = new{typeof(η)}(η)
+    function BFGSOptimizer(η::T = 1f-2, δ=1f-7) where T 
+        new{T}(η, T(δ))
+    end
 end
 
 @doc raw"""
@@ -13,29 +16,30 @@ Optimization for an entire neural networks with BFGS. What is different in this 
 If `o.step == 0`, then we initialize the cache
 """
 function update!(o::Optimizer{<:BFGSOptimizer}, C::CT, B::AbstractArray{T}) where {T, CT<:BFGSCache{T}}
-    if o.step == 0
+    if o.step == 1
         bfgs_initialization!(o, C, B)
     else
         bfgs_update!(o, C, B)   
     end
-    o.step += 1
 end
 
 function bfgs_update!(o::Optimizer{<:BFGSOptimizer}, C::CT, B::AbstractArray{T}) where {T, CT<:BFGSCache{T}}
     # in the first step we compute the difference between the current and the previous mapped gradients:
-    Y = B - C.B 
+    Y = vec(B - C.B) 
     # in the second step we update H (write a test to check that this preserves symmetry)
     vecS = vec(C.S)
-    C.H .= C.H + (vecS' * vec(Y) + vec(Y)' * C.H * vec(Y)) / (vecS' * vec(Y)) ^ 2 * vecS * vecS' - (C.H * vec(Y) * vecS' + vecS * (C.H * vec(Y))' ) / (vecS' * vec(Y))
+    # the *term for the second condition* appears many times in the expression.
+    SY = vecS' * Y + o.method.δ
+    C.H .= C.H + (SY + Y' * C.H * Y) / (SY ^ 2) * vecS * vecS' - (C.H * Y * vecS' + vecS * (C.H * Y)' ) / SY
     # in the third step we compute the final velocity
     mul!(vecS, C.H, vec(B))
-    mul!(C.S, C.S, -o.method.η)
+    mul!(C.S, -o.method.η, C.S)
     assign!(C.B, copy(B))
     assign!(B, copy(C.S))
 end
 
 function bfgs_initialization!(o::Optimizer{<:BFGSOptimizer}, C::CT, B::AbstractArray{T}) where {T, CT<:BFGSCache{T}}
-    C.B = copy(B)
-    C.S = copy(B)
-    mul!(C.S, -o.η, C.S)
+    mul!(C.S, -o.method.η, B)
+    assign!(C.B, copy(B))
+    assign!(B, copy(C.S))
 end
