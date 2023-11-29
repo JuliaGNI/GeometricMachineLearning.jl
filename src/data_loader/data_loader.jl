@@ -125,3 +125,5 @@ function accuracy(model::Chain, ps::Tuple, dl::DataLoader{T, AT, BT}) where {T, 
     tensor_of_maximum_elements[ind] .= T1(1)
     (size(dl.output, 3)-sum(abs.(dl.output - tensor_of_maximum_elements))/T1(2))/size(dl.output, 3)
 end
+
+accuracy(nn::NeuralNetwork, dl::DataLoader) = accuracy(nn.model, nn.params, dl)
