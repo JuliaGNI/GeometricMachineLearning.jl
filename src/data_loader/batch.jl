@@ -73,3 +73,7 @@ end
 function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTuple}, dl::DataLoader{T, AT, BT}, batch::Batch) where {T, T1, AT<:AbstractArray{T, 3}, BT<:AbstractArray{T1, 3}}
     optimize_for_one_epoch!(opt, model, ps, dl, batch, loss)
 end
+
+function optimize_for_one_epoch!(opt::Optimizer, nn::NeuralNetwork, dl::DataLoader, batch::Batch)
+    optimize_for_one_epoch!(opt, nn.model, nn.params, dl, batch)
+end
