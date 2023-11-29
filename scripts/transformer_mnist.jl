@@ -2,7 +2,7 @@
 TODO: Add a better predictor at the end! It should set the biggest value of the softmax to 1 and the rest to zero!
 """
 
-using GeometricMachineLearning, LinearAlgebra, ProgressMeter, Plots, CUDA
+using GeometricMachineLearning, ProgressMeter, Plots, CUDA
 import Zygote, MLDatasets
 
 # MNIST images are 28×28, so a sequence_length of 16 = 4² means the image patches are of size 7² = 49
