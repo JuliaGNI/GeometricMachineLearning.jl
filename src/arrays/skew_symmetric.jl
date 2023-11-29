@@ -206,7 +206,7 @@ function KernelAbstractions.get_backend(A::SkewSymMatrix)
 end
 
 function assign!(B::SkewSymMatrix{T}, C::SkewSymMatrix{T}) where T 
-    B.S = C.S 
+    B.S .= C.S 
 end
 
 function Base.copy(A::SkewSymMatrix)
