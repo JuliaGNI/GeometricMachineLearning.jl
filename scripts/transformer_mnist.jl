@@ -3,12 +3,7 @@ TODO: Add a better predictor at the end! It should set the biggest value of the 
 """
 
 using GeometricMachineLearning, LinearAlgebra, ProgressMeter, Plots, CUDA
-using AbstractNeuralNetworks
 import Zygote, MLDatasets
-
-# remove this after AbstractNeuralNetworks PR has been merged 
-GeometricMachineLearning.Chain(model::Chain, d::AbstractNeuralNetworks.AbstractExplicitLayer) = Chain(model.layers..., d)
-GeometricMachineLearning.Chain(d::AbstractNeuralNetworks.AbstractExplicitLayer, model::Chain) = Chain(d, model.layers...)
 
 # MNIST images are 28×28, so a sequence_length of 16 = 4² means the image patches are of size 7² = 49
 image_dim = 28
@@ -28,6 +23,7 @@ test_x, test_y = MLDatasets.MNIST(split=:test)[:]
 # use CUDA backend if available. else use CPU()
 backend, train_x, test_x, train_y, test_y = 
     try
+        error()
         CUDABackend(),
         train_x |> cu,
         test_x |> cu,
@@ -41,26 +37,21 @@ backend, train_x, test_x, train_y, test_y =
         test_y
 end
 
+dl = DataLoader(train_x, train_y)
+dl_test = DataLoader(test_x, test_y)
 
-#encoder layer - final layer has to be added for evaluation purposes!
-model1 = Chain(Transformer(patch_length^2, n_heads, n_layers, Stiefel=false, add_connection=add_connection),
-	    Classification(patch_length^2, 10, activation))
+# the difference between the first and the second model is that we put the weights on the Stiefel manifold in the second case
+model1 = ClassificationTransformer(dl, n_heads=n_heads, n_layers=n_layers, Stiefel=false, add_connection=add_connection)
+model2 = ClassificationTransformer(dl, n_heads=n_heads, n_layers=n_layers, Stiefel=true, add_connection=add_connection)
 
-model2 = Chain(Transformer(patch_length^2, n_heads, n_layers, Stiefel=true, add_connection=add_connection),
-	    Classification(patch_length^2, 10, activation))
+batch = Batch(batch_size)
 
 # err_freq is the frequency with which the error is computed (e.g. every 100 steps)
-function transformer_training(Ψᵉ::Chain; backend=backend, n_epochs=100, opt=AdamOptimizer())
-    # call data loader
-    dl = DataLoader(train_x, train_y)
-    dl_test = DataLoader(test_x, test_y)
-    batch = Batch(batch_size)
+function transformer_training(Ψᵉ::GeometricMachineLearning.Architecture; n_epochs=100, opt=AdamOptimizer())
+    nn = NeuralNetwork(Ψᵉ, backend, eltype(dl))
+    optimizer_instance = Optimizer(opt, nn)
 
-    ps = initialparameters(backend, eltype(dl.input), Ψᵉ) 
-
-    optimizer_instance = Optimizer(opt, ps)
-
-    println("initial test accuracy: ", GeometricMachineLearning.accuracy(Ψᵉ, ps, dl_test), "\n")
+    println("initial test accuracy: ", GeometricMachineLearning.accuracy(nn, dl_test), "\n")
 
     progress_object = Progress(n_epochs; enabled=true)
 
@@ -70,7 +61,8 @@ function transformer_training(Ψᵉ::Chain; backend=backend, n_epochs=100, opt=A
 
     loss_array = zeros(eltype(train_x), n_epochs)
     for i in 1:n_epochs
-        loss_val = optimize_for_one_epoch!(optimizer_instance, Ψᵉ, ps, dl, batch)
+        # there is some functionality in a recent PR that streamlines some of this -> make sure to include this!
+        loss_val = optimize_for_one_epoch!(optimizer_instance, nn, dl, batch)
 
         ProgressMeter.next!(progress_object; showvalues = [(:TrainingLoss, loss_val)])   
         loss_array[i] = loss_val
@@ -79,17 +71,17 @@ function transformer_training(Ψᵉ::Chain; backend=backend, n_epochs=100, opt=A
         total_time = init_time - time()
     end
 
-    accuracy_score = GeometricMachineLearning.accuracy(Ψᵉ, ps, dl_test)
+    accuracy_score = GeometricMachineLearning.accuracy(nn, dl_test)
     println("final test accuracy: ", accuracy_score, "\n")
 
     loss_array, ps, total_time, accuracy_score
 end
 
 
-loss_array2, ps2, total_time2, accuracy_score2 = transformer_training(model2, backend=backend, n_epochs=n_epochs)
-loss_array1, ps1, total_time1, accuracy_score1 = transformer_training(model1, backend=backend, n_epochs=n_epochs)
-loss_array3, ps3, total_time3, accuracy_score3 = transformer_training(model2, backend=backend, n_epochs=n_epochs, opt=GradientOptimizer(0.001))
-loss_array4, ps4, total_time4, accuracy_score4 = transformer_training(model2, backend=backend, n_epochs=n_epochs, opt=MomentumOptimizer(0.001, 0.5))
+loss_array2, ps2, total_time2, accuracy_score2 = transformer_training(model2, n_epochs=n_epochs)
+loss_array1, ps1, total_time1, accuracy_score1 = transformer_training(model1, n_epochs=n_epochs)
+loss_array3, ps3, total_time3, accuracy_score3 = transformer_training(model2, n_epochs=n_epochs, opt=GradientOptimizer(0.001))
+loss_array4, ps4, total_time4, accuracy_score4 = transformer_training(model2, n_epochs=n_epochs, opt=MomentumOptimizer(0.001, 0.5))
 
 p1 = plot(loss_array1, color=1, label="Regular weights", ylimits=(0.,1.4), linewidth=2)
 plot!(p1, loss_array2, color=2, label="Weights on Stiefel Manifold", linewidth=2)
