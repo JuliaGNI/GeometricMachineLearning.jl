@@ -16,6 +16,8 @@ end
 
 @doc raw"""
 In order to initialize `BGGSCache` we first need gradient information. This is why we initially have this `BFGSDummyCache` until gradient information is available.
+
+NOTE: we may not need this. 
 """
 struct BFGSDummyCache{T, AT<:AbstractArray{T}} <: AbstractCache
     function BFGSDummyCache(B::AbstractArray)

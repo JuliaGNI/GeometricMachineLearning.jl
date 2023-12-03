@@ -11,9 +11,9 @@ struct BFGSOptimizer{T<:Real} <: OptimizerMethod
 end
 
 @doc raw"""
-Optimization for an entire neural networks with BFGS. What is different in this case is that we still have to initialize the cache. This was first done in a lazy way with `DummyBFGSCache`. 
+Optimization for an entire neural networks with BFGS. What is different in this case is that we still have to initialize the cache.
 
-If `o.step == 0`, then we initialize the cache
+If `o.step == 1`, then we initialize the cache
 """
 function update!(o::Optimizer{<:BFGSOptimizer}, C::CT, B::AbstractArray{T}) where {T, CT<:BFGSCache{T}}
     if o.step == 1
@@ -30,7 +30,10 @@ function bfgs_update!(o::Optimizer{<:BFGSOptimizer}, C::CT, B::AbstractArray{T})
     vecS = vec(C.S)
     # the *term for the second condition* appears many times in the expression.
     SY = vecS' * Y + o.method.δ
-    C.H .= C.H + (SY + Y' * C.H * Y) / (SY ^ 2) * vecS * vecS' - (C.H * Y * vecS' + vecS * (C.H * Y)' ) / SY
+    # C.H .= C.H + (SY + Y' * C.H * Y) / (SY ^ 2) * vecS * vecS' - (C.H * Y * vecS' + vecS * (C.H * Y)' ) / SY
+    # the two computations of the H matrix should be equivalent. Check this!!
+    HY = C.H * Y
+    C.H .= C.H - HY * HY' / (Y' * HY + o.method.δ) + vecS * vecS' / SY
     # in the third step we compute the final velocity
     mul!(vecS, C.H, vec(B))
     mul!(C.S, -o.method.η, C.S)
