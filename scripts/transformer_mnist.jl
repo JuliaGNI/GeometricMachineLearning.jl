@@ -14,7 +14,7 @@ n_layers = 16
 number_of_patch = (image_dim÷patch_length)^2
 batch_size = 2048
 activation = softmax
-n_epochs = 500
+n_epochs = 1000
 add_connection = false
 
 train_x, train_y = MLDatasets.MNIST(split=:train)[:]
@@ -23,7 +23,6 @@ test_x, test_y = MLDatasets.MNIST(split=:test)[:]
 # use CUDA backend if available. else use CPU()
 backend, train_x, test_x, train_y, test_y = 
     try
-        error()
         CUDABackend(),
         train_x |> cu,
         test_x |> cu,
@@ -74,14 +73,14 @@ function transformer_training(Ψᵉ::GeometricMachineLearning.Architecture; n_ep
     accuracy_score = GeometricMachineLearning.accuracy(nn, dl_test)
     println("final test accuracy: ", accuracy_score, "\n")
 
-    loss_array, ps, total_time, accuracy_score
+    loss_array, nn, total_time, accuracy_score
 end
 
 
-loss_array2, ps2, total_time2, accuracy_score2 = transformer_training(model2, n_epochs=n_epochs)
-loss_array1, ps1, total_time1, accuracy_score1 = transformer_training(model1, n_epochs=n_epochs)
-loss_array3, ps3, total_time3, accuracy_score3 = transformer_training(model2, n_epochs=n_epochs, opt=GradientOptimizer(0.001))
-loss_array4, ps4, total_time4, accuracy_score4 = transformer_training(model2, n_epochs=n_epochs, opt=MomentumOptimizer(0.001, 0.5))
+loss_array2, nn2, total_time2, accuracy_score2 = transformer_training(model2, n_epochs=n_epochs)
+loss_array1, nn1, total_time1, accuracy_score1 = transformer_training(model1, n_epochs=n_epochs)
+loss_array3, nn3, total_time3, accuracy_score3 = transformer_training(model2, n_epochs=n_epochs, opt=GradientOptimizer(0.001))
+loss_array4, nn4, total_time4, accuracy_score4 = transformer_training(model2, n_epochs=n_epochs, opt=MomentumOptimizer(0.001, 0.5))
 
 p1 = plot(loss_array1, color=1, label="Regular weights", ylimits=(0.,1.4), linewidth=2)
 plot!(p1, loss_array2, color=2, label="Weights on Stiefel Manifold", linewidth=2)

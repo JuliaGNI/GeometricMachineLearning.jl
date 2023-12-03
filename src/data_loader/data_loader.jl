@@ -127,3 +127,5 @@ function accuracy(model::Chain, ps::Tuple, dl::DataLoader{T, AT, BT}) where {T, 
 end
 
 accuracy(nn::NeuralNetwork, dl::DataLoader) = accuracy(nn.model, nn.params, dl)
+
+Base.eltype(::DataLoader{T}) where T = T
