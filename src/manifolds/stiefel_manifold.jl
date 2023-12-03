@@ -1,8 +1,10 @@
+@doc raw"""
+An implementation of the Stiefel manifold. It has various convenience functions associated with it:
+- check 
+- rand 
+- rgrad
+- metric
 """
-maybe consider dividing the output in the check functions by n!
-TODO: Implement sampling procedures!!
-"""
-
 mutable struct StiefelManifold{T, AT <: AbstractMatrix{T}} <: Manifold{T}
     A::AT
     function StiefelManifold(A::AbstractMatrix)
@@ -65,10 +67,30 @@ function Base.:*(Y::Adjoint{T, StiefelManifold{T, AT}}, B::AbstractMatrix) where
     Y.parent.A'*B 
 end
 
+@doc raw"""
+Computes the Riemannian gradient for the Stiefel manifold given an element ``Y\in{}St(N,n)`` and a matrix ``\nabla{}L\in\mahbb{R}^{N\times{}n}`` (the Euclidean gradient). It computes the Riemannian gradient with respect to the canonical metric (see the documentation for the function `metric` for an explanation of this).
+The precise form of the mapping is: 
+```math
+\mathtt{rgrad}(Y, \nabla{}L) \mapsto \nabla{}L - Y(\nabla{}L)^TY
+```
+It is called with inputs:
+- `Y::StiefelManifold`
+- `e_grad::AbstractMatrix`: i.e. the Euclidean gradient (what was called ``\nabla{}L``) above.
+"""
 function rgrad(Y::StiefelManifold, e_grad::AbstractMatrix)
     e_grad - Y.A*(e_grad'*Y.A)
 end
 
+@doc raw"""
+Implements the canonical Riemannian metric for the Stiefel manifold:
+```math 
+g_Y: (\Delta_1, \Delta_2) \mapsto \mathrm{tr}(\Delta_1^T(\mathbb{I} - \frac{1}{2}YY^T)\Delta_2).
+```
+It is called with: 
+- `Y::StiefelManifold`
+- `Δ₁::AbstractMatrix`
+- `Δ₂::AbstractMatrix``
+"""
 function metric(Y::StiefelManifold, Δ₁::AbstractMatrix, Δ₂::AbstractMatrix)
     LinearAlgebra.tr(Δ₁'*(I - .5*Y.A*Y.A')*Δ₂)
 end
