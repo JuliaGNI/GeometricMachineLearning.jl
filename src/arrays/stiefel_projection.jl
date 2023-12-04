@@ -36,6 +36,11 @@ end
     A[i, i] = one(T)
 end
 
+"""
+Outer constructor for `StiefelProjection`. This works with two integers as input and optionally the type.
+"""
+StiefelProjection(N::Integer, n::Integer, T::Type=Float64) = StiefelProjection(CPU(), T, N, n)
+
 Base.size(E::StiefelProjection) = (E.N, E.n)
 Base.getindex(E::StiefelProjection, i, j) = getindex(E.A, i, j)
 Base.:+(E::StiefelProjection, A::AbstractMatrix) = E.A + A 
