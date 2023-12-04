@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - documentation_for_optimizer_yaml_test
     tags: '*'
   pull_request:
 
