@@ -115,6 +115,8 @@ module GeometricMachineLearning
     # include("manifolds/symplectic_stiefel_manifold.jl")
     include("manifolds/grassmann_manifold.jl")
 
+    include("arrays/stiefel_projection.jl")
+
     export StiefelManifold, SymplecticStiefelManifold, GrassmannManifold, Manifold
     export rgrad, metric
 
