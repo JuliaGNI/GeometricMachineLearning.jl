@@ -56,7 +56,7 @@ h(s)  = \begin{cases}
 
 Plotted on the relevant domain it looks like this: 
 
-![](../images/third_degree_spline.png)
+![](../tikz/third_degree_spline.png)
 
 Taking the above function $h(s)$ as a starting point, the initial conditions for the linear wave equations will now be constructed under the following considerations: 
 - the initial condition (i.e. the shape of the wave) should depend on the parameter of the vector field, i.e. $u_0(\mu)(\omega) = h(s(\omega, \mu))$.

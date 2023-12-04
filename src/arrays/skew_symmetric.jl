@@ -150,7 +150,7 @@ function Base.:*(A::SkewSymMatrix{T}, B::AbstractMatrix{T}) where T
     C
 end
 
-@kernel function skew_mat_mul_kernel!(C::AbstractMatrix, S::AbstractVector{T}, B::AbstractMatrix{T}, n) where T
+@kernel function skew_mat_mul_kernel!(C::AbstractMatrix{T}, S::AbstractVector{T}, B::AbstractMatrix{T}, n) where T
     i,j = @index(Global, NTuple)
 
     tmp_sum = zero(T)

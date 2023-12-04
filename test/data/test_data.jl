@@ -13,12 +13,12 @@ keys4 = (:q, :q̇)
 keys5 = (:q, :q̇, :q̈)
 keys6 = (:q, :p, :s)
 
-@test type(DataSymbol(keys1)) == PositionSymbol
-@test type(DataSymbol(keys2)) == PhaseSpaceSymbol
-@test type(DataSymbol(keys3)) == DerivativePhaseSpaceSymbol
-@test type(DataSymbol(keys4)) == PosVeloSymbol
-@test type(DataSymbol(keys5)) == PosVeloAccSymbol
-@test type(DataSymbol(keys6)) == PhaseSpaceSymbol
+@test GeometricMachineLearning.type(DataSymbol(keys1)) == PositionSymbol
+@test GeometricMachineLearning.type(DataSymbol(keys2)) == PhaseSpaceSymbol
+@test GeometricMachineLearning.type(DataSymbol(keys3)) == DerivativePhaseSpaceSymbol
+@test GeometricMachineLearning.type(DataSymbol(keys4)) == PosVeloSymbol
+@test GeometricMachineLearning.type(DataSymbol(keys5)) == PosVeloAccSymbol
+@test GeometricMachineLearning.type(DataSymbol(keys6)) == PhaseSpaceSymbol
 
 
 @test can_reduce(DataSymbol(keys2), DataSymbol(keys1)) == true
@@ -46,7 +46,7 @@ training_data = TrainingData(Data, get_Data)
 
 @test problem(training_data)               == UnknownProblem()
 @test typeof(shape(training_data))         == TrajectoryData
-@test type(data_symbols(training_data))    == PhaseSpaceSymbol
+@test GeometricMachineLearning.type(data_symbols(training_data))    == PhaseSpaceSymbol
 @test symbols(training_data)               == (:q,:p)
 @test dim(training_data)                   == 2
 @test noisemaker(training_data)            == NothingFunction()    
@@ -63,7 +63,7 @@ sampled_data = reshape_intoSampledData(training_data)
 
 @test problem(sampled_data)              == UnknownProblem()
 @test typeof(shape(sampled_data))        == SampledData
-@test type(data_symbols(sampled_data))   == PhaseSpaceSymbol
+@test GeometricMachineLearning.type(data_symbols(sampled_data))   == PhaseSpaceSymbol
 @test symbols(sampled_data)              == (:q,:p)
 @test dim(sampled_data)                  == 2
 @test noisemaker(sampled_data)           == NothingFunction()    
@@ -80,7 +80,7 @@ reduced_data = reduce_symbols(sampled_data, DataSymbol((:q,)))
 
 @test problem(reduced_data)              == UnknownProblem()
 @test typeof(shape(reduced_data))        == SampledData
-@test type(data_symbols(reduced_data))   == PositionSymbol
+@test GeometricMachineLearning.type(data_symbols(reduced_data))   == PositionSymbol
 @test symbols(reduced_data)              == (:q,)
 @test dim(reduced_data)                  == 2
 @test noisemaker(reduced_data)           == NothingFunction()    

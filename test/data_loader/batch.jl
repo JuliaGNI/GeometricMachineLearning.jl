@@ -3,6 +3,8 @@ using GeometricMachineLearning, Test
 
 """
 This creates a dummy MNIST data set.
+
+TODO: include tests to check if all elements are batched!
 """
 function create_dummy_mnist(;T=Float32, dim₁=6, dim₂=6, n_images=10)
     rand(T, dim₁, dim₂, n_images), Int.(floor.(10*rand(T, n_images)))

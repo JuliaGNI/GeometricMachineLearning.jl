@@ -50,11 +50,13 @@ function add!(dx₁::NamedTuple, dx₂::NamedTuple, dx₃::NamedTuple)
     apply_toNT(add!, dx₁, dx₂, dx₃)
 end
 
+# Type pyracy!!
 function Base.:+(a::Float64, b::Tuple{Float64})
     x, = b
     return a+x
 end
 
+# Type pyracy!!
 function Base.:+(a::Vector{Float64}, b::Tuple{Float64})
     x, = b
     y, = a
