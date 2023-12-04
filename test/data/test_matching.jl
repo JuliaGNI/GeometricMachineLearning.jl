@@ -16,7 +16,7 @@ sympeuler = SEuler()
 
 match1 = matching(exacthnn, tra_dps_data)
 @test typeof(shape(match1)) == SampledData
-@test type(data_symbols(match1)) == type(data_symbols(tra_dps_data))
+@test GeometricMachineLearning.type(data_symbols(match1)) == GeometricMachineLearning.type(data_symbols(tra_dps_data))
 
 @testerror matching(sympeuler, sam_ps_data)
 
@@ -26,6 +26,6 @@ match1 = matching(exacthnn, tra_dps_data)
 
 match2 = matching(sympeuler, tra_dps_data)
 @test typeof(shape(match2)) == typeof(shape(tra_dps_data))
-@test type(data_symbols(match2)) == PhaseSpaceSymbol
+@test GeometricMachineLearning.type(data_symbols(match2)) == PhaseSpaceSymbol
 
 

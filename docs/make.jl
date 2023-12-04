@@ -1,8 +1,15 @@
 using GeometricMachineLearning
 using Documenter
+using DocumenterCitations
+# using Weave
 
+# this is necessary to avoid warnings. See https://documenter.juliadocs.org/dev/man/syntax/
+ENV["GKSwstype"] = "100"
+
+bib = CitationBibliography(joinpath(@__DIR__, "src", "GeometricMachineLearning.bib"))
 
 makedocs(;
+    plugins=[bib],
     modules=[GeometricMachineLearning],
     authors="Michael Kraus, Benedikt Brantner",
     repo="https://github.com/JuliaGNI/GeometricMachineLearning.jl/blob/{commit}{path}#L{line}",
@@ -11,6 +18,8 @@ makedocs(;
         prettyurls=get(ENV, "CI", "false") == "true",
         canonical="https://juliagni.github.io/GeometricMachineLearning.jl",
         assets=String[],
+        # specifies that we do not display the package name again (it's already in the logo)
+        sidebar_sitename=false,
     ),
     pages=[
         "Home" => "index.md",
@@ -49,9 +58,11 @@ makedocs(;
             "Projection and Reduction Error" => "reduced_order_modeling/projection_reduction_errors.md",
         ],
         "Tutorials" =>[
+            "Sympnets" => "tutorials/sympnet_tutorial.md",
             "Linear Wave Equation" => "tutorials/linear_wave_equation.md",
             "MNIST" => "tutorials/mnist_tutorial.md",
         ],
+        "References" => "references.md",
         "Library" => "library.md",
     ],
 )

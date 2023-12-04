@@ -2,6 +2,8 @@
 Optimizer struct that stores the 'method' (i.e. Adam with corresponding hyperparameters), the cache and the optimization step.
 
 It takes as input an optimization method and the parameters of a network. 
+
+For *technical reasons* we first specify an OptimizerMethod that stores all the hyperparameters of the optimizer. 
 """
 mutable struct Optimizer{MT<:OptimizerMethod, CT}
     method::MT
@@ -13,6 +15,9 @@ function Optimizer(m::OptimizerMethod, x)
     Optimizer(m, init_optimizer_cache(m, x), 0)
 end
 
+"""
+Typically the Optimizer is not initialized with the network parameters, but instead with a NeuralNetwork struct.
+"""
 function Optimizer(m::OptimizerMethod, nn::NeuralNetwork)
     Optimizer(m, nn.params)
 end

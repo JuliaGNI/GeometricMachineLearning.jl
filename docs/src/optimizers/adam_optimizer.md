@@ -19,7 +19,7 @@ If all the weights are on a vector space, then we directly compute updates for $
 
 Here $\eta$ (with default 0.01) is the **learning rate** and $\delta$ (with default $3\cdot10^{-7}$) is a small constant that is added for stability. The division, square root and addition in step 3 are performed element-wise. 
 
-![](../images/adam_optimizer.png)
+![](../tikz/adam_optimizer.png)
 
 ## Weights on manifolds 
 

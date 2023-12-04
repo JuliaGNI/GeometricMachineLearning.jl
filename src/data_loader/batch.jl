@@ -15,8 +15,7 @@ end
 hasseqlength(::Batch{<:Integer}) = true
 hasseqlength(::Batch{<:Nothing}) = false
 
-
-function (batch::Batch{<:Nothing})(dl::DataLoader{T, AT}) where {T, AT<:AbstractArray{T}}
+function (batch::Batch{<:Nothing})(dl::DataLoader{T, AT}) where {T, AT<:AbstractArray{T, 3}}
     indices = shuffle(1:dl.n_params)
     n_batches = Int(ceil(dl.n_params/batch.batch_size))
     batches = ()
@@ -26,6 +25,16 @@ function (batch::Batch{<:Nothing})(dl::DataLoader{T, AT}) where {T, AT<:Abstract
 
     # this is needed because the last batch may not have the full size
     batches = (batches..., indices[( (n_batches-1) * batch.batch_size + 1 ):end])
+    batches
+end
+
+function (batch::Batch{<:Nothing})(dl::DataLoader{T, AT}) where {T, BT<:AbstractMatrix{T}, AT<:Union{BT, NamedTuple{(:q, :p), Tuple{BT, BT}}}}
+    indices = shuffle(1:dl.input_time_steps)
+    n_batches = Int(ceil((dl.input_time_steps-1)/batch.batch_size))
+    batches = ()
+    for batch_number in 1:(n_batches-1)
+        batches = (batches..., indices[(batch_number-1)*batch.batch_size + 1:batch_number*batch.batch_size])
+    end
     batches
 end
 
@@ -76,4 +85,39 @@ end
 
 function optimize_for_one_epoch!(opt::Optimizer, nn::NeuralNetwork, dl::DataLoader, batch::Batch)
     optimize_for_one_epoch!(opt, nn.model, nn.params, dl, batch)
+end
+
+"""
+TODO: Add ProgressMeter!!!
+"""
+function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTuple}, dl::DataLoader{T, AT}, batch::Batch, loss) where {T, AT<:NamedTuple}
+    count = 0 
+    total_error = T(0)
+    batches = batch(dl)
+    @views for batch_indices in batches 
+        count += 1
+        input_batch = (q=copy(dl.input.q[:,batch_indices]), p=copy(dl.input.p[:,batch_indices]))
+        # add +1 here !!!!
+        output_batch = (q=copy(dl.input.q[:,batch_indices.+1]), p=copy(dl.input.p[:,batch_indices.+1]))
+        loss_value, pullback = Zygote.pullback(ps -> loss(model, ps, input_batch, output_batch), ps)
+        total_error += loss_value 
+        dp = pullback(one(loss_value))[1]
+        optimization_step!(opt, model, ps, dp)
+    end
+    total_error/count
+end
+
+
+function (o::Optimizer)(nn::NeuralNetwork, dl::DataLoader, batch::Batch, n_epochs::Int, loss)
+    progress_object = ProgressMeter.Progress(n_epochs; enabled=true)
+    loss_array = zeros(n_epochs)
+    for i in 1:n_epochs
+        loss_array[i] = optimize_for_one_epoch!(o, nn.model, nn.params, dl, batch, loss)
+        ProgressMeter.next!(progress_object; showvalues = [(:TrainingLoss, loss_array[i])]) 
+    end
+    loss_array
+end
+
+function (o::Optimizer)(nn::NeuralNetwork, dl::DataLoader, batch::Batch, n_epochs::Int)
+    o(nn, dl, batch, n_epochs, loss)
 end

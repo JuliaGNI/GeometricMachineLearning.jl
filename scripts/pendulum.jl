@@ -1,15 +1,9 @@
 using GeometricIntegrators
-using Plots
-using Zygote
 
 # define Hamiltonian
 H(x) = x[2]^2 / 2 + (1-cos(x[1]))
 H(q, p) = H([q[1], p[1]])
 H(t, q, p, params) = H(q, p)
-
-# compute vector field
-∇H(x) = Zygote.gradient(χ -> H(χ), x)[1]
-dH(x) = [0 1;-1 0] * ∇H(x)
 
 # vector field methods
 function v(v, t, q, p, params)
@@ -35,15 +29,29 @@ function get_data_set(num=10, xymin=-1.2, xymax=+1.2)
 end
 
 
-function pendulum_data(; tspan = (0., 100.), tstep = 0.1, q₀ = randn(1), p₀ = randn(1))
+@doc raw"""
+Generates data for a pendulum in 2d with optional arguments:
+- `T`: the type of the data (`Float32`, `Float64`, `Float16`, etc.)
+- `tspan`: default is `(0., 100.)`
+- `tstep` default is `0.1`
+- `q0`: default is `randn(1)`
+- `p0`: default is `rand(1)`.
+"""
+function pendulum_data(; T = Float64, tspan = (T(0.), T(100.)), tstep = T(0.1), q0 = T.(randn(1)), p0 = T.(randn(1)))
     # simulate data with geometric Integrators
-    ode = HODEProblem(v, f, H, tspan, tstep, q₀, p₀)
+    ode = HODEProblem(v, f, H, tspan, tstep, q0, p0)
 
     # sol = integrate(ode, SymplecticEulerA())
     sol = integrate(ode, ImplicitMidpoint())
 
-    q = sol.q[:,1]
-    p = sol.p[:,1]
+    n_time_steps = length(sol.t)
+    q = reshape(sol.q[:,1].parent, 1, n_time_steps)
+    p = reshape(sol.p[:,1].parent, 1, n_time_steps)
 
-    return (q, p)
+    # return a NamedTuple of the parent arrays.
+    return (q=q, p=p)
+end
+
+function pendulum_data(ics::NamedTuple{(:q, :p), Tuple{AT, AT}}; tspan = (T(0.), T(100.)), tstep = T(0.1)) where {T, AT<:AbstractVector{T}}
+    pendulum_data(; T=T, tspan=tspan, tstep=tstep, q0=ics.q, p0=ics.p)
 end

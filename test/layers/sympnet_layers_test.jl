@@ -1,9 +1,12 @@
 using GeometricMachineLearning, Test
 
+"""
+This test checks if the sympnets handle tensors the right way.
+"""
 function sympnet_tests(N, N2=2*N, second_dim=10, third_dim=10, T=Float32)
-    model₁ = Chain(LinearQ(N), LinearP(N))
-    model₂ = Chain(ActivationQ(N, tanh), ActivationP(N, tanh))
-    model₃ = Chain(GradientQ(N, N2, tanh), GradientP(N, N2, tanh))
+    model₁ = Chain(LinearLayerQ(N), LinearLayerP(N))
+    model₂ = Chain(ActivationLayerQ(N, tanh), ActivationLayerP(N, tanh))
+    model₃ = Chain(GradientLayerQ(N, N2, tanh), GradientLayerP(N, N2, tanh))
     ps₁ = initialparameters(CPU(), T, model₁)
     ps₂ = initialparameters(CPU(), T, model₂)
     ps₃ = initialparameters(CPU(), T, model₃)
