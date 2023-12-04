@@ -75,8 +75,10 @@ function initialparameters(backend::KernelAbstractions.Backend, T::Type, d::Mult
     (PQ=PQ, PK=PK, PV=PV)
 end
 
-
-function compute_output_of_mha(d::MultiHeadAttention{M, M}, x::AbstractMatrix, ps::NamedTuple) where {M}
+@doc raw"""
+Applies MHA to an abstract matrix. This is the same independent of whether the input is added to the output or not. 
+"""
+function compute_output_of_mha(d::MultiHeadAttention{M, M}, x::AbstractMatrix{T}, ps::NamedTuple) where {M, T}
     dim, input_length = size(x)
     @assert dim == M
 
