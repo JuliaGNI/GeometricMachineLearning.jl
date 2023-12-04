@@ -1,6 +1,6 @@
 # Basic Concepts of General Topology
 
-On this page we discuss basic notions of topology that are necessary to define and work [manifolds](manifolds.md). Here we largely omit concrete examples and only define concepts that are necessary for defining a manifold[^1], namely the properties of being *Hausdorff* and *second countable*. For a wide range of examples and a detailed discussion of the theory see e.g. [lipschutz1965general](@cite). The here-presented theory is also (rudimentary) covered in most differential geometry books such as [lang2012](@cite) and [bishop1980tensor](@cite). 
+On this page we discuss basic notions of topology that are necessary to define and work [manifolds](manifolds.md). Here we largely omit concrete examples and only define concepts that are necessary for defining a manifold[^1], namely the properties of being *Hausdorff* and *second countable*. For a wide range of examples and a detailed discussion of the theory see e.g. [lipschutz1965general](@cite). The here-presented theory is also (rudimentary) covered in most differential geometry books such as [lang2012fundamentals](@cite) and [bishop1980tensor](@cite). 
 
 [^1]: Some authors (see e.g. [lang2012fundamentals](@cite)) do not require these properties. But since they constitute very weak restrictions and are always satisfied by the manifolds relevant for our purposes we require them here. 
 
@@ -53,30 +53,12 @@ __Theorem__: If ``\mathcal{M}`` is compact and ``\mathcal{N}`` is Hausdorff, the
 __Proof__: We can equivalently show that every closed set is mapped to a closed set. First consider the set ``K\in\mathcal{M}``. Its image is again compact and hence closed because ``\mathcal{N}`` is Hausdorff. 
 
 ## References 
-- General Topology book. 
-- Lang
-- Bishop
 
-@book{lang2012fundamentals,
-  title={Fundamentals of differential geometry},
-  author={Lang, Serge},
-  volume={191},
-  year={2012},
-  publisher={Springer Science \& Business Media}
-}
+```@bibliography
+Pages = []
+Canonical = false 
 
-@book{lipschutz1965general,
-    title={General Topology},
-    author={Seymour Lipschutz},
-    year={1965},
-    publisher={McGraw-Hill Book Company},
-    location={New York City, New York}
-}
-
-@book{bishop1980tensor,
-    title={Tensor Analysis on Manifolds},
-    author={Richard L. Bishop, Samuel I. Goldberg},
-    year={1980},
-    publisher={Dover Publications},
-    location={Mineola, New York}
-}
+bishop1980tensor
+lang2012fundamentals
+lipschutz1965general
+```

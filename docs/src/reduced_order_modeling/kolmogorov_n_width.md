@@ -12,6 +12,12 @@ In order to overcome this, techniques based on neural networks (see e.g. (Lee an
 
 
 ## References 
-- Greif, Constantin, and Karsten Urban. "Decay of the Kolmogorov N-width for wave problems." Applied Mathematics Letters 96 (2019): 216-222.
-- Blickhan, Tobias. "A registration method for reduced basis problems using linear optimal transport." arXiv preprint arXiv:2304.14884 (2023).
-- Lee, Kookjin, and Kevin T. Carlberg. "Model reduction of dynamical systems on nonlinear manifolds using deep convolutional autoencoders." Journal of Computational Physics 404 (2020): 108973.
+
+```@bibliography
+Pages = []
+Canonical = false 
+
+blickhan2023registration
+greif2019decay
+lee2020model
+```

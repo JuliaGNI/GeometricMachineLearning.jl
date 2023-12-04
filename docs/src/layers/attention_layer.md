@@ -84,5 +84,11 @@ Attention was used before, but always in connection with **recurrent neural netw
 
 
 ## References 
-- Luong M T, Pham H, Manning C D. Effective approaches to attention-based neural machine translation[J]. arXiv preprint arXiv:1508.04025, 2015.
-- Bahdanau D, Cho K, Bengio Y. Neural machine translation by jointly learning to align and translate[J]. arXiv preprint arXiv:1409.0473, 2014.
+
+```@bibliography
+Pages = []
+Canonical = false 
+
+bahdanau2014neural
+luong2015effective
+```

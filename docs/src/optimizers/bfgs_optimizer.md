@@ -128,10 +128,10 @@ H_{k} = H_{k-1} - \frac{H_{k-1}y_{k-1}y_{k-1}^TH_{k-1}}{y_{k-1}^TH_{k-1}y_{k-1}}
 TODO: Example where this works well!
 
 ## References 
-@book{wright2006numerical,
-  title={Numerical optimization},
-  author={Stephen J. Wright, Jorge Nocedal},
-  year={2006},
-  publisher={Springer Science+Business Media},
-  location={New York, NY}
-}
+
+```@biblioraphy
+Pages = []
+Canonical = false 
+
+wright2006numerical
+```

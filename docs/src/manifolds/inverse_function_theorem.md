@@ -20,10 +20,9 @@ and this goes to zero as ``\eta`` goes to zero, because ``H`` is continuous and 
 
 ## References
 
-@book{lang2012fundamentals,
-  title={Fundamentals of differential geometry},
-  author={Lang, Serge},
-  volume={191},
-  year={2012},
-  publisher={Springer Science \& Business Media}
-}
+```@bibliography
+Pages = []
+Canonical = false
+
+lang2012fundamentals
+```
