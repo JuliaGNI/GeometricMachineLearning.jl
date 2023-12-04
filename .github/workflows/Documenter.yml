@@ -14,7 +14,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: julia-actions/setup-julia@latest
-      - name: Install dependencies
       - run: |
             julia --project=docs/ -e '
               using Pkg
@@ -26,16 +25,13 @@ jobs:
             sudo apt-get install poppler-utils
             sudo apt-get install texlive-xetex
             sudo apt-get install texlive-science
-      - name: Generate tikz pictures 
       - run: |
           make all -C src/tikz
-      - name: Run doctests
       - run: |
           julia --project=docs -e '
             using Documenter: doctest
             using GeometricMachineLearning
             doctest(GeometricMachineLearning)'
-      - name: Build and deploy Documentation
       - run: julia --project make.jl
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia/docdeploy@v1
