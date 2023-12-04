@@ -26,13 +26,13 @@ jobs:
             sudo apt-get install texlive-xetex
             sudo apt-get install texlive-science
       - run: |
-          make all -C src/tikz
+          make all -C docs/src/tikz
       - run: |
           julia --project=docs -e '
             using Documenter: doctest
             using GeometricMachineLearning
             doctest(GeometricMachineLearning)'
-      - run: julia --project make.jl
+      - run: julia --project docs/make.jl
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-docdeploy@v1
         env:
