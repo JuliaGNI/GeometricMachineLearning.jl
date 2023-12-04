@@ -95,7 +95,6 @@ module GeometricMachineLearning
     include("arrays/skew_symmetric.jl")
     include("arrays/stiefel_lie_algebra_horizontal.jl")
     include("arrays/grassmann_lie_algebra_horizontal.jl")
-    include("arrays/auxiliary.jl")
 
     export SymmetricMatrix, SymplecticPotential, SkewSymMatrix
     export StiefelLieAlgHorMatrix
