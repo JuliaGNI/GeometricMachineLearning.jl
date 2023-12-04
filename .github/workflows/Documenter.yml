@@ -11,33 +11,33 @@ jobs:
   build:
     name: Documentation
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: julia-actions/setup-julia@latest
-      - name: Install dependencies
-        run: |
-          julia --project=docs -e '
-            using Pkg
-            Pkg.develop(PackageSpec(path=pwd()))
-            Pkg.instantiate()
-            Pkg.build()
-            Pkg.precompile()'
-          sudo apt-get install imagemagick
-          sudo apt-get install poppler-utils
-          sudo apt-get install texlive-xetex
-          sudo apt-get install texlive-science
-      -name: Generate tikz pictures 
-        run: |
-          make all -C src/tikz
-      - name: Run doctests
-        run: |
-          julia --project=docs -e '
-            using Documenter: doctest
-            using GeometricMachineLearning
-            doctest(GeometricMachineLearning)'
-      - name: Build and deploy Documentation
-        run: julia --project make.jl
-        working-directory: docs
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
+  steps:
+    - uses: actions/checkout@v3
+    - uses: julia-actions/setup-julia@latest
+    - name: Install dependencies
+      run: |
+        julia --project=docs -e '
+          using Pkg
+          Pkg.develop(PackageSpec(path=pwd()))
+          Pkg.instantiate()
+          Pkg.build()
+          Pkg.precompile()'
+        sudo apt-get install imagemagick
+        sudo apt-get install poppler-utils
+        sudo apt-get install texlive-xetex
+        sudo apt-get install texlive-science
+    - name: Generate tikz pictures 
+      run: |
+        make all -C src/tikz
+    - name: Run doctests
+      run: |
+        julia --project=docs -e '
+          using Documenter: doctest
+          using GeometricMachineLearning
+          doctest(GeometricMachineLearning)'
+    - name: Build and deploy Documentation
+      run: julia --project make.jl
+      working-directory: docs
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
