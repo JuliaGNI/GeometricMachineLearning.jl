@@ -129,7 +129,7 @@ TODO: Example where this works well!
 
 ## References 
 
-```@biblioraphy
+```@bibliography
 Pages = []
 Canonical = false 
 
