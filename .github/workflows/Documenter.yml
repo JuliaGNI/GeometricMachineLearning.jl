@@ -9,8 +9,8 @@ on:
 
 jobs:
   build:
-    name: Documentation
-    runs-on: ubuntu-latest
+    - name: Documentation
+    - runs-on: ubuntu-latest
   steps:
     - uses: actions/checkout@v3
     - uses: julia-actions/setup-julia@latest
