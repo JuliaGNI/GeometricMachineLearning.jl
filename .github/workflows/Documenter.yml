@@ -15,17 +15,17 @@ jobs:
       uses: actions/checkout@v3
       uses: julia-actions/setup-julia@latest
       name: Install dependencies
-        run: |
-          julia --project=docs/ -e '
-            using Pkg
-            Pkg.develop(PackageSpec(path=pwd()))
-            Pkg.instantiate()
-            Pkg.build()
-            Pkg.precompile()'
-          sudo apt-get install imagemagick
-          sudo apt-get install poppler-utils
-          sudo apt-get install texlive-xetex
-          sudo apt-get install texlive-science
+        - run: |
+            julia --project=docs/ -e '
+              using Pkg
+              Pkg.develop(PackageSpec(path=pwd()))
+              Pkg.instantiate()
+              Pkg.build()
+              Pkg.precompile()'
+            sudo apt-get install imagemagick
+            sudo apt-get install poppler-utils
+            sudo apt-get install texlive-xetex
+            sudo apt-get install texlive-science
       name: Generate tikz pictures 
         run: |
           make all -C src/tikz
