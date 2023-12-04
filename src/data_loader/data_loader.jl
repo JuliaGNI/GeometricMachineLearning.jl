@@ -47,7 +47,7 @@ end
 The DataLoader is called with a tensor and a vector. For the moment this is always interpreted to be the MNIST data set. 
 """
 function DataLoader(data::AbstractArray{T, 3}, target::AbstractVector{T1}; patch_length=7) where {T, T1} 
-    @info "You provided a tensor and a vector as input. This will be treated as a classification problem (MNIST). Tensor axes: (i) & (ii) image axes and (iii) parameter dimesnion."
+    @info "You provided a tensor and a vector as input. This will be treated as a classification problem (MNIST). Tensor axes: (i) & (ii) image axes and (iii) parameter dimension."
     im_dim₁, im_dim₂, n_params = size(data)
     @assert length(target) == n_params 
     number_of_patches = (im_dim₁÷patch_length)*(im_dim₂÷patch_length) 
@@ -154,3 +154,7 @@ function accuracy(model::Chain, ps::Tuple, dl::DataLoader{T, AT, BT}) where {T, 
     tensor_of_maximum_elements[ind] .= T1(1)
     (size(dl.output, 3)-sum(abs.(dl.output - tensor_of_maximum_elements))/T1(2))/size(dl.output, 3)
 end
+
+accuracy(nn::NeuralNetwork, dl::DataLoader) = accuracy(nn.model, nn.params, dl)
+
+Base.eltype(::DataLoader{T}) where T = T

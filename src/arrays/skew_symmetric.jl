@@ -189,3 +189,26 @@ end
 function Base.:*(A1::SkewSymMatrix{T}, A2::SkewSymMatrix{T}) where T 
     A1*(one(A2)*A2) 
 end
+
+@doc raw"""
+If `vec` is applied onto `SkewSymMatrix`, then the output is the associated vector.  
+"""
+function Base.vec(A::SkewSymMatrix)
+    A.S
+end
+
+function Base.zero(A::SkewSymMatrix)
+    SkewSymMatrix(zero(A.S), A.n)
+end
+
+function KernelAbstractions.get_backend(A::SkewSymMatrix)
+    KernelAbstractions.get_backend(A.S)
+end
+
+function assign!(B::SkewSymMatrix{T}, C::SkewSymMatrix{T}) where T 
+    B.S .= C.S 
+end
+
+function Base.copy(A::SkewSymMatrix)
+    SkewSymMatrix(copy(A.S), A.n)
+end

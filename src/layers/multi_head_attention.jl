@@ -75,7 +75,10 @@ function initialparameters(backend::KernelAbstractions.Backend, T::Type, d::Mult
     (PQ=PQ, PK=PK, PV=PV)
 end
 
-function (d::MultiHeadAttention{M, M, Stiefel, Retraction, true})(x::AbstractMatrix{T}, ps::NamedTuple) where {M, Stiefel, Retraction, T}
+@doc raw"""
+Applies MHA to an abstract matrix. This is the same independent of whether the input is added to the output or not. 
+"""
+function compute_output_of_mha(d::MultiHeadAttention{M, M}, x::AbstractMatrix{T}, ps::NamedTuple) where {M, T}
     dim, input_length = size(x)
     @assert dim == M
 
@@ -84,34 +87,17 @@ function (d::MultiHeadAttention{M, M, Stiefel, Retraction, true})(x::AbstractMat
         key = Symbol("head_"*string(i))
         output = vcat(output, ps.PV[key]'*x*softmax((ps.PQ[key]'*x)'*(ps.PK[key]'*x)/T(sqrt(dim))))
     end
-    x + output
-end
-
-function (d::MultiHeadAttention{M, M, Stiefel, Retraction, false})(x::AbstractMatrix{T}, ps::NamedTuple) where {M, Stiefel, Retraction, T}
-    dim, input_length = size(x)
-    @assert dim == M
-
-    output = similar(x, 0, input_length)
-    for i in 1:d.n_heads
-        key = Symbol("head_"*string(i))
-        output = vcat(output, ps.PV[key]'*x*softmax((ps.PQ[key]'*x)'*(ps.PK[key]'*x)/T(sqrt(dim))))
-    end
     output
 end
 
-function (d::MultiHeadAttention{M, M, Stiefel, Retraction, true})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, Stiefel, Retraction, T} 
+
+function compute_output_of_mha(d::MultiHeadAttention{M, M}, x::AbstractArray{T, 3}, ps::NamedTuple) where {M, T}
     Dₕ = M ÷ d.n_heads
     dim, input_length, number_data = size(x)
     @assert dim == M
     
-
+    # initialize the output
     output = similar(x, 0, input_length, number_data)
-
-    # initialize the results of various tensor matrix multiplications
-    Q_tensor = similar(x, Dₕ, input_length, number_data)
-    K_tensor = similar(x, Dₕ, input_length, number_data)
-    V_tensor = similar(x, Dₕ, input_length, number_data)
-    QK_tensor = similar(x, input_length, input_length, number_data)
 
     # this is the result of a single head attention block
     single_head_output = similar(x, Dₕ, input_length, number_data)
@@ -127,35 +113,15 @@ function (d::MultiHeadAttention{M, M, Stiefel, Retraction, true})(x::AbstractArr
         output = vcat(output, single_head_output) 
         # KernelAbstractions.synchronize(backend)
     end
-    x + output
+    output
 end
 
-function (d::MultiHeadAttention{M, M, Stiefel, Retraction, false})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, Stiefel, Retraction, T} 
-    Dₕ = M ÷ d.n_heads
-    dim, input_length, number_data = size(x)
-    @assert dim == M
-    
-    output = similar(x, 0, input_length, number_data)
+function (d::MultiHeadAttention{M, M, Stiefel, Retraction, true})(x::AbstractArray, ps::NamedTuple) where {M, Stiefel, Retraction} 
+    x + compute_output_of_mha(d, x, ps)
+end
 
-    Q_tensor = similar(x, Dₕ, input_length, number_data)
-    K_tensor = similar(x, Dₕ, input_length, number_data)
-    V_tensor = similar(x, Dₕ, input_length, number_data)
-    QK_tensor = similar(x, input_length, input_length, number_data)
-    
-    single_head_output = similar(x, Dₕ, input_length, number_data)
-
-    for i in 1:d.n_heads 
-        key = Symbol("head_"*string(i))
-        Q_tensor = mat_tensor_mul(ps.PQ[key]', x)
-        K_tensor = mat_tensor_mul(ps.PK[key]', x)
-        V_tensor = mat_tensor_mul(ps.PV[key]', x)
-        QK_tensor = tensor_transpose_tensor_mul(Q_tensor, K_tensor)
-
-        single_head_output = tensor_tensor_mul(V_tensor, softmax(QK_tensor/T(sqrt(dim))))
-        output = vcat(output, single_head_output) 
-        # KernelAbstractions.synchronize(backend)
-    end
-    output
+function (d::MultiHeadAttention{M, M, Stiefel, Retraction, false})(x::AbstractArray, ps::NamedTuple) where {M, Stiefel, Retraction} 
+    compute_output_of_mha(d, x, ps)
 end
 
 import ChainRules

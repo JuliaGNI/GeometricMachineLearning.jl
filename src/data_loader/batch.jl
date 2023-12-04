@@ -83,6 +83,10 @@ function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTu
     optimize_for_one_epoch!(opt, model, ps, dl, batch, loss)
 end
 
+function optimize_for_one_epoch!(opt::Optimizer, nn::NeuralNetwork, dl::DataLoader, batch::Batch)
+    optimize_for_one_epoch!(opt, nn.model, nn.params, dl, batch)
+end
+
 """
 TODO: Add ProgressMeter!!!
 """
@@ -105,7 +109,6 @@ end
 
 
 function (o::Optimizer)(nn::NeuralNetwork, dl::DataLoader, batch::Batch, n_epochs::Int, loss)
-    
     progress_object = ProgressMeter.Progress(n_epochs; enabled=true)
     loss_array = zeros(n_epochs)
     for i in 1:n_epochs

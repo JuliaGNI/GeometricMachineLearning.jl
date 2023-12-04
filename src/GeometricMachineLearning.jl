@@ -45,6 +45,9 @@ module GeometricMachineLearning
     
     export σ, sigmoid, softmax
 
+    # the functionality in the script doesn't require anything else defined in GML, but some of the other scripts in that folder do.
+    include("data_loader/data_loader.jl")
+
     include("kernels/assign_q_and_p.jl")
     include("kernels/tensor_mat_mul.jl")
     include("kernels/tensor_tensor_mul.jl")
@@ -91,7 +94,6 @@ module GeometricMachineLearning
     include("arrays/skew_symmetric.jl")
     include("arrays/stiefel_lie_algebra_horizontal.jl")
     include("arrays/grassmann_lie_algebra_horizontal.jl")
-    include("arrays/auxiliary.jl")
 
     export SymmetricMatrix, SymplecticPotential, SkewSymMatrix
     export StiefelLieAlgHorMatrix
@@ -110,6 +112,8 @@ module GeometricMachineLearning
     # include("manifolds/symplectic_stiefel_manifold.jl")
     include("manifolds/grassmann_manifold.jl")
 
+    include("arrays/stiefel_projection.jl")
+
     export StiefelManifold, SymplecticStiefelManifold, GrassmannManifold, Manifold
     export rgrad, metric
 
@@ -119,6 +123,8 @@ module GeometricMachineLearning
     include("optimizers/gradient_optimizer.jl")
     include("optimizers/momentum_optimizer.jl")        
     include("optimizers/adam_optimizer.jl")
+    include("optimizers/bfgs_cache.jl")
+    include("optimizers/bfgs_optimizer.jl")
     include("optimizers/init_optimizer_cache.jl")
 
     include("optimizers/manifold_related/global_sections.jl")
@@ -150,10 +156,10 @@ module GeometricMachineLearning
     export GradientOptimizer, GradientCache
     export MomentumOptimizer, MomentumCache
     export AdamOptimizer, AdamCache
+    export BFGSOptimizer, BFGSCache
 
     export Optimizer
     export optimization_step!
-    export init_optimizer_cache
 
     export GlobalSection, apply_section
     export global_rep
@@ -234,6 +240,7 @@ module GeometricMachineLearning
     include("architectures/variable_width_network.jl")
     include("architectures/recurrent_neural_network.jl")
     include("architectures/LSTM_neural_network.jl")
+    include("architectures/transformer_neural_network.jl")
 
     export HamiltonianNeuralNetwork
     export LagrangianNeuralNetwork
@@ -242,10 +249,10 @@ module GeometricMachineLearning
     export GSympNet
     export RecurrentNeuralNetwork
     export LSTMNeuralNetwork
+    export ClassificationTransformer
 
     export train!, apply!, jacobian!
     export Iterate_Sympnet
-
 
     export default_arch
 
@@ -356,7 +363,6 @@ module GeometricMachineLearning
     export integrate, integrate_step!
 
     include("integrator/sympnet_integrator.jl")
-
  
     include("reduced_system/system_type.jl")
     include("reduced_system/reduced_system.jl")

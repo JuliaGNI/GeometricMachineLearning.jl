@@ -1,8 +1,9 @@
-"""
+@doc raw"""
 AbstractCache has subtypes: 
-AdamCache
-MomentumCache
-GradientCache
+- AdamCache
+- MomentumCache
+- GradientCache
+- BFGSCache
 
 All of them can be initialized with providing an array (also supporting manifold types).
 """
@@ -14,15 +15,15 @@ abstract type AbstractCache end
 struct AdamCache{T, AT <: AbstractArray{T}} <: AbstractCache
     B₁::AT
     B₂::AT 
-    function AdamCache(B::AbstractArray)
-        new{eltype(B), typeof(zero(B))}(zero(B), zero(B))
+    function AdamCache(Y::AbstractArray)
+        new{eltype(Y), typeof(zero(Y))}(zero(Y), zero(Y))
     end
 end
 
 struct MomentumCache{T, AT <: AbstractArray{T}} <:AbstractCache
     B::AT
-    function MomentumCache(B::AbstractArray)
-        new{eltype(B), typeof(zero(B))}(zero(B))
+    function MomentumCache(Y::AbstractArray)
+        new{eltype(Y), typeof(zero(Y))}(zero(Y))
     end
 end
 
@@ -32,9 +33,10 @@ GradientCache(::AbstractArray) = GradientCache()
 #############################################################################
 # All the setup_cache functions 
 
-setup_adam_cache(B::AbstractArray) = reshape([setup_adam_cache(b) for b in B], size(B))
-setup_momentum_cache(B::AbstractArray) = reshape([setup_momentum_cache(b) for b in B], size(B))
-setup_gradient_cache(B::AbstractArray) = reshape([setup_gradient_cache(b) for b in B], size(B))
+# I don't really understand what we need these for ???
+# setup_adam_cache(B::AbstractArray) = reshape([setup_adam_cache(b) for b in B], size(B))
+# setup_momentum_cache(B::AbstractArray) = reshape([setup_momentum_cache(b) for b in B], size(B))
+# setup_gradient_cache(B::AbstractArray) = reshape([setup_gradient_cache(b) for b in B], size(B))
 
 setup_adam_cache(ps::NamedTuple) = apply_toNT(setup_adam_cache, ps)
 setup_momentum_cache(ps::NamedTuple) = apply_toNT(setup_momentum_cache, ps)

@@ -1,4 +1,4 @@
-"""
+@doc raw"""
 Optimizer struct that stores the 'method' (i.e. Adam with corresponding hyperparameters), the cache and the optimization step.
 
 It takes as input an optimization method and the parameters of a network. 
@@ -46,6 +46,15 @@ function optimization_step!(o::Optimizer, d::Union{AbstractExplicitLayer, Abstra
     apply_section!(ps, λY, ps₂)
 end
 
+@doc raw"""
+Optimization for an entire neural networks, the way this function should be called. 
+
+inputs: 
+- `o::Optimizer`
+- `model::Chain`
+- `ps::Tuple`
+- `dx::Tuple`
+"""
 function optimization_step!(o::Optimizer, model::Chain, ps::Tuple, dx::Tuple)
     o.step += 1
     for (index, element) in zip(eachindex(model.layers), model.layers)
@@ -69,6 +78,7 @@ function rgrad(Y::AbstractVecOrMat, dx::AbstractVecOrMat)
     dx
 end
 
+# do we need those two? 
 function update!(m::Optimizer, C::NamedTuple, B::NamedTuple)
     apply_toNT(m, C, B, update!)
 end

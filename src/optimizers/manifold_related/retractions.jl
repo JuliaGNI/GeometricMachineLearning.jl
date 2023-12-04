@@ -41,16 +41,12 @@ geodesic(B::NamedTuple) = apply_toNT(geodesic, B)
 
 #you will have to fix the scalar indexing problem wrt to SkewSymMatrix!
 function geodesic(B::StiefelLieAlgHorMatrix{T}) where T
-    N, n = B.N, B.n
-    E = typeof(B.B)(StiefelProjection(N, n, T))
-    # expression from which matrix exponential and inverse have to be computed
-    unit = typeof(B.B)(I(n))
-    # delete this line eventually!!!
-    # A_mat = typeof(B.B)(SkewSymMatrix(Vector(B.A.S), n))
-    A_mat = B.A
-    exponent = hcat(vcat(T(.5)*(A_mat*one(A_mat)), T(.25)*A_mat*A_mat - B.B'*B.B), vcat(unit, T(.5)*(A_mat*one(A_mat))))
+    E = StiefelProjection(B)
+    unit = one(B.A)
+    A_mat = B.A * unit
+    exponent = hcat(vcat(T(.5) * A_mat, T(.25) * B.A * A_mat - B.B' * B.B), vcat(unit, T(.5) * A_mat))
     StiefelManifold(
-        E + hcat(vcat(T(.5)*A_mat*one(A_mat), B.B), E)*𝔄(exponent)*vcat(unit, T(.5)*A_mat*one(A_mat))
+        E + hcat(vcat(T(.5) * A_mat, B.B), E) * 𝔄(exponent) * vcat(unit, T(.5) * A_mat)
     )
 end
 
@@ -68,19 +64,18 @@ end
 cayley(B::NamedTuple) = apply_toNT(cayley, B)
 
 function cayley(B::StiefelLieAlgHorMatrix{T}) where T
-    N, n = B.N, B.n
-    E = typeof(B.B)(StiefelProjection(N, n, T))
-    unit = typeof(B.B)(I(n))
-    A_mat = B.A*one(B.A)
-    A_mat2 = B.A*B.A 
-    BB = B.B'*B.B
+    E = StiefelProjection(B)
+    unit = one(B.A)
+    A_mat = B.A * one(B.A)
+    A_mat2 = B.A * B.A 
+    BB = B.B' * B.B
 
-    exponent = hcat(vcat(unit - T(.25)*A_mat, T(.5)*BB - T(.125)*A_mat2), vcat(-T(.5)*unit, unit - T(.25)*A_mat))
+    exponent = hcat(vcat(unit - T(.25) * A_mat, T(.5) * BB - T(.125) * A_mat2), vcat(-T(.5) * unit, unit - T(.25) * A_mat))
     StiefelManifold(
         E + 
-        T(.5)*hcat(vcat(T(.5)*A_mat, B.B), vcat(unit, zero(B.B)))*
+        T(.5) * hcat(vcat(T(.5) * A_mat, B.B), vcat(unit, zero(B.B)))*
         (
-            vcat(unit, T(0.5)*A_mat) + exponent \ (vcat(unit, T(0.5)*A_mat) + vcat(T(0.5)*A_mat, T(0.25)*A_mat2 - T(0.5)*BB))
+            vcat(unit, T(0.5) * A_mat) + exponent \ (vcat(unit, T(0.5) * A_mat) + vcat(T(0.5) * A_mat, T(0.25) * A_mat2 - T(0.5) * BB))
             )
     )
 end

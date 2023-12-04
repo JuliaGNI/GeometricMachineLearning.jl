@@ -1,4 +1,4 @@
-"""
+@doc raw"""
 This implements global sections for the Stiefel manifold and the Symplectic Stiefel manifold. 
 
 In practice this is implemented using Householder reflections, with the auxiliary column vectors given by: 
@@ -14,10 +14,9 @@ Maybe consider dividing the output in the check functions by n!
 
 Implement a general global section here!!!! Tₓ𝔐 → G×𝔤 !!!!!! (think about random initialization!)
 """
-#global section maps an element of the manifold to its associated Lie group!
 struct GlobalSection{T, AT} 
     Y::AT
-    #for now the only lift that is implemented is the Stiefel one - these types will have to be expanded!
+    # for now the only lift that is implemented is the Stiefel one - these types will have to be expanded!
     λ::Union{LinearAlgebra.QRCompactWYQ, LinearAlgebra.QRPackedQ, Nothing}
 
     function GlobalSection(Y::AbstractVecOrMat)
@@ -30,26 +29,22 @@ function GlobalSection(ps::NamedTuple)
     apply_toNT(GlobalSection, ps)
 end
 
-#this is an application G×𝔐 → 𝔐
+# this is an application G×𝔐 → 𝔐
 function apply_section(λY::GlobalSection{T, AT}, Y₂::AT) where {T, AT<:StiefelManifold{T}}
     N, n = size(λY.Y)
     @assert (N, n) == size(Y₂)
-    #temporary solution for the moment 
-    projection_matrix₁ = typeof(Y₂.A)(hcat(I(n), zeros(T, n, N-n)))
-    projection_matrix₂ = typeof(Y₂.A)(hcat(zeros(T, N-n, n), I(N-n)))
+    backend = KernelAbstractions.get_backend(Y₂)
     StiefelManifold(
-        λY.Y.A*(projection_matrix₁*Y₂.A) + λY.λ*vcat(projection_matrix₂*Y₂.A, typeof(Y₂.A)(zeros(T, n, n)))
+        λY.Y.A * Y₂.A[1:n, :] + λY.λ*vcat(Y₂.A[(n+1):N, :], KernelAbstractions.zeros(backend, T, n, n))
     )
 end
 
 function apply_section!(Y::AT, λY::GlobalSection{T, AT}, Y₂::AT) where {T, AT<:StiefelManifold{T}}
     N, n = size(λY.Y)
     @assert (N, n) == size(Y₂) == size(Y)
-    #temporary solution for the moment 
-    projection_matrix₁ = typeof(Y₂.A)(hcat(I(n), zeros(T, n, N-n)))
-    projection_matrix₂ = typeof(Y₂.A)(hcat(zeros(T, N-n, n), I(N-n)))
 
-    Y.A .= λY.Y*(projection_matrix₁*Y₂) + λY.λ*vcat(projection_matrix₂*Y₂, typeof(Y₂.A)(zeros(T, n, n)))
+    backend = KernelAbstractions.get_backend(Y)
+    Y.A .= λY.Y * Y₂.A[1:n, :] + λY.λ*vcat(Y₂.A[(n+1):N, :], KernelAbstractions.zeros(backend, T, n, n))
 end
 
 function apply_section(λY::GlobalSection{T, AT}, Y₂::AT) where {T, AT<:GrassmannManifold{T}}
@@ -91,11 +86,9 @@ end
 
 function global_rep(λY::GlobalSection{T, AT}, Δ::AbstractMatrix{T}) where {T, AT<:StiefelManifold{T}}
     N, n = size(λY.Y)
-    #temporary workaround 
-    projection_matrix = typeof(Δ)(hcat(I(N-n), zeros(T, N-n, n)))
     StiefelLieAlgHorMatrix(
         SkewSymMatrix(λY.Y.A'*Δ),
-        projection_matrix*(λY.λ'*Δ), 
+        (λY.λ'*Δ)[1:(N-n), 1:n], 
         N, 
         n
     )
@@ -103,10 +96,9 @@ end
 
 function global_rep(λY::GlobalSection{T, AT}, Δ::AbstractMatrix{T}) where {T, AT<:GrassmannManifold{T}}
     N, n = size(λY.Y)
-    #temporary workaround 
-    projection_matrix = typeof(Δ)(hcat(zeros(T, N-n, n), I(N-n)))
     GrassmannLieAlgHorMatrix(
-        projection_matrix*(λY.λ'*Δ),
+        # (λY.λ'*Δ)[(n+1):N, 1:n],
+        (λY.λ' * Δ)[1:(N-n), 1:n],
         N,
         n
     )
