@@ -58,10 +58,6 @@ end
 
 Base.:*(Y::StiefelManifold, B::AbstractMatrix) = Y.A*B
 Base.:*(B::AbstractMatrix, Y::StiefelManifold) = B*Y.A
-#this is needed for the implementation of MultiHeadAttention
-function Base.:*(Y::Adjoint{T, StiefelManifold{T, AT}}, B::AbstractMatrix) where {T, AT<:AbstractGPUMatrix{T}}
-    Y.parent.A'*B 
-end
 
 function Base.:*(Y::Adjoint{T, StiefelManifold{T, AT}}, B::AbstractMatrix) where {T, AT<:AbstractMatrix{T}}
     Y.parent.A'*B 

@@ -8,7 +8,6 @@ module GeometricMachineLearning
     using GeometricBase
     using GeometricEquations
     using GeometricIntegrators
-    using GPUArrays
     using KernelAbstractions
     using LinearAlgebra
     using NNlib
@@ -18,8 +17,6 @@ module GeometricMachineLearning
     using ForwardDiff
     using InteractiveUtils
     using TimerOutputs
-
-    import CUDA
 
     import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer, AbstractExplicitCell, AbstractNeuralNetwork , NeuralNetwork
     import AbstractNeuralNetworks: Chain, GridCell
@@ -227,7 +224,6 @@ module GeometricMachineLearning
     export Batch, optimize_for_one_epoch!
     include("data_loader/tensor_assign.jl")
     include("data_loader/matrix_assign.jl")
-    include("data_loader/data_loader.jl")
     include("data_loader/mnist_utils.jl")
     include("data_loader/batch.jl")
 
