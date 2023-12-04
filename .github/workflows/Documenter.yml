@@ -27,17 +27,17 @@ jobs:
             sudo apt-get install texlive-xetex
             sudo apt-get install texlive-science
       name: Generate tikz pictures 
-        run: |
+      run: |
           make all -C src/tikz
       name: Run doctests
-        run: |
+      run: |
           julia --project=docs -e '
             using Documenter: doctest
             using GeometricMachineLearning
             doctest(GeometricMachineLearning)'
       name: Build and deploy Documentation
-        run: julia --project make.jl
-        working-directory: docs
-        env:
+      run: julia --project make.jl
+      working-directory: docs
+      env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
