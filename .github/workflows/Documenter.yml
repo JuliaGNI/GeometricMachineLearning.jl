@@ -37,7 +37,8 @@ jobs:
             doctest(GeometricMachineLearning)'
       - name: Build and deploy Documentation
       - run: julia --project make.jl
-      - working-directory: docs
-      - env:
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia/docdeploy@v1
+        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
