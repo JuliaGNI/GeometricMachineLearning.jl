@@ -96,7 +96,6 @@ end
 
 function global_rep(λY::GlobalSection{T, AT}, Δ::AbstractMatrix{T}) where {T, AT<:GrassmannManifold{T}}
     N, n = size(λY.Y)
-    #temporary workaround 
     GrassmannLieAlgHorMatrix(
         (λY.λ'*Δ)[n:N, 1:n],
         N,
