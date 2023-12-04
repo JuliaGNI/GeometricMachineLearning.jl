@@ -7,6 +7,7 @@ import Random, Test, Lux, LinearAlgebra, KernelAbstractions
 using GeometricMachineLearning, Test
 using GeometricMachineLearning: geodesic
 using GeometricMachineLearning: cayley
+using GeometricMachineLearning: init_optimizer_cache
 
 dim = 64
 n_heads = 8
