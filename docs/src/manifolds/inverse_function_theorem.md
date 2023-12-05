@@ -20,9 +20,19 @@ and this goes to zero as ``\eta`` goes to zero, because ``H`` is continuous and 
 
 ## References
 
+<<<<<<< HEAD
 ```@bibliography
 Pages = []
 Canonical = false
 
 lang2012fundamentals
 ```
+=======
+@book{lang2012fundamentals,
+  title={Fundamentals of differential geometry},
+  author={Lang, Serge},
+  volume={191},
+  year={2012},
+  publisher={Springer Science \& Business Media}
+}
+>>>>>>> 9daa61fb1fc0177fc30f51b3df504196a03c688a
