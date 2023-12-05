@@ -1,7 +1,9 @@
-<p align="center">
-    <img width="700px" src="https://github.com/JuliaGNI/GeometricMachineLearning.jl/assets/55493704/8d6d1410-b857-4e0f-8609-50e43be9a268#gh-light-mode-only"/>
-    <img width="700px" src="https://github.com/JuliaGNI/GeometricMachineLearning.jl/assets/55493704/014929d1-2297-4b2c-9359-58cadbb03a0e#gh-dark-mode-only"/>
-</p>
+<picture>
+  <source media="(prefers-color-scheme: light)" srcset="https://github.com/JuliaGNI/GeometricMachineLearning.jl/assets/55493704/8d6d1410-b857-4e0f-8609-50e43be9a268">
+  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/JuliaGNI/GeometricMachineLearning.jl/assets/55493704/014929d1-2297-4b2c-9359-58cadbb03a0e">
+  <img alt="Shows a black logo in light color mode and a white one in dark color mode.">
+</picture>
+
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliagni.github.io/GeometricMachineLearning.jl/stable)
 [![Latest](https://img.shields.io/badge/docs-latest-blue.svg)](https://juliagni.github.io/GeometricMachineLearning.jl/latest)
