@@ -26,7 +26,7 @@ jobs:
             Pkg.develop(PackageSpec(path=pwd()))
             Pkg.instantiate()
             Pkg.build()
-            Pkg.precompile()'
+            Pkg.precompile()
             using Documenter: doctest
             using GeometricMachineLearning
             doctest(GeometricMachineLearning)'
