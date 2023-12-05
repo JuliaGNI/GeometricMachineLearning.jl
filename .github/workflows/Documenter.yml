@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-    tags: '*'
   pull_request:
 
 jobs:
@@ -13,31 +12,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - run: |
+          sudo apt-get install imagemagick
+          sudo apt-get install poppler-utils
+          sudo apt-get install texlive-xetex
+          sudo apt-get install texlive-science
+          make all -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
-      - name: Install dependencies
-        run: |
+      - run: |
           julia --project=docs -e '
             using Pkg
             Pkg.develop(PackageSpec(path=pwd()))
             Pkg.instantiate()
             Pkg.build()
-            Pkg.precompile()'
-          sudo apt-get install imagemagick
-          sudo apt-get install poppler-utils
-          sudo apt-get install texlive-xetex
-          sudo apt-get install texlive-science
-      -name: Generate tikz pictures 
-        run: |
-          make all -C src/tikz
-      - name: Run doctests
-        run: |
-          julia --project=docs -e '
+            Pkg.precompile()
             using Documenter: doctest
             using GeometricMachineLearning
             doctest(GeometricMachineLearning)'
-      - name: Build and deploy Documentation
-        run: julia --project make.jl
-        working-directory: docs
+          julia --project=docs docs/make.jl
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia-docdeploy@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
