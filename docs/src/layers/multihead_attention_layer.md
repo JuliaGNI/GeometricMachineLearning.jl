@@ -51,4 +51,10 @@ Because the main task of the $W_i^V$, $W_i^K$ and $W_i^Q$ matrices here is for t
 
 
 ## References 
-- Vaswani, Ashish, et al. "Attention is all you need." Advances in neural information processing systems 30 (2017).
+
+```@bibliography
+Pages = []
+Canonical = false
+
+vaswani2017attention
+```

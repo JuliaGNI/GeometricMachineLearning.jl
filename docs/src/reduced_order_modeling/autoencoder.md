@@ -46,5 +46,9 @@ In reduced order modeling we aim to construct a mapping to a space that is close
 The third step can be done with various machine learning (ML) techniques. Traditionally the most popular of these has been **Proper orthogonal decomposition** (POD), but in recent years **autoencoders** have also become a popular alternative (see (Fresca et al, 2021)). 
 
 ## References 
+```@bibliography
+Pages = []
+Canonical = false
 
-- Fresca, Stefania, Luca Dede, and Andrea Manzoni. "A comprehensive deep learning-based approach to reduced order modeling of nonlinear time-dependent parametrized PDEs." Journal of Scientific Computing 87 (2021): 1-36.
+fresca2021comprehensive
+```

@@ -27,14 +27,22 @@ makedocs(;
             "SympNet" => "architectures/sympnet.md",
         ],
         "Manifolds" => [
+            "Concepts from General Topology" => "manifolds/basic_topology.md",
+            "General Theory on Manifolds" => "manifolds/manifolds.md",
+            "The Inverse Function Theorem" => "manifolds/inverse_function_theorem.md",
+            "The Submersion Theorem" => "manifolds/submersion_theorem.md",
             "Homogeneous Spaces" => "manifolds/homogeneous_spaces.md",
             "Stiefel" => "manifolds/stiefel_manifold.md",
             "Grassmann" => "manifolds/grassmann_manifold.md",
+            "Differential Equations and the EAU theorem" => "manifolds/existence_and_uniqueness_theorem.md",
             ],
         "Arrays" => [
             "Global Tangent Space" => "arrays/stiefel_lie_alg_horizontal.md",
         ],
-        "Optimizer Framework" => "Optimizer.md",
+        "Optimizer Framework" => [
+            "Optimizers" => "Optimizer.md",
+            "General Optimization" => "optimizers/general_optimization.md",
+        ],
         "Optimizer Functions" => [
             "Horizontal Lift" => "optimizers/manifold_related/horizontal_lift.md",
             "Global Sections" => "optimizers/manifold_related/global_sections.md",
@@ -42,6 +50,7 @@ makedocs(;
             "Geodesic Retraction" => "optimizers/manifold_related/geodesic.md",
             "Cayley Retraction" => "optimizers/manifold_related/cayley.md",
             "Adam Optimizer" => "optimizers/adam_optimizer.md",
+            "BFGS Optimizer" => "optimizers/bfgs_optimizer.md",
             ],
         "Special Neural Network Layers" => [
             "Attention" => "layers/attention_layer.md",

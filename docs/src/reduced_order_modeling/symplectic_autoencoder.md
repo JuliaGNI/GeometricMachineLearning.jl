@@ -83,5 +83,11 @@ So we alternate between SympNet and PSD layers. Because all the PSD layers are b
 
 
 ## References 
-- Buchfink, Patrick, Silke Glas, and Bernard Haasdonk. "Symplectic model reduction of Hamiltonian systems on nonlinear manifolds and approximation with weakly symplectic autoencoder." SIAM Journal on Scientific Computing 45.2 (2023): A289-A311.
-- Peng, Liqian, and Kamran Mohseni. "Symplectic model reduction of Hamiltonian systems." SIAM Journal on Scientific Computing 38.1 (2016): A1-A27.
+
+```@bibliography
+Pages = []
+Canonical = false
+
+buchfink2023symplectic
+peng2016symplectic
+```
