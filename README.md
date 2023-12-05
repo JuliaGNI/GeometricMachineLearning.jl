@@ -1,6 +1,6 @@
 <p align="center">
-    <img width="700px" src="docs/src/assets/logo.png#gh-light-mode-only"/>
-    <img width="700px" src="docs/src/assets/logo_dark.png#gh-dark-mode-only"/>
+    <img width="700px" src="logo.png#gh-light-mode-only"/>
+    <img width="700px" src="logo_dark.png#gh-dark-mode-only"/>
 </p>
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliagni.github.io/GeometricMachineLearning.jl/stable)
