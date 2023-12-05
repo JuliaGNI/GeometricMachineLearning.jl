@@ -57,7 +57,6 @@ __Theorem__: If ``\mathcal{M}`` is compact and ``\mathcal{N}`` is Hausdorff, the
 __Proof__: We can equivalently show that every closed set is mapped to a closed set. First consider the set ``K\in\mathcal{M}``. Its image is again compact and hence closed because ``\mathcal{N}`` is Hausdorff. 
 
 ## References 
-<<<<<<< HEAD
 
 ```@bibliography
 Pages = []
@@ -67,32 +66,3 @@ bishop1980tensor
 lang2012fundamentals
 lipschutz1965general
 ```
-=======
-- General Topology book. 
-- Lang
-- Bishop
-
-@book{lang2012fundamentals,
-  title={Fundamentals of differential geometry},
-  author={Lang, Serge},
-  volume={191},
-  year={2012},
-  publisher={Springer Science \& Business Media}
-}
-
-@book{lipschutz1965general,
-    title={General Topology},
-    author={Seymour Lipschutz},
-    year={1965},
-    publisher={McGraw-Hill Book Company},
-    location={New York City, New York}
-}
-
-@book{bishop1980tensor,
-    title={Tensor Analysis on Manifolds},
-    author={Richard L. Bishop, Samuel I. Goldberg},
-    year={1980},
-    publisher={Dover Publications},
-    location={Mineola, New York}
-}
->>>>>>> 9daa61fb1fc0177fc30f51b3df504196a03c688a
