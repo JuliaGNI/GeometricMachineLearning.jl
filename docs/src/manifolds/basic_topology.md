@@ -1,10 +1,7 @@
 # Basic Concepts of General Topology
 
-<<<<<<< HEAD
 On this page we discuss basic notions of topology that are necessary to define and work [manifolds](manifolds.md). Here we largely omit concrete examples and only define concepts that are necessary for defining a manifold[^1], namely the properties of being *Hausdorff* and *second countable*. For a wide range of examples and a detailed discussion of the theory see e.g. [lipschutz1965general](@cite). The here-presented theory is also (rudimentary) covered in most differential geometry books such as [lang2012fundamentals](@cite) and [bishop1980tensor](@cite). 
-=======
-On this page we discuss basic notions of topology that are necessary to define and work [manifolds](manifolds.md). Here we largely omit concrete examples and only define concepts that are necessary for defining a manifold[^1], namely the properties of being *Hausdorff* and *second countable*. For a wide range of examples and a detailed discussion of the theory see e.g. [lipschutz1965general](@cite). The here-presented theory is also (rudimentary) covered in most differential geometry books such as [lang2012](@cite) and [bishop1980tensor](@cite). 
->>>>>>> 9daa61fb1fc0177fc30f51b3df504196a03c688a
+
 
 [^1]: Some authors (see e.g. [lang2012fundamentals](@cite)) do not require these properties. But since they constitute very weak restrictions and are always satisfied by the manifolds relevant for our purposes we require them here. 
 
