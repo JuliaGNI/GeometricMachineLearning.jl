@@ -106,12 +106,12 @@ nothing # hide
 
 If we want to obtain information on the number of parameters in a neural network, we can do that very simply with the function `parameterlength`. For the `LASympNet`:
 ```@example sympnet
-parameterlength(la_nn)
+parameterlength(la_nn.model)
 ```
 
 And for the `GSympNet`:
 ```@example sympnet
-parameterlength(g_nn)
+parameterlength(g_nn.model)
 ```
 
 *Remark*: We can also specify whether we would like to start with a layer that changes the $q$-component or one that changes the $p$-component. This can be done via the keywords `init_upper` for `GSympNet`, and `init_upper_linear` and `init_upper_act` for `LASympNet`.
