@@ -7,7 +7,7 @@ pdf:
 	xelatex -shell-escape sympnet_architecture
 	xelatex -shell-escape structs_visualization
 	xelatex -shell-escape logo 
-	xelatex -shell-escape symplectic_autoencoders
+	xelatex -shell-escape symplectic_autoencoder
 	xelatex -shell-escape solution_manifold_2
 	xelatex -shell-escape mha
 
@@ -20,7 +20,7 @@ png:
 	pdftocairo	-png -r 150 -transp -singlefile	 sympnet_architecture.pdf				sympnet_architecture
 	pdftocairo 	-png -r 150 -transp -singlefile  structs_visualization.pdf				structs_visualization
 	pdftocairo 	-png -r 150 -transp -singlefile	 logo.pdf								logo 
-	pdftocairo  -png -r 150 -transp -singlefile  symplectic_autoencoders.pdf			symplectic_autoencoders
+	pdftocairo  -png -r 150 -transp -singlefile  symplectic_autoencoder.pdf				symplectic_autoencoder
 	pdftocairo  -png -r 150 -transp -singlefile  solution_manifold_2.pdf				solution_manifold_2
 	pdftocairo  -png -r 150 -transp -singlefile  mha.pdf 								mha
 
@@ -31,6 +31,7 @@ logo:
 	pdftocairo 	-png -r 500 -transp -singlefile	 logo_with_name.pdf						logo_with_name 
 	pdftocairo 	-png -r 500 -transp -singlefile  logo_with_name_dark.pdf 				logo_with_name_dark
 
+	mkdir -p ../assets
 	cp logo_with_name.png 		../assets/logo.png
 	cp logo_with_name_dark.png 	../assets/logo-dark.png
 
@@ -46,5 +47,6 @@ empty: clean
 	rm -f *.png
 	rm -f *.svg
 	rm -f ../assets/*.png
+	rm -f ../assets
 
 all: pdf png logo clean
