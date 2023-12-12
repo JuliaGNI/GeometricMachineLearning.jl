@@ -15,14 +15,18 @@
 
 \tikzset{set/.style={draw,circle,inner sep=0pt,align=center}}
 
+\definecolor{morange}{RGB}{255,127,14}
+\definecolor{mblue}{RGB}{31,119,180}
 \definecolor{mred}{RGB}{214,39,40}
+\definecolor{mpurple}{RGB}{148,103,189}
 \definecolor{mgreen}{RGB}{44,160,44}
+
 
 \begin{document}
 \begin{tikzpicture}[module/.style={draw, very thick, rounded corners, minimum width=15ex},
-    attmodule/.style={module, fill=orange!20},
-    ffnnmodule/.style={module, fill=cyan!20},
-    addmodule/.style={module, fill=yellow!20},
+    attmodule/.style={module, fill=morange!30},
+    ffnnmodule/.style={module, fill=mblue!30},
+    addmodule/.style={module, fill=mpurple!30},
     arrow/.style={-stealth, thick, rounded corners},
 ]
 \node (input) {Input};

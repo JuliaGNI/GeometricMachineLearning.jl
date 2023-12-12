@@ -14,7 +14,7 @@ To any parametric PDE we associate a **solution manifold**:
 \mathcal{M} = \{z(\mu):F(z(\mu);\mu)=0, \mu\in\mathbb{P}\}.
 ```
 
-![](../images/solution_manifold_2.png)
+![](../tikz/solution_manifold_2.png)
 
 In the image above a 2-dimensional solution manifold is visualized as a sub-manifold in 3-dimensional space. In general the embedding space is an infinite-dimensional function space.
 

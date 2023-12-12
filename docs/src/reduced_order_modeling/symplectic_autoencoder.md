@@ -77,7 +77,7 @@ PSD suffers from the similar shortcomings as regular POD: it is a linear map and
 
 In order to overcome this difficulty we use neural networks, more specifically [SympNets](../architectures/sympnet.md), together with cotangent lift-like matrices. The resulting architecture, symplectic autoencoders, are demonstrated in the following image: 
 
-![](../images/symplectic_autoencoder.png)
+![](../tikz/symplectic_autoencoder.png)
 
 So we alternate between SympNet and PSD layers. Because all the PSD layers are based on matrices $\Phi\in{}St(n,N)$ we have to [optimize on the Stiefel manifold](../Optimizer.md).
 
