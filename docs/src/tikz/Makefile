@@ -8,6 +8,8 @@ pdf:
 	xelatex -shell-escape structs_visualization
 	xelatex -shell-escape logo 
 	xelatex -shell-escape symplectic_autoencoders
+	xelatex -shell-escape solution_manifold_2
+	xelatex -shell-escape mha
 
 png:
 	pdftocairo  -png -r 150 -transp -singlefile  adam_optimizer.pdf               	 	adam_optimizer              
@@ -19,6 +21,8 @@ png:
 	pdftocairo 	-png -r 150 -transp -singlefile  structs_visualization.pdf				structs_visualization
 	pdftocairo 	-png -r 150 -transp -singlefile	 logo.pdf								logo 
 	pdftocairo  -png -r 150 -transp -singlefile  symplectic_autoencoders.pdf			symplectic_autoencoders
+	pdftocairo  -png -r 150 -transp -singlefile  solution_manifold_2.pdf				solution_manifold_2
+	pdftocairo  -png -r 150 -transp -singlefile  mha.pdf 								mha
 
 logo:
 	xelatex -shell-escape logo_with_name
