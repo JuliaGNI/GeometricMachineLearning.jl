@@ -26,7 +26,7 @@ logo:
 	pdftocairo 	-png -r 500 -transp -singlefile  logo_with_name_dark.pdf 				logo_with_name_dark
 
 	cp logo_with_name.png 		../assets/logo.png
-	cp logo_with_name_dark.png 	../assets/logo_dark.png
+	cp logo_with_name_dark.png 	../assets/logo-dark.png
 
 clean:
 	rm -f *.aux
