@@ -45,7 +45,7 @@ function assign_q_and_p(x::AbstractVector, N::Int)
     p_kernel! = assign_second_half!(backend)
     q_kernel!(q, x, ndrange=size(q))
     p_kernel!(p, x, N, ndrange=size(p))
-    (q, p)
+    (q=q, p=p)
 end
 
 function assign_q_and_p(x::AbstractMatrix, N::Int)
@@ -56,7 +56,7 @@ function assign_q_and_p(x::AbstractMatrix, N::Int)
     p_kernel! = assign_second_half!(backend)
     q_kernel!(q, x, ndrange=size(q))
     p_kernel!(p, x, N, ndrange=size(p))
-    (q, p)
+    (q=q, p=p)
 end
 
 function assign_q_and_p(x::AbstractArray{T, 3}, N::Int) where T
@@ -67,5 +67,5 @@ function assign_q_and_p(x::AbstractArray{T, 3}, N::Int) where T
     p_kernel! = assign_second_half!(backend)
     q_kernel!(q, x, ndrange=size(q))
     p_kernel!(p, x, N, ndrange=size(p))
-    (q, p)
+    (q=q, p=p)
 end
