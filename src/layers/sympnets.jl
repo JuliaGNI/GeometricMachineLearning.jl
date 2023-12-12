@@ -182,6 +182,9 @@ function parameterlength(::LinearLayer{M, M}) where {M}
         (M÷2)*(M÷2+1)÷2
 end
 
+@doc raw"""
+Multiplies a matrix with a vector, a matrix or a tensor.
+"""
 custom_mat_mul(weight::AbstractMatrix, x::AbstractVecOrMat) = weight*x 
 function custom_mat_mul(weight::AbstractMatrix, x::AbstractArray{T, 3}) where T 
         mat_tensor_mul(weight, x)
@@ -236,8 +239,8 @@ It converts the Array to a `NamedTuple` (via `assign_q_and_p`), then calls the S
 """
 function apply_layer_to_nt_and_return_array(x::AbstractArray, d::SympNetLayer{M, M}, ps) where {M}
         N2 = size(x, 1)÷2
-        q, p = assign_q_and_p(x, N2)
-        output = d((q=q, p=p), ps)
+        qp = assign_q_and_p(x, N2)
+        output = d(qp, ps)
         return vcat(output.q, output.p)
 end
 
