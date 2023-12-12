@@ -29,18 +29,10 @@ function initialparameters(backend::KernelAbstractions.Backend, T::Type, ::PSDLa
     (weight =  N > M ? rand(backend, rng, StiefelManifold{T}, N÷2, M÷2) : rand(backend, rng, StiefelManifold{T}, M÷2, N÷2), )
 end
 
-function (::PSDLayer{M, N})(x::AbstractVecOrMat, ps::NamedTuple) where {M, N}
+function (::PSDLayer{M, N})(x::AbstractArray, ps::NamedTuple) where {M, N}
     dim = size(x, 1)
     @assert dim == M 
 
-    q, p = assign_q_and_p(x, dim÷2)
-    N > M ? vcat(ps.weight*q, ps.weight*p) : vcat(ps.weight'*q, ps.weight'*p)
-end
-
-function (::PSDLayer{M, N})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, N, T}
-    dim = size(x, 1)
-    @assert dim == M 
-
-    q, p = assign_q_and_p(x, dim÷2)
-    N > M ? vcat(mat_tensor_mul(ps.weight,q), mat_tensor_mul(ps.weight,p)) : vcat(mat_tensor_mul(ps.weight', q), mat_tensor_mul(ps.weight', p))
+    qp = assign_q_and_p(x, dim÷2)
+    N > M ? vcat(custom_mat_mul(ps.weight, qp.q), custom_mat_mul(ps.weight, qp.p)) : vcat(custom_mat_mul(ps.weight', qp.q), custom_mat_mul(ps.weight', qp.p))
 end
