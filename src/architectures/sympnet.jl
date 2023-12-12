@@ -59,7 +59,7 @@ end
 """
 function Chain(arch::GSympNet{AT, true}) where {AT}
     layers = ()
-    for i in 1:(arch.nhidden+1)
+    for _ in 1:(arch.nhidden+1)
         layers = (layers..., GradientLayerQ(arch.dim, arch.upscaling_dimension, arch.act), GradientLayerP(arch.dim, arch.upscaling_dimension, arch.act))
     end
     Chain(layers...)
@@ -67,7 +67,7 @@ end
 
 function Chain(arch::GSympNet{AT, false}) where {AT}
     layers = ()
-    for i in 1:(arch.nhidden+1)
+    for _ in 1:(arch.nhidden+1)
         layers = (layers..., GradientLayerP(arch.dim, arch.upscaling_dimension, arch.act), GradientLayerQ(arch.dim, arch.upscaling_dimension, arch.act))
     end
     Chain(layers...)
@@ -78,10 +78,11 @@ Build a chain for an LASympnet for which `init_upper_linear` is `true` and `init
 """
 function Chain(arch::LASympNet{AT, true, false}) where {AT}
     layers = ()
-    for i in 1:arch.nhidden
+    for _ in 1:arch.nhidden
         for j in 1:(arch.depth)
             layers = isodd(j) ? (layers..., LinearLayerQ(arch.dim)) : (layers..., LinearLayerP(arch.dim))
         end
+        layers = (layers..., BiasLayer(arch.dim))
         layers = (layers..., ActivationLayerP(arch.dim, arch.activation))
         layers = (layers..., ActivationLayerQ(arch.dim, arch.activation))
     end
