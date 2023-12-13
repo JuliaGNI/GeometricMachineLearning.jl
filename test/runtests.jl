@@ -3,7 +3,7 @@ using SafeTestsets
 
 @safetestset "Check parameterlength                                                           " begin include("parameterlength/check_parameterlengths.jl") end
 @safetestset "Arrays #1                                                                       " begin include("arrays/array_tests.jl") end
-@safetestset "Arrays #2                                                                       " begin include("arrays/array_tests_old.jl") end
+@safetestset "Sampling of arrays                                                              " begin include("arrays/random_generation_of_custom_arrays.jl") end
 @safetestset "Manifolds (Grassmann):                                                          " begin include("manifolds/grassmann_manifold.jl") end
 @safetestset "Gradient Layer                                                                  " begin include("layers/gradient_layer_tests.jl") end
 @safetestset "Test symplecticity of upscaling layer                                           " begin include("layers/sympnet_layers_test.jl") end 
