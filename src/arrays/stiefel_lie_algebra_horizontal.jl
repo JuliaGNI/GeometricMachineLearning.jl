@@ -1,21 +1,32 @@
-"""
-This implements the horizontal component of the Lie algebra (in this case just the skew-symmetric matrices).
-The projection is: 
-S -> SE where 
-|I|
-|0| = E.
+@doc raw"""
+`StiefelLieAlgHorMatrix` is the *horizontal component of the Lie algebra of skew-symmetric matrices* (with respect to the canonical metric).
+The projection here is: \(\pi:S \to SE \) where 
+```math
+E = \begin{pmatrix} \mathbb{I}_{n} \\ \mathbb{O}_{(N-n)\times{}n}  \end{pmatrix}.
+```
+The matrix \(E\) is implemented under `StiefelProjection` in `GeometricMachineLearning`.
 
 An element of StiefelLieAlgMatrix takes the form: 
-| A -B'|
-| B  0 | where A is skew-symmetric.
+```math
+\begin{pmatrix}
+A & B^T \\ B & \mathbb{O}
+\end{pmatrix},
+```
+where \(A\) is skew-symmetric (this is `SkewSymMatrix` in `GeometricMachineLearning`).
 
-This also implements the projection: 
-| A -B'|    | A -B'|
-| B  D | -> | B  0 |.
+If the constructor is called with a big \(N\times{}N\) matrix, then the projection is performed the following way: 
+```math
+\begin{pmatrix}
+A & B_1  \\
+B_2 & D
+\end{pmatrix} \mapsto 
+\begin{pmatrix}
+\mathrm{skew}(A) & -B_2^T \\ 
+B_2 & \mathbb{O}
+\end{pmatrix}.
+```
+The operation $\mathrm{skew}:\mathbb{R}^{n\times{}n}\to\mathcal{S}_\mahtrm{skew}(n)$ is the skew-symmetrization operation. This is equivalent to calling the constructor of `SkewSymMatrix` with an \(n\times{}n\) matrix.
 """
-
-abstract type AbstractLieAlgHorMatrix{T} <: AbstractMatrix{T} end
-
 mutable struct StiefelLieAlgHorMatrix{T, AT <: SkewSymMatrix{T}, ST <: AbstractMatrix{T}} <: AbstractLieAlgHorMatrix{T}
     A::AT
     B::ST
