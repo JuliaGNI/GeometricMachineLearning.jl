@@ -33,7 +33,7 @@ function scalar_multiplication_for_custom_arrays(n::Int, N::Int, T::Type)
     Cα_glahm = GrassmannLieAlgHorMatrix(α * C, n)
     Cα_glahm2 = α * GrassmannLieAlgHorMatrix(C, n)
     @test Cα_glahm ≈ Cα_glahm2
-    @test tyepof(Cα_glahm) <: GrassmannLieAlgHorMatrix{T}
+    @test typeof(Cα_glahm) <: GrassmannLieAlgHorMatrix{T}
     @test typeof(Cα_glahm2) <: GrassmannLieAlgHorMatrix{T}
 end
 

@@ -17,7 +17,7 @@ function addition_tests_for_custom_arrays(n::Int, N::Int, T::Type)
     # SkewSymMatrix
     AB_skew = SkewSymMatrix(A + B)
     AB_skew2 = SkewSymMatrix(A) + SkewSymMatrix(B)
-    @test A_skew ≈ A_skew2 
+    @test AB_skew ≈ AB_skew2 
     @test typeof(AB_skew) <: SkewSymMatrix{T}
     @test typeof(AB_skew2) <: SkewSymMatrix{T}
 
@@ -34,7 +34,7 @@ function addition_tests_for_custom_arrays(n::Int, N::Int, T::Type)
     CD_glahm = GrassmannLieAlgHorMatrix(C + D, n)
     CD_glahm2 = GrassmannLieAlgHorMatrix(C, n) + GrassmannLieAlgHorMatrix(D, n)
     @test CD_glahm ≈ CD_glahm2
-    @test tyepof(CD_glahm) <: GrassmannLieAlgHorMatrix{T}
+    @test typeof(CD_glahm) <: GrassmannLieAlgHorMatrix{T}
     @test typeof(CD_glahm2) <: GrassmannLieAlgHorMatrix{T}
 end
 
