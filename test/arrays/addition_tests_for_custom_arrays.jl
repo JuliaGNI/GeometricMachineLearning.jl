@@ -37,3 +37,5 @@ function addition_tests_for_custom_arrays(n::Int, N::Int, T::Type)
     @test tyepof(CD_glahm) <: GrassmannLieAlgHorMatrix{T}
     @test typeof(CD_glahm2) <: GrassmannLieAlgHorMatrix{T}
 end
+
+addition_tests_for_custom_arrays(5, 10, Float32)
