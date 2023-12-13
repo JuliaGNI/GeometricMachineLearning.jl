@@ -209,6 +209,8 @@ function Base.:*(A::SymmetricMatrix{T}, B::AbstractMatrix{T}) where T
     C
 end
 
+Base.:*(B::AbstractMatrix{T}, A::SymmetricMatrix{T}) where T = (A * B')'
+
 function Base.:*(A::SymmetricMatrix{T}, b::AbstractVector{T}) where T 
     backend = KernelAbstractions.get_backend(A.S)
     c = KernelAbstractions.allocate(backend, T, A.n)
