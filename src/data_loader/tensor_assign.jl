@@ -35,18 +35,22 @@ end
 end
 
 @doc raw"""
-The function `assign_output_estimate` is closely related to the transformer. It takes the last prediction_window columns of the output and uses is for the final prediction.
+The function `assign_output_estimate` is closely related to the transformer. It takes the last `prediction_window` columns of the output and uses them for the final prediction.
 i.e.
 ```math
-\mathbb{R}^{N\times\mathtt{pw}}\to\mathbb{R}^{N\times\mathtt{pw}}, \begin{bmatrix} z^{(1)}_1 & \cdots z^{(T)}_1 \\ 
-                \cdots & \cdots \\ 
-                z^{(T - \mathtt{pw})}_n & \cdots & z^{(T})_n\end{bmatrix} \mapsto 
-                \begin{bmatrix} z^{(1)}_1 & \cdots z^{(T)}_1 \\ 
-                \cdots & \cdots \\ 
-                z^{(T - \mathtt{pw})}_n & \cdots & z^{(T})_n\end{bmatrix}     
+\mathbb{R}^{N\times\mathtt{pw}}\to\mathbb{R}^{N\times\mathtt{pw}}, 
+\begin{bmatrix} 
+    z^{(1)}_1               & \cdots & z^{(T)}_1 \\ 
+    \cdots                  & \cdots & \cdots    \\ 
+    z^{(1)}_n               & \cdots & z^{(T})_n
+    \end{bmatrix} \mapsto 
+    \begin{bmatrix} 
+    z^{(T - \mathtt{pw})}_1 & \cdots      & z^{(T)}_1 \\ 
+    \cdots                  & \cdots      & \cdots \\ 
+    z^{(T - \mathtt{pw})}_n & \cdots      & z^{(T})_n\end{bmatrix}     
 ``` 
 """
-function assign_output_estimate(full_output::AbstractArray{T, 3}, prediction_window) where T
+function assign_output_estimate(full_output::AbstractArray{T, 3}, prediction_window::Int) where T
     sys_dim, seq_length, batch_size = size(full_output)
     backend = KernelAbstractions.get_backend(full_output)
     output_estimate = KernelAbstractions.allocate(backend, T, sys_dim, prediction_window, batch_size)
