@@ -211,11 +211,23 @@ end
 
 Base.:*(B::AbstractMatrix{T}, A::SymmetricMatrix{T}) where T = (A * B')'
 
+function Base.:*(A::SymmetricMatrix{T}, B::SymmetricMatrix{T}) where T 
+    A * (B * one(B))
+end
+
 function Base.:*(A::SymmetricMatrix{T}, b::AbstractVector{T}) where T 
     backend = KernelAbstractions.get_backend(A.S)
     c = KernelAbstractions.allocate(backend, T, A.n)
     LinearAlgebra.mul!(c, A, b)
     c
+end
+
+function Base.one(A::SymmetricMatrix{T}) where T
+    backend = KernelAbstractions.get_backend(A.S)
+    unit_matrix = KernelAbstractions.zeros(backend, T, A.n, A.n)
+    write_ones! = write_ones_kernel!(backend)
+    write_ones!(unit_matrix, ndrange=A.n)
+    unit_matrix
 end
 
 # define routines for generalizing ChainRulesCore to SymmetricMatrix 

@@ -84,13 +84,13 @@ module GeometricMachineLearning
     # INCLUDE ARRAYS
     include("arrays/block_identity_lower.jl")
     include("arrays/block_identity_upper.jl")
-    include("arrays/symmetric.jl")
     include("arrays/symplectic.jl")
     include("arrays/symplectic_lie_algebra.jl")
     include("arrays/symplectic_lie_algebra_horizontal.jl")
     include("arrays/skew_symmetric.jl")
     include("arrays/stiefel_lie_algebra_horizontal.jl")
     include("arrays/grassmann_lie_algebra_horizontal.jl")
+    include("arrays/symmetric.jl")
 
     export SymmetricMatrix, SymplecticPotential, SkewSymMatrix
     export StiefelLieAlgHorMatrix
