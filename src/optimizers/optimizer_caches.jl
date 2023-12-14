@@ -7,12 +7,12 @@ AbstractCache has subtypes:
 
 All of them can be initialized with providing an array (also supporting manifold types).
 """
-abstract type AbstractCache end
+abstract type AbstractCache{T} end
 
 #############################################################################
 # All the definitions of the caches
 
-struct AdamCache{T, AT <: AbstractArray{T}} <: AbstractCache
+struct AdamCache{T, AT <: AbstractArray{T}} <: AbstractCache{T}
     B₁::AT
     B₂::AT 
     function AdamCache(Y::AbstractArray)
@@ -20,15 +20,15 @@ struct AdamCache{T, AT <: AbstractArray{T}} <: AbstractCache
     end
 end
 
-struct MomentumCache{T, AT <: AbstractArray{T}} <:AbstractCache
+struct MomentumCache{T, AT <: AbstractArray{T}} <:AbstractCache{T}
     B::AT
     function MomentumCache(Y::AbstractArray)
         new{eltype(Y), typeof(zero(Y))}(zero(Y))
     end
 end
 
-struct GradientCache <: AbstractCache end
-GradientCache(::AbstractArray) = GradientCache()
+struct GradientCache{T} <: AbstractCache{T} end
+GradientCache(::AbstractArray{T}) where T = GradientCache{T}()
 
 #############################################################################
 # All the setup_cache functions 
