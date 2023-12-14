@@ -125,14 +125,23 @@ function (d::MultiHeadAttention{M, M, Stiefel, Retraction, false})(x::AbstractAr
 end
 
 import ChainRules
+"""
+This has to be extended to tensors; you should probably do a PR in ChainRules for this.
+"""
 function ChainRules._adjoint_mat_pullback(y::AbstractArray{T, 3}, proj) where T 
     (NoTangent(), proj(tensor_transpose(y)))
 end
 
+"""
+Extend `mat_tensor_mul` to a multiplication by the adjoint of an element of `StiefelManifold`. 
+"""
 function mat_tensor_mul(Y::AT, x::AbstractArray{T, 3}) where {T, BT <: AbstractArray{T}, ST <: StiefelManifold{T, BT}, AT <: Adjoint{T, ST}}
     mat_tensor_mul(Y.parent.A', x)
 end
 
+"""
+Extend `mat_tensor_mul` to a multiplication by an element of `StiefelManifold`. 
+"""
 function mat_tensor_mul(Y::StiefelManifold, x::AbstractArray{T, 3}) where T 
     mat_tensor_mul(Y.A, x)
 end
