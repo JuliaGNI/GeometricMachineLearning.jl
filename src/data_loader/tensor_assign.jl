@@ -55,6 +55,7 @@ function assign_output_estimate(full_output::AbstractArray{T, 3}, prediction_win
     output_estimate
 end
 
+#=
 """
 This function draws random time steps and parameters and based on these assign the batch and the output.
 
@@ -101,6 +102,7 @@ function draw_batch!(batch::AT, output::BT, data::AT, target::BT) where {T, T2, 
     assign_batch!(batch, data, params, time_steps, ndrange=size(batch))
     assign_batch!(output, target, params, time_steps, ndrange=size(output))
 end
+=#
 
 """
 Used for differentiating assign_output_estimate (this appears in the loss). 
