@@ -154,13 +154,6 @@ function loss(nn::NeuralNetwork, dl::DataLoader)
 end
 
 @doc raw"""
-Wrapper if we deal with a neural network.
-"""
-function loss(nn::NeuralNetwork, dl::DataLoader)
-    loss(nn.model, nn.params, dl)
-end
-
-@doc raw"""
 Computes the accuracy (as opposed to the loss) of a neural network classifier. 
 
 It takes as input:
