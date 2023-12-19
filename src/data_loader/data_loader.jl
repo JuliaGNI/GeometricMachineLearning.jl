@@ -109,7 +109,7 @@ nt_norm(A) = norm(A.q) + norm(A.p)
 
 function loss(model::Chain, ps::Tuple, input::NT) where {T, AT<:AbstractArray{T}, NT<:NamedTuple{(:q, :p,), Tuple{AT, AT}}}
     output_estimate = model(input, ps)
-    nt_norm(output_estimate - input) / nt_norm(input)
+    nt_norm(nt_diff(output_estimate, input)) / nt_norm(input)
 end
 
 @doc raw"""
@@ -143,7 +143,7 @@ function loss(model::Chain, ps::Tuple, dl::DataLoader{T, BT, Nothing}) where {T,
 end
 
 function loss(model::Chain, ps::Tuple, dl::DataLoader{T, BT}) where {T, BT<:NamedTuple}
-    loss(model, ps, dl.data)
+    loss(model, ps, dl.input)
 end
 
 @doc raw"""
