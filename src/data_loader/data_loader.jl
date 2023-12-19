@@ -99,18 +99,18 @@ end
 @doc raw"""
 The *autoencoder loss*. 
 """
-function loss(model::Chain, ps::Tuple, input::BT) where {T, BT<:AbstractArray{T, 3}} 
+function loss(model::Chain, ps::Tuple, input::BT) where {T, BT<:AbstractArray{T}} 
     output_estimate = model(input, ps)
     norm(output_estimate - input) / norm(input) # /T(sqrt(size(input, 2)*size(input, 3)))
 end
 
-function loss(model::Chain, ps::Tuple, input::BT) where {T, BT<:AbstractArray{T, 2}} 
-    output_estimate = model(input, ps)
-    norm(output_estimate - input) / norm(input) # /T(sqrt(size(input, 2)))
-end
-
 nt_diff(A, B) = (q = A.q - B.q, p = A.p - B.p)
 nt_norm(A) = norm(A.q) + norm(A.p)
+
+function loss(model::Chain, ps::Tuple, input::NT) where {T, AT<:AbstractArray{T}, NT<:NamedTuple{(:q, :p,), Tuple{AT, AT}}}
+    output_estimate = model(input, ps)
+    nt_norm(output_estimate - input) / nt_norm(input)
+end
 
 @doc raw"""
 Loss function that takes a `NamedTuple` as input. This should be used with a SympNet (or other neural network-based integrator). It computes:
