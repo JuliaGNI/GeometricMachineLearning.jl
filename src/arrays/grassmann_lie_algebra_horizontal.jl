@@ -1,19 +1,6 @@
 """
-This implements the horizontal component of the Lie algebra (in this case just the skew-symmetric matrices).
-The projection is: 
-S -> SE where 
-|I|
-|0| = E.
-
-An element of GrassmannLieAlgMatrix takes the form: 
-| -0 -B'|
-| B  0 | where B is arbitrary.
-
-This also implements the projection: 
-| 0 -B'|    | 0 -B'|
-| B  0 | -> | B  0 |.
+This implements the horizontal component of a Lie algebra that is isomorphic to the Grassmann manifold. 
 """
-
 mutable struct GrassmannLieAlgHorMatrix{T, ST <: AbstractMatrix{T}} <: AbstractLieAlgHorMatrix{T}
     B::ST
     N::Int
