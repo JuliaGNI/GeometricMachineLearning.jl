@@ -15,6 +15,9 @@ end
 hasseqlength(::Batch{<:Integer}) = true
 hasseqlength(::Batch{<:Nothing}) = false
 
+@doc raw"""
+The functor for batch is called with an instance on `DataLoader`. It then returns a tuple of batch indices: ``(\mathcal{I}_1, \ldots, \mathcal{I}_{\lceil\mathtt{dl.n\_params/batch\_size}\rceil})``, where the index runs from 1 to the number of batches, which is the number of parameters divided by the batch size (rounded up).
+"""
 function (batch::Batch{<:Nothing})(dl::DataLoader{T, AT}) where {T, AT<:AbstractArray{T, 3}}
     indices = shuffle(1:dl.n_params)
     n_batches = Int(ceil(dl.n_params/batch.batch_size))
@@ -28,6 +31,9 @@ function (batch::Batch{<:Nothing})(dl::DataLoader{T, AT}) where {T, AT<:Abstract
     batches
 end
 
+@doc raw"""
+The functor for batch is called with an instance on `DataLoader`. It then returns a tuple of batch indices: ``(\mathcal{I}_1, \ldots, \mathcal{I}_{\lceil\mathtt{(dl.input\_time\_steps-1)/batch\_size}\rceil})``, where the index runs from 1 to the number of batches, which is the number of input time steps (minus one) divided by the batch size (and rounded up).
+"""
 function (batch::Batch{<:Nothing})(dl::DataLoader{T, AT}) where {T, BT<:AbstractMatrix{T}, AT<:Union{BT, NamedTuple{(:q, :p), Tuple{BT, BT}}}}
     indices = shuffle(1:dl.input_time_steps)
     n_batches = Int(ceil((dl.input_time_steps-1)/batch.batch_size))
@@ -88,7 +94,7 @@ function optimize_for_one_epoch!(opt::Optimizer, nn::NeuralNetwork, dl::DataLoad
 end
 
 """
-TODO: Add ProgressMeter!!!
+This routine is called if a `DataLoader` storing *symplectic data* (i.e. a `NamedTuple`) is supplied.
 """
 function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTuple}, dl::DataLoader{T, AT}, batch::Batch, loss) where {T, AT<:NamedTuple}
     count = 0 
@@ -107,7 +113,16 @@ function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTu
     total_error/count
 end
 
+@doc raw"""
+A functor for `Optimizer`. It is called with:
+    - `nn::NeuralNetwork`
+    - `dl::DataLoader`
+    - `batch::Batch`
+    - `n_epochs::Int`
+    - `loss`
 
+The last argument is a function through which `Zygote` differentiates. This argument is optional; if it is not supplied `GeometricMachineLearning` defaults to an appropriate loss for the `DataLoader`.
+"""
 function (o::Optimizer)(nn::NeuralNetwork, dl::DataLoader, batch::Batch, n_epochs::Int, loss)
     progress_object = ProgressMeter.Progress(n_epochs; enabled=true)
     loss_array = zeros(n_epochs)
