@@ -9,11 +9,8 @@ function dummy_qp_data_tensor(dim=2, number_of_time_steps=100, number_of_paramet
     (q = rand(T, dim, number_of_time_steps, number_of_parameters), p = (rand(T, dim, number_of_time_steps, number_of_parameters)))
 end
 
-<<<<<<< HEAD
 function test_data_loader(dim=2, number_of_time_steps=100, number_of_parameters=20, batch_size=10, T=Float32)
-=======
-function test_data_loader(dim=2, number_of_time_steps=100, number_of_parameters=20, batch_size, T=Float32)
->>>>>>> 4528053bc135b3f495ac732804cd913e4187cc96
+
     dl1 = DataLoader(dummy_qp_data_matrix(dim, number_of_time_steps, T))
     dl2 = DataLoader(dummy_qp_data_tensor(dim, number_of_time_steps, number_of_parameters))
 
@@ -23,7 +20,6 @@ function test_data_loader(dim=2, number_of_time_steps=100, number_of_parameters=
     nn1 = NeuralNetwork(arch1, CPU(), T)
     nn2 = NeuralNetwork(arch2, CPU(), T)
 
-<<<<<<< HEAD
     loss1 = GeometricMachineLearning.loss(nn1, dl1)
     loss2 = GeometricMachineLearning.loss(nn2, dl2)
 
@@ -33,17 +29,6 @@ function test_data_loader(dim=2, number_of_time_steps=100, number_of_parameters=
 
     o₁(nn1, dl1, batch)
     # o₂(nn2, dl2, batch)
-=======
-    loss1 = loss(nn1, dl1)
-    loss2 = loss(nn2, dl2)
-
-    batch = Batch(batch_size)
-    o₁ = Optimizer(GradientOptimizer(), nn1)
-    o₂ = Optimizer(GradientOptimizer(), nn2)
-
-    o₁(nn1, dl1, batch)
-    o₂(nn2, dl2, batch)
->>>>>>> 4528053bc135b3f495ac732804cd913e4187cc96
 end
 
 test_data_loader()
