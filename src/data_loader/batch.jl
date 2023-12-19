@@ -133,6 +133,6 @@ function (o::Optimizer)(nn::NeuralNetwork, dl::DataLoader, batch::Batch, n_epoch
     loss_array
 end
 
-function (o::Optimizer)(nn::NeuralNetwork, dl::DataLoader, batch::Batch, n_epochs::Int)
+function (o::Optimizer)(nn::NeuralNetwork, dl::DataLoader, batch::Batch, n_epochs::Int=1)
     o(nn, dl, batch, n_epochs, loss)
 end
