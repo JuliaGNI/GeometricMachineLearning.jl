@@ -22,6 +22,8 @@ function Optimizer(m::OptimizerMethod, nn::NeuralNetwork)
     Optimizer(m, nn.params)
 end
 
+Optimizer(nn::NeuralNetwork, m::OptimizerMethod) = Optimizer(m, nn)
+
 #######################################################################################
 # optimization step function
 
