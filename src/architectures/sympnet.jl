@@ -49,7 +49,7 @@ struct GSympNet{AT, InitUpper} <: SympNet{AT} where {InitUpper}
     end
 
         
-    function GSympNet(dl::DataLoader; upscaling_dimension=2*dim, nhidden=2, activation=tanh, init_upper=true) 
+    function GSympNet(dl::DataLoader; upscaling_dimension=2*dl.input_dim, nhidden=2, activation=tanh, init_upper=true) 
         new{typeof(activation), init_upper}(dl.input_dim, upscaling_dimension, nhidden, activation)
     end
 end
