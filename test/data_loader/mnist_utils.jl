@@ -49,17 +49,17 @@ test_onehotbatch([1, 2, 5, 0])
 @doc raw"""
 Generates an MNIST-like dummy data set.
 """
-function generate_dummy_mnist(dim₁=28, dim₂=18, number_images=100, T=Float32)
+function generate_dummy_mnist(dim₁=28, dim₂=28, number_images=100, T=Float32)
     train_x = rand(T, dim₁, dim₂, number_images)
     train_y = Int.(ceil.(10 * rand(T, number_images))) .- 1
     train_x, train_y
 end
 
 function test_optimizer_for_classification_layer(; dim₁=28, dim₂=28, number_images=100, patch_length=7, T=Float32)
-    dl = DataLoader(generate_dummy_mnist(dim₁, dim₂, number_images, T); patch_length=patch_length)
+    dl = DataLoader(generate_dummy_mnist(dim₁, dim₂, number_images, T)...; patch_length=patch_length)
 
     activation_function(x) = tanh.(x)
-    model = Classification((dim₁ ÷ patch_length) * (dim₂ ÷ patch_length), 10, activation_function)
+    model = Classification(patch_length * patch_length, 10, activation_function)
     ps = initialparameters(CPU(), T, model)   
     loss₁ = GeometricMachineLearning.loss(model, ps, dl)
 

@@ -13,14 +13,14 @@ function create_dummy_mnist(;T=Float32, dim₁=6, dim₂=6, n_images=10)
     rand(T, dim₁, dim₂, n_images), Int.(floor.(10*rand(T, n_images)))
 end
 
-function test_optimizer_functor_with_adam(;T=Float32, dim₁=6, dim₂=6, n_images=10, patch_length=patch_length)
-    dl = DataLoader(create_dummy_mnist(T=T, dim₁=dim₁, dim₂=dim₂, n_images=n_images)...; patch_length=3)
+function test_optimizer_functor_with_adam(;T=Float32, dim₁=6, dim₂=6, n_images=10, patch_length=3)
+    dl = DataLoader(create_dummy_mnist(T=T, dim₁=dim₁, dim₂=dim₂, n_images=n_images)...; patch_length=patch_length)
     
     # batch size is equal to two
     batch = Batch(2)
 
     # input dim is dim₁ / patch_length * dim₂ / pach_length; the transformer is called with dim₁ / patch_length and two layers
-    model = Chain(Transformer(dl.input_dim, dim₁ / patch_length, 2; Stiefel=true), Classification(dl.input_dim, 10, σ))
+    model = Chain(Transformer(dl.input_dim, patch_length, 2; Stiefel=true), Classification(dl.input_dim, 10, σ))
     ps = initialparameters(CPU(), Float32, model)
 
     loss₁ = GeometricMachineLearning.loss(model, ps, dl)
