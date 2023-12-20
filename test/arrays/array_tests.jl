@@ -77,7 +77,10 @@ function stiefel_lie_alg_add_sub_test(N, n)
 end
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 71f791bd1191e6324408c43fc991ae9e9800a555
 function stiefel_lie_alg_vectorization_test(N, n; T=Float32)
     A = rand(StiefelLieAlgHorMatrix{T}, N, n)
     @test isapprox(StiefelLieAlgHorMatrix(vec(A), N, n), A)
@@ -105,7 +108,10 @@ for (N, n) ∈ zip(N_vec, n_vec)
     stiefel_proj_test(N,n)
     stiefel_lie_alg_add_sub_test(N,n)
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 71f791bd1191e6324408c43fc991ae9e9800a555
     stiefel_lie_alg_vectorization_test(N, n)
 >>>>>>> b05c66c (Removed the symplectic arrays.)
 end
