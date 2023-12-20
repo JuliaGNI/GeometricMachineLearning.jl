@@ -35,7 +35,6 @@ logo:
 	pdftocairo 	-png -r 500 -transp -singlefile	 logo_with_name.pdf						logo_with_name 
 	pdftocairo 	-png -r 500 -transp -singlefile  logo_with_name_dark.pdf 				logo_with_name_dark
 
-	mkdir -p ../assets
 	cp logo_with_name.png 		../assets/logo.png
 	cp logo_with_name_dark.png 	../assets/logo-dark.png
 
@@ -51,6 +50,5 @@ empty: clean
 	rm -f *.png
 	rm -f *.svg
 	rm -f ../assets/*.png
-	rm -rf ../assets
 
 all: pdf png logo clean
