@@ -3,7 +3,6 @@ using GeometricMachineLearning, Test
 @doc raw"""
 This function tests addition for various custom arrays, i.e. if \(A + B\) is performed in the correct way. 
 """
-
 function addition_tests_for_custom_arrays(n::Int, N::Int, T::Type)
     A = rand(T, n, n)
     B = rand(T, n, n)
@@ -26,9 +25,15 @@ function addition_tests_for_custom_arrays(n::Int, N::Int, T::Type)
     D = rand(T, N, N)
 
     # StiefelLieAlgHorMatrix
-    CD_slahm = StiefelLieAlgHorMatrix(A + B, n)
-    CD_slahm2 = StiefelLieAlgHorMatrix(A, n) + StiefelLieAlgHorMatrix(B, n)
+    CD_slahm = StiefelLieAlgHorMatrix(C + D, n)
+    CD_slahm2 = StiefelLieAlgHorMatrix(C, n) + StiefelLieAlgHorMatrix(D, n)
     @test CD_slahm ≈ CD_slahm2
     @test typeof(CD_slahm) <: StiefelLieAlgHorMatrix{T}
     @test typeof(CD_slahm2) <: StiefelLieAlgHorMatrix{T}
+
+    CD_glahm = GrassmannLieAlgHorMatrix(C + D, n)
+    CD_glahm2 = GrassmannLieAlgHorMatrix(C, n) + GrassmannLieAlgHorMatrix(D, n)
+    @test CD_glahm ≈ CD_glahm2
+    @test tyepof(CD_glahm) <: GrassmannLieAlgHorMatrix{T}
+    @test typeof(CD_glahm2) <: GrassmannLieAlgHorMatrix{T}
 end
