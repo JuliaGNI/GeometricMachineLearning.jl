@@ -130,7 +130,7 @@ We can now perform the training of the neural networks. The syntax is the follow
 
 ```@example sympnet
 # number of training epochs
-const nepochs = 1000
+const nepochs = 300
 # Batchsize used to compute the gradient of the loss function with respect to the parameters of the neural networks.
 const batch_size = 100
 
