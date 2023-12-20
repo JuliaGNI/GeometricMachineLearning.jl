@@ -54,6 +54,10 @@ function skew_mat_mul_test2(n, T=Float64)
     @test isapprox(AS1, AS2)
 end
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> c6a350e (Fixed typo.)
 # test Stiefel manifold projection test 
 function stiefel_proj_test(N,n)
     In = I(n)
@@ -61,6 +65,10 @@ function stiefel_proj_test(N,n)
     @test all(abs.((E'*E) .- In) .< 1e-10)
 end
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> c6a350e (Fixed typo.)
 function stiefel_lie_alg_add_sub_test(N, n)
     E = StiefelProjection(N, n)
     projection(W::SkewSymMatrix) = W - (I - E*E')*W*(I - E*E')
@@ -76,6 +84,14 @@ function stiefel_lie_alg_add_sub_test(N, n)
     @test all(abs.(projection(W₁ - W₂) .- S₄) .< 1e-10)
 end
 
+<<<<<<< HEAD
+=======
+function stiefel_lie_alg_vectorization_test(N, n; T=Float32)
+    A = rand(StiefelLieAlgHorMatrix{T}, N, n)
+    @test isapprox(StiefelLieAlgHorMatrix(vec(A), N, n), A)
+end
+
+>>>>>>> c6a350e (Fixed typo.)
 # TODO: tests for ADAM functions
 
 # test everything for different n & N values
@@ -96,4 +112,8 @@ for (N, n) ∈ zip(N_vec, n_vec)
     skew_mat_mul_test2(N)
     stiefel_proj_test(N,n)
     stiefel_lie_alg_add_sub_test(N,n)
+<<<<<<< HEAD
+=======
+    stiefel_lie_alg_vectorization_test(N, n)
+>>>>>>> c6a350e (Fixed typo.)
 end
