@@ -12,4 +12,3 @@ images:
 clean:
 	$(MAKE) empty -C src/tikz
 	rm -Rf build
-	rm -Rf src/tutorial

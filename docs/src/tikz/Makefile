@@ -5,7 +5,9 @@ pdf:
 	xelatex -shell-escape transformer_encoder
 	xelatex -shell-escape third_degree_spline
 	xelatex -shell-escape sympnet_architecture
+	xelatex -shell-escape sympnet_architecture_dark
 	xelatex -shell-escape structs_visualization
+	xelatex -shell-escape structs_visualization_dark
 	xelatex -shell-escape logo 
 	xelatex -shell-escape symplectic_autoencoder
 	xelatex -shell-escape solution_manifold_2
@@ -18,7 +20,9 @@ png:
 	pdftocairo  -png -r 150 -transp -singlefile  transformer_encoder.pdf		        transformer_encoder   
 	pdftocairo  -png -r 150 -transp -singlefile  third_degree_spline.pdf	           	third_degree_spline          
 	pdftocairo	-png -r 150 -transp -singlefile	 sympnet_architecture.pdf				sympnet_architecture
+	pdftocairo	-png -r 150 -transp -singlefile	 sympnet_architecture_dark.pdf			sympnet_architecture_dark
 	pdftocairo 	-png -r 150 -transp -singlefile  structs_visualization.pdf				structs_visualization
+	pdftocairo 	-png -r 150 -transp -singlefile  structs_visualization_dark.pdf			structs_visualization_dark
 	pdftocairo 	-png -r 150 -transp -singlefile	 logo.pdf								logo 
 	pdftocairo  -png -r 150 -transp -singlefile  symplectic_autoencoder.pdf				symplectic_autoencoder
 	pdftocairo  -png -r 150 -transp -singlefile  solution_manifold_2.pdf				solution_manifold_2
@@ -31,7 +35,6 @@ logo:
 	pdftocairo 	-png -r 500 -transp -singlefile	 logo_with_name.pdf						logo_with_name 
 	pdftocairo 	-png -r 500 -transp -singlefile  logo_with_name_dark.pdf 				logo_with_name_dark
 
-	mkdir -p ../assets
 	cp logo_with_name.png 		../assets/logo.png
 	cp logo_with_name_dark.png 	../assets/logo-dark.png
 
@@ -47,6 +50,5 @@ empty: clean
 	rm -f *.png
 	rm -f *.svg
 	rm -f ../assets/*.png
-	rm -f ../assets
 
 all: pdf png logo clean
