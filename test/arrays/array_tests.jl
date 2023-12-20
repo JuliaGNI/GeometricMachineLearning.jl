@@ -53,6 +53,7 @@ function skew_mat_mul_test2(n, T=Float64)
     AS2 = A*Matrix{T}(S)
     @test isapprox(AS1, AS2)
 end
+
 # test Stiefel manifold projection test 
 function stiefel_proj_test(N,n)
     In = I(n)
