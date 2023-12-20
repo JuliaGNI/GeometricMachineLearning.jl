@@ -5,12 +5,16 @@ using SafeTestsets
 @safetestset "Arrays #1                                                                       " begin include("arrays/array_tests.jl") end
 @safetestset "Sampling of arrays                                                              " begin include("arrays/random_generation_of_custom_arrays.jl") end
 <<<<<<< HEAD
+<<<<<<< HEAD
 @safetestset "Addition tests for custom arrays                                                " begin include("arrays/addition_tests_for_custom_arrays.jl") end
 @safetestset "Scalar multiplication tests for custom arrays                                   " begin include("arrays/scalar_multiplication_for_custom_arrays.jl") end
 @safetestset "Matrix multiplication tests for custom arrays                                   " begin include("arrays/matrix_multiplication_for_custom_arrays.jl") end
 =======
 @safetestset "Test constructors for custom arrays                                             " begin include("arrays/constructor_tests_for_custom_arrays.jl") end
 >>>>>>> 99e83e6 (Resolved conflict (forgot to resolve another one before).)
+=======
+@safetestset "Test constructors for custom arrays                                             " begin include("arrays/constructor_tests_for_custom_arrays.jl") end
+>>>>>>> 4e6f264 (Resolved merge conflict.)
 @safetestset "Manifolds (Grassmann):                                                          " begin include("manifolds/grassmann_manifold.jl") end
 @safetestset "Gradient Layer                                                                  " begin include("layers/gradient_layer_tests.jl") end
 @safetestset "Test symplecticity of upscaling layer                                           " begin include("layers/sympnet_layers_test.jl") end 
