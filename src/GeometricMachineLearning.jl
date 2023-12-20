@@ -82,9 +82,9 @@ module GeometricMachineLearning
     export convert_to_dev, Device, CPUDevice
 
     # INCLUDE ARRAYS
+    include("arrays/skew_symmetric.jl")
     include("arrays/symmetric.jl")
     include("arrays/symplectic.jl")
-    include("arrays/skew_symmetric.jl")
     include("arrays/abstract_lie_algebra_horizontal.jl")
     include("arrays/stiefel_lie_algebra_horizontal.jl")
     include("arrays/grassmann_lie_algebra_horizontal.jl")

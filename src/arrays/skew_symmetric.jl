@@ -187,7 +187,7 @@ end
 
 # the first matrix is multiplied onto A2 in order for it to not be SkewSymMatrix!
 function Base.:*(A1::SkewSymMatrix{T}, A2::SkewSymMatrix{T}) where T 
-    A1*(one(A2)*A2) 
+    A1 * (one(A2) * A2) 
 end
 
 @doc raw"""
