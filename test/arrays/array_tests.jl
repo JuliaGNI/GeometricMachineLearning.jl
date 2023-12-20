@@ -55,7 +55,10 @@ function skew_mat_mul_test2(n, T=Float64)
 end
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> c6a350ed471420a4b4583c45978658d85b1f253e
 
 >>>>>>> c6a350e (Fixed typo.)
 # test Stiefel manifold projection test 
@@ -66,7 +69,10 @@ function stiefel_proj_test(N,n)
 end
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> c6a350ed471420a4b4583c45978658d85b1f253e
 
 >>>>>>> c6a350e (Fixed typo.)
 function stiefel_lie_alg_add_sub_test(N, n)
@@ -85,7 +91,10 @@ function stiefel_lie_alg_add_sub_test(N, n)
 end
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> c6a350ed471420a4b4583c45978658d85b1f253e
 function stiefel_lie_alg_vectorization_test(N, n; T=Float32)
     A = rand(StiefelLieAlgHorMatrix{T}, N, n)
     @test isapprox(StiefelLieAlgHorMatrix(vec(A), N, n), A)
@@ -113,7 +122,10 @@ for (N, n) ∈ zip(N_vec, n_vec)
     stiefel_proj_test(N,n)
     stiefel_lie_alg_add_sub_test(N,n)
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> c6a350ed471420a4b4583c45978658d85b1f253e
     stiefel_lie_alg_vectorization_test(N, n)
 >>>>>>> c6a350e (Fixed typo.)
 end
