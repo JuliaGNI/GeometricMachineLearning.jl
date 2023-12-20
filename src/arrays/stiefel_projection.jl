@@ -41,6 +41,8 @@ Outer constructor for `StiefelProjection`. This works with two integers as input
 """
 StiefelProjection(N::Integer, n::Integer, T::Type=Float64) = StiefelProjection(CPU(), T, N, n)
 
+StiefelProjection(T::Type, N::Integer, n::Integer) = StiefelProjection(N, n, T)
+
 Base.size(E::StiefelProjection) = (E.N, E.n)
 Base.getindex(E::StiefelProjection, i, j) = getindex(E.A, i, j)
 Base.:+(E::StiefelProjection, A::AbstractMatrix) = E.A + A 

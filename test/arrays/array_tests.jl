@@ -53,6 +53,7 @@ function skew_mat_mul_test2(n, T=Float64)
     AS2 = A*Matrix{T}(S)
     @test isapprox(AS1, AS2)
 end
+
 # test Stiefel manifold projection test 
 function stiefel_proj_test(N,n)
     In = I(n)
@@ -74,6 +75,7 @@ function stiefel_lie_alg_add_sub_test(N, n)
     @test all(abs.(projection(W₁ + W₂) .- S₃) .< 1e-10)
     @test all(abs.(projection(W₁ - W₂) .- S₄) .< 1e-10)
 end
+
 
 function stiefel_lie_alg_vectorization_test(N, n; T=Float32)
     A = rand(StiefelLieAlgHorMatrix{T}, N, n)
