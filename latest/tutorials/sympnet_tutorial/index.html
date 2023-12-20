@@ -30,7 +30,7 @@ g_nn = NeuralNetwork(gsympnet, backend, type)</code></pre><p>If we want to obtai
 opt_method = AdamOptimizer(; T=type)
 la_opt = Optimizer(opt_method, la_nn)
 g_opt = Optimizer(opt_method, g_nn)</code></pre><p>We can now perform the training of the neural networks. The syntax is the following :</p><pre><code class="language-julia hljs"># number of training epochs
-const nepochs = 1000
+const nepochs = 300
 # Batchsize used to compute the gradient of the loss function with respect to the parameters of the neural networks.
 const batch_size = 100
 
@@ -38,488 +38,164 @@ batch = Batch(batch_size)
 
 # perform training (returns array that contains the total loss for each training step)
 g_loss_array = g_opt(g_nn, dl, batch, nepochs)
-la_loss_array = la_opt(la_nn, dl, batch, nepochs)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr32">Progress:   0%|▏                                        |  ETA: 2:02:44</span>
-<span class="sgr34">  TrainingLoss:  0.397216796875</span>
-<span class="sgr32">Progress: 100%|█████████████████████████████████████████| Time: 0:00:18</span>
-<span class="sgr34">  TrainingLoss:  0.0008435249328613281</span>
-<span class="sgr32">Progress:   0%|▏                                        |  ETA: 0:49:55</span>
-<span class="sgr34">  TrainingLoss:  39.09375</span>
-<span class="sgr32">Progress:   1%|▎                                        |  ETA: 0:16:51</span>
-<span class="sgr34">  TrainingLoss:  33.8125</span>
-<span class="sgr32">Progress:   1%|▍                                        |  ETA: 0:10:16</span>
-<span class="sgr34">  TrainingLoss:  30.21875</span>
-<span class="sgr32">Progress:   1%|▋                                        |  ETA: 0:07:26</span>
-<span class="sgr34">  TrainingLoss:  26.375</span>
-<span class="sgr32">Progress:   2%|▊                                        |  ETA: 0:05:51</span>
-<span class="sgr34">  TrainingLoss:  22.5625</span>
-<span class="sgr32">Progress:   2%|▉                                        |  ETA: 0:04:52</span>
-<span class="sgr34">  TrainingLoss:  18.9375</span>
-<span class="sgr32">Progress:   3%|█▏                                       |  ETA: 0:04:10</span>
-<span class="sgr34">  TrainingLoss:  16.28125</span>
-<span class="sgr32">Progress:   3%|█▎                                       |  ETA: 0:03:39</span>
-<span class="sgr34">  TrainingLoss:  13.734375</span>
-<span class="sgr32">Progress:   3%|█▍                                       |  ETA: 0:03:15</span>
-<span class="sgr34">  TrainingLoss:  11.6796875</span>
-<span class="sgr32">Progress:   4%|█▌                                       |  ETA: 0:02:57</span>
-<span class="sgr34">  TrainingLoss:  9.8203125</span>
-<span class="sgr32">Progress:   4%|█▊                                       |  ETA: 0:02:42</span>
-<span class="sgr34">  TrainingLoss:  8.28125</span>
-<span class="sgr32">Progress:   5%|█▉                                       |  ETA: 0:02:29</span>
-<span class="sgr34">  TrainingLoss:  6.953125</span>
-<span class="sgr32">Progress:   5%|██                                       |  ETA: 0:02:19</span>
-<span class="sgr34">  TrainingLoss:  5.90625</span>
-<span class="sgr32">Progress:   5%|██▎                                      |  ETA: 0:02:10</span>
-<span class="sgr34">  TrainingLoss:  4.640625</span>
-<span class="sgr32">Progress:   6%|██▍                                      |  ETA: 0:02:02</span>
-<span class="sgr34">  TrainingLoss:  3.27734375</span>
-<span class="sgr32">Progress:   6%|██▌                                      |  ETA: 0:01:55</span>
-<span class="sgr34">  TrainingLoss:  2.02734375</span>
-<span class="sgr32">Progress:   7%|██▊                                      |  ETA: 0:01:49</span>
-<span class="sgr34">  TrainingLoss:  1.6298828125</span>
-<span class="sgr32">Progress:   7%|██▉                                      |  ETA: 0:01:44</span>
-<span class="sgr34">  TrainingLoss:  1.5966796875</span>
-<span class="sgr32">Progress:   7%|███                                      |  ETA: 0:01:39</span>
-<span class="sgr34">  TrainingLoss:  1.5791015625</span>
-<span class="sgr32">Progress:   8%|███▎                                     |  ETA: 0:01:35</span>
-<span class="sgr34">  TrainingLoss:  1.5556640625</span>
-<span class="sgr32">Progress:   8%|███▍                                     |  ETA: 0:01:30</span>
-<span class="sgr34">  TrainingLoss:  1.5244140625</span>
-<span class="sgr32">Progress:   9%|███▋                                     |  ETA: 0:01:27</span>
-<span class="sgr34">  TrainingLoss:  1.4990234375</span>
-<span class="sgr32">Progress:   9%|███▊                                     |  ETA: 0:01:24</span>
-<span class="sgr34">  TrainingLoss:  1.474609375</span>
-<span class="sgr32">Progress:  10%|███▉                                     |  ETA: 0:01:21</span>
-<span class="sgr34">  TrainingLoss:  1.4423828125</span>
-<span class="sgr32">Progress:  10%|████                                     |  ETA: 0:01:18</span>
-<span class="sgr34">  TrainingLoss:  1.408203125</span>
-<span class="sgr32">Progress:  10%|████▎                                    |  ETA: 0:01:16</span>
-<span class="sgr34">  TrainingLoss:  1.3642578125</span>
-<span class="sgr32">Progress:  11%|████▍                                    |  ETA: 0:01:13</span>
-<span class="sgr34">  TrainingLoss:  1.3173828125</span>
-<span class="sgr32">Progress:  11%|████▌                                    |  ETA: 0:01:11</span>
-<span class="sgr34">  TrainingLoss:  1.27734375</span>
-<span class="sgr32">Progress:  12%|████▊                                    |  ETA: 0:01:09</span>
-<span class="sgr34">  TrainingLoss:  1.21875</span>
-<span class="sgr32">Progress:  12%|████▉                                    |  ETA: 0:01:07</span>
-<span class="sgr34">  TrainingLoss:  1.1630859375</span>
-<span class="sgr32">Progress:  12%|█████                                    |  ETA: 0:01:06</span>
-<span class="sgr34">  TrainingLoss:  1.1220703125</span>
-<span class="sgr32">Progress:  13%|█████▎                                   |  ETA: 0:01:04</span>
-<span class="sgr34">  TrainingLoss:  1.0673828125</span>
-<span class="sgr32">Progress:  13%|█████▍                                   |  ETA: 0:01:02</span>
-<span class="sgr34">  TrainingLoss:  1.0224609375</span>
-<span class="sgr32">Progress:  14%|█████▌                                   |  ETA: 0:01:01</span>
-<span class="sgr34">  TrainingLoss:  0.97314453125</span>
-<span class="sgr32">Progress:  14%|█████▊                                   |  ETA: 0:01:00</span>
-<span class="sgr34">  TrainingLoss:  0.92529296875</span>
-<span class="sgr32">Progress:  14%|█████▉                                   |  ETA: 0:00:58</span>
-<span class="sgr34">  TrainingLoss:  0.884765625</span>
-<span class="sgr32">Progress:  15%|██████▏                                  |  ETA: 0:00:57</span>
-<span class="sgr34">  TrainingLoss:  0.833984375</span>
-<span class="sgr32">Progress:  15%|██████▎                                  |  ETA: 0:00:55</span>
-<span class="sgr34">  TrainingLoss:  0.791015625</span>
-<span class="sgr32">Progress:  16%|██████▍                                  |  ETA: 0:00:54</span>
-<span class="sgr34">  TrainingLoss:  0.7529296875</span>
-<span class="sgr32">Progress:  16%|██████▋                                  |  ETA: 0:00:53</span>
-<span class="sgr34">  TrainingLoss:  0.71875</span>
-<span class="sgr32">Progress:  16%|██████▊                                  |  ETA: 0:00:52</span>
+la_loss_array = la_opt(la_nn, dl, batch, nepochs)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr32">Progress:   1%|▎                                        |  ETA: 0:34:04</span>
+<span class="sgr34">  TrainingLoss:  0.4345703125</span>
+<span class="sgr32">Progress: 100%|█████████████████████████████████████████| Time: 0:00:15</span>
+<span class="sgr34">  TrainingLoss:  0.0007081031799316406</span>
+<span class="sgr32">Progress:   1%|▎                                        |  ETA: 0:13:46</span>
+<span class="sgr34">  TrainingLoss:  24.203125</span>
+<span class="sgr32">Progress:   2%|▉                                        |  ETA: 0:04:37</span>
+<span class="sgr34">  TrainingLoss:  18.859375</span>
+<span class="sgr32">Progress:   3%|█▍                                       |  ETA: 0:02:48</span>
+<span class="sgr34">  TrainingLoss:  14.6640625</span>
+<span class="sgr32">Progress:   5%|█▉                                       |  ETA: 0:02:00</span>
+<span class="sgr34">  TrainingLoss:  11.2421875</span>
+<span class="sgr32">Progress:   6%|██▌                                      |  ETA: 0:01:34</span>
+<span class="sgr34">  TrainingLoss:  8.4453125</span>
+<span class="sgr32">Progress:   7%|███                                      |  ETA: 0:01:17</span>
+<span class="sgr34">  TrainingLoss:  7.0703125</span>
+<span class="sgr32">Progress:   9%|███▌                                     |  ETA: 0:01:06</span>
+<span class="sgr34">  TrainingLoss:  6.82421875</span>
+<span class="sgr32">Progress:  10%|████▏                                    |  ETA: 0:00:57</span>
+<span class="sgr34">  TrainingLoss:  6.46875</span>
+<span class="sgr32">Progress:  11%|████▋                                    |  ETA: 0:00:51</span>
+<span class="sgr34">  TrainingLoss:  6.2265625</span>
+<span class="sgr32">Progress:  13%|█████▎                                   |  ETA: 0:00:45</span>
+<span class="sgr34">  TrainingLoss:  5.859375</span>
+<span class="sgr32">Progress:  14%|█████▊                                   |  ETA: 0:00:41</span>
+<span class="sgr34">  TrainingLoss:  5.609375</span>
+<span class="sgr32">Progress:  15%|██████▎                                  |  ETA: 0:00:38</span>
+<span class="sgr34">  TrainingLoss:  5.31640625</span>
+<span class="sgr32">Progress:  17%|██████▉                                  |  ETA: 0:00:35</span>
+<span class="sgr34">  TrainingLoss:  5.078125</span>
+<span class="sgr32">Progress:  18%|███████▍                                 |  ETA: 0:00:32</span>
+<span class="sgr34">  TrainingLoss:  4.84765625</span>
+<span class="sgr32">Progress:  19%|███████▉                                 |  ETA: 0:00:30</span>
+<span class="sgr34">  TrainingLoss:  4.625</span>
+<span class="sgr32">Progress:  21%|████████▌                                |  ETA: 0:00:28</span>
+<span class="sgr34">  TrainingLoss:  4.4375</span>
+<span class="sgr32">Progress:  22%|█████████                                |  ETA: 0:00:26</span>
+<span class="sgr34">  TrainingLoss:  4.18359375</span>
+<span class="sgr32">Progress:  23%|█████████▋                               |  ETA: 0:00:25</span>
+<span class="sgr34">  TrainingLoss:  3.978515625</span>
+<span class="sgr32">Progress:  25%|██████████▏                              |  ETA: 0:00:23</span>
+<span class="sgr34">  TrainingLoss:  3.7421875</span>
+<span class="sgr32">Progress:  26%|██████████▋                              |  ETA: 0:00:22</span>
+<span class="sgr34">  TrainingLoss:  3.5390625</span>
+<span class="sgr32">Progress:  27%|███████████▎                             |  ETA: 0:00:21</span>
+<span class="sgr34">  TrainingLoss:  3.349609375</span>
+<span class="sgr32">Progress:  29%|███████████▊                             |  ETA: 0:00:20</span>
+<span class="sgr34">  TrainingLoss:  3.216796875</span>
+<span class="sgr32">Progress:  30%|████████████▎                            |  ETA: 0:00:19</span>
+<span class="sgr34">  TrainingLoss:  3.08203125</span>
+<span class="sgr32">Progress:  31%|████████████▉                            |  ETA: 0:00:18</span>
+<span class="sgr34">  TrainingLoss:  2.951171875</span>
+<span class="sgr32">Progress:  33%|█████████████▍                           |  ETA: 0:00:17</span>
+<span class="sgr34">  TrainingLoss:  2.8359375</span>
+<span class="sgr32">Progress:  34%|██████████████                           |  ETA: 0:00:16</span>
+<span class="sgr34">  TrainingLoss:  2.701171875</span>
+<span class="sgr32">Progress:  35%|██████████████▌                          |  ETA: 0:00:16</span>
+<span class="sgr34">  TrainingLoss:  2.595703125</span>
+<span class="sgr32">Progress:  37%|███████████████                          |  ETA: 0:00:15</span>
+<span class="sgr34">  TrainingLoss:  2.5</span>
+<span class="sgr32">Progress:  38%|███████████████▋                         |  ETA: 0:00:14</span>
+<span class="sgr34">  TrainingLoss:  2.4296875</span>
+<span class="sgr32">Progress:  39%|████████████████▏                        |  ETA: 0:00:14</span>
+<span class="sgr34">  TrainingLoss:  2.34375</span>
+<span class="sgr32">Progress:  41%|████████████████▋                        |  ETA: 0:00:13</span>
+<span class="sgr34">  TrainingLoss:  2.28125</span>
+<span class="sgr32">Progress:  42%|█████████████████▎                       |  ETA: 0:00:13</span>
+<span class="sgr34">  TrainingLoss:  2.228515625</span>
+<span class="sgr32">Progress:  43%|█████████████████▊                       |  ETA: 0:00:12</span>
+<span class="sgr34">  TrainingLoss:  2.1796875</span>
+<span class="sgr32">Progress:  45%|██████████████████▍                      |  ETA: 0:00:12</span>
+<span class="sgr34">  TrainingLoss:  2.142578125</span>
+<span class="sgr32">Progress:  46%|██████████████████▉                      |  ETA: 0:00:11</span>
+<span class="sgr34">  TrainingLoss:  2.10546875</span>
+<span class="sgr32">Progress:  47%|███████████████████▍                     |  ETA: 0:00:11</span>
+<span class="sgr34">  TrainingLoss:  2.07421875</span>
+<span class="sgr32">Progress:  49%|████████████████████                     |  ETA: 0:00:10</span>
+<span class="sgr34">  TrainingLoss:  2.037109375</span>
+<span class="sgr32">Progress:  50%|████████████████████▌                    |  ETA: 0:00:10</span>
+<span class="sgr34">  TrainingLoss:  1.982421875</span>
+<span class="sgr32">Progress:  51%|█████████████████████                    |  ETA: 0:00:09</span>
+<span class="sgr34">  TrainingLoss:  1.9150390625</span>
+<span class="sgr32">Progress:  53%|█████████████████████▋                   |  ETA: 0:00:09</span>
+<span class="sgr34">  TrainingLoss:  1.8642578125</span>
+<span class="sgr32">Progress:  54%|██████████████████████▏                  |  ETA: 0:00:09</span>
+<span class="sgr34">  TrainingLoss:  1.8037109375</span>
+<span class="sgr32">Progress:  55%|██████████████████████▋                  |  ETA: 0:00:08</span>
+<span class="sgr34">  TrainingLoss:  1.7451171875</span>
+<span class="sgr32">Progress:  57%|███████████████████████▎                 |  ETA: 0:00:08</span>
+<span class="sgr34">  TrainingLoss:  1.68359375</span>
+<span class="sgr32">Progress:  58%|███████████████████████▊                 |  ETA: 0:00:08</span>
+<span class="sgr34">  TrainingLoss:  1.611328125</span>
+<span class="sgr32">Progress:  59%|████████████████████████▍                |  ETA: 0:00:07</span>
+<span class="sgr34">  TrainingLoss:  1.54296875</span>
+<span class="sgr32">Progress:  61%|████████████████████████▉                |  ETA: 0:00:07</span>
+<span class="sgr34">  TrainingLoss:  1.48046875</span>
+<span class="sgr32">Progress:  62%|█████████████████████████▍               |  ETA: 0:00:07</span>
+<span class="sgr34">  TrainingLoss:  1.41015625</span>
+<span class="sgr32">Progress:  63%|██████████████████████████               |  ETA: 0:00:06</span>
+<span class="sgr34">  TrainingLoss:  1.341796875</span>
+<span class="sgr32">Progress:  65%|██████████████████████████▌              |  ETA: 0:00:06</span>
+<span class="sgr34">  TrainingLoss:  1.279296875</span>
+<span class="sgr32">Progress:  66%|███████████████████████████              |  ETA: 0:00:06</span>
+<span class="sgr34">  TrainingLoss:  1.2158203125</span>
+<span class="sgr32">Progress:  67%|███████████████████████████▋             |  ETA: 0:00:05</span>
+<span class="sgr34">  TrainingLoss:  1.1552734375</span>
+<span class="sgr32">Progress:  69%|████████████████████████████▏            |  ETA: 0:00:05</span>
+<span class="sgr34">  TrainingLoss:  1.1025390625</span>
+<span class="sgr32">Progress:  70%|████████████████████████████▊            |  ETA: 0:00:05</span>
+<span class="sgr34">  TrainingLoss:  1.04296875</span>
+<span class="sgr32">Progress:  71%|█████████████████████████████▎           |  ETA: 0:00:05</span>
+<span class="sgr34">  TrainingLoss:  0.9990234375</span>
+<span class="sgr32">Progress:  73%|█████████████████████████████▊           |  ETA: 0:00:04</span>
+<span class="sgr34">  TrainingLoss:  0.947265625</span>
+<span class="sgr32">Progress:  74%|██████████████████████████████▍          |  ETA: 0:00:04</span>
+<span class="sgr34">  TrainingLoss:  0.900390625</span>
+<span class="sgr32">Progress:  75%|██████████████████████████████▉          |  ETA: 0:00:04</span>
+<span class="sgr34">  TrainingLoss:  0.853515625</span>
+<span class="sgr32">Progress:  77%|███████████████████████████████▍         |  ETA: 0:00:04</span>
+<span class="sgr34">  TrainingLoss:  0.80126953125</span>
+<span class="sgr32">Progress:  78%|████████████████████████████████         |  ETA: 0:00:03</span>
+<span class="sgr34">  TrainingLoss:  0.75732421875</span>
+<span class="sgr32">Progress:  79%|████████████████████████████████▌        |  ETA: 0:00:03</span>
+<span class="sgr34">  TrainingLoss:  0.7236328125</span>
+<span class="sgr32">Progress:  81%|█████████████████████████████████▏       |  ETA: 0:00:03</span>
 <span class="sgr34">  TrainingLoss:  0.68603515625</span>
-<span class="sgr32">Progress:  17%|██████▉                                  |  ETA: 0:00:51</span>
-<span class="sgr34">  TrainingLoss:  0.650390625</span>
-<span class="sgr32">Progress:  17%|███████▏                                 |  ETA: 0:00:50</span>
-<span class="sgr34">  TrainingLoss:  0.62158203125</span>
-<span class="sgr32">Progress:  18%|███████▎                                 |  ETA: 0:00:49</span>
-<span class="sgr34">  TrainingLoss:  0.59375</span>
-<span class="sgr32">Progress:  18%|███████▍                                 |  ETA: 0:00:48</span>
-<span class="sgr34">  TrainingLoss:  0.56591796875</span>
-<span class="sgr32">Progress:  18%|███████▋                                 |  ETA: 0:00:48</span>
-<span class="sgr34">  TrainingLoss:  0.537109375</span>
-<span class="sgr32">Progress:  19%|███████▊                                 |  ETA: 0:00:47</span>
-<span class="sgr34">  TrainingLoss:  0.51123046875</span>
-<span class="sgr32">Progress:  19%|███████▉                                 |  ETA: 0:00:46</span>
-<span class="sgr34">  TrainingLoss:  0.490966796875</span>
-<span class="sgr32">Progress:  20%|████████▏                                |  ETA: 0:00:45</span>
-<span class="sgr34">  TrainingLoss:  0.462158203125</span>
-<span class="sgr32">Progress:  20%|████████▎                                |  ETA: 0:00:45</span>
-<span class="sgr34">  TrainingLoss:  0.4423828125</span>
-<span class="sgr32">Progress:  20%|████████▍                                |  ETA: 0:00:44</span>
-<span class="sgr34">  TrainingLoss:  0.4169921875</span>
-<span class="sgr32">Progress:  21%|████████▋                                |  ETA: 0:00:43</span>
-<span class="sgr34">  TrainingLoss:  0.399658203125</span>
-<span class="sgr32">Progress:  21%|████████▊                                |  ETA: 0:00:43</span>
-<span class="sgr34">  TrainingLoss:  0.37451171875</span>
-<span class="sgr32">Progress:  22%|████████▉                                |  ETA: 0:00:42</span>
-<span class="sgr34">  TrainingLoss:  0.355224609375</span>
-<span class="sgr32">Progress:  22%|█████████                                |  ETA: 0:00:41</span>
-<span class="sgr34">  TrainingLoss:  0.328125</span>
-<span class="sgr32">Progress:  22%|█████████▎                               |  ETA: 0:00:41</span>
-<span class="sgr34">  TrainingLoss:  0.303955078125</span>
-<span class="sgr32">Progress:  23%|█████████▍                               |  ETA: 0:00:40</span>
-<span class="sgr34">  TrainingLoss:  0.27587890625</span>
-<span class="sgr32">Progress:  23%|█████████▌                               |  ETA: 0:00:40</span>
-<span class="sgr34">  TrainingLoss:  0.24853515625</span>
-<span class="sgr32">Progress:  24%|█████████▊                               |  ETA: 0:00:39</span>
-<span class="sgr34">  TrainingLoss:  0.21923828125</span>
-<span class="sgr32">Progress:  24%|█████████▉                               |  ETA: 0:00:39</span>
-<span class="sgr34">  TrainingLoss:  0.18798828125</span>
-<span class="sgr32">Progress:  25%|██████████▏                              |  ETA: 0:00:38</span>
-<span class="sgr34">  TrainingLoss:  0.146728515625</span>
-<span class="sgr32">Progress:  25%|██████████▎                              |  ETA: 0:00:37</span>
-<span class="sgr34">  TrainingLoss:  0.10565185546875</span>
-<span class="sgr32">Progress:  26%|██████████▌                              |  ETA: 0:00:37</span>
-<span class="sgr34">  TrainingLoss:  0.0723876953125</span>
-<span class="sgr32">Progress:  26%|██████████▋                              |  ETA: 0:00:36</span>
-<span class="sgr34">  TrainingLoss:  0.039398193359375</span>
-<span class="sgr32">Progress:  26%|██████████▊                              |  ETA: 0:00:36</span>
-<span class="sgr34">  TrainingLoss:  0.02069091796875</span>
-<span class="sgr32">Progress:  27%|███████████                              |  ETA: 0:00:36</span>
-<span class="sgr34">  TrainingLoss:  0.018035888671875</span>
-<span class="sgr32">Progress:  27%|███████████▏                             |  ETA: 0:00:35</span>
-<span class="sgr34">  TrainingLoss:  0.016754150390625</span>
-<span class="sgr32">Progress:  28%|███████████▎                             |  ETA: 0:00:35</span>
-<span class="sgr34">  TrainingLoss:  0.0152740478515625</span>
-<span class="sgr32">Progress:  28%|███████████▌                             |  ETA: 0:00:34</span>
-<span class="sgr34">  TrainingLoss:  0.0139007568359375</span>
-<span class="sgr32">Progress:  28%|███████████▋                             |  ETA: 0:00:34</span>
-<span class="sgr34">  TrainingLoss:  0.01323699951171875</span>
-<span class="sgr32">Progress:  29%|███████████▊                             |  ETA: 0:00:33</span>
-<span class="sgr34">  TrainingLoss:  0.012359619140625</span>
-<span class="sgr32">Progress:  29%|███████████▉                             |  ETA: 0:00:33</span>
-<span class="sgr34">  TrainingLoss:  0.01116180419921875</span>
-<span class="sgr32">Progress:  30%|████████████▏                            |  ETA: 0:00:33</span>
-<span class="sgr34">  TrainingLoss:  0.01036834716796875</span>
-<span class="sgr32">Progress:  30%|████████████▎                            |  ETA: 0:00:32</span>
-<span class="sgr34">  TrainingLoss:  0.00894927978515625</span>
-<span class="sgr32">Progress:  30%|████████████▌                            |  ETA: 0:00:32</span>
-<span class="sgr34">  TrainingLoss:  0.00839996337890625</span>
-<span class="sgr32">Progress:  31%|████████████▋                            |  ETA: 0:00:31</span>
-<span class="sgr34">  TrainingLoss:  0.00785064697265625</span>
-<span class="sgr32">Progress:  31%|████████████▉                            |  ETA: 0:00:31</span>
-<span class="sgr34">  TrainingLoss:  0.0070953369140625</span>
-<span class="sgr32">Progress:  32%|█████████████                            |  ETA: 0:00:31</span>
-<span class="sgr34">  TrainingLoss:  0.00726318359375</span>
-<span class="sgr32">Progress:  32%|█████████████▏                           |  ETA: 0:00:30</span>
-<span class="sgr34">  TrainingLoss:  0.0069427490234375</span>
-<span class="sgr32">Progress:  32%|█████████████▍                           |  ETA: 0:00:30</span>
-<span class="sgr34">  TrainingLoss:  0.00586700439453125</span>
-<span class="sgr32">Progress:  33%|█████████████▌                           |  ETA: 0:00:30</span>
-<span class="sgr34">  TrainingLoss:  0.006633758544921875</span>
-<span class="sgr32">Progress:  33%|█████████████▋                           |  ETA: 0:00:29</span>
-<span class="sgr34">  TrainingLoss:  0.005260467529296875</span>
-<span class="sgr32">Progress:  34%|█████████████▉                           |  ETA: 0:00:29</span>
-<span class="sgr34">  TrainingLoss:  0.004756927490234375</span>
-<span class="sgr32">Progress:  34%|██████████████                           |  ETA: 0:00:29</span>
-<span class="sgr34">  TrainingLoss:  0.00461578369140625</span>
-<span class="sgr32">Progress:  35%|██████████████▏                          |  ETA: 0:00:28</span>
-<span class="sgr34">  TrainingLoss:  0.0044097900390625</span>
-<span class="sgr32">Progress:  35%|██████████████▍                          |  ETA: 0:00:28</span>
-<span class="sgr34">  TrainingLoss:  0.004329681396484375</span>
-<span class="sgr32">Progress:  35%|██████████████▌                          |  ETA: 0:00:28</span>
-<span class="sgr34">  TrainingLoss:  0.00464630126953125</span>
-<span class="sgr32">Progress:  36%|██████████████▋                          |  ETA: 0:00:27</span>
-<span class="sgr34">  TrainingLoss:  0.004184722900390625</span>
-<span class="sgr32">Progress:  36%|██████████████▉                          |  ETA: 0:00:27</span>
-<span class="sgr34">  TrainingLoss:  0.004070281982421875</span>
-<span class="sgr32">Progress:  37%|███████████████                          |  ETA: 0:00:27</span>
-<span class="sgr34">  TrainingLoss:  0.004108428955078125</span>
-<span class="sgr32">Progress:  37%|███████████████▏                         |  ETA: 0:00:27</span>
-<span class="sgr34">  TrainingLoss:  0.004779815673828125</span>
-<span class="sgr32">Progress:  37%|███████████████▍                         |  ETA: 0:00:26</span>
-<span class="sgr34">  TrainingLoss:  0.005107879638671875</span>
-<span class="sgr32">Progress:  38%|███████████████▌                         |  ETA: 0:00:26</span>
-<span class="sgr34">  TrainingLoss:  0.004001617431640625</span>
-<span class="sgr32">Progress:  38%|███████████████▊                         |  ETA: 0:00:26</span>
-<span class="sgr34">  TrainingLoss:  0.004108428955078125</span>
-<span class="sgr32">Progress:  39%|███████████████▉                         |  ETA: 0:00:25</span>
-<span class="sgr34">  TrainingLoss:  0.004085540771484375</span>
-<span class="sgr32">Progress:  39%|████████████████                         |  ETA: 0:00:25</span>
-<span class="sgr34">  TrainingLoss:  0.00399017333984375</span>
-<span class="sgr32">Progress:  40%|████████████████▎                        |  ETA: 0:00:25</span>
-<span class="sgr34">  TrainingLoss:  0.0039825439453125</span>
-<span class="sgr32">Progress:  40%|████████████████▌                        |  ETA: 0:00:25</span>
-<span class="sgr34">  TrainingLoss:  0.005985260009765625</span>
-<span class="sgr32">Progress:  40%|████████████████▋                        |  ETA: 0:00:24</span>
-<span class="sgr34">  TrainingLoss:  0.0060577392578125</span>
-<span class="sgr32">Progress:  41%|████████████████▊                        |  ETA: 0:00:24</span>
-<span class="sgr34">  TrainingLoss:  0.00405120849609375</span>
-<span class="sgr32">Progress:  41%|█████████████████                        |  ETA: 0:00:24</span>
-<span class="sgr34">  TrainingLoss:  0.0040740966796875</span>
-<span class="sgr32">Progress:  42%|█████████████████▏                       |  ETA: 0:00:23</span>
-<span class="sgr34">  TrainingLoss:  0.004108428955078125</span>
-<span class="sgr32">Progress:  42%|█████████████████▍                       |  ETA: 0:00:23</span>
-<span class="sgr34">  TrainingLoss:  0.004138946533203125</span>
-<span class="sgr32">Progress:  43%|█████████████████▌                       |  ETA: 0:00:23</span>
-<span class="sgr34">  TrainingLoss:  0.006816864013671875</span>
-<span class="sgr32">Progress:  43%|█████████████████▋                       |  ETA: 0:00:23</span>
-<span class="sgr34">  TrainingLoss:  0.00405120849609375</span>
-<span class="sgr32">Progress:  44%|█████████████████▉                       |  ETA: 0:00:22</span>
-<span class="sgr34">  TrainingLoss:  0.004085540771484375</span>
-<span class="sgr32">Progress:  44%|██████████████████                       |  ETA: 0:00:22</span>
-<span class="sgr34">  TrainingLoss:  0.0040130615234375</span>
-<span class="sgr32">Progress:  44%|██████████████████▏                      |  ETA: 0:00:22</span>
-<span class="sgr34">  TrainingLoss:  0.004566192626953125</span>
-<span class="sgr32">Progress:  45%|██████████████████▍                      |  ETA: 0:00:22</span>
-<span class="sgr34">  TrainingLoss:  0.00403594970703125</span>
-<span class="sgr32">Progress:  45%|██████████████████▌                      |  ETA: 0:00:22</span>
-<span class="sgr34">  TrainingLoss:  0.00403594970703125</span>
-<span class="sgr32">Progress:  46%|██████████████████▊                      |  ETA: 0:00:21</span>
-<span class="sgr34">  TrainingLoss:  0.0054168701171875</span>
-<span class="sgr32">Progress:  46%|██████████████████▉                      |  ETA: 0:00:21</span>
-<span class="sgr34">  TrainingLoss:  0.005558013916015625</span>
-<span class="sgr32">Progress:  46%|███████████████████                      |  ETA: 0:00:21</span>
-<span class="sgr34">  TrainingLoss:  0.004901885986328125</span>
-<span class="sgr32">Progress:  47%|███████████████████▎                     |  ETA: 0:00:21</span>
-<span class="sgr34">  TrainingLoss:  0.004245758056640625</span>
-<span class="sgr32">Progress:  47%|███████████████████▍                     |  ETA: 0:00:20</span>
-<span class="sgr34">  TrainingLoss:  0.004383087158203125</span>
-<span class="sgr32">Progress:  48%|███████████████████▌                     |  ETA: 0:00:20</span>
-<span class="sgr34">  TrainingLoss:  0.004207611083984375</span>
-<span class="sgr32">Progress:  48%|███████████████████▋                     |  ETA: 0:00:20</span>
-<span class="sgr34">  TrainingLoss:  0.00406646728515625</span>
-<span class="sgr32">Progress:  48%|███████████████████▉                     |  ETA: 0:00:20</span>
-<span class="sgr34">  TrainingLoss:  0.004116058349609375</span>
-<span class="sgr32">Progress:  49%|████████████████████                     |  ETA: 0:00:20</span>
-<span class="sgr34">  TrainingLoss:  0.00525665283203125</span>
-<span class="sgr32">Progress:  49%|████████████████████▏                    |  ETA: 0:00:19</span>
-<span class="sgr34">  TrainingLoss:  0.00608062744140625</span>
-<span class="sgr32">Progress:  50%|████████████████████▍                    |  ETA: 0:00:19</span>
-<span class="sgr34">  TrainingLoss:  0.004150390625</span>
-<span class="sgr32">Progress:  50%|████████████████████▌                    |  ETA: 0:00:19</span>
-<span class="sgr34">  TrainingLoss:  0.004116058349609375</span>
-<span class="sgr32">Progress:  50%|████████████████████▊                    |  ETA: 0:00:19</span>
-<span class="sgr34">  TrainingLoss:  0.0041046142578125</span>
-<span class="sgr32">Progress:  51%|████████████████████▉                    |  ETA: 0:00:19</span>
-<span class="sgr34">  TrainingLoss:  0.004180908203125</span>
-<span class="sgr32">Progress:  51%|█████████████████████                    |  ETA: 0:00:18</span>
-<span class="sgr34">  TrainingLoss:  0.004055023193359375</span>
-<span class="sgr32">Progress:  52%|█████████████████████▎                   |  ETA: 0:00:18</span>
-<span class="sgr34">  TrainingLoss:  0.004116058349609375</span>
-<span class="sgr32">Progress:  52%|█████████████████████▍                   |  ETA: 0:00:18</span>
-<span class="sgr34">  TrainingLoss:  0.0063934326171875</span>
-<span class="sgr32">Progress:  52%|█████████████████████▌                   |  ETA: 0:00:18</span>
-<span class="sgr34">  TrainingLoss:  0.005878448486328125</span>
-<span class="sgr32">Progress:  53%|█████████████████████▊                   |  ETA: 0:00:18</span>
-<span class="sgr34">  TrainingLoss:  0.004261016845703125</span>
-<span class="sgr32">Progress:  53%|█████████████████████▉                   |  ETA: 0:00:17</span>
-<span class="sgr34">  TrainingLoss:  0.004062652587890625</span>
-<span class="sgr32">Progress:  54%|██████████████████████▏                  |  ETA: 0:00:17</span>
-<span class="sgr34">  TrainingLoss:  0.00409698486328125</span>
-<span class="sgr32">Progress:  54%|██████████████████████▎                  |  ETA: 0:00:17</span>
-<span class="sgr34">  TrainingLoss:  0.003993988037109375</span>
-<span class="sgr32">Progress:  55%|██████████████████████▍                  |  ETA: 0:00:17</span>
-<span class="sgr34">  TrainingLoss:  0.0040130615234375</span>
-<span class="sgr32">Progress:  55%|██████████████████████▋                  |  ETA: 0:00:17</span>
-<span class="sgr34">  TrainingLoss:  0.0041656494140625</span>
-<span class="sgr32">Progress:  56%|██████████████████████▊                  |  ETA: 0:00:16</span>
-<span class="sgr34">  TrainingLoss:  0.0040740966796875</span>
-<span class="sgr32">Progress:  56%|███████████████████████                  |  ETA: 0:00:16</span>
-<span class="sgr34">  TrainingLoss:  0.004093170166015625</span>
-<span class="sgr32">Progress:  56%|███████████████████████▏                 |  ETA: 0:00:16</span>
-<span class="sgr34">  TrainingLoss:  0.006282806396484375</span>
-<span class="sgr32">Progress:  57%|███████████████████████▎                 |  ETA: 0:00:16</span>
-<span class="sgr34">  TrainingLoss:  0.00452423095703125</span>
-<span class="sgr32">Progress:  57%|███████████████████████▌                 |  ETA: 0:00:16</span>
-<span class="sgr34">  TrainingLoss:  0.004108428955078125</span>
-<span class="sgr32">Progress:  58%|███████████████████████▋                 |  ETA: 0:00:15</span>
-<span class="sgr34">  TrainingLoss:  0.004154205322265625</span>
-<span class="sgr32">Progress:  58%|███████████████████████▊                 |  ETA: 0:00:15</span>
-<span class="sgr34">  TrainingLoss:  0.00421905517578125</span>
-<span class="sgr32">Progress:  58%|████████████████████████                 |  ETA: 0:00:15</span>
-<span class="sgr34">  TrainingLoss:  0.00409698486328125</span>
-<span class="sgr32">Progress:  59%|████████████████████████▏                |  ETA: 0:00:15</span>
-<span class="sgr34">  TrainingLoss:  0.0041656494140625</span>
-<span class="sgr32">Progress:  59%|████████████████████████▍                |  ETA: 0:00:15</span>
-<span class="sgr34">  TrainingLoss:  0.004119873046875</span>
-<span class="sgr32">Progress:  60%|████████████████████████▌                |  ETA: 0:00:15</span>
-<span class="sgr34">  TrainingLoss:  0.004207611083984375</span>
-<span class="sgr32">Progress:  60%|████████████████████████▋                |  ETA: 0:00:14</span>
-<span class="sgr34">  TrainingLoss:  0.0042266845703125</span>
-<span class="sgr32">Progress:  61%|████████████████████████▉                |  ETA: 0:00:14</span>
-<span class="sgr34">  TrainingLoss:  0.0042266845703125</span>
-<span class="sgr32">Progress:  61%|█████████████████████████                |  ETA: 0:00:14</span>
-<span class="sgr34">  TrainingLoss:  0.004169464111328125</span>
-<span class="sgr32">Progress:  62%|█████████████████████████▎               |  ETA: 0:00:14</span>
-<span class="sgr34">  TrainingLoss:  0.0041656494140625</span>
-<span class="sgr32">Progress:  62%|█████████████████████████▍               |  ETA: 0:00:14</span>
-<span class="sgr34">  TrainingLoss:  0.00415802001953125</span>
-<span class="sgr32">Progress:  62%|█████████████████████████▋               |  ETA: 0:00:13</span>
-<span class="sgr34">  TrainingLoss:  0.00411224365234375</span>
-<span class="sgr32">Progress:  63%|█████████████████████████▊               |  ETA: 0:00:13</span>
-<span class="sgr34">  TrainingLoss:  0.0041351318359375</span>
-<span class="sgr32">Progress:  63%|██████████████████████████               |  ETA: 0:00:13</span>
-<span class="sgr34">  TrainingLoss:  0.004108428955078125</span>
-<span class="sgr32">Progress:  64%|██████████████████████████▏              |  ETA: 0:00:13</span>
-<span class="sgr34">  TrainingLoss:  0.004146575927734375</span>
-<span class="sgr32">Progress:  64%|██████████████████████████▎              |  ETA: 0:00:13</span>
-<span class="sgr34">  TrainingLoss:  0.0041046142578125</span>
-<span class="sgr32">Progress:  64%|██████████████████████████▌              |  ETA: 0:00:13</span>
-<span class="sgr34">  TrainingLoss:  0.004177093505859375</span>
-<span class="sgr32">Progress:  65%|██████████████████████████▋              |  ETA: 0:00:12</span>
-<span class="sgr34">  TrainingLoss:  0.00418853759765625</span>
-<span class="sgr32">Progress:  65%|██████████████████████████▊              |  ETA: 0:00:12</span>
-<span class="sgr34">  TrainingLoss:  0.00414276123046875</span>
-<span class="sgr32">Progress:  66%|██████████████████████████▉              |  ETA: 0:00:12</span>
-<span class="sgr34">  TrainingLoss:  0.00418853759765625</span>
-<span class="sgr32">Progress:  66%|███████████████████████████▏             |  ETA: 0:00:12</span>
-<span class="sgr34">  TrainingLoss:  0.0041656494140625</span>
-<span class="sgr32">Progress:  67%|███████████████████████████▎             |  ETA: 0:00:12</span>
-<span class="sgr34">  TrainingLoss:  0.005794525146484375</span>
-<span class="sgr32">Progress:  67%|███████████████████████████▌             |  ETA: 0:00:12</span>
-<span class="sgr34">  TrainingLoss:  0.0040740966796875</span>
-<span class="sgr32">Progress:  67%|███████████████████████████▋             |  ETA: 0:00:11</span>
-<span class="sgr34">  TrainingLoss:  0.00406646728515625</span>
-<span class="sgr32">Progress:  68%|███████████████████████████▉             |  ETA: 0:00:11</span>
-<span class="sgr34">  TrainingLoss:  0.00399017333984375</span>
-<span class="sgr32">Progress:  68%|████████████████████████████             |  ETA: 0:00:11</span>
-<span class="sgr34">  TrainingLoss:  0.0041046142578125</span>
-<span class="sgr32">Progress:  69%|████████████████████████████▎            |  ETA: 0:00:11</span>
-<span class="sgr34">  TrainingLoss:  0.00405120849609375</span>
-<span class="sgr32">Progress:  69%|████████████████████████████▍            |  ETA: 0:00:11</span>
-<span class="sgr34">  TrainingLoss:  0.00420379638671875</span>
-<span class="sgr32">Progress:  70%|████████████████████████████▌            |  ETA: 0:00:10</span>
-<span class="sgr34">  TrainingLoss:  0.005733489990234375</span>
-<span class="sgr32">Progress:  70%|████████████████████████████▊            |  ETA: 0:00:10</span>
-<span class="sgr34">  TrainingLoss:  0.0041656494140625</span>
-<span class="sgr32">Progress:  71%|█████████████████████████████            |  ETA: 0:00:10</span>
-<span class="sgr34">  TrainingLoss:  0.0040740966796875</span>
-<span class="sgr32">Progress:  71%|█████████████████████████████▏           |  ETA: 0:00:10</span>
-<span class="sgr34">  TrainingLoss:  0.0040130615234375</span>
-<span class="sgr32">Progress:  72%|█████████████████████████████▍           |  ETA: 0:00:10</span>
-<span class="sgr34">  TrainingLoss:  0.00394439697265625</span>
-<span class="sgr32">Progress:  72%|█████████████████████████████▌           |  ETA: 0:00:10</span>
-<span class="sgr34">  TrainingLoss:  0.0038623809814453125</span>
-<span class="sgr32">Progress:  72%|█████████████████████████████▊           |  ETA: 0:00:09</span>
-<span class="sgr34">  TrainingLoss:  0.003963470458984375</span>
-<span class="sgr32">Progress:  73%|█████████████████████████████▉           |  ETA: 0:00:09</span>
-<span class="sgr34">  TrainingLoss:  0.0038585662841796875</span>
-<span class="sgr32">Progress:  73%|██████████████████████████████▏          |  ETA: 0:00:09</span>
-<span class="sgr34">  TrainingLoss:  0.0038623809814453125</span>
-<span class="sgr32">Progress:  74%|██████████████████████████████▎          |  ETA: 0:00:09</span>
-<span class="sgr34">  TrainingLoss:  0.00391387939453125</span>
-<span class="sgr32">Progress:  74%|██████████████████████████████▍          |  ETA: 0:00:09</span>
-<span class="sgr34">  TrainingLoss:  0.005809783935546875</span>
-<span class="sgr32">Progress:  75%|██████████████████████████████▋          |  ETA: 0:00:09</span>
-<span class="sgr34">  TrainingLoss:  0.006134033203125</span>
-<span class="sgr32">Progress:  75%|██████████████████████████████▊          |  ETA: 0:00:08</span>
-<span class="sgr34">  TrainingLoss:  0.00650787353515625</span>
-<span class="sgr32">Progress:  76%|███████████████████████████████          |  ETA: 0:00:08</span>
-<span class="sgr34">  TrainingLoss:  0.003971099853515625</span>
-<span class="sgr32">Progress:  76%|███████████████████████████████▏         |  ETA: 0:00:08</span>
-<span class="sgr34">  TrainingLoss:  0.00396728515625</span>
-<span class="sgr32">Progress:  76%|███████████████████████████████▎         |  ETA: 0:00:08</span>
-<span class="sgr34">  TrainingLoss:  0.004024505615234375</span>
-<span class="sgr32">Progress:  77%|███████████████████████████████▌         |  ETA: 0:00:08</span>
-<span class="sgr34">  TrainingLoss:  0.003997802734375</span>
-<span class="sgr32">Progress:  77%|███████████████████████████████▋         |  ETA: 0:00:08</span>
-<span class="sgr34">  TrainingLoss:  0.004009246826171875</span>
-<span class="sgr32">Progress:  78%|███████████████████████████████▉         |  ETA: 0:00:07</span>
-<span class="sgr34">  TrainingLoss:  0.003849029541015625</span>
-<span class="sgr32">Progress:  78%|████████████████████████████████         |  ETA: 0:00:07</span>
-<span class="sgr34">  TrainingLoss:  0.0040130615234375</span>
-<span class="sgr32">Progress:  78%|████████████████████████████████▏        |  ETA: 0:00:07</span>
-<span class="sgr34">  TrainingLoss:  0.003963470458984375</span>
-<span class="sgr32">Progress:  79%|████████████████████████████████▍        |  ETA: 0:00:07</span>
-<span class="sgr34">  TrainingLoss:  0.0040740966796875</span>
-<span class="sgr32">Progress:  79%|████████████████████████████████▌        |  ETA: 0:00:07</span>
-<span class="sgr34">  TrainingLoss:  0.00397491455078125</span>
-<span class="sgr32">Progress:  80%|████████████████████████████████▊        |  ETA: 0:00:07</span>
-<span class="sgr34">  TrainingLoss:  0.004016876220703125</span>
-<span class="sgr32">Progress:  80%|████████████████████████████████▉        |  ETA: 0:00:07</span>
-<span class="sgr34">  TrainingLoss:  0.00543975830078125</span>
-<span class="sgr32">Progress:  81%|█████████████████████████████████▏       |  ETA: 0:00:06</span>
-<span class="sgr34">  TrainingLoss:  0.004917144775390625</span>
-<span class="sgr32">Progress:  81%|█████████████████████████████████▎       |  ETA: 0:00:06</span>
-<span class="sgr34">  TrainingLoss:  0.00418853759765625</span>
-<span class="sgr32">Progress:  82%|█████████████████████████████████▌       |  ETA: 0:00:06</span>
-<span class="sgr34">  TrainingLoss:  0.004119873046875</span>
-<span class="sgr32">Progress:  82%|█████████████████████████████████▋       |  ETA: 0:00:06</span>
-<span class="sgr34">  TrainingLoss:  0.004058837890625</span>
-<span class="sgr32">Progress:  82%|█████████████████████████████████▉       |  ETA: 0:00:06</span>
-<span class="sgr34">  TrainingLoss:  0.003917694091796875</span>
-<span class="sgr32">Progress:  83%|██████████████████████████████████       |  ETA: 0:00:06</span>
-<span class="sgr34">  TrainingLoss:  0.003963470458984375</span>
-<span class="sgr32">Progress:  83%|██████████████████████████████████▎      |  ETA: 0:00:05</span>
-<span class="sgr34">  TrainingLoss:  0.00386810302734375</span>
-<span class="sgr32">Progress:  84%|██████████████████████████████████▍      |  ETA: 0:00:05</span>
-<span class="sgr34">  TrainingLoss:  0.0038928985595703125</span>
-<span class="sgr32">Progress:  84%|██████████████████████████████████▌      |  ETA: 0:00:05</span>
-<span class="sgr34">  TrainingLoss:  0.003910064697265625</span>
-<span class="sgr32">Progress:  85%|██████████████████████████████████▊      |  ETA: 0:00:05</span>
-<span class="sgr34">  TrainingLoss:  0.004978179931640625</span>
-<span class="sgr32">Progress:  85%|██████████████████████████████████▉      |  ETA: 0:00:05</span>
-<span class="sgr34">  TrainingLoss:  0.0039825439453125</span>
-<span class="sgr32">Progress:  86%|███████████████████████████████████▏     |  ETA: 0:00:05</span>
-<span class="sgr34">  TrainingLoss:  0.00399017333984375</span>
-<span class="sgr32">Progress:  86%|███████████████████████████████████▎     |  ETA: 0:00:05</span>
-<span class="sgr34">  TrainingLoss:  0.00386810302734375</span>
-<span class="sgr32">Progress:  86%|███████████████████████████████████▌     |  ETA: 0:00:04</span>
-<span class="sgr34">  TrainingLoss:  0.003871917724609375</span>
-<span class="sgr32">Progress:  87%|███████████████████████████████████▋     |  ETA: 0:00:04</span>
-<span class="sgr34">  TrainingLoss:  0.00514984130859375</span>
-<span class="sgr32">Progress:  87%|███████████████████████████████████▊     |  ETA: 0:00:04</span>
-<span class="sgr34">  TrainingLoss:  0.00424957275390625</span>
-<span class="sgr32">Progress:  88%|████████████████████████████████████     |  ETA: 0:00:04</span>
-<span class="sgr34">  TrainingLoss:  0.00408935546875</span>
-<span class="sgr32">Progress:  88%|████████████████████████████████████▏    |  ETA: 0:00:04</span>
-<span class="sgr34">  TrainingLoss:  0.0040435791015625</span>
-<span class="sgr32">Progress:  89%|████████████████████████████████████▍    |  ETA: 0:00:04</span>
-<span class="sgr34">  TrainingLoss:  0.004077911376953125</span>
-<span class="sgr32">Progress:  89%|████████████████████████████████████▌    |  ETA: 0:00:04</span>
-<span class="sgr34">  TrainingLoss:  0.00629425048828125</span>
-<span class="sgr32">Progress:  90%|████████████████████████████████████▊    |  ETA: 0:00:03</span>
-<span class="sgr34">  TrainingLoss:  0.00537109375</span>
-<span class="sgr32">Progress:  90%|████████████████████████████████████▉    |  ETA: 0:00:03</span>
-<span class="sgr34">  TrainingLoss:  0.00411224365234375</span>
-<span class="sgr32">Progress:  90%|█████████████████████████████████████    |  ETA: 0:00:03</span>
-<span class="sgr34">  TrainingLoss:  0.0039520263671875</span>
-<span class="sgr32">Progress:  91%|█████████████████████████████████████▏   |  ETA: 0:00:03</span>
-<span class="sgr34">  TrainingLoss:  0.00394439697265625</span>
-<span class="sgr32">Progress:  91%|█████████████████████████████████████▍   |  ETA: 0:00:03</span>
-<span class="sgr34">  TrainingLoss:  0.004062652587890625</span>
-<span class="sgr32">Progress:  92%|█████████████████████████████████████▌   |  ETA: 0:00:03</span>
-<span class="sgr34">  TrainingLoss:  0.004047393798828125</span>
-<span class="sgr32">Progress:  92%|█████████████████████████████████████▋   |  ETA: 0:00:03</span>
-<span class="sgr34">  TrainingLoss:  0.0039520263671875</span>
-<span class="sgr32">Progress:  92%|█████████████████████████████████████▉   |  ETA: 0:00:02</span>
-<span class="sgr34">  TrainingLoss:  0.0039215087890625</span>
-<span class="sgr32">Progress:  93%|██████████████████████████████████████   |  ETA: 0:00:02</span>
-<span class="sgr34">  TrainingLoss:  0.003936767578125</span>
-<span class="sgr32">Progress:  93%|██████████████████████████████████████▏  |  ETA: 0:00:02</span>
-<span class="sgr34">  TrainingLoss:  0.003910064697265625</span>
-<span class="sgr32">Progress:  94%|██████████████████████████████████████▍  |  ETA: 0:00:02</span>
-<span class="sgr34">  TrainingLoss:  0.00390625</span>
-<span class="sgr32">Progress:  94%|██████████████████████████████████████▌  |  ETA: 0:00:02</span>
-<span class="sgr34">  TrainingLoss:  0.00450897216796875</span>
-<span class="sgr32">Progress:  94%|██████████████████████████████████████▊  |  ETA: 0:00:02</span>
-<span class="sgr34">  TrainingLoss:  0.0058441162109375</span>
-<span class="sgr32">Progress:  95%|██████████████████████████████████████▉  |  ETA: 0:00:02</span>
-<span class="sgr34">  TrainingLoss:  0.00628662109375</span>
-<span class="sgr32">Progress:  95%|███████████████████████████████████████  |  ETA: 0:00:02</span>
-<span class="sgr34">  TrainingLoss:  0.0050811767578125</span>
-<span class="sgr32">Progress:  96%|███████████████████████████████████████▎ |  ETA: 0:00:01</span>
-<span class="sgr34">  TrainingLoss:  0.004077911376953125</span>
-<span class="sgr32">Progress:  96%|███████████████████████████████████████▍ |  ETA: 0:00:01</span>
-<span class="sgr34">  TrainingLoss:  0.004192352294921875</span>
-<span class="sgr32">Progress:  96%|███████████████████████████████████████▋ |  ETA: 0:00:01</span>
-<span class="sgr34">  TrainingLoss:  0.0041351318359375</span>
-<span class="sgr32">Progress:  97%|███████████████████████████████████████▊ |  ETA: 0:00:01</span>
-<span class="sgr34">  TrainingLoss:  0.0042266845703125</span>
-<span class="sgr32">Progress:  97%|███████████████████████████████████████▉ |  ETA: 0:00:01</span>
-<span class="sgr34">  TrainingLoss:  0.004039764404296875</span>
-<span class="sgr32">Progress:  98%|████████████████████████████████████████▏|  ETA: 0:00:01</span>
-<span class="sgr34">  TrainingLoss:  0.00408935546875</span>
-<span class="sgr32">Progress:  98%|████████████████████████████████████████▎|  ETA: 0:00:01</span>
-<span class="sgr34">  TrainingLoss:  0.00408172607421875</span>
-<span class="sgr32">Progress:  99%|████████████████████████████████████████▌|  ETA: 0:00:00</span>
-<span class="sgr34">  TrainingLoss:  0.004932403564453125</span>
-<span class="sgr32">Progress:  99%|████████████████████████████████████████▋|  ETA: 0:00:00</span>
-<span class="sgr34">  TrainingLoss:  0.00624847412109375</span>
-<span class="sgr32">Progress: 100%|████████████████████████████████████████▉|  ETA: 0:00:00</span>
-<span class="sgr34">  TrainingLoss:  0.005420684814453125</span>
-<span class="sgr32">Progress: 100%|█████████████████████████████████████████| Time: 0:00:31</span>
-<span class="sgr34">  TrainingLoss:  0.006504058837890625</span></code></pre><p>We can also plot the training errors against the epoch (here the <span>$y$</span>-axis is in log-scale):</p><pre><code class="language-julia hljs">using Plots
+<span class="sgr32">Progress:  82%|█████████████████████████████████▋       |  ETA: 0:00:03</span>
+<span class="sgr34">  TrainingLoss:  0.6533203125</span>
+<span class="sgr32">Progress:  83%|██████████████████████████████████▏      |  ETA: 0:00:03</span>
+<span class="sgr34">  TrainingLoss:  0.62109375</span>
+<span class="sgr32">Progress:  85%|██████████████████████████████████▊      |  ETA: 0:00:02</span>
+<span class="sgr34">  TrainingLoss:  0.58837890625</span>
+<span class="sgr32">Progress:  86%|███████████████████████████████████▎     |  ETA: 0:00:02</span>
+<span class="sgr34">  TrainingLoss:  0.55712890625</span>
+<span class="sgr32">Progress:  87%|███████████████████████████████████▊     |  ETA: 0:00:02</span>
+<span class="sgr34">  TrainingLoss:  0.52197265625</span>
+<span class="sgr32">Progress:  89%|████████████████████████████████████▍    |  ETA: 0:00:02</span>
+<span class="sgr34">  TrainingLoss:  0.48388671875</span>
+<span class="sgr32">Progress:  90%|████████████████████████████████████▉    |  ETA: 0:00:01</span>
+<span class="sgr34">  TrainingLoss:  0.4462890625</span>
+<span class="sgr32">Progress:  91%|█████████████████████████████████████▌   |  ETA: 0:00:01</span>
+<span class="sgr34">  TrainingLoss:  0.411376953125</span>
+<span class="sgr32">Progress:  93%|██████████████████████████████████████   |  ETA: 0:00:01</span>
+<span class="sgr34">  TrainingLoss:  0.37109375</span>
+<span class="sgr32">Progress:  94%|██████████████████████████████████████▌  |  ETA: 0:00:01</span>
+<span class="sgr34">  TrainingLoss:  0.326416015625</span>
+<span class="sgr32">Progress:  95%|███████████████████████████████████████▏ |  ETA: 0:00:01</span>
+<span class="sgr34">  TrainingLoss:  0.2861328125</span>
+<span class="sgr32">Progress:  97%|███████████████████████████████████████▋ |  ETA: 0:00:00</span>
+<span class="sgr34">  TrainingLoss:  0.2410888671875</span>
+<span class="sgr32">Progress:  98%|████████████████████████████████████████▏|  ETA: 0:00:00</span>
+<span class="sgr34">  TrainingLoss:  0.185546875</span>
+<span class="sgr32">Progress:  99%|████████████████████████████████████████▊|  ETA: 0:00:00</span>
+<span class="sgr34">  TrainingLoss:  0.1363525390625</span>
+<span class="sgr32">Progress: 100%|█████████████████████████████████████████| Time: 0:00:13</span>
+<span class="sgr34">  TrainingLoss:  0.12109375</span></code></pre><p>We can also plot the training errors against the epoch (here the <span>$y$</span>-axis is in log-scale):</p><pre><code class="language-julia hljs">using Plots
 p1 = plot(g_loss_array, xlabel=&quot;Epoch&quot;, ylabel=&quot;Training error&quot;, label=&quot;G-SympNet&quot;, color=3, yaxis=:log)
-plot!(p1, la_loss_array, label=&quot;LA-SympNet&quot;, color=2)</code></pre><img src="c152ce76.svg" alt="Example block output"/><p>The train function will change the parameters of the neural networks and gives an a vector containing the evolution of the value of the loss function during the training. Default values for the arguments <code>ntraining</code> and <code>batch_size</code> are respectively <span>$1000$</span> and <span>$10$</span>.</p><p>The trainings data <code>data_q</code> and <code>data_p</code> must be matrices of <span>$\mathbb{R}^{n\times d}$</span> where <span>$n$</span> is the length of data and <span>$d$</span> is the half of the dimension of the system, i.e <code>data_q[i,j]</code> is <span>$q_j(t_i)$</span> where <span>$(t_1,...,t_n)$</span> are the corresponding time of the training data.</p><p>Then we can make prediction. Let&#39;s compare the initial data with a prediction starting from the same phase space point using the provided function Iterate_Sympnet:</p><pre><code class="language-julia hljs">ics = (q=qp_data.q[:,1], p=qp_data.p[:,1])
+plot!(p1, la_loss_array, label=&quot;LA-SympNet&quot;, color=2)</code></pre><img src="06f09438.svg" alt="Example block output"/><p>The train function will change the parameters of the neural networks and gives an a vector containing the evolution of the value of the loss function during the training. Default values for the arguments <code>ntraining</code> and <code>batch_size</code> are respectively <span>$1000$</span> and <span>$10$</span>.</p><p>The trainings data <code>data_q</code> and <code>data_p</code> must be matrices of <span>$\mathbb{R}^{n\times d}$</span> where <span>$n$</span> is the length of data and <span>$d$</span> is the half of the dimension of the system, i.e <code>data_q[i,j]</code> is <span>$q_j(t_i)$</span> where <span>$(t_1,...,t_n)$</span> are the corresponding time of the training data.</p><p>Then we can make prediction. Let&#39;s compare the initial data with a prediction starting from the same phase space point using the provided function Iterate_Sympnet:</p><pre><code class="language-julia hljs">ics = (q=qp_data.q[:,1], p=qp_data.p[:,1])
 
 steps_to_plot = 200
 
@@ -530,4 +206,4 @@ g_trajectory = Iterate_Sympnet(g_nn, ics; n_points = steps_to_plot)
 using Plots
 p2 = plot(qp_data.q&#39;[1:steps_to_plot], qp_data.p&#39;[1:steps_to_plot], label=&quot;training data&quot;)
 plot!(p2, la_trajectory.q&#39;, la_trajectory.p&#39;, label=&quot;LA Sympnet&quot;)
-plot!(p2, g_trajectory.q&#39;, g_trajectory.p&#39;, label=&quot;G Sympnet&quot;)</code></pre><img src="cbe9d79f.svg" alt="Example block output"/><p>We see that <code>GSympNet</code> gives an almost perfect math on the training data whereas <code>LASympNet</code> cannot even properly replicate the training data. It also takes longer to train <code>LASympNet</code>.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../reduced_order_modeling/projection_reduction_errors/">« Projection and Reduction Error</a><a class="docs-footer-nextpage" href="../linear_wave_equation/">Linear Wave Equation »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="auto">Automatic (OS)</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.2.1 on <span class="colophon-date" title="Tuesday 12 December 2023 16:11">Tuesday 12 December 2023</span>. Using Julia version 1.9.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+plot!(p2, g_trajectory.q&#39;, g_trajectory.p&#39;, label=&quot;G Sympnet&quot;)</code></pre><img src="47a6ba13.svg" alt="Example block output"/><p>We see that <code>GSympNet</code> gives an almost perfect math on the training data whereas <code>LASympNet</code> cannot even properly replicate the training data. It also takes longer to train <code>LASympNet</code>.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../reduced_order_modeling/projection_reduction_errors/">« Projection and Reduction Error</a><a class="docs-footer-nextpage" href="../linear_wave_equation/">Linear Wave Equation »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="auto">Automatic (OS)</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.2.1 on <span class="colophon-date" title="Wednesday 20 December 2023 15:53">Wednesday 20 December 2023</span>. Using Julia version 1.9.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
