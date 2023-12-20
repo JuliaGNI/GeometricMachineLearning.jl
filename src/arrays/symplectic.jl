@@ -1,75 +1,43 @@
 
 @doc raw"""
 
-    `SymplecticMatrix(n)`
+`SymplecticPotential(n)`
 
 Returns a symplectic matrix of size 2n x 2n
 
 ```math
 \begin{pmatrix}
-0 & & & 1 & & & \\
-& \ddots & & & \ddots & & \\
-& & 0 & & & 1 \\
--1 & & & 0 & & & \\
-& \ddots & & & \ddots & & \\
-& & -1 & & 0 & \\
-\end{pmatrix}
-```
-
-    `SymplecticProjection(N,n)`
-Returns the symplectic projection matrix E of the Stiefel manifold, i.e. π: Sp(2N) → Sp(2n,2N), A ↦ AE
-
-"""
-#=
-function SymplecticMatrix(n::Int, T::DataType=Float64)
-    BandedMatrix((n => ones(T,n), -n => -ones(T,n)), (2n,2n))
-end
-
-SymplecticMatrix(T::DataType, n::Int) = SymplecticMatrix(n, T)
-
-@doc raw"""
-```math
-\begin{pmatrix}
-I & 0 \\
-0 & 0 \\
-0 & I \\
-0 & 0 \\
+\mathbb{O} & \mathbb{I} \\
+\mathbb{O} & -\mathbb{I} \\
 \end{pmatrix}
 ```
 """
-=#
-
-function SymplecticPotential(n::Int, T::DataType=Float64)
-    J = zeros(T, 2*n, 2*n)
-    J[1:n, (n+1):2*n] = one(ones(T, n, n))
-    J[(n+1):2*n, 1:n] = -one(ones(T, n, n))
+function SymplecticPotential(backend, n2::Int, T::DataType=Float64)
+    @assert iseven(n2)
+    n = n2÷2
+    J = KernelAbstractions.zeros(backend, T, 2*n, 2*n)
+    assign_ones_for_symplectic_potential! = assign_ones_for_symplectic_potential_kernel!(backend)
+    assign_ones_for_symplectic_potential!(J, n, ndrange=n)
     J
 end
 
+SymplecticPotential(n::Int, T::DataType=Float64) = SymplecticPotential(CPU(), n, T)
+SymplecticPotential(bakend, T::DataType, n::Int) = SymplecticPotential(backend, n, T)
+
 SymplecticPotential(T::DataType, n::Int) = SymplecticPotential(n, T)
 
-struct SymplecticProjection{T} <: AbstractMatrix{T}
-    N::Int
-    n::Int
-    SymplecticProjection(N, n, T = Float64) = new{T}(N,n)
+@kernel function assign_ones_for_symplectic_potential_kernel!(J::AbstractMatrix{T}, n::Int) where T
+    i = @index(Global)
+    J[map_index_for_symplectic_potential(i, n)...] = i ≤ n ? one(T) : -one(T)
 end
 
-function Base.getindex(E::SymplecticProjection,i,j)
-    if i ≤ E.n
-        if j == i 
-            return 1.
-        end
-        return 0.
+"""
+This assigns the right index for the symplectic potential. To be used with `assign_ones_for_symplectic_potential_kernel!`.
+"""
+function map_index_for_symplectic_potential(i::Int, n::Int)
+    if i ≤ n
+        return (i, i+n)
+    else
+        return (i, i-n)
     end
-    if j > E.n
-        if (j-E.n) == (i-E.N)
-            return 1.
-        end
-        return 0.
-    end
-    return 0.
 end
-
-
-Base.parent(E::SymplecticProjection) = (E.N,E.n)
-Base.size(E::SymplecticProjection) = (2*E.N,2*E.n)

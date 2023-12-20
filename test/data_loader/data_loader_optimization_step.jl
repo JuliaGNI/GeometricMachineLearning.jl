@@ -1,5 +1,8 @@
 using GeometricMachineLearning, Test, Zygote
 
+@doc raw"""
+This tests the gradient optimizer called together with the `DataLoader` (applied to a tensor).
+"""
 function test_data_loader(sys_dim, n_time_steps, n_params, T=Float32)
     data = randn(T, sys_dim, n_time_steps, n_params)
     dl = DataLoader(data)

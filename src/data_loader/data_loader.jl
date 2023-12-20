@@ -93,25 +93,35 @@ It takes as input:
 """
 function loss(model::Union{Chain, AbstractExplicitLayer}, ps::Union{Tuple, NamedTuple}, input::AT, output::BT) where {T, T1, AT<:AbstractArray{T, 3}, BT<:AbstractArray{T1, 3}}
     output_estimate = model(input, ps)
-    norm(output - output_estimate)/norm(output) # /T(sqrt(size(output, 2)*size(output, 3)))
+    norm(output - output_estimate) / norm(output) # /T(sqrt(size(output, 2)*size(output, 3)))
 end
 
-function loss(model::Chain, ps::Tuple, input::BT) where {T, BT<:AbstractArray{T, 3}} 
+@doc raw"""
+The *autoencoder loss*. 
+"""
+function loss(model::Chain, ps::Tuple, input::BT) where {T, BT<:AbstractArray{T}} 
     output_estimate = model(input, ps)
-    norm(output_estimate - input)/norm(input) # /T(sqrt(size(input, 2)*size(input, 3)))
-end
-
-function loss(model::Chain, ps::Tuple, input::BT) where {T, BT<:AbstractArray{T, 2}} 
-    output_estimate = model(input, ps)
-    norm(output_estimate - input)/norm(input) # /T(sqrt(size(input, 2)))
+    norm(output_estimate - input) / norm(input) # /T(sqrt(size(input, 2)*size(input, 3)))
 end
 
 nt_diff(A, B) = (q = A.q - B.q, p = A.p - B.p)
 nt_norm(A) = norm(A.q) + norm(A.p)
 
+function loss(model::Chain, ps::Tuple, input::NT) where {T, AT<:AbstractArray{T}, NT<:NamedTuple{(:q, :p,), Tuple{AT, AT}}}
+    output_estimate = model(input, ps)
+    nt_norm(nt_diff(output_estimate, input)) / nt_norm(input)
+end
+
+@doc raw"""
+Loss function that takes a `NamedTuple` as input. This should be used with a SympNet (or other neural network-based integrator). It computes:
+
+```math
+\mathtt{loss}(\mathcal{NN}, \mathtt{ps}, \begin{pmatrix} q \\ p \end{pmatrix}, \begin{pmatrix} q' \\ p' \end{pmatrix}) \mapsto \left|| \mathcal{NN}(\begin{pmatrix} q \\ p \end{pmatrix}) -  \begin{pmatrix} q' \\ p' \end{pmatrix} \right|| / \left|| \begin{pmatrix} q \\ p \end{pmatrix} \right||
+```
+"""
 function loss(model::Chain, ps::Tuple, input::NamedTuple, output::NamedTuple) 
     output_estimate = model(input, ps)
-    nt_norm(nt_diff(output_estimate, output))/nt_norm(input)
+    nt_norm(nt_diff(output_estimate, output)) / nt_norm(input)
 end
 
 @doc raw"""
@@ -133,7 +143,14 @@ function loss(model::Chain, ps::Tuple, dl::DataLoader{T, BT, Nothing}) where {T,
 end
 
 function loss(model::Chain, ps::Tuple, dl::DataLoader{T, BT}) where {T, BT<:NamedTuple}
-    loss(model, ps, dl.data)
+    loss(model, ps, dl.input)
+end
+
+@doc raw"""
+Wrapper if we deal with a neural network.
+"""
+function loss(nn::NeuralNetwork, dl::DataLoader)
+    loss(nn.model, nn.params, dl)
 end
 
 @doc raw"""

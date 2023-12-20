@@ -7,7 +7,7 @@ TODO:
 abstract type SympNet{AT} <: Architecture end
 
 @doc raw"""
-`LASympNet` is called with **a single input argument**, the **system dimension**. Optional input arguments are: 
+`LASympNet` is called with **a single input argument**, the **system dimension**, or with an instance of `DataLoader`. Optional input arguments are: 
 - `depth::Int`: The number of linear layers that are applied. The default is 5.
 - `nhidden::Int`: The number of hidden layers (i.e. layers that are **not** input or output layers). The default is 2.
 - `activation`: The activation function that is applied. By default this is `tanh`.
@@ -32,7 +32,7 @@ end
 @inline AbstractNeuralNetworks.dim(arch::SympNet) = arch.dim
 
 @doc raw"""
-`GSympNet` is called with **a single input argument**, the **system dimension**. Optional input arguments are: 
+`GSympNet` is called with **a single input argument**, the **system dimension**, or with an instance of `DataLoader`. Optional input arguments are: 
 - `upscaling_dimension::Int`: The *upscaling dimension* of the gradient layer. See the documentation for `GradientLayerQ` and `GradientLayerP` for further explanation. The default is `2*dim`.
 - `nhidden::Int`: The number of hidden layers (i.e. layers that are **not** input or output layers). The default is 2.
 - `activation`: The activation function that is applied. By default this is `tanh`.
@@ -49,7 +49,7 @@ struct GSympNet{AT, InitUpper} <: SympNet{AT} where {InitUpper}
     end
 
         
-    function GSympNet(dl::DataLoader; upscaling_dimension=2*dim, nhidden=2, activation=tanh, init_upper=true) 
+    function GSympNet(dl::DataLoader; upscaling_dimension=2*dl.input_dim, nhidden=2, activation=tanh, init_upper=true) 
         new{typeof(activation), init_upper}(dl.input_dim, upscaling_dimension, nhidden, activation)
     end
 end

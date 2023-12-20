@@ -34,6 +34,8 @@ using SafeTestsets
 @safetestset "Training                                                                        " begin include("train!/test_training.jl") end
 @safetestset "NeuralNetSolution                                                               " begin include("train!/test_neuralnet_solution.jl") end
 @safetestset "Problem & Integrators                                                           " begin include("integrator/test_integrator.jl") end
-@safetestset "Data Loader #1                                                                  " begin include("data_loader/data_loader.jl") end
-@safetestset "Data Loader #2                                                                  " begin include("data_loader/mnist_utils.jl") end
-@safetestset "Data Loader #3 (Batch struct)                                                   " begin include("data_loader/batch.jl") end
+
+@safetestset "Test data loader for q and p data                                               " begin include("data_loader/batch_data_loader_qp_test.jl") end
+@safetestset "Test mnist_utils.                                                               " begin include("data_loader/mnist_utils.jl") end
+@safetestset "Test the data loader in combination with optimization_step!                     " begin include("data_loader/data_loader_optimization_step.jl") end
+@safetestset "Optimizer functor with data loader for Adam                                     " begin include("data_loader/optimizer_functor_with_adam.jl") end
