@@ -16,45 +16,50 @@
 
 At its core every neural network comprises three components: a neural network architecture, a loss function and an optimizer. 
 
-Traditionally, physical properties have been encoded into the loss function (PiNN approach), but in `GeometricMachineLearning.jl` this is exclusively done through the architectures and the optimizers of the neural network, thus giving theoretical guarantees that these properties are actually preserved.
+Traditionally, physical properties have been encoded into the loss function (PINN approach), but in `GeometricMachineLearning.jl` this is exclusively done through the architectures and the optimizers of the neural network, thus giving theoretical guarantees that these properties are actually preserved.
 
-Using the package is very straightforward and is very flexible with respect to the device (CPU, CUDA, ...) and the type (Float16, Float32, Float64, ...) you want to use. The following is a simple example that should learn a sine function:
+Using the package is very straightforward and is very flexible with respect to the device `(CPU, CUDA, Metal, ...)` and the type `(Float16, Float32, Float64, ...)` you want to use. The following is a simple example to learn a SympNet on data coming from a pendulum:
 ```julia
 using GeometricMachineLearning
-using CUDA
-using Zygote
-using LinearAlgebra
+using CUDA # Metal
 using Plots
 
-model = Chain(StiefelLayer(2, 100), ResNet(100, tanh), Dense(100,2, tanh))
-ps = initialparameters(CUDABackend(), Float32, model)
+include("scripts/pendulum.jl")
 
-training_data = [CUDA.rand(2,100)*2*pi for _ in 1:1000]
-function loss(ps, t)
-    input = training_data[t]
-    norm(sin.(input) - model(input, ps))/100
-end
+type = Float32 # Float16 etc.
+# get data 
+qp_data = GeometricMachineLearning.apply_toNT(a -> CuArray(type.(a)), pendulum_data((q=[0.], p=[1.]); tspan=(0.,100.)))
+# call the DataLoader
+dl = DataLoader(qp_data)
 
-o = Optimizer(AdamOptimizer(), ps)
+# call the SympNet architecture
+gsympnet = GSympNet(dl)
 
-function train_one_epoch()
-    for t in 1:1000
-        dx = Zygote.gradient(ps -> loss(ps, t), ps)[1]
-        optimization_step!(o, model, ps, dx)
-    end
-end
+# specify the backend
+backend = CUDABackend()
 
-for _ in 1:1
-    train_one_epoch()
-end
+# initialize the network (i.e. the parameters of the network)
+g_nn = NeuralNetwork(gsympnet, backend, type)
 
-learned_trajectories = CuArray{Float32}(0:.1:2*pi)
-learned_trajectories = model(hcat(learned_trajectories, learned_trajectories)', ps)
+# call the optimizer
+g_opt = Optimizer(AdamOptimizer(), g_nn)
 
-trajectory_to_plot = Matrix{Float32}(learned_trajectories)[1,:]
-plot(trajectory_to_plot)
+const nepochs = 300
+const batch_size = 100
+
+# train the network
+g_loss_array = g_opt(g_nn, dl, Batch(batch_size), nepochs)
+
+# plot the result
+ics = (q=qp_data.q[:,1], p=qp_data.p[:,1])
+const steps_to_plot = 200
+g_trajectory = Iterate_Sympnet(g_nn, ics; n_points = steps_to_plot)
+p2 = plot(qp_data.q'[1:steps_to_plot], qp_data.p'[1:steps_to_plot], label="training data")
+plot!(p2, g_trajectory.q', g_trajectory.p', label="G Sympnet")
 ```
-The optimization of the first layer is done on the Stiefel Manifold $St(n, N)$, and the optimizer used is the manifold version of Adam (see (Brantner, 2023)).
+More examples like this can be found in the docs.
 
 ## References
-- Brantner B. Generalizing Adam To Manifolds For Efficiently Training Transformers[J]. arXiv preprint arXiv:2305.16901, 2023.
+- Brantner B. Generalizing Adam To Manifolds For Efficiently Training Transformers. arXiv preprint arXiv:2305.16901, 2023.
+- Brantner B., Kraus M. Symplectic Autoencoders for Model Reduction of Hamiltonian Systems. arXiv preprint arXiv:2312.10004, 2023.
+- Brantner B., Romemont G., Kraus M., Li Z. Structure-Preserving Transformers for Learning Parametrized Hamiltonian Systems. arXiv preprint arXiv:2312.11166, 2023.
