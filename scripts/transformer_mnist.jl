@@ -2,19 +2,16 @@
 TODO: Add a better predictor at the end! It should set the biggest value of the softmax to 1 and the rest to zero!
 """
 
-using GeometricMachineLearning, ProgressMeter, Plots, CUDA
-import Zygote, MLDatasets
+using GeometricMachineLearning, Plots, CUDA
+import MLDatasets
 
 # MNIST images are 28×28, so a sequence_length of 16 = 4² means the image patches are of size 7² = 49
-image_dim = 28
-patch_length = 7
-transformer_dim = 49
-n_heads = 7
-n_layers = 16
-number_of_patch = (image_dim÷patch_length)^2
-batch_size = 2048
-activation = softmax
-n_epochs = 1000
+const patch_length = 7
+const n_heads = 7
+const n_layers = 16
+const batch_size = 2048
+const activation = softmax
+const n_epochs = 100
 add_connection = false
 
 train_x, train_y = MLDatasets.MNIST(split=:train)[:]
@@ -36,8 +33,8 @@ backend, train_x, test_x, train_y, test_y =
         test_y
 end
 
-dl = DataLoader(train_x, train_y)
-dl_test = DataLoader(test_x, test_y)
+dl = DataLoader(train_x, train_y, patch_length=7)
+dl_test = DataLoader(test_x, test_y, patch_length=7)
 
 # the difference between the first and the second model is that we put the weights on the Stiefel manifold in the second case
 model1 = ClassificationTransformer(dl, n_heads=n_heads, n_layers=n_layers, Stiefel=false, add_connection=add_connection)
@@ -52,23 +49,13 @@ function transformer_training(Ψᵉ::GeometricMachineLearning.Architecture; n_ep
 
     println("initial test accuracy: ", GeometricMachineLearning.accuracy(nn, dl_test), "\n")
 
-    progress_object = Progress(n_epochs; enabled=true)
-
     # use the `time` function to get the system time.
     init_time = time()
     total_time = init_time - time()
 
-    loss_array = zeros(eltype(train_x), n_epochs)
-    for i in 1:n_epochs
-        # there is some functionality in a recent PR that streamlines some of this -> make sure to include this!
-        loss_val = optimize_for_one_epoch!(optimizer_instance, nn, dl, batch)
+    loss_array = optimizer_instance(nn, dl, batch, n_epochs)
 
-        ProgressMeter.next!(progress_object; showvalues = [(:TrainingLoss, loss_val)])   
-        loss_array[i] = loss_val
-
-        # update runtime
-        total_time = init_time - time()
-    end
+    total_time = init_time - time()
 
     accuracy_score = GeometricMachineLearning.accuracy(nn, dl_test)
     println("final test accuracy: ", accuracy_score, "\n")
