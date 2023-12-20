@@ -17,7 +17,7 @@ makedocs(;
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
         canonical="https://juliagni.github.io/GeometricMachineLearning.jl",
-        assets=String[],
+        assets=["assets/extra_styles.css"],
         # specifies that we do not display the package name again (it's already in the logo)
         sidebar_sitename=false,
     ),
