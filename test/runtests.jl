@@ -11,13 +11,15 @@ using SafeTestsets
 @safetestset "Manifold Neural Network Layers                                                  " begin include("layers/manifold_layers.jl") end
 @safetestset "Custom AD rules for kernels                                                     " begin include("custom_ad_rules/kernel_pullbacks.jl") end
 @safetestset "ResNet                                                                          " begin include("layers/resnet_tests.jl") end
-@safetestset "Transformer Networks #1                                                         " begin include("transformer_related/multi_head_attention_stiefel_optim_cache.jl") end
-@safetestset "Transformer Networks #2                                                         " begin include("transformer_related/multi_head_attention_stiefel_retraction.jl") end
-@safetestset "Transformer Networks #3                                                         " begin include("transformer_related/multi_head_attention_stiefel_setup.jl") end
-@safetestset "Transformer Networks #4                                                         " begin include("transformer_related/transformer_setup.jl") end
-@safetestset "Transformer Networks #5                                                         " begin include("transformer_related/transformer_application.jl") end
-@safetestset "Transformer Networks #6                                                         " begin include("transformer_related/transformer_gradient.jl") end
-@safetestset "Transformer Networks #7                                                         " begin include("transformer_related/transformer_optimizer.jl") end
+
+# transformer-related tests
+@safetestset "Test setup of MultiHeadAttention layer Stiefel weights                          " begin include("transformer_related/multi_head_attention_stiefel_setup.jl") end
+@safetestset "Test geodesic and Cayley retr for the MultiHeadAttention layer w/ St weights    " begin include("transformer_related/multi_head_attention_stiefel_retraction.jl") end
+@safetestset "Test the correct setup of the various optimizer caches for MultiHeadAttention   " begin include("transformer_related/multi_head_attention_stiefel_optim_cache.jl") end
+@safetestset "Check if the transformer can be applied to a tensor.                            " begin include("transformer_related/transformer_application.jl") end
+@safetestset "Check if the gradient/pullback of MultiHeadAttention changes type in St case    " begin include("transformer_related/transformer_gradient.jl") end
+@safetestset "Check if the optimization_step! changes the parameters of the transformer       " begin include("transformer_related/transformer_optimizer.jl") end
+
 @safetestset "Attention layer #1                                                              " begin include("attention_layer/attention_setup.jl") end
 @safetestset "(MultiHead)Attention                                                            " begin include("attention_layer/apply_multi_head_attention.jl") end
 @safetestset "Classification layer                                                            " begin include("layers/classification.jl") end

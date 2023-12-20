@@ -1,5 +1,8 @@
 using Test, KernelAbstractions, GeometricMachineLearning, Zygote, LinearAlgebra
 
+@doc raw"""
+This checks if the gradients of the transformer change the type in case of the Stiefel manifold, and checks if they stay the same in the case of regular weights.
+"""
 function transformer_gradient_test(T, dim, n_heads, L, seq_length=8, batch_size=10)
     model₁ = Chain(Transformer(dim, n_heads, L, Stiefel=false), ResNet(dim))
     model₂ = Chain(Transformer(dim, n_heads, L, Stiefel=true), ResNet(dim))

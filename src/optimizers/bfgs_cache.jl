@@ -5,7 +5,7 @@ It stores an array for the previous time step `B` and the inverse of the Hessian
 
 It is important to note that setting up this cache already requires a derivative! This is not the case for the other optimizers.
 """
-struct BFGSCache{T, AT<:AbstractArray{T}} <: AbstractCache
+struct BFGSCache{T, AT<:AbstractArray{T}} <: AbstractCache{T}
     B::AT
     S::AT
     H::AbstractMatrix{T}
@@ -19,7 +19,7 @@ In order to initialize `BGGSCache` we first need gradient information. This is w
 
 NOTE: we may not need this. 
 """
-struct BFGSDummyCache{T, AT<:AbstractArray{T}} <: AbstractCache
+struct BFGSDummyCache{T, AT<:AbstractArray{T}} <: AbstractCache{T}
     function BFGSDummyCache(B::AbstractArray)
         new{eltype(B), typeof(zero(B))}()
     end

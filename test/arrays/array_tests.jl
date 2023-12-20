@@ -76,6 +76,11 @@ function stiefel_lie_alg_add_sub_test(N, n)
     @test all(abs.(projection(W₁ - W₂) .- S₄) .< 1e-10)
 end
 
+function stiefel_lie_alg_vectorization_test(N, n; T=Float32)
+    A = rand(StiefelLieAlgHorMatrix{T}, N, n)
+    @test isapprox(StiefelLieAlgHorMatrix(vec(A), N, n), A)
+end
+
 # TODO: tests for ADAM functions
 
 # test everything for different n & N values
@@ -96,4 +101,5 @@ for (N, n) ∈ zip(N_vec, n_vec)
     skew_mat_mul_test2(N)
     stiefel_proj_test(N,n)
     stiefel_lie_alg_add_sub_test(N,n)
+    stiefel_lie_alg_vectorization_test(N, n)
 end
