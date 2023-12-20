@@ -47,6 +47,6 @@ empty: clean
 	rm -f *.png
 	rm -f *.svg
 	rm -f ../assets/*.png
-	rm -f ../assets
+	rm -r ../assets
 
 all: pdf png logo clean
