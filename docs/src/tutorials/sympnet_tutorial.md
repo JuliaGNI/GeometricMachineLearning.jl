@@ -49,7 +49,8 @@ The loss function described in the [theory section](../architectures/sympnet.md)
 
 ## Data Structures in `GeometricMachineLearning.jl`
 
-![](../tikz/structs_visualization.png)
+![](../tikz/structs_visualization.png#gh-light-mode-only)
+![](../tikz/structs_visualization_dark.png#gh-dark-mode-only)
 
 ## Examples
 
