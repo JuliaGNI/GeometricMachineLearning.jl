@@ -6,7 +6,7 @@ This document discusses the SympNet architecture and its implementation in `Geom
 
 ### Principle
 
-SympNets (see [jin2020sympnets](@cite) for the eponymous paper) are a type of neural network that can model the trajectory of a Hamiltonian system in phase space. Take $(q^T,p^T)^T=(q_1,\ldots,q_d,p_1,\ldots,p_d)^T\in \mathbb{R}^{2d}$ as the coordinates in phase space, where $q=(q_1, \ldots, q_d)^T\in \mathbb{R}^{d}$ is refered to as the *position* and $p=(p_1, \ldots, p_d)^T\in \mathbb{R}^{d}$ the *momentum*. Given a point $(q^T,p^T)^T$ in $\mathbb{R}^{2d}$ the SympNet aims to compute the *next position* $((q')^T,(p')^T)^T$ and thus predicts the trajectory while preserving the *symplectic structure* of the system.
+SympNets (see [jin2020sympnets](@cite) for the eponymous paper) are a type of neural network that can model the trajectory of a Hamiltonian system in phase space. Take ``(q^T,p^T)^T=(q_1,\ldots,q_d,p_1,\ldots,p_d)^T\in \mathbb{R}^{2d}`` as the coordinates in phase space, where ``q=(q_1, \ldots, q_d)^T\in \mathbb{R}^{d}`` is refered to as the *position* and ``p=(p_1, \ldots, p_d)^T\in \mathbb{R}^{d}`` the *momentum*. Given a point ``(q^T,p^T)^T`` in ``\mathbb{R}^{2d}`` the SympNet aims to compute the *next position* ``((q')^T,(p')^T)^T`` and thus predicts the trajectory while preserving the *symplectic structure* of the system.
 SympNets are enforcing symplecticity strongly, meaning that this property is hard-coded into the network architecture. The layers are reminiscent of traditional neural network feedforward layers, but have a strong restriction imposed on them in order to be symplectic.
 
 SympNets can be viewed as a "symplectic integrator" (see [hairer2006geometric](@cite) and [leimkuhler2004simulating](@cite)). Their goal is to predict, based on an initial condition $((q^{(0)})^T,(p^{(0)})^T)^T$, a sequence of points in phase space that fit the training data as well as possible:
@@ -15,9 +15,10 @@ SympNets can be viewed as a "symplectic integrator" (see [hairer2006geometric](@
 ```
 The tilde in the above equation indicates *predicted data*. The time step between predictions is not a parameter we can choose but is related to the *temporal frequency of the training data*. This means that if data is recorded in an interval of e.g. 0.1 seconds, then this will be the time step of our integrator.
 
-### Architecture of SympNets
-![](../tikz/sympnet_architecture.png#gh-light-mode-only)
-![](../tikz/sympnet_architecture_dark.png#gh-dark-mode-only)
+```@raw html
+<img class="display-light-only" src="../tikz/sympnet_architecture.png" alt="SympNet Architecture">
+<img class="display-dark-only" src="../tikz/sympnet_architecture_dark.png" alt="SympNet Architecture">
+```
 
 There are two types of SympNet architectures: $LA$-SympNets and $G$-SympNets. 
  
