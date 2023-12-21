@@ -1,6 +1,6 @@
 # The Linear Wave Equation
 
-The **linear wave equation** is the prototypical example for a Hamiltonian PDE. It is given by (see (Buchfink et al, 2023) and (Peng and Mohseni, 2016)): 
+The **linear wave equation** is the prototypical example for a Hamiltonian PDE. It is given by (see [buchfink2023symplectic](@cite) and [peng2016symplectic](@cite)): 
 ```math
 \mathcal{H}(q, p; \mu) := \frac{1}{2}\int_\Omega\mu^2(\partial_\xi{}q(t,\xi;\mu))^2 + p(t,\xi;\mu)^2d\xi,
 ```
@@ -70,6 +70,11 @@ u_0(\mu)(\omega) = h(s(\omega, \mu)), \quad s(\omega, \mu) =  20 \mu  |\omega + 
 ```
 
 ## References 
-- Buchfink, Patrick, Silke Glas, and Bernard Haasdonk. "Symplectic model reduction of Hamiltonian systems on nonlinear manifolds and approximation with weakly symplectic autoencoder." SIAM Journal on Scientific Computing 45.2 (2023): A289-A311.
-- Peng, Liqian, and Kamran Mohseni. "Symplectic model reduction of Hamiltonian systems." SIAM Journal on Scientific Computing 38.1 (2016): A1-A27.
-- Greif C, Urban K. Decay of the Kolmogorov N-width for wave problems[J]. Applied Mathematics Letters, 2019, 96: 216-222.
+```@bibliography
+Pages = []
+Canonical = false
+
+buchfink2023symplectic
+peng2016symplectic
+greif2019decay
+```
