@@ -1,16 +1,12 @@
-"""
-A `SkewSymMatrix` is a matrix
-| 0 -S |
-| S  0 |
+@doc raw"""
+A `SkewSymMatrix` is a matrix ``A`` s.t. ``A^T = -A``.
 
-
-If the constructor is called with a matrix as input it returns a symmetric matrix via the projection 
-A ↦ .5*(A - Aᵀ). 
-This is a projection defined via the canonical metric (A,B) ↦ tr(AᵀB).
+If the constructor is called with a matrix as input it returns a symmetric matrix via the projection ``A \mapsto \frac{1}{2}(A - A^T)``. 
+This is a projection defined via the canonical metric ``\mathbb{R}^{n\times{}n}\times\mathbb{R}^{n\times{}n}\to\mathbb{R}, (A,B) \mapsto \mathrm{Tr}(A^TB)``.
 
 The first index is the row index, the second one the column index.
 
-TODO: Check how LinearAlgebra implements matrix multiplication!
+The struct two fields: `S` and `n`. The first stores all the entries of the matrix in a sparse fashion (in a vector) and the second is the dimension ``n`` for ``A\in\mathbb{R}^{n\times{}n}``.
 """
 
 mutable struct SkewSymMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
@@ -169,11 +165,6 @@ end
 
 function Base.:*(A::SkewSymMatrix, b::AbstractVector{T}) where T
     A*reshape(b, size(b), 1)
-end
-
-@kernel function write_ones_kernel!(unit_matrix::AbstractMatrix{T}) where T
-    i = @index(Global)
-    unit_matrix[i, i] = one(T)
 end
 
 function Base.one(A::SkewSymMatrix{T}) where T
