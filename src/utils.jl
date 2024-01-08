@@ -63,6 +63,13 @@ function Base.:+(a::Vector{Float64}, b::Tuple{Float64})
     return y+x
 end
 
+"""
+Kernel that is needed for functions relating to `SymmetricMatrix`, `SkewSymMatrix` and ``
+"""
+@kernel function write_ones_kernel!(unit_matrix::AbstractMatrix{T}) where T
+    i = @index(Global)
+    unit_matrix[i, i] = one(T)
+end
 
 # overloaded similar operation to work with NamedTuples
 _similar(x) = similar(x)
@@ -76,7 +83,6 @@ function _similar(x::NamedTuple)
 end
 
 # utils functions on string
-
 function type_without_brace(var)
     type_str = string(typeof(var))
     replace(type_str, r"\{.*\}"=>"")
@@ -91,8 +97,7 @@ function center_align_text(text,width)
 end
 
 
-#The following are fallback functions - maybe you want to put them into a separate file
-
+# The following are fallback functions - maybe you want to put them into a separate file
 function global_section(::AbstractVecOrMat)
     nothing
 end

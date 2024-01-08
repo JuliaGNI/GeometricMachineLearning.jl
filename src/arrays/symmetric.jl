@@ -1,9 +1,5 @@
 @doc raw"""
-A `SymmetricMatrix` is a matrix
-| a  S |
-| S  b |
-
-The first index is the row index, the second one the column index.
+A `SymmetricMatrix` ``A`` is a matrix ``A^T = A``.
 
 If the constructor is called with a matrix as input it returns a symmetric matrix via the projection:
 ```math
@@ -17,7 +13,7 @@ Internally the `struct` saves a vector $S$ of size $n(n+1)\div2$. The conversion
                          S[( (j-1) j ) \div 2 + i] & \text{else}. \end{cases}
 ```
 
-So $S$ stores a string of vectors taken from $A$: $S = [\tilde{a}_1, \tilde{a}_2, \ldots, \tilde{a}_n]$ with $\tilde{a}_i = [[A]_{i1},[A]_{i2},\ldots,[A]_{ii}]$.
+So ``S`` stores a string of vectors taken from $A$: $S = [\tilde{a}_1, \tilde{a}_2, \ldots, \tilde{a}_n]$ with $\tilde{a}_i = [[A]_{i1},[A]_{i2},\ldots,[A]_{ii}]$.
 
 TODO: 
 - [x] Overload Adjoint operation for SymmetricMatrix!! (Aᵀ = A)
