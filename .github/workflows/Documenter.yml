@@ -20,7 +20,7 @@ jobs:
           make all -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
         with:
-          version: '1.9'
+          version: '1'
       - run: |
           julia --project=docs -e '
             using Pkg
