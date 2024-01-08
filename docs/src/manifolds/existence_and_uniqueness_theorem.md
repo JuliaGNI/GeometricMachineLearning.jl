@@ -18,7 +18,9 @@ __Proof (Banach fixed-point theorem)__: Take an arbitrary point ``x_0\in\mathbb{
 ```
 where we have used the triangle inequality in the first line. If we now let ``m`` on the right-hand side first go to infinity then we get 
 ```math
+\begin{aligned}
 |x_m-x_n|     & \leq q^n|x_1 -x_0|\sum_{i=1}^{\infty}q^i
                 & =q^n|x_1 -x_0| \frac{1}{1-q},
+\end{aligned}
 ```  
 proofing that the sequence is Cauchy. Because ``\mathbb{R}^N`` is a complete metric space we get that ``(x_n)_{n\in\mathbb{N}}`` is a convergent sequence. We call the limit of this sequence ``x^*``. This completes the proof of the Banach fixed-point theorem. 
