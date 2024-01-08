@@ -64,7 +64,7 @@ function Base.:+(a::Vector{Float64}, b::Tuple{Float64})
 end
 
 """
-Kernel that is needed for functions relating to `SymmetricMatrix`, `SkewSymMatrix` and ``
+Kernel that is needed for functions relating to `SymmetricMatrix` and `SkewSymMatrix` 
 """
 @kernel function write_ones_kernel!(unit_matrix::AbstractMatrix{T}) where T
     i = @index(Global)
