@@ -17,7 +17,6 @@ jobs:
           sudo apt-get install poppler-utils
           sudo apt-get install texlive-xetex
           sudo apt-get install texlive-science
-          mkdir docs/src/assets
           make all -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
       - run: |
