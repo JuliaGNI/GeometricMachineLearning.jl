@@ -7,6 +7,6 @@ function loss_single(::TrainingMethod{LnnExactMethod}, nn::AbstractNeuralNetwork
 end
 
 loss(ti::TrainingMethod{<:LnnExactMethod}, nn::AbstractNeuralNetwork{<:LagrangianNeuralNetwork}, data::TrainingData{<:DataSymbol{<:PosVeloAccSymbol}}, index_batch = eachindex(ti, data), params = nn.params) = 
-mapreduce(args->loss_single(Zygote.ignore_derivative(ti), nn, get_loss(ti, nn, data, args)..., params),+, index_batch)
+mapreduce(args->loss_single(Zygote.ignore_derivatives(ti), nn, get_loss(ti, nn, data, args)..., params),+, index_batch)
 
 get_loss(::TrainingMethod{<:LnnExactMethod}, ::AbstractNeuralNetwork{<:LagrangianNeuralNetwork}, data::TrainingData{<:DataSymbol{<:PosVeloAccSymbol}}, args) = (get_data(data, :q,args...), get_data(data, :q̇, args...), get_data(data, :q̈, args...))

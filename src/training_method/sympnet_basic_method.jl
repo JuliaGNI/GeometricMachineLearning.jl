@@ -8,9 +8,9 @@ function loss_single(::TrainingMethod{BasicSympNetMethod}, nn::AbstractNeuralNet
 end
 
 get_loss(::TrainingMethod{<:BasicSympNetMethod}, ::AbstractNeuralNetwork{<:SympNet}, data::TrainingData{<:DataSymbol{<:PhaseSpaceSymbol}}, args) = 
-(Zygote.ignore_derivative(get_data(data,:q, args...)), Zygote.ignore_derivative(get_data(data,:p, args...)), Zygote.ignore_derivative(get_data(data,:q, next(args...)...)), Zygote.ignore_derivative(get_data(data,:p, next(args...)...)))
+(Zygote.ignore_derivatives(get_data(data,:q, args...)), Zygote.ignore_derivatives(get_data(data,:p, args...)), Zygote.ignore_derivatives(get_data(data,:q, next(args...)...)), Zygote.ignore_derivatives(get_data(data,:p, next(args...)...)))
 
 loss(ti::TrainingMethod{<:BasicSympNetMethod}, nn::AbstractNeuralNetwork{<:SympNet}, data::TrainingData{<:DataSymbol{<:PhaseSpaceSymbol}}, index_batch = eachindex(ti, data), params = nn.params) = 
-mapreduce(args->loss_single(Zygote.ignore_derivative(ti), nn, get_loss(ti, nn, data, args)..., params),+, index_batch)
+mapreduce(args->loss_single(Zygote.ignore_derivatives(ti), nn, get_loss(ti, nn, data, args)..., params),+, index_batch)
 min_length_batch(::BasicSympNetMethod) = 2
 

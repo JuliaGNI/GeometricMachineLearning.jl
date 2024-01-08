@@ -23,5 +23,5 @@ end
 get_loss(::TrainingMethod{<:VariationalMidPointMethod}, ::AbstractNeuralNetwork{<:LagrangianNeuralNetwork}, data::TrainingData{<:DataSymbol{<:PositionSymbol}}, args) = (get_data(data,:q, args...), get_data(data,:q, next(args...)...), get_data(data,:q,next(next(args...)...)...), get_Δt(data))
 
 loss(ti::TrainingMethod{<:VariationalMidPointMethod}, nn::AbstractNeuralNetwork{<:LagrangianNeuralNetwork}, data::TrainingData{<:DataSymbol{<:PositionSymbol}}, index_batch = eachindex(ti, data), params = nn.params) = 
-mapreduce(args->loss_single(Zygote.ignore_derivative(ti), nn, get_loss(ti, nn, data, args)..., params),+, index_batch)
+mapreduce(args->loss_single(Zygote.ignore_derivatives(ti), nn, get_loss(ti, nn, data, args)..., params),+, index_batch)
 min_length_batch(::VariationalMethod) = 3
