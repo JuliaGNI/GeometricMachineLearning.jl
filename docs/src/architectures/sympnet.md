@@ -2,7 +2,7 @@
 
 This document discusses the SympNet architecture and its implementation in `GeometricMachineLearning.jl`.
 
-## Quick overview of the theory of SympNet
+## Quick overview of the theory of SympNets
 
 ### Principle
 
@@ -16,8 +16,8 @@ SympNets can be viewed as a "symplectic integrator" (see [hairer2006geometric](@
 The tilde in the above equation indicates *predicted data*. The time step between predictions is not a parameter we can choose but is related to the *temporal frequency of the training data*. This means that if data is recorded in an interval of e.g. 0.1 seconds, then this will be the time step of our integrator.
 
 ```@raw html
-<img class="display-light-only" src="../tikz/sympnet_architecture.png" alt="SympNet Architecture">
-<img class="display-dark-only" src="../tikz/sympnet_architecture_dark.png" alt="SympNet Architecture">
+<img class="display-light-only" src="../../tikz/sympnet_architecture.png" alt="SympNet Architecture">
+<img class="display-dark-only" src="../../tikz/sympnet_architecture_dark.png" alt="SympNet Architecture">
 ```
 
 There are two types of SympNet architectures: $LA$-SympNets and $G$-SympNets. 
