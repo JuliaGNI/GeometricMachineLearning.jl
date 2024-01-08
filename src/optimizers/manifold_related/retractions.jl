@@ -39,7 +39,6 @@ end
 
 geodesic(B::NamedTuple) = apply_toNT(geodesic, B)
 
-#you will have to fix the scalar indexing problem wrt to SkewSymMatrix!
 function geodesic(B::StiefelLieAlgHorMatrix{T}) where T
     E = StiefelProjection(B)
     unit = one(B.A)
@@ -53,7 +52,7 @@ end
 function geodesic(B::GrassmannLieAlgHorMatrix{T}) where T
     N, n = B.N, B.n
     E = typeof(B.B)(StiefelProjection(N, n, T))
-    #expression from which matrix exponential and inverse have to be computed
+    # expression from which matrix exponential and inverse have to be computed
     unit = typeof(B.B)(I(n))
     exponent = hcat(vcat(zeros(T, n, n), - B.B'*B.B), vcat(unit, zeros(T, n, n)))
     GrassmannManifold(
