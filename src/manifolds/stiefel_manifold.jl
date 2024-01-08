@@ -74,7 +74,7 @@ It is called with inputs:
 - `e_grad::AbstractMatrix`: i.e. the Euclidean gradient (what was called ``\nabla{}L``) above.
 """
 function rgrad(Y::StiefelManifold, e_grad::AbstractMatrix)
-    e_grad - Y.A*(e_grad'*Y.A)
+    e_grad - Y.A * (e_grad' * Y.A)
 end
 
 @doc raw"""
@@ -95,9 +95,11 @@ function check(Y::StiefelManifold)
     norm(Y.A'*Y.A - I)
 end
 
-function global_section(Y::StiefelManifold)
+function global_section(Y::StiefelManifold{T}) where T
     N, n = size(Y)
-    A = typeof(Y.A)(randn(eltype(Y), N, N-n))
+    backend = KernelAbstractions.get_backend(Y)
+    A = KernelAbstractions.allocate(backend, T, N, N-n)
+    randn!(A)
     A = A - Y.A*Y.A'*A
     qr!(A).Q
 end
