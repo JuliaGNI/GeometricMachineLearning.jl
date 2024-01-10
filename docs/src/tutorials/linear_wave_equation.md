@@ -56,7 +56,11 @@ h(s)  = \begin{cases}
 
 Plotted on the relevant domain it looks like this: 
 
-![](../tikz/third_degree_spline.png)
+```@example
+HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/third_degree_spline.png"))></object>""") # hide
+HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/third_degree_spline_dark.png"))></object>""") # hide
+```
+
 
 Taking the above function $h(s)$ as a starting point, the initial conditions for the linear wave equations will now be constructed under the following considerations: 
 - the initial condition (i.e. the shape of the wave) should depend on the parameter of the vector field, i.e. $u_0(\mu)(\omega) = h(s(\omega, \mu))$.
