@@ -1,0 +1,44 @@
+name: CI
+on:
+  push:
+    branches:
+      - main
+      - metal_tests
+  pull_request:
+jobs:
+  test:
+    name: Julia ${{ matrix.version }} - ${{ matrix.arch }} - ${{ github.event_name }}
+    runs-on: macOS-latest
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - '1.8'
+          - '1.9'
+          - '^1.10.0-0'
+        arch:
+          - x64
+        experimental: [false]
+        include:
+          - version: 'nightly'
+            os: macOS-latest
+            arch: x64
+            experimental: true
+    steps:
+      - uses: actions/checkout@v3
+      - uses: julia-actions/setup-julia@v1
+        with:
+          version: ${{ matrix.version }}
+          arch: ${{ matrix.arch }}
+      - run: |
+          julia --project -e '
+            using Pkg
+            Pkg.develop(PackageSpec(path=pwd()))
+            Pkg.instantiate()
+            Pkg.build()
+            Pkg.precompile()
+            using GeometricMachineLearning'
+          julia --project test/gpu/metal/metal_tests.jl
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
