@@ -24,11 +24,10 @@ png:
 	pdftocairo  -png -r 150 -transp -singlefile  transformer_encoder.pdf		        		transformer_encoder   
 	pdftocairo  -png -r 150 -transp -singlefile  third_degree_spline.pdf	           			third_degree_spline     
 	pdftocairo  -png -r 150 -transp -singlefile  third_degree_spline_dark.pdf	           		third_degree_spline_dark       
-	mkdir -p ../assets/tikz
-	pdftocairo	-png -r 150 -transp -singlefile	 sympnet_architecture.pdf						../assets/tikz/sympnet_architecture
-	pdftocairo	-png -r 150 -transp -singlefile	 sympnet_architecture_dark.pdf					../assets/tikz/sympnet_architecture_dark
-	pdftocairo 	-png -r 150 -transp -singlefile  structs_visualization.pdf						structs_visualization
-	pdftocairo 	-png -r 150 -transp -singlefile  structs_visualization_dark.pdf					structs_visualization_dark
+	pdftocairo	-png -r 200 -transp -singlefile	 sympnet_architecture.pdf						sympnet_architecture
+	pdftocairo	-png -r 200 -transp -singlefile	 sympnet_architecture_dark.pdf					sympnet_architecture_dark
+	pdftocairo 	-png -r 100 -transp -singlefile  structs_visualization.pdf						structs_visualization
+	pdftocairo 	-png -r 100 -transp -singlefile  structs_visualization_dark.pdf					structs_visualization_dark
 	pdftocairo 	-png -r 150 -transp -singlefile	 logo.pdf										logo 
 	pdftocairo  -png -r 150 -transp -singlefile  symplectic_autoencoder.pdf						symplectic_autoencoder
 	pdftocairo  -png -r 150 -transp -singlefile  solution_manifold_2.pdf						solution_manifold_2
