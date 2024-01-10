@@ -56,6 +56,8 @@ function Base.rand(backend::KernelAbstractions.Backend, manifold_type::Type{Stie
     rand(backend, Random.default_rng(), manifold_type, N, n)
 end
 
+Base.rand(manifold_type::Type{StiefelManifold{T}}, backend::KernelAbstractions.Backend, N::Integer, n::Integer) where T = rand(backend, manifold_type, N, n)
+
 Base.:*(Y::StiefelManifold, B::AbstractMatrix) = Y.A*B
 Base.:*(B::AbstractMatrix, Y::StiefelManifold) = B*Y.A
 
