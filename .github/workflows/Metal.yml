@@ -34,11 +34,9 @@ jobs:
       - run: |
           julia --project -e '
             using Pkg
-            Pkg.develop(PackageSpec(path=pwd()))
-            Pkg.instantiate()
-            Pkg.build()
+            Pkg.add("Metal")
+            Pkg.add("Test")
             Pkg.precompile()
-            using GeometricMachineLearning'
           julia --project test/gpu/metal/metal_tests.jl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
