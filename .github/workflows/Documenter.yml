@@ -19,6 +19,8 @@ jobs:
           sudo apt-get install texlive-science
           make all -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
+        with:
+          version: '1'
       - run: |
           julia --project=docs -e '
             using Pkg

@@ -15,7 +15,9 @@ makedocs(;
     repo="https://github.com/JuliaGNI/GeometricMachineLearning.jl/blob/{commit}{path}#L{line}",
     sitename="GeometricMachineLearning.jl",
     format=Documenter.HTML(;
+        repolink="https://github.com/JuliaGNI/GeometricMachineLearning.jl",
         prettyurls=get(ENV, "CI", "false") == "true",
+        # not sure why we need this?
         canonical="https://juliagni.github.io/GeometricMachineLearning.jl",
         assets=["assets/extra_styles.css"],
         # specifies that we do not display the package name again (it's already in the logo)
