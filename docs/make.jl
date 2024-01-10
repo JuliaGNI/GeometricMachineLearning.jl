@@ -8,6 +8,9 @@ ENV["GKSwstype"] = "100"
 
 bib = CitationBibliography(joinpath(@__DIR__, "src", "GeometricMachineLearning.bib"))
 
+# if the docs are generated with github actions, then this changes the path; see: https://github.com/JuliaDocs/Documenter.jl/issues/921 
+const buildpath = haskey(ENV, "CI") ? ".." : ""
+
 makedocs(;
     plugins=[bib],
     modules=[GeometricMachineLearning],
