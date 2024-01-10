@@ -29,3 +29,10 @@ The problem with generalizing Adam to manifolds is that the Hadamard product $\o
 ## References
 
 - Goodfellow I, Bengio Y, Courville A. Deep learning[M]. MIT press, 2016.
+
+```@bibliography 
+Pages = []
+Canonical = false
+
+goodfellow2016deep
+```
