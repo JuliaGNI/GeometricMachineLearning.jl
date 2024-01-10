@@ -36,7 +36,7 @@ jobs:
             using Pkg
             Pkg.add("Metal")
             Pkg.add("Test")
-            Pkg.precompile()
+            Pkg.precompile()'
           julia --project test/gpu/metal/metal_tests.jl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
