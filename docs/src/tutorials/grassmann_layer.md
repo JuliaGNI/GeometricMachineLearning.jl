@@ -34,8 +34,7 @@ For computing the loss between the two distributions, i.e. ``\Psi(\mathcal{N}(0,
 using GeometricMachineLearning, Zygote, BrenierTwoFluid
 using LinearAlgebra: norm # hide
 
-#model = Chain(GrassmannLayer(2,3), Dense(3, 10, tanh), Dense(10, 3, tanh), Linear(3, 3))
-model = Chain(GrassmannLayer(2,3), map(i -> ResNet(3, 3, tanh), 1:4)..., Dense(3, 3, identity))
+model = Chain(GrassmannLayer(2,3), Dense(3, 8, tanh), Dense(8, 3, identity))
 
 nn = NeuralNetwork(model, CPU(), Float64)
 
@@ -69,7 +68,8 @@ end
 # note the very high value for the learning rate
 optimizer = Optimizer(nn, AdamOptimizer(1e-1))
 
-const training_steps = 30
+# note the small number of training steps
+const training_steps = 50
 loss_array = zeros(training_steps)
 for i in 1:training_steps
     val, dp = compute_gradient(nn.params)
@@ -82,7 +82,7 @@ plot(loss_array, xlabel="training step")
 Now we plot a few points to check how well they match the graph:
 
 ```@example rosenbrock
-const number_of_points = 50
+const number_of_points = 30
 
 coordinates = nn(randn(2, number_of_points))
 scatter3d!(p, [coordinates[1, :]], [coordinates[2, :]], [coordinates[3, :]], alpha=.5, color=4)
