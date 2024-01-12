@@ -37,25 +37,46 @@ The Grassmann manifold can also be seen as the Stiefel manifold modulo an equiva
 
 ## The Riemannian Gradient
 
-For matrix manifolds (like the Stiefel manifold), the Riemannian gradient of a function can be easily determined computationally:
-
-The Euclidean gradient of a function $L$ is equivalent to an element of the cotangent space $T^*_Y\mathcal{M}$ via: 
-```math
-\langle\nabla{}L,\cdot\rangle:T_Y\mathcal{M} \to \mathbb{R}, \Delta \mapsto \sum_{ij}[\nabla{}L]_{ij}[\Delta]_{ij} = \mathrm{Tr}(\nabla{}L^T\Delta).
-```
-
-We can then utilize the Riemannian metric on $\mathcal{M}$ to map the element from the cotangent space (i.e. $\nabla{}L$) to the tangent space. This element is called $\mathrm{grad}_{(\cdot)}L$ here. Explicitly, it is given by: 
+Obtaining the Riemannian Gradient for the Grassmann manifold is slightly more difficult than it is in the case of the Stiefel manifold. Since the Grassmann manifold can be obtained from the Stiefel manifold through an equivalence relation however, we can use this as a starting point. In a first step we identify charts on the Grassmann manifold to make dealing with it easier. For this consider the following open cover of the Grassmann manifold (also see [absil2004riemannian](@cite)): 
 
 ```math
-    \mathrm{grad}_YL = \nabla_YL - Y(\nabla_YL)^TY
+\{\mathcal{U}_W\}_{W\in{}St(n, N)} \text{ where } \mathcal{U}_W = \{\mathrm{span}(Y):\mathrm{det}(W^TY)\neq0\}.
 ```
 
-### `rgrad`
+We can find a canonical bijective mapping from the set ``\mathcal{U}_W`` to the set ``\mathcal{S}_W := \{Y\in\mathbb{R}^{N\times{}n}:W^TY=\mathbb{I}_n\}``:
 
-What was referred to as $\nabla{}L$ before can in practice be obtained with an AD routine. We then use the function `rgrad` to map this *Euclidean gradient* to $\in{}T_YSt(n,N)$. This mapping has the property: 
-
-```math 
-\mathrm{Tr}((\nabla{}L)^T\Delta) = g_Y(\mathtt{rgrad}(Y, \nabla{}L), \Delta) \forall\Delta\in{}T_YSt(n,N)
+```math
+\sigma_W: \mathcal{U}_W \to \mathcal{S}_W,\, \mathcal{Y}=\mathrm{span}(Y)\mapsto{}Y(W^TY)^{-1} =: \hat{Y}.
 ```
 
- and $g$ is the Riemannian metric.
+That ``\sigma_W`` is well-defined is easy to see: Consider ``YC`` with ``C\in\mathbb{R}^{n\times{}n}`` non-singular. Then ``YC(W^TYC)^{-1}=Y(W^TY)^{-1}``. With this isomorphism we can also find a representation of elements of the tangent space:
+
+```math
+T_\mathcal{Y}\sigma_W: T_\mathcal{Y}Gr(n,N)\to{}T_\hat{Y}\mathcal{S}_W,\, \xi \mapsto (\xi_{\diamond{}Y} -\hat{Y}W^T\xi_{\diamond{}Y})(W^TY)^{-1}.
+```
+
+``\xi_{\diamond{}Y}`` is the representation of ``\xi\in{}T_\mathcal{Y}Gr(n,N)`` for the point ``Y\in{}St(n,N)``; because the map ``\sigma_W`` does not care about the representation of ``\mathrm{span}(Y)`` we can perform the variations in ``St(n,N)``[^2]:
+
+[^2]: I.e. ``Y(t)\in{}St(n,N)`` for ``t\in(-\varepsilon,\varepsilon)``. We also set ``Y(0) = Y``.
+
+```math
+\frac{d}{dt}Y(t)(W^TY(t))^{-1} = (\dot{Y}(0) - Y(W^TY)^{-1}W^T\dot{Y}(0))(W^TY)^{-1},
+```
+
+where ``\dot{Y}(0)\in{}T_YSt(n,N)``. Further note that we have ``T_\mathcal{Y}\mathcal{U}_W = T_\mathcal{Y}Gr(n,N)`` because ``\mathcal{U}_W`` is an open subset of ``Gr(n,N)``. We thus can identify the tangent space ``T_\mathcal{Y}Gr(n,N)`` with the following set:
+
+```math
+T_{\hat{Y}}\mathcal{S}_W = \{(\Delta - Y(W^TY)^{-1}W^T\Delta)(W^T\Delta)^{-1}: Y\in{}St(n,N)\text{ s.t. }\mathrm{span}(Y)=\mathcal{Y}\text{ and }\Delta\in{}T_YSt(n,N)\}.
+```
+
+If we now further take ``W=Y`` for our distinct element on whose basis we construct the charts, then we get the identification: 
+
+```math
+T_\mathcal{Y}Gr(n,N) = \{\Delta - YY^T\Delta: Y\in{}St(n,N)\text{ s.t. }\mathrm{span}(Y)=\mathcal{Y}\text{ and }\Delta\in{}T_YSt(n,N)\},
+```
+which is very easy to handle computationally (we simply store and change the matrix ``Y`` that represents an element of the Grassmann manifold). The Riemannian gradient is then 
+
+```math
+\mathrm{grad}_\mathcal{Y}^{Gr}L = \mathrm{grad}_Y^{St}L - YY^T\mathrm{grad}_Y^{St}L = \nabla_Y{}L - YY^T\nabla_YL,
+```
+where ``\nabla_Y{}L`` again is the Euclidean gradient as in the [Stiefel manifold](stiefel_manifold.md) case.
