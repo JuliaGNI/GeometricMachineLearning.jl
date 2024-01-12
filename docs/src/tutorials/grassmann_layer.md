@@ -85,5 +85,5 @@ Now we plot a few points to check how well they match the graph:
 const number_of_points = 30
 
 coordinates = nn(randn(2, number_of_points))
-scatter3d!(p, [coordinates[1, :]], [coordinates[2, :]], [coordinates[3, :]], alpha=.5, color=4)
+scatter3d!(p, [coordinates[1, :]], [coordinates[2, :]], [coordinates[3, :]], alpha=.5, color=4, label="mapped points")
 ```
