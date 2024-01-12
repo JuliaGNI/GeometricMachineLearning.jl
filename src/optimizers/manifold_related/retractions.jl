@@ -54,9 +54,9 @@ function geodesic(B::GrassmannLieAlgHorMatrix{T}) where T
     E = typeof(B.B)(StiefelProjection(N, n, T))
     # expression from which matrix exponential and inverse have to be computed
     unit = typeof(B.B)(I(n))
-    exponent = hcat(vcat(zeros(T, n, n), - B.B'*B.B), vcat(unit, zeros(T, n, n)))
+    exponent = hcat(vcat(zeros(T, n, n), - B.B' * B.B), vcat(unit, zeros(T, n, n)))
     GrassmannManifold(
-        E + (hcat(vcat(zeros(T, n, n), B.B), E)*𝔄(exponent))[1:N, 1:n]
+        E + (hcat(vcat(zeros(T, n, n), B.B), E) * 𝔄(exponent))[1:N, 1:n]
     )
 end
 
