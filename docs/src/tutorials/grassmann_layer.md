@@ -13,12 +13,12 @@ We are given data in a big space ``\mathcal{D}=[d_i]_{i\in\mathcal{I}}\subset\ma
 
 ## Example
 
-Consider the following toy example: We want to sample from the graph of the Rosenbrock function ``f(x,y) = (1 - x)^2 + 100(y - x^2)^2`` while pretending we do not know the function. 
+Consider the following toy example: We want to sample from the graph of the (scaled) Rosenbrock function ``f(x,y) = ((1 - x)^2 + 100(y - x^2)^2)/1000`` while pretending we do not know the function. 
 
 ```@example rosenbrock
-using Plots 
-
-rosenbrock(x::Vector) = (1.0 - x[1])^2 + 100.0 * (x[2] - x[1]^2)^2
+using Plots # hide
+# hide
+rosenbrock(x::Vector) = ((1.0 - x[1])^2 + 100.0 * (x[2] - x[1]^2)^2) / 1000
 x, y = -1.5:0.1:1.5, -1.5:0.1:1.5
 z = Surface((x,y)->rosenbrock([x,y]), x, y)
 p = surface(x,y,z; camera=(30,20), alpha=.6, colorbar=false)
@@ -26,27 +26,54 @@ p = surface(x,y,z; camera=(30,20), alpha=.6, colorbar=false)
 
 We now build a neural network whose task it is to map a product of two Gaussians ``\mathcal{N}(0,1)\times\mathcal{N}(0,1)`` onto the graph of the Rosenbrock function where the range for ``x`` and for ``y`` is ``[-1.5,1.5]``.
 
-```@example rosenbrock
-using GeometricMachineLearning, Zygote
+For computing the loss between the two distributions, i.e. ``\Psi(\mathcal{N}(0,1)\times\mathcal{N}(0,1))`` and ``f([-1.5,1.5], [-1.5,1.5])`` we use the Wasserstein distance[^3].
 
-model = Chain(GrassmannLayer(2,3), ResNet(3, tanh), ResNet(3, tanh))
+[^3]: The implementation of the Wasserstein distance is taken from [blickhan2023brenier](@cite).
+
+```@example rosenbrock
+using GeometricMachineLearning, Zygote, BrenierTwoFluid
+using LinearAlgebra: norm # hide
+
+#model = Chain(GrassmannLayer(2,3), Dense(3, 10, tanh), Dense(10, 3, tanh), Linear(3, 3))
+model = Chain(GrassmannLayer(2,3), map(i -> ResNet(3, 3, tanh), 1:4)..., Dense(3, 3, identity))
 
 nn = NeuralNetwork(model, CPU(), Float64)
 
-function loss(ps::Tuple, nsamples=100)
-    samples = randn(2,nsamples)
-    estimate = model(samples, ps)
-    sum(i -> (estimate[3,i] - rosenbrock(estimate[1:2,i]))^2, 1:nsamples)/nsamples
+# this computes the cost that is associated to the Wasserstein distance
+c = (x,y) -> .5 * norm(x - y)^2
+∇c = (x,y) -> x - y
+
+function compute_wasserstein_gradient(ensemble1::AT, ensemble2::AT) where AT<:AbstractArray
+    number_of_particles1 = size(ensemble1, 2)
+    number_of_particles2 = size(ensemble2, 2)
+    V = SinkhornVariable(ensemble1', ones(number_of_particles1) / number_of_particles1)
+    W = SinkhornVariable(ensemble2', ones(number_of_particles2) / number_of_particles2)
+    CC = CostCollection(ensemble1', ensemble2', c)
+    S = SinkhornDivergence(V, W, CC; ε=0.01, q=0.5)
+    initialize_potentials!(V, W, CC)
+    compute!(S)
+    value(S), x_gradient(S, ∇c)'
 end
 
-optimizer = Optimizer(nn, AdamOptimizer(Float64))
+xyz_points = hcat([[x,y,rosenbrock([x,y])] for x in x for y in y]...)
 
-const training_steps = 10000
+function compute_gradient(ps::Tuple)
+    samples = randn(2, size(xyz_points, 2))
+
+    estimate, nn_pullback = Zygote.pullback(ps -> model(samples, ps), ps)
+
+    valS, wasserstein_gradient = compute_wasserstein_gradient(estimate, xyz_points)
+    valS, nn_pullback(wasserstein_gradient)[1]
+end
+
+# note the very high value for the learning rate
+optimizer = Optimizer(nn, AdamOptimizer(1e-1))
+
+const training_steps = 30
 loss_array = zeros(training_steps)
 for i in 1:training_steps
-    val, pullback = Zygote.pullback(ps -> loss(ps), nn.params)
+    val, dp = compute_gradient(nn.params)
     loss_array[i] = val
-    dp = pullback(1)[1]
     optimization_step!(optimizer, model, nn.params, dp)
 end
 plot(loss_array, xlabel="training step")
@@ -55,8 +82,8 @@ plot(loss_array, xlabel="training step")
 Now we plot a few points to check how well they match the graph:
 
 ```@example rosenbrock
-const number_of_points = 10
+const number_of_points = 50
 
 coordinates = nn(randn(2, number_of_points))
-scatter3d!(p, [coordinates[1, :]], [coordinates[2, :]], [coordinates[3, :]], alpha=.5)
+scatter3d!(p, [coordinates[1, :]], [coordinates[2, :]], [coordinates[3, :]], alpha=.5, color=4)
 ```
