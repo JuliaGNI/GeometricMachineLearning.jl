@@ -8,6 +8,9 @@ Starting from an element of the tangent space $T_Y\mathcal{M}$[^1], we need to p
 
 ```@example
 HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "tikz/general_optimization_with_boundary.png"))></object>""") # hide
+```
+
+```@example
 HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "tikz/general_optimization_with_boundary_dark.png"))></object>""") # hide
 ```
 

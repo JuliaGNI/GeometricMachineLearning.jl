@@ -58,6 +58,9 @@ Plotted on the relevant domain it looks like this:
 
 ```@example
 HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/third_degree_spline.png"))></object>""") # hide
+```
+
+```@example
 HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/third_degree_spline_dark.png"))></object>""") # hide
 ```
 

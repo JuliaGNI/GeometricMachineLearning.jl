@@ -21,6 +21,9 @@ The transformer contains a **self-attention mechanism**, i.e. takes an input $X$
 
 ```@example
 HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/mha.png"))></object>""") # hide
+```
+
+```@example
 HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/mha_dark.png"))></object>""") # hide
 ```
 
