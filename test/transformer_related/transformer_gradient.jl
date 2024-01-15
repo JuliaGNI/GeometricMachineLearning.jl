@@ -1,4 +1,7 @@
 using Test, KernelAbstractions, GeometricMachineLearning, Zygote, LinearAlgebra
+import Random 
+
+Random.seed!(1234)
 
 @doc raw"""
 This checks if the gradients of the transformer change the type in case of the Stiefel manifold, and checks if they stay the same in the case of regular weights.

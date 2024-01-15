@@ -1,4 +1,7 @@
 using Test, LinearAlgebra, GeometricMachineLearning
+import Random 
+
+Random.seed!(1234)
 
 function stiefel_layer_test(T, M, N, tol=1f-1)
     model = Chain(StiefelLayer(M, N), StiefelLayer(N, N))

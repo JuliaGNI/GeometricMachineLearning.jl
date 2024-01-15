@@ -4,7 +4,9 @@ using GeometricMachineLearning: split_and_flatten
 using GeometricMachineLearning: patch_index
 using GeometricMachineLearning: within_patch_index
 using GeometricMachineLearning: index_conversion
-import Zygote
+import Zygote, Random 
+
+Random.seed!(1234)
 
 """
 This function tests is used to test if all the patch nubmers are assigned correctly with `index_conversion`, i.e. tests `patch_index` by inverting it.

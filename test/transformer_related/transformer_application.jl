@@ -1,4 +1,7 @@
 using Test, KernelAbstractions, GeometricMachineLearning
+import Random 
+
+Random.seed!(1234)
 
 @doc raw"""
 This tests if the size of the input array is kept constant when fed into the transformer (for a matrix and a tensor)

@@ -1,7 +1,8 @@
-import Random, Test, Lux, LinearAlgebra, KernelAbstractions
-
 using GeometricMachineLearning, Test
 using GeometricMachineLearning: init_optimizer_cache
+import Random, Test, Lux, LinearAlgebra, KernelAbstractions
+
+Random.seed!(1234)
 
 @doc raw"""
 This checks for an arbitrary matrix ``A\in\mathbb{R}^{N\times{}n}`` if ``A\in{}St(n,N)``.

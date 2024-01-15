@@ -1,4 +1,7 @@
 using GeometricMachineLearning, Test, Zygote
+import Random 
+
+Random.seed!(1234)
 
 @doc raw"""
 This tests the gradient optimizer called together with the `DataLoader` (applied to a tensor).

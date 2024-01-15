@@ -1,5 +1,8 @@
 using AbstractNeuralNetworks: AbstractExplicitLayer, Chain
 using GeometricMachineLearning, Test
+import Random 
+
+Random.seed!(1234)
 
 # this function should be made part of AbstractNeuralNetworks !!!
 function Chain(c::Chain, d::AbstractExplicitLayer) 

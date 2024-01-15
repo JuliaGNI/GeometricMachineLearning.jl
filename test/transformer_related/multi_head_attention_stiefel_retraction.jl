@@ -1,9 +1,10 @@
-import Random, Test, Lux, LinearAlgebra, KernelAbstractions
-
 using GeometricMachineLearning, Test
 using GeometricMachineLearning: geodesic
 using GeometricMachineLearning: cayley
 using GeometricMachineLearning: init_optimizer_cache
+import Random, Test, Lux, LinearAlgebra, KernelAbstractions
+
+Random.seed!(1234)
 
 @doc raw"""
 This function computes the geodesic retraction of an element of `StiefelLieAlgHorMatrix` and then checks if the resulting element is `StiefelProjection`.

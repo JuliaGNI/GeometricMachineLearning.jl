@@ -1,4 +1,7 @@
 using Test, KernelAbstractions, GeometricMachineLearning, Zygote, LinearAlgebra
+import Random 
+
+Random.seed!(1234)
 
 @doc raw"""
 This function tests if the `GradientOptimzier`, `MomentumOptimizer`, `AdamOptimizer` and `BFGSOptimizer` act on the neural network weights via `optimization_step!`.

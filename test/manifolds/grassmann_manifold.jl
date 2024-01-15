@@ -6,6 +6,9 @@ using Test
 using LinearAlgebra
 using GeometricMachineLearning
 using GeometricMachineLearning: global_section
+import Random 
+
+Random.seed!(1234)
 
 function check_gradient(T, N::Integer, n::Integer)
     Y = rand(GrassmannManifold{T}, N, n)

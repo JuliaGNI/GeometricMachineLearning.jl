@@ -1,6 +1,8 @@
 using GeometricMachineLearning
 using Test
+import Random 
 
+Random.seed!(1234)
 
 # input dimension
 const dimin = 2
