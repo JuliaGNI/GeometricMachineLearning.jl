@@ -51,6 +51,9 @@ The loss function described in the [theory section](../architectures/sympnet.md)
 
 ```@example
 HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/structs_visualization.png"))></object>""") # hide
+```
+
+```@example
 HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/structs_visualization_dark.png"))></object>""") # hide
 ```
 

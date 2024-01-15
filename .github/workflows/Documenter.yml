@@ -24,6 +24,7 @@ jobs:
       - run: |
           julia --project=docs -e '
             using Pkg
+            Pkg.add(url="https://github.com/ToBlick/BrenierTwoFluids.git")
             Pkg.develop(PackageSpec(path=pwd()))
             Pkg.instantiate()
             Pkg.build()

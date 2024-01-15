@@ -17,6 +17,9 @@ The tilde in the above equation indicates *predicted data*. The time step betwee
 
 ```@example
 HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/sympnet_architecture.png"))></object>""") # hide
+```
+
+```@example
 HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/sympnet_architecture_dark.png"))></object>""") # hide
 ```
 

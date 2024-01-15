@@ -11,7 +11,7 @@ mutable struct Optimizer{MT<:OptimizerMethod, CT}
     step::Int
 end
 
-function Optimizer(m::OptimizerMethod, x)
+function Optimizer(m::OptimizerMethod, x::Union{Tuple, NamedTuple})
     Optimizer(m, init_optimizer_cache(m, x), 0)
 end
 

@@ -22,7 +22,9 @@ makedocs(;
         prettyurls=get(ENV, "CI", "false") == "true",
         # not sure why we need this?
         canonical="https://juliagni.github.io/GeometricMachineLearning.jl",
-        assets=["assets/extra_styles.css"],
+        assets=[
+            "assets/extra_styles.css",
+        ],
         # specifies that we do not display the package name again (it's already in the logo)
         sidebar_sitename=false,
     ),
@@ -75,6 +77,7 @@ makedocs(;
             "Sympnets" => "tutorials/sympnet_tutorial.md",
             "Linear Wave Equation" => "tutorials/linear_wave_equation.md",
             "MNIST" => "tutorials/mnist_tutorial.md",
+            "Grassmann manifold" => "tutorials/grassmann_layer.md",
         ],
         "References" => "references.md",
         "Library" => "library.md",
