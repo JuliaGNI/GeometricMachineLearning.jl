@@ -1,5 +1,8 @@
 using GeometricMachineLearning, Test
 using LinearAlgebra: I
+import Random
+
+Random.seed!(1234)
 
 @doc raw"""
 This tests various constructor for custom arrays, e.g. if calling `SymmetricMatrix` on a matrix ``A`` does 

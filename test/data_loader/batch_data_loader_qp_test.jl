@@ -1,5 +1,8 @@
 using GeometricMachineLearning
 using Test 
+import Random 
+
+Random.seed!(1234)
 
 function dummy_qp_data_matrix(dim=2, number_data_points=200, T=Float32)
     (q = rand(T, dim, number_data_points), p = (rand(T, dim, number_data_points)))

@@ -1,4 +1,7 @@
 using GeometricMachineLearning, Test
+import Random 
+
+Random.seed!(1234)
 
 function test_resnet(M, batch_size=10, T=Float32)
     model₁ = ResNet(M, tanh, use_bias=false)

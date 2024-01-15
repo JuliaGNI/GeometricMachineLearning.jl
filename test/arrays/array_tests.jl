@@ -3,6 +3,8 @@ using Random
 using Test
 using GeometricMachineLearning
 
+Random.seed!(1234)
+
 #check if symmetric matrix works for 1×1 matrices 
 W = rand(1,1)
 S = SymmetricMatrix(W)

@@ -1,4 +1,7 @@
 using Test, GeometricMachineLearning
+import Random 
+
+Random.seed!(1234)
 
 function check_parameterlength(N, n)
     model₁ = Dense(N,N,identity)

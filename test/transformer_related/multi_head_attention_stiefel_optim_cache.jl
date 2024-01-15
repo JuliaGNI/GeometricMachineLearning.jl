@@ -1,6 +1,7 @@
 using GeometricMachineLearning, Test
-
 import Lux, Random, LinearAlgebra
+
+Random.seed!(1234)
 
 @doc raw"""
 This checks if the Adam cache was set up in the right way

@@ -3,6 +3,8 @@ using AbstractNeuralNetworks: AbstractExplicitLayer
 import GeometricMachineLearning: initialparameters
 import Random
 
+Random.seed!(1234)
+
 function optimization_step_test(N, n, T)
     model = Chain(StiefelLayer(N, n), Dense(N, N, tanh))
     ps = initialparameters(KernelAbstractions.CPU(), T, model)

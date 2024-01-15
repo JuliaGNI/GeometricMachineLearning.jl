@@ -1,11 +1,13 @@
-#=
-This tests random generation of custom arrays. This will have to be expanded to GPU tests.
-=#
 using LinearAlgebra
 using Random
 using Test
 using GeometricMachineLearning
 
+Random.seed!(1234)
+
+"""
+This tests random generation of custom arrays. This will have to be expanded to GPU tests.
+"""
 function test_random_array_generation(n::Int, N::Int, T::Type)
     A_sym = rand(SymmetricMatrix{T}, n)
     @test typeof(A_sym) <: SymmetricMatrix{T}

@@ -1,6 +1,9 @@
 using GeometricMachineLearning: 𝔄
 using GeometricMachineLearning: 𝔄exp 
 using Test
+import Random 
+
+Random.seed!(1234)
 
 # check if we recover the regular exponential function
 function test(T, N, n)

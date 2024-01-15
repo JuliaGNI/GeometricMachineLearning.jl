@@ -1,4 +1,7 @@
 using GeometricMachineLearning, Test 
+import Random 
+
+Random.seed!(1234)
 
 @doc raw"""
 This function tests addition for various custom arrays, i.e. if \(A + B\) is performed in the correct way. 

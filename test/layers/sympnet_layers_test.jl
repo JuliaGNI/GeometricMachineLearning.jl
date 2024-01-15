@@ -1,4 +1,7 @@
 using GeometricMachineLearning, Test
+import Random 
+
+Random.seed!(1234)
 
 """
 This test checks if the sympnets handle tensors the right way.

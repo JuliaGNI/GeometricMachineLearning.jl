@@ -1,6 +1,9 @@
 using GeometricMachineLearning, Test 
 using NNlib: softmax
 using LinearAlgebra: I
+import Random 
+
+Random.seed!(1234)
 
 function compare_attention_to_mha(N, batch_size=10, T=Float32)
     model₁ = MultiHeadAttention(N, 1, add_connection=false)

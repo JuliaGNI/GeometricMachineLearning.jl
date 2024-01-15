@@ -2,6 +2,9 @@ using GeometricMachineLearning, Test
 using GeometricMachineLearning: upper_triangular_asymmetrize
 using GeometricMachineLearning: orthonormal_activation
 using LinearAlgebra: det
+import Random 
+
+Random.seed!(1234)
 
 function attention_tests(N, T=Float32)
     model₁ = Attention(N, Stiefel=false)
