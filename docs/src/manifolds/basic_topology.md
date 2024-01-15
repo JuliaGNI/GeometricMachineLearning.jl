@@ -47,7 +47,7 @@ __Proof__: Call the closed set ``F`` and consider an open cover of this set: ``\
 
 __Theorem__: A compact subset of a Hausdorff space is closed: 
 
-__Proof__: Consider a compact subset ``K``. If ``K`` is not closed, then there has to be a point ``y\nin{}K`` s.t. every open set containing ``y`` intersects ``K``. Because the surrounding space is Hausdorff we can now find the following two collections of open sets: ``\{(U_z, U_{z,y}: U_z\cap{}U_{z,y}=\{\})\}_{z\in{}K}``. The open cover ``\{U_z}_{z\in{}K}`` is then reducible to a finite cover ``\{U_z}_{z\in{z_1, \ldots, z_n}\}``. The intersection ``\cap_{z\in{z_1, \ldots, z_n}}U_{z,y}`` is then an open set that contains ``y`` but has no intersection with ``K``. A contraction. 
+__Proof__: Consider a compact subset ``K``. If ``K`` is not closed, then there has to be a point ``y\nin{}K`` s.t. every open set containing ``y`` intersects ``K``. Because the surrounding space is Hausdorff we can now find the following two collections of open sets: ``\{(U_z, U_{z,y}: U_z\cap{}U_{z,y}=\{\})\}_{z\in{}K}``. The open cover ``\{U_z\}_{z\in{}K}`` is then reducible to a finite cover ``\{U_z\}_{z\in\{z_1, \ldots, z_n\}}``. The intersection ``\cap_{z\in{z_1, \ldots, z_n}}U_{z,y}`` is then an open set that contains ``y`` but has no intersection with ``K``. A contraction. 
 
 __Theorem__: If ``\mathcal{M}`` is compact and ``\mathcal{N}`` is Hausdorff, then the inverse of a continuous function ``f:\mathcal{M}\to\mathcal{N}`` is again continuous, i.e. ``f(V)`` is an open set in ``\mathcal{N}`` for ``V\in\mathcal{T}``.
 
