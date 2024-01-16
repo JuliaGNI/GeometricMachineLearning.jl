@@ -4,7 +4,7 @@ Symplectic Autoencoders are a type of neural network suitable for treating Hamil
 
 ## Hamiltonian Model Order Reduction 
 
-Hamiltonian PDEs are partial differential equations that, like its ODE counterpart, have a Hamiltonian associated with it. An example of this is the **linear wave equation** (see (Buckfink et al, 2023)) with Hamiltonian 
+Hamiltonian PDEs are partial differential equations that, like its ODE counterpart, have a Hamiltonian associated with it. An example of this is the **linear wave equation** (see [buchfink2023symplectic](@cite)) with Hamiltonian 
 
 ```math
 \mathcal{H}(q, p; \mu) := \frac{1}{2}\int_\Omega\mu^2(\partial_\xi{}q(t,\xi;\mu))^2 + p(t,\xi;\mu)^2d\xi.
@@ -69,7 +69,7 @@ then $\Phi$ can be computed in a very straight-forward manner:
 1. Rearrange the rows of the matrix $M$ such that we end up with a $N\times2(f+1)$ matrix: $\hat{M} := [M_q, M_p]$.
 2. Perform SVD: $\hat{M} = U\Sigma{}V^T$; set $\Phi\gets{}U\mathtt{[:,1:n]}$.
 
-For details on the cotangent lift (and other methods for linear symplectic model reduction) consult (Peng and Mohseni, 2016).
+For details on the cotangent lift (and other methods for linear symplectic model reduction) consult [peng2016symplectic](@cite).
 
 ## Symplectic Autoencoders
 
@@ -77,7 +77,13 @@ PSD suffers from the similar shortcomings as regular POD: it is a linear map and
 
 In order to overcome this difficulty we use neural networks, more specifically [SympNets](../architectures/sympnet.md), together with cotangent lift-like matrices. The resulting architecture, symplectic autoencoders, are demonstrated in the following image: 
 
-![](../tikz/symplectic_autoencoder.png)
+```@example
+HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/symplectic_autoencoder.png"))></object>""") # hide
+```
+
+```@example
+HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/symplectic_autoencoder_dark.png"))></object>""") # hide
+```
 
 So we alternate between SympNet and PSD layers. Because all the PSD layers are based on matrices $\Phi\in{}St(n,N)$ we have to [optimize on the Stiefel manifold](../Optimizer.md).
 
