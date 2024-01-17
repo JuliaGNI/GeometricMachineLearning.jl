@@ -1,8 +1,5 @@
 @doc raw"""
 SympNet type encompasses GSympNets and LASympnets.
-
-TODO: 
--[ ] add bias to `LASympNet`!
 """
 abstract type SympNet{AT} <: Architecture end
 
