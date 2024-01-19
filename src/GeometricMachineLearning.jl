@@ -42,6 +42,9 @@ module GeometricMachineLearning
     
     export σ, sigmoid, softmax
 
+    # from GeometricBase to print docs
+    export description
+
     # the functionality in the script doesn't require anything else defined in GML, but some of the other scripts in that folder do.
     include("data_loader/data_loader.jl")
 
