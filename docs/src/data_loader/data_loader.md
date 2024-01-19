@@ -1,8 +1,98 @@
 # Data Loader 
 
-`GeometricMachineLearning` provides flexible routines to load and manage data for training neural networks. 
-`DataLoader` has several constructors: 
+```@eval
+using GeometricMachineLearning, Markdown
+Markdown.parse(description(Val(:DataLoader)))
+```
 
-1. If provided with a tensor, then it assumes the first axis is the system dimension, the second axis is the dimension of the parameter space, and the third axis gives the time evolution of the system. 
+The data loader can be called with various types of arrays as input, for example a [snapshot matrix](snapshot_matrix.md):
 
-2. If provided with a tensor and a vector, it assumes the data are related to a classification task. 
+```@example
+using GeometricMachineLearning # hide 
+
+SnapshotMatrix = rand(Float32, 10, 100)
+
+dl = DataLoader(SnapshotMatrix)
+```
+
+or a snapshot tensor: 
+
+```@example
+using GeometricMachineLearning # hide 
+
+SnapshotTensor = rand(Float32, 10, 100, 5)
+
+dl = DataLoader(SnapshotTensor)
+```
+
+```@eval
+using GeometricMachineLearning, Markdown 
+Markdown.parse(description(Val(:data_loader_constructor_matrix)))
+```
+
+```@example 
+using GeometricMachineLearning # hide
+
+SnapshotMatrix = rand(Float32, 10, 100)
+
+dl = DataLoader(SnapshotMatrix; autoencoder=false)
+dl.input_time_steps
+```
+
+
+```@eval
+using GeometricMachineLearning, Markdown
+Markdown.parse(description(Val(:data_loader_for_named_tuple)))
+```
+
+```@example
+using GeometricMachineLearning # hide
+
+SymplecticSnapshotTensor = (q = rand(Float32, 10, 100, 5), p = rand(Float32, 10, 100, 5))
+
+dl = DataLoader(SymplecticSnapshotTensor)
+```
+
+## Convenience functions 
+
+```@eval
+using GeometricMachineLearning, Markdown
+Markdown.parse(description(Val(:Batch)))
+```
+
+```@eval
+using GeometricMachineLearning, Markdown
+Markdown.parse(description(Val(:batch_functor_matrix)))
+```
+
+```@example 
+using GeometricMachineLearning # hide
+
+matrix_data = rand(Float32, 2, 10)
+dl = DataLoader(matrix_data)
+
+batch = Batch(3)
+batch(dl)
+```
+
+This also works if the data are in ``qp`` form: 
+
+```@example matrix
+using GeometricMachineLearning # hide 
+
+qp_data = (q = rand(Float32, 2, 10), p = rand(Float32, 2, 10))
+dl = DataLoader(qp_data; autoencoder=true)
+
+batch = Batch(3)
+batch(dl)
+```
+
+```@example matrix
+using GeometricMachineLearning # hide 
+
+qp_data = (q = rand(Float32, 2, 10), p = rand(Float32, 2, 10))
+dl = DataLoader(qp_data; autoencoder=false) # false is default 
+
+batch = Batch(3)
+batch(dl)
+```

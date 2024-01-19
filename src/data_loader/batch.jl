@@ -1,7 +1,11 @@
-@doc raw"""
-`Batch` is a struct with an associated functor that acts on `DataLoader`. 
+description(::Val{:Batch}) = raw"""
+`Batch` is a struct with an associated functor that acts on an instance of `DataLoader`. 
 
-The functor returns indices that are then used in the optimization step (always for an entire epoch).
+The constructor of `Batch` takes `batch_size` (an integer) as input argument. Optionally we can provide `seq_length` if we deal with time series data and want to draw batches of a certain *length* (i.e. the second dimension of the input array).
+"""
+
+"""
+$(description(Val(:Batch)))
 """
 struct Batch{seq_type <: Union{Nothing, Integer}}
     batch_size::Int
@@ -15,32 +19,43 @@ end
 hasseqlength(::Batch{<:Integer}) = true
 hasseqlength(::Batch{<:Nothing}) = false
 
-@doc raw"""
+description(::Val{:batch_functor_matrix}) = raw"""
+For a snapshot matrix (or a `NamedTuple` of the form `(q=A, p=B)` where `A` and `B` are matrices), the functor for `Batch` is called on an instance of `DataLoader`. It then returns a tuple of batch indices: 
+- for `autoencoder=true`: (\mathcal{I}_1, \ldots, \mathcal{I}_{\lceil\mathtt{n\_params/batch\_size}\rceil})``, where the index runs from 1 to the number of batches, which is the number of columns in the snapshot matrix divided by the batch size (rounded up).
+- for `autoencoder=false`: (\mathcal{I}_1, \ldots, \mathcal{I}_{\lceil\mathtt{dl.input\_time\_steps/batch\_size}\rceil})``, where the index runs from 1 to the number of batches, which is the number of columns in the snapshot matrix (minus one) divided by the batch size (rounded up).
+"""
+
+"""
+$(description(Val(:batch_functor_matrix)))
+"""
+function (batch::Batch{<:Nothing})(dl::DataLoader{T, AT}) where {T, BT<:AbstractMatrix{T}, AT<:Union{BT, NamedTuple{(:q, :p), Tuple{BT, BT}}}}
+    number_columns = isnothing(dl.input_time_steps) ? dl.n_params : dl.input_time_steps
+    indices = shuffle(1:number_columns)
+    n_batches = Int(ceil(number_columns / batch.batch_size))
+    batches = ()
+    for batch_number in 1:(n_batches - 1)
+        batches = (batches..., indices[(batch_number - 1) * batch.batch_size + 1 : batch_number * batch.batch_size])
+    end
+    (batches..., indices[(n_batches - 1) * batch.batch_size + 1:number_columns])
+end
+
+description(::Val{:batch_functor_tensor}) = raw"""
 The functor for batch is called with an instance on `DataLoader`. It then returns a tuple of batch indices: ``(\mathcal{I}_1, \ldots, \mathcal{I}_{\lceil\mathtt{dl.n\_params/batch\_size}\rceil})``, where the index runs from 1 to the number of batches, which is the number of parameters divided by the batch size (rounded up).
+"""
+
+"""
+$(description(Val(:batch_functor_tensor)))
 """
 function (batch::Batch{<:Nothing})(dl::DataLoader{T, AT}) where {T, AT<:AbstractArray{T, 3}}
     indices = shuffle(1:dl.n_params)
-    n_batches = Int(ceil(dl.n_params/batch.batch_size))
+    n_batches = Int(ceil(dl.n_params / batch.batch_size))
     batches = ()
     for batch_number in 1:(n_batches-1)
-        batches = (batches..., indices[(batch_number-1)*batch.batch_size + 1:batch_number*batch.batch_size])
+        batches = (batches..., indices[(batch_number - 1) * batch.batch_size + 1 : batch_number * batch.batch_size])
     end
 
     # this is needed because the last batch may not have the full size
-    batches = (batches..., indices[( (n_batches-1) * batch.batch_size + 1 ):end])
-    batches
-end
-
-@doc raw"""
-The functor for batch is called with an instance on `DataLoader`. It then returns a tuple of batch indices: ``(\mathcal{I}_1, \ldots, \mathcal{I}_{\lceil\mathtt{(dl.input\_time\_steps-1)/batch\_size}\rceil})``, where the index runs from 1 to the number of batches, which is the number of input time steps (minus one) divided by the batch size (and rounded up).
-"""
-function (batch::Batch{<:Nothing})(dl::DataLoader{T, AT}) where {T, BT<:AbstractMatrix{T}, AT<:Union{BT, NamedTuple{(:q, :p), Tuple{BT, BT}}}}
-    indices = shuffle(1:dl.input_time_steps)
-    n_batches = Int(ceil((dl.input_time_steps-1)/batch.batch_size))
-    batches = ()
-    for batch_number in 1:(n_batches-1)
-        batches = (batches..., indices[(batch_number-1)*batch.batch_size + 1:batch_number*batch.batch_size])
-    end
+    batches = (batches..., indices[( (n_batches-1) * batch.batch_size + 1 ) : end])
     batches
 end
 
