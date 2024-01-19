@@ -90,7 +90,7 @@ Next we specify the architectures. `GeometricMachineLearning.jl` provides useful
 
 ```@example sympnet
 # layer dimension for gradient module 
-const upscaling_dimension = 10
+const upscaling_dimension = 2
 # hidden layers
 const nhidden = 1
 # activation function
