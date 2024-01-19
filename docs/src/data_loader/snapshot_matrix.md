@@ -13,3 +13,19 @@ M = \left[\begin{array}{c:c:c:c}
 \hat{u}_{2N}(t_0) &  \hat{u}_{2N}(t_1) & \ldots & \hat{u}_{2N}(t_f) \\
 \end{array}\right].
 ```
+
+In the above example we store a matrix whose first axis is the system dimension (i.e. a state is an element of ``\mathbb{R}^{2n}``) and the second dimension gives the time step. 
+
+The starting point for using the snapshot matrix as data for a machine learning model is that all the columns of ``M`` live on a lower-dimensional [solution manifold](../reduced_order_modeling/autoencoder.md) and we can use techniques such as *POD* and *autoencoders* to find this solution manifold. We also note that the second axis of ``M`` does not necessarily indicate time but can also represent various parameters (including initial conditions). The second axis in the `DataLoader` struct is therefore saved in the field `n_params`.
+
+# Snapshot tensor 
+
+The snapshot tensor fulfills the same role as the snapshot matrix but has a third axis that describes different initial parameters (such as different initial conditions). 
+
+```@example 
+HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/tensor.png"))></object>""") # hide
+```
+
+```@example
+HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/tensor_dark.png"))></object>""") # hide
+```
