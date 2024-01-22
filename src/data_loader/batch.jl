@@ -1,7 +1,7 @@
 description(::Val{:Batch}) = raw"""
 `Batch` is a struct with an associated functor that acts on an instance of `DataLoader`. 
 
-The constructor of `Batch` takes `batch_size` (an integer) as input argument. Optionally we can provide `seq_length` if we deal with time series data and want to draw batches of a certain *length* (i.e. the second dimension of the input array).
+The constructor of `Batch` takes `batch_size` (an integer) as input argument. Optionally we can provide `seq_length` if we deal with time series data and want to draw batches of a certain *length* (i.e. a range contained in the second dimension of the input array).
 """
 
 """
@@ -19,17 +19,10 @@ end
 hasseqlength(::Batch{<:Integer}) = true
 hasseqlength(::Batch{<:Nothing}) = false
 
-description(::Val{:batch_functor_matrix}) = raw"""
-For a snapshot matrix (or a `NamedTuple` of the form `(q=A, p=B)` where `A` and `B` are matrices), the functor for `Batch` is called on an instance of `DataLoader`. It then returns a tuple of batch indices: 
-- for `autoencoder=true`: (\mathcal{I}_1, \ldots, \mathcal{I}_{\lceil\mathtt{n\_params/batch\_size}\rceil})``, where the index runs from 1 to the number of batches, which is the number of columns in the snapshot matrix divided by the batch size (rounded up).
-- for `autoencoder=false`: (\mathcal{I}_1, \ldots, \mathcal{I}_{\lceil\mathtt{dl.input\_time\_steps/batch\_size}\rceil})``, where the index runs from 1 to the number of batches, which is the number of columns in the snapshot matrix (minus one) divided by the batch size (rounded up).
 """
-
+This function is called when either dealing with a matrix or a tensor where we always consider the entire time series. 
 """
-$(description(Val(:batch_functor_matrix)))
-"""
-function (batch::Batch{<:Nothing})(dl::DataLoader{T, AT}) where {T, BT<:AbstractMatrix{T}, AT<:Union{BT, NamedTuple{(:q, :p), Tuple{BT, BT}}}}
-    number_columns = isnothing(dl.input_time_steps) ? dl.n_params : dl.input_time_steps
+function batch_over_one_axis(batch::Batch, number_columns::Int)
     indices = shuffle(1:number_columns)
     n_batches = Int(ceil(number_columns / batch.batch_size))
     batches = ()
@@ -37,6 +30,21 @@ function (batch::Batch{<:Nothing})(dl::DataLoader{T, AT}) where {T, BT<:Abstract
         batches = (batches..., indices[(batch_number - 1) * batch.batch_size + 1 : batch_number * batch.batch_size])
     end
     (batches..., indices[(n_batches - 1) * batch.batch_size + 1:number_columns])
+end
+
+
+description(::Val{:batch_functor_matrix}) = raw"""
+For a snapshot matrix (or a `NamedTuple` of the form `(q=A, p=B)` where `A` and `B` are matrices), the functor for `Batch` is called on an instance of `DataLoader`. It then returns a tuple of batch indices: 
+- for `autoencoder=true`: ``(\mathcal{I}_1, \ldots, \mathcal{I}_{\lceil\mathtt{n\_params/batch\_size}\rceil})``, where the index runs from 1 to the number of batches, which is the number of columns in the snapshot matrix divided by the batch size (rounded up).
+- for `autoencoder=false`: ``(\mathcal{I}_1, \ldots, \mathcal{I}_{\lceil\mathtt{dl.input\_time\_steps/batch\_size}\rceil})``, where the index runs from 1 to the number of batches, which is the number of columns in the snapshot matrix (minus one) divided by the batch size (rounded up).
+"""
+
+"""
+$(description(Val(:batch_functor_matrix)))
+"""
+function (batch::Batch{<:Nothing})(dl::DataLoader{T, AT}) where {T, BT<:AbstractMatrix{T}, AT<:Union{BT, NamedTuple{(:q, :p), Tuple{BT, BT}}}}
+    number_columns = isnothing(dl.input_time_steps) ? dl.n_params : dl.input_time_steps
+    batch_over_one_axis(batch, number_columns)
 end
 
 description(::Val{:batch_functor_tensor}) = raw"""
@@ -47,24 +55,38 @@ The functor for batch is called with an instance on `DataLoader`. It then return
 $(description(Val(:batch_functor_tensor)))
 """
 function (batch::Batch{<:Nothing})(dl::DataLoader{T, AT}) where {T, AT<:AbstractArray{T, 3}}
-    indices = shuffle(1:dl.n_params)
-    n_batches = Int(ceil(dl.n_params / batch.batch_size))
-    batches = ()
-    for batch_number in 1:(n_batches-1)
-        batches = (batches..., indices[(batch_number - 1) * batch.batch_size + 1 : batch_number * batch.batch_size])
-    end
-
-    # this is needed because the last batch may not have the full size
-    batches = (batches..., indices[( (n_batches-1) * batch.batch_size + 1 ) : end])
-    batches
+    batch_over_one_axis(batch, dl.n_params)
 end
 
-#=
-function (batch::Batch{<:Integer})(dl::DataLoader{T, AT, Nothing}) where {T, AT<:AbstractArray{T, 3}}
-    n_starting_points = n_params
-    ...
+"""
+Batching for tensor with three axes (unsupervised learning). 
+"""
+function (batch::Batch{<:Integer})(dl::DataLoader{T, BT, Nothing}) where {T, AT<:AbstractArray{T, 3}, BT<:Union{AT, NamedTuple{(:q, :p), Tuple{AT, AT}}}}
+    time_indices = shuffle(1:(dl.input_time_steps - batch.seq_length))
+    parameter_indices = shuffle(1:dl.n_params)
+    all_batches = Iterators.product(time_indices, parameter_indices) |> collect |> vec
+    batches = ()
+    n_batches = number_of_batches(dl, batch)
+    for batch_number in 1:(n_batches - 1)
+        batches = (batches..., all_batches[(batch_number - 1) * batch.batch_size + 1 : batch_number * batch.batch_size])
+    end
+    (batches..., all_batches[(n_batches - 1) * batch.batch_size + 1:end])
 end 
-=#
+
+@doc raw"""
+Gives the number of bathces. Inputs are of type `DataLoader` and `Batch`.
+"""
+function number_of_batches(dl::DataLoader{T, AT}, batch::Batch) where {T, BT<:AbstractMatrix{T}, AT<:Union{BT, NamedTuple{(:q, :p), Tuple{BT, BT}}}}
+    Int(ceil(dl.input_time_steps / batch.batch_size))
+end
+
+function number_of_batches(dl::DataLoader{T, AT}, batch::Batch{Nothing}) where {T, BT<:AbstractArray{T, 3}, AT<:Union{BT, NamedTuple{(:q, :p), Tuple{BT, BT}}}}
+    Int(ceil(dl.n_params / batch.batch_size))
+end
+
+function number_of_batches(dl::DataLoader{T, AT}, batch::Batch{<:Integer}) where {T, BT<:AbstractArray{T, 3}, AT<:Union{BT, NamedTuple{(:q, :p), Tuple{BT, BT}}}}
+    Int(ceil((dl.input_time_steps - batch.seq_length) * dl.n_params / batch.batch_size))
+end
 
 @doc raw"""
 Optimize for an entire epoch. For this you have to supply: 
@@ -97,7 +119,57 @@ function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTu
         dp = pullback(one(loss_value))[1]
         optimization_step!(opt, model, ps, dp)
     end
-    total_error/count
+    total_error / count
+end
+
+@kernel function assign_input_from_vector_of_tuples_kernel!(q_input::AT, p_input::AT, input::NamedTuple{(:q, :p), Tuple{AT, AT}}, indices::Vector{Tuple{Int, Int}}) where {T, AT<:AbstractArray{T, 3}}
+    i, j, k = @index(Global, NTuple)
+    
+    q_input[i, j, k] = input.q[i, indices[k][1] + j - 1, indices[k][2]]
+    p_input[i, j, k] = input.p[i, indices[k][1] + j - 1, indices[k][2]]
+end
+
+@kernel function assign_output_from_vector_of_tuples_kernel!(q_output::AT, p_output::AT, input::NamedTuple{(:q, :p), Tuple{AT, AT}}, indices::Vector{Tuple{Int, Int}}, seq_length::Int) where {T, AT<:AbstractArray{T, 3}}
+    i, k = @index(Global, NTuple)
+
+    q_output[i, 1, k] = input.q[i, indices[k][1] + seq_length, indices[k][2]]
+    p_output[i, 1, k] = input.p[i, indices[k][1] + seq_length, indices[k][2]]
+end
+
+"""
+Takes the output of the batch functor and uses it to create the corresponding array. 
+"""
+function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT}, batch::Batch, batch_indices::Vector{Tuple{Int, Int}}) where {T, AT<:AbstractArray{T, 3}, BT<:NamedTuple{(:q, :p), Tuple{AT, AT}}}
+    backend = KernelAbstractions.get_backend(dl.input.q)
+    q_input = KernelAbstractions.allocate(backend, T, dl.input_dim ÷ 2, batch.seq_length, length(batch_indices))
+    p_input = similar(q_input)
+
+    assign_input_from_vector_of_tuples! = assign_input_from_vector_of_tuples_kernel!(backend)
+    assign_input_from_vector_of_tuples!(q_input, p_input, dl.input, batch_indices, ndrange=(dl.input_dim ÷ 2, batch.seq_length, length(batch_indices)))
+
+    q_output = KernelAbstractions.allocate(backend, T, dl.input_dim ÷ 2, 1, length(batch_indices))
+    p_output = similar(q_output)
+
+    assign_output_from_vector_of_tuples! = assign_output_from_vector_of_tuples_kernel!(backend)
+    assign_output_from_vector_of_tuples!(q_output, p_output, dl.input, batch_indices, batch.seq_length, ndrange=(dl.input_dim ÷ 2, length(batch_indices)))
+
+    (q = q_input, p = p_input), (q = q_output, p = p_output)
+end
+
+function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTuple}, dl::DataLoader{T, BT, Nothing}, batch::Batch, loss) where {T, AT<:AbstractArray{T, 3}, BT<:NamedTuple{(:q, :p), Tuple{AT, AT}}}
+    count = 0
+    total_error = T(0)
+    batches = batch(dl)
+    @views for batch_indices in batches 
+        count += 1
+        # these `copy`s should not be necessary! coming from a Zygote problem!
+        input_nt, output_nt = convert_input_and_batch_indices_to_array(dl, batch, batch_indices)
+        loss_value, pullback = Zygote.pullback(ps -> loss(model, ps, input_nt, output_nt), ps)
+        total_error += loss_value
+        dp = pullback(one(loss_value))[1]
+        optimization_step!(opt, model, ps, dp)
+    end
+    total_error / count
 end
 
 function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTuple}, dl::DataLoader{T, AT, BT}, batch::Batch) where {T, T1, AT<:AbstractArray{T, 3}, BT<:AbstractArray{T1, 3}}
@@ -125,7 +197,7 @@ function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTu
         dp = pullback(one(loss_value))[1]
         optimization_step!(opt, model, ps, dp)
     end
-    total_error/count
+    total_error / count
 end
 
 @doc raw"""
