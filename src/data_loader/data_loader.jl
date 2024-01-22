@@ -19,11 +19,11 @@ $(description(Val(:DataLoader)))
 struct DataLoader{T, AT<:Union{NamedTuple, AbstractArray{T}}, OT<:Union{AbstractArray, Nothing}, TimeSteps}
     input::AT
     output::OT
-    input_dim::Integer
-    input_time_steps::Union{Integer, Nothing}
-    n_params::Union{Integer, Nothing} 
-    output_dim::Union{Integer, Nothing}
-    output_time_steps::Union{Integer, Nothing}
+    input_dim::Int
+    input_time_steps::Union{Int, Nothing}
+    n_params::Union{Int, Nothing} 
+    output_dim::Union{Int, Nothing}
+    output_time_steps::Union{Int, Nothing}
 end
 
 struct TimeSteps end 
@@ -61,7 +61,7 @@ function DataLoader(data::AbstractArray{T, 3}, target::AbstractVector{T1}; patch
     @info "You provided a tensor and a vector as input. This will be treated as a classification problem (MNIST). Tensor axes: (i) & (ii) image axes and (iii) parameter dimension."
     im_dim₁, im_dim₂, n_params = size(data)
     @assert length(target) == n_params 
-    number_of_patches = (im_dim₁÷patch_length) * (im_dim₂÷patch_length) 
+    number_of_patches = (im_dim₁ ÷ patch_length) * (im_dim₂ ÷ patch_length) 
     target = onehotbatch(target)
     data_preprocessed = split_and_flatten(data, patch_length=patch_length, number_of_patches=number_of_patches)
     DataLoader{T, typeof(data_preprocessed), typeof(target), RegularData}(
@@ -83,10 +83,10 @@ function DataLoader(data::NamedTuple{(:q, :p), Tuple{AT, AT}}; autoencoder=false
     
     if autoencoder == false
         dim2, time_steps = size(data.q)
-        return DataLoader{T, typeof(data), Nothing, TimeSteps}(data, nothing, dim2*2, time_steps-1, nothing, nothing, nothing)
+        return DataLoader{T, typeof(data), Nothing, TimeSteps}(data, nothing, dim2 * 2, time_steps - 1, nothing, nothing, nothing)
     elseif autoencoder == true
         dim2, n_params = size(data.q)
-        return DataLoader{T, typeof(data), Nothing, RegularData}(data, nothing, dim2*2, nothing, n_params, nothing, nothing)
+        return DataLoader{T, typeof(data), Nothing, RegularData}(data, nothing, dim2 * 2, nothing, n_params, nothing, nothing)
     end
 end
 
@@ -94,7 +94,7 @@ function DataLoader(data::NamedTuple{(:q, :p), Tuple{AT, AT}}; output_time_steps
     @info "You have provided a NamedTuple with keys q and p; the data are tensors. This is interpreted as *symplectic data*."
     
     dim2, time_steps, n_params = size(data.q)
-    DataLoader{T, typeof(data), Nothing, TimeSteps}(data, nothing, dim2*2, time_steps-1, n_params, nothing, output_time_steps)
+    DataLoader{T, typeof(data), Nothing, TimeSteps}(data, nothing, dim2 * 2, time_steps - 1, n_params, nothing, output_time_steps)
 end
 
 @doc raw"""
