@@ -18,6 +18,8 @@ In the above example we store a matrix whose first axis is the system dimension 
 
 The starting point for using the snapshot matrix as data for a machine learning model is that all the columns of ``M`` live on a lower-dimensional [solution manifold](../reduced_order_modeling/autoencoder.md) and we can use techniques such as *POD* and *autoencoders* to find this solution manifold. We also note that the second axis of ``M`` does not necessarily indicate time but can also represent various parameters (including initial conditions). The second axis in the `DataLoader` struct is therefore saved in the field `n_params`.
 
+
+
 # Snapshot tensor 
 
 The snapshot tensor fulfills the same role as the snapshot matrix but has a third axis that describes different initial parameters (such as different initial conditions). 
@@ -29,3 +31,5 @@ HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(
 ```@example
 HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/tensor_dark.png"))></object>""") # hide
 ```
+
+When drawing training samples from the snapshot tensor we also need to specify a *sequence length* (as an argument to the [`Batch`](@ref) struct). When sampling a batch from the snapshot tensor we sample over the starting point of the time interval (which is of length `seq_length`) and the third axis of the tensor (the parameters). The total number of batches in this case is ``\lceil\mathtt{(dl.input\_time_steps - batch.seq\_length) * dl.n\_params / batch.batch_size}\rceil``. 
