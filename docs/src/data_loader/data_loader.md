@@ -96,3 +96,20 @@ dl = DataLoader(qp_data; autoencoder=false) # false is default
 batch = Batch(3)
 batch(dl)
 ```
+
+Not that the routines are implemented in such a way that no two indices appear double. 
+
+## Sampling from a tensor 
+
+We can also sample tensor data.
+
+```@example tensor
+using GeometricMachineLearning # hide 
+
+qp_data = (q = rand(Float32, 2, 8, 5), p = rand(Float32, 2, 8, 5))
+dl = DataLoader(qp_data)
+
+# also specify sequence length here
+batch = Batch(3, 5)
+batch(dl)
+```
