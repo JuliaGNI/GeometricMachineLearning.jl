@@ -77,7 +77,7 @@ batch(dl)
 
 This also works if the data are in ``qp`` form: 
 
-```@example matrix
+```@example
 using GeometricMachineLearning # hide 
 
 qp_data = (q = rand(Float32, 2, 10), p = rand(Float32, 2, 10))
@@ -87,7 +87,7 @@ batch = Batch(3)
 batch(dl)
 ```
 
-```@example matrix
+```@example
 using GeometricMachineLearning # hide 
 
 qp_data = (q = rand(Float32, 2, 10), p = rand(Float32, 2, 10))
@@ -103,13 +103,23 @@ Not that the routines are implemented in such a way that no two indices appear d
 
 We can also sample tensor data.
 
-```@example tensor
+```@example
 using GeometricMachineLearning # hide 
 
-qp_data = (q = rand(Float32, 2, 8, 5), p = rand(Float32, 2, 8, 5))
+qp_data = (q = rand(Float32, 2, 8, 3), p = rand(Float32, 2, 8, 3))
 dl = DataLoader(qp_data)
 
 # also specify sequence length here
-batch = Batch(3, 5)
+batch = Batch(4, 5)
 batch(dl)
 ```
+
+```@example 
+HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/tensor_sampling.png"))></object>""") # hide
+```
+
+```@example
+HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/tensor_sampling_dark.png"))></object>""") # hide
+```
+
+Here the sampling is performed over the second axis (the *time step dimension*) and the third axis (the *parameter dimension*). 
