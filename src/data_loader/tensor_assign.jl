@@ -59,55 +59,6 @@ function assign_output_estimate(full_output::AbstractArray{T, 3}, prediction_win
     output_estimate
 end
 
-#=
-"""
-This function draws random time steps and parameters and based on these assign the batch and the output.
-
-For ODE DataLoader: 
-(i) batch input tensor to be written on
-(ii) batch output tensor to be written on 
-(iii) data tensor 
-
-For MNIST DataLoader:
-(i) batch input tensor to be written on
-(ii) batch output tensor to be written on 
-(iii) data tensor 
-(iv) target tensor
-"""
-function draw_batch!(batch::AbstractArray{T, 3}, output::AbstractArray{T, 3}, data::AbstractArray{T, 3}) where T
-    batch_size = size(batch, 3)
-    n_params = size(data, 2)
-    seq_length = size(batch, 2)
-    prediction_window = size(output, 2)
-    n_time_steps = size(data, 3)
-    backend = KernelAbstractions.get_backend(batch)
-    params = KernelAbstractions.allocate(backend, T, batch_size)
-	time_steps = KernelAbstractions.allocate(backend, T, batch_size)
-	rand!(Random.default_rng(), params)
-	rand!(Random.default_rng(), time_steps)
-	params = Int.(ceil.(n_params*params))
-    time_steps = Int.(ceil.((n_time_steps-seq_length+1-prediction_window)*time_steps)) 
-    assign_batch! = assign_batch_kernel!(backend)
-    assign_output! = assign_output_kernel!(backend)
-    assign_batch!(batch, data, params, time_steps, ndrange=size(batch))
-    assign_output!(output, data, params, time_steps, seq_length, ndrange=size(output))
-end
-
-function draw_batch!(batch::AT, output::BT, data::AT, target::BT) where {T, T2, AT<:AbstractArray{T, 3}, BT<:AbstractArray{T2, 3}}
-    batch_size = size(batch, 3)
-    n_params = size(data, 2)
-    backend = KernelAbstractions.get_backend(batch)
-    params = KernelAbstractions.allocate(backend, T, batch_size)
-    rand!(Random.default_rng(), params)
-    params = Int.(ceil.(n_params*params))
-    assign_batch! = assign_batch_kernel!(backend)
-    # for mnist this is fixed!
-    time_steps = KernelAbstractions.ones(backend, T2, batch_size)
-    assign_batch!(batch, data, params, time_steps, ndrange=size(batch))
-    assign_batch!(output, target, params, time_steps, ndrange=size(output))
-end
-=#
-
 """
 Used for differentiating assign_output_estimate (this appears in the loss). 
 """
