@@ -21,7 +21,7 @@ using Plots # hide
 rosenbrock(x::Vector) = ((1.0 - x[1])^2 + 100.0 * (x[2] - x[1]^2)^2) / 1000
 x, y = -1.5:0.1:1.5, -1.5:0.1:1.5
 z = Surface((x,y)->rosenbrock([x,y]), x, y)
-p = surface(x,y,z; camera=(30,20), alpha=.6, colorbar=false)
+p = surface(x,y,z; camera=(30,20), alpha=.6, colorbar=false, xlims=(-1.5, 1.5), ylims=(-1.5, 1.5), zlims=(0.0, rosenbrock([-1.5, -1.5])))
 ```
 
 We now build a neural network whose task it is to map a product of two Gaussians ``\mathcal{N}(0,1)\times\mathcal{N}(0,1)`` onto the graph of the Rosenbrock function where the range for ``x`` and for ``y`` is ``[-1.5,1.5]``.

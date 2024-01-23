@@ -1,5 +1,6 @@
 pdf:
 	xelatex -shell-escape adam_optimizer
+	xelatex -shell-escape adam_optimizer_dark
 	xelatex -shell-escape general_optimization
 	xelatex -shell-escape general_optimization_with_boundary
 	xelatex -shell-escape general_optimization_with_boundary_dark
@@ -12,12 +13,14 @@ pdf:
 	xelatex -shell-escape structs_visualization_dark
 	xelatex -shell-escape logo 
 	xelatex -shell-escape symplectic_autoencoder
+	xelatex -shell-escape symplectic_autoencoder_dark
 	xelatex -shell-escape solution_manifold_2
 	xelatex -shell-escape mha
 	xelatex -shell-escape mha_dark
 
 png:
-	pdftocairo  -png -r 150 -transp -singlefile  adam_optimizer.pdf               	 			adam_optimizer              
+	pdftocairo  -png -r 150 -transp -singlefile  adam_optimizer.pdf               	 			adam_optimizer  
+	pdftocairo  -png -r 150 -transp -singlefile  adam_optimizer_dark.pdf               	 		adam_optimizer_dark                     
 	pdftocairo  -png -r 150 -transp -singlefile  general_optimization.pdf		 	 			general_optimization   
 	pdftocairo  -png -r 150 -transp -singlefile  general_optimization_with_boundary.pdf 		general_optimization_with_boundary              
 	pdftocairo  -png -r 150 -transp -singlefile  general_optimization_with_boundary_dark.pdf	general_optimization_with_boundary_dark          
@@ -30,6 +33,7 @@ png:
 	pdftocairo 	-png -r 100 -transp -singlefile  structs_visualization_dark.pdf					structs_visualization_dark
 	pdftocairo 	-png -r 150 -transp -singlefile	 logo.pdf										logo 
 	pdftocairo  -png -r 150 -transp -singlefile  symplectic_autoencoder.pdf						symplectic_autoencoder
+	pdftocairo  -png -r 150 -transp -singlefile  symplectic_autoencoder_dark.pdf				symplectic_autoencoder_dark
 	pdftocairo  -png -r 150 -transp -singlefile  solution_manifold_2.pdf						solution_manifold_2
 	pdftocairo  -png -r 150 -transp -singlefile  mha.pdf 										mha
 	pdftocairo  -png -r 150 -transp -singlefile  mha_dark.pdf 									mha_dark
