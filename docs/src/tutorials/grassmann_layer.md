@@ -42,13 +42,26 @@ nn = NeuralNetwork(model, CPU(), Float64)
 c = (x,y) -> .5 * norm(x - y)^2
 ∇c = (x,y) -> x - y
 
+const d = 3 # hide 
+const d′ = 2 * Int(floor(d / 2)) # hide
+const N = length(x) * length(y) # hide
+const δ = N ^ (-1/2) # hide
+const ε = 0.1 * N ^ (-1 / (d′+4)) # δ^2 #N^(-3/(d′+4)) # hide
+const q = 0.7 # hide
+const Δ = 1.0 # hide
+const s = ε # hide
+const tol = 1e-3 # hide
+const crit_it = 5 # hide
+const p_ω = 2 # hide
+
 function compute_wasserstein_gradient(ensemble1::AT, ensemble2::AT) where AT<:AbstractArray
     number_of_particles1 = size(ensemble1, 2)
     number_of_particles2 = size(ensemble2, 2)
     V = SinkhornVariable(ensemble1', ones(number_of_particles1) / number_of_particles1)
     W = SinkhornVariable(ensemble2', ones(number_of_particles2) / number_of_particles2)
     CC = CostCollection(ensemble1', ensemble2', c)
-    S = SinkhornDivergence(V, W, CC; ε=0.01, q=0.5)
+    params = SinkhornParameters(CC; ε=ε,q=1.0,Δ=1.0,s=s,tol=tol,crit_it=crit_it,p_ω=p_ω,sym=true,acc=false) # hide
+    S = SinkhornDivergence(V, W, CC, params)
     initialize_potentials!(V, W, CC)
     compute!(S)
     value(S), x_gradient(S, ∇c)'
