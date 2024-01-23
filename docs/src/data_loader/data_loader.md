@@ -97,7 +97,13 @@ batch = Batch(3)
 batch(dl)
 ```
 
-Not that the routines are implemented in such a way that no two indices appear double. 
+Specifically the routines do the following: 
+1. ``\mathtt{n\_indices}\leftarrow \mathtt{n\_params}\lor\mathtt{input\_time\_steps}`` 
+2. ``\mathtt{indices} \leftarrow \mathtt{shuffle}(\mathtt{1:\mathtt{n\_indices}})``
+3. ``\mathcal{I}_i \leftarrow \mathtt{indices[(i - 1)} \cdot \mathtt{batch\_size} + 1 \mathtt{:} i \cdot \mathtt{batch\_size]}\text{ for }i=1, \ldots, (\mathrm{last} -1)``
+4. ``\mathcal{I}_\mathtt{last} \leftarrow \mathtt{indices[}(\mathtt{n\_batches} - 1) \cdot \mathtt{batch\_size} + 1\mathtt{:end]}``
+
+Note that the routines are implemented in such a way that no two indices appear double. 
 
 ## Sampling from a tensor 
 
@@ -114,6 +120,15 @@ batch = Batch(4, 5)
 batch(dl)
 ```
 
+Sampling from a tensor is done the following way (``\mathcal{I}_i`` again denotes the batch indices for the ``i``-th batch): 
+1. ``\mathtt{time\_indices} \leftarrow \mathtt{shuffle}(\mathtt{1:}(\mathtt{input\_time\_steps} - \mathtt{seq\_length})``
+2. ``\mathtt{parameter\_indices} \leftarrow \mathtt{shuffle}(\mathtt{1:n\_params})``
+3. ``\mathtt{complete\_indices} \leftarrow \mathtt{Iterators.product}(\mathtt{time\_indices}, \mathtt{parameter\_indices}) \mathtt{|> collect |> vec}``
+3. ``\mathcal{I}_i \leftarrow \mathtt{complete\_indices[}(i - 1) \cdot \mathtt{batch\_size} + 1 : i \cdot \mathtt{batch\_size]}\text{ for }i=1, \ldots, (\mathrm{last} -1)``
+4. ``\mathcal{I}_\mathrm{last} \leftarrow \mathtt{complete\_indices[}(\mathrm{last} - 1) \cdot \mathtt{batch\_size} + 1\mathtt{:end]}``
+
+This algorithm can be visualized the following way (here `batch_size = 4`):
+
 ```@example 
 HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/tensor_sampling.png"))></object>""") # hide
 ```
@@ -122,4 +137,4 @@ HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(
 HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/tensor_sampling_dark.png"))></object>""") # hide
 ```
 
-Here the sampling is performed over the second axis (the *time step dimension*) and the third axis (the *parameter dimension*). 
+Here the sampling is performed over the second axis (the *time step dimension*) and the third axis (the *parameter dimension*). Whereas each block has thickness 1 in the ``x`` direction (i.e. pertains to a single parameter), its length in the ``y`` direction is `seq_length`. In total we sample as many such blocks as the batch size is big. By construction those blocks are never the same throughout a training epoch but may intersect each other!
