@@ -17,6 +17,10 @@ pdf:
 	xelatex -shell-escape solution_manifold_2
 	xelatex -shell-escape mha
 	xelatex -shell-escape mha_dark
+	xelatex -shell-escape tensor 
+	xelatex -shell-escape tensor_dark
+	xelatex -shell-escape tensor_sampling
+	xelatex -shell-escape tensor_sampling_dark
 
 png:
 	pdftocairo  -png -r 150 -transp -singlefile  adam_optimizer.pdf               	 			adam_optimizer  
@@ -37,6 +41,10 @@ png:
 	pdftocairo  -png -r 150 -transp -singlefile  solution_manifold_2.pdf						solution_manifold_2
 	pdftocairo  -png -r 150 -transp -singlefile  mha.pdf 										mha
 	pdftocairo  -png -r 150 -transp -singlefile  mha_dark.pdf 									mha_dark
+	pdftocairo  -png -r 150 -transp -singlefile  tensor.pdf 									tensor
+	pdftocairo  -png -r 150 -transp -singlefile  tensor_dark.pdf 								tensor_dark
+	pdftocairo  -png -r 180 -transp -singlefile  tensor_sampling.pdf 							tensor_sampling
+	pdftocairo  -png -r 180 -transp -singlefile  tensor_sampling_dark.pdf 						tensor_sampling_dark
 
 logo:
 	xelatex -shell-escape logo_with_name

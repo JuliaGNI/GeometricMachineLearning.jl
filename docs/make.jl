@@ -66,7 +66,7 @@ makedocs(;
         ],
         "Data Loader" =>[
             "Routines" => "data_loader/data_loader.md",
-            "Snapshot matrix" => "data_loader/snapshot_matrix.md",
+            "Snapshot matrix & tensor" => "data_loader/snapshot_matrix.md",
         ],
         "Reduced Order Modelling" =>[
             "POD and Autoencoders" => "reduced_order_modeling/autoencoder.md",
