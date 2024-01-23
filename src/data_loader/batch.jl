@@ -64,13 +64,13 @@ Batching for tensor with three axes (unsupervised learning).
 function (batch::Batch{<:Integer})(dl::DataLoader{T, BT, Nothing}) where {T, AT<:AbstractArray{T, 3}, BT<:Union{AT, NamedTuple{(:q, :p), Tuple{AT, AT}}}}
     time_indices = shuffle(1:(dl.input_time_steps - batch.seq_length))
     parameter_indices = shuffle(1:dl.n_params)
-    all_batches = Iterators.product(time_indices, parameter_indices) |> collect |> vec
+    complete_indices = Iterators.product(time_indices, parameter_indices) |> collect |> vec
     batches = ()
     n_batches = number_of_batches(dl, batch)
     for batch_number in 1:(n_batches - 1)
-        batches = (batches..., all_batches[(batch_number - 1) * batch.batch_size + 1 : batch_number * batch.batch_size])
+        batches = (batches..., complete_indices[(batch_number - 1) * batch.batch_size + 1 : batch_number * batch.batch_size])
     end
-    (batches..., all_batches[(n_batches - 1) * batch.batch_size + 1:end])
+    (batches..., complete_indices[(n_batches - 1) * batch.batch_size + 1:end])
 end 
 
 @doc raw"""
