@@ -97,6 +97,25 @@ function DataLoader(data::NamedTuple{(:q, :p), Tuple{AT, AT}}; output_time_steps
     DataLoader{T, typeof(data), Nothing, TimeSteps}(data, nothing, dim2 * 2, time_steps - 1, n_params, nothing, output_time_steps)
 end
 
+"""
+Constructor for `EnsembleSolution` form package `GeometricSolutions`.
+"""
+function DataLoader(ensemble_solution::EnsembleSolution)
+
+    sys_dim, input_time_steps, n_params = length(ensemble_solution.s[1].q[0]), length(ensemble_solution.t), length(ensemble_solution.s)
+
+    data = (q = zeros(sys_dim, input_time_steps, n_params), p = zeros(sys_dim, input_time_steps, n_params))
+
+    for (solution, i) in zip(ensemble_solution.s, axes(ensemble_solution.s, 1))
+        for dim in 1:sys_dim 
+            data.q[dim, :, i] = solution.q[:, dim]
+            data.p[dim, :, i] = solution.p[:, dim]
+        end 
+    end
+
+    data
+end
+
 @doc raw"""
 Computes the loss for a neural network and a data set. 
 The computed loss is $||output - \mathcal{NN}(input)||_F/\mathtt{size(output, 2)}/\mathtt{size(output, 3)}$, where $||A||_F := \sqrt{\sum_{i_1,\ldots,i_k}||a_{i_1,\ldots,i_k}^2}$ is the Frobenius norm.
