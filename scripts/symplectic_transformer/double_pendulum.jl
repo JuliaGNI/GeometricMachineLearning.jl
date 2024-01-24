@@ -1,4 +1,4 @@
-using GeometricMachineLearning: DataLoader, SymplecticTransformer, NeuralNetwork, CPU
+using GeometricMachineLearning: DataLoader, SymplecticTransformer, NeuralNetwork, CPU, Batch
 using GeometricProblems.DoublePendulum: tspan, tstep, default_parameters, hodeproblem
 using GeometricIntegrators: integrate, ImplicitMidpoint
 using GeometricEquations: EnsembleProblem
