@@ -2,6 +2,7 @@
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 GeometricIntegrators = "dcce2d33-59f6-5b8d-9047-0defad88ae06"
 GeometricMachineLearning = "194d25b2-d3f5-49f0-af24-c124f4aa80cc"
+GeometricProblems = "18cb22b4-ad41-5c80-9c5f-710df63fbdc9"
 LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
