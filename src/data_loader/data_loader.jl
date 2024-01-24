@@ -113,7 +113,7 @@ function DataLoader(ensemble_solution::EnsembleSolution)
         end 
     end
 
-    data
+    DataLoader(data)
 end
 
 @doc raw"""
