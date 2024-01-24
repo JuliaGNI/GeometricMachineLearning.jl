@@ -1,25 +1,20 @@
-using GeometricProblems.DoublePendulum: hodeproblem
+using GeometricMachineLearning: DataLoader, SymplecticTransformer, NeuralNetwork, CPU
+using GeometricProblems.DoublePendulum: tspan, tstep, default_parameters, hodeproblem
 using GeometricIntegrators: integrate, ImplicitMidpoint
-using GeometricMachineLearning
+using GeometricEquations: EnsembleProblem
 
-initial_conditions = (
-        ([π / 4, π / 2], [0.0, π / 8]), 
-        ([π / 4, π / 1], [0.0, 0.0  ]),
-        ([π / 1, π / 2], [0.0, π    ])
-)
+initial_conditions = [
+        (q=[π / 4, π / 2], p=[0.0, π / 8]), 
+        (q=[π / 4, π / 1], p=[0.0, 0.0  ]),
+        (q=[π / 1, π / 2], p=[0.0, π    ])
+]
 
-problems = [hodeproblem(initial_condition...) for initial_condition in initial_conditions]
-solutions = [integrate(problem, ImplicitMidpoint()) for problem in problems]
+ensemble_problem = EnsembleProblem(hodeproblem().equation, tspan, tstep, initial_conditions, default_parameters)
 
-sys_dim, input_time_steps, n_params = length(solutions[1].q[0]), length(solutions[1].t), length(initial_conditions)
+ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
 
-data = (q = zeros(sys_dim, input_time_steps, n_params), p = zeros(sys_dim, input_time_steps, n_params))
+dl = DataLoader(ensemble_solution)
 
-for (solution, i) in zip(solutions, axes(solutions, 1))
-    for dim in 1:sys_dim 
-        data.q[dim, :, i] = solution.q[:, dim]
-        data.p[dim, :, i] = solution.p[:, dim]
-    end 
-end
+arch = SymplecticTransformer(dl)
 
-dl = DataLoader(data)
+nn = NeuralNetwork(arch, CPU(), Float64)
