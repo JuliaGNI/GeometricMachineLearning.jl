@@ -32,7 +32,7 @@ module GeometricMachineLearning
     export dim
     import GeometricIntegrators.Integrators: method, GeometricIntegrator
     import NNlib: σ, sigmoid, softmax
-    #import LogExpFunctions: softmax
+    import GeometricSolutions: EnsembleSolution
 
     export CPU, GPU
     export Chain, NeuralNetwork
