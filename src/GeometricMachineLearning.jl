@@ -366,5 +366,14 @@ module GeometricMachineLearning
 
     export ReducedSystem, compute_reduction_error, compute_projection_error, reduced_vector_field_from_full_explicit_vector_field, perform_integration_reduced, perform_integration_full
 
+<<<<<<< HEAD
     include("loss/loss_routines.jl")
+=======
+    include("symplectic_transformer/symplectic_transformer_potential.jl")
+    include("symplectic_transformer/symplectic_transformer_potential_gradient.jl")
+    include("layers/symplectic_transformer.jl")
+    include("architectures/symplectic_transformer.jl")
+
+    export SymplecticTransformer
+>>>>>>> 702cc05 (Added all new files (at the bottom) and exporting SymplecticTransformer.)
 end
