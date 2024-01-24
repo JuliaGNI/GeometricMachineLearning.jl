@@ -6,16 +6,16 @@ Implements the symplectic transformer. Analogous to SympNet gradient layers it p
 ```
 where ``Q,\, P\in\mathbb{R}^{n\times{}T}`` and ``F(P) = \mathrm{Tr}(P \mathrm{softmax}(P^TAP) * P^T)``. 
 """
-struct SymplecticTransformerLayer{M, N} <: AbstractExplicitLayer{M, N} end
+struct SymplecticTransformerLayer{M, N, LayerType} <: AbstractExplicitLayer{M, N} end
 
 const SymplecticTransformerLayerQ{M, N} = SymplecticTransformerLayer{M, N, :Q}
 const SymplecticTransformerLayerP{M, N} = SymplecticTransformerLayer{M, N, :P}
 
 function SymplecticTransformerLayerQ(M)
-    SymplecticTransformerLayer{M, M, :Q}
+    SymplecticTransformerLayer{M, M, :Q}()
 end
 function SymplecticTransformerLayerP(M)
-    SymplecticTransformerLayer{M, M, :P}
+    SymplecticTransformerLayer{M, M, :P}()
 end
  
 parameterlength(::SymplecticTransformerLayer{M, N}) where {M, N} = (M÷2) ^ 2 
