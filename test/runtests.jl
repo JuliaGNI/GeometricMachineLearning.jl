@@ -45,4 +45,9 @@ using SafeTestsets
 @safetestset "Test mnist_utils.                                                               " begin include("data_loader/mnist_utils.jl") end
 @safetestset "Test the data loader in combination with optimization_step!                     " begin include("data_loader/data_loader_optimization_step.jl") end
 @safetestset "Optimizer functor with data loader for Adam                                     " begin include("data_loader/optimizer_functor_with_adam.jl") end
+<<<<<<< HEAD
 @safetestset "Test data loader for a tensor (q and p data)                                    " begin include("data_loader/draw_batch_for_tensor_test.jl") end
+=======
+
+@safetestset "Symplectic Attention Derivative                                                 " begin include("symplectic_transformer/symplectic_transformer_potential_gradient.jl")
+>>>>>>> 68d4b52 (Added tests for the gradient of our symplectic transformer potential.)
