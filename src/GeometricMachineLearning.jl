@@ -17,6 +17,7 @@ module GeometricMachineLearning
     using ForwardDiff
     using InteractiveUtils
     using TimerOutputs
+    using Enzyme 
 
     import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer, AbstractExplicitCell, AbstractNeuralNetwork , NeuralNetwork
     import AbstractNeuralNetworks: Chain, GridCell
@@ -57,13 +58,16 @@ module GeometricMachineLearning
     include("kernels/tensor_transpose_tensor_transpose_mul.jl")
     include("kernels/mat_tensor_mul.jl")
     include("kernels/tensor_transpose.jl")
+    include("kernels/matrix_transpose.jl")
     include("kernels/exponentials/tensor_exponential.jl")
     include("kernels/inverses/inverse_kernel.jl")
     include("kernels/vec_tensor_mul.jl")
 
     include("kernels/kernel_ad_routines/assign_q_and_p.jl")
     include("kernels/kernel_ad_routines/tensor_mat_mul.jl")
+    include("kernels/kernel_ad_routines/tensor_transpose_mat_mul.jl")
     include("kernels/kernel_ad_routines/mat_tensor_mul.jl")
+    include("kernels/kernel_ad_routines/matrix_transpose.jl")
     include("kernels/kernel_ad_routines/tensor_tensor_mul.jl")
     include("kernels/kernel_ad_routines/tensor_transpose_tensor_mul.jl")
     include("kernels/kernel_ad_routines/tensor_transpose.jl")
@@ -366,12 +370,16 @@ module GeometricMachineLearning
 
     export ReducedSystem, compute_reduction_error, compute_projection_error, reduced_vector_field_from_full_explicit_vector_field, perform_integration_reduced, perform_integration_full
 
-    include("loss/loss_routines.jl")
-
     include("symplectic_transformer/symplectic_transformer_potential.jl")
     include("symplectic_transformer/symplectic_transformer_potential_gradient.jl")
+    include("symplectic_transformer/symplectic_transformer_simple_potential_gradient.jl")
+    include("symplectic_transformer/symplectic_transformer_potential_pullback.jl")
     include("layers/symplectic_transformer.jl")
     include("architectures/symplectic_transformer.jl")
+    include("layers/linear_symplectic_transformer.jl")
+    include("architectures/linear_symplectic_transformer.jl")
 
     export SymplecticTransformer
+
+    include("loss/loss_routines.jl")
 end
