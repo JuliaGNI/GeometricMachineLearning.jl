@@ -8,7 +8,7 @@ function ChainRulesCore.rrule(::typeof(tensor_tensor_mul), A::AbstractArray{T, 3
     C = tensor_tensor_mul(A, B)
     function tensor_tensor_mul_pullback(C_diff)
         f̄ = NoTangent()
-        #tensor_transpose_mat_mul
+        # tensor_transpose_mat_mul
         A_diff = @thunk tensor_tensor_transpose_mul(C_diff, B)
         B_diff = @thunk tensor_transpose_tensor_mul(A, C_diff)
         return f̄, A_diff, B_diff
