@@ -48,3 +48,4 @@ using SafeTestsets
 @safetestset "Test data loader for a tensor (q and p data)                                    " begin include("data_loader/draw_batch_for_tensor_test.jl") end
 
 @safetestset "Symplectic Attention Derivative                                                 " begin include("symplectic_transformer/symplectic_transformer_potential_gradient.jl") end
+@safetestset "Symplectic Attention Derivative pullback                                        " begin include("symplectic_transformer/symplectic_transformer_potential_gradient_pullback.jl") end 
