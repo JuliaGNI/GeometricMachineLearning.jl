@@ -1,7 +1,6 @@
 """
 This computes the transpose of a tensor.
 """
-
 @kernel function tensor_transpose_kernel!(C, A)
     i, j, k = @index(Global, NTuple)
 
