@@ -124,7 +124,6 @@ function Base.rand(rng::Random.AbstractRNG, ::Type{SymmetricMatrix}, n::Int)
     SymmetricMatrix(rand(rng, n*(n+1)÷2), n)
 end
 
-#TODO: make defaults when no rng is specified!!! (prbabaly rng ← Random.default_rng())
 function Base.rand(type::Type{SymmetricMatrix{T}}, n::Integer) where T
     rand(Random.default_rng(), type, n)
 end
@@ -133,12 +132,12 @@ function Base.rand(type::Type{SymmetricMatrix}, n::Integer)
     rand(Random.default_rng(), type, n)
 end
 
-#these are Adam operations:
+# these are Adam operations:
 function scalar_add(A::SymmetricMatrix, δ::Real)
     SymmetricMatrix(A.S .+ δ, A.n)
 end
 
-#element-wise squares and square root (for Adam)
+# element-wise squares and square root (for Adam)
 function ⊙²(A::SymmetricMatrix)
     SymmetricMatrix(A.S.^2, A.n)
 end
