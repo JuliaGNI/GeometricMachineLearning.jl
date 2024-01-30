@@ -4,11 +4,13 @@
 
     # creating a temporary sum variable for matrix multiplication
     tmp_sum = zero(eltype(C))
-    for l = 1:size(A)[2]
+    for l in axes(A, 2)
         tmp_sum += A[i, l] * B[l, j, k]
     end
 
     C[i,j,k] = tmp_sum
+
+    nothing
 end
 
 # Creating a wrapper kernel for launching with error checks
