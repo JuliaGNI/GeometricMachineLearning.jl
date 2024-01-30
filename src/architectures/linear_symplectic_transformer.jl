@@ -57,3 +57,35 @@ function Chain(arch::LinearSymplecticTransformer{AT, false}) where AT
     end
     Chain(layers...)
 end
+
+@doc raw"""
+This function computes a trajectory for a LinearSymplecticTransformer that has already been trained for valuation purposes.
+
+It takes as input: 
+- `nn`: a `NeuralNetwork` (that has been trained).
+- `ics`: initial conditions (a `NamedTuple` of two matrices)
+"""
+function iterate(nn::NeuralNetwork{<:LinearSymplecticTransformer}, ics::NamedTuple{(:q, :p), Tuple{AT, AT}}; n_points = 100) where {T, AT<:AbstractVector{T}}
+
+    seq_length = nn.model.seq_length
+    n_dim = length(ics.q)
+    backend = KernelAbstractions.get_backend(ics.q)
+
+    # Array to store the predictions
+    q_valuation = KernelAbstractions.allocate(backend, T, n_dim, n_points)
+    p_valuation = KernelAbstractions.allocate(backend, T, n_dim, n_points)
+    
+    # Initialisation
+    @views q_valuation[:,1:seq_length] = ics.q
+    @views p_valuation[:,1:seq_length] = ics.p
+    
+    #Computation of phase space
+    @views for i in (seq_length + 1):n_points
+        qp_temp = (q=q_valuation[:, (i - seq_length):(i - 1)], p=p_valuation[:, (i - seq_length):(i - 1)]) 
+        qp_prediction = nn(qp_temp)
+        q_valuation[:, i] = qp_prediction.q
+        p_valuation[:, i] = qp_prediction.p
+    end
+
+    (q=q_valuation, p=p_valuation)
+end
