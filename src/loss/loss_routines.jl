@@ -46,6 +46,43 @@ function loss(model::Union{Chain, AbstractExplicitLayer}, ps::Union{Tuple, Named
     nt_norm(nt_diff(output_estimate, input)) / nt_norm(input)
 end
 
+@doc raw"""
+This crops the output array of the neural network so that it conforms with the output it should be compared to. This is needed for the transformer loss. 
+"""
+function crop_array_for_transformer_loss(nn_output::AT, output::AT) where {T, AT<:AbstractArray{T, 3}}
+    @view nn_output[axes(output, 1), axes(output, 2) .+ size(nn_output, 2) .- size(output, 2), axes(output, 3)]
+end
+
+@doc raw"""
+The transformer works similarly to the regular loss, but with the difference that ``\mathcal{NN}(input)`` and ``output`` may have different sizes. 
+
+It takes as input: 
+- `model::Union{Chain, AbstractExplicitLayer}`
+- `ps::Union{Tuple, NamedTuple}`
+- `input::Union{Array, NamedTuple}`
+- `output::Uniont{Array, NamedTuple}`
+"""
+function transformer_loss(model::Union{Chain, AbstractExplicitLayer}, ps::Union{Tuple, NamedTuple}, input::BT, output::BT) where {T, BT<:AbstractArray{T}} 
+    norm(
+        crop_array_for_transformer_loss(model(input, ps), output) - 
+        output 
+        ) / 
+    norm(input) 
+end
+
+function transformer_loss(model::Union{Chain, AbstractExplicitLayer}, ps::Union{Tuple, NamedTuple}, input::NT, output::NT) where {T, AT<:AbstractArray{T}, NT<:NamedTuple{(:q, :p,), Tuple{AT, AT}}}
+    output_estimate = model(input, ps)
+    
+    nt_norm(
+        nt_diff(
+            (q = crop_array_for_transformer_loss(output_estimate.q, output.q),
+             p = crop_array_for_transformer_loss(output_estimate.p, output.p)), 
+            output
+            )
+            ) / 
+            nt_norm(input)
+end
+
 
 @doc raw"""
 Alternative call of the loss function. This takes as input: 
@@ -76,4 +113,8 @@ You can supply an instance of `NeuralNetwork` instead of the two arguments model
 """
 function loss(nn::NeuralNetwork, var_args...)
     loss(nn.model, nn.params, var_args...)
+end
+
+function loss(nn::NeuralNetwork{<:SymplecticTransformer}, var_args...)
+    transformer_loss(nn.model, nn.params, var_args...)
 end
