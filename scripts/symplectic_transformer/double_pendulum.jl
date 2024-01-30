@@ -15,9 +15,9 @@ ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
 
 dl = DataLoader(ensemble_solution)
 
-const seq_length = 10
+const seq_length = 5
 
-arch = LinearSymplecticTransformer(dl, nhidden=5, depth=1, seq_length=seq_length)
+arch = LinearSymplecticTransformer(dl, nhidden=2, depth=1, seq_length=seq_length)
 
 nn = NeuralNetwork(arch, CPU(), Float64)
 
