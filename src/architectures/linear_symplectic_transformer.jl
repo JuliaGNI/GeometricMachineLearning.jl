@@ -4,8 +4,8 @@ Realizes the linear Symplectic Transformer.
 Fields: 
 - `dim::Int`: System dimension 
 - `time_steps::Int`: Number of time steps that the transformer considers. 
-- `depth::Int`: The number of transformer layers layers that is applied. 
-- `nhidden::Int`: The number of hidden layers in the SympNet layer.
+- `depth::Int`: The number of SympNet layers that is applied. 
+- `nhidden::Int`: The number of hidden layers in the transformer.
 - `upscaling_dimension::Int`: The upscaling that is done by the gradient layer. 
 - `activation`: The activation function for the SympNet layers. 
 - `init_upper::Bool`: Specifies if the first layer is a ``Q``-type layer (`init_upper=true`) or if it is a ``P``-type layer (`init_upper=false`).
