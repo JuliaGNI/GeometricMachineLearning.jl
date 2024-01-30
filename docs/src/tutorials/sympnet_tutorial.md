@@ -167,8 +167,8 @@ ics = (q=qp_data.q[:,1], p=qp_data.p[:,1])
 steps_to_plot = 200
 
 #predictions
-la_trajectory = Iterate_Sympnet(la_nn, ics; n_points = steps_to_plot)
-g_trajectory = Iterate_Sympnet(g_nn, ics; n_points = steps_to_plot)
+la_trajectory = iterate(la_nn, ics; n_points = steps_to_plot)
+g_trajectory = iterate(g_nn, ics; n_points = steps_to_plot)
 
 using Plots
 p2 = plot(qp_data.q'[1:steps_to_plot], qp_data.p'[1:steps_to_plot], label="training data")

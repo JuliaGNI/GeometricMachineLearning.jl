@@ -153,7 +153,7 @@ It takes as input:
 - `nn`: a `NeuralNetwork` (that has been trained).
 - `ics`: initial conditions (a `NamedTuple` of two vectors)
 """
-function Iterate_Sympnet(nn::NeuralNetwork{<:SympNet}, ics::NamedTuple{(:q, :p), Tuple{AT, AT}}; n_points = 100) where {T, AT<:AbstractVector{T}}
+function iterate(nn::NeuralNetwork{<:SympNet}, ics::NamedTuple{(:q, :p), Tuple{AT, AT}}; n_points = 100) where {T, AT<:AbstractVector{T}}
 
     n_dim = length(ics.q)
     backend = KernelAbstractions.get_backend(ics.q)
