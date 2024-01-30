@@ -115,6 +115,6 @@ function loss(nn::NeuralNetwork, var_args...)
     loss(nn.model, nn.params, var_args...)
 end
 
-function loss(nn::NeuralNetwork{<:SymplecticTransformer}, var_args...)
+function loss(nn::NeuralNetwork{<:LinearSymplecticTransformer}, var_args...)
     transformer_loss(nn.model, nn.params, var_args...)
 end
