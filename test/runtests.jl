@@ -13,6 +13,8 @@ using SafeTestsets
 @safetestset "Test symplecticity of upscaling layer                                           " begin include("layers/sympnet_layers_test.jl") end 
 @safetestset "Hamiltonian Neural Network                                                      " begin include("hamiltonian_neural_network_tests.jl") end
 @safetestset "Manifold Neural Network Layers                                                  " begin include("layers/manifold_layers.jl") end
+
+@safetestset "Custom inverse for 4-4 and 6-6 tensor_inverse                                   " begin include("kernels/tensor_inverse.jl") end
 @safetestset "Custom AD rules for kernels                                                     " begin include("custom_ad_rules/kernel_pullbacks.jl") end
 @safetestset "ResNet                                                                          " begin include("layers/resnet_tests.jl") end
 
