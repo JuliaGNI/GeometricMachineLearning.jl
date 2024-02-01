@@ -18,6 +18,7 @@ module GeometricMachineLearning
     using InteractiveUtils
     using TimerOutputs
 
+    import Enzyme 
     import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer, AbstractExplicitCell, AbstractNeuralNetwork , NeuralNetwork
     import AbstractNeuralNetworks: Chain, GridCell
     import AbstractNeuralNetworks: Dense, Linear, Recurrent
@@ -58,7 +59,9 @@ module GeometricMachineLearning
     include("kernels/mat_tensor_mul.jl")
     include("kernels/tensor_transpose.jl")
     include("kernels/exponentials/tensor_exponential.jl")
-    include("kernels/inverses/inverse_kernel.jl")
+    include("kernels/inverses/inverse_4x4.jl")
+    include("kernels/inverses/inverse_6x6.jl")
+    include("kernels/inverses/tensor_cayley.jl")
     include("kernels/vec_tensor_mul.jl")
 
     include("kernels/kernel_ad_routines/assign_q_and_p.jl")
@@ -144,7 +147,7 @@ module GeometricMachineLearning
     export StiefelLayer, GrassmannLayer, ManifoldLayer
     export PSDLayer
     export MultiHeadAttention
-    export Attention
+    export VolumePreservingAttention
     export ResNet
     export Transformer
     export Classification
@@ -238,6 +241,9 @@ module GeometricMachineLearning
     include("architectures/recurrent_neural_network.jl")
     include("architectures/LSTM_neural_network.jl")
     include("architectures/transformer_neural_network.jl")
+    include("architectures/transformer_integrator.jl")
+    include("architectures/regular_transformer_integrator.jl")
+    include("architectures/volume_preserving_transformer.jl")
 
     export HamiltonianNeuralNetwork
     export LagrangianNeuralNetwork
@@ -247,6 +253,8 @@ module GeometricMachineLearning
     export RecurrentNeuralNetwork
     export LSTMNeuralNetwork
     export ClassificationTransformer
+    export RegularTransformerIntegrator
+    export VolumePreservingTransformer
 
     export train!, apply!, jacobian!
     export Iterate_Sympnet
@@ -367,4 +375,7 @@ module GeometricMachineLearning
     export ReducedSystem, compute_reduction_error, compute_projection_error, reduced_vector_field_from_full_explicit_vector_field, perform_integration_reduced, perform_integration_full
 
     include("loss/loss_routines.jl")
+
+    include("map_to_cpu.jl")
+
 end
