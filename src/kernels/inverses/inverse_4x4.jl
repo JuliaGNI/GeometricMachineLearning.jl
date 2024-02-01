@@ -42,7 +42,7 @@ function tensor_inverse4!(out::AbstractArray{T, 3}, A::AbstractArray{T, 3}) wher
 end
 
 function ChainRulesCore.rrule(::typeof(tensor_inverse4), A::AT) where {T, AT<:AbstractArray{T, 3}}
-    out = tensor_inverse(A)
+    out = tensor_inverse4(A)
     
     function tensor_inverse_pullback(out_diff::AT)
         A_diff = similar(out_diff)
