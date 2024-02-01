@@ -73,6 +73,7 @@ function (batch::Batch{<:Integer})(dl::DataLoader{T, BT, Nothing}) where {T, AT<
     (batches..., complete_indices[(n_batches - 1) * batch.batch_size + 1:end])
 end 
 
+
 @doc raw"""
 Gives the number of bathces. Inputs are of type `DataLoader` and `Batch`.
 """
@@ -122,41 +123,87 @@ function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTu
     total_error / count
 end
 
-@kernel function assign_input_from_vector_of_tuples_kernel!(q_input::AT, p_input::AT, input::NamedTuple{(:q, :p), Tuple{AT, AT}}, indices::Vector{Tuple{Int, Int}}) where {T, AT<:AbstractArray{T, 3}}
+@kernel function assign_input_from_vector_of_tuples_kernel!(q_input::AT, p_input::AT, input::NamedTuple{(:q, :p), Tuple{AT, AT}}, indices::AbstractArray{Int, 2}) where {T, AT<:AbstractArray{T, 3}}
     i, j, k = @index(Global, NTuple)
     
-    q_input[i, j, k] = input.q[i, indices[k][1] + j - 1, indices[k][2]]
-    p_input[i, j, k] = input.p[i, indices[k][1] + j - 1, indices[k][2]]
+    q_input[i, j, k] = input.q[i, indices[1, k] + j - 1, indices[2, k]]
+    p_input[i, j, k] = input.p[i, indices[1, k] + j - 1, indices[2, k]]
 end
 
-@kernel function assign_output_from_vector_of_tuples_kernel!(q_output::AT, p_output::AT, input::NamedTuple{(:q, :p), Tuple{AT, AT}}, indices::Vector{Tuple{Int, Int}}, seq_length::Int) where {T, AT<:AbstractArray{T, 3}}
+@kernel function assign_input_from_vector_of_tuples_kernel!(input::AT, data::AT, indices::AbstractArray{Int, 2}) where {T, AT<:AbstractArray{T, 3}}
+    i, j, k = @index(Global, NTuple)
+    
+    input[i, j, k] = data[i, indices[1, k] + j - 1, indices[2, k]]
+end
+
+@kernel function assign_output_from_vector_of_tuples_kernel!(q_output::AT, p_output::AT, input::NamedTuple{(:q, :p), Tuple{AT, AT}}, indices::AbstractArray{Int, 2}, seq_length::Int) where {T, AT<:AbstractArray{T, 3}}
     i, k = @index(Global, NTuple)
 
-    q_output[i, 1, k] = input.q[i, indices[k][1] + seq_length, indices[k][2]]
-    p_output[i, 1, k] = input.p[i, indices[k][1] + seq_length, indices[k][2]]
+    q_output[i, 1, k] = input.q[i, indices[1, k] + seq_length, indices[2, k]]
+    p_output[i, 1, k] = input.p[i, indices[1, k] + seq_length, indices[2, k]]
+end
+
+@kernel function assign_output_from_vector_of_tuples_kernel!(output::AT, data::AT, indices::AbstractArray{Int, 2}, seq_length::Int) where {T, AT<:AbstractArray{T, 3}}
+    i, k = @index(Global, NTuple)
+
+    output[i, 1, k] = data[i, indices[1, k] + seq_length, indices[2, k]]
+end
+
+"""
+Takes the output of the batch functor and uses it to create the corresponding array (NamedTuples). 
+"""
+function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT}, batch::Batch, batch_indices_tuple::Vector{Tuple{Int, Int}}) where {T, AT<:AbstractArray{T, 3}, BT<:NamedTuple{(:q, :p), Tuple{AT, AT}}}
+    backend = KernelAbstractions.get_backend(dl.input.q)
+    q_input = KernelAbstractions.allocate(backend, T, dl.input_dim ÷ 2, batch.seq_length, length(batch_indices_tuple))
+    p_input = similar(q_input)
+
+    batch_indices = KernelAbstractions.allocate(backend, Int, 2, length(batch_indices_tuple))
+    batch_indices_temp = zeros(Int, size(batch_indices)...)
+    for t in axes(batch_indices_tuple, 1)
+        batch_indices_temp[1, t] = batch_indices_tuple[t][1]
+        batch_indices_temp[2, t] = batch_indices_tuple[t][2]
+    end
+    batch_indices = typeof(batch_indices)(batch_indices_temp)
+
+    assign_input_from_vector_of_tuples! = assign_input_from_vector_of_tuples_kernel!(backend)
+    assign_input_from_vector_of_tuples!(q_input, p_input, dl.input, batch_indices, ndrange=(dl.input_dim ÷ 2, batch.seq_length, length(batch_indices_tuple)))
+
+    q_output = KernelAbstractions.allocate(backend, T, dl.input_dim ÷ 2, 1, length(batch_indices_tuple))
+    p_output = similar(q_output)
+
+    assign_output_from_vector_of_tuples! = assign_output_from_vector_of_tuples_kernel!(backend)
+    assign_output_from_vector_of_tuples!(q_output, p_output, dl.input, batch_indices, batch.seq_length, ndrange=(dl.input_dim ÷ 2, length(batch_indices_tuple)))
+
+    (q = q_input, p = p_input), (q = q_output, p = p_output)
 end
 
 """
 Takes the output of the batch functor and uses it to create the corresponding array. 
 """
-function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT}, batch::Batch, batch_indices::Vector{Tuple{Int, Int}}) where {T, AT<:AbstractArray{T, 3}, BT<:NamedTuple{(:q, :p), Tuple{AT, AT}}}
-    backend = KernelAbstractions.get_backend(dl.input.q)
-    q_input = KernelAbstractions.allocate(backend, T, dl.input_dim ÷ 2, batch.seq_length, length(batch_indices))
-    p_input = similar(q_input)
+function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT}, batch::Batch, batch_indices_tuple::Vector{Tuple{Int, Int}}) where {T, BT<:AbstractArray{T, 3}}
+    backend = KernelAbstractions.get_backend(dl.input)
+    input = KernelAbstractions.allocate(backend, T, dl.input_dim, batch.seq_length, length(batch_indices_tuple))
+
+    batch_indices = KernelAbstractions.allocate(backend, Int, 2, length(batch_indices_tuple))
+    batch_indices_temp = zeros(Int, size(batch_indices)...)
+    for t in axes(batch_indices_tuple, 1)
+        batch_indices_temp[1, t] = batch_indices_tuple[t][1]
+        batch_indices_temp[2, t] = batch_indices_tuple[t][2]
+    end
+    batch_indices = typeof(batch_indices)(batch_indices_temp)
 
     assign_input_from_vector_of_tuples! = assign_input_from_vector_of_tuples_kernel!(backend)
-    assign_input_from_vector_of_tuples!(q_input, p_input, dl.input, batch_indices, ndrange=(dl.input_dim ÷ 2, batch.seq_length, length(batch_indices)))
+    assign_input_from_vector_of_tuples!(input, dl.input, batch_indices, ndrange=(dl.input_dim, batch.seq_length, length(batch_indices_tuple)))
 
-    q_output = KernelAbstractions.allocate(backend, T, dl.input_dim ÷ 2, 1, length(batch_indices))
-    p_output = similar(q_output)
+    output = KernelAbstractions.allocate(backend, T, dl.input_dim, 1, length(batch_indices_tuple))
 
     assign_output_from_vector_of_tuples! = assign_output_from_vector_of_tuples_kernel!(backend)
-    assign_output_from_vector_of_tuples!(q_output, p_output, dl.input, batch_indices, batch.seq_length, ndrange=(dl.input_dim ÷ 2, length(batch_indices)))
+    assign_output_from_vector_of_tuples!(output, dl.input, batch_indices, batch.seq_length, ndrange=(dl.input_dim, length(batch_indices_tuple)))
 
-    (q = q_input, p = p_input), (q = q_output, p = p_output)
+    input, output
 end
 
-function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTuple}, dl::DataLoader{T, BT, Nothing}, batch::Batch, loss) where {T, AT<:AbstractArray{T, 3}, BT<:NamedTuple{(:q, :p), Tuple{AT, AT}}}
+function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTuple}, dl::DataLoader{T, CT, Nothing}, batch::Batch, loss) where {T, AT<:AbstractArray{T, 3}, BT<:NamedTuple{(:q, :p), Tuple{AT, AT}}, CT<:Union{AT, BT}}
     count = 0
     total_error = T(0)
     batches = batch(dl)
