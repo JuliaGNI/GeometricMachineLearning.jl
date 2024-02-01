@@ -153,7 +153,7 @@ It takes as input:
 - `nn`: a `NeuralNetwork` (that has been trained).
 - `ics`: initial conditions (a `NamedTuple` of two vectors)
 """
-function Iterate_Sympnet(nn::NeuralNetwork{<:SympNet}, ics::NamedTuple{(:q, :p), Tuple{AT, AT}}; n_points = 100) where {T, AT<:AbstractVector{T}}
+function iterate(nn::NeuralNetwork{<:SympNet}, ics::NamedTuple{(:q, :p), Tuple{AT, AT}}; n_points = 100) where {T, AT<:AbstractVector{T}}
 
     n_dim = length(ics.q)
     backend = KernelAbstractions.get_backend(ics.q)
@@ -175,4 +175,25 @@ function Iterate_Sympnet(nn::NeuralNetwork{<:SympNet}, ics::NamedTuple{(:q, :p),
     end
 
     (q=q_valuation, p=p_valuation)
+end
+
+function iterate(nn::NeuralNetwork{<:SympNet}, ics::AT; n_points = 100) where {T, AT<:AbstractVector{T}}
+
+    n_dim = length(ics)
+    backend = KernelAbstractions.get_backend(ics)
+
+    # Array to store the predictions
+    valuation = KernelAbstractions.allocate(backend, T, n_dim, n_points)
+    
+    # Initialisation
+    @views valuation[:,1] = ics
+    
+    #Computation of phase space
+    @views for i in 2:n_points
+        temp = valuation[:,i-1]
+        prediction = nn(temp)
+        valuation[:,i] = prediction
+    end
+
+    valuation
 end
