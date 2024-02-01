@@ -45,7 +45,7 @@ end
 function tensor_inverse6(A::AbstractArray{T, 3}) where T 
     out = similar(A)
 
-    tensor_inverse!(out, A)
+    tensor_inverse6!(out, A)
     
     out 
 end

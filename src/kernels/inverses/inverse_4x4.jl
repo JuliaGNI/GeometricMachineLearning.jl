@@ -24,7 +24,7 @@ end
 function tensor_inverse4(A::AbstractArray{T, 3}) where T 
     out = similar(A)
 
-    tensor_inverse!(out, A)
+    tensor_inverse4!(out, A)
     
     out 
 end
