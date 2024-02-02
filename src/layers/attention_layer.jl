@@ -12,15 +12,15 @@ struct VolumePreservingAttention{M, N, SL} <: AbstractExplicitLayer{M, N}
     end
 end
 
-function orthonormal_activation_cayley(d::VolumePreservingAttention{M, M, 4}, A::AbstractArray{T, 3}) where T 
+function orthonormal_activation_cayley(d::VolumePreservingAttention{M, M, 4}, A::AbstractArray{T, 3}) where {T, M} 
     tensor_cayley4(A_ut)
 end
 
-function orthonormal_activation_cayley(d::VolumePreservingAttention{M, M, 5}, A::AbstractArray{T, 3}) where T 
+function orthonormal_activation_cayley(d::VolumePreservingAttention{M, M, 5}, A::AbstractArray{T, 3}) where {T, M} 
     tensor_cayley5(A_ut)
 end
 
-function orthonormal_activation_cayley(d::VolumePreservingAttention{M, M, 6}, A::AbstractArray{T, 3}) where T 
+function orthonormal_activation_cayley(d::VolumePreservingAttention{M, M, 6}, A::AbstractArray{T, 3}) where {T, M} 
     tensor_cayley6(A_ut)
 end
 
