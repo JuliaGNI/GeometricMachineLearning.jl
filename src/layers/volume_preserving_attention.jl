@@ -12,23 +12,23 @@ struct VolumePreservingAttention{M, N, SL} <: AbstractExplicitLayer{M, N}
     end
 end
 
-function orthonormal_activation_cayley(d::VolumePreservingAttention{M, M, 4}, A::AbstractArray{T, 3}) where {T, M} 
-    tensor_cayley4(A_ut)
+function orthonormal_activation_cayley(::VolumePreservingAttention{M, M, 4}, A::AbstractArray{T, 3}) where {T, M} 
+    tensor_cayley4(A)
 end
 
-function orthonormal_activation_cayley(d::VolumePreservingAttention{M, M, 5}, A::AbstractArray{T, 3}) where {T, M} 
-    tensor_cayley5(A_ut)
+function orthonormal_activation_cayley(::VolumePreservingAttention{M, M, 5}, A::AbstractArray{T, 3}) where {T, M} 
+    tensor_cayley5(A)
 end
 
-function orthonormal_activation_cayley(d::VolumePreservingAttention{M, M, 6}, A::AbstractArray{T, 3}) where {T, M} 
-    tensor_cayley6(A_ut)
+function orthonormal_activation_cayley(::VolumePreservingAttention{M, M, 6}, A::AbstractArray{T, 3}) where {T, M} 
+    tensor_cayley6(A)
 end
 
 function orthonormal_activation_cayley(A::AbstractMatrix{T}) where T 
     reshape(orthonormal_activation_cayley(reshape(A, size(A)..., 1)), size(A)...)
 end
 
-function parameterlength(d::VolumePreservingAttention{M, M}) where M
+function parameterlength(::VolumePreservingAttention{M, M}) where M
     M * (M-1) ÷ 2
 end
 
@@ -48,7 +48,9 @@ where ``X\in'mathbb{R}^{N\times\mathtt{seq\_length}}`` is a vector containing ti
 In a second step we compute the Cayley transform of ``C``. This is the output. 
 """
 function (d::VolumePreservingAttention)(x::AbstractArray{T, 3}, ps::NamedTuple) where {T}
-    orthonormal_activation_cayley(d, 
-        tensor_transpose_tensor_mul(x, mat_tensor_mul(ps.A, x))
+    tensor_tensor_mul(  x, 
+                        orthonormal_activation_cayley(d, 
+                            tensor_transpose_tensor_mul(x, mat_tensor_mul(ps.A, x))
+                        )
     )
 end
