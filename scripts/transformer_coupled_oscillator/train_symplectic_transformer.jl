@@ -31,7 +31,7 @@ const resnet_activation = tanh
 # hyperparameters concerning training 
 const n_epochs = 50
 const batch_size = 512
-const seq_length = 6
+const seq_length = 4
 
 # type and backend 
 const backend = CPU()
@@ -43,7 +43,7 @@ const dl = backend == CUDABackend() ? DataLoader(vcat(dl_nt.input.q, dl_nt.input
 const opt_method = AdamOptimizer(T)
 
 model₁ = RegularTransformerIntegrator(sys_dim, transformer_dim, n_heads, L, upscaling_activation, resnet_activation)
-model₂ = VolumePreservingTransformer(sys_dim, transformer_dim, sympnet_upscaling * transformer_dim, L, resnet_activation)
+model₂ = VolumePreservingTransformer(sys_dim, seq_length, transformer_dim, sympnet_upscaling * transformer_dim, L, resnet_activation)
 
 model₃ = Chain(  Dense(sys_dim, transformer_dim, identity),
               ResNet(transformer_dim, tanh),
