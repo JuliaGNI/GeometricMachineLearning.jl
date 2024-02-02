@@ -3,22 +3,24 @@ Volume-preserving attention (single heaad attention)
 
 Drawbacks: 
 - only works on CPU for now (there is an issue with Enzyme atm)
-- the super-fast activation is only implemented in 4d and 6d
+- the super-fast activation is only implemented for sequence lengths of 4, 5 and 6. We also dispatch over this. 
 """
-struct VolumePreservingAttention{M, N} <: AbstractExplicitLayer{M, N}
+struct VolumePreservingAttention{M, N, SL} <: AbstractExplicitLayer{M, N}
 
-    function VolumePreservingAttention(dim::Int)
-        new{dim, dim}()
+    function VolumePreservingAttention(dim::Int, seq_length::Int)
+        new{dim, dim, seq_length}()
     end
 end
 
-function orthonormal_activation_cayley(d::VolumePreservingAttention{4, 4}, A::AbstractArray{T, 3}) where T 
-    A_ut = upper_triangular_asymmetrize(A)
+function orthonormal_activation_cayley(d::VolumePreservingAttention{M, M, 4}, A::AbstractArray{T, 3}) where T 
     tensor_cayley4(A_ut)
 end
 
-function orthonormal_activation_cayley(d::VolumePreservingAttention{6, 6}, A::AbstractArray{T, 3}) where T 
-    A_ut = upper_triangular_asymmetrize(A)
+function orthonormal_activation_cayley(d::VolumePreservingAttention{M, M, 5}, A::AbstractArray{T, 3}) where T 
+    tensor_cayley5(A_ut)
+end
+
+function orthonormal_activation_cayley(d::VolumePreservingAttention{M, M, 6}, A::AbstractArray{T, 3}) where T 
     tensor_cayley6(A_ut)
 end
 
@@ -36,16 +38,17 @@ function initialparameters(backend::KernelAbstractions.Backend, T::Type, d::Volu
     (A = SkewSymMatrix(V, M), )
 end
 
-function (d::VolumePreservingAttention{4, 4})(x::AbstractArray{T, 3}, ps::NamedTuple) where {T}
-    dim, input_length = size(x)
-    @assert dim == 4
+@doc raw"""
+Here we fist perform the operation 
+```math
+X \mapsto X^T A X =: C,
+```
+where ``X\in'mathbb{R}^{N\times\mathtt{seq\_length}}`` is a vector containing time series data and ``A`` is the skew symmetric matrix associated with the layer. 
 
-    tensor_cayley4(tensor_transpose_tensor_mul(x, mat_tensor_mul(ps.A, x)))
-end
-
-function (d::VolumePreservingAttention{6, 6})(x::AbstractArray{T, 3}, ps::NamedTuple) where {T}
-    dim, input_length = size(x)
-    @assert dim == 6
-
-    tensor_cayley6(tensor_transpose_tensor_mul(x, mat_tensor_mul(ps.A, x)))
+In a second step we compute the Cayley transform of ``C``. This is the output. 
+"""
+function (d::VolumePreservingAttention)(x::AbstractArray{T, 3}, ps::NamedTuple) where {T}
+    orthonormal_activation_cayley(d, 
+        tensor_transpose_tensor_mul(x, mat_tensor_mul(ps.A, x))
+    )
 end
