@@ -3,6 +3,7 @@ using SafeTestsets
 
 @safetestset "Check parameterlength                                                           " begin include("parameterlength/check_parameterlengths.jl") end
 @safetestset "Arrays #1                                                                       " begin include("arrays/array_tests.jl") end
+@safetestset "Map to skew                                                                     " begin include("arrays/map_to_skew.jl")
 @safetestset "Sampling of arrays                                                              " begin include("arrays/random_generation_of_custom_arrays.jl") end
 @safetestset "Addition tests for custom arrays                                                " begin include("arrays/addition_tests_for_custom_arrays.jl") end
 @safetestset "Scalar multiplication tests for custom arrays                                   " begin include("arrays/scalar_multiplication_for_custom_arrays.jl") end
