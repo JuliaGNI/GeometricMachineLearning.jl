@@ -4,6 +4,10 @@ Volume-preserving attention (single heaad attention)
 Drawbacks: 
 - only works on CPU for now (there is an issue with Enzyme atm)
 - the super-fast activation is only implemented for sequence lengths of 4, 5 and 6. We also dispatch over this. 
+
+The constructor is called with: 
+- `dim::Int`: The system dimension 
+- `seq_length::Int`: The number of time steps that are considered in the attention mechanism. 
 """
 struct VolumePreservingAttention{M, N, SL} <: AbstractExplicitLayer{M, N}
 
