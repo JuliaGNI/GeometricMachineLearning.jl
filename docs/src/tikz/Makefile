@@ -21,6 +21,8 @@ pdf:
 	xelatex -shell-escape tensor_dark
 	xelatex -shell-escape tensor_sampling
 	xelatex -shell-escape tensor_sampling_dark
+	xelatex -shell-escape skew_sym_visualization
+	xelatex -shell-escape skew_sym_visualization_dark
 
 png:
 	pdftocairo  -png -r 150 -transp -singlefile  adam_optimizer.pdf               	 			adam_optimizer  
@@ -45,6 +47,8 @@ png:
 	pdftocairo  -png -r 150 -transp -singlefile  tensor_dark.pdf 								tensor_dark
 	pdftocairo  -png -r 180 -transp -singlefile  tensor_sampling.pdf 							tensor_sampling
 	pdftocairo  -png -r 180 -transp -singlefile  tensor_sampling_dark.pdf 						tensor_sampling_dark
+	pdftocairo  -png -r 180 -transp -singlefile  skew_sym_visualization.pdf 							skew_sym_visualization
+	pdftocairo  -png -r 180 -transp -singlefile  skew_sym_visualization_dark.pdf 						skew_sym_visualization_dark
 
 logo:
 	xelatex -shell-escape logo_with_name
