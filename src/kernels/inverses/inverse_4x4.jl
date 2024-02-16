@@ -45,7 +45,7 @@ function ChainRulesCore.rrule(::typeof(tensor_inverse4), A::AT) where {T, AT<:Ab
     out = tensor_inverse4(A)
     
     function tensor_inverse_pullback(out_diff::AT)
-        A_diff = similar(out_diff)
+        A_diff = zero(out_diff)
         out_diff_copy = copy(out_diff)
         A_copy = copy(A)
         out_copy = copy(out)
