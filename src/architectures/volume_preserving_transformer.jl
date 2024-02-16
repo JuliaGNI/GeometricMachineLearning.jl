@@ -1,4 +1,4 @@
-struct VolumePreservingTransformer{AT, InitUpper} <: TransformerIntegrator 
+struct VolumePreservingTransformer{AT, InitUpper, Upscaling} <: TransformerIntegrator 
     sys_dim::Int 
     transformer_dim::Int 
     upscaling_dimension::Int 
@@ -18,10 +18,11 @@ The volume-preserving transformer with the Cayley activation function and built-
 - `init_upper::Bool`: Specifies if the network first acts on the ``q`` component. 
 """
 function VolumePreservingTransformer(sys_dim::Int, seq_length::Int, transformer_dim::Int = sys_dim, upscaling_dimension::Int = 2 * transformer_dim, L::Int = 2, activation = tanh, init_upper::Bool=true)
-    VolumePreservingTransformer{typeof(tanh), init_upper}(sys_dim, transformer_dim, upscaling_dimension, seq_length, L, activation)
+    upscaling = upscaling_dimension == transformer_dim ? false : true
+    VolumePreservingTransformer{typeof(tanh), init_upper, upscaling}(sys_dim, transformer_dim, upscaling_dimension, seq_length, L, activation)
 end
 
-function Chain(arch::VolumePreservingTransformer{AT, true}) where {AT}
+function Chain(arch::VolumePreservingTransformer{AT, true, true}) where {AT}
     layers = (PSDLayer(arch.sys_dim, arch.transformer_dim), )
     for _ in 1:arch.L 
         layers = (layers..., VolumePreservingAttention(arch.transformer_dim, arch.seq_length))
@@ -33,7 +34,7 @@ function Chain(arch::VolumePreservingTransformer{AT, true}) where {AT}
     Chain(layers...)
 end
 
-function Chain(arch::VolumePreservingTransformer{AT, false}) where {AT}
+function Chain(arch::VolumePreservingTransformer{AT, false, true}) where {AT}
     layers = (PSDLayer(arch.sys_dim, arch.transformer_dim), )
     for _ in 1:arch.L 
         layers = (layers..., VolumePreservingAttention(arch.transformer_dim, arch.seq_length))
@@ -41,5 +42,27 @@ function Chain(arch::VolumePreservingTransformer{AT, false}) where {AT}
         layers = (layers..., GradientLayerQ(arch.transformer_dim, 2 * arch.transformer_dim, arch.activation))
     end
     layers = (layers..., PSDLayer(arch.transformer_dim, arch.sys_dim))
+    Chain(layers...)
+end
+
+function Chain(arch::VolumePreservingTransformer{AT, true, false}) where {AT}
+    layers = ()
+    for _ in 1:arch.L 
+        layers = (layers..., VolumePreservingAttention(arch.transformer_dim, arch.seq_length))
+        layers = (layers..., GradientLayerQ(arch.transformer_dim, 2 * arch.transformer_dim, arch.activation))
+        layers = (layers..., GradientLayerP(arch.transformer_dim, 2 * arch.transformer_dim, arch.activation))
+    end
+
+    Chain(layers...)
+end
+
+function Chain(arch::VolumePreservingTransformer{AT, false, false}) where {AT}
+    layers = ()
+    for _ in 1:arch.L 
+        layers = (layers..., VolumePreservingAttention(arch.transformer_dim, arch.seq_length))
+        layers = (layers..., GradientLayerP(arch.transformer_dim, 2 * arch.transformer_dim, arch.activation))
+        layers = (layers..., GradientLayerQ(arch.transformer_dim, 2 * arch.transformer_dim, arch.activation))
+    end
+
     Chain(layers...)
 end
