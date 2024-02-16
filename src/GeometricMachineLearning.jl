@@ -49,6 +49,20 @@ module GeometricMachineLearning
     # the functionality in the script doesn't require anything else defined in GML, but some of the other scripts in that folder do.
     include("data_loader/data_loader.jl")
 
+    # INCLUDE ARRAYS
+    include("arrays/skew_symmetric.jl")
+    include("arrays/symmetric.jl")
+    include("arrays/symplectic.jl")
+    include("arrays/abstract_lie_algebra_horizontal.jl")
+    include("arrays/stiefel_lie_algebra_horizontal.jl")
+    include("arrays/grassmann_lie_algebra_horizontal.jl")
+
+    export SymmetricMatrix, SymplecticPotential, SkewSymMatrix
+    export StiefelLieAlgHorMatrix
+    export SymplecticLieAlgMatrix, SymplecticLieAlgHorMatrix
+    export GrassmannLieAlgHorMatrix
+    export StiefelProjection, SymplecticProjection
+
     include("kernels/assign_q_and_p.jl")
     include("kernels/tensor_mat_mul.jl")
     include("kernels/tensor_tensor_mul.jl")
@@ -60,6 +74,7 @@ module GeometricMachineLearning
     include("kernels/tensor_transpose.jl")
     include("kernels/exponentials/tensor_exponential.jl")
     include("kernels/inverses/inverse_4x4.jl")
+    include("kernels/inverses/inverse_5x5.jl")
     include("kernels/inverses/inverse_6x6.jl")
     include("kernels/inverses/tensor_cayley.jl")
     include("kernels/vec_tensor_mul.jl")
@@ -86,20 +101,6 @@ module GeometricMachineLearning
     
     # GPU specific operations
     export convert_to_dev, Device, CPUDevice
-
-    # INCLUDE ARRAYS
-    include("arrays/skew_symmetric.jl")
-    include("arrays/symmetric.jl")
-    include("arrays/symplectic.jl")
-    include("arrays/abstract_lie_algebra_horizontal.jl")
-    include("arrays/stiefel_lie_algebra_horizontal.jl")
-    include("arrays/grassmann_lie_algebra_horizontal.jl")
-
-    export SymmetricMatrix, SymplecticPotential, SkewSymMatrix
-    export StiefelLieAlgHorMatrix
-    export SymplecticLieAlgMatrix, SymplecticLieAlgHorMatrix
-    export GrassmannLieAlgHorMatrix
-    export StiefelProjection, SymplecticProjection
 
     export GradientLayerQ, GradientLayerP, ActivationLayerQ, ActivationLayerP, LinearLayerQ, LinearLayerP
     export Linear
