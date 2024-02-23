@@ -53,6 +53,41 @@ function ChainRulesCore.rrule(::typeof(mat_tensor_mul), B::SymmetricMatrix{T}, A
     return C, skew_sym_mul_pullback
 end
 
+function ChainRulesCore.rrule(::typeof(mat_tensor_mul), B::LowerTriangular{T}, A::AbstractArray{T, 3}) where T
+    @assert size(A, 1) == B.n 
+    C = mat_tensor_mul(B, A)
+    function lower_triangular_mul_pullback(C_diff::AbstractArray{T, 3})
+        f̄ = NoTangent()
+        S_diff = zero(B.S)
+        A_diff = zero(C_diff)
+        C_diff_copy = copy(C_diff)
+        S_copy = copy(B.S)
+        A_copy = copy(A)
+        C_copy = copy(C)
+        Enzyme.autodiff(Enzyme.Reverse, lo_mat_mul!, Enzyme.Const, Enzyme.Duplicated(C_copy, C_diff_copy), Enzyme.Duplicated(S_copy, S_diff), Enzyme.Duplicated(A_copy, A_diff), Enzyme.Const(B.n))
+
+        return f̄, LowerTriangular(S_diff, B.n), A_diff 
+    end 
+    return C, lower_triangular_mul_pullback
+end
+
+function ChainRulesCore.rrule(::typeof(mat_tensor_mul), B::UpperTriangular{T}, A::AbstractArray{T, 3}) where T
+    @assert size(A, 1) == B.n 
+    C = mat_tensor_mul(B, A)
+    function upper_triangular_mul_pullback(C_diff::AbstractArray{T, 3})
+        f̄ = NoTangent()
+        S_diff = zero(B.S)
+        A_diff = zero(C_diff)
+        C_diff_copy = copy(C_diff)
+        S_copy = copy(B.S)
+        A_copy = copy(A)
+        C_copy = copy(C)
+        Enzyme.autodiff(Enzyme.Reverse, up_mat_mul!, Enzyme.Const, Enzyme.Duplicated(C_copy, C_diff_copy), Enzyme.Duplicated(S_copy, S_diff), Enzyme.Duplicated(A_copy, A_diff), Enzyme.Const(B.n))
+
+        return f̄, UpperTriangular(S_diff, B.n), A_diff 
+    end 
+    return C, upper_triangular_mul_pullback
+end
 
 mat_tensor_mul(B::AbstractMatrix, A::Thunk) = Thunk(() -> mat_tensor_mul(B, unthunk(A)))
     
