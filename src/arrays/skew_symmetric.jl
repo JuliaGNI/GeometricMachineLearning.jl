@@ -154,7 +154,7 @@ function Base.:*(B::AbstractMatrix{T}, A::SkewSymMatrix{T}) where T
 end
 
 function Base.:*(A::SkewSymMatrix, b::AbstractVector{T}) where T
-    A*reshape(b, size(b), 1)
+    A*reshape(b, length(b), 1)
 end
 
 function Base.one(A::SkewSymMatrix{T}) where T
