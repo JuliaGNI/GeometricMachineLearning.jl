@@ -18,7 +18,7 @@ Consider the following toy example: We want to sample from the graph of the (sca
 ```@example rosenbrock
 using Plots # hide
 # hide
-rosenbrock(x::Vector) = ((1.0 - x[1])^2 + 100.0 * (x[2] - x[1]^2)^2) / 1000
+rosenbrock(x::Vector) = ((1.0 - x[1]) ^ 2 + 100.0 * (x[2] - x[1] ^ 2) ^ 2) / 1000
 x, y = -1.5:0.1:1.5, -1.5:0.1:1.5
 z = Surface((x,y)->rosenbrock([x,y]), x, y)
 p = surface(x,y,z; camera=(30,20), alpha=.6, colorbar=false, xlims=(-1.5, 1.5), ylims=(-1.5, 1.5), zlims=(0.0, rosenbrock([-1.5, -1.5])))
@@ -33,6 +33,8 @@ For computing the loss between the two distributions, i.e. ``\Psi(\mathcal{N}(0,
 ```@example rosenbrock
 using GeometricMachineLearning, Zygote, BrenierTwoFluid
 using LinearAlgebra: norm # hide
+import Random # hide 
+Random.seed!(123)
 
 model = Chain(GrassmannLayer(2,3), Dense(3, 8, tanh), Dense(8, 3, identity))
 
@@ -42,29 +44,24 @@ nn = NeuralNetwork(model, CPU(), Float64)
 c = (x,y) -> .5 * norm(x - y)^2
 ∇c = (x,y) -> x - y
 
-const d = 3 # hide 
-const d′ = 2 * Int(floor(d / 2)) # hide
-const N = length(x) * length(y) # hide
-const δ = N ^ (-1/2) # hide
-const ε = 0.1 * N ^ (-1 / (d′+4)) # δ^2 #N^(-3/(d′+4)) # hide
-const q = 0.7 # hide
-const Δ = 1.0 # hide
-const s = ε # hide
-const tol = 1e-3 # hide
-const crit_it = 5 # hide
-const p_ω = 2 # hide
+const ε = 0.1                 # entropic regularization. √ε is a length.  # hide
+const q = 1.0                 # annealing parameter                       # hide
+const Δ = 1.0                 # characteristic domain size                # hide
+const s = ε                   # current scale: no annealing -> equals ε   # hide
+const tol = 1e-4              # marginal condition tolerance              # hide 
+const crit_it = 20            # acceleration inference                    # hide
+const p_ω = 2
 
 function compute_wasserstein_gradient(ensemble1::AT, ensemble2::AT) where AT<:AbstractArray
     number_of_particles1 = size(ensemble1, 2)
     number_of_particles2 = size(ensemble2, 2)
-    V = SinkhornVariable(ensemble1', ones(number_of_particles1) / number_of_particles1)
-    W = SinkhornVariable(ensemble2', ones(number_of_particles2) / number_of_particles2)
-    CC = CostCollection(ensemble1', ensemble2', c)
-    params = SinkhornParameters(CC; ε=ε,q=1.0,Δ=1.0,s=s,tol=tol,crit_it=crit_it,p_ω=p_ω,sym=true,acc=false) # hide
-    S = SinkhornDivergence(V, W, CC, params)
-    initialize_potentials!(V, W, CC)
+    V = SinkhornVariable(copy(ensemble1'), ones(number_of_particles1) / number_of_particles1)
+    W = SinkhornVariable(copy(ensemble2'), ones(number_of_particles2) / number_of_particles2)
+    params = SinkhornParameters(; ε=ε,q=1.0,Δ=1.0,s=s,tol=tol,crit_it=crit_it,p_ω=p_ω,sym=false,acc=true) # hide
+    S = SinkhornDivergence(V, W, c, params, true)
+    initialize_potentials!(S)
     compute!(S)
-    value(S), x_gradient(S, ∇c)'
+    value(S), x_gradient!(S, ∇c)'
 end
 
 xyz_points = hcat([[x,y,rosenbrock([x,y])] for x in x for y in y]...)
@@ -82,20 +79,20 @@ end
 optimizer = Optimizer(nn, AdamOptimizer(1e-1))
 
 # note the small number of training steps
-const training_steps = 50
+const training_steps = 40
 loss_array = zeros(training_steps)
 for i in 1:training_steps
     val, dp = compute_gradient(nn.params)
     loss_array[i] = val
     optimization_step!(optimizer, model, nn.params, dp)
 end
-plot(loss_array, xlabel="training step")
+plot(loss_array, xlabel="training step", label="loss")
 ```
 
 Now we plot a few points to check how well they match the graph:
 
 ```@example rosenbrock
-const number_of_points = 30
+const number_of_points = 35
 
 coordinates = nn(randn(2, number_of_points))
 scatter3d!(p, [coordinates[1, :]], [coordinates[2, :]], [coordinates[3, :]], alpha=.5, color=4, label="mapped points")
