@@ -4,8 +4,24 @@ description(::Val{:Batch}) = raw"""
 The constructor of `Batch` takes `batch_size` (an integer) as input argument. Optionally we can provide `seq_length` if we deal with time series data and want to draw batches of a certain *length* (i.e. a range contained in the second dimension of the input array).
 """
 
+description(::Val{:batch_functor_matrix}) = raw"""
+For a snapshot matrix (or a `NamedTuple` of the form `(q=A, p=B)` where `A` and `B` are matrices), the functor for `Batch` is called on an instance of `DataLoader`. It then returns a tuple of batch indices: 
+- for `autoencoder=true`: ``(\mathcal{I}_1, \ldots, \mathcal{I}_{\lceil\mathtt{n\_params/batch\_size}\rceil})``, where the index runs from 1 to the number of batches, which is the number of columns in the snapshot matrix divided by the batch size (rounded up).
+- for `autoencoder=false`: ``(\mathcal{I}_1, \ldots, \mathcal{I}_{\lceil\mathtt{dl.input\_time\_steps/batch\_size}\rceil})``, where the index runs from 1 to the number of batches, which is the number of columns in the snapshot matrix (minus one) divided by the batch size (rounded up).
 """
+
+description(::Val{:batch_functor_tensor}) = raw"""
+The functor for batch is called with an instance on `DataLoader`. It then returns a tuple of batch indices: ``(\mathcal{I}_1, \ldots, \mathcal{I}_{\lceil\mathtt{dl.n\_params/batch\_size}\rceil})``, where the index runs from 1 to the number of batches, which is the number of parameters divided by the batch size (rounded up).
+"""
+
+"""
+## `Batch` constructor
 $(description(Val(:Batch)))
+
+## `Batch functor`
+$(description(Val(:batch_functor_matrix)))
+
+$(description(Val(:batch_functor_tensor)))
 """
 struct Batch{seq_type <: Union{Nothing, Integer}}
     batch_size::Int
@@ -32,35 +48,15 @@ function batch_over_one_axis(batch::Batch, number_columns::Int)
     (batches..., indices[(n_batches - 1) * batch.batch_size + 1:number_columns])
 end
 
-
-description(::Val{:batch_functor_matrix}) = raw"""
-For a snapshot matrix (or a `NamedTuple` of the form `(q=A, p=B)` where `A` and `B` are matrices), the functor for `Batch` is called on an instance of `DataLoader`. It then returns a tuple of batch indices: 
-- for `autoencoder=true`: ``(\mathcal{I}_1, \ldots, \mathcal{I}_{\lceil\mathtt{n\_params/batch\_size}\rceil})``, where the index runs from 1 to the number of batches, which is the number of columns in the snapshot matrix divided by the batch size (rounded up).
-- for `autoencoder=false`: ``(\mathcal{I}_1, \ldots, \mathcal{I}_{\lceil\mathtt{dl.input\_time\_steps/batch\_size}\rceil})``, where the index runs from 1 to the number of batches, which is the number of columns in the snapshot matrix (minus one) divided by the batch size (rounded up).
-"""
-
-"""
-$(description(Val(:batch_functor_matrix)))
-"""
-function (batch::Batch{<:Nothing})(dl::DataLoader{T, AT}) where {T, BT<:AbstractMatrix{T}, AT<:Union{BT, NamedTuple{(:q, :p), Tuple{BT, BT}}}}
-    number_columns = isnothing(dl.input_time_steps) ? dl.n_params : dl.input_time_steps
-    batch_over_one_axis(batch, number_columns)
-end
-
-description(::Val{:batch_functor_tensor}) = raw"""
-The functor for batch is called with an instance on `DataLoader`. It then returns a tuple of batch indices: ``(\mathcal{I}_1, \ldots, \mathcal{I}_{\lceil\mathtt{dl.n\_params/batch\_size}\rceil})``, where the index runs from 1 to the number of batches, which is the number of parameters divided by the batch size (rounded up).
-"""
-
-"""
-$(description(Val(:batch_functor_tensor)))
-"""
-function (batch::Batch{<:Nothing})(dl::DataLoader{T, AT}) where {T, AT<:AbstractArray{T, 3}}
+function (batch::Batch{<:Nothing})(dl::DataLoader{T, BT, OT, RegularData}) where {T, AT<:AbstractArray{T}, BT<:Union{AT, NamedTuple{(:q, :p), Tuple{AT, AT}}}, OT}
     batch_over_one_axis(batch, dl.n_params)
 end
 
-"""
-Batching for tensor with three axes (unsupervised learning). 
-"""
+function (batch::Batch{<:Nothing})(dl::DataLoader{T, BT, OT, TimeSteps}) where {T, AT<:AbstractArray{T}, BT<:Union{AT, NamedTuple{(:q, :p), Tuple{AT, AT}}}, OT}
+    batch_over_one_axis(batch, dl.input_time_steps)
+end
+
+# Batching for tensor with three axes (unsupervised learning). 
 function (batch::Batch{<:Integer})(dl::DataLoader{T, BT, Nothing}) where {T, AT<:AbstractArray{T, 3}, BT<:Union{AT, NamedTuple{(:q, :p), Tuple{AT, AT}}}}
     time_indices = shuffle(1:(dl.input_time_steps - batch.seq_length))
     parameter_indices = shuffle(1:dl.n_params)
@@ -72,7 +68,6 @@ function (batch::Batch{<:Integer})(dl::DataLoader{T, BT, Nothing}) where {T, AT<
     end
     (batches..., complete_indices[(n_batches - 1) * batch.batch_size + 1:end])
 end 
-
 
 @doc raw"""
 Gives the number of bathces. Inputs are of type `DataLoader` and `Batch`.
