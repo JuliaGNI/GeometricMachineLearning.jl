@@ -56,12 +56,16 @@ module GeometricMachineLearning
     include("arrays/abstract_lie_algebra_horizontal.jl")
     include("arrays/stiefel_lie_algebra_horizontal.jl")
     include("arrays/grassmann_lie_algebra_horizontal.jl")
+    include("arrays/triangular.jl")
+    include("arrays/lower_triangular.jl")
+    include("arrays/upper_triangular.jl")
 
     export SymmetricMatrix, SymplecticPotential, SkewSymMatrix
     export StiefelLieAlgHorMatrix
     export SymplecticLieAlgMatrix, SymplecticLieAlgHorMatrix
     export GrassmannLieAlgHorMatrix
     export StiefelProjection, SymplecticProjection
+    export LowerTriangular, UpperTriangular
 
     include("kernels/assign_q_and_p.jl")
     include("kernels/tensor_mat_mul.jl")
@@ -140,6 +144,7 @@ module GeometricMachineLearning
     include("layers/grassmann_layer.jl")
     include("layers/multi_head_attention.jl")
     include("layers/volume_preserving_attention.jl")
+    include("layers/volume_preserving_feedforward.jl")
     include("layers/transformer.jl")
     include("layers/psd_like_layer.jl")
     include("layers/classification.jl")
@@ -149,6 +154,8 @@ module GeometricMachineLearning
     export PSDLayer
     export MultiHeadAttention
     export VolumePreservingAttention
+    export VolumePreservingLowerLayer
+    export VolumePreservingUpperLayer
     export ResNet
     export Transformer
     export Classification
@@ -284,7 +291,7 @@ module GeometricMachineLearning
     include("nnsolution/history.jl")
 
     export NeuralNetSolution
-    export nn, problem, tstep, history, size_history
+    export problem, tstep, history, size_history
     export set_sizemax_history
     
     include("nnsolution/neural_net_solution.jl")
@@ -297,13 +304,13 @@ module GeometricMachineLearning
     # INCLUDE TRAINING integrator
 
     export TrainingSet
-    export nn, parameters # , data
+    export parameters # , data
 
     include("training/training_set.jl")
 
     export EnsembleTraining
     export isnnShared, isParametersShared, isDataShared
-    export nn, parameters, data
+    export parameters, data
     export push!, merge!, size
 
     include("training/ensemble_training.jl")
