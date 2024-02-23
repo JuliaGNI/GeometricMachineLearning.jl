@@ -44,8 +44,9 @@ makedocs(;
             "Differential Equations and the EAU theorem" => "manifolds/existence_and_uniqueness_theorem.md",
             ],
         "Arrays" => [
+            "Symmetric and Skew-Symmetric Matrices" => "arrays/skew_symmetric_matrix.md",
             "Stiefel Global Tangent Space" => "arrays/stiefel_lie_alg_horizontal.md",
-            "Grassmann Global Tangent Space"=> "arrays/grassmann_lie_alg_hor_matrix.md"
+            "Grassmann Global Tangent Space"=> "arrays/grassmann_lie_alg_hor_matrix.md",
         ],
         "Optimizer Framework" => [
             "Optimizers" => "Optimizer.md",
