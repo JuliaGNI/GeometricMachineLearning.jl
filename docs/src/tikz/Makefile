@@ -22,6 +22,8 @@ pdf:
 	xelatex -shell-escape tensor_sampling
 	xelatex -shell-escape tensor_sampling_dark
 	xelatex -shell-escape skew_sym_visualization
+	xelatex -shell-escape skew_sym_visualization
+	xelatex -shell-escape skew_sym_visualization_dark
 	xelatex -shell-escape skew_sym_visualization_dark
 
 png:
