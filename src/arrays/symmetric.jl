@@ -14,14 +14,6 @@ Internally the `struct` saves a vector $S$ of size $n(n+1)\div2$. The conversion
 ```
 
 So ``S`` stores a string of vectors taken from $A$: $S = [\tilde{a}_1, \tilde{a}_2, \ldots, \tilde{a}_n]$ with $\tilde{a}_i = [[A]_{i1},[A]_{i2},\ldots,[A]_{ii}]$.
-
-TODO: 
-- [x] Overload Adjoint operation for SymmetricMatrix!! (Aᵀ = A)
-- [ ] implement matrix and vector products (to also work on GPU)
-- [x] implement zero initialization (for optimizer)
-- [ ] perform some tests (also with Zygote)
-- [x] update the constructor (to work better for GPU)
-- [ ] implement multiplication with a tensor
 """
 mutable struct SymmetricMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
     S::AT
