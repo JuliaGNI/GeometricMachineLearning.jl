@@ -17,13 +17,11 @@ So what is stored internally is a vector of size ``n(n-1)/2`` for the skew-symme
 ```@example skew_sym
 using GeometricMachineLearning # hide 
 
-A = rand(SkewSymmetricMatrix, 5)
-display(A) # hide
+A = rand(SkewSymMatrix, 5)
 ```
 
 and then access the vector:
 
 ```@example skew_sym
-S = A.S 
-display(S) # hide 
+A.S 
 ```
