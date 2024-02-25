@@ -7,9 +7,9 @@ A kernel that computes the weighted scalar products of all combinations of vecto
     temp = zero(T)
 
     if i > j
-        for l in axes(Z, 2)
-            for m in axes(Z, 2)
-                temp += Z[i, l, k] * A[l, m] * Z[m, j, k]
+        for l in axes(Z, 1)
+            for m in axes(Z, 1)
+                temp += Z[l, i, k] * A[l, m] * Z[m, j, k]
             end
         end
     end
