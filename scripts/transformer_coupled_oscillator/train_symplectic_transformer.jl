@@ -1,7 +1,6 @@
 using GeometricMachineLearning
-using CUDA
-using GeometricMachineLearning: transformer_loss, apply_toNT
-using Plots
+using GeometricMachineLearning: transformer_loss, apply_toNT, map_to_cpu
+# using Plots
 using GeometricIntegrators: integrate, ImplicitMidpoint
 using GeometricProblems.CoupledHarmonicOscillator: hodeproblem, default_parameters, tspan, tstep, q₀, p₀, hamiltonian
 using GeometricEquations: EnsembleProblem
@@ -21,62 +20,62 @@ dl_nt = DataLoader(ensemble_solution)
 
 # hyperparameters concerning architecture 
 const sys_dim = size(dl_nt.input.q, 1) * 2
-const transformer_dim = 6
+const transformer_dim = sys_dim
 const n_heads = 2
 const sympnet_upscaling = 3
-const L = 2 # transformer blocks 
+const L = 1 # transformer blocks 
 const upscaling_activation = identity
 const resnet_activation = tanh
-
-# hyperparameters concerning training 
-const n_epochs = 50
-const batch_size = 512
-const seq_length = 4
+const depth = 8
+const n_blocks = 2
+const n_linear = 2
 
 # type and backend 
 const backend = CPU()
-const T = backend == CUDABackend() ? Float32 : eltype(dl_nt)
+const T = eltype(dl_nt)
 
 # data loader 
-const dl = backend == CUDABackend() ? DataLoader(vcat(dl_nt.input.q, dl_nt.input.p) |> cu) : DataLoader(vcat(dl_nt.input.q, dl_nt.input.p))
+const dl = DataLoader(vcat(dl_nt.input.q, dl_nt.input.p)) 
 
+# hyperparameters concerning training 
+const n_epochs = 200
+const batch_size = 1024
+const seq_length = 4
 const opt_method = AdamOptimizer(T)
 
 model₁ = RegularTransformerIntegrator(sys_dim, transformer_dim, n_heads, L, upscaling_activation, resnet_activation)
-model₂ = VolumePreservingTransformer(sys_dim, seq_length, transformer_dim, sympnet_upscaling * transformer_dim, L, resnet_activation)
+model₂ = VolumePreservingTransformer(sys_dim, seq_length, n_blocks, n_linear, L, resnet_activation)
 
-model₃ = Chain(  Dense(sys_dim, transformer_dim, identity),
-              ResNet(transformer_dim, tanh),
-              ResNet(transformer_dim, tanh),
+model₃ = Chain(  Dense(sys_dim, transformer_dim, upscaling_activation),
+              ResNet(transformer_dim, resnet_activation),
+              ResNet(transformer_dim, resnet_activation),
               Dense(transformer_dim, sys_dim, identity)
               )
 
 model₄ = Chain( PSDLayer(sys_dim, transformer_dim),
-              GradientLayerQ(transformer_dim, sympnet_upscaling * transformer_dim, tanh),
-              GradientLayerP(transformer_dim, sympnet_upscaling * transformer_dim, tanh),
-              GradientLayerP(transformer_dim, sympnet_upscaling * transformer_dim, tanh),
-              GradientLayerQ(transformer_dim, sympnet_upscaling * transformer_dim, tanh),
+              GradientLayerQ(transformer_dim, sympnet_upscaling * transformer_dim, resnet_activation),
+              GradientLayerP(transformer_dim, sympnet_upscaling * transformer_dim, resnet_activation),
+              GradientLayerP(transformer_dim, sympnet_upscaling * transformer_dim, resnet_activation),
+              GradientLayerQ(transformer_dim, sympnet_upscaling * transformer_dim, resnet_activation),
 	          PSDLayer(transformer_dim, sys_dim)
               )
 
-nn₁ = NeuralNetwork(model₁, backend, T)
-nn₂ = NeuralNetwork(model₂, backend, T)
-nn₃ = NeuralNetwork(model₃, backend, T)
-nn₄ = NeuralNetwork(model₄, backend, T)
+function setup_and_train(model::Union{GeometricMachineLearning.Architecture, GeometricMachineLearning.Chain}, batch::Batch, transformer::Bool=true)
+    nn₀ = NeuralNetwork(model, backend, T)
+    o₀ = Optimizer(opt_method, nn₀)
 
-o₁ = Optimizer(opt_method, nn₁)
-o₂ = Optimizer(opt_method, nn₂)
-o₃ = Optimizer(opt_method, nn₃)
-o₄ = Optimizer(opt_method, nn₄)
+    loss_array = transformer ? o₀(nn₀, dl, batch, n_epochs, transformer_loss) : o₀(nn₀, dl, batch, n_epochs)
+
+    nn₀, loss_array
+end
 
 batch = Batch(batch_size, seq_length)
 sympnet_batch = Batch(batch_size, 1)
 
-# train networks
-o₁(nn₁, dl, batch, n_epochs, transformer_loss)
-o₂(nn₂, dl, batch, n_epochs, transformer_loss)
-o₃(nn₃, dl, sympnet_batch, n_epochs)
-o₄(nn₄, dl, sympnet_batch, n_epochs)
+nn₁, loss_array₁ = setup_and_train(model₁, batch)
+nn₂, loss_array₂ = setup_and_train(model₂, batch)
+nn₃, loss_array₃ = setup_and_train(model₃, sympnet_batch, false)
+nn₄, loss_array₄ = setup_and_train(model₄, sympnet_batch, false)
 
 struct DummySympNet{AT} <: GeometricMachineLearning.SympNet{AT} end
 function DummySympNet(activation = identity)
@@ -90,7 +89,7 @@ end
 nn₃ = convert_nn_to_cpu_sympnet(nn₃)
 nn₄ = convert_nn_to_cpu_sympnet(nn₄)
 
-@docs"""
+@doc raw"""
 Computes the numerical solution for the problem (for comparative purposes)
 """
 function numerical_solution(; t_integration = t_integration, params = (m₁ = 2., m₂ = 1., k₁ = 1.5, k₂ = 0.3, k = 3.5), only_symplectic::Bool = false)
@@ -151,10 +150,8 @@ function save_plot(t_final = 15., index = 1)
 end
 
 
-display(GeometricMachineLearning.parameterlength(model₁))
-display(GeometricMachineLearning.parameterlength(model₂))
+display(GeometricMachineLearning.parameterlength(nn₁))
+display(GeometricMachineLearning.parameterlength(nn₂))
 
-display(GeometricMachineLearning.parameterlength(model₃))
-display(GeometricMachineLearning.parameterlength(model₄))
-
-png(make_sympnet_plot(t_integration = t_integration), "sympnet_integration_length_" * string(t_integration))
+display(GeometricMachineLearning.parameterlength(nn₃))
+display(GeometricMachineLearning.parameterlength(nn₄))
