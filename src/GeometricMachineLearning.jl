@@ -81,6 +81,7 @@ module GeometricMachineLearning
     include("kernels/inverses/inverse_5x5.jl")
     include("kernels/inverses/inverse_6x6.jl")
     include("kernels/inverses/tensor_cayley.jl")
+    include("kernels/inverses/tensor_mat_skew_sym_assign.jl")
     include("kernels/vec_tensor_mul.jl")
 
     include("kernels/kernel_ad_routines/assign_q_and_p.jl")
@@ -90,6 +91,7 @@ module GeometricMachineLearning
     include("kernels/kernel_ad_routines/tensor_transpose_tensor_mul.jl")
     include("kernels/kernel_ad_routines/tensor_transpose.jl")
     include("kernels/kernel_ad_routines/vec_tensor_mul.jl")
+    include("kernels/kernel_ad_routines/tensor_mat_skew_sym_assign.jl")
     # export tensor_mat_mul
 
     # this defines empty retraction type structs (doesn't rely on anything)
@@ -251,6 +253,7 @@ module GeometricMachineLearning
     include("architectures/transformer_neural_network.jl")
     include("architectures/transformer_integrator.jl")
     include("architectures/regular_transformer_integrator.jl")
+    include("architectures/volume_preserving_feedforward.jl")
     include("architectures/volume_preserving_transformer.jl")
 
     export HamiltonianNeuralNetwork
@@ -263,6 +266,7 @@ module GeometricMachineLearning
     export ClassificationTransformer
     export RegularTransformerIntegrator
     export VolumePreservingTransformer
+    export VolumePreservingFeedForward
 
     export train!, apply!, jacobian!
     export Iterate_Sympnet
