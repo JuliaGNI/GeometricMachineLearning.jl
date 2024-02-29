@@ -53,36 +53,112 @@ function ChainRulesCore.rrule(::typeof(mat_tensor_mul), B::SymmetricMatrix{T}, A
     return C, skew_sym_mul_pullback
 end
 
+################################ lower triangular 
+
+@kernel function lower_da_kernel!(dA::AT, S::AbstractVector{T}, dC::AT) where {T, AT <: AbstractArray{T, 3}} 
+    l, m, h = @index(Global, NTuple)
+
+    temp = zero(T)
+    for i = (l+1):size(dA, 1)
+        temp += S[(i-2) * (i-1) ÷ 2 + l] * dC[i, m, h]
+    end
+
+    dA[l, m, h] = temp 
+
+    nothing
+end
+
+@kernel function lower_ds_kernel!(dS::AbstractVector{T}, A::AT, dC::AT) where {T, AT <: AbstractArray{T, 3}}
+    l = @index(Global)
+    n = size(A, 1)
+
+    temp = zero(T)
+    for h in axes(A, 3)
+        for j in 1:n
+            for i = 2:n 
+                i_sum = (i - 2) * (i - 1) ÷ 2
+                temp = (i_sum < l < (i_sum + i)) ? temp + A[l - i_sum, j, h] * dC[i, j, h] : temp
+            end
+        end
+    end
+
+    dS[l] = temp 
+
+    nothing
+end
+
 function ChainRulesCore.rrule(::typeof(mat_tensor_mul), B::LowerTriangular{T}, A::AbstractArray{T, 3}) where T
     @assert size(A, 1) == B.n 
     C = mat_tensor_mul(B, A)
-    function lower_triangular_mul_pullback(C_diff::AbstractArray{T, 3})
-        f̄ = NoTangent()
-        S_diff = zero(B.S)
-        A_diff = zero(C_diff)
-        C_diff_copy = copy(C_diff)
-        S_copy = copy(B.S)
-        A_copy = copy(A)
-        C_copy = copy(C)
-        Enzyme.autodiff(Enzyme.Reverse, lo_mat_mul!, Enzyme.Const, Enzyme.Duplicated(C_copy, C_diff_copy), Enzyme.Duplicated(S_copy, S_diff), Enzyme.Duplicated(A_copy, A_diff), Enzyme.Const(B.n))
+    function lower_triangular_mul_pullback(dC::AbstractArray{T, 3})
+        f̄, dS, dA, _  = rrule(lo_mat_mul, B.S, A, n)[2](dC)
 
-        return f̄, LowerTriangular(S_diff, B.n), A_diff 
+        return f̄, LowerTriangular(dS, B.n), dA 
     end 
     return C, lower_triangular_mul_pullback
+end
+
+function ChainRulesCore.rrule(::typeof(lo_mat_mul), S::AbstractVector{T}, A::AbstractArray{T, 3}, n::Int) where T 
+    C = lo_mat_mul(S, A, n)
+    function lo_mat_mul_pullback(dC::AbstractArray{T, 3}) 
+        f̄ = NoTangent()
+        backend = KernelAbstractions.get_backend(dC)
+        lower_da! = lower_da_kernel!(backend)
+        lower_ds! = lower_ds_kernel!(backend)
+
+        dA = zero(A)
+        dS = zero(S)
+
+        lower_da!(dA, S, dC, ndrange=size(dA))
+        lower_ds!(dS, A, dC, ndrange=size(dS))
+
+        return f̄, dS, dA, NoTangent()
+    end
+
+    return C, lo_mat_mul_pullback
+end
+
+################################ upper triangular 
+
+@kernel function upper_da_kernel!(dA::AT, S::AbstractVector{T}, dC::AT) where {T, AT <: AbstractArray{T, 3}} 
+    l, m, h = @index(Global, NTuple)
+
+    temp = zero(T)
+    if m < size(dA, 1)
+        for i = 1:(m-1)
+            temp += S[(n-2) * (n-1) ÷ 2 + i] * dC[i, m, h]
+        end
+    end
+
+    dA[l, m, h] = temp 
+
+    nothing
+end
+
+@kernel function upper_ds_kernel!(dS::AbstractVector{T}, A::AT, dC::AT) where {T, AT <: AbstractArray{T, 3}}
+    l = @index(Global)
+    n = size(A, 1)
+
+    temp = zero(T)
+    for h in axes(A, 3)
+        for j in 1:n
+            for i = 2:n 
+                i_sum = (i - 2) * (i - 1) ÷ 2
+                temp = (i_sum < l < (i_sum + i)) ? temp + A[l - i_sum, j, h] * dC[i, j, h] : temp
+            end
+        end
+    end
+
+    dS[l] = temp 
+
+    nothing
 end
 
 function ChainRulesCore.rrule(::typeof(mat_tensor_mul), B::UpperTriangular{T}, A::AbstractArray{T, 3}) where T
     @assert size(A, 1) == B.n 
     C = mat_tensor_mul(B, A)
     function upper_triangular_mul_pullback(C_diff::AbstractArray{T, 3})
-        f̄ = NoTangent()
-        S_diff = zero(B.S)
-        A_diff = zero(C_diff)
-        C_diff_copy = copy(C_diff)
-        S_copy = copy(B.S)
-        A_copy = copy(A)
-        C_copy = copy(C)
-        Enzyme.autodiff(Enzyme.Reverse, up_mat_mul!, Enzyme.Const, Enzyme.Duplicated(C_copy, C_diff_copy), Enzyme.Duplicated(S_copy, S_diff), Enzyme.Duplicated(A_copy, A_diff), Enzyme.Const(B.n))
+        ...
 
         return f̄, UpperTriangular(S_diff, B.n), A_diff 
     end 

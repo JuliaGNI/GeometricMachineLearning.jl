@@ -31,7 +31,7 @@ end
 
 ################## SkewSymMatrix
 
-@kernel function skew_mat_mul_kernel!(C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{T, 3}, n) where T
+@kernel function skew_mat_mul_kernel!(C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where T
     i, j, l = @index(Global, NTuple)
 
     tmp_sum = zero(T)
@@ -44,7 +44,7 @@ end
     C[i, j, l] = tmp_sum
 end
 
-function skew_mat_mul!(C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{T, 3}, n) where T 
+function skew_mat_mul!(C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where T 
     backend = KernelAbstractions.get_backend(C)
 
     skew_mat_mul_k! = skew_mat_mul_kernel!(backend)
@@ -57,7 +57,7 @@ end
 
 ################### SymmetricMatrix
 
-@kernel function symmetric_mat_mul_kernel!(C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{T, 3}, n) where T 
+@kernel function symmetric_mat_mul_kernel!(C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where T 
     i, j, l = @index(Global, NTuple)
 
     tmp_sum = zero(T)
@@ -70,7 +70,7 @@ end
     C[i, j, l] = tmp_sum
 end
 
-function symmetric_mat_mul!(C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{T, 3}, n) where T 
+function symmetric_mat_mul!(C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where T 
     backend = KernelAbstractions.get_backend(C)
 
     symmetric_mat_mul_k! = symmetric_mat_mul_kernel!(backend)
@@ -83,7 +83,7 @@ end
 
 ########################### LowerTriangular
 
-@kernel function lo_mul_kernel!(C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{T, 3}, n) where T
+@kernel function lo_mul_kernel!(C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{T, 3}, ::Int) where T
     i, j, l = @index(Global, NTuple)
 
     tmp_sum = zero(T)
@@ -93,11 +93,19 @@ end
     C[i, j, l] = tmp_sum
 end
 
-function lo_mat_mul!(C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{T, 3}, n) where T 
+function lo_mat_mul!(C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where T 
     backend = KernelAbstractions.get_backend(C)
 
     lo_mat_mul_k! = lo_mul_kernel!(backend)
     lo_mat_mul_k!(C, S, B, n, ndrange=size(C))
+end
+
+function lo_mat_mul(S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where T 
+    C = zero(B)
+    
+    lo_mat_mul!(C, S, B, n)
+
+    C 
 end
 
 function mat_tensor_mul!(C::AbstractArray{T, 3}, A::LowerTriangular{T}, B::AbstractArray{T, 3}) where T
@@ -106,7 +114,7 @@ end
 
 ####################### UpperTriangular
 
-@kernel function up_mul_kernel!(C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{T, 3}, n) where T
+@kernel function up_mul_kernel!(C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where T
     i, j, l = @index(Global, NTuple)
 
     tmp_sum = zero(T)
@@ -116,7 +124,7 @@ end
     C[i, j, l] = tmp_sum
 end
 
-function up_mat_mul!(C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{T, 3}, n) where T 
+function up_mat_mul!(C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where T 
     backend = KernelAbstractions.get_backend(C)
 
     up_mat_mul_k! = lo_mul_kernel!(backend)
