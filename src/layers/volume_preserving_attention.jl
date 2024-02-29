@@ -29,6 +29,7 @@ struct VolumePreservingAttention{M, N, SL, ScalarProductType} <: AbstractExplici
     end
 end
 
+#=
 function orthonormal_activation_cayley(::VolumePreservingAttention{M, M, 4}, A::AbstractArray{T, 3}) where {T, M} 
     tensor_cayley4(A)
 end
@@ -39,6 +40,11 @@ end
 
 function orthonormal_activation_cayley(::VolumePreservingAttention{M, M, 6}, A::AbstractArray{T, 3}) where {T, M} 
     tensor_cayley6(A)
+end
+=#
+
+function orthonormal_activation_cayley(::VolumePreservingAttention, A::AbstractArray{T, 3}) where T 
+    cpu_tensor_cayley(A)
 end
 
 function orthonormal_activation_cayley(A::AbstractMatrix{T}) where T 

@@ -24,6 +24,8 @@ function main(first_dim, second_dim, third_dim, third_tensor_dim)
     test_rrule(assign_output_estimate, rand(first_dim, second_dim, third_tensor_dim), 1)
     test_rrule(vec_tensor_mul, rand(first_dim), rand(first_dim, second_dim, third_tensor_dim))
     test_rrule(upper_triangular_asymmetrize, rand(first_dim, first_dim, third_tensor_dim))
+    test_rrule(tensor_mat_skew_sym_assign, rand(first_dim, second_dim, third_dim), rand(first_dim, first_dim), check_thunked_output_tangent = false)
+    test_rrule(lo_mat_mul, rand(first_dim * (first_dim - 1) ÷ 2), rand(first_dim, first_dim, third_dim), check_thunked_output_tangent = false)
 end
 
 const dim_range = 10

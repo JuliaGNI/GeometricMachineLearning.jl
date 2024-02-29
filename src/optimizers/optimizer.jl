@@ -49,7 +49,7 @@ function optimization_step!(o::Optimizer, d::Union{AbstractExplicitLayer, Abstra
 end
 
 @doc raw"""
-Optimization for an entire neural networks, the way this function should be called. 
+Optimization for an entire neural network, the way this function should be called. 
 
 inputs: 
 - `o::Optimizer`
