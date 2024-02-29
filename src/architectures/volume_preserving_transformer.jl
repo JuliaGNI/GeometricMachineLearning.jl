@@ -16,18 +16,19 @@ struct VolumePreservingTransformer{AT} <: TransformerIntegrator
     L::Int 
     activation::AT
     init_upper::Bool
+    skew_sym::Bool
 
-    function VolumePreservingTransformer(sys_dim::Int, seq_length::Int, n_blocks::Int=1, n_linear::Int=1, L::Int=2, activation=tanh, init_upper::Bool=false)
-        return new{typeof(tanh)}(sys_dim, seq_length, n_blocks, n_linear, L, activation, init_upper)
+    function VolumePreservingTransformer(sys_dim::Int, seq_length::Int, n_blocks::Int=1, n_linear::Int=1, L::Int=2, activation=tanh; init_upper::Bool=false, skew_sym::Bool=false)
+        return new{typeof(tanh)}(sys_dim, seq_length, n_blocks, n_linear, L, activation, init_upper, skew_sym)
     end
 end
 
 function Chain(arch::VolumePreservingTransformer)
     layers = ()
     
-    for _ in 1:arch:L 
-        layers = (layers..., VolumePreservingAttention(arch.sys_dim, arch.seq_length))
-        layers = (layers..., Chain(VolumePreservingFeedForward(arch.sys_dim, arch.n_blocks, arch.n_linear, arch.tanh; init_upper=init_upper)).layers...)
+    for _ in 1:arch.L 
+        layers = (layers..., VolumePreservingAttention(arch.sys_dim, arch.seq_length; skew_sym=arch.skew_sym))
+        layers = (layers..., Chain(VolumePreservingFeedForward(arch.sys_dim, arch.n_blocks, arch.n_linear, arch.activation; init_upper=arch.init_upper)).layers...)
     end
 
     Chain(layers...)
