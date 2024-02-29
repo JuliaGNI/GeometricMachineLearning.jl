@@ -100,7 +100,7 @@ end
 """
 Constructor for `EnsembleSolution` form package `GeometricSolutions`.
 """
-function DataLoader(ensemble_solution::EnsembleSolution)
+function DataLoader(ensemble_solution::EnsembleSolution{T, T1, Vector{ST}}) where {T, T1, DT, ST <: GeometricSolution{T, T1, NamedTuple{(:q, :p), Tuple{DT, DT}}}}
 
     sys_dim, input_time_steps, n_params = length(ensemble_solution.s[1].q[0]), length(ensemble_solution.t), length(ensemble_solution.s)
 
@@ -110,6 +110,24 @@ function DataLoader(ensemble_solution::EnsembleSolution)
         for dim in 1:sys_dim 
             data.q[dim, :, i] = solution.q[:, dim]
             data.p[dim, :, i] = solution.p[:, dim]
+        end 
+    end
+
+    DataLoader(data)
+end
+
+"""
+Constructor for `EnsembleSolution` form package `GeometricSolutions`.
+"""
+function DataLoader(ensemble_solution::EnsembleSolution{T, T1, Vector{ST}}) where {T, T1, DT, ST <: GeometricSolution{T, T1, NamedTuple{(:q, ), Tuple{DT}}}}
+
+    sys_dim, input_time_steps, n_params = length(ensemble_solution.s[1].q[0]), length(ensemble_solution.t), length(ensemble_solution.s)
+
+    data = zeros(sys_dim, input_time_steps, n_params)
+
+    for (solution, i) in zip(ensemble_solution.s, axes(ensemble_solution.s, 1))
+        for dim in 1:sys_dim 
+            data[dim, :, i] = solution.q[:, dim]
         end 
     end
 
