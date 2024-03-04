@@ -4,7 +4,7 @@ SympNet type encompasses GSympNets and LASympnets.
 TODO: 
 -[ ] add bias to `LASympNet`!
 """
-abstract type SympNet{AT} <: Architecture end
+abstract type SympNet{AT} <: NeuralNetworkIntegrator end
 
 @doc raw"""
 `LASympNet` is called with **a single input argument**, the **system dimension**, or with an instance of `DataLoader`. Optional input arguments are: 
@@ -175,25 +175,4 @@ function iterate(nn::NeuralNetwork{<:SympNet}, ics::NamedTuple{(:q, :p), Tuple{A
     end
 
     (q=q_valuation, p=p_valuation)
-end
-
-function iterate(nn::NeuralNetwork{<:SympNet}, ics::AT; n_points = 100) where {T, AT<:AbstractVector{T}}
-
-    n_dim = length(ics)
-    backend = KernelAbstractions.get_backend(ics)
-
-    # Array to store the predictions
-    valuation = KernelAbstractions.allocate(backend, T, n_dim, n_points)
-    
-    # Initialisation
-    @views valuation[:,1] = ics
-    
-    #Computation of phase space
-    @views for i in 2:n_points
-        temp = valuation[:,i-1]
-        prediction = nn(temp)
-        valuation[:,i] = prediction
-    end
-
-    valuation
 end
