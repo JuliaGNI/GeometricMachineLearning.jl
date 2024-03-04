@@ -1,6 +1,6 @@
 abstract type NeuralNetworkIntegrator <: Architecture end
 
-function iterate(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, ics::AT; n_points = 100) where {T, AT<:AbstractVector{T}}
+function Base.iterate(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, ics::AT; n_points = 100) where {T, AT<:AbstractVector{T}}
 
     n_dim = length(ics)
     backend = KernelAbstractions.get_backend(ics)
@@ -21,11 +21,18 @@ function iterate(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, ics::AT; n_points
     valuation
 end
 
-function iterate(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, ics::BT; n_points = 100) where {AT<:AbstractVector, BT<:NamedTuple{(:q, ), Tuple{AT}}}
+function Base.iterate(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, ics::BT; n_points = 100) where {AT<:AbstractVector, BT<:NamedTuple{(:q, ), Tuple{AT}}}
     (q = iterate(nn, ics.q; n_points = n_points), )
 end
 
-function iterate(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, ics::BT; n_points = 100) where {T, AT<:AbstractVector{T}, BT<:NamedTuple{(:q, :p), Tuple{AT, AT}}}
+@doc raw"""
+This function computes a trajectory for a SympNet that has already been trained for valuation purposes.
+
+It takes as input: 
+- `nn`: a `NeuralNetwork` (that has been trained).
+- `ics`: initial conditions (a `NamedTuple` of two vectors)
+"""
+function Base.iterate(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, ics::BT; n_points = 100) where {T, AT<:AbstractVector{T}, BT<:NamedTuple{(:q, :p), Tuple{AT, AT}}}
 
     n_dim2 = length(ics.q)
     backend = KernelAbstractions.get_backend(ics.q)
