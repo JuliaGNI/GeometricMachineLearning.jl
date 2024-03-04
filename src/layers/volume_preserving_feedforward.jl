@@ -1,9 +1,28 @@
+@doc raw"""
+Super-type of `VolumePreservingLowerLayer` and `VolumePreservingUpperLayer`. The layers do the following: 
+
+```math
+x \mapsto \begin{cases} \sigma(Lx + b) & \text{where $L$ is }\mathtt{LowerTriangular} \\ \sigma(Ux + b) & \text{where $U$ is }\mathtt{UpperTriangular}. \end{cases}
+```
+
+The functor can be applied to a vecotr, a matrix or a tensor. 
+
+## Constructor 
+
+The constructors are called with:
+- `sys_dim::Int`: the system dimension. 
+- `activation=tanh`: the activation function. 
+- `include_bias::Bool=true` (keyword argument): specifies whether a bias should be used. 
+"""
 abstract type VolumePreservingFeedForwardLayer{M, N, bias} <: AbstractExplicitLayer{M, N} end 
 
+"""
+See the documentation for `VolumePreservingFeedForwardLayer`.
+"""
 struct VolumePreservingLowerLayer{M, N, bias, AT} <: VolumePreservingFeedForwardLayer{M, N, bias}
     activation::AT
 
-    function VolumePreservingLowerLayer(sys_dim::Int, activation=tanh; include_bias=true)
+    function VolumePreservingLowerLayer(sys_dim::Int, activation=tanh; include_bias::Bool=true)
         if include_bias
             return new{sys_dim, sys_dim, :bias, typeof(activation)}(activation)
         else 
@@ -12,10 +31,13 @@ struct VolumePreservingLowerLayer{M, N, bias, AT} <: VolumePreservingFeedForward
     end
 end 
 
+"""
+See the documentation for `VolumePreservingFeedForwardLayer`.
+"""
 struct VolumePreservingUpperLayer{M, N, bias, AT} <: VolumePreservingFeedForwardLayer{M, N, bias}
     activation::AT
 
-    function VolumePreservingUpperLayer(sys_dim::Int, activation=tanh; include_bias=true)
+    function VolumePreservingUpperLayer(sys_dim::Int, activation=tanh; include_bias::Bool=true)
         if include_bias
             return new{sys_dim, sys_dim, :bias, typeof(activation)}(activation)
         else 
