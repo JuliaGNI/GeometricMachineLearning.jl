@@ -27,7 +27,8 @@ dummy_setup(2, 4)
 # pullback(mat_tensor_mul, rand(SkewSymMatrix, sys_dim), rand(sys_dim, seq_length, 1))[2](rand(sys_dim, seq_length, 1))
 
 using GeometricMachineLearning
-using GeometricMachineLearning: transformer_loss, apply_toNT, map_to_cpu
+using GeometricMachineLearning: transformer_loss, map_to_cpu
+# using Plots
 using GeometricIntegrators: integrate, ImplicitMidpoint
 using GeometricProblems.DoublePendulum: hodeproblem, default_parameters, tspan, tstep, hamiltonian, ϑ
 using GeometricEquations: EnsembleProblem
@@ -62,10 +63,11 @@ const T = eltype(dl_nt)
 const dl = DataLoader(vcat(dl_nt.input.q, dl_nt.input.p)) 
 
 # hyperparameters concerning training 
-const n_epochs = 50000
+const n_epochs = 5000
 const batch_size = 1024
 const seq_length = 4
 const opt_method = AdamOptimizer(T)
+const resnet_activation = tanh
 
 
 # model₂ = RegularTransformerIntegrator(sys_dim, transformer_dim, n_heads, L, upscaling_activation, resnet_activation)
@@ -86,11 +88,10 @@ transformer_batch = Batch(batch_size, seq_length)
 model₁ = Chain(VolumePreservingAttention(sys_dim, seq_length))
 
 # only two linear layers
-model₂ = VolumePreservingFeedForward(sys_dim, n_blocks, n_linear, activation)
+model₂ = VolumePreservingFeedForward(sys_dim, n_blocks, n_linear)
 
 # model₂ = RegularTransformerIntegrator(sys_dim, transformer_dim, n_heads, L, upscaling_activation, resnet_activation)
-
-model₃ = VolumePreservingTransformer(sys_dim, seq_length, n_blocks, n_linear, L, activation)
+model₃ = VolumePreservingTransformer(sys_dim, seq_length, n_blocks, n_linear, L, resnet_activation)
 
 nn₁, loss_array₁ = setup_and_train(model₁, transformer_batch, transformer=true)
 nn₂, loss_array₂ = setup_and_train(model₂, feedforward_batch, transformer=false)
