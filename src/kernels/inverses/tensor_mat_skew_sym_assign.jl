@@ -19,7 +19,7 @@ A kernel that computes the weighted scalar products of all combinations of vecto
     nothing
 end
 
-function tensor_mat_skew_sym_assign!(C::AT, Z::AT, A::AbstractMatrix{T}) where {T, AT <: AbstractArray{T, 3}}
+function tensor_mat_skew_sym_assign!(C::AbstractArray{T, 3}, Z::AbstractArray{T, 3}, A::AbstractMatrix{T}) where {T}
     backend = KernelAbstractions.get_backend(Z)
 
     tensor_mat_skew_sym_assign_k! = tensor_mat_skew_sym_assign_kernel!(backend)
