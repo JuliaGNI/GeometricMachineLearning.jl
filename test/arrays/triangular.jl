@@ -33,7 +33,6 @@ function triangular_tensor_multiplication_test(T=Float64, n::Int=5)
     end
 end
 
-#=
 function triangular_tensor_multiplication_pullback_test(T=Float64, n::Int=5)
     Aₗ = rand(LowerTriangular{T}, n)
     Aᵤ = rand(LowerTriangular{T}, n)
@@ -41,11 +40,15 @@ function triangular_tensor_multiplication_pullback_test(T=Float64, n::Int=5)
     B = rand(T, n, n, n)
     C_diff = rand(T, n, n, n)
 
-    total_pb_lower = pullback(mat_tensor_mul, Aₗ)
-    total_pb_upper = pullback(mat_tensor_mul, Aᵤ, )
+    total_pb_lower = pullback(mat_tensor_mul, Aₗ, B)[2](C_diff)
+    total_pb_upper = pullback(mat_tensor_mul, Aᵤ, B)[2](C_diff)
+
+    for i in axes(total_pb_lower, 3)
+        ...
+    end
 end
-=#
 
 triangular_assignment_test()
 triangular_multiplication_test()
 triangular_tensor_multiplication_test()
+triangular_tensor_multiplication_pullback_test()
