@@ -1,5 +1,3 @@
-abstract type FeedForwardIntegrator <: Architecture end
-
 description(::Val{:VPFconstructor}) = raw"""
 The constructor is called with the following arguments: 
 - `sys_dim::Int`: The system dimension. 
@@ -16,7 +14,7 @@ Realizes a volume-preserving neural network as a combination of `VolumePreservin
 
 $(description(Val(:VPFconstructor)))
 """
-struct VolumePreservingFeedForward{AT, InitLowerUpper} <: FeedForwardIntegrator 
+struct VolumePreservingFeedForward{AT, InitLowerUpper} <: NeuralNetworkIntegrator 
     sys_dim::Int 
     n_linear::Int 
     n_blocks::Int 
