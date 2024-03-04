@@ -45,9 +45,9 @@ end
 #     tensor_cayley6(A)
 # end
 
-function orthonormal_activation_cayley(A::AbstractMatrix{T}) where T 
-    reshape(orthonormal_activation_cayley(reshape(A, size(A)..., 1)), size(A)...)
-end
+# function orthonormal_activation_cayley(A::AbstractMatrix{T}) where T 
+#     reshape(orthonormal_activation_cayley(reshape(A, size(A)..., 1)), size(A)...)
+# end
 
 function parameterlength(::VolumePreservingAttention{M, M, :skew_sym}) where {M}
     M * (M-1) ÷ 2
@@ -83,4 +83,8 @@ function (d::VolumePreservingAttention{M, M, :arbitrary})(x::AbstractArray{T, 3}
                         orthonormal_activation_cayley(d, 
                             x_interm - tensor_transpose(x_interm) )
                         )
+end
+
+function (d::VolumePreservingAttention)(x::AbstractMatrix, ps::NamedTuple)
+    reshape(d(reshape(x, size(x)..., 1), ps), size(x)...)
 end
