@@ -1,11 +1,14 @@
 using GeometricMachineLearning
-using GeometricMachineLearning: transformer_loss, apply_toNT, map_to_cpu
+using GeometricMachineLearning: transformer_loss, map_to_cpu
 # using Plots
 using GeometricIntegrators: integrate, ImplicitMidpoint
 using GeometricProblems.DoublePendulum: hodeproblem, default_parameters, tspan, tstep, hamiltonian, ϑ
 using GeometricEquations: EnsembleProblem
 using LinearAlgebra: norm 
 using Zygote: gradient
+import Random 
+
+Random.seed!(123)
 
 θ₀ = [[π / 4, π / i] for i in 1:1]
 ω₀ = [0.0, π / 8]
@@ -36,10 +39,11 @@ const T = eltype(dl_nt)
 const dl = DataLoader(vcat(dl_nt.input.q, dl_nt.input.p)) 
 
 # hyperparameters concerning training 
-const n_epochs = 10
+const n_epochs = 5000
 const batch_size = 1024
 const seq_length = 4
 const opt_method = AdamOptimizer(T)
+const resnet_activation = tanh
 
 
 # model₂ = RegularTransformerIntegrator(sys_dim, transformer_dim, n_heads, L, upscaling_activation, resnet_activation)
@@ -60,28 +64,11 @@ transformer_batch = Batch(batch_size, seq_length)
 model₁ = Chain(VolumePreservingAttention(sys_dim, seq_length))
 
 # only two linear layers
-model₂ = VolumePreservingFeedForward(sys_dim, 0)
+model₂ = VolumePreservingFeedForward(sys_dim, n_blocks, n_linear)
 
 # model₂ = RegularTransformerIntegrator(sys_dim, transformer_dim, n_heads, L, upscaling_activation, resnet_activation)
-# model₃ = VolumePreservingTransformer(sys_dim, seq_length, depth, transformer_dim, L, resnet_activation)
-
-"""
-This is necessary for now when using Enzyme. 
-"""
-function dummy_setup()
-    dummy_model₁ = VolumePreservingAttention(sys_dim, seq_length)
-    ps₁ = initialparameters(backend, T, dummy_model₁)
-
-    dummy_model₂ = Chain(VolumePreservingLowerLayer(sys_dim), VolumePreservingUpperLayer(sys_dim))
-    ps₂ = initialparameters(backend, T, dummy_model₂)
-
-    gradient(ps -> norm(dummy_model₁(rand(4, 4, 1), ps)), ps₁)
-    gradient(ps -> norm(dummy_model₂(rand(4, 1, 1), ps)), ps₂)
-
-    nothing
-end
-
-dummy_setup()
+model₃ = VolumePreservingTransformer(sys_dim, seq_length, n_blocks, n_linear, L, resnet_activation)
 
 nn₁, loss_array₁ = setup_and_train(model₁, transformer_batch, transformer=true)
 nn₂, loss_array₂ = setup_and_train(model₂, feedforward_batch, transformer=false)
+nn₃, loss_array₃ = setup_and_train(model₃, transformer_batch, transformer=true)
