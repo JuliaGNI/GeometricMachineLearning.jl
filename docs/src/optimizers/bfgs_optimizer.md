@@ -23,7 +23,7 @@ where ``\alpha_k`` is the *step length*. Techniques that describe how to pick an
 \begin{aligned}
 \nabla_{x_k}m_k  & = \nabla_{x_k}f + B_k(x_k - x_k)  & \overset{!}{=} \nabla_{x_k}f \text{ and } \\
 \nabla_{x_{k-1}}m_k & = \nabla{x_k}f + B_k(x_{k-1} - x_k) & \overset{!}{=} \nabla_{x_{k-1}}f.
-\end{align}
+\end{aligned}
 ```
 The first one of these conditions is of course automatically satisfied. The second one can be rewritten as: 
 ```math
