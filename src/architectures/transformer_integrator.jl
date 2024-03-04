@@ -10,7 +10,7 @@ It takes as input:
 - `nn`: a `NeuralNetwork` (that has been trained).
 - `ics`: initial conditions (a matrix in ``\mathbb{R}^{2n\times\mathtt{seq\_length}}`` or `NamedTuple` of two matrices in ``\mathbb{R}^{n\times\mathtt{seq\_length}}``)
 """
-function iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::NamedTuple{(:q, :p), Tuple{AT, AT}}; n_points = 100) where {T, AT<:AbstractMatrix{T}}
+function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::NamedTuple{(:q, :p), Tuple{AT, AT}}; n_points = 100) where {T, AT<:AbstractMatrix{T}}
 
     seq_length = nn.model.seq_length
     n_dim = size(ics.q, 1)
@@ -35,7 +35,7 @@ function iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::NamedTuple{(:q
     (q=q_valuation, p=p_valuation)
 end
 
-function iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::AT; n_points::Int = 100, seq_length::Union{Nothing, Int} = nothing) where {T, AT<:AbstractMatrix{T}}
+function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::AT; n_points::Int = 100, seq_length::Union{Nothing, Int} = nothing) where {T, AT<:AbstractMatrix{T}}
 
     seq_length = isnothing(seq_length) ? nn.architecture.seq_length : seq_length
     @assert size(ics, 2) == seq_length
