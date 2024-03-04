@@ -1,18 +1,20 @@
 abstract type FeedForwardIntegrator <: Architecture end
 
-@doc raw"""
-# `VolumePreservingFeedForward` Architecture
-
-Realizes a volume-preserving neural network as a combination of `VolumePreservingLowerLayer` and `VolumePreservingUpperLayer`. 
-
-## Constructor 
-
+description(::Val{:VPFconstructor}) = raw"""
 The constructor is called with the following arguments: 
 - `sys_dim::Int`: The system dimension. 
 - `n_blocks::Int`: The number of blocks in the neural network (containing linear layers and nonlinear layers). Default is `1`.
 - `n_linear::Int`: The number of linear `VolumePreservingLowerLayer`s and `VolumePreservingUpperLayer`s in one block. Default is `1`.
 - `activation`: The activation function for the nonlinear layers in a block. 
 - `init_upper::Bool=false` (keyword argument): Specifies if the first layer is lower or upper. 
+"""
+
+"""
+Realizes a volume-preserving neural network as a combination of `VolumePreservingLowerLayer` and `VolumePreservingUpperLayer`. 
+
+## Constructor 
+
+$(description(Val(:VPFconstructor)))
 """
 struct VolumePreservingFeedForward{AT, InitLowerUpper} <: FeedForwardIntegrator 
     sys_dim::Int 
@@ -47,7 +49,7 @@ function Chain(arch::VolumePreservingFeedForward{AT, :init_lower}) where AT
     end
 
     # linear layers for the output
-    layers = (layers..., VolumePreservingLowerLayer(arch.sys_dim, identity; include_bias=true))
+    layers = (layers..., VolumePreservingLowerLayer(arch.sys_dim, identity; include_bias=false))
     layers = (layers..., VolumePreservingUpperLayer(arch.sys_dim, identity; include_bias=true))
 
     Chain(layers...)
@@ -71,7 +73,7 @@ function Chain(arch::VolumePreservingFeedForward{AT, :init_upper}) where AT
     end
 
     # linear layers for the output
-    layers = (layers..., VolumePreservingUpperLayer(arch.sys_dim, identity; include_bias=true))
+    layers = (layers..., VolumePreservingUpperLayer(arch.sys_dim, identity; include_bias=false))
     layers = (layers..., VolumePreservingLowerLayer(arch.sys_dim, identity; include_bias=true))
 
     Chain(layers...)
