@@ -32,7 +32,7 @@ jobs:
             using Documenter: doctest
             using GeometricMachineLearning
             doctest(GeometricMachineLearning)'
-          julia --project=docs docs/make.jl
+          julia --project=docs docs/make.jl html_output
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-docdeploy@v1
         env:
