@@ -25,32 +25,36 @@ pdf:
 	xelatex -shell-escape skew_sym_visualization
 	xelatex -shell-escape skew_sym_visualization_dark
 	xelatex -shell-escape skew_sym_visualization_dark
+	xelatex -shell-escape vp_feedforward
+	xelatex -shell-escape vp_feedforward_dark
 
 png:
-	pdftocairo  -png -r 150 -transp -singlefile  adam_optimizer.pdf               	 			adam_optimizer  
-	pdftocairo  -png -r 150 -transp -singlefile  adam_optimizer_dark.pdf               	 		adam_optimizer_dark                     
-	pdftocairo  -png -r 150 -transp -singlefile  general_optimization.pdf		 	 			general_optimization   
-	pdftocairo  -png -r 150 -transp -singlefile  general_optimization_with_boundary.pdf 		general_optimization_with_boundary              
-	pdftocairo  -png -r 150 -transp -singlefile  general_optimization_with_boundary_dark.pdf	general_optimization_with_boundary_dark          
-	pdftocairo  -png -r 150 -transp -singlefile  transformer_encoder.pdf		        		transformer_encoder   
-	pdftocairo  -png -r 150 -transp -singlefile  third_degree_spline.pdf	           			third_degree_spline     
-	pdftocairo  -png -r 150 -transp -singlefile  third_degree_spline_dark.pdf	           		third_degree_spline_dark       
-	pdftocairo	-png -r 200 -transp -singlefile	 sympnet_architecture.pdf						sympnet_architecture
-	pdftocairo	-png -r 200 -transp -singlefile	 sympnet_architecture_dark.pdf					sympnet_architecture_dark
-	pdftocairo 	-png -r 100 -transp -singlefile  structs_visualization.pdf						structs_visualization
-	pdftocairo 	-png -r 100 -transp -singlefile  structs_visualization_dark.pdf					structs_visualization_dark
-	pdftocairo 	-png -r 150 -transp -singlefile	 logo.pdf										logo 
-	pdftocairo  -png -r 150 -transp -singlefile  symplectic_autoencoder.pdf						symplectic_autoencoder
-	pdftocairo  -png -r 150 -transp -singlefile  symplectic_autoencoder_dark.pdf				symplectic_autoencoder_dark
-	pdftocairo  -png -r 150 -transp -singlefile  solution_manifold_2.pdf						solution_manifold_2
-	pdftocairo  -png -r 150 -transp -singlefile  mha.pdf 										mha
-	pdftocairo  -png -r 150 -transp -singlefile  mha_dark.pdf 									mha_dark
-	pdftocairo  -png -r 150 -transp -singlefile  tensor.pdf 									tensor
-	pdftocairo  -png -r 150 -transp -singlefile  tensor_dark.pdf 								tensor_dark
-	pdftocairo  -png -r 180 -transp -singlefile  tensor_sampling.pdf 							tensor_sampling
-	pdftocairo  -png -r 180 -transp -singlefile  tensor_sampling_dark.pdf 						tensor_sampling_dark
-	pdftocairo  -png -r 180 -transp -singlefile  skew_sym_visualization.pdf 							skew_sym_visualization
-	pdftocairo  -png -r 180 -transp -singlefile  skew_sym_visualization_dark.pdf 						skew_sym_visualization_dark
+	pdftocairo  -png -r $(res1) -transp -singlefile  adam_optimizer.pdf               	 			adam_optimizer  
+	pdftocairo  -png -r $(res1) -transp -singlefile  adam_optimizer_dark.pdf               	 		adam_optimizer_dark                     
+	pdftocairo  -png -r $(res1) -transp -singlefile  general_optimization.pdf		 	 			general_optimization   
+	pdftocairo  -png -r $(res1) -transp -singlefile  general_optimization_with_boundary.pdf 		general_optimization_with_boundary              
+	pdftocairo  -png -r $(res1) -transp -singlefile  general_optimization_with_boundary_dark.pdf	general_optimization_with_boundary_dark          
+	pdftocairo  -png -r $(res1) -transp -singlefile  transformer_encoder.pdf		        		transformer_encoder   
+	pdftocairo  -png -r $(res1) -transp -singlefile  third_degree_spline.pdf	           			third_degree_spline     
+	pdftocairo  -png -r $(res1) -transp -singlefile  third_degree_spline_dark.pdf	           		third_degree_spline_dark       
+	pdftocairo	-png -r $(res2) -transp -singlefile	 sympnet_architecture.pdf						sympnet_architecture
+	pdftocairo	-png -r $(res2) -transp -singlefile	 sympnet_architecture_dark.pdf					sympnet_architecture_dark
+	pdftocairo 	-png -r $(res3) -transp -singlefile  structs_visualization.pdf						structs_visualization
+	pdftocairo 	-png -r $(res3) -transp -singlefile  structs_visualization_dark.pdf					structs_visualization_dark
+	pdftocairo 	-png -r $(res1) -transp -singlefile	 logo.pdf										logo 
+	pdftocairo  -png -r $(res1) -transp -singlefile  symplectic_autoencoder.pdf						symplectic_autoencoder
+	pdftocairo  -png -r $(res1) -transp -singlefile  symplectic_autoencoder_dark.pdf				symplectic_autoencoder_dark
+	pdftocairo  -png -r $(res1) -transp -singlefile  solution_manifold_2.pdf						solution_manifold_2
+	pdftocairo  -png -r $(res1) -transp -singlefile  mha.pdf 										mha
+	pdftocairo  -png -r $(res1) -transp -singlefile  mha_dark.pdf 									mha_dark
+	pdftocairo  -png -r $(res1) -transp -singlefile  tensor.pdf 									tensor
+	pdftocairo  -png -r $(res1) -transp -singlefile  tensor_dark.pdf 								tensor_dark
+	pdftocairo  -png -r $(res4) -transp -singlefile  tensor_sampling.pdf 							tensor_sampling
+	pdftocairo  -png -r $(res4) -transp -singlefile  tensor_sampling_dark.pdf 						tensor_sampling_dark
+	pdftocairo  -png -r $(res4) -transp -singlefile  skew_sym_visualization.pdf 					skew_sym_visualization
+	pdftocairo  -png -r $(res4) -transp -singlefile  skew_sym_visualization_dark.pdf 				skew_sym_visualization_dark
+	pdftocairo  -png -r $(res1) -transp -singlefile  vp_feedforward.pdf 							vp_feedforward
+	pdftocairo  -png -r $(res1) -transp -singlefile  vp_feedforward_dark.pdf 						vp_feedforward_dark
 
 logo:
 	xelatex -shell-escape logo_with_name
@@ -67,12 +71,18 @@ clean:
 	rm -f *.fdb_latexmk
 	rm -f *.fls
 	rm -f *.log
-	rm -f *.pdf
 	rm -f *.xdv
+	rm -f *.pdf
 
 empty: clean
 	rm -f *.png
 	rm -f *.svg
 	rm -f ../assets/*.png
 
-all: pdf png logo clean
+png_low_res:  make png res1=150 res2=200 res3=100 res4=180
+
+png_high_res: $(make) png res1=450 res2=600 res3=300 res4=540
+
+all: pdf png res1=150 res2=200 res3=100 res4=180 logo clean
+
+all_high_res : pdf png res1=450 res2=600 res3=300 res4=540 logo clean
