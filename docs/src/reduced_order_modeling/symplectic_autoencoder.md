@@ -50,7 +50,7 @@ For PSD the two mappings $\Psi^\mathrm{enc}$ and $\Psi^\mathrm{dec}$ are constra
 \Psi_\mathrm{CL} = 
 \begin{bmatrix} \Phi & \mathbb{O} \\ \mathbb{O} & \Phi \end{bmatrix},
 ```
-and $\Phi\in{}St(n,N)\sub\mathbb{R}^{N\times{}n}$, i.e. is an element of the [Stiefel manifold](../manifolds/stiefel_manifold.md). If the [snapshot matrix](../data_loader/snapshot_matrix.md) is of the form: 
+and $\Phi\in{}St(n,N)\subset\mathbb{R}^{N\times{}n}$, i.e. is an element of the [Stiefel manifold](../manifolds/stiefel_manifold.md). If the [snapshot matrix](../data_loader/snapshot_matrix.md) is of the form: 
 
 ```math
 M = \left[\begin{array}{c:c:c:c}
@@ -78,11 +78,18 @@ PSD suffers from the similar shortcomings as regular POD: it is a linear map and
 In order to overcome this difficulty we use neural networks, more specifically [SympNets](../architectures/sympnet.md), together with cotangent lift-like matrices. The resulting architecture, symplectic autoencoders, are demonstrated in the following image: 
 
 ```@example
-HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/symplectic_autoencoder.png"))></object>""") # hide
+import Images, Plots # hide
+if Main.output_type == :html_output # hide
+    HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/symplectic_autoencoder.png"))></object>""") # hide
+else # hide
+    Plots.plot(Images.load("../tikz/symplectic_autoencoder.png"), axis=([], false)) # hide
+end # hide
 ```
 
 ```@example
-HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/symplectic_autoencoder_dark.png"))></object>""") # hide
+if Main.output_type == :html_output # hide
+    HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/symplectic_autoencoder_dark.png"))></object>""") # hide
+end # hide
 ```
 
 So we alternate between SympNet and PSD layers. Because all the PSD layers are based on matrices $\Phi\in{}St(n,N)$ we have to [optimize on the Stiefel manifold](../Optimizer.md).
