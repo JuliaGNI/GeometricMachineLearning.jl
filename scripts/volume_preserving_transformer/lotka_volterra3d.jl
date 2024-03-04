@@ -8,9 +8,7 @@ using Zygote: gradient
 using LinearAlgebra: norm
 
 # hyperparameters for the problem 
-const q₀ = (q = [X₀, Y₀, Z₀], )
-
-const parameter_ensemble = [(A1 = A₁, A2 = A₁, A3 = 1., B1 = 0., B2 = 1., B3 = 1.) for A₁ in .1 : .1 : 1.]
+const q₀ = [(q = [X₀, Y₀, Z₀], ) for Z₀ in 1. : .1 : 2.]
 
 ensemble_problem = EnsembleProblem(lotka_volterra_3d_ode().equation, tspan, Δt, q₀, parameter_ensemble)
 ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
