@@ -11,23 +11,29 @@ bib = CitationBibliography(joinpath(@__DIR__, "src", "GeometricMachineLearning.b
 # if the docs are generated with github actions, then this changes the path; see: https://github.com/JuliaDocs/Documenter.jl/issues/921 
 const buildpath = haskey(ENV, "CI") ? ".." : ""
 
-makedocs(;
-    plugins=[bib],
-    modules=[GeometricMachineLearning],
-    authors="Michael Kraus, Benedikt Brantner",
-    repo="https://github.com/JuliaGNI/GeometricMachineLearning.jl/blob/{commit}{path}#L{line}",
-    sitename="GeometricMachineLearning.jl",
-    format=Documenter.HTML(;
-        repolink="https://github.com/JuliaGNI/GeometricMachineLearning.jl",
-        prettyurls=get(ENV, "CI", "false") == "true",
-        # not sure why we need this?
-        canonical="https://juliagni.github.io/GeometricMachineLearning.jl",
-        assets=[
-            "assets/extra_styles.css",
+const html_format = Documenter.HTML(;
+    repolink = "https://github.com/JuliaGNI/GeometricMachineLearning.jl",
+    prettyurls = get(ENV, "CI", "false") == "true",
+    # not sure why we need this?
+    canonical = "https://juliagni.github.io/GeometricMachineLearning.jl",
+    assets = [
+        "assets/extra_styles.css",
         ],
-        # specifies that we do not display the package name again (it's already in the logo)
-        sidebar_sitename=false,
-    ),
+    # specifies that we do not display the package name again (it's already in the logo)
+    sidebar_sitename = false,
+    )
+
+const latex_format = Documenter.LaTeX()
+
+const output_type = ARGS[1] == "latex_output" ? :latex_output : :html_output
+
+makedocs(;
+    plugins = [bib],
+    modules = [GeometricMachineLearning],
+    authors = "Michael Kraus, Benedikt Brantner",
+    repo = "https://github.com/JuliaGNI/GeometricMachineLearning.jl/blob/{commit}{path}#L{line}",
+    sitename = "GeometricMachineLearning.jl",
+    format = output_type == :latex_output ? latex_format : html_format,
     pages=[
         "Home" => "index.md",
         "Architectures" => [
@@ -44,12 +50,14 @@ makedocs(;
             "Differential Equations and the EAU theorem" => "manifolds/existence_and_uniqueness_theorem.md",
             ],
         "Arrays" => [
+            "Symmetric and Skew-Symmetric Matrices" => "arrays/skew_symmetric_matrix.md",
             "Stiefel Global Tangent Space" => "arrays/stiefel_lie_alg_horizontal.md",
-            "Grassmann Global Tangent Space"=> "arrays/grassmann_lie_alg_hor_matrix.md"
+            "Grassmann Global Tangent Space"=> "arrays/grassmann_lie_alg_hor_matrix.md",
         ],
         "Optimizer Framework" => [
             "Optimizers" => "Optimizer.md",
             "General Optimization" => "optimizers/general_optimization.md",
+            "Pullbacks" => "pullbacks/computation_of_pullbacks.md",
         ],
         "Optimizer Functions" => [
             "Horizontal Lift" => "optimizers/manifold_related/horizontal_lift.md",
@@ -61,6 +69,7 @@ makedocs(;
             "BFGS Optimizer" => "optimizers/bfgs_optimizer.md",
             ],
         "Special Neural Network Layers" => [
+            "Volume-Preserving Layers" => "layers/volume_preserving_feedforward.md",
             "Attention" => "layers/attention_layer.md",
             "Multihead Attention" => "layers/multihead_attention_layer.md",
         ],
