@@ -18,7 +18,6 @@ module GeometricMachineLearning
     using InteractiveUtils
     using TimerOutputs
 
-    import Enzyme 
     import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer, AbstractExplicitCell, AbstractNeuralNetwork , NeuralNetwork
     import AbstractNeuralNetworks: Chain, GridCell
     import AbstractNeuralNetworks: Dense, Linear, Recurrent
