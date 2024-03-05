@@ -33,11 +33,11 @@ function orthonormal_activation_cayley(::VolumePreservingAttention, A::AbstractA
     cpu_tensor_cayley(A)
 end
 
-function orthonormal_activation_cayley(::VolumePreservingAttention{M, M, 4}, A::AbstractArray{T, 3}) where {T, M} 
+function orthonormal_activation_cayley(::VolumePreservingAttention{M, M, ScalarProductType, 4}, A::AbstractArray{T, 3}) where {T, M, ScalarProductType} 
     tensor_cayley4(A)
 end
 
-function orthonormal_activation_cayley(::VolumePreservingAttention{M, M, 5}, A::AbstractArray{T, 3}) where {T, M} 
+function orthonormal_activation_cayley(::VolumePreservingAttention{M, M, ScalarProductType, 5}, A::AbstractArray{T, 3}) where {T, M, ScalarProductType} 
     tensor_cayley5(A)
 end
 
@@ -78,7 +78,7 @@ function (d::VolumePreservingAttention{M, M, :skew_sym})(x::AbstractArray{T, 3},
 end
 
 function (d::VolumePreservingAttention{M, M, :arbitrary})(x::AbstractArray{T, 3}, ps::NamedTuple) where {T, M}
-    x_interm = tensor_mat_skew_sym_assign(x, ps.A) / √M
+    x_interm = tensor_mat_skew_sym_assign(x, ps.A) / T(√M)
     tensor_tensor_mul(  x, 
                         orthonormal_activation_cayley(d, 
                             x_interm - tensor_transpose(x_interm) )
