@@ -118,7 +118,7 @@ B_k = (\mathbb{I} - \frac{1}{y_{k-1}^Ts_{k-1}}y_{k-1}s_{k-1}^T)B_{k-1}(\mathbb{I
 
 What we need in practice however is not ``B_k``, but its inverse ``H_k``. This is because we need to find ``s_{k-1}`` based on ``y_{k-1}``.  To get ``H_k`` based on the expression for ``B_k`` above we can use the *Sherman-Morrison-Woodbury formula*[^3] to obtain:
 
-[^3]: The *Sherman-Morrison-Woodbury formula* states ``(A + UCV)^{-1} = A^{-1} - A^{-1} - A^{-1}U(C^{-1} + VA^{-1}U)^{-1}VA^{-1}.
+[^3]: The *Sherman-Morrison-Woodbury formula* states ``(A + UCV)^{-1} = A^{-1} - A^{-1} - A^{-1}U(C^{-1} + VA^{-1}U)^{-1}VA^{-1}``.
 
 ```math
 H_{k} = H_{k-1} - \frac{H_{k-1}y_{k-1}y_{k-1}^TH_{k-1}}{y_{k-1}^TH_{k-1}y_{k-1}} + \frac{s_{k-1}s_{k-1}^T}{y_{k-1}^Ts_{k-1}}.
