@@ -2,11 +2,12 @@
 The volume-preserving transformer with the Cayley activation function and built-in upscaling. The arguments for the constructor are: 
 - `sys_dim::Int`
 - `seq_length::Int`: The sequence length of the data fed into the transformer.
-- `n_blocks::Int`: The number of blocks in one transformer unit (containing linear layers and nonlinear layers). Default is `1`.
-- `n_linear::Int`: The number of linear `VolumePreservingLowerLayer`s and `VolumePreservingUpperLayer`s in one block. Default is `1`.
-- `L::Int`: The number of transformer units (default is 2). 
-- `activation`: The activation function (`tanh` by default).
-- `init_upper::Bool`: Specifies if the network first acts on the ``q`` component. 
+- `n_blocks::Int=1`: The number of blocks in one transformer unit (containing linear layers and nonlinear layers). Default is `1`.
+- `n_linear::Int=1`: The number of linear `VolumePreservingLowerLayer`s and `VolumePreservingUpperLayer`s in one block. Default is `1`.
+- `L::Int=1`: The number of transformer units (default is 2). 
+- `activation=tanh`: The activation function (`tanh` by default).
+- `init_upper::Bool=false` (keyword argument): Specifies if the network first acts on the ``q`` component. 
+- `skew_sym::Bool=false` (keyword argument): specifies if we the weight matrix is skew symmetric or arbitrary.
 """
 struct VolumePreservingTransformer{AT} <: TransformerIntegrator 
     sys_dim::Int 
