@@ -1,11 +1,37 @@
+using Zygote: gradient, pullback
+using GeometricMachineLearning
+using GeometricMachineLearning: tensor_mat_skew_sym_assign, mat_tensor_mul
+# using Plots
+
+#=
+"""
+This is necessary for now when using Enzyme. 
+"""
+function dummy_setup(sys_dim = 2, seq_length = 4)
+
+    pullback(tensor_mat_skew_sym_assign, rand(sys_dim, seq_length, 1), rand(sys_dim, sys_dim))[2](rand(sys_dim, seq_length, 1))
+    pullback(mat_tensor_mul, rand(LowerTriangular, sys_dim), rand(sys_dim, seq_length, 1))[2](rand(sys_dim, seq_length, 1))
+    pullback(mat_tensor_mul, rand(UpperTriangular, sys_dim), rand(sys_dim, seq_length, 1))[2](rand(sys_dim, seq_length, 1))
+    pullback(mat_tensor_mul, rand(SkewSymMatrix, sys_dim), rand(sys_dim, seq_length, 1))[2](rand(sys_dim, seq_length, 1))
+
+    nothing
+end
+
+dummy_setup(2, 4)
+=# 
+# const sys_dim = 4
+# const seq_length = 4 
+# pullback(tensor_mat_skew_sym_assign, rand(sys_dim, seq_length, 1), rand(sys_dim, sys_dim))[2](rand(sys_dim, seq_length, 1))
+# pullback(mat_tensor_mul, rand(LowerTriangular, sys_dim), rand(sys_dim, seq_length, 1))[2](rand(sys_dim, seq_length, 1))
+# pullback(mat_tensor_mul, rand(UpperTriangular, sys_dim), rand(sys_dim, seq_length, 1))[2](rand(sys_dim, seq_length, 1))
+# pullback(mat_tensor_mul, rand(SkewSymMatrix, sys_dim), rand(sys_dim, seq_length, 1))[2](rand(sys_dim, seq_length, 1))
+
 using GeometricMachineLearning
 using GeometricMachineLearning: transformer_loss, apply_toNT, map_to_cpu
-# using Plots
 using GeometricIntegrators: integrate, ImplicitMidpoint
 using GeometricProblems.DoublePendulum: hodeproblem, default_parameters, tspan, tstep, hamiltonian, ϑ
 using GeometricEquations: EnsembleProblem
 using LinearAlgebra: norm 
-using Zygote: gradient
 
 θ₀ = [[π / 4, π / i] for i in 1:1]
 ω₀ = [0.0, π / 8]
@@ -19,7 +45,7 @@ dl_nt = DataLoader(ensemble_solution)
 # hyperparameters concerning architecture 
 const sys_dim = size(dl_nt.input.q, 1) * 2
 const n_heads = 2
-const L = 2 # transformer blocks 
+const L = 1 # transformer blocks 
 const activation = tanh
 const n_linear = 1
 const n_blocks = 1
@@ -36,7 +62,7 @@ const T = eltype(dl_nt)
 const dl = DataLoader(vcat(dl_nt.input.q, dl_nt.input.p)) 
 
 # hyperparameters concerning training 
-const n_epochs = 10
+const n_epochs = 50000
 const batch_size = 1024
 const seq_length = 4
 const opt_method = AdamOptimizer(T)
@@ -60,28 +86,12 @@ transformer_batch = Batch(batch_size, seq_length)
 model₁ = Chain(VolumePreservingAttention(sys_dim, seq_length))
 
 # only two linear layers
-model₂ = VolumePreservingFeedForward(sys_dim, 0)
+model₂ = VolumePreservingFeedForward(sys_dim, n_blocks, n_linear, activation)
 
 # model₂ = RegularTransformerIntegrator(sys_dim, transformer_dim, n_heads, L, upscaling_activation, resnet_activation)
-# model₃ = VolumePreservingTransformer(sys_dim, seq_length, depth, transformer_dim, L, resnet_activation)
 
-"""
-This is necessary for now when using Enzyme. 
-"""
-function dummy_setup()
-    dummy_model₁ = VolumePreservingAttention(sys_dim, seq_length)
-    ps₁ = initialparameters(backend, T, dummy_model₁)
-
-    dummy_model₂ = Chain(VolumePreservingLowerLayer(sys_dim), VolumePreservingUpperLayer(sys_dim))
-    ps₂ = initialparameters(backend, T, dummy_model₂)
-
-    gradient(ps -> norm(dummy_model₁(rand(4, 4, 1), ps)), ps₁)
-    gradient(ps -> norm(dummy_model₂(rand(4, 1, 1), ps)), ps₂)
-
-    nothing
-end
-
-dummy_setup()
+model₃ = VolumePreservingTransformer(sys_dim, seq_length, n_blocks, n_linear, L, activation)
 
 nn₁, loss_array₁ = setup_and_train(model₁, transformer_batch, transformer=true)
 nn₂, loss_array₂ = setup_and_train(model₂, feedforward_batch, transformer=false)
+nn₃, loss_array₃ = setup_and_train(model₃, transformer_batch, transformer=true)
