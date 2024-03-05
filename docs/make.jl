@@ -12,6 +12,7 @@ bib = CitationBibliography(joinpath(@__DIR__, "src", "GeometricMachineLearning.b
 const buildpath = haskey(ENV, "CI") ? ".." : ""
 
 const html_format = Documenter.HTML(;
+    prettyurls = get(ENV, "CI", nothing) == "true",
     repolink = "https://github.com/JuliaGNI/GeometricMachineLearning.jl",
     canonical = "https://juliagni.github.io/GeometricMachineLearning.jl",
     assets = [
