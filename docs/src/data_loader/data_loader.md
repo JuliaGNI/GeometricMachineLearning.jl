@@ -131,7 +131,7 @@ This algorithm can be visualized the following way (here `batch_size = 4`):
 
 ```@example 
 import Images, Plots # hide
-if Main.output_type == :html_output # hide
+if Main.output_type == :html # hide
     HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/tensor_sampling.png"))></object>""") # hide
 else # hide
     Plots.plot(Images.load("../tikz/tensor_sampling.png"), axis=([], false)) # hide
@@ -139,7 +139,7 @@ end # hide
 ```
 
 ```@example
-if Main.output_type == :html_output # hide
+if Main.output_type == :html # hide
     HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/tensor_sampling_dark.png"))></object>""") # hide
 end # hide
 ```

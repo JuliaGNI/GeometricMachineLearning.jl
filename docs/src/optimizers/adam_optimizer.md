@@ -21,7 +21,7 @@ Here $\eta$ (with default 0.01) is the **learning rate** and $\delta$ (with defa
 
 ```@example
 import Images, Plots # hide
-if Main.output_type == :html_output # hide
+if Main.output_type == :html # hide
     HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/adam_optimizer.png"))></object>""") # hide
 else # hide
     Plots.plot(Images.load("../tikz/adam_optimizer.png"), axis=([], false)) # hide
@@ -29,7 +29,7 @@ end # hide
 ```
 
 ```@example
-if Main.output_type == :html_output # hide
+if Main.output_type == :html # hide
     HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/adam_optimizer_dark.png"))></object>""") # hide
 end # hide
 ```

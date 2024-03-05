@@ -17,7 +17,7 @@ The tilde in the above equation indicates *predicted data*. The time step betwee
 
 ```@example
 import Images, Plots # hide
-if Main.output_type == :html_output # hide
+if Main.output_type == :html # hide
   Docs.HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/sympnet_architecture.png"))></object>""") # hide
 else # hide
   Plots.plot(Images.load("../tikz/sympnet_architecture.png"), axis=([], false)) # hide
@@ -25,7 +25,7 @@ end # hide
 ```
 
 ```@example
-if Main.output_type == :html_output # hide
+if Main.output_type == :html # hide
   Docs.HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/sympnet_architecture_dark.png"))></object>""") # hide
 end # hide
 ```

@@ -26,7 +26,7 @@ The snapshot tensor fulfills the same role as the snapshot matrix but has a thir
 
 ```@example 
 import Images, Plots # hide
-if Main.output_type == :html_output # hide
+if Main.output_type == :html # hide
     HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/tensor.png"))></object>""") # hide
 else # hide
     Plots.plot(Images.load("../tikz/tensor.png"), axis=([], false)) # hide
@@ -34,7 +34,7 @@ end # hide
 ```
 
 ```@example
-if Main.output_type == :html_output # hide
+if Main.output_type == :html # hide
     HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/tensor_dark.png"))></object>""") # hide
 end # hide
 ```

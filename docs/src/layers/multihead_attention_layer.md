@@ -21,7 +21,7 @@ The transformer contains a **self-attention mechanism**, i.e. takes an input $X$
 
 ```@example
 import Images, Plots # hide
-if Main.output_type == :html_output # hide
+if Main.output_type == :html # hide
     HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/mha.png"))></object>""") # hide
 else # hide
     Plots.plot(Images.load("../tikz/mha.png"), axis=([], false)) # hide
@@ -29,7 +29,7 @@ end # hide
 ```
 
 ```@example
-if Main.output_type == :html_output # hide
+if Main.output_type == :html # hide
     HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/mha_dark.png"))></object>""") # hide
 end # hide
 ```

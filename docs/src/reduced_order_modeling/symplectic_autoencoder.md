@@ -79,7 +79,7 @@ In order to overcome this difficulty we use neural networks, more specifically [
 
 ```@example
 import Images, Plots # hide
-if Main.output_type == :html_output # hide
+if Main.output_type == :html # hide
     HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/symplectic_autoencoder.png"))></object>""") # hide
 else # hide
     Plots.plot(Images.load("../tikz/symplectic_autoencoder.png"), axis=([], false)) # hide
@@ -87,7 +87,7 @@ end # hide
 ```
 
 ```@example
-if Main.output_type == :html_output # hide
+if Main.output_type == :html # hide
     HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/symplectic_autoencoder_dark.png"))></object>""") # hide
 end # hide
 ```
