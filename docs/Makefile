@@ -1,12 +1,14 @@
 
 .PHONY: documenter images
 
-all: images documenter
+all: html
 
 latex: images latex_docs
 
+html: images documenter
+
 documenter:
-	julia --color=yes --project=. --threads=14 make.jl html_output
+	julia --color=yes --project=. --threads=8 make.jl html_output
 
 images:
 	$(MAKE) all   	 -C src/tikz
@@ -16,5 +18,5 @@ clean:
 	rm -Rf build
 
 latex_docs:
-	julia --color=yes --project=. --threads=14 make.jl latex_output
+	julia --color=yes --project=. --threads=8 make.jl latex_output
 	
