@@ -1,6 +1,6 @@
 using GeometricMachineLearning
 using GeometricMachineLearning: transformer_loss, map_to_cpu
-# using Plots
+using Plots
 using GeometricIntegrators: integrate, ImplicitMidpoint
 using GeometricProblems.TodaLattice: hodeproblem, default_parameters, tspan, tstep, hamiltonian, Ñ, p̃₀, q̃₀
 using GeometricEquations: EnsembleProblem
@@ -20,14 +20,10 @@ dl_nt = DataLoader(ensemble_solution)
 # hyperparameters concerning architecture 
 const sys_dim = size(dl_nt.input.q, 1) * 2
 const n_heads = 2
-const L = 1 # transformer blocks 
+const L = 3 # transformer blocks 
 const activation = tanh
 const n_linear = 1
 const n_blocks = 1
-
-# type and backend 
-const backend = CPU()
-const T = eltype(dl_nt)
 
 # type and backend 
 const backend = CPU()
