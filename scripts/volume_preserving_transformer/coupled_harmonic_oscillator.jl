@@ -7,7 +7,7 @@ using GeometricEquations: EnsembleProblem
 using LinearAlgebra: norm 
 using Zygote: gradient
 import Random 
-# using CUDA
+using CUDA
 
 Random.seed!(123)
 
@@ -27,17 +27,18 @@ dl_nt = DataLoader(ensemble_solution)
 # hyperparameters concerning architecture 
 const sys_dim = size(dl_nt.input.q, 1) * 2
 const n_heads = 2
-const L = 1 # transformer blocks 
+const L = 2 # transformer blocks 
 const activation = tanh
 const n_linear = 1
 const n_blocks = 1
 
-# type and backend 
-const backend = CPU()
-const T = eltype(dl_nt)
+# backend 
+const backend = CUDABackend()
 
 # data loader 
 const dl = backend == CPU() ? DataLoader(vcat(dl_nt.input.q, dl_nt.input.p)) : DataLoader(vcat(dl_nt.input.q, dl_nt.input.p) |> cu)
+
+const T = eltype(dl)
 
 # hyperparameters concerning training 
 const n_epochs = 500
