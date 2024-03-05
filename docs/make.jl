@@ -13,8 +13,6 @@ const buildpath = haskey(ENV, "CI") ? ".." : ""
 
 const html_format = Documenter.HTML(;
     repolink = "https://github.com/JuliaGNI/GeometricMachineLearning.jl",
-    prettyurls = get(ENV, "CI", "false") == "true",
-    # not sure why we need this?
     canonical = "https://juliagni.github.io/GeometricMachineLearning.jl",
     assets = [
         "assets/extra_styles.css",
@@ -27,7 +25,7 @@ const latex_format = Documenter.LaTeX()
 
 const output_type = isempty(ARGS) ? :html : ARGS[1] == "latex_output" ? :latex : :html
 
-const format = output_type == :latex ? latex_formal : html_format
+const format = output_type == :latex ? latex_format : html_format
 
 makedocs(;
     plugins = [bib],
