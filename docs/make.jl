@@ -25,7 +25,7 @@ const html_format = Documenter.HTML(;
 
 const latex_format = Documenter.LaTeX()
 
-const output_type = ARGS[1] == "latex_output" ? :latex_output : :html_output
+const output_type = isempty(ARGS) ? :html : ARGS[1] == "latex_output" ? :latex : :html
 
 makedocs(;
     plugins = [bib],
