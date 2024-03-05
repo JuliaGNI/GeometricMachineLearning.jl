@@ -27,10 +27,11 @@ dl_nt = DataLoader(ensemble_solution)
 # hyperparameters concerning architecture 
 const sys_dim = size(dl_nt.input.q, 1) * 2
 const n_heads = 2
-const L = 2 # transformer blocks 
+const L = 10 # transformer blocks 
 const activation = tanh
 const n_linear = 1
 const n_blocks = 1
+const skew_sym = false
 
 # backend 
 const backend = CUDABackend()
@@ -68,12 +69,12 @@ feedforward_batch = Batch(batch_size, 1)
 transformer_batch = Batch(batch_size, seq_length)
 
 # attention only
-model₁ = Chain(VolumePreservingAttention(sys_dim, seq_length))
+model₁ = Chain(VolumePreservingAttention(sys_dim, seq_length; skew_sym = skew_sym))
 
 model₂ = VolumePreservingFeedForward(sys_dim, n_blocks * L, n_linear)
 
 # model₂ = RegularTransformerIntegrator(sys_dim, transformer_dim, n_heads, L, upscaling_activation, resnet_activation)
-model₃ = VolumePreservingTransformer(sys_dim, seq_length, n_blocks, n_linear, L, resnet_activation)
+model₃ = VolumePreservingTransformer(sys_dim, seq_length, n_blocks, n_linear, L, resnet_activation; skew_sym = skew_sym)
 
 nn₁, loss_array₁ = setup_and_train(model₁, transformer_batch, transformer=true)
 nn₂, loss_array₂ = setup_and_train(model₂, feedforward_batch, transformer=false)
@@ -90,7 +91,7 @@ function numerical_solution(sys_dim::Int, t_integration::Int, tstep::Real, param
     t_array = zeros(length(sol.t))
     for i in axes(sol.t, 1) t_array[i+1] = sol.t[i] end
 
-    numerical_solution, t_array 
+    T.(numerical_solution), T.(t_array) 
 end
 
 numerical, t_array = numerical_solution(sys_dim, t_validation, tstep, params)
@@ -123,3 +124,6 @@ p_training_loss = plot(loss_array₁, label = "attention only", color = 2, linew
 plot!(p_training_loss, loss_array₂, label = "feedforward", color = 3, linewidth = 2)
 
 plot!(p_training_loss, loss_array₃, label = "transformer", color = 4, linewidth = 2)
+
+png(p_validation, joinpath(@__FILE__, "coupled_harmonic_oscillator/validation"))
+png(p_training_loss, joinpath(@__FILE__, "coupled_harmonic_oscillator/training_loss"))
