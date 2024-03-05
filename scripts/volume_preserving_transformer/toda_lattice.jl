@@ -1,36 +1,8 @@
-using Zygote: gradient, pullback
-using GeometricMachineLearning
-using GeometricMachineLearning: tensor_mat_skew_sym_assign, mat_tensor_mul
-# using Plots
-
-#=
-"""
-This is necessary for now when using Enzyme. 
-"""
-function dummy_setup(sys_dim = 2, seq_length = 4)
-
-    pullback(tensor_mat_skew_sym_assign, rand(sys_dim, seq_length, 1), rand(sys_dim, sys_dim))[2](rand(sys_dim, seq_length, 1))
-    pullback(mat_tensor_mul, rand(LowerTriangular, sys_dim), rand(sys_dim, seq_length, 1))[2](rand(sys_dim, seq_length, 1))
-    pullback(mat_tensor_mul, rand(UpperTriangular, sys_dim), rand(sys_dim, seq_length, 1))[2](rand(sys_dim, seq_length, 1))
-    pullback(mat_tensor_mul, rand(SkewSymMatrix, sys_dim), rand(sys_dim, seq_length, 1))[2](rand(sys_dim, seq_length, 1))
-
-    nothing
-end
-
-dummy_setup(2, 4)
-=# 
-# const sys_dim = 4
-# const seq_length = 4 
-# pullback(tensor_mat_skew_sym_assign, rand(sys_dim, seq_length, 1), rand(sys_dim, sys_dim))[2](rand(sys_dim, seq_length, 1))
-# pullback(mat_tensor_mul, rand(LowerTriangular, sys_dim), rand(sys_dim, seq_length, 1))[2](rand(sys_dim, seq_length, 1))
-# pullback(mat_tensor_mul, rand(UpperTriangular, sys_dim), rand(sys_dim, seq_length, 1))[2](rand(sys_dim, seq_length, 1))
-# pullback(mat_tensor_mul, rand(SkewSymMatrix, sys_dim), rand(sys_dim, seq_length, 1))[2](rand(sys_dim, seq_length, 1))
-
 using GeometricMachineLearning
 using GeometricMachineLearning: transformer_loss, map_to_cpu
 # using Plots
 using GeometricIntegrators: integrate, ImplicitMidpoint
-using GeometricProblems.DoublePendulum: hodeproblem, default_parameters, tspan, tstep, hamiltonian, ϑ
+using GeometricProblems.TodaLattice: hodeproblem, default_parameters, tspan, tstep, hamiltonian, Ñ, p̃₀, q̃₀
 using GeometricEquations: EnsembleProblem
 using LinearAlgebra: norm 
 using Zygote: gradient
@@ -38,11 +10,9 @@ import Random
 
 Random.seed!(123)
 
-θ₀ = [[π / 4, π / i] for i in 1:1]
-ω₀ = [0.0, π / 8]
-p₀ = [ϑ(tspan[begin], θ, ω₀, default_parameters) for θ in θ₀]
+param_collection = [(N = Ñ, α = α) for α in .5:.1:1.]
 
-ensemble_problem = EnsembleProblem(hodeproblem().equation, tspan, tstep, [(q = q, p = p) for (q, p) in zip(θ₀, p₀)], default_parameters)
+ensemble_problem = EnsembleProblem(hodeproblem().equation, tspan, tstep, (q = q̃₀, p = p̃₀), param_collection)
 ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
 
 dl_nt = DataLoader(ensemble_solution)
@@ -67,9 +37,9 @@ const T = eltype(dl_nt)
 const dl = DataLoader(vcat(dl_nt.input.q, dl_nt.input.p)) 
 
 # hyperparameters concerning training 
-const n_epochs = 5000
+const n_epochs = 10
 const batch_size = 1024
-const seq_length = 4
+const seq_length = 5
 const opt_method = AdamOptimizer(T)
 const resnet_activation = tanh
 
@@ -92,7 +62,7 @@ transformer_batch = Batch(batch_size, seq_length)
 model₁ = Chain(VolumePreservingAttention(sys_dim, seq_length))
 
 # only two linear layers
-model₂ = VolumePreservingFeedForward(sys_dim, n_blocks, n_linear)
+model₂ = VolumePreservingFeedForward(sys_dim, n_blocks * L, n_linear)
 
 # model₂ = RegularTransformerIntegrator(sys_dim, transformer_dim, n_heads, L, upscaling_activation, resnet_activation)
 model₃ = VolumePreservingTransformer(sys_dim, seq_length, n_blocks, n_linear, L, resnet_activation)

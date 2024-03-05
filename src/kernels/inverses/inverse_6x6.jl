@@ -66,13 +66,8 @@ function ChainRulesCore.rrule(::typeof(tensor_inverse6), A::AT) where {T, AT<:Ab
     out = tensor_inverse6(A)
     
     function tensor_inverse_pullback(out_diff::AT)
-        A_diff = zero(out_diff)
-        out_diff_copy = copy(out_diff)
-        A_copy = copy(A)
-        out_copy = copy(out)
-        Enzyme.autodiff(Enzyme.Reverse, tensor_inverse6!, Enzyme.Const, Enzyme.Duplicated(out_copy, out_diff_copy), Enzyme.Duplicated(A_copy, A_diff))
 
-        NoTangent(), A_diff 
+        NoTangent(), - tensor_transpose_tensor_mul(out, tensor_tensor_mul(out_diff, tensor_transpose(out)))
     end 
     out, tensor_inverse_pullback 
 end 

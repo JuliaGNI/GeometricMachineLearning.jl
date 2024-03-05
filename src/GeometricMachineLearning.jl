@@ -18,7 +18,6 @@ module GeometricMachineLearning
     using InteractiveUtils
     using TimerOutputs
 
-    import Enzyme 
     import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer, AbstractExplicitCell, AbstractNeuralNetwork , NeuralNetwork
     import AbstractNeuralNetworks: Chain, GridCell
     import AbstractNeuralNetworks: Dense, Linear, Recurrent
@@ -33,6 +32,7 @@ module GeometricMachineLearning
     export dim
     import GeometricIntegrators.Integrators: method, GeometricIntegrator
     import NNlib: σ, sigmoid, softmax
+    import Base: iterate
     #import LogExpFunctions: softmax
 
     export CPU, GPU
@@ -243,6 +243,7 @@ module GeometricMachineLearning
     include("data_loader/batch.jl")
 
     #INCLUDE ARCHITECTURES
+    include("architectures/neural_network_integrator.jl")
     include("architectures/sympnet.jl")
     include("architectures/autoencoder.jl")
     include("architectures/fixed_width_network.jl")
@@ -270,7 +271,7 @@ module GeometricMachineLearning
     export VolumePreservingFeedForward
 
     export train!, apply!, jacobian!
-    export Iterate_Sympnet
+    export iterate
 
     export default_arch
 

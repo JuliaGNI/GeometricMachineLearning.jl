@@ -1,17 +1,17 @@
 @kernel function dz_kernel!(dZ::AT, Z::AT, A::AbstractMatrix{T}, dB::AT, sys_dim::Int, seq_length::Int) where {T, AT <: AbstractArray{T, 3}}
-    k, l, h = @index(Global, NTuple)
+    k, n, h = @index(Global, NTuple)
 
     temp = zero(T)
-    for n = 1:sys_dim 
-        for j = 1:(l-1)
-            temp += A[k, n] * Z[n, j, h] * dB[l, j, h]
+    for m = 1:sys_dim
+        for j = 1:(n - 1)
+            temp += A[k, m] * Z[m, j, h] * dB[n, j, h]
         end
-        for i = (l+1):seq_length
-            temp += A[n, k] * Z[n, i, h] * dB[i, l, h]
+        for j = (n + 1):seq_length
+            temp += A[m, k] * Z[m, j, h] * dB[j, n, h]
         end
     end
 
-    dZ[k, l, h] = temp
+    dZ[k, n, h] = temp
 
     nothing
 end
@@ -45,7 +45,7 @@ function ChainRulesCore.rrule(::typeof(tensor_mat_skew_sym_assign), Z::AbstractA
         dZ = zero(Z)
         dA = zero(A)
         
-        sys_dim, seq_length, _ = size(dB)
+        sys_dim, seq_length, _ = size(Z)
         
         dz!(dZ, Z, A, dB, sys_dim, seq_length, ndrange = size(dZ))
         da!(dA, Z, A, dB, sys_dim, seq_length, ndrange = size(dA))
