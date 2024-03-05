@@ -27,13 +27,15 @@ const latex_format = Documenter.LaTeX()
 
 const output_type = isempty(ARGS) ? :html : ARGS[1] == "latex_output" ? :latex : :html
 
+const format = output_type == :latex ? latex_formal : html_format
+
 makedocs(;
     plugins = [bib],
     modules = [GeometricMachineLearning],
     authors = "Michael Kraus, Benedikt Brantner",
     repo = "https://github.com/JuliaGNI/GeometricMachineLearning.jl/blob/{commit}{path}#L{line}",
     sitename = "GeometricMachineLearning.jl",
-    format = output_type == :latex_output ? latex_format : html_format,
+    format = format,
     pages=[
         "Home" => "index.md",
         "Architectures" => [
