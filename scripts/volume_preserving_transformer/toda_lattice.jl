@@ -2,7 +2,7 @@ using GeometricMachineLearning
 using GeometricMachineLearning: transformer_loss, map_to_cpu
 using Plots
 using GeometricIntegrators: integrate, ImplicitMidpoint
-using GeometricProblems.TodaLattice: hodeproblem, default_parameters, tspan, tstep, hamiltonian, Ñ, p̃₀, q̃₀
+using GeometricProblems.TodaLattice: hodeproblem, default_parameters, tspan, hamiltonian, Ñ, p̃₀, q̃₀
 using GeometricEquations: EnsembleProblem
 using LinearAlgebra: norm 
 using Zygote: gradient
@@ -11,8 +11,12 @@ using CUDA
 
 Random.seed!(123)
 
+const tstep = 1.3
+
+const attention_only = false
+
 # hyperparameters for the problem 
-params_collection = [(N = Ñ, α = α̃) for α̃ in 0.1:.1:1.]
+params_collection = [(N = Ñ, α = α̃) for α̃ in [.8]]
 
 ensemble_problem = EnsembleProblem(hodeproblem().equation, tspan, tstep, (q = q̃₀, p = p̃₀), params_collection)
 ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
@@ -22,10 +26,10 @@ dl_nt = DataLoader(ensemble_solution)
 # hyperparameters concerning architecture 
 const sys_dim = size(dl_nt.input.q, 1) * 2
 const n_heads = 2
-const L = 2 # transformer blocks 
+const L = 1 # transformer blocks 
 const activation = tanh
-const n_linear = 1
-const n_blocks = 1
+const n_linear = 2
+const n_blocks = 3
 const skew_sym = false
 
 # backend 
@@ -37,7 +41,7 @@ const dl = backend == CPU() ? DataLoader(vcat(dl_nt.input.q, dl_nt.input.p)) : D
 const T = eltype(dl)
 
 # hyperparameters concerning training 
-const n_epochs = 100
+const n_epochs = 200
 const batch_size = 1024
 const seq_length = 5
 const opt_method = AdamOptimizer(T)
@@ -66,14 +70,14 @@ transformer_batch = Batch(batch_size, seq_length)
 # attention only
 model₁ = Chain(VolumePreservingAttention(sys_dim, seq_length; skew_sym = skew_sym))
 
-model₂ = VolumePreservingFeedForward(sys_dim, n_blocks * L, n_linear)
+model₂ = VolumePreservingFeedForward(sys_dim, n_blocks * L, n_linear, resnet_activation)
 
 # model₂ = RegularTransformerIntegrator(sys_dim, transformer_dim, n_heads, L, upscaling_activation, resnet_activation)
 model₃ = VolumePreservingTransformer(sys_dim, seq_length, n_blocks, n_linear, L, resnet_activation; skew_sym = skew_sym)
 
 nn₁, loss_array₁ = setup_and_train(model₁, transformer_batch, transformer=true)
-nn₂, loss_array₂ = setup_and_train(model₂, feedforward_batch, transformer=false)
-nn₃, loss_array₃ = setup_and_train(model₃, transformer_batch, transformer=true)
+nn₂, loss_array₂ = !attention_only ? setup_and_train(model₂, feedforward_batch, transformer=false) : (nothing, nothing)
+nn₃, loss_array₃ = !attention_only ? setup_and_train(model₃, transformer_batch, transformer=true) : (nothing, nothing)
 
 function numerical_solution(sys_dim::Int, t_integration::Int, tstep::Real, params::NamedTuple)
     validation_problem = hodeproblem(; tspan = (0.0, t_integration), tstep = tstep, params = params)
@@ -96,11 +100,9 @@ struct DummyTransformer <: GeometricMachineLearning.TransformerIntegrator
 end
 nn₁ = NeuralNetwork(DummyTransformer(seq_length), nn₁.model, nn₁.params)
 
-nn₁_solution = iterate(nn₁, numerical[:, 1:seq_length]; n_points = Int(t_validation / tstep) + 1)
-
-nn₂_solution = iterate(nn₂, numerical[:, 1]; n_points = Int(t_validation / tstep) + 1)
-
-nn₃_solution = iterate(nn₃, numerical[:, 1:seq_length]; n_points = Int(t_validation / tstep) + 1)
+nn₁_solution = iterate(nn₁, numerical[:, 1:seq_length]; n_points = length(t_array))
+nn₂_solution = !attention_only ? iterate(nn₂, numerical[:, 1]; n_points = length(t_array)) : nothing
+nn₃_solution = !attention_only ? iterate(nn₃, numerical[:, 1:seq_length]; n_points = length(t_array)) : nothing
 
 ########################### plot validation
 
@@ -108,17 +110,19 @@ p_validation = plot(t_array, numerical[1, :], label = "numerical solution", colo
 
 plot!(p_validation, t_array, nn₁_solution[1, :], label = "attention only", color = 2, linewidth = 2)
 
-plot!(p_validation, t_array, nn₂_solution[1, :], label = "feedforward", color = 3, linewidth = 2)
-
-plot!(p_validation, t_array, nn₃_solution[1, :], label = "transformer", color = 4, linewidth = 2)
+if !attention_only
+    plot!(p_validation, t_array, nn₂_solution[1, :], label = "feedforward", color = 3, linewidth = 2)
+    plot!(p_validation, t_array, nn₃_solution[1, :], label = "transformer", color = 4, linewidth = 2)
+end
 
 ########################### plot training loss
 
 p_training_loss = plot(loss_array₁, label = "attention only", color = 2, linewidth = 2)
 
-plot!(p_training_loss, loss_array₂, label = "feedforward", color = 3, linewidth = 2)
+if !attention_only
+    plot!(p_training_loss, loss_array₂, label = "feedforward", color = 3, linewidth = 2)
+    plot!(p_training_loss, loss_array₃, label = "transformer", color = 4, linewidth = 2)
+end
 
-plot!(p_training_loss, loss_array₃, label = "transformer", color = 4, linewidth = 2)
-
-png(p_validation, joinpath(@__FILE__, "toda_lattice/validation"))
-png(p_training_loss, joinpath(@__FILE__, "toda_lattice/training_loss"))
+png(p_validation, joinpath(@__DIR__, "toda_lattice/validation"))
+png(p_training_loss, joinpath(@__DIR__, "toda_lattice/training_loss"))

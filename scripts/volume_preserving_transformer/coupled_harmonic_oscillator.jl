@@ -27,10 +27,10 @@ dl_nt = DataLoader(ensemble_solution)
 # hyperparameters concerning architecture 
 const sys_dim = size(dl_nt.input.q, 1) * 2
 const n_heads = 2
-const L = 10 # transformer blocks 
+const L = 2 # transformer blocks 
 const activation = tanh
-const n_linear = 1
-const n_blocks = 1
+const n_linear = 2
+const n_blocks = 3
 const skew_sym = false
 
 # backend 
@@ -42,7 +42,7 @@ const dl = backend == CPU() ? DataLoader(vcat(dl_nt.input.q, dl_nt.input.p)) : D
 const T = eltype(dl)
 
 # hyperparameters concerning training 
-const n_epochs = 500
+const n_epochs = 20000
 const batch_size = 1024
 const seq_length = 5
 const opt_method = AdamOptimizer(T)
@@ -71,7 +71,7 @@ transformer_batch = Batch(batch_size, seq_length)
 # attention only
 model₁ = Chain(VolumePreservingAttention(sys_dim, seq_length; skew_sym = skew_sym))
 
-model₂ = VolumePreservingFeedForward(sys_dim, n_blocks * L, n_linear)
+model₂ = VolumePreservingFeedForward(sys_dim, n_blocks * L, n_linear, resnet_activation)
 
 # model₂ = RegularTransformerIntegrator(sys_dim, transformer_dim, n_heads, L, upscaling_activation, resnet_activation)
 model₃ = VolumePreservingTransformer(sys_dim, seq_length, n_blocks, n_linear, L, resnet_activation; skew_sym = skew_sym)
@@ -102,9 +102,7 @@ end
 nn₁ = NeuralNetwork(DummyTransformer(seq_length), nn₁.model, nn₁.params)
 
 nn₁_solution = iterate(nn₁, numerical[:, 1:seq_length]; n_points = Int(t_validation / tstep) + 1)
-
 nn₂_solution = iterate(nn₂, numerical[:, 1]; n_points = Int(t_validation / tstep) + 1)
-
 nn₃_solution = iterate(nn₃, numerical[:, 1:seq_length]; n_points = Int(t_validation / tstep) + 1)
 
 ########################### plot validation
@@ -125,5 +123,5 @@ plot!(p_training_loss, loss_array₂, label = "feedforward", color = 3, linewidt
 
 plot!(p_training_loss, loss_array₃, label = "transformer", color = 4, linewidth = 2)
 
-png(p_validation, joinpath(@__FILE__, "coupled_harmonic_oscillator/validation"))
-png(p_training_loss, joinpath(@__FILE__, "coupled_harmonic_oscillator/training_loss"))
+png(p_validation, joinpath(@__DIR__, "coupled_harmonic_oscillator/validation"))
+png(p_training_loss, joinpath(@__DIR__, "coupled_harmonic_oscillator/training_loss"))
