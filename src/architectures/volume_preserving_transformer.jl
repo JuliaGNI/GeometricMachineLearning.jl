@@ -28,8 +28,8 @@ function Chain(arch::VolumePreservingTransformer)
     layers = ()
     
     for _ in 1:arch.L 
-        layers = (layers..., VolumePreservingAttention(arch.sys_dim, arch.seq_length; skew_sym=arch.skew_sym))
-        layers = (layers..., Chain(VolumePreservingFeedForward(arch.sys_dim, arch.n_blocks, arch.n_linear, arch.activation; init_upper=arch.init_upper)).layers...)
+        layers = (layers..., VolumePreservingAttention(arch.sys_dim, arch.seq_length; skew_sym = arch.skew_sym))
+        layers = (layers..., Chain(VolumePreservingFeedForward(arch.sys_dim, arch.n_blocks, arch.n_linear, arch.activation; init_upper = arch.init_upper)).layers...)
     end
 
     Chain(layers...)
