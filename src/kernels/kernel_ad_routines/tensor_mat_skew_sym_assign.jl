@@ -16,19 +16,17 @@
     nothing
 end
 
-@kernel function da_kernel!(dA::BT, Z::AT, ::BT, dB::AT, ::Int, seq_length::Int) where {T, AT <: AbstractArray{T, 3}, BT <: AbstractMatrix{T}}
-    m, n = @index(Global, NTuple)
+@kernel function da_kernel!(dA::AT, Z::AT, ::BT, dB::AT, ::Int, seq_length::Int) where {T, AT <: AbstractArray{T, 3}, BT <: AbstractMatrix{T}}
+    m, n, h = @index(Global, NTuple)
 
     temp = zero(T)
-    for h in axes(Z, 3)
-        for j = 1:seq_length
-            for i = (j+1):seq_length
-                temp += Z[m, i, h] * Z[n, j, h] * dB[i, j, h]
-            end
+    for j = 1:seq_length
+        for i = (j+1):seq_length
+            temp += Z[m, i, h] * Z[n, j, h] * dB[i, j, h]
         end
     end
 
-    dA[m, n] = temp
+    dA[m, n, h] = temp
 
     nothing
 end
@@ -43,14 +41,14 @@ function ChainRulesCore.rrule(::typeof(tensor_mat_skew_sym_assign), Z::AbstractA
         da! = da_kernel!(backend)
 
         dZ = zero(Z)
-        dA = zero(A)
+        dA = KernelAbstractions.zeros(backend, T, size(A)..., size(dB, 3))
         
         sys_dim, seq_length, _ = size(Z)
         
         dz!(dZ, Z, A, dB, sys_dim, seq_length, ndrange = size(dZ))
         da!(dA, Z, A, dB, sys_dim, seq_length, ndrange = size(dA))
 
-        return f̄, dZ, dA 
+        return f̄, dZ, reshape(sum(dA, dims = 3), size(A)) 
     end
 
     return B, tensor_mat_skew_sym_assign_pullback
