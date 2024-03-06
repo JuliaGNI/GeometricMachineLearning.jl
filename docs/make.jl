@@ -11,23 +11,30 @@ bib = CitationBibliography(joinpath(@__DIR__, "src", "GeometricMachineLearning.b
 # if the docs are generated with github actions, then this changes the path; see: https://github.com/JuliaDocs/Documenter.jl/issues/921 
 const buildpath = haskey(ENV, "CI") ? ".." : ""
 
-makedocs(;
-    plugins=[bib],
-    modules=[GeometricMachineLearning],
-    authors="Michael Kraus, Benedikt Brantner",
-    repo="https://github.com/JuliaGNI/GeometricMachineLearning.jl/blob/{commit}{path}#L{line}",
-    sitename="GeometricMachineLearning.jl",
-    format=Documenter.HTML(;
-        repolink="https://github.com/JuliaGNI/GeometricMachineLearning.jl",
-        prettyurls=get(ENV, "CI", "false") == "true",
-        # not sure why we need this?
-        canonical="https://juliagni.github.io/GeometricMachineLearning.jl",
-        assets=[
-            "assets/extra_styles.css",
+const html_format = Documenter.HTML(;
+    prettyurls = get(ENV, "CI", nothing) == "true",
+    repolink = "https://github.com/JuliaGNI/GeometricMachineLearning.jl",
+    canonical = "https://juliagni.github.io/GeometricMachineLearning.jl",
+    assets = [
+        "assets/extra_styles.css",
         ],
-        # specifies that we do not display the package name again (it's already in the logo)
-        sidebar_sitename=false,
-    ),
+    # specifies that we do not display the package name again (it's already in the logo)
+    sidebar_sitename = false,
+    )
+
+const latex_format = Documenter.LaTeX()
+
+const output_type = isempty(ARGS) ? :html : ARGS[1] == "latex_output" ? :latex : :html
+
+const format = output_type == :latex ? latex_format : html_format
+
+makedocs(;
+    plugins = [bib],
+    modules = [GeometricMachineLearning],
+    authors = "Michael Kraus, Benedikt Brantner",
+    repo = "https://github.com/JuliaGNI/GeometricMachineLearning.jl/blob/{commit}{path}#L{line}",
+    sitename = "GeometricMachineLearning.jl",
+    format = format,
     pages=[
         "Home" => "index.md",
         "Architectures" => [
@@ -45,7 +52,7 @@ makedocs(;
             ],
         "Arrays" => [
             "Stiefel Global Tangent Space" => "arrays/stiefel_lie_alg_horizontal.md",
-            "Grassmann Global Tangent Space"=> "arrays/grassmann_lie_alg_hor_matrix.md"
+            "Grassmann Global Tangent Space"=> "arrays/grassmann_lie_alg_hor_matrix.md",
         ],
         "Optimizer Framework" => [
             "Optimizers" => "Optimizer.md",

@@ -7,7 +7,7 @@ end
 One-hot-batch encoding of a vector of integers: $input\in\{0,1,\ldots,9\}^\ell$. 
 The output is a tensor of shape $10\times1\times\ell$. 
 ```math
-0 \mapsto \begin{bmatrix} 1 & 0 & \ldots & 0 \end{matrix}.
+0 \mapsto \begin{bmatrix} 1 & 0 & \ldots & 0 \end{bmatrix}.
 ```
 In more abstract terms: $i \mapsto e_i$.
 """
