@@ -20,11 +20,18 @@ If all the weights are on a vector space, then we directly compute updates for $
 Here $\eta$ (with default 0.01) is the **learning rate** and $\delta$ (with default $3\cdot10^{-7}$) is a small constant that is added for stability. The division, square root and addition in step 3 are performed element-wise. 
 
 ```@example
-HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/adam_optimizer.png"))></object>""") # hide
+import Images, Plots # hide
+if Main.output_type == :html # hide
+    HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/adam_optimizer.png"))></object>""") # hide
+else # hide
+    Plots.plot(Images.load("../tikz/adam_optimizer.png"), axis=([], false)) # hide
+end # hide
 ```
 
 ```@example
-HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/adam_optimizer_dark.png"))></object>""") # hide
+if Main.output_type == :html # hide
+    HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/adam_optimizer_dark.png"))></object>""") # hide
+end # hide
 ```
 ## Weights on manifolds 
 

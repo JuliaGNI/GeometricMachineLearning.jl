@@ -1,6 +1,6 @@
 # The horizontal component of the Lie algebra ``\mathfrak{g}`` for the Grassmann manifold
 
-## Tangent space to the element \mathcal{E}
+## Tangent space to the element ``\mathcal{E}``
 
 Consider the tangent space to the distinct element ``\mathcal{E}=\mathrm{span}(E)\in{}Gr(n,N)``, where ``E`` is again:
 
