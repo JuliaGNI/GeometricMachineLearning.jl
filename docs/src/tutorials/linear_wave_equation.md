@@ -57,11 +57,18 @@ h(s)  = \begin{cases}
 Plotted on the relevant domain it looks like this: 
 
 ```@example
-HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/third_degree_spline.png"))></object>""") # hide
+import Images, Plots # hide
+if Main.output_type == :html # hide
+  HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/third_degree_spline.png"))></object>""") # hide
+else # hide
+  Plots.plot(Images.load("../tikz/third_degree_spline.png"), axis=([], false)) # hide
+end # hide
 ```
 
 ```@example
-HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/third_degree_spline_dark.png"))></object>""") # hide
+if Main.output_type == :html # hide 
+  HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/third_degree_spline_dark.png"))></object>""") # hide
+end # hide
 ```
 
 

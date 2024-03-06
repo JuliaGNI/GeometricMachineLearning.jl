@@ -1,7 +1,7 @@
 # (Matrix) Manifolds
 
 Manifolds are topological spaces that locally look like vector spaces. In the following we restrict ourselves to finite-dimensional manifolds. 
-__Definition__: A **finite-dimensional smooth manifold** of dimension ``n`` is a [second-countable Hausdorff space](basic_topology.md) ``\mathcal{M}`` for which ``\forall{}x\in\mathcal{M}`` we can find a neighborhood ``U`` that contains ``x`` and a corresponding homeomorphism ``\varphi_U:U\cong{}W\sub\mathbb{R}^n`` where ``W`` is an open subset. The homeomorphisms ``\varphi_U`` are referred to as *coordinate charts*. If two such coordinate charts overlap, i.e. if ``U_1\cap{}U_2\neq\{\}``, then the map ``\varphi_{U_2}^{-1}\circ\varphi_{U_1}`` is ``C^\infty``.
+__Definition__: A **finite-dimensional smooth manifold** of dimension ``n`` is a [second-countable Hausdorff space](basic_topology.md) ``\mathcal{M}`` for which ``\forall{}x\in\mathcal{M}`` we can find a neighborhood ``U`` that contains ``x`` and a corresponding homeomorphism ``\varphi_U:U\cong{}W\subset\mathbb{R}^n`` where ``W`` is an open subset. The homeomorphisms ``\varphi_U`` are referred to as *coordinate charts*. If two such coordinate charts overlap, i.e. if ``U_1\cap{}U_2\neq\{\}``, then the map ``\varphi_{U_2}^{-1}\circ\varphi_{U_1}`` is ``C^\infty``.
 
 One example of a manifold that is also important for `GeometricMachineLearning.jl` is the Lie group[^1] of orthonormal matrices ``SO(N)``. Before we can proof that ``SO(N)`` is a manifold we first need  another definition and a theorem:
 

@@ -130,11 +130,18 @@ Sampling from a tensor is done the following way (``\mathcal{I}_i`` again denote
 This algorithm can be visualized the following way (here `batch_size = 4`):
 
 ```@example 
-HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/tensor_sampling.png"))></object>""") # hide
+import Images, Plots # hide
+if Main.output_type == :html # hide
+    HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/tensor_sampling.png"))></object>""") # hide
+else # hide
+    Plots.plot(Images.load("../tikz/tensor_sampling.png"), axis=([], false)) # hide
+end # hide
 ```
 
 ```@example
-HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/tensor_sampling_dark.png"))></object>""") # hide
+if Main.output_type == :html # hide
+    HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/tensor_sampling_dark.png"))></object>""") # hide
+end # hide
 ```
 
 Here the sampling is performed over the second axis (the *time step dimension*) and the third axis (the *parameter dimension*). Whereas each block has thickness 1 in the ``x`` direction (i.e. pertains to a single parameter), its length in the ``y`` direction is `seq_length`. In total we sample as many such blocks as the batch size is big. By construction those blocks are never the same throughout a training epoch but may intersect each other!
