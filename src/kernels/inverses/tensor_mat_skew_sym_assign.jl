@@ -27,6 +27,19 @@ function tensor_mat_skew_sym_assign!(C::AbstractArray{T, 3}, Z::AbstractArray{T,
     tensor_mat_skew_sym_assign_k!(C, Z, A, ndrange=size(C))
 end
 
+@doc raw"""
+Takes as input: 
+- `Z::AbstractArray{T, 3}`: A tensor that stores a bunch of time series. 
+- `A::AbstractMatrix`: A matrix that is used to perform various scalar products. 
+
+For one of these time series the function performs the following computation: 
+
+```math
+    (z^{(i)}, z^{(j)}) \mapsto (z^{(i)})^TAz^{(j)} \text{ for } i > j.
+```
+
+The result of this are ``n(n-2)\div2`` scalar products. These scalar products are written into a lower-triangular matrix and the final output of the function is a tensor of these lower-triangular matrices. 
+"""
 function tensor_mat_skew_sym_assign(Z::AT, A::AbstractMatrix{T}) where {T, AT <: AbstractArray{T, 3}}
     backend = KernelAbstractions.get_backend(Z)
 
