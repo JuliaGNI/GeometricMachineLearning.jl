@@ -78,10 +78,9 @@ function (d::VolumePreservingAttention{M, M, :skew_sym})(x::AbstractArray{T, 3},
 end
 
 function (d::VolumePreservingAttention{M, M, :arbitrary})(x::AbstractArray{T, 3}, ps::NamedTuple) where {T, M}
-    x_interm = tensor_mat_skew_sym_assign(x, ps.A) / T(√M)
+    x_interim = tensor_mat_skew_sym_assign(x, ps.A) / T(√M)
     tensor_tensor_mul(  x, 
-                        orthonormal_activation_cayley(d, 
-                            x_interm - tensor_transpose(x_interm) )
+                        orthonormal_activation_cayley(d, x_interim - tensor_transpose(x_interim))
                         )
 end
 
