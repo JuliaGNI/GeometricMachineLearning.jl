@@ -24,7 +24,7 @@ Our training data thus consist of two curves:
 ```@example volume_preserving_attention
 plot(dl.input[1, :, 1], label = "sine")
 plot!(dl.input[1, :, 2], label = "cosine")
-end
+```
 
 We want to train a single neural network on both these curves. We compare three networks: 
 1. A composition of a dense layer, volume-preserving attention with skew-symmetric weighting and another dense layer (with identity activation).
@@ -51,6 +51,9 @@ o_arb  = Optimizer(AdamOptimizer(), nn_arb)
 o_comp = Optimizer(AdamOptimizer(), nn_comp)
 
 n_epochs = 150
+
+batch = Batch(100, 5)
+batch2 = Batch(100, 1)
 
 loss_array_skew = o_skew(nn_skew, dl, batch, n_epochs, transformer_loss)
 loss_array_arb  = o_arb( nn_arb,  dl, batch, n_epochs, transformer_loss)
