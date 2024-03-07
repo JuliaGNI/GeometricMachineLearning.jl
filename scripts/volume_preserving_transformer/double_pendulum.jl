@@ -1,10 +1,12 @@
-using Zygote: gradient, pullback
 using GeometricMachineLearning
 using Plots
 using GeometricIntegrators: integrate, ImplicitMidpoint
 using GeometricProblems.DoublePendulum: hodeproblem, default_parameters, tspan, tstep, hamiltonian, ϑ
 using GeometricEquations: EnsembleProblem
 using LinearAlgebra: norm 
+import Random 
+
+Random.seed!(123)
 
 θ₀ = [[π / 4, π / i] for i in 1:1]
 ω₀ = [0.0, π / 8]
