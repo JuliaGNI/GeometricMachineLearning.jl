@@ -3,9 +3,9 @@
 
 all: html
 
-latex: images install_brenier_two_fluid test_docs latex_docs remove_brenier_two_fluid
+latex: tex_images install_brenier_two_fluid test_docs latex_docs remove_brenier_two_fluid
 
-html: images install_brenier_two_fluid test_docs documenter remove_brenier_two_fluid
+html: html_images install_brenier_two_fluid test_docs documenter remove_brenier_two_fluid
 
 test_docs: 
 	cd ..; julia --project=docs  -e ';									\
@@ -31,11 +31,20 @@ remove_brenier_two_fluid:
 documenter:
 	julia --color=yes --project=. --threads=8 make.jl html_output
 
-images:
-	$(MAKE) all   	 -C src/tikz
+html_images:
+	$(MAKE) pdf   									-C src/tikz ;
+	$(MAKE) png res1=150 res2=200 res3=100 res4=180 -C src/tikz	;
+	$(MAKE) logo  									-C src/tikz ;
+	$(MAKE) clean -C src/tikz
+
+tex_images:
+	$(MAKE) pdf   									-C src/tikz ;
+	$(MAKE) png res1=450 res2=600 res3=300 res4=540 -C src/tikz ;
+	$(MAKE) logo  									-C src/tikz	;								
+	$(MAKE) clean -C src/tikz
 
 clean:
-	$(MAKE) empty 	 -C src/tikz
+	$(MAKE) empty -C src/tikz ;
 	rm -Rf build
 
 latex_docs:
