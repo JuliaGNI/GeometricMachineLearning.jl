@@ -3,8 +3,12 @@ This defines a manifold layer that only has one matrix-valued manifold $A$ assoc
 """
 abstract type ManifoldLayer{M, N, retraction} <: LayerWithManifold{M, N, retraction} end
 
-function (d::ManifoldLayer{M, N})(x::AbstractArray, ps::NamedTuple) where {M, N}
+function (d::ManifoldLayer{M, N})(x::AbstractVecOrMat, ps::NamedTuple) where {M, N}
     N > M ? ps.weight*x : ps.weight'*x
+end
+
+function (d::ManifoldLayer{M, N})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, N, T}
+    N > M ? mat_tensor_mul(ps.weight, x) : mat_tensor_mul(ps.weight', x)
 end
 
 function retraction(::ManifoldLayer{N, M, Geodesic}, B::NamedTuple{(:weight,),Tuple{AT}}) where {N, M, AT<:AbstractLieAlgHorMatrix}
