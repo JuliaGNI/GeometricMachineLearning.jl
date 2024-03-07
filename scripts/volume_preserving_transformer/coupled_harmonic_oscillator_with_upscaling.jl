@@ -7,7 +7,6 @@ using GeometricEquations: EnsembleProblem
 using LinearAlgebra: norm 
 using Zygote: gradient
 import Random 
-using CUDA
 
 Random.seed!(123)
 
@@ -27,22 +26,22 @@ dl_nt = DataLoader(ensemble_solution)
 # hyperparameters concerning architecture 
 const sys_dim = size(dl_nt.input.q, 1) * 2
 const n_heads = 2
-const L = 2 # transformer blocks 
+const L = 1 # transformer blocks 
 const activation = tanh
-const n_linear = 2
-const n_blocks = 3
+const n_linear = 1
+const n_blocks = 2
 const skew_sym = false
 
 # backend 
 const backend = CPU()
 
 # data loader 
-const dl = backend == CPU() ? DataLoader(vcat(dl_nt.input.q, dl_nt.input.p) |> Array{Float32}) : DataLoader(vcat(dl_nt.input.q, dl_nt.input.p) |> cu)
+const dl = backend == CPU() ? DataLoader(vcat(dl_nt.input.q, dl_nt.input.p)) : DataLoader(vcat(dl_nt.input.q, dl_nt.input.p) |> cu)
 
 const T = eltype(dl)
 
 # hyperparameters concerning training 
-const n_epochs = 500
+const n_epochs = 2000
 const batch_size = 1024
 const seq_length = 5
 const opt_method = AdamOptimizer(T)
@@ -69,12 +68,12 @@ feedforward_batch = Batch(batch_size, 1)
 transformer_batch = Batch(batch_size, seq_length)
 
 # attention only
-model₁ = Chain(VolumePreservingAttention(sys_dim, seq_length; skew_sym = skew_sym))
+model₁ = Chain(StiefelLayer(sys_dim, sys_dim * 3), VolumePreservingAttention(sys_dim * 3, seq_length; skew_sym = skew_sym), StiefelLayer(sys_dim * 3, sys_dim))
 
-model₂ = VolumePreservingFeedForward(sys_dim, n_blocks * L, n_linear, resnet_activation)
+model₂ = Chain(StiefelLayer(sys_dim, sys_dim * 3), Chain(VolumePreservingFeedForward(sys_dim * 3, n_blocks * L, n_linear, resnet_activation)).layers..., StiefelLayer(sys_dim * 3, sys_dim))
 
 # model₂ = RegularTransformerIntegrator(sys_dim, transformer_dim, n_heads, L, upscaling_activation, resnet_activation)
-model₃ = VolumePreservingTransformer(sys_dim, seq_length, n_blocks, n_linear, L, resnet_activation; skew_sym = skew_sym)
+model₃ = Chain(StiefelLayer(sys_dim, sys_dim * 3), Chain(VolumePreservingTransformer(sys_dim * 3, seq_length, n_blocks, n_linear, L, resnet_activation; skew_sym = skew_sym)).layers..., StiefelLayer(sys_dim * 3, sys_dim))
 
 nn₁, loss_array₁ = setup_and_train(model₁, transformer_batch, transformer=true)
 nn₂, loss_array₂ = setup_and_train(model₂, feedforward_batch, transformer=false)
@@ -96,7 +95,14 @@ end
 
 numerical, t_array = numerical_solution(sys_dim, t_validation, tstep, params)
 
-nn₁ = NeuralNetwork(GeometricMachineLearning.DummyTransformer(seq_length), nn₁.model, nn₁.params)
+struct DummyTransformer <: GeometricMachineLearning.TransformerIntegrator 
+    seq_length::Int
+end
+struct DummyNNIntegrator <: GeometricMachineLearning.NeuralNetworkIntegrator end
+
+nn₁ = NeuralNetwork(DummyTransformer(seq_length), nn₁.model, nn₁.params)
+nn₂ = NeuralNetwork(DummyNNIntegrator(), nn₂.model, nn₂.params)
+nn₃ = NeuralNetwork(DummyTransformer(seq_length), nn₃.model, nn₃.params)
 
 nn₁_solution = iterate(nn₁, numerical[:, 1:seq_length]; n_points = Int(t_validation / tstep) + 1)
 nn₂_solution = iterate(nn₂, numerical[:, 1]; n_points = Int(t_validation / tstep) + 1)
