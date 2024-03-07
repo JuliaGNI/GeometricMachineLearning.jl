@@ -1,6 +1,6 @@
 using GeometricMachineLearning, Test
 using GeometricMachineLearning: init_optimizer_cache
-import Random, Test, Lux, LinearAlgebra, KernelAbstractions
+import Random, Test, LinearAlgebra, KernelAbstractions
 
 Random.seed!(1234)
 
