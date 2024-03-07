@@ -12,9 +12,8 @@ bib = CitationBibliography(joinpath(@__DIR__, "src", "GeometricMachineLearning.b
 const buildpath = haskey(ENV, "CI") ? ".." : ""
 
 const html_format = Documenter.HTML(;
+    prettyurls = get(ENV, "CI", nothing) == "true",
     repolink = "https://github.com/JuliaGNI/GeometricMachineLearning.jl",
-    prettyurls = get(ENV, "CI", "false") == "true",
-    # not sure why we need this?
     canonical = "https://juliagni.github.io/GeometricMachineLearning.jl",
     assets = [
         "assets/extra_styles.css",
@@ -25,7 +24,9 @@ const html_format = Documenter.HTML(;
 
 const latex_format = Documenter.LaTeX()
 
-const output_type = ARGS[1] == "latex_output" ? :latex_output : :html_output
+const output_type = isempty(ARGS) ? :html : ARGS[1] == "latex_output" ? :latex : :html
+
+const format = output_type == :latex ? latex_format : html_format
 
 makedocs(;
     plugins = [bib],
@@ -33,7 +34,7 @@ makedocs(;
     authors = "Michael Kraus, Benedikt Brantner",
     repo = "https://github.com/JuliaGNI/GeometricMachineLearning.jl/blob/{commit}{path}#L{line}",
     sitename = "GeometricMachineLearning.jl",
-    format = output_type == :latex_output ? latex_format : html_format,
+    format = format,
     pages=[
         "Home" => "index.md",
         "Architectures" => [

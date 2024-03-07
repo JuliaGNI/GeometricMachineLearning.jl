@@ -14,7 +14,7 @@ Based on this definition of a topological space we can now define what it means 
 __Definition__: A topological space ``\mathcal{M}`` is said to be **Hausdorff** if for any two points ``x,y\in\mathcal{M}`` we can find two open sets ``U_x,U_y\in\mathcal{T}`` s.t. ``x\in{}U_x, y\in{}U_y`` and ``U_x\cap{}U_y=\{\}``.
 
 We now give the second definition that we need for defining manifolds, that of *second countability*:
-__Definition__: A topological space ``\mathcal{M}`` is said to be **second-countable** if we can find a countable subcollection of ``\mathcal{T}`` called ``\mathcal{U}`` s.t. ``\forall{}U\in\mathcal{T}`` and ``x\in{}U`` we can find an element ``V\in\mathcal{U}`` for which ``x\in{}V\sub{}U``.
+__Definition__: A topological space ``\mathcal{M}`` is said to be **second-countable** if we can find a countable subcollection of ``\mathcal{T}`` called ``\mathcal{U}`` s.t. ``\forall{}U\in\mathcal{T}`` and ``x\in{}U`` we can find an element ``V\in\mathcal{U}`` for which ``x\in{}V\subset{}U``.
 
 We now give a few definitions and results that are needed for the [inverse function theorem](inverse_function_theorem.md) which is essential for practical applications of manifold theory.
 
@@ -25,13 +25,13 @@ __Definition__: A **closed set** of a topological space ``\mathcal{M}`` is one w
 2. Any union of a finite number of closed sets is again closed.
 3. Any intersection of an arbitrary number of closed sets is again closed.
 
-__Theorem__: The definition of continuity is equivalent to the following, second definition: ``f:\mathcal{M}\to\mathcal{N}`` is continuous if ``f^{-1}\{F\}\sub\mathcal{M}`` is a closed set for each closed set ``F\sub\mathcal{N}``.
+__Theorem__: The definition of continuity is equivalent to the following, second definition: ``f:\mathcal{M}\to\mathcal{N}`` is continuous if ``f^{-1}\{F\}\subset\mathcal{M}`` is a closed set for each closed set ``F\subset\mathcal{N}``.
 
-__Proof__: First assume that ``f`` is continuous according to the first definition and not to the second. Then ``f^{-1}{F}`` is not closed but ``f^{-1}{F^c}`` is open. But ``f^{-1}\{F^c\} = \{x\in\mathcal{M}:f(x)\nin\mathcal{N}\} = (f^{-1}\{F\})^c`` cannot be open, else ``f^{-1}\{F\}`` would be closed. The implication of the first definition under assumption of the second can be shown analogously. 
+__Proof__: First assume that ``f`` is continuous according to the first definition and not to the second. Then ``f^{-1}{F}`` is not closed but ``f^{-1}{F^c}`` is open. But ``f^{-1}\{F^c\} = \{x\in\mathcal{M}:f(x)\not\in\mathcal{N}\} = (f^{-1}\{F\})^c`` cannot be open, else ``f^{-1}\{F\}`` would be closed. The implication of the first definition under assumption of the second can be shown analogously. 
 
 __Theorem__: The property of a set ``F`` being closed is equivalent to the following statement: If a point ``y`` is such that for every open set ``U`` containing it we have ``U\cap{}F\neq\{\}`` then this point is contained in ``F``.
 
-__Proof__: We first proof that if a set is closed then the statement holds. Consider a closed set ``F`` and a point ``y\nin{}F`` s.t. every open set containing ``y`` has nonempty intersection with ``F``. But the complement ``F^c`` also is such a set, which is a clear contradiction. Now assume the above statement for a set ``F`` and further assume ``F`` is not closed. Its complement ``F^c`` is thus not open. Now consider the *interior* of this set: ``\mathrm{int}(F^c):=\cup\{U:U\sub{}F^c\}``, i.e. the biggest open set contained within ``F^c``. Hence there must be a point ``y`` which is in ``F^c`` but is not in its interior, else ``F^c`` would be equal to its interior, i.e. would be open. We further must be able to find an open set ``U`` that contains ``y`` but is also contained in ``F^c``, else ``y`` would be an element of ``F``. A contradiction. 
+__Proof__: We first proof that if a set is closed then the statement holds. Consider a closed set ``F`` and a point ``y\not\in{}F`` s.t. every open set containing ``y`` has nonempty intersection with ``F``. But the complement ``F^c`` also is such a set, which is a clear contradiction. Now assume the above statement for a set ``F`` and further assume ``F`` is not closed. Its complement ``F^c`` is thus not open. Now consider the *interior* of this set: ``\mathrm{int}(F^c):=\cup\{U:U\subset{}F^c\}``, i.e. the biggest open set contained within ``F^c``. Hence there must be a point ``y`` which is in ``F^c`` but is not in its interior, else ``F^c`` would be equal to its interior, i.e. would be open. We further must be able to find an open set ``U`` that contains ``y`` but is also contained in ``F^c``, else ``y`` would be an element of ``F``. A contradiction. 
 
 __Definition__: An **open cover** of a topological space ``\mathcal{M}`` is a (not necessarily countable) collection of open sets ``\{U_i\}_{i\mathcal{I}}`` s.t. their union contains ``\mathcal{M}``. A **finite open cover** is a collection of a finite number of open sets that cover ``\mathcal{M}``. We say that an open cover is **reducible** to a finite cover if we can find a finite number of elements in the open cover whose union still contains ``\mathcal{M}``.
 
@@ -39,7 +39,7 @@ __Definition__: A topological space ``\mathcal{M}`` is called **compact** if eve
 
 __Theorem__: Consider a continuous function ``f:\mathcal{M}\to\mathcal{N}`` and a compact set ``K\in\mathcal{M}``. Then ``f(K)`` is also compact. 
 
-__Proof__: Consider an open cover of ``f(K)``: ``\{U_i\}_{i\in\mathcal{I}}``. Then ``\{f^{-1}\{U_i\}\}_{i\in\mathcal{I}}`` is an open cover of ``K`` and hence reducible to a finite cover ``\{f^{-1}\{U_i\}\}_{i\in\{i_1,\ldots,i_n}}``. But then ``\{{U_i\}_{i\in\{i_1,\ldots,i_n}}`` also covers ``f(K)``.
+__Proof__: Consider an open cover of ``f(K)``: ``\{U_i\}_{i\in\mathcal{I}}``. Then ``\{f^{-1}\{U_i\}\}_{i\in\mathcal{I}}`` is an open cover of ``K`` and hence reducible to a finite cover ``\{f^{-1}\{U_i\}\}_{i\in\{i_1,\ldots,i_n\}}``. But then ``\{{U_i\}_{i\in\{i_1,\ldots,i_n}}`` also covers ``f(K)``.
 
 __Theorem__: A closed subset of a compact space is compact:
 
@@ -47,7 +47,7 @@ __Proof__: Call the closed set ``F`` and consider an open cover of this set: ``\
 
 __Theorem__: A compact subset of a Hausdorff space is closed: 
 
-__Proof__: Consider a compact subset ``K``. If ``K`` is not closed, then there has to be a point ``y\nin{}K`` s.t. every open set containing ``y`` intersects ``K``. Because the surrounding space is Hausdorff we can now find the following two collections of open sets: ``\{(U_z, U_{z,y}: U_z\cap{}U_{z,y}=\{\})\}_{z\in{}K}``. The open cover ``\{U_z\}_{z\in{}K}`` is then reducible to a finite cover ``\{U_z\}_{z\in\{z_1, \ldots, z_n\}}``. The intersection ``\cap_{z\in{z_1, \ldots, z_n}}U_{z,y}`` is then an open set that contains ``y`` but has no intersection with ``K``. A contraction. 
+__Proof__: Consider a compact subset ``K``. If ``K`` is not closed, then there has to be a point ``y\not\in{}K`` s.t. every open set containing ``y`` intersects ``K``. Because the surrounding space is Hausdorff we can now find the following two collections of open sets: ``\{(U_z, U_{z,y}: U_z\cap{}U_{z,y}=\{\})\}_{z\in{}K}``. The open cover ``\{U_z\}_{z\in{}K}`` is then reducible to a finite cover ``\{U_z\}_{z\in\{z_1, \ldots, z_n\}}``. The intersection ``\cap_{z\in{z_1, \ldots, z_n}}U_{z,y}`` is then an open set that contains ``y`` but has no intersection with ``K``. A contraction. 
 
 __Theorem__: If ``\mathcal{M}`` is compact and ``\mathcal{N}`` is Hausdorff, then the inverse of a continuous function ``f:\mathcal{M}\to\mathcal{N}`` is again continuous, i.e. ``f(V)`` is an open set in ``\mathcal{N}`` for ``V\in\mathcal{T}``.
 

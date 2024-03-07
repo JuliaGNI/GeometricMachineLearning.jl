@@ -25,7 +25,7 @@ B_2 & D
 B_2 & \mathbb{O}
 \end{pmatrix}.
 ```
-The operation $\mathrm{skew}:\mathbb{R}^{n\times{}n}\to\mathcal{S}_\mahtrm{skew}(n)$ is the skew-symmetrization operation. This is equivalent to calling the constructor of `SkewSymMatrix` with an \(n\times{}n\) matrix.
+The operation $\mathrm{skew}:\mathbb{R}^{n\times{}n}\to\mathcal{S}_\mathrm{skew}(n)$ is the skew-symmetrization operation. This is equivalent to calling the constructor of `SkewSymMatrix` with an \(n\times{}n\) matrix.
 """
 mutable struct StiefelLieAlgHorMatrix{T, AT <: SkewSymMatrix{T}, ST <: AbstractMatrix{T}} <: AbstractLieAlgHorMatrix{T}
     A::AT

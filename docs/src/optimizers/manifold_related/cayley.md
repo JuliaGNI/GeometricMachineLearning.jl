@@ -32,18 +32,15 @@ So what we have to invert is the term
 \begin{bmatrix}  \mathbb{I} - \frac{1}{4}A & - \frac{1}{2}\mathbb{I} \\ \frac{1}{2}B^TB - \frac{1}{8}A^2 & \mathbb{I} - \frac{1}{4}A  \end{bmatrix}.
 ```
 
-The whole cayley transform is then: 
+The whole Cayley transform is then: 
 
 ```math
 \left(\mathbb{I} + \frac{1}{2}\begin{bmatrix}  \frac{1}{2}A & \mathbb{I} \\ B & \mathbb{O} \end{bmatrix} \begin{bmatrix}  \mathbb{I} - \frac{1}{4}A & - \frac{1}{2}\mathbb{I} \\ \frac{1}{2}B^TB - \frac{1}{8}A^2 & \mathbb{I} - \frac{1}{4}A  \end{bmatrix}^{-1}  \begin{bmatrix}  \mathbb{I} & \mathbb{O} \\ \frac{1}{2}A & -B^T  \end{bmatrix} \right)\left( E +  \frac{1}{2}\begin{bmatrix}  \frac{1}{2}A & \mathbb{I} \\ B & \mathbb{O} \end{bmatrix} \begin{bmatrix}  \mathbb{I} \\ \frac{1}{2}A   \end{bmatrix}\ \right) = \\
-
 E + \frac{1}{2}\begin{bmatrix} \frac{1}{2}A & \mathbb{I} \\ B & \mathbb{O}  \end{bmatrix}\left(
     \begin{bmatrix}  \mathbb{I} \\ \frac{1}{2}A   \end{bmatrix}  + 
     \begin{bmatrix}  \mathbb{I} - \frac{1}{4}A & - \frac{1}{2}\mathbb{I} \\ \frac{1}{2}B^TB - \frac{1}{8}A^2 & \mathbb{I} - \frac{1}{4}A  \end{bmatrix}^{-1}\left(
-
         \begin{bmatrix}  \mathbb{I} \\ \frac{1}{2}A   \end{bmatrix} + 
         \begin{bmatrix} \frac{1}{2}A \\ \frac{1}{4}A^2 - \frac{1}{2}B^TB \end{bmatrix}
-
     \right)
     \right)
 ```
