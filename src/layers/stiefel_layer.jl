@@ -13,5 +13,5 @@ function AbstractNeuralNetworks.initialparameters(backend::KernelAbstractions.Ba
 end
 
 function parameterlength(::StiefelLayer{M, N}) where {M, N}
-    N > M ? M*(M-1)÷2 + (N-M)*M : N*(N-1)÷2 + (M-N)*N
+    N > M ? M * (M - 1) ÷ 2 + (N - M) * M : N * (N - 1) ÷ 2 + (M - N) * N
 end
