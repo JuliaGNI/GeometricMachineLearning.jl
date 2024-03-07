@@ -9,8 +9,9 @@ This function computes a trajectory for a Transformer that has already been trai
 It takes as input: 
 - `nn`: a `NeuralNetwork` (that has been trained).
 - `ics`: initial conditions (a matrix in ``\mathbb{R}^{2n\times\mathtt{seq\_length}}`` or `NamedTuple` of two matrices in ``\mathbb{R}^{n\times\mathtt{seq\_length}}``)
+- `n_points::Int=100` (keyword argument): The number of steps for which we run the prediction. 
 """
-function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::NamedTuple{(:q, :p), Tuple{AT, AT}}; n_points = 100) where {T, AT<:AbstractMatrix{T}}
+function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::NamedTuple{(:q, :p), Tuple{AT, AT}}; n_points::Int = 100) where {T, AT<:AbstractMatrix{T}}
 
     seq_length = nn.model.seq_length
     n_dim = size(ics.q, 1)
@@ -57,4 +58,8 @@ function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::AT; n_poi
     end
 
     valuation
+end
+
+struct DummyTransformer <: TransformerIntegrator 
+    seq_length::Int
 end
