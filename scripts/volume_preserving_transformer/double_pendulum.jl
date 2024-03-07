@@ -1,34 +1,6 @@
 using Zygote: gradient, pullback
 using GeometricMachineLearning
-using GeometricMachineLearning: tensor_mat_skew_sym_assign, mat_tensor_mul
-# using Plots
-
-#=
-"""
-This is necessary for now when using Enzyme. 
-"""
-function dummy_setup(sys_dim = 2, seq_length = 4)
-
-    pullback(tensor_mat_skew_sym_assign, rand(sys_dim, seq_length, 1), rand(sys_dim, sys_dim))[2](rand(sys_dim, seq_length, 1))
-    pullback(mat_tensor_mul, rand(LowerTriangular, sys_dim), rand(sys_dim, seq_length, 1))[2](rand(sys_dim, seq_length, 1))
-    pullback(mat_tensor_mul, rand(UpperTriangular, sys_dim), rand(sys_dim, seq_length, 1))[2](rand(sys_dim, seq_length, 1))
-    pullback(mat_tensor_mul, rand(SkewSymMatrix, sys_dim), rand(sys_dim, seq_length, 1))[2](rand(sys_dim, seq_length, 1))
-
-    nothing
-end
-
-dummy_setup(2, 4)
-=# 
-# const sys_dim = 4
-# const seq_length = 4 
-# pullback(tensor_mat_skew_sym_assign, rand(sys_dim, seq_length, 1), rand(sys_dim, sys_dim))[2](rand(sys_dim, seq_length, 1))
-# pullback(mat_tensor_mul, rand(LowerTriangular, sys_dim), rand(sys_dim, seq_length, 1))[2](rand(sys_dim, seq_length, 1))
-# pullback(mat_tensor_mul, rand(UpperTriangular, sys_dim), rand(sys_dim, seq_length, 1))[2](rand(sys_dim, seq_length, 1))
-# pullback(mat_tensor_mul, rand(SkewSymMatrix, sys_dim), rand(sys_dim, seq_length, 1))[2](rand(sys_dim, seq_length, 1))
-
-using GeometricMachineLearning
-using GeometricMachineLearning: transformer_loss, map_to_cpu
-# using Plots
+using Plots
 using GeometricIntegrators: integrate, ImplicitMidpoint
 using GeometricProblems.DoublePendulum: hodeproblem, default_parameters, tspan, tstep, hamiltonian, ϑ
 using GeometricEquations: EnsembleProblem
