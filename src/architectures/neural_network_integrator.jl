@@ -54,3 +54,5 @@ function Base.iterate(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, ics::BT; n_p
 
     valuation
 end
+
+struct DummyNNIntegrator <: NeuralNetworkIntegrator end
