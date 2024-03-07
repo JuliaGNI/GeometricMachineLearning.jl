@@ -6,7 +6,7 @@ There are special implementations of symmetric and skew-symmetric matrices in `G
 
 ```@example 
 import Images, Plots # hide
-if Main.output_type == :html_output # hide
+if Main.output_type == :html # hide
     HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/skew_sym_visualization.png"))></object>""") # hide
 else # hide
     Plots.plot(Images.load("../tikz/skew_sym_visualization.pdf"), axis=([], false)) # hide
@@ -14,7 +14,7 @@ end # hide
 ```
 
 ```@example
-if Main.output_type == :html_output # hide
+if Main.output_type == :html # hide
     HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/skew_sym_visualization_dark.png"))></object>""") # hide
 end # 
 ```

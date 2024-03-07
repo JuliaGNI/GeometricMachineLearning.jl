@@ -45,15 +45,15 @@ The constructor produces the following architecture[^2]:
 
 ```@example 
 import Images, Plots # hide
-if Main.output_type == :html_output # hide
+if Main.output_type == :html # hide
      HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/vp_feedforward.png"))></object>""") # hide
 else # hide
-     Plots.plot(Images.load("../tikz/vp_feedforward.pdf"), axis=([], false)) # hide
+     Plots.plot(Images.load("../tikz/vp_feedforward.png"), axis=([], false)) # hide
 end # hide
 ```
 
 ```@example
-if Main.output_type == :html_output # hide
+if Main.output_type == :html # hide
      HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/vp_feedforward_dark.png"))></object>""") # hide
 end # hide
 ```
