@@ -4,7 +4,6 @@ module GeometricMachineLearning
     using BandedMatrices
     using ChainRulesCore
     using Distances
-    using ForwardDiff
     using GeometricBase
     using GeometricEquations
     using GeometricIntegrators
@@ -14,7 +13,6 @@ module GeometricMachineLearning
     using ProgressMeter
     using Random
     using Zygote
-    using ForwardDiff
     using InteractiveUtils
     using TimerOutputs
 

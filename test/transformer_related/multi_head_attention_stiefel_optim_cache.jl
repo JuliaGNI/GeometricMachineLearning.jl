@@ -1,5 +1,5 @@
 using GeometricMachineLearning, Test
-import Lux, Random, LinearAlgebra
+import Random, LinearAlgebra
 
 Random.seed!(1234)
 
