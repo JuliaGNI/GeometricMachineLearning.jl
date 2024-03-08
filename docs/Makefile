@@ -38,9 +38,9 @@ html_images:
 	$(MAKE) clean -C src/tikz
 
 tex_images:
-	$(MAKE) pdf   									-C src/tikz ;
-	$(MAKE) png res1=450 res2=600 res3=300 res4=540 -C src/tikz ;
-	$(MAKE) logo  									-C src/tikz	;								
+	$(MAKE) pdf   									  	-C src/tikz ;
+	$(MAKE) png res1=1000 res2=1000 res3=1000 res4=1000	-C src/tikz ;
+	$(MAKE) logo  									  	-C src/tikz ;								
 	$(MAKE) clean -C src/tikz
 
 clean:
