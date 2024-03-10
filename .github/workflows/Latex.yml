@@ -39,6 +39,7 @@ jobs:
       - run: |
           tlmgr install xetex
           tlmgr install pgf
+          tlmgr install standalone
       - run: make mac -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
         with:
