@@ -1,0 +1,70 @@
+name: PDF
+
+on:
+  push:
+    branches:
+      - main
+      - make_mac_docs
+  pull_request:
+
+jobs:
+  LatexDocs:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - if: matrix.os == 'ubuntu-latest'
+        name: install imagemagick and poppler-utils
+        run: |
+          sudo apt-get install imagemagick
+          sudo apt-get install poppler-utils
+      - if: matrix.os == 'macos-latest'
+        run: |
+          pip3 install Pygments
+      - name: install texlive
+        run: |
+          wget --no-check-certificate https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz
+          zcat < install-tl-unx.tar.gz | tar xf -
+          rm install-tl-unx.tar.gz
+          cd install-tl-*
+          sudo perl ./install-tl --no-interaction
+          cd ..
+      - name: add texlive to path
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          echo "/usr/local/texlive/2024/bin/x86_64-linux" >> $GITHUB_PATH
+      - name: add texlive to path
+        if: matrix.os == 'macos-latest'
+        run: |
+          echo "/usr/local/texlive/2024/bin/universal-darwin" >> $GITHUB_PATH
+      - name: Make images
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          make linux -C docs/src/tikz
+      - name: Make images
+        if: matrix.os == 'macos-latest'
+        run: |
+          make mac -C docs/src/tikz
+      - uses: julia-actions/setup-julia@latest
+        with:
+          version: '1'
+      - name: install BrenierTwoFluid
+        run: |
+          cd docs
+          make install_brenier_two_fluid test_docs
+          cd .. 
+      - name: make tex document
+        run: julia --project=docs --threads=2 docs/make.jl latex_output_no_pdf
+      - name: compile tex document
+        run: |
+          cd docs/build 
+          xelatex -shell-escape GeometricMachineLearning.jl.tex
+      - name: Upload PDF file
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}
+          path: docs/build/GeometricMachineLearning.jl.pdf
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
