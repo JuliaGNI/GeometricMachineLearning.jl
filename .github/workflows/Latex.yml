@@ -33,10 +33,10 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - run: |
-          brew update
-          brew install texlive
-          make mac -C docs/src/tikz
+      - uses: teatimeguest/setup-texlive-action@v3
+        with:
+          packages: scheme-basic
+      - run: make mac -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
         with:
           version: '1'
