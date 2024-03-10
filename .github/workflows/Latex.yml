@@ -37,10 +37,10 @@ jobs:
         with:
           packages: scheme-basic
       - run: |
-        tlmgr install xetex
-        tlmgr install tikz
-        tlmgr install standalone 
-        tlmgr install xcolor
+          tlmgr install xetex
+          tlmgr install tikz
+          tlmgr install standalone 
+          tlmgr install xcolor
       - run: make mac -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
         with:
