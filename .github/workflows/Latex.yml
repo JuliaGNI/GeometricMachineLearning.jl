@@ -35,8 +35,7 @@ jobs:
       - uses: actions/checkout@v4
       - run: |
           brew update
-          brew install texlive-xetex 
-          brew install texlive-science
+          brew install texlive
           make mac -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
         with:
