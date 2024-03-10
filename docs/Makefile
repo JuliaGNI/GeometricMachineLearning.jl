@@ -3,7 +3,9 @@
 
 all: html
 
-latex: images install_brenier_two_fluid test_docs latex_docs remove_brenier_two_fluid
+latex_mac: images_mac install_brenier_two_fluid test_docs latex_docs remove_brenier_two_fluid
+
+latex_linux: images_linux install_brenier_two_fluid test_docs latex_docs remove_brenier_two_fluid
 
 html: images install_brenier_two_fluid test_docs documenter remove_brenier_two_fluid
 
@@ -33,6 +35,12 @@ documenter:
 
 images:
 	$(MAKE) all   	 -C src/tikz
+
+images_mac: 
+	$(MAKE) mac		 -C src/tikz
+
+images_linux: 
+	$(MAKE) linux 	 -C src/tikz
 
 clean:
 	$(MAKE) empty 	 -C src/tikz
