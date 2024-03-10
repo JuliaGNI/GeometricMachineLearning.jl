@@ -36,6 +36,7 @@ jobs:
       - uses: teatimeguest/setup-texlive-action@v3
         with:
           packages: scheme-basic
+      - run: tlmgr install xelatex
       - run: make mac -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
         with:
