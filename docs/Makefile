@@ -53,5 +53,5 @@ clean:
 latex_docs:
 	julia --color=yes --project=. --threads=8 make.jl latex_output
 
-latex_docs_pdf_only:
+latex_docs_no_pdf:
 	julia --color=yes --project=. --threads=8 make.jl latex_output_no_pdf	
