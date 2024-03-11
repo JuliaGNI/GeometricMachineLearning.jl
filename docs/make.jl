@@ -25,7 +25,7 @@ const html_format = Documenter.HTML(;
 const latex_format = Documenter.LaTeX()
 
 # if platform is set to "none" then no output pdf is generated
-const latex_format_no_pdf = Documenter.LaTex(platform = "none")
+const latex_format_no_pdf = Documenter.LaTeX(platform = "none")
 
 # if we supply no arguments to make.jl or supply html_output, then `output_type` is `:html`. Else it is latex.
 const output_type = isempty(ARGS) ? :html : ARGS[1] == "html_output" ? :html : :latex
