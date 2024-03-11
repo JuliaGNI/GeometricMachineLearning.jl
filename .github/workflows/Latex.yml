@@ -64,7 +64,8 @@ jobs:
           # the following three lines do the same as calling `make.jl` with latex_output as input argument
           julia --project=docs docs/make.jl latex_output_no_pdf
           cd docs/build
-          latexmk -f -interaction=batchmode -halt-on-error -view=none -lualatex -shell-escape GeometricMachineLearning.jl.tex
+          # latexmk -f -interaction=batchmode -halt-on-error -view=none -lualatex -shell-escape GeometricMachineLearning.jl.tex
+          xelatex -shell-escape GeometricMachineLearning.jl.tex
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
