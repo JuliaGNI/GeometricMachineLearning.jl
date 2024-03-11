@@ -46,6 +46,7 @@ jobs:
           tlmgr install mathtools
           tlmgr install filehook
           tlmgr install etoolbox
+          tlmgr install svn-prov
       - run: make mac -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
         with:
