@@ -38,14 +38,10 @@ jobs:
           packages: scheme-basic
       - run: |
           tlmgr install xetex
-          tlmgr install pgf
+          tlmgr install environ
           tlmgr install standalone
-          tlmgr install filehook
           tlmgr install neuralnetwork
           tlmgr install pgfplots
-          tlmgr install svn-prov
-          tlmgr install environ
-          tlmgr install etoolbox
           tlmgr install collection-mathscience
           tlmgr install mathtools
       - run: make mac -C docs/src/tikz
