@@ -40,6 +40,9 @@ jobs:
           tlmgr install xetex
           tlmgr install pgf
           tlmgr install standalone
+          tlmgr install filehook
+          tlmgr install neuralnetwork
+          tlmgr install pgfplots
       - run: make mac -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
         with:
