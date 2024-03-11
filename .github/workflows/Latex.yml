@@ -43,6 +43,8 @@ jobs:
           tlmgr install filehook
           tlmgr install neuralnetwork
           tlmgr install pgfplots
+          tlmgr install svn-prov
+          tlmgr install environ
       - run: make mac -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
         with:
