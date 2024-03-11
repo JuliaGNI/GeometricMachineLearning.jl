@@ -44,6 +44,8 @@ jobs:
           tlmgr install pgfplots
           tlmgr install collection-mathscience
           tlmgr install mathtools
+          tlmgr install filehook
+          tlmgr install etoolbox
       - run: make mac -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
         with:
