@@ -11,11 +11,14 @@ pdf: $(MYDIR)/*.tex
 	done
 
 # this is converting pdfs to pngs using sips (mac version)
+MYDIR = .
 sips: $(MYDIR)/*.pdf
 	for file in $^ ; do \
 		sips --setProperty format png --resampleHeightWidthMax 2000 $${file} --out $${file%.*}.png ; \
 	done
 
+# this is converting pdfs to pngs using pdftocairo (linux version)
+MYDIR = .
 pdftocairo: $(MYDIR)/*.pdf
 	for file in $^ ; do \
 		pdftocairo -png -r 500 -transp -singlefile $${file} --out $${file%.*} ; \
