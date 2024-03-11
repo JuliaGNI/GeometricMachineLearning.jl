@@ -1,8 +1,14 @@
 all: pdf png logo clean 
 
-linux: pdf pdftocairo logo clean
+linux: pdf 
+	$(MAKE) pdftocairo 
+	$(MAKE) logo 
+	$(MAKE) clean
 
-mac: pdf sips logo clean
+mac: pdf 
+	$(MAKE) sips 
+	$(MAKE) logo 
+	$(MAKE) clean
 
 MYDIR = .
 pdf: $(MYDIR)/*.tex
@@ -11,14 +17,12 @@ pdf: $(MYDIR)/*.tex
 	done
 
 # this is converting pdfs to pngs using sips (mac version)
-MYDIR = .
 sips: $(MYDIR)/*.pdf
 	for file in $^ ; do \
 		sips --setProperty format png --resampleHeightWidthMax 2000 $${file} --out $${file%.*}.png ; \
 	done
 
 # this is converting pdfs to pngs using pdftocairo (linux version)
-MYDIR = .
 pdftocairo: $(MYDIR)/*.pdf
 	for file in $^ ; do \
 		pdftocairo -png -r 500 -transp -singlefile $${file} --out $${file%.*} ; \
