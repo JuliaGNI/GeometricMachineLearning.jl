@@ -46,7 +46,7 @@ jobs:
           tlmgr install svn-prov
           tlmgr install environ
           tlmgr install etoolbox
-          tlmgr install algorithms
+          tlmgr install collection-mathscience
       - run: make mac -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
         with:
