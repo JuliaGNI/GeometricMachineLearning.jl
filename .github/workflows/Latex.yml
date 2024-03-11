@@ -18,6 +18,7 @@ jobs:
           sudo apt-get install texlive-xetex
           sudo apt-get install texlive-science
           sudo apt-get install latexmk
+          pip3 install pygments
       - run: make linux -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
         with:
@@ -42,6 +43,7 @@ jobs:
         with:
           packages: scheme-basic
       - run: |
+          # these packages are needed to generate the tex images
           tlmgr install xetex
           tlmgr install environ
           tlmgr install standalone
@@ -53,6 +55,9 @@ jobs:
           tlmgr install etoolbox
           tlmgr install svn-prov
           tlmgr install latexmk
+          # these packages are needed to compile the tex
+          tlmgr install memoir
+          # this package is needed for the minted latex package
           pip3 install pygments
       - run: make mac -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
