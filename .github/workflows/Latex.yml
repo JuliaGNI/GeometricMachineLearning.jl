@@ -25,7 +25,7 @@ jobs:
           cd docs
           make install_brenier_two_fluid test_docs
           cd .. 
-          julia --project=latex_linux docs/make.jl latex_output
+          julia --project=docs docs/make.jl latex_output
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
@@ -55,7 +55,7 @@ jobs:
           cd docs
           make install_brenier_two_fluid test_docs
           cd .. 
-          julia --project=latex_mac docs/make.jl latex_output
+          julia --project=docs docs/make.jl latex_output
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
