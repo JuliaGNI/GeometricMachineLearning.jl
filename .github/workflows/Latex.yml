@@ -8,6 +8,29 @@ on:
   pull_request:
 
 jobs:
+  LatexDocsUbuntu2:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          sudo apt-get install imagemagick
+          sudo apt-get install poppler-utils
+          sudo apt-get install texlive-xetex
+          sudo apt-get install texlive-science
+          sudo apt-get install latexmk
+          pip3 install pygments
+      - run: make linux -C docs/src/tikz
+      - uses: julia-actions/setup-julia@latest
+        with:
+          version: '1'
+      - run: |
+          cd docs
+          make install_brenier_two_fluid test_docs
+          cd .. 
+          # the following three lines do the same as calling `make.jl` with latex_output as input argument
+          julia --project=docs docs/make.jl latex_output
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   LatexDocsUbuntu:
     runs-on: ubuntu-latest
     steps:
@@ -30,10 +53,10 @@ jobs:
           # the following three lines do the same as calling `make.jl` with latex_output as input argument
           julia --project=docs docs/make.jl latex_output_no_pdf
           cd docs/build
-          latexmk -f -interaction=batchmode -halt-on-error -view=none -lualatex -shell-escape GeometricMachineLearning.jl.tex
+          # latexmk -f -interaction=batchmode -halt-on-error -view=none -lualatex -shell-escape GeometricMachineLearning.jl.tex
+          xelatex -shell-escape GeometricMachineLearning.jl.tex
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
   LatexDocsMac:
     runs-on: macos-latest
     steps:
@@ -73,4 +96,3 @@ jobs:
           xelatex -shell-escape GeometricMachineLearning.jl.tex
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
