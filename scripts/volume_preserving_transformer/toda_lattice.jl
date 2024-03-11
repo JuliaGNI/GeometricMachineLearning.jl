@@ -2,7 +2,7 @@ using GeometricMachineLearning
 using GeometricMachineLearning: transformer_loss, map_to_cpu
 using Plots
 using GeometricIntegrators: integrate, ImplicitMidpoint
-using GeometricProblems.TodaLattice: hodeproblem, default_parameters, tspan, hamiltonian, Ñ, p̃₀, q̃₀
+using GeometricProblems.TodaLattice: hodeproblem, default_parameters, hamiltonian, Ñ, p̃₀, q̃₀
 using GeometricEquations: EnsembleProblem
 using LinearAlgebra: norm 
 using Zygote: gradient
@@ -11,7 +11,8 @@ using CUDA
 
 Random.seed!(123)
 
-const tstep = 1.3
+const tstep = 5.
+const tspan = (0., 10000.)
 
 const attention_only = false
 
@@ -41,7 +42,7 @@ const dl = backend == CPU() ? DataLoader(vcat(dl_nt.input.q, dl_nt.input.p)) : D
 const T = eltype(dl)
 
 # hyperparameters concerning training 
-const n_epochs = 200
+const n_epochs = 500
 const batch_size = 1024
 const seq_length = 5
 const opt_method = AdamOptimizer(T)
@@ -111,7 +112,7 @@ p_validation = plot(t_array, numerical[1, :], label = "numerical solution", colo
 plot!(p_validation, t_array, nn₁_solution[1, :], label = "attention only", color = 2, linewidth = 2)
 
 if !attention_only
-    plot!(p_validation, t_array, nn₂_solution[1, :], label = "feedforward", color = 3, linewidth = 2)
+    # plot!(p_validation, t_array, nn₂_solution[1, :], label = "feedforward", color = 3, linewidth = 2)
     plot!(p_validation, t_array, nn₃_solution[1, :], label = "transformer", color = 4, linewidth = 2)
 end
 
