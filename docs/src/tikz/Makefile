@@ -25,7 +25,7 @@ convert_with_sips: $(MYDIR)/*.pdf
 # this is converting pdfs to pngs using pdftocairo (linux version)
 convert_with_pdftocairo: $(MYDIR)/*.pdf
 	for file in $^ ; do \
-		pdftocairo -png -r 500 -transp -singlefile $${file} --out $${file%.*} ; \
+		pdftocairo -png -r 500 -transp -singlefile $${file} $${file%.*} ; \
 	done
 
 png:
