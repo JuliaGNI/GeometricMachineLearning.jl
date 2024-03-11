@@ -26,8 +26,9 @@ jobs:
           cd docs
           make install_brenier_two_fluid test_docs
           cd .. 
+          # the following two commands do the same as calling `make.jl` with latex_output as input argument
           julia --project=docs docs/make.jl latex_output_no_pdf
-          latexmk -f -interaction=batchmode -halt-on-error -view=none -lualatex -shell-escape GeometricMachineLearning.jl.tex
+          latexmk -f -interaction=batchmode -halt-on-error -view=none -lualatex -shell-escape docs/build/GeometricMachineLearning.jl.tex
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
@@ -59,8 +60,9 @@ jobs:
           cd docs
           make install_brenier_two_fluid test_docs
           cd .. 
+          # the following two commands do the same as calling `make.jl` with latex_output as input argument
           julia --project=docs docs/make.jl latex_output_no_pdf
-          latexmk -f -interaction=batchmode -halt-on-error -view=none -lualatex -shell-escape GeometricMachineLearning.jl.tex
+          latexmk -f -interaction=batchmode -halt-on-error -view=none -lualatex -shell-escape docs/build/GeometricMachineLearning.jl.tex
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
