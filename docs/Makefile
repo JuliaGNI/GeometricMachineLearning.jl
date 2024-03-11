@@ -7,6 +7,10 @@ latex_mac: images_mac install_brenier_two_fluid test_docs latex_docs remove_bren
 
 latex_linux: images_linux install_brenier_two_fluid test_docs latex_docs remove_brenier_two_fluid
 
+latex_linux_no_pdf: images_linux install_brenier_two_fluid test_docs latex_docs_no_pdf remove_brenier_two_fluid
+
+latex_mac_no_pdf: images_mac install_brenier_two_fluid test_docs latex_docs_no_pdf remove_brenier_two_fluid
+
 html: images install_brenier_two_fluid test_docs documenter remove_brenier_two_fluid
 
 test_docs: 
@@ -48,4 +52,6 @@ clean:
 
 latex_docs:
 	julia --color=yes --project=. --threads=8 make.jl latex_output
-	
+
+latex_docs_pdf_only:
+	julia --color=yes --project=. --threads=8 make.jl latex_output_no_pdf	
