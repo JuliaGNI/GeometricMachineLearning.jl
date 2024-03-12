@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - make_mac_docs
+      - volume_preserving_transformer
   pull_request:
 
 jobs:
