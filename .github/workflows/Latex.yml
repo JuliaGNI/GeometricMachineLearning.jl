@@ -58,6 +58,7 @@ jobs:
           # these packages are needed to compile the tex
           tlmgr install memoir
           tlmgr install xpatch
+          tlmgr install booktabs
           # this package is needed for the minted latex package
           pip3 install pygments
       - run: make mac -C docs/src/tikz
