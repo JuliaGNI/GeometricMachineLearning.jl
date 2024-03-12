@@ -24,9 +24,13 @@ const html_format = Documenter.HTML(;
 
 const latex_format = Documenter.LaTeX()
 
-const output_type = isempty(ARGS) ? :html : ARGS[1] == "latex_output" ? :latex : :html
+# if platform is set to "none" then no output pdf is generated
+const latex_format_no_pdf = Documenter.LaTeX(platform = "none")
 
-const format = output_type == :latex ? latex_format : html_format
+# if we supply no arguments to make.jl or supply html_output, then `output_type` is `:html`. Else it is latex.
+const output_type = isempty(ARGS) ? :html : ARGS[1] == "html_output" ? :html : :latex
+
+const format = output_type == :html ? html_format : ARGS[1] == "latex_output" ? latex_format : latex_format_no_pdf
 
 makedocs(;
     plugins = [bib],

@@ -1,0 +1,75 @@
+name: PDF
+
+on:
+  push:
+    branches:
+      - main
+      - make_mac_docs
+  pull_request:
+
+jobs:
+  LatexDocsUbuntu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          sudo apt-get install imagemagick
+          sudo apt-get install poppler-utils
+          sudo apt-get install texlive-xetex
+          sudo apt-get install texlive-science
+          sudo apt-get install latexmk
+          pip3 install pygments
+      - run: make linux -C docs/src/tikz
+      - uses: julia-actions/setup-julia@latest
+        with:
+          version: '1'
+      - run: |
+          cd docs
+          make install_brenier_two_fluid test_docs
+          cd .. 
+          # the following three lines do the same as calling `make.jl` with latex_output as input argument
+          julia --project=docs docs/make.jl latex_output_no_pdf
+          cd docs/build
+          # latexmk -f -interaction=batchmode -halt-on-error -view=none -lualatex -shell-escape GeometricMachineLearning.jl.tex
+          xelatex -shell-escape GeometricMachineLearning.jl.tex
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  LatexDocsMac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: teatimeguest/setup-texlive-action@v3
+        with:
+          packages: scheme-basic
+      - run: |
+          # these packages are needed to generate the tex images
+          tlmgr install xetex
+          tlmgr install environ
+          tlmgr install standalone
+          tlmgr install neuralnetwork
+          tlmgr install pgfplots
+          tlmgr install collection-mathscience
+          tlmgr install mathtools
+          tlmgr install filehook
+          tlmgr install etoolbox
+          tlmgr install svn-prov
+          tlmgr install latexmk
+          # these packages are needed to compile the tex
+          tlmgr install memoir
+          # this package is needed for the minted latex package
+          pip3 install pygments
+      - run: make mac -C docs/src/tikz
+      - uses: julia-actions/setup-julia@latest
+        with:
+          version: '1'
+      - run: |
+          cd docs
+          make install_brenier_two_fluid test_docs
+          cd .. 
+          # the following three lines do the same as calling `make.jl` with latex_output as input argument
+          julia --project=docs docs/make.jl latex_output_no_pdf
+          cd docs/build
+          # latexmk -f -interaction=batchmode -halt-on-error -view=none -lualatex -shell-escape GeometricMachineLearning.jl.tex
+          xelatex -shell-escape GeometricMachineLearning.jl.tex
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

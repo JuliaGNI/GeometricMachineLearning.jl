@@ -1,32 +1,32 @@
-pdf:
-	xelatex -shell-escape adam_optimizer
-	xelatex -shell-escape adam_optimizer_dark
-	xelatex -shell-escape general_optimization
-	xelatex -shell-escape general_optimization_with_boundary
-	xelatex -shell-escape general_optimization_with_boundary_dark
-	xelatex -shell-escape transformer_encoder
-	xelatex -shell-escape third_degree_spline
-	xelatex -shell-escape third_degree_spline_dark
-	xelatex -shell-escape sympnet_architecture
-	xelatex -shell-escape sympnet_architecture_dark
-	xelatex -shell-escape structs_visualization
-	xelatex -shell-escape structs_visualization_dark
-	xelatex -shell-escape logo 
-	xelatex -shell-escape symplectic_autoencoder
-	xelatex -shell-escape symplectic_autoencoder_dark
-	xelatex -shell-escape solution_manifold_2
-	xelatex -shell-escape mha
-	xelatex -shell-escape mha_dark
-	xelatex -shell-escape tensor 
-	xelatex -shell-escape tensor_dark
-	xelatex -shell-escape tensor_sampling
-	xelatex -shell-escape tensor_sampling_dark
-	xelatex -shell-escape skew_sym_visualization
-	xelatex -shell-escape skew_sym_visualization
-	xelatex -shell-escape skew_sym_visualization_dark
-	xelatex -shell-escape skew_sym_visualization_dark
-	xelatex -shell-escape vp_feedforward
-	xelatex -shell-escape vp_feedforward_dark
+all: pdf png logo clean 
+
+linux: pdf 
+	$(MAKE) convert_with_pdftocairo 
+	$(MAKE) logo 
+	$(MAKE) clean
+
+mac: pdf 
+	$(MAKE) convert_with_sips 
+	$(MAKE) logo 
+	$(MAKE) clean
+
+MYDIR = .
+pdf: $(MYDIR)/*.tex
+	for file in $^ ; do \
+		xelatex -shell-escape $${file} ; \
+	done
+
+# this is converting pdfs to pngs using sips (mac version)
+convert_with_sips: $(MYDIR)/*.pdf
+	for file in $^ ; do \
+		sips --setProperty format png --resampleHeightWidthMax 2000 $${file} --out $${file%.*}.png ; \
+	done
+
+# this is converting pdfs to pngs using pdftocairo (linux version)
+convert_with_pdftocairo: $(MYDIR)/*.pdf
+	for file in $^ ; do \
+		pdftocairo -png -r 500 -transp -singlefile $${file} $${file%.*} ; \
+	done
 
 png:
 	pdftocairo  -png -r $(res1) -transp -singlefile  adam_optimizer.pdf               	 			adam_optimizer  
@@ -57,12 +57,6 @@ png:
 	pdftocairo  -png -r $(res1) -transp -singlefile  vp_feedforward_dark.pdf 						vp_feedforward_dark
 
 logo:
-	xelatex -shell-escape logo_with_name
-	xelatex -shell-escape logo_with_name_dark
-
-	pdftocairo 	-png -r 500 -transp -singlefile	 logo_with_name.pdf						logo_with_name 
-	pdftocairo 	-png -r 500 -transp -singlefile  logo_with_name_dark.pdf 				logo_with_name_dark
-
 	cp logo_with_name.png 		../assets/logo.png
 	cp logo_with_name_dark.png 	../assets/logo-dark.png
 
@@ -78,11 +72,3 @@ empty: clean
 	rm -f *.png
 	rm -f *.svg
 	rm -f ../assets/*.png
-
-png_low_res:  make png res1=150 res2=200 res3=100 res4=180
-
-png_high_res: $(make) png res1=450 res2=600 res3=300 res4=540
-
-all: pdf png res1=150 res2=200 res3=100 res4=180 logo clean
-
-all_high_res : pdf png res1=450 res2=600 res3=300 res4=540 logo clean
