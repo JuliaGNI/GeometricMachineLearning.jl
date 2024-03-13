@@ -19,9 +19,6 @@ jobs:
       - run: |
           sudo apt-get install imagemagick
           sudo apt-get install poppler-utils
-          sudo apt-get install texlive-xetex
-          sudo apt-get install texlive-science
-          sudo apt-get install latexmk
           pip3 install pygments
       - run: make linux -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
@@ -42,28 +39,10 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: teatimeguest/setup-texlive-action@v3
+      - uses: xu-cheng/texlive-action@v2
         with:
-          packages: scheme-basic
+          scheme: full
       - run: |
-          # these packages are needed to generate the tex images
-          tlmgr install xetex
-          tlmgr install environ
-          tlmgr install standalone
-          tlmgr install neuralnetwork
-          tlmgr install pgfplots
-          tlmgr install collection-mathscience
-          tlmgr install mathtools
-          tlmgr install filehook
-          tlmgr install etoolbox
-          tlmgr install svn-prov
-          tlmgr install latexmk
-          # these packages are needed to compile the tex
-          tlmgr install memoir
-          tlmgr install xpatch
-          tlmgr install booktabs
-          tlmgr install fontspec
-          # this package is needed for the minted latex package
           pip3 install pygments
       - run: make mac -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
