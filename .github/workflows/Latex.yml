@@ -15,12 +15,12 @@ jobs:
       - uses: actions/checkout@v4
       - run: |
           pip3 install pygments
+          sudo apt-get install imagemagick
+          sudo apt-get install poppler-utils
       - uses: xu-cheng/texlive-action@v2
         with:
           scheme: full
           run: |
-            sudo apt-get install imagemagick
-            sudo apt-get install poppler-utils
             make linux -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
         with:
@@ -36,7 +36,7 @@ jobs:
           xelatex -shell-escape GeometricMachineLearning.jl.tex
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  MacDocsUbuntu:
+  LatexDocsMac:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
