@@ -17,8 +17,8 @@ jobs:
         with:
           scheme: full
           run: |
-            sudo apt-get install imagemagick
-            sudo apt-get install poppler-utils
+            apt-get install imagemagick
+            apt-get install poppler-utils
             make linux -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
         with:
@@ -42,8 +42,6 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - run: |
-          pip3 install pygments
       - uses: xu-cheng/texlive-action@v2
         with:
           scheme: full
@@ -59,7 +57,11 @@ jobs:
           # the following three lines do the same as calling `make.jl` with latex_output as input argument
           julia --project=docs docs/make.jl latex_output_no_pdf
           cd docs/build
-      - run: |
-          xelatex -shell-escape GeometricMachineLearning.jl.tex
+      - uses: xu-cheng/texlive-action@v2
+        with:
+          scheme: full
+          run: |
+            pip3 install pygments
+            xelatex -shell-escape GeometricMachineLearning.jl.tex
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
