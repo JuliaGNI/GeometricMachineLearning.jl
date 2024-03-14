@@ -38,7 +38,7 @@ jobs:
           run: |
             tlmgr repository add ftp://tug.org/historic/systems/texlive/2023/tlnet-final
             tlmgr repository list
-            tlmgr repository remove http://mirror.ctan.org/systems/texlive/tlnet
+            tlmgr repository remove https://ctan.math.washington.edu/tex-archive/systems/texlive/tlnet
             tlmgr option repository ftp://tug.org/historic/systems/texlive/2023/tlnet-final
             tlmgr --verify-repo=none install preamble
             xelatex -shell-escape docs/build/GeometricMachineLearning.jl.tex
