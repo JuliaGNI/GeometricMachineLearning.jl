@@ -36,7 +36,11 @@ jobs:
         with:
           scheme: full
           run: |
-            tlmgr install preamble
+            tlmgr repository add ftp://tug.org/historic/systems/texlive/2023/tlnet-final
+            tlmgr repository list
+            tlmgr repository remove http://mirror.ctan.org/systems/texlive/tlnet
+            tlmgr option repository ftp://tug.org/historic/systems/texlive/2023/tlnet-final
+            tlmgr --verify-repo=none install preamble
             xelatex -shell-escape docs/build/GeometricMachineLearning.jl.tex
       - name: Upload PDF file
         uses: actions/upload-artifact@v4
