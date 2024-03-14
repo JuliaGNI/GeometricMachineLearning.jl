@@ -16,14 +16,9 @@ jobs:
       - run: |
           sudo apt-get install imagemagick
           sudo apt-get install poppler-utils
-      - uses: xu-cheng/texlive-action@v2
-        with:
-          scheme: full
-          texlive_version: 2023
-          run: |
-            make pdf -C docs/src/tikz
-      - run: | 
-          make convert_with_pdftocairo -C docs/src/tikz
+          sudo apt-get install texlive-full
+      - run: |
+          make images_linux -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
         with:
           version: '1'
@@ -33,13 +28,9 @@ jobs:
           cd .. 
           # the following three lines do the same as calling `make.jl` with latex_output as input argument
           julia --project=docs --threads=2 docs/make.jl latex_output_no_pdf
-      - uses: xu-cheng/texlive-action@v2
-        with:
-          scheme: full
-          texlive_version: 2023
-          run: |
-            tlmgr install preamble
-            xelatex -shell-escape docs/build/GeometricMachineLearning.jl.tex
+      - run: |
+          tlmgr install preamble
+          xelatex -shell-escape docs/build/GeometricMachineLearning.jl.tex
       - name: Upload PDF file
         uses: actions/upload-artifact@v4
         with:
@@ -51,13 +42,9 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: xu-cheng/texlive-action@v2
-        with:
-          scheme: full
-          run: |
-            make pdf -C docs/src/tikz
+      - run: brew install texlive
       - run: |
-          make convert_with_sips -C docs/src/tikz
+            make images_mac -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
         with:
           version: '1'
@@ -67,12 +54,8 @@ jobs:
           cd .. 
           # the following three lines do the same as calling `make.jl` with latex_output as input argument
           julia --project=docs --threads=2 docs/make.jl latex_output_no_pdf
-      - uses: xu-cheng/texlive-action@v2
-        with:
-          scheme: full
-          texlive_version: 2023
-          run: |
-            xelatex -shell-escape docs/build/GeometricMachineLearning.jl.tex
+      - run: |
+          xelatex -shell-escape docs/build/GeometricMachineLearning.jl.tex
       - name: Upload PDF file
         uses: actions/upload-artifact@v4
         with:
