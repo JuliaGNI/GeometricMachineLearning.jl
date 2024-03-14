@@ -1,8 +1,5 @@
 name: PDF
 
-env: 
-  ACTIONS_ALLOW_UNSECURE_STOPCOMMAND_TOKENS: true
-
 on:
   push:
     branches:
@@ -34,11 +31,12 @@ jobs:
           make install_brenier_two_fluid test_docs
           cd .. 
           # the following three lines do the same as calling `make.jl` with latex_output as input argument
-          julia --project=docs docs/make.jl latex_output_no_pdf
+          julia --project=docs --threads=2 docs/make.jl latex_output_no_pdf
       - uses: xu-cheng/texlive-action@v2
         with:
           scheme: full
           run: |
+            tlmgr install preamble
             xelatex -shell-escape docs/build/GeometricMachineLearning.jl.tex
       - name: Upload PDF file
         uses: actions/upload-artifact@v4
@@ -66,7 +64,7 @@ jobs:
           make install_brenier_two_fluid test_docs
           cd .. 
           # the following three lines do the same as calling `make.jl` with latex_output as input argument
-          julia --project=docs docs/make.jl latex_output_no_pdf
+          julia --project=docs --threads=2 docs/make.jl latex_output_no_pdf
       - uses: xu-cheng/texlive-action@v2
         with:
           scheme: full
