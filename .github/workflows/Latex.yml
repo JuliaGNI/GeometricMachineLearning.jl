@@ -1,5 +1,8 @@
 name: PDF
 
+env: 
+  ACTIONS_ALLOW_UNSECURE_STOPCOMMAND_TOKENS: true
+
 on:
   push:
     branches:
@@ -32,16 +35,15 @@ jobs:
           cd .. 
           # the following three lines do the same as calling `make.jl` with latex_output as input argument
           julia --project=docs docs/make.jl latex_output_no_pdf
-          cd docs/build
       - uses: xu-cheng/texlive-action@v2
         with:
           scheme: full
           run: |
-            xelatex -shell-escape GeometricMachineLearning.jl.tex
+            xelatex -shell-escape docs/build/GeometricMachineLearning.jl.tex
       - name: Upload PDF file
         uses: actions/upload-artifact@v4
         with:
-          name: PDF
+          name: Ubuntu-PDF
           path: GeometricMachineLearning.jl.pdf
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -53,7 +55,9 @@ jobs:
         with:
           scheme: full
           run: |
-            make mac -C docs/src/tikz
+            make pdf -C docs/src/tikz
+      - run: |
+          make convert_with_sips -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
         with:
           version: '1'
@@ -63,12 +67,15 @@ jobs:
           cd .. 
           # the following three lines do the same as calling `make.jl` with latex_output as input argument
           julia --project=docs docs/make.jl latex_output_no_pdf
-          cd docs/build
       - uses: xu-cheng/texlive-action@v2
         with:
           scheme: full
           run: |
-            pip3 install pygments
-            xelatex -shell-escape GeometricMachineLearning.jl.tex
+            xelatex -shell-escape docs/build/GeometricMachineLearning.jl.tex
+      - name: Upload PDF file
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mac-PDF
+          path: GeometricMachineLearning.jl.pdf
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
