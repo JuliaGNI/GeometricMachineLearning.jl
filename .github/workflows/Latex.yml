@@ -22,7 +22,7 @@ jobs:
           cd install-tl-*
           sudo perl ./install-tl --no-interaction
           cd ..
-          echo "${HOME}/.local/texlive/2024/bin/x86_64-linux" >> $GITHUB_PATH
+          echo "${HOME}/local/texlive/2024/bin/x86_64-linux" >> $GITHUB_PATH
           tlmgr init-usertree
           tlmgr install preamble
       - run: |
@@ -54,8 +54,8 @@ jobs:
           cd install-tl-*
           perl ./install-tl --no-interaction
           cd ..
-          ls ${HOME}/.local/texlive/2024/bin
-          echo "${HOME}/.local/texlive/2024/bin/x86_64-macos" >> $GITHUB_PATH
+          ls ${HOME}/local/texlive/2024/bin
+          echo "${HOME}/local/texlive/2024/bin/x86_64-macos" >> $GITHUB_PATH
           tlmgr init-usertree
           tlmgr install preamble
       - run: |
