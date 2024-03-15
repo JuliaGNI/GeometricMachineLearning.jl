@@ -48,7 +48,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: | 
-          curl https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz 
+          wget https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz 
           zcat < install-tl-unx.tar.gz | tar xf -
           ls 
           # rm install-tl-unx.tar.gz
