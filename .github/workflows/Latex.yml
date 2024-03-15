@@ -17,6 +17,7 @@ jobs:
           sudo apt-get install imagemagick
           sudo apt-get install poppler-utils
           sudo apt-get install texlive-full
+          tlmgr init-usertree
           tlmgr install preamble
       - run: |
           make linux -C docs/src/tikz
