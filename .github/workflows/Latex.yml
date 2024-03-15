@@ -53,7 +53,7 @@ jobs:
           ls 
           # rm install-tl-unx.tar.gz
           cd install-tl-*
-          perl ./install-tl --no-interaction
+          sudo perl ./install-tl --no-interaction
           cd ..
           ls ${HOME}/local/texlive/2024/bin
           echo "${HOME}/local/texlive/2024/bin/x86_64-macos" >> $GITHUB_PATH
