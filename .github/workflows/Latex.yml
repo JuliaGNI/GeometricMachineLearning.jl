@@ -47,6 +47,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+      - run: ls /usr/local
       - run: wget --no-check-certificate https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz 
       - run: zcat < install-tl-unx.tar.gz | tar xf -
       - run: | 
@@ -57,9 +58,12 @@ jobs:
           sudo perl ./install-tl --no-interaction
           cd ..
       - run: ls ${HOME}/local/texlive/2024/bin
-      - run: echo "${HOME}/local/texlive/2024/bin/x86_64-macos" >> $GITHUB_PATH
-      - run: tlmgr init-usertree
-      - run: tlmgr install preamble
+      - run: |
+          echo "${HOME}/local/texlive/2024/bin/x86_64-macos" >> $GITHUB_PATH
+      - run: |
+          tlmgr init-usertree
+      - run: |
+          tlmgr install preamble
       - run: |
           make mac -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
