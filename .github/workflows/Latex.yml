@@ -17,6 +17,7 @@ jobs:
           sudo apt-get install imagemagick
           sudo apt-get install poppler-utils
           sudo apt-get install texlive-full
+          tlmgr install preamble
       - run: |
           make linux -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
@@ -41,7 +42,7 @@ jobs:
       - uses: actions/checkout@v4
       - run: brew install texlive
       - run: |
-            make mac -C docs/src/tikz
+          make mac -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
         with:
           version: '1'
