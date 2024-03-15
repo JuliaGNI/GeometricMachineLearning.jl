@@ -13,7 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: |
+      - name: install imagemagick, poppler-utils and texlive
+        run: |
           sudo apt-get install imagemagick
           sudo apt-get install poppler-utils
           wget https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz
