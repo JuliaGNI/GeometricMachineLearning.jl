@@ -16,7 +16,12 @@ jobs:
       - run: |
           sudo apt-get install imagemagick
           sudo apt-get install poppler-utils
-          sudo apt-get install texlive-full
+          wget https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz
+          zcat < install-tl-unx.tar.gz | tar xf -
+          cd install-tl-*
+          perl ./install-tl --no-interaction
+          cd ..
+          echo "${HOME}/.local/texlive/2024/bin/x86_64-linux" >> $GITHUB_PATH
           tlmgr init-usertree
           tlmgr install preamble
       - run: |
@@ -41,7 +46,16 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - run: brew install texlive
+      - run: | 
+          curl https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz 
+          zcat < install-tl-unx.tar.gz | tar xf -
+          cd install-tl-*
+          perl ./install-tl --no-interaction
+          cd ..
+          ls ${HOME}/.local/texlive/2024/bin
+          echo "${HOME}/.local/texlive/2024/bin/x86_64-macos" >> $GITHUB_PATH
+          tlmgr init-usertree
+          tlmgr install preamble
       - run: |
           make mac -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
