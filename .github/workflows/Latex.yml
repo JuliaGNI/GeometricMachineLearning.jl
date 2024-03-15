@@ -20,7 +20,7 @@ jobs:
           zcat < install-tl-unx.tar.gz | tar xf -
           rm install-tl-unx.tar.gz
           cd install-tl-*
-          perl ./install-tl --no-interaction
+          sudo perl ./install-tl --no-interaction
           cd ..
           echo "${HOME}/.local/texlive/2024/bin/x86_64-linux" >> $GITHUB_PATH
           tlmgr init-usertree
