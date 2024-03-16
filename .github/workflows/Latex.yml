@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - make_mac_docs
   pull_request:
 
 jobs:
