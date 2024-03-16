@@ -25,7 +25,7 @@ jobs:
           cd ..
           echo "/usr/local/texlive/2024/bin/x86_64-linux" >> $GITHUB_PATH
           tlmgr init-usertree
-          sudo tlmgr install preamble
+          # sudo tlmgr install preamble
       - run: |
           make linux -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
@@ -63,8 +63,6 @@ jobs:
           echo "/usr/local/texlive/2024/bin/universal-darwin" >> $GITHUB_PATH
       - run: |
           tlmgr init-usertree
-      - run: |
-          sudo tlmgr install preamble
       - run: |
           make mac -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
