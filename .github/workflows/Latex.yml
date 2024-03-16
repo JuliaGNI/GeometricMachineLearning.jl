@@ -23,9 +23,12 @@ jobs:
           cd install-tl-*
           sudo perl ./install-tl --no-interaction
           cd ..
+      - run: |
+          ls /usr/local/texlive/2024/bin
+      - run: |
+          ls /usr/local/texlive/2024/bin/x86_64-linux
+      - run: |
           echo "/usr/local/texlive/2024/bin/x86_64-linux" >> $GITHUB_PATH
-          tlmgr init-usertree
-          # sudo tlmgr install preamble
       - run: |
           make linux -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
@@ -36,7 +39,9 @@ jobs:
           make install_brenier_two_fluid test_docs
           cd .. 
       - run: julia --project=docs --threads=2 docs/make.jl latex_output_no_pdf
-      - run: xelatex -shell-escape docs/build/GeometricMachineLearning.jl.tex
+      - run:
+          cd docs/build 
+          xelatex -shell-escape GeometricMachineLearning.jl.tex
       - name: Upload PDF file
         uses: actions/upload-artifact@v4
         with:
@@ -62,8 +67,6 @@ jobs:
       - run: |
           echo "/usr/local/texlive/2024/bin/universal-darwin" >> $GITHUB_PATH
       - run: |
-          tlmgr init-usertree
-      - run: |
           make mac -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
         with:
@@ -73,11 +76,13 @@ jobs:
           make install_brenier_two_fluid test_docs
           cd .. 
       - run: julia --project=docs --threads=2 docs/make.jl latex_output_no_pdf
-      - run: xelatex -shell-escape docs/build/GeometricMachineLearning.jl.tex
+      - run: | 
+          cd docs/build
+          xelatex -shell-escape GeometricMachineLearning.jl.tex
       - name: Upload PDF file
         uses: actions/upload-artifact@v4
         with:
           name: Mac-PDF
-          path: GeometricMachineLearning.jl.pdf
+          path: docs/build/GeometricMachineLearning.jl.pdf
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
