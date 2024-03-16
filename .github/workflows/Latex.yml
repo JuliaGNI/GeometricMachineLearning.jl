@@ -39,21 +39,20 @@ jobs:
           make install_brenier_two_fluid test_docs
           cd .. 
       - run: julia --project=docs --threads=2 docs/make.jl latex_output_no_pdf
-      - run:
+      - run: |
           cd docs/build 
           xelatex -shell-escape GeometricMachineLearning.jl.tex
       - name: Upload PDF file
         uses: actions/upload-artifact@v4
         with:
           name: Ubuntu-PDF
-          path: GeometricMachineLearning.jl.pdf
+          path: docs/build/GeometricMachineLearning.jl.pdf
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   LatexDocsMac:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - run: ls /usr/local
       - run: wget --no-check-certificate https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz 
       - run: zcat < install-tl-unx.tar.gz | tar xf -
       - run: | 
