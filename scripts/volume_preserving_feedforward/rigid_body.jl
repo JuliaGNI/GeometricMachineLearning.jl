@@ -10,8 +10,8 @@ using Metal
 import Random 
 
 Random.seed!(123)
-const ics₁ = [(q = [sin(val), 0., cos(val)], ) for val in 0.1:.05:(2*π)]
-const ics₂ = [(q = [0., sin(val), cos(val)], ) for val in 0.1:.05:(2*π)]
+const ics₁ = [(q = [sin(val), 0., cos(val)], ) for val in 0.1:.01:(2*π)]
+const ics₂ = [(q = [0., sin(val), cos(val)], ) for val in 0.1:.01:(2*π)]
 const ics = [ics₁..., ics₂...]
 
 const tstep = .2
@@ -66,13 +66,27 @@ function make_validation_plot(t_validation::Int, nn::NeuralNetwork)
 
     numerical, t_array = numerical_solution(sys_dim, t_validation, tstep, ic)
 
-    nn₁_solution = iterate(nn₁, numerical[:, 1]; n_points = Int(floor(t_validation / tstep)) + 1)
+    nn₁_solution = iterate(nn, numerical[:, 1]; n_points = Int(floor(t_validation / tstep)) + 1)
 
     ########################### plot validation
 
     p_validation = plot(t_array, numerical[1, :], label = "numerical solution", color = 1, linewidth = 2)
 
     plot!(p_validation, t_array, nn₁_solution[1, :], label = "volume-preserving feedforward", color = 2, linewidth = 2)
+
+    p_validation
+end
+
+function make_validation_plot3d(t_validation::Int, nn::NeuralNetwork)
+    numerical, _ = numerical_solution(sys_dim, t_validation, tstep, ic)
+
+    nn₁_solution = iterate(nn, numerical[:, 1]; n_points = Int(floor(t_validation / tstep)) + 1)
+
+    ########################### plot validation
+
+    p_validation = plot(numerical[1, :], numerical[2, :], numerical[3, :], label = "numerical solution", color = 1, linewidth = 2)
+
+    plot!(p_validation, nn₁_solution[1, :], nn₁_solution[2,:], nn₁_solution[3, :], label = "volume-preserving feedforward", color = 2, linewidth = 2)
 
     p_validation
 end
@@ -89,10 +103,11 @@ p_training_loss = plot(loss_array₁, label = "volume-preserving feedforward", c
 
 ########################### plot trajectories on the sphere
 
-
+p_validation3d = make_validation_plot3d(20, nn₁)
 
 ########################### save figures
 
 png(p_validation, joinpath(@__DIR__, "rigid_body/validation"))
 png(p_validation₂, joinpath(@__DIR__, "rigid_body/validation2"))
+png(p_validation3d, joinpath(@__DIR__, "rigid_body/validation3d"))
 png(p_training_loss, joinpath(@__DIR__, "rigid_body/training_loss"))
