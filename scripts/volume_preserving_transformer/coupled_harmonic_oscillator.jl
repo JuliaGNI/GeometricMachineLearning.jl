@@ -7,7 +7,7 @@ using GeometricEquations: EnsembleProblem
 using LinearAlgebra: norm 
 using Zygote: gradient
 import Random 
-using CUDA
+using Metal
 
 Random.seed!(123)
 
@@ -76,8 +76,8 @@ model₂ = VolumePreservingFeedForward(sys_dim, n_blocks * L, n_linear, resnet_a
 # model₂ = RegularTransformerIntegrator(sys_dim, transformer_dim, n_heads, L, upscaling_activation, resnet_activation)
 model₃ = VolumePreservingTransformer(sys_dim, seq_length, n_blocks, n_linear, L, resnet_activation; skew_sym = skew_sym)
 
-nn₁, loss_array₁ = setup_and_train(model₁, transformer_batch, transformer=true)
-nn₂, loss_array₂ = setup_and_train(model₂, feedforward_batch, transformer=false)
+# nn₁, loss_array₁ = setup_and_train(model₁, transformer_batch, transformer=true)
+# nn₂, loss_array₂ = setup_and_train(model₂, feedforward_batch, transformer=false)
 nn₃, loss_array₃ = setup_and_train(model₃, transformer_batch, transformer=true)
 
 function numerical_solution(sys_dim::Int, t_integration::Int, tstep::Real, params::NamedTuple)
