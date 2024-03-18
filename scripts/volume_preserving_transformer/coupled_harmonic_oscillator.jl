@@ -34,7 +34,7 @@ const n_blocks = 3
 const skew_sym = false
 
 # backend 
-const backend = CPU()
+const backend = CUDABackend()
 
 # data loader 
 const dl = backend == CPU() ? DataLoader(vcat(dl_nt.input.q, dl_nt.input.p) |> Array{Float32}) : DataLoader(vcat(dl_nt.input.q, dl_nt.input.p) |> cu)
@@ -42,7 +42,7 @@ const dl = backend == CPU() ? DataLoader(vcat(dl_nt.input.q, dl_nt.input.p) |> A
 const T = eltype(dl)
 
 # hyperparameters concerning training 
-const n_epochs = 500
+const n_epochs = 10000
 const batch_size = 1024
 const seq_length = 5
 const opt_method = AdamOptimizer(T)
@@ -51,7 +51,7 @@ const resnet_activation = tanh
 # parameters for evaluation 
 const k_eval = 3.5 
 params = (m₁ = m₁, m₂ = m₂, k₁ = k₁, k₂ = k₂, k = k_eval)
-const t_validation = 30
+const t_validation = 20
 
 # model₂ = RegularTransformerIntegrator(sys_dim, transformer_dim, n_heads, L, upscaling_activation, resnet_activation)
 # model₃ = VolumePreservingTransformer(sys_dim, seq_length, depth, transformer_dim, L, resnet_activation)
@@ -114,7 +114,7 @@ plot!(p_validation, t_array, nn₃_solution[1, :], label = "transformer", color 
 
 ########################### plot training loss
 
-p_training_loss = plot(loss_array₁, label = "attention only", color = 2, linewidth = 2)
+p_training_loss = plot(loss_array₁, label = "attention only", color = 2, linewidth = 2, yaxis = :log)
 
 plot!(p_training_loss, loss_array₂, label = "feedforward", color = 3, linewidth = 2)
 
