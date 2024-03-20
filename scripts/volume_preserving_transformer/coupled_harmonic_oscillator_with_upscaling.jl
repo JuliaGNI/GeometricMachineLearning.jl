@@ -3,9 +3,7 @@ using GeometricMachineLearning: transformer_loss, map_to_cpu
 using Plots
 using GeometricIntegrators: integrate, ImplicitMidpoint
 using GeometricProblems.CoupledHarmonicOscillator: hodeproblem, default_parameters, tspan, tstep, hamiltonian, p₀, q₀
-using GeometricEquations: EnsembleProblem
-using LinearAlgebra: norm 
-using Zygote: gradient
+using CUDA
 import Random 
 
 Random.seed!(123)
@@ -18,7 +16,7 @@ const k₂ = default_parameters.k₂
 const k = Float64.(0.0:0.1:4)
 
 params_collection = [(m₁ = m₁, m₂ = m₂, k₁ = k₁, k₂ = k₂, k = k_val) for k_val in k]
-ensemble_problem = EnsembleProblem(hodeproblem().equation, tspan, tstep, (q = q₀, p = p₀), params_collection)
+ensemble_problem = GeometricMachineLearning.EnsembleProblem(hodeproblem().equation, tspan, tstep, (q = q₀, p = p₀), params_collection)
 ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
 
 dl_nt = DataLoader(ensemble_solution)
@@ -26,14 +24,15 @@ dl_nt = DataLoader(ensemble_solution)
 # hyperparameters concerning architecture 
 const sys_dim = size(dl_nt.input.q, 1) * 2
 const n_heads = 2
-const L = 1 # transformer blocks 
+const L = 5 # transformer blocks 
 const activation = tanh
 const n_linear = 1
-const n_blocks = 2
+const n_blocks = 1
 const skew_sym = false
+const transformer_dim = 20
 
 # backend 
-const backend = CPU()
+const backend = CUDABackend()
 
 # data loader 
 const dl = backend == CPU() ? DataLoader(vcat(dl_nt.input.q, dl_nt.input.p)) : DataLoader(vcat(dl_nt.input.q, dl_nt.input.p) |> cu)
@@ -41,11 +40,12 @@ const dl = backend == CPU() ? DataLoader(vcat(dl_nt.input.q, dl_nt.input.p)) : D
 const T = eltype(dl)
 
 # hyperparameters concerning training 
-const n_epochs = 2000
+const n_epochs = 500
 const batch_size = 1024
 const seq_length = 5
 const opt_method = AdamOptimizer(T)
 const resnet_activation = tanh
+const upscaling_activation = identity
 
 # parameters for evaluation 
 const k_eval = 3.5 
@@ -68,16 +68,18 @@ feedforward_batch = Batch(batch_size, 1)
 transformer_batch = Batch(batch_size, seq_length)
 
 # attention only
-model₁ = Chain(StiefelLayer(sys_dim, sys_dim * 3), VolumePreservingAttention(sys_dim * 3, seq_length; skew_sym = skew_sym), StiefelLayer(sys_dim * 3, sys_dim))
+model₁ = Chain(StiefelLayer(sys_dim, transformer_dim), VolumePreservingAttention(transformer_dim, seq_length; skew_sym = skew_sym), StiefelLayer(transformer_dim, sys_dim))
 
-model₂ = Chain(StiefelLayer(sys_dim, sys_dim * 3), Chain(VolumePreservingFeedForward(sys_dim * 3, n_blocks * L, n_linear, resnet_activation)).layers..., StiefelLayer(sys_dim * 3, sys_dim))
+model₂ = Chain(StiefelLayer(sys_dim, transformer_dim), Chain(VolumePreservingFeedForward(transformer_dim, n_blocks * L, n_linear, resnet_activation)).layers..., StiefelLayer(transformer_dim, sys_dim))
 
-# model₂ = RegularTransformerIntegrator(sys_dim, transformer_dim, n_heads, L, upscaling_activation, resnet_activation)
-model₃ = Chain(StiefelLayer(sys_dim, sys_dim * 3), Chain(VolumePreservingTransformer(sys_dim * 3, seq_length, n_blocks, n_linear, L, resnet_activation; skew_sym = skew_sym)).layers..., StiefelLayer(sys_dim * 3, sys_dim))
+model₃ = Chain(StiefelLayer(sys_dim, transformer_dim), Chain(VolumePreservingTransformer(transformer_dim, seq_length, n_blocks, n_linear, L, resnet_activation; skew_sym = skew_sym)).layers..., StiefelLayer(transformer_dim, sys_dim))
+
+model₄ = RegularTransformerIntegrator(sys_dim, transformer_dim, n_heads, L, upscaling_activation, resnet_activation; add_connection = false)
 
 nn₁, loss_array₁ = setup_and_train(model₁, transformer_batch, transformer=true)
 nn₂, loss_array₂ = setup_and_train(model₂, feedforward_batch, transformer=false)
 nn₃, loss_array₃ = setup_and_train(model₃, transformer_batch, transformer=true)
+nn₄, loss_array₄ = setup_and_train(model₄, transformer_batch, transformer=true)
 
 function numerical_solution(sys_dim::Int, t_integration::Int, tstep::Real, params::NamedTuple)
     validation_problem = hodeproblem(; tspan = (0.0, t_integration), tstep = tstep, params = params)
@@ -103,10 +105,12 @@ struct DummyNNIntegrator <: GeometricMachineLearning.NeuralNetworkIntegrator end
 nn₁ = NeuralNetwork(DummyTransformer(seq_length), nn₁.model, nn₁.params)
 nn₂ = NeuralNetwork(DummyNNIntegrator(), nn₂.model, nn₂.params)
 nn₃ = NeuralNetwork(DummyTransformer(seq_length), nn₃.model, nn₃.params)
+nn₄ = NeuralNetwork(DummyTransformer(seq_length), nn₄.model, nn₄.params)
 
 nn₁_solution = iterate(nn₁, numerical[:, 1:seq_length]; n_points = Int(t_validation / tstep) + 1)
 nn₂_solution = iterate(nn₂, numerical[:, 1]; n_points = Int(t_validation / tstep) + 1)
 nn₃_solution = iterate(nn₃, numerical[:, 1:seq_length]; n_points = Int(t_validation / tstep) + 1)
+nn₄_solution = iterate(nn₄, numerical[:, 1:seq_length]; n_points = Int(t_validation / tstep) + 1)
 
 ########################### plot validation
 
@@ -118,13 +122,17 @@ plot!(p_validation, t_array, nn₂_solution[1, :], label = "feedforward", color 
 
 plot!(p_validation, t_array, nn₃_solution[1, :], label = "transformer", color = 4, linewidth = 2)
 
+plot!(p_validation, t_array, nn₄_solution[1, :], label = "standard transformer", color = 5, linewidth = 2)
+
 ########################### plot training loss
 
-p_training_loss = plot(loss_array₁, label = "attention only", color = 2, linewidth = 2)
+p_training_loss = plot(loss_array₁, label = "attention only", color = 2, linewidth = 2, yaxis = :log)
 
 plot!(p_training_loss, loss_array₂, label = "feedforward", color = 3, linewidth = 2)
 
 plot!(p_training_loss, loss_array₃, label = "transformer", color = 4, linewidth = 2)
+
+plot!(p_training_loss, loss_array₄, label = "standard transformer", color = 5, linewidth = 2)
 
 png(p_validation, joinpath(@__DIR__, "coupled_harmonic_oscillator/validation"))
 png(p_training_loss, joinpath(@__DIR__, "coupled_harmonic_oscillator/training_loss"))
