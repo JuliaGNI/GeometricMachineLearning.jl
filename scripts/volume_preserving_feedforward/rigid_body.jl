@@ -6,7 +6,7 @@ using GeometricProblems.RigidBody: odeproblem, default_parameters
 using GeometricEquations: EnsembleProblem
 using LinearAlgebra: norm 
 using Zygote: gradient
-using Metal
+using CUDA
 import Random 
 
 Random.seed!(123)
@@ -19,23 +19,24 @@ const tspan = (0., 20.)
 
 const sys_dim = length(ics[1].q)
 
-const n_blocks = 3
-const n_linear = 1
+const n_blocks = 4
+const n_linear = 2
 const activation = tanh
 
 const batch_size = 16384
 const opt_method = AdamOptimizer()
-const n_epochs = 10000
+const n_epochs = 20000
 
-const backend = MetalBackend()
-const T = backend == CPU() ? Float64 : Float32
+const backend = CUDABackend()
+# const T = backend == CPU() ? Float64 : Float32
+const T = Float64
 
 const t_validation = 5
 
 ensemble_problem = EnsembleProblem(odeproblem().equation, tspan, tstep, ics, default_parameters)
 ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
 dl₁ = DataLoader(ensemble_solution)
-dl = backend == CPU() ? dl₁ : DataLoader(dl₁.input |> MtlArray{T})
+dl = backend == CPU() ? dl₁ : DataLoader(dl₁.input |> CuArray{T})
 
 model = VolumePreservingFeedForward(sys_dim, n_blocks, n_linear, activation)
 
@@ -50,7 +51,7 @@ loss_array₁ =  o(nn, dl, batch, n_epochs)
 ic = (q = [sin(1.1), 0., cos(1.1)], )
 
 function numerical_solution(sys_dim::Int, t_integration::Int, tstep::Real, ic::NamedTuple)
-    validation_problem = odeproblem(ic ; tspan = (0.0, t_integration), tstep = tstep, parameters = default_parameters)
+    validation_problem = odeproblem(ic; tspan = (0.0, t_integration), tstep = tstep, parameters = default_parameters)
     sol = integrate(validation_problem, ImplicitMidpoint())
 
     numerical_solution = zeros(sys_dim, length(sol.t))
