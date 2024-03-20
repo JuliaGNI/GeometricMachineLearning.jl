@@ -19,11 +19,11 @@ function tensor_inverse2(A::AbstractArray{T, 3}) where T
 end
 
 function tensor_inverse2!(out::AbstractArray{T, 3}, A::AbstractArray{T, 3}) where T 
-    @assert size(A, 1) == size(A, 2) == 4
+    @assert size(A, 1) == size(A, 2) == 2
     @assert size(A) == size(out)
 
     backend = get_backend(out)
-    inv33! = inv22_kernel!(backend)
+    inv22! = inv22_kernel!(backend)
 
     inv22!(out, A, ndrange = size(A, 3))
 
