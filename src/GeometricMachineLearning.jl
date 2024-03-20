@@ -75,6 +75,8 @@ module GeometricMachineLearning
     include("kernels/mat_tensor_mul.jl")
     include("kernels/tensor_transpose.jl")
     include("kernels/exponentials/tensor_exponential.jl")
+    include("kernels/inverses/inverse_2x2.jl")
+    include("kernels/inverses/inverse_3x3.jl")
     include("kernels/inverses/inverse_4x4.jl")
     include("kernels/inverses/inverse_5x5.jl")
     # include("kernels/inverses/inverse_6x6.jl")

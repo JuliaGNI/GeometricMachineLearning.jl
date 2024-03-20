@@ -2,7 +2,7 @@
 # Volume-preserving attention (single head attention)
 
 Drawbacks: 
-- the super fast activation is only implemented for sequence lengths of 4 and 5.
+- the super fast activation is only implemented for sequence lengths of 2, 3, 4 and 5.
 - other sequence lengths only work on CPU for now (lu decomposition has to be implemented to work for tensors in parallel).
 
 ## Constructor 
@@ -31,6 +31,14 @@ end
 
 function orthonormal_activation_cayley(::VolumePreservingAttention, A::AbstractArray{T, 3}) where T 
     cpu_tensor_cayley(A)
+end
+
+function orthonormal_activation_cayley(::VolumePreservingAttention{M, M, ScalarProductType, 2}, A::AbstractArray{T, 3}) where {T, M, ScalarProductType} 
+    tensor_cayley2(A)
+end
+
+function orthonormal_activation_cayley(::VolumePreservingAttention{M, M, ScalarProductType, 3}, A::AbstractArray{T, 3}) where {T, M, ScalarProductType} 
+    tensor_cayley3(A)
 end
 
 function orthonormal_activation_cayley(::VolumePreservingAttention{M, M, ScalarProductType, 4}, A::AbstractArray{T, 3}) where {T, M, ScalarProductType} 
