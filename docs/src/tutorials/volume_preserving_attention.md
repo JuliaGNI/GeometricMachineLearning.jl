@@ -115,13 +115,13 @@ p2 = produce_validation_plot(50, initial_condition = initial_condition, type = :
 This advantage of the volume-preserving attention with arbitrary weighting may however be due to the fact that the skew-symmetric attention only has 3 learnable parameters, as opposed to 9 for the arbitrary weighting. If we increase the *upscaling dimension* the result changes: 
 
 ```@example volume_preserving_attention
-nn_skew, nn_arb, nn_comp = set_up_networks(6)
+nn_skew, nn_arb, nn_comp = set_up_networks(5)
 
 o_skew = Optimizer(AdamOptimizer(), nn_skew)
 o_arb  = Optimizer(AdamOptimizer(), nn_arb)
 o_comp = Optimizer(AdamOptimizer(), nn_comp)
 
-n_epochs = 400
+n_epochs = 2000
 
 batch = Batch(30, 5)
 batch2 = Batch(30, 1)
