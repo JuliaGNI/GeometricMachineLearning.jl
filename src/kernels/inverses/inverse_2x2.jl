@@ -1,4 +1,5 @@
 @kernel function inv22_kernel!(ˍ₋out::AT, A::AT) where {T, AT<:AbstractArray{T, 3}}
+    k = @index(Global)
     begin
          @inbounds begin
                 ˍ₋out[1, 1, k] = (/)((getindex)(A, 2, 2, k), (+)((*)((getindex)(A, 1, 1, k), (getindex)(A, 2, 2, k)), (*)((*)(-1, (getindex)(A, 1, 2, k)), (getindex)(A, 2, 1, k))))
