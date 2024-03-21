@@ -52,4 +52,4 @@ using SafeTestsets
 @safetestset "Test data loader for a tensor (q and p data)                                    " begin include("data_loader/draw_batch_for_tensor_test.jl") end
 
 @safetestset "Volume-Preserving Transformer (skew-symmetric tests)                            " begin include("volume_preserving_attention/test_skew_map.jl") end
-@safetestset "Volume-Preserving Transformer (cayley-transform tests)                          " begin include("volume_preserving_attention/test_cayley_transforms.jl") end     
+@safetestset "Volume-Preserving Transformer (cayley-transform tests)                          " begin include("volume_preserving_attention/test_cayley_transforms.jl") end
