@@ -35,8 +35,13 @@ end
 hasseqlength(::Batch{<:Integer}) = true
 hasseqlength(::Batch{<:Nothing}) = false
 
-"""
-This function is called when either dealing with a matrix or a tensor where we always consider the entire time series. 
+@doc raw"""
+This function is called when either dealing with a matrix or a tensor where we always consider the entire time series. It takes an input a 
+- `batch::Batch`
+- `number_columns::Int`
+
+The output is a *tuple of vectors of indices*: 
+``([i^1_1, i^1_2, \ldots, i^1_\mathrm{bs}], \ldots, [i^{\ell - 1}_1, i^{\ell - 1}_2, \ldots, i^{\ell - 1}_\mathrm{bs}], [i^\ell_1, i^\ell_2, \ldots, i^\ell_\mathrm{r}])`` where ``r`` is the remainder.  
 """
 function batch_over_one_axis(batch::Batch, number_columns::Int)
     indices = shuffle(1:number_columns)
