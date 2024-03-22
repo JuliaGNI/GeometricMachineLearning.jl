@@ -7,7 +7,7 @@ Random.seed!(1234)
 
 function optimization_step_test(N, n, T)
     model = Chain(StiefelLayer(N, n), Dense(N, N, tanh))
-    ps = initialparameters(KernelAbstractions.CPU(), T, model)
+    ps = initialparameters(model, KernelAbstractions.CPU(), T)
     # gradient 
     dx = ((weight=rand(Float32, N, n),), (W=rand(Float32, N, N), b=rand(Float32, N)))
     m = AdamOptimizer()

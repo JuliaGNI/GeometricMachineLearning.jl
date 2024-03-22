@@ -8,7 +8,7 @@ function BiasLayer(M::Int)
     BiasLayer{M, M}()
 end
 
-function initialparameters(backend::Backend, ::Type{T}, ::BiasLayer{M, M}; rng::AbstractRNG = Random.default_rng(), init_bias = GlorotUniform()) where {M, T}
+function initialparameters(::BiasLayer{M, M}, backend::Backend, ::Type{T}; rng::AbstractRNG = Random.default_rng(), init_bias = GlorotUniform()) where {M, T}
     q_part = KernelAbstractions.zeros(backend, T, M÷2)
     p_part = KernelAbstractions.zeros(backend, T, M÷2)
     init_bias(rng, q_part)

@@ -8,7 +8,7 @@ function GrassmannLayer(n::Integer, N::Integer, Retraction::AbstractRetraction=d
     GrassmannLayer{n, N, typeof(Retraction)}()
 end
 
-function AbstractNeuralNetworks.initialparameters(backend::KernelAbstractions.Backend, ::Type{T}, d::GrassmannLayer{N,M}; rng::AbstractRNG=Random.default_rng()) where {M,N,T}
+function AbstractNeuralNetworks.initialparameters(d::GrassmannLayer{N,M}, backend::KernelAbstractions.Backend, ::Type{T}; rng::AbstractRNG=Random.default_rng()) where {M,N,T}
     (weight = N > M ? rand(backend, rng, GrassmannManifold{T}, N, M) : rand(backend, rng, GrassmannManifold{T}, M, N), )
 end
 

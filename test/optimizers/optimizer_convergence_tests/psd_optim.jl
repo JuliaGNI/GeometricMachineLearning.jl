@@ -36,7 +36,7 @@ function svd_test(A, n, train_steps=1000, tol=1e-1; retraction=Cayley())
 
     err_best = norm(A - U_result*U_result'*A)
     model = Chain(PSDLayer(2*N, 2*n, retraction=retraction), PSDLayer(2*n, 2*N, retraction=retraction))
-    ps = initialparameters(CPU(), Float64, model)
+    ps = initialparameters(model, CPU(), Float64)
 
     o₁ = Optimizer(GradientOptimizer(0.01), ps)
     o₂ = Optimizer(MomentumOptimizer(0.01), ps)

@@ -10,9 +10,9 @@ function sympnet_tests(N, N2=2*N, second_dim=10, third_dim=10, T=Float32)
     model₁ = Chain(LinearLayerQ(N), LinearLayerP(N))
     model₂ = Chain(ActivationLayerQ(N, tanh), ActivationLayerP(N, tanh))
     model₃ = Chain(GradientLayerQ(N, N2, tanh), GradientLayerP(N, N2, tanh))
-    ps₁ = initialparameters(CPU(), T, model₁)
-    ps₂ = initialparameters(CPU(), T, model₂)
-    ps₃ = initialparameters(CPU(), T, model₃)
+    ps₁ = initialparameters(model₁, CPU(), T)
+    ps₂ = initialparameters(model₂, CPU(), T)
+    ps₃ = initialparameters(model₃, CPU(), T)
 
     # evaluate functions 
     x_vec = rand(T, N)

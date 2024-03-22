@@ -17,7 +17,7 @@ function Classification(M::Integer, N::Integer, activation; average::Bool=false)
     Classification{M, N, average, typeof(activation)}(activation)
 end
 
-function initialparameters(device::KernelAbstractions.Backend, T::Type, ::Classification{M, N}; rng::Random.AbstractRNG=Random.default_rng(), init_weight! = GlorotUniform()) where {M, N}
+function initialparameters(::Classification{M, N}, device::KernelAbstractions.Backend, T::Type; rng::Random.AbstractRNG=Random.default_rng(), init_weight! = GlorotUniform()) where {M, N}
     weight = KernelAbstractions.allocate(device, T, N, M)
     init_weight!(rng, weight)
     (weight=weight, )

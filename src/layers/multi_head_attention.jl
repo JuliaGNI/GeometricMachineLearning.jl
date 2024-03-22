@@ -19,7 +19,7 @@ function parameterlength(d::MultiHeadAttention{M, M, true}) where M
     Int(3*M^2 - 3*M*(M + d.n_heads)/(2*d.n_heads))
 end
 
-function initialparameters(backend::KernelAbstractions.Backend, T::Type, d::MultiHeadAttention{M, M, false}; rng::AbstractRNG=Random.default_rng(), initializer::AbstractNeuralNetworks.AbstractInitializer=GlorotUniform()) where {M}
+function initialparameters(d::MultiHeadAttention{M, M, false}, backend::KernelAbstractions.Backend, T::Type; rng::AbstractRNG=Random.default_rng(), initializer::AbstractNeuralNetworks.AbstractInitializer=GlorotUniform()) where {M}
     # number of "hidden" dimension (dimension of projection) 
     Dₕ = M ÷ d.n_heads
     # projections for queries, keys and values.
@@ -51,7 +51,7 @@ function initialparameters(backend::KernelAbstractions.Backend, T::Type, d::Mult
 end
 
 
-function initialparameters(backend::KernelAbstractions.Backend, T::Type, d::MultiHeadAttention{M, M, true}; rng::AbstractRNG=Random.default_rng(), initializer::AbstractNeuralNetworks.AbstractInitializer=GlorotUniform()) where {M}
+function initialparameters(d::MultiHeadAttention{M, M, true}, backend::KernelAbstractions.Backend, T::Type; rng::AbstractRNG=Random.default_rng(), initializer::AbstractNeuralNetworks.AbstractInitializer=GlorotUniform()) where {M}
     # number of "hidden" dimension (dimension of projection) 
     Dₕ = M ÷ d.n_heads
     # projections for queries, keys and vectors.

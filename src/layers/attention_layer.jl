@@ -43,7 +43,7 @@ function parameterlength(d::Attention{M, M, true}) where M
     M*(M-1)
 end
 
-function initialparameters(backend::KernelAbstractions.Backend, T::Type, d::Attention{M, M, false}; rng::AbstractRNG=Random.default_rng(), initializer::AbstractNeuralNetworks.AbstractInitializer=GlorotUniform()) where {M}
+function initialparameters(d::Attention{M, M, false}, backend::KernelAbstractions.Backend, T::Type; rng::AbstractRNG=Random.default_rng(), initializer::AbstractNeuralNetworks.AbstractInitializer=GlorotUniform()) where {M}
     # transformations for queries and keys.
     PQ_weight = KernelAbstractions.allocate(backend, T, M, M)
     PK_weight = KernelAbstractions.allocate(backend, T, M, M)
@@ -52,7 +52,7 @@ function initialparameters(backend::KernelAbstractions.Backend, T::Type, d::Atte
     (PQ=PQ_weight, PK=PK_weight)
 end
 
-function initialparameters(backend::KernelAbstractions.Backend, T::Type, d::Attention{M, M, true}; rng::AbstractRNG=Random.default_rng(), initializer::AbstractNeuralNetworks.AbstractInitializer=GlorotUniform()) where {M}
+function initialparameters(d::Attention{M, M, true}, backend::KernelAbstractions.Backend, T::Type; rng::AbstractRNG=Random.default_rng(), initializer::AbstractNeuralNetworks.AbstractInitializer=GlorotUniform()) where {M}
     # projections for queries, keys and vectors.
     PQ_weight = rand(backend, rng, StiefelManifold{T}, M, M)
     PK_weight = rand(backend, rng, StiefelManifold{T}, M, M)

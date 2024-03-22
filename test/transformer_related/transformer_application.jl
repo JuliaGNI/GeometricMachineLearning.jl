@@ -10,8 +10,8 @@ function transformer_application_test(T, dim, n_heads, L, seq_length=8, batch_si
     model₁ = Chain(Transformer(dim, n_heads, L, Stiefel=false), ResNet(dim))
     model₂ = Chain(Transformer(dim, n_heads, L, Stiefel=true), ResNet(dim))
 
-    ps₁ = initialparameters(KernelAbstractions.CPU(), T, model₁)
-    ps₂ = initialparameters(KernelAbstractions.CPU(), T, model₂)
+    ps₁ = initialparameters(model₁, KernelAbstractions.CPU(), T)
+    ps₂ = initialparameters(model₂, KernelAbstractions.CPU(), T)
     
     input₁ = rand(T, dim, seq_length, batch_size)
     input₂ = rand(T, dim, seq_length)

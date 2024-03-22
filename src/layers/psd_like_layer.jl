@@ -25,7 +25,7 @@ function parameterlength(::PSDLayer{M, N}) where {M, N}
     M÷2*(N÷2 - (M÷2+1)÷2)
 end 
 
-function initialparameters(backend::KernelAbstractions.Backend, T::Type, ::PSDLayer{M, N}, rng::AbstractRNG=Random.default_rng()) where {M, N}
+function initialparameters(::PSDLayer{M, N}, backend::KernelAbstractions.Backend, T::Type; rng::AbstractRNG=Random.default_rng()) where {M, N}
     (weight =  N > M ? rand(backend, rng, StiefelManifold{T}, N÷2, M÷2) : rand(backend, rng, StiefelManifold{T}, M÷2, N÷2), )
 end
 

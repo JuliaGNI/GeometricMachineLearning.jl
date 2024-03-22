@@ -64,7 +64,7 @@ function test_optimizer_for_classification_layer(; dim₁=28, dim₂=28, number_
     activation_function(x) = tanh.(x)
     model = Classification(patch_length * patch_length, 10, activation_function)
 
-    ps = initialparameters(CPU(), T, model)   
+    ps = initialparameters(model, CPU(), T)   
     loss₁ = GeometricMachineLearning.loss(model, ps, dl)
 
     opt = Optimizer(GradientOptimizer(), ps)
