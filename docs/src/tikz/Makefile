@@ -1,5 +1,5 @@
 all: pdf 
-	$(MAKE) png 
+	$(MAKE) png res1=150 res2=200 res3=100 res4=180
 	$(MAKE) logo 
 	$(MAKE) clean 
 
@@ -33,6 +33,8 @@ convert_with_pdftocairo: $(MYDIR)/*.pdf
 	done
 
 png:
+	pdftocairo 	-png -r 500		-transp -singlefile	 logo_with_name.pdf								logo_with_name
+	pdftocairo 	-png -r 500		-transp -singlefile	 logo_with_name_dark.pdf						logo_with_name_dark
 	pdftocairo  -png -r $(res1) -transp -singlefile  adam_optimizer.pdf               	 			adam_optimizer  
 	pdftocairo  -png -r $(res1) -transp -singlefile  adam_optimizer_dark.pdf               	 		adam_optimizer_dark                     
 	pdftocairo  -png -r $(res1) -transp -singlefile  general_optimization.pdf		 	 			general_optimization   
