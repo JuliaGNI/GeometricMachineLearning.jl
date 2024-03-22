@@ -29,7 +29,7 @@ jobs:
           make install_brenier_two_fluid test_docs
           cd .. 
       - name: Make docs (call julia documenter)
-          run: julia --project=docs docs/make.jl html_output
+        run: julia --project=docs docs/make.jl html_output
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-docdeploy@v1
         env:
