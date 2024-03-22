@@ -48,7 +48,7 @@ const ε = 0.1                 # entropic regularization. √ε is a length.  # 
 const q = 1.0                 # annealing parameter                       # hide
 const Δ = 1.0                 # characteristic domain size                # hide
 const s = ε                   # current scale: no annealing -> equals ε   # hide
-const tol = 1e-4              # marginal condition tolerance              # hide 
+const tol = 1e-6              # marginal condition tolerance              # hide 
 const crit_it = 20            # acceleration inference                    # hide
 const p_η = 2
 
