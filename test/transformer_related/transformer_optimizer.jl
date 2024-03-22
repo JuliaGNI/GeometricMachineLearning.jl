@@ -10,7 +10,7 @@ function transformer_gradient_test(T, dim, n_heads, L, seq_length=8, batch_size=
     model = Chain(Transformer(dim, n_heads, L, Stiefel=true), ResNet(dim))
     model = Transformer(dim, n_heads, L, Stiefel=true)
 
-    ps = initialparameters(KernelAbstractions.CPU(), T, model)
+    ps = initialparameters(model, KernelAbstractions.CPU(), T)
     
     input = rand(T, dim, seq_length, batch_size)
     

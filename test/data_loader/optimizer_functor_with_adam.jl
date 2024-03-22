@@ -26,7 +26,7 @@ function test_optimizer_functor_with_adam(;T=Float32, dim₁=6, dim₂=6, n_imag
     # input dim is dim₁ / patch_length * dim₂ / pach_length; the transformer is called with dim₁ / patch_length and two layers
     model = Chain(Transformer(dl.input_dim, patch_length, 2; Stiefel=true), Classification(dl.input_dim, 10, σ))
 
-    ps = initialparameters(CPU(), Float32, model)
+    ps = initialparameters(model, CPU(), Float32)
 
     loss₁ = GeometricMachineLearning.loss(model, ps, dl)
 
