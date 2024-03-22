@@ -1,4 +1,19 @@
 description(::Val{:Batch}) = raw"""
+`Batch` is a struct whose functor acts on an instance of `DataLoader` to produce a sequence of training samples for one epoch. 
+
+## The Constructor
+
+The constructor for `Batch` is called with: 
+- `batch_size::Int`
+- `seq_length::Int` (optional)
+- `prediction_window::Int` (optional)
+
+## The functor 
+
+An instance of `Batch` can be called on an instance of `DataLoader` to produce a sequence of samples that contain all the input data, i.e. for training for one epoch. 
+"""
+
+description(::Val{:Batch}) = raw"""
 `Batch` is a struct with an associated functor that acts on an instance of `DataLoader`. 
 
 The constructor of `Batch` takes `batch_size` (an integer) as input argument. Optionally we can provide `seq_length` if we deal with time series data and want to draw batches of a certain *length* (i.e. a range contained in the second dimension of the input array).
@@ -23,35 +38,58 @@ $(description(Val(:batch_functor_matrix)))
 
 $(description(Val(:batch_functor_tensor)))
 """
-struct Batch{seq_type <: Union{Nothing, Integer}}
+struct Batch{seq_type <: Union{Nothing, Int}}
     batch_size::Int
     seq_length::seq_type
-
-    function Batch(batch_size, seq_length = nothing)
-        new{typeof(seq_length)}(batch_size, seq_length)
-    end
+    prediction_window::seq_type
 end
+
+function Batch(batch_size, seq_length = nothing, prediction_window = nothing)
+    new{typeof(seq_length)}(batch_size, seq_length, prediction_window)
+end
+
+# if no prediction window is provided it is set to 1.
+function Batch(batch_size::Int, seq_length::Int, ::Nothing)
+    new{typeof(seq_length)}(batch_size, seq_length, 1)
+end
+
+Batch(::Int, ::Nothing, ::Int) = error("Cannot provide prediction window alone. Need sequence length!")
 
 hasseqlength(::Batch{<:Integer}) = true
 hasseqlength(::Batch{<:Nothing}) = false
 
 @doc raw"""
-This function is called when either dealing with a matrix or a tensor where we always consider the entire time series. It takes an input a 
+This function is called when either dealing with a matrix or a tensor which **is not** of time series nature. It takes an input a 
 - `batch::Batch`
 - `number_columns::Int`
 
 The output is a *tuple of vectors of indices*: 
 ``([i^1_1, i^1_2, \ldots, i^1_\mathrm{bs}], \ldots, [i^{\ell - 1}_1, i^{\ell - 1}_2, \ldots, i^{\ell - 1}_\mathrm{bs}], [i^\ell_1, i^\ell_2, \ldots, i^\ell_\mathrm{r}])`` where ``r`` is the remainder.  
 """
-function batch_over_one_axis(batch::Batch, number_columns::Int)
+function batch_over_one_axis(batch::Batch{Nothing}, number_columns::Int)
     indices = shuffle(1:number_columns)
     n_batches = Int(ceil(number_columns / batch.batch_size))
     batches = ()
     for batch_number in 1:(n_batches - 1)
         batches = (batches..., indices[(batch_number - 1) * batch.batch_size + 1 : batch_number * batch.batch_size])
     end
+    # this last line is needed if the number of columns is not divisible by the batch size. 
     (batches..., indices[(n_batches - 1) * batch.batch_size + 1:number_columns])
 end
+
+function batch_over_two_axis(batch::Batch{Nothing}, number_columns::Int, third_dim::Int)
+    time_indices = shuffle(1:(number_columns - batch.seq_length - batch.prediction_window))
+    parameter_indices = shuffle(1:third_dim)
+    complete_indices = Iterators.product(time_indices, parameter_indices) |> collect |> vec
+    batches = ()
+    n_batches = Int(ceil((number_columns - batch.seq_length - batch.prediction_window) * dl.n_params / batch.batch_size))
+    for batch_number in 1:(n_batches - 1)
+        batches = (batches..., complete_indices[(batch_number - 1) * batch.batch_size + 1 : batch_number * batch.batch_size])
+    end
+    (batches..., complete_indices[(n_batches - 1) * batch.batch_size + 1:end])
+end
+
+(::Batch{Nothing})(::DataLoader{T, AT, Nothing, TimeSteps}) where {T <: Number, AT} = error("Need to provide `seq_length` when dealing with time series data.")
 
 function (batch::Batch{<:Nothing})(dl::DataLoader{T, BT, OT, RegularData}) where {T, AT<:AbstractArray{T}, BT<:Union{AT, NamedTuple{(:q, :p), Tuple{AT, AT}}}, OT}
     batch_over_one_axis(batch, dl.n_params)
@@ -62,31 +100,23 @@ function (batch::Batch{<:Nothing})(dl::DataLoader{T, BT, OT, TimeSteps}) where {
 end
 
 # Batching for tensor with three axes (unsupervised learning). 
-function (batch::Batch{<:Integer})(dl::DataLoader{T, BT, Nothing}) where {T, AT<:AbstractArray{T, 3}, BT<:Union{AT, NamedTuple{(:q, :p), Tuple{AT, AT}}}}
-    time_indices = shuffle(1:(dl.input_time_steps - batch.seq_length))
-    parameter_indices = shuffle(1:dl.n_params)
-    complete_indices = Iterators.product(time_indices, parameter_indices) |> collect |> vec
-    batches = ()
-    n_batches = number_of_batches(dl, batch)
-    for batch_number in 1:(n_batches - 1)
-        batches = (batches..., complete_indices[(batch_number - 1) * batch.batch_size + 1 : batch_number * batch.batch_size])
-    end
-    (batches..., complete_indices[(n_batches - 1) * batch.batch_size + 1:end])
+function (batch::Batch{Int})(dl::DataLoader{T, BT, Nothing}) where {T, AT<:AbstractArray{T, 3}, BT<:Union{AT, NamedTuple{(:q, :p), Tuple{AT, AT}}}}
+    batch_over_two_axis(batch, dl.input_time_steps, dl.n_params)
 end 
 
 @doc raw"""
-Gives the number of bathces. Inputs are of type `DataLoader` and `Batch`.
+Gives the number of batches. Inputs are of type `DataLoader` and `Batch`.
 """
-function number_of_batches(dl::DataLoader{T, AT}, batch::Batch) where {T, BT<:AbstractMatrix{T}, AT<:Union{BT, NamedTuple{(:q, :p), Tuple{BT, BT}}}}
+function number_of_batches(dl::DataLoader{T, AT}, batch::Batch{Nothing}) where {T, BT<:AbstractMatrix{T}, AT<:Union{BT, NamedTuple{(:q, :p), Tuple{BT, BT}}}}
     Int(ceil(dl.input_time_steps / batch.batch_size))
 end
 
-function number_of_batches(dl::DataLoader{T, AT}, batch::Batch{Nothing}) where {T, BT<:AbstractArray{T, 3}, AT<:Union{BT, NamedTuple{(:q, :p), Tuple{BT, BT}}}}
-    Int(ceil(dl.n_params / batch.batch_size))
-end
+# function number_of_batches(dl::DataLoader{T, AT}, batch::Batch{Nothing}) where {T, BT<:AbstractArray{T, 3}, AT<:Union{BT, NamedTuple{(:q, :p), Tuple{BT, BT}}}}
+#     Int(ceil(dl.n_params / batch.batch_size))
+# end
 
-function number_of_batches(dl::DataLoader{T, AT}, batch::Batch{<:Integer}) where {T, BT<:AbstractArray{T, 3}, AT<:Union{BT, NamedTuple{(:q, :p), Tuple{BT, BT}}}}
-    Int(ceil((dl.input_time_steps - batch.seq_length) * dl.n_params / batch.batch_size))
+function number_of_batches(dl::DataLoader{T, AT}, batch::Batch{Int}) where {T, BT<:AbstractArray{T, 3}, AT<:Union{BT, NamedTuple{(:q, :p), Tuple{BT, BT}}}}
+    Int(ceil((dl.input_time_steps - batch.seq_length - batch.prediction_window) * dl.n_params / batch.batch_size))
 end
 
 @doc raw"""

@@ -1,8 +1,34 @@
 description(::Val{:DataLoader}) = raw"""
 Data Loader is a struct that creates an instance based on a tensor (or different input format) and is designed to make training convenient. 
 
-The fields of the struct are the following: 
-- `data`: The input data with axes (i) system dimension, (ii) number of parameters and (iii) number of time steps.
+## Constructor 
+
+The data loader can be called with various inputs:
+
+### A single matrix 
+
+If the data loader is called with a single matrix (and no other arguments are given), then this is interpreted as an autoencoder problem, i.e. the first axis is assumed to indicate the degrees of freedom of the system and the second axis indicates parameter values and/or time steps. 
+
+### A single tensor 
+
+If the data loader is called with a single tensor (and no other arguments are given), then this is interpreted as an *integration problem* with the second axis indicating the time step and the third one indicating the parameters.
+
+### A tensor and a vector 
+
+This is a special case (MNIST classification problem).
+
+### A `NamedTuple` with fields `q` and `p`.
+
+The `NamedTuple` contains (i) two matrices or (ii) two tensors. 
+
+### An `EnsembleSolution`
+
+The `EnsembleSolution` typically comes from `GeometricProblems`.
+"""
+
+#=
+The fields of the `DataLoader` struct are the following: 
+- `input`: The input data with axes (i) system dimension, (ii) number of time steps and (iii) number of parameters.
 - `output`: The tensor that contains the output (supervised learning) - this may be of type Nothing if the constructor is only called with one tensor (unsupervised learning).
 - `input_dim`: The *dimension* of the system, i.e. what is taken as input by a regular neural network.
 - `input_time_steps`: The length of the entire time series of the data
@@ -11,7 +37,7 @@ The fields of the struct are the following:
 - `output_time_steps`: The size of the second axis of the output tensor (also called `prediction_window`, `output_time_steps=1` in most cases)
 
 If for the output we have a tensor whose second axis has length 1, we still store it as a tensor and not a matrix for consistency. 
-"""
+=#
 
 """
 $(description(Val(:DataLoader)))
@@ -90,11 +116,11 @@ function DataLoader(data::NamedTuple{(:q, :p), Tuple{AT, AT}}; autoencoder=false
     end
 end
 
-function DataLoader(data::NamedTuple{(:q, :p), Tuple{AT, AT}}; output_time_steps=1) where {T, AT<:AbstractArray{T, 3}}
+function DataLoader(data::NamedTuple{(:q, :p), Tuple{AT, AT}}) where {T, AT<:AbstractArray{T, 3}}
     @info "You have provided a NamedTuple with keys q and p; the data are tensors. This is interpreted as *symplectic data*."
     
     dim2, time_steps, n_params = size(data.q)
-    DataLoader{T, typeof(data), Nothing, TimeSteps}(data, nothing, dim2 * 2, time_steps - 1, n_params, nothing, output_time_steps)
+    DataLoader{T, typeof(data), Nothing, TimeSteps}(data, nothing, dim2 * 2, time_steps, n_params, nothing, nothing)
 end
 
 """
@@ -117,7 +143,7 @@ function DataLoader(ensemble_solution::EnsembleSolution{T, T1, Vector{ST}}) wher
 end
 
 """
-Constructor for `EnsembleSolution` form package `GeometricSolutions`.
+Constructor for `EnsembleSolution` from package `GeometricSolutions`.
 """
 function DataLoader(ensemble_solution::EnsembleSolution{T, T1, Vector{ST}}) where {T, T1, DT, ST <: GeometricSolution{T, T1, NamedTuple{(:q, ), Tuple{DT}}}}
 
@@ -138,7 +164,7 @@ end
 Computes the accuracy (as opposed to the loss) of a neural network classifier. 
 
 It takes as input:
-- `model::Chain`:
+- `model::Chain`
 - `ps`: parameters of the network
 - `dl::DataLoader`
 """
