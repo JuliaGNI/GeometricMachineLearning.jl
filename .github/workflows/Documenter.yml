@@ -12,20 +12,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - run: |
+      - name: Install packages for generating tikz images
+        run: |
           sudo apt-get install imagemagick
           sudo apt-get install poppler-utils
           sudo apt-get install texlive-xetex
           sudo apt-get install texlive-science
-          make all -C docs/src/tikz
+      - name: Make tikz images
+        run: make all -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
         with:
           version: '1'
-      - run: |
+      - name: Install BrenierTwoFluid package
+        run: |
           cd docs
           make install_brenier_two_fluid test_docs
           cd .. 
-          julia --project=docs docs/make.jl html_output
+      - name: Make docs (call julia documenter)
+          run: julia --project=docs docs/make.jl html_output
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-docdeploy@v1
         env:
