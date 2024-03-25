@@ -34,11 +34,14 @@ function (o::Optimizer)(nn::NeuralNetwork, dl::DataLoader, batch::Batch, n_epoch
     loss_array
 end
 
-function (o::Optimizer)(nn::NeuralNetwork{<:TransformerIntegrator}, dl::DataLoader, batch::Batch, n_epochs::Int=1)
+function (o::Optimizer)(nn::NeuralNetwork{<:TransformerIntegrator}, dl::DataLoader, batch::Batch{Int}, n_epochs::Int=1)
     loss = TransformerLoss(batch)
     o(nn, dl, batch, n_epochs, loss)
 end
 
-function (o::Optimizer)(nn::NeuralNetwork{<:TransformerIntegrator}, dl::DataLoader, batch::Batch{Int}, n_epochs::Int=1)
-    loss = TransformerLoss(batch)
+function (o::Optimizer)(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, dl::DataLoader, batch::Batch{Int}, n_epochs::Int=1)
+    loss = FeedForwardLoss()
+    o(nn, dl, batch, n_epochs, loss)
 end
+
+(o::Optimizer)(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, dl::DataLoader, batch::Batch{Nothing}, n_epochs::Int=1) = o(nn, dl, Batch(batch.batch_size, 1), n_epochs)

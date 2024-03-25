@@ -47,13 +47,6 @@ function loss(model::Union{Chain, AbstractExplicitLayer}, ps::Union{Tuple, Named
 end
 
 @doc raw"""
-This crops the output array of the neural network so that it conforms with the output it should be compared to. This is needed for the transformer loss. 
-"""
-function crop_array_for_transformer_loss(nn_output::AT, output::AT) where {T, AT<:AbstractArray{T, 3}}
-    @view nn_output[axes(output, 1), axes(output, 2) .+ size(nn_output, 2) .- size(output, 2), axes(output, 3)]
-end
-
-@doc raw"""
 The transformer works similarly to the regular loss, but with the difference that ``\mathcal{NN}(input)`` and ``output`` may have different sizes. 
 
 It takes as input: 

@@ -35,7 +35,7 @@ function (loss::TransformerLoss)(model::Chain, ps::Union{Tuple, NamedTuple}, inp
     norm(predicted_output_cropped - output) / norm(output)
 end
 
-struct FeedforwardLoss <: NetworkLoss end
+struct FeedForwardLoss <: NetworkLoss end
 
 function (loss::FeedForwardLoss)(model::Chain, ps::Union{Tuple, NamedTuple}, input::AT, output::AT) where {AT <: AbstractArray}
     norm(model(input, ps) - output) / norm(output)

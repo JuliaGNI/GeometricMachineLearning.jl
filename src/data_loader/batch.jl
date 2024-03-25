@@ -13,12 +13,6 @@ The constructor for `Batch` is called with:
 An instance of `Batch` can be called on an instance of `DataLoader` to produce a sequence of samples that contain all the input data, i.e. for training for one epoch. 
 """
 
-description(::Val{:Batch}) = raw"""
-`Batch` is a struct with an associated functor that acts on an instance of `DataLoader`. 
-
-The constructor of `Batch` takes `batch_size` (an integer) as input argument. Optionally we can provide `seq_length` if we deal with time series data and want to draw batches of a certain *length* (i.e. a range contained in the second dimension of the input array).
-"""
-
 description(::Val{:batch_functor_matrix}) = raw"""
 For a snapshot matrix (or a `NamedTuple` of the form `(q=A, p=B)` where `A` and `B` are matrices), the functor for `Batch` is called on an instance of `DataLoader`. It then returns a tuple of batch indices: 
 - for `autoencoder=true`: ``(\mathcal{I}_1, \ldots, \mathcal{I}_{\lceil\mathtt{n\_params/batch\_size}\rceil})``, where the index runs from 1 to the number of batches, which is the number of columns in the snapshot matrix divided by the batch size (rounded up).
@@ -45,15 +39,17 @@ struct Batch{seq_type <: Union{Nothing, Int}}
 end
 
 # add an additional constructor for `TransformerLoss` taking batch as input.
-TransformerLoss(batch::Batch{Int}) = TransformerLoss(seq_length, prediction_window)
+TransformerLoss(batch::Batch{Int}) = TransformerLoss(batch.seq_length, batch.prediction_window)
+
+Base.iterate(nn::NeuralNetwork, ics, batch::Batch{Int}; n_points = 100) = iterate(nn, ics; n_points = n_points, prediction_window = batch.prediction_window)
 
 function Batch(batch_size, seq_length = nothing, prediction_window = nothing)
-    new{typeof(seq_length)}(batch_size, seq_length, prediction_window)
+    Batch{typeof(seq_length)}(batch_size, seq_length, prediction_window)
 end
 
 # if no prediction window is provided it is set to 1.
 function Batch(batch_size::Int, seq_length::Int, ::Nothing)
-    new{typeof(seq_length)}(batch_size, seq_length, 1)
+    Batch{typeof(seq_length)}(batch_size, seq_length, 1)
 end
 
 Batch(::Int, ::Nothing, ::Int) = error("Cannot provide prediction window alone. Need sequence length!")
@@ -80,19 +76,19 @@ function batch_over_one_axis(batch::Batch{Nothing}, number_columns::Int)
     (batches..., indices[(n_batches - 1) * batch.batch_size + 1:number_columns])
 end
 
-function batch_over_two_axis(batch::Batch{Nothing}, number_columns::Int, third_dim::Int)
+function batch_over_two_axis(batch::Batch{Int}, number_columns::Int, third_dim::Int)
     time_indices = shuffle(1:(number_columns - batch.seq_length - batch.prediction_window))
     parameter_indices = shuffle(1:third_dim)
     complete_indices = Iterators.product(time_indices, parameter_indices) |> collect |> vec
     batches = ()
-    n_batches = Int(ceil((number_columns - batch.seq_length - batch.prediction_window) * dl.n_params / batch.batch_size))
+    n_batches = Int(ceil((number_columns - batch.seq_length - batch.prediction_window) * third_dim / batch.batch_size))
     for batch_number in 1:(n_batches - 1)
         batches = (batches..., complete_indices[(batch_number - 1) * batch.batch_size + 1 : batch_number * batch.batch_size])
     end
     (batches..., complete_indices[(n_batches - 1) * batch.batch_size + 1:end])
 end
 
-(::Batch{Nothing})(::DataLoader{T, AT, Nothing, TimeSteps}) where {T <: Number, AT} = error("Need to provide `seq_length` when dealing with time series data.")
+# (::Batch{Nothing})(::DataLoader{T, AT, Nothing, TimeSteps}) where {T <: Number, AT} = error("Need to provide `seq_length` when dealing with time series data.")
 
 function (batch::Batch{<:Nothing})(dl::DataLoader{T, BT, OT, RegularData}) where {T, AT<:AbstractArray{T}, BT<:Union{AT, NamedTuple{(:q, :p), Tuple{AT, AT}}}, OT}
     batch_over_one_axis(batch, dl.n_params)
