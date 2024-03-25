@@ -18,10 +18,10 @@ struct VolumePreservingTransformer{AT} <: TransformerIntegrator
     activation::AT
     init_upper::Bool
     skew_sym::Bool
+end
 
-    function VolumePreservingTransformer(sys_dim::Int, seq_length::Int, n_blocks::Int=1, n_linear::Int=1, L::Int=2, activation=tanh; init_upper::Bool=false, skew_sym::Bool=false)
-        return new{typeof(tanh)}(sys_dim, seq_length, n_blocks, n_linear, L, activation, init_upper, skew_sym)
-    end
+function VolumePreservingTransformer(sys_dim::Int, seq_length::Int, n_blocks::Int=1, n_linear::Int=1, L::Int=2, activation=tanh; init_upper::Bool=false, skew_sym::Bool=false)
+    VolumePreservingTransformer{typeof(activation)}(sys_dim, seq_length, n_blocks, n_linear, L, activation, init_upper, skew_sym)
 end
 
 function Chain(arch::VolumePreservingTransformer)
