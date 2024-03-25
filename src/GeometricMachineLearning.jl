@@ -235,12 +235,18 @@ module GeometricMachineLearning
     include("backends/backends.jl")
     include("backends/lux.jl")
 
+    export TransformerLoss, FeedforwardLoss
+
+    include("loss/loss_routines.jl")
+    include("loss/losses.jl")
+
     export DataLoader, onehotbatch, accuracy
     export Batch, optimize_for_one_epoch!
     include("data_loader/tensor_assign.jl")
     include("data_loader/matrix_assign.jl")
     include("data_loader/mnist_utils.jl")
     include("data_loader/batch.jl")
+    include("data_loader/optimize.jl")
 
     #INCLUDE ARCHITECTURES
     include("architectures/neural_network_integrator.jl")
@@ -387,8 +393,6 @@ module GeometricMachineLearning
     include("reduced_system/reduced_system.jl")
 
     export ReducedSystem, compute_reduction_error, compute_projection_error, reduced_vector_field_from_full_explicit_vector_field, perform_integration_reduced, perform_integration_full
-
-    include("loss/loss_routines.jl")
 
     include("map_to_cpu.jl")
 
