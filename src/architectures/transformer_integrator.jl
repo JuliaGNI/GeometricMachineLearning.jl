@@ -3,6 +3,10 @@ Encompasses various transformer architectures, such as the structure-preserving 
 """
 abstract type TransformerIntegrator <: Architecture end
 
+struct DummyTransformer <: TransformerIntegrator 
+    seq_length::Int
+end
+
 @doc raw"""
 This function computes a trajectory for a Transformer that has already been trained for valuation purposes.
 
@@ -11,55 +15,57 @@ It takes as input:
 - `ics`: initial conditions (a matrix in ``\mathbb{R}^{2n\times\mathtt{seq\_length}}`` or `NamedTuple` of two matrices in ``\mathbb{R}^{n\times\mathtt{seq\_length}}``)
 - `n_points::Int=100` (keyword argument): The number of steps for which we run the prediction. 
 """
-function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::NamedTuple{(:q, :p), Tuple{AT, AT}}; n_points::Int = 100) where {T, AT<:AbstractMatrix{T}}
+function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::NamedTuple{(:q, :p), Tuple{AT, AT}}; n_points::Int = 100, prediction_window::Union{Nothing, Int} = 1) where {T, AT<:AbstractMatrix{T}}
 
-    seq_length = nn.model.seq_length
+    seq_length = nn.arch.seq_length
+
     n_dim = size(ics.q, 1)
     backend = KernelAbstractions.get_backend(ics.q)
 
+    n_iterations = Int(ceil((n_points - seq_length) / prediction_window))
     # Array to store the predictions
-    q_valuation = KernelAbstractions.allocate(backend, T, n_dim, n_points)
-    p_valuation = KernelAbstractions.allocate(backend, T, n_dim, n_points)
+    q_valuation = KernelAbstractions.allocate(backend, T, n_dim, seq_length + n_iterations * prediction_window)
+    p_valuation = KernelAbstractions.allocate(backend, T, n_dim, seq_length + n_iterations * prediction_window)
     
     # Initialisation
     q_valuation[:,1:seq_length] = ics.q
     p_valuation[:,1:seq_length] = ics.p
     
     # iteration in phase space
-    @views for i in (seq_length + 1):n_points
-        qp_temp = (q=q_valuation[:, (i - seq_length):(i - 1)], p=p_valuation[:, (i - seq_length):(i - 1)]) 
+    @views for i in 1:n_iterations
+        start_index = (i - 1) * prediction_window + 1
+        @views qp_temp = (q = q_valuation[:, start_index:(start_index + seq_length)], p = p_valuation[:, start_index:(start_index + seq_length)]) 
         qp_prediction = nn(qp_temp)
-        q_valuation[:, i] = qp_prediction.q[:, end]
-        p_valuation[:, i] = qp_prediction.p[:, end]
+        q_valuation[seq_length + (i - 1) * prediction_window, seq_length + i * prediction_window] = qp_prediction.q[:, (seq_length - prediction_window + 1):end]
+        p_valuation[seq_length + (i - 1) * prediction_window, seq_length + i * prediction_window] = qp_prediction.p[:, (seq_length - prediction_window + 1):end]
     end
 
-    (q=q_valuation, p=p_valuation)
+    (q=q_valuation[:, 1:n_points], p=p_valuation[:, 1:n_points])
 end
 
-function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::AT; n_points::Int = 100, seq_length::Union{Nothing, Int} = nothing) where {T, AT<:AbstractMatrix{T}}
+function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::AT; n_points::Int = 100, prediction_window::Union{Nothing, Int} = 1) where {T, AT<:AbstractMatrix{T}}
 
-    seq_length = isnothing(seq_length) ? nn.architecture.seq_length : seq_length
-    @assert size(ics, 2) == seq_length
+    seq_length = nn.arch.seq_length
 
     n_dim = size(ics, 1)
-    backend = KernelAbstractions.get_backend(ics)
+    backend = KernelAbstractions.get_backend(ics.q)
 
+    n_iterations = Int(ceil((n_points - seq_length) / prediction_window))
     # Array to store the predictions
-    valuation = KernelAbstractions.allocate(backend, T, n_dim, n_points)
+    valuation = KernelAbstractions.allocate(backend, T, n_dim, seq_length + n_iterations * prediction_window)
     
     # Initialisation
     valuation[:,1:seq_length] = ics
     
     # iteration in phase space
-    @views for i in (seq_length + 1):n_points
-        temp = valuation[:, (i - seq_length):(i - 1)] 
+    @views for i in 1:n_iterations
+        start_index = (i - 1) * prediction_window + 1
+        @views temp = valuation[:, start_index:(start_index + seq_length)]
         prediction = nn(temp)
-        valuation[:, i] = prediction[:, end]
+        valuation[seq_length + (i - 1) * prediction_window, seq_length + i * prediction_window] = prediction[:, (seq_length - prediction_window + 1):end]
     end
 
-    valuation
+    valuation[:, 1:n_points]
 end
 
-struct DummyTransformer <: TransformerIntegrator 
-    seq_length::Int
-end
+Base.iterate(nn::NeuralNetwork, ics, batch::Batch{Int}; n_points = 100) = iterate(nn, ics; n_points = n_points, prediction_window = batch.prediction_window)
