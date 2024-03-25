@@ -17,7 +17,7 @@ It takes as input:
 """
 function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::NamedTuple{(:q, :p), Tuple{AT, AT}}; n_points::Int = 100, prediction_window::Union{Nothing, Int} = 1) where {T, AT<:AbstractMatrix{T}}
 
-    seq_length = nn.arch.seq_length
+    seq_length = nn.architecture.seq_length
 
     n_dim = size(ics.q, 1)
     backend = KernelAbstractions.get_backend(ics.q)
@@ -34,7 +34,7 @@ function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::NamedTupl
     # iteration in phase space
     @views for i in 1:n_iterations
         start_index = (i - 1) * prediction_window + 1
-        @views qp_temp = (q = q_valuation[:, start_index:(start_index + seq_length)], p = p_valuation[:, start_index:(start_index + seq_length)]) 
+        @views qp_temp = (q = q_valuation[:, start_index:(start_index + seq_length - 1)], p = p_valuation[:, start_index:(start_index + seq_length - 1)]) 
         qp_prediction = nn(qp_temp)
         q_valuation[seq_length + (i - 1) * prediction_window, seq_length + i * prediction_window] = qp_prediction.q[:, (seq_length - prediction_window + 1):end]
         p_valuation[seq_length + (i - 1) * prediction_window, seq_length + i * prediction_window] = qp_prediction.p[:, (seq_length - prediction_window + 1):end]
@@ -45,10 +45,10 @@ end
 
 function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::AT; n_points::Int = 100, prediction_window::Union{Nothing, Int} = 1) where {T, AT<:AbstractMatrix{T}}
 
-    seq_length = nn.arch.seq_length
+    seq_length = typeof(nn.architecture) <: RegularTransformerIntegrator ? prediction_window : nn.architecture.seq_length
 
     n_dim = size(ics, 1)
-    backend = KernelAbstractions.get_backend(ics.q)
+    backend = KernelAbstractions.get_backend(ics)
 
     n_iterations = Int(ceil((n_points - seq_length) / prediction_window))
     # Array to store the predictions
@@ -60,12 +60,10 @@ function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::AT; n_poi
     # iteration in phase space
     @views for i in 1:n_iterations
         start_index = (i - 1) * prediction_window + 1
-        @views temp = valuation[:, start_index:(start_index + seq_length)]
+        @views temp = valuation[:, start_index:(start_index + seq_length - 1)]
         prediction = nn(temp)
-        valuation[seq_length + (i - 1) * prediction_window, seq_length + i * prediction_window] = prediction[:, (seq_length - prediction_window + 1):end]
+        valuation[:, (seq_length + (i - 1) * prediction_window + 1):(seq_length + i * prediction_window)] = prediction[:, (seq_length - prediction_window + 1):end]
     end
 
     valuation[:, 1:n_points]
 end
-
-Base.iterate(nn::NeuralNetwork, ics, batch::Batch{Int}; n_points = 100) = iterate(nn, ics; n_points = n_points, prediction_window = batch.prediction_window)
