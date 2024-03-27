@@ -53,3 +53,5 @@ using SafeTestsets
 
 @safetestset "Volume-Preserving Transformer (skew-symmetric tests)                            " begin include("volume_preserving_attention/test_skew_map.jl") end
 @safetestset "Volume-Preserving Transformer (cayley-transform tests)                          " begin include("volume_preserving_attention/test_cayley_transforms.jl") end
+
+@safetestset "Batch functor(s)                                                                " begin include("batch/batch_functor.jl") end
