@@ -47,9 +47,9 @@ function Batch(batch_size, seq_length = nothing, prediction_window = nothing)
     Batch{typeof(seq_length)}(batch_size, seq_length, prediction_window)
 end
 
-# if no prediction window is provided it is set to 1.
+# if no prediction window is provided it is set to seq_length.
 function Batch(batch_size::Int, seq_length::Int, ::Nothing)
-    Batch{typeof(seq_length)}(batch_size, seq_length, 1)
+    Batch{typeof(seq_length)}(batch_size, seq_length, seq_length)
 end
 
 Batch(::Int, ::Nothing, ::Int) = error("Cannot provide prediction window alone. Need sequence length!")
