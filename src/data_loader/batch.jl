@@ -65,7 +65,7 @@ This function is called when either dealing with a matrix or a tensor which **is
 The output is a *tuple of vectors of indices*: 
 ``([i^1_1, i^1_2, \ldots, i^1_\mathrm{bs}], \ldots, [i^{\ell - 1}_1, i^{\ell - 1}_2, \ldots, i^{\ell - 1}_\mathrm{bs}], [i^\ell_1, i^\ell_2, \ldots, i^\ell_\mathrm{r}])`` where ``r`` is the remainder.  
 """
-function batch_over_one_axis(batch::Batch{Nothing}, number_columns::Int)
+function batch_over_one_axis(batch::Batch, number_columns::Int)
     indices = shuffle(1:number_columns)
     n_batches = Int(ceil(number_columns / batch.batch_size))
     batches = ()
@@ -76,12 +76,12 @@ function batch_over_one_axis(batch::Batch{Nothing}, number_columns::Int)
     (batches..., indices[(n_batches - 1) * batch.batch_size + 1:number_columns])
 end
 
-function batch_over_two_axis(batch::Batch{Int}, number_columns::Int, third_dim::Int)
-    time_indices = shuffle(1:(number_columns - batch.seq_length - batch.prediction_window))
+function batch_over_two_axis(batch::Batch, number_columns::Int, third_dim::Int)
+    time_indices = shuffle(1:number_columns)
     parameter_indices = shuffle(1:third_dim)
     complete_indices = Iterators.product(time_indices, parameter_indices) |> collect |> vec
     batches = ()
-    n_batches = Int(ceil((number_columns - batch.seq_length - batch.prediction_window) * third_dim / batch.batch_size))
+    n_batches = Int(ceil(number_columns * third_dim / batch.batch_size))
     for batch_number in 1:(n_batches - 1)
         batches = (batches..., complete_indices[(batch_number - 1) * batch.batch_size + 1 : batch_number * batch.batch_size])
     end
@@ -98,9 +98,17 @@ function (batch::Batch{<:Nothing})(dl::DataLoader{T, BT, OT, TimeSteps}) where {
     batch_over_one_axis(batch, dl.input_time_steps)
 end
 
+function (batch::Batch{Int})(dl::DataLoader{T, BT, OT, TimeSteps}) where {T, AT<:AbstractArray{T}, BT<:Union{AT, NamedTuple{(:q, :p), Tuple{AT, AT}}}, OT}
+    batch_over_one_axis(batch, dl.input_time_steps - batch.seq_length - batch.prediction_window)
+end
+
+function (batch::Batch{Nothing})(dl::DataLoader{T, BT, Nothing}) where {T, AT<:AbstractArray{T, 3}, BT<:Union{AT, NamedTuple{(:q, :p), Tuple{AT, AT}}}}
+    batch_over_two_axis(batch, dl.input_time_steps, dl.n_params)
+end 
+
 # Batching for tensor with three axes (unsupervised learning). 
 function (batch::Batch{Int})(dl::DataLoader{T, BT, Nothing}) where {T, AT<:AbstractArray{T, 3}, BT<:Union{AT, NamedTuple{(:q, :p), Tuple{AT, AT}}}}
-    batch_over_two_axis(batch, dl.input_time_steps, dl.n_params)
+    batch_over_two_axis(batch, dl.input_time_steps - batch.seq_length - batch.prediction_window, dl.n_params)
 end 
 
 @doc raw"""
@@ -116,40 +124,6 @@ end
 
 function number_of_batches(dl::DataLoader{T, AT}, batch::Batch{Int}) where {T, BT<:AbstractArray{T, 3}, AT<:Union{BT, NamedTuple{(:q, :p), Tuple{BT, BT}}}}
     Int(ceil((dl.input_time_steps - batch.seq_length - batch.prediction_window) * dl.n_params / batch.batch_size))
-end
-
-@doc raw"""
-Optimize for an entire epoch. For this you have to supply: 
-- an instance of the optimizer.
-- the neural network model 
-- the parameters of the model 
-- the data (in form of `DataLoader`)
-- in instance of `Batch` that contains `batch_size` (and optionally `seq_length`)
-
-With the optional argument:
-- the loss, which takes the `model`, the parameters `ps` and an instance of `DataLoader` as input.
-
-The output of `optimize_for_one_epoch!` is the average loss over all batches of the epoch:
-```math
-output = \frac{1}{\mathtt{steps\_per\_epoch}}\sum_{t=1}^\mathtt{steps\_per\_epoch}loss(\theta^{(t-1)}).
-```
-This is done because any **reverse differentiation** routine always has two outputs: a pullback and the value of the function it is differentiating. In the case of zygote: `loss_value, pullback = Zygote.pullback(ps -> loss(ps), ps)` (if the loss only depends on the parameters).
-"""
-function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTuple}, dl::DataLoader{T, AT, BT}, batch::Batch, loss) where {T, T1, AT<:AbstractArray{T, 3}, BT<:AbstractArray{T1, 3}}
-    count = 0
-    total_error = T(0)
-    batches = batch(dl)
-    @views for batch_indices in batches 
-        count += 1
-        # these `copy`s should not be necessary! coming from a Zygote problem!
-        input_batch = copy(dl.input[:, :, batch_indices])
-        output_batch = copy(dl.output[:, :, batch_indices])
-        loss_value, pullback = Zygote.pullback(ps -> loss(model, ps, input_batch, output_batch), ps)
-        total_error += loss_value
-        dp = pullback(one(loss_value))[1]
-        optimization_step!(opt, model, ps, dp)
-    end
-    total_error / count
 end
 
 @kernel function assign_input_from_vector_of_tuples_kernel!(q_input::AT, p_input::AT, input::NamedTuple{(:q, :p), Tuple{AT, AT}}, indices::AbstractArray{Int, 2}) where {T, AT<:AbstractArray{T, 3}}
