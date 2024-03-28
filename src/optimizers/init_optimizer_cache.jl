@@ -4,5 +4,5 @@ These appear outside of `optimizer_caches.jl` because the `OptimizerMethods` fir
 """
 init_optimizer_cache(::GradientOptimizer, x) = setup_gradient_cache(x)
 init_optimizer_cache(::MomentumOptimizer, x) = setup_momentum_cache(x)
-init_optimizer_cache(::AdamOptimizer, x) = setup_adam_cache(x)
+init_optimizer_cache(::Union{AdamOptimizer, AdamOptimizerWithDecay}, x) = setup_adam_cache(x)
 init_optimizer_cache(::BFGSOptimizer, x) = setup_bfgs_cache(x)
