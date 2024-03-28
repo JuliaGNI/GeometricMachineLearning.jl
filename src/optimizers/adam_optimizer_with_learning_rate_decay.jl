@@ -22,7 +22,7 @@ function AdamOptimizerWithDecay(n_epochs::Int, T::Type)
 end
 
 function update!(o::Optimizer{<:AdamOptimizerWithDecay{T}}, C::AdamCache, B::AbstractArray) where T
-    η = o.method.γ ^ o.t * o.method.η₁
+    η = o.method.γ ^ o.step * o.method.η₁
     add!(C.B₁, ((o.method.ρ₁ - o.method.ρ₁^o.step) / (T(1.) - o.method.ρ₁^o.step)) * C.B₁, ((T(1.) - o.method.ρ₁) / (T(1.) - o.method.ρ₁ ^ o.step)) * B)
     add!(C.B₂, ((o.method.ρ₂ - o.method.ρ₂^o.step) / (T(1.) - o.method.ρ₂^o.step)) * C.B₂, ((T(1.) - o.method.ρ₂) / (T(1.) - o.method.ρ₂ ^ o.step)) * ⊙²(B))
     mul!(B, -η, /ᵉˡᵉ(C.B₁, scalar_add(racᵉˡᵉ(C.B₂), o.method.δ)))
