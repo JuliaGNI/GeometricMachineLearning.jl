@@ -169,6 +169,7 @@ module GeometricMachineLearning
     export GradientOptimizer, GradientCache
     export MomentumOptimizer, MomentumCache
     export AdamOptimizer, AdamCache
+    export AdamOptimizerWithDecay
     export BFGSOptimizer, BFGSCache
 
     export Optimizer
