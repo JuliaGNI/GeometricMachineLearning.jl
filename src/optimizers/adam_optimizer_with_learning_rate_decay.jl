@@ -17,8 +17,8 @@ struct AdamOptimizerWithDecay{T<:Real} <: OptimizerMethod
     end
 end
 
-function AdamOptimizerWithDecay(n_epochs::Int, T::Type)
-    AdamOptimizerWithDecay(n_epochs, T(1f-2))
+function AdamOptimizerWithDecay(n_epochs::Int, T::Type; η₁=1f-2, η₂=1f-6, ρ₁=9f-1, ρ₂=9.9f-1, δ=1f-8)
+    AdamOptimizerWithDecay(n_epochs, T(η₁), T(η₂), T(ρ₁), T(ρ₂), T(δ))
 end
 
 function update!(o::Optimizer{<:AdamOptimizerWithDecay{T}}, C::AdamCache, B::AbstractArray) where T
