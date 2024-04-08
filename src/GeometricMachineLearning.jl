@@ -254,6 +254,7 @@ module GeometricMachineLearning
     export RecurrentNeuralNetwork
     export LSTMNeuralNetwork
     export ClassificationTransformer
+    export VolumePreservingFeedForward
 
     export train!, apply!, jacobian!
     export Iterate_Sympnet
