@@ -8,7 +8,6 @@ The first index is the row index, the second one the column index.
 
 The struct two fields: `S` and `n`. The first stores all the entries of the matrix in a sparse fashion (in a vector) and the second is the dimension ``n`` for ``A\in\mathbb{R}^{n\times{}n}``.
 """
-
 mutable struct SkewSymMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
     S::AT
     n::Int
@@ -20,17 +19,8 @@ mutable struct SkewSymMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
     function SkewSymMatrix(S::AbstractMatrix{T}) where {T}
         n = size(S, 1)
         @assert size(S, 2) == n
-        S_vec = zeros(T, n*(n-1)÷2)
-        # make the input skew-symmetric if it isn't already
-        S = T(.5)*(S - S')
-        # this is disgusting and should be removed! Here because indexing for GPUs not supported.
-        S_cpu = Matrix{T}(S)
-        # map the sub-diagonal elements to a vector 
-        for i in 2:n
-            S_vec[((i-1)*(i-2)÷2+1):(i*(i-1)÷2)] = S_cpu[i,1:(i-1)]
-        end
-        S_vec₂ = Base.typename(typeof(S)).wrapper{eltype(S), 1}(S_vec)
-        new{T,typeof(S_vec₂)}(S_vec₂, n)
+        S_vec = map_to_Skew(S)
+        new{T,typeof(S_vec)}(S_vec, n)
     end
 end 
 
@@ -39,9 +29,9 @@ function Base.getindex(A::SkewSymMatrix, i::Int, j::Int)
         return zero(eltype(A))
     end
     if i > j
-        return A.S[(i-2)*(i-1)÷2+j]
+        return A.S[(i-2) * (i-1) ÷ 2 + j]
     end
-    return - A.S[(j-2)*(j-1)÷2+i]
+    return - A.S[ (j-2) * (j-1) ÷ 2 + i] 
 end
 
 
@@ -164,7 +154,7 @@ function Base.:*(B::AbstractMatrix{T}, A::SkewSymMatrix{T}) where T
 end
 
 function Base.:*(A::SkewSymMatrix, b::AbstractVector{T}) where T
-    A*reshape(b, size(b), 1)
+    A*reshape(b, length(b), 1)
 end
 
 function Base.one(A::SkewSymMatrix{T}) where T
@@ -203,3 +193,31 @@ end
 function Base.copy(A::SkewSymMatrix)
     SkewSymMatrix(copy(A.S), A.n)
 end
+
+@kernel function assign_Skew_val_kernel!(S, A_skew, i)
+    j = @index(Global)
+    S[((i - 2) * (i - 1) ÷ 2 + j)] = A_skew[i, j]
+end
+
+function map_to_Skew(A::AbstractMatrix{T}) where T
+    n = size(A, 1)
+    @assert size(A, 2) == n 
+    A_skew = T(.5)*(A - A')
+    backend = KernelAbstractions.get_backend(A)
+    S = KernelAbstractions.zeros(backend, T, n * (n - 1) ÷ 2)
+    assign_Skew_val! = assign_Skew_val_kernel!(backend)
+    for i in 2:n
+        assign_Skew_val!(S, A_skew, i, ndrange = (i - 1))
+    end
+    S
+end
+
+function Base.copyto!(A::SkewSymMatrix, B::SkewSymMatrix)
+    A.S .= B.S
+    nothing
+end
+
+# define routines for generalizing ChainRulesCore to SkewSymMatrix 
+ChainRulesCore.ProjectTo(A::SkewSymMatrix) = ProjectTo{SkewSymMatrix}(; skew_sym = ProjectTo(A.S))
+(project::ProjectTo{SkewSymMatrix})(dA::AbstractMatrix) = SkewSymMatrix(project.skew_sym(map_to_Skew(dA)), size(dA, 2))
+(project::ProjectTo{SkewSymMatrix})(dA::SkewSymMatrix) = SkewSymMatrix(project.skew_sym(dA.S), dA.n)
