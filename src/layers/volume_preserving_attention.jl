@@ -49,10 +49,6 @@ function orthonormal_activation_cayley(::VolumePreservingAttention{M, M, ScalarP
     tensor_cayley5(A)
 end
 
-# function orthonormal_activation_cayley(::VolumePreservingAttention{M, M, 6}, A::AbstractArray{T, 3}) where {T, M} 
-#     tensor_cayley6(A)
-# end
-
 # function orthonormal_activation_cayley(A::AbstractMatrix{T}) where T 
 #     reshape(orthonormal_activation_cayley(reshape(A, size(A)..., 1)), size(A)...)
 # end
