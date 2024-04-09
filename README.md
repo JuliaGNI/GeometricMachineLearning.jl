@@ -63,3 +63,12 @@ More examples like this can be found in the docs.
 - Brantner B. Generalizing Adam To Manifolds For Efficiently Training Transformers. arXiv preprint arXiv:2305.16901, 2023.
 - Brantner B., Kraus M. Symplectic Autoencoders for Model Reduction of Hamiltonian Systems. arXiv preprint arXiv:2312.10004, 2023.
 - Brantner B., Romemont G., Kraus M., Li Z. Structure-Preserving Transformers for Learning Parametrized Hamiltonian Systems. arXiv preprint arXiv:2312.11166, 2023.
+
+
+## Development
+
+We are using git hooks, e.g., to enforce that all tests pass before pushing.
+In order to activate these hooks, the following command must be executed once:
+```
+git config core.hooksPath .githooks
+```

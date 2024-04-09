@@ -28,7 +28,7 @@ Check if `initialparameters` and `init_optimizer_cache` do the right thing for `
 """
 function check_multi_head_attention_stiefel_setup(T::Type, N::Int, n::Int)
     model = MultiHeadAttention(N, n, Stiefel=true)
-    ps = initialparameters(KernelAbstractions.CPU(), T, model)
+    ps = initialparameters(model, KernelAbstractions.CPU(), T)
 
     check_setup(ps)
 
