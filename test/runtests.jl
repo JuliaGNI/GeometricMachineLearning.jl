@@ -25,7 +25,6 @@ using SafeTestsets
 @safetestset "Check if the optimization_step! changes the parameters of the transformer       " begin include("transformer_related/transformer_optimizer.jl") end
 
 @safetestset "Attention layer #1                                                              " begin include("attention_layer/attention_setup.jl") end
-@safetestset "(MultiHead)Attention                                                            " begin include("attention_layer/apply_multi_head_attention.jl") end
 @safetestset "Classification layer                                                            " begin include("layers/classification.jl") end
 @safetestset "Optimizer #1                                                                    " begin include("optimizers/utils/global_sections.jl") end
 @safetestset "Optimizer #2                                                                    " begin include("optimizers/utils/optimization_step.jl") end
@@ -46,3 +45,6 @@ using SafeTestsets
 @safetestset "Test the data loader in combination with optimization_step!                     " begin include("data_loader/data_loader_optimization_step.jl") end
 @safetestset "Optimizer functor with data loader for Adam                                     " begin include("data_loader/optimizer_functor_with_adam.jl") end
 @safetestset "Test data loader for a tensor (q and p data)                                    " begin include("data_loader/draw_batch_for_tensor_test.jl") end
+
+@safetestset "Test parallel inverses                                                          " begin include("kernels/tensor_inverse.jl") end
+@safetestset "Test parallel Cayley                                                            " begin include("kernels/tensor_cayley.jl") end
