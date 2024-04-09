@@ -74,7 +74,13 @@ module GeometricMachineLearning
     include("kernels/mat_tensor_mul.jl")
     include("kernels/tensor_transpose.jl")
     include("kernels/exponentials/tensor_exponential.jl")
-    include("kernels/inverses/inverse_kernel.jl")
+    include("kernels/inverses/cpu_inverse.jl")
+    include("kernels/inverses/inverse_2x2.jl")
+    include("kernels/inverses/inverse_3x3.jl")
+    include("kernels/inverses/inverse_4x4.jl")
+    include("kernels/inverses/inverse_5x5.jl")
+    include("kernels/inverses/tensor_cayley.jl")
+    include("kernels/inverses/tensor_mat_skew_sym_assign.jl")
     include("kernels/vec_tensor_mul.jl")
 
     include("kernels/kernel_ad_routines/assign_q_and_p.jl")
@@ -83,6 +89,7 @@ module GeometricMachineLearning
     include("kernels/kernel_ad_routines/tensor_tensor_mul.jl")
     include("kernels/kernel_ad_routines/tensor_transpose_tensor_mul.jl")
     include("kernels/kernel_ad_routines/tensor_transpose.jl")
+    include("kernels/kernel_ad_routines/tensor_mat_skew_sym_assign.jl")
     include("kernels/kernel_ad_routines/vec_tensor_mul.jl")
     # export tensor_mat_mul
 
@@ -137,7 +144,7 @@ module GeometricMachineLearning
     include("layers/stiefel_layer.jl")
     include("layers/grassmann_layer.jl")
     include("layers/multi_head_attention.jl")
-    include("layers/attention_layer.jl")
+    include("layers/volume_preserving_attention.jl")
     include("layers/transformer.jl")
     include("layers/psd_like_layer.jl")
     include("layers/classification.jl")
@@ -147,7 +154,7 @@ module GeometricMachineLearning
     export StiefelLayer, GrassmannLayer, ManifoldLayer
     export PSDLayer
     export MultiHeadAttention
-    export Attention
+    export VolumePreservingAttention
     export ResNet
     export Transformer
     export Classification

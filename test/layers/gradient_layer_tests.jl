@@ -7,7 +7,7 @@ Random.seed!(1234)
 
 function test_gradient_layer_application(T, M, N, batch_size=10)
     dummy_model = GradientLayerQ(M, N, tanh)
-    ps = initialparameters(CPU(), T, dummy_model)
+    ps = initialparameters(dummy_model, CPU(), T)
 
     x = rand(T, M)
     x_applied = dummy_model(x, ps)
@@ -22,7 +22,7 @@ end
 
 function test_gradient_layer_derivative_and_update(T, M, N, batch_size=10)
     dummy_model = Chain(GradientLayerP(M, N, tanh), GradientLayerQ(M, N, tanh))
-    ps = initialparameters(CPU(), T, dummy_model)
+    ps = initialparameters(dummy_model, CPU(), T)
     o = Optimizer(AdamOptimizer(T(0.1), T(.9), T(0.999), T(3e-7)), ps)
 
     # test for vector 

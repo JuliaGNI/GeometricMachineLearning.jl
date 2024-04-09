@@ -5,7 +5,7 @@ Random.seed!(1234)
 
 function stiefel_layer_test(T, M, N, tol=1f-1)
     model = Chain(StiefelLayer(M, N), StiefelLayer(N, N))
-    ps = initialparameters(T, model)
+    ps = initialparameters(model, T)
     o = Optimizer(AdamOptimizer(T(1f0), T(5f-1), T(5f-1), T(3f-7)),ps)
 
     dx = ((weight=rand(T,N,M),),(weight=rand(T,N,N),))
@@ -20,7 +20,7 @@ end
 
 function grassmann_layer_test(T, M, N, tol=1f-1)
     model = Chain(GrassmannLayer(M, N), StiefelLayer(N, N))
-    ps = initialparameters(T, model)
+    ps = initialparameters(model, T)
     o = Optimizer(AdamOptimizer(T(1f0), T(5f-1), T(5f-1), T(3f-7)),ps)
 
     dx = ((weight=rand(T,N,M),),(weight=rand(T,N,N),))

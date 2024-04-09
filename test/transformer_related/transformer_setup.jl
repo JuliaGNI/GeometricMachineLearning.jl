@@ -5,7 +5,7 @@ This function tests the setup of the transformer with Stiefel weights.
 """
 function transformer_setup_test(dim, n_heads, L, T)
     model = Transformer(dim, n_heads, L, Stiefel=true)
-    ps = initialparameters(KernelAbstractions.CPU(), T, model)
+    ps = initialparameters(model, KernelAbstractions.CPU(), T)
     @test typeof(ps[1].PQ.head_1) <: StiefelManifold
 end
 

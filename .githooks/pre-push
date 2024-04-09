@@ -1,0 +1,19 @@
+# pre-push git hook that runs all tests before pushing
+
+red='\033[0;31m'
+green='\033[0;32m'
+no_color='\033[0m'
+
+reponame=$(basename `git rev-parse --show-toplevel`)
+
+
+echo "\nRunning pre-push hook\n"
+echo "Testing $reponame"
+julia --project=@.  -e "using Pkg; Pkg.test(\"GeometricMachineLearning\")"
+
+if [[ $? -ne 0 ]]; then
+        echo "\n${red}ERROR - Tests must pass before push!\n${no_color}"
+  exit 1
+fi
+
+echo "\n${green}Git hook was SUCCESSFUL!${no_color}\n"
