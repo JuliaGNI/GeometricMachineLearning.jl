@@ -1,5 +1,5 @@
 all: pdf 
-	$(MAKE) png 
+	$(MAKE) png   res1=150 res2=200 res3=100 res4=180
 	$(MAKE) logo 
 	$(MAKE) clean 
 
