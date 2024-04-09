@@ -6,7 +6,7 @@ function ResNet(dim::IT, activation=identity; use_bias::Bool=true) where {IT<:In
     return ResNet{dim, dim, use_bias, typeof(activation)}(activation)
 end
 
-function initialparameters(backend::KernelAbstractions.Backend, T::Type, ::ResNet{M, M, use_bias}; rng::Random.AbstractRNG=Random.default_rng(), init_weight = GlorotUniform(), init_bias = ZeroInitializer()) where {M, use_bias}
+function initialparameters(::ResNet{M, M, use_bias}, backend::KernelAbstractions.Backend, T::Type; rng::Random.AbstractRNG=Random.default_rng(), init_weight = GlorotUniform(), init_bias = ZeroInitializer()) where {M, use_bias}
     if use_bias
         weight = KernelAbstractions.allocate(backend, T, M, M)
         bias = KernelAbstractions.allocate(backend, T, M)

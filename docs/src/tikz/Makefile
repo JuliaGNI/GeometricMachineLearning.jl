@@ -1,5 +1,5 @@
 all: pdf 
-	$(MAKE) png 
+	$(MAKE) png   res1=150 res2=200 res3=100 res4=180
 	$(MAKE) logo 
 	$(MAKE) clean 
 
@@ -46,6 +46,8 @@ png:
 	pdftocairo 	-png -r $(res3) -transp -singlefile  structs_visualization.pdf						structs_visualization
 	pdftocairo 	-png -r $(res3) -transp -singlefile  structs_visualization_dark.pdf					structs_visualization_dark
 	pdftocairo 	-png -r $(res1) -transp -singlefile	 logo.pdf										logo 
+	pdftocairo 	-png -r 500	    -transp -singlefile	 logo_with_name.pdf								logo_with_name 
+	pdftocairo 	-png -r 500	    -transp -singlefile	 logo_with_name_dark.pdf						logo_with_name_dark 
 	pdftocairo  -png -r $(res1) -transp -singlefile  symplectic_autoencoder.pdf						symplectic_autoencoder
 	pdftocairo  -png -r $(res1) -transp -singlefile  symplectic_autoencoder_dark.pdf				symplectic_autoencoder_dark
 	pdftocairo  -png -r $(res1) -transp -singlefile  solution_manifold_2.pdf						solution_manifold_2
@@ -55,10 +57,6 @@ png:
 	pdftocairo  -png -r $(res1) -transp -singlefile  tensor_dark.pdf 								tensor_dark
 	pdftocairo  -png -r $(res4) -transp -singlefile  tensor_sampling.pdf 							tensor_sampling
 	pdftocairo  -png -r $(res4) -transp -singlefile  tensor_sampling_dark.pdf 						tensor_sampling_dark
-	pdftocairo  -png -r $(res4) -transp -singlefile  skew_sym_visualization.pdf 					skew_sym_visualization
-	pdftocairo  -png -r $(res4) -transp -singlefile  skew_sym_visualization_dark.pdf 				skew_sym_visualization_dark
-	pdftocairo  -png -r $(res1) -transp -singlefile  vp_feedforward.pdf 							vp_feedforward
-	pdftocairo  -png -r $(res1) -transp -singlefile  vp_feedforward_dark.pdf 						vp_feedforward_dark
 
 logo:
 	cp logo_with_name.png 		../assets/logo.png

@@ -29,7 +29,7 @@ TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
-AbstractNeuralNetworks = "0.1"
+AbstractNeuralNetworks = "0.2"
 BandedMatrices = "0.17, 1"
 ChainRules = "1"
 ChainRulesCore = "1"

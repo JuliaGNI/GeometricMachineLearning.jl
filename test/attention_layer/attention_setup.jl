@@ -13,9 +13,9 @@ function attention_tests(N, T=Float32)
     # same as model₁, but with the add connection
     model₄ = Attention(N, Stiefel=false, add_connection=true)
 
-    ps₁ = initialparameters(CPU(), T, model₁)
-    ps₂ = initialparameters(CPU(), T, model₂)
-    ps₃ = initialparameters(CPU(), T, model₃)
+    ps₁ = initialparameters(model₁, CPU(), T)
+    ps₂ = initialparameters(model₂, CPU(), T)
+    ps₃ = initialparameters(model₃, CPU(), T)
     @test typeof(ps₂.PQ) <: StiefelManifold 
     @test typeof(ps₂.PK) <: StiefelManifold 
 
