@@ -48,7 +48,7 @@ const ε = 0.1                 # entropic regularization. √ε is a length.  # 
 const q = 1.0                 # annealing parameter                       # hide
 const Δ = 1.0                 # characteristic domain size                # hide
 const s = ε                   # current scale: no annealing -> equals ε   # hide
-const tol = 1e-4              # marginal condition tolerance              # hide 
+const tol = 1e-6              # marginal condition tolerance              # hide 
 const crit_it = 20            # acceleration inference                    # hide
 const p_η = 2
 
@@ -58,7 +58,7 @@ function compute_wasserstein_gradient(ensemble1::AT, ensemble2::AT) where AT<:Ab
     V = SinkhornVariable(copy(ensemble1'), ones(number_of_particles1) / number_of_particles1)
     W = SinkhornVariable(copy(ensemble2'), ones(number_of_particles2) / number_of_particles2)
     params = SinkhornParameters(; ε=ε,q=1.0,Δ=1.0,s=s,tol=tol,crit_it=crit_it,p_η=p_η,sym=false,acc=true) # hide
-    S = SinkhornDivergence(V, W, c, params, true)
+    S = SinkhornDivergence(V, W, c, params; islog = true)
     initialize_potentials!(S)
     compute!(S)
     value(S), x_gradient!(S, ∇c)'
