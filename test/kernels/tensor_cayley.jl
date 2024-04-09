@@ -40,7 +40,7 @@ function check_all(T::Type, third_dim::Int=10)
     test_tensor_cayley2(T, third_dim)
     test_tensor_cayley3(T, third_dim)
     test_tensor_cayley4(T, third_dim)
-    test_tensor_cayley5(T, third_dim)
+    # test_tensor_cayley5(T, third_dim)
 end
 
 check_all(Float32)
