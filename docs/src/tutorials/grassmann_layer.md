@@ -58,7 +58,7 @@ function compute_wasserstein_gradient(ensemble1::AT, ensemble2::AT) where AT<:Ab
     V = SinkhornVariable(copy(ensemble1'), ones(number_of_particles1) / number_of_particles1)
     W = SinkhornVariable(copy(ensemble2'), ones(number_of_particles2) / number_of_particles2)
     params = SinkhornParameters(; ε=ε,q=1.0,Δ=1.0,s=s,tol=tol,crit_it=crit_it,p_η=p_η,sym=false,acc=true) # hide
-    S = SinkhornDivergence(V, W, c, params, true)
+    S = SinkhornDivergence(V, W, c, params; islog = true)
     initialize_potentials!(S)
     compute!(S)
     value(S), x_gradient!(S, ∇c)'
