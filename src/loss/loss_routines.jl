@@ -12,7 +12,7 @@ It takes as input:
 - `input::Union{Array, NamedTuple}`
 - `output::Uniont{Array, NamedTuple}`
 """
-function loss(model::Union{Chain, AbstractExplicitLayer}, ps::Union{Tuple, NamedTuple}, input::AT, output::BT) where {T, T1, AT<:AbstractArray{T, 3}, BT<:AbstractArray{T1, 3}}
+function loss(model::Union{Chain, AbstractExplicitLayer}, ps::Union{Tuple, NamedTuple}, input::AT, output::BT) where {T, T1, AT<:AbstractArray{T}, BT<:AbstractArray{T1}}
     output_estimate = model(input, ps)
     norm(output - output_estimate) / norm(output) 
 end
@@ -44,6 +44,36 @@ end
 function loss(model::Union{Chain, AbstractExplicitLayer}, ps::Union{Tuple, NamedTuple}, input::NT) where {T, AT<:AbstractArray{T}, NT<:NamedTuple{(:q, :p,), Tuple{AT, AT}}}
     output_estimate = model(input, ps)
     nt_norm(nt_diff(output_estimate, input)) / nt_norm(input)
+end
+
+@doc raw"""
+The transformer works similarly to the regular loss, but with the difference that ``\mathcal{NN}(input)`` and ``output`` may have different sizes. 
+
+It takes as input: 
+- `model::Union{Chain, AbstractExplicitLayer}`
+- `ps::Union{Tuple, NamedTuple}`
+- `input::Union{Array, NamedTuple}`
+- `output::Uniont{Array, NamedTuple}`
+"""
+function transformer_loss(model::Union{Chain, AbstractExplicitLayer}, ps::Union{Tuple, NamedTuple}, input::BT, output::BT) where {T, BT<:AbstractArray{T}} 
+    norm(
+        crop_array_for_transformer_loss(model(input, ps), output) - 
+        output 
+        ) / 
+    norm(input) 
+end
+
+function transformer_loss(model::Union{Chain, AbstractExplicitLayer}, ps::Union{Tuple, NamedTuple}, input::NT, output::NT) where {T, AT<:AbstractArray{T}, NT<:NamedTuple{(:q, :p,), Tuple{AT, AT}}}
+    output_estimate = model(input, ps)
+    
+    nt_norm(
+        nt_diff(
+            (q = crop_array_for_transformer_loss(output_estimate.q, output.q),
+             p = crop_array_for_transformer_loss(output_estimate.p, output.p)), 
+            output
+            )
+            ) / 
+            nt_norm(input)
 end
 
 
