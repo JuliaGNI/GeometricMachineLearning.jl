@@ -148,7 +148,7 @@ function Gradient(dim::Int, dim2::Int=dim, activation = identity; full_grad::Boo
         end
 end
 
-function initialparameters(backend::Backend, ::Type{T}, d::GradientLayer{M, M}; rng::AbstractRNG = Random.default_rng(), init_weight = GlorotUniform(), init_bias = ZeroInitializer(), init_scale = GlorotUniform()) where {M, T}
+function initialparameters(d::GradientLayer{M, M}, backend::Backend, ::Type{T}; rng::AbstractRNG = Random.default_rng(), init_weight = GlorotUniform(), init_bias = ZeroInitializer(), init_scale = GlorotUniform()) where {M, T}
         K = KernelAbstractions.allocate(backend, T, d.second_dim÷2, M÷2)
         b = KernelAbstractions.allocate(backend, T, d.second_dim÷2)
         a = KernelAbstractions.allocate(backend, T, d.second_dim÷2)
@@ -158,13 +158,13 @@ function initialparameters(backend::Backend, ::Type{T}, d::GradientLayer{M, M}; 
         return (weight=K, bias=b, scale=a)
 end
 
-function initialparameters(backend::Backend, ::Type{T}, ::ActivationLayer{M, M}; rng::AbstractRNG = Random.default_rng(), init_scale = GlorotUniform()) where {M, T}
+function initialparameters(::ActivationLayer{M, M}, backend::Backend, ::Type{T}; rng::AbstractRNG = Random.default_rng(), init_scale = GlorotUniform()) where {M, T}
         a = KernelAbstractions.zeros(backend, T, M÷2)
         init_scale(rng, a)
         return (scale = a,)
 end
 
-function initialparameters(backend::Backend, ::Type{T}, ::LinearLayer{M, M}; rng::AbstractRNG = Random.default_rng(), init_weight = GlorotUniform()) where {M, T}
+function initialparameters(::LinearLayer{M, M}, backend::Backend, ::Type{T}; rng::AbstractRNG = Random.default_rng(), init_weight = GlorotUniform()) where {M, T}
         S = KernelAbstractions.allocate(backend, T, (M÷2)*(M÷2+1)÷2)
         init_weight(rng, S)
         (weight=SymmetricMatrix(S, M÷2), )

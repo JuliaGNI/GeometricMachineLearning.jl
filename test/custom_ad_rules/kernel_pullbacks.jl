@@ -1,4 +1,4 @@
-using GeometricMachineLearning: tensor_mat_mul, mat_tensor_mul, tensor_tensor_mul, tensor_transpose_tensor_mul, assign_q_and_p, tensor_transpose, assign_matrix, assign_tensor, assign_output_estimate, vec_tensor_mul, upper_triangular_asymmetrize
+using GeometricMachineLearning: tensor_mat_mul, mat_tensor_mul, tensor_tensor_mul, tensor_transpose_tensor_mul, assign_q_and_p, tensor_transpose, assign_output_estimate, vec_tensor_mul, tensor_mat_skew_sym_assign
 using ChainRulesTestUtils
 using Printf
 import Random 
@@ -17,11 +17,9 @@ function main(first_dim, second_dim, third_dim, third_tensor_dim)
     test_rrule(tensor_tensor_mul, rand(first_dim, second_dim, third_tensor_dim), rand(second_dim, third_dim, third_tensor_dim))
     test_rrule(tensor_transpose_tensor_mul, rand(second_dim, first_dim, third_tensor_dim), rand(second_dim, third_dim, third_tensor_dim))
     test_rrule(tensor_transpose, rand(first_dim, second_dim, third_tensor_dim))
-    test_rrule(assign_matrix, rand(first_dim, second_dim, third_tensor_dim), third_tensor_dim)
-    test_rrule(assign_tensor, rand(first_dim, second_dim), third_tensor_dim, 1)
     test_rrule(assign_output_estimate, rand(first_dim, second_dim, third_tensor_dim), 1)
     test_rrule(vec_tensor_mul, rand(first_dim), rand(first_dim, second_dim, third_tensor_dim))
-    test_rrule(upper_triangular_asymmetrize, rand(first_dim, first_dim, third_tensor_dim))
+    test_rrule(tensor_mat_skew_sym_assign, rand(first_dim, second_dim, third_tensor_dim), rand(first_dim, first_dim), check_thunked_output_tangent = false)
 end
 
 const dim_range = 10
