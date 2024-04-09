@@ -125,6 +125,7 @@ module GeometricMachineLearning
     include("optimizers/gradient_optimizer.jl")
     include("optimizers/momentum_optimizer.jl")        
     include("optimizers/adam_optimizer.jl")
+    include("optimizers/adam_optimizer_with_learning_rate_decay.jl")
     include("optimizers/bfgs_cache.jl")
     include("optimizers/bfgs_optimizer.jl")
     include("optimizers/init_optimizer_cache.jl")
@@ -158,6 +159,7 @@ module GeometricMachineLearning
     export OptimizerMethod, AbstractCache
     export GradientOptimizer, GradientCache
     export MomentumOptimizer, MomentumCache
+    export AdamOptimizerWithDecay
     export AdamOptimizer, AdamCache
     export BFGSOptimizer, BFGSCache
 
