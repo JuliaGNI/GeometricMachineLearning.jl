@@ -1,5 +1,5 @@
 all: pdf 
-	$(MAKE) png 
+	$(MAKE) png   res1=150 res2=200 res3=100 res4=180
 	$(MAKE) logo 
 	$(MAKE) clean 
 
@@ -46,6 +46,8 @@ png:
 	pdftocairo 	-png -r $(res3) -transp -singlefile  structs_visualization.pdf						structs_visualization
 	pdftocairo 	-png -r $(res3) -transp -singlefile  structs_visualization_dark.pdf					structs_visualization_dark
 	pdftocairo 	-png -r $(res1) -transp -singlefile	 logo.pdf										logo 
+	pdftocairo 	-png -r 500	    -transp -singlefile	 logo_with_name.pdf								logo_with_name 
+	pdftocairo 	-png -r 500	    -transp -singlefile	 logo_with_name_dark.pdf						logo_with_name_dark 
 	pdftocairo  -png -r $(res1) -transp -singlefile  symplectic_autoencoder.pdf						symplectic_autoencoder
 	pdftocairo  -png -r $(res1) -transp -singlefile  symplectic_autoencoder_dark.pdf				symplectic_autoencoder_dark
 	pdftocairo  -png -r $(res1) -transp -singlefile  solution_manifold_2.pdf						solution_manifold_2
