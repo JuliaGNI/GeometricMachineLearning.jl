@@ -14,7 +14,7 @@ function setup_network(dl::DataLoader{T}) where T
 end
 
 # tests checks if Adam with decay achieves a lower loss value than regular Adam and the two converge reasonably well
-function train_network(; n_epochs=1024)
+function train_network(; n_epochs=2048)
     nn₁ = setup_network(dl)
     nn₂ = setup_network(dl)
     loss = GeometricMachineLearning.loss
