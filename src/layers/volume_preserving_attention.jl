@@ -61,13 +61,13 @@ function parameterlength(::VolumePreservingAttention{M, M, :arbitrary}) where {M
     M ^2
 end
 
-function initialparameters(backend::KernelAbstractions.Backend, T::Type, d::VolumePreservingAttention{M, M, :skew_sym}; rng::AbstractRNG=Random.default_rng(), initializer!::AbstractNeuralNetworks.AbstractInitializer=GlorotUniform()) where {M}
+function initialparameters(d::VolumePreservingAttention{M, M, :skew_sym}, backend::KernelAbstractions.Backend, T::Type; rng::AbstractRNG=Random.default_rng(), initializer!::AbstractNeuralNetworks.AbstractInitializer=GlorotUniform()) where {M}
     V = KernelAbstractions.allocate(backend, T, parameterlength(d))
     initializer!(rng, V)
     (A = SkewSymMatrix(V, M), )
 end
 
-function initialparameters(backend::KernelAbstractions.Backend, T::Type, ::VolumePreservingAttention{M, M, :arbitrary}; rng::AbstractRNG=Random.default_rng(), initializer!::AbstractNeuralNetworks.AbstractInitializer=GlorotUniform()) where {M}
+function initialparameters(::VolumePreservingAttention{M, M, :arbitrary}, backend::KernelAbstractions.Backend, T::Type; rng::AbstractRNG=Random.default_rng(), initializer!::AbstractNeuralNetworks.AbstractInitializer=GlorotUniform()) where {M}
     A = KernelAbstractions.allocate(backend, T, M, M)
     initializer!(rng, A)
     (A = A, )
