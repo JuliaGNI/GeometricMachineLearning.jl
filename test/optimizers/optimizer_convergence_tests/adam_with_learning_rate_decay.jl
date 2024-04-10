@@ -17,11 +17,13 @@ end
 function train_network(; n_epochs=2048)
     nn₁ = setup_network(dl)
     nn₂ = setup_network(dl)
-    loss = GeometricMachineLearning.loss
 
     o₁ = Optimizer(AdamOptimizer(), nn₁)
     o₂ = Optimizer(AdamOptimizerWithDecay(n_epochs), nn₂)
+
     batch = Batch(5, 1)
+    loss = GeometricMachineLearning.FeedForwardLoss()
+
     loss_array₁ = o₁(nn₁, dl, batch, n_epochs, loss)
     loss_array₂ = o₂(nn₂, dl, batch, n_epochs, loss)
 
