@@ -48,3 +48,7 @@ using SafeTestsets
 
 @safetestset "Test parallel inverses                                                          " begin include("kernels/tensor_inverse.jl") end
 @safetestset "Test parallel Cayley                                                            " begin include("kernels/tensor_cayley.jl") end
+
+@safetestset "Test triangular arrays                                                          " begin include("arrays/triangular.jl") end
+
+@safetestset "Test volume-preserving feedforward neural network                               " begin include("layers/volume_preserving_feedforward.jl") end
