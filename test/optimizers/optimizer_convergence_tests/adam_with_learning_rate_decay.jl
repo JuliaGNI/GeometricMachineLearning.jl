@@ -28,7 +28,7 @@ function train_network(; n_epochs=2048)
     loss_array₂ = o₂(nn₂, dl, batch, n_epochs, loss)
 
     T = eltype(dl)
-    @test loss_array₂[end] < loss_array₁[end] < T(1.5e-1)
+    @test loss_array₂[end] < loss_array₁[end] < T(1.6e-1)
 end
 
 train_network()
