@@ -47,5 +47,11 @@ using SafeTestsets
 @safetestset "Optimizer functor with data loader for Adam                                     " begin include("data_loader/optimizer_functor_with_adam.jl") end
 @safetestset "Test data loader for a tensor (q and p data)                                    " begin include("data_loader/draw_batch_for_tensor_test.jl") end
 
+@safetestset "Test NetworkLoss + Optimizer                                                    " begin include("network_losses/losses_and_optimization.jl") end
+
 @safetestset "Test parallel inverses                                                          " begin include("kernels/tensor_inverse.jl") end
 @safetestset "Test parallel Cayley                                                            " begin include("kernels/tensor_cayley.jl") end
+
+@safetestset "Test triangular arrays                                                          " begin include("arrays/triangular.jl") end
+
+@safetestset "Test volume-preserving feedforward neural network                               " begin include("layers/volume_preserving_feedforward.jl") end

@@ -32,6 +32,24 @@ module GeometricMachineLearning
     import NNlib: σ, sigmoid, softmax
     #import LogExpFunctions: softmax
 
+    # INCLUDE ARRAYS
+    include("arrays/skew_symmetric.jl")
+    include("arrays/symmetric.jl")
+    include("arrays/symplectic.jl")
+    include("arrays/abstract_lie_algebra_horizontal.jl")
+    include("arrays/stiefel_lie_algebra_horizontal.jl")
+    include("arrays/grassmann_lie_algebra_horizontal.jl")
+    include("arrays/triangular.jl")
+    include("arrays/lower_triangular.jl")
+    include("arrays/upper_triangular.jl")
+
+    export SymmetricMatrix, SymplecticPotential, SkewSymMatrix, LowerTriangular, UpperTriangular
+    export StiefelLieAlgHorMatrix
+    export SymplecticLieAlgMatrix, SymplecticLieAlgHorMatrix
+    export GrassmannLieAlgHorMatrix
+    export StiefelProjection, SymplecticProjection
+    
+
     export CPU, GPU
     export Chain, NeuralNetwork
     export Dense, Linear
@@ -43,8 +61,10 @@ module GeometricMachineLearning
     # from GeometricBase to print docs
     export description
 
-    # the functionality in the script doesn't require anything else defined in GML, but some of the other scripts in that folder do.
     include("data_loader/data_loader.jl")
+
+    include("loss/loss_routines.jl")
+    include("loss/losses.jl")
 
     include("kernels/assign_q_and_p.jl")
     include("kernels/tensor_mat_mul.jl")
@@ -89,20 +109,6 @@ module GeometricMachineLearning
     # GPU specific operations
     export convert_to_dev, Device, CPUDevice
 
-    # INCLUDE ARRAYS
-    include("arrays/skew_symmetric.jl")
-    include("arrays/symmetric.jl")
-    include("arrays/symplectic.jl")
-    include("arrays/abstract_lie_algebra_horizontal.jl")
-    include("arrays/stiefel_lie_algebra_horizontal.jl")
-    include("arrays/grassmann_lie_algebra_horizontal.jl")
-
-    export SymmetricMatrix, SymplecticPotential, SkewSymMatrix
-    export StiefelLieAlgHorMatrix
-    export SymplecticLieAlgMatrix, SymplecticLieAlgHorMatrix
-    export GrassmannLieAlgHorMatrix
-    export StiefelProjection, SymplecticProjection
-
     export GradientLayerQ, GradientLayerP, ActivationLayerQ, ActivationLayerP, LinearLayerQ, LinearLayerP
     export Linear
     export ResidualLayer
@@ -145,6 +151,7 @@ module GeometricMachineLearning
     include("layers/transformer.jl")
     include("layers/psd_like_layer.jl")
     include("layers/classification.jl")
+    include("layers/volume_preserving_feedforward.jl")
 
     # include("layers/symplectic_stiefel_layer.jl")
     export StiefelLayer, GrassmannLayer, ManifoldLayer
@@ -154,6 +161,8 @@ module GeometricMachineLearning
     export ResNet
     export Transformer
     export Classification
+    export VolumePreservingLowerLayer
+    export VolumePreservingUpperLayer
 
     # INCLUDE OPTIMIZERS
     export OptimizerMethod, AbstractCache
@@ -236,6 +245,7 @@ module GeometricMachineLearning
     include("data_loader/batch.jl")
 
     #INCLUDE ARCHITECTURES
+    include("architectures/neural_network_integrator.jl")
     include("architectures/sympnet.jl")
     include("architectures/autoencoder.jl")
     include("architectures/fixed_width_network.jl")
@@ -245,6 +255,7 @@ module GeometricMachineLearning
     include("architectures/recurrent_neural_network.jl")
     include("architectures/LSTM_neural_network.jl")
     include("architectures/transformer_neural_network.jl")
+    include("architectures/volume_preserving_feedforward.jl")
 
     export HamiltonianNeuralNetwork
     export LagrangianNeuralNetwork
@@ -254,6 +265,7 @@ module GeometricMachineLearning
     export RecurrentNeuralNetwork
     export LSTMNeuralNetwork
     export ClassificationTransformer
+    export VolumePreservingFeedForward
 
     export train!, apply!, jacobian!
     export Iterate_Sympnet
@@ -373,5 +385,5 @@ module GeometricMachineLearning
 
     export ReducedSystem, compute_reduction_error, compute_projection_error, reduced_vector_field_from_full_explicit_vector_field, perform_integration_reduced, perform_integration_full
 
-    include("loss/loss_routines.jl")
+    include("data_loader/optimize.jl")
 end

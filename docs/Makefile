@@ -38,10 +38,7 @@ documenter:
 	julia --color=yes --project=. --threads=8 make.jl html_output
 
 html_images:
-	$(MAKE) pdf   									-C src/tikz ;
-	$(MAKE) png res1=150 res2=200 res3=100 res4=180 -C src/tikz	;
-	$(MAKE) logo  									-C src/tikz ;
-	$(MAKE) clean -C src/tikz
+	$(MAKE) all -C src/tikz
 
 images_mac: 
 	$(MAKE) mac		 -C src/tikz

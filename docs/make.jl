@@ -55,6 +55,7 @@ makedocs(;
             "Differential Equations and the EAU theorem" => "manifolds/existence_and_uniqueness_theorem.md",
             ],
         "Arrays" => [
+            "Symmetric and Skew-Symmetric Matrices" => "arrays/skew_symmetric_matrix.md",
             "Stiefel Global Tangent Space" => "arrays/stiefel_lie_alg_horizontal.md",
             "Grassmann Global Tangent Space"=> "arrays/grassmann_lie_alg_hor_matrix.md",
         ],
@@ -72,6 +73,7 @@ makedocs(;
             "BFGS Optimizer" => "optimizers/bfgs_optimizer.md",
             ],
         "Special Neural Network Layers" => [
+            "Volume-Preserving Layers" => "layers/volume_preserving_feedforward.md",
             "Attention" => "layers/attention_layer.md",
             "Multihead Attention" => "layers/multihead_attention_layer.md",
         ],
