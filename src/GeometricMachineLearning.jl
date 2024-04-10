@@ -61,8 +61,10 @@ module GeometricMachineLearning
     # from GeometricBase to print docs
     export description
 
-    # the functionality in the script doesn't require anything else defined in GML, but some of the other scripts in that folder do.
     include("data_loader/data_loader.jl")
+
+    include("loss/loss_routines.jl")
+    include("loss/losses.jl")
 
     include("kernels/assign_q_and_p.jl")
     include("kernels/tensor_mat_mul.jl")
@@ -381,5 +383,5 @@ module GeometricMachineLearning
 
     export ReducedSystem, compute_reduction_error, compute_projection_error, reduced_vector_field_from_full_explicit_vector_field, perform_integration_reduced, perform_integration_full
 
-    include("loss/loss_routines.jl")
+    include("data_loader/optimize.jl")
 end
