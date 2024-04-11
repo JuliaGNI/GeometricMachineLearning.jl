@@ -8,8 +8,8 @@ function volume_preserving_attention_tests(N, T=Float32)
     model₁ = VolumePreservingAttention(N, skew_sym = false)
     model₂ = VolumePreservingAttention(N, skew_sym = true)
 
-    ps₁ = initialparameters(CPU(), T, model₁)
-    ps₂ = initialparameters(CPU(), T, model₂)
+    ps₁ = initialparameters(model₁, CPU(), T)
+    ps₂ = initialparameters(model₂, CPU(), T)
     @test typeof(ps₁.A) <: AbstractMatrix{T} 
     @test typeof(ps₂.A) <: SkewSymMatrix{T} 
 

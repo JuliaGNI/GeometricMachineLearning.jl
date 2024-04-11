@@ -31,6 +31,7 @@ using SafeTestsets
 @safetestset "Optimizer #3                                                                    " begin include("optimizers/utils/modified_exponential.jl") end
 @safetestset "Optimizer #4                                                                    " begin include("optimizers/optimizer_convergence_tests/svd_optim.jl") end
 @safetestset "Optimizer #5                                                                    " begin include("optimizers/optimizer_convergence_tests/psd_optim.jl") end
+@safetestset "Check if Adam with decay converges                                              " begin include("optimizers/optimizer_convergence_tests/adam_with_learning_rate_decay.jl") end
 @safetestset "Data                                                                            " begin include("data/test_data.jl") end
 @safetestset "Batch                                                                           " begin include("data/test_batch.jl") end
 @safetestset "Method                                                                          " begin include("train!/test_method.jl") end
