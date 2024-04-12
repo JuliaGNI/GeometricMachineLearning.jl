@@ -63,3 +63,6 @@ using SafeTestsets
 @safetestset "Regular transformer integrator                                                  " begin include("regular_transformer_integrator.jl") end
 
 @safetestset "Batch functor(s)                                                                " begin include("batch/batch_functor.jl") end
+
+@safetestset "SympNet integrator                                                              " begin include("sympnet_integrator.jl") end
+@safetestset "Regular transformer integrator                                                  " begin include("regular_transformer_integrator.jl") end
