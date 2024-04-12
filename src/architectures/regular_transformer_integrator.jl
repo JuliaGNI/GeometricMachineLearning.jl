@@ -3,7 +3,7 @@ The regular transformer used as an integrator (multi-step method).
 
 The constructor is called with the following arguments: 
 - `sys_dim::Int`
-- `transformer_dim::Int`: the defualt is `transformer_dim = sys_dim`.
+- `transformer_dim::Int`: the default is `transformer_dim = sys_dim`.
 - `n_blocks::Int`: The default is `1`.
 - `n_heads::Int`: the number of heads in the multihead attentio layer (default is `n_heads = sys_dim`)
 - `L::Int` the number of transformer blocks (default is `L = 2`).
