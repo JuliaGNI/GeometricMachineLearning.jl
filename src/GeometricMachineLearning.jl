@@ -246,6 +246,7 @@ module GeometricMachineLearning
 
     #INCLUDE ARCHITECTURES
     include("architectures/neural_network_integrator.jl")
+    include("architectures/transformer_integrator.jl")
     include("architectures/sympnet.jl")
     include("architectures/autoencoder.jl")
     include("architectures/fixed_width_network.jl")
