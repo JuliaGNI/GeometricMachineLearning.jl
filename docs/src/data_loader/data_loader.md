@@ -69,7 +69,7 @@ Markdown.parse(description(Val(:batch_functor_matrix)))
 using GeometricMachineLearning # hide
 
 matrix_data = rand(Float32, 2, 10)
-dl = DataLoader(matrix_data)
+dl = DataLoader(matrix_data; autoencoder=true)
 
 batch = Batch(3)
 batch(dl)
@@ -112,7 +112,7 @@ We can also sample tensor data.
 ```@example
 using GeometricMachineLearning # hide 
 
-qp_data = (q = rand(Float32, 2, 8, 3), p = rand(Float32, 2, 8, 3))
+qp_data = (q = rand(Float32, 2, 20, 3), p = rand(Float32, 2, 20, 3))
 dl = DataLoader(qp_data)
 
 # also specify sequence length here
