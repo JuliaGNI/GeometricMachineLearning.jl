@@ -85,7 +85,7 @@ function compute_output_of_mha(d::MultiHeadAttention{M, M}, x::AbstractMatrix{T}
     output = typeof(x)(zeros(T, 0, input_length))
     for i in 1:d.n_heads
         key = Symbol("head_"*string(i))
-        output = vcat(output, ps.PV[key]'*x*softmax((ps.PQ[key]'*x)'*(ps.PK[key]'*x)/T(sqrt(dim))))
+        output = vcat(output, ps.PV[key]' * x * softmax((ps.PQ[key]' * x)' * (ps.PK[key]' * x) / T(sqrt(dim))))
     end
     output
 end
@@ -111,7 +111,6 @@ function compute_output_of_mha(d::MultiHeadAttention{M, M}, x::AbstractArray{T, 
 
         single_head_output = tensor_tensor_mul(V_tensor, softmax(QK_tensor/T(sqrt(dim))))
         output = vcat(output, single_head_output) 
-        # KernelAbstractions.synchronize(backend)
     end
     output
 end
@@ -125,9 +124,7 @@ function (d::MultiHeadAttention{M, M, Stiefel, Retraction, false})(x::AbstractAr
 end
 
 import ChainRules
-"""
-This has to be extended to tensors; you should probably do a PR in ChainRules for this.
-"""
+# type pyracy! 
 function ChainRules._adjoint_mat_pullback(y::AbstractArray{T, 3}, proj) where T 
     (NoTangent(), proj(tensor_transpose(y)))
 end

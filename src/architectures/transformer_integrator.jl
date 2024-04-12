@@ -14,8 +14,9 @@ It takes as input:
 - `nn`: a `NeuralNetwork` (that has been trained).
 - `ics`: initial conditions (a matrix in ``\mathbb{R}^{2n\times\mathtt{seq\_length}}`` or `NamedTuple` of two matrices in ``\mathbb{R}^{n\times\mathtt{seq\_length}}``)
 - `n_points::Int=100` (keyword argument): The number of steps for which we run the prediction. 
+- `prediction_window::Int=size(ics.q, 2)`: The prediction window (i.e. the number of steps we predict into the future) is equal to the sequence length (i.e. the number of input time steps) by default.  
 """
-function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::NamedTuple{(:q, :p), Tuple{AT, AT}}; n_points::Int = 100, prediction_window::Union{Nothing, Int} = 1) where {T, AT<:AbstractMatrix{T}}
+function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::NamedTuple{(:q, :p), Tuple{AT, AT}}; n_points::Int = 100, prediction_window::Union{Nothing, Int}=size(ics.q, 2)) where {T, AT<:AbstractMatrix{T}}
 
     seq_length = nn.architecture.seq_length
 
@@ -43,7 +44,7 @@ function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::NamedTupl
     (q=q_valuation[:, 1:n_points], p=p_valuation[:, 1:n_points])
 end
 
-function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::AT; n_points::Int = 100, prediction_window::Union{Nothing, Int} = 1) where {T, AT<:AbstractMatrix{T}}
+function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::AT; n_points::Int = 100, prediction_window::Union{Nothing, Int} = size(ics, 2)) where {T, AT<:AbstractMatrix{T}}
 
     seq_length = typeof(nn.architecture) <: RegularTransformerIntegrator ? prediction_window : nn.architecture.seq_length
 

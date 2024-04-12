@@ -1,5 +1,5 @@
 using GeometricMachineLearning
-using GeometricMachineLearning: FeedForwardLoss
+using GeometricMachineLearning: FeedForwardLoss, ResNetLayer
 using Test 
 import Random 
 
@@ -9,7 +9,7 @@ const sin_vector = sin.(0:0.01:2π)
 const dl = DataLoader(reshape(sin_vector, 1, length(sin_vector), 1))
 
 function setup_network(dl::DataLoader{T}) where T
-    arch = Chain(Dense(1, 5, tanh), ResNet(5, tanh), Dense(5, 1, identity))
+    arch = Chain(Dense(1, 5, tanh), ResNetLayer(5, tanh), Dense(5, 1, identity))
     NeuralNetwork(arch, CPU(), T)
 end
 

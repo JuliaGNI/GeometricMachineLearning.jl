@@ -1,13 +1,15 @@
-
 using SafeTestsets
 
 @safetestset "Check parameterlength                                                           " begin include("parameterlength/check_parameterlengths.jl") end
+
 @safetestset "Arrays #1                                                                       " begin include("arrays/array_tests.jl") end
 @safetestset "Sampling of arrays                                                              " begin include("arrays/random_generation_of_custom_arrays.jl") end
 @safetestset "Addition tests for custom arrays                                                " begin include("arrays/addition_tests_for_custom_arrays.jl") end
 @safetestset "Scalar multiplication tests for custom arrays                                   " begin include("arrays/scalar_multiplication_for_custom_arrays.jl") end
 @safetestset "Matrix multiplication tests for custom arrays                                   " begin include("arrays/matrix_multiplication_for_custom_arrays.jl") end
 @safetestset "Test constructors for custom arrays                                             " begin include("arrays/constructor_tests_for_custom_arrays.jl") end
+@safetestset "Symplectic Potential (array tests)                                              " begin include("arrays/symplectic_potential.jl") end
+
 @safetestset "Test triangular matrices                                                        " begin include("arrays/triangular.jl") end
 @safetestset "Manifolds (Grassmann):                                                          " begin include("manifolds/grassmann_manifold.jl") end
 @safetestset "Gradient Layer                                                                  " begin include("layers/gradient_layer_tests.jl") end
@@ -55,8 +57,9 @@ using SafeTestsets
 @safetestset "Test parallel inverses                                                          " begin include("kernels/tensor_inverse.jl") end
 @safetestset "Test parallel Cayley                                                            " begin include("kernels/tensor_cayley.jl") end
 
-@safetestset "Test triangular arrays                                                          " begin include("arrays/triangular.jl") end
-
 @safetestset "Test volume-preserving feedforward neural network                               " begin include("layers/volume_preserving_feedforward.jl") end
+
+@safetestset "SympNet integrator                                                              " begin include("sympnet_integrator.jl") end
+@safetestset "Regular transformer integrator                                                  " begin include("regular_transformer_integrator.jl") end
 
 @safetestset "Batch functor(s)                                                                " begin include("batch/batch_functor.jl") end

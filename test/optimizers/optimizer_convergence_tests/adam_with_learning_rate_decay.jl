@@ -9,7 +9,7 @@ const sin_vector = sin.(0:0.1:2π)
 const dl = DataLoader(reshape(sin_vector, 1, length(sin_vector), 1))
 
 function setup_network(dl::DataLoader{T}) where T
-    arch = Chain(Dense(1, 20, tanh), ResNet(20, tanh), Dense(20, 1, identity))
+    arch = Chain(Dense(1, 20, tanh), ResNetLayer(20, tanh), Dense(20, 1, identity))
     NeuralNetwork(arch, CPU(), T)
 end
 
