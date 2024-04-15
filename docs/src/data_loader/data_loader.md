@@ -25,10 +25,9 @@ SnapshotTensor = rand(Float32, 10, 100, 5)
 dl = DataLoader(SnapshotTensor)
 ```
 
-```@eval
-using GeometricMachineLearning, Markdown 
-Markdown.parse(description(Val(:data_loader_constructor_matrix)))
-```
+The constructor for the data loader, when called on a matrix, also takes an optional argument `autoencoder`. If set to true than the data loader assumes we are dealing with an *autoencoder problem* and the field `n_params` in the `DataLoader` object will be set to the number of columns of our input matrix. 
+If `autoencoder=false`, then the field `input_time_steps` of the `DataLoader` object will be set to the *number of columns minus 1*. This is because in this case the data are used to train a neural network integrator and we need to leave at least one time step after the last one free in order to have something that we can compare the prediction to. 
+So we have that for an input of form ``(z^{(0)}, \ldots, z^{(T)})`` `input_time_steps` is ``T``. 
 
 ```@example 
 using GeometricMachineLearning # hide
