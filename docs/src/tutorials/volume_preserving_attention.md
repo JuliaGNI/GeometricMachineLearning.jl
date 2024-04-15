@@ -29,7 +29,7 @@ plot!(dl.input[1, :, 2], label = "cosine")
 We want to train a single neural network on both these curves. We compare three networks which are of the following form: 
 
 ```math
-\mathtt{network} = \mathcal{NN}_u\circ\Psi\circ\mathcal{NN}_d,
+\mathtt{network} = \mathcal{NN}_d\circ\Psi\circ\mathcal{NN}_u,
 ```
 
 where ``\mathcal{NN}_u`` refers to a neural network that scales up and ``\mathcal{NN}_d`` refers to a neural network that scales down. The up and down scaling is done with simple dense layers: 
@@ -37,7 +37,7 @@ where ``\mathcal{NN}_u`` refers to a neural network that scales up and ``\mathca
 ```math
 \mathcal{NN}_u(x) = \mathrm{tanh}(a_ux + b_u) \text{ and } \mathcal{NN}_d(x) = a_d^Tx + b_d,
 ```
-where ``a_u, b_u, a_d\in\mathbb{R}^\mathrm{ud}`` and ``b_d`` is a scalar. `ud` refers to *upscaling dimension*. For ``\Psi`` we now further consider three different choices:
+where ``a_u, b_u, a_d\in\mathbb{R}^\mathrm{ud}`` and ``b_d`` is a scalar. `ud` refers to *upscaling dimension*. For ``\Psi`` we consider three different choices:
 1. a volume-preserving attention with skew-symmetric weighting,
 2. a volume-preserving attention with arbitrary weighting,
 3. an identity layer.
@@ -45,10 +45,12 @@ where ``a_u, b_u, a_d\in\mathbb{R}^\mathrm{ud}`` and ``b_d`` is a scalar. `ud` r
 We further choose a sequence length 5 (i.e. the network always sees the last 5 time steps) and always predict one step into the future (i.e. the prediction window is set to 1):
 
 ```@example volume_preserving_attention
-const seq_length = 5
+const seq_length = 3
 const prediction_window = 1
 
-function set_up_networks(upscale_dimension::Int = 3)
+const upscale_dimension_1 = 5
+
+function set_up_networks(upscale_dimension::Int = upscale_dimension_1)
     model_skew = Chain(Dense(1, upscale_dimension, tanh), VolumePreservingAttention(upscale_dimension, seq_length; skew_sym = true),  Dense(upscale_dimension, 1, identity; use_bias = true))
     model_arb  = Chain(Dense(1, upscale_dimension, tanh), VolumePreservingAttention(upscale_dimension, seq_length; skew_sym = false), Dense(upscale_dimension, 1, identity; use_bias = true))
     model_comp = Chain(Dense(1, upscale_dimension, tanh), Dense(upscale_dimension, 1, identity; use_bias = true))
@@ -72,7 +74,7 @@ o_skew = Optimizer(AdamOptimizer(Float16), nn_skew)
 o_arb  = Optimizer(AdamOptimizer(Float16), nn_arb)
 o_comp = Optimizer(AdamOptimizer(Float16), nn_comp)
 
-n_epochs = 120
+n_epochs = 750
 
 const batch_size = 30
 
@@ -92,7 +94,7 @@ Looking at the training errors, we can see that the network with the skew-symmet
 
 The following demonstrates the predictions of our approaches[^1]: 
 
-[^1]: Here we have to use the structs `DummyTransformer` and `DummyNNIntegrator` to reformulate the three neural networks defined here as `NeuralNetworkIntegrator`s.
+[^1]: Here we have to use the architectures `DummyTransformer` and `DummyNNIntegrator` to reformulate the three neural networks defined here as `NeuralNetworkIntegrator`s. Normally the user should try to use predefined architectures in `GeometricMachineLearning`, that way they never use `DummyTransformer` and `DummyNNIntegrator`. 
 
 ```@example volume_preserving_attention
 initial_condition = dl.input[:, 1:seq_length, 2]
@@ -135,7 +137,7 @@ p2 = produce_validation_plot(50, initial_condition = initial_condition, type = :
 This advantage of the volume-preserving attention with arbitrary weighting may however be due to the fact that the skew-symmetric attention only has 3 learnable parameters, as opposed to 9 for the arbitrary weighting. If we increase the *upscaling dimension* the result changes: 
 
 ```@example volume_preserving_attention
-const upscale_dimension_2 = 5
+const upscale_dimension_2 = 7
 
 nn_skew, nn_arb, nn_comp = set_up_networks(upscale_dimension_2)
 
@@ -160,8 +162,8 @@ plot!(p, loss_array_comp, color = 4, label = "comp")
 ```@example volume_preserving_attention 
 initial_condition = dl.input[:, 1:seq_length, 2]
 
-nn_skew = NeuralNetwork(GeometricMachineLearning.DummyTransformer(5), nn_skew.model, nn_skew.params)
-nn_arb  = NeuralNetwork(GeometricMachineLearning.DummyTransformer(5), nn_arb.model,  nn_arb.params)
+nn_skew = NeuralNetwork(GeometricMachineLearning.DummyTransformer(seq_length), nn_skew.model, nn_skew.params)
+nn_arb  = NeuralNetwork(GeometricMachineLearning.DummyTransformer(seq_length), nn_arb.model,  nn_arb.params)
 nn_comp = NeuralNetwork(GeometricMachineLearning.DummyNNIntegrator(), nn_comp.model, nn_comp.params)
 
 p2 = produce_validation_plot(50, nn_skew, nn_arb, nn_comp)
