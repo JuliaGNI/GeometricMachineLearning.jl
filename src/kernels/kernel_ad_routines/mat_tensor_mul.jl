@@ -253,7 +253,7 @@ function ChainRulesCore.rrule(::typeof(mat_tensor_mul), B::SymmetricMatrix{T}, A
         return f̄, SymmetricMatrix(dS, B.n), dA 
     end 
 
-    return C, skew_sym_mul_pullback
+    return C, symmetric_mul_pullback
 end
 
 
