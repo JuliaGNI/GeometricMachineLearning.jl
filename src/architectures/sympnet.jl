@@ -4,7 +4,7 @@ SympNet type encompasses GSympNets and LASympnets.
 TODO: 
 -[ ] add bias to `LASympNet`!
 """
-abstract type SympNet{AT} <: Architecture end
+abstract type SympNet{AT} <: NeuralNetworkIntegrator end
 
 @doc raw"""
 `LASympNet` is called with **a single input argument**, the **system dimension**, or with an instance of `DataLoader`. Optional input arguments are: 
@@ -144,35 +144,4 @@ function Chain(arch::LASympNet{AT, true, true}) where {AT}
         layers = isodd(j) ? (layers..., LinearLayerQ(arch.dim)) : (layers..., LinearLayerP(arch.dim))
     end
     Chain(layers...)
-end
-
-@doc raw"""
-This function computes a trajectory for a SympNet that has already been trained for valuation purposes.
-
-It takes as input: 
-- `nn`: a `NeuralNetwork` (that has been trained).
-- `ics`: initial conditions (a `NamedTuple` of two vectors)
-"""
-function Iterate_Sympnet(nn::NeuralNetwork{<:SympNet}, ics::NamedTuple{(:q, :p), Tuple{AT, AT}}; n_points = 100) where {T, AT<:AbstractVector{T}}
-
-    n_dim = length(ics.q)
-    backend = KernelAbstractions.get_backend(ics.q)
-
-    # Array to store the predictions
-    q_valuation = KernelAbstractions.allocate(backend, T, n_dim, n_points)
-    p_valuation = KernelAbstractions.allocate(backend, T, n_dim, n_points)
-    
-    # Initialisation
-    @views q_valuation[:,1] = ics.q
-    @views p_valuation[:,1] = ics.p
-    
-    #Computation of phase space
-    @views for i in 2:n_points
-        qp_temp = (q=q_valuation[:,i-1], p=p_valuation[:,i-1]) 
-        qp_prediction = nn(qp_temp)
-        q_valuation[:,i] = qp_prediction.q
-        p_valuation[:,i] = qp_prediction.p
-    end
-
-    (q=q_valuation, p=p_valuation)
 end

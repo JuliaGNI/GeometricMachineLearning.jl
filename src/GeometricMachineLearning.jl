@@ -158,7 +158,7 @@ module GeometricMachineLearning
     export PSDLayer
     export MultiHeadAttention
     export VolumePreservingAttention
-    export ResNet
+    export ResNetLayer
     export Transformer
     export Classification
     export VolumePreservingLowerLayer
@@ -246,6 +246,9 @@ module GeometricMachineLearning
 
     #INCLUDE ARCHITECTURES
     include("architectures/neural_network_integrator.jl")
+    include("architectures/resnet.jl")
+    include("architectures/transformer_integrator.jl")
+    include("architectures/regular_transformer_integrator.jl")
     include("architectures/sympnet.jl")
     include("architectures/autoencoder.jl")
     include("architectures/fixed_width_network.jl")
@@ -265,6 +268,8 @@ module GeometricMachineLearning
     export RecurrentNeuralNetwork
     export LSTMNeuralNetwork
     export ClassificationTransformer
+    export ResNet
+    export RegularTransformerIntegrator
     export VolumePreservingFeedForward
 
     export train!, apply!, jacobian!
