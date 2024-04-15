@@ -1,5 +1,5 @@
 description(::Val{:Batch}) = raw"""
-`Batch` is a struct whose functor acts on an instance of `DataLoader` to produce a sequence of training samples for one epoch. 
+`Batch` is a struct whose functor acts on an instance of `DataLoader` to produce a sequence of training samples for training for one epoch. 
 
 ## The Constructor
 
@@ -8,29 +8,15 @@ The constructor for `Batch` is called with:
 - `seq_length::Int` (optional)
 - `prediction_window::Int` (optional)
 
+The first one of these arguments is required; it indicates the number of training samples in a batch. If we deal with time series data then we can additionaly supply a *sequence length* and a *prediction window* as input arguments to `Batch`. These indicate the number of input vectors and the number of output vectors.
+
 ## The functor 
 
-An instance of `Batch` can be called on an instance of `DataLoader` to produce a sequence of samples that contain all the input data, i.e. for training for one epoch. 
-"""
-
-description(::Val{:batch_functor_matrix}) = raw"""
-For a snapshot matrix (or a `NamedTuple` of the form `(q=A, p=B)` where `A` and `B` are matrices), the functor for `Batch` is called on an instance of `DataLoader`. It then returns a tuple of batch indices: 
-- for `autoencoder=true`: ``(\mathcal{I}_1, \ldots, \mathcal{I}_{\lceil\mathtt{n\_params/batch\_size}\rceil})``, where the index runs from 1 to the number of batches, which is the number of columns in the snapshot matrix divided by the batch size (rounded up).
-- for `autoencoder=false`: ``(\mathcal{I}_1, \ldots, \mathcal{I}_{\lceil\mathtt{dl.input\_time\_steps/batch\_size}\rceil})``, where the index runs from 1 to the number of batches, which is the number of columns in the snapshot matrix (minus one) divided by the batch size (rounded up).
-"""
-
-description(::Val{:batch_functor_tensor}) = raw"""
-The functor for batch is called with an instance on `DataLoader`. It then returns a tuple of batch indices: ``(\mathcal{I}_1, \ldots, \mathcal{I}_{\lceil\mathtt{dl.n\_params/batch\_size}\rceil})``, where the index runs from 1 to the number of batches, which is the number of parameters divided by the batch size (rounded up).
+An instance of `Batch` can be called on an instance of `DataLoader` to produce a sequence of samples that contain all the input data, i.e. for training for one epoch. The output of applying `batch:Batch` to `dl::DataLoader` is a tuple of vectors of integers. Each of these vectors contains two integers: the first is the *time index* and the second one is the *parameter index*.
 """
 
 """
-## `Batch` constructor
 $(description(Val(:Batch)))
-
-## `Batch functor`
-$(description(Val(:batch_functor_matrix)))
-
-$(description(Val(:batch_functor_tensor)))
 """
 struct Batch{BatchType}
     batch_size::Int
