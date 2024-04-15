@@ -4,43 +4,33 @@ Data Loader is a struct that creates an instance based on a tensor (or different
 ## Constructor 
 
 The data loader can be called with various inputs:
+- **A single vector**: If the data loader is called with a single vector (and no other arguments are given), then this is interpreted as an autoencoder problem, i.e. the second axis indicates parameter values and/or time steps and the system has a single degree of freedom (i.e. the system dimension is one).
+- **A single matrix**: If the data loader is called with a single matrix (and no other arguments are given), then this is interpreted as an autoencoder problem, i.e. the first axis is assumed to indicate the degrees of freedom of the system and the second axis indicates parameter values and/or time steps. 
+- **A single tensor**: If the data loader is called with a single tensor, then this is interpreted as an *integration problem* with the second axis indicating the time step and the third one indicating the parameters.
+- **A tensor and a vector**: This is a special case (MNIST classification problem). For the MNIST problem for example the input are ``n_p`` matrices (first input argument) and ``n_p`` integers (second input argument).
+- **A `NamedTuple` with fields `q` and `p`**: The `NamedTuple` contains (i) two matrices or (ii) two tensors. 
+- **An `EnsembleSolution`**: The `EnsembleSolution` typically comes from `GeometricProblems`.
 
-### A single matrix 
-
-If the data loader is called with a single matrix (and no other arguments are given), then this is interpreted as an autoencoder problem, i.e. the first axis is assumed to indicate the degrees of freedom of the system and the second axis indicates parameter values and/or time steps. 
-
-### A single tensor 
-
-If the data loader is called with a single tensor (and no other arguments are given), then this is interpreted as an *integration problem* with the second axis indicating the time step and the third one indicating the parameters.
-
-### A tensor and a vector 
-
-This is a special case (MNIST classification problem).
-
-### A `NamedTuple` with fields `q` and `p`.
-
-The `NamedTuple` contains (i) two matrices or (ii) two tensors. 
-
-### An `EnsembleSolution`
-
-The `EnsembleSolution` typically comes from `GeometricProblems`.
+When we supply a single vector or a single matrix as input to `DataLoader` and further set `autoencoder = false` (keyword argument), then the data are stored as an *integration problem* and the second axis is assumed to indicate time steps.
 """
-
-#=
-The fields of the `DataLoader` struct are the following: 
-- `input`: The input data with axes (i) system dimension, (ii) number of time steps and (iii) number of parameters.
-- `output`: The tensor that contains the output (supervised learning) - this may be of type Nothing if the constructor is only called with one tensor (unsupervised learning).
-- `input_dim`: The *dimension* of the system, i.e. what is taken as input by a regular neural network.
-- `input_time_steps`: The length of the entire time series of the data
-- `n_params`: The number of parameters that are present in the data set (length of third axis)
-- `output_dim`: The dimension of the output tensor (first axis). 
-- `output_time_steps`: The size of the second axis of the output tensor (also called `prediction_window`, `output_time_steps=1` in most cases)
-
-If for the output we have a tensor whose second axis has length 1, we still store it as a tensor and not a matrix for consistency. 
-=#
 
 """
 $(description(Val(:DataLoader)))
+
+## Fields of `DataLoader`
+
+The fields of the `DataLoader` struct are the following: 
+    - `input`: The input data with axes (i) system dimension, (ii) number of time steps and (iii) number of parameters.
+    - `output`: The tensor that contains the output (supervised learning) - this may be of type `Nothing` if the constructor is only called with one tensor (unsupervised learning).
+    - `input_dim`: The *dimension* of the system, i.e. what is taken as input by a regular neural network.
+    - `input_time_steps`: The length of the entire time series (length of the second axis).
+    - `n_params`: The number of parameters that are present in the data set (length of third axis)
+    - `output_dim`: The dimension of the output tensor (first axis). If `output` is of type `Nothing`, then this is also of type `Nothing`.
+    - `output_time_steps`: The size of the second axis of the output tensor. If `output` is of type `Nothing`, then this is also of type `Nothing`.
+
+### The `input` and `output` fields of `DataLoader`
+
+Even though the arguments to the Constructor may be vectors or matrices, internally `DataLoader` always stores tensors.
 """
 struct DataLoader{T, AT<:Union{NamedTuple, AbstractArray{T}}, OT<:Union{AbstractArray, Nothing}, DataType}
     input::AT
@@ -58,15 +48,6 @@ function DataLoader(data::AbstractArray{T, 3}) where T
     DataLoader{T, typeof(data), Nothing, :TimeSeries}(data, nothing, input_dim, input_time_steps, n_params, nothing, nothing)
 end
 
-description(::Val{:data_loader_constructor_matrix}) = raw"""
-The constructor for the data loader, when called on a matrix, also takes an optional argument `autoencoder`. If set to true than the data loader assumes we are dealing with an *autoencoder problem* and the field `n_params` in the `DataLoader` object will be set to the number of columns of our input matrix. 
-If `autoencoder=false`, then the field `input_time_steps` of the `DataLoader` object will be set to the *number of columns minus 1*. This is because in this case the data are used to train a neural network integrator and we need to leave at least one time step after the last one free in order to have something that we can compare the prediction to. 
-So we have that for an input of form ``(z^{(0)}, \ldots, z^{(T)})`` `input_time_steps` is ``T``. 
-"""
-
-"""
-$(description(Val(:data_loader_constructor_matrix)))
-"""
 function DataLoader(data::AbstractMatrix{T}; autoencoder=true) where T 
     @info "You have provided a matrix as input. The axes will be interpreted as (i) system dimension and (ii) number of parameters."
     
@@ -81,7 +62,7 @@ function DataLoader(data::AbstractMatrix{T}; autoencoder=true) where T
     end
 end
 
-DataLoader(data::AbstractVector) = DataLoader(reshape(data, 1, length(data)))
+DataLoader(data::AbstractVector; autoencoder=true) = DataLoader(reshape(data, 1, length(data)); autoencoder = autoencoder)
 
 # T and T1 are not the same because T1 is of Integer type
 function DataLoader(data::AbstractArray{T, 3}, target::AbstractVector{T1}; patch_length=7) where {T, T1} 
@@ -129,7 +110,7 @@ end
 DataLoader(data::NamedTuple{(:q, :p), Tuple{VT, VT}}) where {VT <: AbstractVector} = DataLoader((q = reshape(data.q, 1, length(data.q)), p = reshape(data.p, 1, length(data.p))))
 
 """
-Constructor for `EnsembleSolution` form package `GeometricSolutions`.
+Constructor for `EnsembleSolution` form package `GeometricSolutions` with fields `q` and `p`.
 """
 function DataLoader(ensemble_solution::EnsembleSolution{T, T1, Vector{ST}}) where {T, T1, DT, ST <: GeometricSolution{T, T1, NamedTuple{(:q, :p), Tuple{DT, DT}}}}
 
@@ -148,7 +129,7 @@ function DataLoader(ensemble_solution::EnsembleSolution{T, T1, Vector{ST}}) wher
 end
 
 """
-Constructor for `EnsembleSolution` from package `GeometricSolutions`.
+Constructor for `EnsembleSolution` from package `GeometricSolutions` with field `q`.
 """
 function DataLoader(ensemble_solution::EnsembleSolution{T, T1, Vector{ST}}) where {T, T1, DT, ST <: GeometricSolution{T, T1, NamedTuple{(:q, ), Tuple{DT}}}}
 
