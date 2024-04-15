@@ -3,13 +3,8 @@ all: pdf
 	$(MAKE) logo 
 	$(MAKE) clean 
 
-linux: pdf 
-	$(MAKE) convert_with_pdftocairo 
-	$(MAKE) logo 
-	$(MAKE) clean
-
-mac: pdf 
-	$(MAKE) convert_with_sips 
+latex: pdf 
+	$(MAKE) convert_with_pdftocairo res=500
 	$(MAKE) logo 
 	$(MAKE) clean
 
@@ -20,16 +15,10 @@ pdf: $(MYDIR)/*.tex
 		xelatex -shell-escape $${file} ; \
 	done
 
-# this is converting pdfs to pngs using sips (mac version)
-convert_with_sips: $(MYDIR)/*.pdf
-	for file in $^ ; do \
-		sips --setProperty format png --resampleHeightWidthMax 2000 $${file} --out $${file%.*}.png ; \
-	done
-
-# this is converting pdfs to pngs using pdftocairo (linux version)
+# this is converting pdfs to pngs using pdftocairo (with a fixed resolution for all images)
 convert_with_pdftocairo: $(MYDIR)/*.pdf
 	for file in $^ ; do \
-		pdftocairo -png -r 500 -transp -singlefile $${file} $${file%.*} ; \
+		pdftocairo -png -r $(res) -transp -singlefile $${file} $${file%.*} ; \
 	done
 
 png:

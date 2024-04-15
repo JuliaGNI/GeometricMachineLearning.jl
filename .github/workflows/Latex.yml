@@ -8,44 +8,17 @@ on:
 
 jobs:
   LatexDocs:
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - if: matrix.os == 'ubuntu-latest'
-        name: install imagemagick and poppler-utils
+      - name: install imagemagick, poppler-utils and texlive
         run: |
-          sudo apt-get install imagemagick
-          sudo apt-get install poppler-utils
-      - if: matrix.os == 'macos-latest'
-        run: |
-          pip3 install Pygments
-      - name: install texlive
-        run: |
-          wget --no-check-certificate https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz
-          zcat < install-tl-unx.tar.gz | tar xf -
-          rm install-tl-unx.tar.gz
-          cd install-tl-*
-          sudo perl ./install-tl --no-interaction
-          cd ..
-      - name: add texlive to path
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          echo "/usr/local/texlive/2024/bin/x86_64-linux" >> $GITHUB_PATH
-      - name: add texlive to path
-        if: matrix.os == 'macos-latest'
-        run: |
-          echo "/usr/local/texlive/2024/bin/universal-darwin" >> $GITHUB_PATH
+            sudo apt-get install imagemagick
+            sudo apt-get install poppler-utils
+            sudo apt-get install texlive-xetex
+            sudo apt-get install texlive-science
       - name: Make images
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          make linux -C docs/src/tikz
-      - name: Make images
-        if: matrix.os == 'macos-latest'
-        run: |
-          make mac -C docs/src/tikz
+        run: make latex -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
         with:
           version: '1'
@@ -63,7 +36,7 @@ jobs:
       - name: Upload PDF file
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}
+          name: Docs in PDF version
           path: docs/build/GeometricMachineLearning.jl.pdf
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
