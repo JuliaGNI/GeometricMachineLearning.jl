@@ -3,13 +3,9 @@
 
 all: html
 
-latex_mac: images_mac install_brenier_two_fluid test_docs latex_docs remove_brenier_two_fluid
+latex: latex_no_pdf compile_tex
 
-latex_linux: images_linux install_brenier_two_fluid test_docs latex_docs remove_brenier_two_fluid
-
-latex_linux_no_pdf: images_linux install_brenier_two_fluid test_docs latex_docs_no_pdf remove_brenier_two_fluid
-
-latex_mac_no_pdf: images_mac install_brenier_two_fluid test_docs latex_docs_no_pdf remove_brenier_two_fluid
+latex_no_pdf: images_linux install_brenier_two_fluid test_docs latex_docs_no_pdf remove_brenier_two_fluid
 
 html: html_images install_brenier_two_fluid test_docs documenter remove_brenier_two_fluid
 
@@ -40,11 +36,8 @@ documenter:
 html_images:
 	$(MAKE) all -C src/tikz
 
-images_mac: 
-	$(MAKE) mac		 -C src/tikz
-
-images_linux: 
-	$(MAKE) linux 	 -C src/tikz
+images_latex: 
+	$(MAKE) latex -C src/tikz
 
 clean:
 	$(MAKE) empty -C src/tikz ;
@@ -55,3 +48,7 @@ latex_docs:
 
 latex_docs_no_pdf:
 	julia --color=yes --project=. --threads=8 make.jl latex_output_no_pdf	
+
+compile_tex: 
+	cd build; \
+	xelatex -shell-escape G*.tex 
