@@ -5,7 +5,7 @@ all: html
 
 latex: latex_no_pdf compile_tex
 
-latex_no_pdf: images_linux install_brenier_two_fluid test_docs latex_docs_no_pdf remove_brenier_two_fluid
+latex_no_pdf: images_latex install_brenier_two_fluid test_docs latex_docs_no_pdf remove_brenier_two_fluid
 
 html: html_images install_brenier_two_fluid test_docs documenter remove_brenier_two_fluid
 
