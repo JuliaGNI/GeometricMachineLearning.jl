@@ -92,6 +92,7 @@ makedocs(;
             "Linear Wave Equation" => "tutorials/linear_wave_equation.md",
             "MNIST" => "tutorials/mnist_tutorial.md",
             "Grassmann manifold" => "tutorials/grassmann_layer.md",
+            "Volume-Preserving Attention" => "tutorials/volume_preserving_attention.md",
         ],
         "References" => "references.md",
         "Library" => "library.md",
