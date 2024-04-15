@@ -1,7 +1,20 @@
 abstract type NetworkLoss end 
 
-function (loss::NetworkLoss)(nn::NeuralNetwork, input::AT, output::AT) where {AT <: AbstractArray}
+function (loss::NetworkLoss)(nn::NeuralNetwork, input::CT, output::CT) where {AT<:AbstractArray, BT <: NamedTuple{(:q, :p), Tuple{AT, AT}}, CT <: Union{AT, BT}}
     loss(nn.model, nn.params, input, output)
+end
+
+function _compute_loss(output_prediction::CT1, output::CT2) where {AT<:AbstractArray, BT <: NamedTuple{(:q, :p), Tuple{AT, AT}}, CT <: Union{AT, BT}, CT1 <: CT, CT2 <: CT}
+    _norm(_diff(output_prediction, output)) / _norm(output)
+end 
+
+function _compute_loss(model::Union{AbstractExplicitLayer, Chain}, ps::Union{Tuple, NamedTuple}, input::CT, output::CT) where {AT<:AbstractArray, BT <: NamedTuple{(:q, :p), Tuple{AT, AT}}, CT <: Union{AT, BT}}
+    output_prediction = model(input, ps)
+    _compute_loss(output_prediction, output)
+end
+
+function (loss::NetworkLoss)(model::Union{Chain, AbstractExplicitLayer}, ps::Union{Tuple, NamedTuple}, input::CT, output::CT) where {AT<:AbstractArray, BT <: NamedTuple{(:q, :p), Tuple{AT, AT}}, CT <: Union{AT, BT}}
+    _compute_loss(model, ps, input, output)
 end
 
 @doc raw"""
@@ -14,16 +27,16 @@ struct TransformerLoss <: NetworkLoss
     prediction_window::Int
 end
 
-TransformerLoss(seq_length::Int) = TransformerLoss(seq_length, 1)
+TransformerLoss(seq_length::Int) = TransformerLoss(seq_length, seq_length)
 
 @doc raw"""
 This crops the output array of the neural network so that it conforms with the output it should be compared to. This is needed for the transformer loss. 
 """
-function crop_array_for_transformer_loss(nn_output::AT, output::AT) where {T, AT<:AbstractArray{T, 3}}
+function crop_array_for_transformer_loss(nn_output::AT, output::BT) where {T, T2, AT <: AbstractArray{T, 3}, BT <: AbstractArray{T2, 3}}
     @view nn_output[axes(output, 1), axes(output, 2) .+ size(nn_output, 2) .- size(output, 2), axes(output, 3)]
 end
 
-function (loss::TransformerLoss)(model::Chain, ps::Union{Tuple, NamedTuple}, input::AT, output::AT) where {T, AT <: Union{AbstractArray{T, 2}, AbstractArray{T, 3}}}
+function (loss::TransformerLoss)(model::Union{Chain, AbstractExplicitLayer}, ps::Union{Tuple, NamedTuple}, input::AT, output::AT) where {T, AT <: Union{AbstractArray{T, 2}, AbstractArray{T, 3}}}
     input_dim, input_seq_length = size(input)
     output_dim, output_prediction_window = size(output)
     @assert input_dim == output_dim 
@@ -32,11 +45,15 @@ function (loss::TransformerLoss)(model::Chain, ps::Union{Tuple, NamedTuple}, inp
 
     predicted_output_uncropped = model(input, ps)
     predicted_output_cropped = crop_array_for_transformer_loss(predicted_output_uncropped, output)
+    _compute_loss(predicted_output_cropped, output)
+end
+
+struct ClassificationTransformerLoss <: NetworkLoss end
+
+function (loss::ClassificationTransformerLoss)(model::Union{Chain, AbstractExplicitLayer}, ps::Union{Tuple, NamedTuple}, input::AbstractArray, output::AbstractArray)
+    predicted_output_uncropped = model(input, ps)
+    predicted_output_cropped = crop_array_for_transformer_loss(predicted_output_uncropped, output)
     norm(predicted_output_cropped - output) / norm(output)
 end
 
 struct FeedForwardLoss <: NetworkLoss end
-
-function (loss::FeedForwardLoss)(model::Chain, ps::Union{Tuple, NamedTuple}, input::AT, output::AT) where {AT <: AbstractArray}
-    norm(model(input, ps) - output) / norm(output)
-end

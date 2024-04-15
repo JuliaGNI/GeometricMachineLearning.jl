@@ -10,11 +10,14 @@ using SafeTestsets
 @safetestset "Test constructors for custom arrays                                             " begin include("arrays/constructor_tests_for_custom_arrays.jl") end
 @safetestset "Symplectic Potential (array tests)                                              " begin include("arrays/symplectic_potential.jl") end
 
+@safetestset "Test triangular matrices                                                        " begin include("arrays/triangular.jl") end
 @safetestset "Manifolds (Grassmann):                                                          " begin include("manifolds/grassmann_manifold.jl") end
 @safetestset "Gradient Layer                                                                  " begin include("layers/gradient_layer_tests.jl") end
 @safetestset "Test symplecticity of upscaling layer                                           " begin include("layers/sympnet_layers_test.jl") end 
 @safetestset "Hamiltonian Neural Network                                                      " begin include("hamiltonian_neural_network_tests.jl") end
 @safetestset "Manifold Neural Network Layers                                                  " begin include("layers/manifold_layers.jl") end
+
+@safetestset "Custom inverse for 2x2, 3x3, 4x4, 5x5 matrices                                  " begin include("kernels/tensor_inverse.jl") end
 @safetestset "Custom AD rules for kernels                                                     " begin include("custom_ad_rules/kernel_pullbacks.jl") end
 @safetestset "ResNet                                                                          " begin include("layers/resnet_tests.jl") end
 
@@ -54,9 +57,12 @@ using SafeTestsets
 @safetestset "Test parallel inverses                                                          " begin include("kernels/tensor_inverse.jl") end
 @safetestset "Test parallel Cayley                                                            " begin include("kernels/tensor_cayley.jl") end
 
-@safetestset "Test triangular arrays                                                          " begin include("arrays/triangular.jl") end
-
 @safetestset "Test volume-preserving feedforward neural network                               " begin include("layers/volume_preserving_feedforward.jl") end
+
+@safetestset "SympNet integrator                                                              " begin include("sympnet_integrator.jl") end
+@safetestset "Regular transformer integrator                                                  " begin include("regular_transformer_integrator.jl") end
+
+@safetestset "Batch functor(s)                                                                " begin include("batch/batch_functor.jl") end
 
 @safetestset "SympNet integrator                                                              " begin include("sympnet_integrator.jl") end
 @safetestset "Regular transformer integrator                                                  " begin include("regular_transformer_integrator.jl") end
