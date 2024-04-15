@@ -46,5 +46,5 @@ end
 end
 
 @inline function (d::Dense{M, N, false})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, N, T}
-	return d.σ.(mat_tensor_mult(ps.W, x))
+	return d.σ.(mat_tensor_mul(ps.W, x))
 end
