@@ -125,7 +125,6 @@ Z =  \left[\begin{array}{cccc}
             z_d^{(1)} & z_d^{(2)} & \cdots & z_d^{(T)}
             \end{array}\right] \mapsto 
             \left[\begin{array}{c}  z_1^{(1)} \\ z_1^{(2)} \\ \cdots \\ z_1^{(T)} \\ z_2^{(1)} \\ \cdots \\ z_d^{(T)} \end{array}\right] =: Z_\mathrm{vec}.
-\label{eq:isomorphism}
 ```
 
 The inverse of ``Z \mapsto \hat{Z} `` we refer to as ``Y \mapsto \tilde{Y}``. In the following we also write ``\hat{\varphi}`` for the mapping ``\,\hat{}\circ\varphi\circ\tilde{}\,``.
@@ -144,7 +143,6 @@ In the transformed coordinate system (in terms of the vector ``Z_\mathrm{vec}`` 
     \mathbb{O} & \mathbb{O} & \cdots & \Lambda(Z) \\
     \end{pmatrix}
     \left[\begin{array}{c}  z_1^{(1)} \\ z_1^{(2)} \\ \ldots \\ z_1^{(T)} \\ z_2^{(1)} \\ \ldots \\ z_d^{(T)} \end{array}\right] .
-    \label{eq:LambdaApplication}
 ```
 
 ``\tilde{\Lambda}(Z)`` in m[eq:LambdaApplication]m(@latex) is easily shown to be an orthogonal matrix. 
