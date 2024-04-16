@@ -1,4 +1,4 @@
-using GeometricMachineLearning: tensor_inverse2, tensor_inverse3, tensor_inverse4, tensor_inverse5
+using GeometricMachineLearning: tensor_inverse2, tensor_inverse3, tensor_inverse4, tensor_inverse5, cpu_inverse
 using Test
 import Zygote
 
@@ -98,7 +98,6 @@ end
 
 test22_inverse()
 
-
 function test22_inverse_pullback(k::Int = 10)
     A = rand(2, 2, k)
 
@@ -115,3 +114,20 @@ function test22_inverse_pullback(k::Int = 10)
 end
 
 test22_inverse_pullback()
+
+function test_cpu_inverse_pullback(k::Int = 10)
+    A = rand(3, 3, k)
+
+    pullback_total = Zygote.pullback(cpu_inverse, A)
+
+    out_diff = rand(3, 3, k)
+
+    for i = 1:k 
+        pullback_k = Zygote.pullback(inv, A[:, :, k])
+        
+        @test pullback_total[1][:, :, k] ≈ pullback_k[1]
+        @test pullback_total[2](out_diff)[1][:, :, k] ≈ pullback_k[2](out_diff[:, :, k])[1]
+    end
+end
+
+test_cpu_inverse_pullback()
