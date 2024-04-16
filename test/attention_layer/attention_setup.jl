@@ -4,9 +4,9 @@ import Random
 
 Random.seed!(1234)
 
-function volume_preserving_attention_tests(N, T=Float32)
-    model₁ = VolumePreservingAttention(N, skew_sym = false)
-    model₂ = VolumePreservingAttention(N, skew_sym = true)
+function volume_preserving_attention_tests(N, seq_length, T=Float32)
+    model₁ = VolumePreservingAttention(N, seq_length, skew_sym = false)
+    model₂ = VolumePreservingAttention(N, seq_length, skew_sym = true)
 
     ps₁ = initialparameters(model₁, CPU(), T)
     ps₂ = initialparameters(model₂, CPU(), T)
@@ -23,11 +23,9 @@ function volume_preserving_attention_tests(N, T=Float32)
 end
 
 # this checks the cpu version
-volume_preserving_attention_tests(10)
+volume_preserving_attention_tests(4, 10)
 
 # this checks the "gpu versions"
-volume_preserving_attention_tests(2)
-volume_preserving_attention_tests(3)
-volume_preserving_attention_tests(4)
-volume_preserving_attention_tests(5)
-volume_preserving_attention_tests(6)
+volume_preserving_attention_tests(4, 2)
+volume_preserving_attention_tests(4, 3)
+volume_preserving_attention_tests(4, 4)
