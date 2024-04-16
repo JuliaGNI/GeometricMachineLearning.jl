@@ -16,7 +16,7 @@ sine_cosine[1, :, 1] .= sin.(0.:.1:99.9)
 sine_cosine[1, :, 2] .= cos.(0.:.1:99.9)
 
 
-dl = DataLoader(Float16.(sine_cosine))
+const dl = DataLoader(Float16.(sine_cosine))
 ```
 
 The third axis (i.e. the parameter axis) has length two, meaning we have two different kinds of curves: 
@@ -48,16 +48,18 @@ We further choose a sequence length 5 (i.e. the network always sees the last 5 t
 const seq_length = 3
 const prediction_window = 1
 
-const upscale_dimension_1 = 5
+const upscale_dimension_1 = 2
+
+const T = Float16
 
 function set_up_networks(upscale_dimension::Int = upscale_dimension_1)
     model_skew = Chain(Dense(1, upscale_dimension, tanh), VolumePreservingAttention(upscale_dimension, seq_length; skew_sym = true),  Dense(upscale_dimension, 1, identity; use_bias = true))
     model_arb  = Chain(Dense(1, upscale_dimension, tanh), VolumePreservingAttention(upscale_dimension, seq_length; skew_sym = false), Dense(upscale_dimension, 1, identity; use_bias = true))
     model_comp = Chain(Dense(1, upscale_dimension, tanh), Dense(upscale_dimension, 1, identity; use_bias = true))
 
-    nn_skew = NeuralNetwork(model_skew, CPU(), Float16)
-    nn_arb  = NeuralNetwork(model_arb,  CPU(), Float16)
-    nn_comp = NeuralNetwork(model_comp, CPU(), Float16)
+    nn_skew = NeuralNetwork(model_skew, CPU(), T)
+    nn_arb  = NeuralNetwork(model_arb,  CPU(), T)
+    nn_comp = NeuralNetwork(model_comp, CPU(), T)
 
     nn_skew, nn_arb, nn_comp
 end
@@ -70,24 +72,42 @@ We expect the third network to not be able to learn anything useful since it can
 Next we train the networks (here we pick a batch size of 30):
 
 ```@example volume_preserving_attention
-o_skew = Optimizer(AdamOptimizer(Float16), nn_skew)
-o_arb  = Optimizer(AdamOptimizer(Float16), nn_arb)
-o_comp = Optimizer(AdamOptimizer(Float16), nn_comp)
+function set_up_optimizers(nn_skew, nn_arb, nn_comp)
+    o_skew = Optimizer(AdamOptimizer(T), nn_skew)
+    o_arb  = Optimizer(AdamOptimizer(T), nn_arb)
+    o_comp = Optimizer(AdamOptimizer(T), nn_comp)
 
-n_epochs = 750
+    o_skew, o_arb, o_comp
+end
+
+o_skew, o_arb, o_comp = set_up_optimizers(nn_skew, nn_arb, nn_comp)
+
+const n_epochs = 1000
 
 const batch_size = 30
 
-batch = Batch(batch_size, seq_length, prediction_window)
-batch2 = Batch(batch_size)
+const batch = Batch(batch_size, seq_length, prediction_window)
+const batch2 = Batch(batch_size)
 
-loss_array_skew = o_skew(nn_skew, dl, batch, n_epochs, TransformerLoss(batch))
-loss_array_arb  = o_arb( nn_arb,  dl, batch, n_epochs, TransformerLoss(batch))
-loss_array_comp = o_comp(nn_comp, dl, batch2, n_epochs, FeedForwardLoss())
+function train_networks!(nn_skew, nn_arb, nn_comp)
+    loss_array_skew = o_skew(nn_skew, dl, batch, n_epochs, TransformerLoss(batch))
+    loss_array_arb  = o_arb( nn_arb,  dl, batch, n_epochs, TransformerLoss(batch))
+    loss_array_comp = o_comp(nn_comp, dl, batch2, n_epochs, FeedForwardLoss())
 
-p = plot(loss_array_skew, color = 2, label = "skew", yaxis = :log)
-plot!(p, loss_array_arb,  color = 3, label = "arb")
-plot!(p, loss_array_comp, color = 4, label = "comp")
+    loss_array_skew, loss_array_arb, loss_array_comp
+end
+
+loss_array_skew, loss_array_arb, loss_array_comp = train_networks!(nn_skew, nn_arb, nn_comp)
+
+function plot_training_losses(loss_array_skew, loss_array_arb, loss_array_comp)
+    p = plot(loss_array_skew, color = 2, label = "skew", yaxis = :log)
+    plot!(p, loss_array_arb,  color = 3, label = "arb")
+    plot!(p, loss_array_comp, color = 4, label = "comp")
+
+    p
+end
+
+plot_training_losses(loss_array_skew, loss_array_arb, loss_array_comp)
 ```
 
 Looking at the training errors, we can see that the network with the skew-symmetric weighting is stuck at a relatively high error rate, whereas the loss for  the network with the arbitrary weighting is decreasing to a significantly lower level. The feedforward network without the attention mechanism is not able to learn anything useful (as was expected). 
@@ -99,9 +119,15 @@ The following demonstrates the predictions of our approaches[^1]:
 ```@example volume_preserving_attention
 initial_condition = dl.input[:, 1:seq_length, 2]
 
-nn_skew = NeuralNetwork(GeometricMachineLearning.DummyTransformer(seq_length), nn_skew.model, nn_skew.params)
-nn_arb  = NeuralNetwork(GeometricMachineLearning.DummyTransformer(seq_length), nn_arb.model,  nn_arb.params)
-nn_comp = NeuralNetwork(GeometricMachineLearning.DummyNNIntegrator(), nn_comp.model, nn_comp.params)
+function make_networks_neural_network_integrators(nn_skew, nn_arb, nn_comp)
+    nn_skew = NeuralNetwork(GeometricMachineLearning.DummyTransformer(seq_length), nn_skew.model, nn_skew.params)
+    nn_arb  = NeuralNetwork(GeometricMachineLearning.DummyTransformer(seq_length), nn_arb.model,  nn_arb.params)
+    nn_comp = NeuralNetwork(GeometricMachineLearning.DummyNNIntegrator(), nn_comp.model, nn_comp.params)
+
+    nn_skew, nn_arb, nn_comp
+end
+
+nn_skew, nn_arb, nn_comp = make_networks_neural_network_integrators(nn_skew, nn_arb, nn_comp)
 
 function produce_validation_plot(n_points::Int, nn_skew = nn_skew, nn_arb = nn_arb, nn_comp = nn_comp; initial_condition::Matrix=initial_condition, type = :cos)
     validation_skew = iterate(nn_skew, initial_condition; n_points = n_points, prediction_window = 1)
@@ -118,7 +144,7 @@ function produce_validation_plot(n_points::Int, nn_skew = nn_skew, nn_arb = nn_a
     p2 
 end
 
-p2 = produce_validation_plot(50)
+p2 = produce_validation_plot(40)
 ```
 In the above plot we can see that the network with the arbitrary weighting performs much better; even though the green line does not fit the blue line very well either, it manages to least qualitatively reflect the training data.  We can also plot the predictions for longer time intervals: 
 
@@ -131,42 +157,29 @@ We can also plot the comparison with the sine function:
 ```@example volume_preserving_attention 
 initial_condition = dl.input[:, 1:seq_length, 1]
 
-p2 = produce_validation_plot(50, initial_condition = initial_condition, type = :sin)
+p2 = produce_validation_plot(40, initial_condition = initial_condition, type = :sin)
 ```
 
 This advantage of the volume-preserving attention with arbitrary weighting may however be due to the fact that the skew-symmetric attention only has 3 learnable parameters, as opposed to 9 for the arbitrary weighting. If we increase the *upscaling dimension* the result changes: 
 
 ```@example volume_preserving_attention
-const upscale_dimension_2 = 7
+const upscale_dimension_2 = 10
 
 nn_skew, nn_arb, nn_comp = set_up_networks(upscale_dimension_2)
 
-o_skew = Optimizer(AdamOptimizer(), nn_skew)
-o_arb  = Optimizer(AdamOptimizer(), nn_arb)
-o_comp = Optimizer(AdamOptimizer(), nn_comp)
+o_skew, o_arb, o_comp = set_up_optimizers(nn_skew, nn_arb, nn_comp)
 
-n_epochs = 1000
+loss_array_skew, loss_array_arb, loss_array_comp = train_networks!(nn_skew, nn_arb, nn_comp)
 
-batch = Batch(batch_size, seq_length, prediction_window)
-batch2 = Batch(batch_size)
-
-loss_array_skew = o_skew(nn_skew, dl, batch, n_epochs, TransformerLoss(batch))
-loss_array_arb  = o_arb( nn_arb,  dl, batch, n_epochs, TransformerLoss(batch))
-loss_array_comp = o_comp(nn_comp, dl, batch2, n_epochs, FeedForwardLoss())
-
-p = plot(loss_array_skew, color = 2, label = "skew", yaxis = :log)
-plot!(p, loss_array_arb,  color = 3, label = "arb")
-plot!(p, loss_array_comp, color = 4, label = "comp")
+plot_training_losses(loss_array_skew, loss_array_arb, loss_array_comp)
 ```
 
 ```@example volume_preserving_attention 
 initial_condition = dl.input[:, 1:seq_length, 2]
 
-nn_skew = NeuralNetwork(GeometricMachineLearning.DummyTransformer(seq_length), nn_skew.model, nn_skew.params)
-nn_arb  = NeuralNetwork(GeometricMachineLearning.DummyTransformer(seq_length), nn_arb.model,  nn_arb.params)
-nn_comp = NeuralNetwork(GeometricMachineLearning.DummyNNIntegrator(), nn_comp.model, nn_comp.params)
+nn_skew, nn_arb, nn_comp = make_networks_neural_network_integrators(nn_skew, nn_arb, nn_comp)
 
-p2 = produce_validation_plot(50, nn_skew, nn_arb, nn_comp)
+p2 = produce_validation_plot(40, nn_skew, nn_arb, nn_comp)
 ```
 
 And for a longer time interval: 
