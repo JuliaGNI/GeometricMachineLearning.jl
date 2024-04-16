@@ -1,6 +1,11 @@
 # The Attention Layer
 
-The *attention* mechanism was originally applied for image and natural language processing (NLP) tasks. It is motivated by the need to handle time series data in an efficient way[^1]. In [bahdanau2014neural](@cite) ``additive'' attention is used to compute the correlations between two vectors in a time series: 
+The *attention* mechanism was originally developed for image and natural language processing (NLP) tasks. It is motivated by the need to handle time series data in an efficient way[^1]. Its essential idea is to compute correlations between vectors in input sequences. I.e. given sequences 
+
+```math
+(z_q^{(1)}, z_q^{(2)}, \ldots, z_q^{(T)}) \text{ and } (z_p^{(1)}, z_p^{(2)}, \ldots, z_p^{(T)}),
+```
+an attention mechanism computes pair-wise correlations between all combinations of two input vectors from these sequences. In [bahdanau2014neural](@cite) "additive" attention is used to compute such correlations: 
 
 [^1]: *Recurrent neural networks* have the same motivation. 
 
@@ -8,15 +13,15 @@ The *attention* mechanism was originally applied for image and natural language 
 (z_q, z_k) \mapsto v^T\sigma(Wz_q + Uz_k), 
 ```
 
-where ``z_q, z_k \in \mathbb{R}^d``, ``W, U \in \mathbb{R}^{n\times{}d}`` and ``v \in \mathbb{R}^n``.
+where ``z_q, z_k \in \mathbb{R}^d`` are elements of the input sequences. The learnable parameters are ``W, U \in \mathbb{R}^{n\times{}d}`` and ``v \in \mathbb{R}^n``.
 
-However *multiplicative attention* is more straightforward to interpret and cheaper to handle computationally: 
+However *multiplicative attention* (see e.g. [vaswani2017attention](@cite))is more straightforward to interpret and cheaper to handle computationally: 
 
 ```math
-(z_q, z_k) \mapsto z_q^TWz_k.
+(z_q, z_k) \mapsto z_q^TWz_k,
 ```
 
-Regardless of the type of attention used, they all try to compute correlations among input sequences on whose basis further computation is performed. Given two input sequences ``Z_q = (z_q^{(1)}, \ldots, z_q^{(T)})`` and ``Z_k = (z_k^{(1)}, \ldots, z_k^{(T)})``, we can arrange the various correlations into a *correlation matrix* ``C\in\mathbb{R}^{T\times{}T}`` with entries ``[C]_{ij} = \mathtt{attention}(z_q^{(i)}, z_k^{(j)})``. In the case of multiplicative attention this matrix is just ``C = Z^TWZ``.
+where ``W \in \mathbb{R}^{d\times{}d}`` is a learnable weight matrix with respect to which correlations are computed as scalar products. Regardless of the type of attention used, they all try to compute correlations among input sequences on whose basis further computation is performed. Given two input sequences ``Z_q = (z_q^{(1)}, \ldots, z_q^{(T)})`` and ``Z_k = (z_k^{(1)}, \ldots, z_k^{(T)})``, we can arrange the various correlations into a *correlation matrix* ``C\in\mathbb{R}^{T\times{}T}`` with entries ``[C]_{ij} = \mathtt{attention}(z_q^{(i)}, z_k^{(j)})``. In the case of multiplicative attention this matrix is just ``C = Z^TWZ``.
 
 ## Reweighting of the input sequence 
 
@@ -31,7 +36,7 @@ Z \xrightarrow{\mathrm{correlations}} C(Z) =: C \xrightarrow{\sigma} \sigma(C) \
 ```
 
 
-After the right multiplication the outpus is of the following form: 
+After the right multiplication the outputs is of the following form: 
 
 ```math 
     [\sum_{i=1}^Tp^{(1)}_iz^{(i)}, \ldots, \sum_{i=1}^Tp^{(T)}_iz^{(i)}],
@@ -55,9 +60,9 @@ The softmax activation acts vector-wise, i.e. if we supply it with a matrix ``C`
 \mathrm{softmax}(C) = [\mathrm{softmax}(c_{\bullet{}1}), \ldots, \mathrm{softmax}(c_{\bullet{}T})].
 ```
 
-The output of a softmax is a *probability vector* (also called *stochastic vector*) and the matrix ``[p^{(1)}, \ldots, p^{(T)}]``, where each column is a probability vector, is sometimes referred to as a *stochastic matrix* (see [jacobs1992discrete](@cite)). This attention mechanism finds application in *transformer neural networks*. The problem with this matrix from a geometric point of view is that all the columns are independent of each other and the nonlinear transformation could in theory produce a stochastic matrix for which all columns are identical and thus lead to a loss of information.
+The output of a softmax is a *probability vector* (also called *stochastic vector*) and the matrix ``P = [p^{(1)}, \ldots, p^{(T)}]``, where each column is a probability vector, is sometimes referred to as a *stochastic matrix* (see [jacobs1992discrete](@cite)). This attention mechanism finds application in *transformer neural networks* [vaswani2017attention](@cite). The problem with this matrix from a geometric point of view is that all the columns are independent of each other and the nonlinear transformation could in theory produce a stochastic matrix for which all columns are identical and thus lead to a loss of information. So the softmax activation function is inherently non-geometric. 
 
-Besides the traditional attention mechanism `GeometricMachineLearning` hence also has a volume-preserving transformation that fulfills a similar role. There are two approaches implemented to realize similar transformations. Both of them however utilize the *Cayley transform* to produce orthonormal matrices ``\sigma(C)`` instead of stochastic matrices. 
+Besides the traditional attention mechanism `GeometricMachineLearning` therefore also has a volume-preserving transformation that fulfills a similar role. There are two approaches implemented to realize similar transformations. Both of them however utilize the *Cayley transform* to produce orthogonal matrices ``\sigma(C)`` instead of stochastic matrices. For an orthogonal matrix ``\Sigma`` we have ``\Sigma^T\Sigma = \mathbb{I}``, so all the columns are linearly independent which is not necessarily true for a stochastic matrix ``P``. The following explains how this new activation function is implemented.
 
 ### The Cayley transform 
 
@@ -69,7 +74,13 @@ The Cayley transform maps from skew-symmetric matrices to orthonormal matrices[^
 \mathrm{Cayley}: A \mapsto (\mathbb{I} - A)(\mathbb{I} + A)^{-1}.
 ```
 
-In order to use the Cayley transform as an activation function we further need a mapping from the input ``Z`` to a skew-symmetric matrix. This is realized in two ways in `GeometricMachineLearning` (these are the two approaches to which we referred to above).
+We can easily check that ``\mathrm{Cayley}(A)`` is orthogonal if ``A`` is skew-symmetric. For this consider ``\varepsilon \mapsto A(\varepsilon)\in\mathcal{S}_\mathrm{skew}`` with ``A(0) = \mathbb{I}`` and ``A'(0) = B``. Then we have: 
+
+```math
+\frac{\delta\mathrm{Cayley}}{\delta{}A} \big \frac{d}{d\varepsilon}\big|_{\varepsilon=0} \mathrm{Cayley}(A(\varepsilon))^T \mathrm{Cayley}(A(\varepsilon)) = \mathbb{O}.
+```
+
+In order to use the Cayley transform as an activation function we further need a mapping from the input ``Z`` to a skew-symmetric matrix. This is realized in two ways in `GeometricMachineLearning`: via a scalar-product with a skew-symmetric weighting and via a scalar-product with an arbitrary weighting.
 
 ### First approach: scalar products with a skew-symmetric weighting
 
@@ -78,33 +89,65 @@ For this the attention layer is modified in the following way:
 ```math 
 Z := [z^{(1)}, \ldots, z^{(T)}] \mapsto Z\sigma(Z^TAZ),
 ```
-where ``\sigma(C)=\mathrm{Cayley}(C)`` and ``A`` is a skew-symmetric matrix that is learnable, i.e. the parameters of the attention layer are stored in ``A``. ``\mathrm{Cayley}(C) = (\mathbb(I) - A)(\mathbb{I} + A)^{-1}`` is the Cayley transform. 
+where ``\sigma(C)=\mathrm{Cayley}(C)`` and ``A`` is a skew-symmetric matrix that is learnable, i.e. the parameters of the attention layer are stored in ``A``.
 
 ### Second approach: scalar products with an arbitrary weighting
 
+For this approach we compute correlations between the input vectors with a skew-symmetric weighting. The correlations we consider here are based on: 
 
+```math
+(z^{(2)})^TAz^{(1)}, (z^{(3)})^TAz^{(1)}, \ldots, (z^{(d)})^TAz^{(1)}, (z^{(3)})^TAz^{(2)}, \ldots, (z^{(d)})^TAz^{(2)}, \ldots, (z^{(d)})^TAz^{(d-1)}.
+```
+
+So in total we consider correlations ``(z^{(i)})^Tz^{(j)}`` for which ``i > j``. We now arrange these correlations into a skew-symmetric matrix: 
+
+```math
+C = \begin{bmatrix}
+        0               & -(z^{(2)})^TAz^{(1)} & -(z^{(3)})^TAz^{(1)} &     \ldots & -(z^{(d)})^TAz^{(1)} \\
+    (z^{(2)})^TAz^{(1)} &       0              & -(z^{(3)})^TAz^{(2)} &     \ldots & -(z^{(d)})^TAz^{(2)} \\
+    \ldots              &       \ldots         &        \ldots        &     \ldots &    \ldots             \\
+    (z^{(d)})^TAz^{(1)} & (z^{(d)})^TAz^{(2)}  & (z^{(d)})^TAz^{(3)}  &     \ldots &        0               
+\end{bmatrix}.
+```
+
+This correlation matrix can now again be used as an input for the Cayley transform to produce an orthogonal matrix.
 
 ## How is structure preserved? 
 
-To make the structure-preserving property more clear, consider that the transformer maps sequences of vectors to sequences of vectors, i.e. ``V\times\cdots\times{}V \ni [z^1, \ldots, z^T] \mapsto [\hat{z}^1, \ldots, \hat{z}^T]``. We can define a symplectic structure on ``V\times\cdots\times{}V`` by rearranging ``[z^1, \ldots, z^T]`` into a vector. We do this in the following way: 
+In order to discuss *how structure is preserved* we first have to define what *structure* we mean precisely. This structure is strongly inspired by traditional *multi-step methods* (see [feng1998step](@cite)). We now define what volume preservation means for the product space ``\mathbb{R}^{d}\times\cdots\times\mathbb{R}^{d}\equiv\times_\text{$T$ times}\mathbb{R}^{d}``.
 
+Consider an isomorphism ``\hat{}: \times_\text{($T$ times)}\mathbb{R}^{d}\stackrel{\approx}{\longrightarrow}\mathbb{R}^{dT}``. Specifically, this isomorphism takes the form:
 ```math
-\tilde{Z} = \begin{pmatrix} q^{(1)}_1 \\ q^{(2)}_1 \\ \cdots \\ q^{(T)}_1 \\ q^{(1)}_2 \\ \cdots \\ q^{(T)}_d \\ p^{(1)}_1 \\ p^{(2)}_1 \\ \cdots \\ p^{(T)}_1 \\ p^{(1)}_2 \\ \cdots \\ p^{(T)}_d \end{pmatrix}.
+Z =  \left[\begin{array}{cccc}
+            z_1^{(1)} &  z_1^{(2)} & \quad\cdots\quad & z_1^{(T)} \\
+            z_2^{(1)} &  z_2^{(2)} & \cdots & z_2^{(T)} \\
+            \cdots &  \cdots & \cdots & \cdots \\
+            z_d^{(1)} & z_d^{(2)} & \cdots & z_d^{(T)}
+            \end{array}\right] \mapsto 
+            \left[\begin{array}{c}  z_1^{(1)} \\ z_1^{(2)} \\ \cdots \\ z_1^{(T)} \\ z_2^{(1)} \\ \cdots \\ z_d^{(T)} \end{array}\right] =: Z_\mathrm{vec}.
+\label{eq:isomorphism}
 ```
 
-Multiplying with the matrix ``\Lambda(Z)`` from the right onto ``[z^1, \ldots, z^T]`` corresponds to applying the sparse matrix 
+The inverse of ``Z \mapsto \hat{Z} `` we refer to as ``Y \mapsto \tilde{Y}``. In the following we also write ``\hat{\varphi}`` for the mapping ``\,\hat{}\circ\varphi\circ\tilde{}\,``.
+
+__DEFINITION__:
+We say that a mapping ``\varphi: \times_\text{$T$ times}\mathbb{R}^{d} \to \times_\text{$T$ times}\mathbb{R}^{d}`` is **volume-preserving** if the associated ``\hat{\varphi}`` is volume-preserving.
+
+In the transformed coordinate system (in terms of the vector ``Z_\mathrm{vec}`` defined above) this is equivalent to multiplication by a sparse matrix ``\tilde\Lambda(Z)`` from the left:
 
 ```math
-\tilde{\Lambda}(Z)=\left[
-\begin{array}{ccc}
-   \Lambda(Z) & \cdots & \mathbb{O}_T \\
-   \vdots & \ddots & \vdots \\
-   \mathbb{O}_T & \cdots & \Lambda(Z) 
-   \end{array}
-\right]
+    \tilde{\Lambda}(Z) Z_\mathrm{vec} :=
+    \begin{pmatrix}
+    \Lambda(Z) & \mathbb{O} & \cdots  & \mathbb{O} \\
+    \mathbb{O} & \Lambda(Z) & \cdots & \mathbb{O} \\
+    \cdots & \cdots & \ddots & \cdots \\ 
+    \mathbb{O} & \mathbb{O} & \cdots & \Lambda(Z) \\
+    \end{pmatrix}
+    \left[\begin{array}{c}  z_1^{(1)} \\ z_1^{(2)} \\ \ldots \\ z_1^{(T)} \\ z_2^{(1)} \\ \ldots \\ z_d^{(T)} \end{array}\right] .
+    \label{eq:LambdaApplication}
 ```
 
-from the left onto the big vector. 
+``\tilde{\Lambda}(Z)`` in m[eq:LambdaApplication]m(@latex) is easily shown to be an orthogonal matrix. 
 
 
 ## Historical Note 
