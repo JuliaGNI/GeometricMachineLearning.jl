@@ -77,7 +77,7 @@ The Cayley transform maps from skew-symmetric matrices to orthonormal matrices[^
 We can easily check that ``\mathrm{Cayley}(A)`` is orthogonal if ``A`` is skew-symmetric. For this consider ``\varepsilon \mapsto A(\varepsilon)\in\mathcal{S}_\mathrm{skew}`` with ``A(0) = \mathbb{I}`` and ``A'(0) = B``. Then we have: 
 
 ```math
-\frac{\delta\mathrm{Cayley}}{\delta{}A} \big \frac{d}{d\varepsilon}\big|_{\varepsilon=0} \mathrm{Cayley}(A(\varepsilon))^T \mathrm{Cayley}(A(\varepsilon)) = \mathbb{O}.
+\frac{\delta\mathrm{Cayley}}{\delta{}A} = \frac{d}{d\varepsilon}|_{\varepsilon=0} \mathrm{Cayley}(A(\varepsilon))^T \mathrm{Cayley}(A(\varepsilon)) = \mathbb{O}.
 ```
 
 In order to use the Cayley transform as an activation function we further need a mapping from the input ``Z`` to a skew-symmetric matrix. This is realized in two ways in `GeometricMachineLearning`: via a scalar-product with a skew-symmetric weighting and via a scalar-product with an arbitrary weighting.
