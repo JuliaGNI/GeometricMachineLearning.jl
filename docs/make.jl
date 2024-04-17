@@ -62,6 +62,7 @@ makedocs(;
         "Optimizer Framework" => [
             "Optimizers" => "Optimizer.md",
             "General Optimization" => "optimizers/general_optimization.md",
+            "Pullbacks" => "pullbacks/computation_of_pullbacks.md",
         ],
         "Optimizer Functions" => [
             "Horizontal Lift" => "optimizers/manifold_related/horizontal_lift.md",
