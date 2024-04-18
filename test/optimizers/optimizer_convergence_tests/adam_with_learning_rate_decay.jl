@@ -1,5 +1,6 @@
 
 using GeometricMachineLearning
+using GeometricMachineLearning: ResNetLayer
 using Test 
 import Random 
 
