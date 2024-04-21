@@ -32,6 +32,10 @@ const output_type = isempty(ARGS) ? :html : ARGS[1] == "html_output" ? :html : :
 
 const format = output_type == :html ? html_format : ARGS[1] == "latex_output" ? latex_format : latex_format_no_pdf
 
+function include_html_graphics(path::String)
+    Docs.HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(buildpath, path))></object>"""), Docs.HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(buildpath, path))></object>""")
+end
+
 makedocs(;
     plugins = [bib],
     modules = [GeometricMachineLearning],

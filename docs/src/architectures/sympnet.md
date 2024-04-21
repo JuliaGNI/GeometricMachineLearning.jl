@@ -15,19 +15,27 @@ SympNets can be viewed as a "symplectic integrator" (see [hairer2006geometric](@
 ```
 The tilde in the above equation indicates *predicted data*. The time step between predictions is not a parameter we can choose but is related to the *temporal frequency of the training data*. This means that if data is recorded in an interval of e.g. 0.1 seconds, then this will be the time step of our integrator.
 
-```@example
-import Images, Plots # hide
-if Main.output_type == :html # hide
-  Docs.HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/sympnet_architecture.png"))></object>""") # hide
-else # hide
-  Plots.plot(Images.load("../tikz/sympnet_architecture.png"), axis=([], false)) # hide
-end # hide
-```
+m```figure
+"../tikz/sympnet_architecture.png", "sympnet_architecture", "A visualization of the SympNet."
+m```
 
 ```@example
-if Main.output_type == :html # hide
-  Docs.HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/sympnet_architecture_dark.png"))></object>""") # hide
-end # hide
+Docs.HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/sympnet_architecture.png"))></object>""") # hide
+Docs.HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/sympnet_architecture_dark.png"))></object>""") # hide
+```
+
+```@example 
+  a, b = Main.include_html_graphics("../tikz/sympnet_architecture.png") # hide
+  a # hide
+  b # hide
+```
+
+```@raw latex 
+\begin{figure}
+  \includegraphics[width = .5\textwidth]{../tikz/sympnet_architecture.png}
+  \caption{Visualization of the SympNet architecture}
+  \label{fig:SympNetArchitecture}
+\end{figure}
 ```
 
 There are two types of SympNet architectures: $LA$-SympNets and $G$-SympNets. 
