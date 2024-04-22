@@ -78,7 +78,10 @@ H:(q,p)\in\mathbb{R}^2 \mapsto \frac{1}{2}p^2-cos(q) \in \mathbb{R}.
 Here we generate pendulum data with the script `GeometricMachineLearning/scripts/pendulum.jl`:
 
 ```@example sympnet
-using GeometricMachineLearning
+using GeometricMachineLearning # hide
+import Random # hide
+
+Random.seed!(1234)
 
 # load script
 include("../../../scripts/pendulum.jl")
@@ -165,7 +168,7 @@ The train function will change the parameters of the neural networks and gives a
 
 The trainings data `data_q` and `data_p` must be matrices of $\mathbb{R}^{n\times d}$ where $n$ is the length of data and $d$ is the half of the dimension of the system, i.e `data_q[i,j]` is $q_j(t_i)$ where $(t_1,...,t_n)$ are the corresponding time of the training data.
 
-Then we can make prediction. Let's compare the initial data with a prediction starting from the same phase space point using the provided function Iterate_Sympnet:
+Then we can make prediction. Let's compare the initial data with a prediction starting from the same phase space point using the provided function `iterate`:
 
 ```@example sympnet
 ics = (q=qp_data.q[:,1], p=qp_data.p[:,1])
