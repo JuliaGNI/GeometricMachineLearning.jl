@@ -250,6 +250,7 @@ module GeometricMachineLearning
     include("architectures/transformer_integrator.jl")
     include("architectures/regular_transformer_integrator.jl")
     include("architectures/sympnet.jl")
+    include("architectures/symplectic_autoencoder.jl")
     include("architectures/autoencoder.jl")
     include("architectures/fixed_width_network.jl")
     include("architectures/hamiltonian_neural_network.jl")
