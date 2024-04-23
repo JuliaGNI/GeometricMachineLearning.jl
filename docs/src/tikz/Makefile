@@ -22,8 +22,6 @@ convert_with_pdftocairo: $(MYDIR)/*.pdf
 	done
 
 png:
-	pdftocairo 	-png -r 500		-transp -singlefile	 logo_with_name.pdf								logo_with_name
-	pdftocairo 	-png -r 500		-transp -singlefile	 logo_with_name_dark.pdf						logo_with_name_dark
 	pdftocairo  -png -r $(res1) -transp -singlefile  adam_optimizer.pdf               	 			adam_optimizer  
 	pdftocairo  -png -r $(res1) -transp -singlefile  adam_optimizer_dark.pdf               	 		adam_optimizer_dark                     
 	pdftocairo  -png -r $(res1) -transp -singlefile  general_optimization.pdf		 	 			general_optimization   
@@ -36,9 +34,9 @@ png:
 	pdftocairo	-png -r $(res2) -transp -singlefile	 sympnet_architecture_dark.pdf					sympnet_architecture_dark
 	pdftocairo 	-png -r $(res3) -transp -singlefile  structs_visualization.pdf						structs_visualization
 	pdftocairo 	-png -r $(res3) -transp -singlefile  structs_visualization_dark.pdf					structs_visualization_dark
-	pdftocairo 	-png -r $(res1) -transp -singlefile	 logo.pdf										logo
 	pdftocairo  -png -r 500     -transp -singlefile  logo_with_name.pdf                             logo_with_name
 	pdftocairo  -png -r 500     -transp -singlefile  logo_with_name_dark.pdf                        logo_with_name_dark
+	pdftocairo 	-png -r $(res1) -transp -singlefile	 logo.pdf										logo 
 	pdftocairo  -png -r $(res1) -transp -singlefile  symplectic_autoencoder.pdf						symplectic_autoencoder
 	pdftocairo  -png -r $(res1) -transp -singlefile  symplectic_autoencoder_dark.pdf				symplectic_autoencoder_dark
 	pdftocairo  -png -r $(res1) -transp -singlefile  solution_manifold_2.pdf						solution_manifold_2

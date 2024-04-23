@@ -1,5 +1,4 @@
-using GeometricMachineLearning: tensor_mat_mul, tensor_tensor_mul, tensor_transpose_tensor_mul, assign_q_and_p, tensor_transpose, assign_output_estimate, vec_tensor_mul
-using GeometricMachineLearning: mat_tensor_mul, lo_mat_mul, up_mat_mul, skew_mat_mul, symmetric_mat_mul
+using GeometricMachineLearning: lo_mat_mul, up_mat_mul, skew_mat_mul, symmetric_mat_mul
 using GeometricMachineLearning: tensor_mat_mul, mat_tensor_mul, tensor_tensor_mul, tensor_transpose_tensor_mul, assign_q_and_p, tensor_transpose, assign_output_estimate, vec_tensor_mul, tensor_mat_skew_sym_assign
 using ChainRulesTestUtils
 using Printf
