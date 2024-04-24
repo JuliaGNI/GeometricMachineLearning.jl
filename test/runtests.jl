@@ -67,3 +67,8 @@ using SafeTestsets
 
 @safetestset "Volume-Preserving Transformer (skew-symmetric tests)                            " begin include("volume_preserving_attention/test_skew_map.jl") end
 @safetestset "Volume-Preserving Transformer (cayley-transform tests)                          " begin include("volume_preserving_attention/test_cayley_transforms.jl") end
+
+# reduced order modeling tests
+@safetestset "PSD tests                                                                       " begin include("psd_architecture_tests.jl") end
+@safetestset "SymplecticAutoencoder tests                                                     " begin include("symplectic_autoencoder_tests.jl") end
+@safetestset "Check if autoencoder error is lower than PSD error                              " begin include("sae_error_lower_than_psd_error.jl") end
