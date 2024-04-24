@@ -120,9 +120,9 @@ The following demonstrates the predictions of our approaches[^1]:
 initial_condition = dl.input[:, 1:seq_length, 2]
 
 function make_networks_neural_network_integrators(nn_skew, nn_arb, nn_comp)
-    nn_skew = NeuralNetwork(GeometricMachineLearning.DummyTransformer(seq_length), nn_skew.model, nn_skew.params)
-    nn_arb  = NeuralNetwork(GeometricMachineLearning.DummyTransformer(seq_length), nn_arb.model,  nn_arb.params)
-    nn_comp = NeuralNetwork(GeometricMachineLearning.DummyNNIntegrator(), nn_comp.model, nn_comp.params)
+    nn_skew = NeuralNetwork(GeometricMachineLearning.DummyTransformer(seq_length), nn_skew.model, nn_skew.params, CPU())
+    nn_arb  = NeuralNetwork(GeometricMachineLearning.DummyTransformer(seq_length), nn_arb.model,  nn_arb.params, CPU())
+    nn_comp = NeuralNetwork(GeometricMachineLearning.DummyNNIntegrator(), nn_comp.model, nn_comp.params, CPU())
 
     nn_skew, nn_arb, nn_comp
 end
