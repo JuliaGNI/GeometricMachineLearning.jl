@@ -9,7 +9,28 @@ struct SymplecticAutoencoder{EncoderInit, DecoderInit, AT} <: AutoEncoder
     activation::AT
 end
 
-function SymplecticAutoencoder(full_dim::Integer, reduced_dim::Integer; n_encoder_layers::Integer = 4, n_encoder_blocks::Integer = 2, n_decoder_layers::Integer = 1, n_decoder_blocks::Integer = 3, sympnet_upscale::Integer = 5, activation = tanh, encoder_init_q::Bool = true, decoder_init_q_true::Bool = true)
+struct SymplecticEncoder{AT} <: Encoder
+    full_dim::Int
+    reduced_dim::Int 
+    n_encoder_layers::Int 
+    n_encoder_blocks::Int 
+    sympnet_upscale::Int 
+    activation::AT
+end
+
+struct SymplecticDecoder{AT} <: Encoder
+    full_dim::Int
+    reduced_dim::Int 
+    n_decoder_layers::Int 
+    n_decoder_blocks::Int 
+    sympnet_upscale::Int 
+    activation::AT
+end
+
+function SymplecticAutoencoder(full_dim::Integer, reduced_dim::Integer; n_encoder_layers::Integer = 4, n_encoder_blocks::Integer = 2, n_decoder_layers::Integer = 1, n_decoder_blocks::Integer = 3, sympnet_upscale::Integer = 5, activation = tanh, encoder_init_q::Bool = true, decoder_init_q::Bool = true)
+    @assert full_dim ≥ reduced_dim "The dimension of the full-order model hast to be larger than the dimension of the reduced order model!"
+    @assert iseven(full_dim) && iseven(reduced_dim) "The full-order model and the reduced-order model need to be even dimensional!"
+    
     if encoder_init_q && decoder_init_q
         SymplecticAutoencoder{:EncoderInitQ, :DecoderInitQ, typeof(activation)}(full_dim, reduced_dim, n_encoder_layers, n_encoder_blocks, n_decoder_layers, n_decoder_blocks, sympnet_upscale, activation)
     elseif encoder_init_q && !decoder_init_q
@@ -25,17 +46,19 @@ end
 This function gives iterations from the full dimension to the reduced dimension (i.e. the intermediate steps). The iterations are given in ascending order. 
 """
 function compute_iterations(full_dim::Integer, reduced_dim::Integer, n_blocks::Integer)
-    iterations = Vector{Int}(reduced_dim : (full_dim - reduced_dim) ÷ (n_blocks - 1) : full_dim)
-    iterations[end] = full_dim 
-    iterations
+    full_dim2 = full_dim ÷ 2
+    reduced_dim2 = reduced_dim ÷ 2
+    iterations = Vector{Int}(reduced_dim2 : (full_dim2 - reduced_dim2) ÷ (n_blocks - 1) : full_dim2)
+    iterations[end] = full_dim2 
+    2 * iterations
 end
 
-function encoder_or_decoder_layers_from_iteration(arch::SymplecticAutoencoder, encoder_iterations::AbstractVector, _determine_layer_type)
+function encoder_or_decoder_layers_from_iteration(arch::SymplecticAutoencoder, encoder_iterations::AbstractVector, n_encoder_layers::Integer, _determine_layer_type)
     encoder_layers = ()
     encoder_iterations_reduced = encoder_iterations[1:(end - 1)]
     for (i, it) in zip(axes(encoder_iterations_reduced, 1), encoder_iterations_reduced)
-        for layer_index in 1:arch.encoder_layers 
-            encoder_layers = _determine_layer_type(layer_index) ? (encoder_layers..., GradientQ(it, arch.sympnet_upscale * it, arch.activation)) : (encoder_layers..., GradientP(it, arch.sympnet_upscale * it, arch.activation))
+        for layer_index in 1:n_encoder_layers 
+            encoder_layers = _determine_layer_type(layer_index) ? (encoder_layers..., GradientLayerQ(it, arch.sympnet_upscale * it, arch.activation)) : (encoder_layers..., GradientLayerP(it, arch.sympnet_upscale * it, arch.activation))
         end
         encoder_layers = (encoder_layers..., PSDLayer(it, encoder_iterations[i + 1]))
     end
@@ -44,24 +67,31 @@ function encoder_or_decoder_layers_from_iteration(arch::SymplecticAutoencoder, e
 end
 
 function encoder_layers_from_iteration(arch::SymplecticAutoencoder{:EncoderInitQ}, encoder_iterations::AbstractVector)
-    encoder_or_decoder_layers_from_iteration(arch, encoder_iterations, isodd)
+    encoder_or_decoder_layers_from_iteration(arch, encoder_iterations, arch.n_encoder_layers, isodd)
 end
 
 function encoder_layers_from_iteration(arch::SymplecticAutoencoder{:EncoderInitP}, encoder_iterations::AbstractVector)
-    encoder_or_decoder_layers_from_iteration(arch, encoder_iterations, iseven)
+    encoder_or_decoder_layers_from_iteration(arch, encoder_iterations, arch.n_encoder_layers, iseven)
 end
 
 function decoder_layers_from_iteration(arch::SymplecticAutoencoder{<:Any, :DecoderInitQ}, decoder_iterations::AbstractVector)
-    encoder_or_decoder_layers_from_iteration(arch, decoder_iterations, isodd)
+    encoder_or_decoder_layers_from_iteration(arch, decoder_iterations, arch.n_decoder_layers, isodd)
 end
 
 function decoder_layers_from_iteration(arch::SymplecticAutoencoder{<:Any, :DecoderInitP}, decoder_iterations::AbstractVector)
-    encoder_or_decoder_layers_from_iteration(arch, decoder_iterations, iseven)
+    encoder_or_decoder_layers_from_iteration(arch, decoder_iterations, arch.n_decoder_layers, iseven)
 end
 
 function Chain(arch::SymplecticAutoencoder)
-    encoder_iterations = flip(compute_iterations(arch.full_dim, arch.reduced_dim, arch.n_encoder_blocks))
-    decoder_iterations = compute_iterations(arch.full_dim, arch.reduced_dim, arch.n_decoder_blocks)
+    Chain(get_encoder(arch).layers..., get_decoder(arch).layers...)
+end
 
-    Chain(encoder_layers_from_iteration(arch, encoder_iterations)..., decoder_layers_from_iteration(arch, decoder_iterations)...)
+function get_encoder(nn::NeuralNetwork{<:SymplecticAutoencoder})
+    arch = SymplecticEncoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_layers, nn.architecture.n_encoder_blocks, nn.architecture.sympnet_upscale, nn.architecture.activation)
+    NeuralNetwork(arch, get_encoder(nn.architecture), get_encoder_params(nn), get_backend(nn))
+end
+
+function get_decoder(nn::NeuralNetwork{<:SymplecticAutoencoder})
+    arch = SymplecticDecoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_decoder_layers, nn.architecture.n_decoder_blocks, nn.architecture.sympnet_upscale, nn.architecture.activation)
+    NeuralNetwork(arch, get_decoder(nn.architecture), get_decoder_params(nn), get_backend(nn))
 end
