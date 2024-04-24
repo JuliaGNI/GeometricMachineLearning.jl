@@ -112,7 +112,7 @@ gsympnet = GSympNet(dl, upscaling_dimension=upscaling_dimension, nhidden=nhidden
 lasympnet = LASympNet(dl, nhidden=nhidden, activation=activation)
 
 # specify the backend
-backend = CPU()
+const backend = CPU()
 
 # initialize the networks
 la_nn = NeuralNetwork(lasympnet, backend, type) 
@@ -136,7 +136,7 @@ We have to define an optimizer which will be use in the training of the SympNet.
 
 ```@example sympnet
 # set up optimizer; for this we first need to specify the optimization method (argue for why we need the optimizer method)
-opt_method = AdamOptimizer(; T=type)
+opt_method = AdamOptimizer(type)
 la_opt = Optimizer(opt_method, la_nn)
 g_opt = Optimizer(opt_method, g_nn)
 nothing # hide
@@ -164,11 +164,10 @@ using Plots
 p1 = plot(g_loss_array, xlabel="Epoch", ylabel="Training error", label="G-SympNet", color=3, yaxis=:log)
 plot!(p1, la_loss_array, label="LA-SympNet", color=2)
 ```
-The train function will change the parameters of the neural networks and gives an a vector containing the evolution of the value of the loss function during the training. Default values for the arguments `ntraining` and `batch_size` are respectively $1000$ and $10$.
 
 The trainings data `data_q` and `data_p` must be matrices of $\mathbb{R}^{n\times d}$ where $n$ is the length of data and $d$ is the half of the dimension of the system, i.e `data_q[i,j]` is $q_j(t_i)$ where $(t_1,...,t_n)$ are the corresponding time of the training data.
 
-Then we can make prediction. Let's compare the initial data with a prediction starting from the same phase space point using the provided function `iterate`:
+Now we can make a prediction. Let's compare the initial data with a prediction starting from the same phase space point using the function `iterate`:
 
 ```@example sympnet
 ics = (q=qp_data.q[:,1], p=qp_data.p[:,1])
@@ -185,4 +184,4 @@ plot!(p2, la_trajectory.q', la_trajectory.p', label="LA Sympnet")
 plot!(p2, g_trajectory.q', g_trajectory.p', label="G Sympnet")
 ```
 
-We see that `GSympNet` gives an almost perfect math on the training data whereas `LASympNet` cannot even properly replicate the training data. It also takes longer to train `LASympNet`.
+We see that `GSympNet` outperforms the `LASympNet` on this problem.
