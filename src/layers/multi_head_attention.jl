@@ -1,12 +1,20 @@
 """
 MultiHeadAttention (MHA) serves as a preprocessing step in the transformer. It reweights the input vectors bases on correlations within those data. 
+
+### Constructor 
+Takes input arguments: 
+- `dim::Int`: The system dimension 
+- `n_heads::Int`: The number of heads. 
+- `Stiefel::Bool=true` (keyword argument): whether the weights should be put on the Stiefel manifold. 
+- `retraction::AbstractRetraction` (keyword argument): what kind of retraction should be used. By default this is the geodesic retraction. 
+- `add_connection::Bool=true` (keyword argument): determines if the input should be added to the output for the final result. 
 """
 struct MultiHeadAttention{M, N, Stiefel, retraction, add_connection} <: LayerWithOptionalManifold{M, N, Stiefel, retraction}
-    n_heads::Integer
+    n_heads::Int
 end
 
 default_retr = Geodesic()
-function MultiHeadAttention(dim::Integer, n_heads::Integer; Stiefel::Bool=false, retraction::AbstractRetraction=default_retr, add_connection::Bool=true)
+function MultiHeadAttention(dim::Int, n_heads::Int; Stiefel::Bool=false, retraction::AbstractRetraction=default_retr, add_connection::Bool=true)
     @assert dim % n_heads == 0
     MultiHeadAttention{dim, dim, Stiefel, typeof(retraction), add_connection}(n_heads)
 end
