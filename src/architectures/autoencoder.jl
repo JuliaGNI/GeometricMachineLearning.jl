@@ -13,6 +13,12 @@ Abstract `Decoder` type. If a custom `<:Decoder` architecture is implemented it 
 """
 abstract type Decoder <: Architecture end
 
+abstract type SymplecticCompression <: AutoEncoder end
+
+abstract type SymplecticEncoder <: Encoder end 
+
+abstract type SymplecticDecoder <: Decoder end
+
 struct UnknownEncoder <: Encoder 
     full_dim::Int
     reduced_dim::Int
@@ -20,6 +26,18 @@ struct UnknownEncoder <: Encoder
 end 
 
 struct UnknownDecoder <: Decoder 
+    full_dim::Int 
+    reduced_dim::Int 
+    n_decoder_blocks::Int
+end
+
+struct UnknownSymplecticEncoder <: SymplecticEncoder 
+    full_dim::Int
+    reduced_dim::Int
+    n_encoder_blocks::Int
+end 
+
+struct UnknownSymplecticDecoder <: SymplecticDecoder 
     full_dim::Int 
     reduced_dim::Int 
     n_decoder_blocks::Int
@@ -82,4 +100,12 @@ end
 
 function get_decoder(nn::NeuralNetwork{<:AutoEncoder})
     NeuralNetwork(UnknownDecoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks), get_decoder_model(nn.architecture), get_decoder_parameters(nn), get_backend(nn))
+end
+
+function get_encoder(nn::NeuralNetwork{<:SymplecticCompression})
+    NeuralNetwork(UnknownSymplecticEncoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks), get_encoder_model(nn.architecture), get_encoder_parameters(nn), get_backend(nn))
+end
+
+function get_decoder(nn::NeuralNetwork{<:SymplecticCompression})
+    NeuralNetwork(UnknownSymplecticDecoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks), get_decoder_model(nn.architecture), get_decoder_parameters(nn), get_backend(nn))
 end
