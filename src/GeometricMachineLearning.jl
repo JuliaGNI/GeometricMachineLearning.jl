@@ -7,6 +7,7 @@ module GeometricMachineLearning
     using GeometricBase
     using GeometricIntegrators
     using GeometricSolutions: GeometricSolution, EnsembleSolution, DataSeries
+    using GeometricEquations: ODEProblem, HODEProblem
     using KernelAbstractions
     using LinearAlgebra
     using NNlib
