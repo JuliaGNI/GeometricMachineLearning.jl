@@ -12,7 +12,7 @@ It can be called using the following constructor: `ReducedSystem(N, n; encoder, 
 - `ics`: the initial condition for the big system.
 - `projection_error`: the error ``||M - \mathcal{R}\circ\mathcal{P}(M)||`` where ``M`` is the snapshot matrix; ``\mathcal{P}$ and $\mathcal{R}`` are the reduction and reconstruction respectively.
 """
-struct ReducedSystem{T, ET <: Encoder, DT <: Decoder, FT, RT, InT, PT, IT <: Union{AT, NamedTuple{(:q, :p), Tuple{AT, AT}}}} where AT <: AbstractArray{T} 
+struct ReducedSystem{T, ET <: Encoder, DT <: Decoder, FT <: Callable, RT <: Callable, InT, PT, IT <: Union{AbstractArray{T}, NamedTuple{(:q, :p), Tuple{<:AbstractArray{T}, <:AbstractArray{T}}}}}
     N::Int 
     n::Int
     encoder::ET
@@ -24,14 +24,17 @@ struct ReducedSystem{T, ET <: Encoder, DT <: Decoder, FT, RT, InT, PT, IT <: Uni
     tspan::Tuple{Int, Int} 
     tstep::T
     ics::IT
-
-    function ReducedSystem(N::Integer, n::Integer; encoder::Encoder, decoder::Decoder, full_vector_field, reduced_vector_field, parameters, tspan::Tuple, tstep::Real, ics, integrator=ImplicitMidpoint()) 
-        new{typeof(tstep), typeof(encoder), typeof(decoder), typeof(full_vector_field), typeof(reduced_vector_field), typeof(integrator), typeof(parameters), typeof(ics)}(N, n, encoder, decoder, full_vector_field, reduced_vector_field, integrator, parameters, tspan, tstep, ics)
-    end
 end
 
-function ReducedSystem(N::Integer, n::Integer; encoder::Encoder, decoder::Decoder, full_vector_field, parameters, tspan::Tuple, tstep::T, ics, integrator=ImplicitMidpoint()) where T
-    ReducedSystem(N, n; encoder = encoder, decoder = decoder, full_vector_field = full_vector_field, reduced_vector_fields = build_reduced_vector_field(full_vector_field, decoder, N, n, T), integrator = integrator, parameters = parameters, tspan = tspan, tstep = tstep, ics = ics)
+function ReducedSystem(N::Integer, n::Integer; encoder::Encoder, decoder::Decoder, full_vector_field, parameters, tspan::Tuple, tstep::Real, ics, reduced_vector_field = build_reduced_vector_field(full_vector_field, decoder, N, n, T), integrator=ImplicitMidpoint()) 
+    ReducedSystem{typeof(tstep), typeof(encoder), typeof(decoder), typeof(full_vector_field), typeof(reduced_vector_field), typeof(integrator), typeof(parameters), typeof(ics)}(N, n, encoder, decoder, full_vector_field, reduced_vector_field, integrator, parameters, tspan, tstep, ics)
+end
+
+function ReducedSystem(odeproblem::ODEProblem; encoder::Encoder, decoder::Decoder, integrator=ImplicitMidpoint()) 
+    N = encoder.full_dim 
+    n = encoder.reduced_dim
+    eq = odeproblem.equation
+    ReducedSystem(N, n; encoder = encoder, decoder = decoder, full_vector_field = eq.v, parameters = odeproblem.parameters, tspan = odeproblem.tspan, ics = odeproblem.ics, integrator = integrator)
 end
 
 function build_reduced_vector_field(full_vector_field, decoder::SymplecticDecoder, N::Integer, n::Integer, T::DataType=Float64)
@@ -65,11 +68,11 @@ end
 function compute_reduction_error(rs::ReducedSystem, sol_full)
     n_time_steps = Int(round((rs.tspan[2] - rs.tspan[1])/rs.tstep + 1))
     sol_red = perform_integration_reduced(rs)
-    sol_matrix_red = zeros(2*rs.N, n_time_steps)
+    sol_matrix_red = zeros(rs.N, n_time_steps)
     for (t_ind,q) in zip(1:n_time_steps,sol_red.q)
         sol_matrix_red[:, t_ind] = rs.decoder(q)
     end
-    sol_matrix_full = zeros(2*rs.N, n_time_steps)
+    sol_matrix_full = zeros(rs.N, n_time_steps)
     for (t_ind,q) in zip(1:n_time_steps,sol_full.q)
         sol_matrix_full[:, t_ind] = q
     end
@@ -78,7 +81,7 @@ end
 
 function compute_projection_error(rs::ReducedSystem, sol_full)
     n_time_steps = Int(round((rs.tspan[2] - rs.tspan[1])/rs.tstep + 1))
-    sol_matrix_full = zeros(2*rs.N, n_time_steps)
+    sol_matrix_full = zeros(rs.N, n_time_steps)
     for (t_ind,q) in zip(1:n_time_steps,sol_full.q)
         sol_matrix_full[:, t_ind] = q
     end
