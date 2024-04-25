@@ -1,4 +1,4 @@
-struct PSDArch <: AutoEncoder 
+struct PSDArch <: SymplecticCompression 
     full_dim::Int 
     reduced_dim::Int 
     n_encoder_blocks::Int 
