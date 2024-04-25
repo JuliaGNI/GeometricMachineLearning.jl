@@ -12,7 +12,7 @@ It can be called using the following constructor: `ReducedSystem(N, n; encoder, 
 - `ics`: the initial condition for the big system.
 - `projection_error`: the error ``||M - \mathcal{R}\circ\mathcal{P}(M)||`` where ``M`` is the snapshot matrix; ``\mathcal{P}$ and $\mathcal{R}`` are the reduction and reconstruction respectively.
 """
-struct ReducedSystem{T, ET <: Encoder, DT <: Decoder, FT <: Callable, RT <: Callable, InT, PT, IT <: Union{AbstractArray{T}, NamedTuple{(:q, :p), Tuple{<:AbstractArray{T}, <:AbstractArray{T}}}}}
+struct ReducedSystem{T, ET <: NeuralNetwork{<:Encoder}, DT <: NeuralNetwork{<:Decoder}, FT <: Function, RT <: Function, InT, PT, IT <: Union{AbstractArray{T}, NamedTuple{(:q, :p), Tuple{<:AbstractArray{T}, <:AbstractArray{T}}}}}
     N::Int 
     n::Int
     encoder::ET
@@ -26,13 +26,13 @@ struct ReducedSystem{T, ET <: Encoder, DT <: Decoder, FT <: Callable, RT <: Call
     ics::IT
 end
 
-function ReducedSystem(N::Integer, n::Integer; encoder::Encoder, decoder::Decoder, full_vector_field, parameters, tspan::Tuple, tstep::Real, ics, reduced_vector_field = build_reduced_vector_field(full_vector_field, decoder, N, n, T), integrator=ImplicitMidpoint()) 
+function ReducedSystem(N::Integer, n::Integer; encoder::NeuralNetwork{<:Encoder}, decoder::NeuralNetwork{<:Decoder}, full_vector_field, parameters, tspan::Tuple, tstep::Real, ics, reduced_vector_field = build_reduced_vector_field(full_vector_field, decoder, N, n, T), integrator=ImplicitMidpoint()) 
     ReducedSystem{typeof(tstep), typeof(encoder), typeof(decoder), typeof(full_vector_field), typeof(reduced_vector_field), typeof(integrator), typeof(parameters), typeof(ics)}(N, n, encoder, decoder, full_vector_field, reduced_vector_field, integrator, parameters, tspan, tstep, ics)
 end
 
-function ReducedSystem(odeproblem::ODEProblem; encoder::Encoder, decoder::Decoder, integrator=ImplicitMidpoint()) 
-    N = encoder.full_dim 
-    n = encoder.reduced_dim
+function ReducedSystem(odeproblem::Union{ODEProblem, HODEProblem, ODEEnsemble, HODEEnsemble}; encoder::NeuralNetwork{<:Encoder}, decoder::NeuralNetwork{<:Decoder}, integrator=ImplicitMidpoint()) 
+    N = encoder.architecture.full_dim 
+    n = encoder.architecture.reduced_dim
     eq = odeproblem.equation
     ReducedSystem(N, n; encoder = encoder, decoder = decoder, full_vector_field = eq.v, parameters = odeproblem.parameters, tspan = odeproblem.tspan, ics = odeproblem.ics, integrator = integrator)
 end
