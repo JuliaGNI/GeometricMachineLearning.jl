@@ -5,8 +5,8 @@ module GeometricMachineLearning
     using ChainRulesCore
     using Distances
     using GeometricBase
-    using GeometricEquations
     using GeometricIntegrators
+    using GeometricSolutions: GeometricSolution, EnsembleSolution, DataSeries
     using KernelAbstractions
     using LinearAlgebra
     using NNlib
