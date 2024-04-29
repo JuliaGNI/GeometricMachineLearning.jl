@@ -19,6 +19,8 @@ abstract type SymplecticEncoder <: Encoder end
 
 abstract type SymplecticDecoder <: Decoder end
 
+const SymplecticDimensionChange = Union{SymplecticCompression, SymplecticEncoder, SymplecticDecoder}
+
 struct UnknownEncoder <: Encoder 
     full_dim::Int
     reduced_dim::Int
@@ -108,4 +110,9 @@ end
 
 function get_decoder(nn::NeuralNetwork{<:SymplecticCompression})
     NeuralNetwork(UnknownSymplecticDecoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks), get_decoder_model(nn.architecture), get_decoder_parameters(nn), get_backend(nn))
+end
+
+function (nn::NeuralNetwork{<:SymplecticDimensionChange})(q::AT, p::AT) where {AT <: AbstractArray}
+    nn_applied = nn((q = q, p = p))
+    nn_applied.q, nn_applied.p
 end
