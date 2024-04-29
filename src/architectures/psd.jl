@@ -6,6 +6,7 @@ struct PSDArch <: SymplecticCompression
 end
 
 function PSDArch(full_dim::Integer, reduced_dim::Integer)
+    @assert full_dim ≥ reduced_dim "Full order dim has to be greater than reduced order dim!"
     @assert iseven(full_dim) && iseven(reduced_dim) "Full order and reduced dimension have to be even!"
     PSDArch(full_dim, reduced_dim, 2, 2)
 end
