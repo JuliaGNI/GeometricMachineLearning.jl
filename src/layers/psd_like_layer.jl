@@ -38,5 +38,5 @@ function (l::PSDLayer{M, N})(x::AbstractArray, ps::NamedTuple) where {M, N}
     @assert dim == M 
 
     qp = assign_q_and_p(x, dim÷2)
-    vat∘l(qp, ps)
+    vcat∘l(qp, ps)
 end
