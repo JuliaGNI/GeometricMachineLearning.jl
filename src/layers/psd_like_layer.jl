@@ -29,7 +29,7 @@ function initialparameters(::PSDLayer{M, N}, backend::KernelAbstractions.Backend
     (weight =  N > M ? rand(backend, rng, StiefelManifold{T}, N÷2, M÷2) : rand(backend, rng, StiefelManifold{T}, M÷2, N÷2), )
 end
 
-function (::PSDLayer{M, N})(qp::NamedTuple{(:q, :p), Tuple{AT, AT}}) where {M, N, AT <: AbstractArray}
+function (::PSDLayer{M, N})(qp::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {M, N, AT <: AbstractArray}
     N > M ? (q = custom_mat_mul(ps.weight, qp.q), p = custom_mat_mul(ps.weight, qp.p)) : (q = custom_mat_mul(ps.weight', qp.q), p = custom_mat_mul(ps.weight', qp.p))
 end
 
