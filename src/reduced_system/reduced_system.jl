@@ -46,7 +46,7 @@ struct HRedSys{
     ics::IT
 end
 
-function HRedSys(N::Integer, n::Integer, encoder::NeuralNetwork{<:Encoder}, decoder::NeuralNetwork{<:Decoder}, v_full, f_full, h_full, tspan::Tuple, tstep::T, ics; parameters = parameters, v_reduced = build_reduced_v(v_full, f_full, decoder), f_reduced = build_reduced_f(v_full, f_full, decoder), h_reduced = build_reduced_h(h_full, decoder), integrator=ImplicitMidpoint()) where {T <: Real}
+function HRedSys(N::Integer, n::Integer, encoder::NeuralNetwork{<:Encoder}, decoder::NeuralNetwork{<:Decoder}, v_full, f_full, h_full, tspan::Tuple, tstep::T, ics; parameters = parameters, v_reduced = build_v_reduced(v_full, f_full, decoder), f_reduced = build_f_reduced(v_full, f_full, decoder), h_reduced = build_h_reduced(h_full, decoder), integrator=ImplicitMidpoint()) where {T <: Real}
     HRedSys{typeof(tstep), typeof(encoder), typeof(decoder), typeof(v_full), typeof(f_full), typeof(h_full), typeof(v_reduced), typeof(f_reduced), typeof(h_reduced), typeof(integrator), typeof(parameters), typeof(ics)}(N, n, encoder, decoder, v_full, f_full, h_full, v_reduced, f_reduced, h_reduced, integrator, parameters, tspan, tstep, ics)
 end
 
@@ -66,7 +66,7 @@ We then get
 \mathbb{J}_{2n}\nabla_\xi\tilde{H} = \mathbb{J}_{2n}(\nabla\Psi^\mathrm{dec})^T\mathbb{J}_{2N}^T\mathbb{J}_{2N}\nabla_z{}H = \mathbb{J}_{2n}(\nabla\Psi^\mathrm{dec})^T\mathbb{J}_{2N}^T \begin{pmatrix} v(z) \\ f(z) \end{pmatrix} = \begin{pmatrix} - (\nabla_p\Psi_q)^Tf(z) + (\nabla_p\Psi_p)^Tv(z) \\ (\nabla_q\Psi_q)^Tf(z) - (\nabla_q\Psi_p)^Tv(z) \end{pmatrix}.
 ```
 """
-function build_reduced_v(v_full, f_full, decoder::NeuralNetwork{<:SymplecticDecoder})
+function build_v_reduced(v_full, f_full, decoder::NeuralNetwork{<:SymplecticDecoder})
     T = _eltype(decoder.params)
     N2 = decoder.architecture.full_dim ÷ 2 
     function v_reduced(v, t, q̃, p̃, parameters)
@@ -74,8 +74,8 @@ function build_reduced_v(v_full, f_full, decoder::NeuralNetwork{<:SymplecticDeco
         f_intermediate = zeros(T, N2)
         v_full(v_intermediate, t, decoder((q = q̃, p = p̃))..., parameters)
         f_full(f_intermediate, t, decoder((q = q̃, p = p̃))..., parameters)
-        ∇₂Ψ₁ = ForwardDiff.jacobian(p -> decoder(q̃, p)[1], p̃)
-        ∇₂Ψ₂ = ForwardDiff.jacobian(p -> decoder(q̃, p)[2], p̃) 
+        ∇₂Ψ₁ = Zygote.jacobian(p -> decoder(q̃, p)[1], p̃)[1]
+        ∇₂Ψ₂ = Zygote.jacobian(p -> decoder(q̃, p)[2], p̃)[1]
         v .= -∇₂Ψ₁' * f_intermediate + ∇₂Ψ₂' * v_intermediate
 
         nothing
@@ -83,7 +83,7 @@ function build_reduced_v(v_full, f_full, decoder::NeuralNetwork{<:SymplecticDeco
     v_reduced
 end
 
-function build_reduced_f(v_full, f_full, decoder::NeuralNetwork{<:SymplecticDecoder})
+function build_f_reduced(v_full, f_full, decoder::NeuralNetwork{<:SymplecticDecoder})
     T = _eltype(decoder.params)
     N2 = decoder.architecture.full_dim ÷ 2 
     function f_reduced(f, t, q̃, p̃, parameters)
@@ -91,8 +91,8 @@ function build_reduced_f(v_full, f_full, decoder::NeuralNetwork{<:SymplecticDeco
         f_intermediate = zeros(T, N2)
         v_full(v_intermediate, t, decoder((q = q̃, p = p̃))..., parameters)
         f_full(f_intermediate, t, decoder((q = q̃, p = p̃))..., parameters)
-        ∇₁Ψ₁ = ForwardDiff.jacobian(q -> decoder(q, p̃)[1], q̃)
-        ∇₁Ψ₂ = ForwardDiff.jacobian(q -> decoder(q, p̃)[2], q̃) 
+        ∇₁Ψ₁ = Zygote.jacobian(q -> decoder(q, p̃)[1], q̃)[1]
+        ∇₁Ψ₂ = Zygote.jacobian(q -> decoder(q, p̃)[2], q̃)[1]
         f .= ∇₁Ψ₁' * f_intermediate - ∇₁Ψ₂' * v_intermediate
 
         nothing
@@ -100,7 +100,7 @@ function build_reduced_f(v_full, f_full, decoder::NeuralNetwork{<:SymplecticDeco
     f_reduced
 end
 
-function build_reduced_h(h_full, decoder::NeuralNetwork{<:SymplecticDecoder})
+function build_h_reduced(h_full, decoder::NeuralNetwork{<:SymplecticDecoder})
     function h_reduced(t, q, p, params)
         h_full(t, decoder(q, p)..., params)
     end
