@@ -6,7 +6,7 @@ module GeometricMachineLearning
     using Distances
     using GeometricBase
     using GeometricIntegrators
-    using GeometricSolutions: GeometricSolution, EnsembleSolution, DataSeries
+    using GeometricSolutions: GeometricSolution, EnsembleSolution, DataSeries, StateVariable
     using GeometricEquations: ODEProblem, HODEProblem, ODEEnsemble, HODEEnsemble
     using KernelAbstractions
     using LinearAlgebra
