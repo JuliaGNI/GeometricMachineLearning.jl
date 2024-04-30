@@ -30,7 +30,9 @@ end
 function SymplecticAutoencoder(full_dim::Integer, reduced_dim::Integer; n_encoder_layers::Integer = 4, n_encoder_blocks::Integer = 2, n_decoder_layers::Integer = 1, n_decoder_blocks::Integer = 3, sympnet_upscale::Integer = 5, activation = tanh, encoder_init_q::Bool = true, decoder_init_q::Bool = true)
     @assert full_dim ≥ reduced_dim "The dimension of the full-order model hast to be larger than the dimension of the reduced order model!"
     @assert iseven(full_dim) && iseven(reduced_dim) "The full-order model and the reduced-order model need to be even dimensional!"
-    
+    @assert n_encoder_blocks ≤ full_dim - reduced_dim "The number of encoder blocks is too big!"
+    @assert n_decoder_blocks ≤ full_dim - reduced_dim "The number of decoder blocks is too big!"
+
     if encoder_init_q && decoder_init_q
         SymplecticAutoencoder{:EncoderInitQ, :DecoderInitQ, typeof(activation)}(full_dim, reduced_dim, n_encoder_layers, n_encoder_blocks, n_decoder_layers, n_decoder_blocks, sympnet_upscale, activation)
     elseif encoder_init_q && !decoder_init_q
