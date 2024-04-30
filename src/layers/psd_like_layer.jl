@@ -22,11 +22,13 @@ function PSDLayer(M::Integer, N::Integer; retraction=default_retr)
 end
 
 function parameterlength(::PSDLayer{M, N}) where {M, N}
-    M÷2*(N÷2 - (M÷2+1)÷2)
+    M2 = M ÷ 2 
+    N2 = M ÷ 2
+    M2 * (N2 - (M2 + 1) ÷ 2)
 end 
 
 function initialparameters(::PSDLayer{M, N}, backend::KernelAbstractions.Backend, T::Type; rng::AbstractRNG=Random.default_rng()) where {M, N}
-    (weight =  N > M ? rand(backend, rng, StiefelManifold{T}, N÷2, M÷2) : rand(backend, rng, StiefelManifold{T}, M÷2, N÷2), )
+    (weight =  N > M ? rand(backend, rng, StiefelManifold{T}, N ÷ 2, M ÷ 2) : rand(backend, rng, StiefelManifold{T}, M ÷ 2, N ÷ 2), )
 end
 
 function (::PSDLayer{M, N})(qp::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {M, N, AT <: AbstractArray}
@@ -35,8 +37,8 @@ end
 
 function (l::PSDLayer{M, N})(x::AbstractArray, ps::NamedTuple) where {M, N}
     dim = size(x, 1)
-    @assert dim == M 
+    @assert M == dim  
 
     qp = assign_q_and_p(x, dim÷2)
-    vcat∘l(qp, ps)
+    _vcat(l(qp, ps))
 end
