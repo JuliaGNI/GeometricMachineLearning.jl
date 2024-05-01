@@ -399,7 +399,7 @@ module GeometricMachineLearning
  
     include("reduced_system/reduced_system.jl")
 
-    export HRedSys, compute_reduction_error, compute_projection_error
+    export HRedSys, reduction_error, projection_error, integrate_reduced_system, integrate_full_system
 
     include("map_to_cpu.jl")
 end

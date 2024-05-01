@@ -108,8 +108,10 @@ function build_h_reduced(h_full, decoder::NeuralNetwork{<:SymplecticDecoder})
 end
 
 function perform_integration_reduced(rs::HRedSys)
-    ics_reduced = rs.encoder(rs.ics)
-    hode = HODEProblem(rs.v_reduced, rs.f_reduced,rs.h_reduced, rs.tspan, rs.tstep, ics_reduced; parameters = rs.parameters)
+    ics_reduced_nt = rs.encoder(rs.ics)
+    # convert to StateVariable format 
+    ics_reduced = (q = StateVariable(ics_reduced_nt.q), p = StateVariable(ics_reduced_nt.p))
+    hode = HODEProblem(rs.v_reduced, rs.f_reduced, rs.h_reduced, rs.tspan, rs.tstep, ics_reduced; parameters = rs.parameters)
     integrate(hode, rs.integrator)
 end
 
@@ -119,12 +121,12 @@ function perform_integration_full(rs::HRedSys)
 end
 
 # compute reduction error for the q part 
-function compute_reduction_error(rs::HRedSys, sol_full=perform_integration_full(rs), sol_red=perform_integration_reduced(rs))
+function reduction_error(rs::HRedSys, sol_full=perform_integration_full(rs), sol_red=perform_integration_reduced(rs))
     norm(rs.decoder(sol_red.q) - sol_full.q)/norm(sol_full.q)
 end
 
 # compute projection error for the q part 
-function compute_projection_error(rs::HRedSys, sol_full=perform_integration_full(rs))
+function projection_error(rs::HRedSys, sol_full=perform_integration_full(rs))
     sol_full_matrices = data_matrices_from_geometric_solution(sol_full)
     _norm(_diff(rs.decoder(rs.encoder(sol_full_matrices)), sol_full_matrices)) / _norm(sol_full_matrices)
 end

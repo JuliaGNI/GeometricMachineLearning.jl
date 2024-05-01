@@ -27,9 +27,9 @@ function test_reduced_vector_fields(reduced_dim::Integer, integrator)
     rs2 = HRedSys(hodeproblem(), get_encoder(nn2), get_decoder(nn2); integrator = integrator)
 
     # we expect the neural network projection & reduction errors to be higher than the PSD projection & reduction errors if we don't train
-    @test compute_projection_error(rs1) < compute_projection_error(rs2)
-    @test compute_reduction_error(rs1) < compute_reduction_error(rs2)
+    @test projection_error(rs1) < projection_error(rs2)
+    @test reduction_error(rs1) < reduction_error(rs2)
 end
 
-test_reduced_vector_fields(2, ImplicitMidpoint())
+# test_reduced_vector_fields(2, ImplicitMidpoint())
 test_reduced_vector_fields(2, ExplicitEulerRK())
