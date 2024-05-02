@@ -14,6 +14,7 @@ module GeometricMachineLearning
     using ProgressMeter
     using Random
     using Zygote
+    using ForwardDiff
     using InteractiveUtils
     using TimerOutputs
 
