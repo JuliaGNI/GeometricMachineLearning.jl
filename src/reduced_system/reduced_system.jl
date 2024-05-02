@@ -60,7 +60,8 @@ function HRedSys(odeproblem::Union{HODEProblem, HODEEnsemble}, encoder::NeuralNe
 end
 
 # this is much more expensive than it has to be and is due to a problem with nested derivatives in ForwardDiff (should not be necessary to do this twice!)
-function evaluate_vf_and_compute_∇Ψ(t, q̃::AbstractVector{T}, p̃::AbstractVector{T}, parameters, v_full, f_full) where T
+function evaluate_vf_and_compute_∇Ψ(t, q̃::AbstractVector{T}, p̃::AbstractVector{T}, parameters, decoder, v_full, f_full) where T
+    N2 = decoder.architecture.full_dim ÷ 2
     v_intermediate = zeros(T, N2)
     f_intermediate = zeros(T, N2)
     decoded_nt = decoder((q = q̃, p = p̃))
@@ -81,7 +82,7 @@ function build_v_reduced(v_full, f_full, decoder::NeuralNetwork{<:SymplecticDeco
     N2 = decoder.architecture.full_dim ÷ 2 
     n2 = decoder.architecture.reduced_dim ÷ 2
     function v_reduced(v, t, q̃::AbstractVector{T}, p̃::AbstractVector{T}, parameters) where T
-        v_intermediate, f_intermediate, ∇Ψ = evaluate_vf_and_compute_∇Ψ(t, q̃, p̃, parameters, v_full, f_full)
+        v_intermediate, f_intermediate, ∇Ψ = evaluate_vf_and_compute_∇Ψ(t, q̃, p̃, parameters, decoder, v_full, f_full)
         ∇₂Ψ₁ = @view ∇Ψ[1:N2, (n2 + 1):(2 * n2)]
         ∇₂Ψ₂ = @view ∇Ψ[(N2 + 1):(2 * N2), (n2 + 1):(2 * n2)]
         v .= -∇₂Ψ₁' * f_intermediate + ∇₂Ψ₂' * v_intermediate
@@ -95,7 +96,7 @@ function build_f_reduced(v_full, f_full, decoder::NeuralNetwork{<:SymplecticDeco
     N2 = decoder.architecture.full_dim ÷ 2 
     n2 = decoder.architecture.reduced_dim ÷ 2
     function f_reduced(f, t, q̃::AbstractVector{T}, p̃::AbstractVector{T}, parameters) where T 
-        v_intermediate, f_intermediate, ∇Ψ = evaluate_vf_and_compute_∇Ψ(t, q̃, p̃, parameters, v_full, f_full)
+        v_intermediate, f_intermediate, ∇Ψ = evaluate_vf_and_compute_∇Ψ(t, q̃, p̃, parameters, decoder, v_full, f_full)
         ∇₁Ψ₁ = @view ∇Ψ[1:N2, 1:n2]
         ∇₁Ψ₂ = @view ∇Ψ[(N2 + 1):(2 * N2), 1:n2]
         f .= ∇₁Ψ₁' * f_intermediate - ∇₁Ψ₂' * v_intermediate
