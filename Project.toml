@@ -11,6 +11,7 @@ ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 ChainRulesTestUtils = "cdddcdb0-9152-4a09-a978-84456f9df70a"
 Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 GeometricBase = "9a0b12b7-583b-4f04-aa1f-d8551b6addc9"
 GeometricEquations = "c85262ba-a08a-430a-b926-d29770767bf2"
 GeometricIntegrators = "dcce2d33-59f6-5b8d-9047-0defad88ae06"
@@ -53,6 +54,7 @@ julia = "1.8"
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 ChainRulesTestUtils = "cdddcdb0-9152-4a09-a978-84456f9df70a"
+FiniteDifferences = "26cc04aa-876d-5657-8c51-4c34ba976000"
 GeometricEquations = "c85262ba-a08a-430a-b926-d29770767bf2"
 GeometricProblems = "18cb22b4-ad41-5c80-9c5f-710df63fbdc9"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -61,4 +63,4 @@ SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["ChainRulesTestUtils", "Random", "SafeTestsets", "Test", "GeometricProblems"]
+test = ["ChainRulesTestUtils", "Random", "SafeTestsets", "Test", "GeometricProblems", "FiniteDifferences"]
