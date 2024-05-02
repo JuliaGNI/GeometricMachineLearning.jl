@@ -31,6 +31,22 @@ function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTu
     total_error / count
 end
 
+function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTuple}, dl::DataLoader{T, <:Any, Nothing, :RegularData}, batch::Batch, loss::Union{typeof(loss), NetworkLoss}) where T
+    count = 0
+    total_error = T(0)
+    batches = batch(dl)
+    @views for batch_indices in batches 
+        count += 1
+        # these `copy`s should not be necessary! coming from a Zygote problem!
+        input_nt = convert_input_and_batch_indices_to_array(dl, batch, batch_indices)
+        loss_value, pullback = Zygote.pullback(ps -> loss(model, ps, input_nt), ps)
+        total_error += loss_value
+        dp = pullback(one(loss_value))[1]
+        optimization_step!(opt, model, ps, dp)
+    end
+    total_error / count
+end
+
 @doc raw"""
 A functor for `Optimizer`. It is called with:
     - `nn::NeuralNetwork`
@@ -48,6 +64,7 @@ function (o::Optimizer)(nn::NeuralNetwork, dl::DataLoader, batch::Batch, n_epoch
         loss_array[i] = optimize_for_one_epoch!(o, nn.model, nn.params, dl, batch, loss)
         ProgressMeter.next!(progress_object; showvalues = [(:TrainingLoss, loss_array[i])]) 
     end
+
     loss_array
 end
 
@@ -58,5 +75,10 @@ end
 
 function (o::Optimizer)(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, dl::DataLoader, batch::Batch{:FeedForward}, n_epochs::Int=1)
     loss = FeedForwardLoss()
+    o(nn, dl, batch, n_epochs, loss)
+end
+
+function (o::Optimizer)(nn::NeuralNetwork{<:AutoEncoder}, dl::DataLoader, batch::Batch{:FeedForward}, n_epochs::Int=1)
+    loss = AutoEncoderLoss()
     o(nn, dl, batch, n_epochs, loss)
 end

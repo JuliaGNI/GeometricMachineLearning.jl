@@ -57,3 +57,13 @@ function (loss::ClassificationTransformerLoss)(model::Union{Chain, AbstractExpli
 end
 
 struct FeedForwardLoss <: NetworkLoss end
+
+struct AutoEncoderLoss <: NetworkLoss end 
+
+function (loss::AutoEncoderLoss)(nn::NeuralNetwork, input)
+    loss(nn.model, nn.params, input, input)
+end
+
+function (loss::AutoEncoderLoss)(model::Union{Chain, AbstractExplicitLayer}, ps::Union{Tuple, NamedTuple}, input)
+    loss(model, ps, input, input)
+end

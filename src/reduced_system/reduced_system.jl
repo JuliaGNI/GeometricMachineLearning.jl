@@ -12,26 +12,26 @@ It can be called using the following constructor: ReducedSystem(N, n, encoder, d
 - ics: the initial condition for the big system.
 - projection_error: the error $||M - \mathcal{R}\circ\mathcal{P}(M)||$ where $M$ is the snapshot matrix; $\mathcal{P}$ and $\mathcal{R}$ are the reduction and reconstruction respectively.
 """
-struct ReducedSystem{T, ST<:SystemType} 
+struct ReducedSystem{T, ST<:SystemType, ET <: Encoder, DT <: Decoder, IT} 
     N::Integer 
     n::Integer
-    encoder
-    decoder 
+    encoder::ET
+    decoder::DT
     full_vector_field
     reduced_vector_field 
     integrator 
     params
-    tspan 
-    tstep
-    ics
+    tspan::Tuple{Int, Int} 
+    tstep::T
+    ics::IT
 
     function ReducedSystem(N::Integer, n::Integer, encoder, decoder, full_vector_field, reduced_vector_field, params, tspan, tstep, ics; integrator=ImplicitMidpoint(), system_type=Symplectic(), T=Float64) 
-        new{T, typeof(system_type)}(N, n, encoder, decoder, full_vector_field, reduced_vector_field, integrator, params, tspan, tstep, ics)
+        new{T, typeof(system_type), typeof(encoder), typeof(decoder), typeof(ics)}(N, n, encoder, decoder, full_vector_field, reduced_vector_field, integrator, params, tspan, tstep, ics)
     end
 end
 
 function ReducedSystem(N::Integer, n::Integer, encoder, decoder, full_vector_field, params, tspan, tstep, ics; integrator=ImplicitMidpoint(), system_type=Symplectic(), T=Float64) 
-    ReducedSystem{T, typeof(system_type)}(
+    ReducedSystem{T, typeof(system_type), typeof(encoder), typeof(decoder), typeof(ics)}(
         N, n, encoder, decoder, full_vector_field, build_reduced_vector_field(full_vector_field, decoder, N, n, T), integrator, params, tspan, tstep, ics
     )
 end

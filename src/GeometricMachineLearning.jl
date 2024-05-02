@@ -250,6 +250,8 @@ module GeometricMachineLearning
     include("architectures/regular_transformer_integrator.jl")
     include("architectures/sympnet.jl")
     include("architectures/autoencoder.jl")
+    include("architectures/symplectic_autoencoder.jl")
+    include("architectures/psd.jl")
     include("architectures/fixed_width_network.jl")
     include("architectures/hamiltonian_neural_network.jl")
     include("architectures/lagrangian_neural_network.jl")
@@ -269,6 +271,9 @@ module GeometricMachineLearning
     export LSTMNeuralNetwork
     export ClassificationTransformer
     export VolumePreservingFeedForward
+    export SymplecticAutoencoder, PSDArch
+
+    export solve!, encoder, decoder
 
     export train!, apply!, jacobian!
     export iterate
