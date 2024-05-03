@@ -105,9 +105,9 @@ function decoder(nn::NeuralNetwork{<:AutoEncoder})
 end
 
 function encoder(nn::NeuralNetwork{<:SymplecticCompression})
-    NeuralNetwork(UnknownSymplecticEncoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks), get_encoder_model(nn.architecture), get_encoder_parameters(nn), get_backend(nn))
+    NeuralNetwork(UnknownSymplecticEncoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks), encoder_model(nn.architecture), encoder_parameters(nn), get_backend(nn))
 end
 
 function decoder(nn::NeuralNetwork{<:SymplecticCompression})
-    NeuralNetwork(UnknownSymplecticDecoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks), get_decoder_model(nn.architecture), get_decoder_parameters(nn), get_backend(nn))
+    NeuralNetwork(UnknownSymplecticDecoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks), decoder_model(nn.architecture), decoder_parameters(nn), get_backend(nn))
 end
