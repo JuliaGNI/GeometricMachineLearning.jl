@@ -93,11 +93,11 @@ function decoder_layers_from_iteration(arch::SymplecticAutoencoder{<:Any, :Decod
 end
 
 function encoder(nn::NeuralNetwork{<:SymplecticAutoencoder})
-    arch = SymplecticEncoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_layers, nn.architecture.n_encoder_blocks, nn.architecture.sympnet_upscale, nn.architecture.activation)
+    arch = NonLinearSymplecticEncoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_layers, nn.architecture.n_encoder_blocks, nn.architecture.sympnet_upscale, nn.architecture.activation)
     NeuralNetwork(arch, encoder_model(nn.architecture), encoder_parameters(nn), get_backend(nn))
 end
 
 function decoder(nn::NeuralNetwork{<:SymplecticAutoencoder})
-    arch = SymplecticDecoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_decoder_layers, nn.architecture.n_decoder_blocks, nn.architecture.sympnet_upscale, nn.architecture.activation)
+    arch = NonLinearSymplecticDecoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_decoder_layers, nn.architecture.n_decoder_blocks, nn.architecture.sympnet_upscale, nn.architecture.activation)
     NeuralNetwork(arch, decoder_model(nn.architecture), decoder_parameters(nn), get_backend(nn))
 end
