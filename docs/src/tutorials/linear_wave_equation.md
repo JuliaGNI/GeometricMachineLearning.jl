@@ -136,11 +136,11 @@ projection_error(psd_rs)
 projecction_error(sae_rs)
 ```
 
-```@example 
+```@example linear_wave
 reduction_error(psd_rs)
 ```
 
-```@example 
+```@example linear_wave
 reduction_error(sae_rs)
 ```
 
