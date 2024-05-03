@@ -1,5 +1,5 @@
 """
-Abstract `AutoEncoder` type. If a custom `<:AutoEncoder` architecture is implemented it should have the fields `full_dim`, `reduced_dim`, `n_encoder_blocks` and `n_decoder_blocks`. Further the routines `get_encoder`, `get_decoder`, `get_encoder_parameters` and `get_decoder_parameters` should be extended.
+Abstract `AutoEncoder` type. If a custom `<:AutoEncoder` architecture is implemented it should have the fields `full_dim`, `reduced_dim`, `n_encoder_blocks` and `n_decoder_blocks`. Further the routines `encoder`, `decoder`, `encoder_parameters` and `decoder_parameters` should be extended.
 """
 abstract type AutoEncoder <: Architecture end
 
@@ -72,47 +72,42 @@ Takes as input the autoencoder architecture and a vector of integers specifying 
 """
 decoder_layers_from_iteration(::AutoEncoder, ::AbstractVector{<:Integer}) = error("You have to implement `decoder_layers_from_iteration` for this autoencoder architecture!")
 
-function get_encoder_model(arch::AutoEncoder)
+function encoder_model(arch::AutoEncoder)
     encoder_iterations = reverse(compute_encoder_iterations(arch))
     Chain(encoder_layers_from_iteration(arch, encoder_iterations)...)
 end
 
-function get_decoder_model(arch::AutoEncoder)
+function decoder_model(arch::AutoEncoder)
     decoder_iterations = compute_decoder_iterations(arch)
     Chain(decoder_layers_from_iteration(arch, decoder_iterations)...)
 end
 
-function get_encoder_parameters(nn::NeuralNetwork{<:AutoEncoder})
-    n_encoder_layers = length(get_encoder_model(nn.architecture).layers)
+function encoder_parameters(nn::NeuralNetwork{<:AutoEncoder})
+    n_encoder_layers = length(encoder_model(nn.architecture).layers)
     nn.params[1:n_encoder_layers]
 end
 
-function get_decoder_parameters(nn::NeuralNetwork{<:AutoEncoder})
-    n_decoder_layers = length(get_decoder_model(nn.architecture).layers)
+function decoder_parameters(nn::NeuralNetwork{<:AutoEncoder})
+    n_decoder_layers = length(decoder_model(nn.architecture).layers)
     nn.params[(end - (n_decoder_layers - 1)):end]
 end
 
 function Chain(arch::AutoEncoder)
-    Chain(get_encoder_model(arch).layers..., get_decoder_model(arch).layers...)
+    Chain(encoder_model(arch).layers..., decoder_model(arch).layers...)
 end
 
-function get_encoder(nn::NeuralNetwork{<:AutoEncoder})
-    NeuralNetwork(UnknownEncoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks), get_encoder_model(nn.architecture), get_encoder_parameters(nn), get_backend(nn))
+function encoder(nn::NeuralNetwork{<:AutoEncoder})
+    NeuralNetwork(UnknownEncoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks), encoder_model(nn.architecture), encoder_parameters(nn), get_backend(nn))
 end
 
-function get_decoder(nn::NeuralNetwork{<:AutoEncoder})
-    NeuralNetwork(UnknownDecoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks), get_decoder_model(nn.architecture), get_decoder_parameters(nn), get_backend(nn))
+function decoder(nn::NeuralNetwork{<:AutoEncoder})
+    NeuralNetwork(UnknownDecoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks), decoder_model(nn.architecture), decoder_parameters(nn), get_backend(nn))
 end
 
-function get_encoder(nn::NeuralNetwork{<:SymplecticCompression})
+function encoder(nn::NeuralNetwork{<:SymplecticCompression})
     NeuralNetwork(UnknownSymplecticEncoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks), get_encoder_model(nn.architecture), get_encoder_parameters(nn), get_backend(nn))
 end
 
-function get_decoder(nn::NeuralNetwork{<:SymplecticCompression})
+function decoder(nn::NeuralNetwork{<:SymplecticCompression})
     NeuralNetwork(UnknownSymplecticDecoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks), get_decoder_model(nn.architecture), get_decoder_parameters(nn), get_backend(nn))
-end
-
-function (nn::NeuralNetwork{<:SymplecticDimensionChange})(q::AT, p::AT) where {AT <: AbstractArray}
-    nn_applied = nn((q = q, p = p))
-    nn_applied.q, nn_applied.p
 end

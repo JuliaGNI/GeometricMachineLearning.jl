@@ -20,8 +20,8 @@ function test_encoder_and_decoder(N::Integer, n::Integer)
     dl = DataLoader(rand(N, 10 * N); autoencoder = true)
 
     sae_nn = NeuralNetwork(SymplecticAutoencoder(N, n))
-    sae_encoder = get_encoder(sae_nn)
-    sae_decoder = get_decoder(sae_nn)
+    sae_encoder = encoder(sae_nn)
+    sae_decoder = decoder(sae_nn)
 
     test_vec = rand(N)
     test_mat = rand(N, N)
@@ -32,7 +32,7 @@ end
 
 function test_symplecticity(N::Integer, n::Integer)
     sae_nn = NeuralNetwork(SymplecticAutoencoder(N, n))
-    sae_decoder = get_decoder(sae_nn)
+    sae_decoder = decoder(sae_nn)
     test_vector = rand(n)
     
     # this matrix should be symplectic

@@ -18,8 +18,8 @@ function test_encoder_and_decoder(N::Integer, n::Integer)
     dl = DataLoader(rand(N, 10 * N); autoencoder = true)
 
     psd_nn = NeuralNetwork(PSDArch(N, n))
-    psd_encoder = get_encoder(psd_nn)
-    psd_decoder = get_decoder(psd_nn)
+    psd_encoder = encoder(psd_nn)
+    psd_decoder = decoder(psd_nn)
 
     test_vec = rand(N)
     test_mat = rand(N, N)
@@ -30,7 +30,7 @@ end
 
 function test_symplecticity(N::Integer, n::Integer)
     psd_nn = NeuralNetwork(PSDArch(N, n))
-    psd_decoder = get_decoder(psd_nn)
+    psd_decoder = decoder(psd_nn)
     test_vector = rand(n)
 
     # this matrix should be symplectic

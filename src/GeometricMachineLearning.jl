@@ -275,7 +275,7 @@ module GeometricMachineLearning
     export VolumePreservingFeedForward
     export SymplecticAutoencoder, PSDArch
 
-    export solve!, get_encoder, get_decoder
+    export solve!, encoder, decoder
 
     export train!, apply!, jacobian!
     export iterate
