@@ -23,9 +23,9 @@ function set_up_reduced_systems(reduced_dim::Integer, integrator)
 
     nn2 = NeuralNetwork(model2)
 
-    rs1 = HRedSys(hodeproblem(), get_encoder(nn1), get_decoder(nn1); integrator = integrator)
+    rs1 = HRedSys(hodeproblem(), encoder(nn1), decoder(nn1); integrator = integrator)
 
-    rs2 = HRedSys(hodeproblem(), get_encoder(nn2), get_decoder(nn2); integrator = integrator)
+    rs2 = HRedSys(hodeproblem(), encoder(nn2), decoder(nn2); integrator = integrator)
 
     rs1, rs2 
 end
