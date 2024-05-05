@@ -20,13 +20,13 @@ $(description(Val(:DataLoader)))
 ## Fields of `DataLoader`
 
 The fields of the `DataLoader` struct are the following: 
-    - `input`: The input data with axes (i) system dimension, (ii) number of time steps and (iii) number of parameters.
-    - `output`: The tensor that contains the output (supervised learning) - this may be of type `Nothing` if the constructor is only called with one tensor (unsupervised learning).
-    - `input_dim`: The *dimension* of the system, i.e. what is taken as input by a regular neural network.
-    - `input_time_steps`: The length of the entire time series (length of the second axis).
-    - `n_params`: The number of parameters that are present in the data set (length of third axis)
-    - `output_dim`: The dimension of the output tensor (first axis). If `output` is of type `Nothing`, then this is also of type `Nothing`.
-    - `output_time_steps`: The size of the second axis of the output tensor. If `output` is of type `Nothing`, then this is also of type `Nothing`.
+- `input`: The input data with axes (i) system dimension, (ii) number of time steps and (iii) number of parameters.
+- `output`: The tensor that contains the output (supervised learning) - this may be of type `Nothing` if the constructor is only called with one tensor (unsupervised learning).
+- `input_dim`: The *dimension* of the system, i.e. what is taken as input by a regular neural network.
+- `input_time_steps`: The length of the entire time series (length of the second axis).
+- `n_params`: The number of parameters that are present in the data set (length of third axis)
+- `output_dim`: The dimension of the output tensor (first axis). If `output` is of type `Nothing`, then this is also of type `Nothing`.
+- `output_time_steps`: The size of the second axis of the output tensor. If `output` is of type `Nothing`, then this is also of type `Nothing`.
 
 ### The `input` and `output` fields of `DataLoader`
 
@@ -140,10 +140,10 @@ function data_matrices_from_geometric_solution(solution::GeometricSolution{T, <:
     data
 end
 
-function DataLoader(solution::GeometricSolution{T, <:Number, NT}) where {T <: Number, DT <: DataSeries{T}, NT<:NamedTuple{(:q, :p), Tuple{DT, DT}}}
+function DataLoader(solution::GeometricSolution{T, <:Number, NT}; kwargs...) where {T <: Number, DT <: DataSeries{T}, NT<:NamedTuple{(:q, :p), Tuple{DT, DT}}}
     data = data_matrices_from_geometric_solution(solution)
 
-    DataLoader((q = reshape(data.q, size(data.q)..., 1), p = reshape(data.p, size(data.p)..., 1)))
+    DataLoader(data; kwargs...)
 end
 
 """
