@@ -90,7 +90,7 @@ makedocs(;
         ],
         "Tutorials" =>[
             "Sympnets" => "tutorials/sympnet_tutorial.md",
-            "Linear Wave Equation" => "tutorials/linear_wave_equation.md",
+            "Symplectic Autoencoders" => "tutorials/symplectic_autoencoder.md",
             "MNIST" => "tutorials/mnist_tutorial.md",
             "Grassmann manifold" => "tutorials/grassmann_layer.md",
             "Volume-Preserving Attention" => "tutorials/volume_preserving_attention.md",

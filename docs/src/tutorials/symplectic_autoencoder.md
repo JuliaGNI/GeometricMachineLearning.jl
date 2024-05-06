@@ -1,6 +1,6 @@
-# Symplectic Autoencoders for the Linear Wave Equation
+# Symplectic Autoencoders and the Toda Lattice
 
-In this tutorial we use symplectic autoencoders to approximate the linear wave equation with a lower-dimensional Hamiltonian model and compare it with standard proper symplectic decomposition (PSD).
+In this tutorial we use a [SymplecticAutoencoder](@ref) to approximate the linear wave equation with a lower-dimensional Hamiltonian model and compare it with standard proper symplectic decomposition (PSD).
 
 ## Problem statement
 
@@ -80,28 +80,32 @@ u_0(\mu)(\omega) = h(s(\omega, \mu)), \quad s(\omega, \mu) =  20 \mu  |\omega + 
 The training data can very easily be obtained by using the packages [`GeometricProblems`](https://github.com/JuliaGNI/GeometricProblems.jl) and [`GeometricIntegrators`](https://github.com/JuliaGNI/GeometricIntegrators.jl):
 
 ```@example linear_wave
-using GeometricProblems.LinearWave: hodeproblem
+using GeometricProblems.TodaLattice: hodeproblem
 using GeometricIntegrators: integrate, ImplicitMidpoint
 using GeometricMachineLearning 
+using Plots
+import Random
 
-sol = integrate(hodeproblem(), ImplicitMidpoint())
-dl = DataLoader(sol)
+pr = hodeproblem(; tspan = (0.0, 100.))
+sol = integrate(pr, ImplicitMidpoint())
+dl = DataLoader(sol; autoencoder = true)
 
 dl.input_dim
 ```
 
-Here we first integrate the system with implicit midpoint and then put the training data into the right format by calling `DataLoader`. We can get the dimension of the system by calling `dl.input_dim`.
+Here we first integrate the system with implicit midpoint and then put the training data into the right format by calling `DataLoader`. We can get the dimension of the system by calling `dl.input_dim`. Also note that the keyword `autoencoder` was set to true.
 
 ## Train the network 
 
 We now want to compare two different approaches: [PSDArch](@ref) and [SymplecticAutoencoders](@ref). For this we first have to set up the networks: 
 
 ```@example linear_wave
-const reduced_dim = 10
+const reduced_dim = 2
 
-psd_arch = PSDArch(dl.input_dim, 10)
-sae_arch = SymplecticAutoencoder(dl.input_dim, 10)
+psd_arch = PSDArch(dl.input_dim, reduced_dim)
+sae_arch = SymplecticAutoencoder(dl.input_dim, reduced_dim; n_encoder_blocks = 4, n_decoder_blocks = 4, n_encoder_layers = 4, n_decoder_layers = 1)
 
+Random.seed!(123)
 psd_nn = NeuralNetwork(psd_arch)
 sae_nn = NeuralNetwork(sae_arch)
 
@@ -111,14 +115,16 @@ nothing # hide
 Training a neural network is usually done by calling an instance of [Optimizer](@ref) in `GeometricMachineLearning`. [PSDArch](@ref) however can be solved directly by using singular value decomposition and this is done by calling [solve!](@ref). The `SymplecticAutoencoder` we train with the [AdamOptimzier](@ref) however: 
 
 ```@example linear_wave 
+const n_epochs = 8
+const batch_size = 16
+
 o = Optimizer(sae_nn, AdamOptimizer(Float64))
 
-const n_epochs = 100
+psd_error = solve!(psd_nn, dl)
+sae_error = o(sae_nn, dl, Batch(batch_size), n_epochs)
 
-o(sae_nn, dl; n_epochs = n_epochs)
-solve!(psd_nn, dl)
-
-nothing # hide
+hline([psd_error]; color = 2, label = "PSD error")
+plot!(sae_error; color = 3, label = "SAE error", xlabel = "epoch", ylabel = "training error")
 ```
 
 ## The online stage 
@@ -126,24 +132,30 @@ nothing # hide
 After having trained our neural network we can now evaluate it in the online stage of reduced complexity modeling: 
 
 ```@example linear_wave
-psd_rs = HRedSys(hodeproblem(), encoder(psd_nn), decoder(psd_nn); integrator = ImplicitMidpoint())
-sae_rs = HRedSys(hodeproblem(), encoder(sae_nn), decoder(sae_nn); integrator = ImplicitMidpoint())
+psd_rs = HRedSys(pr, encoder(psd_nn), decoder(psd_nn); integrator = ImplicitMidpoint())
+sae_rs = HRedSys(pr, encoder(sae_nn), decoder(sae_nn); integrator = ImplicitMidpoint())
 
 projection_error(psd_rs)
 ```
 
 ```@example linear_wave 
-projecction_error(sae_rs)
+projection_error(sae_rs)
 ```
+
+Next we plot a comparison between the PSD prediction and the symplectic autoencoder prediction: 
 
 ```@example linear_wave
-reduction_error(psd_rs)
+sol_full = integrate_full_system(psd_rs)
+sol_psd_reduced = integrate_reduced_system(psd_rs)
+sol_sae_reduced = integrate_reduced_system(sae_rs)
+
+const t_step = 100
+plot(sol_full.s.q[t_step], label = "Implicit Midpoint")
+plot!(psd_rs.decoder((q = sol_psd_reduced.s.q[t_step], p = sol_psd_reduced.s.p[t_step])).q, label = "PSD")
+plot!(sae_rs.decoder((q = sol_sae_reduced.s.q[t_step], p = sol_sae_reduced.s.p[t_step])).q, label = "SAE")
 ```
 
-```@example linear_wave
-reduction_error(sae_rs)
-```
-
+We can see that the autoencoder approach has much more approximation capabilities than the psd approach. The jiggly lines are due to the fact that training was done for only 8 epochs. 
 
 ## References 
 ```@bibliography
