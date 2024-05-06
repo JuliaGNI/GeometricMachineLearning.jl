@@ -2,41 +2,26 @@
 
 In this tutorial we use a [SymplecticAutoencoder](@ref) to approximate the linear wave equation with a lower-dimensional Hamiltonian model and compare it with standard proper symplectic decomposition (PSD).
 
-## Problem statement
+## The system
 
-The [linear wave equation](https://juliagni.github.io/GeometricProblems.jl/latest/linear_wave) is a prototypical example of a Hamiltonian PDE. It is given by (see [buchfink2023symplectic, peng2016symplectic](@cite)): 
+The [Toda lattice](https://juliagni.github.io/GeometricProblems.jl/latest/toda_lattice) is a prototypical example of a Hamiltonian PDE. It is described by 
 ```math
-\mathcal{H}(q, p; \mu) := \frac{1}{2}\int_\Omega\mu^2(\partial_\xi{}q(t,\xi;\mu))^2 + p(t,\xi;\mu)^2d\xi,
-```
-with ``\xi\in\Omega:=(-1/2,1/2)`` and ``\mu\in\mathbb{P}:=[5/12,5/6]`` as a possible choice for domain and parameters. 
-
-The PDE for to this Hamiltonian can be obtained similarly as in the ODE case:
-
-```math
-\partial_t{}q(t,\xi;\mu) = \frac{\delta{}\mathcal{H}}{\delta{}p} = p(t,\xi;\mu), \quad \partial_t{}p(t,\xi;\mu) = -\frac{\delta{}\mathcal{H}}{\delta{}q} = \mu^2\partial_{\xi{}\xi}q(t,\xi;\mu).
+    H(q, p) = \sum_{n\in\mathbb{Z}}\left(  \frac{p_n^2}{2} + \alpha e^{q_n - q_{n+1}} \right).
 ```
 
-As with any other PDE, the wave equation can also be discretized to obtain a ODE which can be solved numerically.
-
-If we discretize ``\mathcal{H}`` directly, to obtain a Hamiltonian on a finite-dimensional vector space ``\mathbb{R}^{2N}``, we get a Hamiltonian ODE[^1]:
-
-[^1]: This conserves the Hamiltonian structure of the system.
-
+We further assume a finite number of particles ``N`` and impose periodic boundary conditions: 
 ```math
-\mathcal{H}_h(z) = \sum_{i=1}^{\tilde{N}}\frac{\Delta{}x}{2}\bigg[p_i^2 + \mu^2\frac{(q_i - q_{i-1})^2 + (q_{i+1} - q_i)^2}{2\Delta{}x^2}\bigg]. 
+\begin{aligned}
+    q_{n+N} &  \equiv q_n \\ 
+    p_{n+N} &   \equiv p_n.
+\end{aligned}
 ```
 
-The vector field of the FOM is described by [peng2016symplectic](@cite):
+In this tutorial we want to reduce the dimension of the big system by a significant factor with (i) proper symplectic decomposition (PSD) and (ii) symplectic autoencoders. The first approach is strictly linear whereas the second one allows for more general mappings. 
 
-```math
-  \frac{dz}{dt} = \mathbb{J}_d\nabla_z\mathcal{H}_h, \quad \mathbb{J}_d = \frac{\mathbb{J}_{2N}}{\Delta{}x}.
-```
+### Using the Toda lattice in numerical experiments 
 
-The wave equation has a slowely-decaying [Kolmogorov ``n``-width](../reduced_order_modeling/kolmogorov_n_width.md) [greif2019decay](@cite), which means linear methods like PSD will perform poorly.
-
-### Using the Linear Wave Equation in Numerical Experiments 
-
-In order to use the linear wave equation in numerical experiments we have to pick suitable initial conditions. For this, consider the [third-degree spline](https://juliagni.github.io/GeometricProblems.jl/latest/initial_condition): 
+In order to use the Toda lattice in numerical experiments we have to pick suitable initial conditions. For this, consider the [third-degree spline](https://juliagni.github.io/GeometricProblems.jl/latest/initial_condition): 
 
 ```math
 h(s)  = \begin{cases}
@@ -64,22 +49,25 @@ end # hide
 ```
 
 
-Taking the above function ``h(s)`` as a starting point, the initial conditions for the linear wave equations will now be constructed under the following considerations: 
-- the initial condition (i.e. the shape of the wave) should depend on the parameter of the vector field, i.e. ``u_0(\mu)(\omega) = h(s(\omega, \mu))``.
-- the solutions of the linear wave equation will travel with speed ``\mu``, and we should make sure that the wave does not *touch* the right boundary of the domain, i.e. 0.5. So the peak should be sharper for higher values of ``\mu`` as the wave will travel faster.
-- the wave should start at the left boundary of the domain, i.e. at point 0.5, so to cover it as much as possible. 
-
-Based on this we end up with the following choice of parametrized initial conditions: 
+We end up with the following choice of parametrized initial conditions: 
 
 ```math 
 u_0(\mu)(\omega) = h(s(\omega, \mu)), \quad s(\omega, \mu) =  20 \mu  |\omega + \frac{\mu}{2}|.
+```
+
+For the purposes of this tutorial we will use the default value for ``\mu`` provided in `GeometricMachineLearning`:
+
+```@example
+using GeometricProblems.TodaLattice: μ
+
+μ
 ```
 
 ## Get the data 
 
 The training data can very easily be obtained by using the packages [`GeometricProblems`](https://github.com/JuliaGNI/GeometricProblems.jl) and [`GeometricIntegrators`](https://github.com/JuliaGNI/GeometricIntegrators.jl):
 
-```@example linear_wave
+```@example toda_lattice
 using GeometricProblems.TodaLattice: hodeproblem
 using GeometricIntegrators: integrate, ImplicitMidpoint
 using GeometricMachineLearning 
@@ -99,7 +87,7 @@ Here we first integrate the system with implicit midpoint and then put the train
 
 We now want to compare two different approaches: [PSDArch](@ref) and [SymplecticAutoencoder](@ref). For this we first have to set up the networks: 
 
-```@example linear_wave
+```@example toda_lattice
 const reduced_dim = 2
 
 psd_arch = PSDArch(dl.input_dim, reduced_dim)
@@ -114,7 +102,7 @@ nothing # hide
 
 Training a neural network is usually done by calling an instance of [Optimizer](@ref) in `GeometricMachineLearning`. [PSDArch](@ref) however can be solved directly by using singular value decomposition and this is done by calling [solve!](@ref). The `SymplecticAutoencoder` we train with the [AdamOptimizer](@ref) however: 
 
-```@example linear_wave 
+```@example toda_lattice 
 const n_epochs = 8
 const batch_size = 16
 
@@ -131,20 +119,20 @@ plot!(sae_error; color = 3, label = "SAE error", xlabel = "epoch", ylabel = "tra
 
 After having trained our neural network we can now evaluate it in the online stage of reduced complexity modeling: 
 
-```@example linear_wave
+```@example toda_lattice
 psd_rs = HRedSys(pr, encoder(psd_nn), decoder(psd_nn); integrator = ImplicitMidpoint())
 sae_rs = HRedSys(pr, encoder(sae_nn), decoder(sae_nn); integrator = ImplicitMidpoint())
 
 projection_error(psd_rs)
 ```
 
-```@example linear_wave 
+```@example toda_lattice 
 projection_error(sae_rs)
 ```
 
 Next we plot a comparison between the PSD prediction and the symplectic autoencoder prediction: 
 
-```@example linear_wave
+```@example toda_lattice
 sol_full = integrate_full_system(psd_rs)
 sol_psd_reduced = integrate_reduced_system(psd_rs)
 sol_sae_reduced = integrate_reduced_system(sae_rs)
