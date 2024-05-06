@@ -1,3 +1,34 @@
+@doc raw"""
+## The architecture
+
+The symplectic autoencoder architecture was introduced in [brantner2023symplectic](@cite). Like any other autoencoder it consists of an *encoder* ``\Psi^e:\mathbb{R}^{2N}\to\mathbb{R}^{2n}`` and a *decoder* ``\Psi^d:\mathbb{R}^{2n}\to\mathbb{R}^{2N}`` with ``n\ll{}N``. These satisfy the following properties: 
+
+```math
+\nabla_z\Psi^e\mathbb{J}_{2N}(\nabla_z\Psi^e\mathbb{J}_{2N})^T = \mathbb{J}_{2n} \text{ and } (\nabla_\xi\Psi^d)^T\mathbb{J}_{2N}\nabla_\xi\Psi^d = \mathbb{J}_{2n}.
+```
+
+Because the decoder has this particular property, the reduced system can be described by the Hamiltonian ``H\circ\Psi^d``: 
+
+```math
+\mathbb{J}_{2n}\nabla_\xi(H\circ\Psi^d) = \mathbb{J}_{2n}(\nabla_\xi\Psi^d)^T\nabla_{\Psi^d(\xi)}H = \mathbb{J}_{2n}(\nabla_\xi\Psi^d)^T\mathbb{J}_{2N}^T\mathbb{J}_{2N}\nabla_{\Psi^d(\xi)}H = (\nabla_\xi\Psi^d)^+X_H(\Psi^d(\xi)),
+```
+
+where ``(\nabla_\xi\Psi^d)^+`` is the pseudoinverse of ``\nabla_\xi\Psi^d`` (for more details see the docs on the [AutoEncoder](@ref) type).
+
+## The constructor
+
+The constructor is called with
+- `full_dim::Integer` 
+- `reduced_dim::Integer` 
+- `n_encoder_layers::Integer = 4` (keyword argument)
+- `n_encoder_blocks::Integer = 2` (keyword argument)
+- `n_decoder_layers::Integer = 1` (keyword argument)
+- `n_decoder_blocks::Integer = 3` (keyword argument)
+- `sympnet_upscale::Integer = 5` (keyword argument)
+- `activation = tanh` (keyword argument)
+- `encoder_init_q::Bool = true` (keyword argument)
+- `decoder_init_q::Bool = true` (keyword argument)
+"""
 struct SymplecticAutoencoder{EncoderInit, DecoderInit, AT} <: SymplecticCompression 
     full_dim::Int
     reduced_dim::Int 

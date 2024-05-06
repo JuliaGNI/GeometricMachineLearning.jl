@@ -1,3 +1,18 @@
+@doc raw"""
+## The architecture 
+
+Proper symplectic decomposition (PSD) can be seen as a [SymplecticAutoencoder](@ref) for which the decoder and the encoder are both PSD-like matrices (see the docs for [PSDLayer](@ref). 
+
+## Training 
+
+For optimizing the parameters in this architecture no neural network training is necessary (see the docs for [solve!](@ref)).
+
+## The constructor 
+
+The constructor only takes two arguments as input:
+- `full_dim::Integer`
+- `reduced_dim::Integer`
+"""
 struct PSDArch <: SymplecticCompression 
     full_dim::Int 
     reduced_dim::Int 
@@ -27,7 +42,9 @@ function decoder_layers_from_iteration(arch::PSDArch, decoder_iterations::Abstra
     (PSDLayer(arch.reduced_dim, arch.full_dim), )
 end
 
-# this performs PSD 
+@doc raw"""
+[PSDArch](@ref) does not require neural network training since it is a strictly linear operation that can be solved with singular value decomposition (SVD).
+"""
 function solve!(nn::NeuralNetwork{<:PSDArch}, input::AbstractMatrix)
     half_of_dimension_in_big_space = nn.architecture.full_dim ÷ 2
     @views input_qp = hcat(input[1 : half_of_dimension_in_big_space, :], input[(half_of_dimension_in_big_space + 1) : end, :])

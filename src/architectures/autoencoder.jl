@@ -1,4 +1,16 @@
-"""
+@doc raw"""
+## The autoencoder architecture
+
+An autoencoder [goodfellow2016deep](@cite) is a neural network consisting of an encoder ``\Psi^e`` and a decoder ``\Psi^d``. In the simplest case they are trained on some data set ``\mathcal{D}`` to reduce the following error: 
+
+```math
+||\Psi^d\circ\Psi^e(\mathcal{D}) - \mathcal{D}||,
+```
+
+which we call the *reconstruction error* or *autoencoder error* (see the docs for [AutoEncoderLoss](@ref)) and ``||\cdot||`` is some norm.
+
+## Implementation details.
+
 Abstract `AutoEncoder` type. If a custom `<:AutoEncoder` architecture is implemented it should have the fields `full_dim`, `reduced_dim`, `n_encoder_blocks` and `n_decoder_blocks`. Further the routines `encoder`, `decoder`, `encoder_parameters` and `decoder_parameters` should be extended.
 """
 abstract type AutoEncoder <: Architecture end
