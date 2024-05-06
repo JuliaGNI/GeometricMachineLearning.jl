@@ -43,6 +43,7 @@ makedocs(;
         "Home" => "index.md",
         "Architectures" => [
             "SympNet" => "architectures/sympnet.md",
+            "Symplectic Autoencoders" => "architectures/symplectic_autoencoder.md",
         ],
         "Manifolds" => [
             "Concepts from General Topology" => "manifolds/basic_topology.md",
