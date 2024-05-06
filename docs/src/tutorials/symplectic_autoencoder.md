@@ -97,7 +97,7 @@ Here we first integrate the system with implicit midpoint and then put the train
 
 ## Train the network 
 
-We now want to compare two different approaches: [PSDArch](@ref) and [SymplecticAutoencoders](@ref). For this we first have to set up the networks: 
+We now want to compare two different approaches: [PSDArch](@ref) and [SymplecticAutoencoder](@ref). For this we first have to set up the networks: 
 
 ```@example linear_wave
 const reduced_dim = 2
@@ -112,7 +112,7 @@ sae_nn = NeuralNetwork(sae_arch)
 nothing # hide
 ```
 
-Training a neural network is usually done by calling an instance of [Optimizer](@ref) in `GeometricMachineLearning`. [PSDArch](@ref) however can be solved directly by using singular value decomposition and this is done by calling [solve!](@ref). The `SymplecticAutoencoder` we train with the [AdamOptimzier](@ref) however: 
+Training a neural network is usually done by calling an instance of [Optimizer](@ref) in `GeometricMachineLearning`. [PSDArch](@ref) however can be solved directly by using singular value decomposition and this is done by calling [solve!](@ref). The `SymplecticAutoencoder` we train with the [AdamOptimizer](@ref) however: 
 
 ```@example linear_wave 
 const n_epochs = 8
