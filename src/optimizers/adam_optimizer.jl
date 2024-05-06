@@ -1,6 +1,6 @@
-"""
+@doc raw"""
 Defines the Adam Optimizer.
-Algorithm and suggested defaults are taken from (Goodfellow et al., 2016, page 301), except for δ, because single precision is used!
+Algorithm and suggested defaults are taken from [goodfellow2016deep](@cite) (page 301).
 """
 struct AdamOptimizer{T<:Real} <: OptimizerMethod
     η::T
