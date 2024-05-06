@@ -16,8 +16,8 @@ It can be called using the following constructor: `HRedSys(N, n; encoder, decode
 """
 struct HRedSys{
     T <: Number, 
-    ET <: NeuralNetwork{<:Encoder}, 
-    DT <: NeuralNetwork{<:Decoder}, 
+    ET <: NeuralNetwork{<:SymplecticEncoder}, 
+    DT <: NeuralNetwork{<:SymplecticDecoder}, 
     VFT <: Function, 
     FFT <: Function, 
     HFT <: Function, 
@@ -46,11 +46,11 @@ struct HRedSys{
     ics::IT
 end
 
-function HRedSys(N::Integer, n::Integer, encoder::NeuralNetwork{<:Encoder}, decoder::NeuralNetwork{<:Decoder}, v_full, f_full, h_full, tspan::Tuple, tstep::T, ics; parameters = parameters, v_reduced = build_v_reduced(v_full, f_full, decoder), f_reduced = build_f_reduced(v_full, f_full, decoder), h_reduced = build_h_reduced(h_full, decoder), integrator=ImplicitMidpoint()) where {T <: Real}
+function HRedSys(N::Integer, n::Integer, encoder::NeuralNetwork{<:SymplecticEncoder}, decoder::NeuralNetwork{<:SymplecticDecoder}, v_full, f_full, h_full, tspan::Tuple, tstep::T, ics; parameters = parameters, v_reduced = build_v_reduced(v_full, f_full, decoder), f_reduced = build_f_reduced(v_full, f_full, decoder), h_reduced = build_h_reduced(h_full, decoder), integrator=ImplicitMidpoint()) where {T <: Real}
     HRedSys{typeof(tstep), typeof(encoder), typeof(decoder), typeof(v_full), typeof(f_full), typeof(h_full), typeof(v_reduced), typeof(f_reduced), typeof(h_reduced), typeof(integrator), typeof(parameters), typeof(ics)}(N, n, encoder, decoder, v_full, f_full, h_full, v_reduced, f_reduced, h_reduced, integrator, parameters, tspan, tstep, ics)
 end
 
-function HRedSys(odeproblem::Union{HODEProblem, HODEEnsemble}, encoder::NeuralNetwork{<:Encoder}, decoder::NeuralNetwork{<:Decoder}; integrator=ImplicitMidpoint()) 
+function HRedSys(odeproblem::Union{HODEProblem, HODEEnsemble}, encoder::NeuralNetwork{<:SymplecticEncoder}, decoder::NeuralNetwork{<:SymplecticDecoder}; integrator=ImplicitMidpoint()) 
     N = encoder.architecture.full_dim 
     n = encoder.architecture.reduced_dim
     v_eq = odeproblem.equation.v
