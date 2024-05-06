@@ -1,4 +1,5 @@
 using GeometricMachineLearning, Test
+using GeometricMachineLearning: ResNetLayer
 import Random 
 
 Random.seed!(1234)

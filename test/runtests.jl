@@ -3,6 +3,7 @@ using SafeTestsets
 @safetestset "Check parameterlength                                                           " begin include("parameterlength/check_parameterlengths.jl") end
 
 @safetestset "Arrays #1                                                                       " begin include("arrays/array_tests.jl") end
+@safetestset "Map to skew                                                                     " begin include("arrays/map_to_skew.jl") end
 @safetestset "Sampling of arrays                                                              " begin include("arrays/random_generation_of_custom_arrays.jl") end
 @safetestset "Addition tests for custom arrays                                                " begin include("arrays/addition_tests_for_custom_arrays.jl") end
 @safetestset "Scalar multiplication tests for custom arrays                                   " begin include("arrays/scalar_multiplication_for_custom_arrays.jl") end
@@ -64,5 +65,10 @@ using SafeTestsets
 
 @safetestset "Batch functor(s)                                                                " begin include("batch/batch_functor.jl") end
 
-@safetestset "SympNet integrator                                                              " begin include("sympnet_integrator.jl") end
-@safetestset "Regular transformer integrator                                                  " begin include("regular_transformer_integrator.jl") end
+@safetestset "Volume-Preserving Transformer (skew-symmetric tests)                            " begin include("volume_preserving_attention/test_skew_map.jl") end
+@safetestset "Volume-Preserving Transformer (cayley-transform tests)                          " begin include("volume_preserving_attention/test_cayley_transforms.jl") end
+
+# reduced order modeling tests
+@safetestset "PSD tests                                                                       " begin include("psd_architecture_tests.jl") end
+@safetestset "SymplecticAutoencoder tests                                                     " begin include("symplectic_autoencoder_tests.jl") end
+@safetestset "Check if autoencoder error is lower than PSD error                              " begin include("sae_error_lower_than_psd_error.jl") end

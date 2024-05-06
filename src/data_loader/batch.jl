@@ -168,6 +168,38 @@ function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT}, batch::
     input, output
 end
 
+function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT, Nothing, :RegularData}, batch::Batch, batch_indices_tuple::Vector{Tuple{Int, Int}}) where {T, AT<:AbstractArray{T, 3}, BT<:NamedTuple{(:q, :p), Tuple{AT, AT}}}
+    backend = KernelAbstractions.get_backend(dl.input)
+
+    # the batch size is smaller for the last batch
+    _batch_size = length(batch_indices_tuple)
+
+    batch_indices = convert_vector_of_tuples_to_matrix(backend, batch_indices_tuple)
+
+    q_input = KernelAbstractions.allocate(backend, T, dl.input_dim ÷ 2, batch.seq_length, _batch_size)
+    p_input = similar(q_input)
+
+    assign_input_from_vector_of_tuples! = assign_input_from_vector_of_tuples_kernel!(backend)
+    assign_input_from_vector_of_tuples!(q_input, p_input, dl.input, batch_indices, ndrange=(dl.input_dim ÷ 2, batch.seq_length, _batch_size))
+
+    (q = q_input, p = p_input)
+end
+
+function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT, Nothing, :RegularData}, batch::Batch, batch_indices_tuple::Vector{Tuple{Int, Int}}) where {T, BT<:AbstractArray{T, 3}}
+    backend = KernelAbstractions.get_backend(dl.input)
+
+    # the batch size is smaller for the last batch 
+    _batch_size = length(batch_indices_tuple)
+
+    batch_indices = convert_vector_of_tuples_to_matrix(backend, batch_indices_tuple)
+
+    input = KernelAbstractions.allocate(backend, T, dl.input_dim, batch.seq_length, _batch_size)
+
+    assign_input_from_vector_of_tuples! = assign_input_from_vector_of_tuples_kernel!(backend)
+    assign_input_from_vector_of_tuples!(input, dl.input, batch_indices, ndrange=(dl.input_dim, batch.seq_length, _batch_size))
+
+    input
+end
 
 # for the case when the DataLoader also contains an output
 function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT, OT}, ::Batch, batch_indices_tuple::Vector{Tuple{Int, Int}}) where {T, T1, BT<:AbstractArray{T, 3}, OT<:AbstractArray{T1, 3}}

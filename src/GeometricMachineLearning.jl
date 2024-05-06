@@ -30,25 +30,8 @@ module GeometricMachineLearning
     export dim
     import GeometricIntegrators.Integrators: method, GeometricIntegrator
     import NNlib: σ, sigmoid, softmax
+    import Base: iterate
     #import LogExpFunctions: softmax
-
-    # INCLUDE ARRAYS
-    include("arrays/skew_symmetric.jl")
-    include("arrays/symmetric.jl")
-    include("arrays/symplectic.jl")
-    include("arrays/abstract_lie_algebra_horizontal.jl")
-    include("arrays/stiefel_lie_algebra_horizontal.jl")
-    include("arrays/grassmann_lie_algebra_horizontal.jl")
-    include("arrays/triangular.jl")
-    include("arrays/lower_triangular.jl")
-    include("arrays/upper_triangular.jl")
-
-    export SymmetricMatrix, SymplecticPotential, SkewSymMatrix, LowerTriangular, UpperTriangular
-    export StiefelLieAlgHorMatrix
-    export SymplecticLieAlgMatrix, SymplecticLieAlgHorMatrix
-    export GrassmannLieAlgHorMatrix
-    export StiefelProjection, SymplecticProjection
-    
 
     export CPU, GPU
     export Chain, NeuralNetwork
@@ -63,8 +46,25 @@ module GeometricMachineLearning
 
     include("data_loader/data_loader.jl")
 
-    include("loss/loss_routines.jl")
     include("loss/losses.jl")
+
+    # INCLUDE ARRAYS
+    include("arrays/skew_symmetric.jl")
+    include("arrays/symmetric.jl")
+    include("arrays/symplectic.jl")
+    include("arrays/abstract_lie_algebra_horizontal.jl")
+    include("arrays/stiefel_lie_algebra_horizontal.jl")
+    include("arrays/grassmann_lie_algebra_horizontal.jl")
+    include("arrays/triangular.jl")
+    include("arrays/lower_triangular.jl")
+    include("arrays/upper_triangular.jl")
+
+    export SymmetricMatrix, SymplecticPotential, SkewSymMatrix
+    export StiefelLieAlgHorMatrix
+    export SymplecticLieAlgMatrix, SymplecticLieAlgHorMatrix
+    export GrassmannLieAlgHorMatrix
+    export StiefelProjection, SymplecticProjection
+    export LowerTriangular, UpperTriangular
 
     include("kernels/assign_q_and_p.jl")
     include("kernels/tensor_mat_mul.jl")
@@ -148,18 +148,21 @@ module GeometricMachineLearning
     include("layers/grassmann_layer.jl")
     include("layers/multi_head_attention.jl")
     include("layers/volume_preserving_attention.jl")
+    include("layers/volume_preserving_feedforward.jl")
     include("layers/transformer.jl")
     include("layers/psd_like_layer.jl")
     include("layers/classification.jl")
-    include("layers/volume_preserving_feedforward.jl")
 
     # include("layers/symplectic_stiefel_layer.jl")
     export StiefelLayer, GrassmannLayer, ManifoldLayer
     export PSDLayer
     export MultiHeadAttention
     export VolumePreservingAttention
-    export ResNetLayer
+    export VolumePreservingLowerLayer
+    export VolumePreservingUpperLayer
+    export ResNet
     export Transformer
+    export RegularTransformerIntegrator
     export Classification
     export VolumePreservingLowerLayer
     export VolumePreservingUpperLayer
@@ -170,6 +173,7 @@ module GeometricMachineLearning
     export MomentumOptimizer, MomentumCache
     export AdamOptimizerWithDecay
     export AdamOptimizer, AdamCache
+    export AdamOptimizerWithDecay
     export BFGSOptimizer, BFGSCache
 
     export Optimizer
@@ -237,12 +241,7 @@ module GeometricMachineLearning
     include("backends/backends.jl")
     include("backends/lux.jl")
 
-    export DataLoader, onehotbatch, accuracy
-    export Batch, optimize_for_one_epoch!
-    include("data_loader/tensor_assign.jl")
-    include("data_loader/matrix_assign.jl")
-    include("data_loader/mnist_utils.jl")
-    include("data_loader/batch.jl")
+    export TransformerLoss, FeedForwardLoss
 
     #INCLUDE ARCHITECTURES
     include("architectures/neural_network_integrator.jl")
@@ -251,6 +250,8 @@ module GeometricMachineLearning
     include("architectures/regular_transformer_integrator.jl")
     include("architectures/sympnet.jl")
     include("architectures/autoencoder.jl")
+    include("architectures/symplectic_autoencoder.jl")
+    include("architectures/psd.jl")
     include("architectures/fixed_width_network.jl")
     include("architectures/hamiltonian_neural_network.jl")
     include("architectures/lagrangian_neural_network.jl")
@@ -259,6 +260,7 @@ module GeometricMachineLearning
     include("architectures/LSTM_neural_network.jl")
     include("architectures/transformer_neural_network.jl")
     include("architectures/volume_preserving_feedforward.jl")
+    include("architectures/volume_preserving_transformer.jl")
 
     export HamiltonianNeuralNetwork
     export LagrangianNeuralNetwork
@@ -268,16 +270,25 @@ module GeometricMachineLearning
     export RecurrentNeuralNetwork
     export LSTMNeuralNetwork
     export ClassificationTransformer
-    export ResNet
-    export RegularTransformerIntegrator
     export VolumePreservingFeedForward
+    export SymplecticAutoencoder, PSDArch
+
+    export solve!, encoder, decoder
 
     export train!, apply!, jacobian!
-    export Iterate_Sympnet
+    export iterate
 
     export default_arch
 
     include("architectures/default_architecture.jl")
+
+    export DataLoader, onehotbatch, accuracy
+    export Batch, optimize_for_one_epoch!
+    include("data_loader/tensor_assign.jl")
+    include("data_loader/matrix_assign.jl")
+    include("data_loader/mnist_utils.jl")
+    include("data_loader/batch.jl")
+    include("data_loader/optimize.jl")
 
     export default_optimizer
 
@@ -299,7 +310,7 @@ module GeometricMachineLearning
     include("nnsolution/history.jl")
 
     export NeuralNetSolution
-    export nn, problem, tstep, history, size_history
+    export problem, tstep, history, size_history
     export set_sizemax_history
     
     include("nnsolution/neural_net_solution.jl")
@@ -312,13 +323,13 @@ module GeometricMachineLearning
     # INCLUDE TRAINING integrator
 
     export TrainingSet
-    export nn, parameters # , data
+    export parameters # , data
 
     include("training/training_set.jl")
 
     export EnsembleTraining
     export isnnShared, isParametersShared, isDataShared
-    export nn, parameters, data
+    export parameters, data
     export push!, merge!, size
 
     include("training/ensemble_training.jl")
@@ -390,5 +401,5 @@ module GeometricMachineLearning
 
     export ReducedSystem, compute_reduction_error, compute_projection_error, reduced_vector_field_from_full_explicit_vector_field, perform_integration_reduced, perform_integration_full
 
-    include("data_loader/optimize.jl")
+    include("map_to_cpu.jl")
 end
