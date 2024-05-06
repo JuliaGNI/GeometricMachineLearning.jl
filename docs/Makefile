@@ -3,9 +3,17 @@
 
 all: html
 
-latex: latex_no_pdf compile_tex
+latex_no_images: latex_no_pdf_no_images
+	$(MAKE) compile_tex;
+	$(MAKE) compile_tex
 
-latex_no_pdf: latex_images install_brenier_two_fluid test_docs latex_docs_no_pdf remove_brenier_two_fluid
+latex: latex_no_pdf 
+	$(MAKE) compile_tex;
+	$(MAKE) compile_tex
+
+latex_no_pdf_no_images: install_brenier_two_fluid latex_docs_no_pdf remove_brenier_two_fluid
+
+latex_no_pdf: latex_images latex_no_pdf_no_images
 
 html: html_images install_brenier_two_fluid test_docs documenter remove_brenier_two_fluid
 
