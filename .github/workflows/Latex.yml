@@ -29,6 +29,8 @@ jobs:
           cd .. 
       - name: make tex document
         run: julia --project=docs --threads=2 docs/make.jl latex_output_no_pdf
+      - name: Some sed magic 
+        run: make put_figures_outside_of_minted_environment -C docs
       - name: compile tex document
         run: |
           cd docs/build 
