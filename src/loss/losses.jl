@@ -58,6 +58,15 @@ end
 
 struct FeedForwardLoss <: NetworkLoss end
 
+@doc raw"""
+This loss should always be used together with a neural network of type [AutoEncoder](@ref) (and it is also the default for training such a network). 
+
+It simply computes: 
+
+```math
+\mathtt{AutoEncoderLoss}(nn\mathtt{::Loss}, input) = ||nn(input) - input||.
+```
+"""
 struct AutoEncoderLoss <: NetworkLoss end 
 
 function (loss::AutoEncoderLoss)(nn::NeuralNetwork, input)

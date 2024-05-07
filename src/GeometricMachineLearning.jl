@@ -5,14 +5,16 @@ module GeometricMachineLearning
     using ChainRulesCore
     using Distances
     using GeometricBase
-    using GeometricEquations
     using GeometricIntegrators
+    using GeometricSolutions: GeometricSolution, EnsembleSolution, DataSeries, StateVariable
+    using GeometricEquations: ODEProblem, HODEProblem, ODEEnsemble, HODEEnsemble
     using KernelAbstractions
     using LinearAlgebra
     using NNlib
     using ProgressMeter
     using Random
     using Zygote
+    using ForwardDiff
     using InteractiveUtils
     using TimerOutputs
 
@@ -396,10 +398,9 @@ module GeometricMachineLearning
 
     include("integrator/sympnet_integrator.jl")
  
-    include("reduced_system/system_type.jl")
     include("reduced_system/reduced_system.jl")
 
-    export ReducedSystem, compute_reduction_error, compute_projection_error, reduced_vector_field_from_full_explicit_vector_field, perform_integration_reduced, perform_integration_full
+    export HRedSys, reduction_error, projection_error, integrate_reduced_system, integrate_full_system
 
     include("map_to_cpu.jl")
 end

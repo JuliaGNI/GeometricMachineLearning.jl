@@ -1,4 +1,35 @@
-struct SymplecticAutoencoder{EncoderInit, DecoderInit, AT} <: AutoEncoder 
+@doc raw"""
+## The architecture
+
+The symplectic autoencoder architecture was introduced in [brantner2023symplectic](@cite). Like any other autoencoder it consists of an *encoder* ``\Psi^e:\mathbb{R}^{2N}\to\mathbb{R}^{2n}`` and a *decoder* ``\Psi^d:\mathbb{R}^{2n}\to\mathbb{R}^{2N}`` with ``n\ll{}N``. These satisfy the following properties: 
+
+```math
+\nabla_z\Psi^e\mathbb{J}_{2N}(\nabla_z\Psi^e\mathbb{J}_{2N})^T = \mathbb{J}_{2n} \text{ and } (\nabla_\xi\Psi^d)^T\mathbb{J}_{2N}\nabla_\xi\Psi^d = \mathbb{J}_{2n}.
+```
+
+Because the decoder has this particular property, the reduced system can be described by the Hamiltonian ``H\circ\Psi^d``: 
+
+```math
+\mathbb{J}_{2n}\nabla_\xi(H\circ\Psi^d) = \mathbb{J}_{2n}(\nabla_\xi\Psi^d)^T\nabla_{\Psi^d(\xi)}H = \mathbb{J}_{2n}(\nabla_\xi\Psi^d)^T\mathbb{J}_{2N}^T\mathbb{J}_{2N}\nabla_{\Psi^d(\xi)}H = (\nabla_\xi\Psi^d)^+X_H(\Psi^d(\xi)),
+```
+
+where ``(\nabla_\xi\Psi^d)^+`` is the pseudoinverse of ``\nabla_\xi\Psi^d`` (for more details see the docs on the [AutoEncoder](@ref) type).
+
+## The constructor
+
+The constructor is called with
+- `full_dim::Integer` 
+- `reduced_dim::Integer` 
+- `n_encoder_layers::Integer = 4` (keyword argument)
+- `n_encoder_blocks::Integer = 2` (keyword argument)
+- `n_decoder_layers::Integer = 1` (keyword argument)
+- `n_decoder_blocks::Integer = 3` (keyword argument)
+- `sympnet_upscale::Integer = 5` (keyword argument)
+- `activation = tanh` (keyword argument)
+- `encoder_init_q::Bool = true` (keyword argument)
+- `decoder_init_q::Bool = true` (keyword argument)
+"""
+struct SymplecticAutoencoder{EncoderInit, DecoderInit, AT} <: SymplecticCompression 
     full_dim::Int
     reduced_dim::Int 
     n_encoder_layers::Int
@@ -9,7 +40,7 @@ struct SymplecticAutoencoder{EncoderInit, DecoderInit, AT} <: AutoEncoder
     activation::AT
 end
 
-struct SymplecticEncoder{AT} <: Encoder
+struct NonLinearSymplecticEncoder{AT} <: SymplecticEncoder
     full_dim::Int
     reduced_dim::Int 
     n_encoder_layers::Int 
@@ -18,7 +49,7 @@ struct SymplecticEncoder{AT} <: Encoder
     activation::AT
 end
 
-struct SymplecticDecoder{AT} <: Encoder
+struct NonLinearSymplecticDecoder{AT} <: SymplecticDecoder
     full_dim::Int
     reduced_dim::Int 
     n_decoder_layers::Int 
@@ -30,7 +61,9 @@ end
 function SymplecticAutoencoder(full_dim::Integer, reduced_dim::Integer; n_encoder_layers::Integer = 4, n_encoder_blocks::Integer = 2, n_decoder_layers::Integer = 1, n_decoder_blocks::Integer = 3, sympnet_upscale::Integer = 5, activation = tanh, encoder_init_q::Bool = true, decoder_init_q::Bool = true)
     @assert full_dim ≥ reduced_dim "The dimension of the full-order model hast to be larger than the dimension of the reduced order model!"
     @assert iseven(full_dim) && iseven(reduced_dim) "The full-order model and the reduced-order model need to be even dimensional!"
-    
+    @assert n_encoder_blocks ≤ full_dim - reduced_dim "The number of encoder blocks is too big!"
+    @assert n_decoder_blocks ≤ full_dim - reduced_dim "The number of decoder blocks is too big!"
+
     if encoder_init_q && decoder_init_q
         SymplecticAutoencoder{:EncoderInitQ, :DecoderInitQ, typeof(activation)}(full_dim, reduced_dim, n_encoder_layers, n_encoder_blocks, n_decoder_layers, n_decoder_blocks, sympnet_upscale, activation)
     elseif encoder_init_q && !decoder_init_q
@@ -91,11 +124,11 @@ function decoder_layers_from_iteration(arch::SymplecticAutoencoder{<:Any, :Decod
 end
 
 function encoder(nn::NeuralNetwork{<:SymplecticAutoencoder})
-    arch = SymplecticEncoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_layers, nn.architecture.n_encoder_blocks, nn.architecture.sympnet_upscale, nn.architecture.activation)
+    arch = NonLinearSymplecticEncoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_layers, nn.architecture.n_encoder_blocks, nn.architecture.sympnet_upscale, nn.architecture.activation)
     NeuralNetwork(arch, encoder_model(nn.architecture), encoder_parameters(nn), get_backend(nn))
 end
 
 function decoder(nn::NeuralNetwork{<:SymplecticAutoencoder})
-    arch = SymplecticDecoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_decoder_layers, nn.architecture.n_decoder_blocks, nn.architecture.sympnet_upscale, nn.architecture.activation)
+    arch = NonLinearSymplecticDecoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_decoder_layers, nn.architecture.n_decoder_blocks, nn.architecture.sympnet_upscale, nn.architecture.activation)
     NeuralNetwork(arch, decoder_model(nn.architecture), decoder_parameters(nn), get_backend(nn))
 end

@@ -109,3 +109,7 @@ end
 function global_section(::AbstractVecOrMat)
     nothing
 end
+
+_eltype(x) = eltype(x)
+_eltype(ps::NamedTuple) = _eltype(ps[1])
+_eltype(ps::Tuple) = _eltype(ps[1])
