@@ -22,17 +22,15 @@ const html_format = Documenter.HTML(;
     sidebar_sitename = false,
     )
 
-const latex_format = Documenter.LaTeX()
-
 # if platform is set to "none" then no output pdf is generated
-const latex_format_no_pdf = Documenter.LaTeX(platform = "none")
+const latex_format = Documenter.LaTeX(platform = "none")
 
 # output_type is defined here for handling e.g. figures in a not-too-messy way 
 # if we supply no arguments to make.jl or supply html_output, then `output_type` is `:html`. Else it is latex.
 const output_type = isempty(ARGS) ? :html : ARGS[1] == "html_output" ? :html : :latex
 
 # the format is needed by the Julia documenter
-const format = output_type == :html ? html_format : ARGS[1] == "latex_output" ? latex_format : latex_format_no_pdf
+const format = output_type == :html ? latex_format
 
 function html_graphics(path::String; kwargs...)
     light_string = """<object type="image/svg+xml" class="display-light-only" data=$(joinpath(buildpath, path * ".png"))></object>"""
