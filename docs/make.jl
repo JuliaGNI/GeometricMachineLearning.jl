@@ -35,9 +35,9 @@ const output_type = isempty(ARGS) ? :html : ARGS[1] == "html_output" ? :html : :
 const format = output_type == :html ? html_format : ARGS[1] == "latex_output" ? latex_format : latex_format_no_pdf
 
 function html_graphics(path::String; kwargs...)
-    light_string = """<object type="image/svg+xml" class="display-light-only" data=$(joinpath(buildpath, path, ".png"))></object>"""
-    dark_string = """<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(buildpath, path, "_dark.png"))></object>"""
-    (Docs.HTML(light_string), Docs.HTML(dark_string))
+    light_string = """<object type="image/svg+xml" class="display-light-only" data=$(joinpath(buildpath, path * ".png"))></object>"""
+    dark_string = """<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(buildpath, path * "_dark.png"))></object>"""
+    Docs.HTML(light_string, dark_string)
 end
 
 function latex_graphics(path::String; label = nothing, caption = nothing, width = .5)
