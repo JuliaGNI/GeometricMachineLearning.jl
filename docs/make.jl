@@ -30,7 +30,7 @@ const latex_format = Documenter.LaTeX(platform = "none")
 const output_type = isempty(ARGS) ? :html : ARGS[1] == "html_output" ? :html : :latex
 
 # the format is needed by the Julia documenter
-const format = output_type == :html ? latex_format
+const format = output_type == :html ? html_format : latex_format
 
 function html_graphics(path::String; kwargs...)
     light_string = """<object type="image/svg+xml" class="display-light-only" data=$(joinpath(buildpath, path * ".png"))></object>"""
