@@ -43,19 +43,8 @@ The constructor produces the following architecture[^2]:
 
 [^2]: Based on the input arguments `n_linear` and `n_blocks`. In this example `init_upper` is set to false, which means that the first layer is of type *lower* followed by a layer of type *upper*. 
 
-```@example 
-import Images, Plots # hide
-if Main.output_type == :html # hide
-     HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/vp_feedforward.png"))></object>""") # hide
-else # hide
-     Plots.plot(Images.load("../tikz/vp_feedforward.png"), axis=([], false)) # hide
-end # hide
-```
-
 ```@example
-if Main.output_type == :html # hide
-     HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/vp_feedforward_dark.png"))></object>""") # hide
-end # hide
+Main.include_graphics("../tikz/vp_feedforward") # hide
 ```
 
 Here *LinearLowerLayer* performs ``x \mapsto x + Lx`` and *NonLinearLowerLayer* performs ``x \mapsto x + \sigma(Lx + b)``. The activation function ``\sigma`` is the forth input argument to the constructor and `tanh` by default. 
