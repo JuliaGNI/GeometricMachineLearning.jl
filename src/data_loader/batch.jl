@@ -169,7 +169,7 @@ function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT}, batch::
 end
 
 function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT, Nothing, :RegularData}, batch::Batch, batch_indices_tuple::Vector{Tuple{Int, Int}}) where {T, AT<:AbstractArray{T, 3}, BT<:NamedTuple{(:q, :p), Tuple{AT, AT}}}
-    backend = KernelAbstractions.get_backend(dl.input)
+    backend = KernelAbstractions.get_backend(dl.input.q)
 
     # the batch size is smaller for the last batch
     _batch_size = length(batch_indices_tuple)

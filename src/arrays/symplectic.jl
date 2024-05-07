@@ -44,7 +44,7 @@ SymplecticPotential(backend::CPU, n2::Int) = SymplecticPotential(backend, n2, Fl
     J[map_index_for_symplectic_potential(i, n)...] = i ≤ n ? one(T) : -one(T)
 end
 
-Base.:*(𝕁::SymplecticPotential{T}, v::NamedTuple{(:q, :p), Tuple{AT, AT}}) where {T, AT <: AbstractVecOrMat{T}} = (q = v.p, p = -v.q)
+Base.:*(::SymplecticPotential{T}, v::NamedTuple{(:q, :p), Tuple{AT, AT}}) where {T, AT <: AbstractVecOrMat{T}} = (q = v.p, p = -v.q)
 
 function _vcat(v::NamedTuple{(:q, :p), Tuple{AT, AT}}) where {AT <: AbstractArray}
     vcat(v.q, v.p)

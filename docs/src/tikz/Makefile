@@ -39,6 +39,8 @@ png:
 	pdftocairo 	-png -r $(res1) -transp -singlefile	 logo.pdf										logo 
 	pdftocairo  -png -r $(res1) -transp -singlefile  symplectic_autoencoder.pdf						symplectic_autoencoder
 	pdftocairo  -png -r $(res1) -transp -singlefile  symplectic_autoencoder_dark.pdf				symplectic_autoencoder_dark
+	pdftocairo  -png -r $(res1) -transp -singlefile  symplectic_autoencoder_architecture.pdf		symplectic_autoencoder_architecture
+	pdftocairo  -png -r $(res1) -transp -singlefile  symplectic_autoencoder_architecture_dark.pdf	symplectic_autoencoder_architecture_dark
 	pdftocairo  -png -r $(res1) -transp -singlefile  solution_manifold_2.pdf						solution_manifold_2
 	pdftocairo  -png -r $(res1) -transp -singlefile  mha.pdf 										mha
 	pdftocairo  -png -r $(res1) -transp -singlefile  mha_dark.pdf 									mha_dark
