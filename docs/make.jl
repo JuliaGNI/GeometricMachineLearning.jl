@@ -44,13 +44,11 @@ function latex_graphics(path::String; label = nothing, caption = nothing, width 
     figure_width = "$(width)\\textwidth"
     latex_label = isnothing(label) ? "" : "\\label{" * label * "}" 
     latex_caption = isnothing(caption) ? "" : "\\caption{" * caption * "}"
-    latex_string = """
-        \\begin{figure}
+    latex_string = """\\begin{figure}
             \\includegraphics[width = """ * figure_width * "]{" * path * ".png}" *
             latex_caption *
             latex_label * """
-        \\end{figure}
-    """
+        \\end{figure}"""
 end
 
 function include_graphics(path::String; kwargs...)
