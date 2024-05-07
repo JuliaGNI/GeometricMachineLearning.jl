@@ -52,7 +52,7 @@ clean:
 	rm -Rf build
 
 latex_docs_no_pdf:
-	julia --color=yes --project=. --threads=8 make.jl latex_output_no_pdf	
+	julia --color=yes --project=. --threads=8 make.jl latex_output	
 
 compile_tex: 
 	cd build; \
@@ -65,6 +65,7 @@ put_figures_outside_of_minted_environment:
 	sed -i'' -e 's/\\\\label/\\label/g' build/G*.tex;
 	sed -i'' -e 's/\\\\caption/\\caption/g' build/G*.tex;
 	sed -i'' -e 's/..\/tikz/tikz/g' build/G*.tex;
+	echo -en '\n\n' >> build/G*.tex 
 	sed -ni'' -e '/DeleteThisAndTheLineBefore/{x;d;};1h;1!{x;p;};${x;p;}' build/G*.tex;
 	sed -i'' -e '/DeleteThisAndTheLineAfter/{N;s/\n.*//;}' build/G*.tex;
 	sed -i'' -e '/DeleteThisAndTheLineBefore/d' build/G*.tex;
