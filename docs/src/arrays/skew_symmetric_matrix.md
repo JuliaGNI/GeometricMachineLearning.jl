@@ -5,18 +5,7 @@ There are special implementations of symmetric and skew-symmetric matrices in `G
 [^1]: It works similarly for `SymmetricMatrix`. 
 
 ```@example 
-import Images, Plots # hide
-if Main.output_type == :html # hide
-    HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/skew_sym_visualization.png"))></object>""") # hide
-else # hide
-    Plots.plot(Images.load("../tikz/skew_sym_visualization.png"), axis=([], false)) # hide
-end # hide
-```
-
-```@example
-if Main.output_type == :html # hide
-    HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/skew_sym_visualization_dark.png"))></object>""") # hide
-end # 
+Main.include_graphics("../tikz/skew_sym_visualization")
 ```
 
 So what is stored internally is a vector of size ``n(n-1)/2`` for the skew-symmetric matrix and a vector of size ``n(n+1)/2`` for the symmetric matrix. We can sample a random skew-symmetric matrix: 

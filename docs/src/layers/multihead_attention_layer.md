@@ -19,19 +19,8 @@ where $n$ is the dimension of the vectors in $V$, $Q$ and $K$. The softmax activ
 
 The transformer contains a **self-attention mechanism**, i.e. takes an input $X$ and then transforms it linearly to $V$, $Q$ and $K$, i.e. $V = P^VX$, $Q = P^QX$ and $K = P^KX$. What distinguishes the multihead attention layer from the singlehead attention layer, is that there is not just one $P^V$, $P^Q$ and $P^K$, but there are several: one for each **head** of the multihead attention layer. After computing the individual values, queries and vectors, and after applying the softmax, the outputs are then concatenated together in order to obtain again an array that is of the same size as the input array:
 
-```@example
-import Images, Plots # hide
-if Main.output_type == :html # hide
-    HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/mha.png"))></object>""") # hide
-else # hide
-    Plots.plot(Images.load("../tikz/mha.png"), axis=([], false)) # hide
-end # hide
-```
-
-```@example
-if Main.output_type == :html # hide
-    HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/mha_dark.png"))></object>""") # hide
-end # hide
+```@example 
+Main.include_graphics("../tikz/mha") # hide
 ```
 
 Here the various $P$ matrices can be interpreted as being projections onto lower-dimensional subspaces, hence the designation by the letter $P$. Because of this interpretation as projection matrices onto smaller spaces that should **capture features in the input data** it makes sense to constrain these elements to be part of the Stiefel manifold.   
