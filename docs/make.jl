@@ -32,6 +32,22 @@ const output_type = isempty(ARGS) ? :html : ARGS[1] == "html_output" ? :html : :
 
 const format = output_type == :html ? html_format : ARGS[1] == "latex_output" ? latex_format : latex_format_no_pdf
 
+struct LaTeXTheorem
+    content::String
+end
+
+function Base.show(io::IO, ::MIME"text/latex", x::LaTeXTheorem)
+    return print(io, x.content)
+end
+
+function theorem(statement::String)
+    if format == :html
+        LaTeXTheorem("__Theorem:__ " * statement)
+    else
+        LaTeXTheorem(raw"\begin{theorem}" * statement * raw"\end{theorem}")
+    end
+end
+
 makedocs(;
     plugins = [bib],
     modules = [GeometricMachineLearning],
@@ -75,9 +91,11 @@ makedocs(;
             "BFGS Optimizer" => "optimizers/bfgs_optimizer.md",
             ],
         "Special Neural Network Layers" => [
+            "Sympnet Gradient Layers" => "layers/sympnet_gradient.md",
             "Volume-Preserving Layers" => "layers/volume_preserving_feedforward.md",
             "Attention" => "layers/attention_layer.md",
             "Multihead Attention" => "layers/multihead_attention_layer.md",
+            "Linear Symplectic Attention" => "layers/linear_symplectic_attention.md",
         ],
         "Data Loader" =>[
             "Routines" => "data_loader/data_loader.md",
