@@ -111,7 +111,7 @@ module GeometricMachineLearning
     # GPU specific operations
     export convert_to_dev, Device, CPUDevice
 
-    export GradientLayerQ, GradientLayerP, ActivationLayerQ, ActivationLayerP, LinearLayerQ, LinearLayerP
+    export GradientLayer, GradientLayerQ, GradientLayerP, ActivationLayerQ, ActivationLayerP, LinearLayerQ, LinearLayerP
     export Linear
     export ResidualLayer
     export LinearSymplecticLayerP, LinearSymplecticLayerQ
