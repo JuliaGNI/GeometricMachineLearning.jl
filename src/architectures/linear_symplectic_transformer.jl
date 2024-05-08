@@ -28,7 +28,7 @@ struct LinearSymplecticTransformer{AT} <: TransformerIntegrator where AT
     end
 end
 
-function Chain(arch::LinearSymplecticTransformer{AT, true}) where AT
+function Chain(arch::LinearSymplecticTransformer{AT}) where AT
     layers = ()
     for _ in 1:(arch.nhidden + 1)
         layers = (layers..., LinearSymplecticAttentionQ(arch.seq_length))
@@ -43,7 +43,8 @@ function Chain(arch::LinearSymplecticTransformer{AT, true}) where AT
     Chain(layers...)
 end
 
-function Chain(arch::LinearSymplecticTransformer{AT, false}) where AT
+#=
+function Chain(arch::LinearSymplecticTransformer{AT}) where AT
     layers = ()
     for _ in 1:(arch.nhidden+1)
         layers = (layers..., LinearSymplecticAttentionP(arch.seq_length))
@@ -57,3 +58,4 @@ function Chain(arch::LinearSymplecticTransformer{AT, false}) where AT
     end
     Chain(layers...)
 end
+=#
