@@ -20,18 +20,16 @@ end
  
 parameterlength(::LinearSymplecticTransformerLayer{M, N}) where {M, N} = (M÷2) ^ 2 
 
-#=
-function initialparameters(backend::KernelAbstractions.Backend, T::Type, ::LinearSymplecticTransformerLayer{M}; rng::AbstractRNG=Random.default_rng(), initializer::AbstractNeuralNetworks.AbstractInitializer=GlorotUniform()) where {M}
-    S = KernelAbstractions.allocate(backend, T, M * (M + 1) ÷ 2)
-    initializer(rng, S)
-    (A = SymmetricMatrix(S, M), )
-end
-=#
 function initialparameters(backend::KernelAbstractions.Backend, T::Type, ::LinearSymplecticTransformerLayer{M}; rng::AbstractRNG=Random.default_rng(), initializer::AbstractNeuralNetworks.AbstractInitializer=GlorotUniform()) where {M}
     S = KernelAbstractions.allocate(backend, T, M, M)
     initializer(rng, S)
     (A = S, )
 end
 
-(::LinearSymplecticTransformerLayerQ)(z::NamedTuple, ps::NamedTuple) = (q = z.q + tensor_mat_mul(z.p, ps.A + ps.A'), p = z.p)
-(::LinearSymplecticTransformerLayerP)(z::NamedTuple, ps::NamedTuple) = (q = z.q, p = z.p + tensor_mat_mul(z.q, ps.A + ps.A'))
+function (::LinearSymplecticTransformerLayerQ)(z::NamedTuple, ps::NamedTuple{(:q, :p), Tuple{AT, AT}}) where AT
+    (q = z.q + tensor_mat_mul(z.p, ps.A + ps.A'), p = z.p)
+end
+
+function (::LinearSymplecticTransformerLayerP)(z::NamedTuple, ps::NamedTuple{(:q, :p), Tuple{AT, AT}}) where AT
+    (q = z.q, p = z.p + tensor_mat_mul(z.q, ps.A + ps.A'))
+end
