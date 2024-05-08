@@ -1,0 +1,42 @@
+name: PDF
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  LatexDocs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: install imagemagick, poppler-utils and texlive
+        run: |
+            sudo apt-get install imagemagick
+            sudo apt-get install poppler-utils
+            sudo apt-get install texlive-xetex
+            sudo apt-get install texlive-science
+      - name: Make images
+        run: make latex -C docs/src/tikz
+      - uses: julia-actions/setup-julia@latest
+        with:
+          version: '1'
+      - name: install BrenierTwoFluid
+        run: |
+          cd docs
+          make install_brenier_two_fluid test_docs
+          cd .. 
+      - name: make tex document
+        run: julia --project=docs --threads=2 docs/make.jl latex_output_no_pdf
+      - name: compile tex document
+        run: |
+          cd docs/build 
+          xelatex -shell-escape GeometricMachineLearning.jl.tex
+      - name: Upload PDF file
+        uses: actions/upload-artifact@v4
+        with:
+          name: Docs in PDF version
+          path: docs/build/GeometricMachineLearning.jl.pdf
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

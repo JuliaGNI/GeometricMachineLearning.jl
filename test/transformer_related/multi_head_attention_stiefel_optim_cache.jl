@@ -1,5 +1,5 @@
 using GeometricMachineLearning, Test
-import Lux, Random, LinearAlgebra
+import Random, LinearAlgebra
 
 Random.seed!(1234)
 
@@ -45,7 +45,7 @@ TODO:
 function test_cache_setups_for_optimizer_for_multihead_attention_layer(T::Type, dim::Int, n_heads::Int)
     @assert dim % n_heads == 0
     model = MultiHeadAttention(dim, n_heads, Stiefel=true)
-    ps = initialparameters(CPU(), T, model)
+    ps = initialparameters(model, CPU(), T)
 
     o₁ = Optimizer(AdamOptimizer(), ps)
     o₂ = Optimizer(MomentumOptimizer(), ps)

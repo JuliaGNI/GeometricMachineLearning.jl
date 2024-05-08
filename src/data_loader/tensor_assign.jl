@@ -7,7 +7,7 @@ All of this uses KernelAbstractions and should work with any GPU supported by Ju
 """
 
 """
-Takes as input a ``batch tensor'' (to which the data are assigned), the whole data tensor and two vectors ``params'' and ``time_steps'' that include the specific parameters and time steps we want to assign. 
+Takes as input a *batch tensor* (to which the data are assigned), the whole data tensor and two vectors *params* and *time_steps* that include the specific parameters and time steps we want to assign. 
 
 Note that this assigns sequential data! For e.g. being processed by a transformer.
 """
@@ -19,7 +19,7 @@ Note that this assigns sequential data! For e.g. being processed by a transforme
 end
 
 """
-This should be used together with assign_batch_kernel!. It assigns the corresponding output (i.e. target).
+This should be used together with `assign_batch_kernel!`. It assigns the corresponding output (i.e. target).
 """
 @kernel function assign_output_kernel!(output::AbstractArray{T, 3}, data::AbstractArray{T,3}, params, time_steps, seq_length::Integer) where T 
     i,j,k = @index(Global, NTuple)

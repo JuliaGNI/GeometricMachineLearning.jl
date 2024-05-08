@@ -1,12 +1,20 @@
 """
 MultiHeadAttention (MHA) serves as a preprocessing step in the transformer. It reweights the input vectors bases on correlations within those data. 
+
+### Constructor 
+Takes input arguments: 
+- `dim::Int`: The system dimension 
+- `n_heads::Int`: The number of heads. 
+- `Stiefel::Bool=true` (keyword argument): whether the weights should be put on the Stiefel manifold. 
+- `retraction::AbstractRetraction` (keyword argument): what kind of retraction should be used. By default this is the geodesic retraction. 
+- `add_connection::Bool=true` (keyword argument): determines if the input should be added to the output for the final result. 
 """
 struct MultiHeadAttention{M, N, Stiefel, retraction, add_connection} <: LayerWithOptionalManifold{M, N, Stiefel, retraction}
-    n_heads::Integer
+    n_heads::Int
 end
 
 default_retr = Geodesic()
-function MultiHeadAttention(dim::Integer, n_heads::Integer; Stiefel::Bool=false, retraction::AbstractRetraction=default_retr, add_connection::Bool=true)
+function MultiHeadAttention(dim::Int, n_heads::Int; Stiefel::Bool=false, retraction::AbstractRetraction=default_retr, add_connection::Bool=true)
     @assert dim % n_heads == 0
     MultiHeadAttention{dim, dim, Stiefel, typeof(retraction), add_connection}(n_heads)
 end
@@ -19,7 +27,7 @@ function parameterlength(d::MultiHeadAttention{M, M, true}) where M
     Int(3*M^2 - 3*M*(M + d.n_heads)/(2*d.n_heads))
 end
 
-function initialparameters(backend::KernelAbstractions.Backend, T::Type, d::MultiHeadAttention{M, M, false}; rng::AbstractRNG=Random.default_rng(), initializer::AbstractNeuralNetworks.AbstractInitializer=GlorotUniform()) where {M}
+function initialparameters(d::MultiHeadAttention{M, M, false}, backend::KernelAbstractions.Backend, T::Type; rng::AbstractRNG=Random.default_rng(), initializer::AbstractNeuralNetworks.AbstractInitializer=GlorotUniform()) where {M}
     # number of "hidden" dimension (dimension of projection) 
     Dₕ = M ÷ d.n_heads
     # projections for queries, keys and values.
@@ -51,7 +59,7 @@ function initialparameters(backend::KernelAbstractions.Backend, T::Type, d::Mult
 end
 
 
-function initialparameters(backend::KernelAbstractions.Backend, T::Type, d::MultiHeadAttention{M, M, true}; rng::AbstractRNG=Random.default_rng(), initializer::AbstractNeuralNetworks.AbstractInitializer=GlorotUniform()) where {M}
+function initialparameters(d::MultiHeadAttention{M, M, true}, backend::KernelAbstractions.Backend, T::Type; rng::AbstractRNG=Random.default_rng(), initializer::AbstractNeuralNetworks.AbstractInitializer=GlorotUniform()) where {M}
     # number of "hidden" dimension (dimension of projection) 
     Dₕ = M ÷ d.n_heads
     # projections for queries, keys and vectors.
@@ -85,7 +93,7 @@ function compute_output_of_mha(d::MultiHeadAttention{M, M}, x::AbstractMatrix{T}
     output = typeof(x)(zeros(T, 0, input_length))
     for i in 1:d.n_heads
         key = Symbol("head_"*string(i))
-        output = vcat(output, ps.PV[key]'*x*softmax((ps.PQ[key]'*x)'*(ps.PK[key]'*x)/T(sqrt(dim))))
+        output = vcat(output, ps.PV[key]' * x * softmax((ps.PQ[key]' * x)' * (ps.PK[key]' * x) / T(sqrt(dim))))
     end
     output
 end
@@ -111,7 +119,6 @@ function compute_output_of_mha(d::MultiHeadAttention{M, M}, x::AbstractArray{T, 
 
         single_head_output = tensor_tensor_mul(V_tensor, softmax(QK_tensor/T(sqrt(dim))))
         output = vcat(output, single_head_output) 
-        # KernelAbstractions.synchronize(backend)
     end
     output
 end
@@ -125,9 +132,7 @@ function (d::MultiHeadAttention{M, M, Stiefel, Retraction, false})(x::AbstractAr
 end
 
 import ChainRules
-"""
-This has to be extended to tensors; you should probably do a PR in ChainRules for this.
-"""
+# type pyracy! 
 function ChainRules._adjoint_mat_pullback(y::AbstractArray{T, 3}, proj) where T 
     (NoTangent(), proj(tensor_transpose(y)))
 end

@@ -64,13 +64,15 @@ function test_optimizer_for_classification_layer(; dim₁=28, dim₂=28, number_
     activation_function(x) = tanh.(x)
     model = Classification(patch_length * patch_length, 10, activation_function)
 
-    ps = initialparameters(CPU(), T, model)   
-    loss₁ = GeometricMachineLearning.loss(model, ps, dl)
+    ps = initialparameters(model, CPU(), T)   
+    loss = GeometricMachineLearning.ClassificationTransformerLoss()
+    loss_dl(model::GeometricMachineLearning.AbstractExplicitLayer, ps::Union{Tuple, NamedTuple}, dl::DataLoader) = loss(model, ps, dl.input, dl.output)
+    loss₁ = loss_dl(model, ps, dl)
 
     opt = Optimizer(GradientOptimizer(), ps)
-    dx = Zygote.gradient(ps -> GeometricMachineLearning.loss(model, ps, dl), ps)[1]
+    dx = Zygote.gradient(ps -> loss_dl(model, ps, dl), ps)[1]
     optimization_step!(opt, model, ps, dx)
-    loss₂ = GeometricMachineLearning.loss(model, ps, dl)
+    loss₂ = loss_dl(model, ps, dl)
 
     @test loss₂ < loss₁
 end
