@@ -3,9 +3,17 @@
 
 all: html
 
-latex: latex_no_pdf compile_tex
+latex_no_images: latex_no_pdf_no_images
+	$(MAKE) compile_tex;
+	$(MAKE) compile_tex
 
-latex_no_pdf: latex_images install_brenier_two_fluid test_docs latex_docs_no_pdf remove_brenier_two_fluid
+latex: latex_no_pdf 
+	$(MAKE) compile_tex;
+	$(MAKE) compile_tex
+
+latex_no_pdf_no_images: install_brenier_two_fluid latex_docs_no_pdf remove_brenier_two_fluid put_figures_outside_of_minted_environment
+
+latex_no_pdf: latex_images latex_no_pdf_no_images 
 
 html: html_images install_brenier_two_fluid test_docs documenter remove_brenier_two_fluid
 
@@ -43,12 +51,22 @@ clean:
 	$(MAKE) empty -C src/tikz ;
 	rm -Rf build
 
-latex_docs:
-	julia --color=yes --project=. --threads=8 make.jl latex_output
-
 latex_docs_no_pdf:
-	julia --color=yes --project=. --threads=8 make.jl latex_output_no_pdf	
+	julia --color=yes --project=. --threads=8 make.jl latex_output	
 
 compile_tex: 
 	cd build; \
-	xelatex -shell-escape G*.tex 
+	xelatex -shell-escape G*.tex;
+
+put_figures_outside_of_minted_environment:
+	sed -i'' -e 's/\"\\\\begin{figure}\\n\\\\includegraphics/DeleteThisAndTheLineBefore\n\\begin{figure}[H]\n\\centering\n\\includegraphics/g' build/G*.tex;
+	sed -i'' -e 's/\\\\end{figure}\"/\\end{figure}\nDeleteThisAndTheLineAfter/g' build/G*.tex;
+	sed -i'' -e 's/\\\\textwidth/\\textwidth/g' build/G*.tex;
+	sed -i'' -e 's/\\\\label/\\label/g' build/G*.tex;
+	sed -i'' -e 's/\\\\caption/\\caption/g' build/G*.tex;
+	sed -i'' -e 's/..\/tikz/tikz/g' build/G*.tex;
+	echo -en '\n\n' >> build/GeometricMachineLearning.jl.tex 
+	sed -ni'' -e '/DeleteThisAndTheLineBefore/{x;d;};1h;1!{x;p;};${x;p;}' build/G*.tex;
+	sed -i'' -e '/DeleteThisAndTheLineAfter/{N;s/\n.*//;}' build/G*.tex;
+	sed -i'' -e '/DeleteThisAndTheLineBefore/d' build/G*.tex;
+	sed -i'' -e '/DeleteThisAndTheLineAfter/d' build/G*.tex;

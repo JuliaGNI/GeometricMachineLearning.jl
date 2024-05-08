@@ -1,6 +1,9 @@
 using GeometricMachineLearning
 using LinearAlgebra: I
 using Test
+import Random 
+
+Random.seed!(123)
 
 function test_setup(n2::Int, T::DataType)
     @assert iseven(n2) 
