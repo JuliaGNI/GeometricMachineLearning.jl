@@ -402,7 +402,7 @@ module GeometricMachineLearning
 
     export HRedSys, reduction_error, projection_error, integrate_reduced_system, integrate_full_system
 
-    include("layers/linear_symplectic_transformer.jl")
+    include("layers/linear_symplectic_attention.jl")
     include("architectures/linear_symplectic_transformer.jl")
 
     export LinearSymplecticTransformer

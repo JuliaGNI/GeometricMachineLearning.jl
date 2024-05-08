@@ -30,12 +30,12 @@ end
 
 function Chain(arch::LinearSymplecticTransformer{AT, true}) where AT
     layers = ()
-    for _ in 1:(arch.nhidden+1)
-        layers = (layers..., LinearSymplecticTransformerLayerQ(arch.seq_length))
+    for _ in 1:(arch.nhidden + 1)
+        layers = (layers..., LinearSymplecticAttentionQ(arch.seq_length))
         for __ in 1:arch.depth 
             layers = (layers..., GradientLayerQ(arch.dim, arch.upscaling_dimension, arch.activation))
         end
-        layers = (layers..., LinearSymplecticTransformerLayerP(arch.seq_length))
+        layers = (layers..., LinearSymplecticAttentionP(arch.seq_length))
         for __ in 1:arch.depth 
             layers = (layers..., GradientLayerP(arch.dim, arch.upscaling_dimension, arch.activation))
         end
@@ -46,11 +46,11 @@ end
 function Chain(arch::LinearSymplecticTransformer{AT, false}) where AT
     layers = ()
     for _ in 1:(arch.nhidden+1)
-        layers = (layers..., LinearSymplecticTransformerLayerP(arch.seq_length))
+        layers = (layers..., LinearSymplecticAttentionP(arch.seq_length))
         for __ in 1:arch.depth 
             layers = (layers..., GradientLayerP(arch.dim, arch.upscaling_dimension, arch.activation))
         end
-        layers = (layers..., LinearSymplecticTransformerLayerQ(arch.seq_length))
+        layers = (layers..., LinearSymplecticAttentionQ(arch.seq_length))
         for __ in 1:arch.depth 
             layers = (layers..., GradientLayerQ(arch.dim, arch.upscaling_dimension, arch.activation))
         end
