@@ -89,7 +89,6 @@ module GeometricMachineLearning
 
     include("kernels/kernel_ad_routines/assign_q_and_p.jl")
     include("kernels/kernel_ad_routines/tensor_mat_mul.jl")
-    include("kernels/kernel_ad_routines/tensor_transpose_mat_mul.jl")
     include("kernels/kernel_ad_routines/mat_tensor_mul.jl")
     include("kernels/kernel_ad_routines/tensor_tensor_mul.jl")
     include("kernels/kernel_ad_routines/tensor_transpose_tensor_mul.jl")
