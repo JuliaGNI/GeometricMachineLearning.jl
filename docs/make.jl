@@ -1,6 +1,7 @@
 using GeometricMachineLearning
 using Documenter
 using DocumenterCitations
+using Markdown
 # using Weave
 
 # this is necessary to avoid warnings. See https://documenter.juliadocs.org/dev/man/syntax/
@@ -53,19 +54,21 @@ function include_graphics(path::String; kwargs...)
     Main.output_type == :html ? html_graphics(path; kwargs...) : latex_graphics(path; kwargs...)
 end
 
-struct LaTeXTheorem
-    content::String
-end
-
-function Base.show(io::IO, ::MIME"text/latex", x::LaTeXTheorem)
-    return print(io, x.content)
-end
-
-function theorem(statement::String)
-    if format == :html
-        LaTeXTheorem("__Theorem:__ " * statement)
+function theorem(statement::String; label::Union{Nothing, String} = nothing)
+    if Main.output_type == :html
+        Markdown.parse("__Theorem:__ *" * statement * "*")
     else
-        LaTeXTheorem(raw"\begin{theorem}" * statement * raw"\end{theorem}")
+        theorem_label = isnothing(label) ? "" : raw"\label{th:" * label * raw"}"
+        Markdown.parse(raw"\begin{thrm}" * statement * theorem_label * raw"\end{thrm}")
+    end
+end
+
+function definition(statement::String; label::Union{Nothing, String} = nothing)
+    if Main.output_type == :html
+        Markdown.parse("__Definition:__ *" * statement * "*")
+    else
+        theorem_label = isnothing(label) ? "" : raw"\label{def:" * label * raw"}"
+        Markdown.parse(raw"\begin{dfntn}" * statement * theorem_label * raw"\end{dfntn}")
     end
 end
 
@@ -78,10 +81,6 @@ makedocs(;
     format = format,
     pages=[
         "Home" => "index.md",
-        "Architectures" => [
-            "SympNet" => "architectures/sympnet.md",
-            "Symplectic Autoencoders" => "architectures/symplectic_autoencoder.md",
-        ],
         "Manifolds" => [
             "Concepts from General Topology" => "manifolds/basic_topology.md",
             "General Theory on Manifolds" => "manifolds/manifolds.md",
@@ -117,6 +116,14 @@ makedocs(;
             "Attention" => "layers/attention_layer.md",
             "Multihead Attention" => "layers/multihead_attention_layer.md",
             "Linear Symplectic Attention" => "layers/linear_symplectic_attention.md",
+        ],
+        "Architectures" => [
+            "Neural Network Integrators" => "architectures/neural_network_integrators.md",
+            "SympNet" => "architectures/sympnet.md",
+            "Symplectic Autoencoders" => "architectures/symplectic_autoencoder.md",
+            "Standard Transformer" => "architectures/transformer.md",
+            "Volume-Preserving Transformer" => "architectures/volume_preserving_transformer.md",
+            "Linear Symplectic Transformer" => "architectures/linear_symplectic_transformer.md",
         ],
         "Data Loader" =>[
             "Routines" => "data_loader/data_loader.md",
