@@ -48,6 +48,8 @@ png:
 	pdftocairo  -png -r $(res1) -transp -singlefile  tensor_dark.pdf 								tensor_dark
 	pdftocairo  -png -r $(res4) -transp -singlefile  tensor_sampling.pdf 							tensor_sampling
 	pdftocairo  -png -r $(res4) -transp -singlefile  tensor_sampling_dark.pdf 						tensor_sampling_dark
+	pdftocairo 	-png -r $(res1) -transp -singlefile  vp_feedforward.pdf								vp_feedforward
+	pdftocairo 	-png -r $(res1) -transp -singlefile  vp_feedforward_dark.pdf						vp_feedforward_dark
 
 logo:
 	cp logo_with_name.png 		../assets/logo.png
