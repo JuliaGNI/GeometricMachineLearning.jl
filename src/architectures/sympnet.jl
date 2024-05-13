@@ -1,8 +1,5 @@
 @doc raw"""
-SympNet type encompasses GSympNets and LASympnets.
-
-TODO: 
--[ ] add bias to `LASympNet`!
+The `SympNet` type encompasses [`GSympNet`](@ref)s and [`LASympNet`](@ref)s. SympNets are universal approximators of *symplectic flows*, i.e. maps ``\varphi:\mathbb{R}^{2n}\to\mathbb{R}^{2n}`` for which ``(\nabla\varphi)^T\mathbb{J}\nabla\varphi = \mathbb{J}`` holds.
 """
 abstract type SympNet{AT} <: NeuralNetworkIntegrator end
 

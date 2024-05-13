@@ -1,19 +1,42 @@
 @doc raw"""
-Implements the various layers from the SympNet paper: (https://www.sciencedirect.com/science/article/abs/pii/S0893608020303063). This is a super type of `Gradient`, `Activation` and `Linear`.
+Implements the various layers from the SympNet paper [jin2020sympnets](@cite). This is a super type of [`GradientLayer`](@ref), [`ActivationLayer`](@ref) and [`LinearLayer`](@ref).
 
-For the linear layer, the activation and the bias are left out, and for the activation layer $K$ and $b$ are left out!
+For the linear layer, the activation and the bias are left out, and for the activation layer ``K`` and ``b`` are left out!
 """
 abstract type SympNetLayer{M, N} <: AbstractExplicitLayer{M, N} end
 
 @doc raw"""
-`GradientLayer` is the `struct` corresponding to the constructors `GradientLayerQ` and `GradientLayerP`. See those for more information.
+`GradientLayer` is the `struct` corresponding to the constructors [`GradientLayerQ`](@ref) and [`GradientLayerP`](@ref). See those for more information.
 """ 
 struct GradientLayer{M, N, TA, C} <: SympNetLayer{M, N}
         second_dim::Integer
         activation::TA
 end
 
+@doc raw"""
+The gradient layer that changes the ``q`` component. It is of the form: 
+
+```math
+\begin{bmatrix}
+        \mathbb{I} & \nabla{}V \\ \mathbb{O} & \mathbb{I} 
+\end{bmatrix},
+```
+
+with ``V(p) = \sum_{i=1}^Ma_i\Sigma(\sum_jk_{ij}p_j+b_i)``, where ``\Sigma`` is the antiderivative of the activation function ``\sigma`` (one-layer neural network). We refer to ``M`` as the *upscaling dimension*. Such layers are by construction symplectic.
+"""
 const GradientLayerQ{M, N, TA} = GradientLayer{M, N, TA, :Q}
+
+@doc raw"""
+The gradient layer that changes the ``q`` component. It is of the form: 
+
+```math
+\begin{bmatrix}
+        \mathbb{I} & \mathbb{O} \\ \nabla{}V & \mathbb{I} 
+\end{bmatrix},
+```
+
+with ``V(p) = \sum_{i=1}^Ma_i\Sigma(\sum_jk_{ij}p_j+b_i)``, where ``\Sigma`` is the antiderivative of the activation function ``\sigma`` (one-layer neural network). We refer to $M$ as the *upscaling dimension*. Such layers are by construction symplectic.
+"""
 const GradientLayerP{M, N, TA} = GradientLayer{M, N, TA, :P}
 
 @doc raw"""
@@ -35,32 +58,10 @@ end
 const ActivationLayerQ{M, N, TA} = ActivationLayer{M, N, TA, :Q}
 const ActivationLayerP{M, N, TA} = ActivationLayer{M, N, TA, :P}
 
-@doc raw"""
-The gradient layer that changes the $q$ component. It is of the form: 
-
-```math
-\begin{bmatrix}
-        \mathbb{I} & \nabla{}V \\ \mathbb{O} & \mathbb{I} 
-\end{bmatrix},
-```
-
-with $V(p) = \sum_{i=1}^Ma_i\Sigma(\sum_jk_{ij}p_j+b_i)$, where $\Sigma$ is the antiderivative of the activation function $\sigma$ (one-layer neural network). We refer to $M$ as the *upscaling dimension*. Such layers are by construction symplectic.
-"""
 function GradientLayerQ(M, upscaling_dimension, activation)
         GradientLayer{M, M, typeof(activation), :Q}(upscaling_dimension, activation)
 end
 
-@doc raw"""
-The gradient layer that changes the $q$ component. It is of the form: 
-
-```math
-\begin{bmatrix}
-        \mathbb{I} & \mathbb{O} \\ \nabla{}V & \mathbb{I} 
-\end{bmatrix},
-```
-
-with $V(p) = \sum_{i=1}^Ma_i\Sigma(\sum_jk_{ij}p_j+b_i)$, where $\Sigma$ is the antiderivative of the activation function $\sigma$ (one-layer neural network). We refer to $M$ as the *upscaling dimension*. Such layers are by construction symplectic.
-"""
 function GradientLayerP(M, upscaling_dimension, activation)
         GradientLayer{M, M, typeof(activation), :P}(upscaling_dimension, activation)
 end
@@ -237,7 +238,7 @@ This function is used in the wrappers where the input to the SympNet layers is n
 
 It converts the Array to a `NamedTuple` (via `assign_q_and_p`), then calls the SympNet routine(s) and converts back to an `AbstractArray` (with `vcat`).
 """
-function apply_layer_to_nt_and_return_array(x::AbstractArray, d::SympNetLayer{M, M}, ps) where {M}
+function apply_layer_to_nt_and_return_array(x::AbstractArray, d::AbstractExplicitLayer, ps::NamedTuple)
         N2 = size(x, 1)÷2
         qp = assign_q_and_p(x, N2)
         output = d(qp, ps)
@@ -247,6 +248,6 @@ end
 @doc raw"""
 This is called when a SympnetLayer is applied to a `NamedTuple`. It calls `apply_layer_to_nt_and_return_array`.
 """
-@inline function (d::SympNetLayer)(x::AbstractArray, ps)
+@inline function (d::SympNetLayer)(x::AbstractArray, ps::NamedTuple)
         apply_layer_to_nt_and_return_array(x, d, ps)
 end

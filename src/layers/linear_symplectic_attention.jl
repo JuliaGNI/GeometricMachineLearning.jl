@@ -1,35 +1,68 @@
 @doc raw"""
-Implements the symplectic transformer. Analogous to SympNet gradient layers it performs
+Implements the linear symplectic attention layers. Analogous to [`GradientLayer`](@ref) it performs mappings that only change the ``Q`` or the ``P`` part.
+For more information see [`LinearSymplecticAttentionQ`](@ref) and [`LinearSymplecticAttentionP`](@ref).
+
+### Constructor 
+
+For the constructors simply call 
+
+```julia
+LinearSymplecticAttentionQ(sys_dim, seq_length)
+``` or 
+
+```julia
+LinearSymplecticAttentionP(sys_dim, seq_length)
+``` 
+where `sys_dim` is the system dimension and `seq_length` is the sequence length.
+"""
+struct LinearSymplecticAttention{M, N, LayerType} <: AbstractExplicitLayer{M, N} 
+    seq_length::Int
+end
+
+@doc raw"""
+Performs: 
 
 ```math 
 \begin{pmatrix} Q \\ P \end{pmatrix} \mapsto \begin{pmatrix} Q + \nabla_PF \\ P \end{pmatrix},
 ```
-where ``Q,\, P\in\mathbb{R}^{n\times{}T}`` and ``F(P) = \mathrm{Tr}(P \mathrm{softmax}(P^TAP) * P^T)``. 
+where ``Q,\, P\in\mathbb{R}^{n\times{}T}`` and ``F(P) = \frac{1}{2}\mathrm{Tr}(P A P^T)``. 
 """
-struct LinearSymplecticAttention{M, N, LayerType} <: AbstractExplicitLayer{M, N} end
-
 const LinearSymplecticAttentionQ{M, N} = LinearSymplecticAttention{M, N, :Q}
+
+@doc raw"""
+Performs: 
+
+```math 
+\begin{pmatrix} Q \\ P \end{pmatrix} \mapsto \begin{pmatrix} Q + \nabla_PF \\ P \end{pmatrix},
+```
+where ``Q,\, P\in\mathbb{R}^{n\times{}T}`` and ``F(P) = \frac{1}{2}\mathrm{Tr}(P A P^T)``. 
+"""
 const LinearSymplecticAttentionP{M, N} = LinearSymplecticAttention{M, N, :P}
 
-function LinearSymplecticAttentionQ(M)
-    LinearSymplecticAttention{M, M, :Q}()
+function LinearSymplecticAttentionQ(M::Integer, seq_length::Integer)
+    LinearSymplecticAttention{M, M, :Q}(seq_length)
 end
-function LinearSymplecticAttentionP(M)
-    LinearSymplecticAttention{M, M, :P}()
+function LinearSymplecticAttentionP(M::Integer, seq_length::Integer)
+    LinearSymplecticAttention{M, M, :P}(seq_length)
 end
  
-parameterlength(::LinearSymplecticAttention{M, N}) where {M, N} = (M÷2) ^ 2 
+parameterlength(l::LinearSymplecticAttention) = (l.seq_length + 1) * l.seq_length ÷ 2
 
-function initialparameters(backend::KernelAbstractions.Backend, T::Type, ::LinearSymplecticAttention{M}; rng::AbstractRNG=Random.default_rng(), initializer::AbstractNeuralNetworks.AbstractInitializer=GlorotUniform()) where {M}
-    S = KernelAbstractions.allocate(backend, T, M, M)
+function initialparameters(l::LinearSymplecticAttention, backend::KernelAbstractions.Backend, T::Type; rng::AbstractRNG=Random.default_rng(), initializer::AbstractNeuralNetworks.AbstractInitializer=GlorotUniform())
+    S = KernelAbstractions.allocate(backend, T, parameterlength(l))
     initializer(rng, S)
-    (A = S, )
+    (A = SymmetricMatrix(S, l.seq_length), )
 end
 
-function (::LinearSymplecticAttentionQ)(z::NamedTuple, ps::NamedTuple{(:q, :p), Tuple{AT, AT}}) where AT
-    (q = z.q + tensor_mat_mul(z.p, ps.A + ps.A'), p = z.p)
+# Implement multiplication with symmetric matrix from the right!
+function (::LinearSymplecticAttentionQ)(z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where AT
+    (q = z.q + mat_tensor_mul(z.p, ps.A), p = z.p)
 end
 
-function (::LinearSymplecticAttentionP)(z::NamedTuple, ps::NamedTuple{(:q, :p), Tuple{AT, AT}}) where AT
-    (q = z.q, p = z.p + tensor_mat_mul(z.q, ps.A + ps.A'))
+function (::LinearSymplecticAttentionP)(z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where AT
+    (q = z.q, p = z.p + mat_tensor_mul(z.q, ps.A))
+end
+
+function (d::LinearSymplecticAttention)(z::AbstractArray, ps::NamedTuple)
+    apply_layer_to_nt_and_return_array(z, d, ps)
 end

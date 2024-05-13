@@ -1,3 +1,6 @@
+@doc raw"""
+A ResNet is a neural network that realizes a mapping of the form: ``x = \mathcal{NN}(x) + x``, so the input is again added to the output (a so-called add connection). In `GeometricMachineLearning` the specific ResNet that we use consists of a series of simple [`ResNetLayer`](@ref)s.
+"""
 struct ResNet{AT} <: NeuralNetworkIntegrator
     sys_dim::Int 
     n_blocks::Int 
