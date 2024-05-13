@@ -33,7 +33,7 @@ end
         temp += S[(m + 1) * m ÷ 2 + j] * dC[l, j, h]
     end
     for j = (m+1):size(dA, 2)
-        temp += S[(j - 1) * j ÷ 2 + j] * dC[l, j, h]
+        temp += S[(j - 1) * j ÷ 2 + m] * dC[l, j, h]
     end
 
     dA[l, m, h] = temp
