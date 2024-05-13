@@ -1,10 +1,18 @@
-# The Existence-And-Uniqueness Theorem
+# [The Existence-And-Uniqueness Theorem](@id eau_th)
 
 In order to proof the existence-and-uniqueness theorem we first need another theorem, the **Banach fixed-point theorem** for which we also need another definition. 
 
-__Definition__: A **contraction mapping** is a map ``T:\mathbb{R}^N\to\mathbb{R}^N`` for which there exists ``q\in[0,1)`` s.t. ``\forall{}x,y\in\mathbb{R}^N,\,||T(x)-T(y)||\leq{}q||x-y||``.
+```@eval
+Main.definition(raw"""
+A **contraction mapping** is a map ``T:\mathbb{R}^N\to\mathbb{R}^N`` for which there exists ``q\in[0,1)`` s.t. ``\forall{}x,y\in\mathbb{R}^N,\,||T(x)-T(y)||\leq{}q||x-y||``.
+""")
+```
 
-__Theorem (Banach fixed-point theorem)__: Every **contraction mapping** ``T`` admits a unique fixed point ``x^*`` (i.e. a point ``x^*`` s.t. ``F(x^*)=x^*``) and this point can be found by taking an arbitrary point ``x_0\in\mathbb{R}^N`` and taking the limit ``\lim_{n\to\infty}T^n(x_0)``.
+```@eval
+Main.theorem(raw"""
+Every **contraction mapping** ``T`` admits a unique fixed point ``x^*`` (i.e. a point ``x^*`` s.t. ``F(x^*)=x^*``) and this point can be found by taking an arbitrary point ``x_0\in\mathbb{R}^N`` and taking the limit ``\lim_{n\to\infty}T^n(x_0)``.
+"""; name = "Banach fixed-point theorem")
+```
 
 __Proof (Banach fixed-point theorem)__: Take an arbitrary point ``x_0\in\mathbb{R}^N`` and consider the sequence ``(x_n)_{n\in\mathbb{N}}`` with ``x_n:=T^n(x_0)``. Then it holds that (for ``m>n``): 
 ```math
