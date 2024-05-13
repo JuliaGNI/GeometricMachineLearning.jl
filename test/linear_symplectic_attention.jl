@@ -11,8 +11,8 @@ function test_application_of_lsa(n::Integer=4, seq_length::Integer=5, T=Float64)
     ps₂ = initialparameters(l₂, CPU(), T)
 
     nt = (q = rand(T, n, seq_length), p = rand(T, n, seq_length))
-    @test l₁(nt, ps₁) ≈ (nt.q + nt.p * ps₁.A, nt.p)
-    @test l₂(nt, ps₂) ≈ (nt.q, nt.p + nt.q * ps₂.A)
+    @test l₁(nt, ps₁).q ≈ nt.q + nt.p * ps₁.A
+    @test l₂(nt, ps₂).p ≈ nt.p + nt.q * ps₂.A
 end
 
 test_application_of_lsa()
