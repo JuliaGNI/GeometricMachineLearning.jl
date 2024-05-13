@@ -29,3 +29,43 @@ function tensor_mat_mul(A::AbstractArray{T, 3}, B::AbstractMatrix{T}) where T
     tensor_mat_mul!(C, A, B)
     C
 end
+
+########################### SymmetricMatrix (right multiplication)
+
+@kernel function symmetric_mat_right_mul_kernel!(C::AbstractArray{T, 3}, B::AbstractArray{T, 3}, S::AbstractVector{T}, n::Int) where T
+    i, j, l = @index(Global, NTuple)
+    tmp_sum = zero(T)
+    
+    for k = j:n
+        tmp_sum += B[i, k] * S[(k - 1)* k ÷ 2 + j]
+    end
+    
+    for k = 1:(j - 1)
+        tmp_sum += B[i, k] * S[(j - 1) * j ÷ 2 + k]
+    end
+
+    C[i, j, l] = tmp_sum
+end
+
+function symmetric_mat_right_mul!(C::AbstractArray{T, 3}, B::AbstractArray{T, 3}, S::AbstractVector{T}, n::Int) where T
+    backend = KernelAbstractions.get_backend(C)
+    
+    symmetric_mat_right_mul_k! = symmetric_mat_right_mul_kernel!(backend)
+    symmetric_mat_right_mul_k!(C, S, B, n, ndrange = size(C))
+
+    nothing
+end
+
+function symmetric_mat_right_mul(B::AbstractArray{T, 3}, S::AbstractVector{T}, n::Int) where T
+    C = copy(B)
+
+    symmetric_mat_right_mul!(C, B, S, n)
+
+    C
+end
+
+function tensor_mat_mul!(C::AbstractArray{T, 3}, B::AbstractArray{T, 3}, A::SymmetricMatrix{T}) where T
+    @assert A.n == size(C, 2) == size(B, 2)
+
+    symmetric_mat_mul!(C, B, A.S, A.n)
+end
