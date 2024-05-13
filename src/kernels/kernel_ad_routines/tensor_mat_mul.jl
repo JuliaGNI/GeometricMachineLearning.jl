@@ -30,7 +30,7 @@ end
     temp = zero(T)
 
     for j = 1:m
-        temp += S[(m + 1) * m ÷ 2 + j] * dC[l, j, h]
+        temp += S[(m - 1) * m ÷ 2 + j] * dC[l, j, h]
     end
     for j = (m+1):size(dA, 2)
         temp += S[(j - 1) * j ÷ 2 + m] * dC[l, j, h]
@@ -48,11 +48,11 @@ end
     for i in axes(dC, 1)
         for k in axes(dC, 2)
             sum_k = (k - 1) * k ÷ 2
-            temp += l ≤ k + sum_k ? B[i, k, h] * dC[i, l - sum_k, h] : zero(T)
+            temp += 1 ≤ l - sum_k ≤ k ? B[i, k, h] * dC[i, l - sum_k, h] : zero(T)
         end
         for j in axes(dC, 2)
             sum_j = (j - 1) * j ÷ 2
-            temp += l < sum_j + j ? B[i, l - sum_j, h] * dC[i, j, h] : zero(T)
+            temp += 1 ≤ l - sum_j < j ? B[i, l - sum_j, h] * dC[i, j, h] : zero(T)
         end
     end
 
@@ -74,7 +74,7 @@ function ChainRulesCore.rrule(::typeof(symmetric_mat_right_mul), A::AbstractArra
         symmetric_right_da!(dA, S, dC, ndrange = size(dA))
         symmetric_right_ds!(dS, A, dC, ndrange = size(dS))
 
-        NoTangent(), reshape(sum(dS, dims = 2), length(S)), dA, NoTangent()
+        NoTangent(), dA, reshape(sum(dS, dims = 2), length(S)), NoTangent()
     end
 
     C, symmetric_mat_mul_pullback 
