@@ -256,7 +256,6 @@ function ChainRulesCore.rrule(::typeof(mat_tensor_mul), B::SymmetricMatrix{T}, A
     return C, symmetric_mul_pullback
 end
 
-
 ############### Thunks
 
 mat_tensor_mul(B::AbstractMatrix, A::Thunk) = Thunk(() -> mat_tensor_mul(B, unthunk(A)))
