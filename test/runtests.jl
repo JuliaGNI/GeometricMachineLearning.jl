@@ -68,7 +68,7 @@ using SafeTestsets
 @safetestset "Test volume-preserving feedforward neural network                               " begin include("layers/volume_preserving_feedforward.jl") end
 
 @safetestset "SympNet integrator                                                              " begin include("sympnet_integrator.jl") end
-@safetestset "Regular transformer integrator                                                  " begin include("regular_transformer_integrator.jl") end
+@safetestset "Regular transformer integrator                                                  " begin include("standard_transformer_integrator.jl") end
 
 @safetestset "Batch functor(s)                                                                " begin include("batch/batch_functor.jl") end
 
