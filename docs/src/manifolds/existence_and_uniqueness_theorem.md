@@ -1,4 +1,4 @@
-# [The Existence-And-Uniqueness Theorem](@id eau_th)
+# The Existence-And-Uniqueness Theorem
 
 In order to proof the existence-and-uniqueness theorem we first need another theorem, the **Banach fixed-point theorem** for which we also need another definition. 
 
