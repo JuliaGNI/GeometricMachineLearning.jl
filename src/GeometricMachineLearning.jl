@@ -162,9 +162,10 @@ module GeometricMachineLearning
     export VolumePreservingAttention
     export VolumePreservingLowerLayer
     export VolumePreservingUpperLayer
+    export NeuralNetworkIntegrator
     export ResNet
     export Transformer
-    export RegularTransformerIntegrator
+    export TransformerIntegrator, StandardTransformerIntegrator
     export Classification
     export VolumePreservingLowerLayer
     export VolumePreservingUpperLayer
@@ -249,7 +250,7 @@ module GeometricMachineLearning
     include("architectures/neural_network_integrator.jl")
     include("architectures/resnet.jl")
     include("architectures/transformer_integrator.jl")
-    include("architectures/regular_transformer_integrator.jl")
+    include("architectures/standard_transformer_integrator.jl")
     include("architectures/sympnet.jl")
     include("architectures/autoencoder.jl")
     include("architectures/symplectic_autoencoder.jl")
@@ -266,9 +267,7 @@ module GeometricMachineLearning
 
     export HamiltonianNeuralNetwork
     export LagrangianNeuralNetwork
-    export SympNet
-    export LASympNet
-    export GSympNet
+    export SympNet, LASympNet, GSympNet
     export RecurrentNeuralNetwork
     export LSTMNeuralNetwork
     export ClassificationTransformer
@@ -405,6 +404,7 @@ module GeometricMachineLearning
     include("layers/linear_symplectic_attention.jl")
     include("architectures/linear_symplectic_transformer.jl")
 
+    export LinearSymplecticAttention, LinearSymplecticAttentionQ, LinearSymplecticAttentionP
     export LinearSymplecticTransformer
 
     include("map_to_cpu.jl")
