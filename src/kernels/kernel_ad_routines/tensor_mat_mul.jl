@@ -61,7 +61,7 @@ end
     nothing 
 end
 
-function ChainRulesCore.rrule(::typeof(symmetric_mat_right_mul), S::AbstractVector{T}, A::AbstractArray{T, 3}, n::Int) where  T 
+function ChainRulesCore.rrule(::typeof(symmetric_mat_right_mul), A::AbstractArray{T, 3}, S::AbstractVector{T}, n::Int) where  T 
     C = symmetric_mat_right_mul(A, S, n)
     function symmetric_mat_mul_pullback(dC::AbstractArray{T, 3}) 
         backend = KernelAbstractions.get_backend(dC)
