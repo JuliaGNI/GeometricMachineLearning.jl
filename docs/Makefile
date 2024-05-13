@@ -15,7 +15,9 @@ latex_no_pdf_no_images: install_brenier_two_fluid latex_docs_no_pdf put_figures_
 
 latex_no_pdf: latex_images latex_no_pdf_no_images 
 
-html: html_images install_brenier_two_fluid test_docs documenter
+html: html_images html_no_images
+
+html_no_images: install_brenier_two_fluid test_docs documenter
 
 test_docs: 
 	cd ..; julia --project=docs  -e ';									\
@@ -56,7 +58,7 @@ latex_docs_no_pdf:
 
 compile_tex: 
 	cd build; \
-	xelatex -shell-escape G*.tex;
+	lualatex -shell-escape G*.tex;
 
 put_figures_outside_of_minted_environment:
 	sed -i'' -e 's/\"\\\\begin{figure}\\n\\\\includegraphics/DeleteThisAndTheLineBefore\n\\begin{figure}[H]\n\\centering\n\\includegraphics/g' build/G*.tex;
@@ -80,5 +82,5 @@ make_correct_thrm_and_dfntn_environment:
 	sed -i'' -e 's/{\\textbackslash}label\\{def:\([a-zA-Z]*\)\\}/\\label{th:\1}/g' build/G*.tex;
 
 do_correct_quotation_marks:
-	sed -i'' -e 's/{\\textquotedbl}/"/g' build/V*.tex;
-	sed -i'' -e 's/ "/ ``/g' build/V*.tex
+	sed -i'' -e 's/{\\textquotedbl}/"/g' build/G*.tex;
+	sed -i'' -e 's/ "/ ``/g' build/G*.tex
