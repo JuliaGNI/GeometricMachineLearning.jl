@@ -20,6 +20,25 @@
 \usepackage{amsmath, amssymb}
 %
 
+% theorem
+\usepackage{theorem}
+\theoremstyle{plain} 
+\newtheorem{thrm}{Theorem}[section] 
+\newtheorem{lmm}[thrm]{Lemma}
+\newtheorem{crllr}[thrm]{Corollary} 
+\newtheorem{prpstn}[thrm]{Proposition} 
+\newtheorem{crtrn}[thrm]{Criterion}
+\newtheorem{lgrthm}[thrm]{Algorithm} %
+\theoremstyle{definition}
+\newtheorem{dfntn}[thrm]{Definition} 
+\newtheorem{cnjctr}[thrm]{Conjecture} 
+\newtheorem{xmpl}[thrm]{Example} 
+\newtheorem{prblm}[thrm]{Problem} 
+\newtheorem{rmrk}[thrm]{Remark} 
+\newtheorem{nt}[thrm]{Note} 
+\newtheorem{clm}[thrm]{Claim} 
+\newtheorem{smmr}[thrm]{Summary} 
+
 % listings
 \usepackage{minted}
 \setminted{
