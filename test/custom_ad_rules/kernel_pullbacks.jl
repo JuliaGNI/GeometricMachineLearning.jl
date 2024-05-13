@@ -1,4 +1,4 @@
-using GeometricMachineLearning: lo_mat_mul, up_mat_mul, skew_mat_mul, symmetric_mat_mul
+using GeometricMachineLearning: lo_mat_mul, up_mat_mul, skew_mat_mul, symmetric_mat_mul, symmetric_mat_right_mul
 using GeometricMachineLearning: tensor_mat_mul, mat_tensor_mul, tensor_tensor_mul, tensor_transpose_tensor_mul, assign_q_and_p, tensor_transpose, assign_output_estimate, vec_tensor_mul, tensor_mat_skew_sym_assign
 using ChainRulesTestUtils
 using Printf
@@ -25,7 +25,8 @@ function main(first_dim, second_dim, third_dim, third_tensor_dim)
     test_rrule(lo_mat_mul, rand(first_dim * (first_dim - 1) ÷ 2), rand(first_dim, first_dim, third_dim), first_dim, check_thunked_output_tangent = false)
     test_rrule(up_mat_mul, rand(first_dim * (first_dim - 1) ÷ 2), rand(first_dim, first_dim, third_dim), first_dim, check_thunked_output_tangent = false)
     test_rrule(skew_mat_mul, rand(first_dim * (first_dim - 1) ÷ 2), rand(first_dim, first_dim, third_dim), first_dim, check_thunked_output_tangent = false)
-    test_rrule(symmetric_mat_mul, rand(first_dim * (first_dim + 1) ÷ 2), rand(first_dim, first_dim, third_dim), first_dim, check_thunked_output_tangent = false)
+    test_rrule(symmetric_mat_mul, rand(first_dim * (first_dim + 1) ÷ 2), rand(first_dim, second_dim, third_dim), first_dim, check_thunked_output_tangent = false)
+    test_rrule(symmetric_mat_right_mul, rand(second_dim, first_dim, third_dim), rand(first_dim * (first_dim + 1) ÷ 2), first_dim, check_thunked_output_tangent = false)
     test_rrule(tensor_mat_skew_sym_assign, rand(first_dim, second_dim, third_tensor_dim), rand(first_dim, first_dim), check_thunked_output_tangent = false)
 end
 
