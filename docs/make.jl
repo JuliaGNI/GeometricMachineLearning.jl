@@ -158,6 +158,7 @@ makedocs(;
             "MNIST" => "tutorials/mnist_tutorial.md",
             "Grassmann manifold" => "tutorials/grassmann_layer.md",
             "Volume-Preserving Attention" => "tutorials/volume_preserving_attention.md",
+            "Linear Symplectic Transformer" => "tutorials/linear_symplectic_transformer.md",
         ],
         "References" => "references.md",
         "Library" => "library.md",
