@@ -1,4 +1,4 @@
-# [SympNet Gradient Layer](@id symp_grad_layer)
+# SympNet Gradient Layer
 
 The Sympnet gradient layer (called [`GradientLayer`](@ref) in `GeometricMachineLearning`) is based on the following theorem: 
 
