@@ -37,11 +37,11 @@ end
     tmp_sum = zero(T)
     
     for k = j:n
-        tmp_sum += B[i, k] * S[(k - 1)* k ÷ 2 + j]
+        tmp_sum += B[i, k, l] * S[(k - 1)* k ÷ 2 + j]
     end
     
     for k = 1:(j - 1)
-        tmp_sum += B[i, k] * S[(j - 1) * j ÷ 2 + k]
+        tmp_sum += B[i, k, l] * S[(j - 1) * j ÷ 2 + k]
     end
 
     C[i, j, l] = tmp_sum
@@ -51,7 +51,7 @@ function symmetric_mat_right_mul!(C::AbstractArray{T, 3}, B::AbstractArray{T, 3}
     backend = KernelAbstractions.get_backend(C)
     
     symmetric_mat_right_mul_k! = symmetric_mat_right_mul_kernel!(backend)
-    symmetric_mat_right_mul_k!(C, S, B, n, ndrange = size(C))
+    symmetric_mat_right_mul_k!(C, B, S, n, ndrange = size(C))
 
     nothing
 end
@@ -67,5 +67,5 @@ end
 function tensor_mat_mul!(C::AbstractArray{T, 3}, B::AbstractArray{T, 3}, A::SymmetricMatrix{T}) where T
     @assert A.n == size(C, 2) == size(B, 2)
 
-    symmetric_mat_mul!(C, B, A.S, A.n)
+    symmetric_mat_right_mul!(C, B, A.S, A.n)
 end
