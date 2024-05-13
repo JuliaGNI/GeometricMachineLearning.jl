@@ -32,14 +32,14 @@ and several keywords argument :
  To call a G-SympNet, one needs to write
 
 ```julia
-gsympnet = GSympNet(dim; upscaling_dimension=2*dim, nhidden=2, activation=tanh, init_upper=true) 
+gsympnet = GSympNet(dim; upscaling_dimension=2*dim, n_layers=2, activation=tanh, init_upper=true) 
 ```
 `GSympNet` takes one obligatory argument:
 - __dim__ : the dimension of the phase space (i.e. an integer) or optionally an instance of `DataLoader`. This latter option will be used below.
 
 and severals keywords argument :
 - __upscaling_dimension__: The first dimension of the matrix with which the input is multiplied. In the [theory section](../architectures/sympnet.md) this matrix is called $K$ and the *upscaling dimension* is called $m$.
-- __nhidden__: the number of gradient layers with default value set to 2.
+- __n_layers__: the number of gradient layers with default value set to 2.
 - __activation__ : the activation function for all the activations layers with default set to tanh.
 - __init_upper__ : a boolean that indicates whether the first gradient layer changes $q$ first. By default this is `true`.
 
@@ -95,7 +95,7 @@ const nhidden = 1
 const activation = tanh
 
 # calling G-SympNet architecture 
-gsympnet = GSympNet(dl, upscaling_dimension=upscaling_dimension, nhidden=nhidden, activation=activation)
+gsympnet = GSympNet(dl, upscaling_dimension=upscaling_dimension, n_layers=4, activation=activation)
 
 # calling LA-SympNet architecture 
 lasympnet = LASympNet(dl, nhidden=nhidden, activation=activation)
