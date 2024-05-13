@@ -1,4 +1,5 @@
 [deps]
+BrenierTwoFluid = "698bc5df-bacc-4e45-9592-41ae9e406d75"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 DocumenterCitations = "daee34ce-89f3-4625-b898-19384cb65244"
 GeometricIntegrators = "dcce2d33-59f6-5b8d-9047-0defad88ae06"
