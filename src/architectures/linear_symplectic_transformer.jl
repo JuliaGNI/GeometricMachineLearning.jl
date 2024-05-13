@@ -28,7 +28,7 @@ struct LinearSymplecticTransformer{AT} <: TransformerIntegrator where AT
     end
 end
 
-function _make_block_for_initialization!(layers::Tuple, arch::LinearSymplecticTransformer{AT}, is_upper_criterion::Function) where AT
+function _make_block_for_initialization(layers::Tuple, arch::LinearSymplecticTransformer{AT}, is_upper_criterion::Function) where AT
     for i in 1:arch.n_sympnet
         layers = (layers..., 
             if is_upper_criterion(i)
@@ -39,7 +39,7 @@ function _make_block_for_initialization!(layers::Tuple, arch::LinearSymplecticTr
         )
     end
 
-    nothing
+    layers
 end
 
 
@@ -49,9 +49,9 @@ function Chain(arch::LinearSymplecticTransformer{AT}) where AT
     layers = ()
     for _ in 1:arch.L
         layers = (layers..., LinearSymplecticAttentionQ(arch.dim, arch.seq_length))
-        _make_block_for_initialization!(layers, arch, is_upper_criterion)
+        layers = _make_block_for_initialization(layers, arch, is_upper_criterion)
         layers = (layers..., LinearSymplecticAttentionP(arch.dim, arch.seq_length))
-        _make_block_for_initialization!(layers, arch, is_upper_criterion)
+        layers = _make_block_for_initialization(layers, arch, is_upper_criterion)
     end
 
     Chain(layers...)
