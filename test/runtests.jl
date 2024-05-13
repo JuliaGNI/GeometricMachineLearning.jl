@@ -24,6 +24,7 @@ using SafeTestsets
 @safetestset "Hamiltonian Neural Network                                                      " begin include("hamiltonian_neural_network_tests.jl") end
 @safetestset "Manifold Neural Network Layers                                                  " begin include("layers/manifold_layers.jl") end
 
+@safetestset "Custom tensor matrix multiplication                                             " begin include("kernels/tensor_mat_mul.jl") end
 @safetestset "Custom inverse for 2x2, 3x3, 4x4, 5x5 matrices                                  " begin include("kernels/tensor_inverse.jl") end
 @safetestset "Custom AD rules for kernels                                                     " begin include("custom_ad_rules/kernel_pullbacks.jl") end
 @safetestset "ResNet                                                                          " begin include("layers/resnet_tests.jl") end
@@ -73,3 +74,5 @@ using SafeTestsets
 
 @safetestset "Volume-Preserving Transformer (skew-symmetric tests)                            " begin include("volume_preserving_attention/test_skew_map.jl") end
 @safetestset "Volume-Preserving Transformer (cayley-transform tests)                          " begin include("volume_preserving_attention/test_cayley_transforms.jl") end
+
+# @safetestset "Linear Symplectic Attention                                                     " begin include("linear_symplectic_attention.jl") end

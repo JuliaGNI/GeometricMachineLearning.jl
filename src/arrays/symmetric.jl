@@ -1,10 +1,6 @@
 @doc raw"""
 A `SymmetricMatrix` ``A`` is a matrix ``A^T = A``.
 
-If the constructor is called with a matrix as input it returns a symmetric matrix via the projection:
-```math
-A \mapsto \frac{1}{2}(A + A^T).
-```
 This is a projection defined via the canonical metric $(A,B) \mapsto \mathrm{tr}(A^TB)$.
 
 Internally the `struct` saves a vector $S$ of size $n(n+1)\div2$. The conversion is done the following way: 
@@ -14,10 +10,18 @@ Internally the `struct` saves a vector $S$ of size $n(n+1)\div2$. The conversion
 ```
 
 So ``S`` stores a string of vectors taken from $A$: $S = [\tilde{a}_1, \tilde{a}_2, \ldots, \tilde{a}_n]$ with $\tilde{a}_i = [[A]_{i1},[A]_{i2},\ldots,[A]_{ii}]$.
+
+### Constructor 
+If the constructor is called with a matrix as input it returns a symmetric matrix via the projection:
+```math
+A \mapsto \frac{1}{2}(A + A^T).
+```
+
+It can also be called with two arguments `S::AbstractVector` and `n::Integer` where `length(S) == n * (n + 1) ÷ 2` has to be true.
 """
 mutable struct SymmetricMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
     S::AT
-    n::Integer
+    n::Int
 
     function SymmetricMatrix(S::AbstractVector, n::Integer)
         @assert length(S) == n*(n+1)÷2
@@ -66,9 +70,10 @@ end
 
 function Base.getindex(A::SymmetricMatrix,i::Int,j::Int)
     if i ≥ j
-        return A.S[((i-1)*i)÷2+j]
+        A.S[((i-1)*i)÷2+j]
+    else
+        A.S[(j-1)*j÷2+i]
     end
-    return A.S[(j-1)*j÷2+i]
 end
 
 Base.parent(A::SymmetricMatrix) = A.S

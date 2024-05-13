@@ -209,8 +209,8 @@ end
     for i in axes(dC, 1)
         sum_i = (i - 1) * i ÷ 2
         if sum_i < l
-            for j in axes(dC, 1)
-                if l < (sum_i + i) 
+            for j in axes(dC, 2)
+                if 1 ≤ (l - sum_i) < i 
                     temp += A[l - sum_i, j, h] * dC[i, j, h]
                     temp += A[i, j, h] * dC[l - sum_i, j, h]
                 end
@@ -255,7 +255,6 @@ function ChainRulesCore.rrule(::typeof(mat_tensor_mul), B::SymmetricMatrix{T}, A
 
     return C, symmetric_mul_pullback
 end
-
 
 ############### Thunks
 
