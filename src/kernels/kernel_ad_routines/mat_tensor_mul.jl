@@ -210,7 +210,7 @@ end
         sum_i = (i - 1) * i ÷ 2
         if sum_i < l
             for j in axes(dC, 1)
-                if l < (sum_i + i) 
+                if 1 ≤ (l - sum_i) < i 
                     temp += A[l - sum_i, j, h] * dC[i, j, h]
                     temp += A[i, j, h] * dC[l - sum_i, j, h]
                 end
