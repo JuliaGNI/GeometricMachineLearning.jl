@@ -223,6 +223,22 @@ function Base.one(A::SymmetricMatrix{T}) where T
     unit_matrix
 end
 
+function assign!(B::SymmetricMatrix{T}, C::SymmetricMatrix{T}) where T 
+    B.S .= C.S 
+
+    nothing
+end
+
+function Base.copy(A::SymmetricMatrix)
+    SymmetricMatrix(copy(A.S), A.n)
+end
+
+function Base.copyto!(A::SymmetricMatrix{T}, B::SymmetricMatrix{T}) where T
+    A.S .= B.S
+
+    nothing
+end
+
 # define routines for generalizing ChainRulesCore to SymmetricMatrix 
 ChainRulesCore.ProjectTo(A::SymmetricMatrix) = ProjectTo{SymmetricMatrix}(; symmetric=ProjectTo(A.S))
 (project::ProjectTo{SymmetricMatrix})(dA::AbstractMatrix) = SymmetricMatrix(project.symmetric(map_to_S(dA)), size(dA, 2))
