@@ -24,7 +24,7 @@ function map_to_cpu(A::SymmetricMatrix{T}) where T
     SymmetricMatrix(Array{T}(A.S), A.n)
 end
 
-function map_to_cpu(nn::NeuralNetwork{AT, MT}) where {AT, MT}
+function map_to_cpu(nn::NeuralNetwork{AT, MT, <:Any, BT}) where {AT, MT, BT}
     ps = map_to_cpu(nn.params)
-    NeuralNetwork{AT, MT, typeof(ps)}(nn.architecture, nn.model, ps)
+    NeuralNetwork{AT, MT, typeof(ps), BT}(nn.architecture, nn.model, ps, nn.backend)
 end
