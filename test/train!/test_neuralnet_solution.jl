@@ -20,7 +20,7 @@ training_parameters = TrainingParameters(nruns, method, mopt; batch_size = batch
 
 neural_net_solution = train!(neuralnet, training_data, training_parameters)
 
-@test nn(neural_net_solution)            == neuralnet
+@test GeometricMachineLearning.nn(neural_net_solution)            == neuralnet
 @test problem(neural_net_solution)       == UnknownProblem()
 @test tstep(neural_net_solution)         == 0.1
 @test length(loss(neural_net_solution))  == nruns
@@ -41,7 +41,7 @@ training_parameters2 = TrainingParameters(2*nruns, BasicSympNet(), AdamOptimizer
 training_data2 = training_data
 train!(neural_net_solution, training_data2, training_parameters2)
 
-@test nn(neural_net_solution)            == neuralnet
+@test GeometricMachineLearning.nn(neural_net_solution)            == neuralnet
 @test problem(neural_net_solution)       == UnknownProblem()
 @test tstep(neural_net_solution)         == 0.1
 @test length(loss(neural_net_solution))  == 2*nruns
@@ -61,7 +61,7 @@ training_parameters3 = TrainingParameters(nruns, BasicSympNet(), MomentumOptimiz
 training_data3 = training_data
 train!(neural_net_solution, training_data3, training_parameters3)
 
-@test nn(neural_net_solution)            == neuralnet
+@test GeometricMachineLearning.nn(neural_net_solution)            == neuralnet
 @test problem(neural_net_solution)       == UnknownProblem()
 @test tstep(neural_net_solution)         == 0.1
 @test length(loss(neural_net_solution))  == nruns
@@ -94,7 +94,7 @@ last_sg3  = last(neural_net_solution)
 
 training_set1 = TrainingSet(neuralnet, training_parameters, training_data)
 
-neuralnet2 = NeuralNetwork(GSympNet(2; nhidden = 4), Float64)
+neuralnet2 = NeuralNetwork(GSympNet(2; n_layers = 4), Float64)
 training_set2 = TrainingSet(neuralnet2, training_parameters, training_data)
 
 ensemble_training = EnsembleTraining(training_set1, training_set2)

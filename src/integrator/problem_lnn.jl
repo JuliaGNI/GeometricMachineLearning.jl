@@ -1,6 +1,6 @@
 # This file contains the functions to create the corresponding problem to lnn which is LODEProblem
 
-function LNNProblem(nn::NeuralNetwork{<:LagrangianNeuralNetwork}, g, tspan::Tuple, tstep::Real, ics::NamedTuple; kwargs...)
+function LNNProblem(nn::NeuralNetwork{<:LagrangianNeuralNetwork}, tspan::Tuple, tstep::Real, ics...; kwargs...)
     
     Lₛₚₗᵢₜ(q,v) = sum(nn([q...,v...]))
 
@@ -11,31 +11,19 @@ function LNNProblem(nn::NeuralNetwork{<:LagrangianNeuralNetwork}, g, tspan::Tupl
     end
     
     function f(f, t, q, v, params)
-        p .=  ∇Lₛₚₗᵢₜ(q,v)[1]
+        f .=  ∇Lₛₚₗᵢₜ(q,v)[1]
     end
     
-    function ω(f, t, q, v, params)
+    function ω(ω, t, q, v, params)
         n_dim = length(q)
         I = Diagonal(ones(n_dim))
         Z = zeros(n_dim,n_dim)
-        ω = [Z I;-I Z]
+        ω .= [Z I;-I Z]
     end
     
     function lagrangian(t, q, v, params)
         Lₛₚₗᵢₜ(q,v)
     end
-    LODEProblem(p, f, g, ω, lagrangian, tspan, tstep, ics; kwargs...)
-end
 
-function LNNProblem(nn::NeuralNetwork{<:LagrangianNeuralNetwork}, tspan::Tuple, tstep::Real, ics::NamedTuple; kwargs...)
-    LNNProblem(nn, GeometricEquations._lode_default_g, tspan, tstep, ics; kwargs...)
-end
-
-function LNNProblem(nn::NeuralNetwork{<:LagrangianNeuralNetwork}, g, tspan::Tuple, tstep::Real, q₀::StateVariable, p₀::StateVariable, λ₀::StateVariable = zero(q₀); kwargs...)
-    ics = (q = q₀, p = p₀, λ = λ₀)
-    LNNProblem(nn, g, tspan, tstep, ics; kwargs...)
-end
-
-function LNNProblem(nn::NeuralNetwork{<:LagrangianNeuralNetwork}, tspan::Tuple, tstep::Real, q₀::StateVariable, p₀::StateVariable, λ₀::StateVariable = zero(q₀); kwargs...)
-    LNNProblem(nn, GeometricEquations._lode_default_g, tspan, tstep, q₀, p₀, λ₀; kwargs...)
+    LODEProblem(p, f, ω, lagrangian, tspan, tstep, ics...; kwargs...)
 end

@@ -1,6 +1,3 @@
-
-import Lux
-
 struct LuxBackend <: AbstractBackend end
 
 struct LuxNeuralNetwork{AT,MT,PT,ST} <: AbstractNeuralNetwork{AT}
@@ -51,11 +48,11 @@ apply(nn::LuxNeuralNetwork, x) = apply(nn, x, nn.params)
 (nn::LuxNeuralNetwork)(x, args...) = apply(nn, x, args...)
 
 
-function update!(::Lux.AbstractExplicitLayer, x::NamedTuple, dx::NamedTuple, η::AbstractFloat)
-    for obj in keys(x)
-        x[obj] .+= η * dx[obj]
-    end
-end
+# function update!(::Lux.AbstractExplicitLayer, x::NamedTuple, dx::NamedTuple, η::AbstractFloat)
+#     for obj in keys(x)
+#         x[obj] .+= η * dx[obj]
+#     end
+# end
 
 
 @inline AbstractNeuralNetworks.dim(nn::NeuralNetwork) = dim(nn.architecture)
@@ -71,21 +68,21 @@ end
 # computing two derivatives with Zygote as is required for
 # Hamiltonian Neural Networks
 
-@generated function Lux.applychain(layers::NamedTuple{fields}, x, ps::Tuple, st::NamedTuple{fields}) where {fields}
-    N = length(fields)
-    x_symbols = vcat([:x], [gensym() for _ in 1:N])
-    calls = [:(($(x_symbols[i + 1])) = Lux.apply(layers.$(fields[i]),
-                                                $(x_symbols[i]),
-                                                ps[$i],
-                                                st.$(fields[i]))) for i in 1:N]
-    push!(calls, :(return $(x_symbols[N + 1])))
-    return Expr(:block, calls...)
-end
-
-@inline function Lux.apply(d::Lux.Dense{false}, x::AbstractVecOrMat, ps::Tuple, st::NamedTuple)
-    return d.activation.(ps[1] * x)
-end
-
-@inline function Lux.apply(d::Lux.Dense{true}, x::AbstractVector, ps::Tuple, st::NamedTuple)
-    return d.activation.(ps[1] * x .+ vec(ps[2]))
-end
+# @generated function Lux.applychain(layers::NamedTuple{fields}, x, ps::Tuple, st::NamedTuple{fields}) where {fields}
+#     N = length(fields)
+#     x_symbols = vcat([:x], [gensym() for _ in 1:N])
+#     calls = [:(($(x_symbols[i + 1])) = Lux.apply(layers.$(fields[i]),
+#                                                 $(x_symbols[i]),
+#                                                 ps[$i],
+#                                                 st.$(fields[i]))) for i in 1:N]
+#     push!(calls, :(return $(x_symbols[N + 1])))
+#     return Expr(:block, calls...)
+# end
+# 
+# @inline function Lux.apply(d::Lux.Dense{false}, x::AbstractVecOrMat, ps::Tuple, st::NamedTuple)
+#     return d.activation.(ps[1] * x)
+# end
+# 
+# @inline function Lux.apply(d::Lux.Dense{true}, x::AbstractVector, ps::Tuple, st::NamedTuple)
+#     return d.activation.(ps[1] * x .+ vec(ps[2]))
+# end

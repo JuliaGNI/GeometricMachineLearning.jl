@@ -29,9 +29,7 @@ function GeometricIntegrators.Integrators.integrate_step!(int::GeometricIntegrat
         _q, _p = (_qp[1:length(_q)], _qp[(1+length(_q)):end])
     end
 
-    GeometricIntegrators.Integrators.solstep(int).q = _q
-    GeometricIntegrators.Integrators.solstep(int).p = _p
+    GeometricIntegrators.Integrators.solstep(int).q = StateVariable(_q)
+    GeometricIntegrators.Integrators.solstep(int).p = StateVariable(_p)
 
 end
-
-

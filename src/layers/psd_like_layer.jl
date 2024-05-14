@@ -22,17 +22,23 @@ function PSDLayer(M::Integer, N::Integer; retraction=default_retr)
 end
 
 function parameterlength(::PSDLayer{M, N}) where {M, N}
-    M÷2*(N÷2 - (M÷2+1)÷2)
+    M2 = M ÷ 2 
+    N2 = M ÷ 2
+    M2 * (N2 - (M2 + 1) ÷ 2)
 end 
 
-function initialparameters(backend::KernelAbstractions.Backend, T::Type, ::PSDLayer{M, N}, rng::AbstractRNG=Random.default_rng()) where {M, N}
-    (weight =  N > M ? rand(backend, rng, StiefelManifold{T}, N÷2, M÷2) : rand(backend, rng, StiefelManifold{T}, M÷2, N÷2), )
+function initialparameters(::PSDLayer{M, N}, backend::KernelAbstractions.Backend, T::Type; rng::AbstractRNG=Random.default_rng()) where {M, N}
+    (weight =  N > M ? rand(backend, rng, StiefelManifold{T}, N ÷ 2, M ÷ 2) : rand(backend, rng, StiefelManifold{T}, M ÷ 2, N ÷ 2), )
 end
 
-function (::PSDLayer{M, N})(x::AbstractArray, ps::NamedTuple) where {M, N}
+function (::PSDLayer{M, N})(qp::NamedTuple{(:q, :p), Tuple{AT1, AT2}}, ps::NamedTuple) where {M, N, AT1 <: AbstractArray, AT2 <: AbstractArray}
+    N > M ? (q = custom_mat_mul(ps.weight, qp.q), p = custom_mat_mul(ps.weight, qp.p)) : (q = custom_mat_mul(ps.weight', qp.q), p = custom_mat_mul(ps.weight', qp.p))
+end
+
+function (l::PSDLayer{M, N})(x::AbstractArray, ps::NamedTuple) where {M, N}
     dim = size(x, 1)
-    @assert dim == M 
+    @assert M == dim  
 
     qp = assign_q_and_p(x, dim÷2)
-    N > M ? vcat(custom_mat_mul(ps.weight, qp.q), custom_mat_mul(ps.weight, qp.p)) : vcat(custom_mat_mul(ps.weight', qp.q), custom_mat_mul(ps.weight', qp.p))
+    _vcat(l(qp, ps))
 end

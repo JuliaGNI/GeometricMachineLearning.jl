@@ -7,11 +7,7 @@ Starting from an element of the tangent space $T_Y\mathcal{M}$[^1], we need to p
 [^1]: In practice this is obtained by first using an AD routine on a loss function $L$, and then computing the Riemannian gradient based on this. See the section of the [Stiefel manifold](manifolds/stiefel_manifold.md) for an example of this.
 
 ```@example
-HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "tikz/general_optimization_with_boundary.png"))></object>""") # hide
-```
-
-```@example
-HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "tikz/general_optimization_with_boundary_dark.png"))></object>""") # hide
+Main.include_graphics("tikz/general_optimization_with_boundary") # hide
 ```
 
 Here the mapping $\Omega$ is a [horizontal lift](optimizers/manifold_related/horizontal_lift.md) from the tangent space onto the **horizontal component of the Lie algebra at $Y$**. 

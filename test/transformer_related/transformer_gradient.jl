@@ -1,4 +1,5 @@
 using Test, KernelAbstractions, GeometricMachineLearning, Zygote, LinearAlgebra
+using GeometricMachineLearning: ResNetLayer
 import Random 
 
 Random.seed!(1234)
@@ -7,11 +8,11 @@ Random.seed!(1234)
 This checks if the gradients of the transformer change the type in case of the Stiefel manifold, and checks if they stay the same in the case of regular weights.
 """
 function transformer_gradient_test(T, dim, n_heads, L, seq_length=8, batch_size=10)
-    model₁ = Chain(Transformer(dim, n_heads, L, Stiefel=false), ResNet(dim))
-    model₂ = Chain(Transformer(dim, n_heads, L, Stiefel=true), ResNet(dim))
+    model₁ = Chain(Transformer(dim, n_heads, L, Stiefel=false), ResNetLayer(dim))
+    model₂ = Chain(Transformer(dim, n_heads, L, Stiefel=true), ResNetLayer(dim))
 
-    ps₁ = initialparameters(KernelAbstractions.CPU(), T, model₁)
-    ps₂ = initialparameters(KernelAbstractions.CPU(), T, model₂)
+    ps₁ = initialparameters(model₁, KernelAbstractions.CPU(), T)
+    ps₂ = initialparameters(model₂, KernelAbstractions.CPU(), T)
     
     input₁ = rand(T, dim, seq_length, batch_size)
     input₂ = rand(T, dim, seq_length, batch_size)

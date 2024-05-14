@@ -152,6 +152,34 @@
   year={2017}
 }
 
+@article{patwardhan2023transformers,
+  title={Transformers in the real world: A survey on nlp applications},
+  author={Patwardhan, Narendra and Marrone, Stefano and Sansone, Carlo},
+  journal={Information},
+  volume={14},
+  number={4},
+  pages={242},
+  year={2023},
+  publisher={MDPI}
+}
+
+@article{hemmasian2023reduced,
+  title={Reduced-order modeling of fluid flows with transformers},
+  author={Hemmasian, AmirPouya and Barati Farimani, Amir},
+  journal={Physics of Fluids},
+  volume={35},
+  number={5},
+  year={2023},
+  publisher={AIP Publishing}
+}
+
+@article{solera2023beta,
+  title={$\beta$-Variational autoencoders and transformers for reduced-order modelling of fluid flows},
+  author={Solera-Rico, Alberto and Vila, Carlos Sanmiguel and G{\'o}mez, MA and Wang, Yuning and Almashjary, Abdulrahman and Dawson, Scott and Vinuesa, Ricardo},
+  journal={arXiv preprint arXiv:2304.03571},
+  year={2023}
+}
+
 @article{brantner2023symplectic,
   title={Symplectic autoencoders for Model Reduction of Hamiltonian Systems},
   author={Brantner, Benedikt and Kraus, Michael},
@@ -164,6 +192,13 @@
     title = {Structure-Preserving Transformers for Learning Parametrized Hamiltonian Systems},
     journal = {arXiv preprint arXiv:2312:11166},
     year = {2023}
+}
+
+@article{brantner2024volume,
+    author = {Brantner, Benedikt and de Romemont, Guillaume and Kraus, Michael and Li, Zeyuan},
+    title = {Volume-Preserving Transformers for Learning Time Series Data with Structure},
+    journal = {arXiv preprint arXiv:2312:11166v2},
+    year = {2024}
 }
 
 @article{lin2008riemannian,
@@ -202,7 +237,7 @@
 
 @article{absil2004riemannian,
   title={Riemannian geometry of Grassmann manifolds with a view on algorithmic computation},
-  author={Absil, P-A and Mahony, Robert and Sepulchre, Rodolphe},
+  author={Absil, Pierre-Antoine and Mahony, Robert and Sepulchre, Rodolphe},
   journal={Acta Applicandae Mathematica},
   volume={80},
   pages={199--220},
@@ -210,9 +245,104 @@
   publisher={Springer}
 }
 
+@book{absil2008optimization,
+  title={Optimization algorithms on matrix manifolds},
+  author={Absil, Pierre-Antoine, Mahony, Robert and Sepulchre, Rodolphe},
+  publisher={Princeton University Press},
+  address={Princeton, New Jersey},
+  year={2008}
+}
+
 @article{bendokat2020grassmann,
   title={A Grassmann manifold handbook: Basic geometry and computational aspects},
-  author={Bendokat, Thomas and Zimmermann, Ralf and Absil, P-A},
+  author={Bendokat, Thomas and Zimmermann, Ralf and Absil, Pierre-Antoine},
   journal={arXiv preprint arXiv:2011.13699},
   year={2020}
+}
+
+@inproceedings{moses2021reverse,
+author = {Moses, William S. and Churavy, Valentin and Paehler, Ludger and H\"{u}ckelheim, Jan and Narayanan, Sri Hari Krishna and Schanen, Michel and Doerfert, Johannes},
+title = {Reverse-Mode Automatic Differentiation and Optimization of GPU Kernels via Enzyme},
+year = {2021},
+isbn = {9781450384421},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3458817.3476165},
+doi = {10.1145/3458817.3476165},
+booktitle = {Proceedings of the International Conference for High Performance Computing, Networking, Storage and Analysis},
+articleno = {61},
+numpages = {16},
+keywords = {CUDA, LLVM, ROCm, HPC, AD, GPU, automatic differentiation},
+location = {St. Louis, Missouri},
+series = {SC '21}
+}
+
+@article{betancourt2018geometric,
+  title={A geometric theory of higher-order automatic differentiation},
+  author={Betancourt, Michael},
+  journal={arXiv preprint arXiv:1812.11592},
+  year={2018}
+}
+
+@article{bolte2020mathematical,
+  title={A mathematical model for automatic differentiation in machine learning},
+  author={Bolte, J{\'e}r{\^o}me and Pauwels, Edouard},
+  journal={Advances in Neural Information Processing Systems},
+  volume={33},
+  pages={10809--10819},
+  year={2020}
+}
+
+@book{jacobs1992discrete,
+  title={Discrete Stochastics}, 
+  author={Jacobs, Konrad},
+  publisher={Birkh{\"a}user Verlag},
+  address={Basel, Switzerland},
+  year={1992}
+}
+
+@article{feng1998step,
+  title={The step-transition operators for multi-step methods of ODE's},
+  author={Feng, Kang},
+  journal={Journal of Computational Mathematics},
+  pages={193--202},
+  year={1998},
+  publisher={JSTOR}
+}
+
+@inproceedings{feng1987symplectic,
+  title={The symplectic methods for the computation of Hamiltonian equations},
+  author={Feng, Kang and Qin, Meng-zhao},
+  booktitle={Numerical Methods for Partial Differential Equations: Proceedings of a Conference held in Shanghai, PR China, March 25--29, 1987},
+  pages={1--37},
+  year={1987},
+  organization={Springer}
+}
+
+@article{ge1988approximation,
+  title={On the approximation of linear Hamiltonian systems},
+  author={Ge, Zhong and Feng, Kang},
+  journal={Journal of Computational Mathematics},
+  pages={88--97},
+  year={1988},
+  publisher={JSTOR}
+}
+
+@misc{Kraus:2020:GeometricIntegrators,
+  title={GeometricIntegrators.jl: Geometric Numerical Integration in Julia},
+  author={Kraus, Michael},
+  year={2020},
+  howpublished={\url{https://github.com/JuliaGNI/GeometricIntegrators.jl}},
+  doi={10.5281/zenodo.3648325}
+}
+
+@article{hochreiter1997long,
+  title={Long short-term memory},
+  author={Hochreiter, Sepp and Schmidhuber, J{\"u}rgen},
+  journal={Neural computation},
+  volume={9},
+  number={8},
+  pages={1735--1780},
+  year={1997},
+  publisher={MIT press}
 }

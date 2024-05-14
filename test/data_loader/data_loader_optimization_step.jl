@@ -12,8 +12,9 @@ function test_data_loader(sys_dim, n_time_steps, n_params, T=Float32)
 
     # first argument is sys_dim, second is number of heads, third is number of units
     model = Transformer(dl.input_dim, 2, 1)
-    ps = initialparameters(CPU(), T, model)
-    dx = Zygote.gradient(ps -> GeometricMachineLearning.loss(model, ps, dl), ps)[1]
+    ps = initialparameters(model, CPU(), T)
+    loss = GeometricMachineLearning.TransformerLoss(n_time_steps)
+    dx = Zygote.gradient(ps -> loss(model, ps, dl.input, dl.input), ps)[1]
     ps_copy = deepcopy(ps)
     o = Optimizer(GradientOptimizer(), ps)
     optimization_step!(o, model, ps, dx)

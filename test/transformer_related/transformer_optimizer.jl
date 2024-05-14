@@ -1,4 +1,5 @@
 using Test, KernelAbstractions, GeometricMachineLearning, Zygote, LinearAlgebra
+using GeometricMachineLearning: ResNetLayer
 import Random 
 
 Random.seed!(1234)
@@ -7,10 +8,10 @@ Random.seed!(1234)
 This function tests if the `GradientOptimzier`, `MomentumOptimizer`, `AdamOptimizer` and `BFGSOptimizer` act on the neural network weights via `optimization_step!`.
 """
 function transformer_gradient_test(T, dim, n_heads, L, seq_length=8, batch_size=10)
-    model = Chain(Transformer(dim, n_heads, L, Stiefel=true), ResNet(dim))
+    model = Chain(Transformer(dim, n_heads, L, Stiefel=true), ResNetLayer(dim))
     model = Transformer(dim, n_heads, L, Stiefel=true)
 
-    ps = initialparameters(KernelAbstractions.CPU(), T, model)
+    ps = initialparameters(model, KernelAbstractions.CPU(), T)
     
     input = rand(T, dim, seq_length, batch_size)
     

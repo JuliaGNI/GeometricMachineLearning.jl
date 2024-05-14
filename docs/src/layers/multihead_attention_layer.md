@@ -19,12 +19,8 @@ where $n$ is the dimension of the vectors in $V$, $Q$ and $K$. The softmax activ
 
 The transformer contains a **self-attention mechanism**, i.e. takes an input $X$ and then transforms it linearly to $V$, $Q$ and $K$, i.e. $V = P^VX$, $Q = P^QX$ and $K = P^KX$. What distinguishes the multihead attention layer from the singlehead attention layer, is that there is not just one $P^V$, $P^Q$ and $P^K$, but there are several: one for each **head** of the multihead attention layer. After computing the individual values, queries and vectors, and after applying the softmax, the outputs are then concatenated together in order to obtain again an array that is of the same size as the input array:
 
-```@example
-HTML("""<object type="image/svg+xml" class="display-light-only" data=$(joinpath(Main.buildpath, "../tikz/mha.png"))></object>""") # hide
-```
-
-```@example
-HTML("""<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(Main.buildpath, "../tikz/mha_dark.png"))></object>""") # hide
+```@example 
+Main.include_graphics("../tikz/mha") # hide
 ```
 
 Here the various $P$ matrices can be interpreted as being projections onto lower-dimensional subspaces, hence the designation by the letter $P$. Because of this interpretation as projection matrices onto smaller spaces that should **capture features in the input data** it makes sense to constrain these elements to be part of the Stiefel manifold.   
@@ -55,6 +51,11 @@ With this we can now give a better interpretation of what the projection matrice
 
 Because the main task of the $W_i^V$, $W_i^K$ and $W_i^Q$ matrices here is for them to find bases, it makes sense to constrain them onto the Stiefel manifold; they do not and should not have the maximum possible generality.
 
+## Library Functions 
+
+```@docs; canonical=false
+MultiHeadAttention
+```
 
 ## References 
 
