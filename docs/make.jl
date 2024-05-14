@@ -135,9 +135,10 @@ makedocs(;
             "Linear Symplectic Attention" => "layers/linear_symplectic_attention.md",
         ],
         "Architectures" => [
+            "Symplectic Autoencoders" => "architectures/symplectic_autoencoder.md",
             "Neural Network Integrators" => "architectures/neural_network_integrators.md",
             "SympNet" => "architectures/sympnet.md",
-            "Symplectic Autoencoders" => "architectures/symplectic_autoencoder.md",
+            "Volume-Preserving FeedForward" => "architectures/volume_preserving_feedforward.md",
             "Standard Transformer" => "architectures/transformer.md",
             "Volume-Preserving Transformer" => "architectures/volume_preserving_transformer.md",
             "Linear Symplectic Transformer" => "architectures/linear_symplectic_transformer.md",
