@@ -37,7 +37,7 @@ There are essentially two ways to construct multi-step methods with neural netwo
 
 [^2]: `GeometricMachineLearning` also has an LSTM implementation, but this may be deprecated in the future. 
 
-Explicit multi-step methods derived from he transformer are always subtypes of the type [`TransformerIntegrator`](@ref) in `GeometricMachineLearning`. In `GeometricMachineLearning` the [standard transformer](@ref tran), the [volume-preserving transformer](@ref vol_pre_tran) and the [linear symplectic transformer](@ref lin_symp_tran) are implemented. 
+Explicit multi-step methods derived from he transformer are always subtypes of the type [`TransformerIntegrator`](@ref) in `GeometricMachineLearning`. In `GeometricMachineLearning` the [standard transformer](@ref "Standard Transformer"), the [volume-preserving transformer](@ref "Volume-Preserving Transformer") and the [linear symplectic transformer](@ref "Linear Symplectic Transformer") are implemented. 
 
 ## Library Functions 
 
