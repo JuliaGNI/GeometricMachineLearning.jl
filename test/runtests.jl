@@ -76,3 +76,4 @@ using SafeTestsets
 @safetestset "Volume-Preserving Transformer (cayley-transform tests)                          " begin include("volume_preserving_attention/test_cayley_transforms.jl") end
 
 @safetestset "Linear Symplectic Attention                                                     " begin include("linear_symplectic_attention.jl") end
+@safetestset "Linear Symplectic Transformer                                                   " begin include("linear_symplectic_transformer.jl") end
