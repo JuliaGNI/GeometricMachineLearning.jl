@@ -1,6 +1,6 @@
 # Neural Network Integrators 
 
-In `GeometricMachineLearning` we can divide most neural network architectures (that are used for applications to physical systems) into two categories: autoencoders and integrators. *Integrator* in its most general form refers to an approximation of the flow of an ODE (see [the section on the existence and uniqueness theorem](@ref eau_th)) by a numerical scheme. Traditionally these numerical schemes were constructed by defining certain relationships between a known time step ``z^{(t)}`` and a future unknown one ``z^{(t+1)}`` [hairer2006geometric, leimkuhler2004simulating](@cite): 
+In `GeometricMachineLearning` we can divide most neural network architectures (that are used for applications to physical systems) into two categories: autoencoders and integrators. *Integrator* in its most general form refers to an approximation of the flow of an ODE (see [the section on the existence and uniqueness theorem](@ref "The Existence-And-Uniqueness Theorem")) by a numerical scheme. Traditionally these numerical schemes were constructed by defining certain relationships between a known time step ``z^{(t)}`` and a future unknown one ``z^{(t+1)}`` [hairer2006geometric, leimkuhler2004simulating](@cite): 
 
 ```math
     f(z^{(t)}, z^{(t+1)}) = 0.

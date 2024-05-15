@@ -1,6 +1,6 @@
-# Multihead Attention Layer
+# Multihead Attention
 
-In order to arrive from the [attention layer](attention_layer.md) at the **multihead attention layer** we have to do a few modifications: 
+In order to arrive from the [attention layer](@ref "The Attention Layer") at the **multihead attention layer** we have to do a few modifications: 
 
 Note that these neural networks were originally developed for natural language processing (NLP) tasks and the terminology used here bears some resemblance to that field. 
 The input to a multihead attention layer typicaly comprises three components:

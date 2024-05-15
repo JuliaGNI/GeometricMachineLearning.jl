@@ -1,4 +1,4 @@
-# [Linear Symplectic Transformer](@id lin_symp_tran)
+# Linear Symplectic Transformer
 
 The linear symplectic transformer consists of a combination of [linear symplectic attention](@ref "Linear Symplectic Attention") and [gradient](@ref "SympNet Gradient Layer") layers and is visualized below: 
 

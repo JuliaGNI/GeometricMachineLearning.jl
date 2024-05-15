@@ -43,7 +43,7 @@ After the right multiplication the outputs is of the following form:
 ```
 for ``p^{(i)} = [\sigma(C)]_{\bullet{}i}``. What is *learned* during training are ``T`` different linear combinations of the input vectors, where the coefficients ``p^{(i)}_j`` in these linear combinations depend on the input ``Z`` nonlinearly. 
 
-## `VolumePreservingAttention` in `GeometricMachineLearning`
+## Volume-Preserving Attention
 
 The attention layer (and the activation function ``\sigma`` defined for it) in `GeometricMachineLearning` was specifically designed to apply it to data coming from physical systems that can be described through a divergence-free or a symplectic vector field. 
 Traditionally the nonlinearity in the attention mechanism is a softmax[^3] (see [vaswani2017attention](@cite)) and the self-attention layer performs the following mapping: 
