@@ -160,15 +160,15 @@ module GeometricMachineLearning
     export PSDLayer
     export MultiHeadAttention
     export VolumePreservingAttention
+    export VolumePreservingFeedForwardLayer
     export VolumePreservingLowerLayer
     export VolumePreservingUpperLayer
+    export VolumePreservingTransformer
     export NeuralNetworkIntegrator
     export ResNet
     export Transformer
     export TransformerIntegrator, StandardTransformerIntegrator
     export Classification
-    export VolumePreservingLowerLayer
-    export VolumePreservingUpperLayer
 
     # INCLUDE OPTIMIZERS
     export OptimizerMethod, AbstractCache
