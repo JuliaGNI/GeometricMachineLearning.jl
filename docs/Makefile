@@ -72,6 +72,8 @@ put_figures_outside_of_minted_environment:
 	sed -i'' -e '/DeleteThisAndTheLineAfter/{N;s/\n.*//;}' build/G*.tex;
 	sed -i'' -e '/DeleteThisAndTheLineBefore/d' build/G*.tex;
 	sed -i'' -e '/DeleteThisAndTheLineAfter/d' build/G*.tex;
+	sed -i'' -e 's/\\\\texttt/\\texttt/g' build/G*.tex;
+	sed -i'' -e 's/\\\\_/\\_/g' build/G*.tex;
 
 make_correct_thrm_and_dfntn_environment:
 	sed -i'' -e 's/{\\textbackslash}begin\\{thrm\\}/\\begin{thrm}/g' build/G*.tex;
