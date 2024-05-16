@@ -102,8 +102,7 @@ makedocs(;
         "Home" => "index.md",
         "Manifolds" => [
             "Concepts from General Topology" => "manifolds/basic_topology.md",
-            "The Inverse Function Theorem" => "manifolds/inverse_function_theorem.md",
-            "The Submersion Theorem" => "manifolds/submersion_theorem.md",
+            "Foundations of Differential Manifolds" => "manifolds/inverse_function_theorem.md",
             "General Theory on Manifolds" => "manifolds/manifolds.md",
             "Homogeneous Spaces" => "manifolds/homogeneous_spaces.md",
             "Stiefel" => "manifolds/stiefel_manifold.md",
