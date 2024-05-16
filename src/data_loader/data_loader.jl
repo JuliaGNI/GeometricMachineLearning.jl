@@ -109,25 +109,6 @@ end
 
 DataLoader(data::NamedTuple{(:q, :p), Tuple{VT, VT}}) where {VT <: AbstractVector} = DataLoader((q = reshape(data.q, 1, length(data.q)), p = reshape(data.p, 1, length(data.p))))
 
-"""
-Constructor for `EnsembleSolution` form package `GeometricSolutions` with fields `q` and `p`.
-"""
-function DataLoader(ensemble_solution::EnsembleSolution{T, T1, Vector{ST}}) where {T, T1, DT <: DataSeries{T}, ST <: GeometricSolution{T, T1, NamedTuple{(:q, :p), Tuple{DT, DT}}}}
-
-    sys_dim, input_time_steps, n_params = length(ensemble_solution.s[1].q[0]), length(ensemble_solution.t), length(ensemble_solution.s)
-
-    data = (q = zeros(T, sys_dim, input_time_steps, n_params), p = zeros(T, sys_dim, input_time_steps, n_params))
-
-    for (solution, i) in zip(ensemble_solution.s, axes(ensemble_solution.s, 1))
-        for dim in 1:sys_dim 
-            data.q[dim, :, i] = solution.q[:, dim]
-            data.p[dim, :, i] = solution.p[:, dim]
-        end 
-    end
-
-    DataLoader(data)
-end
-
 function data_matrices_from_geometric_solution(solution::GeometricSolution{T, <:Number, NT}) where {T <: Number, DT <: DataSeries{T}, NT<:NamedTuple{(:q, :p), Tuple{DT, DT}}}
     sys_dim, input_time_steps = length(solution.s.q[0]), length(solution.t)
     data = (q = zeros(T, sys_dim, input_time_steps), p = zeros(T, sys_dim, input_time_steps))
@@ -158,6 +139,25 @@ function DataLoader(ensemble_solution::EnsembleSolution{T, T1, Vector{ST}}) wher
     for (solution, i) in zip(ensemble_solution.s, axes(ensemble_solution.s, 1))
         for dim in 1:sys_dim 
             data[dim, :, i] = solution.q[:, dim]
+        end 
+    end
+
+    DataLoader(data)
+end
+
+"""
+Constructor for `EnsembleSolution` form package `GeometricSolutions` with fields `q` and `p`.
+"""
+function DataLoader(ensemble_solution::EnsembleSolution{T, T1, Vector{ST}}) where {T, T1, DT <: DataSeries{T}, ST <: GeometricSolution{T, T1, NamedTuple{(:q, :p), Tuple{DT, DT}}}}
+
+    sys_dim, input_time_steps, n_params = length(ensemble_solution.s[1].q[0]), length(ensemble_solution.t), length(ensemble_solution.s)
+
+    data = (q = zeros(T, sys_dim, input_time_steps, n_params), p = zeros(T, sys_dim, input_time_steps, n_params))
+
+    for (solution, i) in zip(ensemble_solution.s, axes(ensemble_solution.s, 1))
+        for dim in 1:sys_dim 
+            data.q[dim, :, i] = solution.q[:, dim]
+            data.p[dim, :, i] = solution.p[:, dim]
         end 
     end
 

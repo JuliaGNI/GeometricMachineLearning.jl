@@ -5,7 +5,7 @@ import Random
 Random.seed!(123)
 
 const sys_dim = 5
-const model = RegularTransformerIntegrator(sys_dim)
+const model = StandardTransformerIntegrator(sys_dim)
 const seq_length = 5
 
 function set_up_and_apply_integrator(; T=Float32)

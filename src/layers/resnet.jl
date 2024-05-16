@@ -1,3 +1,6 @@
+@doc raw"""
+The `ResNetLayer` is a simple feedforward neural network to which we add the input after applying it, i.e. it realizes ``x \mapsto x + \sigma(Ax + b)``.
+"""
 struct ResNetLayer{M, N, use_bias, F1} <: AbstractExplicitLayer{M, N}
     activation::F1
 end

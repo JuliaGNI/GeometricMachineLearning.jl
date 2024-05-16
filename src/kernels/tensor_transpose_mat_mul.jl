@@ -15,7 +15,7 @@ This implements the operation (A,B) -> A'*B for a tensor and a matrix
 end
 
 function tensor_transpose_mat_mul!(C, A, B)
-    @assert size(A)[1] == size(B)[1]
+    @assert axes(A, 1) == axes(B, 1)
 
     backend = KernelAbstractions.get_backend(A)
     kernel! = tensor_transpose_mat_mul_kernel!(backend)

@@ -68,11 +68,12 @@ using SafeTestsets
 @safetestset "Test volume-preserving feedforward neural network                               " begin include("layers/volume_preserving_feedforward.jl") end
 
 @safetestset "SympNet integrator                                                              " begin include("sympnet_integrator.jl") end
-@safetestset "Regular transformer integrator                                                  " begin include("regular_transformer_integrator.jl") end
+@safetestset "Regular transformer integrator                                                  " begin include("standard_transformer_integrator.jl") end
 
 @safetestset "Batch functor(s)                                                                " begin include("batch/batch_functor.jl") end
 
 @safetestset "Volume-Preserving Transformer (skew-symmetric tests)                            " begin include("volume_preserving_attention/test_skew_map.jl") end
 @safetestset "Volume-Preserving Transformer (cayley-transform tests)                          " begin include("volume_preserving_attention/test_cayley_transforms.jl") end
 
-# @safetestset "Linear Symplectic Attention                                                     " begin include("linear_symplectic_attention.jl") end
+@safetestset "Linear Symplectic Attention                                                     " begin include("linear_symplectic_attention.jl") end
+@safetestset "Linear Symplectic Transformer                                                   " begin include("linear_symplectic_transformer.jl") end

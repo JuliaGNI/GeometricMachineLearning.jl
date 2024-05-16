@@ -1,6 +1,6 @@
-# Multihead Attention Layer
+# Multihead Attention
 
-In order to arrive from the [attention layer](attention_layer.md) at the **multihead attention layer** we have to do a few modifications: 
+In order to arrive from the [attention layer](@ref "The Attention Layer") at the **multihead attention layer** we have to do a few modifications: 
 
 Note that these neural networks were originally developed for natural language processing (NLP) tasks and the terminology used here bears some resemblance to that field. 
 The input to a multihead attention layer typicaly comprises three components:
@@ -51,6 +51,11 @@ With this we can now give a better interpretation of what the projection matrice
 
 Because the main task of the $W_i^V$, $W_i^K$ and $W_i^Q$ matrices here is for them to find bases, it makes sense to constrain them onto the Stiefel manifold; they do not and should not have the maximum possible generality.
 
+## Library Functions 
+
+```@docs; canonical=false
+MultiHeadAttention
+```
 
 ## References 
 

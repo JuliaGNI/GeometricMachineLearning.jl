@@ -1,6 +1,7 @@
 using GeometricMachineLearning
 using Documenter
 using DocumenterCitations
+using Markdown
 # using Weave
 
 # this is necessary to avoid warnings. See https://documenter.juliadocs.org/dev/man/syntax/
@@ -33,8 +34,12 @@ const output_type = isempty(ARGS) ? :html : ARGS[1] == "html_output" ? :html : :
 const format = output_type == :html ? html_format : latex_format
 
 function html_graphics(path::String; kwargs...)
-    light_string = """<object type="image/svg+xml" class="display-light-only" data=$(joinpath(buildpath, path * ".png"))></object>"""
-    dark_string = """<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(buildpath, path * "_dark.png"))></object>"""
+    light_path = joinpath(path * ".png")
+    dark_path = joinpath(path * "_dark.png")
+    light_string = """<object type="image/svg+xml" class="display-light-only" data=$(joinpath(buildpath, light_path))></object>"""
+    dark_string = """<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(buildpath, dark_path))></object>"""
+    @assert isfile(light_path) "No file found for " * light_path * "!"
+    @assert isfile(dark_path) "No file found for " * dark_path * "!"
     Docs.HTML(light_string, dark_string)
 end
 
@@ -53,6 +58,37 @@ function include_graphics(path::String; kwargs...)
     Main.output_type == :html ? html_graphics(path; kwargs...) : latex_graphics(path; kwargs...)
 end
 
+function theorem(statement::String, name::Nothing; label::Union{Nothing, String} = nothing)
+    if Main.output_type == :html
+        Markdown.parse("__Theorem:__ *" * statement * "*")
+    else
+        theorem_label = isnothing(label) ? "" : raw"\label{th:" * label * raw"}"
+        Markdown.parse(raw"\begin{thrm}" * statement * theorem_label * raw"\end{thrm}")
+    end
+end
+
+function theorem(statement::String, name::String; label::Union{Nothing, String} = nothing)
+    if Main.output_type == :html
+        Markdown.parse("__Theorem (" * name * "):__ *" * statement * "*")
+    else
+        theorem_label = isnothing(label) ? "" : raw"\label{th:" * label * raw"}"
+        Markdown.parse(raw"\begin{thrm}[" * name * "]" * statement * theorem_label * raw"\end{thrm}")
+    end
+end
+
+function theorem(statement::String; name::Union{Nothing, String} = nothing, label::Union{Nothing, String} = nothing)
+    theorem(statement, name; label = label)
+end
+
+function definition(statement::String; label::Union{Nothing, String} = nothing)
+    if Main.output_type == :html
+        Markdown.parse("__Definition:__ *" * statement * "*")
+    else
+        theorem_label = isnothing(label) ? "" : raw"\label{def:" * label * raw"}"
+        Markdown.parse(raw"\begin{dfntn}" * statement * theorem_label * raw"\end{dfntn}")
+    end
+end
+
 makedocs(;
     plugins = [bib],
     modules = [GeometricMachineLearning],
@@ -62,10 +98,6 @@ makedocs(;
     format = format,
     pages=[
         "Home" => "index.md",
-        "Architectures" => [
-            "SympNet" => "architectures/sympnet.md",
-            "Symplectic Autoencoders" => "architectures/symplectic_autoencoder.md",
-        ],
         "Manifolds" => [
             "Concepts from General Topology" => "manifolds/basic_topology.md",
             "General Theory on Manifolds" => "manifolds/manifolds.md",
@@ -96,9 +128,20 @@ makedocs(;
             "BFGS Optimizer" => "optimizers/bfgs_optimizer.md",
             ],
         "Special Neural Network Layers" => [
+            "Sympnet Gradient Layers" => "layers/sympnet_gradient.md",
             "Volume-Preserving Layers" => "layers/volume_preserving_feedforward.md",
             "Attention" => "layers/attention_layer.md",
             "Multihead Attention" => "layers/multihead_attention_layer.md",
+            "Linear Symplectic Attention" => "layers/linear_symplectic_attention.md",
+        ],
+        "Architectures" => [
+            "Symplectic Autoencoders" => "architectures/symplectic_autoencoder.md",
+            "Neural Network Integrators" => "architectures/neural_network_integrators.md",
+            "SympNet" => "architectures/sympnet.md",
+            "Volume-Preserving FeedForward" => "architectures/volume_preserving_feedforward.md",
+            "Standard Transformer" => "architectures/transformer.md",
+            "Volume-Preserving Transformer" => "architectures/volume_preserving_transformer.md",
+            "Linear Symplectic Transformer" => "architectures/linear_symplectic_transformer.md",
         ],
         "Data Loader" =>[
             "Routines" => "data_loader/data_loader.md",
@@ -116,6 +159,7 @@ makedocs(;
             "MNIST" => "tutorials/mnist_tutorial.md",
             "Grassmann manifold" => "tutorials/grassmann_layer.md",
             "Volume-Preserving Attention" => "tutorials/volume_preserving_attention.md",
+            "Linear Symplectic Transformer" => "tutorials/linear_symplectic_transformer.md",
         ],
         "References" => "references.md",
         "Library" => "library.md",

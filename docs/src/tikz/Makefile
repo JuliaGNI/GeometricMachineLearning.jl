@@ -28,6 +28,7 @@ png:
 	pdftocairo  -png -r $(res1) -transp -singlefile  general_optimization_with_boundary.pdf 		general_optimization_with_boundary              
 	pdftocairo  -png -r $(res1) -transp -singlefile  general_optimization_with_boundary_dark.pdf	general_optimization_with_boundary_dark          
 	pdftocairo  -png -r $(res1) -transp -singlefile  transformer_encoder.pdf		        		transformer_encoder   
+	pdftocairo  -png -r $(res1) -transp -singlefile  transformer_encoder_dark.pdf		        	transformer_encoder_dark   
 	pdftocairo  -png -r $(res1) -transp -singlefile  third_degree_spline.pdf	           			third_degree_spline     
 	pdftocairo  -png -r $(res1) -transp -singlefile  third_degree_spline_dark.pdf	           		third_degree_spline_dark       
 	pdftocairo	-png -r $(res2) -transp -singlefile	 sympnet_architecture.pdf						sympnet_architecture
@@ -48,6 +49,14 @@ png:
 	pdftocairo  -png -r $(res1) -transp -singlefile  tensor_dark.pdf 								tensor_dark
 	pdftocairo  -png -r $(res4) -transp -singlefile  tensor_sampling.pdf 							tensor_sampling
 	pdftocairo  -png -r $(res4) -transp -singlefile  tensor_sampling_dark.pdf 						tensor_sampling_dark
+	pdftocairo 	-png -r $(res1) -transp -singlefile  vp_feedforward.pdf								vp_feedforward
+	pdftocairo 	-png -r $(res1) -transp -singlefile  vp_feedforward_dark.pdf						vp_feedforward_dark
+	pdftocairo 	-png -r $(res1) -transp -singlefile  vp_transformer.pdf								vp_transformer
+	pdftocairo 	-png -r $(res1) -transp -singlefile  vp_transformer_dark.pdf						vp_transformer_dark
+	pdftocairo 	-png -r $(res1) -transp -singlefile  linear_symplectic_transformer.pdf				linear_symplectic_transformer
+	pdftocairo 	-png -r $(res1) -transp -singlefile  linear_symplectic_transformer_dark.pdf			linear_symplectic_transformer_dark
+	pdftocairo 	-png -r $(res1) -transp -singlefile  skew_sym_visualization.pdf						skew_sym_visualization
+	pdftocairo 	-png -r $(res1) -transp -singlefile  skew_sym_visualization_dark.pdf				skew_sym_visualization_dark
 
 logo:
 	cp logo_with_name.png 		../assets/logo.png

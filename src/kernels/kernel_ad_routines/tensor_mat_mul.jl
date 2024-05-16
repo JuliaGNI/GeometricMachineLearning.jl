@@ -89,5 +89,5 @@ function ChainRulesCore.rrule(::typeof(tensor_mat_mul), A::AbstractArray{T, 3}, 
         return f̄, dA, SymmetricMatrix(dS, B.n) 
     end 
 
-    return C, symmetric_mul_pullback
+    return C, symmetric_right_mul_pullback
 end

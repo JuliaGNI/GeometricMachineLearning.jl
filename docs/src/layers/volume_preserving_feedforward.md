@@ -30,25 +30,8 @@ J = \begin{pmatrix}
 ```
 and the determinant of ``J`` is 1, i.e. the map is volume-preserving. 
 
-## Neural network architecture
+## Library Functions 
 
-Volume-preserving feedforward neural networks should be used as `Architecture`s in `GeometricMachineLearning`. The constructor for them is: 
-
-```@eval
-using GeometricMachineLearning, Markdown
-Markdown.parse(description(Val(:VPFconstructor)))
+```@docs; canonical=false
+VolumePreservingFeedForwardLayer
 ```
-
-The constructor produces the following architecture[^2]:
-
-[^2]: Based on the input arguments `n_linear` and `n_blocks`. In this example `init_upper` is set to false, which means that the first layer is of type *lower* followed by a layer of type *upper*. 
-
-```@example
-Main.include_graphics("../tikz/vp_feedforward") # hide
-```
-
-Here *LinearLowerLayer* performs ``x \mapsto x + Lx`` and *NonLinearLowerLayer* performs ``x \mapsto x + \sigma(Lx + b)``. The activation function ``\sigma`` is the forth input argument to the constructor and `tanh` by default. 
-
-## Note on Sympnets 
-
-As [SympNets](../architectures/sympnet.md) are symplectic maps, they also conserve phase space volume and therefore form a subcategory of volume-preserving feedforward layers. 

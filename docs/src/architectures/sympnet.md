@@ -1,4 +1,4 @@
-# SympNet
+# SympNet Architecture
 
 This document discusses the SympNet architecture and its implementation in `GeometricMachineLearning.jl`.
 

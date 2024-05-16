@@ -5,13 +5,13 @@ There are special implementations of symmetric and skew-symmetric matrices in `G
 [^1]: It works similarly for `SymmetricMatrix`. 
 
 ```@example 
-Main.include_graphics("../tikz/skew_sym_visualization")
+Main.include_graphics("../tikz/skew_sym_visualization") # hide
 ```
 
 So what is stored internally is a vector of size ``n(n-1)/2`` for the skew-symmetric matrix and a vector of size ``n(n+1)/2`` for the symmetric matrix. We can sample a random skew-symmetric matrix: 
 
 ```@example skew_sym
-using GeometricMachineLearning # hide 
+using GeometricMachineLearning # hide
 
 A = rand(SkewSymMatrix, 5)
 ```

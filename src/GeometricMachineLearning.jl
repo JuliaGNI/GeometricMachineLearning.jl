@@ -91,6 +91,7 @@ module GeometricMachineLearning
     include("kernels/kernel_ad_routines/tensor_mat_mul.jl")
     include("kernels/kernel_ad_routines/mat_tensor_mul.jl")
     include("kernels/kernel_ad_routines/tensor_tensor_mul.jl")
+    include("kernels/kernel_ad_routines/tensor_transpose_mat_mul.jl")
     include("kernels/kernel_ad_routines/tensor_transpose_tensor_mul.jl")
     include("kernels/kernel_ad_routines/tensor_transpose.jl")
     include("kernels/kernel_ad_routines/tensor_mat_skew_sym_assign.jl")
@@ -111,7 +112,7 @@ module GeometricMachineLearning
     # GPU specific operations
     export convert_to_dev, Device, CPUDevice
 
-    export GradientLayerQ, GradientLayerP, ActivationLayerQ, ActivationLayerP, LinearLayerQ, LinearLayerP
+    export GradientLayer, GradientLayerQ, GradientLayerP, ActivationLayerQ, ActivationLayerP, LinearLayerQ, LinearLayerP
     export Linear
     export ResidualLayer
     export LinearSymplecticLayerP, LinearSymplecticLayerQ
@@ -160,14 +161,15 @@ module GeometricMachineLearning
     export PSDLayer
     export MultiHeadAttention
     export VolumePreservingAttention
+    export VolumePreservingFeedForwardLayer
     export VolumePreservingLowerLayer
     export VolumePreservingUpperLayer
+    export VolumePreservingTransformer
+    export NeuralNetworkIntegrator
     export ResNet
     export Transformer
-    export RegularTransformerIntegrator
+    export TransformerIntegrator, StandardTransformerIntegrator
     export Classification
-    export VolumePreservingLowerLayer
-    export VolumePreservingUpperLayer
 
     # INCLUDE OPTIMIZERS
     export OptimizerMethod, AbstractCache
@@ -249,7 +251,7 @@ module GeometricMachineLearning
     include("architectures/neural_network_integrator.jl")
     include("architectures/resnet.jl")
     include("architectures/transformer_integrator.jl")
-    include("architectures/regular_transformer_integrator.jl")
+    include("architectures/standard_transformer_integrator.jl")
     include("architectures/sympnet.jl")
     include("architectures/autoencoder.jl")
     include("architectures/symplectic_autoencoder.jl")
@@ -266,9 +268,7 @@ module GeometricMachineLearning
 
     export HamiltonianNeuralNetwork
     export LagrangianNeuralNetwork
-    export SympNet
-    export LASympNet
-    export GSympNet
+    export SympNet, LASympNet, GSympNet
     export RecurrentNeuralNetwork
     export LSTMNeuralNetwork
     export ClassificationTransformer
@@ -401,6 +401,12 @@ module GeometricMachineLearning
     include("reduced_system/reduced_system.jl")
 
     export HRedSys, reduction_error, projection_error, integrate_reduced_system, integrate_full_system
+
+    include("layers/linear_symplectic_attention.jl")
+    include("architectures/linear_symplectic_transformer.jl")
+
+    export LinearSymplecticAttention, LinearSymplecticAttentionQ, LinearSymplecticAttentionP
+    export LinearSymplecticTransformer
 
     include("map_to_cpu.jl")
 end

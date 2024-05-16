@@ -1,3 +1,6 @@
+@doc raw"""
+This is a super type of various neural network architectures such as [`SympNet`](@ref) and [`ResNet`](@ref) whose purpose is to approximate the flow of an ordinary differential equation (ODE).
+"""
 abstract type NeuralNetworkIntegrator <: Architecture end
 
 function Base.iterate(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, ics::AT; n_points = 100) where {T, AT<:AbstractVector{T}}

@@ -1,8 +1,5 @@
 @doc raw"""
-SympNet type encompasses GSympNets and LASympnets.
-
-TODO: 
--[ ] add bias to `LASympNet`!
+The `SympNet` type encompasses [`GSympNet`](@ref)s and [`LASympNet`](@ref)s. SympNets are universal approximators of *symplectic flows*, i.e. maps ``\varphi:\mathbb{R}^{2n}\to\mathbb{R}^{2n}`` for which ``(\nabla\varphi)^T\mathbb{J}\nabla\varphi = \mathbb{J}`` holds.
 """
 abstract type SympNet{AT} <: NeuralNetworkIntegrator end
 
@@ -34,41 +31,41 @@ end
 @doc raw"""
 `GSympNet` is called with **a single input argument**, the **system dimension**, or with an instance of `DataLoader`. Optional input arguments are: 
 - `upscaling_dimension::Int`: The *upscaling dimension* of the gradient layer. See the documentation for `GradientLayerQ` and `GradientLayerP` for further explanation. The default is `2*dim`.
-- `nhidden::Int`: The number of hidden layers (i.e. layers that are **not** input or output layers). The default is 2.
+- `n_layers::Int`: The number of layers (i.e. the total number of [`GradientLayerQ`](@ref) and [`GradientLayerP`](@ref)). The default is 2.
 - `activation`: The activation function that is applied. By default this is `tanh`.
 - `init_upper::Bool`: Initialize the gradient layer so that it first modifies the $q$-component. The default is `true`.
 """
-struct GSympNet{AT, InitUpper} <: SympNet{AT} where {InitUpper} 
+struct GSympNet{AT} <: SympNet{AT}
     dim::Int
     upscaling_dimension::Int
-    nhidden::Int
+    n_layers::Int
     act::AT
+    init_upper::Bool
 
-    function GSympNet(dim; upscaling_dimension=2*dim, nhidden=2, activation=tanh, init_upper=true) 
-        new{typeof(activation), init_upper}(dim, upscaling_dimension, nhidden, activation)
+    function GSympNet(dim; upscaling_dimension=2*dim, n_layers=2, activation=tanh, init_upper=true) 
+        new{typeof(activation)}(dim, upscaling_dimension, n_layers, activation, init_upper)
     end
 
         
-    function GSympNet(dl::DataLoader; upscaling_dimension=2*dl.input_dim, nhidden=2, activation=tanh, init_upper=true) 
-        new{typeof(activation), init_upper}(dl.input_dim, upscaling_dimension, nhidden, activation)
+    function GSympNet(dl::DataLoader; upscaling_dimension=2*dl.input_dim, n_layers=2, activation=tanh, init_upper=true) 
+        new{typeof(activation)}(dl.input_dim, upscaling_dimension, n_layers, activation, init_upper)
     end
 end
 
 @doc raw"""
 `Chain` can also be called with a neural network as input.
 """
-function Chain(arch::GSympNet{AT, true}) where {AT}
+function Chain(arch::GSympNet)
     layers = ()
-    for _ in 1:(arch.nhidden+1)
-        layers = (layers..., GradientLayerQ(arch.dim, arch.upscaling_dimension, arch.act), GradientLayerP(arch.dim, arch.upscaling_dimension, arch.act))
-    end
-    Chain(layers...)
-end
-
-function Chain(arch::GSympNet{AT, false}) where {AT}
-    layers = ()
-    for _ in 1:(arch.nhidden+1)
-        layers = (layers..., GradientLayerP(arch.dim, arch.upscaling_dimension, arch.act), GradientLayerQ(arch.dim, arch.upscaling_dimension, arch.act))
+    is_upper_criterion = arch.init_upper ? isodd : iseven
+    for i in 1:arch.n_layers
+        layers = (layers..., 
+        if is_upper_criterion(i)
+            GradientLayerQ(arch.dim, arch.upscaling_dimension, arch.act)
+        else 
+            GradientLayerP(arch.dim, arch.upscaling_dimension, arch.act)
+        end
+        )
     end
     Chain(layers...)
 end
