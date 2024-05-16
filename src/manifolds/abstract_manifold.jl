@@ -1,5 +1,5 @@
 @doc raw"""
-`rand` is implemented for manifolds that use the initialization of the `StiefelManifold` and the `GrassmannManifold` by default. 
+`rand` is implemented for manifolds that use the initialization of the [`StiefelManifold`](@ref) and the [`GrassmannManifold`](@ref) by default. 
 """
 abstract type Manifold{T} <: AbstractMatrix{T} end
 
