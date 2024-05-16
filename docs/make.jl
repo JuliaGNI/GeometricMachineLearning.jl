@@ -2,12 +2,14 @@ using GeometricMachineLearning
 using Documenter
 using DocumenterCitations
 using Markdown
+using Bibliography
 # using Weave
 
 # this is necessary to avoid warnings. See https://documenter.juliadocs.org/dev/man/syntax/
 ENV["GKSwstype"] = "100"
 
 bib = CitationBibliography(joinpath(@__DIR__, "src", "GeometricMachineLearning.bib"))
+sort_bibliography!(bib.entries, :nyt)  # name-year-title
 
 # if the docs are generated with github actions, then this changes the path; see: https://github.com/JuliaDocs/Documenter.jl/issues/921 
 const buildpath = haskey(ENV, "CI") ? ".." : ""
@@ -100,9 +102,9 @@ makedocs(;
         "Home" => "index.md",
         "Manifolds" => [
             "Concepts from General Topology" => "manifolds/basic_topology.md",
-            "General Theory on Manifolds" => "manifolds/manifolds.md",
             "The Inverse Function Theorem" => "manifolds/inverse_function_theorem.md",
             "The Submersion Theorem" => "manifolds/submersion_theorem.md",
+            "General Theory on Manifolds" => "manifolds/manifolds.md",
             "Homogeneous Spaces" => "manifolds/homogeneous_spaces.md",
             "Stiefel" => "manifolds/stiefel_manifold.md",
             "Grassmann" => "manifolds/grassmann_manifold.md",
