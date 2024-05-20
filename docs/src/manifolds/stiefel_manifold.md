@@ -41,4 +41,12 @@ What was referred to as $\nabla{}L$ before can in practice be obtained with an A
 \mathrm{Tr}((\nabla{}L)^T\Delta) = g_Y(\mathtt{rgrad}(Y, \nabla{}L), \Delta) \forall\Delta\in{}T_YSt(n,N)
 ```
 
- and $g$ is the Riemannian metric.
+ and ``g`` is the Riemannian metric.
+
+ ## Library Functions 
+
+```@docs; canonical=false
+StiefelManifold
+GeometricMachineLearning.rgrad(::StiefelManifold, ::AbstractMatrix)
+GeometricMachineLearning.metric(::StiefelManifold, ::AbstractMatrix, ::AbstractMatrix)
+```
