@@ -151,7 +151,7 @@ nothing
 using Markdown
 
 if Main.output_type == :latex
-    Markdown.parse(raw"""![raw"Visualization of how the tangent space is constructed."]("manifolds/tangent_space.pdf")""")
+    Markdown.parse(raw"""![Visualization of how the tangent space is constructed.]("manifolds/tangent_space.pdf")""")
     elseif Main.output_type == :html
     Markdown.parse(raw"""![]("tangent_space.svg")""")
 end
