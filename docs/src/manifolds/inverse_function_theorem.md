@@ -22,7 +22,7 @@ And the sequence is clearly Cauchy.
 
 ## The Inverse Function Theorem
 
-The *inverse function theorem* gives a sufficient condition on a vector-valued function to be invertible in a neighborhood of a specific point. This theorem serves as a basis for the [submersion theorem](@ref "The Submersion Theorem") and is critical in developing a theory of [manifolds](@ref "(Matrix) Manifolds"). Here we first state the theorem and then give a proof.
+The *inverse function theorem* gives a sufficient condition on a vector-valued function to be invertible in a neighborhood of a specific point. This theorem serves as a basis for the *implicit function theorem* and further for the [preimage theorem](@ref "The Preimage Theorem") and is critical in developing a theory of [manifolds](@ref "(Matrix) Manifolds"). Here we first state the theorem and then give a proof.
 
 ```@eval
 Main.theorem(raw"Consider a vector-valued differentiable function ``F:\mathbb{R}^N\to\mathbb{R}^N`` and assume its Jacobian is non-degenerate at a point ``x\in\mathbb{R}^N``. Then there exists a neighborhood ``U`` that contains ``F(x)`` and on which ``F`` is invertible, i.e. ``\exists{}H:U\to\mathbb{R}^N`` s.t. ``\forall{}y\in{}U,\,F\circ{}H(y) = y`` and ``H`` is differentiable."; name = "Inverse function theorem")
@@ -47,12 +47,12 @@ and the rightmost expression is bounded because of the mean value theorem: ``F(z
 This theorem is a direct consequence of the inverse function theorem. 
 
 ```@eval
-Main.theorem(""; name = "Implicit Function Theorem")
+Main.theorem(raw"Given a function ``f:\mathbb{R}^{n+m}\to\mathbb{R}^n`` whose derivative at ``x\in\mathbb{R}^{n+m}`` has full rank, we can find a map ``h:U\to\mathbb{R}^{n+m}`` for a neighborhood ``U\ni(f(x), x_{n+1}, \ldots, x_{n+m})`` such that ``f\circ{}h is a projection onto the first factor, i.e. ``f(h(x_1, \ldots, x_{n+m})) = (x_1, \ldots, x_n).``"; name = "Implicit Function Theorem")
 ```
 
-## The Submersion Theorem
+__Proof__: Consider the map ``x = (x_1, \ldots, x_{n+m}) = (f(x), x_{n+1}, \ldots, x_{n+m})``. The derivative of this map is clearly of full rank if ``f'(x)`` is of full rank and therefore invertible in a neighborhood around ``(f(x), x_{n+1}, \ldots, x_{n+m})``. We call this inverse map ``h``. We then see that ``f\circ{}h`` is a projection.
 
-The submersion theorem is an application of the inverse function theorem that we need in order to show that the spaces we deal with here are indeed manifolds. 
+The implicit function will be used to proof the [preimage theorem](@ref "The Preimage Theorem") which we use as a basis to construct all the manifolds in `GeometricMachineLearning`.
 
 ## References
 
