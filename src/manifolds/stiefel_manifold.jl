@@ -1,9 +1,15 @@
 @doc raw"""
-An implementation of the Stiefel manifold. It has various convenience functions associated with it:
-- check 
-- rand 
-- rgrad
-- metric
+An implementation of the Stiefel manifold [hairer2006geometric](@cite).
+
+### Sampling elements from manifolds
+
+We can sample elements from (compact) manifolds by writing (this example is for the [`StiefelManifold`](@ref)): 
+
+```julia
+rand(StiefelManifold{Float32}, CUDABackend())
+```
+
+The sampling is done by relying on a QR composition. 
 """
 mutable struct StiefelManifold{T, AT <: AbstractMatrix{T}} <: Manifold{T}
     A::AT
