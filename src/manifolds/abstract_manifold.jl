@@ -1,5 +1,5 @@
 @doc raw"""
-`rand` is implemented for manifolds that use the initialization of the [`StiefelManifold`](@ref) and the [`GrassmannManifold`](@ref) by default. 
+A manifold in `GeometricMachineLearning` is a sutype of `AbstractMatrix`. All manifolds are matrix manifolds and therefore stored as matrices. More details can be found in the docstrings for the [`StiefelManifold`](@ref) and the [`GrassmannManifold`](@ref).
 """
 abstract type Manifold{T} <: AbstractMatrix{T} end
 
