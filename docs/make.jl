@@ -91,6 +91,15 @@ function definition(statement::String; label::Union{Nothing, String} = nothing)
     end
 end
 
+function example(statement::String; label::Union{Nothing, String} = nothing)
+    if Main.output_type == :html
+        Markdown.parse("__Example:__ *" * statement * "*")
+    else
+        theorem_label = isnothing(label) ? "" : raw"\label{xmpl:" * label * raw"}"
+        Markdown.parse(raw"\begin{xmpl}" * statement * theorem_label * raw"\end{xmpl}")
+    end
+end
+
 makedocs(;
     plugins = [bib],
     modules = [GeometricMachineLearning],
