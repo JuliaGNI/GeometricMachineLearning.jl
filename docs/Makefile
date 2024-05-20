@@ -58,7 +58,7 @@ latex_docs_no_pdf:
 
 compile_tex: 
 	cd build; \
-	lualatex -shell-escape G*.tex;
+	xelatex -shell-escape G*.tex;
 
 put_figures_outside_of_minted_environment:
 	sed -i'' -e 's/\"\\\\begin{figure}\\n\\\\includegraphics/DeleteThisAndTheLineBefore\n\\begin{figure}[H]\n\\centering\n\\includegraphics/g' build/G*.tex;
