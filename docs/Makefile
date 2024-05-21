@@ -11,7 +11,7 @@ latex: latex_no_pdf
 	$(MAKE) compile_tex;
 	$(MAKE) compile_tex
 
-latex_no_pdf_no_images: install_brenier_two_fluid latex_docs_no_pdf put_figures_outside_of_minted_environment do_correct_quotation_marks make_correct_thrm_and_dfntn_and_xmpl_environment
+latex_no_pdf_no_images: install_brenier_two_fluid latex_docs_no_pdf put_figures_outside_of_minted_environment do_correct_quotation_marks make_correct_thrm_and_dfntn_and_xmpl_and_proof_environment
 
 latex_no_pdf: latex_images latex_no_pdf_no_images 
 
@@ -74,8 +74,9 @@ put_figures_outside_of_minted_environment:
 	sed -i'' -e '/DeleteThisAndTheLineAfter/d' build/G*.tex;
 	sed -i'' -e 's/\\\\texttt/\\texttt/g' build/G*.tex;
 	sed -i'' -e 's/\\\\_/\\_/g' build/G*.tex;
+	sed -i'' -e 's/tangent_space.png/manifolds\/tangent_space.png/g' build/G*.tex;
 
-make_correct_thrm_and_dfntn_and_xmpl_environment:
+make_correct_thrm_and_dfntn_and_xmpl_and_proof_environment:
 	sed -i'' -e 's/{\\textbackslash}begin\\{thrm\\}/\\begin{thrm}/g' build/G*.tex;
 	sed -i'' -e 's/{\\textbackslash}end\\{thrm\\}/\\end{thrm}/g' build/G*.tex;
 	sed -i'' -e 's/{\\textbackslash}label\\{th:\([a-zA-Z]*\)\\}/\\label{th:\1}/g' build/G*.tex;
@@ -85,6 +86,8 @@ make_correct_thrm_and_dfntn_and_xmpl_environment:
 	sed -i'' -e 's/{\\textbackslash}begin\\{xmpl\\}/\\begin{xmpl}/g' build/G*.tex;
 	sed -i'' -e 's/{\\textbackslash}end\\{xmpl\\}/\\end{xmpl}/g' build/G*.tex;
 	sed -i'' -e 's/{\\textbackslash}label\\{xmpl:\([a-zA-Z]*\)\\}/\\label{xmpl:\1}/g' build/G*.tex;
+	sed -i'' -e 's/{\\textbackslash}begin\\{proof\\}/\\begin{proof}/g' build/G*.tex;
+	sed -i'' -e 's/{\\textbackslash}end\\{proof\\}/\\end{proof}/g' build/G*.tex;
 
 do_correct_quotation_marks:
 	sed -i'' -e 's/{\\textquotedbl}/"/g' build/G*.tex;
