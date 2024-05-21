@@ -62,7 +62,8 @@ end
 
 function theorem(statement::String, name::Nothing; label::Union{Nothing, String} = nothing)
     if Main.output_type == :html
-        Markdown.parse("__Theorem:__ *" * statement * "*")
+        Markdown.parse("""!!! info "Theorem" 
+            \t $(statement)""")
     else
         theorem_label = isnothing(label) ? "" : raw"\label{th:" * label * raw"}"
         Markdown.parse(raw"\begin{thrm}" * statement * theorem_label * raw"\end{thrm}")
@@ -71,7 +72,8 @@ end
 
 function theorem(statement::String, name::String; label::Union{Nothing, String} = nothing)
     if Main.output_type == :html
-        Markdown.parse("__Theorem (" * name * "):__ *" * statement * "*")
+        Markdown.parse("""!!! info "Theorem ($(name))" 
+            \t $(statement)""")
     else
         theorem_label = isnothing(label) ? "" : raw"\label{th:" * label * raw"}"
         Markdown.parse(raw"\begin{thrm}[" * name * "]" * statement * theorem_label * raw"\end{thrm}")
@@ -84,7 +86,8 @@ end
 
 function definition(statement::String; label::Union{Nothing, String} = nothing)
     if Main.output_type == :html
-        Markdown.parse("__Definition:__ *" * statement * "*")
+        Markdown.parse("""!!! info "Definition" 
+            \t $(statement)""")
     else
         theorem_label = isnothing(label) ? "" : raw"\label{def:" * label * raw"}"
         Markdown.parse(raw"\begin{dfntn}" * statement * theorem_label * raw"\end{dfntn}")
@@ -93,10 +96,20 @@ end
 
 function example(statement::String; label::Union{Nothing, String} = nothing)
     if Main.output_type == :html
-        Markdown.parse("__Example:__ *" * statement * "*")
+        Markdown.parse("""!!! info "Example" 
+            \t $(statement)""")
     else
         theorem_label = isnothing(label) ? "" : raw"\label{xmpl:" * label * raw"}"
         Markdown.parse(raw"\begin{xmpl}" * statement * theorem_label * raw"\end{xmpl}")
+    end
+end
+
+function proof(statement::String)
+    if Main.output_type == :html
+        Markdown.parse("""!!! details "Proof" 
+            \t $(statement)""")
+    else
+        Markdown.parse(raw"\begin{proof}" * statement * raw"\end{proof}")
     end
 end
 
@@ -112,11 +125,11 @@ makedocs(;
         "Manifolds" => [
             "Concepts from General Topology" => "manifolds/basic_topology.md",
             "Foundations of Differential Manifolds" => "manifolds/inverse_function_theorem.md",
+            "Differential Equations and the EAU theorem" => "manifolds/existence_and_uniqueness_theorem.md",
             "General Theory on Manifolds" => "manifolds/manifolds.md",
             "Homogeneous Spaces" => "manifolds/homogeneous_spaces.md",
             "Stiefel" => "manifolds/stiefel_manifold.md",
             "Grassmann" => "manifolds/grassmann_manifold.md",
-            "Differential Equations and the EAU theorem" => "manifolds/existence_and_uniqueness_theorem.md",
             ],
         "Arrays" => [
             "Symmetric and Skew-Symmetric Matrices" => "arrays/skew_symmetric_matrix.md",
