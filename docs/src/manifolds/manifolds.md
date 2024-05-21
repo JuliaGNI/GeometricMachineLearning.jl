@@ -1,11 +1,11 @@
 # (Matrix) Manifolds
 
-Manifolds are topological spaces that locally look like vector spaces. In the following we restrict ourselves to finite-dimensional smooth[^1] manifolds. In this section we routinely denote points on a manifold by lower case letters like ``x, y`` and ``z`` if we speak about general properties and by upper case letters like ``A`` and ``B`` if we talk about specific examples of matrix manifolds.
+Manifolds are topological spaces that locally look like vector spaces. In the following we restrict ourselves to finite-dimensional smooth[^1] manifolds. In this section we routinely denote points on a manifold by lower case letters like ``x, y`` and ``z`` if we speak about general properties and by upper case letters like ``A`` and ``B`` if we talk about specific examples of matrix manifolds. All manifolds that can be used to build neural networks in `GeometricMachineLearning`, such as the [Stiefel manifold](@ref "The Stiefel Manifold") and the [Grassmann manifold](@ref "The Grassmann Manifold") are matrix manifolds.
 
 [^1]: *Smooth* here means ``C^\infty``.
 
 ```@eval 
-Main.theorem(raw"A **finite-dimensional smooth manifold** of dimension ``n`` is a second-countable Hausdorff space ``\mathcal{M}`` for which ``\forall{}x\in\mathcal{M}`` we can find a neighborhood ``U`` that contains ``x`` and a corresponding homeomorphism ``\varphi_U:U\cong{}W\subset\mathbb{R}^n`` where ``W`` is an open subset. The homeomorphisms ``\varphi_U`` are referred to as *coordinate charts*. If two such coordinate charts overlap, i.e. if ``U_1\cap{}U_2\neq\{\}``, then the map ``\varphi_{U_2}^{-1}\circ\varphi_{U_1}`` is ``C^\infty``.")
+Main.definition(raw"A **finite-dimensional smooth manifold** of dimension ``n`` is a second-countable Hausdorff space ``\mathcal{M}`` for which ``\forall{}x\in\mathcal{M}`` we can find a neighborhood ``U`` that contains ``x`` and a corresponding homeomorphism ``\varphi_U:U\cong{}W\subset\mathbb{R}^n`` where ``W`` is an open subset. The homeomorphisms ``\varphi_U`` are referred to as *coordinate charts*. If two such coordinate charts overlap, i.e. if ``U_1\cap{}U_2\neq\{\}``, then the map ``\varphi_{U_2}^{-1}\circ\varphi_{U_1}`` has to be ``C^\infty``.")
 ```
 
 One example of a manifold that is also important for `GeometricMachineLearning` is the Lie group[^2] of orthonormal matrices ``SO(N)``. Before we can proof that ``SO(N)`` is a manifold we first need the *preimage theorem*.
@@ -14,26 +14,31 @@ One example of a manifold that is also important for `GeometricMachineLearning` 
 
 ## The Preimage Theorem
 
-Before we can state the preimage theorem we need another definition: 
+Before we can state the preimage theorem we need another definition[^3]:
+
+[^3]: In this definition we use the notation ``T_xg``. This will be explained below. For we will interpret ``T_xg`` simply as ``(\varphi_U\circ{}g\circ\psi_V^{-1})'`` where ``\varphi_U`` is a coordinate chart around ``y = g(x)`` and ``\psi_V`` is a coordinate chart around ``x``.
 
 ```@eval
-Main.definition(raw"Consider a smooth mapping ``g: \mathcal{M}\to\mathcal{N}`` from one manifold to another. A point ``y\in\mathcal{N}`` is called a **regular value** of ``g`` if ``\forall{}x\in{}g^{-1}\{y\}`` the map ``T_xg:T_A\mathcal{M}\to{}T_{g(x)}\mathcal{N}`` is surjective.")
+Main.definition(raw"Consider a smooth mapping ``g: \mathcal{M}\to\mathcal{N}`` from one manifold to another. A point ``y\in\mathcal{N}`` is called a **regular value** of ``g`` if ``\forall{}x\in{}g^{-1}\{y\}`` the map ``T_xg:T_A\mathcal{M}\to{}T_{y}\mathcal{N}`` is surjective.")
 ```
 
 We now state the preimage theorem:
 
 ```@eval
-Main.theorem(raw"Consider a smooth map ``g:\mathcal{M}\to\mathcal{N}`` from one manifold to another (we assume the dimensions of the two manifolds to be ``m+n`` and ``m``). Then the preimage of a regular point ``y`` of ``\mathcal{N}`` is a submanifold of ``\mathcal{M}``. Furthermore the codimension of ``g^{-1}\{y\}`` is equal to the dimension of ``\mathcal{N}`` and the tangent space ``T_x(g^{-1}\{y\})`` is equal to the kernel of ``T_xg``."; name = "Preimage Theorem")
+Main.theorem(raw"Consider a smooth map ``g:\mathcal{M}\to\mathcal{N}`` from one manifold to another (we assume the dimensions of the two manifolds to be ``m+n`` and ``m`` respectively). Then the preimage of a regular point ``y`` of ``\mathcal{N}`` is a submanifold of ``\mathcal{M}``. Furthermore the codimension of ``g^{-1}\{y\}`` is equal to the dimension of ``\mathcal{N}`` and the tangent space ``T_x(g^{-1}\{y\})`` is equal to the kernel of ``T_xg``."; name = "Preimage Theorem")
 ```
 
-__Proof__: Because ``\mathcal{N}`` has manifold structure we can find a chart ``\varphi_U:U\to\mathbb{R}^m`` for some neighborhood ``U`` that contains ``y``. We further consider a point ``A\in{}g^{-1}\{y\}`` and a chart around it ``\psi_V:V\to\mathbb{R}^{m+n}``. By the implicit function theorem we can then find a mapping ``h`` that turns ``\varphi_U\circ{}g\circ\psi_V^{-1}`` into a projection ``(x_1, \ldots, x_{n+m}) \mapsto (x_{n+1}, \ldots, x_{n+m})``. We now consider the neighborhood ``V_1\times\{0\}`` for ``V = V_1\times{}V_2`` with the coordinate chart ``(x_1, \ldots, x_n) \mapsto \psi(x_1, \ldots, x_n, 0, \ldots, 0).`` This proofs our assertion.
-
+```@eval
+Main.proof(raw"Because ``\mathcal{N}`` has manifold structure we can find a chart ``\varphi_U:U\to\mathbb{R}^m`` for some neighborhood ``U`` that contains ``y``. We further consider a point ``A\in{}g^{-1}\{y\}`` and a chart around it ``\psi_V:V\to\mathbb{R}^{m+n}``. By the implicit function theorem we can then find a mapping ``h`` that turns ``\varphi_U\circ{}g\circ\psi_V^{-1}`` into a projection ``(x_1, \ldots, x_{n+m}) \mapsto (x_{n+1}, \ldots, x_{n+m})``. We now consider the neighborhood ``V_1\times\{0\} = \psi(V \cup f^{-1}\{y\})`` for ``\psi(V) = V_1\times{}V_2`` with the coordinate chart ``(x_1, \ldots, x_n) \mapsto \psi(x_1, \ldots, x_n, 0, \ldots, 0).`` As this map is also smooth by the implicit function theorem this proofs our assertion.")
+```
 
 ```@eval
 Main.example(raw"The group ``SO(N)`` is a Lie group (i.e. has manifold structure).")
 ```
 
-__Proof__: The vector space ``\mathbb{R}^{N\times{}N}`` clearly has manifold structure. The group ``SO(N)`` is equivalent to one of the level sets of the mapping: ``g:\mathbb{R}^{N\times{}N}\to\mathcal{S}(N), A\mapsto{}A^TA - \mathbb{I}``, i.e. it is the component of ``f^{-1}\{\mathbb{I}\}`` that contains ``\mathbb{I}``. We still need to proof that ``\mathbb{I}`` is a regular point of ``g``, i.e. that for ``A\in{}SO(N)`` the mapping ``T_Ag`` is surjective. This means that ``\forall{}B\in\mathcal{S}(N), A\in\mathbb{R}^{N\times{}N}`` ``\exists{}C\in\mathbb{R}^{N\times{}N}`` s.t. ``C^TA + A^TC = B``. The element ``C=\frac{1}{2}AB\in\mathcal{R}^{N\times{}N}`` satisfies this property.
+```@eval
+Main.proof(raw"The vector space ``\mathbb{R}^{N\times{}N}`` clearly has manifold structure. The group ``SO(N)`` is equivalent to one of the level sets of the mapping: ``g:\mathbb{R}^{N\times{}N}\to\mathcal{S}(N), A\mapsto{}A^TA - \mathbb{I}``, i.e. it is the component of ``f^{-1}\{\mathbb{I}\}`` that contains ``\mathbb{I}``. We still need to proof that ``\mathbb{I}`` is a regular point of ``g``, i.e. that for ``A\in{}SO(N)`` the mapping ``T_Ag`` is surjective. This means that ``\forall{}B\in\mathcal{S}(N), A\in\mathbb{R}^{N\times{}N}`` ``\exists{}C\in\mathbb{R}^{N\times{}N}`` s.t. ``C^TA + A^TC = B``. The element ``C=\frac{1}{2}AB\in\mathcal{R}^{N\times{}N}`` satisfies this property.")
+```
 
 Similarly we can also proof: 
 
@@ -41,7 +46,11 @@ Similarly we can also proof:
 Main.example(raw"The sphere ``S^n:=\{x\in\mathbb{R}^{n+1}: x^Tx = 1\}`` is a manifold of dimension ``n``.")
 ```
 
-__Proof__: Take ``g(x) = x^x - 1``.
+```@eval
+Main.proof(raw"Take ``g(x) = x^x - 1`` and proceed as in the case of ``SO(N)``.")
+```
+
+Note that both these manifolds, ``SO(N)`` and ``S^n`` are matrix manifolds, i.e. an element of ``\mathcal{M}`` can be written as an element of ``\mathbb{R}^{N\times{}N}`` in the first case and ``\mathbb{R}^{n\times{}1}`` in the second case. The additional conditions we impose on these manifolds are ``A^TA = \mathbb{I}`` in the first case and ``x^Tx = 1`` in the second case. 
 
 ## Tangent Spaces 
 
@@ -54,17 +63,17 @@ Main.definition(raw"A mapping ``\gamma:(-\epsilon, \epsilon)\to\mathcal{M}`` tha
 The tangent space of ``\mathcal{M}`` at ``x`` is the collection of the first derivatives of all ``\gamma``: 
 
 ```@eval
-Main.definition(raw"**The tangent space** of \mathcal{M} at ``x`` is the collection of all ``C^\infty`` curves at ``x`` modulo the equivalence class ``\gamma_1 \sim \gamma_2 \iff \gamma_1'(0) = \gamma_2'(0)``. It is denoted by ``T_x\mathcal{M}``.")
+Main.definition(raw"The **tangent space** of ``\mathcal{M}`` at ``x`` is the collection of all ``C^\infty`` curves at ``x`` modulo the equivalence class ``\gamma_1 \sim \gamma_2 \iff \gamma_1'(0) = \gamma_2'(0)``. It is denoted by ``T_x\mathcal{M}``.")
 ```
 
 As is customary we write ``[\gamma]`` for the equivalence class of ``\gamma`` and this is by definition equivalent to ``\gamma'(0)``.
-The tangent space ``T_x\mathcal{M}`` can be shown to be homeomorphic[^3] to ``\mathbb{R}^n`` where ``n`` is the dimension of the manifold ``\mathcal{M}``. If the homeomorphism is constructed through the coordinate chart ``(\varphi, U)`` we call it ``\varphi'(x)``. 
+The tangent space ``T_x\mathcal{M}`` can be shown to be homeomorphic[^4] to ``\mathbb{R}^n`` where ``n`` is the dimension of the manifold ``\mathcal{M}``. If the homeomorphism is constructed through the coordinate chart ``(\varphi, U)`` we call it ``\varphi'(x)`` or simply ``\varphi'``. If we are given a map ``g:\mathcal{M}\to\mathcal{N}`` we further define ``T_xg = (\varphi')^{-1}\circ(\varphi\circ{}g\psi^{-1})'\circ{}\psi'``, i.e. a smooth map between two manifolds ``\mathcal{M}`` and ``\mathcal{N}`` induces a smooth map between the tangent spaces ``T_x\mathcal{M}`` and ``T_{g(x)}\mathcal{N}``.
 
-[^3]: Note that we have not formally defined addition for ``T_x\mathcal{M}``. This can be done through the definition ``[\gamma] + [\beta] = [\alpha]`` where ``\alpha`` is any ``C^\infty`` curve through ``x`` that satisfies ``\alpha'(0) = \beta(0) + \gamma(0)``. Note that we can always find such an ``\alpha`` by the [existence and uniqueness theorem](@ref "The Existence-And-Uniqueness Theorem").
+[^4]: Note that we have not formally defined addition for ``T_x\mathcal{M}``. This can be done through the definition ``[\gamma] + [\beta] = [\alpha]`` where ``\alpha`` is any ``C^\infty`` curve through ``x`` that satisfies ``\alpha'(0) = \beta(0) + \gamma(0)``. Note that we can always find such an ``\alpha`` by the [existence and uniqueness theorem](@ref "The Existence-And-Uniqueness Theorem").
 
 We want to demonstrate this principle of constructing the tangent space from curves through the example of ``S^2``. We consider the following curves: 
 1. ``\gamma_1(t) = \begin{pmatrix} 0 \\ sin(t) \\ cos(t) \end{pmatrix},``
-2. ``\gamma_2(t) = \begin{pmatrix} sin(t) \\ 0 \\ cos(t) \end{pmatrix}.``
+2. ``\gamma_2(t) = \begin{pmatrix} sin(t) \\ 0 \\ cos(t) \end{pmatrix},``
 3. ``\gamma_3(t) = \begin{pmatrix} \exp(-t ^ 2 / 2)  t \sin(t) \\  \exp(-t ^ 2 / 2) t cos(t) \\  \sqrt{1 - (t ^ 2) exp(-t^2)} \end{pmatrix}. ``
 
 We now plot the manifold ``S^2``, the three curves described above and the associated tangent vectors (visualized as arrows). Note that the tangent vectors induced by ``\gamma_1`` and ``\gamma_3`` are the same; for these curves we have ``\gamma_1 \sim \gamma_3`` and the tangent vectors of those two curves coincide: 
@@ -74,22 +83,22 @@ using CairoMakie
 using ForwardDiff
 using LaTeXStrings
 
-function plot_curve!(p, gamma::Function; epsilon_range::T = 1.4, epsilon_spacing::T = .01, kwargs...) where T
+function plot_curve!(ax, gamma::Function; epsilon_range::T = 1.4, epsilon_spacing::T = .01, kwargs...) where T
     curve_domain = -epsilon_range : epsilon_spacing : epsilon_range
     curve = zeros(T, 3, length(curve_domain))
     for (i, t) in zip(axes(curve_domain, 1), curve_domain)
         curve[:, i] .= gamma(t)
     end
-    lines!(p, curve[1, :], curve[2, :], curve[3, :]; kwargs...)
+    lines!(ax, curve[1, :], curve[2, :], curve[3, :]; kwargs...)
 end
 
-function plot_arrow!(p, gamma::Function; kwargs...) where T
+function plot_arrow!(ax, gamma::Function; kwargs...)
     arrow_val = ForwardDiff.derivative(gamma, 0.)
 
     gamma_vec = ([gamma(0)[1]], [gamma(0)[2]], [gamma(0)[3]])
     gamma_deriv_vec = ([arrow_val[1]], [arrow_val[2]], [arrow_val[3]])
 
-    arrows!(gamma_vec..., gamma_deriv_vec...; kwargs...)
+    arrows!(ax, gamma_vec..., gamma_deriv_vec...; kwargs...)
 end
 
 function sphere(r, C)   # r: radius; C: center [cx,cy,cz]
@@ -109,8 +118,6 @@ function tangent_space(; n = 100)
     xs, ys, zs
 end
 
-fig, ax, plt = surface(sphere(1., [0., 0., 0.])...; alpha = .6)
-
 gamma_1(t) = [zero(t), sin(t), cos(t)]
 gamma_2(t) = [sin(t), zero(t), cos(t)]
 gamma_3(t) = [exp(-t ^ 2 / 2) * (t ^ 1) * sin(t), exp(-t ^ 2 / 2) * (t ^ 1) * cos(t), sqrt(1 - (t ^ 2) * exp(-t^2))]
@@ -125,45 +132,60 @@ mgreen = RGBf(44 / 256, 160 / 256, 44 / 256)
 
 colors = (morange, mblue, mred)
 
-for (i, curve, color) in zip(1:length(curves), curves, colors)
-    plot_curve!(ax, curve; label = L"\gamma_%$(string(i))", linewidth = 2, color = color)
+function make_plot(; theme = :light)
+    text_color = theme == :light ? :black : :white
+
+    fig = Figure(; backgroundcolor = :transparent)
+
+    ax = Axis3(fig[1, 1]; 
+        backgroundcolor = :transparent, 
+        aspect = (1., 1., 0.8), 
+        azimuth = π / 6, 
+        elevation = π / 8, 
+        xlabel = rich("x", subscript("1"), font = :italic, color = text_color),
+        ylabel = rich("x", subscript("2"), font = :italic, color = text_color),
+        zlabel = rich("x", subscript("3"), font = :italic, color = text_color),
+        )
+
+    surface!(sphere(1., [0., 0., 0.])...; alpha = .6)
+
+    for (i, curve, color) in zip(1:length(curves), curves, colors)
+        plot_curve!(ax, curve; label = rich("γ", subscript(string(i)); color = text_color, font = :italic), linewidth = 2, color = color)
+    end
+
+    surface!(ax, tangent_space()...; alpha = .2)
+    text!(.9, -.9, 1.; text = L"T_x\mathcal{M}", color = text_color)
+
+    for (i, curve, color) in zip(1:length(curves), curves, colors)
+        plot_arrow!(ax, curve; linewidth = .03, color = color)
+    end
+
+    axislegend(; position = (.82, .75), backgroundcolor = :transparent, color = text_color)
+
+    fig, ax
 end
 
-surface!(ax, tangent_space()...; alpha = .2)
-text!(.9, -.9, 1.; text = L"T_x\mathcal{M}")
-
-for (i, curve, color) in zip(1:length(curves), curves, colors)
-    plot_arrow!(ax, curve; linewidth = .03, color = color)
-end
-
-axislegend(; position = (.75, .75))
-
-if Main.output_type == :latex
-    save("tangent_space.pdf", fig)
-    elseif Main.output_type == :html
-    save("tangent_space.svg", fig)
+if Main.output_type == :html
+    save("tangent_space.png",        make_plot(; theme = :light)[1]; px_per_unit = 1.5)
+    save("tangent_space_dark.png",   make_plot(; theme = :dark )[1]; px_per_unit = 1.5)
+elseif Main.output_type == :latex
+    save("tangent_space.png",       make_plot(; theme = :light)[1]; px_per_unit = 2.0)
 end
 
 nothing
 ```
 
-```@eval
-using Markdown
-
-if Main.output_type == :latex
-    Markdown.parse(raw"""![Visualization of how the tangent space is constructed.]("manifolds/tangent_space.pdf")""")
-    elseif Main.output_type == :html
-    Markdown.parse(raw"""![]("tangent_space.svg")""")
-end
+```@example
+Main.include_graphics("tangent_space"; caption = raw"Visualization of how the tangent space is constructed.", width = .8) # hide
 ```
 
-The tangent space ``T_x\mathcal{M}`` (for ``x = \begin{pmatrix} 0 & 0 & 1\end{pmatrix}^T``) is also shown. 
+The tangent space ``T_{\tiny\begin{pmatrix}0 \\ 0 \\ 1 \end{pmatrix}}\mathcal{M}`` is also shown. 
 
 ## Vector Fields
 
-A time-independent vector field[^4] is an object that specifies a velocity for every point on a domain. We first give the definition of a vector field on the vector space ``\mathbb{R}^n`` and limit ourselves here to ``C^\infty`` vector fields:
+A time-independent vector field[^5] is an object that specifies a velocity for every point on a domain. We first give the definition of a vector field on the vector space ``\mathbb{R}^n`` and limit ourselves here to ``C^\infty`` vector fields:
 
-[^4]: Also called *ordinary differential equation* (ODE).
+[^5]: Also called *ordinary differential equation* (ODE).
 
 ```@eval 
 Main.definition(raw"A **vector field** on ``\mathbb{R}^n`` is a smooth map ``X:\mathbb{R}^n\to\mathbb{R}^n``.")
@@ -175,7 +197,7 @@ The definition of a vector field on a manifold is not much more complicated:
 Main.definition(raw"A **vector field** on ``\mathcal{M}`` is a map ``X`` defined on ``\mathcal{M}`` such that ``X(x)\in{}T_x\mathcal{M}`` and ``\varphi'\circ{}X\circ(\varphi)^{-1}`` is smooth for any coordinate chart ``(\varphi, U)`` that contains ``x``.")
 ```
 
-In the section on the [existence-and-uniqueness theorem](@ref "The Existence-And-Uniqueness Theorem") we show that every vector field has a unique solution given an initial condition; i.e. given a point ``x\mathcal{M}`` and a vector field ``X`` we can find a curve ``\gamma`` such that ``\gamma(0) = x`` and ``\gamma'(t) = X(\gamma(t))`` for all ``t`` in some interval ``(-\epsilon, \epsilon)``.
+In the section on the [existence-and-uniqueness theorem](@ref "The Existence-And-Uniqueness Theorem") we show that every vector field has a unique solution given an initial condition; i.e. given a point ``x\in\mathcal{M}`` and a vector field ``X`` we can find a curve ``\gamma`` such that ``\gamma(0) = x`` and ``\gamma'(t) = X(\gamma(t))`` for all ``t`` in some interval ``(-\epsilon, \epsilon)``.
 
 
 ## Library Functions 
