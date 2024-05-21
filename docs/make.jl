@@ -113,6 +113,9 @@ function proof(statement::String)
     end
 end
 
+const indentation = output_type == :html ? "\t" : ""
+... stopped here; use this!!
+
 makedocs(;
     plugins = [bib],
     modules = [GeometricMachineLearning],
