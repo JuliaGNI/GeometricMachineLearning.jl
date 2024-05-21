@@ -1,4 +1,4 @@
-# Grassmann Manifold 
+# The Grassmann Manifold 
 
 (The description of the Grassmann manifold is based on that of the [Stiefel manifold](stiefel_manifold.md), so this should be read first.)
 
