@@ -30,6 +30,10 @@ for i in (n+1):N
     end
 end
 
+Y = rand(StiefelManifold{Float32}, 5, 3)
+Δ = rgrad(Y, rand(Float32, 5, 3))
+@test GeometricMachineLearning.Ω(Y, Δ) * Y ≈ Δ
+
 #=
 #Stiefel manifold test
 A_ortho = OrthonormalMatrix(A)

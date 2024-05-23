@@ -18,6 +18,7 @@ using SafeTestsets
 @safetestset "Symplectic Potential (array tests)                                              " begin include("arrays/symplectic_potential.jl") end
 
 @safetestset "Test triangular matrices                                                        " begin include("arrays/triangular.jl") end
+@safetestset "Manifolds (Stiefel):                                                            " begin include("manifolds/stiefel_manifold.jl") end
 @safetestset "Manifolds (Grassmann):                                                          " begin include("manifolds/grassmann_manifold.jl") end
 @safetestset "Gradient Layer                                                                  " begin include("layers/gradient_layer_tests.jl") end
 @safetestset "Test symplecticity of upscaling layer                                           " begin include("layers/sympnet_layers_test.jl") end 
