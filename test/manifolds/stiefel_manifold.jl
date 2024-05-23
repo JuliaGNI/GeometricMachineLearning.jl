@@ -17,7 +17,7 @@ A_hor = StiefelLieAlgHorMatrix(A_skew, n)
 
 for i in 1:n
     for j in 1:N 
-        @test abs(A_hor[i,j] - 2*A_skew[i,j]) < 1e-10
+        @test abs(A_hor[i,j] - A_skew[i,j]) < 1e-10
     end 
 end
 
