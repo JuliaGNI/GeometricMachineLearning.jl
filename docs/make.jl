@@ -113,8 +113,18 @@ function proof(statement::String)
     end
 end
 
+function sphere(r, C)   # r: radius; C: center [cx,cy,cz]
+    n = 100
+    u = range(-π, π; length = n)
+    v = range(0, π; length = n)
+    x = C[1] .+ r * cos.(u) * sin.(v)'
+    y = C[2] .+ r * sin.(u) * sin.(v)'
+    z = C[3] .+ r * ones(n) * cos.(v)'
+    x, y, z
+end
+
+# this is needed if we have multiline definitions or proofs
 const indentation = output_type == :html ? "\t" : ""
-... stopped here; use this!!
 
 makedocs(;
     plugins = [bib],
@@ -127,12 +137,13 @@ makedocs(;
         "Home" => "index.md",
         "Manifolds" => [
             "Concepts from General Topology" => "manifolds/basic_topology.md",
+            "Metric and Vector Spaces" => "manifolds/metric_and_vector_spaces.md",
             "Foundations of Differential Manifolds" => "manifolds/inverse_function_theorem.md",
-            "Differential Equations and the EAU theorem" => "manifolds/existence_and_uniqueness_theorem.md",
             "General Theory on Manifolds" => "manifolds/manifolds.md",
+            "Differential Equations and the EAU theorem" => "manifolds/existence_and_uniqueness_theorem.md",
             "Homogeneous Spaces" => "manifolds/homogeneous_spaces.md",
-            "Stiefel" => "manifolds/stiefel_manifold.md",
-            "Grassmann" => "manifolds/grassmann_manifold.md",
+            "Riemannian Manifolds" => "manifolds/riemannian_manifolds.md",
+            "Homogeneous Spaces" => "manifolds/homogeneous_spaces.md",
             ],
         "Arrays" => [
             "Symmetric and Skew-Symmetric Matrices" => "arrays/skew_symmetric_matrix.md",
