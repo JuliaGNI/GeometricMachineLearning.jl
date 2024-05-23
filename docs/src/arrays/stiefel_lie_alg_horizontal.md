@@ -2,7 +2,7 @@
 
 What we use to optimize Adam (and other algorithms) to manifolds is a **global tangent space representation** of the homogeneous spaces. 
 
-For the [Stiefel manifold](../manifolds/stiefel_manifold.md), this global tangent space representation takes a simple form: 
+For the [Stiefel manifold](@ref "The Stiefel Manifold"), this global tangent space representation takes a simple form: 
 
 ```math 
 \mathcal{B} = \begin{bmatrix}
@@ -17,7 +17,7 @@ where ``A\in\mathbb{R}^{n\times{}n}`` is skew-symmetric and ``B\in\mathbb{R}^{N\
 
 ### Vertical and horizontal components
 
-The Stiefel manifold ``St(n, N)`` is a [homogeneous space](../manifolds/homogeneous_spaces.md) obtained from ``SO(N)`` by setting two matrices, whose first $n$ columns conincide, equivalent. 
+The Stiefel manifold ``St(n, N)`` is a [homogeneous space](@ref "Homogeneous Spaces") obtained from ``SO(N)`` by setting two matrices, whose first $n$ columns conincide, equivalent. 
 Another way of expressing this is: 
 ```math
 A_1 \sim A_2 \iff A_1E = A_2E

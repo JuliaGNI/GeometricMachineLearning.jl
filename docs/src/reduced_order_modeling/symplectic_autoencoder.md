@@ -50,7 +50,7 @@ For PSD the two mappings $\Psi^\mathrm{enc}$ and $\Psi^\mathrm{dec}$ are constra
 \Psi_\mathrm{CL} = 
 \begin{bmatrix} \Phi & \mathbb{O} \\ \mathbb{O} & \Phi \end{bmatrix},
 ```
-and $\Phi\in{}St(n,N)\subset\mathbb{R}^{N\times{}n}$, i.e. is an element of the [Stiefel manifold](../manifolds/stiefel_manifold.md). If the [snapshot matrix](../data_loader/snapshot_matrix.md) is of the form: 
+and $\Phi\in{}St(n,N)\subset\mathbb{R}^{N\times{}n}$, i.e. is an element of the [Stiefel manifold](@ref "The Stiefel Manifold"). If the [snapshot matrix](../data_loader/snapshot_matrix.md) is of the form: 
 
 ```math
 M = \left[\begin{array}{c:c:c:c}

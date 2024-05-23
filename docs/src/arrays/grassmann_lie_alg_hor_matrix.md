@@ -25,7 +25,7 @@ The tangent tangent space ``T_\mathcal{E}Gr(n,N)`` can be represented through ma
 \end{pmatrix},
 ```
 
-where we have used the identification ``T_\mathcal{E}Gr(n,N)\to{}T_E\mathcal{S}_E`` that was discussed in the [section on the Grassmann manifold](../manifolds/grassmann_manifold.md).  The Grassmann manifold can also be seen as the Stiefel manifold modulo an equivalence class. This leads to the following (which is used for optimization):
+where we have used the identification ``T_\mathcal{E}Gr(n,N)\to{}T_E\mathcal{S}_E`` that was discussed in the [section on the Grassmann manifold](@ref "The Grassmann Manifold").  The Grassmann manifold can also be seen as the Stiefel manifold modulo an equivalence class. This leads to the following (which is used for optimization):
 
 ```math
 \mathfrak{g}^\mathrm{hor} = \mathfrak{g}^{\mathrm{hor},\mathcal{E}} = \left\{\begin{pmatrix} 0 & -B^T \\ B & 0 \end{pmatrix}: \text{$B$ arbitrary}\right\}.
