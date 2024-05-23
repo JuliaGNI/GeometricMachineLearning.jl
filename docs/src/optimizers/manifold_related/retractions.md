@@ -22,7 +22,7 @@ where $\mathrm{grad}_WL$ is the **Riemannian gradient** of the loss function $L$
 
 If we deal with Euclidean spaces (vector spaces), then the Riemannian gradient is just the result of an AD routine and the solution of the equation above can be approximated with $W^{t+1} \gets W^t - \eta\nabla_{W^t}L$, where $\eta$ is the **learning rate**. 
 
-For manifolds, after we obtained the Riemannian gradient (see e.g. the section on [Stiefel manifold](../../manifolds/stiefel_manifold.md)), we have to solve a **geodesic equation**. This is a canonical ODE associated with any Riemannian manifold. 
+For manifolds, after we obtained the Riemannian gradient (see e.g. the section on [Stiefel manifold](@ref "The Stiefel Manifold")), we have to solve a **geodesic equation**. This is a canonical ODE associated with any Riemannian manifold. 
 
 The general theory of Riemannian manifolds is rather complicated, but for the neural networks treated in `GeometricMachineLearning`, we only rely on optimization of matrix Lie groups and [homogeneous spaces](../../manifolds/homogeneous_spaces.md), which is much simpler. 
 
