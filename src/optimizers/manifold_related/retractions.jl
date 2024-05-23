@@ -1,15 +1,11 @@
-"""
-This implements some basic retractions.
-
-
-TODO: test for Cayley vs Exp
-TODO: adapt AT <: StiefelLieAlgHorMatrix for the general case!
-"""
-
-"""
-Additional types to make handling manifolds more readable.
+@doc raw"""
+`LayerWithManifold` is a subtype of `AbstractExplicitLayer` that contains manifolds as weights.
 """
 abstract type LayerWithManifold{M, N, retraction} <: AbstractExplicitLayer{M, N}  end
+
+@doc raw"""
+`LayerWithOptionalManifold` is a subtype of `AbstractExplicitLayer` that can contain manifolds as weights.
+"""
 abstract type LayerWithOptionalManifold{M, N, Stiefel, retraction} <: AbstractExplicitLayer{M, N} end
 
 #fallback function -> maybe put into another file!
@@ -38,6 +34,24 @@ function retraction(::LayerWithOptionalManifold{M, N, true, Cayley}, B::NamedTup
 end
 
 geodesic(B::NamedTuple) = apply_toNT(geodesic, B)
+
+@doc raw"""
+The geodesic map for the manifolds. It takes as input an element ``x`` of ``\mathcal{M}`` and an element of ``T_x\mathcal{M}`` and returns ``\mathtt{geodesic}(x, v_x) = \exp(v_x).`` For example: 
+
+```julia 
+Y = rand(StiefelManifold{Float64}, N, n)
+Δ = rgrad(Y, rand(N, n))
+geodesic(Y, Δ)
+```
+
+See the docstring for ``rgrad`` for details on this function.
+"""
+function geodesic(Y::Manifold{T}, Δ::AbstractMatrix{T}) where T
+    λY = GlobalSection(Y)
+    B = global_rep(λY, Δ)
+    expB = geodesic(B)
+    apply_section(λY, expB)
+end
 
 function geodesic(B::StiefelLieAlgHorMatrix{T}) where T
     E = StiefelProjection(B)
