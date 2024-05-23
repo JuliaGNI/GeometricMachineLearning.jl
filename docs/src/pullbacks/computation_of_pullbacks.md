@@ -1,4 +1,8 @@
-# How to compute pullbacks
+# Pullbacks and Automatic Differentiation
+
+Automatic Differentiation is an important part of modern machine learning libraries. It is essentially a tool to compute the gradient of a loss function with respect to its input arguments. 
+
+## How to Compute Pullbacks
 
 `GeometricMachineLearning` has many pullbacks for custom array types and other operations implemented. The need for this essentially comes from the fact that we cannot trivially differentiate custom GPU kernels at the moment[^1].
 
