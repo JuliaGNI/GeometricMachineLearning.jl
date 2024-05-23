@@ -10,11 +10,13 @@ We now start by giving all the definitions, theorem and corresponding proofs tha
 ```@eval
 Main.definition(raw"A **topological space** is a set ``\mathcal{M}`` for which we define a collection of subsets of ``\mathcal{M}``, which we denote by ``\mathcal{T}`` and call the *open subsets*. ``\mathcal{T}`` further has to satisfy the following three conditions:
 " *
-"\t" * raw"1. The empty set and ``\mathcal{M}`` belong to ``\mathcal{T}``.
+Main.indentation * raw"1. The empty set and ``\mathcal{M}`` belong to ``\mathcal{T}``.
 " *
-"\t" * raw"2. Any union of an arbitrary number of elements of ``\mathcal{T}`` again belongs to ``\mathcal{T}``.
+Main.indentation * raw"2. Any union of an arbitrary number of elements of ``\mathcal{T}`` again belongs to ``\mathcal{T}``.
 " *
-"\t" * raw"3. Any intersection of a finite number of elements of ``\mathcal{T}`` again belongs to ``\mathcal{T}``.")
+Main.indentation * raw"3. Any intersection of a finite number of elements of ``\mathcal{T}`` again belongs to ``\mathcal{T}``.
+" *
+Main.indentation * "So an arbitrary union of open sets is again open and a finite intersection of open sets is again open.")
 ```
 
 Based on this definition of a topological space we can now define what it means to be *Hausdorff*: 
@@ -40,11 +42,13 @@ Continuity can also be formulated in terms of *closed sets* instead of doing it 
 ```@eval
 Main.definition(raw"A **closed set** of a topological space ``\mathcal{M}`` is one whose complement is an open set, i.e. ``F`` is closed if ``F^c\in\mathcal{T}``, where the superscript ``{}^c`` indicates the complement. For closed sets we thus have the following three properties:
 " *
-"\t" * raw"1. The empty set and ``\mathcal{M}`` are closed sets.
+Main.indentation * raw"1. The empty set and ``\mathcal{M}`` are closed sets.
 " *
-"\t" * raw"2. Any union of a finite number of closed sets is again closed.
+Main.indentation * raw"2. Any union of a finite number of closed sets is again closed.
 " *
-"\t" * raw"3. Any intersection of an arbitrary number of closed sets is again closed.")
+Main.indentation * raw"3. Any intersection of an arbitrary number of closed sets is again closed.
+" *
+Main.indentation * "So a finite union of closed sets is again closed and an arbitrary intersection of closed sets is again closed.")
 ```
 
 We now give an equivalent definition of continuity: 
