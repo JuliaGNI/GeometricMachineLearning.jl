@@ -50,7 +50,7 @@ Main.example(raw"The sphere ``S^n:=\{x\in\mathbb{R}^{n+1}: x^Tx = 1\}`` is a man
 Main.proof(raw"Take ``g(x) = x^x - 1`` and proceed as in the case of ``SO(N)``.")
 ```
 
-Note that both these manifolds, ``SO(N)`` and ``S^n`` are matrix manifolds, i.e. an element of ``\mathcal{M}`` can be written as an element of ``\mathbb{R}^{N\times{}N}`` in the first case and ``\mathbb{R}^{n\times{}1}`` in the second case. The additional conditions we impose on these manifolds are ``A^TA = \mathbb{I}`` in the first case and ``x^Tx = 1`` in the second case. 
+Note that both these manifolds, ``SO(N)`` and ``S^n`` are matrix manifolds, i.e. an element of ``\mathcal{M}`` can be written as an element of ``\mathbb{R}^{N\times{}N}`` in the first case and ``\mathbb{R}^{n\times{}1}`` in the second case. The additional conditions we impose on these manifolds are ``A^TA = \mathbb{I}`` in the first case and ``x^Tx = 1`` in the second case. Both of these manifolds belong to the category of [Stiefel manifolds](@ref "The Stiefel Manifold").
 
 ## Tangent Spaces 
 
@@ -67,9 +67,11 @@ Main.definition(raw"The **tangent space** of ``\mathcal{M}`` at ``x`` is the col
 ```
 
 As is customary we write ``[\gamma]`` for the equivalence class of ``\gamma`` and this is by definition equivalent to ``\gamma'(0)``.
-The tangent space ``T_x\mathcal{M}`` can be shown to be homeomorphic[^4] to ``\mathbb{R}^n`` where ``n`` is the dimension of the manifold ``\mathcal{M}``. If the homeomorphism is constructed through the coordinate chart ``(\varphi, U)`` we call it ``\varphi'(x)`` or simply ``\varphi'``. If we are given a map ``g:\mathcal{M}\to\mathcal{N}`` we further define ``T_xg = (\varphi')^{-1}\circ(\varphi\circ{}g\psi^{-1})'\circ{}\psi'``, i.e. a smooth map between two manifolds ``\mathcal{M}`` and ``\mathcal{N}`` induces a smooth map between the tangent spaces ``T_x\mathcal{M}`` and ``T_{g(x)}\mathcal{N}``.
+The tangent space ``T_x\mathcal{M}`` can be shown to be homeomorphic[^4] to ``\mathbb{R}^n`` where ``n`` is the dimension of the manifold ``\mathcal{M}``. If the homeomorphism is constructed through the coordinate chart ``(\varphi, U)`` we call it ``\varphi'(x)`` or simply[^5] ``\varphi'``. If we are given a map ``g:\mathcal{M}\to\mathcal{N}`` we further define ``T_xg = (\varphi')^{-1}\circ(\varphi\circ{}g\psi^{-1})'\circ{}\psi'``, i.e. a smooth map between two manifolds ``\mathcal{M}`` and ``\mathcal{N}`` induces a smooth map between the tangent spaces ``T_x\mathcal{M}`` and ``T_{g(x)}\mathcal{N}``.
 
 [^4]: Note that we have not formally defined addition for ``T_x\mathcal{M}``. This can be done through the definition ``[\gamma] + [\beta] = [\alpha]`` where ``\alpha`` is any ``C^\infty`` curve through ``x`` that satisfies ``\alpha'(0) = \beta(0) + \gamma(0)``. Note that we can always find such an ``\alpha`` by the [existence and uniqueness theorem](@ref "The Existence-And-Uniqueness Theorem").
+
+[^5]: We will further discuss this when we introduce the [tangent bundle](@ref "The Tangent Bundle").
 
 We want to demonstrate this principle of constructing the tangent space from curves through the example of ``S^2``. We consider the following curves: 
 1. ``\gamma_1(t) = \begin{pmatrix} 0 \\ sin(t) \\ cos(t) \end{pmatrix},``
@@ -99,16 +101,6 @@ function plot_arrow!(ax, gamma::Function; kwargs...)
     gamma_deriv_vec = ([arrow_val[1]], [arrow_val[2]], [arrow_val[3]])
 
     arrows!(ax, gamma_vec..., gamma_deriv_vec...; kwargs...)
-end
-
-function sphere(r, C)   # r: radius; C: center [cx,cy,cz]
-    n = 100
-    u = range(-π, π; length = n)
-    v = range(0, π; length = n)
-    x = C[1] .+ r * cos.(u) * sin.(v)'
-    y = C[2] .+ r * sin.(u) * sin.(v)'
-    z = C[3] .+ r * ones(n) * cos.(v)'
-    x, y, z
 end
 
 function tangent_space(; n = 100)
@@ -147,7 +139,7 @@ function make_plot(; theme = :light)
         zlabel = rich("x", subscript("3"), font = :italic, color = text_color),
         )
 
-    surface!(sphere(1., [0., 0., 0.])...; alpha = .6)
+    surface!(Main.sphere(1., [0., 0., 0.])...; alpha = .6)
 
     for (i, curve, color) in zip(1:length(curves), curves, colors)
         plot_curve!(ax, curve; label = rich("γ", subscript(string(i)); color = text_color, font = :italic), linewidth = 2, color = color)
@@ -179,13 +171,19 @@ nothing
 Main.include_graphics("tangent_space"; caption = raw"Visualization of how the tangent space is constructed.", width = .8) # hide
 ```
 
-The tangent space ``T_{\tiny\begin{pmatrix}0 \\ 0 \\ 1 \end{pmatrix}}\mathcal{M}`` is also shown. 
+The tangent space ``T_x\mathcal{M}`` for
+
+```math
+x = begin{pmatrix}0 \\ 0 \\ 1 \end{pmatrix}
+```
+
+ is also shown. 
 
 ## Vector Fields
 
-A time-independent vector field[^5] is an object that specifies a velocity for every point on a domain. We first give the definition of a vector field on the vector space ``\mathbb{R}^n`` and limit ourselves here to ``C^\infty`` vector fields:
+A time-independent vector field[^6] is an object that specifies a velocity for every point on a domain. We first give the definition of a vector field on the vector space ``\mathbb{R}^n`` and limit ourselves here to ``C^\infty`` vector fields:
 
-[^5]: Also called *ordinary differential equation* (ODE).
+[^6]: Also called *ordinary differential equation* (ODE).
 
 ```@eval 
 Main.definition(raw"A **vector field** on ``\mathbb{R}^n`` is a smooth map ``X:\mathbb{R}^n\to\mathbb{R}^n``.")
@@ -199,6 +197,16 @@ Main.definition(raw"A **vector field** on ``\mathcal{M}`` is a map ``X`` defined
 
 In the section on the [existence-and-uniqueness theorem](@ref "The Existence-And-Uniqueness Theorem") we show that every vector field has a unique solution given an initial condition; i.e. given a point ``x\in\mathcal{M}`` and a vector field ``X`` we can find a curve ``\gamma`` such that ``\gamma(0) = x`` and ``\gamma'(t) = X(\gamma(t))`` for all ``t`` in some interval ``(-\epsilon, \epsilon)``.
 
+
+## The Tangent Bundle
+
+To each manifold ``\mathcal{M}`` we can associate another manifold which we call the *tangent bundle* and denote by ``T\mathcal{M}``. The points on this manifold are: 
+
+```math
+T\mathcal{M} = \{ (x, v_x): x\in\mathcal{M},\, v_x\in{}T_x\mathcal{M} \}.
+```
+
+Coordinate charts on this manifold can be constructed in a straightforward manner; for every coordinate chart ``\varphi_U`` the map ``\varphi_U'(x)`` gives a homeomorphism between ``T_x\mathcal{M}`` and ``\mathbb{R}^n``for any ``x\in{}U``. We can then find a neighborhood of any point ``(x, v_x)`` by taking ``\pi^{-1}(U) = \{(x, v_x): x\in{}U, v_x\in{}T_x\mathcal{M}\}`` and this neighborhood is isomorphic to ``\mathbb{R}^{2n}`` via ``(x, v_x) \mapsto (\varphi_U(x), \varphi'(x)v_x)``. The [geodesic spray](@ref "Geodesic Sprays and the Exponential Map") is an important vector field defined on ``T\mathcal{M}``.
 
 ## Library Functions 
 
