@@ -141,7 +141,6 @@ makedocs(;
             "Foundations of Differential Manifolds" => "manifolds/inverse_function_theorem.md",
             "General Theory on Manifolds" => "manifolds/manifolds.md",
             "Differential Equations and the EAU theorem" => "manifolds/existence_and_uniqueness_theorem.md",
-            "Homogeneous Spaces" => "manifolds/homogeneous_spaces.md",
             "Riemannian Manifolds" => "manifolds/riemannian_manifolds.md",
             "Homogeneous Spaces" => "manifolds/homogeneous_spaces.md",
             ],
