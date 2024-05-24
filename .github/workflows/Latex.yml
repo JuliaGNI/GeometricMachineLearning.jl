@@ -30,7 +30,10 @@ jobs:
       - name: make tex document
         run: julia --project=docs --threads=2 docs/make.jl latex_output
       - name: Some sed magic 
-        run: make put_figures_outside_of_minted_environment -C docs
+        run: |
+          make put_figures_outside_of_minted_environment -C docs
+          make do_correct_quotation_marks -C docs
+          make_correct_thrm_and_dfntn_and_xmpl_and_proof_environment -C docs
       - name: compile tex document
         run: |
           cd docs/build 
