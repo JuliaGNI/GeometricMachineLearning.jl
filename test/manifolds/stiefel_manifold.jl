@@ -1,6 +1,9 @@
 using Test 
 using LinearAlgebra
 using GeometricMachineLearning
+import Random
+
+Random.seed!(123)
 
 N = 5
 A = rand(N,N)
@@ -30,22 +33,24 @@ for i in (n+1):N
     end
 end
 
-Y = rand(StiefelManifold{Float32}, 5, 3)
-Δ = rgrad(Y, rand(Float32, 5, 3))
-@test GeometricMachineLearning.Ω(Y, Δ) * Y ≈ Δ
+function Ω_test(N::Integer, n::Integer, T::Type=Float32)
+    Y = rand(StiefelManifold{Float32}, 5, 3)
+    Δ = rgrad(Y, rand(Float32, 5, 3))
+    @test GeometricMachineLearning.Ω(Y, Δ) * Y ≈ Δ
+end
 
-#=
-#Stiefel manifold test
-A_ortho = OrthonormalMatrix(A)
-check(A_ortho)
-A_stiefel = A_ortho[1:N,1:n]
-A_stiefel = StiefelManifold(A_stiefel)
-check(A_stiefel)
+function retraction_test(N::Integer, n::Integer, T::Type=Float32)
+    Y = rand(StiefelManifold{T}, N, n)
+    Δ = rgrad(Y, rand(T, N, n))
+    Y₁ = geodesic(Y, Δ / 1000)
+    @test norm(1000 * (Y₁ - Y) - Δ) / norm(Δ) < 1e-2
+end
 
-A_ortho2 = global_section(A_stiefel)
-A_ortho2 = OrthonormalMatrix(A_ortho2, true)
-check(A_ortho2)
-
-display(A_ortho)
-display(A_ortho2)
-=#
+for N in (20, 10)
+    for n in (5, 3)
+        for T in (Float64, Float32)
+            Ω_test(N, n, T)
+            retraction_test(N, n, T)
+        end
+    end
+end
