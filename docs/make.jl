@@ -48,7 +48,7 @@ end
 function latex_graphics(path::String; label = nothing, caption = nothing, width = .5)
     figure_width = "$(width)\\textwidth"
     latex_label = isnothing(label) ? "" : "\\label{" * label * "}" 
-    latex_caption = isnothing(caption) ? "" : "\\caption{" * caption * "}"
+    latex_caption = isnothing(caption) ? "" : "\\caption{" * Markdown.parse(caption) * "}"
     latex_string = """\\begin{figure}
             \\includegraphics[width = """ * figure_width * "]{" * path * ".png}" *
             latex_caption *
