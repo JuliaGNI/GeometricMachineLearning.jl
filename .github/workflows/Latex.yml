@@ -21,7 +21,7 @@ jobs:
         run: make latex -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
         with:
-          version: '1'
+          version: '1.10'
       - name: install BrenierTwoFluid
         run: |
           cd docs
