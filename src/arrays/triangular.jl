@@ -1,3 +1,6 @@
+@doc raw"""
+See [`UpperTriangular`](@ref) and [`LowerTriangular`](@ref).
+"""
 abstract type AbstractTriangular{T} <: AbstractMatrix{T} end 
 
 Base.parent(A::AbstractTriangular) = A.S
