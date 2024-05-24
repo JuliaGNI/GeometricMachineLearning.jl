@@ -40,7 +40,7 @@ mutable struct SkewSymMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
 end 
 
 @doc raw"""
-   SkewSymMatrix(A::AbstractMatrix)
+    SkewSymMatrix(A::AbstractMatrix)
 
 Perform `0.5 * (A - A')` and store the matrix in an efficient way (as a vector with ``n(n-1)/2`` entries).
 
