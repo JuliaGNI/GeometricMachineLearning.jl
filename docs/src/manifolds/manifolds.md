@@ -174,7 +174,8 @@ Main.include_graphics("tangent_space"; caption = raw"Visualization of how the ta
 The tangent space ``T_x\mathcal{M}`` for
 
 ```math
-x = begin{pmatrix}0 \\ 0 \\ 1 \end{pmatrix}
+x = \begin{pmatrix}0 \\ 0 \\ 1 \end{pmatrix}
+
 ```
 
  is also shown. 
