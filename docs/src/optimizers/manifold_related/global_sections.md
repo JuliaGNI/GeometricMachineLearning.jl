@@ -1,6 +1,6 @@
 # Global Sections
 
-**Global sections** are needed needed for the generalization of [Adam](../adam_optimizer.md) and other optimizers to [homogeneous spaces](../../manifolds/homogeneous_spaces.md). They are necessary to perform the two mappings represented represented by horizontal and vertical red lines in the section on the general [optimizer framework](../../Optimizer.md).
+**Global sections** are needed needed for the generalization of [Adam](../adam_optimizer.md) and other optimizers to [homogeneous spaces](@ref "Homogeneous Spaces"). They are necessary to perform the two mappings represented represented by horizontal and vertical red lines in the section on the general [optimizer framework](../../Optimizer.md).
 
 ## Computing the global section
 In differential geometry a **section** is always associated to some **bundle**, in our case this bundle is $\pi:G\to\mathcal{M},A\mapsto{}AE$. A section is a mapping $\mathcal{M}\to{}G$ for which $\pi$ is a left inverse, i.e. $\pi\circ\lambda = \mathrm{id}$. 
@@ -37,7 +37,7 @@ In practice we use the following:
 \end{aligned}
 ```
 
-meaning that for an element of the [horizontal component of the Lie algebra](../../arrays/stiefel_lie_alg_horizontal.md) ``\mathfrak{g}^\mathrm{hor}`` we store ``A=Y^T\Delta`` and ``B=\bar{\lambda}^T\Delta``.
+meaning that for an element of the [horizontal component of the Lie algebra](@ref "The Global Tangent Space for the Stiefel Manifold") ``\mathfrak{g}^\mathrm{hor}`` we store ``A=Y^T\Delta`` and ``B=\bar{\lambda}^T\Delta``.
 
 ## Optimization
 
