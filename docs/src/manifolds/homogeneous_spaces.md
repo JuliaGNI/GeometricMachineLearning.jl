@@ -77,7 +77,7 @@ using GeometricMachineLearning
 
 Y = rand(StiefelManifold{Float32}, 5, 3)
 Δ = rgrad(Y, rand(Float32, 5, 3))
-GeometricMachineLearning.Ω(Y, Δ) * Y ≈ Δ
+GeometricMachineLearning.Ω(Y, Δ) * Y.A ≈ Δ
 ```
 
 The function `rgrad` is introduced below. 
@@ -151,7 +151,7 @@ Obtaining the Riemannian Gradient for the Grassmann manifold is slightly more di
 ```@eval
 Main.theorem(raw"The Riemannian gradient of a function ``L`` defined on the Grassmann manifold can be written as
 " * Main.indentation * raw"```math
-" * Main.indentation * raw"\mathrm{grad}_\mathcal{Y}^{Gr}L = \nabla_Y{}L - YY^T\nabla_YL,
+" * Main.indentation * raw"\mathrm{grad}_\mathcal{Y}^{Gr}L \simeq \nabla_Y{}L - YY^T\nabla_YL,
 " * Main.indentation * raw"```
 " * Main.indentation * raw"where ``\nabla_Y{}L`` again is again the Euclidean gradient.")
 ```
@@ -194,8 +194,11 @@ Main.proof(raw"In a first step we identify charts on the Grassmann manifold to m
 StiefelManifold
 rand(manifold_type::Type{MT}, ::Integer, ::Integer) where MT <: Manifold
 GeometricMachineLearning.rgrad(::StiefelManifold, ::AbstractMatrix)
+GeometricMachineLearning.rgrad(::GrassmannManifold, ::AbstractMatrix)
 GeometricMachineLearning.metric(::StiefelManifold, ::AbstractMatrix, ::AbstractMatrix)
+GeometricMachineLearning.metric(::GrassmannManifold, ::AbstractMatrix, ::AbstractMatrix)
 GeometricMachineLearning.Ω(::StiefelManifold{T}, ::AbstractMatrix{T}) where T
+GeometricMachineLearning.Ω(::GrassmannManifold{T}, ::AbstractMatrix{T}) where T
 ```
 
 ## References 
