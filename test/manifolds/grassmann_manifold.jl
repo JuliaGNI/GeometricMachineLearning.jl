@@ -22,17 +22,15 @@ end
 
 function global_section_test(T, N::Integer, n::Integer)
     Y = rand(GrassmannManifold{T}, N, n)
-    Q = global_section(Y)
+    Q = Matrix(GlobalSection(Y))
     πQ = Q[1:N, 1:n]
-    norm(Y - πQ*πQ'*Y)/N/n
+    norm(Y - πQ * πQ' * Y) / N / n
 end
-
 
 function tangent_space_rep(T, N::Integer, n::Integer)
     Y = rand(GrassmannManifold{T}, N, n)
     Δ = rgrad(Y, randn(T, N, n))
-    λY = GlobalSection(Y)
-    λY.λ'*Δ
+    Y.A' * Δ
 end
 
 function gloabl_tangent_space_representation(T, N::Integer, n::Integer)
@@ -54,7 +52,7 @@ function run_tests(T, N, n, tol)
     @test norm(tangent_space_rep(T, N, n)[1:n,1:n])/N/n < tol
     @test typeof(gloabl_tangent_space_representation(T, N, n)) <: GrassmannLieAlgHorMatrix
     # because of the matrix inversion the tolerance here is set to a higher value
-    @test norm(coordinate_chart_rep(T, N, n)[1:n,1:n]-I(n))/N/n < tol*10
+    @test norm(coordinate_chart_rep(T, N, n)[1:n,1:n]-I(n)) / N / n < tol*10
 end
 
 tol = 1e-8
