@@ -42,6 +42,10 @@ function Base.rand(rng::Random.AbstractRNG, manifold_type::Type{MT}, N::Integer,
     rand(CPU(), rng, manifold_type, N, n)
 end
 
+function _round(Y::Manifold; kwargs...)
+    typeof(Y)(round.(Y.A; kwargs...))
+end
+
 @doc raw"""
     rand(backend::KernelAbstractions.Backend, manifold_type::Type{MT}, N::Integer, n::Integer) where MT <: Manifold)
 
@@ -50,20 +54,22 @@ Draw random elements for a specific device.
 # Examples
 ```jldoctest
 using GeometricMachineLearning
+using GeometricMachineLearning: _round # hide
 import Random
 Random.seed!(123)
 
 N, n = 5, 3
-rand(CPU(), StiefelManifold{Float32}, N, n)
+Y = rand(CPU(), StiefelManifold{Float32}, N, n)
+_round(Y; digits = 5) # hide
 
 # output
 
 5×3 StiefelManifold{Float32, Matrix{Float32}}:
- -0.275746    0.329913   0.772753
- -0.624851   -0.332242  -0.0685991
- -0.693326    0.36724   -0.189882
- -0.0929493  -0.731446   0.460639
-  0.210203    0.333008   0.387173
+ -0.27575   0.32991   0.77275
+ -0.62485  -0.33224  -0.0686
+ -0.69333   0.36724  -0.18988
+ -0.09295  -0.73145   0.46064
+  0.2102    0.33301   0.38717
 ```
 
 Random elements of the manifold can also be allocated on GPU, via e.g. ...
@@ -90,20 +96,22 @@ When we call ...
 
 ```jldoctest
 using GeometricMachineLearning
+using GeometricMachineLearning: _round # hide
 import Random
 Random.seed!(123)
 
 N, n = 5, 3
-rand(StiefelManifold{Float32}, N, n)
+Y = rand(StiefelManifold{Float32}, N, n)
+_round(Y; digits = 5) # hide
 
 # output
 
 5×3 StiefelManifold{Float32, Matrix{Float32}}:
- -0.275746    0.329913   0.772753
- -0.624851   -0.332242  -0.0685991
- -0.693326    0.36724   -0.189882
- -0.0929493  -0.731446   0.460639
-  0.210203    0.333008   0.387173
+ -0.27575   0.32991   0.77275
+ -0.62485  -0.33224  -0.0686
+ -0.69333   0.36724  -0.18988
+ -0.09295  -0.73145   0.46064
+  0.2102    0.33301   0.38717
 ```
 
 ... the sampling is done by first allocating a random matrix of size ``N\times{}n`` via `Y = randn(Float32, N, n)`. We then perform a QR decomposition `Q, R = qr(Y)` with the `qr` function from the `LinearAlgebra` package (this is using Householder reflections internally). 
