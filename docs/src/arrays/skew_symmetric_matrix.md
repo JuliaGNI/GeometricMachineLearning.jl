@@ -109,7 +109,11 @@ SkewSymMatrix(S, 5)
 
 These special matrices are important for [SympNets](@ref "SympNet Architecture"), [volume-preserving transformers](@ref "Volume-Preserving Transformer") and [linear symplectic transformers](@ref "Linear Symplectic Transformer").
 
-# Library Functions
+## Parallel Computation
+
+The functions [`GeometricMachineLearning.mat_tensor_mul`](@ref) and [`GeometricMachineLearning.tensor_mat_mul`](@ref) are also implemented for these matrices for efficient parallel computations. This is elaborated on when we introduce [pullbacks](@ref "Pullbacks and Automatic Differentiation").
+
+## Library Functions
 
 ```@docs; canonical = false
 UpperTriangular
