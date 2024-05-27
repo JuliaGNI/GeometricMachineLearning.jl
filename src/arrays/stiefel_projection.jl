@@ -1,13 +1,11 @@
 @doc raw"""
-An array that essentially does `vcat(I(n), zeros(N-n, n))` with GPU support. It has **three inner constructors**. The **first one** is called with the following arguments: 
-1. `backend`: backends as supported by `KernelAbstractions`.
-2. `T::Type`
-3. `N::Integer`
-4. `n::Integer`
+    StiefelProjection(backend, T, N, n)
 
-The **second constructor** is called by supplying a matrix as input. The constructor will then extract the backend, the type and the dimensions of that matrix. 
+Make a matrix of the form ``\begin{bmatrix} \mathbb{I} & \mathbb{O} \end{pmatrix}^T`` for a specific backend and data type.
 
-The **third constructor** is called by supplying an instance of `StiefelLieAlgHorMatrix`.  
+An array that essentially does `vcat(I(n), zeros(N-n, n))` with GPU support. 
+
+# Extend help
 
 Technically this should be a subtype of `StiefelManifold`. 
 """
@@ -21,16 +19,32 @@ struct StiefelProjection{T, AT} <: AbstractMatrix{T}
         assign_ones_for_stiefel_projection!(A, ndrange=n)
         new{T, typeof(A)}(N,n, A)
     end
-
-    function StiefelProjection(A::AbstractMatrix{T}) where T 
-        StiefelProjection(KernelAbstractions.get_backend(A), T, size(A)...)
-    end
-
-    function StiefelProjection(B::StiefelLieAlgHorMatrix{T}) where T 
-        StiefelProjection(KernelAbstractions.get_backend(B), T, B.N, B.n)
-    end
 end
     
+@doc raw"""
+    StiefelProjection(A::AbstractMatrix)
+
+Extract necessary information from `A` and build an instance of `StiefelProjection`. 
+
+Necessary information here referes to the backend, the data type and the size of the matrix.
+"""
+function StiefelProjection(A::AbstractMatrix{T}) where T 
+    StiefelProjection(KernelAbstractions.get_backend(A), T, size(A)...)
+end
+
+@doc raw"""
+    StiefelProjection(B::StiefelLieAlgHorMatrix)
+
+Extract necessary information from `B` and build an instance of `StiefelProjection`. 
+
+Necessary information here referes to the backend, the data type and the size of the matrix.
+
+The size is queried through `B.N` and `B.n`.
+"""
+function StiefelProjection(B::StiefelLieAlgHorMatrix{T}) where T 
+    StiefelProjection(KernelAbstractions.get_backend(B), T, B.N, B.n)
+end
+
 @kernel function assign_ones_for_stiefel_projection_kernel!(A::AbstractArray{T}) where T
     i = @index(Global)
     A[i, i] = one(T)
@@ -51,3 +65,7 @@ Base.vcat(A::AbstractVecOrMat{T}, E::StiefelProjection{T}) where {T<:Number} = v
 Base.vcat(E::StiefelProjection{T}, A::AbstractVecOrMat{T}) where {T<:Number} = vcat(E.A, A)
 Base.hcat(A::AbstractVecOrMat{T}, E::StiefelProjection{T}) where {T<:Number} = hcat(A, E.A)
 Base.hcat(E::StiefelProjection{T}, A::AbstractVecOrMat{T}) where {T<:Number} = hcat(E.A, A)
+
+function KernelAbstractions.get_backend(E::StiefelProjection)
+    KernelAbstractions.get_backend(E.A)
+end

@@ -275,6 +275,14 @@ function Base.copyto!(A::SkewSymMatrix, B::SkewSymMatrix)
     nothing
 end
 
+function _round(A::SkewSymMatrix; kwargs...)
+    SkewSymMatrix(_round(A.S; kwargs...), A.n)
+end
+
+function _round(A::AbstractArray; kwargs...)
+    round.(A; kwargs...)
+end
+
 # define routines for generalizing ChainRulesCore to SkewSymMatrix 
 ChainRulesCore.ProjectTo(A::SkewSymMatrix) = ProjectTo{SkewSymMatrix}(; skew_sym = ProjectTo(A.S))
 (project::ProjectTo{SkewSymMatrix})(dA::AbstractMatrix) = SkewSymMatrix(project.skew_sym(map_to_Skew(dA)), size(dA, 2))

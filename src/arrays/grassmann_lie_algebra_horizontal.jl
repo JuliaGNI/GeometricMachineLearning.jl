@@ -1,5 +1,27 @@
-"""
-This implements the horizontal component of a Lie algebra that is isomorphic to the Grassmann manifold. 
+@doc raw"""
+    GrassmannLieAlgHorMatrix(B::AbstractMatrix{T}, N::Integer, n::Integer) where T
+
+Build an instance of `GrassmannLieAlgHorMatrix` based on an arbitrary matrix `B` of size ``(N-n)\times{}n``.
+
+`GrassmannLieAlgHorMatrix` is the *horizontal component of the Lie algebra of skew-symmetric matrices* (with respect to the canonical metric).
+The projection here is: ``\pi:S \to SE/\sim`` where 
+```math
+E = \begin{pmatrix} \mathbb{I}_{n} \\ \mathbb{O}_{(N-n)\times{}n}  \end{pmatrix},
+```
+
+and the equivalence relation is 
+
+```math
+V_1 \sim V_2 \iff \exists A\in\mathcal{S}_\mathrm{skew}(n) \text{such that } V_2 = V_1 + \begin{pmatrix} A \\ \mathbb{O} \end{pmatrix}
+```
+
+An element of GrassmannLieAlgMatrix takes the form: 
+```math
+\begin{pmatrix}
+\bar{\mathbb{O}} & B^T \\ B & \mathbb{O}
+\end{pmatrix},
+```
+where ``\bar{\mathbb{O}}\in\mathbb{R}^{n\times{}n}`` and ``\mathbb{O}\in\mathbb{R}^{(N - n)\times{}n}.
 """
 mutable struct GrassmannLieAlgHorMatrix{T, ST <: AbstractMatrix{T}} <: AbstractLieAlgHorMatrix{T}
     B::ST
@@ -13,18 +35,45 @@ mutable struct GrassmannLieAlgHorMatrix{T, ST <: AbstractMatrix{T}} <: AbstractL
 
         new{T, typeof(B)}(B, N, n)
     end 
-
-    function GrassmannLieAlgHorMatrix(A::AbstractMatrix{T}, n::Int) where {T}
-        N = size(A, 1)
-        @assert N ≥ n 
-
-        B = A[(n+1):N,1:n]
-        new{eltype(A), typeof(B)}(B, N, n)
-    end
 end 
 
-Base.parent(A::GrassmannLieAlgHorMatrix) = (B)
+@doc raw"""
+    GrassmannLieAlgHorMatrix(D::AbstractMatrix, n::Integer)
+
+Take a big matrix as input and build an instance of `GrassmannLieAlgHorMatrix` belonging to the GrassmannManifold ``Gr(n, N)`` where ``N`` is the number of rows of `D`.
+
+If the constructor is called with a big ``N\times{}N`` matrix, then the projection is performed the following way: 
+
+```math
+\begin{pmatrix}
+A & B_1  \\
+B_2 & D
+\end{pmatrix} \mapsto 
+\begin{pmatrix}
+\bar{\mathbb{O}} & -B_2^T \\ 
+B_2 & \mathbb{O}
+\end{pmatrix}.
+```
+
+This can also be seen as the operation:
+```math
+D \mapsto \Omega(E, DE - EE^TDE),
+```
+
+where ``\Omega`` is the horizontal lift [`GeometricMachineLearning.Ω`](@ref).
+"""
+function GrassmannLieAlgHorMatrix(D::AbstractMatrix{T}, n::Int) where {T}
+    N = size(D, 1)
+    @assert N ≥ n 
+
+    B = D[(n+1):N,1:n]
+    GrassmannLieAlgHorMatrix(B, N, n)
+end
+
+Base.parent(A::GrassmannLieAlgHorMatrix) = (A.B, )
 Base.size(A::GrassmannLieAlgHorMatrix) = (A.N, A.N)
+
+KernelAbstractions.get_backend(B::GrassmannLieAlgHorMatrix) = KernelAbstractions.get_backend(B.B)
 
 function Base.getindex(A::GrassmannLieAlgHorMatrix{T}, i::Integer, j::Integer) where {T}
     if i ≤ A.n
@@ -134,3 +183,11 @@ function LinearAlgebra.mul!(C::GrassmannLieAlgHorMatrix, A::GrassmannLieAlgHorMa
 end
 LinearAlgebra.mul!(C::GrassmannLieAlgHorMatrix, α::Real, A::GrassmannLieAlgHorMatrix) = mul!(C, A, α)
 LinearAlgebra.rmul!(C::GrassmannLieAlgHorMatrix, α::Real) = mul!(C, C, α)
+
+function _round(B::GrassmannLieAlgHorMatrix; kwargs...)
+    GrassmannLieAlgHorMatrix(
+        _round(B.B; kwargs...),
+        B.N,
+        B.n
+    )
+end
