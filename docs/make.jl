@@ -23,6 +23,8 @@ const html_format = Documenter.HTML(;
         ],
     # specifies that we do not display the package name again (it's already in the logo)
     sidebar_sitename = false,
+    # we should get rid of this line again eventually. We will be able to do this once we got rid of library.md
+    size_threshold = 262144,
     )
 
 # if platform is set to "none" then no output pdf is generated
@@ -144,10 +146,9 @@ makedocs(;
             "Riemannian Manifolds" => "manifolds/riemannian_manifolds.md",
             "Homogeneous Spaces" => "manifolds/homogeneous_spaces.md",
             ],
-        "Arrays" => [
+        "Special Arrays" => [
             "Symmetric and Skew-Symmetric Matrices" => "arrays/skew_symmetric_matrix.md",
-            "Stiefel Global Tangent Space" => "arrays/stiefel_lie_alg_horizontal.md",
-            "Grassmann Global Tangent Space"=> "arrays/grassmann_lie_alg_hor_matrix.md",
+            "Global Tangent Spaces" => "arrays/global_tangent_spaces.md",
         ],
         "Optimizer Framework" => [
             "Optimizers" => "Optimizer.md",
