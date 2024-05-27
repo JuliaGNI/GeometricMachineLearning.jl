@@ -22,11 +22,21 @@ Main.theorem(raw"Let ``A\in{}G`` an element such that ``AE = Y``. Then we have
 Main.proof(raw"We first show that for every ``B^Y\in\mathfrak{g}^{\mathrm{hor},Y}`` the element ``A^{-1}B^YA`` is in ``\mathfrak{g}^{\mathrm{hor}}``. First not that ``A^{-1}B^YA\in\mathfrak{g}`` by a fundamental theorem of Lie group theory (closedness of the Lie algebra under adjoint action). Now assume that ``A^{-1}B^YA`` is not fully contained in ``\mathfrak{g}^\mathrm{hor}``, i.e. it also has a vertical component. So we would lose information when performing ``A^{-1}B^YA \mapsto A^{-1}B^YAE = A^{-1}B^YY``, but this contradicts the fact that ``B^Y\in\mathfrak{g}^{\mathrm{hor},Y}.`` We now have to proof that for every ``B\in\mathfrak{g}^\mathrm{hor}`` we can find an element in ``\mathfrak{g}^{\mathrm{hor}, Y}`` such that this element is mapped to ``B``. By a argument similar to the one above we can show that ``ABA^{-1}\in\mathfrak{g}^\mathrm{hor, Y}`` and this element maps to ``B``. Proofing that the map is injective is now trivial.")
 ```
 
-We should note that we have written all Lie group and Lie algebra actions as simple matrix multiplications, like ``AE = Y``. For some Lie groups and Lie algebras we should use different notations [holm2009geometric](@cite). But this is not relevant for what we use in `GeometricMachineLearning`.
+We should note that we have written all Lie group and Lie algebra actions as simple matrix multiplications, like ``AE = Y``. For some Lie groups and Lie algebras we should use different notations [holm2009geometric](@cite). These Lie groups are however not relevant for what we use in `GeometricMachineLearning` and we will stick to regular matrix notation.
 
 ## Global Sections 
 
-Note that the theorem above requires us to find an element ``A\in{}G`` such that ``AE = Y``. If we can find a mapping ``\lambda:\mathcal{M}\to{}G`` we call such a mapping a *global section*. Note that in general global sections are not unique because the rank of ``G`` is in general greater than that of ``\mathcal{M}``. We give an example of how to construct such a global section for the Stiefel and the Grassmann manifold below. 
+Note that the theorem above requires us to find an element ``A\in{}G`` such that ``AE = Y``. If we can find a mapping ``\lambda:\mathcal{M}\to{}G`` we call such a mapping a *global section*. 
+
+```@eval
+Main.theorem(raw"We call a mapping from ``\lambda:\mathcal{M} \to G`` a homogeneous space to its associated Lie group a **global section** if it satisfies:
+" * Main.indentation * raw"```math
+" * Main.indentation * raw"\lambda(Y)E = Y,
+" * Main.indentation * raw"```
+" * Main.indentation * raw"where ``E`` is the distinct element of the homogeneous space.")
+```
+
+Note that in general global sections are not unique because the rank of ``G`` is in general greater than that of ``\mathcal{M}``. We give an example of how to construct such a global section for the Stiefel and the Grassmann manifold below. 
 
 ## The Global Tangent Space for the Stiefel Manifold
 
@@ -143,13 +153,15 @@ This representation is based on the identification ``T_\mathcal{E}Gr(n,N)\to{}T_
 \mathfrak{g}^\mathrm{hor} = \mathfrak{g}^{\mathrm{hor},\mathcal{E}} = \left\{\begin{pmatrix} 0 & -B^T \\ B & 0 \end{pmatrix}: \text{$B$ arbitrary}\right\}.
 ```
 
-This is equivalent to the horizontal component of ``\mathfrak{g}`` for the Stiefel manifold for the case when ``A`` is zero. This is a reflection of the rotational invariance of the Grassmann manifold: the skew-symmetric matrices ``A`` are connected to the group of rotations ``O(n)`` which is factored out in the Grassmann manifold ``Gr(n,N)\simeq{}St(n,N)/O(n)``.
+This is equivalent to the horizontal component of ``\mathfrak{g}`` for the Stiefel manifold for the case when ``A`` is zero. This is a reflection of the rotational invariance of the Grassmann manifold: the skew-symmetric matrices ``A`` are connected to the group of rotations ``O(n)`` which is factored out in the Grassmann manifold ``Gr(n,N)\simeq{}St(n,N)/O(n)``. In `GeometricMachineLearning` we thus treat the Grassmann manifold as being embedded in the Stiefel manifold. In [bendokat2020grassmann](@cite) viewing the Grassmann manifold as a quotient space of the Stiefel manifold is important for "feasibility" in "practical computations". 
 
 ## Library Functions
 
 ```@docs; canonical=false
 StiefelLieAlgHorMatrix
 GrassmannLieAlgHorMatrix
+GlobalSection
+GeometricMachineLearning.global_section
 global_rep
 ```
 
@@ -160,6 +172,8 @@ global_rep
 Pages = []
 Canonical = false
 
-brantner2023generalizing
+absil2004riemannian
+absil2008optimization
 bendokat2020grassmann
+brantner2023generalizing
 ```
