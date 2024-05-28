@@ -3,6 +3,7 @@ using Documenter
 using DocumenterCitations
 using Markdown
 using Bibliography
+using LaTeXStrings
 # using Weave
 
 # this is necessary to avoid warnings. See https://documenter.juliadocs.org/dev/man/syntax/
@@ -50,7 +51,7 @@ end
 function latex_graphics(path::String; label = nothing, caption = nothing, width = .5)
     figure_width = "$(width)\\textwidth"
     latex_label = isnothing(label) ? "" : "\\label{" * label * "}" 
-    latex_caption = isnothing(caption) ? "" : "\\caption{" * string(Markdown.parse(caption)) * "}"
+    latex_caption = isnothing(caption) ? "" : "\\caption{" * string(Markdown.parse(caption))[1:end-2] * "}"
     latex_string = """\\begin{figure}
             \\includegraphics[width = """ * figure_width * "]{" * path * ".png}" *
             latex_caption *
