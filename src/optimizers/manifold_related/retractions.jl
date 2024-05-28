@@ -80,6 +80,28 @@ end
 
 cayley(B::NamedTuple) = apply_toNT(cayley, B)
 
+@doc raw"""
+    cayley(Y::Manifold, Δ)
+
+Take as input an element of a manifold `Y` and a tangent vector in `Δ` in the corresponding tangent space and compute the Cayley retraction.
+
+In different notation: take as input an element ``x`` of ``\mathcal{M}`` and an element of ``T_x\mathcal{M}`` and return ``\mathrm{Cayley}(v_x).`` For example: 
+
+```julia 
+Y = rand(StiefelManifold{Float64}, N, n)
+Δ = rgrad(Y, rand(N, n))
+cayley(Y, Δ)
+```
+
+See the docstring for [`rgrad`](@ref) for details on this function.
+"""
+function cayley(Y::Manifold{T}, Δ::AbstractMatrix{T}) where T
+    λY = GlobalSection(Y)
+    B = global_rep(λY, Δ)
+    cayleyB = cayley(B)
+    apply_section(λY, cayleyB)
+end
+
 function cayley(B::StiefelLieAlgHorMatrix{T}) where T
     E = StiefelProjection(B)
     unit = one(B.A)
