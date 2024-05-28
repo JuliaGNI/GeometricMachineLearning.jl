@@ -21,7 +21,7 @@ An element of GrassmannLieAlgMatrix takes the form:
 \bar{\mathbb{O}} & B^T \\ B & \mathbb{O}
 \end{pmatrix},
 ```
-where ``\bar{\mathbb{O}}\in\mathbb{R}^{n\times{}n}`` and ``\mathbb{O}\in\mathbb{R}^{(N - n)\times{}n}.
+where ``\bar{\mathbb{O}}\in\mathbb{R}^{n\times{}n}`` and ``\mathbb{O}\in\mathbb{R}^{(N - n)\times{}n}.``
 """
 mutable struct GrassmannLieAlgHorMatrix{T, ST <: AbstractMatrix{T}} <: AbstractLieAlgHorMatrix{T}
     B::ST
@@ -62,11 +62,11 @@ D \mapsto \Omega(E, DE - EE^TDE),
 
 where ``\Omega`` is the horizontal lift [`GeometricMachineLearning.Ω`](@ref).
 """
-function GrassmannLieAlgHorMatrix(D::AbstractMatrix{T}, n::Int) where {T}
+function GrassmannLieAlgHorMatrix(D::AbstractMatrix, n::Int)
     N = size(D, 1)
     @assert N ≥ n 
 
-    B = D[(n+1):N,1:n]
+    @views B = D[(n + 1):N,1:n]
     GrassmannLieAlgHorMatrix(B, N, n)
 end
 
