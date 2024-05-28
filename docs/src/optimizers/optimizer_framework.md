@@ -1,11 +1,13 @@
 # Neural Network Optimizers
 
+In this section we present the general Optimizer framework used in `GeometricMachineLearning`. For more information on the particular steps involved in this consult the documentation on the various optimizer methods such as the *momentum optimizer* and the [Adam optimizer](@ref "The Adam Optimizer"), and the documentation on [retractions](@ref "Retractions").
+
 During *optimization* we aim at changing the neural network parameters in such a way to minimize the loss function. So if we express the loss function ``L`` as a function of the neural network weights ``\Theta`` in a parameter space ``\mathbb{P}`` we can phrase the task as: 
 
 ```@eval
 Main.definition(raw"Given a neural network ``\mathcal{NN}`` parametrized by ``\Theta`` and a loss function ``L:\mathbb{P}\to\mathbb{R}`` we call an algorithm an **iterative optimizer** (or simply **optimizer**) if it performs the following task:
 " * Main.indentation * raw"```math
-" * Main.indentation * raw"\Theta \leftarrow \mathtt{Optimizer}(\Theta, \mathrm{past history}, t),
+" * Main.indentation * raw"\Theta \leftarrow \mathtt{Optimizer}(\Theta, \text{past history}, t),
 " * Main.indentation * raw"```
 " * Main.indentation * raw"with the aim of decreasing the value ``L(\Theta)`` in each optimization step.")
 ```
@@ -15,38 +17,46 @@ The past history of the optimization is stored in a cache ([`AdamCache`](@ref), 
 Optimization for neural networks is (almost always) some variation on gradient descent. The most basic form of gradient descent is a discretization of the *gradient flow equation*:
 
 ```math
-\dot{\theta} = -\nabla_\Theta{}L,
+\dot{\Theta} = -\nabla_\Theta{}L,
 ```
-by means of a Euler time-stepping scheme: 
+by means of an Euler time-stepping scheme: 
 ```math
 \Theta^{t+1} = \Theta^{t} - h\nabla_{\Theta^{t}}L,
 ```
 where ``\eta`` (the time step of the Euler scheme) is referred to as the *learning rate*. 
 
-This equation can easily be generalized to [manifolds](@ref "(Matrix) Manifolds") by replacing the *Euclidean gradient* ``\nabla_{\Theta^{t}}L`` by a *Riemannian gradient* $-h\mathrm{grad}_{\theta^{t}}L$ and addition by $-h\nabla_{\theta^{t}}L$ with a [retraction](../optimizers/manifold_related/retractions.md) by $-h\mathrm{grad}_{\theta^{t}}L$.
+This equation can easily be generalized to [manifolds](@ref "(Matrix) Manifolds") by replacing the *Euclidean gradient* ``\nabla_{\Theta^{t}}L`` by a *Riemannian gradient* ``-h\mathrm{grad}_{\Theta^{t}}L`` and addition by ``-h\nabla_{\Theta^{t}}L`` with the [exponential map](@ref "Geodesic Sprays and the Exponential Map") of ``-h\mathrm{grad}_{\theta^{t}}L``. In practice we often use approximations ot the exponential map however. These are called [retractions](@ref "Retractions").
 
-## Generalization
+## Generalization to Homogeneous Spaces
 
-In order to generalize neural network optimizers to [homogeneous spaces](@ref "Homogeneous Spaces"), a class of manifolds we often encounter in machine learning, we have to find a [global tangent space representation](@ref "Global Tangent Spaces") which we call $\mathfrak{g}^\mathrm{hor}$ here. 
+In order to generalize neural network optimizers to [homogeneous spaces](@ref "Homogeneous Spaces") we utilize their corresponding [global tangent space representation](@ref "Global Tangent Spaces") ``\mathfrak{g}^\mathrm{hor}``. 
 
-Starting from an element of the tangent space $T_Y\mathcal{M}$[^1], we need to perform two mappings to arrive at $\mathfrak{g}^\mathrm{hor}$, which we refer to by $\Omega$ and a red horizontal arrow:
+When introducing the notion of a [global tangent space](@ref "Global Tangent Spaces") we discussed how an element of the tangent space ``T_Y\mathcal{M}`` can be represented in ``\mathfrak{g}^\mathrm{hor}`` by performing two mappings: the first one is the horizontal lift ``\Omega`` (see the docstring for [`GeometricMachineLearning.Ω`](@ref)) and the second one is the adjoint operation[^1] with the lift of ``Y`` called ``\lambda(Y)``. We can visualize the steps required in performing this generalization:
 
-[^1]: In practice this is obtained by first using an AD routine on a loss function $L$, and then computing the Riemannian gradient based on this. See the section of the [Stiefel manifold](@ref "The Stiefel Manifold") for an example of this.
+[^1]: By the *adjoint operation* ``\mathrm{ad}_A:\mathfrak{g}\to\mathfrak{g}`` for an element ``A\in{}G`` we mean ``B \mapsto A^{-1}BA``.
 
 ```@example
 Main.include_graphics("../tikz/general_optimization_with_boundary") # hide
 ```
 
-Here the mapping $\Omega$ is a [horizontal lift](manifold_related/horizontal_lift.md) from the tangent space onto the **horizontal component of the Lie algebra at $Y$**. 
+The `cache` stores information about previous optimization steps and is dependent on the optimizer. In general the cache is represented as one or more elements in ``\mathfrak{g}^\mathrm{hor}``. Based on this the optimizer method (represented by [`update!`](@ref) in the figure) computes a *final velocity*. This final velocity is again an element of ``\mathfrak{g}^\mathrm{hor}``.
 
-The red line maps the horizontal component at $Y$, i.e. $\mathfrak{g}^{\mathrm{hor},Y}$, to the horizontal component at $\mathfrak{g}^\mathrm{hor}$.
+The final velocity is then fed into a [retraction](@ref "Retractions")[^2]. For computational reasons we split the retraction into two steps, referred to as "Retraction" and [`apply_section`](@ref) above. These two mappings together are equivalent to: 
 
-The $\mathrm{cache}$ stores information about previous optimization steps and is dependent on the optimizer. The elements of the $\mathrm{cache}$ are also in $\mathfrak{g}^\mathrm{hor}$. Based on this the optimer ([Adam](optimizers/adam_optimizer.md) in this case) computes a final velocity, which is the input of a [retraction](optimizers/manifold_related/retractions.md). Because this *update* is done for $\mathfrak{g}^{\mathrm{hor}}\equiv{}T_Y\mathcal{M}$, we still need to perform a mapping, called `apply_section` here, that then finally updates the network parameters. The two red lines are described in [global sections](@ref "Global Sections").
+[^2]: A retraction is an approximation of the [exponential map](@ref "Geodesic Sprays and the Exponential Map")
+
+```math
+\mathrm{retraction}(\Delta) = \mathrm{retraction}(\lambda(Y)B^\Delta{}E) = \lambda(Y)\mathrm{Retraction}(B^\Delta), 
+```
+
+where ``\Delta\in{}T_\mathcal{M}`` and ``B^\Delta`` is its representation in ``\mathfrak{g}^\mathrm{hor}`` as ``B^\Delta = \lambda(Y)^{-1}\Omega(\Delta)\lambda(Y).``
+
 
 ## Library Functions
 
 ```@docs; canonical = false
 Optimizer
+update!
 ```
 
 ## References 
