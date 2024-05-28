@@ -36,11 +36,11 @@ Main.theorem(raw"We call a mapping from ``\lambda:\mathcal{M} \to G`` a homogene
 " * Main.indentation * raw"where ``E`` is the distinct element of the homogeneous space.")
 ```
 
-Note that in general global sections are not unique because the rank of ``G`` is in general greater than that of ``\mathcal{M}``. We give an example of how to construct such a global section for the Stiefel and the Grassmann manifold below. 
+Note that in general global sections are not unique because the rank of ``G`` is in general greater than that of ``\mathcal{M}``. We give an example of how to construct such a global section for the Stiefel and the Grassmann manifolds below. 
 
 ## The Global Tangent Space for the Stiefel Manifold
 
-We now discuss the specific form of the global tangent space for the [Stiefel manifold](@ref "The Stiefel Manifold"). We choose the distinct element[^1] ``E`` to have an especially simple form:
+We now discuss the specific form of the global tangent space for the [Stiefel manifold](@ref "The Stiefel Manifold"). We choose the distinct element[^1] ``E`` to have an especially simple form (this matrix can be build by calling [`StiefelProjection`](@ref)):
 
 [^1]: We already introduced this special matrix together with the Stiefel manifold.
 
@@ -61,7 +61,7 @@ A & B^T \\ B & \mathbb{O}
 
 where ``A`` is a skew-symmetric matrix of size ``n\times{}n`` and ``B`` is an arbitrary matrix of size ``(N - n)\times{}n``.
 
-Arrays of type ``\mathfrak{g}^{\mathrm{hor}, E}`` are implemented in `GeometricMachineLearning` under the name `StiefelLieAlgHorMatrix`.
+Arrays of type ``\mathfrak{g}^{\mathrm{hor}, E}`` are implemented in `GeometricMachineLearning` under the name [`StiefelLieAlgHorMatrix`](@ref).
 
 We can call this with e.g. a skew-symmetric matrix ``A`` and an arbitrary matrix ``B``:
 
@@ -118,12 +118,42 @@ Y = rand(StiefelManifold, N, n)
 round.(λY_mat' * ΩΔ * λY_mat; digits = 3)
 ```
 
-For computational reasons the user is strongly discouraged to call `Matrix` on an instance of `GlobalSection`. The better option is:
+Performing this computation directly is computationally very inefficient however and the user is strongly discouraged to call `Matrix` on an instance of [`GlobalSection`](@ref). The better option is calling [`global_rep`](@ref):
 
 ```@example global_section
 using GeometricMachineLearning: _round # hide
 
 _round(global_rep(λY, Δ); digits = 3)
+```
+
+Internally `GlobalSection` calls the function [`global_section`](@ref) which does the following for the Stiefel manifold: 
+
+```julia
+A = randn(N, N - n) # or the gpu equivalent
+A = A - Y * (Y' * A)
+Y⟂ = qr(A).Q[1:N, 1:(N - n)]
+```
+
+So we draw ``(N - n)`` new columns randomly, subtract the part that is spanned by the columns of ``Y`` and then perform a ``QR`` composition on the resulting matrix. The ``Q`` part of the decomposition is a matrix of ``(N - n)`` columns that is orthogonal to ``Y`` and is typically referred to as ``Y_\perp``  [absil2004riemannian, absil2008optimization, bendokat2020grassmann](@cite). We can easily check that this ``Y_\perp`` is indeed orthogonal to ``Y``.
+
+```@eval
+Main.theorem(raw"The matrix ``Y_\perp`` constructed with the above algorithm satisfies
+" * Main.indentation * raw"```math
+" * Main.indentation * raw"Y^TY_\perp = \mathbb{O},
+" * Main.indentation * raw"```
+" * Main.indentation * raw"and
+" * Main.indentation * raw"```math
+" * Main.indentation * raw"(Y_\perp)^TY_\perp = \mathbb{I},
+" * Main.indentation * raw"```
+" * Main.indentation * raw"i.e. all the columns in the big matrix ``[Y, Y_\perp]\in\mathbb{R}^{N\times{}N}`` are mutually orthonormal and it therefore is an element of ``SO(N)``.")
+```
+
+```@eval
+Main.proof(raw"The second property is trivially satisfied because the ``Q`` component of a ``QR`` decomposition is an orthogonal matrix. For the first property note that ``Y^TQR = \mathbb{O}`` is zero because we have subtracted the ``Y`` component from the matrix ``QR``. The matrix ``R\in\mathbb{R}^{N\times{}(N-n)}`` further has the property ``[R]_{ij} = 0`` for ``i > j`` and we have that 
+" * Main.indentation * raw"```math
+" * Main.indentation * raw"(Y^TQ)R = [r_{11}(Y^TQ)_{1\bullet}, r_{12}(Y^TQ)_{1\bullet} + r_{22}(Y^TQ)_{2\bullet}, \ldots, \sum_{i=1}^{N-n}r_{i(N-n)}(Y^TQ)_{i\bullet}].
+" * Main.indentation * raw"```
+" * Main.indentation * raw"Now all the coefficients ``r_{ii}`` are non-zero because the matrix we performed the ``QR`` decomposition on has full rank and we can see that if ``(Y^TQ)R`` is zero ``Y^TQ`` also has to be zero.")
 ```
 
 We now discuss the global tangent space for the Grassmann manifold. This is similar to the Stiefel case.
@@ -158,8 +188,11 @@ This is equivalent to the horizontal component of ``\mathfrak{g}`` for the Stief
 ## Library Functions
 
 ```@docs; canonical=false
+GeometricMachineLearning.AbstractLieAlgHorMatrix
 StiefelLieAlgHorMatrix
+StiefelLieAlgHorMatrix(::AbstractMatrix, ::Int)
 GrassmannLieAlgHorMatrix
+GrassmannLieAlgHorMatrix(::AbstractMatrix, ::Int)
 GlobalSection
 GeometricMachineLearning.global_section
 global_rep
