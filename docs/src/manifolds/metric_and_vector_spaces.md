@@ -82,7 +82,7 @@ Main.indentation * raw"2. ``x + y = y + x,``
 " * 
 Main.indentation * raw"3. ``\exists 0 \in \mathcal{V}`` such that ``x + 0 = x,``
 " * 
-Main.indentation * raw"4. ``\exists -x \in \mathcal{V} such that ``x + (-x) = 0,``
+Main.indentation * raw"4. ``\exists -x \in \mathcal{V}`` such that ``x + (-x) = 0,``
 " * 
 Main.indentation * raw"5. ``a(ax) = (ab)x,``
 " * 
