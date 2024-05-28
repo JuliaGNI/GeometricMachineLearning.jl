@@ -126,7 +126,7 @@ using GeometricMachineLearning: _round # hide
 _round(global_rep(λY, Δ); digits = 3)
 ```
 
-Internally `GlobalSection` calls the function [`global_section`](@ref) which does the following for the Stiefel manifold: 
+Internally `GlobalSection` calls the function [`GeometricMachineLearning.global_section`](@ref) which does the following for the Stiefel manifold: 
 
 ```julia
 A = randn(N, N - n) # or the gpu equivalent
