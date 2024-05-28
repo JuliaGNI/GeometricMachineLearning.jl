@@ -36,7 +36,11 @@ end
 geodesic(B::NamedTuple) = apply_toNT(geodesic, B)
 
 @doc raw"""
-The geodesic map for the manifolds. It takes as input an element ``x`` of ``\mathcal{M}`` and an element of ``T_x\mathcal{M}`` and returns ``\mathtt{geodesic}(x, v_x) = \exp(v_x).`` For example: 
+    geodesic(Y::Manifold, Δ)
+
+Take as input an element of a manifold `Y` and a tangent vector in `Δ` in the corresponding tangent space and compute the geodesic (exponential map).
+
+In different notation: take as input an element ``x`` of ``\mathcal{M}`` and an element of ``T_x\mathcal{M}`` and return ``\mathtt{geodesic}(x, v_x) = \exp(v_x).`` For example: 
 
 ```julia 
 Y = rand(StiefelManifold{Float64}, N, n)
@@ -44,7 +48,7 @@ Y = rand(StiefelManifold{Float64}, N, n)
 geodesic(Y, Δ)
 ```
 
-See the docstring for ``rgrad`` for details on this function.
+See the docstring for [`rgrad`](@ref) for details on this function.
 """
 function geodesic(Y::Manifold{T}, Δ::AbstractMatrix{T}) where T
     λY = GlobalSection(Y)
