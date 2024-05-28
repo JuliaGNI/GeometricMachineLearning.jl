@@ -66,8 +66,8 @@ function StiefelLieAlgHorMatrix(D::AbstractMatrix, n::Integer)
     N = size(D, 1)
     @assert N ≥ n 
 
-    A_small = SkewSymMatrix(D[1:n,1:n])
-    B = D[(n+1):N, 1:n]
+    @views A_small = SkewSymMatrix(D[1:n,1:n])
+    @views B = D[(n + 1):N, 1:n]
     StiefelLieAlgHorMatrix(A_small, B, N, n)
 end
 
