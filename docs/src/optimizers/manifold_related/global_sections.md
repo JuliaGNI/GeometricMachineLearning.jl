@@ -1,6 +1,6 @@
-# Global Sections
+# Global Sections for Homogeneous Spaces
 
-**Global sections** are needed needed for the generalization of [Adam](../adam_optimizer.md) and other optimizers to [homogeneous spaces](@ref "Homogeneous Spaces"). They are necessary to perform the two mappings represented represented by horizontal and vertical red lines in the section on the general [optimizer framework](../../Optimizer.md).
+**Global sections** are needed needed for the generalization of [Adam](../adam_optimizer.md) and other optimizers to [homogeneous spaces](@ref "Homogeneous Spaces"). They are necessary to perform the two mappings represented represented by horizontal and vertical red lines in the section on the general [optimizer framework](../optimizer_framework.md).
 
 ## Computing the global section
 In differential geometry a **section** is always associated to some **bundle**, in our case this bundle is $\pi:G\to\mathcal{M},A\mapsto{}AE$. A section is a mapping $\mathcal{M}\to{}G$ for which $\pi$ is a left inverse, i.e. $\pi\circ\lambda = \mathrm{id}$. 
@@ -17,7 +17,7 @@ In `GeometricMachineLearning`, `GlobalSection` takes an element of $Y\in{}St(n,N
 
 ## Computing the global tangent space representation based on a global section
 
-The output of the [horizontal lift](horizontal_lift.md) $\Omega$ is an element of $\mathfrak{g}^{\mathrm{hor},Y}$. For this mapping $\Omega(Y, B{}Y) = B$ if $B\in\mathfrak{g}^{\mathrm{hor},Y}$, i.e. there is **no information loss** and no projection is performed. We can map the $B\in\mathfrak{g}^{\mathrm{hor},Y}$ to $\mathfrak{g}^\mathrm{hor}$ with $B\mapsto{}\lambda(Y)^{-1}B\lambda(Y)$.
+The output of the [horizontal lift](@ref "Homogeneous Spaces") $\Omega$ is an element of $\mathfrak{g}^{\mathrm{hor},Y}$. For this mapping $\Omega(Y, B{}Y) = B$ if $B\in\mathfrak{g}^{\mathrm{hor},Y}$, i.e. there is **no information loss** and no projection is performed. We can map the $B\in\mathfrak{g}^{\mathrm{hor},Y}$ to $\mathfrak{g}^\mathrm{hor}$ with $B\mapsto{}\lambda(Y)^{-1}B\lambda(Y)$.
 
 The function `global_rep` performs both mappings at once[^1], i.e. it takes an instance of `GlobalSection` and an element of $T_YSt(n,N)$, and then returns an element of $\frak{g}^\mathrm{hor}\equiv$`StiefelLieAlgHorMatrix`.
 
