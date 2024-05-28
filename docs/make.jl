@@ -50,7 +50,7 @@ end
 function latex_graphics(path::String; label = nothing, caption = nothing, width = .5)
     figure_width = "$(width)\\textwidth"
     latex_label = isnothing(label) ? "" : "\\label{" * label * "}" 
-    latex_caption = isnothing(caption) ? "" : "\\caption{" * Markdown.parse(caption) * "}"
+    latex_caption = isnothing(caption) ? "" : "\\caption{" * string(Markdown.parse(caption)) * "}"
     latex_string = """\\begin{figure}
             \\includegraphics[width = """ * figure_width * "]{" * path * ".png}" *
             latex_caption *
@@ -150,13 +150,9 @@ makedocs(;
             "Symmetric and Skew-Symmetric Matrices" => "arrays/skew_symmetric_matrix.md",
             "Global Tangent Spaces" => "arrays/global_tangent_spaces.md",
         ],
-        "Optimizer Framework" => [
-            "Optimizers" => "Optimizer.md",
-            "General Optimization" => "optimizers/general_optimization.md",
+        "Optimizers" => [
+            "Optimizers" => "optimizers/optimizer_framework.md",
             "Pullbacks" => "pullbacks/computation_of_pullbacks.md",
-        ],
-        "Optimizer Functions" => [
-            "Horizontal Lift" => "optimizers/manifold_related/horizontal_lift.md",
             "Global Sections" => "optimizers/manifold_related/global_sections.md",
             "Retractions" => "optimizers/manifold_related/retractions.md",
             "Geodesic Retraction" => "optimizers/manifold_related/geodesic.md",
