@@ -41,7 +41,7 @@ meaning that for an element of the [horizontal component of the Lie algebra](@re
 
 ## Optimization
 
-The output of `global_rep` is then used for all the [optimization steps](../../Optimizer.md).
+The output of `global_rep` is then used for all the [optimization steps](@ref "Neural Network Optimizers").
 
 ## References 
 

@@ -36,7 +36,7 @@ Starting from this basic map $\exp:\mathfrak{g}\to{}G$ we can build mappings for
 
 3. **General tangent space to a homogeneous space** $T_Y\mathcal{M}$ with $Y = AE$: For $\Delta=ABE\in{}T_Y\mathcal{M}$ the exponential map is simply $A\exp(B)E$. This is the general case which we deal with.  
 
-The general theory behind points 2. and 3. is discussed in chapter 11 of (O'Neill, 1983). The function `retraction` in `GeometricMachineLearning` performs $\mathfrak{g}^\mathrm{hor}\to\mathcal{M}$, which is the second of the above points. To get the third from the second point, we simply have to multiply with a matrix from the left. This step is done with `apply_section` and represented through the red vertical line in the diagram on the [general optimizer framework](../../Optimizer.md).
+The general theory behind points 2. and 3. is discussed in chapter 11 of (O'Neill, 1983). The function `retraction` in `GeometricMachineLearning` performs $\mathfrak{g}^\mathrm{hor}\to\mathcal{M}$, which is the second of the above points. To get the third from the second point, we simply have to multiply with a matrix from the left. This step is done with `apply_section` and represented through the red vertical line in the diagram on the [general optimizer framework](@ref "Neural Network Optimizers").
 
 
 ### Word of caution
