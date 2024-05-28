@@ -1,9 +1,9 @@
 @doc raw"""
-AbstractCache has subtypes: 
-- AdamCache
-- MomentumCache
-- GradientCache
-- BFGSCache
+AbstractCache has subtypes:
+- [`AdamCache`](@ref)
+- [`MomentumCache`](@ref)
+- [`GradientCache`](@ref)
+- [`BFGSCache`](@ref)
 
 All of them can be initialized with providing an array (also supporting manifold types).
 """
@@ -12,6 +12,33 @@ abstract type AbstractCache{T} end
 #############################################################################
 # All the definitions of the caches
 
+@doc raw"""
+    AdamCache(Y)
+
+Store the first and second moment for `Y` (initialized as zeros).
+
+First and second moments are called `B₁` and `B₂`.
+
+If the cache is called with an instance of a homogeneous space, e.g. the [`StiefelManifold`](@ref) ``St(n,N)`` it initializes the moments as elements of ``\mathfrak{g}^\mathrm{hor}`` ([`StiefelLieAlgHorMatrix`](@ref)).
+
+# Examples
+
+```jldoctest
+using GeometricMachineLearning
+
+Y = rand(StiefelManifold, 5, 3)
+AdamCache(Y).B₁
+
+# output
+
+5×5 StiefelLieAlgHorMatrix{Float64, SkewSymMatrix{Float64, Vector{Float64}}, Matrix{Float64}}:
+ 0.0  -0.0  -0.0  -0.0  -0.0
+ 0.0   0.0  -0.0  -0.0  -0.0
+ 0.0   0.0   0.0  -0.0  -0.0
+ 0.0   0.0   0.0   0.0   0.0
+ 0.0   0.0   0.0   0.0   0.0
+```
+"""
 struct AdamCache{T, AT <: AbstractArray{T}} <: AbstractCache{T}
     B₁::AT
     B₂::AT 
@@ -20,6 +47,17 @@ struct AdamCache{T, AT <: AbstractArray{T}} <: AbstractCache{T}
     end
 end
 
+@doc raw"""
+    MomentumCache(Y)
+
+Store the moment for `Y` (initialized as zeros).
+
+The moment is called `B`.
+
+If the cache is called with an instance of a homogeneous space, e.g. the [`StiefelManifold`](@ref) ``St(n,N)`` it initializes the moments as elements of ``\mathfrak{g}^\mathrm{hor}`` ([`StiefelLieAlgHorMatrix`](@ref)).
+
+See [`AdamCache`](@ref).
+"""
 struct MomentumCache{T, AT <: AbstractArray{T}} <:AbstractCache{T}
     B::AT
     function MomentumCache(Y::AbstractArray)
@@ -27,6 +65,13 @@ struct MomentumCache{T, AT <: AbstractArray{T}} <:AbstractCache{T}
     end
 end
 
+@doc raw"""
+    GradientCache(Y)
+
+Do not store anything.
+
+The cache for the [`GradientOptimizer`](@ref) does not consider past information.
+"""
 struct GradientCache{T} <: AbstractCache{T} end
 GradientCache(::AbstractArray{T}) where T = GradientCache{T}()
 
