@@ -12,6 +12,11 @@ Compute the Riemannian gradient at ``Y\in{}Gr(n, N)``.
 
 These gradient have the property that they are orthogonal to the space spanned by ``Y``.
 
+The precise form of the mapping is: 
+```math
+\mathtt{rgrad}(Y, \nabla{}L) \mapsto \nabla{}L - YY^T\nabla{}L
+```
+
 Note the property ``Y^T\mathrm{rgrad}(Y, \nabla{}L) = \mathbb{O}.``
 
 Also see [`rgrad(::StiefelManifold, ::AbstractMatrix)`](@ref).
