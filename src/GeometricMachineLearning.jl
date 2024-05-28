@@ -186,7 +186,7 @@ module GeometricMachineLearning
     export GlobalSection, apply_section
     export global_rep
     export Geodesic, Cayley
-    export geodesic
+    export geodesic, cayley
     export retraction
     # export ⊙², √ᵉˡᵉ, /ᵉˡᵉ, scalar_add
     export update!
