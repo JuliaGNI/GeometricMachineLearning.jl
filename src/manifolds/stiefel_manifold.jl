@@ -30,7 +30,7 @@ Compute the Riemannian gradient for the Stiefel manifold at ``Y\in{}St(N,n)`` ba
     
 The function computes the Riemannian gradient with respect to the canonical [`metric`](@ref).
 
-    The precise form of the mapping is: 
+The precise form of the mapping is: 
 ```math
 \mathtt{rgrad}(Y, \nabla{}L) \mapsto \nabla{}L - Y(\nabla{}L)^TY
 ```
@@ -113,7 +113,7 @@ Further note that we convert the `QRCompactWYQ` object to a `Matrix` before we d
 The implementation is done with a QR decomposition (`LinearAlgebra.qr!`). Internally we do: 
 
 ```julia
-randn!(A)
+A = randn(N, N - n) # or the gpu equivalent
 A = A - Y.A * (Y.A' * A)
 qr!(A).Q
 ```
