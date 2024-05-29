@@ -166,8 +166,6 @@ makedocs(;
             "Pullbacks" => "pullbacks/computation_of_pullbacks.md",
             "Global Sections" => "optimizers/manifold_related/global_sections.md",
             "Retractions" => "optimizers/manifold_related/retractions.md",
-            "Geodesic Retraction" => "optimizers/manifold_related/geodesic.md",
-            "Cayley Retraction" => "optimizers/manifold_related/cayley.md",
             "Adam Optimizer" => "optimizers/adam_optimizer.md",
             "BFGS Optimizer" => "optimizers/bfgs_optimizer.md",
             ],
