@@ -107,6 +107,16 @@ function example(statement::String; label::Union{Nothing, String} = nothing)
     end
 end
 
+function remark(statement::String; label::Union{Nothing, String} = nothing)
+    if Main.output_type == :html
+        Markdown.parse("""!!! info "Remark" 
+            \t $(statement)""")
+    else
+        theorem_label = isnothing(label) ? "" : raw"\label{rmrk:" * label * raw"}"
+        Markdown.parse(raw"\begin{rmrk}" * statement * theorem_label * raw"\end{rmrk}")
+    end
+end
+
 function proof(statement::String)
     if Main.output_type == :html
         Markdown.parse("""!!! details "Proof" 

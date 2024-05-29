@@ -78,7 +78,7 @@ put_figures_outside_of_minted_environment:
 	sed -i'' -e 's/retraction_comparison.png/optimizers\/manifold_related\/retraction_comparison.png/g' build/G*.tex;
 	sed -i'' -e 's/retraction_discrepancy.png/optimizers\/manifold_related\/retraction_discrepancy.png/g' build/G*.tex;
 
-make_correct_thrm_and_dfntn_and_xmpl_and_proof_environment:
+make_correct_thrm_and_dfntn_and_xmpl_and_rmrk_and_proof_environment:
 	sed -i'' -e 's/{\\textbackslash}begin\\{thrm\\}/\\begin{thrm}/g' build/G*.tex;
 	sed -i'' -e 's/{\\textbackslash}end\\{thrm\\}/\\end{thrm}/g' build/G*.tex;
 	sed -i'' -e 's/{\\textbackslash}label\\{th:\([a-zA-Z]*\)\\}/\\label{th:\1}/g' build/G*.tex;
@@ -90,6 +90,9 @@ make_correct_thrm_and_dfntn_and_xmpl_and_proof_environment:
 	sed -i'' -e 's/{\\textbackslash}label\\{xmpl:\([a-zA-Z]*\)\\}/\\label{xmpl:\1}/g' build/G*.tex;
 	sed -i'' -e 's/{\\textbackslash}begin\\{proof\\}/\\begin{proof}/g' build/G*.tex;
 	sed -i'' -e 's/{\\textbackslash}end\\{proof\\}/\\end{proof}/g' build/G*.tex;
+	sed -i'' -e 's/{\\textbackslash}begin\\{rmrk\\}/\\begin{rmrk}/g' build/G*.tex;
+	sed -i'' -e 's/{\\textbackslash}end\\{rmrk\\}/\\end{rmrk}/g' build/G*.tex;
+	sed -i'' -e 's/{\\textbackslash}label\\{rmrk:\([a-zA-Z]*\)\\}/\\label{rmrk:\1}/g' build/G*.tex;
 
 do_correct_quotation_marks:
 	sed -i'' -e 's/{\\textquotedbl}/"/g' build/G*.tex;
