@@ -57,6 +57,15 @@ function geodesic(Y::Manifold{T}, Δ::AbstractMatrix{T}) where T
     apply_section(λY, expB)
 end
 
+@doc raw"""
+    geodesic(B::StiefelLieAlgHorMatrix)
+
+Compute the geodesic of `B*E` where `E` is the distinct element of the StiefelManifold.
+
+# Implementation
+
+This is using a computationally efficient version of the matrix exponential. See [`GeometricMachineLearning.𝔄`](@ref).
+"""
 function geodesic(B::StiefelLieAlgHorMatrix{T}) where T
     E = StiefelProjection(B)
     unit = one(B.A)
@@ -67,6 +76,13 @@ function geodesic(B::StiefelLieAlgHorMatrix{T}) where T
     )
 end
 
+@doc raw"""
+    geodesic(B::GrassmannLieAlgHorMatrix)
+
+Compute the geodesic of `B*E` where `E` is the distinct element of the StiefelManifold.
+
+See [`geodesic(::StiefelLieAlgHorMatrix)`](@ref).
+"""
 function geodesic(B::GrassmannLieAlgHorMatrix{T}) where T
     N, n = B.N, B.n
     E = typeof(B.B)(StiefelProjection(N, n, T))
@@ -102,6 +118,11 @@ function cayley(Y::Manifold{T}, Δ::AbstractMatrix{T}) where T
     apply_section(λY, cayleyB)
 end
 
+@doc raw"""
+    cayley(B::StiefelLieAlgHorMatrix)
+
+Compute the Cayley retraction of `B` and multiply it with `E` (the distinct element of the Stiefel manifold).
+"""
 function cayley(B::StiefelLieAlgHorMatrix{T}) where T
     E = StiefelProjection(B)
     unit = one(B.A)
@@ -117,4 +138,15 @@ function cayley(B::StiefelLieAlgHorMatrix{T}) where T
             vcat(unit, T(0.5) * A_mat) + exponent \ (vcat(unit, T(0.5) * A_mat) + vcat(T(0.5) * A_mat, T(0.25) * A_mat2 - T(0.5) * BB))
             )
     )
+end
+
+@doc raw"""
+    cayley(B::GrassmannLieAlgHorMatrix)
+
+Compute the Cayley retraction of `B` and multiply it with `E` (the distinct element of the Stiefel manifold).
+
+See [`cayley(::StiefelLieAlgHorMatrix)`](@ref).
+"""
+function cayley(B::GrassmannLieAlgHorMatrix{T}) where T
+    error("Missing implementation!")
 end
