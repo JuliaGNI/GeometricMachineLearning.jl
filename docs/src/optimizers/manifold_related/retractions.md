@@ -206,7 +206,7 @@ The theorem requires the homogeneous space to be naturally reductive:
 
 ```@eval
 Main.definition(raw"A homogeneous space is called **naturally-reductive** if the following two conditions hold:
-" * Main.indentation * raw"1. ``A^{-1}BA\in\mathfrak{g}^\mathrm{hor}`` for every ``B\in\mathfrak{g}^\mathrm{hor}`` and ``A\in\exp(\mathfrak{g}^\mathrm{ver}),
+" * Main.indentation * raw"1. ``A^{-1}BA\in\mathfrak{g}^\mathrm{hor}`` for every ``B\in\mathfrak{g}^\mathrm{hor}`` and ``A\in\exp(\mathfrak{g}^\mathrm{ver}``),
 " * Main.indentation * raw"2. ``g([X, Y]^\mathrm{hor}, Z) = g(X, [Y, Z]^\mathrm{hor})`` for all ``X, Y, Z \in \mathfrak{g}^\mathrm{hor}``,
 " * Main.indentation * raw"where ``[X, Y]^\mathrm{hor} = \Omega(XYE - YXE)``. If only the first condition holds the homogeneous space is called **reductive** but not **naturally-reductive**.")
 ```
@@ -267,6 +267,11 @@ and
 
 where ``B = \lambda(Y)^{-1}\Omega(\Delta)\lambda(Y)``. These expressions for `geodesic` and `cayley` are the ones that we typically use in `GeometricMachineLearning` for computational reasons. We show how we can utilize the sparse structure of ``\mathfrak{g}^\mathrm{hor}`` for computing the geodesic retraction and the Cayley retraction (i.e. the expressions ``\exp(B)`` and ``\mathrm{Cayley}(B)`` for ``B\in\mathfrak{g}^\mathrm{hor}``). Similar derivations can be found in [celledoni2000approximating, fraikin2007optimization, bendokat2021real](@cite).
 
+```@eval
+Main.remark(raw"Further note that, even though the global section ``\lambda:\mathcal{M} \to G`` is not unique, the final geodesic ``
+\gamma_\Delta(t) = \lambda(Y)\exp(\lambda(Y)^{-1}\Omega(\Delta)\lambda(Y))E`` does not depend on the particular section we chose.")
+```
+
 ### The Geodesic Retraction
 
 An element of ``\mathfrak{g}^\mathrm{hor}`` can be written as:
@@ -275,7 +280,7 @@ An element of ``\mathfrak{g}^\mathrm{hor}`` can be written as:
 \begin{bmatrix}
     A & -B^T \\ 
     B & \mathbb{O}
-\end{bmatrix} = \begin{bmatrix}  \frac{1}{2}A & \mathbb{I} \\ B & \mathbb{O} \end{bmatrix} \begin{bmatrix}  \mathbb{I} & \mathbb{O} \\ \frac{1}{2}A & -B^T  \end{bmatrix} =: B'(B'')^Ts,
+\end{bmatrix} = \begin{bmatrix}  \frac{1}{2}A & \mathbb{I} \\ B & \mathbb{O} \end{bmatrix} \begin{bmatrix}  \mathbb{I} & \mathbb{O} \\ \frac{1}{2}A & -B^T  \end{bmatrix} =: B'(B'')^T,
 ```
 
 where we exploit the sparse structure of the array, i.e. it is a multiplication of a ``N\times2n`` with a ``2n\times{}N`` matrix.
@@ -289,7 +294,13 @@ We further use the following:
     \end{aligned}
 ```
 
-where we defined ``\mathfrak{A}(B', B'') := \sum_{n=1}^\infty \frac{1}{n!} ((B'')^TB')^{n-1}.`` Note that evaluating ``\mathfrak{A}`` relies on computing products of *small* matrices of size ``2n\times2n.`` We do this by relying on a simple Taylor expansion (see the docstring for [`GeometricMachineLearning.𝔄`](@ref)).
+where we defined ``\mathfrak{A}(B', B'') := \sum_{n=1}^\infty \frac{1}{n!} ((B'')^TB')^{n-1}.`` Note that evaluating ``\mathfrak{A}`` relies on computing products of *small* matrices of size ``2n\times2n.`` We do this by relying on a simple Taylor expansion (see the docstring for [`GeometricMachineLearning.𝔄`](@ref)). 
+
+The final expression we obtain is: 
+
+```math
+E + \begin{pmatrix} \frac{1}{2} A & \mathbb{I} \\ B & \mathbb{O} \end{pmatrix} 𝔄(B', B'') \begin{pmatrix} \mathbb{I} \\ \frac{1}{2} A \end{pmatrix}.
+```
 
 ### The Cayley Retraction
 
@@ -319,17 +330,20 @@ E + \frac{1}{2}\begin{bmatrix} \frac{1}{2}A & \mathbb{I} \\ B & \mathbb{O}  \end
     \right)
 ```
 
+We conclude with a remark:
 
 ```@eval
-Main.remark(raw"As mentioned previously the Lie group ``SO(N)``, i.e. the one corresponding to the Stiefel manifold and the Grassmann manifold, has a bi-invariant Riemannian metric associated with it: ``(B_1,B_2)\mapsto \mathrm{Tr}(B_1^TB_2)``.
-For other Lie groups (e.g. the symplectic group) the situation is slightly more difficult [bendokat2021real](@cite).")
+Main.remark(raw"As mentioned previously the Lie group ``SO(N)``, i.e. the one corresponding to the Stiefel manifold and the Grassmann manifold, has a bi-invariant Riemannian metric associated with it: ``(B_1,B_2)\mapsto \mathrm{Tr}(B_1^TB_2)``. For other Lie groups (e.g. the symplectic group) the situation is slightly more difficult [bendokat2021real](@cite).")
 ```
 
 ## Library Functions
 
 ```@docs; canonical=false
-geodesic
-cayley
+geodesic(::StiefelLieAlgHorMatrix)
+geodesic(::GrassmannLieAlgHorMatrix)
+cayley(::StiefelLieAlgHorMatrix)
+cayley(::GrassmannLieAlgHorMatrix)
+cayley(::Manifold{T}, ::AbstractMatrix{T}) where T
 GeometricMachineLearning.𝔄
 ```
 
