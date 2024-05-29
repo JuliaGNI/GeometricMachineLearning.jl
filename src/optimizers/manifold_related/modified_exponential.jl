@@ -11,7 +11,7 @@ This uses a Taylor expansion that iteratively adds terms with
 while norm(Aⁿ) > ε
     mul!(A_temp, Aⁿ, A)
     Aⁿ .= A_temp
-    rmul!(Aⁿ, T(inv(i)))
+    rmul!(Aⁿ, inv(n))
 
     𝔄 += B
     n += 1 
