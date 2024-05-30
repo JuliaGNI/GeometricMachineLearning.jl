@@ -7,10 +7,11 @@ It takes as input an optimization method and the parameters of a network.
 
 For *technical reasons* we first specify an [`OptimizerMethod`](@ref) that stores all the hyperparameters of the optimizer. 
 """
-mutable struct Optimizer{MT<:OptimizerMethod, CT}
+mutable struct Optimizer{MT<:OptimizerMethod, CT, RT}
     method::MT
     cache::CT
     step::Int
+    retraction::RT
 end
 
 @doc raw"""
@@ -20,8 +21,8 @@ Allocate the cache for a specific `method` and `nn_params` for an instance of `O
 
 Internally this calls [`init_optimizer_cache`](@ref).
 """
-function Optimizer(method::OptimizerMethod, nn_params::Union{Tuple, NamedTuple})
-    Optimizer(method, init_optimizer_cache(method, nn_params), 0)
+function Optimizer(method::OptimizerMethod, nn_params::Union{Tuple, NamedTuple}; retraction = cayley)
+    Optimizer(method, init_optimizer_cache(method, nn_params), 0, retraction)
 end
 
 """
@@ -33,11 +34,11 @@ Internally this calls `Optimizer(method, nn.params)`.
 
 Typically the Optimizer is not initialized with the network parameters, but instead with a NeuralNetwork struct.
 """
-function Optimizer(method::OptimizerMethod, nn::NeuralNetwork)
-    Optimizer(method, nn.params)
+function Optimizer(method::OptimizerMethod, nn::NeuralNetwork; kwargs...)
+    Optimizer(method, nn.params; kwargs...)
 end
 
-Optimizer(nn::NeuralNetwork, m::OptimizerMethod) = Optimizer(m, nn)
+Optimizer(nn::NeuralNetwork, m::OptimizerMethod; kwargs...) = Optimizer(m, nn; kwargs...)
 
 @doc raw"""
     update!(o, cache, B)
@@ -52,7 +53,7 @@ function update!(::Optimizer, ::AbstractCache, ::AbstractArray) end
 # optimization step function
 
 @doc raw"""
-    optimization_step!(o, layer, ps, cache, dx)
+    optimization_step!(o, λY, ps, cache, dx)
 
 Update the weights `ps` of a `layer` based on an [`Optimizer`](@ref), a `cache` and first-order derivatives `dx`.
 
@@ -60,13 +61,13 @@ The derivatives `dx` here are usually obtained via an AD routine by differentiat
 
 It is calling the function [`update!`](@ref) internally which has to be implemented for every [`OptimizerMethod`](@ref).
 """
-function optimization_step!(o::Optimizer, layer::Union{AbstractExplicitLayer, AbstractExplicitCell}, ps::NamedTuple, cache::NamedTuple, dx::NamedTuple)
+function optimization_step!(o::Optimizer, λY::NamedTuple, ps::NamedTuple, cache::NamedTuple, dx::NamedTuple)
     gx = rgrad(ps, dx)
-    λY = GlobalSection(ps)
     B = global_rep(λY, gx)
     update!(o, cache, B)
-    ps₂ = retraction(layer, B)
-    apply_section!(ps, λY, ps₂)
+    update_section!(λY, B, o.retraction)
+
+    nothing
 end
 
 @doc raw"""
@@ -74,10 +75,10 @@ end
 
 Optimize a neural network built with `Chain`.
 """
-function optimization_step!(o::Optimizer, model::Chain, ps::Tuple, dx::Tuple)
+function optimization_step!(o::Optimizer, λY::Tuple, ps::Tuple, dx::Tuple)
     o.step += 1
-    for (index, element) in zip(eachindex(model.layers), model.layers)
-        optimization_step!(o, element, ps[index], o.cache[index], dx[index])
+    for (cache, λY, ps, dx) in zip(o.cache, λY, ps, dx)
+        optimization_step!(o, λY, ps, cache, dx)
     end
 end
 
@@ -86,10 +87,10 @@ end
 
 Optimize a neural network consisting of a single `AbstractExplicitLayer`.
 """
-function optimization_step!(o::Optimizer, model::AbstractExplicitLayer, ps::NamedTuple, dx::NamedTuple)
+function optimization_step!(o::Optimizer, λY::NamedTuple, ps::NamedTuple, dx::NamedTuple)
     o.step += 1
 
-    optimization_step!(o, model, ps, o.cache, dx)
+    optimization_step!(o, λY, ps, o.cache, dx)
 end
 
 #######################################################################################
