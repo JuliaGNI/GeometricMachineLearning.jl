@@ -124,7 +124,7 @@ function global_section(Y::StiefelManifold{T}) where T
     A = KernelAbstractions.allocate(backend, T, N, N-n)
     randn!(A)
     A = A - Y.A * (Y.A' * A)
-    qr!(A).Q
+    typeof(Y.A)(qr!(A).Q)
 end
 
 @doc raw"""
