@@ -157,17 +157,17 @@ makedocs(;
             "Riemannian Manifolds" => "manifolds/riemannian_manifolds.md",
             "Homogeneous Spaces" => "manifolds/homogeneous_spaces.md",
             ],
-        "Special Arrays" => [
+        "Special Arrays and AD" => [
             "Symmetric and Skew-Symmetric Matrices" => "arrays/skew_symmetric_matrix.md",
             "Global Tangent Spaces" => "arrays/global_tangent_spaces.md",
+            "Pullbacks" => "pullbacks/computation_of_pullbacks.md",
         ],
         "Optimizers" => [
             "Optimizers" => "optimizers/optimizer_framework.md",
-            "Pullbacks" => "pullbacks/computation_of_pullbacks.md",
             "Global Sections" => "optimizers/manifold_related/global_sections.md",
             "Retractions" => "optimizers/manifold_related/retractions.md",
-            "Parallel transport" => "optimizers/manifold_related/parallel_transport.md",
-            "Adam Optimizer" => "optimizers/adam_optimizer.md",
+            "Parallel Transport" => "optimizers/manifold_related/parallel_transport.md",
+            "Optimizer Methods" => "optimizers/optimizer_methods.md",
             "BFGS Optimizer" => "optimizers/bfgs_optimizer.md",
             ],
         "Special Neural Network Layers" => [
