@@ -135,4 +135,5 @@ Canonical = false
 lang2012fundamentals
 bishop1980tensor
 bendokat2020grassmann
+schlarb2024covariant
 ```
