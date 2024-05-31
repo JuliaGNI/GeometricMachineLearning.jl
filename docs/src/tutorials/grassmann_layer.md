@@ -34,11 +34,13 @@ For computing the loss between the two distributions, i.e. ``\Psi(\mathcal{N}(0,
 using GeometricMachineLearning, Zygote, BrenierTwoFluid
 using LinearAlgebra: norm # hide
 import Random # hide 
-Random.seed!(123)
+Random.seed!(1234)
 
 model = Chain(GrassmannLayer(2,3), Dense(3, 8, tanh), Dense(8, 3, identity))
 
 nn = NeuralNetwork(model, CPU(), Float64)
+
+λY = GlobalSection(nn.params)
 
 # this computes the cost that is associated to the Wasserstein distance
 c = (x,y) -> .5 * norm(x - y)^2
@@ -48,7 +50,7 @@ const ε = 0.1                 # entropic regularization. √ε is a length.  # 
 const q = 1.0                 # annealing parameter                       # hide
 const Δ = 1.0                 # characteristic domain size                # hide
 const s = ε                   # current scale: no annealing -> equals ε   # hide
-const tol = 1e-6              # marginal condition tolerance              # hide 
+const tol = 1e-6              # marginal condition tolerance              # hide
 const crit_it = 20            # acceleration inference                    # hide
 const p_η = 2
 
@@ -84,7 +86,7 @@ loss_array = zeros(training_steps)
 for i in 1:training_steps
     val, dp = compute_gradient(nn.params)
     loss_array[i] = val
-    optimization_step!(optimizer, model, nn.params, dp)
+    optimization_step!(optimizer, λY, nn.params, dp)
 end
 plot(loss_array, xlabel="training step", label="loss")
 ```
@@ -92,6 +94,7 @@ plot(loss_array, xlabel="training step", label="loss")
 Now we plot a few points to check how well they match the graph:
 
 ```@example rosenbrock
+Random.seed!(124)
 const number_of_points = 35
 
 coordinates = nn(randn(2, number_of_points))
