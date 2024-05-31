@@ -181,7 +181,7 @@ The *geodesic retraction* is a retraction whose associated curve is also the uni
 ```@eval
 Main.theorem(raw"The geodesic on a compact matrix Lie group ``G`` with bi-invariant metric for ``B\in{}T_AG`` is simply
 " * Main.indentation * raw"```math
-" * Main.indentation * raw"\gamma(t) = \exp(t\cdot{}BA^-1)A,
+" * Main.indentation * raw"\gamma(t) = \exp(t\cdot{}BA^{-1})A,
 " * Main.indentation * raw"```
 " * Main.indentation * raw"where ``\exp:\mathcal{g}\to{}G`` is the matrix exponential map.")
 ```
