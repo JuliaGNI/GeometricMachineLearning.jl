@@ -1,7 +1,7 @@
 @doc raw"""
-    Optimizer(method, cache, step)
+    Optimizer(method, cache, step, retraction)
 
-Store the `method` (e.g. [`AdamOptimizer`](@ref) with corresponding hyperparameters), the `cache` (e.g. [`AdamCache`](@ref)) and the optimization step.
+Store the `method` (e.g. [`AdamOptimizer`](@ref) with corresponding hyperparameters), the `cache` (e.g. [`AdamCache`](@ref)), the optimization step and the retraction.
 
 It takes as input an optimization method and the parameters of a network. 
 
@@ -20,6 +20,10 @@ end
 Allocate the cache for a specific `method` and `nn_params` for an instance of `Optimizer`.
 
 Internally this calls [`init_optimizer_cache`](@ref).
+
+# Arguments
+
+The optional keyword argument is the retraction. By default this is [`cayley`](@ref).
 """
 function Optimizer(method::OptimizerMethod, nn_params::Union{Tuple, NamedTuple}; retraction = cayley)
     Optimizer(method, init_optimizer_cache(method, nn_params), 0, retraction)
@@ -71,7 +75,7 @@ function optimization_step!(o::Optimizer, λY::NamedTuple, ps::NamedTuple, cache
 end
 
 @doc raw"""
-    optimization_step!(o::Optimizer, model::Chain, ps::Tuple, dx::Tuple)
+    optimization_step!(o::Optimizer, λY::Chain, ps::Tuple, dx::Tuple)
 
 Optimize a neural network built with `Chain`.
 """
@@ -83,7 +87,7 @@ function optimization_step!(o::Optimizer, λY::Tuple, ps::Tuple, dx::Tuple)
 end
 
 @doc raw"""
-    optimization_step!(o::Optimizer, model::AbstractExplicitLayer, ps::NamedTuple, dx::NamedTuple)
+    optimization_step!(o::Optimizer, λY::NamedTuple, ps::NamedTuple, dx::NamedTuple)
 
 Optimize a neural network consisting of a single `AbstractExplicitLayer`.
 """
