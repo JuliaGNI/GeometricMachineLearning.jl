@@ -85,7 +85,7 @@ arrows!(ax, point_vec..., arrow_vec2...; color = mpurple, linewidth = .02)
 save("two_vectors.png", fig)
 ```
 
-![]("two_vectors.png")
+![](two_vectors.png)
 
 Note that we have chosen the arrow here to have the same direction as before but only about half the magnitude. We further drew another arrow that we want to parallel transport. 
 
