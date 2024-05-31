@@ -163,7 +163,7 @@ The way we use *retractions*[^1] in `GeometricMachineLearning` is slightly diffe
 [^1]: Classical retractions are also defined in `GeometricMachineLearning` under the same name, i.e. there is e.g. a method [`cayley(::StiefelLieAlgHorMatrix)`](@ref) and a method [`cayley(::StiefelManifold, ::AbstractMatrix)`](@ref) (the latter being the classical retraction); but the user is *strongly discouraged* from using classical retractions as these are computational inefficient.
 
 ```@eval
-Main.definition(raw"Given a section ``\lambda:\mathcal{M}\to{}G`` a **retraction** is a map ``\mathrm{Retraction}:\mathfrak{g}^\mathrm{hor}\to\mathcal{M}`` such that 
+Main.definition(raw"Given a section ``\lambda:\mathcal{M}\to{}G`` a **retraction** is a map ``\mathrm{Retraction}:\mathfrak{g}^\mathrm{hor}\to{}G`` such that 
 " * Main.indentation * raw"```math
 " * Main.indentation * raw"\Delta \mapsto \lambda(Y)\mathrm{Retraction}(\lambda(Y)^{-1}\Omega(\Delta)\lambda(Y))E,
 " * Main.indentation * raw"```
@@ -256,20 +256,20 @@ where we have used that
 Based on this we define the maps: 
 
 ```math
-\mathtt{geodesic}: \mathfrak{g}^\mathrm{hor} \to \mathcal{M}, B \mapsto \exp(B)E,
+\mathtt{geodesic}: \mathfrak{g}^\mathrm{hor} \to G, B \mapsto \exp(B),
 ```
 
 and
 
 ```math
-\mathtt{cayley}: \mathfrak{g}^\mathrm{hor} \to \mathcal{M}, B \mapsto \mathrm{Cayley}(B)E,
+\mathtt{cayley}: \mathfrak{g}^\mathrm{hor} \to G, B \mapsto \mathrm{Cayley}(B),
 ```
 
 where ``B = \lambda(Y)^{-1}\Omega(\Delta)\lambda(Y)``. These expressions for `geodesic` and `cayley` are the ones that we typically use in `GeometricMachineLearning` for computational reasons. We show how we can utilize the sparse structure of ``\mathfrak{g}^\mathrm{hor}`` for computing the geodesic retraction and the Cayley retraction (i.e. the expressions ``\exp(B)`` and ``\mathrm{Cayley}(B)`` for ``B\in\mathfrak{g}^\mathrm{hor}``). Similar derivations can be found in [celledoni2000approximating, fraikin2007optimization, bendokat2021real](@cite).
 
 ```@eval
 Main.remark(raw"Further note that, even though the global section ``\lambda:\mathcal{M} \to G`` is not unique, the final geodesic ``
-\gamma_\Delta(t) = \lambda(Y)\exp(\lambda(Y)^{-1}\Omega(\Delta)\lambda(Y))E`` does not depend on the particular section we chose.")
+\gamma_\Delta(t) = \lambda(Y)\exp(\lambda(Y)^{-1}\Omega(\Delta)\lambda(Y))E`` does not depend on the particular section we choose.")
 ```
 
 ### The Geodesic Retraction
@@ -299,7 +299,7 @@ where we defined ``\mathfrak{A}(B', B'') := \sum_{n=1}^\infty \frac{1}{n!} ((B''
 The final expression we obtain is: 
 
 ```math
-E + \begin{pmatrix} \frac{1}{2} A & \mathbb{I} \\ B & \mathbb{O} \end{pmatrix} 𝔄(B', B'') \begin{pmatrix} \mathbb{I} \\ \frac{1}{2} A \end{pmatrix}.
+\exp(B) = \mathbb{I} + B' \mathfrak{A}(B', B'')  (B'')^T
 ```
 
 ### The Cayley Retraction
@@ -320,17 +320,10 @@ So what we have to compute the inverse of:
 By leveraging the sparse structure of the matrices in ``\mathfrak{g}^\mathrm{hor}`` we arrive at the following expression for the Cayley retraction (similar to the case of the geodesic retraction):
 
 ```math
-\left(\mathbb{I} + \frac{1}{2}\begin{bmatrix}  \frac{1}{2}A & \mathbb{I} \\ B & \mathbb{O} \end{bmatrix} \begin{bmatrix}  \mathbb{I} - \frac{1}{4}A & - \frac{1}{2}\mathbb{I} \\ \frac{1}{2}B^TB - \frac{1}{8}A^2 & \mathbb{I} - \frac{1}{4}A  \end{bmatrix}^{-1}  \begin{bmatrix}  \mathbb{I} & \mathbb{O} \\ \frac{1}{2}A & -B^T  \end{bmatrix} \right)\left( E +  \frac{1}{2}\begin{bmatrix}  \frac{1}{2}A & \mathbb{I} \\ B & \mathbb{O} \end{bmatrix} \begin{bmatrix}  \mathbb{I} \\ \frac{1}{2}A   \end{bmatrix}\ \right) = \\
-E + \frac{1}{2}\begin{bmatrix} \frac{1}{2}A & \mathbb{I} \\ B & \mathbb{O}  \end{bmatrix}\left(
-    \begin{bmatrix}  \mathbb{I} \\ \frac{1}{2}A   \end{bmatrix}  + 
-    \begin{bmatrix}  \mathbb{I} - \frac{1}{4}A & - \frac{1}{2}\mathbb{I} \\ \frac{1}{2}B^TB - \frac{1}{8}A^2 & \mathbb{I} - \frac{1}{4}A  \end{bmatrix}^{-1}\left(
-        \begin{bmatrix}  \mathbb{I} \\ \frac{1}{2}A   \end{bmatrix} + 
-        \begin{bmatrix} \frac{1}{2}A \\ \frac{1}{4}A^2 - \frac{1}{2}B^TB \end{bmatrix}
-    \right)
-    \right)
+\mathrm{Cayley}(B) = \mathbb{I} + \frac{1}{2} B' (\mathbb{I}_{2n} - \frac{1}{2} (B'')^T B')^{-1} (B'')^T (\mathbb{I} + \frac{1}{2} B),
 ```
 
-We conclude with a remark:
+where we have abbreviated ``\mathbb{I} := \mathbb{I}_N.`` We conclude with a remark:
 
 ```@eval
 Main.remark(raw"As mentioned previously the Lie group ``SO(N)``, i.e. the one corresponding to the Stiefel manifold and the Grassmann manifold, has a bi-invariant Riemannian metric associated with it: ``(B_1,B_2)\mapsto \mathrm{Tr}(B_1^TB_2)``. For other Lie groups (e.g. the symplectic group) the situation is slightly more difficult [bendokat2021real](@cite).")
