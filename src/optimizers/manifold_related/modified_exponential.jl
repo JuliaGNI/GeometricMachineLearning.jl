@@ -70,5 +70,5 @@ function 𝔄(B̂::AbstractMatrix{T}, B̄::AbstractMatrix{T}) where T
 end
 
 function 𝔄exp(X::AbstractMatrix{T}, Y::AbstractMatrix{T}) where T
-    I + X*𝔄(Y*X)*Y
+    I + X * 𝔄(X, Y) * Y'
 end
