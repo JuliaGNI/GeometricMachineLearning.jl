@@ -28,12 +28,13 @@ function test_gradient_layer_derivative_and_update(T, M, N, batch_size=10)
     # test for vector 
     x = rand(T, M)
     gs = Zygote.gradient(ps -> sum(dummy_model(x, ps)), ps)[1]
-    optimization_step!(o, dummy_model, ps, gs)
+    λY = GlobalSection(ps)
+    optimization_step!(o, λY, ps, gs)
     
     # test for matrix 
     X = rand(T, M, batch_size)
     gs = Zygote.gradient(ps -> sum(dummy_model(X, ps)), ps)[1]
-    optimization_step!(o, dummy_model, ps, gs)
+    optimization_step!(o, λY, ps, gs)
 end
 
 
