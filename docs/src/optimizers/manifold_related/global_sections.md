@@ -1,6 +1,6 @@
 # Global Sections for Homogeneous Spaces
 
-**Global sections** are needed needed for the generalization of [Adam](../adam_optimizer.md) and other optimizers to [homogeneous spaces](@ref "Homogeneous Spaces"). They are necessary to perform the two mappings represented represented by horizontal and vertical red lines in the section on the general [optimizer framework](../optimizer_framework.md).
+**Global sections** are needed needed for the generalization of [Adam](@ref "The Adam Optimizer") and other optimizers to [homogeneous spaces](@ref "Homogeneous Spaces"). They are necessary to perform the two mappings represented represented by horizontal and vertical red lines in the section on the general [optimizer framework](../optimizer_framework.md).
 
 ## Computing the global section
 In differential geometry a **section** is always associated to some **bundle**, in our case this bundle is $\pi:G\to\mathcal{M},A\mapsto{}AE$. A section is a mapping $\mathcal{M}\to{}G$ for which $\pi$ is a left inverse, i.e. $\pi\circ\lambda = \mathrm{id}$. 

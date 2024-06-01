@@ -60,9 +60,14 @@ and we see that ``\gamma_{v_x}(t) = \exp(t\cdot{}v_x)``. In `GeometricMachineLea
 
 We give an example here:
 
+```@setup s2_retraction
+using GLMakie
+
+include("../../gl_makie_transparent_background_hack.jl")
+```
+
 ```@example s2_retraction
 using GeometricMachineLearning
-using CairoMakie # hide
 import Random # hide
 Random.seed!(123) # hide
 
@@ -71,10 +76,14 @@ Y = rand(StiefelManifold, 3, 1)
 v = 5 * rand(3, 1)
 Δ = v - Y * (v' * Y)
 
-fig = Figure(; backgroundcolor = :transparent) # hide
+morange = RGBf(255 / 256, 127 / 256, 14 / 256) # hide
+mred = RGBf(214 / 256, 39 / 256, 40 / 256) # hide
+
+function set_up_plot(; theme = :dark) # hide
 text_color = Main.output_type == :html ? :white : :black # hide
+fig = Figure(; backgroundcolor = :transparent) # hide
 ax = Axis3(fig[1, 1]; # hide
-        backgroundcolor = :transparent, # hide
+        backgroundcolor = (:tomato, .5), # hide
         aspect = (1., 1., 1.), # hide
         azimuth = π / 6, # hide
         elevation = π / 8, # hide
@@ -84,32 +93,56 @@ ax = Axis3(fig[1, 1]; # hide
         ) # hide
 
 # plot a sphere with radius one and origin 0
-surface!(ax, Main.sphere(1., [0., 0., 0.])...; alpha = .6)
+surface!(ax, Main.sphere(1., [0., 0., 0.])...; alpha = .5, transparency = true)
 
-morange = RGBf(255 / 256, 127 / 256, 14 / 256) # hide
 point_vec = ([Y[1]], [Y[2]], [Y[3]])
 scatter!(ax, point_vec...; color = morange, marker = :star5)
 
-mred = RGBf(214 / 256, 39 / 256, 40 / 256) # hide
 arrow_vec = ([Δ[1]], [Δ[2]], [Δ[3]])
 arrows!(ax, point_vec..., arrow_vec...; color = mred, linewidth = .02)
 
-fig
+fig, ax # hide
+end # hide
+
+fig_light = set_up_plot(; theme = :light)[1] # hide
+fig_dark = set_up_plot(; theme = :dark)[1] # hide
+save("sphere_with_tangent_vec.png", fig_light |> alpha_colorbuffer) # hide
+save("sphere_with_tangent_vec_dark.png", fig_dark |> alpha_colorbuffer) # hide
+
+nothing # hide
+```
+
+```@example
+Main.include_graphics("sphere_with_tangent_vec") # hide
 ```
 
 We now solve the geodesic spray for ``\eta\cdot\Delta`` for ``\eta = 0.1, 0.2, 0.3, \ldots, 2.5`` and plot the corresponding points:
 
 ```@example s2_retraction
-Δ_increments = [Δ * η for η in 0.1 : 0.1 : 2.5]
+Δ_increments = [Δ * η for η in 0.1 : 0.1 : 5.5]
 
 Y_increments = [geodesic(Y, Δ_increment) for Δ_increment in Δ_increments]
 
+function make_plot_with_solution(; theme = :dark) # hide
+fig, ax = set_up_plot(; theme = theme)
 for Y_increment in Y_increments
     scatter!(ax, [Y_increment[1]], [Y_increment[2]], [Y_increment[3]]; 
         color = mred, markersize = 5)
 end
 
 fig
+end # hide
+
+fig_light = make_plot_with_solution(; theme = :light) # hide
+fig_dark = make_plot_with_solution(; theme = :dark) # hide
+save("sphere_with_tangent_vec_and_geodesic.png", fig_light |> alpha_colorbuffer) # hide
+save("sphere_with_tangent_vec_and_geodesic_dark.png", fig_dark |> alpha_colorbuffer) # hide
+
+nothing # hide
+```
+
+```@example
+Main.include_graphics("sphere_with_tangent_vec_and_geodesic") # hide
 ```
 
 So a geodesic can be seen as the *equivalent of a straight line* on a manifold. Also note that we drew a random element form [`StiefelManifold`](@ref) here and not from ``S^2``. This is because [Stiefel manifolds](@ref "The Stiefel Manifold") are more general spaces than ``S^n`` and also comprise them. 
@@ -140,7 +173,13 @@ In `GeometricMachineLearning` we can include weights in neural networks that are
 X(x) = - \mathrm{grad}_xL.
 ```
 
-Solving this gradient flow equation will then lead us to a local minimum on ``\mathcal{M}``. This will be elaborated on when talking about [optimizers](@ref "Optimizer"). In practice we cannot solve the gradient flow equation directly and have to rely on approximations. The most straightforward approximation (and one that serves as a basis for all the optimization algorithms in `GeometricMachineLearning`) is to take the point ``(x, X(x))`` as an initial condition for the geodesic spray and then solve the ODE for a small time step. We will call this  
+Solving this gradient flow equation will then lead us to a local minimum on ``\mathcal{M}``. This will be elaborated on when talking about [optimizers](@ref "Neural Network Optimizers"). In practice we cannot solve the gradient flow equation directly and have to rely on approximations. The most straightforward approximation (and one that serves as a basis for all the optimization algorithms in `GeometricMachineLearning`) is to take the point ``(x, X(x))`` as an initial condition for the geodesic spray and then solve the ODE for a small time step. Such an update rule, i.e. 
+
+```math
+x^{(t)} \leftarrow \gamma_{X(x^{(t-1)})}(\Delta{}t)\text{ with $\Delta{}t$ the time step},
+```
+
+we call the *gradient optimization scheme*.
 
 ## Library Functions
 

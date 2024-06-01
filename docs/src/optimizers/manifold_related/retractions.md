@@ -31,8 +31,13 @@ We should mention that the factor ``\frac{1}{2}`` is sometimes left out in the d
 We want to compare the [`geodesic`](@ref) retraction with the [`cayley`](@ref) retraction for the example we already introduced when talking about the [exponential map](@ref "Geodesic Sprays and the Exponential Map"):
 
 ```@setup s2_retraction
+using GLMakie
+
+include("../../../gl_makie_transparent_background_hack.jl")
+```
+
+```@setup s2_retraction
 using GeometricMachineLearning
-using CairoMakie # hide
 import Random # hide
 Random.seed!(123) # hide
 
@@ -42,10 +47,10 @@ v = 5 * rand(3, 1)
 Δ = v - Y * (v' * Y)
 
 function do_setup(; theme=:light)
-    fig = Figure(; backgroundcolor = :transparent) # hide
     text_color = theme == :dark ? :white : :black # hide
+    fig = Figure(; backgroundcolor = :transparent) # hide
     ax = Axis3(fig[1, 1]; # hide
-            backgroundcolor = :transparent, # hide
+            backgroundcolor = (:tomato, .5), # hide
             aspect = (1., 1., 1.), # hide
             azimuth = π / 6, # hide
             elevation = π / 8, # hide
@@ -55,7 +60,7 @@ function do_setup(; theme=:light)
             ) # hide
 
     # plot a sphere with radius one and origin 0
-    surface!(ax, Main.sphere(1., [0., 0., 0.])...; alpha = .6)
+    surface!(ax, Main.sphere(1., [0., 0., 0.])...; alpha = .5, transparency = true)
 
     morange = RGBf(255 / 256, 127 / 256, 14 / 256) # hide
     point_vec = ([Y[1]], [Y[2]], [Y[3]])
@@ -71,7 +76,7 @@ nothing
 ```
 
 ```@example s2_retraction
-η_increments = 0.1 : 0.1 : 2.5
+η_increments = 0.1 : 0.1 : 5.5
 Δ_increments = [Δ * η for η in η_increments]
 
 Y_increments_geodesic = [geodesic(Y, Δ_increment) for Δ_increment in Δ_increments]
@@ -110,12 +115,10 @@ axislegend(; position = (.82, .75), backgroundcolor = :transparent, color = text
 fig, ax, zip_ob, Y_increments_geodesic, Y_increments_cayley # hide
 end # hide
 
-if Main.output_type == :html # hide
-    save("retraction_comparison.png",        make_plot(; theme = :light)[1]; px_per_unit = 1.5) # hide
-    save("retraction_comparison_dark.png",   make_plot(; theme = :dark )[1]; px_per_unit = 1.5) # hide
-elseif Main.output_type == :latex # hide
-    save("retraction_comparison.png",       make_plot(; theme = :light)[1]; px_per_unit = 2.0) # hide
-end # hide
+fig_light = make_plot(; theme = :light)[1] # hide
+fig_dark = make_plot(; theme = :dark)[1] # hide
+save("retraction_comparison.png",        fig_light |> alpha_colorbuffer) #; px_per_unit = 1.5) # hide
+save("retraction_comparison_dark.png",   fig_dark |> alpha_colorbuffer) #; px_per_unit = 1.5) # hide
 
 Main.include_graphics("retraction_comparison"; caption = raw"Comparison between the geodesic and the Cayley retraction.", width = .8) # hide
 ```
@@ -123,6 +126,7 @@ Main.include_graphics("retraction_comparison"; caption = raw"Comparison between 
 We see that for small ``\Delta`` increments the Cayley retraction seems to match the geodesic retraction very well, but for larger values there is a notable discrepancy:
 
 ```@setup s2_retraction
+using CairoMakie
 function plot_discrepancies(discrepancies; theme = :light)
     fig = Figure(; backgroundcolor = :transparent) # hide
     text_color = theme == :dark ? :white : :black # hide
@@ -146,12 +150,10 @@ using LinearAlgebra: norm
 _, __, zip_ob, Y_increments_geodesic, Y_increments_cayley = make_plot() # hide
 discrepancies = [norm(Y_geo_inc - Y_cay_inc) for (Y_geo_inc, Y_cay_inc, _) in zip_ob]
 
-if Main.output_type == :html # hide
-    save("retraction_discrepancy.png",        plot_discrepancies(discrepancies; theme = :light)[1]; px_per_unit = 1.5) # hide
-    save("retraction_discrepancy_dark.png",   plot_discrepancies(discrepancies; theme = :dark )[1]; px_per_unit = 1.5) # hide
-elseif Main.output_type == :latex # hide
-    save("retraction_discrepancy.png",        plot_discrepancies(discrepancies; theme = :light)[1]; px_per_unit = 2.0) # hide
-end # hide
+fig_light = plot_discrepancies(discrepancies; theme = :light)[1] # hide
+fig_dark = plot_discrepancies(discrepancies; theme = :dark)[1] # hide
+save("retraction_discrepancy.png",        fig_light) #; px_per_unit = 1.5) # hide
+save("retraction_discrepancy_dark.png",   fig_dark) #; px_per_unit = 1.5) # hide
 
 Main.include_graphics("retraction_discrepancy"; caption = raw"Discrepancy between the geodesic and the Cayley retraction.", width = .6) # hide
 ```

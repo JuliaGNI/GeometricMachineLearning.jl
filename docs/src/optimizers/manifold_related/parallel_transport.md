@@ -43,8 +43,13 @@ So we conveniently take parallel transport of vectors into account by representi
 To demonstrate parallel transport we again use the example from when we introduced the concept of [geodesics](@ref "Geodesic Sprays and the Exponential Map"). We first set up the problem:
 
 ```@setup s2_parallel_transport
+using GLMakie
+
+include("../../../gl_makie_transparent_background_hack.jl")
+```
+
+```@setup s2_parallel_transport
 using GeometricMachineLearning
-using CairoMakie # hide
 import Random # hide
 Random.seed!(123) # hide
 
@@ -55,10 +60,16 @@ v₂ = 1 * rand(3, 1)
 Δ = rgrad(Y, v)
 Δ₂ = rgrad(Y, v₂)
 
+morange = RGBf(255 / 256, 127 / 256, 14 / 256) # hide
+mred = RGBf(214 / 256, 39 / 256, 40 / 256) # hide
+mpurple = RGBf(148 / 256, 103 / 256, 189 / 256)
+
+function set_up_plot(; theme = :dark) # hide
+text_color = Main.output_type == :html ? :white : :black # hide
 fig = Figure(; backgroundcolor = :transparent) # hide
 text_color = Main.output_type == :html ? :white : :black # hide
 ax = Axis3(fig[1, 1]; # hide
-        backgroundcolor = :transparent, # hide
+        backgroundcolor = (:tomato, .5), # hide
         aspect = (1., 1., 1.), # hide
         azimuth = π / 6, # hide
         elevation = π / 8, # hide
@@ -68,24 +79,31 @@ ax = Axis3(fig[1, 1]; # hide
         ) # hide
 
 # plot a sphere with radius one and origin 0
-surface!(ax, Main.sphere(1., [0., 0., 0.])...; alpha = .6)
+surface!(ax, Main.sphere(1., [0., 0., 0.])...; alpha = .5, transparency = true)
 
-morange = RGBf(255 / 256, 127 / 256, 14 / 256) # hide
 point_vec = ([Y[1]], [Y[2]], [Y[3]])
 scatter!(ax, point_vec...; color = morange, marker = :star5)
 
-mred = RGBf(214 / 256, 39 / 256, 40 / 256) # hide
 arrow_vec = ([Δ[1]], [Δ[2]], [Δ[3]])
 arrows!(ax, point_vec..., arrow_vec...; color = mred, linewidth = .02)
 
-mpurple = RGBf(148 / 256, 103 / 256, 189 / 256)
 arrow_vec2 = ([Δ₂[1]], [Δ₂[2]], [Δ₂[3]])
 arrows!(ax, point_vec..., arrow_vec2...; color = mpurple, linewidth = .02)
 
-save("two_vectors.png", fig)
+fig, ax # hide
+end # hide
+
+fig_light = set_up_plot(; theme = :light)[1]
+fig_dark = set_up_plot(; theme = :dark)[1]
+save("two_vectors.png", fig_light |> alpha_colorbuffer) # hide
+save("two_vectors_dark.png", fig_dark |> alpha_colorbuffer) # hide
+
+nothing # hide
 ```
 
-![](two_vectors.png)
+```@example
+Main.include_graphics("two_vectors") # hide
+```
 
 Note that we have chosen the arrow here to have the same direction as before but only about half the magnitude. We further drew another arrow that we want to parallel transport. 
 
@@ -110,6 +128,8 @@ for _ in 1:n_steps
     push!(Δ₂_transported, Matrix(λY) * B₂ * E)
 end
 
+function plot_parallel_transport(; theme = :dark) # hide
+fig, ax = set_up_plot(; theme = :dark) # hide
 for Y_increment in Y_increments
     scatter!(ax, [Y_increment[1]], [Y_increment[2]], [Y_increment[3]]; 
         color = mred, markersize = 5)
@@ -124,6 +144,18 @@ for (color, vec_transported) in zip((mred, mpurple), (Δ_transported, Δ₂_tran
 end
 
 fig
+end # hide
+
+fig_light = plot_parallel_transport(; theme = :light) # hide
+fig_dark = plot_parallel_transport(; theme = :dark) # hide
+save("parallel_transport.png", fig_light |> alpha_colorbuffer) # hide
+save("parallel_transport_dark.png", fig_dark |> alpha_colorbuffer) # hide
+
+nothing # hide
+```
+
+```@example
+Main.include_graphics("parallel_transport") # hide
 ```
 
 ## References
