@@ -1,6 +1,6 @@
 # Neural Network Optimizers
 
-In this section we present the general Optimizer framework used in `GeometricMachineLearning`. For more information on the particular steps involved in this consult the documentation on the various optimizer methods such as the *momentum optimizer* and the [Adam optimizer](@ref "The Adam Optimizer"), and the documentation on [retractions](@ref "Retractions").
+In this section we present the general Optimizer framework used in `GeometricMachineLearning`. For more information on the particular steps involved in this consult the documentation on the various optimizer methods such as the [momentum optimizer](@ref "The Momentum Optimizer") and the [Adam optimizer](@ref "The Adam Optimizer"), and the documentation on [retractions](@ref "Retractions").
 
 During *optimization* we aim at changing the neural network parameters in such a way to minimize the loss function. So if we express the loss function ``L`` as a function of the neural network weights ``\Theta`` in a parameter space ``\mathbb{P}`` we can phrase the task as: 
 
