@@ -80,13 +80,14 @@ morange = RGBf(255 / 256, 127 / 256, 14 / 256) # hide
 mred = RGBf(214 / 256, 39 / 256, 40 / 256) # hide
 
 function set_up_plot(; theme = :dark) # hide
-text_color = Main.output_type == :html ? :white : :black # hide
+text_color = theme == :dark ? :white : :black # hide
 fig = Figure(; backgroundcolor = :transparent) # hide
 ax = Axis3(fig[1, 1]; # hide
         backgroundcolor = (:tomato, .5), # hide
         aspect = (1., 1., 1.), # hide
-        azimuth = π / 6, # hide
-        elevation = π / 8, # hide
+        azimuth = π / 7, # hide
+        elevation = π / 7, # hide
+        height = Relative(1.1),
         xlabel = rich("x", subscript("1"), font = :italic, color = text_color), # hide
         ylabel = rich("x", subscript("2"), font = :italic, color = text_color), # hide
         zlabel = rich("x", subscript("3"), font = :italic, color = text_color), # hide
@@ -106,8 +107,9 @@ end # hide
 
 fig_light = set_up_plot(; theme = :light)[1] # hide
 fig_dark = set_up_plot(; theme = :dark)[1] # hide
-save("sphere_with_tangent_vec.png", fig_light |> alpha_colorbuffer) # hide
-save("sphere_with_tangent_vec_dark.png", fig_dark |> alpha_colorbuffer) # hide
+
+save("sphere_with_tangent_vec.png", alpha_colorbuffer(fig_light)) # hide
+save("sphere_with_tangent_vec_dark.png", alpha_colorbuffer(fig_dark)) # hide
 
 nothing # hide
 ```
@@ -135,8 +137,9 @@ end # hide
 
 fig_light = make_plot_with_solution(; theme = :light) # hide
 fig_dark = make_plot_with_solution(; theme = :dark) # hide
-save("sphere_with_tangent_vec_and_geodesic.png", fig_light |> alpha_colorbuffer) # hide
-save("sphere_with_tangent_vec_and_geodesic_dark.png", fig_dark |> alpha_colorbuffer) # hide
+
+save("sphere_with_tangent_vec_and_geodesic.png", alpha_colorbuffer(fig_light)) # hide
+save("sphere_with_tangent_vec_and_geodesic_dark.png", alpha_colorbuffer(fig_dark)) # hide
 
 nothing # hide
 ```

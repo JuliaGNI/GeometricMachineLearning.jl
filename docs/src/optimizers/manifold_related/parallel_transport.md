@@ -67,7 +67,7 @@ mpurple = RGBf(148 / 256, 103 / 256, 189 / 256)
 function set_up_plot(; theme = :dark) # hide
 text_color = Main.output_type == :html ? :white : :black # hide
 fig = Figure(; backgroundcolor = :transparent) # hide
-text_color = Main.output_type == :html ? :white : :black # hide
+text_color = theme == :dark ? :white : :black # hide
 ax = Axis3(fig[1, 1]; # hide
         backgroundcolor = (:tomato, .5), # hide
         aspect = (1., 1., 1.), # hide
@@ -95,8 +95,8 @@ end # hide
 
 fig_light = set_up_plot(; theme = :light)[1]
 fig_dark = set_up_plot(; theme = :dark)[1]
-save("two_vectors.png", fig_light |> alpha_colorbuffer) # hide
-save("two_vectors_dark.png", fig_dark |> alpha_colorbuffer) # hide
+save("two_vectors.png", alpha_colorbuffer(fig_light)) # hide
+save("two_vectors_dark.png", alpha_colorbuffer(fig_dark)) # hide
 
 nothing # hide
 ```

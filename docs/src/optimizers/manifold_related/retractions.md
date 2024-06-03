@@ -50,14 +50,15 @@ function do_setup(; theme=:light)
     text_color = theme == :dark ? :white : :black # hide
     fig = Figure(; backgroundcolor = :transparent) # hide
     ax = Axis3(fig[1, 1]; # hide
-            backgroundcolor = (:tomato, .5), # hide
-            aspect = (1., 1., 1.), # hide
-            azimuth = π / 6, # hide
-            elevation = π / 8, # hide
-            xlabel = rich("x", subscript("1"), font = :italic, color = text_color), # hide
-            ylabel = rich("x", subscript("2"), font = :italic, color = text_color), # hide
-            zlabel = rich("x", subscript("3"), font = :italic, color = text_color), # hide
-            ) # hide
+        backgroundcolor = (:tomato, .5), # hide
+        aspect = (1., 1., 1.), # hide
+        azimuth = π / 7, # hide
+        elevation = π / 7, # hide
+        height = Relative(1.1),
+        xlabel = rich("x", subscript("1"), font = :italic, color = text_color), # hide
+        ylabel = rich("x", subscript("2"), font = :italic, color = text_color), # hide
+        zlabel = rich("x", subscript("3"), font = :italic, color = text_color), # hide
+        ) # hide
 
     # plot a sphere with radius one and origin 0
     surface!(ax, Main.sphere(1., [0., 0., 0.])...; alpha = .5, transparency = true)
@@ -117,8 +118,9 @@ end # hide
 
 fig_light = make_plot(; theme = :light)[1] # hide
 fig_dark = make_plot(; theme = :dark)[1] # hide
-save("retraction_comparison.png",        fig_light |> alpha_colorbuffer) #; px_per_unit = 1.5) # hide
-save("retraction_comparison_dark.png",   fig_dark |> alpha_colorbuffer) #; px_per_unit = 1.5) # hide
+
+save("retraction_comparison.png",        alpha_colorbuffer(fig_light)) #; px_per_unit = 1.5) # hide
+save("retraction_comparison_dark.png",   alpha_colorbuffer(fig_dark)) #; px_per_unit = 1.5) # hide
 
 Main.include_graphics("retraction_comparison"; caption = raw"Comparison between the geodesic and the Cayley retraction.", width = .8) # hide
 ```
@@ -127,6 +129,8 @@ We see that for small ``\Delta`` increments the Cayley retraction seems to match
 
 ```@setup s2_retraction
 using CairoMakie
+
+CairoMakie.activate!()
 function plot_discrepancies(discrepancies; theme = :light)
     fig = Figure(; backgroundcolor = :transparent) # hide
     text_color = theme == :dark ? :white : :black # hide
@@ -152,6 +156,7 @@ discrepancies = [norm(Y_geo_inc - Y_cay_inc) for (Y_geo_inc, Y_cay_inc, _) in zi
 
 fig_light = plot_discrepancies(discrepancies; theme = :light)[1] # hide
 fig_dark = plot_discrepancies(discrepancies; theme = :dark)[1] # hide
+
 save("retraction_discrepancy.png",        fig_light) #; px_per_unit = 1.5) # hide
 save("retraction_discrepancy_dark.png",   fig_dark) #; px_per_unit = 1.5) # hide
 
