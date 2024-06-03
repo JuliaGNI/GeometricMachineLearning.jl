@@ -1,6 +1,6 @@
-# The BFGS Algorithm
+# The BFGS Optimizer
 
-The presentation shown here is largely taken from chapters 3 and 6 of reference [wright2006numerical](@cite) with a derivation based on an [online comment](https://math.stackexchange.com/questions/2091867/quasi-newton-methods-understanding-dfp-updating-formula). The Broyden-Fletcher-Goldfarb-Shanno (BFGS) algorithm is a second order optimizer that can be also be used to train a neural network.
+The presentation shown here is largely taken from [wright2006numerical; chapters 3 and 6](@cite) with a derivation based on an [online comment](https://math.stackexchange.com/questions/2091867/quasi-newton-methods-understanding-dfp-updating-formula). The Broyden-Fletcher-Goldfarb-Shanno (BFGS) algorithm is a second order optimizer that can be also be used to train a neural network.
 
 It is a version of a *quasi-Newton* method and is therefore especially suited for convex problems. As is the case with any other (quasi-)Newton method the BFGS algorithm approximates the objective with a quadratic function in each optimization step:
 ```math
