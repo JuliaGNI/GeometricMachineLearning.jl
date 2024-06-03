@@ -54,6 +54,8 @@ import Random # hide
 Random.seed!(123) # hide
 
 Y = rand(StiefelManifold, 3, 1)
+# needed because we will change `Y` later on
+Y_copy = StiefelManifold(copy(Y.A))
 
 v = 2 * rand(3, 1)
 v₂ = 1 * rand(3, 1)
@@ -65,23 +67,36 @@ mred = RGBf(214 / 256, 39 / 256, 40 / 256) # hide
 mpurple = RGBf(148 / 256, 103 / 256, 189 / 256)
 
 function set_up_plot(; theme = :dark) # hide
-text_color = Main.output_type == :html ? :white : :black # hide
 fig = Figure(; backgroundcolor = :transparent) # hide
 text_color = theme == :dark ? :white : :black # hide
 ax = Axis3(fig[1, 1]; # hide
-        backgroundcolor = (:tomato, .5), # hide
-        aspect = (1., 1., 1.), # hide
-        azimuth = π / 6, # hide
-        elevation = π / 8, # hide
-        xlabel = rich("x", subscript("1"), font = :italic, color = text_color), # hide
-        ylabel = rich("x", subscript("2"), font = :italic, color = text_color), # hide
-        zlabel = rich("x", subscript("3"), font = :italic, color = text_color), # hide
-        ) # hide
+    backgroundcolor = (:tomato, .5), # hide
+    aspect = (1., 1., 1.), # hide
+    xlabel = L"x_1", # hide
+    ylabel = L"x_2", # hide
+    zlabel = L"x_3", # hide
+    xgridcolor = text_color, # hide
+    ygridcolor = text_color, # hide
+    zgridcolor = text_color, # hide
+    xtickcolor = text_color, # hide
+    ytickcolor = text_color, # hide
+    ztickcolor = text_color, # hide
+    xlabelcolor = text_color, # hide
+    ylabelcolor = text_color, # hide
+    zlabelcolor = text_color, # hide
+    xypanelcolor = :transparent, # hide
+    xzpanelcolor = :transparent, # hide
+    yzpanelcolor = :transparent, # hide
+    limits = ([-1, 1], [-1, 1], [-1, 1]),
+    azimuth = π / 7, # hide
+    elevation = π / 7, # hide
+    # height = 75.,
+    ) # hide
 
 # plot a sphere with radius one and origin 0
 surface!(ax, Main.sphere(1., [0., 0., 0.])...; alpha = .5, transparency = true)
 
-point_vec = ([Y[1]], [Y[2]], [Y[3]])
+point_vec = ([Y_copy[1]], [Y_copy[2]], [Y_copy[3]])
 scatter!(ax, point_vec...; color = morange, marker = :star5)
 
 arrow_vec = ([Δ[1]], [Δ[2]], [Δ[3]])
@@ -109,6 +124,7 @@ Note that we have chosen the arrow here to have the same direction as before but
 
 ```@example s2_parallel_transport
 using GeometricMachineLearning: update_section!
+
 λY = GlobalSection(Y)
 B = global_rep(λY, Δ)
 B₂ = global_rep(λY, Δ₂)
@@ -118,7 +134,7 @@ Y_increments = []
 Δ_transported = []
 Δ₂_transported = []
 
-const n_steps = 8
+const n_steps = 6
 const tstep = 2
 
 for _ in 1:n_steps
@@ -129,7 +145,7 @@ for _ in 1:n_steps
 end
 
 function plot_parallel_transport(; theme = :dark) # hide
-fig, ax = set_up_plot(; theme = :dark) # hide
+fig, ax = set_up_plot(; theme = theme) # hide
 for Y_increment in Y_increments
     scatter!(ax, [Y_increment[1]], [Y_increment[2]], [Y_increment[3]]; 
         color = mred, markersize = 5)

@@ -83,15 +83,28 @@ function set_up_plot(; theme = :dark) # hide
 text_color = theme == :dark ? :white : :black # hide
 fig = Figure(; backgroundcolor = :transparent) # hide
 ax = Axis3(fig[1, 1]; # hide
-        backgroundcolor = (:tomato, .5), # hide
-        aspect = (1., 1., 1.), # hide
-        azimuth = π / 7, # hide
-        elevation = π / 7, # hide
-        height = Relative(1.1),
-        xlabel = rich("x", subscript("1"), font = :italic, color = text_color), # hide
-        ylabel = rich("x", subscript("2"), font = :italic, color = text_color), # hide
-        zlabel = rich("x", subscript("3"), font = :italic, color = text_color), # hide
-        ) # hide
+    backgroundcolor = (:tomato, .5), # hide
+    aspect = (1., 1., 1.), # hide
+    xlabel = L"x_1", # hide
+    ylabel = L"x_2", # hide
+    zlabel = L"x_3", # hide
+    xgridcolor = text_color, # hide
+    ygridcolor = text_color, # hide
+    zgridcolor = text_color, # hide
+    xtickcolor = text_color, # hide
+    ytickcolor = text_color, # hide
+    ztickcolor = text_color, # hide
+    xlabelcolor = text_color, # hide
+    ylabelcolor = text_color, # hide
+    zlabelcolor = text_color, # hide
+    xypanelcolor = :transparent, # hide
+    xzpanelcolor = :transparent, # hide
+    yzpanelcolor = :transparent, # hide
+    limits = ([-1, 1], [-1, 1], [-1, 1]), # hide
+    azimuth = π / 7, # hide
+    elevation = π / 7, # hide
+    # height = 75.,
+    ) # hide
 
 # plot a sphere with radius one and origin 0
 surface!(ax, Main.sphere(1., [0., 0., 0.])...; alpha = .5, transparency = true)
