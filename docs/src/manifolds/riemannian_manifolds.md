@@ -1,0 +1,159 @@
+# Riemannian Manifolds
+
+A Riemannian manifold is a manifold ``\mathcal{M}`` that we endow with a mapping ``g`` that smoothly[^1] assigns a [metric](@ref "(Topological) Metric Spaces") ``g_x`` to each tangent space ``T_x\mathcal{M}``. By a slight abuse of notation we will also refer to this ``g`` as a *metric*.
+
+[^1]: Smooth here refers to the fact that ``g:\mathcal{M}\to\text{(Space of Metrics)}`` has to be a smooth map. But in order to discuss this in detail we would have to define a topology on the space of metrics. A more detailed discussion can be found in [lang2012fundamentals, bishop1980tensor, do1992riemannian](@cite).
+
+After having defined a metric ``g`` we can *associate a length* to each curve ``\gamma:[0, t] \to \mathcal{M}`` through: 
+
+```math
+L(\gamma) = \int_0^t \sqrt{g_{\gamma(s)}(\gamma'(s), \gamma'(s))}ds.
+```
+
+This ``L`` turns ``\mathcal{M}`` into a metric space:
+
+```@eval
+Main.definition(raw"The **metric on a Riemannian manifold** ``\mathcal{M}`` is 
+" * 
+Main.indentation * raw"```math
+" *
+Main.indentation * raw"d(x, y) = \mathrm{inf}_{\text{$\gamma(0) = x$ and $\gamma(t) = y$}}L(\gamma),
+" * 
+Main.indentation * raw"```
+" *
+Main.indentation * raw"where ``t`` can be chosen arbitrarily.")
+```
+
+If a curve is minimal with respect to the function ``L`` we call it the *shortest curve* or a geodesic. So we say that a curve ``\gamma:[0, t]\to\mathcal{M}`` is a geodesic if there is no shorter curve that can connect two points in ``\gamma([0, t])``, i.e. 
+
+```math
+d(\gamma(t_i), \gamma(t_f)) = \int_{t_i}^{t_f}\sqrt{g_{\gamma(s)}(\gamma'(s), \gamma'(s))}ds,
+```
+for any ``t_i, t_f\in[0, t]``.
+
+An important result of Riemannian geometry states that there exists a vector field ``X`` on ``T\mathcal{M}``, called the *geodesic spray*, whose integral curves are derivatives of geodesics.
+
+
+## Geodesic Sprays and the Exponential Map
+
+To every Riemannian manifold we can naturally associate a vector field called the *geodesic spray* or *geodesic equation*. For our purposes it is enough to state that this vector field is unique and well-defined [do1992riemannian](@cite).
+
+The important property of the geodesic spray is
+
+```@eval
+Main.theorem(raw"Given an initial point ``x`` and an initial velocity ``v_x``, an integral curve for the geodesic spray is of the form ``t \mapsto (\gamma_{v_x}(t), \gamma_{v_x}'(t))`` where ``\gamma_{v_x}`` is a geodesic. We further have the property that the integral curve for the geodesic spray for an initial point ``x`` and an initial velocity ``\eta\cdot{}v_x`` (where ``\eta`` is a scalar) is of the form ``t \mapsto (\gamma_{\eta\cdot{}v_x}(t), \gamma_{\eta\cdot{}v_x}'(t)) = (\gamma_{v_x}(\eta\cdot{}t), \eta\cdot\gamma_{v_x}'(\eta\cdot{}t)).``")
+```
+
+It is therefore customary to introduce the *exponential map* ``\exp:T_x\mathcal{M}\to\mathcal{M}`` as
+
+```math
+\exp(v_x) := \gamma_{v_x}(1),
+```
+
+and we see that ``\gamma_{v_x}(t) = \exp(t\cdot{}v_x)``. In `GeometricMachineLearning` we denote the exponential map by [`geodesic`](@ref) to avoid confusion with the matrix exponential map[^2]:
+
+[^2]: The Riemannian exponential map and the matrix exponential map coincide for many matrix Lie groups.
+
+```math
+    \mathtt{geodesic}(x, v_x) \equiv \exp(v_x).
+```
+
+We give an example here:
+
+```@example s2_retraction
+using GeometricMachineLearning
+using CairoMakie # hide
+import Random # hide
+Random.seed!(123) # hide
+
+Y = rand(StiefelManifold, 3, 1)
+
+v = 5 * rand(3, 1)
+Δ = v - Y * (v' * Y)
+
+fig = Figure(; backgroundcolor = :transparent) # hide
+text_color = Main.output_type == :html ? :white : :black # hide
+ax = Axis3(fig[1, 1]; # hide
+        backgroundcolor = :transparent, # hide
+        aspect = (1., 1., 1.), # hide
+        azimuth = π / 6, # hide
+        elevation = π / 8, # hide
+        xlabel = rich("x", subscript("1"), font = :italic, color = text_color), # hide
+        ylabel = rich("x", subscript("2"), font = :italic, color = text_color), # hide
+        zlabel = rich("x", subscript("3"), font = :italic, color = text_color), # hide
+        ) # hide
+
+# plot a sphere with radius one and origin 0
+surface!(ax, Main.sphere(1., [0., 0., 0.])...; alpha = .6)
+
+morange = RGBf(255 / 256, 127 / 256, 14 / 256) # hide
+point_vec = ([Y[1]], [Y[2]], [Y[3]])
+scatter!(ax, point_vec...; color = morange, marker = :star5)
+
+mred = RGBf(214 / 256, 39 / 256, 40 / 256) # hide
+arrow_vec = ([Δ[1]], [Δ[2]], [Δ[3]])
+arrows!(ax, point_vec..., arrow_vec...; color = mred, linewidth = .02)
+
+fig
+```
+
+We now solve the geodesic spray for ``\eta\cdot\Delta`` for ``\eta = 0.1, 0.2, 0.3, \ldots, 2.5`` and plot the corresponding points:
+
+```@example s2_retraction
+Δ_increments = [Δ * η for η in 0.1 : 0.1 : 2.5]
+
+Y_increments = [geodesic(Y, Δ_increment) for Δ_increment in Δ_increments]
+
+for Y_increment in Y_increments
+    scatter!(ax, [Y_increment[1]], [Y_increment[2]], [Y_increment[3]]; 
+        color = mred, markersize = 5)
+end
+
+fig
+```
+
+So a geodesic can be seen as the *equivalent of a straight line* on a manifold. Also note that we drew a random element form [`StiefelManifold`](@ref) here and not from ``S^2``. This is because [Stiefel manifolds](@ref "The Stiefel Manifold") are more general spaces than ``S^n`` and also comprise them. 
+
+## The Riemannian Gradient
+
+The Riemannian gradient of a function ``L\mathcal{M}\to\mathbb{R}`` is a vector field[^3] ``\mathrm{grad}^gL`` (or simply ``\mathrm{grad}L``) for which we have
+
+[^3]: We also write ``\mathrm{grad}^gL(x) = \mathrm{grad}^g_xL.``
+
+```math
+    g_x(\mathrm{grad}_x^gL, v_x) = (\nabla_{\varphi_U(x)}(L\circ\varphi_U^{-1}))^T \varphi_U'(v_x), 
+```
+
+where 
+
+```math
+ \nabla_xf = \begin{pmatrix} \frac{\partial{}f}{\partial{}x_1} \\ \cdots \\ \frac{\partial{}f}{\partial{}x_n} \end{pmatrix},
+```
+is the Euclidean gradient. By the *non-degeneracy* of ``g`` the Riemannian gradient always exists [bishop1980tensor](@cite). We will give specific examples of this when discussing the [Stiefel manifold](@ref "The Stiefel Manifold") and the [Grassmann manifold](@ref "The Grassmann Manifold"). 
+
+
+## Gradient Flows and Riemannian Optimization
+
+In `GeometricMachineLearning` we can include weights in neural networks that are part of a manifold. Training such neural networks amounts to *Riemannian optimization* and hence solving the *gradient flow* equation. The gradient flow equation is given by
+
+```math
+X(x) = - \mathrm{grad}_xL.
+```
+
+Solving this gradient flow equation will then lead us to a local minimum on ``\mathcal{M}``. This will be elaborated on when talking about [optimizers](@ref "Optimizer"). In practice we cannot solve the gradient flow equation directly and have to rely on approximations. The most straightforward approximation (and one that serves as a basis for all the optimization algorithms in `GeometricMachineLearning`) is to take the point ``(x, X(x))`` as an initial condition for the geodesic spray and then solve the ODE for a small time step. We will call this  
+
+## Library Functions
+
+```@docs; canonical = false
+geodesic(::Manifold{T}, ::AbstractMatrix{T}) where T
+```
+
+## References
+
+```@bibliography
+Pages = []
+Canonical = false
+
+lang2012fundamentals
+do1992riemannian
+```

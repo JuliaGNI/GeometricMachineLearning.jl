@@ -4,7 +4,7 @@ In order to generalize neural network optimizers to [homogeneous spaces](manifol
 
 Starting from an element of the tangent space $T_Y\mathcal{M}$[^1], we need to perform two mappings to arrive at $\mathfrak{g}^\mathrm{hor}$, which we refer to by $\Omega$ and a red horizontal arrow:
 
-[^1]: In practice this is obtained by first using an AD routine on a loss function $L$, and then computing the Riemannian gradient based on this. See the section of the [Stiefel manifold](manifolds/stiefel_manifold.md) for an example of this.
+[^1]: In practice this is obtained by first using an AD routine on a loss function $L$, and then computing the Riemannian gradient based on this. See the section of the [Stiefel manifold](@ref "The Stiefel Manifold") for an example of this.
 
 ```@example
 Main.include_graphics("tikz/general_optimization_with_boundary") # hide

@@ -1,9 +1,13 @@
 [deps]
+Bibliography = "f1be7e48-bf82-45af-a471-ae754a193061"
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 DocumenterCitations = "daee34ce-89f3-4625-b898-19384cb65244"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 GeometricIntegrators = "dcce2d33-59f6-5b8d-9047-0defad88ae06"
 GeometricMachineLearning = "194d25b2-d3f5-49f0-af24-c124f4aa80cc"
 GeometricProblems = "18cb22b4-ad41-5c80-9c5f-710df63fbdc9"
+ImageMagick = "6218d12a-5da1-5696-b52f-db25d2ecc6d1"
 LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"

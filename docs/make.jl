@@ -2,12 +2,14 @@ using GeometricMachineLearning
 using Documenter
 using DocumenterCitations
 using Markdown
+using Bibliography
 # using Weave
 
 # this is necessary to avoid warnings. See https://documenter.juliadocs.org/dev/man/syntax/
 ENV["GKSwstype"] = "100"
 
 bib = CitationBibliography(joinpath(@__DIR__, "src", "GeometricMachineLearning.bib"))
+sort_bibliography!(bib.entries, :nyt)  # name-year-title
 
 # if the docs are generated with github actions, then this changes the path; see: https://github.com/JuliaDocs/Documenter.jl/issues/921 
 const buildpath = haskey(ENV, "CI") ? ".." : ""
@@ -60,7 +62,8 @@ end
 
 function theorem(statement::String, name::Nothing; label::Union{Nothing, String} = nothing)
     if Main.output_type == :html
-        Markdown.parse("__Theorem:__ *" * statement * "*")
+        Markdown.parse("""!!! info "Theorem" 
+            \t $(statement)""")
     else
         theorem_label = isnothing(label) ? "" : raw"\label{th:" * label * raw"}"
         Markdown.parse(raw"\begin{thrm}" * statement * theorem_label * raw"\end{thrm}")
@@ -69,7 +72,8 @@ end
 
 function theorem(statement::String, name::String; label::Union{Nothing, String} = nothing)
     if Main.output_type == :html
-        Markdown.parse("__Theorem (" * name * "):__ *" * statement * "*")
+        Markdown.parse("""!!! info "Theorem ($(name))" 
+            \t $(statement)""")
     else
         theorem_label = isnothing(label) ? "" : raw"\label{th:" * label * raw"}"
         Markdown.parse(raw"\begin{thrm}[" * name * "]" * statement * theorem_label * raw"\end{thrm}")
@@ -82,12 +86,45 @@ end
 
 function definition(statement::String; label::Union{Nothing, String} = nothing)
     if Main.output_type == :html
-        Markdown.parse("__Definition:__ *" * statement * "*")
+        Markdown.parse("""!!! info "Definition" 
+            \t $(statement)""")
     else
         theorem_label = isnothing(label) ? "" : raw"\label{def:" * label * raw"}"
         Markdown.parse(raw"\begin{dfntn}" * statement * theorem_label * raw"\end{dfntn}")
     end
 end
+
+function example(statement::String; label::Union{Nothing, String} = nothing)
+    if Main.output_type == :html
+        Markdown.parse("""!!! info "Example" 
+            \t $(statement)""")
+    else
+        theorem_label = isnothing(label) ? "" : raw"\label{xmpl:" * label * raw"}"
+        Markdown.parse(raw"\begin{xmpl}" * statement * theorem_label * raw"\end{xmpl}")
+    end
+end
+
+function proof(statement::String)
+    if Main.output_type == :html
+        Markdown.parse("""!!! details "Proof" 
+            \t $(statement)""")
+    else
+        Markdown.parse(raw"\begin{proof}" * statement * raw"\end{proof}")
+    end
+end
+
+function sphere(r, C)   # r: radius; C: center [cx,cy,cz]
+    n = 100
+    u = range(-π, π; length = n)
+    v = range(0, π; length = n)
+    x = C[1] .+ r * cos.(u) * sin.(v)'
+    y = C[2] .+ r * sin.(u) * sin.(v)'
+    z = C[3] .+ r * ones(n) * cos.(v)'
+    x, y, z
+end
+
+# this is needed if we have multiline definitions or proofs
+const indentation = output_type == :html ? "\t" : ""
 
 makedocs(;
     plugins = [bib],
@@ -100,13 +137,12 @@ makedocs(;
         "Home" => "index.md",
         "Manifolds" => [
             "Concepts from General Topology" => "manifolds/basic_topology.md",
+            "Metric and Vector Spaces" => "manifolds/metric_and_vector_spaces.md",
+            "Foundations of Differential Manifolds" => "manifolds/inverse_function_theorem.md",
             "General Theory on Manifolds" => "manifolds/manifolds.md",
-            "The Inverse Function Theorem" => "manifolds/inverse_function_theorem.md",
-            "The Submersion Theorem" => "manifolds/submersion_theorem.md",
-            "Homogeneous Spaces" => "manifolds/homogeneous_spaces.md",
-            "Stiefel" => "manifolds/stiefel_manifold.md",
-            "Grassmann" => "manifolds/grassmann_manifold.md",
             "Differential Equations and the EAU theorem" => "manifolds/existence_and_uniqueness_theorem.md",
+            "Riemannian Manifolds" => "manifolds/riemannian_manifolds.md",
+            "Homogeneous Spaces" => "manifolds/homogeneous_spaces.md",
             ],
         "Arrays" => [
             "Symmetric and Skew-Symmetric Matrices" => "arrays/skew_symmetric_matrix.md",
