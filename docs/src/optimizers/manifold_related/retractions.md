@@ -48,7 +48,7 @@ v = 5 * rand(3, 1)
 
 function do_setup(; theme=:light)
     text_color = theme == :dark ? :white : :black # hide
-    fig = Figure(; backgroundcolor = :transparent, size = (400, 300)) # hide
+    fig = Figure(; backgroundcolor = :transparent, size = (450, 338)) # hide
     ax = Axis3(fig[1, 1]; # hide
         backgroundcolor = (:tomato, .5), # hide
         aspect = (1., 1., 1.), # hide
@@ -170,8 +170,8 @@ discrepancies = [norm(Y_geo_inc - Y_cay_inc) for (Y_geo_inc, Y_cay_inc, _) in zi
 fig_light = plot_discrepancies(discrepancies; theme = :light)[1] # hide
 fig_dark = plot_discrepancies(discrepancies; theme = :dark)[1] # hide
 
-save("retraction_discrepancy.png",        fig_light) #; px_per_unit = 1.5) # hide
-save("retraction_discrepancy_dark.png",   fig_dark) #; px_per_unit = 1.5) # hide
+save("retraction_discrepancy.png",        fig_light; px_per_unit = 1.5) # hide
+save("retraction_discrepancy_dark.png",   fig_dark; px_per_unit = 1.5) # hide
 
 Main.include_graphics("retraction_discrepancy"; caption = raw"Discrepancy between the geodesic and the Cayley retraction.", width = .6) # hide
 ```

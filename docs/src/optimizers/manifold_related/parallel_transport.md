@@ -67,7 +67,7 @@ mred = RGBf(214 / 256, 39 / 256, 40 / 256) # hide
 mpurple = RGBf(148 / 256, 103 / 256, 189 / 256)
 
 function set_up_plot(; theme = :dark) # hide
-fig = Figure(; backgroundcolor = :transparent, size = (400, 300)) # hide
+fig = Figure(; backgroundcolor = :transparent, size = (450, 338)) # hide
 text_color = theme == :dark ? :white : :black # hide
 ax = Axis3(fig[1, 1]; # hide
     backgroundcolor = (:tomato, .5), # hide
