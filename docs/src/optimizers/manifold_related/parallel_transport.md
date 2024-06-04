@@ -67,7 +67,7 @@ mred = RGBf(214 / 256, 39 / 256, 40 / 256) # hide
 mpurple = RGBf(148 / 256, 103 / 256, 189 / 256)
 
 function set_up_plot(; theme = :dark) # hide
-fig = Figure(; backgroundcolor = :transparent) # hide
+fig = Figure(; backgroundcolor = :transparent, size = (400, 300)) # hide
 text_color = theme == :dark ? :white : :black # hide
 ax = Axis3(fig[1, 1]; # hide
     backgroundcolor = (:tomato, .5), # hide
@@ -172,6 +172,10 @@ nothing # hide
 
 ```@example
 Main.include_graphics("parallel_transport") # hide
+```
+
+```@eval
+Main.remark(raw"Note that `apply_section!` changes ``\lambda(Y)`` (including ``Y``) in-place!")
 ```
 
 ## References

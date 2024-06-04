@@ -81,7 +81,7 @@ mred = RGBf(214 / 256, 39 / 256, 40 / 256) # hide
 
 function set_up_plot(; theme = :dark) # hide
 text_color = theme == :dark ? :white : :black # hide
-fig = Figure(; backgroundcolor = :transparent) # hide
+fig = Figure(; backgroundcolor = :transparent, size = (400, 300)) # hide
 ax = Axis3(fig[1, 1]; # hide
     backgroundcolor = (:tomato, .5), # hide
     aspect = (1., 1., 1.), # hide
