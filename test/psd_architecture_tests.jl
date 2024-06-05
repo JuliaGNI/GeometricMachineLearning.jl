@@ -15,8 +15,6 @@ function test_accuracy(N::Integer, n::Integer; tol::Real = .35)
 end
 
 function test_encoder_and_decoder(N::Integer, n::Integer)
-    dl = DataLoader(rand(N, 10 * N); autoencoder = true)
-
     psd_nn = NeuralNetwork(PSDArch(N, n))
     psd_encoder = encoder(psd_nn)
     psd_decoder = decoder(psd_nn)
