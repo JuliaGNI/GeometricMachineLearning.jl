@@ -1,3 +1,11 @@
+@doc raw"""
+An abstract type for all the neural network losses. 
+If you want to implement ``CustomLoss <: NetworkLoss`` you need to define a functor:
+```julia
+    (loss::CustomLoss)(model, ps, input, output)
+```
+where `model` is an instance of an `AbstractExplicitLayer` or a `Chain` and `ps` the parameters.
+"""
 abstract type NetworkLoss end 
 
 function (loss::NetworkLoss)(nn::NeuralNetwork, input::CT, output::CT) where {AT<:AbstractArray, BT <: NamedTuple{(:q, :p), Tuple{AT, AT}}, CT <: Union{AT, BT}}
@@ -18,9 +26,16 @@ function (loss::NetworkLoss)(model::Union{Chain, AbstractExplicitLayer}, ps::Uni
 end
 
 @doc raw"""
-The loss for a transformer network (especially a transformer integrator). The constructor is called with:
-- `seq_length::Int`
-- `prediction_window::Int` (default is 1).
+    TransformerLoss(seq_length, prediction_window)
+
+Make an instance of the transformer loss. 
+
+This is the loss for a transformer network (especially a transformer integrator). 
+    
+# Parameters
+
+The `prediction_window` specifies how many time steps are predicted into the future.
+It defaults to the value specified for `seq_length`. 
 """
 struct TransformerLoss <: NetworkLoss
     seq_length::Int
@@ -56,6 +71,13 @@ function (loss::ClassificationTransformerLoss)(model::Union{Chain, AbstractExpli
     norm(predicted_output_cropped - output) / norm(output)
 end
 
+@doc raw"""
+    FeedForwardLoss()
+
+Make an instance of a loss for feedforward neural networks.
+
+This doesn't have any parameters.
+"""
 struct FeedForwardLoss <: NetworkLoss end
 
 @doc raw"""
