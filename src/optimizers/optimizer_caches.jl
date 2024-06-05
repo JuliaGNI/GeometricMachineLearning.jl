@@ -47,6 +47,13 @@ struct AdamCache{T, AT <: AbstractArray{T}} <: AbstractCache{T}
     end
 end
 
+function Base.display(C::AdamCache)
+    println(raw"`MomentumCache` that currently stores `B₁` as ...")
+    display(C.B₁)
+    println(raw"and `B₂` as ...")
+    display(C.B₂)
+end
+
 @doc raw"""
     MomentumCache(Y)
 
@@ -63,6 +70,11 @@ struct MomentumCache{T, AT <: AbstractArray{T}} <:AbstractCache{T}
     function MomentumCache(Y::AbstractArray)
         new{eltype(Y), typeof(zero(Y))}(zero(Y))
     end
+end
+
+function Base.display(C::MomentumCache)
+    println(raw"`MomentumCache` that currently stores `B`as  ...")
+    display(C.B)
 end
 
 @doc raw"""
