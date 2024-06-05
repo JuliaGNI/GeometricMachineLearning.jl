@@ -8,7 +8,7 @@ The projection here is: ``\pi:S \to SE`` where
 ```math
 E = \begin{pmatrix} \mathbb{I}_{n} \\ \mathbb{O}_{(N-n)\times{}n}  \end{pmatrix}.
 ```
-The matrix \(E\) is implemented under [`StiefelProjection`](@ref) in `GeometricMachineLearning`.
+The matrix ``E`` is implemented under [`StiefelProjection`](@ref) in `GeometricMachineLearning`.
 
 An element of StiefelLieAlgMatrix takes the form: 
 ```math
