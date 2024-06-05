@@ -1,20 +1,17 @@
 @doc raw"""
-Defines the Adam Optimizer with weight decay.
+    AdamOptimizerWithDecay(n_epochs, η₁=1f-2, η₂=1f-6, ρ₁=9f-1, ρ₂=9.9f-1, δ=1f-8)
 
-### Constructors
-The default constructor takes as input: 
-- `n_epochs::Int`
-- `η₁`: the learning rate at the start 
-- `η₂`: the learning rate at the end 
-- `ρ₁`: the decay parameter for the first moment 
-- `ρ₂`: the decay parameter for the second moment
-- `δ`: the safety parameter 
-- `T` (keyword argument): the type. 
+Make an instance of the Adam Optimizer with weight decay.
 
-The second constructor is called with: 
-- `n_epochs::Int`
-- `T`
-... the rest are keyword arguments
+All except the first argument (the number of epochs) have defaults.
+
+The difference to the standard [`AdamOptimizer`](@ref) is that we change the learning reate `η` in each step.
+We start with a relatively high value `η₁` and then exponentially decrease it until we reach `η₂` with
+
+```math
+ \eta = \gamma^t\eta_1,
+```
+where ``\gamma = \exp(\log(\eta_1 / \eta_2) / \mathtt{n\_epochs}).``
 """
 struct AdamOptimizerWithDecay{T<:Real} <: OptimizerMethod
     η₁::T
