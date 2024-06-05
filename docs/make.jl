@@ -203,6 +203,7 @@ makedocs(;
             "Grassmann manifold" => "tutorials/grassmann_layer.md",
             "Volume-Preserving Attention" => "tutorials/volume_preserving_attention.md",
             "Linear Symplectic Transformer" => "tutorials/linear_symplectic_transformer.md",
+            "Adjusting the Loss Function" => "tutorials/adjusting_the_loss_function.md",
         ],
         "References" => "references.md",
         "Library" => "library.md",
