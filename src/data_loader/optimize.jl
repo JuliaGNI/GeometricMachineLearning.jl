@@ -22,24 +22,8 @@ function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTu
     @views for batch_indices in batches 
         count += 1
         # these `copy`s should not be necessary! coming from a Zygote problem!
-        input_nt, output_nt = convert_input_and_batch_indices_to_array(dl, batch, batch_indices)
-        loss_value, pullback = Zygote.pullback(ps -> loss(model, ps, input_nt, output_nt), ps)
-        total_error += loss_value
-        dp = pullback(one(loss_value))[1]
-        optimization_step!(opt, λY, ps, dp)
-    end
-    total_error / count
-end
-
-function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTuple}, dl::DataLoader{T, <:Any, Nothing, :RegularData}, batch::Batch, loss::Union{typeof(loss), NetworkLoss}, λY) where T
-    count = 0
-    total_error = T(0)
-    batches = batch(dl)
-    @views for batch_indices in batches 
-        count += 1
-        # these `copy`s should not be necessary! coming from a Zygote problem!
-        input_nt = convert_input_and_batch_indices_to_array(dl, batch, batch_indices)
-        loss_value, pullback = Zygote.pullback(ps -> loss(model, ps, input_nt), ps)
+        input_nt_output_nt = convert_input_and_batch_indices_to_array(dl, batch, batch_indices)
+        loss_value, pullback = Zygote.pullback(ps -> loss(model, ps, input_nt_output_nt...), ps)
         total_error += loss_value
         dp = pullback(one(loss_value))[1]
         optimization_step!(opt, λY, ps, dp)
