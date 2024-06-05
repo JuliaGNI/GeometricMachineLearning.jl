@@ -23,7 +23,11 @@ function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTu
         count += 1
         # these `copy`s should not be necessary! coming from a Zygote problem!
         input_nt_output_nt = convert_input_and_batch_indices_to_array(dl, batch, batch_indices)
-        loss_value, pullback = Zygote.pullback(ps -> loss(model, ps, input_nt_output_nt...), ps)
+        if typeof(input_nt_output_nt) <: Tuple
+            loss_value, pullback = Zygote.pullback(ps -> loss(model, ps, input_nt_output_nt...), ps)
+        else
+            loss_value, pullback = Zygote.pullback(ps -> loss(model, ps, input_nt_output_nt), ps)
+        end
         total_error += loss_value
         dp = pullback(one(loss_value))[1]
         optimization_step!(opt, λY, ps, dp)
