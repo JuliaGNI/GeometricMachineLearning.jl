@@ -14,7 +14,9 @@ It simply does:
 \mathrm{weight} \leftarrow \mathrm{weight} + (-\eta\cdot\mathrm{gradient}),
 ```
 
-where addition has to be replaced with appropriate operations in the manifold case.
+where addition has to be replaced with appropriate operations in the manifold case[^2].
+
+[^2]: In the manifold case the expression ``-\eta\cdot\mathrm{gradient}`` is an element of the [global tangent space](@ref "Global Tangent Spaces") ``\mathfrak{g}^\mathrm{hor}`` and a retraction maps from ``\mathfrak{g}^\mathrm{hor}``. We then still have to compose it with the [updated global section](@ref "Parallel Transport") ``\Lamda^{(t)}``.
 
 When calling [`GradientOptimizer`](@ref) we can specify a learning rate ``\eta`` (or use the default).
 
@@ -39,7 +41,7 @@ If we operate on a derivative with [`update!`](@ref) this will compute a *final 
 dx = (A = one(weight.A), )
 update!(o, o.cache, dx)
 
-dx
+dx.A
 ```
 
 So what has happened here is that the gradient `dx` was simply multiplied with ``-\eta`` as the cache of the gradient optimizer is trivial.
@@ -49,7 +51,7 @@ So what has happened here is that the gradient `dx` was simply multiplied with `
 The momentum optimizer is similar to the gradient optimizer but further stores past information as *first moments*. We let these first moments *decay* with a *decay parameter* ``\alpha``:
 
 ```math
-\mathrm{weights} \leftarrow weights + (\alpha\cdot\mathrm{moment} - \eta\cdot\mathrm{gradient}),
+\mathrm{weights} \leftarrow \mathrm{weights} + (\alpha\cdot\mathrm{moment} - \eta\cdot\mathrm{gradient}),
 ```
 
 where addition has to be replaced with appropriate operations in the manifold case.
@@ -61,7 +63,7 @@ const α = 0.5
 method = MomentumOptimizer(η, α)
 o = Optimizer(method, weight)
 
-o.cache
+o.cache.A # the cache is stored for each array in `weight` (which is a `NamedTuple`)
 ```
 
 But as the cache is initialized with zeros it will lead to the same result as the gradient optimizer in the first iteration:
@@ -85,7 +87,7 @@ If we have weights on manifolds calling [`Optimizer`](@ref) will automatically a
 ```@example optimizer_methods
 weight = (Y = rand(StiefelManifold, 10, 5), )
 
-Optimizer(method, weight).cache
+Optimizer(method, weight).cache.Y
 ```
 
 ## The Adam Optimizer 
@@ -100,7 +102,7 @@ where ``\odot:\mathbb{R}^n\times\mathbb{R}^n\to\mathbb{R}^n`` is the *Hadamard p
 * ``W_t\gets -\eta{}B_1/\sqrt{B_2 + \delta},``
 * ``Y^{(t+1)} \gets Y^{(t)} + W^{(t)},``
 
-where the last addition has to be replaced with appropriate operations when dealing with manifolds. Further ``\eta`` is the *learning rate* and ``\delta`` is a small constant that is added for stability. The division, square root and addition in step 3 are performed element-wise.
+where the last addition has to be replaced with appropriate operations when dealing with manifolds. Further ``\eta`` is the *learning rate* and ``\delta`` is a small constant that is added for stability. The division, square root and addition in the computation of ``W_t`` are performed element-wise.
 
 In the following we show a schematic update that Adam performs for the case when no elements are on manifolds (also compare this figure with the [general optimization framework](@ref "Generalization to Homogeneous Spaces")):
 
@@ -108,16 +110,45 @@ In the following we show a schematic update that Adam performs for the case when
 Main.include_graphics("../tikz/adam_optimizer") # hide
 ```
 
+We demonstrate the Adam cache on the same example from before:
+```@example optimizer_methods
+const ρ₁ = 0.9
+const ρ₂ = 0.99
+const δ = 1e-8
+
+method = AdamOptimizer(η, ρ₁, ρ₂, δ)
+o = Optimizer(method, weight)
+
+o.cache.A
+```
+
 ### Weights on manifolds 
 
-The problem with generalizing Adam to manifolds is that the Hadamard product ``\odot`` as well as the other element-wise operations (``/``, ``\sqrt{}`` and ``+`` in step 3 above) lack a clear geometric interpretation. In `GeometricMachineLearning` we get around this issue by utilizing a so-called [global tangent space representation](@ref "Global Tangent Spaces").  
+The problem with generalizing Adam to manifolds is that the Hadamard product ``\odot`` as well as the other element-wise operations (``/``, ``\sqrt{}`` and ``+`` in step 3 above) lack a clear geometric interpretation. In `GeometricMachineLearning` we get around this issue by utilizing a so-called [global tangent space representation](@ref "Global Tangent Spaces"). A similar approach is shown in [kong2023momentum](@cite).
 
 ```@eval
-Main.remark(raw"The optimization framework presented here manages to generalize the Adam optimizer to manifolds without knowing an underlying differential equation. From a mathematical perspective this is not really satisfactory because we would ideally want the optimizers to emerge as a discretization of a differential equation as in the case of the gradient and the momentum optimizer to better interpret them. A similar attempt to generalize Adam to the Stiefel manifold was made in [kong2023momentum](@cite).")
+Main.remark(raw"The optimization framework presented here manages to generalize the Adam optimizer to manifolds without knowing an underlying differential equation. From a mathematical perspective this is not really satisfactory because we would ideally want the optimizers to emerge as a discretization of a differential equation as in the case of the gradient and the momentum optimizer to better interpret them.")
 ```
 
 ## The Adam Optimizer with Decay
+The Adam optimizer with decay is similar to the standard Adam optimizer with the difference that the learning rate ``\eta`` decays exponentially. We start with a relatively high learning rate ``\eta_1`` (e.g. ``10^{-2}``) and end with a low learning rate ``\eta_2`` (e.g. ``10^{-8}``). If we want to use this optimizer we have to tell it beforehand how many epochs we train for such that it can adjust the learning rate decay accordingly:
 
+```@example optimizer_methods
+const η₁ = 1e-2 
+const η₂ = 1e-6
+const n_epochs = 1000 
+
+method = AdamOptimizerWithDecay(n_epochs, η₁, η₂, ρ₁, ρ₂, δ)
+o = Optimizer(method, weight)
+
+nothing # hide
+```
+ 
+ The cache is however exactly the same as for the Adam optimizer:
+
+```@example
+    o.cache.A
+```
 
 ## Library Functions
 
