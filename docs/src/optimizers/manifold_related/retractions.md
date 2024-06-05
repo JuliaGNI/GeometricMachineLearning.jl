@@ -132,8 +132,8 @@ end # hide
 fig_light = make_plot(; theme = :light)[1] # hide
 fig_dark = make_plot(; theme = :dark)[1] # hide
 
-save("retraction_comparison.png",        alpha_colorbuffer(fig_light)) #; px_per_unit = 1.5) # hide
-save("retraction_comparison_dark.png",   alpha_colorbuffer(fig_dark)) #; px_per_unit = 1.5) # hide
+save("retraction_comparison.png",        alpha_colorbuffer(fig_light)) # hide
+save("retraction_comparison_dark.png",   alpha_colorbuffer(fig_dark)) # hide
 
 Main.include_graphics("retraction_comparison"; caption = raw"Comparison between the geodesic and the Cayley retraction.", width = .8) # hide
 ```
@@ -170,8 +170,8 @@ discrepancies = [norm(Y_geo_inc - Y_cay_inc) for (Y_geo_inc, Y_cay_inc, _) in zi
 fig_light = plot_discrepancies(discrepancies; theme = :light)[1] # hide
 fig_dark = plot_discrepancies(discrepancies; theme = :dark)[1] # hide
 
-save("retraction_discrepancy.png",        fig_light; px_per_unit = 1.5) # hide
-save("retraction_discrepancy_dark.png",   fig_dark; px_per_unit = 1.5) # hide
+save("retraction_discrepancy.png",        fig_light; px_per_unit = 1.3) # hide
+save("retraction_discrepancy_dark.png",   fig_dark; px_per_unit = 1.3) # hide
 
 Main.include_graphics("retraction_discrepancy"; caption = raw"Discrepancy between the geodesic and the Cayley retraction.", width = .6) # hide
 ```
