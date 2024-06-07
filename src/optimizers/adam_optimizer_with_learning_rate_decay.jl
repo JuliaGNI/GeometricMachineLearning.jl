@@ -5,11 +5,12 @@ Make an instance of the Adam Optimizer with weight decay.
 
 All except the first argument (the number of epochs) have defaults.
 
-The difference to the standard [`AdamOptimizer`](@ref) is that we change the learning reate `η` in each step.
-We start with a relatively high value `η₁` and then exponentially decrease it until we reach `η₂` with
+The difference to the standard [`AdamOptimizer`](@ref) is that we change the learning reate ``\eta`` in each step.
+Apart from the *time dependency* of ``\eta`` the two algorithms are however equivalent!
+``\eta(0)`` starts with a high value ``\eta_1`` and then exponentially decrease until it reaches ``\eta_2`` with
 
 ```math
- \eta = \gamma^t\eta_1,
+ \eta(t) = \gamma^t\eta_1,
 ```
 where ``\gamma = \exp(\log(\eta_1 / \eta_2) / \mathtt{n\_epochs}).``
 """
