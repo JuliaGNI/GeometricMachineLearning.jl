@@ -11,7 +11,7 @@ latex: latex_no_pdf
 	$(MAKE) compile_tex;
 	$(MAKE) compile_tex
 
-latex_no_pdf_no_images: install_brenier_two_fluid latex_docs_no_pdf put_figures_outside_of_minted_environment do_correct_quotation_marks make_correct_thrm_and_dfntn_and_xmpl_and_proof_environment
+latex_no_pdf_no_images: install_brenier_two_fluid latex_docs_no_pdf copy_png_files put_figures_outside_of_minted_environment do_correct_quotation_marks make_correct_thrm_and_dfntn_and_xmpl_and_rmrk_and_proof_environment
 
 latex_no_pdf: latex_images latex_no_pdf_no_images 
 
@@ -74,9 +74,6 @@ put_figures_outside_of_minted_environment:
 	sed -i'' -e '/DeleteThisAndTheLineAfter/d' build/G*.tex;
 	sed -i'' -e 's/\\\\texttt/\\texttt/g' build/G*.tex;
 	sed -i'' -e 's/\\\\_/\\_/g' build/G*.tex;
-	sed -i'' -e 's/tangent_space.png/manifolds\/tangent_space.png/g' build/G*.tex;
-	sed -i'' -e 's/retraction_comparison.png/optimizers\/manifold_related\/retraction_comparison.png/g' build/G*.tex;
-	sed -i'' -e 's/retraction_discrepancy.png/optimizers\/manifold_related\/retraction_discrepancy.png/g' build/G*.tex;
 
 make_correct_thrm_and_dfntn_and_xmpl_and_rmrk_and_proof_environment:
 	sed -i'' -e 's/{\\textbackslash}begin\\{thrm\\}/\\begin{thrm}/g' build/G*.tex;
@@ -97,3 +94,8 @@ make_correct_thrm_and_dfntn_and_xmpl_and_rmrk_and_proof_environment:
 do_correct_quotation_marks:
 	sed -i'' -e 's/{\\textquotedbl}/"/g' build/G*.tex;
 	sed -i'' -e 's/ "/ ``/g' build/G*.tex
+
+copy_png_files:
+	find build/manifolds -name \*.png -exec cp {} build \; ;
+	find build/optimizers/manifold_related -name \*.png -exec cp {} build \; ;
+	find build/tutorials -name \*.png -exec cp {} build \;
