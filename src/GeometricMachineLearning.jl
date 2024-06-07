@@ -246,7 +246,7 @@ module GeometricMachineLearning
     include("backends/backends.jl")
     include("backends/lux.jl")
 
-    export TransformerLoss, FeedForwardLoss
+    export TransformerLoss, FeedForwardLoss, AutoEncoderLoss
 
     #INCLUDE ARCHITECTURES
     include("architectures/neural_network_integrator.jl")
