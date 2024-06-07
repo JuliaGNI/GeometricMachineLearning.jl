@@ -2,7 +2,7 @@
 
 `GeometricMachineLearning` provides a few standard loss function that are used as defaults for specific neural networks:
 * [`FeedForwardLoss`](@ref)
-* [`AutoencoderLoss`](@ref)
+* [`AutoEncoderLoss`](@ref)
 * [`TransformerLoss`](@ref)
 
 If these standard losses do not satisfy the user's needs, it is very easy to implement custom loss functions. We again consider training a SympNet on the data coming from a pendulum:
@@ -53,7 +53,10 @@ We now implement a custom loss such that:
 ```@example change_loss
 struct CustomLoss <: GeometricMachineLearning.NetworkLoss end
 
-function (loss::CustomLoss)(model::Chain, params::Tuple, input::CT, output::CT) where {AT<:AbstractArray, CT<:@NamedTuple{q::AT, p::AT}}
+function (loss::CustomLoss)(model::Chain, params::Tuple, input::CT, output::CT) where {
+                                                            AT<:AbstractArray, 
+                                                            CT<:@NamedTuple{q::AT, p::AT}
+                                                            }
     FeedForwardLoss()(model, params, input, output) + .1 * network_parameter_norm(params)
 end
 
@@ -77,8 +80,16 @@ We can also compare the solutions of the two networks:
 ```@example change_loss
 using CairoMakie
 
-fig = Figure()
-ax = Axis(fig[1, 1]; backgroundcolor = :transparent)
+function make_fig(; theme = :dark, size = (450, 338)) # hide
+textcolor = theme == :dark ? :white : :black # hide
+fig = Figure(; backgroundcolor = :transparent)
+ax = Axis(fig[1, 1]; backgroundcolor = :transparent, 
+    bottomspinecolor = textcolor, 
+    topspinecolor = textcolor,
+    leftspinecolor = textcolor,
+    rightspinecolor = textcolor,
+    xtickcolor = textcolor, 
+    ytickcolor = textcolor)
 
 init_con = [0.5 0.]
 n_time_steps = 100
@@ -92,20 +103,25 @@ for i in 2:(n_time_steps + 1)
     prediction2[:, i] = nn_custom(prediction2[:, i - 1])
 end
 
-lines!(ax, data.input.q[:], data.input.p[:], label = "Training Data")
-lines!(ax, prediction1[1, :], prediction1[2, :], label = "FeedForwardLoss")
-lines!(ax, prediction2[1, :], prediction2[2, :], label = "CustomLoss")
+lines!(ax, data.input.q[:], data.input.p[:], label = rich("Training Data"; color = textcolor))
+lines!(ax, prediction1[1, :], prediction1[2, :], label = rich("FeedForwardLoss"; color = textcolor))
+lines!(ax, prediction2[1, :], prediction2[2, :], label = rich("CustomLoss"; color = textcolor))
 text_color = :white # hide
-axislegend(; position = (.82, .75), backgroundcolor = :transparent, color = text_color) # hide
+axislegend(; position = (.82, .75), backgroundcolor = :transparent) # hide
 
 fig
+end # hide
+ # hide
+save("compare_losses.png", make_fig(; theme = :light)) # hide
+save("compare_losses_dark.png", make_fig(; theme = :dark)) # hide
+Main.include_graphics("compare_losses") # hide
 ```
 
 ## Library Functions
 
 ```@docs; canonical = false
 GeometricMachineLearning.NetworkLoss
-FeedForwardLoss
-AutoencoderLoss
-TransformerLoss
+GeometricMachineLearning.FeedForwardLoss
+GeometricMachineLearning.AutoEncoderLoss
+GeometricMachineLearning.TransformerLoss
 ```
