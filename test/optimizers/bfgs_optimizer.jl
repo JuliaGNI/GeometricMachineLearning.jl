@@ -1,108 +1,104 @@
 using GeometricMachineLearning
+using GeometricMachineLearning: apply_section!
 using Zygote
 using Test
-using LinearAlgebra: norm, svd
+using LinearAlgebra: norm
+import Random
+
+Random.seed!(123)
 
 @doc raw"""
-This tests the BFGS optimizer.
+    bfgs_optimizer(N)
+
+Test if BFGS optimizer perfroms better than gradient optimizer.
+
+The test is performed on a simple loss function
+```math
+    \mathrm{loss}(A) = norm(A - B) ^ 3,
+```
+where ``B`` is fixed. 
 """
-function bfgs_optimizer(N)
+function bfgs_optimizer(N; n_steps = 10, η = 1e-4)
     B = inv(rand(N, N))
-    loss(A) = norm(A - B) ^ (3)
+    loss(A) = norm(A - B) ^ (2)
     A = randn(N, N)
     loss1 = loss(A)
-    opt = BFGSOptimizer(1e-3)
-    optimizer_instance = Optimizer(opt, A)
-    ∇loss = gradient(loss, A)[1]
-    GeometricMachineLearning.bfgs_initialization!(optimizer_instance, optimizer_instance.cache, ∇loss)
-    A .= A + ∇loss
+    method₁ = GradientOptimizer(η)
+    o₁ = Optimizer(method₁, (A = A,))
+    for _ in 1:n_steps
+        ∇L = Zygote.gradient(loss, A)[1]
+        # println("before gradient step")
+        # display(∇L)
+        update!(o₁, o₁.cache.A, ∇L)
+        # println("after gradient step")
+        # display(∇L)
+        A .+= ∇L
+    end
     loss2 = loss(A)
-    ∇loss = gradient(loss, A)[1]
-    GeometricMachineLearning.bfgs_update!(optimizer_instance, optimizer_instance.cache, ∇loss)
-    A .= A + ∇loss
+    A = randn(N, N)
+    method₂ = BFGSOptimizer(η)
+    o₂ = Optimizer(method₂, (A = A,))
+    for _ in 1:n_steps
+        ∇L = Zygote.gradient(loss, A)[1]
+        # println("before gradient step")
+        # display(∇L)
+        update!(o₂, o₂.cache.A, ∇L)
+        # println("after gradient step")
+        # display(∇L)
+        A .+= ∇L
+    end
     loss3 = loss(A)
     @test loss1 > loss2 > loss3
+    println(loss2)
+    println(loss3)
+
 end
 
 bfgs_optimizer(10)
 
-function bfgs_optimizer2(N, n_iterates=10)
-    losses = zeros(n_iterates+2)
-    B = inv(rand(N, N))
-    loss(A) = norm(A - B) ^ (3)
-    A = randn(N, N)
-    losses[1] = loss(A)
-    opt = BFGSOptimizer(1e-3)
-    optimizer_instance = Optimizer(opt, A)
-    ∇loss = gradient(loss, A)[1]
-    GeometricMachineLearning.bfgs_initialization!(optimizer_instance, optimizer_instance.cache, ∇loss)
-    A .= A + ∇loss
-    losses[2] = loss(A)
-    for i in 1:n_iterates
-        ∇loss = gradient(loss, A)[1]
-        GeometricMachineLearning.bfgs_update!(optimizer_instance, optimizer_instance.cache, ∇loss)
-        A .= A + ∇loss
-        losses[i+2] = loss(A)
+@doc raw"""
+    bfgs_optimizer(N, n)
+
+Test if BFGS optimizer perfroms better than gradient optimizer.
+
+The test is performed on a simple loss function
+```math
+    \mathrm{loss}(A) = norm(AA^T - B) ^ 3,
+```
+where ``B = Y_BY_B^T`` for some ``Y\in{}St(n, N)`` is fixed. 
+``A`` in the equation above is optimized on the Stiefel manifold. 
+"""
+function bfgs_stiefel_optimizer(N, n; n_steps = 100, η = 1e-4)
+    YB = rand(StiefelManifold, N, n)
+    B = YB * YB'
+    loss(A) = norm(A * A' - B) ^ 2
+    Y = rand(StiefelManifold, N, n)
+    λY = GlobalSection(Y)
+    loss1 = loss(Y)
+    method₁ = GradientOptimizer(η)
+    o₁ = Optimizer(method₁, (A = Y,))
+    for _ in 1:n_steps
+        ∇L = Zygote.gradient(loss, Y)[1]
+        gradL = global_rep(λY, ∇L)
+        update!(o₁, o₁.cache.A, gradL)
+        cayleyB = StiefelManifold(cayley(gradL) * StiefelProjection(N, n))
+        apply_section!(Y, λY, cayleyB)
     end
-    losses
+    loss2 = loss(Y)
+    Y = rand(StiefelManifold, N, n)
+    method₂ = BFGSOptimizer(η)
+    o₂ = Optimizer(method₂, (A = Y,))
+    for _ in 1:n_steps
+        ∇L = Zygote.gradient(loss, Y)[1]
+        gradL = global_rep(λY, ∇L)
+        update!(o₂, o₂.cache.A, gradL)
+        cayleyB = StiefelManifold(cayley(gradL) * StiefelProjection(N, n))
+        apply_section!(Y, λY, cayleyB)
+    end
+    loss3 = loss(Y)
+    @test loss1 > loss2 == loss3
+    println(loss2)
+    println(loss3)
 end
 
-# bfgs_optimizer2(10)
-
-function stiefel_optimizer_test(N, n; T=Float32, n_iterates=10, η=1f-2)
-    opt=BFGSOptimizer(T(η))
-    A = rand(StiefelManifold{T}, N, n)
-    B = T(10)*randn(T, N, N)
-    ideal_A = svd(B).U[:, 1:n]
-    loss(A) = norm(B - A * A' * B)
-    ideal_error = norm(ideal_A)
-    losses = zeros(n_iterates+2)
-    losses[1] = loss(A)
-    optimizer_instance = Optimizer(opt, A)
-    λA = GlobalSection(A)
-    grad_loss = global_rep(λA, rgrad(A, gradient(loss, A)[1]))
-    GeometricMachineLearning.bfgs_initialization!(optimizer_instance, optimizer_instance.cache, grad_loss)
-    # geodesic for `grad_loss`
-    exp_grad_loss = GeometricMachineLearning.geodesic(grad_loss)
-    GeometricMachineLearning.apply_section!(A, λA, exp_grad_loss)
-    losses[2] = loss(A)
-    for i in 1:n_iterates
-        λA = GlobalSection(A)
-        grad_loss = global_rep(λA, rgrad(A, gradient(loss, A)[1]))
-        GeometricMachineLearning.bfgs_update!(optimizer_instance, optimizer_instance.cache, grad_loss)
-        # geodesic for `grad_loss`
-        exp_grad_loss = GeometricMachineLearning.geodesic(grad_loss)
-        GeometricMachineLearning.apply_section!(A, λA, exp_grad_loss)
-        losses[i+2] = loss(A)
-    end
-    losses, ideal_error, check(A)
-end
-
-function stiefel_adam_test(N, n; T=Float32, n_iterates=10)
-    opt=AdamOptimizer()
-    A = rand(StiefelManifold{T}, N, n)
-    B = T(10)*randn(T, N, N)
-    ideal_A = svd(B).U[:, 1:n]
-    loss(A) = norm(B - A * A' * B)
-    ideal_error = norm(ideal_A)
-    losses = zeros(n_iterates+2)
-    losses[1] = loss(A)
-    optimizer_instance = Optimizer(opt, A)
-    λA = GlobalSection(A)
-    grad_loss = global_rep(λA, rgrad(A, gradient(loss, A)[1]))
-    GeometricMachineLearning.update!(optimizer_instance, optimizer_instance.cache, grad_loss)
-    # geodesic for `grad_loss`
-    exp_grad_loss = GeometricMachineLearning.geodesic(grad_loss)
-    GeometricMachineLearning.apply_section!(A, λA, exp_grad_loss)
-    losses[2] = loss(A)
-    for i in 1:n_iterates
-        λA = GlobalSection(A)
-        grad_loss = global_rep(λA, rgrad(A, gradient(loss, A)[1]))
-        GeometricMachineLearning.update!(optimizer_instance, optimizer_instance.cache, grad_loss)
-        # geodesic for `grad_loss`
-        exp_grad_loss = GeometricMachineLearning.geodesic(grad_loss)
-        GeometricMachineLearning.apply_section!(A, λA, exp_grad_loss)
-        losses[i+2] = loss(A)
-    end
-    losses, ideal_error, check(A)
-end
+bfgs_stiefel_optimizer(10, 5)
