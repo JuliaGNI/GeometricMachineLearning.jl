@@ -168,3 +168,8 @@ function Ω(Y::StiefelManifold{T}, Δ::AbstractMatrix{T}) where T
     YY = Y * Y'
     SkewSymMatrix(2 * (one(YY) - T(.5) * Y * Y') * Δ * Y')
 end
+
+function Base.copyto!(A::StiefelManifold, B::StiefelManifold)
+    A.A .= B.A
+    nothing
+end
