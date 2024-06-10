@@ -47,11 +47,12 @@ struct AdamCache{T, AT <: AbstractArray{T}} <: AbstractCache{T}
     end
 end
 
-function Base.display(C::AdamCache)
-    println(raw"`MomentumCache` that currently stores `B₁` as ...")
-    display(C.B₁)
-    println(raw"and `B₂` as ...")
-    display(C.B₂)
+function Base.show(io::IO, ::MIME{Symbol("text/plain")}, C::AdamCache)
+    println(io, raw"`AdamCache` that currently stores `B₁` as ...")
+    show(io, "text/plain", C.B₁)
+    println(io, "")
+    println(io, raw"and `B₂` as ...")
+    show(io, "text/plain", C.B₂)
 end
 
 @doc raw"""
@@ -72,9 +73,9 @@ struct MomentumCache{T, AT <: AbstractArray{T}} <:AbstractCache{T}
     end
 end
 
-function Base.display(C::MomentumCache)
-    println(raw"`MomentumCache` that currently stores `B`as  ...")
-    display(C.B)
+function Base.show(io::IO, ::MIME{Symbol("text/plain")}, C::MomentumCache)
+    println(io, raw"`MomentumCache` that currently stores `B`as  ...")
+    show(io, "text/plain", C.B)
 end
 
 @doc raw"""
