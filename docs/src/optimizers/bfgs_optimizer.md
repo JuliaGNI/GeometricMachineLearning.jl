@@ -69,7 +69,7 @@ Main.theorem(raw"The solution of the minimization problem is:
 " * Main.indentation * raw"```math
 " * Main.indentation * raw"R^{(k)} = (\mathbb{I} - \frac{1}{(y^{(k-1)})^Ts^{(k-1)}}y^{(k-1)}(s^{(k-1)})^T)R^{(k-1)}(\mathbb{I} - \frac{1}{y^({k-1})^Ts^{(k-1)}}s^{(k-1)}(y^{(k-1)})^T) + \\ \frac{1}{(y^{(k-1)})^Ts^{(k-1)}}y^{(k)}(y^{(k)})^T,
 " * Main.indentation * raw"```
-" * Main.indentation * raw"with ``y^{(k-1)} = \nabla_{x^{(k)}}L - \nabla_{x^{k-1}}L`` and ``s^{(k-1)} = x^{(k)} - x^{(k-1)}`` as above.")
+" * Main.indentation * raw"with ``y^{(k-1)} = \nabla_{x^{(k)}}L - \nabla_{x^{(k-1)}}L`` and ``s^{(k-1)} = x^{(k)} - x^{(k-1)}`` as above.")
 ```
 
 ```@eval
@@ -82,9 +82,9 @@ Main.proof(raw"In order to find the ideal ``R^{(k)}`` under the conditions descr
 " * Main.indentation * raw"With this notation we can rewrite the problem of finding ``R^{(k)}`` as: 
 " * Main.indentation * raw"```math
 " * Main.indentation * raw"\begin{aligned}
-" * Main.indentation * raw"\min_{\tilde{R}} & ||\tilde{R} & - \tilde{R}^{(k-1)}||_F \\ 
-" * Main.indentation * raw"\text{s.t.}\quad & \tilde{R} & = \tilde{R}^T\quad\text{and}\\
-" * Main.indentation * raw"            &\tilde{R}\tilde{s}^{(k-1)} & = \tilde{y}^{(k-1)}.
+" * Main.indentation * raw"\min_{\tilde{R}} & ||\tilde{R} - \tilde{R}^{(k-1)}||_F & \\ 
+" * Main.indentation * raw"\text{s.t.}\quad & \tilde{R} = \tilde{R}^T\quad & \text{and}\\
+" * Main.indentation * raw"            &\tilde{R}\tilde{s}^{(k-1)} = \tilde{y}^{(k-1)}&.
 " * Main.indentation * raw"\end{aligned}
 " * Main.indentation * raw"```
 " * Main.indentation * raw"
@@ -203,7 +203,7 @@ We initialize ``H^{(0)}`` with the identity matrix ``\mathbb{I}`` and the gradie
 using GeometricMachineLearning
 
 weight = (Y = rand(StiefelManifold, 10, 5), )
-method = BFGSOptimzier()
+method = BFGSOptimizer()
 o = Optimizer(method, weight)
 
 o.cache.Y.H
@@ -216,6 +216,10 @@ The *previous gradient* in [`BFGSCache`](@ref) is stored in the same way as it i
 ```@example bfgs
 o.cache.Y.B
 ```
+
+## Stability of the Algorithm
+
+Similar to the [Adam optimizer](@ref "The Adam Optimizer") we also add a ``\delta`` term for stability to two of the terms appearing in the update rule of the BFGS algorithm in practice. 
 
 ## Library Functions
 
