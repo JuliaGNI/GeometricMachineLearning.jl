@@ -16,7 +16,7 @@ It simply does:
 
 where addition has to be replaced with appropriate operations in the manifold case[^2].
 
-[^2]: In the manifold case the expression ``-\eta\cdot\mathrm{gradient}`` is an element of the [global tangent space](@ref "Global Tangent Spaces") ``\mathfrak{g}^\mathrm{hor}`` and a retraction maps from ``\mathfrak{g}^\mathrm{hor}``. We then still have to compose it with the [updated global section](@ref "Parallel Transport") ``\Lamda^{(t)}``.
+[^2]: In the manifold case the expression ``-\eta\cdot\mathrm{gradient}`` is an element of the [global tangent space](@ref "Global Tangent Spaces") ``\mathfrak{g}^\mathrm{hor}`` and a retraction maps from ``\mathfrak{g}^\mathrm{hor}``. We then still have to compose it with the [updated global section](@ref "Parallel Transport") ``\Lambda^{(t)}``.
 
 When calling [`GradientOptimizer`](@ref) we can specify a learning rate ``\eta`` (or use the default).
 
@@ -119,7 +119,7 @@ const δ = 1e-8
 method = AdamOptimizer(η, ρ₁, ρ₂, δ)
 o = Optimizer(method, weight)
 
-o.cache.A
+o.cache.Y
 ```
 
 ### Weights on manifolds 
@@ -146,8 +146,8 @@ nothing # hide
  
  The cache is however exactly the same as for the Adam optimizer:
 
-```@example
-    o.cache.A
+```@example optimizer_methods
+    o.cache.Y
 ```
 
 ## Library Functions
