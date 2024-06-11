@@ -1,15 +1,56 @@
 @doc raw"""
-An upper-triangular matrix is an ``n\times{}n`` matrix that has ones on the diagonal and zeros on the upper triangular.
+    LowerTriangular(S::AbstractVector, n::Int)
 
-The data are stored in a vector ``S`` similarly to `SkewSymMatrix`.
+Build a lower-triangular matrix from a vector.
+
+A lower-triangular matrix is an ``n\times{}n`` matrix that has ones on the diagonal and zeros on the upper triangular.
+
+The data are stored in a vector ``S`` similarly to other matrices. See [`LowerTriangular`](@ref), [`SkewSymMatrix`](@ref) and [`SymmetricMatrix`](@ref).
 
 The struct two fields: `S` and `n`. The first stores all the entries of the matrix in a sparse fashion (in a vector) and the second is the dimension ``n`` for ``A\in\mathbb{R}^{n\times{}n}``.
+
+# Examples 
+```jldoctest
+using GeometricMachineLearning
+S = [1, 2, 3, 4, 5, 6]
+UpperTriangular(S, 4)
+
+# output
+
+4×4 UpperTriangular{Int64, Vector{Int64}}:
+ 0  1  2  4
+ 0  0  3  5
+ 0  0  0  6
+ 0  0  0  0
+```
 """
 mutable struct UpperTriangular{T, AT <: AbstractVector{T}} <: AbstractTriangular{T}
     S::AT
     n::Int
 end 
 
+@doc raw"""
+    UpperTriangular(A::AbstractMatrix)
+
+Build a lower-triangular matrix from a matrix.
+
+This is done by taking the lower left of that matrix.
+
+# Examples 
+```jldoctest
+using GeometricMachineLearning
+M = [1 2 3 4; 5 6 7 8; 9 10 11 12; 13 14 15 16]
+UpperTriangular(M)
+
+# output
+
+4×4 UpperTriangular{Int64, Vector{Int64}}:
+ 0  2  3   4
+ 0  0  7   8
+ 0  0  0  12
+ 0  0  0   0
+```
+"""
 function UpperTriangular(S::AbstractMatrix{T}) where {T}
     n = size(S, 1)
     @assert size(S, 2) == n

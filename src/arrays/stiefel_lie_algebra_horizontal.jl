@@ -1,10 +1,14 @@
 @doc raw"""
+    StiefelLieAlgHorMatrix(A::SkewSymMatrix{T}, B::AbstractMatrix{T}, N::Integer, n::Integer) where T
+
+Build an instance of `StiefelLieAlgHorMatrix` based on a skew-symmetric matrix `A` and an arbitrary matrix `B`.
+
 `StiefelLieAlgHorMatrix` is the *horizontal component of the Lie algebra of skew-symmetric matrices* (with respect to the canonical metric).
-The projection here is: \(\pi:S \to SE \) where 
+The projection here is: ``\pi:S \to SE`` where 
 ```math
 E = \begin{pmatrix} \mathbb{I}_{n} \\ \mathbb{O}_{(N-n)\times{}n}  \end{pmatrix}.
 ```
-The matrix \(E\) is implemented under `StiefelProjection` in `GeometricMachineLearning`.
+The matrix \(E\) is implemented under [`StiefelProjection`](@ref) in `GeometricMachineLearning`.
 
 An element of StiefelLieAlgMatrix takes the form: 
 ```math
@@ -12,20 +16,9 @@ An element of StiefelLieAlgMatrix takes the form:
 A & B^T \\ B & \mathbb{O}
 \end{pmatrix},
 ```
-where \(A\) is skew-symmetric (this is `SkewSymMatrix` in `GeometricMachineLearning`).
+where ``A`` is skew-symmetric (this is [`SkewSymMatrix`](@ref) in `GeometricMachineLearning`).
 
-If the constructor is called with a big \(N\times{}N\) matrix, then the projection is performed the following way: 
-```math
-\begin{pmatrix}
-A & B_1  \\
-B_2 & D
-\end{pmatrix} \mapsto 
-\begin{pmatrix}
-\mathrm{skew}(A) & -B_2^T \\ 
-B_2 & \mathbb{O}
-\end{pmatrix}.
-```
-The operation $\mathrm{skew}:\mathbb{R}^{n\times{}n}\to\mathcal{S}_\mathrm{skew}(n)$ is the skew-symmetrization operation. This is equivalent to calling the constructor of `SkewSymMatrix` with an \(n\times{}n\) matrix.
+Also see [`GrassmannLieAlgHorMatrix`](@ref).
 """
 mutable struct StiefelLieAlgHorMatrix{T, AT <: SkewSymMatrix{T}, ST <: AbstractMatrix{T}} <: AbstractLieAlgHorMatrix{T}
     A::AT
@@ -40,16 +33,43 @@ mutable struct StiefelLieAlgHorMatrix{T, AT <: SkewSymMatrix{T}, ST <: AbstractM
 
         new{T, typeof(A), typeof(B)}(A, B, N, n)
     end 
-    
-    function StiefelLieAlgHorMatrix(A::AbstractMatrix, n::Integer)
-        N = size(A, 1)
-        @assert N ≥ n 
-
-        A_small = SkewSymMatrix(A[1:n,1:n])
-        B = A[(n+1):N,1:n]
-        new{eltype(A),typeof(A_small), typeof(B)}(A_small, B, N, n)
-    end
 end 
+
+@doc raw"""
+    StiefelLieAlgHorMatrix(D::AbstractMatrix, n::Integer)
+
+Take a big matrix as input and build an instance of `StiefelLieAlgHorMatrix` belonging to the StiefelManifold ``St(n, N)`` where ``N`` is the number of rows of `D`.
+
+If the constructor is called with a big ``N\times{}N`` matrix, then the projection is performed the following way: 
+
+```math
+\begin{pmatrix}
+A & B_1  \\
+B_2 & D
+\end{pmatrix} \mapsto 
+\begin{pmatrix}
+\mathrm{skew}(A) & -B_2^T \\ 
+B_2 & \mathbb{O}
+\end{pmatrix}.
+```
+
+The operation ``\mathrm{skew}:\mathbb{R}^{n\times{}n}\to\mathcal{S}_\mathrm{skew}(n)`` is the skew-symmetrization operation. This is equivalent to calling of [`SkewSymMatrix`](@ref) with an ``n\times{}n`` matrix.
+
+This can also be seen as the operation:
+```math
+D \mapsto \Omega(E, DE) = \mathrm{skew}\left(2 \left(\mathbb{I} - \frac{1}{2} E E^T \right) DE E^T\right).
+```
+
+Also see [`GeometricMachineLearning.Ω`](@ref).
+"""
+function StiefelLieAlgHorMatrix(D::AbstractMatrix, n::Integer)
+    N = size(D, 1)
+    @assert N ≥ n 
+
+    @views A_small = SkewSymMatrix(D[1:n,1:n])
+    @views B = D[(n + 1):N, 1:n]
+    StiefelLieAlgHorMatrix(A_small, B, N, n)
+end
 
 Base.parent(A::StiefelLieAlgHorMatrix) = (A, B)
 Base.size(A::StiefelLieAlgHorMatrix) = (A.N, A.N)
@@ -230,4 +250,13 @@ end
 # fallback -> put this somewhere else!
 function assign!(A::AbstractArray, B::AbstractArray)
     A .= B 
+end
+
+function _round(B::StiefelLieAlgHorMatrix; kwargs...)
+    StiefelLieAlgHorMatrix(
+        _round(B.A; kwargs...),
+        _round(B.B; kwargs...),
+        B.N,
+        B.n
+    )
 end

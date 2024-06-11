@@ -11,7 +11,15 @@
     C[i,j,k] = tmp_sum
 end
 
-# Creating a wrapper kernel for launching with error checks
+@doc raw"""
+    tensor_mat_mul!(C, A, B)
+
+Multiply the matrix `B` onto the tensor `A` from the right and store the result in `C`.
+
+Also checks the bounds of the input arrays.
+
+The function [`tensor_mat_mul`](@ref) calls `tensor_mat_mul!` internally.
+"""
 function tensor_mat_mul!(C, A, B)
     @assert size(A)[2] == size(B)[1]
 
@@ -20,6 +28,37 @@ function tensor_mat_mul!(C, A, B)
     kernel!(C, A, B, ndrange=size(C)) 
 end
 
+@doc raw"""
+    tensor_mat_mul(A::AbstractArray{T, 3}, B::AbstractArray{T}) where T
+
+Multipliy the matrix `B` onto the tensor `A` from the right. 
+
+Internally this calls the inplace version [`tensor_mat_mul!`](@ref).
+
+# Examples
+
+```jldoctest
+using GeometricMachineLearning: tensor_mat_mul
+
+A = [1 1 1; 1 1 1; 1 1 1;;; 2 2 2; 2 2 2; 2 2 2]
+B = [3 0 0; 0 2 0; 0 0 1]
+
+tensor_mat_mul(A, B)
+
+# output
+
+3×3×2 Array{Int64, 3}:
+[:, :, 1] =
+ 3  2  1
+ 3  2  1
+ 3  2  1
+
+[:, :, 2] =
+ 6  4  2
+ 6  4  2
+ 6  4  2
+```
+"""
 function tensor_mat_mul(A::AbstractArray{T, 3}, B::AbstractMatrix{T}) where T 
     sizeA = size(A); sizeB = size(B)
     @assert sizeA[2] == sizeB[1] 
@@ -64,6 +103,15 @@ function symmetric_mat_right_mul(B::AbstractArray{T, 3}, S::AbstractVector{T}, n
     C
 end
 
+@doc raw"""
+    mat_tensor_mul!(C::AbstractArray{T, 3}, B::AbstractArray{T, 3}, A::SymmetricMatrix{T}) where T
+
+Multiply the symmetric matrix `A` onto the tensor `B` from the right and store the result in `C`.
+
+Also checks the bounds of the input arrays.
+
+This performs an efficient multiplication based on the special structure of the symmetric matrix `A`.
+"""
 function tensor_mat_mul!(C::AbstractArray{T, 3}, B::AbstractArray{T, 3}, A::SymmetricMatrix{T}) where T
     @assert A.n == size(C, 2) == size(B, 2)
 

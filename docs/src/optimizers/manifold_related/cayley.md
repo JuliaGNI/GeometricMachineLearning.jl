@@ -8,7 +8,7 @@ They Cayley retraction reads:
 ```
 This is easily checked to be a retraction, i.e. $\mathrm{Cayley}(\mathbb{O}) = \mathbb{I}$ and $\frac{\partial}{\partial{}t}\mathrm{Cayley}(tC) = C$.
 
-What we need in practice is not the computation of the Cayley transform of an arbitrary matrix, but the Cayley transform of an element of $\mathfrak{g}^\mathrm{hor}$, the [global tangent space representation](../../arrays/stiefel_lie_alg_horizontal.md). 
+What we need in practice is not the computation of the Cayley transform of an arbitrary matrix, but the Cayley transform of an element of $\mathfrak{g}^\mathrm{hor}$, the [global tangent space representation](@ref "Global Tangent Spaces"). 
 
 The elements of $\mathfrak{g}^\mathrm{hor}$ can be written as: 
 

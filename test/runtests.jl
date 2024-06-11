@@ -1,5 +1,7 @@
-using SafeTestsets
+using SafeTestsets, Test, GeometricMachineLearning
+using Documenter: doctest
 
+@testset "Doc tests                                                                           " begin doctest(GeometricMachineLearning; manual = false) end
 # reduced order modeling tests
 @safetestset "PSD tests                                                                       " begin include("psd_architecture_tests.jl") end
 @safetestset "SymplecticAutoencoder tests                                                     " begin include("symplectic_autoencoder_tests.jl") end
@@ -16,6 +18,8 @@ using SafeTestsets
 @safetestset "Matrix multiplication tests for custom arrays                                   " begin include("arrays/matrix_multiplication_for_custom_arrays.jl") end
 @safetestset "Test constructors for custom arrays                                             " begin include("arrays/constructor_tests_for_custom_arrays.jl") end
 @safetestset "Symplectic Potential (array tests)                                              " begin include("arrays/symplectic_potential.jl") end
+@safetestset "Test StiefelLieAlgHorMatrix constructors and lifts                              " begin include("arrays/test_stiefel_lie_alg_hor_constructors.jl") end
+@safetestset "Test GrassmannLieAlgHorMatrix constructors and lifts                            " begin include("arrays/test_grassmann_lie_alg_hor_constructors.jl") end
 
 @safetestset "Test triangular matrices                                                        " begin include("arrays/triangular.jl") end
 @safetestset "Manifolds (Stiefel):                                                            " begin include("manifolds/stiefel_manifold.jl") end

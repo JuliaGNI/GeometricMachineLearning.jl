@@ -1,23 +1,34 @@
 @doc raw"""
+    SymmetricMatrix(S::AbstractVector, n::Integer)
+
+Instantiate a symmetric matrix with information stored in vector `S`.
+
 A `SymmetricMatrix` ``A`` is a matrix ``A^T = A``.
 
-This is a projection defined via the canonical metric $(A,B) \mapsto \mathrm{tr}(A^TB)$.
-
-Internally the `struct` saves a vector $S$ of size $n(n+1)\div2$. The conversion is done the following way: 
+Internally the `struct` saves a vector ``S`` of size ``n(n+1)\div2``. The conversion is done the following way: 
 ```math
 [A]_{ij} = \begin{cases} S[( (i-1) i ) \div 2 + j] & \text{if $i\geq{}j$}\\ 
                          S[( (j-1) j ) \div 2 + i] & \text{else}. \end{cases}
 ```
 
-So ``S`` stores a string of vectors taken from $A$: $S = [\tilde{a}_1, \tilde{a}_2, \ldots, \tilde{a}_n]$ with $\tilde{a}_i = [[A]_{i1},[A]_{i2},\ldots,[A]_{ii}]$.
+So ``S`` stores a string of vectors taken from ``A``: ``S = [\tilde{a}_1, \tilde{a}_2, \ldots, \tilde{a}_n]`` with ``\tilde{a}_i = [[A]_{i1},[A]_{i2},\ldots,[A]_{ii}]``.
 
-### Constructor 
-If the constructor is called with a matrix as input it returns a symmetric matrix via the projection:
-```math
-A \mapsto \frac{1}{2}(A + A^T).
+Also see [`SkewSymMatrix`](@ref), [`LowerTriangular`](@ref) and [`UpperTriangular`](@ref).
+
+# Examples 
+```jldoctest
+using GeometricMachineLearning
+S = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+SymmetricMatrix(S, 4)
+
+# output
+
+4×4 SymmetricMatrix{Int64, Vector{Int64}}:
+ 1  2  4   7
+ 2  3  5   8
+ 4  5  6   9
+ 7  8  9  10
 ```
-
-It can also be called with two arguments `S::AbstractVector` and `n::Integer` where `length(S) == n * (n + 1) ÷ 2` has to be true.
 """
 mutable struct SymmetricMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
     S::AT
@@ -27,11 +38,43 @@ mutable struct SymmetricMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
         @assert length(S) == n*(n+1)÷2
         new{eltype(S),typeof(S)}(S, n)
     end
-    function SymmetricMatrix(A::AbstractMatrix{T}) where {T}
-        S = map_to_S(A)
-        new{T, typeof(S)}(S, size(A, 1))
-    end
 end 
+
+@doc raw"""
+    SymmetricMatrix(A::AbstractMatrix)
+
+Perform `0.5 * (A + A')` and store the matrix in an efficient way (as a vector with ``n(n+1)/2`` entries).
+
+If the constructor is called with a matrix as input it returns a symmetric matrix via the projection:
+```math
+A \mapsto \frac{1}{2}(A + A^T).
+```
+
+# Examples
+```jldoctest
+using GeometricMachineLearning
+M = [1 2 3 4; 5 6 7 8; 9 10 11 12; 13 14 15 16]
+SymmetricMatrix(M)
+
+# output
+
+4×4 SymmetricMatrix{Float64, Vector{Float64}}:
+ 1.0   3.5   6.0   8.5
+ 3.5   6.0   8.5  11.0
+ 6.0   8.5  11.0  13.5
+ 8.5  11.0  13.5  16.0
+```
+
+# Extend help
+
+Note that the constructor is designed in such a way that it always returns matrices of type `SymmetricMatrix{<:AbstractFloat}` when called with a matrix, even if this matrix is of type `AbstractMatrix{<:Integer}`.
+
+If the user wishes to allocate a matrix `SymmetricMatrix{<:Integer}` the constructor `SymmetricMatrix(::AbstractVector, n::Integer)` has to be called.
+"""
+function SymmetricMatrix(A::AbstractMatrix{T}) where {T}
+    S = map_to_S(A)
+    SymmetricMatrix(S, size(A, 1))
+end
 
 # I'm not 100% sure this is the best solution (needed for broadcasting operations ...)
 function Base.setindex!(A::SymmetricMatrix{T}, val::T, i::Int, j::Int) where T
@@ -47,7 +90,7 @@ end
     S[i * (i-1)÷2 + j] = A_sym[i, j]
 end
 
-function map_to_S(A::AbstractMatrix{T}) where T
+function map_to_S(A::AbstractMatrix{T}) where {T <: Number}
     n = size(A, 1)
     @assert size(A, 2) == n 
     A_sym = T(.5)*(A + A')
@@ -58,6 +101,11 @@ function map_to_S(A::AbstractMatrix{T}) where T
         assign_S_val!(S, A_sym, i, ndrange=i)
     end
     S
+end
+
+function map_to_S(A::AbstractMatrix{T}) where {T <: Integer}
+    Float = T == Int64 ? Float64 : Float32
+    map_to_S(Float.(A))
 end
 
 function LinearAlgebra.Adjoint(A::SymmetricMatrix)

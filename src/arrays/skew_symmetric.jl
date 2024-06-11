@@ -1,12 +1,33 @@
 @doc raw"""
-A `SkewSymMatrix` is a matrix ``A`` s.t. ``A^T = -A``.
+    SkewSymMatrix(S::AbstractVector, n::Integer)
 
-If the constructor is called with a matrix as input it returns a symmetric matrix via the projection ``A \mapsto \frac{1}{2}(A - A^T)``. 
-This is a projection defined via the canonical metric ``\mathbb{R}^{n\times{}n}\times\mathbb{R}^{n\times{}n}\to\mathbb{R}, (A,B) \mapsto \mathrm{Tr}(A^TB)``.
+Instantiate a skew-symmetric matrix with information stored in vector `S`.
 
-The first index is the row index, the second one the column index.
+A skew-symmetric matrix ``A`` is a matrix ``A^T = -A``.
 
-The struct two fields: `S` and `n`. The first stores all the entries of the matrix in a sparse fashion (in a vector) and the second is the dimension ``n`` for ``A\in\mathbb{R}^{n\times{}n}``.
+Internally the `struct` saves a vector ``S`` of size ``n(n-1)\div2``. The conversion is done the following way: 
+```math
+[A]_{ij} = \begin{cases} 0                             & \text{if $i=j$} \\
+                         S[( (i-2) (i-1) ) \div 2 + j] & \text{if $i>j$}\\ 
+                         S[( (j-2) (j-1) ) \div 2 + i] & \text{else}. \end{cases}
+```
+
+Also see [`SymmetricMatrix`](@ref), [`LowerTriangular`](@ref) and [`UpperTriangular`](@ref).
+
+# Examples 
+```jldoctest
+using GeometricMachineLearning
+S = [1, 2, 3, 4, 5, 6]
+SkewSymMatrix(S, 4)
+
+# output
+
+4×4 SkewSymMatrix{Int64, Vector{Int64}}:
+ 0  -1  -2  -4
+ 1   0  -3  -5
+ 2   3   0  -6
+ 4   5   6   0
+```
 """
 mutable struct SkewSymMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
     S::AT
@@ -16,13 +37,45 @@ mutable struct SkewSymMatrix{T, AT <: AbstractVector{T}} <: AbstractMatrix{T}
         @assert length(S) == n*(n-1)÷2
         new{T,typeof(S)}(S,n)
     end
-    function SkewSymMatrix(S::AbstractMatrix{T}) where {T}
-        n = size(S, 1)
-        @assert size(S, 2) == n
-        S_vec = map_to_Skew(S)
-        new{T,typeof(S_vec)}(S_vec, n)
-    end
 end 
+
+@doc raw"""
+    SkewSymMatrix(A::AbstractMatrix)
+
+Perform `0.5 * (A - A')` and store the matrix in an efficient way (as a vector with ``n(n-1)/2`` entries).
+
+If the constructor is called with a matrix as input it returns a skew-symmetric matrix via the projection:
+```math
+A \mapsto \frac{1}{2}(A - A^T).
+```
+
+# Examples
+```jldoctest
+using GeometricMachineLearning
+M = [1 2 3 4; 5 6 7 8; 9 10 11 12; 13 14 15 16]
+SkewSymMatrix(M)
+
+# output
+
+4×4 SkewSymMatrix{Float64, Vector{Float64}}:
+ 0.0  -1.5  -3.0  -4.5
+ 1.5   0.0  -1.5  -3.0
+ 3.0   1.5   0.0  -1.5
+ 4.5   3.0   1.5   0.0
+```
+
+# Extend help
+
+Note that the constructor is designed in such a way that it always returns matrices of type `SkewSymMatrix{<:AbstractFloat}` when called with a matrix, even if this matrix is of type `AbstractMatrix{<:Integer}`.
+
+If the user wishes to allocate a matrix `SkewSymMatrix{<:Integer}` the constructor `SkewSymMatrix(::AbstractVector, n::Integer)` has to be called.
+"""
+function SkewSymMatrix(S::AbstractMatrix{T}) where {T}
+    n = size(S, 1)
+    @assert size(S, 2) == n
+    S_vec = map_to_Skew(S)
+    SkewSymMatrix(S_vec, n)
+end
 
 function Base.getindex(A::SkewSymMatrix, i::Int, j::Int)
     if j == i
@@ -212,9 +265,22 @@ function map_to_Skew(A::AbstractMatrix{T}) where T
     S
 end
 
+function map_to_Skew(A::AbstractMatrix{T}) where T <: Integer
+    Float = T == Int64 ? Float64 : Float32
+    map_to_Skew(Float.(A))
+end
+
 function Base.copyto!(A::SkewSymMatrix, B::SkewSymMatrix)
     A.S .= B.S
     nothing
+end
+
+function _round(A::SkewSymMatrix; kwargs...)
+    SkewSymMatrix(_round(A.S; kwargs...), A.n)
+end
+
+function _round(A::AbstractArray; kwargs...)
+    round.(A; kwargs...)
 end
 
 # define routines for generalizing ChainRulesCore to SkewSymMatrix 

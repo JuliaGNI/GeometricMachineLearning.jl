@@ -1,6 +1,6 @@
 # Optimizer
 
-In order to generalize neural network optimizers to [homogeneous spaces](manifolds/homogeneous_spaces.md), a class of manifolds we often encounter in machine learning, we have to find a [global tangent space representation](arrays/stiefel_lie_alg_horizontal.md) which we call $\mathfrak{g}^\mathrm{hor}$ here. 
+In order to generalize neural network optimizers to [homogeneous spaces](@ref "Homogeneous Spaces"), a class of manifolds we often encounter in machine learning, we have to find a [global tangent space representation](@ref "Global Tangent Spaces") which we call $\mathfrak{g}^\mathrm{hor}$ here. 
 
 Starting from an element of the tangent space $T_Y\mathcal{M}$[^1], we need to perform two mappings to arrive at $\mathfrak{g}^\mathrm{hor}$, which we refer to by $\Omega$ and a red horizontal arrow:
 
