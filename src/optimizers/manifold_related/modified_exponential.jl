@@ -58,7 +58,7 @@ B = rand(StiefelLieAlgHorMatrix, 10, 2)
 B̂ = hcat(vcat(.5 * B.A, B.B), vcat(one(B.A), zero(B.B)))
 B̄ = hcat(vcat(one(B.A), zero(B.B)), vcat(-.5 * B.A, -B.B))
 
-one(B̂ * B̄') + B̂ * 𝔄(B̂, B̄) * B̄' ≈ exp(B)
+one(B̂ * B̄') + B̂ * 𝔄(B̂, B̄) * B̄' ≈ exp(Matrix(B))
 
 # output
 

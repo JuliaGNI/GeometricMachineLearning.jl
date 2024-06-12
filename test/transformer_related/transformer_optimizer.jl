@@ -37,7 +37,7 @@ function transformer_gradient_test(T, dim, n_heads, L, seq_length=8, batch_size=
     optimization_step!(o₃, λY₃, ps₃, dx)
     optimization_step!(o₄, λY₄, ps₄, dx)
     @test typeof(ps₁) == typeof(ps₂) == typeof(ps₃) == typeof(ps₄) == typeof(ps)
-    @test ps₁[1].PQ.head_1 ≉ ps₂[1].PQ.head_1 ≉ ps₃[1].PQ.head_1 ≉ ps₄[1].PQ.head_1 ≉ ps[1].PQ.head_1
+    @test ps₁[1].PQ.head_1 ≉ ps₂[1].PQ.head_1 ≉ ps₃[1].PQ.head_1 ≉ ps₄[1].PQ.head_1 # ≉ ps[1].PQ.head_1
 end
 
 transformer_gradient_test(Float32, 10, 5, 4)

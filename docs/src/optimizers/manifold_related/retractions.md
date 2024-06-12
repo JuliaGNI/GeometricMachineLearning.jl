@@ -48,7 +48,7 @@ v = 5 * rand(3, 1)
 
 function do_setup(; theme=:light)
     text_color = theme == :dark ? :white : :black # hide
-    fig = Figure(; backgroundcolor = :transparent, size = (450, 338)) # hide
+    fig = Figure(; backgroundcolor = :transparent, size = (900, 675)) # hide
     ax = Axis3(fig[1, 1]; # hide
         backgroundcolor = (:tomato, .5), # hide
         aspect = (1., 1., 1.), # hide

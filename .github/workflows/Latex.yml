@@ -25,15 +25,16 @@ jobs:
       - name: install BrenierTwoFluid
         run: |
           cd docs
-          make install_brenier_two_fluid test_docs
+          DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' make install_brenier_two_fluid test_docs
           cd .. 
       - name: make tex document
-        run: julia --project=docs --threads=2 docs/make.jl latex_output
+        run: DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' julia --project=docs --threads=2 docs/make.jl latex_output
       - name: Some sed magic 
         run: |
+          make copy_png_files -C docs
           make put_figures_outside_of_minted_environment -C docs
           make do_correct_quotation_marks -C docs
-          make_correct_thrm_and_dfntn_and_xmpl_and_proof_environment -C docs
+          make make_correct_thrm_and_dfntn_and_xmpl_and_rmrk_and_proof_environment -C docs
       - name: compile tex document
         run: |
           cd docs/build 
