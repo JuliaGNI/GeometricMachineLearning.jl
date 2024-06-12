@@ -1,5 +1,5 @@
 using GeometricMachineLearning
-using GeometricMachineLearning: apply_section!
+using GeometricMachineLearning: update_section!
 using Zygote
 using Test
 using LinearAlgebra: norm
@@ -27,11 +27,7 @@ function bfgs_optimizer(N; n_steps = 10, η = 1e-4)
     o₁ = Optimizer(method₁, (A = A,))
     for _ in 1:n_steps
         ∇L = Zygote.gradient(loss, A)[1]
-        # println("before gradient step")
-        # display(∇L)
         update!(o₁, o₁.cache.A, ∇L)
-        # println("after gradient step")
-        # display(∇L)
         A .+= ∇L
     end
     loss2 = loss(A)
@@ -40,11 +36,7 @@ function bfgs_optimizer(N; n_steps = 10, η = 1e-4)
     o₂ = Optimizer(method₂, (A = A,))
     for _ in 1:n_steps
         ∇L = Zygote.gradient(loss, A)[1]
-        # println("before gradient step")
-        # display(∇L)
         update!(o₂, o₂.cache.A, ∇L)
-        # println("after gradient step")
-        # display(∇L)
         A .+= ∇L
     end
     loss3 = loss(A)
@@ -68,7 +60,7 @@ The test is performed on a simple loss function
 where ``B = Y_BY_B^T`` for some ``Y\in{}St(n, N)`` is fixed. 
 ``A`` in the equation above is optimized on the Stiefel manifold. 
 """
-function bfgs_stiefel_optimizer(N, n; n_steps = 100, η = 1e-4)
+function bfgs_stiefel_optimizer(N, n; n_steps = 10, η = 1e-4)
     YB = rand(StiefelManifold, N, n)
     B = YB * YB'
     loss(A) = norm(A * A' - B) ^ 2
@@ -81,8 +73,7 @@ function bfgs_stiefel_optimizer(N, n; n_steps = 100, η = 1e-4)
         ∇L = Zygote.gradient(loss, Y)[1]
         gradL = global_rep(λY, ∇L)
         update!(o₁, o₁.cache.A, gradL)
-        cayleyB = StiefelManifold(cayley(gradL) * StiefelProjection(N, n))
-        apply_section!(Y, λY, cayleyB)
+        update_section!(λY, gradL, cayley)
     end
     loss2 = loss(Y)
     Y = rand(StiefelManifold, N, n)
@@ -92,11 +83,10 @@ function bfgs_stiefel_optimizer(N, n; n_steps = 100, η = 1e-4)
         ∇L = Zygote.gradient(loss, Y)[1]
         gradL = global_rep(λY, ∇L)
         update!(o₂, o₂.cache.A, gradL)
-        cayleyB = StiefelManifold(cayley(gradL) * StiefelProjection(N, n))
-        apply_section!(Y, λY, cayleyB)
+        update_section!(λY, gradL, cayley)
     end
     loss3 = loss(Y)
-    @test loss1 > loss2 == loss3
+    @test loss1 > loss2 > loss3
     println(loss2)
     println(loss3)
 end
