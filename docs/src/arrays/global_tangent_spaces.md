@@ -29,7 +29,7 @@ We should note that we have written all Lie group and Lie algebra actions as sim
 Note that the theorem above requires us to find an element ``A\in{}G`` such that ``AE = Y``. If we can find a mapping ``\lambda:\mathcal{M}\to{}G`` we call such a mapping a *global section*. 
 
 ```@eval
-Main.theorem(raw"We call a mapping from ``\lambda:\mathcal{M} \to G`` a homogeneous space to its associated Lie group a **global section** if it satisfies:
+Main.definition(raw"We call a mapping from ``\lambda:\mathcal{M} \to G`` a homogeneous space to its associated Lie group a **global section** if it satisfies:
 " * Main.indentation * raw"```math
 " * Main.indentation * raw"\lambda(Y)E = Y,
 " * Main.indentation * raw"```

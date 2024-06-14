@@ -8,9 +8,9 @@ Random.seed!(1234)
 # check if we recover the regular exponential function
 function test(T, N, n)
     A = T(.1)*rand(T, N, n)
-    B = T(.1)*rand(T, n, N)
+    B = T(.1)*rand(T, N, n)
     @test eltype(𝔄exp(A, B)) == T 
-    @test isapprox(exp(A*B), 𝔄exp(A, B))
+    @test isapprox(exp(A * B'), 𝔄exp(A, B))
 end
 
 N_max = 10

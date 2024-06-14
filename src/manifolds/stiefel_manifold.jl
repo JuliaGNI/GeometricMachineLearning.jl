@@ -124,7 +124,7 @@ function global_section(Y::StiefelManifold{T}) where T
     A = KernelAbstractions.allocate(backend, T, N, N-n)
     randn!(A)
     A = A - Y.A * (Y.A' * A)
-    qr!(A).Q
+    typeof(Y.A)(qr!(A).Q)
 end
 
 @doc raw"""
@@ -167,4 +167,9 @@ Note that the output of `Ω` is a skew-symmetric matrix, i.e. an element of ``\m
 function Ω(Y::StiefelManifold{T}, Δ::AbstractMatrix{T}) where T
     YY = Y * Y'
     SkewSymMatrix(2 * (one(YY) - T(.5) * Y * Y') * Δ * Y')
+end
+
+function Base.copyto!(A::StiefelManifold, B::StiefelManifold)
+    A.A .= B.A
+    nothing
 end

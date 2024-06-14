@@ -31,8 +31,8 @@
     \coordinate[below of=Euc, yshift=.7cm, xshift=-.3cm] (below_Euc);
     \draw[->, white] (TYM) -- (ghorY) node[pos=.5, left] {$\Omega$};
     \draw[->, mred] (ghorY) -- (ghor);
-    \draw[->, white] (ghor) -- (cache) node[pos=.5, sloped, below] {Adam};
-    \draw[->, white] (cache) -- (ghor2) node[pos=.5, sloped, above] {Adam};
+    \draw[->, white] (ghor) -- (cache) node[pos=.5, sloped, below] {\texttt{update!}};
+    \draw[->, white] (cache) -- (ghor2) node[pos=.5, sloped, above] {\texttt{update!}};
     \draw[->, white] (ghor2) -- (M) node[pos=.5, right] {Retraction};
     \draw[->, mgreen] (M2) -- (below_Euc) node[pos=.5, left] {\color{mgreen}AD};
     \draw[->, white] (Euc) -- (TYM) node[pos=.5, above] {$\mathtt{rgrad}$};

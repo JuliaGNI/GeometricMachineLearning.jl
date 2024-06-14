@@ -15,7 +15,8 @@ function optimization_step_test(N, n, T)
     o = Optimizer(m, ps)
 
     ps2 = deepcopy(ps)
-    optimization_step!(o, model, ps, dx)
+    λY = GlobalSection(ps)
+    optimization_step!(o, λY, ps, dx)
     @test typeof(ps[1].weight) <: StiefelManifold
     for (layers1, layers2) in zip(ps, ps2)
         for key in keys(layers1)

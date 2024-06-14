@@ -10,7 +10,8 @@ function stiefel_layer_test(T, M, N, tol=1f-1)
 
     dx = ((weight=rand(T,N,M),),(weight=rand(T,N,N),))
     ps_copy = deepcopy(ps)
-    optimization_step!(o, model, ps, dx)
+    λY = GlobalSection(ps)
+    optimization_step!(o, λY, ps, dx)
     # check that the new weight is different from the old one
     @test norm(ps_copy[1].weight - ps[1].weight) > T(tol)
     # check that the updated elements are on the Stiefel Manifold 
@@ -25,7 +26,8 @@ function grassmann_layer_test(T, M, N, tol=1f-1)
 
     dx = ((weight=rand(T,N,M),),(weight=rand(T,N,N),))
     ps_copy = deepcopy(ps)
-    for i in 1:4 optimization_step!(o, model, ps, dx) end
+    λY = GlobalSection(ps)
+    for i in 1:4 optimization_step!(o, λY, ps, dx) end
     # check that the new weight is different from the old one
     @test norm(ps_copy[1].weight - ps[1].weight) > T(tol)
     # check that the updated elements are on the Stiefel Manifold 

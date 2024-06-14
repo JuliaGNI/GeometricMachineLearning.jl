@@ -1,6 +1,29 @@
 @doc raw"""
-Defines the Adam Optimizer.
-Algorithm and suggested defaults are taken from [goodfellow2016deep](@cite) (page 301).
+    AdamOptimizer(η, ρ₁, ρ₂, δ)
+
+Make an instance of the Adam Optimizer.
+
+Here the cache consists of first and second moments that are updated as 
+
+```math
+B_1 \gets ((\rho_1 - \rho_1^t)/(1 - \rho_1^t))\cdot{}B_1 + (1 - \rho_1)/(1 - \rho_1^t)\cdot{}\nabla{}L,
+```
+and
+
+```math
+B_2 \gets ((\rho_2 - \rho_1^t)/(1 - \rho_2^t))\cdot{}B_2 + (1 - \rho_2)/(1 - \rho_2^t)\cdot\nabla{}L\odot\nabla{}L.
+```
+The final velocity is computed as:
+
+```math
+\mathrm{velocity} \gets -\eta{}B_1/\sqrt{B_2 + \delta}.
+```
+
+# Implementation 
+
+The *velocity* is stored in the input to save memory.
+
+Algorithm and suggested defaults are taken from [goodfellow2016deep; page 301](@cite).
 """
 struct AdamOptimizer{T<:Real} <: OptimizerMethod
     η::T

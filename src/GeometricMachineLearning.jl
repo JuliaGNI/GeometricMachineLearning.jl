@@ -17,6 +17,7 @@ module GeometricMachineLearning
     using ForwardDiff
     using InteractiveUtils
     using TimerOutputs
+    using LazyArrays
 
     import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer, AbstractExplicitCell, AbstractNeuralNetwork , NeuralNetwork
     import AbstractNeuralNetworks: Chain, GridCell
@@ -186,7 +187,7 @@ module GeometricMachineLearning
     export GlobalSection, apply_section
     export global_rep
     export Geodesic, Cayley
-    export geodesic
+    export geodesic, cayley
     export retraction
     # export ⊙², √ᵉˡᵉ, /ᵉˡᵉ, scalar_add
     export update!
@@ -246,7 +247,7 @@ module GeometricMachineLearning
     include("backends/backends.jl")
     include("backends/lux.jl")
 
-    export TransformerLoss, FeedForwardLoss
+    export TransformerLoss, FeedForwardLoss, AutoEncoderLoss
 
     #INCLUDE ARCHITECTURES
     include("architectures/neural_network_integrator.jl")

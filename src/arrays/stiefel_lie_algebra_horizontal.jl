@@ -8,7 +8,7 @@ The projection here is: ``\pi:S \to SE`` where
 ```math
 E = \begin{pmatrix} \mathbb{I}_{n} \\ \mathbb{O}_{(N-n)\times{}n}  \end{pmatrix}.
 ```
-The matrix \(E\) is implemented under [`StiefelProjection`](@ref) in `GeometricMachineLearning`.
+The matrix ``E`` is implemented under [`StiefelProjection`](@ref) in `GeometricMachineLearning`.
 
 An element of StiefelLieAlgMatrix takes the form: 
 ```math
@@ -202,7 +202,7 @@ LinearAlgebra.mul!(C::StiefelLieAlgHorMatrix, α::Real, A::StiefelLieAlgHorMatri
 LinearAlgebra.rmul!(C::StiefelLieAlgHorMatrix, α::Real) = mul!(C, C, α)
 
 function Base.vec(A::StiefelLieAlgHorMatrix)
-    vcat(vec(A.A), vec(A.B))
+    LazyArrays.Vcat(vec(A.A), vec(A.B))
 end
 
 function StiefelLieAlgHorMatrix(V::AbstractVector, N::Int, n::Int)
@@ -235,7 +235,9 @@ end
 # assign funciton; also implement this for other arrays! 
 function assign!(B::StiefelLieAlgHorMatrix{T}, C::StiefelLieAlgHorMatrix{T}) where T 
     assign!(B.A, C.A)
-    B.B .= C.B 
+    assign!(B.B, C.B)
+    
+    nothing
 end
 
 function Base.copy(B::StiefelLieAlgHorMatrix)
@@ -250,6 +252,8 @@ end
 # fallback -> put this somewhere else!
 function assign!(A::AbstractArray, B::AbstractArray)
     A .= B 
+
+    nothing
 end
 
 function _round(B::StiefelLieAlgHorMatrix; kwargs...)
