@@ -1,9 +1,11 @@
 [deps]
 Bibliography = "f1be7e48-bf82-45af-a471-ae754a193061"
+BrenierTwoFluid = "698bc5df-bacc-4e45-9592-41ae9e406d75"
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 DocumenterCitations = "daee34ce-89f3-4625-b898-19384cb65244"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 GeometricIntegrators = "dcce2d33-59f6-5b8d-9047-0defad88ae06"
 GeometricMachineLearning = "194d25b2-d3f5-49f0-af24-c124f4aa80cc"
 GeometricProblems = "18cb22b4-ad41-5c80-9c5f-710df63fbdc9"

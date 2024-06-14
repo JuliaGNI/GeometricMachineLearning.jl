@@ -1,73 +1,100 @@
 @doc raw"""
-Optimizer struct that stores the 'method' (i.e. Adam with corresponding hyperparameters), the cache and the optimization step.
+    Optimizer(method, cache, step, retraction)
+
+Store the `method` (e.g. [`AdamOptimizer`](@ref) with corresponding hyperparameters), the `cache` (e.g. [`AdamCache`](@ref)), the optimization step and the retraction.
 
 It takes as input an optimization method and the parameters of a network. 
 
-For *technical reasons* we first specify an OptimizerMethod that stores all the hyperparameters of the optimizer. 
+For *technical reasons* we first specify an [`OptimizerMethod`](@ref) that stores all the hyperparameters of the optimizer. 
 """
-mutable struct Optimizer{MT<:OptimizerMethod, CT}
+mutable struct Optimizer{MT<:OptimizerMethod, CT, RT}
     method::MT
     cache::CT
     step::Int
+    retraction::RT
 end
 
-function Optimizer(m::OptimizerMethod, x::Union{Tuple, NamedTuple})
-    Optimizer(m, init_optimizer_cache(m, x), 0)
+@doc raw"""
+    Optimizer(method, nn_params)
+
+Allocate the cache for a specific `method` and `nn_params` for an instance of `Optimizer`.
+
+Internally this calls [`init_optimizer_cache`](@ref).
+
+# Arguments
+
+The optional keyword argument is the retraction. By default this is [`cayley`](@ref).
+"""
+function Optimizer(method::OptimizerMethod, nn_params::Union{Tuple, NamedTuple}; retraction = cayley)
+    Optimizer(method, init_optimizer_cache(method, nn_params), 0, retraction)
 end
 
 """
+    Optimizer(method, nn::NeuralNetwork)
+
+Allocate the cache for a specific `method` and a `NeuralNetwork` for an instance of `Optimizer`.
+
+Internally this calls `Optimizer(method, nn.params)`.
+
 Typically the Optimizer is not initialized with the network parameters, but instead with a NeuralNetwork struct.
 """
-function Optimizer(m::OptimizerMethod, nn::NeuralNetwork)
-    Optimizer(m, nn.params)
+function Optimizer(method::OptimizerMethod, nn::NeuralNetwork; kwargs...)
+    Optimizer(method, nn.params; kwargs...)
 end
 
-Optimizer(nn::NeuralNetwork, m::OptimizerMethod) = Optimizer(m, nn)
+Optimizer(nn::NeuralNetwork, m::OptimizerMethod; kwargs...) = Optimizer(m, nn; kwargs...)
+
+@doc raw"""
+    update!(o, cache, B)
+
+First update the `cache` and then update the array `B` based on the optimizer `o`. 
+
+Note that ``B\in\mathfrak{g}^\mathrm{hor}`` in general.
+"""
+function update!(::Optimizer, ::AbstractCache, ::AbstractArray) end
 
 #######################################################################################
 # optimization step function
 
 @doc raw"""
-Optimization for a single layer. 
+    optimization_step!(o, λY, ps, cache, dx)
 
-inputs: 
-- `o::Optimizer`
-- `d::Union{AbstractExplicitLayer, AbstractExplicitCell}`
-- `ps::NamedTuple`: the parameters 
-- `C::NamedTuple`: NamedTuple of the caches 
-- `dx::NamedTuple`: NamedTuple of the derivatives (output of AD routine)
+Update the weights `ps` of a `layer` based on an [`Optimizer`](@ref), a `cache` and first-order derivatives `dx`.
 
-`ps`, `C` and `dx` must have the same keys. 
+The derivatives `dx` here are usually obtained via an AD routine by differentiating a loss function, i.e. `dx` is ``\nabla_xL``.
+
+It is calling the function [`update!`](@ref) internally which has to be implemented for every [`OptimizerMethod`](@ref).
 """
-function optimization_step!(o::Optimizer, d::Union{AbstractExplicitLayer, AbstractExplicitCell}, ps::NamedTuple, C::NamedTuple, dx::NamedTuple)
+function optimization_step!(o::Optimizer, λY::NamedTuple, ps::NamedTuple, cache::NamedTuple, dx::NamedTuple)
     gx = rgrad(ps, dx)
-    λY = GlobalSection(ps)
     B = global_rep(λY, gx)
-    update!(o, C, B)
-    ps₂ = retraction(d, B)
-    apply_section!(ps, λY, ps₂)
+    update!(o, cache, B)
+    update_section!(λY, B, o.retraction)
+
+    nothing
 end
 
 @doc raw"""
-Optimization for an entire neural network, the way this function should be called. 
+    optimization_step!(o::Optimizer, λY::Chain, ps::Tuple, dx::Tuple)
 
-inputs: 
-- `o::Optimizer`
-- `model::Chain`
-- `ps::Tuple`
-- `dx::Tuple`
+Optimize a neural network built with `Chain`.
 """
-function optimization_step!(o::Optimizer, model::Chain, ps::Tuple, dx::Tuple)
+function optimization_step!(o::Optimizer, λY::Tuple, ps::Tuple, dx::Tuple)
     o.step += 1
-    for (index, element) in zip(eachindex(model.layers), model.layers)
-        optimization_step!(o, element, ps[index], o.cache[index], dx[index])
+    for (cache, λY, ps, dx) in zip(o.cache, λY, ps, dx)
+        optimization_step!(o, λY, ps, cache, dx)
     end
 end
 
-function optimization_step!(o::Optimizer, model::AbstractExplicitLayer, ps::NamedTuple, dx::NamedTuple)
+@doc raw"""
+    optimization_step!(o::Optimizer, λY::NamedTuple, ps::NamedTuple, dx::NamedTuple)
+
+Optimize a neural network consisting of a single `AbstractExplicitLayer`.
+"""
+function optimization_step!(o::Optimizer, λY::NamedTuple, ps::NamedTuple, dx::NamedTuple)
     o.step += 1
 
-    optimization_step!(o, model, ps, o.cache, dx)
+    optimization_step!(o, λY, ps, o.cache, dx)
 end
 
 #######################################################################################

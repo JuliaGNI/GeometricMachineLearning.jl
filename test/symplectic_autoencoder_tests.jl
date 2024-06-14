@@ -17,7 +17,6 @@ function test_accuracy(N::Integer, n::Integer; tol::Real = .35, n_epochs::Intege
 end
 
 function test_encoder_and_decoder(N::Integer, n::Integer)
-    dl = DataLoader(rand(N, 10 * N); autoencoder = true)
 
     sae_nn = NeuralNetwork(SymplecticAutoencoder(N, n))
     sae_encoder = encoder(sae_nn)

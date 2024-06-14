@@ -1,4 +1,10 @@
 @doc raw"""
+    init_optimizer_cache(method, x)
+
+Initialize the cache corresponding to the weights `x` for a specific method.
+
+# Implementation
+
 Wrapper for the functions `setup_adam_cache`, `setup_momentum_cache`, `setup_gradient_cache`, `setup_bfgs_cache`.
 These appear outside of `optimizer_caches.jl` because the `OptimizerMethods` first have to be defined.
 """

@@ -190,7 +190,7 @@ There are many $r$-finite activation functions commonly used in neural networks,
 - sigmoid $\sigma(x)=\frac{1}{1+e^{-x}}$ for any positive integer $r$, 
 - tanh $\tanh(x)=\frac{e^x-e^{-x}}{e^x+e^{-x}}$ for any positive integer $r$. 
 
-The universal approximation theorems state that we can, in principle, get arbitrarily close to any symplectomorphism defined on $\mathbb{R}^{2d}$. But this does not tell us anything about how to optimize the network. This is can be done with any common [neural network optimizer](../Optimizer.md) and these neural network optimizers always rely on a corresponding loss function.  
+The universal approximation theorems state that we can, in principle, get arbitrarily close to any symplectomorphism defined on $\mathbb{R}^{2d}$. But this does not tell us anything about how to optimize the network. This is can be done with any common [neural network optimizer](@ref "Neural Network Optimizers") and these neural network optimizers always rely on a corresponding loss function.  
 
 ## Loss function
 

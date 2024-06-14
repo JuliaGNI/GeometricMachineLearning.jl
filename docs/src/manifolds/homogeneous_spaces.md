@@ -22,7 +22,7 @@ The tangent spaces of ``\mathcal{M}`` are of the form ``T_Y\mathcal{M} = \mathfr
 Based on this we can perform a splitting of ``\mathfrak{g}`` into two parts:
 
 ```@eval
-Main.definition(raw"A **splitting of the Lie algebra** ``mathfrak{g}`` at an element of a homogeneous space ``Y`` is a decomposition into a **vertical** and a **horizontal** component, denoted by ``\mathfrak{g} = \mathfrak{g}^{\mathrm{ver},Y} \oplus \mathfrak{g}^{\mathrm{hor},Y}`` such that
+Main.definition(raw"A **splitting of the Lie algebra** ``\mathfrak{g}`` at an element of a homogeneous space ``Y`` is a decomposition into a **vertical** and a **horizontal** component, denoted by ``\mathfrak{g} = \mathfrak{g}^{\mathrm{ver},Y} \oplus \mathfrak{g}^{\mathrm{hor},Y}`` such that
 " * Main.indentation * raw"1. The *vertical component* ``\mathfrak{g}^{\mathrm{ver},Y}`` is the kernel of the map ``\mathfrak{g}\to{}T_Y\mathcal{M}, V \mapsto VY``, i.e. ``\mathfrak{g}^{\mathrm{ver},Y} = \{V\in\mathfrak{g}:VY = 0\}.``
 " * Main.indentation * raw"2. The *horizontal component* ``\mathfrak{g}^{\mathrm{hor},Y}`` is the orthogonal complement of ``\mathfrak{g}^{\mathrm{ver},Y}`` in ``\mathfrak{g}``. It is isomorphic to ``T_Y\mathcal{M}``.
 ")

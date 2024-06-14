@@ -71,7 +71,8 @@ function test_optimizer_for_classification_layer(; dim₁=28, dim₂=28, number_
 
     opt = Optimizer(GradientOptimizer(), ps)
     dx = Zygote.gradient(ps -> loss_dl(model, ps, dl), ps)[1]
-    optimization_step!(opt, model, ps, dx)
+    λY = GlobalSection(ps)
+    optimization_step!(opt, λY, ps, dx)
     loss₂ = loss_dl(model, ps, dl)
 
     @test loss₂ < loss₁

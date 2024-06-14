@@ -57,7 +57,7 @@ This last example shows that *metric spaces need not be vector spaces*, i.e. spa
 To define *complete metric spaces* we first need the definition of a *Cauchy sequence*.
 
 ```@eval
-Main.definition(raw"A **Cauchy sequence** is a sequence ``(a_n)_{n\in\mathbb{N}}`` for which, given any `epsilon>0`, we can find an integer ``N`` such that ``d(a_n, a_m) < \epsilon`` for all ``n, m \geq N``.")
+Main.definition(raw"A **Cauchy sequence** is a sequence ``(a_n)_{n\in\mathbb{N}}`` for which, given any ``\epsilon>0``, we can find an integer ``N`` such that ``d(a_n, a_m) < \epsilon`` for all ``n, m \geq N``.")
 ```
 
 Now we can give the definition of a *complete metric space*:
@@ -80,9 +80,9 @@ Main.indentation * raw"1. ``x + (y + z) = (x + y) + z,``
 " * 
 Main.indentation * raw"2. ``x + y = y + x,``
 " * 
-Main.indentation * raw"3. ``\exists 0 \in \mathcal{V}`` such that ``x + 0 = x,``
+Main.indentation * raw"3. ``\exists 0 \in \mathcal{V}\text{such that }x + 0 = x,``
 " * 
-Main.indentation * raw"4. ``\exists -x \in \mathcal{V} such that ``x + (-x) = 0,``
+Main.indentation * raw"4. ``\exists -x \in \mathcal{V}\text{ such that }x + (-x) = 0,``
 " * 
 Main.indentation * raw"5. ``a(ax) = (ab)x,``
 " * 

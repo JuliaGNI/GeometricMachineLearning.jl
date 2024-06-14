@@ -3,6 +3,7 @@ using Documenter
 using DocumenterCitations
 using Markdown
 using Bibliography
+using LaTeXStrings
 # using Weave
 
 # this is necessary to avoid warnings. See https://documenter.juliadocs.org/dev/man/syntax/
@@ -106,6 +107,16 @@ function example(statement::String; label::Union{Nothing, String} = nothing)
     end
 end
 
+function remark(statement::String; label::Union{Nothing, String} = nothing)
+    if Main.output_type == :html
+        Markdown.parse("""!!! info "Remark" 
+            \t $(statement)""")
+    else
+        theorem_label = isnothing(label) ? "" : raw"\label{rmrk:" * label * raw"}"
+        Markdown.parse(raw"\begin{rmrk}" * statement * theorem_label * raw"\end{rmrk}")
+    end
+end
+
 function proof(statement::String)
     if Main.output_type == :html
         Markdown.parse("""!!! details "Proof" 
@@ -146,22 +157,17 @@ makedocs(;
             "Riemannian Manifolds" => "manifolds/riemannian_manifolds.md",
             "Homogeneous Spaces" => "manifolds/homogeneous_spaces.md",
             ],
-        "Special Arrays" => [
+        "Special Arrays and AD" => [
             "Symmetric and Skew-Symmetric Matrices" => "arrays/skew_symmetric_matrix.md",
             "Global Tangent Spaces" => "arrays/global_tangent_spaces.md",
-        ],
-        "Optimizer Framework" => [
-            "Optimizers" => "Optimizer.md",
-            "General Optimization" => "optimizers/general_optimization.md",
             "Pullbacks" => "pullbacks/computation_of_pullbacks.md",
         ],
-        "Optimizer Functions" => [
-            "Horizontal Lift" => "optimizers/manifold_related/horizontal_lift.md",
+        "Optimizers" => [
+            "Optimizers" => "optimizers/optimizer_framework.md",
             "Global Sections" => "optimizers/manifold_related/global_sections.md",
             "Retractions" => "optimizers/manifold_related/retractions.md",
-            "Geodesic Retraction" => "optimizers/manifold_related/geodesic.md",
-            "Cayley Retraction" => "optimizers/manifold_related/cayley.md",
-            "Adam Optimizer" => "optimizers/adam_optimizer.md",
+            "Parallel Transport" => "optimizers/manifold_related/parallel_transport.md",
+            "Optimizer Methods" => "optimizers/optimizer_methods.md",
             "BFGS Optimizer" => "optimizers/bfgs_optimizer.md",
             ],
         "Special Neural Network Layers" => [
@@ -197,6 +203,8 @@ makedocs(;
             "Grassmann manifold" => "tutorials/grassmann_layer.md",
             "Volume-Preserving Attention" => "tutorials/volume_preserving_attention.md",
             "Linear Symplectic Transformer" => "tutorials/linear_symplectic_transformer.md",
+            "Adjusting the Loss Function" => "tutorials/adjusting_the_loss_function.md",
+            "Comparing Optimizers" => "tutorials/optimizer_comparison.md",
         ],
         "References" => "references.md",
         "Library" => "library.md",

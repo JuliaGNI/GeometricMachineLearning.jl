@@ -134,9 +134,12 @@ function make_plot(; theme = :light)
         aspect = (1., 1., 0.8), 
         azimuth = π / 6, 
         elevation = π / 8, 
-        xlabel = rich("x", subscript("1"), font = :italic, color = text_color),
-        ylabel = rich("x", subscript("2"), font = :italic, color = text_color),
-        zlabel = rich("x", subscript("3"), font = :italic, color = text_color),
+        xlabel = L"x_1",
+        ylabel = L"x_2",
+        zlabel = L"x_3",
+        xlabelcolor = text_color,
+        ylabelcolor = text_color,
+        zlabelcolor = text_color,
         )
 
     surface!(Main.sphere(1., [0., 0., 0.])...; alpha = .6)

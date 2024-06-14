@@ -33,7 +33,8 @@ function test_optimization_with_adam(;T=Float32, dim₁=6, dim₂=6, n_images=10
     loss₁ = loss(model, ps, dl.input, dl.output)
 
     opt = Optimizer(AdamOptimizer(), ps)
-    loss_average = optimize_for_one_epoch!(opt, model, ps, dl, batch, loss)
+    λY = GlobalSection(ps)
+    loss_average = optimize_for_one_epoch!(opt, model, ps, dl, batch, loss, λY)
 
     loss₃ = loss(model, ps, dl.input, dl.output)
 

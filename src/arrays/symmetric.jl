@@ -281,6 +281,8 @@ function Base.copy(A::SymmetricMatrix)
     SymmetricMatrix(copy(A.S), A.n)
 end
 
+Base.vec(A::SymmetricMatrix) = A.S
+
 function Base.copyto!(A::SymmetricMatrix{T}, B::SymmetricMatrix{T}) where T
     A.S .= B.S
 

@@ -46,6 +46,10 @@ function _round(Y::Manifold; kwargs...)
     typeof(Y)(round.(Y.A; kwargs...))
 end
 
+function Base.broadcast(operation, Y::Manifold)
+    typeof(Y)(broadcast(operation, Y.A))
+end
+
 @doc raw"""
     rand(backend::KernelAbstractions.Backend, manifold_type::Type{MT}, N::Integer, n::Integer) where MT <: Manifold)
 

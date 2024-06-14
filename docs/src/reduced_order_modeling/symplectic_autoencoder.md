@@ -81,7 +81,7 @@ In order to overcome this difficulty we use neural networks, more specifically [
 Main.include_graphics("../tikz/symplectic_autoencoder") # hide
 ```
 
-So we alternate between SympNet and PSD layers. Because all the PSD layers are based on matrices $\Phi\in{}St(n,N)$ we have to [optimize on the Stiefel manifold](../Optimizer.md).
+So we alternate between SympNet and PSD layers. Because all the PSD layers are based on matrices $\Phi\in{}St(n,N)$ we have to [optimize on the Stiefel manifold](@ref "Neural Network Optimizers").
 
 
 ## References 
