@@ -49,8 +49,6 @@ module GeometricMachineLearning
 
     include("data_loader/data_loader.jl")
 
-    include("loss/losses.jl")
-
     # INCLUDE ARRAYS
     include("arrays/skew_symmetric.jl")
     include("arrays/symmetric.jl")
@@ -285,6 +283,8 @@ module GeometricMachineLearning
     export default_arch
 
     include("architectures/default_architecture.jl")
+
+    include("loss/losses.jl")
 
     export DataLoader, onehotbatch, accuracy
     export Batch, optimize_for_one_epoch!
