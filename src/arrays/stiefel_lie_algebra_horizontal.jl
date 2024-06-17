@@ -121,7 +121,20 @@ function Base.:*(A::StiefelLieAlgHorMatrix, α::Real)
     StiefelLieAlgHorMatrix( α*A.A, α*A.B, A.N, A.n)
 end
 
-Base.:*(α::Real, A::StiefelLieAlgHorMatrix) = A*α
+function Base.:+(B::StiefelLieAlgHorMatrix, A::AbstractMatrix)
+    @assert size(A) == size(B)
+
+    C = copy(A)
+    @views C[1:B.n, 1:B.n] .= B.A + A[1:B.n, 1:B.n]
+    @views C[(B.n+1):B.N, 1:B.n] .= B.B + A[(B.n+1):B.N, 1:B.n]
+    @views C[1:B.n, (B.n+1):B.N] .= A[1:B.n, (B.n+1):B.N] - B.B'
+    
+    C
+end
+
+Base.:+(A::AbstractMatrix, B::StiefelLieAlgHorMatrix) = B + A
+
+Base.:*(α::Real, A::StiefelLieAlgHorMatrix) = A * α
 
 function Base.zeros(::Type{StiefelLieAlgHorMatrix{T}}, N::Integer, n::Integer) where T
     StiefelLieAlgHorMatrix(
@@ -254,6 +267,15 @@ function assign!(A::AbstractArray, B::AbstractArray)
     A .= B 
 
     nothing
+end
+
+function Base.one(B::StiefelLieAlgHorMatrix{T}) where T
+    backend = get_backend(B)
+    oneB = KernelAbstractions.zeros(backend, T, B.N, B.N)
+    write_ones! = write_ones_kernel!(backend)
+    write_ones!(oneB; ndrange = B.N)
+
+    oneB
 end
 
 function _round(B::StiefelLieAlgHorMatrix; kwargs...)
