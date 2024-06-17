@@ -1,5 +1,5 @@
 @doc raw"""
-Encompasses various transformer architectures, such as the structure-preserving transformer and the linear symplectic transformer. 
+Encompasses various transformer architectures, such as the [`VolumePreservingTransformmer`](@ref) and the [`LinearSymplecticTransformer`](@ref). 
 """
 abstract type TransformerIntegrator <: Architecture end
 
