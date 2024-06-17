@@ -77,19 +77,40 @@ function SkewSymMatrix(S::AbstractMatrix{T}) where {T}
     SkewSymMatrix(S_vec, n)
 end
 
-function Base.getindex(A::SkewSymMatrix, i::Int, j::Int)
+function return_element(S::AbstractVector{T}, i::Int, j::Int) where T
     if j == i
-        return zero(eltype(A))
+        return zero(T)
     end
     if i > j
-        return A.S[(i-2) * (i-1) ÷ 2 + j]
+        return S[(i-2) * (i-1) ÷ 2 + j]
     end
-    return - A.S[ (j-2) * (j-1) ÷ 2 + i] 
+    return - S[ (j-2) * (j-1) ÷ 2 + i]
+end
+
+function Base.getindex(A::SkewSymMatrix, i::Int, j::Int)
+    return_element(A.S, i, j)
 end
 
 
 Base.parent(A::SkewSymMatrix) = A.S
 Base.size(A::SkewSymMatrix) = (A.n,A.n)
+
+@kernel function addition_kernel!(C::AbstractMatrix, S::AbstractVector, B::AbstractMatrix)
+    i, j = @index(Global, NTuple)
+    C[i, j] = return_element(S, i, j) + B[i, j]
+end
+
+function Base.:+(A::SkewSymMatrix{T}, B::AbstractMatrix{T}) where T
+    @assert size(A) == size(B)
+    backend = KernelAbstractions.get_backend(B)
+    addition! = addition_kernel!(backend)
+    C = KernelAbstractions.allocate(backend, T, size(A)...)
+    addition!(C, A.S, B; ndrange = size(A))
+
+    C
+end
+
+Base.:+(B::AbstractMatrix, A::SkewSymMatrix) = B + A
 
 function Base.:+(A::SkewSymMatrix, B::SkewSymMatrix)
     @assert A.n == B.n 
@@ -190,7 +211,7 @@ function Base.:*(A::SkewSymMatrix{T}, B::AbstractMatrix{T}) where T
 end
 
 @kernel function skew_mat_mul_kernel!(C::AbstractMatrix{T}, S::AbstractVector{T}, B::AbstractMatrix{T}, n) where T
-    i,j = @index(Global, NTuple)
+    i, j = @index(Global, NTuple)
 
     tmp_sum = zero(T)
     for k = 1:(i-1)
