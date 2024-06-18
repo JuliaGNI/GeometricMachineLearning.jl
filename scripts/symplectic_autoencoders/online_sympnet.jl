@@ -77,7 +77,8 @@ dl_reduced = DataLoader(data_processed; autoencoder = false)
 integrator_train_epochs = 4096
 integrator_batch_size = 512
 
-integrator_nn = NeuralNetwork(GSympNet(reduced_dim; n_layers = 5), backend)
+seq_length = 4
+integrator_nn = NeuralNetwork(LinearSymplecticTransformer(reduced_dim, seq_length; n_sympnet = 3, L = 3), backend)
 integrator_method = AdamOptimizerWithDecay(integrator_train_epochs)
 o_integrator = Optimizer(integrator_method, integrator_nn)
 
@@ -87,9 +88,9 @@ dl_integration = DataLoader((q = reshape(dl.input.q, size(dl.input.q, 1), size(d
                             autoencoder = false
                             )
 
-o_integrator(integrator_nn, dl_integration, Batch(integrator_batch_size), integrator_train_epochs, loss)
+o_integrator(integrator_nn, dl_integration, Batch(integrator_batch_size, seq_length), integrator_train_epochs, loss)
 
-const ics = (q = mtc(dl_reduced.input.q[:, 1]), p = mtc(dl_reduced.input.p[:, 1]))
+const ics = (q = mtc(dl_reduced.input.q[:, 1:seq_length, 1]), p = mtc(dl_reduced.input.p[:, 1:seq_length, 1]))
 
 ######################################################################
 
@@ -107,7 +108,7 @@ function plot_validation(t_steps::Integer=100)
     axislegend(; position = (.82, .75), backgroundcolor = :transparent, color = text_color)
     save(name * ".png", fig_val)
 
-    time_series = iterate(mtc(integrator_nn), ics; n_points = t_steps)
+    time_series = iterate(mtc(integrator_nn), ics; n_points = t_steps, prediction_window = seq_length)
     prediction = (q = time_series.q[:, end], p = time_series.p[:, end])
     sol = decoder(sae_nn_cpu)(prediction)
 
