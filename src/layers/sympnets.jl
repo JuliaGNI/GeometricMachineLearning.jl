@@ -14,6 +14,10 @@ struct GradientLayer{M, N, TA, C} <: SympNetLayer{M, N}
 end
 
 @doc raw"""
+    GradientLayerQ(sys_dim, upscaling_dimension, activation)
+
+Make an instance of a gradient-``q`` layer.
+
 The gradient layer that changes the ``q`` component. It is of the form: 
 
 ```math
@@ -27,7 +31,11 @@ with ``V(p) = \sum_{i=1}^Ma_i\Sigma(\sum_jk_{ij}p_j+b_i)``, where ``\Sigma`` is 
 const GradientLayerQ{M, N, TA} = GradientLayer{M, N, TA, :Q}
 
 @doc raw"""
-The gradient layer that changes the ``q`` component. It is of the form: 
+    GradientLayerP(sys_dim, upscaling_dimension, activation)
+
+Make an instance of a gradient-``p`` layer.
+
+The gradient layer that changes the ``p`` component. It is of the form: 
 
 ```math
 \begin{bmatrix}
@@ -35,7 +43,7 @@ The gradient layer that changes the ``q`` component. It is of the form:
 \end{bmatrix},
 ```
 
-with ``V(p) = \sum_{i=1}^Ma_i\Sigma(\sum_jk_{ij}p_j+b_i)``, where ``\Sigma`` is the antiderivative of the activation function ``\sigma`` (one-layer neural network). We refer to $M$ as the *upscaling dimension*. Such layers are by construction symplectic.
+with ``V(p) = \sum_{i=1}^Ma_i\Sigma(\sum_jk_{ij}q_j+b_i)``, where ``\Sigma`` is the antiderivative of the activation function ``\sigma`` (one-layer neural network). We refer to $M$ as the *upscaling dimension*. Such layers are by construction symplectic.
 """
 const GradientLayerP{M, N, TA} = GradientLayer{M, N, TA, :P}
 
