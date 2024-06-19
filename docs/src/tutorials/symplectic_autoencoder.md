@@ -104,7 +104,7 @@ hline([psd_error]; color = 2, label = "PSD error")
 plot!(sae_error; color = 3, label = "SAE error", xlabel = "epoch", ylabel = "training error")
 ```
 
-## The online stage 
+## The online stage with a standard integrator
 
 After having trained our neural network we can now evaluate it in the online stage of reduced complexity modeling: 
 
@@ -126,13 +126,62 @@ sol_full = integrate_full_system(psd_rs)
 sol_psd_reduced = integrate_reduced_system(psd_rs)
 sol_sae_reduced = integrate_reduced_system(sae_rs)
 
-const t_step = 100
+const t_steps = 100
 plot(sol_full.s.q[t_step], label = "Implicit Midpoint")
-plot!(psd_rs.decoder((q = sol_psd_reduced.s.q[t_step], p = sol_psd_reduced.s.p[t_step])).q, label = "PSD")
-plot!(sae_rs.decoder((q = sol_sae_reduced.s.q[t_step], p = sol_sae_reduced.s.p[t_step])).q, label = "SAE")
+plot!(psd_rs.decoder((q = sol_psd_reduced.s.q[t_steps], p = sol_psd_reduced.s.p[t_steps])).q, label = "PSD")
+plot!(sae_rs.decoder((q = sol_sae_reduced.s.q[t_steps], p = sol_sae_reduced.s.p[t_steps])).q, label = "SAE")
 ```
 
 We can see that the autoencoder approach has much more approximation capabilities than the psd approach. The jiggly lines are due to the fact that training was done for only 8 epochs. 
+
+## The online stage with a neural network
+
+Instead of using a standard integrator we can also use a neural network that is trained on the reduced data. For this: 
+
+```@example toda_lattice
+data_unprocessed = encoder(sae_nn)(dl.input)
+data_processed = (  q = reshape(data_unprocessed.q, reduced_dim ÷ 2, length(data_unprocessed.q)), 
+                    p = reshape(data_unprocessed.p, reduced_dim ÷ 2, length(data_unprocessed.p))
+                    )
+
+dl_reduced = DataLoader(data_processed; autoencoder = false)
+integrator_batch_size = 128
+integrator_train_epochs = 4
+
+integrator_nn = NeuralNetwork(GSympNet(reduced_dim))
+o_integrator = Optimizer(AdamOptimizer(Float64), integrator_nn)
+struct ReducedLoss{ET, DT} <: GeometricMachineLearning.NetworkLoss
+    encoder::ET
+    decoder::DT
+end
+function (loss::ReducedLoss)(model::Chain, params::Tuple, input::CT, output::CT) where {AT <:Array, CT <: NamedTuple{(:q, :p), Tuple{AT, AT}}}
+    GeometricMachineLearning._compute_loss(loss.decoder(model(loss.encoder(input), params)), output)
+end
+
+loss = ReducedLoss(encoder(sae_nn), decoder(sae_nn))
+dl_integration = DataLoader((q = reshape(dl.input.q, size(dl.input.q, 1), size(dl.input.q, 3)),
+                             p = reshape(dl.input.p, size(dl.input.p, 1), size(dl.input.p, 3)));
+                            autoencoder = false
+                            )
+
+o_integrator(integrator_nn, dl_integration, Batch(integrator_batch_size), integrator_train_epochs, loss)
+
+nothing # hide
+```
+
+We can now evaluate the solution:
+
+```@example toda_lattice
+ics = (q = dl_reduced.input.q[:, 1], p = dl_reduced.input.p[:, 1])
+time_series = iterate(integrator_nn, ics; n_points = t_steps)
+prediction = (q = time_series.q[:, end], p = time_series.p[:, end])
+sol = decoder(sae_nn)(prediction)
+
+plot!(sol.q; label = "Neural Network Integrator")
+```
+
+
+
 
 ## References 
 ```@bibliography
