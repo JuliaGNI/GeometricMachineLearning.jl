@@ -78,7 +78,8 @@ integrator_train_epochs = 4096
 integrator_batch_size = 512
 
 seq_length = 4
-integrator_nn = NeuralNetwork(LinearSymplecticTransformer(reduced_dim, seq_length; n_sympnet = 3, L = 3), backend)
+integrator_architecture = StandardTransformerIntegrator(reduced_dim; transformer_dim = 30, n_blocks = 4, n_heads = 5, L = 3, upscaling_activation = tanh)
+integrator_nn = NeuralNetwork(integrator_architecture, backend)
 integrator_method = AdamOptimizerWithDecay(integrator_train_epochs)
 o_integrator = Optimizer(integrator_method, integrator_nn)
 
@@ -88,9 +89,12 @@ dl_integration = DataLoader((q = reshape(dl.input.q, size(dl.input.q, 1), size(d
                             autoencoder = false
                             )
 
+# the regular transformer can't deal with symplectic data!
+dl_integration = DataLoader(vcat(dl_integration.input.q, dl_integration.input.p))
 o_integrator(integrator_nn, dl_integration, Batch(integrator_batch_size, seq_length), integrator_train_epochs, loss)
 
-const ics = (q = mtc(dl_reduced.input.q[:, 1:seq_length, 1]), p = mtc(dl_reduced.input.p[:, 1:seq_length, 1]))
+const ics_nt = (q = mtc(dl_reduced.input.q[:, 1:seq_length, 1]), p = mtc(dl_reduced.input.p[:, 1:seq_length, 1]))
+const ics = vcat(ics_nt, ics_nt)
 
 ######################################################################
 
@@ -109,10 +113,11 @@ function plot_validation(t_steps::Integer=100)
     save(name * ".png", fig_val)
 
     time_series = iterate(mtc(integrator_nn), ics; n_points = t_steps, prediction_window = seq_length)
-    prediction = (q = time_series.q[:, end], p = time_series.p[:, end])
+    # prediction = (q = time_series.q[:, end], p = time_series.p[:, end])
+    prediction = time.series[:, end]
     sol = decoder(sae_nn_cpu)(prediction)
 
-    lines!(ax_val, sol.q; label = "Neural Network Integrator", color = mpurple)
+    lines!(ax_val, sol[1:(dl.sys_dim ÷ 2)]; label = "Neural Network Integrator", color = mpurple)
 
     axislegend(; position = (.82, .75), backgroundcolor = :transparent, color = text_color)
     save(name * "_with_nn_integrator.png", fig_val)
