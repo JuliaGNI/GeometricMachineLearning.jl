@@ -178,7 +178,7 @@ makedocs(;
             "Linear Symplectic Attention" => "layers/linear_symplectic_attention.md",
         ],
         "Reduced Order Modelling" =>[
-            "POD and Autoencoders" => "reduced_order_modeling/autoencoder.md",
+            "General Framework" => "reduced_order_modeling/reduced_order_modeling.md",
             "Network Losses" => "reduced_order_modeling/losses.md",
             "PSD and Symplectic Autoencoders" => "reduced_order_modeling/symplectic_autoencoder.md",
             "Kolmogorov n-width" => "reduced_order_modeling/kolmogorov_n_width.md",
