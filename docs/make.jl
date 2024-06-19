@@ -179,6 +179,7 @@ makedocs(;
         ],
         "Reduced Order Modelling" =>[
             "POD and Autoencoders" => "reduced_order_modeling/autoencoder.md",
+            "Network Losses" => "reduced_order_modeling/losses.md",
             "PSD and Symplectic Autoencoders" => "reduced_order_modeling/symplectic_autoencoder.md",
             "Kolmogorov n-width" => "reduced_order_modeling/kolmogorov_n_width.md",
             "Projection and Reduction Error" => "reduced_order_modeling/projection_reduction_errors.md",
