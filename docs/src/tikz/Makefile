@@ -57,6 +57,8 @@ png:
 	pdftocairo 	-png -r $(res1) -transp -singlefile  linear_symplectic_transformer_dark.pdf			linear_symplectic_transformer_dark
 	pdftocairo 	-png -r $(res1) -transp -singlefile  skew_sym_visualization.pdf						skew_sym_visualization
 	pdftocairo 	-png -r $(res1) -transp -singlefile  skew_sym_visualization_dark.pdf				skew_sym_visualization_dark
+	pdftocairo  -png -r $(res2) -transp -singlefile  offline_online.pdf								offline_online
+	pdftocairo  -png -r $(res2) -transp -singlefile  offline_online_dark.pdf						offline_online_dark
 
 logo:
 	cp logo_with_name.png 		../assets/logo.png
