@@ -177,6 +177,12 @@ makedocs(;
             "Multihead Attention" => "layers/multihead_attention_layer.md",
             "Linear Symplectic Attention" => "layers/linear_symplectic_attention.md",
         ],
+        "Reduced Order Modelling" =>[
+            "POD and Autoencoders" => "reduced_order_modeling/autoencoder.md",
+            "PSD and Symplectic Autoencoders" => "reduced_order_modeling/symplectic_autoencoder.md",
+            "Kolmogorov n-width" => "reduced_order_modeling/kolmogorov_n_width.md",
+            "Projection and Reduction Error" => "reduced_order_modeling/projection_reduction_errors.md",
+        ],
         "Architectures" => [
             "Symplectic Autoencoders" => "architectures/symplectic_autoencoder.md",
             "Neural Network Integrators" => "architectures/neural_network_integrators.md",
@@ -189,12 +195,6 @@ makedocs(;
         "Data Loader" =>[
             "Routines" => "data_loader/data_loader.md",
             "Snapshot matrix & tensor" => "data_loader/snapshot_matrix.md",
-        ],
-        "Reduced Order Modelling" =>[
-            "POD and Autoencoders" => "reduced_order_modeling/autoencoder.md",
-            "PSD and Symplectic Autoencoders" => "reduced_order_modeling/symplectic_autoencoder.md",
-            "Kolmogorov n-width" => "reduced_order_modeling/kolmogorov_n_width.md",
-            "Projection and Reduction Error" => "reduced_order_modeling/projection_reduction_errors.md",
         ],
         "Tutorials" =>[
             "Sympnets" => "tutorials/sympnet_tutorial.md",
