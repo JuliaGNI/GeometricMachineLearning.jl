@@ -197,26 +197,26 @@ function map_to_new_backend(input::AT, backend::KernelAbstractions.Backend) wher
     DataLoader(input₂)
 end
 
-function map_to_new_backend(input::QPT, backend::KernelAbstractions.Backend)
-    input₂ = (q = KernelAbstractions.allocate(backend, size(input₂.q)...), p = KernelAbstractions.allocate(backend, size(input₂.p)...))
+function map_to_new_backend(input::QPT{T}, backend::KernelAbstractions.Backend) where T
+    input₂ = (q = KernelAbstractions.allocate(backend, T, size(input₂.q)...), p = KernelAbstractions.allocate(backend, size(input₂.p)...))
     KernelAbstractions.copyto!(backend, input₂.q, input.q)
     KernelAbstractions.copyto!(backend, input₂.p, input.p)
     DataLoader(input₂)
 end
 
-function DataLoader(dl::DataLoader{T, <:QPTOAT, Nothing}, backend::KernelAbstractions.Backend)
+function DataLoader(dl::DataLoader{<:Number, <:QPTOAT, Nothing}, backend::KernelAbstractions.Backend)
     DataLoader(map_to_new_backend(dl.input, backend))
 end
 
-function reshape_to_matrix(dl::DataLoader{T, <:QPT, Nothing, :RegularData})
+function reshape_to_matrix(dl::DataLoader{<:Number, <:QPT, Nothing, :RegularData})
     (q = reshape(dl.input.q, dl.input_dim ÷ 2, dl.n_params), p = reshape(dl.input.p, dl.input_dim ÷ 2, dl.n_params))
 end
 
-function reshape_to_matrix(dl::DataLoader{T, <:AbstractArray, Nothing, :RegularData})
+function reshape_to_matrix(dl::DataLoader{<:Number, <:AbstractArray, Nothing, :RegularData})
     reshape(dl.input, dl.input_dim, dl.n_params)
 end
 
-function DataLoader(dl::DataLoader{T, <: QPTOAT, Nothing, :RegularData}, 
+function DataLoader(dl::DataLoader{<: Number, <: QPTOAT, Nothing, :RegularData}, 
     backend::KernelAbstractions.Backend=KernelAbstractions.get_backend(dl); 
     autoencoder::Bool=false)
 
