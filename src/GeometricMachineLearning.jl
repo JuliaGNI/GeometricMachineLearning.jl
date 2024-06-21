@@ -47,6 +47,8 @@ module GeometricMachineLearning
     # from GeometricBase to print docs
     export description
 
+    include("utils.jl")
+
     include("data_loader/data_loader.jl")
 
     # INCLUDE ARRAYS
@@ -103,7 +105,6 @@ module GeometricMachineLearning
 
     # are these needed?
     export UnknownProblem, NothingFunction
-    include("utils.jl")
 
     # + operation has been overloaded to work with NamedTuples!
     export _add, apply_toNT, split_and_flatten, add!
