@@ -45,6 +45,7 @@ dl.input
 
 # output
 
+[ Info: You have provided a matrix as input. The axes will be interpreted as (i) system dimension and (ii) number of parameters.
 2×1×3 Array{Int64, 3}:
 [:, :, 1] =
  1
