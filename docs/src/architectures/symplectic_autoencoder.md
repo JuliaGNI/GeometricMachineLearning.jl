@@ -2,9 +2,14 @@
 
 Symplectic autoencoders offer a structure-preserving way of mapping a high-dimensional system to a low dimensional system. Concretely this means that if we obtain a reduced system by means of a symplectic autoencoder, this system will again be reduced. 
 
+The architecture is represented by the figure below:
+
 ```@example 
 Main.include_graphics("../tikz/symplectic_autoencoder") # hide
 ```
+
+It is a composition of [SympNet gradient layers](@ref "SympNet Gradient Layer") and PSD-like matrices.
+
 
 ## Intermediate Dimensions
 
