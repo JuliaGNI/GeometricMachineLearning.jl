@@ -113,7 +113,7 @@ end
 """
 The type for data in ``(q, p)`` coordinates.
 """
-const QPT = NamedTuple{(:q, :p), Tuple{AT, AT}} where AT <: AbstractArray
+const QPT{T} = NamedTuple{(:q, :p), Tuple{AT, AT}} where {T, AT <: AbstractArray{T}}
 
 """
 A union of two types:
@@ -121,7 +121,7 @@ A union of two types:
 const QPTOAT = Union{QPT, AbstractArray}
 ```
 """
-const QPTOAT = Union{QPT, AbstractArray}
+const QPTOAT{T} = Union{QPT{T}, AbstractArray{T}} where T
 
 _eltype(x) = eltype(x)
 _eltype(ps::NamedTuple) = _eltype(ps[1])
