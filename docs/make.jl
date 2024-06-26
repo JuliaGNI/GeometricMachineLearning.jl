@@ -171,7 +171,7 @@ makedocs(;
             "BFGS Optimizer" => "optimizers/bfgs_optimizer.md",
             ],
         "Special Neural Network Layers" => [
-            "Sympnet Gradient Layers" => "layers/sympnet_gradient.md",
+            "Sympnet Layers" => "layers/sympnet_gradient.md",
             "Volume-Preserving Layers" => "layers/volume_preserving_feedforward.md",
             "Attention" => "layers/attention_layer.md",
             "Multihead Attention" => "layers/multihead_attention_layer.md",
