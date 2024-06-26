@@ -6,14 +6,19 @@ This document discusses the SympNet architecture and its implementation in `Geom
 
 ### Principle
 
-SympNets (see [jin2020sympnets](@cite) for the eponymous paper) are a type of neural network that can model the trajectory of a Hamiltonian system in phase space. Take ``(q^T,p^T)^T=(q_1,\ldots,q_d,p_1,\ldots,p_d)^T\in \mathbb{R}^{2d}`` as the coordinates in phase space, where ``q=(q_1, \ldots, q_d)^T\in \mathbb{R}^{d}`` is refered to as the *position* and ``p=(p_1, \ldots, p_d)^T\in \mathbb{R}^{d}`` the *momentum*. Given a point ``(q^T,p^T)^T`` in ``\mathbb{R}^{2d}`` the SympNet aims to compute the *next position* ``((q')^T,(p')^T)^T`` and thus predicts the trajectory while preserving the *symplectic structure* of the system.
+SympNets [jin2020sympnets](@cite) are a type of neural network that can model the trajectory of a Hamiltonian system in phase space. Take ``(q^T,p^T)^T=(q_1,\ldots,q_d,p_1,\ldots,p_d)^T\in \mathbb{R}^{2d}`` as the coordinates in phase space, where ``q=(q_1, \ldots, q_d)^T\in \mathbb{R}^{d}`` is refered to as the *position* and ``p=(p_1, \ldots, p_d)^T\in \mathbb{R}^{d}`` the *momentum*. Given a point ``(q^T,p^T)^T`` in ``\mathbb{R}^{2d}`` the SympNet aims to compute the *next position* ``((q')^T,(p')^T)^T`` and thus predicts the trajectory while preserving the *symplectic structure* of the system.
 SympNets are enforcing symplecticity strongly, meaning that this property is hard-coded into the network architecture. The layers are reminiscent of traditional neural network feedforward layers, but have a strong restriction imposed on them in order to be symplectic.
 
-SympNets can be viewed as a "symplectic integrator" (see [hairer2006geometric](@cite) and [leimkuhler2004simulating](@cite)). Their goal is to predict, based on an initial condition $((q^{(0)})^T,(p^{(0)})^T)^T$, a sequence of points in phase space that fit the training data as well as possible:
+SympNets can be viewed as a *symplectic integrator* or symplectic one-step method[^1] [hairer2006geometric, leimkuhler2004simulating](@cite). Their goal is to predict, based on an initial condition ``((q^{(0)})^T,(p^{(0)})^T)^T``, a sequence of points in phase space that fit the training data as well as possible:
+
+[^1]: *Symplectic multi-step methods* can be modeled with [transformers](@ref "Linear Symplectic Transformers").
+
 ```math
 \begin{pmatrix} q^{(0)} \\ p^{(0)} \end{pmatrix}, \cdots, \begin{pmatrix} \tilde{q}^{(1)} \\ \tilde{p}^{(1)} \end{pmatrix}, \cdots \begin{pmatrix} \tilde{q}^{(n)} \\ \tilde{p}^{(n)} \end{pmatrix}.
 ```
 The tilde in the above equation indicates *predicted data*. The time step between predictions is not a parameter we can choose but is related to the *temporal frequency of the training data*. This means that if data is recorded in an interval of e.g. 0.1 seconds, then this will be the time step of our integrator.
+
+SympNets preserve symplecticity by exploiting the ``(q, p)`` structure of the system. This is visualized below:
 
 
 ```@example 
@@ -23,11 +28,11 @@ The tilde in the above equation indicates *predicted data*. The time step betwee
   ) # hide
 ```
 
-There are two types of SympNet architectures: $LA$-SympNets and $G$-SympNets. 
+In the figure above we see that an update for ``q`` is based on data coming from ``p`` and an update for ``p`` is based on data coming from ``q``. There are two types of SympNet architectures: ``LA``-SympNets and ``G``-SympNets. 
  
-#### $LA$-SympNet
+#### ``LA``-SympNet
 
-The first type of SympNets, $LA$-SympNets, are obtained from composing two types of layers: *symplectic linear layers* and *symplectic activation layers*.  For a given integer $n$, a symplectic linear layer is defined by
+The first type of SympNets, ``LA``-SympNets, are obtained from composing two types of layers: [symplectic linear layers](@ref "SympNet Linear Layer") and [symplectic activation layers](@ref "SympNet Gradient Layer").  For a given integer ``n``, the *linear part* of an ``LA``-SympNet is
 
 ```math
 \mathcal{L}^{n,q}
@@ -59,69 +64,47 @@ The first type of SympNets, $LA$-SympNets, are obtained from composing two types
 or 
  
 ```math
-\mathcal{L}^{n,p}
+\mathcal{L}^{w,p}
 \begin{pmatrix}  q  \\  
  p  \end{pmatrix} =  
   \begin{pmatrix} 
- I & 0/S^n  \\ 
- S^n/0 & I
+ I & 0/A^w  \\ 
+ A^w/0 & I
  \end{pmatrix} \cdots 
   \begin{pmatrix} 
- I & S^2  \\ 
+ I & A^2  \\ 
  0 & I
  \end{pmatrix}
  \begin{pmatrix} 
  I & 0  \\ 
- S^1 & I
+ A^1 & I
  \end{pmatrix}
  \begin{pmatrix}  q  \\  
  p  \end{pmatrix}
   + b . 
 ```
 
-The superscripts $q$ and $p$ indicate whether the $q$ or the $p$ part is changed. The learnable parameters are the symmetric matrices $S^i\in\mathbb{R}^{d\times d}$ and the bias $b\in\mathbb{R}^{2d}$. The integer $n$ is the width of the symplectic linear layer. It can be shown that five of these layers, i.e. $n\geq{}5$, can represent any linear symplectic map (see [jin2022optimal](@cite)), so $n$ need not be larger than five. We denote the set of symplectic linear layers by $\mathcal{M}^L$.
+The superscripts ``q`` and ``p`` indicate whether the ``q`` or the ``p`` part is first changed. The learnable parameters are the symmetric matrices ``A^i\in\mathbb{R}^{d\times d}`` and the bias ``b\in\mathbb{R}^{2d}``. The integer ``w`` is the number of linear layers in one block. It can be shown that five of these layers, i.e. ``w\geq{}5``, can represent any linear symplectic map (see [jin2022optimal](@cite)), so ``w`` need not be larger than five. We denote the set of symplectic linear layers by ``\mathcal{M}^L``.
 
-The second type of layer needed for $LA$-SympNets are so-called *activation layers*:
+The second type of layer needed for ``LA``-SympNet are so-called [activation layers](@ref "SympNet Gradient Layer").
+ 
+An ``LA``-SympNet is a function of the form ``\Psi=l_{k} \circ a_{k} \circ l_{k-1} \circ \cdots \circ a_1 \circ l_0`` where ``(l_i)_{0\leq i\leq k} \subset \mathcal{M}^L`` and ``(a_i)_{1\leq i\leq k} \subset \mathcal{M}^A``. We will refer to ``k`` as the *number of hidden layers* of the SympNet[^1] and the number ``w`` above as the *depth* of the linear layer.
 
-```math
- \mathcal{A}^{q}  \begin{pmatrix}  q  \\  
- p  \end{pmatrix} =  
-  \begin{bmatrix} 
- I&\hat{\sigma}^{a}  \\ 
- 0&I
- \end{bmatrix} \begin{pmatrix}  q  \\  
- p  \end{pmatrix} :=
- \begin{pmatrix} 
-  \mathrm{diag}(a)\sigma(p)+q \\ 
-  p
- \end{pmatrix},
+[^1]: Note that if ``k=1`` then the ``LA``-SympNet consists of only one linear layer.
+
+We give an example of calling ``LA``-SympNet:
+
+```@example
+using GeometricMachineLearning
+
+arch = LASympNet(4; depth=2, nhidden=1, activation=tanh, init_upper_linear=true, init_upper_act=true)
+
+model = Chain(arch).layers
 ```
  
- and
+#### $G$-SympNets
  
-```math
- \mathcal{A}^{p}  \begin{pmatrix}  q  \\  
- p  \end{pmatrix} =  
-  \begin{bmatrix} 
- I&0  \\ 
- \hat{\sigma}^{a}&I
- \end{bmatrix} \begin{pmatrix}  q  \\  
- p  \end{pmatrix}
- :=
- \begin{pmatrix} 
- q \\ 
- \mathrm{diag}(a)\sigma(q)+p
- \end{pmatrix}.
-```
-The activation function $\sigma$ can be any nonlinearity (on which minor restrictions are imposed below). Here the *scaling vector* $a\in\mathbb{R^{d}}$ constitutes the learnable weights. We denote the set of symplectic activation layers by $\mathcal{M}^A$. 
- 
-An $LA$-SympNet is a function of the form $\Psi=l_{k} \circ a_{k} \circ l_{k-1} \circ \cdots \circ a_1 \circ l_0$ where $(l_i)_{0\leq i\leq k} \subset (\mathcal{M}^L)^{k+1}$ and $(a_i)_{1\leq i\leq k} \subset (\mathcal{M}^A)^{k}$. We will refer to $k$ as the *number of hidden layers* of the SympNet[^1] and the number $n$ above as the *depth* of the linear layer.
-
-[^1]: Note that if $k=1$ then the $LA$-SympNet consists of only one linear layer.
- 
- #### $G$-SympNets
- 
- $G$-SympNets are an alternative to $LA$-SympNets. They are built with only one kind of layer, called *gradient layer*. For a given activation function $\sigma$ and an integer $n\geq d$, a gradient layers is a symplectic map from $\mathbb{R}^{2d}$ to $\mathbb{R}^{2d}$ defined by
+$G$-SympNets are an alternative to $LA$-SympNets. They are built with only one kind of layer, called *gradient layer*. For a given activation function $\sigma$ and an integer $n\geq d$, a gradient layers is a symplectic map from $\mathbb{R}^{2d}$ to $\mathbb{R}^{2d}$ defined by
  
 ```math
  \mathcal{G}^{up}  \begin{pmatrix}  q  \\  
@@ -200,6 +183,20 @@ $$Loss(Q,P) = \underset{i}{\sum} d(\Phi(Q[i,-],P[i,-]), [Q[i,-] P[i,-]]^T)$$
 where $d$ is a distance on $\mathbb{R}^d$.
 
 See the [tutorial section](../tutorials/sympnet_tutorial.md) for an introduction into using SympNets with `GeometricMachineLearning.jl`.
+
+## Data Structures in `GeometricMachineLearning.jl`
+
+```@example 
+Main.include_graphics("../tikz/structs_visualization") # hide
+```
+
+## Library Functions
+
+```docs; canonical = false
+SympNet
+LASympNet
+GSympNet
+```
 
 ## References
 ```@bibliography

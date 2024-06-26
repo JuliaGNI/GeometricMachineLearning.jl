@@ -47,12 +47,6 @@ and severals keywords argument :
 
 The loss function described in the [theory section](../architectures/sympnet.md) is the default choice used in `GeometricMachineLearning.jl` for training SympNets.
 
-## Data Structures in `GeometricMachineLearning.jl`
-
-```@example 
-Main.include_graphics("../tikz/structs_visualization") # hide
-```
-
 ## Examples
 
 Let us see how to use it on several examples.
