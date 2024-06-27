@@ -49,7 +49,7 @@ The third step can be done with various machine learning (ML) techniques. Tradit
 After having obtained ``\mathcal{P}`` and ``\mathcal{R}`` we still need to solve the *reduced system*. Solving the reduced system is typically referred to as the *online phase* in reduced order modeling. This is sketched below: 
 
 ```@example
-include_graphics(../tikz/offline_online) # hide
+Main.include_graphics("../tikz/offline_online") # hide
 ```
 
 The online phase is applying the mapping ``\mathcal{NN}`` in the low-dimensional space in order to predict the next time step. Crucially this step can be made very cheap when compared to the full-order model.
