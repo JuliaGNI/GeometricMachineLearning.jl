@@ -90,5 +90,5 @@ GeometricMachineLearning.GradientLayerP
 Canonical = false
 Pages = []
 
-jin2020sympnet
+jin2020sympnets
 ```

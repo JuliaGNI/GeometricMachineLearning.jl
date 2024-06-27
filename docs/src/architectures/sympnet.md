@@ -9,7 +9,7 @@ SympNets are enforcing symplecticity strongly, meaning that this property is har
 
 SympNets can be viewed as a *symplectic integrator* or symplectic one-step method[^1] [hairer2006geometric, leimkuhler2004simulating](@cite). Their goal is to predict, based on an initial condition ``((q^{(0)})^T,(p^{(0)})^T)^T``, a sequence of points in phase space that fit the training data as well as possible:
 
-[^1]: *Symplectic multi-step methods* can be modeled with [transformers](@ref "Linear Symplectic Transformers").
+[^1]: *Symplectic multi-step methods* can be modeled with [transformers](@ref "Linear Symplectic Transformer").
 
 ```math
 \begin{pmatrix} q^{(0)} \\ p^{(0)} \end{pmatrix}, \cdots, \begin{pmatrix} \tilde{q}^{(1)} \\ \tilde{p}^{(1)} \end{pmatrix}, \cdots \begin{pmatrix} \tilde{q}^{(n)} \\ \tilde{p}^{(n)} \end{pmatrix}.
@@ -86,9 +86,9 @@ The superscripts ``\mathrm{up}`` and ``\mathrm{low}`` indicate whether the ``q``
 
 The second type of layer needed for ``LA``-SympNets are [activation layers](@ref "SympNet Gradient Layer").
  
-An ``LA``-SympNet is a mapping of the form ``\Psi=l_{k} \circ a_{k} \circ l_{k-1} \circ \cdots \circ a_1 \circ l_0`` where ``(l_i)_{0\leq i\leq k} \subset \mathcal{M}^L`` and ``(a_i)_{1\leq i\leq k} \subset \mathcal{M}^A``. We will refer to ``k`` as the *number of hidden layers* of the SympNet[^1] and the number ``w`` above as the *depth* of the linear layer.
+An ``LA``-SympNet is a mapping of the form ``\Psi=l_{k} \circ a_{k} \circ l_{k-1} \circ \cdots \circ a_1 \circ l_0`` where ``(l_i)_{0\leq i\leq k} \subset \mathcal{M}^L`` and ``(a_i)_{1\leq i\leq k} \subset \mathcal{M}^A``. We will refer to ``k`` as the *number of hidden layers* of the SympNet[^2] and the number ``w`` above as the *depth* of the linear layer.
 
-[^1]: Note that if ``k=0`` then the ``LA``-SympNet consists of only one linear layer.
+[^2]: Note that if ``k=0`` then the ``LA``-SympNet consists of only one linear layer.
 
 We give an example of calling ``LA``-SympNet:
 
@@ -102,9 +102,9 @@ arch = LASympNet(4; nhidden = k, depth = 2, init_upper_linear = true, init_upper
 model = Chain(arch).layers
 ```
  
-The keywords `init_upper_linear` and `init_upper_act` indicate whether the first linear (respectively activation) layer is of ``q`` type[2].
+The keywords `init_upper_linear` and `init_upper_act` indicate whether the first linear (respectively activation) layer is of ``q`` type[^3].
 
-[^2]: If `init_upper_linear = true` then the first layer is of ``q`` type, i.e. changes the ``q`` component and leaves the ``p`` component unchanged. 
+[^3]: If `init_upper_linear = true` then the first layer is of ``q`` type, i.e. changes the ``q`` component and leaves the ``p`` component unchanged. 
 
 ## ``G``-SympNets
  
@@ -164,9 +164,9 @@ The universal approximation theorems state that we can, in principle, get arbitr
 
 ## Loss function
 
-To train the SympNet, one needs data along a trajectory such that the model is trained to perform an integration. The loss function is defined as[^3]:
+To train the SympNet, one needs data along a trajectory such that the model is trained to perform an integration. The loss function is defined as[^4]:
 
-[^3]: This loss function is implemented as [`FeedForwardLoss`](@ref) in `GeometricMachineLearning`.
+[^4]: This loss function is implemented as [`FeedForwardLoss`](@ref) in `GeometricMachineLearning`.
 
 ```math
 \mathrm{loss}(z^\mathrm{c}, z^\mathrm{p}) = || z^\mathrm{c} - z^\mathrm{p} || / || z^\mathrm{c} ||,

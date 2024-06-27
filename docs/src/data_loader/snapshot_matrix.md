@@ -1,6 +1,6 @@
 # Snapshot matrix
 
-The snapshot matrix stores solutions of the high-dimensional ODE (obtained from discretizing a PDE). This is then used to construct [reduced bases](../reduced_order_modeling/autoencoder.md) in a data-driven way. So (for a single parameter[^1]) the snapshot matrix takes the following form: 
+The snapshot matrix stores solutions of the high-dimensional ODE (obtained from discretizing a PDE). This is then used to construct [reduced bases](../reduced_order_modeling/reduced_order_modeling.md) in a data-driven way. So (for a single parameter[^1]) the snapshot matrix takes the following form: 
 
 [^1]: If we deal with a parametrized PDE then there are **two stages** at which the snapshot matrix has to be processed: the offline stage and the online stage. 
 
@@ -16,7 +16,7 @@ M = \left[\begin{array}{c:c:c:c}
 
 In the above example we store a matrix whose first axis is the system dimension (i.e. a state is an element of ``\mathbb{R}^{2n}``) and the second dimension gives the time step. 
 
-The starting point for using the snapshot matrix as data for a machine learning model is that all the columns of ``M`` live on a lower-dimensional [solution manifold](../reduced_order_modeling/autoencoder.md) and we can use techniques such as *POD* and *autoencoders* to find this solution manifold. We also note that the second axis of ``M`` does not necessarily indicate time but can also represent various parameters (including initial conditions). The second axis in the `DataLoader` struct is therefore saved in the field `n_params`.
+The starting point for using the snapshot matrix as data for a machine learning model is that all the columns of ``M`` live on a lower-dimensional [solution manifold](../reduced_order_modeling/reduced_order_modeling.md) and we can use techniques such as *POD* and *autoencoders* to find this solution manifold. We also note that the second axis of ``M`` does not necessarily indicate time but can also represent various parameters (including initial conditions). The second axis in the `DataLoader` struct is therefore saved in the field `n_params`.
 
 
 

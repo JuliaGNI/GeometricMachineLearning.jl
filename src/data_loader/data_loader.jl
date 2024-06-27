@@ -302,6 +302,6 @@ accuracy(nn::NeuralNetwork, dl::DataLoader) = accuracy(nn.model, nn.params, dl)
 Base.eltype(::DataLoader{T}) where T = T
 
 KernelAbstractions.get_backend(dl::DataLoader) = KernelAbstractions.get_backend(dl.input)
-function KernelAbstractions.get_backend(dl::DataLoader{T, QPT{T}}) where T
+function KernelAbstractions.get_backend(dl::DataLoader{T, <:QPT{T}}) where T
     KernelAbstractions.get_backend(dl.input.q)
 end

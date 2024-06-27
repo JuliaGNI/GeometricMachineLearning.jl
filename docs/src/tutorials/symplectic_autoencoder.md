@@ -127,7 +127,7 @@ sol_psd_reduced = integrate_reduced_system(psd_rs)
 sol_sae_reduced = integrate_reduced_system(sae_rs)
 
 const t_steps = 100
-plot(sol_full.s.q[t_step], label = "Implicit Midpoint")
+plot(sol_full.s.q[t_steps], label = "Implicit Midpoint")
 plot!(psd_rs.decoder((q = sol_psd_reduced.s.q[t_steps], p = sol_psd_reduced.s.p[t_steps])).q, label = "PSD")
 plot!(sae_rs.decoder((q = sol_sae_reduced.s.q[t_steps], p = sol_sae_reduced.s.p[t_steps])).q, label = "SAE")
 ```

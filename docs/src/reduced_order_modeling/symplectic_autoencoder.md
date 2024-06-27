@@ -24,7 +24,7 @@ I NEED A PROOF OR SOME EXPLANATION FOR THIS!
 
 ## Workflow for Symplectic ROM
 
-As with any other [reduced order modeling technique](autoencoder.md) we first discretize the PDE. This should be done with a structure-preserving scheme, thus yielding a (high-dimensional) Hamiltonian ODE as a result. Discretizing the wave equation above with finite differences yields a Hamiltonian system: 
+As with any other [reduced order modeling technique](reduced_order_modeling.md) we first discretize the PDE. This should be done with a structure-preserving scheme, thus yielding a (high-dimensional) Hamiltonian ODE as a result. Discretizing the wave equation above with finite differences yields a Hamiltonian system: 
 
 ```math
 \mathcal{H}_\mathrm{discr}(z(t;\mu);\mu) := \frac{1}{2}x(t;\mu)^T\begin{bmatrix}  -\mu^2D_{\xi{}\xi} & \mathbb{O} \\ \mathbb{O} & \mathbb{I}  \end{bmatrix} x(t;\mu).
