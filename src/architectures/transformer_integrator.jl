@@ -44,6 +44,10 @@ function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::NamedTupl
     (q=q_valuation[:, 1:n_points], p=p_valuation[:, 1:n_points])
 end
 
+function Base.iterate(::NeuralNetwork{<:TransformerIntegrator}, ics::AT; n_points::Int = 100, prediction_window::Union{Nothing, Int} = size(ics, 2)) where {T, AT<:AbstractVector{T}}
+    error("You have to provide a matrix as initial condition for the transformer!")
+end
+
 function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::AT; n_points::Int = 100, prediction_window::Union{Nothing, Int} = size(ics, 2)) where {T, AT<:AbstractMatrix{T}}
 
     seq_length = typeof(nn.architecture) <: StandardTransformerIntegrator ? prediction_window : nn.architecture.seq_length
