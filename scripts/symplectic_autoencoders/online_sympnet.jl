@@ -10,10 +10,7 @@ backend = CUDABackend()
 pr = hodeproblem(; tspan = (0.0, 100.))
 sol = integrate(pr, ImplicitMidpoint())
 dl_cpu = DataLoader(sol; autoencoder = true)
-dl = DataLoader((
-                q = reshape(dl_cpu.input.q |> cu, size(dl_cpu.input.q, 1), size(dl_cpu.input.q, 3)), 
-                p = reshape(dl_cpu.input.p |> cu, size(dl_cpu.input.p, 1), size(dl_cpu.input.p, 3))); 
-                autoencoder = true)
+dl = DataLoader(dl_cpu, backend, Float32)
 
 const reduced_dim = 2
 
@@ -24,7 +21,7 @@ Random.seed!(123)
 psd_nn = NeuralNetwork(psd_arch, backend)
 sae_nn = NeuralNetwork(sae_arch, backend)
 
-const n_epochs = 4096
+const n_epochs = 8192
 const batch_size = 512
 
 sae_method = AdamOptimizerWithDecay(n_epochs)
@@ -74,27 +71,27 @@ data_processed = (  q = reshape(data_unprocessed.q, reduced_dim ÷ 2, length(dat
                     )
 
 dl_reduced = DataLoader(data_processed; autoencoder = false)
-integrator_train_epochs = 4096
+integrator_train_epochs = 8192
 integrator_batch_size = 512
 
 seq_length = 4
-integrator_architecture = StandardTransformerIntegrator(reduced_dim; transformer_dim = 30, n_blocks = 4, n_heads = 5, L = 3, upscaling_activation = tanh)
+integrator_architecture = StandardTransformerIntegrator(reduced_dim; transformer_dim = 10, n_blocks = 3, n_heads = 5, L = 2, upscaling_activation = tanh)
 integrator_nn = NeuralNetwork(integrator_architecture, backend)
 integrator_method = AdamOptimizerWithDecay(integrator_train_epochs)
 o_integrator = Optimizer(integrator_method, integrator_nn)
 
 loss = GeometricMachineLearning.ReducedLoss(encoder(sae_nn), decoder(sae_nn))
-dl_integration = DataLoader((q = reshape(dl.input.q, size(dl.input.q, 1), size(dl.input.q, 3)),
-                             p = reshape(dl.input.p, size(dl.input.p, 1), size(dl.input.p, 3)));
-                            autoencoder = false
-                            )
+
+# map autoencoder-like data to time-series like data
+dl_integration = DataLoader(dl; autoencoder = false)
 
 # the regular transformer can't deal with symplectic data!
 dl_integration = DataLoader(vcat(dl_integration.input.q, dl_integration.input.p))
-o_integrator(integrator_nn, dl_integration, Batch(integrator_batch_size, seq_length), integrator_train_epochs, loss)
+integrator_batch = Batch(integrator_batch_size, seq_length)
+o_integrator(integrator_nn, dl_integration, integrator_batch, integrator_train_epochs, loss)
 
 const ics_nt = (q = mtc(dl_reduced.input.q[:, 1:seq_length, 1]), p = mtc(dl_reduced.input.p[:, 1:seq_length, 1]))
-const ics = vcat(ics_nt, ics_nt)
+const ics = vcat(ics_nt.q, ics_nt.p)
 
 ######################################################################
 
@@ -114,10 +111,10 @@ function plot_validation(t_steps::Integer=100)
 
     time_series = iterate(mtc(integrator_nn), ics; n_points = t_steps, prediction_window = seq_length)
     # prediction = (q = time_series.q[:, end], p = time_series.p[:, end])
-    prediction = time.series[:, end]
+    prediction = time_series[:, end]
     sol = decoder(sae_nn_cpu)(prediction)
 
-    lines!(ax_val, sol[1:(dl.sys_dim ÷ 2)]; label = "Neural Network Integrator", color = mpurple)
+    lines!(ax_val, sol[1:(dl.input_dim ÷ 2)]; label = "Neural Network Integrator", color = mpurple)
 
     axislegend(; position = (.82, .75), backgroundcolor = :transparent, color = text_color)
     save(name * "_with_nn_integrator.png", fig_val)
@@ -126,3 +123,13 @@ end
 for t_steps in (10, 100, 200, 300, 400, 500, 600, 700, 800, 900)
     plot_validation(t_steps)
 end
+
+######################################################################
+
+# plot the reduced data (should be a closed orbit)
+reduced_data_matrix = vcat(dl_reduced.input.q, dl_reduced.input.p)
+fig_reduced = Figure()
+ax_reduced = Axis(reduced_fig[1, 1])
+lines!(ax_reduced, reduced_data_matrix[1, :, 1], reduced_data_matrix[2, :, 1]; color = mgreen, label = "Reduced Data")
+axislegend(; position = (.82, .75), backgroundcolor = :transparent, color = text_color)
+save("reduced_data.png", fig_reduced)
