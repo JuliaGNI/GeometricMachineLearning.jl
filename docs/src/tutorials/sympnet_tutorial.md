@@ -1,4 +1,4 @@
-# SympNets with `GeometricMachineLearning.jl`
+# SympNets with `GeometricMachineLearning`
 
 This page serves as a short introduction into using SympNets with `GeometricMachineLearning.jl`. For the general theory see [the theory section](../architectures/sympnet.md).
 
