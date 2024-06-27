@@ -76,6 +76,15 @@ function DataLoader(data::AbstractArray{T, 3}) where T
     DataLoader{T, typeof(data), Nothing, :TimeSeries}(data, nothing, input_dim, input_time_steps, n_params, nothing, nothing)
 end
 
+"""
+    DataLoader(data::AbstractMatrix)
+
+Make an instance of `DataLoader` based on a matrix.
+
+# Arguments 
+
+This has an addition keyword argument `autoencoder`, which is set to `true` by default.
+"""
 function DataLoader(data::AbstractMatrix{T}; autoencoder=true) where T 
     @info "You have provided a matrix as input. The axes will be interpreted as (i) system dimension and (ii) number of parameters."
     
@@ -177,7 +186,6 @@ end
 Constructor for `EnsembleSolution` form package `GeometricSolutions` with fields `q` and `p`.
 """
 function DataLoader(ensemble_solution::EnsembleSolution{T, T1, Vector{ST}}) where {T, T1, DT <: DataSeries{T}, ST <: GeometricSolution{T, T1, NamedTuple{(:q, :p), Tuple{DT, DT}}}}
-
     sys_dim, input_time_steps, n_params = length(ensemble_solution.s[1].q[0]), length(ensemble_solution.t), length(ensemble_solution.s)
 
     data = (q = zeros(T, sys_dim, input_time_steps, n_params), p = zeros(T, sys_dim, input_time_steps, n_params))
@@ -192,20 +200,35 @@ function DataLoader(ensemble_solution::EnsembleSolution{T, T1, Vector{ST}}) wher
     DataLoader(data)
 end
 
-function map_to_new_backend(input::AT, backend::KernelAbstractions.Backend) where AT <: AbstractArray
-    input₂ = KernelAbstractions.allocate(backend, size(input)...)
+function map_to_new_backend(input::AbstractArray{T}, backend::KernelAbstractions.Backend) where T
+    input₂ = KernelAbstractions.allocate(backend, T, size(input)...)
     KernelAbstractions.copyto!(backend, input₂, input)
-    DataLoader(input₂)
+    input₂
 end
 
 function map_to_new_backend(input::QPT{T}, backend::KernelAbstractions.Backend) where T
-    input₂ = (q = KernelAbstractions.allocate(backend, T, size(input₂.q)...), p = KernelAbstractions.allocate(backend, size(input₂.p)...))
+    input₂ = (q = KernelAbstractions.allocate(backend, T, size(input.q)...), p = KernelAbstractions.allocate(backend, T, size(input.p)...))
     KernelAbstractions.copyto!(backend, input₂.q, input.q)
     KernelAbstractions.copyto!(backend, input₂.p, input.p)
-    DataLoader(input₂)
+    input₂
 end
 
-function DataLoader(dl::DataLoader{<:Number, <:QPTOAT, Nothing}, backend::KernelAbstractions.Backend)
+function map_to_type(input::QPT, T::DataType)
+    (q = T.(input.q), p = T.(input.p))
+end
+
+function map_to_type(input::AbstractArray, T::DataType)
+    T.(input)
+end
+
+function DataLoader(dl::DataLoader{T1, <:QPTOAT, Nothing}, backend::KernelAbstractions.Backend, T::DataType=T1) where T1
+    input = 
+        if T==T1
+            dl.input
+        else
+            map_to_new_type(dl.input, T)
+        end
+
     DataLoader(map_to_new_backend(dl.input, backend))
 end
 
@@ -217,15 +240,39 @@ function reshape_to_matrix(dl::DataLoader{<:Number, <:AbstractArray, Nothing, :R
     reshape(dl.input, dl.input_dim, dl.n_params)
 end
 
-function DataLoader(dl::DataLoader{<: Number, <: QPTOAT, Nothing, :RegularData}, 
-    backend::KernelAbstractions.Backend=KernelAbstractions.get_backend(dl); 
-    autoencoder::Bool=false)
+function DataLoader(dl::DataLoader{T1, <: QPTOAT, Nothing, :RegularData}, 
+    backend::KernelAbstractions.Backend=KernelAbstractions.get_backend(dl),
+    T::DataType=T1;
+    autoencoder::Bool=true) where T1
 
     if autoencoder == true
-        DataLoader(map_to_new_backend(backend, dl.input))
+        input = 
+        if T == T1
+            dl.input
+        else
+            map_to_type(dl.input, T)
+        end 
+
+        new_input = map_to_new_backend(input, backend)
+        DataLoader{T, typeof(new_input), Nothing, :RegularData}(
+            new_input,
+            nothing,
+            dl.input_dim,
+            dl.input_time_steps,
+            dl.n_params,
+            nothing,
+            nothing)
     elseif autoencoder == false
         matrix_data = reshape_to_matrix(dl)
-        DataLoader(map_to_new_backend(backend, matrix_data); autoencoder=true)
+
+        matrix_data_new_type = 
+            if T == T1
+                matrix_data
+            else
+                map_to_type(matrix_data, T)
+            end
+
+        DataLoader(map_to_new_backend(matrix_data_new_type, backend); autoencoder=false)
     end
 end
 
@@ -255,3 +302,6 @@ accuracy(nn::NeuralNetwork, dl::DataLoader) = accuracy(nn.model, nn.params, dl)
 Base.eltype(::DataLoader{T}) where T = T
 
 KernelAbstractions.get_backend(dl::DataLoader) = KernelAbstractions.get_backend(dl.input)
+function KernelAbstractions.get_backend(dl::DataLoader{T, QPT{T}}) where T
+    KernelAbstractions.get_backend(dl.input.q)
+end
