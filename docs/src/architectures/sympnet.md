@@ -124,7 +124,7 @@ model = Chain(arch).layers
 
 In order to state the *universal approximation theorem* for both architectures we first need a few definitions:
  
-Let ``U`` be an open set of ``\mathbb{R}^{2d}``, and let us denote by ``\mathcal{SP}^r(U)`` the set of ``C^r`` smooth symplectic maps on ``U``. We now define a topology on ``C^r(K, \mathbb{R}^{2d})``, the set of ``C^r``-smooth maps from a compact set ``K\subset{}U}`` to ``\mathbb{R}^{2d}`` through the norm
+Let ``U`` be an open set of ``\mathbb{R}^{2d}``, and let us denote by ``\mathcal{SP}^r(U)`` the set of ``C^r`` smooth symplectic maps on ``U``. We now define a topology on ``C^r(K, \mathbb{R}^{2d})``, the set of ``C^r``-smooth maps from a compact set ``K\subset{}U`` to ``\mathbb{R}^{2d}`` through the norm
 
 ```math
 ||f||_{C^r(K,\mathbb{R}^{2d})} = \sum_{|\alpha|\leq r} \underset{1\leq i \leq 2d}{\max}\underset{x\in K}{\sup} |D^\alpha f_i(x)|,
