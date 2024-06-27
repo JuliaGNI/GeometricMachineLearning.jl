@@ -1,0 +1,27 @@
+\documentclass[tikz]{standalone}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+
+\begin{document}
+
+\begin{tikzpicture}
+    \node[rectangle,draw] (r) at (0,0) {\textbf{Network architecture}: function $NN_\theta:\mathbb{R}^\mathrm{input-dim}\to\mathbb{R}^\mathrm{output-dim}$ parametrized by $\theta \equiv (W,b)$ };
+\end{tikzpicture}
+
+\vspace{2em}
+{\Huge+}
+\vspace{2em}
+
+\begin{tikzpicture}
+   \node[rectangle,draw] (r) at (0,0) {\textbf{Loss function} $L(\theta)$: is minimized during training.};% $\implies$ \textbf{reconstruction error} $||M - \mathcal{R}\circ\mathcal{P}(M)||$};
+\end{tikzpicture}
+
+\vspace{2em}
+{\Huge+}
+\vspace{2em}
+
+\begin{tikzpicture}
+  \node[rectangle,draw] (r) at (0,0) {\textbf{Optimization procedure (gradient descent)}: updates $\theta$ with $\nabla{}L(\theta)$; $\theta \leftarrow \theta - \eta\nabla{}L(\theta)$};
+\end{tikzpicture}
+
+\end{document}
