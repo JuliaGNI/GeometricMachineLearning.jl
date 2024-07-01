@@ -1,9 +1,9 @@
-description(::Val{:DataLoader}) = raw"""
+@doc raw"""
     DataLoader(data)
 
 Make an instance based on a data set.
 
-This is designed such to make training convenient.
+This is designed to make training convenient.
 
 # Constructor 
 
@@ -16,10 +16,6 @@ The data loader can be called with various inputs:
 - **An `EnsembleSolution`**: The `EnsembleSolution` typically comes from `GeometricProblems`.
 
 When we supply a single vector or a single matrix as input to `DataLoader` and further set `autoencoder = false` (keyword argument), then the data are stored as an *integration problem* and the second axis is assumed to indicate time steps.
-"""
-
-"""
-$(description(Val(:DataLoader)))
 
 # Fields of `DataLoader`
 
@@ -70,10 +66,30 @@ struct DataLoader{T, AT<:Union{NamedTuple, AbstractArray{T}}, OT<:Union{Abstract
     output_time_steps::Union{Int, Nothing}
 end
 
-function DataLoader(data::AbstractArray{T, 3}) where T
+"""
+    DataLoader(data::AbstractArray{T, 3}) where T
+
+Make an instance of DataLoader for data that are in tensor format.
+
+# Arguments 
+
+By default the data are stored as `TimeSeries` type. If you want to train an [`AutoEncoder`](@ref) with your data call:
+
+```julia
+    DataLoader(data; autoencoder = true)
+```
+
+The default is equivalent to `autoencoder = false`.
+"""
+function DataLoader(data::AbstractArray{T, 3}; autoencoder = false) where T
     @info "You have provided a tensor with three axes as input. They will be interpreted as \n (i) system dimension, (ii) number of time steps and (iii) number of params."
     input_dim, input_time_steps, n_params = size(data)
-    DataLoader{T, typeof(data), Nothing, :TimeSeries}(data, nothing, input_dim, input_time_steps, n_params, nothing, nothing)
+
+    if autoencoder == false
+        DataLoader{T, typeof(data), Nothing, :TimeSeries}(data, nothing, input_dim, input_time_steps, n_params, nothing, nothing)
+    elseif autoencoder == true
+        DataLoader{T, typeof(data), Nothing, :RegularData}(data, nothing, input_dim, input_time_steps, n_params, nothing, nothing)
+    end
 end
 
 """
@@ -83,22 +99,39 @@ Make an instance of `DataLoader` based on a matrix.
 
 # Arguments 
 
-This has an addition keyword argument `autoencoder`, which is set to `true` by default.
+See [`DataLoader(::AbstractArray{T, 3}) where T`](@ref) for details.
+
+# Implementation
+
+Internally the data are reshaped to a tensor of shape `(size(data)..., 1)` to make for a consistent representation.
 """
 function DataLoader(data::AbstractMatrix{T}; autoencoder=true) where T 
     @info "You have provided a matrix as input. The axes will be interpreted as (i) system dimension and (ii) number of parameters."
     
-    if autoencoder ==false
+    if autoencoder == false
         input_dim, time_steps = size(data)
         reshaped_data = reshape(data, input_dim, time_steps, 1)
         return DataLoader{T, typeof(reshaped_data), Nothing, :TimeSeries}(reshaped_data, nothing, input_dim, time_steps, 1, nothing, nothing)
-    elseif autoencoder ==true 
+    elseif autoencoder == true 
         input_dim, n_params = size(data)
         reshaped_data = reshape(data, input_dim, 1, n_params)
         return DataLoader{T, typeof(reshaped_data), Nothing, :RegularData}(reshaped_data, nothing, input_dim, 1, n_params, nothing, nothing)
     end
 end
 
+"""
+    DataLoader(data::AbstractVector)
+
+Make an instance of `DataLoader` based on a vector.
+
+# Extend Help
+
+If the input to `DataLoader` is a vector, it is assumed that this vector represents one-dimensional time-series data and is therefore processed as:
+
+```julia
+    DataLoader(data::AbstractVector; autoencoder=true) = DataLoader(reshape(data, 1, length(data)); autoencoder = autoencoder)
+```
+"""
 DataLoader(data::AbstractVector; autoencoder=true) = DataLoader(reshape(data, 1, length(data)); autoencoder = autoencoder)
 
 # T and T1 are not the same because T1 is of Integer type
@@ -137,29 +170,34 @@ function DataLoader(data::NamedTuple{(:q, :p), Tuple{AT, AT}}; autoencoder=false
     end
 end
 
-function DataLoader(data::NamedTuple{(:q, :p), Tuple{AT, AT}}) where {T, AT<:AbstractArray{T, 3}}
+function DataLoader(data::NamedTuple{(:q, :p), Tuple{AT, AT}}; autoencoder = false) where {T, AT<:AbstractArray{T, 3}}
     @info "You have provided a NamedTuple with keys q and p; the data are tensors. This is interpreted as *symplectic data*."
     
     dim2, time_steps, n_params = size(data.q)
-    DataLoader{T, typeof(data), Nothing, :TimeSeries}(data, nothing, dim2 * 2, time_steps, n_params, nothing, nothing)
+
+    if autoencoder == false
+        DataLoader{T, typeof(data), Nothing, :TimeSeries}(data, nothing, dim2 * 2, time_steps, n_params, nothing, nothing)
+    elseif autoencoder == true
+        DataLoader{T, typeof(data), Nothing, :RegularData}(data, nothing, dim2 * 2, time_steps, n_params, nothing, nothing)
+    end
 end
 
 DataLoader(data::NamedTuple{(:q, :p), Tuple{VT, VT}}) where {VT <: AbstractVector} = DataLoader((q = reshape(data.q, 1, length(data.q)), p = reshape(data.p, 1, length(data.p))))
 
-function data_matrices_from_geometric_solution(solution::GeometricSolution{T, <:Number, NT}) where {T <: Number, DT <: DataSeries{T}, NT<:NamedTuple{(:q, :p), Tuple{DT, DT}}}
+function data_tensors_from_geometric_solution(solution::GeometricSolution{T, <:Number, NT}) where {T <: Number, DT <: DataSeries{T}, NT<:NamedTuple{(:q, :p), Tuple{DT, DT}}}
     sys_dim, input_time_steps = length(solution.s.q[0]), length(solution.t)
-    data = (q = zeros(T, sys_dim, input_time_steps), p = zeros(T, sys_dim, input_time_steps))
+    data = (q = zeros(T, sys_dim, input_time_steps, 1), p = zeros(T, sys_dim, input_time_steps, 1))
 
     for dim in 1:sys_dim 
-        data.q[dim, :] = solution.q[:, dim]
-        data.p[dim, :] = solution.p[:, dim]
+        data.q[dim, :, 1] = solution.q[:, dim]
+        data.p[dim, :, 1] = solution.p[:, dim]
     end
 
     data
 end
 
 function DataLoader(solution::GeometricSolution{T, <:Number, NT}; kwargs...) where {T <: Number, DT <: DataSeries{T}, NT<:NamedTuple{(:q, :p), Tuple{DT, DT}}}
-    data = data_matrices_from_geometric_solution(solution)
+    data = data_tensors_from_geometric_solution(solution)
 
     DataLoader(data; kwargs...)
 end
@@ -185,7 +223,7 @@ end
 """
 Constructor for `EnsembleSolution` form package `GeometricSolutions` with fields `q` and `p`.
 """
-function DataLoader(ensemble_solution::EnsembleSolution{T, T1, Vector{ST}}) where {T, T1, DT <: DataSeries{T}, ST <: GeometricSolution{T, T1, NamedTuple{(:q, :p), Tuple{DT, DT}}}}
+function DataLoader(ensemble_solution::EnsembleSolution{T, T1, Vector{ST}}; autoencoder = false) where {T, T1, DT <: DataSeries{T}, ST <: GeometricSolution{T, T1, NamedTuple{(:q, :p), Tuple{DT, DT}}}}
     sys_dim, input_time_steps, n_params = length(ensemble_solution.s[1].q[0]), length(ensemble_solution.t), length(ensemble_solution.s)
 
     data = (q = zeros(T, sys_dim, input_time_steps, n_params), p = zeros(T, sys_dim, input_time_steps, n_params))
@@ -197,7 +235,7 @@ function DataLoader(ensemble_solution::EnsembleSolution{T, T1, Vector{ST}}) wher
         end 
     end
 
-    DataLoader(data)
+    DataLoader(data; autoencoder = autoencoder)
 end
 
 function map_to_new_backend(input::AbstractArray{T}, backend::KernelAbstractions.Backend) where T
@@ -226,34 +264,27 @@ function DataLoader(dl::DataLoader{T1, <:QPTOAT, Nothing}, backend::KernelAbstra
         if T==T1
             dl.input
         else
-            map_to_new_type(dl.input, T)
+            map_to_type(dl.input, T)
         end
 
-    DataLoader(map_to_new_backend(dl.input, backend))
-end
-
-function reshape_to_matrix(dl::DataLoader{<:Number, <:QPT, Nothing, :RegularData})
-    (q = reshape(dl.input.q, dl.input_dim ÷ 2, dl.n_params), p = reshape(dl.input.p, dl.input_dim ÷ 2, dl.n_params))
-end
-
-function reshape_to_matrix(dl::DataLoader{<:Number, <:AbstractArray, Nothing, :RegularData})
-    reshape(dl.input, dl.input_dim, dl.n_params)
+    DataLoader(map_to_new_backend(input, backend))
 end
 
 function DataLoader(dl::DataLoader{T1, <: QPTOAT, Nothing, :RegularData}, 
     backend::KernelAbstractions.Backend=KernelAbstractions.get_backend(dl),
     T::DataType=T1;
     autoencoder::Bool=true) where T1
-
-    if autoencoder == true
-        input = 
+        
+    input = 
         if T == T1
             dl.input
         else
             map_to_type(dl.input, T)
         end 
 
-        new_input = map_to_new_backend(input, backend)
+    new_input = map_to_new_backend(input, backend)
+      
+    if autoencoder == true
         DataLoader{T, typeof(new_input), Nothing, :RegularData}(
             new_input,
             nothing,
@@ -263,16 +294,14 @@ function DataLoader(dl::DataLoader{T1, <: QPTOAT, Nothing, :RegularData},
             nothing,
             nothing)
     elseif autoencoder == false
-        matrix_data = reshape_to_matrix(dl)
-
-        matrix_data_new_type = 
-            if T == T1
-                matrix_data
-            else
-                map_to_type(matrix_data, T)
-            end
-
-        DataLoader(map_to_new_backend(matrix_data_new_type, backend); autoencoder=false)
+        DataLoader{T, typeof(new_input), Nothing, :TimeSeries}(
+            new_input,
+            nothing,
+            dl.input_dim,
+            dl.input_time_steps,
+            dl.n_params,
+            nothing,
+            nothing)
     end
 end
 
