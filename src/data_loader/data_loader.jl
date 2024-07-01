@@ -134,7 +134,20 @@ If the input to `DataLoader` is a vector, it is assumed that this vector represe
 """
 DataLoader(data::AbstractVector; autoencoder=true) = DataLoader(reshape(data, 1, length(data)); autoencoder = autoencoder)
 
-# T and T1 are not the same because T1 is of Integer type
+@doc raw"""
+    DataLoader(data::AbstractArray{T, 3}, target::AbstractVector)
+
+Make an instance of DataLoader for a classification problem. 
+
+Target here is a vector of labels. This is tailored towards being used with the package [`MLDatasets.jl`](https://github.com/JuliaML/MLDatasets.jl).
+
+# Arguments
+
+There is one keyword argument `patch_length`. This is the length of the patch in the ``x`` and the ``y`` direction.
+
+For the example of the MNIST data set all images are of size ``49\times49``.
+For `patch_length = 7` the image is therefore split into 16 ``7\times7`` patches [brantner2023generalizing](@cite).
+"""
 function DataLoader(data::AbstractArray{T, 3}, target::AbstractVector{T1}; patch_length=7) where {T, T1} 
     @info "You provided a tensor and a vector as input. This will be treated as a classification problem (MNIST). Tensor axes: (i) & (ii) image axes and (iii) parameter dimension."
     im_dim₁, im_dim₂, n_params = size(data)
@@ -147,14 +160,14 @@ function DataLoader(data::AbstractArray{T, 3}, target::AbstractVector{T1}; patch
         )
 end
 
-description(::Val{:data_loader_for_named_tuple}) =  raw"""
-`DataLoader` can also be called with a `NamedTuple` that has `q` and `p` as keys.
+@doc raw"""
+    DataLoader(data::QPT)
+
+Make an instance of `DataLoader` based on ``(q, p)`` data.
+
+# Implementation
 
 In this case the field `input_dim` of `DataLoader` is interpreted as the sum of the ``q``- and ``p``-dimensions, i.e. if ``q`` and ``p`` both evolve on ``\mathbb{R}^n``, then `input_dim` is ``2n``.
-"""
-
-"""
-$(description(Val(:DataLoader)))
 """
 function DataLoader(data::NamedTuple{(:q, :p), Tuple{AT, AT}}; autoencoder=false) where {T, AT<:AbstractMatrix{T}} 
     @info "You have provided a NamedTuple with keys q and p; the data are matrices. This is interpreted as *symplectic data*."
