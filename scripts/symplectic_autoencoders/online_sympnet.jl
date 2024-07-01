@@ -1,18 +1,19 @@
 using CUDA
 using GeometricIntegrators: integrate, ImplicitMidpoint
 using CairoMakie
-using GeometricProblems.TodaLattice: hodeproblem
+using GeometricProblems.TodaLattice: hodeensemble
 using GeometricMachineLearning 
 import Random
 
 backend = CUDABackend()
 
-pr = hodeproblem(; tspan = (0.0, 100.))
+params = [(α = α̃ ^ 2, N = 200) for α̃ in 0.8 : .1 : 2.0]
+pr = hodeensemble(; tspan = (0.0, 100.), parameters = params)
 sol = integrate(pr, ImplicitMidpoint())
 dl_cpu = DataLoader(sol; autoencoder = true)
 dl = DataLoader(dl_cpu, backend, Float32)
 
-const reduced_dim = 2
+const reduced_dim = 4
 
 psd_arch = PSDArch(dl.input_dim, reduced_dim)
 sae_arch = SymplecticAutoencoder(dl.input_dim, reduced_dim; n_encoder_blocks = 4, n_decoder_blocks = 4, n_encoder_layers = 2, n_decoder_layers = 2)
@@ -22,10 +23,12 @@ psd_nn = NeuralNetwork(psd_arch, backend)
 sae_nn = NeuralNetwork(sae_arch, backend)
 
 const n_epochs = 8192
-const batch_size = 512
+const batch_size = 2048
 
 sae_method = AdamOptimizerWithDecay(n_epochs)
 o = Optimizer(sae_nn, sae_method)
+
+println("Number of batches: ", GeometricMachineLearning.number_of_batches(dl, Batch(batch_size)))
 
 psd_error = solve!(psd_nn, dl)
 sae_error = o(sae_nn, dl, Batch(batch_size), n_epochs)
@@ -65,14 +68,11 @@ sol_sae_reduced = integrate_reduced_system(sae_rs)
 
 # train sympnet 
 
-data_unprocessed = encoder(sae_nn)(dl.input)
-data_processed = (  q = reshape(data_unprocessed.q, reduced_dim ÷ 2, length(data_unprocessed.q)), 
-                    p = reshape(data_unprocessed.p, reduced_dim ÷ 2, length(data_unprocessed.p))
-                    )
+data_processed = encoder(sae_nn)(dl.input)
 
 dl_reduced = DataLoader(data_processed; autoencoder = false)
 integrator_train_epochs = 8192
-integrator_batch_size = 512
+integrator_batch_size = 2048
 
 seq_length = 4
 integrator_architecture = StandardTransformerIntegrator(reduced_dim; transformer_dim = 10, n_blocks = 3, n_heads = 5, L = 2, upscaling_activation = tanh)
@@ -129,7 +129,7 @@ end
 # plot the reduced data (should be a closed orbit)
 reduced_data_matrix = vcat(dl_reduced.input.q, dl_reduced.input.p)
 fig_reduced = Figure()
-ax_reduced = Axis(reduced_fig[1, 1])
-lines!(ax_reduced, reduced_data_matrix[1, :, 1], reduced_data_matrix[2, :, 1]; color = mgreen, label = "Reduced Data")
+ax_reduced = Axis(fig_reduced[1, 1])
+lines!(ax_reduced, reduced_data_matrix[1, :, 1] |> mtc, reduced_data_matrix[2, :, 1] |> mtc; color = mgreen, label = "Reduced Data")
 axislegend(; position = (.82, .75), backgroundcolor = :transparent, color = text_color)
 save("reduced_data.png", fig_reduced)
