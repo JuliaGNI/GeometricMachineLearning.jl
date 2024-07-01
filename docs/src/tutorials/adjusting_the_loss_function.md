@@ -54,7 +54,8 @@ We now implement a custom loss such that:
 struct CustomLoss <: GeometricMachineLearning.NetworkLoss end
 
 function (loss::CustomLoss)(model::Chain, params::Tuple, input::CT, output::CT) where {
-                                                            AT<:AbstractArray, 
+                                                            T,
+                                                            AT<:AbstractArray{T, 3}, 
                                                             CT<:@NamedTuple{q::AT, p::AT}
                                                             }
     FeedForwardLoss()(model, params, input, output) + .1 * network_parameter_norm(params)
@@ -106,7 +107,6 @@ end
 lines!(ax, data.input.q[:], data.input.p[:], label = rich("Training Data"; color = textcolor))
 lines!(ax, prediction1[1, :], prediction1[2, :], label = rich("FeedForwardLoss"; color = textcolor))
 lines!(ax, prediction2[1, :], prediction2[2, :], label = rich("CustomLoss"; color = textcolor))
-text_color = :white # hide
 axislegend(; position = (.82, .75), backgroundcolor = :transparent) # hide
 
 fig

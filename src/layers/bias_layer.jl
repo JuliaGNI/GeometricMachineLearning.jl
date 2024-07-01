@@ -20,8 +20,24 @@ function parameterlength(::BiasLayer{M, M}) where M
     M 
 end
 
-(::BiasLayer{M, M})(z::NT, ps::NT) where {M, AT<:AbstractVector, NT<:NamedTuple{(:q, :p), Tuple{AT, AT}}} =  (q = z.q + ps.q, p = z.p + ps.p)
-(::BiasLayer{M, M})(z::NT1, ps::NT2) where {M, T, AT<:AbstractVector, BT<:Union{AbstractMatrix, AbstractArray{T, 3}}, NT1<:NamedTuple{(:q, :p), Tuple{AT, AT}}, NT2<:NamedTuple{(:q, :p), Tuple{BT, BT}}} =  (q = z.q .+ ps.q, p = z.p .+ ps.p)
+function (::BiasLayer{M, M})(z::NT, ps::NT) where {
+                                                    M, 
+                                                    AT<:AbstractVector, 
+                                                    NT<:NamedTuple{(:q, :p), Tuple{AT, AT}}
+                                                    }
+    (q = z.q + ps.q, p = z.p + ps.p)
+end
+
+function (::BiasLayer{M, M})(z::NT2, ps::NT1) where {   
+                                                    M, 
+                                                    T, 
+                                                    AT<:AbstractVector{T}, 
+                                                    BT<:Union{AbstractMatrix{T}, AbstractArray{T, 3}}, 
+                                                    NT1<:NamedTuple{(:q, :p), Tuple{AT, AT}}, 
+                                                    NT2<:NamedTuple{(:q, :p), Tuple{BT, BT}}
+                                                    }
+    (q = z.q .+ ps.q, p = z.p .+ ps.p)
+end
 
 function (d::BiasLayer{M, M})(z::AbstractArray, ps) where M
     apply_layer_to_nt_and_return_array(z, d, ps)

@@ -1,7 +1,11 @@
 description(::Val{:DataLoader}) = raw"""
-Data Loader is a struct that creates an instance based on a tensor (or different input format) and is designed to make training convenient. 
+    DataLoader(data)
 
-## Constructor 
+Make an instance based on a data set.
+
+This is designed such to make training convenient.
+
+# Constructor 
 
 The data loader can be called with various inputs:
 - **A single vector**: If the data loader is called with a single vector (and no other arguments are given), then this is interpreted as an autoencoder problem, i.e. the second axis indicates parameter values and/or time steps and the system has a single degree of freedom (i.e. the system dimension is one).
@@ -17,7 +21,7 @@ When we supply a single vector or a single matrix as input to `DataLoader` and f
 """
 $(description(Val(:DataLoader)))
 
-## Fields of `DataLoader`
+# Fields of `DataLoader`
 
 The fields of the `DataLoader` struct are the following: 
 - `input`: The input data with axes (i) system dimension, (ii) number of time steps and (iii) number of parameters.
@@ -28,9 +32,33 @@ The fields of the `DataLoader` struct are the following:
 - `output_dim`: The dimension of the output tensor (first axis). If `output` is of type `Nothing`, then this is also of type `Nothing`.
 - `output_time_steps`: The size of the second axis of the output tensor. If `output` is of type `Nothing`, then this is also of type `Nothing`.
 
-### The `input` and `output` fields of `DataLoader`
+# Implementation
 
-Even though the arguments to the Constructor may be vectors or matrices, internally `DataLoader` always stores tensors.
+Even though `DataLoader` can be called with inputs of various forms, internally it always stores tensors with three axes.
+
+```jldoctest
+using GeometricMachineLearning
+
+data = [1 2 3; 4 5 6]
+dl = DataLoader(data)
+dl.input
+
+# output
+
+[ Info: You have provided a matrix as input. The axes will be interpreted as (i) system dimension and (ii) number of parameters.
+2×1×3 Array{Int64, 3}:
+[:, :, 1] =
+ 1
+ 4
+
+[:, :, 2] =
+ 2
+ 5
+
+[:, :, 3] =
+ 3
+ 6
+```
 """
 struct DataLoader{T, AT<:Union{NamedTuple, AbstractArray{T}}, OT<:Union{AbstractArray, Nothing}, DataType}
     input::AT
@@ -48,6 +76,15 @@ function DataLoader(data::AbstractArray{T, 3}) where T
     DataLoader{T, typeof(data), Nothing, :TimeSeries}(data, nothing, input_dim, input_time_steps, n_params, nothing, nothing)
 end
 
+"""
+    DataLoader(data::AbstractMatrix)
+
+Make an instance of `DataLoader` based on a matrix.
+
+# Arguments 
+
+This has an addition keyword argument `autoencoder`, which is set to `true` by default.
+"""
 function DataLoader(data::AbstractMatrix{T}; autoencoder=true) where T 
     @info "You have provided a matrix as input. The axes will be interpreted as (i) system dimension and (ii) number of parameters."
     
@@ -149,7 +186,6 @@ end
 Constructor for `EnsembleSolution` form package `GeometricSolutions` with fields `q` and `p`.
 """
 function DataLoader(ensemble_solution::EnsembleSolution{T, T1, Vector{ST}}) where {T, T1, DT <: DataSeries{T}, ST <: GeometricSolution{T, T1, NamedTuple{(:q, :p), Tuple{DT, DT}}}}
-
     sys_dim, input_time_steps, n_params = length(ensemble_solution.s[1].q[0]), length(ensemble_solution.t), length(ensemble_solution.s)
 
     data = (q = zeros(T, sys_dim, input_time_steps, n_params), p = zeros(T, sys_dim, input_time_steps, n_params))
@@ -164,13 +200,86 @@ function DataLoader(ensemble_solution::EnsembleSolution{T, T1, Vector{ST}}) wher
     DataLoader(data)
 end
 
-@doc raw"""
-Computes the accuracy (as opposed to the loss) of a neural network classifier. 
+function map_to_new_backend(input::AbstractArray{T}, backend::KernelAbstractions.Backend) where T
+    input₂ = KernelAbstractions.allocate(backend, T, size(input)...)
+    KernelAbstractions.copyto!(backend, input₂, input)
+    input₂
+end
 
-It takes as input:
-- `model::Chain`
-- `ps`: parameters of the network
-- `dl::DataLoader`
+function map_to_new_backend(input::QPT{T}, backend::KernelAbstractions.Backend) where T
+    input₂ = (q = KernelAbstractions.allocate(backend, T, size(input.q)...), p = KernelAbstractions.allocate(backend, T, size(input.p)...))
+    KernelAbstractions.copyto!(backend, input₂.q, input.q)
+    KernelAbstractions.copyto!(backend, input₂.p, input.p)
+    input₂
+end
+
+function map_to_type(input::QPT, T::DataType)
+    (q = T.(input.q), p = T.(input.p))
+end
+
+function map_to_type(input::AbstractArray, T::DataType)
+    T.(input)
+end
+
+function DataLoader(dl::DataLoader{T1, <:QPTOAT, Nothing}, backend::KernelAbstractions.Backend, T::DataType=T1) where T1
+    input = 
+        if T==T1
+            dl.input
+        else
+            map_to_new_type(dl.input, T)
+        end
+
+    DataLoader(map_to_new_backend(dl.input, backend))
+end
+
+function reshape_to_matrix(dl::DataLoader{<:Number, <:QPT, Nothing, :RegularData})
+    (q = reshape(dl.input.q, dl.input_dim ÷ 2, dl.n_params), p = reshape(dl.input.p, dl.input_dim ÷ 2, dl.n_params))
+end
+
+function reshape_to_matrix(dl::DataLoader{<:Number, <:AbstractArray, Nothing, :RegularData})
+    reshape(dl.input, dl.input_dim, dl.n_params)
+end
+
+function DataLoader(dl::DataLoader{T1, <: QPTOAT, Nothing, :RegularData}, 
+    backend::KernelAbstractions.Backend=KernelAbstractions.get_backend(dl),
+    T::DataType=T1;
+    autoencoder::Bool=true) where T1
+
+    if autoencoder == true
+        input = 
+        if T == T1
+            dl.input
+        else
+            map_to_type(dl.input, T)
+        end 
+
+        new_input = map_to_new_backend(input, backend)
+        DataLoader{T, typeof(new_input), Nothing, :RegularData}(
+            new_input,
+            nothing,
+            dl.input_dim,
+            dl.input_time_steps,
+            dl.n_params,
+            nothing,
+            nothing)
+    elseif autoencoder == false
+        matrix_data = reshape_to_matrix(dl)
+
+        matrix_data_new_type = 
+            if T == T1
+                matrix_data
+            else
+                map_to_type(matrix_data, T)
+            end
+
+        DataLoader(map_to_new_backend(matrix_data_new_type, backend); autoencoder=false)
+    end
+end
+
+@doc raw"""
+    accuracy(model, ps, dl)
+
+Compute the accuracy of a neural network classifier. 
 """
 function accuracy(model::Chain, ps::Tuple, dl::DataLoader{T, AT, BT}) where {T, T1<:Integer, AT<:AbstractArray{T}, BT<:AbstractArray{T1}}
     output_tensor = model(dl.input, ps)
@@ -183,8 +292,16 @@ function accuracy(model::Chain, ps::Tuple, dl::DataLoader{T, AT, BT}) where {T, 
     (size(dl.output, 3)-sum(abs.(dl.output - tensor_of_maximum_elements))/T1(2))/size(dl.output, 3)
 end
 
+"""
+    accuracy(nn, dl)
+
+Compute the accuracy of a neural network classifier.
+"""
 accuracy(nn::NeuralNetwork, dl::DataLoader) = accuracy(nn.model, nn.params, dl)
 
 Base.eltype(::DataLoader{T}) where T = T
 
 KernelAbstractions.get_backend(dl::DataLoader) = KernelAbstractions.get_backend(dl.input)
+function KernelAbstractions.get_backend(dl::DataLoader{T, <:QPT{T}}) where T
+    KernelAbstractions.get_backend(dl.input.q)
+end

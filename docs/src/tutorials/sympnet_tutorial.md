@@ -1,4 +1,4 @@
-# SympNets with `GeometricMachineLearning.jl`
+# SympNets with `GeometricMachineLearning`
 
 This page serves as a short introduction into using SympNets with `GeometricMachineLearning.jl`. For the general theory see [the theory section](../architectures/sympnet.md).
 
@@ -46,12 +46,6 @@ and severals keywords argument :
 ### Loss function
 
 The loss function described in the [theory section](../architectures/sympnet.md) is the default choice used in `GeometricMachineLearning.jl` for training SympNets.
-
-## Data Structures in `GeometricMachineLearning.jl`
-
-```@example 
-Main.include_graphics("../tikz/structs_visualization") # hide
-```
 
 ## Examples
 

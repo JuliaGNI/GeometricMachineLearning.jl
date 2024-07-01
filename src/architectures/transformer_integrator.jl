@@ -1,5 +1,5 @@
 @doc raw"""
-Encompasses various transformer architectures, such as the structure-preserving transformer and the linear symplectic transformer. 
+Encompasses various transformer architectures, such as the [`VolumePreservingTransformer`](@ref) and the [`LinearSymplecticTransformer`](@ref). 
 """
 abstract type TransformerIntegrator <: Architecture end
 
@@ -37,11 +37,15 @@ function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::NamedTupl
         start_index = (i - 1) * prediction_window + 1
         @views qp_temp = (q = q_valuation[:, start_index:(start_index + seq_length - 1)], p = p_valuation[:, start_index:(start_index + seq_length - 1)]) 
         qp_prediction = nn(qp_temp)
-        q_valuation[seq_length + (i - 1) * prediction_window, seq_length + i * prediction_window] = qp_prediction.q[:, (seq_length - prediction_window + 1):end]
-        p_valuation[seq_length + (i - 1) * prediction_window, seq_length + i * prediction_window] = qp_prediction.p[:, (seq_length - prediction_window + 1):end]
+        q_valuation[:, seq_length + (i - 1) * prediction_window + 1 : seq_length + i * prediction_window] = qp_prediction.q[:, (seq_length - prediction_window + 1):end]
+        p_valuation[:, seq_length + (i - 1) * prediction_window + 1 : seq_length + i * prediction_window] = qp_prediction.p[:, (seq_length - prediction_window + 1):end]
     end
 
     (q=q_valuation[:, 1:n_points], p=p_valuation[:, 1:n_points])
+end
+
+function Base.iterate(::NeuralNetwork{<:TransformerIntegrator}, ics::AT; n_points::Int = 100, prediction_window::Union{Nothing, Int} = size(ics, 2)) where {T, AT<:AbstractVector{T}}
+    error("You have to provide a matrix as initial condition for the transformer!")
 end
 
 function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::AT; n_points::Int = 100, prediction_window::Union{Nothing, Int} = size(ics, 2)) where {T, AT<:AbstractMatrix{T}}

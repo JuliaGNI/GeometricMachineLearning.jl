@@ -70,12 +70,16 @@ function stiefel_lie_alg_add_sub_test(N, n)
     S₁ = StiefelLieAlgHorMatrix(W₁,n)
     W₂ = SkewSymMatrix(rand(N,N))
     S₂ = StiefelLieAlgHorMatrix(W₂,n)
+    A = rand(N, N)
     S₃ = S₁ + S₂
     S₄ = S₁ - S₂
     @test typeof(S₃) <: StiefelLieAlgHorMatrix
     @test typeof(S₄) <: StiefelLieAlgHorMatrix
     @test all(abs.(projection(W₁ + W₂) .- S₃) .< 1e-10)
     @test all(abs.(projection(W₁ - W₂) .- S₄) .< 1e-10)
+    # check custom addition
+    @test S₁ + A ≈ Matrix(S₁) + A
+    @test A + S₁ ≈ Matrix(S₁) + A
 end
 
 

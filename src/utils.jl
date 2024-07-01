@@ -110,6 +110,19 @@ function global_section(::AbstractVecOrMat)
     nothing
 end
 
+"""
+The type for data in ``(q, p)`` coordinates.
+"""
+const QPT{T} = NamedTuple{(:q, :p), Tuple{AT, AT}} where {T, AT <: AbstractArray{T}}
+
+"""
+A union of two types:
+```julia
+const QPTOAT = Union{QPT, AbstractArray}
+```
+"""
+const QPTOAT{T} = Union{QPT{T}, AbstractArray{T}} where T
+
 _eltype(x) = eltype(x)
 _eltype(ps::NamedTuple) = _eltype(ps[1])
 _eltype(ps::Tuple) = _eltype(ps[1])

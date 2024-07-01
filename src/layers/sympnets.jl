@@ -14,6 +14,10 @@ struct GradientLayer{M, N, TA, C} <: SympNetLayer{M, N}
 end
 
 @doc raw"""
+    GradientLayerQ(n, upscaling_dimension, activation)
+
+Make an instance of a gradient-``q`` layer.
+
 The gradient layer that changes the ``q`` component. It is of the form: 
 
 ```math
@@ -27,7 +31,11 @@ with ``V(p) = \sum_{i=1}^Ma_i\Sigma(\sum_jk_{ij}p_j+b_i)``, where ``\Sigma`` is 
 const GradientLayerQ{M, N, TA} = GradientLayer{M, N, TA, :Q}
 
 @doc raw"""
-The gradient layer that changes the ``q`` component. It is of the form: 
+    GradientLayerP(n, upscaling_dimension, activation)
+
+Make an instance of a gradient-``p`` layer.
+
+The gradient layer that changes the ``p`` component. It is of the form: 
 
 ```math
 \begin{bmatrix}
@@ -35,38 +43,64 @@ The gradient layer that changes the ``q`` component. It is of the form:
 \end{bmatrix},
 ```
 
-with ``V(p) = \sum_{i=1}^Ma_i\Sigma(\sum_jk_{ij}p_j+b_i)``, where ``\Sigma`` is the antiderivative of the activation function ``\sigma`` (one-layer neural network). We refer to $M$ as the *upscaling dimension*. Such layers are by construction symplectic.
+with ``V(p) = \sum_{i=1}^Ma_i\Sigma(\sum_jk_{ij}q_j+b_i)``, where ``\Sigma`` is the antiderivative of the activation function ``\sigma`` (one-layer neural network). We refer to $M$ as the *upscaling dimension*. Such layers are by construction symplectic.
 """
 const GradientLayerP{M, N, TA} = GradientLayer{M, N, TA, :P}
 
 @doc raw"""
-`LinearLayer` is the `struct` corresponding to the constructors `LinearLayerQ` and `LinearLayerP`. See those for more information.
+`LinearLayer` is the `struct` corresponding to the constructors [`LinearLayerQ`](@ref) and [`LinearLayerP`](@ref). See those for more information.
+
+# Implementation
+
+`LinearLayer` uses the custom matrix [`SymmetricMatrix`](@ref) for an especially efficient implementation. 
 """
 struct LinearLayer{M, N, C} <: SympNetLayer{M, N}
 end
 
+@doc raw"""
+    LinearLayerQ(n)
+
+Make a linear layer of dimension ``n\times{}n`` that only changes the ``q`` component.
+
+Equivalent to a left multiplication by the matrix:
+```math
+\begin{pmatrix}
+\mathbb{I} & B \\ 
+\mathbb{O} & \mathbb{I}
+\end{pmatrix}, 
+```
+where $B$ is a symmetric matrix.
+"""
 const LinearLayerQ{M, N, TA} = LinearLayer{M, N, :Q}
+
+@doc raw"""
+    LinearLayerP(n)
+
+Make a linear layer of dimension ``n\times{}n`` that only changes the ``p`` component.
+
+Equivalent to a left multiplication by the matrix:
+```math
+\begin{pmatrix}
+\mathbb{I} & \mathbb{O} \\ 
+B & \mathbb{I}
+\end{pmatrix}, 
+```
+where $B$ is a symmetric matrix.
+"""
 const LinearLayerP{M, N, TA} = LinearLayer{M, N, :P}
 
 @doc raw"""
-`ActivationLayer` is the `struct` corresponding to the constructors `ActivationLayerQ` and `ActivationLayerP`. See those for more information.
+`ActivationLayer` is the `struct` corresponding to the constructors [`ActivationLayerQ`](@ref) and [`ActivationLayerP`](@ref). See those for more information.
 """
 struct  ActivationLayer{M, N, TA, C} <: SympNetLayer{M, N}
         activation::TA
 end
 
-const ActivationLayerQ{M, N, TA} = ActivationLayer{M, N, TA, :Q}
-const ActivationLayerP{M, N, TA} = ActivationLayer{M, N, TA, :P}
-
-function GradientLayerQ(M, upscaling_dimension, activation)
-        GradientLayer{M, M, typeof(activation), :Q}(upscaling_dimension, activation)
-end
-
-function GradientLayerP(M, upscaling_dimension, activation)
-        GradientLayer{M, M, typeof(activation), :P}(upscaling_dimension, activation)
-end
-
 @doc raw"""
+    ActivationLayerQ(n, σ)
+
+Make an activation layer of size ``n`` and with activation ``σ`` that only changes the ``q`` component. 
+
 Performs:
 
 ```math
@@ -79,11 +113,13 @@ Performs:
 ```
 
 """
-function ActivationLayerQ(M, activation)
-        ActivationLayerQ{M, M, typeof(activation)}(activation)
-end
+const ActivationLayerQ{M, N, TA} = ActivationLayer{M, N, TA, :Q}
 
 @doc raw"""
+    ActivationLayerP(n, σ)
+
+Make an activation layer of size ``n`` and with activation ``σ`` that only changes the ``p`` component. 
+
 Performs:
 
 ```math
@@ -96,35 +132,28 @@ Performs:
 ```
 
 """
+const ActivationLayerP{M, N, TA} = ActivationLayer{M, N, TA, :P}
+
+function GradientLayerQ(M, upscaling_dimension, activation)
+        GradientLayer{M, M, typeof(activation), :Q}(upscaling_dimension, activation)
+end
+
+function GradientLayerP(M, upscaling_dimension, activation)
+        GradientLayer{M, M, typeof(activation), :P}(upscaling_dimension, activation)
+end
+
+function ActivationLayerQ(M, activation)
+        ActivationLayerQ{M, M, typeof(activation)}(activation)
+end
+
 function ActivationLayerP(M, activation)
         ActivationLayerP{M, M, typeof(activation)}(activation)
 end
 
-
-@doc raw"""
-Equivalent to a left multiplication by the matrix:
-```math
-\begin{pmatrix}
-\mathbb{I} & B \\ 
-\mathbb{O} & \mathbb{I}
-\end{pmatrix}, 
-```
-where $B$ is a symmetric matrix.
-"""
 function LinearLayerQ(M)
         LinearLayerQ{M, M}()
 end
 
-@doc raw"""
-Equivalent to a left multiplication by the matrix:
-```math
-\begin{pmatrix}
-\mathbb{I} & \mathbb{O} \\ 
-B & \mathbb{I}
-\end{pmatrix}, 
-```
-where $B$ is a symmetric matrix.
-"""
 function LinearLayerP(M)
         LinearLayerP{M, M}()
 end
@@ -160,27 +189,27 @@ function initialparameters(d::GradientLayer{M, M}, backend::Backend, ::Type{T}; 
 end
 
 function initialparameters(::ActivationLayer{M, M}, backend::Backend, ::Type{T}; rng::AbstractRNG = Random.default_rng(), init_scale = GlorotUniform()) where {M, T}
-        a = KernelAbstractions.zeros(backend, T, M÷2)
+        a = KernelAbstractions.zeros(backend, T, M ÷ 2)
         init_scale(rng, a)
         return (scale = a,)
 end
 
 function initialparameters(::LinearLayer{M, M}, backend::Backend, ::Type{T}; rng::AbstractRNG = Random.default_rng(), init_weight = GlorotUniform()) where {M, T}
-        S = KernelAbstractions.allocate(backend, T, (M÷2)*(M÷2+1)÷2)
+        S = KernelAbstractions.allocate(backend, T, (M ÷ 2) * (M ÷ 2 + 1) ÷ 2)
         init_weight(rng, S)
-        (weight=SymmetricMatrix(S, M÷2), )
+        (weight=SymmetricMatrix(S, M ÷ 2), )
 end
 
 function parameterlength(d::GradientLayer{M, M}) where {M}
-        d.second_dim÷2 * (M÷2 + 2)
+        d.second_dim ÷ 2 * (M ÷ 2 + 2)
 end
 
 function parameterlength(::ActivationLayer{M, M}) where {M}
-        M÷2
+        M ÷ 2
 end
 
 function parameterlength(::LinearLayer{M, M}) where {M}
-        (M÷2)*(M÷2+1)÷2
+        (M ÷ 2) * (M ÷ 2 + 1) ÷ 2
 end
 
 @doc raw"""

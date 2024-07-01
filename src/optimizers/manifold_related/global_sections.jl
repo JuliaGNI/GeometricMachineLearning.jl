@@ -237,8 +237,8 @@ function update_section!(Λ⁽ᵗ⁻¹⁾::GlobalSection{T, MT}, B⁽ᵗ⁻¹⁾
     N, n = B⁽ᵗ⁻¹⁾.N, B⁽ᵗ⁻¹⁾.n
     expB = retraction(B⁽ᵗ⁻¹⁾)
     apply_section!(expB, Λ⁽ᵗ⁻¹⁾, expB)
-    Λ⁽ᵗ⁻¹⁾.Y.A .= @view expB[:, 1:n]
-    Λ⁽ᵗ⁻¹⁾.λ .= @view expB[:, (n+1):N]
+    Λ⁽ᵗ⁻¹⁾.Y.A .= @view expB.A[:, 1:n]
+    Λ⁽ᵗ⁻¹⁾.λ .= @view expB.A[:, (n+1):N]
 
     nothing
 end

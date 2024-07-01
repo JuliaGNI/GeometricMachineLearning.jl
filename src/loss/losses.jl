@@ -16,12 +16,12 @@ function _compute_loss(output_prediction::CT1, output::CT2) where {AT<:AbstractA
     _norm(_diff(output_prediction, output)) / _norm(output)
 end 
 
-function _compute_loss(model::Union{AbstractExplicitLayer, Chain}, ps::Union{Tuple, NamedTuple}, input::CT, output::CT) where {AT<:AbstractArray, BT <: NamedTuple{(:q, :p), Tuple{AT, AT}}, CT <: Union{AT, BT}}
+function _compute_loss(model::Union{AbstractExplicitLayer, Chain}, ps::Union{Tuple, NamedTuple}, input::CT, output::CT) where {CT <: QPTOAT}
     output_prediction = model(input, ps)
     _compute_loss(output_prediction, output)
 end
 
-function (loss::NetworkLoss)(model::Union{Chain, AbstractExplicitLayer}, ps::Union{Tuple, NamedTuple}, input::CT, output::CT) where {AT<:AbstractArray, BT <: NamedTuple{(:q, :p), Tuple{AT, AT}}, CT <: Union{AT, BT}}
+function (loss::NetworkLoss)(model::Union{Chain, AbstractExplicitLayer}, ps::Union{Tuple, NamedTuple}, input::CT, output::CT) where {CT <: QPTOAT}
     _compute_loss(model, ps, input, output)
 end
 
@@ -81,7 +81,7 @@ This doesn't have any parameters.
 struct FeedForwardLoss <: NetworkLoss end
 
 @doc raw"""
-This loss should always be used together with a neural network of type [AutoEncoder](@ref) (and it is also the default for training such a network). 
+This loss should always be used together with a neural network of type [`AutoEncoder`](@ref) (and it is also the default for training such a network). 
 
 It simply computes: 
 
@@ -97,4 +97,37 @@ end
 
 function (loss::AutoEncoderLoss)(model::Union{Chain, AbstractExplicitLayer}, ps::Union{Tuple, NamedTuple}, input)
     loss(model, ps, input, input)
+end
+
+@doc raw"""
+    ReducedLoss(encoder, decoder)
+
+Make an instance of `ReducedLoss` based on an [`Encoder`](@ref) and a [`Decoder`](@ref).
+
+This loss should be used together with a [`NeuralNetworkIntegrator`](@ref) or [`TransformerIntegrator`](@ref).
+
+The loss is computed as: 
+
+```math
+\mathrm{loss}_{\mathcal{E}, \mathcal{D}}(\mathcal{NN}, \mathrm{input}, \mathrm{output}) = ||\mathcal{D}(\mathcal{NN}(\mathcal{E}(\mathrm{input}))) - \mathrm{output}||,
+```
+where ``\mathcal{E}`` is the [`Encoder`](@ref), ``\mathcal{D}`` is the [`Decoder`](@ref).
+``\mathcal{NN}`` is the neural network we compute the loss of.
+"""
+struct ReducedLoss{ET <: NeuralNetwork{<:Encoder}, DT <: NeuralNetwork{<:Decoder}} <: NetworkLoss
+    encoder::ET
+    decoder::DT
+end
+
+"""
+    ReducedLoss(autoencoder)
+
+Make an instance of `ReducedLoss` based on a neural network of type [`AutoEncoder`](@ref).
+"""
+function ReducedLoss(autoencoder::NeuralNetwork{<:AutoEncoder})
+    ReducedLoss(encoder(autoencoder), decoder(autoencoder))
+end
+
+function (loss::ReducedLoss)(model::Chain, params::Tuple, input::CT, output::CT) where {CT <: QPTOAT}
+    _compute_loss(loss.decoder(model(loss.encoder(input), params)), output)
 end

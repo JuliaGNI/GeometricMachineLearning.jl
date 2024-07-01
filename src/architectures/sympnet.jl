@@ -4,12 +4,20 @@ The `SympNet` type encompasses [`GSympNet`](@ref)s and [`LASympNet`](@ref)s. Sym
 abstract type SympNet{AT} <: NeuralNetworkIntegrator end
 
 @doc raw"""
-`LASympNet` is called with **a single input argument**, the **system dimension**, or with an instance of `DataLoader`. Optional input arguments are: 
+    LASympNet(d)
+
+Make an ``LA``-SympNet with dimension ``d.``
+
+There exists an additional constructor that can be called by supplying an instance of [`DataLoader`](@ref).
+
+# Arguments
+
+Keyword arguments are: 
 - `depth::Int`: The number of linear layers that are applied. The default is 5.
 - `nhidden::Int`: The number of hidden layers (i.e. layers that are **not** input or output layers). The default is 2.
 - `activation`: The activation function that is applied. By default this is `tanh`.
-- `init_upper_linear::Bool`: Initialize the linear layer so that it first modifies the $q$-component. The default is `true`.
-- `init_upper_act::Bool`: Initialize the activation layer so that it first modifies the $q$-component. The default is `true`.
+- `init_upper_linear::Bool`: Initialize the linear layer so that it first modifies the ``q``-component. The default is `true`.
+- `init_upper_act::Bool`: Initialize the activation layer so that it first modifies the ``q``-component. The default is `true`.
 """
 struct LASympNet{AT, InitUpperLinear, InitUpperAct} <: SympNet{AT} where {InitUpperLinear, InitUpperAct}
     dim::Int
@@ -29,7 +37,15 @@ end
 @inline AbstractNeuralNetworks.dim(arch::SympNet) = arch.dim
 
 @doc raw"""
-`GSympNet` is called with **a single input argument**, the **system dimension**, or with an instance of `DataLoader`. Optional input arguments are: 
+    GSympNet(d)
+
+Make a ``G``-SympNet with dimension ``d.``
+
+There exists an additional constructor that can be called by supplying an instance of [`DataLoader`](@ref).
+
+# Arguments
+
+`Keyword arguments are:
 - `upscaling_dimension::Int`: The *upscaling dimension* of the gradient layer. See the documentation for `GradientLayerQ` and `GradientLayerP` for further explanation. The default is `2*dim`.
 - `n_layers::Int`: The number of layers (i.e. the total number of [`GradientLayerQ`](@ref) and [`GradientLayerP`](@ref)). The default is 2.
 - `activation`: The activation function that is applied. By default this is `tanh`.
@@ -98,6 +114,7 @@ function Chain(arch::LASympNet{AT, false, true}) where {AT}
         for j in 1:arch.depth
             layers = isodd(j) ? (layers..., LinearLayerP(arch.dim)) : (layers..., LinearLayerQ(arch.dim))
         end
+        layers = (layers..., BiasLayer(arch.dim))
         layers = (layers..., ActivationLayerQ(arch.dim, arch.activation))
         layers = (layers..., ActivationLayerP(arch.dim, arch.activation))
     end
@@ -116,6 +133,7 @@ function Chain(arch::LASympNet{AT, false, false}) where {AT}
         for j in 1:arch.depth
             layers = isodd(j) ? (layers..., LinearLayerP(arch.dim)) : (layers..., LinearLayerQ(arch.dim))
         end
+        layers = (layers..., BiasLayer(arch.dim))
         layers = (layers..., ActivationLayerP(arch.dim, arch.activation))
         layers = (layers..., ActivationLayerQ(arch.dim, arch.activation))
     end
@@ -134,6 +152,7 @@ function Chain(arch::LASympNet{AT, true, true}) where {AT}
         for j in 1:arch.depth
             layers = isodd(j) ? (layers..., LinearLayerQ(arch.dim)) : (layers..., LinearLayerP(arch.dim))
         end
+        layers = (layers..., BiasLayer(arch.dim))
         layers = (layers..., ActivationLayerQ(arch.dim, arch.activation))
         layers = (layers..., ActivationLayerP(arch.dim, arch.activation))
     end

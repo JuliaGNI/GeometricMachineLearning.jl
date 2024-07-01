@@ -171,11 +171,18 @@ makedocs(;
             "BFGS Optimizer" => "optimizers/bfgs_optimizer.md",
             ],
         "Special Neural Network Layers" => [
-            "Sympnet Gradient Layers" => "layers/sympnet_gradient.md",
+            "Sympnet Layers" => "layers/sympnet_gradient.md",
             "Volume-Preserving Layers" => "layers/volume_preserving_feedforward.md",
             "Attention" => "layers/attention_layer.md",
             "Multihead Attention" => "layers/multihead_attention_layer.md",
             "Linear Symplectic Attention" => "layers/linear_symplectic_attention.md",
+        ],
+        "Reduced Order Modelling" =>[
+            "General Framework" => "reduced_order_modeling/reduced_order_modeling.md",
+            "Network Losses" => "reduced_order_modeling/losses.md",
+            "PSD and Symplectic Autoencoders" => "reduced_order_modeling/symplectic_autoencoder.md",
+            "Kolmogorov n-width" => "reduced_order_modeling/kolmogorov_n_width.md",
+            "Projection and Reduction Error" => "reduced_order_modeling/projection_reduction_errors.md",
         ],
         "Architectures" => [
             "Symplectic Autoencoders" => "architectures/symplectic_autoencoder.md",
@@ -189,12 +196,6 @@ makedocs(;
         "Data Loader" =>[
             "Routines" => "data_loader/data_loader.md",
             "Snapshot matrix & tensor" => "data_loader/snapshot_matrix.md",
-        ],
-        "Reduced Order Modelling" =>[
-            "POD and Autoencoders" => "reduced_order_modeling/autoencoder.md",
-            "PSD and Symplectic Autoencoders" => "reduced_order_modeling/symplectic_autoencoder.md",
-            "Kolmogorov n-width" => "reduced_order_modeling/kolmogorov_n_width.md",
-            "Projection and Reduction Error" => "reduced_order_modeling/projection_reduction_errors.md",
         ],
         "Tutorials" =>[
             "Sympnets" => "tutorials/sympnet_tutorial.md",
