@@ -35,6 +35,7 @@ jobs:
           make put_figures_outside_of_minted_environment -C docs
           make do_correct_quotation_marks -C docs
           make make_correct_thrm_and_dfntn_and_xmpl_and_rmrk_and_proof_environment -C docs
+          make references_instead_of_hyperlinks -C docs
       - name: compile tex document
         run: |
           cd docs/build 
