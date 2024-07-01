@@ -50,13 +50,29 @@ function HRedSys(N::Integer, n::Integer, encoder::NeuralNetwork{<:SymplecticEnco
     HRedSys{typeof(tstep), typeof(encoder), typeof(decoder), typeof(v_full), typeof(f_full), typeof(h_full), typeof(v_reduced), typeof(f_reduced), typeof(h_reduced), typeof(integrator), typeof(parameters), typeof(ics)}(N, n, encoder, decoder, v_full, f_full, h_full, v_reduced, f_reduced, h_reduced, integrator, parameters, tspan, tstep, ics)
 end
 
-function HRedSys(odeproblem::Union{HODEProblem, HODEEnsemble}, encoder::NeuralNetwork{<:SymplecticEncoder}, decoder::NeuralNetwork{<:SymplecticDecoder}; integrator=ImplicitMidpoint()) 
+function HRedSys(odeproblem::HODEProblem, encoder::NeuralNetwork{<:SymplecticEncoder}, decoder::NeuralNetwork{<:SymplecticDecoder}; integrator=ImplicitMidpoint()) 
     N = encoder.architecture.full_dim 
     n = encoder.architecture.reduced_dim
     v_eq = odeproblem.equation.v
     f_eq = odeproblem.equation.f
     h_eq = odeproblem.equation.hamiltonian
     HRedSys(N, n, encoder, decoder, v_eq, f_eq, h_eq, odeproblem.tspan, odeproblem.tstep, odeproblem.ics; parameters = odeproblem.parameters, integrator = integrator)
+end
+
+@doc raw"""
+    HRedSys(odeensemble, encoder, decoder)
+
+Make a reduced system based on an `HODEEnsemble`. 
+
+The initial conditions and parameters are taken as the first elements in the respective vector.
+"""
+function HRedSys(odeensemble::HODEEnsemble, encoder::NeuralNetwork{<:SymplecticEncoder}, decoder::NeuralNetwork{<:SymplecticDecoder}; integrator=ImplicitMidpoint()) 
+    N = encoder.architecture.full_dim 
+    n = encoder.architecture.reduced_dim
+    v_eq = odeensemble.equation.v
+    f_eq = odeensemble.equation.f
+    h_eq = odeensemble.equation.hamiltonian
+    HRedSys(N, n, encoder, decoder, v_eq, f_eq, h_eq, odeensemble.tspan, odeensemble.tstep, odeensemble.ics[1]; parameters = odeensemble.parameters[1], integrator = integrator)
 end
 
 # this is much more expensive than it has to be and is due to a problem with nested derivatives in ForwardDiff (should not be necessary to do this twice!)
