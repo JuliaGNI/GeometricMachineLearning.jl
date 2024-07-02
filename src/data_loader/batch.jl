@@ -1,22 +1,38 @@
-description(::Val{:Batch}) = raw"""
+@doc raw"""
 `Batch` is a struct whose functor acts on an instance of `DataLoader` to produce a sequence of training samples for training for one epoch. 
 
-## The Constructor
+See [`Batch(::Int)`](@ref), [`Batch(::Int, ::Int)`](@ref) and [`Batch(::Int, ::Int, ::Int)`](@ref) for the different constructors.
 
-The constructor for `Batch` is called with: 
-- `batch_size::Int`
-- `seq_length::Int` (optional)
-- `prediction_window::Int` (optional)
+# The functor 
 
-The first one of these arguments is required; it indicates the number of training samples in a batch. If we deal with time series data then we can additionaly supply a *sequence length* and a *prediction window* as input arguments to `Batch`. These indicate the number of input vectors and the number of output vectors.
+An instance of `Batch` can be called on an instance of `DataLoader` to produce a sequence of samples that contain all the input data, i.e. for training for one epoch. 
 
-## The functor 
+The output of applying `batch:Batch` to `dl::DataLoader` is a tuple of vectors of integers. Each of these vectors contains two integers: the first is the *time index* and the second one is the *parameter index*.
 
-An instance of `Batch` can be called on an instance of `DataLoader` to produce a sequence of samples that contain all the input data, i.e. for training for one epoch. The output of applying `batch:Batch` to `dl::DataLoader` is a tuple of vectors of integers. Each of these vectors contains two integers: the first is the *time index* and the second one is the *parameter index*.
-"""
+# Examples
 
-"""
-$(description(Val(:Batch)))
+Consider the following example for drawing batches of size 2 for an instance of `DataLoader` constructed with a vector:
+
+```jldoctest
+using GeometricMachineLearning
+import Random
+
+Random.seed!(123)
+
+dl = DataLoader(rand(5))
+batch = Batch(2)
+
+batch(dl)
+
+# output
+
+[ Info: You have provided a matrix as input. The axes will be interpreted as (i) system dimension and (ii) number of parameters.
+([(1, 4), (1, 3)], [(1, 2), (1, 1)], [(1, 5)])
+```
+
+Here the first index is always 1 (the time dimension). We get a total number of 3 batches. 
+The last batch is only of size 1 because we *sample without replacement*.
+Also see the docstring for [`DataLoader(::AbstractVector)`](@ref).
 """
 struct Batch{BatchType}
     batch_size::Int
@@ -29,22 +45,52 @@ TransformerLoss(batch::Batch{:Transformer}) = TransformerLoss(batch.seq_length, 
 
 Base.iterate(nn::NeuralNetwork, ics, batch::Batch{:Transformer}; n_points = 100) = iterate(nn, ics; n_points = n_points, prediction_window = batch.prediction_window)
 
+@doc raw"""
+    Batch(batch_size)
+
+Make an instance of `Batch` for a specific batch size.
+
+This is used to train neural networks of `FeedForward` type (as opposed to transformers).
+"""
 function Batch(batch_size::Int)
     Batch{:FeedForward}(batch_size, 1, 1)
 end
 
-function Batch(batch_size::Int, seq_length::Int)
-    Batch{:Transformer}(batch_size, seq_length, seq_length)
-end
+@doc raw"""
+    Batch(batch_size, seq_length)
 
-function Batch(batch_size::Int, seq_length::Int, prediction_window::Int)
+Make an instance of `Batch` for a specific batch size and a sequence length.
+
+This is used to train neural networks of `Transformer` type.
+
+Optionally the prediction window can also be specified by calling:
+
+```jldoctest
+using GeometricMachineLearning
+
+batch_size = 2
+seq_length = 3
+prediction_window = 2
+
+Batch(batch_size, seq_length, prediction_window)
+
+# output
+
+Batch{:Transformer}(2, 3, 2)
+```
+
+Note that here the batch is of type `:Transformer`.
+"""
+function Batch(batch_size::Int, seq_length::Int, prediction_window::Int=seq_length)
     Batch{:Transformer}(batch_size, seq_length, prediction_window)
 end
 
 Batch(::Int, ::Nothing, ::Int) = error("Cannot provide prediction window alone. Need sequence length!")
 
 @doc raw"""
-Gives the number of batches. Inputs are of type `DataLoader` and `Batch`.
+    number_of_batches(dl, batch)
+
+Compute the number of batches.
 
 Here the big distinction is between data that are *time-series like* and data that are *autoencoder like*.
 """
@@ -118,8 +164,35 @@ function convert_vector_of_tuples_to_matrix(backend::Backend, batch_indices_tupl
     batch_indices
 end
 
-"""
-Takes the output of the batch functor and uses it to create the corresponding array (NamedTuples). 
+@doc raw"""
+    convert_input_and_batch_indices_to_array(dl, batch, batch_indices)
+
+Assign batch data based on batch indices.
+
+# Examples
+
+```jldoctest
+using GeometricMachineLearning
+
+dl = DataLoader([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
+batch = Batch(3)
+batch_indices = [(1, 1), (1, 3), (1, 5)]
+
+GeometricMachineLearning.convert_input_and_batch_indices_to_array(dl, batch, batch_indices)
+
+# output
+
+[ Info: You have provided a matrix as input. The axes will be interpreted as (i) system dimension and (ii) number of parameters.
+1×1×3 Array{Float64, 3}:
+[:, :, 1] =
+ 0.1
+
+[:, :, 2] =
+ 0.3
+
+[:, :, 3] =
+ 0.5
+```
 """
 function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT}, batch::Batch, batch_indices_tuple::Vector{Tuple{Int, Int}}) where {T, AT<:AbstractArray{T, 3}, BT<:NamedTuple{(:q, :p), Tuple{AT, AT}}}
     backend = KernelAbstractions.get_backend(dl.input.q)
@@ -144,9 +217,6 @@ function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT}, batch::
     (q = q_input, p = p_input), (q = q_output, p = p_output)
 end
 
-"""
-Takes the output of the batch functor and uses it to create the corresponding array. 
-"""
 function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT}, batch::Batch, batch_indices_tuple::Vector{Tuple{Int, Int}}) where {T, BT<:AbstractArray{T, 3}}
     backend = KernelAbstractions.get_backend(dl.input)
 

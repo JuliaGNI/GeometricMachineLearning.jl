@@ -139,30 +139,14 @@ We can see that the autoencoder approach has much more approximation capabilitie
 Instead of using a standard integrator we can also use a neural network that is trained on the reduced data. For this: 
 
 ```@example toda_lattice
-data_unprocessed = encoder(sae_nn)(dl.input)
-data_processed = (  q = reshape(data_unprocessed.q, reduced_dim ÷ 2, length(data_unprocessed.q)), 
-                    p = reshape(data_unprocessed.p, reduced_dim ÷ 2, length(data_unprocessed.p))
-                    )
-
-dl_reduced = DataLoader(data_processed; autoencoder = false)
 integrator_batch_size = 128
-integrator_train_epochs = 4
+integrator_train_epochs = 10
 
 integrator_nn = NeuralNetwork(GSympNet(reduced_dim))
 o_integrator = Optimizer(AdamOptimizer(Float64), integrator_nn)
-struct ReducedLoss{ET, DT} <: GeometricMachineLearning.NetworkLoss
-    encoder::ET
-    decoder::DT
-end
-function (loss::ReducedLoss)(model::Chain, params::Tuple, input::CT, output::CT) where {AT <:Array, CT <: NamedTuple{(:q, :p), Tuple{AT, AT}}}
-    GeometricMachineLearning._compute_loss(loss.decoder(model(loss.encoder(input), params)), output)
-end
 
 loss = ReducedLoss(encoder(sae_nn), decoder(sae_nn))
-dl_integration = DataLoader((q = reshape(dl.input.q, size(dl.input.q, 1), size(dl.input.q, 3)),
-                             p = reshape(dl.input.p, size(dl.input.p, 1), size(dl.input.p, 3)));
-                            autoencoder = false
-                            )
+dl_integration = DataLoader(dl; autoencoder = false)
 
 o_integrator(integrator_nn, dl_integration, Batch(integrator_batch_size), integrator_train_epochs, loss)
 
@@ -172,7 +156,7 @@ nothing # hide
 We can now evaluate the solution:
 
 ```@example toda_lattice
-ics = (q = dl_reduced.input.q[:, 1], p = dl_reduced.input.p[:, 1])
+ics = encoder(sae_nn)((q = dl.input.q[:, 1, 1], p = dl.input.p[:, 1, 1]))
 time_series = iterate(integrator_nn, ics; n_points = t_steps)
 prediction = (q = time_series.q[:, end], p = time_series.p[:, end])
 sol = decoder(sae_nn)(prediction)
@@ -180,7 +164,9 @@ sol = decoder(sae_nn)(prediction)
 plot!(sol.q; label = "Neural Network Integrator")
 ```
 
-
+```@eval
+Main.remark(raw"The results presented here are not ideal. In order to be able to quickly run them on a relatively weak gpu we have chosen the number of epochs very low. For more useful results the number of epochs should be increased to at least 1000 or more.")
+```
 
 
 ## References 

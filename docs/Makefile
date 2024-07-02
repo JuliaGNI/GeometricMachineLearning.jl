@@ -11,7 +11,7 @@ latex: latex_no_pdf
 	$(MAKE) compile_tex;
 	$(MAKE) compile_tex
 
-latex_no_pdf_no_images: install_brenier_two_fluid latex_docs_no_pdf copy_png_files put_figures_outside_of_minted_environment do_correct_quotation_marks make_correct_thrm_and_dfntn_and_xmpl_and_rmrk_and_proof_environment
+latex_no_pdf_no_images: install_brenier_two_fluid latex_docs_no_pdf copy_png_files put_figures_outside_of_minted_environment do_correct_quotation_marks make_correct_thrm_and_dfntn_and_xmpl_and_rmrk_and_proof_environment references_instead_of_hyperlinks
 
 latex_no_pdf: latex_images latex_no_pdf_no_images 
 
@@ -94,6 +94,9 @@ make_correct_thrm_and_dfntn_and_xmpl_and_rmrk_and_proof_environment:
 do_correct_quotation_marks:
 	sed -i'' -e 's/{\\textquotedbl}/"/g' build/G*.tex;
 	sed -i'' -e 's/ "/ ``/g' build/G*.tex
+
+references_instead_of_hyperlinks:
+	sed -i'' -e 's/\\hyperlinkref{\([0-9]*\)}{\([a-zA-Z -]*\)}/\2 (see \\Cref{\1})/g' build/G*.tex
 
 copy_png_files:
 	find build/manifolds -name \*.png -exec cp {} build \; ;

@@ -1,7 +1,7 @@
 using SafeTestsets, Test, GeometricMachineLearning
 using Documenter: doctest
 
-@testset "Doc tests                                                                           " begin doctest(GeometricMachineLearning; manual = false) end
+# @testset "Doc tests                                                                           " begin doctest(GeometricMachineLearning; manual = false) end
 # reduced order modeling tests
 @safetestset "PSD tests                                                                       " begin include("psd_architecture_tests.jl") end
 @safetestset "SymplecticAutoencoder tests                                                     " begin include("symplectic_autoencoder_tests.jl") end

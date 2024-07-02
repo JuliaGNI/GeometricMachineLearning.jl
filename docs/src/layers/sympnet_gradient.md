@@ -19,36 +19,34 @@ Main.proof(raw"""Proofing this is straightforward by looking at the gradient of 
 """ * Main.indentation * raw"""        \nabla_q^2f & \mathbb{I}
 """ * Main.indentation * raw"""    \end{pmatrix},
 """ * Main.indentation * raw"""```
-""" * Main.indentation * raw"""
 """ * Main.indentation * raw"""where ``\nabla_q^2f`` is the Hessian of ``f``. This matrix is symmetric and for any symmetric matrix ``A`` we have that: 
-""" * Main.indentation * raw"""
 """ * Main.indentation * raw"""```math
-""" * Main.indentation * raw"""    \begin{pmatrix}
-""" * Main.indentation * raw"""        \mathbb{I} & \mathbb{O} \\ 
-""" * Main.indentation * raw"""        A & \mathbb{I}
-""" * Main.indentation * raw"""    \end{pmatrix}^T \mathbb{J}_{2n} 
-""" * Main.indentation * raw"""    \begin{pmatrix} 
-""" * Main.indentation * raw"""        \mathbb{I} & \mathbb{O} \\ 
-""" * Main.indentation * raw"""        A & \mathbb{I} 
-""" * Main.indentation * raw"""    \end{pmatrix} = 
-""" * Main.indentation * raw"""    \begin{pmatrix}
-""" * Main.indentation * raw"""        \mathbb{I} & A \\ 
-""" * Main.indentation * raw"""        \mathbb{O} & \mathbb{I}
-""" * Main.indentation * raw"""    \end{pmatrix} 
-""" * Main.indentation * raw"""    \begin{pmatrix} 
-""" * Main.indentation * raw"""        \mathbb{O} & \mathbb{I} \\ 
-""" * Main.indentation * raw"""        -\mathbb{I} & \mathbb{O} 
-""" * Main.indentation * raw"""    \end{pmatrix} 
-""" * Main.indentation * raw"""    \begin{pmatrix}
-""" * Main.indentation * raw"""        \mathbb{I} & \mathbb{O} \\ 
-""" * Main.indentation * raw"""        A & \mathbb{I}
-""" * Main.indentation * raw"""    \end{pmatrix} = 
-""" * Main.indentation * raw"""    \begin{pmatrix}
-""" * Main.indentation * raw"""        \mathbb{O} & \mathbb{I} \\ 
-""" * Main.indentation * raw"""        -\mathbb{I} & \mathbb{O} 
-""" * Main.indentation * raw"""    \end{pmatrix} = \mathbb{J}_{2n}.
+""" * Main.indentation * raw""" \begin{pmatrix}
+""" * Main.indentation * raw"""     \mathbb{I} & \mathbb{O} \\ 
+""" * Main.indentation * raw"""     A & \mathbb{I}
+""" * Main.indentation * raw""" \end{pmatrix}^T \mathbb{J}_{2n} 
+""" * Main.indentation * raw""" \begin{pmatrix} 
+""" * Main.indentation * raw"""     \mathbb{I} & \mathbb{O} \\ 
+""" * Main.indentation * raw"""     A & \mathbb{I} 
+""" * Main.indentation * raw""" \end{pmatrix} = 
+""" * Main.indentation * raw""" \begin{pmatrix}
+""" * Main.indentation * raw"""     \mathbb{I} & A \\ 
+""" * Main.indentation * raw"""     \mathbb{O} & \mathbb{I}
+""" * Main.indentation * raw""" \end{pmatrix} 
+""" * Main.indentation * raw""" \begin{pmatrix} 
+""" * Main.indentation * raw"""     \mathbb{O} & \mathbb{I} \\ 
+""" * Main.indentation * raw"""     -\mathbb{I} & \mathbb{O} 
+""" * Main.indentation * raw""" \end{pmatrix} 
+""" * Main.indentation * raw""" \begin{pmatrix}
+""" * Main.indentation * raw"""     \mathbb{I} & \mathbb{O} \\ 
+""" * Main.indentation * raw"""     A & \mathbb{I}
+""" * Main.indentation * raw""" \end{pmatrix} = 
+""" * Main.indentation * raw""" \begin{pmatrix}
+""" * Main.indentation * raw"""     \mathbb{O} & \mathbb{I} \\ 
+""" * Main.indentation * raw"""     -\mathbb{I} & \mathbb{O} 
+""" * Main.indentation * raw""" \end{pmatrix} = \mathbb{J}_{2n},
 """ * Main.indentation * raw"""```
-""" * Main.indentation * raw"""Thus showing symplecticity.""")
+""" * Main.indentation * raw"""thus showing symplecticity.""")
 ```
 
 If we deal with [`GSympNet`](@ref)s this function ``f`` is 
@@ -60,7 +58,7 @@ If we deal with [`GSympNet`](@ref)s this function ``f`` is
 where ``a, b\in\mathbb{R}^m``, ``K\in\mathbb{R}^{m\times{}n}`` and ``\Sigma`` is the antiderivative of some common activation function ``\sigma``. We routinely refer to ``m`` as the *upscaling dimension* in `GeometricMachineLearning`. Computing the gradient of ``f`` gives: 
 
 ```math
-    [\nabla_qf]_k = \sum_{i=1}^m a_i \sigma(\sum_{j=1}^nk_{ij}q_j + b_i)k_{ik} = K^T a \odot \sigma(Kq + b),
+    [\nabla_qf]_k = \sum_{i=1}^m a_i \sigma(\sum_{j=1}^nk_{ij}q_j + b_i)k_{ik} = K^T (a \odot \sigma(Kq + b)),
 ```
 
 where ``\odot`` is the element-wise product, i.e. ``[a\odot{}v]_k = a_kv_k``. This is the form that *gradient layers* take. In addition to gradient layers `GeometricMachineLearning` also has *linear* and *activation* layers implemented. Activation layers are simplified versions of *gradient layers*. These are equivalent to taking ``m = n`` and ``K = \mathbb{I}.``
