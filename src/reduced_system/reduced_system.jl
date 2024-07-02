@@ -144,13 +144,13 @@ end
 
 # compute reduction error for the q part 
 function reduction_error(rs::HRedSys, sol_full=integrate_full_system(rs), sol_reduced=integrate_reduced_system(rs))
-    sol_full_matrices = data_matrices_from_geometric_solution(sol_full)
-    sol_reduced_matrices = data_matrices_from_geometric_solution(sol_reduced)
+    sol_full_matrices = data_tensors_from_geometric_solution(sol_full)
+    sol_reduced_matrices = data_tensors_from_geometric_solution(sol_reduced)
     _norm(_diff(rs.decoder(sol_reduced_matrices), sol_full_matrices)) / _norm(sol_full_matrices)
 end
 
 # compute projection error for the q part 
 function projection_error(rs::HRedSys, sol_full=integrate_full_system(rs))
-    sol_full_matrices = data_matrices_from_geometric_solution(sol_full)
+    sol_full_matrices = data_tensors_from_geometric_solution(sol_full)
     _norm(_diff(rs.decoder(rs.encoder(sol_full_matrices)), sol_full_matrices)) / _norm(sol_full_matrices)
 end
