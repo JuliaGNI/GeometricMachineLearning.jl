@@ -5,18 +5,6 @@ Make an instance based on a data set.
 
 This is designed to make training convenient.
 
-# Constructor 
-
-The data loader can be called with various inputs:
-- **A single vector**: If the data loader is called with a single vector (and no other arguments are given), then this is interpreted as an autoencoder problem, i.e. the second axis indicates parameter values and/or time steps and the system has a single degree of freedom (i.e. the system dimension is one).
-- **A single matrix**: If the data loader is called with a single matrix (and no other arguments are given), then this is interpreted as an autoencoder problem, i.e. the first axis is assumed to indicate the degrees of freedom of the system and the second axis indicates parameter values and/or time steps. 
-- **A single tensor**: If the data loader is called with a single tensor, then this is interpreted as an *integration problem* with the second axis indicating the time step and the third one indicating the parameters.
-- **A tensor and a vector**: This is a special case (MNIST classification problem). For the MNIST problem for example the input are ``n_p`` matrices (first input argument) and ``n_p`` integers (second input argument).
-- **A `NamedTuple` with fields `q` and `p`**: The `NamedTuple` contains (i) two matrices or (ii) two tensors. 
-- **An `EnsembleSolution`**: The `EnsembleSolution` typically comes from `GeometricProblems`.
-
-When we supply a single vector or a single matrix as input to `DataLoader` and further set `autoencoder = false` (keyword argument), then the data are stored as an *integration problem* and the second axis is assumed to indicate time steps.
-
 # Fields of `DataLoader`
 
 The fields of the `DataLoader` struct are the following: 
@@ -67,7 +55,7 @@ struct DataLoader{T, AT<:Union{NamedTuple, AbstractArray{T}}, OT<:Union{Abstract
 end
 
 """
-    DataLoader(data::AbstractArray{T, 3}) where T
+    DataLoader(data::AbstractArray{<:Number, 3})
 
 Make an instance of DataLoader for data that are in tensor format.
 
@@ -99,7 +87,7 @@ Make an instance of `DataLoader` based on a matrix.
 
 # Arguments 
 
-See [`DataLoader(::AbstractArray{T, 3}) where T`](@ref) for details.
+See [`DataLoader(::AbstractArray{<:Number, 3})`](@ref) for details.
 
 # Implementation
 
@@ -168,6 +156,9 @@ Make an instance of `DataLoader` based on ``(q, p)`` data.
 # Implementation
 
 In this case the field `input_dim` of `DataLoader` is interpreted as the sum of the ``q``- and ``p``-dimensions, i.e. if ``q`` and ``p`` both evolve on ``\mathbb{R}^n``, then `input_dim` is ``2n``.
+
+Apart from this the input is treated similarly as if it were an `Array`, i.e. everything is converted to tensors internally.
+See e.g. [`DataLoader{::AbstractArray{<:Number, 3}}`](@ref).
 """
 function DataLoader(data::NamedTuple{(:q, :p), Tuple{AT, AT}}; autoencoder=false) where {T, AT<:AbstractMatrix{T}} 
     @info "You have provided a NamedTuple with keys q and p; the data are matrices. This is interpreted as *symplectic data*."
@@ -197,6 +188,7 @@ end
 
 DataLoader(data::NamedTuple{(:q, :p), Tuple{VT, VT}}) where {VT <: AbstractVector} = DataLoader((q = reshape(data.q, 1, length(data.q)), p = reshape(data.p, 1, length(data.p))))
 
+
 function data_tensors_from_geometric_solution(solution::GeometricSolution{T, <:Number, NT}) where {T <: Number, DT <: DataSeries{T}, NT<:NamedTuple{(:q, :p), Tuple{DT, DT}}}
     sys_dim, input_time_steps = length(solution.s.q[0]), length(solution.t)
     data = (q = zeros(T, sys_dim, input_time_steps, 1), p = zeros(T, sys_dim, input_time_steps, 1))
@@ -209,6 +201,21 @@ function data_tensors_from_geometric_solution(solution::GeometricSolution{T, <:N
     data
 end
 
+"""
+    DataLoader(solution)
+
+Make an instance of `DataLoader` for a `GeometricSolution`.
+
+`GeometricSolution`s are imported from the the package [`GeometricSolutions.jl`](https://github.com/JuliaGNI/GeometricSolutions.jl).
+
+# Arguments
+
+This functor for `DataLoader` also has the keyword argument `autoencoder`. See the docstring for [`DataLoader(::AbstractArray{<:Number, 3})`](@ref).
+
+# Implementation 
+
+Internally this stores the data as a tensor where the third axis has length 1.
+"""
 function DataLoader(solution::GeometricSolution{T, <:Number, NT}; kwargs...) where {T <: Number, DT <: DataSeries{T}, NT<:NamedTuple{(:q, :p), Tuple{DT, DT}}}
     data = data_tensors_from_geometric_solution(solution)
 
@@ -234,7 +241,19 @@ function DataLoader(ensemble_solution::EnsembleSolution{T, T1, Vector{ST}}) wher
 end
 
 """
-Constructor for `EnsembleSolution` form package `GeometricSolutions` with fields `q` and `p`.
+    DataLoader(ensemble_solution)
+
+Make an instance of `DataLoader` for a `EnsembleSolution`.
+
+`EnsembleSolution`s are imported from the the package [`GeometricSolutions.jl`](https://github.com/JuliaGNI/GeometricSolutions.jl).
+
+# Arguments
+
+This functor for `DataLoader` also has the keyword argument `autoencoder`. See the docstring for [`DataLoader(::AbstractArray{<:Number, 3})`](@ref).
+
+# Implementation 
+
+Internally this stores the data as a tensor where the third axis has length equal to the number of solutions in the ensemble.
 """
 function DataLoader(ensemble_solution::EnsembleSolution{T, T1, Vector{ST}}; autoencoder = false) where {T, T1, DT <: DataSeries{T}, ST <: GeometricSolution{T, T1, NamedTuple{(:q, :p), Tuple{DT, DT}}}}
     sys_dim, input_time_steps, n_params = length(ensemble_solution.s[1].q[0]), length(ensemble_solution.t), length(ensemble_solution.s)
@@ -272,31 +291,40 @@ function map_to_type(input::AbstractArray, T::DataType)
     T.(input)
 end
 
-function DataLoader(dl::DataLoader{T1, <:QPTOAT, Nothing}, backend::KernelAbstractions.Backend, T::DataType=T1) where T1
-    input = 
-        if T==T1
-            dl.input
-        else
-            map_to_type(dl.input, T)
-        end
+@doc raw"""
+    DataLoader(dl, backend)
 
-    DataLoader(map_to_new_backend(input, backend))
-end
+Make a new instance of `DataLoader` based on an existing instance of `DataLoader` for a new `backend`.
 
-function DataLoader(dl::DataLoader{T1, <: QPTOAT, Nothing, :RegularData}, 
-    backend::KernelAbstractions.Backend=KernelAbstractions.get_backend(dl),
-    T::DataType=T1;
-    autoencoder::Bool=true) where T1
-        
+This allocates new memory of the same size as is used for the original `dl` and then copies the data.
+
+By default the data type remains unchanged, i.e. `eltype(DataLoader(dl, backend)) == eltype(dl)` is `true`.
+
+If you want to change the data type write e.g. 
+
+```julia
+    DataLoader(dl, backend, Float32)
+```
+
+# Arguments
+
+There is an optional keyword argument `autoencoder`. See the docstring for [`DataLoader(data::AbstractArray{<:Number, 3})`](@ref).
+"""
+function DataLoader(dl::DataLoader{T1, <:QPTOAT, Nothing}, backend::KernelAbstractions.Backend=KernelAbstractions.get_backend(dl), T::DataType=T1; autoencoder = false) where T1
     input = 
         if T == T1
             dl.input
         else
             map_to_type(dl.input, T)
-        end 
+        end
 
-    new_input = map_to_new_backend(input, backend)
-      
+    new_input = 
+        if backend == KernelAbstractions.get_backend(dl)
+            input 
+        else
+            map_to_new_backend(input, backend)
+        end
+
     if autoencoder == true
         DataLoader{T, typeof(new_input), Nothing, :RegularData}(
             new_input,
@@ -317,6 +345,41 @@ function DataLoader(dl::DataLoader{T1, <: QPTOAT, Nothing, :RegularData},
             nothing)
     end
 end
+
+# function DataLoader(dl::DataLoader{T1, <: QPTOAT, Nothing, :RegularData}, 
+#     backend::KernelAbstractions.Backend=KernelAbstractions.get_backend(dl),
+#     T::DataType=T1;
+#     autoencoder::Bool=true) where T1
+#         
+#     input = 
+#         if T == T1
+#             dl.input
+#         else
+#             map_to_type(dl.input, T)
+#         end 
+# 
+#     new_input = map_to_new_backend(input, backend)
+#       
+#     if autoencoder == true
+#         DataLoader{T, typeof(new_input), Nothing, :RegularData}(
+#             new_input,
+#             nothing,
+#             dl.input_dim,
+#             dl.input_time_steps,
+#             dl.n_params,
+#             nothing,
+#             nothing)
+#     elseif autoencoder == false
+#         DataLoader{T, typeof(new_input), Nothing, :TimeSeries}(
+#             new_input,
+#             nothing,
+#             dl.input_dim,
+#             dl.input_time_steps,
+#             dl.n_params,
+#             nothing,
+#             nothing)
+#     end
+# end
 
 @doc raw"""
     accuracy(model, ps, dl)
