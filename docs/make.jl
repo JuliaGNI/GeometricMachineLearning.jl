@@ -25,7 +25,7 @@ const html_format = Documenter.HTML(;
     # specifies that we do not display the package name again (it's already in the logo)
     sidebar_sitename = false,
     # we should get rid of this line again eventually. We will be able to do this once we got rid of library.md
-    size_threshold = 262144,
+    size_threshold = 524288,
     )
 
 # if platform is set to "none" then no output pdf is generated
