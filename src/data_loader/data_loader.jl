@@ -310,7 +310,15 @@ If you want to change the data type write e.g.
 
 There is an optional keyword argument `autoencoder`. See the docstring for [`DataLoader(data::AbstractArray{<:Number, 3})`](@ref).
 """
-function DataLoader(dl::DataLoader{T1, <:QPTOAT, Nothing}, backend::KernelAbstractions.Backend=KernelAbstractions.get_backend(dl), T::DataType=T1; autoencoder = false) where T1
+function DataLoader(dl::DataLoader{T1, <:QPTOAT, Nothing, Type}, backend::KernelAbstractions.Backend=KernelAbstractions.get_backend(dl), T::DataType=T1; autoencoder = nothing) where {T1, Type}
+    DT = if isnothing(autoencoder)
+            Type
+    elseif autoencoder == true
+        :RegularData
+    elseif autoencoder == false
+        :TimeSeries
+    end
+
     input = 
         if T == T1
             dl.input
@@ -325,25 +333,14 @@ function DataLoader(dl::DataLoader{T1, <:QPTOAT, Nothing}, backend::KernelAbstra
             map_to_new_backend(input, backend)
         end
 
-    if autoencoder == true
-        DataLoader{T, typeof(new_input), Nothing, :RegularData}(
-            new_input,
-            nothing,
-            dl.input_dim,
-            dl.input_time_steps,
-            dl.n_params,
-            nothing,
-            nothing)
-    elseif autoencoder == false
-        DataLoader{T, typeof(new_input), Nothing, :TimeSeries}(
-            new_input,
-            nothing,
-            dl.input_dim,
-            dl.input_time_steps,
-            dl.n_params,
-            nothing,
-            nothing)
-    end
+    DataLoader{T, typeof(new_input), Nothing, DT}(
+        new_input,
+        nothing,
+        dl.input_dim,
+        dl.input_time_steps,
+        dl.n_params,
+        nothing,
+        nothing)
 end
 
 # function DataLoader(dl::DataLoader{T1, <: QPTOAT, Nothing, :RegularData}, 
