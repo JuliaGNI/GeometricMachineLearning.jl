@@ -162,6 +162,9 @@ makedocs(;
             "Global Tangent Spaces" => "arrays/global_tangent_spaces.md",
             "Pullbacks" => "pullbacks/computation_of_pullbacks.md",
         ],
+        "Structure-Preservation" => [
+            "Symplecticity" => "structure_preservation/symplecticity.md",
+        ],
         "Optimizers" => [
             "Optimizers" => "optimizers/optimizer_framework.md",
             "Global Sections" => "optimizers/manifold_related/global_sections.md",
