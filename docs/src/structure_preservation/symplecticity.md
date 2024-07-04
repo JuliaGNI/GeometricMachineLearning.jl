@@ -63,7 +63,7 @@ Main.definition(raw"A map ``\phi:\mathbb{R}^{2d}\to\mathbb{R}^{2d}`` is called *
 " * Main.indentation * raw"for all ``z\in{}U.``")
 ```
 
-A similar definition of symplecticity holds for the general case of symplectic manifolds ``(\mathcal{M}, \Omega)`` [arnold1978](@cite). The following holds:
+A similar definition of symplecticity holds for the general case of symplectic manifolds ``(\mathcal{M}, \Omega)`` [arnold1978mathematical](@cite). The following holds:
 
 ```@eval
 Main.theorem(raw"The flow of a Hamiltonian system is symplectic")
