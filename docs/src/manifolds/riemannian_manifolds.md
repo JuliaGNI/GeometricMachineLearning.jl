@@ -165,20 +165,32 @@ So a geodesic can be seen as the *equivalent of a straight line* on a manifold. 
 
 ## The Riemannian Gradient
 
-The Riemannian gradient of a function ``L\mathcal{M}\to\mathbb{R}`` is a vector field[^3] ``\mathrm{grad}^gL`` (or simply ``\mathrm{grad}L``) for which we have
+The *Riemannian gradient* is essential when talking about optimization on manifolds.
 
-[^3]: We also write ``\mathrm{grad}^gL(x) = \mathrm{grad}^g_xL.``
-
-```math
-    g_x(\mathrm{grad}_x^gL, v_x) = (\nabla_{\varphi_U(x)}(L\circ\varphi_U^{-1}))^T \varphi_U'(v_x), 
+```@eval
+Main.definition(raw"The Riemannian gradient of a function ``L:\mathcal{M}\to\mathbb{R}`` is a vector field ``\mathrm{grad}^gL`` (or simply ``\mathrm{grad}L``) for which we have
+" * Main.indentation * raw"```math
+" * Main.indentation * raw"    g_x(\mathrm{grad}^gL(x), v_x) = (\nabla_{\varphi_U(x)}(L\circ\varphi_U^{-1}))^T \varphi_U'(v_x), 
+" * Main.indentation * raw"```
+" * Main.indentation * raw"for all ``v_x\in{}T_x\mathcal{M}.`` In the expression above ``\varphi_U`` is some coordinate chart defined in a neighborhood ``U`` around ``x``.")
 ```
 
-where 
-
+In the definition above ``\nabla`` indicates the *Euclidean gradient*:
 ```math
- \nabla_xf = \begin{pmatrix} \frac{\partial{}f}{\partial{}x_1} \\ \cdots \\ \frac{\partial{}f}{\partial{}x_n} \end{pmatrix},
+ \nabla_xf = \begin{pmatrix} \frac{\partial{}f}{\partial{}x_1} \\ \cdots \\ \frac{\partial{}f}{\partial{}x_n} \end{pmatrix}.
 ```
-is the Euclidean gradient. By the *non-degeneracy* of ``g`` the Riemannian gradient always exists [bishop1980tensor](@cite). We will give specific examples of this when discussing the [Stiefel manifold](@ref "The Stiefel Manifold") and the [Grassmann manifold](@ref "The Grassmann Manifold"). 
+
+We can also describe the Riemannian gradient through differential curves:
+
+```@eval
+Main.definition(raw"The Riemannian gradient of ``L`` is a vector field ``\mathrm{grad}^gL`` for which
+" * Main.indentation * raw"```math
+" * Main.indentation * raw"g_x(\mathrm{grad}^gL(x), \dot{\gamma}(0)) = \frac{d}{dt}L(\gamma(t)),
+" * Main.indentation * raw"```
+" * Main.indentation * raw"where ``\gamma`` is a ``C^\infty`` curve through ``x``.")
+```
+
+By the *non degeneracy* of ``g`` the Riemannian gradient always exists [bishop1980tensor](@cite). In the following we will also write ``\mathrm{grad}^gL(x) = \mathrm{grad}^g_xL.`` We will give specific examples of this when discussing the [Stiefel manifold](@ref "The Stiefel Manifold") and the [Grassmann manifold](@ref "The Grassmann Manifold"). 
 
 
 ## Gradient Flows and Riemannian Optimization
