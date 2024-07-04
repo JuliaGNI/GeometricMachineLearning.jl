@@ -164,6 +164,7 @@ makedocs(;
         ],
         "Structure-Preservation" => [
             "Symplecticity" => "structure_preservation/symplecticity.md",
+            "Volume-Preservation" => "structure_preservation/volume_preservation.md",
         ],
         "Optimizers" => [
             "Optimizers" => "optimizers/optimizer_framework.md",
