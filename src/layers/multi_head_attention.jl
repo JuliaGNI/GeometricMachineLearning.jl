@@ -137,11 +137,11 @@ function compute_output_of_mha(d::MultiHeadAttention{M, M}, x::AbstractArray{T, 
     output
 end
 
-function (d::MultiHeadAttention{M, M, Stiefel, Retraction, true})(x::AbstractArray, ps::NamedTuple) where {M, Stiefel, Retraction} 
+function (d::MultiHeadAttention{M, M, Stiefel, true})(x::AbstractArray, ps::NamedTuple) where {M, Stiefel} 
     x + compute_output_of_mha(d, x, ps)
 end
 
-function (d::MultiHeadAttention{M, M, Stiefel, Retraction, false})(x::AbstractArray, ps::NamedTuple) where {M, Stiefel, Retraction} 
+function (d::MultiHeadAttention{M, M, Stiefel, false})(x::AbstractArray, ps::NamedTuple) where {M, Stiefel} 
     compute_output_of_mha(d, x, ps)
 end
 
