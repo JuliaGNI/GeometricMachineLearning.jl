@@ -1,4 +1,8 @@
 @doc raw"""
+    Transformer(dim, n_heads, L)
+
+Make an instance of the Transformer with `n_heads` for dimension `dim` and `L` blocks.
+
 The architecture for a "transformer encoder" is essentially taken from arXiv:2010.11929, but with the difference that **no** layer normalization is employed.
 This is because we still need to find a generalization of layer normalization to manifolds. 
 

@@ -65,7 +65,7 @@ where ``\odot`` is the element-wise product, i.e. ``[a\odot{}v]_k = a_kv_k``. Th
 
 ## SympNet Linear Layer
 
-Linear layers of type ``q`` are of the form:
+Linear layers of type ``p`` are of the form:
 
 ```math
 \begin{pmatrix} q \\ p \end{pmatrix} \mapsto \begin{pmatrix} \mathbb{I} & \mathbb{O} \\ A & \mathbb{I} \end{pmatrix} \begin{pmatrix} q \\ p \end{pmatrix},
