@@ -66,7 +66,7 @@ The output of a softmax is a *probability vector* (also called *stochastic vecto
 
 So the ``y`` coefficients responsible for producing the first output vector are independent from those producing the second output vector etc., they have the condition ``\sum_{i=1}^Ty^{(j)}_iz_\mu^{(i)}`` for each column ``j`` imposed on them, but the coefficients for two different columns are independent of each other.
 
-Besides the traditional attention mechanism `GeometricMachineLearning` therefore also has a volume-preserving transformation that fulfills a similar role. There are two approaches implemented to realize similar transformations. Both of them however utilize the *Cayley transform* to produce orthogonal matrices ``\sigma(C)`` instead of stochastic matrices. For an orthogonal matrix ``\Sigma`` we have ``\Sigma^T\Sigma = \mathbb{I}``, so all the columns are linearly independent which is not necessarily true for a stochastic matrix ``P``. The following explains how this new activation function is implemented.
+Besides the traditional attention mechanism `GeometricMachineLearning` therefore also has a volume-preserving transformation that fulfills a similar role. There are two approaches implemented to realize similar transformations. Both of them however utilize the *Cayley transform* to produce orthogonal matrices ``\sigma(C)`` instead of stochastic matrices. For an orthogonal matrix ``\Sigma`` we have ``\Sigma^T\Sigma = \mathbb{I}``, so all the columns are linearly independent which is not necessarily true for a stochastic matrix ``P``. In the following we explain how this new activation function is implemented. First we need to briefly discuss the *Cayley transform*. 
 
 ### The Cayley transform 
 
@@ -81,10 +81,10 @@ The Cayley transform maps from skew-symmetric matrices to orthonormal matrices[^
 We can easily check that ``\mathrm{Cayley}(A)`` is orthogonal if ``A`` is skew-symmetric. For this consider ``\varepsilon \mapsto A(\varepsilon)\in\mathcal{S}_\mathrm{skew}`` with ``A(0) = \mathbb{I}`` and ``A'(0) = B``. Then we have: 
 
 ```math
-\frac{\delta\mathrm{Cayley}}{\delta{}A} = \frac{d}{d\varepsilon}|_{\varepsilon=0} \mathrm{Cayley}(A(\varepsilon))^T \mathrm{Cayley}(A(\varepsilon)) = \mathbb{O}.
+\frac{\delta(\mathrm{Cayley}(A)^T\mathrm{Cayley}(A))}{\delta{}A} = \frac{d}{d\varepsilon}|_{\varepsilon=0} \mathrm{Cayley}(A(\varepsilon))^T \mathrm{Cayley}(A(\varepsilon)) = A'(0)^T + A'(0) = \mathbb{O},
 ```
 
-In order to use the Cayley transform as an activation function we further need a mapping from the input ``Z`` to a skew-symmetric matrix. This is realized in two ways in `GeometricMachineLearning`: via a scalar-product with a skew-symmetric weighting and via a scalar-product with an arbitrary weighting.
+So ``\mathrm{Cayley}(A)^T\mathrm{Cayley}(A)`` remains unchanged among ``\varepsilon``. In order to use the Cayley transform as an activation function we further need a mapping from the input ``Z`` to a skew-symmetric matrix. This is realized in two ways in `GeometricMachineLearning`: via a scalar-product with a skew-symmetric weighting and via a scalar-product with an arbitrary weighting.
 
 ### First approach: scalar products with a skew-symmetric weighting
 
@@ -93,17 +93,17 @@ For this the attention layer is modified in the following way:
 ```math 
 Z := [z^{(1)}, \ldots, z^{(T)}] \mapsto Z\sigma(Z^TAZ),
 ```
-where ``\sigma(C)=\mathrm{Cayley}(C)`` and ``A`` is a skew-symmetric matrix that is learnable, i.e. the parameters of the attention layer are stored in ``A``.
+where ``\sigma(C)=\mathrm{Cayley}(C)`` and ``A`` is a matrix of type [`SkewSymMatrix`](@ref) that is learnable, i.e. the parameters of the attention layer are stored in ``A``.
 
 ### Second approach: scalar products with an arbitrary weighting
 
-For this approach we compute correlations between the input vectors with a skew-symmetric weighting. The correlations we consider here are based on: 
+For this approach we compute correlations between the input vectors based on scalar product with an arbitrary weighting. This arbitrary ``T\times{}T`` matrix ``A`` constitutes the learnable parameters of the attention layer. The correlations we consider here are based on: 
 
 ```math
 (z^{(2)})^TAz^{(1)}, (z^{(3)})^TAz^{(1)}, \ldots, (z^{(d)})^TAz^{(1)}, (z^{(3)})^TAz^{(2)}, \ldots, (z^{(d)})^TAz^{(2)}, \ldots, (z^{(d)})^TAz^{(d-1)}.
 ```
 
-So in total we consider correlations ``(z^{(i)})^Tz^{(j)}`` for which ``i > j``. We now arrange these correlations into a skew-symmetric matrix: 
+So we consider correlations ``(z^{(i)})^Tz^{(j)}`` for which ``i > j``. We now arrange these correlations into a skew-symmetric matrix: 
 
 ```math
 C = \begin{bmatrix}
@@ -114,7 +114,13 @@ C = \begin{bmatrix}
 \end{bmatrix}.
 ```
 
-This correlation matrix can now again be used as an input for the Cayley transform to produce an orthogonal matrix.
+This correlation matrix can now again be used as an input for the Cayley transform to produce an orthogonal matrix. Mathematically this is also equivalent to first computing all correlations ``Z^TAZ`` and then mapping the lower triangular to the upper triangular and negating these elements. This is visualized below: 
+
+```@example
+Main.include_graphics("../tikz/skew_sym_mapping")
+```
+
+Internally `GeometricMachineLearning` computes this more efficiently with the function [`GeometricMachineLearning.tensor_mat_skew_sym_assign`](@ref).
 
 ## How is structure preserved? 
 
@@ -128,10 +134,10 @@ Z =  \left[\begin{array}{cccc}
             \cdots &  \cdots & \cdots & \cdots \\
             z_d^{(1)} & z_d^{(2)} & \cdots & z_d^{(T)}
             \end{array}\right] \mapsto 
-            \left[\begin{array}{c}  z_1^{(1)} \\ z_1^{(2)} \\ \cdots \\ z_1^{(T)} \\ z_2^{(1)} \\ \cdots \\ z_d^{(T)} \end{array}\right] =: Z_\mathrm{vec}.
+            \left[\begin{array}{c}  z_1^{(1)} \\ z_1^{(2)} \\ \cdots \\ z_1^{(T)} \\ z_2^{(1)} \\ \cdots \\ z_d^{(T)} \end{array}\right] =: Z_\mathrm{vec},
 ```
 
-The inverse of ``Z \mapsto \hat{Z} `` we refer to as ``Y \mapsto \tilde{Y}``. In the following we also write ``\hat{\varphi}`` for the mapping ``\,\hat{}\circ\varphi\circ\tilde{}\,``.
+so we arrange the rows consecutively into a vector. The inverse of ``Z \mapsto \hat{Z} `` we refer to as ``Y \mapsto \tilde{Y}``. In the following we also write ``\hat{\varphi}`` for the mapping ``\,\hat{}\circ\varphi\circ\tilde{}\,``.
 
 ```@eval
 Main.definition(raw"We say that a mapping ``\varphi: \times_\text{$T$ times}\mathbb{R}^{d} \to \times_\text{$T$ times}\mathbb{R}^{d}`` is **volume-preserving** if the associated ``\hat{\varphi}`` is volume-preserving.")
@@ -150,12 +156,22 @@ In the transformed coordinate system (in terms of the vector ``Z_\mathrm{vec}`` 
     \left[\begin{array}{c}  z_1^{(1)} \\ z_1^{(2)} \\ \ldots \\ z_1^{(T)} \\ z_2^{(1)} \\ \ldots \\ z_d^{(T)} \end{array}\right] .
 ```
 
-``\tilde{\Lambda}(Z)`` is easily shown to be an orthogonal matrix. 
+``\tilde{\Lambda}(Z)`` is easily shown to be an orthogonal matrix and a symplectic matrix, i.e. it satisfies
+
+```math
+\tilde{\Lambda}(Z)^T\tilde{\Lambda}(Z) = \mathbb{I}
+```
+
+and
+
+```math
+\tilde{\Lambda}(Z)^T\mathbb{J}\tilde{\Lambda}(Z) = \mathbb{J}.
+```
 
 
 ## Historical Note 
 
-Attention was used before, but always in connection with **recurrent neural networks** (see [luong2015effective](@cite) and [bahdanau2014neural](@cite)). 
+Attention was used before the transformer was introduced, but mostly in connection with *recurrent neural networks* (see [luong2015effective](@cite) and [bahdanau2014neural](@cite)). 
 
 ## Library Functions
 
