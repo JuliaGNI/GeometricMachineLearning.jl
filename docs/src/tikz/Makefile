@@ -63,6 +63,8 @@ png:
 	pdftocairo  -png -r $(res1) -transp -singlefile  ingredients_dark.pdf							ingredients_dark
 	pdftocairo  -png -r $(res1) -transp -singlefile  convex_recombination.pdf						convex_recombination
 	pdftocairo  -png -r $(res1) -transp -singlefile  convex_recombination_dark.pdf					convex_recombination_dark
+	pdftocairo  -png -r $(res1) -transp -singlefile  skew_sym_mapping.pdf							skew_sym_mapping
+	pdftocairo  -png -r $(res1) -transp -singlefile  skew_sym_mapping_dark.pdf						skew_sym_mapping_dark
 
 logo:
 	cp logo_with_name.png 		../assets/logo.png
