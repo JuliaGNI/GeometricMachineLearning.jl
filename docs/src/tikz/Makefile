@@ -61,6 +61,8 @@ png:
 	pdftocairo  -png -r $(res2) -transp -singlefile  offline_online_dark.pdf						offline_online_dark
 	pdftocairo  -png -r $(res1) -transp -singlefile  ingredients.pdf								ingredients
 	pdftocairo  -png -r $(res1) -transp -singlefile  ingredients_dark.pdf							ingredients_dark
+	pdftocairo  -png -r $(res1) -transp -singlefile  convex_recombination.pdf						convex_recombination
+	pdftocairo  -png -r $(res1) -transp -singlefile  convex_recombination_dark.pdf					convex_recombination_dark
 
 logo:
 	cp logo_with_name.png 		../assets/logo.png

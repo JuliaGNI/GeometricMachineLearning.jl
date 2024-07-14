@@ -1,6 +1,6 @@
 # The Attention Layer
 
-The *attention* mechanism was originally developed for image and natural language processing (NLP) tasks. It is motivated by the need to handle time series data in an efficient way[^1]. Its essential idea is to compute correlations between vectors in input sequences. I.e. given sequences 
+The *attention* mechanism was originally developed for image and natural language processing (NLP) tasks. It is motivated by the need to handle time series data in an efficient way[^1]. Its essential idea is to compute correlations between vectors in input sequences. So given two sequences 
 
 ```math
 (z_q^{(1)}, z_q^{(2)}, \ldots, z_q^{(T)}) \text{ and } (z_p^{(1)}, z_p^{(2)}, \ldots, z_p^{(T)}),
@@ -15,7 +15,7 @@ an attention mechanism computes pair-wise correlations between all combinations 
 
 where ``z_q, z_k \in \mathbb{R}^d`` are elements of the input sequences. The learnable parameters are ``W, U \in \mathbb{R}^{n\times{}d}`` and ``v \in \mathbb{R}^n``.
 
-However *multiplicative attention* (see e.g. [vaswani2017attention](@cite))is more straightforward to interpret and cheaper to handle computationally: 
+However *multiplicative attention* (see e.g. [vaswani2017attention](@cite)) is more straightforward to interpret and cheaper to handle computationally: 
 
 ```math
 (z_q, z_k) \mapsto z_q^TWz_k,
@@ -45,8 +45,8 @@ for ``p^{(i)} = [\sigma(C)]_{\bullet{}i}``. What is *learned* during training ar
 
 ## Volume-Preserving Attention
 
-The attention layer (and the activation function ``\sigma`` defined for it) in `GeometricMachineLearning` was specifically designed to apply it to data coming from physical systems that can be described through a divergence-free or a symplectic vector field. 
-Traditionally the nonlinearity in the attention mechanism is a softmax[^3] (see [vaswani2017attention](@cite)) and the self-attention layer performs the following mapping: 
+The [`VolumePreservingAttention`](@ref) layer (and the activation function ``\sigma`` defined for it) in `GeometricMachineLearning` was specifically designed to apply it to data coming from physical systems that can be described through a divergence-free or a symplectic vector field. 
+Traditionally the nonlinearity in the attention mechanism is a softmax[^3] [vaswani2017attention](@cite) and the self-attention layer performs the following mapping: 
 
 [^3]: The softmax acts on the matrix ``C`` in a vector-wise manner, i.e. it operates on each column of the input matrix ``C = [c^{(1)}, \ldots, c^{(T)}]``. The result is a sequence of probability vectors ``[p^{(1)}, \ldots, p^{(T)}]`` for which ``\sum_{i=1}^Tp^{(j)}_i=1\quad\forall{}j\in\{1,\dots,T\}.``
 
@@ -60,7 +60,11 @@ The softmax activation acts vector-wise, i.e. if we supply it with a matrix ``C`
 \mathrm{softmax}(C) = [\mathrm{softmax}(c_{\bullet{}1}), \ldots, \mathrm{softmax}(c_{\bullet{}T})].
 ```
 
-The output of a softmax is a *probability vector* (also called *stochastic vector*) and the matrix ``P = [p^{(1)}, \ldots, p^{(T)}]``, where each column is a probability vector, is sometimes referred to as a *stochastic matrix* (see [jacobs1992discrete](@cite)). This attention mechanism finds application in *transformer neural networks* [vaswani2017attention](@cite). The problem with this matrix from a geometric point of view is that all the columns are independent of each other and the nonlinear transformation could in theory produce a stochastic matrix for which all columns are identical and thus lead to a loss of information. So the softmax activation function is inherently non-geometric. 
+The output of a softmax is a *probability vector* (also called *stochastic vector*) and the matrix ``P = [p^{(1)}, \ldots, p^{(T)}]``, where each column is a probability vector, is sometimes referred to as a *stochastic matrix* (see [jacobs1992discrete](@cite)). This attention mechanism finds application in *transformer neural networks* [vaswani2017attention](@cite). The problem with this matrix from a geometric point of view is that all the columns are independent of each other and the nonlinear transformation could in theory produce a stochastic matrix for which all columns are identical and thus lead to a loss of information. So the softmax activation function is inherently non-geometric. We visualize this with the figure below: 
+
+![](../tikz/convex_recombination.png)
+
+So the ``y`` coefficients responsible for producing the first output vector are independent from those producing the second output vector etc., they have the condition ``\sum_{i=1}^Ty^{(j)}_iz_\mu^{(i)}`` for each column ``j`` imposed on them, but the coefficients for two different columns are independent of each other.
 
 Besides the traditional attention mechanism `GeometricMachineLearning` therefore also has a volume-preserving transformation that fulfills a similar role. There are two approaches implemented to realize similar transformations. Both of them however utilize the *Cayley transform* to produce orthogonal matrices ``\sigma(C)`` instead of stochastic matrices. For an orthogonal matrix ``\Sigma`` we have ``\Sigma^T\Sigma = \mathbb{I}``, so all the columns are linearly independent which is not necessarily true for a stochastic matrix ``P``. The following explains how this new activation function is implemented.
 
@@ -129,8 +133,9 @@ Z =  \left[\begin{array}{cccc}
 
 The inverse of ``Z \mapsto \hat{Z} `` we refer to as ``Y \mapsto \tilde{Y}``. In the following we also write ``\hat{\varphi}`` for the mapping ``\,\hat{}\circ\varphi\circ\tilde{}\,``.
 
-__DEFINITION__:
-We say that a mapping ``\varphi: \times_\text{$T$ times}\mathbb{R}^{d} \to \times_\text{$T$ times}\mathbb{R}^{d}`` is **volume-preserving** if the associated ``\hat{\varphi}`` is volume-preserving.
+```@eval
+Main.definition(raw"We say that a mapping ``\varphi: \times_\text{$T$ times}\mathbb{R}^{d} \to \times_\text{$T$ times}\mathbb{R}^{d}`` is **volume-preserving** if the associated ``\hat{\varphi}`` is volume-preserving.")
+```
 
 In the transformed coordinate system (in terms of the vector ``Z_\mathrm{vec}`` defined above) this is equivalent to multiplication by a sparse matrix ``\tilde\Lambda(Z)`` from the left:
 
@@ -145,13 +150,20 @@ In the transformed coordinate system (in terms of the vector ``Z_\mathrm{vec}`` 
     \left[\begin{array}{c}  z_1^{(1)} \\ z_1^{(2)} \\ \ldots \\ z_1^{(T)} \\ z_2^{(1)} \\ \ldots \\ z_d^{(T)} \end{array}\right] .
 ```
 
-``\tilde{\Lambda}(Z)`` in m[eq:LambdaApplication]m(@latex) is easily shown to be an orthogonal matrix. 
+``\tilde{\Lambda}(Z)`` is easily shown to be an orthogonal matrix. 
 
 
 ## Historical Note 
 
 Attention was used before, but always in connection with **recurrent neural networks** (see [luong2015effective](@cite) and [bahdanau2014neural](@cite)). 
 
+## Library Functions
+
+```@docs; canonical = false
+tensor_mat_skew_sym_assign
+MultiHeadAttention
+VolumePreservingAttention
+```
 
 ## References 
 
