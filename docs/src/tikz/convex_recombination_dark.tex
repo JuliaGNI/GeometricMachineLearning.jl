@@ -32,15 +32,15 @@
     color=white,
 ]
 
-    \node[output1] (o1) {$\sum_{i=1}^Ty^{(1)}_iz^{(i)}$};
-    \node[output2, left of=o1, xshift=5cm] (o2) {$\sum_{i=1}^Ty^{(2)}_iz^{(i)}$};
-    \node[output3, left of=o2, xshift=5cm] (output_dots) {$\cdots$};
-    \node[output4, left of=output_dots, xshift=5cm] (oT) {$\sum_{i=1}^Ty^{(T)}_1z^{(i)}$};
+    \node[output1] (o1) {\color{black}$\sum_{i=1}^Ty^{(1)}_iz^{(i)}$};
+    \node[output2, left of=o1, xshift=5cm] (o2) {\color{black}$\sum_{i=1}^Ty^{(2)}_iz^{(i)}$};
+    \node[output3, left of=o2, xshift=5cm] (output_dots) {\color{black}$\cdots$};
+    \node[output4, left of=output_dots, xshift=5cm] (oT) {\color{black}$\sum_{i=1}^Ty^{(T)}_1z^{(i)}$};
 
-    \node[input, above of=o1, yshift = 4cm] (z1) {$z^{(1)}$};
-    \node[input, above of=o2, yshift = 4cm] (z2) {$z^{(2)}$};
-    \node[input, above of=output_dots, yshift = 4cm] (input_dots) {$\cdots$};
-    \node[input, above of=oT, yshift = 4cm] (zT) {$z^{(T)}$};
+    \node[input, above of=o1, yshift = 4cm] (z1) {\color{black}$z^{(1)}$};
+    \node[input, above of=o2, yshift = 4cm] (z2) {\color{black}$z^{(2)}$};
+    \node[input, above of=output_dots, yshift = 4cm] (input_dots) {\color{black}$\cdots$};
+    \node[input, above of=oT, yshift = 4cm] (zT) {\color{black}$z^{(T)}$};
 
     \node[fit=(z1)(z2)(input_dots)(zT),draw, ultra thick, rounded corners, label=above:{$input$ sequence}] (input) {};
     \node[fit=(o1)(o2)(output_dots)(oT),draw, ultra thick, rounded corners, label=below:{$output$ sequence}] (output) {};
