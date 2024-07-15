@@ -27,7 +27,7 @@ where ``W \in \mathbb{R}^{d\times{}d}`` is a learnable weight matrix with respec
 
 In `GeometricMachineLearning` we always compute *self-attention*, meaning that the two input sequences ``Z_q`` and ``Z_k`` are the same, i.e. ``Z = Z_q = Z_k``.[^2]
 
-[^2]: [Multihead attention](multihead_attention_layer.md) also falls into this category. Here the input ``Z`` is multiplied from the left with several *projection matrices* ``P^Q_i`` and ``P^K_i``, where ``i`` indicates the *head*. For each head we then compute a correlation matrix ``(P^Q_i Z)^T(P^K Z)``. 
+[^2]: [Multihead attention](@ref "Multihead Attention") also falls into this category. Here the input ``Z`` is multiplied from the left with several *projection matrices* ``P^Q_i`` and ``P^K_i``, where ``i`` indicates the *head*. For each head we then compute a correlation matrix ``(P^Q_i Z)^T(P^K Z)``. 
 
 This is then used to reweight the columns in the input sequence ``Z``. For this we first apply a nonlinearity ``\sigma`` onto ``C`` and then multiply ``\sigma(C)`` onto ``Z`` from the right, i.e. the output of the attention layer is ``Z\sigma(C)``. So we perform the following mappings:
 
@@ -62,7 +62,9 @@ The softmax activation acts vector-wise, i.e. if we supply it with a matrix ``C`
 
 The output of a softmax is a *probability vector* (also called *stochastic vector*) and the matrix ``P = [p^{(1)}, \ldots, p^{(T)}]``, where each column is a probability vector, is sometimes referred to as a *stochastic matrix* (see [jacobs1992discrete](@cite)). This attention mechanism finds application in *transformer neural networks* [vaswani2017attention](@cite). The problem with this matrix from a geometric point of view is that all the columns are independent of each other and the nonlinear transformation could in theory produce a stochastic matrix for which all columns are identical and thus lead to a loss of information. So the softmax activation function is inherently non-geometric. We visualize this with the figure below: 
 
-![](../tikz/convex_recombination.png)
+```@example
+include_graphics("../tikz/convex_recombination.png") # hide
+```
 
 So the ``y`` coefficients responsible for producing the first output vector are independent from those producing the second output vector etc., they have the condition ``\sum_{i=1}^Ty^{(j)}_iz_\mu^{(i)}`` for each column ``j`` imposed on them, but the coefficients for two different columns are independent of each other.
 
@@ -117,7 +119,7 @@ C = \begin{bmatrix}
 This correlation matrix can now again be used as an input for the Cayley transform to produce an orthogonal matrix. Mathematically this is also equivalent to first computing all correlations ``Z^TAZ`` and then mapping the lower triangular to the upper triangular and negating these elements. This is visualized below: 
 
 ```@example
-Main.include_graphics("../tikz/skew_sym_mapping")
+Main.include_graphics("../tikz/skew_sym_mapping") # hide
 ```
 
 Internally `GeometricMachineLearning` computes this more efficiently with the function [`GeometricMachineLearning.tensor_mat_skew_sym_assign`](@ref).
@@ -176,8 +178,7 @@ Attention was used before the transformer was introduced, but mostly in connecti
 ## Library Functions
 
 ```@docs; canonical = false
-tensor_mat_skew_sym_assign
-MultiHeadAttention
+GeometricMachineLearning.tensor_mat_skew_sym_assign
 VolumePreservingAttention
 ```
 
