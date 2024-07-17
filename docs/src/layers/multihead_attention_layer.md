@@ -35,7 +35,7 @@ When performing the *reweighting* of the columns of $V_i$ we first compute the c
     [C_i]_{mn} = \left(k_i^{(m)}\right)^Tq_i^{(n)}.
 ```
 
-The columns of this correlation matrix are than rescaled with a softmax function, obtaining a matrix of *probability vectors*[2] ``\mathcal{P}_i``:
+The columns of this correlation matrix are than rescaled with a softmax function, obtaining a matrix of *probability vectors*[^2] ``\mathcal{P}_i``:
 
 [^2]: Also called a *stochastic matrix*.
 

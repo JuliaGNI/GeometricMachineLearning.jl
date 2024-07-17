@@ -23,7 +23,7 @@ However *multiplicative attention* (see e.g. [vaswani2017attention](@cite)) is m
 
 where ``W \in \mathbb{R}^{d\times{}d}`` is a learnable weight matrix with respect to which correlations are computed as scalar products. Regardless of the type of attention used, they all try to compute correlations among input sequences on whose basis further computation is performed. Given two input sequences ``Z_q = (z_q^{(1)}, \ldots, z_q^{(T)})`` and ``Z_k = (z_k^{(1)}, \ldots, z_k^{(T)})``, we can arrange the various correlations into a *correlation matrix* ``C\in\mathbb{R}^{T\times{}T}`` with entries ``[C]_{ij} = \mathtt{attention}(z_q^{(i)}, z_k^{(j)})``. In the case of multiplicative attention this matrix is just ``C = Z^TWZ``.
 
-## Reweighting of the input sequence 
+## Reweighting of the Input Sequence 
 
 In `GeometricMachineLearning` we always compute *self-attention*, meaning that the two input sequences ``Z_q`` and ``Z_k`` are the same, i.e. ``Z = Z_q = Z_k``.[^2]
 
@@ -48,7 +48,7 @@ for ``p^{(i)} = [\sigma(C)]_{\bullet{}i}``. What is *learned* during training ar
 The [`VolumePreservingAttention`](@ref) layer (and the activation function ``\sigma`` defined for it) in `GeometricMachineLearning` was specifically designed to apply it to data coming from physical systems that can be described through a divergence-free or a symplectic vector field. 
 Traditionally the nonlinearity in the attention mechanism is a softmax[^3] [vaswani2017attention](@cite) and the self-attention layer performs the following mapping: 
 
-[^3]: The softmax acts on the matrix ``C`` in a vector-wise manner, i.e. it operates on each column of the input matrix ``C = [c^{(1)}, \ldots, c^{(T)}]``. The result is a sequence of probability vectors ``[p^{(1)}, \ldots, p^{(T)}]`` for which ``\sum_{i=1}^Tp^{(j)}_i=1\quad\forall{}j\in\{1,\dots,T\}.``
+[^3]: The softmax acts on the matrix ``C`` in a vector-wise manner, i.e. it operates on each column of the input matrix ``C = [c^{(1)}, \ldots, c^{(T)}]``. The result is a sequence of probability vectors ``[y^{(1)}, \ldots, y^{(T)}]`` for which ``\sum_{i=1}^Ty^{(j)}_i=1\quad\forall{}j\in\{1,\dots,T\}.``
 
 ```math
 Z := [z^{(1)}, \ldots, z^{(T)}] \mapsto Z\mathrm{softmax}(Z^TWZ).
@@ -60,10 +60,10 @@ The softmax activation acts vector-wise, i.e. if we supply it with a matrix ``C`
 \mathrm{softmax}(C) = [\mathrm{softmax}(c_{\bullet{}1}), \ldots, \mathrm{softmax}(c_{\bullet{}T})].
 ```
 
-The output of a softmax is a *probability vector* (also called *stochastic vector*) and the matrix ``P = [p^{(1)}, \ldots, p^{(T)}]``, where each column is a probability vector, is sometimes referred to as a *stochastic matrix* (see [jacobs1992discrete](@cite)). This attention mechanism finds application in *transformer neural networks* [vaswani2017attention](@cite). The problem with this matrix from a geometric point of view is that all the columns are independent of each other and the nonlinear transformation could in theory produce a stochastic matrix for which all columns are identical and thus lead to a loss of information. So the softmax activation function is inherently non-geometric. We visualize this with the figure below: 
+The output of a softmax is a *probability vector* (also called *stochastic vector*) and the matrix ``Y = [y^{(1)}, \ldots, y^{(T)}]``, where each column is a probability vector, is sometimes referred to as a *stochastic matrix* (see [jacobs1992discrete](@cite)). This attention mechanism finds application in *transformer neural networks* [vaswani2017attention](@cite). The problem with this matrix from a geometric point of view is that all the columns are independent of each other and the nonlinear transformation could in theory produce a stochastic matrix for which all columns are identical and thus lead to a loss of information. So the softmax activation function is inherently non-geometric. We visualize this with the figure below: 
 
 ```@example
-include_graphics("../tikz/convex_recombination.png") # hide
+Main.include_graphics("../tikz/convex_recombination") # hide
 ```
 
 So the ``y`` coefficients responsible for producing the first output vector are independent from those producing the second output vector etc., they have the condition ``\sum_{i=1}^Ty^{(j)}_iz_\mu^{(i)}`` for each column ``j`` imposed on them, but the coefficients for two different columns are independent of each other.
