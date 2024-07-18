@@ -22,9 +22,11 @@ We can proof the theorem:
 Main.theorem(raw"The flow of a divergence-free vector field is volume-preserving.")
 ```
 
-It is a classical result that *all Hamiltonian vector fields are divergence-free*, so volume-preservation is weaker than preservation of symplecticity.
+It is a classical result that *all Hamiltonian vector fields are divergence-free*, so volume-preservation is weaker than preservation of symplecticity [arnold1978mathematical](@cite).
 
 The definition of integration on Riemannian manifolds and measures of volume elements can be found in standard textbooks on differential geometry, e.g. [bishop1980tensor, lang2012fundamentals](@cite).
+
+## References
 
 ```@bibliography
 Canonical = false
