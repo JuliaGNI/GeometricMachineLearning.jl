@@ -1,22 +1,33 @@
-"""
-MultiHeadAttention (MHA) serves as a preprocessing step in the transformer. It reweights the input vectors bases on correlations within those data. 
+@doc raw"""
+    MultiHeadAttention(dim, n_heads)
 
-### Constructor 
-Takes input arguments: 
-- `dim::Int`: The system dimension 
-- `n_heads::Int`: The number of heads. 
-- `Stiefel::Bool=true` (keyword argument): whether the weights should be put on the Stiefel manifold. 
-- `retraction::AbstractRetraction` (keyword argument): what kind of retraction should be used. By default this is the geodesic retraction. 
-- `add_connection::Bool=true` (keyword argument): determines if the input should be added to the output for the final result. 
+Make a `MultiHeadAttention` layer with `n_heads` for a system of dimension `dim`. 
+
+Note that the `dim` has to be divisible by `n_heads`.
+
+MultiHeadAttention (MHA) serves as a preprocessing step in the transformer. 
+
+It reweights the input vectors bases on correlations within those data.
+
+This is used for the neural networks [`StandardTransformerIntegrator`](@ref) and [`ClassificationTransformer`](@ref).
+
+# Arguments
+
+The optional keyword arguments to `MultiHeadAttention` are:
+- `Stiefel::Bool`
+- `add_connection::Bool`
+
+`Stiefel` indicates whether weights are put on ``St(\mathrm{dim}, \mathrm{dim}\div\mathrm{n_heads})``.
+
+`add_connection` indicates whether the input is again added to the output.
 """
-struct MultiHeadAttention{M, N, Stiefel, retraction, add_connection} <: LayerWithOptionalManifold{M, N, Stiefel, retraction}
+struct MultiHeadAttention{M, N, Stiefel, add_connection} <: AbstractExplicitLayer{M, N}
     n_heads::Int
 end
 
-default_retr = Geodesic()
-function MultiHeadAttention(dim::Int, n_heads::Int; Stiefel::Bool=false, retraction::AbstractRetraction=default_retr, add_connection::Bool=true)
+function MultiHeadAttention(dim::Int, n_heads::Int; Stiefel::Bool=false, add_connection::Bool=true)
     @assert dim % n_heads == 0
-    MultiHeadAttention{dim, dim, Stiefel, typeof(retraction), add_connection}(n_heads)
+    MultiHeadAttention{dim, dim, Stiefel, add_connection}(n_heads)
 end
 
 function parameterlength(::MultiHeadAttention{M, M, false}) where M
@@ -83,9 +94,6 @@ function initialparameters(d::MultiHeadAttention{M, M, true}, backend::KernelAbs
     (PQ=PQ, PK=PK, PV=PV)
 end
 
-@doc raw"""
-Applies MHA to an abstract matrix. This is the same independent of whether the input is added to the output or not. 
-"""
 function compute_output_of_mha(d::MultiHeadAttention{M, M}, x::AbstractMatrix{T}, ps::NamedTuple) where {M, T}
     dim, input_length = size(x)
     @assert dim == M
@@ -98,7 +106,13 @@ function compute_output_of_mha(d::MultiHeadAttention{M, M}, x::AbstractMatrix{T}
     output
 end
 
+@doc raw"""
+    compute_output_of_mha(d::MultiHeadAttention, x, ps)
 
+Apply [`MultiHeadAttention`](@ref) layer `d` to `x`. 
+
+This is the same, independent of whether the input is added to the output or not. 
+"""
 function compute_output_of_mha(d::MultiHeadAttention{M, M}, x::AbstractArray{T, 3}, ps::NamedTuple) where {M, T}
     Dₕ = M ÷ d.n_heads
     dim, input_length, number_data = size(x)
@@ -123,11 +137,11 @@ function compute_output_of_mha(d::MultiHeadAttention{M, M}, x::AbstractArray{T, 
     output
 end
 
-function (d::MultiHeadAttention{M, M, Stiefel, Retraction, true})(x::AbstractArray, ps::NamedTuple) where {M, Stiefel, Retraction} 
+function (d::MultiHeadAttention{M, M, Stiefel, true})(x::AbstractArray, ps::NamedTuple) where {M, Stiefel} 
     x + compute_output_of_mha(d, x, ps)
 end
 
-function (d::MultiHeadAttention{M, M, Stiefel, Retraction, false})(x::AbstractArray, ps::NamedTuple) where {M, Stiefel, Retraction} 
+function (d::MultiHeadAttention{M, M, Stiefel, false})(x::AbstractArray, ps::NamedTuple) where {M, Stiefel} 
     compute_output_of_mha(d, x, ps)
 end
 
@@ -137,15 +151,14 @@ function ChainRules._adjoint_mat_pullback(y::AbstractArray{T, 3}, proj) where T
     (NoTangent(), proj(tensor_transpose(y)))
 end
 
-"""
-Extend `mat_tensor_mul` to a multiplication by the adjoint of an element of `StiefelManifold`. 
-"""
 function mat_tensor_mul(Y::AT, x::AbstractArray{T, 3}) where {T, BT <: AbstractArray{T}, ST <: StiefelManifold{T, BT}, AT <: Adjoint{T, ST}}
     mat_tensor_mul(Y.parent.A', x)
 end
 
-"""
-Extend `mat_tensor_mul` to a multiplication by an element of `StiefelManifold`. 
+@doc raw"""
+    mat_tensor_mul(Y::StiefelManifold, x::AbstractArray{<:Number, 3})
+
+Multiply `Y` with all matrices stored in `x` (parallelize over the third axis).
 """
 function mat_tensor_mul(Y::StiefelManifold, x::AbstractArray{T, 3}) where T 
     mat_tensor_mul(Y.A, x)

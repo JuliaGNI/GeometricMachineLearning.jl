@@ -162,6 +162,10 @@ makedocs(;
             "Global Tangent Spaces" => "arrays/global_tangent_spaces.md",
             "Pullbacks" => "pullbacks/computation_of_pullbacks.md",
         ],
+        "Structure-Preservation" => [
+            "Symplecticity" => "structure_preservation/symplecticity.md",
+            "Volume-Preservation" => "structure_preservation/volume_preservation.md",
+        ],
         "Optimizers" => [
             "Optimizers" => "optimizers/optimizer_framework.md",
             "Global Sections" => "optimizers/manifold_related/global_sections.md",
@@ -173,7 +177,7 @@ makedocs(;
         "Special Neural Network Layers" => [
             "Sympnet Layers" => "layers/sympnet_gradient.md",
             "Volume-Preserving Layers" => "layers/volume_preserving_feedforward.md",
-            "Attention" => "layers/attention_layer.md",
+            "(Volume-Preserving) Attention" => "layers/attention_layer.md",
             "Multihead Attention" => "layers/multihead_attention_layer.md",
             "Linear Symplectic Attention" => "layers/linear_symplectic_attention.md",
         ],

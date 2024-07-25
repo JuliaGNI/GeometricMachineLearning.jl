@@ -111,7 +111,28 @@ function global_section(::AbstractVecOrMat)
 end
 
 """
-The type for data in ``(q, p)`` coordinates.
+The type for data in ``(q, p)`` coordinates. It encompasses various array types.
+
+# Examples
+
+```jldoctest
+using GeometricMachineLearning: QPT
+
+# allocate two vectors
+data1 = (q = rand(5), p = rand(5))
+
+# allocate two matrices
+data2 = (q = rand(5, 4), p = rand(5, 4))
+
+# allocate two tensors
+data3 = (q = rand(5, 4, 2), p = rand(5, 4, 2))
+
+(typeof(data1) <: QPT, typeof(data2) <: QPT, typeof(data3) <: QPT)
+
+# output
+
+(true, true, true)
+```
 """
 const QPT{T} = NamedTuple{(:q, :p), Tuple{AT, AT}} where {T, AT <: AbstractArray{T}}
 

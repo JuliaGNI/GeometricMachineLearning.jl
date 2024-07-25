@@ -1,12 +1,18 @@
 @doc raw"""
+    ClassificationTransformer(dl)
+
+Make an instance of the `ClassificationTransformer` based on an instance of [`DataLoader`](@ref).
+
 This is a transformer neural network for classification purposes. At the moment this is only used for training on MNIST, but can in theory be used for any classification problem.
 
-It has to be called with a `DataLoader` that stores an input and an output tensor. The optional arguments are: 
-- `n_heads`: The number of heads in the `MultiHeadAttention` (mha) layers. Default: `7`.
-- `n_layers`: The number of transformer layers. Default: `16`.
-- `activation`: The activation function. Default: `softmax`.
-- `Stiefel`: Wheter the matrices in the mha layers are on the **Stiefel manifold**. 
-- `add_connection`: Whether the input is appended to the output of the mha layer. (skip connection)
+# Arguments
+
+The optional keyword arguments are: 
+- `n_heads::Int=7`: The number of heads in the `MultiHeadAttention` (mha) layers.
+- `n_layers::Int=16`: The number of transformer layers.
+- `activation=softmax`: The activation function.
+- `Stiefel::Bool=true`: Wheter the matrices in the mha layers are on the [`StiefelManifold`](@ref). 
+- `add_connection::Bool=true`: Whether the input is appended to the output of the mha layer. (skip connection)
 """
 struct ClassificationTransformer{AT} <: Architecture 
     transformer_dim::Int
