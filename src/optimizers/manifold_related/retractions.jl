@@ -1,13 +1,3 @@
-@doc raw"""
-`LayerWithManifold` is a subtype of `AbstractExplicitLayer` that contains manifolds as weights.
-"""
-abstract type LayerWithManifold{M, N, retraction} <: AbstractExplicitLayer{M, N}  end
-
-@doc raw"""
-`LayerWithOptionalManifold` is a subtype of `AbstractExplicitLayer` that can contain manifolds as weights.
-"""
-abstract type LayerWithOptionalManifold{M, N, Stiefel, retraction} <: AbstractExplicitLayer{M, N} end
-
 geodesic(A::AbstractVecOrMat) = A
 cayley(A::AbstractVecOrMat) = A
 
@@ -18,15 +8,28 @@ geodesic(B::NamedTuple) = apply_toNT(geodesic, B)
 
 Take as input an element of a manifold `Y` and a tangent vector in `Δ` in the corresponding tangent space and compute the geodesic (exponential map).
 
-In different notation: take as input an element ``x`` of ``\mathcal{M}`` and an element of ``T_x\mathcal{M}`` and return ``\mathtt{geodesic}(x, v_x) = \exp(v_x).`` For example: 
+In different notation: take as input an element ``x`` of ``\mathcal{M}`` and an element of ``T_x\mathcal{M}`` and return ``\mathtt{geodesic}(x, v_x) = \exp(v_x).``
 
-```julia 
-Y = rand(StiefelManifold{Float64}, N, n)
-Δ = rgrad(Y, rand(N, n))
-geodesic(Y, Δ)
+
+# Examples
+
+```jldoctest
+using GeometricMachineLearning
+
+Y = StiefelManifold([1. 0. 0.;]' |> Matrix)
+Δ = [0. .5 0.;]' |> Matrix
+Y₂ = geodesic(Y, Δ)
+
+Y₂' * Y₂ ≈ [1.;]
+
+# output
+
+true
 ```
 
-See the docstring for [`rgrad`](@ref) for details on this function.
+# Implementation
+
+Internally this `geodesic` method calls [`geodesic(::StiefelLieAlgHorMatrix{T}) where T`](@ref).
 """
 function geodesic(Y::Manifold{T}, Δ::AbstractMatrix{T}) where T
     λY = GlobalSection(Y)
@@ -59,7 +62,7 @@ end
 
 Compute the geodesic of an element in [`GrassmannLieAlgHorMatrix`](@ref).
 
-See [`geodesic(::StiefelLieAlgHorMatrix)`](@ref).
+See [`geodesic(::StiefelLieAlgHorMatrix{T}) where T`](@ref).
 """
 function geodesic(B::GrassmannLieAlgHorMatrix{T}) where T
     E = StiefelProjection(B)
@@ -98,7 +101,23 @@ end
 @doc raw"""
     cayley(B::StiefelLieAlgHorMatrix)
 
-Compute the Cayley retraction of `B` and multiply it with `E` (the distinct element of the Stiefel manifold).
+Compute the Cayley retraction of `B`.
+
+# Implementation
+
+Internally this is using 
+
+```math
+\mathrm{Cayley}(\bar{B}) = \mathbb{I} + \frac{1}{2} B' (\mathbb{I}_{2n} - \frac{1}{2} (B'')^T B')^{-1} (B'')^T (\mathbb{I} + \frac{1}{2} B),
+```
+with
+```math
+\bar{B} = \begin{bmatrix}
+    A & -B^T \\ 
+    B & \mathbb{O}
+\end{bmatrix} = \begin{bmatrix}  \frac{1}{2}A & \mathbb{I} \\ B & \mathbb{O} \end{bmatrix} \begin{bmatrix}  \mathbb{I} & \mathbb{O} \\ \frac{1}{2}A & -B^T  \end{bmatrix} =: B'(B'')^T,
+```
+i.e. ``\bar{B}`` is expressed as a product of two ``N\times{}2n`` matrices.
 """
 function cayley(B::StiefelLieAlgHorMatrix{T}) where T
     E = StiefelProjection(B)
@@ -116,9 +135,9 @@ end
 @doc raw"""
     cayley(B::GrassmannLieAlgHorMatrix)
 
-Compute the Cayley retraction of `B` and multiply it with `E` (the distinct element of the Stiefel manifold).
+Compute the Cayley retraction of `B`.
 
-See [`cayley(::StiefelLieAlgHorMatrix)`](@ref).
+See [`cayley(::StiefelLieAlgHorMatrix{T}) where T`](@ref).
 """
 function cayley(B::GrassmannLieAlgHorMatrix{T}) where T
     E = StiefelProjection(B)

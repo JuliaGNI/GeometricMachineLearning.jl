@@ -1,19 +1,48 @@
 @doc raw"""
 Encompasses various transformer architectures, such as the [`VolumePreservingTransformer`](@ref) and the [`LinearSymplecticTransformer`](@ref). 
+
+The central idea behind this is to construct an explicit multi-step integrator:
+
+```math
+    \mathtt{Integrator}: [ z^{(t - \mathtt{sl} + 1)}, z^{(t - \mathtt{sl} + 2)}, \ldots, z^{(t)} ] \mapsto [ z^{(t + 1)}, z^{(t + 2)}, \ldots, z^{(t + \mathtt{pw})} ],
+```
+where `sl` stands for *sequence length* and `pw` stands for *prediction window*, so the numbers of input and output vectors respectively.
+
+Note that for standard multi-step methods (that are not neural network-based) `sl` is generally a number greater than one whereas `pw = 1` in most cases. 
+
+For the `TransformerIntegrator`s in `GeometricMachineLearning` however we usually have:
+
+```math
+    \mathtt{pw} = \mathtt{sl},
+```
+so the number of vectors in the input sequence is equal to the number of vectors in the output sequence.
 """
 abstract type TransformerIntegrator <: Architecture end
 
+@doc raw"""
+    DummyTransformer(seq_length)
+
+Make an instance of `DummyTransformer`.
+
+This *dummy architecture* can be used if the user wants to define a new [`TransformerIntegrator`](@ref).
+"""
 struct DummyTransformer <: TransformerIntegrator 
     seq_length::Int
 end
 
 @doc raw"""
+    iterate(nn, ics)
+
+Iterate the neural network of type [`TransformerIntegrator`](@ref) for initial conditions `ics`.
+
+The initial condition is a matrix ``\in\mathbb{R}^{2n\times\mathtt{seq\_length}}`` or `NamedTuple` of two matrices ``\in\mathbb{R}^{n\times\mathtt{seq\_length}}``).
+
 This function computes a trajectory for a Transformer that has already been trained for valuation purposes.
 
-It takes as input: 
-- `nn`: a `NeuralNetwork` (that has been trained).
-- `ics`: initial conditions (a matrix in ``\mathbb{R}^{2n\times\mathtt{seq\_length}}`` or `NamedTuple` of two matrices in ``\mathbb{R}^{n\times\mathtt{seq\_length}}``)
-- `n_points::Int=100` (keyword argument): The number of steps for which we run the prediction. 
+# Parameters 
+
+The following are optional keyword arguments:
+- `n_points::Int=100`: The number of steps for which we run the prediction. 
 - `prediction_window::Int=size(ics.q, 2)`: The prediction window (i.e. the number of steps we predict into the future) is equal to the sequence length (i.e. the number of input time steps) by default.  
 """
 function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::NamedTuple{(:q, :p), Tuple{AT, AT}}; n_points::Int = 100, prediction_window::Union{Nothing, Int}=size(ics.q, 2)) where {T, AT<:AbstractMatrix{T}}

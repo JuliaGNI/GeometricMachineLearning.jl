@@ -61,6 +61,19 @@ png:
 	pdftocairo  -png -r $(res2) -transp -singlefile  offline_online_dark.pdf						offline_online_dark
 	pdftocairo  -png -r $(res1) -transp -singlefile  ingredients.pdf								ingredients
 	pdftocairo  -png -r $(res1) -transp -singlefile  ingredients_dark.pdf							ingredients_dark
+	pdftocairo  -png -r $(res1) -transp -singlefile  convex_recombination.pdf						convex_recombination
+	pdftocairo  -png -r $(res1) -transp -singlefile  convex_recombination_dark.pdf					convex_recombination_dark
+	pdftocairo  -png -r $(res1) -transp -singlefile  skew_sym_mapping.pdf							skew_sym_mapping
+	pdftocairo  -png -r $(res1) -transp -singlefile  skew_sym_mapping_dark.pdf						skew_sym_mapping_dark
+	pdftocairo  -png -r $(res1) -transp -singlefile  sae_venn.pdf									sae_venn
+	pdftocairo  -png -r $(res1) -transp -singlefile  structure_preservation_hierarchy.pdf			structure_preservation_hierarchy
+	pdftocairo  -png -r $(res1) -transp -singlefile  structure_preservation_hierarchy_dark.pdf		structure_preservation_hierarchy_dark
+	pdftocairo  -png -r $(res1) -transp -singlefile  transformer_upscaling.pdf						transformer_upscaling
+	pdftocairo  -png -r $(res1) -transp -singlefile  transformer_upscaling_dark.pdf					transformer_upscaling_dark
+	pdftocairo  -png -r $(res1) -transp -singlefile  multiple_parameters.pdf						multiple_parameters
+	pdftocairo  -png -r $(res1) -transp -singlefile  multiple_parameters_dark.pdf					multiple_parameters_dark
+	pdftocairo  -png -r $(res1) -transp -singlefile  coupled_harmonic_oscillator.pdf				coupled_harmonic_oscillator
+	pdftocairo  -png -r $(res1) -transp -singlefile  coupled_harmonic_oscillator_dark.pdf			coupled_harmonic_oscillator_dark
 
 logo:
 	cp logo_with_name.png 		../assets/logo.png

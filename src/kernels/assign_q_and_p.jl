@@ -32,11 +32,11 @@ end
     p[i,j,k] = x[i+N,j,k]
 end
 
-@doc raw"""
-Allocates two new arrays `q` and `p` whose first dimension is half of that of the input `x`. This should also be supplied through the second argument `N`.
-
-The output is a `Tuple` containing `q` and `p`.
-"""
+# @doc raw"""
+# Allocates two new arrays `q` and `p` whose first dimension is half of that of the input `x`. This should also be supplied through the second argument `N`.
+# 
+# The output is a `Tuple` containing `q` and `p`.
+# """
 function assign_q_and_p(x::AbstractVector, N::Int)
     backend = KernelAbstractions.get_backend(x)
     q = KernelAbstractions.allocate(backend, eltype(x), N)

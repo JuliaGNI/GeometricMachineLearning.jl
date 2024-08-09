@@ -223,7 +223,7 @@ Similar to the [Adam optimizer](@ref "The Adam Optimizer") we also add a ``\delt
 
 ## Library Functions
 
-```@docs; canonical=false
+```@docs
 BFGSOptimizer
 BFGSCache
 ```

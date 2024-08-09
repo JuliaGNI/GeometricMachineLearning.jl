@@ -13,9 +13,9 @@ latex: latex_no_pdf
 
 latex_no_pdf_no_images: install_brenier_two_fluid latex_docs_no_pdf copy_png_files put_figures_outside_of_minted_environment do_correct_quotation_marks make_correct_thrm_and_dfntn_and_xmpl_and_rmrk_and_proof_environment references_instead_of_hyperlinks
 
-latex_no_pdf: latex_images latex_no_pdf_no_images 
+latex_no_pdf: latex_images mnist_image latex_no_pdf_no_images 
 
-html: html_images html_no_images
+html: html_images mnist_image html_no_images
 
 html_no_images: install_brenier_two_fluid test_docs documenter
 
@@ -49,8 +49,12 @@ html_images:
 latex_images: 
 	$(MAKE) latex -C src/tikz
 
+mnist_image:
+	$(MAKE) all -C src/tutorials/mnist
+
 clean:
 	$(MAKE) empty -C src/tikz ;
+	$(MAKE) clean -C src/tutorials/mnist ;
 	rm -Rf build
 
 latex_docs_no_pdf:
@@ -102,3 +106,5 @@ copy_png_files:
 	find build/manifolds -name \*.png -exec cp {} build \; ;
 	find build/optimizers/manifold_related -name \*.png -exec cp {} build \; ;
 	find build/tutorials -name \*.png -exec cp {} build \;
+	find build/reduced_order_modeling -name \*.png -exec cp {} build \;
+	find build/tutorials/mnist -name \*.png -exec cp {} build \;

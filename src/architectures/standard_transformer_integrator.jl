@@ -1,9 +1,15 @@
 @doc raw"""
-The regular transformer used as an integrator (multi-step method). 
+    StandardTransformerIntegrator(sys_dim)
 
-The constructor is called with one argument: 
-- `sys_dim::Int`
-The following are keyword arguments:
+Make an instance of `StandardTransformerIntegrator` for a specific system dimension.
+
+Here the standard transformer used as an integrator (multi-step method). 
+
+It is a composition of [`MultiHeadAttention`](@ref) layers and [`ResNet`](@ref) layers.
+
+# Arguments
+
+The following are optional keyword arguments:
 - `transformer_dim::Int`: the default is `transformer_dim = sys_dim`.
 - `n_blocks::Int`: The default is `1`.
 - `n_heads::Int`: the number of heads in the multihead attentio layer (default is `n_heads = sys_dim`)

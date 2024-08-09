@@ -87,6 +87,10 @@ end
 
 Batch(::Int, ::Nothing, ::Int) = error("Cannot provide prediction window alone. Need sequence length!")
 
+function Batch(batch_size::Int, dl::DataLoader{T, AT, OT, :TimeSeries}) where {T, T1, AT<:AbstractArray{T, 3}, OT<:AbstractArray{T1, 3}}
+    Batch(batch_size, dl.input_time_steps, 0)
+end
+
 @doc raw"""
     number_of_batches(dl, batch)
 
@@ -95,7 +99,7 @@ Compute the number of batches.
 Here the big distinction is between data that are *time-series like* and data that are *autoencoder like*.
 """
 function number_of_batches(dl::DataLoader{T, AT, OT, :TimeSeries}, batch::Batch) where {T, BT<:AbstractArray{T, 3}, AT<:Union{BT, NamedTuple{(:q, :p), Tuple{BT, BT}}}, OT}
-    @assert dl.input_time_steps > (batch.seq_length + batch.prediction_window) "The number of time steps has to be greater than sequence length + prediction window."
+    @assert dl.input_time_steps ≥ (batch.seq_length + batch.prediction_window) "The number of time steps has to be greater than sequence length + prediction window."
     Int(ceil((dl.input_time_steps - (batch.seq_length - 1) - batch.prediction_window) * dl.n_params / batch.batch_size))
 end
 
@@ -153,13 +157,11 @@ end
 function convert_vector_of_tuples_to_matrix(backend::Backend, batch_indices_tuple::Vector{Tuple{Int, Int}})
     _batch_size = length(batch_indices_tuple)
 
-    batch_indices = KernelAbstractions.allocate(backend, Int, 2, _batch_size)
-    batch_indices_temp = zeros(Int, size(batch_indices)...)
-    for t in axes(batch_indices_tuple, 1)
-        batch_indices_temp[1, t] = batch_indices_tuple[t][1]
-        batch_indices_temp[2, t] = batch_indices_tuple[t][2]
+    batch_indices = KernelAbstractions.zeros(backend, Int, 2, _batch_size)
+    @views for t in axes(batch_indices_tuple, 1)
+        batch_indices[1, t] = batch_indices_tuple[t][1]
+        batch_indices[2, t] = batch_indices_tuple[t][2]
     end
-    batch_indices = typeof(batch_indices)(batch_indices_temp)
 
     batch_indices
 end
@@ -272,10 +274,11 @@ function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT, Nothing,
 end
 
 # for the case when the DataLoader also contains an output
-function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT, OT}, ::Batch, batch_indices_tuple::Vector{Tuple{Int, Int}}) where {T, T1, BT<:AbstractArray{T, 3}, OT<:AbstractArray{T1, 3}}
-    _batch_indices = [batch_index[1] for batch_index in batch_indices_tuple]
-    input_batch = copy(dl.input[:, :, _batch_indices])
-    output_batch = copy(dl.output[:, :, _batch_indices])
+function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT, OT}, batch::Batch, batch_indices_tuple::Vector{Tuple{Int, Int}}) where {T, T1, BT<:AbstractArray{T, 3}, OT<:AbstractArray{T1, 3}}
+    time_indices = [batch_index[1] for batch_index in batch_indices_tuple]
+    parameter_indices = [batch_index[2] for batch_index in batch_indices_tuple]
+    @views input_batch = dl.input[:, :, parameter_indices]
+    @views output_batch = dl.output[:, :, parameter_indices]
 
     input_batch, output_batch
 end

@@ -71,9 +71,8 @@ function Base.:+(a::Vector{Float64}, b::Tuple{Float64})
     return y+x
 end
 
-"""
-Kernel that is needed for functions relating to `SymmetricMatrix` and `SkewSymMatrix` 
-"""
+
+# Kernel that is needed for functions relating to `SymmetricMatrix` and `SkewSymMatrix` 
 @kernel function write_ones_kernel!(unit_matrix::AbstractMatrix{T}) where T
     i = @index(Global)
     unit_matrix[i, i] = one(T)
@@ -111,15 +110,42 @@ function global_section(::AbstractVecOrMat)
 end
 
 """
-The type for data in ``(q, p)`` coordinates.
+    QPT
+
+The type for data in ``(q, p)`` coordinates. It encompasses various array types.
+
+# Examples
+
+```jldoctest
+using GeometricMachineLearning: QPT
+
+# allocate two vectors
+data1 = (q = rand(5), p = rand(5))
+
+# allocate two matrices
+data2 = (q = rand(5, 4), p = rand(5, 4))
+
+# allocate two tensors
+data3 = (q = rand(5, 4, 2), p = rand(5, 4, 2))
+
+(typeof(data1) <: QPT, typeof(data2) <: QPT, typeof(data3) <: QPT)
+
+# output
+
+(true, true, true)
+```
 """
 const QPT{T} = NamedTuple{(:q, :p), Tuple{AT, AT}} where {T, AT <: AbstractArray{T}}
 
-"""
+@doc raw"""
+    QPTOAT
+
 A union of two types:
 ```julia
 const QPTOAT = Union{QPT, AbstractArray}
 ```
+
+This could be data in ``(q, p)\in\mathbb{R}^{2d}`` form or come from an arbitrary vector space.
 """
 const QPTOAT{T} = Union{QPT{T}, AbstractArray{T}} where T
 

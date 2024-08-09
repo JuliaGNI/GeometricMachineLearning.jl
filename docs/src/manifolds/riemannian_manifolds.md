@@ -103,7 +103,7 @@ ax = Axis3(fig[1, 1]; # hide
     limits = ([-1, 1], [-1, 1], [-1, 1]), # hide
     azimuth = π / 7, # hide
     elevation = π / 7, # hide
-    # height = 75.,
+    # height = 75., # hide
     ) # hide
 
 # plot a sphere with radius one and origin 0
@@ -131,7 +131,7 @@ nothing # hide
 Main.include_graphics("sphere_with_tangent_vec") # hide
 ```
 
-We now solve the geodesic spray for ``\eta\cdot\Delta`` for ``\eta = 0.1, 0.2, 0.3, \ldots, 2.5`` and plot the corresponding points:
+We now solve the geodesic spray for ``\eta\cdot\Delta`` for ``\eta = 0.1, 0.2, 0.3, \ldots, 5.5`` with the function [`geodesic`](@ref) and plot the corresponding points:
 
 ```@example s2_retraction
 Δ_increments = [Δ * η for η in 0.1 : 0.1 : 5.5]
@@ -139,13 +139,13 @@ We now solve the geodesic spray for ``\eta\cdot\Delta`` for ``\eta = 0.1, 0.2, 0
 Y_increments = [geodesic(Y, Δ_increment) for Δ_increment in Δ_increments]
 
 function make_plot_with_solution(; theme = :dark) # hide
-fig, ax = set_up_plot(; theme = theme)
+fig, ax = set_up_plot(; theme = theme) # hide
 for Y_increment in Y_increments
     scatter!(ax, [Y_increment[1]], [Y_increment[2]], [Y_increment[3]]; 
-        color = mred, markersize = 5)
+        color = mred)
 end
 
-fig
+fig # hide
 end # hide
 
 fig_light = make_plot_with_solution(; theme = :light) # hide
@@ -161,24 +161,36 @@ nothing # hide
 Main.include_graphics("sphere_with_tangent_vec_and_geodesic") # hide
 ```
 
-So a geodesic can be seen as the *equivalent of a straight line* on a manifold. Also note that we drew a random element form [`StiefelManifold`](@ref) here and not from ``S^2``. This is because [Stiefel manifolds](@ref "The Stiefel Manifold") are more general spaces than ``S^n`` and also comprise them. 
+A geodesic can be seen as the *equivalent of a straight line* on a manifold. Also note that we drew a random element form [`StiefelManifold`](@ref) here, and not from ``S^2``. This is because the category of [Stiefel manifolds](@ref "The Stiefel Manifold") is more general than the category of spheres ``S^n``: ``St(1, 3) \simeq S^2``.
 
 ## The Riemannian Gradient
 
-The Riemannian gradient of a function ``L\mathcal{M}\to\mathbb{R}`` is a vector field[^3] ``\mathrm{grad}^gL`` (or simply ``\mathrm{grad}L``) for which we have
+The *Riemannian gradient* is essential when talking about optimization on manifolds.
 
-[^3]: We also write ``\mathrm{grad}^gL(x) = \mathrm{grad}^g_xL.``
-
-```math
-    g_x(\mathrm{grad}_x^gL, v_x) = (\nabla_{\varphi_U(x)}(L\circ\varphi_U^{-1}))^T \varphi_U'(v_x), 
+```@eval
+Main.definition(raw"The Riemannian gradient of a function ``L:\mathcal{M}\to\mathbb{R}`` is a vector field ``\mathrm{grad}^gL`` (or simply ``\mathrm{grad}L``) for which we have
+" * Main.indentation * raw"```math
+" * Main.indentation * raw"    g_x(\mathrm{grad}^gL(x), v_x) = (\nabla_{\varphi_U(x)}(L\circ\varphi_U^{-1}))^T \varphi_U'(v_x), 
+" * Main.indentation * raw"```
+" * Main.indentation * raw"for all ``v_x\in{}T_x\mathcal{M}.`` In the expression above ``\varphi_U`` is some coordinate chart defined in a neighborhood ``U`` around ``x``.")
 ```
 
-where 
-
+In the definition above ``\nabla`` indicates the *Euclidean gradient*:
 ```math
- \nabla_xf = \begin{pmatrix} \frac{\partial{}f}{\partial{}x_1} \\ \cdots \\ \frac{\partial{}f}{\partial{}x_n} \end{pmatrix},
+ \nabla_xf = \begin{pmatrix} \frac{\partial{}f}{\partial{}x_1} \\ \cdots \\ \frac{\partial{}f}{\partial{}x_n} \end{pmatrix}.
 ```
-is the Euclidean gradient. By the *non-degeneracy* of ``g`` the Riemannian gradient always exists [bishop1980tensor](@cite). We will give specific examples of this when discussing the [Stiefel manifold](@ref "The Stiefel Manifold") and the [Grassmann manifold](@ref "The Grassmann Manifold"). 
+
+We can also describe the Riemannian gradient through differential curves:
+
+```@eval
+Main.definition(raw"The Riemannian gradient of ``L`` is a vector field ``\mathrm{grad}^gL`` for which
+" * Main.indentation * raw"```math
+" * Main.indentation * raw"g_x(\mathrm{grad}^gL(x), \dot{\gamma}(0)) = \frac{d}{dt}L(\gamma(t)),
+" * Main.indentation * raw"```
+" * Main.indentation * raw"where ``\gamma`` is a ``C^\infty`` curve through ``x``.")
+```
+
+By the *non degeneracy* of ``g`` the Riemannian gradient always exists [bishop1980tensor](@cite). In the following we will also write ``\mathrm{grad}^gL(x) = \mathrm{grad}^g_xL = \mathrm{grad}_xL.`` We will give specific examples of this when discussing the [Stiefel manifold](@ref "The Stiefel Manifold") and the [Grassmann manifold](@ref "The Grassmann Manifold"). 
 
 
 ## Gradient Flows and Riemannian Optimization
@@ -199,7 +211,7 @@ we call the *gradient optimization scheme*.
 
 ## Library Functions
 
-```@docs; canonical = false
+```@docs
 geodesic(::Manifold{T}, ::AbstractMatrix{T}) where T
 ```
 

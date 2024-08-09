@@ -1,7 +1,5 @@
-@doc raw"""
-This defines a manifold layer that only has one matrix-valued manifold $A$ associated with it does $x\mapsto{}Ax$. 
-"""
-abstract type ManifoldLayer{M, N, retraction} <: LayerWithManifold{M, N, retraction} end
+# This defines a manifold layer that only has one matrix-valued manifold $A$ associated with it does $x\mapsto{}Ax$. 
+abstract type ManifoldLayer{M, N, retraction} <: AbstractExplicitLayer{M, N} end
 
 function (d::ManifoldLayer{M, N})(x::AbstractVecOrMat, ps::NamedTuple) where {M, N}
     N > M ? ps.weight*x : ps.weight'*x
