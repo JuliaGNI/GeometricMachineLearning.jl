@@ -112,7 +112,7 @@ module GeometricMachineLearning
     # GPU specific operations
     export convert_to_dev, Device, CPUDevice
 
-    export GradientLayer, GradientLayerQ, GradientLayerP, ActivationLayerQ, ActivationLayerP, LinearLayerQ, LinearLayerP
+    export GradientLayerQ, GradientLayerP, ActivationLayerQ, ActivationLayerP, LinearLayerQ, LinearLayerP
     export Linear
     export ResidualLayer
     export LinearSymplecticLayerP, LinearSymplecticLayerQ
@@ -169,7 +169,6 @@ module GeometricMachineLearning
     export ResNet
     export Transformer
     export TransformerIntegrator, StandardTransformerIntegrator
-    export Classification
 
     # INCLUDE OPTIMIZERS
     export OptimizerMethod, AbstractCache
@@ -183,7 +182,7 @@ module GeometricMachineLearning
     export Optimizer
     export optimization_step!
 
-    export GlobalSection, apply_section
+    export GlobalSection, apply_section, apply_section!
     export global_rep
     export Geodesic, Cayley
     export geodesic, cayley
@@ -246,7 +245,7 @@ module GeometricMachineLearning
     include("backends/backends.jl")
     include("backends/lux.jl")
 
-    export TransformerLoss, FeedForwardLoss, AutoEncoderLoss, ReducedLoss
+    export NetworkLoss, TransformerLoss, FeedForwardLoss, AutoEncoderLoss, ReducedLoss
 
     #INCLUDE ARCHITECTURES
     include("architectures/neural_network_integrator.jl")
@@ -272,7 +271,7 @@ module GeometricMachineLearning
     export SympNet, LASympNet, GSympNet
     export RecurrentNeuralNetwork
     export LSTMNeuralNetwork
-    export ClassificationTransformer
+    export ClassificationTransformer, ClassificationLayer
     export VolumePreservingFeedForward
     export SymplecticAutoencoder, PSDArch
 
@@ -287,7 +286,7 @@ module GeometricMachineLearning
 
     include("loss/losses.jl")
 
-    export DataLoader, onehotbatch, accuracy
+    export DataLoader, onehotbatch
     export Batch, optimize_for_one_epoch!
     include("data_loader/tensor_assign.jl")
     include("data_loader/matrix_assign.jl")

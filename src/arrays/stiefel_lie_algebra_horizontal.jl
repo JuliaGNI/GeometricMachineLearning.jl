@@ -156,10 +156,9 @@ end
 
 function Base.zeros(backend::KernelAbstractions.Backend, ::Type{StiefelLieAlgHorMatrix{T}}, N::Integer, n::Integer) where T 
 	StiefelLieAlgHorMatrix(
-			       zeros(backend, SkewSymMatrix{T}, n), 
-			       KernelAbstractions.zeros(backend, T, N-n, n),
-							N,
-	n)
+			       zeros(backend, SkewSymMatrix{T}, n),
+			       N == n ? KernelAbstractions.allocate(backend, T, N-n, n) : 
+                            KernelAbstractions.zeros(backend, T, N-n, n), N, n)
 end
 
 

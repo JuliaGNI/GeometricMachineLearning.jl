@@ -1,15 +1,34 @@
 
 @doc raw"""
+    SymplecticPotential(n2)
 
-`SymplecticPotential(n)`
-
-Returns a symplectic matrix of size 2n x 2n
+Returns a symplectic potential of size ``2n\times2n``.
 
 ```math
 \begin{pmatrix}
 \mathbb{O} & \mathbb{I} \\
 \mathbb{O} & -\mathbb{I} \\
 \end{pmatrix}
+```
+
+# Arguments
+
+It can also be called with a `backend` and a `type`:
+```jldoctest
+using GeometricMachineLearning
+
+backend = CPU()
+T = Float16
+
+SymplecticPotential(backend, 4, T)
+
+# output
+
+4×4 SymplecticPotential{Float16, Matrix{Float16}}:
+  0.0   0.0  1.0  0.0
+  0.0   0.0  0.0  1.0
+ -1.0   0.0  0.0  0.0
+  0.0  -1.0  0.0  0.0
 ```
 """
 struct SymplecticPotential{T, AT} <: AbstractMatrix{T}
@@ -62,9 +81,7 @@ function (𝕁::SymplecticPotential{T})(v₁::AbstractVector{T}, v₂::AbstractV
     𝕁(assign_q_and_p(v₁, 𝕁.n), assign_q_and_p(v₂, 𝕁.n))
 end
 
-"""
-This assigns the right index for the symplectic potential. To be used with `assign_ones_for_symplectic_potential_kernel!`.
-"""
+# This assigns the right index for the symplectic potential. To be used with `assign_ones_for_symplectic_potential_kernel!`.
 function map_index_for_symplectic_potential(i::Int, n::Int)
     if i ≤ n
         return (i, i + n)

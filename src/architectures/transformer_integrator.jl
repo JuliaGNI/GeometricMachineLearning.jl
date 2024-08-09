@@ -1,8 +1,31 @@
 @doc raw"""
 Encompasses various transformer architectures, such as the [`VolumePreservingTransformer`](@ref) and the [`LinearSymplecticTransformer`](@ref). 
+
+The central idea behind this is to construct an explicit multi-step integrator:
+
+```math
+    \mathtt{Integrator}: [ z^{(t - \mathtt{sl} + 1)}, z^{(t - \mathtt{sl} + 2)}, \ldots, z^{(t)} ] \mapsto [ z^{(t + 1)}, z^{(t + 2)}, \ldots, z^{(t + \mathtt{pw})} ],
+```
+where `sl` stands for *sequence length* and `pw` stands for *prediction window*, so the numbers of input and output vectors respectively.
+
+Note that for standard multi-step methods (that are not neural network-based) `sl` is generally a number greater than one whereas `pw = 1` in most cases. 
+
+For the `TransformerIntegrator`s in `GeometricMachineLearning` however we usually have:
+
+```math
+    \mathtt{pw} = \mathtt{sl},
+```
+so the number of vectors in the input sequence is equal to the number of vectors in the output sequence.
 """
 abstract type TransformerIntegrator <: Architecture end
 
+@doc raw"""
+    DummyTransformer(seq_length)
+
+Make an instance of `DummyTransformer`.
+
+This *dummy architecture* can be used if the user wants to define a new [`TransformerIntegrator`](@ref).
+"""
 struct DummyTransformer <: TransformerIntegrator 
     seq_length::Int
 end

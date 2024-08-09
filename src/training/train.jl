@@ -13,7 +13,7 @@ loss_gradient(loss, index_batch, params = nn.params) = Zygote.gradient(p -> loss
 ## Training on (LuxNeuralNetwork, AbstractTrainingData, OptimizerMethod, TrainingMethod, nruns, batch_size )
 ####################################################################################
 
-"""
+train_docstring = """
     train!(...)
 
 Perform a training of a neural networks on data using given method a training Method
@@ -31,6 +31,7 @@ Different ways of use:
 - `batch_size` : size of batch of data used for each step
 
 """
+
 function train!(nn::AbstractNeuralNetwork, _data::AbstractTrainingData, m::OptimizerMethod, method = default_method(nn, data); ntraining = DEFAULT_NRUNS, batch_size = missing, showprogress::Bool = false, timer::Bool = false)
 
     # create a timer
@@ -81,7 +82,7 @@ end
 ## Training on (LuxNeuralNetwork, AbstractTrainingData, TrainingParameters)
 ####################################################################################
 
-"""
+train_docstring2 = """
 ```julia
 train!(neuralnetwork, data, optimizer, training_method; nruns = 1000, batch_size, showprogress = false )
 ```
@@ -92,6 +93,7 @@ train!(neuralnetwork, data, optimizer, training_method; nruns = 1000, batch_size
 - ``
 
 """
+
 function train!(nn::AbstractNeuralNetwork{<:Architecture}, data::AbstractTrainingData, tp::TrainingParameters; kwarsg...)
 
     bs = typeof(method) <: TrainingMethod ? complete_batch_size(data, method(tp), batchsize(tp)) : batchsize(tp) 

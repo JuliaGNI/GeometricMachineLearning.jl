@@ -1,7 +1,9 @@
 @doc raw"""
-Implements the various layers from the SympNet paper [jin2020sympnets](@cite). This is a super type of [`GradientLayer`](@ref), [`ActivationLayer`](@ref) and [`LinearLayer`](@ref).
+Implements the various layers from the SympNet paper [jin2020sympnets](@cite).
 
-For the linear layer, the activation and the bias are left out, and for the activation layer ``K`` and ``b`` are left out!
+This is a super type of [`GradientLayer`](@ref), [`ActivationLayer`](@ref) and [`LinearLayer`](@ref).
+
+See the relevant docstrings of those layers for more information.
 """
 abstract type SympNetLayer{M, N} <: AbstractExplicitLayer{M, N} end
 
@@ -43,7 +45,7 @@ The gradient layer that changes the ``p`` component. It is of the form:
 \end{bmatrix},
 ```
 
-with ``V(p) = \sum_{i=1}^Ma_i\Sigma(\sum_jk_{ij}q_j+b_i)``, where ``\Sigma`` is the antiderivative of the activation function ``\sigma`` (one-layer neural network). We refer to $M$ as the *upscaling dimension*. Such layers are by construction symplectic.
+with ``V(p) = \sum_{i=1}^Ma_i\Sigma(\sum_jk_{ij}q_j+b_i)``, where ``\Sigma`` is the antiderivative of the activation function ``\sigma`` (one-layer neural network). We refer to ``M`` as the *upscaling dimension*. Such layers are by construction symplectic.
 """
 const GradientLayerP{M, N, TA} = GradientLayer{M, N, TA, :P}
 
@@ -69,7 +71,7 @@ Equivalent to a left multiplication by the matrix:
 \mathbb{O} & \mathbb{I}
 \end{pmatrix}, 
 ```
-where $B$ is a symmetric matrix.
+where ``B`` is a [`SymmetricMatrix`](@ref).
 """
 const LinearLayerQ{M, N, TA} = LinearLayer{M, N, :Q}
 
@@ -85,7 +87,7 @@ Equivalent to a left multiplication by the matrix:
 B & \mathbb{I}
 \end{pmatrix}, 
 ```
-where $B$ is a symmetric matrix.
+where ``B`` is a [`SymmetricMatrix`](@ref).
 """
 const LinearLayerP{M, N, TA} = LinearLayer{M, N, :P}
 
@@ -112,6 +114,7 @@ Performs:
 \end{pmatrix}.
 ```
 
+This can be recovered from [`GradientLayerQ`](@ref) by setting ``M`` equal to `n`, ``K`` equal to ``\mathbb{I}`` and ``b`` equal to zero.
 """
 const ActivationLayerQ{M, N, TA} = ActivationLayer{M, N, TA, :Q}
 
@@ -130,6 +133,8 @@ Performs:
         q \\ p + \mathrm{diag}(a)\sigma(q)
 \end{pmatrix}.
 ```
+
+This can be recovered from [`GradientLayerP`](@ref) by setting ``M`` equal to `n`, ``K`` equal to ``\mathbb{I}`` and ``b`` equal to zero.
 
 """
 const ActivationLayerP{M, N, TA} = ActivationLayer{M, N, TA, :P}
@@ -158,11 +163,6 @@ function LinearLayerP(M)
         LinearLayerP{M, M}()
 end
 
-@doc raw"""
-This is an old constructor and will be depricated. For `change_q=true` it is equivalent to `GradientLayerQ`; for `change_q=false` it is equivalent to `GradientLayerP`.
-
-If `full_grad=false` then `ActivationLayer` is called
-"""
 function Gradient(dim::Int, dim2::Int=dim, activation = identity; full_grad::Bool=true, change_q::Bool=true, allow_fast_activation::Bool=true)
         @warn "You are calling the old constructor. This will be deprecated."
 
@@ -212,9 +212,7 @@ function parameterlength(::LinearLayer{M, M}) where {M}
         (M ÷ 2) * (M ÷ 2 + 1) ÷ 2
 end
 
-@doc raw"""
-Multiplies a matrix with a vector, a matrix or a tensor.
-"""
+# Multiplies a matrix with a vector, a matrix or a tensor.
 custom_mat_mul(weight::AbstractMatrix, x::AbstractVecOrMat) = weight*x 
 function custom_mat_mul(weight::AbstractMatrix, x::AbstractArray{T, 3}) where T 
         mat_tensor_mul(weight, x)
@@ -262,11 +260,11 @@ end
 end
 
 
-@doc raw"""
-This function is used in the wrappers where the input to the SympNet layers is not a `NamedTuple` (as it should be) but an `AbstractArray`.
-
-It converts the Array to a `NamedTuple` (via `assign_q_and_p`), then calls the SympNet routine(s) and converts back to an `AbstractArray` (with `vcat`).
-"""
+# @doc raw"""
+# This function is used in the wrappers where the input to the SympNet layers is not a `NamedTuple` (as it should be) but an `AbstractArray`.
+# 
+# It converts the Array to a `NamedTuple` (via `assign_q_and_p`), then calls the SympNet routine(s) and converts back to an `AbstractArray` (with `vcat`).
+# """
 function apply_layer_to_nt_and_return_array(x::AbstractArray, d::AbstractExplicitLayer, ps::NamedTuple)
         N2 = size(x, 1)÷2
         qp = assign_q_and_p(x, N2)
@@ -274,9 +272,11 @@ function apply_layer_to_nt_and_return_array(x::AbstractArray, d::AbstractExplici
         return vcat(output.q, output.p)
 end
 
-@doc raw"""
-This is called when a SympnetLayer is applied to a `NamedTuple`. It calls `apply_layer_to_nt_and_return_array`.
-"""
+# @doc raw"""
+# This is called when a [`SympNetLayer`](@ref) is applied to a `NamedTuple`. 
+# 
+# It calls [`GeometricMachineLearning.apply_layer_to_nt_and_return_array`](@ref).
+# """
 @inline function (d::SympNetLayer)(x::AbstractArray, ps::NamedTuple)
         apply_layer_to_nt_and_return_array(x, d, ps)
 end

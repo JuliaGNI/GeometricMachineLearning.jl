@@ -1,6 +1,8 @@
 # Neural Network Integrators 
 
-In `GeometricMachineLearning` we can divide most neural network architectures (that are used for applications to physical systems) into two categories: autoencoders and integrators. *Integrator* in its most general form refers to an approximation of the flow of an ODE (see [the section on the existence and uniqueness theorem](@ref "The Existence-And-Uniqueness Theorem")) by a numerical scheme. Traditionally these numerical schemes were constructed by defining certain relationships between a known time step ``z^{(t)}`` and a future unknown one ``z^{(t+1)}`` [hairer2006geometric, leimkuhler2004simulating](@cite): 
+In `GeometricMachineLearning` we can divide most neural network architectures (that are used for applications to physical systems) into two categories: autoencoders and integrators. This is also closely related to the application of reduced order modeling where *autoencoders are used in the offline phase* and *integrators are used in the online phase*.
+
+*Integrator* in its most general form refers to an approximation of the [flow of an ODE](@ref "The Existence-And-Uniqueness Theorem") by a numerical scheme. Traditionally, for so called *one-step methods*, these numerical schemes are constructed by defining certain relationships between a known time step ``z^{(t)}`` and a future unknown one ``z^{(t+1)}`` [hairer2006geometric, leimkuhler2004simulating](@cite): 
 
 ```math
     f(z^{(t)}, z^{(t+1)}) = 0.
@@ -18,6 +20,8 @@ The neural network integrators in `GeometricMachineLearning` (the corresponding 
 
 Neural networks, as an alternative to traditional methods, are employed because of (i) potentially superior performance and (ii) an ability to learn unknown dynamics from data. 
 
+The simplest of such a neural network for modeling an explicit integrator is the [`ResNet`](@ref).
+
 ## Multi-step methods
 
 *Multi-step method* [feng1987symplectic, ge1988approximation](@cite) refers to schemes that are of the form[^1]: 
@@ -33,16 +37,20 @@ where `sl` is short for *sequence length* and `pw` is short for *prediction wind
 [z^{(t+1)}, \ldots, z^{(t+\mathtt{pw})}] = g(z^{(t - \mathtt{sl} + 1)}, \ldots, z^{(t)}).
 ```
 
-There are essentially two ways to construct multi-step methods with neural networks: the older one is using recurrent neural networks such as long short-term memory cells (LSTMs, [hochreiter1997long](@cite)) and the newer one is using transformer neural networks [vaswani2017attention](@cite). Both of these approaches have been successfully employed to learn multi-step methods (see [fresca2021comprehensive, lee2020model](@cite) for the former and [hemmasian2023reduced, solera2023beta, brantner2024volume](@cite) for the latter), but because the transformer architecture exhibits superior performance on modern hardware and can be imbued with geometric properties it is recommended to always use a transformer-derived architecture when dealing with time series[^2].
+In `GeometricMachineLearning` all multi-step methods, as is the case with one-step methods, are explicit. There are essentially two ways to construct multi-step methods with neural networks: the older one is using recurrent neural networks such as long short-term memory cells (LSTMs) [hochreiter1997long](@cite) and the newer one is using transformer neural networks [vaswani2017attention](@cite). Both of these approaches have been successfully employed to learn multi-step methods (see [fresca2021comprehensive, lee2020model](@cite) for the former and [hemmasian2023reduced, solera2023beta, brantner2024volume](@cite) for the latter), but because the transformer architecture exhibits superior performance on modern hardware and can be imbued with geometric properties we almost always use a transformer-derived architecture when dealing with time series[^2].
 
 [^2]: `GeometricMachineLearning` also has an LSTM implementation, but this may be deprecated in the future. 
 
-Explicit multi-step methods derived from he transformer are always subtypes of the type [`TransformerIntegrator`](@ref) in `GeometricMachineLearning`. In `GeometricMachineLearning` the [standard transformer](@ref "Standard Transformer"), the [volume-preserving transformer](@ref "Volume-Preserving Transformer") and the [linear symplectic transformer](@ref "Linear Symplectic Transformer") are implemented. 
+Explicit multi-step methods derived from the transformer are always subtypes of the type [`TransformerIntegrator`](@ref) in `GeometricMachineLearning`. In `GeometricMachineLearning` the [standard transformer](@ref "Standard Transformer"), the [volume-preserving transformer](@ref "Volume-Preserving Transformer") and the [linear symplectic transformer](@ref "Linear Symplectic Transformer") are implemented. 
 
 ## Library Functions 
 
-```@docs; canonical=false
-NeuralNetworkIntegrator 
+```@docs
+NeuralNetworkIntegrator
+iterate(::NeuralNetwork{<:NeuralNetworkIntegrator}, ::BT) where {T, AT<:AbstractVector{T}, BT<:NamedTuple{(:q, :p), Tuple{AT, AT}}}
+iterate(::NeuralNetwork{<:TransformerIntegrator}, ::NamedTuple{(:q, :p), Tuple{AT, AT}}) where {T, AT<:AbstractMatrix{T}}
+ResNet
+GeometricMachineLearning.ResNetLayer
 TransformerIntegrator
 ```
 

@@ -66,9 +66,6 @@ end
     A[i, i] = one(T)
 end
 
-"""
-Outer constructor for `StiefelProjection`. This works with two integers as input and optionally the type.
-"""
 StiefelProjection(N::Integer, n::Integer, T::Type=Float64) = StiefelProjection(CPU(), T, N, n)
 
 StiefelProjection(T::Type, N::Integer, n::Integer) = StiefelProjection(N, n, T)

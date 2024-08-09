@@ -1,4 +1,4 @@
-# Data Loader 
+# The Data Loader 
 
 The `DataLoader` in `GeometricMachineLearning` is designed to make training convenient. 
 
@@ -137,7 +137,7 @@ Here the sampling is performed over the second axis (the *time step dimension*) 
 
 ## Library Functions
 
-```@docs; canonical=false
+```@docs
 DataLoader
 Batch
 GeometricMachineLearning.number_of_batches

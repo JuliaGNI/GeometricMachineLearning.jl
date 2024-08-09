@@ -1,13 +1,11 @@
 @doc raw"""
-Realizes the linear Symplectic Transformer.
+    LinearSymplecticTransformer(sys_dim, seq_length)
 
-### Constructor: 
+Make an instance of `LinearSymplecticTransformer` for a specific system dimension and sequence length.
 
-The constructor is called with the following arguments
-1. `dim::Int`: System dimension 
-2. `seq_length::Int`: Number of time steps that the transformer considers. 
+# Arguments 
 
-Optional keyword arguments:
+You can provide the additional optional keyword arguments:
 - `n_sympnet::Int=2`: The number of sympnet layers in the transformer.
 - `upscaling_dimension::Int=2*dim`: The upscaling that is done by the gradient layer. 
 - `L::Int=1`: The number of transformer units. 

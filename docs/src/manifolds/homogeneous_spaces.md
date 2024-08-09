@@ -7,12 +7,12 @@
 ```@eval
 Main.definition(raw"A **homogeneous space** is a manifold ``\mathcal{M}`` on which a Lie group ``G`` acts transitively, i.e.
 " * Main.indentation * raw" ```math
-" * Main.indentation * raw"\forall X,Y\in\mathcal{M} \exists{}A\in{}G\text{ s.t. }AX = Y.
+" * Main.indentation * raw"\forall X,Y\in\mathcal{M} \quad \exists{}A\in{}G\text{ s.t. }AX = Y.
 " * Main.indentation * raw"```
 ")
 ```
 
-Now fix a distinct element ``E\in\mathcal{M}``; we will refer to this as the *canonical element*. We can also establish an isomorphism between ``\mathcal{M}`` and the quotient space ``G/\sim`` with the equivalence relation: 
+Now fix a distinct element ``E\in\mathcal{M}``; we will refer to this as the *canonical element* or [`StiefelProjection`](@ref). We can also establish an isomorphism between ``\mathcal{M}`` and the quotient space ``G/\sim`` with the equivalence relation: 
 ```math
 A_1 \sim A_2 \iff A_1E = A_2E.
 ```
@@ -70,7 +70,7 @@ That this is an isomorphism can be easily checked:
     \Omega(\Delta)Y = (\mathbb{I} - \frac{1}{2}YY^T)\Delta - \frac{1}{2}Y\Delta^TY = \Delta.
 ```
 
-The isomorphism is also implemented in `GeometricMachineLearning`:
+This isomorphism is also implemented in `GeometricMachineLearning`:
 
 ```@example
 using GeometricMachineLearning
@@ -190,8 +190,9 @@ Main.proof(raw"In a first step we identify charts on the Grassmann manifold to m
 
  ## Library Functions 
 
-```@docs; canonical=false
+```@docs
 StiefelManifold
+StiefelProjection
 GrassmannManifold
 rand(manifold_type::Type{MT}, ::Integer, ::Integer) where MT <: Manifold
 GeometricMachineLearning.rgrad(::StiefelManifold, ::AbstractMatrix)
