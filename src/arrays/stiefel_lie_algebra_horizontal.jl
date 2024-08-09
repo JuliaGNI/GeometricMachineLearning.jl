@@ -214,6 +214,15 @@ end
 LinearAlgebra.mul!(C::StiefelLieAlgHorMatrix, α::Real, A::StiefelLieAlgHorMatrix) = mul!(C, A, α)
 LinearAlgebra.rmul!(C::StiefelLieAlgHorMatrix, α::Real) = mul!(C, C, α)
 
+@doc raw"""
+    vec(A::StiefelLieAlgHorMatrix)
+
+Vectorize `A`. 
+
+# Implementation
+
+This is using `Vcat` from `LazyArrays`.
+"""
 function Base.vec(A::StiefelLieAlgHorMatrix)
     LazyArrays.Vcat(vec(A.A), vec(A.B))
 end
