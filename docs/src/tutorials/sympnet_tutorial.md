@@ -70,7 +70,7 @@ Next we specify the architectures. `GeometricMachineLearning` provides useful de
 
 ```@example sympnet
 # layer dimension for gradient module 
-const upscaling_dimension = 3
+const upscaling_dimension = 2
 
 # hidden layers
 const nhidden = 1
@@ -79,10 +79,10 @@ const nhidden = 1
 const activation = tanh
 
 # number of layers for the G-SympNet
-const n_layers = 2
+const n_layers = 4
 
 # number of linear layers in each "linear block" in the LA-SympNet
-const depth = 2
+const depth = 4
 
 # calling G-SympNet architecture 
 gsympnet = GSympNet(dl, upscaling_dimension=upscaling_dimension, n_layers=n_layers, activation=activation)
