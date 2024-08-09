@@ -217,7 +217,7 @@ Similar to the [Adam optimizer](@ref "The Adam Optimizer") we also add a ``\delt
 ```@docs
 BFGSOptimizer
 BFGSCache
-vcat(::StiefelLieAlgHorMatrix)
+vec(::StiefelLieAlgHorMatrix)
 ```
 
 ## References 
