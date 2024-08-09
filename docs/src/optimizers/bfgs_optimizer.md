@@ -30,7 +30,7 @@ where ``\eta^{(k)}`` is the *step length*. Techniques that describe how to pick 
 ```
 The first one of these conditions is automatically satisfied. The second one can be rewritten as: 
 ```math
-R^{(k)}(x^{(k)} - x^{(k-1)}) \overset{!}{=} \nabla_{x^{(k)}}L - \nabla_{x^{(k-1)}}L. 
+x^{(k)} - x^{(k-1)} \overset{!}{=} H^{(k)}(\nabla_{x^{(k)}}L - \nabla_{x^{(k-1)}}L). 
 ```
 
 The following notations are often used: 
@@ -40,23 +40,23 @@ s^{(k-1)} := \eta^{(k-1)}p^{(k-1)} :=  x^{(k)} - x^{(k-1)} \quad\text{ and }\qua
 
 The condition mentioned above then becomes: 
 ```math
-R^{(k)}s^{(k-1)} \overset{!}{=} y^{(k-1)},
+s^{(k-1)} \overset{!}{=} H^{(k)}y^{(k-1)},
 ```
 and we call it the *secant equation*. 
 
-In order to pick the ideal ``R^{(k)}`` we solve the following problem: 
+In order to pick the ideal ``H^{(k)}`` we solve the following problem: 
 ```math
 \begin{aligned}
-\min_R & ||R & - R^{(k-1)}||_W \\ 
-\text{s.t.} & R  & = R^T\quad\text{and}\\
-            & Rs^{(k-1)} & = y^{(k-1)},
+& \min_H & & ||H - H^{(k-1)}||_W \\ 
+& \text{s.t.} & & H = H^T\quad\text{and}\\
+            & \text{and} & & s^{(k-1)} = Hy^{(k-1)},
 \end{aligned}
 ```
 where the first condition is symmetry and the second one is the secant equation. For the norm ``||\cdot||_W`` we pick the weighted Frobenius norm:
 ```math
 ||A||_W := ||W^{1/2}AW^{1/2}||_F,
 ```
-where ``||\cdot||_F`` is the usual Frobenius norm[^2] and the matrix ``W=\tilde{R}^{(k-1)}`` is the inverse of the *average Hessian*:
+where ``||\cdot||_F`` is the usual Frobenius norm[^2] and the matrix ``W=\tilde{R}^{(k-1)}`` is the *average Hessian*:
 ```math
 \tilde{R}^{(k-1)} = \int_0^1 \nabla^2f(x^{(k-1)} + \tau\eta^{(k-1)}p^{(k-1)})d\tau.
 ``` 
@@ -67,72 +67,65 @@ We now state the solution to this minimization problem:
 ```@eval
 Main.theorem(raw"The solution of the minimization problem is:
 " * Main.indentation * raw"```math
-" * Main.indentation * raw"R^{(k)} = (\mathbb{I} - \frac{1}{(y^{(k-1)})^Ts^{(k-1)}}y^{(k-1)}(s^{(k-1)})^T)R^{(k-1)}(\mathbb{I} - \frac{1}{y^({k-1})^Ts^{(k-1)}}s^{(k-1)}(y^{(k-1)})^T) + \\ \frac{1}{(y^{(k-1)})^Ts^{(k-1)}}y^{(k)}(y^{(k)})^T,
+" * Main.indentation * raw"H^{(k)} = (\mathbb{I} - \frac{1}{(s^{(k-1)})^Ty^{(k-1)}}s^{(k-1)}(y^{(k-1)})^T)H^{(k-1)}(\mathbb{I} - \frac{1}{s^({k-1})^Ty^{(k-1)}}y^{(k-1)}(s^{(k-1)})^T) + \\ \frac{1}{(s^{(k-1)})^Ty^{(k-1)}}s^{(k)}(s^{(k)})^T,
 " * Main.indentation * raw"```
 " * Main.indentation * raw"with ``y^{(k-1)} = \nabla_{x^{(k)}}L - \nabla_{x^{(k-1)}}L`` and ``s^{(k-1)} = x^{(k)} - x^{(k-1)}`` as above.")
 ```
 
 ```@eval
-Main.proof(raw"In order to find the ideal ``R^{(k)}`` under the conditions described above, we introduce some notation: 
-" * Main.indentation * raw"- ``\tilde{R}^{(k-1)} := W^{1/2}R^{(k-1)}W^{1/2}``,
-" * Main.indentation * raw"- ``\tilde{R} := W^{1/2}RW^{1/2}``, 
+Main.proof(raw"In order to find the ideal ``H^{(k)}`` under the conditions described above, we introduce some notation: 
+" * Main.indentation * raw"- ``\tilde{H}^{(k-1)} := W^{1/2}H^{(k-1)}W^{1/2}``,
+" * Main.indentation * raw"- ``\tilde{H} := W^{1/2}HW^{1/2}``, 
 " * Main.indentation * raw"- ``\tilde{y}^{(k-1)} := W^{-1/2}y^{(k-1)}``, 
 " * Main.indentation * raw"- ``\tilde{s}^{(k-1)} := W^{1/2}s^{(k-1)}``.
 " * Main.indentation * raw"
-" * Main.indentation * raw"With this notation we can rewrite the problem of finding ``R^{(k)}`` as: 
+" * Main.indentation * raw"With this notation we can rewrite the problem of finding ``H^{(k)}`` as: 
 " * Main.indentation * raw"```math
 " * Main.indentation * raw"\begin{aligned}
-" * Main.indentation * raw"\min_{\tilde{R}} & ||\tilde{R} - \tilde{R}^{(k-1)}||_F & \\ 
-" * Main.indentation * raw"\text{s.t.}\quad & \tilde{R} = \tilde{R}^T\quad & \text{and}\\
-" * Main.indentation * raw"            &\tilde{R}\tilde{s}^{(k-1)} = \tilde{y}^{(k-1)}&.
+" * Main.indentation * raw"& \min_{\tilde{H}} & & ||\tilde{H} - \tilde{H}^{(k-1)}||_F  \\ 
+" * Main.indentation * raw"& \text{s.t.}\quad & & \tilde{H} = \tilde{H}^T\quad \\
+" * Main.indentation * raw"& \text{and} & & \tilde{s}^{(k-1)} = \tilde{H}\tilde{y}^{(k-1)}.
 " * Main.indentation * raw"\end{aligned}
 " * Main.indentation * raw"```
 " * Main.indentation * raw"
-" * Main.indentation * raw"We further have ``y^{(k-1)} = Ws^{(k-1)}`` and hence ``\tilde{y}^{(k-1)} = \tilde{s}^{(k-1)}`` by a corollary of the mean value theorem: ``\int_0^1 g'(\xi_1 + \tau(\xi_2 - \xi_1)) d\tau (\xi_2 - \xi_1) = g(\xi_2 - \xi_1)`` for a vector-valued function ``g``.
+" * Main.indentation * raw"We further have ``y^{(k-1)} = Ws^{(k-1)}`` and hence ``\tilde{y}^{(k-1)} = \tilde{s}^{(k-1)}`` by a corollary of the mean value theorem: ``\int_0^1 g'(\xi_1 + \tau(\xi_2 - \xi_1)) d\tau (\xi_2 - \xi_1) = g(\xi_2) - g(\xi_1)`` for a vector-valued function ``g``.
 " * Main.indentation * raw"
-" * Main.indentation * raw"Now we rewrite ``R`` and ``R^{(k-1)}`` in a new basis ``U = [u|u_\perp]``, where ``u := \tilde{s}_{k-1}/||\tilde{s}_{k-1}||`` and ``u_\perp`` is an orthogonal complement of ``u`` (i.e. we have ``u^Tu_\perp=0`` and ``u_\perp^Tu_\perp=\mathbb{I}``):
+" * Main.indentation * raw"Now we rewrite ``H`` and ``H^{(k-1)}`` in a new basis ``U = [u|u_\perp]``, where ``u := \tilde{y}^{(k-1)}/||\tilde{y}^{(k-1)}||`` and ``u_\perp`` is an orthogonal complement of ``u`` (i.e. we have ``u^Tu_\perp=0`` and ``u_\perp^Tu_\perp=\mathbb{I}``):
 " * Main.indentation * raw"
 " * Main.indentation * raw"```math
 " * Main.indentation * raw"\begin{aligned}
-" * Main.indentation * raw"U^T\tilde{R}^{(k-1)}U - U^T\tilde{R}U = \begin{bmatrix}  u^T \\ u_\perp^T \end{bmatrix}(\tilde{R}^{(k-1)} - \tilde{R})\begin{bmatrix} u & u_\perp \end{bmatrix} = \\
+" * Main.indentation * raw"U^T\tilde{H}^{(k-1)}U - U^T\tilde{H}U = \begin{bmatrix}  u^T \\ u_\perp^T \end{bmatrix}(\tilde{H}^{(k-1)} - \tilde{H})\begin{bmatrix} u & u_\perp \end{bmatrix} = \\
 " * Main.indentation * raw"\begin{bmatrix}
-" * Main.indentation * raw"    u^T\tilde{R}^{(k-1)}u - 1 & u^T\tilde{R}^{(k-1)}u \\
-" * Main.indentation * raw"    u_\perp^T\tilde{R}^{(k-1)}u & u_\perp^T(\tilde{R}^{(k-1)}-\tilde{R}^{(k)})u_\perp
+" * Main.indentation * raw"    u^T\tilde{H}^{(k-1)}u - 1 & u^T\tilde{H}^{(k-1)}u_\perp \\
+" * Main.indentation * raw"    u_\perp^T\tilde{H}^{(k-1)}u & u_\perp^T(\tilde{H}^{(k-1)}-\tilde{H}^{(k)})u_\perp
 " * Main.indentation * raw"\end{bmatrix}.
 " * Main.indentation * raw"\end{aligned}
 " * Main.indentation * raw"```
 " * Main.indentation * raw"By a property of the Frobenius norm we can consider the blocks independently: 
 " * Main.indentation * raw"```math
-" * Main.indentation * raw"||\tilde{R}^{(k-1)} - \tilde{R}||^2_F = (u^T\tilde{R}^{(k-1)}u -1)^2 + ||u^T\tilde{R}^{(k-1)}u_\perp||_F^2 + ||u_\perp^T\tilde{R}^{(k-1)}u||_F^2 + ||u_\perp^T(\tilde{R}^{(k-1)} - \tilde{R})u_\perp||_F^2
+" * Main.indentation * raw"\begin{aligned}
+" * Main.indentation * raw"||\tilde{H}^{(k-1)} - \tilde{H}||^2_F = ||U^T(\tilde{H}^{(k-1)} - \tilde{H})U||^2_F \\
+" * Main.indentation * raw"= (u^T\tilde{H}^{(k-1)}u -1)^2 + ||u^T\tilde{H}^{(k-1)}u_\perp||_F^2 + ||u_\perp^T\tilde{H}^{(k-1)}u||_F^2 + ||u_\perp^T(\tilde{H}^{(k-1)} - \tilde{H})u_\perp||_F^2.
+" * Main.indentation * raw"\end{aligned}
 " * Main.indentation * raw"```
-" * Main.indentation * raw"
-" * Main.indentation * raw"We see that ``\tilde{R}`` only appears in the last term, which should therefore be made zero, i.e. the projections of ``\tilde{R}_{k-1}`` and ``\tilde{R}`` onto the space spanned by ``u_\perp`` should coincide. With the condition ``\tilde{R}u \overset{!}{=} u`` w hence get: 
+" * Main.indentation * raw"We see that ``\tilde{H}`` only appears in the last term, which should therefore be made zero, i.e. the projections of ``\tilde{H}_{k-1}`` and ``\tilde{H}`` onto the space spanned by ``u_\perp`` should coincide. With the condition ``\tilde{H}u \overset{!}{=} u`` we hence get: 
 " * Main.indentation * raw"```math
-" * Main.indentation * raw"\tilde{R} = U\begin{bmatrix} 1 & 0 \\ 0 & u^T_\perp\tilde{R}^{(k-1)}u_\perp \end{bmatrix}U^T = uu^T + (\mathbb{I}-uu^T)\tilde{R}^{(k-1)}(\mathbb{I}-uu^T).
+" * Main.indentation * raw"\tilde{H} = U\begin{bmatrix} 1 & 0 \\ 0 & u^T_\perp\tilde{H}^{(k-1)}u_\perp \end{bmatrix}U^T = uu^T + (\mathbb{I}-uu^T)\tilde{H}^{(k-1)}(\mathbb{I}-uu^T).
 " * Main.indentation * raw"```
-" * Main.indentation * raw"
-" * Main.indentation * raw"If we now map back to the original coordinate system, the ideal solution for ``R^{(k)}`` is: 
+" * Main.indentation * raw"If we now map back to the original coordinate system, the ideal solution for ``H^{(k)}`` is: 
 " * Main.indentation * raw"```math
-" * Main.indentation * raw"R^{(k)} = (\mathbb{I} - \frac{1}{(y^{(k-1)})^Ts^{(k-1)}}y^{(k-1)}(s^{(k-1)})^T)R^{(k-1)}(\mathbb{I} - \frac{1}{(y^{k-1})^Ts^{(k-1)}}s^{(k-1)}(y^{(k-1)})^T) + \\ \frac{1}{(y^{(k-1)})^Ts^{(k-1)}}y^{(k)}(y^{(k)})^T,
+" * Main.indentation * raw"H^{(k)} = (\mathbb{I} - \frac{1}{(s^{(k-1)})^Ty^{(k-1)}}s^{(k-1)}(y^{(k-1)})^T)H^{(k-1)}(\mathbb{I} - \frac{1}{(s^{k-1})^Ty^{(k-1)}}y^{(k-1)}(s^{(k-1)})^T) + \\ \frac{1}{(s^{(k-1)})^Ty^{(k-1)}}s^{(k)}(s^{(k)})^T,
 " * Main.indentation * raw"```
 " * Main.indentation * raw"and the assertion is proved.")
 ```
 
-What we need in practice however is not ``R^{(k)}``, but its inverse ``H^{(k)}``. This is because we need to find ``s^{(k-1)}`` based on ``y^{(k-1)}``.  To get ``H^{(k)}`` based on the expression for ``R^{(k)}`` above we can use the *Sherman-Morrison-Woodbury formula*[^3] to obtain:
-
-[^3]: The *Sherman-Morrison-Woodbury formula* states ``(A + UCV)^{-1} = A^{-1} - A^{-1}U(C^{-1} + VA^{-1}U)^{-1}VA^{-1}``.
-
-```math
-H^{(k)} = H^{(k-1)} - \frac{H^{(k-1)}y^{(k-1)}(y^{(k-1)})^TH^{(k-1)}}{(y^{(k-1)})^TH^{(k-1)}y^{(k-1)}} + \frac{s^{(k-1)}(s^{(k-1)})^T}{(y^{(k-1)})^Ts^{(k-1)}}.
-```
-
 The cache and the parameters are updated with:
 1. Compute the gradient ``\nabla_{x^{(k)}}L``,
-2. obtain a negative search direction ``p^{(k)} \gets H^{(k)}\nabla_{x^{(k)}}L``,
-3. compute ``s^{(k)} = -\eta^{(k)}p^{(k)}``,
+2. obtain a negative search direction ``p^{(k)} \gets -H^{(k)}\nabla_{x^{(k)}}L``,
+3. compute ``s^{(k)} = \eta^{(k)}p^{(k)}``,
 4. update ``x^{(k + 1)} \gets x^{(k)} + s^{(k)}``,
 5. compute ``y^{(k)} \gets \nabla_{x^{(k)}}L - \nabla_{x^{(k-1)}}L``,
-6. update ``H^{(k + 1)} \gets H^{(k)} - \frac{H^{(k)}y^{(k)}(y^{(k)})^TH^{(k)}}{(y^{(k)})^TH^{(k)}y^{(k)}} + \frac{s^{(k)}(s^{(k)})^T}{(y^{(k)})^Ts^{(k)}}``.
+6. update ``H^{(k + 1)} \gets (\mathbb{I} - \frac{1}{(s^{(k-1)})^Ty^{(k-1)}}s^{(k-1)}(y^{(k-1)})^T)H^{(k-1)}(\mathbb{I} - \frac{1}{s^({k-1})^Ty^{(k-1)}}y^{(k-1)}(s^{(k-1)})^T) + \\ \frac{1}{(s^{(k-1)})^Ty^{(k-1)}}s^{(k)}(s^{(k)})^T``.
 
 The cache of the BFGS algorithm thus consists of the matrix ``H^{(\cdot)}`` for each vector ``x^{(\cdot)}`` in the neural network and the gradient for the previous time step ``\nabla_{x^{(k-1)}}L``. ``s^{(k)}`` here is again the *velocity* that we use to update the neural network weights. 
 
@@ -141,7 +134,7 @@ The cache of the BFGS algorithm thus consists of the matrix ``H^{(\cdot)}`` for 
 Generalizing the BFGS algorithm to the setting of a Riemannian manifold is very straightforward. All we have to do is replace Euclidean gradient by Riemannian ones (composed with a horizontal lift): 
 
 ```math
-\nabla_{x^{(k)}}L \implies (\Lambda^{(k)})^{-1}(\Omega\circ\mathrm{grad}_{x^{(k)}}L)\Lambda^{(k)},
+\nabla_{x^{(k)}}L \implies (\Lambda^{(k)})^{-1}(\Omega(x^{(k)}, \mathrm{grad}_{x^{(k)}}L))\Lambda^{(k)} = \mathrm{global_rep}(\mathrm{grad}_{x^{(k)}}),
 ```
 
 and addition by a retraction:
@@ -150,11 +143,9 @@ and addition by a retraction:
     x^{(k+1)} \gets x^{(k)} + s^{(k)} \implies x^{(k+1)} \gets \mathrm{Retraction}(s^{(k)})x^{(k)}.
 ```
 
-If we deal with manifolds however we cannot simply take differences. But we do have however:
+The Hessian for the manifold BFGS algorithm is of size[^3] ``\tilde{N}\times\tilde{N}`` where ``\tilde{N} = \mathrm{dim}(\mathfrak{g}^\mathrm{hor})``. For [the global tangent space belonging to the Stiefel manifold](@ref "The Global Tangent Space for the Stiefel Manifold") we have ``\tilde{N} = (N - n)n + n(n - 1)\div2``.
 
-```math
-x^{(k+1)} = x
-```
+[^3]: We use the vectorization operation [`vec`](@ref) internally.
 
 ## The Curvature Condition and the Wolfe Conditions
 
@@ -202,7 +193,7 @@ We initialize ``H^{(0)}`` with the identity matrix ``\mathbb{I}`` and the gradie
 ```@example bfgs
 using GeometricMachineLearning
 
-weight = (Y = rand(StiefelManifold, 10, 5), )
+weight = (Y = rand(StiefelManifold, 5, 2), )
 method = BFGSOptimizer()
 o = Optimizer(method, weight)
 
@@ -226,6 +217,7 @@ Similar to the [Adam optimizer](@ref "The Adam Optimizer") we also add a ``\delt
 ```@docs; canonical=false
 BFGSOptimizer
 BFGSCache
+vcat(::StiefelLieAlgHorMatrix)
 ```
 
 ## References 
