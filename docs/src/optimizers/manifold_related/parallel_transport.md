@@ -30,7 +30,7 @@ We can further modify the expression of parallel transport for the Stiefel manif
 \Pi_{Y\to\gamma_{\Delta_1}(t)} = \lambda(Y)\exp(B_1)\lambda(Y)\Omega(Y, \Delta_2)Y = \lambda(Y)\exp(B_1)B_2E,
 ```
 
-where ``B_2 = \lambda(Y)^{-1}\Omega(Y, \Delta_2)\lambda(Y).``. We can now define explicit updating rules for the global section ``\Lambda^{(\cdot)}``, the element of the homogeneous space ``Y^{(\cdot)}``, the tangent vector ``\Delta^{(\cdot)}`` and ``D^{(\cdot)}``, its representation in ``\mathfrak{g}^\mathrm{hor}``.
+where ``B_2 = \lambda(Y)^{-1}\Omega(Y, \Delta_2)\lambda(Y).`` We can now define explicit updating rules for the global section ``\Lambda^{(\cdot)}``, the element of the homogeneous space ``Y^{(\cdot)}``, the tangent vector ``\Delta^{(\cdot)}`` and ``D^{(\cdot)}``, its representation in ``\mathfrak{g}^\mathrm{hor}``.
 
 We thus have:
 1. ``\Lambda^{(t)} \leftarrow \Lambda^{(t-1)}\exp(B^{(t-1)}),``
@@ -64,7 +64,7 @@ v₂ = 1 * rand(3, 1)
 
 morange = RGBf(255 / 256, 127 / 256, 14 / 256) # hide
 mred = RGBf(214 / 256, 39 / 256, 40 / 256) # hide
-mpurple = RGBf(148 / 256, 103 / 256, 189 / 256)
+mpurple = RGBf(148 / 256, 103 / 256, 189 / 256) # hide
 
 function set_up_plot(; theme = :dark) # hide
 fig = Figure(; backgroundcolor = :transparent, size = (900, 675)) # hide
@@ -148,7 +148,7 @@ function plot_parallel_transport(; theme = :dark) # hide
 fig, ax = set_up_plot(; theme = theme) # hide
 for Y_increment in Y_increments
     scatter!(ax, [Y_increment[1]], [Y_increment[2]], [Y_increment[3]]; 
-        color = mred, markersize = 5)
+        color = mred)
 end
 
 for (color, vec_transported) in zip((mred, mpurple), (Δ_transported, Δ₂_transported))

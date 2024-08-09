@@ -8,7 +8,10 @@ Make an instance of `SymplecticAutoencoder` for dimensions `full_dim` and `reduc
 The symplectic autoencoder architecture was introduced in [brantner2023symplectic](@cite). Like any other autoencoder it consists of an *encoder* ``\Psi^e:\mathbb{R}^{2N}\to\mathbb{R}^{2n}`` and a *decoder* ``\Psi^d:\mathbb{R}^{2n}\to\mathbb{R}^{2N}`` with ``n\ll{}N``. These satisfy the following properties: 
 
 ```math
-\nabla_z\Psi^e\mathbb{J}_{2N}(\nabla_z\Psi^e\mathbb{J}_{2N})^T = \mathbb{J}_{2n} \text{ and } (\nabla_\xi\Psi^d)^T\mathbb{J}_{2N}\nabla_\xi\Psi^d = \mathbb{J}_{2n}.
+\begin{aligned}
+    \nabla_z\Psi^e\mathbb{J}_{2N}(\nabla_z\Psi^e\mathbb{J}_{2N})^T = \mathbb{J}_{2n} & \quad\text{and} \\
+    (\nabla_\xi\Psi^d)^T\mathbb{J}_{2N}\nabla_\xi\Psi^d = \mathbb{J}_{2n}. & 
+\end{aligned}
 ```
 
 Because the decoder has this particular property, the reduced system can be described by the Hamiltonian ``H\circ\Psi^d``: 
@@ -17,7 +20,7 @@ Because the decoder has this particular property, the reduced system can be desc
 \mathbb{J}_{2n}\nabla_\xi(H\circ\Psi^d) = \mathbb{J}_{2n}(\nabla_\xi\Psi^d)^T\nabla_{\Psi^d(\xi)}H = \mathbb{J}_{2n}(\nabla_\xi\Psi^d)^T\mathbb{J}_{2N}^T\mathbb{J}_{2N}\nabla_{\Psi^d(\xi)}H = (\nabla_\xi\Psi^d)^+X_H(\Psi^d(\xi)),
 ```
 
-where ``(\nabla_\xi\Psi^d)^+`` is the pseudoinverse of ``\nabla_\xi\Psi^d`` (for more details see the docs on the [AutoEncoder](@ref) type).
+where ``(\nabla_\xi\Psi^d)^+`` is the *symplectic inverse* of ``\nabla_\xi\Psi^d`` (for more details see the docs on the [AutoEncoder](@ref) type).
 
 # Arguments
 
@@ -87,9 +90,9 @@ function SymplecticAutoencoder(full_dim::Integer, reduced_dim::Integer; n_encode
     end
 end
 
-"""
-This function gives iterations from the full dimension to the reduced dimension (i.e. the intermediate steps). The iterations are given in ascending order. Only even steps are allowed here.
-"""
+# """
+# This function gives iterations from the full dimension to the reduced dimension (i.e. the intermediate steps). The iterations are given in ascending order. Only even steps are allowed here.
+# """
 function compute_iterations_for_symplectic_system(full_dim::Integer, reduced_dim::Integer, n_blocks::Integer)
     full_dim2 = full_dim ÷ 2 
     reduced_dim2 = reduced_dim ÷ 2

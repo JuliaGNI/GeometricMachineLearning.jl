@@ -7,13 +7,13 @@ import Random
 
 backend = CUDABackend()
 
-params = [(α = α̃ ^ 2, N = 200) for α̃ in 0.8 : .1 : 2.0]
-pr = hodeensemble(; tspan = (0.0, 100.), parameters = params)
+params = [(α = α̃ ^ 2, N = 200) for α̃ in 0.8 : .1 : 0.8]
+pr = hodeensemble(; tspan = (0.0, 1000.), parameters = params)
 sol = integrate(pr, ImplicitMidpoint())
 dl_cpu = DataLoader(sol; autoencoder = true)
 dl = DataLoader(dl_cpu, backend, Float32)
 
-const reduced_dim = 4
+const reduced_dim = 2
 
 psd_arch = PSDArch(dl.input_dim, reduced_dim)
 sae_arch = SymplecticAutoencoder(dl.input_dim, reduced_dim; n_encoder_blocks = 4, n_decoder_blocks = 4, n_encoder_layers = 2, n_decoder_layers = 2)
@@ -22,8 +22,8 @@ Random.seed!(123)
 psd_nn = NeuralNetwork(psd_arch, backend)
 sae_nn = NeuralNetwork(sae_arch, backend)
 
-const n_epochs = 8192
-const batch_size = 2048
+const n_epochs = 131072
+const batch_size = 4096
 
 sae_method = AdamOptimizerWithDecay(n_epochs)
 o = Optimizer(sae_nn, sae_method)
@@ -45,7 +45,7 @@ hlines!([psd_error]; color = morange, label = "PSD error")
 lines!(sae_error; color = mgreen, label = "SAE error")
 const text_color = :black
 axislegend(; position = (.82, .75), backgroundcolor = :transparent, color = text_color)
-save("compare_errors.png", fig)
+save("symplectic_autoencoder_validation/compare_errors.pdf", fig)
 
 const mtc = GeometricMachineLearning.map_to_cpu
 psd_nn_cpu = mtc(psd_nn)
@@ -60,9 +60,14 @@ sae_rs = HRedSys(pr, encoder(sae_nn_cpu), decoder(sae_nn_cpu); integrator = Impl
 ######################################################################
 
 # integrate system
-sol_full = integrate_full_system(psd_rs)
-sol_psd_reduced = integrate_reduced_system(psd_rs)
-sol_sae_reduced = integrate_reduced_system(sae_rs)
+@time "FOM + Implicit Midpoint" sol_full = integrate_full_system(psd_rs)
+@time "PSD + Implicit Midpoint" sol_psd_reduced = integrate_reduced_system(psd_rs)
+@time "SAE + Implicit Midpoint" sol_sae_reduced = integrate_reduced_system(sae_rs)
+
+# call same functions again.
+@time "FOM + Implicit Midpoint" sol_full = integrate_full_system(psd_rs)
+@time "PSD + Implicit Midpoint" sol_psd_reduced = integrate_reduced_system(psd_rs)
+@time "SAE + Implicit Midpoint" sol_sae_reduced = integrate_reduced_system(sae_rs)
 
 ######################################################################
 
@@ -71,8 +76,8 @@ sol_sae_reduced = integrate_reduced_system(sae_rs)
 data_processed = encoder(sae_nn)(dl.input)
 
 dl_reduced = DataLoader(data_processed; autoencoder = false)
-integrator_train_epochs = 8192
-integrator_batch_size = 2048
+integrator_train_epochs = 65536
+integrator_batch_size = 4096
 
 seq_length = 4
 integrator_architecture = StandardTransformerIntegrator(reduced_dim; transformer_dim = 10, n_blocks = 3, n_heads = 5, L = 2, upscaling_activation = tanh)
@@ -99,28 +104,28 @@ const ics = vcat(ics_nt.q, ics_nt.p)
 function plot_validation(t_steps::Integer=100)
     fig_val = Figure()
     ax_val = Axis(fig_val[1, 1])
-    lines!(ax_val, sol_full.s.q[t_steps], label = "Implicit Midpoint", color = mblue)
+    lines!(ax_val, sol_full.s.q[t_steps], label = "FOM + Implicit Midpoint", color = mblue)
     lines!(ax_val, psd_rs.decoder((q = sol_psd_reduced.s.q[t_steps], p = sol_psd_reduced.s.p[t_steps])).q, 
-        label = "PSD", color = morange)
+        label = "PSD + Implicit Midpoint", color = morange)
     lines!(ax_val, sae_rs.decoder((q = sol_sae_reduced.s.q[t_steps], p = sol_sae_reduced.s.p[t_steps])).q, 
-        label = "SAE", color = mgreen)
+        label = "SAE + Implicit Midpoint", color = mgreen)
 
-    name = "symplectic_autoencoder_validation_" * string(t_steps)
-    axislegend(; position = (.82, .75), backgroundcolor = :transparent, color = text_color)
-    save(name * ".png", fig_val)
+    name = "symplectic_autoencoder_validation/symplectic_autoencoder_validation_" * string(t_steps)
+    # axislegend(; position = (.82, .75), backgroundcolor = :transparent, color = text_color)
+    save(name * ".pdf", fig_val)
 
-    time_series = iterate(mtc(integrator_nn), ics; n_points = t_steps, prediction_window = seq_length)
+    @time "time stepping with transformer" time_series = iterate(mtc(integrator_nn), ics; n_points = t_steps, prediction_window = seq_length)
     # prediction = (q = time_series.q[:, end], p = time_series.p[:, end])
     prediction = time_series[:, end]
     sol = decoder(sae_nn_cpu)(prediction)
 
-    lines!(ax_val, sol[1:(dl.input_dim ÷ 2)]; label = "Neural Network Integrator", color = mpurple)
+    lines!(ax_val, sol[1:(dl.input_dim ÷ 2)]; label = "SAE + Transformer", color = mpurple)
 
     axislegend(; position = (.82, .75), backgroundcolor = :transparent, color = text_color)
-    save(name * "_with_nn_integrator.png", fig_val)
+    save(name * "_with_nn_integrator.pdf", fig_val)
 end
 
-for t_steps in (10, 100, 200, 300, 400, 500, 600, 700, 800, 900)
+for t_steps in 0:20:9980
     plot_validation(t_steps)
 end
 
@@ -132,4 +137,4 @@ fig_reduced = Figure()
 ax_reduced = Axis(fig_reduced[1, 1])
 lines!(ax_reduced, reduced_data_matrix[1, :, 1] |> mtc, reduced_data_matrix[2, :, 1] |> mtc; color = mgreen, label = "Reduced Data")
 axislegend(; position = (.82, .75), backgroundcolor = :transparent, color = text_color)
-save("reduced_data.png", fig_reduced)
+save("symplectic_autoencoder_validation/reduced_data.pdf", fig_reduced)

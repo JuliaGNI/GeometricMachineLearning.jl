@@ -123,6 +123,14 @@ Main.theorem(raw"If ``\mathcal{M}`` is compact and ``\mathcal{N}`` is Hausdorff,
 Main.proof(raw"We can equivalently show that every closed set is mapped to a closed set. First consider the set ``K\in\mathcal{M}``. Its image is again compact and hence closed because ``\mathcal{N}`` is Hausdorff.")
 ```
 
+We further define what it means for a set to be *dense*:
+
+```@eval
+Main.definition(raw"A set ``U`` is called **dense in ``D``**, where ``U\subset{}D`` if the *closure of ``U``*, i.e. the smallest closed set containing ``U``, also contains ``D``.")
+```
+
+We will come back to the notion of *denseness* when talking about the [universal approximation theorem for SympNets](@ref "Universal Approximation Theorems").
+
 ## References 
 
 ```@bibliography

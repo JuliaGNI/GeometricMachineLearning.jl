@@ -1,0 +1,42 @@
+\documentclass[tikz]{standalone}
+
+\usetikzlibrary{fit}
+
+\definecolor{morange}{RGB}{255,127,14}
+\definecolor{mblue}{RGB}{31,119,180}
+\definecolor{mred}{RGB}{214,39,40}
+\definecolor{mpurple}{RGB}{148,103,189}
+\definecolor{mgreen}{RGB}{44,160,44}
+
+\usepackage{./neuralnetwork}
+
+\newcommand{\symplecticlayer}[1][] { \layer[bias=true,nodeclass={symplectic neuron},#1] }
+\newcommand{\autoencoderlayer}[1][] { \layer[bias=true,nodeclass={autoencoder neuron},#1] }
+
+\newcommand{\xin}[2]{$x_#2$}
+\newcommand{\xout}[2]{$\hat x_#2$}
+
+\begin{document}
+
+\begin{neuralnetwork}[height=8, layertitleheight=30, toprow=true]
+
+  \tikzstyle{input neuron}=[neuron, fill=morange];
+  \tikzstyle{hidden neuron}=[neuron, fill=mred];
+  \tikzstyle{output neuron}=[neuron, fill=mgreen];
+  \tikzstyle{symplectic neuron}=[neuron, fill=mblue];
+  \tikzstyle{autoencoder neuron}=[neuron, fill=mpurple];
+
+  \inputlayer[count=4, bias=false, text=\xin]
+
+  \autoencoderlayer[count=6, bias=false]
+  \linklayers[title=$\Psi^\mathrm{up}$]
+
+  \hiddenlayer[count=6, bias=false]
+  \linklayers%[title=$\psi^2_\mathrm{symp}$]
+  \maketransformerblack
+
+  \outputlayer[count=4, text=\xout]%, title=Output Layer
+  \linklayers[title=$\Psi^\mathrm{down}$]
+  % \node[fit=\thislayer,draw, ultra thick, rounded corners, label=left:Transformer] (transformer) {};
+\end{neuralnetwork}
+\end{document}

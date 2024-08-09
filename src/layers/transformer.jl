@@ -7,9 +7,9 @@ The architecture for a "transformer encoder" is essentially taken from arXiv:201
 This is because we still need to find a generalization of layer normalization to manifolds. 
 
 The transformer is called with the following inputs: 
-- `dim`: the dimension of the transformer 
-- `n_heads`: the number of heads 
-- `L`: the number of **transformer blocks**
+1. `dim`: the dimension of the transformer 
+2. `n_heads`: the number of heads 
+3. `L`: the number of **transformer blocks**
 
 # Arguments
 

@@ -55,7 +55,7 @@ Pages = [
 ]
 ```
 
-## Reduced Order Modeling
+## Data-Driven Reduced Order Modeling
 
 A short description of the key concepts in **reduced order modeling** (where `GeometricMachineLearning` can be used) are in:
 

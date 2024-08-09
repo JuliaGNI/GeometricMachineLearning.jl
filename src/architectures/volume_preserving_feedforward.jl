@@ -1,18 +1,19 @@
-description(::Val{:VPFconstructor}) = raw"""
-The constructor is called with the following arguments: 
-- `sys_dim::Int`: The system dimension. 
-- `n_blocks::Int`: The number of blocks in the neural network (containing linear layers and nonlinear layers). Default is `1`.
-- `n_linear::Int`: The number of linear `VolumePreservingLowerLayer`s and `VolumePreservingUpperLayer`s in one block. Default is `1`.
-- `activation`: The activation function for the nonlinear layers in a block. 
-- `init_upper::Bool=false` (keyword argument): Specifies if the first layer is lower or upper. 
-"""
+@doc raw"""
+    VolumePreservingFeedForward(dim)
 
-"""
-Realizes a volume-preserving neural network as a combination of `VolumePreservingLowerLayer` and `VolumePreservingUpperLayer`. 
+Make an instance of a volume-preserving feedforward neural network for a specific system dimension.    
 
-## Constructor 
+This architecture is a composition of [`VolumePreservingLowerLayer`](@ref) and [`VolumePreservingUpperLayer`](@ref). 
 
-$(description(Val(:VPFconstructor)))
+# Arguments 
+
+You can provide the constructor with the following additional arguments:
+- `n_blocks::Int=1`: The number of blocks in the neural network (containing linear layers and nonlinear layers).
+- `n_linear::Int=1`: The number of linear `VolumePreservingLowerLayer`s and `VolumePreservingUpperLayer`s in one block.
+- `activation=tanh`: The activation function for the nonlinear layers in a block.
+
+The following is a keyword argument:
+- `init_upper::Bool=false`: Specifies if the first layer is lower or upper. 
 """
 struct VolumePreservingFeedForward{AT, InitLowerUpper} <: NeuralNetworkIntegrator 
     sys_dim::Int 

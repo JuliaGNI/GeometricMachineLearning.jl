@@ -1,23 +1,26 @@
 @doc raw"""
-Super-type of `VolumePreservingLowerLayer` and `VolumePreservingUpperLayer`. The layers do the following: 
+Super-type of [`VolumePreservingLowerLayer`](@ref) and [`VolumePreservingUpperLayer`](@ref). The layers do the following: 
 
 ```math
 x \mapsto \begin{cases} \sigma(Lx + b) & \text{where $L$ is }\mathtt{LowerTriangular} \\ \sigma(Ux + b) & \text{where $U$ is }\mathtt{UpperTriangular}. \end{cases}
 ```
 
-The functor can be applied to a vecotr, a matrix or a tensor. 
-
-## Constructor 
-
-The constructors are called with:
-- `sys_dim::Int`: the system dimension. 
-- `activation=tanh`: the activation function. 
-- `include_bias::Bool=true` (keyword argument): specifies whether a bias should be used. 
+The functor can be applied to a vector, a matrix or a tensor. The special matrices are implemented as [`LowerTriangular`](@ref) and [`UpperTriangular`](@ref).
 """
 abstract type VolumePreservingFeedForwardLayer{M, N, bias} <: AbstractExplicitLayer{M, N} end 
 
-"""
-See the documentation for `VolumePreservingFeedForwardLayer`.
+@doc raw"""
+    VolumePreservingLowerLayer(dim)
+
+Make an instance of `VolumePreservingLowerLayer` for a specific system dimension.
+
+See the documentation for [`VolumePreservingFeedForwardLayer`](@ref).
+
+# Arguments 
+
+The constructor can be called with the optional arguments:
+- `activation=tanh`: the activation function. 
+- `include_bias::Bool=true` (keyword argument): specifies whether a bias should be used. 
 """
 struct VolumePreservingLowerLayer{M, N, bias, AT} <: VolumePreservingFeedForwardLayer{M, N, bias}
     activation::AT
@@ -31,8 +34,18 @@ struct VolumePreservingLowerLayer{M, N, bias, AT} <: VolumePreservingFeedForward
     end
 end 
 
-"""
-See the documentation for `VolumePreservingFeedForwardLayer`.
+@doc raw"""
+    VolumePreservingUpperLayer(dim)
+
+Make an instance of `VolumePreservingUpperLayer` for a specific system dimension.
+
+See the documentation for [`VolumePreservingFeedForwardLayer`](@ref).
+
+# Arguments 
+
+The constructor can be called with the optional arguments:
+- `activation=tanh`: the activation function. 
+- `include_bias::Bool=true` (keyword argument): specifies whether a bias should be used. 
 """
 struct VolumePreservingUpperLayer{M, N, bias, AT} <: VolumePreservingFeedForwardLayer{M, N, bias}
     activation::AT

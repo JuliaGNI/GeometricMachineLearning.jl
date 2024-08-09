@@ -117,10 +117,10 @@ for (Y_increment_geodesic, Y_increment_cayley, i) in zip_ob
 end
 
 scatter!(ax, Y_geodesic_reshaped...; 
-        color = mred, markersize = 5, label = rich("geodesic retraction"; color = text_color))
+        color = mred, label = rich("geodesic retraction"; color = text_color))
 
 scatter!(ax, Y_cayley_reshaped...; 
-        color = mblue, markersize = 5, label = rich("Cayley retraction"; color = text_color))
+        color = mblue, label = rich("Cayley retraction"; color = text_color))
 
 arrow_vec = ([Δ[1]], [Δ[2]], [Δ[3]]) # hide
 arrows!(ax, point_vec..., arrow_vec...; color = mred, linewidth = .02) # hide
@@ -350,12 +350,12 @@ Main.remark(raw"As mentioned previously the Lie group ``SO(N)``, i.e. the one co
 
 ## Library Functions
 
-```@docs; canonical=false
-geodesic(::StiefelLieAlgHorMatrix)
-geodesic(::GrassmannLieAlgHorMatrix)
-cayley(::StiefelLieAlgHorMatrix)
-cayley(::GrassmannLieAlgHorMatrix)
-cayley(::Manifold{T}, ::AbstractMatrix{T}) where T
+```@docs
+GeometricMachineLearning.geodesic(::StiefelLieAlgHorMatrix{T}) where T
+GeometricMachineLearning.geodesic(::GrassmannLieAlgHorMatrix{T}) where T
+GeometricMachineLearning.cayley(::StiefelLieAlgHorMatrix{T}) where T
+GeometricMachineLearning.cayley(::GrassmannLieAlgHorMatrix{T}) where T
+GeometricMachineLearning.cayley(::Manifold{T}, ::AbstractMatrix{T}) where T
 GeometricMachineLearning.𝔄
 ```
 

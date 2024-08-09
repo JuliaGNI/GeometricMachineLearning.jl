@@ -12,7 +12,7 @@ The constructor of PSDLayer is called by `PSDLayer(M, N; retraction=retraction)`
 - `N` is the output dimension. 
 - `retraction` is an instance of a struct with supertype `AbstractRetraction`. The only options at the moment are `Geodesic()` and `Cayley()`.
 """
-struct PSDLayer{M, N, Retraction} <: LayerWithManifold{M, N, Retraction} end
+struct PSDLayer{M, N, Retraction} <: AbstractExplicitLayer{M, N} end
 
 default_retr = Geodesic()
 function PSDLayer(M::Integer, N::Integer; retraction=default_retr)
