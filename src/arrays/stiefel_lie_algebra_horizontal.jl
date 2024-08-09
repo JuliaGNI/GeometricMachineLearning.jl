@@ -156,10 +156,9 @@ end
 
 function Base.zeros(backend::KernelAbstractions.Backend, ::Type{StiefelLieAlgHorMatrix{T}}, N::Integer, n::Integer) where T 
 	StiefelLieAlgHorMatrix(
-			       zeros(backend, SkewSymMatrix{T}, n), 
-			       KernelAbstractions.zeros(backend, T, N-n, n),
-							N,
-	n)
+			       zeros(backend, SkewSymMatrix{T}, n),
+			       N == n ? KernelAbstractions.allocate(backend, T, N-n, n) : 
+                            KernelAbstractions.zeros(backend, T, N-n, n), N, n)
 end
 
 
@@ -214,6 +213,15 @@ end
 LinearAlgebra.mul!(C::StiefelLieAlgHorMatrix, α::Real, A::StiefelLieAlgHorMatrix) = mul!(C, A, α)
 LinearAlgebra.rmul!(C::StiefelLieAlgHorMatrix, α::Real) = mul!(C, C, α)
 
+@doc raw"""
+    vec(A::StiefelLieAlgHorMatrix)
+
+Vectorize `A`. 
+
+# Implementation
+
+This is using `Vcat` from `LazyArrays`.
+"""
 function Base.vec(A::StiefelLieAlgHorMatrix)
     LazyArrays.Vcat(vec(A.A), vec(A.B))
 end

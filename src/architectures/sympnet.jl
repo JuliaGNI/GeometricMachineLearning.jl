@@ -1,5 +1,11 @@
 @doc raw"""
-The `SympNet` type encompasses [`GSympNet`](@ref)s and [`LASympNet`](@ref)s. SympNets are universal approximators of *symplectic flows*, i.e. maps ``\varphi:\mathbb{R}^{2n}\to\mathbb{R}^{2n}`` for which ``(\nabla\varphi)^T\mathbb{J}\nabla\varphi = \mathbb{J}`` holds.
+The `SympNet` type encompasses [`GSympNet`](@ref)s and [`LASympNet`](@ref)s. 
+SympNets [jin2020sympnets](@cite) are universal approximators of *canonical symplectic flows*.
+This means that for every map 
+```math
+    \varphi:\mathbb{R}^{2n}\to\mathbb{R}^{2n},
+``` 
+for which ``(\nabla\varphi)^T\mathbb{J}\nabla\varphi = \mathbb{J}`` holds, we can find a SympNet that approximates ``\varphi`` arbitrarily well.
 """
 abstract type SympNet{AT} <: NeuralNetworkIntegrator end
 
@@ -14,7 +20,7 @@ There exists an additional constructor that can be called by supplying an instan
 
 Keyword arguments are: 
 - `depth::Int`: The number of linear layers that are applied. The default is 5.
-- `nhidden::Int`: The number of hidden layers (i.e. layers that are **not** input or output layers). The default is 2.
+- `nhidden::Int`: The number of hidden layers (i.e. layers that are **not** output layers). The default is 2.
 - `activation`: The activation function that is applied. By default this is `tanh`.
 - `init_upper_linear::Bool`: Initialize the linear layer so that it first modifies the ``q``-component. The default is `true`.
 - `init_upper_act::Bool`: Initialize the activation layer so that it first modifies the ``q``-component. The default is `true`.
@@ -45,7 +51,7 @@ There exists an additional constructor that can be called by supplying an instan
 
 # Arguments
 
-`Keyword arguments are:
+Keyword arguments are:
 - `upscaling_dimension::Int`: The *upscaling dimension* of the gradient layer. See the documentation for `GradientLayerQ` and `GradientLayerP` for further explanation. The default is `2*dim`.
 - `n_layers::Int`: The number of layers (i.e. the total number of [`GradientLayerQ`](@ref) and [`GradientLayerP`](@ref)). The default is 2.
 - `activation`: The activation function that is applied. By default this is `tanh`.
@@ -68,9 +74,6 @@ struct GSympNet{AT} <: SympNet{AT}
     end
 end
 
-@doc raw"""
-`Chain` can also be called with a neural network as input.
-"""
 function Chain(arch::GSympNet)
     layers = ()
     is_upper_criterion = arch.init_upper ? isodd : iseven
@@ -86,9 +89,6 @@ function Chain(arch::GSympNet)
     Chain(layers...)
 end
 
-@doc raw"""
-Build a chain for an LASympnet for which `init_upper_linear` is `true` and `init_upper_act` is `false`.
-"""
 function Chain(arch::LASympNet{AT, true, false}) where {AT}
     layers = ()
     for _ in 1:arch.nhidden
@@ -105,9 +105,6 @@ function Chain(arch::LASympNet{AT, true, false}) where {AT}
     Chain(layers...)
 end
 
-@doc raw"""
-Build a chain for an LASympnet for which `init_upper_linear` is `false` and `init_upper_act` is `true`.
-"""
 function Chain(arch::LASympNet{AT, false, true}) where {AT}
     layers = ()
     for i in 1:arch.nhidden
@@ -124,9 +121,6 @@ function Chain(arch::LASympNet{AT, false, true}) where {AT}
     Chain(layers...)
 end
 
-@doc raw"""
-Build a chain for an LASympnet for which `init_upper_linear` is `false` and `init_upper_act` is `false`.
-"""
 function Chain(arch::LASympNet{AT, false, false}) where {AT}
     layers = ()
     for i in 1:arch.nhidden
@@ -143,9 +137,6 @@ function Chain(arch::LASympNet{AT, false, false}) where {AT}
     Chain(layers...)
 end
 
-@doc raw"""
-Build a chain for an LASympnet for which `init_upper_linear` is `true` and `init_upper_act` is `true`.
-"""
 function Chain(arch::LASympNet{AT, true, true}) where {AT}
     layers = ()
     for i in 1:arch.nhidden

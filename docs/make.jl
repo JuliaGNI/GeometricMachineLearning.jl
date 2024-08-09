@@ -25,7 +25,7 @@ const html_format = Documenter.HTML(;
     # specifies that we do not display the package name again (it's already in the logo)
     sidebar_sitename = false,
     # we should get rid of this line again eventually. We will be able to do this once we got rid of library.md
-    size_threshold = 524288,
+    size_threshold = 1048576,
     )
 
 # if platform is set to "none" then no output pdf is generated
@@ -109,7 +109,7 @@ end
 
 function remark(statement::String; label::Union{Nothing, String} = nothing)
     if Main.output_type == :html
-        Markdown.parse("""!!! info "Remark" 
+        Markdown.parse("""!!! tip "Remark" 
             \t $(statement)""")
     else
         theorem_label = isnothing(label) ? "" : raw"\label{rmrk:" * label * raw"}"
@@ -160,6 +160,7 @@ makedocs(;
         "Special Arrays and AD" => [
             "Symmetric and Skew-Symmetric Matrices" => "arrays/skew_symmetric_matrix.md",
             "Global Tangent Spaces" => "arrays/global_tangent_spaces.md",
+            "Tensors" => "arrays/tensors.md",
             "Pullbacks" => "pullbacks/computation_of_pullbacks.md",
         ],
         "Structure-Preservation" => [
@@ -168,7 +169,6 @@ makedocs(;
         ],
         "Optimizers" => [
             "Optimizers" => "optimizers/optimizer_framework.md",
-            "Global Sections" => "optimizers/manifold_related/global_sections.md",
             "Retractions" => "optimizers/manifold_related/retractions.md",
             "Parallel Transport" => "optimizers/manifold_related/parallel_transport.md",
             "Optimizer Methods" => "optimizers/optimizer_methods.md",
@@ -181,12 +181,11 @@ makedocs(;
             "Multihead Attention" => "layers/multihead_attention_layer.md",
             "Linear Symplectic Attention" => "layers/linear_symplectic_attention.md",
         ],
-        "Reduced Order Modelling" =>[
+        "Reduced Order Modeling" =>[
             "General Framework" => "reduced_order_modeling/reduced_order_modeling.md",
-            "Network Losses" => "reduced_order_modeling/losses.md",
-            "PSD and Symplectic Autoencoders" => "reduced_order_modeling/symplectic_autoencoder.md",
-            "Kolmogorov n-width" => "reduced_order_modeling/kolmogorov_n_width.md",
-            "Projection and Reduction Error" => "reduced_order_modeling/projection_reduction_errors.md",
+            "POD and Autoencoders" => "reduced_order_modeling/pod_autoencoders.md",
+            "Losses and Errors" => "reduced_order_modeling/losses.md",
+            "Symplectic Model Order Reduction" => "reduced_order_modeling/symplectic_mor.md",
         ],
         "Architectures" => [
             "Symplectic Autoencoders" => "architectures/symplectic_autoencoder.md",
@@ -204,7 +203,7 @@ makedocs(;
         "Tutorials" =>[
             "Sympnets" => "tutorials/sympnet_tutorial.md",
             "Symplectic Autoencoders" => "tutorials/symplectic_autoencoder.md",
-            "MNIST" => "tutorials/mnist_tutorial.md",
+            "MNIST" => "tutorials/mnist/mnist_tutorial.md",
             "Grassmann manifold" => "tutorials/grassmann_layer.md",
             "Volume-Preserving Attention" => "tutorials/volume_preserving_attention.md",
             "Linear Symplectic Transformer" => "tutorials/linear_symplectic_transformer.md",
@@ -212,7 +211,6 @@ makedocs(;
             "Comparing Optimizers" => "tutorials/optimizer_comparison.md",
         ],
         "References" => "references.md",
-        "Library" => "library.md",
     ],
 )
 

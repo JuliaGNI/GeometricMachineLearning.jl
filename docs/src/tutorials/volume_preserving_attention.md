@@ -1,38 +1,78 @@
-# Comparison of different `VolumePreservingAttention`
+# Comparing different `VolumePreservingAttention` mechanisms
 
-In the [section of volume-preserving attention](../layers/attention_layer.md) we mentioned two ways of computing volume-preserving attention: one where we compute the correlations with a skew-symmetric matrix and one where we compute the correlations with an arbitrary matrix. Here we compare the two approaches. When calling the `VolumePreservingAttention` layer we can specify whether we want to use the skew-symmetric or the arbitrary weighting by setting the keyword `skew_sym = true` and `skew_sym = false` respectively. 
+In the [section on volume-preserving attention](@ref "Volume-Preserving Attention") we mentioned two ways of computing volume-preserving attention: one where we compute the correlations with a skew-symmetric matrix and one where we compute the correlations with an arbitrary matrix. Here we compare the two approaches. When calling the [`VolumePreservingAttention`](@ref) layer we can specify whether we want to use the skew-symmetric or the arbitrary weighting by setting the keyword `skew_sym = true` and `skew_sym = false` respectively. 
 
 In here we demonstrate the differences between the two approaches for computing correlations. For this we first generate a training set consisting of two collections of curves: (i) sine curves and (ii) cosine curve. 
 
 ```@example volume_preserving_attention
 using GeometricMachineLearning # hide
 using GeometricMachineLearning: FeedForwardLoss, TransformerLoss # hide
-using Plots # hide
-import Random # hide 
+import Random # hide
 Random.seed!(123) # hide
 
 sine_cosine = zeros(1, 1000, 2)
 sine_cosine[1, :, 1] .= sin.(0.:.1:99.9)
 sine_cosine[1, :, 2] .= cos.(0.:.1:99.9)
 
+const T = Float16
+const dl = DataLoader(T.(sine_cosine))
 
-const dl = DataLoader(Float16.(sine_cosine))
+nothing # hide
 ```
 
-The third axis (i.e. the parameter axis) has length two, meaning we have two different kinds of curves: 
+The third axis (i.e. the parameter axis) has length two, meaning we have two different kinds of curves, i.e. the data look like this:
 
-```@example volume_preserving_attention
-plot(dl.input[1, :, 1], label = "sine")
-plot!(dl.input[1, :, 2], label = "cosine")
+```@setup volume_preserving_attention
+using CairoMakie, LaTeXStrings # hide
+
+morange = RGBf(255 / 256, 127 / 256, 14 / 256) # hide
+mred = RGBf(214 / 256, 39 / 256, 40 / 256) # hide
+mpurple = RGBf(148 / 256, 103 / 256, 189 / 256) # hide
+mblue = RGBf(31 / 256, 119 / 256, 180 / 256) # hide
+mgreen = RGBf(44 / 256, 160 / 256, 44 / 256) # hide
+
+function make_comparison_plot(; theme = :dark) # hide
+textcolor = theme == :dark ? :white : :black # hide
+fig = Figure(; backgroundcolor = :transparent)
+ax = Axis(fig[1, 1]; 
+    backgroundcolor = :transparent,
+    bottomspinecolor = textcolor, 
+    topspinecolor = textcolor,
+    leftspinecolor = textcolor,
+    rightspinecolor = textcolor,
+    xtickcolor = textcolor, 
+    ytickcolor = textcolor,
+    xticklabelcolor = textcolor,
+    yticklabelcolor = textcolor,
+    xlabel=L"t", 
+    ylabel=L"z",
+    xlabelcolor = textcolor,
+    ylabelcolor = textcolor,
+    )
+
+lines!(ax, dl.input[1, :, 1], label=L"\sin(t)", color=morange)
+lines!(ax, dl.input[1, :, 2], label=L"\cos(t)", color=mpurple)
+axislegend(; position = (.82, .75), backgroundcolor = :transparent, labelcolor = textcolor) # hide
+fig_name = theme == :dark ? "curve_comparison_dark.png" : "curve_comparison.png" # hide
+save(fig_name, fig; px_per_unit = 1.2) # hide
+end # hide
+make_comparison_plot(; theme = :dark) # hide
+make_comparison_plot(; theme = :light) # hide
+
+nothing
 ```
 
-We want to train a single neural network on both these curves. We compare three networks which are of the following form: 
+```@example
+Main.include_graphics("curve_comparison"; caption = raw"The data stored in `dl` contains two different curves.")
+```
+
+We want to train a single neural network on both these curves. We already noted [before](@ref "Why use Transformers for Model Order Reduction") that a simple feedforward neural network cannot do this. Here we compare three networks which are of the following form: 
 
 ```math
 \mathtt{network} = \mathcal{NN}_d\circ\Psi\circ\mathcal{NN}_u,
 ```
 
-where ``\mathcal{NN}_u`` refers to a neural network that scales up and ``\mathcal{NN}_d`` refers to a neural network that scales down. The up and down scaling is done with simple dense layers: 
+where ``\mathcal{NN}_u`` refers to a neural network that [scales up](@ref "The Upscaling") and ``\mathcal{NN}_d`` refers to a neural network that scales down. The up and down scaling is done with simple dense layers: 
 
 ```math
 \mathcal{NN}_u(x) = \mathrm{tanh}(a_ux + b_u) \text{ and } \mathcal{NN}_d(x) = a_d^Tx + b_d,
@@ -50,12 +90,20 @@ const prediction_window = 1
 
 const upscale_dimension_1 = 2
 
-const T = Float16
-
 function set_up_networks(upscale_dimension::Int = upscale_dimension_1)
-    model_skew = Chain(Dense(1, upscale_dimension, tanh), VolumePreservingAttention(upscale_dimension, seq_length; skew_sym = true),  Dense(upscale_dimension, 1, identity; use_bias = true))
-    model_arb  = Chain(Dense(1, upscale_dimension, tanh), VolumePreservingAttention(upscale_dimension, seq_length; skew_sym = false), Dense(upscale_dimension, 1, identity; use_bias = true))
-    model_comp = Chain(Dense(1, upscale_dimension, tanh), Dense(upscale_dimension, 1, identity; use_bias = true))
+    model_skew = Chain( Dense(1, upscale_dimension, tanh), 
+                        VolumePreservingAttention(upscale_dimension, seq_length; skew_sym = true),
+                        Dense(upscale_dimension, 1, identity; use_bias = true)
+                        )
+
+    model_arb  = Chain( Dense(1, upscale_dimension, tanh), 
+                        VolumePreservingAttention(upscale_dimension, seq_length; skew_sym = false), 
+                        Dense(upscale_dimension, 1, identity; use_bias = true)
+                        )
+
+    model_comp = Chain( Dense(1, upscale_dimension, tanh), 
+                        Dense(upscale_dimension, 1, identity; use_bias = true)
+                        )
 
     nn_skew = NeuralNetwork(model_skew, CPU(), T)
     nn_arb  = NeuralNetwork(model_arb,  CPU(), T)
@@ -65,13 +113,15 @@ function set_up_networks(upscale_dimension::Int = upscale_dimension_1)
 end
 
 nn_skew, nn_arb, nn_comp = set_up_networks()
+
+nothing # hide
 ```
 
 We expect the third network to not be able to learn anything useful since it cannot resolve time series data: a regular feedforward network only ever sees one datum at a time. 
 
-Next we train the networks (here we pick a batch size of 30):
+Next we train the networks (here we pick a batch size of 30 and train for 1000 epochs):
 
-```@example volume_preserving_attention
+```@setup volume_preserving_attention
 function set_up_optimizers(nn_skew, nn_arb, nn_comp)
     o_skew = Optimizer(AdamOptimizer(T), nn_skew)
     o_arb  = Optimizer(AdamOptimizer(T), nn_arb)
@@ -99,22 +149,50 @@ end
 
 loss_array_skew, loss_array_arb, loss_array_comp = train_networks!(nn_skew, nn_arb, nn_comp)
 
-function plot_training_losses(loss_array_skew, loss_array_arb, loss_array_comp)
-    p = plot(loss_array_skew, color = 2, label = "skew", yaxis = :log)
-    plot!(p, loss_array_arb,  color = 3, label = "arb")
-    plot!(p, loss_array_comp, color = 4, label = "comp")
+function plot_training_losses(loss_array_skew, loss_array_arb, loss_array_comp; theme = :dark)
+    textcolor = theme == :dark ? :white : :black
+    fig = Figure(; backgroundcolor = :transparent)
+    ax = Axis(fig[1, 1]; 
+        backgroundcolor = :transparent,
+        bottomspinecolor = textcolor, 
+        topspinecolor = textcolor,
+        leftspinecolor = textcolor,
+        rightspinecolor = textcolor,
+        xtickcolor = textcolor, 
+        ytickcolor = textcolor,
+        xticklabelcolor = textcolor,
+        yticklabelcolor = textcolor,
+        xlabel="Epoch", 
+        ylabel="Training loss",
+        xlabelcolor = textcolor,
+        ylabelcolor = textcolor,
+        yscale = log10
+    )
+    lines!(ax, loss_array_skew, color = mblue, label = "skew")
+    lines!(ax, loss_array_arb,  color = mred, label = "arb")
+    lines!(ax, loss_array_comp, color = mgreen, label = "comp")
+    axislegend(; position = (.82, .75), backgroundcolor = :transparent, labelcolor = textcolor)
 
-    p
+    fig, ax
 end
 
-plot_training_losses(loss_array_skew, loss_array_arb, loss_array_comp)
+fig_dark, ax_dark = plot_training_losses(loss_array_skew, loss_array_arb, loss_array_comp; theme = :dark)
+fig_light, ax_light = plot_training_losses(loss_array_skew, loss_array_arb, loss_array_comp; theme = :light)
+save("training_loss_vpa.png", fig_light; px_per_unit = 1.2)
+save("training_loss_vpa_dark.png", fig_dark; px_per_unit = 1.2)
+
+nothing
+```
+
+```@example
+Main.include_graphics("training_loss_vpa")
 ```
 
 Looking at the training errors, we can see that the network with the skew-symmetric weighting is stuck at a relatively high error rate, whereas the loss for  the network with the arbitrary weighting is decreasing to a significantly lower level. The feedforward network without the attention mechanism is not able to learn anything useful (as was expected). 
 
-The following demonstrates the predictions of our approaches[^1]: 
+Before we can use the trained neural networks for prediction we have to make them [`TransformerIntegrator`](@ref)s or [`NeuralNetworkIntegrator`](@ref)s[^1]:
 
-[^1]: Here we have to use the architectures `DummyTransformer` and `DummyNNIntegrator` to reformulate the three neural networks defined here as `NeuralNetworkIntegrator`s. Normally the user should try to use predefined architectures in `GeometricMachineLearning`, that way they never use `DummyTransformer` and `DummyNNIntegrator`. 
+[^1]: Here we have to use the architectures [`GeometricMachineLearning.DummyTransformer`](@ref) and [`GeometricMachineLearning.DummyNNIntegrator`](@ref) to reformulate the three neural networks defined here as [`NeuralNetworkIntegrator`](@ref)s or [`TransformerIntegrator`](@ref)s. These *dummy architectures* can be used if the user wants to specify new neural network integrators that are not yet defined in `GeometricMachineLearning`. 
 
 ```@example volume_preserving_attention
 initial_condition = dl.input[:, 1:seq_length, 2]
@@ -129,35 +207,78 @@ end
 
 nn_skew, nn_arb, nn_comp = make_networks_neural_network_integrators(nn_skew, nn_arb, nn_comp)
 
-function produce_validation_plot(n_points::Int, nn_skew = nn_skew, nn_arb = nn_arb, nn_comp = nn_comp; initial_condition::Matrix=initial_condition, type = :cos)
+nothing # hide
+```
+
+```@setup volume_preserving_attention
+function produce_validation_plot_single(n_points::Int, nn_skew = nn_skew, nn_arb = nn_arb, nn_comp = nn_comp; initial_condition::Matrix=initial_condition, type = :cos, theme = :dark)
+textcolor = theme == :dark ? :white : :black # hide
+    fig = Figure(; backgroundcolor = :transparent)
+    ax = Axis(fig[1, 1]; 
+        backgroundcolor = :transparent,
+        bottomspinecolor = textcolor, 
+        topspinecolor = textcolor,
+        leftspinecolor = textcolor,
+        rightspinecolor = textcolor,
+        xtickcolor = textcolor, 
+        ytickcolor = textcolor,
+        xticklabelcolor = textcolor,
+        yticklabelcolor = textcolor,
+        xlabel=L"t", 
+        ylabel=L"z",
+        xlabelcolor = textcolor,
+        ylabelcolor = textcolor,
+        )
     validation_skew = iterate(nn_skew, initial_condition; n_points = n_points, prediction_window = 1)
     validation_arb  = iterate(nn_arb,  initial_condition; n_points = n_points, prediction_window = 1)
     validation_comp = iterate(nn_comp, initial_condition[:, 1]; n_points = n_points)
 
-    p2 = type == :cos ? plot(dl.input[1, 1:n_points, 2], color = 1, label = "reference") : plot(dl.input[1, 1:n_points, 1], color = 1, label = "reference")
+    p2 = type == :cos ? lines!(dl.input[1, 1:n_points, 2], color = mpurple, label = "reference") : plot(dl.input[1, 1:n_points, 1], color = mpurple, label = "reference")
 
-    plot!(validation_skew[1, :], color = 2, label = "skew")
-    plot!(p2, validation_arb[1, :], color = 3, label = "arb")
-    plot!(p2, validation_comp[1, :], color = 4, label = "comp")
-    vline!([seq_length], color = :red, label = "start of prediction")
+    lines!(ax, validation_skew[1, :], color = mblue, label = "skew")
+    lines!(ax, validation_arb[1, :], color = mred, label = "arb")
+    lines!(ax, validation_comp[1, :], color = mgreen, label = "comp")
+    vlines!(ax, [seq_length], color = mred, label = "start of prediction")
 
-    p2 
+    axislegend(; position = (.82, .75), backgroundcolor = :transparent, labelcolor = textcolor)
+    fig, ax
 end
 
-p2 = produce_validation_plot(40)
+function produce_validation_plot(n_points::Int, nn_skew = nn_skew, nn_arb = nn_arb, nn_comp = nn_comp; initial_condition::Matrix=initial_condition, type = :cos)
+    fig_dark, ax_dark = produce_validation_plot_single(n_points, nn_skew, nn_arb, nn_comp; initial_condition = initial_condition, type = type, theme = :dark)
+    fig_light, ax_light = produce_validation_plot_single(n_points, nn_skew, nn_arb, nn_comp; initial_condition = initial_condition, type = type, theme = :light)
+
+    fig_dark, fig_light, ax_dark, ax_light
+end
+
+nothing
 ```
+
+```@example volume_preserving_attention
+fig_dark, fig_light, ax_dark, ax_light  = produce_validation_plot(40) # hide
+save("plot40_dark.png", fig_dark; px_per_unit = 1.2) # hide
+save("plot40.png", fig_light; px_per_unit = 1.2) # hide
+Main.include_graphics("plot40") # hide
+```
+
 In the above plot we can see that the network with the arbitrary weighting performs much better; even though the green line does not fit the blue line very well either, it manages to least qualitatively reflect the training data.  We can also plot the predictions for longer time intervals: 
 
 ```@example volume_preserving_attention 
-p3 = produce_validation_plot(400)
+fig_dark, fig_light, ax_dark, ax_light  = produce_validation_plot(400) # hide
+save("plot400_dark.png", fig_dark; px_per_unit = 1.2) # hide
+save("plot400.png", fig_light; px_per_unit = 1.2) # hide
+Main.include_graphics("plot400") # hide
 ``` 
 
 We can also plot the comparison with the sine function: 
 
 ```@example volume_preserving_attention 
-initial_condition = dl.input[:, 1:seq_length, 1]
+initial_condition = dl.input[:, 1:seq_length, 1] # hide
 
-p2 = produce_validation_plot(40, initial_condition = initial_condition, type = :sin)
+fig_dark, fig_light, ax_dark, ax_light  = produce_validation_plot(40; initial_condition = initial_condition, type = :sin) # hide
+save("plot40_sine_dark.png", fig_dark; px_per_unit = 1.2) # hide
+save("plot40_sine.png", fig_light; px_per_unit = 1.2) # hide
+Main.include_graphics("plot40_sine") # hide
 ```
 
 This advantage of the volume-preserving attention with arbitrary weighting may however be due to the fact that the skew-symmetric attention only has 3 learnable parameters, as opposed to 9 for the arbitrary weighting. If we increase the *upscaling dimension* the result changes: 
@@ -169,9 +290,14 @@ nn_skew, nn_arb, nn_comp = set_up_networks(upscale_dimension_2)
 
 o_skew, o_arb, o_comp = set_up_optimizers(nn_skew, nn_arb, nn_comp)
 
-loss_array_skew, loss_array_arb, loss_array_comp = train_networks!(nn_skew, nn_arb, nn_comp)
+loss_array_skew, loss_array_arb, loss_array_comp = train_networks!(nn_skew, nn_arb, nn_comp) # hide
 
-plot_training_losses(loss_array_skew, loss_array_arb, loss_array_comp)
+fig_dark, ax_dark = plot_training_losses(loss_array_skew, loss_array_arb, loss_array_comp; theme = :dark) # hide
+fig_light, ax_light = plot_training_losses(loss_array_skew, loss_array_arb, loss_array_comp; theme = :light) # hide
+save("training_loss2_vpa.png", fig_light; px_per_unit = 1.2) # hide
+save("training_loss2_vpa_dark.png", fig_dark; px_per_unit = 1.2) # hide
+
+Main.include_graphics("training_loss2_vpa") # hide
 ```
 
 ```@example volume_preserving_attention 
@@ -179,11 +305,27 @@ initial_condition = dl.input[:, 1:seq_length, 2]
 
 nn_skew, nn_arb, nn_comp = make_networks_neural_network_integrators(nn_skew, nn_arb, nn_comp)
 
-p2 = produce_validation_plot(40, nn_skew, nn_arb, nn_comp)
+fig_dark, fig_light, ax_dark, ax_light = produce_validation_plot(40, nn_skew, nn_arb, nn_comp)
+
+save("plot40_sine2_dark.png", fig_dark; px_per_unit = 1.2) # hide
+save("plot40_sine2.png", fig_light; px_per_unit = 1.2) # hide
+Main.include_graphics("plot40_sine2") # hide
 ```
 
 And for a longer time interval: 
 
 ```@example volume_preserving_attention
-p3 = produce_validation_plot(200, nn_skew, nn_arb, nn_comp)
+fig_dark, fig_light, ax_dark, ax_light = produce_validation_plot(200, nn_skew, nn_arb, nn_comp)
+
+
+save("plot200_sine2_dark.png", fig_dark; px_per_unit = 1.2) # hide
+save("plot200_sine2.png", fig_light; px_per_unit = 1.2) # hide
+Main.include_graphics("plot200_sine2") # hide
+```
+
+## Library Functions
+
+```@docs
+GeometricMachineLearning.DummyNNIntegrator
+GeometricMachineLearning.DummyTransformer
 ```

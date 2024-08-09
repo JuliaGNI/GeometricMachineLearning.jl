@@ -31,6 +31,8 @@ jobs:
           cd docs
           DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' make install_brenier_two_fluid test_docs
           cd .. 
+      - name: Make MNIST image
+        run: make all -C docs/src/tutorials/mnist
       - name: Make docs (call julia documenter)
         run: DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' julia --project=docs docs/make.jl html_output
       - uses: julia-actions/julia-buildpkg@v1

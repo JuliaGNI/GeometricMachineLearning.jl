@@ -38,6 +38,12 @@ Main.definition(raw"We call a mapping from ``\lambda:\mathcal{M} \to G`` a homog
 
 Note that in general global sections are not unique because the rank of ``G`` is in general greater than that of ``\mathcal{M}``. We give an example of how to construct such a global section for the Stiefel and the Grassmann manifolds below. 
 
+Global sections are also crucial for [parallel transport](@ref "Parallel Transport") in `GeometricMachineLearning`. A global section is first updated:
+```math
+    \Lambda^{(t)} \gets \mathrm{update}(\Lambda^{(t-1)}),
+```
+and on the basis of this we then update the element of the manifold ``Y\in\mathcal{M}`` and the tangent vector ``\Delta\in{}T\mathcal{M}``.
+
 ## The Global Tangent Space for the Stiefel Manifold
 
 We now discuss the specific form of the global tangent space for the [Stiefel manifold](@ref "The Stiefel Manifold"). We choose the distinct element[^1] ``E`` to have an especially simple form (this matrix can be build by calling [`StiefelProjection`](@ref)):
@@ -156,6 +162,29 @@ Main.proof(raw"The second property is trivially satisfied because the ``Q`` comp
 " * Main.indentation * raw"Now all the coefficients ``r_{ii}`` are non-zero because the matrix we performed the ``QR`` decomposition on has full rank and we can see that if ``(Y^TQ)R`` is zero ``Y^TQ`` also has to be zero.")
 ```
 
+The function [`global_rep`](@ref) furthermore makes use of the following:
+
+```math
+    \mathtt{global\_rep}(Y) = \lambda(Y)^T\Omega(Y,\Delta)\lambda(Y) = EY^T\Delta{}E^T + \begin{bmatrix} \mathbb{O} \\ \bar{\lambda}^T\Delta{}E^T \end{bmatrix} - \begin{bmatrix} \mathbb{O} & E\Delta^T\bar{\lambda} \end{bmatrix},
+```
+where ``\lambda(Y) = [Y, \bar{\lambda}].``
+
+```@eval
+Main.proof(raw"In practice we use the following to make computations efficient: 
+" * Main.indentation * raw"```math
+" * Main.indentation * raw"\begin{aligned}
+" * Main.indentation * raw"\lambda(Y)^T\Omega(Y,\Delta)\lambda(Y)  & = \lambda(Y)^T[(\mathbb{I} - \frac{1}{2}YY^T)\Delta{}Y^T - Y\Delta^T(\mathbb{I} - \frac{1}{2}YY^T)]\lambda(Y) \\
+" * Main.indentation * raw"                                        & = \lambda(Y)^T[(\mathbb{I} - \frac{1}{2}YY^T)\Delta{}E^T - Y\Delta^T(\lambda(Y) - \frac{1}{2}YE^T)] \\
+" * Main.indentation * raw"                                        & = \lambda(Y)^T\Delta{}E^T - \frac{1}{2}EY^T\Delta{}E^T - E\Delta^T\lambda(Y) + \frac{1}{2}E\Delta^TYE^T \\ 
+" * Main.indentation * raw"                                        & = \begin{bmatrix} Y^T\Delta{}E^T \\ \bar{\lambda}\Delta{}E^T \end{bmatrix} - \frac{1}{2}EY^T\Delta{}E - \begin{bmatrix} E\Delta^TY & E\Delta^T\bar{\lambda} \end{bmatrix} + \frac{1}{2}E\Delta^TYE^T \\
+" * Main.indentation * raw"                                        & = \begin{bmatrix} Y^T\Delta{}E^T \\ \bar{\lambda}\Delta{}E^T \end{bmatrix} + E\Delta^TYE^T - \begin{bmatrix}E\Delta^TY & E\Delta^T\bar{\lambda} \end{bmatrix} \\
+" * Main.indentation * raw"                                                & = EY^T\Delta{}E^T + E\Delta^TYE^T - E\Delta^TYE^T + \begin{bmatrix} \mathbb{O} \\ \bar{\lambda}\Delta{}E^T \end{bmatrix} - \begin{bmatrix} \mathbb{O} & E\Delta^T\bar{\lambda} \end{bmatrix} \\
+" * Main.indentation * raw"                                        & = EY^T\Delta{}E^T + \begin{bmatrix} \mathbb{O} \\ \bar{\lambda}\Delta{}E^T \end{bmatrix} - \begin{bmatrix} \mathbb{O} & E\Delta^T\bar{\lambda} \end{bmatrix},
+" * Main.indentation * raw"\end{aligned},
+" * Main.indentation * raw"```
+" * Main.indentation * raw"which means we only need ``Y^T\Delta`` and ``\bar{\lambda}^T\Delta``.")
+```
+
 We now discuss the global tangent space for the Grassmann manifold. This is similar to the Stiefel case.
 
 ## Global Tangent Space for the Grassmann Manifold
@@ -187,13 +216,17 @@ This is equivalent to the horizontal component of ``\mathfrak{g}`` for the Stief
 
 ## Library Functions
 
-```@docs; canonical=false
+```@docs
 GeometricMachineLearning.AbstractLieAlgHorMatrix
 StiefelLieAlgHorMatrix
 StiefelLieAlgHorMatrix(::AbstractMatrix, ::Int)
 GrassmannLieAlgHorMatrix
 GrassmannLieAlgHorMatrix(::AbstractMatrix, ::Int)
 GlobalSection
+Matrix(::GlobalSection)
+apply_section
+apply_section!
+*(::GlobalSection, ::Manifold)
 GeometricMachineLearning.global_section
 global_rep
 ```
@@ -209,4 +242,5 @@ absil2004riemannian
 absil2008optimization
 bendokat2020grassmann
 brantner2023generalizing
+frankel2011geometry
 ```

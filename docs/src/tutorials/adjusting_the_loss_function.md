@@ -1,20 +1,22 @@
 # Adjusting the Loss Function
 
-`GeometricMachineLearning` provides a few standard loss function that are used as defaults for specific neural networks:
-* [`FeedForwardLoss`](@ref)
-* [`AutoEncoderLoss`](@ref)
-* [`TransformerLoss`](@ref)
+`GeometricMachineLearning` provides a few standard loss functions that are used as defaults [for specific neural networks](@ref "Different Neural Network Losses").
 
-If these standard losses do not satisfy the user's needs, it is very easy to implement custom loss functions. We again consider training a SympNet on the data coming from a pendulum:
+If these standard losses do not satisfy the user's needs, it is very easy to implement custom loss functions. Adding terms to the loss function is standard practice in machine learning to either increase stability [goodfellow2016deep](@cite) or to *inform* the network about physical properties[^1] [raissi2019physics](@cite).
+
+[^1]: Note however that we discourage using so-called [*physics-informed neural networks*](@ref "A Note on Physics-Informed Neural Networks") as they do not really preserve any physical properties but only give a potential improvement on stability in the region where we have training data.
+
+We again consider training a SympNet on the data coming from a harmonic oscillator:
 
 ```@example change_loss
-using GeometricMachineLearning
-using GeometricIntegrators: integrate, ImplicitMidpoint
+using GeometricMachineLearning  # hide
+using GeometricIntegrators: integrate, ImplicitMidpoint  # hide
 using GeometricProblems.HarmonicOscillator: hodeproblem
-import Random
-Random.seed!(123)
+import Random # hide
+Random.seed!(123) # hide
 
-data = integrate(hodeproblem(; tspan = 100), ImplicitMidpoint()) |> DataLoader
+sol = integrate(hodeproblem(; tspan = 100), ImplicitMidpoint()) 
+data = DataLoader(sol; suppress_info = true)
 
 nn = NeuralNetwork(GSympNet(2))
 
@@ -26,7 +28,7 @@ n_epochs = 30
 
 loss = FeedForwardLoss()
 
-loss_array = o(nn, data, batch, n_epochs, loss)
+loss_array = o(nn, data, batch, n_epochs, loss; show_progress = false)
 
 print(loss_array[end])
 ```
@@ -34,7 +36,7 @@ print(loss_array[end])
 And we see that the loss goes down to a very low value. But the user might want to constrain the norm of the network parameters:
 
 ```@example change_loss
-using LinearAlgebra: norm
+using LinearAlgebra: norm  # hide
 
 # norm of parameters for single layer
 network_parameter_norm(params::NamedTuple) = sum([norm(params[i]) for i in 1:length(params)])
@@ -65,12 +67,12 @@ loss = CustomLoss()
 
 nn_custom = NeuralNetwork(GSympNet(2))
 
-loss_array = o(nn_custom, data, batch, n_epochs, loss)
+loss_array = o(nn_custom, data, batch, n_epochs, loss; show_progress = false)
 
 print(loss_array[end])
 ```
 
-And we see that the norm of the parameters is a lot lower:
+And we see that the norm of the parameters is lower:
 
 ```@example change_loss
 network_parameter_norm(nn_custom.params)
@@ -78,10 +80,10 @@ network_parameter_norm(nn_custom.params)
 
 We can also compare the solutions of the two networks:
 
-```@example change_loss
+```@setup change_loss
 using CairoMakie
 
-function make_fig(; theme = :dark, size = (450, 338)) # hide
+function make_fig(; theme = :dark) # hide
 textcolor = theme == :dark ? :white : :black # hide
 fig = Figure(; backgroundcolor = :transparent)
 ax = Axis(fig[1, 1]; backgroundcolor = :transparent, 
@@ -90,7 +92,9 @@ ax = Axis(fig[1, 1]; backgroundcolor = :transparent,
     leftspinecolor = textcolor,
     rightspinecolor = textcolor,
     xtickcolor = textcolor, 
-    ytickcolor = textcolor)
+    ytickcolor = textcolor,
+    xticklabelcolor = textcolor,
+    yticklabelcolor = textcolor)
 
 init_con = [0.5 0.]
 n_time_steps = 100
@@ -112,16 +116,12 @@ axislegend(; position = (.82, .75), backgroundcolor = :transparent) # hide
 fig
 end # hide
  # hide
-save("compare_losses.png", make_fig(; theme = :light)) # hide
-save("compare_losses_dark.png", make_fig(; theme = :dark)) # hide
-Main.include_graphics("compare_losses") # hide
+save("compare_losses.png", make_fig(; theme = :light); px_per_unit = 1.2) # hide
+save("compare_losses_dark.png", make_fig(; theme = :dark); px_per_unit = 1.2) # hide
+
+nothing
 ```
 
-## Library Functions
-
-```@docs; canonical = false
-GeometricMachineLearning.NetworkLoss
-GeometricMachineLearning.FeedForwardLoss
-GeometricMachineLearning.AutoEncoderLoss
-GeometricMachineLearning.TransformerLoss
+```@example
+Main.include_graphics("compare_losses") # hide
 ```

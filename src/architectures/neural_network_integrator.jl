@@ -1,5 +1,21 @@
 @doc raw"""
-This is a super type of various neural network architectures such as [`SympNet`](@ref) and [`ResNet`](@ref) whose purpose is to approximate the flow of an ordinary differential equation (ODE).
+`NeuralNetworkIntegrator` is a super type of various neural network architectures such as [`SympNet`](@ref) and [`ResNet`](@ref).
+
+The purpose of such neural networks is to approximate the flow of an ordinary differential equation (ODE).
+
+`NeuralNetworkIntegrator`s can be seen as modeling traditional one-step methods with neural networks, i.e. for a fixed time step they perform:
+
+```math
+    \mathtt{NeuralNetworkIntegrator}: z^{(t)} \mapsto z^{(t+1)},
+```
+
+to try to approximate the flow of some ODE:
+
+```math
+    || \mathtt{Integrator}(z^{(t)}) - \varphi^h(z^{(t)}) || \approx \mathcal{O}(h),
+```
+
+where ``\varphi^h`` is the flow map of the ODE for a time step ``h``.
 """
 abstract type NeuralNetworkIntegrator <: Architecture end
 
@@ -29,11 +45,20 @@ function Base.iterate(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, ics::BT; n_p
 end
 
 @doc raw"""
-This function computes a trajectory for a SympNet that has already been trained for valuation purposes.
+    iterate(nn, ics)
+
+This function computes a trajectory for a [`NeuralNetworkIntegrator`](@ref) that has already been trained for valuation purposes.
 
 It takes as input: 
-- `nn`: a `NeuralNetwork` (that has been trained).
-- `ics`: initial conditions (a `NamedTuple` of two vectors)
+1. `nn`: a `NeuralNetwork` (that has been trained).
+2. `ics`: initial conditions (a `NamedTuple` of two vectors)
+
+# Arguments
+
+The optional keyword argument is 
+- `n_points = 100`
+
+The number of integration steps that should be performed.
 """
 function Base.iterate(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, ics::BT; n_points = 100) where {T, AT<:AbstractVector{T}, BT<:NamedTuple{(:q, :p), Tuple{AT, AT}}}
 
@@ -58,4 +83,11 @@ function Base.iterate(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, ics::BT; n_p
     valuation
 end
 
+@doc raw"""
+    DummyNNIntegrator()
+
+Make an instance of `DummyNNIntegrator`.
+
+This *dummy architecture* can be used if the user wants to define a new [`NeuralNetworkIntegrator`](@ref).
+"""
 struct DummyNNIntegrator <: NeuralNetworkIntegrator end

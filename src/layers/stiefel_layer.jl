@@ -1,6 +1,6 @@
-"""
-Defines a layer that performs simple multiplication with an element of the Stiefel manifold.
-"""
+# """
+# Defines a layer that performs simple multiplication with an element of the Stiefel manifold.
+# """
 struct StiefelLayer{M, N, Retraction} <: ManifoldLayer{M, N, Retraction} end
 
 default_retr = Geodesic()

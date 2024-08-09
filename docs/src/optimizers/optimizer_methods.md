@@ -152,12 +152,16 @@ nothing # hide
 
 ## Library Functions
 
-```@docs; canonical=false
+```@docs
 OptimizerMethod
 GradientOptimizer
 MomentumOptimizer
 AdamOptimizer
 AdamOptimizerWithDecay
+AbstractCache
+GradientCache
+MomentumCache
+AdamCache
 GeometricMachineLearning.init_optimizer_cache
 update!
 ```

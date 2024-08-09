@@ -137,12 +137,17 @@ end
 
 Base.:*(α::Real, A::SkewSymMatrix) = A*α
 
-function Base.zeros(::Type{SkewSymMatrix{T}}, n::Int) where T
-    SkewSymMatrix(zeros(T, n*(n-1)÷2), n)
+function Base.zeros(ST::Type{SkewSymMatrix{<:Real}}, n::Int)
+    zeros(CPU(), ST, n)
 end
 
 function Base.zeros(backend::KernelAbstractions.Backend, ::Type{SkewSymMatrix{T}}, n::Int) where T
-	SkewSymMatrix(KernelAbstractions.zeros(backend, T, n*(n-1)÷2), n)
+    zero_vec = if n != 1
+        KernelAbstractions.zeros(backend, T, n*(n-1)÷2)
+    else
+        KernelAbstractions.allocate(backend, T, n*(n-1)÷2)
+    end
+	SkewSymMatrix(zero_vec, n)
 end
 
 function Base.zeros(::Type{SkewSymMatrix}, n::Int)
@@ -275,10 +280,14 @@ end
 
 function map_to_Skew(A::AbstractMatrix{T}) where T
     n = size(A, 1)
-    @assert size(A, 2) == n 
+    @assert size(A, 2) == n
     A_skew = T(.5)*(A - A')
     backend = KernelAbstractions.get_backend(A)
-    S = KernelAbstractions.zeros(backend, T, n * (n - 1) ÷ 2)
+    S = if n != 1
+        KernelAbstractions.zeros(backend, T, n * (n - 1) ÷ 2)
+    else
+        KernelAbstractions.allocate(backend, T, n * (n - 1) ÷ 2)
+    end
     assign_Skew_val! = assign_Skew_val_kernel!(backend)
     for i in 2:n
         assign_Skew_val!(S, A_skew, i, ndrange = (i - 1))

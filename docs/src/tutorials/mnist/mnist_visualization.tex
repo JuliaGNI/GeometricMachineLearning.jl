@@ -1,0 +1,142 @@
+\documentclass{standalone}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\usepackage{xcolor}
+
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{calc}
+\usetikzlibrary{fit}
+%\usepackage{nicematrix}
+
+\tikzset{set/.style={draw,circle,inner sep=0pt,align=center}}
+
+\definecolor{morange}{RGB}{255,127,14}
+\definecolor{mblue}{RGB}{31,119,180}
+\definecolor{mred}{RGB}{214,39,40}
+\definecolor{mpurple}{RGB}{148,103,189}
+\definecolor{mgreen}{RGB}{44,160,44}
+
+\usetikzlibrary{shapes.geometric, arrows,positioning,calc}
+\tikzset{
+  box/.style = {draw, rectangle, draw=white},
+  to/.style  = {->, >=stealth', shorten >=0pt, thin, draw=morange, fill=orange}
+  }
+
+\newlength{\gridwidth}
+\setlength{\gridwidth}{60pt}
+\newlength{\cellwidth}
+\setlength{\cellwidth}{15pt}
+\newlength{\colwidth}
+\setlength{\colwidth}{2.142857pt}
+
+\begin{document}
+\begin{tikzpicture}[module/.style={draw, very thick, rounded corners, minimum width=15ex},
+  attmodule/.style={module, fill=morange!40},
+  ffnnmodule/.style={module, fill=mblue!40},
+  addmodule/.style={module, fill=mpurple!40},
+  classification/.style={module, fill=mred!40},
+  arrow/.style={-stealth, thick, rounded corners},
+]
+            \node[anchor=south west,inner sep=0,outer sep=0pt] (original) at (0,0,0) {\includegraphics[width=\gridwidth]{original/image}};
+            \begin{scope}[x={(original.south east)},y={(original.north west)}]
+                \draw[help lines,xstep=.25,ystep=.25, mred] (0,0) grid (1,1);
+            \end{scope}
+            \node[below left = 6.5cm of original] (one) {\includegraphics[width=\cellwidth]{split/1}};
+            \node[right = .05cm of one] (two) {\includegraphics[width=\cellwidth]{split/2}};
+            \node[right = .05cm of two] (three) {\includegraphics[width=\cellwidth]{split/3}};
+            \node[right = .05cm of three] (four) {\includegraphics[width=\cellwidth]{split/4}};
+            \node[right = .05cm of four] (five) {\includegraphics[width=\cellwidth]{split/5}};
+            \node[right = .05cm of five] (six) {\includegraphics[width=\cellwidth]{split/6}};
+            \node[right = .05cm of six] (seven) {\includegraphics[width=\cellwidth]{split/7}};
+            \node[right = .05cm of seven] (eight) {\includegraphics[width=\cellwidth]{split/8}};
+            \node[right = .05cm of eight] (nine) {\includegraphics[width=\cellwidth]{split/9}};
+            \node[right = .05cm of nine] (ten) {\includegraphics[width=\cellwidth]{split/10}};
+            \node[right = .05cm of ten] (eleven) {\includegraphics[width=\cellwidth]{split/11}};
+            \node[right = .05cm of eleven] (twelve) {\includegraphics[width=\cellwidth]{split/12}};
+            \node[right = .05cm of twelve] (thirteen) {\includegraphics[width=\cellwidth]{split/13}};
+            \node[right = .05cm of thirteen] (fourteen) {\includegraphics[width=\cellwidth]{split/14}};
+            \node[right = .05cm of fourteen] (fifteen) {\includegraphics[width=\cellwidth]{split/15}};
+            \node[right = .05cm of fifteen] (sixteen) {\includegraphics[width=\cellwidth]{split/16}};
+            \node[below = .2cm of one] (one2) {\includegraphics[width=\colwidth]{flatten/1}};
+            \node[below = .2cm of two] (two2) {\includegraphics[width=\colwidth]{flatten/2}};
+            \node[below = .2cm of three] (three2) {\includegraphics[width=\colwidth]{flatten/3}};
+            \node[below = .2cm of four] (four2) {\includegraphics[width=\colwidth]{flatten/4}};
+            \node[below = .2cm of five] (five2) {\includegraphics[width=\colwidth]{flatten/5}};
+            \node[below = .2cm of six] (six2) {\includegraphics[width=\colwidth]{flatten/6}};
+            \node[below = .2cm of seven] (seven2) {\includegraphics[width=\colwidth]{flatten/7}};
+            \node[below = .2cm of eight] (eight2) {\includegraphics[width=\colwidth]{flatten/8}};
+            \node[below = .2cm of nine] (nine2) {\includegraphics[width=\colwidth]{flatten/9}};
+            \node[below = .2cm of ten] (ten2) {\includegraphics[width=\colwidth]{flatten/10}};
+            \node[below = .2cm of eleven] (eleven2) {\includegraphics[width=\colwidth]{flatten/11}};
+            \node[below = .2cm of twelve] (twelve2) {\includegraphics[width=\colwidth]{flatten/12}};
+            \node[below = .2cm of thirteen] (thirteen2) {\includegraphics[width=\colwidth]{flatten/13}};
+            \node[below = .2cm of fourteen] (fourteen2) {\includegraphics[width=\colwidth]{flatten/14}};
+            \node[below = .2cm of fifteen] (fifteen2) {\includegraphics[width=\colwidth]{flatten/15}};
+            \node[below = .2cm of sixteen] (sixteen2) {\includegraphics[width=\colwidth]{flatten/16}};
+            \node[right = 1cm of sixteen2] (final) {\includegraphics[width=17\colwidth]{final_image}};
+            \draw[to] ($(original.south west)+ (0.5*\cellwidth,3.5*\cellwidth)$) -- (four);  
+            \draw[to] ($(original.south west)+ (0.5*\cellwidth,2.5*\cellwidth)$) -- (three);  
+            \draw[to] ($(original.south west)+ (0.5*\cellwidth,1.5*\cellwidth)$) -- (two);  
+            \draw[to] ($(original.south west)+ (0.5*\cellwidth,0.5*\cellwidth)$) -- (one);  
+            \draw[to] ($(original.south west)+ (1.5*\cellwidth,3.5*\cellwidth)$) -- (eight);  
+            \draw[to] ($(original.south west)+ (1.5*\cellwidth,2.5*\cellwidth)$) -- (seven);  
+            \draw[to] ($(original.south west)+ (1.5*\cellwidth,1.5*\cellwidth)$) -- (six);  
+            \draw[to] ($(original.south west)+ (1.5*\cellwidth,0.5*\cellwidth)$) -- (five);  
+            \draw[to] ($(original.south west)+ (2.5*\cellwidth,3.5*\cellwidth)$) -- (twelve);  
+            \draw[to] ($(original.south west)+ (2.5*\cellwidth,2.5*\cellwidth)$) -- (eleven);  
+            \draw[to] ($(original.south west)+ (2.5*\cellwidth,1.5*\cellwidth)$) -- (ten);  
+            \draw[to] ($(original.south west)+ (2.5*\cellwidth,0.5*\cellwidth)$) -- (nine);  
+            \draw[to] ($(original.south west)+ (3.5*\cellwidth,3.5*\cellwidth)$) -- (sixteen);  
+            \draw[to] ($(original.south west)+ (3.5*\cellwidth,2.5*\cellwidth)$) -- (fifteen);  
+            \draw[to] ($(original.south west)+ (3.5*\cellwidth,1.5*\cellwidth)$) -- (fourteen);  
+            \draw[to] ($(original.south west)+ (3.5*\cellwidth,0.5*\cellwidth)$) -- (thirteen);  
+            \draw[to] (one) -- (one2);
+            \draw[to] (two) -- (two2);
+            \draw[to] (three) -- (three2);
+            \draw[to] (four) -- (four2);
+            \draw[to] (five) -- (five2);
+            \draw[to] (six) -- (six2);
+            \draw[to] (seven) -- (seven2);
+            \draw[to] (eight) -- (eight2);
+            \draw[to] (nine) -- (nine2);
+            \draw[to] (ten) -- (ten2);
+            \draw[to] (eleven) -- (eleven2);
+            \draw[to] (twelve) -- (twelve2);
+            \draw[to] (thirteen) -- (thirteen2);
+            \draw[to] (fourteen) -- (fourteen2);
+            \draw[to] (fifteen) -- (fifteen2);
+            \draw[to] (sixteen) -- (sixteen2);
+            \draw[to, double] (sixteen2) -- (final);
+
+            \node[above of=final, attmodule, align=center, yshift=2cm] (att) {Multihead\\Attention};
+            %\node[above of=att, addmodule, align=center] (add1) {Add};
+\node[above of=att, ffnnmodule, align=center, yshift=.3cm] (ffnn) {Feed\\Forward};
+\node[above of=ffnn, addmodule, align=center] (add2) {Add};
+\node[above of=add2, classification] (class) {Classification}; 
+\node[above of=class] (output) {Output};
+
+\coordinate[above of=final, yshift=.8cm] (final_north);
+
+\draw[arrow] (final_north) -- (att);
+\draw[arrow] (att) -- (ffnn); 
+\draw[arrow] (ffnn) -- (add2); 
+\draw[arrow] (add2) -- (class);
+\draw[arrow] (class) -- (output);
+
+\coordinate (attresidual) at ($(att.south)!0.5!(final_north)$);
+\coordinate (ffnnresidual) at ($(ffnn.south)!0.5!(att.north)$);
+\coordinate[right of=add2, xshift=.5cm] (leftofadd2);
+%\coordinate[right of=att, xshift=.5cm] (leftofatt);
+\coordinate (mhafork) at ($(att.south)!0.5!(attresidual)$);
+
+\node[fit=(attresidual)(att)(add2)(leftofadd2),draw, ultra thick, rounded corners, label=left:$\mathrm{16\times}$] (encoder) {};
+%\draw[arrow, mgreen] (attresidual)-|(leftofadd1)--(add1);
+\draw[arrow] (ffnnresidual)-|(leftofadd2)--(add2);
+\draw[arrow] (mhafork) -|($(att.south)!0.5!(att.south west)$);
+\draw[arrow] (mhafork) -|($(att.south)!0.5!(att.south east)$);
+\end{tikzpicture}
+\end{document}

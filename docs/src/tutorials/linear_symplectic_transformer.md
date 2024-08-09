@@ -1,16 +1,37 @@
 # [Linear Symplectic Transformer](@id linear_symplectic_transformer_tutorial)
 
-In this tutorial we compare the [linear symplectic transformer](@ref "Linear Symplectic Transformer") to the [standard transformer](@ref "Standard Transformer"). 
+In this tutorial we compare the [linear symplectic transformer](@ref "Linear Symplectic Transformer") to the [standard transformer](@ref "Standard Transformer"). The example we treat here is the *coupled harmonic oscillator*:
+
+```@example
+Main.include_graphics("../tikz/coupled_harmonic_oscillator"; caption = raw"Visualization of the coupled harmonic oscillator.") # hide
+```
+
+It is a [Hamiltonian system](@ref "Symplectic Systems") with 
+
+```math
+H(q_1, q_2, p_1, p_2) = \frac{q_1^2}{2m_1} + \frac{q_2^2}{2m_2} + k_1\frac{q_1^2}{2} + k_2\frac{q_2^2}{2} +  k\sigma(q_1)\frac{(q_2 - q_1)^2}{2},
+```
+where ``\sigma(x) = 1 / (1 + e^{-x})`` is the sigmoid activation function. The system parameters are:
+- ``k_1``: spring constant of mass 1
+- ``k_2``: spring constant of mass 2
+- ``m_1``: mass 1
+- ``m_2``: mass 2
+- ``k``: coupling strength between the two masses. 
+
+To demonstrate the efficacy of the linear symplectic transformer here we will leave the parameters fixed but alter the initial conditions[^1]:
+
+[^1]: We here use the implementation of the coupled harmonic oscillator from [`GeometricProblems`](https://github.com/JuliaGNI/GeometricProblems.jl).
 
 ```@example lin_sympl_tran_tut
 using GeometricMachineLearning # hide
 using GeometricProblems.CoupledHarmonicOscillator: hodeensemble, default_parameters
-using GeometricIntegrators: ImplicitMidpoint, integrate 
-using LaTeXStrings
-using Plots
-import Random
+using GeometricIntegrators: ImplicitMidpoint, integrate # hide
+using LaTeXStrings # hide
+using CairoMakie  # hide
+CairoMakie.activate!() # hide
+import Random # hide
 
-Random.seed!(123)
+Random.seed!(123) # hide
 
 const tstep = .3
 const n_init_con = 5
@@ -19,7 +40,7 @@ const n_init_con = 5
 ep = hodeensemble([rand(2) for _ in 1:n_init_con], [rand(2) for _ in 1:n_init_con]; tstep = tstep)
 
 dl_nt = DataLoader(integrate(ep, ImplicitMidpoint()))
-dl = DataLoader(vcat(dl_nt.input.q, dl_nt.input.p))
+dl = DataLoader(vcat(dl_nt.input.q, dl_nt.input.p))  # hide
 
 nothing # hide
 ```
@@ -48,42 +69,116 @@ o_sympnet = Optimizer(o_method, nn_sympnet)
 batch = Batch(batch_size, seq_length)
 batch2 = Batch(batch_size)
 
-loss_array_standard = o_standard(nn_standard, dl, batch, n_epochs)
-loss_array_symplectic = o_symplectic(nn_symplectic, dl, batch, n_epochs)
-loss_array_sympnet = o_sympnet(nn_sympnet, dl, batch2, n_epochs)
+loss_array_standard = o_standard(nn_standard, dl, batch, n_epochs; show_progress = false)
+loss_array_symplectic = o_symplectic(nn_symplectic, dl, batch, n_epochs; show_progress = false)
+loss_array_sympnet = o_sympnet(nn_sympnet, dl, batch2, n_epochs; show_progress = false)
 
-p_train = plot(loss_array_standard; color = 2, xlabel = "epoch", ylabel = "training error", label = "ST", yaxis = :log)
-plot!(p_train, loss_array_symplectic; color = 4, label = "LST")
-plot!(p_train, loss_array_sympnet; color = 3, label = "SympNet")
-
-p_train
+nothing # hide
 ```
 
-We further evaluate a trajectory with the trained networks: 
+And the corresponding training losses look as follows:
 
-```@example lin_sympl_tran_tut
+```@setup lin_sympl_tran_tut
+morange = RGBf(255 / 256, 127 / 256, 14 / 256) # hide
+mred = RGBf(214 / 256, 39 / 256, 40 / 256) # hide
+mpurple = RGBf(148 / 256, 103 / 256, 189 / 256) # hide
+mblue = RGBf(31 / 256, 119 / 256, 180 / 256) # hide
+mgreen = RGBf(44 / 256, 160 / 256, 44 / 256) # hide
+
+function plot_training_losses(loss_array_standard, loss_array_symplectic, loss_array_sympnet; theme = :dark)
+    textcolor = theme == :dark ? :white : :black
+    fig = Figure(; backgroundcolor = :transparent)
+    ax = Axis(fig[1, 1]; 
+        backgroundcolor = :transparent,
+        bottomspinecolor = textcolor, 
+        topspinecolor = textcolor,
+        leftspinecolor = textcolor,
+        rightspinecolor = textcolor,
+        xtickcolor = textcolor, 
+        ytickcolor = textcolor,
+        xticklabelcolor = textcolor,
+        yticklabelcolor = textcolor,
+        xlabel="Epoch", 
+        ylabel="Training loss",
+        xlabelcolor = textcolor,
+        ylabelcolor = textcolor,
+        yscale = log10
+    )
+    lines!(ax, loss_array_standard, color = mblue, label = "ST")
+    lines!(ax, loss_array_symplectic,  color = mred, label = "LST")
+    lines!(ax, loss_array_sympnet, color = mgreen, label = "SympNet")
+    axislegend(; position = (.82, .75), backgroundcolor = :transparent, labelcolor = textcolor)
+
+    fig, ax
+end
+
+fig_dark, ax_dark = plot_training_losses(loss_array_standard, loss_array_symplectic, loss_array_sympnet; theme = :dark)
+fig_light, ax_light = plot_training_losses(loss_array_standard, loss_array_symplectic, loss_array_sympnet; theme = :light)
+
+save("lst_dark.png", fig_dark; px_per_unit = 1.2)
+save("lst.png", fig_light; px_per_unit = 1.2)
+
+nothing
+```
+
+```@example
+Main.include_graphics("lst"; caption = "Training loss for the different networks.") # hide
+```
+
+
+We further evaluate a trajectory with the trained networks for thirty time steps: 
+
+```@setup lin_sympl_tran_tut
 const index = 1
 init_con = dl.input[:, 1:seq_length, index]
 
 const n_steps = 30
 
-function make_validation_plot(n_steps = n_steps; kwargs...)
+function make_validation_plot(n_steps = n_steps; theme = :dark)
+    textcolor = theme == :dark ? :white : :black
+    fig = Figure(; backgroundcolor = :transparent)
+    ax = Axis(fig[1, 1]; 
+        backgroundcolor = :transparent,
+        bottomspinecolor = textcolor, 
+        topspinecolor = textcolor,
+        leftspinecolor = textcolor,
+        rightspinecolor = textcolor,
+        xtickcolor = textcolor, 
+        ytickcolor = textcolor,
+        xticklabelcolor = textcolor,
+        yticklabelcolor = textcolor,
+        xlabel=L"t", 
+        ylabel=L"q_1",
+        xlabelcolor = textcolor,
+        ylabelcolor = textcolor,
+    )
     prediction_standard = iterate(nn_standard, init_con; n_points = n_steps, prediction_window = seq_length)
     prediction_symplectic = iterate(nn_symplectic, init_con; n_points = n_steps, prediction_window = seq_length)
     prediction_sympnet = iterate(nn_sympnet, init_con[:, 1]; n_points = n_steps)
 
-    p_validate = plot(dl.input[1, 1:n_steps, index]; color = 1, ylabel = L"q_1", label = "implicit midpoint", kwargs...)
-    plot!(p_validate, prediction_standard[1, :]; color = 2, label = "ST", kwargs...)
-    plot!(p_validate, prediction_symplectic[1, :]; color = 4, label = "LST", kwargs...)
-    plot!(p_validate, prediction_sympnet[1, :]; color = 3, label = "SympNet", kwargs...)
+    # we use linewidth  = 2
+    lines!(ax, dl.input[1, 1:n_steps, index]; color = mblue, label = "Implicit midpoint", linewidth = 2)
+    lines!(ax, prediction_standard[1, :]; color = mpurple, label = "ST", linewidth = 2)
+    lines!(ax, prediction_symplectic[1, :]; color = mred, label = "LST", linewidth = 2)
+    lines!(ax, prediction_sympnet[1, :]; color = morange, label = "SympNet", linewidth = 2)
+    axislegend(; position = (.55, .75), backgroundcolor = :transparent, labelcolor = textcolor)
 
-    p_validate
+    fig, ax
 end
 
-make_validation_plot(; linewidth = 2)
+fig_light, ax_light = make_validation_plot(n_steps; theme = :light)
+fig_dark, ax_dark = make_validation_plot(n_steps; theme = :dark)
+save("lst_validation.png", fig_light; px_per_unit = 1.2)
+save("lst_validation_dark.png", fig_dark; px_per_unit = 1.2)
+
+nothing
 ```
 
-We can see that the standard transformer is not able to stay close to the trajectory coming from implicit midpoint very well. The linear symplectic transformer outperforms the standard transformer as well as the SympNet while needed much fewer parameters than the standard transformer: 
+```@example lin_sympl_tran_tut
+Main.include_graphics("lst_validation"; caption = "Validation of the different networks.") # hide
+```
+
+We can see that the standard transformer is not able to stay close to the trajectory coming from implicit midpoint very well. The linear symplectic transformer outperforms the standard transformer as well as the SympNet while needing fewer parameters than the standard transformer: 
 
 ```@example lin_sympl_tran_tut
 parameterlength(nn_standard), parameterlength(nn_symplectic), parameterlength(nn_sympnet)

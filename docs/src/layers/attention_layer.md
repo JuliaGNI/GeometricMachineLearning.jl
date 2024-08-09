@@ -70,7 +70,7 @@ So the ``y`` coefficients responsible for producing the first output vector are 
 
 Besides the traditional attention mechanism `GeometricMachineLearning` therefore also has a volume-preserving transformation that fulfills a similar role. There are two approaches implemented to realize similar transformations. Both of them however utilize the *Cayley transform* to produce orthogonal matrices ``\sigma(C)`` instead of stochastic matrices. For an orthogonal matrix ``\Sigma`` we have ``\Sigma^T\Sigma = \mathbb{I}``, so all the columns are linearly independent which is not necessarily true for a stochastic matrix ``P``. In the following we explain how this new activation function is implemented. First we need to briefly discuss the *Cayley transform*. 
 
-### The Cayley transform 
+### The Cayley Transform 
 
 The Cayley transform maps from skew-symmetric matrices to orthonormal matrices[^4]. It takes the form:
 
@@ -124,7 +124,7 @@ Main.include_graphics("../tikz/skew_sym_mapping") # hide
 
 Internally `GeometricMachineLearning` computes this more efficiently with the function [`GeometricMachineLearning.tensor_mat_skew_sym_assign`](@ref).
 
-## How is structure preserved? 
+## How is Structure Preserved? 
 
 In order to discuss *how structure is preserved* we first have to define what *structure* we mean precisely. This structure is strongly inspired by traditional *multi-step methods* (see [feng1998step](@cite)). We now define what volume preservation means for the product space ``\mathbb{R}^{d}\times\cdots\times\mathbb{R}^{d}\equiv\times_\text{$T$ times}\mathbb{R}^{d}``.
 
@@ -177,7 +177,7 @@ Attention was used before the transformer was introduced, but mostly in connecti
 
 ## Library Functions
 
-```@docs; canonical = false
+```@docs
 GeometricMachineLearning.tensor_mat_skew_sym_assign
 VolumePreservingAttention
 ```

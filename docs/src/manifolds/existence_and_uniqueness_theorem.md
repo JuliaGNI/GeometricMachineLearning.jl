@@ -40,8 +40,8 @@ Main.indentation * raw"and we see that ``\Gamma`` is a contractive mapping if we
 Main.indentation * raw"```math
 " * 
 Main.indentation * raw"\gamma^*(t) = \int_0^tX(\gamma^*(s))ds,
-" *
-Main.indentation * raw"and this ``\gamma^*`` is the curve we were looking for. Its uniqueness is guaranteed by the fixed-point theorem.")
+" * Main.indentation * raw"```
+" * Main.indentation * raw"and this ``\gamma^*`` is the curve we were looking for. Its uniqueness is guaranteed by the fixed-point theorem.")
 ``` 
 
 For all the problems we discuss here we can extend the integral curves of ``X`` from the finite interval ``(-\epsilon, \epsilon)`` to all of ``\mathbb{R}``. The solution ``\gamma`` we call an *integral curve* or *flow* of the vector field (ODE).
