@@ -1,6 +1,4 @@
-@doc raw"""
-A *bias layer* that does nothing more than add a vector to the input. This is needed for *LA-SympNets*.
-"""
+# A *bias layer* that does nothing more than add a vector to the input. This is needed for *LA-SympNets*.
 struct BiasLayer{M, N} <: SympNetLayer{M, N}
 end
 

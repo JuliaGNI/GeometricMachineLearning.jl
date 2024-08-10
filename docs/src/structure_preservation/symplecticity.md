@@ -85,8 +85,10 @@ The discipline of finding numerical approximations of flows ``\varphi^t`` such t
 Is is important to note that symplecticity is a very strong property that may not be achievable in some practical applications. If symplecticity preservation is not achievable it may however still be advantageous to consider weaker properties such as [volume preservation](@ref "Divergence-Free Vector Fields").
 
 ## References
-```@docs; canonical = false
+```@docs
+SymplecticPotential
 GeometricMachineLearning.QPT
+GeometricMachineLearning.QPTOAT
 ```
 
 ## Library Functions

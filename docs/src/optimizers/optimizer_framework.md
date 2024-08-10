@@ -2,7 +2,13 @@
 
 In this section we present the general Optimizer framework used in `GeometricMachineLearning`. For more information on the particular steps involved in this consult the documentation on the various optimizer methods such as the [momentum optimizer](@ref "The Momentum Optimizer") and the [Adam optimizer](@ref "The Adam Optimizer"), and the documentation on [retractions](@ref "Retractions").
 
-During *optimization* we aim at changing the neural network parameters in such a way to minimize the loss function. So if we express the loss function ``L`` as a function of the neural network weights ``\Theta`` in a parameter space ``\mathbb{P}`` we can phrase the task as: 
+During *optimization* we aim at changing the neural network parameters in such a way to minimize the loss function. A loss function assigns a scalar value to the weights that parametrize the neural network:
+
+```math
+    L: \mathbb{P}\to\mathbb{R},\quad \Theta \mapsto L(\Theta),
+```
+
+where ``\mathbb{P}`` is the parameter space. We can then phrase the optimization task as: 
 
 ```@eval
 Main.definition(raw"Given a neural network ``\mathcal{NN}`` parametrized by ``\Theta`` and a loss function ``L:\mathbb{P}\to\mathbb{R}`` we call an algorithm an **iterative optimizer** (or simply **optimizer**) if it performs the following task:
@@ -25,15 +31,30 @@ by means of an Euler time-stepping scheme:
 ```
 where ``\eta`` (the time step of the Euler scheme) is referred to as the *learning rate*. 
 
-This equation can easily be generalized to [manifolds](@ref "(Matrix) Manifolds") by replacing the *Euclidean gradient* ``\nabla_{\Theta^{t}}L`` by a *Riemannian gradient* ``-h\mathrm{grad}_{\Theta^{t}}L`` and addition by ``-h\nabla_{\Theta^{t}}L`` with the [exponential map](@ref "Geodesic Sprays and the Exponential Map") of ``-h\mathrm{grad}_{\theta^{t}}L``. In practice we often use approximations ot the exponential map however. These are called [retractions](@ref "Retractions").
+This equation can easily be generalized to [manifolds](@ref "(Matrix) Manifolds") with the following two steps:
+1. ``\nabla_{\Theta^{t}}L\implies{}-h\mathrm{grad}_{\Theta^{t}}L,`` i.e. replace the Euclidean gradient by a [Riemannian gradient](@ref "The Riemannian Gradient")
+2. replace addition with the [geodesic map](@ref "Geodesic Sprays and the Exponential Map").
+
+To sum up we then have:
+
+```math
+\Theta^{t+1} = \mathrm{geodesic}(\Theta^{t}, --h\mathrm{grad}_{\Theta^{t}}L).
+```
+
+In practice we often use approximations ot the exponential map however. These are called [retractions](@ref "Retractions").
 
 ## Generalization to Homogeneous Spaces
 
 In order to generalize neural network optimizers to [homogeneous spaces](@ref "Homogeneous Spaces") we utilize their corresponding [global tangent space representation](@ref "Global Tangent Spaces") ``\mathfrak{g}^\mathrm{hor}``. 
 
-When introducing the notion of a [global tangent space](@ref "Global Tangent Spaces") we discussed how an element of the tangent space ``T_Y\mathcal{M}`` can be represented in ``\mathfrak{g}^\mathrm{hor}`` by performing two mappings: the first one is the horizontal lift ``\Omega`` (see the docstring for [`GeometricMachineLearning.Ω`](@ref)) and the second one is the adjoint operation[^1] with the lift of ``Y`` called ``\lambda(Y)``. We can visualize the steps required in performing this generalization:
+When introducing the notion of a [global tangent space](@ref "Global Tangent Spaces") we discussed how an element of the tangent space ``T_Y\mathcal{M}`` can be represented in ``\mathfrak{g}^\mathrm{hor}`` by performing two mappings: 
+1. the first one is the horizontal lift ``\Omega`` (see the docstring for [`GeometricMachineLearning.Ω`](@ref)) and 
+2. the second one is the adjoint operation[^1] with the lift of ``Y`` called ``\lambda(Y)``. 
 
 [^1]: By the *adjoint operation* ``\mathrm{ad}_A:\mathfrak{g}\to\mathfrak{g}`` for an element ``A\in{}G`` we mean ``B \mapsto A^{-1}BA``.
+
+The two steps together are performed as [`global_rep`](@ref) in `GeometricMachineLearning.` We can visualize the steps required in performing this generalization:
+
 
 ```@example
 Main.include_graphics("../tikz/general_optimization_with_boundary") # hide
@@ -54,9 +75,10 @@ where ``\Delta\in{}T_\mathcal{M}`` and ``B^\Delta`` is its representation in ``\
 
 ## Library Functions
 
-```@docs; canonical = false
+```@docs
 Optimizer
-update!
+optimize_for_one_epoch!
+optimization_step!
 ```
 
 ## References 

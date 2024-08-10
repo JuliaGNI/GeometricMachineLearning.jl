@@ -6,6 +6,31 @@ Store the `method` (e.g. [`AdamOptimizer`](@ref) with corresponding hyperparamet
 It takes as input an optimization method and the parameters of a network. 
 
 For *technical reasons* we first specify an [`OptimizerMethod`](@ref) that stores all the hyperparameters of the optimizer. 
+
+# Functor 
+
+```julia
+Optimizer(nn, dl, batch, n_epochs, loss)
+```
+
+The arguments are the following
+1. `nn::NeuralNetwork`
+2. `dl::`[`DataLoader`](@ref)
+3. `batch::`[`Batch`](@ref)
+4. `n_epochs::Int`
+5. `loss::`[`NetworkLoss`](@ref)
+
+The last argument is optional for many neural network architectures. We have the following defaults:
+- A [`TransformerIntegrator`](@ref) uses [`TransformerLoss`](@ref).
+- A [`NeuralNetworkIntegrator`](@ref) uses [`FeedForwardLoss`](@ref).
+- An [`AutoEncoder`](@ref) uses [`AutoEncoderLoss`](@ref).
+
+In addition there is an optional keyword argument:
+- `show_progress=true`: This specifies whether a progress bar should be shown during training.
+
+# Implementation
+
+Internally the functor for `Optimizer` calls [`GlobalSection`](@ref) and [`optimize_for_one_epoch!`](@ref).
 """
 mutable struct Optimizer{MT<:OptimizerMethod, CT, RT}
     method::MT
@@ -37,6 +62,10 @@ Allocate the cache for a specific `method` and a `NeuralNetwork` for an instance
 Internally this calls `Optimizer(method, nn.params)`.
 
 Typically the Optimizer is not initialized with the network parameters, but instead with a NeuralNetwork struct.
+
+# Arguments
+
+See [`Optimizer(::OptimizerMethod, ::Union{Tuple, NamedTuple})`](@ref).
 """
 function Optimizer(method::OptimizerMethod, nn::NeuralNetwork; kwargs...)
     Optimizer(method, nn.params; kwargs...)

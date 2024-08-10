@@ -14,10 +14,10 @@ This is used for the neural networks [`StandardTransformerIntegrator`](@ref) and
 # Arguments
 
 The optional keyword arguments to `MultiHeadAttention` are:
-- `Stiefel::Bool`
-- `add_connection::Bool`
+- `Stiefel::Bool=false`
+- `add_connection::Bool=true`
 
-`Stiefel` indicates whether weights are put on ``St(\mathrm{dim}, \mathrm{dim}\div\mathrm{n_heads})``.
+`Stiefel` indicates whether weights are put on the [`StiefelManifold`](@ref) ``St(\mathrm{dim}, \mathrm{dim}\div\mathrm{n\_heads})``.
 
 `add_connection` indicates whether the input is again added to the output.
 """
@@ -106,13 +106,13 @@ function compute_output_of_mha(d::MultiHeadAttention{M, M}, x::AbstractMatrix{T}
     output
 end
 
-@doc raw"""
-    compute_output_of_mha(d::MultiHeadAttention, x, ps)
-
-Apply [`MultiHeadAttention`](@ref) layer `d` to `x`. 
-
-This is the same, independent of whether the input is added to the output or not. 
-"""
+# @doc raw"""
+#     compute_output_of_mha(d::MultiHeadAttention, x, ps)
+# 
+# Apply [`MultiHeadAttention`](@ref) layer `d` to `x`. 
+# 
+# This is the same, independent of whether the input is added to the output or not. 
+# """
 function compute_output_of_mha(d::MultiHeadAttention{M, M}, x::AbstractArray{T, 3}, ps::NamedTuple) where {M, T}
     Dₕ = M ÷ d.n_heads
     dim, input_length, number_data = size(x)

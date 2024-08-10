@@ -55,7 +55,7 @@ Because the main task of the ``W_i^V``, ``W_i^K`` and ``W_i^Q`` matrices here is
 
 ## Library Functions 
 
-```@docs; canonical=false
+```@docs
 MultiHeadAttention
 ```
 

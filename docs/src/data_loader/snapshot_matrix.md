@@ -1,4 +1,4 @@
-# Snapshot matrix
+# Snapshot Matrix
 
 The snapshot matrix stores solutions of the high-dimensional ODE (obtained from discretizing a PDE). This is then used to construct [reduced bases](../reduced_order_modeling/reduced_order_modeling.md) in a data-driven way. So (for a single parameter[^1]) the snapshot matrix takes the following form: 
 
@@ -20,7 +20,7 @@ The starting point for using the snapshot matrix as data for a machine learning 
 
 
 
-# Snapshot tensor 
+# Snapshot Tensor 
 
 The snapshot tensor fulfills the same role as the snapshot matrix but has a third axis that describes different initial parameters (such as different initial conditions). 
 
@@ -28,4 +28,10 @@ The snapshot tensor fulfills the same role as the snapshot matrix but has a thir
 Main.include_graphics("../tikz/tensor") # hide
 ```
 
-When drawing training samples from the snapshot tensor we also need to specify a *sequence length* (as an argument to the [`Batch`](@ref) struct). When sampling a batch from the snapshot tensor we sample over the starting point of the time interval (which is of length `seq_length`) and the third axis of the tensor (the parameters). The total number of batches in this case is ``\lceil\mathtt{(dl.input\_time_steps - batch.seq\_length) * dl.n\_params / batch.batch_size}\rceil``. 
+When drawing training samples from the snapshot tensor we also need to specify a *sequence length* (as an argument to the [`Batch`](@ref) struct). When sampling a batch from the snapshot tensor we sample over the starting point of the time interval (which is of length `seq_length`) and the third axis of the tensor (the parameters). The total number of batches in this case is 
+
+```math
+\lceil\mathtt{(dl.input\_time_steps - batch.seq\_length) * dl.n\_params / batch.batch\_size}\rceil,
+``` 
+
+where ``\lceil\cdot\rceil`` is the *ceiling operation*.
