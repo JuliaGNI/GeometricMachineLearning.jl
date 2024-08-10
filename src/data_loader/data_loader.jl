@@ -285,10 +285,14 @@ See the docstring for [`DataLoader(::AbstractArray{<:Number, 3})`](@ref).
 
 Internally this stores the data as a tensor where the third axis has length 1.
 """
-function DataLoader(solution::GeometricSolution{T, <:Number, NT}; kwargs...) where {T <: Number, DT <: DataSeries{T}, NT<:NamedTuple{(:q, :p), Tuple{DT, DT}}}
+function DataLoader(solution::GeometricSolution{T, <:Number, NT}, suppress_info = false; kwargs...) where 
+                                                                                {T <: Number, 
+                                                                                 DT <: DataSeries{T}, 
+                                                                                 NT<:NamedTuple{(:q, :p), 
+                                                                                 Tuple{DT, DT}}}
     data = data_tensors_from_geometric_solution(solution)
 
-    DataLoader(data; kwargs...)
+    DataLoader(data; suppress_info = suppress_info, kwargs...)
 end
 
 function DataLoader(ensemble_solution::EnsembleSolution{T, T1, Vector{ST}};
@@ -436,6 +440,10 @@ function DataLoader(dl::DataLoader{T1, <:QPTOAT, Nothing, Type},
         dl.n_params,
         nothing,
         nothing)
+end
+
+function DataLoader(dl::DataLoader, T::DataType; kwargs...)
+    DataLoader(dl, KernelAbstractions.get_backend(dl), T; kwargs...)
 end
 
 @doc raw"""
