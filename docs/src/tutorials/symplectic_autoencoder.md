@@ -46,10 +46,10 @@ u_0(\mu)(\omega) = h(s(\omega, \mu)), \quad s(\omega, \mu) =  20 \mu  |\omega + 
 
 For the purposes of this tutorial we will use the default value for ``\mu`` provided in `GeometricMachineLearning`:
 
-```@example
-using GeometricProblems.TodaLattice: μ
+```@example toda_lattice
+import GeometricProblems.TodaLattice as tl
 
-μ
+tl.μ
 ```
 
 ## Get the data 
@@ -57,20 +57,24 @@ using GeometricProblems.TodaLattice: μ
 The training data can very easily be obtained by using the packages [`GeometricProblems`](https://github.com/JuliaGNI/GeometricProblems.jl) and [`GeometricIntegrators`](https://github.com/JuliaGNI/GeometricIntegrators.jl):
 
 ```@example toda_lattice
-using GeometricProblems.TodaLattice: hodeproblem
 using GeometricIntegrators: integrate, ImplicitMidpoint
 using GeometricMachineLearning 
-using Plots
-import Random
+import Random # hide
 
-pr = hodeproblem(; tspan = (0.0, 100.))
+pr = tl.hodeproblem(; tspan = (0.0, 800.))
 sol = integrate(pr, ImplicitMidpoint())
-dl = DataLoader(sol; autoencoder = true)
+dl_cpu = DataLoader(sol; autoencoder = true, suppress_info = true)
 
-dl.input_dim
+nothing # hide
 ```
 
-Here we first integrate the system with implicit midpoint and then put the training data into the right format by calling `DataLoader`. We can get the dimension of the system by calling `dl.input_dim`. Also note that the keyword `autoencoder` was set to true.
+Here we first integrate the system with implicit midpoint and then put the training data into the right format by calling `DataLoader`. We can get the dimension of the system by calling `dl.input_dim`:
+
+```@example toda_lattice
+dl_cpu.input_dim
+```
+
+Also note that the keyword `autoencoder` was set to true when calling [`DataLoader`](@ref).
 
 ## Train the network 
 
@@ -79,29 +83,56 @@ We now want to compare two different approaches: [PSDArch](@ref) and [Symplectic
 ```@example toda_lattice
 const reduced_dim = 2
 
-psd_arch = PSDArch(dl.input_dim, reduced_dim)
-sae_arch = SymplecticAutoencoder(dl.input_dim, reduced_dim; n_encoder_blocks = 4, n_decoder_blocks = 4, n_encoder_layers = 4, n_decoder_layers = 1)
-
-Random.seed!(123)
-psd_nn = NeuralNetwork(psd_arch)
-sae_nn = NeuralNetwork(sae_arch)
+Random.seed!(123) # hide
+psd_arch = PSDArch(dl_cpu.input_dim, reduced_dim)
+sae_arch = SymplecticAutoencoder(dl_cpu.input_dim, reduced_dim; n_encoder_blocks = 4, n_decoder_blocks = 4, n_encoder_layers = 2, n_decoder_layers = 2)
 
 nothing # hide
 ```
 
-Training a neural network is usually done by calling an instance of [Optimizer](@ref) in `GeometricMachineLearning`. [PSDArch](@ref) however can be solved directly by using singular value decomposition and this is done by calling [solve!](@ref). The `SymplecticAutoencoder` we train with the [AdamOptimizer](@ref) however: 
+Training a neural network is usually done by calling an instance of [Optimizer](@ref) in `GeometricMachineLearning`. [PSDArch](@ref) however can be solved directly by using singular value decomposition and this is done by calling [solve!](@ref):  
 
-```@example toda_lattice 
-const n_epochs = 8
-const batch_size = 16
+```@example toda_lattice
+psd_nn_cpu = NeuralNetwork(psd_arch, CPU(), eltype(dl_cpu))
 
-o = Optimizer(sae_nn, AdamOptimizer(Float64))
+solve!(psd_nn_cpu, dl_cpu)
+```
 
-psd_error = solve!(psd_nn, dl)
-sae_error = o(sae_nn, dl, Batch(batch_size), n_epochs)
+The `SymplecticAutoencoder` we train with the [AdamOptimizer](@ref) however[^1]:
 
-hline([psd_error]; color = 2, label = "PSD error")
-plot!(sae_error; color = 3, label = "SAE error", xlabel = "epoch", ylabel = "training error")
+[^1]: It is not feasible to perform the training on CPU, which is why we use `CUDA` [besard2018juliagpu](@cite) here. We further perform the training in single precision.
+
+```julia
+using CUDA
+
+const n_epochs = 262144
+const batch_size = 4096
+
+backend = CUDABackend()
+dl = DataLoader(dl_cpu, backend, Float32)
+
+
+sae_nn_gpu = NeuralNetwork(sae_arch, CUDADevice(), Float32)
+o = Optimizer(sae_nn, AdamOptimizer())
+
+# train the network
+o(sae_nn_gpu, dl, Batch(batch_size), n_epochs)
+```
+
+After training we map the network parameters to cpu:
+
+```julia
+const mtc = GeometricMachineLearning.map_to_cpu
+sae_nn_cpu = mtc(sae_nn_gpu)
+```
+
+```@setup toda_lattice
+using JLD2 
+
+sae_trained_parameters = load("sae_parameters.jld2")["sae_parameters"]
+sae_nn_cpu = NeuralNetwork(sae_arch, Chain(sae_arch), sae_trained_parameters, CPU())
+
+# nothing
 ```
 
 ## The online stage with a standard integrator
@@ -109,27 +140,87 @@ plot!(sae_error; color = 3, label = "SAE error", xlabel = "epoch", ylabel = "tra
 After having trained our neural network we can now evaluate it in the online stage of reduced complexity modeling: 
 
 ```@example toda_lattice
-psd_rs = HRedSys(pr, encoder(psd_nn), decoder(psd_nn); integrator = ImplicitMidpoint())
-sae_rs = HRedSys(pr, encoder(sae_nn), decoder(sae_nn); integrator = ImplicitMidpoint())
+psd_rs = HRedSys(pr, encoder(psd_nn_cpu), decoder(psd_nn_cpu); integrator = ImplicitMidpoint())
+sae_rs = HRedSys(pr, encoder(sae_nn_cpu), decoder(sae_nn_cpu); integrator = ImplicitMidpoint())
 
-projection_error(psd_rs)
+nothing  # hide
 ```
+
+We integrate the full system (again) as well as the two reduced systems:
 
 ```@example toda_lattice 
-projection_error(sae_rs)
+@time "FOM + Implicit Midpoint" sol_full = integrate_full_system(psd_rs)
+@time "PSD + Implicit Midpoint" sol_psd_reduced = integrate_reduced_system(psd_rs)
+@time "SAE + Implicit Midpoint" sol_sae_reduced = integrate_reduced_system(sae_rs)
+
+nothing # hide
 ```
 
-Next we plot a comparison between the PSD prediction and the symplectic autoencoder prediction: 
+And plot the solutions for 
 
 ```@example toda_lattice
-sol_full = integrate_full_system(psd_rs)
-sol_psd_reduced = integrate_reduced_system(psd_rs)
-sol_sae_reduced = integrate_reduced_system(sae_rs)
+time_steps = (0, 300, 800)
 
-const t_steps = 100
-plot(sol_full.s.q[t_steps], label = "Implicit Midpoint")
-plot!(psd_rs.decoder((q = sol_psd_reduced.s.q[t_steps], p = sol_psd_reduced.s.p[t_steps])).q, label = "PSD")
-plot!(sae_rs.decoder((q = sol_sae_reduced.s.q[t_steps], p = sol_sae_reduced.s.p[t_steps])).q, label = "SAE")
+nothing # hide
+```
+
+```@setup toda_lattice
+using CairoMakie
+
+morange = RGBf(255 / 256, 127 / 256, 14 / 256)
+mred = RGBf(214 / 256, 39 / 256, 40 / 256) 
+mpurple = RGBf(148 / 256, 103 / 256, 189 / 256)
+mblue = RGBf(31 / 256, 119 / 256, 180 / 256)
+mgreen = RGBf(44 / 256, 160 / 256, 44 / 256)
+
+# plot validation
+function plot_validation!(fig, coordinates::Tuple, t_steps::Integer=100; theme = :dark)
+    textcolor = theme == :dark ? :white : :black
+    ax_val = Axis(fig[coordinates[1], coordinates[2]]; backgroundcolor = :transparent,
+                                                                bottomspinecolor = textcolor, 
+                                                                topspinecolor = textcolor,
+                                                                leftspinecolor = textcolor,
+                                                                rightspinecolor = textcolor,
+                                                                xtickcolor = textcolor, 
+                                                                ytickcolor = textcolor,
+                                                                xticklabelcolor = textcolor,
+                                                                yticklabelcolor = textcolor,
+                                                                xlabel=L"t", 
+                                                                ylabel=L"q",
+                                                                xlabelcolor = textcolor,
+                                                                ylabelcolor = textcolor)
+    lines!(ax_val, sol_full.s.q[t_steps], label = "FOM + Implicit Midpoint", color = mblue)
+    lines!(ax_val, psd_rs.decoder((q = sol_psd_reduced.s.q[t_steps], p = sol_psd_reduced.s.p[t_steps])).q, 
+        label = "PSD + Implicit Midpoint", color = morange)
+    lines!(ax_val, sae_rs.decoder((q = sol_sae_reduced.s.q[t_steps], p = sol_sae_reduced.s.p[t_steps])).q, 
+        label = "SAE + Implicit Midpoint", color = mgreen)
+
+    if t_steps == 0
+        axislegend(ax_val; position = (1.01, 1.5), backgroundcolor = :transparent, color = textcolor, labelsize = 8)
+    end
+    nothing
+end
+
+fig_light = Figure(; backgroundcolor = :transparent)
+
+fig_dark = Figure(; backgroundcolor = :transparent)
+
+for (i, time) in zip(1:length(time_steps), time_steps)
+    plot_validation!(fig_light, (i, 1), time; theme = :light)
+    plot_validation!(fig_dark, (i, 1), time; theme = :dark)
+end
+
+# axislegend(fig_light; position = (.82, .75), backgroundcolor = :transparent, color = :black)
+# axislegend(fig_dark;  position = (.82, .75), backgroundcolor = :transparent, color = :white)
+
+save("sae_validation.png", fig_light)
+save("sae_validation_dark.png", fig_dark)
+
+nothing # hide
+```
+
+```@example
+Main.include_graphics("sae_validation")
 ```
 
 We can see that the autoencoder approach has much more approximation capabilities than the psd approach. The jiggly lines are due to the fact that training was done for only 8 epochs. 
@@ -138,7 +229,7 @@ We can see that the autoencoder approach has much more approximation capabilitie
 
 Instead of using a standard integrator we can also use a neural network that is trained on the reduced data. For this: 
 
-```@example toda_lattice
+```julia
 integrator_batch_size = 128
 integrator_train_epochs = 10
 
@@ -155,7 +246,7 @@ nothing # hide
 
 We can now evaluate the solution:
 
-```@example toda_lattice
+```julia
 ics = encoder(sae_nn)((q = dl.input.q[:, 1, 1], p = dl.input.p[:, 1, 1]))
 time_series = iterate(integrator_nn, ics; n_points = t_steps)
 prediction = (q = time_series.q[:, end], p = time_series.p[:, end])
@@ -163,6 +254,34 @@ sol = decoder(sae_nn)(prediction)
 
 plot!(sol.q; label = "Neural Network Integrator")
 ```
+
+```julia
+# plot validation
+function plot_validation(t_steps::Integer=100)
+    fig_val = Figure()
+    ax_val = Axis(fig_val[1, 1])
+    lines!(ax_val, sol_full.s.q[t_steps], label = "FOM + Implicit Midpoint", color = mblue)
+    lines!(ax_val, psd_rs.decoder((q = sol_psd_reduced.s.q[t_steps], p = sol_psd_reduced.s.p[t_steps])).q, 
+        label = "PSD + Implicit Midpoint", color = morange)
+    lines!(ax_val, sae_rs.decoder((q = sol_sae_reduced.s.q[t_steps], p = sol_sae_reduced.s.p[t_steps])).q, 
+        label = "SAE + Implicit Midpoint", color = mgreen)
+
+    name = "symplectic_autoencoder_validation/symplectic_autoencoder_validation_" * string(t_steps)
+    # axislegend(; position = (.82, .75), backgroundcolor = :transparent, color = text_color)
+    save(name * ".pdf", fig_val)
+
+    @time "time stepping with transformer" time_series = iterate(mtc(integrator_nn), ics; n_points = t_steps, prediction_window = seq_length)
+    # prediction = (q = time_series.q[:, end], p = time_series.p[:, end])
+    prediction = time_series[:, end]
+    sol = decoder(sae_nn_cpu)(prediction)
+
+    lines!(ax_val, sol[1:(dl.input_dim ÷ 2)]; label = "SAE + Transformer", color = mpurple)
+
+    axislegend(; position = (.82, .75), backgroundcolor = :transparent, color = textcolor)
+    save(name * "_with_nn_integrator.pdf", fig_val)
+end
+```
+
 
 ```@eval
 Main.remark(raw"The results presented here are not ideal. In order to be able to quickly run them on a relatively weak gpu we have chosen the number of epochs very low. For more useful results the number of epochs should be increased to at least 1000 or more.")
