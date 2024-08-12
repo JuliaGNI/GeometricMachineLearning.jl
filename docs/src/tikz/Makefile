@@ -74,6 +74,8 @@ png:
 	pdftocairo  -png -r $(res1) -transp -singlefile  multiple_parameters_dark.pdf					multiple_parameters_dark
 	pdftocairo  -png -r $(res1) -transp -singlefile  coupled_harmonic_oscillator.pdf				coupled_harmonic_oscillator
 	pdftocairo  -png -r $(res1) -transp -singlefile  coupled_harmonic_oscillator_dark.pdf			coupled_harmonic_oscillator_dark
+	pdftocairo  -png -r $(res1) -transp -singlefile  tangent_vector.pdf								tangent_vector
+	pdftocairo  -png -r $(res1) -transp -singlefile  tangent_vector_dark.pdf						tangent_vector_dark
 
 logo:
 	cp logo_with_name.png 		../assets/logo.png

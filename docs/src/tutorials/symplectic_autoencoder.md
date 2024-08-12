@@ -149,9 +149,13 @@ nothing  # hide
 We integrate the full system (again) as well as the two reduced systems:
 
 ```@example toda_lattice 
-@time "FOM + Implicit Midpoint" sol_full = integrate_full_system(psd_rs)
-@time "PSD + Implicit Midpoint" sol_psd_reduced = integrate_reduced_system(psd_rs)
-@time "SAE + Implicit Midpoint" sol_sae_reduced = integrate_reduced_system(sae_rs)
+integrate_full_system(psd_rs) # hide
+integrate_reduced_system(psd_rs) # hide
+integrate_reduced_system(sae_rs) # hide
+
+@time "FOM + Implicit Midpoint" sol_full = integrate_full_system(psd_rs) # hide
+@time "PSD + Implicit Midpoint" sol_psd_reduced = integrate_reduced_system(psd_rs) # hide
+@time "SAE + Implicit Midpoint" sol_sae_reduced = integrate_reduced_system(sae_rs) # hide
 
 nothing # hide
 ```
@@ -220,7 +224,7 @@ nothing # hide
 ```
 
 ```@example
-Main.include_graphics("sae_validation")
+Main.include_graphics("sae_validation"; width = .8) # hide
 ```
 
 We can see that the autoencoder approach has much more approximation capabilities than the psd approach. The jiggly lines are due to the fact that training was done for only 8 epochs. 

@@ -1,4 +1,4 @@
-# Comparing different `VolumePreservingAttention` mechanisms
+# Comparing Different `VolumePreservingAttention` Mechanisms
 
 In the [section on volume-preserving attention](@ref "Volume-Preserving Attention") we mentioned two ways of computing volume-preserving attention: one where we compute the correlations with a skew-symmetric matrix and one where we compute the correlations with an arbitrary matrix. Here we compare the two approaches. When calling the [`VolumePreservingAttention`](@ref) layer we can specify whether we want to use the skew-symmetric or the arbitrary weighting by setting the keyword `skew_sym = true` and `skew_sym = false` respectively. 
 
