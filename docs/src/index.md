@@ -53,7 +53,7 @@ There are several tutorials demonstrating how `GeometricMachineLearning` can be 
 These tutorials include:
 - a [tutorial on SympNets](@ref "SympNets with `GeometricMachineLearning`") that shows how we can model a flow map corresponding to data coming from an unknown [canonical Hamiltonian system](@ref "Symplectic Systems"),
 - a [tutorial on symplectic Autoencoders](@ref "Symplectic Autoencoders and the Toda Lattice") that shows how this architecture can be used in [structure-preserving reduced order modeling](@ref "Hamiltonian Model Order Reduction"),
-- a [tutorial on the volume-preserving attention mechanism](@re "Comparing Different `VolumePreservingAttention` Mechanisms") which serves as a basis for the [volume-preserving transformer](@ref "Volume-Preserving Transformer"),
+- a [tutorial on the volume-preserving attention mechanism](@ref "Comparing Different `VolumePreservingAttention` Mechanisms") which serves as a basis for the [volume-preserving transformer](@ref "Volume-Preserving Transformer"),
 - a [tutorial on training a transformer with manifold weights for image classification](@ref "MNIST Tutorial") to show that manifold optimization is also useful outside of scientific machine learning.
 
 ## Data-Driven Reduced Order Modeling
