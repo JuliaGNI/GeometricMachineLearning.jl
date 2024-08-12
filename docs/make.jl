@@ -139,7 +139,123 @@ end
 # this is needed if we have multiline definitions or proofs
 const indentation = output_type == :html ? "\t" : ""
 
-introduction = output_type == :html ? "index.md" : "introduction.md"
+_introduction_text = output_type == :html ? "index.md" : "introduction.md"
+
+_introduction_label = output_type == :html ? "HOME" : "Introduction"
+
+_introduction = _introduction_label => _introduction_text
+
+_manifolds = "Manifolds" => [
+    "Concepts from General Topology" => "manifolds/basic_topology.md",
+    "Metric and Vector Spaces" => "manifolds/metric_and_vector_spaces.md",
+    "Foundations of Differential Manifolds" => "manifolds/inverse_function_theorem.md",
+    "General Theory on Manifolds" => "manifolds/manifolds.md",
+    "Differential Equations and the EAU theorem" => "manifolds/existence_and_uniqueness_theorem.md",
+    "Riemannian Manifolds" => "manifolds/riemannian_manifolds.md",
+    "Homogeneous Spaces" => "manifolds/homogeneous_spaces.md",
+    ]
+
+_special_arrays = "Special Arrays and AD" => [
+    "Symmetric and Skew-Symmetric Matrices" => "arrays/skew_symmetric_matrix.md",
+    "Global Tangent Spaces" => "arrays/global_tangent_spaces.md",
+    "Tensors" => "arrays/tensors.md",
+    "Pullbacks" => "pullbacks/computation_of_pullbacks.md",
+    ]
+
+_structure_preservation = "Structure-Preservation" => [
+    "Symplecticity" => "structure_preservation/symplecticity.md",
+    "Volume-Preservation" => "structure_preservation/volume_preservation.md",
+]
+
+_optimizers = "Optimizers" => [
+    "Optimizers" => "optimizers/optimizer_framework.md",
+    "Retractions" => "optimizers/manifold_related/retractions.md",
+    "Parallel Transport" => "optimizers/manifold_related/parallel_transport.md",
+    "Optimizer Methods" => "optimizers/optimizer_methods.md",
+    "BFGS Optimizer" => "optimizers/bfgs_optimizer.md",
+    ]
+
+_special_layers = "Special Neural Network Layers" => [
+    "Sympnet Layers" => "layers/sympnet_gradient.md",
+    "Volume-Preserving Layers" => "layers/volume_preserving_feedforward.md",
+    "(Volume-Preserving) Attention" => "layers/attention_layer.md",
+    "Multihead Attention" => "layers/multihead_attention_layer.md",
+    "Linear Symplectic Attention" => "layers/linear_symplectic_attention.md",
+    ]
+
+_reduced_order_modeling = "Reduced Order Modeling" =>[
+    "General Framework" => "reduced_order_modeling/reduced_order_modeling.md",
+    "POD and Autoencoders" => "reduced_order_modeling/pod_autoencoders.md",
+    "Losses and Errors" => "reduced_order_modeling/losses.md",
+    "Symplectic Model Order Reduction" => "reduced_order_modeling/symplectic_mor.md",
+    ]
+
+_architectures = "Architectures" => [
+    "Symplectic Autoencoders" => "architectures/symplectic_autoencoder.md",
+    "Neural Network Integrators" => "architectures/neural_network_integrators.md",
+    "SympNet" => "architectures/sympnet.md",
+    "Volume-Preserving FeedForward" => "architectures/volume_preserving_feedforward.md",
+    "Standard Transformer" => "architectures/transformer.md",
+    "Volume-Preserving Transformer" => "architectures/volume_preserving_transformer.md",
+    "Linear Symplectic Transformer" => "architectures/linear_symplectic_transformer.md",
+    ]
+
+_data_loader = "Data Loader" =>[
+            "Routines" => "data_loader/data_loader.md",
+            "Snapshot matrix & tensor" => "data_loader/snapshot_matrix.md",
+    ]
+
+_tutorials = "Tutorials" =>[
+    "Sympnets" => "tutorials/sympnet_tutorial.md",
+    "Symplectic Autoencoders" => "tutorials/symplectic_autoencoder.md",
+    "MNIST" => "tutorials/mnist/mnist_tutorial.md",
+    "Grassmann manifold" => "tutorials/grassmann_layer.md",
+    "Volume-Preserving Attention" => "tutorials/volume_preserving_attention.md",
+    "Linear Symplectic Transformer" => "tutorials/linear_symplectic_transformer.md",
+    "Adjusting the Loss Function" => "tutorials/adjusting_the_loss_function.md",
+    "Comparing Optimizers" => "tutorials/optimizer_comparison.md",
+    ]
+
+_references = "References" => "references.md"
+
+_html_pages = [
+    _introduction,
+    _manifolds,
+    _special_arrays,
+    _structure_preservation,
+    _optimizers,
+    _special_layers,
+    _reduced_order_modeling,
+    _architectures,
+    _data_loader,
+    _tutorials,
+    _references
+]
+
+# Maybe you want to name "Background" → "Manifolds, Global Tangent Spaces and Geometric Structure"
+
+_latex_pages = [
+    _introduction,
+    "Background" => vcat(
+        _manifolds[2],
+        _special_arrays[2][2],
+        _structure_preservation[2],
+        _reduced_order_modeling[2]
+        ),
+    _optimizers,
+    "Special Neural Network Layers and Architectures" => vcat(
+        _special_layers[2],
+        _architectures[2]
+    ),
+    "Experiments and Applications" => _tutorials[2],
+    _references,
+    "Appendix" => vcat(
+        _data_loader[2],
+        _special_arrays[2][1],
+        _special_arrays[2][3],
+        _special_arrays[2][4]
+    )
+]
 
 makedocs(;
     plugins = [bib],
@@ -148,72 +264,7 @@ makedocs(;
     repo = "https://github.com/JuliaGNI/GeometricMachineLearning.jl/blob/{commit}{path}#L{line}",
     sitename = "GeometricMachineLearning.jl",
     format = format,
-    pages=[
-        "Home" => introduction,
-        "Manifolds" => [
-            "Concepts from General Topology" => "manifolds/basic_topology.md",
-            "Metric and Vector Spaces" => "manifolds/metric_and_vector_spaces.md",
-            "Foundations of Differential Manifolds" => "manifolds/inverse_function_theorem.md",
-            "General Theory on Manifolds" => "manifolds/manifolds.md",
-            "Differential Equations and the EAU theorem" => "manifolds/existence_and_uniqueness_theorem.md",
-            "Riemannian Manifolds" => "manifolds/riemannian_manifolds.md",
-            "Homogeneous Spaces" => "manifolds/homogeneous_spaces.md",
-            ],
-        "Special Arrays and AD" => [
-            "Symmetric and Skew-Symmetric Matrices" => "arrays/skew_symmetric_matrix.md",
-            "Global Tangent Spaces" => "arrays/global_tangent_spaces.md",
-            "Tensors" => "arrays/tensors.md",
-            "Pullbacks" => "pullbacks/computation_of_pullbacks.md",
-        ],
-        "Structure-Preservation" => [
-            "Symplecticity" => "structure_preservation/symplecticity.md",
-            "Volume-Preservation" => "structure_preservation/volume_preservation.md",
-        ],
-        "Optimizers" => [
-            "Optimizers" => "optimizers/optimizer_framework.md",
-            "Retractions" => "optimizers/manifold_related/retractions.md",
-            "Parallel Transport" => "optimizers/manifold_related/parallel_transport.md",
-            "Optimizer Methods" => "optimizers/optimizer_methods.md",
-            "BFGS Optimizer" => "optimizers/bfgs_optimizer.md",
-            ],
-        "Special Neural Network Layers" => [
-            "Sympnet Layers" => "layers/sympnet_gradient.md",
-            "Volume-Preserving Layers" => "layers/volume_preserving_feedforward.md",
-            "(Volume-Preserving) Attention" => "layers/attention_layer.md",
-            "Multihead Attention" => "layers/multihead_attention_layer.md",
-            "Linear Symplectic Attention" => "layers/linear_symplectic_attention.md",
-        ],
-        "Reduced Order Modeling" =>[
-            "General Framework" => "reduced_order_modeling/reduced_order_modeling.md",
-            "POD and Autoencoders" => "reduced_order_modeling/pod_autoencoders.md",
-            "Losses and Errors" => "reduced_order_modeling/losses.md",
-            "Symplectic Model Order Reduction" => "reduced_order_modeling/symplectic_mor.md",
-        ],
-        "Architectures" => [
-            "Symplectic Autoencoders" => "architectures/symplectic_autoencoder.md",
-            "Neural Network Integrators" => "architectures/neural_network_integrators.md",
-            "SympNet" => "architectures/sympnet.md",
-            "Volume-Preserving FeedForward" => "architectures/volume_preserving_feedforward.md",
-            "Standard Transformer" => "architectures/transformer.md",
-            "Volume-Preserving Transformer" => "architectures/volume_preserving_transformer.md",
-            "Linear Symplectic Transformer" => "architectures/linear_symplectic_transformer.md",
-        ],
-        "Data Loader" =>[
-            "Routines" => "data_loader/data_loader.md",
-            "Snapshot matrix & tensor" => "data_loader/snapshot_matrix.md",
-        ],
-        "Tutorials" =>[
-            "Sympnets" => "tutorials/sympnet_tutorial.md",
-            "Symplectic Autoencoders" => "tutorials/symplectic_autoencoder.md",
-            "MNIST" => "tutorials/mnist/mnist_tutorial.md",
-            "Grassmann manifold" => "tutorials/grassmann_layer.md",
-            "Volume-Preserving Attention" => "tutorials/volume_preserving_attention.md",
-            "Linear Symplectic Transformer" => "tutorials/linear_symplectic_transformer.md",
-            "Adjusting the Loss Function" => "tutorials/adjusting_the_loss_function.md",
-            "Comparing Optimizers" => "tutorials/optimizer_comparison.md",
-        ],
-        "References" => "references.md",
-    ],
+    pages = output_type == :html ? _html_pages : _latex_pages,
 )
 
 deploydocs(;
