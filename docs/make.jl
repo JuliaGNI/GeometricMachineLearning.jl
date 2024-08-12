@@ -139,6 +139,8 @@ end
 # this is needed if we have multiline definitions or proofs
 const indentation = output_type == :html ? "\t" : ""
 
+introduction = output_type == :html ? "index.md" : "introduction.md"
+
 makedocs(;
     plugins = [bib],
     modules = [GeometricMachineLearning],
@@ -147,7 +149,7 @@ makedocs(;
     sitename = "GeometricMachineLearning.jl",
     format = format,
     pages=[
-        "Home" => "index.md",
+        "Home" => introduction,
         "Manifolds" => [
             "Concepts from General Topology" => "manifolds/basic_topology.md",
             "Metric and Vector Spaces" => "manifolds/metric_and_vector_spaces.md",
