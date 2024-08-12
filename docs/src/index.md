@@ -34,7 +34,7 @@ Existing architectures include:
 Main.include_graphics("tikz/tangent_vector"; caption = raw"Weights can be put on manifolds to achieve structure preservation or improved stability.") # hide
 ```
 
-When `GeometricMachineLearning` optimizes on manifolds it uses the framework introduced in [brantner2023generalizing](@cite). Optimization is necessary for some neural network architectures such as [symplectic autoencoders](@ref "The Symplectic Autoencoder") and can be critical for others such as the [standard transformer](@ref "MNIST tutorial") [kong2023momentum, zhang2021orthogonality](@cite).
+When `GeometricMachineLearning` optimizes on manifolds it uses the framework introduced in [brantner2023generalizing](@cite). Optimization is necessary for some neural network architectures such as [symplectic autoencoders](@ref "The Symplectic Autoencoder") and can be critical for others such as the [standard transformer](@ref "MNIST Tutorial") [kong2023momentum, zhang2021orthogonality](@cite).
 
 
 
