@@ -12,4 +12,17 @@ In this picture we visualize that geometric machine learning aims at constructin
 
 For us the biggest motivation for geometric machine learning comes from *data-driven reduced order modeling*. There we want to find cheap representations of so-called *full order models* of which we have data available. This is the case when solving parametric partial differential equations (PPDEs) for example. In this case we can solve the full order model for a few parameter instances and then build a cheaper representation of the full model (a so-called *reduced model*) with neural networks. This can bring dramatic speed-ups in performance. 
 
-Closely linked to the research presented here is the development of a software package written in `Julia` called `GeometricMachineLearning`.
+Closely linked to the research presented here is the development of a software package written in `Julia` called `GeometricMachineLearning`. Throughout this work we will demonstrate concepts such as neural network architecture and (Riemannian) optimization by using `GeometricMachineLearning`. All the code necessary to reproduce the results is included in the text and does not have any specific hardware requirements. Except for training some of the neural networks (which was done on an NVIDA Geforce RTX 4090 [rtx4090](@cite)) all the code snippets were run on CPU (via GitHub runners [actions](@cite)).
+
+This thesis is structures into three parts:
+
+
+
+The following papers have emerged in connection with the development of `GeometricMachineLearning`:
+1. In [brantner2023generalizing](@cite) a new class of optimizers for *homogeneous spaces*, a category that includes the Stiefel manifold and the Grassmann manifold, is introduced.
+2. In [brantner2023symplectic](@cite) we introduced a new neural network architectures that we call *symplectic autoencoders*. This is capable of performing non-linear Hamiltonian model reduction. During training we use the optimizers introduced in [brantner2023generalizing](@cite).
+3. In [brantner2024volume](@cite) we introduce a new neural network architecture that we call *volume-preserving transformers*. This is a structure-preserving version of the *standard transformer* [vaswani2017attention](@cite) for which all components have been made volume preserving. As application we foresee the *online phase* in reduced order modeling.
+
+In addition there are new results presented in this work that have not been written up as a separate paper:
+4. We show how the [Grassmann manifold can be included into a neural network](@ref "Example of a Neural Network with a Grassmann Layer") and construct a loss based on the Wasserstein distance to approximate a nonlinear space from which we can then sample.
+5. Similar to the volume-preserving transformer [brantner2024volume](@cite) we introduce a [*linear symplectic transformer*](@ref "Linear Symplectic Transformer") that preserves a symplectic product structure and is also foreseen to be used in reduced order modeling.
