@@ -51,3 +51,9 @@ end
 @inline function (d::Dense{M, N, false})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, N, T}
 	return d.σ.(mat_tensor_mul(ps.W, x))
 end
+
+function (d::Dense)(z::QPT, ps::NamedTuple)
+    N2 = size(z.q, 1)
+    output = d(vcat(z), ps)
+    assign_q_and_p(output, N2)
+end
