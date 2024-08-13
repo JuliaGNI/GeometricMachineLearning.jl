@@ -153,15 +153,23 @@ end
     output[i, j, k] = data[i, indices[1, k] + seq_length + j - 1, indices[2, k]]
 end
 
+@kernel function assign_output_from_vector_of_tuples_kernel!(output::AT, data::AT, indices::AbstractArray{Int, 2}, seq_length::Int) where {T, AT<:AbstractArray{T, 3}}
+    i, j, k = @index(Global, NTuple)
+
+    output[i, j, k] = data[i, indices[1, k] + seq_length + j - 1, indices[2, k]]
+end
+
 # this is neeced if we want to use the vector of tuples in a kernel
 function convert_vector_of_tuples_to_matrix(backend::Backend, batch_indices_tuple::Vector{Tuple{Int, Int}})
     _batch_size = length(batch_indices_tuple)
 
-    batch_indices = KernelAbstractions.zeros(backend, Int, 2, _batch_size)
-    @views for t in axes(batch_indices_tuple, 1)
-        batch_indices[1, t] = batch_indices_tuple[t][1]
-        batch_indices[2, t] = batch_indices_tuple[t][2]
+    batch_indices = KernelAbstractions.allocate(backend, Int, 2, _batch_size)
+    batch_indices_temp = zeros(Int, size(batch_indices)...)
+    for t in axes(batch_indices_tuple, 1)
+        batch_indices_temp[1, t] = batch_indices_tuple[t][1]
+        batch_indices_temp[2, t] = batch_indices_tuple[t][2]
     end
+    batch_indices = typeof(batch_indices)(batch_indices_temp)
 
     batch_indices
 end
