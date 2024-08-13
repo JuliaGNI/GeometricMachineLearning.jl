@@ -79,7 +79,7 @@ end
 
 function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::AT; n_points::Int = 100, prediction_window::Union{Nothing, Int} = size(ics, 2)) where {T, AT<:AbstractMatrix{T}}
 
-    seq_length = typeof(nn.architecture) <: StandardTransformerIntegrator ? size(ics.q, 2) : nn.architecture.seq_length
+    seq_length = typeof(nn.architecture) <: StandardTransformerIntegrator ? size(ics, 2) : nn.architecture.seq_length
 
     n_dim = size(ics, 1)
     backend = KernelAbstractions.get_backend(ics)
