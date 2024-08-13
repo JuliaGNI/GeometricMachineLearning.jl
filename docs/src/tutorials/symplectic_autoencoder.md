@@ -130,12 +130,12 @@ sae_nn_cpu = mtc(sae_nn_gpu)
 ```
 
 ```@setup toda_lattice
-using JLD2 
+using JLD2
 
 sae_trained_parameters = load("sae_parameters.jld2")["sae_parameters"]
 sae_nn_cpu = NeuralNetwork(sae_arch, Chain(sae_arch), sae_trained_parameters, CPU())
 
-# nothing
+nothing  # hide
 ```
 
 ## The online stage with a standard integrator
@@ -260,7 +260,7 @@ dl = dl_cpu # hide
 dl_integration = DataLoader(dl; autoencoder = false)
 
 # the regular transformer can't deal with symplectic data!
-dl_integration = DataLoader(vcat(dl_integration.input.q, dl_integration.input.p))
+dl_integration = DataLoader(vcat(dl_integration.input.q, dl_integration.input.p); suppress_info = true)
 
 integrator_batch = Batch(integrator_batch_size, seq_length)
 
@@ -283,6 +283,7 @@ nn_integrator_parameters = load("integrator_parameters.jld2")["integrator_parame
 integrator_nn = NeuralNetwork(integrator_architecture, Chain(integrator_architecture), nn_integrator_parameters, backend) # hide
 
 ics = encoder(sae_nn_cpu)((q = dl.input.q[:, 1:seq_length, 1], p = dl.input.p[:, 1:seq_length, 1])) # hide
+iterate(mtc(integrator_nn), ics; n_points = length(sol.t), prediction_window = seq_length) # hide
 @time "time stepping with transformer" time_series = iterate(mtc(integrator_nn), ics; n_points = length(sol.t), prediction_window = seq_length) # hide
 
 nothing # hide
@@ -313,10 +314,10 @@ function plot_transformer_validation!(fig, coordinates, t_steps::Integer=100; th
 
     time_series = iterate(mtc(integrator_nn), ics; n_points = t_steps, prediction_window = seq_length)
     # prediction = (q = time_series.q[:, end], p = time_series.p[:, end])
-    prediction = time_series[:, end]
+    prediction = (q = time_series.q[:, end], p = time_series.p[:, end])
     sol = decoder(sae_nn_cpu)(prediction)
 
-    lines!(ax_val, sol[1:(dl.input_dim ÷ 2)]; label = "SAE + Transformer", color = mpurple)
+    lines!(ax_val, sol.q; label = "SAE + Transformer", color = mpurple)
 
     if t_steps == 0
         axislegend(ax_val; position = (1.01, 1.5), backgroundcolor = :transparent, color = textcolor, labelsize = 8)
