@@ -163,3 +163,9 @@ Multiply `Y` with all matrices stored in `x` (parallelize over the third axis).
 function mat_tensor_mul(Y::StiefelManifold, x::AbstractArray{T, 3}) where T 
     mat_tensor_mul(Y.A, x)
 end
+
+function (d::MultiHeadAttention)(z::QPT, ps::NamedTuple)
+    N2 = size(z.q, 1)
+    output = d(vcat(z.q, z.p), ps)
+    assign_q_and_p(output, N2)
+end

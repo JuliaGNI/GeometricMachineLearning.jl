@@ -1,11 +1,24 @@
 @doc raw"""
+    ResNetLayer(dim)
+
+Make an instance of the resnet layer.
+
 The `ResNetLayer` is a simple feedforward neural network to which we add the input after applying it, i.e. it realizes ``x \mapsto x + \sigma(Ax + b)``.
+
+# Arguments
+
+The ResNet layer takes the following arguments:
+1. `dim::Integer`: the system dimension.
+2. `activation = identity`: The activation function.
+
+The following is a keyword argument:
+- `use_bias::Bool = true`: This determines whether a bias ``b`` is used.
 """
 struct ResNetLayer{M, N, use_bias, F1} <: AbstractExplicitLayer{M, N}
     activation::F1
 end
 
-function ResNetLayer(dim::IT, activation=identity; use_bias::Bool=true) where {IT<:Int}
+function ResNetLayer(dim::Integer, activation=identity; use_bias::Bool=true)
     return ResNetLayer{dim, dim, use_bias, typeof(activation)}(activation)
 end
 
@@ -52,8 +65,10 @@ end
 	return d.σ.(mat_tensor_mul(ps.W, x))
 end
 
-function (d::Dense)(z::QPT, ps::NamedTuple)
-    N2 = size(z.q, 1)
-    output = d(vcat(z), ps)
+function (d::Union{Dense{M, N}, ResNetLayer{M, N}})(z::QPT, ps::NamedTuple) where {M, N}
+    @assert iseven(M) == iseven(N) == true
+    @assert size(z.q, 1) * 2 == M
+    N2 = N ÷ 2
+    output = d(vcat(z.q, z.p), ps)
     assign_q_and_p(output, N2)
 end
