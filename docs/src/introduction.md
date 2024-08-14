@@ -66,12 +66,11 @@ We note that SympNets, volume-preserving feedforward neural networks and the thr
 
 In this part we demonstrate the neural network architectures implemented in `GeometricMachineLearning` with a few examples:
 - [SympNets](@ref "SympNets with `GeometricMachineLearning`"): this serves as an introductory example into using `GeometricMachineLearning` and does not contain any new results. It simply shows how to use SympNets to learn the flow of a harmonic oscillator.
-- [Symplectic autoencoders](@ref "Symplectic Autoencoders and the Toda Lattice"):
+- [Symplectic autoencoders](@ref "Symplectic Autoencoders and the Toda Lattice"): here we show how to reduce the Toda lattice [toda1967vibration](@cite), which is a 400-dimensional Hamiltonian system in our case, to a two-dimensional Hamiltonian system with symplectic autoencoders. 
 - [Image classification](@ref "MNIST Tutorial"): Here we perform image classification for the MNIST dataset [deng2012mnist](@cite) with vision transformers and show that manifold optimization can enable convergence that would otherwise not be possible.
-- [The Grassmann manifold in neural networks](@ref "Example of a Neural Network with a Grassmann Layer"):
-- [Different volume-preserving attention mechanisms](@ref "Comparing Different `VolumePreservingAttention` Mechanisms"):
-- [Linear Symplectic Transformer](@ref linear_symplectic_transformer_tutorial): 
-- [Adjusting the loss function](@ref "Adjusting the Loss Function"): 
+- [The Grassmann manifold in neural networks](@ref "Example of a Neural Network with a Grassmann Layer"): in this example we model a surface embedded in ``\mathbb{R}^3`` with the help of the Grassmann manifold.
+- [Different volume-preserving attention mechanisms](@ref "Comparing Different `VolumePreservingAttention` Mechanisms"): the [volume-preserving attention mechanism](@ref "Volume-Preserving Attention") in `GeometricMachineLearning` is based on computing correlations in the input sequence. These correlations can be constructed in two different ways. Here we compare these two.
+- [Linear Symplectic Transformer](@ref linear_symplectic_transformer_tutorial): the linear symplectic transformer is used to integrate the four-dimensional Hamiltonian system of the *coupled harmonic oscillator*. Here we compare the linear symplectic transformer to the standard transformer and SympNets.
 
 ## Associated Papers
 
