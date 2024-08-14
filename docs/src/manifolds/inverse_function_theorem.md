@@ -1,6 +1,6 @@
-# Foundational Theorem for Differential Manifolds
+# Foundational Theorems for Differential Manifolds
 
-Here we state and proof all the theorem necessary to define [differential manifold](@ref "(Matrix) Manifolds"). All these theorems (including proofs) can be found in e.g. [lang2012fundamentals](@cite).
+Here we state and proof all the theorems necessary to define [differential manifolds](@ref "(Matrix) Manifolds"). All these theorems (including proofs) can be found in e.g. [lang2012fundamentals](@cite).
 
 ## The Fixed-Point Theorem 
 
