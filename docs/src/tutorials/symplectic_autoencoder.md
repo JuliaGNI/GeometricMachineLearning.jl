@@ -196,11 +196,11 @@ function plot_validation!(fig, coordinates::Tuple, t_steps::Integer=100; theme =
                                                                 ylabel=L"q",
                                                                 xlabelcolor = textcolor,
                                                                 ylabelcolor = textcolor)
-    lines!(ax_val, sol_full.s.q[t_steps], label = "FOM + Implicit Midpoint", color = mblue)
+    lines!(ax_val, sol_full.s.q[t_steps], label = rich("FOM + Implicit Midpoint"; color = textcolor), color = mblue)
     lines!(ax_val, psd_rs.decoder((q = sol_psd_reduced.s.q[t_steps], p = sol_psd_reduced.s.p[t_steps])).q, 
-        label = "PSD + Implicit Midpoint", color = morange)
+        label = rich("PSD + Implicit Midpoint"; color = textcolor), color = morange)
     lines!(ax_val, sae_rs.decoder((q = sol_sae_reduced.s.q[t_steps], p = sol_sae_reduced.s.p[t_steps])).q, 
-        label = "SAE + Implicit Midpoint", color = mgreen)
+        label = rich("SAE + Implicit Midpoint"; color = textcolor), color = mgreen)
 
     if t_steps == 0
         axislegend(ax_val; position = (1.01, 1.5), backgroundcolor = :transparent, color = textcolor, labelsize = 8)
@@ -220,8 +220,8 @@ end
 # axislegend(fig_light; position = (.82, .75), backgroundcolor = :transparent, color = :black)
 # axislegend(fig_dark;  position = (.82, .75), backgroundcolor = :transparent, color = :white)
 
-save("sae_validation.png", fig_light)
-save("sae_validation_dark.png", fig_dark)
+save("sae_validation.png", fig_light; px_per_unit = 1.2)
+save("sae_validation_dark.png", fig_dark; px_per_unit = 1.2)
 
 nothing # hide
 ```
@@ -238,15 +238,15 @@ Instead of using a standard integrator we can also use a neural network that is 
 
 ```@example toda_lattice
 backend = CPU() # hide
-const integrator_train_epochs = 262144
+const integrator_train_epochs = 65536
 const integrator_batch_size = 4096
 const seq_length = 4
 
 integrator_architecture = StandardTransformerIntegrator(reduced_dim; 
-                                                                    transformer_dim = 10, 
+                                                                    transformer_dim = 20, 
                                                                     n_blocks = 3, 
                                                                     n_heads = 5, 
-                                                                    L = 2, 
+                                                                    L = 3,
                                                                     upscaling_activation = tanh)
 
 integrator_nn = NeuralNetwork(integrator_architecture, backend)
@@ -302,25 +302,25 @@ function plot_transformer_validation!(fig, coordinates, t_steps::Integer=100; th
                                                                 ytickcolor = textcolor,
                                                                 xticklabelcolor = textcolor,
                                                                 yticklabelcolor = textcolor,
-                                                                xlabel=L"t", 
-                                                                ylabel=L"q",
+                                                                xlabel = L"t", 
+                                                                ylabel = L"q",
                                                                 xlabelcolor = textcolor,
                                                                 ylabelcolor = textcolor)
-    lines!(ax_val, sol_full.s.q[t_steps], label = "FOM + Implicit Midpoint", color = mblue)
+    lines!(ax_val, sol_full.s.q[t_steps], label = rich("FOM + Implicit Midpoint"; color = textcolor), color = mblue)
     lines!(ax_val, psd_rs.decoder((q = sol_psd_reduced.s.q[t_steps], p = sol_psd_reduced.s.p[t_steps])).q, 
-        label = "PSD + Implicit Midpoint", color = morange)
+        label = rich("PSD + Implicit Midpoint"; color = textcolor), color = morange)
     lines!(ax_val, sae_rs.decoder((q = sol_sae_reduced.s.q[t_steps], p = sol_sae_reduced.s.p[t_steps])).q, 
-        label = "SAE + Implicit Midpoint", color = mgreen)
+        label = rich("SAE + Implicit Midpoint"; color = textcolor), color = mgreen)
 
     time_series = iterate(mtc(integrator_nn), ics; n_points = t_steps, prediction_window = seq_length)
     # prediction = (q = time_series.q[:, end], p = time_series.p[:, end])
     prediction = (q = time_series.q[:, end], p = time_series.p[:, end])
     sol = decoder(sae_nn_cpu)(prediction)
 
-    lines!(ax_val, sol.q; label = "SAE + Transformer", color = mpurple)
+    lines!(ax_val, sol.q; label = rich("SAE + Transformer"; color = textcolor), color = mpurple)
 
     if t_steps == 0
-        axislegend(ax_val; position = (1.01, 1.5), backgroundcolor = :transparent, color = textcolor, labelsize = 8)
+        axislegend(ax_val; position = (1.01, .8), backgroundcolor = :transparent, color = textcolor, labelsize = 8)
     end
     nothing
 end
@@ -334,8 +334,8 @@ for (i, time) in zip(1:length(time_steps), time_steps)
     plot_transformer_validation!(fig_dark, (i, 1), time; theme = :dark)
 end
 
-save("sae_integrator_validation.png", fig_light)
-save("sae_integrator_validation_dark.png", fig_dark)
+save("sae_integrator_validation.png", fig_light; px_per_unit = 1.2)
+save("sae_integrator_validation_dark.png", fig_dark; px_per_unit = 1.2)
 
 nothing # hide
 ```
@@ -344,8 +344,10 @@ nothing # hide
 Main.include_graphics("sae_integrator_validation"; width = .8) # hide
 ```
 
+Note that integration of the system with the transformer is orders of magnitudes faster than any comparable method and also leads to an improvement in accuracy over the case where we build the reduced space with the symplectic autoencoder and use implicit midpoint in the online phase.
+
 ```@eval
-Main.remark(raw"The results presented here are not ideal. In order to be able to quickly run them on a relatively weak gpu we have chosen the number of epochs very low. For more useful results the number of epochs should be increased to at least 1000 or more.")
+Main.remark(raw"While training the symplectic autoencoder we completely ignore the online phase, but only aim at finding a good low-dimensional approximation to the solution manifold. This is why we observe that the approximated solution differs somewhat form the actual one when using implicit midpoint for integrating the low-dimensional system (blue line vs. green line).")
 ```
 
 
