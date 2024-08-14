@@ -165,7 +165,8 @@ _structure_preservation = "Structure-Preservation" => [
     "Volume-Preservation" => "structure_preservation/volume_preservation.md",
 ]
 
-_optimizers = "Optimizers" => [
+optimizer_name = output_type == :html ? "Optimizer" : "Optimizer Framework"
+_optimizers = optimizer_name => [
     "Optimizers" => "optimizers/optimizer_framework.md",
     "Retractions" => "optimizers/manifold_related/retractions.md",
     "Parallel Transport" => "optimizers/manifold_related/parallel_transport.md",
