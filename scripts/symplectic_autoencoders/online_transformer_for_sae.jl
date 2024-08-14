@@ -18,11 +18,11 @@ const sae_arch = SymplecticAutoencoder(dl.input_dim, reduced_dim; n_encoder_bloc
 const sae_parameters = load("sae_parameters.jld2")["sae_parameters"] |> cu
 const sae_nn = NeuralNetwork(sae_arch, Chain(sae_arch), sae_parameters, backend)
 
-const integrator_train_epochs = 262144
+const integrator_train_epochs = 65536
 const integrator_batch_size = 4096
 
 const seq_length = 4
-const integrator_architecture = StandardTransformerIntegrator(reduced_dim; transformer_dim = 10, n_blocks = 3, n_heads = 5, L = 2, upscaling_activation = tanh)
+const integrator_architecture = StandardTransformerIntegrator(reduced_dim; transformer_dim = 20, n_blocks = 3, n_heads = 5, L = 3, upscaling_activation = tanh)
 const integrator_nn = NeuralNetwork(integrator_architecture, backend)
 const integrator_method = AdamOptimizerWithDecay(integrator_train_epochs)
 const o_integrator = Optimizer(integrator_method, integrator_nn)
