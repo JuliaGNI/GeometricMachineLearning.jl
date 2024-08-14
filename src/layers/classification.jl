@@ -44,5 +44,5 @@ function (d::ClassificationLayer{M, N, false})(output::AbstractArray{T, 3}, ps::
 end
 
 function (d::ClassificationLayer{M, N, false})(output::AbstractArray{T, 2}, ps::NamedTuple) where {M, N, T} 
-    d.activation(ps.weight*output[:,end:end])
+    d.activation(ps.weight * @view output[:, end:end])
 end
