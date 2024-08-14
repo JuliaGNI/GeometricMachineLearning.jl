@@ -246,13 +246,16 @@ _latex_pages = [
         _special_layers[2],
         _architectures[2]
     ),
-    "Experiments and Applications" => _tutorials[2],
+    # we do not include the last tutorial here
+    "Experiments and Applications" => _tutorials[2][1:end-1],
     _references,
     "Appendix" => vcat(
         _data_loader[2],
         _special_arrays[2][1],
         _special_arrays[2][3],
-        _special_arrays[2][4]
+        _special_arrays[2][4],
+        # we include the last tutorial here
+        _tutorials[2][end]
     )
 ]
 
