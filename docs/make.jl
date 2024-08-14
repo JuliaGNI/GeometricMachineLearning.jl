@@ -204,7 +204,7 @@ _data_loader = "Data Loader" =>[
             "Snapshot matrix & tensor" => "data_loader/snapshot_matrix.md",
     ]
 
-_tutorials = "Tutorials" =>[
+_tutorials = "Tutorials" => [
     "Sympnets" => "tutorials/sympnet_tutorial.md",
     "Symplectic Autoencoders" => "tutorials/symplectic_autoencoder.md",
     "MNIST" => "tutorials/mnist/mnist_tutorial.md",
@@ -212,7 +212,7 @@ _tutorials = "Tutorials" =>[
     "Volume-Preserving Attention" => "tutorials/volume_preserving_attention.md",
     "Linear Symplectic Transformer" => "tutorials/linear_symplectic_transformer.md",
     "Adjusting the Loss Function" => "tutorials/adjusting_the_loss_function.md",
-    "Comparing Optimizers" => "tutorials/optimizer_comparison.md",
+    # "Comparing Optimizers" => "tutorials/optimizer_comparison.md",
     ]
 
 _references = "References" => "references.md"
