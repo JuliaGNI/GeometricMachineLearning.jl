@@ -141,9 +141,7 @@ const indentation = output_type == :html ? "\t" : ""
 
 _introduction_text = output_type == :html ? "index.md" : "introduction.md"
 
-_introduction_label = output_type == :html ? "HOME" : "Introduction"
-
-_introduction = _introduction_label => _introduction_text
+_introduction = "HOME" => _introduction_text
 
 _manifolds = "Manifolds" => [
     "Concepts from General Topology" => "manifolds/basic_topology.md",
@@ -167,7 +165,8 @@ _structure_preservation = "Structure-Preservation" => [
     "Volume-Preservation" => "structure_preservation/volume_preservation.md",
 ]
 
-_optimizers = "Optimizers" => [
+optimizer_name = output_type == :html ? "Optimizer" : "Optimizer Framework"
+_optimizers = optimizer_name => [
     "Optimizers" => "optimizers/optimizer_framework.md",
     "Retractions" => "optimizers/manifold_related/retractions.md",
     "Parallel Transport" => "optimizers/manifold_related/parallel_transport.md",
@@ -205,7 +204,7 @@ _data_loader = "Data Loader" =>[
             "Snapshot matrix & tensor" => "data_loader/snapshot_matrix.md",
     ]
 
-_tutorials = "Tutorials" =>[
+_tutorials = "Tutorials" => [
     "Sympnets" => "tutorials/sympnet_tutorial.md",
     "Symplectic Autoencoders" => "tutorials/symplectic_autoencoder.md",
     "MNIST" => "tutorials/mnist/mnist_tutorial.md",
@@ -213,7 +212,7 @@ _tutorials = "Tutorials" =>[
     "Volume-Preserving Attention" => "tutorials/volume_preserving_attention.md",
     "Linear Symplectic Transformer" => "tutorials/linear_symplectic_transformer.md",
     "Adjusting the Loss Function" => "tutorials/adjusting_the_loss_function.md",
-    "Comparing Optimizers" => "tutorials/optimizer_comparison.md",
+    # "Comparing Optimizers" => "tutorials/optimizer_comparison.md",
     ]
 
 _references = "References" => "references.md"

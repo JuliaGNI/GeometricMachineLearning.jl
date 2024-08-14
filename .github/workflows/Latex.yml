@@ -38,6 +38,8 @@ jobs:
           make do_correct_quotation_marks -C docs
           make make_correct_thrm_and_dfntn_and_xmpl_and_rmrk_and_proof_environment -C docs
           make references_instead_of_hyperlinks -C docs
+          make correct_appendix -C docs
+          make remove_home_part -C docs
       - name: compile tex document
         run: |
           cd docs/build 

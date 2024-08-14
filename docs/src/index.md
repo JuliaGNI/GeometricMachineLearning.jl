@@ -6,6 +6,12 @@ CurrentModule = GeometricMachineLearning
 
 `GeometricMachineLearning` is a package for *structure-preserving scientific machine learning*. It contains models that can learn dynamical systems with geometric structure, such as Hamiltonian (symplectic) or Lagrangian (variational) systems.
 
+In that regard its aim is similar to traditional *geometric numerical integration* [hairer2006geometric, Kraus:2020:GeometricIntegrators](@cite) in that it models maps that share properties with the analytic solution of a differential equation:
+
+```@example
+Main.include_graphics("tikz/gml_venn") # hide
+```
+
 ## Installation
 
 `GeometricMachineLearning` and all of its dependencies can be installed via the Julia REPL by typing 

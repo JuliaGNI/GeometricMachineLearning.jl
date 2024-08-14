@@ -1,4 +1,6 @@
 @doc raw"""
+    TransformerIntegrator <: Architecture
+
 Encompasses various transformer architectures, such as the [`VolumePreservingTransformer`](@ref) and the [`LinearSymplecticTransformer`](@ref). 
 
 The central idea behind this is to construct an explicit multi-step integrator:
@@ -42,12 +44,17 @@ This function computes a trajectory for a Transformer that has already been trai
 # Parameters 
 
 The following are optional keyword arguments:
-- `n_points::Int=100`: The number of steps for which we run the prediction. 
+- `n_points::Int=100`: The number of time steps for which we run the prediction.
 - `prediction_window::Int=size(ics.q, 2)`: The prediction window (i.e. the number of steps we predict into the future) is equal to the sequence length (i.e. the number of input time steps) by default.  
 """
 function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::NamedTuple{(:q, :p), Tuple{AT, AT}}; n_points::Int = 100, prediction_window::Union{Nothing, Int}=size(ics.q, 2)) where {T, AT<:AbstractMatrix{T}}
 
-    seq_length = nn.architecture.seq_length
+    # if the number of predicted points is zero, just return the initial condition
+    if n_points == 0
+        return ics
+    end
+
+    seq_length = typeof(nn.architecture) <: StandardTransformerIntegrator ? size(ics.q, 2) : nn.architecture.seq_length
 
     n_dim = size(ics.q, 1)
     backend = KernelAbstractions.get_backend(ics.q)
@@ -78,8 +85,12 @@ function Base.iterate(::NeuralNetwork{<:TransformerIntegrator}, ics::AT; n_point
 end
 
 function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::AT; n_points::Int = 100, prediction_window::Union{Nothing, Int} = size(ics, 2)) where {T, AT<:AbstractMatrix{T}}
+    seq_length = typeof(nn.architecture) <: StandardTransformerIntegrator ? size(ics, 2) : nn.architecture.seq_length
 
-    seq_length = typeof(nn.architecture) <: StandardTransformerIntegrator ? prediction_window : nn.architecture.seq_length
+    # if the number of predicted points is zero, just return the initial condition
+    if n_points == 0
+        return ics
+    end
 
     n_dim = size(ics, 1)
     backend = KernelAbstractions.get_backend(ics)

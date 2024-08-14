@@ -113,7 +113,7 @@ dl = DataLoader(dl_cpu, backend, Float32)
 
 
 sae_nn_gpu = NeuralNetwork(sae_arch, CUDADevice(), Float32)
-o = Optimizer(sae_nn, AdamOptimizer())
+o = Optimizer(sae_nn_gpu, AdamOptimizer())
 
 # train the network
 o(sae_nn_gpu, dl, Batch(batch_size), n_epochs)
@@ -121,18 +121,21 @@ o(sae_nn_gpu, dl, Batch(batch_size), n_epochs)
 
 After training we map the network parameters to cpu:
 
-```julia
+```@example toda_lattice
 const mtc = GeometricMachineLearning.map_to_cpu
+nothing # hide
+```
+```julia
 sae_nn_cpu = mtc(sae_nn_gpu)
 ```
 
 ```@setup toda_lattice
-using JLD2 
+using JLD2
 
 sae_trained_parameters = load("sae_parameters.jld2")["sae_parameters"]
 sae_nn_cpu = NeuralNetwork(sae_arch, Chain(sae_arch), sae_trained_parameters, CPU())
 
-# nothing
+nothing  # hide
 ```
 
 ## The online stage with a standard integrator
@@ -193,11 +196,11 @@ function plot_validation!(fig, coordinates::Tuple, t_steps::Integer=100; theme =
                                                                 ylabel=L"q",
                                                                 xlabelcolor = textcolor,
                                                                 ylabelcolor = textcolor)
-    lines!(ax_val, sol_full.s.q[t_steps], label = "FOM + Implicit Midpoint", color = mblue)
+    lines!(ax_val, sol_full.s.q[t_steps], label = rich("FOM + Implicit Midpoint"; color = textcolor), color = mblue)
     lines!(ax_val, psd_rs.decoder((q = sol_psd_reduced.s.q[t_steps], p = sol_psd_reduced.s.p[t_steps])).q, 
-        label = "PSD + Implicit Midpoint", color = morange)
+        label = rich("PSD + Implicit Midpoint"; color = textcolor), color = morange)
     lines!(ax_val, sae_rs.decoder((q = sol_sae_reduced.s.q[t_steps], p = sol_sae_reduced.s.p[t_steps])).q, 
-        label = "SAE + Implicit Midpoint", color = mgreen)
+        label = rich("SAE + Implicit Midpoint"; color = textcolor), color = mgreen)
 
     if t_steps == 0
         axislegend(ax_val; position = (1.01, 1.5), backgroundcolor = :transparent, color = textcolor, labelsize = 8)
@@ -217,8 +220,8 @@ end
 # axislegend(fig_light; position = (.82, .75), backgroundcolor = :transparent, color = :black)
 # axislegend(fig_dark;  position = (.82, .75), backgroundcolor = :transparent, color = :white)
 
-save("sae_validation.png", fig_light)
-save("sae_validation_dark.png", fig_dark)
+save("sae_validation.png", fig_light; px_per_unit = 1.2)
+save("sae_validation_dark.png", fig_dark; px_per_unit = 1.2)
 
 nothing # hide
 ```
@@ -233,62 +236,118 @@ We can see that the autoencoder approach has much more approximation capabilitie
 
 Instead of using a standard integrator we can also use a neural network that is trained on the reduced data. For this: 
 
-```julia
-integrator_batch_size = 128
-integrator_train_epochs = 10
+```@example toda_lattice
+backend = CPU() # hide
+const integrator_train_epochs = 65536
+const integrator_batch_size = 4096
+const seq_length = 4
 
-integrator_nn = NeuralNetwork(GSympNet(reduced_dim))
-o_integrator = Optimizer(AdamOptimizer(Float64), integrator_nn)
+integrator_architecture = StandardTransformerIntegrator(reduced_dim; 
+                                                                    transformer_dim = 20, 
+                                                                    n_blocks = 3, 
+                                                                    n_heads = 5, 
+                                                                    L = 3,
+                                                                    upscaling_activation = tanh)
 
-loss = ReducedLoss(encoder(sae_nn), decoder(sae_nn))
+integrator_nn = NeuralNetwork(integrator_architecture, backend)
+
+integrator_method = AdamOptimizerWithDecay(integrator_train_epochs)
+
+o_integrator = Optimizer(integrator_method, integrator_nn)
+
+dl = dl_cpu # hide
+# map from autoencoder type to integrator type
 dl_integration = DataLoader(dl; autoencoder = false)
 
-o_integrator(integrator_nn, dl_integration, Batch(integrator_batch_size), integrator_train_epochs, loss)
+# the regular transformer can't deal with symplectic data!
+dl_integration = DataLoader(vcat(dl_integration.input.q, dl_integration.input.p); suppress_info = true)
+
+integrator_batch = Batch(integrator_batch_size, seq_length)
 
 nothing # hide
+```
+```julia
+loss = GeometricMachineLearning.ReducedLoss(encoder(sae_nn_gpu), decoder(sae_nn_gpu))
+
+train_integrator_loss = o_integrator(   integrator_nn, 
+                                        dl_integration, 
+                                        integrator_batch, 
+                                        integrator_train_epochs, 
+                                        loss)
 ```
 
 We can now evaluate the solution:
 
-```julia
-ics = encoder(sae_nn)((q = dl.input.q[:, 1, 1], p = dl.input.p[:, 1, 1]))
-time_series = iterate(integrator_nn, ics; n_points = t_steps)
-prediction = (q = time_series.q[:, end], p = time_series.p[:, end])
-sol = decoder(sae_nn)(prediction)
+```@example toda_lattice
+nn_integrator_parameters = load("integrator_parameters.jld2")["integrator_parameters"] # hide
+integrator_nn = NeuralNetwork(integrator_architecture, Chain(integrator_architecture), nn_integrator_parameters, backend) # hide
 
-plot!(sol.q; label = "Neural Network Integrator")
+ics = encoder(sae_nn_cpu)((q = dl.input.q[:, 1:seq_length, 1], p = dl.input.p[:, 1:seq_length, 1])) # hide
+iterate(mtc(integrator_nn), ics; n_points = length(sol.t), prediction_window = seq_length) # hide
+@time "time stepping with transformer" time_series = iterate(mtc(integrator_nn), ics; n_points = length(sol.t), prediction_window = seq_length) # hide
+
+nothing # hide
 ```
 
-```julia
+```@setup toda_lattice
 # plot validation
-function plot_validation(t_steps::Integer=100)
-    fig_val = Figure()
-    ax_val = Axis(fig_val[1, 1])
-    lines!(ax_val, sol_full.s.q[t_steps], label = "FOM + Implicit Midpoint", color = mblue)
+function plot_transformer_validation!(fig, coordinates, t_steps::Integer=100; theme = :dark)
+    textcolor = theme == :dark ? :white : :black
+    ax_val = Axis(fig[coordinates[1], coordinates[2]]; backgroundcolor = :transparent,
+                                                                bottomspinecolor = textcolor, 
+                                                                topspinecolor = textcolor,
+                                                                leftspinecolor = textcolor,
+                                                                rightspinecolor = textcolor,
+                                                                xtickcolor = textcolor, 
+                                                                ytickcolor = textcolor,
+                                                                xticklabelcolor = textcolor,
+                                                                yticklabelcolor = textcolor,
+                                                                xlabel = L"t", 
+                                                                ylabel = L"q",
+                                                                xlabelcolor = textcolor,
+                                                                ylabelcolor = textcolor)
+    lines!(ax_val, sol_full.s.q[t_steps], label = rich("FOM + Implicit Midpoint"; color = textcolor), color = mblue)
     lines!(ax_val, psd_rs.decoder((q = sol_psd_reduced.s.q[t_steps], p = sol_psd_reduced.s.p[t_steps])).q, 
-        label = "PSD + Implicit Midpoint", color = morange)
+        label = rich("PSD + Implicit Midpoint"; color = textcolor), color = morange)
     lines!(ax_val, sae_rs.decoder((q = sol_sae_reduced.s.q[t_steps], p = sol_sae_reduced.s.p[t_steps])).q, 
-        label = "SAE + Implicit Midpoint", color = mgreen)
+        label = rich("SAE + Implicit Midpoint"; color = textcolor), color = mgreen)
 
-    name = "symplectic_autoencoder_validation/symplectic_autoencoder_validation_" * string(t_steps)
-    # axislegend(; position = (.82, .75), backgroundcolor = :transparent, color = text_color)
-    save(name * ".pdf", fig_val)
-
-    @time "time stepping with transformer" time_series = iterate(mtc(integrator_nn), ics; n_points = t_steps, prediction_window = seq_length)
+    time_series = iterate(mtc(integrator_nn), ics; n_points = t_steps, prediction_window = seq_length)
     # prediction = (q = time_series.q[:, end], p = time_series.p[:, end])
-    prediction = time_series[:, end]
+    prediction = (q = time_series.q[:, end], p = time_series.p[:, end])
     sol = decoder(sae_nn_cpu)(prediction)
 
-    lines!(ax_val, sol[1:(dl.input_dim ÷ 2)]; label = "SAE + Transformer", color = mpurple)
+    lines!(ax_val, sol.q; label = rich("SAE + Transformer"; color = textcolor), color = mpurple)
 
-    axislegend(; position = (.82, .75), backgroundcolor = :transparent, color = textcolor)
-    save(name * "_with_nn_integrator.pdf", fig_val)
+    if t_steps == 0
+        axislegend(ax_val; position = (1.01, .8), backgroundcolor = :transparent, color = textcolor, labelsize = 8)
+    end
+    nothing
 end
+
+fig_light = Figure(; backgroundcolor = :transparent)
+
+fig_dark = Figure(; backgroundcolor = :transparent)
+
+for (i, time) in zip(1:length(time_steps), time_steps)
+    plot_transformer_validation!(fig_light, (i, 1), time; theme = :light)
+    plot_transformer_validation!(fig_dark, (i, 1), time; theme = :dark)
+end
+
+save("sae_integrator_validation.png", fig_light; px_per_unit = 1.2)
+save("sae_integrator_validation_dark.png", fig_dark; px_per_unit = 1.2)
+
+nothing # hide
 ```
 
+```@example
+Main.include_graphics("sae_integrator_validation"; width = .8) # hide
+```
+
+Note that integration of the system with the transformer is orders of magnitudes faster than any comparable method and also leads to an improvement in accuracy over the case where we build the reduced space with the symplectic autoencoder and use implicit midpoint in the online phase.
 
 ```@eval
-Main.remark(raw"The results presented here are not ideal. In order to be able to quickly run them on a relatively weak gpu we have chosen the number of epochs very low. For more useful results the number of epochs should be increased to at least 1000 or more.")
+Main.remark(raw"While training the symplectic autoencoder we completely ignore the online phase, but only aim at finding a good low-dimensional approximation to the solution manifold. This is why we observe that the approximated solution differs somewhat form the actual one when using implicit midpoint for integrating the low-dimensional system (blue line vs. green line).")
 ```
 
 
