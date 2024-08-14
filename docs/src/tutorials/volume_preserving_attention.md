@@ -15,7 +15,7 @@ sine_cosine[1, :, 1] .= sin.(0.:.1:99.9)
 sine_cosine[1, :, 2] .= cos.(0.:.1:99.9)
 
 const T = Float16
-const dl = DataLoader(T.(sine_cosine))
+const dl = DataLoader(T.(sine_cosine); suppress_info = true)
 
 nothing # hide
 ```
@@ -63,7 +63,7 @@ nothing
 ```
 
 ```@example
-Main.include_graphics("curve_comparison"; caption = raw"The data stored in `dl` contains two different curves.")
+Main.include_graphics("curve_comparison"; caption = raw"The data stored in `dl` contains two different curves.") # hide
 ```
 
 We want to train a single neural network on both these curves. We already noted [before](@ref "Why use Transformers for Model Order Reduction") that a simple feedforward neural network cannot do this. Here we compare three networks which are of the following form: 
