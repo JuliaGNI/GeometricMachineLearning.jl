@@ -2,7 +2,7 @@
 
 We typically store training data as *tensors with three axes* in `GeometricMachineLearning`.
 
-# Library Functions
+## Library Functions
 
 ```@docs
 GeometricMachineLearning.tensor_mat_mul

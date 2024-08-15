@@ -205,14 +205,14 @@ _data_loader = "Data Loader" =>[
     ]
 
 _tutorials = "Tutorials" => [
-    "Sympnets" => "tutorials/sympnet_tutorial.md",
+    "SympNets" => "tutorials/sympnet_tutorial.md",
     "Symplectic Autoencoders" => "tutorials/symplectic_autoencoder.md",
     "MNIST" => "tutorials/mnist/mnist_tutorial.md",
-    "Grassmann manifold" => "tutorials/grassmann_layer.md",
+    "Grassmann Manifold" => "tutorials/grassmann_layer.md",
     "Volume-Preserving Attention" => "tutorials/volume_preserving_attention.md",
     "Linear Symplectic Transformer" => "tutorials/linear_symplectic_transformer.md",
     "Adjusting the Loss Function" => "tutorials/adjusting_the_loss_function.md",
-    # "Comparing Optimizers" => "tutorials/optimizer_comparison.md",
+    "Comparing Optimizers" => "tutorials/optimizer_comparison.md",
     ]
 
 _references = "References" => "references.md"
@@ -233,29 +233,71 @@ _html_pages = [
 
 # Maybe you want to name "Background" → "Manifolds, Global Tangent Spaces and Geometric Structure"
 
+# this returns a vector
+function reduce_to_second_factors(list::Vector{Pair{String, String}})
+    [list_item[2] for list_item in list]
+end
+function reduce_to_second_factors(pair::Pair{String, Vector{Pair{String, String}}})
+    reduce_to_second_factors(pair[2])
+end
+
+function value_for_key(pair::Pair{String, <:Any}, key::String)
+    Dict(pair)[key]
+end
+
+function value_for_key(pairs::Vector{PT}, key::String) where {PT <: Pair{String, <:Any}}
+    Dict(pairs)[key]
+end
+
+function value_for_key(pairs::Pair{String, VT}, key::String) where {PT <: Pair{String, <:Any}, VT<:Vector{PT}}
+    value_for_key(pairs[2], key)
+end
+
+function value_for_key(pairs::Union{VT, Pair{String, VT}}, keys...) where {
+                                                                PT <: Pair{String, <:Any}, 
+                                                                VT <: Vector{PT}}
+    values = Vector{String}()
+    for key in keys
+        push!(values, value_for_key(pairs, key))
+    end
+    values
+end
+
 _latex_pages = [
     _introduction,
-    "Background" => vcat(
-        _manifolds[2],
-        _special_arrays[2][2],
-        _structure_preservation[2],
-        _reduced_order_modeling[2]
-        ),
-    _optimizers,
-    "Special Neural Network Layers and Architectures" => vcat(
-        _special_layers[2],
-        _architectures[2]
-    ),
+    "Background" => [
+        "Manifolds" => vcat(reduce_to_second_factors(_manifolds),
+                            value_for_key(_special_arrays, "Global Tangent Spaces"),
+                        ),
+        "Geometric Structure" => reduce_to_second_factors(_structure_preservation),
+        "Reduced Order Modeling" => reduce_to_second_factors(_reduced_order_modeling),
+    ],
+    "Optimizers" => [   "General Framework" => value_for_key(_optimizers, "Optimizers"),
+                        "Generalization to Manifolds" => 
+                            value_for_key(_optimizers, "Retractions", "Parallel Transport"),
+                        "Optimizer Methods" =>
+                            value_for_key(_optimizers, "Optimizer Methods", "BFGS Optimizer")
+                        ],
+    "Special Neural Network Layers and Architectures" => [
+        "Layers" => reduce_to_second_factors(_special_layers),
+        "Architectures" => reduce_to_second_factors(_architectures)
+    ],
     # we do not include the last tutorial here
-    "Experiments and Applications" => _tutorials[2][1:end-1],
+    "Experiments and Applications" => value_for_key(_tutorials,
+                                            "SympNets", 
+                                            "Symplectic Autoencoders",
+                                            "MNIST",
+                                            "Grassmann Manifold",
+                                            "Volume-Preserving Attention",
+                                            "Linear Symplectic Transformer"),
     _references,
     "Appendix" => vcat(
-        _data_loader[2],
-        _special_arrays[2][1],
-        _special_arrays[2][3],
-        _special_arrays[2][4],
+        reduce_to_second_factors(_data_loader),
+        value_for_key(_special_arrays,  "Symmetric and Skew-Symmetric Matrices",
+                                        "Tensors",
+                                        "Pullbacks"),
         # we include the last tutorial here
-        _tutorials[2][end]
+        value_for_key(_tutorials, "Adjusting the Loss Function")
     )
 ]
 

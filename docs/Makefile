@@ -11,9 +11,9 @@ latex: latex_no_pdf
 	$(MAKE) compile_tex;
 	$(MAKE) compile_tex
 
-latex_no_pdf_no_images: install_brenier_two_fluid latex_docs_no_pdf copy_png_files put_figures_outside_of_minted_environment do_correct_quotation_marks make_correct_thrm_and_dfntn_and_xmpl_and_rmrk_and_proof_environment references_instead_of_hyperlinks correct_appendix remove_home_part
+latex_no_pdf_no_images: install_brenier_two_fluid latex_docs_no_pdf copy_png_files put_figures_outside_of_minted_environment do_correct_quotation_marks make_correct_thrm_and_dfntn_and_xmpl_and_rmrk_and_proof_environment references_instead_of_hyperlinks correct_appendix remove_home_part remove_numbering_for_references
 
-latex_no_pdf: latex_images mnist_image latex_no_pdf_no_images 
+latex_no_pdf: latex_images mnist_image latex_no_pdf_no_images
 
 html: html_images mnist_image html_no_images
 
@@ -107,6 +107,9 @@ correct_appendix:
 
 remove_home_part:
 	sed -i'' -e 's/\\part{HOME}/ /g' build/G*.tex
+
+remove_numbering_for_references:
+	sed -i'' -e 's/\\part{References}/\\part*{References}/g' build/G*.tex
 
 copy_png_files:
 	find build/manifolds -name \*.png -exec cp {} build \; ;
