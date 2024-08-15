@@ -61,6 +61,8 @@ We can then write:
 
 The notions of a pullback in automatic differentiation and differential geometry are closely related (see e.g. [betancourt2018geometric](@cite) and [bolte2020mathematical](@cite)). In both cases we want to compute, based on a mapping ``f:\mathcal{V}\to\mathcal{W}, a \mapsto f(a) =: b``, a *map of differentials* ``db \mapsto da``. In the differential geometry case ``db`` and ``da`` are part of the associated cotangent spaces, i.e. ``db\in{}T^*_b\mathcal{W}`` and ``da\in{}T^*_a\mathcal{V}``; in AD we (mostly) deal with spaces of arrays, i.e. vector spaces, which means that ``db\in\mathcal{W}`` and ``da\in\mathcal{V}``.
 
+## References
+
 ```@bibliography 
 Pages = []
 Canonical = false
