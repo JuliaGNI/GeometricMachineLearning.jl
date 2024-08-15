@@ -37,6 +37,7 @@ png:
 	pdftocairo 	-png -r $(res3) -transp -singlefile  structs_visualization_dark.pdf					structs_visualization_dark
 	pdftocairo  -png -r 500     -transp -singlefile  logo_with_name.pdf                             logo_with_name
 	pdftocairo  -png -r 500     -transp -singlefile  logo_with_name_dark.pdf                        logo_with_name_dark
+	pdftocairo  -png -r 500     -transp -singlefile  logo_with_name_without_jl.pdf                  logo_with_name_without_jl
 	pdftocairo 	-png -r $(res1) -transp -singlefile	 logo.pdf										logo 
 	pdftocairo  -png -r $(res1) -transp -singlefile  symplectic_autoencoder.pdf						symplectic_autoencoder
 	pdftocairo  -png -r $(res1) -transp -singlefile  symplectic_autoencoder_dark.pdf				symplectic_autoencoder_dark
@@ -80,8 +81,9 @@ png:
 	pdftocairo  -png -r $(res1) -transp -singlefile  gml_venn_dark.pdf								gml_venn_dark
 
 logo:
-	cp logo_with_name.png 		../assets/logo.png
-	cp logo_with_name_dark.png 	../assets/logo-dark.png
+	cp logo_with_name.png 				../assets/logo.png
+	cp logo_with_name_dark.png 			../assets/logo-dark.png
+	cp logo_with_name_without_jl.png 	../assets/logo_without_jl.png
 
 clean:
 	rm -f *.aux
