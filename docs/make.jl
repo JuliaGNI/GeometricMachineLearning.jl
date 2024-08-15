@@ -283,22 +283,23 @@ _latex_pages = [
         "Architectures" => reduce_to_second_factors(_architectures)
     ],
     # we do not include the last tutorial here
-    "Experiments and Applications" => value_for_key(_tutorials,
+    "Experiments and Applications" => [
+        "Neural Networks as Symplectic Integrators" => value_for_key(_tutorials,
                                             "SympNets", 
-                                            "Symplectic Autoencoders",
-                                            "MNIST",
-                                            "Grassmann Manifold",
-                                            "Volume-Preserving Attention",
                                             "Linear Symplectic Transformer"),
+        "Transformers with Structure" => value_for_key(_tutorials, "MNIST", "Volume-Preserving Attention"),
+        "Learning Nonlinear Spaces" => value_for_key(_tutorials, "Grassmann Manifold"),
+    ],
     _references,
-    "Appendix" => vcat(
-        reduce_to_second_factors(_data_loader),
+    "Appendix" => [
+        "Data Loader" => reduce_to_second_factors(_data_loader),
+        "Special Arrays, Tensors and Pullbacks" =>
         value_for_key(_special_arrays,  "Symmetric and Skew-Symmetric Matrices",
                                         "Tensors",
                                         "Pullbacks"),
         # we include the last tutorial here
-        value_for_key(_tutorials, "Adjusting the Loss Function")
-    )
+        "Customizing Training" => value_for_key(_tutorials, "Adjusting the Loss Function")
+    ]
 ]
 
 makedocs(;

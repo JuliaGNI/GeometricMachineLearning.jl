@@ -159,13 +159,16 @@ for (color, vec_transported) in zip((mred, mpurple), (Δ_transported, Δ₂_tran
     end
 end
 
-fig
+fig, ax
 end # hide
 
-fig_light = plot_parallel_transport(; theme = :light) # hide
-fig_dark = plot_parallel_transport(; theme = :dark) # hide
+fig_light, ax_light = plot_parallel_transport(; theme = :light) # hide
+fig_dark, ax_dark = plot_parallel_transport(; theme = :dark) # hide
 save("parallel_transport.png", fig_light |> alpha_colorbuffer) # hide
 save("parallel_transport_dark.png", fig_dark |> alpha_colorbuffer) # hide
+hidedecorations!(ax_light)  # hide
+hidespines!(ax_light) # hide
+save("parallel_transport_naked.png", fig_light |> alpha_colorbuffer) # hide
 
 nothing # hide
 ```

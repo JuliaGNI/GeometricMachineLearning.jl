@@ -9,6 +9,18 @@
 }
 \author{Benedikt Brantner}
 
+\makeatletter         
+\def\@maketitle{
+\raggedright
+\includegraphics[height = 13mm]{assets/logo_ipp.jpg}\hfill\includegraphics[height = 13mm]{assets/logo_tum.pdf}\\[18ex]
+\begin{center}
+{\Huge \bfseries \sffamily \@title }\\[4ex] 
+{\Large  \@author}\\[4ex] 
+\@date\\[8ex]
+\includegraphics[height = 20mm]{parallel_transport_naked.png}
+\end{center}}
+\makeatother
+
 %% TOC settings
 % -- TOC depth
 %   value: [part, chapter, section, subsection,

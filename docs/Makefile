@@ -109,7 +109,7 @@ remove_home_part:
 	sed -i'' -e 's/\\part{HOME}/ /g' build/G*.tex
 
 remove_numbering_for_references:
-	sed -i'' -e 's/\\part{References}/\\part*{References}/g' build/G*.tex
+	sed -i'' -e 's/\\chapter{References}/\\chapter*{References}/g' build/G*.tex
 
 copy_png_files:
 	find build/manifolds -name \*.png -exec cp {} build \; ;
