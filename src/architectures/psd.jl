@@ -1,11 +1,11 @@
 @doc raw"""
 ## The architecture 
 
-Proper symplectic decomposition (PSD) can be seen as a [SymplecticAutoencoder](@ref) for which the decoder and the encoder are both PSD-like matrices (see the docs for [PSDLayer](@ref). 
+Proper symplectic decomposition (PSD) can be seen as a [`SymplecticAutoencoder`](@ref) for which the decoder and the encoder are both PSD-like matrices (see the docs for [`PSDLayer`](@ref). 
 
 ## Training 
 
-For optimizing the parameters in this architecture no neural network training is necessary (see the docs for [solve!](@ref)).
+For optimizing the parameters in this architecture no neural network training is necessary (see the docs for [`solve!`](@ref)).
 
 ## The constructor 
 
