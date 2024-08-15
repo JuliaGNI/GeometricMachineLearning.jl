@@ -28,12 +28,12 @@ function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTu
     count = 0
     total_error = T(0)
     batches = batch(dl)
-    @views for batch_indices in batches 
+    for batch_indices in batches 
         count += 1
         # these `copy`s should not be necessary! coming from a Zygote problem!
         input_nt_output_nt = convert_input_and_batch_indices_to_array(dl, batch, batch_indices)
         loss_value, pullback = if typeof(input_nt_output_nt) <: Tuple
-            Zygote.pullback(ps -> loss(model, ps, copy.(input_nt_output_nt)...), ps)
+            Zygote.pullback(ps -> loss(model, ps, input_nt_output_nt...), ps)
         else
             Zygote.pullback(ps -> loss(model, ps, input_nt_output_nt), ps)
         end

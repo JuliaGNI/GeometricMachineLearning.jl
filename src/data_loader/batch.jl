@@ -276,7 +276,7 @@ function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT, Nothing,
 end
 
 # for the case when the DataLoader also contains an output
-function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT, OT}, batch::Batch, batch_indices_tuple::Vector{Tuple{Int, Int}}) where {T, T1, BT<:AbstractArray{T, 3}, OT<:AbstractArray{T1, 3}}
+function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT, OT}, ::Batch, batch_indices_tuple::Vector{Tuple{Int, Int}}) where {T, T1, BT<:AbstractArray{T, 3}, OT<:AbstractArray{T1, 3}}
     time_indices = [batch_index[1] for batch_index in batch_indices_tuple]
     parameter_indices = [batch_index[2] for batch_index in batch_indices_tuple]
     @views input_batch = dl.input[:, :, parameter_indices]
