@@ -81,4 +81,4 @@ The following papers have emerged in connection with the development of `Geometr
 
 In addition there are new results presented in this work that have not been written up as a separate paper:
 4. We show how the [Grassmann manifold can be included into a neural network](@ref "Example of a Neural Network with a Grassmann Layer") and construct a loss based on the Wasserstein distance to approximate a nonlinear space from which we can then sample.
-5. Similar to the volume-preserving transformer [brantner2024volume](@cite) we introduce a [*linear symplectic transformer*](@ref "Linear Symplectic Transformer") that preserves a symplectic product structure and is also foreseen to be used in reduced order modeling.
+5. Similar to the volume-preserving transformer [brantner2024volume](@cite) we introduce a [linear symplectic transformer](@ref "Linear Symplectic Transformer") that preserves a symplectic product structure and is also foreseen to be used in reduced order modeling.
