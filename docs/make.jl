@@ -141,7 +141,12 @@ const indentation = output_type == :html ? "\t" : ""
 
 _introduction_text = output_type == :html ? "index.md" : "introduction.md"
 
-_introduction = "HOME" => _introduction_text
+_introduction = output_type == :html ? ("HOME" => "index.md") : ("HOME" =>
+        ["acknowledgements.md",
+        "abstract.md",
+        "zusammenfassung.md",
+        "introduction.md"]
+    )
 
 _manifolds = "Manifolds" => [
     "Concepts from General Topology" => "manifolds/basic_topology.md",
