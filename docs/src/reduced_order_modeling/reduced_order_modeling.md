@@ -1,4 +1,4 @@
-# Reduced Order Modeling
+# Basic Concepts of Reduced Order Modeling
 
 Reduced order modeling is a data-driven technique that exploits the structure of parametric partial differential equations (PPDEs) to make repeated simulations of this PPDE much cheaper.
 
