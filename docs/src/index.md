@@ -64,4 +64,4 @@ These tutorials include:
 
 ## Data-Driven Reduced Order Modeling
 
-The main motivation behind developing `GeometricMachineLearning` is *reduced order modeling*, especially *structure-preserving reduced order modeling*. For this purpose we give a short introduction into [this topic](@ref "Reduced Order Modeling").
+The main motivation behind developing `GeometricMachineLearning` is *reduced order modeling*, especially *structure-preserving reduced order modeling*. For this purpose we give a short introduction into [this topic](@ref "Basic Concepts of Reduced Order Modeling").

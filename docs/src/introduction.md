@@ -29,7 +29,7 @@ The background material, which does not include any original work, covers all th
 - [Homogeneous spaces](@ref "Homogeneous Spaces"): homogeneous spaces are as special class of manifolds to which our *generalized optimizer framework* can be applied. They trivially include all Lie groups and spaces like the [Stiefel](@ref "The Stiefel Manifold"), the [Grassmann manifold](@ref "The Grassmann Manifold") and the "homogeneous space of positions and orientations" [bon2024optimal](@cite).
 - [Global tangent spaces](@ref "Global Tangent Spaces"): homogeneous spaces allow for identifying for an invariant representation of all tangent spaces which we call *global tangent spaces*[^2]. 
 - [Geometric structure](@ref "Symplectic Systems"): structure preservation takes a prominent role in this dissertation. In general it *structure* refers to some property that the analytic solution of a differential equation has. Here we discuss *symplecticity* and [*volume preservation*](@ref "Divergence-Free Vector Fields") in detail.
-- [Reduced order modeling](@ref "Reduced Order Modeling"): reduced order modeling serves as a motivation for most of the architectures introduced here. 
+- [Reduced order modeling](@ref "Basic Concepts of Reduced Order Modeling"): reduced order modeling serves as a motivation for most of the architectures introduced here. 
 
 [^2]: These spaces are also discussed in [bendokat2020grassmann, bendokat2021real](@cite).
 
