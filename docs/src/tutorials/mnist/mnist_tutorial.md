@@ -9,12 +9,27 @@ using GeometricMachineLearning
 import MLDatasets
 ```
 
-For the AD routine we here use the `GeometricMachineLearning` default and we get the dataset from [`MLDatasets`](https://github.com/JuliaML/MLDatasets.jl). First we need to load the data set and preprocess it:
+For the AD routine we here use the `GeometricMachineLearning` default and we get the dataset from [`MLDatasets`](https://github.com/JuliaML/MLDatasets.jl). We need to load the data set and preprocess it:
 
-```@example mnist
+```@setup mnist
 train_x, train_y = MLDatasets.MNIST(split=:train)[:]
 test_x, test_y = MLDatasets.MNIST(split=:test)[:]
 
+nothing # hide
+```
+
+```julia
+using CUDA
+train_x, train_y = MLDatasets.MNIST(split=:train)[:]
+test_x, test_y = MLDatasets.MNIST(split=:test)[:]
+
+train_x = train_x |> cu
+train_y = train_y |> cu
+test_x = test_x |> cu
+test_y = test_y |> cu
+```
+
+```@example mnist
 const patch_length = 7
 dl = DataLoader(train_x, train_y, patch_length = patch_length)
 
@@ -69,9 +84,9 @@ nn2 = NeuralNetwork(model2, backend, T)
 nothing # hide
 ```
 
-And with this we can finally perform the training:
+We still have to initialize the optimizers:
 
-```julia
+```@example mnist
 const batch_size = 2048
 const n_epochs = 500
 # an instance of batch is needed for the optimizer
@@ -80,23 +95,116 @@ batch = Batch(batch_size, dl)
 opt1 = Optimizer(AdamOptimizer(T), nn1)
 opt2 = Optimizer(AdamOptimizer(T), nn2)
 
+nothing # hide
+```
+
+And with this we can finally perform the training:
+
+```julia
 loss_array1 = opt1(nn1, dl, batch, n_epochs, GeometricMachineLearning.ClassificationTransformerLoss())
 loss_array2 = opt2(nn2, dl, batch, n_epochs, GeometricMachineLearning.ClassificationTransformerLoss())
 ```
 
 We furthermore optimize the second model (with weights on the manifold) with the [`GradientOptimizer`](@ref) and the [`MomentumOptimizer`](@ref):
 
-```julia
+```@example mnist
 nn3 = NeuralNetwork(model2, backend, T)
 nn4 = NeuralNetwork(model2, backend, T)
 
 opt3 = Optimizer(GradientOptimizer(T(0.001)), nn3)
 opt4 = Optimizer(MomentumOptimizer(T(0.001), T(0.5)), nn4)
 
+nothing # hide
+```
+
+```julia
 loss_array3 = opt3(nn3, dl, batch, n_epochs, GeometricMachineLearning.ClassificationTransformerLoss())
 loss_array4 = opt4(nn4, dl, batch, n_epochs, GeometricMachineLearning.ClassificationTransformerLoss())
 ```
 
+And we get the following result:
+
+```@setup mnist
+using JLD2
+using CairoMakie
+
+data = load("mnist_parameters.jld2")
+loss_array1 = data["loss_array1"]
+loss_array2 = data["loss_array2"]
+loss_array3 = data["loss_array3"]
+loss_array4 = data["loss_array4"]
+
+accuracy_score1 = data["accuracy_score1"]
+accuracy_score2 = data["accuracy_score2"]
+accuracy_score3 = data["accuracy_score3"]
+accuracy_score4 = data["accuracy_score4"]
+
+nn1 = NeuralNetwork(nn1.architecture, nn1.model, data["nn1weights"], CPU())
+nn2 = NeuralNetwork(nn2.architecture, nn2.model, data["nn2weights"], CPU())
+nn3 = NeuralNetwork(nn3.architecture, nn3.model, data["nn3weights"], CPU())
+nn4 = NeuralNetwork(nn4.architecture, nn4.model, data["nn4weights"], CPU())
+
+morange = RGBf(255 / 256, 127 / 256, 14 / 256) # hide
+mred = RGBf(214 / 256, 39 / 256, 40 / 256) # hide
+mpurple = RGBf(148 / 256, 103 / 256, 189 / 256) # hide
+mblue = RGBf(31 / 256, 119 / 256, 180 / 256) # hide
+
+function make_error_plot(; theme = :dark) # hide
+textcolor = theme == :dark ? :white : :black # hide
+fig = Figure(; backgroundcolor = :transparent)
+ax = Axis(fig[1, 1]; 
+    backgroundcolor = :transparent,
+    bottomspinecolor = textcolor, 
+    topspinecolor = textcolor,
+    leftspinecolor = textcolor,
+    rightspinecolor = textcolor,
+    xtickcolor = textcolor, 
+    ytickcolor = textcolor,
+    xticklabelcolor = textcolor,
+    yticklabelcolor = textcolor,
+    xlabel="Epoch", 
+    ylabel="Training loss",
+    xlabelcolor = textcolor,
+    ylabelcolor = textcolor,
+    )
+
+lines!(ax, loss_array1, label="Adam", color=mblue)
+lines!(ax, loss_array2, label="Stiefel + Adam", color=mred)
+lines!(ax, loss_array3, label="Gradient + Adam", color=mpurple)
+lines!(ax, loss_array4, label="Momentum + Adam", color=morange)
+axislegend(; position = (.82, .75), backgroundcolor = :transparent, labelcolor = textcolor) # hide
+fig_name = theme == :dark ? "mnist_training_loss_dark.png" : "mnist_training_loss.png" # hide
+save(fig_name, fig; px_per_unit = 1.2) # hide
+end # hide
+make_error_plot(; theme = :dark) # hide
+make_error_plot(; theme = :light) # hide
+```
+
+```@example
+Main.include_graphics("mnist_training_loss") # hide
+```
+
+```@eval
+Main.remark(raw"We see that the loss value for the Adam optimizer without parameters on the Stiefel manifold is stuck at around 1.34 which means that it *always predicts the same value*. So in 1 out of ten cases we have error 0 and in 9 out of ten cases we have error ``\sqrt{2}``, giving
+" * Main.indentation * raw"```math
+" * Main.indentation * raw"    \sqrt{2\frac{9}{10}} = 1.342,
+" * Main.indentation * raw"```
+" * Main.indentation * raw"which is what we see in the error plot.")
+```
+
+We can also call [`GeometricMachineLearning.accuracy`](@ref) to obtain the test accuracy instead of the training error:
+
+```@example mnist
+using GeometricMachineLearning # hide
+(accuracy(nn1, dl_test), accuracy(nn2, dl_test), accuracy(nn3, dl_test), accuracy(nn4, dl_test))
+```
+
+```@eval
+Main.remark(raw"We note here that conventional convolutional neural networks and other vision transformers achieve much better accuracy on MNIST in a training time that is often shorter than what we presented here. Our aim here is not to outperform existing neural networks in terms of accuracy on image classification problems, but to demonstrate two things:
+" * Main.indentation * raw"    1. In many cases putting weights on the Stiefel manifold (which is a compact space) can enable training that would otherwise not be possible.
+" * Main.indentation * raw"    2. As is the case with standard Adam, the manifold version also seems to achieve similar performance gain over the gradient and momentum optimizer.
+" * Main.indentation * raw"Both of these observations can be seen in the figure above.")
+```
 
 ## Library Functions
 
