@@ -4,14 +4,11 @@
 % colours
 \usepackage{xcolor}
 
-\definecolor{light-blue}{HTML}{6b85dd}
-\definecolor{dark-blue}{HTML}{4266d5}
-\definecolor{light-red}{HTML}{d66661}
-\definecolor{dark-red}{HTML}{c93d39}
-\definecolor{light-green}{HTML}{6bab5b}
-\definecolor{dark-green}{HTML}{3b972e}
-\definecolor{light-purple}{HTML}{aa7dc0}
-\definecolor{dark-purple}{HTML}{945bb0}
+\definecolor{morange}{RGB}{255,127,14}
+\definecolor{mblue}{RGB}{31,119,180}
+\definecolor{mred}{RGB}{214,39,40}
+\definecolor{mpurple}{RGB}{148,103,189}
+\definecolor{mgreen}{RGB}{44,160,44}
 \definecolor{codeblock-background}{gray}{0.96}
 \definecolor{codeblock-border}{gray}{0.8}
 %
@@ -48,7 +45,11 @@
     bgcolor = codeblock-background,
     rulecolor=codeblock-border,
 }
-%
+% fix taken from: https://gist.github.com/dn0sar/d67672d3793271a2985e4ec20f425174
+% \immediate\write18{bash ./pygmentize_patcher.sh}
+% \renewcommand{\MintedPygmentize}{./pygmentize}
+
+\usemintedstyle{xcode}%
 
 % tables
 \usepackage{tabulary}
@@ -61,8 +62,8 @@
     bookmarks,
     hyperindex,
     unicode = true,
-    linkcolor = dark-blue,
-    urlcolor = dark-purple,
+    linkcolor = mblue,
+    urlcolor = mpurple,
     colorlinks = true,
 }
 %
@@ -88,7 +89,8 @@
 \usepackage[export]{adjustbox}
 %
 % unicode
-\usepackage[utf8]{inputenc}
+\usepackage[utf8x]{inputenc}
+\usepackage{textgreek}
 
 % Some internal link targets are implemented with \label, some with \hypertarget,
 % but they require different links. This inserts a \hyperref if a corresponding label exists,
