@@ -86,7 +86,7 @@ split_and_flatten(input; patch_length = 3, number_of_patches = 4)
 ```
 
 Here we see that `split_and_flatten`:
-1. *splits* the original matrix into 4 ``3\times3`` matrices and then 
+1. *splits* the original matrix into four ``3\times3`` matrices and then 
 2. *flattens* each matrix into a column vector of size ``9.``
 After this all the vectors are put together again to yield a ``9\times4`` matrix.
 
