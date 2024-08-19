@@ -31,7 +31,7 @@ function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTu
     for batch_indices in batches 
         count += 1
         # these `copy`s should not be necessary! coming from a Zygote problem!
-        input_nt_output_nt = convert_input_and_batch_indices_to_array(dl, batch, batch_indices)
+        input_nt_output_nt = convert_input_and_batch_indices_to_array(dl, batch, batch_indices) |> _copy
         loss_value, pullback = if typeof(input_nt_output_nt) <: Tuple
             Zygote.pullback(ps -> loss(model, ps, input_nt_output_nt...), ps)
         else
@@ -43,6 +43,10 @@ function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTu
     end
     total_error / count
 end
+
+_copy(a::AbstractArray) = copy(a)
+_copy(qp::QPT) = (q = copy(qp.q), p = copy(qp.p))
+_copy(t::Tuple{<:QPTOAT, <:QPTOAT}) = _copy.(t)
 
 function (o::Optimizer)(nn::NeuralNetwork, dl::DataLoader, batch::Batch, n_epochs::Int, loss::NetworkLoss; show_progress = true)
     Λ = GlobalSection(nn.params)
