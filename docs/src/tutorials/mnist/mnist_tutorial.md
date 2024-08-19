@@ -195,7 +195,7 @@ Main.remark(raw"We see that the loss value for the Adam optimizer without parame
 We can also call [`GeometricMachineLearning.accuracy`](@ref) to obtain the test accuracy instead of the training error:
 
 ```@example mnist
-using GeometricMachineLearning # hide
+using GeometricMachineLearning: accuracy # hide
 (accuracy(nn1, dl_test), accuracy(nn2, dl_test), accuracy(nn3, dl_test), accuracy(nn4, dl_test))
 ```
 
