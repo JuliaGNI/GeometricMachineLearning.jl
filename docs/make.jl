@@ -290,7 +290,7 @@ _latex_pages = [
     ],
     # we do not include the last tutorial here
     "Experiments and Applications" => [
-        "Learning a Reduced Model with Symplectic Autoencoders" => valude_for_key(_tutorials, "Symplectic Autoencoders"),
+        "Learning a Reduced Model with Symplectic Autoencoders" => value_for_key(_tutorials, "Symplectic Autoencoders"),
         "Neural Networks as Symplectic Integrators" => value_for_key(_tutorials,
                                             "SympNets", 
                                             "Linear Symplectic Transformer"),

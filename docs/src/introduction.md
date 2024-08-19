@@ -14,7 +14,9 @@ In the picture above we visualize that geometric machine learning aims at constr
 
 For us the biggest motivation for geometric machine learning comes from *data-driven reduced order modeling*. There we want to find cheap representations of so-called *full order models* of which we have data available. This is the case when solving parametric partial differential equations (PPDEs) for example. In this case we can solve the full order model for a few parameter instances and then build a cheaper representation of the full model (a so-called *reduced model*) with neural networks. This can bring dramatic speed-ups in performance. 
 
-Closely linked to the research presented here is the development of a software package written in `Julia` called `GeometricMachineLearning` [brantner2020geometric](@cite). Throughout this work we will demonstrate concepts such as neural network architecture and (Riemannian) optimization by using `GeometricMachineLearning`. Most sections contain a header **Library Functions** that explains types and functions in `GeometricMachineLearning` that pertain to the text in that section (they are generated as so-called docstrings [julia2024documentation]). We show an example here:
+Closely linked to the research presented here is the development of a software package written in `Julia` called `GeometricMachineLearning` [brantner2020geometric](@cite). Throughout this work we will demonstrate concepts such as neural network architecture and (Riemannian) optimization by using `GeometricMachineLearning`. Most sections contain a header **Library Functions** that explains types and functions in `GeometricMachineLearning` that pertain to the text in that section[^1] (they are generated as so-called docstrings [julia2024documentation]). We show an example here:
+
+[^1]: In addition to **Library Functions** most sections also have an additional header **References** that shows further related reading material.
 
 ```@docs; canonical = false
 GradientCache
@@ -24,9 +26,9 @@ So the docstring shows the name of the function, how to call it and then gives s
 
 All the code necessary to reproduce the results is included in the text and does not have any specific hardware requirements. Except for training some of the neural networks (which was done on an NVIDA Geforce RTX 4090 [rtx4090](@cite)) all the code snippets were run on CPU (via GitHub runners [actions](@cite)).
 
-This dissertation is structures into four main parts: (i) background information, (ii) an explanation of the optimizer framework used for training neural networks, (iii) a detailed explanation of the various neural network layers and architectures that we use and (iv) a number of examples of how to use `GeometricMachineLearning`. We explain the content of these parts in some detail[^1].
+This dissertation is structures into four main parts: (i) background information, (ii) an explanation of the optimizer framework used for training neural networks, (iii) a detailed explanation of the various neural network layers and architectures that we use and (iv) a number of examples of how to use `GeometricMachineLearning`. We explain the content of these parts in some detail[^2].
 
-[^1]: In addition there is also an appendix that provides more implementation details.
+[^2]: In addition there is also an appendix that provides more implementation details.
 
 ## Background Information
 
@@ -35,11 +37,11 @@ The background material, which does not include any original work, covers all th
 -  [General theory on manifolds](@ref "(Matrix) Manifolds"): we introduce manifolds, the preimage theorem and submersion theorem. These theorems will be used to construct manifolds; the preimage theorem is used to give structure to the [Stiefel](@ref "The Stiefel Manifold") and the [Grassmann manifold](@ref "The Grassmann Manifold"), and the immersion theorem gives structure to the [solution manifold](@ref "The Solution Manifold") which is used in reduced order modeling.
 - [Riemannian manifolds](@ref "Riemannian Manifolds"): for optimizing on manifolds we need to define a metric on them, which leads to *Riemannian manifolds*. We introduce *geodesics* and the *Riemannian gradient* here.
 - [Homogeneous spaces](@ref "Homogeneous Spaces"): homogeneous spaces are a special class of manifolds to which our *generalized optimizer framework* can be applied. They trivially include all Lie groups and spaces like the [Stiefel manifold](@ref "The Stiefel Manifold"), the [Grassmann manifold](@ref "The Grassmann Manifold") and the "homogeneous space of positions and orientations" [bon2024optimal](@cite).
-- [Global tangent spaces](@ref "Global Tangent Spaces"): homogeneous spaces allow for identifying for an invariant representation of all tangent spaces which we call *global tangent spaces*[^2]. We explain this concept in this section.
+- [Global tangent spaces](@ref "Global Tangent Spaces"): homogeneous spaces allow for identifying for an invariant representation of all tangent spaces which we call *global tangent spaces*[^3]. We explain this concept in this section.
 - [Geometric structure](@ref "Symplectic Systems"): structure preservation takes a prominent role in this dissertation. In general *structure* refers to some property that the analytic solution of a differential equation also has and that we want to preserve when modeling the system. Here we discuss *symplecticity* and [volume preservation](@ref "Divergence-Free Vector Fields") in detail.
 - [Reduced order modeling](@ref "Basic Concepts of Reduced Order Modeling"): reduced order modeling serves as a motivation for most of the architectures introduced here. In this section we introduce the basic idea behind reduced order modeling, show a typical workflow and explain what structure preservation looks like [in this context](@ref "Hamiltonian Model Order Reduction").
 
-[^2]: These spaces are also discussed in [bendokat2020grassmann, bendokat2021real](@cite).
+[^3]: These spaces are also discussed in [bendokat2020grassmann, bendokat2021real](@cite).
 
 ## The Optimizer Framework
 
