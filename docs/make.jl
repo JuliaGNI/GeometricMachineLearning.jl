@@ -145,6 +145,7 @@ _introduction = output_type == :html ? ("HOME" => "index.md") : ("HOME" =>
         ["acknowledgements.md",
         "abstract.md",
         "zusammenfassung.md",
+        "toc.md",
         "introduction.md"]
     )
 

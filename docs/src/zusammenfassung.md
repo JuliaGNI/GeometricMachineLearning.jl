@@ -15,3 +15,7 @@ In Teil II wird ein neues Optimierungsframework eingeführt, das bestehende Opti
 In Teil III werden schließlich verschiedene spezielle neuronale Netzwerkarchitekturen. Einige von ihnen, wie *SympNets* und *Multi-Head Attention*, stellen keine Neuheiten da, aber andere, wie *Volume-Preserving Attention* und der *lineare symplektische Transformer*, sind originell.
 
 In Teil IV geben wir einige Ergebnisse an, die auf den neuen Architekturen basieren. Die meisten dieser Anwendungen beziehen sich auf Anwendungen aus der Physik; um jedoch die neuen Optimierer zu demonstrieren, greifen wir auf ein klassisches Problem aus der Bildklassifikation zurück, um zu zeigen, dass geometrisches maschinelles Lernen auch in Bereichen außerhalb des wissenschaftlichen Rechnens Anwendung finden kann.
+
+```@raw latex
+\clearpage
+```

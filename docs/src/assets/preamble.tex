@@ -3,13 +3,25 @@
 
 \usepackage{./custom}
 
+% solution taken from: https://groups.google.com/g/comp.text.tex/c/_M1ByBy6CYo (2024年8月19日)
+\makeatletter
+\DeclareRobustCommand\origttfamily
+{\not@math@alphabet\ttfamily\mathtt
+\fontfamily\ttdefault\selectfont\hyphenchar\font=-1}
+\DeclareTextFontCommand{\texttorig}{\origttfamily}
+\DeclareRobustCommand\ttfamily
+{\not@math@alphabet\ttfamily\mathtt
+\fontfamily\ttdefault\selectfont\hyphenchar\font=`\-}
+\makeatother
+% \hyphenation{Geo-me-tric-Machine-Learn-ing}
+
 %% Title Page
 \title{\centering
 \includegraphics[width=.8\textwidth]{assets/logo_without_jl.png}
 }
 \author{Benedikt Brantner}
 
-\makeatletter         
+\makeatletter       
 \def\@maketitle{
 \raggedright
 \includegraphics[height = 13mm]{assets/logo_ipp.jpg}\hfill\includegraphics[height = 13mm]{assets/logo_tum.pdf}\\[18ex]
@@ -19,7 +31,9 @@
 \@date\\[8ex]
 \includegraphics[height = 65mm]{parallel_transport_naked.png}
 \end{center}}
+\aliaspagestyle{title}{empty} % suppress the page number after \maketitle
 \makeatother
+\hyphenation{wiss-en-schaft-lich-en}
 
 %% TOC settings
 % -- TOC depth
@@ -52,7 +66,6 @@
 \frontmatter
 \maketitle
 \clearpage
-\tableofcontents
+\setcounter{page}{1}
 
-\mainmatter
 %% preamble END
