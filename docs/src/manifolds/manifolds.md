@@ -5,7 +5,7 @@ Manifolds are topological spaces that locally look like vector spaces. In the fo
 [^1]: *Smooth* here means ``C^\infty``.
 
 ```@eval 
-Main.definition(raw"A **finite-dimensional smooth manifold** of dimension ``n`` is a second-countable Hausdorff space ``\mathcal{M}`` for which ``\forall{}x\in\mathcal{M}`` we can find a neighborhood ``U``, that contains ``x,`` and a corresponding homeomorphism ``\varphi_U:U\cong{}W\subset\mathbb{R}^n`` where ``W`` is an open subset. The homeomorphisms ``\varphi_U`` are referred to as *coordinate charts*. If two such coordinate charts overlap, i.e. if ``U_1\cap{}U_2\neq\{\}``, then the map ``\varphi_{U_2}^{-1}\circ\varphi_{U_1}`` has to be ``C^\infty``.")
+Main.definition(raw"A **finite-dimensional smooth manifold** of dimension ``n`` is a second-countable Hausdorff space ``\mathcal{M}`` for which ``\forall{}x\in\mathcal{M}`` we can find a neighborhood ``U``, that contains ``x,`` and a corresponding homeomorphism ``\varphi_U:U\cong{}W\subset\mathbb{R}^n`` where ``W`` is an open subset. The homeomorphisms ``\varphi_U`` are referred to as *coordinate charts*. If two such coordinate charts overlap, i.e. if ``U_1\cap{}U_2\neq\{\}``, then the map ``\varphi_{U_2}\circ\varphi_{U_1}^{-1}`` has to be ``C^\infty`` on ``varphi_{U_1}(U_1\cap{}U_2).`` We call the collection of coordinate charts ``\{\varphi_U\}_{U\subset\mathcal{M}}`` an **atlas** for ``\mathcal{M}.``")
 ```
 
 One example of a manifold that is also important for `GeometricMachineLearning` is the Lie group[^2] of orthonormal matrices ``SO(N)``. Before we can proof that ``SO(N)`` is a manifold we first need the *preimage theorem*.
@@ -14,12 +14,16 @@ One example of a manifold that is also important for `GeometricMachineLearning` 
 
 ## The Preimage Theorem
 
-The preimage theorem is crucial for treating the specific manifolds that are part of `GeometricMachineLearning`; the preimage theorem gives spaces like the [`StiefelManifold`](@ref) the structure of a manifold. Before we can state the preimage theorem we need another definition[^3]:
+The preimage theorem is crucial for treating the specific manifolds that are part of `GeometricMachineLearning`; the preimage theorem gives spaces like the [Stiefel manifold](@ref "The Stiefel Manifold") the structure of a manifold. Before we can state the preimage theorem we need another definition[^3]:
 
 [^3]: In this definition we use the notation ``T_xg``. This will be explained below. For we will interpret ``T_xg`` simply as ``(\varphi_U\circ{}g\circ\psi_V^{-1})'`` where ``\varphi_U`` is a coordinate chart around ``y = g(x)`` and ``\psi_V`` is a coordinate chart around ``x``.
 
 ```@eval
-Main.definition(raw"Consider a smooth mapping ``g: \mathcal{M}\to\mathcal{N}`` from one manifold to another. A point ``y\in\mathcal{N}`` is called **regular point of ``g``** if ``\forall{}x\in{}g^{-1}\{y\}`` the map ``T_xg:T_A\mathcal{M}\to{}T_{y}\mathcal{N}`` is surjective.")
+Main.definition(raw"Consider a smooth mapping ``g: \mathcal{M}\to\mathcal{N}`` from one manifold to another. A point ``y\in\mathcal{N}`` is called **regular point of ``g``** if ``\forall{}x\in{}g^{-1}\{y\}`` the map ``T_xg:T_x\mathcal{M}\to{}T_{y}\mathcal{N}`` is surjective.")
+```
+
+``@eval
+Main.remark(raw"Here we already used the notation ``T_y\mathcal{N}`` to denote the *tangent space to ``\mathcal{N}`` at ``y``*. We will explain what we mean by this precisely below. For now we simply view ``T_y\mathcal{N}`` as *something that is homemorphic to ``\mathbb{R}^m``* and the *tangent map ``T_xg``* we will simply view as ``(\psi\circ{}g\circ{}\varphi^{-1})'(varphi(x)),`` where ``\varphi`` is a coordinate chart as ``x`` and ``\psi`` is a coordinate chart at ``y.`` In the examples we give below ``\mathcal{M}`` and ``\mathcal{N}`` will simply be vector spaces, and ``g`` will be differential map between vector spaces whose derivative at ``x\in{}f^{-1}\{y\}`` (for a regular point ``y``) is surjective. For a vector space ``\mathcal{V}`` we furthermore have ``T_x\mathcal{V} = \mathcal{V}.``")
 ```
 
 We now state the preimage theorem:
@@ -29,15 +33,17 @@ Main.theorem(raw"Consider a smooth map ``g:\mathcal{M}\to\mathcal{N}`` from one 
 ```
 
 ```@eval
-Main.proof(raw"Because ``\mathcal{N}`` has manifold structure we can find a chart ``\varphi_U:U\to\mathbb{R}^m`` for some neighborhood ``U`` that contains ``y``. We further consider a point ``A\in{}g^{-1}\{y\}`` and a chart around it ``\psi_V:V\to\mathbb{R}^{m+n}``. By the implicit function theorem we can then find a mapping ``h`` that turns ``\varphi_U\circ{}g\circ\psi_V^{-1}`` into a projection ``(x_1, \ldots, x_{n+m}) \mapsto (x_{n+1}, \ldots, x_{n+m})``. We now consider the neighborhood ``V_1\times\{0\} = \psi(V \cup f^{-1}\{y\})`` for ``\psi(V) = V_1\times{}V_2`` with the coordinate chart ``(x_1, \ldots, x_n) \mapsto \psi(x_1, \ldots, x_n, 0, \ldots, 0).`` As this map is also smooth by the implicit function theorem this proofs our assertion.")
+Main.proof(raw"Because ``\mathcal{N}`` has manifold structure we can find a chart ``\psi_U:U\to\mathbb{R}^m`` for some neighborhood ``U`` that contains ``y``. We further consider a point ``x\in{}g^{-1}\{y\}`` and a chart around it ``\varphi_V:V\to\mathbb{R}^{m+n}``. By the implicit function theorem we can then find a mapping ``h`` that turns ``\psi_U\circ{}g\circ\varphi_V^{-1}`` into a projection ``(x_1, \ldots, x_{n+m}) \mapsto (x_{n+1}, \ldots, x_{n+m})``. We now consider the neighborhood ``V_1\times\{0\} = \varphi(V \cup f^{-1}\{y\})`` for ``\varphi(V) = V_1\times{}V_2`` with the coordinate chart ``(x_1, \ldots, x_n) \mapsto \varphi(x_1, \ldots, x_n, 0, \ldots, 0).`` As this map is also smooth by the implicit function theorem this proofs our assertion.")
+```
+
+We now give some examples of manifolds that can be constructed this way:
+
+```@eval
+Main.example(raw"The group ``SO(N)`` is a Lie group (i.e. has manifold structure). ``SO(N)`` has dimension ``N(N-1)/2.``")
 ```
 
 ```@eval
-Main.example(raw"The group ``SO(N)`` is a Lie group (i.e. has manifold structure).")
-```
-
-```@eval
-Main.proof(raw"The vector space ``\mathbb{R}^{N\times{}N}`` clearly has manifold structure. The group ``SO(N)`` is equivalent to one of the level sets of the mapping: ``g:\mathbb{R}^{N\times{}N}\to\mathcal{S}(N), A\mapsto{}A^TA - \mathbb{I}``, i.e. it is the component of ``f^{-1}\{\mathbb{I}\}`` that contains ``\mathbb{I}``. We still need to proof that ``\mathbb{I}`` is a regular point of ``g``, i.e. that for ``A\in{}SO(N)`` the mapping ``T_Ag`` is surjective. This means that ``\forall{}B\in\mathcal{S}(N), A\in\mathbb{R}^{N\times{}N}`` ``\exists{}C\in\mathbb{R}^{N\times{}N}`` s.t. ``C^TA + A^TC = B``. The element ``C=\frac{1}{2}AB\in\mathcal{R}^{N\times{}N}`` satisfies this property.")
+Main.proof(raw"The vector space ``\mathbb{R}^{N\times{}N}`` clearly has manifold structure. The group ``SO(N)`` is equivalent to one of the level sets of the mapping: ``g:\mathbb{R}^{N\times{}N}\to\mathcal{S}(N), A\mapsto{}A^TA - \mathbb{I}``, i.e. it is the component of ``f^{-1}\{\mathbb{I}\}`` that contains ``\mathbb{I}``; the image of ``f`` is contained in ``\mathcal{S}(N),`` the symmetric matrices of size ``N\times{}N.`` We still need to proof that ``\mathbb{I}`` is a regular point of ``g``, i.e. that for ``A\in{}SO(N)`` the mapping ``T_Ag`` is surjective. This means that ``\forall{}B\in\mathcal{S}(N)`` ``\exists{}C\in\mathbb{R}^{N\times{}N}`` s.t. ``C^TA + A^TC = B``. The element ``C=\frac{1}{2}AB\in\mathcal{R}^{N\times{}N}`` satisfies this property. The dimension of ``SO(N)`` is ``N(N-1)/2`` as ``\mathrm{dim}(\mathcal{S}(N))=N(N+1)/2.``")
 ```
 
 Similarly we can also proof: 
@@ -47,14 +53,14 @@ Main.example(raw"The sphere ``S^n:=\{x\in\mathbb{R}^{n+1}: x^Tx = 1\}`` is a man
 ```
 
 ```@eval
-Main.proof(raw"Take ``g(x) = x^x - 1`` and proceed as in the case of ``SO(N)``.")
+Main.proof(raw"Take ``g(x) = x^Tx - 1`` and proceed as in the case of ``SO(N)``.")
 ```
 
-Note that both these manifolds, ``SO(N)`` and ``S^n`` are matrix manifolds, i.e. an element of ``\mathcal{M}`` can be written as an element of ``\mathbb{R}^{N\times{}N}`` in the first case and ``\mathbb{R}^{n\times{}1}`` in the second case. The additional conditions we impose on these manifolds are ``A^TA = \mathbb{I}`` in the first case and ``x^Tx = 1`` in the second case. Both of these manifolds belong to the category of [Stiefel manifolds](@ref "The Stiefel Manifold") and therefore also to the bigger category of matrix manifolds, i.e. every element of ``SO(N)`` and of ``S^n`` can be represented as a matrix on which further conditions are imposed (e.g orthogonality).
+Note that both these manifolds, ``SO(N)`` and ``S^n`` are matrix manifolds, i.e. an element of ``\mathcal{M}`` can be written as an element of ``\mathbb{R}^{N\times{}N}`` in the first case and ``\mathbb{R}^{(n+1)\times{}1}`` in the second case. The additional conditions we impose on these manifolds are ``A^TA = \mathbb{I}`` in the first case and ``x^Tx = 1`` in the second case. Both of these manifolds belong to the category of [Stiefel manifolds](@ref "The Stiefel Manifold") and therefore also to the bigger category of matrix manifolds, i.e. every element of ``SO(N)`` and of ``S^n`` can be represented as a matrix on which further conditions are imposed (e.g orthogonality).
 
 ## The Immersion Theorem
 
-The immersion theorem, similarly to the preimage theorem, gives a way of constructing a manifold based on a non-linear function. 
+The immersion theorem, similarly to the preimage theorem, gives another way of constructing a manifold based on a non-linear function. 
 
 ```@eval
 Main.theorem(raw"Consider a differentiable function ``\mathcal{R}:\mathcal{N}\to\mathcal{M}`` with ``\mathrm{dim}(\mathcal{M}) = N > n = \mathrm{dim}(\mathcal{N})`` tangent mapping ``T_x\mathcal{R}`` has full rank at every point ``x\in\mathcal{N}``. Then ``\mathcal{R}(\mathcal{N})`` is a manifold *immersed* in ``\mathcal{M}``."; name = "Immersion Theorem")
@@ -82,7 +88,7 @@ We will use the immersion theorem when discussing the [symplectic solution manif
 
 ## Tangent Spaces 
 
-A tangent space can be seen as the *collection of all possible velocities a curve can take at a point on a manifold*. For this consider a manifold ``\mathcal{M}`` and a point ``x`` on it and the collection of ``C^\infty`` curves through ``x``: 
+We already alluded to tangent spaces when talking about the preimage and the immersion theorems. Here we will give a precise definition. A tangent space can be seen as the *collection of all possible velocities a curve can take at a point on a manifold*. For this consider a manifold ``\mathcal{M}`` and a point ``x`` on it and the collection of ``C^\infty`` curves through ``x``: 
 
 ```@eval
 Main.definition(raw"A mapping ``\gamma:(-\epsilon, \epsilon)\to\mathcal{M}`` that is ``C^\infty`` and for which we have ``\gamma(0) = x`` is called a **``C^\infty`` curve through ``x``**.")
@@ -199,14 +205,13 @@ nothing
 ```
 
 ```@example
-Main.include_graphics("tangent_space"; caption = raw"Visualization of how the tangent space is constructed.", width = .8) # hide
+Main.include_graphics("tangent_space"; caption = raw"Visualization of how the tangent space is constructed.", width = .9) # hide
 ```
 
 The tangent space ``T_x\mathcal{M}`` for
 
 ```math
 x = \begin{pmatrix}0 \\ 0 \\ 1 \end{pmatrix}
-
 ```
 
  is also shown. 
@@ -238,13 +243,14 @@ To each manifold ``\mathcal{M}`` we can associate another manifold which we call
 T\mathcal{M} = \{ (x, v_x): x\in\mathcal{M},\, v_x\in{}T_x\mathcal{M} \}.
 ```
 
-Coordinate charts on this manifold can be constructed in a straightforward manner; for every coordinate chart ``\varphi_U`` the map ``\varphi_U'(x)`` gives a homeomorphism between ``T_x\mathcal{M}`` and ``\mathbb{R}^n``for any ``x\in{}U``. We can then find a neighborhood of any point ``(x, v_x)`` by taking ``\pi^{-1}(U) = \{(x, v_x): x\in{}U, v_x\in{}T_x\mathcal{M}\}`` and this neighborhood is isomorphic to ``\mathbb{R}^{2n}`` via ``(x, v_x) \mapsto (\varphi_U(x), \varphi'(x)v_x)``. The [geodesic spray](@ref "Geodesic Sprays and the Exponential Map") is an important vector field defined on ``T\mathcal{M}``.
+Coordinate charts on this manifold can be constructed in a straightforward manner; for every coordinate chart ``\varphi_U`` the map ``\varphi_U'(x)`` gives a homeomorphism between ``T_x\mathcal{M}`` and ``\mathbb{R}^n`` for any ``x\in{}U``. We can then find a neighborhood of any point ``(x, v_x)`` by taking ``\pi^{-1}(U) = \{(x, v_x): x\in{}U, v_x\in{}T_x\mathcal{M}\}`` and this neighborhood is isomorphic to ``\mathbb{R}^{2n}`` via ``(x, v_x) \mapsto (\varphi_U(x), \varphi'(x)v_x)``. The [geodesic spray](@ref "Geodesic Sprays and the Exponential Map") is an important vector field defined on ``T\mathcal{M}``.
 
 ## Library Functions 
 
 ```@docs
 Manifold
-rand(backend::GeometricMachineLearning.Backend, ::Type{MT}, ::Integer, ::Integer) where MT <: Manifold
+rand(::Type{MT}, ::Integer, ::Integer) where MT <: Manifold
+rand(::GeometricMachineLearning.Backend, ::Type{MT}, ::Integer, ::Integer) where MT <: Manifold
 ```
 
 ## References 

@@ -14,7 +14,7 @@ In the picture above we visualize that geometric machine learning aims at constr
 
 For us the biggest motivation for geometric machine learning comes from *data-driven reduced order modeling*. There we want to find cheap representations of so-called *full order models* of which we have data available. This is the case when solving parametric partial differential equations (PPDEs) for example. In this case we can solve the full order model for a few parameter instances and then build a cheaper representation of the full model (a so-called *reduced model*) with neural networks. This can bring dramatic speed-ups in performance. 
 
-Closely linked to the research presented here is the development of a software package written in `Julia` called `GeometricMachineLearning` [brantner2020geometric](@cite). Throughout this work we will demonstrate concepts such as neural network architecture and (Riemannian) optimization by using `GeometricMachineLearning`. Most sections contain a header **Library Functions** that explains types and functions in `GeometricMachineLearning` that pertain to the text in that section[^1] (they are generated as so-called docstrings [julia2024documentation]). We show an example here:
+Closely linked to the research presented here is the development of a software package written in `Julia` called `GeometricMachineLearning` [brantner2020geometric](@cite). Throughout this work we will demonstrate concepts such as neural network architecture and (Riemannian) optimization by using `GeometricMachineLearning`. Most sections contain a header **Library Functions** that explains types and functions in `GeometricMachineLearning` that pertain to the text in that section[^1] (they are generated as so-called docstrings [julia2024documentation](@cite)). We show an example here:
 
 [^1]: In addition to **Library Functions** most sections also have an additional header **References** that shows further related reading material.
 
@@ -22,7 +22,7 @@ Closely linked to the research presented here is the development of a software p
 GradientCache
 ```
 
-So the docstring shows the name of the function, how to call it and then gives some information explaining what it does and potentially hyperlinks to other similar docstrings ([`GradientOptimizer`](@ref) in this case). Docstrings may include other information under subheaders **Arguments** (showing the arguments the method can be supplied with), **Examples** (giving more detailed examples (including results) of how to use the method) and **Implementation** (giving details on how the method is implemented).
+So the docstring shows the name of the type or method, in most cases how to call it and then gives some information explaining what it does and potentially hyperlinks to other similar docstrings ([`GradientOptimizer`](@ref) in this case); all of this information is indented by a tab. Docstrings may include other information under subheaders **Arguments** (showing the arguments the method can be supplied with), **Examples** (giving more detailed examples (including results) of how to use the method) and **Implementation** (giving details on how the method is implemented).
 
 All the code necessary to reproduce the results is included in the text and does not have any specific hardware requirements. Except for training some of the neural networks (which was done on an NVIDA Geforce RTX 4090 [rtx4090](@cite)) all the code snippets were run on CPU (via GitHub runners [actions](@cite)).
 

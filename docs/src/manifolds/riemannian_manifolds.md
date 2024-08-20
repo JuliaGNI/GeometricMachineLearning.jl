@@ -17,7 +17,8 @@ Main.definition(raw"The **metric on a Riemannian manifold** ``\mathcal{M}`` is
 " * 
 Main.indentation * raw"```math
 " *
-Main.indentation * raw"d(x, y) = \mathrm{inf}_{\text{$\gamma(0) = x$ and $\gamma(t) = y$}}L(\gamma),
+Main.indentation * raw"d(x, y) = \inf_{\substack{\text{$\gamma(0) = x$ and}\\
+    \gamma(t) = y}}L(\gamma),
 " * 
 Main.indentation * raw"```
 " *
@@ -31,7 +32,7 @@ d(\gamma(t_i), \gamma(t_f)) = \int_{t_i}^{t_f}\sqrt{g_{\gamma(s)}(\gamma'(s), \g
 ```
 for any ``t_i, t_f\in[0, t]``.
 
-An important result of Riemannian geometry states that there exists a vector field ``X`` on ``T\mathcal{M}``, called the *geodesic spray*, whose integral curves are derivatives of geodesics.
+An important result of Riemannian geometry states that there exists a vector field ``X`` on ``T\mathcal{M}``, called the *geodesic spray*, whose integral curves are derivatives of geodesics. We formalize this statement as a theorem in the next section.
 
 
 ## Geodesic Sprays and the Exponential Map

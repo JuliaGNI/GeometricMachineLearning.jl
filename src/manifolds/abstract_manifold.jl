@@ -1,4 +1,6 @@
 @doc raw"""
+    Manifold <: AbstractMatrix
+
 A manifold in `GeometricMachineLearning` is a sutype of `AbstractMatrix`. All manifolds are matrix manifolds and therefore stored as matrices. More details can be found in the docstrings for the [`StiefelManifold`](@ref) and the [`GrassmannManifold`](@ref).
 """
 abstract type Manifold{T} <: AbstractMatrix{T} end
@@ -51,32 +53,13 @@ function Base.broadcast(operation, Y::Manifold)
 end
 
 @doc raw"""
-    rand(backend::KernelAbstractions.Backend, manifold_type::Type{MT}, N::Integer, n::Integer) where MT <: Manifold)
+    rand(backend, manifold_type, N, n)
 
 Draw random elements for a specific device.
 
 # Examples
-```jldoctest
-using GeometricMachineLearning
-using GeometricMachineLearning: _round # hide
-import Random
-Random.seed!(123)
 
-N, n = 5, 3
-Y = rand(CPU(), StiefelManifold{Float32}, N, n)
-_round(Y; digits = 5) # hide
-
-# output
-
-5×3 StiefelManifold{Float32, Matrix{Float32}}:
- -0.27575   0.32991   0.77275
- -0.62485  -0.33224  -0.0686
- -0.69333   0.36724  -0.18988
- -0.09295  -0.73145   0.46064
-  0.2102    0.33301   0.38717
-```
-
-Random elements of the manifold can also be allocated on GPU, via e.g. ...
+Random elements of the manifold can be allocated on GPU.  Call ...
 
 ```julia
 rand(CUDABackend(), StiefelManifold{Float32}, N, n)
@@ -89,7 +72,7 @@ function Base.rand(backend::KernelAbstractions.Backend, manifold_type::Type{MT},
 end
 
 @doc raw"""
-    rand(manifold_type::Type{MT}, N::Integer, n::Integer) where MT <: Manifold
+    rand(manifold_type, N, n)
 
 Draw random elements from the Stiefel and the Grassmann manifold. 
 
@@ -118,7 +101,10 @@ _round(Y; digits = 5) # hide
   0.2102    0.33301   0.38717
 ```
 
-... the sampling is done by first allocating a random matrix of size ``N\times{}n`` via `Y = randn(Float32, N, n)`. We then perform a QR decomposition `Q, R = qr(Y)` with the `qr` function from the `LinearAlgebra` package (this is using Householder reflections internally). 
+... the sampling is done by first allocating a random matrix of size ``N\times{}n`` via `Y = randn(Float32, N, n)`.
+
+We then perform a QR decomposition `Q, R = qr(Y)` with the `qr` function from the `LinearAlgebra` package (this is using Householder reflections internally). 
+
 The final output are then the first `n` columns of the `Q` matrix. 
 """
 function Base.rand(manifold_type::Type{MT}, N::Integer, n::Integer) where MT <: Manifold

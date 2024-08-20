@@ -122,7 +122,7 @@ o = Optimizer(method, weight)
 o.cache.Y
 ```
 
-### Weights on manifolds 
+### Weights on Manifolds 
 
 The problem with generalizing Adam to manifolds is that the Hadamard product ``\odot`` as well as the other element-wise operations (``/``, ``\sqrt{}`` and ``+`` in step 3 above) lack a clear geometric interpretation. In `GeometricMachineLearning` we get around this issue by utilizing a so-called [global tangent space representation](@ref "Global Tangent Spaces"). A similar approach is shown in [kong2023momentum](@cite).
 

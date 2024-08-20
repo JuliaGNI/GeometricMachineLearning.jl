@@ -1,6 +1,6 @@
 # The Existence-And-Uniqueness Theorem
 
-The *existence-and-uniqueness theorem*, also known as the *Picard-Lindelöf theorem*, *Picard's existence theorem* and the *Cauchy-Lipschitz theorem* gives a proof of the existence of solutions for ODEs. Here we state the existence-and-uniqueness theorem for manifolds as vector fields are just a special case of this. Its proof relies on the [Banach fixed-point theorem](@ref "The Fixed-Point Theorem")[^1].
+The *existence-and-uniqueness theorem*, also known as the *Picard-Lindelöf theorem*, *Picard's existence theorem* or the *Cauchy-Lipschitz theorem* gives a proof of the existence of solutions for ODEs. Here we state the existence-and-uniqueness theorem for manifolds as vector spaces are just a special case of this. Its proof relies on the [Banach fixed-point theorem](@ref "The Fixed-Point Theorem")[^1].
 
 [^1]: It has to be noted that the proof given here is not entirely self-contained. The proof of the fundamental theorem of calculus, i.e. the proof of the existence of an antiderivative of a continuous function [lang2012real](@cite), is omitted for example. 
 
@@ -48,7 +48,7 @@ For all the problems we discuss here we can extend the integral curves of ``X`` 
 
 ## Time-Dependent Vector Fields
 
-We proved the theorem above for a time-independent vector field ``X``, but it also holds for time-dependent vector fields, i.e. for mapping of the form: 
+We proved the theorem above for a time-independent vector field ``X``, but it also holds for time-dependent vector fields, i.e. for mappings of the form: 
 
 ```math
 X: [0,T]\times\mathcal{M}\to{}TM.

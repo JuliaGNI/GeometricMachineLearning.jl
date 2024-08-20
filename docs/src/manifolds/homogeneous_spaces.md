@@ -194,7 +194,6 @@ Main.proof(raw"In a first step we identify charts on the Grassmann manifold to m
 StiefelManifold
 StiefelProjection
 GrassmannManifold
-rand(manifold_type::Type{MT}, ::Integer, ::Integer) where MT <: Manifold
 GeometricMachineLearning.rgrad(::StiefelManifold, ::AbstractMatrix)
 GeometricMachineLearning.rgrad(::GrassmannManifold, ::AbstractMatrix)
 GeometricMachineLearning.metric(::StiefelManifold, ::AbstractMatrix, ::AbstractMatrix)
