@@ -23,17 +23,21 @@ Based on this we can perform a splitting of ``\mathfrak{g}`` into two parts:
 
 ```@eval
 Main.definition(raw"A **splitting of the Lie algebra** ``\mathfrak{g}`` at an element of a homogeneous space ``Y`` is a decomposition into a **vertical** and a **horizontal** component, denoted by ``\mathfrak{g} = \mathfrak{g}^{\mathrm{ver},Y} \oplus \mathfrak{g}^{\mathrm{hor},Y}`` such that
-" * Main.indentation * raw"1. The *vertical component* ``\mathfrak{g}^{\mathrm{ver},Y}`` is the kernel of the map ``\mathfrak{g}\to{}T_Y\mathcal{M}, V \mapsto VY``, i.e. ``\mathfrak{g}^{\mathrm{ver},Y} = \{V\in\mathfrak{g}:VY = 0\}.``
-" * Main.indentation * raw"2. The *horizontal component* ``\mathfrak{g}^{\mathrm{hor},Y}`` is the orthogonal complement of ``\mathfrak{g}^{\mathrm{ver},Y}`` in ``\mathfrak{g}``. It is isomorphic to ``T_Y\mathcal{M}``.
-")
+" * Main.indentation * raw"1. The **vertical component** ``\mathfrak{g}^{\mathrm{ver},Y}`` is the kernel of the map ``\mathfrak{g}\to{}T_Y\mathcal{M}, V \mapsto VY``, i.e. ``\mathfrak{g}^{\mathrm{ver},Y} = \{V\in\mathfrak{g}:VY = 0\}.``
+" * Main.indentation * raw"2. The **horizontal component** ``\mathfrak{g}^{\mathrm{hor},Y}`` is the orthogonal complement of ``\mathfrak{g}^{\mathrm{ver},Y}`` in ``\mathfrak{g}``. It is isomorphic to ``T_Y\mathcal{M}``.
+" * Main.indentation * raw"*Orthogonal complement* means that ``\forall{}V\in\mathfrak{g}^{\mathrm{ver}, Y}`` and ``\forall{}B\in\mathfrak{g}^{\mathrm{hor}, Y}`` we have ``\langle V, B \rangle = 0`` for some metric ``\langle\cdot,\cdot\rangle`` defined on ``\mathfrak{g}``.")
 ```
 
-We will refer to the mapping from ``T_Y\mathcal{M}`` to ``\mathfrak{g}^{\mathrm{hor}, Y}`` by ``\Omega``. We will give explicit examples of ``\Omega`` below. If we have now defined a metric ``\langle\cdot,\cdot\rangle`` on ``\mathfrak{g}``, then this induces a Riemannian metric on ``\mathcal{M}``:
+We will refer to the isomorphism from ``T_Y\mathcal{M}`` to ``\mathfrak{g}^{\mathrm{hor}, Y}`` by ``\Omega``. We will give explicit examples of ``\Omega`` below. The metric ``\langle\cdot,\cdot\rangle`` on ``\mathfrak{g}`` further induces a Riemannian metric on ``\mathcal{M}``:
 ```math
 g_Y(\Delta_1, \Delta_2) = \langle\Omega(Y,\Delta_1),\Omega(Y,\Delta_2)\rangle\text{ for $\Delta_1,\Delta_2\in{}T_Y\mathcal{M}$.}
 ```
 
-Two examples of homogeneous spaces implemented in `GeometricMachineLearning` are the [Stiefel](@ref "The Stiefel Manifold") and the [Grassmann](@ref "The Grassmann Manifold") manifold. The Lie group ``SO(N)`` acts transitively on both of these manifolds, i.e. turns them into homogeneous spaces. The Lie algebra of ``SO(N)`` are the skew-symmetric matrices ``\mathfrak{so}(N):=\{V\in\mathbb{R}^{N\times{}N}:V^T + V = 0\}`` and the canonical metric associated with it is simply ``(V_1,V_2)\mapsto\frac{1}{2}\mathrm{Tr}(V_1^TV_2)``.
+Two examples of homogeneous spaces implemented in `GeometricMachineLearning` are the [Stiefel manifold](@ref "The Stiefel Manifold") and the [Grassmann manifold](@ref "The Grassmann Manifold"). The Lie group ``SO(N)`` acts transitively on both of these manifolds, i.e. turns them into homogeneous spaces. We give its Lie algebra as an example here: 
+
+```@eval
+Main.example(raw"The Lie algebra of ``SO(N)`` are the skew-symmetric matrices ``\mathfrak{so}(N):=\{V\in\mathbb{R}^{N\times{}N}:V^T + V = 0\}`` and the canonical metric associated with it is simply ``(V_1,V_2)\mapsto\frac{1}{2}\mathrm{Tr}(V_1^TV_2)``.")
+```
 
 
 # The Stiefel Manifold 
@@ -46,22 +50,24 @@ E = \begin{bmatrix}
 \mathbb{O}
 \end{bmatrix}\in{}St(n, N),
 ```
-which is the canonical element of the Stiefel manifold. In words: the first ``n`` columns of ``A`` and ``B`` are the same. We also use this principle to draw random elements from the Stiefel manifold.
+which is the canonical element of the Stiefel manifold that we call [`StiefelProjection`](@ref). In words: the first ``n`` columns of ``A`` and ``B`` are the same. We also use this principle to draw random elements from the Stiefel manifold.
 
 ```@eval
-Main.example(raw"Drawing random elements from the Stiefel (and the Grassmann) manifold is done by first calling `rand(N, n)` (i.e. drawing from a normal distribution) and then performing a ``QR`` decomposition. We then take the first ``n`` columns of the ``Q`` matrix to be an element of the Stiefel manifold.")
+Main.remark(raw"Drawing random elements from the Stiefel (and the Grassmann) manifold is done by first calling `rand(N, n)` (i.e. drawing from a normal distribution) and then performing a ``QR`` decomposition. We then take the first ``n`` columns of the ``Q`` matrix to be an element of the Stiefel manifold.")
 ```
 
-The tangent space to the element ``Y\in{}St(n,N)`` can be determined by considering ``C^\infty`` curves on ``SO(N)`` through ``\mathbb{I}`` which we write ``t\mapsto{}A(t)``. Because ``SO(N)`` acts transitively on ``St(n, N)`` each ``C^\infty`` curve on ``St(n, N)`` through ``Y`` can be written as ``A(t)Y`` and we get: 
+The tangent space to the element ``Y\in{}St(n,N)`` can be determined by considering ``C^\infty`` curves on ``SO(N)`` through ``\mathbb{I}.`` We write those curves as ``t\mapsto{}A(t)``. Because ``SO(N)`` acts transitively on ``St(n, N)`` each ``C^\infty`` curve on ``St(n, N)`` through ``Y`` can be written as ``A(t)Y`` and we get: 
 
 ```math
 T_YSt(n,N)=\{BY : B\in\mathfrak{g}\} = \{\Delta\in\mathbb{R}^{N\times{}n}: \Delta^TY + Y^T\Delta = \mathbb{O}\},
 ```
 
-where the last equality can be established through the isomorphism 
+where the last equality[^2] can be established through the isomorphism:
+
+[^2]: Note that we can easily check ``\{BY : B\in\mathfrak{g}\} \subset \{\Delta\in\mathbb{R}^{N\times{}n}: \Delta^TY + Y^T\Delta = \mathbb{O}\}.`` The isomorphism is used to proof ``\{\Delta\in\mathbb{R}^{N\times{}n}: \Delta^TY + Y^T\Delta = \mathbb{O}\} \subset \{BY : B\in\mathfrak{g}\}`` as ``\Omega(\Delta)\in\mathfrak{g}^{\mathrm{hor},Y}\subset\mathfrak{g}`` and ``\Delta = \Omega(\Delta)Y.``
 
 ```math
-\Omega: T_YSt(n, N) \to \mathfrak{g}^{\mathrm{vec}, Y}, \Delta \mapsto (\mathbb{I} - \frac{1}{2}YY^T)\Delta{}Y^T - Y\Delta^T(\mathbb{I} - \frac{1}{2}YY^T).
+\Omega: T_YSt(n, N) \to \mathfrak{g}^{\mathrm{hor}, Y}, \Delta \mapsto (\mathbb{I} - \frac{1}{2}YY^T)\Delta{}Y^T - Y\Delta^T(\mathbb{I} - \frac{1}{2}YY^T).
 ```
 
 That this is an isomorphism can be easily checked: 
@@ -70,17 +76,16 @@ That this is an isomorphism can be easily checked:
     \Omega(\Delta)Y = (\mathbb{I} - \frac{1}{2}YY^T)\Delta - \frac{1}{2}Y\Delta^TY = \Delta.
 ```
 
-This isomorphism is also implemented in `GeometricMachineLearning`:
+This isomorphism is implemented in `GeometricMachineLearning`:
 
 ```@example
-using GeometricMachineLearning
-
+using GeometricMachineLearning # hide
 Y = rand(StiefelManifold{Float32}, 5, 3)
 Δ = rgrad(Y, rand(Float32, 5, 3))
 GeometricMachineLearning.Ω(Y, Δ) * Y.A ≈ Δ
 ```
 
-The function `rgrad` is introduced below. 
+The function [`rgrad`](@ref), which maps ``\mathbb{R}^{N\times{}n}`` to ``T_YSt(n, N)`` is introduced below. 
 
 ## The Riemannian Gradient for the Stiefel Manifold
 
@@ -106,23 +111,26 @@ where ``\nabla_YL`` refers to the Euclidean gradient, i.e.
     [\nabla_YL]_{ij} = \frac{\partial{}L}{\partial{}y_{ij}}.
 ```
 
-The Euclidean gradient ``\nabla{}L`` can in practice be obtained with an [AD routine](@ref "Pullbacks and Automatic Differentiation"). We then use the function `rgrad` to map ``\nabla_YL`` from ``\mathbb{R}^{N\times{}n}`` to ``T_YSt(n,N)``. We can check that this mapping indeed maps to the Riemannian gradient
+The Euclidean gradient ``\nabla{}L`` can in practice be obtained with an [AD routine](@ref "Pullbacks and Automatic Differentiation"). We then use the function [`rgrad`](@ref) to map ``\nabla_YL`` from ``\mathbb{R}^{N\times{}n}`` to ``T_YSt(n,N)``. We can check that this mapping indeed produces the Riemannian gradient[^3]:
+
+[^3]: Here we are testing with a randomly drawn element ``\Delta\in{}T_Y\mathcal{M}.``
 
 ```@example
-using GeometricMachineLearning
+using GeometricMachineLearning # hide
 using LinearAlgebra: tr
 
-Y = rand(StiefelManifold{Float32}, 5, 3)
-∇L = rand(Float32, 5, 3)
+Y = rand(StiefelManifold, 5, 3)
+∇L = rand(5, 3)
 gradL = rgrad(Y, ∇L)
-Δ = rgrad(Y, rand(Float32, 5, 3))
+Δ = rgrad(Y, rand(5, 3))
 
+@assert metric(Y, gradL, Δ) ≈ tr(∇L' * Δ) # hide
 metric(Y, gradL, Δ) ≈ tr(∇L' * Δ)
 ```
 
 # The Grassmann Manifold 
 
-The Grassmann manifold is closely related to the Stiefel manifold, and an element of the Grassmann manifold can be represented through an element of the Stiefel manifold (but not vice-versa). An element of the Grassmann manifold ``G(n,N)`` is a vector subspace ``\subset\mathbb{R}^N`` of dimension $n$. Each such subspace (i.e. element of the Grassmann manifold) can be represented by a full-rank matrix ``A\in\mathbb{R}^{N\times{}n}`` and we identify two elements with the following equivalence relation: 
+The Grassmann manifold is closely related to the Stiefel manifold, and an element of the Grassmann manifold can be represented through an element of the Stiefel manifold (but not vice-versa). An element of the Grassmann manifold ``Gr(n,N)`` is a vector subspace ``\subset\mathbb{R}^N`` of dimension $n$. Each such subspace (i.e. element of the Grassmann manifold) can be represented by a full-rank matrix ``A\in\mathbb{R}^{N\times{}n}`` and we identify two elements with the following equivalence relation: 
 
 ```math
     A_1 \sim A_2 \iff \exists{}C\in\mathbb{R}^{n\times{}n}\text{ s.t. }A_1C = A_2.
@@ -139,8 +147,7 @@ We can also define the Grassmann manifold based on the Stiefel manifold since el
 In `GeometricMachineLearning` elements of the Grassmann manifold are drawn the same way as elements of the Stiefel manifold:
 
 ```@example
-using GeometricMachineLearning
-
+using GeometricMachineLearning # hide
 rand(GrassmannManifold{Float32}, 5, 3)
 ```
 
@@ -153,7 +160,7 @@ Main.theorem(raw"The Riemannian gradient of a function ``L`` defined on the Gras
 " * Main.indentation * raw"```math
 " * Main.indentation * raw"\mathrm{grad}_\mathcal{Y}^{Gr}L \simeq \nabla_Y{}L - YY^T\nabla_YL,
 " * Main.indentation * raw"```
-" * Main.indentation * raw"where ``\nabla_Y{}L`` again is again the Euclidean gradient.")
+" * Main.indentation * raw"where ``\nabla_Y{}L`` is again the Euclidean gradient.")
 ```
 
 ```@eval
