@@ -145,6 +145,7 @@ _introduction = output_type == :html ? ("HOME" => "index.md") : ("HOME" =>
         ["acknowledgements.md",
         "abstract.md",
         "zusammenfassung.md",
+        "toc.md",
         "introduction.md"]
     )
 
@@ -289,6 +290,7 @@ _latex_pages = [
     ],
     # we do not include the last tutorial here
     "Experiments and Applications" => [
+        "Learning a Reduced Model with Symplectic Autoencoders" => value_for_key(_tutorials, "Symplectic Autoencoders"),
         "Neural Networks as Symplectic Integrators" => value_for_key(_tutorials,
                                             "SympNets", 
                                             "Linear Symplectic Transformer"),

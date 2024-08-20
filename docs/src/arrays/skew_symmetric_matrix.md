@@ -1,4 +1,4 @@
-# Symmetric Skew-Symmetric and Triangular Matrices.
+# Symmetric, Skew-Symmetric and Triangular Matrices.
 
 Among the special arrays implemented in `GeometricMachineLearning` [`SymmetricMatrix`](@ref), [`SkewSymMatrix`](@ref), [`UpperTriangular`](@ref) and [`LowerTriangular`](@ref) are the most common ones and these can also be found in other libraries; `LinearAlgebra.jl` has an implementation of a symmetric matrix called [`Symmetric`](https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/#LinearAlgebra.Symmetric) for example. The versions of these matrices in `GeometricMachineLearning` are however more memory efficient as they only store as many parameters as are necessary, i.e. ``n(n+1)/2`` for the symmetric matrix and ``n(n-1)/2`` for the other three. In addition operations such as matrix and tensor multiplication are implemented for these matrices to work in parallel on GPU via [`GeometricMachineLearning.tensor_mat_mul`](@ref) for example. We here give an overview of *elementary* custom matrices that are implemented in `GeometricMachineLearning`. More *involved* matrices are the so-called [global tangent spaces](@ref "Global Tangent Spaces").
 
