@@ -14,15 +14,13 @@ One example of a manifold that is also important for `GeometricMachineLearning` 
 
 ## The Preimage Theorem
 
-The preimage theorem is crucial for treating the specific manifolds that are part of `GeometricMachineLearning`; the preimage theorem gives spaces like the [Stiefel manifold](@ref "The Stiefel Manifold") the structure of a manifold. Before we can state the preimage theorem we need another definition[^3]:
-
-[^3]: In this definition we use the notation ``T_xg``. This will be explained below. For we will interpret ``T_xg`` simply as ``(\varphi_U\circ{}g\circ\psi_V^{-1})'`` where ``\varphi_U`` is a coordinate chart around ``y = g(x)`` and ``\psi_V`` is a coordinate chart around ``x``.
+The preimage theorem is crucial for treating the specific manifolds that are part of `GeometricMachineLearning`; the preimage theorem gives spaces like the [Stiefel manifold](@ref "The Stiefel Manifold") the structure of a manifold. Before we can state the preimage theorem we need another definition:
 
 ```@eval
 Main.definition(raw"Consider a smooth mapping ``g: \mathcal{M}\to\mathcal{N}`` from one manifold to another. A point ``y\in\mathcal{N}`` is called **regular point of ``g``** if ``\forall{}x\in{}g^{-1}\{y\}`` the map ``T_xg:T_x\mathcal{M}\to{}T_{y}\mathcal{N}`` is surjective.")
 ```
 
-``@eval
+```@eval
 Main.remark(raw"Here we already used the notation ``T_y\mathcal{N}`` to denote the *tangent space to ``\mathcal{N}`` at ``y``*. We will explain what we mean by this precisely below. For now we simply view ``T_y\mathcal{N}`` as *something that is homemorphic to ``\mathbb{R}^m``* and the *tangent map ``T_xg``* we will simply view as ``(\psi\circ{}g\circ{}\varphi^{-1})'(varphi(x)),`` where ``\varphi`` is a coordinate chart as ``x`` and ``\psi`` is a coordinate chart at ``y.`` In the examples we give below ``\mathcal{M}`` and ``\mathcal{N}`` will simply be vector spaces, and ``g`` will be differential map between vector spaces whose derivative at ``x\in{}f^{-1}\{y\}`` (for a regular point ``y``) is surjective. For a vector space ``\mathcal{V}`` we furthermore have ``T_x\mathcal{V} = \mathcal{V}.``")
 ```
 
@@ -101,11 +99,11 @@ Main.definition(raw"The **tangent space** of ``\mathcal{M}`` at ``x`` is the col
 ```
 
 As is customary we write ``[\gamma]`` for the equivalence class of ``\gamma`` and this is by definition equivalent to ``\gamma'(0)``.
-The tangent space ``T_x\mathcal{M}`` can be shown to be homeomorphic[^4] to ``\mathbb{R}^n`` where ``n`` is the dimension of the manifold ``\mathcal{M}``. If the homeomorphism is constructed through the coordinate chart ``(\varphi, U)`` we call it ``\varphi'(x)`` or simply[^5] ``\varphi'``. If we are given a map ``g:\mathcal{M}\to\mathcal{N}`` we further define ``T_xg = (\varphi')^{-1}\circ(\varphi\circ{}g\circ\psi^{-1})'\circ{}\psi'``, i.e. a smooth map between two manifolds ``\mathcal{M}`` and ``\mathcal{N}`` induces a smooth map between the tangent spaces ``T_x\mathcal{M}`` and ``T_{g(x)}\mathcal{N}``.
+The tangent space ``T_x\mathcal{M}`` can be shown to be homeomorphic[^3] to ``\mathbb{R}^n`` where ``n`` is the dimension of the manifold ``\mathcal{M}``. If the homeomorphism is constructed through the coordinate chart ``(\varphi, U)`` we call it ``\varphi'(x)`` or simply[^4] ``\varphi'``. If we are given a map ``g:\mathcal{M}\to\mathcal{N}`` we further define ``T_xg = (\varphi')^{-1}\circ(\varphi\circ{}g\circ\psi^{-1})'\circ{}\psi'``, i.e. a smooth map between two manifolds ``\mathcal{M}`` and ``\mathcal{N}`` induces a smooth map between the tangent spaces ``T_x\mathcal{M}`` and ``T_{g(x)}\mathcal{N}``.
 
-[^4]: Note that we have not formally defined addition for ``T_x\mathcal{M}``. This can be done through the definition ``[\gamma] + [\beta] = [\alpha]`` where ``\alpha`` is any ``C^\infty`` curve through ``x`` that satisfies ``\alpha'(0) = \beta(0) + \gamma(0)``. Note that we can always find such an ``\alpha`` by the [existence and uniqueness theorem](@ref "The Existence-And-Uniqueness Theorem").
+[^3]: Note that we have not formally defined addition for ``T_x\mathcal{M}``. This can be done through the definition ``[\gamma] + [\beta] = [\alpha]`` where ``\alpha`` is any ``C^\infty`` curve through ``x`` that satisfies ``\alpha'(0) = \beta(0) + \gamma(0)``. Note that we can always find such an ``\alpha`` by the [existence and uniqueness theorem](@ref "The Existence-And-Uniqueness Theorem").
 
-[^5]: We will further discuss this when we introduce the [tangent bundle](@ref "The Tangent Bundle").
+[^4]: We will further discuss this when we introduce the [tangent bundle](@ref "The Tangent Bundle").
 
 We want to demonstrate this principle of constructing the tangent space from curves through the example of ``S^2``. We consider the following curves: 
 1. ``\gamma_1(t) = \begin{pmatrix} 0 \\ \sin(t) \\ \cos(t) \end{pmatrix},``
@@ -218,9 +216,9 @@ x = \begin{pmatrix}0 \\ 0 \\ 1 \end{pmatrix}
 
 ## Vector Fields
 
-A time-independent vector field[^6] is an object that specifies a velocity for every point on a domain. We first give the definition of a vector field on the vector space ``\mathbb{R}^n`` and limit ourselves here to ``C^\infty`` vector fields:
+A time-independent vector field[^5] is an object that specifies a velocity for every point on a domain. We first give the definition of a vector field on the vector space ``\mathbb{R}^n`` and limit ourselves here to ``C^\infty`` vector fields:
 
-[^6]: Also called *ordinary differential equation* (ODE).
+[^5]: Also called *ordinary differential equation* (ODE).
 
 ```@eval 
 Main.definition(raw"A **vector field** on ``\mathbb{R}^n`` is a smooth map ``X:\mathbb{R}^n\to\mathbb{R}^n``.")
