@@ -45,7 +45,7 @@ Main.include_graphics("mnist_visualization"; caption = "Visualization of how the
 Internally [`DataLoader`](@ref) calls [`split_and_flatten`](@ref) which splits each image into a number of *patches* according to the keyword arguments `patch_length` and `number_of_patches`. We also load the test data with [`DataLoader`](@ref):
 
 ```@example mnist
-dl_test = DataLoader(train_x, train_y, patch_length=patch_length)
+dl_test = DataLoader(test_x, test_y, patch_length=patch_length)
 
 nothing # hide
 ```
