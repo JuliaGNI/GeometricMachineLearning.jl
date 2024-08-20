@@ -89,8 +89,13 @@
 \usepackage[export]{adjustbox}
 %
 % unicode
-\usepackage[utf8x]{inputenc}
-\usepackage{textgreek}
+\usepackage{fontspec}
+\usepackage{polyglossia}
+% pick a font that can display all special symbols
+\setmonofont{DejaVu Sans Mono}[Scale=MatchLowercase]
+
+% custom hyphenation
+\usepackage[htt]{hyphenat}
 
 % Some internal link targets are implemented with \label, some with \hypertarget,
 % but they require different links. This inserts a \hyperref if a corresponding label exists,
