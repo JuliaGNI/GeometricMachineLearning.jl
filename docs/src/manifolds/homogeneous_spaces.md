@@ -78,14 +78,29 @@ That this is an isomorphism can be easily checked:
 
 This isomorphism is implemented in `GeometricMachineLearning`:
 
-```@example
+```@example omega_metric
 using GeometricMachineLearning # hide
-Y = rand(StiefelManifold{Float32}, 5, 3)
-Δ = rgrad(Y, rand(Float32, 5, 3))
-GeometricMachineLearning.Ω(Y, Δ) * Y.A ≈ Δ
+using GeometricMachineLearning: Ω
+Y = rand(StiefelManifold, 5, 3)
+Δ = rgrad(Y, rand(5, 3))
+@assert Ω(Y, Δ) * Y.A ≈ Δ # hide
+Ω(Y, Δ) * Y.A ≈ Δ
 ```
 
-The function [`rgrad`](@ref), which maps ``\mathbb{R}^{N\times{}n}`` to ``T_YSt(n, N)`` is introduced below. 
+The function [`rgrad`](@ref), which maps ``\mathbb{R}^{N\times{}n}`` to ``T_YSt(n, N)`` is introduced below. We can now also introduce the Riemannian metric on ``St(n,N)``:
+
+```math
+g_Y(\Delta_1, \Delta_2)  = \mathrm{Tr}\left( \frac{1}{2} \Omega(\Delta_1)^T \Omega(\Delta_2) \right) = \mathrm{Tr}(\Delta_1^T(\mathbb{I} - \frac{1}{2}YY^T)\Delta_2).
+```
+
+We can check that this is true:
+
+```@example omega_metric
+using LinearAlgebra: tr
+Δ₂ = rgrad(Y, rand(5, 3))
+@assert .5 * tr(Ω(Y, Δ)' * Ω(Y, Δ₂)) ≈ metric(Y, Δ, Δ₂) # hide
+.5 * tr(Ω(Y, Δ)' * Ω(Y, Δ₂)) ≈ metric(Y, Δ, Δ₂)
+```
 
 ## The Riemannian Gradient for the Stiefel Manifold
 
@@ -182,13 +197,13 @@ Main.proof(raw"In a first step we identify charts on the Grassmann manifold to m
 " * Main.indentation * raw"```
 " * Main.indentation * raw"where ``\dot{Y}(0)\in{}T_YSt(n,N)``. Also note  note that we have ``T_\mathcal{Y}\mathcal{U}_W = T_\mathcal{Y}Gr(n,N)`` because ``\mathcal{U}_W`` is an open subset of ``Gr(n,N)``. We thus can identify the tangent space ``T_\mathcal{Y}Gr(n,N)`` with the following set:
 " * Main.indentation * raw"```math
-" * Main.indentation * raw"T_{\hat{Y}}\mathcal{S}_W = \{(\Delta - YW^T\Delta)(W^T\Delta)^{-1}: Y\in{}St(n,N)\text{ s.t. }\mathrm{span}(Y)=\mathcal{Y}\text{ and }\Delta\in{}T_YSt(n,N)\}.
+" * Main.indentation * raw"T_{\hat{Y}}\mathcal{S}_W = \{(\Delta - YW^T\Delta)(W^TY)^{-1}: Y\in{}St(n,N)\text{ s.t. }\mathrm{span}(Y)=\mathcal{Y}\text{ and }\Delta\in{}T_YSt(n,N)\}.
 " * Main.indentation * raw"```
 " * Main.indentation * raw"Further note that we can pick any element ``W`` to construct the charts for a neighborhood around the point ``\mathcal{Y}\in{}Gr(n,N)`` as long as we have ``\mathrm{det}(W^TY)\neq0`` for ``\mathrm{span}(Y)=\mathcal{Y}``. We  hence take ``W=Y`` and get the identification: 
 " * Main.indentation * raw"```math
 " * Main.indentation * raw"T_\mathcal{Y}Gr(n,N) \equiv \{\Delta - YY^T\Delta: Y\in{}St(n,N)\text{ s.t. }\mathrm{span}(Y)=\mathcal{Y}\text{ and }\Delta\in{}T_YSt(n,N)\},
 " * Main.indentation * raw"```
-" * Main.indentation * raw"which is very easy to handle computationally (we simply store and change the matrix ``Y`` that represents an element of the Grassmann manifold). The Riemannian gradient is then 
+" * Main.indentation * raw"which is very easy to handle computationally (we simply store and change the matrix ``Y`` that represents an element of the Grassmann manifold). In this representation the Riemannian gradient is then 
 " * Main.indentation * raw"```math
 " * Main.indentation * raw"\mathrm{grad}_\mathcal{Y}^{Gr}L = \mathrm{grad}_Y^{St}L - YY^T\mathrm{grad}_Y^{St}L = \nabla_Y{}L - YY^T\nabla_YL,
 " * Main.indentation * raw"```
@@ -201,10 +216,10 @@ Main.proof(raw"In a first step we identify charts on the Grassmann manifold to m
 StiefelManifold
 StiefelProjection
 GrassmannManifold
-GeometricMachineLearning.rgrad(::StiefelManifold, ::AbstractMatrix)
-GeometricMachineLearning.rgrad(::GrassmannManifold, ::AbstractMatrix)
 GeometricMachineLearning.metric(::StiefelManifold, ::AbstractMatrix, ::AbstractMatrix)
+GeometricMachineLearning.rgrad(::StiefelManifold, ::AbstractMatrix)
 GeometricMachineLearning.metric(::GrassmannManifold, ::AbstractMatrix, ::AbstractMatrix)
+GeometricMachineLearning.rgrad(::GrassmannManifold, ::AbstractMatrix)
 GeometricMachineLearning.Ω(::StiefelManifold{T}, ::AbstractMatrix{T}) where T
 GeometricMachineLearning.Ω(::GrassmannManifold{T}, ::AbstractMatrix{T}) where T
 ```

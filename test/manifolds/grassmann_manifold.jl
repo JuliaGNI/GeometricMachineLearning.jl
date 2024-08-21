@@ -5,6 +5,7 @@ Warning: all these tests seem to be fine for double precision, but require a rid
 using Test 
 using LinearAlgebra
 using GeometricMachineLearning
+using GeometricMachineLearning: Ω
 using GeometricMachineLearning: global_section
 import Random 
 
@@ -46,6 +47,13 @@ function coordinate_chart_rep(T, N::Integer, n::Integer)
     Y
 end
 
+function metric_test(T, N, n)
+    Y = rand(GrassmannManifold{T}, N, n)
+    Δ₁ = rgrad(Y, rand(T, N, n))
+    Δ₂ = rgrad(Y, rand(T, N, n))
+    @test T(.5) * tr(Ω(Y, Δ₁)' * Ω(Y, Δ₂)) ≈ metric(Y, Δ₁, Δ₂)
+end
+
 function run_tests(T, N, n, tol)
     @test check_gradient(T, N, n) < tol
     @test global_section_test(T, N, n) < tol
@@ -53,6 +61,7 @@ function run_tests(T, N, n, tol)
     @test typeof(gloabl_tangent_space_representation(T, N, n)) <: GrassmannLieAlgHorMatrix
     # because of the matrix inversion the tolerance here is set to a higher value
     @test norm(coordinate_chart_rep(T, N, n)[1:n,1:n]-I(n)) / N / n < tol*10
+    metric_test(T, N, n)
 end
 
 tol = 1e-8
