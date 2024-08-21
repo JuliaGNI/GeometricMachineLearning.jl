@@ -41,7 +41,7 @@ For stability we use `δ` for computing `ρ`:
 
 This is similar to the [`AdamOptimizer`](@ref)
 
-# Extend Help 
+# Extended help 
 
 If we have weights on a [`Manifold`](@ref) than the updates are slightly more difficult.
 In this case the [`vec`](@ref) operation has to be generalized to the corresponding *global tangent space*.

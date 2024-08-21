@@ -5,7 +5,7 @@ Make a matrix of the form ``\begin{bmatrix} \mathbb{I} & \mathbb{O} \end{bmatrix
 
 An array that essentially does `vcat(I(n), zeros(N-n, n))` with GPU support. 
 
-# Extend help
+# Extended help
 
 An instance of `StiefelProjection` should technically also belong to [`StiefelManifold`](@ref). 
 """
