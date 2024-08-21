@@ -83,3 +83,5 @@ using Documenter: doctest
 
 @safetestset "Linear Symplectic Attention                                                     " begin include("linear_symplectic_attention.jl") end
 @safetestset "Linear Symplectic Transformer                                                   " begin include("linear_symplectic_transformer.jl") end
+
+@safetestset "DataLoader for input and output                                                 " begin include("data_loader/data_loader_for_input_and_output.jl") end

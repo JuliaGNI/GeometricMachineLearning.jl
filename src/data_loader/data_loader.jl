@@ -169,6 +169,23 @@ function DataLoader(data::AbstractVector; autoencoder=true, suppress_info = fals
     DataLoader(reshape(data, 1, length(data)); autoencoder = autoencoder, suppress_info = suppress_info)
 end
 
+function DataLoader(input::AbstractArray{T, 3}, output::AbstractArray{T, 3}; suppress_info = false) where T
+    @assert size(input, 3) == size(output, 3)
+    if !suppress_info
+        @info "You have provided an input and an output."
+    end
+
+    DataLoader{T, typeof(input), typeof(output), :TimeSeries}(input, output, size(input, 1), size(input, 2), size(input, 3), size(output, 1), size(output, 2))
+end
+
+function DataLoader(input::AbstractMatrix{T}, output::AbstractMatrix{T}; suppress_info = false) where T
+    DataLoader(reshape(input, size(input)..., 1), reshape(output, size(output)..., 1); suppress_info = suppress_info)
+end
+
+function DataLoader(input::AbstractVector{T}, output::AbstractVector{T}; suppress_info = false) where T
+    DataLoader(reshape(input, 1, length(input)), reshape(output, 1, length(output)); suppress_info = suppress_info)
+end
+
 @doc raw"""
     DataLoader(data::AbstractArray{T, 3}, target::AbstractVector)
 
