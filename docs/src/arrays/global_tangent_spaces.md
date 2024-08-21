@@ -32,7 +32,7 @@ We should note that we have written all Lie group and Lie algebra actions as sim
 
 Note that the theorem above requires us to find an element ``A\in{}G`` such that ``AE = Y``. We will call such a mapping ``\lambda:\mathcal{M}\to{}G`` a *global section*[^1]. 
 
-[^1:] Global sections are also crucial for [parallel transport](@ref "Parallel Transport") in `GeometricMachineLearning`. A global section is first updated, i.e. ``\Lambda^{(t)} \gets \mathrm{update}(\Lambda^{(t-1)});`` and on the basis of this we then update the element of the manifold ``Y\in\mathcal{M}`` and the tangent vector ``\Delta\in{}T\mathcal{M}``.
+[^1]: Global sections are also crucial for [parallel transport](@ref "Parallel Transport") in `GeometricMachineLearning`. A global section is first updated, i.e. ``\Lambda^{(t)} \gets \mathrm{update}(\Lambda^{(t-1)});`` and on the basis of this we then update the element of the manifold ``Y\in\mathcal{M}`` and the tangent vector ``\Delta\in{}T\mathcal{M}``.
 
 ```@eval
 Main.definition(raw"We call a mapping ``\lambda`` from a homogeneous space ``\mathcal{M}`` to its associated Lie group ``G`` a **global section** if ``\forall{}Y\in\mathcal{M}`` it satisfies:
@@ -88,9 +88,9 @@ B̄ = StiefelLieAlgHorMatrix(A, B, N, n)
 We can also call it with a matrix of shape ``N\times{}N``:
 
 ```@example call_stiefel_lie_alg_hor_matrix_1
-B2 = Matrix(B1) # note that this does not have any special structure
+B̄₂ = Matrix(B̄) # note that this does not have any special structure
 
-StiefelLieAlgHorMatrix(B2, n)
+StiefelLieAlgHorMatrix(B̄₂, n)
 ```
 
 Or we can call it on ``T_E\mathcal{M}\subset\mathbb{R}^{N\times{}n},`` i.e. a matrix of shape ``N\times{}n``:
@@ -100,9 +100,9 @@ E = StiefelProjection(N, n)
 ```
 
 ```@example call_stiefel_lie_alg_hor_matrix_1
-B3 = B1 * E
+B̄₃ = B̄ * E
 
-StiefelLieAlgHorMatrix(B3, n)
+StiefelLieAlgHorMatrix(B̄₃, n)
 ```
 
 We now demonstrate how to map from an element of ``\mathfrak{g}^{\mathrm{hor}, Y}`` to an element of ``\mathfrak{g}^\mathrm{hor}``:
