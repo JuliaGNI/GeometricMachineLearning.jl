@@ -282,3 +282,23 @@ function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT, OT}, bat
 
     input_batch, output_batch
 end
+
+function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT, BT}, batch::Batch, batch_indices_tuple::Vector{Tuple{Int, Int}}) where {T, BT<:AbstractArray{T, 3}}
+    backend = KernelAbstractions.get_backend(dl.input)
+
+    # the batch size is smaller for the last batch 
+    _batch_size = length(batch_indices_tuple)
+
+    batch_indices = convert_vector_of_tuples_to_matrix(backend, batch_indices_tuple)
+
+    input = KernelAbstractions.allocate(backend, T, dl.input_dim, batch.seq_length, _batch_size)
+
+    assign_input_from_vector_of_tuples! = assign_input_from_vector_of_tuples_kernel!(backend)
+    assign_input_from_vector_of_tuples!(input, dl.input, batch_indices, ndrange=(dl.input_dim, batch.seq_length, _batch_size))
+
+    output = KernelAbstractions.allocate(backend, T, dl.output_dim, batch.prediction_window, _batch_size)
+
+    assign_input_from_vector_of_tuples!(output, dl.output, batch_indices, ndrange=(dl.output_dim, batch.prediction_window, _batch_size))
+
+    input, output
+end
