@@ -1,5 +1,5 @@
 @doc raw"""
-    GlobalSection(Y::AbstractMatrix)
+    GlobalSection(Y)
 
 Construct a global section for `Y`.  
 
@@ -48,7 +48,7 @@ function Base.Matrix(λY::GlobalSection)
 end
 
 @doc raw"""
-    *(λY, Y)
+    λY * Y
 
 Apply the element `λY` onto `Y`.
 
@@ -63,7 +63,7 @@ Apply `λY` to `Y₂`.
 
 Mathematically this is the group action of the element ``\lambda{}Y\in{}G`` on the element ``Y_2`` of the homogeneous space ``\mathcal{M}``.
 
-Internally it calls the inplace version [`apply_section!`](@ref).
+Internally it calls [`apply_section!`](@ref).
 """
 function apply_section(λY::GlobalSection{T, AT}, Y₂::AT) where {T, AT<:StiefelManifold{T}}
     Y = StiefelManifold(zero(Y₂.A))
@@ -77,7 +77,7 @@ end
 
 Apply `λY` to `Y₂` and store the result in `Y`.
 
-The inplace version of [`apply_section`](@ref).
+This is the inplace version of [`apply_section`](@ref).
 """
 function apply_section!(Y::AT, λY::GlobalSection{T, AT}, Y₂::AT) where {T, AT<:StiefelManifold{T}}
     N, n = size(λY.Y)
@@ -173,13 +173,13 @@ The function `global_rep` does in fact not perform the entire map ``\lambda(Y)^{
 \Delta \mapsto \mathrm{skew}(Y^T\Delta),
 ```
 
-to get the small skew-symmetric matrix and 
+to get the small skew-symmetric matrix ``A\in\mathcal{S}_\mathrm{skew}(n)`` and 
 
 ```math
 \Delta \mapsto (\lambda(Y)_{[1:N, n:N]}^T \Delta)_{[1:(N-n), 1:n]},
 ```
 
-for the arbitrary matrix.
+to get the arbitrary matrix ``B\in\mathbb{R}^{(N-n)\times{}n}``.
 """
 function global_rep(λY::GlobalSection{T, AT}, Δ::AbstractMatrix{T}) where {T, AT<:StiefelManifold{T}}
     N, n = size(λY.Y)
@@ -194,7 +194,7 @@ end
 @doc raw"""
     global_rep(λY::GlobalSection{T, AT}, Δ::AbstractMatrix{T}) where {T, AT<:GrassmannManifold{T}}
 
-Express `Δ` (an the tangent space of `Y`) as an instance of `GrassmannLieAlgHorMatrix`.
+Express `Δ` (an element of the tangent space of `Y`) as an instance of [`GrassmannLieAlgHorMatrix`](@ref).
 
 The method `global_rep` for [`GrassmannManifold`](@ref) is similar to that for [`StiefelManifold`](@ref).
 

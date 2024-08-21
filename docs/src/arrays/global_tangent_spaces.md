@@ -6,7 +6,11 @@ In `GeometricMachineLearning` standard neural network optimizers are generalized
     T_Y\mathcal{M} = \mathfrak{g} \cdot Y := \{AY: A\in{}\mathfrak{g}\}.
 ```
 
-We then have a decomposition of ``\mathfrak{g}`` into a vertical part ``\mathfrak{g}^{\mathrm{ver}, Y}`` and a horizontal part ``\mathfrak{g}^{\mathrm{hor}, Y}`` and the horizontal part is isomorphic to ``T_Y\mathcal{M}``. 
+We then have a decomposition of ``\mathfrak{g}`` into a vertical part ``\mathfrak{g}^{\mathrm{ver}, Y}`` and a horizontal part ``\mathfrak{g}^{\mathrm{hor}, Y}`` and the horizontal part is isomorphic to ``T_Y\mathcal{M}`` via:
+
+```math
+    \mathfrak{g}^{\mathrm{hor}, Y} = \{\Omega(\Delta): \Delta\in{}T_Y\mathcal{M} \}.
+```
 
 We now identify a special element ``E \in \mathcal{M}`` and designate the horizontal component ``\mathfrak{g}^{\mathrm{hor}, E}`` as our *global tangent space*. We will refer to this global tangent space by ``\mathfrak{g}^\mathrm{hor}``. We can now find a transformation from any ``\mathfrak{g}^{\mathrm{hor}, Y}`` to ``\mathfrak{g}^\mathrm{hor}`` and vice-versa (these spaces are isomorphic).
 
@@ -22,14 +26,16 @@ Main.theorem(raw"Let ``A\in{}G`` an element such that ``AE = Y``. Then we have
 Main.proof(raw"We first show that for every ``B^Y\in\mathfrak{g}^{\mathrm{hor},Y}`` the element ``A^{-1}B^YA`` is in ``\mathfrak{g}^{\mathrm{hor}}``. First not that ``A^{-1}B^YA\in\mathfrak{g}`` by a fundamental theorem of Lie group theory (closedness of the Lie algebra under adjoint action). Now assume that ``A^{-1}B^YA`` is not fully contained in ``\mathfrak{g}^\mathrm{hor}``, i.e. it also has a vertical component. So we would lose information when performing ``A^{-1}B^YA \mapsto A^{-1}B^YAE = A^{-1}B^YY``, but this contradicts the fact that ``B^Y\in\mathfrak{g}^{\mathrm{hor},Y}.`` We now have to proof that for every ``B\in\mathfrak{g}^\mathrm{hor}`` we can find an element in ``\mathfrak{g}^{\mathrm{hor}, Y}`` such that this element is mapped to ``B``. By a argument similar to the one above we can show that ``ABA^{-1}\in\mathfrak{g}^\mathrm{hor, Y}`` and this element maps to ``B``. Proofing that the map is injective is now trivial.")
 ```
 
-We should note that we have written all Lie group and Lie algebra actions as simple matrix multiplications, like ``AE = Y``. For some Lie groups and Lie algebras we should use different notations [holm2009geometric](@cite). These Lie groups are however not relevant for what we use in `GeometricMachineLearning` and we will stick to regular matrix notation.
+We should note that we have written all Lie group and Lie algebra actions as simple matrix multiplications, like ``AE = Y``. For some Lie groups and Lie algebras, as the Lie group of isomorphisms on some domain ``\mathcal{D}``, this notation may not be appropriate [holm2009geometric](@cite). These Lie groups are however not relevant for what we use in `GeometricMachineLearning` and we will stick to regular matrix notation.
 
 ## Global Sections 
 
-Note that the theorem above requires us to find an element ``A\in{}G`` such that ``AE = Y``. If we can find a mapping ``\lambda:\mathcal{M}\to{}G`` we call such a mapping a *global section*. 
+Note that the theorem above requires us to find an element ``A\in{}G`` such that ``AE = Y``. We will call such a mapping ``\lambda:\mathcal{M}\to{}G`` a *global section*[^1]. 
+
+[^1]: Global sections are also crucial for [parallel transport](@ref "Parallel Transport") in `GeometricMachineLearning`. A global section is first updated, i.e. ``\Lambda^{(t)} \gets \mathrm{update}(\Lambda^{(t-1)});`` and on the basis of this we then update the element of the manifold ``Y\in\mathcal{M}`` and the tangent vector ``\Delta\in{}T\mathcal{M}``.
 
 ```@eval
-Main.definition(raw"We call a mapping from ``\lambda:\mathcal{M} \to G`` a homogeneous space to its associated Lie group a **global section** if it satisfies:
+Main.definition(raw"We call a mapping ``\lambda`` from a homogeneous space ``\mathcal{M}`` to its associated Lie group ``G`` a **global section** if ``\forall{}Y\in\mathcal{M}`` it satisfies:
 " * Main.indentation * raw"```math
 " * Main.indentation * raw"\lambda(Y)E = Y,
 " * Main.indentation * raw"```
@@ -38,17 +44,9 @@ Main.definition(raw"We call a mapping from ``\lambda:\mathcal{M} \to G`` a homog
 
 Note that in general global sections are not unique because the rank of ``G`` is in general greater than that of ``\mathcal{M}``. We give an example of how to construct such a global section for the Stiefel and the Grassmann manifolds below. 
 
-Global sections are also crucial for [parallel transport](@ref "Parallel Transport") in `GeometricMachineLearning`. A global section is first updated:
-```math
-    \Lambda^{(t)} \gets \mathrm{update}(\Lambda^{(t-1)}),
-```
-and on the basis of this we then update the element of the manifold ``Y\in\mathcal{M}`` and the tangent vector ``\Delta\in{}T\mathcal{M}``.
-
 ## The Global Tangent Space for the Stiefel Manifold
 
-We now discuss the specific form of the global tangent space for the [Stiefel manifold](@ref "The Stiefel Manifold"). We choose the distinct element[^1] ``E`` to have an especially simple form (this matrix can be build by calling [`StiefelProjection`](@ref)):
-
-[^1]: We already introduced this special matrix together with the Stiefel manifold.
+We now discuss the specific form of the global tangent space for the [Stiefel manifold](@ref "The Stiefel Manifold"). We pick as distinct element ``E`` (which build by calling [`StiefelProjection`](@ref)):
 
 ```math
 E = \begin{bmatrix}
@@ -57,24 +55,22 @@ E = \begin{bmatrix}
 \end{bmatrix}\in{}St(n, N).
 ```
 
-Based on this elements of the vector space ``\mathfrak{g}^{\mathrm{hor}, E} =: \mathfrak{g}^{\mathrm{hor}}`` are: 
+Based on this, elements of the vector space ``\mathfrak{g}^{\mathrm{hor}, E} =: \mathfrak{g}^{\mathrm{hor}}`` are: 
 
 ```math
-\begin{pmatrix}
+\bar{B} = \begin{pmatrix}
 A & B^T \\ B & \mathbb{O}
 \end{pmatrix},
 ```
 
-where ``A`` is a skew-symmetric matrix of size ``n\times{}n`` and ``B`` is an arbitrary matrix of size ``(N - n)\times{}n``.
-
-Arrays of type ``\mathfrak{g}^{\mathrm{hor}, E}`` are implemented in `GeometricMachineLearning` under the name [`StiefelLieAlgHorMatrix`](@ref).
+where ``A`` is a skew-symmetric matrix of size ``n\times{}n`` and ``B`` is an arbitrary matrix of size ``(N - n)\times{}n``. Arrays of type ``\mathfrak{g}^{\mathrm{hor}, E} \equiv \mathfrak{g}^\mathrm{hor}`` are implemented in `GeometricMachineLearning` under the name [`StiefelLieAlgHorMatrix`](@ref).
 
 We can call this with e.g. a skew-symmetric matrix ``A`` and an arbitrary matrix ``B``:
 
 ```@example call_stiefel_lie_alg_hor_matrix_1
 using GeometricMachineLearning # hide
 
-N, n = 10, 4
+N, n = 5, 2
 
 A = rand(SkewSymMatrix, n)
 ```
@@ -83,40 +79,43 @@ A = rand(SkewSymMatrix, n)
 B = rand(N - n, n)
 ```
 
+The constructor is then called as follows:
+
 ```@example call_stiefel_lie_alg_hor_matrix_1
-B1 = StiefelLieAlgHorMatrix(A, B, N, n)
+B̄ = StiefelLieAlgHorMatrix(A, B, N, n)
 ```
 
 We can also call it with a matrix of shape ``N\times{}N``:
 
 ```@example call_stiefel_lie_alg_hor_matrix_1
-B2 = Matrix(B1) # note that this does not have any special structure
+B̄₂ = Matrix(B̄) # note that this does not have any special structure
 
-StiefelLieAlgHorMatrix(B2, n)
+StiefelLieAlgHorMatrix(B̄₂, n)
 ```
 
-Or we can call it a matrix of shape ``N\times{}n``:
+Or we can call it on ``T_E\mathcal{M}\subset\mathbb{R}^{N\times{}n},`` i.e. a matrix of shape ``N\times{}n``:
 
 ```@example call_stiefel_lie_alg_hor_matrix_1
 E = StiefelProjection(N, n)
 ```
 
 ```@example call_stiefel_lie_alg_hor_matrix_1
-B3 = B1 * E
+B̄₃ = B̄ * E
 
-StiefelLieAlgHorMatrix(B3, n)
+StiefelLieAlgHorMatrix(B̄₃, n)
 ```
 
 We now demonstrate how to map from an element of ``\mathfrak{g}^{\mathrm{hor}, Y}`` to an element of ``\mathfrak{g}^\mathrm{hor}``:
 
 ```@example global_section
 using GeometricMachineLearning # hide
+using GeometricMachineLearning: Ω
 
-N, n = 10, 5
+N, n = 5, 2 # hide
 
 Y = rand(StiefelManifold, N, n)
 Δ = rgrad(Y, rand(N, n))
-ΩΔ = GeometricMachineLearning.Ω(Y, Δ)
+ΩΔ = Ω(Y, Δ)
 λY = GlobalSection(Y) 
 
 λY_mat = Matrix(λY)
@@ -132,7 +131,7 @@ using GeometricMachineLearning: _round # hide
 _round(global_rep(λY, Δ); digits = 3)
 ```
 
-Internally `GlobalSection` calls the function [`GeometricMachineLearning.global_section`](@ref) which does the following for the Stiefel manifold: 
+Internally [`GlobalSection`](@ref) calls the function [`GeometricMachineLearning.global_section`](@ref) which does the following for the Stiefel manifold: 
 
 ```julia
 A = randn(N, N - n) # or the gpu equivalent
@@ -143,13 +142,13 @@ Y⟂ = qr(A).Q[1:N, 1:(N - n)]
 So we draw ``(N - n)`` new columns randomly, subtract the part that is spanned by the columns of ``Y`` and then perform a ``QR`` composition on the resulting matrix. The ``Q`` part of the decomposition is a matrix of ``(N - n)`` columns that is orthogonal to ``Y`` and is typically referred to as ``Y_\perp``  [absil2004riemannian, absil2008optimization, bendokat2020grassmann](@cite). We can easily check that this ``Y_\perp`` is indeed orthogonal to ``Y``.
 
 ```@eval
-Main.theorem(raw"The matrix ``Y_\perp`` constructed with the above algorithm satisfies
+Main.theorem(raw"The matrix ``Y_\perp`` constructed with the algorithm above satisfies
 " * Main.indentation * raw"```math
-" * Main.indentation * raw"Y^TY_\perp = \mathbb{O},
+" * Main.indentation * raw"Y^TY_\perp = \mathbb{O}_{n\times{}n},
 " * Main.indentation * raw"```
 " * Main.indentation * raw"and
 " * Main.indentation * raw"```math
-" * Main.indentation * raw"(Y_\perp)^TY_\perp = \mathbb{I},
+" * Main.indentation * raw"(Y_\perp)^TY_\perp = \mathbb{I}_n,
 " * Main.indentation * raw"```
 " * Main.indentation * raw"i.e. all the columns in the big matrix ``[Y, Y_\perp]\in\mathbb{R}^{N\times{}N}`` are mutually orthonormal and it therefore is an element of ``SO(N)``.")
 ```
@@ -170,7 +169,7 @@ The function [`global_rep`](@ref) furthermore makes use of the following:
 where ``\lambda(Y) = [Y, \bar{\lambda}].``
 
 ```@eval
-Main.proof(raw"In practice we use the following to make computations efficient: 
+Main.proof(raw"We derive the expression above: 
 " * Main.indentation * raw"```math
 " * Main.indentation * raw"\begin{aligned}
 " * Main.indentation * raw"\lambda(Y)^T\Omega(Y,\Delta)\lambda(Y)  & = \lambda(Y)^T[(\mathbb{I} - \frac{1}{2}YY^T)\Delta{}Y^T - Y\Delta^T(\mathbb{I} - \frac{1}{2}YY^T)]\lambda(Y) \\
@@ -179,11 +178,13 @@ Main.proof(raw"In practice we use the following to make computations efficient:
 " * Main.indentation * raw"                                        & = \begin{bmatrix} Y^T\Delta{}E^T \\ \bar{\lambda}\Delta{}E^T \end{bmatrix} - \frac{1}{2}EY^T\Delta{}E - \begin{bmatrix} E\Delta^TY & E\Delta^T\bar{\lambda} \end{bmatrix} + \frac{1}{2}E\Delta^TYE^T \\
 " * Main.indentation * raw"                                        & = \begin{bmatrix} Y^T\Delta{}E^T \\ \bar{\lambda}\Delta{}E^T \end{bmatrix} + E\Delta^TYE^T - \begin{bmatrix}E\Delta^TY & E\Delta^T\bar{\lambda} \end{bmatrix} \\
 " * Main.indentation * raw"                                                & = EY^T\Delta{}E^T + E\Delta^TYE^T - E\Delta^TYE^T + \begin{bmatrix} \mathbb{O} \\ \bar{\lambda}\Delta{}E^T \end{bmatrix} - \begin{bmatrix} \mathbb{O} & E\Delta^T\bar{\lambda} \end{bmatrix} \\
-" * Main.indentation * raw"                                        & = EY^T\Delta{}E^T + \begin{bmatrix} \mathbb{O} \\ \bar{\lambda}\Delta{}E^T \end{bmatrix} - \begin{bmatrix} \mathbb{O} & E\Delta^T\bar{\lambda} \end{bmatrix},
-" * Main.indentation * raw"\end{aligned},
+" * Main.indentation * raw"                                        & = EY^T\Delta{}E^T + \begin{bmatrix} \mathbb{O}_{n\times{}N} \\ \bar{\lambda}\Delta{}E^T \end{bmatrix} - \begin{bmatrix} \mathbb{O}_{N\times{}n} & E\Delta^T\bar{\lambda} \end{bmatrix},
+" * Main.indentation * raw"\end{aligned}
 " * Main.indentation * raw"```
-" * Main.indentation * raw"which means we only need ``Y^T\Delta`` and ``\bar{\lambda}^T\Delta``.")
+" * Main.indentation * raw"which proofs our assertion.")
 ```
+
+This expression of [`global_rep`](@ref) means we only need ``Y^T\Delta`` and ``\bar{\lambda}^T\Delta`` and this is what is used internally.
 
 We now discuss the global tangent space for the Grassmann manifold. This is similar to the Stiefel case.
 
@@ -206,10 +207,10 @@ The tangent tangent space ``T_\mathcal{E}Gr(n,N)`` can be represented through ma
 
 This representation is based on the identification ``T_\mathcal{E}Gr(n,N)\to{}T_E\mathcal{S}_E`` that was discussed in the section on the [Grassmann manifold](@ref "The Grassmann Manifold")[^2]. We use the following notation:
 
-[^2]: We derived the following expression for the [Riemannian gradient of the Grassmann manifold](@ref "The Riemannian Gradient of the Grassmann Manifold"): ``\mathrm{grad}_\mathcal{Y}^{Gr}L = \nabla_Y{}L - YY^T\nabla_YL``. The tangent space to the element ``\mathcal{E}`` can thus be written as ``\bar{B} - EE^T\bar{B}`` where ``B\in\mathbb{R}^{N\times{}n}`` and the matrices in this tangent space have the desired form. 
+[^2]: We derived the following expression for the Riemannian gradient of the Grassmann manifold: ``\mathrm{grad}_\mathcal{Y}^{Gr}L = \nabla_Y{}L - YY^T\nabla_YL``. The tangent space to the element ``\mathcal{E}`` can thus be written as ``\bar{B} - EE^T\bar{B}`` where ``B\in\mathbb{R}^{N\times{}n}`` and the matrices in this tangent space have the desired form. 
 
 ```math
-\mathfrak{g}^\mathrm{hor} = \mathfrak{g}^{\mathrm{hor},\mathcal{E}} = \left\{\begin{pmatrix} 0 & -B^T \\ B & 0 \end{pmatrix}: \text{$B$ arbitrary}\right\}.
+\mathfrak{g}^\mathrm{hor} = \mathfrak{g}^{\mathrm{hor},\mathcal{E}} = \left\{\begin{pmatrix} 0 & -B^T \\ B & 0 \end{pmatrix}: \text{$B\in\mathbb{R}^{(N-n)\times{}n}$ is arbitrary}\right\}.
 ```
 
 This is equivalent to the horizontal component of ``\mathfrak{g}`` for the Stiefel manifold for the case when ``A`` is zero. This is a reflection of the rotational invariance of the Grassmann manifold: the skew-symmetric matrices ``A`` are connected to the group of rotations ``O(n)`` which is factored out in the Grassmann manifold ``Gr(n,N)\simeq{}St(n,N)/O(n)``. In `GeometricMachineLearning` we thus treat the Grassmann manifold as being embedded in the Stiefel manifold. In [bendokat2020grassmann](@cite) viewing the Grassmann manifold as a quotient space of the Stiefel manifold is important for "feasibility" in "practical computations". 
@@ -227,7 +228,8 @@ Matrix(::GlobalSection)
 apply_section
 apply_section!
 *(::GlobalSection, ::Manifold)
-GeometricMachineLearning.global_section
+GeometricMachineLearning.global_section(::StiefelManifold{T}) where T
+GeometricMachineLearning.global_section(::GrassmannManifold{T}) where T
 global_rep
 ```
 

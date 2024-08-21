@@ -64,7 +64,7 @@ SkewSymMatrix(M)
  4.5   3.0   1.5   0.0
 ```
 
-# Extend help
+# Extended help
 
 Note that the constructor is designed in such a way that it always returns matrices of type `SkewSymMatrix{<:AbstractFloat}` when called with a matrix, even if this matrix is of type `AbstractMatrix{<:Integer}`.
 

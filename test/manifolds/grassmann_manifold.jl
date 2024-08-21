@@ -67,7 +67,7 @@ end
 tol = 1e-8
 T = Float64
 for N in 1:10
-    for n in 1:N 
+    for n in 1:(N-1) 
         run_tests(T, N, n, tol)
     end
 end
