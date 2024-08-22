@@ -29,7 +29,7 @@ Main.example(raw"To obtain a canonical Hamiltonian system we take ``\mathcal{M} 
 " * Main.indentation * raw"```math
 " * Main.indentation * raw"\Omega_z = \mathbb{J}_{2d}^T = \begin{pmatrix} \mathbb{O} & -\mathbb{I} \\ \mathbb{I} & \mathbb{O} \end{pmatrix}
 " * Main.indentation * raw"``` 
-" * Main.indentation * raw"for all ``z``. We call ``\mathbb{J}_{2d}`` the **Poisson tensor** or by a slight misnomer the **symplectic matrix**. In this case the vector field can be written as:
+" * Main.indentation * raw"for all ``z``. We call ``\mathbb{J}_{2d}`` the **Poisson tensor**. In this case the vector field can be written as:
 " * Main.indentation * raw"```math
 " * Main.indentation * raw"X_H(z) = \mathbb{J}_{2d}\nabla_z{}H,
 " * Main.indentation * raw"```
