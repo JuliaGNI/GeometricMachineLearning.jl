@@ -81,6 +81,12 @@ function (𝕁::PoissonTensor{T})(v₁::AbstractVector{T}, v₂::AbstractVector{
     𝕁(assign_q_and_p(v₁, 𝕁.n), assign_q_and_p(v₂, 𝕁.n))
 end
 
+function (𝕁::PoissonTensor)(qp::QPT)
+    (q = qp.p, p = -qp.q)
+end
+
+Base.:*(𝕁::PoissonTensor, qp::QPT) = 𝕁(qp)
+
 # This assigns the right index for the symplectic potential. To be used with `assign_ones_for_poisson_tensor_kernel!`.
 function map_index_for_poisson_tensor(i::Int, n::Int)
     if i ≤ n
