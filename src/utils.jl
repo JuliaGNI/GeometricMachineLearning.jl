@@ -134,6 +134,22 @@ data3 = (q = rand(5, 4, 2), p = rand(5, 4, 2))
 
 (true, true, true)
 ```
+
+We can also do:
+
+```jldoctest
+using GeometricMachineLearning: QPT, PoissonTensor
+
+𝕁 = PoissonTensor(4)
+qp = (q = [1, 2], p = [3, 4])
+
+𝕁 * qp
+
+# output
+
+(q = [3, 4], p = [-1, -2])
+```
+
 """
 const QPT{T} = NamedTuple{(:q, :p), Tuple{AT, AT}} where {T, AT <: AbstractArray{T}}
 
