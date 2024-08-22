@@ -18,6 +18,7 @@ We forego the precise definition of *closedness* because it would require us to 
 Main.definition(raw"A **Hamiltonian vector field** at ``x\in\mathcal{M}`` corresponding to the function ``H:\mathcal{M}\to\mathbb{R}`` (called **the Hamiltonian**) is a vector field that has the following property:
 " * Main.indentation * raw"```math
 " * Main.indentation * raw"\Omega(X_H, \dot{\gamma}(0)) = \frac{d}{dt}\bigg|_{t = 0}H(\gamma(t)),
+" * Main.indentation * raw"\Omega(X_H, \dot{\gamma}(0)) = \frac{d}{dt}\bigg|_{t = 0}H(\gamma(t)),
 " * Main.indentation * raw"```
 " * Main.indentation * raw"where ``\gamma`` is a ``C^\infty`` curve through ``x``.")
 ```
@@ -55,9 +56,11 @@ We can then reformulate a Hamiltonian vector field as two separate vector fields
 
 The [flow](@ref "The Existence-And-Uniqueness Theorem") of a Hamiltonian ODE has very restrictive properties, the most important one of these is called *symplecticity* [hairer2006geometric](@cite). This property dramatically restricts the dynamically accessible states of the flow map. For a canonical Hamiltonian system symplecticity is defined as follows:
 
+
 ```@eval
 Main.definition(raw"A map ``\phi:\mathbb{R}^{2d}\to\mathbb{R}^{2d}`` is called **symplectic** on ``U\subset\mathbb{R}^{2d}`` if
 " * Main.indentation * raw"```math
+" * Main.indentation * raw"    (\nabla_z\phi)^T\mathbb{J}_{2d}\nabla_z\phi = \mathbb{J}_{2d},
 " * Main.indentation * raw"    (\nabla_z\phi)^T\mathbb{J}_{2d}\nabla_z\phi = \mathbb{J}_{2d},
 " * Main.indentation * raw"```
 " * Main.indentation * raw"for all ``z\in{}U.``")
