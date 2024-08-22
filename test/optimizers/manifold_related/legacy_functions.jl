@@ -5,7 +5,7 @@ These may be useful for testing purposes, but are no longer used in src.
 
 #I might actually not need this!
 function Ω(U::SymplecticStiefelManifold{T}, Δ::AbstractMatrix{T}) where {T} 
-    J_mat = SymplecticPotential(T, size(U,1)÷2)
+    J_mat = PoissonTensor(T, size(U,1)÷2)
     SymplecticLieAlgMatrix(
         Δ*inv(U'*U)*U' + J_mat*U*inv(U'U)*Δ'*(I + J_mat*U*inv(U'*U)*U'*J_mat)*J_mat
     )

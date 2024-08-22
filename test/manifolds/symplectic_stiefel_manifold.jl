@@ -16,7 +16,7 @@ function symplectic_stiefel_manifold_tests(T, N, n)
     global_section_error = LinearAlgebra.norm((inv(S)*U)[vcat(1:(N-n), (N+1):(2*N-n)), :])
     print("ErrGlobalSection",T,": ", global_section_error, "\n")
     
-    J = SymplecticPotential(eltype(U), N)
+    J = PoissonTensor(eltype(U), N)
     Δ = rgrad(U, rand(eltype(U), 2*N, 2*n), J)
     print("error in vector space property", T, ": ", LinearAlgebra.norm(Δ'*J*U + U'*J*Δ), "\n")
     print("error lie algebra lift", T ,": ", LinearAlgebra.norm(Ω(U, Δ)*U - Δ), "\n")

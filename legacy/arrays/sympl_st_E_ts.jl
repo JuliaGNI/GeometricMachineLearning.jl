@@ -1,5 +1,5 @@
 """
-Implements the tangent space of Sp(2n,2N) =: 𝑍 at the point E (defined in "symplectic.jl").
+Implements the tangent space of Sp(2n,2N) =: 𝑍 at the point E (defined in "poisson_tensor.jl").
 This tangent space is defined through Tₑ𝑍 = {Δ:Δ⁺E + E⁺Δ = 0}, where ⁺:Δ ↦ JΔᵀJᵀ is the symplectic conjugation.
 It is also isomorphic to the space 𝔤ʰ (see "symplectic_lie_alg_hor.jl").
 

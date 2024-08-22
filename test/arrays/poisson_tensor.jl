@@ -10,13 +10,13 @@ function test_setup(n2::Int, T::DataType)
     n = n2 ÷ 2
 
     one_mat = Matrix{T}(I(n))
-    @test SymplecticPotential(n2, T) ≈ hcat(vcat(zero(one_mat), -one_mat), vcat(one_mat, zero(one_mat)))
+    @test PoissonTensor(n2, T) ≈ hcat(vcat(zero(one_mat), -one_mat), vcat(one_mat, zero(one_mat)))
 end
 
 function test_application(n2::Int, T::DataType)
     @assert iseven(n2) 
 
-    𝕁 = SymplecticPotential(n2, T)
+    𝕁 = PoissonTensor(n2, T)
     x = rand(T, n2)
     y = rand(T, n2)
 
@@ -26,7 +26,7 @@ end
 function test_application_nt(n2::Int, T::DataType)
     @assert iseven(n2) 
 
-    𝕁 = SymplecticPotential(n2, T)
+    𝕁 = PoissonTensor(n2, T)
     n = n2 ÷ 2
     x = (q = rand(T, n), p = rand(T, n))
     y = (q = rand(T, n), p = rand(T, n))

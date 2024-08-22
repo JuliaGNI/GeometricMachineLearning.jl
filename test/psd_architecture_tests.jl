@@ -33,13 +33,13 @@ function test_symplecticity(N::Integer, n::Integer)
 
     # this matrix should be symplectic
     sympl_mat = jacobian(vec -> psd_decoder(vec), test_vector)[1]
-    @test SymplecticPotential(n) ≈ sympl_mat' * SymplecticPotential(N) * sympl_mat
+    @test PoissonTensor(n) ≈ sympl_mat' * PoissonTensor(N) * sympl_mat
 
     # test if it's still symplectic after computing psd 
     dl = DataLoader(rand(N, 10 * N); autoencoder = true)
     solve!(psd_nn, dl)
     sympl_mat = jacobian(vec -> psd_decoder(vec), test_vector)[1]
-    @test SymplecticPotential(n) ≈ sympl_mat' * SymplecticPotential(N) * sympl_mat
+    @test PoissonTensor(n) ≈ sympl_mat' * PoissonTensor(N) * sympl_mat
 end
 
 function all_tests(N::Integer, n::Integer; kwargs...)

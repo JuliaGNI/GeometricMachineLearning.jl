@@ -46,7 +46,7 @@ We can then reformulate a Hamiltonian vector field as two separate vector fields
 
 ```math
 \begin{aligned}
-    \dot{q} & = \frac{\partial{}H}{\partial{}p} \text{ and } \\
+    \dot{q} & = \frac{\partial{}H}{\partial{}p} \quad\text{and} \\
     \dot{p} & = - \frac{\partial{}H}{\partial{}q}.
 \end{aligned}
 ```
@@ -80,13 +80,13 @@ Main.proof(raw"We proof this statement only for canonical Hamiltonian systems he
 " * Main.indentation * raw"and this expression is zero at ``t=0.`` This computation holds for all points on the domain on which ``H`` is defined and ``\varphi^t`` is symplectic.")
 ```
 
-The discipline of finding numerical approximations of flows ``\varphi^t`` such that these numerical approximations also preserve certain properties of that flow (such as symplecticity) is referred to as *structure-preserving numerical integration* or *geometric numerical integration* [hairer2006geometric](@cite). The julia library `GeometricIntegrators` [Kraus:2020:GeometricIntegrators](@cite) offers a wide array of such geometric numerical integrators for a broad class of systems (not just canonical Hamiltonian systems).
+The discipline of finding numerical approximations of flows ``\varphi^t`` such that these numerical approximations also preserve certain properties of that flow (such as symplecticity) is referred to as *structure-preserving numerical integration* or *geometric numerical integration* [hairer2006geometric](@cite). The `Julia` library `GeometricIntegrators` [Kraus:2020:GeometricIntegrators](@cite) offers a wide array of such geometric numerical integrators for a broad class of systems (not just canonical Hamiltonian systems).
 
-Is is important to note that symplecticity is a very strong property that may not be achievable in some practical applications. If preservation of symplecticity is not achievable, it may however still be advantageous to consider weaker properties such as [volume preservation](@ref "Divergence-Free Vector Fields").
+It is important to note that symplecticity is a very strong property that may not be achievable in some practical applications. If preservation of symplecticity is not achievable, it may however still be advantageous to consider weaker properties such as [volume preservation](@ref "Divergence-Free Vector Fields").
 
 ## References
 ```@docs
-SymplecticPotential
+PoissonTensor
 GeometricMachineLearning.QPT
 GeometricMachineLearning.QPTOAT
 ```

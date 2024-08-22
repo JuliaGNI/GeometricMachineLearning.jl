@@ -13,16 +13,16 @@ add_connection = false
 train_x, train_y = MLDatasets.MNIST(split=:train)[:]
 test_x, test_y = MLDatasets.MNIST(split=:test)[:]
 
-backend = CPU()
+backend = CUDABackend()
 if backend == CUDABackend()
-    global train_x = train_x |> cu,
-    global test_x = test_x |> cu,
-    global train_y = train_y |> cu,
+    global train_x = train_x |> cu
+    global test_x = test_x |> cu
+    global train_y = train_y |> cu
     global test_y = test_y |> cu
 end
 
-dl = DataLoader(train_x, train_y, patch_length = patch_length)
-dl_test = DataLoader(test_x, test_y, patch_length = patch_length)
+dl = DataLoader(train_x, train_y; patch_length = patch_length)
+dl_test = DataLoader(test_x, test_y; patch_length = patch_length)
 const T = eltype(dl)
 
 # the difference between the first and the second model is that we put the weights on the Stiefel manifold in the second case
@@ -60,8 +60,8 @@ function transformer_training(Ψᵉ::GeometricMachineLearning.Architecture; n_ep
     loss_array, nn, total_time, accuracy_score
 end
 
-loss_array1, nn1, total_time1, accuracy_score1 = transformer_training(model1; n_epochs=n_epochs)
 loss_array2, nn2, total_time2, accuracy_score2 = transformer_training(model2; n_epochs=n_epochs)
+loss_array1, nn1, total_time1, accuracy_score1 = transformer_training(model1; n_epochs=n_epochs)
 loss_array3, nn3, total_time3, accuracy_score3 = transformer_training(model2; n_epochs=n_epochs, opt=GradientOptimizer(T(0.001)))
 loss_array4, nn4, total_time4, accuracy_score4 = transformer_training(model2; n_epochs=n_epochs, opt=MomentumOptimizer(T(0.001), T(0.5)))
 
