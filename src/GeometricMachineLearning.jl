@@ -19,7 +19,7 @@ module GeometricMachineLearning
     using TimerOutputs
     using LazyArrays
 
-    import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer, AbstractExplicitCell, AbstractNeuralNetwork , NeuralNetwork
+    import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer, AbstractExplicitCell, AbstractNeuralNetwork , NeuralNetwork, UnknownArchitecture
     import AbstractNeuralNetworks: Chain, GridCell
     import AbstractNeuralNetworks: Dense, Linear, Recurrent
     import AbstractNeuralNetworks: IdentityActivation, ZeroVector

@@ -83,7 +83,7 @@ ax1 = make_axis(1)
 ax2 = make_axis(2)
 ax3 = make_axis(3)
 
-px_per_unit = output_type == :html ? 1 : 2
+px_per_unit = Main.output_type == :html ? 1 : 2
 add_on = theme == :dark ? "_dark" : ""
 save(plot_name * add_on * ".png", fig; px_per_unit = px_per_unit)
 end

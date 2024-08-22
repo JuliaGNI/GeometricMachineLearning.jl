@@ -70,11 +70,10 @@ Main.theorem(raw"Consider a full-order model on ``\mathbb{R}^N`` described by th
 ```@eval
 Main.proof(raw"If we take as test function ``\tilde{\psi}_i = (\nabla\Psi^\mathrm{dec})e_i`` we get:
 " * Main.indentation * raw"```math
-" * Main.indentation * raw"    (\Psi^\mathrm{dec}(e_i))^TX(\Psi^\mathrm{dec}(u(t))) \overset{!}{=} (\Psi^\mathrm{dec}(e_i))^T(\nabla\Psi^\mathrm{dec})u'(t) = e_i^Tu'(t),
+" * Main.indentation * raw"    e_i^T(\Psi^\mathrm{dec})^+X(\Psi^\mathrm{dec}(u(t))) \overset{!}{=} e_i^T(\Psi^\mathrm{dec})^+(\nabla\Psi^\mathrm{dec})u'(t) = e_i^Tu'(t),
 " * Main.indentation * raw"```
 " * Main.indentation * raw"and since this must be true for every ``i = 1, \ldots, n`` we obtain the desired expression for the reduced vector field.")
 ```
-
 
 Both POD and standard autoencoders suffer from the problem that they completely neglect the structure of the differential equation and the data they are applied to. This can have grave consequences [peng2016symplectic, tyranowski2023symplectic, buchfink2023symplectic](@cite). [Hamiltonian model order reduction](@ref "Hamiltonian Model Order Reduction") can improve the approximation significantly in these situations.
 

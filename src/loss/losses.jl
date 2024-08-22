@@ -153,14 +153,13 @@ This should be used together with a neural network of type [`NeuralNetworkIntegr
 using GeometricMachineLearning
 using LinearAlgebra: norm
 import Random
+Random.seed!(123)
 
 const d = 2
-
-Random.seed!(123)
 arch = GSympNet(d)
 nn = NeuralNetwork(arch)
 
-input_vec = [1., 2.]
+input_vec =  [1., 2.]
 output_vec = [3., 4.]
 loss = FeedForwardLoss()
 
