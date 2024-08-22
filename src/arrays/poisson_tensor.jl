@@ -2,12 +2,12 @@
 @doc raw"""
     PoissonTensor(n2)
 
-Returns a (canonical) Poisson tensor of size ``2n\times2n``.
+Returns a (canonical) Poisson tensor of size ``2n\times2n``:
 
 ```math
-\begin{pmatrix}
-\mathbb{O} & \mathbb{O} \\
-\mathbb{I} & -\mathbb{I} \\
+\mathbb{J}_{2n} = \begin{pmatrix}
+\mathbb{O} & \mathbb{I}_n \\
+-\mathbb{I}_n & \mathbb{O} \\
 \end{pmatrix}
 ```
 
