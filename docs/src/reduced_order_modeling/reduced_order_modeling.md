@@ -7,7 +7,7 @@ For this consider a PPDE written in the form: ``F(z(\mu);\mu)=0`` where ``z(\mu)
 In modeling any PDE we have to choose a discretization (particle discretization, finite element method, ...) of ``V`` which will be denoted by ``V_h \simeq \mathbb{R}^N``. The space ``V_h`` is not infinite-dimensional but its dimension ``N`` is still very large. Solving a discretized PDE in this space is typically very expensive. In reduced order modeling we utilize the fact that slightly different choices of parameters ``\mu`` will give qualitatively similar solutions. We can therefore perform a few simulations in the full space ``V_h`` and then make successive simulations cheaper by *learning* from the past simulations:
 
 ```@example
-Main.include_graphics("reduced_order_modeling_idea"; width=.9, caption = "Schematic representation of a reduced order modeling framework. The width of the individual blocks represent how long it takes to perform a simulation.")
+Main.include_graphics("../tikz/reduced_order_modeling_idea"; width=.9, caption = "Schematic representation of a reduced order modeling framework. The width of the individual blocks represent how long it takes to perform a simulation.")
 ```
 
 In the figure above we refer to the discretized PDE as the *full order model* (FOM) and to the cheaper representation (that we construct in a data-driven manner) as the *reduced order model* (ROM). We now introduce the *solution manifold*, which is a crucial concept in reduced order modeling.
