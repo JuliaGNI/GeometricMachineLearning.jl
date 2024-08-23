@@ -169,6 +169,7 @@ _special_arrays = "Special Arrays and AD" => [
 _structure_preservation = "Structure-Preservation" => [
     "Symplecticity" => "structure_preservation/symplecticity.md",
     "Volume-Preservation" => "structure_preservation/volume_preservation.md",
+    "Structure-Preserving Neural Networks" => "structure_preservation/structure_preserving_neural_networks.md",
 ]
 
 optimizer_name = output_type == :html ? "Optimizer" : "Optimizer Framework"
