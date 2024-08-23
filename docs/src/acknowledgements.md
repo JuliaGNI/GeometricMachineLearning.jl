@@ -12,7 +12,7 @@ At this point I want to acknowledge several people who helped me professionally 
 
 I am also very grateful to Eric Sonnendrücker, the head of our department, who gave me many opportunities to present my work at international conferences which in turn enabled me to meet new people (very often the faces behind the papers I read) and exchange ideas.
 
-On a more personal note I want to thank my parents for their patience, understanding and relentless encouragement; I often think back to my father telling me: "Irgendwie geht's immer."
+On a more personal note I want to thank my parents for their patience, understanding and relentless encouragement; I often think back to them telling me: "Irgendwie geht's immer."
 
 Lastly I want to thank Lejie for her love and support, remarks that very often helped me organize thoughts in my head, and her extreme understanding when I opened my laptop for the umpteenth time for a late-night programming session.
 
