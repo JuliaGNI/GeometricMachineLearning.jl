@@ -244,7 +244,7 @@ Because ``SO(N)`` is compact and we furnish it with the canonical metric, i.e.
     g:T_AG\times{}T_AG \to \mathbb{R}, (B_1, B_2) \mapsto \mathrm{Tr}(B_1^TB_2) = \mathrm{Tr}((B_1A^{-1})^T(B_2A^{-1})),
 ```
 
-its geodesics are thus equivalent to the exponential maps. We now use this observation to obtain expression for the geodesics on the [Stiefel manifold](@ref "The Stiefel Manifold") ``St(n, N)``. We use the following theorem from [o1983semi; Proposition 25.7](@cite):
+its geodesics are thus equivalent to the exponential maps. We now use this observation to obtain expression for the geodesics on the [Stiefel manifold](@ref "The Stiefel Manifold"). We use the following theorem from [o1983semi; Proposition 25.7](@cite):
 
 ```@eval
 Main.theorem(raw"The geodesics for a naturally-reductive homogeneous space ``\mathcal{M}`` starting at ``Y`` are given by:
