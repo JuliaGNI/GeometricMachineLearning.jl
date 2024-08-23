@@ -12,20 +12,20 @@ See [`FeedForwardLoss`](@ref), [`TransformerLoss`](@ref), [`AutoEncoderLoss`](@r
 """
 abstract type NetworkLoss end 
 
-function (loss::NetworkLoss)(nn::NeuralNetwork, input::CT, output::CT) where {AT<:AbstractArray, BT <: NamedTuple{(:q, :p), Tuple{AT, AT}}, CT <: Union{AT, BT}}
+function (loss::NetworkLoss)(nn::NeuralNetwork, input::QPTOAT, output::QPT)
     loss(nn.model, nn.params, input, output)
 end
 
-function _compute_loss(output_prediction::CT1, output::CT2) where {AT<:AbstractArray, BT <: NamedTuple{(:q, :p), Tuple{AT, AT}}, CT <: Union{AT, BT}, CT1 <: CT, CT2 <: CT}
+function _compute_loss(output_prediction::QPTOAT, output::QPTOAT)
     _norm(_diff(output_prediction, output)) / _norm(output)
 end 
 
-function _compute_loss(model::Union{AbstractExplicitLayer, Chain}, ps::Union{Tuple, NamedTuple}, input::CT, output::CT) where {CT <: QPTOAT}
+function _compute_loss(model::Union{AbstractExplicitLayer, Chain}, ps::Union{Tuple, NamedTuple}, input::QPTOAT, output::QPTOAT)
     output_prediction = model(input, ps)
     _compute_loss(output_prediction, output)
 end
 
-function (loss::NetworkLoss)(model::Union{Chain, AbstractExplicitLayer}, ps::Union{Tuple, NamedTuple}, input::CT, output::CT) where {CT <: QPTOAT}
+function (loss::NetworkLoss)(model::Union{Chain, AbstractExplicitLayer}, ps::Union{Tuple, NamedTuple}, input::QPTOAT, output::QPTOAT)
     _compute_loss(model, ps, input, output)
 end
 
