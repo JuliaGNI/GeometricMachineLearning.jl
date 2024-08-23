@@ -1,13 +1,13 @@
 # Retractions
 
-In practice we usually do not solve the geodesic equation exactly in each optimization step (even though this is possible and computationally feasible), but prefer approximations that are called "retractions" [absil2008optimization](@cite) for stability. The definition of a retraction in `GeometricMachineLearning` is slightly different from how it is usually defined in textbooks [absil2008optimization, hairer2006geometric](@cite). We discuss these differences here.
+In practice we usually do not solve the geodesic equation exactly in each optimization step (even though this is possible and computationally feasible), but prefer approximations that are called "retractions" [absil2008optimization](@cite) for numerical stability. The definition of a retraction in `GeometricMachineLearning` is slightly different from how it is usually defined in textbooks [absil2008optimization, hairer2006geometric](@cite). We discuss these differences here.
 
 ## Classical Retractions
 
 By "classical retraction" we here mean the textbook definition. 
 
 ```@eval
-Main.theorem(raw"A **classical retraction** is a smooth map
+Main.definition(raw"A **classical retraction** is a smooth map
 " * Main.indentation * raw"```math 
 " * Main.indentation * raw"R: T\mathcal{M}\to\mathcal{M}:(x,v)\mapsto{}R_x(v),
 " * Main.indentation * raw"```
@@ -17,18 +17,39 @@ Main.theorem(raw"A **classical retraction** is a smooth map
 ")
 ```
 
-Perhaps the most common example for matrix manifolds is the *Cayley retraction*:
+Perhaps the most common example for matrix manifolds is the *Cayley retraction*. It is a retraction for many matrix Lie groups [hairer2006geometric, bendokat2021real](@cite).
 
 ```@eval
-Main.example(raw"The **Cayley retraction** is defined as
+Main.example(raw"The **Cayley retraction** for ``V\in{}T_\mathbb{I}G\equiv\mathfrak{g}`` is defined as
 " * Main.indentation * raw"```math
-" * Main.indentation * raw"\mathrm{Cayley}(V_x) = \left(\mathbb{I} - \frac{1}{2}V_x\right)^{-1}\left(\mathbb{I} +\frac{1}{2}V_x\right).
+" * Main.indentation * raw"\mathrm{Cayley}(V) = \left(\mathbb{I} - \frac{1}{2}V\right)^{-1}\left(\mathbb{I} +\frac{1}{2}V\right).
 " * Main.indentation * raw"```")
 ```
 
-We should mention that the factor ``\frac{1}{2}`` is sometimes left out in the definition of the Cayley transform when used in different contexts. But it is necessary for defining a retraction. 
+We show that the Cayley transform is a retraction for ``G = SO(N)`` at ``\mathbb{I}\in{}SO(N)``:
+```@eval
+Main.proof(raw"The Cayley transform trivially satisfies ``\mathrm{Cayley}(\mathbb{O}) = \mathbb{I}``. So what we have to show is the second condition for a retraction and that ``\mathrm{Cayley}(V)\in{}SO(N)``. For this take ``V\in\mathfrak{so}(N).`` We then have
+" * Main.indentation * raw"```math
+" * Main.indentation * raw"\frac{d}{dt}\bigg|_{t = 0}\mathrm{Cayley}(tV) = \frac{d}{dt}\bigg|_{t = 0}\left(\mathbb{I} - \frac{1}{2}tV\right)^{-1}\left(\mathbb{I} +\frac{1}{2}tV\right) = \frac{1}{2}V - \frac{1}{2}V^T = V,
+" * Main.indentation * raw"```
+" * Main.indentation * raw"which satisfies the second condition. We further have
+" * Main.indentation * raw"```math
+" * Main.indentation * raw"\frac{d}{dt}\bigg|_{t = 0}(\mathrm{Cayley}(tV))^T\mathrm{Cayley}(tV) = (\frac{1}{2}V - \frac{1}{2}V^T)^T + \frac{1}{2}V - \frac{1}{2}V^T = 0.
+" * Main.indentation * raw"```
+" * Main.indentation * raw"This proofs that the Cayley transform maps to ``SO(N)``.")
+```
 
-We want to compare the [`geodesic`](@ref) retraction with the [`cayley`](@ref) retraction for the example we already introduced when talking about the [exponential map](@ref "Geodesic Sprays and the Exponential Map"):
+We should mention that the factor ``\frac{1}{2}`` is sometimes left out in the definition of the Cayley transform when used in different contexts. But it is necessary for defining a retraction as without it the second condition is not satisfied.
+
+```@eval
+Main.remark(raw"We can also use the Cayley retraction at a different point than the identity ``\mathbb{I}.`` For this consider ``A\in{}SO(N)`` and ``B\in{}T_ASO(N) = \{B\in\mathbb{R}^{N\times{}N}: A^TB + B^TA = \mathbb{O}\}``. We then have ``A^TB\in\mathfrak{so}(N)`` and 
+" * Main.indentation * raw"```math
+" * Main.indentation * raw"    \overline{\mathrm{Cayley}}: T_ASO(N) \to SO(N), B \mapsto A\mathrm{Cayley}(A^TB),
+" * Main.indentation * raw"```
+" * Main.indentation * raw"is a retraction ``\forall{}A\in{}SO(N)``.")
+```
+
+As a retraction is always an approximation of the geodesic map, we now compare the [`cayley`](@ref) retraction for the example we introduced along [Riemannian manifolds](@ref "Geodesic Sprays and the Exponential Map"):
 
 ```@setup s2_retraction
 using GLMakie
@@ -78,7 +99,7 @@ function do_setup(; theme=:light)
 
     morange = RGBf(255 / 256, 127 / 256, 14 / 256) # hide
     point_vec = ([Y[1]], [Y[2]], [Y[3]])
-    scatter!(ax, point_vec...; color = morange, marker = :star5)
+    scatter!(ax, point_vec...; color = morange, marker = :star5, markersize = 30)
 
     fig, ax, point_vec
 end
@@ -90,12 +111,15 @@ nothing
 ```
 
 ```@example s2_retraction
-η_increments = 0.1 : 0.1 : 5.5
+η_increments = 0.2 : 0.2 : 5.4
 Δ_increments = [Δ * η for η in η_increments]
 
 Y_increments_geodesic = [geodesic(Y, Δ_increment) for Δ_increment in Δ_increments]
 Y_increments_cayley = [cayley(Y, Δ_increment) for Δ_increment in Δ_increments]
- # hide
+nothing # hide
+```
+
+```@setup s2_retraction
 function make_plot(; theme=:light) # hide
 
 text_color = theme == :light ? :black : :white # hide
@@ -117,14 +141,15 @@ for (Y_increment_geodesic, Y_increment_cayley, i) in zip_ob
 end
 
 scatter!(ax, Y_geodesic_reshaped...; 
-        color = mred, label = rich("geodesic retraction"; color = text_color))
+        color = mred, label = rich("geodesic retraction"; color = text_color), markersize = 15)
 
 scatter!(ax, Y_cayley_reshaped...; 
-        color = mblue, label = rich("Cayley retraction"; color = text_color))
+        color = mblue, label = rich("Cayley retraction"; color = text_color), markersize = 15)
 
 arrow_vec = ([Δ[1]], [Δ[2]], [Δ[3]]) # hide
 arrows!(ax, point_vec..., arrow_vec...; color = mred, linewidth = .02) # hide
-axislegend(; position = (.82, .75), backgroundcolor = :transparent, color = text_color) # hide
+backgroundcolor = theme == :light ? :white : :transparent
+axislegend(; position = (.82, .75), backgroundcolor = backgroundcolor, color = text_color) # hide
 
 fig, ax, zip_ob, Y_increments_geodesic, Y_increments_cayley # hide
 end # hide
@@ -135,10 +160,14 @@ fig_dark = make_plot(; theme = :dark)[1] # hide
 save("retraction_comparison.png",        alpha_colorbuffer(fig_light)) # hide
 save("retraction_comparison_dark.png",   alpha_colorbuffer(fig_dark)) # hide
 
+nothing
+```
+
+```@example
 Main.include_graphics("retraction_comparison"; caption = raw"Comparison between the geodesic and the Cayley retraction.", width = .8) # hide
 ```
 
-We see that for small ``\Delta`` increments the Cayley retraction seems to match the geodesic retraction very well, but for larger values there is a notable discrepancy:
+We see that for small ``\Delta`` increments the Cayley retraction seems to match the geodesic retraction very well, but for larger values there is a notable discrepancy. We can plot this discrepancy directly: 
 
 ```@setup s2_retraction
 using CairoMakie
@@ -162,17 +191,14 @@ end
 ```
 
 ```@example s2_retraction
-using LinearAlgebra: norm
-
+using LinearAlgebra: norm # hide
+zip_ob = zip(Y_increments_geodesic, Y_increments_cayley, axes(Y_increments_geodesic, 1))
 _, __, zip_ob, Y_increments_geodesic, Y_increments_cayley = make_plot() # hide
 discrepancies = [norm(Y_geo_inc - Y_cay_inc) for (Y_geo_inc, Y_cay_inc, _) in zip_ob]
-
 fig_light = plot_discrepancies(discrepancies; theme = :light)[1] # hide
 fig_dark = plot_discrepancies(discrepancies; theme = :dark)[1] # hide
-
 save("retraction_discrepancy.png",        fig_light; px_per_unit = 1.3) # hide
 save("retraction_discrepancy_dark.png",   fig_dark; px_per_unit = 1.3) # hide
-
 Main.include_graphics("retraction_discrepancy"; caption = raw"Discrepancy between the geodesic and the Cayley retraction.", width = .6) # hide
 ```
 
@@ -180,17 +206,17 @@ Main.include_graphics("retraction_discrepancy"; caption = raw"Discrepancy betwee
 
 The way we use *retractions*[^1] in `GeometricMachineLearning` is slightly different from their classical definition:
 
-[^1]: Classical retractions are also defined in `GeometricMachineLearning` under the same name, i.e. there is e.g. a method [`cayley(::StiefelLieAlgHorMatrix)`](@ref) and a method [`cayley(::StiefelManifold, ::AbstractMatrix)`](@ref) (the latter being the classical retraction); but the user is *strongly discouraged* from using classical retractions as these are computational inefficient.
+[^1]: Classical retractions are also defined in `GeometricMachineLearning` under the same name, i.e. there is e.g. a method [`cayley(::StiefelLieAlgHorMatrix)`](@ref) and a method [`cayley(::StiefelManifold, ::AbstractMatrix)`](@ref) (the latter being the classical retraction); but the user is *strongly discouraged* from using classical retractions as these are computationally inefficient.
 
 ```@eval
-Main.definition(raw"Given a section ``\lambda:\mathcal{M}\to{}G`` a **retraction** is a map ``\mathrm{Retraction}:\mathfrak{g}^\mathrm{hor}\to{}G`` such that 
+Main.definition(raw"Given a section ``\lambda:\mathcal{M}\to{}G,`` where ``\mathcal{M}`` is a homogeneous space, a **retraction** is a map ``\mathrm{Retraction}:\mathfrak{g}^\mathrm{hor}\to{}G`` such that 
 " * Main.indentation * raw"```math
 " * Main.indentation * raw"\Delta \mapsto \lambda(Y)\mathrm{Retraction}(\lambda(Y)^{-1}\Omega(\Delta)\lambda(Y))E,
 " * Main.indentation * raw"```
 " * Main.indentation * raw"is a classical retraction.")
 ```
 
-We now discuss how two of these retractions, the geodesic retraction (exponential map) and the Cayley retraction, are implemented in `GeometricMachineLearning`.
+This map ``\mathrm{Retraction}`` is also what was visualized in the figure on [the general optimization framework](@ref "Generalization to Homogeneous Spaces"). We now discuss how the geodesic retraction (exponential map) and the Cayley retraction are implemented in `GeometricMachineLearning`.
 
 ## Retractions for Homogeneous Spaces
 
@@ -201,9 +227,15 @@ The *geodesic retraction* is a retraction whose associated curve is also the uni
 ```@eval
 Main.theorem(raw"The geodesic on a compact matrix Lie group ``G`` with bi-invariant metric for ``B\in{}T_AG`` is simply
 " * Main.indentation * raw"```math
-" * Main.indentation * raw"\gamma(t) = \exp(t\cdot{}BA^{-1})A,
+" * Main.indentation * raw"\gamma(t) = \exp(t\cdot{}BA^{-1})A = A\exp(t\cdot{}A^-1B^n),
 " * Main.indentation * raw"```
-" * Main.indentation * raw"where ``\exp:\mathcal{g}\to{}G`` is the matrix exponential map.")
+" * Main.indentation * raw"where ``\exp:\mathfrak{g}\to{}G`` is the matrix exponential map.")
+```
+
+The last equality in the equation above is a result of:
+
+```math
+\exp(A^{-1}\hat{B}A) = \sum_{k=1}^\infty\frac{1}{k!}(A^{-1}\hat{B}A)^k = \sum_{k=1}^\infty \frac{1}{k!}\underbrace{(A^{-1}\hat{B}A)\cdots(A^{-1}\hat{B}A)}{\text{$k$ times}} = \sum_{k=1}^\infty \frac{1}{k!} A^{-1} \hat{B}^k A = A^{-1}\exp(\hat{B})A.
 ```
 
 Because ``SO(N)`` is compact and we furnish it with the canonical metric, i.e. 
