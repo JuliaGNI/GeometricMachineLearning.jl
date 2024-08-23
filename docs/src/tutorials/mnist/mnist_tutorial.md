@@ -101,8 +101,8 @@ nothing # hide
 And with this we can finally perform the training:
 
 ```julia
-loss_array1 = opt1(nn1, dl, batch, n_epochs, GeometricMachineLearning.ClassificationTransformerLoss())
-loss_array2 = opt2(nn2, dl, batch, n_epochs, GeometricMachineLearning.ClassificationTransformerLoss())
+loss_array1 = opt1(nn1, dl, batch, n_epochs, FeedForwardLoss())
+loss_array2 = opt2(nn2, dl, batch, n_epochs, FeedForwardLoss())
 ```
 
 We furthermore optimize the second model (with weights on the manifold) with the [`GradientOptimizer`](@ref) and the [`MomentumOptimizer`](@ref):
@@ -118,8 +118,8 @@ nothing # hide
 ```
 
 ```julia
-loss_array3 = opt3(nn3, dl, batch, n_epochs, GeometricMachineLearning.ClassificationTransformerLoss())
-loss_array4 = opt4(nn4, dl, batch, n_epochs, GeometricMachineLearning.ClassificationTransformerLoss())
+loss_array3 = opt3(nn3, dl, batch, n_epochs, FeedForwardLoss())
+loss_array4 = opt4(nn4, dl, batch, n_epochs, FeedForwardLoss())
 ```
 
 And we get the following result:
