@@ -24,7 +24,7 @@ An element of GrassmannLieAlgMatrix takes the form:
 \bar{\mathbb{O}} & B^T \\ B & \mathbb{O}
 \end{pmatrix},
 ```
-where ``\bar{\mathbb{O}}\in\mathbb{R}^{n\times{}n}`` and ``\mathbb{O}\in\mathbb{R}^{(N - n)\times{}n}.``
+where ``\bar{\mathbb{O}}\in\mathbb{R}^{n\times{}n}`` and ``\mathbb{O}\in\mathbb{R}^{(N - n)\times(N-n)}.``
 """
 mutable struct GrassmannLieAlgHorMatrix{T, ST <: AbstractMatrix{T}} <: AbstractLieAlgHorMatrix{T}
     B::ST

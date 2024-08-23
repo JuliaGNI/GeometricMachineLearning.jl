@@ -53,7 +53,7 @@ Random.seed!(123)
 arch = StandardTransformerIntegrator(d)
 nn = NeuralNetwork(arch)
 
-input_mat = [1. 2. 3.; 4. 5. 6.]
+input_mat =  [1. 2. 3.; 4. 5. 6.]
 output_mat = [1. 2.; 3. 4.]
 loss = TransformerLoss(seq_length, prediction_window)
 
@@ -106,30 +106,24 @@ function (loss::TransformerLoss)(model::Union{Chain, AbstractExplicitLayer}, ps:
     loss(model, ps, reshape(input, size(input)..., 1), reshape(output, size(output)..., 1))
 end
 
-@doc raw"""
-    ClassificationTransformerLoss()
-
-Make an instance of `ClassificationTransformerLoss`.
-
-This is to be used together with a [`ClassificationTransformer`](@ref) for image classification.
-
-It takes an input, parses it to the transformer and then crops it to conform with the desired output size.
-
-Suppose the input is of dimension ``\mathtt{td}\times\mathtt{sl}``, where `td` is *transformer dimension and `sl` is sequence length.
-The output of the transformer will again be of the same dimension: 
-
-```math
-\mathrm{output}\in\mathbb{R}^{`\mathtt{td}\times\mathtt{sl}},
-```
-
-or 
-
-```math
-\mathrm{output}\in\mathbb{R}^{`\mathtt{cd}\times\mathtt{sl}},
-```
-
-if the output dimension `cl` of the [`ClassificationLayer`](@ref) is differnt form `td`.
-"""
+# @doc raw"""
+#     ClassificationTransformerLoss()
+# 
+# Make an instance of `ClassificationTransformerLoss`.
+# 
+# This is to be used together with a [`ClassificationTransformer`](@ref).
+# 
+# It takes an input, parses it to the transformer and then crops it to conform with the desired output size.
+# 
+# Suppose the input is of dimension ``\mathtt{td}\times\mathtt{sl}``, where `td` is *transformer dimension* and `sl` is *sequence length*.
+# The output of the transformer will again be of the same dimension: 
+# 
+# ```math
+# \mathrm{output}\in\mathbb{R}^{\mathtt{td}\times\mathtt{sl}}.
+# ```
+# 
+# if the output dimension `cl` of the [`ClassificationLayer`](@ref) is differnt form `td`.
+# """
 struct ClassificationTransformerLoss <: NetworkLoss end
 
 function (loss::ClassificationTransformerLoss)(model::Union{Chain, AbstractExplicitLayer}, ps::Union{Tuple, NamedTuple}, input::AbstractArray, output::AbstractArray)
@@ -198,19 +192,17 @@ This loss should always be used together with a neural network of type [`AutoEnc
 using GeometricMachineLearning
 using LinearAlgebra: norm
 import Random
+Random.seed!(123)
 
 const N = 4
 const n = 1
-
-Random.seed!(123)
 arch = SymplecticAutoencoder(2*N, 2*n)
 nn = NeuralNetwork(arch)
 
-input_vec = [1., 2., 3., 4., 5., 6., 7., 8.]
-output_vec = [9., 10., 11., 12., 13., 14., 15., 16.]
+input_vec =  [1., 2., 3., 4., 5., 6., 7., 8.]
 loss = AutoEncoderLoss()
 
-loss(nn, input_vec, output_vec) ≈ norm(output_vec - nn(input_vec)) / norm(output_vec)
+loss(nn, input_vec) ≈ norm(input_vec - nn(input_vec)) / norm(input_vec)
 
 # output
 
@@ -220,7 +212,7 @@ true
 So `AutoEncoderLoss` simply does:
 
 ```math
-    \mathtt{loss}(\mathcal{NN}, \mathtt{input}, \mathtt{output}) = || \mathcal{NN}(\mathtt{input}) - \mathtt{output} || / || \mathtt{output} ||,
+    \mathtt{loss}(\mathcal{NN}, \mathtt{input}) = || \mathcal{NN}(\mathtt{input}) - \mathtt{input} || / || \mathtt{input} ||,
 ```
 where ``||\cdot||`` is the ``L_2`` norm. 
 

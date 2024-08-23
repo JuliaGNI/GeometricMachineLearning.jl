@@ -1,4 +1,8 @@
 @doc raw"""
+    PSDArch <: SymplecticCompression
+
+`PSDArch` is the architecture that corresponds to [`PSDLayer`](@ref). 
+
 ## The architecture 
 
 Proper symplectic decomposition (PSD) can be seen as a [`SymplecticAutoencoder`](@ref) for which the decoder and the encoder are both PSD-like matrices (see the docs for [`PSDLayer`](@ref). 
@@ -43,7 +47,11 @@ function decoder_layers_from_iteration(arch::PSDArch, decoder_iterations::Abstra
 end
 
 @doc raw"""
-[PSDArch](@ref) does not require neural network training since it is a strictly linear operation that can be solved with singular value decomposition (SVD).
+    solve!(nn::NeuralNetwork{<:PSDArch}, input)
+
+Solve the cotangent lift problem for an input.
+
+[`PSDArch`](@ref) does not require neural network training since it is a strictly linear operation that can be solved with singular value decomposition (SVD).
 """
 function solve!(nn::NeuralNetwork{<:PSDArch}, input::AbstractMatrix)
     half_of_dimension_in_big_space = nn.architecture.full_dim ÷ 2
