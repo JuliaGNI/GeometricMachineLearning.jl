@@ -28,7 +28,7 @@ function test_optimization_with_adam(;T=Float32, dim₁=6, dim₂=6, n_images=10
 
     ps = initialparameters(model, CPU(), Float32)
 
-    loss = GeometricMachineLearning.ClassificationTransformerLoss()
+    loss = FeedForwardLoss()
 
     loss₁ = loss(model, ps, dl.input, dl.output)
 

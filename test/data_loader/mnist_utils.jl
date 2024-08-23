@@ -65,7 +65,7 @@ function test_optimizer_for_classification_layer(; dim₁=28, dim₂=28, number_
     model = ClassificationLayer(patch_length * patch_length, 10, activation_function)
 
     ps = initialparameters(model, CPU(), T)   
-    loss = GeometricMachineLearning.ClassificationTransformerLoss()
+    loss = FeedForwardLoss()
     loss_dl(model::GeometricMachineLearning.AbstractExplicitLayer, ps::Union{Tuple, NamedTuple}, dl::DataLoader) = loss(model, ps, dl.input, dl.output)
     loss₁ = loss_dl(model, ps, dl)
 

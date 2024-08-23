@@ -48,7 +48,6 @@ GeometricMachineLearning.NetworkLoss
 FeedForwardLoss
 TransformerLoss
 AutoEncoderLoss
-GeometricMachineLearning.ClassificationTransformerLoss
 ReducedLoss
 projection_error
 reduction_error
