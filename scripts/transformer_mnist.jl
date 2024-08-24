@@ -50,7 +50,7 @@ function transformer_training(Ψᵉ::GeometricMachineLearning.Architecture; n_ep
     init_time = time()
     total_time = init_time - time()
 
-    loss_array = optimizer_instance(nn, dl, batch, n_epochs, GeometricMachineLearning.ClassificationTransformerLoss())
+    loss_array = optimizer_instance(nn, dl, batch, n_epochs, FeedForwardLoss())
 
     total_time = init_time - time()
 

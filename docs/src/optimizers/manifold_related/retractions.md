@@ -235,7 +235,9 @@ Main.theorem(raw"The geodesic on a compact matrix Lie group ``G`` with bi-invari
 The last equality in the equation above is a result of:
 
 ```math
-\exp(A^{-1}\hat{B}A) = \sum_{k=1}^\infty\frac{1}{k!}(A^{-1}\hat{B}A)^k = \sum_{k=1}^\infty \frac{1}{k!}\underbrace{(A^{-1}\hat{B}A)\cdots(A^{-1}\hat{B}A)}{\text{$k$ times}} = \sum_{k=1}^\infty \frac{1}{k!} A^{-1} \hat{B}^k A = A^{-1}\exp(\hat{B})A.
+\begin{aligned}
+\exp(A^{-1}\hat{B}A) = \sum_{k=1}^\infty\frac{1}{k!}(A^{-1}\hat{B}A)^k & = \sum_{k=1}^\infty \frac{1}{k!}\underbrace{(A^{-1}\hat{B}A)\cdots(A^{-1}\hat{B}A)}{\text{$k$ times}} \\ & = \sum_{k=1}^\infty \frac{1}{k!} A^{-1} \hat{B}^k A = A^{-1}\exp(\hat{B})A.
+\end{aligned}
 ```
 
 Because ``SO(N)`` is compact and we furnish it with the canonical metric, i.e. 

@@ -12,7 +12,7 @@ See [`FeedForwardLoss`](@ref), [`TransformerLoss`](@ref), [`AutoEncoderLoss`](@r
 """
 abstract type NetworkLoss end 
 
-function (loss::NetworkLoss)(nn::NeuralNetwork, input::QPTOAT, output::QPT)
+function (loss::NetworkLoss)(nn::NeuralNetwork, input::QPTOAT, output::QPTOAT)
     loss(nn.model, nn.params, input, output)
 end
 
@@ -93,7 +93,7 @@ end
 function (loss::TransformerLoss)(model::Union{Chain, AbstractExplicitLayer}, ps::Union{Tuple, NamedTuple}, input::AT, output::AT) where {T, AT <: AbstractArray{T, 3}}
     input_dim, input_seq_length = size(input)
     output_dim, output_prediction_window = size(output)
-    @assert input_dim == output_dim 
+    @assert input_dim == output_dim
     @assert input_seq_length == loss.seq_length
     @assert output_prediction_window == loss.prediction_window
 
@@ -245,16 +245,16 @@ This loss should be used together with a [`NeuralNetworkIntegrator`](@ref) or [`
 using GeometricMachineLearning
 using LinearAlgebra: norm
 import Random
+Random.seed!(123)
 
 const N = 4
 const n = 1
 
-Random.seed!(123)
 Ψᵉ = NeuralNetwork(Chain(Dense(N, n), Dense(n, n))) |> encoder
 Ψᵈ = NeuralNetwork(Chain(Dense(n, n), Dense(n, N))) |> decoder
 transformer = NeuralNetwork(StandardTransformerIntegrator(n))
 
-input_mat = [1. 2.; 3. 4.; 5. 6.; 7. 8.]
+input_mat =  [1.  2.;  3.  4.;  5.  6.;  7.  8.]
 output_mat = [9. 10.; 11. 12.; 13. 14.; 15. 16.]
 loss = ReducedLoss(Ψᵉ, Ψᵈ)
 
