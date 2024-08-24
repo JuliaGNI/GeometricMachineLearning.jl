@@ -243,10 +243,10 @@ The last equality in the equation above is a result of:
 Because ``SO(N)`` is compact and we furnish it with the canonical metric, i.e. 
 
 ```math
-    g:T_\bar{A}G\times{}T_{\bar{A}}G \to \mathbb{R}, (B_1, B_2) \mapsto \mathrm{Tr}(B_1^TB_2) = \mathrm{Tr}((B_1\bar{A}^{-1})^T(B_2\bar{A}^{-1})),
+    g:T_{\bar{A}}G\times{}T_{\bar{A}}G \to \mathbb{R}, (B_1, B_2) \mapsto \mathrm{Tr}(B_1^TB_2) = \mathrm{Tr}((B_1\bar{A}^{-1})^T(B_2\bar{A}^{-1})),
 ```
 
-its geodesics are thus equivalent to the exponential maps. We now use this observation to obtain expression for the geodesics on the [Stiefel manifold](@ref "The Stiefel Manifold"). We use the following theorem from [o1983semi; Proposition 25.7](@cite):
+its geodesics are thus equivalent to the exponential maps. We now use this observation to obtain an expression for the geodesics on the [Stiefel manifold](@ref "The Stiefel Manifold"). We use the following theorem from [o1983semi; Proposition 25.7](@cite):
 
 ```@eval
 Main.theorem(raw"The geodesics for a naturally reductive homogeneous space ``\mathcal{M}`` starting at ``Y`` are given by:
