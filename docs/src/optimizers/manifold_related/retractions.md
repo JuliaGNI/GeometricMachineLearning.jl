@@ -42,11 +42,11 @@ Main.proof(raw"The Cayley transform trivially satisfies ``\mathrm{Cayley}(\mathb
 We should mention that the factor ``\frac{1}{2}`` is sometimes left out in the definition of the Cayley transform when used in different contexts. But it is necessary for defining a retraction as without it the second condition is not satisfied.
 
 ```@eval
-Main.remark(raw"We can also use the Cayley retraction at a different point than the identity ``\mathbb{I}.`` For this consider ``A\in{}SO(N)`` and ``B\in{}T_ASO(N) = \{B\in\mathbb{R}^{N\times{}N}: A^TB + B^TA = \mathbb{O}\}``. We then have ``A^TB\in\mathfrak{so}(N)`` and 
+Main.remark(raw"We can also use the Cayley retraction at a different point than the identity ``\mathbb{I}.`` For this consider ``\bar{A}\in{}SO(N)`` and ``\bar{B}\in{}T_{\bar{A}}SO(N) = \{\bar{B}\in\mathbb{R}^{N\times{}N}: \bar{A}^T\bar{B} + \bar{B}^T\bar{A} = \mathbb{O}\}``. We then have ``\bar{A}^T\bar{B}\in\mathfrak{so}(N)`` and 
 " * Main.indentation * raw"```math
-" * Main.indentation * raw"    \overline{\mathrm{Cayley}}: T_ASO(N) \to SO(N), B \mapsto A\mathrm{Cayley}(A^TB),
+" * Main.indentation * raw"    \overline{\mathrm{Cayley}}: T_{\bar{A}}SO(N) \to SO(N), \bar{B} \mapsto \bar{A}\mathrm{Cayley}(\bar{A}^T\bar{B}),
 " * Main.indentation * raw"```
-" * Main.indentation * raw"is a retraction ``\forall{}A\in{}SO(N)``.")
+" * Main.indentation * raw"is a retraction ``\forall{}\bar{A}\in{}SO(N)``.")
 ```
 
 As a retraction is always an approximation of the geodesic map, we now compare the [`cayley`](@ref) retraction for the example we introduced along [Riemannian manifolds](@ref "Geodesic Sprays and the Exponential Map"):
@@ -225,9 +225,9 @@ Here we harness special properties of homogeneous spaces to obtain computational
 The *geodesic retraction* is a retraction whose associated curve is also the unique geodesic. For many matrix Lie groups (including ``SO(N)``) geodesics are obtained by simply evaluating the exponential map [absil2008optimization, o1983semi](@cite):
  
 ```@eval
-Main.theorem(raw"The geodesic on a compact matrix Lie group ``G`` with bi-invariant metric for ``B\in{}T_AG`` is simply
+Main.theorem(raw"The geodesic on a compact matrix Lie group ``G`` with bi-invariant metric for ``\bar{B}\in{}T_{\bar{A}}G`` is simply
 " * Main.indentation * raw"```math
-" * Main.indentation * raw"\gamma(t) = \exp(t\cdot{}BA^{-1})A = A\exp(t\cdot{}A^-1B^n),
+" * Main.indentation * raw"\gamma(t) = \exp(t\cdot{}\bar{B}\bar{A}^{-1})\bar{A} = A\exp(t\cdot{}\bar{A}^{-1}\bar{B}^n),
 " * Main.indentation * raw"```
 " * Main.indentation * raw"where ``\exp:\mathfrak{g}\to{}G`` is the matrix exponential map.")
 ```
@@ -236,20 +236,20 @@ The last equality in the equation above is a result of:
 
 ```math
 \begin{aligned}
-\exp(A^{-1}\hat{B}A) = \sum_{k=1}^\infty\frac{1}{k!}(A^{-1}\hat{B}A)^k & = \sum_{k=1}^\infty \frac{1}{k!}\underbrace{(A^{-1}\hat{B}A)\cdots(A^{-1}\hat{B}A)}{\text{$k$ times}} \\ & = \sum_{k=1}^\infty \frac{1}{k!} A^{-1} \hat{B}^k A = A^{-1}\exp(\hat{B})A.
+\exp(\bar{A}^{-1}\hat{B}\bar{A}) = \sum_{k=1}^\infty\frac{1}{k!}(\bar{A}^{-1}\hat{B}\bar{A})^k & = \sum_{k=1}^\infty \frac{1}{k!}\underbrace{(\bar{A}^{-1}\hat{B}\bar{A})\cdots(A^{-1}\hat{B}\bar{A})}_{\text{$k$ times}} \\ & = \sum_{k=1}^\infty \frac{1}{k!} \bar{A}^{-1} \hat{B}^k \bar{A} = \bar{A}^{-1}\exp(\hat{B})\bar{A}.
 \end{aligned}
 ```
 
 Because ``SO(N)`` is compact and we furnish it with the canonical metric, i.e. 
 
 ```math
-    g:T_AG\times{}T_AG \to \mathbb{R}, (B_1, B_2) \mapsto \mathrm{Tr}(B_1^TB_2) = \mathrm{Tr}((B_1A^{-1})^T(B_2A^{-1})),
+    g:T_\bar{A}G\times{}T_{\bar{A}}G \to \mathbb{R}, (B_1, B_2) \mapsto \mathrm{Tr}(B_1^TB_2) = \mathrm{Tr}((B_1\bar{A}^{-1})^T(B_2\bar{A}^{-1})),
 ```
 
 its geodesics are thus equivalent to the exponential maps. We now use this observation to obtain expression for the geodesics on the [Stiefel manifold](@ref "The Stiefel Manifold"). We use the following theorem from [o1983semi; Proposition 25.7](@cite):
 
 ```@eval
-Main.theorem(raw"The geodesics for a naturally-reductive homogeneous space ``\mathcal{M}`` starting at ``Y`` are given by:
+Main.theorem(raw"The geodesics for a naturally reductive homogeneous space ``\mathcal{M}`` starting at ``Y`` are given by:
 " * Main.indentation * raw"```math
 " * Main.indentation * raw"\gamma_{\Delta}(t) = \exp(t\cdot\Omega(\Delta))Y,
 " * Main.indentation * raw"```
@@ -259,34 +259,33 @@ Main.theorem(raw"The geodesics for a naturally-reductive homogeneous space ``\ma
 The theorem requires the homogeneous space to be naturally reductive: 
 
 ```@eval
-Main.definition(raw"A homogeneous space is called **naturally-reductive** if the following two conditions hold:
-" * Main.indentation * raw"1. ``A^{-1}BA\in\mathfrak{g}^\mathrm{hor}`` for every ``B\in\mathfrak{g}^\mathrm{hor}`` and ``A\in\exp(\mathfrak{g}^\mathrm{ver}``),
+Main.definition(raw"A homogeneous space is called **naturally reductive** if the following two conditions hold:
+" * Main.indentation * raw"1. ``\bar{A}^{-1}\bar{B}\bar{A}\in\mathfrak{g}^\mathrm{hor}`` for every ``\bar{B}\in\mathfrak{g}^\mathrm{hor}`` and ``\bar{A}\in\exp(\mathfrak{g}^\mathrm{ver}``),
 " * Main.indentation * raw"2. ``g([X, Y]^\mathrm{hor}, Z) = g(X, [Y, Z]^\mathrm{hor})`` for all ``X, Y, Z \in \mathfrak{g}^\mathrm{hor}``,
-" * Main.indentation * raw"where ``[X, Y]^\mathrm{hor} = \Omega(XYE - YXE)``. If only the first condition holds the homogeneous space is called **reductive** but not **naturally-reductive**.")
+" * Main.indentation * raw"where ``[X, Y]^\mathrm{hor} = \Omega(XYE - YXE)``. If only the first condition holds the homogeneous space is called **reductive** (but not **naturally reductive**).")
 ```
 
-We state here without proof that the [Stiefel manifold](@ref "The Stiefel Manifold") and the [Grassmann manifold](@ref "The Grassmann Manifold") are naturally-reductive. An empirical verification of this is very easy:
+We state here without proof that the [Stiefel manifold](@ref "The Stiefel Manifold") and the [Grassmann manifold](@ref "The Grassmann Manifold") are naturally reductive. We can however provide empirical evidence here:
 
 ```@example naturally_reductive
-using GeometricMachineLearning
+using GeometricMachineLearning # hide
 import Random # hide
 Random.seed!(123) # hide
-
-B = rand(SkewSymMatrix, 6) # ∈ 𝔤
-A = exp(B - StiefelLieAlgHorMatrix(B, 3)) # ∈ exp(𝔤ᵛᵉʳ)
+B̄ = rand(SkewSymMatrix, 6) # ∈ 𝔤
+Ā = exp(B̄ - StiefelLieAlgHorMatrix(B̄, 3)) # ∈ exp(𝔤ᵛᵉʳ)
 
 X = rand(StiefelLieAlgHorMatrix, 6, 3) # ∈ 𝔤ʰᵒʳ
 Y = rand(StiefelLieAlgHorMatrix, 6, 3) # ∈ 𝔤ʰᵒʳ
 Z = rand(StiefelLieAlgHorMatrix, 6, 3) # ∈ 𝔤ʰᵒʳ
 
-@assert StiefelLieAlgHorMatrix(A' * X * A, 3) ≈ A' * X * A # hide
-A' * X * A # this has to be in 𝔤ʰᵒʳ for St(3, 6) to be reductive
+@assert StiefelLieAlgHorMatrix(Ā' * X * Ā, 3) ≈ Ā' * X * Ā # hide
+Ā' * X * Ā # this has to be in 𝔤ʰᵒʳ for St(3, 6) to be reductive
 ```
 
 verifies the first property and
 
 ```@example naturally_reductive
-using LinearAlgebra: tr
+using LinearAlgebra: tr # hide
 adʰᵒʳ(X, Y) = StiefelLieAlgHorMatrix(X * Y - Y * X, 3)
 
 @assert tr(adʰᵒʳ(X, Y)' * Z) ≈ tr(X' * adʰᵒʳ(Y, Z)) # hide
@@ -298,28 +297,22 @@ verifies the second.
 In `GeometricMachineLearning` we always work with elements in ``\mathfrak{g}^\mathrm{hor}`` and the Lie group ``G`` is always ``SO(N)``. We hence use:
 
 ```math
-    \gamma_\Delta(t) = \exp(\lambda(Y)\lambda(Y)^{-1}\Omega(\Delta)\lambda(Y)\lambda(Y)^{-1})Y = \lambda(Y)\exp(\lambda(Y)^{-1}\Omega(\Delta)\lambda(Y))E,
-```
-
-where we have used that 
-
-```math
- \exp(\Lambda{}B\Lambda^{-1}) = \sum_{n = 0}^\infty \frac{1}{n!}(\Lambda{}B\Lambda^{-1})^n = \sum_{n = 0}^\infty \frac{1}{n!}\underbrace{(\Lambda{}B\Lambda^{-1})}_{\text{$n$ times}} = \sum_{n = 0}^\infty \Lambda\frac{1}{n!}B^n\Lambda^{-1}.
+    \gamma_\Delta(t) = \exp(\lambda(Y)\lambda(Y)^{-1}\Omega(\Delta)\lambda(Y)\lambda(Y)^{-1})Y = \lambda(Y)\exp(\lambda(Y)^{-1}\Omega(\Delta)\lambda(Y))E.
 ```
 
 Based on this we define the maps: 
 
 ```math
-\mathtt{geodesic}: \mathfrak{g}^\mathrm{hor} \to G, B \mapsto \exp(B),
+\mathtt{geodesic}: \mathfrak{g}^\mathrm{hor} \to G, \bar{B} \mapsto \exp(\bar{B}),
 ```
 
 and
 
 ```math
-\mathtt{cayley}: \mathfrak{g}^\mathrm{hor} \to G, B \mapsto \mathrm{Cayley}(B),
+\mathtt{cayley}: \mathfrak{g}^\mathrm{hor} \to G, \bar{B} \mapsto \mathrm{Cayley}(\bar{B}),
 ```
 
-where ``B = \lambda(Y)^{-1}\Omega(\Delta)\lambda(Y)``. These expressions for `geodesic` and `cayley` are the ones that we typically use in `GeometricMachineLearning` for computational reasons. We show how we can utilize the sparse structure of ``\mathfrak{g}^\mathrm{hor}`` for computing the geodesic retraction and the Cayley retraction (i.e. the expressions ``\exp(B)`` and ``\mathrm{Cayley}(B)`` for ``B\in\mathfrak{g}^\mathrm{hor}``). Similar derivations can be found in [celledoni2000approximating, fraikin2007optimization, bendokat2021real](@cite).
+where ``\bar{B} = \lambda(Y)^{-1}\Omega(\Delta)\lambda(Y)``. These expressions for `geodesic` and `cayley` are the ones that we typically use in `GeometricMachineLearning` for computational reasons. We show how we can utilize the sparse structure of ``\mathfrak{g}^\mathrm{hor}`` for computing the geodesic retraction and the Cayley retraction (i.e. the expressions ``\exp(\bar{B})`` and ``\mathrm{Cayley}(\bar{B})`` for ``\bar{B}\in\mathfrak{g}^\mathrm{hor}``). Similar derivations can be found in [celledoni2000approximating, fraikin2007optimization, bendokat2021real](@cite).
 
 ```@eval
 Main.remark(raw"Further note that, even though the global section ``\lambda:\mathcal{M} \to G`` is not unique, the final geodesic ``\gamma_\Delta(t) = \lambda(Y)\exp(\lambda(Y)^{-1}\Omega(\Delta)\lambda(Y))E`` does not depend on the particular section we choose.")
@@ -327,10 +320,10 @@ Main.remark(raw"Further note that, even though the global section ``\lambda:\mat
 
 ### The Geodesic Retraction
 
-An element of ``\mathfrak{g}^\mathrm{hor}`` can be written as:
+An element ``\bar{B}`` of ``\mathfrak{g}^\mathrm{hor}`` can be written as:
 
 ```math
-\begin{bmatrix}
+\bar{B} = \begin{bmatrix}
     A & -B^T \\ 
     B & \mathbb{O}
 \end{bmatrix} = \begin{bmatrix}  \frac{1}{2}A & \mathbb{I} \\ B & \mathbb{O} \end{bmatrix} \begin{bmatrix}  \mathbb{I} & \mathbb{O} \\ \frac{1}{2}A & -B^T  \end{bmatrix} =: B'(B'')^T,
@@ -357,7 +350,7 @@ The final expression we obtain is:
 
 ### The Cayley Retraction
 
-For the Cayley retraction we leverage the decomposition of ``B = B'(B'')^T\in\mathfrak{g}^\mathrm{hor}`` through the *Sherman-Morrison-Woodbury formula*:
+For the Cayley retraction we leverage the decomposition of ``\bar{B} = B'(B'')^T\in\mathfrak{g}^\mathrm{hor}`` through the *Sherman-Morrison-Woodbury formula*:
 
 ```math
 (\mathbb{I} - \frac{1}{2}B'(B'')^T)^{-1} = \mathbb{I} + \frac{1}{2}B'(\mathbb{I} - \frac{1}{2}B'(B'')^T)^{-1}(B'')^T
@@ -373,14 +366,16 @@ So what we have to compute the inverse of:
 By leveraging the sparse structure of the matrices in ``\mathfrak{g}^\mathrm{hor}`` we arrive at the following expression for the Cayley retraction (similar to the case of the geodesic retraction):
 
 ```math
-\mathrm{Cayley}(B) = \mathbb{I} + \frac{1}{2} B' (\mathbb{I}_{2n} - \frac{1}{2} (B'')^T B')^{-1} (B'')^T (\mathbb{I} + \frac{1}{2} B),
+\mathrm{Cayley}(\bar{B}) = \mathbb{I} + \frac{1}{2} B' (\mathbb{I}_{2n} - \frac{1}{2} (B'')^T B')^{-1} (B'')^T (\mathbb{I} + \frac{1}{2} \bar{B}),
 ```
 
 where we have abbreviated ``\mathbb{I} := \mathbb{I}_N.`` We conclude with a remark:
 
 ```@eval
-Main.remark(raw"As mentioned previously the Lie group ``SO(N)``, i.e. the one corresponding to the Stiefel manifold and the Grassmann manifold, has a bi-invariant Riemannian metric associated with it: ``(B_1,B_2)\mapsto \mathrm{Tr}(B_1^TB_2)``. For other Lie groups (e.g. the symplectic group) the situation is slightly more difficult [bendokat2021real](@cite).")
+Main.remark(raw"As mentioned previously the Lie group ``SO(N)``, i.e. the one corresponding to the Stiefel manifold and the Grassmann manifold, has a bi-invariant Riemannian metric associated with it: ``(B_1,B_2)\mapsto \mathrm{Tr}(B_1^TB_2)``. For other Lie groups (e.g. the symplectic group) the situation is slightly more difficult.")
 ```
+
+One of such Lie groups is the *group of symplectic matrices* [bendokat2021real](@cite); for this group the expressions presented here are more complicated.
 
 ## Library Functions
 
