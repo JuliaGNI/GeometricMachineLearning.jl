@@ -240,12 +240,44 @@ _html_pages = [
 
 # Maybe you want to name "Background" → "Manifolds, Global Tangent Spaces and Geometric Structure"
 
+const SectionType = Vector{Pair{String, String}}
+const ChapterType = Pair{String, SectionType}
+const LatexChapterType = Pair{String, Vector{String}}
+const SingleDocumentType = Pair{String, String}
+const SpecialType = Pair{String, Union{String, Vector{String}}}
+
+function reduce_to_second_factors(pair::String)
+    pair
+end
 # this returns a vector
-function reduce_to_second_factors(list::Vector{Pair{String, String}})
+function reduce_to_second_factors(pairs::Vector{String})
+    pairs
+end
+function reduce_to_second_factors(pair::SingleDocumentType)
+    pair[2]
+end
+# this returns a vector
+function reduce_to_second_factors(list::SectionType)
     [list_item[2] for list_item in list]
 end
-function reduce_to_second_factors(pair::Pair{String, Vector{Pair{String, String}}})
+function reduce_to_second_factors(pair::ChapterType)
     reduce_to_second_factors(pair[2])
+end
+function reduce_to_second_factors(pairs::Vector{ChapterType})
+    second_factors = Tuple([reduce_to_second_factors(pair) for pair in pairs])
+    vcat(second_factors...)
+end
+function reduce_to_second_factors(pair::LatexChapterType)
+    vcat(pair[2]...)
+end
+function reduce_to_second_factors(pair::Pair{String, Any})
+    reduce_to_second_factors(pair[2])
+end
+function reduce_to_second_factors(pairs::Vector{Any})
+    vcat([reduce_to_second_factors(pair) for pair in pairs]...)
+end
+function reduce_to_second_factors(pairs::Vector{Pair{String, Any}})
+    vcat([reduce_to_second_factors(pair) for pair in pairs]...)
 end
 
 function value_for_key(pair::Pair{String, <:Any}, key::String)
@@ -299,6 +331,7 @@ _latex_pages = [
         "Learning Nonlinear Spaces" => value_for_key(_tutorials, "Grassmann Manifold"),
     ],
     _references,
+    "Index of Docstrings" => "docstring_index.md",
     "Appendix" => [
         "Data Loader" => reduce_to_second_factors(_data_loader),
         "Special Arrays, Tensors and Pullbacks" =>
@@ -309,6 +342,10 @@ _latex_pages = [
         "Customizing Training" => value_for_key(_tutorials, "Adjusting the Loss Function")
     ]
 ]
+
+_keys = [page[1] for page in _latex_pages]
+filter!(key -> (key ≠ "HOME") & (key ≠ "Index of Docstrings") & (key ≠ "References"), _keys)
+index_latex_pages = vcat([Dict(_latex_pages)[key] for key in _keys]...) |> reduce_to_second_factors
 
 makedocs(;
     plugins = [bib],

@@ -11,7 +11,7 @@ latex: latex_no_pdf
 	$(MAKE) compile_tex;
 	$(MAKE) compile_tex
 
-latex_no_pdf_no_images: install_brenier_two_fluid latex_docs_no_pdf copy_png_files put_figures_outside_of_minted_environment do_correct_quotation_marks make_correct_thrm_and_dfntn_and_xmpl_and_rmrk_and_proof_environment references_instead_of_hyperlinks correct_appendix remove_home_part remove_numbering_for_some_chapters
+latex_no_pdf_no_images: install_brenier_two_fluid latex_docs_no_pdf copy_png_files put_figures_outside_of_minted_environment do_correct_quotation_marks make_correct_thrm_and_dfntn_and_xmpl_and_rmrk_and_proof_environment references_instead_of_hyperlinks correct_appendix remove_home_part remove_numbering_for_some_chapters docstring_indexing
 
 latex_no_pdf: latex_images mnist_image latex_no_pdf_no_images
 
@@ -109,6 +109,7 @@ remove_home_part:
 	sed -i'' -e 's/\\part{HOME}/ /g' build/G*.tex
 
 remove_numbering_for_some_chapters:
+	sed -i'' -e 's/\\chapter{Index of Docstrings}/\\chapter*{Index of Docstrings}/g' build/G*.tex;
 	sed -i'' -e 's/\\chapter{References}/\\chapter*{References}/g' build/G*.tex;
 	sed -i'' -e 's/\\chapter{Preliminary Remarks and Acknowledgements}/\\chapter*{Preliminary Remarks and Acknowledgements}/g' build/G*.tex;
 	sed -i'' -e 's/\\chapter{Abstract}/\\chapter*{Abstract}/g' build/G*.tex;
@@ -121,3 +122,6 @@ copy_png_files:
 	find build/tutorials -name \*.png -exec cp {} build \;
 	find build/reduced_order_modeling -name \*.png -exec cp {} build \;
 	find build/tutorials/mnist -name \*.png -exec cp {} build \;
+
+docstring_indexing:
+	sed -i'' -e 's/\\item \\hyperlinkref{\([0-9]*\)}{\\texttt{\(.*\)}}/\\item \\hyperlinkref{\1}{\\texttt{\2}}: \\pageref{\1}/g' build/G*.tex
