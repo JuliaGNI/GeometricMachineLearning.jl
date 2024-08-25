@@ -335,7 +335,7 @@ We further use the following:
 
 ```math
     \begin{aligned}
-    \exp(B'(B'')^T) & = \sum_{n=0}^\infty \frac{1}{n!} (B'(B'')^T)^n = \mathbb{I} + \sum_{n=0}^\infty \frac{1}{n!} B'\sum_{n=1}^\infty B'((B'')^TB')(B'')^T \\
+    \exp(B'(B'')^T) & = \sum_{n=0}^\infty \frac{1}{n!} (B'(B'')^T)^n = \mathbb{I} + \sum_{n=1}^\infty \frac{1}{n!} B'((B'')^TB')^{n-1}(B'')^T \\
     & = \mathbb{I} + B'\left( \sum_{n=1}^\infty \frac{1}{n!} ((B'')^TB')^{n-1} \right)B'' =: \mathbb{I} + B'\mathfrak{A}(B', B'')B'',
     \end{aligned}
 ```
@@ -345,7 +345,7 @@ where we defined ``\mathfrak{A}(B', B'') := \sum_{n=1}^\infty \frac{1}{n!} ((B''
 The final expression we obtain is: 
 
 ```math
-\exp(B) = \mathbb{I} + B' \mathfrak{A}(B', B'')  (B'')^T
+\exp(\bar{B}) = \mathbb{I} + B' \mathfrak{A}(B', B'')  (B'')^T
 ```
 
 ### The Cayley Retraction
@@ -366,7 +366,7 @@ So what we have to compute the inverse of:
 By leveraging the sparse structure of the matrices in ``\mathfrak{g}^\mathrm{hor}`` we arrive at the following expression for the Cayley retraction (similar to the case of the geodesic retraction):
 
 ```math
-\mathrm{Cayley}(\bar{B}) = \mathbb{I} + \frac{1}{2} B' (\mathbb{I}_{2n} - \frac{1}{2} (B'')^T B')^{-1} (B'')^T (\mathbb{I} + \frac{1}{2} \bar{B}),
+\mathrm{Cayley}(\bar{B}) = \mathbb{I} + \frac{1}{2} B' \left(\mathbb{I}_{2n} - \frac{1}{2} (B'')^T B'\right)^{-1} (B'')^T \left(\mathbb{I} + \frac{1}{2} \bar{B}\right),
 ```
 
 where we have abbreviated ``\mathbb{I} := \mathbb{I}_N.`` We conclude with a remark:
@@ -380,10 +380,10 @@ One of such Lie groups is the *group of symplectic matrices* [bendokat2021real](
 ## Library Functions
 
 ```@docs
-GeometricMachineLearning.geodesic(::StiefelLieAlgHorMatrix{T}) where T
-GeometricMachineLearning.geodesic(::GrassmannLieAlgHorMatrix{T}) where T
-GeometricMachineLearning.cayley(::StiefelLieAlgHorMatrix{T}) where T
-GeometricMachineLearning.cayley(::GrassmannLieAlgHorMatrix{T}) where T
+GeometricMachineLearning.geodesic(::StiefelLieAlgHorMatrix)
+GeometricMachineLearning.geodesic(::GrassmannLieAlgHorMatrix)
+GeometricMachineLearning.cayley(::StiefelLieAlgHorMatrix)
+GeometricMachineLearning.cayley(::GrassmannLieAlgHorMatrix)
 GeometricMachineLearning.cayley(::Manifold{T}, ::AbstractMatrix{T}) where T
 GeometricMachineLearning.𝔄
 ```
