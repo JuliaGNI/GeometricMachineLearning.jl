@@ -124,4 +124,5 @@ copy_png_files:
 	find build/tutorials/mnist -name \*.png -exec cp {} build \;
 
 docstring_indexing:
-	sed -i'' -e 's/\\item \\hyperlinkref{\([0-9]*\)}{\\texttt{\(.*\)}}/\\item \\hyperlinkref{\1}{\\texttt{\2}}: \\pageref{\1}/g' build/G*.tex
+	sed -i'' -e 's/\\item \\hyperlinkref{\([0-9]*\)}{\\texttt{\(.*\)}}/\\item \\hyperlinkref{\1}{\\texttt{\2}}: page \\pageref{\1}/g' build/G*.tex;
+	sed -i'' -e 's/\\hypertarget{\(.*\)}{\(.*\)}/\\pagetarget{\1}{\2}/g' build/G*.tex
