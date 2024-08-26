@@ -97,9 +97,12 @@
 % custom hyphenation
 \usepackage[htt]{hyphenat}
 
+% for Chinese characters
+\usepackage{xeCJK}
 \usepackage{newunicodechar}
-\newunicodechar{𝔄}{$\mathfrak{A}$}
-\newunicodechar{𝔤}{$\mathfrak{g}$}
+\newunicodechar{𝔄}{{\footnotesize $\mathfrak{A}$}}
+\newunicodechar{𝔤}{{\footnotesize $\mathfrak{g}$}}
+\newunicodechar{𝕀}{{\footnotesize $\mathbb{I}$}}
 
 % Some internal link targets are implemented with \label, some with \hypertarget,
 % but they require different links. This inserts a \hyperref if a corresponding label exists,
