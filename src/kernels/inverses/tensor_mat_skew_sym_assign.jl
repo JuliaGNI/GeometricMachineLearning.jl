@@ -42,6 +42,45 @@ The result of this are ``n(n-2)\div2`` scalar products for each index `k` from t
 These scalar products are written into a lower-triangular matrix and the final output of the function is a tensor of these lower-triangular matrices. 
 
 This is used in [`VolumePreservingAttention`](@ref) when `skew_sym` is set to `false`.
+
+# Examples
+
+Here we consider a weighting
+
+```math
+A = \begin{pmatrix} 1 & 0 & 0 \\ 0 & 2 & 0 \\ 0 & 0 & 3\end{pmatrix}
+```
+
+and three sequences:
+
+```math
+Z_1 = \begin{pmatrix} 1 & 1 \\ 0 & 1 \\ 0 & 1 \end{pmatrix},\quad Z_2 = \begin{pmatrix} 0 & 1 \\ 1 & 1 \\ 0 & 1 \end{pmatrix}, \quad Z_3 = \begin{pmatrix} 0 & 1 \\ 0 & 1 \\ 1 & 1 \end{pmatrix}.
+```
+
+The result of applying `tensor_mat_skew_sym_assign` is a tensor ``\in\mathbb{R}^{2\times2\times3}:``
+```jldoctest
+using GeometricMachineLearning: tensor_mat_skew_sym_assign
+
+A = [1 0 0; 0 2 0; 0 0 3]
+Z = [1; 0; 0;; 1; 1; 1;;; 0; 1; 0;; 1; 1; 1;;; 0; 0; 1;; 1; 1; 1]
+
+tensor_mat_skew_sym_assign(Z, A)
+
+# output
+
+2×2×3 Array{Int64, 3}:
+[:, :, 1] =
+ 0  0
+ 1  0
+
+[:, :, 2] =
+ 0  0
+ 2  0
+
+[:, :, 3] =
+ 0  0
+ 3  0
+```
 """
 function tensor_mat_skew_sym_assign(Z::AT, A::AbstractMatrix{T})::AT where {T, AT <: AbstractArray{T, 3}}
     backend = KernelAbstractions.get_backend(Z)

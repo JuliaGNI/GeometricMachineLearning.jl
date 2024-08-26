@@ -1,6 +1,6 @@
 # Linear Symplectic Attention
 
-The attention layer introduced here can be seen as an extension of the [Sympnet gradient layer](@ref "SympNet Gradient Layer") to the setting where we deal with time series data. Before we introduce the [`LinearSymplecticAttention`](@ref) layer we first define a notion of symplecticity for [multi-step methods](@ref "Multi-step methods"). 
+The attention layer introduced here can be seen as an extension of the [SympNet gradient layer](@ref "SympNet Gradient Layer") to the setting where we deal with time series data. Before we introduce the [`LinearSymplecticAttention`](@ref) layer we first define a notion of symplecticity for [multi-step methods](@ref "Multi-step methods"). 
 
 This definition is different from [feng1987symplectic, ge1988approximation](@cite), but similar to the [definition of volume-preservation for product spaces](@ref "How is Structure Preserved?") in [brantner2024volume](@cite).
 
@@ -12,7 +12,7 @@ A multi-step method ``\varphi\times_T\mathbb{R}^{2n}\to\times_T\mathbb{R}^{2n}``
 ```@eval
 Main.remark(raw"The **symplectic product structure** is the following skew-symmetric non-degenerate bilinear form: 
 " * Main.indentation * raw"```math
-" * Main.indentation * raw"\hat{\mathbb{J}}([z^{(1)}, \ldots, z^{(T)}], [\tilde{z}^{(1)}, \ldots, \tilde{z}^{(T)}]) := \sum_{i=1}^T (z^{(i)})^T\tilde{z}^{(i)}.
+" * Main.indentation * raw"\hat{\mathbb{J}}([z^{(1)}, \ldots, z^{(T)}], [\tilde{z}^{(1)}, \ldots, \tilde{z}^{(T)}]) := \sum_{i=1}^T (z^{(i)})^T\mathbb{J}_{2n}\tilde{z}^{(i)}.
 " * Main.indentation * raw"```
 " * Main.indentation * raw"``\hat{\mathbb{J}}`` is defined through the isomorphism between the product space and the space of big vectors 
 " * Main.indentation * raw"```math
@@ -33,13 +33,13 @@ where ``Q := [q^{(1)}, \ldots, q^{(T)}]`` is the concatenation of the vectors in
 \nabla_Qf = \frac{1}{2}Q(A + A^T) =: Q\bar{A},
 ```
 
-where ``A\in\mathcal{S}_\mathrm{skew}(T)``. So the map performs:
+where ``\bar{A}\in\mathcal{S}_\mathrm{sym}(T)`` is a symmetric matrix. So the map performs:
 
 ```math
-[q^{(1)}, \ldots, q^{(T)}] \mapsto \left[ \sum_{i=1}^Ta_{1i}q^{(i)}, \ldots, \sum_{i=1}^Ta_{Ti}q^{(i)} \right].
+[q^{(1)}, \ldots, q^{(T)}] \mapsto \left[ \sum_{i=1}^Ta_{1i}q^{(i)}, \ldots, \sum_{i=1}^Ta_{Ti}q^{(i)} \right] \text{ for } a_{ji} = [\bar{A}]_{ji}.
 ```
 
-Note that there is still a reweighting of the input vectors performed with this linear symplectic attention, like in [standard attention](@ref "Reweighting of the Input Sequence ") and [volume-preserving attention](@ref "Volume-Preserving Attention"), but the crucial difference is that the coefficients ``a`` here are fixed and not computed as the result of a softmax or a [Cayley transform](@ref "The Cayley Transform"). We hence call this attention mechanism *linear symplectic attention* as it performs a linear reweighting of the input vectors. We distinguish it from the [standard attention mechanism](@ref "The Attention Layer"), which computes reweighting coefficients that depend on the input nonlinearly.
+Note that there is still a reweighting of the input vectors performed with this linear symplectic attention, like in [standard attention](@ref "Reweighting of the Input Sequence ") and [volume-preserving attention](@ref "Volume-Preserving Attention"), but the crucial difference is that the coefficients ``a_{ji}`` here are fixed and not computed as the result of a softmax or a [Cayley transform](@ref "The Cayley Transform"). We hence call this attention mechanism *linear symplectic attention* as it performs a linear reweighting of the input vectors. We distinguish it from the [standard attention mechanism](@ref "The Attention Layer"), which computes coefficients that depend on the input nonlinearly.
 
 ## Library Functions
 
