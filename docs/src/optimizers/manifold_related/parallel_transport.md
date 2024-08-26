@@ -2,26 +2,26 @@
 
 The concept of *parallel transport along a geodesic* ``\gamma:[0, T]\to\mathcal{M}`` describes moving a tangent vector from ``T_x\mathcal{M}`` to ``T_{\gamma(t)}\mathcal{M}`` such that its orientation with respect to the geodesic is preserved.
 
-A precise definition of parallel transport needs a notion of a *connection* [lang2012fundamentals, bishop1980tensor, bendokat2020grassmann](@cite). Here we simply state how to parallel transport vectors on the Lie group ``SO(N)`` and the homogeneous spaces ``St(n, N)`` and ``Gr(n, N)``.
+A precise definition of parallel transport needs a notion of a *connection* [lang2012fundamentals, bishop1980tensor, bendokat2020grassmann](@cite) and we forego it here. We simply state how to parallel transport vectors on the Lie group ``SO(N)`` and the homogeneous spaces ``St(n, N)`` and ``Gr(n, N)``.
 
 ```@eval
 Main.theorem(raw"Given two elements ``B^A_1, B^A_2\in{}T_AG`` the parallel transport of ``B^A_2`` along the geodesic of ``B^A_1`` is given by
 " * Main.indentation * raw"```math
 " * Main.indentation * raw"\Pi_{A\to\gamma_{B^A_1}(t)} = A\exp(t\cdot{}A^{-1}B^A_1)A^{-1}B^A_2 = A\exp(t\cdot{}B_1)B_2,
 " * Main.indentation * raw"```
-" * Main.indentation * raw"where ``B_i := A^{-1}B_i.``")
+" * Main.indentation * raw"where ``B_i := A^{-1}B^A_i.``")
 ```
 
 For the Stiefel manifold this is not much more complicated[^1]:
 
-[^1]: That this expression is sound from the perspective of Riemannian geometry has to be proved [schlarb2024covariant](@cite). For now the evidence that this is correct is largely empirical. 
+[^1]: Here we do not provide a detailed proof that this constitutes a sound expression from the perspective of Riemannian geometry. A proof can be found in [schlarb2024covariant](@cite).
 
 ```@eval
 Main.theorem(raw"Given two elements ``\Delta_1, \Delta_2\in{}T_Y\mathcal{M}``, the parallel transport of ``\Delta_2`` along the geodesic of ``\Delta_1`` is given by
 " * Main.indentation * raw"```math
-" * Main.indentation * raw"\Pi_{Y\to\gamma_{\Delta_1}(t)} = \exp(t\cdot\Omega(Y, \Delta_1))\Delta_2 =  \lambda(Y)\exp(B_1)\lambda(Y)^{-1}\Delta_2,
+" * Main.indentation * raw"\Pi_{Y\to\gamma_{\Delta_1}(t)} = \exp(t\cdot\Omega(Y, \Delta_1))\Delta_2 =  \lambda(Y)\exp(\bar{B}_1)\lambda(Y)^{-1}\Delta_2,
 " * Main.indentation * raw"```
-" * Main.indentation * raw"where ``B_1 = \lambda(Y)^{-1}\Omega(Y, \Delta_1)\lambda(Y).``")
+" * Main.indentation * raw"where ``\bar{B}_1 = \lambda(Y)^{-1}\Omega(Y, \Delta_1)\lambda(Y).``")
 ```
 
 We can further modify the expression of parallel transport for the Stiefel manifold: 
@@ -30,7 +30,7 @@ We can further modify the expression of parallel transport for the Stiefel manif
 \Pi_{Y\to\gamma_{\Delta_1}(t)} = \lambda(Y)\exp(B_1)\lambda(Y)\Omega(Y, \Delta_2)Y = \lambda(Y)\exp(B_1)B_2E,
 ```
 
-where ``B_2 = \lambda(Y)^{-1}\Omega(Y, \Delta_2)\lambda(Y).`` We can now define explicit updating rules for the global section ``\Lambda^{(\cdot)}``, the element of the homogeneous space ``Y^{(\cdot)}``, the tangent vector ``\Delta^{(\cdot)}`` and ``D^{(\cdot)}``, its representation in ``\mathfrak{g}^\mathrm{hor}``.
+where ``B_2 = \lambda(Y)^{-1}\Omega(Y, \Delta_2)\lambda(Y).`` We can now define explicit updating rules for the [global section](@ref "Global Sections") ``\Lambda^{(\cdot)}``, the element of the homogeneous space ``Y^{(\cdot)}``, the tangent vector ``\Delta^{(\cdot)}`` and ``D^{(\cdot)} = (\Lambda^{(\cdot)})^{-1}\Omega(\Delta^{(\cdot)})\Lambda^{(cdot)}``, its representation in ``\mathfrak{g}^\mathrm{hor}``.
 
 We thus have:
 1. ``\Lambda^{(t)} \leftarrow \Lambda^{(t-1)}\exp(B^{(t-1)}),``
@@ -38,7 +38,7 @@ We thus have:
 3. ``\Delta^{(t)} \leftarrow  \Lambda^{(t-1)}\exp(B^{(t-1)})(\Lambda^{(t-1)})^{-1}\Delta^{(t-1)} = \Lambda^{(t)}D^{(t-1)}E,``
 4. ``D^{(t)} \leftarrow D^{(t-1)}.``
 
-So we conveniently take parallel transport of vectors into account by representing them in ``\mathfrak{g}^\mathrm{hor}``.
+So we conveniently take parallel transport of vectors into account by representing them in ``\mathfrak{g}^\mathrm{hor}``: ``D`` does not change.
 
 To demonstrate parallel transport we again use the example from when we introduced the concept of [geodesics](@ref "Geodesic Sprays and the Exponential Map"). We first set up the problem:
 
@@ -97,7 +97,7 @@ ax = Axis3(fig[1, 1]; # hide
 surface!(ax, Main.sphere(1., [0., 0., 0.])...; alpha = .5, transparency = true)
 
 point_vec = ([Y_copy[1]], [Y_copy[2]], [Y_copy[3]])
-scatter!(ax, point_vec...; color = morange, marker = :star5)
+scatter!(ax, point_vec...; color = morange, marker = :star5, markersize = 30)
 
 arrow_vec = ([Δ[1]], [Δ[2]], [Δ[3]])
 arrows!(ax, point_vec..., arrow_vec...; color = mred, linewidth = .02)
@@ -117,13 +117,13 @@ nothing # hide
 ```
 
 ```@example
-Main.include_graphics("two_vectors") # hide
+Main.include_graphics("two_vectors"; width = .7) # hide
 ```
 
-Note that we have chosen the arrow here to have the same direction as before but only about half the magnitude. We further drew another arrow that we want to parallel transport. 
+Note that we have chosen the arrow here to have the same direction as before but only about half the magnitude. We further drew another arrow that we want to parallel transport (the purple arrow). 
 
 ```@example s2_parallel_transport
-using GeometricMachineLearning: update_section!
+using GeometricMachineLearning: update_section! # hide
 
 λY = GlobalSection(Y)
 B = global_rep(λY, Δ)
@@ -143,10 +143,13 @@ for _ in 1:n_steps
     push!(Δ_transported, Matrix(λY) * B * E)
     push!(Δ₂_transported, Matrix(λY) * B₂ * E)
 end
+nothing # hide
+```
 
+```@setup s2_parallel_transport
 function plot_parallel_transport(; theme = :dark) # hide
 fig, ax = set_up_plot(; theme = theme) # hide
-for Y_increment in Y_increments
+for Y_increment in Y_increments 
     scatter!(ax, [Y_increment[1]], [Y_increment[2]], [Y_increment[3]]; 
         color = mred)
 end
@@ -174,12 +177,10 @@ nothing # hide
 ```
 
 ```@example
-Main.include_graphics("parallel_transport") # hide
+Main.include_graphics("parallel_transport"; width = .7) # hide
 ```
 
-```@eval
-Main.remark(raw"Note that `apply_section!` changes ``\lambda(Y)`` (including ``Y``) in-place!")
-```
+Note that the angle between the two vector is preserved as we go along the geodesic.
 
 ## References
 

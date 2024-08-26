@@ -385,7 +385,8 @@ GeometricMachineLearning.geodesic(::GrassmannLieAlgHorMatrix)
 GeometricMachineLearning.cayley(::StiefelLieAlgHorMatrix)
 GeometricMachineLearning.cayley(::GrassmannLieAlgHorMatrix)
 GeometricMachineLearning.cayley(::Manifold{T}, ::AbstractMatrix{T}) where T
-GeometricMachineLearning.𝔄
+GeometricMachineLearning.𝔄(::AbstractMatrix)
+GeometricMachineLearning.𝔄(::AbstractMatrix, ::AbstractMatrix)
 ```
 
 ## References 
