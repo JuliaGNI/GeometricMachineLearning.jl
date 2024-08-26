@@ -10,11 +10,11 @@ Although not touching on all these aspects, I tried to make my dissertation fit 
 
 At this point I want to acknowledge several people who helped me professionally and personally. My foremost thanks go to my scientific mentor Michael Kraus who throughout my PhD provided me with guidance, nudged me in the right direction when I needed it, and was extremely understanding whenever progress was slow. He almost always gave me the maximum amount of freedom to pursue things I found interesting. The only instance I can think of, where this freedom was not granted, was his insistence that all his students use Julia, a demand that sped up getting results immensely.
 
-I am also very grateful to Eric Sonnendrücker, the head of our department, who gave me many opportunities to present my work at international conferences which in turn enabled me to meet new people (very often the faces behind the papers I read) and exchange ideas.
+I am also very grateful to Eric Sonnendrücker, the head of our department, who gave me many opportunities to present my work at international conferences which in turn enabled me to meet new people (very often the faces behind the papers I read) and exchange ideas. My thanks also go to all my colleagues, especially those I regularly had lunch with, for stimulating discussions on work and everything else in the world.
 
 On a more personal note I want to thank my parents for their patience, understanding and relentless encouragement; I often think back to them telling me: "Irgendwie geht's immer."
 
-Lastly I want to thank Lejie for her love and support, remarks that very often helped me organize thoughts in my head, and her extreme understanding when I opened my laptop for the umpteenth time for a late-night programming session.
+Lastly I want to thank Lejie for her love and support, remarks that very often helped me organize thoughts in my head, and her extreme understanding when I opened my laptop for the umpteenth time for a late-night programming session. 路漫漫其修远兮，我们将上下而求索。我永远爱你。
 
 ```@raw latex
 \clearpage
