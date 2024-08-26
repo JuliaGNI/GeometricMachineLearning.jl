@@ -251,7 +251,28 @@ function Base.:*(A1::SkewSymMatrix{T}, A2::SkewSymMatrix{T}) where T
 end
 
 @doc raw"""
-If `vec` is applied onto `SkewSymMatrix`, then the output is the associated vector.  
+    vec(A)
+
+Output the associated vector of `A`.
+
+# Examples
+
+```jldoctest
+using GeometricMachineLearning
+
+M = [1 2 3 4; 5 6 7 8; 9 10 11 12; 13 14 15 16]
+SkewSymMatrix(M) |> vec
+
+# output
+
+6-element Vector{Float64}:
+ 1.5
+ 3.0
+ 1.5
+ 4.5
+ 3.0
+ 1.5
+```
 """
 function Base.vec(A::SkewSymMatrix)
     A.S

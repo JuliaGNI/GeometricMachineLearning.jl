@@ -225,9 +225,27 @@ LinearAlgebra.rmul!(C::StiefelLieAlgHorMatrix, α::Real) = mul!(C, C, α)
 
 Vectorize `A`. 
 
+# Examples
+
+```jldoctest
+using GeometricMachineLearning
+
+A = SkewSymMatrix([1, ], 2)
+B = [2 3; ]
+B̄ = StiefelLieAlgHorMatrix(A, B, 3, 2)
+B̄ |> vec
+
+# output
+
+vcat(1-element Vector{Int64}, 2-element Vector{Int64}):
+ 1
+ 2
+ 3
+```
+
 # Implementation
 
-This is using `Vcat` from `LazyArrays`.
+This is using `Vcat` from the package `LazyArrays`.
 """
 function Base.vec(A::StiefelLieAlgHorMatrix)
     LazyArrays.Vcat(vec(A.A), vec(A.B))

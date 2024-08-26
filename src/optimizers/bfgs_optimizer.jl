@@ -6,7 +6,7 @@ Make an instance of the Broyden-Fletcher-Goldfarb-Shanno (BFGS) optimizer.
 `η` is the *learning rate*.
 `δ` is a stabilization parameter.
 """
-struct BFGSOptimizer{T<:Real} <: OptimizerMethod
+struct BFGSOptimizer{T<:Real} <: OptimizerMethod{T}
     η::T
     δ::T
 
@@ -24,11 +24,11 @@ Peform an update with the BFGS optimizer.
 
 First we compute the *final velocity* with
 ```julia
-    vecS = -o.method.η * C.H * vec(B)
+vecS = -o.method.η * C.H * vec(B)
 ```
 and then we update `H`
 ```julia
-    C.H .= (𝕀 - ρ * SY) * C.H * (𝕀 - ρ * SY') + ρ * vecS * vecS'
+C.H .= (𝕀 - ρ * SY) * C.H * (𝕀 - ρ * SY') + ρ * vecS * vecS'
 ```
 where `SY` is `vecS * Y'` and `𝕀` is the idendity. 
 
@@ -36,7 +36,7 @@ where `SY` is `vecS * Y'` and `𝕀` is the idendity.
 
 For stability we use `δ` for computing `ρ`:
 ```julia
-    ρ = 1. / (vecS' * Y + o.method.δ)
+ρ = 1. / (vecS' * Y + o.method.δ)
 ```
 
 This is similar to the [`AdamOptimizer`](@ref)
@@ -46,7 +46,8 @@ This is similar to the [`AdamOptimizer`](@ref)
 If we have weights on a [`Manifold`](@ref) than the updates are slightly more difficult.
 In this case the [`vec`](@ref) operation has to be generalized to the corresponding *global tangent space*.
 """
-function update!(o::Optimizer{<:BFGSOptimizer}, C::CT, B::AbstractArray{T}) where {T, CT<:BFGSCache{T}}
+function update!(o::Optimizer{<:BFGSOptimizer}, C::BFGSCache, B::AbstractArray)
+    T = eltype(o)
     # in the first step we compute the difference between the current and the previous mapped gradients:
     Y = vec(B - C.B)
     # compute the descent direction

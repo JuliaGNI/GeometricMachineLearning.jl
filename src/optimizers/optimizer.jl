@@ -41,6 +41,8 @@ mutable struct Optimizer{MT<:OptimizerMethod, CT, RT}
     retraction::RT
 end
 
+eltype(::Optimizer{<:OptimizerMethod{T}}) where T = T
+
 @doc raw"""
     Optimizer(method, nn_params)
 
@@ -71,11 +73,15 @@ Optimizer(nn::NeuralNetwork, m::OptimizerMethod; kwargs...) = Optimizer(m, nn; k
 @doc raw"""
     update!(o, cache, B)
 
-First update the `cache` and then update the array `B` based on the optimizer `o`. 
+Update the `cache` and output a final velocity that is stored in `B`.
 
 Note that ``B\in\mathfrak{g}^\mathrm{hor}`` in general.
+
+In the manifold case the final velocity is the input to a retraction.
 """
-function update!(::Optimizer, ::AbstractCache, ::AbstractArray) end
+function update!(o::Optimizer, ::AbstractCache, ::AbstractArray) 
+    error("No update rule implemented for method", o.method)
+end
 
 #######################################################################################
 # optimization step function

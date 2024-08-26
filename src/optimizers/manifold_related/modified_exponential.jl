@@ -41,7 +41,7 @@ function 𝔄(A::AbstractMatrix)
         𝔄A += Aⁿ
         n += 1 
     end
-    #print("\nNumber of iterations is: ", i, "\n")
+    # println("Number of iterations is: ", i)
     𝔄A
 end
 
@@ -71,7 +71,7 @@ one(B̂ * B̄') + B̂ * 𝔄(B̂, B̄) * B̄' ≈ exp(Matrix(B))
 true
 ```
 """
-function 𝔄(B̂::AbstractMatrix{T}, B̄::AbstractMatrix{T}) where T
+function 𝔄(B̂::AbstractMatrix, B̄::AbstractMatrix)
     𝔄(B̄' * B̂)
 end
 
