@@ -34,22 +34,22 @@ function Chain(arch::VolumePreservingFeedForward{AT, :init_lower}) where AT
     layers = ()
     for _ in 1:arch.n_blocks 
         for __ in 1:(arch.n_linear-1)
-            layers = (layers..., VolumePreservingLowerLayer(arch.sys_dim, identity; include_bias=false)) 
-            layers = (layers..., VolumePreservingUpperLayer(arch.sys_dim, identity; include_bias=false))
+            layers = (layers..., VolumePreservingLowerLayer(arch.sys_dim, identity; use_bias=false)) 
+            layers = (layers..., VolumePreservingUpperLayer(arch.sys_dim, identity; use_bias=false))
         end
 
         # linear layers where the last one includes a bias
-        layers = (layers..., VolumePreservingLowerLayer(arch.sys_dim, identity; include_bias=false)) 
-        layers = (layers..., VolumePreservingUpperLayer(arch.sys_dim, identity; include_bias=true))
+        layers = (layers..., VolumePreservingLowerLayer(arch.sys_dim, identity; use_bias=false)) 
+        layers = (layers..., VolumePreservingUpperLayer(arch.sys_dim, identity; use_bias=true))
 
         # nonlinear layers
-        layers = (layers..., VolumePreservingLowerLayer(arch.sys_dim, arch.activation; include_bias=true))
-        layers = (layers..., VolumePreservingUpperLayer(arch.sys_dim, arch.activation; include_bias=true))
+        layers = (layers..., VolumePreservingLowerLayer(arch.sys_dim, arch.activation; use_bias=true))
+        layers = (layers..., VolumePreservingUpperLayer(arch.sys_dim, arch.activation; use_bias=true))
     end
 
     # linear layers for the output
-    layers = (layers..., VolumePreservingLowerLayer(arch.sys_dim, identity; include_bias=false))
-    layers = (layers..., VolumePreservingUpperLayer(arch.sys_dim, identity; include_bias=true))
+    layers = (layers..., VolumePreservingLowerLayer(arch.sys_dim, identity; use_bias=false))
+    layers = (layers..., VolumePreservingUpperLayer(arch.sys_dim, identity; use_bias=true))
 
     Chain(layers...)
 end
@@ -58,22 +58,22 @@ function Chain(arch::VolumePreservingFeedForward{AT, :init_upper}) where AT
     layers = ()
     for _ in 1:arch.n_blocks 
         for __ in 1:(arch.n_linear-1)
-            layers = (layers..., VolumePreservingUpperLayer(arch.sys_dim, identity; include_bias=false)) 
-            layers = (layers..., VolumePreservingLowerLayer(arch.sys_dim, identity; include_bias=false))
+            layers = (layers..., VolumePreservingUpperLayer(arch.sys_dim, identity; use_bias=false)) 
+            layers = (layers..., VolumePreservingLowerLayer(arch.sys_dim, identity; use_bias=false))
         end
 
         # linear layers where the last one includes a bias
-        layers = (layers..., VolumePreservingUpperLayer(arch.sys_dim, identity; include_bias=false)) 
-        layers = (layers..., VolumePreservingLowerLayer(arch.sys_dim, identity; include_bias=true))
+        layers = (layers..., VolumePreservingUpperLayer(arch.sys_dim, identity; use_bias=false)) 
+        layers = (layers..., VolumePreservingLowerLayer(arch.sys_dim, identity; use_bias=true))
 
         # nonlinear layers
-        layers = (layers..., VolumePreservingUpperLayer(arch.sys_dim, arch.activation; include_bias=true))
-        layers = (layers..., VolumePreservingLowerLayer(arch.sys_dim, arch.activation; include_bias=true))
+        layers = (layers..., VolumePreservingUpperLayer(arch.sys_dim, arch.activation; use_bias=true))
+        layers = (layers..., VolumePreservingLowerLayer(arch.sys_dim, arch.activation; use_bias=true))
     end
 
     # linear layers for the output
-    layers = (layers..., VolumePreservingUpperLayer(arch.sys_dim, identity; include_bias=false))
-    layers = (layers..., VolumePreservingLowerLayer(arch.sys_dim, identity; include_bias=true))
+    layers = (layers..., VolumePreservingUpperLayer(arch.sys_dim, identity; use_bias=false))
+    layers = (layers..., VolumePreservingLowerLayer(arch.sys_dim, identity; use_bias=true))
 
     Chain(layers...)
 end

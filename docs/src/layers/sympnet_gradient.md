@@ -1,6 +1,6 @@
 # SympNet Layers
 
-The *SympNet paper* [jin2020sympnets](@cite) discusses three different kinds of sympnet layers: *activation layers*, *linear layers* and *gradient layers*. We discuss them below. Because activation layers are just a simplified form of gradient layers those two will be discussed together. A neural network that consists of many of these layers we call a [SympNet](@ref "SympNet Architecture").
+The *SympNet paper* [jin2020sympnets](@cite) discusses three different kinds of sympnet layers: *activation layers*, *linear layers* and *gradient layers*. We discuss them below. Because activation layers are just a simplified form of gradient layers those are introduced together. A neural network that consists of many of these layers we call a [SympNet](@ref "SympNet Architecture").
 
 ## SympNet Gradient Layer
 
