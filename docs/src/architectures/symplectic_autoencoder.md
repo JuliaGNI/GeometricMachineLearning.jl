@@ -1,25 +1,25 @@
 # The Symplectic Autoencoder 
 
-Symplectic autoencoders offer a structure-preserving way of mapping a high-dimensional system to a low dimensional system. Concretely this means that if we obtain a reduced system by means of a symplectic autoencoder, this system will again be symplectic and we therefore model a symplectic FOM with a [symplectic ROM](@ref "The Symplectic Solution Manifold"). 
+Symplectic autoencoders offer a structure-preserving way of mapping a high-dimensional system to a low-dimensional system. Concretely this means that if we obtain a reduced system by means of a symplectic autoencoder, this system will again be symplectic; we can thus model a symplectic FOM with a [symplectic ROM](@ref "The Symplectic Solution Manifold"). 
 
 The architecture is represented by the figure below[^1]:
 
-[^1]: For the symplectic autoencoder we only use [SympNet Gradient Layer](@ref) because they seem to outperform ``LA``-SympNets in many cases and are easier to interpret: they are the gradient of a Hamiltonian that only depends on half the coordinates.
+[^1]: For the symplectic autoencoder we only use [SympNet gradient layers](@ref "SympNet Gradient Layer") because they seem to outperform ``LA``-SympNets in many cases and are easier to interpret: their nonlinear part is the gradient of a function that only depends on half the coordinates.
 
 ```@example 
-Main.include_graphics("../tikz/symplectic_autoencoder") # hide
+Main.include_graphics("../tikz/symplectic_autoencoder"; width = .7, caption = raw"A visualization of the symplectic autoencoder architecture. It is a composition of SympNet layers and PSD-like layers.") # hide
 ```
 
-It is a composition of [SympNet gradient layers](@ref "SympNet Gradient Layer") and [PSD-like matrices](@ref "Proper Symplectic Decomposition"), so a matrix ``A_i`` is of the form
+It is a composition of [SympNet gradient layers](@ref "SympNet Gradient Layer") and [PSD-like matrices](@ref "Proper Symplectic Decomposition"), so a matrix ``A_i`` (respectively ``A_i^+``) is of the form
 
 ```math
-    A_i = \begin{bmatrix} \Phi_i & \mathbb{O} \\ \mathbb{O} & \Phi_i \end{bmatrix} \text{ where }\begin{cases} \Phi_i\in{}St(d_{i},d_{i+1})\subset\mathbb{R}^{d{i+1}\times{}d_i} & \text{if $d_{i+1} > d_i$}
+    A_i^{(+)} = \begin{bmatrix} \Phi_i & \mathbb{O} \\ \mathbb{O} & \Phi_i \end{bmatrix} \text{ where }\begin{cases} \Phi_i\in{}St(d_{i},d_{i+1})\subset\mathbb{R}^{d_{i+1}\times{}d_i} & \text{if $d_{i+1} > d_i$}
     \\
-    \Phi_i\in{}St(d_{i+1},d_{i})\subset\mathbb{R}^{d{i}\times{}d_{i+1}} & \text{if $d_i > d_{i+1}$}.
+    \Phi_i\in{}St(d_{i+1},d_{i})\subset\mathbb{R}^{d{i}\times{}d_{i+1}} & \text{if $d_i > d_{i+1}$},
     \end{cases}
 ```
 
-Also note that for cotangent lift-like matrices we have
+where ``A_i^{(+)} = A_i`` if ``d_{i+1} > d_i`` and ``A_i^{(+)} = A_i^+`` if ``d_{i+1} < d_i.`` Also note that for cotangent lift-like matrices we have
 
 ```math
 \begin{aligned}
@@ -29,7 +29,9 @@ Also note that for cotangent lift-like matrices we have
 
 so the symplectic inverse is equivalent to a matrix transpose in this case. In the symplectic autoencoder we use SympNets as a form of *symplectic preprocessing* before the linear symplectic reduction (i.e. the PSD layer) is employed. The resulting neural network has some of its weights on manifolds, which is why we cannot use standard neural network optimizers, but have to resort to [manifold optimizers](@ref "Generalization to Homogeneous Spaces"). Note that manifold optimization is not necessary for the weights corresponding to the SympNet layers, these are still updated with standard neural network optimizers during training. Also note that SympNets are nonlinear and preserve symplecticity, but they cannot change the dimension of a system while PSD layers can change the dimension of a system and preserve symplecticity, but are strictly linear. Symplectic autoencoders have all three properties: they preserve symplecticity, can change dimension and are nonlinear mappings. We can visualize this in a Venn diagram:
 
-![Venn diagram visualizing that a symplectic autoencoder (SAE) is symplectic, can change dimension and is nonlinear.](../tikz/sae_venn.png)
+```@example
+Main.include_graphics("../tikz/sae_venn.png"; caption = raw"Venn diagram visualizing that a symplectic autoencoder (SAE) is symplectic, can change dimension and is nonlinear.") # hide
+```
 
 The SympNet layers in the symplectic autoencoder operate in *intermediate dimensions* (as well as the input and output dimensions). In the following we explain how `GeometricMachineLearning` computes those intermediate dimensions. 
 

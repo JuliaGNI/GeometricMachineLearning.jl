@@ -67,6 +67,7 @@ png:
 	pdftocairo  -png -r $(res1) -transp -singlefile  skew_sym_mapping.pdf							skew_sym_mapping
 	pdftocairo  -png -r $(res1) -transp -singlefile  skew_sym_mapping_dark.pdf						skew_sym_mapping_dark
 	pdftocairo  -png -r $(res1) -transp -singlefile  sae_venn.pdf									sae_venn
+	pdftocairo  -png -r $(res1) -transp -singlefile  sae_venn_dark.pdf								sae_venn_dark
 	pdftocairo  -png -r $(res1) -transp -singlefile  structure_preservation_hierarchy.pdf			structure_preservation_hierarchy
 	pdftocairo  -png -r $(res1) -transp -singlefile  structure_preservation_hierarchy_dark.pdf		structure_preservation_hierarchy_dark
 	pdftocairo  -png -r $(res1) -transp -singlefile  transformer_upscaling.pdf						transformer_upscaling
