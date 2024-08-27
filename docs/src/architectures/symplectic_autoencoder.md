@@ -30,7 +30,7 @@ where ``A_i^{(+)} = A_i`` if ``d_{i+1} > d_i`` and ``A_i^{(+)} = A_i^+`` if ``d_
 so the symplectic inverse is equivalent to a matrix transpose in this case. In the symplectic autoencoder we use SympNets as a form of *symplectic preprocessing* before the linear symplectic reduction (i.e. the PSD layer) is employed. The resulting neural network has some of its weights on manifolds, which is why we cannot use standard neural network optimizers, but have to resort to [manifold optimizers](@ref "Generalization to Homogeneous Spaces"). Note that manifold optimization is not necessary for the weights corresponding to the SympNet layers, these are still updated with standard neural network optimizers during training. Also note that SympNets are nonlinear and preserve symplecticity, but they cannot change the dimension of a system while PSD layers can change the dimension of a system and preserve symplecticity, but are strictly linear. Symplectic autoencoders have all three properties: they preserve symplecticity, can change dimension and are nonlinear mappings. We can visualize this in a Venn diagram:
 
 ```@example
-Main.include_graphics("../tikz/sae_venn.png"; caption = raw"Venn diagram visualizing that a symplectic autoencoder (SAE) is symplectic, can change dimension and is nonlinear.") # hide
+Main.include_graphics("../tikz/sae_venn"; caption = raw"Venn diagram visualizing that a symplectic autoencoder (SAE) is symplectic, can change dimension and is nonlinear. ") # hide
 ```
 
 The SympNet layers in the symplectic autoencoder operate in *intermediate dimensions* (as well as the input and output dimensions). In the following we explain how `GeometricMachineLearning` computes those intermediate dimensions. 
@@ -69,7 +69,7 @@ The second step (the multiplication by two) is needed to arrive at intermediate 
 A visualization of an instance of [`SymplecticAutoencoder`](@ref) is shown below: 
 
 ```@example 
-Main.include_graphics("../tikz/symplectic_autoencoder_architecture") # hide
+Main.include_graphics("../tikz/symplectic_autoencoder_architecture"; width = .6, caption = raw"Example of a symplectic autoencoder. The SympNet layers are in green, the PSD-like layers are in blue. ") # hide
 ```
 
 In this figure we have the following configuration: `n_encoder_blocks` is two, `n_encoder_layers` is four, `n_decoder_blocks` is three and `n_decoder_layers` is two. For a full dimension of 100 and a reduced dimension of ten you can build such an instance of a symplectic autoencoder by calling:
@@ -85,6 +85,17 @@ model = SymplecticAutoencoder(full_dim, reduced_dim;
                                                     n_encoder_layers = 4, 
                                                     n_decoder_blocks = 3, 
                                                     n_decoder_layers = 2)
+@assert Chain(model).layers[1] == GradientLayerQ{100, 100, typeof(tanh)}(500, tanh) # hide
+@assert Chain(model).layers[2] == GradientLayerP{100, 100, typeof(tanh)}(500, tanh) # hide
+@assert Chain(model).layers[3] == GradientLayerQ{100, 100, typeof(tanh)}(500, tanh) # hide
+@assert Chain(model).layers[4] == GradientLayerP{100, 100, typeof(tanh)}(500, tanh) # hide
+@assert Chain(model).layers[5] == PSDLayer{100, 10}() # hide
+@assert Chain(model).layers[6] == GradientLayerQ{10, 10, typeof(tanh)}(50, tanh) # hide
+@assert Chain(model).layers[7] == GradientLayerP{10, 10, typeof(tanh)}(50, tanh) # hide
+@assert Chain(model).layers[8] == PSDLayer{10, 54}() # hide
+@assert Chain(model).layers[9] == GradientLayerQ{54, 54, typeof(tanh)}(270, tanh) # hide
+@assert Chain(model).layers[10] == GradientLayerP{54, 54, typeof(tanh)}(270, tanh) # hide
+@assert Chain(model).layers[11] == PSDLayer{54, 100}() # hide
 
 for layer in Chain(model)
     println(stdout, layer)

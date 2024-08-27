@@ -1,5 +1,6 @@
 %% Default preamble BEGIN
-\documentclass[oneside]{memoir}
+
+\documentclass[twoside]{memoir} % would have to be changed to two sided
 
 \usepackage{./custom}
 
@@ -10,7 +11,7 @@
 \author{Benedikt Brantner}
 
 \newcommand{\getTitle}{Geometric Machine Learning}
-\newcommand{\getSubTitle}{Structure-Preserving Neural Networks}
+\newcommand{\getSubTitle}{Structure-Preserving Neural Networks for Scientific Computing}
 \newcommand{\getAuthor}{Benedikt Brantner}
 \newcommand{\getChairman}{\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_}
 \newcommand{\getSupervisor}{Eric Sonnendrücker}
@@ -60,11 +61,13 @@
 %% Main document begin
 \begin{document}
 
-\frontmatter
-\maketitle
+\input{assets/deckblatt.tex}
 \clearpage
 \setcounter{page}{1}
 
-\input{assets/deckblatt.tex}
+\frontmatter
+\maketitle
+\clearpage
 
+\pagestyle{headings}
 %% preamble END

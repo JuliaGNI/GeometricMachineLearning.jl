@@ -114,7 +114,7 @@ remove_numbering_for_some_chapters:
 	sed -i'' -e 's/\\chapter{Preliminary Remarks and Acknowledgements}/\\chapter*{Preliminary Remarks and Acknowledgements}/g' build/G*.tex;
 	sed -i'' -e 's/\\chapter{Abstract}/\\chapter*{Abstract}/g' build/G*.tex;
 	sed -i'' -e 's/\\chapter{Zusammenfassung}/\\chapter*{Zusammenfassung}/g' build/G*.tex;
-
+	sed -i'' -e 's/\\chapter{Summary}/\\chapter*{Summary}/g' build/G*.tex;
 
 copy_png_files:
 	find build/manifolds -name \*.png -exec cp {} build \; ;

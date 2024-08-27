@@ -1,4 +1,4 @@
-# Abstract
+# Summary
 
 Scientific computing has become an indispensible tool for many disciplines like biology, engineering and physics. It is, for example, useful in (i) establishing connections between theories and experiments, (ii) making predictions without relying on physical apparatuses and (iii) aiding in adjusting parameters in the design of large-scale projects such as fusion reactors. 
 
@@ -16,7 +16,7 @@ Part II discusses a novel optimization framework that generalizes existing neura
 
 Part III finally introduces various special neural network layers and architectures. Some of them, like *SympNets* and the *multi-head attention layer*, are well-known , but others like SAEs, *volume-preserving attention* and the *linear symplectic transformer* are new.
 
-In Part IV we give some results based on the new architectures and show how they compare to existing approaches. Most of these applications pertain to applications from physics; but to demonstrate the efficacy of the new optimizers we resort to a classical problem from image classification to show that geometric machine learning can also find applications in fields outside of scientific computing.
+In Part IV we give some results based on the new architectures and show how they compare to existing approaches. Most of these applications pertain to applications from physics; but to demonstrate the efficacy of the new optimizers we resort to a classical problem from image classification to show that geometric machine learning can also find applications in fields outside of scientific computing. For all examples that we show our new architectures exhibit a clear improvement in terms of speed or accuracy over existing architectures.
 
 ```@raw latex
 \clearpage
