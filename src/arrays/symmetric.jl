@@ -65,7 +65,7 @@ SymmetricMatrix(M)
  8.5  11.0  13.5  16.0
 ```
 
-# Extend help
+# Extended help
 
 Note that the constructor is designed in such a way that it always returns matrices of type `SymmetricMatrix{<:AbstractFloat}` when called with a matrix, even if this matrix is of type `AbstractMatrix{<:Integer}`.
 
