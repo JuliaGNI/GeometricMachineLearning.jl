@@ -174,17 +174,17 @@ Main.definition(raw"We say that a mapping ``\varphi: \times_\text{$T$ times}\mat
 In the transformed coordinate system (in terms of the vector ``Z_\mathrm{vec}`` defined above) this is equivalent to multiplication by a sparse matrix ``\tilde\Lambda(Z)`` from the left:
 
 ```math
-    \tilde{\Lambda}(Z) Z_\mathrm{vec} :=
+    \tilde{\Lambda}(Z) Z_\mathrm{vec} := (\Lambda(Z) \otimes \mathbb{I}_T) Z_\mathrm{vec} = 
     \begin{pmatrix}
     \Lambda(Z) & \mathbb{O} & \cdots  & \mathbb{O} \\
     \mathbb{O} & \Lambda(Z) & \cdots & \mathbb{O} \\
     \cdots & \cdots & \ddots & \cdots \\ 
     \mathbb{O} & \mathbb{O} & \cdots & \Lambda(Z) \\
     \end{pmatrix}
-    \left[\begin{array}{c}  z_1^{(1)} \\ z_1^{(2)} \\ \ldots \\ z_1^{(T)} \\ z_2^{(1)} \\ \ldots \\ z_d^{(T)} \end{array}\right] .
+    \left[\begin{array}{c}  z_1^{(1)} \\ z_1^{(2)} \\ \ldots \\ z_1^{(T)} \\ z_2^{(1)} \\ \ldots \\ z_d^{(T)} \end{array}\right],
 ```
 
-``\tilde{\Lambda}(Z)`` is easily shown to be an orthogonal matrix and a symplectic matrix, i.e. it satisfies
+where ``\otimes:\mathbb{R}^{n\times{}n}\times\mathbb{R}^{p\times{}q} \to \mathbb{R}^{pm\times{}qn}`` is the *Kronecker product*. ``\tilde{\Lambda}(Z)`` is easily shown to be an orthogonal matrix and a symplectic matrix, i.e. it satisfies
 
 ```math
 \tilde{\Lambda}(Z)^T\tilde{\Lambda}(Z) = \mathbb{I}
