@@ -17,6 +17,7 @@ jobs:
             sudo apt-get install poppler-utils
             sudo apt-get install texlive-xetex
             sudo apt-get install texlive-science
+            sudo apt-get install latex-cjk-all
       - name: Make images
         run: make latex -C docs/src/tikz
       - uses: julia-actions/setup-julia@latest
