@@ -1,7 +1,7 @@
 @doc raw"""
     SymplecticAutoencoder(full_dim, reduced_dim)
 
-Make an instance of `SymplecticAutoencoder` for dimensions `full_dim` and `reduced_dim` (those have to be provided as `Integer`s).
+Make an instance of `SymplecticAutoencoder` for dimensions `full_dim` and `reduced_dim`.
 
 # The architecture
 
@@ -20,7 +20,7 @@ Because the decoder has this particular property, the reduced system can be desc
 \mathbb{J}_{2n}\nabla_\xi(H\circ\Psi^d) = \mathbb{J}_{2n}(\nabla_\xi\Psi^d)^T\nabla_{\Psi^d(\xi)}H = \mathbb{J}_{2n}(\nabla_\xi\Psi^d)^T\mathbb{J}_{2N}^T\mathbb{J}_{2N}\nabla_{\Psi^d(\xi)}H = (\nabla_\xi\Psi^d)^+X_H(\Psi^d(\xi)),
 ```
 
-where ``(\nabla_\xi\Psi^d)^+`` is the *symplectic inverse* of ``\nabla_\xi\Psi^d`` (for more details see the docs on the [AutoEncoder](@ref) type).
+where ``(\nabla_\xi\Psi^d)^+`` is the *symplectic inverse* of ``\nabla_\xi\Psi^d`` (for more details see the docs on the [`AutoEncoder`](@ref) type).
 
 # Arguments
 

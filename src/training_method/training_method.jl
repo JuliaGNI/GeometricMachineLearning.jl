@@ -1,4 +1,4 @@
-#Define common strucutre Method
+#Define common structure Method
 struct TrainingMethod{TIT<:AbstractTrainingMethod, TSymbol<:AbstractDataSymbol, TShape<:AbstractDataShape, TD} <:AbstractTrainingMethod
     sqdist::TD
 end

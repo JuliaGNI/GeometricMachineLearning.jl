@@ -1,6 +1,8 @@
 @doc raw"""
     AutoEncoder <: Architecture
 
+The abstract `AutoEncoder` type.
+
 An autoencoder [goodfellow2016deep](@cite) is a neural network consisting of an encoder ``\Psi^e`` and a decoder ``\Psi^d``. In the simplest case they are trained on some data set ``\mathcal{D}`` to reduce the following error: 
 
 ```math
@@ -189,7 +191,7 @@ end
 """
     encoder(nn::NeuralNetwork{<:AutoEncoder})
 
-Obtain the *encoder* from a [`AutoEncoder`](@ref) neural network. 
+Obtain the *encoder* from an [`AutoEncoder`](@ref) neural network. 
 """
 function encoder(nn::NeuralNetwork{<:AutoEncoder})
     NeuralNetwork(  UnknownEncoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks), 
@@ -218,7 +220,7 @@ end
 
 Make a neural network of type [`Encoder`](@ref) out of an arbitrary neural network.
 
-# Implementtion
+# Implementation
 
 Internally this allocates a new nerual network of type [`UnknownEncoder`](@ref) and takes the parameters and the backend from `nn`.
 """
@@ -244,7 +246,7 @@ end
 
 Make a neural network of type [`Decoder`](@ref) out of an arbitrary neural network.
 
-# Implementtion
+# Implementation
 
 Internally this allocates a new nerual network of type [`UnknownDecoder`](@ref) and takes the parameters and the backend from `nn`.
 """
