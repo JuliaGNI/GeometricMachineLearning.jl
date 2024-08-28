@@ -24,7 +24,7 @@ where ``(\nabla_\xi\Psi^d)^+`` is the *symplectic inverse* of ``\nabla_\xi\Psi^d
 
 # Arguments
 
-You can provide the following keyword arguments:
+Besides the required arguments `full_dim` and `reduced_dim` you can provide the following keyword arguments:
 - `n_encoder_layers::Integer = 4`: The number of layers in one encoder block.
 - `n_encoder_blocks::Integer = 2`: The number of encoder blocks.
 - `n_decoder_layers::Integer = 1`: The number of layers in one decoder block.
@@ -77,7 +77,14 @@ struct NonLinearSymplecticDecoder{AT} <: SymplecticDecoder
     activation::AT
 end
 
-function SymplecticAutoencoder(full_dim::Integer, reduced_dim::Integer; n_encoder_layers::Integer = 4, n_encoder_blocks::Integer = 2, n_decoder_layers::Integer = 1, n_decoder_blocks::Integer = 3, sympnet_upscale::Integer = 5, activation = tanh, encoder_init_q::Bool = true, decoder_init_q::Bool = true)
+function SymplecticAutoencoder(full_dim::Integer, reduced_dim::Integer; n_encoder_layers::Integer = 4, 
+                                                                        n_encoder_blocks::Integer = 2, 
+                                                                        n_decoder_layers::Integer = 1, 
+                                                                        n_decoder_blocks::Integer = 3, 
+                                                                        sympnet_upscale::Integer = 5, 
+                                                                        activation = tanh, 
+                                                                        encoder_init_q::Bool = true, 
+                                                                        decoder_init_q::Bool = true)
     @assert full_dim ≥ reduced_dim "The dimension of the full-order model hast to be larger than the dimension of the reduced order model!"
     @assert iseven(full_dim) && iseven(reduced_dim) "The full-order model and the reduced-order model need to be even dimensional!"
     @assert n_encoder_blocks ≤ full_dim - reduced_dim "The number of encoder blocks is too big!"

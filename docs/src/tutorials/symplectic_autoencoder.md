@@ -281,11 +281,9 @@ We can now evaluate the solution:
 ```@example toda_lattice
 nn_integrator_parameters = load("integrator_parameters.jld2")["integrator_parameters"] # hide
 integrator_nn = NeuralNetwork(integrator_architecture, Chain(integrator_architecture), nn_integrator_parameters, backend) # hide
-
 ics = encoder(sae_nn_cpu)((q = dl.input.q[:, 1:seq_length, 1], p = dl.input.p[:, 1:seq_length, 1])) # hide
 iterate(mtc(integrator_nn), ics; n_points = length(sol.t), prediction_window = seq_length) # hide
-@time "time stepping with transformer" time_series = iterate(mtc(integrator_nn), ics; n_points = length(sol.t), prediction_window = seq_length) # hide
-
+@time "time stepping with transformer" time_series = iterate(mtc(integrator_nn), ics; n_points = length(sol.t), prediction_window = seq_length)
 nothing # hide
 ```
 

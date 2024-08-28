@@ -74,7 +74,7 @@ const SymplecticDimensionChange = Union{SymplecticCompression, SymplecticEncoder
 
 Make an instance of `UnknownEncoder`.
 
-This should be used if one wants to use an [`Encoder`](@ref) that doesn't have any specific structure.
+This should be used if one wants to use an [`Encoder`](@ref) that does not have any specific structure.
 
 # Examples
 
@@ -105,7 +105,7 @@ end
 
 Make an instance of `UnknownDecoder`.
 
-This should be used if one wants to use an [`Decoder`](@ref) that doesn't have any specific structure.
+This should be used if one wants to use an [`Decoder`](@ref) that does not have any specific structure.
 
 An example of using this can be constructed analogously to [`UnknownDecoder`](@ref).
 """

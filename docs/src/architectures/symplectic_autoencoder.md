@@ -52,8 +52,8 @@ So for e.g. ``2N = 100,`` ``2n = 10`` and ``\mathtt{n\_blocks} = 3`` we get
 ```
 
 We still have to perform the two other modifications in the algorithm above:
-1. `iterations[end] = full_dim2`: assign `full_dim2` to the last entry,
-2. `iterations * 2`: multiply all the intermediate dimensions by two.
+1. `iterations[end] = full_dim2` ``\ldots`` assign `full_dim2` to the last entry,
+2. `iterations * 2` ``\ldots`` multiply all the intermediate dimensions by two.
 
 The resulting dimensions are:
 
@@ -72,7 +72,7 @@ A visualization of an instance of [`SymplecticAutoencoder`](@ref) is shown below
 Main.include_graphics("../tikz/symplectic_autoencoder_architecture"; width = .6, caption = raw"Example of a symplectic autoencoder. The SympNet layers are in green, the PSD-like layers are in blue. ") # hide
 ```
 
-In this figure we have the following configuration: `n_encoder_blocks` is two, `n_encoder_layers` is four, `n_decoder_blocks` is three and `n_decoder_layers` is two. For a full dimension of 100 and a reduced dimension of ten you can build such an instance of a symplectic autoencoder by calling:
+In this figure we have the following configuration: `n_encoder_blocks` is two, `n_encoder_layers` is four, `n_decoder_blocks` is three and `n_decoder_layers` is two. For a full dimension of 100 and a reduced dimension of ten we can build such an instance of a symplectic autoencoder by calling:
 
 ```@example sae
 using GeometricMachineLearning
