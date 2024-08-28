@@ -24,7 +24,7 @@ Closely linked to the research presented here is the development of a software p
 GradientCache
 ```
 
-So the docstring shows the name of the type or method, in most cases how to call it and then gives some information explaining what it does and potentially hyperlinks to other similar docstrings ([`GradientOptimizer`](@ref) in this case); all of this information is indented by a tab. Docstrings may include other information under subheaders **Arguments** (showing the arguments the method can be supplied with), **Examples** (giving more detailed examples (including results) of how to use the method) and **Implementation** (giving details on how the method is implemented).
+So the docstring shows the name of the type or method, in most cases how to call it and then gives some information explaining what it does and potentially hyperlinks to other similar docstrings ([`GradientOptimizer`](@ref) in this case); all of this information is indented by a tab. Docstrings may include other information under subheaders **Arguments** (showing the arguments the method can be supplied with), **Examples** (giving more detailed examples (including results) of how to use the method) and **Implementation** (giving details on how the method is implemented). When we reference a docstring it is always printed in blue (e.g. [`GradientOptimizer`](@ref)), indicating a hyperlink. In addition there is an *index of docstrings* showing all docstrings in chronological order with the associated page number.
 
 All the code necessary to reproduce the results is included in the text and does not have any specific hardware requirements. Except for training some of the neural networks (which was done on an NVIDA Geforce RTX 4090 [rtx4090](@cite)) all the code snippets were run on CPU (via GitHub runners [actions](@cite)).
 
@@ -47,11 +47,13 @@ The background material, which does not include any original work, covers all th
 
 ## The Optimizer Framework
 
-One of the central parts of this dissertation is an *optimizer framework* that allows the generalization of existing optimizers such as Adam [kingma2014adam](@cite) and BFGS [wright2006numerical; Chapter 6.1](@cite) to homogeneous spaces in a consistent way. This part contains the following sections:
+One of the central parts of this dissertation is an *optimizer framework* that allows the generalization of existing optimizers such as Adam [kingma2014adam](@cite) and BFGS [wright2006numerical; Chapter 6.1](@cite) to homogeneous spaces in a consistent way[^4]. This part contains the following sections:
 - [Neural Network Optimizers](@ref): here we introduce the concept of a neural network optimizer and discuss the modifications we have to make in order to generalize them to homogeneous spaces.
 - [Retractions](@ref): an important concept in manifold optimization are retractions [absil2008optimization](@cite). We introduce them in this section, discuss how they can be constructed for homogeneous spaces and show the two examples of the *geodesic retraction* and the *Cayley retraction*.
 - [Parallel Transport](@ref): whenever we have an optimizer that contains momentum terms (such as Adam for example) we need to *transport* these momenta. In this section we explain how this can be done straightforwardly when dealing with homogeneous spaces. 
 - [Optimizer methods](@ref "Standard Neural Network Optimizers"): in this section we introduce simple optimizers such as the *gradient optimizer*, the *momentum optimizer* and *Adam* and show how to generalize them to our setting. Due to its increased complexity the BFGS optimizer gets [its own section](@ref "The BFGS Optimizer").
+
+[^4]: The optimizer framework was introduced in [brantner2023generalizing](@cite).
 
 ```@example
 Main.include_graphics("tikz/tangent_vector"; caption = raw"Weights can be put on manifolds to achieve structure preservation or improved stability.") # hide
@@ -84,13 +86,13 @@ In this part we demonstrate the neural network architectures implemented in `Geo
 - [Different volume-preserving attention mechanisms](@ref "Comparing Different `VolumePreservingAttention` Mechanisms"): the [volume-preserving attention mechanism](@ref "Volume-Preserving Attention") in `GeometricMachineLearning` is based on computing correlations in the input sequence. These correlations can be constructed in two different ways. Here we compare these two.
 - [Linear Symplectic Transformer](@ref linear_symplectic_transformer_tutorial): the linear symplectic transformer is used to integrate the four-dimensional Hamiltonian system of the *coupled harmonic oscillator*. Here we compare the linear symplectic transformer to the standard transformer and SympNets.
 
-## Associated Papers
+## Associated Papers and Contributions
 
 The following papers have emerged in connection with the development of `GeometricMachineLearning`:
 1. In [brantner2023generalizing](@cite) a new class of optimizers for *homogeneous spaces*, a category that includes the Stiefel manifold and the Grassmann manifold, is introduced.
-2. In [brantner2023symplectic](@cite) we introduced a new neural network architectures that we call *symplectic autoencoders*. This is capable of performing non-linear Hamiltonian model reduction. During training we use the optimizers introduced in [brantner2023generalizing](@cite).
+2. In [brantner2023symplectic](@cite) we introduced a new neural network architectures that we call *symplectic autoencoders*. This is capable of performing non-linear Hamiltonian model reduction. During training of these symplectic autoencoders we use the optimizers introduced in [brantner2023generalizing](@cite).
 3. In [brantner2024volume](@cite) we introduce a new neural network architecture that we call *volume-preserving transformers*. This is a structure-preserving version of the *standard transformer* [vaswani2017attention](@cite) for which all components have been made volume preserving. As application we foresee the *online phase* in reduced order modeling.
 
 In addition there are new results presented in this work that have not been written up as a separate paper:
-4. We show how the [Grassmann manifold can be included into a neural network](@ref "Example of a Neural Network with a Grassmann Layer") and construct a loss based on the Wasserstein distance to approximate a nonlinear space from which we can then sample.
-5. Similar to the volume-preserving transformer [brantner2024volume](@cite) we introduce a [linear symplectic transformer](@ref "Linear Symplectic Transformer") that preserves a symplectic product structure and is also foreseen to be used in reduced order modeling.
+4. Similar to the volume-preserving transformer [brantner2024volume](@cite) we introduce a [linear symplectic transformer](@ref "Linear Symplectic Transformer") that preserves a symplectic product structure and is also foreseen to be used in reduced order modeling.
+5. We show how the [Grassmann manifold can be included into a neural network](@ref "Example of a Neural Network with a Grassmann Layer") and construct a loss based on the Wasserstein distance to approximate a nonlinear space from which we can then sample.
