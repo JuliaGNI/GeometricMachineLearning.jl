@@ -197,6 +197,7 @@ _reduced_order_modeling = "Reduced Order Modeling" =>[
     ]
 
 _architectures = "Architectures" => [
+    "Using Architectures with `NeuralNetwork`" => "architectures/abstract_neural_networks.md",
     "Symplectic Autoencoders" => "architectures/symplectic_autoencoder.md",
     "Neural Network Integrators" => "architectures/neural_network_integrators.md",
     "SympNet" => "architectures/sympnet.md",
