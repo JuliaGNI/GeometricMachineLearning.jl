@@ -9,15 +9,6 @@ The central idea behind this is to construct an explicit multi-step integrator:
     \mathtt{Integrator}: [ z^{(t - \mathtt{sl} + 1)}, z^{(t - \mathtt{sl} + 2)}, \ldots, z^{(t)} ] \mapsto [ z^{(t + 1)}, z^{(t + 2)}, \ldots, z^{(t + \mathtt{pw})} ],
 ```
 where `sl` stands for *sequence length* and `pw` stands for *prediction window*, so the numbers of input and output vectors respectively.
-
-Note that for standard multi-step methods (that are not neural network-based) `sl` is generally a number greater than one whereas `pw = 1` in most cases. 
-
-For the `TransformerIntegrator`s in `GeometricMachineLearning` however we usually have:
-
-```math
-    \mathtt{pw} = \mathtt{sl},
-```
-so the number of vectors in the input sequence is equal to the number of vectors in the output sequence.
 """
 abstract type TransformerIntegrator <: Architecture end
 
@@ -37,7 +28,7 @@ end
 
 Iterate the neural network of type [`TransformerIntegrator`](@ref) for initial conditions `ics`.
 
-The initial condition is a matrix ``\in\mathbb{R}^{2n\times\mathtt{seq\_length}}`` or `NamedTuple` of two matrices ``\in\mathbb{R}^{n\times\mathtt{seq\_length}}``).
+The initial condition is a matrix ``\in\mathbb{R}^{n\times\mathtt{seq\_length}}`` or `NamedTuple` of two matrices).
 
 This function computes a trajectory for a Transformer that has already been trained for valuation purposes.
 
