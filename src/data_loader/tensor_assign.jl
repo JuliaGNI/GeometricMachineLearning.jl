@@ -37,12 +37,12 @@ end
 
 Crop the output to get the correct number of output vectors.
 
-The function `assign_output_estimate` is closely related to the transformer. 
-It takes the last `prediction_window` columns of the output and uses them for the final prediction.
+The function `assign_output_estimate` is closely related to the [`Transformer`](@ref). 
+It takes the last `prediction_window` columns of the output and uses them for the prediction.
 
 i.e.
 ```math
-\mathbb{R}^{N\times\mathtt{pw}}\to\mathbb{R}^{N\times\mathtt{pw}}, 
+\mathbb{R}^{N\times{}T}\to\mathbb{R}^{N\times\mathtt{pw}}, 
 \begin{bmatrix} 
     z^{(1)}_1               & \cdots & z^{(T)}_1 \\ 
     \cdots                  & \cdots & \cdots    \\ 
