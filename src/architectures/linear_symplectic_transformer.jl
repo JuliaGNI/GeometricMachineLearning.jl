@@ -1,3 +1,8 @@
+const lst_n_sympnet_default = 2
+const lst_L_default = 1
+const lst_activation_default = tanh
+const lst_init_upper_default = true
+
 @doc raw"""
     LinearSymplecticTransformer(sys_dim, seq_length)
 
@@ -6,11 +11,13 @@ Make an instance of `LinearSymplecticTransformer` for a specific system dimensio
 # Arguments 
 
 You can provide the additional optional keyword arguments:
-- `n_sympnet::Int=2`: The number of sympnet layers in the transformer.
-- `upscaling_dimension::Int=2*dim`: The upscaling that is done by the gradient layer. 
-- `L::Int=1`: The number of transformer units. 
-- `activation=tanh`: The activation function for the SympNet layers. 
-- `init_upper::Bool=true`: Specifies if the first layer is a ``Q``-type layer (`init_upper=true`) or if it is a ``P``-type layer (`init_upper=false`).
+- `n_sympnet::Int = """ * "($lst_n_sympnet_default)`" * raw""": The number of sympnet layers in the transformer.
+- `upscaling_dimension::Int = 2*dim`: The upscaling that is done by the gradient layer. 
+- `L::Int = """ * "$(lst_L_default)`" * raw""": The number of transformer units. 
+- `activation = """ * "$(lst_activation_default)`" * raw""": The activation function for the SympNet layers. 
+- `init_upper::Bool=true`: Specifies if the first layer is a ``q``-type layer (`init_upper=true`) or if it is a ``p``-type layer (`init_upper=false`).
+
+The number of SympNet layers in the network is `2n_sympnet`, i.e. for `n_sympnet = 1` we have one [`GradientLayerQ`](@ref) and one [`GradientLayerP`](@ref).
 """
 struct LinearSymplecticTransformer{AT} <: TransformerIntegrator where AT 
     dim::Int
@@ -21,7 +28,11 @@ struct LinearSymplecticTransformer{AT} <: TransformerIntegrator where AT
     activation::AT
     init_upper::Bool
 
-    function LinearSymplecticTransformer(dim::Int, seq_length::Int; n_sympnet::Int=2, upscaling_dimension::Int=2*dim, L::Int=1, activation=tanh, init_upper::Bool=true)
+    function LinearSymplecticTransformer(dim::Int, seq_length::Int; n_sympnet::Int = lst_n_sympnet_default, 
+                                                                    upscaling_dimension::Int = 2 * dim, 
+                                                                    L::Int = lst_L_default, 
+                                                                    activation = lst_activation_default, 
+                                                                    init_upper::Bool = lst_init_upper_default)
         new{typeof(tanh)}(dim, seq_length, n_sympnet, upscaling_dimension, L, activation, init_upper)
     end
 end
