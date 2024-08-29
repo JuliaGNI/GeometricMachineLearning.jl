@@ -218,6 +218,7 @@ _tutorials = "Tutorials" => [
     "MNIST" => "tutorials/mnist/mnist_tutorial.md",
     "Grassmann Manifold" => "tutorials/grassmann_layer.md",
     "Volume-Preserving Attention" => "tutorials/volume_preserving_attention.md",
+    "Volume-Preserving Transformer for the Rigid Body" => "tutorials/volume_preserving_transformer_rigid_body.md",
     "Linear Symplectic Transformer" => "tutorials/linear_symplectic_transformer.md",
     "Adjusting the Loss Function" => "tutorials/adjusting_the_loss_function.md",
     "Comparing Optimizers" => "tutorials/optimizer_comparison.md",
@@ -326,7 +327,8 @@ _latex_pages = [
     "Experiments and Applications" => [
         "Learning a Reduced Model with Symplectic Autoencoders" => value_for_key(_tutorials, "Symplectic Autoencoders"),
         "Neural Networks as Symplectic Integrators" => value_for_key(_tutorials,
-                                            "SympNets", 
+                                            "SympNets",
+                                            "Volume-Preserving Transformer for the Rigid Body",
                                             "Linear Symplectic Transformer"),
         "Transformers with Structure" => value_for_key(_tutorials, "MNIST", "Volume-Preserving Attention"),
         "Learning Nonlinear Spaces" => value_for_key(_tutorials, "Grassmann Manifold"),
