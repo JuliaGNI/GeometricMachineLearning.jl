@@ -20,8 +20,8 @@ The following are optional keyword arguments:
 - `n_blocks::Int = """ * "$(sti_n_blocks_default)`" * raw""" : the number of [`ResNetLayer`](@ref) blocks.
 - `n_heads::Int = sys_dim`: the number of heads in the multihead attention layer.
 - `L::Int = """ * "$(sti_L_default)`" * raw""": the number of transformer blocks.
-- `upscaling_activation = """ * "$(sti_upscaling_activation_default)`" * raw"""
-- `resnet_activation = """ * "$(sti_resnet_activation_default)`" * raw"""
+- `upscaling_activation = """ * "$(sti_upscaling_activation_default)`" * raw""": the activation used in the upscaling layer.
+- `resnet_activation = """ * "$(sti_resnet_activation_default)`" * raw""": the activation used for the [`ResNetLayer`](@ref).
 - `add_connection:Bool = """ * "$(sti_add_connection_default)`" * raw""": specifies if the input should be added to the output.
 """
 struct StandardTransformerIntegrator{AT1, AT2} <: TransformerIntegrator
