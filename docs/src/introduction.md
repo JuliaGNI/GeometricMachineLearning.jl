@@ -89,8 +89,8 @@ In this part we demonstrate the neural network architectures implemented in `Geo
 ## Associated Papers and Contributions
 
 The following papers have emerged in connection with the development of `GeometricMachineLearning`:
-1. In [brantner2023generalizing](@cite) a new class of optimizers for *homogeneous spaces*, a category that includes the Stiefel manifold and the Grassmann manifold, is introduced.
-2. In [brantner2023symplectic](@cite) we introduced a new neural network architectures that we call *symplectic autoencoders*. This is capable of performing non-linear Hamiltonian model reduction. During training of these symplectic autoencoders we use the optimizers introduced in [brantner2023generalizing](@cite).
+1. In [brantner2023generalizing](@cite) a new class of optimizers for *homogeneous spaces*, a category that includes the Stiefel manifold and the Grassmann manifold, is introduced. The results presented in this paper are reproduced in the [examples](@ref "MNIST Tutorial").
+2. In [brantner2023symplectic](@cite) we introduced a new neural network architectures that we call *symplectic autoencoders*. This is capable of performing non-linear Hamiltonian model reduction. During training of these symplectic autoencoders we use the optimizers introduced in [brantner2023generalizing](@cite). Similar results to what is presented in the paper are reproduced [as an example](@ref "Symplectic Autoencoders and the Toda Lattice").
 3. In [brantner2024volume](@cite) we introduce a new neural network architecture that we call *volume-preserving transformers*. This is a structure-preserving version of the *standard transformer* [vaswani2017attention](@cite) for which all components have been made volume preserving. As application we foresee the *online phase* in reduced order modeling.
 
 In addition there are new results presented in this work that have not been written up as a separate paper:
