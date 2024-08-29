@@ -1,6 +1,6 @@
 # The Volume-Preserving Transformer for the Rigid Body
 
-Here we train a [volume-preserving feedforward neural network](@ref "Volume-Preserving Feedforward Neural Network"), a [standard transformer](@ref "Standard Transformer") and a [volume-preserving transformer](@ref "Volume-Preserving Transformer") on a rigid body [hairer2006geometric, arnold1978classical](@cite). These are also the results presented in [brantner2024volume](@cite). The ODE that describes the rigid body is: 
+Here we train a [volume-preserving feedforward neural network](@ref "Volume-Preserving Feedforward Neural Network"), a [standard transformer](@ref "Standard Transformer") and a [volume-preserving transformer](@ref "Volume-Preserving Transformer") on a rigid body [hairer2006geometric, arnold1978mathematical](@cite). These are also the results presented in [brantner2024volume](@cite). The ODE that describes the rigid body is: 
 
 ```math
 \frac{d}{dt}\begin{pmatrix} z_1 \\ z_2 \\ z_3 \end{pmatrix} = \begin{pmatrix} Az_2z_3 \\ Bz_1z_3 \\ Cz_1z_2 \end{pmatrix}.
@@ -144,7 +144,7 @@ The rigid body has Poisson structure [hairer2006geometric](@cite), but does not 
 
 ```@example rigid_body
 # hyperparameters concerning the architectures 
-const sys_dim = size(dl₁.input, 1)
+const sys_dim = size(dl_cpu.input, 1)
 const n_heads = 1
 const L = 3 # transformer blocks 
 const activation = tanh
@@ -169,7 +169,7 @@ backend = CUDABackend()
 T = Float32
 backend = CPU() # hide
 
-dl = DataLoader(dl, backend, T; suppress_info = true)
+dl = DataLoader(dl_cpu, backend, T; suppress_info = true)
 nn_vpff = NeuralNetwork(arch_vpff, backend, T)
 nn_vpt = NeuralNetwork(arch_vpt, backend, T)
 nn_st = NeuralNetwork(arch_st, backend, T)
