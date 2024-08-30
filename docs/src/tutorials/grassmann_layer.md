@@ -1,6 +1,13 @@
 # Example of a Neural Network with a Grassmann Layer
 
-Here we show how to implement a neural network that contains a layer whose weight is an element of the [Grassmann manifold](@ref "The Grassmann Manifold") and where this might be useful. Recall that the Grassmann manifold ``Gr(n, N)`` is the set of vector spaces of dimension ``n`` embedded in ``\mathbb{R}^N``. So if we optimize on the Grassmann manifold, we optimize for an *ideal* ``n``-dimensional vector space in the bigger space ``\mathbb{R}^N``. 
+Here we show how to implement a neural network that contains a layer whose weight is an element of the [Grassmann manifold](@ref "The Grassmann Manifold") and where this is useful. Recall that the Grassmann manifold ``Gr(n, N)`` is the set of vector spaces of dimension ``n`` embedded in ``\mathbb{R}^N``. So if we optimize on the Grassmann manifold, we optimize for an *ideal* ``n``-dimensional vector space in the bigger space ``\mathbb{R}^N``. 
+
+We visualize this:
+
+```@example
+Main.include_graphics("../tikz/grassmann_sampling"; width = .7, caption = raw"We can build a neural network that creates new samples from an unknown distribution. ")
+```
+
 
 ```@eval
 Main.remark(raw"This example for learning weights on a Grassmann manifold also shows how `GeometricMachineLearning` can be used together with other packages. Here we use the *Wasserstein distance* from the package `BrenierTwoFluid` for example.")
@@ -8,11 +15,11 @@ Main.remark(raw"This example for learning weights on a Grassmann manifold also s
 
 ## Identifying Non-Linear Subspaces of ``\mathbb{R}^N``
 
-Consider the following scenario: we are given data in a big space ``\mathcal{D}=[d_i]_{i\in\mathcal{I}}\subset\mathbb{R}^N`` and know these data live on an ``n``-dimensional submanifold[^1] in ``\mathbb{R}^N``. Based on these data we would now like to generate new samples from the distributions that produced our original data. This is where the Grassmann manifold is useful: each element ``V`` of the Grassmann manifold is an ``n``-dimensional subspace of ``\mathbb{R}^N`` from which we can easily sample. We can then construct a (bijective) mapping from this space ``V`` onto a space that contains our data points ``\mathcal{D}``. 
+Consider the following scenario: we are given data in a big space ``\mathcal{D}=[d_i]_{i\in\mathcal{I}}\subset\mathbb{R}^N`` and know these data are on an ``n``-dimensional submanifold[^1] in ``\mathbb{R}^N``. Based on these data we would now like to generate new samples from the distributions that produced our original data. This is where the Grassmann manifold is useful: each element ``V`` of the Grassmann manifold is an ``n``-dimensional subspace of ``\mathbb{R}^N`` from which we can easily sample. We can then construct a (bijective) mapping from this space ``V`` onto a space that contains our data points ``\mathcal{D}``. 
 
 [^1]: Problems and solutions related to this scenario are part of the *manifold learning paradigm* (see [lin2008riemannian](@cite)). [Data-driven reduced order modeling](@ref "General Workflow") can also be seen as belonging to this category.
 
-## Academic Example
+## Graph of Rosenbrock Function as Example
 
 Consider the following toy example: We want to sample from the graph of the (scaled) Rosenbrock function 
 
@@ -69,7 +76,7 @@ nothing # hide
 ```
 
 ```@example rosenbrock
-Main.include_graphics("rosenbrock") # hide
+Main.include_graphics("rosenbrock"; width = .7) # hide
 ```
 
 We now build a neural network whose task it is to map a product of two Gaussians ``\mathcal{N}(0,1)\times\mathcal{N}(0,1)`` onto the graph of the Rosenbrock function:
@@ -232,7 +239,7 @@ nothing # hide
 ```
 
 ```@example rosenbrock
-Main.include_graphics("point_cloud_arrows") # hide
+Main.include_graphics("point_cloud_arrows"; width = .7) # hide
 ```
 
 We now want to train a neural network based on this Wasserstein loss. The loss function is:
@@ -314,7 +321,7 @@ nothing # hide
 ```
 
 ```@example rosenbrock
-Main.include_graphics("training_loss") # hide
+Main.include_graphics("training_loss"; width = .7) # hide
 ```
 
 Now we plot a few points to check how well they match the graph:
@@ -340,7 +347,7 @@ file_name = "mapped_points" * (theme == :dark ? "_dark.png" : ".png") # hide
 save(file_name, alpha_colorbuffer(fig)) # hide
 end # hide
 
-Main.include_graphics("mapped_points") # hide
+Main.include_graphics("mapped_points"; width = .7) # hide
 ```
 
 If points appear in darker color this means that they lie behind the graph of the Rosenbrock function.
