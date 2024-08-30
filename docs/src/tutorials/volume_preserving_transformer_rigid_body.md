@@ -60,6 +60,7 @@ nothing # hide
 ```@setup rigid_body
 using GLMakie
 include("../../gl_makie_transparent_background_hack.jl")
+GLMakie.activate!() # hide
 
 morange = RGBf(255 / 256, 127 / 256, 14 / 256) # hide
 mred = RGBf(214 / 256, 39 / 256, 40 / 256) # hide
@@ -120,10 +121,12 @@ Main.include_graphics("rigid_body_trajectories"; width = .7, caption = raw"A sam
 
 The rigid body has two conserved quantities:
 1. one conserved quantity is the [Hamiltonian of the system](@ref "Symplectic Systems"):
+    
     ```math
     H(z_1, z_2, z_3) = \frac{1}{2}\left( \frac{z_1^2}{I_1} + \frac{z_2^2}{I_2} + \frac{z_3^2}{I_3} \right),
     ```
 2. the second one is the quadratic invariant:
+    
     ```math
     I(z_1, z_2, z_3) = z_1^2 + z_2^2 + z_3^2.
     ```
@@ -138,7 +141,7 @@ C = \frac{I_1 - I_2}{I_1I_2}.
 \end{aligned}
 ```
 
-The second conserved invariant ``I(\cdot, \cdot, \codt)`` is visualized through the sphere in the figure above. The conserved Hamiltonian is the reason for why the curves are closed.
+The second conserved invariant ``I(\cdot, \cdot, \cdot)`` is visualized through the sphere in the figure above. The conserved Hamiltonian is the reason for why the curves are closed.
 
 The rigid body has Poisson structure [hairer2006geometric](@cite), but does not have canonical Hamiltonian structure. We can thus not use [SympNets](@ref "SympNet Architecture") or [symplectic transformers](@ref "Linear Symplectic Transformer") here, but the ODE is clearly divergence-free. We use this to demonstrate the efficacy of the [volume-preserving transformer](@ref "Volume-Preserving Transformer"). We set up our networks:
 
@@ -174,7 +177,7 @@ nn_vpff = NeuralNetwork(arch_vpff, backend, T)
 nn_vpt = NeuralNetwork(arch_vpt, backend, T)
 nn_st = NeuralNetwork(arch_st, backend, T)
 
-(parameterlength(nn_vpff), paramterlength(nn_vpt), parameterlength(nn_st))
+(parameterlength(nn_vpff), parameterlength(nn_vpt), parameterlength(nn_st))
 ```
 
 We now train the various networks. For this we use [`AdamOptimizerWithDecay`](@ref):
