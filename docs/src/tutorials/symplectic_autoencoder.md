@@ -1,15 +1,26 @@
 # Symplectic Autoencoders and the Toda Lattice
 
-In this tutorial we use a [SymplecticAutoencoder](@ref) to approximate the linear wave equation with a lower-dimensional Hamiltonian model and compare it with standard proper symplectic decomposition (PSD).
+In this tutorial we use a [symplectic autoencoder](@ref "The Symplectic Autoencoder") to approximate the linear wave equation with a lower-dimensional Hamiltonian model and compare it with standard [proper symplectic decomposition](@ref "Proper Symplectic Decomposition").
+
+```@eval
+Main.remark(raw"As with any neural network we have to make the following choices:
+" * Main.indentation * raw"1. specify the *architecture*,
+" * Main.indentation * raw"2. specify the *type* and *backend*,
+" * Main.indentation * raw"3. pick an *optimizer* for training the network,
+" * Main.indentation * raw"4. specify how you want to perform *batching*,
+" * Main.indentation * raw"5. choose a *number of epochs*,
+" * Main.indentation * raw"where points 1 and 3 depend on a variable number of hyperparameters.")
+```
+For the symplectic autoencoder point 1 is done by calling [`SymplecticAutoencoder`](@ref), point 2 is done by calling `NeuralNetwork`, point 3 is done by calling [`Optimizer`](@ref) and point 4 is done by calling [`Batch`](@ref).
 
 ## The system
 
-The [Toda lattice](https://juliagni.github.io/GeometricProblems.jl/latest/toda_lattice) is a prototypical example of a Hamiltonian PDE. It is described by 
+The Toda lattice [toda1967vibration](@cite) is a prototypical example of a Hamiltonian PDE. It is described by 
 ```math
     H(q, p) = \sum_{n\in\mathbb{Z}}\left(  \frac{p_n^2}{2} + \alpha e^{q_n - q_{n+1}} \right).
 ```
 
-We further assume a finite number of particles ``N`` and impose periodic boundary conditions: 
+Starting from this equation we further assume a finite number of particles ``N`` and impose periodic boundary conditions: 
 ```math
 \begin{aligned}
     q_{n+N} &  \equiv q_n \\ 
@@ -17,11 +28,11 @@ We further assume a finite number of particles ``N`` and impose periodic boundar
 \end{aligned}
 ```
 
-In this tutorial we want to reduce the dimension of the big system by a significant factor with (i) proper symplectic decomposition (PSD) and (ii) symplectic autoencoders. The first approach is strictly linear whereas the second one allows for more general mappings. 
+In this tutorial we want to reduce the dimension of the big system by a significant factor with (i) proper symplectic decomposition (PSD) and (ii) symplectic autoencoders (SAE). The first approach is strictly linear whereas the second one allows for more general mappings. 
 
 ### Using the Toda lattice in numerical experiments 
 
-In order to use the Toda lattice in numerical experiments we have to pick suitable initial conditions. For this, consider the [third-degree spline](https://juliagni.github.io/GeometricProblems.jl/latest/initial_condition): 
+In order to use the Toda lattice in numerical experiments we have to pick suitable initial conditions. For this, consider the third-degree spline: 
 
 ```math
 h(s)  = \begin{cases}
@@ -63,34 +74,37 @@ import Random # hide
 
 pr = tl.hodeproblem(; tspan = (0.0, 800.))
 sol = integrate(pr, ImplicitMidpoint())
-dl_cpu = DataLoader(sol; autoencoder = true, suppress_info = true)
-
 nothing # hide
 ```
 
-Here we first integrate the system with implicit midpoint and then put the training data into the right format by calling `DataLoader`. We can get the dimension of the system by calling `dl.input_dim`:
+We then put the format in the correct format by calling [`DataLoader`](@ref)[^1]:
+
+[^1]: For more information on [`DataLoader`](@ref) see the [corresponding section](@ref "The Data Loader").
 
 ```@example toda_lattice
-dl_cpu.input_dim
+dl_cpu = DataLoader(sol; autoencoder = true, suppress_info = true)
+nothing # hide
 ```
 
-Also note that the keyword `autoencoder` was set to true when calling [`DataLoader`](@ref).
+Also note that the keyword `autoencoder` was set to true when calling [`DataLoader`](@ref). The keyword argument `supress_info` determines whether data loader provides some additional information on the data it is called on.
 
 ## Train the network 
 
-We now want to compare two different approaches: [PSDArch](@ref) and [SymplecticAutoencoder](@ref). For this we first have to set up the networks: 
+We now want to compare two different approaches: [`PSDArch`](@ref) and [`SymplecticAutoencoder`](@ref). For this we first have to set up the networks: 
 
 ```@example toda_lattice
 const reduced_dim = 2
 
 Random.seed!(123) # hide
 psd_arch = PSDArch(dl_cpu.input_dim, reduced_dim)
-sae_arch = SymplecticAutoencoder(dl_cpu.input_dim, reduced_dim; n_encoder_blocks = 4, n_decoder_blocks = 4, n_encoder_layers = 2, n_decoder_layers = 2)
-
+sae_arch = SymplecticAutoencoder(dl_cpu.input_dim, reduced_dim; n_encoder_blocks = 4, 
+                                                                n_decoder_blocks = 4, 
+                                                                n_encoder_layers = 2, 
+                                                                n_decoder_layers = 2)
 nothing # hide
 ```
 
-Training a neural network is usually done by calling an instance of [Optimizer](@ref) in `GeometricMachineLearning`. [PSDArch](@ref) however can be solved directly by using singular value decomposition and this is done by calling [solve!](@ref):  
+Training a neural network is usually done by calling an instance of [`Optimizer`](@ref) in `GeometricMachineLearning`. [`PSDArch`](@ref) however can be solved directly by using singular value decomposition and this is done by calling [solve!](@ref):  
 
 ```@example toda_lattice
 psd_nn_cpu = NeuralNetwork(psd_arch, CPU(), eltype(dl_cpu))
@@ -98,9 +112,9 @@ psd_nn_cpu = NeuralNetwork(psd_arch, CPU(), eltype(dl_cpu))
 solve!(psd_nn_cpu, dl_cpu)
 ```
 
-The `SymplecticAutoencoder` we train with the [AdamOptimizer](@ref) however[^1]:
+The `SymplecticAutoencoder` we train with the [`AdamOptimizerWithDecay`](@ref) however[^2]:
 
-[^1]: It is not feasible to perform the training on CPU, which is why we use `CUDA` [besard2018juliagpu](@cite) here. We further perform the training in single precision.
+[^2]: It is not feasible to perform the training on CPU, which is why we use `CUDA` [besard2018juliagpu](@cite) here. We further perform the training in single precision.
 
 ```julia
 using CUDA
@@ -113,7 +127,7 @@ dl = DataLoader(dl_cpu, backend, Float32)
 
 
 sae_nn_gpu = NeuralNetwork(sae_arch, CUDADevice(), Float32)
-o = Optimizer(sae_nn_gpu, AdamOptimizer())
+o = Optimizer(sae_nn_gpu, AdamOptimizerWithDecay(integrator_train_epochs))
 
 # train the network
 o(sae_nn_gpu, dl, Batch(batch_size), n_epochs)
@@ -149,7 +163,9 @@ sae_rs = HRedSys(pr, encoder(sae_nn_cpu), decoder(sae_nn_cpu); integrator = Impl
 nothing  # hide
 ```
 
-We integrate the full system (again) as well as the two reduced systems:
+We integrate the full system (again) as well as the two reduced systems[^3]:
+
+[^3]: All of this is done with `ImplicitMidpoint` as integrator.
 
 ```@example toda_lattice 
 integrate_full_system(psd_rs) # hide
@@ -227,10 +243,10 @@ nothing # hide
 ```
 
 ```@example
-Main.include_graphics("sae_validation"; width = .8) # hide
+Main.include_graphics("sae_validation"; width = .8, caption = raw"Comparison between FOM (blue), PSD with implicit midpoint (orange) and SAE with implicit midpoint (green). ") # hide
 ```
 
-We can see that the autoencoder approach has much more approximation capabilities than the psd approach. The jiggly lines are due to the fact that training was done for only 8 epochs. 
+We can see that the SAE has much more approximation capabilities than the PSD. But even though the SAE reasonably reproduces the full-order model (FOM), we see that the online stage of the SAE takes even longer than evaluating the FOM. In order to solve this problem we have to make the *online stage more efficient*.
 
 ## The online stage with a neural network
 
@@ -258,9 +274,6 @@ o_integrator = Optimizer(integrator_method, integrator_nn)
 dl = dl_cpu # hide
 # map from autoencoder type to integrator type
 dl_integration = DataLoader(dl; autoencoder = false)
-
-# the regular transformer can't deal with symplectic data!
-dl_integration = DataLoader(vcat(dl_integration.input.q, dl_integration.input.p); suppress_info = true)
 
 integrator_batch = Batch(integrator_batch_size, seq_length)
 
@@ -339,7 +352,7 @@ nothing # hide
 ```
 
 ```@example
-Main.include_graphics("sae_integrator_validation"; width = .8) # hide
+Main.include_graphics("sae_integrator_validation"; width = .8, caption = raw"Comparison between FOM (blue), PSD with implicit midpoint (orange), SAE with implicit midpoint (green) and SAE with transformer (purple). ") # hide
 ```
 
 Note that integration of the system with the transformer is orders of magnitudes faster than any comparable method and also leads to an improvement in accuracy over the case where we build the reduced space with the symplectic autoencoder and use implicit midpoint in the online phase.

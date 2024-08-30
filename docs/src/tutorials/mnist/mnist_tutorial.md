@@ -2,16 +2,11 @@
 
 This is a short tutorial that shows how we can use `GeometricMachineLearning` to build a vision transformer and apply it for MNIST [deng2012mnist](@cite), while also putting some of the weights on a manifold. This is also the result presented in [brantner2023generalizing](@cite).
 
-First, we need to import the relevant packages: 
-
-```@example mnist
-using GeometricMachineLearning
-import MLDatasets
-```
-
-For the AD routine we here use the `GeometricMachineLearning` default and we get the dataset from [`MLDatasets`](https://github.com/JuliaML/MLDatasets.jl). We need to load the data set and preprocess it:
+We get the dataset from [`MLDatasets`](https://github.com/JuliaML/MLDatasets.jl). Before we use it we allocate it on gpu with `cu` from `CUDA.jl` [besard2018juliagpu](@cite):
 
 ```@setup mnist
+using GeometricMachineLearning
+import MLDatasets
 train_x, train_y = MLDatasets.MNIST(split=:train)[:]
 test_x, test_y = MLDatasets.MNIST(split=:test)[:]
 
@@ -19,6 +14,7 @@ nothing # hide
 ```
 
 ```julia
+using MLDatasets
 using CUDA
 train_x, train_y = MLDatasets.MNIST(split=:train)[:]
 test_x, test_y = MLDatasets.MNIST(split=:test)[:]
@@ -29,9 +25,17 @@ test_x = test_x |> cu
 test_y = test_y |> cu
 ```
 
+Next we call [`DataLoader`](@ref) on these data. For this we first need to specify a *patch length*[^1].
+
+[^1]: When [`DataLoader`](@ref) is called this way it uses [`split_and_flatten`](@ref) internally.
+
+```@eval
+Main.remark(raw"In order to apply the transformer to a data set we should typically cast these data into a *time series format*. MNIST images are pictures with ``28\times28`` pixels. Here we cast these images into *time series* of length 16, so one image is represented by a matrix ``\in\mathbb{R}^{49\times{}16}``.")
+```
+
 ```@example mnist
 const patch_length = 7
-dl = DataLoader(train_x, train_y, patch_length = patch_length)
+dl = DataLoader(train_x, train_y, patch_length = patch_length; suppress_info = true)
 
 nothing # hide
 ```
@@ -39,7 +43,7 @@ nothing # hide
 Here we called [`DataLoader`](@ref) on a tensor and a vector of integers (targets) as input. [`DataLoader`](@ref) automatically converts the data to the correct input format for easy handling. This is visualized below:
 
 ```@example
-Main.include_graphics("mnist_visualization"; caption = "Visualization of how the data are preprocessed.") # hide
+Main.include_graphics("mnist_visualization"; caption = "Visualization of how the data are preprocessed. It is split and flattened. ", width = .8) # hide
 ```
 
 Internally [`DataLoader`](@ref) calls [`split_and_flatten`](@ref) which splits each image into a number of *patches* according to the keyword arguments `patch_length` and `number_of_patches`. We also load the test data with [`DataLoader`](@ref):
@@ -105,7 +109,7 @@ loss_array1 = opt1(nn1, dl, batch, n_epochs, FeedForwardLoss())
 loss_array2 = opt2(nn2, dl, batch, n_epochs, FeedForwardLoss())
 ```
 
-We furthermore optimize the second model (with weights on the manifold) with the [`GradientOptimizer`](@ref) and the [`MomentumOptimizer`](@ref):
+We furthermore optimize the second neural network (with weights on the manifold) with the [`GradientOptimizer`](@ref) and the [`MomentumOptimizer`](@ref):
 
 ```@example mnist
 nn3 = NeuralNetwork(model2, backend, T)
@@ -117,6 +121,8 @@ opt4 = Optimizer(MomentumOptimizer(T(0.001), T(0.5)), nn4)
 nothing # hide
 ```
 
+
+For training we use the same data, the same batch and the same number of epochs:
 ```julia
 loss_array3 = opt3(nn3, dl, batch, n_epochs, FeedForwardLoss())
 loss_array4 = opt4(nn4, dl, batch, n_epochs, FeedForwardLoss())
@@ -169,9 +175,9 @@ ax = Axis(fig[1, 1];
     )
 
 lines!(ax, loss_array1, label="Adam", color=mblue)
-lines!(ax, loss_array2, label="Stiefel + Adam", color=mred)
-lines!(ax, loss_array3, label="Gradient + Adam", color=mpurple)
-lines!(ax, loss_array4, label="Momentum + Adam", color=morange)
+lines!(ax, loss_array2, label="Adam + Stiefel", color=mred)
+lines!(ax, loss_array3, label="Gradient + Stiefel", color=mpurple)
+lines!(ax, loss_array4, label="Momentum + Stiefel", color=morange)
 axislegend(; position = (.82, .75), backgroundcolor = :transparent, labelcolor = textcolor) # hide
 fig_name = theme == :dark ? "mnist_training_loss_dark.png" : "mnist_training_loss.png" # hide
 save(fig_name, fig; px_per_unit = 1.2) # hide
@@ -181,7 +187,7 @@ make_error_plot(; theme = :light) # hide
 ```
 
 ```@example
-Main.include_graphics("mnist_training_loss") # hide
+Main.include_graphics("mnist_training_loss"; width = .7, caption = raw"Comparison between the standard Adam optimizer (blue), the Adam optimizer with weights on the Stiefel manifold (purple), the gradient optimizer with weights on the Stiefel manifold (purple) and the momentum optimizer with weights on the Stiefel manifold (orange). ") # hide
 ```
 
 ```@eval
@@ -200,10 +206,7 @@ using GeometricMachineLearning: accuracy # hide
 ```
 
 ```@eval
-Main.remark(raw"We note here that conventional convolutional neural networks and other vision transformers achieve much better accuracy on MNIST in a training time that is often shorter than what we presented here. Our aim here is not to outperform existing neural networks in terms of accuracy on image classification problems, but to demonstrate two things:
-" * Main.indentation * raw"    1. In many cases putting weights on the Stiefel manifold (which is a compact space) can enable training that would otherwise not be possible.
-" * Main.indentation * raw"    2. As is the case with standard Adam, the manifold version also seems to achieve similar performance gain over the gradient and momentum optimizer.
-" * Main.indentation * raw"Both of these observations can be seen in the figure above.")
+Main.remark(raw"We note here that conventional convolutional neural networks and other vision transformers achieve much better accuracy on MNIST in a training time that is often shorter than what we presented here. Our aim here is not to outperform existing neural networks in terms of accuracy on image classification problems, but to demonstrate two things: (i) in many cases putting weights on the Stiefel manifold (which is a compact space) can enable training that would otherwise not be possible and (ii) as is the case with standard Adam, the manifold version also seems to achieve similar performance gain over the gradient and momentum optimizer. Both of these observations are demonstrated figure above.")
 ```
 
 ## Library Functions

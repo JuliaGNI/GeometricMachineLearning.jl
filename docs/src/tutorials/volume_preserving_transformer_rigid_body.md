@@ -140,7 +140,7 @@ C = \frac{I_1 - I_2}{I_1I_2}.
 
 The second conserved invariant ``I(\cdot, \cdot, \codt)`` is visualized through the sphere in the figure above. The conserved Hamiltonian is the reason for why the curves are closed.
 
-The rigid body has Poisson structure [hairer2006geometric](@cite), but does not have canonical Hamiltonian structure. We can thus not use [SympNets](@ref "SympNet Architecture") or [symplectic transformers](@ref "Symplectic Transformer") here, but the ODE is clearly divergence-free. We use this to demonstrate the efficacy of the [volume-preserving transformer](@ref "Volume-Preserving Transformer"). We set up our networks:
+The rigid body has Poisson structure [hairer2006geometric](@cite), but does not have canonical Hamiltonian structure. We can thus not use [SympNets](@ref "SympNet Architecture") or [symplectic transformers](@ref "Linear Symplectic Transformer") here, but the ODE is clearly divergence-free. We use this to demonstrate the efficacy of the [volume-preserving transformer](@ref "Volume-Preserving Transformer"). We set up our networks:
 
 ```@example rigid_body
 # hyperparameters concerning the architectures 
@@ -174,7 +174,7 @@ nn_vpff = NeuralNetwork(arch_vpff, backend, T)
 nn_vpt = NeuralNetwork(arch_vpt, backend, T)
 nn_st = NeuralNetwork(arch_st, backend, T)
 
-(parameterlength(nn_vpf), paramterlength(nn_vpt), parameterlength(nn_st))
+(parameterlength(nn_vpff), paramterlength(nn_vpt), parameterlength(nn_st))
 ```
 
 We now train the various networks. For this we use [`AdamOptimizerWithDecay`](@ref):

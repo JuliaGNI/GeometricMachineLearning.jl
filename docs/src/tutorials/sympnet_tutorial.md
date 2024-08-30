@@ -2,26 +2,16 @@
 
 This page serves as a short introduction into using [SympNets](@ref "SympNet Architecture") with `GeometricMachineLearning`. 
 
-```@eval
-Main.remark(raw"As with any neural network we have to make the following choices:
-" * Main.indentation * raw"1. specify the *architecture*,
-" * Main.indentation * raw"2. specify the *type* and *backend*,
-" * Main.indentation * raw"3. pick an *optimizer* for training the network,
-" * Main.indentation * raw"4. specify how you want to perform *batching*,
-" * Main.indentation * raw"5. choose a number of epochs,
-" * Main.indentation * raw"where points 1 and 3 depend on a variable number of hyperparameters.")
-```
-For the SympNet point 1 is done by calling [`LASympNet`](@ref) or [`GSympNet`](@ref), point 2 is done by calling `NeuralNetwork`, point 3 is done by calling [`Optimizer`](@ref) and point 4 is done by calling [`Batch`](@ref).
 
 ## Loss function
 
-The [`FeedForwardLoss`](@ref) is the default choice used in `GeometricMachineLearning` for training SympNets, this [can however by altered](@ref "Adjusting the Loss Function").
+The [`FeedForwardLoss`](@ref) is the default choice used in `GeometricMachineLearning` for training SympNets, this can however be changed or [tweaked](@ref "Adjusting the Loss Function").
 
 ## Training a Harmonic Oscillator
 
-Let us begin with a simple example, the pendulum system, the Hamiltonian of which is 
+Here we begin with a simple example, the harmonic oscillator, the Hamiltonian of which is 
 ```math
-H:(q,p)\in\mathbb{R}^2 \mapsto \frac{1}{2}p^2-cos(q) \in \mathbb{R}.
+H:(q,p)\in\mathbb{R}^2 \mapsto \frac{1}{2}p^2-q^2 \in \mathbb{R}.
 ```
 
 Here we take the ODE from [`GeometricProblems`](https://github.com/JuliaGNI/GeometricProblems.jl) and integrate it with `GeometricIntegrators` [Kraus:2020:GeometricIntegrators](@cite):
@@ -41,19 +31,17 @@ solution = integrate(ho_problem, ImplicitMidpoint())
 nothing # hide
 ```
 
-We can then conveniently handle the data with [the data loader](@ref "The Data Loader"):
+We call [`DataLoader`](@ref) in order to conveniently handle the data:
 
 ```@example sympnet
 using GeometricMachineLearning # hide
 # we can conveniently handle the data with # hide 
-dl_raw = DataLoader(solution)
+dl_raw = DataLoader(solution; suppress_info = true)
 
 nothing # hide
 ```
 
-Note that we have not yet specified the type and backend that we want to use[^1]. We do this now:
-
-[^1]: Note that we also have to reallocate the data for [`DataLoader`](@ref) in this case to conform with the neural network parameters. 
+Note that we have not yet specified the type and backend that we want to use. We do this now:
 
 ```@example sympnet
 # specify the data type and the backend
@@ -65,34 +53,30 @@ dl = DataLoader(dl_raw, backend, type)
 nothing # hide
 ```
 
-Next we specify the architectures. `GeometricMachineLearning` provides useful defaults for all parameters although they can be specified manually (which is done in the following):
+Next we specify the architectures[^1]: 
+
+[^1]: `GeometricMachineLearning` provides useful defaults for all parameters, but they can still be specified manually; which is what we are doing here. Details on these parameters can be found in the docstrings for [`GSympNet`](@ref) and [`LASympNet`](@ref).
 
 ```@example sympnet
-# layer dimension for gradient module 
 const upscaling_dimension = 2
-
-# hidden layers
 const nhidden = 1
-
-# activation function
 const activation = tanh
-
-# number of layers for the G-SympNet
-const n_layers = 4
-
-# number of linear layers in each "linear block" in the LA-SympNet
-const depth = 4
+const n_layers = 4 # number of layers for the G-SympNet
+const depth = 4 # number of layers in each linear block in the LA-SympNet
 
 # calling G-SympNet architecture 
-gsympnet = GSympNet(dl, upscaling_dimension=upscaling_dimension, n_layers=n_layers, activation=activation)
+gsympnet = GSympNet(dl; upscaling_dimension = upscaling_dimension, 
+                        n_layers = n_layers, 
+                        activation = activation)
 
 # calling LA-SympNet architecture 
-lasympnet = LASympNet(dl, nhidden=nhidden, activation=activation, depth = depth)
+lasympnet = LASympNet(dl;   nhidden = nhidden, 
+                            activation = activation, 
+                            depth = depth)
 
 # initialize the networks
 la_nn = NeuralNetwork(lasympnet, backend, type) 
 g_nn = NeuralNetwork(gsympnet, backend, type)
-
 nothing # hide
 ```
 
@@ -110,7 +94,7 @@ parameterlength(g_nn.model)
 Main.remark(raw"We can also specify whether we would like to start with a layer that changes the ``q``-component or one that changes the ``p``-component. This can be done via the keywords `init_upper` for the `GSympNet`, and `init_upper_linear` and `init_upper_act` for the `LASympNet`.")
 ```
 
-We have to define an optimizer which will be use in the training of the SympNet. For more details on optimizer, see the [corresponding documentation](@ref "Neural Network Optimizers"). In this example we use [Adam](@ref "The Adam Optimizer"):
+We have to define an [optimizer](@ref "Standard Neural Network Optimizers") which will be used in training of the SympNet. In this example we use [Adam](@ref "The Adam Optimizer"):
 
 ```@example sympnet
 # set up optimizer; for this we first need to specify the optimization method
@@ -139,7 +123,7 @@ la_loss_array = la_opt(la_nn, dl, batch, nepochs; show_progress = false)
 nothing # hide
 ```
 
-We can also plot the training errors against the epoch (here the ``y``-axis is in log-scale):
+We plot the training errors against the epoch (here the ``y``-axis is in log-scale):
 ```@setup sympnet
 using CairoMakie
 using LaTeXStrings
@@ -239,7 +223,7 @@ Main.include_graphics("sympnet_prediction"; width = .7) # hide
 We see that [`GSympNet`](@ref) outperforms [`LASympNet`](@ref) on this problem; the blue line (reference) and the orange line (``G``-SympNet) are in fact almost indistinguishable.
 
 ```@eval
-Main.remark(raw"We have actually never observed a scenario in which the ``LA``-SympNet can outperform the ``G``-SympNet. The ``G``-SympNet seems to train faster, be more accurate and less sensitive to the chosen hyperparameters and initialization of the weights. They are also more straightforward to interpret. We therefore use the ``G``-SympNet as a basis for the *linear symplectic transformer.*")
+Main.remark(raw"We have actually never observed a scenario in which the ``LA``-SympNet can outperform the ``G``-SympNet. The ``G``-SympNet seems usually trains faster, is more accurate and less sensitive to the chosen hyperparameters and initialization of the weights. They are also more straightforward to interpret. We therefore use the ``G``-SympNet as a basis for the *linear symplectic transformer.*")
 ```
 
 ## Comparison with a ResNet
