@@ -20,7 +20,7 @@
     %Nodes
     \node      (fig)                              {\includegraphics[width=.3\textwidth]{rosenbrock_naked}};
     \coordinate[below of=fig, yshift=.1cm] (gr_plot);
-    \node[squarednodeR]        (samples)       [below of=fig, yshift=-2cm] {$\begin{aligned} \begin{pmatrix} x^{(1)} \\ y^{(1)} \\ z^{(1)} \end{pmatrix},  \begin{pmatrix} x^{(2)} \\ y^{(2)} \\ z^{(2)} \end{pmatrix}, \cdots, \begin{pmatrix} x^{(\mathtt{nop})} \\ y^{(\mathtt{nop})} \\ z^{(\mathtt{nop})} \end{pmatrix}\end{aligned}$};
+    \node[squarednodeR]        (samples)       [below of=fig, yshift=-2cm] {$\begin{aligned} \begin{pmatrix} x^{(1)} \\ y^{(1)} \\ z^{(1)} \end{pmatrix},  \begin{pmatrix} x^{(2)} \\ y^{(2)} \\ z^{(2)} \end{pmatrix}, \cdots, \begin{pmatrix} x^{(\mathtt{np})} \\ y^{(\mathtt{np})} \\ z^{(\mathtt{np})} \end{pmatrix}\end{aligned}$};
     \node[squarednodeR]      (reduced1)       [right of=samples, xshift=6cm] {$\mathcal{NN}$};
     \node        (fig2)       [above of=reduced1, yshift=2cm] {\includegraphics[width=.3\textwidth]{rosenbrock_naked}};
     \coordinate[below of=fig2] (gr_plot2);
