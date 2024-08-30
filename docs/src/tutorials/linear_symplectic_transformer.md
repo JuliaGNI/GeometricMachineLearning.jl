@@ -47,7 +47,7 @@ We now define the architectures and train them:
 
 ```@example lin_sympl_tran_tut
 const seq_length = 4
-const batch_size = 16384
+const batch_size = 1024
 const n_epochs = 2000
 
 arch_standard = StandardTransformerIntegrator(dl.input_dim; n_heads = 2, 
@@ -108,9 +108,9 @@ function plot_training_losses(loss_array_standard, loss_array_symplectic, loss_a
         ylabelcolor = textcolor,
         yscale = log10
     )
-    lines!(ax, loss_array_standard, color = mblue, label = "ST")
+    lines!(ax, loss_array_standard, color = mpurple, label = "ST")
     lines!(ax, loss_array_symplectic,  color = mred, label = "LST")
-    lines!(ax, loss_array_sympnet, color = mgreen, label = "SympNet")
+    lines!(ax, loss_array_sympnet, color = morange, label = "SympNet")
     axislegend(; position = (.82, .75), backgroundcolor = :transparent, labelcolor = textcolor)
 
     fig, ax
