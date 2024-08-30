@@ -82,8 +82,8 @@ png:
 	pdftocairo  -png -r $(res1) -transp -singlefile  gml_venn_dark.pdf								gml_venn_dark
 	pdftocairo  -png -r $(res1) -transp -singlefile  reduced_order_modeling_idea.pdf				reduced_order_modeling_idea
 	pdftocairo  -png -r $(res1) -transp -singlefile  reduced_order_modeling_idea_dark.pdf			reduced_order_modeling_idea_dark
-	pdftocairo  -png -r $(res1) -transp -singlefile  grassmann_sampling_dark.pdf					grassmann_sampling
-	pdftocairo  -png -r $(res1) -transp -singlefile  grassmann_sampling_dark_dark.pdf				grassmann_sampling_dark
+	pdftocairo  -png -r $(res1) -transp -singlefile  grassmann_sampling.pdf							grassmann_sampling
+	pdftocairo  -png -r $(res1) -transp -singlefile  grassmann_sampling_dark.pdf					grassmann_sampling_dark
 
 logo:
 	cp logo_with_name.png 				../assets/logo.png

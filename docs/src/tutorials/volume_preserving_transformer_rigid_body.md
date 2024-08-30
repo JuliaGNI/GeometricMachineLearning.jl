@@ -172,7 +172,7 @@ backend = CUDABackend()
 T = Float32
 backend = CPU() # hide
 
-dl = DataLoader(dl_cpu, backend, T; suppress_info = true)
+dl = DataLoader(dl_cpu, backend, T)
 nn_vpff = NeuralNetwork(arch_vpff, backend, T)
 nn_vpt = NeuralNetwork(arch_vpt, backend, T)
 nn_st = NeuralNetwork(arch_st, backend, T)
