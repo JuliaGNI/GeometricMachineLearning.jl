@@ -271,7 +271,6 @@ function DataLoader(data::NamedTuple{(:q, :p), Tuple{VT, VT}};
                 suppress_info = suppress_info)
 end
 
-
 function data_tensors_from_geometric_solution(solution::GeometricSolution{T, <:Number, NT}) where {T <: Number, DT <: DataSeries{T}, NT<:NamedTuple{(:q, :p), Tuple{DT, DT}}}
     sys_dim, input_time_steps = length(solution.s.q[0]), length(solution.t)
     data = (q = zeros(T, sys_dim, input_time_steps, 1), p = zeros(T, sys_dim, input_time_steps, 1))
@@ -279,6 +278,17 @@ function data_tensors_from_geometric_solution(solution::GeometricSolution{T, <:N
     for dim in 1:sys_dim 
         data.q[dim, :, 1] = solution.q[:, dim]
         data.p[dim, :, 1] = solution.p[:, dim]
+    end
+
+    data
+end
+
+function data_tensors_from_geometric_solution(solution::GeometricSolution{T, <:Number, NT}) where {T <: Number, DT <: DataSeries{T}, NT<:NamedTuple{(:q, ), Tuple{DT}}}
+    sys_dim, input_time_steps = length(solution.s.q[0]), length(solution.t)
+    data = zeros(T, sys_dim, input_time_steps, 1)
+
+    for dim in 1:sys_dim 
+        data[dim, :, 1] = solution.q[:, dim]
     end
 
     data
@@ -304,9 +314,12 @@ Internally this stores the data as a tensor where the third axis has length 1.
 """
 function DataLoader(solution::GeometricSolution{T, <:Number, NT}, suppress_info = false; kwargs...) where 
                                                                                 {T <: Number, 
-                                                                                 DT <: DataSeries{T}, 
-                                                                                 NT<:NamedTuple{(:q, :p), 
-                                                                                 Tuple{DT, DT}}}
+                                                                                 DT <: DataSeries{T},
+                                                                                 NT <: Union{
+                                                                                    NamedTuple{(:q, :p), 
+                                                                                    Tuple{DT, DT}}, 
+                                                                                    NamedTuple{(:q, ),
+                                                                                    Tuple{DT}}}}
     data = data_tensors_from_geometric_solution(solution)
 
     DataLoader(data; suppress_info = suppress_info, kwargs...)
