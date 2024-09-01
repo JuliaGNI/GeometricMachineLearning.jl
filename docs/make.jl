@@ -208,8 +208,8 @@ _architectures = "Architectures" => [
     ]
 
 _data_loader = "Data Loader" =>[
-            "Routines" => "data_loader/data_loader.md",
             "Snapshot matrix & tensor" => "data_loader/snapshot_matrix.md",
+            "Routines" => "data_loader/data_loader.md",
     ]
 
 _tutorials = "Tutorials" => [
@@ -328,9 +328,10 @@ _latex_pages = [
         "Learning a Reduced Model with Symplectic Autoencoders" => value_for_key(_tutorials, "Symplectic Autoencoders"),
         "Neural Networks as Symplectic Integrators" => value_for_key(_tutorials,
                                             "SympNets",
-                                            "Volume-Preserving Transformer for the Rigid Body",
                                             "Linear Symplectic Transformer"),
-        "Transformers with Structure" => value_for_key(_tutorials, "MNIST", "Volume-Preserving Attention"),
+        "Transformers with Structure" => value_for_key(_tutorials,  "MNIST", 
+                                                                    "Volume-Preserving Transformer for the Rigid Body",
+                                                                    "Volume-Preserving Attention"),
         "Learning Nonlinear Spaces" => value_for_key(_tutorials, "Grassmann Manifold"),
     ],
     _references,
