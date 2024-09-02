@@ -24,7 +24,7 @@ As with regular parametric PDEs, we also associate a solution manifold with Hami
 For Hamiltonian model order reduction we additionally require that the reduction ``\mathcal{P}`` satisfies
 
 ```math
-    \nabla_z\mathcal{P}\mathbb{J}_{2N}(\nabla_z\mathcal{P})^T = \mathbb{J}_{2N} \text{ for $z\in\mathbb{R}^{2N}$}
+    \nabla_z\mathcal{P}\mathbb{J}_{2N}(\nabla_z\mathcal{P})^T = \mathbb{J}_{2n} \text{ for $z\in\mathbb{R}^{2N}$}
 ```
 
 and the reconstruction ``\mathcal{R}`` satisfies[^2]
