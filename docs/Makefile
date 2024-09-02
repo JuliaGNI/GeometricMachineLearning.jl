@@ -11,7 +11,7 @@ latex: latex_no_pdf
 	$(MAKE) compile_tex;
 	$(MAKE) compile_tex
 
-latex_no_pdf_no_images: install_brenier_two_fluid latex_docs_no_pdf copy_png_files put_figures_outside_of_minted_environment do_correct_quotation_marks make_correct_thrm_and_dfntn_and_xmpl_and_rmrk_and_proof_environment references_instead_of_hyperlinks correct_appendix remove_home_part remove_numbering_for_some_chapters docstring_indexing
+latex_no_pdf_no_images: install_brenier_two_fluid latex_docs_no_pdf copy_png_files put_figures_outside_of_minted_environment do_correct_quotation_marks make_correct_thrm_and_dfntn_and_xmpl_and_rmrk_and_proof_environment references_instead_of_hyperlinks correct_appendix remove_home_part remove_numbering_for_some_chapters docstring_indexing fix_long_urls
 
 latex_no_pdf: latex_images mnist_image latex_no_pdf_no_images
 
@@ -126,3 +126,6 @@ copy_png_files:
 docstring_indexing:
 	sed -i'' -e 's/\\item \\hyperlinkref{\([0-9]*\)}{\\texttt{\(.*\)}}/\\item \\hyperlinkref{\1}{\\texttt{\2}}: page \\pageref{\1}/g' build/G*.tex;
 	sed -i'' -e 's/\\hypertarget{\(.*\)}{\(.*\)}/\\pagetarget{\1}{\2}/g' build/G*.tex
+
+fix_long_urls:
+	sed -i'' -e 's/\\href{\([a-z0-9:/.-]*\)}{\\texttt{[a-z0-9:/.-]*}}/\\url{\1}/g' build/G*.tex
