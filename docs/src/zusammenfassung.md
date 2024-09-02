@@ -14,7 +14,7 @@ In Teil II wird ein neues Optimierungsframework eingeführt, das bestehende Opti
 
 In Teil III werden schließlich verschiedene spezielle neuronale Netzwerkarchitekturen. Einige von ihnen, wie *SympNets* und *Multi-Head Attention*, stellen keine Neuheiten da, aber andere, wie SAEs, *Volume-Preserving Attention* und der *lineare symplektische Transformer*, sind originell.
 
-In Teil IV geben wir einige Ergebnisse an, die auf den neuen Architekturen basieren. Die meisten dieser Anwendungen beziehen sich auf Anwendungen aus der Physik; um jedoch die neuen Optimierer zu demonstrieren, greifen wir auf ein klassisches Problem aus der Bildklassifikation zurück. Wir wollen damit zeigen dass geometrisches maschinelles Lernen auch in Bereichen außerhalb des wissenschaftlichen Rechnens Anwendung finden kann. In allen behandelten Problemen ist zu sehen dass unsere Modelle genauer oder schneller als vergleichbare Architekturen sind.
+In Teil IV geben wir einige Ergebnisse an, die auf den neuen Architekturen basieren. Die meisten dieser Anwendungen beziehen sich auf Anwendungen aus der Physik; um jedoch die neuen Optimierer zu demonstrieren, greifen wir auf ein klassisches Problem aus der Bildklassifikation zurück. Wir wollen damit zeigen dass geometrisches maschinelles Lernen auch in Bereichen außerhalb des wissenschaftlichen Rechnens Anwendung finden kann. In allen behandelten Problemen ist zu sehen dass unsere Modelle genauer oder schneller als vergleichbare Architekturen sind. In einem Beispiel zeigen wir wie ein SAE-reduziertes Model die Auswertung eines Problems um einen Faktor 1000 beschleunigt.
 
 ```@raw latex
 \clearpage
