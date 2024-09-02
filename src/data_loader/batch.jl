@@ -104,23 +104,30 @@ Here the distinction is between data that are *time-series like* and data that a
 
 ```jldoctest
 using GeometricMachineLearning
+using GeometricMachineLearning: number_of_batches
 import Random
 Random.seed!(123)
 
 dat = [1, 2, 3, 4, 5]
-dl₁ = DataLoader(dat; autoencoder = false) # time series-like
-dl₂ = DataLoader(dat; autoencoder = true) # autoencoder-like
+dl₁ = DataLoader(dat; autoencoder = false, suppress_info = true) # time series-like
+dl₂ = DataLoader(dat; autoencoder = true, suppress_info = true) # autoencoder-like
 batch = Batch(3)
 
+nob₁ = number_of_batches(dl₁, batch)
+nob₂ = number_of_batches(dl₂, batch)
+println(stdout, "Number of batches of dl₁: ", nob₁)
+println(stdout, "Number of batches of dl₂: ", nob₂)
 println(stdout, batch(dl₁), "\n", batch(dl₂))
 
 # output
 
+Number of batches of dl₁: 2
+Number of batches of dl₂: 2
 ([(1, 1), (3, 1), (4, 1)], [(2, 1)])
 ([(1, 4), (1, 3), (1, 2)], [(1, 5), (1, 1)])
 ```
 
-Here we see that in the *autoencoder case* there is an additional minibatch for the last index.
+Here we see that in the *autoencoder case* that last minibatch has an additional element.
 """
 function number_of_batches(dl::DataLoader{T, AT, OT, :TimeSeries}, batch::Batch) where {T, BT<:AbstractArray{T, 3}, AT<:Union{BT, NamedTuple{(:q, :p), Tuple{BT, BT}}}, OT}
     @assert dl.input_time_steps ≥ (batch.seq_length + batch.prediction_window) "The number of time steps has to be greater than sequence length + prediction window."
