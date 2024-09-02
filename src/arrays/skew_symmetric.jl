@@ -12,6 +12,8 @@ Internally the `struct` saves a vector ``S`` of size ``n(n-1)\div2``. The conver
                          S[( (j-2) (j-1) ) \div 2 + i] & \text{else}. \end{cases}
 ```
 
+So ``S`` stores a string of vectors taken from ``A``: ``S = [\tilde{a}_1, \tilde{a}_2, \ldots, \tilde{a}_n]`` with ``\tilde{a}_i = [[A]_{i1},[A]_{i2},\ldots,[A]_{i(i-1)}]``.
+
 Also see [`SymmetricMatrix`](@ref), [`LowerTriangular`](@ref) and [`UpperTriangular`](@ref).
 
 # Examples 
@@ -68,7 +70,13 @@ SkewSymMatrix(M)
 
 Note that the constructor is designed in such a way that it always returns matrices of type `SkewSymMatrix{<:AbstractFloat}` when called with a matrix, even if this matrix is of type `AbstractMatrix{<:Integer}`.
 
-If the user wishes to allocate a matrix `SkewSymMatrix{<:Integer}` the constructor `SkewSymMatrix(::AbstractVector, n::Integer)` has to be called.
+If the user wishes to allocate a matrix `SkewSymMatrix{<:Integer}` then call:
+
+```julia
+SkewSymMatrix(::AbstractVector, n::Integer)
+```
+
+Note that this is different from [`LowerTriangular`](@ref) and [`UpperTriangular`](@ref) as no porjection takes place there.
 """
 function SkewSymMatrix(S::AbstractMatrix{T}) where {T}
     n = size(S, 1)

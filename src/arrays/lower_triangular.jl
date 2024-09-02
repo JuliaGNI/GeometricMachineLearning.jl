@@ -3,7 +3,7 @@
 
 Build a lower-triangular matrix from a vector.
 
-A lower-triangular matrix is an ``n\times{}n`` matrix that has ones on the diagonal and zeros on the upper triangular.
+A lower-triangular matrix is an ``n\times{}n`` matrix that has zeros on the diagonal and on the upper triangular.
 
 The data are stored in a vector ``S`` similarly to other matrices. See [`UpperTriangular`](@ref), [`SkewSymMatrix`](@ref) and [`SymmetricMatrix`](@ref).
 

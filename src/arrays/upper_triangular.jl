@@ -1,9 +1,9 @@
 @doc raw"""
-    LowerTriangular(S::AbstractVector, n::Int)
+    UpperTriangular(S::AbstractVector, n::Int)
 
-Build a lower-triangular matrix from a vector.
+Build an upper-triangular matrix from a vector.
 
-A lower-triangular matrix is an ``n\times{}n`` matrix that has ones on the diagonal and zeros on the upper triangular.
+An upper-triangular matrix is an ``n\times{}n`` matrix that has zeros on the diagonal and on the lower triangular.
 
 The data are stored in a vector ``S`` similarly to other matrices. See [`LowerTriangular`](@ref), [`SkewSymMatrix`](@ref) and [`SymmetricMatrix`](@ref).
 
@@ -32,9 +32,9 @@ end
 @doc raw"""
     UpperTriangular(A::AbstractMatrix)
 
-Build a lower-triangular matrix from a matrix.
+Build an upper-triangular matrix from a matrix.
 
-This is done by taking the lower left of that matrix.
+This is done by taking the upper right of that matrix.
 
 # Examples 
 ```jldoctest

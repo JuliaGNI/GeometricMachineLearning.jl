@@ -43,9 +43,9 @@ end
 @doc raw"""
     SymmetricMatrix(A::AbstractMatrix)
 
-Perform `0.5 * (A + A')` and store the matrix in an efficient way (as a vector with ``n(n+1)/2`` entries).
+Perform a projection and store the matrix in an efficient way (as a vector with ``n(n+1)/2`` entries).
 
-If the constructor is called with a matrix as input it returns a symmetric matrix via the projection:
+If the constructor is called with a matrix as input it returns a symmetric matrix via the *projection*:
 ```math
 A \mapsto \frac{1}{2}(A + A^T).
 ```
@@ -69,7 +69,13 @@ SymmetricMatrix(M)
 
 Note that the constructor is designed in such a way that it always returns matrices of type `SymmetricMatrix{<:AbstractFloat}` when called with a matrix, even if this matrix is of type `AbstractMatrix{<:Integer}`.
 
-If the user wishes to allocate a matrix `SymmetricMatrix{<:Integer}` the constructor `SymmetricMatrix(::AbstractVector, n::Integer)` has to be called.
+If the user wishes to allocate a matrix `SymmetricMatrix{<:Integer}` then call
+
+``julia
+SymmetricMatrix(::AbstractVector, n::Integer)
+```
+
+Note that this is different from [`LowerTriangular`](@ref) and [`UpperTriangular`](@ref) as no porjection takes place there.
 """
 function SymmetricMatrix(A::AbstractMatrix{T}) where {T}
     S = map_to_S(A)
