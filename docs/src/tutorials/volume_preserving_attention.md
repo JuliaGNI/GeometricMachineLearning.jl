@@ -63,7 +63,7 @@ nothing
 ```
 
 ```@example
-Main.include_graphics("curve_comparison"; width = .7, caption = raw"The data we treat here contains two different curves.") # hide
+Main.include_graphics("curve_comparison"; width = .65, caption = raw"The data we treat here contains two different curves.") # hide
 ```
 
 We want to train a single neural network on both these curves. We already noted [before](@ref "Why use Transformers for Model Order Reduction") that a simple feedforward neural network cannot do this. Here we compare three networks which are of the following form: 
@@ -184,7 +184,7 @@ nothing
 ```
 
 ```@example
-Main.include_graphics("training_loss_vpa"; width = .7, caption = raw"The training losses for the three networks. ") # hide
+Main.include_graphics("training_loss_vpa"; width = .65, caption = raw"The training losses for the three networks. ") # hide
 ```
 
 Looking at the training errors, we can see that the network with the skew-symmetric weighting is stuck at a relatively high error rate, whereas the loss for  the network with the arbitrary weighting is decreasing to a significantly lower level. The feedforward network without the attention mechanism is not able to learn anything useful (as was expected). 
@@ -266,7 +266,7 @@ nothing
 fig_dark, fig_light, ax_dark, ax_light  = produce_validation_plot(40) # hide
 save("plot40_dark.png", fig_dark; px_per_unit = 1.2) # hide
 save("plot40.png", fig_light; px_per_unit = 1.2) # hide
-Main.include_graphics("plot40"; width = .7, caption = raw"Comparing the two volume-preserving attention mechanisms for 40 points. ") # hide
+Main.include_graphics("plot40"; width = .65, caption = raw"Comparing the two volume-preserving attention mechanisms for 40 points. ") # hide
 ```
 
 In the plot above we can see that the network with the arbitrary weighting performs much better; even though the red line does not fit the purple line perfectly, it manages to least qualitatively reflect the training data.  We can also plot the predictions for longer time intervals: 
@@ -275,7 +275,7 @@ In the plot above we can see that the network with the arbitrary weighting perfo
 fig_dark, fig_light, ax_dark, ax_light  = produce_validation_plot(400) # hide
 save("plot400_dark.png", fig_dark; px_per_unit = 1.2) # hide
 save("plot400.png", fig_light; px_per_unit = 1.2) # hide
-Main.include_graphics("plot400"; width = .7, caption = raw"Comparing the two volume-preserving attention mechanisms for 400 points. ") # hide
+Main.include_graphics("plot400"; width = .65, caption = raw"Comparing the two volume-preserving attention mechanisms for 400 points. ") # hide
 ```
 
 This advantage of the volume-preserving attention with arbitrary weighting may however be due to the fact that the skew-symmetric attention only has 3 learnable parameters, as opposed to 9 for the arbitrary weighting. We can increase the *upscaling dimension* and see how it affects the result: 
@@ -294,7 +294,7 @@ fig_light, ax_light = plot_training_losses(loss_array_skew, loss_array_arb, loss
 save("training_loss2_vpa.png", fig_light; px_per_unit = 1.2) # hide
 save("training_loss2_vpa_dark.png", fig_dark; px_per_unit = 1.2) # hide
 
-Main.include_graphics("training_loss2_vpa"; width = .7, caption = raw"Comparison for 40 points, but with an upscaling of ten. ") # hide
+Main.include_graphics("training_loss2_vpa"; width = .65, caption = raw"Comparison for 40 points, but with an upscaling of ten. ") # hide
 ```
 
 ```@example volume_preserving_attention 
@@ -306,7 +306,7 @@ fig_dark, fig_light, ax_dark, ax_light = produce_validation_plot(40, nn_skew, nn
 
 save("plot40_sine2_dark.png", fig_dark; px_per_unit = 1.2) # hide
 save("plot40_sine2.png", fig_light; px_per_unit = 1.2) # hide
-Main.include_graphics("plot40_sine2") # hide
+Main.include_graphics("plot40_sine2"; width = .65) # hide
 ```
 
 And for a longer time interval: 
@@ -317,7 +317,7 @@ fig_dark, fig_light, ax_dark, ax_light = produce_validation_plot(200, nn_skew, n
 
 save("plot200_sine2_dark.png", fig_dark; px_per_unit = 1.2) # hide
 save("plot200_sine2.png", fig_light; px_per_unit = 1.2) # hide
-Main.include_graphics("plot200_sine2") # hide
+Main.include_graphics("plot200_sine2"; width = .65) # hide
 ```
 
 ## Library Functions
