@@ -225,6 +225,7 @@ _tutorials = "Tutorials" => [
     ]
 
 _references = "References" => "references.md"
+_index_of_docstrings = "Index of Docstrings" => "docstring_index.md",
 
 _html_pages = [
     _introduction,
@@ -237,7 +238,8 @@ _html_pages = [
     _architectures,
     _data_loader,
     _tutorials,
-    _references
+    _references,
+    _index_of_docstrings
 ]
 
 # Maybe you want to name "Background" → "Manifolds, Global Tangent Spaces and Geometric Structure"
@@ -335,7 +337,7 @@ _latex_pages = [
         "Learning Nonlinear Spaces" => value_for_key(_tutorials, "Grassmann Manifold"),
     ],
     _references,
-    "Index of Docstrings" => "docstring_index.md",
+    _index_of_docstrings,
     "Appendix" => [
         "Data Loader" => reduce_to_second_factors(_data_loader),
         "Special Arrays, Tensors and Pullbacks" =>
@@ -349,7 +351,7 @@ _latex_pages = [
 
 _keys = [page[1] for page in _latex_pages]
 filter!(key -> (key ≠ "HOME") & (key ≠ "Index of Docstrings") & (key ≠ "References"), _keys)
-index_latex_pages = vcat([Dict(_latex_pages)[key] for key in _keys]...) |> reduce_to_second_factors
+index_latex_pages = vcat([Dict(_latex_pages)[key] for key in _keys]...)
 
 makedocs(;
     plugins = [bib],
