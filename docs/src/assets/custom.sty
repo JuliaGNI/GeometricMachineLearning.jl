@@ -96,6 +96,21 @@
 
 % custom hyphenation
 \usepackage[htt]{hyphenat}
+% renew texttt for better line breaks; taken from https://tex.stackexchange.com/questions/579789/combining-wrapping-texttt-with-sections-and-toc-improper-alphabetic-constan
+\DeclareRobustCommand{\texttt}[1]{%
+  \begingroup
+  \ttfamily
+  \begingroup\lccode`~=`/\lowercase{\endgroup\def~}{/\discretionary{}{}{}}%
+  \begingroup\lccode`~=`[\lowercase{\endgroup\def~}{[\discretionary{}{}{}}%
+  \begingroup\lccode`~=`.\lowercase{\endgroup\def~}{.\discretionary{}{}{}}%
+  \catcode`/=\active\catcode`[=\active\catcode`.=\active
+  \scantokens{#1\noexpand}%
+  \endgroup
+}
+
+% make correct quotation
+\def\beginquotation{``}
+\def\endquotation{"}
 
 % for Chinese characters
 \usepackage{xeCJK}
