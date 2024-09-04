@@ -31,9 +31,9 @@ where ``T^*_x\mathcal{V}`` is the cotangent space of ``\mathcal{V}`` at ``x``.
 
 ## How to Compute Pullbacks
 
-`GeometricMachineLearning` has many pullbacks for custom array types and other operations implemented. The need for this essentially comes from the fact that we cannot trivially differentiate custom GPU kernels[^2]. Implemented custom pullback comprise [parallel multiplications with tensors](@ref "Tensors in `GeometricMachineLearning`").
+`GeometricMachineLearning` has many pullbacks for custom array types and other operations implemented. The need for this essentially comes from the fact that we cannot trivially differentiate custom GPU kernels[^3]. Implemented custom pullback comprise [parallel multiplications with tensors](@ref "Tensors in `GeometricMachineLearning`").
 
-[^2]: This may change in the future if the package `Enzyme` [moses2021reverse](@cite) reaches maturity.
+[^3]: This may change in the future if the package `Enzyme` [moses2021reverse](@cite) reaches maturity.
 
 ## What is a Pullback?
 
