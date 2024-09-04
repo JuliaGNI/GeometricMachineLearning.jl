@@ -86,7 +86,7 @@ The tuples that make up this vector always have two entries: a *time index* ``b^
 
 ```@example batches
 @assert length(batches) == 2 # hide
-@assert length(batches[1]) + length(batches[2]) == 5
+@assert length(batches[1]) + length(batches[2]) == 5 # hide
 for (minibatch, i) in zip(batches[2], axes(batches[2], 1))
     println(stdout, minibatch[1], " = bᵗ₁" * join('₀' + d for d in digits(i)))
     println(stdout, minibatch[2], " = bᵖ₁" * join('₀' + d for d in digits(i)))
