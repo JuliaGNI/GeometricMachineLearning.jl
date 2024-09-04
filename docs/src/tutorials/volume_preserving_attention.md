@@ -248,7 +248,7 @@ textcolor = theme == :dark ? :white : :black # hide
     lines!(ax, validation_comp[1, :], color = mgreen, label = "comp")
     vlines!(ax, [seq_length], color = mred, label = "start of prediction")
 
-    axislegend(; position = (.82, .75), backgroundcolor = :transparent, labelcolor = textcolor)
+    axislegend(; position = (.82, .75), backgroundcolor = theme == :dark ? :transparent : :white, labelcolor = textcolor)
     fig, ax
 end
 
