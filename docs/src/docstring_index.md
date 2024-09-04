@@ -48,17 +48,6 @@ Pages = Dict(index_latex_pages)["Layers"]
 Pages = Dict(index_latex_pages)["Architectures"]
 ```
 
-### Learning a Reduced Model with Symplectic Autoencoders
-
-```@index
-Pages = [Dict(index_latex_pages)["Learning a Reduced Model with Symplectic Autoencoders"]]
-```
-
-### Neural Networks as Symplectic Integrators
-
-```@index
-Pages = Dict(index_latex_pages)["Neural Networks as Symplectic Integrators"]
-```
 
 ### Transformers with Structure
 
