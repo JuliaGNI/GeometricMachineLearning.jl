@@ -225,7 +225,7 @@ _tutorials = "Tutorials" => [
     ]
 
 _references = "References" => "references.md"
-_index_of_docstrings = "Index of Docstrings" => "docstring_index.md",
+_index_of_docstrings = "Index of Docstrings" => "docstring_index.md"
 
 _html_pages = [
     _introduction,
