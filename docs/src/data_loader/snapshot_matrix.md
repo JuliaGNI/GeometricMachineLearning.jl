@@ -28,10 +28,10 @@ Main.include_graphics("../tikz/tensor") # hide
 
 When drawing samples from the snapshot tensor to train a neural networks we also need to specify a *sequence length* (as an argument to the [`Batch`](@ref) struct). When sampling a batch from the snapshot tensor we sample over the second axis (the *time dimension*) and the third axis of the tensor (the *parameter dimension*). The total number of batches[^2] is 
 
-[^2]: This number may be smaller if ``\mathtt{prediction\_window} \neq 0.``
+[^2]: The number of batches shown here is for the case ``\mathtt{prediction\_window} = 0.`` If ``\mathtt{prediction\_window} \neq 0,`` this number may be smaller. The corresponding function is [`GeometricMachineLearning.number_of_batches`](@ref).
 
 ```math
 \lceil\mathtt{(dl.input\_time\_steps - batch.seq\_length) * dl.n\_params / batch.batch\_size}\rceil,
 ``` 
 
-where ``\lceil\cdot\rceil`` is the *ceiling operation*. The number of batches can be obtained by calling [`GeometricMachineLearning.number_of_batches`](@ref).
+where ``\lceil\cdot\rceil`` is the *ceiling operation*.
