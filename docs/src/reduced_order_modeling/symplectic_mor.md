@@ -45,7 +45,7 @@ Main.theorem(raw"A Hamiltonian system on the reduced space ``(\mathbb{R}^{2n}, \
 " * Main.indentation * raw"is an approximation to the solution manifold.")
 ```
 
-For the proof we use the fact that ``\mathcal{M} = \mathcal{R}(\mathbb{R}^{2n})`` is a manifold [whose coordinate chart is the local inverse](@ref "The Immersion Theorem") of ``\mathcal{R}`` which we will call ``\psi``, i.e. around a point ``y\in\mathcal{M}`` we have ``\psi\circ\mathcal{R}(y) = y``[^0]. We further define the *symplectic inverse* of a matrix ``A\in\mathbb{R}^{2N\times2n}`` as 
+For the proof we use the fact that ``\mathcal{M} = \mathcal{R}(\mathbb{R}^{2n})`` is a manifold [whose coordinate chart is the local inverse](@ref "The Immersion Theorem") of ``\mathcal{R}`` which we will call ``\psi``, i.e. around a point ``y\in\mathcal{M}`` we have ``\psi\circ\mathcal{R}(y) = y.``[^0] We further define the *symplectic inverse* of a matrix ``A\in\mathbb{R}^{2N\times2n}`` as 
 
 [^0]: A similar proof can be found in [yildiz2024data](@cite).
 
