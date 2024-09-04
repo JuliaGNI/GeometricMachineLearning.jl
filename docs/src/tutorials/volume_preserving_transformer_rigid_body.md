@@ -119,14 +119,8 @@ Main.include_graphics("rigid_body_trajectories"; width = .7, caption = raw"A sam
 ```
 
 The rigid body has two conserved quantities:
-1. one conserved quantity is the [Hamiltonian of the system](@ref "Symplectic Systems"):
-    ```math
-    H(z_1, z_2, z_3) = \frac{1}{2}\left( \frac{z_1^2}{I_1} + \frac{z_2^2}{I_2} + \frac{z_3^2}{I_3} \right),
-    ```
-2. the second one is the quadratic invariant:
-    ```math
-    I(z_1, z_2, z_3) = z_1^2 + z_2^2 + z_3^2.
-    ```
+1. one conserved quantity is the [Hamiltonian of the system](@ref "Symplectic Systems"): ``H(z_1, z_2, z_3) = \frac{1}{2}\left( \frac{z_1^2}{I_1} + \frac{z_2^2}{I_2} + \frac{z_3^2}{I_3} \right),``
+2. the second one is the quadratic invariant: ``I(z_1, z_2, z_3) = z_1^2 + z_2^2 + z_3^2.``
 
 The coefficients ``I_1,`` ``I_2`` and ``I_3`` can be obtained through
 
@@ -229,7 +223,7 @@ nothing # hide
 After this we use [`iterate`](@ref) to obtain predicted orbits:
 
 ```@example rigid_body
-ics_val₁ = [0., sin(.9), cos(.9 + π)]
+ics_val₁ = [0., sin(0.9), cos(0.9 + π)]
 ics_val₂ = [0., sin(1.1), cos(1.1)]
 const t_validation = 120
 

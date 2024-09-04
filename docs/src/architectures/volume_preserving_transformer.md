@@ -6,7 +6,7 @@ The volume-preserving transformer [brantner2024volume](@cite) is, similar to the
 Main.include_graphics("../tikz/vp_transformer"; caption = raw"Visualization of the Volume-Preserving Transformer architecture", width = .25) # hide
 ```
 
-In the figure we indicate that we leave out the *add connection*. When talking about the [`standard transformer`](@ref "Standard Transformer") we said that the add connection is optional and can be included via the keyword argument `add_connection`. For the volume-preserving transformer this is not true: it is always excluded. 
+In the figure we indicate that we leave out the *add connection*. When talking about the [standard transformer](@ref "Standard Transformer") we said that the add connection is optional and can be included via the keyword argument `add_connection`. For the volume-preserving transformer this is not true: it is always excluded.
 
 Note that the volume-preserving transformer preserves the volume in the sense of the product spaces. That the [`VolumePreservingAttention`](@ref) layer preserves this structure was discussed when we [introduced it](@ref "Volume-Preserving Attention"). That the [`VolumePreservingFeedForwardLayer`](@ref)s preserve this structure on the product space is also easy to see. We take a [`VolumePreservingFeedForwardLayer`](@ref), e.g. 
 ```math
