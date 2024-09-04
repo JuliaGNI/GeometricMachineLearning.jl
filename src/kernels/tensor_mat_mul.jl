@@ -59,6 +59,7 @@ tensor_mat_mul(A, B)
 """
 function tensor_mat_mul(A::AbstractArray{<:Number, 3}, B::AbstractMatrix)
     @assert eltype(A) == eltype(B)
+    T = eltype(A)
     sizeA = size(A); sizeB = size(B)
     @assert sizeA[2] == sizeB[1] 
     tensor_shape = (sizeA[1], sizeB[2], sizeA[3])

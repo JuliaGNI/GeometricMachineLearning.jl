@@ -62,6 +62,7 @@ mat_tensor_mul(A, B)
 """
 function mat_tensor_mul(A::AbstractMatrix, B::AbstractArray{<:Number, 3})
     @assert eltype(A) == eltype(B)
+    T = eltype(A)
     sizeA = size(A)
     sizeB = size(B)
     backend = KernelAbstractions.get_backend(A)
