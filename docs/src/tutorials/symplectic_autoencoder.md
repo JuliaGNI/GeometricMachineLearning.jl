@@ -219,7 +219,7 @@ function plot_validation!(fig, coordinates::Tuple, t_steps::Integer=100; theme =
         label = rich("SAE + Implicit Midpoint"; color = textcolor), color = mgreen)
 
     if t_steps == 0
-        axislegend(ax_val; position = (1.01, 1.5), backgroundcolor = :transparent, color = textcolor, labelsize = 8)
+        axislegend(ax_val; position = (1.01, 1.5), backgroundcolor = theme == :dark ? :transparent : :white, color = textcolor, labelsize = 8)
     end
     nothing
 end
@@ -331,7 +331,7 @@ function plot_transformer_validation!(fig, coordinates, t_steps::Integer=100; th
     lines!(ax_val, sol.q; label = rich("SAE + Transformer"; color = textcolor), color = mpurple)
 
     if t_steps == 0
-        axislegend(ax_val; position = (1.01, .8), backgroundcolor = :transparent, color = textcolor, labelsize = 8)
+        axislegend(ax_val; position = (1.01, .8), backgroundcolor = theme == :dark ? :transparent : :white, color = textcolor, labelsize = 8)
     end
     nothing
 end
