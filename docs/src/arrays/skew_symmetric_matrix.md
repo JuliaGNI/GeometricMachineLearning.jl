@@ -137,7 +137,7 @@ Random.seed!(123) # hide
 
 S = rand(3 * (3 - 1) ÷ 2)
 @assert A == SkewSymMatrix(S, 3) # hide
-SSkewSymMatrix(S, 3)
+SkewSymMatrix(S, 3)
 ```
 
 These special matrices are important for [SympNets](@ref "SympNet Architecture"), [volume-preserving transformers](@ref "Volume-Preserving Transformer") and [linear symplectic transformers](@ref "Linear Symplectic Transformer").
