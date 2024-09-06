@@ -42,12 +42,16 @@ Main.theorem(raw"A Hamiltonian system on the reduced space ``(\mathbb{R}^{2n}, \
 " * Main.indentation * raw"```math
 " * Main.indentation * raw"    \mathcal{M} = \mathcal{R}(\mathbb{R}^{2n})
 " * Main.indentation * raw"```
-" * Main.indentation * raw"is an approximation to the solution manifold.")
+" * Main.indentation * raw"is an approximation to the solution manifold. We further have
+" * Main.indentation * raw"```math
+" * Main.indentation * raw"    \mathbb{J}_{2N}|_\mathcal{M}(z) = ((\nabla_a\mathcal{R})^+)^T\mathbb{J}_{2n}(\nabla_z\mathcal{R})^+,
+" * Main.indentation * raw"```
+" * Main.indentation * raw"so the dynamics on ``\mathcal{M}`` can be described through a Hamiltonian ODE on ``\mathbb{R}^{2n}.``")
 ```
 
 For the proof we use the fact that ``\mathcal{M} = \mathcal{R}(\mathbb{R}^{2n})`` is a manifold [whose coordinate chart is the local inverse](@ref "The Immersion Theorem") of ``\mathcal{R}`` which we will call ``\psi``, i.e. around a point ``y\in\mathcal{M}`` we have ``\psi\circ\mathcal{R}(y) = y.``[^0] We further define the *symplectic inverse* of a matrix ``A\in\mathbb{R}^{2N\times2n}`` as 
 
-[^0]: A similar proof can be found in [yildiz2024data](@cite).
+[^0]: A similar proof can be found in [yildiz2024data](@cite). Further note that, if we enforced the condition ``\mathcal{P}\circ\mathcal{R} = \mathrm{id}`` exactly, the projection ``\mathcal{P}`` would be equal to the local inverse ``\psi.`` For the proof here we however only require the existence of ``\psi``, not its explicit construction as ``\mathcal{P}.``
 
 ```math
     A^+ = \mathbb{J}_{2n}^TA^T\mathbb{J}_{2N},
@@ -74,9 +78,9 @@ Main.proof(raw"Note that the tangent space at ``y = \mathcal{R}(z)`` to ``\mathc
 " * Main.indentation * raw"```math
 " * Main.indentation * raw"    \mathbb{J}_{2N}\nabla_yH\circ\psi = \mathbb{J}_{2N}(\nabla_y\psi)^T\nabla_{\psi(y)}H = \mathbb{J}_{2N}\left((\nabla_{\psi(y)}\mathcal{R})^+\right)^T\nabla_{\psi(y)}H = (\nabla_{\psi(y)}\mathcal{R})\mathbb{J}_{2n}\nabla_{\psi(y)}H,
 " * Main.indentation * raw"```
-" * Main.indentation * raw"which proves that every Hamiltonian system on ``\mathbb{R}^{2n}`` induces a Hamiltonian system on ``\mathcal{M}``. We thus showed that a Hamiltonian system on ``\mathbb{R}^{2n}`` induces one on ``\mathcal{M}``. Conversely assume we are given a Hamiltonian vector field whose flow map evolves on ``\mathcal{M}``, which we denote by
+" * Main.indentation * raw"which proves that every Hamiltonian system on ``\mathbb{R}^{2n}`` induces a Hamiltonian system on ``\mathcal{M}``. Conversely assume we are given a Hamiltonian vector field whose flow map evolves on ``\mathcal{M}``, which we denote by
 " * Main.indentation * raw"```math
-" * Main.indentation * raw"\hat{X}(z) = \mathbb{J}_{2N}\nabla_{z}\hat{H} = \nabla_{\psi(z)}\mathcal{R}\bar{X}(\psi(z)),
+" * Main.indentation * raw"\hat{X}(z) = \mathbb{J}_{2N}\nabla_{z}\hat{H} = (\nabla_{\psi(z)}\mathcal{R})\bar{X}(\psi(z)),
 " * Main.indentation * raw"```
 " * Main.indentation * raw"where ``\bar{X}`` is a vector field on the reduced space. In the last equality we used that the flow map evolves on ``\mathcal{M}``, so the corresponding vector field needs to map to ``T\mathcal{M}.`` We further have:
 " * Main.indentation * raw"```math
