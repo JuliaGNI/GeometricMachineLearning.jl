@@ -97,9 +97,9 @@ This theorem serves as the basis for Hamiltonian model order reduction via prope
 
 ## Proper Symplectic Decomposition
 
-For proper symplectic decomposition (PSD) the reduction ``\mathcal{P}`` and the reconstruction ``\mathcal{R}`` are constrained to be linear, orthonormal and symplectic. Note that these first two properties are shared with [POD](@ref "Proper Orthogonal Decomposition"). The easiest way[^3] to enforce this is through the so-called "cotangent lift" [peng2016symplectic](@cite): 
+For proper symplectic decomposition (PSD) the reduction ``\mathcal{P}`` and the reconstruction ``\mathcal{R}`` are constrained to be linear, orthonormal and symplectic. Note that these first two properties are shared with [POD](@ref "Proper Orthogonal Decomposition"). The easiest way[^5] to enforce this is through the so-called "cotangent lift" [peng2016symplectic](@cite): 
 
-[^3]: The original PSD paper [peng2016symplectic](@cite) proposes another approach to build linear reductions and reconstructions with the so-called "complex SVD." In practice this only brings minor advantages over the cotangent lift however [tyranowski2023symplectic](@cite).
+[^5]: The original PSD paper [peng2016symplectic](@cite) proposes another approach to build linear reductions and reconstructions with the so-called "complex SVD." In practice this only brings minor advantages over the cotangent lift however [tyranowski2023symplectic](@cite).
 
 ```math
 \mathcal{R} \equiv \Psi_\mathrm{CL} = \begin{bmatrix} \Phi & \mathbb{O} \\ \mathbb{O} & \Phi \end{bmatrix} \text{ where $\Phi\in{}St(n,N)\subset\mathbb{R}^{N\times{}n}$},
@@ -137,9 +137,9 @@ For details on the cotangent lift (and other methods for linear symplectic model
 
 ## Symplectic Autoencoders
 
-Symplectic Autoencoders are a type of neural network suitable for treating Hamiltonian parametrized PDEs with slowly decaying Kolmogorov ``n``-width. It is based on PSD and [symplectic neural networks](@ref "SympNet Architecture")[^5].
+Symplectic Autoencoders are a type of neural network suitable for treating Hamiltonian parametrized PDEs with slowly decaying Kolmogorov ``n``-width. It is based on PSD and [symplectic neural networks](@ref "SympNet Architecture")[^6].
 
-[^5]: We call these SympNets most of the time. This term was coined in [jin2020sympnets](@cite).
+[^6]: We call these SympNets most of the time. This term was coined in [jin2020sympnets](@cite).
 
 Symplectic autoencoders are motivated similarly to standard autoencoders for model order reduction: PSD suffers from similar shortcomings as regular POD. PSD is a linear map and the approximation space ``\tilde{\mathcal{M}}= \{\Psi^\mathrm{dec}(z_r)\in\mathbb{R}^{2N}:z_r\in\mathbb{R}^{2n}\}`` is therefore also linear. For problems with slowly-decaying Kolmogorov ``n``-width this leads to very poor approximations.  
 
@@ -154,9 +154,9 @@ As with any other data-driven [reduced order modeling technique](@ref "General W
 \mathcal{H}_\mathrm{discr}(z(t;\mu);\mu) := \frac{1}{2}x(t;\mu)^T\begin{bmatrix}  -\mu^2D_{\xi{}\xi} & \mathbb{O} \\ \mathbb{O} & \mathbb{I}  \end{bmatrix} x(t;\mu).
 ```
 
-In Hamiltonian reduced order modeling we try to find a symplectic submanifold in the solution space[^6] that captures the dynamics of the full system as well as possible.
+In Hamiltonian reduced order modeling we try to find a symplectic submanifold in the solution space[^7] that captures the dynamics of the full system as well as possible.
 
-[^6]: The submanifold, that approximates the solution manifold, is ``\tilde{\mathcal{M}} = \{\Psi^\mathrm{dec}(z_r)\in\mathbb{R}^{2N}:u_r\in\mathrm{R}^{2n}\}`` where ``z_r`` is the reduced state of the system. By a slight abuse of notation we also denote ``\tilde{\mathcal{M}}`` by ``\mathcal{M}`` as we have done previously when showing equivalence between Hamiltonian vector fields on ``\mathbb{R}^{2n}`` and ``\mathcal{M}``. 
+[^7]: The submanifold, that approximates the solution manifold, is ``\tilde{\mathcal{M}} = \{\Psi^\mathrm{dec}(z_r)\in\mathbb{R}^{2N}:u_r\in\mathrm{R}^{2n}\}`` where ``z_r`` is the reduced state of the system. By a slight abuse of notation we also denote ``\tilde{\mathcal{M}}`` by ``\mathcal{M}`` as we have done previously when showing equivalence between Hamiltonian vector fields on ``\mathbb{R}^{2n}`` and ``\mathcal{M}``. 
 
 Similar to the regular PDE case we again build an encoder ``\mathcal{P} \equiv \Psi^\mathrm{enc}`` and a decoder ``\mathcal{R} \equiv \Psi^\mathrm{dec}``; but now both these mappings are required to be symplectic.
 
