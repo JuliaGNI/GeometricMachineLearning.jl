@@ -44,14 +44,14 @@ Main.theorem(raw"A Hamiltonian system on the reduced space ``(\mathbb{R}^{2n}, \
 " * Main.indentation * raw"```
 " * Main.indentation * raw"is an approximation to the solution manifold. We further have
 " * Main.indentation * raw"```math
-" * Main.indentation * raw"    \mathbb{J}_{2N}|_\mathcal{M}(z) = ((\nabla_a\mathcal{R})^+)^T\mathbb{J}_{2n}(\nabla_z\mathcal{R})^+,
+" * Main.indentation * raw"    \mathbb{J}_{2N}|_\mathcal{M}(z) = ((\nabla_z\mathcal{R})^+)^T\mathbb{J}_{2n}(\nabla_z\mathcal{R})^+,
 " * Main.indentation * raw"```
 " * Main.indentation * raw"so the dynamics on ``\mathcal{M}`` can be described through a Hamiltonian ODE on ``\mathbb{R}^{2n}.``")
 ```
 
-For the proof we use the fact that ``\mathcal{M} = \mathcal{R}(\mathbb{R}^{2n})`` is a manifold [whose coordinate chart is the local inverse](@ref "The Immersion Theorem") of ``\mathcal{R}`` which we will call ``\psi``, i.e. around a point ``y\in\mathcal{M}`` we have ``\psi\circ\mathcal{R}(y) = y.``[^0] We further define the *symplectic inverse* of a matrix ``A\in\mathbb{R}^{2N\times2n}`` as 
+For the proof we use the fact that ``\mathcal{M} = \mathcal{R}(\mathbb{R}^{2n})`` is a manifold [whose coordinate chart is the local inverse](@ref "The Immersion Theorem") of ``\mathcal{R}`` which we will call ``\psi``, i.e. around a point ``y\in\mathcal{M}`` we have ``\psi\circ\mathcal{R}(y) = y.``[^3] We further define the *symplectic inverse* of a matrix ``A\in\mathbb{R}^{2N\times2n}`` as 
 
-[^0]: A similar proof can be found in [yildiz2024data](@cite). Further note that, if we enforced the condition ``\mathcal{P}\circ\mathcal{R} = \mathrm{id}`` exactly, the projection ``\mathcal{P}`` would be equal to the local inverse ``\psi.`` For the proof here we however only require the existence of ``\psi``, not its explicit construction as ``\mathcal{P}.``
+[^3]: A similar proof can be found in [yildiz2024data](@cite). Further note that, if we enforced the condition ``\mathcal{P}\circ\mathcal{R} = \mathrm{id}`` exactly, the projection ``\mathcal{P}`` would be equal to the local inverse ``\psi.`` For the proof here we however only require the existence of ``\psi``, not its explicit construction as ``\mathcal{P}.``
 
 ```math
     A^+ = \mathbb{J}_{2n}^TA^T\mathbb{J}_{2N},
@@ -89,7 +89,11 @@ Main.proof(raw"Note that the tangent space at ``y = \mathcal{R}(z)`` to ``\mathc
 " * Main.indentation * raw"and we see that the vector field on the reduced space also has to be Hamiltonian. We can thus express a high-dimensional Hamiltonian system on ``\mathcal{M}`` with a low-dimensional Hamiltonian system on ``\mathbb{R}^{2n}``.")
 ```
 
-This theorem serves as the basis for Hamiltonian model order reduction via proper symplectic decomposition and symplectic autoencoders. We will now briefly introduce these two approaches, but postpone a [detailed discussion on symplectic autoencoders](@ref "The Symplectic Autoencoder").
+In the proof we used that *the pseudoinverse is unique*. This is not true in general [peng2016symplectic](@cite), but holds for the architectures discussed here (proper symplectic decomposition and symplectic autoencoders). We will postpone the proof of this until after we introduced [symplectic autoencoders in detail](@ref "The Symplectic Autoencoder").
+
+This theorem serves as the basis for Hamiltonian model order reduction via proper symplectic decomposition and symplectic autoencoders. We will now briefly introduce these two approaches[^4].
+
+[^4]: We will discuss symplectic autoencoders later in a [dedicated section](@ref "The Symplectic Autoencoder").
 
 ## Proper Symplectic Decomposition
 
@@ -133,13 +137,14 @@ For details on the cotangent lift (and other methods for linear symplectic model
 
 ## Symplectic Autoencoders
 
-Symplectic Autoencoders are a type of neural network suitable for treating Hamiltonian parametrized PDEs with slowly decaying Kolmogorov ``n``-width. It is based on PSD and [symplectic neural networks](@ref "SympNet Architecture")[^4].
+Symplectic Autoencoders are a type of neural network suitable for treating Hamiltonian parametrized PDEs with slowly decaying Kolmogorov ``n``-width. It is based on PSD and [symplectic neural networks](@ref "SympNet Architecture")[^5].
 
-[^4]: We call these SympNets most of the time. This term was coined in [jin2020sympnets](@cite).
+[^5]: We call these SympNets most of the time. This term was coined in [jin2020sympnets](@cite).
 
 Symplectic autoencoders are motivated similarly to standard autoencoders for model order reduction: PSD suffers from similar shortcomings as regular POD. PSD is a linear map and the approximation space ``\tilde{\mathcal{M}}= \{\Psi^\mathrm{dec}(z_r)\in\mathbb{R}^{2N}:z_r\in\mathbb{R}^{2n}\}`` is therefore also linear. For problems with slowly-decaying Kolmogorov ``n``-width this leads to very poor approximations.  
 
 In order to overcome this difficulty we use neural networks, more specifically [SympNets](@ref "SympNet Architecture"), together with cotangent lift-like matrices. The resulting architecture, symplectic autoencoders, are discussed in the [dedicated section on neural network architectures](@ref "The Symplectic Autoencoder").
+
 
 ## Workflow for Symplectic ROM
 
@@ -149,9 +154,9 @@ As with any other data-driven [reduced order modeling technique](@ref "General W
 \mathcal{H}_\mathrm{discr}(z(t;\mu);\mu) := \frac{1}{2}x(t;\mu)^T\begin{bmatrix}  -\mu^2D_{\xi{}\xi} & \mathbb{O} \\ \mathbb{O} & \mathbb{I}  \end{bmatrix} x(t;\mu).
 ```
 
-In Hamiltonian reduced order modeling we try to find a symplectic submanifold in the solution space[^5] that captures the dynamics of the full system as well as possible.
+In Hamiltonian reduced order modeling we try to find a symplectic submanifold in the solution space[^6] that captures the dynamics of the full system as well as possible.
 
-[^5]: The submanifold, that approximates the solution manifold, is ``\tilde{\mathcal{M}} = \{\Psi^\mathrm{dec}(z_r)\in\mathbb{R}^{2N}:u_r\in\mathrm{R}^{2n}\}`` where ``z_r`` is the reduced state of the system. By a slight abuse of notation we also denote ``\tilde{\mathcal{M}}`` by ``\mathcal{M}`` as we have done previously when showing equivalence between Hamiltonian vector fields on ``\mathbb{R}^{2n}`` and ``\mathcal{M}``. 
+[^6]: The submanifold, that approximates the solution manifold, is ``\tilde{\mathcal{M}} = \{\Psi^\mathrm{dec}(z_r)\in\mathbb{R}^{2N}:u_r\in\mathrm{R}^{2n}\}`` where ``z_r`` is the reduced state of the system. By a slight abuse of notation we also denote ``\tilde{\mathcal{M}}`` by ``\mathcal{M}`` as we have done previously when showing equivalence between Hamiltonian vector fields on ``\mathbb{R}^{2n}`` and ``\mathcal{M}``. 
 
 Similar to the regular PDE case we again build an encoder ``\mathcal{P} \equiv \Psi^\mathrm{enc}`` and a decoder ``\mathcal{R} \equiv \Psi^\mathrm{dec}``; but now both these mappings are required to be symplectic.
 

@@ -85,7 +85,26 @@ Main.proof(raw"We proof this statement only for canonical Hamiltonian systems he
 
 The discipline of finding numerical approximations of flows ``\varphi^t`` such that these numerical approximations also preserve certain properties of that flow (such as symplecticity) is referred to as *structure-preserving numerical integration* or *geometric numerical integration* [hairer2006geometric](@cite). The `Julia` library `GeometricIntegrators` [Kraus:2020:GeometricIntegrators](@cite) offers a wide array of such geometric numerical integrators for a broad class of systems (not just canonical Hamiltonian systems).
 
-It is important to note that symplecticity is a very strong property that may not be achievable in some practical applications. If preservation of symplecticity is not achievable, it may however still be advantageous to consider weaker properties such as [volume preservation](@ref "Divergence-Free Vector Fields").
+In addition to being symplectic, the flow of a Hamiltonian vector field is also energy-preserving:
+
+```@eval
+Main.theorem(raw"The flow of a Hamiltonian vector field preserves the Hamiltonian ``H,`` i.e. 
+" * Main.indentation * raw"```math
+" * Main.indentation * raw"    H(\varphi^t(z_0)) = H(z_0),
+" * Main.indentation * raw"```
+" * Main.indentation * raw"for all ``t\in[0, T].``")
+```
+```@eval
+Main.proof(raw"We differentiate ``H(\varphi^t(z_0))`` with respect to ``t``:
+" * Main.indentation * raw"```math
+" * Main.indentation * raw"    \frac{d}{dt}H(\varphi^t(z_0)) = (\nabla_{\varphi^t(z_0)}H)^T\frac{d}{dt}\varphi^t(z_0) = (\nabla_{\varphi^t(z_0)}H)^T\mathbb{J}\nabla_{\varphi^t(z_0)}H = \mathbb{O},
+" * Main.indentation * raw"```
+" * Main.indentation * raw"because ``\mathbb{J}`` is skew-symmetric.")
+```
+
+It is important to note that symplecticity is a very strong property[^2] that may not be achievable in some practical applications. If preservation of symplecticity is not achievable, it may however still be advantageous to consider weaker properties such as [volume preservation](@ref "Divergence-Free Vector Fields").
+
+[^2]: Symplecticity imposes in general greater restrictions on the flow map than e.g. conservation of energy. The famous *Ge-Marsden theorem* [ge1988lie](@cite) says that one cannot achieve preservation of energy and preservation of symplecticity at the same time, unless the numerical method is the exact integral of the Hamiltonian ODE. In practice we hence almost always choose a symplectic over an energy-preserving scheme.
 
 ## References
 ```@docs

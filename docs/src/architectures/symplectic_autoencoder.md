@@ -33,6 +33,35 @@ so the symplectic inverse is equivalent to a matrix transpose in this case. In t
 Main.include_graphics("../tikz/sae_venn"; caption = raw"Venn diagram visualizing that a symplectic autoencoder (SAE) is symplectic, can change dimension and is nonlinear. ") # hide
 ```
 
+We now show the proof that shows ``\nabla_{\mathcal{R}(z)}\psi = (\nabla_{z}\mathcal{R})^+`` which was used when [showing the equivalence between Hamiltonian systems on the full and the reduced space](@ref "The Symplectic Solution Manifold"):
+```@eval
+Main.proof(raw"""The symplectic autoencoder is a composition of ``G``-SympNet layers and PSD-like matrices:
+""" * Main.indentation * raw"""```math
+""" * Main.indentation * raw"""\Psi^d = A_n\circ\psi_n\circ\cdots\circ{}A_1\circ\psi_1.
+""" * Main.indentation * raw"""```
+""" * Main.indentation * raw"""It's local inverse is
+""" * Main.indentation * raw"""```math
+""" * Main.indentation * raw"""(\Psi^d)^{-1} = \psi_1^{-1}\circ{}A_1^+\circ\ldots\circ\psi_n^{-1}\circ{}A_n^+.
+""" * Main.indentation * raw"""```
+""" * Main.indentation * raw"""The jacobian of ``\Psi^d`` is:
+""" * Main.indentation * raw"""```math
+""" * Main.indentation * raw"""\nabla_z\Psi^d = A_n\nabla_{A_{n-1}\cdots{}A_1\psi_1(z)}\psi_n\cdots{}A_1\nabla_z\psi_1,
+""" * Main.indentation * raw"""```
+""" * Main.indentation * raw"""and thus
+""" * Main.indentation * raw"""```math
+""" * Main.indentation * raw"""(\nabla_z\Psi^d)^+ = (\nabla\psi)^+A_1^+\cdots(\nabla\psi_n)^+A_n^+,
+""" * Main.indentation * raw"""```
+""" * Main.indentation * raw"""where we dropped the argument in the derivative of the nonlinear parts. We further have
+""" * Main.indentation * raw"""```math
+""" * Main.indentation * raw"""A^+ = A^T
+""" * Main.indentation * raw"""```
+""" * Main.indentation * raw"""for PSD-like matrices and
+""" * Main.indentation * raw"""```math
+""" * Main.indentation * raw"""(\nabla_z\psi)^+ = \begin{pmatrix} \mathbb{O} & \mathbb{I} \\ -\mathbb{I} & \mathbb{O}  \end{pmatrix} \begin{pmatrix} \mathbb{I} & \nabla_pf \\ \mathbb{O} & \mathbb{I} \end{pmatrix}^T \begin{pmatrix} \mathbb{O} & -\mathbb{I} \\ \mathbb{I} & \mathbb{O}  \end{pmatrix} = \begin{pmatrix} \mathbb{I} & -\nabla_pf \\ \mathbb{O} & \mathbb{I} \end{pmatrix},
+""" * Main.indentation * raw"""```
+""" * Main.indentation * raw"""for the ``G``-SympNet layers, where we assumed that ``\psi`` only changes the ``q`` component. Because these matrices are square, the inverse ``(\nabla\psi)^+ = (\nabla\psi)^{-1}`` is unique.""")
+```
+
 The SympNet layers in the symplectic autoencoder operate in *intermediate dimensions* (as well as the input and output dimensions). In the following we explain how `GeometricMachineLearning` computes those intermediate dimensions. 
 
 ## Intermediate Dimensions
