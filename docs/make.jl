@@ -235,6 +235,7 @@ _html_pages = [
     _optimizers,
     _special_layers,
     _reduced_order_modeling,
+    "port-Hamiltonian Systems" => "port_hamiltonian_systems.md",
     _architectures,
     _data_loader,
     _tutorials,
@@ -345,7 +346,8 @@ _latex_pages = [
                                         "Tensors",
                                         "Pullbacks"),
         # we include the last tutorial here
-        "Customizing Training" => value_for_key(_tutorials, "Adjusting the Loss Function")
+        "Customizing Training" => value_for_key(_tutorials, "Adjusting the Loss Function"),
+        "Other Structure-Preserving Properties" => ["Port-Hamiltonian Systems" => "port_hamiltonian_systems.md",]
     ]
 ]
 
