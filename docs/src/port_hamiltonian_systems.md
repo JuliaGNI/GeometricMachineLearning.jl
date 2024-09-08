@@ -2,13 +2,13 @@
 
 Symplectic autoencoders can also be used to reduce *port-Hamiltonian systems* [van2014port](@cite). Here we focus on *linear port-Hamiltonian systems*[^1] which are of the form:
 
-[^1]: For a broader class of such systems see [morandin2023modeling](@cite). A generalization to manifolds of such systems is also possible by utilizing *Dirac structures* [yoshimura2006diracI, yoshimura2006diracII](@cite).
+[^1]: For a broader class of such systems see [morandin2023modeling](@cite). A generalization to manifolds of such systems is also possible [yoshimura2006diracI, yoshimura2006diracII](@cite).
 
 ```math
 \Sigma_\mathrm{lpH}(\mathbb{R}^{2N}) = \Sigma_\mathrm{lpH} : \begin{cases} \dot{\hat{z}}(t) & =  (\mathbb{J}_{2N} - \hat{R})\nabla{}H(\hat{z}(t)) + \hat{B}u(t) \\ y(t) & = \hat{B}^T\nabla{}H(\hat{z}(t)),  \end{cases}
 ```
 
-where ``\mathbb{J}_{2N}`` is the [Poisson tensor](@ref "Symplectic Systems"), ``\hat{R}\in\mathbb{R}^{2N\times{}2N}`` is symmetric semi-positive definite (i.e. all its eigenvalues are non-zero), ``\hat{z}\in\mathbb{R}^{2N}`` is called the *state of the system*, ``u\in\mathbb{R}^m`` are the *system inputs*, ``y\in\mathbb{R}^m`` are the *system outputs*, and ``\hat{B}\in\mathbb{R}^{2N\times{}m}`` connects the inputs to the state. We also refer to *linear port-Hamiltonian systems* as *lpH systems*.
+where ``\mathbb{J}_{2N}`` is the [Poisson tensor](@ref "Symplectic Systems"), ``\hat{R}\in\mathbb{R}^{2N\times{}2N}`` is symmetric semi-positive definite (i.e. all its eigenvalues are non-negative). ``\hat{z}\in\mathbb{R}^{2N}`` is called the *state of the system*, ``u\in\mathbb{R}^m`` are the *system inputs*, ``y\in\mathbb{R}^m`` are the *system outputs*, and ``\hat{B}\in\mathbb{R}^{2N\times{}m}`` connects the inputs to the state. We also refer to *linear port-Hamiltonian systems* as *lpH systems*.
 
 Similar to energy conservation of standard Hamiltonian systems, lpH systems have an associated *energy balance equation*:
 
@@ -33,24 +33,60 @@ Main.proof(raw"""We evaluate the derivative of ``H(z(t))`` with respect to ``t``
 """ * Main.indentation * raw"""where we used that ``R`` is symmetric and positive semi-definite in the last step.""")
 ```
 
-Model order reduction of port-Hamiltonian systems can be divided into two approaches: *projection-based methods* and *interpolations of the transfer function* [moser2023structure](@cite). The first approach equivalent to [Galerkin projection](@ref "Obtaining the Reduced System via Galerkin Projection") and we limit the discussion here to this approach. Similar to the case of [canonical Hamiltonian systems](@ref "Workflow for Symplectic ROM"), we reduce the system with a [symplectic autoencoder](@ref "The Symplectic Autoencoder").
+The analogue to the [Poisson tensor](@ref "Symplectic Systems") for lpH systems are so-called *Dirac structures*:
 
-When discussing [symplectic model order reduciton](@ref "Hamiltonian Model Order Reduction") we showed that a Hamiltonian system on the reduced space ``\mathbb{R}^{2n}`` is equivalent to a Hamiltonian system on ``\mathcal{M} = \mathcal{R}(\mathbb{R}^{2n}).``
-
-We will now show the following equivalence relationships:
-
-```@example
-Main.include_graphics("tikz/lpH_equivalence"; width = .3, caption = raw"We can derive full lpH systems from reduced lpH systems and vice-versa (in some cases). ") # hide
+```@eval
+Main.definition(raw"""A Dirac structure for a vector space ``\mathbb{R}^{n}`` is a subspace ``D\subset\mathbb{R}^n\times(\mathbb{R}^n)* \simeq \mathbb{R}^{2n}`` such that
+""" * Main.indentation * raw"""```math
+""" * Main.indentation * raw"""D^\perp = D,
+""" * Main.indentation * raw"""```
+""" * Main.indentation * raw"""i.e. the orthogonal complement of ``D`` is equal to itself. Here the orthogonal complement is taken with respect to the pairing:
+""" * Main.indentation * raw"""```math
+""" * Main.indentation * raw"""\llangle\cdot,\cdot\rrangle:\mathbb{R}^{2n}\times\mathbb{R}^{2n}\to\mathbb{R}, (e, f)\times(\tilde{e}, \tilde{f}) \mapsto e^T\tilde{f} + \tilde{e}^Tf.
+""" * Main.indentation * raw"""```
+""" * Main.indentation * raw"""Note that ``\llangle\cdot, \cdot\rrangle`` is a symmetric bilinear form.""")
 ```
 
-The figure above indicates that we can derive a full system ``\tilde{\Sigma}_\mathrm{lpH}(\mathbb{R}^{2N}) := \Sigma_\mathrm{lpH}(\mathcal{M})`` from a reduced one ``\Sigma_\mathrm{lpH}(\mathbb{R}^{2n}).`` If we have ``R = 0,`` i.e. if the dissipative part of the system is zero, then we can also derive a reduced system ``\Sigma^{R=0}_\mathrm{lpH}(\mathbb{R}^{2n})`` from a full one ``\tilde{\Sigma}^{R=0}_\mathrm{lpH}(\mathbb{R}^{2N}) = \Sigma^{R=0}_\mathrm{lpH}(\mathcal{M}).`` When this is true for ``R\neq0`` is an open question. We now proceed with showing this equivalence, first for the special case ``R = 0.``
+```@eval
+Main.example(raw"""The space:
+""" * Main.indentation * raw"""```math
+""" * Main.indentation * raw"""    D = \{ (e, f): e\in\mathbb{R}^{2n}, f = \mathbb{J}_{2n}e \}\subset\mathbb{R}^{4n}
+""" * Main.indentation * raw"""```
+""" * Main.indentation * raw"""forms a Dirac structure. Note that we also have:
+""" * Main.indentation * raw"""```math
+""" * Main.indentation * raw"""    (\nabla_z{H}, X_H(z)) = (\nabla_zH, \mathbb{J}\nabla_zH) \in D.
+""" * Main.indentation * raw"""```
+""" * Main.indentation * raw"""So every Hamiltonian System has an associated Dirac structure.""")
+```
+
+```@eval
+Main.example(raw"""For the lpH shown above we have the relation:
+""" * Main.indentation * raw"""```math
+""" * Main.indentation * raw""" \begin{pmatrix} f \\ y \\e \end{pmatrix} = \begin{pmatrix} \mathbb{J}_{2N}^T & -B & \mathbb{I}_{2N} \\ B^T & \mathbb{O} & \mathbb{O} \\ \mathbb{I}_{2N} & \mathbb{O} & \mathbb{O} \end{pmatrix} \begin{pmatrix} \bar{e} \\ u \\ \bar{\bar{e}} \end{pmatrix},
+""" * Main.indentation * raw"""```
+""" * Main.indentation * raw"""where we further have the constraints and identifications ``f = -\dot{z},`` ``\bar{e} = -\nabla_zH`` and ``\bar{\bar{e}} = Re`` to fully describe the lpH.""")
+```
+
+Model order reduction of port-Hamiltonian systems can be divided into two approaches: *projection-based methods* and *interpolations of the transfer function* [moser2023structure](@cite). The first approach is equivalent to [Galerkin projection](@ref "Obtaining the Reduced System via Galerkin Projection") and we limit the discussion here to this approach. Similar to the case of [canonical Hamiltonian systems](@ref "Workflow for Symplectic ROM"), we reduce the system with a [symplectic autoencoder](@ref "The Symplectic Autoencoder").
+
+When discussing [symplectic model order reduciton](@ref "Hamiltonian Model Order Reduction") we showed that a Hamiltonian system on the reduced space ``\mathbb{R}^{2n}`` is equivalent to a Hamiltonian system on ``\mathcal{M} = \mathcal{R}(\mathbb{R}^{2n}),`` where ``\mathcal{R}`` is the *reconstruction* in a reduced order modeling framework.
+
+We will now demonstrate how to obtain a reduced-order lpH system from a full-order lpH system and vice-versa:
+
+```@example
+Main.include_graphics("tikz/lpH_equivalence"; width = .3, caption = raw"We can derive full lpH systems from reduced lpH systems and vice-versa (in some cases). The solid arrows indicate that we have an explicit construction available, the dashed arrow indicates that in this specific case we do not yet know if a structure-preserving reduction is possible. ") # hide
+```
+
+The figure above indicates that we can derive a full system ``\tilde{\Sigma}_\mathrm{lpH}(\mathbb{R}^{2N}) := \Sigma_\mathrm{lpH}(\mathcal{M})`` from a reduced one ``\Sigma_\mathrm{lpH}(\mathbb{R}^{2n}).`` If we have ``R = 0,`` i.e. if the dissipative part of the system is zero, then we can also derive a reduced system ``\Sigma^{R=0}_\mathrm{lpH}(\mathbb{R}^{2n})`` from a full one ``\tilde{\Sigma}^{R=0}_\mathrm{lpH}(\mathbb{R}^{2N}) = \Sigma^{R=0}_\mathrm{lpH}(\mathcal{M}).`` If and when this is true for ``R\neq0`` is an open question[^2]. We now proceed with showing this equivalence, first for the special case ``R = 0.``
+
+[^2]: We indicate this with a dashed arrow.
 
 ## The Special Case ``R = 0``
 
 We first focus on the case where ``R = 0.`` This case was also discussed in [kotyczka2019discrete](@cite).
 
 ```@eval
-Main.theorem(raw"For ``R = 0,`` model reduction of a lpH system with a symplectic autoencoder ``(\Psi^e, \Psi^d)`` yields an lpH system in reduced dimension of the form:
+Main.theorem(raw"For ``R = 0,`` model reduction of an lpH system with a symplectic autoencoder ``(\Psi^e, \Psi^d)`` yields an lpH system in reduced dimension of the form:
 " * Main.indentation * raw"```math
 " * Main.indentation * raw"    \bar{\Sigma}_\mathrm{lpH} : \begin{cases} \dot{z}(t) & = \mathbb{J}_{2n}\bar{H}(z(t)) + Bu(t) \\ y(t) & = B^T\nabla\bar{H}(z(t)) \end{cases},
 " * Main.indentation * raw"```
@@ -77,7 +113,7 @@ Main.proof(raw"We have to proof that the dynamics of ``\Psi^d(z)``, that approxi
 
 ## From the Reduced Space to the Full Space for ``R\neq0``
 
-Here we recall a proof from [rettberg2024data](@cite).
+Here we show that we can construct an lpH system on the full space from an lpH system on the reduced space; this holds for both ``R=0`` and ``R\neq0.`` The corresponding proof was already introduced in similar form by [rettberg2024data](@cite).
 
 ```@eval
 Main.theorem(raw"An lpH system on the reduced space induces an lpH system on the full space.")
@@ -90,9 +126,9 @@ Main.proof(raw"""Consider a reduced lpH system:
 """ * Main.indentation * raw"""```
 """ * Main.indentation * raw"""where ``R\in\mathbb{R}^{2n\times2n}`` and ``B\in\mathbb{R}^{2n\times{}m}.`` After multiplying the first equation with ``\nabla_z\mathcal{R}`` from the left we get:
 """ * Main.indentation * raw"""```math
-""" * Main.indentation * raw"""\frac{d}{dt} \mathcal{R}(z(t)) = \nabla_z\mathcal{R}(\mathbb{J}_{2n} - R)\nabla_zH + \nabla_z\mathcal{R}Bu(t).
+""" * Main.indentation * raw"""\frac{d}{dt} \mathcal{R}(z(t)) = \nabla_z\mathcal{R}(\mathbb{J}_{2n} - R)\nabla_zH + (\nabla_z\mathcal{R})Bu(t).
 """ * Main.indentation * raw"""```
-""" * Main.indentation * raw"""From now on we call ``\tilde{B} := \nabla_z\mathcal{R}B.`` We then look at the terms (i) ``(\nabla_z\mathcal{R})\mathbb{J}_{2n}\nabla_zH`` and (ii) ``(\nabla_z\mathcal{R})R\nabla_zH.`` The first one (i) becomes:
+""" * Main.indentation * raw"""From now on we call ``\tilde{B} := (\nabla_z\mathcal{R})B.`` We then look at the terms (i) ``(\nabla_z\mathcal{R})\mathbb{J}_{2n}\nabla_zH`` and (ii) ``(\nabla_z\mathcal{R})R\nabla_zH.`` The first one (i) becomes:
 """ * Main.indentation * raw"""```math
 """ * Main.indentation * raw"""\begin{aligned}
 """ * Main.indentation * raw"""\nabla_z\mathcal{R}\mathbb{J}_{2n}\nabla_zH & = \mathbb{J}_{2N}\mathbb{J}_{2N}^T\mathcal{R}\mathbb{J}_{2n}\nabla_zH \\
@@ -115,4 +151,4 @@ Main.proof(raw"""Consider a reduced lpH system:
 """ * Main.indentation * raw"""where  ``\tilde{R}|_{\mathcal{R}(z)} = (\nabla_z\mathcal{R})^TR(\nabla_z\mathcal{R}),`` ``\tilde{B} := (\nabla_z\mathcal{R})B`` and ``\bar{H} = H\circ\psi``.""")
 ```
 
-As was already discussed in [the section on Hamiltonian model order reduction](@ref "The Symplectic Solution Manifold") the encoder ``\Psi^e`` can be constructed such that it is exactly the local inverse ``\varphi.`` This was done in e.g. [otto2023learning](@cite). Enforcing this for [symplectic autoencoders](@ref "The Symplectic Autoencoder") is also straightforward:
+As was already discussed in [the section on Hamiltonian model order reduction](@ref "The Symplectic Solution Manifold") the encoder ``\Psi^e`` can be constructed such that it is exactly the local inverse ``\varphi.`` This was done in e.g. [otto2023learning](@cite). Enforcing this for symplectic autoencoders is also [straightforward](@ref "The Symplectic Autoencoder").
