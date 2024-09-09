@@ -320,6 +320,8 @@ save("plot200_sine2.png", fig_light; px_per_unit = 1.2) # hide
 Main.include_graphics("plot200_sine2"; width = .65) # hide
 ```
 
+Here we see that the arbitrary weighting quickly fails and the skew-symmetric weighting performs better on longer time scales.
+
 ## Library Functions
 
 ```@docs
