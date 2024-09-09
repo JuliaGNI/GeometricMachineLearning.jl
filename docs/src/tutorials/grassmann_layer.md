@@ -346,7 +346,7 @@ end # hide
 ```
 
 ```@example
-Main.include_graphics("mapped_points"; width = .7, caption = raw"The blue points were obtained with the neural network sampler." ) # hide
+Main.include_graphics("mapped_points"; width = .7, caption = raw"The blue points were obtained with the neural network sampler. " ) # hide
 ```
 
 If points appear in darker color this means that they lie behind the graph of the Rosenbrock function.
