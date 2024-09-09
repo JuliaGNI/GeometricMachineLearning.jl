@@ -203,7 +203,7 @@ nothing
 ```
 
 ```@example
-Main.include_graphics("tangent_space"; caption = raw"Visualization of how the tangent space is constructed.", width = .9) # hide
+Main.include_graphics("tangent_space"; caption = raw"Visualization of how the tangent space is constructed. ", width = .9) # hide
 ```
 
 The tangent space ``T_x\mathcal{M}`` for
