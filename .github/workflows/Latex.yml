@@ -19,6 +19,7 @@ jobs:
             sudo apt-get install texlive-science
             sudo apt-get install latex-cjk-all
             sudo apt-get install texlive-fonts-recommended
+            sudo apt-get install texlive-fonts-extra
       - uses: julia-actions/setup-julia@latest
         with:
           version: '1'
