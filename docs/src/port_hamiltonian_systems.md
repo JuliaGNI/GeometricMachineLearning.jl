@@ -62,14 +62,16 @@ Main.example(raw"""The space:
 ```@eval
 Main.example(raw"""For the lpH shown above we have the relation:
 """ * Main.indentation * raw"""```math
-""" * Main.indentation * raw""" \begin{pmatrix} f \\ y \\e \end{pmatrix} = \begin{pmatrix} \mathbb{J}_{2N}^T & -B & \mathbb{I}_{2N} \\ B^T & \mathbb{O} & \mathbb{O} \\ \mathbb{I}_{2N} & \mathbb{O} & \mathbb{O} \end{pmatrix} \begin{pmatrix} \bar{e} \\ u \\ \bar{\bar{e}} \end{pmatrix},
+""" * Main.indentation * raw""" \begin{pmatrix} f \\ y \\e \end{pmatrix} = \begin{pmatrix} \mathbb{J}_{2N}^T & -B & -\mathbb{I}_{2N} \\ B^T & \mathbb{O} & \mathbb{O} \\ \mathbb{I}_{2N} & \mathbb{O} & \mathbb{O} \end{pmatrix} \begin{pmatrix} \bar{e} \\ u \\ \bar{\bar{e}} \end{pmatrix},
 """ * Main.indentation * raw"""```
-""" * Main.indentation * raw"""where we further have the constraints and identifications ``f = -\dot{z},`` ``\bar{e} = -\nabla_zH`` and ``\bar{\bar{e}} = Re`` to fully describe the lpH.""")
+""" * Main.indentation * raw"""where we further have the constraints and identifications ``f = -\dot{z},`` ``\bar{e} = \nabla_zH`` and ``\bar{\bar{e}} = Re`` to fully describe the lpH.""")
 ```
+
+In numerically solving lpH systems the Dirac structure takes a similar role to the symplectic structure of canonical Hamiltonian systems [kotyczka2019discrete](@cite) and the energy-balance equation takes a similar role to energy conservation for canonical Hamiltonian systems. 
 
 Model order reduction of port-Hamiltonian systems can be divided into two approaches: *projection-based methods* and *interpolations of the transfer function* [moser2023structure](@cite). The first approach is equivalent to [Galerkin projection](@ref "Obtaining the Reduced System via Galerkin Projection") and we limit the discussion here to this approach. Similar to the case of [canonical Hamiltonian systems](@ref "Workflow for Symplectic ROM"), we reduce the system with a [symplectic autoencoder](@ref "The Symplectic Autoencoder").
 
-When discussing [symplectic model order reduciton](@ref "Hamiltonian Model Order Reduction") we showed that a Hamiltonian system on the reduced space ``\mathbb{R}^{2n}`` is equivalent to a Hamiltonian system on ``\mathcal{M} = \mathcal{R}(\mathbb{R}^{2n}),`` where ``\mathcal{R}`` is the *reconstruction* in a reduced order modeling framework.
+When discussing [symplectic model order reduciton](@ref "Hamiltonian Model Order Reduction") we showed that a Hamiltonian system on the reduced space ``\mathbb{R}^{2n}`` is equivalent to a Hamiltonian system on ``\mathcal{M} = \mathcal{R}(\mathbb{R}^{2n}),`` where ``\mathcal{R}`` is the *reconstruction* in a reduced order modeling framework. Similar statements are also true for lpH systems.
 
 We will now demonstrate how to obtain a reduced-order lpH system from a full-order lpH system and vice-versa:
 
