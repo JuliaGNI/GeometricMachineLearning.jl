@@ -41,7 +41,7 @@ dl_raw = DataLoader(solution; suppress_info = true)
 nothing # hide
 ```
 
-Note that we have not yet specified the type and backend that we want to use. We do this now:
+We have not yet specified the type and backend that we want to use. We do this now:
 
 ```@example sympnet
 # specify the data type and the backend

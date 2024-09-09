@@ -1,6 +1,6 @@
 # Using Symplectic Autoencoders for Port-Hamiltonian Systems
 
-Symplectic autoencoders can also be used to reduce *port-Hamiltonian systems* [van2014port](@cite). Here we focus on *linear port-Hamiltonian systems*[^1] which are of the form:
+Symplectic autoencoders can also be used to reduce *port-Hamiltonian systems* [van2014port](@cite). Here we focus on *linear port-Hamiltonian systems*[^1]. These are of the form:
 
 [^1]: For a broader class of such systems see [morandin2023modeling](@cite). A generalization to manifolds of such systems is also possible [yoshimura2006diracI, yoshimura2006diracII](@cite).
 
@@ -8,7 +8,7 @@ Symplectic autoencoders can also be used to reduce *port-Hamiltonian systems* [v
 \Sigma_\mathrm{lpH}(\mathbb{R}^{2N}) = \Sigma_\mathrm{lpH} : \begin{cases} \dot{\hat{z}}(t) & =  (\mathbb{J}_{2N} - \hat{R})\nabla{}H(\hat{z}(t)) + \hat{B}u(t) \\ y(t) & = \hat{B}^T\nabla{}H(\hat{z}(t)),  \end{cases}
 ```
 
-where ``\mathbb{J}_{2N}`` is the [Poisson tensor](@ref "Symplectic Systems"), ``\hat{R}\in\mathbb{R}^{2N\times{}2N}`` is symmetric semi-positive definite (i.e. all its eigenvalues are non-negative). ``\hat{z}\in\mathbb{R}^{2N}`` is called the *state of the system*, ``u\in\mathbb{R}^m`` are the *system inputs*, ``y\in\mathbb{R}^m`` are the *system outputs*, and ``\hat{B}\in\mathbb{R}^{2N\times{}m}`` connects the inputs to the state. We also refer to *linear port-Hamiltonian systems* as *lpH systems*.
+where ``\mathbb{J}_{2N}`` is the [Poisson tensor](@ref "Symplectic Systems") and ``\hat{R}\in\mathbb{R}^{2N\times{}2N}`` is symmetric semi-positive definite (i.e. all its eigenvalues are non-negative). ``\hat{z}\in\mathbb{R}^{2N}`` is called the *state of the system*, ``u\in\mathbb{R}^m`` are the *system inputs*, ``y\in\mathbb{R}^m`` are the *system outputs*, and ``\hat{B}\in\mathbb{R}^{2N\times{}m}`` connects the inputs to the state. We also refer to *linear port-Hamiltonian systems* as *lpH systems*.
 
 Similar to energy conservation of standard Hamiltonian systems, lpH systems have an associated *energy balance equation*:
 
@@ -36,7 +36,7 @@ Main.proof(raw"""We evaluate the derivative of ``H(z(t))`` with respect to ``t``
 The analogue to the [Poisson tensor](@ref "Symplectic Systems") for lpH systems are so-called *Dirac structures*:
 
 ```@eval
-Main.definition(raw"""A Dirac structure for a vector space ``\mathbb{R}^{n}`` is a subspace ``D\subset\mathbb{R}^n\times(\mathbb{R}^n)* \simeq \mathbb{R}^{2n}`` such that
+Main.definition(raw"""A Dirac structure for a vector space ``\mathbb{R}^{n}`` is a subspace ``D\subset\mathbb{R}^n\times(\mathbb{R}^n)^* \simeq \mathbb{R}^{2n}`` such that
 """ * Main.indentation * raw"""```math
 """ * Main.indentation * raw"""D^\perp = D,
 """ * Main.indentation * raw"""```
@@ -151,4 +151,4 @@ Main.proof(raw"""Consider a reduced lpH system:
 """ * Main.indentation * raw"""where  ``\tilde{R}|_{\mathcal{R}(z)} = (\nabla_z\mathcal{R})^TR(\nabla_z\mathcal{R}),`` ``\tilde{B} := (\nabla_z\mathcal{R})B`` and ``\bar{H} = H\circ\psi``.""")
 ```
 
-As was already discussed in [the section on Hamiltonian model order reduction](@ref "The Symplectic Solution Manifold") the encoder ``\Psi^e`` can be constructed such that it is exactly the local inverse ``\varphi.`` This was done in e.g. [otto2023learning](@cite). Enforcing this for symplectic autoencoders is also [straightforward](@ref "The Symplectic Autoencoder").
+As was already discussed in [the section on Hamiltonian model order reduction](@ref "The Symplectic Solution Manifold") the encoder ``\Psi^e`` can be constructed such that it is exactly the local inverse ``\psi.`` This was done in e.g. [otto2023learning](@cite). Enforcing this for symplectic autoencoders is also [straightforward](@ref "The Symplectic Autoencoder").
