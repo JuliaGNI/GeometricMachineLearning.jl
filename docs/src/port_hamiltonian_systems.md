@@ -13,7 +13,7 @@ where ``\mathbb{J}_{2N}`` is the [Poisson tensor](@ref "Symplectic Systems") and
 Similar to energy conservation of standard Hamiltonian systems, lpH systems have an associated *energy balance equation*:
 
 ```@eval
-Main.definition(raw"The energy balance equation of a lpH system is:
+Main.definition(raw"The **energy balance equation** of a lpH system is:
 " * Main.indentation * raw"```math
 " * Main.indentation * raw"\frac{d}{dt}H(z(t)) \leq y(t)^Tu(t).
 " * Main.indentation * raw"```
@@ -36,15 +36,17 @@ Main.proof(raw"""We evaluate the derivative of ``H(z(t))`` with respect to ``t``
 The analogue to the [Poisson tensor](@ref "Symplectic Systems") for lpH systems are so-called *Dirac structures*:
 
 ```@eval
+llangle = Main.output_type == :latex ? raw"\llangle" : raw"\langle\langle"
+rrangle = Main.output_type == :latex ? raw"\rrangle" : raw"\rangle\rangle"
 Main.definition(raw"""A Dirac structure for a vector space ``\mathbb{R}^{n}`` is a subspace ``D\subset\mathbb{R}^n\times(\mathbb{R}^n)^* \simeq \mathbb{R}^{2n}`` such that
 """ * Main.indentation * raw"""```math
 """ * Main.indentation * raw"""D^\perp = D,
 """ * Main.indentation * raw"""```
 """ * Main.indentation * raw"""i.e. the orthogonal complement of ``D`` is equal to itself. Here the orthogonal complement is taken with respect to the pairing:
 """ * Main.indentation * raw"""```math
-""" * Main.indentation * raw"""\llangle\cdot,\cdot\rrangle:\mathbb{R}^{2n}\times\mathbb{R}^{2n}\to\mathbb{R}, (e, f)\times(\tilde{e}, \tilde{f}) \mapsto e^T\tilde{f} + \tilde{e}^Tf.
+""" * Main.indentation * llangle * raw"""\cdot,\cdot""" * rrangle * raw""":\mathbb{R}^{2n}\times\mathbb{R}^{2n}\to\mathbb{R}, (e, f)\times(\tilde{e}, \tilde{f}) \mapsto e^T\tilde{f} + \tilde{e}^Tf.
 """ * Main.indentation * raw"""```
-""" * Main.indentation * raw"""Note that ``\llangle\cdot, \cdot\rrangle`` is a symmetric bilinear form.""")
+""" * Main.indentation * raw"""Note that ``""" * llangle * raw"""\cdot, \cdot""" * rrangle * raw"""`` is a symmetric bilinear form.""")
 ```
 
 ```@eval
@@ -88,7 +90,7 @@ The figure above indicates that we can derive a full system ``\tilde{\Sigma}_\ma
 We first focus on the case where ``R = 0.`` This case was also discussed in [kotyczka2019discrete](@cite).
 
 ```@eval
-Main.theorem(raw"For ``R = 0,`` model reduction of an lpH system with a symplectic autoencoder ``(\Psi^e, \Psi^d)`` yields an lpH system in reduced dimension of the form:
+Main.theorem(raw"For ``R = 0,`` model reduction of a lpH system with a symplectic autoencoder ``(\Psi^e, \Psi^d)`` yields a lpH system in reduced dimension of the form:
 " * Main.indentation * raw"```math
 " * Main.indentation * raw"    \bar{\Sigma}_\mathrm{lpH} : \begin{cases} \dot{z}(t) & = \mathbb{J}_{2n}\bar{H}(z(t)) + Bu(t) \\ y(t) & = B^T\nabla\bar{H}(z(t)) \end{cases},
 " * Main.indentation * raw"```
@@ -115,10 +117,10 @@ Main.proof(raw"We have to proof that the dynamics of ``\Psi^d(z)``, that approxi
 
 ## From the Reduced Space to the Full Space for ``R\neq0``
 
-Here we show that we can construct an lpH system on the full space from an lpH system on the reduced space; this holds for both ``R=0`` and ``R\neq0.`` The corresponding proof was already introduced in similar form by [rettberg2024data](@cite).
+Here we show that we can construct a lpH system on the full space from a lpH system on the reduced space; this holds for both ``R=0`` and ``R\neq0.`` The corresponding proof was already introduced in similar form by [rettberg2024data](@cite).
 
 ```@eval
-Main.theorem(raw"An lpH system on the reduced space induces an lpH system on the full space.")
+Main.theorem(raw"A lpH system on the reduced space induces a lpH system on the full space.")
 ```
 
 ```@eval
@@ -133,16 +135,16 @@ Main.proof(raw"""Consider a reduced lpH system:
 """ * Main.indentation * raw"""From now on we call ``\tilde{B} := (\nabla_z\mathcal{R})B.`` We then look at the terms (i) ``(\nabla_z\mathcal{R})\mathbb{J}_{2n}\nabla_zH`` and (ii) ``(\nabla_z\mathcal{R})R\nabla_zH.`` The first one (i) becomes:
 """ * Main.indentation * raw"""```math
 """ * Main.indentation * raw"""\begin{aligned}
-""" * Main.indentation * raw"""\nabla_z\mathcal{R}\mathbb{J}_{2n}\nabla_zH & = \mathbb{J}_{2N}\mathbb{J}_{2N}^T\mathcal{R}\mathbb{J}_{2n}\nabla_zH \\
-""" * Main.indentation * raw"""                                            & = \mathbb{J}_{2N}(\mathcal{R}^+)^T\nabla_zH \\
+""" * Main.indentation * raw"""(\nabla_z\mathcal{R})\mathbb{J}_{2n}\nabla_zH & = \mathbb{J}_{2N}\mathbb{J}_{2N}^T(\nabla_z\mathcal{R})\mathbb{J}_{2n}\nabla_zH \\
+""" * Main.indentation * raw"""                                            & = \mathbb{J}_{2N}((\nabla_z\mathcal{R})^+)^T\nabla_zH \\
 """ * Main.indentation * raw"""                                            & = \mathbb{J}_{2N}\nabla_{\mathcal{R}(z)}(H\circ\psi)
 """ * Main.indentation * raw"""\end{aligned}
 """ * Main.indentation * raw"""```
 """ * Main.indentation * raw"""And the second one (ii) becomes:
 """ * Main.indentation * raw"""```math
 """ * Main.indentation * raw"""\begin{aligned}
-""" * Main.indentation * raw"""\nabla_z\mathcal{R}R\nabla_zH   & = \nabla_z\mathcal{R}R\nabla_z(H\circ\psi\circ\mathcal{R}) \\
-""" * Main.indentation * raw"""                                & = \nabla_z\mathcal{R}R(\nabla_z\mathcal{R})^T\nabla_{\mathcal{R}(z)}(H\circ\psi) \\
+""" * Main.indentation * raw"""(\nabla_z\mathcal{R})R\nabla_zH   & = (\nabla_z\mathcal{R})R\nabla_z(H\circ\psi\circ\mathcal{R}) \\
+""" * Main.indentation * raw"""                                & = (\nabla_z\mathcal{R})R(\nabla_z\mathcal{R})^T\nabla_{\mathcal{R}(z)}(H\circ\psi) \\
 """ * Main.indentation * raw"""                                & =: \tilde{R}\nabla_{\mathcal{R}(z)}\bar{H}.
 """ * Main.indentation * raw"""\end{aligned}
 """ * Main.indentation * raw"""```
