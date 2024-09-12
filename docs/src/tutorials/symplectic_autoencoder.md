@@ -183,7 +183,6 @@ And plot the solutions for
 
 ```@example toda_lattice
 time_steps = (0, 300, 800)
-
 nothing # hide
 ```
 
@@ -331,7 +330,7 @@ function plot_transformer_validation!(fig, coordinates, t_steps::Integer=100; th
     lines!(ax_val, sol.q; label = rich("SAE + Transformer"; color = textcolor), color = mpurple)
 
     if t_steps == 0
-        axislegend(ax_val; position = (1.01, .9), backgroundcolor = theme == :dark ? :transparent : :white, color = textcolor, labelsize = 8)
+        axislegend(ax_val; position = (1.01, .9), backgroundcolor = theme == :dark ? :transparent : :white, color = textcolor, labelsize = 8, nbanks = 2)
     end
     nothing
 end
