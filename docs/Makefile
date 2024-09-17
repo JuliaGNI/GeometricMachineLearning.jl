@@ -116,6 +116,7 @@ remove_numbering_for_some_chapters:
 	sed -i'' -e 's/\\chapter{Zusammenfassung}/\\chapter*{Zusammenfassung}/g' build/G*.tex;
 	sed -i'' -e 's/\\chapter{Summary}/\\chapter*{Summary}/g' build/G*.tex;
 	sed -i'' -e 's/\\chapter{Conclusion and Outlook}/\\chapter*{Conclusion and Outlook}/g' build/G*.tex;
+	sed -i'' -e 's/\\chapter{Learning a Reduced Model with Symplectic Autoencoders}/\\chapter[A Reduced Model with Symplectic Autoencoders]{Learning a Reduced Model with Symplectic Autoencoders}/g' build/G*.tex;
 
 copy_png_files:
 	find build/manifolds -name \*.png -exec cp {} build \; ;
