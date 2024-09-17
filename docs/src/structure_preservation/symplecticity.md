@@ -106,14 +106,14 @@ It is important to note that symplecticity is a very strong property[^2] that ma
 
 [^2]: Symplecticity imposes in general greater restrictions on the flow map than e.g. conservation of energy. The famous *Ge-Marsden theorem* [ge1988lie](@cite) says that one cannot achieve preservation of energy and preservation of symplecticity at the same time, unless the numerical method is the exact integral of the Hamiltonian ODE. In practice we hence almost always choose a symplectic over an energy-preserving scheme.
 
-## References
+## Library Functions
 ```@docs
 PoissonTensor
 GeometricMachineLearning.QPT
 GeometricMachineLearning.QPTOAT
 ```
 
-## Library Functions
+## References
 
 ```@bibliography
 Canonical = false
