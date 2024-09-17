@@ -66,7 +66,7 @@ Main.example(raw"""For the lpH shown above we have the relation:
 """ * Main.indentation * raw"""```math
 """ * Main.indentation * raw""" \begin{pmatrix} f \\ y \\e \end{pmatrix} = \begin{pmatrix} \mathbb{J}_{2N}^T & -B & -\mathbb{I}_{2N} \\ B^T & \mathbb{O} & \mathbb{O} \\ \mathbb{I}_{2N} & \mathbb{O} & \mathbb{O} \end{pmatrix} \begin{pmatrix} \bar{e} \\ u \\ \bar{\bar{e}} \end{pmatrix},
 """ * Main.indentation * raw"""```
-""" * Main.indentation * raw"""where we further have the constraints and identifications ``f = -\dot{z},`` ``\bar{e} = \nabla_zH`` and ``\bar{\bar{e}} = Re`` to fully describe the lpH.""")
+""" * Main.indentation * raw"""where we further have the constraints and identifications ``f = -\dot{z},`` ``\bar{e} = \nabla_zH`` and ``\bar{\bar{e}} = -Re`` to fully describe the lpH.""")
 ```
 
 In numerically solving lpH systems the Dirac structure takes a similar role to the symplectic structure of canonical Hamiltonian systems [kotyczka2019discrete](@cite) and the energy-balance equation takes a similar role to energy conservation for canonical Hamiltonian systems. 

@@ -16,7 +16,7 @@ The [standard transformer](@ref "Standard Transformer"), the [volume-preserving 
 
 
 ```@example
-Main.include_graphics("../tikz/multiple_parameters"; caption = raw"Two trajectories of a parameter-dependent ODE with the same initial condition.") # hide
+Main.include_graphics("../tikz/multiple_parameters"; caption = raw"Two trajectories of a parameter-dependent ODE with the same initial condition. ") # hide
 ```
 
 The trajectories come from a parameter-dependent [ODE](@ref "The Existence-And-Uniqueness Theorem") in two dimensions. As initial condition we take ``A\in\mathbb{R}^2`` and we look at two different parameter instances: ``\mu_1`` and ``\mu_2``. As we can see the curves ``\tilde{z}_{\mu_1}`` and ``\tilde{z}_{\mu_2}`` both start out at ``A,`` then go into different directions but cross again at ``D.`` If we used a standard feedforward neural network to treat this system it would not be able to resolve those training data as the information would be ambiguous at points ``A`` and ``D,`` i.e. the network would not know what it should predict. If we however consider the information coming from points three points, either ``(A, B, D)`` or ``(A, C, D),`` then the network can learn to predict the next time step. We will elaborate more on this in the [tutorial section](@ref "Comparing Different `VolumePreservingAttention` Mechanisms").

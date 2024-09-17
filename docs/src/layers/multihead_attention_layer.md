@@ -25,7 +25,7 @@ The ``K^TQ`` term is a similarity matrix between the queries and the vectors.
 The transformer contains a *self-attention mechanism*, i.e. takes an input ``X`` and then transforms it linearly to ``V``, ``Q`` and ``K`` via ``V = P^VX``, ``Q = P^QX`` and ``K = P^KX``. What distinguishes the multihead attention layer from the singlehead attention layer is that there is not just one ``P^V``, ``P^Q`` and ``P^K``, but there are several: one for each *head* of the multihead attention layer. After computing the individual values, queries and vectors, and after applying the softmax, the outputs are then concatenated together in order to obtain again an array that is of the same size as the input array:
 
 ```@example 
-Main.include_graphics("../tikz/mha"; caption = raw"A representation of a multihead attention layer with three heads.") # hide
+Main.include_graphics("../tikz/mha"; caption = raw"A representation of a multihead attention layer with three heads. ") # hide
 ```
 
 Written as an equation we get:

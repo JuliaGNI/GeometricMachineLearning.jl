@@ -7,7 +7,7 @@ The architecture is represented by the figure below[^1]:
 [^1]: For the symplectic autoencoder we only use [SympNet gradient layers](@ref "SympNet Gradient Layer") because they seem to outperform ``LA``-SympNets in many cases and are easier to interpret: their nonlinear part is the gradient of a function that only depends on half the coordinates.
 
 ```@example 
-Main.include_graphics("../tikz/symplectic_autoencoder"; width = .7, caption = raw"A visualization of the symplectic autoencoder architecture. It is a composition of SympNet layers and PSD-like layers.") # hide
+Main.include_graphics("../tikz/symplectic_autoencoder"; width = .7, caption = raw"A visualization of the symplectic autoencoder architecture. It is a composition of SympNet layers and PSD-like layers. ") # hide
 ```
 
 It is a composition of [SympNet gradient layers](@ref "SympNet Gradient Layer") and [PSD-like matrices](@ref "Proper Symplectic Decomposition"), so a matrix ``A_i`` (respectively ``A_i^+``) is of the form

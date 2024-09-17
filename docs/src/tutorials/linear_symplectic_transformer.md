@@ -3,7 +3,7 @@
 In this section we compare the [linear symplectic transformer](@ref "Linear Symplectic Transformer") to the [standard transformer](@ref "Standard Transformer"). The example we treat here is the *coupled harmonic oscillator*:
 
 ```@example
-Main.include_graphics("../tikz/coupled_harmonic_oscillator"; caption = raw"Visualization of the coupled harmonic oscillator.") # hide
+Main.include_graphics("../tikz/coupled_harmonic_oscillator"; caption = raw"Visualization of the coupled harmonic oscillator. ") # hide
 ```
 
 It is a [Hamiltonian system](@ref "Symplectic Systems") with 
@@ -126,7 +126,7 @@ nothing
 ```
 
 ```@example
-Main.include_graphics("lst"; caption = "Training loss for the different networks.") # hide
+Main.include_graphics("lst"; caption = "Training loss for the different networks. ") # hide
 ```
 
 
@@ -181,7 +181,7 @@ nothing
 ```
 
 ```@example lin_sympl_tran_tut
-Main.include_graphics("lst_validation"; caption = "Validation of the different networks.", width = .85) # hide
+Main.include_graphics("lst_validation"; caption = "Validation of the different networks. ", width = .85) # hide
 ```
 
 We can see that the standard transformer is not able to stay close to the trajectory coming from implicit midpoint very well. The linear symplectic transformer outperforms the standard transformer as well as the SympNet while needing fewer parameters than the standard transformer: 

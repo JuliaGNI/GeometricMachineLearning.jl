@@ -35,9 +35,7 @@ We call [`DataLoader`](@ref) in order to conveniently handle the data:
 
 ```@example sympnet
 using GeometricMachineLearning # hide
-# we can conveniently handle the data with # hide 
 dl_raw = DataLoader(solution; suppress_info = true)
-
 nothing # hide
 ```
 
