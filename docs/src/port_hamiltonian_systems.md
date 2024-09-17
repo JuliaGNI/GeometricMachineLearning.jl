@@ -69,7 +69,18 @@ Main.example(raw"""For the lpH shown above we have the relation:
 """ * Main.indentation * raw"""where we further have the constraints and identifications ``f = -\dot{z},`` ``\bar{e} = \nabla_zH`` and ``\bar{\bar{e}} = -Re`` to fully describe the lpH. Note that points ``(f, y, e, \bar{e}, u, \bar{\bar{e}})\in\mathbb{R}^{8N + 2m}`` that satisfy the relation shown above form a Dirac structure.""")
 ```
 
-In numerically solving lpH systems the Dirac structure takes a similar role to the symplectic structure of canonical Hamiltonian systems [kotyczka2019discrete](@cite) and the energy-balance equation takes a similar role to energy conservation for canonical Hamiltonian systems. 
+In numerically solving lpH systems the Dirac structure takes a similar role to the symplectic structure of canonical Hamiltonian systems [kotyczka2019discrete](@cite) and the energy-balance equation takes a similar role to energy conservation for canonical Hamiltonian systems. Structure-preserving discretization of lpH systems discretize the Dirac structure with collocation methods [mehrmann2019structure](@cite). A one-step update can be written as
+
+```math
+\begin{aligned}
+z_f & = z_0 + h\sum_{i=1}^s\beta_if_i, \\
+z_i & = z_0 + h\sum_{j=1}^s\alpha_{ij}f_j, \\
+e_i & = \bar{e}_i = \nabla_{z_i}H, \\
+\bar{\bar{e}}_i & = -Re_i, \\
+f_i & = \mathbb{J}_{2N}^T\bar{e}_i - Bu_i - \bar{\bar{e}}_i, \\
+y_i & = B^T\bar{e}_i.
+\end{aligned}
+```
 
 Model order reduction of port-Hamiltonian systems can be divided into two approaches: *projection-based methods* and *interpolations of the transfer function* [moser2023structure](@cite). The first approach is equivalent to [Galerkin projection](@ref "Obtaining the Reduced System via Galerkin Projection") and we limit the discussion here to this approach. Similar to the case of [canonical Hamiltonian systems](@ref "Workflow for Symplectic ROM"), we reduce the system with a [symplectic autoencoder](@ref "The Symplectic Autoencoder").
 
