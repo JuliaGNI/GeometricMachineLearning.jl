@@ -224,6 +224,7 @@ _tutorials = "Tutorials" => [
     "Comparing Optimizers" => "tutorials/optimizer_comparison.md",
     ]
 
+_outlook = "Outlook" => "outlook.md"
 _references = "References" => "references.md"
 _index_of_docstrings = "Index of Docstrings" => "docstring_index.md"
 
@@ -337,6 +338,7 @@ _latex_pages = [
                                                                     "Volume-Preserving Attention"),
         "Learning Nonlinear Spaces" => value_for_key(_tutorials, "Grassmann Manifold"),
     ],
+    _outlook,
     _references,
     _index_of_docstrings,
     "Appendix" => [
