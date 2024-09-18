@@ -1,3 +1,8 @@
+```@raw latex
+% introductory remarks for the latex version
+A central topic of this thesis is \textit{structure preservation}. In this chapter we discuss the notions of \textit{symplecticity} and \textit{volume preservation}. After this we discuss what we mean by \textit{structure-preserving neural network}.
+```
+
 # Symplectic Systems
 
 *Symplectic systems* are ODEs whose vector field has a specific structure that is very restrictive. Before we introduce symplectic vector fields on manifolds we first have to define what a *symplectic structure* is:

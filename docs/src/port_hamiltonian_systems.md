@@ -1,3 +1,7 @@
+```@raw latex
+When talking about \textit{structure} we largely limited ourselves to \textit{symplecticity} and \textit{volume preservation} in this dissertation\footnote{The orthogonality constraints imposed on the vision transformer can however also be seen as structure.}. A more general type of structure is that of a \textit{port-Hamiltonian system}. In addition to a conservative Hamiltonian part it also includes external (driving) forces and a dissipative part.
+```
+
 # Using Symplectic Autoencoders for Port-Hamiltonian Systems
 
 Symplectic autoencoders can also be used to reduce *port-Hamiltonian systems* [van2014port](@cite). Here we focus on *linear port-Hamiltonian systems*[^1]. These are of the form:
@@ -167,3 +171,16 @@ Main.proof(raw"""Consider a reduced lpH system:
 ```
 
 As was already discussed in [the section on Hamiltonian model order reduction](@ref "The Symplectic Solution Manifold") the encoder ``\Psi^e`` can be constructed such that it is exactly the local inverse ``\psi.`` This was done in e.g. [otto2023learning](@cite). Enforcing this for symplectic autoencoders is also [straightforward](@ref "The Symplectic Autoencoder").
+
+## References
+
+```@bibliography
+Canonical = false
+Pages = []
+
+van2014port
+kotyczka2019discrete
+mehrmann2019structure
+morandin2023modeling
+rettberg2024data
+```

@@ -51,7 +51,7 @@ It is therefore customary to introduce the *exponential map* ``\exp:T_x\mathcal{
 \exp(v_x) := \gamma_{v_x}(1),
 ```
 
-and we see that ``\gamma_{v_x}(t) = \exp(t\cdot{}v_x)``. In `GeometricMachineLearning` we denote the exponential map by [`geodesic`](@ref) to avoid confusion with the matrix exponential map[^2] which is called as `exp` in Julia. So we use the definition:
+and we see that ``\gamma_{v_x}(t) = \exp(t\cdot{}v_x)``. In `GeometricMachineLearning` we denote the exponential map by [`geodesic`](@ref) to avoid confusion with the matrix exponential map[^2] which is called as `exp` in `Julia`. So we use the definition:
 
 [^2]: The Riemannian exponential map and the matrix exponential map coincide for many matrix Lie groups.
 

@@ -1,3 +1,7 @@
+```@raw latex
+In this chapter we give another example of using the new neural network optimizer framework for manifolds, but this time for the \textit{Grassmann manifold}. Here we suppose we are given data on a nonlinear subspace of $\mathbb{R}^N$ and want to sample additional data from this nonlinear subspace. We also utilize the Wasserstein distance and its gradient in this task.
+```
+
 # Example of a Neural Network with a Grassmann Layer
 
 Here we show how to implement a neural network that contains a layer whose weight is an element of the [Grassmann manifold](@ref "The Grassmann Manifold") and where this is useful. Recall that the Grassmann manifold ``Gr(n, N)`` is the set of vector spaces of dimension ``n`` embedded in ``\mathbb{R}^N``. So if we optimize on the Grassmann manifold, we optimize for an *ideal* ``n``-dimensional vector space in the bigger space ``\mathbb{R}^N``. 

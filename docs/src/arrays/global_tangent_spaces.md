@@ -233,6 +233,12 @@ global_rep
 ```
 
 
+```@raw latex
+\section*{Chapter Summary}
+
+In this chapter we discussed mathematical core concepts in this dissertation: aspects from general topology and analysis. We furthermore discussed Riemannian geometry and parallel transport which are crucial concepts for manifold optimization. Homogeneous spaces were introduced as an important subcategory of manifolds and we showed how to find a global tangent space representation for them. We have presented our basic application user interface (API) for the \texttt{Julia} package \texttt{GeometricMachineLearning}. This API will be extended in the second part with a general optimizer framework. 
+```
+
 ## References
 
 ```@bibliography

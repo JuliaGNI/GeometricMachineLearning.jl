@@ -182,6 +182,14 @@ Main.include_graphics("parallel_transport"; width = .7) # hide
 
 Note that the angle between the two vector is preserved as we go along the geodesic.
 
+
+```@raw latex
+\section*{Chapter Summary}
+
+In this chapter we introduced our \textit{optimizer framework} which will be used to efficiently train symplectic autoencoders and transformers with orthogonality constraints in part IV. The chapter started with a general discussion of neural network optimization and we proposed a way of extending this to homogeneous spaces by introducing the extra operations \texttt{rgrad}, \texttt{global\_rep} and ``Retraction''. We then discussed what these operations look like in practice and concluded by introducing \textit{parallel transport}. The presentation was accompanied by code snippets that demonstrate the application interface of \texttt{GeometricMachineLearning} throughout the chapter.
+```
+
+
 ## References
 
 ```@bibliography

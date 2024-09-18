@@ -218,6 +218,12 @@ update!(::Optimizer{<:BFGSOptimizer}, ::BFGSCache, ::AbstractArray)
 vec(::StiefelLieAlgHorMatrix)
 ```
 
+```@raw latex
+section*{Chapter Summary}
+
+In this chapter we gave explicit examples of neural network optimizers and demonstrated the corresponding application interface; we referred to the corresponding updating rules as \textit{optimizer methods}. A central part for all optimizers was the \textit{optimizer cache}. This depends on the specific optimizer method and has to be parallel transported along the optimization trajectory; for vector spaces this is trivial and for homogeneous spaces this is done by utilizing the \textit{global tangent space representation}. 
+```
+
 ## References 
 
 ```@bibliography

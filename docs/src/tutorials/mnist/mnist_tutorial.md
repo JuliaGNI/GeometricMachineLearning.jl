@@ -1,6 +1,10 @@
+```@raw latex
+In this chapter we discuss examples of improving transformers by imbuing them with structure\footnote{Technically the linear symplectic transformer from the previous chapter could also be included here, but because of the very severe modification/limitation of the attention layer we performed there, we decided against it.}. We show two examples: an example of using the vision transformer where we put orthogonality constraints on some of the weights (which effectively leads to manifold optimization) and using the volume-preserving transformer to learn the dynamics of a rigid body. At the end we further compare two different approaches to realizing the volume-preserving transformer.
+```
+
 # MNIST Tutorial 
 
-This is a short tutorial that shows how we can use `GeometricMachineLearning` to build a vision transformer and apply it for MNIST [deng2012mnist](@cite), while also putting some of the weights on a manifold. This is also the result presented in [brantner2023generalizing](@cite).
+In this tutorial we show how we can use `GeometricMachineLearning` to build a vision transformer and apply it for MNIST [deng2012mnist](@cite), while also putting some of the weights on a manifold. This is also the result presented in [brantner2023generalizing](@cite).
 
 We get the dataset from [`MLDatasets`](https://github.com/JuliaML/MLDatasets.jl). Before we use it we allocate it on gpu with `cu` from `CUDA.jl` [besard2018juliagpu](@cite):
 

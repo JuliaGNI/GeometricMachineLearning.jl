@@ -1,3 +1,8 @@
+```@raw latex
+% This is a summary of the manifold chapter; this is only visible in the latex version
+In this chapter we introduce basic concepts necessary to discuss manifolds and manifold optimization. We begin by discussing \textit{topological vector spaces} and \textit{topological metric spaces}, and several theorems important for developing a theory of manifolds such as the \textit{implicit function theorem}. We then define manifolds and discuss the \textit{preimage theorem} and the \textit{immersion theorem} as tools to give general spaces the structure of a manifold. We then proceed with a discussion on \textit{geodesics} and \textit{Riemannian manifolds}. The chapter concludes with a presentation of \textit{homogeneous spaces} and their \textit{global tangent space representation} that will be crucial for generalizing neural network optimizers to the manifold setting.
+```
+
 # Basic Concepts from General Topology
 
 Here we discuss basic notions of topology that are necessary to define [manifolds](@ref "(Matrix) Manifolds") and work with them. Here we largely omit concrete examples and only define concepts that are necessary for defining a manifold[^1], namely the properties of being *Hausdorff* and *second countable*. For a detailed discussion of the theory and for a wide range of examples that illustrate this theory see e.g. [lipschutz1965general](@cite). The here-presented concepts are also (rudimentarily) covered in most differential geometry textbooks such as [lang2012fundamentals, bishop1980tensor](@cite). 

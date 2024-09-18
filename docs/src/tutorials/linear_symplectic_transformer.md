@@ -191,3 +191,9 @@ parameterlength(nn_standard), parameterlength(nn_symplectic), parameterlength(nn
 ```
 
 It is also interesting to note that the training error for the SympNet gets lower than the one for the linear symplectic transformer, but it does not manage to outperform it when looking at the validation. 
+
+```@raw latex
+\section*{Chapter Summary}
+
+In this chapter we demonstrated the efficacy of neural network-based symplectic integrators. We showed two examples: SympNets as an example of a symplectic one-step method and linear symplectic transformers as an example of a symplectic multi-step method. Of these two linear symplectic transformers constitute a novel neural network architecture which was introduced in this thesis.
+```

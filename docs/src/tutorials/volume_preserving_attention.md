@@ -328,3 +328,9 @@ Here we see that the arbitrary weighting quickly fails and the skew-symmetric we
 GeometricMachineLearning.DummyNNIntegrator
 GeometricMachineLearning.DummyTransformer
 ```
+
+```@raw latex
+\section*{Chapter Summary}
+
+In this chapter we showed concrete examples of how to improve transformer neural networks by imbuing them with structure. The two examples we gave were (i) enforcing orthogonality constraints for some of the weights in a vision transformer and (ii) using a volume-preserving transformer to learn the dynamics of a rigid boyd. In both cases we observed big improvements over the standard transformer that does not consider structure. 
+```

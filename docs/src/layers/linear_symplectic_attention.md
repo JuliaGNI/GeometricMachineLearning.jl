@@ -48,3 +48,9 @@ LinearSymplecticAttention
 LinearSymplecticAttentionQ
 LinearSymplecticAttentionP
 ```
+
+```@raw latex
+\section*{Chapter Summary}
+
+In this chapter we discussed various neural network layers and the corresponding application interface in \texttt{GeometricMachineLearning}. Some of these layers constitute novel work (like the volume-preserving attention layer and the linear symplectic layer) and others were established before (such as SympNet layers and multihead attention). Volume-preserving attention and linear symplectic attention were designed as a modification of standard attention in order to imbue the corresponding neural network with structure (volume preservation and symplecticity respectively). In the next chapter we use these neural network layers to build \textit{neural network architectures}.
+```

@@ -1,3 +1,7 @@
+```@raw latex
+In this chapter we demonstrate using symplectic autoencoders for the offline phase of reduced order modeling. The example we consider is the \textit{Toda lattice}. For the online phase we compare using a standard integrator (implicit midpoint) and a transformer neural network.
+```
+
 # Symplectic Autoencoders and the Toda Lattice
 
 In this tutorial we use a [symplectic autoencoder](@ref "The Symplectic Autoencoder") to approximate the linear wave equation with a lower-dimensional Hamiltonian model and compare it with standard [proper symplectic decomposition](@ref "Proper Symplectic Decomposition").

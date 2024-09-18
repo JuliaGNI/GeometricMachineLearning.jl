@@ -1,3 +1,9 @@
+```@raw latex
+\pagestyle{headings}
+
+Here we discuss the \textit{data loader}, which forms an important part of \texttt{GeometricMachineLearning}. It is used to store data and sample from them.
+```
+
 # Snapshot Matrix
 
 The snapshot matrix stores solutions of the high-dimensional ODE (obtained from discretizing a PDE). In the [offline phase of reduced order modeling](@ref "Basic Concepts of Reduced Order Modeling") this is then used to construct reduced bases in a data-driven way. So (for a single parameter[^1]) the snapshot matrix takes the following form: 

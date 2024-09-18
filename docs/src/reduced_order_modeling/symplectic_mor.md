@@ -189,6 +189,12 @@ PSDArch
 solve!
 ```
 
+```@raw latex
+\section*{Chapter Summary}
+
+In this chapter we introduced the concept of \textit{data-driven reduced order modeling}, explained the notions of an \textit{offline phase} and an \textit{online phase} and provided \textit{proper orthogonal decomposition} (POD) and \textit{autoencoders} as examples of performing the offline phase in reduced order modeling. We furthermore discussed how a reduced order model can be made structure-preserving and discussed \textit{proper symplectic decomposition} as the structure-preserving alternative to POD. At the very end of the chapter we teased \textit{symplectic autoencoders} which will be discussed in detail in part III.
+```
+
 ## References 
 
 ```@bibliography

@@ -26,3 +26,9 @@ The trajectories come from a parameter-dependent [ODE](@ref "The Existence-And-U
 ```@docs
 LinearSymplecticTransformer
 ```
+
+```@raw latex
+\section*{Chapter Summary}
+
+In this chapter we discussed various neural network architectures and presented the corresponding application interface in \texttt{GeometricMachineLearning}. Of the presented architectures the \textit{symplectic autoencoder}, the \textit{volume-preserving transformer} and the \textit{linear symplectic transformer} constitute novel architectures. In addition we elaborated on the concept of \textit{neural network-based integrators}.
+```

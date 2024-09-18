@@ -14,17 +14,17 @@ In the picture above we visualize that geometric machine learning aims at constr
 
 For us the biggest motivation for geometric machine learning comes from *data-driven reduced order modeling*. There we want to find *reduced representations* of so-called *full order models* of which we have data available; such reduced representation ideally have much lower computational complexity then the full order model. Data-driven reduced order modeling is especially useful when solving parametric partial differential equations (PPDEs). In this case we can solve the full order model for a few parameter instances and then build a cheaper representation of the full model (a so-called *reduced model*) with neural networks. This can bring dramatic speed-ups in performance. 
 
-Closely linked to the research presented here is the development of a software package written in `Julia` called `GeometricMachineLearning` [brantner2020geometric](@cite). Throughout this work we will demonstrate concepts such as neural network architecture and (Riemannian) optimization by using `GeometricMachineLearning`[^0]. Most sections contain a subsection **Library Functions** that explains types and functions in `GeometricMachineLearning` that pertain to the text in that section[^1] (they are generated as so-called docstrings [julia2024documentation](@cite)). We show an example here:
+Closely linked to the research presented here is the development of a software package written in `Julia` called `GeometricMachineLearning` [brantner2020geometric](@cite). Throughout this work we will demonstrate concepts such as neural network architecture and (Riemannian) optimization by using `GeometricMachineLearning`[^0]. Most sections contain a subsection **Library Functions** that explains types and functions in `GeometricMachineLearning` that pertain to the text in that section (they are generated as so-called docstrings [julia2024documentation](@cite)). We show an example here:
 
 [^0]: This document was produced with `GeometricMachineLearning` `v0.3`. It may be that the interface will slightly change in future versions, but efforts will be made to keep these changes as small as possible.
-
-[^1]: In addition to **Library Functions** most sections also have an additional subsection **References** that shows further related reading material.
 
 ```@docs; canonical = false
 GradientCache
 ```
 
 So the docstring shows the name of the type or method, in most cases how to call it and then gives some information explaining what it does and potentially hyperlinks to other similar docstrings ([`GradientOptimizer`](@ref) in this case); all of this information is indented by a tab. Docstrings may include other information under subheaders **Arguments** (showing the arguments the method can be supplied with), **Examples** (giving more detailed examples (including results) of how to use the method) and **Implementation** (giving details on how the method is implemented). When we reference a docstring it is always printed in blue (e.g. [`GradientOptimizer`](@ref)), indicating a hyperlink. In addition there is an *index of docstrings* showing all docstrings in chronological order with the associated page number.
+
+Similar to **Library Functions**, which is included in most sections, almost every chapter concludes with a section **Chapter Summary** and an additional section **References** that shows further related reading material. The **Chapter Summary** recaps the important aspects of the corresponding chapter, states again what is new (this may be mathematical or software aspects) and gives information to what other parts of the dissertation the contents of the chapter are relevant.
 
 All the code necessary to reproduce the results is included in the text and does not have any specific hardware requirements. Except for training some of the neural networks (which was done on an NVIDA Geforce RTX 4090 [rtx4090](@cite)) all the code snippets were run on CPU (via GitHub runners [actions](@cite)). All plots have been generated with `Makie` [DanischKrumbiegel2021](@cite).
 

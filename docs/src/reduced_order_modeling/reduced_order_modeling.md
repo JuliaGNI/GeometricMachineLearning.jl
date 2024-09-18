@@ -1,3 +1,7 @@
+```@raw latex
+In this chapter we discuss \textit{data-driven reduced order modeling}. This serves as a motivation for designing structure-preserving neural networks. In this chapter we first discuss the general workflow of reduced order modeling and explain the split into an \textit{offline phase} and an \textit{online phase}. Next we discuss \textit{proper orthogonal decomposition} and \textit{autoencoders} as examples of machine learning techniques that can be used for the offline phase of reduced order modeling. The chapter concludes with an explanation of how to adjust a reduced order model for the Hamiltonian setting so as to make it structure-preserving.
+```
+
 # Basic Concepts of Reduced Order Modeling
 
 Reduced order modeling is a data-driven technique that exploits the structure of parametric partial differential equations (PPDEs) to make repeated simulations of this PPDE much cheaper.

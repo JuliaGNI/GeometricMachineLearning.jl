@@ -1,3 +1,7 @@
+```@raw latex
+A neural network framework can be seen as a collection of (i) a neural network architecture, (ii) a loss function and (iii) an optimization procedure. In this dissertation we focused on points (i) and (iii) when designing neural networks. \texttt{GeometricMachineLearning} however also offers the possibility to change the loss function. We show how to do this here.
+```
+
 # Adjusting the Loss Function
 
 `GeometricMachineLearning` provides a few standard loss functions that are used as defaults [for specific neural networks](@ref "Different Neural Network Losses").

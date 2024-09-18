@@ -37,7 +37,7 @@ A *structure-preserving* or *geometric* neural networks is a neural network that
 ```@eval
 Main.definition(raw"A **structure-preserving neural network architecture** is a parameter-dependent realization of a function:
 " * Main.indentation * raw"```math
-" * Main.indentation * raw"    \mathrm{sp-architecture}: \mathbb{P} \to \mathcal{C}(\mathcal{D}, \mathcal{M}), \Theta \mapsto \mathcal{NN}_\Theta,
+" * Main.indentation * raw"    \mathrm{sp}\cdot{architecture}: \mathbb{P} \to \mathcal{C}(\mathcal{D}, \mathcal{M}), \Theta \mapsto \mathcal{NN}_\Theta,
 " * Main.indentation * raw"```
 " * Main.indentation * raw"such that ``\mathcal{NN}_\Theta`` preserves some structure.")
 ```
@@ -61,3 +61,9 @@ Main.example(raw"We say that a neural network is **volume-preserving** if ``\mat
 ```
 
 Note that here we keep the dimension constant. Volume-preserving neural networks can be built on the basis of [feedforward neural networks](@ref "Volume-Preserving Feedforward Neural Network") or [transformers](@ref "Volume-Preserving Transformer").
+
+```@raw latex
+\section*{Chapter Summary}
+
+In this chapter we introduced \textit{symplecticity} and \textit{volume presentation} (or divergence-freeness for the corresponding vector field) as examples of geometric structure. We then discussed how these concepts can be understood in a context of neural networks.
+```

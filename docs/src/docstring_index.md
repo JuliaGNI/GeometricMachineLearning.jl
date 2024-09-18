@@ -1,5 +1,9 @@
 # Index of Docstrings
 
+```@raw latex
+\thispagestyle{empty}
+```
+
 ### Manifolds
 
 ```@index
@@ -18,16 +22,10 @@ Pages = Dict(index_latex_pages)["Geometric Structure"]
 Pages = Dict(index_latex_pages)["Reduced Order Modeling"]
 ```
 
-### General Optimizer Framework
+### General Framework for Manifold Optimization
 
 ```@index
-Pages = [Dict(index_latex_pages)["General Framework"]]
-```
-
-### Generalization of Optimizers to Manifolds
-
-```@index
-Pages = Dict(index_latex_pages)["Generalization to Manifolds"]
+Pages = Dict(index_latex_pages)["General Framework for Manifold Optimization"]
 ```
 
 ### Optimizer Methods

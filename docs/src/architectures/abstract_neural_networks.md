@@ -1,3 +1,7 @@
+```@raw latex
+In this chapter we build, starting from the neural network layers introduced in the previous chapter, \textit{neural network architectures}. Here these are always understood as a composition of neural network layers. We start by shortly explaining the application interface for neural networks used in \texttt{GeometricMachineLearning} and then introduce symplectic autoencoders, SympNets, volume-preserving feedforward neural networks, standard transformers, volume-preserving transformers and linear symplectic transformers. All of these architectures, except SympNets and standard transformers (and arguably volume-preserving feedforward neural networks), constitute new work. All of them, except symplectic autoencoders, can be seen as \textit{neural network-based integrators}.
+```
+
 # `NeuralNetwork`s in `GeometricMachineLearning`
 
 `GeometricMachineLearning` inherits some functionality from another `Julia` package called [`AbstractNeuralNetworks`](https://github.com/JuliaGNI/AbstractNeuralNetworks.jl). How these two packages interact is shown in the figure below for the example of the [SympNet](@ref "SympNet Architecture")[^1]:

@@ -1,3 +1,7 @@
+```@raw latex
+In this chapter we introduce various special neural network layers. A neural network layer is a parametrized function that is \textit{relatively simple} and serves as a basic building block of a neural network \text{architecture} (neural network architectures will be introduced in the next chapter). Some of the neural network layers in this chapter (like SympNet layers and multihead attention) have been established by other authors while others (like volume-preserving attention and linear symplectic attention) constitute novel work.
+```
+
 # SympNet Layers
 
 The *SympNet paper* [jin2020sympnets](@cite) discusses three different kinds of sympnet layers: *activation layers*, *linear layers* and *gradient layers*. We discuss them below. Because activation layers are just a simplified form of gradient layers those are introduced together. A neural network that consists of many of these layers we call a [SympNet](@ref "SympNet Architecture").
