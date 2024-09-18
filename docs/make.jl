@@ -224,7 +224,7 @@ _tutorials = "Tutorials" => [
     "Comparing Optimizers" => "tutorials/optimizer_comparison.md",
     ]
 
-_outlook = "Outlook" => "outlook.md"
+_outlook = "Summary and Outlook" => "outlook.md"
 _references = "References" => "references.md"
 _index_of_docstrings = "Index of Docstrings" => "docstring_index.md"
 
@@ -347,7 +347,7 @@ _latex_pages = [
                                         "Pullbacks"),
         # we include the last tutorial here
         "Customizing Training" => value_for_key(_tutorials, "Adjusting the Loss Function"),
-        "Other Structure-Preserving Properties" => ["Port-Hamiltonian Systems" => "port_hamiltonian_systems.md",]
+        "Other Structure-Preserving Properties" => "port_hamiltonian_systems.md"
     ]
 ]
 
