@@ -1,6 +1,6 @@
 # Preliminary Remarks and Acknowledgements
 
-During the time I conducted my PhD the TUM School of Computation, Information, and Technology (CIT) replaced former departments of Mathematics, Informatics, and Electrical and Computer Engineering. Its mission statement reads: "[CIT unites] a wide spectrum of different competencies:
+During the time I conducted my PhD the TUM School of Computation, Information, and Technology (CIT) replaced the former departments of Mathematics, Informatics, and Electrical and Computer Engineering. Its mission statement reads: "[CIT unites] a wide spectrum of different competencies:
 - from theoretical foundations to implementation in different contexts of application,
 - from elementary components via hardware and software architectures to holistic technical systems,
 - from mathematical abstraction to technological engineering processes,
