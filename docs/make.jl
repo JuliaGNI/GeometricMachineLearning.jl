@@ -317,9 +317,7 @@ _latex_pages = [
         "Geometric Structure" => reduce_to_second_factors(_structure_preservation),
         "Reduced Order Modeling" => reduce_to_second_factors(_reduced_order_modeling),
     ],
-    "Optimizers" => [   "General Framework" => value_for_key(_optimizers, "Optimizers"),
-                        "Generalization to Manifolds" => 
-                            value_for_key(_optimizers, "Retractions", "Parallel Transport"),
+    "Optimizers" => [   "General Framework for Manifold Optimization" => value_for_key(_optimizers, "Optimizers", "Retractions", "Parallel Transport"),
                         "Optimizer Methods" =>
                             value_for_key(_optimizers, "Optimizer Methods", "BFGS Optimizer")
                         ],
