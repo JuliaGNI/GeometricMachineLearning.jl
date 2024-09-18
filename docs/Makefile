@@ -117,6 +117,11 @@ remove_numbering_for_some_chapters:
 	sed -i'' -e 's/\\chapter{Summary}/\\chapter*{Summary}/g' build/G*.tex;
 	sed -i'' -e 's/\\chapter{Conclusion and Outlook}/\\chapter*{Conclusion and Outlook}/g' build/G*.tex;
 	sed -i'' -e 's/\\chapter{Learning a Reduced Model with Symplectic Autoencoders}/\\chapter[A Reduced Model with Symplectic Autoencoders]{Learning a Reduced Model with Symplectic Autoencoders}/g' build/G*.tex;
+	sed -i'' -e 's/\\section{Reduced Order Modeling as Motivation}/\\section*{Reduced Order Modeling as Motivation}/g' build/G*.tex;
+	sed -i'' -e 's/\\section{Structure-Preserving Reduced Order Modeling of Hamiltonian Systems - The Offline Phase}/\\section*{Structure-Preserving Reduced Order Modeling of Hamiltonian Systems - The Offline Phase}/g' build/G*.tex;
+	sed -i'' -e 's/\\section{Structure-Preserving Neural Network-Based Integrators - The Online Phase}/\\section*{Structure-Preserving Neural Network-Based Integrators - The Online Phase}/g' build/G*.tex;
+	sed -i'' -e 's/\\section{Structure-Preserving Optimizers}/\\section*{Structure-Preserving Optimizers}/g' build/G*.tex;
+	sed -i'' -e 's/\\section{Outlook}/\\section*{Outlook}/g' build/G*.tex;
 
 copy_png_files:
 	find build/manifolds -name \*.png -exec cp {} build \; ;
