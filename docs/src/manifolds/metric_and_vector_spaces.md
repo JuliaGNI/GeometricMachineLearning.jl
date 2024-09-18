@@ -97,6 +97,8 @@ Main.indentation * raw"The first law is known as *associativity*, the second one
 
 The topological spaces ``\mathbb{R}`` and ``\mathbb{R}^{n}`` are (almost) trivially vector spaces. The same is true for many function spaces. One of the special aspects of `GeometricMachineLearning` is that it can deal with spaces that are not vector spaces, but manifolds. All vector spaces are however manifolds.  
 
+## References
+
 ```@bibliography
 Pages = []
 Canonical = false
