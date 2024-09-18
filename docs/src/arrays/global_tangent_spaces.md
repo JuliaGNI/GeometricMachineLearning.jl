@@ -112,7 +112,6 @@ using GeometricMachineLearning # hide
 using GeometricMachineLearning: Ω
 
 N, n = 5, 2 # hide
-
 Y = rand(StiefelManifold, N, n)
 Δ = rgrad(Y, rand(N, n))
 ΩΔ = Ω(Y, Δ)
