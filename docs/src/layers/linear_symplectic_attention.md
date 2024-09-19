@@ -52,5 +52,25 @@ LinearSymplecticAttentionP
 ```@raw latex
 \section*{Chapter Summary}
 
-In this chapter we discussed various neural network layers and the corresponding application interface in \texttt{GeometricMachineLearning}. Some of these layers constitute novel work (like the volume-preserving attention layer and the linear symplectic layer) and others were established before (such as SympNet layers and multihead attention). Volume-preserving attention and linear symplectic attention were designed as a modification of standard attention in order to imbue the corresponding neural network with structure (volume preservation and symplecticity respectively). In the next chapter we use these neural network layers to build \textit{neural network architectures}.
+In this chapter we discussed various neural network layers and the corresponding application interface in \texttt{GeometricMachineLearning}. Some of these layers constitute novel work (like the volume-preserving attention layer and the linear symplectic layer) and others were established before (such as SympNet layers and multihead attention). Volume-preserving attention and linear symplectic attention were designed as a modification of standard attention in order to imbue the corresponding neural network with structure (volume preservation and symplecticity respectively). Volume-preserving attention was achieved by exchanging the softmax activation function with a \textit{Cayley activation function}, but otherwise keeping the operations the same, i.e. we still perform \textit{multiplicative attention}. In order to make the attention layer symplectic we had to impose more severe restrictions on it: the attention mechanism does not compute a scalar product in this case. We therefore call it \textit{linear}.
+
+In the next chapter we use these neural network layers to build \textit{neural network architectures}.
+```
+
+```@raw html
+<!--
+```
+
+```@bibliography
+Pages = []
+Canonical = Pages
+
+jin2020sympnets
+bahdanau2014neural
+luong205effective
+vaswani2017attention
+```
+
+```@raw html
+-->
 ```

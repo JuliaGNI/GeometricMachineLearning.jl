@@ -118,6 +118,10 @@ GeometricMachineLearning.QPT
 GeometricMachineLearning.QPTOAT
 ```
 
+```@raw latex
+\begin{comment}
+```
+
 ## References
 
 ```@bibliography
@@ -127,4 +131,8 @@ Pages = []
 arnold1978mathematical
 bishop1980tensor
 hairer2006geometric
+```
+
+```@raw latex
+\end{comment}
 ```

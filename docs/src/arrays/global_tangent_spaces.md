@@ -260,6 +260,10 @@ frankel2011geometry
 \end{comment}
 ```
 
+```@raw html
+<!--
+```
+
 # References
 
 ```@bibliography
@@ -267,11 +271,17 @@ Pages = []
 Canonical = false 
 
 lipschutz1965general
+lang2012real
 lang2012fundamentals
 bishop1980tensor
+do1992riemannian
 absil2004riemannian
-absil2008optimization
-frankel2011geometry
 bendokat2020grassmann
+frankel2011geometry
+o1983semi
 bendokat2021real
+```
+
+```@raw html
+-->
 ```

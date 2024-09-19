@@ -224,6 +224,10 @@ GeometricMachineLearning.Ω(::StiefelManifold{T}, ::AbstractMatrix{T}) where T
 GeometricMachineLearning.Ω(::GrassmannManifold{T}, ::AbstractMatrix{T}) where T
 ```
 
+```@raw latex
+\begin{comment}
+```
+
 ## References 
 
 ```@bibliography
@@ -233,4 +237,8 @@ Canonical = false
 absil2004riemannian
 frankel2011geometry
 bendokat2021real
+```
+
+```@raw latex
+\end{comment}
 ```

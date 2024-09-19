@@ -17,7 +17,7 @@ Main.definition(raw"A **classical retraction** is a smooth map
 ")
 ```
 
-Perhaps the most common example for matrix manifolds is the *Cayley retraction*. It is a retraction for many matrix Lie groups [hairer2006geometric, bendokat2021real](@cite).
+Perhaps the most common example for matrix manifolds is the *Cayley retraction*. It is a retraction for many matrix Lie groups [hairer2006geometric, bendokat2021real, gao2021riemannian](@cite).
 
 ```@eval
 Main.example(raw"The **Cayley retraction** for ``V\in{}T_\mathbb{I}G\equiv\mathfrak{g}`` is defined as
@@ -389,6 +389,10 @@ GeometricMachineLearning.𝔄(::AbstractMatrix)
 GeometricMachineLearning.𝔄(::AbstractMatrix, ::AbstractMatrix)
 ```
 
+```@raw latex
+\begin{comment}
+```
+
 ## References 
 
 ```@bibliography
@@ -398,4 +402,8 @@ Canonical = false
 absil2008optimization
 bendokat2021real
 o1983semi
+```
+
+```@raw latex
+\end{comment}
 ```

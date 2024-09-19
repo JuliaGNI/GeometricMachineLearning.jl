@@ -81,6 +81,10 @@ Main.proof(raw"Consider the map ``x = (x_1, \ldots, x_{n+m}) = (f(x), x_{n+1}, \
 
 The implicit function will be used to proof the [preimage theorem](@ref "The Preimage Theorem") which we use as a basis to construct all the manifolds in `GeometricMachineLearning`.
 
+```@raw latex
+\begin{comment}
+```
+
 ## References
 
 ```@bibliography
@@ -90,3 +94,6 @@ Canonical = false
 lang2012fundamentals
 ```
 
+```@raw latex
+\end{comment}
+```

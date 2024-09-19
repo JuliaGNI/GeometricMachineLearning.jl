@@ -214,6 +214,10 @@ we call the *gradient optimization scheme*.
 geodesic(::Manifold{T}, ::AbstractMatrix{T}) where T
 ```
 
+```@raw latex
+\begin{comment}
+```
+
 ## References
 
 ```@bibliography
@@ -222,4 +226,8 @@ Canonical = false
 
 lang2012fundamentals
 do1992riemannian
+```
+
+```@raw latex
+\end{comment}
 ```

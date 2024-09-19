@@ -138,9 +138,12 @@ Main.definition(raw"A set ``U`` is called **dense in ``D``**, where ``U\subset{}
 
 We will come back to the notion of *denseness* when talking about the [universal approximation theorem for SympNets](@ref "Universal Approximation Theorems").
 
+```@raw latex
+\begin{comment}
+```
+
 ## References 
 
-```@eval
 references = raw"""
 ```@bibliography
 Pages = []
@@ -150,7 +153,7 @@ lipschutz1965general
 lang2012fundamentals
 bishop1980tensor
 ```
-"""
-import Markdown
-Main.output_type == :html ? Markdown.parse(references) : nothing
+
+```@raw latex
+\end{comment}
 ```

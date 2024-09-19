@@ -65,6 +65,10 @@ Main.proof(raw"We refer to the flow of ``X`` by ``\varphi^t:\mathbb{R}^d\to\math
 
 It is a classical result that *all Hamiltonian vector fields are divergence-free*, so volume-preservation is weaker than preservation of symplecticity [arnold1978mathematical](@cite).
 
+```@raw latex
+\begin{comment}
+```
+
 ## References
 
 ```@bibliography
@@ -74,4 +78,8 @@ Pages = []
 bishop1980tensor
 lang2012fundamentals
 arnold1978mathematical
+```
+
+```@raw latex
+\end{comment}
 ```

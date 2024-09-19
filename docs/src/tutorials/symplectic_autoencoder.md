@@ -364,13 +364,42 @@ Note that integration of the system with the transformer is orders of magnitudes
 Main.remark(raw"While training the symplectic autoencoder we completely ignore the online phase, but only aim at finding a good low-dimensional approximation to the solution manifold. This is why we observe that the approximated solution differs somewhat form the actual one when using implicit midpoint for integrating the low-dimensional system (blue line vs. green line).")
 ```
 
+```@raw latex
+\begin{comment}
+```
 
 ## References 
+
 ```@bibliography
 Pages = []
 Canonical = false
 
-buchfink2023symplectic
 peng2016symplectic
 greif2019decay
+buchfink2023symplectic
+brantner2023symplectic
+```
+
+```@raw latex
+\end{comment}
+```
+
+```@raw html
+<!--
+```
+
+# References 
+```@bibliography
+Pages = []
+Canonical = false
+
+peng2016symplectic
+greif2019decay
+buchfink2023symplectic
+brantner2023symplectic
+```
+
+
+```@raw html
+-->
 ```

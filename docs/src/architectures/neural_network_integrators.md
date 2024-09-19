@@ -63,10 +63,12 @@ TransformerIntegrator
 iterate(::NeuralNetwork{<:TransformerIntegrator}, ::NamedTuple{(:q, :p), Tuple{AT, AT}}) where {T, AT<:AbstractMatrix{T}}
 ```
 
+```@raw latex
+\begin{comment}
+```
+
 ## References
 
-```@eval
-references_html = raw"""
 ```@bibliography
 Pages = []
 Canonical = false
@@ -75,16 +77,12 @@ hairer2006geometric
 leimkuhler2004simulating
 Kraus:2020:GeometricIntegrators
 feng1998step
-hochreiter1997long
 vaswani2017attention
-fresca2021comprehensive
-lee2020model
 hemmasian2023reduced
 solera2023beta
 brantner2024volume
 ```
-"""
 
-import Markdown
-Main.output_type == :html ? Markdown.parse(references_html) : nothing
+```@raw latex
+\end{comment}
 ```

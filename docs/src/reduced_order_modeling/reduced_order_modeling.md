@@ -160,6 +160,10 @@ with ``\mathcal{M}\subset{}V`` and ``V`` is a (typically infinite-dimensional) B
 
 In order to overcome this, techniques based on neural networks [lee2020model](@cite) and optimal transport [blickhan2023registration](@cite) have been used. 
 
+```@raw latex
+\begin{comment}
+```
+
 ## References 
 ```@bibliography
 Pages = []
@@ -168,4 +172,8 @@ Canonical = false
 fresca2021comprehensive
 lee2020model
 blickhan2023registration
+```
+
+```@raw latex
+\end{comment}
 ```

@@ -223,10 +223,19 @@ LASympNet
 GSympNet
 ```
 
+```@raw latex
+\begin{comment}
+```
+
 ## References
+
 ```@bibliography
 Pages = []
 Canonical = false
 
 jin2020sympnets
+```
+
+```@raw latex
+\end{comment}
 ```

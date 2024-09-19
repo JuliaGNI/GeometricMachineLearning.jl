@@ -203,7 +203,7 @@ Main.proof(raw"We use the second Wolfe condition to write
 " * Main.indentation * raw"which is negative if the value of ``L`` is decreasing.")
 ```
 
-It is noteworthy that line search has not been used a lot in deep learning in the past. This is beginning to change however [kenneweg2024improving, vaswani2019painless](@cite).
+It is noteworthy that line search has not been used a lot in deep learning in the past. This is beginning to change however [kenneweg2024improving, vaswani2019painless](@cite). We also note that the BFGS optimizer combined with the [global tangent space representation](@ref "Global Tangent Spaces") offers a way of performing second order optimization on manifolds, this is however not the only way to do so [huang2016riemannian, gao2024symplectic](@cite).
 
 ## Stability of the Algorithm
 
@@ -223,6 +223,8 @@ vec(::StiefelLieAlgHorMatrix)
 
 In this chapter we gave explicit examples of neural network optimizers and demonstrated the corresponding application interface; we referred to the related updating rules as \textit{optimizer methods}. A central part for all optimizers was the \textit{optimizer cache}. This optimizer cache is nothing in the simplest case (for the gradient optimizer), contains \textit{first moments} for the case of the momentum optimizer, and contains \textit{first} and \textit{second moments} for the case of the \textit{Adam optimizer}. When using the more complex \textit{BFGS optimizer} the 
 This depends on the specific optimizer method and has to be parallel transported along the optimization trajectory; for vector spaces this is trivial and for homogeneous spaces this is done by utilizing the \textit{global tangent space representation}. 
+
+\begin{comment}
 ```
 
 ## References 
@@ -234,4 +236,30 @@ Canonical = false
 wright2006numerical
 2279304
 huang2016riemannian
+```
+
+```@raw latex
+\end{comment}
+```
+
+```@raw html
+<!--
+```
+
+# References
+
+```@bibliography
+Pages = []
+Canonical = false
+
+goodfellow
+wright2006numerical
+2279304
+huang2016riemannian
+gao2024symplectic
+```
+
+
+```@raw html
+-->
 ```

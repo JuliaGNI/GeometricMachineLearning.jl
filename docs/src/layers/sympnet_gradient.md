@@ -92,6 +92,10 @@ ActivationLayerQ
 ActivationLayerP
 ```
 
+```@raw latex
+\begin{comment}
+```
+
 ## References
 
 ```@bibliography
@@ -99,4 +103,8 @@ Canonical = false
 Pages = []
 
 jin2020sympnets
+```
+
+```@raw latex
+\end{comment}
 ```

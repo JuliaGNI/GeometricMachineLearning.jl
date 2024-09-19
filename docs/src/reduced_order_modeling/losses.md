@@ -53,6 +53,10 @@ projection_error
 reduction_error
 ```
 
+```@raw latex
+\begin{comment}
+```
+
 ## References
 
 ```@bibliography
@@ -61,4 +65,8 @@ Pages = []
 
 lee2020model
 raissi2019physics
+```
+
+```@raw latex
+\end{comment}
 ```

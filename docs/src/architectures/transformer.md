@@ -62,6 +62,10 @@ ClassificationTransformer
 GeometricMachineLearning.assign_output_estimate
 ```
 
+```@raw latex
+\begin{comment}
+```
+
 ## References
 
 ```@bibliography
@@ -70,4 +74,8 @@ Canonical = false
 
 vaswani2017attention
 solera2023beta
+```
+
+```@raw latex
+\end{comment}
 ```

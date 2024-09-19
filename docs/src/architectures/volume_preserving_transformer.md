@@ -35,6 +35,10 @@ where ``J`` is the jacobian of ``\psi``. We now see that ``\mathrm{det}(\nabla\h
 VolumePreservingTransformer
 ```
 
+```@raw latex
+\begin{comment}
+```
+
 ## References 
 
 ```@bibliography
@@ -42,4 +46,8 @@ Pages = []
 Canonical = false
 
 brantner2024volume
+```
+
+```@raw latex
+\end{comment}
 ```

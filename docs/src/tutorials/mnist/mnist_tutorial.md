@@ -222,6 +222,10 @@ GeometricMachineLearning.onehotbatch
 GeometricMachineLearning.ClassificationLayer
 ```
 
+```@raw latex
+\begin{comment}
+```
+
 ## References
 
 ```@bibliography
@@ -229,4 +233,8 @@ Pages = []
 Canonical = false
 
 brantner2023generalizing
+```
+
+```@raw latex
+\end{comment}
 ```

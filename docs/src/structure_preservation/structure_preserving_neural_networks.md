@@ -50,7 +50,9 @@ Main.example(raw"We say that a neural network is **symplectic** if ``\mathcal{NN
 " * Main.indentation * raw"where ``z`` are coordinates on ``\mathbb{R}^n``.")
 ```
 
-If we have ``m = n`` then we can use [SympNets](@ref "SympNet Architecture") to realize such architectures; SympNets furthermore are universal approximators for the set of canonical symplectic maps [jin2020sympnets](@cite). If ``m \neq n`` we can use [symplectic autoencoders](@ref "The Symplectic Autoencoder") to realize such an architecture. A different class of neural networks are *volume-preserving neural networks*:
+If we have ``m = n`` then we can use [SympNets](@ref "SympNet Architecture") to realize such architectures; SympNets furthermore are universal approximators for the set of canonical symplectic maps[^3] [jin2020sympnets](@cite). If ``m \neq n`` we can use [symplectic autoencoders](@ref "The Symplectic Autoencoder") to realize such an architecture. A different class of neural networks are *volume-preserving neural networks*:
+
+[^3]: Other neural network architectures that were developed with the same aim are *hamiltonian neural networks* [greydanus2019hamiltonian](@cite), *Hénon nets* [burby2020fast](@cite) and *generalized Hamiltonian neural networks* [horn4555181generalized](@cite). [celledoni2021structure](@cite) gives another good overview over *structure preserving neural networks*.
 
 ```@eval
 Main.example(raw"We say that a neural network is **volume-preserving** if ``\mathcal{NN}_\Theta:\mathbb{R}^n\to\mathbb{R}^n`` is such that: 
@@ -66,4 +68,46 @@ Note that here we keep the dimension constant. Volume-preserving neural networks
 \section*{Chapter Summary}
 
 In this chapter we introduced \textit{symplecticity} and \textit{volume presentation} (or divergence-freeness for the corresponding vector field) as examples of geometric structure. \textit{symplecticity} is a property of the flow of Hamiltonian vector fields that dramatically restricts the accessible degrees of freedom. We then discussed how these concepts can be understood in a context of neural networks.
+\begin{comment}
+```
+
+## References
+
+```@bibliography
+Canonical = false
+Pages = []
+
+greydanus2019hamiltonian
+burby2020fast
+horn4555181generalized
+celledoni2021structure
+```
+
+
+```@raw latex
+\end{comment}
+```
+
+```@raw html
+<!--
+```
+
+# References
+
+```@bibliography
+Canonical = false
+Pages = []
+
+arnold1978mathematical
+hairer2006geometric
+leimkuhler2004simulating
+greydanus2019hamiltonian
+burby2020fast
+horn4555181generalized
+celledoni2021structure
+```
+
+
+```@raw html
+-->
 ```

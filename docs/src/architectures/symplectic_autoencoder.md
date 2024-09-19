@@ -139,6 +139,10 @@ We also see that the intermediate dimension in the decoder is `54`  for the spec
 SymplecticAutoencoder
 ```
 
+```@raw latex
+\begin{comment}
+```
+
 ## References
 
 ```@bibliography
@@ -146,4 +150,8 @@ Pages = []
 Canonical = false
 
 brantner2023symplectic
+```
+
+```@raw latex
+\end{comment}
 ```

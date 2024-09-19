@@ -187,8 +187,9 @@ Note that the angle between the two vector is preserved as we go along the geode
 \section*{Chapter Summary}
 
 In this chapter we introduced our \textit{optimizer framework} which will be used to efficiently train symplectic autoencoders and transformers with orthogonality constraints in part IV. We proposed extending standard neural network optimizers to homogeneous spaces by introducing the extra operations \texttt{rgrad}, \texttt{global\_rep} and ``Retraction''. We then discussed what these operations look like in practice and concluded by introducing \textit{parallel transport}. The presentation was accompanied by code snippets that demonstrate the application interface of \texttt{GeometricMachineLearning} throughout the chapter.
-```
 
+\begin{comment}
+```
 
 ## References
 
@@ -200,4 +201,31 @@ lang2012fundamentals
 bishop1980tensor
 bendokat2020grassmann
 schlarb2024covariant
+```
+
+```@raw latex
+\end{comment}
+```
+
+```@raw html
+<!--
+```
+
+# References
+
+```@bibliography
+Canonical = false
+Pages = []
+
+brantner2023generalizing
+schlarb2024covariant
+absil2008optimization
+gao2021riemannian
+gao2024optimization
+bendokat2020grassmann
+bendokat2021real
+```
+
+```@raw html
+-->
 ```

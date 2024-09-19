@@ -80,6 +80,10 @@ Because the main task of the ``W_i^V``, ``W_i^K`` and ``W_i^Q`` matrices here is
 MultiHeadAttention
 ```
 
+```@raw latex
+\begin{comment}
+```
+
 ## References 
 
 ```@bibliography
@@ -87,4 +91,8 @@ Pages = []
 Canonical = false
 
 vaswani2017attention
+```
+
+```@raw latex
+\end{comment}
 ```

@@ -129,3 +129,25 @@ Main.include_graphics("compare_losses"; caption = "Here we trained the same netw
 ```
 
 Wit the second loss function, for which the norm of the resulting network parameters has lower value, the network still performs well, albeit slightly worse than the network trained with the first loss.
+
+```@raw latex
+\begin{comment}
+```
+## References
+
+```@raw latex
+\end{comment}
+```
+
+```@raw html
+\begin{comment}
+```
+# References
+
+```@raw html
+\end{comment}
+```
+
+```@bibliography
+raissi2019physics
+```

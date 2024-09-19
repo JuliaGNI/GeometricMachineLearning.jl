@@ -172,7 +172,28 @@ Main.proof(raw"""Consider a reduced lpH system:
 
 As was already discussed in [the section on Hamiltonian model order reduction](@ref "The Symplectic Solution Manifold") the encoder ``\Psi^e`` can be constructed such that it is exactly the local inverse ``\psi.`` This was done in e.g. [otto2023learning](@cite). Enforcing this for symplectic autoencoders is also [straightforward](@ref "The Symplectic Autoencoder").
 
+```@raw latex
+\begin{comment}
+```
+
 ## References
+
+
+```@raw latex
+\end{comment}
+```
+
+
+```@raw html
+<!--
+```
+
+# References
+
+
+```@raw html
+-->
+```
 
 ```@bibliography
 Canonical = false

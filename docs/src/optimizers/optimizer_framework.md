@@ -97,6 +97,10 @@ optimize_for_one_epoch!
 optimization_step!
 ```
 
+```@raw latex
+\begin{comment}
+```
+
 ## References 
 
 ```@bibliography
@@ -104,4 +108,8 @@ Pages = []
 Canonical = false
 
 brantner2023generalizing
+```
+
+```@raw latex
+\end{comment}
 ```

@@ -209,6 +209,10 @@ GeometricMachineLearning.tensor_mat_skew_sym_assign
 VolumePreservingAttention
 ```
 
+```@raw latex
+\begin{comment}
+```
+
 ## References 
 
 ```@bibliography
@@ -217,4 +221,8 @@ Canonical = false
 
 bahdanau2014neural
 luong2015effective
+```
+
+```@raw latex
+\end{comment}
 ```

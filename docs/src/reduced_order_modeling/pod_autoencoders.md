@@ -89,6 +89,10 @@ encoder
 decoder
 ```
 
+```@raw latex
+\begin{comment}
+```
+
 ## References
 
 ```@bibliography
@@ -96,4 +100,8 @@ Canonical = false
 Pages = []
 
 chatterjee2000introduction
+```
+
+```@raw latex
+\end{comment}
 ```

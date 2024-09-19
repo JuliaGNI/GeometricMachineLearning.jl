@@ -166,6 +166,10 @@ AdamCache
 update!(::Optimizer, ::AbstractCache, ::AbstractArray)
 ```
 
+```@raw latex
+\begin{comment}
+```
+
 ## References
 
 ```@bibliography 
@@ -173,4 +177,8 @@ Pages = []
 Canonical = false
 
 goodfellow2016deep
+```
+
+```@raw latex
+\end{comment}
 ```
