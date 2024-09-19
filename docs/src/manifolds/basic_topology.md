@@ -140,6 +140,8 @@ We will come back to the notion of *denseness* when talking about the [universal
 
 ## References 
 
+```@eval
+references = raw"""
 ```@bibliography
 Pages = []
 Canonical = false 
@@ -147,4 +149,8 @@ Canonical = false
 lipschutz1965general
 lang2012fundamentals
 bishop1980tensor
+```
+"""
+import Markdown
+Main.output_type == :html ? Markdown.parse(references) : nothing
 ```

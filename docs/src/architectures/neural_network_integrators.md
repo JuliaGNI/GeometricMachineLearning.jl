@@ -63,8 +63,10 @@ TransformerIntegrator
 iterate(::NeuralNetwork{<:TransformerIntegrator}, ::NamedTuple{(:q, :p), Tuple{AT, AT}}) where {T, AT<:AbstractMatrix{T}}
 ```
 
-## References 
+## References
 
+```@eval
+references_html = raw"""
 ```@bibliography
 Pages = []
 Canonical = false
@@ -80,4 +82,9 @@ lee2020model
 hemmasian2023reduced
 solera2023beta
 brantner2024volume
+```
+"""
+
+import Markdown
+Main.output_type == :html ? Markdown.parse(references_html) : nothing
 ```
