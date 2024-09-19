@@ -221,7 +221,7 @@ vec(::StiefelLieAlgHorMatrix)
 ```@raw latex
 \section*{Chapter Summary}
 
-In this chapter we gave explicit examples of neural network optimizers and demonstrated the corresponding application interface; we referred to the related updating rules as \textit{optimizer methods}. A central part for all optimizers was the \textit{optimizer cache}. This optimizer cache is nothing in the simplest case (for the gradient optimizer), contains \textit{first moments} for the case of the momentum optimizer, and contains \textit{first} and \textit{second moments} for the case of the \textit{Adam optimizer}. When using the more complex \textit{BFGS optimizer} 
+In this chapter we gave explicit examples of neural network optimizers and demonstrated the corresponding application interface; we referred to the related updating rules as \textit{optimizer methods}. A central part for all optimizers was the \textit{optimizer cache}. This optimizer cache is nothing in the simplest case (for the gradient optimizer), contains \textit{first moments} for the case of the momentum optimizer, and contains \textit{first} and \textit{second moments} for the case of the \textit{Adam optimizer}. When using the more complex \textit{BFGS optimizer} the 
 This depends on the specific optimizer method and has to be parallel transported along the optimization trajectory; for vector spaces this is trivial and for homogeneous spaces this is done by utilizing the \textit{global tangent space representation}. 
 ```
 
