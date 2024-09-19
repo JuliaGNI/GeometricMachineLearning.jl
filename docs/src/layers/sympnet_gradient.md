@@ -1,5 +1,5 @@
 ```@raw latex
-In this chapter we introduce various special neural network layers. A neural network layer is a parametrized function that is \textit{relatively simple} and serves as a basic building block of a neural network \text{architecture} (neural network architectures will be introduced in the next chapter). Some of the neural network layers in this chapter (like SympNet layers and multihead attention) have been established by other authors while others (like volume-preserving attention and linear symplectic attention) constitute novel work.
+In this chapter we introduce various special neural network layers. A neural network layer is a parametrized function that is \textit{relatively simple} and serves as a basic building block of a neural network \text{architecture} (neural network architectures will be introduced in the next chapter). Some of the neural network layers in this chapter (like SympNet layers and multihead attention) are well-established while others (like volume-preserving attention and linear symplectic attention) constitute novel work.
 ```
 
 # SympNet Layers

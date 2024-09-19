@@ -60,14 +60,15 @@ In the next chapter we use these neural network layers to build \textit{neural n
 ```@raw html
 <!--
 ```
+# References
 
 ```@bibliography
 Pages = []
-Canonical = Pages
+Canonical = false
 
 jin2020sympnets
 bahdanau2014neural
-luong205effective
+luong2015effective
 vaswani2017attention
 ```
 

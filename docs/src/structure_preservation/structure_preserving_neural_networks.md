@@ -37,7 +37,7 @@ A *structure-preserving* or *geometric* neural networks is a neural network that
 ```@eval
 Main.definition(raw"A **structure-preserving neural network architecture** is a parameter-dependent realization of a function:
 " * Main.indentation * raw"```math
-" * Main.indentation * raw"    \mathrm{sp}\cdot{architecture}: \mathbb{P} \to \mathcal{C}(\mathcal{D}, \mathcal{M}), \Theta \mapsto \mathcal{NN}_\Theta,
+" * Main.indentation * raw"    \mathrm{sp}\cdot\mathrm{architecture}: \mathbb{P} \to \mathcal{C}(\mathcal{D}, \mathcal{M}), \Theta \mapsto \mathcal{NN}_\Theta,
 " * Main.indentation * raw"```
 " * Main.indentation * raw"such that ``\mathcal{NN}_\Theta`` preserves some structure.")
 ```
@@ -52,7 +52,7 @@ Main.example(raw"We say that a neural network is **symplectic** if ``\mathcal{NN
 
 If we have ``m = n`` then we can use [SympNets](@ref "SympNet Architecture") to realize such architectures; SympNets furthermore are universal approximators for the set of canonical symplectic maps[^3] [jin2020sympnets](@cite). If ``m \neq n`` we can use [symplectic autoencoders](@ref "The Symplectic Autoencoder") to realize such an architecture. A different class of neural networks are *volume-preserving neural networks*:
 
-[^3]: Other neural network architectures that were developed with the same aim are *hamiltonian neural networks* [greydanus2019hamiltonian](@cite), *Hénon nets* [burby2020fast](@cite) and *generalized Hamiltonian neural networks* [horn4555181generalized](@cite). [celledoni2021structure](@cite) gives another good overview over *structure preserving neural networks*.
+[^3]: Other neural network architectures that were developed with the same aim are *Hamiltonian neural networks* [greydanus2019hamiltonian](@cite), *Hénon nets* [burby2020fast](@cite) and *generalized Hamiltonian neural networks* [horn4555181generalized](@cite). [celledoni2021structure](@cite) gives an overview over *structure preserving neural networks*.
 
 ```@eval
 Main.example(raw"We say that a neural network is **volume-preserving** if ``\mathcal{NN}_\Theta:\mathbb{R}^n\to\mathbb{R}^n`` is such that: 
@@ -67,7 +67,7 @@ Note that here we keep the dimension constant. Volume-preserving neural networks
 ```@raw latex
 \section*{Chapter Summary}
 
-In this chapter we introduced \textit{symplecticity} and \textit{volume presentation} (or divergence-freeness for the corresponding vector field) as examples of geometric structure. \textit{symplecticity} is a property of the flow of Hamiltonian vector fields that dramatically restricts the accessible degrees of freedom. We then discussed how these concepts can be understood in a context of neural networks.
+In this chapter we introduced \textit{symplecticity} and \textit{volume presentation} (or divergence-freeness for the corresponding vector field) as examples of geometric structure. \textit{Symplecticity} is a property of the flow of Hamiltonian vector fields that dramatically restricts the accessible degrees of freedom. In many applications neural networks, similar to classical numerical methods, aim at modeling the flow of a differential equation. Because symplecticity is a very restrictive property that we know the flow of the differential equation has, it is advantageous to also imbue the neural network with this property. We hence defined \textit{structure-preserving neural networks} as the ones that preserve symplecticity (or other structure) in this chapter.
 \begin{comment}
 ```
 

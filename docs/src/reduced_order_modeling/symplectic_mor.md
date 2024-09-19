@@ -192,9 +192,9 @@ solve!
 ```@raw latex
 \section*{Chapter Summary}
 
-In this chapter we introduced the concept of \textit{data-driven reduced order modeling}. It was shown how data-driven reduced order modeling can at least partially be motivated by the concept of a \textit{solution manifold}. \textit{Proper orthogonal decomposition} (POD) and \textit{autoencoders} were discussed as specific examples of performing the offline phase in reduced order modeling. POD is an application of \textit{singular value decomposition} and as such belongs to the realm of linear algebra. Autoencoders are more general approximators that are build with neural networks and have to optimized during a \textit{training stage}.
+In this chapter we introduced the concept of \textit{data-driven reduced order modeling}. It was shown how data-driven reduced order modeling can be motivated by the \textit{solution manifold}, the (nonlinear) space containing all the solutions to the (parameter-dependent) differential equation. \textit{Proper orthogonal decomposition} (POD) and \textit{autoencoders} were discussed as specific examples of performing the offline phase in reduced order modeling. POD is an application of \textit{singular value decomposition} and as such belongs to the realm of linear algebra. Autoencoders are more general approximators that are build with neural networks and have to be optimized during a \textit{training stage}. Autoencoders are especially well-suited for problems with a \textit{slowly-decaying Kolmogorov $n$-width}. The Kolmogorov $n$-width provides a quantitative measure for how well something can be approximated with a linear subspace.
 
-We furthermore discussed how a reduced order model can be made structure-preserving and discussed \textit{proper symplectic decomposition} (PSD) as the structure-preserving alternative to POD. PSD is a more restrictive form of POD where we impose additional conditions on the reduction $\mathcal{P}$ and reconstruction $\mathcal{R}$ so that a Hamiltonian full order model can be reduced to a Hamiltonian reduced order model. At the very end of the chapter we teased \textit{symplectic autoencoders} which will be discussed in detail in part III. These offer, similar to standard autoencoders, a way of constructing more general Hamiltonian reductions.
+We furthermore discussed how a reduced order model can be made structure-preserving and showed \textit{proper symplectic decomposition} (PSD) to be the structure-preserving alternative to POD. PSD is a more restrictive form of POD where additional conditions on the reduction $\mathcal{P}$ and the reconstruction $\mathcal{R}$ are imposed. With this construction a Hamiltonian full order model is reduced to a Hamiltonian reduced order model. At the very end of the chapter we teased \textit{symplectic autoencoders} which will be discussed in detail in part III. These offer, similar to standard autoencoders, a way of constructing more general symplectic reductions and are thus well-suited to problems with a slowly-decaying Kolmogorov $n$-width.
 
 \begin{comment}
 ```
@@ -226,7 +226,7 @@ Canonical = false
 lee2020model
 fresca2021comprehensive
 blickhan2023registration
-challerjee2000introduction
+chatterjee2000introduction
 peng2016symplectic
 buchfink2023symplectic
 ```

@@ -1,5 +1,5 @@
 ```@raw latex
-In this chapter we demonstrate using symplectic autoencoders for the offline phase of reduced order modeling. The example we consider is the \textit{Toda lattice}. For the online phase we compare using a standard integrator (implicit midpoint) and a transformer neural network.
+In this chapter we show how to use symplectic autoencoders for the offline phase of reduced order modeling. The example we consider here is the \textit{Toda lattice}. We further discuss the online phase and compare a standard integrator (implicit midpoint) with a transformer neural network.
 ```
 
 # Symplectic Autoencoders and the Toda Lattice
@@ -381,6 +381,11 @@ brantner2023symplectic
 ```
 
 ```@raw latex
+\section*{Chapter Summary}
+We showed that for the Toda lattice we can achieve a very good approximation to the full-order system by using a two-dimensional reduced space; we also showed that for such a small space proper symplectic decomposition utterly fails.
+
+We however also saw that when we use standard integrators in the online phase, the very low dimension of the reduced space may not mean fast computation. With using a transformer as a neural network-based integrator however we achieved a speed-up of close to a factor 1000.
+
 \end{comment}
 ```
 

@@ -17,7 +17,6 @@ Compute ``\mathfrak{A}(A) := \sum_{n=1}^\infty \frac{1}{n!} (A)^{n-1}.``
 This uses a Taylor expansion that iteratively adds terms with
 
 ```julia
-
 """ * update_algorithm * raw"""
 
 ```

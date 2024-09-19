@@ -1,5 +1,5 @@
 ```@raw latex
-In this chapter we demonstrate using neural networks as symplectic integrators. We first show SympNets as an example of a neural network-based one-step method and then show linear symplectic transformers as an example of a symplectic multi-step method.
+In this chapter we use neural networks as symplectic integrators. We first show SympNets as an example of a neural network-based one-step method and then show linear symplectic transformers as an example of a symplectic multi-step method.
 ```
 
 # SympNets with `GeometricMachineLearning`

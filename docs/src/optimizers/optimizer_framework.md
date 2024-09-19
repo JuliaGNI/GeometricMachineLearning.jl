@@ -1,5 +1,5 @@
 ```@raw latex
-In this chapter we introduce a \textit{general framework for manifold optimization} that is needed to efficiently train symplectic autoencoders. We start this chapter by discussing optimization for neural network in general and explain how we can generalize this to homogeneous spaces. We will see that an important ingredient for doing so are \textit{retractions} which we then elaborate on. After discussing how to make retractions efficient for homogeneous spaces we conclude the chapter by introducing the notion of \textit{parallel transport} which we need to extend the notion of \textit{momentum} in neural network optimization.
+In this chapter we introduce a \textit{general framework for manifold optimization} that is needed to efficiently train symplectic autoencoders. We start this chapter by discussing optimization for neural network in general and explain how we can generalize this to homogeneous spaces. We will see that an important ingredient for doing so are \textit{retractions} which we then elaborate on. After discussing how to make the computation of retractions efficient for homogeneous spaces we conclude the chapter by introducing the notion of \textit{parallel transport} which we need to extend the notion of \textit{momentum} in neural network optimization.
 ```
 
 # Neural Network Optimizers

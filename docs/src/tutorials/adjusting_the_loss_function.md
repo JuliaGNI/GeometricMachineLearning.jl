@@ -140,14 +140,17 @@ Wit the second loss function, for which the norm of the resulting network parame
 ```
 
 ```@raw html
-\begin{comment}
+<!--
 ```
 # References
 
 ```@raw html
-\end{comment}
+-->
 ```
 
 ```@bibliography
+Pages = []
+Canonical = false
+
 raissi2019physics
 ```

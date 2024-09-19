@@ -1,5 +1,5 @@
 ```@raw latex
-In the previous chapter we introduced a general optimizer framework without giving explicit examples of neural network optimizers; this is done here. This chapter is divided into two sections: we first discuss \textit{standard neural network optimizers} (including ADAM) and then the more complicated BFGS optimizer.
+In the previous chapter we introduced a general optimizer framework without giving explicit examples of neural network optimizers; this is done here. This chapter is divided into two sections: we first discuss \textit{standard neural network optimizers} (including Adam) and then the more complicated BFGS optimizer. For all these optimizers the \textit{optimizer cache} will play an important role.
 ```
 
 # Standard Neural Network Optimizers
@@ -82,7 +82,7 @@ dx.A
 The cache has changed however:
 
 ```@example optimizer_methods
-o.cache
+o.cache.A
 ```
 
 If we have weights on manifolds calling [`Optimizer`](@ref) will automatically allocate the correct cache on ``\mathfrak{g}^\mathrm{hor}``:

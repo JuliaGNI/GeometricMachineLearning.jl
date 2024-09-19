@@ -360,3 +360,9 @@ If points appear in darker color this means that they lie behind the graph of th
 ```@docs
 GrassmannLayer
 ```
+
+```@raw latex
+\section*{Chapter Summary}
+
+In this chapter we used a neural network, which has some of its weights lie on the \textit{Grassmann manifold}, to sample from a distribution from which we have some data available. In order to accomplish this task we combined the gradient of a Wasserstein distance with the pullback of an automatic differentiation routine. At the end we saw that the we could sample new data which were close to the original, given ones.
+```
