@@ -251,6 +251,10 @@ rand(::Type{MT}, ::Integer, ::Integer) where MT <: Manifold
 rand(::GeometricMachineLearning.Backend, ::Type{MT}, ::Integer, ::Integer) where MT <: Manifold
 ```
 
+```@raw latex
+\begin{comment}
+```
+
 ## References 
 
 ```@bibliography
@@ -258,4 +262,8 @@ Pages = []
 Canonical = false
 
 absil2008optimization
+```
+
+```@raw latex
+\end{comment}
 ```
