@@ -65,5 +65,5 @@ Note that here we keep the dimension constant. Volume-preserving neural networks
 ```@raw latex
 \section*{Chapter Summary}
 
-In this chapter we introduced \textit{symplecticity} and \textit{volume presentation} (or divergence-freeness for the corresponding vector field) as examples of geometric structure. We then discussed how these concepts can be understood in a context of neural networks.
+In this chapter we introduced \textit{symplecticity} and \textit{volume presentation} (or divergence-freeness for the corresponding vector field) as examples of geometric structure. \textit{symplecticity} is a property of the flow of Hamiltonian vector fields that dramatically restricts the accessible degrees of freedom. We then discussed how these concepts can be understood in a context of neural networks.
 ```

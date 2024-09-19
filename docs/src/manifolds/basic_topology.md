@@ -45,7 +45,7 @@ Main.definition(raw"A mapping ``f`` between topological spaces ``\mathcal{M}`` a
 Continuity can also be formulated in terms of *closed sets* instead of doing it with *open sets*. The definition of closed sets is given below:
 
 ```@eval
-Main.definition(raw"A **closed set** of a topological space ``\mathcal{M}`` is one whose complement is an open set, i.e. ``F`` is closed if ``F^c\in\mathcal{T}``, where the superscript ``{}^c`` indicates the complement: ``F^c := \{x\in\mathcal{M}:x\not\in{}F\}. For closed sets we thus have the following three properties:
+Main.definition(raw"A **closed set** of a topological space ``\mathcal{M}`` is one whose complement is an open set, i.e. ``F`` is closed if ``F^c\in\mathcal{T}``, where the superscript ``{}^c`` indicates the complement: ``F^c := \{x\in\mathcal{M}:x\not\in{}F\}.`` For closed sets we thus have the following three properties:
 " *
 Main.indentation * raw"1. The empty set and ``\mathcal{M}`` are closed sets.
 " *

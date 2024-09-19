@@ -192,7 +192,9 @@ solve!
 ```@raw latex
 \section*{Chapter Summary}
 
-In this chapter we introduced the concept of \textit{data-driven reduced order modeling}, explained the notions of an \textit{offline phase} and an \textit{online phase} and provided \textit{proper orthogonal decomposition} (POD) and \textit{autoencoders} as examples of performing the offline phase in reduced order modeling. We furthermore discussed how a reduced order model can be made structure-preserving and discussed \textit{proper symplectic decomposition} as the structure-preserving alternative to POD. At the very end of the chapter we teased \textit{symplectic autoencoders} which will be discussed in detail in part III.
+In this chapter we introduced the concept of \textit{data-driven reduced order modeling}. It was shown how data-driven reduced order modeling can at least partially be motivated by the concept of a \textit{solution manifold}. \textit{Proper orthogonal decomposition} (POD) and \textit{autoencoders} were discussed as specific examples of performing the offline phase in reduced order modeling. POD is an application of \textit{singular value decomposition} and as such belongs to the realm of linear algebra. Autoencoders are more general approximators that are build with neural networks and have to optimized during a \textit{training stage}.
+
+We furthermore discussed how a reduced order model can be made structure-preserving and discussed \textit{proper symplectic decomposition} (PSD) as the structure-preserving alternative to POD. PSD is a more restrictive form of POD where we impose additional conditions on the reduction $\mathcal{P}$ and reconstruction $\mathcal{R}$ so that a Hamiltonian full order model can be reduced to a Hamiltonian reduced order model. At the very end of the chapter we teased \textit{symplectic autoencoders} which will be discussed in detail in part III. These offer, similar to standard autoencoders, a way of constructing more general Hamiltonian reductions.
 ```
 
 ## References 
