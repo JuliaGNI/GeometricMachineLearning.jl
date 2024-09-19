@@ -1,7 +1,7 @@
 
 .PHONY: documenter images
 
-all: html
+all: test_docs html
 
 latex_no_images: latex_no_pdf_no_images
 	$(MAKE) compile_tex;
@@ -17,7 +17,7 @@ latex_no_pdf: latex_images mnist_image latex_no_pdf_no_images
 
 html: html_images mnist_image html_no_images
 
-html_no_images: install_brenier_two_fluid test_docs documenter
+html_no_images: install_brenier_two_fluid documenter
 
 test_docs: 
 	cd ..; julia --project=docs  -e ';									\

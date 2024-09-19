@@ -362,6 +362,7 @@ makedocs(;
     repo = "https://github.com/JuliaGNI/GeometricMachineLearning.jl/blob/{commit}{path}#L{line}",
     sitename = "GeometricMachineLearning.jl",
     format = format,
+    doctest = false,
     pages = output_type == :html ? _html_pages : _latex_pages,
 )
 
