@@ -34,7 +34,7 @@ jobs:
       - name: Make MNIST image
         run: make all -C docs/src/tutorials/mnist
       - name: Make docs (call julia documenter)
-        run: DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' julia --project=docs --color=yes docs/make.jl html_output
+        run: DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' julia --project=docs --color=yes --threads=2 docs/make.jl html_output
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-docdeploy@v1
         with:
