@@ -32,7 +32,7 @@ LinearSymplecticTransformer
 
 In this chapter we discussed various neural network architectures and presented the corresponding application interface in \texttt{GeometricMachineLearning}. Of the presented architectures the \textit{symplectic autoencoder}, the \textit{volume-preserving transformer} and the \textit{linear symplectic transformer} constitute novel architectures. We construced the symplectic autoencoder as a composition of \textit{PSD-like layers} and \textit{SympNet} layers. For optimizing this architecture we need to resort to manifold optimization. The volume-preserving transformer is a composition of \textit{volume-preserving attention layers} and \textit{volume-preserving feedforward layers}; this is similar for the liner symplectic transformer: it is a composition of \textit{linear symplectic attention layers} and \textit{SympNets}.
 
-We discussed how all three transformer neural networks can be seen as \textit{multi-step integrators}. This was elaborated on in an extra chapter on \textit{neural network-based integrators}.
+We discussed how all three transformer neural networks can be seen as \textit{multi-step integrators}. This was elaborated on in an extra section on \textit{neural network-based integrators}.
 ```
 
 ```@raw html

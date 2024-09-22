@@ -24,17 +24,20 @@ A central part of this dissertation was the development of [symplectic autoencod
 (\mathbb{R}^{400}, H) \xRightarrow{\mathrm{SAE}} (\mathbb{R}^2, \bar{H}).
 ```
 
-For this case we observed speed-ups of up to a factor 1000 when [symplectic autoencoder was combined with a transformer in the online phase](@ref "Symplectic Autoencoders and the Toda Lattice").
+For this case we observed speed-ups of up to a factor 1000 when a [symplectic autoencoder was combined with a transformer in the online phase](@ref "Symplectic Autoencoders and the Toda Lattice").
 
 Symplectic autoencoders have the property that they induce a Hamiltonian system on the reduced space. This distinguishes them from "weakly symplectic autoencoders" [buchfink2023symplectic, yildiz2024data](@cite) that only approximately obtain a Hamiltonian system on a restricted domain by using a "physics-informed neural networks" [raissi2019physics](@cite) approach.
 
-We also mention that the development of symplectic autoencoders required generalizing existing neural network optimizers to manifolds. This is further discussed below.
+We also mention that the development of symplectic autoencoders required generalizing existing neural network optimizers to manifolds[^2]. This is further discussed below.
+
+[^2]: We also refer to optimizers that preserve manifold structure as *structure-preserving optimizers*.
+
 
 ## Structure-Preserving Neural Network-Based Integrators - The Online Phase
 
-For the online phase of reduced order modeling we developed new neural network architectures based on the [transformer](@ref "Standard Transformer") [vaswani2017attention](@cite) which is a neural network architecture that is extensively used in other fields of neural network research such as natural language processing[^2]. We used transformers to build an equivalent of structure-preserving multi-step methods [hairer2006geometric](@cite).
+For the online phase of reduced order modeling we developed new neural network architectures based on the [transformer](@ref "Standard Transformer") [vaswani2017attention](@cite) which is a neural network architecture that is extensively used in other fields of neural network research such as natural language processing[^3]. We used transformers to build an equivalent of structure-preserving multi-step methods [hairer2006geometric](@cite).
 
-[^2]: The T in ChatGPT [achiam2023gpt](@cite) stands for *transformer*.
+[^3]: The T in ChatGPT [achiam2023gpt](@cite) stands for *transformer*.
 
 
 The transformer consists of a composition of standard neural network layers and attention layers:
@@ -53,9 +56,9 @@ In this dissertation we applied the volume-preserving transformer for [learning 
 
 ## Structure-Preserving Optimizers
 
-Training a symplectic autoencoder requires optimization on manifolds[^3]. The particular manifolds we need in this case are "homogeneous spaces" [frankel2011geometry](@cite). In this dissertation we proposed a new optimizer framework that manages to [generalize existing neural network optimizers to manifolds](@ref "Neural Network Optimizers"). This is done by identifying a [global tangent space representation](@ref "Global Tangent Spaces") and dispenses with the need for a *projection step* as is necessary in other approaches [kong2023momentum, li2020efficient](@cite).
+Training a symplectic autoencoder requires optimization on manifolds[^4]. The particular manifolds we need in this case are "homogeneous spaces" [frankel2011geometry](@cite). In this dissertation we proposed a new optimizer framework that manages to [generalize existing neural network optimizers to manifolds](@ref "Neural Network Optimizers"). This is done by identifying a [global tangent space representation](@ref "Global Tangent Spaces") and dispenses with the need for a *projection step* as is necessary in other approaches [kong2023momentum, li2020efficient](@cite).
 
-[^3]: This is necessary to preserve the symplectic structure of the neural network.
+[^4]: This is necessary to preserve the symplectic structure of the neural network.
 
 As was already observed by others [zhang2021orthogonality, kong2023momentum, huang2018orthogonal](@cite) putting weights on manifolds can improve training significantly in contexts other than scientific computing. Motivated by this we show an example of training a vision transformer [dosovitskiy2020image](@cite) on the MNIST data set [deng2012mnist](@cite) to demonstrate the efficacy of the new optimizers. Contrary to other applications of the transformer we do not have to rely on layer normalization [xiong2020layer](@cite) or add connections to [achieve convergent training for relatively big neural networks](@ref "MNIST Tutorial"). We also applied the new optimizers to a neural network that contains weights on the [Grassmann manifold](@ref "The Grassmann Manifold") to be [able to sample from a nonlinear space](@ref "Example of a Neural Network with a Grassmann Layer").
 
@@ -65,6 +68,6 @@ We believe that the topics *structure-preserving autoencoders*, *structure-prese
 
 Symplectic autoencoders could be used for model reduction of higher-dimensional systems [fresca2022pod](@cite) as well as using them for treating systems that are more general than canonical Hamiltonian ones; these include port-Hamiltonian [van2014port](@cite) and metriplectic [morrison1986paradigm](@cite) systems. Structure-preserving model order reductions for such systems have been proposed [gruber2023energetically, moser2023structure, schulze2023structure, mamunuzzaman2022structure](@cite) but without using neural networks. In the appendix we sketch how symplectic autoencoders could be used for [structure-preserving model reduction of port-Hamiltonian systems](@ref "Using Symplectic Autoencoders for Port-Hamiltonian Systems").
 
-Structure-preserving transformers have shown great potential for learning dynamical systems, but their application should not be limited to that area. Structure-preserving machine learning techniques such as *Hamilton Monte Carlo* [duane1987hybrid](@cite) has been used in various fields such as image classification [cobb2021scaling](@cite) and inverse problems [fichtner2018hamiltonian](@cite) and we believe that the structure-preserving transformers introduced in this work can also find applications in these fields.
+Structure-preserving transformers have shown great potential for learning dynamical systems, but their application should not be limited to that area. Structure-preserving machine learning techniques such as *Hamilton Monte Carlo* [duane1987hybrid](@cite) has been used in various fields such as image classification [cobb2021scaling](@cite) and inverse problems [fichtner2018hamiltonian](@cite) and we believe that the structure-preserving transformers introduced in this work can also find applications in these fields, by replacing the activation function in the attention layers of a vision transformer for example.
 
-Lastly structure-preserving optimization is an exciting field, especially for neural networks. The manifold optimizers introduced in this work can speed up neural network training significantly and are suitable for modern hardware (i.e. GPUs). They are however based on existing neural network optimizers such as Adam [kingma2014adam](@cite) and thus still lack a clear geometric interpretation. By utilizing a more geometric representation, as presented in this work, we hope to be able to find a differential equation describing Adam and other neural network optimizer, perhaps through a variational principle [wibisono2016variational, duruisseaux2022accelerated](@cite). One could also build on the existing optimization framework and use different retractions than the *geodesic retraction* and the *Cayley retraction* presented here; an example would be a *QR-based retraction* [sato2019cholesky, gao2024optimization](@cite). This will be left for future work.
+Lastly structure-preserving optimization is an exciting field, especially with regards to neural networks. The manifold optimizers introduced in this work can speed up neural network training significantly and are suitable for modern hardware (i.e. GPUs). They are however based on existing neural network optimizers such as Adam [kingma2014adam](@cite) and thus still lack a clear geometric interpretation. By utilizing a more geometric representation, as presented in this work, we hope to be able to find a differential equation describing Adam and other neural network optimizer, perhaps through a variational principle [wibisono2016variational, duruisseaux2022accelerated](@cite). One could also build on the existing optimization framework and use retractions other than the *geodesic retraction* and the *Cayley retraction* [presented here](@ref "Retractions"); an example would be a *QR-based retraction* [sato2019cholesky, gao2024optimization](@cite). This will be left for future work.

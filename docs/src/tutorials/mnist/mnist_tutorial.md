@@ -1,5 +1,7 @@
 ```@raw latex
-In this chapter we discuss examples of improving transformers by imbuing them with structure\footnote{Technically the linear symplectic transformer from the previous chapter could also be included here, but because of the very severe modification/limitation of the attention layer we performed there, we decided against it.}. We show two examples: an example of using the vision transformer where we put orthogonality constraints on some of the weights (which effectively leads to manifold optimization) and using the volume-preserving transformer to learn the dynamics of a rigid body. At the end we further compare two different approaches to realizing the volume-preserving transformer.
+In this chapter we discuss examples of improving transformers by imbuing them with structure\footnotemark[1]. We show two examples: an example of using the vision transformer where we put orthogonality constraints on some of the weights (which effectively leads to manifold optimization) and using the volume-preserving transformer to learn the dynamics of a rigid body. At the end we further compare two different approaches to realizing the volume-preserving transformer.
+
+\footnotetext[1]{Technically the linear symplectic transformer from the previous chapter could also be included here, but because of the very severe modification/limitation of the attention layer we performed there, we decided against it.}
 ```
 
 # MNIST Tutorial 

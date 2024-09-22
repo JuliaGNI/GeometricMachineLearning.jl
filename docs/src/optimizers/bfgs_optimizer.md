@@ -222,7 +222,7 @@ vec(::StiefelLieAlgHorMatrix)
 \section*{Chapter Summary}
 
 In this chapter we gave explicit examples of neural network optimizers and demonstrated the corresponding application interface; we referred to the related updating rules as \textit{optimizer methods}. An important ingredient for all optimizers was the \textit{optimizer cache}. In the simplest case (for the gradient optimizer) the cache stores nothing; it however contains \textit{first moments} for the momentum optimizer, and \textit{first} and \textit{second moments} for the \textit{Adam optimizer}. When using the more complex \textit{BFGS optimizer} the cache is even more complicated (it stores an approximation to the inverse of the Hessian of the loss).
-The cache further has to be parallel transported along the optimization trajectory; for vector spaces this is trivial and for homogeneous spaces this is done by utilizing the \textit{global tangent space representation}.
+The cache further has to be parallel transported along the optimization trajectory; for vector spaces this is trivial and for homogeneous spaces this is done by utilizing the \textit{global tangent space representation} which was developed in the previous chapter.
 
 \begin{comment}
 ```

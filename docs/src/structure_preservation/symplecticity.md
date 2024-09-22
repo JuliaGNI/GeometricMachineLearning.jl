@@ -1,6 +1,6 @@
 ```@raw latex
 % introductory remarks for the latex version
-A central topic of this dissertation is \textit{structure preservation}. In this chapter we discuss the notions of \textit{symplecticity} and \textit{volume preservation}. After this we introduce the concept of \textit{structure-preserving neural networks}.
+A central topic of this dissertation is \textit{structure preservation}. In this chapter we first discuss the notions of \textit{symplecticity} and \textit{volume preservation}. After this we introduce the concept of \textit{structure-preserving neural networks}.
 ```
 
 # Symplectic Systems
