@@ -364,6 +364,90 @@ Note that integration of the system with the transformer is orders of magnitudes
 Main.remark(raw"While training the symplectic autoencoder we completely ignore the online phase, but only aim at finding a good low-dimensional approximation to the solution manifold. This is why we observe that the approximated solution differs somewhat form the actual one when using implicit midpoint for integrating the low-dimensional system (blue line vs. green line).")
 ```
 
+Here we compared PSD with an SAE whith the same reduced dimension. One may argue that this is not entirely fair as the PSD has much fewer parameters than the SAE:
+
+```@example toda_lattice
+(parameterlength(psd_nn_cpu), parameterlength(sae_nn_cpu))
+```
+
+and we also saw that evaluating *PSD + Implicit Midpoint* is much faster than *SAE + Implicit Midpoint*. We thus model the system with PSDs of higher reduced dimension:
+
+```@example toda_lattice
+const reduced_dim2 = 6
+
+Random.seed!(123) # hide
+psd_arch2 = PSDArch(dl_cpu.input_dim, reduced_dim2)
+
+psd_nn2 = NeuralNetwork(psd_arch2, CPU(), eltype(dl_cpu))
+
+solve!(psd_nn2, dl_cpu)
+
+psd_rs2 = HRedSys(pr, encoder(psd_nn2), decoder(psd_nn2); integrator = ImplicitMidpoint())
+```
+
+We integrate this PSD to check how big the difference in performance is:
+```@example toda_lattice
+integrate_reduced_system(psd_rs2) # hide
+@time "PSD + Implicit Midpoint" sol_psd_reduced2 = integrate_reduced_system(psd_rs2) # hide
+```
+
+We can also plot the comparison with the FOM as before:
+
+```@setup toda_lattice
+morange = RGBf(255 / 256, 127 / 256, 14 / 256)
+mred = RGBf(214 / 256, 39 / 256, 40 / 256) 
+mpurple = RGBf(148 / 256, 103 / 256, 189 / 256)
+mblue = RGBf(31 / 256, 119 / 256, 180 / 256)
+mgreen = RGBf(44 / 256, 160 / 256, 44 / 256)
+
+# plot validation
+function plot_validation!(fig, coordinates::Tuple, t_steps::Integer=100; theme = :dark)
+    textcolor = theme == :dark ? :white : :black
+    ax_val = Axis(fig[coordinates[1], coordinates[2]]; backgroundcolor = :transparent,
+                                                                bottomspinecolor = textcolor, 
+                                                                topspinecolor = textcolor,
+                                                                leftspinecolor = textcolor,
+                                                                rightspinecolor = textcolor,
+                                                                xtickcolor = textcolor, 
+                                                                ytickcolor = textcolor,
+                                                                xticklabelcolor = textcolor,
+                                                                yticklabelcolor = textcolor,
+                                                                xlabel=L"t", 
+                                                                ylabel=L"q",
+                                                                xlabelcolor = textcolor,
+                                                                ylabelcolor = textcolor)
+    lines!(ax_val, sol_full.s.q[t_steps], label = rich("FOM + Implicit Midpoint"; color = textcolor), color = mblue)
+    lines!(ax_val, psd_rs2.decoder((q = sol_psd_reduced2.s.q[t_steps], p = sol_psd_reduced2.s.p[t_steps])).q, 
+        label = rich("PSD + Implicit Midpoint"; color = textcolor), color = morange)
+
+    if t_steps == 0
+        axislegend(ax_val; position = (1.01, 1.5), backgroundcolor = theme == :dark ? :transparent : :white, color = textcolor, labelsize = 8)
+    end
+    nothing
+end
+
+fig_light = Figure(; backgroundcolor = :transparent)
+
+fig_dark = Figure(; backgroundcolor = :transparent)
+
+for (i, time) in zip(1:length(time_steps), time_steps)
+    plot_validation!(fig_light, (i, 1), time; theme = :light)
+    plot_validation!(fig_dark, (i, 1), time; theme = :dark)
+end
+
+# axislegend(fig_light; position = (.82, .75), backgroundcolor = :transparent, color = :black)
+# axislegend(fig_dark;  position = (.82, .75), backgroundcolor = :transparent, color = :white)
+
+save("sae_validation2.png", fig_light; px_per_unit = 1.2)
+save("sae_validation_dark2.png", fig_dark; px_per_unit = 1.2)
+
+nothing # hide
+```
+
+```@example
+Main.include_graphics("sae_validation2"; width = .8, caption = raw"Comparison between the FOM and the PSD with a bigger reduced dimension. ")
+```
+
 ```@raw latex
 \section*{Chapter Summary}
 We showed that for the Toda lattice we can achieve a very good approximation to the full-order system by using a two-dimensional reduced space; we also showed that for such a small space proper symplectic decomposition utterly fails.
