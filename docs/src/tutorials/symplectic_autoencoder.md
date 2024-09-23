@@ -56,14 +56,17 @@ Main.include_graphics("../tikz/third_degree_spline") # hide
 We end up with the following choice of parametrized initial conditions: 
 
 ```math 
-u_0(\mu)(\omega) = h(s(\omega, \mu)), \quad s(\omega, \mu) =  20 \mu  |\omega + \frac{\mu}{2}|.
+u_0(\mu)(\omega) = h(s(\omega, \mu)), \quad s(\omega, \mu) =  20 \mu  |\omega + \frac{\mu}{2}|,
 ```
 
-For the purposes of this tutorial we will use the default value for ``\mu`` provided in `GeometricMachineLearning`:
+where the ``\omega`` is an element of the domain ``\Omega = [-0.5, 0.5].`` For the purposes of this tutorial we will use the default value for ``\mu`` provided in [`GeometricProblems`](https://github.com/JuliaGNI/GeometricProblems.jl):
 
 ```@example toda_lattice
 import GeometricProblems.TodaLattice as tl
 
+N = tl.Ñ # hide
+Δx = 1. / (N - 1) # hide
+Ω = -0.5 : Δx : 0.5 # hide
 tl.μ
 ```
 
@@ -211,14 +214,14 @@ function plot_validation!(fig, coordinates::Tuple, t_steps::Integer=100; theme =
                                                                 ytickcolor = textcolor,
                                                                 xticklabelcolor = textcolor,
                                                                 yticklabelcolor = textcolor,
-                                                                xlabel=L"t", 
+                                                                xlabel=L"\omega", 
                                                                 ylabel=L"q",
                                                                 xlabelcolor = textcolor,
                                                                 ylabelcolor = textcolor)
-    lines!(ax_val, sol_full.s.q[t_steps], label = rich("FOM + Implicit Midpoint"; color = textcolor), color = mblue)
-    lines!(ax_val, psd_rs.decoder((q = sol_psd_reduced.s.q[t_steps], p = sol_psd_reduced.s.p[t_steps])).q, 
+    lines!(ax_val, Ω, sol_full.s.q[t_steps], label = rich("FOM + Implicit Midpoint"; color = textcolor), color = mblue)
+    lines!(ax_val, Ω, psd_rs.decoder((q = sol_psd_reduced.s.q[t_steps], p = sol_psd_reduced.s.p[t_steps])).q, 
         label = rich("PSD + Implicit Midpoint"; color = textcolor), color = morange)
-    lines!(ax_val, sae_rs.decoder((q = sol_sae_reduced.s.q[t_steps], p = sol_sae_reduced.s.p[t_steps])).q, 
+    lines!(ax_val, Ω, sae_rs.decoder((q = sol_sae_reduced.s.q[t_steps], p = sol_sae_reduced.s.p[t_steps])).q, 
         label = rich("SAE + Implicit Midpoint"; color = textcolor), color = mgreen)
 
     if t_steps == 0
@@ -316,14 +319,14 @@ function plot_transformer_validation!(fig, coordinates, t_steps::Integer=100; th
                                                                 ytickcolor = textcolor,
                                                                 xticklabelcolor = textcolor,
                                                                 yticklabelcolor = textcolor,
-                                                                xlabel = L"t", 
+                                                                xlabel = L"\omega", 
                                                                 ylabel = L"q",
                                                                 xlabelcolor = textcolor,
                                                                 ylabelcolor = textcolor)
-    lines!(ax_val, sol_full.s.q[t_steps], label = rich("FOM + Implicit Midpoint"; color = textcolor), color = mblue)
-    lines!(ax_val, psd_rs.decoder((q = sol_psd_reduced.s.q[t_steps], p = sol_psd_reduced.s.p[t_steps])).q, 
+    lines!(ax_val, Ω, sol_full.s.q[t_steps], label = rich("FOM + Implicit Midpoint"; color = textcolor), color = mblue)
+    lines!(ax_val, Ω, psd_rs.decoder((q = sol_psd_reduced.s.q[t_steps], p = sol_psd_reduced.s.p[t_steps])).q, 
         label = rich("PSD + Implicit Midpoint"; color = textcolor), color = morange)
-    lines!(ax_val, sae_rs.decoder((q = sol_sae_reduced.s.q[t_steps], p = sol_sae_reduced.s.p[t_steps])).q, 
+    lines!(ax_val, Ω, sae_rs.decoder((q = sol_sae_reduced.s.q[t_steps], p = sol_sae_reduced.s.p[t_steps])).q, 
         label = rich("SAE + Implicit Midpoint"; color = textcolor), color = mgreen)
 
     time_series = iterate(mtc(integrator_nn), ics; n_points = t_steps, prediction_window = seq_length)
@@ -331,7 +334,7 @@ function plot_transformer_validation!(fig, coordinates, t_steps::Integer=100; th
     prediction = (q = time_series.q[:, end], p = time_series.p[:, end])
     sol = decoder(sae_nn_cpu)(prediction)
 
-    lines!(ax_val, sol.q; label = rich("SAE + Transformer"; color = textcolor), color = mpurple)
+    lines!(ax_val, Ω, sol.q; label = rich("SAE + Transformer"; color = textcolor), color = mpurple)
 
     if t_steps == 0
         axislegend(ax_val; position = (1.01, .9), backgroundcolor = theme == :dark ? :transparent : :white, color = textcolor, labelsize = 8, nbanks = 2)
@@ -373,7 +376,7 @@ Here we compared PSD with an SAE whith the same reduced dimension. One may argue
 and we also saw that evaluating *PSD + Implicit Midpoint* is much faster than *SAE + Implicit Midpoint*. We thus model the system with PSDs of higher reduced dimension:
 
 ```@example toda_lattice
-const reduced_dim2 = 6
+const reduced_dim2 = 8
 
 Random.seed!(123) # hide
 psd_arch2 = PSDArch(dl_cpu.input_dim, reduced_dim2)
@@ -414,12 +417,12 @@ function plot_validation!(fig, coordinates::Tuple, t_steps::Integer=100; theme =
                                                                 ytickcolor = textcolor,
                                                                 xticklabelcolor = textcolor,
                                                                 yticklabelcolor = textcolor,
-                                                                xlabel=L"t", 
+                                                                xlabel=L"\omega", 
                                                                 ylabel=L"q",
                                                                 xlabelcolor = textcolor,
                                                                 ylabelcolor = textcolor)
-    lines!(ax_val, sol_full.s.q[t_steps], label = rich("FOM + Implicit Midpoint"; color = textcolor), color = mblue)
-    lines!(ax_val, psd_rs2.decoder((q = sol_psd_reduced2.s.q[t_steps], p = sol_psd_reduced2.s.p[t_steps])).q, 
+    lines!(ax_val, Ω, sol_full.s.q[t_steps], label = rich("FOM + Implicit Midpoint"; color = textcolor), color = mblue)
+    lines!(ax_val, Ω, psd_rs2.decoder((q = sol_psd_reduced2.s.q[t_steps], p = sol_psd_reduced2.s.p[t_steps])).q, 
         label = rich("PSD + Implicit Midpoint"; color = textcolor), color = morange)
 
     if t_steps == 0
@@ -440,14 +443,106 @@ end
 # axislegend(fig_light; position = (.82, .75), backgroundcolor = :transparent, color = :black)
 # axislegend(fig_dark;  position = (.82, .75), backgroundcolor = :transparent, color = :white)
 
-save("sae_validation2.png", fig_light; px_per_unit = 1.2)
-save("sae_validation_dark2.png", fig_dark; px_per_unit = 1.2)
+save("psd_validation2.png", fig_light; px_per_unit = 1.2)
+save("psd_validation2_dark.png", fig_dark; px_per_unit = 1.2)
 
 nothing # hide
 ```
 
 ```@example
-Main.include_graphics("sae_validation2"; width = .8, caption = raw"Comparison between the FOM and the PSD with a bigger reduced dimension. ") # hide
+Main.include_graphics("psd_validation2"; width = .8, caption = raw"Comparison between the FOM and the PSD with a bigger reduced dimension. ") # hide
+```
+
+We see that for a reduced dimension of ``2n = 8`` the PSD looks slightly better than the SAE for ``2n = 2.`` As with the SAE we also use a transformer to integrate the dynamics on the low-dimensional space:
+
+```@example toda_lattice
+const integrator_architecture2 = StandardTransformerIntegrator(reduced_dim2; 
+                                                                            transformer_dim = 20, 
+                                                                            n_blocks = 3, 
+                                                                            n_heads = 5, 
+                                                                            L = 3, 
+                                                                            upscaling_activation = tanh)
+const integrator_nn2 = NeuralNetwork(integrator_architecture2, backend)
+const integrator_method2 = AdamOptimizerWithDecay(integrator_train_epochs)
+const o_integrator2 = Optimizer(integrator_method2, integrator_nn2)
+
+loss2 = GeometricMachineLearning.ReducedLoss(encoder(psd_nn2), decoder(psd_nn2))
+```
+
+For training we leave `dl_integration`, `integrator_batch` and `integrator_train_epochs` unchanged:
+```julia
+train_integrator_loss2 = o_integrator(integrator_nn2, dl_integration, integrator_batch, integrator_train_epochs, loss2)
+```
+
+```@setup toda_lattice
+nn_integrator_parameters2 = load("integrator_parameters_psd.jld2")["integrator_parameters"] # hide
+integrator_nn2 = NeuralNetwork(integrator_architecture2, Chain(integrator_architecture2), nn_integrator_parameters2, backend) # hide
+ics = encoder(psd_nn2)((q = dl_cpu.input.q[:, 1:seq_length, 1], p = dl_cpu.input.p[:, 1:seq_length, 1])) # hide
+nothing # hide
+```
+
+We again integrate the system and then plot the result:
+
+```@example toda_lattice
+iterate(mtc(integrator_nn2), ics; n_points = length(sol.t), prediction_window = seq_length) # hide
+@time "time stepping with transformer" time_series2 = iterate(mtc(integrator_nn2), ics; n_points = length(sol.t), prediction_window = seq_length)
+nothing # hide
+```
+
+```@setup toda_lattice
+# plot validation
+function plot_validation!(fig, coordinates::Tuple, t_steps::Integer=100; theme = :dark)
+    textcolor = theme == :dark ? :white : :black
+    ax_val = Axis(fig[coordinates[1], coordinates[2]]; backgroundcolor = :transparent,
+                                                                bottomspinecolor = textcolor, 
+                                                                topspinecolor = textcolor,
+                                                                leftspinecolor = textcolor,
+                                                                rightspinecolor = textcolor,
+                                                                xtickcolor = textcolor, 
+                                                                ytickcolor = textcolor,
+                                                                xticklabelcolor = textcolor,
+                                                                yticklabelcolor = textcolor,
+                                                                xlabel=L"\omega", 
+                                                                ylabel=L"q",
+                                                                xlabelcolor = textcolor,
+                                                                ylabelcolor = textcolor)
+    lines!(ax_val, Ω, sol_full.s.q[t_steps], label = rich("FOM + Implicit Midpoint"; color = textcolor), color = mblue)
+    lines!(ax_val, Ω, psd_rs2.decoder((q = sol_psd_reduced2.s.q[t_steps], p = sol_psd_reduced2.s.p[t_steps])).q, 
+        label = rich("PSD + Implicit Midpoint"; color = textcolor), color = morange)
+
+    time_series2 = iterate(mtc(integrator_nn2), ics; n_points = t_steps, prediction_window = seq_length)
+    # prediction = (q = time_series.q[:, end], p = time_series.p[:, end])
+    prediction2 = (q = time_series2.q[:, end], p = time_series2.p[:, end])
+    sol = decoder(psd_nn2)(prediction2)
+
+    lines!(ax_val, Ω, sol.q; label = rich("PSD + Transformer"; color = textcolor), color = mred)
+
+    if t_steps == 0
+        axislegend(ax_val; position = (1.01, 1.5), backgroundcolor = theme == :dark ? :transparent : :white, color = textcolor, labelsize = 8)
+    end
+    nothing
+end
+
+fig_light = Figure(; backgroundcolor = :transparent)
+
+fig_dark = Figure(; backgroundcolor = :transparent)
+
+for (i, time) in zip(1:length(time_steps), time_steps)
+    plot_validation!(fig_light, (i, 1), time; theme = :light)
+    plot_validation!(fig_dark, (i, 1), time; theme = :dark)
+end
+
+# axislegend(fig_light; position = (.82, .75), backgroundcolor = :transparent, color = :black)
+# axislegend(fig_dark;  position = (.82, .75), backgroundcolor = :transparent, color = :white)
+
+save("psd_integrator_validation.png", fig_light; px_per_unit = 1.2)
+save("psd_integrator_validation_dark.png", fig_dark; px_per_unit = 1.2)
+
+nothing # hide
+```
+
+```@example
+Main.include_graphics("psd_integrator_validation"; width = .8, caption = raw"Comparison between FOM (blue), PSD with implicit midpoint (orange), and PSD with transformer (red). ") # hide
 ```
 
 ```@raw latex
