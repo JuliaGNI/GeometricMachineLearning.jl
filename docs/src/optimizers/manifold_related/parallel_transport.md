@@ -186,7 +186,7 @@ Note that the angle between the two vector is preserved as we go along the geode
 ```@raw latex
 \section*{Chapter Summary}
 
-In this chapter we introduced our \textit{optimizer framework} which will be used to efficiently train symplectic autoencoders and transformers with orthogonality constraints in part IV. We proposed extending standard neural network optimizers to homogeneous spaces by introducing the extra operations \texttt{rgrad}, \texttt{global\_rep} and ``Retraction.'' The definition of a retraction we used here was slightly different from the usual one. We defined retractions as maps from the \textit{global tangent space representation} $\mathfrak{g}^\mathrm{hor}$ to the associated Lie group (and in addition satisfy two more conditions), i.e.
+In this chapter we introduced our \textit{optimizer framework} which will be used to efficiently train symplectic autoencoders and transformers with orthogonality constraints in Part IV. We proposed extending standard neural network optimizers to homogeneous spaces by introducing the extra operations \texttt{rgrad}, \texttt{global\_rep} and ``Retraction.'' The definition of a retraction we used here was slightly different from the usual one. We defined retractions as maps from the \textit{global tangent space representation} $\mathfrak{g}^\mathrm{hor}$ to the associated Lie group (and in addition satisfy two more conditions), i.e.
 \begin{equation*}
     \mathrm{Retraction}: \mathfrak{g}^\mathrm{hor} \to G.
 \end{equation*}

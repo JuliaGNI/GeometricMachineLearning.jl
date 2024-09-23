@@ -62,7 +62,11 @@ The proof for this case proceeds analogously to the case of the time-independent
 
 More details on this can be found in e.g. [lang2012fundamentals](@cite). For `GeometricMachineLearning` time-dependent vector fields are important because many of the optimizers we are using (such as the [Adam optimizer](@ref "The Adam Optimizer")) can be seen as approximating the flow of a time-dependent vector field.
 
-## Reference
+```@raw latex
+\begin{comment}
+```
+
+## References
 
 ```@bibliography
 Pages = []
@@ -70,4 +74,8 @@ Canonical = false
 
 lang2012real
 lang2012fundamentals
+```
+
+```@raw latex
+\end{comment}
 ```

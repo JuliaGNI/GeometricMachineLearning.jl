@@ -195,7 +195,7 @@ It is also interesting to note that the training error for the SympNet gets lowe
 ```@raw latex
 \section*{Chapter Summary}
 
-In this chapter we demonstrated the efficacy of neural network-based symplectic integrators. We showed two examples: SympNets as an example of a symplectic one-step method and linear symplectic transformers as an example of a symplectic multi-step method. We compared the two different SympNet architectures ($LA$-SympNets and $G$-SympNets) with a standard ResNet and gave an example where symplecticity is important to achieve long-term stability. The linear symplectic transformer was compared to the standard transformer and a SympNet (on the example of a complex coupled harmonic oscillator) and shown to outperform these two networks.
+In this chapter we demonstrated the efficacy of neural network-based symplectic integrators. We showed two examples: SympNets as an example of a symplectic one-step method and linear symplectic transformers as an example of a symplectic multi-step method. We compared the two different SympNet architectures ($LA$-SympNets and $G$-SympNets) with a standard ResNet and gave an example where symplecticity is important to achieve long-term stability: the ResNet was shown to fail on longer time scales even though it outperforms the $LA$-SympNet on smaller ones; this is because the ResNet does not have any structure encoded into it. The linear symplectic transformer was compared to the standard transformer and a SympNet (on the example of a complex coupled harmonic oscillator) and shown to outperform these two networks.
 
 Of the two symplectic neural networks shown here the linear symplectic transformer constitutes a novel neural network architecture which was introduced in this dissertation.
 ```

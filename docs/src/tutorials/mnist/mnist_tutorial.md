@@ -49,7 +49,7 @@ nothing # hide
 Here we called [`DataLoader`](@ref) on a tensor and a vector of integers (targets) as input. [`DataLoader`](@ref) automatically converts the data to the correct input format for easy handling. This is visualized below:
 
 ```@example
-Main.include_graphics("mnist_visualization"; caption = "Visualization of how the data are preprocessed. It is split and flattened. ", width = .8) # hide
+Main.include_graphics("mnist_visualization"; caption = "Visualization of how the data are preprocessed. An image is first split and then flattened. ", width = .8) # hide
 ```
 
 Internally [`DataLoader`](@ref) calls [`split_and_flatten`](@ref) which splits each image into a number of *patches* according to the keyword arguments `patch_length` and `number_of_patches`. We also load the test data with [`DataLoader`](@ref):

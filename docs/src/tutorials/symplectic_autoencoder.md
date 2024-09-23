@@ -365,6 +365,11 @@ Main.remark(raw"While training the symplectic autoencoder we completely ignore t
 ```
 
 ```@raw latex
+\section*{Chapter Summary}
+We showed that for the Toda lattice we can achieve a very good approximation to the full-order system by using a two-dimensional reduced space; we also showed that for such a small space proper symplectic decomposition utterly fails.
+
+We however also saw that when we use standard integrators in the online phase, the very low dimension of the reduced space may not mean fast computation. But by using a transformer as a neural network-based integrator we could circumvent this problem and achieve a speed-up of a factor of approximately 1000.
+
 \begin{comment}
 ```
 
@@ -381,11 +386,6 @@ brantner2023symplectic
 ```
 
 ```@raw latex
-\section*{Chapter Summary}
-We showed that for the Toda lattice we can achieve a very good approximation to the full-order system by using a two-dimensional reduced space; we also showed that for such a small space proper symplectic decomposition utterly fails.
-
-We however also saw that when we use standard integrators in the online phase, the very low dimension of the reduced space may not mean fast computation. With using a transformer as a neural network-based integrator however we achieved a speed-up of close to a factor 1000.
-
 \end{comment}
 ```
 
