@@ -4,7 +4,7 @@ In this chapter we show how to use symplectic autoencoders for the offline phase
 
 # Symplectic Autoencoders and the Toda Lattice
 
-In this tutorial we use a [symplectic autoencoder](@ref "The Symplectic Autoencoder") to approximate the linear wave equation with a lower-dimensional Hamiltonian model and compare it with standard [proper symplectic decomposition](@ref "Proper Symplectic Decomposition").
+In this tutorial we use a [symplectic autoencoder](@ref "The Symplectic Autoencoder") to approximate the solution of the Toda lattice with a lower-dimensional Hamiltonian model and compare it with standard [proper symplectic decomposition](@ref "Proper Symplectic Decomposition").
 
 ```@eval
 Main.remark(raw"As with any neural network we have to make the following choices:
@@ -69,6 +69,8 @@ N = tl.Ñ # hide
 Ω = -0.5 : Δx : 0.5 # hide
 tl.μ
 ```
+
+We thus look at the displacement of ``N = 200`` particles on the periodic domain ``\Omega = [-0.5, 0.5]/~ \simeq S^1`` where the equivalence relation ``~`` indicates that we associate the points ``-0.5`` and ``0.5`` with each other.
 
 ## Get the data 
 
@@ -384,7 +386,11 @@ psd_arch2 = PSDArch(dl_cpu.input_dim, reduced_dim2)
 psd_nn2 = NeuralNetwork(psd_arch2, CPU(), eltype(dl_cpu))
 
 solve!(psd_nn2, dl_cpu)
+```
 
+And we see that the error is a lot lower than for the case `reduced_dim = 2`. We now proceed with building the reduced Hamiltonian system as before, again using [`HRedSys`](@ref):
+
+```@example toda_lattice
 psd_rs2 = HRedSys(pr, encoder(psd_nn2), decoder(psd_nn2); integrator = ImplicitMidpoint())
 nothing # hide
 ```
@@ -453,7 +459,7 @@ nothing # hide
 Main.include_graphics("psd_validation2"; width = .8, caption = raw"Comparison between the FOM and the PSD with a bigger reduced dimension. ") # hide
 ```
 
-We see that for a reduced dimension of ``2n = 8`` the PSD looks slightly better than the SAE for ``2n = 2.`` As with the SAE we also use a transformer to integrate the dynamics on the low-dimensional space:
+We see that for a reduced dimension of ``2n = 8`` the PSD looks slightly better than the SAE for ``2n = 2.`` As with the SAE we can also use a transformer to integrate the dynamics on the low-dimensional space:
 
 ```@example toda_lattice
 const integrator_architecture2 = StandardTransformerIntegrator(reduced_dim2; 
@@ -462,11 +468,12 @@ const integrator_architecture2 = StandardTransformerIntegrator(reduced_dim2;
                                                                             n_heads = 5, 
                                                                             L = 3, 
                                                                             upscaling_activation = tanh)
-const integrator_nn2 = NeuralNetwork(integrator_architecture2, backend)
+integrator_nn2 = NeuralNetwork(integrator_architecture2, backend)
 const integrator_method2 = AdamOptimizerWithDecay(integrator_train_epochs)
 const o_integrator2 = Optimizer(integrator_method2, integrator_nn2)
 
 loss2 = GeometricMachineLearning.ReducedLoss(encoder(psd_nn2), decoder(psd_nn2))
+nothing # hide
 ```
 
 For training we leave `dl_integration`, `integrator_batch` and `integrator_train_epochs` unchanged:
@@ -544,6 +551,8 @@ nothing # hide
 ```@example
 Main.include_graphics("psd_integrator_validation"; width = .8, caption = raw"Comparison between FOM (blue), PSD with implicit midpoint (orange), and PSD with transformer (red). ") # hide
 ```
+
+Here we however see a dramatic deterioration in the quality of the approximation. We assume that this because the `transformer_dim` was chosen to be `20` for the SAE and the PSD, but in the second case the reduced space is of dimension six, whereas it is of dimension two in the first case. This may mean that we need an even bigger transformer to find a good approximation of the reduced space.
 
 ```@raw latex
 \section*{Chapter Summary}
