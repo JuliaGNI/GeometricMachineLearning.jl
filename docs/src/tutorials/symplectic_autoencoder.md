@@ -383,12 +383,14 @@ psd_nn2 = NeuralNetwork(psd_arch2, CPU(), eltype(dl_cpu))
 solve!(psd_nn2, dl_cpu)
 
 psd_rs2 = HRedSys(pr, encoder(psd_nn2), decoder(psd_nn2); integrator = ImplicitMidpoint())
+nothing # hide
 ```
 
 We integrate this PSD to check how big the difference in performance is:
 ```@example toda_lattice
 integrate_reduced_system(psd_rs2) # hide
 @time "PSD + Implicit Midpoint" sol_psd_reduced2 = integrate_reduced_system(psd_rs2) # hide
+nothing # hide
 ```
 
 We can also plot the comparison with the FOM as before:
@@ -445,7 +447,7 @@ nothing # hide
 ```
 
 ```@example
-Main.include_graphics("sae_validation2"; width = .8, caption = raw"Comparison between the FOM and the PSD with a bigger reduced dimension. ")
+Main.include_graphics("sae_validation2"; width = .8, caption = raw"Comparison between the FOM and the PSD with a bigger reduced dimension. ") # hide
 ```
 
 ```@raw latex
