@@ -31,7 +31,7 @@ but the input has necessarily the same dimension as the output. PSD can change d
 
 but is strictly linear. Symplectic autoencoders offer a way of (i) constructing nonlinear symplectic maps that (ii) can change dimension. We used these to reduce a 400-dimensional Hamiltonian system to a two-dimensional one[^1]:
 
-[^1]: ``\bar{H} = H\circ\Psi^\mathrm{dec}_{\theta_2}:\mathbb{R}^2\to\mathbb{R}`` here refers to the *induced Hamiltonian on the reduced space*. \textit{SAE} is short for \textit{symplectic autoencoder}. 
+[^1]: ``\bar{H} = H\circ\Psi^\mathrm{dec}_{\theta_2}:\mathbb{R}^2\to\mathbb{R}`` here refers to the *induced Hamiltonian on the reduced space*. *SAE* is short for *symplectic autoencoder*. 
 
 ```math
 (\mathbb{R}^{400}, H) \xRightarrow{\mathrm{SAE}^\mathrm{enc}} (\mathbb{R}^2, \bar{H}).
