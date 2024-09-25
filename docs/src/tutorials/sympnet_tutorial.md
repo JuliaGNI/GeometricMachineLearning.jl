@@ -15,7 +15,7 @@ The [`FeedForwardLoss`](@ref) is the default choice used in `GeometricMachineLea
 
 Here we begin with a simple example, the harmonic oscillator, the Hamiltonian of which is 
 ```math
-H:(q,p)\in\mathbb{R}^2 \mapsto \frac{1}{2}p^2-q^2 \in \mathbb{R}.
+H:(q,p)\in\mathbb{R}^2 \mapsto \frac{1}{2}p^2 + \frac{1}{2}q^2 \in \mathbb{R}.
 ```
 
 Here we take the ODE from [`GeometricProblems`](https://github.com/JuliaGNI/GeometricProblems.jl) and integrate it with `GeometricIntegrators` [Kraus:2020:GeometricIntegrators](@cite):
