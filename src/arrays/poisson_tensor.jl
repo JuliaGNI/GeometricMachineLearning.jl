@@ -63,15 +63,14 @@ PoissonTensor(backend::CPU, n2::Int) = PoissonTensor(backend, n2, Float64)
     J[map_index_for_poisson_tensor(i, n)...] = i ≤ n ? one(T) : -one(T)
 end
 
-Base.:*(::PoissonTensor{T}, v::NamedTuple{(:q, :p), Tuple{AT, AT}}) where {T, AT <: AbstractVecOrMat{T}} = (q = v.p, p = -v.q)
-
 function _vcat(v::NamedTuple{(:q, :p), Tuple{AT, AT}}) where {AT <: AbstractArray}
     vcat(v.q, v.p)
 end
 
-Base.:*(𝕁::PoissonTensor{T}, v::AbstractVector{T}) where T = _vcat(𝕁 * assign_q_and_p(v, 𝕁.n))
-Base.:*(𝕁::PoissonTensor{T}, v::AbstractMatrix{T}) where T = _vcat(𝕁 * assign_q_and_p(v, 𝕁.n))
-
+Base.:*(𝕁::PoissonTensor{T}, v::QPT{T}) where T = (q = v.p, p = -v.q)
+Base.:*(𝕁::PoissonTensor{T}, v::AbstractArray{T,3}) where T = _vcat(𝕁(assign_q_and_p(v, 𝕁.n)))
+Base.:*(𝕁::PoissonTensor{T}, v::AbstractVector{T}) where T = _vcat(𝕁(assign_q_and_p(v, 𝕁.n)))
+Base.:*(𝕁::PoissonTensor{T}, v::AbstractMatrix{T}) where T = _vcat(𝕁(assign_q_and_p(v, 𝕁.n)))
 
 function (𝕁::PoissonTensor{T})(v₁::NT, v₂::NT) where {T, AT <: AbstractVector{T}, NT <: NamedTuple{(:q, :p), Tuple{AT, AT}}}
     v₁.q' * v₂.p - v₁.p' * v₂.q
@@ -81,11 +80,7 @@ function (𝕁::PoissonTensor{T})(v₁::AbstractVector{T}, v₂::AbstractVector{
     𝕁(assign_q_and_p(v₁, 𝕁.n), assign_q_and_p(v₂, 𝕁.n))
 end
 
-function (𝕁::PoissonTensor)(qp::QPT)
-    (q = qp.p, p = -qp.q)
-end
-
-Base.:*(𝕁::PoissonTensor, qp::QPT) = 𝕁(qp)
+(𝕁::PoissonTensor)(qp::QPTOAT) = 𝕁 * qp
 
 # This assigns the right index for the symplectic potential. To be used with `assign_ones_for_poisson_tensor_kernel!`.
 function map_index_for_poisson_tensor(i::Int, n::Int)
