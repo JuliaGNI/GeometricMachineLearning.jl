@@ -41,7 +41,7 @@ nothing # hide
 
 We can now train the network
 
-```@example hnn
+```julia
 batch = Batch(10)
 n_epochs = 100
 o = Optimizer(AdamOptimizer(Float64), hnn)
