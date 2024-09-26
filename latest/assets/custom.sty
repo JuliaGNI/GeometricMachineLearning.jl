@@ -4,21 +4,47 @@
 % colours
 \usepackage{xcolor}
 
-\definecolor{light-blue}{HTML}{6b85dd}
-\definecolor{dark-blue}{HTML}{4266d5}
-\definecolor{light-red}{HTML}{d66661}
-\definecolor{dark-red}{HTML}{c93d39}
-\definecolor{light-green}{HTML}{6bab5b}
-\definecolor{dark-green}{HTML}{3b972e}
-\definecolor{light-purple}{HTML}{aa7dc0}
-\definecolor{dark-purple}{HTML}{945bb0}
+\definecolor{morange}{RGB}{255,127,14}
+\definecolor{mblue}{RGB}{31,119,180}
+\definecolor{mred}{RGB}{214,39,40}
+\definecolor{mpurple}{RGB}{148,103,189}
+\definecolor{mgreen}{RGB}{44,160,44}
 \definecolor{codeblock-background}{gray}{0.96}
 \definecolor{codeblock-border}{gray}{0.8}
 %
 
 % maths
-\usepackage{amsmath, amssymb}
-%
+\usepackage{amsmath, amssymb, mathtools}
+%%%%%%%%%%% define rrangle llangle
+\DeclareFontFamily{OMX}{MnSymbolE}{}
+\DeclareSymbolFont{MnLargeSymbols}{OMX}{MnSymbolE}{m}{n}
+\SetSymbolFont{MnLargeSymbols}{bold}{OMX}{MnSymbolE}{b}{n}
+\DeclareFontShape{OMX}{MnSymbolE}{m}{n}{
+    <-6>  MnSymbolE5
+   <6-7>  MnSymbolE6
+   <7-8>  MnSymbolE7
+   <8-9>  MnSymbolE8
+   <9-10> MnSymbolE9
+  <10-12> MnSymbolE10
+  <12->   MnSymbolE12
+}{}
+\DeclareFontShape{OMX}{MnSymbolE}{b}{n}{
+    <-6>  MnSymbolE-Bold5
+   <6-7>  MnSymbolE-Bold6
+   <7-8>  MnSymbolE-Bold7
+   <8-9>  MnSymbolE-Bold8
+   <9-10> MnSymbolE-Bold9
+  <10-12> MnSymbolE-Bold10
+  <12->   MnSymbolE-Bold12
+}{}
+
+\let\llangle\@undefined
+\let\rrangle\@undefined
+\DeclareMathDelimiter{\llangle}{\mathopen}%
+                     {MnLargeSymbols}{'164}{MnLargeSymbols}{'164}
+\DeclareMathDelimiter{\rrangle}{\mathclose}%
+                     {MnLargeSymbols}{'171}{MnLargeSymbols}{'171}
+%%%%%%%%%%%
 
 % theorem
 \usepackage{amsthm}
@@ -48,7 +74,11 @@
     bgcolor = codeblock-background,
     rulecolor=codeblock-border,
 }
-%
+% fix taken from: https://gist.github.com/dn0sar/d67672d3793271a2985e4ec20f425174
+% \immediate\write18{bash ./pygmentize_patcher.sh}
+% \renewcommand{\MintedPygmentize}{./pygmentize}
+
+\usemintedstyle{xcode}%
 
 % tables
 \usepackage{tabulary}
@@ -61,8 +91,8 @@
     bookmarks,
     hyperindex,
     unicode = true,
-    linkcolor = dark-blue,
-    urlcolor = dark-purple,
+    linkcolor = mblue,
+    urlcolor = mpurple,
     colorlinks = true,
 }
 %
@@ -87,12 +117,49 @@
 \usepackage{graphicx}
 \usepackage[export]{adjustbox}
 %
+% unicode
+\usepackage{fontspec}
+\usepackage{polyglossia}
+% pick a font that can display all special symbols
+\setmonofont{DejaVu Sans Mono}[Scale=MatchLowercase]
+
+% custom hyphenation
+\usepackage[htt]{hyphenat}
+% renew texttt for better line breaks; taken from https://tex.stackexchange.com/questions/579789/combining-wrapping-texttt-with-sections-and-toc-improper-alphabetic-constan
+\DeclareRobustCommand{\texttt}[1]{%
+  \begingroup
+  \ttfamily
+  \begingroup\lccode`~=`/\lowercase{\endgroup\def~}{/\discretionary{}{}{}}%
+  \begingroup\lccode`~=`[\lowercase{\endgroup\def~}{[\discretionary{}{}{}}%
+  \begingroup\lccode`~=`.\lowercase{\endgroup\def~}{.\discretionary{}{}{}}%
+  \catcode`/=\active\catcode`[=\active\catcode`.=\active
+  \scantokens{#1\noexpand}%
+  \endgroup
+}
+
+% make correct quotation
+\def\beginquotation{``}
+\def\endquotation{"}
+
+% for Chinese characters
+\usepackage{xeCJK}
+% add unicode characters that are not included in DejaVu Sans Mono
+\usepackage{newunicodechar}
+\newunicodechar{𝔄}{{\footnotesize $\mathfrak{A}$}}
+\newunicodechar{𝔤}{{\footnotesize $\mathfrak{g}$}}
+\newunicodechar{𝕀}{{\footnotesize $\mathbb{I}$}}
+\newunicodechar{𝕁}{{\footnotesize $\mathbb{J}$}}
 
 % Some internal link targets are implemented with \label, some with \hypertarget,
 % but they require different links. This inserts a \hyperref if a corresponding label exists,
 % and \hyperlink if it doesn't.
 \def\hyperlinkref#1#2{\@ifundefined{r@#1}{\hyperlink{#1}{#2}}{\hyperref[#1]{#2}}}
 %
+\newcommand{\pagetarget}[2]{%
+  \phantomsection%
+  \label{#1}%
+  \hypertarget{#1}{#2}%
+}
 
 % styling of admonitions. tcolorbox is available in the texlive-latex-extra
 % package
