@@ -1,4 +1,4 @@
-# Comparing different `VolumePreservingAttention` mechanisms
+# Comparing Different `VolumePreservingAttention` Mechanisms
 
 In the [section on volume-preserving attention](@ref "Volume-Preserving Attention") we mentioned two ways of computing volume-preserving attention: one where we compute the correlations with a skew-symmetric matrix and one where we compute the correlations with an arbitrary matrix. Here we compare the two approaches. When calling the [`VolumePreservingAttention`](@ref) layer we can specify whether we want to use the skew-symmetric or the arbitrary weighting by setting the keyword `skew_sym = true` and `skew_sym = false` respectively. 
 
@@ -15,7 +15,7 @@ sine_cosine[1, :, 1] .= sin.(0.:.1:99.9)
 sine_cosine[1, :, 2] .= cos.(0.:.1:99.9)
 
 const T = Float16
-const dl = DataLoader(T.(sine_cosine))
+const dl = DataLoader(T.(sine_cosine); suppress_info = true)
 
 nothing # hide
 ```
@@ -50,9 +50,9 @@ ax = Axis(fig[1, 1];
     ylabelcolor = textcolor,
     )
 
-lines!(ax, dl.input[1, :, 1], label=L"\sin(t)", color=morange)
-lines!(ax, dl.input[1, :, 2], label=L"\cos(t)", color=mpurple)
-axislegend(; position = (.82, .75), backgroundcolor = :transparent, labelcolor = textcolor) # hide
+lines!(ax, dl.input[1, 1:200, 1], label=L"\sin(t)", color = morange)
+lines!(ax, dl.input[1, 1:200, 2], label=L"\cos(t)", color = mpurple)
+axislegend(; position = (.82, .75), backgroundcolor = theme == :dark ? :transparent : :white, labelcolor = textcolor) # hide
 fig_name = theme == :dark ? "curve_comparison_dark.png" : "curve_comparison.png" # hide
 save(fig_name, fig; px_per_unit = 1.2) # hide
 end # hide
@@ -63,7 +63,7 @@ nothing
 ```
 
 ```@example
-Main.include_graphics("curve_comparison"; caption = raw"The data stored in `dl` contains two different curves.")
+Main.include_graphics("curve_comparison"; width = .65, caption = raw"The data we treat here contains two different curves.") # hide
 ```
 
 We want to train a single neural network on both these curves. We already noted [before](@ref "Why use Transformers for Model Order Reduction") that a simple feedforward neural network cannot do this. Here we compare three networks which are of the following form: 
@@ -87,7 +87,6 @@ We further choose a sequence length 5 (i.e. the network always sees the last 5 t
 ```@example volume_preserving_attention
 const seq_length = 3
 const prediction_window = 1
-
 const upscale_dimension_1 = 2
 
 function set_up_networks(upscale_dimension::Int = upscale_dimension_1)
@@ -185,7 +184,7 @@ nothing
 ```
 
 ```@example
-Main.include_graphics("training_loss_vpa")
+Main.include_graphics("training_loss_vpa"; width = .65, caption = raw"The training losses for the three networks. ") # hide
 ```
 
 Looking at the training errors, we can see that the network with the skew-symmetric weighting is stuck at a relatively high error rate, whereas the loss for  the network with the arbitrary weighting is decreasing to a significantly lower level. The feedforward network without the attention mechanism is not able to learn anything useful (as was expected). 
@@ -198,9 +197,18 @@ Before we can use the trained neural networks for prediction we have to make the
 initial_condition = dl.input[:, 1:seq_length, 2]
 
 function make_networks_neural_network_integrators(nn_skew, nn_arb, nn_comp)
-    nn_skew = NeuralNetwork(GeometricMachineLearning.DummyTransformer(seq_length), nn_skew.model, nn_skew.params, CPU())
-    nn_arb  = NeuralNetwork(GeometricMachineLearning.DummyTransformer(seq_length), nn_arb.model,  nn_arb.params, CPU())
-    nn_comp = NeuralNetwork(GeometricMachineLearning.DummyNNIntegrator(), nn_comp.model, nn_comp.params, CPU())
+    nn_skew = NeuralNetwork(GeometricMachineLearning.DummyTransformer(seq_length), 
+                            nn_skew.model, 
+                            nn_skew.params, 
+                            CPU())
+    nn_arb  = NeuralNetwork(GeometricMachineLearning.DummyTransformer(seq_length), 
+                            nn_arb.model,  
+                            nn_arb.params, 
+                            CPU())
+    nn_comp = NeuralNetwork(GeometricMachineLearning.DummyNNIntegrator(), 
+                            nn_comp.model, 
+                            nn_comp.params, 
+                            CPU())
 
     nn_skew, nn_arb, nn_comp
 end
@@ -240,7 +248,7 @@ textcolor = theme == :dark ? :white : :black # hide
     lines!(ax, validation_comp[1, :], color = mgreen, label = "comp")
     vlines!(ax, [seq_length], color = mred, label = "start of prediction")
 
-    axislegend(; position = (.82, .75), backgroundcolor = :transparent, labelcolor = textcolor)
+    axislegend(; position = (.82, .75), backgroundcolor = theme == :dark ? :transparent : :white, labelcolor = textcolor)
     fig, ax
 end
 
@@ -258,30 +266,19 @@ nothing
 fig_dark, fig_light, ax_dark, ax_light  = produce_validation_plot(40) # hide
 save("plot40_dark.png", fig_dark; px_per_unit = 1.2) # hide
 save("plot40.png", fig_light; px_per_unit = 1.2) # hide
-Main.include_graphics("plot40") # hide
+Main.include_graphics("plot40"; width = .65, caption = raw"Comparing the two volume-preserving attention mechanisms for 40 points. ") # hide
 ```
 
-In the above plot we can see that the network with the arbitrary weighting performs much better; even though the green line does not fit the blue line very well either, it manages to least qualitatively reflect the training data.  We can also plot the predictions for longer time intervals: 
+In the plot above we can see that the network with the arbitrary weighting performs much better; even though the red line does not fit the purple line perfectly, it manages to least qualitatively reflect the training data.  We can also plot the predictions for longer time intervals: 
 
 ```@example volume_preserving_attention 
 fig_dark, fig_light, ax_dark, ax_light  = produce_validation_plot(400) # hide
 save("plot400_dark.png", fig_dark; px_per_unit = 1.2) # hide
 save("plot400.png", fig_light; px_per_unit = 1.2) # hide
-Main.include_graphics("plot400") # hide
-``` 
-
-We can also plot the comparison with the sine function: 
-
-```@example volume_preserving_attention 
-initial_condition = dl.input[:, 1:seq_length, 1] # hide
-
-fig_dark, fig_light, ax_dark, ax_light  = produce_validation_plot(40; initial_condition = initial_condition, type = :sin) # hide
-save("plot40_sine_dark.png", fig_dark; px_per_unit = 1.2) # hide
-save("plot40_sine.png", fig_light; px_per_unit = 1.2) # hide
-Main.include_graphics("plot40_sine") # hide
+Main.include_graphics("plot400"; width = .65, caption = raw"Comparing the two volume-preserving attention mechanisms for 400 points. ") # hide
 ```
 
-This advantage of the volume-preserving attention with arbitrary weighting may however be due to the fact that the skew-symmetric attention only has 3 learnable parameters, as opposed to 9 for the arbitrary weighting. If we increase the *upscaling dimension* the result changes: 
+This advantage of the volume-preserving attention with arbitrary weighting may however be due to the fact that the skew-symmetric attention only has 3 learnable parameters, as opposed to 9 for the arbitrary weighting. We can increase the *upscaling dimension* and see how it affects the result: 
 
 ```@example volume_preserving_attention
 const upscale_dimension_2 = 10
@@ -297,7 +294,7 @@ fig_light, ax_light = plot_training_losses(loss_array_skew, loss_array_arb, loss
 save("training_loss2_vpa.png", fig_light; px_per_unit = 1.2) # hide
 save("training_loss2_vpa_dark.png", fig_dark; px_per_unit = 1.2) # hide
 
-Main.include_graphics("training_loss2_vpa") # hide
+Main.include_graphics("training_loss2_vpa"; width = .65, caption = raw"Comparison for 40 points, but with an upscaling of ten. ") # hide
 ```
 
 ```@example volume_preserving_attention 
@@ -309,7 +306,7 @@ fig_dark, fig_light, ax_dark, ax_light = produce_validation_plot(40, nn_skew, nn
 
 save("plot40_sine2_dark.png", fig_dark; px_per_unit = 1.2) # hide
 save("plot40_sine2.png", fig_light; px_per_unit = 1.2) # hide
-Main.include_graphics("plot40_sine2") # hide
+Main.include_graphics("plot40_sine2"; width = .65) # hide
 ```
 
 And for a longer time interval: 
@@ -320,12 +317,38 @@ fig_dark, fig_light, ax_dark, ax_light = produce_validation_plot(200, nn_skew, n
 
 save("plot200_sine2_dark.png", fig_dark; px_per_unit = 1.2) # hide
 save("plot200_sine2.png", fig_light; px_per_unit = 1.2) # hide
-Main.include_graphics("plot200_sine2") # hide
+Main.include_graphics("plot200_sine2"; width = .65) # hide
 ```
+
+Here we see that the arbitrary weighting quickly fails and the skew-symmetric weighting performs better on longer time scales.
 
 ## Library Functions
 
 ```@docs
 GeometricMachineLearning.DummyNNIntegrator
 GeometricMachineLearning.DummyTransformer
+```
+
+```@raw latex
+\section*{Chapter Summary}
+
+In this chapter we showed concrete examples of how to improve transformer neural networks by imbuing them with structure. The two examples we gave were (i) enforcing orthogonality constraints for some of the weights in a vision transformer (i.e. putting some of the weights on the \textit{Stiefel manifold}) and (ii) using a volume-preserving transformer to learn the dynamics of a rigid body. In both cases we observed big improvements over the standard transformer that does not consider structure. In the first case the network was not able to learn anything if orthogonality constraints were not imposed and in the second case we obtained greatly improved long-time performance. At the end we also compared two different approaches to designing the volume-preserving transformer: computing correlations based on a \textit{skew-symmetric weighting} and \textit{computing correlations based on an arbitrary weighting}. We saw that often the arbitrary weighting should be preferred over the skew-symmetric weighting, but the arbitrary weighting may also fail in other cases.
+```
+
+```@raw html
+<!--
+```
+
+# References
+
+```@bibliography
+Pages = []
+Canonical = false
+
+brantner2023generalizing
+brantner2024volume
+```
+
+```@raw html
+-->
 ```

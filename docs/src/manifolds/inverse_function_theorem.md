@@ -1,6 +1,6 @@
-# Foundational Theorem for Differential Manifolds
+# Foundational Theorems for Differential Manifolds
 
-Here we state and proof all the theorem necessary to define [differential manifold](@ref "(Matrix) Manifolds"). All these theorems (including proofs) can be found in e.g. [lang2012fundamentals](@cite).
+Here we state and proof all the theorems necessary to define [differential manifolds](@ref "(Matrix) Manifolds"). All these theorems (including proofs) can be found in e.g. [lang2012fundamentals](@cite).
 
 ## The Fixed-Point Theorem 
 
@@ -81,6 +81,10 @@ Main.proof(raw"Consider the map ``x = (x_1, \ldots, x_{n+m}) = (f(x), x_{n+1}, \
 
 The implicit function will be used to proof the [preimage theorem](@ref "The Preimage Theorem") which we use as a basis to construct all the manifolds in `GeometricMachineLearning`.
 
+```@raw latex
+\begin{comment}
+```
+
 ## References
 
 ```@bibliography
@@ -90,3 +94,6 @@ Canonical = false
 lang2012fundamentals
 ```
 
+```@raw latex
+\end{comment}
+```

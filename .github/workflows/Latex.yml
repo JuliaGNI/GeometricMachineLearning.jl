@@ -17,8 +17,9 @@ jobs:
             sudo apt-get install poppler-utils
             sudo apt-get install texlive-xetex
             sudo apt-get install texlive-science
-      - name: Make images
-        run: make latex -C docs/src/tikz
+            sudo apt-get install latex-cjk-all
+            sudo apt-get install texlive-fonts-recommended
+            sudo apt-get install texlive-fonts-extra
       - uses: julia-actions/setup-julia@latest
         with:
           version: '1'
@@ -29,8 +30,10 @@ jobs:
           cd .. 
       - name: Make MNIST image
         run: make all -C docs/src/tutorials/mnist
+      - name: Make tikz images
+        run: make latex -C docs/src/tikz
       - name: make tex document
-        run: DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' julia --project=docs --threads=2 docs/make.jl latex_output
+        run: DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' julia --project=docs --color=yes --threads=2 docs/make.jl latex_output
       - name: Some sed magic 
         run: |
           make copy_png_files -C docs
@@ -38,6 +41,11 @@ jobs:
           make do_correct_quotation_marks -C docs
           make make_correct_thrm_and_dfntn_and_xmpl_and_rmrk_and_proof_environment -C docs
           make references_instead_of_hyperlinks -C docs
+          make correct_appendix -C docs
+          make remove_home_part -C docs
+          make remove_numbering_for_some_chapters -C docs
+          make docstring_indexing -C docs
+          make fix_long_urls -C docs
       - name: compile tex document
         run: |
           cd docs/build 

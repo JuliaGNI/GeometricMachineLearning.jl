@@ -1,4 +1,6 @@
 @doc raw"""
+    StiefelManifold <: Manifold
+
 An implementation of the Stiefel manifold [hairer2006geometric](@cite). The Stiefel manifold is the collection of all matrices ``Y\in\mathbb{R}^{N\times{}n}`` whose columns are orthonormal, i.e. 
 
 ```math
@@ -6,7 +8,7 @@ An implementation of the Stiefel manifold [hairer2006geometric](@cite). The Stie
 ```
 
 The Stiefel manifold can be shown to have manifold structure (as the name suggests) and this is heavily used in `GeometricMachineLearning`. It is further a compact space. 
-More information can be found in the docstrings for `rgrad(::StiefelManifold, ::AbstractMatrix)`` and `metric(::StiefelManifold, ::AbstractMatrix, ::AbstractMatrix)`.
+More information can be found in the docstrings for [`rgrad(::StiefelManifold, ::AbstractMatrix)`](@ref) and [`metric(::StiefelManifold, ::AbstractMatrix, ::AbstractMatrix)`](@ref).
 """
 mutable struct StiefelManifold{T, AT <: AbstractMatrix{T}} <: Manifold{T}
     A::AT
@@ -28,18 +30,21 @@ function Base.:*(Y::Adjoint{T, ST}, B::ST) where {T, AT<:AbstractMatrix{T}, ST<:
 end
 
 @doc raw"""
-    rgrad(Y::StiefelManifold, e_grad::AbstractMatrix)
+    rgrad(Y::StiefelManifold, ∇L::AbstractMatrix)
 
-Compute the Riemannian gradient for the Stiefel manifold at ``Y\in{}St(N,n)`` based on ``\nabla{}L\in\mathbb{R}^{N\times{}n}`` (the Euclidean gradient). 
+Compute the Riemannian gradient for the Stiefel manifold at `Y` based on `∇L`.
     
-The function computes the Riemannian gradient with respect to the canonical [`metric`](@ref).
+Here ``Y\in{}St(N,n)`` and ``\nabla{}L\in\mathbb{R}^{N\times{}n}`` is the Euclidean gradient. 
+    
+The function computes the Riemannian gradient with respect to the canonical metric:
+[`metric(::StiefelManifold, ::AbstractMatrix, ::AbstractMatrix)`](@ref).
 
 The precise form of the mapping is: 
 ```math
 \mathtt{rgrad}(Y, \nabla{}L) \mapsto \nabla{}L - Y(\nabla{}L)^TY
 ```
 
-Note the property ``Y^T\mathrm{rgrad}(Y, \nabla{}L)\in\mathcal{S}_\mathrm{skew}(n).``
+Note the property ``Y^T\mathtt{rgrad}(Y, \nabla{}L)\in\mathcal{S}_\mathrm{skew}(n).``
 
 # Examples
 
@@ -59,19 +64,19 @@ rgrad(Y, Δ)
  7   8
 ```
 """
-function rgrad(Y::StiefelManifold, e_grad::AbstractMatrix)
-    e_grad - Y.A * (e_grad' * Y.A)
+function rgrad(Y::StiefelManifold, ∇L::AbstractMatrix)
+    ∇L - Y.A * (∇L' * Y.A)
 end
 
 @doc raw"""
-Implements the canonical Riemannian metric for the Stiefel manifold:
+    metric(Y::StiefelManifold, Δ₁::AbstractMatrix, Δ₂::AbstractMatrix)
+
+Compute the dot product for `Δ₁` and `Δ₂` at `Y`.
+
+This uses the canonical Riemannian metric for the Stiefel manifold:
 ```math 
-g_Y: (\Delta_1, \Delta_2) \mapsto \mathrm{tr}(\Delta_1^T(\mathbb{I} - \frac{1}{2}YY^T)\Delta_2).
+g_Y: (\Delta_1, \Delta_2) \mapsto \mathrm{Tr}(\Delta_1^T(\mathbb{I} - \frac{1}{2}YY^T)\Delta_2).
 ```
-It is called with: 
-- `Y::StiefelManifold`
-- `Δ₁::AbstractMatrix`
-- `Δ₂::AbstractMatrix`
 """
 function metric(Y::StiefelManifold, Δ₁::AbstractMatrix, Δ₂::AbstractMatrix)
     LinearAlgebra.tr(Δ₁'*(I - .5*Y.A*Y.A')*Δ₂)
@@ -146,7 +151,7 @@ Internally this performs
 SkewSymMatrix(2 * (I(n) - .5 * Y * Y') * Δ * Y')
 ```
 
-to save memory. 
+It uses [`SkewSymMatrix`](@ref) to save memory. 
 
 # Examples 
 

@@ -1,17 +1,24 @@
+const vpt_n_blocks_default = 1
+const vpt_n_linear_default = 1
+const vpt_L_default = 1
+const vpt_activation_default = tanh
+const vpt_init_upper_default = false
+const vpt_skew_sym_default = false
+
 @doc raw"""
     VolumePreservingTransformer(sys_dim, seq_length)
 
 Make an instance of the volume-preserving transformer for a given system dimension and sequence length.
 
-#Arguments
+# Arguments
 
 The following are keyword argumetns:
-- `n_blocks::Int=1`: The number of blocks in one transformer unit (containing linear layers and nonlinear layers).
-- `n_linear::Int=1`: The number of linear `VolumePreservingLowerLayer`s and `VolumePreservingUpperLayer`s in one block.
-- `L::Int=1`: The number of transformer units. 
-- `activation=tanh`: The activation function.
-- `init_upper::Bool=false`: Specifies if the network first acts on the ``q`` component. 
-- `skew_sym::Bool=false`: specifies if we the weight matrix is skew symmetric or arbitrary.
+- `n_blocks::Int = """ * "$(vpt_n_blocks_default)`" * raw""": The number of blocks in one transformer unit (containing linear layers and nonlinear layers).
+- `n_linear::Int = """ * "$(vpt_n_linear_default)`" * raw""": The number of linear `VolumePreservingLowerLayer`s and `VolumePreservingUpperLayer`s in one block.
+- `L::Int = """ * "$(vpt_L_default)`" * raw""": The number of transformer units. 
+- `activation = """ * "$(vpt_activation_default)`" * raw""": The activation function.
+- `init_upper::Bool = """ * "$(vpt_init_upper_default)`" * raw""": Specifies if the network first acts on the ``q`` component. 
+- `skew_sym::Bool = """ * "$(vpt_skew_sym_default)`" * raw""": specifies if we the weight matrix is skew symmetric or arbitrary.
 """
 struct VolumePreservingTransformer{AT} <: TransformerIntegrator 
     sys_dim::Int 
@@ -24,7 +31,12 @@ struct VolumePreservingTransformer{AT} <: TransformerIntegrator
     skew_sym::Bool
 end
 
-function VolumePreservingTransformer(sys_dim::Int, seq_length::Int; n_blocks::Int=1, n_linear::Int=1, activation=tanh, L::Int=2, init_upper::Bool=false, skew_sym::Bool=false)
+function VolumePreservingTransformer(sys_dim::Int, seq_length::Int; n_blocks::Int = vpt_n_blocks_default, 
+                                                                    n_linear::Int = vpt_n_linear_default, 
+                                                                    activation = vpt_activation_default, 
+                                                                    L::Int = vpt_L_default, 
+                                                                    init_upper::Bool = vpt_init_upper_default, 
+                                                                    skew_sym::Bool = vpt_skew_sym_default)
     VolumePreservingTransformer{typeof(activation)}(sys_dim, seq_length, n_blocks, n_linear, L, activation, init_upper, skew_sym)
 end
 

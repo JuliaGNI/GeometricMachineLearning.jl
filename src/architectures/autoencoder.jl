@@ -1,20 +1,30 @@
 @doc raw"""
+    AutoEncoder <: Architecture
+
+The abstract `AutoEncoder` type.
+
 An autoencoder [goodfellow2016deep](@cite) is a neural network consisting of an encoder ``\Psi^e`` and a decoder ``\Psi^d``. In the simplest case they are trained on some data set ``\mathcal{D}`` to reduce the following error: 
 
 ```math
 ||\Psi^d\circ\Psi^e(\mathcal{D}) - \mathcal{D}||,
 ```
 
-which we call the *reconstruction error* or *autoencoder error* (see the docs for [AutoEncoderLoss](@ref)) and ``||\cdot||`` is some norm.
+which we call the *reconstruction error*, *projection error* or *autoencoder error* (see the docs for [`AutoEncoderLoss`](@ref)) and ``||\cdot||`` is some norm.
 
 # Implementation
 
-Abstract `AutoEncoder` type. If a custom `<:AutoEncoder` architecture is implemented it should have the fields `full_dim`, `reduced_dim`, `n_encoder_blocks` and `n_decoder_blocks`. Further the routines `encoder`, `decoder`, `encoder_parameters` and `decoder_parameters` should be extended.
+`AutoEncoder` is an abstract type. If a custom `<:AutoEncoder` architecture is implemented it should have the fields `full_dim`, `reduced_dim`, `n_encoder_blocks` and `n_decoder_blocks`. 
+
+`n_encoder_blocks` and `n_decoder_blocks` indicate how often the dimension is changed in the encoder (respectively the decoder).
+
+Further the routines [`encoder`](@ref) and [`decoder`](@ref) should be extended.
 """
 abstract type AutoEncoder <: Architecture end
 
 """
-Abstract `Encoder` type. 
+    Encoder <: Architecture
+
+This is the abstract `Encoder` type. 
 
 Most often this should not be called directly, but rather through the [`encoder`](@ref) function.
 
@@ -25,7 +35,9 @@ If a custom `<:Encoder` architecture is implemented it should have the fields `f
 abstract type Encoder <: Architecture end 
 
 """
-Abstract `Decoder` type. 
+    Decoder <: Architecture
+
+This is the abstract `Decoder` type. 
 
 Most often this should not be called directly, but rather through the [`decoder`](@ref) function.
 
@@ -38,14 +50,18 @@ abstract type Decoder <: Architecture end
 abstract type SymplecticCompression <: AutoEncoder end
 
 """
-Abstract `SymplecticEncoder` type. 
+    SymplecticEncoder <: Encoder
+
+This is the abstract `SymplecticEncoder` type. 
 
 See [`Encoder`](@ref) for the super type and [`NonLinearSymplecticEncoder`](@ref) for a derived `struct`.
 """
 abstract type SymplecticEncoder <: Encoder end 
 
 """
-Abstract `SymplecticDecoder` type.
+    SymplecticDecoder <: Decoder
+
+This is the abstract `SymplecticDecoder` type.
 
 See [`Decoder`](@ref) for the super type and [`NonLinearSymplecticDecoder`](@ref) for a derived `struct`.
 """
@@ -58,7 +74,25 @@ const SymplecticDimensionChange = Union{SymplecticCompression, SymplecticEncoder
 
 Make an instance of `UnknownEncoder`.
 
-This should be used if one wants to use an [`Encoder`](@ref) that doesn't have any specific structure.
+This should be used if one wants to use an [`Encoder`](@ref) that does not have any specific structure.
+
+# Examples
+
+We show how to make an encoder from a custom architecture:
+
+```jldoctest
+using GeometricMachineLearning
+using GeometricMachineLearning: UnknownEncoder
+
+model = Chain(Dense(5, 3, tanh; use_bias = false), Dense(3, 2, identity; use_bias = false))
+nn = NeuralNetwork(UnknownEncoder(5, 2, 2), model, initialparameters(model), CPU())
+
+typeof(nn) <: NeuralNetwork{<:GeometricMachineLearning.Encoder}
+
+# output
+
+true
+```
 """
 struct UnknownEncoder <: Encoder 
     full_dim::Int
@@ -71,7 +105,9 @@ end
 
 Make an instance of `UnknownDecoder`.
 
-This should be used if one wants to use an [`Decoder`](@ref) that doesn't have any specific structure.
+This should be used if one wants to use an [`Decoder`](@ref) that does not have any specific structure.
+
+An example of using this can be constructed analogously to [`UnknownDecoder`](@ref).
 """
 struct UnknownDecoder <: Decoder 
     full_dim::Int 
@@ -128,11 +164,21 @@ function decoder_model(arch::AutoEncoder)
     Chain(decoder_layers_from_iteration(arch, decoder_iterations)...)
 end
 
+# """
+#     encoder_parameters(nn::NeuralNetwork{<:AutoEncoder})
+# 
+# Take a neural network of type [`AutoEncoder`](@ref) and return the parameters of the [`Encoder`](@ref).
+# """
 function encoder_parameters(nn::NeuralNetwork{<:AutoEncoder})
     n_encoder_layers = length(encoder_model(nn.architecture).layers)
     nn.params[1:n_encoder_layers]
 end
 
+# """
+#     decoder_parameters(nn::NeuralNetwork{<:AutoEncoder})
+# 
+# Take a neural network of type [`AutoEncoder`](@ref) and return the parameters of the [`Decoder`](@ref).
+# """
 function decoder_parameters(nn::NeuralNetwork{<:AutoEncoder})
     n_decoder_layers = length(decoder_model(nn.architecture).layers)
     nn.params[(end - (n_decoder_layers - 1)):end]
@@ -145,16 +191,20 @@ end
 """
     encoder(nn::NeuralNetwork{<:AutoEncoder})
 
-Obtain the *encoder* from a [`AutoEncoder`](@ref) neural network. 
-
-The input is a neural network and the output is as well.
+Obtain the *encoder* from an [`AutoEncoder`](@ref) neural network. 
 """
 function encoder(nn::NeuralNetwork{<:AutoEncoder})
-    NeuralNetwork(UnknownEncoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks), encoder_model(nn.architecture), encoder_parameters(nn), get_backend(nn))
+    NeuralNetwork(  UnknownEncoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks), 
+                    encoder_model(nn.architecture), 
+                    encoder_parameters(nn), 
+                    get_backend(nn))
 end
 
 function _encoder(nn::NeuralNetwork, full_dim::Integer, reduced_dim::Integer)
-    NeuralNetwork(UnknownEncoder(full_dim, reduced_dim, length(nn.model.layers)), nn.model, nn.params, get_backend(nn))
+    NeuralNetwork(  UnknownEncoder(full_dim, reduced_dim, length(nn.model.layers)), 
+                    nn.model, 
+                    nn.params, 
+                    get_backend(nn))
 end
 
 function input_dimension(::AbstractExplicitLayer{M, N}) where {M, N}
@@ -170,7 +220,7 @@ end
 
 Make a neural network of type [`Encoder`](@ref) out of an arbitrary neural network.
 
-# Implementtion
+# Implementation
 
 Internally this allocates a new nerual network of type [`UnknownEncoder`](@ref) and takes the parameters and the backend from `nn`.
 """
@@ -181,9 +231,7 @@ end
 """
     decoder(nn::NeuralNetwork{<:AutoEncoder})
 
-Obtain the *decoder* from a [`AutoEncoder`](@ref) neural network. 
-
-The input is a neural network and the output is as well.
+Obtain the *decoder* from an [`AutoEncoder`](@ref) neural network.
 """
 function decoder(nn::NeuralNetwork{<:AutoEncoder})
     NeuralNetwork(UnknownDecoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks), decoder_model(nn.architecture), decoder_parameters(nn), get_backend(nn))
@@ -198,7 +246,7 @@ end
 
 Make a neural network of type [`Decoder`](@ref) out of an arbitrary neural network.
 
-# Implementtion
+# Implementation
 
 Internally this allocates a new nerual network of type [`UnknownDecoder`](@ref) and takes the parameters and the backend from `nn`.
 """

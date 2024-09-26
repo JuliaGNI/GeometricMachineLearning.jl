@@ -3,15 +3,16 @@ using GeometricIntegrators: integrate, ImplicitMidpoint
 using CairoMakie
 using GeometricProblems.TodaLattice: hodeensemble
 using GeometricMachineLearning 
+using JLD2
 import Random
 
 backend = CUDABackend()
 
 params = [(α = α̃ ^ 2, N = 200) for α̃ in 0.8 : .1 : 0.8]
-pr = hodeensemble(; tspan = (0.0, 1000.), parameters = params)
+pr = hodeensemble(; tspan = (0.0, 800.), parameters = params)
 sol = integrate(pr, ImplicitMidpoint())
-dl_cpu = DataLoader(sol; autoencoder = true)
-dl = DataLoader(dl_cpu, backend, Float32)
+dl_cpu_64 = DataLoader(sol; autoencoder = true)
+dl = DataLoader(dl_cpu_64, backend, Float32)
 
 const reduced_dim = 2
 
@@ -22,7 +23,7 @@ Random.seed!(123)
 psd_nn = NeuralNetwork(psd_arch, backend)
 sae_nn = NeuralNetwork(sae_arch, backend)
 
-const n_epochs = 131072
+const n_epochs = 262144
 const batch_size = 4096
 
 sae_method = AdamOptimizerWithDecay(n_epochs)
@@ -48,6 +49,9 @@ axislegend(; position = (.82, .75), backgroundcolor = :transparent, color = text
 save("symplectic_autoencoder_validation/compare_errors.pdf", fig)
 
 const mtc = GeometricMachineLearning.map_to_cpu
+
+save("sae_parameters.jld2", "sae_parameters", sae_nn.params |> mtc, "training loss", sae_error)
+
 psd_nn_cpu = mtc(psd_nn)
 sae_nn_cpu = mtc(sae_nn)
 psd_rs = HRedSys(pr, encoder(psd_nn_cpu), decoder(psd_nn_cpu); integrator = ImplicitMidpoint())
@@ -76,7 +80,7 @@ sae_rs = HRedSys(pr, encoder(sae_nn_cpu), decoder(sae_nn_cpu); integrator = Impl
 data_processed = encoder(sae_nn)(dl.input)
 
 dl_reduced = DataLoader(data_processed; autoencoder = false)
-integrator_train_epochs = 65536
+integrator_train_epochs = 262144
 integrator_batch_size = 4096
 
 seq_length = 4
@@ -93,7 +97,9 @@ dl_integration = DataLoader(dl; autoencoder = false)
 # the regular transformer can't deal with symplectic data!
 dl_integration = DataLoader(vcat(dl_integration.input.q, dl_integration.input.p))
 integrator_batch = Batch(integrator_batch_size, seq_length)
-o_integrator(integrator_nn, dl_integration, integrator_batch, integrator_train_epochs, loss)
+train_integrator_loss = o_integrator(integrator_nn, dl_integration, integrator_batch, integrator_train_epochs, loss)
+
+save("integrator_parameters.jld2", "integrator_parameters", integrator_nn.params |> mtc, "training loss", train_integrator_loss)
 
 const ics_nt = (q = mtc(dl_reduced.input.q[:, 1:seq_length, 1]), p = mtc(dl_reduced.input.p[:, 1:seq_length, 1]))
 const ics = vcat(ics_nt.q, ics_nt.p)
@@ -125,9 +131,9 @@ function plot_validation(t_steps::Integer=100)
     save(name * "_with_nn_integrator.pdf", fig_val)
 end
 
-for t_steps in 0:20:9980
-    plot_validation(t_steps)
-end
+# for t_steps in 0:20:9980
+#     plot_validation(t_steps)
+# end
 
 ######################################################################
 

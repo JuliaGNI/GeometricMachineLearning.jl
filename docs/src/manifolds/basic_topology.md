@@ -1,6 +1,11 @@
+```@raw latex
+% This is a summary of the manifold chapter; this is only visible in the latex version
+In this chapter we introduce basic concepts necessary to discuss manifolds and manifold optimization. We begin by discussing \textit{topological vector spaces} and \textit{topological metric spaces}, and several theorems important for developing a theory of manifolds such as the \textit{implicit function theorem}. We then define manifolds and discuss the \textit{preimage theorem} and the \textit{immersion theorem} as tools to give general spaces the structure of a manifold. We then proceed with a discussion on \textit{geodesics} and \textit{Riemannian manifolds}. The chapter concludes with a presentation of \textit{homogeneous spaces} and their \textit{global tangent space representation} that will be crucial for generalizing neural network optimizers to the manifold setting.
+```
+
 # Basic Concepts from General Topology
 
-On this page we discuss basic notions of topology that are necessary to define [manifolds](@ref "(Matrix) Manifolds") and work with them. Here we largely omit concrete examples and only define concepts that are necessary for defining a manifold[^1], namely the properties of being *Hausdorff* and *second countable*. For a detailed discussion of the theory and for a wide range of examples that illustrate the theory see e.g. [lipschutz1965general](@cite). The here-presented concepts are also (rudimentarily) covered in most differential geometry books such as [lang2012fundamentals, bishop1980tensor](@cite). 
+Here we discuss basic notions of topology that are necessary to define [manifolds](@ref "(Matrix) Manifolds") and work with them. Here we largely omit concrete examples and only define concepts that are necessary for defining a manifold[^1], namely the properties of being *Hausdorff* and *second countable*. For a detailed discussion of the theory and for a wide range of examples that illustrate this theory see e.g. [lipschutz1965general](@cite). The here-presented concepts are also (rudimentarily) covered in most differential geometry textbooks such as [lang2012fundamentals, bishop1980tensor](@cite). 
 
 
 [^1]: Some authors (see e.g. [lang2012fundamentals](@cite)) do not require these properties. But since they constitute very weak restrictions and are always satisfied by the manifolds relevant for our purposes we require them here. 
@@ -8,7 +13,7 @@ On this page we discuss basic notions of topology that are necessary to define [
 We now start by giving all the definitions, theorem and corresponding proofs that are needed to define manifolds. Every manifold is a *topological space* which is why we give this definition first: 
 
 ```@eval
-Main.definition(raw"A **topological space** is a set ``\mathcal{M}`` for which we define a collection of subsets of ``\mathcal{M}``, which we denote by ``\mathcal{T}`` and call the *open subsets*. ``\mathcal{T}`` further has to satisfy the following three conditions:
+Main.definition(raw"A **topological space** is a set ``\mathcal{M}`` for which we are given a collection of subsets of ``\mathcal{M}``, which we denote by ``\mathcal{T}`` and call the *open subsets*. ``\mathcal{T}`` further has to satisfy the following three conditions:
 " *
 Main.indentation * raw"1. The empty set and ``\mathcal{M}`` belong to ``\mathcal{T}``.
 " *
@@ -40,7 +45,7 @@ Main.definition(raw"A mapping ``f`` between topological spaces ``\mathcal{M}`` a
 Continuity can also be formulated in terms of *closed sets* instead of doing it with *open sets*. The definition of closed sets is given below:
 
 ```@eval
-Main.definition(raw"A **closed set** of a topological space ``\mathcal{M}`` is one whose complement is an open set, i.e. ``F`` is closed if ``F^c\in\mathcal{T}``, where the superscript ``{}^c`` indicates the complement. For closed sets we thus have the following three properties:
+Main.definition(raw"A **closed set** of a topological space ``\mathcal{M}`` is one whose complement is an open set, i.e. ``F`` is closed if ``F^c\in\mathcal{T}``, where the superscript ``{}^c`` indicates the complement: ``F^c := \{x\in\mathcal{M}:x\not\in{}F\}.`` For closed sets we thus have the following three properties:
 " *
 Main.indentation * raw"1. The empty set and ``\mathcal{M}`` are closed sets.
 " *
@@ -51,10 +56,10 @@ Main.indentation * raw"3. Any intersection of an arbitrary number of closed sets
 Main.indentation * "So a finite union of closed sets is again closed and an arbitrary intersection of closed sets is again closed.")
 ```
 
-We now give an equivalent definition of continuity: 
+We now give the definition of continuity in terms of closed sets: 
 
 ```@eval
-Main.theorem(raw"The definition of continuity is equivalent to the following, second definition: ``f:\mathcal{M}\to\mathcal{N}`` is continuous if ``f^{-1}\{F\}\subset\mathcal{M}`` is a closed set for each closed set ``F\subset\mathcal{N}``.")
+Main.theorem(raw"The definition of continuity in terms of open sets is equivalent to the following, second definition: ``f:\mathcal{M}\to\mathcal{N}`` is continuous if ``f^{-1}\{F\}\subset\mathcal{M}`` is a closed set for each closed set ``F\subset\mathcal{N}``.")
 ```
 
 ```@eval
@@ -105,6 +110,8 @@ Main.theorem(raw"A closed subset of a compact space is compact.")
 Main.proof(raw"Call the closed set ``F`` and consider an open cover of this set: ``\{U\}_{i\in\mathcal{I}}``. Then this open cover combined with ``F^c`` is an open cover for the entire compact space, hence reducible to a finite cover.")
 ```
 
+If a set is contained in a Hausdorff space and is also compact we have:
+
 ```@eval
 Main.theorem(raw"A compact subset of a Hausdorff space is closed.")
 ```
@@ -116,7 +123,7 @@ Main.proof(raw"Consider a compact subset ``K``. If ``K`` is not closed, then the
 This last theorem we will use in proofing the [inverse function theorem](@ref "The Inverse Function Theorem"):
 
 ```@eval
-Main.theorem(raw"If ``\mathcal{M}`` is compact and ``\mathcal{N}`` is Hausdorff, then the inverse of a continuous function ``f:\mathcal{M}\to\mathcal{N}`` is again continuous, i.e. ``f(V)`` is an open set in ``\mathcal{N}`` for ``V\in\mathcal{T}``.")
+Main.theorem(raw"If ``\mathcal{M}`` is compact and ``\mathcal{N}`` is Hausdorff, then the inverse of a continuous injective function ``f:\mathcal{M}\to\mathcal{N}`` is again continuous, i.e. ``f(V)`` is an open set in ``\mathcal{N}`` for ``V\in\mathcal{T}``.")
 ```
 
 ```@eval
@@ -131,8 +138,13 @@ Main.definition(raw"A set ``U`` is called **dense in ``D``**, where ``U\subset{}
 
 We will come back to the notion of *denseness* when talking about the [universal approximation theorem for SympNets](@ref "Universal Approximation Theorems").
 
+```@raw latex
+\begin{comment}
+```
+
 ## References 
 
+references = raw"""
 ```@bibliography
 Pages = []
 Canonical = false 
@@ -140,4 +152,8 @@ Canonical = false
 lipschutz1965general
 lang2012fundamentals
 bishop1980tensor
+```
+
+```@raw latex
+\end{comment}
 ```

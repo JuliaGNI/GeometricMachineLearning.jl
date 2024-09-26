@@ -1,7 +1,7 @@
 
 .PHONY: documenter images
 
-all: html
+all: test_docs html
 
 latex_no_images: latex_no_pdf_no_images
 	$(MAKE) compile_tex;
@@ -11,13 +11,13 @@ latex: latex_no_pdf
 	$(MAKE) compile_tex;
 	$(MAKE) compile_tex
 
-latex_no_pdf_no_images: install_brenier_two_fluid latex_docs_no_pdf copy_png_files put_figures_outside_of_minted_environment do_correct_quotation_marks make_correct_thrm_and_dfntn_and_xmpl_and_rmrk_and_proof_environment references_instead_of_hyperlinks
+latex_no_pdf_no_images: install_brenier_two_fluid latex_docs_no_pdf copy_png_files put_figures_outside_of_minted_environment do_correct_quotation_marks make_correct_thrm_and_dfntn_and_xmpl_and_rmrk_and_proof_environment references_instead_of_hyperlinks correct_appendix remove_home_part remove_numbering_for_some_chapters docstring_indexing fix_long_urls
 
-latex_no_pdf: latex_images mnist_image latex_no_pdf_no_images 
+latex_no_pdf: latex_images mnist_image latex_no_pdf_no_images
 
 html: html_images mnist_image html_no_images
 
-html_no_images: install_brenier_two_fluid test_docs documenter
+html_no_images: install_brenier_two_fluid documenter
 
 test_docs: 
 	cd ..; julia --project=docs  -e ';									\
@@ -96,11 +96,34 @@ make_correct_thrm_and_dfntn_and_xmpl_and_rmrk_and_proof_environment:
 	sed -i'' -e 's/{\\textbackslash}label\\{rmrk:\([a-zA-Z]*\)\\}/\\label{rmrk:\1}/g' build/G*.tex;
 
 do_correct_quotation_marks:
-	sed -i'' -e 's/{\\textquotedbl}/"/g' build/G*.tex;
-	sed -i'' -e 's/ "/ ``/g' build/G*.tex
+	sed -i'' -e 's/{\\textquotedbl}/{\\endquotation}/g' build/G*.tex;
+	sed -i'' -e 's/ {\\endquotation}/ {\\beginquotation}/g' build/G*.tex
 
 references_instead_of_hyperlinks:
 	sed -i'' -e 's/\\hyperlinkref{\([0-9]*\)}{\([a-zA-Z -]*\)}/\2 (see \\Cref{\1})/g' build/G*.tex
+
+correct_appendix:
+	sed -i'' -e 's/\\part{Appendix}/\\appendix\\part{Appendix}/g' build/G*.tex
+
+remove_home_part:
+	sed -i'' -e 's/\\part{HOME}/ /g' build/G*.tex
+
+remove_numbering_for_some_chapters:
+	sed -i'' -e 's/\\chapter{Index of Docstrings}/\\chapter*{Index of Docstrings}/g' build/G*.tex;
+	sed -i'' -e 's/\\chapter{References}/\\chapter*{References}/g' build/G*.tex;
+	sed -i'' -e 's/\\chapter{Preliminary Remarks and Acknowledgements}/\\chapter*{Preliminary Remarks and Acknowledgements}/g' build/G*.tex;
+	sed -i'' -e 's/\\chapter{Abstract}/\\chapter*{Abstract}/g' build/G*.tex;
+	sed -i'' -e 's/\\chapter{Zusammenfassung}/\\chapter*{Zusammenfassung}/g' build/G*.tex;
+	sed -i'' -e 's/\\chapter{Summary}/\\chapter*{Summary}/g' build/G*.tex;
+	sed -i'' -e 's/\\chapter{Conclusion}/\\chapter*{Conclusion}/g' build/G*.tex;
+	sed -i'' -e 's/\\chapter{Learning a Reduced Model with Symplectic Autoencoders}/\\chapter[A Reduced Model with Symplectic Autoencoders]{Learning a Reduced Model with Symplectic Autoencoders}/g' build/G*.tex;
+	sed -i'' -e 's/\\section{Reduced Order Modeling as Motivation}/\\section*{Reduced Order Modeling as Motivation}/g' build/G*.tex;
+	sed -i'' -e 's/\\section{Structure-Preserving Reduced Order Modeling of Hamiltonian Systems - The Offline Phase}/\\section*{Structure-Preserving Reduced Order Modeling of Hamiltonian Systems - The Offline Phase}/g' build/G*.tex;
+	sed -i'' -e 's/\\section{Structure-Preserving Neural Network-Based Integrators - The Online Phase}/\\section*{Structure-Preserving Neural Network-Based Integrators - The Online Phase}/g' build/G*.tex;
+	sed -i'' -e 's/\\section{Structure-Preserving Optimizers}/\\section*{Structure-Preserving Optimizers}/g' build/G*.tex;
+	sed -i'' -e 's/\\section{Outlook}/\\section*{Outlook}/g' build/G*.tex;
+	sed -i'' -e 's/\\section{Chapter Summary}/\\section*{Chapter Summary}/g' build/G*.tex;
+	sed -i'' -e 's/\\section{References}/\\section*{References}/g' build/G*.tex;
 
 copy_png_files:
 	find build/manifolds -name \*.png -exec cp {} build \; ;
@@ -108,3 +131,10 @@ copy_png_files:
 	find build/tutorials -name \*.png -exec cp {} build \;
 	find build/reduced_order_modeling -name \*.png -exec cp {} build \;
 	find build/tutorials/mnist -name \*.png -exec cp {} build \;
+
+docstring_indexing:
+	sed -i'' -e 's/\\item \\hyperlinkref{\([0-9]*\)}{\\texttt{\(.*\)}}/\\item \\hyperlinkref{\1}{\\texttt{\2}}: page \\pageref{\1}/g' build/G*.tex;
+	sed -i'' -e 's/\\hypertarget{\(.*\)}{\(.*\)}/\\pagetarget{\1}{\2}/g' build/G*.tex
+
+fix_long_urls:
+	sed -i'' -e 's/\\href{\([a-z0-9:/.-]*\)}{\\texttt{[a-z0-9:/.-]*}}/\\url{\1}/g' build/G*.tex

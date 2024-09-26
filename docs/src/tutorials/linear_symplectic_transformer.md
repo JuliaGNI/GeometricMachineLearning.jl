@@ -1,9 +1,9 @@
 # [Linear Symplectic Transformer](@id linear_symplectic_transformer_tutorial)
 
-In this tutorial we compare the [linear symplectic transformer](@ref "Linear Symplectic Transformer") to the [standard transformer](@ref "Standard Transformer"). The example we treat here is the *coupled harmonic oscillator*:
+In this section we compare the [linear symplectic transformer](@ref "Linear Symplectic Transformer") to the [standard transformer](@ref "Standard Transformer"). The example we treat here is the *coupled harmonic oscillator*:
 
 ```@example
-Main.include_graphics("../tikz/coupled_harmonic_oscillator"; caption = raw"Visualization of the coupled harmonic oscillator.") # hide
+Main.include_graphics("../tikz/coupled_harmonic_oscillator"; caption = raw"Visualization of the coupled harmonic oscillator. ") # hide
 ```
 
 It is a [Hamiltonian system](@ref "Symplectic Systems") with 
@@ -12,10 +12,10 @@ It is a [Hamiltonian system](@ref "Symplectic Systems") with
 H(q_1, q_2, p_1, p_2) = \frac{q_1^2}{2m_1} + \frac{q_2^2}{2m_2} + k_1\frac{q_1^2}{2} + k_2\frac{q_2^2}{2} +  k\sigma(q_1)\frac{(q_2 - q_1)^2}{2},
 ```
 where ``\sigma(x) = 1 / (1 + e^{-x})`` is the sigmoid activation function. The system parameters are:
-- ``k_1``: spring constant of mass 1
-- ``k_2``: spring constant of mass 2
-- ``m_1``: mass 1
-- ``m_2``: mass 2
+- ``k_1``: spring constant belonging to ``m_1``,
+- ``k_2``: spring constant belonging to ``m_2``,
+- ``m_1``: mass 1,
+- ``m_2``: mass 2,
 - ``k``: coupling strength between the two masses. 
 
 To demonstrate the efficacy of the linear symplectic transformer here we will leave the parameters fixed but alter the initial conditions[^1]:
@@ -30,7 +30,6 @@ using LaTeXStrings # hide
 using CairoMakie  # hide
 CairoMakie.activate!() # hide
 import Random # hide
-
 Random.seed!(123) # hide
 
 const tstep = .3
@@ -38,9 +37,8 @@ const n_init_con = 5
 
 # ensemble problem
 ep = hodeensemble([rand(2) for _ in 1:n_init_con], [rand(2) for _ in 1:n_init_con]; tstep = tstep)
-
-dl_nt = DataLoader(integrate(ep, ImplicitMidpoint()))
-dl = DataLoader(vcat(dl_nt.input.q, dl_nt.input.p))  # hide
+dl = DataLoader(integrate(ep, ImplicitMidpoint()); suppress_info = true)
+# dl = DataLoader(vcat(dl_nt.input.q, dl_nt.input.p))  # hide
 
 nothing # hide
 ```
@@ -49,12 +47,18 @@ We now define the architectures and train them:
 
 ```@example lin_sympl_tran_tut
 const seq_length = 4
-const batch_size = 16384
+const batch_size = 1024
 const n_epochs = 2000
 
-arch_standard = StandardTransformerIntegrator(dl.input_dim; n_heads = 2, L = 1, n_blocks = 2)
-arch_symplectic = LinearSymplecticTransformer(dl.input_dim, seq_length; n_sympnet = 2, L = 1, upscaling_dimension = 2 * dl.input_dim)
-arch_sympnet = GSympNet(dl.input_dim; n_layers = 4, upscaling_dimension = 2 * dl.input_dim)
+arch_standard = StandardTransformerIntegrator(dl.input_dim; n_heads = 2, 
+                                                            L = 1, 
+                                                            n_blocks = 2)
+arch_symplectic = LinearSymplecticTransformer(  dl.input_dim, 
+                                                seq_length; n_sympnet = 2,
+                                                L = 1, 
+                                                upscaling_dimension = 2 * dl.input_dim)
+arch_sympnet = GSympNet(dl.input_dim;   n_layers = 4, 
+                                        upscaling_dimension = 2 * dl.input_dim)
 
 nn_standard = NeuralNetwork(arch_standard)
 nn_symplectic = NeuralNetwork(arch_symplectic)
@@ -104,9 +108,9 @@ function plot_training_losses(loss_array_standard, loss_array_symplectic, loss_a
         ylabelcolor = textcolor,
         yscale = log10
     )
-    lines!(ax, loss_array_standard, color = mblue, label = "ST")
+    lines!(ax, loss_array_standard, color = mpurple, label = "ST")
     lines!(ax, loss_array_symplectic,  color = mred, label = "LST")
-    lines!(ax, loss_array_sympnet, color = mgreen, label = "SympNet")
+    lines!(ax, loss_array_sympnet, color = morange, label = "SympNet")
     axislegend(; position = (.82, .75), backgroundcolor = :transparent, labelcolor = textcolor)
 
     fig, ax
@@ -122,7 +126,7 @@ nothing
 ```
 
 ```@example
-Main.include_graphics("lst"; caption = "Training loss for the different networks.") # hide
+Main.include_graphics("lst"; caption = "Training loss for the different networks. ") # hide
 ```
 
 
@@ -130,7 +134,9 @@ We further evaluate a trajectory with the trained networks for thirty time steps
 
 ```@setup lin_sympl_tran_tut
 const index = 1
-init_con = dl.input[:, 1:seq_length, index]
+init_con = (q = dl.input.q[:, 1:seq_length, index], p = dl.input.p[:, 1:seq_length, index])
+# when we iterate with a feedforward neural network we only need a vector as input
+init_con_ff = (q = dl.input.q[:, 1, index], p = dl.input.p[:, 1, index])
 
 const n_steps = 30
 
@@ -154,13 +160,13 @@ function make_validation_plot(n_steps = n_steps; theme = :dark)
     )
     prediction_standard = iterate(nn_standard, init_con; n_points = n_steps, prediction_window = seq_length)
     prediction_symplectic = iterate(nn_symplectic, init_con; n_points = n_steps, prediction_window = seq_length)
-    prediction_sympnet = iterate(nn_sympnet, init_con[:, 1]; n_points = n_steps)
+    prediction_sympnet = iterate(nn_sympnet, init_con_ff; n_points = n_steps)
 
     # we use linewidth  = 2
-    lines!(ax, dl.input[1, 1:n_steps, index]; color = mblue, label = "Implicit midpoint", linewidth = 2)
-    lines!(ax, prediction_standard[1, :]; color = mpurple, label = "ST", linewidth = 2)
-    lines!(ax, prediction_symplectic[1, :]; color = mred, label = "LST", linewidth = 2)
-    lines!(ax, prediction_sympnet[1, :]; color = morange, label = "SympNet", linewidth = 2)
+    lines!(ax, dl.input.q[1, 1:n_steps, index]; color = mblue, label = "Implicit midpoint", linewidth = 2)
+    lines!(ax, prediction_standard.q[1, :]; color = mpurple, label = "ST", linewidth = 2)
+    lines!(ax, prediction_symplectic.q[1, :]; color = mred, label = "LST", linewidth = 2)
+    lines!(ax, prediction_sympnet.q[1, :]; color = morange, label = "SympNet", linewidth = 2)
     axislegend(; position = (.55, .75), backgroundcolor = :transparent, labelcolor = textcolor)
 
     fig, ax
@@ -175,7 +181,7 @@ nothing
 ```
 
 ```@example lin_sympl_tran_tut
-Main.include_graphics("lst_validation"; caption = "Validation of the different networks.") # hide
+Main.include_graphics("lst_validation"; caption = "Validation of the different networks. ", width = .85) # hide
 ```
 
 We can see that the standard transformer is not able to stay close to the trajectory coming from implicit midpoint very well. The linear symplectic transformer outperforms the standard transformer as well as the SympNet while needing fewer parameters than the standard transformer: 
@@ -185,3 +191,11 @@ parameterlength(nn_standard), parameterlength(nn_symplectic), parameterlength(nn
 ```
 
 It is also interesting to note that the training error for the SympNet gets lower than the one for the linear symplectic transformer, but it does not manage to outperform it when looking at the validation. 
+
+```@raw latex
+\section*{Chapter Summary}
+
+In this chapter we demonstrated the efficacy of neural network-based symplectic integrators. We showed two examples: SympNets as an example of a symplectic one-step method and linear symplectic transformers as an example of a symplectic multi-step method. We compared the two different SympNet architectures ($LA$-SympNets and $G$-SympNets) with a standard ResNet and gave an example where symplecticity is important to achieve long-term stability: the ResNet was shown to fail on longer time scales even though it outperforms the $LA$-SympNet on smaller ones; this is because the ResNet does not have any structure encoded into it. The linear symplectic transformer was compared to the standard transformer and a SympNet (on the example of a complex coupled harmonic oscillator) and shown to outperform these two networks.
+
+Of the two symplectic neural networks shown here the linear symplectic transformer constitutes a novel neural network architecture which was introduced in this dissertation.
+```

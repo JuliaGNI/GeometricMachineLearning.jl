@@ -1,9 +1,28 @@
 @doc raw"""
+    LinearSymplecticAttention
+
 Implements the linear symplectic attention layers. Analogous to [`GradientLayer`](@ref) it performs mappings that only change the ``Q`` or the ``P`` part.
 
 This layer preserves symplecticity in the *product-space sense*.
 
 For more information see [`LinearSymplecticAttentionQ`](@ref) and [`LinearSymplecticAttentionP`](@ref).
+
+# Implementation
+
+The coefficients of a [`LinearSymplecticAttention`](@ref) layer is a [`SymmetricMatrix`](@ref):
+
+```jldoctest
+using GeometricMachineLearning
+
+l = LinearSymplecticAttentionQ(3, 5)
+ps = initialparameters(l, CPU(), Float32)
+
+typeof(ps.A) <: SymmetricMatrix
+
+# output
+
+true
+```
 """
 struct LinearSymplecticAttention{M, N, LayerType} <: AbstractExplicitLayer{M, N} 
     seq_length::Int
@@ -19,7 +38,9 @@ Performs:
 ```math 
 \begin{pmatrix} Q \\ P \end{pmatrix} \mapsto \begin{pmatrix} Q + \nabla_PF \\ P \end{pmatrix},
 ```
-where ``Q,\, P\in\mathbb{R}^{n\times{}T}`` and ``F(P) = \frac{1}{2}\mathrm{Tr}(P A P^T)``. 
+where ``Q,\, P\in\mathbb{R}^{n\times{}T}`` and ``F(P) = \frac{1}{2}\mathrm{Tr}(P A P^T)``.
+
+The parameters of this layer are ``\bar{A} = \frac{1}{2}(A + A^T).``
 """
 const LinearSymplecticAttentionQ{M, N} = LinearSymplecticAttention{M, N, :Q}
 
@@ -33,7 +54,9 @@ Performs:
 ```math 
 \begin{pmatrix} Q \\ P \end{pmatrix} \mapsto \begin{pmatrix} Q \\ P + \nabla_QF \end{pmatrix},
 ```
-where ``Q,\, P\in\mathbb{R}^{n\times{}T}`` and ``F(Q) = \frac{1}{2}\mathrm{Tr}(Q A Q^T)``. 
+where ``Q,\, P\in\mathbb{R}^{n\times{}T}`` and ``F(Q) = \frac{1}{2}\mathrm{Tr}(Q A Q^T)``.
+
+The parameters of this layer are ``\bar{A} = \frac{1}{2}(A + A^T).``
 """
 const LinearSymplecticAttentionP{M, N} = LinearSymplecticAttention{M, N, :P}
 

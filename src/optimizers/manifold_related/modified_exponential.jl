@@ -1,4 +1,13 @@
-@doc raw"""
+update_algorithm = "while norm(Aⁿ) > ε
+mul!(A_temp, Aⁿ, A)
+Aⁿ .= A_temp
+rmul!(Aⁿ, T(inv(n)))
+
+𝔄A += Aⁿ
+n += 1 
+end"
+
+@doc (raw"""
     𝔄(A)
 
 Compute ``\mathfrak{A}(A) := \sum_{n=1}^\infty \frac{1}{n!} (A)^{n-1}.``
@@ -8,35 +17,31 @@ Compute ``\mathfrak{A}(A) := \sum_{n=1}^\infty \frac{1}{n!} (A)^{n-1}.``
 This uses a Taylor expansion that iteratively adds terms with
 
 ```julia
-while norm(Aⁿ) > ε
-    mul!(A_temp, Aⁿ, A)
-    Aⁿ .= A_temp
-    rmul!(Aⁿ, inv(n))
+""" * update_algorithm * raw"""
 
-    𝔄 += B
-    n += 1 
-end
 ```
 
 until the norm of `Aⁿ` becomes smaller than machine precision. 
 The counter `n` in the above algorithm is initialized as `2`
 The matrices `Aⁿ` and `𝔄` are initialized as the identity matrix.
-"""
-function 𝔄(A::AbstractMatrix{T}) where T
+""")
+function 𝔄(A::AbstractMatrix)
+    T = eltype(A)
     Aⁿ = one(A)
-    C = one(A)
+    𝔄A = one(A)
     A_temp = zero(A)
     n = 2
-    while norm(Aⁿ) > eps(T)
+    ε = eps(T)
+    while norm(Aⁿ) > ε
         mul!(A_temp, Aⁿ, A)
         Aⁿ .= A_temp
         rmul!(Aⁿ, T(inv(n)))
-
-        C += Aⁿ
+        
+        𝔄A += Aⁿ
         n += 1 
     end
-    #print("\nNumber of iterations is: ", i, "\n")
-    C
+    # println("Number of iterations is: ", i)
+    𝔄A
 end
 
 @doc raw"""
@@ -65,7 +70,7 @@ one(B̂ * B̄') + B̂ * 𝔄(B̂, B̄) * B̄' ≈ exp(Matrix(B))
 true
 ```
 """
-function 𝔄(B̂::AbstractMatrix{T}, B̄::AbstractMatrix{T}) where T
+function 𝔄(B̂::AbstractMatrix, B̄::AbstractMatrix)
     𝔄(B̄' * B̂)
 end
 

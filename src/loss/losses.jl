@@ -1,4 +1,6 @@
 @doc raw"""
+    NetworkLoss
+
 An abstract type for all the neural network losses. 
 If you want to implement `CustomLoss <: NetworkLoss` you need to define a functor:
 ```julia
@@ -10,20 +12,20 @@ See [`FeedForwardLoss`](@ref), [`TransformerLoss`](@ref), [`AutoEncoderLoss`](@r
 """
 abstract type NetworkLoss end 
 
-function (loss::NetworkLoss)(nn::NeuralNetwork, input::CT, output::CT) where {AT<:AbstractArray, BT <: NamedTuple{(:q, :p), Tuple{AT, AT}}, CT <: Union{AT, BT}}
+function (loss::NetworkLoss)(nn::NeuralNetwork, input::QPTOAT, output::QPTOAT)
     loss(nn.model, nn.params, input, output)
 end
 
-function _compute_loss(output_prediction::CT1, output::CT2) where {AT<:AbstractArray, BT <: NamedTuple{(:q, :p), Tuple{AT, AT}}, CT <: Union{AT, BT}, CT1 <: CT, CT2 <: CT}
+function _compute_loss(output_prediction::QPTOAT, output::QPTOAT)
     _norm(_diff(output_prediction, output)) / _norm(output)
 end 
 
-function _compute_loss(model::Union{AbstractExplicitLayer, Chain}, ps::Union{Tuple, NamedTuple}, input::CT, output::CT) where {CT <: QPTOAT}
+function _compute_loss(model::Union{AbstractExplicitLayer, Chain}, ps::Union{Tuple, NamedTuple}, input::QPTOAT, output::QPTOAT)
     output_prediction = model(input, ps)
     _compute_loss(output_prediction, output)
 end
 
-function (loss::NetworkLoss)(model::Union{Chain, AbstractExplicitLayer}, ps::Union{Tuple, NamedTuple}, input::CT, output::CT) where {CT <: QPTOAT}
+function (loss::NetworkLoss)(model::Union{Chain, AbstractExplicitLayer}, ps::Union{Tuple, NamedTuple}, input::QPTOAT, output::QPTOAT)
     _compute_loss(model, ps, input, output)
 end
 
@@ -51,7 +53,7 @@ Random.seed!(123)
 arch = StandardTransformerIntegrator(d)
 nn = NeuralNetwork(arch)
 
-input_mat = [1. 2. 3.; 4. 5. 6.]
+input_mat =  [1. 2. 3.; 4. 5. 6.]
 output_mat = [1. 2.; 3. 4.]
 loss = TransformerLoss(seq_length, prediction_window)
 
@@ -91,7 +93,7 @@ end
 function (loss::TransformerLoss)(model::Union{Chain, AbstractExplicitLayer}, ps::Union{Tuple, NamedTuple}, input::AT, output::AT) where {T, AT <: AbstractArray{T, 3}}
     input_dim, input_seq_length = size(input)
     output_dim, output_prediction_window = size(output)
-    @assert input_dim == output_dim 
+    @assert input_dim == output_dim
     @assert input_seq_length == loss.seq_length
     @assert output_prediction_window == loss.prediction_window
 
@@ -104,30 +106,24 @@ function (loss::TransformerLoss)(model::Union{Chain, AbstractExplicitLayer}, ps:
     loss(model, ps, reshape(input, size(input)..., 1), reshape(output, size(output)..., 1))
 end
 
-@doc raw"""
-    ClassificationTransformerLoss()
-
-Make an instance of `ClassificationTransformerLoss`.
-
-This is to be used together with a [`ClassificationTransformer`](@ref) for image classification.
-
-It takes an input, parses it to the transformer and then crops it to conform with the desired output size.
-
-Suppose the input is of dimension ``\mathtt{td}\times\mathtt{sl}``, where `td` is *transformer dimension and `sl` is sequence length.
-The output of the transformer will again be of the same dimension: 
-
-```math
-\mathrm{output}\in\mathbb{R}^{`\mathtt{td}\times\mathtt{sl}},
-```
-
-or 
-
-```math
-\mathrm{output}\in\mathbb{R}^{`\mathtt{cd}\times\mathtt{sl}},
-```
-
-if the output dimension `cl` of the [`ClassificationLayer`](@ref) is differnt form `td`.
-"""
+# @doc raw"""
+#     ClassificationTransformerLoss()
+# 
+# Make an instance of `ClassificationTransformerLoss`.
+# 
+# This is to be used together with a [`ClassificationTransformer`](@ref).
+# 
+# It takes an input, parses it to the transformer and then crops it to conform with the desired output size.
+# 
+# Suppose the input is of dimension ``\mathtt{td}\times\mathtt{sl}``, where `td` is *transformer dimension* and `sl` is *sequence length*.
+# The output of the transformer will again be of the same dimension: 
+# 
+# ```math
+# \mathrm{output}\in\mathbb{R}^{\mathtt{td}\times\mathtt{sl}}.
+# ```
+# 
+# if the output dimension `cl` of the [`ClassificationLayer`](@ref) is differnt form `td`.
+# """
 struct ClassificationTransformerLoss <: NetworkLoss end
 
 function (loss::ClassificationTransformerLoss)(model::Union{Chain, AbstractExplicitLayer}, ps::Union{Tuple, NamedTuple}, input::AbstractArray, output::AbstractArray)
@@ -151,14 +147,13 @@ This should be used together with a neural network of type [`NeuralNetworkIntegr
 using GeometricMachineLearning
 using LinearAlgebra: norm
 import Random
+Random.seed!(123)
 
 const d = 2
-
-Random.seed!(123)
 arch = GSympNet(d)
 nn = NeuralNetwork(arch)
 
-input_vec = [1., 2.]
+input_vec =  [1., 2.]
 output_vec = [3., 4.]
 loss = FeedForwardLoss()
 
@@ -197,19 +192,17 @@ This loss should always be used together with a neural network of type [`AutoEnc
 using GeometricMachineLearning
 using LinearAlgebra: norm
 import Random
+Random.seed!(123)
 
 const N = 4
 const n = 1
-
-Random.seed!(123)
 arch = SymplecticAutoencoder(2*N, 2*n)
 nn = NeuralNetwork(arch)
 
-input_vec = [1., 2., 3., 4., 5., 6., 7., 8.]
-output_vec = [9., 10., 11., 12., 13., 14., 15., 16.]
+input_vec =  [1., 2., 3., 4., 5., 6., 7., 8.]
 loss = AutoEncoderLoss()
 
-loss(nn, input_vec, output_vec) ≈ norm(output_vec - nn(input_vec)) / norm(output_vec)
+loss(nn, input_vec) ≈ norm(input_vec - nn(input_vec)) / norm(input_vec)
 
 # output
 
@@ -219,7 +212,7 @@ true
 So `AutoEncoderLoss` simply does:
 
 ```math
-    \mathtt{loss}(\mathcal{NN}, \mathtt{input}, \mathtt{output}) = || \mathcal{NN}(\mathtt{input}) - \mathtt{output} || / || \mathtt{output} ||,
+    \mathtt{loss}(\mathcal{NN}, \mathtt{input}) = || \mathcal{NN}(\mathtt{input}) - \mathtt{input} || / || \mathtt{input} ||,
 ```
 where ``||\cdot||`` is the ``L_2`` norm. 
 
@@ -252,16 +245,16 @@ This loss should be used together with a [`NeuralNetworkIntegrator`](@ref) or [`
 using GeometricMachineLearning
 using LinearAlgebra: norm
 import Random
+Random.seed!(123)
 
 const N = 4
 const n = 1
 
-Random.seed!(123)
 Ψᵉ = NeuralNetwork(Chain(Dense(N, n), Dense(n, n))) |> encoder
 Ψᵈ = NeuralNetwork(Chain(Dense(n, n), Dense(n, N))) |> decoder
 transformer = NeuralNetwork(StandardTransformerIntegrator(n))
 
-input_mat = [1. 2.; 3. 4.; 5. 6.; 7. 8.]
+input_mat =  [1.  2.;  3.  4.;  5.  6.;  7.  8.]
 output_mat = [9. 10.; 11. 12.; 13. 14.; 15. 16.]
 loss = ReducedLoss(Ψᵉ, Ψᵈ)
 

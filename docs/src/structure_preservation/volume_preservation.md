@@ -1,6 +1,6 @@
 # Divergence-Free Vector Fields
 
-The quality of being *divergence-free* greatly restricts the number of possible vector fields and also the dynamically accessible states of the flow map. It has however a weaker property then being [Hamiltonian](@ref "Symplectic Systems"). We first define what it means to be divergence-free:
+The quality of being *divergence-free* greatly restricts the number of possible vector fields and also the dynamically accessible states of the flow map. It is however a weaker property then being [Hamiltonian](@ref "Symplectic Systems"). We first define what it means to be divergence-free:
 
 ```@eval
 Main.definition(raw"A vector field ``X:\mathcal{M}\to{}T\mathcal{M}`` defined on a ``d``-dimensional Riemannian manifold ``(\mathcal{M}, g)`` is called **divergence-free** if ``\forall{}z\in\mathcal{M}`` we have:
@@ -43,11 +43,11 @@ Here we only proof this statement for the case of a vector space. A proof of the
 [^1]: Together with a precise definition of Riemannian integration and the volume form introduced above.
 
 ```@eval
-Main.proof(raw"We refer to the flow of ``X`` by ``\varphi^t:\mathbb{R}^d\to\mathbb{R}^d`` and have the following property
+Main.proof(raw"We refer to the flow of ``X`` by ``\varphi^t:\mathbb{R}^d\to\mathbb{R}^d`` and have the following property:
 " * Main.indentation * raw"```math
 " * Main.indentation * raw"    \frac{d}{dt}\nabla\varphi^t(z) = \nabla{}X(\varphi^t(z))\nabla\varphi^t(z).
 " * Main.indentation * raw"```
-" * Main.indentation * raw"This further implies
+" * Main.indentation * raw"Note that we used the convention ``[\nabla{}X(z)]_{ij} = \partial/\partial{}z_jX_i`` here. This expression for ``d/dt\nabla{}\varphi^t(x)`` further implies:
 " * Main.indentation * raw"```math
 " * Main.indentation * raw"    \mathrm{Tr}\left( (\nabla\varphi^t(z))^{-1}\frac{d}{dt}\nabla\varphi^t(z) \right) = \mathrm{Tr}\left( (\nabla\varphi^t(z))^{-1}\nabla{}X(\varphi^t(z))\nabla\varphi^t(z) \right) = \mathrm{Tr}(\nabla{}X(\varphi^t(z))) = 0,
 " * Main.indentation * raw"```
@@ -65,6 +65,10 @@ Main.proof(raw"We refer to the flow of ``X`` by ``\varphi^t:\mathbb{R}^d\to\math
 
 It is a classical result that *all Hamiltonian vector fields are divergence-free*, so volume-preservation is weaker than preservation of symplecticity [arnold1978mathematical](@cite).
 
+```@raw latex
+\begin{comment}
+```
+
 ## References
 
 ```@bibliography
@@ -74,4 +78,8 @@ Pages = []
 bishop1980tensor
 lang2012fundamentals
 arnold1978mathematical
+```
+
+```@raw latex
+\end{comment}
 ```

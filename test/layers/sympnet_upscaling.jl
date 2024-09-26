@@ -8,7 +8,7 @@ function test_symplecticity(N=4, N2=20, T=Float32)
     # the first and last PSD layer need to have the same weight! (else they map to a different symplectic potential)
     ps[4].weight.A = ps[1].weight.A
     jacobian_matrix = Zygote.jacobian(x -> model(x, ps), x)[1]
-    𝕁 = SymplecticPotential(N÷2)
+    𝕁 = PoissonTensor(N÷2)
     @test isapprox(jacobian_matrix'*𝕁*jacobian_matrix, 𝕁, rtol=0.1)
     @test isapprox(model(ten, ps)[:,1], model(ten[:,1], ps))
 end

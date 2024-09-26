@@ -13,10 +13,10 @@ This is the simplest neural network optimizer. It has no cache and computes the 
 The operations are done as memory efficiently as possible.
 This means the provided ``\nabla_WL`` is mutated via:
 ```julia
-    rmul!(∇L, -method.η)
+rmul!(∇L, -method.η)
 ```
 """
-struct GradientOptimizer{T<:Real} <: OptimizerMethod
+struct GradientOptimizer{T<:Real} <: OptimizerMethod{T}
     η::T
     GradientOptimizer(η = 1e-2) = new{typeof(η)}(η)
 end

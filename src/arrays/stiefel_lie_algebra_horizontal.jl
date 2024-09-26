@@ -1,14 +1,7 @@
 @doc raw"""
-    StiefelLieAlgHorMatrix(A::SkewSymMatrix{T}, B::AbstractMatrix{T}, N::Integer, n::Integer) where T
+    StiefelLieAlgHorMatrix(A::SkewSymMatrix, B::AbstractMatrix, N::Integer, n::Integer)
 
 Build an instance of `StiefelLieAlgHorMatrix` based on a skew-symmetric matrix `A` and an arbitrary matrix `B`.
-
-`StiefelLieAlgHorMatrix` is the *horizontal component of the Lie algebra of skew-symmetric matrices* (with respect to the canonical metric).
-The projection here is: ``\pi:S \to SE`` where 
-```math
-E = \begin{pmatrix} \mathbb{I}_{n} \\ \mathbb{O}_{(N-n)\times{}n}  \end{pmatrix}.
-```
-The matrix ``E`` is implemented under [`StiefelProjection`](@ref) in `GeometricMachineLearning`.
 
 An element of StiefelLieAlgMatrix takes the form: 
 ```math
@@ -19,6 +12,16 @@ A & B^T \\ B & \mathbb{O}
 where ``A`` is skew-symmetric (this is [`SkewSymMatrix`](@ref) in `GeometricMachineLearning`).
 
 Also see [`GrassmannLieAlgHorMatrix`](@ref).
+
+# Extended help
+
+`StiefelLieAlgHorMatrix` is the *horizontal component of the Lie algebra of skew-symmetric matrices* (with respect to the canonical metric).
+
+The projection here is: ``\pi:S \to SE`` where 
+```math
+E = \begin{bmatrix} \mathbb{I}_{n} \\ \mathbb{O}_{(N-n)\times{}n}  \end{bmatrix}.
+```
+The matrix ``E`` is implemented under [`StiefelProjection`](@ref) in `GeometricMachineLearning`.
 """
 mutable struct StiefelLieAlgHorMatrix{T, AT <: SkewSymMatrix{T}, ST <: AbstractMatrix{T}} <: AbstractLieAlgHorMatrix{T}
     A::AT
@@ -38,7 +41,11 @@ end
 @doc raw"""
     StiefelLieAlgHorMatrix(D::AbstractMatrix, n::Integer)
 
-Take a big matrix as input and build an instance of `StiefelLieAlgHorMatrix` belonging to the StiefelManifold ``St(n, N)`` where ``N`` is the number of rows of `D`.
+Take a big matrix as input and build an instance of `StiefelLieAlgHorMatrix`.
+
+The integer ``N`` in ``St(n, N)`` is the number of rows of `D`.
+
+# Extended help
 
 If the constructor is called with a big ``N\times{}N`` matrix, then the projection is performed the following way: 
 
@@ -212,6 +219,33 @@ end
 LinearAlgebra.mul!(C::StiefelLieAlgHorMatrix, α::Real, A::StiefelLieAlgHorMatrix) = mul!(C, A, α)
 LinearAlgebra.rmul!(C::StiefelLieAlgHorMatrix, α::Real) = mul!(C, C, α)
 
+@doc raw"""
+    vec(A::StiefelLieAlgHorMatrix)
+
+Vectorize `A`. 
+
+# Examples
+
+```jldoctest
+using GeometricMachineLearning
+
+A = SkewSymMatrix([1, ], 2)
+B = [2 3; ]
+B̄ = StiefelLieAlgHorMatrix(A, B, 3, 2)
+B̄ |> vec
+
+# output
+
+vcat(1-element Vector{Int64}, 2-element Vector{Int64}):
+ 1
+ 2
+ 3
+```
+
+# Implementation
+
+This is using `Vcat` from the package `LazyArrays`.
+"""
 function Base.vec(A::StiefelLieAlgHorMatrix)
     LazyArrays.Vcat(vec(A.A), vec(A.B))
 end

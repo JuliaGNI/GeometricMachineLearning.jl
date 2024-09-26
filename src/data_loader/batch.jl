@@ -1,7 +1,9 @@
 @doc raw"""
+    Batch
+
 `Batch` is a struct whose functor acts on an instance of `DataLoader` to produce a sequence of training samples for training for one epoch. 
 
-See [`Batch(::Int)`](@ref), [`Batch(::Int, ::Int)`](@ref) and [`Batch(::Int, ::Int, ::Int)`](@ref) for the different constructors.
+See [`Batch(::Int)`](@ref) and [`Batch(::Int, ::Int, ::Int)`](@ref) for the different constructors.
 
 # The functor 
 
@@ -50,7 +52,7 @@ Base.iterate(nn::NeuralNetwork, ics, batch::Batch{:Transformer}; n_points = 100)
 
 Make an instance of `Batch` for a specific batch size.
 
-This is used to train neural networks of `FeedForward` type (as opposed to transformers).
+This is, among others, used to train neural networks of [`NeuralNetworkIntegrator`](@ref) type (as opposed to [`TransformerIntegrator`](@ref)).
 """
 function Batch(batch_size::Int)
     Batch{:FeedForward}(batch_size, 1, 1)
@@ -61,7 +63,7 @@ end
 
 Make an instance of `Batch` for a specific batch size and a sequence length.
 
-This is used to train neural networks of `Transformer` type.
+This is used to train neural networks of [`TransformerIntegrator`](@ref) type.
 
 Optionally the prediction window can also be specified by calling:
 
@@ -96,7 +98,36 @@ end
 
 Compute the number of batches.
 
-Here the big distinction is between data that are *time-series like* and data that are *autoencoder like*.
+Here the distinction is between data that are *time-series like* and data that are *autoencoder like*.
+
+# Examples
+
+```jldoctest
+using GeometricMachineLearning
+using GeometricMachineLearning: number_of_batches
+import Random
+Random.seed!(123)
+
+dat = [1, 2, 3, 4, 5]
+dl₁ = DataLoader(dat; autoencoder = false, suppress_info = true) # time series-like
+dl₂ = DataLoader(dat; autoencoder = true, suppress_info = true) # autoencoder-like
+batch = Batch(3)
+
+nob₁ = number_of_batches(dl₁, batch)
+nob₂ = number_of_batches(dl₂, batch)
+println(stdout, "Number of batches of dl₁: ", nob₁)
+println(stdout, "Number of batches of dl₂: ", nob₂)
+println(stdout, batch(dl₁), "\n", batch(dl₂))
+
+# output
+
+Number of batches of dl₁: 2
+Number of batches of dl₂: 2
+([(1, 1), (3, 1), (4, 1)], [(2, 1)])
+([(1, 4), (1, 3), (1, 2)], [(1, 5), (1, 1)])
+```
+
+Here we see that in the *autoencoder case* that last minibatch has an additional element.
 """
 function number_of_batches(dl::DataLoader{T, AT, OT, :TimeSeries}, batch::Batch) where {T, BT<:AbstractArray{T, 3}, AT<:Union{BT, NamedTuple{(:q, :p), Tuple{BT, BT}}}, OT}
     @assert dl.input_time_steps ≥ (batch.seq_length + batch.prediction_window) "The number of time steps has to be greater than sequence length + prediction window."
@@ -157,11 +188,13 @@ end
 function convert_vector_of_tuples_to_matrix(backend::Backend, batch_indices_tuple::Vector{Tuple{Int, Int}})
     _batch_size = length(batch_indices_tuple)
 
-    batch_indices = KernelAbstractions.zeros(backend, Int, 2, _batch_size)
-    @views for t in axes(batch_indices_tuple, 1)
-        batch_indices[1, t] = batch_indices_tuple[t][1]
-        batch_indices[2, t] = batch_indices_tuple[t][2]
+    batch_indices = KernelAbstractions.allocate(backend, Int, 2, _batch_size)
+    batch_indices_temp = zeros(Int, size(batch_indices)...)
+    for t in axes(batch_indices_tuple, 1)
+        batch_indices_temp[1, t] = batch_indices_tuple[t][1]
+        batch_indices_temp[2, t] = batch_indices_tuple[t][2]
     end
+    batch_indices = typeof(batch_indices)(batch_indices_temp)
 
     batch_indices
 end
@@ -169,14 +202,14 @@ end
 @doc raw"""
     convert_input_and_batch_indices_to_array(dl, batch, batch_indices)
 
-Assign batch data based on batch indices.
+Assign batch data based on (i) input and (ii) batch indices.
 
 # Examples
 
 ```jldoctest
 using GeometricMachineLearning
 
-dl = DataLoader([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
+dl = DataLoader([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]; suppress_info = true)
 batch = Batch(3)
 batch_indices = [(1, 1), (1, 3), (1, 5)]
 
@@ -184,7 +217,6 @@ GeometricMachineLearning.convert_input_and_batch_indices_to_array(dl, batch, bat
 
 # output
 
-[ Info: You have provided a matrix as input. The axes will be interpreted as (i) system dimension and (ii) number of parameters.
 1×1×3 Array{Float64, 3}:
 [:, :, 1] =
  0.1
@@ -274,7 +306,7 @@ function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT, Nothing,
 end
 
 # for the case when the DataLoader also contains an output
-function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT, OT}, batch::Batch, batch_indices_tuple::Vector{Tuple{Int, Int}}) where {T, T1, BT<:AbstractArray{T, 3}, OT<:AbstractArray{T1, 3}}
+function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT, OT}, ::Batch, batch_indices_tuple::Vector{Tuple{Int, Int}}) where {T, T1, BT<:AbstractArray{T, 3}, OT<:AbstractArray{T1, 3}}
     time_indices = [batch_index[1] for batch_index in batch_indices_tuple]
     parameter_indices = [batch_index[2] for batch_index in batch_indices_tuple]
     @views input_batch = dl.input[:, :, parameter_indices]

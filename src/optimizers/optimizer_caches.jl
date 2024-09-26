@@ -1,9 +1,7 @@
 @doc raw"""
-AbstractCache has subtypes:
-- [`AdamCache`](@ref)
-- [`MomentumCache`](@ref)
-- [`GradientCache`](@ref)
-- [`BFGSCache`](@ref)
+    AbstractCache
+
+`AbstractCache` has subtypes: [`AdamCache`](@ref), [`MomentumCache`](@ref), [`GradientCache`](@ref) and [`BFGSCache`](@ref).
 
 All of them can be initialized with providing an array (also supporting manifold types).
 """
@@ -62,7 +60,7 @@ Store the moment for `Y` (initialized as zeros).
 
 The moment is called `B`.
 
-If the cache is called with an instance of a homogeneous space, e.g. the [`StiefelManifold`](@ref) ``St(n,N)`` it initializes the moments as elements of ``\mathfrak{g}^\mathrm{hor}`` ([`StiefelLieAlgHorMatrix`](@ref)).
+If the cache is called with an instance of a [`Manifold`](@ref) it initializes the moments as elements of ``\mathfrak{g}^\mathrm{hor}`` ([`AbstractLieAlgHorMatrix`](@ref)).
 
 See [`AdamCache`](@ref).
 """

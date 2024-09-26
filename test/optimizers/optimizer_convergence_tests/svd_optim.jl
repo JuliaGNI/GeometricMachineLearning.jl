@@ -25,18 +25,18 @@ A = [   0.06476993260924702 0.8369280855305259 0.6245358125914054 0.140729967064
 
 Random.seed!(1234)
 
-function svd_test(A, n, train_steps=1000, tol=1e-1; retraction=Cayley())
+function svd_test(A, n, train_steps=1000, tol=1e-1; retraction=cayley)
     N = size(A,1)
     U, Σ, Vt = svd(A)
     U_result = U[:, 1:n]
 
     err_best = norm(A - U_result*U_result'*A)
-    model = Chain(StiefelLayer(N, n, retraction=retraction), StiefelLayer(n, N, retraction=retraction))
+    model = Chain(StiefelLayer(N, n), StiefelLayer(n, N))
     ps = initialparameters(model, CPU(), Float64)
 
-    o₁ = Optimizer(GradientOptimizer(0.01), ps)
-    o₂ = Optimizer(MomentumOptimizer(0.01), ps)
-    o₃ = Optimizer(AdamOptimizer(0.01), ps)
+    o₁ = Optimizer(GradientOptimizer(0.01), ps; retraction = retraction)
+    o₂ = Optimizer(MomentumOptimizer(0.01), ps; retraction = retraction)
+    o₃ = Optimizer(AdamOptimizer(0.01), ps; retraction = retraction)
 
     U₁, Ũ₁, err₁ = train_network!(o₁, model, deepcopy(ps), A, train_steps, tol)
     U₂, Ũ₂, err₂ = train_network!(o₂, model, deepcopy(ps), A, train_steps, tol)
@@ -63,6 +63,6 @@ function train_network!(o::Optimizer, model::Chain, ps::Tuple, A::AbstractMatrix
     ps[1].weight, ps[2].weight, error(ps)
 end
 
-for retraction in (Geodesic(), Cayley())
+for retraction in (geodesic, cayley)
     svd_test(A, 3, retraction=retraction)
 end

@@ -17,7 +17,8 @@ Main.definition(raw"The **metric on a Riemannian manifold** ``\mathcal{M}`` is
 " * 
 Main.indentation * raw"```math
 " *
-Main.indentation * raw"d(x, y) = \mathrm{inf}_{\text{$\gamma(0) = x$ and $\gamma(t) = y$}}L(\gamma),
+Main.indentation * raw"d(x, y) = \inf_{\substack{\text{$\gamma(0) = x$ and}\\
+    \gamma(t) = y}}L(\gamma),
 " * 
 Main.indentation * raw"```
 " *
@@ -31,7 +32,7 @@ d(\gamma(t_i), \gamma(t_f)) = \int_{t_i}^{t_f}\sqrt{g_{\gamma(s)}(\gamma'(s), \g
 ```
 for any ``t_i, t_f\in[0, t]``.
 
-An important result of Riemannian geometry states that there exists a vector field ``X`` on ``T\mathcal{M}``, called the *geodesic spray*, whose integral curves are derivatives of geodesics.
+An important result of Riemannian geometry states that there exists a vector field ``X`` on ``T\mathcal{M}``, called the *geodesic spray*, whose integral curves are derivatives of geodesics. We formalize this statement as a theorem in the next section.
 
 
 ## Geodesic Sprays and the Exponential Map
@@ -50,7 +51,7 @@ It is therefore customary to introduce the *exponential map* ``\exp:T_x\mathcal{
 \exp(v_x) := \gamma_{v_x}(1),
 ```
 
-and we see that ``\gamma_{v_x}(t) = \exp(t\cdot{}v_x)``. In `GeometricMachineLearning` we denote the exponential map by [`geodesic`](@ref) to avoid confusion with the matrix exponential map[^2]:
+and we see that ``\gamma_{v_x}(t) = \exp(t\cdot{}v_x)``. In `GeometricMachineLearning` we denote the exponential map by [`geodesic`](@ref) to avoid confusion with the matrix exponential map[^2] which is called as `exp` in `Julia`. So we use the definition:
 
 [^2]: The Riemannian exponential map and the matrix exponential map coincide for many matrix Lie groups.
 
@@ -58,7 +59,7 @@ and we see that ``\gamma_{v_x}(t) = \exp(t\cdot{}v_x)``. In `GeometricMachineLea
     \mathtt{geodesic}(x, v_x) \equiv \exp(v_x).
 ```
 
-We give an example here:
+We give an example of using this function here:
 
 ```@setup s2_retraction
 using GLMakie
@@ -67,7 +68,7 @@ include("../../gl_makie_transparent_background_hack.jl")
 ```
 
 ```@example s2_retraction
-using GeometricMachineLearning
+using GeometricMachineLearning # hide
 import Random # hide
 Random.seed!(123) # hide
 
@@ -78,7 +79,6 @@ v = 5 * rand(3, 1)
 
 morange = RGBf(255 / 256, 127 / 256, 14 / 256) # hide
 mred = RGBf(214 / 256, 39 / 256, 40 / 256) # hide
-
 function set_up_plot(; theme = :dark) # hide
 text_color = theme == :dark ? :white : :black # hide
 fig = Figure(; backgroundcolor = :transparent, size = (900, 675)) # hide
@@ -105,12 +105,11 @@ ax = Axis3(fig[1, 1]; # hide
     elevation = π / 7, # hide
     # height = 75., # hide
     ) # hide
-
 # plot a sphere with radius one and origin 0
 surface!(ax, Main.sphere(1., [0., 0., 0.])...; alpha = .5, transparency = true)
 
 point_vec = ([Y[1]], [Y[2]], [Y[3]])
-scatter!(ax, point_vec...; color = morange, marker = :star5)
+scatter!(ax, point_vec...; color = morange, marker = :star5, markersize = 30)
 
 arrow_vec = ([Δ[1]], [Δ[2]], [Δ[3]])
 arrows!(ax, point_vec..., arrow_vec...; color = mred, linewidth = .02)
@@ -128,10 +127,10 @@ nothing # hide
 ```
 
 ```@example
-Main.include_graphics("sphere_with_tangent_vec") # hide
+Main.include_graphics("sphere_with_tangent_vec"; width = .7) # hide
 ```
 
-We now solve the geodesic spray for ``\eta\cdot\Delta`` for ``\eta = 0.1, 0.2, 0.3, \ldots, 5.5`` with the function [`geodesic`](@ref) and plot the corresponding points:
+We now solve the geodesic spray for ``\eta\cdot\Delta`` for ``\eta = 0.1, 0.2, \ldots, 5.5`` with the function [`geodesic`](@ref) and plot the corresponding points:
 
 ```@example s2_retraction
 Δ_increments = [Δ * η for η in 0.1 : 0.1 : 5.5]
@@ -158,7 +157,7 @@ nothing # hide
 ```
 
 ```@example
-Main.include_graphics("sphere_with_tangent_vec_and_geodesic") # hide
+Main.include_graphics("sphere_with_tangent_vec_and_geodesic"; width = .7) # hide
 ```
 
 A geodesic can be seen as the *equivalent of a straight line* on a manifold. Also note that we drew a random element form [`StiefelManifold`](@ref) here, and not from ``S^2``. This is because the category of [Stiefel manifolds](@ref "The Stiefel Manifold") is more general than the category of spheres ``S^n``: ``St(1, 3) \simeq S^2``.
@@ -215,6 +214,10 @@ we call the *gradient optimization scheme*.
 geodesic(::Manifold{T}, ::AbstractMatrix{T}) where T
 ```
 
+```@raw latex
+\begin{comment}
+```
+
 ## References
 
 ```@bibliography
@@ -223,4 +226,8 @@ Canonical = false
 
 lang2012fundamentals
 do1992riemannian
+```
+
+```@raw latex
+\end{comment}
 ```

@@ -53,6 +53,39 @@ It takes as input:
 1. `nn`: a `NeuralNetwork` (that has been trained).
 2. `ics`: initial conditions (a `NamedTuple` of two vectors)
 
+# Examples
+
+To demonstrate `iterate` we use a simple ResNet that does:
+
+```math
+\mathrm{ResNet}: x \mapsto \begin{pmatrix} 1 & 0 & 0 \\ 0 & 2 & 0 \\ 0 & 0 & 1\end{pmatrix}x + \begin{pmatrix} 0 \\ 0 \\ 1 \end{pmatrix}
+```
+
+and we iterate three times with
+
+```math
+    \mathtt{ics} = \begin{pmatrix} 1 \\ 1 \\ 1 \end{pmatrix}.
+```
+
+```jldoctest
+using GeometricMachineLearning
+
+model = ResNet(3, 0, identity)
+weight = [1 0 0; 0 2 0; 0 0 1]
+bias = [0, 0, 1]
+nn = NeuralNetwork(model, Chain(model), ((weight = weight, bias = bias), ), CPU())
+
+ics = [1, 1, 1]
+iterate(nn, ics; n_points = 4)
+
+# output
+
+3×4 Matrix{Int64}:
+ 1  2  4   8
+ 1  3  9  27
+ 1  3  7  15
+```
+
 # Arguments
 
 The optional keyword argument is 

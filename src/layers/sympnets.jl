@@ -1,4 +1,6 @@
 @doc raw"""
+    SympNetLayer <: AbstractExplicitLayer
+
 Implements the various layers from the SympNet paper [jin2020sympnets](@cite).
 
 This is a super type of [`GradientLayer`](@ref), [`ActivationLayer`](@ref) and [`LinearLayer`](@ref).
@@ -8,7 +10,9 @@ See the relevant docstrings of those layers for more information.
 abstract type SympNetLayer{M, N} <: AbstractExplicitLayer{M, N} end
 
 @doc raw"""
-`GradientLayer` is the `struct` corresponding to the constructors [`GradientLayerQ`](@ref) and [`GradientLayerP`](@ref). See those for more information.
+    GradientLayer <: SympNetLayer
+
+See the docstrings for the constructors [`GradientLayerQ`](@ref) and [`GradientLayerP`](@ref).
 """ 
 struct GradientLayer{M, N, TA, C} <: SympNetLayer{M, N}
         second_dim::Integer
@@ -28,7 +32,9 @@ The gradient layer that changes the ``q`` component. It is of the form:
 \end{bmatrix},
 ```
 
-with ``V(p) = \sum_{i=1}^Ma_i\Sigma(\sum_jk_{ij}p_j+b_i)``, where ``\Sigma`` is the antiderivative of the activation function ``\sigma`` (one-layer neural network). We refer to ``M`` as the *upscaling dimension*. Such layers are by construction symplectic.
+with ``V(p) = \sum_{i=1}^Ma_i\Sigma(\sum_jk_{ij}p_j+b_i)``, where ``\mathtt{activation} \equiv \Sigma`` is the antiderivative of the activation function ``\sigma`` (one-layer neural network). We refer to ``M`` as the *upscaling dimension*. 
+
+Such layers are by construction symplectic.
 """
 const GradientLayerQ{M, N, TA} = GradientLayer{M, N, TA, :Q}
 
@@ -45,16 +51,20 @@ The gradient layer that changes the ``p`` component. It is of the form:
 \end{bmatrix},
 ```
 
-with ``V(p) = \sum_{i=1}^Ma_i\Sigma(\sum_jk_{ij}q_j+b_i)``, where ``\Sigma`` is the antiderivative of the activation function ``\sigma`` (one-layer neural network). We refer to ``M`` as the *upscaling dimension*. Such layers are by construction symplectic.
+with ``V(p) = \sum_{i=1}^Ma_i\Sigma(\sum_jk_{ij}q_j+b_i)``, where ``\mathtt{activation} \equiv \Sigma`` is the antiderivative of the activation function ``\sigma`` (one-layer neural network). We refer to ``M`` as the *upscaling dimension*. 
+
+Such layers are by construction symplectic.
 """
 const GradientLayerP{M, N, TA} = GradientLayer{M, N, TA, :P}
 
 @doc raw"""
-`LinearLayer` is the `struct` corresponding to the constructors [`LinearLayerQ`](@ref) and [`LinearLayerP`](@ref). See those for more information.
+    LinearLayer <: SympNetLayer
+
+See the constructors [`LinearLayerQ`](@ref) and [`LinearLayerP`](@ref).
 
 # Implementation
 
-`LinearLayer` uses the custom matrix [`SymmetricMatrix`](@ref) for an especially efficient implementation. 
+`LinearLayer` uses the custom matrix [`SymmetricMatrix`](@ref) for its weight. 
 """
 struct LinearLayer{M, N, C} <: SympNetLayer{M, N}
 end
@@ -64,14 +74,14 @@ end
 
 Make a linear layer of dimension ``n\times{}n`` that only changes the ``q`` component.
 
-Equivalent to a left multiplication by the matrix:
+This is equivalent to a left multiplication by the matrix:
 ```math
 \begin{pmatrix}
-\mathbb{I} & B \\ 
+\mathbb{I} & A \\ 
 \mathbb{O} & \mathbb{I}
 \end{pmatrix}, 
 ```
-where ``B`` is a [`SymmetricMatrix`](@ref).
+where ``A`` is a [`SymmetricMatrix`](@ref).
 """
 const LinearLayerQ{M, N, TA} = LinearLayer{M, N, :Q}
 
@@ -80,19 +90,21 @@ const LinearLayerQ{M, N, TA} = LinearLayer{M, N, :Q}
 
 Make a linear layer of dimension ``n\times{}n`` that only changes the ``p`` component.
 
-Equivalent to a left multiplication by the matrix:
+This is equivalent to a left multiplication by the matrix:
 ```math
 \begin{pmatrix}
 \mathbb{I} & \mathbb{O} \\ 
-B & \mathbb{I}
+A & \mathbb{I}
 \end{pmatrix}, 
 ```
-where ``B`` is a [`SymmetricMatrix`](@ref).
+where ``A`` is a [`SymmetricMatrix`](@ref).
 """
 const LinearLayerP{M, N, TA} = LinearLayer{M, N, :P}
 
 @doc raw"""
-`ActivationLayer` is the `struct` corresponding to the constructors [`ActivationLayerQ`](@ref) and [`ActivationLayerP`](@ref). See those for more information.
+    ActivationLayer <: SympNetLayer
+
+See the constructors [`ActivationLayerQ`](@ref) and [`ActivationLayerP`](@ref).
 """
 struct  ActivationLayer{M, N, TA, C} <: SympNetLayer{M, N}
         activation::TA
@@ -101,7 +113,7 @@ end
 @doc raw"""
     ActivationLayerQ(n, σ)
 
-Make an activation layer of size ``n`` and with activation ``σ`` that only changes the ``q`` component. 
+Make an activation layer of size `n` and with activation `σ` that only changes the ``q`` component. 
 
 Performs:
 
@@ -121,7 +133,7 @@ const ActivationLayerQ{M, N, TA} = ActivationLayer{M, N, TA, :Q}
 @doc raw"""
     ActivationLayerP(n, σ)
 
-Make an activation layer of size ``n`` and with activation ``σ`` that only changes the ``p`` component. 
+Make an activation layer of size `n` and with activation `σ` that only changes the ``p`` component. 
 
 Performs:
 
@@ -135,7 +147,6 @@ Performs:
 ```
 
 This can be recovered from [`GradientLayerP`](@ref) by setting ``M`` equal to `n`, ``K`` equal to ``\mathbb{I}`` and ``b`` equal to zero.
-
 """
 const ActivationLayerP{M, N, TA} = ActivationLayer{M, N, TA, :P}
 

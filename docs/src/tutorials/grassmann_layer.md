@@ -1,21 +1,31 @@
+```@raw latex
+In this chapter we give another example of using the new neural network optimizer framework for manifolds, but this time for the \textit{Grassmann manifold}. Here we suppose we are given data on a nonlinear subspace of $\mathbb{R}^N$ and want to sample additional data from this nonlinear subspace. We also utilize the Wasserstein distance and its gradient in this task.
+```
+
 # Example of a Neural Network with a Grassmann Layer
 
-Here we show how to implement a neural network that contains a layer whose weight is an element of the [Grassmann manifold](@ref "The Grassmann Manifold") and where this might be useful. Recall that the Grassmann manifold ``Gr(n, N)`` is the set of vector spaces of dimension ``n`` embedded in ``\mathbb{R}^N``. So if we optimize on the Grassmann manifold, we optimize for an *ideal* ``n``-dimensional vector space in the bigger space ``\mathbb{R}^N``. 
+Here we show how to implement a neural network that contains a layer whose weight is an element of the [Grassmann manifold](@ref "The Grassmann Manifold") and where this is useful. Recall that the Grassmann manifold ``Gr(n, N)`` is the set of vector spaces of dimension ``n`` embedded in ``\mathbb{R}^N``. So if we optimize on the Grassmann manifold, we optimize for an *ideal* ``n``-dimensional vector space in the bigger space ``\mathbb{R}^N``. 
+
+We visualize this:
+
+```@example
+Main.include_graphics("../tikz/grassmann_sampling"; width = .7, caption = raw"We can build a neural network that creates new samples from an unknown distribution. ") # hide
+```
+
+So assume that we are given data on a nonlinear manifold:
+
+```math
+\begin{pmatrix} x_1^{(1)} \\ x_2^{(1)} \\ \vdots \\ x_N^{(1)} \end{pmatrix},  \begin{pmatrix} x_1^{(2)} \\ x_2^{(2)} \\ \vdots \\ x_N^{(2)} \end{pmatrix}, \cdots, \begin{pmatrix} x_1^{(\mathtt{nop})} \\ x_2^{(\mathtt{nop})} \\ \vdots \\ x_N^{(\mathtt{nop})} \end{pmatrix} =: \mathcal{D} \subset \mathcal{M}\subset\mathbb{R}^N``,
+``` 
+and ``\mathrm{dim}(\mathcal{M}) = n.`` We want to obtain additional data on this manifold by sampling from an ``n``-dimensional distribution. Here we do not want to identify an isomorphism ``\mathbb{R}^n \overset{\approx}{\to} \mathcal{M}`` (as is the case with [autoencoders](@ref "General Workflow") for example), but find a mapping from a distribution on ``\mathbb{R}^n`` to a distribution on ``\mathcal{M}``. This is where the Grassmann manifold is useful: each element ``V`` of the Grassmann manifold is an ``n``-dimensional subspace of ``\mathbb{R}^N`` from which we can easily sample. We can then construct a mapping from this space ``V`` onto a space that contains the data points ``\mathcal{D}``. 
 
 ```@eval
 Main.remark(raw"This example for learning weights on a Grassmann manifold also shows how `GeometricMachineLearning` can be used together with other packages. Here we use the *Wasserstein distance* from the package `BrenierTwoFluid` for example.")
 ```
 
-## Identifying Non-Linear Subspaces of ``\mathbb{R}^N``
+## Graph of Rosenbrock Function as Example
 
-Consider the following scenario: we are given data in a big space ``\mathcal{D}=[d_i]_{i\in\mathcal{I}}\subset\mathbb{R}^N`` and know these data live on an ``n``-dimensional submanifold[^1] in ``\mathbb{R}^N``. Based on these data we would now like to generate new samples from the distributions that produced our original data. This is where the Grassmann manifold is useful: each element ``V`` of the Grassmann manifold is an ``n``-dimensional subspace of ``\mathbb{R}^N`` from which we can easily sample. We can then construct a (bijective) mapping from this space ``V`` onto a space that contains our data points ``\mathcal{D}``. 
-
-[^1]: Problems and solutions related to this scenario are part of the *manifold learning paradigm* (see [lin2008riemannian](@cite)). [Data-driven reduced order modeling](@ref "General Workflow") can also be seen as belonging to this category.
-
-## Academic Example
-
-Consider the following toy example: We want to sample from the graph of the (scaled) Rosenbrock function 
-
+Consider the following toy example: we want to sample from the graph of the (scaled) Rosenbrock function 
 ```math
 f(x,y) = ((1 - x)^2 + 100(y - x^2)^2)/1000
 ``` 
@@ -69,26 +79,26 @@ nothing # hide
 ```
 
 ```@example rosenbrock
-Main.include_graphics("rosenbrock") # hide
+Main.include_graphics("rosenbrock"; width = .7, caption = raw"Graph of the Rosenbrock function. ") # hide
 ```
 
 We now build a neural network whose task it is to map a product of two Gaussians ``\mathcal{N}(0,1)\times\mathcal{N}(0,1)`` onto the graph of the Rosenbrock function:
 
 ```math
-    \mathcal{NN}: \mathcal{N}(0,1)\times\mathcal{N}(0,1) \to \{(x, y, z): (x, y)\in[-1.5, 1.5]\times[-1.5, 1.5], z = f(x, y)\},
+    \Psi: \mathcal{N}(0,1)\times\mathcal{N}(0,1) \to \mathcal{W}(\{(x, y, z): (x, y)\in[-1.5, 1.5]\times[-1.5, 1.5], z = f(x, y)\}) =: \tilde{\mathcal{W}},
 ```
-where ``f`` is the Rosenbrock function. 
 
-For computing the loss between the two distributions, i.e. ``\Psi(\mathcal{N}(0,1)\times\mathcal{N}(0,1))`` and ``f([-1.5,1.5], [-1.5,1.5])`` we use the Wasserstein distance[^2].
+where ``\mathcal{W}`` is a distribution on the graph of ``f.`` For computing the loss between the two distributions, i.e. ``\Psi(\mathcal{N}(0,1)\times\mathcal{N}(0,1))`` and ``\mathcal{W}(f([-1.5,1.5], [-1.5,1.5]))`` we use the *Wasserstein distance*[^2]. The Wasserstein distance can  compute the distance between ``\mathcal{N}(0,1)\times\mathcal{N}(0,1)`` and ``\tilde{\mathcal{W}}.`` For more details confer [villani2009optimal, villani2021topics](@cite).
 
 [^2]: The implementation of the Wasserstein distance is taken from [blickhan2023brenier](@cite).
 
-We first set up the neural network. It consists of three layers:
+Before we can use the Wasserstein distance however to train the neural network we need to set it up. It consists of three layers:
 
 ```@example rosenbrock
-using GeometricMachineLearning, Zygote, BrenierTwoFluid
+using GeometricMachineLearning # hide
+using Zygote, BrenierTwoFluid
 using LinearAlgebra: norm # hide
-import Random # hide 
+import Random # hide
 Random.seed!(1234) # hide
 
 model = Chain(GrassmannLayer(2,3), Dense(3, 8, tanh), Dense(8, 3, identity))
@@ -108,7 +118,7 @@ nothing # hide
 
 As the cost function ``c`` for the Wasserstein loss[^3] we simply use:
 
-[^3]: This means that we have a ``W_2`` loss here.
+[^3]: For each Wasserstein loss we need to define such a cost function. For this particular choice of ``c`` the Wasserstein distance corresponds to a ``W_2`` loss.
 
 ```@example rosenbrock
 # this computes the cost that is associated to the Wasserstein distance
@@ -118,7 +128,7 @@ c = (x,y) -> .5 * norm(x - y)^2
 nothing # hide
 ```
 
-We then define a function `compute_wasserstein_gradient`:
+We define a function `compute_wasserstein_gradient`; this is the gradient of the Wasserstein distance with respect to one of the probability distributions it is supplied with (this is further explained below). The function is defined as: 
 
 ```@example rosenbrock
 const ε = 0.1                 # entropic regularization. √ε is a length.  # hide
@@ -232,7 +242,7 @@ nothing # hide
 ```
 
 ```@example rosenbrock
-Main.include_graphics("point_cloud_arrows") # hide
+Main.include_graphics("point_cloud_arrows"; width = .7) # hide
 ```
 
 We now want to train a neural network based on this Wasserstein loss. The loss function is:
@@ -240,7 +250,7 @@ We now want to train a neural network based on this Wasserstein loss. The loss f
 ```math
 L_\mathcal{NN}(\theta) = W_2(\mathcal{NN}_\theta([x^{(1)}, \ldots, x^{(\mathtt{np})}]), \mathcal{D}_2),
 ```
-where `np` is the number of points in ``\mathcal{D}_2.`` We then have
+where `np` is the number of points in ``\mathcal{D}_2`` and ``W_2`` is the *Wasserstein distance*. We then have
 
 ```math
 \nabla_\theta{}L_\mathcal{NN} = (\nabla{}W_2)\nabla_\theta\mathcal{NN},
@@ -248,11 +258,8 @@ where `np` is the number of points in ``\mathcal{D}_2.`` We then have
 where ``\nabla{}W_2`` is equivalent to the function `compute_wasserstein_gradient`.
 
 ```@example rosenbrock
-xyz_points = hcat([[x, y, rosenbrock([x,y])] for x in x for y in y]...)
-
 function compute_gradient(ps::Tuple)
     samples = randn(2, size(xyz_points, 2))
-
     estimate, nn_pullback = Zygote.pullback(ps -> model(samples, ps), ps)
 
     valS, wasserstein_gradient = compute_wasserstein_gradient(estimate, xyz_points)
@@ -265,7 +272,7 @@ optimizer = Optimizer(nn, AdamOptimizer(1e-1))
 nothing # hide
 ```
 
-We can now train our network:
+So we use `Zygote` [Zygote.jl-2018](@cite) to compute ``\nabla_\theta\mathcal{NN}`` and we use `compute_wasserstein_gradient` to obtain ``\nabla{}W_2``. We can now train our network:
 
 ```@example rosenbrock
 import CairoMakie # hide
@@ -314,7 +321,7 @@ nothing # hide
 ```
 
 ```@example rosenbrock
-Main.include_graphics("training_loss") # hide
+Main.include_graphics("training_loss"; width = .7) # hide
 ```
 
 Now we plot a few points to check how well they match the graph:
@@ -325,9 +332,10 @@ GLMakie.activate!() # hide
 
 Random.seed!(124)  # hide
 const number_of_points = 35
-
 coordinates = nn(randn(2, number_of_points))
-
+nothing # hide
+```
+```@setup rosenbrock
 for theme in (:dark, :light) # hide
 fig, ax = make_rosenbrock(; theme = theme) # hide
 scatter!(ax, coordinates[1, :], coordinates[2, :], coordinates[3, :]; 
@@ -339,8 +347,10 @@ axislegend(; position = (.82, .75), backgroundcolor = :transparent, labelcolor =
 file_name = "mapped_points" * (theme == :dark ? "_dark.png" : ".png") # hide
 save(file_name, alpha_colorbuffer(fig)) # hide
 end # hide
+```
 
-Main.include_graphics("mapped_points") # hide
+```@example
+Main.include_graphics("mapped_points"; width = .7, caption = raw"The blue points were obtained with the neural network sampler. " ) # hide
 ```
 
 If points appear in darker color this means that they lie behind the graph of the Rosenbrock function.
@@ -349,4 +359,10 @@ If points appear in darker color this means that they lie behind the graph of th
 
 ```@docs
 GrassmannLayer
+```
+
+```@raw latex
+\section*{Chapter Summary}
+
+In this chapter we used a neural network, which has some of its weights lie on the \textit{Grassmann manifold}, to sample from a distribution from which we have some data available. In order to accomplish this task we combined the gradient of a Wasserstein distance with the pullback of an automatic differentiation routine. At the end we saw that the we could sample new data which were close to the original, given ones.
 ```

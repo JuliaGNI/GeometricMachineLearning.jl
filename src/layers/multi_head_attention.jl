@@ -151,15 +151,24 @@ function ChainRules._adjoint_mat_pullback(y::AbstractArray{T, 3}, proj) where T
     (NoTangent(), proj(tensor_transpose(y)))
 end
 
-function mat_tensor_mul(Y::AT, x::AbstractArray{T, 3}) where {T, BT <: AbstractArray{T}, ST <: StiefelManifold{T, BT}, AT <: Adjoint{T, ST}}
+function mat_tensor_mul(Y::AT, x::AbstractArray{T, 3}) where {  T<:Number,
+                                                                BT <: AbstractArray{T}, 
+                                                                ST <: StiefelManifold{T, BT}, 
+                                                                AT <: Adjoint{T, ST}}
     mat_tensor_mul(Y.parent.A', x)
 end
 
-@doc raw"""
-    mat_tensor_mul(Y::StiefelManifold, x::AbstractArray{<:Number, 3})
-
-Multiply `Y` with all matrices stored in `x` (parallelize over the third axis).
-"""
-function mat_tensor_mul(Y::StiefelManifold, x::AbstractArray{T, 3}) where T 
+# @doc raw"""
+#     mat_tensor_mul(Y::StiefelManifold, x::AbstractArray{<:Number, 3})
+# 
+# Multiply `Y` with all matrices stored in `x` (parallelize over the third axis).
+# """
+function mat_tensor_mul(Y::StiefelManifold, x::AbstractArray{<:Number, 3})
     mat_tensor_mul(Y.A, x)
+end
+
+function (d::MultiHeadAttention)(z::QPT, ps::NamedTuple)
+    N2 = size(z.q, 1)
+    output = d(vcat(z.q, z.p), ps)
+    assign_q_and_p(output, N2)
 end

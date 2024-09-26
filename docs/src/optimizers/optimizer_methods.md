@@ -1,3 +1,7 @@
+```@raw latex
+In the previous chapter we introduced a general optimizer framework without giving explicit examples of neural network optimizers; this is done here. This chapter is divided into two sections: we first discuss \textit{standard neural network optimizers} (including Adam) and then the more complicated BFGS optimizer. In the implementation of all these optimizers the \textit{optimizer cache} will play an important role.
+```
+
 # Standard Neural Network Optimizers
 
 In this section we discuss optimization methods that are often used in training neural networks. The [BFGS optimizer](@ref "The BFGS Optimizer") may also be viewed as a *standard neural network optimizer* but is treated in a separate section because of its complexity. From a perspective of manifolds the *optimizer methods* outlined here operate on ``\mathfrak{g}^\mathrm{hor}`` only. Each of them has a cache associated with it[^1] and this cache is updated with the function [`update!`](@ref). The precise role of this function is described below.
@@ -21,8 +25,7 @@ where addition has to be replaced with appropriate operations in the manifold ca
 When calling [`GradientOptimizer`](@ref) we can specify a learning rate ``\eta`` (or use the default).
 
 ```@example optimizer_methods
-using GeometricMachineLearning
-
+using GeometricMachineLearning  # hide
 const η = 0.01
 method = GradientOptimizer(η)
 ```
@@ -31,7 +34,7 @@ In order to use the optimizer we need an instance of [`Optimizer`](@ref) that is
 
 
 ```@example optimizer_methods
-weight = (A = zeros(10, 10), )
+weight = (A = zeros(4, 4), )
 o = Optimizer(method, weight)
 ```
 
@@ -73,26 +76,28 @@ dx = (A = one(weight.A), )
 
 update!(o, o.cache, dx)
 
-dx
+dx.A
 ```
 
 The cache has changed however:
 
 ```@example optimizer_methods
-o.cache
+o.cache.A
 ```
 
 If we have weights on manifolds calling [`Optimizer`](@ref) will automatically allocate the correct cache on ``\mathfrak{g}^\mathrm{hor}``:
 
 ```@example optimizer_methods
-weight = (Y = rand(StiefelManifold, 10, 5), )
+weight = (Y = rand(StiefelManifold, 5, 3), )
 
 Optimizer(method, weight).cache.Y
 ```
 
+So if the weight is ``Y\in{}St(n,N)`` the corresponding cache is initialized as the zero element on ``\mathfrak{g}^\mathrm{hor}\subset\mathbb{R}^{N\times{}N}`` as this is the global tangent space representation corresponding to the StiefelManifold.
+
 ## The Adam Optimizer 
 
-The Adam Optimizer is one of the most widely neural network optimizers. The cache of the Adam optimizer consists of *first and second moments*. The *first moments* ``B_1``, similar to the momentum optimizer, store linear information about the current and previous gradients, and the *second moments* ``B_2`` store quadratic information about current and previous gradients (all computed from a first-order gradient). 
+The Adam Optimizer is one of the most widely neural network optimizers. The cache of the Adam optimizer consists of *first and second moments*. The *first moments* ``B_1``, similar to the momentum optimizer, store linear information about the current and previous gradients, and the *second moments* ``B_2`` store quadratic information about current and previous gradients. These second moments can be interpreted as approximating the curvature of the optimization landscape.  
 
 If all the weights are on a vector space, then we directly compute updates for ``B_1`` and ``B_2``:
 1. ``B_1 \gets ((\rho_1 - \rho_1^t)/(1 - \rho_1^t))\cdot{}B_1 + (1 - \rho_1)/(1 - \rho_1^t)\cdot{}\nabla{}L,``
@@ -107,7 +112,7 @@ where the last addition has to be replaced with appropriate operations when deal
 In the following we show a schematic update that Adam performs for the case when no elements are on manifolds (also compare this figure with the [general optimization framework](@ref "Generalization to Homogeneous Spaces")):
 
 ```@example 
-Main.include_graphics("../tikz/adam_optimizer") # hide
+Main.include_graphics("../tikz/adam_optimizer"; caption = raw"Schematic representation the Adam optimizer. The first Adam step updates the first and second moments, and the second Adam step outputs the final velocity. ") # hide
 ```
 
 We demonstrate the Adam cache on the same example from before:
@@ -122,13 +127,9 @@ o = Optimizer(method, weight)
 o.cache.Y
 ```
 
-### Weights on manifolds 
+### Weights on Manifolds 
 
-The problem with generalizing Adam to manifolds is that the Hadamard product ``\odot`` as well as the other element-wise operations (``/``, ``\sqrt{}`` and ``+`` in step 3 above) lack a clear geometric interpretation. In `GeometricMachineLearning` we get around this issue by utilizing a so-called [global tangent space representation](@ref "Global Tangent Spaces"). A similar approach is shown in [kong2023momentum](@cite).
-
-```@eval
-Main.remark(raw"The optimization framework presented here manages to generalize the Adam optimizer to manifolds without knowing an underlying differential equation. From a mathematical perspective this is not really satisfactory because we would ideally want the optimizers to emerge as a discretization of a differential equation as in the case of the gradient and the momentum optimizer to better interpret them.")
-```
+The problem with generalizing Adam to manifolds is that the Hadamard product ``\odot`` as well as the other element-wise operations (``/``, ``\sqrt{}`` and ``+``) lack a clear geometric interpretation. In `GeometricMachineLearning` we get around this issue by utilizing the [global tangent space representation](@ref "Global Tangent Spaces"). A similar approach is shown in [kong2023momentum](@cite).
 
 ## The Adam Optimizer with Decay
 The Adam optimizer with decay is similar to the standard Adam optimizer with the difference that the learning rate ``\eta`` decays exponentially. We start with a relatively high learning rate ``\eta_1`` (e.g. ``10^{-2}``) and end with a low learning rate ``\eta_2`` (e.g. ``10^{-8}``). If we want to use this optimizer we have to tell it beforehand how many epochs we train for such that it can adjust the learning rate decay accordingly:
@@ -147,7 +148,7 @@ nothing # hide
  The cache is however exactly the same as for the Adam optimizer:
 
 ```@example optimizer_methods
-    o.cache.Y
+o.cache.Y
 ```
 
 ## Library Functions
@@ -162,8 +163,11 @@ AbstractCache
 GradientCache
 MomentumCache
 AdamCache
-GeometricMachineLearning.init_optimizer_cache
-update!
+update!(::Optimizer, ::AbstractCache, ::AbstractArray)
+```
+
+```@raw latex
+\begin{comment}
 ```
 
 ## References
@@ -173,4 +177,8 @@ Pages = []
 Canonical = false
 
 goodfellow2016deep
+```
+
+```@raw latex
+\end{comment}
 ```

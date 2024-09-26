@@ -19,7 +19,7 @@ module GeometricMachineLearning
     using TimerOutputs
     using LazyArrays
 
-    import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer, AbstractExplicitCell, AbstractNeuralNetwork , NeuralNetwork
+    import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer, AbstractExplicitCell, AbstractNeuralNetwork , NeuralNetwork, UnknownArchitecture
     import AbstractNeuralNetworks: Chain, GridCell
     import AbstractNeuralNetworks: Dense, Linear, Recurrent
     import AbstractNeuralNetworks: IdentityActivation, ZeroVector
@@ -33,7 +33,7 @@ module GeometricMachineLearning
     export dim
     import GeometricIntegrators.Integrators: method, GeometricIntegrator
     import NNlib: σ, sigmoid, softmax
-    import Base: iterate
+    import Base: iterate, eltype
     #import LogExpFunctions: softmax
 
     export CPU, GPU
@@ -54,7 +54,7 @@ module GeometricMachineLearning
     # INCLUDE ARRAYS
     include("arrays/skew_symmetric.jl")
     include("arrays/symmetric.jl")
-    include("arrays/symplectic.jl")
+    include("arrays/poisson_tensor.jl")
     include("arrays/abstract_lie_algebra_horizontal.jl")
     include("arrays/stiefel_lie_algebra_horizontal.jl")
     include("arrays/grassmann_lie_algebra_horizontal.jl")
@@ -62,7 +62,7 @@ module GeometricMachineLearning
     include("arrays/lower_triangular.jl")
     include("arrays/upper_triangular.jl")
 
-    export SymmetricMatrix, SymplecticPotential, SkewSymMatrix
+    export SymmetricMatrix, PoissonTensor, SkewSymMatrix
     export StiefelLieAlgHorMatrix
     export SymplecticLieAlgMatrix, SymplecticLieAlgHorMatrix
     export GrassmannLieAlgHorMatrix

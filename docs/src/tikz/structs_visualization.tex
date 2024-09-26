@@ -68,12 +68,12 @@
 \draw[arrow_exp] (sympnetlayer) -- (linear); 
 
 % arrows for the constructor
-\draw[arrow_constructor] (gradientq) -- (gradient);
-\draw[arrow_constructor] (gradientp) -- (gradient); 
-\draw[arrow_constructor] (activationq) -- (activation); 
-\draw[arrow_constructor] (activationp) -- (activation);
-\draw[arrow_constructor] (linearq) -- (linear);
-\draw[arrow_constructor] (linearp) -- (linear);
+\draw[arrow_constructor] (gradient) -- (gradientq);
+\draw[arrow_constructor] (gradient) -- (gradientp); 
+\draw[arrow_constructor] (activation) -- (activationq); 
+\draw[arrow_constructor] (activation) -- (activationp);
+\draw[arrow_constructor] (linear) -- (linearq);
+\draw[arrow_constructor] (linear) -- (linearp);
 
 \coordinate[right of=linearp, yshift=-.3cm] (right_of_linearp);
 \coordinate[below of=sympnetnetwork, yshift=-.5cm] (below_of_sympnet);

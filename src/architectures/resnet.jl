@@ -10,11 +10,26 @@ A ResNet is a neural network that realizes a mapping of the form:
 ```
 so the input is again added to the output (a so-called add connection). 
 In `GeometricMachineLearning` the specific ResNet that we use consists of a series of simple [`ResNetLayer`](@ref)s.
+
+# Constructor
+
+`ResNet` can also be called with the constructor:
+```julia
+ResNet(dl, n_blocks)
+```
+
+where `dl` is an instance of `DataLoader`.
+
+See [`iterate`](@ref) for an example of this.
 """
 struct ResNet{AT} <: NeuralNetworkIntegrator
     sys_dim::Int 
     n_blocks::Int 
     activation::AT
+end
+
+function ResNet(dl::DataLoader, n_blocks::Integer; activation = tanh)
+    ResNet(dl.input_dim, n_blocks, activation)
 end
 
 function Chain(arch::ResNet{AT}) where AT

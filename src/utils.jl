@@ -134,6 +134,22 @@ data3 = (q = rand(5, 4, 2), p = rand(5, 4, 2))
 
 (true, true, true)
 ```
+
+We can also do:
+
+```jldoctest
+using GeometricMachineLearning: QPT, PoissonTensor
+
+𝕁 = PoissonTensor(4)
+qp = (q = [1, 2], p = [3, 4])
+
+𝕁 * qp
+
+# output
+
+(q = [3, 4], p = [-1, -2])
+```
+
 """
 const QPT{T} = NamedTuple{(:q, :p), Tuple{AT, AT}} where {T, AT <: AbstractArray{T}}
 
@@ -148,6 +164,8 @@ const QPTOAT = Union{QPT, AbstractArray}
 This could be data in ``(q, p)\in\mathbb{R}^{2d}`` form or come from an arbitrary vector space.
 """
 const QPTOAT{T} = Union{QPT{T}, AbstractArray{T}} where T
+
+Base.:≈(qp₁::QPT, qp₂::QPT) = (qp₁.q ≈ qp₂.q) & (qp₁.p ≈ qp₂.p)
 
 _eltype(x) = eltype(x)
 _eltype(ps::NamedTuple) = _eltype(ps[1])

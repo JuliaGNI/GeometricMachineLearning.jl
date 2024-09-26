@@ -4,12 +4,41 @@
 end
 
 @doc raw"""
-One-hot-batch encoding of a vector of integers: $input\in\{0,1,\ldots,9\}^\ell$. 
-The output is a tensor of shape $10\times1\times\ell$. 
+    onehotbatch(target)
+
+Performs a one-hot-batch encoding of a vector of integers: ``input\in\{0,1,\ldots,9\}^\ell``. 
+
+The output is a tensor of shape ``10\times1\times\ell``.
+
+If the input is ``0``, this function produces:
 ```math
-0 \mapsto \begin{bmatrix} 1 & 0 & \ldots & 0 \end{bmatrix}.
+0 \mapsto \begin{bmatrix} 1 & 0 & \ldots & 0 \end{bmatrix}^T.
 ```
-In more abstract terms: $i \mapsto e_i$.
+In more abstract terms: ``i \mapsto e_i``.
+
+# Examples
+
+```jldoctest
+using GeometricMachineLearning: onehotbatch
+
+target = [0]
+onehotbatch(target)
+
+# output
+
+10×1×1 Array{Int64, 3}:
+[:, :, 1] =
+ 1
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+```
 """
 function onehotbatch(target::AbstractVector{T}) where {T<:Integer}
     backend = KernelAbstractions.get_backend(target)
@@ -53,7 +82,7 @@ end
 
 Perform a preprocessing of an image into *flattened patches*.
 
-This rearranges the input data (in an intricate way) so that it can easily be processed with a transformer.
+This rearranges the input data so that it can easily be processed with a transformer.
 
 # Examples
 
@@ -86,7 +115,7 @@ split_and_flatten(input; patch_length = 3, number_of_patches = 4)
 ```
 
 Here we see that `split_and_flatten`:
-1. *splits* the original matrix into 4 ``3\times3`` matrices and then 
+1. *splits* the original matrix into four ``3\times3`` matrices and then 
 2. *flattens* each matrix into a column vector of size ``9.``
 After this all the vectors are put together again to yield a ``9\times4`` matrix.
 

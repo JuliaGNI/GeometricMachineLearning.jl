@@ -1,7 +1,8 @@
 using CUDA
-using Plots; pyplot()
 using GeometricMachineLearning
 using GeometricMachineLearning: map_to_cpu
+# using Plots; pyplot()
+using JLD2
 using GeometricIntegrators: integrate, ImplicitMidpoint
 using GeometricProblems.RigidBody: odeproblem, odeensemble, default_parameters
 using LaTeXStrings
@@ -24,9 +25,11 @@ const sys_dim = size(dl₁.input, 1)
 const n_heads = 1
 const L = 3 # transformer blocks 
 const activation = tanh
+const resnet_activation = tanh
 const n_linear = 1
 const n_blocks = 2
 const skew_sym = true
+const seq_length = 3
 
 # backend 
 const backend = CUDABackend()
@@ -40,9 +43,7 @@ const dl = backend == CPU() ? DataLoader(dl₁.input) : DataLoader(dl₁.input |
 # hyperparameters concerning training 
 const n_epochs = 500000
 const batch_size = 16384
-const seq_length = 3
 const opt_method = AdamOptimizerWithDecay(n_epochs, T; η₁ = 1e-2, η₂ = 1e-6)
-const resnet_activation = tanh
 
 # parameters for evaluation 
 ics_val = [sin(1.1), 0., cos(1.1)]
@@ -87,12 +88,21 @@ model₂ = VolumePreservingFeedForward(sys_dim, n_blocks * L, n_linear, resnet_a
 
 model₃ = VolumePreservingTransformer(sys_dim, seq_length; n_blocks = n_blocks, n_linear = n_linear, L = L, activation = resnet_activation, skew_sym = skew_sym)
 
-model₄ = RegularTransformerIntegrator(sys_dim, sys_dim, n_heads; n_blocks = n_blocks, L = L, resnet_activation = resnet_activation, add_connection = false)
+model₄ = StandardTransformerIntegrator(sys_dim; n_heads = n_heads, transformer_dim = sys_dim, n_blocks = n_blocks, L = L, resnet_activation = resnet_activation, add_connection = false)
 
 # nn₁, loss_array₁ = setup_and_train(model₁, transformer_batch)
 nn₂, loss_array₂ = setup_and_train(model₂, feedforward_batch)
 nn₃, loss_array₃ = setup_and_train(model₃, transformer_batch)
 nn₄, loss_array₄ = setup_and_train(model₄, transformer_batch)
+
+save("transformer_rigid_body.jld2",
+        "nn2_params", nn₂.params,
+        # "nn2_loss_array", loss_array₂,
+        "nn3_params", nn₃.params,
+        # "nn3_loss_array", loss_array₃,
+        "nn4_params", nn₄.params,
+        # "nn4_loss_array", loss_array₄
+        )
 
 function numerical_solution(sys_dim::Int, t_integration::Int, tstep::Real, ics_val::Vector)
     validation_problem = odeproblem(ics_val; tspan = (0.0, t_integration), tstep = tstep, parameters = default_parameters)
