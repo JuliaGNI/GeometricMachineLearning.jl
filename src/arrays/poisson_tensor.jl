@@ -67,7 +67,7 @@ function _vcat(v::NamedTuple{(:q, :p), Tuple{AT, AT}}) where {AT <: AbstractArra
     vcat(v.q, v.p)
 end
 
-Base.:*(𝕁::PoissonTensor{T}, v::QPT{T}) where T = (q = v.p, p = -v.q)
+Base.:*(::PoissonTensor, v::QPT) = (q = v.p, p = -v.q)
 Base.:*(𝕁::PoissonTensor{T}, v::AbstractArray{T,3}) where T = _vcat(𝕁(assign_q_and_p(v, 𝕁.n)))
 Base.:*(𝕁::PoissonTensor{T}, v::AbstractVector{T}) where T = _vcat(𝕁(assign_q_and_p(v, 𝕁.n)))
 Base.:*(𝕁::PoissonTensor{T}, v::AbstractMatrix{T}) where T = _vcat(𝕁(assign_q_and_p(v, 𝕁.n)))
