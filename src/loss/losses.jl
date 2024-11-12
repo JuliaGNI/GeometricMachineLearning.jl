@@ -294,6 +294,6 @@ function ReducedLoss(autoencoder::NeuralNetwork{<:AutoEncoder})
     ReducedLoss(encoder(autoencoder), decoder(autoencoder))
 end
 
-function (loss::ReducedLoss)(model::Chain, params::Tuple, input::CT, output::CT) where {CT <: QPTOAT}
+function (loss::ReducedLoss)(model::Chain, params::NeuralNetworkParameters, input::CT, output::CT) where {CT <: QPTOAT}
     _compute_loss(loss.decoder(model(loss.encoder(input), params)), output)
 end

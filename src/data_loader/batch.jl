@@ -29,7 +29,7 @@ batch(dl)
 # output
 
 [ Info: You have provided a matrix as input. The axes will be interpreted as (i) system dimension and (ii) number of parameters.
-([(1, 4), (1, 3)], [(1, 2), (1, 1)], [(1, 5)])
+([(1, 5), (1, 3)], [(1, 4), (1, 1)], [(1, 2)])
 ```
 
 Here the first index is always 1 (the time dimension). We get a total number of 3 batches. 
@@ -123,8 +123,8 @@ println(stdout, batch(dl₁), "\n", batch(dl₂))
 
 Number of batches of dl₁: 2
 Number of batches of dl₂: 2
-([(1, 1), (3, 1), (4, 1)], [(2, 1)])
-([(1, 4), (1, 3), (1, 2)], [(1, 5), (1, 1)])
+([(1, 1), (4, 1), (2, 1)], [(3, 1)])
+([(1, 3), (1, 2), (1, 4)], [(1, 1), (1, 5)])
 ```
 
 Here we see that in the *autoencoder case* that last minibatch has an additional element.
