@@ -41,6 +41,7 @@ module GeometricMachineLearning
     export Dense, Linear
     export initialparameters
     export parameterlength
+    export NeuralNetworkParameters
     
     export σ, sigmoid, softmax
 

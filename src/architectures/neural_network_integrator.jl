@@ -73,7 +73,8 @@ using GeometricMachineLearning
 model = ResNet(3, 0, identity)
 weight = [1 0 0; 0 2 0; 0 0 1]
 bias = [0, 0, 1]
-nn = NeuralNetwork(model, Chain(model), ((weight = weight, bias = bias), ), CPU())
+ps = NeuralNetworkParameters((L1 = (weight = weight, bias = bias), ))
+nn = NeuralNetwork(model, Chain(model), ps, CPU())
 
 ics = [1, 1, 1]
 iterate(nn, ics; n_points = 4)

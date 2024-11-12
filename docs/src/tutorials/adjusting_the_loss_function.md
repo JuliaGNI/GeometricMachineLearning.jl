@@ -41,7 +41,10 @@ using LinearAlgebra: norm  # hide
 # norm of parameters for single layer
 network_parameter_norm(params::NamedTuple) = sum([norm(params[i]) for i in 1:length(params)])
 # norm of parameters for entire network
-network_parameter_norm(params) = sum([network_parameter_norm(param) for param in params])
+function network_parameter_norm(params::NeuralNetworkParameters)
+    sum([network_parameter_norm(params[key]) for key in keys(params)])
+end
+
 network_parameter_norm(nn.params)
 ```
 
@@ -55,7 +58,7 @@ We now implement a custom loss such that:
 struct CustomLoss <: GeometricMachineLearning.NetworkLoss end
 
 const λ = .1
-function (loss::CustomLoss)(model::Chain, params::Tuple, input::CT, output::CT) where {
+function (loss::CustomLoss)(model::Chain, params::NeuralNetworkParameters, input::CT, output::CT) where {
                                                             T,
                                                             AT<:AbstractArray{T, 3}, 
                                                             CT<:@NamedTuple{q::AT, p::AT}
