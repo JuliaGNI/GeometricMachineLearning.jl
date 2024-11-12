@@ -52,7 +52,7 @@ function svd_test(A, n, train_steps=1000, tol=1e-1; retraction=cayley)
     @test norm((err₃ - err_best)/err_best) < tol 
 end
 
-function train_network!(o::Optimizer, model::Chain, ps::Tuple, A::AbstractMatrix, train_steps, tol)
+function train_network!(o::Optimizer, model::Chain, ps::NamedTuple, A::AbstractMatrix, train_steps, tol)
     error(ps) = norm(A - model(A, ps))
 
     for _ in 1:train_steps

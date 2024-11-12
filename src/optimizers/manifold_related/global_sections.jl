@@ -30,8 +30,8 @@ function GlobalSection(ps::NamedTuple)
     apply_toNT(GlobalSection, ps)
 end
 
-function GlobalSection(ps::Tuple)
-    [GlobalSection(ps_elem) for ps_elem in ps] |> Tuple
+function GlobalSection(ps::NeuralNetworkParameters)
+    setup_cache(GlobalSection, ps)
 end
 
 @doc raw"""

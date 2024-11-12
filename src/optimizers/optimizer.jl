@@ -60,7 +60,7 @@ Optimizer(method, nn::NeuralNetwork)
 
 The optional keyword argument is the retraction. By default this is [`cayley`](@ref).
 """
-function Optimizer(method::OptimizerMethod, nn_params::Union{Tuple, NamedTuple}; retraction = cayley)
+function Optimizer(method::OptimizerMethod, nn_params::Union{NeuralNetworkParameters, NamedTuple}; retraction = cayley)
     Optimizer(method, init_optimizer_cache(method, nn_params), 0, retraction)
 end
 
@@ -95,10 +95,15 @@ function _optimization_step!(o::Optimizer, λY::NamedTuple, ps::NamedTuple, cach
     nothing
 end
 
-function optimization_step!(o::Optimizer, λY::Tuple, ps::Tuple, dx::Tuple)
+function optimization_step!(o::Optimizer, λY::NamedTuple, ps::NeuralNetworkParameters, dx::NamedTuple)
+    @assert keys(o.cache) == keys(λY) == keys(ps) == keys(dx)
     o.step += 1
-    for (cache, λY, ps, dx) in zip(o.cache, λY, ps, dx)
-        _optimization_step!(o, λY, ps, cache, dx)
+    for key in keys(o.cache)
+        cache = o.cache[key]
+        λY_temp = λY[key]
+        ps_temp = ps[key]
+        dx_temp = dx[key]
+        _optimization_step!(o, λY_temp, ps_temp, cache, dx_temp)
     end
 end
 
