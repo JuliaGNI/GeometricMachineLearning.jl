@@ -509,7 +509,7 @@ time_steps
 Now we do so with:
 
 ```@example toda_lattice
-time_steps = (0, 2, 4)
+time_steps = (0, 4, 5)
 nothing # hide
 ```
 
