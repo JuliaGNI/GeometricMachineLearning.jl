@@ -352,7 +352,8 @@ _latex_pages = [
 ]
 
 _keys = [page[1] for page in _latex_pages]
-filter!(key -> (key ≠ "HOME") & (key ≠ "Index of Docstrings") & (key ≠ "References"), _keys)
+# don't generate docstring indices for specific chapters (introduction, conclusion, ...)
+filter!(key -> (key ≠ "HOME") & (key ≠ "Index of Docstrings") & (key ≠ "References") & (key ≠ "Summary and Outlook"), _keys)
 index_latex_pages = vcat([Dict(_latex_pages)[key] for key in _keys]...)
 
 makedocs(;
