@@ -47,7 +47,7 @@ number_of_batches(dl, batch)
 3
 ```
 """
-function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTuple}, dl::DataLoader{T}, batch::Batch, loss::Union{typeof(loss), NetworkLoss}, λY) where T
+function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{NeuralNetworkParameters, NamedTuple}, dl::DataLoader{T}, batch::Batch, loss::Union{typeof(loss), NetworkLoss}, λY) where T
     count = 0
     total_error = T(0)
     batches = batch(dl)
@@ -61,11 +61,15 @@ function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{Tuple, NamedTu
             Zygote.pullback(ps -> loss(model, ps, input_nt_output_nt), ps)
         end
         total_error += loss_value
-        dp = pullback(one(loss_value))[1]
+        dp = return_correct_named_tuple(pullback(one(loss_value))[1])
         optimization_step!(opt, λY, ps, dp)
     end
     total_error / count
 end
+
+# this is needed because of the specific way in which we store nn parameters
+return_correct_named_tuple(dx::NamedTuple{(:params, )}) = dx.params
+return_correct_named_tuple(dx) = dx
 
 _copy(a::AbstractArray) = copy(a)
 _copy(qp::QPT) = (q = copy(qp.q), p = copy(qp.p))

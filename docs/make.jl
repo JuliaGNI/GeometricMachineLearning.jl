@@ -352,7 +352,8 @@ _latex_pages = [
 ]
 
 _keys = [page[1] for page in _latex_pages]
-filter!(key -> (key ≠ "HOME") & (key ≠ "Index of Docstrings") & (key ≠ "References"), _keys)
+# don't generate docstring indices for specific chapters (introduction, conclusion, ...)
+filter!(key -> (key ≠ "HOME") & (key ≠ "Index of Docstrings") & (key ≠ "References") & (key ≠ "Summary and Outlook"), _keys)
 index_latex_pages = vcat([Dict(_latex_pages)[key] for key in _keys]...)
 
 makedocs(;
@@ -371,3 +372,7 @@ deploydocs(;
     devurl = "latest",
     devbranch = "main",
 )
+
+# got the error "exception = GLFWError (NOT_INITIALIZED): The GLFW library is not initialized" before; also see https://discourse.julialang.org/t/warning-error-closing-screen/111939
+import GLMakie
+GLMakie.closeall()

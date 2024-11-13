@@ -9,7 +9,7 @@ function optimization_step_test(N, n, T)
     model = Chain(StiefelLayer(N, n), Dense(N, N, tanh))
     ps = initialparameters(model, KernelAbstractions.CPU(), T)
     # gradient 
-    dx = ((weight=rand(Float32, N, n),), (W=rand(Float32, N, N), b=rand(Float32, N)))
+    dx = (L1 = (weight=rand(Float32, N, n),), L2 = (W=rand(Float32, N, N), b=rand(Float32, N)))
     m = AdamOptimizer()
     # randomize the cache!
     o = Optimizer(m, ps)

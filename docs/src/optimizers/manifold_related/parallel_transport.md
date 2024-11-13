@@ -7,7 +7,7 @@ A precise definition of parallel transport needs a notion of a *connection* [lan
 ```@eval
 Main.theorem(raw"Given two elements ``B^A_1, B^A_2\in{}T_AG`` the parallel transport of ``B^A_2`` along the geodesic of ``B^A_1`` is given by
 " * Main.indentation * raw"```math
-" * Main.indentation * raw"\Pi_{A\to\gamma_{B^A_1}(t)} = A\exp(t\cdot{}A^{-1}B^A_1)A^{-1}B^A_2 = A\exp(t\cdot{}B_1)B_2,
+" * Main.indentation * raw"\Pi_{A\to\gamma_{B^A_1}(t)}B^A_2 = A\exp(t\cdot{}A^{-1}B^A_1)A^{-1}B^A_2 = A\exp(t\cdot{}B_1)B_2,
 " * Main.indentation * raw"```
 " * Main.indentation * raw"where ``B_i := A^{-1}B^A_i.``")
 ```
@@ -19,7 +19,7 @@ For the Stiefel manifold this is not much more complicated[^1]:
 ```@eval
 Main.theorem(raw"Given two elements ``\Delta_1, \Delta_2\in{}T_Y\mathcal{M}``, the parallel transport of ``\Delta_2`` along the geodesic of ``\Delta_1`` is given by
 " * Main.indentation * raw"```math
-" * Main.indentation * raw"\Pi_{Y\to\gamma_{\Delta_1}(t)} = \exp(t\cdot\Omega(Y, \Delta_1))\Delta_2 =  \lambda(Y)\exp(\bar{B}_1)\lambda(Y)^{-1}\Delta_2,
+" * Main.indentation * raw"\Pi_{Y\to\gamma_{\Delta_1}(t)}\Delta_2 = \exp(t\cdot\Omega(Y, \Delta_1))\Delta_2 =  \lambda(Y)\exp(\bar{B}_1)\lambda(Y)^{-1}\Delta_2,
 " * Main.indentation * raw"```
 " * Main.indentation * raw"where ``\bar{B}_1 = \lambda(Y)^{-1}\Omega(Y, \Delta_1)\lambda(Y).``")
 ```
@@ -27,10 +27,10 @@ Main.theorem(raw"Given two elements ``\Delta_1, \Delta_2\in{}T_Y\mathcal{M}``, t
 We can further modify the expression of parallel transport for the Stiefel manifold: 
 
 ```math
-\Pi_{Y\to\gamma_{\Delta_1}(t)} = \lambda(Y)\exp(B_1)\lambda(Y)\Omega(Y, \Delta_2)Y = \lambda(Y)\exp(B_1)B_2E,
+\Pi_{Y\to\gamma_{\Delta_1}(t)}\Delta_2 = \lambda(Y)\exp(B_1)\lambda(Y)\Omega(Y, \Delta_2)Y = \lambda(Y)\exp(B_1)B_2E,
 ```
 
-where ``B_2 = \lambda(Y)^{-1}\Omega(Y, \Delta_2)\lambda(Y).`` We can now define explicit updating rules for the [global section](@ref "Global Sections") ``\Lambda^{(\cdot)}``, the element of the homogeneous space ``Y^{(\cdot)}``, the tangent vector ``\Delta^{(\cdot)}`` and ``D^{(\cdot)} = (\Lambda^{(\cdot)})^{-1}\Omega(\Delta^{(\cdot)})\Lambda^{(cdot)}``, its representation in ``\mathfrak{g}^\mathrm{hor}``.
+where ``B_2 = \lambda(Y)^{-1}\Omega(Y, \Delta_2)\lambda(Y).`` We can now define explicit updating rules for the [global section](@ref "Global Sections") ``\Lambda^{(\cdot)}``, the element of the homogeneous space ``Y^{(\cdot)}``, the tangent vector ``\Delta^{(\cdot)}`` and ``D^{(\cdot)} = (\Lambda^{(\cdot)})^{-1}\Omega(\Delta^{(\cdot)})\Lambda^{(\cdot)}``, its representation in ``\mathfrak{g}^\mathrm{hor}``.
 
 We thus have:
 1. ``\Lambda^{(t)} \leftarrow \Lambda^{(t-1)}\exp(B^{(t-1)}),``

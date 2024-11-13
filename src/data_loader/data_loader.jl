@@ -483,7 +483,7 @@ Compute the accuracy of a neural network classifier.
 
 This needs an instance of [`DataLoader`](@ref) that stores the *test data*.
 """
-function accuracy(model::Chain, ps::Tuple, dl::DataLoader{T, AT, BT}) where {T, T1<:Integer, AT<:AbstractArray{T}, BT<:AbstractArray{T1}}
+function accuracy(model::Chain, ps::NeuralNetworkParameters, dl::DataLoader{T, AT, BT}) where {T, T1<:Integer, AT<:AbstractArray{T}, BT<:AbstractArray{T1}}
     output_tensor = model(dl.input, ps)
     output_estimate = assign_output_estimate(output_tensor, dl.output_time_steps)
     backend = KernelAbstractions.get_backend(output_estimate)

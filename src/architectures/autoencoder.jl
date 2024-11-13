@@ -85,7 +85,8 @@ using GeometricMachineLearning
 using GeometricMachineLearning: UnknownEncoder
 
 model = Chain(Dense(5, 3, tanh; use_bias = false), Dense(3, 2, identity; use_bias = false))
-nn = NeuralNetwork(UnknownEncoder(5, 2, 2), model, initialparameters(model), CPU())
+params = NeuralNetworkParameters(initialparameters(model))
+nn = NeuralNetwork(UnknownEncoder(5, 2, 2), model, params, CPU())
 
 typeof(nn) <: NeuralNetwork{<:GeometricMachineLearning.Encoder}
 
@@ -171,7 +172,8 @@ end
 # """
 function encoder_parameters(nn::NeuralNetwork{<:AutoEncoder})
     n_encoder_layers = length(encoder_model(nn.architecture).layers)
-    nn.params[1:n_encoder_layers]
+    keys = Tuple(Symbol.(["L$(i)" for i in 1:n_encoder_layers]))
+    NeuralNetworkParameters(NamedTuple{keys}(Tuple([nn.params[key] for key in keys])))
 end
 
 # """
@@ -181,7 +183,13 @@ end
 # """
 function decoder_parameters(nn::NeuralNetwork{<:AutoEncoder})
     n_decoder_layers = length(decoder_model(nn.architecture).layers)
-    nn.params[(end - (n_decoder_layers - 1)):end]
+    all_keys = keys(nn.params)
+    # "old keys" are the ones describing the correct parameters in nn.params
+    keys_old = Tuple(Symbol.(["L$(i)" for i in (length(all_keys) - (n_decoder_layers - 1)):length(all_keys)]))
+    n_keys = length(keys_old)
+    # "new keys" are the ones describing the keys in the new NamedTuple
+    keys_new = Tuple(Symbol.(["L$(i)" for i in 1:n_keys]))
+    NeuralNetworkParameters(NamedTuple{keys_new}(Tuple([nn.params[key] for key in keys_old])))
 end
 
 function Chain(arch::AutoEncoder)

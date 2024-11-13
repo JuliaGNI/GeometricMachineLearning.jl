@@ -151,10 +151,11 @@ accuracy_score2 = data["accuracy_score2"]
 accuracy_score3 = data["accuracy_score3"]
 accuracy_score4 = data["accuracy_score4"]
 
-nn1 = NeuralNetwork(nn1.architecture, nn1.model, data["nn1weights"], CPU())
-nn2 = NeuralNetwork(nn2.architecture, nn2.model, data["nn2weights"], CPU())
-nn3 = NeuralNetwork(nn3.architecture, nn3.model, data["nn3weights"], CPU())
-nn4 = NeuralNetwork(nn4.architecture, nn4.model, data["nn4weights"], CPU())
+_nnp(ps::Tuple) = NeuralNetworkParameters{Tuple(Symbol("L$(i)") for i in 1:length(ps))}(ps)
+nn1 = NeuralNetwork(nn1.architecture, nn1.model, _nnp(data["nn1weights"]), CPU())
+nn2 = NeuralNetwork(nn2.architecture, nn2.model, _nnp(data["nn2weights"]), CPU())
+nn3 = NeuralNetwork(nn3.architecture, nn3.model, _nnp(data["nn3weights"]), CPU())
+nn4 = NeuralNetwork(nn4.architecture, nn4.model, _nnp(data["nn4weights"]), CPU())
 
 morange = RGBf(255 / 256, 127 / 256, 14 / 256) # hide
 mred = RGBf(214 / 256, 39 / 256, 40 / 256) # hide

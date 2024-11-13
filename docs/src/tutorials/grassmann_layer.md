@@ -112,7 +112,6 @@ We then *lift* the neural network parameters via [`GlobalSection`](@ref).
 
 ```@example rosenbrock
 λY = GlobalSection(nn.params)
-
 nothing # hide
 ```
 
@@ -258,7 +257,7 @@ where `np` is the number of points in ``\mathcal{D}_2`` and ``W_2`` is the *Wass
 where ``\nabla{}W_2`` is equivalent to the function `compute_wasserstein_gradient`.
 
 ```@example rosenbrock
-function compute_gradient(ps::Tuple)
+function compute_gradient(ps::NeuralNetworkParameters)
     samples = randn(2, size(xyz_points, 2))
     estimate, nn_pullback = Zygote.pullback(ps -> model(samples, ps), ps)
 
@@ -283,7 +282,7 @@ loss_array = zeros(training_steps)
 for i in 1:training_steps
     val, dp = compute_gradient(nn.params)
     loss_array[i] = val
-    optimization_step!(optimizer, λY, nn.params, dp)
+    optimization_step!(optimizer, λY, nn.params, dp.params)
 end
 ```
 

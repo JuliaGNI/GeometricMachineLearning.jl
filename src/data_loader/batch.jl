@@ -19,9 +19,10 @@ Consider the following example for drawing batches of size 2 for an instance of 
 using GeometricMachineLearning
 import Random
 
-Random.seed!(123)
+rng = Random.TaskLocalRNG()
+Random.seed!(rng, 123)
 
-dl = DataLoader(rand(5))
+dl = DataLoader(rand(rng, 5))
 batch = Batch(2)
 
 batch(dl)
@@ -29,7 +30,7 @@ batch(dl)
 # output
 
 [ Info: You have provided a matrix as input. The axes will be interpreted as (i) system dimension and (ii) number of parameters.
-([(1, 4), (1, 3)], [(1, 2), (1, 1)], [(1, 5)])
+([(1, 5), (1, 3)], [(1, 4), (1, 1)], [(1, 2)])
 ```
 
 Here the first index is always 1 (the time dimension). We get a total number of 3 batches. 
@@ -106,6 +107,7 @@ Here the distinction is between data that are *time-series like* and data that a
 using GeometricMachineLearning
 using GeometricMachineLearning: number_of_batches
 import Random
+
 Random.seed!(123)
 
 dat = [1, 2, 3, 4, 5]
@@ -123,8 +125,8 @@ println(stdout, batch(dl₁), "\n", batch(dl₂))
 
 Number of batches of dl₁: 2
 Number of batches of dl₂: 2
-([(1, 1), (3, 1), (4, 1)], [(2, 1)])
-([(1, 4), (1, 3), (1, 2)], [(1, 5), (1, 1)])
+([(1, 1), (4, 1), (2, 1)], [(3, 1)])
+([(1, 3), (1, 2), (1, 4)], [(1, 1), (1, 5)])
 ```
 
 Here we see that in the *autoencoder case* that last minibatch has an additional element.
