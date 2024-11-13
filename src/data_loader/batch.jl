@@ -19,9 +19,10 @@ Consider the following example for drawing batches of size 2 for an instance of 
 using GeometricMachineLearning
 import Random
 
-Random.seed!(123)
+rng = Random.TaskLocalRNG()
+Random.seed!(rng, 123)
 
-dl = DataLoader(rand(5))
+dl = DataLoader(rand(rng, 5))
 batch = Batch(2)
 
 batch(dl)
@@ -106,6 +107,7 @@ Here the distinction is between data that are *time-series like* and data that a
 using GeometricMachineLearning
 using GeometricMachineLearning: number_of_batches
 import Random
+
 Random.seed!(123)
 
 dat = [1, 2, 3, 4, 5]
