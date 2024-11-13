@@ -372,3 +372,7 @@ deploydocs(;
     devurl = "latest",
     devbranch = "main",
 )
+
+# got the error "exception = GLFWError (NOT_INITIALIZED): The GLFW library is not initialized" before; also see https://discourse.julialang.org/t/warning-error-closing-screen/111939
+import GLMakie
+GLMakie.closeall()
