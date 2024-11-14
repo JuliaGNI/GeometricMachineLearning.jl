@@ -101,6 +101,13 @@ T^*_a\mathcal{V} \to T_a\mathcal{V}
 
 is equivalent to applying the [Riemannian gradient](@ref "The Riemannian Gradient").
 
+## Library Functions 
+
+```@docs
+AbstractPullback
+GeometricMachineLearning.ZygotePullback
+```
+
 ```@raw latex
 \begin{comment}
 ```
