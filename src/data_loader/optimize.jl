@@ -72,11 +72,15 @@ function optimize_for_one_epoch!(   opt::Optimizer,
         input_nt_output_nt = convert_input_and_batch_indices_to_array(dl, batch, batch_indices) |> _copy
         loss_value, pullback = _pullback(ps, model, input_nt_output_nt)
         total_error += loss_value
-        dp = return_correct_named_tuple(pullback(one(loss_value))[1])
+        dp = return_correct_named_tuple(_unpack_tuple(pullback(one(loss_value))))
         optimization_step!(opt, λY, ps, dp)
     end
     total_error / count
 end
+
+# this function is necessary because of the way Zygote returns derivatives
+_unpack_tuple(a) = a 
+_unpack_tuple(a::Tuple{<:Any}) = a[1]
 
 # this is needed because of the specific way in which we store nn parameters
 return_correct_named_tuple(dx::NamedTuple{(:params, )}) = dx.params
