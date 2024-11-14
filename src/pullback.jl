@@ -1,4 +1,4 @@
-"""
+@doc raw"""
     AbstractPullback{NNLT<:NetworkLoss}
 
 `AbstractPullback` is an `abstract type` that encompasses all ways of performing differentiation (especially computing the gradient with respect to neural network parameters) in `GeometricMachineLearning`.
