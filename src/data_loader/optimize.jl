@@ -47,7 +47,22 @@ number_of_batches(dl, batch)
 3
 ```
 """
-function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{NeuralNetworkParameters, NamedTuple}, dl::DataLoader{T}, batch::Batch, loss::Union{typeof(loss), NetworkLoss}, λY) where T
+function optimize_for_one_epoch!(   opt::Optimizer, 
+                                    model, ps::Union{NeuralNetworkParameters, NamedTuple}, 
+                                    dl::DataLoader{T}, 
+                                    batch::Batch, 
+                                    loss::NetworkLoss, 
+                                    λY) where T
+    optimize_for_one_epoch!(opt, model, ps, dl, batch, ZygotePullback(loss), λY)
+end
+
+function optimize_for_one_epoch!(   opt::Optimizer, 
+                                    model, 
+                                    ps::Union{NeuralNetworkParameters, NamedTuple}, 
+                                    dl::DataLoader{T}, 
+                                    batch::Batch, 
+                                    _pullback::AbstractPullback, 
+                                    λY) where T
     count = 0
     total_error = T(0)
     batches = batch(dl)
@@ -55,16 +70,17 @@ function optimize_for_one_epoch!(opt::Optimizer, model, ps::Union{NeuralNetworkP
         count += 1
         # these `copy`s should not be necessary! coming from a Zygote problem!
         input_nt_output_nt = convert_input_and_batch_indices_to_array(dl, batch, batch_indices) |> _copy
-        loss_value, pullback = _pullback(ps, model, input_nt_output_nt, loss)
+        loss_value, pullback = _pullback(ps, model, input_nt_output_nt)
         total_error += loss_value
-        dp = return_correct_named_tuple(pullback(one(loss_value))[1])
+        dp = return_correct_named_tuple(_unpack_tuple(pullback(one(loss_value))))
         optimization_step!(opt, λY, ps, dp)
     end
     total_error / count
 end
 
-_pullback(ps, model, input_nt_output_nt, loss) = Zygote.pullback(ps -> loss(model, ps, input_nt_output_nt), ps)
-_pullback(ps, model, input_nt_output_nt::Tuple, loss) = Zygote.pullback(ps -> loss(model, ps, input_nt_output_nt...), ps)
+# this function is necessary because of the way Zygote returns derivatives
+_unpack_tuple(a) = a 
+_unpack_tuple(a::Tuple{<:Any}) = a[1]
 
 # this is needed because of the specific way in which we store nn parameters
 return_correct_named_tuple(dx::NamedTuple{(:params, )}) = dx.params
@@ -74,12 +90,17 @@ _copy(a::AbstractArray) = copy(a)
 _copy(qp::QPT) = (q = copy(qp.q), p = copy(qp.p))
 _copy(t::Tuple{<:QPTOAT, <:QPTOAT}) = _copy.(t)
 
-function (o::Optimizer)(nn::NeuralNetwork, dl::DataLoader, batch::Batch, n_epochs::Integer, loss::NetworkLoss; show_progress = true)
+function (o::Optimizer)(nn::NeuralNetwork, 
+                        dl::DataLoader, 
+                        batch::Batch, 
+                        n_epochs::Integer, 
+                        loss::NetworkLoss, 
+                        _pullback::AbstractPullback = ZygotePullback(loss); show_progress = true)
     Λ = GlobalSection(nn.params)
     progress_object = show_progress == true ? ProgressMeter.Progress(n_epochs; enabled=true) : nothing
     loss_array = zeros(n_epochs)
     for i in 1:n_epochs
-        loss_array[i] = optimize_for_one_epoch!(o, nn.model, nn.params, dl, batch, loss, Λ)
+        loss_array[i] = optimize_for_one_epoch!(o, nn.model, nn.params, dl, batch, _pullback, Λ)
         show_progress == true ? ProgressMeter.next!(progress_object; showvalues = [(:TrainingLoss, loss_array[i])]) : nothing
     end
 

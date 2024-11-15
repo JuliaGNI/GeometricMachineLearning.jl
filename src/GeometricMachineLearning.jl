@@ -287,6 +287,9 @@ module GeometricMachineLearning
 
     include("loss/losses.jl")
 
+    export AbstractPullback
+    include("pullback.jl")
+
     export DataLoader, onehotbatch
     export Batch, optimize_for_one_epoch!
     include("data_loader/tensor_assign.jl")
