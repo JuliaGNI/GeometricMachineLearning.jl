@@ -372,6 +372,54 @@ Main.remark(raw"While training the symplectic autoencoder we completely ignore t
 ```@raw latex
 \begin{comment}
 ```
+We can also make an animation of the resulting solution using `Makie` [DanischKrumbiegel2021](@cite):
+
+```@setup toda_lattice
+time_steps = 0:10:(length(sol.q) * 10)
+
+sol.q ############## !!
+time_series = iterate(mtc(integrator_nn), ics; n_points = length(sol.t) * 10, prediction_window = seq_length)
+time_steps = axes(time_series, 2)
+function make_animation(; theme = :dark)
+textcolor = theme == :dark ? :white : :black 
+fig = Figure()
+ax = Axis(fig[1, 1],    backgroundcolor = :transparent,
+                        bottomspinecolor = textcolor, 
+                        topspinecolor = textcolor,
+                        leftspinecolor = textcolor,
+                        rightspinecolor = textcolor,
+                        xtickcolor = textcolor, 
+                        ytickcolor = textcolor,
+                        xticklabelcolor = textcolor,
+                        yticklabelcolor = textcolor,
+                        xlabel=L"\omega", 
+                        ylabel=L"q",
+                        xlabelcolor = textcolor,
+                        ylabelcolor = textcolor)
+mblue = RGBf(31 / 256, 119 / 256, 180 / 256)
+framerate = 30
+mblue = 
+record(fig, "toda_animation.mp4", time_steps;
+    framerate = framerate) do time_step
+    empty!(ax)
+    time_step ≤ size(time_series, 2) ? lines!(ax, sol.q[time_step, :], label = "t = $(sol.t[time_step])", color = mblue) : nothing
+    prediction = (q = time_series.q[:, time_step], p = time_series.p[:, time_step])
+    sol_sae_t = decoder(sae_nn_cpu)(prediction)
+    lines!(ax, sol_sae_t.q, color = mpurple)
+    ylims!(ax, 0., 1.)
+    axislegend(ax; position = (1.01, 1.5), labelsize = 8)
+end
+nothing
+end
+make_animation(; theme = :dark)
+make_animation(; theme = :light)
+nothing # hide
+```
+
+```@example
+Docs.HTML("""<video mute autoplay loop controls src="toda_animation.mp4" />""") # hide
+```
+
 
 Here we compared PSD with an SAE whith the same reduced dimension. One may argue that this is not entirely fair as the PSD has much fewer parameters than the SAE:
 
