@@ -377,9 +377,8 @@ We can also make an animation of the resulting solution using `Makie` [DanischKr
 ```@setup toda_lattice
 time_steps = 0:10:(length(sol.q) * 10)
 
-sol.q ############## !!
 time_series = iterate(mtc(integrator_nn), ics; n_points = length(sol.t) * 10, prediction_window = seq_length)
-time_steps = axes(time_series, 2)
+time_steps = axes(time_series.q, 2)
 function make_animation(; theme = :dark)
 textcolor = theme == :dark ? :white : :black 
 fig = Figure()
@@ -402,10 +401,10 @@ mblue =
 record(fig, "toda_animation.mp4", time_steps;
     framerate = framerate) do time_step
     empty!(ax)
-    time_step ≤ size(time_series, 2) ? lines!(ax, sol.q[time_step, :], label = "t = $(sol.t[time_step])", color = mblue) : nothing
+    time_step < length(sol.t) ? lines!(ax, sol.q[time_step, :], color = mblue) : nothing
     prediction = (q = time_series.q[:, time_step], p = time_series.p[:, time_step])
     sol_sae_t = decoder(sae_nn_cpu)(prediction)
-    lines!(ax, sol_sae_t.q, color = mpurple)
+    lines!(ax, sol_sae_t.q, color = mpurple, label = "t = $(sol.t[time_step])")
     ylims!(ax, 0., 1.)
     axislegend(ax; position = (1.01, 1.5), labelsize = 8)
 end
