@@ -404,7 +404,7 @@ record(fig, "toda_animation.mp4", time_steps;
     time_step < length(sol.t) ? lines!(ax, sol.q[time_step, :], color = mblue) : nothing
     prediction = (q = time_series.q[:, time_step], p = time_series.p[:, time_step])
     sol_sae_t = decoder(sae_nn_cpu)(prediction)
-    lines!(ax, sol_sae_t.q, color = mpurple, label = "t = $(sol.t[time_step])")
+    lines!(ax, sol_sae_t.q, color = mpurple, label = "time step = $(time_step)")
     ylims!(ax, 0., 1.)
     axislegend(ax; position = (1.01, 1.5), labelsize = 8)
 end
