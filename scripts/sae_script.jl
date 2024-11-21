@@ -18,15 +18,12 @@ dl_cpu = DataLoader(sol; autoencoder = true, suppress_info = true)
 const reduced_dim = 2
 
 Random.seed!(123) # hide
-psd_arch = PSDArch(dl_cpu.input_dim, reduced_dim)
 sae_arch = SymplecticAutoencoder(dl_cpu.input_dim, reduced_dim; n_encoder_blocks = 4, 
                                                                 n_decoder_blocks = 4, 
                                                                 n_encoder_layers = 2, 
                                                                 n_decoder_layers = 2)
 
 
-psd_nn_cpu = NeuralNetwork(psd_arch, CPU(), eltype(dl_cpu))
-solve!(psd_nn_cpu, dl_cpu)
 
 const mtc = GeometricMachineLearning.map_to_cpu
 
@@ -38,7 +35,7 @@ sae_rs = HRedSys(pr, encoder(sae_nn_cpu), decoder(sae_nn_cpu); integrator = Impl
 
 nothing  # hide
 
-@time "FOM + Implicit Midpoint" sol_full = integrate_full_system(psd_rs) # hide
+@time "FOM + Implicit Midpoint" sol_full = integrate_full_system(sae_rs) # hide
 @time "SAE + Implicit Midpoint" sol_sae_reduced = integrate_reduced_system(sae_rs) # hide
 
 nn_integrator_parameters = load("../docs/src/tutorials/integrator_parameters.jld2")["integrator_parameters"] # hide
