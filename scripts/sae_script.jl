@@ -38,6 +38,18 @@ nothing  # hide
 @time "FOM + Implicit Midpoint" sol_full = integrate_full_system(sae_rs) # hide
 @time "SAE + Implicit Midpoint" sol_sae_reduced = integrate_reduced_system(sae_rs) # hide
 
+backend = CPU() # hide
+const integrator_train_epochs = 65536
+const integrator_batch_size = 4096
+const seq_length = 4
+
+integrator_architecture = StandardTransformerIntegrator(reduced_dim; 
+                                                                    transformer_dim = 20, 
+                                                                    n_blocks = 3, 
+                                                                    n_heads = 5, 
+                                                                    L = 3,
+                                                                    upscaling_activation = tanh)
+
 nn_integrator_parameters = load("../docs/src/tutorials/integrator_parameters.jld2")["integrator_parameters"] # hide
 integrator_nn = NeuralNetwork(integrator_architecture, Chain(integrator_architecture), _nnp(nn_integrator_parameters), backend) # hide
 ics = encoder(sae_nn_cpu)((q = dl.input.q[:, 1:seq_length, 1], p = dl.input.p[:, 1:seq_length, 1])) # hide
