@@ -1,6 +1,7 @@
 using Test 
 using LinearAlgebra
 using GeometricMachineLearning
+using GeometricMachineLearning: Ω
 import Random
 
 Random.seed!(123)
@@ -46,11 +47,19 @@ function retraction_test(N::Integer, n::Integer, T::Type=Float32)
     @test norm(1000 * (Y₁ - Y) - Δ) / norm(Δ) < 1e-2
 end
 
+function metric_test(N, n, T)
+    Y = rand(StiefelManifold{T}, N, n)
+    Δ₁ = rgrad(Y, rand(T, N, n))
+    Δ₂ = rgrad(Y, rand(T, N, n))
+    @test T(.5) * tr(Ω(Y, Δ₁)' * Ω(Y, Δ₂)) ≈ metric(Y, Δ₁, Δ₂)
+end
+
 for N in (20, 10)
     for n in (5, 3)
         for T in (Float64, Float32)
             Ω_test(N, n, T)
             retraction_test(N, n, T)
+            metric_test(N, n, T)
         end
     end
 end

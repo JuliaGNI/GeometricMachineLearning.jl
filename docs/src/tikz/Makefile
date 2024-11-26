@@ -37,6 +37,7 @@ png:
 	pdftocairo 	-png -r $(res3) -transp -singlefile  structs_visualization_dark.pdf					structs_visualization_dark
 	pdftocairo  -png -r 500     -transp -singlefile  logo_with_name.pdf                             logo_with_name
 	pdftocairo  -png -r 500     -transp -singlefile  logo_with_name_dark.pdf                        logo_with_name_dark
+	pdftocairo  -png -r 500     -transp -singlefile  logo_with_name_without_jl.pdf                  logo_with_name_without_jl
 	pdftocairo 	-png -r $(res1) -transp -singlefile	 logo.pdf										logo 
 	pdftocairo  -png -r $(res1) -transp -singlefile  symplectic_autoencoder.pdf						symplectic_autoencoder
 	pdftocairo  -png -r $(res1) -transp -singlefile  symplectic_autoencoder_dark.pdf				symplectic_autoencoder_dark
@@ -61,10 +62,35 @@ png:
 	pdftocairo  -png -r $(res2) -transp -singlefile  offline_online_dark.pdf						offline_online_dark
 	pdftocairo  -png -r $(res1) -transp -singlefile  ingredients.pdf								ingredients
 	pdftocairo  -png -r $(res1) -transp -singlefile  ingredients_dark.pdf							ingredients_dark
+	pdftocairo  -png -r $(res1) -transp -singlefile  convex_recombination.pdf						convex_recombination
+	pdftocairo  -png -r $(res1) -transp -singlefile  convex_recombination_dark.pdf					convex_recombination_dark
+	pdftocairo  -png -r $(res1) -transp -singlefile  skew_sym_mapping.pdf							skew_sym_mapping
+	pdftocairo  -png -r $(res1) -transp -singlefile  skew_sym_mapping_dark.pdf						skew_sym_mapping_dark
+	pdftocairo  -png -r $(res1) -transp -singlefile  sae_venn.pdf									sae_venn
+	pdftocairo  -png -r $(res1) -transp -singlefile  sae_venn_dark.pdf								sae_venn_dark
+	pdftocairo  -png -r $(res1) -transp -singlefile  structure_preservation_hierarchy.pdf			structure_preservation_hierarchy
+	pdftocairo  -png -r $(res1) -transp -singlefile  structure_preservation_hierarchy_dark.pdf		structure_preservation_hierarchy_dark
+	pdftocairo  -png -r $(res1) -transp -singlefile  transformer_upscaling.pdf						transformer_upscaling
+	pdftocairo  -png -r $(res1) -transp -singlefile  transformer_upscaling_dark.pdf					transformer_upscaling_dark
+	pdftocairo  -png -r $(res1) -transp -singlefile  multiple_parameters.pdf						multiple_parameters
+	pdftocairo  -png -r $(res1) -transp -singlefile  multiple_parameters_dark.pdf					multiple_parameters_dark
+	pdftocairo  -png -r $(res1) -transp -singlefile  coupled_harmonic_oscillator.pdf				coupled_harmonic_oscillator
+	pdftocairo  -png -r $(res1) -transp -singlefile  coupled_harmonic_oscillator_dark.pdf			coupled_harmonic_oscillator_dark
+	pdftocairo  -png -r $(res1) -transp -singlefile  tangent_vector.pdf								tangent_vector
+	pdftocairo  -png -r $(res1) -transp -singlefile  tangent_vector_dark.pdf						tangent_vector_dark
+	pdftocairo  -png -r $(res1) -transp -singlefile  gml_venn.pdf									gml_venn
+	pdftocairo  -png -r $(res1) -transp -singlefile  gml_venn_dark.pdf								gml_venn_dark
+	pdftocairo  -png -r $(res1) -transp -singlefile  reduced_order_modeling_idea.pdf				reduced_order_modeling_idea
+	pdftocairo  -png -r $(res1) -transp -singlefile  reduced_order_modeling_idea_dark.pdf			reduced_order_modeling_idea_dark
+	pdftocairo  -png -r $(res1) -transp -singlefile  grassmann_sampling.pdf							grassmann_sampling
+	pdftocairo  -png -r $(res1) -transp -singlefile  grassmann_sampling_dark.pdf					grassmann_sampling_dark
+	pdftocairo  -png -r $(res1) -transp -singlefile  lpH_equivalence.pdf							lpH_equivalence
+	pdftocairo  -png -r $(res1) -transp -singlefile  lpH_equivalence_dark.pdf						lpH_equivalence_dark
 
 logo:
-	cp logo_with_name.png 		../assets/logo.png
-	cp logo_with_name_dark.png 	../assets/logo-dark.png
+	cp logo_with_name.png 				../assets/logo.png
+	cp logo_with_name_dark.png 			../assets/logo-dark.png
+	cp logo_with_name_without_jl.png 	../assets/logo_without_jl.png
 
 clean:
 	rm -f *.aux

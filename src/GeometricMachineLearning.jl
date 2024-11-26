@@ -19,7 +19,7 @@ module GeometricMachineLearning
     using TimerOutputs
     using LazyArrays
 
-    import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer, AbstractExplicitCell, AbstractNeuralNetwork , NeuralNetwork
+    import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer, AbstractExplicitCell, AbstractNeuralNetwork , NeuralNetwork, UnknownArchitecture
     import AbstractNeuralNetworks: Chain, GridCell
     import AbstractNeuralNetworks: Dense, Linear, Recurrent
     import AbstractNeuralNetworks: IdentityActivation, ZeroVector
@@ -33,7 +33,7 @@ module GeometricMachineLearning
     export dim
     import GeometricIntegrators.Integrators: method, GeometricIntegrator
     import NNlib: σ, sigmoid, softmax
-    import Base: iterate
+    import Base: iterate, eltype
     #import LogExpFunctions: softmax
 
     export CPU, GPU
@@ -41,6 +41,7 @@ module GeometricMachineLearning
     export Dense, Linear
     export initialparameters
     export parameterlength
+    export NeuralNetworkParameters
     
     export σ, sigmoid, softmax
 
@@ -54,7 +55,7 @@ module GeometricMachineLearning
     # INCLUDE ARRAYS
     include("arrays/skew_symmetric.jl")
     include("arrays/symmetric.jl")
-    include("arrays/symplectic.jl")
+    include("arrays/poisson_tensor.jl")
     include("arrays/abstract_lie_algebra_horizontal.jl")
     include("arrays/stiefel_lie_algebra_horizontal.jl")
     include("arrays/grassmann_lie_algebra_horizontal.jl")
@@ -62,7 +63,7 @@ module GeometricMachineLearning
     include("arrays/lower_triangular.jl")
     include("arrays/upper_triangular.jl")
 
-    export SymmetricMatrix, SymplecticPotential, SkewSymMatrix
+    export SymmetricMatrix, PoissonTensor, SkewSymMatrix
     export StiefelLieAlgHorMatrix
     export SymplecticLieAlgMatrix, SymplecticLieAlgHorMatrix
     export GrassmannLieAlgHorMatrix
@@ -112,7 +113,7 @@ module GeometricMachineLearning
     # GPU specific operations
     export convert_to_dev, Device, CPUDevice
 
-    export GradientLayer, GradientLayerQ, GradientLayerP, ActivationLayerQ, ActivationLayerP, LinearLayerQ, LinearLayerP
+    export GradientLayerQ, GradientLayerP, ActivationLayerQ, ActivationLayerP, LinearLayerQ, LinearLayerP
     export Linear
     export ResidualLayer
     export LinearSymplecticLayerP, LinearSymplecticLayerQ
@@ -169,7 +170,6 @@ module GeometricMachineLearning
     export ResNet
     export Transformer
     export TransformerIntegrator, StandardTransformerIntegrator
-    export Classification
 
     # INCLUDE OPTIMIZERS
     export OptimizerMethod, AbstractCache
@@ -183,7 +183,7 @@ module GeometricMachineLearning
     export Optimizer
     export optimization_step!
 
-    export GlobalSection, apply_section
+    export GlobalSection, apply_section, apply_section!
     export global_rep
     export Geodesic, Cayley
     export geodesic, cayley
@@ -246,7 +246,7 @@ module GeometricMachineLearning
     include("backends/backends.jl")
     include("backends/lux.jl")
 
-    export TransformerLoss, FeedForwardLoss, AutoEncoderLoss, ReducedLoss
+    export NetworkLoss, TransformerLoss, FeedForwardLoss, AutoEncoderLoss, ReducedLoss
 
     #INCLUDE ARCHITECTURES
     include("architectures/neural_network_integrator.jl")
@@ -272,7 +272,7 @@ module GeometricMachineLearning
     export SympNet, LASympNet, GSympNet
     export RecurrentNeuralNetwork
     export LSTMNeuralNetwork
-    export ClassificationTransformer
+    export ClassificationTransformer, ClassificationLayer
     export VolumePreservingFeedForward
     export SymplecticAutoencoder, PSDArch
 
@@ -287,7 +287,10 @@ module GeometricMachineLearning
 
     include("loss/losses.jl")
 
-    export DataLoader, onehotbatch, accuracy
+    export AbstractPullback
+    include("pullback.jl")
+
+    export DataLoader, onehotbatch
     export Batch, optimize_for_one_epoch!
     include("data_loader/tensor_assign.jl")
     include("data_loader/matrix_assign.jl")

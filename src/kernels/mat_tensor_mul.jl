@@ -18,11 +18,10 @@ end
 
 Multiply the matrix `A` onto the tensor `B` from the left and store the result in `C`.
 
-Also checks the bounds of the input arrays.
-
 The function [`mat_tensor_mul`](@ref) calls `mat_tensor_mul!` internally.
 """
-function mat_tensor_mul!(C, A, B)
+function mat_tensor_mul!(C::AbstractArray{<:Number, 3}, A::AbstractMatrix, B::AbstractArray{<:Number, 3})
+    @assert eltype(C) == eltype(A) == eltype(B)
     @assert size(A)[2] == size(B)[1]
 
     backend = KernelAbstractions.get_backend(A)
@@ -31,7 +30,7 @@ function mat_tensor_mul!(C, A, B)
 end
 
 @doc raw"""
-    mat_tensor_mul(A::AbstractMatrix{T}, B::AbstractArray{T, 3}) where T
+    mat_tensor_mul(A, B)
 
 Multipliy the matrix `A` onto the tensor `B` from the left. 
 
@@ -61,7 +60,9 @@ mat_tensor_mul(A, B)
  2  2  2
 ```
 """
-function mat_tensor_mul(A::AbstractMatrix{T}, B::AbstractArray{T, 3}) where T
+function mat_tensor_mul(A::AbstractMatrix, B::AbstractArray{<:Number, 3})
+    @assert eltype(A) == eltype(B)
+    T = eltype(A)
     sizeA = size(A)
     sizeB = size(B)
     backend = KernelAbstractions.get_backend(A)
@@ -101,15 +102,14 @@ function symmetric_mat_mul(S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int)
 end
 
 @doc raw"""
-    mat_tensor_mul!(C::AbstractArray{T, 3}, A::SymmetricMatrix{T}, B::AbstractArray{T, 3}) where T
+    mat_tensor_mul!(C, A::SymmetricMatrix, B)
 
 Multiply the symmetric matrix `A` onto the tensor `B` from the left and store the result in `C`.
 
-Also checks the bounds of the input arrays. 
-
 This performs an efficient multiplication based on the special structure of the symmetric matrix `A`.
 """
-function mat_tensor_mul!(C::AbstractArray{T, 3}, A::SymmetricMatrix{T}, B::AbstractArray{T, 3}) where T 
+function mat_tensor_mul!(C::AbstractArray{<:Number, 3}, A::SymmetricMatrix, B::AbstractArray{<:Number, 3})
+    @assert eltype(C) == eltype(A) == eltype(B)
     @assert A.n == size(C, 1) == size(B, 1)
 
     symmetric_mat_mul!(C, A.S, B, A.n)
@@ -145,15 +145,14 @@ function lo_mat_mul(S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where 
 end
 
 @doc raw"""
-    mat_tensor_mul!(C::AbstractArray{T, 3}, A::LowerTriangular{T}, B::AbstractArray{T, 3}) where T
+    mat_tensor_mul!(C, A::LowerTriangular, B)
 
 Multiply the lower-triangular matrix `A` onto the tensor `B` from the left and store the result in `C`.
 
-Also checks the bounds of the input arrays. 
-
 This performs an efficient multiplication based on the special structure of the lower-triangular matrix `A`.
 """
-function mat_tensor_mul!(C::AbstractArray{T, 3}, A::LowerTriangular{T}, B::AbstractArray{T, 3}) where T
+function mat_tensor_mul!(C::AbstractArray{<:Number, 3}, A::LowerTriangular, B::AbstractArray{<:Number, 3})
+    @assert eltype(C) == eltype(A) == eltype(B)
     @assert A.n == size(C, 1) == size(B, 1)
 
     lo_mat_mul!(C, A.S, B, A.n)
@@ -189,15 +188,14 @@ function up_mat_mul(S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where 
 end
 
 @doc raw"""
-    mat_tensor_mul!(C::AbstractArray{T, 3}, A::UpperTriangular{T}, B::AbstractArray{T, 3}) where T
+    mat_tensor_mul!(C, A::UpperTriangular, B)
 
 Multiply the upper-triangular matrix `A` onto the tensor `B` from the left and store the result in `C`.
 
-Also checks the bounds of the input arrays. 
-
 This performs an efficient multiplication based on the special structure of the upper-triangular matrix `A`.
 """
-function mat_tensor_mul!(C::AbstractArray{T, 3}, A::UpperTriangular{T}, B::AbstractArray{T, 3}) where T 
+function mat_tensor_mul!(C::AbstractArray{<:Number, 3}, A::UpperTriangular, B::AbstractArray{<:Number, 3})
+    @assert eltype(C) == eltype(A) == eltype(B)
     @assert A.n == size(C, 1) == size(B, 1)
 
     up_mat_mul!(C, A.S, B, A.n)
@@ -235,15 +233,14 @@ function skew_mat_mul(S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) wher
 end
 
 @doc raw"""
-    mat_tensor_mul!(C::AbstractArray{T, 3}, A::SkewSymMatrix{T}, B::AbstractArray{T, 3}) where T
+    mat_tensor_mul!(C, A::SkewSymMatrix, B)
 
 Multiply skew-symmetric the matrix `A` onto the tensor `B` from the left and store the result in `C`.
 
-Also checks the bounds of the input arrays. 
-
 This performs an efficient multiplication based on the special structure of the skew-symmetric matrix `A`.
 """
-function mat_tensor_mul!(C::AbstractArray{T, 3}, A::SkewSymMatrix{T}, B::AbstractArray{T, 3}) where T
+function mat_tensor_mul!(C::AbstractArray{<:Number, 3}, A::SkewSymMatrix, B::AbstractArray{<:Number, 3})
+    @assert eltype(C) == eltype(A) == eltype(B)
     @assert A.n == size(C, 1) == size(B, 1)
 
     skew_mat_mul!(C, A.S, B, A.n)

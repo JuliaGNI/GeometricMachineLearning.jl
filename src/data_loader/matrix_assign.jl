@@ -1,6 +1,4 @@
-"""
-This assigns the batch if the data are in form of a matrix.
-"""
+# This assigns the batch if the data are in form of a matrix.
 function draw_batch!(batch::AbstractMatrix{T}, data::AbstractMatrix{T}) where T
     sys_dim, batch_size = size(batch)
     n_params = size(data, 2)

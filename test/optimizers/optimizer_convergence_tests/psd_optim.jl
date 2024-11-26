@@ -26,7 +26,7 @@ A = [   0.06476993260924702 0.8369280855305259 0.6245358125914054 0.140729967064
 """
 This tests if the optimizers can find the optimal PSD solution.
 """        
-function svd_test(A, n, train_steps=1000, tol=1e-1; retraction=Cayley())
+function svd_test(A, n, train_steps=1000, tol=1e-1; retraction=cayley)
     N2 = size(A,1)
     @assert iseven(N2)
     N = N2÷2
@@ -35,12 +35,12 @@ function svd_test(A, n, train_steps=1000, tol=1e-1; retraction=Cayley())
     U_result = hcat(vcat(U_result_sing, zero(U_result_sing)), vcat(zero(U_result_sing), U_result_sing))
 
     err_best = norm(A - U_result*U_result'*A)
-    model = Chain(PSDLayer(2*N, 2*n, retraction=retraction), PSDLayer(2*n, 2*N, retraction=retraction))
+    model = Chain(PSDLayer(2*N, 2*n), PSDLayer(2*n, 2*N))
     ps = initialparameters(model, CPU(), Float64)
 
-    o₁ = Optimizer(GradientOptimizer(0.01), ps)
-    o₂ = Optimizer(MomentumOptimizer(0.01), ps)
-    o₃ = Optimizer(AdamOptimizer(0.01), ps)
+    o₁ = Optimizer(GradientOptimizer(0.01), ps; retraction = retraction)
+    o₂ = Optimizer(MomentumOptimizer(0.01), ps; retraction = retraction)
+    o₃ = Optimizer(AdamOptimizer(0.01), ps; retraction = retraction)
 
     U₁, Ũ₁, err₁ = train_network!(o₁, model, deepcopy(ps), A, train_steps, tol)
     U₂, Ũ₂, err₂ = train_network!(o₂, model, deepcopy(ps), A, train_steps, tol)
@@ -56,7 +56,7 @@ function svd_test(A, n, train_steps=1000, tol=1e-1; retraction=Cayley())
     @test norm((err₃ - err_best)/err_best) < tol 
 end
 
-function train_network!(o::Optimizer, model::Chain, ps::Tuple, A::AbstractMatrix, train_steps, tol)
+function train_network!(o::Optimizer, model::Chain, ps::NamedTuple, A::AbstractMatrix, train_steps, tol)
     error(ps) = norm(A - model(A, ps))
 
     for _ in 1:train_steps
@@ -68,6 +68,6 @@ function train_network!(o::Optimizer, model::Chain, ps::Tuple, A::AbstractMatrix
     ps[1].weight, ps[2].weight, error(ps)
 end
 
-for retraction in (Geodesic(), Cayley())
+for retraction in (geodesic, cayley)
     svd_test(A, 4, retraction=retraction)
 end

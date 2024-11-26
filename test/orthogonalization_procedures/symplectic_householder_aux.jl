@@ -40,7 +40,7 @@ num_factors = 10
 N = 100
 T = Float32
 scal = T(.1)
-J_mat = SymplecticPotential(T, N)
+J_mat = PoissonTensor(T, N)
 
 print(
     test_symplecticity_preservation(),

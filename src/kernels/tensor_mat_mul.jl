@@ -16,11 +16,9 @@ end
 
 Multiply the matrix `B` onto the tensor `A` from the right and store the result in `C`.
 
-Also checks the bounds of the input arrays.
-
 The function [`tensor_mat_mul`](@ref) calls `tensor_mat_mul!` internally.
 """
-function tensor_mat_mul!(C, A, B)
+function tensor_mat_mul!(C::AbstractArray{<:Number, 3}, A::AbstractArray{<:Number, 3}, B::AbstractMatrix)
     @assert size(A)[2] == size(B)[1]
 
     backend = KernelAbstractions.get_backend(A)
@@ -29,7 +27,7 @@ function tensor_mat_mul!(C, A, B)
 end
 
 @doc raw"""
-    tensor_mat_mul(A::AbstractArray{T, 3}, B::AbstractArray{T}) where T
+    tensor_mat_mul(A::AbstractArray{<:Number, 3}, B::AbstractMatrix)
 
 Multipliy the matrix `B` onto the tensor `A` from the right. 
 
@@ -59,7 +57,9 @@ tensor_mat_mul(A, B)
  6  4  2
 ```
 """
-function tensor_mat_mul(A::AbstractArray{T, 3}, B::AbstractMatrix{T}) where T 
+function tensor_mat_mul(A::AbstractArray{<:Number, 3}, B::AbstractMatrix)
+    @assert eltype(A) == eltype(B)
+    T = eltype(A)
     sizeA = size(A); sizeB = size(B)
     @assert sizeA[2] == sizeB[1] 
     tensor_shape = (sizeA[1], sizeB[2], sizeA[3])
@@ -104,15 +104,14 @@ function symmetric_mat_right_mul(B::AbstractArray{T, 3}, S::AbstractVector{T}, n
 end
 
 @doc raw"""
-    mat_tensor_mul!(C::AbstractArray{T, 3}, B::AbstractArray{T, 3}, A::SymmetricMatrix{T}) where T
+    mat_tensor_mul!(C::AbstractArray{<:Number, 3}, B::AbstractArray{<:Number, 3}, A::SymmetricMatrix)
 
 Multiply the symmetric matrix `A` onto the tensor `B` from the right and store the result in `C`.
 
-Also checks the bounds of the input arrays.
-
 This performs an efficient multiplication based on the special structure of the symmetric matrix `A`.
 """
-function tensor_mat_mul!(C::AbstractArray{T, 3}, B::AbstractArray{T, 3}, A::SymmetricMatrix{T}) where T
+function tensor_mat_mul!(C::AbstractArray{<:Number, 3}, B::AbstractArray{<:Number, 3}, A::SymmetricMatrix)
+    @assert eltype(C) == eltype(B) == eltype(A)
     @assert A.n == size(C, 2) == size(B, 2)
 
     symmetric_mat_right_mul!(C, B, A.S, A.n)

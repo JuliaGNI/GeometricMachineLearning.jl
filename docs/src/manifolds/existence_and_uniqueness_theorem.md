@@ -1,6 +1,6 @@
 # The Existence-And-Uniqueness Theorem
 
-The *existence-and-uniqueness theorem*, also known as the *Picard-Lindelöf theorem*, *Picard's existence theorem* and the *Cauchy-Lipschitz theorem* gives a proof of the existence of solutions for ODEs. Here we state the existence-and-uniqueness theorem for manifolds as vector fields are just a special case of this. Its proof relies on the [Banach fixed-point theorem](@ref "The Fixed-Point Theorem")[^1].
+The *existence-and-uniqueness theorem*, also known as the *Picard-Lindelöf theorem*, *Picard's existence theorem* or the *Cauchy-Lipschitz theorem* gives a proof of the existence of solutions for ODEs. Here we state the existence-and-uniqueness theorem for manifolds as vector spaces are just a special case of this. Its proof relies on the [Banach fixed-point theorem](@ref "The Fixed-Point Theorem")[^1].
 
 [^1]: It has to be noted that the proof given here is not entirely self-contained. The proof of the fundamental theorem of calculus, i.e. the proof of the existence of an antiderivative of a continuous function [lang2012real](@cite), is omitted for example. 
 
@@ -40,15 +40,15 @@ Main.indentation * raw"and we see that ``\Gamma`` is a contractive mapping if we
 Main.indentation * raw"```math
 " * 
 Main.indentation * raw"\gamma^*(t) = \int_0^tX(\gamma^*(s))ds,
-" *
-Main.indentation * raw"and this ``\gamma^*`` is the curve we were looking for. Its uniqueness is guaranteed by the fixed-point theorem.")
+" * Main.indentation * raw"```
+" * Main.indentation * raw"and this ``\gamma^*`` is the curve we were looking for. Its uniqueness is guaranteed by the fixed-point theorem.")
 ``` 
 
 For all the problems we discuss here we can extend the integral curves of ``X`` from the finite interval ``(-\epsilon, \epsilon)`` to all of ``\mathbb{R}``. The solution ``\gamma`` we call an *integral curve* or *flow* of the vector field (ODE).
 
 ## Time-Dependent Vector Fields
 
-We proved the theorem above for a time-independent vector field ``X``, but it also holds for time-dependent vector fields, i.e. for mapping of the form: 
+We proved the theorem above for a time-independent vector field ``X``, but it also holds for time-dependent vector fields, i.e. for mappings of the form: 
 
 ```math
 X: [0,T]\times\mathcal{M}\to{}TM.
@@ -62,7 +62,11 @@ The proof for this case proceeds analogously to the case of the time-independent
 
 More details on this can be found in e.g. [lang2012fundamentals](@cite). For `GeometricMachineLearning` time-dependent vector fields are important because many of the optimizers we are using (such as the [Adam optimizer](@ref "The Adam Optimizer")) can be seen as approximating the flow of a time-dependent vector field.
 
-## Reference
+```@raw latex
+\begin{comment}
+```
+
+## References
 
 ```@bibliography
 Pages = []
@@ -70,4 +74,8 @@ Canonical = false
 
 lang2012real
 lang2012fundamentals
+```
+
+```@raw latex
+\end{comment}
 ```

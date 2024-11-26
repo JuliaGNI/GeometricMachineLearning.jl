@@ -5,7 +5,7 @@ function test_global_section(T, N, n)
     U = rand(SymplecticStiefelManifold{T}, 2*N, 2*n)
     Φ = global_section(U)
     λU = hcat(U[:,1:n], vcat(Φ[:,1:(N-n)], zeros(N, N-n)), U[:,(n+1):(2*n)], vcat(zeros(N, N-n), Φ[:,1:(N-n)]))
-    J = SymplecticPotential(N)
+    J = PoissonTensor(N)
     err = norm(λU'*J*λU - J)
     print(err)
 end

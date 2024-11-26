@@ -5,9 +5,9 @@ Make a matrix of the form ``\begin{bmatrix} \mathbb{I} & \mathbb{O} \end{bmatrix
 
 An array that essentially does `vcat(I(n), zeros(N-n, n))` with GPU support. 
 
-# Extend help
+# Extended help
 
-Technically this should be a subtype of `StiefelManifold`. 
+An instance of `StiefelProjection` should technically also belong to [`StiefelManifold`](@ref). 
 """
 struct StiefelProjection{T, AT} <: AbstractMatrix{T}
     N::Integer
@@ -66,9 +66,6 @@ end
     A[i, i] = one(T)
 end
 
-"""
-Outer constructor for `StiefelProjection`. This works with two integers as input and optionally the type.
-"""
 StiefelProjection(N::Integer, n::Integer, T::Type=Float64) = StiefelProjection(CPU(), T, N, n)
 
 StiefelProjection(T::Type, N::Integer, n::Integer) = StiefelProjection(N, n, T)

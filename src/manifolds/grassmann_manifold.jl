@@ -1,4 +1,6 @@
 """
+    GrassmannManifold <: Manifold
+
 The `GrassmannManifold` is based on the [`StiefelManifold`](@ref).
 """
 mutable struct GrassmannManifold{T, AT <: AbstractMatrix{T}} <: Manifold{T}
@@ -6,15 +8,17 @@ mutable struct GrassmannManifold{T, AT <: AbstractMatrix{T}} <: Manifold{T}
 end
 
 @doc raw"""
-    rgrad(Y::GrassmannManifold, e_grad::AbstractMatrix)
+    rgrad(Y::GrassmannManifold, ∇L::AbstractMatrix)
 
-Compute the Riemannian gradient at ``Y\in{}Gr(n, N)``. 
+Compute the Riemannian gradient for the Grassmann manifold at `Y` based on `∇L`.
 
-These gradient have the property that they are orthogonal to the space spanned by ``Y``.
+Here ``Y`` is a representation of ``\mathrm{span}(Y)\in{}Gr(n, N)`` and ``\nabla{}L\in\mathbb{R}^{N\times{}n}`` is the Euclidean gradient. 
+
+This gradient has the property that it is orthogonal to the space spanned by ``Y``.
 
 The precise form of the mapping is: 
 ```math
-\mathtt{rgrad}(Y, \nabla{}L) \mapsto \nabla{}L - YY^T\nabla{}L
+\mathtt{rgrad}(Y, \nabla{}L) \mapsto \nabla{}L - YY^T\nabla{}L.
 ```
 
 Note the property ``Y^T\mathrm{rgrad}(Y, \nabla{}L) = \mathbb{O}.``
@@ -39,8 +43,8 @@ rgrad(Y, Δ)
  7  8
 ```
 """
-function rgrad(Y::GrassmannManifold, e_grad::AbstractMatrix)
-    e_grad - Y * (Y' * e_grad)
+function rgrad(Y::GrassmannManifold, ∇L::AbstractMatrix)
+    ∇L - Y * (Y' * ∇L)
 end
 
 @doc raw"""
@@ -48,13 +52,14 @@ end
 
 Compute the metric for vectors `Δ₁` and `Δ₂` at `Y`. 
 
-The representation of the Grassmann manifold is realized as a quotient space of the Stiefel manifold. 
+The representation of the Grassmann manifold is realized as a *quotient space of the Stiefel manifold*. 
 
 The metric for the Grassmann manifold is:
 
 ```math
-g^{Gr}_Y(\Delta_1, \Delta_2) = g^{St}_Y(\Delta_1, \Delta_2) = \mathrm{Tr}(\Delta_1^T (\mathbb{I} - Y Y^T) \Delta_2) = \mathrm{Tr}(\Delta_1^T \Delta_2).
+g^{Gr}_Y(\Delta_1, \Delta_2) = g^{St}_Y(\Delta_1, \Delta_2) = \mathrm{Tr}(\Delta_1^T (\mathbb{I} - Y Y^T) \Delta_2) = \mathrm{Tr}(\Delta_1^T \Delta_2),
 ```
+where we used that ``Y^T\Delta_i`` for ``i = 1, 2.``
 """
 function metric(::GrassmannManifold, Δ₁::AbstractMatrix, Δ₂::AbstractMatrix)
     LinearAlgebra.tr(Δ₁' * Δ₂)
@@ -84,7 +89,7 @@ end
 Perform the *canonical horizontal lift* for the Grassmann manifold:
 
 ```math
-    \Delta \mapsto \Omega^{St}(Y, Δ),
+    \Delta \mapsto \Omega^{St}(\Delta),
 ```
 
 where ``\Omega^{St}`` is the canonical horizontal lift for the Stiefel manifold.

@@ -1,11 +1,11 @@
 # (Topological) Metric Spaces 
 
-A metric space is a certain class of a topological space where the topology is *induced through a metric*.
+A metric space is a certain class of a topological space where the topology is *induced through a metric*. We define this notion now:
 
 ```@eval
 Main.definition(raw"A **metric** on a topological space ``\mathcal{M}`` is a mapping ``d:\mathcal{M}\times\mathcal{M}\to\mathbb{R}`` such that the following three conditions hold: 
 " * 
-Main.indentation * raw"1. ``d(x, y) = 0 \iff x = y`` for every ``x,y\in\mathcal{M}``, i.e. the distance between 2 points is only zero if and only if they are the same,
+Main.indentation * raw"1. ``d(x, y) = 0 \iff x = y`` for every ``x,y\in\mathcal{M}``, i.e. the distance between two points is zero if and only if they are the same,
 " * 
 Main.indentation * raw"2. ``d(x, y) = d(y, x)``,
 " *
@@ -50,7 +50,7 @@ Main.indentation * raw"This shows that ``d_\infty`` is indeed a metric.")
 Main.example(raw"Any Riemannian manifold is a metric space.")
 ```
 
-This last example shows that *metric spaces need not be vector spaces*, i.e. spaces for which we can define a metric but not addition of two elements. This will be discussed in more detail in the section on [riemannian manifolds](@ref "Riemannian Manifolds").
+This last example shows that *metric spaces need not be vector spaces*, i.e. spaces for which we can define a metric but not addition of two elements. This will be discussed in more detail in the section on [Riemannian manifolds](@ref "Riemannian Manifolds").
 
 ## Complete Metric Spaces
 
@@ -92,14 +92,24 @@ Main.indentation * raw"7. ``a(x + y) = ax + ay,``
 " * 
 Main.indentation * raw"8. ``(a + b)x = ax + bx.``
 " * 
-Main.indentation * raw"The first law is known as *associativity*, the second one as *commutativity* and the last two ones are known *distributivity*.")
+Main.indentation * raw"The first law is known as *associativity*, the second one as *commutativity* and the last two ones are known as *distributivity*.")
 ```
 
 The topological spaces ``\mathbb{R}`` and ``\mathbb{R}^{n}`` are (almost) trivially vector spaces. The same is true for many function spaces. One of the special aspects of `GeometricMachineLearning` is that it can deal with spaces that are not vector spaces, but manifolds. All vector spaces are however manifolds.  
+
+```@raw latex
+\begin{comment}
+```
+
+## References
 
 ```@bibliography
 Pages = []
 Canonical = false
 
 lang2012real
+```
+
+```@raw latex
+\end{comment}
 ```

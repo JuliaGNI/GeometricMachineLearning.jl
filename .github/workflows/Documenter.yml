@@ -19,8 +19,6 @@ jobs:
           sudo apt-get install poppler-utils
           sudo apt-get install texlive-xetex
           sudo apt-get install texlive-science
-      - name: Make tikz images
-        run: make all -C docs/src/tikz
       - name: Install binary dependencies
         run: sudo apt-get update && sudo apt-get install -y xorg-dev mesa-utils xvfb libgl1 freeglut3-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev
       - uses: julia-actions/setup-julia@latest
@@ -30,9 +28,13 @@ jobs:
         run: |
           cd docs
           DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' make install_brenier_two_fluid test_docs
-          cd .. 
+          cd ..
+      - name: Make tikz images
+        run: make all -C docs/src/tikz
+      - name: Make MNIST image
+        run: make all -C docs/src/tutorials/mnist
       - name: Make docs (call julia documenter)
-        run: DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' julia --project=docs docs/make.jl html_output
+        run: DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' julia --project=docs --color=yes --threads=2 docs/make.jl html_output
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-docdeploy@v1
         with:

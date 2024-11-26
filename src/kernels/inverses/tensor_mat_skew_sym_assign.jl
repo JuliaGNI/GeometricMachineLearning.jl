@@ -1,6 +1,3 @@
-@doc raw"""
-A kernel that computes the weighted scalar products of all combinations of vectors in the matrix `Z` except where the two vectors are the same and writes the result into a *tensor of skew symmetric matrices* `C`. 
-"""
 @kernel function tensor_mat_skew_sym_assign_kernel!(C::AbstractArray{T, 3}, Z::AbstractArray{T, 3}, A::AbstractMatrix{T}) where T
     i, j, k = @index(Global, NTuple)
 
@@ -28,19 +25,64 @@ function tensor_mat_skew_sym_assign!(C::AbstractArray{T, 3}, Z::AbstractArray{T,
 end
 
 @doc raw"""
-Takes as input: 
-- `Z::AbstractArray{T, 3}`: A tensor that stores a bunch of time series. 
-- `A::AbstractMatrix`: A matrix that is used to perform various scalar products. 
+    tensor_mat_skew_sym_assign(Z::AbstractArray{<:Number, 3}, A::AbstractMatrix)
 
-For one of these time series the function performs the following computation: 
+Compute scalar products of columns of ``Z`` along the second axis.
+
+The scalar products are weighted by ``A``.
+
+Scalar products are computed for any two vectors of the form `Z[:, i, k]` and `Z[:, j, k]`, i.e.
 
 ```math
     (z^{(i)}, z^{(j)}) \mapsto (z^{(i)})^TAz^{(j)} \text{ for } i > j.
 ```
 
-The result of this are ``n(n-2)\div2`` scalar products. These scalar products are written into a lower-triangular matrix and the final output of the function is a tensor of these lower-triangular matrices. 
+The result of this are ``n(n-2)\div2`` scalar products for each index `k` from the third axis. 
+
+These scalar products are written into a lower-triangular matrix and the final output of the function is a tensor of these lower-triangular matrices. 
+
+This is used in [`VolumePreservingAttention`](@ref) when `skew_sym` is set to `false`.
+
+# Examples
+
+Here we consider a weighting
+
+```math
+A = \begin{pmatrix} 1 & 0 & 0 \\ 0 & 2 & 0 \\ 0 & 0 & 3\end{pmatrix}
+```
+
+and three sequences:
+
+```math
+Z_1 = \begin{pmatrix} 1 & 1 \\ 0 & 1 \\ 0 & 1 \end{pmatrix},\quad Z_2 = \begin{pmatrix} 0 & 1 \\ 1 & 1 \\ 0 & 1 \end{pmatrix}, \quad Z_3 = \begin{pmatrix} 0 & 1 \\ 0 & 1 \\ 1 & 1 \end{pmatrix}.
+```
+
+The result of applying `tensor_mat_skew_sym_assign` is a tensor ``\in\mathbb{R}^{2\times2\times3}:``
+```jldoctest
+using GeometricMachineLearning: tensor_mat_skew_sym_assign
+
+A = [1 0 0; 0 2 0; 0 0 3]
+Z = [1; 0; 0;; 1; 1; 1;;; 0; 1; 0;; 1; 1; 1;;; 0; 0; 1;; 1; 1; 1]
+
+tensor_mat_skew_sym_assign(Z, A)
+
+# output
+
+2×2×3 Array{Int64, 3}:
+[:, :, 1] =
+ 0  0
+ 1  0
+
+[:, :, 2] =
+ 0  0
+ 2  0
+
+[:, :, 3] =
+ 0  0
+ 3  0
+```
 """
-function tensor_mat_skew_sym_assign(Z::AT, A::AbstractMatrix{T}) where {T, AT <: AbstractArray{T, 3}}
+function tensor_mat_skew_sym_assign(Z::AT, A::AbstractMatrix{T})::AT where {T, AT <: AbstractArray{T, 3}}
     backend = KernelAbstractions.get_backend(Z)
 
     C = KernelAbstractions.zeros(backend, T, size(Z, 2), size(Z, 2), size(Z, 3))

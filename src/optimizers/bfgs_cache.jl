@@ -33,14 +33,14 @@ function Base.show(io::IO, ::MIME{Symbol("text/plain")}, C::BFGSCache)
     show(io, "text/plain", C.H)
 end 
 
-@doc raw"""
-    initialize_hessian_inverse(B)
-
-Initialize the inverse of the Hessian for various arrays. 
-
-# Implementation 
-This requires an implementation of a *vectorization operation* `vec`. This is important for custom arrays.
-"""
+# @doc raw"""
+#     initialize_hessian_inverse(B)
+# 
+# Initialize the inverse of the Hessian for various arrays. 
+# 
+# # Implementation 
+# This requires an implementation of a *vectorization operation* `vec`. This is important for custom arrays.
+# """
 function initialize_hessian_inverse(B::AbstractArray{T}) where T
     length_of_array = length(vec(B))
     backend = KernelAbstractions.get_backend(B)

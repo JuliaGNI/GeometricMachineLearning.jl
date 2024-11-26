@@ -17,7 +17,8 @@ Main.definition(raw"The **metric on a Riemannian manifold** ``\mathcal{M}`` is
 " * 
 Main.indentation * raw"```math
 " *
-Main.indentation * raw"d(x, y) = \mathrm{inf}_{\text{$\gamma(0) = x$ and $\gamma(t) = y$}}L(\gamma),
+Main.indentation * raw"d(x, y) = \inf_{\substack{\text{$\gamma(0) = x$ and}\\
+    \gamma(t) = y}}L(\gamma),
 " * 
 Main.indentation * raw"```
 " *
@@ -31,7 +32,7 @@ d(\gamma(t_i), \gamma(t_f)) = \int_{t_i}^{t_f}\sqrt{g_{\gamma(s)}(\gamma'(s), \g
 ```
 for any ``t_i, t_f\in[0, t]``.
 
-An important result of Riemannian geometry states that there exists a vector field ``X`` on ``T\mathcal{M}``, called the *geodesic spray*, whose integral curves are derivatives of geodesics.
+An important result of Riemannian geometry states that there exists a vector field ``X`` on ``T\mathcal{M}``, called the *geodesic spray*, whose integral curves are derivatives of geodesics. We formalize this statement as a theorem in the next section.
 
 
 ## Geodesic Sprays and the Exponential Map
@@ -50,7 +51,7 @@ It is therefore customary to introduce the *exponential map* ``\exp:T_x\mathcal{
 \exp(v_x) := \gamma_{v_x}(1),
 ```
 
-and we see that ``\gamma_{v_x}(t) = \exp(t\cdot{}v_x)``. In `GeometricMachineLearning` we denote the exponential map by [`geodesic`](@ref) to avoid confusion with the matrix exponential map[^2]:
+and we see that ``\gamma_{v_x}(t) = \exp(t\cdot{}v_x)``. In `GeometricMachineLearning` we denote the exponential map by [`geodesic`](@ref) to avoid confusion with the matrix exponential map[^2] which is called as `exp` in `Julia`. So we use the definition:
 
 [^2]: The Riemannian exponential map and the matrix exponential map coincide for many matrix Lie groups.
 
@@ -58,7 +59,7 @@ and we see that ``\gamma_{v_x}(t) = \exp(t\cdot{}v_x)``. In `GeometricMachineLea
     \mathtt{geodesic}(x, v_x) \equiv \exp(v_x).
 ```
 
-We give an example here:
+We give an example of using this function here:
 
 ```@setup s2_retraction
 using GLMakie
@@ -67,7 +68,7 @@ include("../../gl_makie_transparent_background_hack.jl")
 ```
 
 ```@example s2_retraction
-using GeometricMachineLearning
+using GeometricMachineLearning # hide
 import Random # hide
 Random.seed!(123) # hide
 
@@ -78,7 +79,6 @@ v = 5 * rand(3, 1)
 
 morange = RGBf(255 / 256, 127 / 256, 14 / 256) # hide
 mred = RGBf(214 / 256, 39 / 256, 40 / 256) # hide
-
 function set_up_plot(; theme = :dark) # hide
 text_color = theme == :dark ? :white : :black # hide
 fig = Figure(; backgroundcolor = :transparent, size = (900, 675)) # hide
@@ -103,14 +103,13 @@ ax = Axis3(fig[1, 1]; # hide
     limits = ([-1, 1], [-1, 1], [-1, 1]), # hide
     azimuth = π / 7, # hide
     elevation = π / 7, # hide
-    # height = 75.,
+    # height = 75., # hide
     ) # hide
-
 # plot a sphere with radius one and origin 0
 surface!(ax, Main.sphere(1., [0., 0., 0.])...; alpha = .5, transparency = true)
 
 point_vec = ([Y[1]], [Y[2]], [Y[3]])
-scatter!(ax, point_vec...; color = morange, marker = :star5)
+scatter!(ax, point_vec...; color = morange, marker = :star5, markersize = 30)
 
 arrow_vec = ([Δ[1]], [Δ[2]], [Δ[3]])
 arrows!(ax, point_vec..., arrow_vec...; color = mred, linewidth = .02)
@@ -128,10 +127,10 @@ nothing # hide
 ```
 
 ```@example
-Main.include_graphics("sphere_with_tangent_vec") # hide
+Main.include_graphics("sphere_with_tangent_vec"; width = .7) # hide
 ```
 
-We now solve the geodesic spray for ``\eta\cdot\Delta`` for ``\eta = 0.1, 0.2, 0.3, \ldots, 2.5`` and plot the corresponding points:
+We now solve the geodesic spray for ``\eta\cdot\Delta`` for ``\eta = 0.1, 0.2, \ldots, 5.5`` with the function [`geodesic`](@ref) and plot the corresponding points:
 
 ```@example s2_retraction
 Δ_increments = [Δ * η for η in 0.1 : 0.1 : 5.5]
@@ -139,13 +138,13 @@ We now solve the geodesic spray for ``\eta\cdot\Delta`` for ``\eta = 0.1, 0.2, 0
 Y_increments = [geodesic(Y, Δ_increment) for Δ_increment in Δ_increments]
 
 function make_plot_with_solution(; theme = :dark) # hide
-fig, ax = set_up_plot(; theme = theme)
+fig, ax = set_up_plot(; theme = theme) # hide
 for Y_increment in Y_increments
     scatter!(ax, [Y_increment[1]], [Y_increment[2]], [Y_increment[3]]; 
-        color = mred, markersize = 5)
+        color = mred)
 end
 
-fig
+fig # hide
 end # hide
 
 fig_light = make_plot_with_solution(; theme = :light) # hide
@@ -158,27 +157,39 @@ nothing # hide
 ```
 
 ```@example
-Main.include_graphics("sphere_with_tangent_vec_and_geodesic") # hide
+Main.include_graphics("sphere_with_tangent_vec_and_geodesic"; width = .7) # hide
 ```
 
-So a geodesic can be seen as the *equivalent of a straight line* on a manifold. Also note that we drew a random element form [`StiefelManifold`](@ref) here and not from ``S^2``. This is because [Stiefel manifolds](@ref "The Stiefel Manifold") are more general spaces than ``S^n`` and also comprise them. 
+A geodesic can be seen as the *equivalent of a straight line* on a manifold. Also note that we drew a random element form [`StiefelManifold`](@ref) here, and not from ``S^2``. This is because the category of [Stiefel manifolds](@ref "The Stiefel Manifold") is more general than the category of spheres ``S^n``: ``St(1, 3) \simeq S^2``.
 
 ## The Riemannian Gradient
 
-The Riemannian gradient of a function ``L\mathcal{M}\to\mathbb{R}`` is a vector field[^3] ``\mathrm{grad}^gL`` (or simply ``\mathrm{grad}L``) for which we have
+The *Riemannian gradient* is essential when talking about optimization on manifolds.
 
-[^3]: We also write ``\mathrm{grad}^gL(x) = \mathrm{grad}^g_xL.``
-
-```math
-    g_x(\mathrm{grad}_x^gL, v_x) = (\nabla_{\varphi_U(x)}(L\circ\varphi_U^{-1}))^T \varphi_U'(v_x), 
+```@eval
+Main.definition(raw"The Riemannian gradient of a function ``L:\mathcal{M}\to\mathbb{R}`` is a vector field ``\mathrm{grad}^gL`` (or simply ``\mathrm{grad}L``) for which we have
+" * Main.indentation * raw"```math
+" * Main.indentation * raw"    g_x(\mathrm{grad}^gL(x), v_x) = (\nabla_{\varphi_U(x)}(L\circ\varphi_U^{-1}))^T \varphi_U'(v_x), 
+" * Main.indentation * raw"```
+" * Main.indentation * raw"for all ``v_x\in{}T_x\mathcal{M}.`` In the expression above ``\varphi_U`` is some coordinate chart defined in a neighborhood ``U`` around ``x``.")
 ```
 
-where 
-
+In the definition above ``\nabla`` indicates the *Euclidean gradient*:
 ```math
- \nabla_xf = \begin{pmatrix} \frac{\partial{}f}{\partial{}x_1} \\ \cdots \\ \frac{\partial{}f}{\partial{}x_n} \end{pmatrix},
+ \nabla_xf = \begin{pmatrix} \frac{\partial{}f}{\partial{}x_1} \\ \cdots \\ \frac{\partial{}f}{\partial{}x_n} \end{pmatrix}.
 ```
-is the Euclidean gradient. By the *non-degeneracy* of ``g`` the Riemannian gradient always exists [bishop1980tensor](@cite). We will give specific examples of this when discussing the [Stiefel manifold](@ref "The Stiefel Manifold") and the [Grassmann manifold](@ref "The Grassmann Manifold"). 
+
+We can also describe the Riemannian gradient through differential curves:
+
+```@eval
+Main.definition(raw"The Riemannian gradient of ``L`` is a vector field ``\mathrm{grad}^gL`` for which
+" * Main.indentation * raw"```math
+" * Main.indentation * raw"g_x(\mathrm{grad}^gL(x), \dot{\gamma}(0)) = \frac{d}{dt}L(\gamma(t)),
+" * Main.indentation * raw"```
+" * Main.indentation * raw"where ``\gamma`` is a ``C^\infty`` curve through ``x``.")
+```
+
+By the *non degeneracy* of ``g`` the Riemannian gradient always exists [bishop1980tensor](@cite). In the following we will also write ``\mathrm{grad}^gL(x) = \mathrm{grad}^g_xL = \mathrm{grad}_xL.`` We will give specific examples of this when discussing the [Stiefel manifold](@ref "The Stiefel Manifold") and the [Grassmann manifold](@ref "The Grassmann Manifold"). 
 
 
 ## Gradient Flows and Riemannian Optimization
@@ -199,8 +210,12 @@ we call the *gradient optimization scheme*.
 
 ## Library Functions
 
-```@docs; canonical = false
+```@docs
 geodesic(::Manifold{T}, ::AbstractMatrix{T}) where T
+```
+
+```@raw latex
+\begin{comment}
 ```
 
 ## References
@@ -211,4 +226,8 @@ Canonical = false
 
 lang2012fundamentals
 do1992riemannian
+```
+
+```@raw latex
+\end{comment}
 ```

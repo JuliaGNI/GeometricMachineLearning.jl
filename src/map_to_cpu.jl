@@ -1,5 +1,9 @@
-map_to_cpu(ps::Tuple) = Tuple([map_to_cpu(layer) for layer in ps])
+function map_to_cpu(ps::NeuralNetworkParameters) 
+    NeuralNetworkParameters(NamedTuple{keys(ps)}(Tuple(map_to_cpu(ps[key]) for key in keys(ps))))
+end
+
 map_to_cpu(layer::NamedTuple) = apply_toNT(map_to_cpu, layer)
+
 function map_to_cpu(A::AbstractArray{T}) where T
     Array{T}(A)
 end

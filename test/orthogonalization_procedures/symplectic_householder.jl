@@ -31,7 +31,7 @@ function symplecticity_error(S::AbstractMatrix)
     @assert iseven(N2)
     N, M = N2÷2, M2÷2
     @assert N == M 
-    J = SymplecticPotential(N)
+    J = PoissonTensor(N)
     LinearAlgebra.norm(S'*J*S - J)
 end
 

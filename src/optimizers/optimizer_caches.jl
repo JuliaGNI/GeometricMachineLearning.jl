@@ -1,9 +1,7 @@
 @doc raw"""
-AbstractCache has subtypes:
-- [`AdamCache`](@ref)
-- [`MomentumCache`](@ref)
-- [`GradientCache`](@ref)
-- [`BFGSCache`](@ref)
+    AbstractCache
+
+`AbstractCache` has subtypes: [`AdamCache`](@ref), [`MomentumCache`](@ref), [`GradientCache`](@ref) and [`BFGSCache`](@ref).
 
 All of them can be initialized with providing an array (also supporting manifold types).
 """
@@ -62,7 +60,7 @@ Store the moment for `Y` (initialized as zeros).
 
 The moment is called `B`.
 
-If the cache is called with an instance of a homogeneous space, e.g. the [`StiefelManifold`](@ref) ``St(n,N)`` it initializes the moments as elements of ``\mathfrak{g}^\mathrm{hor}`` ([`StiefelLieAlgHorMatrix`](@ref)).
+If the cache is called with an instance of a [`Manifold`](@ref) it initializes the moments as elements of ``\mathfrak{g}^\mathrm{hor}`` ([`AbstractLieAlgHorMatrix`](@ref)).
 
 See [`AdamCache`](@ref).
 """
@@ -95,9 +93,15 @@ setup_adam_cache(ps::NamedTuple) = apply_toNT(setup_adam_cache, ps)
 setup_momentum_cache(ps::NamedTuple) = apply_toNT(setup_momentum_cache, ps)
 setup_gradient_cache(ps::NamedTuple) = apply_toNT(setup_gradient_cache, ps)
 
-setup_adam_cache(ps::Tuple) = Tuple([setup_adam_cache(x) for x in ps])
-setup_momentum_cache(ps::Tuple) = Tuple([setup_momentum_cache(x) for x in ps])
-setup_gradient_cache(ps::Tuple) = Tuple([setup_gradient_cache(x) for x in ps])
+function setup_cache(_setup_cache_function, ps::NeuralNetworkParameters)
+    ps_keys = keys(ps)
+    values = Tuple([_setup_cache_function(ps[key]) for key in ps_keys])
+    NamedTuple{ps_keys}(values)
+end
+
+setup_adam_cache(ps::NeuralNetworkParameters) = setup_cache(setup_adam_cache, ps)
+setup_momentum_cache(ps::NeuralNetworkParameters) = setup_cache(setup_momentum_cache, ps)
+setup_gradient_cache(ps::NeuralNetworkParameters) = setup_cache(setup_gradient_cache, ps)
 
 setup_adam_cache(B::AbstractArray{<:Number}) = AdamCache(B)
 setup_momentum_cache(B::AbstractArray{<:Number}) = MomentumCache(B)

@@ -1,13 +1,17 @@
+```@raw latex
+In this chapter we introduce various special neural network layers. A neural network layer is a parametrized function that is \textit{relatively simple} and serves as a basic building block of a neural network \text{architecture} (neural network architectures will be introduced in the next chapter). Some of the neural network layers in this chapter (like SympNet layers and multihead attention) are well-established while others (like volume-preserving attention and linear symplectic attention) constitute novel work.
+```
+
 # SympNet Layers
 
-The *SympNet paper* [jin2020sympnets](@cite) discusses three different kinds of sympnet layers: *activation layers*, *linear layers* and *gradient layers*. We discuss them below. Because activation layers are just a simplified form of gradient layers those two will be discussed together. A neural network that consists of many of these layers we call a [SympNet](@ref "SympNet Architecture").
+The *SympNet paper* [jin2020sympnets](@cite) discusses three different kinds of sympnet layers: *activation layers*, *linear layers* and *gradient layers*. We discuss them below. Because activation layers are just a simplified form of gradient layers those are introduced together. A neural network that consists of many of these layers we call a [SympNet](@ref "SympNet Architecture").
 
 ## SympNet Gradient Layer
 
-The Sympnet gradient layer (called [`GradientLayer`](@ref) in `GeometricMachineLearning`) is based on the following theorem: 
+The Sympnet gradient layer is based on the following theorem: 
 
 ```@eval
-Main.theorem(raw"""Given a symplectic vector space ``\mathbb{R}^{2n}`` which coordinates ``q_1, \ldots, q_n, p_1, \ldots, p_n`` and a function ``f:\mathbb{R}^n\to\mathbb{R}`` that only acts on the ``q`` part, the map ``(q, p) \mapsto (q, p + \nabla_qf)`` is symplectic. A similar statement holds if ``f`` only acts on the ``p`` part.""")
+Main.theorem(raw"""Given a symplectic vector space ``\mathbb{R}^{2n}`` with coordinates ``q_1, \ldots, q_n, p_1, \ldots, p_n`` and a function ``f:\mathbb{R}^n\to\mathbb{R}`` that only acts on the ``q`` part, the map ``(q, p) \mapsto (q, p + \nabla_qf)`` is symplectic. A similar statement holds if ``f`` only acts on the ``p`` part.""")
 ```
 
 ```@eval
@@ -65,7 +69,7 @@ where ``\odot`` is the element-wise product, i.e. ``[a\odot{}v]_k = a_kv_k``. Th
 
 ## SympNet Linear Layer
 
-Linear layers of type ``q`` are of the form:
+Linear layers of type ``p`` are of the form:
 
 ```math
 \begin{pmatrix} q \\ p \end{pmatrix} \mapsto \begin{pmatrix} \mathbb{I} & \mathbb{O} \\ A & \mathbb{I} \end{pmatrix} \begin{pmatrix} q \\ p \end{pmatrix},
@@ -75,11 +79,21 @@ where ``A`` is a symmetric matrix. This is implemented very efficiently in `Geom
 
 ## Library Functions
 
-```@docs; canonical = false
+```@docs
 GeometricMachineLearning.SympNetLayer
 GeometricMachineLearning.GradientLayer
-GeometricMachineLearning.GradientLayerQ
-GeometricMachineLearning.GradientLayerP
+GradientLayerQ
+GradientLayerP
+GeometricMachineLearning.LinearLayer
+LinearLayerQ
+LinearLayerP
+GeometricMachineLearning.ActivationLayer
+ActivationLayerQ
+ActivationLayerP
+```
+
+```@raw latex
+\begin{comment}
 ```
 
 ## References
@@ -89,4 +103,8 @@ Canonical = false
 Pages = []
 
 jin2020sympnets
+```
+
+```@raw latex
+\end{comment}
 ```

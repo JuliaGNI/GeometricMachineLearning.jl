@@ -1,15 +1,15 @@
 abstract type AbstractTrainingData end
 
 
-"""
-TrainingData stores: \n 
-\t - problem \n 
-\t - shape \n 
-\t - get \n 
-\t - symbols \n 
-\t - dim \n 
-\t - noisemaker \n 
-"""
+# """
+# TrainingData stores: \n 
+# \t - problem \n 
+# \t - shape \n 
+# \t - get \n 
+# \t - symbols \n 
+# \t - dim \n 
+# \t - noisemaker \n 
+# """
 struct TrainingData{TK <: DataSymbol, TS <: AbstractDataShape, TP <: AbstractProblem, TG <: Dict{Symbol, <:Base.Callable}, TN <: Base.Callable} <: AbstractTrainingData 
     problem::TP
     shape::TS

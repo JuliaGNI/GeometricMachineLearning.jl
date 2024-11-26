@@ -17,7 +17,7 @@ using Documenter: doctest
 @safetestset "Scalar multiplication tests for custom arrays                                   " begin include("arrays/scalar_multiplication_for_custom_arrays.jl") end
 @safetestset "Matrix multiplication tests for custom arrays                                   " begin include("arrays/matrix_multiplication_for_custom_arrays.jl") end
 @safetestset "Test constructors for custom arrays                                             " begin include("arrays/constructor_tests_for_custom_arrays.jl") end
-@safetestset "Symplectic Potential (array tests)                                              " begin include("arrays/symplectic_potential.jl") end
+@safetestset "Symplectic Potential (array tests)                                              " begin include("arrays/poisson_tensor.jl") end
 @safetestset "Test StiefelLieAlgHorMatrix constructors and lifts                              " begin include("arrays/test_stiefel_lie_alg_hor_constructors.jl") end
 @safetestset "Test GrassmannLieAlgHorMatrix constructors and lifts                            " begin include("arrays/test_grassmann_lie_alg_hor_constructors.jl") end
 
@@ -83,3 +83,5 @@ using Documenter: doctest
 
 @safetestset "Linear Symplectic Attention                                                     " begin include("linear_symplectic_attention.jl") end
 @safetestset "Linear Symplectic Transformer                                                   " begin include("linear_symplectic_transformer.jl") end
+
+@safetestset "DataLoader for input and output                                                 " begin include("data_loader/data_loader_for_input_and_output.jl") end

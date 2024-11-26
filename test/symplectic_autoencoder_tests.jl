@@ -36,14 +36,14 @@ function test_symplecticity(N::Integer, n::Integer)
     
     # this matrix should be symplectic
     sympl_mat = jacobian(vec -> sae_decoder(vec), test_vector)[1]
-    @test SymplecticPotential(n) ≈ sympl_mat' * SymplecticPotential(N) * sympl_mat
+    @test PoissonTensor(n) ≈ sympl_mat' * PoissonTensor(N) * sympl_mat
 
     # test if it's still symplectic after training
     dl = DataLoader(rand(N, 10 * N); autoencoder = true)
     o = Optimizer(AdamOptimizer(), sae_nn)
     o(sae_nn, dl, Batch(10), 10)
     sympl_mat = jacobian(vec -> sae_decoder(vec), test_vector)[1]
-    @test SymplecticPotential(n) ≈ sympl_mat' * SymplecticPotential(N) * sympl_mat
+    @test PoissonTensor(n) ≈ sympl_mat' * PoissonTensor(N) * sympl_mat
 end
 
 function all_tests(N::Integer, n::Integer; kwargs...)

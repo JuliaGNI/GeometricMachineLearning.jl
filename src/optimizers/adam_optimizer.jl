@@ -21,11 +21,16 @@ The final velocity is computed as:
 
 # Implementation 
 
-The *velocity* is stored in the input to save memory.
+The *velocity* is stored in the input to save memory:
 
-Algorithm and suggested defaults are taken from [goodfellow2016deep; page 301](@cite).
+```julia
+mul!(B, -o.method.η, /ᵉˡᵉ(C.B₁, scalar_add(racᵉˡᵉ(C.B₂), o.method.δ)))
+```
+where `B` is the input to the [`update!`] function.
+
+The algorithm and suggested defaults are taken from [goodfellow2016deep; page 301](@cite).
 """
-struct AdamOptimizer{T<:Real} <: OptimizerMethod
+struct AdamOptimizer{T<:Real} <: OptimizerMethod{T}
     η::T
     ρ₁::T
     ρ₂::T

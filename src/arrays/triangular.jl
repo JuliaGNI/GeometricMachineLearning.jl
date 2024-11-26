@@ -1,4 +1,6 @@
 @doc raw"""
+    AbstractTriangular
+
 See [`UpperTriangular`](@ref) and [`LowerTriangular`](@ref).
 """
 abstract type AbstractTriangular{T} <: AbstractMatrix{T} end 
@@ -99,7 +101,28 @@ function Base.:*(A1::AbstractTriangular{T}, A2::AbstractTriangular{T}) where T
 end
 
 @doc raw"""
-If `vec` is applied onto `Triangular`, then the output is the associated vector.  
+    vec(A::AbstractTriangular)
+
+Return the associated vector to ``A``.
+
+# Examples
+
+```jldoctest
+using GeometricMachineLearning
+
+M = [1 2 3 4; 5 6 7 8; 9 10 11 12; 13 14 15 16]
+LowerTriangular(M) |> vec
+
+# output
+
+6-element Vector{Int64}:
+  5
+  9
+ 10
+ 13
+ 14
+ 15
+```
 """
 function Base.vec(A::AbstractTriangular)
     A.S

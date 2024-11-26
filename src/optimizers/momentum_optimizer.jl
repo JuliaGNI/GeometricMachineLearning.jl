@@ -14,14 +14,12 @@ and then the final velocity is computed as
     \mathrm{velocity} \gets  - \eta{}B^{\mathrm{cache}}.
 ```
 
-Or the riemannian manifold equivalent, if applicable.
-
 # Implementation
 
 To save memory the *velocity* is stored in the input ``\nabla_WL``.
 This is similar to the case of the [`GradientOptimizer`](@ref).
 """
-struct MomentumOptimizer{T<:Real} <: OptimizerMethod
+struct MomentumOptimizer{T<:Real} <: OptimizerMethod{T}
     η::T
     α::T
     MomentumOptimizer(η = 1e-3, α = 1e-2) = new{typeof(η)}(η, α)

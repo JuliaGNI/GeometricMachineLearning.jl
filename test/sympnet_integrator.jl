@@ -10,7 +10,7 @@ const model = GSympNet(sys_dim)
 function set_up_and_apply_integrator(; T=Float32)
     ics₁ = (q = rand(T, sys_dim ÷ 2), p = rand(T, sys_dim ÷ 2))
     ics₂ = (q = rand(T, sys_dim ÷ 2), p = rand(T, sys_dim ÷ 2))
-    𝕁 = SymplecticPotential(sys_dim, T)
+    𝕁 = PoissonTensor(sys_dim, T)
 
     product₀ = 𝕁(ics₁, ics₂)
 

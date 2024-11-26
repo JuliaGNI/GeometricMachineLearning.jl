@@ -1,22 +1,29 @@
 @doc raw"""
-# Volume-preserving attention (single head attention)
+    VolumePreservingAttention(dim, seq_length)
 
-Drawbacks: 
-- the super fast activation is only implemented for sequence lengths of 2, 3, 4 and 5.
-- other sequence lengths only work on CPU for now (lu decomposition has to be implemented to work for tensors in parallel).
+Make an instance of `VolumePreservingAttention` for a specific dimension and sequence length.
 
-## Constructor 
+The sequence length is `0` by default. 
 
-The constructor is called with: 
-- `dim::Int`: The system dimension 
-- `seq_length::Int`: The sequence length to be considered. The default is zero, i.e. arbitrary sequence lengths; this works for all sequence lengths but doesn't apply the super-fast activation. 
-- `skew_sym::Bool` (keyword argument): specifies if we the weight matrix is skew symmetric or arbitrary (default is false).
+Setting `seq_length` to `0` for all sequence lengths but does not apply the fast Cayley activation.
 
-## Functor 
+# Arguments 
+
+The constructor can be called with an optional keyword argument: 
+- `skew_sym::Bool = false`: specifies if the weight matrix is skew symmetric (`true`) or arbitrary (`false`).
+
+# Functor 
 Applying a layer of type `VolumePreservingAttention` does the following: 
-- First we perform the operation ``X \mapsto X^T A X =: C``, where ``X\in\mathbb{R}^{N\times\mathtt{seq\_length}}`` is a vector containing time series data and ``A`` is the skew symmetric matrix associated with the layer. 
+- First we perform the operation ``Z \mapsto Z^T A Z =: C``, where ``Z\in\mathbb{R}^{N\times\mathtt{seq\_length}}`` is a vector containing time series data and ``A`` is the skew symmetric matrix associated with the layer (if `skew_sym = true`). 
 - In a second step we compute the Cayley transform of ``C``; ``\Lambda = \mathrm{Cayley}(C)``.
-- The output of the layer is then ``X\Lambda``.
+- The output of the layer is then ``Z\Lambda``.
+
+# Implementation
+
+The fast activation is only implemented for sequence lengths of 2, 3, 4 and 5. 
+Other sequence lengths only work on CPU (for now).
+
+The fast Cayley activation is using inverses that have been computed symbolically.
 """
 struct VolumePreservingAttention{M, N, ScalarProductType, SL} <: AbstractExplicitLayer{M, N}
 

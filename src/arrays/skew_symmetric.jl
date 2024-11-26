@@ -12,6 +12,8 @@ Internally the `struct` saves a vector ``S`` of size ``n(n-1)\div2``. The conver
                          S[( (j-2) (j-1) ) \div 2 + i] & \text{else}. \end{cases}
 ```
 
+So ``S`` stores a string of vectors taken from ``A``: ``S = [\tilde{a}_1, \tilde{a}_2, \ldots, \tilde{a}_n]`` with ``\tilde{a}_i = [[A]_{i1},[A]_{i2},\ldots,[A]_{i(i-1)}]``.
+
 Also see [`SymmetricMatrix`](@ref), [`LowerTriangular`](@ref) and [`UpperTriangular`](@ref).
 
 # Examples 
@@ -64,11 +66,17 @@ SkewSymMatrix(M)
  4.5   3.0   1.5   0.0
 ```
 
-# Extend help
+# Extended help
 
 Note that the constructor is designed in such a way that it always returns matrices of type `SkewSymMatrix{<:AbstractFloat}` when called with a matrix, even if this matrix is of type `AbstractMatrix{<:Integer}`.
 
-If the user wishes to allocate a matrix `SkewSymMatrix{<:Integer}` the constructor `SkewSymMatrix(::AbstractVector, n::Integer)` has to be called.
+If the user wishes to allocate a matrix `SkewSymMatrix{<:Integer}` then call:
+
+```julia
+SkewSymMatrix(::AbstractVector, n::Integer)
+```
+
+Note that this is different from [`LowerTriangular`](@ref) and [`UpperTriangular`](@ref) as no porjection takes place there.
 """
 function SkewSymMatrix(S::AbstractMatrix{T}) where {T}
     n = size(S, 1)
@@ -137,12 +145,17 @@ end
 
 Base.:*(α::Real, A::SkewSymMatrix) = A*α
 
-function Base.zeros(::Type{SkewSymMatrix{T}}, n::Int) where T
-    SkewSymMatrix(zeros(T, n*(n-1)÷2), n)
+function Base.zeros(ST::Type{SkewSymMatrix{<:Real}}, n::Int)
+    zeros(CPU(), ST, n)
 end
 
 function Base.zeros(backend::KernelAbstractions.Backend, ::Type{SkewSymMatrix{T}}, n::Int) where T
-	SkewSymMatrix(KernelAbstractions.zeros(backend, T, n*(n-1)÷2), n)
+    zero_vec = if n != 1
+        KernelAbstractions.zeros(backend, T, n*(n-1)÷2)
+    else
+        KernelAbstractions.allocate(backend, T, n*(n-1)÷2)
+    end
+	SkewSymMatrix(zero_vec, n)
 end
 
 function Base.zeros(::Type{SkewSymMatrix}, n::Int)
@@ -246,7 +259,28 @@ function Base.:*(A1::SkewSymMatrix{T}, A2::SkewSymMatrix{T}) where T
 end
 
 @doc raw"""
-If `vec` is applied onto `SkewSymMatrix`, then the output is the associated vector.  
+    vec(A)
+
+Output the associated vector of `A`.
+
+# Examples
+
+```jldoctest
+using GeometricMachineLearning
+
+M = [1 2 3 4; 5 6 7 8; 9 10 11 12; 13 14 15 16]
+SkewSymMatrix(M) |> vec
+
+# output
+
+6-element Vector{Float64}:
+ 1.5
+ 3.0
+ 1.5
+ 4.5
+ 3.0
+ 1.5
+```
 """
 function Base.vec(A::SkewSymMatrix)
     A.S
@@ -275,10 +309,14 @@ end
 
 function map_to_Skew(A::AbstractMatrix{T}) where T
     n = size(A, 1)
-    @assert size(A, 2) == n 
+    @assert size(A, 2) == n
     A_skew = T(.5)*(A - A')
     backend = KernelAbstractions.get_backend(A)
-    S = KernelAbstractions.zeros(backend, T, n * (n - 1) ÷ 2)
+    S = if n != 1
+        KernelAbstractions.zeros(backend, T, n * (n - 1) ÷ 2)
+    else
+        KernelAbstractions.allocate(backend, T, n * (n - 1) ÷ 2)
+    end
     assign_Skew_val! = assign_Skew_val_kernel!(backend)
     for i in 2:n
         assign_Skew_val!(S, A_skew, i, ndrange = (i - 1))

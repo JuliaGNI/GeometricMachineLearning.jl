@@ -1,25 +1,29 @@
+const t_activation_default = tanh
+const t_Stiefel_default = false
+const t_add_connection_default = false
+const t_use_bias_default = true
+
 @doc raw"""
-The architecture for a "transformer encoder" is essentially taken from arXiv:2010.11929, but with the difference that **no** layer normalization is employed.
-This is because we still need to find a generalization of layer normalization to manifolds. 
+    Transformer(dim, n_heads, L)
 
-The transformer is called with the following inputs: 
-- `dim`: the dimension of the transformer 
-- `n_heads`: the number of heads 
-- `L`: the number of **transformer blocks**
+Make an instance of the Transformer with `n_heads` for dimension `dim` and `L` blocks.
 
-In addition we have the following optional arguments: 
-- `activation`: the activation function used for the `ResNet` (`tanh` by default)
-- `Stiefel::Bool`: if the matrices $P^V$, $P^Q$ and $P^K$ should live on a manifold (`false` by default)
-- `retraction`: which retraction should be used (`Geodesic()` by default)
-- `add_connection::Bool`: if the input should by added to the ouput after the `MultiHeadAttention` layer is used (`true` by default)
-- `use_bias::Bool`: If the `ResNet` should use a bias (`true` by default)
+# Arguments
+
+`Transformer` takes the following optional keyword arguments:
+- `activation = """ * "$(t_activation_default)`" * raw""": the activation function used for the [`ResNetLayer`](@ref).
+- `Stiefel::Bool = """ * "$(t_Stiefel_default)`" * raw""": if the matrices ``P^V``, ``P^Q`` and ``P^K`` should live on a manifold.
+- `add_connection::Bool = """ * "$(t_add_connection_default)`" * raw""": if the input should by added to the ouput after the [`MultiHeadAttention`](@ref) layer.
+- `use_bias::Bool = """ * "$(t_use_bias_default)`" * raw""": Specifies if the [`ResNetLayer`](@ref) should use a bias.
 """
 function Transformer(dim::Integer, n_heads::Integer, L::Integer; 
-    activation=tanh, Stiefel::Bool=false, retraction=Geodesic(), add_connection=true, use_bias=true)
-
+                                                                activation = t_activation_default, 
+                                                                Stiefel::Bool = t_Stiefel_default, 
+                                                                add_connection::Bool = t_add_connection_default, 
+                                                                use_bias::Bool = t_use_bias_default)
     layers = ()
     for _ in 1:L
-        layers = (layers..., MultiHeadAttention(dim, n_heads, Stiefel=Stiefel, retraction=retraction, add_connection=add_connection), 
+        layers = (layers..., MultiHeadAttention(dim, n_heads, Stiefel=Stiefel, add_connection=add_connection), 
         ResNetLayer(dim, activation; use_bias=use_bias) )
     end
 

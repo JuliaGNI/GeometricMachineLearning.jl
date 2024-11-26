@@ -1,7 +1,5 @@
-@doc raw"""
-This defines a manifold layer that only has one matrix-valued manifold $A$ associated with it does $x\mapsto{}Ax$. 
-"""
-abstract type ManifoldLayer{M, N, retraction} <: LayerWithManifold{M, N, retraction} end
+# This defines a manifold layer that only has one matrix-valued manifold $A$ associated with it does $x\mapsto{}Ax$. 
+abstract type ManifoldLayer{M, N} <: AbstractExplicitLayer{M, N} end
 
 function (d::ManifoldLayer{M, N})(x::AbstractVecOrMat, ps::NamedTuple) where {M, N}
     N > M ? ps.weight*x : ps.weight'*x
@@ -11,13 +9,13 @@ function (d::ManifoldLayer{M, N})(x::AbstractArray{T, 3}, ps::NamedTuple) where 
     N > M ? mat_tensor_mul(ps.weight, x) : mat_tensor_mul(ps.weight', x)
 end
 
-function retraction(::ManifoldLayer{N, M, Geodesic}, B::NamedTuple{(:weight,),Tuple{AT}}) where {N, M, AT<:AbstractLieAlgHorMatrix}
-    geodesic(B)
-end
-
-function retraction(::ManifoldLayer{N, M, Cayley}, B::NamedTuple{(:weight,),Tuple{AT}}) where {N, M, AT<:AbstractLieAlgHorMatrix}
-    cayley(B)
-end
+# function retraction(::ManifoldLayer{N, M, Geodesic}, B::NamedTuple{(:weight,),Tuple{AT}}) where {N, M, AT<:AbstractLieAlgHorMatrix}
+#     geodesic(B)
+# end
+# 
+# function retraction(::ManifoldLayer{N, M, Cayley}, B::NamedTuple{(:weight,),Tuple{AT}}) where {N, M, AT<:AbstractLieAlgHorMatrix}
+#     cayley(B)
+# end
 
 #=
 #function to improve readability when dealing with NamedTuple (for Manifold layers)

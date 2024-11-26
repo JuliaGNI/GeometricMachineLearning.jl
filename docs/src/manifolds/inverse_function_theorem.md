@@ -1,6 +1,6 @@
-# Foundational Theorem for Differential Manifolds
+# Foundational Theorems for Differential Manifolds
 
-Here we state and proof all the theorem necessary to define [differential manifold](@ref "(Matrix) Manifolds"). All these theorems (including proofs) can be found in e.g. [lang2012fundamentals](@cite).
+Here we state and proof all the theorems necessary to define [differential manifolds](@ref "(Matrix) Manifolds"). All these theorems (including proofs) can be found in e.g. [lang2012fundamentals](@cite).
 
 ## The Fixed-Point Theorem 
 
@@ -44,8 +44,12 @@ Main.theorem(raw"Consider a vector-valued differentiable function ``F:\mathbb{R}
 ```
 
 ```@eval
-Main.proof(raw"""Consider a mapping ``F:\mathbb{R}^N\to\mathbb{R}^N`` and assume its Jacobian has full rank at point ``x``, i.e. ``\det{}F'(x)\neq0``. We further assume that ``F(x) = 0``, ``F'(x) = \mathbb{I}`` and ``x = 0``. Now consider a ball around ``x`` whose radius ``r`` we do not yet fix and two points ``y`` and ``z`` in that ball: ``y,z\in{}B(r)``. We further introduce the function ``G(y):=y-F(y)``. By the *mean value theorem* we have ``|G(y)| = |G(y) - x| = |G(y) - G(x)|\leq|y-x|\sup_{0<t<1}||G'(x + t(y-x))||`` where ``||\cdot||`` is the *operator norm*. Because ``t\mapsto{}G'(x+t(y-x))`` is continuous and ``G'(x)=0`` there must exist an ``r`` s.t. ``\forall{}t\in[0,1],\,||G'(x +t(y-x))||<1/2``. We have for any element ``y\in{}B(r)``: ``|G(y) | \leq ||G'(y)||\cdot|y| < |y|/2``, so ``G(B(r))\subset{}B(r/2)``. We further define ``G_z(y) := z + G(y)``; this map is contractive on ``B(r)`` (for ``z\in{}B(r/2)``): ``|G_z(y)| \leq |z| + |G(y) - x| < q < 1`` and therefore has a fixed point: ``y^* = G_z(y^*) = z + y^* - F(y^*)`` and we obtain ``z = F(y^*)``.  The inverse (which we call ``H:F(B(r/2))\to{}B(r)``) is also continuous by the last theorem presented in the section on basic topological concepts. We now proof that the derivative of ``H`` at ``F(x) = 0`` exists and that it is equal to ``F'(H(z))^{-1}``. For this we let ``\eta\in{}F(B(r/2))`` go to zero. We further define ``\xi = F(z)`` and ``h = H(\xi + \eta) - z``:
-""" * 
+Main.proof(raw"Consider a mapping ``F:\mathbb{R}^N\to\mathbb{R}^N`` and assume its Jacobian has full rank at point ``x``, i.e. ``\det{}F'(x)\neq0``. We further assume that ``F(x) = 0``, ``F'(x) = \mathbb{I}`` and ``x = 0``. Now consider a ball around ``x`` whose radius ``r`` we do not yet fix and two points ``y`` and ``z`` in that ball: ``y,z\in{}B(r)``. We further introduce the function ``G(y):=y-F(y)``. By the *mean value theorem* we have 
+" * Main.indentation * raw"```math 
+" * Main.indentation * raw"|G(y)| = |G(y) - x| = |G(y) - G(x)|\leq|y-x|\sup_{0<t<1}||G'(x + t(y-x))||,
+" * Main.indentation * raw"``` 
+" * Main.indentation * raw"where ``||\cdot||`` is the *operator norm*. Because ``t\mapsto{}G'(x+t(y-x))`` is continuous and ``G'(x)=0`` there must exist an ``r`` s.t. ``\forall{}t\in[0,1],\,||G'(x +t(y-x))||<1/2``. We have for any element ``y\in{}B(r)``: ``|G(y) | \leq ||G'(y)||\cdot|y| < |y|/2``, so ``G(B(r))\subset{}B(r/2)``. We further define ``G_z(y) := z + G(y)``; this map is contractive on ``B(r)`` (for ``z\in{}B(r/2)``): ``|G_z(y)| \leq |z| + |G(y) - x| < q < 1`` and therefore has a fixed point: ``y^* = G_z(y^*) = z + y^* - F(y^*)`` and we obtain ``z = F(y^*)``.  The inverse (which we call ``H:F(B(r/2))\to{}B(r)``) is also continuous by the last theorem presented in the section on basic topological concepts. We now proof that the derivative of ``H`` at ``F(x) = 0`` exists and that it is equal to ``F'(H(z))^{-1}``. For this we let ``\eta\in{}F(B(r/2))`` go to zero. We further define ``\xi = F(z)`` and ``h = H(\xi + \eta) - z``:
+" *
 Main.indentation * raw"```math
 " *
 Main.indentation * raw"\begin{aligned}
@@ -77,6 +81,10 @@ Main.proof(raw"Consider the map ``x = (x_1, \ldots, x_{n+m}) = (f(x), x_{n+1}, \
 
 The implicit function will be used to proof the [preimage theorem](@ref "The Preimage Theorem") which we use as a basis to construct all the manifolds in `GeometricMachineLearning`.
 
+```@raw latex
+\begin{comment}
+```
+
 ## References
 
 ```@bibliography
@@ -86,3 +94,6 @@ Canonical = false
 lang2012fundamentals
 ```
 
+```@raw latex
+\end{comment}
+```

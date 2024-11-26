@@ -1,18 +1,21 @@
 @doc raw"""
-    GrassmannLieAlgHorMatrix(B::AbstractMatrix{T}, N::Integer, n::Integer) where T
+    GrassmannLieAlgHorMatrix(B::AbstractMatrix, N::Integer, n::Integer)
 
 Build an instance of `GrassmannLieAlgHorMatrix` based on an arbitrary matrix `B` of size ``(N-n)\times{}n``.
 
 `GrassmannLieAlgHorMatrix` is the *horizontal component of the Lie algebra of skew-symmetric matrices* (with respect to the canonical metric).
+
+# Extended help
+
 The projection here is: ``\pi:S \to SE/\sim`` where 
 ```math
-E = \begin{pmatrix} \mathbb{I}_{n} \\ \mathbb{O}_{(N-n)\times{}n}  \end{pmatrix},
+E = \begin{bmatrix} \mathbb{I}_{n} \\ \mathbb{O}_{(N-n)\times{}n}  \end{bmatrix},
 ```
 
 and the equivalence relation is 
 
 ```math
-V_1 \sim V_2 \iff \exists A\in\mathcal{S}_\mathrm{skew}(n) \text{such that } V_2 = V_1 + \begin{pmatrix} A \\ \mathbb{O} \end{pmatrix}
+V_1 \sim V_2 \iff \exists A\in\mathcal{S}_\mathrm{skew}(n) \text{ such that } V_2 = V_1 + \begin{bmatrix} A \\ \mathbb{O} \end{bmatrix}
 ```
 
 An element of GrassmannLieAlgMatrix takes the form: 
@@ -21,7 +24,7 @@ An element of GrassmannLieAlgMatrix takes the form:
 \bar{\mathbb{O}} & B^T \\ B & \mathbb{O}
 \end{pmatrix},
 ```
-where ``\bar{\mathbb{O}}\in\mathbb{R}^{n\times{}n}`` and ``\mathbb{O}\in\mathbb{R}^{(N - n)\times{}n}.``
+where ``\bar{\mathbb{O}}\in\mathbb{R}^{n\times{}n}`` and ``\mathbb{O}\in\mathbb{R}^{(N - n)\times(N-n)}.``
 """
 mutable struct GrassmannLieAlgHorMatrix{T, ST <: AbstractMatrix{T}} <: AbstractLieAlgHorMatrix{T}
     B::ST
@@ -40,7 +43,11 @@ end
 @doc raw"""
     GrassmannLieAlgHorMatrix(D::AbstractMatrix, n::Integer)
 
-Take a big matrix as input and build an instance of `GrassmannLieAlgHorMatrix` belonging to the GrassmannManifold ``Gr(n, N)`` where ``N`` is the number of rows of `D`.
+Take a big matrix as input and build an instance of `GrassmannLieAlgHorMatrix`.
+
+The integer ``N`` in ``Gr(n, N)`` here is the number of rows of `D`.
+
+# Extended help
 
 If the constructor is called with a big ``N\times{}N`` matrix, then the projection is performed the following way: 
 
