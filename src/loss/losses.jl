@@ -1,35 +1,4 @@
 @doc raw"""
-    NetworkLoss
-
-An abstract type for all the neural network losses. 
-If you want to implement `CustomLoss <: NetworkLoss` you need to define a functor:
-```julia
-(loss::CustomLoss)(model, ps, input, output)
-```
-where `model` is an instance of an `AbstractExplicitLayer` or a `Chain` and `ps` the parameters.
-
-See [`FeedForwardLoss`](@ref), [`TransformerLoss`](@ref), [`AutoEncoderLoss`](@ref) and [`ReducedLoss`](@ref) for examples.
-"""
-abstract type NetworkLoss end 
-
-function (loss::NetworkLoss)(nn::NeuralNetwork, input::QPTOAT, output::QPTOAT)
-    loss(nn.model, nn.params, input, output)
-end
-
-function _compute_loss(output_prediction::QPTOAT, output::QPTOAT)
-    _norm(_diff(output_prediction, output)) / _norm(output)
-end 
-
-function _compute_loss(model::Union{AbstractExplicitLayer, Chain}, ps::Union{NeuralNetworkParameters, NamedTuple}, input::QPTOAT, output::QPTOAT)
-    output_prediction = model(input, ps)
-    _compute_loss(output_prediction, output)
-end
-
-function (loss::NetworkLoss)(model::Union{Chain, AbstractExplicitLayer}, ps::Union{NeuralNetworkParameters, NamedTuple}, input::QPTOAT, output::QPTOAT)
-    _compute_loss(model, ps, input, output)
-end
-
-@doc raw"""
     TransformerLoss(seq_length, prediction_window)
 
 Make an instance of the transformer loss. 
