@@ -29,7 +29,7 @@ module GeometricMachineLearning
     import AbstractNeuralNetworks: parameterlength
     import AbstractNeuralNetworks: GlorotUniform
     import AbstractNeuralNetworks: params, architecture, model, dim
-    import AbstractNeuralNetworks: AbstractPullback, NetworkLoss
+    import AbstractNeuralNetworks: AbstractPullback, NetworkLoss, _compute_loss
     # export params, architetcure, model
     export dim
     import GeometricIntegrators.Integrators: method, GeometricIntegrator
