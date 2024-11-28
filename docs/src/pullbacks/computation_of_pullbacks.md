@@ -104,7 +104,6 @@ is equivalent to applying the [Riemannian gradient](@ref "The Riemannian Gradien
 ## Library Functions 
 
 ```@docs
-AbstractPullback
 GeometricMachineLearning.ZygotePullback
 ```
 

@@ -44,7 +44,6 @@ where ``\mathbf{x}^{(t)}`` is the solution of the FOM at point ``t`` and ``\math
 ## Library Functions
 
 ```@docs
-GeometricMachineLearning.NetworkLoss
 FeedForwardLoss
 TransformerLoss
 AutoEncoderLoss

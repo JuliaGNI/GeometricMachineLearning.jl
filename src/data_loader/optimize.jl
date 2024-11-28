@@ -23,7 +23,7 @@ All the arguments are mandatory (there are no defaults):
 3. the neural network parameters `ps`.
 4. the data (i.e. an instance of [`DataLoader`](@ref)).
 5. `batch`::[`Batch`](@ref): stores `batch_size` (and optionally `seq_length` and `prediction_window`).
-6. `loss::`[`NetworkLoss`](@ref).
+6. `loss::NetworkLoss`.
 7. the *section* `λY` of the parameters `ps`.
 
 # Implementation
