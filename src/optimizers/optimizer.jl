@@ -20,7 +20,7 @@ The arguments are:
 2. `dl::`[`DataLoader`](@ref)
 3. `batch::`[`Batch`](@ref)
 4. `n_epochs::Integer`
-5. `loss::`[`NetworkLoss`](@ref)
+5. `loss::NetworkLoss`
 
 The last argument is optional for many neural network architectures. We have the following defaults:
 - A [`TransformerIntegrator`](@ref) uses [`TransformerLoss`](@ref).
