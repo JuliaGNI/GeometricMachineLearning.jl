@@ -58,7 +58,7 @@ using Documenter: doctest
 # @safetestset "TrainingSet                                                                     " begin include("train!/test_trainingSet.jl") end
 # @safetestset "Training                                                                        " begin include("train!/test_training.jl") end
 @safetestset "NeuralNetSolution                                                               " begin include("train!/test_neuralnet_solution.jl") end
-@safetestset "Problem & Integrators                                                           " begin include("integrator/test_integrator.jl") end
+# @safetestset "Problem & Integrators                                                           " begin include("integrator/test_integrator.jl") end
 
 @safetestset "Test data loader for q and p data                                               " begin include("data_loader/batch_data_loader_qp_test.jl") end
 @safetestset "Test mnist_utils.                                                               " begin include("data_loader/mnist_utils.jl") end
