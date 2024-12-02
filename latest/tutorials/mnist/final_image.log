@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999993 (TeX Live 2022/dev/Debian) (preloaded format=xelatex 2024.11.28)  28 NOV 2024 15:00
+This is XeTeX, Version 3.141592653-2.6-0.999993 (TeX Live 2022/dev/Debian) (preloaded format=xelatex 2024.12.2)  2 DEC 2024 08:46
 entering extended mode
  \write18 enabled.
  %&-line parsing enabled.
@@ -410,7 +410,7 @@ File: final/image.png Graphic file (type bmp)
 ] (./final_image.aux) ) 
 Here is how much of TeX's memory you used:
  12014 strings out of 478158
- 254266 string characters out of 5853401
+ 254266 string characters out of 5853402
  513100 words of memory out of 5000000
  32437 multiletter control sequences out of 15000+600000
  469267 words of font info for 29 fonts, out of 8000000 for 9000
