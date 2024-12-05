@@ -2,7 +2,7 @@ using GeometricMachineLearning
 using Test
 
 #########################################
-# Test HamiltonianNeuralNetwork
+# Test HamiltonianArchitecture
 #########################################
 
 

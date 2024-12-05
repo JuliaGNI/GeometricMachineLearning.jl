@@ -18,7 +18,7 @@ tspan = (t₀, t₁)
 # Test for HNNProblem
 #########################################
 
-hnn = NeuralNetwork(HamiltonianNeuralNetwork(2), Float64)
+hnn = NeuralNetwork(HamiltonianArchitecture(2), Float64)
 ics = (q = q₀, p = p₀)
 
 prob_hnn = HNNProblem(hnn, tspan, Δt, q₀, p₀)

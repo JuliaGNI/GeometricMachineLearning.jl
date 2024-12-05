@@ -1,6 +1,6 @@
 # This file contains the functions to create the corresponding problem to hnn which is HODEProblem
 
-function HNNProblem(nn::NeuralNetwork{<:HamiltonianNeuralNetwork}, tspan, tstep, ics...; kwargs...)
+function HNNProblem(nn::NeuralNetwork{<:HamiltonianArchitecture}, tspan, tstep, ics...; kwargs...)
 
     Hₛₚₗᵢₜ(q, p) = sum(nn([q..., p...]))
 

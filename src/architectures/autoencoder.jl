@@ -215,14 +215,6 @@ function _encoder(nn::NeuralNetwork, full_dim::Integer, reduced_dim::Integer)
                     get_backend(nn))
 end
 
-function input_dimension(::AbstractExplicitLayer{M, N}) where {M, N}
-    M
-end
-
-function output_dimension(::AbstractExplicitLayer{M, N}) where {M, N}
-    N
-end
-
 @doc raw"""
     encoder(nn)
 

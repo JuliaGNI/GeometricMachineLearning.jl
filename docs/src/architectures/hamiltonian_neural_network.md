@@ -33,11 +33,8 @@ Note that this integrator is implicit in general.
 ```math
 \mathcal{L}_\mathrm{HNN} = \sqrt{sum_t\sum_{i=1}^d \Big{||} \frac{\partial\mathcal{NN}}{\partial{}q_i}(q^{(t)}, p^{(t+1)}) + \frac{p_i^{t+1} - p_i^{(t)}}{\Delta{}t} \Big{||}_2^2 + \Big{||} \frac{\partial\mathcal{NN}}{\partial{}p_i}(q^{(t)}, p^{(t+1)}) + \frac{q_i^{t+1} - q_i^{(t)}}{\Delta{}t} \Big{||}_2^2}
 ```
-<<<<<<< Updated upstream
 
 Here the derivatives (i.e. vector field data) ``\dot{q}_i^{(t)}`` and ``\dot{p}_i^{(t)}`` are approximated with finite differences: 
 
 !!! info
    Usually we use [`Zygote`](https://github.com/FluxML/Zygote.jl) for computing derivatives in `GeometricMachineLearning`, but as the [`Zygote` documentation](https://fluxml.ai/Zygote.jl/dev/limitations/#Second-derivatives-1) itself points out: "Often using a different AD system over Zygote is a better solution [for computing second-order derivatives]." For this reason we compute the loss of the HNN with [`SymbolicNeuralNetworks`](https://github.com/JuliaGNI/SymbolicNeuralNetworks.jl) and optionally also its gradient.
-=======
->>>>>>> Stashed changes

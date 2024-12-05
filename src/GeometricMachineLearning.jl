@@ -19,6 +19,9 @@ module GeometricMachineLearning
     using TimerOutputs
     using LazyArrays
     using SymbolicNeuralNetworks
+    import SymbolicNeuralNetworks: input_dimension, output_dimension
+    using SymbolicNeuralNetworks: derivative
+    using Symbolics: @variables, substitute
 
     import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer, AbstractExplicitCell, AbstractNeuralNetwork , NeuralNetwork, UnknownArchitecture
     import AbstractNeuralNetworks: Chain, GridCell
@@ -32,7 +35,6 @@ module GeometricMachineLearning
     import AbstractNeuralNetworks: params, architecture, model, dim
     import AbstractNeuralNetworks: AbstractPullback, NetworkLoss, _compute_loss
     # export params, architetcure, model
-    export dim
     import GeometricIntegrators.Integrators: method, GeometricIntegrator
     import NNlib: σ, sigmoid, softmax
     import Base: iterate, eltype
@@ -248,7 +250,7 @@ module GeometricMachineLearning
     include("backends/backends.jl")
     include("backends/lux.jl")
 
-    export NetworkLoss, TransformerLoss, FeedForwardLoss, AutoEncoderLoss, ReducedLoss
+    export NetworkLoss, TransformerLoss, FeedForwardLoss, AutoEncoderLoss, ReducedLoss, HNNLoss
 
     #INCLUDE ARCHITECTURES
     include("architectures/neural_network_integrator.jl")
@@ -269,7 +271,7 @@ module GeometricMachineLearning
     include("architectures/volume_preserving_feedforward.jl")
     include("architectures/volume_preserving_transformer.jl")
 
-    export HamiltonianNeuralNetwork
+    export HamiltonianArchitecture
     export LagrangianNeuralNetwork
     export SympNet, LASympNet, GSympNet
     export RecurrentNeuralNetwork
@@ -277,6 +279,7 @@ module GeometricMachineLearning
     export ClassificationTransformer, ClassificationLayer
     export VolumePreservingFeedForward
     export SymplecticAutoencoder, PSDArch
+    export HamiltonianArchitecture, StandardHamiltonianArchitecture, GeneralizedHamiltonianArchitecture
 
     export solve!, encoder, decoder
 
@@ -288,6 +291,7 @@ module GeometricMachineLearning
     include("architectures/default_architecture.jl")
 
     include("loss/losses.jl")
+    include("loss/hnn_loss.jl")
 
     export AbstractPullback
     include("pullback.jl")

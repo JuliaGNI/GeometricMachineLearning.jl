@@ -4,8 +4,8 @@
 
 default_method(::AbstractBackend, ::AbstractTrainingData) = throw(ArgumentError("Mismatch between the shape of data and the neural networks used to provide a default methoddefault_method for training"))
 
-default_method(::AbstractNeuralNetwork{<:HamiltonianNeuralNetwork}, ::TrainingData{<:DataSymbol{<:PhaseSpaceSymbol}, <:TrajectoryData}) = SEulerA()
-default_method(::AbstractNeuralNetwork{<:HamiltonianNeuralNetwork}, ::TrainingData{<:DataSymbol{<:DerivativePhaseSpaceSymbol}}) = ExactHnn()
+default_method(::AbstractNeuralNetwork{<:HamiltonianArchitecture}, ::TrainingData{<:DataSymbol{<:PhaseSpaceSymbol}, <:TrajectoryData}) = SEulerA()
+default_method(::AbstractNeuralNetwork{<:HamiltonianArchitecture}, ::TrainingData{<:DataSymbol{<:DerivativePhaseSpaceSymbol}}) = ExactHnn()
 
 default_method(::AbstractNeuralNetwork{<:SympNet}, ::TrainingData{<:DataSymbol{<:PhaseSpaceSymbol}, TrajectoryData}) = BasicSympNet()
 
