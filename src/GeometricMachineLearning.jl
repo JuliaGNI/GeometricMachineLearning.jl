@@ -18,6 +18,7 @@ module GeometricMachineLearning
     using InteractiveUtils
     using TimerOutputs
     using LazyArrays
+    using SymbolicNeuralNetworks
 
     import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer, AbstractExplicitCell, AbstractNeuralNetwork , NeuralNetwork, UnknownArchitecture
     import AbstractNeuralNetworks: Chain, GridCell
