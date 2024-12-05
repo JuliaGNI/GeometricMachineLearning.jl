@@ -14,15 +14,19 @@ where ``\mathcal{NN}:\mathbb{R}^{2d}\to\mathbb{R}`` is a neural network that app
 
 ## HNN Loss for Vector Field Data
 
-For the first loss, we assume that the given data describe the vector field of the HNN. 
+For the first loss, we assume that the given data describe the vector field of the HNN:
 
 ```math
-Loss_1 = || \frac{\partial\mathcal{NN}}{\partial{}q_i} + \dot{p}_i || + || \frac{\partial\mathcal{NN}}{\partial{}p_i} - \dot{q}_i||
+\mathcal{L}_\mathrm{HNN} = \sqrt{\sum_{i=1}^d\left(\Big{||}\frac{\partial\mathcal{NN}}{\partial{}q_i} + \dot{p}_i \Big{||}_2^2 + \Big{||} \frac{\partial\mathcal{NN}}{\partial{}p_i} - \dot{q}_i\Big{||}_2^2\right)}
 ```
 
 ## HNN Loss for Phase Space Data
 
-For the second loss, we assume that the given data describe points in phase space associated to a Hamiltonian system. 
+For the second loss, we assume that the given data describe points in phase space associated to a Hamiltonian system:
+
+```math
+\mathcal{L}_\mathrm{HNN} = \sqrt{sum_t\sum_{i=1}^d \Big{||} \frac{\partial\mathcal{NN}}{\partial{}q_i}(q^{(t)}, p^{(t+1)}) + \frac{p_i^{t+1} - p_i^{(t)}}{\Delta{}t} \Big{||}_2^2 + \Big{||} \frac{\partial\mathcal{NN}}{\partial{}p_i}(q^{(t)}, p^{(t+1)}) + \frac{q_i^{t+1} - q_i^{(t)}}{\Delta{}t} \Big{||}_2^2}
+```
 
 
 !!! info
