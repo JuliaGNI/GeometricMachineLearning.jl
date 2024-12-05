@@ -16,6 +16,10 @@ where ``\mathcal{NN}:\mathbb{R}^{2d}\to\mathbb{R}`` is a neural network that app
 
 For the first loss, we assume that the given data describe the vector field of the HNN. 
 
+```math
+Loss_1 = || \frac{\partial\mathcal{NN}}{\partial{}q_i} + \dot{p}_i || + || \frac{\partial\mathcal{NN}}{\partial{}p_i} - \dot{q}_i||
+```
+
 ## HNN Loss for Phase Space Data
 
 For the second loss, we assume that the given data describe points in phase space associated to a Hamiltonian system. 
