@@ -294,7 +294,7 @@ module GeometricMachineLearning
     include("loss/hnn_loss.jl")
 
     export AbstractPullback, ZygotePullback, SymbolicPullback
-    include("pullbacks/pullback.jl")
+    include("pullbacks/zygote_pullback.jl")
     include("pullbacks/symbolic_hnn_pullback.jl")
 
     export DataLoader, onehotbatch
