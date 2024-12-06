@@ -19,7 +19,7 @@ module GeometricMachineLearning
     using TimerOutputs
     using LazyArrays
     using SymbolicNeuralNetworks
-    import SymbolicNeuralNetworks: input_dimension, output_dimension
+    import SymbolicNeuralNetworks: input_dimension, output_dimension, SymbolicPullback
     using SymbolicNeuralNetworks: derivative
     using Symbolics: @variables, substitute
 
@@ -293,8 +293,9 @@ module GeometricMachineLearning
     include("loss/losses.jl")
     include("loss/hnn_loss.jl")
 
-    export AbstractPullback
-    include("pullback.jl")
+    export AbstractPullback, ZygotePullback, SymbolicPullback
+    include("pullbacks/pullback.jl")
+    include("pullbacks/symbolic_hnn_pullback.jl")
 
     export DataLoader, onehotbatch
     export Batch, optimize_for_one_epoch!
