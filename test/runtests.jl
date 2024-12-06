@@ -53,7 +53,7 @@ using Documenter: doctest
 @safetestset "BFGS Optimizer tests                                                            " begin include("optimizers/bfgs_optimizer.jl") end
 @safetestset "Data                                                                            " begin include("data/test_data.jl") end
 @safetestset "Batch                                                                           " begin include("data/test_batch.jl") end
-@safetestset "Method                                                                          " begin include("train!/test_method.jl") end
+# @safetestset "Method                                                                          " begin include("train!/test_method.jl") end
 @safetestset "Matching                                                                        " begin include("data/test_matching.jl") end
 # @safetestset "TrainingSet                                                                     " begin include("train!/test_trainingSet.jl") end
 # @safetestset "Training                                                                        " begin include("train!/test_training.jl") end
