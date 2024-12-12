@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999993 (TeX Live 2022/dev/Debian) (preloaded format=xelatex 2024.12.3)  3 DEC 2024 10:23
+This is XeTeX, Version 3.141592653-2.6-0.999993 (TeX Live 2022/dev/Debian) (preloaded format=xelatex 2024.12.12)  12 DEC 2024 11:15
 entering extended mode
  \write18 enabled.
  %&-line parsing enabled.
@@ -589,7 +589,7 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 (./mnist_visualization.aux) ) 
 Here is how much of TeX's memory you used:
  15407 strings out of 478158
- 318038 string characters out of 5853402
+ 318038 string characters out of 5853401
  627698 words of memory out of 5000000
  35753 multiletter control sequences out of 15000+600000
  470966 words of font info for 37 fonts, out of 8000000 for 9000
