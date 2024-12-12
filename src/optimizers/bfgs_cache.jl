@@ -50,6 +50,7 @@ function initialize_hessian_inverse(B::AbstractArray{T}) where T
     H
 end
 
+setup_bfgs_cache(ps::NeuralNetworkParameters) = setup_bfgs_cache(ps.params)
 setup_bfgs_cache(ps::NamedTuple) = apply_toNT(setup_bfgs_cache, ps)
 setup_bfgs_cache(ps::Tuple) = Tuple([setup_bfgs_cache(x) for x in ps])
 setup_bfgs_cache(B::AbstractArray) = BFGSCache(B)
