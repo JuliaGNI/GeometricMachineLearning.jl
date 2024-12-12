@@ -43,7 +43,7 @@ end
 # """
 function initialize_hessian_inverse(B::AbstractArray{T}) where T
     length_of_array = length(vec(B))
-    backend = KernelAbstractions.get_backend(B)
+    backend = networkbackend(B)
     H = KernelAbstractions.zeros(backend, T, length_of_array, length_of_array)
     assign_diagonal_ones! = assign_diagonal_ones_kernel!(backend)
     assign_diagonal_ones!(H, ndrange=length_of_array)

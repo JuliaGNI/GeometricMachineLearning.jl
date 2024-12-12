@@ -32,7 +32,7 @@ function svd_test(A, n, train_steps=1000, tol=1e-1; retraction=cayley)
 
     err_best = norm(A - U_result*U_result'*A)
     model = Chain(StiefelLayer(N, n), StiefelLayer(n, N))
-    ps = initialparameters(model, CPU(), Float64)
+    ps = NeuralNetwork(model, CPU(), Float64).params
 
     o₁ = Optimizer(GradientOptimizer(0.01), ps; retraction = retraction)
     o₂ = Optimizer(MomentumOptimizer(0.01), ps; retraction = retraction)

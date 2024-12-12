@@ -24,7 +24,7 @@ function mat_tensor_mul!(C::AbstractArray{<:Number, 3}, A::AbstractMatrix, B::Ab
     @assert eltype(C) == eltype(A) == eltype(B)
     @assert size(A)[2] == size(B)[1]
 
-    backend = KernelAbstractions.get_backend(A)
+    backend = networkbackend(A)
     kernel! = mat_tensor_mul_kernel!(backend)
     kernel!(C, A, B, ndrange=size(C)) 
 end
@@ -65,7 +65,7 @@ function mat_tensor_mul(A::AbstractMatrix, B::AbstractArray{<:Number, 3})
     T = eltype(A)
     sizeA = size(A)
     sizeB = size(B)
-    backend = KernelAbstractions.get_backend(A)
+    backend = networkbackend(A)
     C = KernelAbstractions.zeros(backend, T, sizeA[1], sizeB[2], sizeB[3])
     mat_tensor_mul!(C, A, B)
     C
@@ -87,7 +87,7 @@ end
 end
 
 function symmetric_mat_mul!(C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where T 
-    backend = KernelAbstractions.get_backend(C)
+    backend = networkbackend(C)
 
     symmetric_mat_mul_k! = symmetric_mat_mul_kernel!(backend)
     symmetric_mat_mul_k!(C, S, B, n, ndrange=size(C))
@@ -130,7 +130,7 @@ end
 end
 
 function lo_mat_mul!(C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where T 
-    backend = KernelAbstractions.get_backend(C)
+    backend = networkbackend(C)
 
     lo_mat_mul_k! = lo_mul_kernel!(backend)
     lo_mat_mul_k!(C, S, B, n, ndrange=size(C))
@@ -173,7 +173,7 @@ end
 end
 
 function up_mat_mul!(C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where T 
-    backend = KernelAbstractions.get_backend(C)
+    backend = networkbackend(C)
 
     up_mat_mul_k! = up_mul_kernel!(backend)
     up_mat_mul_k!(C, S, B, n, ndrange=size(C))
@@ -218,7 +218,7 @@ end
 end
 
 function skew_mat_mul!(C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where T 
-    backend = KernelAbstractions.get_backend(C)
+    backend = networkbackend(C)
 
     skew_mat_mul_k! = skew_mat_mul_kernel!(backend)
     skew_mat_mul_k!(C, S, B, n, ndrange=size(C))

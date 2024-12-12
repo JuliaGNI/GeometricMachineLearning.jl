@@ -80,7 +80,7 @@ end
 Base.parent(A::GrassmannLieAlgHorMatrix) = (A.B, )
 Base.size(A::GrassmannLieAlgHorMatrix) = (A.N, A.N)
 
-KernelAbstractions.get_backend(B::GrassmannLieAlgHorMatrix) = KernelAbstractions.get_backend(B.B)
+networkbackend(B::GrassmannLieAlgHorMatrix) = networkbackend(B.B)
 
 function Base.getindex(A::GrassmannLieAlgHorMatrix{T}, i::Integer, j::Integer) where {T}
     if i ≤ A.n

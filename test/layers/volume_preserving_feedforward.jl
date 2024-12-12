@@ -14,10 +14,10 @@ function test_volume_preserving_feedforward(dim₁ = 5; T::Type=Float32)
     layer₃ = VolumePreservingUpperLayer(dim₁; use_bias = false)
     layer₄ = VolumePreservingUpperLayer(dim₁; use_bias = true)
 
-    ps₁ = initialparameters(layer₁, CPU(), T)
-    ps₂ = initialparameters(layer₂, CPU(), T)
-    ps₃ = initialparameters(layer₃, CPU(), T)
-    ps₄ = initialparameters(layer₄, CPU(), T)
+    ps₁ = NeuralNetwork(layer₁, CPU(), T).params
+    ps₂ = NeuralNetwork(layer₂, CPU(), T).params
+    ps₃ = NeuralNetwork(layer₃, CPU(), T).params
+    ps₄ = NeuralNetwork(layer₄, CPU(), T).params
 
     # test if application to matrix and tensor gives same result
     test_vector = rand(T, dim₁)

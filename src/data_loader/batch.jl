@@ -231,7 +231,7 @@ GeometricMachineLearning.convert_input_and_batch_indices_to_array(dl, batch, bat
 ```
 """
 function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT}, batch::Batch, batch_indices_tuple::Vector{Tuple{Int, Int}}) where {T, AT<:AbstractArray{T, 3}, BT<:NamedTuple{(:q, :p), Tuple{AT, AT}}}
-    backend = KernelAbstractions.get_backend(dl.input.q)
+    backend = networkbackend(dl.input.q)
     
     # the batch size is smaller for the last batch
     _batch_size = length(batch_indices_tuple)
@@ -254,7 +254,7 @@ function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT}, batch::
 end
 
 function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT}, batch::Batch, batch_indices_tuple::Vector{Tuple{Int, Int}}) where {T, BT<:AbstractArray{T, 3}}
-    backend = KernelAbstractions.get_backend(dl.input)
+    backend = networkbackend(dl.input)
 
     # the batch size is smaller for the last batch 
     _batch_size = length(batch_indices_tuple)
@@ -275,7 +275,7 @@ function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT}, batch::
 end
 
 function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT, Nothing, :RegularData}, batch::Batch, batch_indices_tuple::Vector{Tuple{Int, Int}}) where {T, AT<:AbstractArray{T, 3}, BT<:NamedTuple{(:q, :p), Tuple{AT, AT}}}
-    backend = KernelAbstractions.get_backend(dl.input.q)
+    backend = networkbackend(dl.input.q)
 
     # the batch size is smaller for the last batch
     _batch_size = length(batch_indices_tuple)
@@ -292,7 +292,7 @@ function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT, Nothing,
 end
 
 function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT, Nothing, :RegularData}, batch::Batch, batch_indices_tuple::Vector{Tuple{Int, Int}}) where {T, BT<:AbstractArray{T, 3}}
-    backend = KernelAbstractions.get_backend(dl.input)
+    backend = networkbackend(dl.input)
 
     # the batch size is smaller for the last batch 
     _batch_size = length(batch_indices_tuple)
@@ -318,7 +318,7 @@ function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT, OT}, ::B
 end
 
 function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT, BT}, batch::Batch, batch_indices_tuple::Vector{Tuple{Int, Int}}) where {T, BT<:AbstractArray{T, 3}}
-    backend = KernelAbstractions.get_backend(dl.input)
+    backend = networkbackend(dl.input)
 
     # the batch size is smaller for the last batch 
     _batch_size = length(batch_indices_tuple)
