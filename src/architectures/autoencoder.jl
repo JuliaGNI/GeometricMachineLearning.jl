@@ -205,14 +205,14 @@ function encoder(nn::NeuralNetwork{<:AutoEncoder})
     NeuralNetwork(  UnknownEncoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks), 
                     encoder_model(nn.architecture), 
                     encoder_parameters(nn), 
-                    get_backend(nn))
+                    networkbackend(nn))
 end
 
 function _encoder(nn::NeuralNetwork, full_dim::Integer, reduced_dim::Integer)
     NeuralNetwork(  UnknownEncoder(full_dim, reduced_dim, length(nn.model.layers)), 
                     nn.model, 
                     nn.params, 
-                    get_backend(nn))
+                    networkbackend(nn))
 end
 
 function input_dimension(::AbstractExplicitLayer{M, N}) where {M, N}
@@ -242,11 +242,11 @@ end
 Obtain the *decoder* from an [`AutoEncoder`](@ref) neural network.
 """
 function decoder(nn::NeuralNetwork{<:AutoEncoder})
-    NeuralNetwork(UnknownDecoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks), decoder_model(nn.architecture), decoder_parameters(nn), get_backend(nn))
+    NeuralNetwork(UnknownDecoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks), decoder_model(nn.architecture), decoder_parameters(nn), networkbackend(nn))
 end
 
 function _decoder(nn::NeuralNetwork, full_dim::Integer, reduced_dim::Integer)
-    NeuralNetwork(UnknownDecoder(full_dim, reduced_dim, length(nn.model.layers)), nn.model, nn.params, get_backend(nn))
+    NeuralNetwork(UnknownDecoder(full_dim, reduced_dim, length(nn.model.layers)), nn.model, nn.params, networkbackend(nn))
 end
 
 @doc raw"""
@@ -263,9 +263,9 @@ function decoder(nn::NeuralNetwork)
 end
 
 function encoder(nn::NeuralNetwork{<:SymplecticCompression})
-    NeuralNetwork(UnknownSymplecticEncoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks), encoder_model(nn.architecture), encoder_parameters(nn), get_backend(nn))
+    NeuralNetwork(UnknownSymplecticEncoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks), encoder_model(nn.architecture), encoder_parameters(nn), networkbackend(nn))
 end
 
 function decoder(nn::NeuralNetwork{<:SymplecticCompression})
-    NeuralNetwork(UnknownSymplecticDecoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks), decoder_model(nn.architecture), decoder_parameters(nn), get_backend(nn))
+    NeuralNetwork(UnknownSymplecticDecoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks), decoder_model(nn.architecture), decoder_parameters(nn), networkbackend(nn))
 end

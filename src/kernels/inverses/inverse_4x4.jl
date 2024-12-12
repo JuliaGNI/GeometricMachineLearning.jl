@@ -33,7 +33,7 @@ function tensor_inverse4!(out::AbstractArray{T, 3}, A::AbstractArray{T, 3}) wher
     @assert size(A, 1) == size(A, 2) == 4
     @assert size(A) == size(out)
 
-    backend = get_backend(out)
+    backend = networkbackend(out)
     inv44! = inv44_kernel!(backend)
 
     inv44!(out, A, ndrange = size(A, 3))

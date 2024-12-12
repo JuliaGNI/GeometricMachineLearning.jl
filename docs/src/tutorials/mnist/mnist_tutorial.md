@@ -86,7 +86,7 @@ Here we have chosen a [`ClassificationTransformer`](@ref), i.e. a composition of
 We now have to initialize the neural network weights. This is done with the constructor for `NeuralNetwork`:
 
 ```@example mnist
-backend = GeometricMachineLearning.get_backend(dl)
+backend = GeometricMachineLearning.networkbackend(dl)
 T = eltype(dl)
 nn1 = NeuralNetwork(model1, backend, T)
 nn2 = NeuralNetwork(model2, backend, T)

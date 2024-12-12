@@ -151,10 +151,10 @@ end
 
 function encoder(nn::NeuralNetwork{<:SymplecticAutoencoder})
     arch = NonLinearSymplecticEncoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_layers, nn.architecture.n_encoder_blocks, nn.architecture.sympnet_upscale, nn.architecture.activation)
-    NeuralNetwork(arch, encoder_model(nn.architecture), encoder_parameters(nn), get_backend(nn))
+    NeuralNetwork(arch, encoder_model(nn.architecture), encoder_parameters(nn), networkbackend(nn))
 end
 
 function decoder(nn::NeuralNetwork{<:SymplecticAutoencoder})
     arch = NonLinearSymplecticDecoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_decoder_layers, nn.architecture.n_decoder_blocks, nn.architecture.sympnet_upscale, nn.architecture.activation)
-    NeuralNetwork(arch, decoder_model(nn.architecture), decoder_parameters(nn), get_backend(nn))
+    NeuralNetwork(arch, decoder_model(nn.architecture), decoder_parameters(nn), networkbackend(nn))
 end

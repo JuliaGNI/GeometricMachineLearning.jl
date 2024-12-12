@@ -436,7 +436,7 @@ By default this inherits the autoencoder property form `dl`.
 See the docstring for [`DataLoader(data::AbstractArray{<:Number, 3})`](@ref).
 """
 function DataLoader(dl::DataLoader{T1, <:QPTOAT, Nothing, Type}, 
-                    backend::KernelAbstractions.Backend=KernelAbstractions.get_backend(dl), 
+                    backend::KernelAbstractions.Backend=networkbackend(dl), 
                     T::DataType=T1; 
                     autoencoder = nothing                    
                     ) where {T1, Type}
@@ -456,7 +456,7 @@ function DataLoader(dl::DataLoader{T1, <:QPTOAT, Nothing, Type},
         end
 
     new_input = 
-        if backend == KernelAbstractions.get_backend(dl)
+        if backend == networkbackend(dl)
             input 
         else
             map_to_new_backend(input, backend)
@@ -473,7 +473,7 @@ function DataLoader(dl::DataLoader{T1, <:QPTOAT, Nothing, Type},
 end
 
 function DataLoader(dl::DataLoader, T::DataType; kwargs...)
-    DataLoader(dl, KernelAbstractions.get_backend(dl), T; kwargs...)
+    DataLoader(dl, networkbackend(dl), T; kwargs...)
 end
 
 @doc raw"""
@@ -486,7 +486,7 @@ This needs an instance of [`DataLoader`](@ref) that stores the *test data*.
 function accuracy(model::Chain, ps::NeuralNetworkParameters, dl::DataLoader{T, AT, BT}) where {T, T1<:Integer, AT<:AbstractArray{T}, BT<:AbstractArray{T1}}
     output_tensor = model(dl.input, ps)
     output_estimate = assign_output_estimate(output_tensor, dl.output_time_steps)
-    backend = KernelAbstractions.get_backend(output_estimate)
+    backend = networkbackend(output_estimate)
     tensor_of_maximum_elements = KernelAbstractions.zeros(backend, T1, size(output_estimate)...)
     ind = argmax(output_estimate, dims=1)
     # get tensor of maximum elements
@@ -505,7 +505,7 @@ accuracy(nn::NeuralNetwork, dl::DataLoader) = accuracy(nn.model, nn.params, dl)
 
 Base.eltype(::DataLoader{T}) where T = T
 
-KernelAbstractions.get_backend(dl::DataLoader) = KernelAbstractions.get_backend(dl.input)
-function KernelAbstractions.get_backend(dl::DataLoader{T, <:QPT{T}}) where T
-    KernelAbstractions.get_backend(dl.input.q)
+networkbackend(dl::DataLoader) = networkbackend(dl.input)
+function networkbackend(dl::DataLoader{T, <:QPT{T}}) where T
+    networkbackend(dl.input.q)
 end

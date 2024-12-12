@@ -6,8 +6,8 @@ import Random, Zygote
 Random.seed!(1234)
 
 function test_gradient_layer_application(T, M, N, batch_size=10)
-    dummy_model = GradientLayerQ(M, N, tanh)
-    ps = initialparameters(dummy_model, CPU(), T)
+    dummy_model = Chain(GradientLayerQ(M, N, tanh))
+    ps = NeuralNetwork(dummy_model, CPU(), T).params
 
     x = rand(T, M)
     x_applied = dummy_model(x, ps)
@@ -22,7 +22,7 @@ end
 
 function test_gradient_layer_derivative_and_update(T, M, N, batch_size=10)
     dummy_model = Chain(GradientLayerP(M, N, tanh), GradientLayerQ(M, N, tanh))
-    ps = initialparameters(dummy_model, CPU(), T)
+    ps = NeuralNetwork(dummy_model, CPU(), T).params
     o = Optimizer(AdamOptimizer(T(0.1), T(.9), T(0.999), T(3e-7)), ps)
 
     # test for vector 
@@ -36,7 +36,6 @@ function test_gradient_layer_derivative_and_update(T, M, N, batch_size=10)
     gs = Zygote.gradient(ps -> sum(dummy_model(X, ps)), ps)[1]
     optimization_step!(o, λY, ps, gs)
 end
-
 
 types = (Float32, Float64)
 for T in types

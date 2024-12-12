@@ -107,6 +107,11 @@ function optimization_step!(o::Optimizer, λY::NamedTuple, ps::NeuralNetworkPara
     end
 end
 
+# take care of Zygote idiosyncrasies
+function optimization_step!(o::Optimizer, λY::NamedTuple, ps::NeuralNetworkParameters, dx::NamedTuple{(:params,), Tuple{NT}}) where {NT <: NamedTuple}
+    optimization_step!(o, λY, ps, dx.params)
+end
+
 @doc raw"""
     optimization_step!(o, λY, ps, dx)
 
@@ -129,7 +134,7 @@ All the arguments are given as `NamedTuple`s  as the neural network weights are 
 using GeometricMachineLearning
 
 l = StiefelLayer(3, 5)
-ps = initialparameters(l, Float32)
+ps = NeuralNetwork(l, Float32).params
 cache = apply_toNT(MomentumCache, ps)
 o = Optimizer(MomentumOptimizer(), cache, 0, geodesic)
 λY = GlobalSection(ps)
@@ -146,8 +151,6 @@ _test_nt(λY) & _test_nt(ps) & _test_nt(cache) & _test_nt(dx)
 
 true
 ```
-
-Note that we used `initialparameters` here instead of `NeuralNetwork` (as we do usually).
 
 # Extended help
 The derivatives `dx` here are usually obtained via an AD routine by differentiating a loss function, i.e. `dx` is ``\nabla_xL``.

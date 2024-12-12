@@ -38,7 +38,7 @@ function parameterlength(d::MultiHeadAttention{M, M, true}) where M
     Int(3*M^2 - 3*M*(M + d.n_heads)/(2*d.n_heads))
 end
 
-function initialparameters(d::MultiHeadAttention{M, M, false}, backend::KernelAbstractions.Backend, T::Type; rng::AbstractRNG=Random.default_rng(), initializer::AbstractNeuralNetworks.AbstractInitializer=GlorotUniform()) where {M}
+function initialparameters(rng::AbstractRNG, initializer::AbstractNeuralNetworks.Initializer, d::MultiHeadAttention{M, M, false}, backend::KernelAbstractions.Backend, T::Type) where {M}
     # number of "hidden" dimension (dimension of projection) 
     Dₕ = M ÷ d.n_heads
     # projections for queries, keys and values.
@@ -70,7 +70,7 @@ function initialparameters(d::MultiHeadAttention{M, M, false}, backend::KernelAb
 end
 
 
-function initialparameters(d::MultiHeadAttention{M, M, true}, backend::KernelAbstractions.Backend, T::Type; rng::AbstractRNG=Random.default_rng(), initializer::AbstractNeuralNetworks.AbstractInitializer=GlorotUniform()) where {M}
+function initialparameters(rng::AbstractRNG, initializer::AbstractNeuralNetworks.Initializer, d::MultiHeadAttention{M, M, true}, backend::KernelAbstractions.Backend, ::Type{T}) where {M, T}
     # number of "hidden" dimension (dimension of projection) 
     Dₕ = M ÷ d.n_heads
     # projections for queries, keys and vectors.
@@ -82,13 +82,13 @@ function initialparameters(d::MultiHeadAttention{M, M, true}, backend::KernelAbs
         key = Symbol("head_"*string(head))
         
         PQ = merge(PQ, 
-            NamedTuple{(key, )}((rand(backend, rng, StiefelManifold{T}, M, Dₕ), ))
+            NamedTuple{(key, )}(values(initialparameters(rng, initializer, StiefelLayer{M, Dₕ}(), backend, T)))
             )
         PK = merge(PK, 
-            NamedTuple{(key, )}((rand(backend, rng, StiefelManifold{T}, M, Dₕ), ))
+            NamedTuple{(key, )}(values(initialparameters(rng, initializer, StiefelLayer{M, Dₕ}(), backend, T)))
             )
         PV = merge(PV, 
-            NamedTuple{(key, )}((rand(backend, rng, StiefelManifold{T}, M, Dₕ), ))
+            NamedTuple{(key, )}(values(initialparameters(rng, initializer, StiefelLayer{M, Dₕ}(), backend, T)))
             )
     end
     (PQ=PQ, PK=PK, PV=PV)

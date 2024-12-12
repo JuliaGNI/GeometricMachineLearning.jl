@@ -8,8 +8,8 @@ function volume_preserving_attention_tests(N, T=Float32)
     model₁ = VolumePreservingAttention(N, N, skew_sym = false)
     model₂ = VolumePreservingAttention(N, N, skew_sym = true)
 
-    ps₁ = initialparameters(model₁, CPU(), T)
-    ps₂ = initialparameters(model₂, CPU(), T)
+    ps₁ = NeuralNetwork(model₁, CPU(), T).params
+    ps₂ = NeuralNetwork(model₂, CPU(), T).params
     @test typeof(ps₁.A) <: AbstractMatrix{T} 
     @test typeof(ps₂.A) <: SkewSymMatrix{T} 
 

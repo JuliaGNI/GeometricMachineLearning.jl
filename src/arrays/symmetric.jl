@@ -100,7 +100,7 @@ function map_to_S(A::AbstractMatrix{T}) where {T <: Number}
     n = size(A, 1)
     @assert size(A, 2) == n 
     A_sym = T(.5)*(A + A')
-    backend = KernelAbstractions.get_backend(A)
+    backend = networkbackend(A)
     S = KernelAbstractions.zeros(backend, T, n*(n+1)÷2)
     assign_S_val! = assign_S_val_kernel!(backend)
     for i in 1:n
@@ -224,7 +224,7 @@ function LinearAlgebra.mul!(C::AbstractMatrix, A::SymmetricMatrix, B::AbstractMa
     @assert A.n == size(B, 1)
     @assert size(B, 2) == size(C, 2)
     @assert A.n == size(C, 1)
-    backend = KernelAbstractions.get_backend(A.S)
+    backend = networkbackend(A.S)
     symmetric_mat_mul! = symmetric_mat_mul_kernel!(backend)
     symmetric_mat_mul!(C, A.S, B, A.n, ndrange=size(C))
 end
@@ -244,13 +244,13 @@ end
 
 function LinearAlgebra.mul!(c::AbstractVector, A::SymmetricMatrix, b::AbstractVector)
     @assert A.n == length(c) == length(b)
-    backend = KernelAbstractions.get_backend(A.S)
+    backend = networkbackend(A.S)
     symmetric_vector_mul! = symmetric_vector_mul_kernel!(backend)
     symmetric_vector_mul!(c, A.S, b, A.n, ndrange=size(c))
 end
 
 function Base.:*(A::SymmetricMatrix{T}, B::AbstractMatrix{T}) where T
-    backend = KernelAbstractions.get_backend(A.S)
+    backend = networkbackend(A.S)
     C = KernelAbstractions.allocate(backend, T, A.n, size(B, 2))
     LinearAlgebra.mul!(C, A, B)
     C
@@ -263,14 +263,14 @@ function Base.:*(A::SymmetricMatrix{T}, B::SymmetricMatrix{T}) where T
 end
 
 function Base.:*(A::SymmetricMatrix{T}, b::AbstractVector{T}) where T 
-    backend = KernelAbstractions.get_backend(A.S)
+    backend = networkbackend(A.S)
     c = KernelAbstractions.allocate(backend, T, A.n)
     LinearAlgebra.mul!(c, A, b)
     c
 end
 
 function Base.one(A::SymmetricMatrix{T}) where T
-    backend = KernelAbstractions.get_backend(A.S)
+    backend = networkbackend(A.S)
     unit_matrix = KernelAbstractions.zeros(backend, T, A.n, A.n)
     write_ones! = write_ones_kernel!(backend)
     write_ones!(unit_matrix, ndrange=A.n)

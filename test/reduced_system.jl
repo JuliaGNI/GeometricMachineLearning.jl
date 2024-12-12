@@ -17,7 +17,7 @@ function set_up_reduced_systems(reduced_dim::Integer, integrator)
     model1 = PSDArch(dl.input_dim, reduced_dim)
 
     # Here the number of decoder blocks is set manually because the default is too big! 
-    model2 = SymplecticAutoencoder(dl.input_dim, reduced_dim; activation = x -> log(1. + exp(x)), n_encoder_layers = 20, n_decoder_blocks = 2)
+    model2 = SymplecticAutoencoder(dl.input_dim, reduced_dim; activation = x -> log(1. + exp(x)), n_encoder_layers = 20, n_decoder_layers = 10, n_decoder_blocks = 2)
 
     nn1 = NeuralNetwork(model1)
 

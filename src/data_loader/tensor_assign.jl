@@ -58,9 +58,9 @@ If `prediction_window` is equal to `sequence_length`, then this is not needed.
 """
 function assign_output_estimate(full_output::AbstractArray{T, 3}, prediction_window::Int) where T
     sys_dim, seq_length, batch_size = size(full_output)
-    backend = KernelAbstractions.get_backend(full_output)
+    backend = networkbackend(full_output)
     output_estimate = KernelAbstractions.allocate(backend, T, sys_dim, prediction_window, batch_size)
-    assign_output_estimate! = assign_output_estimate_kernel!(KernelAbstractions.get_backend(full_output))
+    assign_output_estimate! = assign_output_estimate_kernel!(networkbackend(full_output))
     assign_output_estimate!(output_estimate, full_output, seq_length, prediction_window, ndrange=size(output_estimate))
     output_estimate
 end
@@ -74,10 +74,10 @@ end
 end
 function augment_zeros(output_diff::AbstractArray{T, 3}, seq_length) where T
     sys_dim, prediction_window, batch_size = size(output_diff)
-    backend = KernelAbstractions.get_backend(output_diff)
+    backend = networkbackend(output_diff)
     dim, prediction_window, batch_size = size(output_diff)
     zero_tensor = KernelAbstractions.zeros(backend, T, sys_dim, seq_length, batch_size)
-    augment_zeros! = augment_zeros_kernel!(KernelAbstractions.get_backend(output_diff))
+    augment_zeros! = augment_zeros_kernel!(networkbackend(output_diff))
     augment_zeros!(zero_tensor, output_diff, seq_length, prediction_window, ndrange=size(output_diff))
     zero_tensor
 end

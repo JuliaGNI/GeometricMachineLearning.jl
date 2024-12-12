@@ -41,7 +41,7 @@ onehotbatch(target)
 ```
 """
 function onehotbatch(target::AbstractVector{T}) where {T<:Integer}
-    backend = KernelAbstractions.get_backend(target)
+    backend = networkbackend(target)
     output = KernelAbstractions.zeros(backend, T, 10, length(target))
     assign_val! = assign_val_kernel!(backend)
     assign_val!(output, target, ndrange=length(target))
@@ -131,7 +131,7 @@ The sizes of the first and second axis of the output of `split_and_flatten` are
 """
 function split_and_flatten(input::AbstractArray{T, 3}; patch_length::Integer=7, number_of_patches::Integer=16) where T
     @assert size(input, 1) * size(input, 2) == (patch_length ^ 2) * number_of_patches
-    backend = KernelAbstractions.get_backend(input)
+    backend = networkbackend(input)
     output = KernelAbstractions.allocate(backend, T, patch_length^2, number_of_patches, size(input, 3))
     split_and_flatten! = split_and_flatten_kernel!(backend)
     split_and_flatten!(output, input, patch_length, number_of_patches, ndrange=size(input))

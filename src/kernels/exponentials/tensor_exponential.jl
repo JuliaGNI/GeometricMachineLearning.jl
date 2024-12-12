@@ -23,7 +23,7 @@ function init_output(B::AbstractArray{T, 3}) where T
 end
 
 function assign_ones!(output::AbstractArray{T, 3}) where T
-    backend = KernelAbstractions.get_backend(output)
+    backend = networkbackend(output)
     assign_ones_backend! = assign_ones_kernel!(backend)
     dims = (size(output,1), size(output,3))
     assign_ones_backend!(output, ndrange=dims)

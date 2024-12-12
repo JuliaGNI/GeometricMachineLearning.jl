@@ -81,7 +81,7 @@ end
 function map_to_lo(A::AbstractMatrix{T}) where T
     n = size(A, 1)
     @assert size(A, 2) == n 
-    backend = KernelAbstractions.get_backend(A)
+    backend = networkbackend(A)
     S = KernelAbstractions.zeros(backend, T, n * (n - 1) ÷ 2)
     assign_Skew_val! = assign_Skew_val_kernel!(backend)
     for i in 2:n

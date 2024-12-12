@@ -109,12 +109,12 @@ setup_gradient_cache(B::AbstractArray{<:Number}) = GradientCache(B)
 
 function Base.zero(Y::StiefelManifold{T}) where T 
     N, n = size(Y)
-    backend = KernelAbstractions.get_backend(Y.A)
+    backend = networkbackend(Y.A)
     zeros(backend, StiefelLieAlgHorMatrix{T}, N, n)
 end
 
 function Base.zero(Y::GrassmannManifold{T}) where T 
     N, n = size(Y)
-    backend = KernelAbstractions.get_backend(Y.A)
+    backend = networkbackend(Y.A)
     zeros(backend, GrassmannLieAlgHorMatrix{T}, N, n)
 end

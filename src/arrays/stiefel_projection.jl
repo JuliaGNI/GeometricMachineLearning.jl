@@ -29,7 +29,7 @@ Extract necessary information from `A` and build an instance of `StiefelProjecti
 Necessary information here referes to the backend, the data type and the size of the matrix.
 """
 function StiefelProjection(A::AbstractMatrix{T}) where T 
-    StiefelProjection(KernelAbstractions.get_backend(A), T, size(A)...)
+    StiefelProjection(networkbackend(A), T, size(A)...)
 end
 
 @doc raw"""
@@ -58,7 +58,7 @@ true
 ```
 """
 function StiefelProjection(B::AbstractLieAlgHorMatrix{T}) where T 
-    StiefelProjection(KernelAbstractions.get_backend(B), T, B.N, B.n)
+    StiefelProjection(networkbackend(B), T, B.N, B.n)
 end
 
 @kernel function assign_ones_for_stiefel_projection_kernel!(A::AbstractArray{T}) where T
@@ -79,6 +79,6 @@ Base.vcat(E::StiefelProjection{T}, A::AbstractVecOrMat{T}) where {T<:Number} = v
 Base.hcat(A::AbstractVecOrMat{T}, E::StiefelProjection{T}) where {T<:Number} = hcat(A, E.A)
 Base.hcat(E::StiefelProjection{T}, A::AbstractVecOrMat{T}) where {T<:Number} = hcat(E.A, A)
 
-function KernelAbstractions.get_backend(E::StiefelProjection)
-    KernelAbstractions.get_backend(E.A)
+function networkbackend(E::StiefelProjection)
+    networkbackend(E.A)
 end

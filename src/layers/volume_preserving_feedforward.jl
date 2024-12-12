@@ -126,7 +126,7 @@ end
 parameterlength(::VolumePreservingFeedForwardLayer{M, M, :no_bias}) where M = M * (M - 1) ÷ 2 
 parameterlength(::VolumePreservingFeedForwardLayer{M, M, :bias}) where M = M * (M - 1) ÷ 2 + M
 
-function initialparameters(d::VolumePreservingLowerLayer{M, M, :bias}, backend::Backend, ::Type{T}; rng::AbstractRNG = Random.default_rng(), init_weight! = GlorotUniform(), init_bias! = ZeroInitializer()) where {M, T}
+function initialparameters(rng::AbstractRNG, init_weight!::AbstractNeuralNetworks.Initializer, d::VolumePreservingLowerLayer{M, M, :bias}, backend::Backend, ::Type{T}; init_bias! = ZeroInitializer()) where {M, T}
     S = KernelAbstractions.allocate(backend, T, parameterlength(d) - M)
     b = KernelAbstractions.allocate(backend, T, M)
     init_weight!(rng, S)
@@ -135,7 +135,7 @@ function initialparameters(d::VolumePreservingLowerLayer{M, M, :bias}, backend::
     (weight = LowerTriangular(S, M), bias = b)
 end 
 
-function initialparameters(d::VolumePreservingUpperLayer{M, M, :bias}, backend::Backend, ::Type{T}; rng::AbstractRNG = Random.default_rng(), init_weight! = GlorotUniform(), init_bias! = ZeroInitializer()) where {M, T}
+function initialparameters(rng::AbstractRNG, init_weight!::AbstractNeuralNetworks.Initializer, d::VolumePreservingUpperLayer{M, M, :bias}, backend::Backend, ::Type{T}; init_bias! = ZeroInitializer()) where {M, T}
     S = KernelAbstractions.allocate(backend, T, parameterlength(d) - M)
     b = KernelAbstractions.allocate(backend, T, M)
     init_weight!(rng, S)
@@ -144,14 +144,14 @@ function initialparameters(d::VolumePreservingUpperLayer{M, M, :bias}, backend::
     (weight = UpperTriangular(S, M), bias = b)
 end 
 
-function initialparameters(d::VolumePreservingLowerLayer{M, M, :no_bias}, backend::Backend, ::Type{T}; rng::AbstractRNG = Random.default_rng(), init_weight! = GlorotUniform(), init_bias! = ZeroInitializer()) where {M, T}
+function initialparameters(rng::AbstractRNG, init_weight!::AbstractNeuralNetworks.Initializer, d::VolumePreservingLowerLayer{M, M, :no_bias}, backend::Backend, ::Type{T}; init_bias! = ZeroInitializer()) where {M, T}
     S = KernelAbstractions.allocate(backend, T, parameterlength(d))
     init_weight!(rng, S)
 
     (weight = LowerTriangular(S, M), )
 end 
 
-function initialparameters(d::VolumePreservingUpperLayer{M, M, :no_bias}, backend::Backend, ::Type{T}; rng::AbstractRNG = Random.default_rng(), init_weight! = GlorotUniform(), init_bias! = ZeroInitializer()) where {M, T}
+function initialparameters(rng::AbstractRNG, init_weight!::AbstractNeuralNetworks.Initializer, d::VolumePreservingUpperLayer{M, M, :no_bias}, backend::Backend, ::Type{T}; init_bias! = ZeroInitializer()) where {M, T}
     S = KernelAbstractions.allocate(backend, T, parameterlength(d))
     init_weight!(rng, S)
     

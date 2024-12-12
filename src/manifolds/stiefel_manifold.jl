@@ -129,7 +129,7 @@ qr!(A).Q
 """
 function global_section(Y::StiefelManifold{T}) where T
     N, n = size(Y)
-    backend = KernelAbstractions.get_backend(Y)
+    backend = networkbackend(Y)
     A = KernelAbstractions.allocate(backend, T, N, N-n)
     randn!(A)
     A = A - Y.A * (Y.A' * A)

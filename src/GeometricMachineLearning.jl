@@ -29,6 +29,7 @@ module GeometricMachineLearning
     import AbstractNeuralNetworks: GlorotUniform
     import AbstractNeuralNetworks: params, architecture, model, dim
     import AbstractNeuralNetworks: AbstractPullback, NetworkLoss, _compute_loss
+    import AbstractNeuralNetworks: networkbackend
     # export params, architetcure, model
     export dim
     import NNlib: σ, sigmoid, softmax

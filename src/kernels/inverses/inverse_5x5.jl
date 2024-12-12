@@ -42,7 +42,7 @@ function tensor_inverse5!(out::AbstractArray{T, 3}, A::AbstractArray{T, 3}) wher
     @assert size(A, 1) == size(A, 2) == 5
     @assert size(A) == size(out)
 
-    backend = get_backend(out)
+    backend = networkbackend(out)
     inv55! = inv55_kernel!(backend)
 
     inv55!(out, A, ndrange = size(A, 3))

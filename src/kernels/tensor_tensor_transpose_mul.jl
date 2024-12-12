@@ -20,13 +20,13 @@ function tensor_tensor_transpose_mul!(C, A, B)
     @assert size(A)[3] == size(B)[3]
     @assert size(A)[2] == size(B)[2]
 
-    backend = KernelAbstractions.get_backend(A)
+    backend = networkbackend(A)
     kernel! = tensor_tensor_transpose_mul_kernel!(backend)
     kernel!(C, A, B, ndrange=size(C)) 
 end
 
 function tensor_tensor_transpose_mul(A::AbstractArray{T, 3}, B::AbstractArray{T, 3}) where T
-    backend = KernelAbstractions.get_backend(A)
+    backend = networkbackend(A)
     C = KernelAbstractions.zeros(backend, T, size(A)[1], size(B)[1], size(A)[3])
     tensor_tensor_transpose_mul!(C, A, B)
     C

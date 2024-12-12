@@ -2,7 +2,7 @@ using GeometricMachineLearning, Test, Zygote
 
 function test_symplecticity(N=4, N2=20, T=Float32)
     model = Chain(PSDLayer(N, N2), GradientQ(N2, 2*N2, tanh), GradientP(N2, 2*N2, tanh), PSDLayer(N2, N))
-    ps = initialparameters(model, CPU(), T)
+    ps = NeuralNetwork(model, CPU(), T).params
     x = rand(T, N)
     ten = rand(T, N, N)
     # the first and last PSD layer need to have the same weight! (else they map to a different symplectic potential)

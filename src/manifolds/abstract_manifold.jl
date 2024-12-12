@@ -11,7 +11,7 @@ abstract type Manifold{T} <: AbstractMatrix{T} end
 end
 
 function assign_columns(Q::AbstractMatrix{T}, N::Integer, n::Integer) where T
-    backend = KernelAbstractions.get_backend(Q)
+    backend = networkbackend(Q)
     Y = KernelAbstractions.allocate(backend, T, N, n)
     assign_columns! = assign_columns_kernel!(backend)
     assign_columns!(Y, Q, ndrange=size(Y))

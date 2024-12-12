@@ -38,7 +38,7 @@ end
 # The output is a `Tuple` containing `q` and `p`.
 # """
 function assign_q_and_p(x::AbstractVector, N::Int)
-    backend = KernelAbstractions.get_backend(x)
+    backend = networkbackend(x)
     q = KernelAbstractions.allocate(backend, eltype(x), N)
     p = KernelAbstractions.allocate(backend, eltype(x), N)
     q_kernel! = assign_first_half!(backend)
@@ -49,7 +49,7 @@ function assign_q_and_p(x::AbstractVector, N::Int)
 end
 
 function assign_q_and_p(x::AbstractMatrix, N::Int)
-    backend = KernelAbstractions.get_backend(x)
+    backend = networkbackend(x)
     q = KernelAbstractions.allocate(backend, eltype(x), N, size(x,2))
     p = KernelAbstractions.allocate(backend, eltype(x), N, size(x,2))
     q_kernel! = assign_first_half!(backend)
@@ -60,7 +60,7 @@ function assign_q_and_p(x::AbstractMatrix, N::Int)
 end
 
 function assign_q_and_p(x::AbstractArray{T, 3}, N::Int) where T
-    backend = KernelAbstractions.get_backend(x)
+    backend = networkbackend(x)
     q = KernelAbstractions.allocate(backend, T, N, size(x,2), size(x,3))
     p = KernelAbstractions.allocate(backend, T, N, size(x,2), size(x,3))
     q_kernel! = assign_first_half!(backend)

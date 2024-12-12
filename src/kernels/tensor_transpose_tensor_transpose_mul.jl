@@ -20,13 +20,13 @@ function tensor_transpose_tensor_transpose_mul!(C, A, B)
     @assert axes(A, 3) == axes(B, 3)
     @assert axes(A, 1) == axes(B, 2)
 
-    backend = KernelAbstractions.get_backend(A)
+    backend = networkbackend(A)
     kernel! = tensor_transpose_tensor_transpose_mul_kernel!(backend)
     kernel!(C, A, B, ndrange=size(C)) 
 end
 
 function tensor_transpose_tensor_transpose_mul(A::AbstractArray{T, 3}, B::AbstractArray{T, 3}) where T
-    backend = KernelAbstractions.get_backend(A)
+    backend = networkbackend(A)
     C = KernelAbstractions.zeros(backend, T, size(A)[2], size(B)[1], size(A)[3])
     tensor_transpose_tensor_transpose_mul!(C, A, B)
     C

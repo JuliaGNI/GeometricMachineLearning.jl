@@ -15,14 +15,14 @@ function tensor_transpose!(C, A)
     @assert sizeA[1] == sizeC[2]
     @assert sizeA[2] == sizeC[1]
 
-    backend = KernelAbstractions.get_backend(A)
+    backend = networkbackend(A)
     kernel! = tensor_transpose_kernel!(backend)
     kernel!(C, A, ndrange=size(C))
 end
 
 function tensor_transpose(A::AbstractArray{T, 3}) where T 
     sizeA = size(A)
-    backend = KernelAbstractions.get_backend(A)
+    backend = networkbackend(A)
     C = KernelAbstractions.zeros(backend, T, sizeA[2], sizeA[1], sizeA[3])
     tensor_transpose!(C, A)
     C 

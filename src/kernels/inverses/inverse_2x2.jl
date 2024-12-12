@@ -23,7 +23,7 @@ function tensor_inverse2!(out::AbstractArray{T, 3}, A::AbstractArray{T, 3}) wher
     @assert size(A, 1) == size(A, 2) == 2
     @assert size(A) == size(out)
 
-    backend = get_backend(out)
+    backend = networkbackend(out)
     inv22! = inv22_kernel!(backend)
 
     inv22!(out, A, ndrange = size(A, 3))

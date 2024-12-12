@@ -10,7 +10,7 @@ end
 
 function cpu_inverse(A::AbstractArray)
     B = zero(A)
-    backend = KernelAbstractions.get_backend(A)
+    backend = networkbackend(A)
 
     cpu_inverse! = cpu_inverse_kernel!(backend)
     cpu_inverse!(B, A, ndrange=size(A, 3))
@@ -34,7 +34,7 @@ function ChainRulesCore.rrule(::typeof(cpu_inverse), A::AbstractArray)
 
     function cpu_inverse_pullback(dB::AbstractArray)
         dA = zero(dB)
-        backend = KernelAbstractions.get_backend(dB)
+        backend = networkbackend(dB)
 
         cpu_inverse_pullback! = cpu_inverse_pullback_kernel!(backend)
         cpu_inverse_pullback!(dA, A, dB, ndrange=size(dB, 3))

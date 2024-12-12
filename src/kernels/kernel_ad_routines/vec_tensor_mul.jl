@@ -22,7 +22,7 @@ end
 
 function tensor_scalar_product(x::AbstractArray{T, 3}, b_diff::AbstractArray{T, 3}) where T 
     a_size = size(x, 1)
-    backend = KernelAbstractions.get_backend(x)
+    backend = networkbackend(x)
     a_diff = KernelAbstractions.zeros(backend, T, a_size)
     tensor_scalar_product! = tensor_scalar_product_kernel!(backend)
     tensor_scalar_product!(a_diff, x, b_diff, size(x, 2), size(x, 3), ndrange=size(a_diff))
