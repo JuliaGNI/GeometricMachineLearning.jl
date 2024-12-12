@@ -25,4 +25,3 @@ loss(ti::TrainingMethod{<:SymplecticEuler}, nn::AbstractNeuralNetwork{<:Hamilton
 mapreduce(args->loss_single(Zygote.ignore_derivatives(ti), nn, get_loss(ti, nn, data, args)..., params),+, index_batch)
 
 min_length_batch(::SymplecticEuler) = 2
-
