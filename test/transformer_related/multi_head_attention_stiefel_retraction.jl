@@ -32,7 +32,7 @@ check_retraction_cayley(B::MomentumCache) = check_retraction_cayley(B.B)
 This is a test for that checks if the retractions (geodesic and Cayley for now) map from `StiefelLieAlgHorMatrix` to `StiefelManifold` when used with `MultiHeadAttention`.
 """
 function test_multi_head_attention_retraction(T::Type, dim, n_heads, tol=eps(T), backend=KernelAbstractions.CPU())
-    model = MultiHeadAttention(dim, n_heads, Stiefel=true)
+    model = Chain(MultiHeadAttention(dim, n_heads, Stiefel=true))
 
     ps = NeuralNetwork(model, backend, T).params
     cache = init_optimizer_cache(MomentumOptimizer(), ps)
