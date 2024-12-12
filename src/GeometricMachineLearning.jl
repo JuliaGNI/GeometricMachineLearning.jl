@@ -18,10 +18,10 @@ module GeometricMachineLearning
     using InteractiveUtils
     using TimerOutputs
     using LazyArrays
-    using SymbolicNeuralNetworks
     import SymbolicNeuralNetworks: input_dimension, output_dimension, SymbolicPullback
-    using SymbolicNeuralNetworks: derivative
+    using SymbolicNeuralNetworks: derivative, _get_contents, _get_params
     using Symbolics: @variables, substitute
+    import Symbolics.SymbolicUtils.Code: create_array
 
     import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer, AbstractExplicitCell, AbstractNeuralNetwork , NeuralNetwork, UnknownArchitecture
     import AbstractNeuralNetworks: Chain, GridCell
