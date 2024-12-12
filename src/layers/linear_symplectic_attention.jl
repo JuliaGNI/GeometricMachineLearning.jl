@@ -15,7 +15,7 @@ The coefficients of a [`LinearSymplecticAttention`](@ref) layer is a [`Symmetric
 using GeometricMachineLearning
 
 l = LinearSymplecticAttentionQ(3, 5)
-ps = NeuralNetwork(l, Float32).params
+ps = NeuralNetwork(Chain(l)).params.L1
 
 typeof(ps.A) <: SymmetricMatrix
 
@@ -69,7 +69,7 @@ end
  
 parameterlength(l::LinearSymplecticAttention) = (l.seq_length + 1) * l.seq_length ÷ 2
 
-function initialparameters(l::LinearSymplecticAttention, backend::KernelAbstractions.Backend, T::Type; rng::AbstractRNG=Random.default_rng(), initializer::AbstractNeuralNetworks.Initializer=GlorotUniform())
+function initialparameters(rng::AbstractRNG, initializer::AbstractNeuralNetworks.Initializer, l::LinearSymplecticAttention, backend::KernelAbstractions.Backend, T::Type)
     S = KernelAbstractions.allocate(backend, T, parameterlength(l))
     initializer(rng, S)
     (A = SymmetricMatrix(S, l.seq_length), )

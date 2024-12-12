@@ -8,7 +8,7 @@ function stiefel_layer_test(T, M, N, tol=1f-1)
     ps = NeuralNetwork(model, T).params
     o = Optimizer(AdamOptimizer(T(1f0), T(5f-1), T(5f-1), T(3f-7)),ps)
 
-    dx = (L1 = (weight=rand(T,N,M),), L2 = (weight=rand(T,N,N),))
+    dx = (L1 = (weight = rand(T, N, M),), L2 = (weight=rand(T, N, N),))
     ps_copy = deepcopy(ps)
     λY = GlobalSection(ps)
     optimization_step!(o, λY, ps, dx)

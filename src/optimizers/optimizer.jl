@@ -134,7 +134,7 @@ All the arguments are given as `NamedTuple`s  as the neural network weights are 
 using GeometricMachineLearning
 
 l = StiefelLayer(3, 5)
-ps = NeuralNetwork(l, Float32).params
+ps = NeuralNetwork(Chain(l), Float32).params.L1
 cache = apply_toNT(MomentumCache, ps)
 o = Optimizer(MomentumOptimizer(), cache, 0, geodesic)
 λY = GlobalSection(ps)

@@ -85,8 +85,7 @@ using GeometricMachineLearning
 using GeometricMachineLearning: UnknownEncoder
 
 model = Chain(Dense(5, 3, tanh; use_bias = false), Dense(3, 2, identity; use_bias = false))
-params = NeuralNetworkParameters(initialparameters(model))
-nn = NeuralNetwork(UnknownEncoder(5, 2, 2), model, params, CPU())
+nn = NeuralNetwork(UnknownEncoder(5, 2, 2), model, NeuralNetwork(model).params, CPU())
 
 typeof(nn) <: NeuralNetwork{<:GeometricMachineLearning.Encoder}
 
