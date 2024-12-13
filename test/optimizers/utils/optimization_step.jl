@@ -18,7 +18,7 @@ function optimization_step_test(N, n, T)
     λY = GlobalSection(ps)
     optimization_step!(o, λY, ps, dx)
     @test typeof(ps[1].weight) <: StiefelManifold
-    for (layers1, layers2) in zip(ps, ps2)
+    for (layers1, layers2) in zip(values(ps), values(ps2))
         for key in keys(layers1)
             @test norm(layers1[key] - layers2[key]) > T(1f-6)
         end

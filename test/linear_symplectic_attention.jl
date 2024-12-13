@@ -7,8 +7,8 @@ Random.seed!(123)
 function test_application_of_lsa(n::Integer=4, seq_length::Integer=5, T=Float64)
     l₁ = LinearSymplecticAttentionQ(n, seq_length)
     l₂ = LinearSymplecticAttentionP(n, seq_length)
-    ps₁ = NeuralNetwork(l₁, CPU(), T).params
-    ps₂ = NeuralNetwork(l₂, CPU(), T).params
+    ps₁ = NeuralNetwork(Chain(l₁), CPU(), T).params.L1
+    ps₂ = NeuralNetwork(Chain(l₂), CPU(), T).params.L1
 
     # test for NamedTuple as input
     nt = (q = rand(T, n, seq_length), p = rand(T, n, seq_length))

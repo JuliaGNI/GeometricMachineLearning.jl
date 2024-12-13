@@ -5,13 +5,13 @@ import Random
 Random.seed!(1234)
 
 function volume_preserving_attention_tests(N, T=Float32)
-    model₁ = VolumePreservingAttention(N, N, skew_sym = false)
-    model₂ = VolumePreservingAttention(N, N, skew_sym = true)
+    model₁ = Chain(VolumePreservingAttention(N, N, skew_sym = false))
+    model₂ = Chain(VolumePreservingAttention(N, N, skew_sym = true))
 
     ps₁ = NeuralNetwork(model₁, CPU(), T).params
     ps₂ = NeuralNetwork(model₂, CPU(), T).params
-    @test typeof(ps₁.A) <: AbstractMatrix{T} 
-    @test typeof(ps₂.A) <: SkewSymMatrix{T} 
+    @test typeof(ps₁.L1.A) <: AbstractMatrix{T} 
+    @test typeof(ps₂.L1.A) <: SkewSymMatrix{T} 
 
     # check if the layers are volume preserving
     A = randn(T, N, N)
