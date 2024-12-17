@@ -1,4 +1,4 @@
-# pre-push git hook that runs all tests before pushing
+# pre-push git hook that runs all tests before pushin
 
 red='\033[0;31m'
 green='\033[0;32m'

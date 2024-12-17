@@ -11,8 +11,8 @@ function transformer_application_test(T, dim, n_heads, L, seq_length=8, batch_si
     model₁ = Chain(Transformer(dim, n_heads, L, Stiefel=false), ResNetLayer(dim))
     model₂ = Chain(Transformer(dim, n_heads, L, Stiefel=true), ResNetLayer(dim))
 
-    ps₁ = initialparameters(model₁, KernelAbstractions.CPU(), T)
-    ps₂ = initialparameters(model₂, KernelAbstractions.CPU(), T)
+    ps₁ = NeuralNetwork(model₁, KernelAbstractions.CPU(), T).params
+    ps₂ = NeuralNetwork(model₂, KernelAbstractions.CPU(), T).params
     
     input₁ = rand(T, dim, seq_length, batch_size)
     input₂ = rand(T, dim, seq_length)

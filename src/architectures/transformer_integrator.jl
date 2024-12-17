@@ -48,7 +48,7 @@ function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::NamedTupl
     seq_length = typeof(nn.architecture) <: StandardTransformerIntegrator ? size(ics.q, 2) : nn.architecture.seq_length
 
     n_dim = size(ics.q, 1)
-    backend = KernelAbstractions.get_backend(ics.q)
+    backend = networkbackend(ics.q)
 
     n_iterations = Int(ceil((n_points - seq_length) / prediction_window))
     # Array to store the predictions
@@ -84,7 +84,7 @@ function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::AT; n_poi
     end
 
     n_dim = size(ics, 1)
-    backend = KernelAbstractions.get_backend(ics)
+    backend = networkbackend(ics)
 
     n_iterations = Int(ceil((n_points - seq_length) / prediction_window))
     # Array to store the predictions

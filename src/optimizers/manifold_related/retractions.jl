@@ -87,7 +87,7 @@ See [`geodesic(::StiefelLieAlgHorMatrix)`](@ref).
 function geodesic(B::GrassmannLieAlgHorMatrix)
     T = eltype(B)
     E = StiefelProjection(B)
-    backend = KernelAbstractions.get_backend(B)
+    backend = networkbackend(B)
     zero_mat = KernelAbstractions.zeros(backend, T, B.n, B.n)
     B̂ = hcat(vcat(zero_mat, B.B), E)
     B̄ = hcat(vcat(one(zero_mat), zero_mat), vcat(zero(B.B'), -B.B'))'
@@ -176,7 +176,7 @@ See [`cayley(::StiefelLieAlgHorMatrix)`](@ref).
 function cayley(B::GrassmannLieAlgHorMatrix)
     T = eltype(B)
     E = StiefelProjection(B)
-    backend = KernelAbstractions.get_backend(B)
+    backend = networkbackend(B)
     𝕆 = KernelAbstractions.zeros(backend, T, B.n, B.n)
     𝕀_small = one(𝕆)
     𝕀_small2 = hcat(vcat(𝕀_small, 𝕆), vcat(𝕆, 𝕀_small))

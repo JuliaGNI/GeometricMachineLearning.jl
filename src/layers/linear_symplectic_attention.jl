@@ -13,9 +13,10 @@ The coefficients of a [`LinearSymplecticAttention`](@ref) layer is a [`Symmetric
 
 ```jldoctest
 using GeometricMachineLearning
+using GeometricMachineLearning: params
 
 l = LinearSymplecticAttentionQ(3, 5)
-ps = initialparameters(l, CPU(), Float32)
+ps = params(NeuralNetwork(Chain(l))).L1
 
 typeof(ps.A) <: SymmetricMatrix
 
@@ -69,7 +70,7 @@ end
  
 parameterlength(l::LinearSymplecticAttention) = (l.seq_length + 1) * l.seq_length ÷ 2
 
-function initialparameters(l::LinearSymplecticAttention, backend::KernelAbstractions.Backend, T::Type; rng::AbstractRNG=Random.default_rng(), initializer::AbstractNeuralNetworks.AbstractInitializer=GlorotUniform())
+function initialparameters(rng::AbstractRNG, initializer::AbstractNeuralNetworks.Initializer, l::LinearSymplecticAttention, backend::KernelAbstractions.Backend, T::Type)
     S = KernelAbstractions.allocate(backend, T, parameterlength(l))
     initializer(rng, S)
     (A = SymmetricMatrix(S, l.seq_length), )

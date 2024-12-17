@@ -15,7 +15,7 @@ end
 
 function test_optimizer(T, N, n)
     model = Chain(StiefelLayer(N, n), StiefelLayer(n, n))
-    ps = initialparameters(backend, T, model)
+    ps = NeuralNetwork(model, backend, T).params
     @test typeof(ps[1].weight) <: StiefelManifold{T, <:CuArray{T, 2}}
     @test typeof(ps[2].weight) <: StiefelManifold{T, <:CuArray{T, 2}}
 

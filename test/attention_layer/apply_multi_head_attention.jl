@@ -11,7 +11,7 @@ function compare_attention_to_mha(N, batch_size=10, T=Float32)
     model₃ = MultiHeadAttention(N, 1, add_connection=true)
     model₄ = Attention(N, softmax, add_connection=true)
 
-    ps₂ = initialparameters(model₂, CPU(), T)
+    ps₂ = NeuralNetwork(model₂, CPU(), T).params
     ps₁ = (PQ=(head_1=ps₂.PQ,), PK=(head_1=ps₂.PK,), PV=(head_1=typeof(ps₂.PK)(I(N)),))
 
     mat = rand(T, N, N)

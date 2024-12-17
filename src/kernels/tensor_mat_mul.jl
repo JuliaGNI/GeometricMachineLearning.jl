@@ -21,7 +21,7 @@ The function [`tensor_mat_mul`](@ref) calls `tensor_mat_mul!` internally.
 function tensor_mat_mul!(C::AbstractArray{<:Number, 3}, A::AbstractArray{<:Number, 3}, B::AbstractMatrix)
     @assert size(A)[2] == size(B)[1]
 
-    backend = KernelAbstractions.get_backend(A)
+    backend = networkbackend(A)
     kernel! = tensor_mat_mul_kernel!(backend)
     kernel!(C, A, B, ndrange=size(C)) 
 end
@@ -63,7 +63,7 @@ function tensor_mat_mul(A::AbstractArray{<:Number, 3}, B::AbstractMatrix)
     sizeA = size(A); sizeB = size(B)
     @assert sizeA[2] == sizeB[1] 
     tensor_shape = (sizeA[1], sizeB[2], sizeA[3])
-    backend = get_backend(A)
+    backend = networkbackend(A)
     C = KernelAbstractions.zeros(backend, T, tensor_shape...)
     tensor_mat_mul!(C, A, B)
     C
@@ -87,7 +87,7 @@ end
 end
 
 function symmetric_mat_right_mul!(C::AbstractArray{T, 3}, B::AbstractArray{T, 3}, S::AbstractVector{T}, n::Int) where T
-    backend = KernelAbstractions.get_backend(C)
+    backend = networkbackend(C)
     
     symmetric_mat_right_mul_k! = symmetric_mat_right_mul_kernel!(backend)
     symmetric_mat_right_mul_k!(C, B, S, n, ndrange = size(C))

@@ -16,8 +16,10 @@ function GrassmannLayer(n::Integer, N::Integer)
     GrassmannLayer{n, N}()
 end
 
-function AbstractNeuralNetworks.initialparameters(d::GrassmannLayer{N,M}, backend::KernelAbstractions.Backend, ::Type{T}; rng::AbstractRNG=Random.default_rng()) where {M,N,T}
-    (weight = N > M ? rand(backend, rng, GrassmannManifold{T}, N, M) : rand(backend, rng, GrassmannManifold{T}, M, N), )
+function initialparameters(rng::AbstractRNG, init::AbstractNeuralNetworks.Initializer, ::GrassmannLayer{N,M}, backend::NeuralNetworkBackend, ::Type{T}) where {M,N,T}
+    weight = N > M ? KernelAbstractions.allocate(backend, T, N, M) : KernelAbstractions.allocate(backend, T, M, N)
+    init(rng, weight)
+    (weight = GrassmannManifold(assign_columns(typeof(weight)(qr!(weight).Q), size(weight)...)), )
 end
 
 function parameterlength(::GrassmannLayer{M, N}) where {M, N}
