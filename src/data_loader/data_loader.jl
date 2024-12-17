@@ -501,7 +501,7 @@ Compute the accuracy of a neural network classifier.
 
 This is like [`accuracy(::Chain, ::Tuple, ::DataLoader)`](@ref), but for a `NeuralNetwork`.
 """
-accuracy(nn::NeuralNetwork, dl::DataLoader) = accuracy(nn.model, nn.params, dl)
+accuracy(nn::NeuralNetwork, dl::DataLoader) = accuracy(nn.model, params(nn), dl)
 
 Base.eltype(::DataLoader{T}) where T = T
 

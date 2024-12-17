@@ -65,7 +65,7 @@ function Optimizer(method::OptimizerMethod, nn_params::Union{NeuralNetworkParame
 end
 
 function Optimizer(method::OptimizerMethod, nn::NeuralNetwork; kwargs...)
-    Optimizer(method, nn.params; kwargs...)
+    Optimizer(method, params(nn); kwargs...)
 end
 
 Optimizer(nn::NeuralNetwork, m::OptimizerMethod; kwargs...) = Optimizer(m, nn; kwargs...)
@@ -132,9 +132,10 @@ All the arguments are given as `NamedTuple`s  as the neural network weights are 
 
 ```jldoctest
 using GeometricMachineLearning
+using GeometricMachineLearning: params
 
 l = StiefelLayer(3, 5)
-ps = NeuralNetwork(Chain(l), Float32).params.L1
+ps = params(NeuralNetwork(Chain(l), Float32)).L1
 cache = apply_toNT(MomentumCache, ps)
 o = Optimizer(MomentumOptimizer(), cache, 0, geodesic)
 λY = GlobalSection(ps)

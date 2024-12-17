@@ -13,9 +13,10 @@ The coefficients of a [`LinearSymplecticAttention`](@ref) layer is a [`Symmetric
 
 ```jldoctest
 using GeometricMachineLearning
+using GeometricMachineLearning: params
 
 l = LinearSymplecticAttentionQ(3, 5)
-ps = NeuralNetwork(Chain(l)).params.L1
+ps = params(NeuralNetwork(Chain(l))).L1
 
 typeof(ps.A) <: SymmetricMatrix
 

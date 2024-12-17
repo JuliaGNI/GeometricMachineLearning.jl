@@ -96,6 +96,7 @@ Before we can use the Wasserstein distance however to train the neural network w
 
 ```@example rosenbrock
 using GeometricMachineLearning # hide
+using GeometricMachineLearning: params # hide
 using Zygote, BrenierTwoFluid
 using LinearAlgebra: norm # hide
 import Random # hide
@@ -111,7 +112,7 @@ nothing # hide
 We then *lift* the neural network parameters via [`GlobalSection`](@ref).
 
 ```@example rosenbrock
-λY = GlobalSection(nn.params)
+λY = GlobalSection(params(nn))
 nothing # hide
 ```
 
@@ -280,9 +281,9 @@ CairoMakie.activate!() # hide
 const training_steps = 80
 loss_array = zeros(training_steps)
 for i in 1:training_steps
-    val, dp = compute_gradient(nn.params)
+    val, dp = compute_gradient(params(nn))
     loss_array[i] = val
-    optimization_step!(optimizer, λY, nn.params, dp.params)
+    optimization_step!(optimizer, λY, params(nn), dp.params)
 end
 ```
 
