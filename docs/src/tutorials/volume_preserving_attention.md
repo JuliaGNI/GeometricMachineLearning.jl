@@ -6,7 +6,7 @@ In here we demonstrate the differences between the two approaches for computing 
 
 ```@example volume_preserving_attention
 using GeometricMachineLearning # hide
-using GeometricMachineLearning: FeedForwardLoss, TransformerLoss # hide
+using GeometricMachineLearning: FeedForwardLoss, TransformerLoss, params # hide
 import Random # hide
 Random.seed!(123) # hide
 
@@ -199,15 +199,15 @@ initial_condition = dl.input[:, 1:seq_length, 2]
 function make_networks_neural_network_integrators(nn_skew, nn_arb, nn_comp)
     nn_skew = NeuralNetwork(GeometricMachineLearning.DummyTransformer(seq_length), 
                             nn_skew.model, 
-                            nn_skew.params, 
+                            params(nn_skew), 
                             CPU())
     nn_arb  = NeuralNetwork(GeometricMachineLearning.DummyTransformer(seq_length), 
                             nn_arb.model,  
-                            nn_arb.params, 
+                            params(nn_arb), 
                             CPU())
     nn_comp = NeuralNetwork(GeometricMachineLearning.DummyNNIntegrator(), 
                             nn_comp.model, 
-                            nn_comp.params, 
+                            params(nn_comp), 
                             CPU())
 
     nn_skew, nn_arb, nn_comp

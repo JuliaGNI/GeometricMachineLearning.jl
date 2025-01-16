@@ -22,7 +22,7 @@ function ResNetLayer(dim::Integer, activation=identity; use_bias::Bool=true)
     return ResNetLayer{dim, dim, use_bias, typeof(activation)}(activation)
 end
 
-function initialparameters(::ResNetLayer{M, M, use_bias}, backend::KernelAbstractions.Backend, T::Type; rng::Random.AbstractRNG=Random.default_rng(), init_weight = GlorotUniform(), init_bias = ZeroInitializer()) where {M, use_bias}
+function initialparameters(rng::Random.AbstractRNG, init_weight::AbstractNeuralNetworks.Initializer, ::ResNetLayer{M, M, use_bias}, backend::KernelAbstractions.Backend, ::Type{T}; init_bias = ZeroInitializer()) where {M, use_bias, T}
     if use_bias
         weight = KernelAbstractions.allocate(backend, T, M, M)
         bias = KernelAbstractions.allocate(backend, T, M)

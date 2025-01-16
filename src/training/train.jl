@@ -1,9 +1,9 @@
 const DEFAULT_NRUNS = 1000
 
 # The loss gradient function working for all types of arguments
-loss_gradient(nn::NeuralNetwork{<:Architecture}, ti::AbstractTrainingMethod, data::AbstractTrainingData, index_batch, params = nn.params) = Zygote.gradient(p -> loss(ti, nn, data, index_batch, p), params)[1]
+loss_gradient(nn::NeuralNetwork{<:Architecture}, ti::AbstractTrainingMethod, data::AbstractTrainingData, index_batch, params = params(nn)) = Zygote.gradient(p -> loss(ti, nn, data, index_batch, p), params)[1]
 
-loss_gradient(loss, index_batch, params = nn.params) = Zygote.gradient(p -> loss(p, index_batch), params)[1]
+loss_gradient(loss, index_batch, params = params(nn)) = Zygote.gradient(p -> loss(p, index_batch), params)[1]
 
 #loss_gradient(nn::SymbolicNeuralNetwork, ti::AbstractTrainingMethod, data::AbstractTrainingData, index_batch, params = params(nn)) = 
 #mapreduce(args->∇loss_single(ti, nn, get_loss(ti, nn, data, args)..., params), +, index_batch)

@@ -32,7 +32,7 @@ function svd_test(A, n, train_steps=1000, tol=1e-1; retraction=cayley)
 
     err_best = norm(A - U_result*U_result'*A)
     model = Chain(StiefelLayer(N, n), StiefelLayer(n, N))
-    ps = initialparameters(model, CPU(), Float64)
+    ps = NeuralNetwork(model, CPU(), Float64).params
 
     o₁ = Optimizer(GradientOptimizer(0.01), ps; retraction = retraction)
     o₂ = Optimizer(MomentumOptimizer(0.01), ps; retraction = retraction)
@@ -52,7 +52,7 @@ function svd_test(A, n, train_steps=1000, tol=1e-1; retraction=cayley)
     @test norm((err₃ - err_best)/err_best) < tol 
 end
 
-function train_network!(o::Optimizer, model::Chain, ps::NamedTuple, A::AbstractMatrix, train_steps, tol)
+function train_network!(o::Optimizer, model::Chain, ps::NeuralNetworkParameters, A::AbstractMatrix, train_steps, tol)
     error(ps) = norm(A - model(A, ps))
 
     for _ in 1:train_steps
@@ -60,7 +60,7 @@ function train_network!(o::Optimizer, model::Chain, ps::NamedTuple, A::AbstractM
         λY = GlobalSection(ps)
         optimization_step!(o, λY, ps, dx)
     end
-    ps[1].weight, ps[2].weight, error(ps)
+    ps.L1.weight, ps.L2.weight, error(ps)
 end
 
 for retraction in (geodesic, cayley)

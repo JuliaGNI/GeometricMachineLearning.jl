@@ -28,7 +28,7 @@ function tensor_inverse3!(out::AbstractArray{T, 3}, A::AbstractArray{T, 3}) wher
     @assert size(A, 1) == size(A, 2) == 3
     @assert size(A) == size(out)
 
-    backend = get_backend(out)
+    backend = networkbackend(out)
     inv33! = inv33_kernel!(backend)
 
     inv33!(out, A, ndrange = size(A, 3))

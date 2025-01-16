@@ -26,8 +26,10 @@ function parameterlength(::PSDLayer{M, N}) where {M, N}
     N > M ? Int(M2 * (N2 - (M2 + 1) / 2)) : Int(N2 * (M2 - (N2 + 1) / 2))
 end 
 
-function initialparameters(::PSDLayer{M, N}, backend::KernelAbstractions.Backend, T::Type; rng::AbstractRNG=Random.default_rng()) where {M, N}
-    (weight =  N > M ? rand(backend, rng, StiefelManifold{T}, N ÷ 2, M ÷ 2) : rand(backend, rng, StiefelManifold{T}, M ÷ 2, N ÷ 2), )
+function initialparameters(rng::AbstractRNG, initializer::AbstractNeuralNetworks.Initializer, ::PSDLayer{M, N}, backend::KernelAbstractions.Backend, T::Type) where {M, N}
+    weight = N > M ? KernelAbstractions.allocate(backend, T, N ÷ 2, M ÷ 2) : KernelAbstractions.allocate(backend, T, M ÷ 2, N ÷ 2)
+    initializer(rng, weight)
+    (weight = StiefelManifold(assign_columns(typeof(weight)(qr!(weight).Q), size(weight)...)), )
 end
 
 function (::PSDLayer{M, N})(qp::NamedTuple{(:q, :p), Tuple{AT1, AT2}}, ps::NamedTuple) where {M, N, AT1 <: AbstractArray, AT2 <: AbstractArray}

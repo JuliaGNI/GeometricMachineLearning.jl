@@ -53,7 +53,7 @@ function ChainRulesCore.rrule(::typeof(lo_mat_mul), S::AbstractVector{T}, A::Abs
     C = lo_mat_mul(S, A, n)
     function lo_mat_mul_pullback(dC::AbstractArray{T, 3}) 
         f̄ = NoTangent()
-        backend = KernelAbstractions.get_backend(dC)
+        backend = networkbackend(dC)
         lower_da! = lower_da_kernel!(backend)
         lower_ds! = lower_ds_kernel!(backend)
 
@@ -119,7 +119,7 @@ function ChainRulesCore.rrule(::typeof(up_mat_mul), S::AbstractVector{T}, A::Abs
     C = up_mat_mul(S, A, n)
     function up_mat_mul_pullback(dC::AbstractArray{T, 3}) 
         f̄ = NoTangent()
-        backend = KernelAbstractions.get_backend(dC)
+        backend = networkbackend(dC)
         upper_da! = upper_da_kernel!(backend)
         upper_ds! = upper_ds_kernel!(backend)
 
@@ -152,7 +152,7 @@ function ChainRulesCore.rrule(::typeof(skew_mat_mul), S::AbstractVector{T}, A::A
     C = skew_mat_mul(S, A, n)
     function skew_mat_mul_pullback(dC::AbstractArray{T, 3})
         f̄ = NoTangent()
-        backend = KernelAbstractions.get_backend(dC)
+        backend = networkbackend(dC)
         lower_da! = lower_da_kernel!(backend)
         lower_ds! = lower_ds_kernel!(backend)
         upper_da! = upper_da_kernel!(backend)
@@ -228,7 +228,7 @@ end
 function ChainRulesCore.rrule(::typeof(symmetric_mat_mul), S::AbstractVector{T}, A::AbstractArray{T, 3}, n::Int) where  T 
     C = symmetric_mat_mul(S, A, n)
     function symmetric_mat_mul_pullback(dC::AbstractArray{T, 3}) 
-        backend = KernelAbstractions.get_backend(dC)
+        backend = networkbackend(dC)
         symmetric_da! = symmetric_da_kernel!(backend)
         symmetric_ds! = symmetric_ds_kernel!(backend)
 

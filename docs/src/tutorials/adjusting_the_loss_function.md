@@ -14,6 +14,7 @@ We again consider training a SympNet on the data coming from a harmonic oscillat
 
 ```@example change_loss
 using GeometricMachineLearning  # hide
+using GeometricMachineLearning: params # hide
 using GeometricIntegrators: integrate, ImplicitMidpoint  # hide
 using GeometricProblems.HarmonicOscillator: hodeproblem
 import Random # hide
@@ -45,7 +46,7 @@ function network_parameter_norm(params::NeuralNetworkParameters)
     sum([network_parameter_norm(params[key]) for key in keys(params)])
 end
 
-network_parameter_norm(nn.params)
+network_parameter_norm(params(nn))
 ```
 
 We now implement a custom loss such that:
@@ -80,7 +81,7 @@ print(loss_array[end])
 We see that the norm of the parameters is lower:
 
 ```@example change_loss
-network_parameter_norm(nn_custom.params)
+network_parameter_norm(params(nn_custom))
 ```
 
 We can also compare the solutions of the two networks:

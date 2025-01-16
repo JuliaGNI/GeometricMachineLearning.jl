@@ -110,7 +110,7 @@ end
 
 function Base.:+(A::SkewSymMatrix{T}, B::AbstractMatrix{T}) where T
     @assert size(A) == size(B)
-    backend = KernelAbstractions.get_backend(B)
+    backend = networkbackend(B)
     addition! = addition_kernel!(backend)
     C = KernelAbstractions.allocate(backend, T, size(A)...)
     addition!(C, A.S, B; ndrange = size(A))
@@ -215,7 +215,7 @@ LinearAlgebra.rmul!(C::SkewSymMatrix, α::Real) = mul!(C, C, α)
 function Base.:*(A::SkewSymMatrix{T}, B::AbstractMatrix{T}) where T
     m1, m2 = size(B)
     @assert m1 == A.n
-    backend = KernelAbstractions.get_backend(A)
+    backend = networkbackend(A)
     C = KernelAbstractions.allocate(backend, T, A.n, m2)
 
     skew_mat_mul! = skew_mat_mul_kernel!(backend)
@@ -245,7 +245,7 @@ function Base.:*(A::SkewSymMatrix, b::AbstractVector{T}) where T
 end
 
 function Base.one(A::SkewSymMatrix{T}) where T
-    backend = KernelAbstractions.get_backend(A.S)
+    backend = networkbackend(A.S)
     unit_matrix = KernelAbstractions.zeros(backend, T, A.n, A.n)
     write_ones! = write_ones_kernel!(backend)
     write_ones!(unit_matrix, ndrange=A.n)
@@ -290,8 +290,8 @@ function Base.zero(A::SkewSymMatrix)
     SkewSymMatrix(zero(A.S), A.n)
 end
 
-function KernelAbstractions.get_backend(A::SkewSymMatrix)
-    KernelAbstractions.get_backend(A.S)
+function networkbackend(A::SkewSymMatrix)
+    networkbackend(A.S)
 end
 
 function assign!(B::SkewSymMatrix{T}, C::SkewSymMatrix{T}) where T 
@@ -311,7 +311,7 @@ function map_to_Skew(A::AbstractMatrix{T}) where T
     n = size(A, 1)
     @assert size(A, 2) == n
     A_skew = T(.5)*(A - A')
-    backend = KernelAbstractions.get_backend(A)
+    backend = networkbackend(A)
     S = if n != 1
         KernelAbstractions.zeros(backend, T, n * (n - 1) ÷ 2)
     else

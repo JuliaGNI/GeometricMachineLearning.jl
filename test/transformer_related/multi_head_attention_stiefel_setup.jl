@@ -12,6 +12,7 @@ function check_setup(A::AbstractMatrix{T}, tol=T(10)*eps(T)) where T
     @test check(A) < tol
 end
 check_setup(ps::NamedTuple) = apply_toNT(check_setup, ps)
+check_setup(ps::NeuralNetworkParameters) = check_setup(ps.params)
 
 @doc raw"""
 This checks for an arbitrary matrix ``B\in\mathbb{R}^{N\times{}N}`` if ``B\in\mathfrak{g}^\mathrm{hor}``.
@@ -27,8 +28,8 @@ check_grad_setup(B::MomentumCache) = check_grad_setup(B.B)
 Check if `initialparameters` and `init_optimizer_cache` do the right thing for `MultiHeadAttentionLayer`.
 """
 function check_multi_head_attention_stiefel_setup(T::Type, N::Int, n::Int)
-    model = MultiHeadAttention(N, n, Stiefel=true)
-    ps = initialparameters(model, KernelAbstractions.CPU(), T)
+    model = Chain(MultiHeadAttention(N, n, Stiefel=true))
+    ps = NeuralNetwork(model, KernelAbstractions.CPU(), T).params
 
     check_setup(ps)
 

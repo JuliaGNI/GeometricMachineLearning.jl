@@ -70,7 +70,7 @@ function ClassificationLayer(input_dim::Integer, output_dim::Integer, activation
     ClassificationLayer{input_dim, output_dim, average, typeof(activation)}(activation)
 end
 
-function initialparameters(::ClassificationLayer{M, N}, device::KernelAbstractions.Backend, T::Type; rng::Random.AbstractRNG=Random.default_rng(), init_weight! = GlorotUniform()) where {M, N}
+function initialparameters(rng::Random.AbstractRNG, init_weight!::AbstractNeuralNetworks.Initializer, ::ClassificationLayer{M, N}, device::KernelAbstractions.Backend, ::Type{T}) where {M, N, T}
     weight = KernelAbstractions.allocate(device, T, N, M)
     init_weight!(rng, weight)
     (weight=weight, )

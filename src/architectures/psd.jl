@@ -57,8 +57,8 @@ function solve!(nn::NeuralNetwork{<:PSDArch}, input::AbstractMatrix)
     half_of_dimension_in_big_space = nn.architecture.full_dim ÷ 2
     @views input_qp = hcat(input[1 : half_of_dimension_in_big_space, :], input[(half_of_dimension_in_big_space + 1) : end, :])
     U_term = svd(input_qp).U
-    @views nn.params[1].weight.A .= U_term[:, 1 : nn.architecture.reduced_dim ÷ 2]
-    @views nn.params[2].weight.A .= U_term[:, 1 : nn.architecture.reduced_dim ÷ 2]
+    @views params(nn)[1].weight.A .= U_term[:, 1 : nn.architecture.reduced_dim ÷ 2]
+    @views params(nn)[2].weight.A .= U_term[:, 1 : nn.architecture.reduced_dim ÷ 2]
 
     AutoEncoderLoss()(nn, input)
 end
