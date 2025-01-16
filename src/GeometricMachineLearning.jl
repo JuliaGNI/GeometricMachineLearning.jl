@@ -18,8 +18,9 @@ module GeometricMachineLearning
     using InteractiveUtils
     using TimerOutputs
     using LazyArrays
+    import SymbolicNeuralNetworks
     import SymbolicNeuralNetworks: input_dimension, output_dimension, SymbolicPullback
-    using SymbolicNeuralNetworks: derivative, _get_contents, _get_params
+    using SymbolicNeuralNetworks: derivative, _get_contents, _get_params, SymbolicNeuralNetwork
     using Symbolics: @variables, substitute
     import Symbolics.SymbolicUtils.Code: create_array
 
