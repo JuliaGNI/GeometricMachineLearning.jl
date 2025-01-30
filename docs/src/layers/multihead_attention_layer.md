@@ -34,7 +34,7 @@ Written as an equation we get:
 \mathrm{MultiHeadAttention}(Z) = \begin{pmatrix} \mathrm{Attention}(P^Q_1Z, P^K_1Z, P^V_1Z) \\ \mathrm{Attention}(P^Q_2Z, P^K_2Z, P^V_2Z) \\ \cdots \\ \mathrm{Attention}(P^Q_{\mathtt{n\_heads}}Z, P^K_{\mathtt{n\_heads}}Z, P^V_{\mathtt{n\_heads}}Z) \end{pmatrix},
 ```
 
-where ``P^{(\cdot)}_i\in\mathbb{R}^{N\times(N\div\mathtt{n\_heads})}`` for ``Z\in\mathbb{R}^{N\times{}T}.`` Note that we implicitly require that ``N`` is divisible by ``\mathtt{n\_heads}`` here.
+where ``P^{(\cdot)}_i\in\mathbb{R}^{(N\div\mathtt{n\_heads})\times{}N}`` for ``Z\in\mathbb{R}^{N\times{}T}.`` Note that we implicitly require that ``N`` is divisible by ``\mathtt{n\_heads}`` here.
 
 Here the various ``P`` matrices can be interpreted as being projections onto lower-dimensional subspaces, hence the designation by the letter ``P``. The columns of the projection matrices span smaller spaces that should *capture features in the input data*. We will show [in an example](@ref "MNIST Tutorial") how training of a neural network can benefit from putting the ``P^{(\cdot)}_i`` matrices on the Stiefel manifold.   
 
