@@ -390,10 +390,14 @@ module GeometricMachineLearning
     export HRedSys, reduction_error, projection_error, integrate_reduced_system, integrate_full_system
 
     include("layers/linear_symplectic_attention.jl")
+    include("layers/symplectic_attention.jl")
     include("architectures/linear_symplectic_transformer.jl")
+    include("architectures/symplectic_transformer.jl")
 
     export LinearSymplecticAttention, LinearSymplecticAttentionQ, LinearSymplecticAttentionP
     export LinearSymplecticTransformer
+    export SymplecticAttention, SymplecticAttentionQ, SymplecticAttentionP
+    export SymplecticTransformer
 
     include("map_to_cpu.jl")
 end
