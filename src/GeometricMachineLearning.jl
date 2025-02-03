@@ -16,7 +16,7 @@ module GeometricMachineLearning
     using ForwardDiff
     using InteractiveUtils
     using TimerOutputs
-    using LazyArrays
+    import LazyArrays
 
     import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer, AbstractExplicitCell, AbstractNeuralNetwork , NeuralNetwork, UnknownArchitecture
     import AbstractNeuralNetworks: Chain, GridCell
