@@ -8,6 +8,10 @@ function symplectic_attention(z::NamedTuple{(:q, :p), Tuple{AT, AT}}, _ps::Union
     (q = z.q + _custom_mul(_custom_mul(_ps.L1.A, z.p), 2 * expPAP) / sum(expPAP), p = z.p)
 end
 
+function symplectic_attention_simplified(z::NamedTuple{(:q, :p), Tuple{AT, AT}}, _ps::Union{NamedTuple, NeuralNetworkParameters}) where {AT<:AbstractArray}
+    (q = z.p + _custom_mul(_custom_mul(z.p, _ps.L1.A), z.p), p = z.p)
+end
+
 function symplectic_linear_map(z::NamedTuple{(:q, :p), Tuple{AT, AT}}, _ps::Union{NamedTuple, NeuralNetworkParameters}) where {AT<:AbstractArray}
     (q = z.q + _custom_mul(_ps.L1.A, z.p), p = z.p)
 end
@@ -25,9 +29,12 @@ t = (q = rand(2, 2), p = rand(2, 2))
 l = SymplecticAttentionQ(4; symmetric = true)
 nn = NeuralNetwork(Chain(l))
 
-∇₃ = gradient(params -> norm(nn(t, params)), ps)[1]
+∇₃ = gradient(params -> norm(nn(t, params)), ps)[1] # this doesn't work
 
 ∇₄ = gradient(_ps -> norm(symplectic_linear_map(t, _ps)), ps)[1] # this works
 
+∇₅ = gradient(_ps -> norm(symplectic_attention_simplified(t, _ps)), ps)[1]
+
 # working means that e.g.
-typeof(∇.params.L1.A) <: SymmetricMatrix
+typeof(∇₄.params.L1.A) <: SymmetricMatrix
+typeof(∇₅.params.L1.A) <: SymmetricMatrix
