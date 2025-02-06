@@ -50,6 +50,36 @@ batch = Batch(batch_size, seq_length)
 loss_array1 = o1(nn1, dl, batch, n_epochs)
 loss_array2 = o2(nn2, dl, batch, n_epochs)
 
+function make_training_error_plot(n_steps = n_steps; theme = :dark)
+    textcolor = theme == :dark ? :white : :black
+    fig = Figure(; backgroundcolor = :transparent)
+    ax = Axis(fig[1, 1]; 
+        backgroundcolor = :transparent,
+        bottomspinecolor = textcolor, 
+        topspinecolor = textcolor,
+        leftspinecolor = textcolor,
+        rightspinecolor = textcolor,
+        xtickcolor = textcolor, 
+        ytickcolor = textcolor,
+        xticklabelcolor = textcolor,
+        yticklabelcolor = textcolor,
+        xlabel=L"t", 
+        ylabel=L"q_1",
+        xlabelcolor = textcolor,
+        ylabelcolor = textcolor,
+    )
+
+    # we use linewidth  = 2
+    lines!(ax, loss_array1; color = mpurple, label = "VecSoftM", linewidth = 2)
+    lines!(ax, loss_array2; color = mred, label = "MatSoftM", linewidth = 2)
+    axislegend(; position = (.55, .75), backgroundcolor = :transparent, labelcolor = textcolor)
+
+    fig, ax
+end
+
+training_fig_light, training_ax_light = make_training_error_plot(n_steps; theme = :light)
+training_fig_dark, training_ax_dark = make_training_error_plot(n_steps; theme = :dark)
+
 const index = 1
 init_con = (q = dl.input.q[:, 1:seq_length, index], p = dl.input.p[:, 1:seq_length, index])
 

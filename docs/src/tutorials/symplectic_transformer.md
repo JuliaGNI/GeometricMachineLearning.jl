@@ -22,7 +22,7 @@ To demonstrate the efficacy of the linear symplectic transformer here we will le
 
 [^1]: We here use the implementation of the coupled harmonic oscillator from [`GeometricProblems`](https://github.com/JuliaGNI/GeometricProblems.jl).
 
-```@example lin_sympl_tran_tut
+```@example sympl_tran_tut
 using GeometricMachineLearning # hide
 using GeometricProblems.CoupledHarmonicOscillator: hodeensemble, default_parameters
 using GeometricIntegrators: ImplicitMidpoint, integrate # hide
@@ -45,7 +45,7 @@ nothing # hide
 
 We now define the architectures and train them: 
 
-```@example lin_sympl_tran_tut
+```@example sympl_tran_tut
 const seq_length = 4
 const batch_size = 1024
 const n_epochs = 2000
@@ -82,7 +82,7 @@ nothing # hide
 
 And the corresponding training losses look as follows:
 
-```@setup lin_sympl_tran_tut
+```@setup sympl_tran_tut
 morange = RGBf(255 / 256, 127 / 256, 14 / 256) # hide
 mred = RGBf(214 / 256, 39 / 256, 40 / 256) # hide
 mpurple = RGBf(148 / 256, 103 / 256, 189 / 256) # hide
@@ -132,7 +132,7 @@ Main.include_graphics("lst"; caption = "Training loss for the different networks
 
 We further evaluate a trajectory with the trained networks for thirty time steps: 
 
-```@setup lin_sympl_tran_tut
+```@setup sympl_tran_tut
 const index = 1
 init_con = (q = dl.input.q[:, 1:seq_length, index], p = dl.input.p[:, 1:seq_length, index])
 # when we iterate with a feedforward neural network we only need a vector as input
@@ -180,22 +180,14 @@ save("lst_validation_dark.png", fig_dark; px_per_unit = 1.2)
 nothing
 ```
 
-```@example lin_sympl_tran_tut
+```@example sympl_tran_tut
 Main.include_graphics("lst_validation"; caption = "Validation of the different networks. ", width = .85) # hide
 ```
 
 We can see that the standard transformer is not able to stay close to the trajectory coming from implicit midpoint very well. The linear symplectic transformer outperforms the standard transformer as well as the SympNet while needing fewer parameters than the standard transformer: 
 
-```@example lin_sympl_tran_tut
+```@example sympl_tran_tut
 parameterlength(nn_standard), parameterlength(nn_symplectic), parameterlength(nn_sympnet)
 ```
 
-It is also interesting to note that the training error for the SympNet gets lower than the one for the linear symplectic transformer, but it does not manage to outperform it when looking at the validation. 
-
-```@raw latex
-\section*{Chapter Summary}
-
-In this chapter we demonstrated the efficacy of neural network-based symplectic integrators. We showed two examples: SympNets as an example of a symplectic one-step method and linear symplectic transformers as an example of a symplectic multi-step method. We compared the two different SympNet architectures ($LA$-SympNets and $G$-SympNets) with a standard ResNet and gave an example where symplecticity is important to achieve long-term stability: the ResNet was shown to fail on longer time scales even though it outperforms the $LA$-SympNet on smaller ones; this is because the ResNet does not have any structure encoded into it. The linear symplectic transformer was compared to the standard transformer and a SympNet (on the example of a complex coupled harmonic oscillator) and shown to outperform these two networks.
-
-Of the two symplectic neural networks shown here the linear symplectic transformer constitutes a novel neural network architecture which was introduced in this dissertation.
-```
+It is also interesting to note that the training error for the SympNet gets lower than the one for the symplectic transformer, but it does not manage to outperform it when looking at the validation. 

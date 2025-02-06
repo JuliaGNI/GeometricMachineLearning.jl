@@ -45,7 +45,7 @@ function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator}, ics::NamedTupl
         return ics
     end
 
-    seq_length = typeof(nn.architecture) <: Union{StandardTransformerIntegrator, SymplecticTransformer} ? size(ics.q, 2) : nn.architecture.seq_length
+    seq_length = typeof(nn.architecture) <: Union{StandardTransformerIntegrator, SymplecticTransformer, ModifiedTransformerIntegrator} ? size(ics.q, 2) : nn.architecture.seq_length
 
     n_dim = size(ics.q, 1)
     backend = networkbackend(ics.q)

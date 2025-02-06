@@ -1,22 +1,75 @@
+const SYMPLECTICATTENTION_SYMMETRIC_DEFAULT::Bool = true
+const SYMPLECTICATTENTION_ACTIVATION_DEFAULT::AbstractSoftmax = MatrixSoftmax()
+
 @doc raw"""
     SymplecticAttention
 
 Implements the symplectic attention layers. See [`LinearSymplecticAttention`](@ref).
+
+# Keys
+
+It stores the following key:
+- `activation::`[`AbstractSoftmax`](@ref)
+
+# Constructors
+
+See [`SymplecticAttentionQ`](@ref) and [`SymplecticAttentionP`](@ref).
+
+# Implementation
+
+`SymplecticAttention` is similar to [`MultiHeadAttention`](@ref) or [`VolumePreservingAttention`](@ref) in that it computes the scalar products of all vectors in a sequence of input vectors:
+```math
+C = Q^TAQ,
+```
+where ``Q`` is the ``q``-part of an input ``Z`` (see [`QPT`](@ref)). The matrix ``A`` is a weighting that can either be symmetric or skew-symmetric (this can be adjusted with the key-word `symmetric::Bool`).
+
+# Extended help
+
+The symplectic attention mechanism is derived via computing the gradient of a separable Hamiltonian, as is also done in [`GSympNet`](@ref)s.
 """
-struct SymplecticAttention{M, N, LayerType, Symmetric} <: AbstractExplicitLayer{M, N} 
+struct SymplecticAttention{M, N, LayerType, Symmetric, AT <: AbstractSoftmax} <: AbstractExplicitLayer{M, N} 
+    activation::AT
 end
 
-const SymplecticAttentionQ{M, N, Symmetric} = SymplecticAttention{M, N, :Q, Symmetric}
+"""
+    SymplecticAttentionQ
 
-const SymplecticAttentionP{M, N, Symmetric} = SymplecticAttention{M, N, :P, Symmetric}
+A constant that is derived from [`SymplecticAttention`](@ref). This only changes the `q`-part of the input.
 
-function SymplecticAttentionQ(M::Integer; symmetric = false)
+# Constructor
+
+```julia
+SymplecticAttentionQ(M; symmetric, activation)
+```
+
+The default for the keywords are $(SYMPLECTICATTENTION_SYMMETRIC_DEFAULT) and $(SYMPLECTICATTENTION_ACTIVATION_DEFAULT).
+"""
+const SymplecticAttentionQ{M, N, Symmetric, AT} = SymplecticAttention{M, N, :Q, Symmetric, AT}
+
+"""
+    SymplecticAttentionP
+
+A constant that is derived from [`SymplecticAttention`](@ref). This only changes the `p`-part of the input.
+
+# Constructor
+
+```julia
+SymplecticAttentionP(M; symmetric, activation)
+```
+
+The default for the keywords are $(SYMPLECTICATTENTION_SYMMETRIC_DEFAULT) and $(SYMPLECTICATTENTION_ACTIVATION_DEFAULT).
+"""
+const SymplecticAttentionP{M, N, Symmetric, AT} = SymplecticAttention{M, N, :P, Symmetric, AT}
+
+function SymplecticAttentionQ(M::Integer; symmetric = false, activation::AbstractSoftmax = MatrixSoftmax())
     @assert iseven(M) "Dimension must be even!"
-    symmetric == false ? SymplecticAttention{M, M, :Q, :arbitrary}() : SymplecticAttention{M, M, :Q, :symmetric}()
+    AT = typeof(activation)
+    symmetric == false ? SymplecticAttention{M, M, :Q, :arbitrary, AT}(activation) : SymplecticAttention{M, M, :Q, :symmetric, AT}(activation)
 end
-function SymplecticAttentionP(M::Integer; symmetric = false)
+function SymplecticAttentionP(M::Integer; symmetric = false, activation::AbstractSoftmax = MatrixSoftmax())
     @assert iseven(M) "Dimension must be even!"
-    symmetric == false ? SymplecticAttention{M, M, :P, :arbitrary}() : SymplecticAttention{M, M, :P, :symmetric}()
+    AT = typeof(activation)
+    symmetric == false ? SymplecticAttention{M, M, :P, :arbitrary, AT}(activation) : SymplecticAttention{M, M, :P, :symmetric, AT}(activation)
 end
  
 function parameterlength(::SymplecticAttention{M, M, LayerType, :arbitrary})::Integer where {M, LayerType} 
@@ -49,24 +102,30 @@ function initialparameters( rng::AbstractRNG,
     (A = A, )
 end
 
-function (::SymplecticAttentionQ{M, M, :arbitrary})(z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {AT, M}
-    expPAP = exp.(_custom_mul(_custom_mul(_custom_transpose(z.p), ps.A), z.p))
-    (q = z.q + (_custom_mul(_custom_mul(ps.A, z.p), _custom_transpose(expPAP)) + _custom_mul(_custom_mul(ps.A', z.p), expPAP)) / sum(expPAP), p = z.p)
+function (d::SymplecticAttentionQ{M, M, :arbitrary})(z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {AT, M}
+    PAP = _custom_mul(_custom_mul(_custom_transpose(z.p), ps.A), z.p)
+    σPAP = d.activation(PAP)
+    (q = z.q + (_custom_mul(_custom_mul(ps.A, z.p), _custom_transpose(σPAP)) + _custom_mul(_custom_mul(ps.A', z.p), σPAP)), p = z.p)
 end
 
-function (::SymplecticAttentionQ{M, M, :symmetric})(z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {AT, M}
-    expPAP = exp.(_custom_mul(_custom_mul(_custom_transpose(z.p), ps.A), z.p))
-    (q = z.q + _custom_mul(_custom_mul(ps.A, z.p), 2 * expPAP) / sum(expPAP), p = z.p)
+function (d::SymplecticAttentionQ{M, M, :symmetric})(z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {AT, M}
+    A = ps.A # for some reason we have to allocate a local variable here. This should be further investigated.
+    PAP = _custom_mul(_custom_mul(_custom_transpose(z.p), A), z.p)
+    σPAP = d.activation(PAP)
+    (q = z.q + _custom_mul(_custom_mul(A, z.p), 2 * σPAP), p = z.p)
 end
 
-function (::SymplecticAttentionP{M, M, :arbitrary})(z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {AT, M}
-    expQAQ = exp.(_custom_mul(_custom_mul(_custom_transpose(z.q), ps.A), z.q))
-    (q = z.q, p = z.p + (_custom_mul(_custom_mul(ps.A, z.q), _custom_transpose(expQAQ)) + _custom_mul(_custom_mul(ps.A', z.q), expQAQ)) / sum(expQAQ))
+function (d::SymplecticAttentionP{M, M, :arbitrary})(z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {AT, M}
+    QAQ = _custom_mul(_custom_mul(_custom_transpose(z.q), ps.A), z.q)
+    σQAQ = d.activation(QAQ)
+    (q = z.q, p = z.p + (_custom_mul(_custom_mul(ps.A, z.q), _custom_transpose(σQAQ)) + _custom_mul(_custom_mul(ps.A', z.q), σQAQ)))
 end
 
-function (::SymplecticAttentionP{M, M, :symmetric})(z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {AT, M}
-    expQAQ = exp.(_custom_mul(_custom_mul(_custom_transpose(z.q), ps.A), z.q))
-    (q = z.q, p = z.p + _custom_mul(_custom_mul(ps.A, z.q), 2 * expQAQ) / sum(expQAQ))
+function (d::SymplecticAttentionP{M, M, :symmetric})(z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {AT, M}
+    A = ps.A
+    QAQ = _custom_mul(_custom_mul(_custom_transpose(z.q), A), z.q)
+    σQAQ = d.activation(QAQ)
+    (q = z.q, p = z.p + _custom_mul(_custom_mul(A, z.q), 2 * σQAQ))
 end
 
 function (d::SymplecticAttention)(z::AbstractArray, ps::NamedTuple)

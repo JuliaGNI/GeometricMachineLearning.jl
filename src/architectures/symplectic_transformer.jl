@@ -27,8 +27,9 @@ You can provide the additional optional keyword arguments:
 
 The number of SympNet layers in the network is `2n_sympnet`, i.e. for `n_sympnet = 1` we have one [`GradientLayerQ`](@ref) and one [`GradientLayerP`](@ref).
 """
-struct SymplecticTransformer{AT} <: TransformerIntegrator where AT 
+struct SymplecticTransformer{AT, Upscaling} <: TransformerIntegrator where AT 
     dim::Int
+    transformer_dim::Int
     n_sympnet::Int
     upscaling_dimension::Int
     L::Int
@@ -36,13 +37,15 @@ struct SymplecticTransformer{AT} <: TransformerIntegrator where AT
     init_upper::Bool
     symmetric::Bool
 
-    function SymplecticTransformer(dim::Int;    n_sympnet::Int = lst_n_sympnet_default, 
+    function SymplecticTransformer(dim::Int;    transformer_dim::Int = dim,
+                                                n_sympnet::Int = lst_n_sympnet_default, 
                                                 upscaling_dimension::Int = 2 * dim, 
                                                 L::Int = lst_L_default, 
                                                 activation = lst_activation_default, 
                                                 init_upper::Bool = lst_init_upper_default,
                                                 symmetric::Bool = st_symmetric_default)
-        new{typeof(tanh)}(dim, n_sympnet, upscaling_dimension, L, activation, init_upper, symmetric)
+        upscale = transformer_dim ≡ dim ? :NoUpscale : :Upscale 
+        new{typeof(tanh), upscale}(dim, transformer_dim, n_sympnet, upscaling_dimension, L, activation, init_upper, symmetric)
     end
 end
 
@@ -51,9 +54,9 @@ function _make_block_for_initialization(layers::Tuple, arch::SymplecticTransform
     for i in 1:arch.n_sympnet
         layers = (layers..., 
             if is_upper_criterion(i)
-                GradientLayerQ(arch.dim, arch.upscaling_dimension, arch.activation)
+                GradientLayerQ(arch.transformer_dim, arch.upscaling_dimension, arch.activation)
             else
-                GradientLayerP(arch.dim, arch.upscaling_dimension, arch.activation)
+                GradientLayerP(arch.transformer_dim, arch.upscaling_dimension, arch.activation)
             end
         )
     end
@@ -61,17 +64,31 @@ function _make_block_for_initialization(layers::Tuple, arch::SymplecticTransform
     layers
 end
 
-
-function Chain(arch::SymplecticTransformer{AT}) where AT
+function create_layers_for_transformer_dimension_eqaul_system_dimension(arch::SymplecticTransformer)
     # if `isodd(i)` and `arch.init_upper==true`, then do `GradientLayerQ`.
     is_upper_criterion = arch.init_upper ? isodd : iseven
     layers = ()
     for _ in 1:arch.L
-        layers = (layers..., SymplecticAttentionQ(arch.dim; symmetric = arch.symmetric))
+        layers = (layers..., SymplecticAttentionQ(arch.transformer_dim; symmetric = arch.symmetric))
         layers = _make_block_for_initialization(layers, arch, is_upper_criterion)
-        layers = (layers..., SymplecticAttentionP(arch.dim; symmetric = arch.symmetric))
+        layers = (layers..., SymplecticAttentionP(arch.transformer_dim; symmetric = arch.symmetric))
         layers = _make_block_for_initialization(layers, arch, is_upper_criterion)
     end
 
-    Chain(layers...)
+    layers
+end
+
+function create_layers_for_transformer_dimension_uneqaul_system_dimension(arch::SymplecticTransformer)
+    (   PSDLayer(arch.dim, arch.transformer_dim), 
+        create_layers_for_transformer_dimension_eqaul_system_dimension(arch)..., 
+        PSDLayer(arch.transformer_dim, arch.dim)
+        )
+end
+
+function Chain(arch::SymplecticTransformer{AT, :NoUpscale}) where AT
+    Chain(create_layers_for_transformer_dimension_eqaul_system_dimension(arch)...)
+end
+
+function Chain(arch::SymplecticTransformer{AT, :Upscale}) where AT
+    Chain(create_layers_for_transformer_dimension_uneqaul_system_dimension(arch)...)
 end
