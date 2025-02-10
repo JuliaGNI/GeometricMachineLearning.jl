@@ -56,6 +56,10 @@ nothing # hide
 We now use the same architecture, a [`TransformerIntegrator`](@ref), twice, but alter its activation function:
 
 ```@example softmax_comparison
+const seq_length = 4
+const batch_size = 1024
+const n_epochs = 1000
+
 act1 = GeometricMachineLearning.VectorSoftmax()
 act2 = GeometricMachineLearning.MatrixSoftmax()
 
@@ -176,6 +180,8 @@ nothing
 ```@example
 Main.include_graphics("validation"; caption = "Predicting trajectories with transformers based on the vector softmax and the matrix softmax. ") # hide
 ```
+
+A similar page can be found [here](@ref "Comparing Matrix and Vector Softmax as Activation Functions in a Transformer").
 
 ## Library Functions 
 
