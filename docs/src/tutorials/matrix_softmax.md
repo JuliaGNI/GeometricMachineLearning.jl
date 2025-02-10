@@ -94,7 +94,7 @@ loss_array2 = o2(nn2, dl, batch, n_epochs)
 ```
 
 ```@setup softmax_comparison
-function make_training_error_plot(n_steps = n_steps; theme = :dark)
+function make_training_error_plot(; theme = :dark)
     textcolor = theme == :dark ? :white : :black
     fig = Figure(; backgroundcolor = :transparent)
     ax = Axis(fig[1, 1]; 
@@ -186,6 +186,6 @@ A similar page can be found [here](@ref "Comparing Matrix and Vector Softmax as 
 ## Library Functions 
 
 ```@docs
-MatrixSoftmax
-VectorSoftmax
+GeometricMachineLearning.MatrixSoftmax
+GeometricMachineLearning.VectorSoftmax
 ```
