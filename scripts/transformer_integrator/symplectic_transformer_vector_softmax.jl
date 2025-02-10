@@ -25,7 +25,7 @@ dl = DataLoader(integrate(ep, ImplicitMidpoint()); suppress_info = true)
 const seq_length = 10
 const transformer_dim = 4
 
-act = MatrixSoftmax()
+act = VectorSoftmax()
 
 arch1 = StandardTransformerIntegrator(dl.input_dim; transformer_dim = transformer_dim,
                                                     n_heads = 1, 
@@ -86,7 +86,7 @@ function make_training_error_plot(; theme = :dark, symplectic = true)
 
     # we use linewidth  = 2
     lines!(ax, loss_array1; color = mpurple, label = "Transformer", linewidth = 2)
-    symplectic ? lines!(ax, loss_array2; color = mred, label = "SymplecticTransformerA", linewidth = 2) : nothing
+    symplectic ? lines!(ax, loss_array2; color = mred, label = "SymplecticTransformerS", linewidth = 2) : nothing
     symplectic ? lines!(ax, loss_array3; color = mgreen, label = "SymplecticTransformerA", linewidth = 2) : nothing
     axislegend(; position = (.55, .75), backgroundcolor = :transparent, labelcolor = textcolor)
 
@@ -136,4 +136,4 @@ end
 fig_light, ax_light = make_validation_plot(n_steps; theme = :light)
 fig_dark, ax_dark = make_validation_plot(n_steps; theme = :dark)
 
-save("Matrix-Softmax-Validation.png", fig_light)
+save("Vector-Softmax-Validation.png", fig_light)

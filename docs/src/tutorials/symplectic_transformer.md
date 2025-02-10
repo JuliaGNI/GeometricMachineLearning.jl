@@ -18,7 +18,7 @@ where ``\sigma(x) = 1 / (1 + e^{-x})`` is the sigmoid activation function. The s
 - ``m_2``: mass 2,
 - ``k``: coupling strength between the two masses. 
 
-To demonstrate the efficacy of the linear symplectic transformer here we will leave the parameters fixed but alter the initial conditions[^1]:
+To demonstrate the efficacy of the symplectic transformer here we will leave the parameters fixed but alter the initial conditions[^1]:
 
 [^1]: We here use the implementation of the coupled harmonic oscillator from [`GeometricProblems`](https://github.com/JuliaGNI/GeometricProblems.jl).
 

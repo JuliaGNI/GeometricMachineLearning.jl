@@ -74,6 +74,10 @@ With this we can now give a better interpretation of what the projection matrice
 
 Because the main task of the ``W_i^V``, ``W_i^K`` and ``W_i^Q`` matrices here is for them to find bases, it makes sense to constrain them onto the Stiefel manifold; they do not and should not have the maximum possible generality.
 
+## Using a Matrix Softmax
+
+Usually the attention layer is using a [`VectorSoftmax`](@ref), i.e. one that produces a series of probability vectors. In `GeometricMachineLearning` we can also use a [`MatrixSoftmax`](@ref) instead. An example application of this is shown [in the tutorials section](@ref "Matrix Softmax v Vector Softmax").
+
 ## Library Functions 
 
 ```@docs

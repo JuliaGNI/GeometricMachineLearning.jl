@@ -218,8 +218,10 @@ _tutorials = "Tutorials" => [
     "MNIST" => "tutorials/mnist/mnist_tutorial.md",
     "Grassmann Manifold" => "tutorials/grassmann_layer.md",
     "Volume-Preserving Attention" => "tutorials/volume_preserving_attention.md",
+    "Matrix Attention" => "tutorials/matrix_softmax.md",
     "Volume-Preserving Transformer for the Rigid Body" => "tutorials/volume_preserving_transformer_rigid_body.md",
     "Linear Symplectic Transformer" => "tutorials/linear_symplectic_transformer.md",
+    "Symplectic Transformer" => "tutorials/symplectic_transformer.md",
     "Adjusting the Loss Function" => "tutorials/adjusting_the_loss_function.md",
     "Comparing Optimizers" => "tutorials/optimizer_comparison.md",
     ]

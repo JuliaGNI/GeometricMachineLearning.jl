@@ -34,15 +34,17 @@ end
 """
     SymplecticAttentionQ
 
-A constant that is derived from [`SymplecticAttention`](@ref). This only changes the `q`-part of the input.
+A constant that is derived from [`SymplecticAttention`](@ref). This only changes the ``q``-part of the input.
 
 # Constructor
 
 ```julia
-SymplecticAttentionQ(M; symmetric, activation)
+SymplecticAttentionQ(M; symmetric::Bool, activation)
 ```
 
 The default for the keywords are $(SYMPLECTICATTENTION_SYMMETRIC_DEFAULT) and $(SYMPLECTICATTENTION_ACTIVATION_DEFAULT).
+
+You may want to alter the activation function (either [`MatrixSoftmax`](@ref) or [`VectorSoftmax`](@ref)), but its almost always better to set the keyword `symmetric` to `true`.
 """
 const SymplecticAttentionQ{M, N, Symmetric, AT} = SymplecticAttention{M, N, :Q, Symmetric, AT}
 
@@ -54,10 +56,12 @@ A constant that is derived from [`SymplecticAttention`](@ref). This only changes
 # Constructor
 
 ```julia
-SymplecticAttentionP(M; symmetric, activation)
+SymplecticAttentionP(M; symmetric::Bool, activation)
 ```
 
 The default for the keywords are $(SYMPLECTICATTENTION_SYMMETRIC_DEFAULT) and $(SYMPLECTICATTENTION_ACTIVATION_DEFAULT).
+
+You may want to alter the activation function (either [`MatrixSoftmax`](@ref) or [`VectorSoftmax`](@ref)), but its almost always better to set the keyword `symmetric` to `true`.
 """
 const SymplecticAttentionP{M, N, Symmetric, AT} = SymplecticAttention{M, N, :P, Symmetric, AT}
 
