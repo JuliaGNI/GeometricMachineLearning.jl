@@ -205,6 +205,7 @@ _architectures = "Architectures" => [
     "Standard Transformer" => "architectures/transformer.md",
     "Volume-Preserving Transformer" => "architectures/volume_preserving_transformer.md",
     "Linear Symplectic Transformer" => "architectures/linear_symplectic_transformer.md",
+    "Symplectic Transformer" => "architectures/symplectic_transformer",
     ]
 
 _data_loader = "Data Loader" =>[

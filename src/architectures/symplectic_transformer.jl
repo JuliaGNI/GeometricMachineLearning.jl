@@ -1,5 +1,5 @@
-const st_n_sympnet_default = 2
-const st_L_default = 1
+const ST_N_SYMPNET_DEFAULT = 2
+const ST_L_DEFAULT = 1
 const ST_SYMPNET_ACTIVATION_DEFAULT = tanh
 const ST_ATTENTION_ACTIVATION_DEFAULT::AbstractSoftmax = MatrixSoftmax()
 const st_init_upper_default = true
@@ -19,9 +19,9 @@ Make an instance of `SymplecticTransformer` for a specific system dimension and 
 # Arguments 
 
 You can provide the additional optional keyword arguments:
-- `n_sympnet::Int = """ * "($st_n_sympnet_default)`" * raw""": The number of sympnet layers in the transformer.
+- `n_sympnet::Int = """ * "($ST_N_SYMPNET_DEFAULT)`" * raw""": The number of sympnet layers in the transformer.
 - `upscaling_dimension::Int = 2*dim`: The upscaling that is done by the gradient layer. 
-- `L::Int = """ * "$(st_L_default)`" * raw""": The number of transformer units. 
+- `L::Int = """ * "$(ST_L_DEFAULT)`" * raw""": The number of transformer units. 
 - `sympnet_activation = """ * "$(ST_SYMPNET_ACTIVATION_DEFAULT)`" * raw""": The activation function for the SympNet layers. 
 - `attention_activation = """ * "$(ST_ATTENTION_ACTIVATION_DEFAULT)`" * raw""": The activation function for the Attention layers.
 - `init_upper::Bool=true`: Specifies if the first layer is a ``q``-type layer (`init_upper=true`) or if it is a ``p``-type layer (`init_upper=false`).
@@ -41,9 +41,9 @@ struct SymplecticTransformer{SAT, AAT, Upscaling} <: TransformerIntegrator
     symmetric::Bool
 
     function SymplecticTransformer(dim::Int;    transformer_dim::Int = dim,
-                                                n_sympnet::Int = lst_n_sympnet_default, 
+                                                n_sympnet::Int = ST_N_SYMPNET_DEFAULT, 
                                                 upscaling_dimension::Int = 2 * dim, 
-                                                L::Int = st_L_default, 
+                                                L::Int = ST_L_DEFAULT, 
                                                 sympnet_activation = ST_SYMPNET_ACTIVATION_DEFAULT,
                                                 attention_activation = ST_ATTENTION_ACTIVATION_DEFAULT,
                                                 init_upper::Bool = st_init_upper_default,
