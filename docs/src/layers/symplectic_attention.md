@@ -82,4 +82,6 @@ If we again assume that the matrix `A` is a [`SymmetricMatrix`](@ref) then the e
 
 ```@docs
 SymplecticAttention
+SymplecticAttentionQ
+SymplecticAttentionP
 ```

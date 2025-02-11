@@ -42,6 +42,12 @@ CairoMakie.activate!() # hide
 import Random # hide
 Random.seed!(123) # hide
 
+morange = RGBf(255 / 256, 127 / 256, 14 / 256) # hide
+mred = RGBf(214 / 256, 39 / 256, 40 / 256) # hide
+mpurple = RGBf(148 / 256, 103 / 256, 189 / 256) # hide
+mblue = RGBf(31 / 256, 119 / 256, 180 / 256) # hide
+mgreen = RGBf(44 / 256, 160 / 256, 44 / 256) # hide
+
 const tstep = .3
 const n_init_con = 5
 
@@ -121,8 +127,8 @@ function make_training_error_plot(; theme = :dark)
     fig, ax
 end
 
-training_fig_light, training_ax_light = make_training_error_plot(n_steps; theme = :light)
-training_fig_dark, training_ax_dark = make_training_error_plot(n_steps; theme = :dark)
+training_fig_light, training_ax_light = make_training_error_plot(; theme = :light)
+training_fig_dark, training_ax_dark = make_training_error_plot(; theme = :dark)
 save("attention_training_dark.png", training_fig_dark; px_per_unit = 1.2)
 save("attention_training.png", training_fig_light; px_per_unit = 1.2)
 

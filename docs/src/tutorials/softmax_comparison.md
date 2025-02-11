@@ -134,7 +134,7 @@ Main.include_graphics("lst"; caption = "Training loss for the different networks
 
 We further evaluate a trajectory with the trained networks for 300 time steps: 
 
-```@setup lin_sympl_tran_tut
+```@setup softmax_comparison
 const index = 1
 init_con = (q = dl.input.q[:, 1:seq_length, index], p = dl.input.p[:, 1:seq_length, index])
 
@@ -178,6 +178,6 @@ save("softmax_comparison_validation_dark.png", fig_dark; px_per_unit = 1.2)
 nothing
 ```
 
-```@example lin_sympl_tran_tut
+```@example softmax_comparison
 Main.include_graphics("softmax_comparison_validation"; caption = "Validation of the different networks. ", width = .85) # hide
 ```
