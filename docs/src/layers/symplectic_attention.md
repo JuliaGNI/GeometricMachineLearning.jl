@@ -81,6 +81,8 @@ If we again assume that the matrix `A` is a [`SymmetricMatrix`](@ref) then the e
 ## Library Functions
 
 ```@docs
+VectorSoftmax
+MatrixSoftmax
 SymplecticAttention
 SymplecticAttentionQ
 SymplecticAttentionP

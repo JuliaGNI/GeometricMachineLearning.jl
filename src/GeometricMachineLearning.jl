@@ -103,6 +103,7 @@ module GeometricMachineLearning
     # this defines empty retraction type structs (doesn't rely on anything)
     include("optimizers/manifold_related/retraction_types.jl")
     
+    export MatrixSoftmax, VectorSoftmax
     include("activations/softmax.jl")
 
     # are these needed?

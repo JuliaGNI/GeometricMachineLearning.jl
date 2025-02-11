@@ -29,7 +29,7 @@ act1(A)
 act2(A)
 ```
 
-We can now train transformers with these different activation functions in the [`MultiheadAttention`](@ref) layers:
+We can now train transformers with these different activation functions in the [`MultiHeadAttention`](@ref) layers:
 
 ```@example softmax_comparison
 using GeometricProblems.CoupledHarmonicOscillator: hodeensemble, default_parameters

@@ -9,7 +9,7 @@ Implements the symplectic attention layers. See [`LinearSymplecticAttention`](@r
 # Keys
 
 It stores the following key:
-- `activation::`[`AbstractSoftmax`](@ref)
+- `activation::``AbstractSoftmax`
 
 # Constructors
 

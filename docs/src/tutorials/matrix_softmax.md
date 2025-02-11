@@ -188,10 +188,3 @@ Main.include_graphics("validation"; caption = "Predicting trajectories with tran
 ```
 
 A similar page can be found [here](@ref "Comparing Matrix and Vector Softmax as Activation Functions in a Transformer").
-
-## Library Functions 
-
-```@docs
-GeometricMachineLearning.MatrixSoftmax
-GeometricMachineLearning.VectorSoftmax
-```
