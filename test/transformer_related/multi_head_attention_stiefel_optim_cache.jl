@@ -44,8 +44,8 @@ TODO:
 """
 function test_cache_setups_for_optimizer_for_multihead_attention_layer(T::Type, dim::Int, n_heads::Int)
     @assert dim % n_heads == 0
-    model = MultiHeadAttention(dim, n_heads, Stiefel=true)
-    ps = initialparameters(model, CPU(), T)
+    model = Chain(MultiHeadAttention(dim, n_heads, Stiefel=true))
+    ps = NeuralNetwork(model, CPU(), T).params
 
     o₁ = Optimizer(AdamOptimizer(), ps)
     o₂ = Optimizer(MomentumOptimizer(), ps)

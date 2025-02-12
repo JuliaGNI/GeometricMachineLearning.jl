@@ -17,7 +17,7 @@
 end
 
 function tensor_mat_skew_sym_assign!(C::AbstractArray{T, 3}, Z::AbstractArray{T, 3}, A::AbstractMatrix{T}) where {T}
-    backend = KernelAbstractions.get_backend(Z)
+    backend = networkbackend(Z)
 
     tensor_mat_skew_sym_assign_k! = tensor_mat_skew_sym_assign_kernel!(backend)
 
@@ -83,7 +83,7 @@ tensor_mat_skew_sym_assign(Z, A)
 ```
 """
 function tensor_mat_skew_sym_assign(Z::AT, A::AbstractMatrix{T})::AT where {T, AT <: AbstractArray{T, 3}}
-    backend = KernelAbstractions.get_backend(Z)
+    backend = networkbackend(Z)
 
     C = KernelAbstractions.zeros(backend, T, size(Z, 2), size(Z, 2), size(Z, 3))
 

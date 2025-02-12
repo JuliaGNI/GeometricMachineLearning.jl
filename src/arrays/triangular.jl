@@ -88,7 +88,7 @@ LinearAlgebra.mul!(C::AT, α::Real, A::AT) where AT <: AbstractTriangular = mul!
 LinearAlgebra.rmul!(C::AT, α::Real) where AT <: AbstractTriangular = mul!(C, C, α)
 
 function Base.one(A::AbstractTriangular{T}) where T
-    backend = KernelAbstractions.get_backend(A.S)
+    backend = networkbackend(A.S)
     unit_matrix = KernelAbstractions.zeros(backend, T, A.n, A.n)
     write_ones! = write_ones_kernel!(backend)
     write_ones!(unit_matrix, ndrange=A.n)
@@ -132,8 +132,8 @@ function Base.zero(A::AT) where AT <: AbstractTriangular
     AT(zero(A.S), A.n)
 end
 
-function KernelAbstractions.get_backend(A::AbstractTriangular)
-    KernelAbstractions.get_backend(A.S)
+function networkbackend(A::AbstractTriangular)
+    networkbackend(A.S)
 end
 
 function assign!(B::AT, C::AT) where AT <: AbstractTriangular 

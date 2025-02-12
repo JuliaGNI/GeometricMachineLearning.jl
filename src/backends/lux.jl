@@ -43,7 +43,7 @@ function apply(nn::LuxNeuralNetwork, x, params::NamedTuple)
     return y
 end
 
-apply(nn::LuxNeuralNetwork, x) = apply(nn, x, nn.params)
+apply(nn::LuxNeuralNetwork, x) = apply(nn, x, params(nn))
 
 (nn::LuxNeuralNetwork)(x, args...) = apply(nn, x, args...)
 

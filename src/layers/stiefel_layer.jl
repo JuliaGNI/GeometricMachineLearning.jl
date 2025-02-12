@@ -7,8 +7,10 @@ function StiefelLayer(n::Integer, N::Integer)
     StiefelLayer{n, N}()
 end
 
-function AbstractNeuralNetworks.initialparameters(::StiefelLayer{M,N}, backend::KernelAbstractions.Backend, ::Type{T}; rng::AbstractRNG=Random.default_rng()) where {M,N,T}
-    (weight = N > M ? rand(backend, rng, StiefelManifold{T}, N, M) : rand(backend, rng, StiefelManifold{T}, M, N), )
+function initialparameters(rng::AbstractRNG, initializer::AbstractNeuralNetworks.Initializer, ::StiefelLayer{M,N}, backend::KernelAbstractions.Backend, ::Type{T}) where {M,N,T}
+    weight = N > M ? KernelAbstractions.allocate(backend, T, N, M) : KernelAbstractions.allocate(backend, T, M, N)
+    initializer(rng, weight)
+    (weight = StiefelManifold(assign_columns(typeof(weight)(qr!(weight).Q), size(weight)...)),)
 end
 
 function parameterlength(::StiefelLayer{M, N}) where {M, N}

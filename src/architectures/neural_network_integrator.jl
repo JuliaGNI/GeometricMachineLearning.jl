@@ -22,7 +22,7 @@ abstract type NeuralNetworkIntegrator <: Architecture end
 function Base.iterate(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, ics::AT; n_points = 100) where {T, AT<:AbstractVector{T}}
 
     n_dim = length(ics)
-    backend = KernelAbstractions.get_backend(ics)
+    backend = networkbackend(ics)
 
     # Array to store the predictions
     valuation = KernelAbstractions.allocate(backend, T, n_dim, n_points)
@@ -97,7 +97,7 @@ The number of integration steps that should be performed.
 function Base.iterate(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, ics::BT; n_points = 100) where {T, AT<:AbstractVector{T}, BT<:NamedTuple{(:q, :p), Tuple{AT, AT}}}
 
     n_dim2 = length(ics.q)
-    backend = KernelAbstractions.get_backend(ics.q)
+    backend = networkbackend(ics.q)
 
     # Array to store the predictions
     valuation = (q = KernelAbstractions.allocate(backend, T, n_dim2, n_points), p = KernelAbstractions.allocate(backend, T, n_dim2, n_points))

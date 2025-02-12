@@ -192,7 +192,7 @@ This loss does not have any parameters.
 struct AutoEncoderLoss <: NetworkLoss end 
 
 function (loss::AutoEncoderLoss)(nn::NeuralNetwork, input)
-    loss(nn.model, nn.params, input, input)
+    loss(nn.model, params(nn), input, input)
 end
 
 function (loss::AutoEncoderLoss)(model::Union{Chain, AbstractExplicitLayer}, ps::Union{NeuralNetworkParameters, NamedTuple}, input)

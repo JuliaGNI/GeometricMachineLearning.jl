@@ -36,7 +36,7 @@ function ChainRulesCore.rrule(::typeof(tensor_mat_skew_sym_assign), Z::AbstractA
     B = tensor_mat_skew_sym_assign(Z, A)
     function tensor_mat_skew_sym_assign_pullback(dB::AbstractArray{T, 3})
         f̄ = NoTangent()
-        backend = KernelAbstractions.get_backend(dB)
+        backend = networkbackend(dB)
         dz! = dz_kernel!(backend)
         da! = da_kernel!(backend)
 

@@ -273,8 +273,8 @@ function Base.zero(B::StiefelLieAlgHorMatrix)
     )
 end
 
-function KernelAbstractions.get_backend(B::StiefelLieAlgHorMatrix)
-    KernelAbstractions.get_backend(B.B)
+function networkbackend(B::StiefelLieAlgHorMatrix)
+    networkbackend(B.B)
 end
 
 # assign funciton; also implement this for other arrays! 
@@ -302,7 +302,7 @@ function assign!(A::AbstractArray, B::AbstractArray)
 end
 
 function Base.one(B::StiefelLieAlgHorMatrix{T}) where T
-    backend = get_backend(B)
+    backend = networkbackend(B)
     oneB = KernelAbstractions.zeros(backend, T, B.N, B.N)
     write_ones! = write_ones_kernel!(backend)
     write_ones!(oneB; ndrange = B.N)

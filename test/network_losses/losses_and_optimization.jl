@@ -9,11 +9,11 @@ const sin_vector = sin.(0:0.01:2π)
 const dl = DataLoader(reshape(sin_vector, 1, length(sin_vector), 1))
 
 function setup_network(dl::DataLoader{T}) where T
-    arch = Chain(Dense(1, 5, tanh), ResNetLayer(5, tanh), Dense(5, 1, identity))
+    arch = Chain(Dense(dl.input_dim, 5, tanh), ResNetLayer(5, tanh), Dense(5, 1, identity))
     NeuralNetwork(arch, CPU(), T)
 end
 
-function train_network(; n_epochs=5)
+function train_network(; n_epochs=10)
     nn = setup_network(dl)
     loss = FeedForwardLoss()
 

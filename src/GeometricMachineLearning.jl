@@ -5,9 +5,8 @@ module GeometricMachineLearning
     using ChainRulesCore
     using Distances
     using GeometricBase
-    using GeometricIntegrators
     using GeometricSolutions: GeometricSolution, EnsembleSolution, DataSeries, StateVariable
-    using GeometricEquations: ODEProblem, HODEProblem, ODEEnsemble, HODEEnsemble
+    using GeometricEquations: EnsembleProblem, ODEProblem, HODEProblem, ODEEnsemble, HODEEnsemble
     using KernelAbstractions
     using LinearAlgebra
     using NNlib
@@ -30,9 +29,9 @@ module GeometricMachineLearning
     import AbstractNeuralNetworks: GlorotUniform
     import AbstractNeuralNetworks: params, architecture, model, dim
     import AbstractNeuralNetworks: AbstractPullback, NetworkLoss, _compute_loss
+    import AbstractNeuralNetworks: networkbackend
     # export params, architetcure, model
     export dim
-    import GeometricIntegrators.Integrators: method, GeometricIntegrator
     import NNlib: σ, sigmoid, softmax
     import Base: iterate, eltype
     #import LogExpFunctions: softmax
@@ -386,25 +385,6 @@ module GeometricMachineLearning
     export matching
     include("training/matching.jl")
 
-
-    # INCLUDE PROBLEMS
-    export HNNProblem, LNNProblem
-
-    include("integrator/problem_hnn.jl")
-    include("integrator/problem_lnn.jl")
-    
-    # INCLUDE INTEGRATOR 
-    export NeuralNetMethod
-    export method
-
-    include("integrator/abstract_neural_net_method.jl")
-
-    # INCLUDE INTEGRATION METHOD
-    export  SympNetMethod
-    export integrate, integrate_step!
-
-    include("integrator/sympnet_integrator.jl")
- 
     include("reduced_system/reduced_system.jl")
 
     export HRedSys, reduction_error, projection_error, integrate_reduced_system, integrate_full_system

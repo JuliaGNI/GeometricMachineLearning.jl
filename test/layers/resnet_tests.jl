@@ -5,10 +5,10 @@ import Random
 Random.seed!(1234)
 
 function test_resnet(M, batch_size=10, T=Float32)
-    model₁ = ResNetLayer(M, tanh, use_bias=false)
-    model₂ = ResNetLayer(M, tanh, use_bias=true)
-    ps₁ = initialparameters(model₁, CPU(), T)
-    ps₂ = initialparameters(model₂, CPU(), T) 
+    model₁ = Chain(ResNetLayer(M, tanh, use_bias=false))
+    model₂ = Chain(ResNetLayer(M, tanh, use_bias=true))
+    ps₁ = NeuralNetwork(model₁, CPU(), T).params
+    ps₂ = NeuralNetwork(model₂, CPU(), T).params 
     @test parameterlength(model₁) == M^2
     @test parameterlength(model₂) == M*(M+1)
     A = randn(T, M, M*2, batch_size)
