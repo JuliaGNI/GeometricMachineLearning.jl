@@ -277,13 +277,14 @@ So we use `Zygote` [Zygote.jl-2018](@cite) to compute ``\nabla_\theta\mathcal{NN
 ```@example rosenbrock
 import CairoMakie # hide
 CairoMakie.activate!() # hide
+using GeometricMachineLearning: params # hide
 # note the small number of training steps
 const training_steps = 80
 loss_array = zeros(training_steps)
 for i in 1:training_steps
     val, dp = compute_gradient(params(nn))
     loss_array[i] = val
-    optimization_step!(optimizer, λY, params(nn), dp.params)
+    optimization_step!(optimizer, λY, params(nn), params(dp))
 end
 ```
 
