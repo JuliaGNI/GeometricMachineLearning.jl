@@ -92,9 +92,8 @@ When discussing [symplectic model order reduciton](@ref "Hamiltonian Model Order
 
 We will now demonstrate how to obtain a reduced-order lpH system from a full-order lpH system and vice-versa:
 
-```@example
-Main.include_graphics("tikz/lpH_equivalence"; width = .3, caption = raw"We can derive full lpH systems from reduced lpH systems and vice-versa (in some cases). The solid arrows indicate that we have an explicit construction available, the dashed arrow indicates that in this specific case we do not yet know if a structure-preserving reduction is possible. ") # hide
-```
+![We can derive full lpH systems from reduced lpH systems and vice-versa (in some cases). The solid arrows indicate that we have an explicit construction available, the dashed arrow indicates that in this specific case we do not yet know if a structure-preserving reduction is possible.](tikz/lpH_equivalence_light.png)
+![We can derive full lpH systems from reduced lpH systems and vice-versa (in some cases). The solid arrows indicate that we have an explicit construction available, the dashed arrow indicates that in this specific case we do not yet know if a structure-preserving reduction is possible.](tikz/lpH_equivalence_dark.png)
 
 The figure above indicates that we can derive a full system ``\tilde{\Sigma}_\mathrm{lpH}(\mathbb{R}^{2N}) := \Sigma_\mathrm{lpH}(\mathcal{M})`` from a reduced one ``\Sigma_\mathrm{lpH}(\mathbb{R}^{2n}).`` If we have ``R = 0,`` i.e. if the dissipative part of the system is zero, then we can also derive a reduced system ``\Sigma^{R=0}_\mathrm{lpH}(\mathbb{R}^{2n})`` from a full one ``\tilde{\Sigma}^{R=0}_\mathrm{lpH}(\mathbb{R}^{2N}) = \Sigma^{R=0}_\mathrm{lpH}(\mathcal{M}).`` If and when this is true for ``R\neq0`` is an open question[^2]. We now proceed with showing this equivalence, first for the special case ``R = 0.``
 

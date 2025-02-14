@@ -116,9 +116,8 @@ save("two_vectors_dark.png", alpha_colorbuffer(fig_dark)) # hide
 nothing # hide
 ```
 
-```@example
-Main.include_graphics("two_vectors"; width = .7) # hide
-```
+![](two_vectors_light.png)
+![](two_vectors_dark.png)
 
 Note that we have chosen the arrow here to have the same direction as before but only about half the magnitude. We further drew another arrow that we want to parallel transport (the purple arrow). 
 
@@ -176,9 +175,8 @@ save("parallel_transport_naked.png", fig_light |> alpha_colorbuffer) # hide
 nothing # hide
 ```
 
-```@example
-Main.include_graphics("parallel_transport"; width = .7) # hide
-```
+![](parallel_transport_light.png)
+![](parallel_transport_dark.png)
 
 Note that the angle between the two vector is preserved as we go along the geodesic.
 

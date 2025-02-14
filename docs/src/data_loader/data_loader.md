@@ -150,9 +150,8 @@ Note that we supplied two additional arguments to the [`Batch`](@ref) constructo
 
 This algorithm can be visualized the following way (here `batch_size = 4`):
 
-```@example
-Main.include_graphics("../tikz/tensor_sampling"; width = .7, caption = "Visualization of sampling from a tensor. Here the batch size was specified as four, i.e. we sample four blocks. ") # hide
-```
+![Visualization of sampling from a tensor. Here the batch size was specified as four, i.e. we sample four blocks.](../tikz/tensor_sampling_light.png)
+![Visualization of sampling from a tensor. Here the batch size was specified as four, i.e. we sample four blocks.](../tikz/tensor_sampling_dark.png)
 
 Here the sampling is performed over the second axis (the *time step dimension*) and the third axis (the *parameter dimension*). Whereas each block has thickness 1 in the ``x`` direction (i.e. pertains to a single parameter), its length in the ``y`` direction is `seq_length`. In total we sample as many such blocks as the batch size is big. By construction those blocks are never the same throughout a training epoch but may intersect each other!
 

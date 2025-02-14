@@ -202,9 +202,8 @@ end
 nothing
 ```
 
-```@example
-Main.include_graphics("tangent_space"; caption = raw"Visualization of how the tangent space is constructed. ", width = .9) # hide
-```
+![Visualization of how the tangent space is constructed.](tangent_space_light.png)
+![Visualization of how the tangent space is constructed.](tangent_space_dark.png)
 
 The tangent space ``T_x\mathcal{M}`` for
 

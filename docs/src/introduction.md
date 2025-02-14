@@ -6,9 +6,9 @@ Despite the allure of neglecting hard-coded knowledge in an "era of big data" [d
 
 What this work aims at doing is not "to set the foundations for a new paradigm" [raissi2019physics](@cite), but rather to show that in many cases it is advantageous to imbue neural networks with specific structure and one should to do this whenever possible. In this regard this work is much more closely related to traditional numerics than to neural network research as we try to design problem-specific algorithms rather than "universal approximators" [hornik1989multilayer](@cite). The *structure-preserving neural networks* in this work are never fundamentally new architectures but build on existing neural network designs [vaswani2017attention, jin2020sympnets](@cite) or more classical methods [peng2016symplectic](@cite). We design neural networks that have a specific structure encoded in them (modeling part) and then make their behavior reflect information found in data (machine learning part). We refer to this as *geometric machine learning*.
 
-```@example
-Main.include_graphics("tikz/gml_venn"; width = .6, caption = "Geometric machine learning (GML) like traditional geometric numerical integration (GNI) and other structure-preserving numerical methods aims at building models that share properties with the analytic solution of a differential equation. ") # hide
-```
+
+![Geometric machine learning (GML) like traditional geometric numerical integration (GNI) and other structure-preserving numerical methods aims at building models that share properties with the analytic solution of a differential equation.](tikz/gml_venn_light)
+![Geometric machine learning (GML) like traditional geometric numerical integration (GNI) and other structure-preserving numerical methods aims at building models that share properties with the analytic solution of a differential equation.](tikz/gml_venn_dark)
 
 In the picture above we visualize that geometric machine learning aims at constructing so-called structure-preserving mappings that are ideally close to the analytic solution and perform better than classical methods (e.g. GNI). *Structure-preserving* here means that the model shares properties with the analytic solution of the underlying differential equation. In this work the most important of these properties are *symplecticity* and *volume preservation*, but this may extend to others such as the null space of certain operators [arnold2006finite](@cite) and symmetries encoded into a differential equation [lishkova2023discrete, dierkes2023hamiltonian](@cite).
 
@@ -55,9 +55,9 @@ One of the central parts of this dissertation is an *optimizer framework* that a
 
 [^4]: The optimizer framework was introduced in [brantner2023generalizing](@cite).
 
-```@example
-Main.include_graphics("tikz/tangent_vector"; caption = raw"Weights can be put on manifolds to achieve structure preservation or improved stability. ") # hide
-```
+![Weights can be put on manifolds to achieve structure preservation or improved stability.](tikz/tangent_vector_light.png)
+![Weights can be put on manifolds to achieve structure preservation or improved stability.](tikz/tangent_vector_dark.png)
+
 
 ## Special Neural Network Layers and Architectures
 
