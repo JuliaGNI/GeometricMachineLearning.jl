@@ -120,7 +120,7 @@ end # hide
 fig_light = set_up_plot(; theme = :light)[1] # hide
 fig_dark = set_up_plot(; theme = :dark)[1] # hide
 
-save("sphere_with_tangent_vec.png", alpha_colorbuffer(fig_light)) # hide
+save("sphere_with_tangent_vec_light.png", alpha_colorbuffer(fig_light)) # hide
 save("sphere_with_tangent_vec_dark.png", alpha_colorbuffer(fig_dark)) # hide
 
 nothing # hide
@@ -150,7 +150,7 @@ end # hide
 fig_light = make_plot_with_solution(; theme = :light) # hide
 fig_dark = make_plot_with_solution(; theme = :dark) # hide
 
-save("sphere_with_tangent_vec_and_geodesic.png", alpha_colorbuffer(fig_light)) # hide
+save("sphere_with_tangent_vec_and_geodesic_light.png", alpha_colorbuffer(fig_light)) # hide
 save("sphere_with_tangent_vec_and_geodesic_dark.png", alpha_colorbuffer(fig_dark)) # hide
 
 nothing # hide

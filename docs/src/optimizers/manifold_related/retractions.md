@@ -157,7 +157,7 @@ end # hide
 fig_light = make_plot(; theme = :light)[1] # hide
 fig_dark = make_plot(; theme = :dark)[1] # hide
 
-save("retraction_comparison.png",        alpha_colorbuffer(fig_light)) # hide
+save("retraction_comparison_light.png",        alpha_colorbuffer(fig_light)) # hide
 save("retraction_comparison_dark.png",   alpha_colorbuffer(fig_dark)) # hide
 
 nothing
@@ -196,7 +196,7 @@ _, __, zip_ob, Y_increments_geodesic, Y_increments_cayley = make_plot() # hide
 discrepancies = [norm(Y_geo_inc - Y_cay_inc) for (Y_geo_inc, Y_cay_inc, _) in zip_ob]
 fig_light = plot_discrepancies(discrepancies; theme = :light)[1] # hide
 fig_dark = plot_discrepancies(discrepancies; theme = :dark)[1] # hide
-save("retraction_discrepancy.png",        fig_light; px_per_unit = 1.3) # hide
+save("retraction_discrepancy_light.png",        fig_light; px_per_unit = 1.3) # hide
 save("retraction_discrepancy_dark.png",   fig_dark; px_per_unit = 1.3) # hide
 nothing
 ```

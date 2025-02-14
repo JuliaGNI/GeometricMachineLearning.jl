@@ -110,7 +110,7 @@ end # hide
 
 fig_light = set_up_plot(; theme = :light)[1]
 fig_dark = set_up_plot(; theme = :dark)[1]
-save("two_vectors.png", alpha_colorbuffer(fig_light)) # hide
+save("two_vectors_light.png", alpha_colorbuffer(fig_light)) # hide
 save("two_vectors_dark.png", alpha_colorbuffer(fig_dark)) # hide
 
 nothing # hide
@@ -166,7 +166,7 @@ end # hide
 
 fig_light, ax_light = plot_parallel_transport(; theme = :light) # hide
 fig_dark, ax_dark = plot_parallel_transport(; theme = :dark) # hide
-save("parallel_transport.png", fig_light |> alpha_colorbuffer) # hide
+save("parallel_transport_light.png", fig_light |> alpha_colorbuffer) # hide
 save("parallel_transport_dark.png", fig_dark |> alpha_colorbuffer) # hide
 hidedecorations!(ax_light)  # hide
 hidespines!(ax_light) # hide

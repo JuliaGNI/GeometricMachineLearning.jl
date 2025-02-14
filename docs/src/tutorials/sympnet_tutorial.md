@@ -158,7 +158,7 @@ ax = Axis(fig[1, 1];
 lines!(ax, g_loss_array, label=L"$G$-SympNet", color=morange)
 lines!(ax, la_loss_array, label=L"$LA$-SympNet", color=mpurple)
 axislegend(; position = (.82, .75), backgroundcolor = :transparent, labelcolor = textcolor) # hide
-fig_name = theme == :dark ? "sympnet_training_loss_dark.png" : "sympnet_training_loss.png" # hide
+fig_name = theme == :dark ? "sympnet_training_loss_dark.png" : "sympnet_training_loss_light.png" # hide
 save(fig_name, fig; px_per_unit = 1.2) # hide
 end # hide
 make_error_plot(; theme = :dark) # hide
@@ -166,9 +166,8 @@ make_error_plot(; theme = :light) # hide
 nothing # hide
 ```
 
-```@example
-Main.include_graphics("sympnet_training_loss") # hide
-```
+![](sympnet_training_loss_light.png)
+![](sympnet_training_loss_dark.png)
 
 Now we can make a prediction. We compare the initial data with a prediction starting from the same phase space point using the function [`GeometricMachineLearning.iterate`](@ref):
 
@@ -210,7 +209,7 @@ lines!(ax, dl.input.q[1, 1:steps_to_plot, 1], dl.input.p[1, 1:steps_to_plot, 1],
 lines!(ax, la_trajectory.q[1, :], la_trajectory.p[1, :], label=L"$LA$-Sympnet", color = mpurple)
 lines!(ax, g_trajectory.q[1, :], g_trajectory.p[1, :], label=L"$G$-Sympnet", color = morange)
 axislegend(; position = (.82, .45), backgroundcolor = :transparent, labelcolor = textcolor) # hide
-fig_name = theme == :dark ? "sympnet_prediction_dark.png" : "sympnet_prediction.png" # hide
+fig_name = theme == :dark ? "sympnet_prediction_dark.png" : "sympnet_prediction_light.png" # hide
 save(fig_name, fig; px_per_unit = 1.2) # hide
 end # hide
 make_prediction_plot(; theme = :dark) # hide
@@ -218,9 +217,8 @@ make_prediction_plot(; theme = :light) # hide
 nothing # hide
 ```
 
-```@example
-Main.include_graphics("sympnet_prediction"; width = .7) # hide
-```
+![](sympnet_prediction_light.png)
+![](sympnet_prediction_dark.png)
 
 We see that [`GSympNet`](@ref) outperforms [`LASympNet`](@ref) on this problem; the blue line (reference) and the orange line (``G``-SympNet) are in fact almost indistinguishable.
 
@@ -285,7 +283,7 @@ lines!(ax, g_loss_array, label=L"$G$-SympNet", color=morange)
 lines!(ax, la_loss_array, label=L"$LA$-SympNet", color=mpurple)
 lines!(ax, rn_loss_array, label="ResNet", color=mred)
 axislegend(; position = (.82, .75), backgroundcolor = :transparent, labelcolor = textcolor) # hide
-fig_name = theme == :dark ? "sympnet_resnet_training_loss_dark.png" : "sympnet_resnet_training_loss.png" # hide
+fig_name = theme == :dark ? "sympnet_resnet_training_loss_dark.png" : "sympnet_resnet_training_loss_light.png" # hide
 save(fig_name, fig; px_per_unit = 1.2) # hide
 end # hide
 make_error_plot(; theme = :dark) # hide
@@ -293,9 +291,8 @@ make_error_plot(; theme = :light) # hide
 nothing # hide
 ```
 
-```@example
-Main.include_graphics("sympnet_resnet_training_loss") # hide
-```
+![](sympnet_resnet_training_loss_light.png)
+![](sympnet_resnet_training_loss_dark.png)
 
 And we see that the loss is significantly lower than for the ``LA``-SympNet, but slightly higher than for the ``G``-SympNet. We can also plot the prediction:
 
@@ -330,7 +327,7 @@ lines!(ax, la_trajectory.q[1, :], la_trajectory.p[1, :], label=L"$LA$-Sympnet", 
 lines!(ax, g_trajectory.q[1, :], g_trajectory.p[1, :], label=L"$G$-Sympnet", color = morange)
 lines!(ax, rn_trajectory.q[1, :], rn_trajectory.p[1, :], label="ResNet", color = mred)
 axislegend(; position = (.82, .45), backgroundcolor = :transparent, labelcolor = textcolor) # hide
-fig_name = theme == :dark ? "resnet_sympnet_prediction_dark.png" : "resnet_sympnet_prediction.png" # hide
+fig_name = theme == :dark ? "resnet_sympnet_prediction_dark.png" : "resnet_sympnet_prediction_light.png" # hide
 save(fig_name, fig; px_per_unit = 1.2) # hide
 end # hide
 make_prediction_plot(; theme = :dark) # hide
@@ -338,9 +335,8 @@ make_prediction_plot(; theme = :light) # hide
 nothing # hide
 ```
 
-```@example
-Main.include_graphics("resnet_sympnet_prediction"; width = .7) # hide
-```
+![](resnet_sympnet_prediction_light.png)
+![](resnet_sympnet_prediction_dark.png)
 
 We see that the ResNet is slowly gaining energy which consitutes unphysical behaviour. If we let this simulation run for even longer, this effect gets more pronounced:
 
@@ -380,7 +376,7 @@ lines!(ax, la_trajectory.q[1, :], la_trajectory.p[1, :], label=L"$LA$-Sympnet", 
 lines!(ax, g_trajectory.q[1, :], g_trajectory.p[1, :], label=L"$G$-Sympnet", color = morange)
 lines!(ax, rn_trajectory.q[1, :], rn_trajectory.p[1, :], label="ResNet", color = mred)
 axislegend(; position = (.99, .9), backgroundcolor = :transparent, labelcolor = textcolor) # hide
-fig_name = theme == :dark ? "resnet_sympnet_prediction_long_dark.png" : "resnet_sympnet_prediction_long.png" # hide
+fig_name = theme == :dark ? "resnet_sympnet_prediction_long_dark.png" : "resnet_sympnet_prediction_long_light.png" # hide
 save(fig_name, fig; px_per_unit = 1.2) # hide
 end # hide
 make_prediction_plot(; theme = :dark) # hide
@@ -388,8 +384,7 @@ make_prediction_plot(; theme = :light) # hide
 nothing # hide
 ```
 
-```@example
-Main.include_graphics("resnet_sympnet_prediction_long"; width = .7) # hide
-```
+![](resnet_sympnet_prediction_long_light.png)
+![](resnet_sympnet_prediction_long_dark.png)
 
 The behavior the ResNet exhibits is characteristic of integration schemes that do not preserve structure: the error in a single time step can be made very small, but for long-time simulations one typically has to consider symplecticity or other properties. Also note that the curves produced by the ``LA``-SympNet and the ``G``-SympNet are closed (or nearly closed). This is a property of symplectic maps in two dimensions that is preserved by construction [hairer2006geometric](@cite).
