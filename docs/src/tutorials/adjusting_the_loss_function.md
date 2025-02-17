@@ -122,15 +122,14 @@ axislegend(; position = (.82, .75), backgroundcolor = :transparent) # hide
 fig
 end # hide
  # hide
-save("compare_losses.png", make_fig(; theme = :light); px_per_unit = 1.2) # hide
+save("compare_losses_light.png", make_fig(; theme = :light); px_per_unit = 1.2) # hide
 save("compare_losses_dark.png", make_fig(; theme = :dark); px_per_unit = 1.2) # hide
 
 nothing
 ```
 
-```@example
-Main.include_graphics("compare_losses"; caption = "Here we trained the same network with two different losses. ") # hide
-```
+![Here we trained the same network with two different losses.](compare_losses_light.png)
+![Here we trained the same network with two different losses.](compare_losses_dark.png)
 
 Wit the second loss function, for which the norm of the resulting network parameters has lower value, the network still performs well, albeit slightly worse than the network trained with the first loss.
 

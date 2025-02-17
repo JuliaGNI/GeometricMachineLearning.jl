@@ -28,9 +28,8 @@ The starting point for using the snapshot matrix as data for a machine learning 
 
 The snapshot tensor fulfills the same role as the snapshot matrix but has a third axis that describes different initial parameters (such as different initial conditions). 
 
-```@example
-Main.include_graphics("../tikz/tensor") # hide
-```
+![](../tikz/tensor_light.png)
+![](../tikz/tensor_dark.png)
 
 When drawing samples from the snapshot tensor to train a neural networks we also need to specify a *sequence length* (as an argument to the [`Batch`](@ref) struct). When sampling a batch from the snapshot tensor we sample over the second axis (the *time dimension*) and the third axis of the tensor (the *parameter dimension*). The total number of batches[^2] is 
 
