@@ -27,7 +27,8 @@ A motivation for reduced order modeling is that even though the space ``V_h`` is
 
 [^1]: The systems we deal with usually have much greater dimension of course. The dimension of ``V_h`` will be in the thousands and the dimension of the solution manifold will be a few orders of magnitudes smaller. Because this cannot be easily visualized, we resort to showing a two-dimensional manifold in a three-dimensional space here. 
 
-![A representation of a two-dimensional solution manifold embedded in three-dimensional Euclidean space.](../tikz/solution_manifold_2.png)
+![A representation of a two-dimensional solution manifold embedded in three-dimensional Euclidean space.](../tikz/solution_manifold_2_light.png)
+![A representation of a two-dimensional solution manifold embedded in three-dimensional Euclidean space.](../tikz/solution_manifold_2_dark.png)
 
 As an actual example of a solution manifold consider the one-dimensional wave equation [blickhan2023registration](@cite): 
 
