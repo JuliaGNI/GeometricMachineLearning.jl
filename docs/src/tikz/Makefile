@@ -43,7 +43,8 @@ png:
 	pdftocairo  -png -r $(res1) -transp -singlefile  symplectic_autoencoder_dark.pdf				symplectic_autoencoder_dark
 	pdftocairo  -png -r $(res1) -transp -singlefile  symplectic_autoencoder_architecture_light.pdf	symplectic_autoencoder_architecture_light
 	pdftocairo  -png -r $(res1) -transp -singlefile  symplectic_autoencoder_architecture_dark.pdf	symplectic_autoencoder_architecture_dark
-	pdftocairo  -png -r $(res1) -transp -singlefile  solution_manifold_2.pdf						solution_manifold_2
+	pdftocairo  -png -r $(res1) -transp -singlefile  solution_manifold_2_light.pdf					solution_manifold_2_light
+	pdftocairo  -png -r $(res1) -transp -singlefile  solution_manifold_2_dark.pdf 					solution_manifold_2_dark
 	pdftocairo  -png -r $(res1) -transp -singlefile  mha_light.pdf 									mha_light
 	pdftocairo  -png -r $(res1) -transp -singlefile  mha_dark.pdf 									mha_dark
 	pdftocairo  -png -r $(res1) -transp -singlefile  tensor_light.pdf 								tensor_light
