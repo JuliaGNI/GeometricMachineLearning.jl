@@ -48,10 +48,8 @@ h(s)  = \begin{cases}
 
 Plotted on the relevant domain it looks like this: 
 
-```@example 
-Main.include_graphics("../tikz/third_degree_spline") # hide
-```
-
+![](../tikz/third_degree_spline_light.png)
+![](../tikz/third_degree_spline_dark.png)
 
 We end up with the following choice of parametrized initial conditions: 
 
@@ -245,15 +243,14 @@ end
 # axislegend(fig_light; position = (.82, .75), backgroundcolor = :transparent, color = :black)
 # axislegend(fig_dark;  position = (.82, .75), backgroundcolor = :transparent, color = :white)
 
-save("sae_validation.png", fig_light; px_per_unit = 1.2)
+save("sae_validation_light.png", fig_light; px_per_unit = 1.2)
 save("sae_validation_dark.png", fig_dark; px_per_unit = 1.2)
 
 nothing # hide
 ```
 
-```@example
-Main.include_graphics("sae_validation"; width = .78, caption = raw"Comparison between FOM (blue), PSD with implicit midpoint (orange) and SAE with implicit midpoint (green). ") # hide
-```
+![Comparison between FOM (blue), PSD with implicit midpoint (orange) and SAE with implicit midpoint (green).](sae_validation_light.png)
+![Comparison between FOM (blue), PSD with implicit midpoint (orange) and SAE with implicit midpoint (green).](sae_validation_dark.png)
 
 We can see that the SAE has much more approximation capabilities than the PSD. But even though the SAE reasonably reproduces the full-order model (FOM), we see that the online stage of the SAE takes even longer than evaluating the FOM. In order to solve this problem we have to make the *online stage more efficient*.
 
@@ -353,15 +350,15 @@ for (i, time) in zip(1:length(time_steps), time_steps)
     plot_transformer_validation!(fig_dark, (i, 1), time; theme = :dark)
 end
 
-save("sae_integrator_validation.png", fig_light; px_per_unit = 1.2)
+save("sae_integrator_validation_light.png", fig_light; px_per_unit = 1.2)
 save("sae_integrator_validation_dark.png", fig_dark; px_per_unit = 1.2)
 
 nothing # hide
 ```
 
-```@example
-Main.include_graphics("sae_integrator_validation"; width = .78, caption = raw"Comparison between FOM (blue), PSD with implicit midpoint (orange), SAE with implicit midpoint (green) and SAE with transformer (purple). ") # hide
-```
+![Comparison between FOM (blue), PSD with implicit midpoint (orange), SAE with implicit midpoint (green) and SAE with transformer (purple).](sae_integrator_validation_light.png)
+![Comparison between FOM (blue), PSD with implicit midpoint (orange), SAE with implicit midpoint (green) and SAE with transformer (purple).](sae_integrator_validation_dark.png)
+
 
 Note that integration of the system with the transformer is orders of magnitudes faster than any comparable method and also leads to an improvement in accuracy over the case where we build the reduced space with the symplectic autoencoder and use implicit midpoint in the online phase.
 
@@ -453,15 +450,14 @@ end
 # axislegend(fig_light; position = (.82, .75), backgroundcolor = :transparent, color = :black)
 # axislegend(fig_dark;  position = (.82, .75), backgroundcolor = :transparent, color = :white)
 
-save("psd_validation2.png", fig_light; px_per_unit = 1.2)
+save("psd_validation2_light.png", fig_light; px_per_unit = 1.2)
 save("psd_validation2_dark.png", fig_dark; px_per_unit = 1.2)
 
 nothing # hide
 ```
 
-```@example
-Main.include_graphics("psd_validation2"; width = .78, caption = raw"Comparison between the FOM and the PSD with a bigger reduced dimension. ") # hide
-```
+![Comparison between the FOM and the PSD with a bigger reduced dimension.](psd_validation2_light.png)
+![Comparison between the FOM and the PSD with a bigger reduced dimension.](psd_validation2_dark.png)
 
 We see that for a reduced dimension of ``2n = 8`` the PSD looks slightly better than the SAE for ``2n = 2.`` As with the SAE we can also use a transformer to integrate the dynamics on the low-dimensional space:
 
@@ -559,15 +555,14 @@ end
 # axislegend(fig_light; position = (.82, .75), backgroundcolor = :transparent, color = :black)
 # axislegend(fig_dark;  position = (.82, .75), backgroundcolor = :transparent, color = :white)
 
-save("psd_integrator_validation.png", fig_light; px_per_unit = 1.2)
+save("psd_integrator_validation_light.png", fig_light; px_per_unit = 1.2)
 save("psd_integrator_validation_dark.png", fig_dark; px_per_unit = 1.2)
 
 nothing # hide
 ```
 
-```@example
-Main.include_graphics("psd_integrator_validation"; width = .78, caption = raw"Comparison between FOM (blue), PSD with implicit midpoint (orange), and PSD with transformer (red). ") # hide
-```
+![Comparison between FOM (blue), PSD with implicit midpoint (orange), and PSD with transformer (red).](psd_integrator_validation_light.png)
+![Comparison between FOM (blue), PSD with implicit midpoint (orange), and PSD with transformer (red).](psd_integrator_validation_dark.png)
 
 Here we however see a dramatic deterioration in the quality of the approximation. We assume that this because the `transformer_dim` was chosen to be `20` for the SAE and the PSD, but in the second case the reduced space is of dimension six, whereas it is of dimension two in the first case. This may mean that we need an even bigger transformer to find a good approximation of the reduced space.
 

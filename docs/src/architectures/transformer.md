@@ -7,9 +7,8 @@ The transformer is a relatively modern neural network architecture [vaswani2017a
 
 The transformer architecture is sketched below: 
 
-```@example
-Main.include_graphics("../tikz/transformer_encoder"; caption = raw"Visualization of the standard transformer. It consists of two components: a mulithead attention layer and a feedforward neural network. ", width = .25) # hide
-```
+![Visualization of the standard transformer. It consists of two components: a mulithead attention layer and a feedforward neural network.](../tikz/transformer_encoder_light.png)
+![Visualization of the standard transformer. It consists of two components: a mulithead attention layer and a feedforward neural network.](../tikz/transformer_encoder_dark.png)
 
 It is nothing more than a combination of a [multihead attention layer](@ref "Multihead Attention") and a residual neural network[^1] (ResNet).
 
@@ -34,9 +33,8 @@ Instead of using the transformer for integration, it can also be used as a image
 
 When using the transformer one typically also benefits from defining a `transformer_dim` that is greater than the system dimension and a corresponding `upscaling_activation` (see the docstring of [`StandardTransformerIntegrator`](@ref)).
 
-```@example
-Main.include_graphics("../tikz/transformer_upscaling"; caption = raw"If the transformer dimension is not equal to the system dimension, then we add two more neural network layers. One that maps up to the space whose dimension is the transformer dimension and one that maps down again to the space whose dimension is the system dimension. ") # hide
-```
+![If the transformer dimension is not equal to the system dimension, then we add two more neural network layers. One that maps up to the space whose dimension is the transformer dimension and one that maps down again to the space whose dimension is the system dimension.](../tikz/transformer_upscaling_light.png)
+![If the transformer dimension is not equal to the system dimension, then we add two more neural network layers. One that maps up to the space whose dimension is the transformer dimension and one that maps down again to the space whose dimension is the system dimension.](../tikz/transformer_upscaling_dark.png)
 
 In the figure above we call 
 

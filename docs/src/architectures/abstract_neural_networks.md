@@ -8,9 +8,8 @@ In this chapter we build, starting from the neural network layers introduced in 
 
 [^1]: The section on SympNets also contains an explanation of all the `struct`s and `type`s described in this section here.
 
-```@example 
-Main.include_graphics("../tikz/structs_visualization"; width = .99, caption = raw"Visualization of how the packages interact. ") # hide
-```
+![Visualization of how the packages interact.](../tikz/structs_visualization_light.png)
+![Visualization of how the packages interact.](../tikz/structs_visualization_dark.png)
 
 The red color indicates an `abstract type`, blue indicates a `struct` and orange indicates a `const` (derived from a `struct`). Solid black arrows indicate direct dependencies, i.e. we have
 

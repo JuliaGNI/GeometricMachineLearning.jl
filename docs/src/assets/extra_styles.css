@@ -2,3 +2,14 @@
 .display-dark-only {display: none;}
 .theme--documenter-dark .display-light-only {display: none;}
 .theme--documenter-dark .display-dark-only {display: block;}
+
+@media (prefers-color-scheme: dark) {
+    img:not([src*="dark.png"],[src*="dark.svg"]) {
+      display: none;
+    }
+}
+@media (prefers-color-scheme: light), (prefers-color-scheme: no-preference) {
+    img:not([src*="light.png"],[src*="light.svg"]) {
+      display: none;
+    }
+  }

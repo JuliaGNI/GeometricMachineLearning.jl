@@ -79,8 +79,8 @@ o2 = Optimizer(o_method, nn2)
 
 batch = Batch(batch_size, seq_length)
 
-loss_array1 = o1(nn1, dl, batch, n_epochs) #; show_progress = false)
-loss_array2 = o2(nn2, dl, batch, n_epochs) #; show_progress = false)
+loss_array1 = o1(nn1, dl, batch, n_epochs; show_progress = false)
+loss_array2 = o2(nn2, dl, batch, n_epochs; show_progress = false)
 
 nothing # hide
 ```
@@ -122,14 +122,13 @@ fig_dark, ax_dark = plot_training_losses(loss_array1, loss_array2; theme = :dark
 fig_light, ax_light = plot_training_losses(loss_array1, loss_array2; theme = :light)
 
 save("softmax_comparison_dark.png", fig_dark; px_per_unit = 1.2)
-save("softmax_comparison.png", fig_light; px_per_unit = 1.2)
+save("softmax_comparison_light.png", fig_light; px_per_unit = 1.2)
 
 nothing
 ```
 
-```@example
-Main.include_graphics("lst"; caption = "Training loss for the different networks. ") # hide
-```
+![Training loss for the different networks.](softmax_comparison_light.png)
+![Training loss for the different networks.](softmax_comparison_dark.png)
 
 
 We further evaluate a trajectory with the trained networks for 300 time steps: 
@@ -172,12 +171,11 @@ end
 
 fig_light, ax_light = make_validation_plot(n_steps; theme = :light)
 fig_dark, ax_dark = make_validation_plot(n_steps; theme = :dark)
-save("softmax_comparison_validation.png", fig_light; px_per_unit = 1.2)
+save("softmax_comparison_validation_light.png", fig_light; px_per_unit = 1.2)
 save("softmax_comparison_validation_dark.png", fig_dark; px_per_unit = 1.2)
 
 nothing
 ```
 
-```@example softmax_comparison
-Main.include_graphics("softmax_comparison_validation"; caption = "Validation of the different networks. ", width = .85) # hide
-```
+![Validation of the different networks.](softmax_comparison_validation_light.png)
+![Validation of the different networks.](softmax_comparison_validation_dark.png)

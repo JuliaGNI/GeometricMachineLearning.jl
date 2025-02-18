@@ -17,44 +17,42 @@ mgreen = RGBf(44 / 256, 160 / 256, 44 / 256)
 
 # ensemble problem
 initial_conditions = [
-    #(q = [π / i, π / j], p = [0.0, π / k]) for i=1:1, j=1:1, k=1:1
-    (q = [0., 0.], p = [3π/7, 3π/8]),
+    (q = [π / i, π / j], p = [0.0, π / k]) for i=1:1:10, j=1:1:10, k=1:1:5
 ]
-sympnet_paper_initial_conditions = reshape(initial_conditions, length(initial_conditions))
+initial_conditions = reshape(initial_conditions, length(initial_conditions))
 
-sympnet_paper_parameters = (l₁ = 1., l₂ = 1., m₁ = 1., m₂ = 1., g = 1.)
-sympnet_paper_timestep = 0.75
-ensemble_problem = EnsembleProblem(hodeproblem().equation, (tspan[1], tspan[2] * 100), sympnet_paper_timestep / 3., sympnet_paper_initial_conditions, sympnet_paper_parameters)
+ensemble_problem = EnsembleProblem(hodeproblem().equation, (tspan[1], tspan[1] + 15 * tstep), tstep, initial_conditions, default_parameters)
 
 ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
 
 dl = DataLoader(ensemble_solution)
 
-const seq_length = 2
+
+const seq_length = 5
 const transformer_dim = 4
 
 act = MatrixSoftmax()
 
 arch1 = StandardTransformerIntegrator(dl.input_dim; transformer_dim = transformer_dim,
                                                     n_heads = 1, 
-                                                    L = 3, 
+                                                    L = 1, 
                                                     n_blocks = 4,
                                                     attention_activation = act)
 
 arch2 = SymplecticTransformer(dl.input_dim; transformer_dim = transformer_dim,
-                                            L = 3,
+                                            L = 1,
                                             n_sympnet = 6,
                                             attention_activation = act,
                                             symmetric = true)
 
 arch3 = SymplecticTransformer(dl.input_dim; transformer_dim = transformer_dim,
-                                            L = 3,
+                                            L =1,
                                             n_sympnet = 6,
                                             attention_activation = act,
                                             symmetric = false)
 
 
-arch4 = GSympNet(dl.input_dim; n_layers = 18)
+arch4 = GSympNet(dl.input_dim; n_layers = 6)
 
 nn1 = NeuralNetwork(arch1)
 nn2 = NeuralNetwork(arch2)
@@ -62,7 +60,7 @@ nn3 = NeuralNetwork(arch3)
 nn4 = NeuralNetwork(arch4)
 
 const batch_size = 1024
-const n_epochs = 10000
+const n_epochs = 3000
 
 o_method = AdamOptimizer()
 
@@ -109,47 +107,51 @@ end
 training_fig_light, training_ax_light = make_training_error_plot(; theme = :light)
 training_fig_dark, training_ax_dark = make_training_error_plot(; theme = :dark)
 
-const index = 1
-init_con = (q = dl.input.q[:, 1:seq_length, index], p = dl.input.p[:, 1:seq_length, index])
-init_con2 = (q = dl.input.q[:, 1, index], p = dl.input.p[:, 1, index])
 
-function make_validation_plot(n_steps = n_steps; theme = :dark, symplectic = true)
-    textcolor = theme == :dark ? :white : :black
-    fig = Figure(; backgroundcolor = :transparent)
-    ax = Axis(fig[1, 1]; 
-        backgroundcolor = :transparent,
-        bottomspinecolor = textcolor, 
-        topspinecolor = textcolor,
-        leftspinecolor = textcolor,
-        rightspinecolor = textcolor,
-        xtickcolor = textcolor, 
-        ytickcolor = textcolor,
-        xticklabelcolor = textcolor,
-        yticklabelcolor = textcolor,
-        xlabel=L"t", 
-        ylabel=L"q_1",
-        xlabelcolor = textcolor,
-        ylabelcolor = textcolor,
-    )
-    prediction1 = iterate(nn1, init_con; n_points = n_steps, prediction_window = seq_length)
-    prediction2 = iterate(nn2, init_con; n_points = n_steps, prediction_window = seq_length)
-    prediction3 = iterate(nn3, init_con; n_points = n_steps, prediction_window = seq_length)
-    prediction4 = iterate(nn4, init_con2; n_points = n_steps)
+function make_plot_for_index(index::Integer=1)
+    const n_steps = 100
+    ensemble_problem = EnsembleProblem(hodeproblem().equation, (tspan[1], tspan[1] + n_steps * tstep), tstep, [(q = dl.input.q[:, 1, index], p = dl.input.p[:, 1, index]), ], default_parameters)
+    ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
+    dl = DataLoader(ensemble_solution)
+    init_con = (q = dl.input.q[:, 1:seq_length, 1], p = dl.input.p[:, 1:seq_length, 1])
 
-    # we use linewidth  = 2
-    start_counting = 1 # n_steps-(50)
-    lines!(ax, start_counting:n_steps, dl.input.q[1, start_counting:n_steps, index]; color = mblue, label = "Implicit midpoint", linewidth = 2)
-    lines!(ax, start_counting:n_steps, prediction1.q[1, start_counting:n_steps]; color = mpurple, label = "Transformer", linewidth = 2)
-    symplectic ? lines!(ax, start_counting:n_steps, prediction2.q[1, start_counting:n_steps]; color = mred, label = "SymplecticTransformerS", linewidth = 2) : false
-    symplectic ? lines!(ax, start_counting:n_steps, prediction3.q[1, start_counting:n_steps]; color = mgreen, label = "SymplecticTransformerA", linewidth = 2) : false
-    lines!(ax, start_counting:n_steps, prediction4.q[1, start_counting:n_steps]; color = morange, label = "SympNet", linewidth = 2)
-    axislegend(; position = (.55, .75), backgroundcolor = :transparent, labelcolor = textcolor)
+    # const number_time_steps = 90
+    function make_validation_plot(n_steps = n_steps; theme = :dark, symplectic = true)
+        textcolor = theme == :dark ? :white : :black
+        fig = Figure(; backgroundcolor = :transparent)
+        ax = Axis(fig[1, 1]; 
+            backgroundcolor = :transparent,
+            bottomspinecolor = textcolor, 
+            topspinecolor = textcolor,
+            leftspinecolor = textcolor,
+            rightspinecolor = textcolor,
+            xtickcolor = textcolor, 
+            ytickcolor = textcolor,
+            xticklabelcolor = textcolor,
+            yticklabelcolor = textcolor,
+            xlabel=L"t", 
+            ylabel=L"q_1",
+            xlabelcolor = textcolor,
+            ylabelcolor = textcolor,
+        )
+        prediction1 = iterate(nn1, init_con; n_points = n_steps, prediction_window = seq_length)
+        prediction2 = iterate(nn2, init_con; n_points = n_steps, prediction_window = seq_length)
+        prediction3 = iterate(nn3, init_con; n_points = n_steps, prediction_window = seq_length)
 
-    fig, ax
-end
+        # we use linewidth  = 2
+        lines!(ax, 1:n_steps, dl.input.q[1, 1:n_steps, 1]; color = mblue, label = "Implicit midpoint", linewidth = 2)
+        lines!(ax, 1:n_steps, prediction1.q[1, 1:n_steps]; color = mpurple, label = "Transformer", linewidth = 2)
+        symplectic ? lines!(ax, 1:n_steps, prediction2.q[1, 1:n_steps]; color = mred, label = "SymplecticTransformerS", linewidth = 2) : false
+        symplectic ? lines!(ax, 1:n_steps, prediction3.q[1, 1:n_steps]; color = mgreen, label = "SymplecticTransformerA", linewidth = 2) : false
+        axislegend(; position = (.55, .75), backgroundcolor = :transparent, labelcolor = textcolor)
 
-for n_steps ∈ (10, 20, 30, 40, 100, 200, 300, 400, 600, 800, 1000)
+        fig, ax
+    end
+
     fig_light, ax_light = make_validation_plot(n_steps; theme = :light)
     fig_dark, ax_dark = make_validation_plot(n_steps; theme = :dark)
-    save("comparison_plots/DoublePendulum-Validation_$(n_steps).png", fig_light)
+
+    save("DoublePendulum-Validation_$(index).png", fig_light)
 end
+
+make_plot_for_index()

@@ -111,9 +111,8 @@ where the last addition has to be replaced with appropriate operations when deal
 
 In the following we show a schematic update that Adam performs for the case when no elements are on manifolds (also compare this figure with the [general optimization framework](@ref "Generalization to Homogeneous Spaces")):
 
-```@example 
-Main.include_graphics("../tikz/adam_optimizer"; caption = raw"Schematic representation the Adam optimizer. The first Adam step updates the first and second moments, and the second Adam step outputs the final velocity. ") # hide
-```
+![Schematic representation the Adam optimizer. The first Adam step updates the first and second moments, and the second Adam step outputs the final velocity.](../tikz/adam_optimizer_light.png)
+![Schematic representation the Adam optimizer. The first Adam step updates the first and second moments, and the second Adam step outputs the final velocity.](../tikz/adam_optimizer_dark.png)
 
 We demonstrate the Adam cache on the same example from before:
 ```@example optimizer_methods
