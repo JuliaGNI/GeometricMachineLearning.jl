@@ -94,8 +94,8 @@ o2 = Optimizer(o_method, nn2)
 
 batch = Batch(batch_size, seq_length)
 
-loss_array1 = o1(nn1, dl, batch, n_epochs)
-loss_array2 = o2(nn2, dl, batch, n_epochs)
+loss_array1 = o1(nn1, dl, batch, n_epochs; show_progress = false)
+loss_array2 = o2(nn2, dl, batch, n_epochs; show_progress = false)
 ```
 
 ```@setup softmax_comparison

@@ -9,7 +9,6 @@ using GeometricMachineLearning # hide
 using GeometricMachineLearning: FeedForwardLoss, TransformerLoss, params # hide
 import Random # hide
 Random.seed!(123) # hide
-
 sine_cosine = zeros(1, 1000, 2)
 sine_cosine[1, :, 1] .= sin.(0.:.1:99.9)
 sine_cosine[1, :, 2] .= cos.(0.:.1:99.9)
@@ -24,13 +23,11 @@ The third axis (i.e. the parameter axis) has length two, meaning we have two dif
 
 ```@setup volume_preserving_attention
 using CairoMakie, LaTeXStrings # hide
-
 morange = RGBf(255 / 256, 127 / 256, 14 / 256) # hide
 mred = RGBf(214 / 256, 39 / 256, 40 / 256) # hide
 mpurple = RGBf(148 / 256, 103 / 256, 189 / 256) # hide
 mblue = RGBf(31 / 256, 119 / 256, 180 / 256) # hide
 mgreen = RGBf(44 / 256, 160 / 256, 44 / 256) # hide
-
 function make_comparison_plot(; theme = :dark) # hide
 textcolor = theme == :dark ? :white : :black # hide
 fig = Figure(; backgroundcolor = :transparent)
@@ -111,7 +108,6 @@ function set_up_networks(upscale_dimension::Int = upscale_dimension_1)
 end
 
 nn_skew, nn_arb, nn_comp = set_up_networks()
-
 nothing # hide
 ```
 
@@ -138,9 +134,9 @@ const batch = Batch(batch_size, seq_length, prediction_window)
 const batch2 = Batch(batch_size)
 
 function train_networks!(nn_skew, nn_arb, nn_comp)
-    loss_array_skew = o_skew(nn_skew, dl, batch, n_epochs, TransformerLoss(batch))
-    loss_array_arb  = o_arb( nn_arb,  dl, batch, n_epochs, TransformerLoss(batch))
-    loss_array_comp = o_comp(nn_comp, dl, batch2, n_epochs, FeedForwardLoss())
+    loss_array_skew = o_skew(nn_skew, dl, batch, n_epochs, TransformerLoss(batch); show_progress = false)
+    loss_array_arb  = o_arb( nn_arb,  dl, batch, n_epochs, TransformerLoss(batch); show_progress = false)
+    loss_array_comp = o_comp(nn_comp, dl, batch2, n_epochs, FeedForwardLoss(); show_progress = false)
 
     loss_array_skew, loss_array_arb, loss_array_comp
 end
@@ -276,7 +272,7 @@ In the plot above we can see that the network with the arbitrary weighting perfo
 fig_dark, fig_light, ax_dark, ax_light  = produce_validation_plot(400) # hide
 save("plot400_dark.png", fig_dark; px_per_unit = 1.2) # hide
 save("plot400_light.png", fig_light; px_per_unit = 1.2) # hide
-nothing
+nothing # hide
 ```
 
 ![Comparing the two volume-preserving attention mechanisms for 400 points.](plot400_light.png)
@@ -292,13 +288,11 @@ nn_skew, nn_arb, nn_comp = set_up_networks(upscale_dimension_2)
 o_skew, o_arb, o_comp = set_up_optimizers(nn_skew, nn_arb, nn_comp)
 
 loss_array_skew, loss_array_arb, loss_array_comp = train_networks!(nn_skew, nn_arb, nn_comp) # hide
-
 fig_dark, ax_dark = plot_training_losses(loss_array_skew, loss_array_arb, loss_array_comp; theme = :dark) # hide
 fig_light, ax_light = plot_training_losses(loss_array_skew, loss_array_arb, loss_array_comp; theme = :light) # hide
 save("training_loss2_vpa_light.png", fig_light; px_per_unit = 1.2) # hide
 save("training_loss2_vpa_dark.png", fig_dark; px_per_unit = 1.2) # hide
-
-nothing
+nothing # hide
 ```
 
 ![Comparison for 40 points, but with an upscaling of ten.](training_loss2_vpa_light.png)
@@ -313,7 +307,7 @@ fig_dark, fig_light, ax_dark, ax_light = produce_validation_plot(40, nn_skew, nn
 
 save("plot40_sine2_dark.png", fig_dark; px_per_unit = 1.2) # hide
 save("plot40_sine2_light.png", fig_light; px_per_unit = 1.2) # hide
-nothing
+nothing # hide
 ```
 
 ![](plot40_sine2_light.png)
