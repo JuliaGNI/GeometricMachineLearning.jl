@@ -1,7 +1,6 @@
 using GeometricMachineLearning
 using GeometricMachineLearning: MatrixSoftmax, VectorSoftmax
-using GeometricProblems.DoublePendulum: tspan, tstep, default_parameters, hodeproblem
-using GeometricEquations: EnsembleProblem
+using GeometricProblems.CoupledHarmonicOscillator: hodeensemble, default_parameters
 using GeometricIntegrators: ImplicitMidpoint, integrate
 using LaTeXStrings
 using CairoMakie
@@ -15,23 +14,18 @@ mpurple = RGBf(148 / 256, 103 / 256, 189 / 256)
 mblue = RGBf(31 / 256, 119 / 256, 180 / 256)
 mgreen = RGBf(44 / 256, 160 / 256, 44 / 256)
 
+const tstep = .3
+const n_init_con = 5
+
 # ensemble problem
-initial_conditions = [
-    (q = [π / i, π / j], p = [0.0, π / k]) for i=1:1, j=1:1, k=1:1
-]
-initial_conditions = reshape(initial_conditions, length(initial_conditions))
-
-ensemble_problem = EnsembleProblem(hodeproblem().equation, (tspan[1], tspan[2]), tstep, initial_conditions, default_parameters)
-
-ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
-
-dl = DataLoader(ensemble_solution)
+ep = hodeensemble([rand(2) for _ in 1:n_init_con], [rand(2) for _ in 1:n_init_con]; tstep = tstep)
+dl = DataLoader(integrate(ep, ImplicitMidpoint()); suppress_info = true)
 
 
-const seq_length = 2
+const seq_length = 10
 const transformer_dim = 4
 
-act = MatrixSoftmax()
+act = VectorSoftmax()
 
 arch1 = StandardTransformerIntegrator(dl.input_dim; transformer_dim = transformer_dim,
                                                     n_heads = 1, 
@@ -52,12 +46,9 @@ arch3 = SymplecticTransformer(dl.input_dim; transformer_dim = transformer_dim,
                                             symmetric = false)
 
 
-arch4 = GSympNet(dl.input_dim; n_layers = 6)
-
 nn1 = NeuralNetwork(arch1)
 nn2 = NeuralNetwork(arch2)
 nn3 = NeuralNetwork(arch3)
-nn4 = NeuralNetwork(arch4)
 
 const batch_size = 1024
 const n_epochs = 3000
@@ -67,14 +58,12 @@ o_method = AdamOptimizer()
 o1 = Optimizer(o_method, nn1)
 o2 = Optimizer(o_method, nn2)
 o3 = Optimizer(o_method, nn3)
-o4 = Optimizer(o_method, nn4)
 
 batch = Batch(batch_size, seq_length)
 
 loss_array1 = o1(nn1, dl, batch, n_epochs)
 loss_array2 = o2(nn2, dl, batch, n_epochs)
 loss_array3 = o3(nn3, dl, batch, n_epochs)
-loss_array4 = o4(nn4, dl, Batch(batch_size), n_epochs)
 
 function make_training_error_plot(; theme = :dark, symplectic = true)
     textcolor = theme == :dark ? :white : :black
@@ -97,7 +86,7 @@ function make_training_error_plot(; theme = :dark, symplectic = true)
 
     # we use linewidth  = 2
     lines!(ax, loss_array1; color = mpurple, label = "Transformer", linewidth = 2)
-    symplectic ? lines!(ax, loss_array2; color = mred, label = "SymplecticTransformerA", linewidth = 2) : nothing
+    symplectic ? lines!(ax, loss_array2; color = mred, label = "SymplecticTransformerS", linewidth = 2) : nothing
     symplectic ? lines!(ax, loss_array3; color = mgreen, label = "SymplecticTransformerA", linewidth = 2) : nothing
     axislegend(; position = (.55, .75), backgroundcolor = :transparent, labelcolor = textcolor)
 
@@ -147,4 +136,4 @@ end
 fig_light, ax_light = make_validation_plot(n_steps; theme = :light)
 fig_dark, ax_dark = make_validation_plot(n_steps; theme = :dark)
 
-save("Matrix-Softmax-Validation.png", fig_light)
+save("Vector-Softmax-Validation.png", fig_light)
