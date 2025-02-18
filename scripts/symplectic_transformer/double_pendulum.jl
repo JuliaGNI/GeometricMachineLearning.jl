@@ -24,7 +24,7 @@ sympnet_paper_initial_conditions = reshape(initial_conditions, length(initial_co
 
 sympnet_paper_parameters = (l₁ = 1., l₂ = 1., m₁ = 1., m₂ = 1., g = 1.)
 sympnet_paper_timestep = 0.75
-ensemble_problem = EnsembleProblem(hodeproblem().equation, (tspan[1], tspan[2] * 100), sympnet_paper_timestep, sympnet_paper_initial_conditions, sympnet_paper_parameters)
+ensemble_problem = EnsembleProblem(hodeproblem().equation, (tspan[1], tspan[2] * 100), sympnet_paper_timestep / 3., sympnet_paper_initial_conditions, sympnet_paper_parameters)
 
 ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
 
@@ -62,7 +62,7 @@ nn3 = NeuralNetwork(arch3)
 nn4 = NeuralNetwork(arch4)
 
 const batch_size = 1024
-const n_epochs = 30000
+const n_epochs = 10000
 
 o_method = AdamOptimizer()
 
