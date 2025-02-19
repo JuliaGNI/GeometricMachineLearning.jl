@@ -24,9 +24,8 @@ where ``\sigma(x) = 1 / (1 + e^{-x})`` is the sigmoid activation function. The s
 - ``m_2``: mass 2,
 - ``k``: coupling strength between the two masses. 
 
-```@example
-Main.include_graphics("../tikz/coupled_harmonic_oscillator"; caption = raw"Visualization of the coupled harmonic oscillator. ") # hide
-```
+![Visualization of the coupled harmonic oscillator.](../tikz/coupled_harmonic_oscillator_light.png)
+![Visualization of the coupled harmonic oscillator.](../tikz/coupled_harmonic_oscillator_dark.png)
 
 We will leave the parameters fixed but alter the initial conditions[^1]:
 
@@ -95,8 +94,8 @@ o2 = Optimizer(o_method, nn2)
 
 batch = Batch(batch_size, seq_length)
 
-loss_array1 = o1(nn1, dl, batch, n_epochs)
-loss_array2 = o2(nn2, dl, batch, n_epochs)
+loss_array1 = o1(nn1, dl, batch, n_epochs; show_progress = false)
+loss_array2 = o2(nn2, dl, batch, n_epochs; show_progress = false)
 ```
 
 ```@setup softmax_comparison
@@ -130,14 +129,13 @@ end
 training_fig_light, training_ax_light = make_training_error_plot(; theme = :light)
 training_fig_dark, training_ax_dark = make_training_error_plot(; theme = :dark)
 save("attention_training_dark.png", training_fig_dark; px_per_unit = 1.2)
-save("attention_training.png", training_fig_light; px_per_unit = 1.2)
+save("attention_training_light.png", training_fig_light; px_per_unit = 1.2)
 
 nothing
 ```
 
-```@example
-Main.include_graphics("attention_training"; caption = "Training loss for the different networks. ") # hide
-```
+![Training loss for the different networks.](attention_training_light.png)
+![Training loss for the different networks.](attention_training_dark.png)
 
 ```@setup softmax_comparison
 const index = 1
@@ -178,13 +176,12 @@ end
 fig_light, ax_light = make_validation_plot(n_steps; theme = :light)
 fig_dark, ax_dark = make_validation_plot(n_steps; theme = :dark)
 save("validation_dark.png", fig_dark; px_per_unit = 1.2)
-save("validation.png", fig_light; px_per_unit = 1.2)
+save("validation_light.png", fig_light; px_per_unit = 1.2)
 
 nothing
 ```
 
-```@example
-Main.include_graphics("validation"; caption = "Predicting trajectories with transformers based on the vector softmax and the matrix softmax. ") # hide
-```
+![Predicting trajectories with transformers based on the vector softmax and the matrix softmax.](validation_light.png)
+![Predicting trajectories with transformers based on the vector softmax and the matrix softmax.](validation_dark.png)
 
 A similar page can be found [here](@ref "Comparing Matrix and Vector Softmax as Activation Functions in a Transformer").

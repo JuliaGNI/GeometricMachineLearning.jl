@@ -110,15 +110,14 @@ end # hide
 
 fig_light = set_up_plot(; theme = :light)[1]
 fig_dark = set_up_plot(; theme = :dark)[1]
-save("two_vectors.png", alpha_colorbuffer(fig_light)) # hide
+save("two_vectors_light.png", alpha_colorbuffer(fig_light)) # hide
 save("two_vectors_dark.png", alpha_colorbuffer(fig_dark)) # hide
 
 nothing # hide
 ```
 
-```@example
-Main.include_graphics("two_vectors"; width = .7) # hide
-```
+![](two_vectors_light.png)
+![](two_vectors_dark.png)
 
 Note that we have chosen the arrow here to have the same direction as before but only about half the magnitude. We further drew another arrow that we want to parallel transport (the purple arrow). 
 
@@ -167,7 +166,7 @@ end # hide
 
 fig_light, ax_light = plot_parallel_transport(; theme = :light) # hide
 fig_dark, ax_dark = plot_parallel_transport(; theme = :dark) # hide
-save("parallel_transport.png", fig_light |> alpha_colorbuffer) # hide
+save("parallel_transport_light.png", fig_light |> alpha_colorbuffer) # hide
 save("parallel_transport_dark.png", fig_dark |> alpha_colorbuffer) # hide
 hidedecorations!(ax_light)  # hide
 hidespines!(ax_light) # hide
@@ -176,9 +175,8 @@ save("parallel_transport_naked.png", fig_light |> alpha_colorbuffer) # hide
 nothing # hide
 ```
 
-```@example
-Main.include_graphics("parallel_transport"; width = .7) # hide
-```
+![](parallel_transport_light.png)
+![](parallel_transport_dark.png)
 
 Note that the angle between the two vector is preserved as we go along the geodesic.
 

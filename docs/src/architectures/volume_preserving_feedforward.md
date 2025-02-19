@@ -8,9 +8,8 @@ The constructor for [`VolumePreservingFeedForward`](@ref) produces the following
 
 [^1]: Based on the input arguments `n_linear` and `n_blocks`. In this example `init_upper` is set to false, which means that the first layer is of type *lower* followed by a layer of type *upper*. 
 
-```@example
-Main.include_graphics("../tikz/vp_feedforward"; width = .25, caption = raw"Visualization of how the keywords in the constructor are interpreted. ") # hide
-```
+![Visualization of how the keywords in the constructor are interpreted.](../tikz/vp_feedforward_light.png)
+![Visualization of how the keywords in the constructor are interpreted.](../tikz/vp_feedforward_dark.png)
 
 Here "LinearLowerLayer" performs 
 
@@ -49,9 +48,8 @@ And we see that we get the same architecture as shown in the figure above, with 
 
 In the general framework of feedforward neural networks [SympNets](@ref "SympNet Architecture") are more restrictive than volume-preserving neural networks as symplecticity is a stronger property than volume-preservation:
 
-```@example
-Main.include_graphics("../tikz/structure_preservation_hierarchy"; width = .35, caption = "Symplectic neural networks are a more restrictive class of architectures than volume-preserving ones. But by construction they only work in even dimensions. ") # hide
-```
+![Symplectic neural networks are a more restrictive class of architectures than volume-preserving ones. But by construction they only work in even dimensions.](../tikz/structure_preservation_hierarchy_light.png)
+![Symplectic neural networks are a more restrictive class of architectures than volume-preserving ones. But by construction they only work in even dimensions.](../tikz/structure_preservation_hierarchy_dark.png)
 
 Note however that SympNets rely on data in canonical form, i.e. data that is of ``(q, p)`` type (called [`GeometricMachineLearning.QPT`](@ref) in `GeometricMachineLearning`), so those data need to come from a vector space ``\mathbb{R}^{2n}`` of even dimension. Volume-preserving feedforward neural networks also work for odd-dimensional spaces. This is also true for transformers: the [volume-preserving transformer](@ref "Volume-Preserving Transformer") works in spaces of arbitrary dimension ``\mathbb{R}^{n\times{}T}``, whereas the [linear symplectic transformer](@ref "Linear Symplectic Transformer") only works in even-dimensional spaces ``\mathbb{R}^{2n\times{}T}``.
 

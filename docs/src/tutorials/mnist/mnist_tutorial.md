@@ -48,9 +48,9 @@ nothing # hide
 
 Here we called [`DataLoader`](@ref) on a tensor and a vector of integers (targets) as input. [`DataLoader`](@ref) automatically converts the data to the correct input format for easy handling. This is visualized below:
 
-```@example
-Main.include_graphics("mnist_visualization"; caption = "Visualization of how the data are preprocessed. An image is first split and then flattened. ", width = .8) # hide
-```
+
+![Visualization of how the data are preprocessed. An image is first split and then flattened.](mnist_visualization_light.png)
+![Visualization of how the data are preprocessed. An image is first split and then flattened.](mnist_visualization_dark.png)
 
 Internally [`DataLoader`](@ref) calls [`split_and_flatten`](@ref) which splits each image into a number of *patches* according to the keyword arguments `patch_length` and `number_of_patches`. We also load the test data with [`DataLoader`](@ref):
 
@@ -186,16 +186,15 @@ lines!(ax, loss_array2, label="Adam + Stiefel", color=mred)
 lines!(ax, loss_array3, label="Gradient + Stiefel", color=mpurple)
 lines!(ax, loss_array4, label="Momentum + Stiefel", color=morange)
 axislegend(; position = (.82, .75), backgroundcolor = :transparent, labelcolor = textcolor) # hide
-fig_name = theme == :dark ? "mnist_training_loss_dark.png" : "mnist_training_loss.png" # hide
+fig_name = theme == :dark ? "mnist_training_loss_dark.png" : "mnist_training_loss_light.png" # hide
 save(fig_name, fig; px_per_unit = 1.2) # hide
 end # hide
 make_error_plot(; theme = :dark) # hide
 make_error_plot(; theme = :light) # hide
 ```
 
-```@example
-Main.include_graphics("mnist_training_loss"; width = .7, caption = raw"Comparison between the standard Adam optimizer (blue), the Adam optimizer with weights on the Stiefel manifold (purple), the gradient optimizer with weights on the Stiefel manifold (purple) and the momentum optimizer with weights on the Stiefel manifold (orange). ") # hide
-```
+![Comparison between the standard Adam optimizer (blue), the Adam optimizer with weights on the Stiefel manifold (purple), the gradient optimizer with weights on the Stiefel manifold (purple) and the momentum optimizer with weights on the Stiefel manifold (orange).](mnist_training_loss_light.png)
+![Comparison between the standard Adam optimizer (blue), the Adam optimizer with weights on the Stiefel manifold (purple), the gradient optimizer with weights on the Stiefel manifold (purple) and the momentum optimizer with weights on the Stiefel manifold (orange).](mnist_training_loss_dark.png)
 
 ```@eval
 Main.remark(raw"We see that the loss value for the Adam optimizer without parameters on the Stiefel manifold is stuck at around 1.34 which means that it *always predicts the same value*. So in 1 out of ten cases we have error 0 and in 9 out of ten cases we have error ``\sqrt{2}``, giving
