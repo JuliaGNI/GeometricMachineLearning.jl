@@ -38,31 +38,6 @@ const output_type = isempty(ARGS) ? :html : ARGS[1] == "html_output" ? :html : :
 # the format is needed by the Julia documenter
 const format = output_type == :html ? html_format : latex_format
 
-function html_graphics(path::String; kwargs...)
-    light_path = joinpath(path * ".png")
-    dark_path = joinpath(path * "_dark.png")
-    light_string = """<object type="image/svg+xml" class="display-light-only" data=$(joinpath(buildpath, light_path))></object>"""
-    dark_string = """<object type="image/svg+xml" class="display-dark-only" data=$(joinpath(buildpath, dark_path))></object>"""
-    @assert isfile(light_path) "No file found for " * light_path * "!"
-    @assert isfile(dark_path) "No file found for " * dark_path * "!"
-    Docs.HTML(light_string, dark_string)
-end
-
-function latex_graphics(path::String; label = nothing, caption = nothing, width = .5)
-    figure_width = "$(width)\\textwidth"
-    latex_label = isnothing(label) ? "" : "\\label{" * label * "}" 
-    latex_caption = isnothing(caption) ? "" : "\\caption{" * string(Markdown.parse(caption))[1:end-2] * "}"
-    latex_string = """\\begin{figure}
-            \\includegraphics[width = """ * figure_width * "]{" * path * ".png}" *
-            latex_caption *
-            latex_label * """
-        \\end{figure}"""
-end
-
-function include_graphics(path::String; kwargs...)
-    Main.output_type == :html ? html_graphics(path; kwargs...) : latex_graphics(path; kwargs...)
-end
-
 function theorem(statement::String, name::Nothing; label::Union{Nothing, String} = nothing)
     if Main.output_type == :html
         Markdown.parse("""!!! info "Theorem" 
@@ -206,6 +181,7 @@ _architectures = "Architectures" => [
     "Standard Transformer" => "architectures/transformer.md",
     "Volume-Preserving Transformer" => "architectures/volume_preserving_transformer.md",
     "Linear Symplectic Transformer" => "architectures/linear_symplectic_transformer.md",
+    "Symplectic Transformer" => "architectures/symplectic_transformer.md",
     ]
 
 _data_loader = "Data Loader" =>[
@@ -220,8 +196,10 @@ _tutorials = "Tutorials" => [
     "MNIST" => "tutorials/mnist/mnist_tutorial.md",
     "Grassmann Manifold" => "tutorials/grassmann_layer.md",
     "Volume-Preserving Attention" => "tutorials/volume_preserving_attention.md",
+    "Matrix Attention" => "tutorials/matrix_softmax.md",
     "Volume-Preserving Transformer for the Rigid Body" => "tutorials/volume_preserving_transformer_rigid_body.md",
     "Linear Symplectic Transformer" => "tutorials/linear_symplectic_transformer.md",
+    "Symplectic Transformer" => "tutorials/symplectic_transformer.md",
     "Adjusting the Loss Function" => "tutorials/adjusting_the_loss_function.md",
     "Comparing Optimizers" => "tutorials/optimizer_comparison.md",
     ]

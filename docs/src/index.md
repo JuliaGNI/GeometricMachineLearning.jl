@@ -8,9 +8,8 @@ CurrentModule = GeometricMachineLearning
 
 In that regard its aim is similar to traditional *geometric numerical integration* [hairer2006geometric, Kraus:2020:GeometricIntegrators](@cite) in that it models maps that share properties with the analytic solution of a differential equation:
 
-```@example
-Main.include_graphics("tikz/gml_venn") # hide
-```
+![](tikz/gml_venn_light.png)
+![](tikz/gml_venn_dark.png)
 
 ## Installation
 
@@ -38,9 +37,8 @@ Existing architectures include:
 
 `GeometricMachineLearning` supports putting neural network weights on manifolds such as the [Stiefel manifold](@ref "The Stiefel Manifold") and the [Grassmann manifold](@ref "The Grassmann Manifold") and [Riemannian optimization](@ref "Riemannian Manifolds").
 
-```@example
-Main.include_graphics("tikz/tangent_vector"; caption = raw"Weights can be put on manifolds to achieve structure preservation or improved stability.") # hide
-```
+![Weights can be put on manifolds to achieve structure preservation or improved stability.](tikz/tangent_vector_light.png)
+![Weights can be put on manifolds to achieve structure preservation or improved stability.](tikz/tangent_vector_dark.png)
 
 When `GeometricMachineLearning` optimizes on manifolds it uses the framework introduced in [brantner2023generalizing](@cite). Optimization is necessary for some neural network architectures such as [symplectic autoencoders](@ref "The Symplectic Autoencoder") and can be critical for others such as the [standard transformer](@ref "MNIST Tutorial") [kong2023momentum, zhang2021orthogonality](@cite).
 

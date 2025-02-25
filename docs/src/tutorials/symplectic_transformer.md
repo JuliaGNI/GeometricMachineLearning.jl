@@ -1,6 +1,6 @@
-# [Linear Symplectic Transformer](@id linear_symplectic_transformer_tutorial)
+# [Symplectic Transformer](@id symplectic_transformer_tutorial)
 
-In this section we compare the [linear symplectic transformer](@ref "Linear Symplectic Transformer") to the [standard transformer](@ref "Standard Transformer"). The example we treat here is the *coupled harmonic oscillator*:
+In this section we compare the symplectic transformer to the [standard transformer](@ref "Standard Transformer"). The example we treat here is the *coupled harmonic oscillator*:
 
 ![Visualization of the coupled harmonic oscillator.](../tikz/coupled_harmonic_oscillator_light.png)
 ![Visualization of the coupled harmonic oscillator.](../tikz/coupled_harmonic_oscillator_dark.png)
@@ -17,11 +17,11 @@ where ``\sigma(x) = 1 / (1 + e^{-x})`` is the sigmoid activation function. The s
 - ``m_2``: mass 2,
 - ``k``: coupling strength between the two masses. 
 
-To demonstrate the efficacy of the linear symplectic transformer here we will leave the parameters fixed but alter the initial conditions[^1]:
+To demonstrate the efficacy of the symplectic transformer here we will leave the parameters fixed but alter the initial conditions[^1]:
 
 [^1]: We here use the implementation of the coupled harmonic oscillator from [`GeometricProblems`](https://github.com/JuliaGNI/GeometricProblems.jl).
 
-```@example lin_sympl_tran_tut
+```@example sympl_tran_tut
 using GeometricMachineLearning # hide
 using GeometricProblems.CoupledHarmonicOscillator: hodeensemble, default_parameters
 using GeometricIntegrators: ImplicitMidpoint, integrate # hide
@@ -44,20 +44,20 @@ nothing # hide
 
 We now define the architectures and train them: 
 
-```@example lin_sympl_tran_tut
+```@example sympl_tran_tut
 const seq_length = 4
 const batch_size = 1024
 const n_epochs = 2000
 
 arch_standard = StandardTransformerIntegrator(dl.input_dim; n_heads = 2, 
-                                                            L = 1, 
+                                                            L = 4, 
                                                             n_blocks = 2)
-arch_symplectic = LinearSymplecticTransformer(  dl.input_dim, 
-                                                seq_length; n_sympnet = 2,
-                                                L = 1, 
+arch_symplectic = SymplecticTransformer(  dl.input_dim,; 
+                                                n_sympnet = 2,
+                                                L = 4, 
                                                 upscaling_dimension = 2 * dl.input_dim)
 arch_sympnet = GSympNet(dl.input_dim;   n_layers = 4, 
-                                        upscaling_dimension = 2 * dl.input_dim)
+                                        upscaling_dimension = 8 * dl.input_dim)
 
 nn_standard = NeuralNetwork(arch_standard)
 nn_symplectic = NeuralNetwork(arch_symplectic)
@@ -81,7 +81,7 @@ nothing # hide
 
 And the corresponding training losses look as follows:
 
-```@setup lin_sympl_tran_tut
+```@setup sympl_tran_tut
 morange = RGBf(255 / 256, 127 / 256, 14 / 256) # hide
 mred = RGBf(214 / 256, 39 / 256, 40 / 256) # hide
 mpurple = RGBf(148 / 256, 103 / 256, 189 / 256) # hide
@@ -108,7 +108,7 @@ function plot_training_losses(loss_array_standard, loss_array_symplectic, loss_a
         yscale = log10
     )
     lines!(ax, loss_array_standard, color = mpurple, label = "ST")
-    lines!(ax, loss_array_symplectic,  color = mred, label = "LST")
+    lines!(ax, loss_array_symplectic,  color = mred, label = "SyT")
     lines!(ax, loss_array_sympnet, color = morange, label = "SympNet")
     axislegend(; position = (.82, .75), backgroundcolor = :transparent, labelcolor = textcolor)
 
@@ -124,13 +124,13 @@ save("lst_light.png", fig_light; px_per_unit = 1.2)
 nothing
 ```
 
-![Training loss for the different networks.](lst_light.png)
-![Training loss for the different networks.](lst_dark.png)
+![](lst_light.png)
+![](lst_dark.png)
 
 
 We further evaluate a trajectory with the trained networks for thirty time steps: 
 
-```@setup lin_sympl_tran_tut
+```@setup sympl_tran_tut
 const index = 1
 init_con = (q = dl.input.q[:, 1:seq_length, index], p = dl.input.p[:, 1:seq_length, index])
 # when we iterate with a feedforward neural network we only need a vector as input
@@ -163,7 +163,7 @@ function make_validation_plot(n_steps = n_steps; theme = :dark)
     # we use linewidth  = 2
     lines!(ax, dl.input.q[1, 1:n_steps, index]; color = mblue, label = "Implicit midpoint", linewidth = 2)
     lines!(ax, prediction_standard.q[1, :]; color = mpurple, label = "ST", linewidth = 2)
-    lines!(ax, prediction_symplectic.q[1, :]; color = mred, label = "LST", linewidth = 2)
+    lines!(ax, prediction_symplectic.q[1, :]; color = mred, label = "SyT", linewidth = 2)
     lines!(ax, prediction_sympnet.q[1, :]; color = morange, label = "SympNet", linewidth = 2)
     axislegend(; position = (.55, .75), backgroundcolor = :transparent, labelcolor = textcolor)
 
@@ -178,21 +178,13 @@ save("lst_validation_dark.png", fig_dark; px_per_unit = 1.2)
 nothing
 ```
 
-![Validation of the different networks.](lst_validation_light.png)
-![Validation of the different networks.](lst_validation_dark.png)
+![](lst_validation_light.png)
+![](lst_validation_dark.png)
 
 We can see that the standard transformer is not able to stay close to the trajectory coming from implicit midpoint very well. The linear symplectic transformer outperforms the standard transformer as well as the SympNet while needing fewer parameters than the standard transformer: 
 
-```@example lin_sympl_tran_tut
+```@example sympl_tran_tut
 parameterlength(nn_standard), parameterlength(nn_symplectic), parameterlength(nn_sympnet)
 ```
 
-It is also interesting to note that the training error for the SympNet gets lower than the one for the linear symplectic transformer, but it does not manage to outperform it when looking at the validation. 
-
-```@raw latex
-\section*{Chapter Summary}
-
-In this chapter we demonstrated the efficacy of neural network-based symplectic integrators. We showed two examples: SympNets as an example of a symplectic one-step method and linear symplectic transformers as an example of a symplectic multi-step method. We compared the two different SympNet architectures ($LA$-SympNets and $G$-SympNets) with a standard ResNet and gave an example where symplecticity is important to achieve long-term stability: the ResNet was shown to fail on longer time scales even though it outperforms the $LA$-SympNet on smaller ones; this is because the ResNet does not have any structure encoded into it. The linear symplectic transformer was compared to the standard transformer and a SympNet (on the example of a complex coupled harmonic oscillator) and shown to outperform these two networks.
-
-Of the two symplectic neural networks shown here the linear symplectic transformer constitutes a novel neural network architecture which was introduced in this dissertation.
-```
+It is also interesting to note that the training error for the SympNet gets lower than the one for the symplectic transformer, but it does not manage to outperform it when looking at the validation. 

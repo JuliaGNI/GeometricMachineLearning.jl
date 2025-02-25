@@ -24,9 +24,8 @@ The ``K^TQ`` term is a similarity matrix between the queries and the vectors.
 
 The transformer contains a *self-attention mechanism*, i.e. takes an input ``X`` and then transforms it linearly to ``V``, ``Q`` and ``K`` via ``V = P^VX``, ``Q = P^QX`` and ``K = P^KX``. What distinguishes the multihead attention layer from the singlehead attention layer is that there is not just one ``P^V``, ``P^Q`` and ``P^K``, but there are several: one for each *head* of the multihead attention layer. After computing the individual values, queries and vectors, and after applying the softmax, the outputs are then concatenated together in order to obtain again an array that is of the same size as the input array:
 
-```@example 
-Main.include_graphics("../tikz/mha"; caption = raw"A representation of a multihead attention layer with three heads. ") # hide
-```
+![A representation of a multihead attention layer with three heads.](../tikz/mha_light.png)
+![A representation of a multihead attention layer with three heads.](../tikz/mha_dark.png)
 
 Written as an equation we get:
 
@@ -34,7 +33,7 @@ Written as an equation we get:
 \mathrm{MultiHeadAttention}(Z) = \begin{pmatrix} \mathrm{Attention}(P^Q_1Z, P^K_1Z, P^V_1Z) \\ \mathrm{Attention}(P^Q_2Z, P^K_2Z, P^V_2Z) \\ \cdots \\ \mathrm{Attention}(P^Q_{\mathtt{n\_heads}}Z, P^K_{\mathtt{n\_heads}}Z, P^V_{\mathtt{n\_heads}}Z) \end{pmatrix},
 ```
 
-where ``P^{(\cdot)}_i\in\mathbb{R}^{N\times(N\div\mathtt{n\_heads})}`` for ``Z\in\mathbb{R}^{N\times{}T}.`` Note that we implicitly require that ``N`` is divisible by ``\mathtt{n\_heads}`` here.
+where ``P^{(\cdot)}_i\in\mathbb{R}^{(N\div\mathtt{n\_heads})\times{}N}`` for ``Z\in\mathbb{R}^{N\times{}T}.`` Note that we implicitly require that ``N`` is divisible by ``\mathtt{n\_heads}`` here.
 
 Here the various ``P`` matrices can be interpreted as being projections onto lower-dimensional subspaces, hence the designation by the letter ``P``. The columns of the projection matrices span smaller spaces that should *capture features in the input data*. We will show [in an example](@ref "MNIST Tutorial") how training of a neural network can benefit from putting the ``P^{(\cdot)}_i`` matrices on the Stiefel manifold.   
 
@@ -73,6 +72,10 @@ Finally the matrix ``\mathcal{P}_i`` is multiplied onto ``V_i`` from the right, 
 With this we can now give a better interpretation of what the projection matrices ``W_i^V``, ``W_i^K`` and ``W_i^Q`` should do: they map the original data to lower-dimensional subspaces. We then compute correlations between the representation in the $K$ and in the ``Q`` basis and use this correlation to perform a convex reweighting of the vectors in the $V$ basis. These reweighted *values* are then fed into a standard feedforward neural network as is further explained in the [section on the standard transformer](@ref "Standard Transformer").
 
 Because the main task of the ``W_i^V``, ``W_i^K`` and ``W_i^Q`` matrices here is for them to find bases, it makes sense to constrain them onto the Stiefel manifold; they do not and should not have the maximum possible generality.
+
+## Using a Matrix Softmax
+
+Usually the attention layer is using a [`VectorSoftmax`](@ref), i.e. one that produces a series of probability vectors. In `GeometricMachineLearning` we can also use a [`MatrixSoftmax`](@ref) instead. An example application of this is shown [in the tutorials section](@ref "Matrix Softmax v Vector Softmax").
 
 ## Library Functions 
 

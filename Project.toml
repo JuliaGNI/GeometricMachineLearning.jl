@@ -1,7 +1,7 @@
 name = "GeometricMachineLearning"
 uuid = "194d25b2-d3f5-49f0-af24-c124f4aa80cc"
 authors = ["Michael Kraus <michael.kraus@ipp.mpg.de>"]
-version = "0.3.7"
+version = "0.4.1"
 
 [deps]
 AbstractNeuralNetworks = "60874f82-5ada-4c70-bd1c-fa6be7711c8a"
@@ -33,7 +33,7 @@ UpdateJulia = "770da0de-323d-4d28-9202-0e205c1e0aff"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
-AbstractNeuralNetworks = "0.5"
+AbstractNeuralNetworks = "0.5, 0.6"
 BandedMatrices = "1"
 ChainRules = "1"
 ChainRulesCore = "1"
@@ -43,10 +43,10 @@ ForwardDiff = "0.10"
 GeometricBase = "0.10"
 GeometricEquations = "0.18"
 GeometricIntegrators = "0.14.2"
-GeometricSolutions = "0.3.24"
+GeometricSolutions = "0.3.24, 0.4"
 HDF5 = "0.16, 0.17"
 KernelAbstractions = "0.9"
-LazyArrays = "2"
+LazyArrays = "=2.3.2"
 NNlib = "0.8, 0.9"
 ProgressMeter = "1"
 SafeTestsets = "0.1"
@@ -64,12 +64,12 @@ ChainRulesTestUtils = "cdddcdb0-9152-4a09-a978-84456f9df70a"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 FiniteDifferences = "26cc04aa-876d-5657-8c51-4c34ba976000"
 GeometricEquations = "c85262ba-a08a-430a-b926-d29770767bf2"
+GeometricIntegrators = "dcce2d33-59f6-5b8d-9047-0defad88ae06"
 GeometricProblems = "18cb22b4-ad41-5c80-9c5f-710df63fbdc9"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 RungeKutta = "fb486d5c-30a0-4a8a-8415-a8b4ace5a6f7"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-GeometricIntegrators = "dcce2d33-59f6-5b8d-9047-0defad88ae06"
 
 [targets]
 test = ["Documenter", "ChainRulesTestUtils", "Random", "SafeTestsets", "Test", "GeometricProblems", "FiniteDifferences", "GeometricIntegrators"]

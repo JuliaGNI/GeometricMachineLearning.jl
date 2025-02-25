@@ -192,19 +192,15 @@ function make_plot(; theme = :light)
     fig, ax
 end
 
-if Main.output_type == :html
-    save("tangent_space.png",        make_plot(; theme = :light)[1]; px_per_unit = 1.5)
-    save("tangent_space_dark.png",   make_plot(; theme = :dark )[1]; px_per_unit = 1.5)
-elseif Main.output_type == :latex
-    save("tangent_space.png",       make_plot(; theme = :light)[1]; px_per_unit = 2.0)
-end
+px_per_unit = Main.output_type == :html ? 1.5 : 2
+save("tangent_space_light.png",        make_plot(; theme = :light)[1]; px_per_unit = px_per_unit)
+save("tangent_space_dark.png",   make_plot(; theme = :dark )[1]; px_per_unit = px_per_unit)
 
 nothing
 ```
 
-```@example
-Main.include_graphics("tangent_space"; caption = raw"Visualization of how the tangent space is constructed. ", width = .9) # hide
-```
+![Visualization of how the tangent space is constructed.](tangent_space_light.png)
+![Visualization of how the tangent space is constructed.](tangent_space_dark.png)
 
 The tangent space ``T_x\mathcal{M}`` for
 
