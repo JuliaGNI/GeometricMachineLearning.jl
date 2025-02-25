@@ -26,7 +26,7 @@ We then build the neural network:
 
 ```@example hnn
 const intermediate_dim = 5
-hnn_arch = Chain(Dense(2, intermediate_dim, tanh), Dense(intermediate_dim, intermediate_dim, tanh), Linear(intermediate_dim, 1))
+hnn_arch = StandardHamiltonianArchitecture(2, intermediate_dim)
 hnn = NeuralNetwork(hnn_arch)
 nothing # hide
 ```
@@ -34,12 +34,7 @@ nothing # hide
 Next we define the loss function
 
 ```@example hnn
-struct HNNLoss <: NetworkLoss end
-function (loss::HNNLoss)(model::Chain, ps::Tuple, input::AT, output::AT) where {T, AT <: AbstractArray{T}}
-    vf = 𝕁(gradient(input -> sum(model(input, ps)), input)[1])
-    norm(input - output)
-end
-loss = HNNLoss()
+loss = HNNLoss(hnn_arch)
 nothing # hide
 ```
 

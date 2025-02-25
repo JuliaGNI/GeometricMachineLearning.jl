@@ -38,7 +38,3 @@ Strip `returned_pullback` from unnecessary `Zygote`-induces garbage.
 Also see the docs for [`ZygotePullback`](@ref).
 """
 _processing = _get_params∘_get_contents
-
-function create_array(::Type{<:Base.ReshapedArray{T, N, P}}, S, nd::Val, d::Val, elems...) where {T, N, P}
-    create_array(P, S, nd, d, elems...)
-end

@@ -1,7 +1,7 @@
 abstract type HamiltonianArchitecture{AT<:Activation} <: Architecture end
 
-HNN_nhidden_default = 1
-HNN_activation_default = tanh
+const HNN_nhidden_default = 1
+const HNN_activation_default = AbstractNeuralNetworks.TanhActivation()
 
 function HamiltonianArchitecture(dim::Integer, width::Integer, nhidden::Integer, activation)
     @warn "You called the abstract type `HamiltonianArchitecture` as a constructor. This is defaulting to `StandardHamiltonianArchitecture`."
@@ -65,7 +65,7 @@ struct GeneralizedHamiltonianArchitecture{AT, IT} <: HamiltonianArchitecture{AT}
     end
 end
 
-@inline AbstractNeuralNetworks.dim(arch::HamiltonianArchitecture) = arch.dimin
+@inline AbstractNeuralNetworks.dim(arch::HamiltonianArchitecture) = arch.dim
 
 """
     symbolic_hamiltonian_vector_field(nn::SymbolicNeuralNetwork)
@@ -101,7 +101,7 @@ This first computes a symbolic expression of the vector field using [`symbolic_h
 function hamiltonian_vector_field(arch::HamiltonianArchitecture)
     nn = SymbolicNeuralNetwork(arch)
     hvf = symbolic_hamiltonian_vector_field(nn)
-    build_nn_function(hvf, nn.params, nn.input)
+    SymbolicNeuralNetworks.build_nn_function(hvf, nn.params, nn.input)
 end
 
 function Chain(arch::HamiltonianArchitecture)
