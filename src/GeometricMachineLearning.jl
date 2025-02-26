@@ -22,7 +22,6 @@ module GeometricMachineLearning
     using SymbolicNeuralNetworks: derivative, _get_contents, _get_params, SymbolicNeuralNetwork
     using Symbolics: @variables, substitute
 
-    import ZygoteRules
     import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer, AbstractExplicitCell, AbstractNeuralNetwork , NeuralNetwork, UnknownArchitecture
     import AbstractNeuralNetworks: Chain, GridCell
     import AbstractNeuralNetworks: Dense, Linear, Recurrent
@@ -54,7 +53,6 @@ module GeometricMachineLearning
     export description
 
     include("utils.jl")
-    include("rrule_for_applychain.jl")
 
     include("data_loader/data_loader.jl")
 

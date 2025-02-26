@@ -282,7 +282,7 @@ loss_array = zeros(training_steps)
 for i in 1:training_steps
     val, dp = compute_gradient(params(nn))
     loss_array[i] = val
-    optimization_step!(optimizer, λY, params(nn), dp.params)
+    optimization_step!(optimizer, λY, params(nn), dp)
 end
 ```
 
