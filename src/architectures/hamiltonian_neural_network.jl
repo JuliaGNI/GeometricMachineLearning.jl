@@ -39,7 +39,7 @@ GHNN_integrator_default = nothing
 """
     GeneralizedHamiltonianArchitecture <: HamiltonianArchitecture
 
-A realization of generalized Hamiltonian neural networks (GHNNs) as introduced in [horn4555181generalized](@cite).
+A realization of generalized Hamiltonian neural networks (GHNNs) as introduced in [horn2025generalized](@cite).
 
 Also see [`StandardHamiltonianArchitecture`](@ref).
 

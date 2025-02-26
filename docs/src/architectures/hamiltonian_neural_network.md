@@ -38,3 +38,15 @@ Here the derivatives (i.e. vector field data) ``\dot{q}_i^{(t)}`` and ``\dot{p}_
 
 !!! info
    Usually we use [`Zygote`](https://github.com/FluxML/Zygote.jl) for computing derivatives in `GeometricMachineLearning`, but as the [`Zygote` documentation](https://fluxml.ai/Zygote.jl/dev/limitations/#Second-derivatives-1) itself points out: "Often using a different AD system over Zygote is a better solution [for computing second-order derivatives]." For this reason we compute the loss of the HNN with [`SymbolicNeuralNetworks`](https://github.com/JuliaGNI/SymbolicNeuralNetworks.jl) and optionally also its gradient.
+
+## Library Functions
+
+```@docs
+hamiltonian_vector_field(::HamiltonianArchitecture)
+StandardHamiltonianArchitecture
+HNNLoss
+symbolic_hamiltonian_vector_field(::SymbolicNeuralNetworks.SymbolicNeuralNetwork)
+SymbolicNeuralNetworks.SymbolicPullback(::HamiltonianArchitecture)
+GeneralizedHamiltonianArchitecture
+_processing
+```
