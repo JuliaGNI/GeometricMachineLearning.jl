@@ -79,7 +79,7 @@ Pages = []
 
 greydanus2019hamiltonian
 burby2020fast
-horn4555181generalized
+horn2025generalized
 celledoni2021structure
 ```
 
@@ -103,7 +103,7 @@ hairer2006geometric
 leimkuhler2004simulating
 greydanus2019hamiltonian
 burby2020fast
-horn4555181generalized
+horn2025generalized
 celledoni2021structure
 ```
 
