@@ -31,6 +31,7 @@ Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 UpdateJulia = "770da0de-323d-4d28-9202-0e205c1e0aff"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
+ZygoteRules = "700de1a5-db45-46bc-99cf-38207098b444"
 
 [compat]
 AbstractNeuralNetworks = "0.5, 0.6"
@@ -55,6 +56,7 @@ Symbolics = "6.22.0"
 TimerOutputs = "0.5"
 UpdateJulia = "0.4"
 Zygote = "0.6"
+ZygoteRules = "0.2.7"
 julia = "1.8"
 
 [extras]
