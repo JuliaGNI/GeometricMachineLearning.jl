@@ -5,7 +5,7 @@ Make a `SymbolicPullback` based on a [`HamiltonianArchitecture`](@ref).
 
 # Implementation
 
-Internally this is calling `SymbolicNeuralNetwork` and [`HnnLoss`](@ref).
+Internally this is calling `SymbolicNeuralNetwork` and [`HNNLoss`](@ref).
 """
 function SymbolicPullback(arch::HamiltonianArchitecture)
     nn = SymbolicNeuralNetwork(arch)

@@ -5,11 +5,11 @@ The loss for a Hamiltonian neural network.
 
 # Constructor
 
-This can be called with an instance of [`HamiltonianSymbolicNeuralNetwork`](@ref) as the only input arguemtn, i.e.:
+This can be called with a `NeuralNetwork`, built with a [`HamiltonianArchitecture`](@ref), as the only input arguemtn, i.e.:
 ```julia
 HNNLoss(nn)
 ```
-where `nn` is a [`HamiltonianSymbolicNeuralNetwork`](@ref) gives the corresponding Hamiltonian loss.
+where `nn` is a `NeuralNetwork`, that is built with a [`HamiltonianArchitecture`](@ref), gives the corresponding Hamiltonian loss.
 
 # Functor
 

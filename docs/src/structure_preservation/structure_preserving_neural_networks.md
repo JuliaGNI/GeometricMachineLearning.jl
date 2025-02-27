@@ -52,7 +52,7 @@ Main.example(raw"We say that a neural network is **symplectic** if ``\mathcal{NN
 
 If we have ``m = n`` then we can use [SympNets](@ref "SympNet Architecture") to realize such architectures; SympNets furthermore are universal approximators for the set of canonical symplectic maps[^3] [jin2020sympnets](@cite). If ``m \neq n`` we can use [symplectic autoencoders](@ref "The Symplectic Autoencoder") to realize such an architecture. A different class of neural networks are *volume-preserving neural networks*:
 
-[^3]: Other neural network architectures that were developed with the same aim are *Hamiltonian neural networks* [greydanus2019hamiltonian](@cite), *Hénon nets* [burby2020fast](@cite) and *generalized Hamiltonian neural networks* [horn4555181generalized](@cite). [celledoni2021structure](@cite) gives an overview over *structure preserving neural networks*.
+[^3]: Other neural network architectures that were developed with the same aim are *Hamiltonian neural networks* [greydanus2019hamiltonian](@cite), *Hénon nets* [burby2020fast](@cite) and *generalized Hamiltonian neural networks* [horn2025generalized](@cite). [celledoni2021structure](@cite) gives an overview over *structure preserving neural networks*.
 
 ```@eval
 Main.example(raw"We say that a neural network is **volume-preserving** if ``\mathcal{NN}_\Theta:\mathbb{R}^n\to\mathbb{R}^n`` is such that: 

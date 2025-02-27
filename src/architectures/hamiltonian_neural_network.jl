@@ -1,3 +1,8 @@
+"""
+    HamiltonianArchitecture <: Architecture
+
+See [`StandardHamiltonianArchitecture`](@ref) and [`GeneralizedHamiltonianArchitecture`](@ref).
+"""
 abstract type HamiltonianArchitecture{AT<:Activation} <: Architecture end
 
 const HNN_nhidden_default = 1

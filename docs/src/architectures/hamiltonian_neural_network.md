@@ -1,4 +1,4 @@
-# Hamiltonian Neural Network[@id hnn_architecture]
+# [Hamiltonian Neural Network](@id hnn_architecture)
 
 The Hamiltonian Neural Network (HNN) [greydanus2019hamiltonian](@cite) aims at building a [Hamiltonian vector field](@ref "Symplectic Systems")  with a neural network. We recall that a *canonical Hamiltonian vector field* on ``\mathbb{R}^{2d}`` is one that can be written as:
 
@@ -43,6 +43,7 @@ Here the derivatives (i.e. vector field data) ``\dot{q}_i^{(t)}`` and ``\dot{p}_
 
 ```@docs
 GeometricMachineLearning.hamiltonian_vector_field(::HamiltonianArchitecture)
+GeometricMachineLearning.HamiltonianArchitecture
 GeometricMachineLearning.StandardHamiltonianArchitecture
 GeometricMachineLearning.HNNLoss
 GeometricMachineLearning.symbolic_hamiltonian_vector_field(::GeometricMachineLearning.SymbolicNeuralNetwork)

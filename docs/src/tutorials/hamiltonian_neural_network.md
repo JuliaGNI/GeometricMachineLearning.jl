@@ -1,4 +1,4 @@
-# Hamiltonian Neural Network(@id hnn_tutorial)
+# [Hamiltonian Neural Network](@id hnn_tutorial)
 
 In this tutorial we build a [Hamiltonian neural network](@ref hnn_architecture). 
 
