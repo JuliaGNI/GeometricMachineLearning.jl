@@ -40,14 +40,16 @@ nothing # hide
 
 We can now train the network
 
-```julia
+```@example hnn
 batch = Batch(10)
 n_epochs = 100
 o = Optimizer(AdamOptimizer(Float64), hnn)
 loss_array = o(hnn, dl, batch, n_epochs, loss)
+using CairoMakie # hide
+lines(loss_array) # hide
 ```
 
 !!! info
-   Usually we use [`Zygote`](https://github.com/FluxML/Zygote.jl) for computing derivatives in `GeometricMachineLearning`, but as the [`Zygote` documentation](https://fluxml.ai/Zygote.jl/dev/limitations/#Second-derivatives-1) itself points out: "Often using a different AD system over Zygote is a better solution [for computing second-order derivatives]." For this reason we compute the loss of the HNN with [`SymbolicNeuralNetworks`](https://github.com/JuliaGNI/SymbolicNeuralNetworks.jl) and optionally also its gradient.
+    Usually we use [`Zygote`](https://github.com/FluxML/Zygote.jl) for computing derivatives in `GeometricMachineLearning`, but as the [`Zygote` documentation](https://fluxml.ai/Zygote.jl/dev/limitations/#Second-derivatives-1) itself points out: "Often using a different AD system over Zygote is a better solution [for computing second-order derivatives]." For this reason we compute the loss of the HNN with [`SymbolicNeuralNetworks`](https://github.com/JuliaGNI/SymbolicNeuralNetworks.jl) and optionally also its gradient.
 
 ## Training a HNN Based on Phase Space Data
