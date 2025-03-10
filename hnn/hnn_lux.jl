@@ -35,7 +35,7 @@ const depth = 3
 const act = tanh
 
 # create HNN architecture
-arch = HamiltonianNeuralNetwork(dimin, width, depth, act)
+arch = HamiltonianArchitecture(dimin, width, depth, act)
 
 
 # create model

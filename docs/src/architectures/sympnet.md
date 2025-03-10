@@ -24,7 +24,7 @@ SympNets can be viewed as a *symplectic integrator* or symplectic one-step metho
 ```
 The tilde in the above equation indicates *predicted data*. With standard SympNets[^2] the time step between predictions is not a parameter we can choose but is related to the *temporal frequency of the training data*. This means that if data is recorded in an interval of e.g. 0.1 seconds, then this will be the time step of our integrator.
 
-[^2]: Recently an approach [horn4555181generalized](@cite) has been proposed that makes explicitly specifying the time step possible by viewing SympNets as a subclass of so-called "Generalized Hamiltonian Neural Networks".
+[^2]: Recently an approach [horn2025generalized](@cite) has been proposed that makes explicitly specifying the time step possible by viewing SympNets as a subclass of so-called "Generalized Hamiltonian Neural Networks".
 
 SympNets preserve symplecticity by exploiting the ``(q, p)`` structure of the system. This is visualized below:
 

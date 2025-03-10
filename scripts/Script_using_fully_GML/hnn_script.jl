@@ -26,7 +26,7 @@ ninput = 2*dim
 ln = 2
 ld = 1
 
-arch = HamiltonianNeuralNetwork(ninput; nhidden = ln, width = ld)
+arch = HamiltonianArchitecture(ninput; nhidden = ln, width = ld)
 
 hnn = NeuralNetwork(hnn, Float64)
 

@@ -17,6 +17,10 @@ module GeometricMachineLearning
     using InteractiveUtils
     using TimerOutputs
     import LazyArrays
+    import SymbolicNeuralNetworks
+    import SymbolicNeuralNetworks: input_dimension, output_dimension, SymbolicPullback
+    using SymbolicNeuralNetworks: derivative, _get_contents, _get_params, SymbolicNeuralNetwork
+    using Symbolics: @variables, substitute
 
     import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer, AbstractExplicitCell, AbstractNeuralNetwork , NeuralNetwork, UnknownArchitecture
     import AbstractNeuralNetworks: Chain, GridCell
@@ -248,7 +252,7 @@ module GeometricMachineLearning
     include("backends/backends.jl")
     include("backends/lux.jl")
 
-    export NetworkLoss, TransformerLoss, FeedForwardLoss, AutoEncoderLoss, ReducedLoss
+    export NetworkLoss, TransformerLoss, FeedForwardLoss, AutoEncoderLoss, ReducedLoss, HNNLoss
 
     #INCLUDE ARCHITECTURES
     include("architectures/neural_network_integrator.jl")
@@ -269,7 +273,7 @@ module GeometricMachineLearning
     include("architectures/volume_preserving_feedforward.jl")
     include("architectures/volume_preserving_transformer.jl")
 
-    export HamiltonianNeuralNetwork
+    export HamiltonianArchitecture
     export LagrangianNeuralNetwork
     export SympNet, LASympNet, GSympNet
     export RecurrentNeuralNetwork
@@ -277,6 +281,7 @@ module GeometricMachineLearning
     export ClassificationTransformer, ClassificationLayer
     export VolumePreservingFeedForward
     export SymplecticAutoencoder, PSDArch
+    export HamiltonianArchitecture, StandardHamiltonianArchitecture, GeneralizedHamiltonianArchitecture
 
     export solve!, encoder, decoder
 
@@ -288,9 +293,11 @@ module GeometricMachineLearning
     include("architectures/default_architecture.jl")
 
     include("loss/losses.jl")
+    include("loss/hnn_loss.jl")
 
-    export AbstractPullback
-    include("pullback.jl")
+    export AbstractPullback, ZygotePullback, SymbolicPullback
+    include("pullbacks/zygote_pullback.jl")
+    include("pullbacks/symbolic_hnn_pullback.jl")
 
     export DataLoader, onehotbatch
     export Batch, optimize_for_one_epoch!

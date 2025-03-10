@@ -26,7 +26,7 @@ training_parameters = TrainingParameters(nruns, method, mopt; batch_size = bs)
 # Test for TrainingSet
 #########################################
 
-hnn = HamiltonianNeuralNetwork(2; nhidden= 2, width = 5)
+hnn = HamiltonianArchitecture(2; nhidden= 2, width = 5)
 nn1 = NeuralNetwork(hnn, Float64)
 
 training_set1 = TrainingSet(nn1, training_parameters, training_data)

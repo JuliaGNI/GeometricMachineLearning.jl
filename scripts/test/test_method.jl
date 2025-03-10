@@ -4,7 +4,7 @@ using Test
 include("macro_testerror.jl")
 include("data_generation.jl")
 
-hnn = NeuralNetwork(HamiltonianNeuralNetwork(2), Float64)
+hnn = NeuralNetwork(HamiltonianArchitecture(2), Float64)
 sympnet = NeuralNetwork(GSympNet(2), Float64)
 lnn = NeuralNetwork(LagrangianNeuralNetwork(2), Float64)
 

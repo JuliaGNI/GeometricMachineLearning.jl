@@ -56,7 +56,7 @@ ensemble_training = EnsembleTraining(training_set1, training_set1)
 # Test train! for all training methods
 #########################################
 
-hnn = NeuralNetwork(HamiltonianNeuralNetwork(2), Float64)
+hnn = NeuralNetwork(HamiltonianArchitecture(2), Float64)
 exacthnn = ExactHnn()
 sympeuler = SEuler()
 
