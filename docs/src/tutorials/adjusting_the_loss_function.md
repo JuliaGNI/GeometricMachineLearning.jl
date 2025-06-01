@@ -57,13 +57,10 @@ We now implement a custom loss such that:
 
 ```@example change_loss
 struct CustomLoss <: GeometricMachineLearning.NetworkLoss end
+using GeometricMachineLearning: QPTOAT, AbstractExplicitLayer # hide
 
 const λ = .1
-function (loss::CustomLoss)(model::Chain, params::NeuralNetworkParameters, input::CT, output::CT) where {
-                                                            T,
-                                                            AT<:AbstractArray{T, 3}, 
-                                                            CT<:@NamedTuple{q::AT, p::AT}
-                                                            }
+function (loss::CustomLoss)(model::Union{AbstractExplicitLayer, Chain}, params::Union{NeuralNetworkParameters, NamedTuple}, input::QPTOAT, output::QPTOAT)
     FeedForwardLoss()(model, params, input, output) + λ * network_parameter_norm(params)
 end
 nothing # hide
