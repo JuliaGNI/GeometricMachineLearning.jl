@@ -24,7 +24,7 @@ The arguments are:
 
 The last argument is optional for many neural network architectures. We have the following defaults:
 - A [`TransformerIntegrator`](@ref) uses [`TransformerLoss`](@ref).
-- A [`NeuralNetworkIntegrator`](@ref) uses [`FeedForwardLoss`](@ref).
+- A [`NeuralNetworkIntegrator`](@ref) uses `FeedForwardLoss` (this loss is defined in `AbstractNeuralNetworks`).
 - An [`AutoEncoder`](@ref) uses [`AutoEncoderLoss`](@ref).
 
 In addition there is an optional keyword argument that can be supplied to the functor:

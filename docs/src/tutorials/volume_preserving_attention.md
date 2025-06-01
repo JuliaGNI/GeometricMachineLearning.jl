@@ -6,7 +6,7 @@ In here we demonstrate the differences between the two approaches for computing 
 
 ```@example volume_preserving_attention
 using GeometricMachineLearning # hide
-using GeometricMachineLearning: FeedForwardLoss, TransformerLoss, params # hide
+using GeometricMachineLearning: TransformerLoss, params # hide
 import Random # hide
 Random.seed!(123) # hide
 sine_cosine = zeros(1, 1000, 2)

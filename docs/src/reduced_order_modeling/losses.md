@@ -4,7 +4,7 @@ In general we distinguish between *losses* that are used during training of a ne
 
 ## Different Neural Network Losses
 
-`GeometricMachineLearning` has a number of loss functions implemented that can be called *standard losses*. Those are the [`FeedForwardLoss`](@ref), the [`TransformerLoss`](@ref), the [`AutoEncoderLoss`](@ref) and the [`ReducedLoss`](@ref). How to implement custom losses is shown in a [tutorial](@ref "Adjusting the Loss Function").
+`GeometricMachineLearning` has a number of loss functions implemented that can be called *standard losses*. Those are the `FeedForwardLoss` (defined in `AbstractNeuralNetworks`), the [`TransformerLoss`](@ref), the [`AutoEncoderLoss`](@ref) and the [`ReducedLoss`](@ref). How to implement custom losses is shown in a [tutorial](@ref "Adjusting the Loss Function").
 
 ## A Note on Physics-Informed Neural Networks
 
@@ -43,7 +43,6 @@ where ``\mathbf{x}^{(t)}`` is the solution of the FOM at point ``t`` and ``\math
 ## Library Functions
 
 ```@docs
-FeedForwardLoss
 TransformerLoss
 AutoEncoderLoss
 ReducedLoss

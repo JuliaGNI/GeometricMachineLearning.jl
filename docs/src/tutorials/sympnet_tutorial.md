@@ -9,7 +9,7 @@ This page serves as a short introduction into using [SympNets](@ref "SympNet Arc
 
 ## Loss function
 
-The [`FeedForwardLoss`](@ref) is the default choice used in `GeometricMachineLearning` for training SympNets, this can however be changed or [tweaked](@ref "Adjusting the Loss Function").
+The `FeedForwardLoss` is the default choice used in `GeometricMachineLearning` for training SympNets, this can however be changed or [tweaked](@ref "Adjusting the Loss Function").
 
 ## Training a Harmonic Oscillator
 
