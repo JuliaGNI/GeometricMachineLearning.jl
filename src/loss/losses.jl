@@ -75,6 +75,10 @@ function (loss::TransformerLoss)(model::Union{Chain, AbstractExplicitLayer}, ps:
     loss(model, ps, reshape(input, size(input)..., 1), reshape(output, size(output)..., 1))
 end
 
+function (loss::TransformerLoss)(model::Union{Chain, AbstractExplicitLayer}, ps::Union{NeuralNetworkParameters, NamedTuple}, input::T, output::T) where {T <: QPT}
+    loss(model, ps, vcat(input.q, input.p), vcat(output.q, output.p))
+end
+
 # @doc raw"""
 #     ClassificationTransformerLoss()
 # 
