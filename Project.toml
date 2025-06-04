@@ -53,7 +53,7 @@ ProgressMeter = "1"
 SafeTestsets = "0.1"
 StatsBase = "0.33, 0.34"
 SymbolicNeuralNetworks = "0.3"
-Symbolics = "6.22.0"
+Symbolics = "6.22"
 TimerOutputs = "0.5"
 UpdateJulia = "0.4"
 Zygote = "0.6"
@@ -74,4 +74,13 @@ SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Documenter", "ChainRulesTestUtils", "Random", "SafeTestsets", "Test", "GeometricProblems", "FiniteDifferences", "GeometricIntegrators"]
+test = [
+    "Documenter",
+    "ChainRulesTestUtils",
+    "Random",
+    "SafeTestsets",
+    "Test",
+    "GeometricProblems",
+    "FiniteDifferences",
+    "GeometricIntegrators",
+]
