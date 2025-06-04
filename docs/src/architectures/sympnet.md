@@ -189,7 +189,7 @@ The universal approximation theorems state that we can, in principle, get arbitr
 
 To train the SympNet, one needs data along a trajectory such that the model is trained to perform an integration. The loss function is defined as[^6]:
 
-[^6]: This loss function is implemented as [`FeedForwardLoss`](@ref) in `GeometricMachineLearning`.
+[^6]: This loss function is implemented as `FeedForwardLoss` in `AbstractNeuralNetworks`.
 
 ```math
 \mathrm{loss}(z^\mathrm{c}, z^\mathrm{p}) = \frac{|| z^\mathrm{c} - z^\mathrm{p} ||}{|| z^\mathrm{c} ||},
