@@ -42,7 +42,7 @@ ChainRulesTestUtils = "1"
 Distances = "0.10"
 ForwardDiff = "0.10, 1"
 GeometricBase = "0.10"
-GeometricEquations = "0.18"
+GeometricEquations = "0.18, 0.19"
 GeometricIntegrators = "0.14.2"
 GeometricSolutions = "0.3.24, 0.4"
 HDF5 = "0.16, 0.17"
@@ -74,13 +74,4 @@ SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = [
-    "Documenter",
-    "ChainRulesTestUtils",
-    "Random",
-    "SafeTestsets",
-    "Test",
-    "GeometricProblems",
-    "FiniteDifferences",
-    "GeometricIntegrators",
-]
+test = ["Documenter", "ChainRulesTestUtils", "Random", "SafeTestsets", "Test", "GeometricProblems", "FiniteDifferences", "GeometricIntegrators"]
