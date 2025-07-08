@@ -14,8 +14,8 @@ const ics₁ = [(q = [0., 0., z_val], ) for z_val in 0.:.01:.9]
 const ics₂ = [(q = [0., y_val, 0.], ) for y_val in 0.:.01:.9]
 const ics = [ics₁..., ics₂...]
 
-const tstep = .8
-const tspan = (0., 1000.)
+const timestep = .8
+const timespan = (0., 1000.)
 
 const sys_dim = length(ics[1].q)
 
@@ -32,7 +32,7 @@ const T = backend == CPU() ? Float64 : Float32
 
 const t_validation = 5
 
-ensemble_problem = EnsembleProblem(odeproblem().equation, tspan, tstep, ics, default_parameters)
+ensemble_problem = EnsembleProblem(odeproblem().equation, timespan, timestep, ics, default_parameters)
 ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
 dl₁ = DataLoader(ensemble_solution)
 dl = backend == CPU() ? dl₁ : DataLoader(dl₁.input |> MtlArray{T})
@@ -49,8 +49,8 @@ loss_array₁ =  o(nn, dl, batch, n_epochs)
 
 ic = (q = [0., 0., .1], )
 
-function numerical_solution(sys_dim::Int, t_integration::Int, tstep::Real, ic::NamedTuple)
-    validation_problem = odeproblem(ic ; tspan = (0.0, t_integration), tstep = tstep, parameters = default_parameters)
+function numerical_solution(sys_dim::Int, t_integration::Int, timestep::Real, ic::NamedTuple)
+    validation_problem = odeproblem(ic ; timespan = (0.0, t_integration), timestep = timestep, parameters = default_parameters)
     sol = integrate(validation_problem, ImplicitMidpoint())
 
     numerical_solution = zeros(sys_dim, length(sol.t))
@@ -64,9 +64,9 @@ end
 
 function make_validation_plot(t_validation::Int, nn::NeuralNetwork)
 
-    numerical, t_array = numerical_solution(sys_dim, t_validation, tstep, ic)
+    numerical, t_array = numerical_solution(sys_dim, t_validation, timestep, ic)
 
-    nn₁_solution = iterate(nn₁, numerical[:, 1]; n_points = Int(floor(t_validation / tstep)) + 1)
+    nn₁_solution = iterate(nn₁, numerical[:, 1]; n_points = Int(floor(t_validation / timestep)) + 1)
 
     ########################### plot validation
 

@@ -327,7 +327,7 @@ module GeometricMachineLearning
     include("nnsolution/history.jl")
 
     export NeuralNetSolution
-    export problem, tstep, history, size_history
+    export problem, timestep, history, size_history
     export set_sizemax_history
     
     include("nnsolution/neural_net_solution.jl")

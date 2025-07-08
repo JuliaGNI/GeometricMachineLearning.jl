@@ -12,7 +12,7 @@ p₀ = [0.5]
 v₀ = [0.5]
 λ₀ = [0.0]
 Δt = 0.1
-tspan = (t₀, t₁)
+timespan = (t₀, t₁)
 
 #########################################
 # Test for HNNProblem
@@ -21,7 +21,7 @@ tspan = (t₀, t₁)
 hnn = NeuralNetwork(HamiltonianArchitecture(2), Float64)
 ics = (q = q₀, p = p₀)
 
-prob_hnn = HNNProblem(hnn, tspan, Δt, q₀, p₀)
+prob_hnn = HNNProblem(hnn, timespan, Δt, q₀, p₀)
 
 @test typeof(prob_hnn) <: GeometricProblem
 @test typeof(prob_hnn) <: HODEProblem
@@ -35,7 +35,7 @@ prob_hnn = HNNProblem(hnn, tspan, Δt, q₀, p₀)
 lnn = NeuralNetwork(LagrangianNeuralNetwork(2), Float64)
 ics = (q = q₀, p = p₀, λ = λ₀)
 
-prob_lnn = LNNProblem(lnn, tspan, Δt, q₀, p₀, λ₀)
+prob_lnn = LNNProblem(lnn, timespan, Δt, q₀, p₀, λ₀)
 
 @test typeof(prob_lnn) <: GeometricProblem
 @test typeof(prob_lnn) <: LODEProblem

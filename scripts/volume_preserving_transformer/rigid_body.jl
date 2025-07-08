@@ -9,13 +9,13 @@ using LaTeXStrings
 import Random 
 
 # hyperparameters for the problem 
-const tstep = .2
-const tspan = (0., 20.)
+const timestep = .2
+const timespan = (0., 20.)
 const ics₁ = [[sin(val), 0., cos(val)] for val in .1:.01:(2*π)]
 const ics₂ = [[0., sin(val), cos(val)] for val in .1:.01:(2*π)]
 const ics = [ics₁..., ics₂...]
 
-ensemble_problem = odeensemble(ics; tspan = tspan, tstep = tstep, parameters = default_parameters)
+ensemble_problem = odeensemble(ics; timespan = timespan, timestep = timestep, parameters = default_parameters)
 ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
 
 dl₁ = DataLoader(ensemble_solution)
@@ -104,8 +104,8 @@ save("transformer_rigid_body.jld2",
         # "nn4_loss_array", loss_array₄
         )
 
-function numerical_solution(sys_dim::Int, t_integration::Int, tstep::Real, ics_val::Vector)
-    validation_problem = odeproblem(ics_val; tspan = (0.0, t_integration), tstep = tstep, parameters = default_parameters)
+function numerical_solution(sys_dim::Int, t_integration::Int, timestep::Real, ics_val::Vector)
+    validation_problem = odeproblem(ics_val; timespan = (0.0, t_integration), timestep = timestep, parameters = default_parameters)
     sol = integrate(validation_problem, ImplicitMidpoint())
 
     numerical_solution = zeros(sys_dim, length(sol.t))
@@ -119,12 +119,12 @@ end
 
 function plot_validation(t_validation; nn₂=nn₂, nn₃=nn₃, nn₄=nn₄, plot_regular_transformer = false, plot_vp_transformer = false)
 
-    numerical, t_array = numerical_solution(sys_dim, t_validation, tstep, ics_val)
+    numerical, t_array = numerical_solution(sys_dim, t_validation, timestep, ics_val)
 
-    # nn₁_solution = iterate(nn₁, numerical[:, 1:seq_length]; n_points = Int(floor(t_validation / tstep)) + 1)
-    nn₂_solution = iterate(nn₂, numerical[:, 1]; n_points = Int(floor(t_validation / tstep)) + 1)
-    nn₃_solution = iterate(nn₃, numerical[:, 1:seq_length]; n_points = Int(floor(t_validation / tstep)) + 1, prediction_window = seq_length)
-    nn₄_solution = iterate(nn₄, numerical[:, 1:seq_length]; n_points = Int(floor(t_validation / tstep)) + 1, prediction_window = seq_length)
+    # nn₁_solution = iterate(nn₁, numerical[:, 1:seq_length]; n_points = Int(floor(t_validation / timestep)) + 1)
+    nn₂_solution = iterate(nn₂, numerical[:, 1]; n_points = Int(floor(t_validation / timestep)) + 1)
+    nn₃_solution = iterate(nn₃, numerical[:, 1:seq_length]; n_points = Int(floor(t_validation / timestep)) + 1, prediction_window = seq_length)
+    nn₄_solution = iterate(nn₄, numerical[:, 1:seq_length]; n_points = Int(floor(t_validation / timestep)) + 1, prediction_window = seq_length)
 
     ########################### plot validation
 
@@ -171,13 +171,13 @@ function sphere(r, C) # r: radius; C: center [cx,cy,cz]
 end
 
 function make_validation_plot3d(t_validation::Int, nn::NeuralNetwork)
-    numerical, _ = numerical_solution(sys_dim, t_validation, tstep, ics_val)
-    numerical₂, _ = numerical_solution(sys_dim, t_validation, tstep, ics_val₂)
+    numerical, _ = numerical_solution(sys_dim, t_validation, timestep, ics_val)
+    numerical₂, _ = numerical_solution(sys_dim, t_validation, timestep, ics_val₂)
 
     prediction_window = typeof(nn) <: NeuralNetwork{<:GeometricMachineLearning.TransformerIntegrator} ? seq_length : 1
 
-    nn₁_solution = iterate(nn, numerical[:, 1:seq_length]; n_points = Int(floor(t_validation / tstep)) + 1, prediction_window = prediction_window)
-    nn₁_solution₂ = iterate(nn, numerical₂[:, 1:seq_length]; n_points = Int(floor(t_validation / tstep)) + 1, prediction_window = prediction_window)
+    nn₁_solution = iterate(nn, numerical[:, 1:seq_length]; n_points = Int(floor(t_validation / timestep)) + 1, prediction_window = prediction_window)
+    nn₁_solution₂ = iterate(nn, numerical₂[:, 1:seq_length]; n_points = Int(floor(t_validation / timestep)) + 1, prediction_window = prediction_window)
 
     ########################### plot validation
 

@@ -27,7 +27,7 @@ import Random # hide
 Random.seed!(1234) # hide
 
 # the problem is the ODE of the harmonic oscillator
-ho_problem = ho.hodeproblem(; tspan = 500)
+ho_problem = ho.hodeproblem(; timespan = 500)
 
 # integrate the system
 solution = integrate(ho_problem, ImplicitMidpoint())

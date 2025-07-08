@@ -79,7 +79,7 @@ using GeometricIntegrators: integrate, ImplicitMidpoint
 using GeometricMachineLearning 
 import Random # hide
 
-pr = tl.hodeproblem(; tspan = (0.0, 800.))
+pr = tl.hodeproblem(; timespan = (0.0, 800.))
 sol = integrate(pr, ImplicitMidpoint())
 nothing # hide
 ```

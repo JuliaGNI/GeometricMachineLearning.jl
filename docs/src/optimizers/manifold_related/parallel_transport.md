@@ -134,10 +134,10 @@ Y_increments = []
 Δ₂_transported = []
 
 const n_steps = 6
-const tstep = 2
+const timestep = 2
 
 for _ in 1:n_steps
-    update_section!(λY, tstep * B, geodesic)
+    update_section!(λY, timestep * B, geodesic)
     push!(Y_increments, copy(λY.Y))
     push!(Δ_transported, Matrix(λY) * B * E)
     push!(Δ₂_transported, Matrix(λY) * B₂ * E)

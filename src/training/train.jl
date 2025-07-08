@@ -102,7 +102,7 @@ function train!(nn::AbstractNeuralNetwork{<:Architecture}, data::AbstractTrainin
 
     sh = SingleHistory(tp, shape(data), size(data), total_loss)
     
-    NeuralNetSolution(nn, sh, total_loss, problem(data), tstep(data))
+    NeuralNetSolution(nn, sh, total_loss, problem(data), timestep(data))
 
 end
 
@@ -133,7 +133,7 @@ end
 
 function train!(nns::NeuralNetSolution, data::AbstractTrainingData, tp::TrainingParameters; kwargs...)
 
-    @assert tstep(data) == tstep(nns) || tstep(nns) == nothing || tstep(data) == nothing
+    @assert timestep(data) == timestep(nns) || timestep(nns) == nothing || timestep(data) == nothing
     @assert problem(data) == problem(nns) || problem(nns) == nothing || problem(data) == nothing
     
     total_loss = train!(nn(nns), data, opt(tp), method(tp); ntraining = nruns(tp), batch_size = batchsize(tp), kwargs...)

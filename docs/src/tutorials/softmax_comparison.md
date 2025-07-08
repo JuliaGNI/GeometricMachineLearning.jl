@@ -40,11 +40,11 @@ CairoMakie.activate!() # hide
 import Random # hide
 Random.seed!(123) # hide
 
-const tstep = .3
+const timestep = .3
 const n_init_con = 5
 
 # ensemble problem
-ep = hodeensemble([rand(2) for _ in 1:n_init_con], [rand(2) for _ in 1:n_init_con]; tstep = tstep)
+ep = hodeensemble([rand(2) for _ in 1:n_init_con], [rand(2) for _ in 1:n_init_con]; timestep = timestep)
 dl = DataLoader(integrate(ep, ImplicitMidpoint()); suppress_info = true)
 
 nothing # hide
