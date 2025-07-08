@@ -85,12 +85,12 @@ end
 ########################################################################################
 # get data of a problem for Sypmnet (results is (data = target =(q,p))) from Hamiltonian
 
-function get_phase_space_data(nameproblem, q₀, p₀, tspan = (0., 100.), timestep = 0.1)
+function get_phase_space_data(nameproblem, q₀, p₀, timespan = (0., 100.), timestep = 0.1)
     
     # get the Hamiltonien corresponding to name_problem   
     H_problem, n_dim = dict_problem_H[nameproblem] 
 
-    q,p = compute_phase_space(H_problem, q₀, p₀, tspan, timestep)
+    q,p = compute_phase_space(H_problem, q₀, p₀, timespan, timestep)
 
     return (q, p)
 end
@@ -102,7 +102,7 @@ function get_phase_space_multiple_trajectoy(nameproblem; singlematrix = true, n_
     H_problem, n_dim = dict_problem_H[nameproblem] 
 
     #define timespan
-    tspan=(0.,n_points*timestep)
+    timespan=(0.,n_points*timestep)
 
     #compute phase space for each trajectory staring from a random point
     trajectory_q = [zeros(n_points+1,n_dim) for _ in 1:n_trajectory]
@@ -110,7 +110,7 @@ function get_phase_space_multiple_trajectoy(nameproblem; singlematrix = true, n_
     for i in 1:n_trajectory
         q₀ = [rand()*(qmax-qmin)+qmin for _ in 1:n_dim]
         p₀ = [rand()*(pmax-pmin)+pmin for _ in 1:n_dim]
-        trajectory_q[i],trajectory_p[i] = compute_phase_space(H_problem, q₀, p₀, tspan, timestep)
+        trajectory_q[i],trajectory_p[i] = compute_phase_space(H_problem, q₀, p₀, timespan, timestep)
     end
 
     if singlematrix
@@ -125,7 +125,7 @@ end
 ###############################################################################
 # compute phase space from the Hamiltonian
 
-function compute_phase_space(H_problem, q₀, p₀, tspan = (0., 100.), timestep = 0.1)
+function compute_phase_space(H_problem, q₀, p₀, timespan = (0., 100.), timestep = 0.1)
 
     n_dim = length(q₀)
 
@@ -144,7 +144,7 @@ function compute_phase_space(H_problem, q₀, p₀, tspan = (0., 100.), timestep
     h(t, q, p, params) = H2(q,p)
 
     # simulate data with geometric Integrators
-    ode = HODEProblem(v, f, h, tspan, timestep, q₀, p₀)
+    ode = HODEProblem(v, f, h, timespan, timestep, q₀, p₀)
 
     #return sol = integrate(ode, SymplecticEulerA())
     return sol = integrate(ode, SymplecticTableau(TableauExplicitEuler()))
@@ -175,7 +175,7 @@ function get_multiple_trajectory_structure(nameproblem; n_trajectory = 1, n_poin
     H_problem, n_dim = dict_problem_H[nameproblem] 
 
     #define timespan
-    tspan=(0.,n_points*timestep)
+    timespan=(0.,n_points*timestep)
     
     #compute phase space for each trajectory staring from a random point
     pre_data = NamedTuple()
@@ -184,7 +184,7 @@ function get_multiple_trajectory_structure(nameproblem; n_trajectory = 1, n_poin
 
         q₀ = [rand()*(qmax-qmin)+qmin for _ in 1:n_dim]
         p₀ = [rand()*(pmax-pmin)+pmin for _ in 1:n_dim]
-        q, p = compute_phase_space(H_problem, q₀, p₀, tspan, timestep)
+        q, p = compute_phase_space(H_problem, q₀, p₀, timespan, timestep)
 
         Data = [(q[n], p[n]) for n in 1:size(q,1)]
 
@@ -217,7 +217,7 @@ function get_multiple_trajectory_structure_with_target(nameproblem; n_trajectory
     dH(x) = symplectic_matrix * ∇H(x)
 
     #define timespan
-    tspan=(0.,n_points*timestep)
+    timespan=(0.,n_points*timestep)
     
     #compute phase space for each trajectory staring from a random point
     pre_data = NamedTuple()
@@ -227,7 +227,7 @@ function get_multiple_trajectory_structure_with_target(nameproblem; n_trajectory
 
         q₀ = [rand()*(qmax-qmin)+qmin for _ in 1:n_dim]
         p₀ = [rand()*(pmax-pmin)+pmin for _ in 1:n_dim]
-        q, p = compute_phase_space(H_problem, q₀, p₀, tspan, timestep)
+        q, p = compute_phase_space(H_problem, q₀, p₀, timespan, timestep)
 
         Data = [(q[n], p[n]) for n in 1:size(q,1)]
         data_calc = [[q[n]..., p[n]...] for n in 1:size(q,1)]
@@ -265,7 +265,7 @@ function get_multiple_trajectory_structure_Lagrangian(nameproblem; n_trajectory 
     H_problem, n_dim = dict_problem_L[nameproblem] 
 
     #define timespan
-    tspan=(0.,n_points*timestep)
+    timespan=(0.,n_points*timestep)
     
     #compute phase space for each trajectory staring from a random point
     pre_data = []
@@ -278,7 +278,7 @@ function get_multiple_trajectory_structure_Lagrangian(nameproblem; n_trajectory 
 
         q₀ = [rand()*(qmax-qmin)+qmin for _ in 1:n_dim]
         p₀ = [rand()*(pmax-pmin)+pmin for _ in 1:n_dim]
-        q, p = compute_phase_space(H_problem, q₀, p₀, tspan, timestep)
+        q, p = compute_phase_space(H_problem, q₀, p₀, timespan, timestep)
 
         Data = [q[n] for n in 1:size(q,1)]
 

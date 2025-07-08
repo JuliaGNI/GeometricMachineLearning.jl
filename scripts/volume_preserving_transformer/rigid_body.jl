@@ -10,12 +10,12 @@ import Random
 
 # hyperparameters for the problem 
 const timestep = .2
-const tspan = (0., 20.)
+const timespan = (0., 20.)
 const ics₁ = [[sin(val), 0., cos(val)] for val in .1:.01:(2*π)]
 const ics₂ = [[0., sin(val), cos(val)] for val in .1:.01:(2*π)]
 const ics = [ics₁..., ics₂...]
 
-ensemble_problem = odeensemble(ics; tspan = tspan, timestep = timestep, parameters = default_parameters)
+ensemble_problem = odeensemble(ics; timespan = timespan, timestep = timestep, parameters = default_parameters)
 ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
 
 dl₁ = DataLoader(ensemble_solution)
@@ -105,7 +105,7 @@ save("transformer_rigid_body.jld2",
         )
 
 function numerical_solution(sys_dim::Int, t_integration::Int, timestep::Real, ics_val::Vector)
-    validation_problem = odeproblem(ics_val; tspan = (0.0, t_integration), timestep = timestep, parameters = default_parameters)
+    validation_problem = odeproblem(ics_val; timespan = (0.0, t_integration), timestep = timestep, parameters = default_parameters)
     sol = integrate(validation_problem, ImplicitMidpoint())
 
     numerical_solution = zeros(sys_dim, length(sol.t))

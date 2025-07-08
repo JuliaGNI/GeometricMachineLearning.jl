@@ -1,6 +1,6 @@
 using GeometricMachineLearning
 using GeometricMachineLearning: MatrixSoftmax, VectorSoftmax
-using GeometricProblems.DoublePendulum: tspan, timestep, default_parameters, hodeproblem
+using GeometricProblems.DoublePendulum: timespan, timestep, default_parameters, hodeproblem
 using GeometricEquations: EnsembleProblem
 using GeometricIntegrators: ImplicitMidpoint, integrate
 using LaTeXStrings
@@ -24,7 +24,7 @@ sympnet_paper_initial_conditions = reshape(initial_conditions, length(initial_co
 
 sympnet_paper_parameters = (l₁ = 1., l₂ = 1., m₁ = 1., m₂ = 1., g = 1.)
 sympnet_paper_timestep = 0.75
-ensemble_problem = EnsembleProblem(hodeproblem().equation, (tspan[1], tspan[2] * 100), sympnet_paper_timestep / 3., sympnet_paper_initial_conditions, sympnet_paper_parameters)
+ensemble_problem = EnsembleProblem(hodeproblem().equation, (timespan[1], timespan[2] * 100), sympnet_paper_timestep / 3., sympnet_paper_initial_conditions, sympnet_paper_parameters)
 
 ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
 

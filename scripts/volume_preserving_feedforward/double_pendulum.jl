@@ -2,7 +2,7 @@ using Zygote: gradient, pullback
 using GeometricMachineLearning
 using Plots
 using GeometricIntegrators: integrate, ImplicitMidpoint
-using GeometricProblems.DoublePendulum: hodeproblem, default_parameters, tspan, hamiltonian, ϑ
+using GeometricProblems.DoublePendulum: hodeproblem, default_parameters, timespan, hamiltonian, ϑ
 using GeometricEquations: EnsembleProblem
 using LinearAlgebra: norm 
 using Zygote: gradient
@@ -12,10 +12,10 @@ Random.seed!(123)
 
 θ₀ = [[π / 4, π / i] for i in 1:20]
 ω₀ = [0.0, π / 8]
-p₀ = [ϑ(tspan[begin], θ, ω₀, default_parameters) for θ in θ₀]
+p₀ = [ϑ(timespan[begin], θ, ω₀, default_parameters) for θ in θ₀]
 const timestep = .06
 
-ensemble_problem = EnsembleProblem(hodeproblem().equation, tspan, timestep, [(q = q, p = p) for (q, p) in zip(θ₀, p₀)], default_parameters)
+ensemble_problem = EnsembleProblem(hodeproblem().equation, timespan, timestep, [(q = q, p = p) for (q, p) in zip(θ₀, p₀)], default_parameters)
 ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
 
 dl_nt = DataLoader(ensemble_solution)
@@ -61,7 +61,7 @@ model₂ = VolumePreservingFeedForward(sys_dim, n_blocks, n_linear, resnet_activ
 nn₂, loss_array₂ = setup_and_train(model₂, feedforward_batch, transformer=false)
 
 function numerical_solution(ics::NamedTuple, sys_dim::Int, t_integration::Int, timestep::Real, params::NamedTuple)
-    validation_problem = hodeproblem(ics.q, ics.p; tspan = (0.0, t_integration), timestep = timestep, params = params)
+    validation_problem = hodeproblem(ics.q, ics.p; timespan = (0.0, t_integration), timestep = timestep, params = params)
     sol = integrate(validation_problem, ImplicitMidpoint())
 
     numerical_solution = zeros(sys_dim, length(sol.t))
@@ -76,7 +76,7 @@ end
 
 θ₀_val = [π / 4, π / 4]
 ω₀_val = [0.0, π / 8]
-p₀_val = ϑ(tspan[begin], θ₀_val, ω₀, default_parameters) 
+p₀_val = ϑ(timespan[begin], θ₀_val, ω₀, default_parameters) 
 
 ics = (q = θ₀_val, p = p₀_val)
 numerical, t_array = numerical_solution(ics, sys_dim, t_validation, timestep, default_parameters)

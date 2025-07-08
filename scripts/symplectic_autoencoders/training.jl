@@ -128,11 +128,11 @@ end
 function get_reduced_model(encoder, decoder;n=5, μ_val=0.51, Ñ=(N-2), n_time_steps=n_time_steps, integrator=ImplicitMidpoint(), system_type=GeometricMachineLearning.Symplectic())
     params = (μ=μ_val, Ñ=Ñ, Δx=T(1/(Ñ-1)))
     timestep = T(1/(n_time_steps-1))
-    tspan = (T(0), T(1))
+    timespan = (T(0), T(1))
     ics = get_initial_condition_vector(μ_val, Ñ)
     v_field_full = v_field(params)
     v_field_reduced = reduced_vector_field_from_full_explicit_vector_field(v_field_explicit(params), decoder, N, n)
-    ReducedSystem(N, n, encoder, decoder, v_field_full, v_field_reduced, params, tspan, timestep, ics; integrator=integrator, system_type=system_type)
+    ReducedSystem(N, n, encoder, decoder, v_field_full, v_field_reduced, params, timespan, timestep, ics; integrator=integrator, system_type=system_type)
 end
 
 function _cpu_convert(ps::Tuple)

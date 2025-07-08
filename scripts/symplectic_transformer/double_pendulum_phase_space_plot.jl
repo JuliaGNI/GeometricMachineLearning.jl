@@ -1,4 +1,4 @@
-using GeometricProblems.DoublePendulum: tspan, timestep, default_parameters, hodeproblem
+using GeometricProblems.DoublePendulum: timespan, timestep, default_parameters, hodeproblem
 using GeometricEquations: EnsembleProblem
 using GeometricIntegrators: ImplicitMidpoint, integrate
 using LaTeXStrings
@@ -19,7 +19,7 @@ initial_conditions = [
 ]
 initial_conditions = reshape(initial_conditions, length(initial_conditions))
 
-ensemble_problem = EnsembleProblem(hodeproblem().equation, (tspan[1], tspan[2]), timestep, initial_conditions, default_parameters)
+ensemble_problem = EnsembleProblem(hodeproblem().equation, (timespan[1], timespan[2]), timestep, initial_conditions, default_parameters)
 
 ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
 

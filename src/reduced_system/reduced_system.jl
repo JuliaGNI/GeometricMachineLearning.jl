@@ -10,7 +10,7 @@ It can be called using two different constructors.
 The standard constructor is:
 
 ```julia
-HRedSys(N, n; encoder, decoder, v_full, f_full, v_reduced, f_reduced, parameters, tspan, timestep, ics, projection_error)
+HRedSys(N, n; encoder, decoder, v_full, f_full, v_reduced, f_reduced, parameters, timespan, timestep, ics, projection_error)
 ``` 
 where 
 - `encoder`: a function ``\mathbb{R}^{2N}\mapsto{}\mathbb{R}^{2n}``
@@ -21,7 +21,7 @@ where
 - `f_reduced`: a (differentiable) mapping defined the same way as in GeometricIntegrators.
 - `integrator`: is used for integrating the reduced system.
 - `parameters`: a NamedTuple that parametrizes the vector fields (the same for full_vector_field and reduced_vector_field)
-- `tspan`: a tuple `(t₀, tₗ)` that specifies start and end point of the time interval over which integration is performed. 
+- `timespan`: a tuple `(t₀, tₗ)` that specifies start and end point of the time interval over which integration is performed. 
 - `timestep`: the time step 
 - `ics`: the initial condition for the big system.
 
@@ -61,13 +61,13 @@ struct HRedSys{
     h_reduced::HRT
     integrator::InT 
     parameters::PT
-    tspan::Tuple{Int, Int} 
+    timespan::Tuple{Int, Int} 
     timestep::T
     ics::IT
 end
 
-function HRedSys(N::Integer, n::Integer, encoder::NeuralNetwork{<:SymplecticEncoder}, decoder::NeuralNetwork{<:SymplecticDecoder}, v_full, f_full, h_full, tspan::Tuple, timestep::T, ics; parameters = parameters, v_reduced = build_v_reduced(v_full, f_full, decoder), f_reduced = build_f_reduced(v_full, f_full, decoder), h_reduced = build_h_reduced(h_full, decoder), integrator=ImplicitMidpoint()) where {T <: Real}
-    HRedSys{typeof(timestep), typeof(encoder), typeof(decoder), typeof(v_full), typeof(f_full), typeof(h_full), typeof(v_reduced), typeof(f_reduced), typeof(h_reduced), typeof(integrator), typeof(parameters), typeof(ics)}(N, n, encoder, decoder, v_full, f_full, h_full, v_reduced, f_reduced, h_reduced, integrator, parameters, tspan, timestep, ics)
+function HRedSys(N::Integer, n::Integer, encoder::NeuralNetwork{<:SymplecticEncoder}, decoder::NeuralNetwork{<:SymplecticDecoder}, v_full, f_full, h_full, timespan::Tuple, timestep::T, ics; parameters = parameters, v_reduced = build_v_reduced(v_full, f_full, decoder), f_reduced = build_f_reduced(v_full, f_full, decoder), h_reduced = build_h_reduced(h_full, decoder), integrator=ImplicitMidpoint()) where {T <: Real}
+    HRedSys{typeof(timestep), typeof(encoder), typeof(decoder), typeof(v_full), typeof(f_full), typeof(h_full), typeof(v_reduced), typeof(f_reduced), typeof(h_reduced), typeof(integrator), typeof(parameters), typeof(ics)}(N, n, encoder, decoder, v_full, f_full, h_full, v_reduced, f_reduced, h_reduced, integrator, parameters, timespan, timestep, ics)
 end
 
 function HRedSys(odeproblem::HODEProblem, encoder::NeuralNetwork{<:SymplecticEncoder}, decoder::NeuralNetwork{<:SymplecticDecoder}; integrator=ImplicitMidpoint()) 
@@ -76,7 +76,7 @@ function HRedSys(odeproblem::HODEProblem, encoder::NeuralNetwork{<:SymplecticEnc
     v_eq = odeproblem.equation.v
     f_eq = odeproblem.equation.f
     h_eq = odeproblem.equation.hamiltonian
-    HRedSys(N, n, encoder, decoder, v_eq, f_eq, h_eq, odeproblem.tspan, odeproblem.timestep, odeproblem.ics; parameters = odeproblem.parameters, integrator = integrator)
+    HRedSys(N, n, encoder, decoder, v_eq, f_eq, h_eq, odeproblem.timespan, odeproblem.timestep, odeproblem.ics; parameters = odeproblem.parameters, integrator = integrator)
 end
 
 function HRedSys(odeensemble::HODEEnsemble, encoder::NeuralNetwork{<:SymplecticEncoder}, decoder::NeuralNetwork{<:SymplecticDecoder}; integrator=ImplicitMidpoint()) 
@@ -85,7 +85,7 @@ function HRedSys(odeensemble::HODEEnsemble, encoder::NeuralNetwork{<:SymplecticE
     v_eq = odeensemble.equation.v
     f_eq = odeensemble.equation.f
     h_eq = odeensemble.equation.hamiltonian
-    HRedSys(N, n, encoder, decoder, v_eq, f_eq, h_eq, odeensemble.tspan, odeensemble.timestep, odeensemble.ics[1]; parameters = odeensemble.parameters[1], integrator = integrator)
+    HRedSys(N, n, encoder, decoder, v_eq, f_eq, h_eq, odeensemble.timespan, odeensemble.timestep, odeensemble.ics[1]; parameters = odeensemble.parameters[1], integrator = integrator)
 end
 
 # this is much more expensive than it has to be and is due to a problem with nested derivatives in ForwardDiff (should not be necessary to do this twice!)
@@ -164,12 +164,12 @@ function integrate_reduced_system(rs::HRedSys)
     ics_reduced_nt = rs.encoder(rs.ics)
     # convert to StateVariable format 
     ics_reduced = (q = StateVariable(ics_reduced_nt.q), p = StateVariable(ics_reduced_nt.p))
-    hode = HODEProblem(rs.v_reduced, rs.f_reduced, rs.h_reduced, rs.tspan, rs.timestep, ics_reduced; parameters = rs.parameters)
+    hode = HODEProblem(rs.v_reduced, rs.f_reduced, rs.h_reduced, rs.timespan, rs.timestep, ics_reduced; parameters = rs.parameters)
     integrate(hode, rs.integrator)
 end
 
 function integrate_full_system(rs::HRedSys)
-    hode = HODEProblem(rs.v_full, rs.f_full, rs.h_full, rs.tspan, rs.timestep, rs.ics; parameters = rs.parameters)
+    hode = HODEProblem(rs.v_full, rs.f_full, rs.h_full, rs.timespan, rs.timestep, rs.ics; parameters = rs.parameters)
     integrate(hode, rs.integrator)
 end
 

@@ -32,14 +32,14 @@ end
 @doc raw"""
 Generates data for a pendulum in 2d with optional arguments:
 - `T`: the type of the data (`Float32`, `Float64`, `Float16`, etc.)
-- `tspan`: default is `(0., 100.)`
+- `timespan`: default is `(0., 100.)`
 - `timestep` default is `0.1`
 - `q0`: default is `randn(1)`
 - `p0`: default is `rand(1)`.
 """
-function pendulum_data(; T = Float64, tspan = (T(0.), T(100.)), timestep = T(0.1), q0 = T.(randn(1)), p0 = T.(randn(1)))
+function pendulum_data(; T = Float64, timespan = (T(0.), T(100.)), timestep = T(0.1), q0 = T.(randn(1)), p0 = T.(randn(1)))
     # simulate data with geometric Integrators
-    ode = HODEProblem(v, f, H, tspan, timestep, q0, p0)
+    ode = HODEProblem(v, f, H, timespan, timestep, q0, p0)
 
     # sol = integrate(ode, SymplecticEulerA())
     sol = integrate(ode, ImplicitMidpoint())
@@ -52,6 +52,6 @@ function pendulum_data(; T = Float64, tspan = (T(0.), T(100.)), timestep = T(0.1
     return (q=q, p=p)
 end
 
-function pendulum_data(ics::NamedTuple{(:q, :p), Tuple{AT, AT}}; tspan = (T(0.), T(100.)), timestep = T(0.1)) where {T, AT<:AbstractVector{T}}
-    pendulum_data(; T=T, tspan=tspan, timestep=timestep, q0=ics.q, p0=ics.p)
+function pendulum_data(ics::NamedTuple{(:q, :p), Tuple{AT, AT}}; timespan = (T(0.), T(100.)), timestep = T(0.1)) where {T, AT<:AbstractVector{T}}
+    pendulum_data(; T=T, timespan=timespan, timestep=timestep, q0=ics.q, p0=ics.p)
 end

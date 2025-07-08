@@ -20,7 +20,7 @@ using GeometricProblems.HarmonicOscillator: hodeproblem
 import Random # hide
 Random.seed!(123) # hide
 
-sol = integrate(hodeproblem(; tspan = 100), ImplicitMidpoint()) 
+sol = integrate(hodeproblem(; timespan = 100), ImplicitMidpoint()) 
 data = DataLoader(sol; suppress_info = true)
 
 nn = NeuralNetwork(GSympNet(2))
