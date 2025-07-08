@@ -1,6 +1,6 @@
 using GeometricMachineLearning
 using GeometricMachineLearning: MatrixSoftmax, VectorSoftmax
-using GeometricProblems.DoublePendulum: tspan, tstep, default_parameters, hodeproblem
+using GeometricProblems.DoublePendulum: tspan, timestep, default_parameters, hodeproblem
 using GeometricEquations: EnsembleProblem
 using GeometricIntegrators: ImplicitMidpoint, integrate
 using LaTeXStrings

@@ -14,11 +14,11 @@ mpurple = RGBf(148 / 256, 103 / 256, 189 / 256)
 mblue = RGBf(31 / 256, 119 / 256, 180 / 256)
 mgreen = RGBf(44 / 256, 160 / 256, 44 / 256)
 
-const tstep = .3
+const timestep = .3
 const n_init_con = 5
 
 # ensemble problem
-ep = hodeensemble([rand(2) for _ in 1:n_init_con], [rand(2) for _ in 1:n_init_con]; tstep = tstep)
+ep = hodeensemble([rand(2) for _ in 1:n_init_con], [rand(2) for _ in 1:n_init_con]; timestep = timestep)
 dl = DataLoader(integrate(ep, ImplicitMidpoint()); suppress_info = true)
 
 

@@ -6,11 +6,11 @@ using LaTeXStrings
 using Plots
 using LinearAlgebra: norm
 
-const tstep = .3
+const timestep = .3
 const n_init_con = 1000
 
 # ensemble problem
-ep = hodeensemble([rand(2) for _ in 1:n_init_con], [rand(2) for _ in 1:n_init_con]; tstep = tstep)
+ep = hodeensemble([rand(2) for _ in 1:n_init_con], [rand(2) for _ in 1:n_init_con]; timestep = timestep)
 
 dl_nt = DataLoader(integrate(ep, ImplicitMidpoint()))
 dl = DataLoader(vcat(dl_nt.input.q, dl_nt.input.p) |> cu)

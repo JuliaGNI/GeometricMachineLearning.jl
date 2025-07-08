@@ -52,7 +52,7 @@ function TrainingData(es::EnsembleSolution)
         :shape => TrajectoryData,
         :nb_trajectory => Data -> length(Data),
         :length_trajectory => (Data,i) -> ntime(es),
-        :Δt => Data -> tstep(es),
+        :Δt => Data -> timestep(es),
     )
     for s in keys(es.problem.ics[1])
         get_data[s] = (es, i, n) -> solution(es,i)[n-1][s]
@@ -70,7 +70,7 @@ end
 @inline noisemaker(data::TrainingData) = data.noisemaker
 
 @inline get_Δt(data::TrainingData) = get_Δt(data.shape)
-@inline GeometricBase.tstep(data::TrainingData) = get_Δt(data.shape)
+@inline GeometricBase.timestep(data::TrainingData) = get_Δt(data.shape)
 @inline get_nb_trajectory(data::TrainingData) = get_nb_trajectory(data.shape)
 @inline get_length_trajectory(data::TrainingData, i::Int) = get_length_trajectory(data.shape, i)
 @inline get_length_trajectory(data::TrainingData) = get_length_trajectory(data.shape)

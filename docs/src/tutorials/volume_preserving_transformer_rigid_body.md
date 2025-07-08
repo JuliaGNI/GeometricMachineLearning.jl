@@ -26,7 +26,7 @@ nothing # hide
 We now generate the data by integrating with:
 
 ```@example rigid_body
-const tstep = .2
+const timestep = .2
 const tspan = (0., 20.)
 nothing # hide
 ```
@@ -38,7 +38,7 @@ using GeometricMachineLearning # hide
 using GeometricIntegrators: integrate, ImplicitMidpoint
 using GeometricProblems.RigidBody: odeproblem, odeensemble, default_parameters
 
-ensemble_problem = odeensemble(ics; tspan = tspan, tstep = tstep, parameters = default_parameters)
+ensemble_problem = odeensemble(ics; tspan = tspan, timestep = timestep, parameters = default_parameters)
 ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
 
 dl_cpu = DataLoader(ensemble_solution; suppress_info = true)
@@ -229,16 +229,16 @@ const t_validation = 120
 
 function produce_trajectory(ics_val)
     problem = odeproblem(ics_val;   tspan = (0, t_validation), 
-                                    tstep = tstep, 
+                                    timestep = timestep, 
                                     parameters = default_parameters)
     solution = integrate(problem, ImplicitMidpoint())
     trajectory = Float32.(DataLoader(solution; suppress_info = true).input)
     nn_vpff_solution = iterate(nn_vpff, trajectory[:, 1]; 
-                                            n_points = Int(floor(t_validation / tstep)) + 1)
+                                            n_points = Int(floor(t_validation / timestep)) + 1)
     nn_vpt_solution = iterate(nn_vpt, trajectory[:, 1:seq_length];
-                                            n_points = Int(floor(t_validation / tstep)) + 1)
+                                            n_points = Int(floor(t_validation / timestep)) + 1)
     nn_st_solution = iterate(nn_st, trajectory[:, 1:seq_length];
-                                            n_points = Int(floor(t_validation / tstep)) + 1)
+                                            n_points = Int(floor(t_validation / timestep)) + 1)
     trajectory, nn_vpff_solution, nn_vpt_solution, nn_st_solution
 end
 
@@ -314,14 +314,14 @@ We can see that the volume-preserving transformer performs much better than the 
 We also compare the times it takes to integrate the system with (i) implicit midpoint, (ii) the volume-preserving transformer and (iii) the standard transformer:
 ```@example rigid_body
 function timing() # hide
-problem = odeproblem(ics_val₁; tspan = (0, t_validation), tstep = tstep, parameters = default_parameters) # hide
+problem = odeproblem(ics_val₁; tspan = (0, t_validation), timestep = timestep, parameters = default_parameters) # hide
 solution = integrate(problem, ImplicitMidpoint()) # hide
 @time "Implicit Midpoint" solution = integrate(problem, ImplicitMidpoint())
 trajectory = Float32.(DataLoader(solution; suppress_info = true).input)
-iterate(nn_vpt, trajectory[:, 1:seq_length]; n_points = Int(floor(t_validation / tstep)) + 1) # hide
-@time "VPT" iterate(nn_vpt, trajectory[:, 1:seq_length]; n_points = Int(floor(t_validation / tstep)) + 1)
-iterate(nn_st, trajectory[:, 1:seq_length]; n_points = Int(floor(t_validation / tstep)) + 1) # hide
-@time "ST" iterate(nn_st, trajectory[:, 1:seq_length]; n_points = Int(floor(t_validation / tstep)) + 1)
+iterate(nn_vpt, trajectory[:, 1:seq_length]; n_points = Int(floor(t_validation / timestep)) + 1) # hide
+@time "VPT" iterate(nn_vpt, trajectory[:, 1:seq_length]; n_points = Int(floor(t_validation / timestep)) + 1)
+iterate(nn_st, trajectory[:, 1:seq_length]; n_points = Int(floor(t_validation / timestep)) + 1) # hide
+@time "ST" iterate(nn_st, trajectory[:, 1:seq_length]; n_points = Int(floor(t_validation / timestep)) + 1)
 nothing # hide
 end # hide
 timing() # hide

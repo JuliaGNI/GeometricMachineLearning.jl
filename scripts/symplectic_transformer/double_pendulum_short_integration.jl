@@ -1,6 +1,6 @@
 using GeometricMachineLearning
 using GeometricMachineLearning: MatrixSoftmax, VectorSoftmax
-using GeometricProblems.DoublePendulum: tspan, tstep, default_parameters, hodeproblem
+using GeometricProblems.DoublePendulum: tspan, timestep, default_parameters, hodeproblem
 using GeometricEquations: EnsembleProblem
 using GeometricIntegrators: ImplicitMidpoint, integrate
 using LaTeXStrings
@@ -21,7 +21,7 @@ initial_conditions = [
 ]
 initial_conditions = reshape(initial_conditions, length(initial_conditions))
 
-ensemble_problem = EnsembleProblem(hodeproblem().equation, (tspan[1], tspan[1] + 15 * tstep), tstep, initial_conditions, default_parameters)
+ensemble_problem = EnsembleProblem(hodeproblem().equation, (tspan[1], tspan[1] + 15 * timestep), timestep, initial_conditions, default_parameters)
 
 ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
 
@@ -110,7 +110,7 @@ training_fig_dark, training_ax_dark = make_training_error_plot(; theme = :dark)
 
 function make_plot_for_index(index::Integer=1)
     const n_steps = 100
-    ensemble_problem = EnsembleProblem(hodeproblem().equation, (tspan[1], tspan[1] + n_steps * tstep), tstep, [(q = dl.input.q[:, 1, index], p = dl.input.p[:, 1, index]), ], default_parameters)
+    ensemble_problem = EnsembleProblem(hodeproblem().equation, (tspan[1], tspan[1] + n_steps * timestep), timestep, [(q = dl.input.q[:, 1, index], p = dl.input.p[:, 1, index]), ], default_parameters)
     ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
     dl = DataLoader(ensemble_solution)
     init_con = (q = dl.input.q[:, 1:seq_length, 1], p = dl.input.p[:, 1:seq_length, 1])
