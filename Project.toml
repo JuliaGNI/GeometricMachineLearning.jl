@@ -1,6 +1,6 @@
 name = "GeometricMachineLearning"
 uuid = "194d25b2-d3f5-49f0-af24-c124f4aa80cc"
-version = "0.4.4"
+version = "0.4.5"
 authors = ["Michael Kraus <michael.kraus@ipp.mpg.de>"]
 
 [deps]
