@@ -265,6 +265,8 @@ module GeometricMachineLearning
     include("architectures/psd.jl")
     include("architectures/fixed_width_network.jl")
     include("architectures/hamiltonian_neural_network.jl")
+    include("architectures/standard_hamiltonian_neural_network.jl")
+    include("architectures/generalized_hamiltonian_neural_network.jl")
     include("architectures/lagrangian_neural_network.jl")
     include("architectures/variable_width_network.jl")
     include("architectures/recurrent_neural_network.jl")
