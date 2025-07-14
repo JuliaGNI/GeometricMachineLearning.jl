@@ -22,6 +22,8 @@ module GeometricMachineLearning
     using SymbolicNeuralNetworks: derivative, _get_contents, _get_params, SymbolicNeuralNetwork
     using Symbolics: @variables, substitute
 
+    import ParameterHandling: flatten
+
     import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer, AbstractExplicitCell, AbstractNeuralNetwork , NeuralNetwork, UnknownArchitecture, FeedForwardLoss
     import AbstractNeuralNetworks: Chain, GridCell
     import AbstractNeuralNetworks: Dense, Linear, Recurrent

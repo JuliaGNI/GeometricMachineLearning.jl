@@ -58,13 +58,13 @@ Compute an executable expression of the Hamiltonian vector field of a [`Hamilton
 
 This first computes a symbolic expression of the vector field using [`symbolic_hamiltonian_vector_field`](@ref).
 """
-function hamiltonian_vector_field(arch::HamiltonianArchitecture)
+function hamiltonian_vector_field(arch::StandardHamiltonianArchitecture)
     nn = SymbolicNeuralNetwork(arch)
     hvf = symbolic_hamiltonian_vector_field(nn)
     SymbolicNeuralNetworks.build_nn_function(hvf, nn.params, nn.input)
 end
 
-function Chain(arch::HamiltonianArchitecture)
+function Chain(arch::StandardHamiltonianArchitecture)
     inner_layers = Tuple(
         [Dense(arch.width, arch.width, arch.activation) for _ in 1:arch.nhidden]
     )
