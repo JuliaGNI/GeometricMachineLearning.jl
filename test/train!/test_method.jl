@@ -24,7 +24,7 @@ exacthnn = ExactHnn()
 
 sympeuler = SEuler()
 
-@test GeometricMachineLearning.type(sympeuler)    == SymplecticEulerA
+@test GeometricMachineLearning.type(sympeuler)    == SymplecticEulerIntegratorA
 @test symbols(sympeuler) == PhaseSpaceSymbol
 @test shape(sympeuler)   == TrajectoryData
 @test min_length_batch(sympeuler) == 2
@@ -64,7 +64,7 @@ midpointlnn = VariaMidPoint()
 #########################################
 
 @testerror GeometricMachineLearning.type(default_Method(sympnet, tra_pos_data))
-@test GeometricMachineLearning.type(default_method(hnn, tra_ps_data)) == SymplecticEulerA
+@test GeometricMachineLearning.type(default_method(hnn, tra_ps_data)) == SymplecticEulerIntegratorA
 @test GeometricMachineLearning.type(default_method(hnn, sam_dps_data)) == HnnExactMethod
 @test GeometricMachineLearning.type(default_method(sympnet, tra_ps_data)) == BasicSympNetMethod
 @test GeometricMachineLearning.type(default_method(lnn, tra_pos_data)) == VariationalMidPointMethod
