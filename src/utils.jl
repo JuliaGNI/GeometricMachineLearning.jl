@@ -151,7 +151,7 @@ qp = (q = [1, 2], p = [3, 4])
 ```
 
 """
-const QPT{T} = NamedTuple{(:q, :p), Tuple{AT, AT}} where {T, AT <: AbstractArray{T}}
+const QPT{T} = NamedTuple{(:q, :p), Tuple{AT₁, AT₂}} where {T, N, AT₁ <: AbstractArray{T, N}, AT₂ <: AbstractArray{T, N}}
 
 @doc raw"""
     QPTOAT
