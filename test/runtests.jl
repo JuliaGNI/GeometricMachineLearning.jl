@@ -27,6 +27,7 @@ using Documenter: doctest
 @safetestset "Gradient Layer                                                                  " begin include("layers/gradient_layer_tests.jl") end
 @safetestset "Test symplecticity of upscaling layer                                           " begin include("layers/sympnet_layers_test.jl") end 
 @safetestset "Hamiltonian Neural Network                                                      " begin include("hamiltonian_neural_network_tests.jl") end
+@safetestset "Generalized Hamiltonian Neural Network                                          " begin include("generalized_hamiltonian_neural_networks_test.jl") end
 @safetestset "Manifold Neural Network Layers                                                  " begin include("layers/manifold_layers.jl") end
 
 @safetestset "Custom tensor matrix multiplication                                             " begin include("kernels/tensor_mat_mul.jl") end

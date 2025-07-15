@@ -151,7 +151,9 @@ qp = (q = [1, 2], p = [3, 4])
 ```
 
 """
-const QPT{T} = NamedTuple{(:q, :p), Tuple{AT₁, AT₂}} where {T, N, AT₁ <: AbstractArray{T, N}, AT₂ <: AbstractArray{T, N}}
+const QPT{T} = NamedTuple{(:q, :p), Tuple{AT, AT}} where {T, N, AT <: AbstractArray{T, N}}
+
+const QPT2{T} = NamedTuple{(:q, :p), Tuple{AT₁, AT₂}} where {T, N, AT₁ <: AbstractArray{T, N}, AT₂ <: AbstractArray{T, N}}
 
 @doc raw"""
     QPTOAT
@@ -164,6 +166,8 @@ const QPTOAT = Union{QPT, AbstractArray}
 This could be data in ``(q, p)\in\mathbb{R}^{2d}`` form or come from an arbitrary vector space.
 """
 const QPTOAT{T} = Union{QPT{T}, AbstractArray{T}} where T
+
+const QPTOAT2{T} = Union{QPT2{T}, AbstractArray{T}} where T
 
 Base.:≈(qp₁::QPT, qp₂::QPT) = (qp₁.q ≈ qp₂.q) & (qp₁.p ≈ qp₂.p)
 

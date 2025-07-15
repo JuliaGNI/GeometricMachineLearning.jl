@@ -11,24 +11,32 @@ struct SymbolicEnergy{AT <: Activation, PT, Kinetic}
     parameter_convert::PT
     activation::AT
 
-    function SymbolicEnergy{Kinetic}(dim, width=dim, nhidden=HNN_nhidden_default, activation=HNN_activation_default; parameters::OptionalParameters=NullParameters()) where {Kinetic}
+    function SymbolicEnergy(dim, width=dim, nhidden=HNN_nhidden_default, activation::Activation=HNN_activation_default; parameters::OptionalParameters=NullParameters(), type)
         @assert iseven(dim) "The input dimension must be an even integer!"
-        flattened_parameters = flatten(parameters)
-        parameter_length = length(flattened_parameters[2])
-        new{typeof(activation), typeof(flattened_parameters[2]), Kinetic}(dim, width, nhidden, parameter_length, flattened_parameters[2], activation)
+        flattened_parameters = ParameterHandling.flatten(parameters)
+        parameter_length = length(flattened_parameters[1])
+        new{typeof(activation), typeof(flattened_parameters[2]), type}(dim, width, nhidden, parameter_length, flattened_parameters[2], activation)
     end
 end
 
-ParameterHandling.flatten(::NullParameters) = flatten(NamedTuple())
+ParameterHandling.flatten(::NullParameters) = ParameterHandling.flatten(NamedTuple())
 
 """
     SymbolicPotentialEnergy
 
+A `const` derived from [`SymbolicEnergy`](@ref).
+
 # Constructors
 
-```julia
-SymbolicPotentialEnergy(dim)
+```jldoctest; setup=:(using GeometricMachineLearning)
+julia> params, dim = (m = 1., ω = π / 2), 2
+((m = 1.0, ω = 1.5707963267948966), 2)
+
+julia> se = GeometricMachineLearning.SymbolicPotentialEnergy(dim; parameters = params);
+
 ```
+
+In practice we use `SymbolicPotentialEnergy` (and [`SymbolicKineticEnergy`](@ref)) together with [`build_gradient(::SymbolicEnergy)`](@ref).
 
 # Parameter Dependence
 """
@@ -37,13 +45,16 @@ const SymbolicPotentialEnergy{AT, PT} = SymbolicEnergy{AT, PT, :potential}
 """
     SymbolicKineticEnergy
 
+A `const` derived from [`SymbolicEnergy`](@ref).
+
 # Constructors
 
-```julia
-
-```
+See [`SymbolicPotentialEnergy`](@ref).
 """
 const SymbolicKineticEnergy{AT, PT} = SymbolicEnergy{AT, PT, :kinetic}
+
+SymbolicPotentialEnergy(args...; kwargs...) = SymbolicEnergy(args...; type = :potential, kwargs...)
+SymbolicKineticEnergy(args...; kwargs...) = SymbolicEnergy(args...; type = :kinetic, kwargs...)
 
 function Chain(se::SymbolicEnergy)
     inner_layers = Tuple(
@@ -57,14 +68,14 @@ function Chain(se::SymbolicEnergy)
     )
 end
 
-function SymbolicNeuralNetworks.Jacobian(f::EqT, nn::AbstractSymbolicNeuralNetwork, dim2::Integer)
+function SymbolicNeuralNetworks.Jacobian(f::SymbolicNeuralNetworks.EqT, nn::AbstractSymbolicNeuralNetwork, dim2::Integer)
     # make differential 
-    Dx = symbolic_differentials(nn.input)[1:dim2]
+    Dx = SymbolicNeuralNetworks.symbolic_differentials(nn.input)[1:dim2]
 
     # Evaluation of gradient
-    s∇f = hcat([expand_derivatives.(Symbolics.scalarize(dx(f))) for dx in Dx]...)
+    s∇f = hcat([SymbolicNeuralNetworks.expand_derivatives.(SymbolicNeuralNetworks.Symbolics.scalarize(dx(f))) for dx in Dx]...)
 
-    Jacobian(f, s∇f, nn)
+    SymbolicNeuralNetworks.Jacobian(f, s∇f, nn)
 end
 
 function SymbolicNeuralNetworks.Jacobian(nn::AbstractSymbolicNeuralNetwork, dim2::Integer)
@@ -72,43 +83,119 @@ function SymbolicNeuralNetworks.Jacobian(nn::AbstractSymbolicNeuralNetwork, dim2
     # Evaluation of the symbolic output
     soutput = nn.model(nn.input, params(nn))
 
-    Jacobian(soutput, nn, dim2)
+    SymbolicNeuralNetworks.Jacobian(soutput, nn, dim2)
 end
 
+"""
+    build_gradient(se)
+
+Build a gradient function from a [`SymbolicEnergy`](@ref) `se`.
+
+# Examples
+
+```jldoctest; setup=:(using GeometricMachineLearning; using GeometricMachineLearning: SymbolicPotentialEnergy, build_gradient, concatenate_array_with_parameters; using GeometricMachineLearning.GeometricBase: OptionalParameters; using Random; Random.seed!(123))
+params, dim = (m = 1., ω = π / 2), 4
+
+se = SymbolicPotentialEnergy(dim; parameters = params)
+
+network_params = NeuralNetwork(Chain(se)).params
+
+built_grad = build_gradient(se)
+grad(qp::AbstractArray, problem_params::OptionalParameters, params::NeuralNetworkParameters) = built_grad(concatenate_array_with_parameters(qp, problem_params), params)
+
+grad(rand(2), params, network_params)
+
+# output
+
+2×1 Matrix{Float64}:
+ 0.069809944230798
+ 0.30150270218327446
+```
+"""
 function build_gradient(se::SymbolicEnergy)
     model = Chain(se)
     nn = SymbolicNeuralNetwork(model)
     □ = SymbolicNeuralNetworks.Jacobian(nn, se.dim÷2)
-    SymbolicNeuralNetworks.build_nn_function(□, nn.params, nn.input)
+    SymbolicNeuralNetworks.build_nn_function(SymbolicNeuralNetworks.derivative(□)', nn.params, nn.input)
 end
 
-struct SymplecticEuler{M, N, FT<:Callable, AT<:Architecture, type} <: AbstractExplicitLayer{M, N}
+struct SymplecticEuler{M, N, FT<:Base.Callable, MT<:Chain, type, Last} <: AbstractExplicitLayer{M, N}
     gradient_function::FT
-    energy_architecture::AT
+    energy_model::MT
 end
 
-function initialparameters(integrator::SymplecticEuler)
-
+function initialparameters(rng::Random.AbstractRNG, init_weight::AbstractNeuralNetworks.Initializer, integrator::SymplecticEuler, backend::KernelAbstractions.Backend, ::Type{T}) where {T}
+    initialparameters(rng, init_weight, integrator.energy_model, backend, T)
 end
 
-const SymplecticEulerA{M, N, FT, AT} = SymplecticEuler{M, N, FT, AT, :A}
-const SymplecticEulerB{M, N, FT, AT} = SymplecticEuler{M, N, FT, AT, :B}
+const SymplecticEulerA{M, N, FT, AT, Last} = SymplecticEuler{M, N, FT, AT, :A}
+const SymplecticEulerB{M, N, FT, AT, Last} = SymplecticEuler{M, N, FT, AT, :B}
 
-function SymplecticEulerA(se::SymbolicKineticEnergy)
+function SymplecticEulerA(se::SymbolicKineticEnergy; last_step::Bool=false)
     gradient_function = build_gradient(se)
-    SymplecticEuler{build_gradient(se), :A}
+    c = Chain(se)
+    SymplecticEuler{se.dim, se.dim, typeof(gradient_function), typeof(c), :A, last_step}(gradient_function, c)
 end
 
-function SymplecticEulerB(se::SymbolicPotentialEnergy)
+function SymplecticEulerB(se::SymbolicPotentialEnergy; last_step::Bool=false)
     gradient_function = build_gradient(se)
-    SymplecticEuler{build_gradient(se), :B}
+    c = Chain(se)
+    SymplecticEuler{se.dim, se.dim, typeof(gradient_function), typeof(c), :B, last_step}(gradient_function, c)
 end
 
-(integrator::SymplecticEulerA)(qp::QPT, params::NeuralNetworkParameters) = (qp.q + integrator.gradient_function(qp.p, params), qp.p)
-(integrator::SymplecticEulerB)(qp::QPT, params::NeuralNetworkParameters) = (qp.q, qp.p - integrator.gradient_function(qp.q, params))
+function concatenate_array_with_parameters(qp::AbstractVector, params::OptionalParameters)
+    vcat(qp, ParameterHandling.flatten(params)[1])
+end
 
-SymbolicPotentialEnergy(args...; kwargs...) = SymbolicEnergy{:potential}(args...; kwargs...)
-SymbolicKineticEnergy(args...; kwargs...) = KineticEnergy{:kinetic}(args...; kwargs...)
+function concatenate_array_with_parameters(qp::AbstractMatrix, params::OptionalParameters)
+    hcat((concatenate_array_with_parameters(qp[:, i], params) for i in axes(qp, 2))...)
+end
+
+function (integrator::SymplecticEulerA{M, N, FT, AT, true})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
+    input = concatenate_array_with_parameters(qp.p, problem_params)
+    (q = @view((qp.q + integrator.gradient_function(input, params))[:, 1]), p = qp.p)
+end
+
+function (integrator::SymplecticEulerB{M, N, FT, AT, true})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
+    input = concatenate_array_with_parameters(qp.q, problem_params)
+    (q = qp.q, p = @view((qp.p - integrator.gradient_function(input, params))[:, 1]))
+end
+
+function (integrator::SymplecticEulerA{M, N, FT, AT, false})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
+    input = concatenate_array_with_parameters(qp.p, problem_params)
+    ((q = @view((qp.q + integrator.gradient_function(input, params))[:, 1]), p = qp.p), problem_params)
+end
+
+function (integrator::SymplecticEulerB{M, N, FT, AT, false})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
+    input = concatenate_array_with_parameters(qp.q, problem_params)
+    ((q = qp.q, p = @view((qp.p - integrator.gradient_function(input, params))[:, 1])), problem_params)
+end
+
+function (integrator::SymplecticEuler)(qp_params::Tuple{<:QPTOAT2, <:OptionalParameters}, params::NeuralNetworkParameters)
+    integrator(qp_params..., params)
+end
+
+function (integrator::SymplecticEuler)(::TT, ::NeuralNetworkParameters) where {TT <: Tuple}
+    error("The input is of type $(TT). This shouldn't be the case!")
+end
+
+function (integrator::SymplecticEuler{M, N, FT, AT, Type, false})(qp::AbstractArray, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT, Type}
+    @assert iseven(size(qp, 1))
+    n = size(qp, 1)÷2
+    qp_split = assign_q_and_p(qp, n)
+    evaluated = integrator(qp_split, problem_params, params)[1]
+    (vcat(evaluated.q, evaluated.p), problem_params)
+end
+
+function (integrator::SymplecticEuler{M, N, FT, AT, Type, true})(qp::AbstractArray, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT, Type}
+    @assert iseven(size(qp, 1))
+    n = size(qp, 1)÷2
+    qp_split = assign_q_and_p(qp, n)
+    evaluated = integrator(qp_split, problem_params, params)
+    vcat(evaluated.q, evaluated.p)
+end
+
+(integrator::SymplecticEuler)(qp::QPTOAT2, params::NeuralNetworkParameters) = integrator(qp, NullParameters(), params)
 
 """
     GeneralizedHamiltonianArchitecture <: HamiltonianArchitecture
@@ -126,31 +213,44 @@ The constructor takes the following input arguments:
 4. `n_integrators`: the number of integrators used in the GHNN.
 5. `activation = $(HNN_activation_default)`: the activation function used in the GHNN,
 """
-struct GeneralizedHamiltonianArchitecture{AT, IT} <: HamiltonianArchitecture{AT}
+struct GeneralizedHamiltonianArchitecture{AT, PT <: OptionalParameters} <: HamiltonianArchitecture{AT}
     dim::Int
     width::Int
     nhidden::Int
     n_integrators::Int
+    parameters::PT
     activation::AT
 
-    function GeneralizedHamiltonianArchitecture(dim, width=dim, nhidden=HNN_nhidden_default, n_integrators::Integer=1, activation=HNN_activation_default)
-        new{typeof(activation)}(dim, width, nhidden, n_integrators, activation)
+    function GeneralizedHamiltonianArchitecture(dim; width=dim, nhidden=HNN_nhidden_default, n_integrators::Integer=1, activation=HNN_activation_default, parameters=NullParameters())
+        new{typeof(activation), typeof(parameters)}(dim, width, nhidden, n_integrators, parameters, activation)
     end
+end
+
+@generated function AbstractNeuralNetworks.applychain(layers::Tuple, x::Tuple{<:QPTOAT2, <:OptionalParameters}, ps::Tuple)
+    N = length(fieldtypes((layers)))
+    x_symbols = vcat([:x], [gensym() for _ in 1:N])
+    calls = [:(($(x_symbols[i + 1])) = layers[$i]($(x_symbols[i]), ps[$i])) for i in 1:N]
+    push!(calls, :(return $(x_symbols[N + 1])))
+    return Expr(:block, calls...)
 end
 
 function Chain(ghnn_arch::GeneralizedHamiltonianArchitecture)
     c = ()
-    kinetic_energy = SymbolicKineticEnergy(ghnn_arch.dim, ghnn_arch.width, ghnn_arch.nhidden, ghnn_arch.parameter_length, ghnn_arch.parameter_convert, ghnn_arch.activation)
-    potential_energy = SymbolicPotentialEnergy(ghnn_arch.dim, ghnn_arch.width, ghnn_arch.nhidden, ghnn_arch.parameter_length, ghnn_arch.parameter_convert, ghnn_arch.activation)
+    kinetic_energy = SymbolicKineticEnergy(ghnn_arch.dim, ghnn_arch.width, ghnn_arch.nhidden, ghnn_arch.activation; parameters=ghnn_arch.parameters)
+    potential_energy = SymbolicPotentialEnergy(ghnn_arch.dim, ghnn_arch.width, ghnn_arch.nhidden, ghnn_arch.activation; parameters=ghnn_arch.parameters)
     
-    for _ in 1:n_integrators
-        c = (c..., SymplecticEulerA(kinetic_energy))
-        c = (c..., SymplecticEulerB(potential_energy))
+    for n in 1:ghnn_arch.n_integrators
+        c = (c..., SymplecticEulerA(kinetic_energy; last_step = false))
+        c = n == ghnn_arch.n_integrators ? (c..., SymplecticEulerB(potential_energy; last_step=true)) : (c..., SymplecticEulerB(potential_energy; last_step=false))
     end
 
-    c
+    Chain(c...)
 end
 
-function HNNLoss(arch::GeneralizedHamiltonianArchitecture)
+function (nn::NeuralNetwork{GT})(qp::QPTOAT2, problem_params::OptionalParameters) where {GT <: GeneralizedHamiltonianArchitecture}
+    nn.model(qp, problem_params, params(nn))
+end
 
+function (model::Chain)(qp::QPTOAT2, problem_params::OptionalParameters, params::NeuralNetworkParameters)
+    model((qp, problem_params), params)
 end
