@@ -2,9 +2,8 @@
 
 In this section we compare the [linear symplectic transformer](@ref "Linear Symplectic Transformer") to the [standard transformer](@ref "Standard Transformer"). The example we treat here is the *coupled harmonic oscillator*:
 
-```@example
-Main.include_graphics("../tikz/coupled_harmonic_oscillator"; caption = raw"Visualization of the coupled harmonic oscillator. ") # hide
-```
+![Visualization of the coupled harmonic oscillator.](../tikz/coupled_harmonic_oscillator_light.png)
+![Visualization of the coupled harmonic oscillator.](../tikz/coupled_harmonic_oscillator_dark.png)
 
 It is a [Hamiltonian system](@ref "Symplectic Systems") with 
 
@@ -32,11 +31,11 @@ CairoMakie.activate!() # hide
 import Random # hide
 Random.seed!(123) # hide
 
-const tstep = .3
+const timestep = .3
 const n_init_con = 5
 
 # ensemble problem
-ep = hodeensemble([rand(2) for _ in 1:n_init_con], [rand(2) for _ in 1:n_init_con]; tstep = tstep)
+ep = hodeensemble([rand(2) for _ in 1:n_init_con], [rand(2) for _ in 1:n_init_con]; timestep = timestep)
 dl = DataLoader(integrate(ep, ImplicitMidpoint()); suppress_info = true)
 # dl = DataLoader(vcat(dl_nt.input.q, dl_nt.input.p))  # hide
 
@@ -120,14 +119,13 @@ fig_dark, ax_dark = plot_training_losses(loss_array_standard, loss_array_symplec
 fig_light, ax_light = plot_training_losses(loss_array_standard, loss_array_symplectic, loss_array_sympnet; theme = :light)
 
 save("lst_dark.png", fig_dark; px_per_unit = 1.2)
-save("lst.png", fig_light; px_per_unit = 1.2)
+save("lst_light.png", fig_light; px_per_unit = 1.2)
 
 nothing
 ```
 
-```@example
-Main.include_graphics("lst"; caption = "Training loss for the different networks. ") # hide
-```
+![Training loss for the different networks.](lst_light.png)
+![Training loss for the different networks.](lst_dark.png)
 
 
 We further evaluate a trajectory with the trained networks for thirty time steps: 
@@ -174,15 +172,14 @@ end
 
 fig_light, ax_light = make_validation_plot(n_steps; theme = :light)
 fig_dark, ax_dark = make_validation_plot(n_steps; theme = :dark)
-save("lst_validation.png", fig_light; px_per_unit = 1.2)
+save("lst_validation_light.png", fig_light; px_per_unit = 1.2)
 save("lst_validation_dark.png", fig_dark; px_per_unit = 1.2)
 
 nothing
 ```
 
-```@example lin_sympl_tran_tut
-Main.include_graphics("lst_validation"; caption = "Validation of the different networks. ", width = .85) # hide
-```
+![Validation of the different networks.](lst_validation_light.png)
+![Validation of the different networks.](lst_validation_dark.png)
 
 We can see that the standard transformer is not able to stay close to the trajectory coming from implicit midpoint very well. The linear symplectic transformer outperforms the standard transformer as well as the SympNet while needing fewer parameters than the standard transformer: 
 

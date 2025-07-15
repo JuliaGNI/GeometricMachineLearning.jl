@@ -24,7 +24,7 @@ The arguments are:
 
 The last argument is optional for many neural network architectures. We have the following defaults:
 - A [`TransformerIntegrator`](@ref) uses [`TransformerLoss`](@ref).
-- A [`NeuralNetworkIntegrator`](@ref) uses [`FeedForwardLoss`](@ref).
+- A [`NeuralNetworkIntegrator`](@ref) uses `FeedForwardLoss` (this loss is defined in `AbstractNeuralNetworks`).
 - An [`AutoEncoder`](@ref) uses [`AutoEncoderLoss`](@ref).
 
 In addition there is an optional keyword argument that can be supplied to the functor:
@@ -86,7 +86,7 @@ end
 #######################################################################################
 # optimization step function
 
-function _optimization_step!(o::Optimizer, λY::NamedTuple, ps::NamedTuple, cache::NamedTuple, dx::NamedTuple)
+function _optimization_step!(o::Optimizer, λY::NamedTuple, ps::NamedTuple, cache::NamedTuple, dx::Union{NamedTuple, NeuralNetworkParameters})
     gx = rgrad(ps, dx)
     B = global_rep(λY, gx)
     update!(o, cache, B)
@@ -95,7 +95,7 @@ function _optimization_step!(o::Optimizer, λY::NamedTuple, ps::NamedTuple, cach
     nothing
 end
 
-function optimization_step!(o::Optimizer, λY::NamedTuple, ps::NeuralNetworkParameters, dx::NamedTuple)
+function optimization_step!(o::Optimizer, λY::NamedTuple, ps::NeuralNetworkParameters, dx::Union{NamedTuple, NeuralNetworkParameters})
     @assert keys(o.cache) == keys(λY) == keys(ps) == keys(dx)
     o.step += 1
     for key in keys(o.cache)
@@ -105,11 +105,6 @@ function optimization_step!(o::Optimizer, λY::NamedTuple, ps::NeuralNetworkPara
         dx_temp = dx[key]
         _optimization_step!(o, λY_temp, ps_temp, cache, dx_temp)
     end
-end
-
-# take care of Zygote idiosyncrasies
-function optimization_step!(o::Optimizer, λY::NamedTuple, ps::NeuralNetworkParameters, dx::NamedTuple{(:params,), Tuple{NT}}) where {NT <: NamedTuple}
-    optimization_step!(o, λY, ps, dx.params)
 end
 
 @doc raw"""
@@ -126,7 +121,7 @@ All arguments into `optimization_step!` are mandatory:
 1. `o::`[`Optimizer`](@ref),
 2. `λY::NamedTuple`: this named tuple has the same keys as `ps`, but contains [`GlobalSection`](@ref)s,
 3. `ps::NamedTuple`: the neural network parameters,
-5. `dx::NamedTuple`: the gradients stores as a NamedTuple.
+5. `dx::Union{NamedTuple, NeuralNetworkParameters}`: the gradients stores as a NamedTuple.
 
 All the arguments are given as `NamedTuple`s  as the neural network weights are stores in that format.
 
@@ -156,7 +151,7 @@ true
 # Extended help
 The derivatives `dx` here are usually obtained via an AD routine by differentiating a loss function, i.e. `dx` is ``\nabla_xL``.
 """
-function optimization_step!(o::Optimizer, λY::NamedTuple, ps::NamedTuple, dx::NamedTuple)
+function optimization_step!(o::Optimizer, λY::NamedTuple, ps::NamedTuple, dx::Union{NamedTuple, NeuralNetworkParameters})
     o.step += 1
 
     _optimization_step!(o, λY, ps, o.cache, dx)
@@ -165,7 +160,7 @@ end
 #######################################################################################
 # utils functions (should probably be put somewhere else)
 
-rgrad(ps::NamedTuple, dx::NamedTuple) = apply_toNT(rgrad, ps, dx)
+rgrad(ps::NamedTuple, dx::Union{NamedTuple, NeuralNetworkParameters}) = apply_toNT(rgrad, ps, dx)
 
 function rgrad(Y::AbstractVecOrMat, dx::AbstractVecOrMat)
     @assert size(Y) == size(dx)

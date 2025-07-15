@@ -8,7 +8,7 @@ nameproblem = :pendulum
 
 H , n_dim = dict_problem_H[nameproblem]
 
-Data = get_multiple_trajectory_structure(nameproblem; n_trajectory = 1, n_points = 1000, tstep = 0.1, qmin = -1.2, pmin = -1.2, qmax = 1.2, pmax = 1.2)
+Data = get_multiple_trajectory_structure(nameproblem; n_trajectory = 1, n_points = 1000, timestep = 0.1, qmin = -1.2, pmin = -1.2, qmax = 1.2, pmax = 1.2)
 
 get_Data = Dict(
     :Δt => Data -> Data.Δt,

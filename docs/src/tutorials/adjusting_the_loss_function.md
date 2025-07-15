@@ -20,7 +20,7 @@ using GeometricProblems.HarmonicOscillator: hodeproblem
 import Random # hide
 Random.seed!(123) # hide
 
-sol = integrate(hodeproblem(; tspan = 100), ImplicitMidpoint()) 
+sol = integrate(hodeproblem(; timespan = 100), ImplicitMidpoint()) 
 data = DataLoader(sol; suppress_info = true)
 
 nn = NeuralNetwork(GSympNet(2))
@@ -57,13 +57,10 @@ We now implement a custom loss such that:
 
 ```@example change_loss
 struct CustomLoss <: GeometricMachineLearning.NetworkLoss end
+using GeometricMachineLearning: QPTOAT, AbstractExplicitLayer # hide
 
 const λ = .1
-function (loss::CustomLoss)(model::Chain, params::NeuralNetworkParameters, input::CT, output::CT) where {
-                                                            T,
-                                                            AT<:AbstractArray{T, 3}, 
-                                                            CT<:@NamedTuple{q::AT, p::AT}
-                                                            }
+function (loss::CustomLoss)(model::Union{AbstractExplicitLayer, Chain}, params::Union{NeuralNetworkParameters, NamedTuple}, input::QPTOAT, output::QPTOAT)
     FeedForwardLoss()(model, params, input, output) + λ * network_parameter_norm(params)
 end
 nothing # hide
@@ -122,15 +119,14 @@ axislegend(; position = (.82, .75), backgroundcolor = :transparent) # hide
 fig
 end # hide
  # hide
-save("compare_losses.png", make_fig(; theme = :light); px_per_unit = 1.2) # hide
+save("compare_losses_light.png", make_fig(; theme = :light); px_per_unit = 1.2) # hide
 save("compare_losses_dark.png", make_fig(; theme = :dark); px_per_unit = 1.2) # hide
 
 nothing
 ```
 
-```@example
-Main.include_graphics("compare_losses"; caption = "Here we trained the same network with two different losses. ") # hide
-```
+![Here we trained the same network with two different losses.](compare_losses_light.png)
+![Here we trained the same network with two different losses.](compare_losses_dark.png)
 
 Wit the second loss function, for which the norm of the resulting network parameters has lower value, the network still performs well, albeit slightly worse than the network trained with the first loss.
 

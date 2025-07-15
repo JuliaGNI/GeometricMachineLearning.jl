@@ -9,7 +9,7 @@ import Random
 backend = CUDABackend()
 
 params = [(α = α̃ ^ 2, N = 200) for α̃ in 0.8 : .1 : 0.8]
-pr = hodeensemble(; tspan = (0.0, 800.), parameters = params)
+pr = hodeensemble(; timespan = (0.0, 800.), parameters = params)
 sol = integrate(pr, ImplicitMidpoint())
 dl_cpu_64 = DataLoader(sol; autoencoder = true)
 dl = DataLoader(dl_cpu_64, backend, Float32)

@@ -10,9 +10,8 @@ For this consider a PPDE written in the form: ``F(z(\mu);\mu)=0`` where ``z(\mu)
 
 In modeling any PDE we have to choose a discretization (particle discretization, finite element method, ...) of ``V`` which will be denoted by ``V_h \simeq \mathbb{R}^N``. The space ``V_h`` is not infinite-dimensional but its dimension ``N`` is still very large. Solving a discretized PDE in this space is typically very expensive. In reduced order modeling we utilize the fact that slightly different choices of parameters ``\mu`` will give qualitatively similar solutions. We can therefore perform a few simulations in the full space ``V_h`` and then make successive simulations cheaper by *learning* from the past simulations:
 
-```@example
-Main.include_graphics("../tikz/reduced_order_modeling_idea"; width=.98, caption = "Schematic representation of a reduced order modeling framework. The width of the individual blocks represent how long it takes to perform a simulation. ") # hide
-```
+![Schematic representation of a reduced order modeling framework. The width of the individual blocks represent how long it takes to perform a simulation.](../tikz/reduced_order_modeling_idea_light.png)
+![Schematic representation of a reduced order modeling framework. The width of the individual blocks represent how long it takes to perform a simulation.](../tikz/reduced_order_modeling_idea_dark.png)
 
 In the figure above we refer to the discretized PDE as the *full order model* (FOM) and to the cheaper representation (that we construct in a data-driven manner) as the *reduced order model* (ROM). We now introduce the *solution manifold*, which is a crucial concept in reduced order modeling.
 
@@ -28,7 +27,8 @@ A motivation for reduced order modeling is that even though the space ``V_h`` is
 
 [^1]: The systems we deal with usually have much greater dimension of course. The dimension of ``V_h`` will be in the thousands and the dimension of the solution manifold will be a few orders of magnitudes smaller. Because this cannot be easily visualized, we resort to showing a two-dimensional manifold in a three-dimensional space here. 
 
-![A representation of a two-dimensional solution manifold embedded in three-dimensional Euclidean space.](../tikz/solution_manifold_2.png)
+![A representation of a two-dimensional solution manifold embedded in three-dimensional Euclidean space.](../tikz/solution_manifold_2_light.png)
+![A representation of a two-dimensional solution manifold embedded in three-dimensional Euclidean space.](../tikz/solution_manifold_2_dark.png)
 
 As an actual example of a solution manifold consider the one-dimensional wave equation [blickhan2023registration](@cite): 
 
@@ -88,7 +88,7 @@ ax2 = make_axis(2)
 ax3 = make_axis(3)
 
 px_per_unit = Main.output_type == :html ? 1 : 2
-add_on = theme == :dark ? "_dark" : ""
+add_on = theme == :dark ? "_dark" : "_light"
 save(plot_name * add_on * ".png", fig; px_per_unit = px_per_unit)
 end
 
@@ -98,9 +98,8 @@ make_plot(; theme = :light)
 nothing
 ```
 
-```@example
-Main.include_graphics("wave_equation_different_parameters"; width = .9, caption = "Solution of the one-dimensional wave equation for three different parameters. These solutions evolve on a two-dimensional solution manifold. ") # hide
-```
+![Solution of the one-dimensional wave equation for three different parameters. These solutions evolve on a two-dimensional solution manifold.](wave_equation_different_parameters_light.png)
+![Solution of the one-dimensional wave equation for three different parameters. These solutions evolve on a two-dimensional solution manifold.](wave_equation_different_parameters_dark.png)
 
 Here we plotted the curves for the time steps (0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0) and the parameter values (0.416, 0.508, 0.6). We see that, depending on the parameter value ``\mu``, the wave travels at different speeds. In reduced order modeling we try to find an approximation to the solution manifolds, i.e. model the evolution of the curve in a cheap way for different parameter values ``\mu``. Neural networks offer a way of doing so efficiently!
 
@@ -117,9 +116,8 @@ The third step can be done with various machine learning (ML) techniques. Tradit
 
 After having obtained ``\mathcal{P}`` and ``\mathcal{R}`` we still need to solve the *reduced system*. Solving the reduced system is typically referred to as the *online phase* in reduced order modeling. This is sketched below: 
 
-```@example
-Main.include_graphics("../tikz/offline_online"; width = .9, caption = raw"The offline phase in reduced order modeling consists of finding the reduction and the reconstruction. In the online phase we solve the reduced model. ") # hide
-```
+![The offline phase in reduced order modeling consists of finding the reduction and the reconstruction. In the online phase we solve the reduced model.](../tikz/offline_online_light.png)
+![The offline phase in reduced order modeling consists of finding the reduction and the reconstruction. In the online phase we solve the reduced model.](../tikz/offline_online_dark.png)
 
 In this figure the online phase consists of applying the mapping ``\mathcal{NN}`` in the low-dimensional space in order to predict the next time step; this can either be done with a standard integrator [Kraus:2020:GeometricIntegrators](@cite) or, as is indicated here, [with a neural network](@ref "Neural Network Integrators"). Crucially this step can be made very cheap when compared to the full-order model[^3]. In the following we discuss how an equation for the reduced model can be found classically, without relying on a neural network for the online phase.
 

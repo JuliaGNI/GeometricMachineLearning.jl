@@ -16,9 +16,13 @@ module GeometricMachineLearning
     using ForwardDiff
     using InteractiveUtils
     using TimerOutputs
-    using LazyArrays
+    import LazyArrays
+    import SymbolicNeuralNetworks
+    import SymbolicNeuralNetworks: input_dimension, output_dimension, SymbolicPullback
+    using SymbolicNeuralNetworks: derivative, _get_contents, _get_params, SymbolicNeuralNetwork
+    using Symbolics: @variables, substitute
 
-    import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer, AbstractExplicitCell, AbstractNeuralNetwork , NeuralNetwork, UnknownArchitecture
+    import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer, AbstractExplicitCell, AbstractNeuralNetwork , NeuralNetwork, UnknownArchitecture, FeedForwardLoss
     import AbstractNeuralNetworks: Chain, GridCell
     import AbstractNeuralNetworks: Dense, Linear, Recurrent
     import AbstractNeuralNetworks: IdentityActivation, ZeroVector
@@ -103,6 +107,8 @@ module GeometricMachineLearning
     # this defines empty retraction type structs (doesn't rely on anything)
     include("optimizers/manifold_related/retraction_types.jl")
     
+    export MatrixSoftmax, VectorSoftmax
+    include("activations/softmax.jl")
 
     # are these needed?
     export UnknownProblem, NothingFunction
@@ -246,7 +252,7 @@ module GeometricMachineLearning
     include("backends/backends.jl")
     include("backends/lux.jl")
 
-    export NetworkLoss, TransformerLoss, FeedForwardLoss, AutoEncoderLoss, ReducedLoss
+    export NetworkLoss, TransformerLoss, FeedForwardLoss, AutoEncoderLoss, ReducedLoss, HNNLoss
 
     #INCLUDE ARCHITECTURES
     include("architectures/neural_network_integrator.jl")
@@ -267,7 +273,7 @@ module GeometricMachineLearning
     include("architectures/volume_preserving_feedforward.jl")
     include("architectures/volume_preserving_transformer.jl")
 
-    export HamiltonianNeuralNetwork
+    export HamiltonianArchitecture
     export LagrangianNeuralNetwork
     export SympNet, LASympNet, GSympNet
     export RecurrentNeuralNetwork
@@ -275,6 +281,7 @@ module GeometricMachineLearning
     export ClassificationTransformer, ClassificationLayer
     export VolumePreservingFeedForward
     export SymplecticAutoencoder, PSDArch
+    export HamiltonianArchitecture, StandardHamiltonianArchitecture, GeneralizedHamiltonianArchitecture
 
     export solve!, encoder, decoder
 
@@ -286,9 +293,11 @@ module GeometricMachineLearning
     include("architectures/default_architecture.jl")
 
     include("loss/losses.jl")
+    include("loss/hnn_loss.jl")
 
-    export AbstractPullback
-    include("pullback.jl")
+    export AbstractPullback, ZygotePullback, SymbolicPullback
+    include("pullbacks/zygote_pullback.jl")
+    include("pullbacks/symbolic_hnn_pullback.jl")
 
     export DataLoader, onehotbatch
     export Batch, optimize_for_one_epoch!
@@ -318,7 +327,7 @@ module GeometricMachineLearning
     include("nnsolution/history.jl")
 
     export NeuralNetSolution
-    export problem, tstep, history, size_history
+    export problem, timestep, history, size_history
     export set_sizemax_history
     
     include("nnsolution/neural_net_solution.jl")
@@ -390,10 +399,14 @@ module GeometricMachineLearning
     export HRedSys, reduction_error, projection_error, integrate_reduced_system, integrate_full_system
 
     include("layers/linear_symplectic_attention.jl")
+    include("layers/symplectic_attention.jl")
     include("architectures/linear_symplectic_transformer.jl")
+    include("architectures/symplectic_transformer.jl")
 
     export LinearSymplecticAttention, LinearSymplecticAttentionQ, LinearSymplecticAttentionP
     export LinearSymplecticTransformer
+    export SymplecticAttention, SymplecticAttentionQ, SymplecticAttentionP
+    export SymplecticTransformer
 
     include("map_to_cpu.jl")
 end

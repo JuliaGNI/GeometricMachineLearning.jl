@@ -2,6 +2,7 @@ const sti_n_blocks_default = 1
 const sti_L_default = 2
 const sti_upscaling_activation_default = identity
 const sti_resnet_activation_default = tanh
+const STI_ATTENTION_ACTIVATION_DEFAULT = VectorSoftmax()
 const sti_add_connection_default = true
 
 @doc raw"""
@@ -22,9 +23,10 @@ The following are optional keyword arguments:
 - `L::Int = """ * "$(sti_L_default)`" * raw""": the number of transformer blocks.
 - `upscaling_activation = """ * "$(sti_upscaling_activation_default)`" * raw""": the activation used in the upscaling layer.
 - `resnet_activation = """ * "$(sti_resnet_activation_default)`" * raw""": the activation used for the [`ResNetLayer`](@ref).
+- `attention_activation = """ * "$(STI_ATTENTION_ACTIVATION_DEFAULT)` " * raw""": the activation used for the [`MultiHeadAttention`](@ref) layer.
 - `add_connection:Bool = """ * "$(sti_add_connection_default)`" * raw""": specifies if the input should be added to the output.
 """
-struct StandardTransformerIntegrator{AT1, AT2} <: TransformerIntegrator
+struct StandardTransformerIntegrator{AT1, AT2, AT3} <: TransformerIntegrator
     sys_dim::Int 
     transformer_dim::Int 
     n_heads::Int
@@ -32,6 +34,7 @@ struct StandardTransformerIntegrator{AT1, AT2} <: TransformerIntegrator
     L::Int
     upsacling_activation::AT1
     resnet_activation::AT2
+    attention_activation::AT3
     add_connection::Bool
 end
 
@@ -44,15 +47,16 @@ function StandardTransformerIntegrator(sys_dim::Int;    transformer_dim::Int = s
                                                         n_blocks = sti_n_blocks_default, 
                                                         L::Int = sti_L_default, 
                                                         upscaling_activation = sti_upscaling_activation_default, 
-                                                        resnet_activation = sti_resnet_activation_default, 
+                                                        resnet_activation = sti_resnet_activation_default,
+                                                        attention_activation = STI_ATTENTION_ACTIVATION_DEFAULT,
                                                         add_connection::Bool = sti_add_connection_default)
-    StandardTransformerIntegrator(sys_dim, transformer_dim, n_heads, n_blocks, L, upscaling_activation, resnet_activation, add_connection)
+    StandardTransformerIntegrator(sys_dim, transformer_dim, n_heads, n_blocks, L, upscaling_activation, resnet_activation, attention_activation, add_connection)
 end
 
 function Chain(arch::StandardTransformerIntegrator)
     layers = arch.sys_dim == arch.transformer_dim ? () : (Dense(arch.sys_dim, arch.transformer_dim, arch.upsacling_activation), )
     for _ in 1:arch.L 
-        layers = (layers..., MultiHeadAttention(arch.transformer_dim, arch.n_heads; add_connection = arch.add_connection))
+        layers = (layers..., MultiHeadAttention(arch.transformer_dim, arch.n_heads; add_connection = arch.add_connection, activation = arch.attention_activation))
         layers = (layers..., Chain(ResNet(arch.transformer_dim, arch.n_blocks, arch.resnet_activation)).layers...)
     end
     layers = arch.sys_dim == arch.transformer_dim ? layers : (layers..., Dense(arch.transformer_dim, arch.sys_dim, identity))

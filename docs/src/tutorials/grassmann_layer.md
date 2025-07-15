@@ -8,9 +8,8 @@ Here we show how to implement a neural network that contains a layer whose weigh
 
 We visualize this:
 
-```@example
-Main.include_graphics("../tikz/grassmann_sampling"; width = .7, caption = raw"We can build a neural network that creates new samples from an unknown distribution. ") # hide
-```
+![We can build a neural network that creates new samples from an unknown distribution.](../tikz/grassmann_sampling_light.png)
+![We can build a neural network that creates new samples from an unknown distribution.](../tikz/grassmann_sampling_dark.png)
 
 So assume that we are given data on a nonlinear manifold:
 
@@ -73,14 +72,13 @@ end # hide
 fig_dark, ax_dark = make_rosenbrock(; theme = :dark, alpha = .85)
 fig_light, ax_light = make_rosenbrock(; theme = :light)
 save("rosenbrock_dark.png", alpha_colorbuffer(fig_dark))
-save("rosenbrock.png", alpha_colorbuffer(fig_light))
+save("rosenbrock_light.png", alpha_colorbuffer(fig_light))
 
 nothing # hide
 ```
 
-```@example rosenbrock
-Main.include_graphics("rosenbrock"; width = .7, caption = raw"Graph of the Rosenbrock function. ") # hide
-```
+![Graph of the Rosenbrock function.](rosenbrock_light.png)
+![Graph of the Rosenbrock function.](rosenbrock_dark.png)
 
 We now build a neural network whose task it is to map a product of two Gaussians ``\mathcal{N}(0,1)\times\mathcal{N}(0,1)`` onto the graph of the Rosenbrock function:
 
@@ -235,15 +233,15 @@ end
 fig_light, ax_light = make_point_cloud_arrows(; theme = :light)
 fig_dark, ax_dark = make_point_cloud_arrows(; theme = :dark)
 
-save("point_cloud_arrows.png", alpha_colorbuffer(fig_light))
+save("point_cloud_arrows_light.png", alpha_colorbuffer(fig_light))
 save("point_cloud_arrows_dark.png", alpha_colorbuffer(fig_dark))
 
 nothing # hide
 ```
 
-```@example rosenbrock
-Main.include_graphics("point_cloud_arrows"; width = .7) # hide
-```
+![](point_cloud_arrows_light.png)
+![](point_cloud_arrows_dark.png)
+
 
 We now want to train a neural network based on this Wasserstein loss. The loss function is:
 
@@ -277,13 +275,14 @@ So we use `Zygote` [Zygote.jl-2018](@cite) to compute ``\nabla_\theta\mathcal{NN
 ```@example rosenbrock
 import CairoMakie # hide
 CairoMakie.activate!() # hide
+using GeometricMachineLearning: params # hide
 # note the small number of training steps
 const training_steps = 80
 loss_array = zeros(training_steps)
 for i in 1:training_steps
     val, dp = compute_gradient(params(nn))
     loss_array[i] = val
-    optimization_step!(optimizer, λY, params(nn), dp.params)
+    optimization_step!(optimizer, λY, params(nn), dp)
 end
 ```
 
@@ -311,7 +310,7 @@ ax = CairoMakie.Axis(fig[1, 1];
 
 CairoMakie.lines!(ax, loss_array, label = "training loss", color = mblue)
 CairoMakie.axislegend(; position = (.82, .75), backgroundcolor = :transparent, labelcolor = textcolor) # hide
-fig_name = theme == :dark ? "training_loss_dark.png" : "training_loss.png" # hide
+fig_name = theme == :dark ? "training_loss_dark.png" : "training_loss_light.png" # hide
 CairoMakie.save(fig_name, fig; px_per_unit = 1.2) # hide
 end # hide
 make_error_plot(; theme = :dark) # hide
@@ -320,9 +319,9 @@ make_error_plot(; theme = :light) # hide
 nothing # hide
 ```
 
-```@example rosenbrock
-Main.include_graphics("training_loss"; width = .7) # hide
-```
+![](training_loss_light.png)
+![](training_loss_dark.png)
+
 
 Now we plot a few points to check how well they match the graph:
 
@@ -344,14 +343,13 @@ scatter!(ax, coordinates[1, :], coordinates[2, :], coordinates[3, :];
             label="mapped points")
 textcolor = theme == :dark ? :white : :black # hide
 axislegend(; position = (.82, .75), backgroundcolor = :transparent, labelcolor = textcolor) # hide
-file_name = "mapped_points" * (theme == :dark ? "_dark.png" : ".png") # hide
+file_name = "mapped_points" * (theme == :dark ? "_dark.png" : "_light.png") # hide
 save(file_name, alpha_colorbuffer(fig)) # hide
 end # hide
 ```
 
-```@example
-Main.include_graphics("mapped_points"; width = .7, caption = raw"The blue points were obtained with the neural network sampler. " ) # hide
-```
+![The blue points were obtained with the neural network sampler.](mapped_points_light.png)
+![The blue points were obtained with the neural network sampler.](mapped_points_dark.png)
 
 If points appear in darker color this means that they lie behind the graph of the Rosenbrock function.
 

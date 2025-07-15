@@ -6,10 +6,9 @@ In here we demonstrate the differences between the two approaches for computing 
 
 ```@example volume_preserving_attention
 using GeometricMachineLearning # hide
-using GeometricMachineLearning: FeedForwardLoss, TransformerLoss, params # hide
+using GeometricMachineLearning: TransformerLoss, params # hide
 import Random # hide
 Random.seed!(123) # hide
-
 sine_cosine = zeros(1, 1000, 2)
 sine_cosine[1, :, 1] .= sin.(0.:.1:99.9)
 sine_cosine[1, :, 2] .= cos.(0.:.1:99.9)
@@ -24,13 +23,11 @@ The third axis (i.e. the parameter axis) has length two, meaning we have two dif
 
 ```@setup volume_preserving_attention
 using CairoMakie, LaTeXStrings # hide
-
 morange = RGBf(255 / 256, 127 / 256, 14 / 256) # hide
 mred = RGBf(214 / 256, 39 / 256, 40 / 256) # hide
 mpurple = RGBf(148 / 256, 103 / 256, 189 / 256) # hide
 mblue = RGBf(31 / 256, 119 / 256, 180 / 256) # hide
 mgreen = RGBf(44 / 256, 160 / 256, 44 / 256) # hide
-
 function make_comparison_plot(; theme = :dark) # hide
 textcolor = theme == :dark ? :white : :black # hide
 fig = Figure(; backgroundcolor = :transparent)
@@ -53,7 +50,7 @@ ax = Axis(fig[1, 1];
 lines!(ax, dl.input[1, 1:200, 1], label=L"\sin(t)", color = morange)
 lines!(ax, dl.input[1, 1:200, 2], label=L"\cos(t)", color = mpurple)
 axislegend(; position = (.82, .75), backgroundcolor = theme == :dark ? :transparent : :white, labelcolor = textcolor) # hide
-fig_name = theme == :dark ? "curve_comparison_dark.png" : "curve_comparison.png" # hide
+fig_name = theme == :dark ? "curve_comparison_dark.png" : "curve_comparison_light.png" # hide
 save(fig_name, fig; px_per_unit = 1.2) # hide
 end # hide
 make_comparison_plot(; theme = :dark) # hide
@@ -62,9 +59,8 @@ make_comparison_plot(; theme = :light) # hide
 nothing
 ```
 
-```@example
-Main.include_graphics("curve_comparison"; width = .65, caption = raw"The data we treat here contains two different curves.") # hide
-```
+![The data we treat here contains two different curves.](curve_comparison_light.png)
+![The data we treat here contains two different curves.](curve_comparison_dark.png)
 
 We want to train a single neural network on both these curves. We already noted [before](@ref "Why use Transformers for Model Order Reduction") that a simple feedforward neural network cannot do this. Here we compare three networks which are of the following form: 
 
@@ -112,7 +108,6 @@ function set_up_networks(upscale_dimension::Int = upscale_dimension_1)
 end
 
 nn_skew, nn_arb, nn_comp = set_up_networks()
-
 nothing # hide
 ```
 
@@ -139,9 +134,9 @@ const batch = Batch(batch_size, seq_length, prediction_window)
 const batch2 = Batch(batch_size)
 
 function train_networks!(nn_skew, nn_arb, nn_comp)
-    loss_array_skew = o_skew(nn_skew, dl, batch, n_epochs, TransformerLoss(batch))
-    loss_array_arb  = o_arb( nn_arb,  dl, batch, n_epochs, TransformerLoss(batch))
-    loss_array_comp = o_comp(nn_comp, dl, batch2, n_epochs, FeedForwardLoss())
+    loss_array_skew = o_skew(nn_skew, dl, batch, n_epochs, TransformerLoss(batch); show_progress = false)
+    loss_array_arb  = o_arb( nn_arb,  dl, batch, n_epochs, TransformerLoss(batch); show_progress = false)
+    loss_array_comp = o_comp(nn_comp, dl, batch2, n_epochs, FeedForwardLoss(); show_progress = false)
 
     loss_array_skew, loss_array_arb, loss_array_comp
 end
@@ -177,15 +172,14 @@ end
 
 fig_dark, ax_dark = plot_training_losses(loss_array_skew, loss_array_arb, loss_array_comp; theme = :dark)
 fig_light, ax_light = plot_training_losses(loss_array_skew, loss_array_arb, loss_array_comp; theme = :light)
-save("training_loss_vpa.png", fig_light; px_per_unit = 1.2)
+save("training_loss_vpa_light.png", fig_light; px_per_unit = 1.2)
 save("training_loss_vpa_dark.png", fig_dark; px_per_unit = 1.2)
 
 nothing
 ```
 
-```@example
-Main.include_graphics("training_loss_vpa"; width = .65, caption = raw"The training losses for the three networks. ") # hide
-```
+![The training losses for the three networks.](training_loss_vpa_light.png)
+![The training losses for the three networks.](training_loss_vpa_dark.png)
 
 Looking at the training errors, we can see that the network with the skew-symmetric weighting is stuck at a relatively high error rate, whereas the loss for  the network with the arbitrary weighting is decreasing to a significantly lower level. The feedforward network without the attention mechanism is not able to learn anything useful (as was expected). 
 
@@ -265,18 +259,24 @@ nothing
 ```@example volume_preserving_attention
 fig_dark, fig_light, ax_dark, ax_light  = produce_validation_plot(40) # hide
 save("plot40_dark.png", fig_dark; px_per_unit = 1.2) # hide
-save("plot40.png", fig_light; px_per_unit = 1.2) # hide
-Main.include_graphics("plot40"; width = .65, caption = raw"Comparing the two volume-preserving attention mechanisms for 40 points. ") # hide
+save("plot40_light.png", fig_light; px_per_unit = 1.2) # hide
+nothing
 ```
+
+![Comparing the two volume-preserving attention mechanisms for 40 points.](plot40_light.png)
+![Comparing the two volume-preserving attention mechanisms for 40 points.](plot40_dark.png)
 
 In the plot above we can see that the network with the arbitrary weighting performs much better; even though the red line does not fit the purple line perfectly, it manages to least qualitatively reflect the training data.  We can also plot the predictions for longer time intervals: 
 
 ```@example volume_preserving_attention 
 fig_dark, fig_light, ax_dark, ax_light  = produce_validation_plot(400) # hide
 save("plot400_dark.png", fig_dark; px_per_unit = 1.2) # hide
-save("plot400.png", fig_light; px_per_unit = 1.2) # hide
-Main.include_graphics("plot400"; width = .65, caption = raw"Comparing the two volume-preserving attention mechanisms for 400 points. ") # hide
+save("plot400_light.png", fig_light; px_per_unit = 1.2) # hide
+nothing # hide
 ```
+
+![Comparing the two volume-preserving attention mechanisms for 400 points.](plot400_light.png)
+![Comparing the two volume-preserving attention mechanisms for 400 points.](plot400_dark.png)
 
 This advantage of the volume-preserving attention with arbitrary weighting may however be due to the fact that the skew-symmetric attention only has 3 learnable parameters, as opposed to 9 for the arbitrary weighting. We can increase the *upscaling dimension* and see how it affects the result: 
 
@@ -288,14 +288,15 @@ nn_skew, nn_arb, nn_comp = set_up_networks(upscale_dimension_2)
 o_skew, o_arb, o_comp = set_up_optimizers(nn_skew, nn_arb, nn_comp)
 
 loss_array_skew, loss_array_arb, loss_array_comp = train_networks!(nn_skew, nn_arb, nn_comp) # hide
-
 fig_dark, ax_dark = plot_training_losses(loss_array_skew, loss_array_arb, loss_array_comp; theme = :dark) # hide
 fig_light, ax_light = plot_training_losses(loss_array_skew, loss_array_arb, loss_array_comp; theme = :light) # hide
-save("training_loss2_vpa.png", fig_light; px_per_unit = 1.2) # hide
+save("training_loss2_vpa_light.png", fig_light; px_per_unit = 1.2) # hide
 save("training_loss2_vpa_dark.png", fig_dark; px_per_unit = 1.2) # hide
-
-Main.include_graphics("training_loss2_vpa"; width = .65, caption = raw"Comparison for 40 points, but with an upscaling of ten. ") # hide
+nothing # hide
 ```
+
+![Comparison for 40 points, but with an upscaling of ten.](training_loss2_vpa_light.png)
+![Comparison for 40 points, but with an upscaling of ten.](training_loss2_vpa_dark.png)
 
 ```@example volume_preserving_attention 
 initial_condition = dl.input[:, 1:seq_length, 2]
@@ -305,9 +306,12 @@ nn_skew, nn_arb, nn_comp = make_networks_neural_network_integrators(nn_skew, nn_
 fig_dark, fig_light, ax_dark, ax_light = produce_validation_plot(40, nn_skew, nn_arb, nn_comp)
 
 save("plot40_sine2_dark.png", fig_dark; px_per_unit = 1.2) # hide
-save("plot40_sine2.png", fig_light; px_per_unit = 1.2) # hide
-Main.include_graphics("plot40_sine2"; width = .65) # hide
+save("plot40_sine2_light.png", fig_light; px_per_unit = 1.2) # hide
+nothing # hide
 ```
+
+![](plot40_sine2_light.png)
+![](plot40_sine2_dark.png)
 
 And for a longer time interval: 
 
@@ -316,9 +320,12 @@ fig_dark, fig_light, ax_dark, ax_light = produce_validation_plot(200, nn_skew, n
 
 
 save("plot200_sine2_dark.png", fig_dark; px_per_unit = 1.2) # hide
-save("plot200_sine2.png", fig_light; px_per_unit = 1.2) # hide
-Main.include_graphics("plot200_sine2"; width = .65) # hide
+save("plot200_sine2_light.png", fig_light; px_per_unit = 1.2) # hide
+nothing
 ```
+
+![](plot200_sine2_light.png)
+![](plot200_sine2_dark.png)
 
 Here we see that the arbitrary weighting quickly fails and the skew-symmetric weighting performs better on longer time scales.
 
