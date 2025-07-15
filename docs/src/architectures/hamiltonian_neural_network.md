@@ -42,12 +42,16 @@ Here the derivatives (i.e. vector field data) ``\dot{q}_i^{(t)}`` and ``\dot{p}_
 ## Library Functions
 
 ```@docs
-GeometricMachineLearning.hamiltonian_vector_field(::HamiltonianArchitecture)
+GeometricMachineLearning.hamiltonian_vector_field(::StandardHamiltonianArchitecture)
 GeometricMachineLearning.HamiltonianArchitecture
 GeometricMachineLearning.StandardHamiltonianArchitecture
 GeometricMachineLearning.HNNLoss
 GeometricMachineLearning.symbolic_hamiltonian_vector_field(::GeometricMachineLearning.SymbolicNeuralNetwork)
 GeometricMachineLearning.SymbolicPullback(::HamiltonianArchitecture)
+GeometricMachineLearning.SymbolicEnergy
+GeometricMachineLearning.SymbolicPotentialEnergy
+GeometricMachineLearning.SymbolicKineticEnergy
+GeometricMachineLearning.build_gradient
 GeometricMachineLearning.GeneralizedHamiltonianArchitecture
 GeometricMachineLearning._processing
 ```

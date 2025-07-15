@@ -19,8 +19,10 @@ module GeometricMachineLearning
     import LazyArrays
     import SymbolicNeuralNetworks
     import SymbolicNeuralNetworks: input_dimension, output_dimension, SymbolicPullback
-    using SymbolicNeuralNetworks: derivative, _get_contents, _get_params, SymbolicNeuralNetwork
+    using SymbolicNeuralNetworks: derivative, _get_contents, _get_params, SymbolicNeuralNetwork, AbstractSymbolicNeuralNetwork
     using Symbolics: @variables, substitute
+
+    import ParameterHandling
 
     import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer, AbstractExplicitCell, AbstractNeuralNetwork , NeuralNetwork, UnknownArchitecture, FeedForwardLoss
     import AbstractNeuralNetworks: Chain, GridCell
@@ -265,6 +267,8 @@ module GeometricMachineLearning
     include("architectures/psd.jl")
     include("architectures/fixed_width_network.jl")
     include("architectures/hamiltonian_neural_network.jl")
+    include("architectures/standard_hamiltonian_neural_network.jl")
+    include("architectures/generalized_hamiltonian_neural_network.jl")
     include("architectures/lagrangian_neural_network.jl")
     include("architectures/variable_width_network.jl")
     include("architectures/recurrent_neural_network.jl")
@@ -358,8 +362,6 @@ module GeometricMachineLearning
 
     include("training/train.jl")
 
-    export SymplecticEuler
-    export SymplecticEulerA, SymplecticEulerB
     export SEuler, SEulerA, SEulerB
 
     include("training_method/symplectic_euler.jl")
