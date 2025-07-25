@@ -153,6 +153,7 @@ module GeometricMachineLearning
     include("optimizers/manifold_related/retractions.jl")
 
     include("layers/sympnets.jl")
+    include("layers/forcing_dissipation_layers.jl")
     include("layers/bias_layer.jl")
     include("layers/resnet.jl")
     include("layers/manifold_layer.jl")
