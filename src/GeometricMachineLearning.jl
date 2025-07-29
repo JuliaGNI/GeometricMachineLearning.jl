@@ -304,13 +304,16 @@ module GeometricMachineLearning
     include("pullbacks/zygote_pullback.jl")
     include("pullbacks/symbolic_hnn_pullback.jl")
 
-    export DataLoader, onehotbatch
+    export DataLoader, ParametricDataLoader, onehotbatch
     export Batch, optimize_for_one_epoch!
     include("data_loader/tensor_assign.jl")
     include("data_loader/matrix_assign.jl")
     include("data_loader/mnist_utils.jl")
     include("data_loader/batch.jl")
     include("data_loader/optimize.jl")
+
+    include("data_loader/parametric_data_loader.jl")
+    
 
     export default_optimizer
 

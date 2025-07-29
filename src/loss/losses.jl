@@ -227,3 +227,9 @@ end
 function (loss::ReducedLoss)(model::Chain, params::NeuralNetworkParameters, input::CT, output::CT) where {CT <: QPTOAT}
     _compute_loss(loss.decoder(model(loss.encoder(input), params)), output)
 end
+
+struct ParametricLoss <: NetworkLoss end
+
+function (loss::ParametricLoss)(model::Chain, params::NeuralNetworkParameters, input::CT, output::CT, system_parameters::NamedTuple) where {CT <: QPTOAT}
+    _compute_loss(model(input, system_parameters, params), output)
+end

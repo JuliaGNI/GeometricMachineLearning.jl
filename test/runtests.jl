@@ -62,6 +62,7 @@ using Documenter: doctest
 @safetestset "Test the data loader in combination with optimization_step!                     " begin include("data_loader/data_loader_optimization_step.jl") end
 @safetestset "Optimizer functor with data loader for Adam                                     " begin include("data_loader/optimizer_functor_with_adam.jl") end
 @safetestset "Test data loader for a tensor (q and p data)                                    " begin include("data_loader/draw_batch_for_tensor_test.jl") end
+@safetestset "Parametric DataLoader                                                           " begin include("data_loader/parametric_data_loader_test.jl") end
 
 @safetestset "Test NetworkLoss + Optimizer                                                    " begin include("network_losses/losses_and_optimization.jl") end
 

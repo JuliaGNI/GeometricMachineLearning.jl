@@ -140,17 +140,18 @@ function number_of_batches(dl::DataLoader{T, AT, OT, :RegularData}, batch::Batch
     Int(ceil(dl.input_time_steps * dl.n_params / batch.batch_size))
 end
 
-function batch_over_two_axes(batch::Batch, number_columns::Int, third_dim::Int, dl::DataLoader)
+function batch_over_two_axes(batch::Batch, number_columns::Integer, third_dim::Integer, n_batches::Integer)
     time_indices = shuffle(1:number_columns)
     parameter_indices = shuffle(1:third_dim)
     complete_indices = Iterators.product(time_indices, parameter_indices) |> collect |> vec
     batches = ()
-    n_batches = number_of_batches(dl, batch)
     for batch_number in 1:(n_batches - 1)
         batches = (batches..., complete_indices[(batch_number - 1) * batch.batch_size + 1 : batch_number * batch.batch_size])
     end
     (batches..., complete_indices[(n_batches - 1) * batch.batch_size + 1:end])
 end
+
+batch_over_two_axes(batch::Batch, number_of_columns::Integer, third_dim::Integer, dl::DataLoader) = batch_over_two_axes(batch, number_of_columns, third_dim, number_of_batches(dl, batch))
 
 function (batch::Batch)(dl::DataLoader{T, BT, OT, :RegularData}) where {T, AT<:AbstractArray{T, 3}, BT<:Union{AT, NamedTuple{(:q, :p), Tuple{AT, AT}}}, OT}
     batch_over_two_axes(batch, dl.input_time_steps, dl.n_params, dl)
@@ -186,7 +187,7 @@ end
     output[i, j, k] = data[i, indices[1, k] + seq_length + j - 1, indices[2, k]]
 end
 
-# this is neeced if we want to use the vector of tuples in a kernel
+# this is needed if we want to use the vector of tuples in a kernel
 function convert_vector_of_tuples_to_matrix(backend::Backend, batch_indices_tuple::Vector{Tuple{Int, Int}})
     _batch_size = length(batch_indices_tuple)
 
