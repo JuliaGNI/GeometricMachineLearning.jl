@@ -29,6 +29,8 @@ end
 
 (_pullback::ZygotePullback)(ps, model, input_nt::QPTOAT)::Tuple = Zygote.pullback(ps -> _pullback.loss(model, ps, input_nt), ps)
 (_pullback::ZygotePullback)(ps, model, input_nt_output_nt::Tuple{<:QPTOAT, <:QPTOAT})::Tuple = Zygote.pullback(ps -> _pullback.loss(model, ps, input_nt_output_nt...), ps)
+(_pullback::ZygotePullback)(ps, model, input_and_parameters::Tuple{<:QPTOAT, <:QPTOAT, <:NamedTuple})::Tuple = Zygote.pullback(ps -> _pullback.loss(model, ps, input_and_parameters...), ps)
+(_pullback::ZygotePullback)(ps, model, input_and_parameters::Tuple{<:QPTOAT, <:QPTOAT, <:AbstractVector})::Tuple = Zygote.pullback(ps -> _pullback.loss(model, ps, input_and_parameters...), ps)
 
 """
     _processing(returned_pullback)

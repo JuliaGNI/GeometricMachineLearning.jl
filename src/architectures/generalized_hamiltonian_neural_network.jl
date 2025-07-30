@@ -147,8 +147,13 @@ function concatenate_array_with_parameters(qp::AbstractVector, params::OptionalP
     vcat(qp, ParameterHandling.flatten(params)[1])
 end
 
-function concatenate_array_with_parameters(qp::AbstractMatrix, params::OptionalParameters)
-    hcat((concatenate_array_with_parameters(qp[:, i], params) for i in axes(qp, 2))...)
+# function concatenate_array_with_parameters(qp::AbstractMatrix, params::OptionalParameters)
+#     hcat((concatenate_array_with_parameters(qp[:, i], params) for i in axes(qp, 2))...)
+# end
+
+function concatenate_array_with_parameters(qp::AbstractMatrix, params::AbstractVector)
+    @assert _size(qp, 2) == length(params)
+    LazyArrays.Vcat((concatenate_array_with_parameters(@view(qp[:, i]), params[i]) for i in axes(params, 1))...)
 end
 
 function (integrator::SymplecticEulerA{M, N, FT, AT, true})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
@@ -234,6 +239,9 @@ end
     return Expr(:block, calls...)
 end
 
+index_qpt(qp::QPT2{T, 2}, i, j) where {T} = (q = qp.q[i, j], p = qp.p[i, j])
+index_gpt(qp::QPT2{T, 3}, i, j, k) where {T} = (q = qp.q[i, j, k], p = qp.p[i, j, k])
+
 function Chain(ghnn_arch::GeneralizedHamiltonianArchitecture)
     c = ()
     kinetic_energy = SymbolicKineticEnergy(ghnn_arch.dim, ghnn_arch.width, ghnn_arch.nhidden, ghnn_arch.activation; parameters=ghnn_arch.parameters)
@@ -251,6 +259,15 @@ function (nn::NeuralNetwork{GT})(qp::QPTOAT2, problem_params::OptionalParameters
     nn.model(qp, problem_params, params(nn))
 end
 
-function (model::Chain)(qp::QPTOAT2, problem_params::OptionalParameters, params::NeuralNetworkParameters)
+function (model::Chain)(qp::QPTOAT2, problem_params::OptionalParameters, params::Union{NeuralNetworkParameters, NamedTuple})
     model((qp, problem_params), params)
+end
+
+function (c::Chain)(qp::QPT2{T, 3}, system_params::AbstractVector, ps::Union{NamedTuple, NeuralNetworkParameters})::QPT2{T} where {T}
+    @assert size(qp.q, 3) == length(system_params)
+    @assert size(qp.q, 2) == 1
+    output_vectorwise = [c(index_gpt(qp, :, 1, i), system_params[i], ps) for i in axes(system_params, 1)]
+    q_output = hcat([single_output_vectorwise.q for single_output_vectorwise ∈ output_vectorwise]...)
+    p_output = hcat([single_output_vectorwise.p for single_output_vectorwise ∈ output_vectorwise]...)
+    (q = reshape(q_output, size(q_output, 1), 1, size(q_output, 2)), p = reshape(p_output, size(p_output, 1), 1, size(p_output, 2)))
 end
