@@ -86,7 +86,7 @@ end
 #######################################################################################
 # optimization step function
 
-function _optimization_step!(o::Optimizer, λY::NamedTuple, ps::NamedTuple, cache::NamedTuple, dx::Union{NamedTuple, NeuralNetworkParameters})
+function _optimization_step!(o::Optimizer, λY::NamedTuple, ps::Union{NeuralNetworkParameters, NamedTuple}, cache::NamedTuple, dx::Union{NamedTuple, NeuralNetworkParameters})
     gx = rgrad(ps, dx)
     B = global_rep(λY, gx)
     update!(o, cache, B)
@@ -161,6 +161,10 @@ end
 # utils functions (should probably be put somewhere else)
 
 rgrad(ps::NamedTuple, dx::Union{NamedTuple, NeuralNetworkParameters}) = apply_toNT(rgrad, ps, dx)
+
+function rgrad(ps::NeuralNetworkParameters, dp::NamedTuple)
+    rgrad(NamedTuple{keys(ps)}(values(ps)), _get_params(dp))
+end
 
 function rgrad(Y::AbstractVecOrMat, dx::AbstractVecOrMat)
     @assert size(Y) == size(dx)

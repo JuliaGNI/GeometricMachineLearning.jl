@@ -81,7 +81,7 @@ function optimize_for_one_epoch!(   opt::Optimizer,
         count += 1
         # these `copy`s should not be necessary! coming from a Zygote problem!
         _input_nt_output_nt_parameter_indices = convert_input_and_batch_indices_to_array(dl, batch, batch_indices)
-        input_nt_output_nt = _input_nt_output_nt_parameter_indices[1:2]
+        # input_nt_output_nt = _input_nt_output_nt_parameter_indices[1:2]
         loss_value, pullback = _pullback(ps, model, _input_nt_output_nt_parameter_indices)
         total_error += loss_value
         dp = _get_params(_unpack_tuple(pullback(one(loss_value))))
