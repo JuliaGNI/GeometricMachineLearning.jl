@@ -53,5 +53,7 @@ GeometricMachineLearning.SymbolicPotentialEnergy
 GeometricMachineLearning.SymbolicKineticEnergy
 GeometricMachineLearning.build_gradient
 GeometricMachineLearning.GeneralizedHamiltonianArchitecture
+GeometricMachineLearning.ForcingLayer
+GeometricMachineLearning.ParametricDataLoader
 GeometricMachineLearning._processing
 ```
