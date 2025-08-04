@@ -27,10 +27,22 @@ struct ZygotePullback{NNLT} <: AbstractPullback{NNLT}
     loss::NNLT
 end
 
-(_pullback::ZygotePullback)(ps, model, input_nt::QPTOAT)::Tuple = Zygote.pullback(ps -> _pullback.loss(model, ps, input_nt), ps)
-(_pullback::ZygotePullback)(ps, model, input_nt_output_nt::Tuple{<:QPTOAT, <:QPTOAT})::Tuple = Zygote.pullback(ps -> _pullback.loss(model, ps, input_nt_output_nt...), ps)
-(_pullback::ZygotePullback)(ps, model, input_and_parameters::Tuple{<:QPTOAT, <:QPTOAT, <:NamedTuple})::Tuple = Zygote.pullback(ps -> _pullback.loss(model, ps, input_and_parameters...), ps)
-(_pullback::ZygotePullback)(ps, model, input_and_parameters::Tuple{<:QPTOAT, <:QPTOAT, <:AbstractVector})::Tuple = Zygote.pullback(ps -> _pullback.loss(model, ps, input_and_parameters...), ps)
+function (_pullback::ZygotePullback)(ps, model, input_nt::QPTOAT)::Tuple
+    closure = ps -> _pullback.loss(model, ps, input_nt)
+    Zygote.pullback(closure, ps)
+end
+function (_pullback::ZygotePullback)(ps, model, input_nt_output_nt::Tuple{<:QPTOAT, <:QPTOAT})::Tuple
+    closure = ps -> _pullback.loss(model, ps, input_nt_output_nt...)
+    Zygote.pullback(closure, ps)
+end
+function (_pullback::ZygotePullback)(ps, model, input_and_parameters::Tuple{<:QPTOAT, <:QPTOAT, <:NamedTuple})::Tuple
+    closure = ps -> _pullback.loss(model, ps, input_and_parameters...)
+    Zygote.pullback(closure, ps)
+end
+function (_pullback::ZygotePullback)(ps, model, input_and_parameters::Tuple{<:QPTOAT, <:QPTOAT, <:AbstractVector})::Tuple
+    closure = ps -> _pullback.loss(model, ps, input_and_parameters...)
+    Zygote.pullback(closure, ps)
+end
 
 """
     _processing(returned_pullback)
