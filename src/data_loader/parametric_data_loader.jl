@@ -134,7 +134,7 @@ function (batch::Batch)(dl::ParametricDataLoader)
     batch_over_two_axes(batch, dl.input_time_steps - (batch.seq_length - 1) - batch.prediction_window, dl.n_params, number_of_batches(dl, batch))
 end
 
-function (o::Optimizer)(nn::NeuralNetwork{<:GeneralizedHamiltonianArchitecture}, dl::ParametricDataLoader, batch::Batch{:FeedForward}, n_epochs::Int=1; kwargs...)
-    loss = ParametricLoss()
-    o(nn, dl, batch, n_epochs, loss; kwargs...)
+function (o::Optimizer)(nn::NeuralNetwork{<:GeneralizedHamiltonianArchitecture}, dl::ParametricDataLoader, batch::Batch{:FeedForward}, n_epochs::Integer=1, loss::NetworkLoss=ParametricLoss(); kwargs...)
+    _pullback::AbstractPullback = ZygotePullback(loss)
+    o(nn, dl, batch, n_epochs, loss, _pullback; kwargs...)
 end
