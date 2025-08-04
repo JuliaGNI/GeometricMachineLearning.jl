@@ -7,7 +7,7 @@ using CairoMakie
 omega  = 1.0                     # natural frequency of the harmonic Oscillator
 Omega  = 3.5                     # frequency of the external sinusoidal forcing
 F      = 1.0                     # amplitude of the external sinusoidal forcing   
-ni_dim = 10                      # number of initial conditions per dimension (so ni_dim^2 total)
+ni_dim = 2                      # number of initial conditions per dimension (so ni_dim^2 total)
 T      = 2π
 nt     = 100                     # number of time steps
 dt     = T/nt                    # time step
@@ -106,20 +106,21 @@ end
 dl = load_time_dependent_harmonic_oscillator_with_parametric_data_loader((q = q, p = p), t, IC)
 
 # This sets up the neural network
-width::Int = 4
-nhidden::Int = 4
+width::Int = 8
+nhidden::Int = 20
 arch = GeneralizedHamiltonianArchitecture(2; parameters = turn_parameters_into_correct_format(t, IC)[1])
 nn = NeuralNetwork(arch)
 
 # This is where training starts
-batch = Batch(1000)
+batch_size = 5
+batch = Batch(batch_size)
 o = Optimizer(AdamOptimizer(), nn)
 
-n_epochs = 100
-o(nn, dl, batch, n_epochs)
+n_epochs = 1000
+loss_array = o(nn, dl, batch, n_epochs)
 
 # Testing the network
-initial_conditions = (q = [-1.], p = [-0.11])
+initial_conditions = (q = [-1.], p = [-1])
 n_steps = 100
 trajectory = (q = zeros(1, n_steps), p = zeros(1, n_steps))
 trajectory.q[:, 1] .= initial_conditions.q
@@ -134,4 +135,4 @@ end
 fig = Figure()
 ax = Axis(fig[1,1])
 lines!(ax, trajectory.q[1,:]; label="nn")
-lines!(ax, q[50,:]; label="analytic")
+lines!(ax, q[1,:]; label="analytic")

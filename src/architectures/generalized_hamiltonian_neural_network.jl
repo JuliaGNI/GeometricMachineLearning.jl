@@ -69,7 +69,7 @@ function Chain(se::SymbolicEnergy)
 end
 
 function SymbolicNeuralNetworks.Jacobian(f::SymbolicNeuralNetworks.EqT, nn::AbstractSymbolicNeuralNetwork, dim2::Integer)
-    # make differential 
+    # make differential of input variables (not of parameters)
     Dx = SymbolicNeuralNetworks.symbolic_differentials(nn.input)[1:dim2]
 
     # Evaluation of gradient
