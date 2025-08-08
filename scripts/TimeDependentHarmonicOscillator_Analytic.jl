@@ -6,10 +6,10 @@ using CairoMakie
 # PARAMETERS
 omega  = 1.0                     # natural frequency of the harmonic Oscillator
 Omega  = 3.5                     # frequency of the external sinusoidal forcing
-F      = 1.0                     # amplitude of the external sinusoidal forcing   
-ni_dim = 2                      # number of initial conditions per dimension (so ni_dim^2 total)
+F      = .9                      # amplitude of the external sinusoidal forcing   
+ni_dim = 10                      # number of initial conditions per dimension (so ni_dim^2 total)
 T      = 2π
-nt     = 100                     # number of time steps
+nt     = 500                    # number of time steps
 dt     = T/nt                    # time step
 
 # Generating the initial condition array
@@ -36,6 +36,8 @@ for i in 1:nt+1
 	for j=1:ni
 		q[j,i] =  ( IC[j].p - Omega*F/(omega^2-Omega^2) )/ omega *sin(omega*t[i]) + IC[j].q*cos(omega*t[i]) + F/(omega^2-Omega^2)*sin(Omega*t[i])
 		p[j,i] = -omega^2*IC[j].q*sin(omega*t[i]) + ( IC[j].p - Omega*F/(omega^2-Omega^2) )*cos(omega*t[i]) + Omega*F/(omega^2-Omega^2)*cos(Omega*t[i])
+		# q[j,i] =  ( IC[j].p - Omega*F/(omega^2-Omega^2) )/ omega *exp(-omega*t[i]) - IC[j].q*exp(-omega*t[i]) + F/(omega^2-Omega^2)*exp(-Omega*t[i])
+		# p[j,i] = -omega^2*IC[j].q*exp(-omega*t[i]) + ( IC[j].p + Omega*F/(omega^2-Omega^2) )*exp(-omega*t[i]) - Omega*F/(omega^2-Omega^2)*exp(-Omega*t[i])
 	end
 
 end
@@ -106,33 +108,37 @@ end
 dl = load_time_dependent_harmonic_oscillator_with_parametric_data_loader((q = q, p = p), t, IC)
 
 # This sets up the neural network
-width::Int = 8
-nhidden::Int = 20
-arch = GeneralizedHamiltonianArchitecture(2; parameters = turn_parameters_into_correct_format(t, IC)[1])
+width::Int = 2
+nhidden::Int = 1
+n_integrators::Int = 3
+arch = GeneralizedHamiltonianArchitecture(2; width = width, nhidden = nhidden, n_integrators = n_integrators, parameters = turn_parameters_into_correct_format(t, IC)[1])
 nn = NeuralNetwork(arch)
 
 # This is where training starts
-batch_size = 5
-batch = Batch(batch_size)
-o = Optimizer(AdamOptimizer(), nn)
+function train_network(batch_size::Integer=10, method=AdamOptimizer(), n_epochs=10)
+	batch = Batch(batch_size)
+	o = Optimizer(method, nn)
+	o(nn, dl, batch, n_epochs)
+end
 
-n_epochs = 1000
-loss_array = o(nn, dl, batch, n_epochs)
+loss_array = train_network()
+
+trajectory_number = 20
 
 # Testing the network
-initial_conditions = (q = [-1.], p = [-1])
-n_steps = 100
+initial_conditions = (q = q[trajectory_number, 1], p = p[trajectory_number, 1])
+n_steps = nt
 trajectory = (q = zeros(1, n_steps), p = zeros(1, n_steps))
 trajectory.q[:, 1] .= initial_conditions.q
 trajectory.p[:, 1] .= initial_conditions.p
 # note that we have to supply the parameters as a named tuple as well here:
 for t_step ∈ 0:(n_steps-2)
-	qp_temporary = nn.model((q = [trajectory.q[1, t_step+1]], p = [trajectory.p[1, t_step+1]]), (t = t_step,), nn.params)
+	qp_temporary = nn.model((q = [trajectory.q[1, t_step+1]], p = [trajectory.p[1, t_step+1]]), (t = t[t_step+1],), nn.params)
 	trajectory.q[:, t_step+2] .= qp_temporary.q
-	trajectory.p[:, t_step+2] .= qp_temporary.p 
+	trajectory.p[:, t_step+2] .= qp_temporary.p
 end
 
 fig = Figure()
 ax = Axis(fig[1,1])
 lines!(ax, trajectory.q[1,:]; label="nn")
-lines!(ax, q[1,:]; label="analytic")
+lines!(ax, q[trajectory_number,:]; label="analytic")
