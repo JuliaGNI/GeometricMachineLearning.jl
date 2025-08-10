@@ -162,8 +162,15 @@ end
 
 rgrad(ps::NamedTuple, dx::Union{NamedTuple, NeuralNetworkParameters}) = apply_toNT(rgrad, ps, dx)
 
+rgrad(a::AbstractArray, ::Nothing) = rgrad(a, zero(a))
+
+rgrad(nt::NamedTuple, ::Nothing) = rgrad(nt, apply_toNT(zero, nt))
+
+_get_params_without_warning(nt) = _get_params(nt)
+_get_params_without_warning(nt::NamedTuple{(:params,), Tuple{AT}}) where {AT <: Any} = nt.params
+
 function rgrad(ps::NeuralNetworkParameters, dp::NamedTuple)
-    rgrad(NamedTuple{keys(ps)}(values(ps)), _get_params(dp))
+    rgrad(NamedTuple{keys(ps)}(values(ps)), _get_params_without_warning(dp))
 end
 
 function rgrad(Y::AbstractVecOrMat, dx::AbstractVecOrMat)
