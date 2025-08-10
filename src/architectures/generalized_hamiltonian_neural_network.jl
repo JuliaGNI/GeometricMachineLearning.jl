@@ -11,7 +11,7 @@ struct SymbolicEnergy{AT <: Activation, PT, Kinetic}
     parameter_convert::PT
     activation::AT
 
-    function SymbolicEnergy(dim, width=dim, nhidden=HNN_nhidden_default, activation::Activation=HNN_activation_default; parameters::OptionalParameters=NullParameters(), type)
+    function SymbolicEnergy(dim, width, nhidden, activation::Activation; parameters::OptionalParameters=NullParameters(), type)
         @assert iseven(dim) "The input dimension must be an even integer!"
         flattened_parameters = ParameterHandling.flatten(parameters)
         parameter_length = length(flattened_parameters[1])
@@ -227,6 +227,7 @@ struct GeneralizedHamiltonianArchitecture{AT, PT <: OptionalParameters} <: Hamil
     activation::AT
 
     function GeneralizedHamiltonianArchitecture(dim; width=dim, nhidden=HNN_nhidden_default, n_integrators::Integer=1, activation=HNN_activation_default, parameters=NullParameters())
+        activation = (typeof(activation) <: Activation) ? activation : Activation(activation)
         new{typeof(activation), typeof(parameters)}(dim, width, nhidden, n_integrators, parameters, activation)
     end
 end
