@@ -1,7 +1,8 @@
 using HDF5
 using GeometricMachineLearning
-using GeometricMachineLearning: QPT, QPT2
+using GeometricMachineLearning: QPT, QPT2, Activation
 using CairoMakie
+using NNlib: relu
 
 # PARAMETERS
 omega  = 1.0                     # natural frequency of the harmonic Oscillator
@@ -110,8 +111,8 @@ dl = load_time_dependent_harmonic_oscillator_with_parametric_data_loader((q = q,
 # This sets up the neural network
 width::Int = 2
 nhidden::Int = 1
-n_integrators::Int = 3
-arch = GeneralizedHamiltonianArchitecture(2; width = width, nhidden = nhidden, n_integrators = n_integrators, parameters = turn_parameters_into_correct_format(t, IC)[1])
+n_integrators::Int = 1
+arch = GeneralizedHamiltonianArchitecture(2; activation = relu, width = width, nhidden = nhidden, n_integrators = n_integrators, parameters = turn_parameters_into_correct_format(t, IC)[1])
 nn = NeuralNetwork(arch)
 
 # This is where training starts
