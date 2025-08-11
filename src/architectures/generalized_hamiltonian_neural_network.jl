@@ -119,7 +119,7 @@ function build_gradient(se::SymbolicEnergy)
     SymbolicNeuralNetworks.build_nn_function(SymbolicNeuralNetworks.derivative(□)', nn.params, nn.input)
 end
 
-struct SymplecticEuler{M, N, FT<:Base.Callable, MT<:Chain, type, Last} <: AbstractExplicitLayer{M, N}
+struct SymplecticEuler{M, N, FT<:Base.Callable, MT<:Chain, type, ReturnParameters} <: AbstractExplicitLayer{M, N}
     gradient_function::FT
     energy_model::MT
 end
@@ -128,19 +128,19 @@ function initialparameters(rng::Random.AbstractRNG, init_weight::AbstractNeuralN
     initialparameters(rng, init_weight, integrator.energy_model, backend, T)
 end
 
-const SymplecticEulerA{M, N, FT, AT, Last} = SymplecticEuler{M, N, FT, AT, :A}
-const SymplecticEulerB{M, N, FT, AT, Last} = SymplecticEuler{M, N, FT, AT, :B}
+const SymplecticEulerA{M, N, FT, AT, ReturnParameters} = SymplecticEuler{M, N, FT, AT, :A, ReturnParameters}
+const SymplecticEulerB{M, N, FT, AT, ReturnParameters} = SymplecticEuler{M, N, FT, AT, :B, ReturnParameters}
 
-function SymplecticEulerA(se::SymbolicKineticEnergy; last_step::Bool=false)
+function SymplecticEulerA(se::SymbolicKineticEnergy; return_parameters::Bool)
     gradient_function = build_gradient(se)
     c = Chain(se)
-    SymplecticEuler{se.dim, se.dim, typeof(gradient_function), typeof(c), :A, last_step}(gradient_function, c)
+    SymplecticEuler{se.dim, se.dim, typeof(gradient_function), typeof(c), :A, return_parameters}(gradient_function, c)
 end
 
-function SymplecticEulerB(se::SymbolicPotentialEnergy; last_step::Bool=false)
+function SymplecticEulerB(se::SymbolicPotentialEnergy; return_parameters::Bool)
     gradient_function = build_gradient(se)
     c = Chain(se)
-    SymplecticEuler{se.dim, se.dim, typeof(gradient_function), typeof(c), :B, last_step}(gradient_function, c)
+    SymplecticEuler{se.dim, se.dim, typeof(gradient_function), typeof(c), :B, return_parameters}(gradient_function, c)
 end
 
 function concatenate_array_with_parameters(qp::AbstractVector, params::OptionalParameters)
@@ -156,22 +156,24 @@ function concatenate_array_with_parameters(qp::AbstractMatrix, params::AbstractV
     LazyArrays.Vcat((concatenate_array_with_parameters(@view(qp[:, i]), params[i]) for i in axes(params, 1))...)
 end
 
-function (integrator::SymplecticEulerA{M, N, FT, AT, true})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
+concatenate_array_with_parameters(a::AbstractArray{T, 3}, ::GeometricBase.NullParameters) where {T} =  a
+
+function (integrator::SymplecticEulerA{M, N, FT, AT, false})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
     input = concatenate_array_with_parameters(qp.p, problem_params)
     (q = @view((qp.q + integrator.gradient_function(input, params))[:, 1]), p = qp.p)
 end
 
-function (integrator::SymplecticEulerB{M, N, FT, AT, true})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
+function (integrator::SymplecticEulerB{M, N, FT, AT, false})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
     input = concatenate_array_with_parameters(qp.q, problem_params)
     (q = qp.q, p = @view((qp.p - integrator.gradient_function(input, params))[:, 1]))
 end
 
-function (integrator::SymplecticEulerA{M, N, FT, AT, false})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
+function (integrator::SymplecticEulerA{M, N, FT, AT, true})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
     input = concatenate_array_with_parameters(qp.p, problem_params)
     ((q = @view((qp.q + integrator.gradient_function(input, params))[:, 1]), p = qp.p), problem_params)
 end
 
-function (integrator::SymplecticEulerB{M, N, FT, AT, false})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
+function (integrator::SymplecticEulerB{M, N, FT, AT, true})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
     input = concatenate_array_with_parameters(qp.q, problem_params)
     ((q = qp.q, p = @view((qp.p - integrator.gradient_function(input, params))[:, 1])), problem_params)
 end
@@ -184,7 +186,7 @@ function (integrator::SymplecticEuler)(::TT, ::NeuralNetworkParameters) where {T
     error("The input is of type $(TT). This shouldn't be the case!")
 end
 
-function (integrator::SymplecticEuler{M, N, FT, AT, Type, false})(qp::AbstractArray, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT, Type}
+function (integrator::SymplecticEuler{M, N, FT, AT, Type, true})(qp::AbstractArray, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT, Type}
     @assert iseven(size(qp, 1))
     n = size(qp, 1)÷2
     qp_split = assign_q_and_p(qp, n)
@@ -192,7 +194,7 @@ function (integrator::SymplecticEuler{M, N, FT, AT, Type, false})(qp::AbstractAr
     (vcat(evaluated.q, evaluated.p), problem_params)
 end
 
-function (integrator::SymplecticEuler{M, N, FT, AT, Type, true})(qp::AbstractArray, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT, Type}
+function (integrator::SymplecticEuler{M, N, FT, AT, Type, false})(qp::AbstractArray, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT, Type}
     @assert iseven(size(qp, 1))
     n = size(qp, 1)÷2
     qp_split = assign_q_and_p(qp, n)
@@ -249,8 +251,8 @@ function Chain(ghnn_arch::GeneralizedHamiltonianArchitecture)
     potential_energy = SymbolicPotentialEnergy(ghnn_arch.dim, ghnn_arch.width, ghnn_arch.nhidden, ghnn_arch.activation; parameters=ghnn_arch.parameters)
     
     for n in 1:ghnn_arch.n_integrators
-        c = (c..., SymplecticEulerA(kinetic_energy; last_step = false))
-        c = n == ghnn_arch.n_integrators ? (c..., SymplecticEulerB(potential_energy; last_step=true)) : (c..., SymplecticEulerB(potential_energy; last_step=false))
+        c = (c..., SymplecticEulerA(kinetic_energy; return_parameters = true))
+        c = n == ghnn_arch.n_integrators ? (c..., SymplecticEulerB(potential_energy; return_parameters=false)) : (c..., SymplecticEulerB(potential_energy; return_parameters=true))
     end
 
     Chain(c...)
