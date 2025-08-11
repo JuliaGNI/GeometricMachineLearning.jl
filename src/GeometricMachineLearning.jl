@@ -314,6 +314,8 @@ module GeometricMachineLearning
 
     include("data_loader/parametric_data_loader.jl")
     
+    include("architectures/forced_sympnet.jl")
+    export ForcedSympNet
 
     export default_optimizer
 
