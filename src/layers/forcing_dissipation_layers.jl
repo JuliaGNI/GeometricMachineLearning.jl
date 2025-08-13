@@ -40,7 +40,7 @@ function build_chain(dim::Integer, width::Integer, nhidden::Integer, parameter_l
     Chain(
         Dense(dim÷2 + parameter_length, width, activation),
         inner_layers...,
-        Linear(width, 1; use_bias = false)
+        Linear(width, dim÷2; use_bias = false)
     )
 end
 
