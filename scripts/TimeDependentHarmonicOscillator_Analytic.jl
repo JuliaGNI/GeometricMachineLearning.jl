@@ -1,6 +1,6 @@
 using HDF5
 using GeometricMachineLearning
-using GeometricMachineLearning: QPT, QPT2, Activation
+using GeometricMachineLearning: QPT, QPT2, Activation, ParametricLoss, SymbolicNeuralNetwork, SymbolicPullback
 using CairoMakie
 using NNlib: relu
 
@@ -109,20 +109,21 @@ end
 dl = load_time_dependent_harmonic_oscillator_with_parametric_data_loader((q = q, p = p), t, IC)
 
 # This sets up the neural network
-width::Int = 2
+width::Int = 3
 nhidden::Int = 1
 n_integrators::Int = 1
-arch = GeneralizedHamiltonianArchitecture(2; activation = relu, width = width, nhidden = nhidden, n_integrators = n_integrators, parameters = turn_parameters_into_correct_format(t, IC)[1])
+# sigmoid_linear_unit(x::T) where {T<:Number} = x / (T(1) + exp(-x))
+arch = GeneralizedHamiltonianArchitecture(2; activation = tanh, width = width, nhidden = nhidden, n_integrators = n_integrators, parameters = turn_parameters_into_correct_format(t, IC)[1])
 nn = NeuralNetwork(arch)
 
 # This is where training starts
-function train_network(batch_size::Integer=10, method=AdamOptimizer(), n_epochs=10)
-	batch = Batch(batch_size)
-	o = Optimizer(method, nn)
-	o(nn, dl, batch, n_epochs)
-end
-
-loss_array = train_network()
+batch_size = 128
+n_epochs = 200
+batch = Batch(batch_size)
+o = Optimizer(AdamOptimizer(), nn)
+loss = ParametricLoss()
+_pb = SymbolicPullback(nn, loss, turn_parameters_into_correct_format(t, IC)[1]);
+loss_array = o(nn, dl, batch, n_epochs, loss, _pb)
 
 trajectory_number = 20
 
