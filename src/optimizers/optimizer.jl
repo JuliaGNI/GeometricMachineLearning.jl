@@ -173,6 +173,10 @@ function rgrad(ps::NeuralNetworkParameters, dp::NamedTuple)
     rgrad(NamedTuple{keys(ps)}(values(ps)), _get_params_without_warning(dp))
 end
 
+function rgrad(ps::NeuralNetworkParameters, dp::NeuralNetworkParameters)
+    rgrad(ps, NamedTuple{keys(dp)}(values(dp)))
+end
+
 function rgrad(Y::AbstractVecOrMat, dx::AbstractVecOrMat)
     @assert size(Y) == size(dx)
     dx

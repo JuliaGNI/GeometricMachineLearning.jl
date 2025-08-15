@@ -11,11 +11,12 @@ struct SymbolicEnergy{AT <: Activation, PT, Kinetic}
     parameter_convert::PT
     activation::AT
 
-    function SymbolicEnergy(dim, width, nhidden, activation::Activation; parameters::OptionalParameters=NullParameters(), type)
+    function SymbolicEnergy(dim, width, nhidden, activation; parameters::OptionalParameters=NullParameters(), type)
         @assert iseven(dim) "The input dimension must be an even integer!"
         flattened_parameters = ParameterHandling.flatten(parameters)
         parameter_length = length(flattened_parameters[1])
-        new{typeof(activation), typeof(flattened_parameters[2]), type}(dim, width, nhidden, parameter_length, flattened_parameters[2], activation)
+        _activation = Activation(activation)
+        new{typeof(_activation), typeof(flattened_parameters[2]), type}(dim, width, nhidden, parameter_length, flattened_parameters[2], _activation)
     end
 end
 
@@ -28,11 +29,11 @@ A `const` derived from [`SymbolicEnergy`](@ref).
 
 # Constructors
 
-```jldoctest; setup=:(using GeometricMachineLearning)
-julia> params, dim = (m = 1., ω = π / 2), 2
-((m = 1.0, ω = 1.5707963267948966), 2)
+```jldoctest; setup=:(using GeometricMachineLearning; using GeometricMachineLearning: Activation)
+julia> params, dim, width, nhidden, activation = (m = 1., ω = π / 2), 2, 2, 1, tanh
+((m = 1.0, ω = 1.5707963267948966), 2, 2, 1, tanh)
 
-julia> se = GeometricMachineLearning.SymbolicPotentialEnergy(dim; parameters = params);
+julia> se = GeometricMachineLearning.SymbolicPotentialEnergy(dim, width, nhidden, activation; parameters = params);
 
 ```
 
@@ -147,13 +148,34 @@ function concatenate_array_with_parameters(qp::AbstractVector, params::OptionalP
     vcat(qp, ParameterHandling.flatten(params)[1])
 end
 
+function concatenate_array_with_parameters(qp::AbstractMatrix, params::OptionalParameters)
+    @assert size(qp, 2) == 1
+   vcat(qp, repeat(ParameterHandling.flatten(params)[1], 1, size(qp, 2)))
+end
+
+function concatenate_array_with_parameters(qp::AbstractArray{T, 3}, params::AbstractVector) where {T}
+    @assert size(qp, 3) == length(params)
+    matrices = Tuple(concatenate_array_with_parameters(qp[:, :, i], params[i]) for i in axes(qp, 3))
+    cat(matrices...; dims = 3)
+end
+
+function concatenate_array_with_parameters(qp::SymbolicNeuralNetworks.Symbolics.Arr{SymbolicNeuralNetworks.Symbolics.Num, 1}, params::NamedTuple)
+    SymbolicNeuralNetworks.Symbolics.Arr(vcat(qp, values(params)...))
+end
+
+function concatenate_array_with_parameters(qp::AbstractArray{SymbolicNeuralNetworks.Symbolics.Num, 1}, params::NamedTuple)
+    concatenate_array_with_parameters(SymbolicNeuralNetworks.Symbolics.Arr(qp), params)
+end
+
+Base.eltype(::SymbolicNeuralNetworks.Symbolics.Arr{SymbolicNeuralNetworks.Symbolics.Num}) = SymbolicNeuralNetworks.Symbolics.Num
+
 # function concatenate_array_with_parameters(qp::AbstractMatrix, params::OptionalParameters)
 #     hcat((concatenate_array_with_parameters(qp[:, i], params) for i in axes(qp, 2))...)
 # end
 
 function concatenate_array_with_parameters(qp::AbstractMatrix, params::AbstractVector)
     @assert _size(qp, 2) == length(params)
-    LazyArrays.Vcat((concatenate_array_with_parameters(@view(qp[:, i]), params[i]) for i in axes(params, 1))...)
+    vcat((concatenate_array_with_parameters(@view(qp[:, i]), params[i]) for i in axes(params, 1))...)
 end
 
 concatenate_array_with_parameters(a::AbstractArray{T, 3}, ::GeometricBase.NullParameters) where {T} =  a
@@ -274,3 +296,15 @@ function (c::Chain)(qp::QPT2{T, 3}, system_params::AbstractVector, ps::Union{Nam
     p_output = hcat([single_output_vectorwise.p for single_output_vectorwise ∈ output_vectorwise]...)
     (q = reshape(q_output, size(q_output, 1), 1, size(q_output, 2)), p = reshape(p_output, size(p_output, 1), 1, size(p_output, 2)))
 end
+
+function (c::Chain)(qp::AbstractArray{T, 2}, system_params::AbstractVector, ps::Union{NamedTuple, NeuralNetworkParameters}) where {T}
+    @assert _size(qp, 2) == length(system_params)
+    qp_reshaped = reshape(qp, size(qp, 1), 1, length(system_params))
+    @assert iseven(size(qp_reshaped, 1))
+    n = size(qp_reshaped, 1)÷2
+    qp_split = assign_q_and_p(qp_reshaped, n)
+    c_output = c(qp_split, system_params, ps)::QPT
+    reshape(vcat(c_output.q, c_output.p), 2n, length(system_params))
+end
+
+AbstractNeuralNetworks.networkbackend(::LazyArrays.ApplyArray) = AbstractNeuralNetworks.CPU()
