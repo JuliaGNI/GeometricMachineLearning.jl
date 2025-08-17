@@ -9,8 +9,8 @@ omega  = 1.0                     # natural frequency of the harmonic Oscillator
 Omega  = 3.5                     # frequency of the external sinusoidal forcing
 F      = .9                      # amplitude of the external sinusoidal forcing   
 ni_dim = 10                      # number of initial conditions per dimension (so ni_dim^2 total)
-T      = 2π
-nt     = 500                    # number of time steps
+T      = 2π * 5
+nt     = 1000                # number of time steps
 dt     = T/nt                    # time step
 
 # Generating the initial condition array
