@@ -286,7 +286,7 @@ module GeometricMachineLearning
     export ClassificationTransformer, ClassificationLayer
     export VolumePreservingFeedForward
     export SymplecticAutoencoder, PSDArch
-    export HamiltonianArchitecture, StandardHamiltonianArchitecture, GeneralizedHamiltonianArchitecture
+    export HamiltonianArchitecture, StandardHamiltonianArchitecture, GeneralizedHamiltonianArchitecture, ForcedGeneralizedHamiltonianArchitecture
 
     export solve!, encoder, decoder
 
@@ -315,6 +315,7 @@ module GeometricMachineLearning
     include("data_loader/parametric_data_loader.jl")
     
     include("architectures/forced_sympnet.jl")
+    include("architectures/forced_generalized_hamiltonian_neural_network.jl")
     export ForcedSympNet
 
     export default_optimizer
