@@ -125,6 +125,10 @@ struct SymplecticEuler{M, N, FT<:Base.Callable, MT<:Chain, type, ReturnParameter
     energy_model::MT
 end
 
+function parameterlength(integrator::SymplecticEuler)
+    parameterlength(integrator.energy_model)
+end
+
 function initialparameters(rng::Random.AbstractRNG, init_weight::AbstractNeuralNetworks.Initializer, integrator::SymplecticEuler, backend::KernelAbstractions.Backend, ::Type{T}) where {T}
     initialparameters(rng, init_weight, integrator.energy_model, backend, T)
 end
