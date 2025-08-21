@@ -14,6 +14,8 @@ struct ForcingLayer{M, N, PT<:Base.Callable, CT, type, ReturnParameters} <: Abst
     model::CT
 end
 
+parameterlength(l::ForcingLayer) = parameterlength(l.model)
+
 function initialparameters(rng::Random.AbstractRNG, init_weight::AbstractNeuralNetworks.Initializer, integrator::ForcingLayer, backend::KernelAbstractions.Backend, ::Type{T}) where {T}
     initialparameters(rng, init_weight, integrator.model, backend, T)
 end
