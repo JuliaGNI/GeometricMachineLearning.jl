@@ -19,9 +19,9 @@ end
 
 parameterlength(l::WideResNetLayer{M, M}) where {M} = l.width * (M + 1) + M * (l.width + 1)
 
-(d::WideResNetLayer{M, M})(x::AbstractVecOrMat, ps::NamedTuple) where {M} = x + d.activation.(ps.downscale_weight * d.activation.(ps.upscale_weight * x + ps.upscale_bias) + ps.bias)
+(d::WideResNetLayer{M, M})(x::AbstractVecOrMat, ps::NamedTuple) where {M} = x + d.activation.(ps.downscale_weight * d.activation.(ps.upscale_weight * x .+ ps.upscale_bias) .+ ps.bias)
 
-(d::WideResNetLayer{M, M})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, T} = x + d.activation.(mat_tensor_mul(ps.downscale_weight, d.activation.(mat_tensor_mul(ps.upscale_weight, x) + ps.upscale_bias)) + ps.bias)
+(d::WideResNetLayer{M, M})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, T} = x + d.activation.(mat_tensor_mul(ps.downscale_weight, d.activation.(mat_tensor_mul(ps.upscale_weight, x) .+ ps.upscale_bias)) .+ ps.bias)
 
 function (d::WideResNetLayer{M, M})(z::QPT, ps::NamedTuple) where {M}
     @assert iseven(M)

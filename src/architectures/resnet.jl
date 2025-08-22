@@ -25,7 +25,7 @@ See [`iterate`](@ref) for an example of this.
 struct ResNet{AT} <: NeuralNetworkIntegrator
     sys_dim::Int
     n_blocks::Int
-    width::Int 
+    width::Int
     activation::AT
 end
 
