@@ -156,6 +156,7 @@ module GeometricMachineLearning
     include("layers/forcing_dissipation_layers.jl")
     include("layers/bias_layer.jl")
     include("layers/resnet.jl")
+    include("layers/wide_resnet.jl")
     include("layers/manifold_layer.jl")
     include("layers/stiefel_layer.jl")
     include("layers/grassmann_layer.jl")
