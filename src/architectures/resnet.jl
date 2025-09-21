@@ -29,6 +29,8 @@ struct ResNet{AT} <: NeuralNetworkIntegrator
     activation::AT
 end
 
+ResNet(sys_dim::Integer, n_blocks::Integer, activation) = ResNet(sys_dim, n_blocks, sys_dim, activation)
+
 function ResNet(dl::DataLoader, n_blocks::Integer, width::Integer=dl.input_dim; activation = tanh)
     ResNet(dl.input_dim, n_blocks, width, activation)
 end
