@@ -157,6 +157,7 @@ module GeometricMachineLearning
     include("layers/bias_layer.jl")
     include("layers/resnet.jl")
     include("layers/wide_resnet.jl")
+    include("layers/parametric_resnet_layer.jl")
     include("layers/manifold_layer.jl")
     include("layers/stiefel_layer.jl")
     include("layers/grassmann_layer.jl")
@@ -261,6 +262,7 @@ module GeometricMachineLearning
     #INCLUDE ARCHITECTURES
     include("architectures/neural_network_integrator.jl")
     include("architectures/resnet.jl")
+    include("architectures/parametric_resnet.jl")
     include("architectures/transformer_integrator.jl")
     include("architectures/standard_transformer_integrator.jl")
     include("architectures/sympnet.jl")
