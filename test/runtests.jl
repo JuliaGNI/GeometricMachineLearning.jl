@@ -84,4 +84,4 @@ using Documenter: doctest
 
 @safetestset "DataLoader for input and output                                                 " begin include("data_loader/data_loader_for_input_and_output.jl") end
 
-@safetestset "Test symbolic pullback for PGHNN with single layer                              " begin include("generalized_hamiltonian_neural_networks/pghnn_symbolic_pullback_single_layer_test.jl")
+@safetestset "Test symbolic pullback for PGHNN with single layer                              " begin include("generalized_hamiltonian_neural_networks/pghnn_symbolic_pullback_single_layer_test.jl") end
