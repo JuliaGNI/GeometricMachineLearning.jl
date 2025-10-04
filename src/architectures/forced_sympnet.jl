@@ -22,7 +22,7 @@ Keyword arguments are:
 - `activation""" * "$(g_activation_default)`" * raw""": The activation function that is applied.
 - `init_upper::Bool""" * "$(g_init_upper_default)`" * raw""": Initialize the gradient layer so that it first modifies the $q$-component.
 """
-struct ForcedSympNet{AT} <: NeuralNetworkIntegrator
+struct ForcedSympNet{FT, AT} <: NeuralNetworkIntegrator
     dim::Int
     upscaling_dimension::Int
     n_layers::Int
@@ -33,20 +33,22 @@ struct ForcedSympNet{AT} <: NeuralNetworkIntegrator
                             upscaling_dimension = 2 * dim, 
                             n_layers = g_n_layers_default, 
                             activation = g_activation_default, 
-                            init_upper = g_init_upper_default)
-        new{typeof(activation)}(dim, upscaling_dimension, n_layers, activation, init_upper)
+                            init_upper = g_init_upper_default,
+                            forcing_type::Symbol = :P)
+        new{forcing_type, typeof(activation)}(dim, upscaling_dimension, n_layers, activation, init_upper)
     end
 
     function ForcedSympNet(dl::DataLoader;   
                                         upscaling_dimension = 2 * dl.input_dim, 
                                         n_layers = g_n_layers_default, 
                                         activation = g_activation_default, 
-                                        init_upper = g_init_upper_default) 
-        new{typeof(activation)}(dl.input_dim, upscaling_dimension, n_layers, activation, init_upper)
+                                        init_upper = g_init_upper_default,
+                                        forcing_type::Symbol = :P) 
+        new{forcing_type, typeof(activation)}(dl.input_dim, upscaling_dimension, n_layers, activation, init_upper)
     end
 end
 
-function Chain(arch::ForcedSympNet)
+function Chain(arch::ForcedSympNet{FT}) where {FT}
     layers = ()
     is_upper_criterion = arch.init_upper ? isodd : iseven
     for i in 1:arch.n_layers
@@ -57,7 +59,7 @@ function Chain(arch::ForcedSympNet)
             GradientLayerP(arch.dim, arch.upscaling_dimension, arch.act)
         end
         )
-        layers = (layers..., ForcingLayerP(arch.dim, arch.upscaling_dimension, arch.n_layers, arch.act; return_parameters=false))
+        layers = (layers..., ForcingLayer(arch.dim, arch.upscaling_dimension, arch.n_layers, arch.act; return_parameters=false, type=FT))
     end
     Chain(layers...)
 end
