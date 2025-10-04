@@ -310,9 +310,9 @@ end
 function (c::Chain)(qp::AbstractArray{T, 3}, system_params::AbstractVector, ps::Union{NamedTuple, NeuralNetworkParameters}) where {T}
     @assert size(qp, 3) == length(system_params)
     @assert size(qp, 2) == 1
-    @assert iseven(size(qp_reshaped, 1))
-    n = size(qp_reshaped, 1)÷2
-    qp_split = assign_q_and_p(qp_reshaped, n)
+    @assert iseven(size(qp, 1))
+    n = size(qp, 1)÷2
+    qp_split = assign_q_and_p(qp, n)
     c_output = c(qp_split, system_params, ps)::QPT
     reshape(vcat(c_output.q, c_output.p), 2n, length(system_params))
 end
