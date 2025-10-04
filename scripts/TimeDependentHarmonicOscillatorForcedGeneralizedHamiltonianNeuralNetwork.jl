@@ -7,9 +7,9 @@ using NNlib: relu
 # PARAMETERS
 omega  = 1.0                     # natural frequency of the harmonic Oscillator
 Omega  = 3.5                     # frequency of the external sinusoidal forcing
-F      = .0 # .9                      # amplitude of the external sinusoidal forcing   
+F      = .9                      # amplitude of the external sinusoidal forcing   
 ni_dim = 10                      # number of initial conditions per dimension (so ni_dim^2 total)
-T      = 2π * 5
+T      = 2π * 20
 nt     = 1000                # number of time steps
 dt     = T/nt                    # time step
 
@@ -109,23 +109,28 @@ end
 dl = load_time_dependent_harmonic_oscillator_with_parametric_data_loader((q = q, p = p), t, IC)
 
 # This sets up the neural network
-width::Int = 2
+width::Int = 1
 nhidden::Int = 1
-n_integrators::Int = 1
+n_integrators::Int = 2
 # sigmoid_linear_unit(x::T) where {T<:Number} = x / (T(1) + exp(-x))
-arch = ForcedGeneralizedHamiltonianArchitecture(2; activation = tanh, width = width, nhidden = nhidden, n_integrators = n_integrators, parameters = turn_parameters_into_correct_format(t, IC)[1])
-nn = NeuralNetwork(arch)
+arch1 = ForcedGeneralizedHamiltonianArchitecture(2; activation = tanh, width = width, nhidden = nhidden, n_integrators = n_integrators, parameters = turn_parameters_into_correct_format(t, IC)[1], forcing_type = :P)
+arch2 = ForcedGeneralizedHamiltonianArchitecture(2; activation = tanh, width = width, nhidden = nhidden, n_integrators = n_integrators, parameters = turn_parameters_into_correct_format(t, IC)[1], forcing_type = :Q)
+nn1 = NeuralNetwork(arch1)
+nn2 = NeuralNetwork(arch2)
 
 # This is where training starts
 batch_size = 128
 n_epochs = 200
 batch = Batch(batch_size)
-o = Optimizer(AdamOptimizer(), nn)
+o1 = Optimizer(AdamOptimizer(), nn1)
+o2 = Optimizer(AdamOptimizer(), nn2)
 loss = ParametricLoss()
-_pb = SymbolicPullback(nn, loss, turn_parameters_into_correct_format(t, IC)[1]);
+_pb = SymbolicPullback(nn1, loss, turn_parameters_into_correct_format(t, IC)[1]);
+_pb = SymbolicPullback(nn2, loss, turn_parameters_into_correct_format(t, IC)[1]);
 
 function train_network()
-	o(nn, dl, batch, n_epochs, loss, _pb)
+	o1(nn1, dl, batch, n_epochs, loss, _pb)
+	o2(nn2, dl, batch, n_epochs, loss, _pb)
 end
 
 loss_array = train_network()
@@ -140,7 +145,7 @@ trajectory.q[:, 1] .= initial_conditions.q
 trajectory.p[:, 1] .= initial_conditions.p
 # note that we have to supply the parameters as a named tuple as well here:
 for t_step ∈ 0:(n_steps-2)
-	qp_temporary = nn.model((q = [trajectory.q[1, t_step+1]], p = [trajectory.p[1, t_step+1]]), (t = t[t_step+1],), nn.params)
+	qp_temporary = nn1.model((q = [trajectory.q[1, t_step+1]], p = [trajectory.p[1, t_step+1]]), (t = t[t_step+1],), nn1.params)
 	trajectory.q[:, t_step+2] .= qp_temporary.q
 	trajectory.p[:, t_step+2] .= qp_temporary.p
 end
