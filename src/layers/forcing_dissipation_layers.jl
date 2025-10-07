@@ -13,7 +13,7 @@ The forcing layers are inspired by the Lagrange-d'Alembert integrator from [mars
 ```math
 \begin{aligned}
     q^{(t+1)} = & q^{(t)} + & hM^{-1}p^{(t)}, \\
-    p^{(t+1)} = & p^{(t)} + & -h\nabla{}U(q^{(t)}) + hf_H(q^{(t+1)}),
+    p^{(t+1)} = & p^{(t)} + & -h\nabla{}U(q^{(t+1)}) + hf_H(q^{(t+1)}, p^{(t)}),
 \end{aligned}
 ```
 for a separable Hamiltonian ``H(q, p) = T(p) + U(q) = p^TM^{-1}p + U(q)`` and external forcing ``f_H.`` 
