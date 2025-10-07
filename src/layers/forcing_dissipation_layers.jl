@@ -4,6 +4,11 @@
 Layers that can learn dissipative or forcing terms, but not conservative ones.
 
 Use the constructors [`ForcingLayerQ`](@ref) and [`ForcingLayerP`](@ref) for this.
+
+!!! warn
+    The forcing is dependent on either ``q`` or ``p``, but always applied to the ``p`` component.
+
+The forcing layers are inspired by the Lagrange-d'Alembert integrator from [marsden2001discrete; Example 3.2.2](@cite).
 """
 struct ForcingLayer{M, N, PT<:Base.Callable, CT, type, ReturnParameters} <: AbstractExplicitLayer{M, N}
     dim::Int
@@ -83,7 +88,7 @@ end
 
 function (integrator::ForcingLayerQ{M, N, FT, AT, false})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
     input = concatenate_array_with_parameters(qp.q, problem_params)
-    (q = qp.q + integrator.model(input, params), p = qp.p)
+    (q = qp.q, p = qp.p + integrator.model(input, params))
 end
 
 function (integrator::ForcingLayerP{M, N, FT, AT, false})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
@@ -93,7 +98,7 @@ end
 
 function (integrator::ForcingLayerQ{M, N, FT, AT, true})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
     input = concatenate_array_with_parameters(qp.q, problem_params)
-    ((q = qp.q + integrator.model(input, params), p = qp.p), problem_params)
+    ((q = qp.q, p = qp.p + integrator.model(input, params)), problem_params)
 end
 
 function (integrator::ForcingLayerP{M, N, FT, AT, true})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
