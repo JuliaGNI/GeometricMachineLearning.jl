@@ -136,12 +136,18 @@ end
 const SymplecticEulerA{M, N, FT, AT, ReturnParameters} = SymplecticEuler{M, N, FT, AT, :A, ReturnParameters}
 const SymplecticEulerB{M, N, FT, AT, ReturnParameters} = SymplecticEuler{M, N, FT, AT, :B, ReturnParameters}
 
+"""
+Changes ``q`` (based on the kinetic energy).
+"""
 function SymplecticEulerA(se::SymbolicKineticEnergy; return_parameters::Bool)
     gradient_function = build_gradient(se)
     c = Chain(se)
     SymplecticEuler{se.dim, se.dim, typeof(gradient_function), typeof(c), :A, return_parameters}(gradient_function, c)
 end
 
+"""
+Changes ``p`` (based on the potential energy).
+"""
 function SymplecticEulerB(se::SymbolicPotentialEnergy; return_parameters::Bool)
     gradient_function = build_gradient(se)
     c = Chain(se)

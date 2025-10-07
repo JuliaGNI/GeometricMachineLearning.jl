@@ -8,7 +8,15 @@ Use the constructors [`ForcingLayerQ`](@ref) and [`ForcingLayerP`](@ref) for thi
 !!! warn
     The forcing is dependent on either ``q`` or ``p``, but always applied to the ``p`` component.
 
-The forcing layers are inspired by the Lagrange-d'Alembert integrator from [marsden2001discrete; Example 3.2.2](@cite).
+The forcing layers are inspired by the Lagrange-d'Alembert integrator from [marsden2001discrete; Example 3.2.2](@cite):
+
+```math
+\begin{aligned}
+    q^{(t+1)} = & q^{(t)} + & hM^{-1}p^{(t)}, \\
+    p^{(t+1)} = & p^{(t)} + & -h\nabla{}U(q^{(t)}) + hf_H(q^{(t+1)}),
+\end{aligned}
+```
+for a separable Hamiltonian ``H(q, p) = T(p) + U(q) = p^TM^{-1}p + U(q)`` and external forcing ``f_H.`` 
 """
 struct ForcingLayer{M, N, PT<:Base.Callable, CT, type, ReturnParameters} <: AbstractExplicitLayer{M, N}
     dim::Int

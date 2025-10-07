@@ -53,10 +53,10 @@ function Chain(arch::ForcedSympNet{FT}) where {FT}
         if is_upper_criterion(i)
             GradientLayerQ(arch.dim, arch.upscaling_dimension, arch.act)
         else
+            ForcingLayer(arch.dim, arch.upscaling_dimension, arch.n_layers, arch.act; return_parameters=false, type=FT),
             GradientLayerP(arch.dim, arch.upscaling_dimension, arch.act)
         end
         )
-        layers = (layers..., ForcingLayer(arch.dim, arch.upscaling_dimension, arch.n_layers, arch.act; return_parameters=false, type=FT))
     end
     Chain(layers...)
 end

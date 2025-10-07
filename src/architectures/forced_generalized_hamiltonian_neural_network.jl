@@ -24,9 +24,9 @@ function Chain(arch::ForcedGeneralizedHamiltonianArchitecture{FT}) where {FT}
     potential_energy = SymbolicPotentialEnergy(arch.dim, arch.width, arch.nhidden, arch.activation; parameters=arch.parameters)
     for i ∈ 1:arch.n_integrators
         layers = (layers..., SymplecticEulerA(kinetic_energy; return_parameters = true))
-        layers = (layers..., SymplecticEulerB(potential_energy; return_parameters = true))
+        layers = (layers..., ForcingLayer(arch.dim, arch.width, arch.nhidden, arch.activation; parameters=arch.parameters, return_parameters=true, type=FT))
         _return_parameters = !(i == arch.n_integrators)
-        layers = (layers..., ForcingLayer(arch.dim, arch.width, arch.nhidden, arch.activation; parameters=arch.parameters, return_parameters=_return_parameters, type=FT))
+        layers = (layers..., SymplecticEulerB(potential_energy; return_parameters = _return_parameters))
     end
     Chain(layers...)
 end
