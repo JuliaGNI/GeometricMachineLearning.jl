@@ -3,9 +3,6 @@
 
 `ForcedSympNet`s are based on [`SympNet`](@ref)s [jin2020sympnets](@cite) and include [`ForcingLayer`](@ref)s. They are based on [`GSympNet`](@ref)s.
 
-!!! warn
-    For the moment only ``p`` forcing is implemented (i.e. we only use [`ForcingLayerP`](@ref)).
-
 # Constructor
 
 ```julia
