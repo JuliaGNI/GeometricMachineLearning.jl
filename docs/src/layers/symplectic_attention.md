@@ -63,20 +63,25 @@ We then get:
 The second term in this expression is equivalent to a *standard attention step*:
 
 ```math
-\mathrm{TermII:}\qquad A^TZ\mathrm{softmax}(C).
+\mathrm{TermII:}\qquad A^TZ\mathrm{softmax}_1(C).
 ```
 
 The first term is equivalent to:
 
 ```math
-\mathrm{TermI:}\qquad \sum_n [AZ]_{in}[\mathrm{softmax}(C)^T]_{nj} \equiv AZ(\mathrm{softmax}(C))^T.
+\mathrm{TermI:}\qquad \sum_n [AZ]_{in}[\mathrm{softmax}_1(C)^T]_{nj} \equiv AZ(\mathrm{softmax}_1(C))^T.
 ```
 
 If we again assume that the matrix `A` is a [`SymmetricMatrix`](@ref) then the expression simplifies to:
 
 ```math
-\nabla_Z\Sigma(Z) = AZ\mathrm{softmax}(C).
+\nabla_Z\Sigma(Z) = AZ\mathrm{softmax}_1(C).
 ```
+
+!!! info
+    Note that we used the "one softmax" here instead of the standard softmax. The one softmax has been shown to be favorable to the standard softmax in some cases.
+
+A discussion of the one softmax can be found in [miller2023attention](@cite).
 
 ## Library Functions
 
