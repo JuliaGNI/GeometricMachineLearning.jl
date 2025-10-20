@@ -49,14 +49,14 @@ function Chain(arch::ForcedSympNet{FT}) where {FT}
     layers = ()
     is_upper_criterion = arch.init_upper ? isodd : iseven
     for i in 1:arch.n_layers
-        layers = (layers..., 
+        layers =
         if is_upper_criterion(i)
-            GradientLayerQ(arch.dim, arch.upscaling_dimension, arch.act)
+            (layers..., GradientLayerQ(arch.dim, arch.upscaling_dimension, arch.act))
         else
+            (layers...,
             ForcingLayer(arch.dim, arch.upscaling_dimension, arch.n_layers, arch.act; return_parameters=false, type=FT),
-            GradientLayerP(arch.dim, arch.upscaling_dimension, arch.act)
+            GradientLayerP(arch.dim, arch.upscaling_dimension, arch.act))
         end
-        )
     end
     Chain(layers...)
 end

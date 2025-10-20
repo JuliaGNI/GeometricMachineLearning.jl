@@ -59,7 +59,7 @@ function build_chain(dim::Integer, width::Integer, nhidden::Integer, parameter_l
     )
 end
 
-function ForcingLayer(dim::Integer, width::Integer, nhidden::Integer, activation; parameters::OptionalParameters, return_parameters::Bool, type::Symbol)
+function ForcingLayer(dim::Integer, width::Integer, nhidden::Integer, activation; parameters::OptionalParameters=NullParameters(), return_parameters::Bool, type::Symbol)
     flattened_parameters = ParameterHandling.flatten(parameters)
     parameter_length = length(flattened_parameters[1])
     c = build_chain(dim, width, nhidden, parameter_length, activation)
