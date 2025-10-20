@@ -12,7 +12,7 @@ struct ForcedGeneralizedHamiltonianArchitecture{FT, AT, PT <: OptionalParameters
     activation::AT
 
     function ForcedGeneralizedHamiltonianArchitecture(dim; width=dim, nhidden=HNN_nhidden_default, n_integrators::Integer=1, activation=HNN_activation_default, parameters=NullParameters(), forcing_type::Symbol=:P)
-        forcing_type == :P || forcing_type == :Q || error("Forcing has to be either :Q or :P. It is $(forcing_type).")
+        forcing_type == :P || forcing_type == :Q || forcing_type == :QP || error("Forcing has to be either :Q or :P. It is $(forcing_type).")
         activation = (typeof(activation) <: Activation) ? activation : Activation(activation)
         new{forcing_type, typeof(activation), typeof(parameters)}(dim, width, nhidden, n_integrators, parameters, activation)
     end

@@ -40,7 +40,7 @@ struct ForcedSympNet{FT, AT} <: NeuralNetworkIntegrator
                                         n_layers = g_n_layers_default, 
                                         activation = g_activation_default, 
                                         init_upper = g_init_upper_default,
-                                        forcing_type::Symbol = :P) 
+                                        forcing_type::Symbol = :P)
         new{forcing_type, typeof(activation)}(dl.input_dim, upscaling_dimension, n_layers, activation, init_upper)
     end
 end

@@ -36,24 +36,31 @@ end
 """
     ForcingLayerQ
 
-A layer that is derived from the more general [`ForcingLayer`](@ref) and only changes the ``q`` component.
+A layer that is derived from the more general [`ForcingLayer`](@ref) and the resulting forcing only depends on the ``q`` component.
 """
 const ForcingLayerQ{M, N, FT, AT, ReturnParameters} = ForcingLayer{M, N, FT, AT, :Q, ReturnParameters}
 
 """
     ForcingLayerP
 
-A layer that is derived from the more general [`ForcingLayer`](@ref) and only changes the ``p`` component.
+A layer that is derived from the more general [`ForcingLayer`](@ref) and the resulting forcing only depends on the ``p`` component.
 """
 const ForcingLayerP{M, N, FT, AT, ReturnParameters} = ForcingLayer{M, N, FT, AT, :P, ReturnParameters}
 
-function build_chain(dim::Integer, width::Integer, nhidden::Integer, parameter_length::Integer, activation)
+"""
+    ForcingLayerQP
+
+A layer that is derived from the more general [`ForcingLayer`](@ref) and the resulting forcing only depends on the ``q`` and the ``p`` component.
+"""
+const ForcingLayerQP{M, N, FT, AT, ReturnParameters} = ForcingLayer{M, N, FT, AT, :QP, ReturnParameters}
+
+function build_chain(dim::Integer, width::Integer, nhidden::Integer, parameter_length::Integer, activation, type::Symbol)
     inner_layers = Tuple(
         [Dense(width, width, activation) for _ in 1:nhidden]
     )
 
     Chain(
-        Dense(dim÷2 + parameter_length, width, activation),
+        type == :QP ? Dense(dim + parameter_length, width, activation) : Dense(dim÷2 + parameter_length, width, activation),
         inner_layers...,
         Linear(width, dim÷2; use_bias = false)
     )
@@ -62,7 +69,7 @@ end
 function ForcingLayer(dim::Integer, width::Integer, nhidden::Integer, activation; parameters::OptionalParameters=NullParameters(), return_parameters::Bool, type::Symbol)
     flattened_parameters = ParameterHandling.flatten(parameters)
     parameter_length = length(flattened_parameters[1])
-    c = build_chain(dim, width, nhidden, parameter_length, activation)
+    c = build_chain(dim, width, nhidden, parameter_length, activation, type)
     ForcingLayer{dim, dim, typeof(flattened_parameters[2]), typeof(c), type, return_parameters}(dim, width, nhidden, parameter_length, flattened_parameters[2], c)
 end
 
@@ -94,6 +101,10 @@ function ForcingLayerP(dim::Integer, width::Integer=dim, nhidden::Integer=HNN_nh
     ForcingLayer(dim, width, nhidden, activation; parameters=parameters, return_parameters=return_parameters, type=:P)
 end
 
+function ForcingLayerQP(dim::Integer, width::Integer=dim, nhidden::Integer=HNN_nhidden_default, activation=HNN_activation_default; parameters::OptionalParameters=NullParameters(), return_parameters::Bool=false)
+    ForcingLayer(dim, width, nhidden, activation; parameters=parameters, return_parameters=return_parameters, type=:QP)
+end
+
 function (integrator::ForcingLayerQ{M, N, FT, AT, false})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
     input = concatenate_array_with_parameters(qp.q, problem_params)
     (q = qp.q, p = qp.p + integrator.model(input, params))
@@ -104,6 +115,11 @@ function (integrator::ForcingLayerP{M, N, FT, AT, false})(qp::QPT2, problem_para
     (q = qp.q, p = qp.p + integrator.model(input, params))
 end
 
+function (integrator::ForcingLayerQP{M, N, FT, AT, false})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
+    input = concatenate_array_with_parameters(vcat(qp.q, qp.p), problem_params)
+    (q = qp.q, p = qp.p + integrator.model(input, params))
+end
+
 function (integrator::ForcingLayerQ{M, N, FT, AT, true})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
     input = concatenate_array_with_parameters(qp.q, problem_params)
     ((q = qp.q, p = qp.p + integrator.model(input, params)), problem_params)
@@ -111,6 +127,11 @@ end
 
 function (integrator::ForcingLayerP{M, N, FT, AT, true})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
     input = concatenate_array_with_parameters(qp.p, problem_params)
+    ((q = qp.q, p = qp.p + integrator.model(input, params)), problem_params)
+end
+
+function (integrator::ForcingLayerQP{M, N, FT, AT, true})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
+    input = concatenate_array_with_parameters(vcat(qp.q, qp.p), problem_params)
     ((q = qp.q, p = qp.p + integrator.model(input, params)), problem_params)
 end
 
