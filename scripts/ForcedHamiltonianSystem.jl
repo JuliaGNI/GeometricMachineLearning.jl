@@ -89,7 +89,7 @@ end
 dl = DataLoader(turn_q_p_data_into_correct_format((q = q, p = p)))
 
 # This sets up the neural network
-width::Int = 10
+width::Int = 5
 nhidden::Int = 4
 activation = relu
 arch = ForcedSympNet(2; upscaling_dimension = width, 

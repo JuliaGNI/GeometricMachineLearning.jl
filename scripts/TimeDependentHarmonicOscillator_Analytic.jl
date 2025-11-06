@@ -9,8 +9,8 @@ omega  = 1.0                     # natural frequency of the harmonic Oscillator
 Omega  = 3.5                     # frequency of the external sinusoidal forcing
 F      = .9                      # amplitude of the external sinusoidal forcing   
 ni_dim = 10                      # number of initial conditions per dimension (so ni_dim^2 total)
-T      = 2π * 5
-nt     = 1000                # number of time steps
+T      = 2π * 10
+nt     = 2000                # number of time steps
 dt     = T/nt                    # time step
 
 # Generating the initial condition array
@@ -109,21 +109,26 @@ end
 dl = load_time_dependent_harmonic_oscillator_with_parametric_data_loader((q = q, p = p), t, IC)
 
 # This sets up the neural network
-width::Int = 3
+width::Int = 1
 nhidden::Int = 1
-n_integrators::Int = 1
+n_integrators::Int = 2
 # sigmoid_linear_unit(x::T) where {T<:Number} = x / (T(1) + exp(-x))
 arch = GeneralizedHamiltonianArchitecture(2; activation = tanh, width = width, nhidden = nhidden, n_integrators = n_integrators, parameters = turn_parameters_into_correct_format(t, IC)[1])
 nn = NeuralNetwork(arch)
 
 # This is where training starts
-batch_size = 128
+batch_size = 32
 n_epochs = 200
 batch = Batch(batch_size)
 o = Optimizer(AdamOptimizer(), nn)
 loss = ParametricLoss()
 _pb = SymbolicPullback(nn, loss, turn_parameters_into_correct_format(t, IC)[1]);
-loss_array = o(nn, dl, batch, n_epochs, loss, _pb)
+
+function train_network()
+	o(nn, dl, batch, n_epochs, loss, _pb)
+end
+
+loss_array = train_network()
 
 trajectory_number = 20
 

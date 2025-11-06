@@ -18,7 +18,7 @@ function make_alternative_parameters_by_adding_constant(params::NamedTuple, n::I
     [make_alternative_parameters_by_adding_constant(params,n, a) for a ∈ a_vals]
 end
 
-alternative_parameters = make_alternative_parameters_by_adding_constant(default_parameters, 1, Vector(.1:.1:10.))
+alternative_parameters = make_alternative_parameters_by_adding_constant(default_parameters, 1, Vector(.1:.1:1.))
 
 h_ensemble = hodeensemble(; parameters = alternative_parameters)
 sol = integrate(h_ensemble, ImplicitMidpoint())
