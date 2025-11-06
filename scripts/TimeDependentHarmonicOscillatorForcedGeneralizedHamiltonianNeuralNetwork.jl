@@ -115,8 +115,10 @@ n_integrators::Int = 2
 # sigmoid_linear_unit(x::T) where {T<:Number} = x / (T(1) + exp(-x))
 arch1 = ForcedGeneralizedHamiltonianArchitecture(2; activation = tanh, width = width, nhidden = nhidden, n_integrators = n_integrators, parameters = turn_parameters_into_correct_format(t, IC)[1], forcing_type = :P)
 arch2 = ForcedGeneralizedHamiltonianArchitecture(2; activation = tanh, width = width, nhidden = nhidden, n_integrators = n_integrators, parameters = turn_parameters_into_correct_format(t, IC)[1], forcing_type = :Q)
+arch3 = ForcedGeneralizedHamiltonianArchitecture(2; activation = tanh, width = 2width, nhidden = nhidden, n_integrators = n_integrators, parameters = turn_parameters_into_correct_format(t, IC)[1], forcing_type = :QP)
 nn1 = NeuralNetwork(arch1)
 nn2 = NeuralNetwork(arch2)
+nn3 = NeuralNetwork(arch3)
 
 # This is where training starts
 batch_size = 128
@@ -124,13 +126,16 @@ n_epochs = 200
 batch = Batch(batch_size)
 o1 = Optimizer(AdamOptimizer(), nn1)
 o2 = Optimizer(AdamOptimizer(), nn2)
+o3 = Optimizer(AdamOptimizer(), nn3)
 loss = ParametricLoss()
 _pb = SymbolicPullback(nn1, loss, turn_parameters_into_correct_format(t, IC)[1]);
 _pb = SymbolicPullback(nn2, loss, turn_parameters_into_correct_format(t, IC)[1]);
+_pb = SymbolicPullback(nn3, loss, turn_parameters_into_correct_format(t, IC)[1]);
 
 function train_network()
 	o1(nn1, dl, batch, n_epochs, loss, _pb)
 	o2(nn2, dl, batch, n_epochs, loss, _pb)
+	o3(nn3, dl, batch, n_epochs, loss, _pb)
 end
 
 loss_array = train_network()
@@ -145,7 +150,7 @@ trajectory.q[:, 1] .= initial_conditions.q
 trajectory.p[:, 1] .= initial_conditions.p
 # note that we have to supply the parameters as a named tuple as well here:
 for t_step ∈ 0:(n_steps-2)
-	qp_temporary = nn1.model((q = [trajectory.q[1, t_step+1]], p = [trajectory.p[1, t_step+1]]), (t = t[t_step+1],), nn1.params)
+	qp_temporary = nn3.model((q = [trajectory.q[1, t_step+1]], p = [trajectory.p[1, t_step+1]]), (t = t[t_step+1],), nn3.params)
 	trajectory.q[:, t_step+2] .= qp_temporary.q
 	trajectory.p[:, t_step+2] .= qp_temporary.p
 end

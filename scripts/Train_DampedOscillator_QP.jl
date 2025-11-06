@@ -89,7 +89,7 @@ end
 dl = DataLoader(turn_q_p_data_into_correct_format((q = q, p = p)))
 
 # This sets up the neural network
-arch = ForcedSympNet(2; upscaling_dimension = width, n_layers = nhidden, forcing_type = :QP)
+arch = ForcedSympNet(2; upscaling_dimension = width, n_layers = nhidden, forcing_type = :P)
 #arch = ForcedSympNet(2; upscaling_dimension = width, n_layers = nhidden, activation=(x-> max(0,x)^2/2))
 nn = NeuralNetwork(arch)
 

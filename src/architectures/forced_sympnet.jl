@@ -23,25 +23,28 @@ struct ForcedSympNet{FT, AT} <: NeuralNetworkIntegrator
     dim::Int
     upscaling_dimension::Int
     n_layers::Int
+    n_forcing_layers::Int
     act::AT
     init_upper::Bool
 
-    function ForcedSympNet(dim::Integer;  
+    function ForcedSympNet(dim::Integer;
                             upscaling_dimension = 2 * dim, 
-                            n_layers = g_n_layers_default, 
+                            n_layers = g_n_layers_default,
+                            n_forcing_layers = N_FORCING_LAYERS_DEFAULT,
                             activation = g_activation_default, 
                             init_upper = g_init_upper_default,
                             forcing_type::Symbol = :P)
-        new{forcing_type, typeof(activation)}(dim, upscaling_dimension, n_layers, activation, init_upper)
+        new{forcing_type, typeof(activation)}(dim, upscaling_dimension, n_layers, n_forcing_layers, activation, init_upper)
     end
 
-    function ForcedSympNet(dl::DataLoader;   
+    function ForcedSympNet(dl::DataLoader;
                                         upscaling_dimension = 2 * dl.input_dim, 
-                                        n_layers = g_n_layers_default, 
+                                        n_layers = g_n_layers_default,
+                                        n_forcing_layers = N_FORCING_LAYERS_DEFAULT,
                                         activation = g_activation_default, 
                                         init_upper = g_init_upper_default,
                                         forcing_type::Symbol = :P)
-        new{forcing_type, typeof(activation)}(dl.input_dim, upscaling_dimension, n_layers, activation, init_upper)
+        new{forcing_type, typeof(activation)}(dl.input_dim, upscaling_dimension, n_layers, n_forcing_layers, activation, init_upper)
     end
 end
 
@@ -54,7 +57,7 @@ function Chain(arch::ForcedSympNet{FT}) where {FT}
             (layers..., GradientLayerQ(arch.dim, arch.upscaling_dimension, arch.act))
         else
             (layers...,
-            ForcingLayer(arch.dim, arch.upscaling_dimension, arch.n_layers, arch.act; return_parameters=false, type=FT),
+            ForcingLayer(arch.dim, arch.upscaling_dimension, arch.n_forcing_layers, arch.act; return_parameters=false, type=FT),
             GradientLayerP(arch.dim, arch.upscaling_dimension, arch.act))
         end
     end
