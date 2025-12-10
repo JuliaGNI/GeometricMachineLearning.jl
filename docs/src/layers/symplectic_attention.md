@@ -15,7 +15,7 @@ C = Z^TAZ \implies C_{mn} = \sum_{k\ell}Z_{km}A_{k\ell}Z_{\ell{}n}.
 Its element-wise derivative is:
 
 ```math
-\frac{\partial{}C_{mn}}{\partial{}Z_{ij}} = \sum_{\ell}(\delta_{jm}A_{i\ell}Z_{\ell{}n} + \delta_{jn}X_{\ell{}m}A_{\ell{}i}).
+\frac{\partial{}C_{mn}}{\partial{}Z_{ij}} = \sum_{\ell}(\delta_{jm}A_{i\ell}Z_{\ell{}n} + \delta_{jn}Z_{\ell{}m}A_{\ell{}i}).
 ```
 
 ## Matrix Softmax
@@ -29,19 +29,19 @@ Here we take as a staring point the expression:
 Its gradient (with respect to ``Z``) is:
 
 ```math
-\frac{\partial\Sigma(Z)}{\partial{}Z_{ij}} = \frac{1}{1 + \sum{m, n}\exp(C_{mn})}\sum_{m'n'}\exp(C_{m'n'})\sum_{\ell}(\delta_{jm'}A_{i\ell}Z_{\ell{}n'} + \delta_{jn'}X_{\ell{}m'}A_{\ell{}i}) = \frac{1}{1 + \sum_{m,n}\exp(C_{mn})}\{[AX\exp.(C)^T]_{ij} +  [A^TX\exp.(C)]_{ij}\}.
+\frac{\partial\Sigma(Z)}{\partial{}Z_{ij}} = \frac{1}{1 + \sum{m, n}\exp(C_{mn})}\sum_{m'n'}\exp(C_{m'n'})\sum_{\ell}(\delta_{jm'}A_{i\ell}Z_{\ell{}n'} + \delta_{jn'}Z_{\ell{}m'}A_{\ell{}i}) = \frac{1}{1 + \sum_{m,n}\exp(C_{mn})}\{[AZ\exp.(C)^T]_{ij} +  [A^TZ\exp.(C)]_{ij}\}.
 ```
 
 Note that if `A` is a [`SymmetricMatrix`](@ref) the expression than simplifies to:
 
 ```math
-\frac{\partial\Sigma(Z)}{\partial{}Z_{ij}} = 2\frac{1}{1 + \sum_{m,n}\exp(C_{mn})}[AX\exp.(C)^T]_{ij},
+\frac{\partial\Sigma(Z)}{\partial{}Z_{ij}} = 2\frac{1}{1 + \sum_{m,n}\exp(C_{mn})}[AZ\exp.(C)^T]_{ij},
 ```
 
 or written in matrix notation:
 
 ```math
-\nabla_Z\Sigma(Z) = 2\frac{1}{1 + \sum_{m,n}\exp(C_{mn})}AX\exp.(C).
+\nabla_Z\Sigma(Z) = 2\frac{1}{1 + \sum_{m,n}\exp(C_{mn})}AZ\exp.(C).
 ```
 
 Whether we use a [`SymmetricMatrix`](@ref) for ``A`` or not can be set with the keyword `symmetric` in [`SymplecticAttention`](@ref).
@@ -63,20 +63,25 @@ We then get:
 The second term in this expression is equivalent to a *standard attention step*:
 
 ```math
-\mathrm{TermII:}\qquad A^TZ\mathrm{softmax}(C).
+\mathrm{TermII:}\qquad A^TZ\mathrm{softmax}_1(C).
 ```
 
 The first term is equivalent to:
 
 ```math
-\mathrm{TermI:}\qquad \sum_n [AZ]_{in}[\mathrm{softmax}(C)^T]_{nj} \equiv AZ(\mathrm{softmax}(C))^T.
+\mathrm{TermI:}\qquad \sum_n [AZ]_{in}[\mathrm{softmax}_1(C)^T]_{nj} \equiv AZ(\mathrm{softmax}_1(C))^T.
 ```
 
 If we again assume that the matrix `A` is a [`SymmetricMatrix`](@ref) then the expression simplifies to:
 
 ```math
-\nabla_Z\Sigma(Z) = AZ\mathrm{softmax}(C).
+\nabla_Z\Sigma(Z) = AZ\mathrm{softmax}_1(C).
 ```
+
+!!! info
+    Note that we used the "one softmax" here instead of the standard softmax. The one softmax has been shown to be favorable to the standard softmax in some cases.
+
+A discussion of the one softmax can be found in [miller2023attention](@cite).
 
 ## Library Functions
 
