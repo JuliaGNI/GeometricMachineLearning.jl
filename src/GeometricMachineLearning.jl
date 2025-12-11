@@ -19,8 +19,10 @@ module GeometricMachineLearning
     import LazyArrays
     import SymbolicNeuralNetworks
     import SymbolicNeuralNetworks: input_dimension, output_dimension, SymbolicPullback
-    using SymbolicNeuralNetworks: derivative, _get_contents, _get_params, SymbolicNeuralNetwork
+    using SymbolicNeuralNetworks: derivative, _get_contents, _get_params, SymbolicNeuralNetwork, AbstractSymbolicNeuralNetwork
     using Symbolics: @variables, substitute
+
+    import ParameterHandling
 
     import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer, AbstractExplicitCell, AbstractNeuralNetwork , NeuralNetwork, UnknownArchitecture, FeedForwardLoss
     import AbstractNeuralNetworks: Chain, GridCell
@@ -151,8 +153,11 @@ module GeometricMachineLearning
     include("optimizers/manifold_related/retractions.jl")
 
     include("layers/sympnets.jl")
+    include("layers/forcing_dissipation_layers.jl")
     include("layers/bias_layer.jl")
     include("layers/resnet.jl")
+    include("layers/wide_resnet.jl")
+    include("layers/parametric_resnet_layer.jl")
     include("layers/manifold_layer.jl")
     include("layers/stiefel_layer.jl")
     include("layers/grassmann_layer.jl")
@@ -257,6 +262,7 @@ module GeometricMachineLearning
     #INCLUDE ARCHITECTURES
     include("architectures/neural_network_integrator.jl")
     include("architectures/resnet.jl")
+    include("architectures/parametric_resnet.jl")
     include("architectures/transformer_integrator.jl")
     include("architectures/standard_transformer_integrator.jl")
     include("architectures/sympnet.jl")
@@ -265,6 +271,8 @@ module GeometricMachineLearning
     include("architectures/psd.jl")
     include("architectures/fixed_width_network.jl")
     include("architectures/hamiltonian_neural_network.jl")
+    include("architectures/standard_hamiltonian_neural_network.jl")
+    include("architectures/generalized_hamiltonian_neural_network.jl")
     include("architectures/lagrangian_neural_network.jl")
     include("architectures/variable_width_network.jl")
     include("architectures/recurrent_neural_network.jl")
@@ -281,7 +289,7 @@ module GeometricMachineLearning
     export ClassificationTransformer, ClassificationLayer
     export VolumePreservingFeedForward
     export SymplecticAutoencoder, PSDArch
-    export HamiltonianArchitecture, StandardHamiltonianArchitecture, GeneralizedHamiltonianArchitecture
+    export HamiltonianArchitecture, StandardHamiltonianArchitecture, GeneralizedHamiltonianArchitecture, ForcedGeneralizedHamiltonianArchitecture
 
     export solve!, encoder, decoder
 
@@ -299,13 +307,19 @@ module GeometricMachineLearning
     include("pullbacks/zygote_pullback.jl")
     include("pullbacks/symbolic_hnn_pullback.jl")
 
-    export DataLoader, onehotbatch
+    export DataLoader, ParametricDataLoader, onehotbatch
     export Batch, optimize_for_one_epoch!
     include("data_loader/tensor_assign.jl")
     include("data_loader/matrix_assign.jl")
     include("data_loader/mnist_utils.jl")
     include("data_loader/batch.jl")
     include("data_loader/optimize.jl")
+
+    include("data_loader/parametric_data_loader.jl")
+    
+    include("architectures/forced_sympnet.jl")
+    include("architectures/forced_generalized_hamiltonian_neural_network.jl")
+    export ForcedSympNet
 
     export default_optimizer
 
@@ -358,8 +372,6 @@ module GeometricMachineLearning
 
     include("training/train.jl")
 
-    export SymplecticEuler
-    export SymplecticEulerA, SymplecticEulerB
     export SEuler, SEulerA, SEulerB
 
     include("training_method/symplectic_euler.jl")

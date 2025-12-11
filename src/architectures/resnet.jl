@@ -23,20 +23,23 @@ where `dl` is an instance of `DataLoader`.
 See [`iterate`](@ref) for an example of this.
 """
 struct ResNet{AT} <: NeuralNetworkIntegrator
-    sys_dim::Int 
-    n_blocks::Int 
+    sys_dim::Int
+    n_blocks::Int
+    width::Int
     activation::AT
 end
 
-function ResNet(dl::DataLoader, n_blocks::Integer; activation = tanh)
-    ResNet(dl.input_dim, n_blocks, activation)
+ResNet(sys_dim::Integer, n_blocks::Integer, activation) = ResNet(sys_dim, n_blocks, sys_dim, activation)
+
+function ResNet(dl::DataLoader, n_blocks::Integer, width::Integer=dl.input_dim; activation = tanh)
+    ResNet(dl.input_dim, n_blocks, width, activation)
 end
 
 function Chain(arch::ResNet{AT}) where AT
     layers = ()
     for _ in 1:arch.n_blocks 
         # nonlinear layers
-        layers = (layers..., ResNetLayer(arch.sys_dim, arch.activation; use_bias=true))
+        layers = (layers..., arch.sys_dim == arch.width ? ResNetLayer(arch.sys_dim, arch.activation; use_bias=true) : WideResNetLayer(arch.sys_dim, arch.width, arch.activation))
     end
 
     # linear layers for the output

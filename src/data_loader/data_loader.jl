@@ -145,7 +145,7 @@ function DataLoader(data::AbstractMatrix{T}; autoencoder=true, suppress_info = f
         input_dim, time_steps = size(data)
         reshaped_data = reshape(data, input_dim, time_steps, 1)
         return DataLoader{T, typeof(reshaped_data), Nothing, :TimeSeries}(reshaped_data, nothing, input_dim, time_steps, 1, nothing, nothing)
-    elseif autoencoder == true 
+    elseif autoencoder == true
         input_dim, n_params = size(data)
         reshaped_data = reshape(data, input_dim, 1, n_params)
         return DataLoader{T, typeof(reshaped_data), Nothing, :RegularData}(reshaped_data, nothing, input_dim, 1, n_params, nothing, nothing)

@@ -151,7 +151,9 @@ qp = (q = [1, 2], p = [3, 4])
 ```
 
 """
-const QPT{T} = NamedTuple{(:q, :p), Tuple{AT, AT}} where {T, AT <: AbstractArray{T}}
+const QPT{T} = NamedTuple{(:q, :p), Tuple{AT, AT}} where {T, N, AT <: AbstractArray{T, N}}
+
+const QPT2{T, N} = NamedTuple{(:q, :p), Tuple{AT₁, AT₂}} where {T, N, AT₁ <: AbstractArray{T, N}, AT₂ <: AbstractArray{T, N}}
 
 @doc raw"""
     QPTOAT
@@ -163,10 +165,42 @@ const QPTOAT = Union{QPT, AbstractArray}
 
 This could be data in ``(q, p)\in\mathbb{R}^{2d}`` form or come from an arbitrary vector space.
 """
-const QPTOAT{T} = Union{QPT{T}, AbstractArray{T}} where T
+const QPTOAT{T} = Union{QPT{T}, AbstractArray{T}} where {T}
+
+const QPTOAT2{T, N} = Union{QPT2{T, N}, AbstractArray{T, N}} where {T, N}
 
 Base.:≈(qp₁::QPT, qp₂::QPT) = (qp₁.q ≈ qp₂.q) & (qp₁.p ≈ qp₂.p)
 
 _eltype(x) = eltype(x)
-_eltype(ps::NamedTuple) = _eltype(ps[1])
-_eltype(ps::Tuple) = _eltype(ps[1])
+_eltype(::NTuple{N, FT}) where {N, FT <: AbstractFloat} = FT
+_eltype(nt::NamedTuple) = _eltype(values(nt))
+
+_size(x) = size(x)
+function _size(qp::QPT)
+    q_size = _size(qp.q)
+    p_size = _size(qp.p)
+    @assert q_size == p_size
+    (2q_size[1], q_size[2:end]...)
+end
+
+_size(x, a::Integer) = size(x, a)
+function _size(qp::QPT, a::Integer)
+    q_size = _size(qp.q, a)
+    p_size = _size(qp.p, a)
+    @assert q_size == p_size
+    a == 1 ? 2q_size : q_size
+end
+
+function _eltype(parameters::Vector{<:NamedTuple})
+    types = DataType[]
+    for v ∈ parameters
+        push!(types, _eltype(v))
+    end
+    T = types[1]
+    for T₂ ∈ types
+        T == T₂ || error("There are different types in the NamedTuples!")
+    end
+    T
+end
+
+end_eltype(ps::Tuple) = _eltype(ps[1])
