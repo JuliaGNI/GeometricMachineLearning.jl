@@ -21,10 +21,10 @@ However *multiplicative attention* [vaswani2017attention](@cite) is more straigh
 (z_q, z_k) \mapsto z_q^TWz_k,
 ```
 
-where ``W \in \mathbb{R}^{d\times{}d}`` is a learnable weight matrix with respect to which correlations are computed as scalar products. Regardless of the type of attention used, they all try to compute correlations among input sequences on whose basis further computation is performed. Given two input sequences ``Z_q = (z_q^{(1)}, \ldots, z_q^{(T)})`` and ``Z_k = (z_k^{(1)}, \ldots, z_k^{(T)})``, we can arrange the various correlations into a *correlation matrix* ``C\in\mathbb{R}^{T\times{}T}`` with entries ``[C]_{ij} = \mathtt{attention}(z_q^{(i)}, z_k^{(j)})``. In the case of multiplicative attention this matrix is just ``C = Z^TWZ``.
+where ``W \in \mathbb{R}^{d\times{}d}`` is a learnable weight matrix with respect to which correlations are computed as scalar products. Regardless of the type of attention used, they all compute correlations among input sequences on whose basis further computation is performed. Given two input sequences ``Z_q = (z_q^{(1)}, \ldots, z_q^{(T)})`` and ``Z_k = (z_k^{(1)}, \ldots, z_k^{(T)})``, we can arrange the various correlations into a *correlation matrix* ``C\in\mathbb{R}^{T\times{}T}`` with entries ``[C]_{ij} = \mathtt{attention}(z_q^{(i)}, z_k^{(j)}),`` where the *attention* may be additive or multiplicative. In the case of multiplicative attention this matrix is just ``C = Z_q^TWZ_k``.
 
 ```@eval
-Main.remark(raw"The notation with designating different vectors with a ``q`` and ``k`` label comes from natural language processing. These labels stand for *queries* and *keys*")
+Main.remark(raw"The notation with designating different vectors with a ``q`` and ``k`` label comes from natural language processing. These labels stand for *queries* and *keys*.")
 ```
 
 In the section on [multihead attention](@ref "Multihead Attention") this will be explained further.
@@ -35,7 +35,7 @@ In `GeometricMachineLearning` we always compute *self-attention*, meaning that t
 
 [^2]: [Multihead attention](@ref "Multihead Attention") also falls into this category. Here the input ``Z`` is multiplied from the left with several *projection matrices* ``P^Q_i`` and ``P^K_i``, where ``i`` indicates the *head*. For each head we then compute a correlation matrix ``(P^Q_i Z)^T(P^K Z)``. 
 
-This is then used to reweight the columns in the input sequence ``Z``. For this we first apply a nonlinearity ``\sigma`` onto ``C`` and then multiply ``\sigma(C)`` onto ``Z`` from the right, i.e. the output of the attention layer is ``Z\sigma(C)``. So we perform the following mappings:
+These correlations are then used to reweight the columns in the input sequence ``Z``. For this we first apply a nonlinearity ``\sigma`` onto ``C`` and then multiply ``\sigma(C)`` onto ``Z`` from the right, i.e. the output of the attention layer is ``Z\sigma(C)``. So we perform the following mappings:
 
 ```math
 Z \xrightarrow{\mathrm{correlations}} C(Z) =: C \xrightarrow{\sigma} \sigma(C) \xrightarrow{\text{right multiplication}} Z \sigma(C).
@@ -78,7 +78,7 @@ Main.remark(raw"We said that the coefficients are *independent of each other*, w
 " * Main.indentation * raw"```math
 " * Main.indentation * raw"\mathrm{det}(\mathrm{softmax}(C)) \approx 0.
 " * Main.indentation * raw"```
-" * Main.indentation * raw"With *volume-preserving attention* we make the coefficients dependent of each other, such that the columns of ``\sigma(C)`` are *independent of each other:
+" * Main.indentation * raw"With *volume-preserving attention* we make the coefficients dependent of each other, such that the columns of ``\sigma(C)`` are *independent* of each other:
 " * Main.indentation * raw"```math
 " * Main.indentation * raw"\sigma(C)^T\sigma(C) = \mathbb{I},
 " * Main.indentation * raw"```
@@ -89,7 +89,7 @@ Besides the traditional attention mechanism `GeometricMachineLearning` therefore
 
 ### The Cayley Transform 
 
-The Cayley transform maps from skew-symmetric matrices to orthonormal matrices[^4]. It takes the form[^4]:
+The Cayley transform maps from skew-symmetric matrices to orthonormal matrices. It takes the form[^4]:
 
 [^4]: The Cayley transform here does not have the factor ``1/2`` hat we used when talking about the [Cayley retraction](@ref "Classical Retractions"). This is because now we do not need the retraction property ``d/dt\mathrm{Cayley}(tV)|_{t=0} = V``, but only a map ``\mathfrak{g}\to{}G=SO(N).``
 
@@ -97,7 +97,7 @@ The Cayley transform maps from skew-symmetric matrices to orthonormal matrices[^
 \mathrm{Cayley}: A \mapsto (\mathbb{I} - A)(\mathbb{I} + A)^{-1}.
 ```
 
-Analogously to when we used the Cayley transform [as a retraction](@ref "Classical Retractions"), we can easily check that ``\mathrm{Cayley}(A)`` is orthogonal if ``A`` is skew-symmetric. For this consider ``\varepsilon \mapsto A(\varepsilon)\in\mathcal{S}_\mathrm{skew}`` with ``A(0) = \mathbb{I}`` and ``A'(0) = B``. Then we have: 
+Analogously to when we used the Cayley transform [as a retraction](@ref "Classical Retractions"), we can easily check that ``\mathrm{Cayley}(A)`` is orthogonal if ``A`` is skew-symmetric. For this consider ``\varepsilon \mapsto A(\varepsilon)\in\mathcal{S}_\mathrm{skew}`` with ``A(0) = \mathbb{O}`` and ``A'(0) = B \neq \mathbb{O}``. Then we have: 
 
 ```math
 \frac{\delta(\mathrm{Cayley}(A)^T\mathrm{Cayley}(A))}{\delta{}A} = \frac{d}{d\varepsilon}|_{\varepsilon=0} \mathrm{Cayley}(A(\varepsilon))^T \mathrm{Cayley}(A(\varepsilon)) = A'(0)^T + A'(0) = \mathbb{O},
@@ -142,59 +142,113 @@ Internally `GeometricMachineLearning` computes this more efficiently with the fu
 
 ## How is Structure Preserved? 
 
-In order to discuss *how structure is preserved* we first have to define what *structure* we mean precisely. This structure is strongly inspired by traditional *multi-step methods* [feng1998step](@cite). 
+To discuss structure preservation, we must first define the notion of volume on the space of input matrices. A mapping ``f: \mathbb{R}^{d \times T} \to \mathbb{R}^{d \times T}`` is said to be *volume-preserving* if the determinant of its Jacobian operator ``Df(Z)`` is ``\pm 1``.
+
+We focus on the first approach, where the map is defined as:
+```math
+f(Z) = Z \cdot \sigma(Z^T A Z),
+```
+with ``\sigma(C) = (\mathbb{I} - C)(\mathbb{I} + C)^{-1}``. Here ``Z`` is a rectangular matrix of full row rank ``d`` (with ``T \geq d``).
+
+The volume-preserving property is proved by analyzing the geometry of the tangent space ``T_Z \mathbb{R}^{d \times T} = \mathbb{R}^{d\times{}T}``. We decompose any tangent vector into two orthogonal components: a *vertical* component and a *horizontal* component. The vertical component is the kernel of the tangent map of ``\pi:\mathbb{R}^{d\times{}T}\to\mathfrak{so}(T), Z\mapsto Z^TAZ`` and the horizontal component is its orthogonal complement (with respect to the canonical metric).
+
+In this context it is important to mention that the fibers defined by ``\pi``, i.e. ``\mathcal{F}_C := \pi^{-1}\{C\}``, are preserved under ``f``, i.e. for ``Z\in\mathcal{F}_C`` we have:
+
+```math
+\pi\circ{}f(Z) = \sigma(C)^TZ^TAZ\sigma(C) = \sigma(C)^TC\sigma(C) = C
+```
+and hence ``f(Z) \in \mathcal{F}_C``. Note that ``\sigma(C)`` commutes with ``C`` because the former is a rational function of the latter.
+
+We now split the proof of volume preservation into three parts: one for the fiber directions, one for the base directions and one that puts everything together.
+
+### 1. Vertical Space (Fiber Directions)
+The vertical subspace ``V_Z`` consists of directions that do not change the correlation matrix ``C = Z^T A Z``, i.e. ``V_Z = T_Z\mathcal{F}_C``. A vector ``v\in{}V_Z`` must satisfy the following:
+```math
+V_Z = \{ v\in\mathbb{R}^{d\times{}T} : Z^TAv + v^TAZ = 0 \}.
+```
+
+We now compute the dimension of ``V_Z``. For this consider the linear map ``\mathcal{L}(v) = \text{Skew}(Z^T A v)``. The vertical space corresponds to the kernel of ``\mathcal{L}``. Because the sum of the dimension of the image and the kernel give the total space, we have: ``\dim(V_Z) = dT - \dim(\text{Im}(\mathcal{L}))``.
+Assuming that ``AZ`` has rank ``d`` we can find a transformation[^5] ``AZ \mapsto \begin{bmatrix}\mathbb{I} & 0 \end{bmatrix}`` and then write the image under ``\mathcal{L}`` as:
+
+[^5]: This transformation could be absorbed into ``v``.
+
+```math
+    \mathcal{L}(v) = \begin{bmatrix} v_1^T \\ v_2^T \end{bmatrix}\begin{bmatrix}\mathbb{I} & 0 \end{bmatrix} - \begin{bmatrix}\mathbb{I} \\ 0 \end{bmatrix} \begin{bmatrix} v_1 & v_2 \end{bmatrix} = \begin{bmatrix} v_1^T - v_1 & - v_2 \\ v_2^T & 0 \end{bmatrix},
+```
+where ``v = [v_1, v_2]`` with ``v_1 \in \mathbb{R}^{d \times d}`` and ``v_2 \in \mathbb{R}^{d \times (T-d)}``.
+Dimension counting then yields ``\dim(\text{Im}(\mathcal{L})) = d(d-1)/2 + d(T-d)`` and subsequently:
+
+```math
+ \dim(V_Z) = dT - \left( dT - \frac{d(d+1)}{2} \right) = \frac{d(d+1)}{2}.
+```
 
 ```@eval
-Main.remark(raw"We define what volume preservation means for the product space ``\mathbb{R}^{d}\times\cdots\times\mathbb{R}^{d}\equiv\times_\text{$T$ times}\mathbb{R}^{d}``, i.e. *neural network multi-step methods* in our case are mappings whose domain and image are of the same dimension:
-" * Main.indentation * raw"```math
-" * Main.indentation * raw"\varphi: \times_\text{$T$ times}\mathbb{R}^{d} \to \times_\text{$T$ times}\mathbb{R}^{d}.
-" * Main.indentation * raw"```
-" * Main.indentation * raw"This is not the case for *traditional multi-step methods*; there one usually has a number ``T>1`` of input vectors, but only one output vector. There are however empirical and theoretical advantages of having equally-sized inputs and outputs.")
+Main.remark(raw"We note the similarity in the argumentation for proving the dimensionality of the image of ``\mathcal{L}`` and that of the *Stiefel manifold* ``St(d, T)``.")
 ```
 
-Consider an isomorphism ``\hat{}: \times_\text{($T$ times)}\mathbb{R}^{d}\stackrel{\approx}{\longrightarrow}\mathbb{R}^{dT}``. Specifically, we use:
+We also note that the map ``f`` acts on a vertical vector ``v \in V_Z`` simply by rotating it:
 ```math
-Z =  \left[\begin{array}{cccc}
-            z_1^{(1)} &  z_1^{(2)} & \quad\cdots\quad & z_1^{(T)} \\
-            z_2^{(1)} &  z_2^{(2)} & \cdots & z_2^{(T)} \\
-            \cdots &  \cdots & \cdots & \cdots \\
-            z_d^{(1)} & z_d^{(2)} & \cdots & z_d^{(T)}
-            \end{array}\right] \mapsto 
-            \left[\begin{array}{c}  z_1^{(1)} \\ z_1^{(2)} \\ \cdots \\ z_1^{(T)} \\ z_2^{(1)} \\ \cdots \\ z_d^{(T)} \end{array}\right] =: Z_\mathrm{vec},
+T_Zf(v) = v \cdot \sigma(C).
+```
+Since ``\sigma(C)`` is an orthogonal matrix, this rotation has a determinant of 1. This is further outlined [below](@ref "3. The Jacobian Determinant").
+
+### 2. Horizontal Space (Base Directions)
+The horizontal subspace ``H_Z`` consists of directions orthogonal to ``V_Z``. These directions are responsible for changing the correlation matrix ``C``.
+
+``H_Z`` is generated by applying the *Lie algebra of skew-symmetric matrices* onto ``AZ`` from the right:
+
+```math
+H_Z = \{ A Z \Lambda : \Lambda \in \mathbb{R}^{T \times T}, \Lambda^T = -\Lambda \}.
 ```
 
-so we arrange the rows consecutively into a vector. The inverse of ``Z \mapsto \hat{Z} `` we refer to as ``Y \mapsto \tilde{Y}``. In the following we also write ``\hat{\varphi}`` for the mapping ``\,\hat{}\circ\varphi\circ\tilde{}\,``.
+We show that ``H_Z`` is orthogonal to ``V_Z``. For ``h\in{}H_Z`` we have ``h = AZ\Lambda`` and further
+
+```math
+    \mathrm{Tr}(v^Th) = \mathrm{Tr}(v^TAZ\Lambda) = \mathrm{Tr}(\Lambda^T(v^TAZ)^T) = -\mathrm{Tr}(\Lambda(v^TAZ)) = -\mathrm{Tr}((v^TAZ)\Lambda) = 0,
+```
+by the properties of the trace and the symmetry of ``v^TAZ``. In order to prove that we have an orthogonal decomposition ``\mathbb{R}^{d\times{}T} = V_Z\oplus{}H_Z`` we further have to show that the dimension of ``H_Z`` is ``d(d-1)/2 + d(T-d)``.
 
 ```@eval
-Main.definition(raw"We say that a mapping ``\varphi: \times_\text{$T$ times}\mathbb{R}^{d} \to \times_\text{$T$ times}\mathbb{R}^{d}`` is **volume-preserving** if the associated ``\hat{\varphi}`` is volume-preserving.")
+Main.remark(raw"We remark the analogies to the geometry of the Stiefel manifold. The horizontal component ``H_Z`` is almost equivalent to the tangent space to the Stiefel manifold ``T_YSt(d, T)`` (bar a matrix transpose), where ``Y\in{}St(d, T)`` is an orthogonal matrix that spans the same space as ``Z^T``.")
 ```
 
-In the transformed coordinate system (in terms of the vector ``Z_\mathrm{vec}`` defined above) this is equivalent to multiplication by a sparse matrix ``\tilde\Lambda(Z)`` from the left:
+We focus on the case ``T > d``, for which the map ``L_Z: \Lambda \mapsto A Z \Lambda`` is not injective. Its kernel is:
 
 ```math
-    \tilde{\Lambda}(Z) Z_\mathrm{vec} := (\Lambda(Z) \otimes \mathbb{I}_T) Z_\mathrm{vec} = 
-    \begin{pmatrix}
-    \Lambda(Z) & \mathbb{O} & \cdots  & \mathbb{O} \\
-    \mathbb{O} & \Lambda(Z) & \cdots & \mathbb{O} \\
-    \cdots & \cdots & \ddots & \cdots \\ 
-    \mathbb{O} & \mathbb{O} & \cdots & \Lambda(Z) \\
-    \end{pmatrix}
-    \left[\begin{array}{c}  z_1^{(1)} \\ z_1^{(2)} \\ \ldots \\ z_1^{(T)} \\ z_2^{(1)} \\ \ldots \\ z_d^{(T)} \end{array}\right],
+\ker(L_Z) = \{ \Lambda \in \mathfrak{so}(T) : Z \Lambda = 0 \}.
 ```
+In a basis where ``Z = \begin{bmatrix}\mathbb{I}_d & 0\end{bmatrix}``, the kernel again consists of skew-symmetric matrices supported on the null space of ``Z`` (the bottom-right ``(T-d) \times (T-d)`` block[^6]).
+The dimension of the horizontal space is:
 
-where ``\otimes:\mathbb{R}^{n\times{}n}\times\mathbb{R}^{p\times{}q} \to \mathbb{R}^{pm\times{}qn}`` is the *Kronecker product*. ``\tilde{\Lambda}(Z)`` is easily shown to be an orthogonal matrix and a symplectic matrix, i.e. it satisfies
+[^6]: See the application of ``\mathcal{L}`` onto ``V_Z`` outlined [above](@ref "1. Vertical Space (Fiber Directions)").
 
 ```math
-\tilde{\Lambda}(Z)^T\tilde{\Lambda}(Z) = \mathbb{I}
+\dim(H_Z) = \dim(\mathfrak{so}(T)) - \dim(\mathfrak{so}(T-d)) = \frac{T(T-1)}{2} - \frac{(T-d)(T-d-1)}{2}
 ```
+Simplifying yields ``\dim(H_Z) = dT - \frac{d(d+1)}{2}``. Summing dimensions: ``\dim(V_Z) + \dim(H_Z) = dT``. The decomposition is valid.
 
-and
+We further decompose the action of ``f`` on a horizontal vector ``h = AZ\Lambda \in H_Z`` into vertical and horizontal component:
 
 ```math
-\tilde{\Lambda}(Z)^T\mathbb{J}\tilde{\Lambda}(Z) = \mathbb{J}.
+    T_{f(Z)} \pi ( T_Z f(h) ) = T_Z(\pi \circ f)h =  T_Z \pi(h).
 ```
+This implies that the horizontal component of the output is generated by the *same* effective parameter ``\Lambda``:
+```math
+T_Z f(A Z \Lambda) \simeq A Z' \Lambda + \mathcal{V}_\mathrm{ver}
+```
+where ``Z' = Z\sigma``. The term ``\mathcal{V}_\mathrm{ver}`` refers to the vertical component of ``T_Zf(h)`` in ``V_{f(Z)}`` which is not needed for proving that ``f`` is volume-preserving.
 
-So ``\tilde{\Lambda}(Z)`` is both orthogonal and symplectic.
+
+### 3. The Jacobian Determinant
+When represented in a coordinate system aligned with this Vertical/Horizontal decomposition, the Jacobian matrix ``J`` of ``f`` has a *block lower-triangular* structure:
+```math
+J = \begin{pmatrix} J_{HH} & 0 \\ J_{VH} & J_{VV} \end{pmatrix}.
+```
+*   The top-right block is ``0`` because moving along a vertical direction (fiber) does not change the horizontal coordinate (base).
+*   The bottom-right block ``J_{VV}`` represents the rotation ``v \mapsto v\alpha``. Its determinant is 1.
+*   The top-left block ``J_{HH}`` represents the identity map on the effective parameters of the horizontal space. Its determinant is 1.
+
+Consequently, the total determinant is ``\det(Df) = \det(J_{HH}) \cdot \det(J_{VV}) = 1 \cdot 1 = 1``. This rigorous decomposition confirms that the layer preserves the volume of the input data.
 
 ## Historical Note 
 
