@@ -143,7 +143,7 @@ gradL = rgrad(Y, ∇L)
 metric(Y, gradL, Δ) ≈ tr(∇L' * Δ)
 ```
 
-# The Grassmann Manifold 
+# The Grassmann Manifold
 
 The Grassmann manifold is closely related to the Stiefel manifold, and an element of the Grassmann manifold can be represented through an element of the Stiefel manifold (but not vice-versa). An element of the Grassmann manifold ``Gr(n,N)`` is a vector subspace ``\subset\mathbb{R}^N`` of dimension $n$. Each such subspace (i.e. element of the Grassmann manifold) can be represented by a full-rank matrix ``A\in\mathbb{R}^{N\times{}n}`` and we identify two elements with the following equivalence relation: 
 

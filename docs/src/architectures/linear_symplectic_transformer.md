@@ -46,7 +46,7 @@ Canonical = false
 brantner2023symplectic
 Kraus:2020:GeometricIntegrators
 feng1998step
-brantner2024volume
+brantner2025volume
 ```
 
 ```@raw html
