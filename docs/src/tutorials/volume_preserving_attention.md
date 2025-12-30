@@ -260,7 +260,7 @@ nothing
 fig_dark, fig_light, ax_dark, ax_light  = produce_validation_plot(40) # hide
 save("plot40_dark.png", fig_dark; px_per_unit = 1.2) # hide
 save("plot40_light.png", fig_light; px_per_unit = 1.2) # hide
-nothing
+nothing # hide
 ```
 
 ![Comparing the two volume-preserving attention mechanisms for 40 points.](plot40_light.png)
@@ -295,8 +295,8 @@ save("training_loss2_vpa_dark.png", fig_dark; px_per_unit = 1.2) # hide
 nothing # hide
 ```
 
-![Comparison for 40 points, but with an upscaling of ten.](training_loss2_vpa_light.png)
-![Comparison for 40 points, but with an upscaling of ten.](training_loss2_vpa_dark.png)
+![Training error for 40 points, but with an upscaling of ten.](training_loss2_vpa_light.png)
+![Training error for 40 points, but with an upscaling of ten.](training_loss2_vpa_dark.png)
 
 ```@example volume_preserving_attention 
 initial_condition = dl.input[:, 1:seq_length, 2]
@@ -310,8 +310,8 @@ save("plot40_sine2_light.png", fig_light; px_per_unit = 1.2) # hide
 nothing # hide
 ```
 
-![](plot40_sine2_light.png)
-![](plot40_sine2_dark.png)
+![Prediction for 40 time steps.](plot40_sine2_light.png)
+![Prediction for 40 time steps.](plot40_sine2_dark.png)
 
 And for a longer time interval: 
 
@@ -321,13 +321,13 @@ fig_dark, fig_light, ax_dark, ax_light = produce_validation_plot(200, nn_skew, n
 
 save("plot200_sine2_dark.png", fig_dark; px_per_unit = 1.2) # hide
 save("plot200_sine2_light.png", fig_light; px_per_unit = 1.2) # hide
-nothing
+nothing # hide
 ```
 
-![](plot200_sine2_light.png)
-![](plot200_sine2_dark.png)
+![Prediction for 200 time steps.](plot200_sine2_light.png)
+![Prediction for 200 time steps.](plot200_sine2_dark.png)
 
-Here we see that the arbitrary weighting quickly fails and the skew-symmetric weighting performs better on longer time scales.
+Here we see that the arbitrary weighting quickly fails and the skew-symmetric weighting performs slightly better on longer time scales.
 
 ## Library Functions
 

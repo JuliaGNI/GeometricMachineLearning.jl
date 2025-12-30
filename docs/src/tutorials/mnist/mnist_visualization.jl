@@ -38,9 +38,8 @@ processed_image₂ = Tuple(map(i -> reshape(processed_image₁[i], 49, 1), 1:16)
 fully_processed_image = split_and_flatten(first_image; patch_length = patch_length, number_of_patches = patch_number)
 
 #see https://github.com/JuliaImages/ImageView.jl/issues/28
-function _write_to_png(pic::AbstractMatrix, filename)
+function plot_image!(fig::Figure, pic::AbstractMatrix)
     first_axis, second_axis = axes(pic)
-    fig = Figure(; backgroundcolor = :transparent)
     ax = Axis(fig[1, 1], 
                         backgroundcolor = :transparent,
                         aspect=DataAspect(), 
@@ -52,27 +51,46 @@ function _write_to_png(pic::AbstractMatrix, filename)
                         rightspinevisible = false,
                         topspinevisible = false,
                         bottomspinevisible = false,
-                        xautolimitmargin = (0.0,0.0),
-                        yautolimitmargin = (0.0,0.0)
+                        xautolimitmargin = (zero(Float32),zero(Float32)),
+                        yautolimitmargin = (zero(Float32),zero(Float32))
             )
-    hm = heatmap!(ax, first_axis, second_axis, pic; colormap = :oslo)
-    save(filename, ax.scene, px_per_unit = 2)
+    heatmap!(ax, first_axis, second_axis, pic; colormap = :oslo)
+    ax
 end
 
+fig = Figure(; backgroundcolor = :transparent)
+display(fig)
 filename = "original/image.png"
-_write_to_png(first_image', filename)
+ax = plot_image!(fig, first_image')
+save(filename, fig.content[1, 1].scene)
+# close(fig)
 
-for i in 1:16 
+for i in 1:16
+    global fig = Figure(; backgroundcolor = :transparent)
+    display(fig)
     p_small = processed_image₁[i];
     file_name = "split/"*string(i)*".png"
-    _write_to_png(p_small', file_name)
+    global ax = plot_image!(fig, p_small')
+    save(file_name, ax.scene)
+    # close(fig)
 end
 
 for i in 1:16
+    global fig = Figure(; backgroundcolor = :transparent)
+    display(fig)
     p_small = processed_image₂[i]
     file_name = "flatten/"*string(i)*".png"
-    _write_to_png(p_small', file_name)
+    global ax = plot_image!(fig, p_small')
+    save(file_name, ax.scene)
+    # close(fig)
 end
 
+fig = Figure(; backgroundcolor = :transparent)
+display(fig)
 p_final = fully_processed_image
-_write_to_png(p_final', "final/image.png")
+filename = "final/image.png"
+ax = plot_image!(fig, p_final')
+save(filename, ax.scene)
+# close(fig)
+
+exit()

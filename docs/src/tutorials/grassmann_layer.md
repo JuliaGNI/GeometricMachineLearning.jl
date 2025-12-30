@@ -239,8 +239,8 @@ save("point_cloud_arrows_dark.png", alpha_colorbuffer(fig_dark))
 nothing # hide
 ```
 
-![](point_cloud_arrows_light.png)
-![](point_cloud_arrows_dark.png)
+![Gradient of Wasserstein distance for a particle discretization.](point_cloud_arrows_light.png)
+![Gradient of Wasserstein distance for a particle discretization.](point_cloud_arrows_dark.png)
 
 
 We now want to train a neural network based on this Wasserstein loss. The loss function is:
@@ -319,8 +319,8 @@ make_error_plot(; theme = :light) # hide
 nothing # hide
 ```
 
-![](training_loss_light.png)
-![](training_loss_dark.png)
+![Training loss for the network with Grassmann layers.](training_loss_light.png)
+![Training loss for the network with Grassmann layers.](training_loss_dark.png)
 
 
 Now we plot a few points to check how well they match the graph:

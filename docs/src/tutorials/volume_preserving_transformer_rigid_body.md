@@ -40,7 +40,6 @@ using GeometricProblems.RigidBody: odeproblem, odeensemble, default_parameters
 
 ensemble_problem = odeensemble(ics; timespan = timespan, timestep = timestep, parameters = default_parameters)
 ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
-
 dl_cpu = DataLoader(ensemble_solution; suppress_info = true)
 nothing # hide
 ```
@@ -52,7 +51,6 @@ import Random # hide
 Random.seed!(123456) # hide
 const n_trajectories_to_plot = 5
 indices = Int.(ceil.(size(dl_cpu.input, 3) * rand(n_trajectories_to_plot)))
-
 trajectories = [dl_cpu.input[:, :, index] for index in indices]
 nothing # hide
 ```

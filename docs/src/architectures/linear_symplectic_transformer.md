@@ -1,6 +1,6 @@
 # Linear Symplectic Transformer
 
-The linear symplectic transformer consists of a combination of [linear symplectic attention](@ref "Linear Symplectic Attention") and [gradient layers](@ref "SympNet Gradient Layer") and is visualized below:
+The linear symplectic transformer consists of a combination of [linear symplectic attention](@ref "Linear Symplectic Attention") and [gradient layers](@ref "SympNet Gradient Layer") and is visualized below.
 
 ![Visualization of the linear symplectic transformer architecutre. In this figure the number of SympNet layers per transformer block is two.](../tikz/linear_symplectic_transformer_light.png)
 ![Visualization of the linear symplectic transformer architecutre. In this figure the number of SympNet layers per transformer block is two.](../tikz/linear_symplectic_transformer_dark.png)

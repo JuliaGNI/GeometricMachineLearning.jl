@@ -4,7 +4,7 @@ directories:
 	mkdir -p final; mkdir -p flatten; mkdir -p original; mkdir -p split 
 
 images:
-	julia --project=../../.. mnist_visualization.jl
+	julia --project=../../.. -i mnist_visualization.jl
 	
 combined_patches:
 	xelatex -shell-escape final_image.tex xelatex
