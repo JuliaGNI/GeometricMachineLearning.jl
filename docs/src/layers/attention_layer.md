@@ -159,7 +159,7 @@ In this context it is important to mention that the fibers defined by ``\pi``, i
 ```
 and hence ``f(Z) \in \mathcal{F}_C``. Note that ``\sigma(C)`` commutes with ``C`` because the former is a rational function of the latter.
 
-We now split the proof of volume preservation into three parts: one for the fiber directions, one for the base directions and one that puts everything together.
+We now split the proof of volume preservation into three parts: one for the fiber directions, one for the base directions and one that puts everything together. We also note that we follow [brantner2025proof](@cite) for this proof.
 
 ### 1. Vertical Space (Fiber Directions)
 The vertical subspace ``V_Z`` consists of directions that do not change the correlation matrix ``C = Z^T A Z``, i.e. ``V_Z = T_Z\mathcal{F}_C``. A vector ``v\in{}V_Z`` must satisfy the following:
