@@ -46,6 +46,9 @@ jobs:
           make remove_numbering_for_some_chapters -C docs
           make docstring_indexing -C docs
           make fix_long_urls -C docs
+          make remove_darkmode -C docs
+          make adjust_image_size -C docs
+          make adjust_math_expressions -C docs
       - name: compile tex document
         run: |
           cd docs/build 
