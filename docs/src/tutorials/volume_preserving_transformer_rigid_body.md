@@ -1,12 +1,12 @@
 # The Volume-Preserving Transformer for the Rigid Body
 
-Here we train a [volume-preserving feedforward neural network](@ref "Volume-Preserving Feedforward Neural Network"), a [standard transformer](@ref "Standard Transformer") and a [volume-preserving transformer](@ref "Volume-Preserving Transformer") on a rigid body [hairer2006geometric, arnold1978mathematical](@cite). These are also the results presented in [brantner2024volume](@cite). The ODE that describes the rigid body is: 
+Here we train a [volume-preserving feedforward neural network](@ref "Volume-Preserving Feedforward Neural Network"), a [standard transformer](@ref "Standard Transformer") and a [volume-preserving transformer](@ref "Volume-Preserving Transformer") on a rigid body [hairer2006geometric, arnold1978mathematical](@cite). These are also the results presented in [brantner2025volume](@cite). The ODE that describes the rigid body is: 
 
 ```math
 \frac{d}{dt}\begin{pmatrix} z_1 \\ z_2 \\ z_3 \end{pmatrix} = \begin{pmatrix} Az_2z_3 \\ Bz_1z_3 \\ Cz_1z_2 \end{pmatrix}.
 ```
 
-In the following we use ``A = 1,`` ``B = 1/2`` and ``C = -1/2.`` For a derivation of this equation see [brantner2024volume](@cite). 
+In the following we use ``A = 1,`` ``B = 1/2`` and ``C = -1/2.`` For a derivation of this equation see [brantner2025volume](@cite). 
 
 We first generate the data. The initial conditions that we use are:
 
@@ -40,7 +40,6 @@ using GeometricProblems.RigidBody: odeproblem, odeensemble, default_parameters
 
 ensemble_problem = odeensemble(ics; timespan = timespan, timestep = timestep, parameters = default_parameters)
 ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
-
 dl_cpu = DataLoader(ensemble_solution; suppress_info = true)
 nothing # hide
 ```
@@ -52,7 +51,6 @@ import Random # hide
 Random.seed!(123456) # hide
 const n_trajectories_to_plot = 5
 indices = Int.(ceil.(size(dl_cpu.input, 3) * rand(n_trajectories_to_plot)))
-
 trajectories = [dl_cpu.input[:, :, index] for index in indices]
 nothing # hide
 ```
@@ -163,7 +161,7 @@ arch_st = StandardTransformerIntegrator(sys_dim;    n_heads = n_heads,
 nothing # hide
 ```
 
-Note that we set the keyword `skew_sym` to `false` here. This is different from what we did in [brantner2024volume](@cite), where it was set to true[^1]. We allocate the networks on GPU:
+Note that we set the keyword `skew_sym` to `false` here. This is different from what we did in [brantner2025volume](@cite), where it was set to true[^1]. We allocate the networks on GPU:
 
 [^1]: A detailed discussion of the consequences of setting this keyword is presented [as a separate example](@ref "Comparing Different `VolumePreservingAttention` Mechanisms").
 

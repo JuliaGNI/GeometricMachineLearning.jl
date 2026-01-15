@@ -4,7 +4,7 @@ In this chapter we use neural networks as symplectic integrators. We first show 
 
 # SympNets with `GeometricMachineLearning`
 
-This page serves as a short introduction into using [SympNets](@ref "SympNet Architecture") with `GeometricMachineLearning`. 
+This section serves as a short introduction into using [SympNets](@ref "SympNet Architecture") with `GeometricMachineLearning`. 
 
 
 ## Loss function
@@ -166,8 +166,8 @@ make_error_plot(; theme = :light) # hide
 nothing # hide
 ```
 
-![](sympnet_training_loss_light.png)
-![](sympnet_training_loss_dark.png)
+![Training loss for SympNet.](sympnet_training_loss_light.png)
+![Training loss for SympNet.](sympnet_training_loss_dark.png)
 
 Now we can make a prediction. We compare the initial data with a prediction starting from the same phase space point using the function [`GeometricMachineLearning.iterate`](@ref):
 
@@ -217,8 +217,8 @@ make_prediction_plot(; theme = :light) # hide
 nothing # hide
 ```
 
-![](sympnet_prediction_light.png)
-![](sympnet_prediction_dark.png)
+![Trajectory prediction with the SympNet.](sympnet_prediction_light.png)
+![Trajectory prediction with the SympNet.](sympnet_prediction_dark.png)
 
 We see that [`GSympNet`](@ref) outperforms [`LASympNet`](@ref) on this problem; the blue line (reference) and the orange line (``G``-SympNet) are in fact almost indistinguishable.
 
@@ -291,10 +291,10 @@ make_error_plot(; theme = :light) # hide
 nothing # hide
 ```
 
-![](sympnet_resnet_training_loss_light.png)
-![](sympnet_resnet_training_loss_dark.png)
+![Training loss for SympNet and ResNet.](sympnet_resnet_training_loss_light.png)
+![Training loss for SympNet and ResNet.](sympnet_resnet_training_loss_dark.png)
 
-And we see that the loss is significantly lower than for the ``LA``-SympNet, but slightly higher than for the ``G``-SympNet. We can also plot the prediction:
+And we see that the loss is significantly lower than for both the ``LA``-SympNet and the ``G``-SympNet. We can also plot the prediction:
 
 ```@example sympnet
 rn_trajectory = iterate(rn_nn, ics; n_points = steps_to_plot)
@@ -335,13 +335,13 @@ make_prediction_plot(; theme = :light) # hide
 nothing # hide
 ```
 
-![](resnet_sympnet_prediction_light.png)
-![](resnet_sympnet_prediction_dark.png)
+![Trajectory prediction with SympNet and ResNet.](resnet_sympnet_prediction_light.png)
+![Trajectory prediction with SympNet and ResNet.](resnet_sympnet_prediction_dark.png)
 
 We see that the ResNet is slowly gaining energy which consitutes unphysical behaviour. If we let this simulation run for even longer, this effect gets more pronounced:
 
 ```@example sympnet
-steps_to_plot = 800
+steps_to_plot = 400
 
 #predictions
 la_trajectory = iterate(la_nn, ics; n_points = steps_to_plot)
@@ -375,7 +375,7 @@ lines!(ax, dl.input.q[1, 1:steps_to_plot, 1], dl.input.p[1, 1:steps_to_plot, 1],
 lines!(ax, la_trajectory.q[1, :], la_trajectory.p[1, :], label=L"$LA$-Sympnet", color = mpurple)
 lines!(ax, g_trajectory.q[1, :], g_trajectory.p[1, :], label=L"$G$-Sympnet", color = morange)
 lines!(ax, rn_trajectory.q[1, :], rn_trajectory.p[1, :], label="ResNet", color = mred)
-axislegend(; position = (.99, .9), backgroundcolor = :transparent, labelcolor = textcolor) # hide
+axislegend(; position = (.82, .45), backgroundcolor = :transparent, labelcolor = textcolor) # hide
 fig_name = theme == :dark ? "resnet_sympnet_prediction_long_dark.png" : "resnet_sympnet_prediction_long_light.png" # hide
 save(fig_name, fig; px_per_unit = 1.2) # hide
 end # hide
@@ -384,7 +384,7 @@ make_prediction_plot(; theme = :light) # hide
 nothing # hide
 ```
 
-![](resnet_sympnet_prediction_long_light.png)
-![](resnet_sympnet_prediction_long_dark.png)
+![Comparison of long-time predictions for SympNet and ResNet.](resnet_sympnet_prediction_long_light.png)
+![Comparison of long-time predictions for SympNet and ResNet.](resnet_sympnet_prediction_long_dark.png)
 
 The behavior the ResNet exhibits is characteristic of integration schemes that do not preserve structure: the error in a single time step can be made very small, but for long-time simulations one typically has to consider symplecticity or other properties. Also note that the curves produced by the ``LA``-SympNet and the ``G``-SympNet are closed (or nearly closed). This is a property of symplectic maps in two dimensions that is preserved by construction [hairer2006geometric](@cite).

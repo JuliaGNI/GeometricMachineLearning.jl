@@ -116,8 +116,8 @@ save("two_vectors_dark.png", alpha_colorbuffer(fig_dark)) # hide
 nothing # hide
 ```
 
-![](two_vectors_light.png)
-![](two_vectors_dark.png)
+![The purple vector should be transported along the geodesic of the red one.](two_vectors_light.png)
+![The purple vector should be transported along the geodesic of the red one.](two_vectors_dark.png)
 
 Note that we have chosen the arrow here to have the same direction as before but only about half the magnitude. We further drew another arrow that we want to parallel transport (the purple arrow). 
 
@@ -175,8 +175,8 @@ save("parallel_transport_naked.png", fig_light |> alpha_colorbuffer) # hide
 nothing # hide
 ```
 
-![](parallel_transport_light.png)
-![](parallel_transport_dark.png)
+![Parallel transport of the purple vector along the geodesic of the red one.](parallel_transport_light.png)
+![Parallel transport of the purple vector along the geodesic of the red one.](parallel_transport_dark.png)
 
 Note that the angle between the two vector is preserved as we go along the geodesic.
 

@@ -37,7 +37,7 @@ where `sl` is short for *sequence length* and `pw` is short for *prediction wind
 [z^{(t+1)}, \ldots, z^{(t+\mathtt{pw})}] = g(z^{(t - \mathtt{sl} + 1)}, \ldots, z^{(t)}).
 ```
 
-In `GeometricMachineLearning` all multi-step methods, as is the case with one-step methods, are explicit. There are essentially two ways to construct multi-step methods with neural networks: the older one is using recurrent neural networks such as long short-term memory cells (LSTMs) [hochreiter1997long](@cite) and the newer one is using transformer neural networks [vaswani2017attention](@cite). Both of these approaches have been successfully employed to learn multi-step methods (see [fresca2021comprehensive, lee2020model](@cite) for the former and [hemmasian2023reduced, solera2023beta, brantner2024volume](@cite) for the latter), but because the transformer architecture exhibits superior performance on modern hardware and can be imbued with geometric properties we almost always use a transformer-derived architecture when dealing with time series[^2].
+In `GeometricMachineLearning` all multi-step methods, as is the case with one-step methods, are explicit. There are essentially two ways to construct multi-step methods with neural networks: the older one is using recurrent neural networks such as long short-term memory cells (LSTMs) [hochreiter1997long](@cite) and the newer one is using transformer neural networks [vaswani2017attention](@cite). Both of these approaches have been successfully employed to learn multi-step methods (see [fresca2021comprehensive, lee2020model](@cite) for the former and [hemmasian2023reduced, solera2023beta, brantner2025volume](@cite) for the latter), but because the transformer architecture exhibits superior performance on modern hardware and can be imbued with geometric properties we almost always use a transformer-derived architecture when dealing with time series[^2].
 
 [^2]: `GeometricMachineLearning` also has an LSTM implementation, but this may be deprecated in the future. 
 
@@ -80,7 +80,7 @@ feng1998step
 vaswani2017attention
 hemmasian2023reduced
 solera2023beta
-brantner2024volume
+brantner2025volume
 ```
 
 ```@raw latex

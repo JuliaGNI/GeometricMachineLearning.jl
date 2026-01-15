@@ -124,8 +124,8 @@ save("lst_light.png", fig_light; px_per_unit = 1.2)
 nothing
 ```
 
-![](lst_light.png)
-![](lst_dark.png)
+![Training loss for linear symplectic transformer.](lst_light.png)
+![Training loss for linear symplectic transformer.](lst_dark.png)
 
 
 We further evaluate a trajectory with the trained networks for thirty time steps: 
@@ -178,8 +178,8 @@ save("lst_validation_dark.png", fig_dark; px_per_unit = 1.2)
 nothing
 ```
 
-![](lst_validation_light.png)
-![](lst_validation_dark.png)
+![Validation for linear symplectic transformer.](lst_validation_light.png)
+![Validation for linear symplectic transformer.](lst_validation_dark.png)
 
 We can see that the standard transformer is not able to stay close to the trajectory coming from implicit midpoint very well. The linear symplectic transformer outperforms the standard transformer as well as the SympNet while needing fewer parameters than the standard transformer: 
 
