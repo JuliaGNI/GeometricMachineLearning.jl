@@ -163,4 +163,4 @@ end
 
 Base.NamedTuple(params::NeuralNetworkParameters) = NamedTuple{keys(params)}(values(params))
 
-AbstractNeuralNetworks.h5save(h5::HDF5.Group, params::NeuralNetworkParameters, s::AbstractString) = h5save(h5, NamedTuple(params), s)
+AbstractNeuralNetworks.h5save(h5::AbstractNeuralNetworks.HDF5.Group, params::NeuralNetworkParameters, s::AbstractString) = h5save(h5, NamedTuple(params), s)
