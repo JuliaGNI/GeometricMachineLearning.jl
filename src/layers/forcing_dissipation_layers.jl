@@ -16,7 +16,7 @@ The forcing layers are inspired by the Lagrange-d'Alembert integrator from [mars
     p^{(t+1)} = & p^{(t)} + & -h\nabla{}U(q^{(t+1)}) + hf_H(q^{(t+1)}, p^{(t)}),
 \end{aligned}
 ```
-for a separable Hamiltonian ``H(q, p) = T(p) + U(q) = p^TM^{-1}p + U(q)`` and external forcing ``f_H.`` 
+for a separable Hamiltonian ``H(q, p) = T(p) + U(q) = p^TM^{-1}p + U(q)`` and external forcing ``f_H.``
 """
 struct ForcingLayer{M, N, PT<:Base.Callable, CT, type, ReturnParameters} <: AbstractExplicitLayer{M, N}
     dim::Int
@@ -160,3 +160,7 @@ function (integrator::ForcingLayer{M, N, FT, AT, Type, false})(qp::AbstractArray
 end
 
 (integrator::ForcingLayer)(qp::QPTOAT2, params::NeuralNetworkParameters) = integrator(qp, NullParameters(), params)
+
+Base.NamedTuple(params::NeuralNetworkParameters) = NamedTuple{keys(params)}(values(params))
+
+AbstractNeuralNetworks.h5save(h5::HDF5.Group, params::NeuralNetworkParameters, s::AbstractString) = h5save(h5, NamedTuple(params), s)
