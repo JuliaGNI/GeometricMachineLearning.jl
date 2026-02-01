@@ -18,7 +18,7 @@ The forcing layers are inspired by the Lagrange-d'Alembert integrator from [mars
 ```
 for a separable Hamiltonian ``H(q, p) = T(p) + U(q) = p^TM^{-1}p + U(q)`` and external forcing ``f_H.``
 """
-struct ForcingLayer{M, N, PT<:Base.Callable, CT, type, ReturnParameters} <: AbstractExplicitLayer{M, N}
+struct ForcingLayer{M,N,PT<:Base.Callable,CT,type,ReturnParameters} <: AbstractExplicitLayer{M,N}
     dim::Int
     width::Int
     nhidden::Int
@@ -38,21 +38,21 @@ end
 
 A layer that is derived from the more general [`ForcingLayer`](@ref) and the resulting forcing only depends on the ``q`` component.
 """
-const ForcingLayerQ{M, N, FT, AT, ReturnParameters} = ForcingLayer{M, N, FT, AT, :Q, ReturnParameters}
+const ForcingLayerQ{M,N,FT,AT,ReturnParameters} = ForcingLayer{M,N,FT,AT,:Q,ReturnParameters}
 
 """
     ForcingLayerP
 
 A layer that is derived from the more general [`ForcingLayer`](@ref) and the resulting forcing only depends on the ``p`` component.
 """
-const ForcingLayerP{M, N, FT, AT, ReturnParameters} = ForcingLayer{M, N, FT, AT, :P, ReturnParameters}
+const ForcingLayerP{M,N,FT,AT,ReturnParameters} = ForcingLayer{M,N,FT,AT,:P,ReturnParameters}
 
 """
     ForcingLayerQP
 
 A layer that is derived from the more general [`ForcingLayer`](@ref) and the resulting forcing only depends on the ``q`` and the ``p`` component.
 """
-const ForcingLayerQP{M, N, FT, AT, ReturnParameters} = ForcingLayer{M, N, FT, AT, :QP, ReturnParameters}
+const ForcingLayerQP{M,N,FT,AT,ReturnParameters} = ForcingLayer{M,N,FT,AT,:QP,ReturnParameters}
 
 function build_chain(dim::Integer, width::Integer, nhidden::Integer, parameter_length::Integer, activation, type::Symbol)
     inner_layers = Tuple(
@@ -60,9 +60,9 @@ function build_chain(dim::Integer, width::Integer, nhidden::Integer, parameter_l
     )
 
     Chain(
-        type == :QP ? Dense(dim + parameter_length, width, activation) : Dense(dim÷2 + parameter_length, width, activation),
+        type == :QP ? Dense(dim + parameter_length, width, activation) : Dense(dim ÷ 2 + parameter_length, width, activation),
         inner_layers...,
-        Linear(width, dim÷2; use_bias = false)
+        Linear(width, dim ÷ 2; use_bias=false)
     )
 end
 
@@ -70,7 +70,7 @@ function ForcingLayer(dim::Integer, width::Integer, nhidden::Integer, activation
     flattened_parameters = ParameterHandling.flatten(parameters)
     parameter_length = length(flattened_parameters[1])
     c = build_chain(dim, width, nhidden, parameter_length, activation, type)
-    ForcingLayer{dim, dim, typeof(flattened_parameters[2]), typeof(c), type, return_parameters}(dim, width, nhidden, parameter_length, flattened_parameters[2], c)
+    ForcingLayer{dim,dim,typeof(flattened_parameters[2]),typeof(c),type,return_parameters}(dim, width, nhidden, parameter_length, flattened_parameters[2], c)
 end
 
 """
@@ -105,61 +105,62 @@ function ForcingLayerQP(dim::Integer, width::Integer=dim, nhidden::Integer=HNN_n
     ForcingLayer(dim, width, nhidden, activation; parameters=parameters, return_parameters=return_parameters, type=:QP)
 end
 
-function (integrator::ForcingLayerQ{M, N, FT, AT, false})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
+function (integrator::ForcingLayerQ{M,N,FT,AT,false})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M,N,FT,AT}
     input = concatenate_array_with_parameters(qp.q, problem_params)
-    (q = qp.q, p = qp.p + integrator.model(input, params))
+    (q=qp.q, p=qp.p + integrator.model(input, params))
 end
 
-function (integrator::ForcingLayerP{M, N, FT, AT, false})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
+function (integrator::ForcingLayerP{M,N,FT,AT,false})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M,N,FT,AT}
     input = concatenate_array_with_parameters(qp.p, problem_params)
-    (q = qp.q, p = qp.p + integrator.model(input, params))
+    (q=qp.q, p=qp.p + integrator.model(input, params))
 end
 
-function (integrator::ForcingLayerQP{M, N, FT, AT, false})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
+function (integrator::ForcingLayerQP{M,N,FT,AT,false})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M,N,FT,AT}
     input = concatenate_array_with_parameters(vcat(qp.q, qp.p), problem_params)
-    (q = qp.q, p = qp.p + integrator.model(input, params))
+    (q=qp.q, p=qp.p + integrator.model(input, params))
 end
 
-function (integrator::ForcingLayerQ{M, N, FT, AT, true})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
+function (integrator::ForcingLayerQ{M,N,FT,AT,true})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M,N,FT,AT}
     input = concatenate_array_with_parameters(qp.q, problem_params)
-    ((q = qp.q, p = qp.p + integrator.model(input, params)), problem_params)
+    ((q=qp.q, p=qp.p + integrator.model(input, params)), problem_params)
 end
 
-function (integrator::ForcingLayerP{M, N, FT, AT, true})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
+function (integrator::ForcingLayerP{M,N,FT,AT,true})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M,N,FT,AT}
     input = concatenate_array_with_parameters(qp.p, problem_params)
-    ((q = qp.q, p = qp.p + integrator.model(input, params)), problem_params)
+    ((q=qp.q, p=qp.p + integrator.model(input, params)), problem_params)
 end
 
-function (integrator::ForcingLayerQP{M, N, FT, AT, true})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
+function (integrator::ForcingLayerQP{M,N,FT,AT,true})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M,N,FT,AT}
     input = concatenate_array_with_parameters(vcat(qp.q, qp.p), problem_params)
-    ((q = qp.q, p = qp.p + integrator.model(input, params)), problem_params)
+    ((q=qp.q, p=qp.p + integrator.model(input, params)), problem_params)
 end
 
-function (integrator::ForcingLayer)(qp_params::Tuple{<:QPTOAT2, <:OptionalParameters}, params::NeuralNetworkParameters)
+function (integrator::ForcingLayer)(qp_params::Tuple{<:QPTOAT2,<:OptionalParameters}, params::NeuralNetworkParameters)
     integrator(qp_params..., params)
 end
 
-function (integrator::ForcingLayer)(::TT, ::NeuralNetworkParameters) where {TT <: Tuple}
+function (integrator::ForcingLayer)(::TT, ::NeuralNetworkParameters) where {TT<:Tuple}
     error("The input is of type $(TT). This shouldn't be the case!")
 end
 
-function (integrator::ForcingLayer{M, N, FT, AT, Type, true})(qp::AbstractArray, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT, Type}
+function (integrator::ForcingLayer{M,N,FT,AT,Type,true})(qp::AbstractArray, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M,N,FT,AT,Type}
     @assert iseven(size(qp, 1))
-    n = size(qp, 1)÷2
+    n = size(qp, 1) ÷ 2
     qp_split = assign_q_and_p(qp, n)
     evaluated = integrator(qp_split, problem_params, params)[1]
     (vcat(evaluated.q, evaluated.p), problem_params)
 end
 
-function (integrator::ForcingLayer{M, N, FT, AT, Type, false})(qp::AbstractArray, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT, Type}
+function (integrator::ForcingLayer{M,N,FT,AT,Type,false})(qp::AbstractArray, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M,N,FT,AT,Type}
     @assert iseven(size(qp, 1))
-    n = size(qp, 1)÷2
+    n = size(qp, 1) ÷ 2
     qp_split = assign_q_and_p(qp, n)
     evaluated = integrator(qp_split, problem_params, params)
     vcat(evaluated.q, evaluated.p)
 end
 
 (integrator::ForcingLayer)(qp::QPTOAT2, params::NeuralNetworkParameters) = integrator(qp, NullParameters(), params)
+(integrator::ForcingLayer)(qp::QPTOAT2, params::NamedTuple) = integrator(qp, NeuralNetworkParameters(params))
 
 Base.NamedTuple(params::NeuralNetworkParameters) = NamedTuple{keys(params)}(values(params))
 
