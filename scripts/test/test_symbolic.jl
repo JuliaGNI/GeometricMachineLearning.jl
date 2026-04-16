@@ -10,7 +10,7 @@ include("macro_testerror.jl")
 ########################################################################
 
 training_data = tra_ps_data
-nn = NeuralNetwork(HamiltonianNeuralNetwork(2; nhidden=2), Float64)
+nn = NeuralNetwork(HamiltonianArchitecture(2; nhidden=2), Float64)
 mopt = GradientOptimizer()
 method = SEulerA()
 nruns = 1
@@ -19,7 +19,7 @@ index_batch = get_batch(training_data, batch_size; check = false)
 
 @testnoerror snn = Symbolize(nn, 2)
 
-@test typeof(snn) <: SymbolicNeuralNetwork{<:HamiltonianNeuralNetwork}
+@test typeof(snn) <: SymbolicNeuralNetwork{<:HamiltonianArchitecture}
 
 @test neuralnet(snn)    == nn
 #@test architecture(snn) == nn.architecture 

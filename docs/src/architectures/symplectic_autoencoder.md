@@ -6,9 +6,9 @@ The architecture is represented by the figure below[^1]:
 
 [^1]: For the symplectic autoencoder we only use [SympNet gradient layers](@ref "SympNet Gradient Layer") because they seem to outperform ``LA``-SympNets in many cases and are easier to interpret: their nonlinear part is the gradient of a function that only depends on half the coordinates.
 
-```@example 
-Main.include_graphics("../tikz/symplectic_autoencoder"; width = .7, caption = raw"A visualization of the symplectic autoencoder architecture. It is a composition of SympNet layers and PSD-like layers. ") # hide
-```
+![A visualization of the symplectic autoencoder architecture. It is a composition of SympNet layers and PSD-like layers.](../tikz/symplectic_autoencoder_light.png)
+![A visualization of the symplectic autoencoder architecture. It is a composition of SympNet layers and PSD-like layers.](../tikz/symplectic_autoencoder_dark.png)
+
 
 It is a composition of [SympNet gradient layers](@ref "SympNet Gradient Layer") and [PSD-like matrices](@ref "Proper Symplectic Decomposition"), so a matrix ``A_i`` (respectively ``A_i^+``) is of the form
 
@@ -29,9 +29,8 @@ where ``A_i^{(+)} = A_i`` if ``d_{i+1} > d_i`` and ``A_i^{(+)} = A_i^+`` if ``d_
 
 so the symplectic inverse is equivalent to a matrix transpose in this case. In the symplectic autoencoder we use SympNets as a form of *symplectic preprocessing* before the linear symplectic reduction (i.e. the PSD layer) is employed. The resulting neural network has some of its weights on manifolds, which is why we cannot use standard neural network optimizers, but have to resort to [manifold optimizers](@ref "Generalization to Homogeneous Spaces"). Note that manifold optimization is not necessary for the weights corresponding to the SympNet layers, these are still updated with standard neural network optimizers during training. Also note that SympNets are nonlinear and preserve symplecticity, but they cannot change the dimension of a system while PSD layers can change the dimension of a system and preserve symplecticity, but are strictly linear. Symplectic autoencoders have all three properties: they preserve symplecticity, can change dimension and are nonlinear mappings. We can visualize this in a Venn diagram:
 
-```@example
-Main.include_graphics("../tikz/sae_venn"; caption = raw"Venn diagram visualizing that a symplectic autoencoder (SAE) is symplectic, can change dimension and is nonlinear. ") # hide
-```
+![Venn diagram visualizing that a symplectic autoencoder (SAE) is symplectic, can change dimension and is nonlinear.](../tikz/sae_venn_light.png)
+![Venn diagram visualizing that a symplectic autoencoder (SAE) is symplectic, can change dimension and is nonlinear.](../tikz/sae_venn_dark.png)
 
 We now show the proof that shows ``\nabla_{\mathcal{R}(z)}\psi = (\nabla_{z}\mathcal{R})^+`` which was used when [showing the equivalence between Hamiltonian systems on the full and the reduced space](@ref "The Symplectic Solution Manifold"):
 ```@eval
@@ -97,9 +96,8 @@ The second step (the multiplication by two) is needed to arrive at intermediate 
 
 A visualization of an instance of [`SymplecticAutoencoder`](@ref) is shown below: 
 
-```@example 
-Main.include_graphics("../tikz/symplectic_autoencoder_architecture"; width = .6, caption = raw"Example of a symplectic autoencoder. The SympNet layers are in green, the PSD-like layers are in blue. ") # hide
-```
+![Example of a symplectic autoencoder. The SympNet layers are in green, the PSD-like layers are in blue.](../tikz/symplectic_autoencoder_architecture_light.png)
+![Example of a symplectic autoencoder. The SympNet layers are in green, the PSD-like layers are in blue.](../tikz/symplectic_autoencoder_architecture_dark.png)
 
 In this figure we have the following configuration: `n_encoder_blocks` is two, `n_encoder_layers` is four, `n_decoder_blocks` is three and `n_decoder_layers` is two. For a full dimension of 100 and a reduced dimension of ten we can build such an instance of a symplectic autoencoder by calling:
 

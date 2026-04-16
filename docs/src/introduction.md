@@ -6,9 +6,9 @@ Despite the allure of neglecting hard-coded knowledge in an "era of big data" [d
 
 What this work aims at doing is not "to set the foundations for a new paradigm" [raissi2019physics](@cite), but rather to show that in many cases it is advantageous to imbue neural networks with specific structure and one should to do this whenever possible. In this regard this work is much more closely related to traditional numerics than to neural network research as we try to design problem-specific algorithms rather than "universal approximators" [hornik1989multilayer](@cite). The *structure-preserving neural networks* in this work are never fundamentally new architectures but build on existing neural network designs [vaswani2017attention, jin2020sympnets](@cite) or more classical methods [peng2016symplectic](@cite). We design neural networks that have a specific structure encoded in them (modeling part) and then make their behavior reflect information found in data (machine learning part). We refer to this as *geometric machine learning*.
 
-```@example
-Main.include_graphics("tikz/gml_venn"; width = .6, caption = "Geometric machine learning (GML) like traditional geometric numerical integration (GNI) and other structure-preserving numerical methods aims at building models that share properties with the analytic solution of a differential equation. ") # hide
-```
+
+![Geometric machine learning (GML) like traditional geometric numerical integration (GNI) and other structure-preserving numerical methods aims at building models that share properties with the analytic solution of a differential equation.](tikz/gml_venn_light.png)
+![Geometric machine learning (GML) like traditional geometric numerical integration (GNI) and other structure-preserving numerical methods aims at building models that share properties with the analytic solution of a differential equation.](tikz/gml_venn_dark.png)
 
 In the picture above we visualize that geometric machine learning aims at constructing so-called structure-preserving mappings that are ideally close to the analytic solution and perform better than classical methods (e.g. GNI). *Structure-preserving* here means that the model shares properties with the analytic solution of the underlying differential equation. In this work the most important of these properties are *symplecticity* and *volume preservation*, but this may extend to others such as the null space of certain operators [arnold2006finite](@cite) and symmetries encoded into a differential equation [lishkova2023discrete, dierkes2023hamiltonian](@cite).
 
@@ -55,9 +55,9 @@ One of the central parts of this dissertation is an *optimizer framework* that a
 
 [^4]: The optimizer framework was introduced in [brantner2023generalizing](@cite).
 
-```@example
-Main.include_graphics("tikz/tangent_vector"; caption = raw"Weights can be put on manifolds to achieve structure preservation or improved stability. ") # hide
-```
+![Weights can be put on manifolds to achieve structure preservation or improved stability.](tikz/tangent_vector_light.png)
+![Weights can be put on manifolds to achieve structure preservation or improved stability.](tikz/tangent_vector_dark.png)
+
 
 ## Special Neural Network Layers and Architectures
 
@@ -66,7 +66,7 @@ In here we first discuss specific neural network layers and then architectures. 
 Special neural network layers include:
 - [SympNet layers](@ref "SympNet Layers"): *symplectic neural networks* (SympNets) [jin2020sympnets](@cite) are special neural networks that are *universal approximators in the class of canonical symplectic maps.* SympNet layers comprise three different types: linear layers, activation layers and gradient layers. All these are introduced here.
 - [Volume-preserving layers](@ref "Volume-Preserving Feedforward Layer"): the volume-preserving layers presented here are inspired by linear and activation SympNet layers. They slightly differ from other approaches with the same aim [bajars2023locally](@cite).
-- [Attention layers](@ref "The Attention Layer"): many fields in neural network research have seen big improvements due to *attention mechanisms* [vaswani2017attention, patwardhan2023transformers, dosovitskiy2020image](@cite). Here we introduce this mechanism (which is a neural network layer) and also discuss how to make it volume-preserving [brantner2024volume](@cite). It serves as a basis for [multihead attention](@ref "Multihead Attention") and [linear symplectic attention](@ref "Linear Symplectic Attention").
+- [Attention layers](@ref "The Attention Layer"): many fields in neural network research have seen big improvements due to *attention mechanisms* [vaswani2017attention, patwardhan2023transformers, dosovitskiy2020image](@cite). Here we introduce this mechanism (which is a neural network layer) and also discuss how to make it volume-preserving [brantner2025volume](@cite). It serves as a basis for [multihead attention](@ref "Multihead Attention") and [linear symplectic attention](@ref "Linear Symplectic Attention").
 
 Special neural network architectures include:
 - [Symplectic autoencoders](@ref "The Symplectic Autoencoder"): the *symplectic autoencoder* constitutes one of the central elements of this dissertation. It offers a way of flexibly performing nonlinear model order reduction for Hamiltonian systems. In this section we explain its architecture and how it is implemented in `GeometricMachineLearning` in detail.
@@ -91,8 +91,8 @@ In this part we demonstrate the neural network architectures implemented in `Geo
 The following papers have emerged in connection with the development of `GeometricMachineLearning`:
 1. In [brantner2023generalizing](@cite) a new class of optimizers for *homogeneous spaces*, a category that includes the Stiefel manifold and the Grassmann manifold, is introduced. The results presented in this paper are reproduced in the [examples](@ref "MNIST Tutorial").
 2. In [brantner2023symplectic](@cite) we introduced a new neural network architectures that we call *symplectic autoencoders*. This is capable of performing non-linear Hamiltonian model reduction. During training of these symplectic autoencoders we use the optimizers introduced in [brantner2023generalizing](@cite). Similar results to what is presented in the paper are reproduced [as an example](@ref "Symplectic Autoencoders and the Toda Lattice").
-3. In [brantner2024volume](@cite) we introduce a new neural network architecture that we call *volume-preserving transformers*. This is a structure-preserving version of the *standard transformer* [vaswani2017attention](@cite) for which all components have been made volume preserving. As application we foresee the *online phase* in reduced order modeling.
+3. In [brantner2025volume](@cite) we introduce a new neural network architecture that we call *volume-preserving transformers*. This is a structure-preserving version of the *standard transformer* [vaswani2017attention](@cite) for which all components have been made volume preserving. As application we foresee the *online phase* in reduced order modeling.
 
 In addition there are new results presented in this work that have not been written up as a separate paper:
-4. Similar to the volume-preserving transformer [brantner2024volume](@cite) we introduce a [linear symplectic transformer](@ref "Linear Symplectic Transformer") that preserves a symplectic product structure and is also foreseen to be used in reduced order modeling.
+4. Similar to the volume-preserving transformer [brantner2025volume](@cite) we introduce a [linear symplectic transformer](@ref "Linear Symplectic Transformer") that preserves a symplectic product structure and is also foreseen to be used in reduced order modeling.
 5. We show how the [Grassmann manifold can be included into a neural network](@ref "Example of a Neural Network with a Grassmann Layer") and construct a loss based on the Wasserstein distance to approximate a nonlinear space from which we can then sample.

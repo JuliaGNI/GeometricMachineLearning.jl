@@ -4,7 +4,7 @@ directories:
 	mkdir -p final; mkdir -p flatten; mkdir -p original; mkdir -p split 
 
 images:
-	julia --project=../../.. mnist_visualization.jl
+	julia --project=../../.. -i mnist_visualization.jl
 	
 combined_patches:
 	xelatex -shell-escape final_image.tex xelatex
@@ -26,5 +26,5 @@ clean:
 	rm *.png
 
 png:
-	pdftocairo  -png -r 120 -transp -singlefile  mnist_visualization.pdf        mnist_visualization  
+	pdftocairo  -png -r 120 -transp -singlefile  mnist_visualization.pdf        mnist_visualization_light 
 	pdftocairo  -png -r 120 -transp -singlefile  mnist_visualization_dark.pdf   mnist_visualization_dark

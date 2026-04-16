@@ -24,7 +24,7 @@ const nruns = 1000
 opt = MomentumOptimizer(1e-2,0.5)
 
 # create HNN
-hnn = HamiltonianNeuralNetwork(ninput; nhidden = ln, width = ld)
+hnn = HamiltonianArchitecture(ninput; nhidden = ln, width = ld)
 
 # create Lux network
 nn = NeuralNetwork(hnn, CPU(), Float64)

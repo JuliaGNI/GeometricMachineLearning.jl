@@ -19,11 +19,11 @@ p_zero = false
 μ_right = T(4/6)
 
 function perform_integration(params, n_time_steps)
-    tspan = (T(0),T(1))
-    tstep = T((tspan[2] - tspan[1])/(n_time_steps-1))
+    timespan = (T(0),T(1))
+    timestep = T((timespan[2] - timespan[1])/(n_time_steps-1))
     ics_offset = p_zero ? get_initial_condition2(params.μ, params.Ñ) : get_initial_condition(params.μ, params.Ñ)
     ics = (q=ics_offset.q.parent, p=ics_offset.p.parent)
-    ode = HODEProblem(v_f_hamiltonian(params)..., parameters=params, tspan, tstep, ics)
+    ode = HODEProblem(v_f_hamiltonian(params)..., parameters=params, timespan, timestep, ics)
     sol = integrate(ode, ImplicitMidpoint())
 end
 

@@ -22,7 +22,7 @@ neural_net_solution = train!(neuralnet, training_data, training_parameters)
 
 @test GeometricMachineLearning.nn(neural_net_solution)            == neuralnet
 @test problem(neural_net_solution)       == UnknownProblem()
-@test tstep(neural_net_solution)         == 0.1
+@test timestep(neural_net_solution)         == 0.1
 @test length(loss(neural_net_solution))  == nruns
 @test size_history(neural_net_solution)  == 0
 @test nbtraining(neural_net_solution)    ==  1
@@ -43,7 +43,7 @@ train!(neural_net_solution, training_data2, training_parameters2)
 
 @test GeometricMachineLearning.nn(neural_net_solution)            == neuralnet
 @test problem(neural_net_solution)       == UnknownProblem()
-@test tstep(neural_net_solution)         == 0.1
+@test timestep(neural_net_solution)         == 0.1
 @test length(loss(neural_net_solution))  == 2*nruns
 @test size_history(neural_net_solution)  == 1
 @test nbtraining(neural_net_solution)    ==  2
@@ -63,7 +63,7 @@ train!(neural_net_solution, training_data3, training_parameters3)
 
 @test GeometricMachineLearning.nn(neural_net_solution)            == neuralnet
 @test problem(neural_net_solution)       == UnknownProblem()
-@test tstep(neural_net_solution)         == 0.1
+@test timestep(neural_net_solution)         == 0.1
 @test length(loss(neural_net_solution))  == nruns
 @test size_history(neural_net_solution)  == 2
 @test nbtraining(neural_net_solution)    ==  3

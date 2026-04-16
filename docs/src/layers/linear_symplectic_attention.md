@@ -2,7 +2,7 @@
 
 The attention layer introduced here can be seen as an extension of the [SympNet gradient layer](@ref "SympNet Gradient Layer") to the setting where we deal with time series data. Before we introduce the [`LinearSymplecticAttention`](@ref) layer we first define a notion of symplecticity for [multi-step methods](@ref "Multi-step methods"). 
 
-This definition is different from [feng1987symplectic, ge1988approximation](@cite), but similar to the [definition of volume-preservation for product spaces](@ref "How is Structure Preserved?") in [brantner2024volume](@cite).
+This definition is different from [feng1987symplectic, ge1988approximation](@cite), but similar to the [definition of volume-preservation for product spaces](@ref "How is Structure Preserved?") in [brantner2025volume](@cite).
 
 ```@eval
 Main.definition(raw"""

@@ -1,5 +1,5 @@
 using GeometricMachineLearning
-using GeometricMachineLearning: FeedForwardLoss, ResNetLayer
+using GeometricMachineLearning: ResNetLayer
 using Test 
 import Random 
 

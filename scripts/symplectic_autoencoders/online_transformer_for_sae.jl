@@ -7,7 +7,7 @@ using JLD2
 backend = CUDABackend()
 
 params = [(α = α̃ ^ 2, N = 200) for α̃ in 0.8 : .1 : 0.8]
-const pr = hodeensemble(; tspan = (0.0, 800.), parameters = params)
+const pr = hodeensemble(; timespan = (0.0, 800.), parameters = params)
 const sol = integrate(pr, ImplicitMidpoint())
 const dl_cpu_64 = DataLoader(sol; autoencoder = true)
 const dl = DataLoader(dl_cpu_64, backend, Float32)

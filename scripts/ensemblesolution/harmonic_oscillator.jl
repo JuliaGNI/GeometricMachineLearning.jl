@@ -8,7 +8,7 @@ using GeometricProblems.HarmonicOscillator: hodeensemble, hamiltonian, default_p
 
 
 #create the object ensemble_solution
-ensemble_problem = hodeensemble(tspan = (0.0,4.0))
+ensemble_problem = hodeensemble(timespan = (0.0,4.0))
 ensemble_solution =  exact_solution(ensemble_problem ) 
 
 include("plots.jl")

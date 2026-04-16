@@ -1,12 +1,12 @@
 # The Volume-Preserving Transformer for the Rigid Body
 
-Here we train a [volume-preserving feedforward neural network](@ref "Volume-Preserving Feedforward Neural Network"), a [standard transformer](@ref "Standard Transformer") and a [volume-preserving transformer](@ref "Volume-Preserving Transformer") on a rigid body [hairer2006geometric, arnold1978mathematical](@cite). These are also the results presented in [brantner2024volume](@cite). The ODE that describes the rigid body is: 
+Here we train a [volume-preserving feedforward neural network](@ref "Volume-Preserving Feedforward Neural Network"), a [standard transformer](@ref "Standard Transformer") and a [volume-preserving transformer](@ref "Volume-Preserving Transformer") on a rigid body [hairer2006geometric, arnold1978mathematical](@cite). These are also the results presented in [brantner2025volume](@cite). The ODE that describes the rigid body is: 
 
 ```math
 \frac{d}{dt}\begin{pmatrix} z_1 \\ z_2 \\ z_3 \end{pmatrix} = \begin{pmatrix} Az_2z_3 \\ Bz_1z_3 \\ Cz_1z_2 \end{pmatrix}.
 ```
 
-In the following we use ``A = 1,`` ``B = 1/2`` and ``C = -1/2.`` For a derivation of this equation see [brantner2024volume](@cite). 
+In the following we use ``A = 1,`` ``B = 1/2`` and ``C = -1/2.`` For a derivation of this equation see [brantner2025volume](@cite). 
 
 We first generate the data. The initial conditions that we use are:
 
@@ -26,8 +26,8 @@ nothing # hide
 We now generate the data by integrating with:
 
 ```@example rigid_body
-const tstep = .2
-const tspan = (0., 20.)
+const timestep = .2
+const timespan = (0., 20.)
 nothing # hide
 ```
 
@@ -38,9 +38,8 @@ using GeometricMachineLearning # hide
 using GeometricIntegrators: integrate, ImplicitMidpoint
 using GeometricProblems.RigidBody: odeproblem, odeensemble, default_parameters
 
-ensemble_problem = odeensemble(ics; tspan = tspan, tstep = tstep, parameters = default_parameters)
+ensemble_problem = odeensemble(ics; timespan = timespan, timestep = timestep, parameters = default_parameters)
 ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
-
 dl_cpu = DataLoader(ensemble_solution; suppress_info = true)
 nothing # hide
 ```
@@ -52,7 +51,6 @@ import Random # hide
 Random.seed!(123456) # hide
 const n_trajectories_to_plot = 5
 indices = Int.(ceil.(size(dl_cpu.input, 3) * rand(n_trajectories_to_plot)))
-
 trajectories = [dl_cpu.input[:, :, index] for index in indices]
 nothing # hide
 ```
@@ -108,15 +106,14 @@ end # hide
 fig_light = set_up_plot(; theme = :light)[1] # hide
 fig_dark = set_up_plot(; theme = :dark)[1] # hide
 
-save("rigid_body_trajectories.png", alpha_colorbuffer(fig_light)) # hide
+save("rigid_body_trajectories_light.png", alpha_colorbuffer(fig_light)) # hide
 save("rigid_body_trajectories_dark.png", alpha_colorbuffer(fig_dark)) # hide
 
 nothing # hide
 ```
 
-```@example
-Main.include_graphics("rigid_body_trajectories"; width = .7, caption = raw"A sample of rigid body trajectories. This system has two conserved quantities. ") # hide
-```
+![A sample of rigid body trajectories. This system has two conserved quantities.](rigid_body_trajectories_light.png)
+![A sample of rigid body trajectories. This system has two conserved quantities.](rigid_body_trajectories_dark.png)
 
 The rigid body has two conserved quantities:
 1. one conserved quantity is the [Hamiltonian of the system](@ref "Symplectic Systems"): ``H(z_1, z_2, z_3) = \frac{1}{2}\left( \frac{z_1^2}{I_1} + \frac{z_2^2}{I_2} + \frac{z_3^2}{I_3} \right),``
@@ -164,7 +161,7 @@ arch_st = StandardTransformerIntegrator(sys_dim;    n_heads = n_heads,
 nothing # hide
 ```
 
-Note that we set the keyword `skew_sym` to `false` here. This is different from what we did in [brantner2024volume](@cite), where it was set to true[^1]. We allocate the networks on GPU:
+Note that we set the keyword `skew_sym` to `false` here. This is different from what we did in [brantner2025volume](@cite), where it was set to true[^1]. We allocate the networks on GPU:
 
 [^1]: A detailed discussion of the consequences of setting this keyword is presented [as a separate example](@ref "Comparing Different `VolumePreservingAttention` Mechanisms").
 
@@ -229,17 +226,17 @@ ics_val₂ = [0., sin(1.1), cos(1.1)]
 const t_validation = 120
 
 function produce_trajectory(ics_val)
-    problem = odeproblem(ics_val;   tspan = (0, t_validation), 
-                                    tstep = tstep, 
+    problem = odeproblem(ics_val;   timespan = (0, t_validation), 
+                                    timestep = timestep, 
                                     parameters = default_parameters)
     solution = integrate(problem, ImplicitMidpoint())
     trajectory = Float32.(DataLoader(solution; suppress_info = true).input)
     nn_vpff_solution = iterate(nn_vpff, trajectory[:, 1]; 
-                                            n_points = Int(floor(t_validation / tstep)) + 1)
+                                            n_points = Int(floor(t_validation / timestep)) + 1)
     nn_vpt_solution = iterate(nn_vpt, trajectory[:, 1:seq_length];
-                                            n_points = Int(floor(t_validation / tstep)) + 1)
+                                            n_points = Int(floor(t_validation / timestep)) + 1)
     nn_st_solution = iterate(nn_st, trajectory[:, 1:seq_length];
-                                            n_points = Int(floor(t_validation / tstep)) + 1)
+                                            n_points = Int(floor(t_validation / timestep)) + 1)
     trajectory, nn_vpff_solution, nn_vpt_solution, nn_st_solution
 end
 
@@ -302,28 +299,27 @@ rowsize!(fig_light.layout, 1, Aspect(1, 1.))
 rowsize!(fig_dark.layout, 1, Aspect(1, 1.))
 resize_to_layout!(fig_light)
 resize_to_layout!(fig_dark)
-save("rigid_body_evaluation.png", alpha_colorbuffer(fig_light))
+save("rigid_body_evaluation_light.png", alpha_colorbuffer(fig_light))
 save("rigid_body_evaluation_dark.png", alpha_colorbuffer(fig_dark))
 nothing
 ```
 
-```@example rigid_body
-Main.include_graphics("rigid_body_evaluation"; width = .9, caption = "Evaluation of the three different networks for an interval (0, $(t_validation)). ") # hide
-```
+![Evaluation of the three different networks for an interval (0, 120).](rigid_body_evaluation_light.png)
+![Evaluation of the three different networks for an interval (0, 120).](rigid_body_evaluation_dark.png)
 
 We can see that the volume-preserving transformer performs much better than the volume-preserving feedforward neural network and the standard transformer. It is especially noteworthy that its curves stick to the sphere at all times, which is not the case for the standard transformer. We also see that the standard transformer seems to perform better for one of the curves shown, but completely fails for the other. Why this is should be further investigated. 
 
 We also compare the times it takes to integrate the system with (i) implicit midpoint, (ii) the volume-preserving transformer and (iii) the standard transformer:
 ```@example rigid_body
 function timing() # hide
-problem = odeproblem(ics_val₁; tspan = (0, t_validation), tstep = tstep, parameters = default_parameters) # hide
+problem = odeproblem(ics_val₁; timespan = (0, t_validation), timestep = timestep, parameters = default_parameters) # hide
 solution = integrate(problem, ImplicitMidpoint()) # hide
 @time "Implicit Midpoint" solution = integrate(problem, ImplicitMidpoint())
 trajectory = Float32.(DataLoader(solution; suppress_info = true).input)
-iterate(nn_vpt, trajectory[:, 1:seq_length]; n_points = Int(floor(t_validation / tstep)) + 1) # hide
-@time "VPT" iterate(nn_vpt, trajectory[:, 1:seq_length]; n_points = Int(floor(t_validation / tstep)) + 1)
-iterate(nn_st, trajectory[:, 1:seq_length]; n_points = Int(floor(t_validation / tstep)) + 1) # hide
-@time "ST" iterate(nn_st, trajectory[:, 1:seq_length]; n_points = Int(floor(t_validation / tstep)) + 1)
+iterate(nn_vpt, trajectory[:, 1:seq_length]; n_points = Int(floor(t_validation / timestep)) + 1) # hide
+@time "VPT" iterate(nn_vpt, trajectory[:, 1:seq_length]; n_points = Int(floor(t_validation / timestep)) + 1)
+iterate(nn_st, trajectory[:, 1:seq_length]; n_points = Int(floor(t_validation / timestep)) + 1) # hide
+@time "ST" iterate(nn_st, trajectory[:, 1:seq_length]; n_points = Int(floor(t_validation / timestep)) + 1)
 nothing # hide
 end # hide
 timing() # hide

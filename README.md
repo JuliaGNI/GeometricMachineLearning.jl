@@ -28,7 +28,7 @@ include("scripts/pendulum.jl")
 
 type = Float32 # Float16 etc.
 # get data 
-qp_data = GeometricMachineLearning.apply_toNT(a -> CuArray(type.(a)), pendulum_data((q=[0.], p=[1.]); tspan=(0.,100.)))
+qp_data = GeometricMachineLearning.apply_toNT(a -> CuArray(type.(a)), pendulum_data((q=[0.], p=[1.]); timespan=(0.,100.)))
 # call the DataLoader
 dl = DataLoader(qp_data)
 

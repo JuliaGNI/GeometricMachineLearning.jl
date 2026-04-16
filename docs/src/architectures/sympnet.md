@@ -24,18 +24,12 @@ SympNets can be viewed as a *symplectic integrator* or symplectic one-step metho
 ```
 The tilde in the above equation indicates *predicted data*. With standard SympNets[^2] the time step between predictions is not a parameter we can choose but is related to the *temporal frequency of the training data*. This means that if data is recorded in an interval of e.g. 0.1 seconds, then this will be the time step of our integrator.
 
-[^2]: Recently an approach [horn4555181generalized](@cite) has been proposed that makes explicitly specifying the time step possible by viewing SympNets as a subclass of so-called "Generalized Hamiltonian Neural Networks".
+[^2]: Recently an approach [horn2025generalized](@cite) has been proposed that makes explicitly specifying the time step possible by viewing SympNets as a subclass of so-called "Generalized Hamiltonian Neural Networks".
 
 SympNets preserve symplecticity by exploiting the ``(q, p)`` structure of the system. This is visualized below:
 
-
-```@example 
-  Main.include_graphics("../tikz/sympnet_architecture"; # hide
-  label = "fig:SympNetArchitecture", # hide
-  caption = "Visualization of the SympNet architecture. ", # hide
-  width = .7 # hide
-  ) # hide
-```
+![Visualization of the SympNet architecture.](../tikz/sympnet_architecture_light.png)
+![Visualization of the SympNet architecture.](../tikz/sympnet_architecture_dark.png)
 
 In the figure above we see that an update for ``q`` is based on data coming from ``p`` and an update for ``p`` is based on data coming from ``q``. ``T_i:\mathbb{R}^d\to\mathbb{R}^d`` is an operation that changes ``p`` when ``i`` is even and changes ``q`` when odd. It has the special property that its Jacobian is a symmetric matrix. There are two types of SympNet architectures: ``LA``-SympNets and ``G``-SympNets. 
  
@@ -195,7 +189,7 @@ The universal approximation theorems state that we can, in principle, get arbitr
 
 To train the SympNet, one needs data along a trajectory such that the model is trained to perform an integration. The loss function is defined as[^6]:
 
-[^6]: This loss function is implemented as [`FeedForwardLoss`](@ref) in `GeometricMachineLearning`.
+[^6]: This loss function is implemented as `FeedForwardLoss` in `AbstractNeuralNetworks`.
 
 ```math
 \mathrm{loss}(z^\mathrm{c}, z^\mathrm{p}) = \frac{|| z^\mathrm{c} - z^\mathrm{p} ||}{|| z^\mathrm{c} ||},

@@ -59,7 +59,7 @@ function rewrite(fun, SV, SX, ti, nn)
 end
 
 
-function build_hamiltonien(nn::NeuralNetwork{<:HamiltonianNeuralNetwork})
+function build_hamiltonien(nn::NeuralNetwork{<:HamiltonianArchitecture})
 
     # dimenstion of the input
     dimin = dim(nn.architecture)
@@ -90,14 +90,14 @@ function transposymplecticMatrix(n::Int)
     [Z -I; I Z]
 end
 
-nn= NeuralNetwork(HamiltonianNeuralNetwork(2, nhidden = 1), Float64)
+nn= NeuralNetwork(HamiltonianArchitecture(2, nhidden = 1), Float64)
 _,v = build_hamiltonien(nn)
 evalv = eval(v)
 vectorfield(x, params) = evalv(x, develop(params)...)
 
 
 
-function los(::TrainingIntegrator{SymplecticEulerA}, nn::AbstractNeuralNetwork{<:HamiltonianNeuralNetwork}, qₙ, qₙ₊₁, pₙ, pₙ₊₁, Δt, params = nn.params)
+function los(::TrainingIntegrator{SymplecticEulerA}, nn::AbstractNeuralNetwork{<:HamiltonianArchitecture}, qₙ, qₙ₊₁, pₙ, pₙ₊₁, Δt, params = nn.params)
     dH = vectorfield([qₙ₊₁...,pₙ...], params)
     sqeuclidean(dH[1],(qₙ₊₁-qₙ)/Δt) + sqeuclidean(dH[2],(pₙ₊₁-pₙ)/Δt)
 end

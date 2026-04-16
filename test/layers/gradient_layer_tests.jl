@@ -1,4 +1,5 @@
 using GeometricMachineLearning
+using GeometricMachineLearning: params
 using Test
 using KernelAbstractions
 import Random, Zygote
@@ -7,7 +8,7 @@ Random.seed!(1234)
 
 function test_gradient_layer_application(T, M, N, batch_size=10)
     dummy_model = Chain(GradientLayerQ(M, N, tanh))
-    ps = NeuralNetwork(dummy_model, CPU(), T).params
+    ps = params(NeuralNetwork(dummy_model, CPU(), T))
 
     x = rand(T, M)
     x_applied = dummy_model(x, ps)
@@ -22,7 +23,7 @@ end
 
 function test_gradient_layer_derivative_and_update(T, M, N, batch_size=10)
     dummy_model = Chain(GradientLayerP(M, N, tanh), GradientLayerQ(M, N, tanh))
-    ps = NeuralNetwork(dummy_model, CPU(), T).params
+    ps = params(NeuralNetwork(dummy_model, CPU(), T))
     o = Optimizer(AdamOptimizer(T(0.1), T(.9), T(0.999), T(3e-7)), ps)
 
     # test for vector 

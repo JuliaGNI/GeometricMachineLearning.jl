@@ -35,7 +35,7 @@ end
 
 
 #=
-Data = get_multiple_trajectory_structure(:pendulum; n_trajectory = 20, n_points = 1000, tstep = 0.1, qmin = -1.2, pmin = -1.2, qmax = 1.2, pmax = 1.2)
+Data = get_multiple_trajectory_structure(:pendulum; n_trajectory = 20, n_points = 1000, timestep = 0.1, qmin = -1.2, pmin = -1.2, qmax = 1.2, pmax = 1.2)
 
 Get_Data = Dict(
     :Δt => Data -> Data.Δt,

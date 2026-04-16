@@ -16,18 +16,22 @@ This is used for the neural networks [`StandardTransformerIntegrator`](@ref) and
 The optional keyword arguments to `MultiHeadAttention` are:
 - `Stiefel::Bool=false`
 - `add_connection::Bool=true`
+- `activation::AbstractSoftmax=`[`VectorSoftmax`](@ref).
 
 `Stiefel` indicates whether weights are put on the [`StiefelManifold`](@ref) ``St(\mathrm{dim}, \mathrm{dim}\div\mathrm{n\_heads})``.
 
 `add_connection` indicates whether the input is again added to the output.
 """
-struct MultiHeadAttention{M, N, Stiefel, add_connection} <: AbstractExplicitLayer{M, N}
+struct MultiHeadAttention{M, N, Stiefel, add_connection, AT<:AbstractSoftmax} <: AbstractExplicitLayer{M, N}
     n_heads::Int
+    activation::AT
 end
 
-function MultiHeadAttention(dim::Int, n_heads::Int; Stiefel::Bool=false, add_connection::Bool=true)
+function MultiHeadAttention(dim::Int, n_heads::Int; Stiefel::Bool=false, 
+                                                    add_connection::Bool=true, 
+                                                    activation::AbstractSoftmax=VectorSoftmax())
     @assert dim % n_heads == 0
-    MultiHeadAttention{dim, dim, Stiefel, add_connection}(n_heads)
+    MultiHeadAttention{dim, dim, Stiefel, add_connection, typeof(activation)}(n_heads, activation)
 end
 
 function parameterlength(::MultiHeadAttention{M, M, false}) where M
@@ -101,7 +105,7 @@ function compute_output_of_mha(d::MultiHeadAttention{M, M}, x::AbstractMatrix{T}
     output = typeof(x)(zeros(T, 0, input_length))
     for i in 1:d.n_heads
         key = Symbol("head_"*string(i))
-        output = vcat(output, ps.PV[key]' * x * softmax((ps.PQ[key]' * x)' * (ps.PK[key]' * x) / T(sqrt(dim))))
+        output = vcat(output, ps.PV[key]' * x * d.activation((ps.PQ[key]' * x)' * (ps.PK[key]' * x) / T(sqrt(dim))))
     end
     output
 end
@@ -131,7 +135,7 @@ function compute_output_of_mha(d::MultiHeadAttention{M, M}, x::AbstractArray{T, 
         V_tensor = mat_tensor_mul(ps.PV[key]', x)
         QK_tensor = tensor_transpose_tensor_mul(Q_tensor, K_tensor)
 
-        single_head_output = tensor_tensor_mul(V_tensor, softmax(QK_tensor/T(sqrt(dim))))
+        single_head_output = tensor_tensor_mul(V_tensor, d.activation(QK_tensor/T(sqrt(dim))))
         output = vcat(output, single_head_output) 
     end
     output

@@ -75,6 +75,10 @@ function (loss::TransformerLoss)(model::Union{Chain, AbstractExplicitLayer}, ps:
     loss(model, ps, reshape(input, size(input)..., 1), reshape(output, size(output)..., 1))
 end
 
+function (loss::TransformerLoss)(model::Union{Chain, AbstractExplicitLayer}, ps::Union{NeuralNetworkParameters, NamedTuple}, input::T, output::T) where {T <: QPT}
+    loss(model, ps, vcat(input.q, input.p), vcat(output.q, output.p))
+end
+
 # @doc raw"""
 #     ClassificationTransformerLoss()
 # 
@@ -100,51 +104,6 @@ function (loss::ClassificationTransformerLoss)(model::Union{Chain, AbstractExpli
     # predicted_output_cropped = crop_array_for_transformer_loss(predicted_output_uncropped, output)
     norm(predicted_output_uncropped - output) / norm(output)
 end
-
-@doc raw"""
-    FeedForwardLoss()
-
-Make an instance of a loss for feedforward neural networks.
-
-This should be used together with a neural network of type [`NeuralNetworkIntegrator`](@ref).
-
-# Example 
-
-`FeedForwardLoss` applies a neural network to an input and compares it to the `output` via an ``L_2`` norm:
-
-```jldoctest 
-using GeometricMachineLearning
-using LinearAlgebra: norm
-import Random
-Random.seed!(123)
-
-const d = 2
-arch = GSympNet(d)
-nn = NeuralNetwork(arch)
-
-input_vec =  [1., 2.]
-output_vec = [3., 4.]
-loss = FeedForwardLoss()
-
-loss(nn, input_vec, output_vec) ≈ norm(output_vec - nn(input_vec)) / norm(output_vec)
-
-# output
-
-true
-```
-
-So `FeedForwardLoss` simply does:
-
-```math
-    \mathtt{loss}(\mathcal{NN}, \mathtt{input}, \mathtt{output}) = || \mathcal{NN}(\mathtt{input}) - \mathtt{output} || / || \mathtt{output}||,
-```
-where ``||\cdot||`` is the ``L_2`` norm. 
-
-# Parameters
-
-This loss does not have any parameters.
-"""
-struct FeedForwardLoss <: NetworkLoss end
 
 @doc raw"""
     AutoEncoderLoss()
@@ -191,13 +150,15 @@ This loss does not have any parameters.
 """
 struct AutoEncoderLoss <: NetworkLoss end 
 
-function (loss::AutoEncoderLoss)(nn::NeuralNetwork, input)
+function (loss::AutoEncoderLoss)(nn::NeuralNetwork, input::QPTOAT)
     loss(nn.model, params(nn), input, input)
 end
 
-function (loss::AutoEncoderLoss)(model::Union{Chain, AbstractExplicitLayer}, ps::Union{NeuralNetworkParameters, NamedTuple}, input)
+function (loss::AutoEncoderLoss)(model::Union{Chain, AbstractExplicitLayer}, ps::Union{NeuralNetworkParameters, NamedTuple}, input::QPTOAT)
     loss(model, ps, input, input)
 end
+
+(loss::AutoEncoderLoss)(model::Union{Chain, AbstractExplicitLayer}, ps::Union{NeuralNetworkParameters, NamedTuple}, input::QPTOAT, output::QPTOAT) = FeedForwardLoss()(model, ps, input, output)
 
 @doc raw"""
     ReducedLoss(encoder, decoder)
