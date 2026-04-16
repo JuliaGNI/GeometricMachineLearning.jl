@@ -271,8 +271,8 @@ function DataLoader(data::NamedTuple{(:q, :p), Tuple{VT, VT}};
                 suppress_info = suppress_info)
 end
 
-function data_tensors_from_geometric_solution(solution::GeometricSolution{T, T2, TT, NT}) where {T <: Number, T2 <: Number, TT <: TimeSeries{T2}, DT <: DataSeries{T}, NT<:NamedTuple{(:q, :p), Tuple{DT, DT}}}
-    sys_dim, input_time_steps = length(solution.s.q[0]), length(solution.t)
+function data_tensors_from_geometric_solution(solution::GeometricSolution{T, T2, TT, NT}) where {T <: Number, T2 <: Number, TT <: TimeSeries{T2}, TuT, NT <: NamedTuple{(:t, :q, :p, :q̇, :ṗ), TuT}}
+    sys_dim, input_time_steps = length(solution.dataser.q[0]), length(solution.t)
     data = (q = zeros(T, sys_dim, input_time_steps, 1), p = zeros(T, sys_dim, input_time_steps, 1))
 
     for dim in 1:sys_dim
@@ -283,8 +283,8 @@ function data_tensors_from_geometric_solution(solution::GeometricSolution{T, T2,
     data
 end
 
-function data_tensors_from_geometric_solution(solution::GeometricSolution{T, T2, TT, NT}) where {T <: Number, T2 <: Number, TT <: TimeSeries{T2}, DT <: DataSeries{T}, NT<:NamedTuple{(:q, ), Tuple{DT}}}
-    sys_dim, input_time_steps = length(solution.s.q[0]), length(solution.t)
+function data_tensors_from_geometric_solution(solution::GeometricSolution{T, T2, TT, NT}) where {T <: Number, T2 <: Number, TT <: TimeSeries{T2}, TuT, NT <: NamedTuple{(:t, :q, :v), TuT}}
+    sys_dim, input_time_steps = length(solution.dataser.q[0]), length(solution.t)
     data = zeros(T, sys_dim, input_time_steps, 1)
 
     for dim in 1:sys_dim
@@ -293,6 +293,7 @@ function data_tensors_from_geometric_solution(solution::GeometricSolution{T, T2,
 
     data
 end
+
 
 """
     DataLoader(solution)
@@ -316,12 +317,10 @@ function DataLoader(solution::GeometricSolution{T, T2, TT, NT}, suppress_info = 
                                                                                 {T <: Number,
                                                                                  T2 <: Number,
                                                                                  TT <: TimeSeries{T2},
-                                                                                 DT <: DataSeries{T},
+                                                                                 TuT,
                                                                                  NT <: Union{
-                                                                                    NamedTuple{(:q, :p),
-                                                                                    Tuple{DT, DT}},
-                                                                                    NamedTuple{(:q, ),
-                                                                                    Tuple{DT}}}}
+                                                                                    NamedTuple{(:t, :q, :p, :q̇,:ṗ), TuT},
+                                                                                    NamedTuple{(:t, :q, :v), TuT}}}
     data = data_tensors_from_geometric_solution(solution)
 
     DataLoader(data; suppress_info = suppress_info, kwargs...)
@@ -333,13 +332,13 @@ function DataLoader(ensemble_solution::EnsembleSolution{T, T1, Vector{ST}};
                                     DT,
                                     ST <: GeometricSolution{T, T1, NamedTuple{(:q, ), Tuple{DT}}}}
 
-    sys_dim = length(ensemble_solution.s[1].q[0])
+    sys_dim = length(ensemble_solution.dataser[1].q[0])
     input_time_steps = length(ensemble_solution.t)
-    n_params = length(ensemble_solution.s)
+    n_params = length(ensemble_solution.dataser)
 
     data = zeros(sys_dim, input_time_steps, n_params)
 
-    for (solution, i) in zip(ensemble_solution.s, axes(ensemble_solution.s, 1))
+    for (solution, i) in zip(ensemble_solution.dataser, axes(ensemble_solution.dataser, 1))
         for dim in 1:sys_dim
             data[dim, :, i] = solution.q[:, dim]
         end
@@ -376,13 +375,13 @@ function DataLoader(ensemble_solution::EnsembleSolution{T, T1, Vector{ST}};
                              ST <: GeometricSolution{T, T1, NamedTuple{(:q, :p), Tuple{DT, DT}}}
                              }
 
-    sys_dim = length(ensemble_solution.s[1].q[0])
+    sys_dim = length(ensemble_solution.dataser[1].q[0])
     input_time_steps = length(ensemble_solution.t)
-    n_params = length(ensemble_solution.s)
+    n_params = length(ensemble_solution.dataser)
 
     data = (q = zeros(T, sys_dim, input_time_steps, n_params), p = zeros(T, sys_dim, input_time_steps, n_params))
 
-    for (solution, i) in zip(ensemble_solution.s, axes(ensemble_solution.s, 1))
+    for (solution, i) in zip(ensemble_solution.dataser, axes(ensemble_solution.dataser, 1))
         for dim in 1:sys_dim
             data.q[dim, :, i] = solution.q[:, dim]
             data.p[dim, :, i] = solution.p[:, dim]
