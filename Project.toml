@@ -55,7 +55,7 @@ SymbolicNeuralNetworks = "0.3"
 Symbolics = "6.22"
 TimerOutputs = "0.5"
 UpdateJulia = "0.4"
-Zygote = "0.6"
+Zygote = "0.6, 0.7"
 ZygoteRules = "0.2.7"
 julia = "1.8"
 
