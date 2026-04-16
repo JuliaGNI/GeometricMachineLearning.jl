@@ -75,7 +75,7 @@ Because the main task of the ``W_i^V``, ``W_i^K`` and ``W_i^Q`` matrices here is
 
 ## Using a Matrix Softmax
 
-Usually the attention layer is using a [`VectorSoftmax`](@ref), i.e. one that produces a series of probability vectors. In `GeometricMachineLearning` we can also use a [`MatrixSoftmax`](@ref) instead. An example application of this is shown [in the tutorials section](@ref "Matrix Softmax v Vector Softmax").
+Usually the attention layer is using a [`VectorSoftmax`](@ref), i.e. one that produces a series of probability vectors. In `GeometricMachineLearning` we can also use a [`MatrixSoftmax`](@ref) instead. An example application of this is shown [in the tutorials section](@ref "Comparing Different `VolumePreservingAttention` Mechanisms").
 
 ## Library Functions 
 

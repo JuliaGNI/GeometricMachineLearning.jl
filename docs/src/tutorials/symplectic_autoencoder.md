@@ -48,8 +48,8 @@ h(s)  = \begin{cases}
 
 Plotted on the relevant domain it looks like this: 
 
-![](../tikz/third_degree_spline_light.png)
-![](../tikz/third_degree_spline_dark.png)
+![Third degree spline.](../tikz/third_degree_spline_light.png)
+![Third degree spline.](../tikz/third_degree_spline_dark.png)
 
 We end up with the following choice of parametrized initial conditions: 
 
@@ -84,7 +84,7 @@ sol = integrate(pr, ImplicitMidpoint())
 nothing # hide
 ```
 
-We then put the format in the correct format by calling [`DataLoader`](@ref)[^1]:
+We then put the data in the correct format by calling [`DataLoader`](@ref)[^1]:
 
 [^1]: For more information on [`DataLoader`](@ref) see the [corresponding section](@ref "The Data Loader").
 

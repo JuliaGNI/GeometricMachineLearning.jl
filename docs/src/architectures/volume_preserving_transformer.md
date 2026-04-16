@@ -1,6 +1,6 @@
 # Volume-Preserving Transformer
 
-The volume-preserving transformer [brantner2024volume](@cite) is, similar to the standard transformer, a combination of two different neural networks: a [volume-preserving attention layer](@ref "Volume-Preserving Attention") and a [volume-preserving feedforward layer](@ref "Volume-Preserving Feedforward Neural Network"). It is visualized below:
+The volume-preserving transformer [brantner2025volume](@cite) is, similar to the standard transformer, a combination of two different neural networks: a [volume-preserving attention layer](@ref "Volume-Preserving Attention") and a [volume-preserving feedforward layer](@ref "Volume-Preserving Feedforward Neural Network"). It is visualized below:
 
 ![Visualization of the Volume-Preserving Transformer architecture.](../tikz/vp_transformer_light.png)
 ![Visualization of the Volume-Preserving Transformer architecture.](../tikz/vp_transformer_dark.png)
@@ -44,7 +44,7 @@ VolumePreservingTransformer
 Pages = []
 Canonical = false
 
-brantner2024volume
+brantner2025volume
 ```
 
 ```@raw latex

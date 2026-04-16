@@ -29,7 +29,7 @@ Here we take as a staring point the expression:
 Its gradient (with respect to ``Z``) is:
 
 ```math
-\frac{\partial\Sigma(Z)}{\partial{}Z_{ij}} = \frac{1}{1 + \sum{m, n}\exp(C_{mn})}\sum_{m'n'}\exp(C_{m'n'})\sum_{\ell}(\delta_{jm'}A_{i\ell}Z_{\ell{}n'} + \delta_{jn'}Z_{\ell{}m'}A_{\ell{}i}) = \frac{1}{1 + \sum_{m,n}\exp(C_{mn})}\{[AZ\exp.(C)^T]_{ij} +  [A^TZ\exp.(C)]_{ij}\}.
+\frac{\partial\Sigma(Z)}{\partial{}Z_{ij}} & = \frac{1}{1 + \sum{m, n}\exp(C_{mn})}\sum_{m'n'}\exp(C_{m'n'})\sum_{\ell}(\delta_{jm'}A_{i\ell}Z_{\ell{}n'} + \delta_{jn'}Z_{\ell{}m'}A_{\ell{}i}) \\ & = \frac{1}{1 + \sum_{m,n}\exp(C_{mn})}\{[AZ\exp.(C)^T]_{ij} +  [A^TZ\exp.(C)]_{ij}\}.
 ```
 
 Note that if `A` is a [`SymmetricMatrix`](@ref) the expression than simplifies to:

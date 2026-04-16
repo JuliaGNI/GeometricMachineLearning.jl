@@ -65,8 +65,8 @@ The two steps together are performed as [`global_rep`](@ref) in `GeometricMachin
 
 and then perform all the steps of the optimizer in ``\mathfrak{g}^\mathrm{hor}.`` We can visualize all the steps required in the generalization of the optimizers:
 
-![](../tikz/general_optimization_with_boundary_light.png)
-![](../tikz/general_optimization_with_boundary_dark.png)
+![Schematic visualization of neural network optimizers to homogeneous spaces.](../tikz/general_optimization_with_boundary_light.png)
+![Schematic visualization of neural network optimizers to homogeneous spaces.](../tikz/general_optimization_with_boundary_dark.png)
 
 This picture summarizes all steps involved in an optimization step:
 1. map the Euclidean gradient ``\nabla{}L\in\mathbb{R}^{N\times{}n}`` that was obtained via [automatic differentiation](@ref "Pullbacks and Automatic Differentiation") to the Riemannian gradient ``\mathrm{grad}L\in{}T_Y\mathcal{M}`` with the function [`rgrad`](@ref),

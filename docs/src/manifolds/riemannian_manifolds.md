@@ -74,7 +74,7 @@ Random.seed!(123) # hide
 
 Y = rand(StiefelManifold, 3, 1)
 
-v = 5 * rand(3, 1)
+v = 2 * rand(3, 1)
 Δ = v - Y * (v' * Y)
 
 morange = RGBf(255 / 256, 127 / 256, 14 / 256) # hide
@@ -126,8 +126,8 @@ save("sphere_with_tangent_vec_dark.png", alpha_colorbuffer(fig_dark)) # hide
 nothing # hide
 ```
 
-![](sphere_with_tangent_vec_light.png)
-![](sphere_with_tangent_vec_dark.png)
+![A tangent vector on ``\mathcal{M}`` determines a direction.](sphere_with_tangent_vec_light.png)
+![A tangent vector on ``\mathcal{M}`` determines a direction.](sphere_with_tangent_vec_dark.png)
 
 
 We now solve the geodesic spray for ``\eta\cdot\Delta`` for ``\eta = 0.1, 0.2, \ldots, 5.5`` with the function [`geodesic`](@ref) and plot the corresponding points:
@@ -156,8 +156,8 @@ save("sphere_with_tangent_vec_and_geodesic_dark.png", alpha_colorbuffer(fig_dark
 nothing # hide
 ```
 
-![](sphere_with_tangent_vec_and_geodesic_light.png)
-![](sphere_with_tangent_vec_and_geodesic_dark.png)
+![Solving the geodesic gives a path along the tangent vector, equivalent to a straight line in flat space.](sphere_with_tangent_vec_and_geodesic_light.png)
+![Solving the geodesic gives a path along the tangent vector, equivalent to a straight line in flat space.](sphere_with_tangent_vec_and_geodesic_dark.png)
 
 A geodesic can be seen as the *equivalent of a straight line* on a manifold. Also note that we drew a random element form [`StiefelManifold`](@ref) here, and not from ``S^2``. This is because the category of [Stiefel manifolds](@ref "The Stiefel Manifold") is more general than the category of spheres ``S^n``: ``St(1, 3) \simeq S^2``.
 
