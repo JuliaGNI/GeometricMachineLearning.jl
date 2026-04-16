@@ -5,7 +5,7 @@ module GeometricMachineLearning
     using ChainRulesCore
     using Distances
     using GeometricBase
-    using GeometricSolutions: GeometricSolution, EnsembleSolution, DataSeries, StateVariable
+    using GeometricSolutions: GeometricSolution, EnsembleSolution, DataSeries, StateVariable, TimeSeries
     using GeometricEquations: EnsembleProblem, ODEProblem, HODEProblem, ODEEnsemble, HODEEnsemble
     using KernelAbstractions
     using LinearAlgebra
@@ -46,7 +46,7 @@ module GeometricMachineLearning
     export initialparameters
     export parameterlength
     export NeuralNetworkParameters
-    
+
     export σ, sigmoid, softmax
 
     # from GeometricBase to print docs
@@ -106,7 +106,7 @@ module GeometricMachineLearning
 
     # this defines empty retraction type structs (doesn't rely on anything)
     include("optimizers/manifold_related/retraction_types.jl")
-    
+
     export MatrixSoftmax, VectorSoftmax
     include("activations/softmax.jl")
 
@@ -115,7 +115,7 @@ module GeometricMachineLearning
 
     # + operation has been overloaded to work with NamedTuples!
     export _add, apply_toNT, split_and_flatten, add!
-    
+
     # GPU specific operations
     export convert_to_dev, Device, CPUDevice
 
@@ -139,7 +139,7 @@ module GeometricMachineLearning
     include("optimizers/optimizer_caches.jl")
     include("optimizers/optimizer.jl")
     include("optimizers/gradient_optimizer.jl")
-    include("optimizers/momentum_optimizer.jl")        
+    include("optimizers/momentum_optimizer.jl")
     include("optimizers/adam_optimizer.jl")
     include("optimizers/adam_optimizer_with_learning_rate_decay.jl")
     include("optimizers/bfgs_cache.jl")
@@ -202,11 +202,11 @@ module GeometricMachineLearning
     export AbstractTrainingMethod
 
     export loss_single #, loss
-    
+
     export HnnTrainingMethod
     export LnnTrainingMethod
     export SympNetTrainingMethod
-    
+
     include("training_method/abstract_training_method.jl")
 
     # INCLUDE DATA TRAINING STRUCTURE
@@ -227,8 +227,8 @@ module GeometricMachineLearning
     export TrainingMethod
     export symbol, shape
     export min_length_batch
-    
-    
+
+
     include("training_method/training_method.jl")
 
      # INCLUDE DATA TRAINING STRUCTURE
@@ -237,11 +237,11 @@ module GeometricMachineLearning
     export shape, symbols, dim, noisemaker, data_symbols # , problem
     export reduce_symbols, reshape_intoSampledData
     export aresame
-    
+
     include("data/data_training.jl")
 
     export get_batch, complete_batch_size, check_batch_size
-    
+
     include("data/batch.jl")
 
     # INCLUDE BACKENDS
@@ -329,7 +329,7 @@ module GeometricMachineLearning
     export NeuralNetSolution
     export problem, timestep, history, size_history
     export set_sizemax_history
-    
+
     include("nnsolution/neural_net_solution.jl")
 
     export EnsembleNeuralNetSolution
@@ -386,7 +386,7 @@ module GeometricMachineLearning
     include("training_method/sympnet_basic_method.jl")
 
     export default_method
-    
+
     include("training/default_method.jl")
 
 
