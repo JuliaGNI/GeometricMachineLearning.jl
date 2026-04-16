@@ -86,8 +86,8 @@ _copy(qp::QPT) = (q = copy(qp.q), p = copy(qp.p))
 _copy(t::Tuple{<:QPTOAT, <:QPTOAT}) = _copy.(t)
 
 function (o::Optimizer)(nn::NeuralNetwork, 
-                        dl::DataLoader, 
-                        batch::Batch, 
+                        dl, 
+                        batch::Batch,
                         n_epochs::Integer, 
                         loss::NetworkLoss, 
                         _pullback::AbstractPullback = ZygotePullback(loss); show_progress = true)

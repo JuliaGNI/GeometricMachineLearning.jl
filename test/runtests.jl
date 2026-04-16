@@ -27,6 +27,7 @@ using Documenter: doctest
 @safetestset "Gradient Layer                                                                  " begin include("layers/gradient_layer_tests.jl") end
 @safetestset "Test symplecticity of upscaling layer                                           " begin include("layers/sympnet_layers_test.jl") end 
 @safetestset "Hamiltonian Neural Network                                                      " begin include("hamiltonian_neural_network_tests.jl") end
+@safetestset "Generalized Hamiltonian Neural Network                                          " begin include("generalized_hamiltonian_neural_networks_test.jl") end
 @safetestset "Manifold Neural Network Layers                                                  " begin include("layers/manifold_layers.jl") end
 
 @safetestset "Custom tensor matrix multiplication                                             " begin include("kernels/tensor_mat_mul.jl") end
@@ -61,6 +62,7 @@ using Documenter: doctest
 @safetestset "Test the data loader in combination with optimization_step!                     " begin include("data_loader/data_loader_optimization_step.jl") end
 @safetestset "Optimizer functor with data loader for Adam                                     " begin include("data_loader/optimizer_functor_with_adam.jl") end
 @safetestset "Test data loader for a tensor (q and p data)                                    " begin include("data_loader/draw_batch_for_tensor_test.jl") end
+@safetestset "Parametric DataLoader                                                           " begin include("data_loader/parametric_data_loader_test.jl") end
 
 @safetestset "Test NetworkLoss + Optimizer                                                    " begin include("network_losses/losses_and_optimization.jl") end
 
@@ -81,3 +83,5 @@ using Documenter: doctest
 @safetestset "Linear Symplectic Transformer                                                   " begin include("linear_symplectic_transformer.jl") end
 
 @safetestset "DataLoader for input and output                                                 " begin include("data_loader/data_loader_for_input_and_output.jl") end
+
+@safetestset "Test symbolic pullback for PGHNN with single layer                              " begin include("generalized_hamiltonian_neural_networks/pghnn_symbolic_pullback_single_layer_test.jl") end

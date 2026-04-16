@@ -236,36 +236,36 @@ function custom_vec_mul(scale::AbstractVector{T}, x::AbstractArray{T, 3}) where 
         vec_tensor_mul(scale, x)
 end
 
-@inline function (d::ActivationLayerQ{M, M})(x::NamedTuple, ps) where {M}
+@inline function (d::ActivationLayerQ{M, M})(x::QPT2, ps) where {M}
         size(x.q, 1) == M÷2 || error("Dimension mismatch.")
         return (q = x.q + custom_vec_mul(ps.scale, d.activation.(x.p)), p = x.p)
 end
 
-@inline function (d::ActivationLayerP{M, M})(x::NamedTuple, ps) where {M}
+@inline function (d::ActivationLayerP{M, M})(x::QPT2, ps) where {M}
         size(x.q, 1) == M÷2 || error("Dimension mismatch.")
         return (q = x.q, p = x.p + custom_vec_mul(ps.scale, d.activation.(x.q)))
 end
 
 
-@inline function (d::GradientLayerQ{M, M})(x::NamedTuple, ps) where {M}
+@inline function (d::GradientLayerQ{M, M})(x::QPT2, ps) where {M}
         size(x.q, 1) == M÷2 || error("Dimension mismatch.")
         (q = x.q + custom_mat_mul(ps.weight', (custom_vec_mul(ps.scale, d.activation.(custom_mat_mul(ps.weight, x.p) .+ ps.bias)))), p = x.p)     
 end
 
 
-@inline function(d::GradientLayerP{M, M})(x::NamedTuple, ps) where {M}
+@inline function(d::GradientLayerP{M, M})(x::QPT2, ps) where {M}
         size(x.q, 1) == M÷2 || error("Dimension mismatch.")
         (q = x.q, p = x.p + custom_mat_mul(ps.weight', (custom_vec_mul(ps.scale, d.activation.(custom_mat_mul(ps.weight, x.q) .+ ps.bias)))))
 end
 
 
-@inline function(d::LinearLayerQ{M, M})(x::NamedTuple, ps) where {M}
+@inline function(d::LinearLayerQ{M, M})(x::QPT2, ps) where {M}
         size(x.q, 1) == M÷2 || error("Dimension mismatch.")
         (q = x.q + custom_mat_mul(ps.weight, x.p), p = x.p)
 end
 
 
-@inline function(d::LinearLayerP{M, M})(x::NamedTuple, ps) where {M}
+@inline function(d::LinearLayerP{M, M})(x::QPT2, ps) where {M}
         size(x.q, 1) == M÷2 || error("Dimension mismatch.")
         (q = x.q, p = x.p + custom_mat_mul(ps.weight, x.q))
 end
