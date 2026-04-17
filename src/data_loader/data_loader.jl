@@ -333,13 +333,13 @@ function DataLoader(ensemble_solution::EnsembleSolution{T,T1,Vector{ST}};
     TT<:TimeSeries{T1},
     ST<:GeometricSolution{T,T1,TT,NamedTuple{(:t, :q, :v),TuT}}}
 
-    sys_dim = length(ensemble_solution.dataser[1].q[0])
+    sys_dim = length(ensemble_solution.s[1].q[0])
     input_time_steps = length(ensemble_solution.t)
-    n_params = length(ensemble_solution.dataser)
+    n_params = length(ensemble_solution.s)
 
     data = zeros(sys_dim, input_time_steps, n_params)
 
-    for (solution, i) in zip(ensemble_solution.dataser, axes(ensemble_solution.dataser, 1))
+    for (solution, i) in zip(ensemble_solution.s, axes(ensemble_solution.s, 1))
         for dim in 1:sys_dim
             data[dim, :, i] = solution.q[:, dim]
         end
@@ -377,13 +377,13 @@ function DataLoader(ensemble_solution::EnsembleSolution{T,T1,Vector{ST}};
     ST<:GeometricSolution{T,T1,TT,NamedTuple{(:t, :q, :p, :q̇, :ṗ),TuT}}
 }
 
-    sys_dim = length(ensemble_solution.dataser[1].q[0])
+    sys_dim = length(ensemble_solution.s[1].q[0])
     input_time_steps = length(ensemble_solution.t)
-    n_params = length(ensemble_solution.dataser)
+    n_params = length(ensemble_solution.s)
 
     data = (q=zeros(T, sys_dim, input_time_steps, n_params), p=zeros(T, sys_dim, input_time_steps, n_params))
 
-    for (solution, i) in zip(ensemble_solution.dataser, axes(ensemble_solution.dataser, 1))
+    for (solution, i) in zip(ensemble_solution.s, axes(ensemble_solution.s, 1))
         for dim in 1:sys_dim
             data.q[dim, :, i] = solution.q[:, dim]
             data.p[dim, :, i] = solution.p[:, dim]
