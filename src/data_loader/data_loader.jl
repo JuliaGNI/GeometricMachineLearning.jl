@@ -320,7 +320,8 @@ function DataLoader(solution::GeometricSolution{T,T2,TT,NT}, suppress_info=false
     TuT,
     NT<:Union{
         NamedTuple{(:t, :q, :p, :q̇, :ṗ),TuT},
-        NamedTuple{(:t, :q, :v),TuT}}}
+        NamedTuple{(:t, :q, :v),TuT},
+        NamedTuple{(:t, :q, :q̇),TuT}}}
     data = data_tensors_from_geometric_solution(solution)
 
     DataLoader(data; suppress_info=suppress_info, kwargs...)
@@ -331,7 +332,11 @@ function DataLoader(ensemble_solution::EnsembleSolution{T,T1,Vector{ST}};
     T1,
     TuT,
     TT<:TimeSeries{T1},
-    ST<:GeometricSolution{T,T1,TT,NamedTuple{(:t, :q, :v),TuT}}}
+    ST<:Union{
+        GeometricSolution{T,T1,TT,NamedTuple{(:t, :q, :v),TuT}},
+        GeometricSolution{T,T1,TT,NamedTuple{(:t, :q, :q̇),TuT}}
+    }
+}
 
     sys_dim = length(ensemble_solution.s[1].q[0])
     input_time_steps = length(ensemble_solution.t)
