@@ -283,7 +283,7 @@ function data_tensors_from_geometric_solution(solution::GeometricSolution{T,T2,T
     data
 end
 
-function data_tensors_from_geometric_solution(solution::GeometricSolution{T,T2,TT,NT}) where {T<:Number,T2<:Number,TT<:TimeSeries{T2},TuT,NT<:NamedTuple{(:t, :q, :v),TuT}}
+function data_tensors_from_geometric_solution(solution::GeometricSolution{T,T2,TT,NT}) where {T<:Number,T2<:Number,TT<:TimeSeries{T2},TuT,NT<:Union{NamedTuple{(:t, :q, :v),TuT},NamedTuple{(:t, :q, :q̇),TuT}}}
     sys_dim, input_time_steps = length(solution.dataser.q[0]), length(solution.t)
     data = zeros(T, sys_dim, input_time_steps, 1)
 
@@ -293,7 +293,6 @@ function data_tensors_from_geometric_solution(solution::GeometricSolution{T,T2,T
 
     data
 end
-
 
 """
     DataLoader(solution)
