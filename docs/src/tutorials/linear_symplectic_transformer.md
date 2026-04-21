@@ -181,13 +181,13 @@ nothing
 ![Validation of the different networks.](lst_validation_light.png)
 ![Validation of the different networks.](lst_validation_dark.png)
 
-We can see that the standard transformer is not able to stay close to the trajectory coming from implicit midpoint very well. The linear symplectic transformer outperforms the standard transformer as well as the SympNet while needing fewer parameters than the standard transformer: 
+We can see that the standard transformer is not able to stay close to the trajectory coming from implicit midpoint very well. The linear symplectic transformer outperforms the standard transformer while needing fewer parameters: 
 
 ```@example lin_sympl_tran_tut
 parameterlength(nn_standard), parameterlength(nn_symplectic), parameterlength(nn_sympnet)
 ```
 
-It is also interesting to note that the training error for the SympNet gets lower than the one for the linear symplectic transformer, but it does not manage to outperform it when looking at the validation. 
+We also note that the linear symplectic transformer can be made *nonlinear* by using [symplectic attention](@ref "Symplectic Attention") layers.
 
 ```@raw latex
 \section*{Chapter Summary}

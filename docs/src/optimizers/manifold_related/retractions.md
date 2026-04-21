@@ -64,7 +64,7 @@ Random.seed!(123) # hide
 
 Y = rand(StiefelManifold, 3, 1)
 
-v = 5 * rand(3, 1)
+v = 2 * rand(3, 1)
 Δ = v - Y * (v' * Y)
 
 function do_setup(; theme=:light)

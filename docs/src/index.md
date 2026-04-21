@@ -20,7 +20,7 @@ In that regard its aim is similar to traditional *geometric numerical integratio
 
 ## Architectures
 
-Some of the neural network architectures in `GeometricMachineLearning` [brantner2023symplectic, brantner2024volume](@cite) have emerged in connection with developing this package[^1], other have existed before [jin2020sympnets, greydanus2019hamiltonian](@cite).
+Some of the neural network architectures in `GeometricMachineLearning` [brantner2023symplectic, brantner2025volume](@cite) have emerged in connection with developing this package[^1], other have existed before [jin2020sympnets, greydanus2019hamiltonian](@cite).
 
 [^1]: The work on this software package was done in connection with a PhD thesis. You can read its [introduction](@ref "Introduction and Outline") and [conclusion](@ref "Conclusion") here.
 
