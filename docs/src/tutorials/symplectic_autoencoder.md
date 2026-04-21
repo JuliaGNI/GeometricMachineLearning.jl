@@ -219,10 +219,10 @@ function plot_validation!(fig, coordinates::Tuple, t_steps::Integer=100; theme =
                                                                 ylabel=L"q",
                                                                 xlabelcolor = textcolor,
                                                                 ylabelcolor = textcolor)
-    lines!(ax_val, Ω, sol_full.s.q[t_steps], label = rich("FOM + Implicit Midpoint"; color = textcolor), color = mblue)
-    lines!(ax_val, Ω, psd_rs.decoder((q = sol_psd_reduced.s.q[t_steps], p = sol_psd_reduced.s.p[t_steps])).q, 
+    lines!(ax_val, Ω, sol_full.dataser.q[t_steps], label = rich("FOM + Implicit Midpoint"; color = textcolor), color = mblue)
+    lines!(ax_val, Ω, psd_rs.decoder((q = sol_psd_reduced.dataser.q[t_steps], p = sol_psd_reduced.dataser.p[t_steps])).q, 
         label = rich("PSD + Implicit Midpoint"; color = textcolor), color = morange)
-    lines!(ax_val, Ω, sae_rs.decoder((q = sol_sae_reduced.s.q[t_steps], p = sol_sae_reduced.s.p[t_steps])).q, 
+    lines!(ax_val, Ω, sae_rs.decoder((q = sol_sae_reduced.dataser.q[t_steps], p = sol_sae_reduced.dataser.p[t_steps])).q, 
         label = rich("SAE + Implicit Midpoint"; color = textcolor), color = mgreen)
 
     if t_steps == 0
@@ -322,10 +322,10 @@ function plot_transformer_validation!(fig, coordinates, t_steps::Integer=100; th
                                                                 ylabel = L"q",
                                                                 xlabelcolor = textcolor,
                                                                 ylabelcolor = textcolor)
-    lines!(ax_val, Ω, sol_full.s.q[t_steps], label = rich("FOM + Implicit Midpoint"; color = textcolor), color = mblue)
-    lines!(ax_val, Ω, psd_rs.decoder((q = sol_psd_reduced.s.q[t_steps], p = sol_psd_reduced.s.p[t_steps])).q, 
+    lines!(ax_val, Ω, sol_full.dataser.q[t_steps], label = rich("FOM + Implicit Midpoint"; color = textcolor), color = mblue)
+    lines!(ax_val, Ω, psd_rs.decoder((q = sol_psd_reduced.dataser.q[t_steps], p = sol_psd_reduced.dataser.p[t_steps])).q, 
         label = rich("PSD + Implicit Midpoint"; color = textcolor), color = morange)
-    lines!(ax_val, Ω, sae_rs.decoder((q = sol_sae_reduced.s.q[t_steps], p = sol_sae_reduced.s.p[t_steps])).q, 
+    lines!(ax_val, Ω, sae_rs.decoder((q = sol_sae_reduced.dataser.q[t_steps], p = sol_sae_reduced.dataser.p[t_steps])).q, 
         label = rich("SAE + Implicit Midpoint"; color = textcolor), color = mgreen)
 
     time_series = iterate(mtc(integrator_nn), ics; n_points = t_steps, prediction_window = seq_length)
@@ -428,8 +428,8 @@ function plot_validation!(fig, coordinates::Tuple, t_steps::Integer=100; theme =
                                                                 ylabel=L"q",
                                                                 xlabelcolor = textcolor,
                                                                 ylabelcolor = textcolor)
-    lines!(ax_val, Ω, sol_full.s.q[t_steps], label = rich("FOM + Implicit Midpoint"; color = textcolor), color = mblue)
-    lines!(ax_val, Ω, psd_rs2.decoder((q = sol_psd_reduced2.s.q[t_steps], p = sol_psd_reduced2.s.p[t_steps])).q, 
+    lines!(ax_val, Ω, sol_full.dataser.q[t_steps], label = rich("FOM + Implicit Midpoint"; color = textcolor), color = mblue)
+    lines!(ax_val, Ω, psd_rs2.decoder((q = sol_psd_reduced2.dataser.q[t_steps], p = sol_psd_reduced2.dataser.p[t_steps])).q, 
         label = rich("PSD + Implicit Midpoint"; color = textcolor), color = morange)
 
     if t_steps == 0
@@ -526,8 +526,8 @@ function plot_validation!(fig, coordinates::Tuple, t_steps::Integer=100; theme =
                                                                 ylabel=L"q",
                                                                 xlabelcolor = textcolor,
                                                                 ylabelcolor = textcolor)
-    lines!(ax_val, Ω, sol_full.s.q[t_steps], label = rich("FOM + Implicit Midpoint"; color = textcolor), color = mblue)
-    lines!(ax_val, Ω, psd_rs2.decoder((q = sol_psd_reduced2.s.q[t_steps], p = sol_psd_reduced2.s.p[t_steps])).q, 
+    lines!(ax_val, Ω, sol_full.dataser.q[t_steps], label = rich("FOM + Implicit Midpoint"; color = textcolor), color = mblue)
+    lines!(ax_val, Ω, psd_rs2.decoder((q = sol_psd_reduced2.dataser.q[t_steps], p = sol_psd_reduced2.dataser.p[t_steps])).q, 
         label = rich("PSD + Implicit Midpoint"; color = textcolor), color = morange)
 
     time_series2 = iterate(mtc(integrator_nn2), ics; n_points = t_steps, prediction_window = seq_length)
