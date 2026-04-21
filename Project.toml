@@ -40,15 +40,9 @@ ChainRulesCore = "1"
 ChainRulesTestUtils = "1"
 Distances = "0.10"
 ForwardDiff = "0.10, 1"
-<<<<<<< HEAD
-GeometricBase = "0.11, 0.12"
-GeometricEquations = "0.20, 0.21"
-GeometricSolutions = "0.5"
-=======
 GeometricBase = "0.14"
 GeometricEquations = "0.21"
 GeometricSolutions = "0.6"
->>>>>>> main
 HDF5 = "0.16, 0.17"
 KernelAbstractions = "0.9"
 LazyArrays = "=2.3.2"
