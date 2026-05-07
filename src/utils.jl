@@ -1,7 +1,7 @@
 # Convenient structure
 struct NothingFunction <: Function end
 (::NothingFunction)(args...) = nothing
-is_NothingFunction(f::Function) = typeof(f)==NothingFunction
+is_NothingFunction(f::Function) = typeof(f) == NothingFunction
 
 struct UnknownProblem <: AbstractProblem end
 
@@ -9,13 +9,12 @@ const ∞ = Inf
 
 # Functions on typple and named tuple
 
-@inline next(i::Int,j::Int) = (i,j+1)
-@inline next(i::Int) = (i+1,)
+@inline next(i::Int, j::Int) = (i, j + 1)
+@inline next(i::Int) = (i + 1,)
 
 @inline tuplejoin(x) = x
 @inline tuplejoin(x, y) = (x..., y...)
 @inline tuplejoin(x, y, z...) = tuplejoin(tuplejoin(x, y), z...)
-
 
 rdevelop(x) = x
 rdevelop(t::Tuple{Any}) = [rdevelop(t[1])...]
@@ -27,8 +26,7 @@ develop(t::Tuple{Any}) = [develop(t[1])...]
 develop(t::Tuple) = [develop(t[1])..., develop(t[2:end])...]
 develop(t::NamedTuple) = vcat([[develop(e)...] for e in t]...)
 
-
-_tuplediff(t₁::Tuple,t₂::Tuple) = tuple(setdiff(Set(t₁),Set(t₂))...)
+_tuplediff(t₁::Tuple, t₂::Tuple) = tuple(setdiff(Set(t₁), Set(t₂))...)
 
 function apply_toNT(fun, ps::NamedTuple...)
     for p in ps
@@ -37,17 +35,23 @@ function apply_toNT(fun, ps::NamedTuple...)
     NamedTuple{keys(ps[1])}(fun(p...) for p in zip(ps...))
 end
 
-# overload norm 
-_norm(dx::NT) where {AT <: AbstractArray, NT <: NamedTuple{(:q, :p), Tuple{AT, AT}}}  = (norm(dx.q) + norm(dx.p)) / √2 # we need this because of a Zygote problem
+# overload norm
+function _norm(dx::NT) where {
+        AT <: AbstractArray, NT <: NamedTuple{(:q, :p), Tuple{AT, AT}}}
+    (norm(dx.q) + norm(dx.p)) / √2
+end # we need this because of a Zygote problem
 _norm(dx::NamedTuple) = sum(apply_toNT(norm, dx)) / √length(dx)
 _norm(A::AbstractArray) = norm(A)
 
-# overloaded +/- operation 
-_diff(dx₁::NT, dx₂::NT) where {AT <: AbstractArray, NT <: NamedTuple{(:q, :p), Tuple{AT, AT}}} = (q = dx₁.q - dx₂.q, p = dx₁.p - dx₂.p) # we need this because of a Zygote problem
+# overloaded +/- operation
+function _diff(dx₁::NT,
+        dx₂::NT) where {AT <: AbstractArray, NT <: NamedTuple{(:q, :p), Tuple{AT, AT}}}
+    (q = dx₁.q - dx₂.q, p = dx₁.p - dx₂.p)
+end # we need this because of a Zygote problem
 _diff(dx₁::NamedTuple, dx₂::NamedTuple) = apply_toNT(_diff, dx₁, dx₂)
-_diff(A::AbstractArray, B::AbstractArray) = A - B 
+_diff(A::AbstractArray, B::AbstractArray) = A - B
 _add(dx₁::NamedTuple, dx₂::NamedTuple) = apply_toNT(_add, dx₁, dx₂)
-_add(A::AbstractArray, B::AbstractArray) = A + B 
+_add(A::AbstractArray, B::AbstractArray) = A + B
 
 function add!(C::AbstractVecOrMat, A::AbstractVecOrMat, B::AbstractVecOrMat)
     @assert size(A) == size(B) == size(C)
@@ -61,19 +65,18 @@ end
 # Type pyracy!!
 function Base.:+(a::Float64, b::Tuple{Float64})
     x, = b
-    return a+x
+    return a + x
 end
 
 # Type pyracy!!
 function Base.:+(a::Vector{Float64}, b::Tuple{Float64})
     x, = b
     y, = a
-    return y+x
+    return y + x
 end
 
-
-# Kernel that is needed for functions relating to `SymmetricMatrix` and `SkewSymMatrix` 
-@kernel function write_ones_kernel!(unit_matrix::AbstractMatrix{T}) where T
+# Kernel that is needed for functions relating to `SymmetricMatrix` and `SkewSymMatrix`
+@kernel function write_ones_kernel!(unit_matrix::AbstractMatrix{T}) where {T}
     i = @index(Global)
     unit_matrix[i, i] = one(T)
 end
@@ -92,17 +95,16 @@ end
 # utils functions on string
 function type_without_brace(var)
     type_str = string(typeof(var))
-    replace(type_str, r"\{.*\}"=>"")
+    replace(type_str, r"\{.*\}" => "")
 end
 
-function center_align_text(text,width)
+function center_align_text(text, width)
     padding = max(0, width - length(text))
-    left_padding = repeat(" ",padding ÷2)
+    left_padding = repeat(" ", padding ÷ 2)
     right_padding = repeat(" ", padding - length(left_padding))
     aligned_text = left_padding * text * right_padding
     return aligned_text
 end
-
 
 # The following are fallback functions - maybe you want to put them into a separate file
 function global_section(::AbstractVecOrMat)
@@ -163,10 +165,36 @@ const QPTOAT = Union{QPT, AbstractArray}
 
 This could be data in ``(q, p)\in\mathbb{R}^{2d}`` form or come from an arbitrary vector space.
 """
-const QPTOAT{T} = Union{QPT{T}, AbstractArray{T}} where T
+const QPTOAT{T} = Union{QPT{T}, AbstractArray{T}} where {T}
 
 Base.:≈(qp₁::QPT, qp₂::QPT) = (qp₁.q ≈ qp₂.q) & (qp₁.p ≈ qp₂.p)
 
 _eltype(x) = eltype(x)
 _eltype(ps::NamedTuple) = _eltype(ps[1])
 _eltype(ps::Tuple) = _eltype(ps[1])
+
+function GradientZygote(F, x::AbstractArray{T}) where {T}
+    F = (_b, _a) -> (GeometricOptimizers._copyto!(_b, Zygote.gradient(loss, _a)[1]))
+    GeometricOptimizers.GradientFunction(F, x)
+end
+
+function GMLOptimizer(x::VT, problem::OptimizerProblem{T};
+        options_kwargs...) where {T, VT <: OptimizerSolution{T}}
+    grad = GradientZygote(problem.F, x)
+    Optimizer(x, problem; algorithm = Adam(), linesearch = Static(0.01),
+        gradient = grad, options_kwargs...)
+end
+
+# type piracy. This should be put in `AbstractNeuralNetworks`!
+function GeometricOptimizers.OptimizerProblem(nn::NeuralNetwork)
+    loss = NetworkLoss(nn)
+    _params = params(nn)
+    OptimizerProblem(ps -> loss(model, ps), NamedTuple{keys(_params)}(values(_params)))
+end
+
+function GeometricOptimizers.Optimizer(
+        algorithm::OptimizerMethod, nn::NeuralNetwork; options_kwargs...)
+    _params = params(nn)
+    GMLOptimizer(
+        NamedTuple{keys(_params)}(values(_params)), OptimizerProblem(nn); options_kwargs...)
+end

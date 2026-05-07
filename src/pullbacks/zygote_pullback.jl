@@ -27,8 +27,10 @@ struct ZygotePullback{NNLT} <: AbstractPullback{NNLT}
     loss::NNLT
 end
 
-(_pullback::ZygotePullback)(ps, model, input_nt::QPTOAT)::Tuple = Zygote.pullback(ps -> _pullback.loss(model, ps, input_nt), ps)
-(_pullback::ZygotePullback)(ps, model, input_nt_output_nt::Tuple{<:QPTOAT, <:QPTOAT})::Tuple = Zygote.pullback(ps -> _pullback.loss(model, ps, input_nt_output_nt...), ps)
+(_pullback::ZygotePullback)(ps, model, input_nt::QPTOAT)::Tuple = Zygote.pullback(
+    ps -> _pullback.loss(model, ps, input_nt), ps)
+(_pullback::ZygotePullback)(ps, model, input_nt_output_nt::Tuple{<:QPTOAT, <:QPTOAT})::Tuple = Zygote.pullback(
+    ps -> _pullback.loss(model, ps, input_nt_output_nt...), ps)
 
 """
     _processing(returned_pullback)
@@ -37,4 +39,4 @@ Strip `returned_pullback` from unnecessary `Zygote`-induces garbage.
 
 Also see the docs for [`ZygotePullback`](@ref).
 """
-_processing = _get_params∘_get_contents
+_processing = _get_params ∘ _get_contents
