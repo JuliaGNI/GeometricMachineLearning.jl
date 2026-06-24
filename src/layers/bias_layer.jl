@@ -37,6 +37,6 @@ function (::BiasLayer{M, M})(z::NT2, ps::NT1) where {
     (q = z.q .+ ps.q, p = z.p .+ ps.p)
 end
 
-function (d::BiasLayer{M, M})(z::AbstractArray, ps) where M
+function (d::BiasLayer{M, M})(z::AbstractArray, ps::NamedTuple) where M
     apply_layer_to_nt_and_return_array(z, d, ps)
 end

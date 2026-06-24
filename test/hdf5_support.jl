@@ -2,6 +2,7 @@ using GeometricMachineLearning
 using Test
 using HDF5
 import Random
+import AbstractNeuralNetworks: params
 
 Random.seed!(42)
 
@@ -28,9 +29,9 @@ end
 
 # SAE contains PSDLayer → StiefelManifold parameters.
 @testset "save/load roundtrip: SymplecticAutoencoder (StiefelManifold)" begin
-    arch     = SymplecticAutoencoder(6, 4)
+    arch     = SymplecticAutoencoder(10, 4)
     nn       = NeuralNetwork(arch)
-    x        = rand(6)
+    x        = rand(10)
     y_before = nn(x)
 
     mktempdir() do dir
@@ -79,9 +80,9 @@ end
 
 # Float32 roundtrip: GPU training produces Float32 weights.
 @testset "save/load roundtrip: Float32 weights (element type preserved)" begin
-    arch     = SymplecticAutoencoder(6, 4)
+    arch     = SymplecticAutoencoder(10, 4)
     nn       = NeuralNetwork(arch, CPU(), Float32)
-    x        = rand(Float32, 6)
+    x        = rand(Float32, 10)
     y_before = nn(x)
 
     mktempdir() do dir
@@ -91,15 +92,16 @@ end
 
         @test _ps_eq(params(nn), params(nn2))
         @test nn2(x) ≈ y_before
-        @test eltype(params(nn2)[1].weight.A) == Float32
+        # L5 is the first PSDLayer (4 encoder gradient layers precede it); check its StiefelManifold element type.
+        @test eltype(params(nn2)[5].weight.A) == Float32
     end
 end
 
 # save / load also work on an already-open HDF5 store (the lower-level API).
 @testset "save/load via open H5DataStore" begin
-    arch     = SymplecticAutoencoder(6, 4)
+    arch     = SymplecticAutoencoder(10, 4)
     nn       = NeuralNetwork(arch)
-    x        = rand(6)
+    x        = rand(10)
     y_before = nn(x)
 
     mktempdir() do dir
