@@ -44,3 +44,14 @@ nn.model.layers
 ```
 
 and we see that it consists of two layers: a [`GradientLayerQ`](@ref) and a [`GradientLayerP`](@ref).
+
+## Saving and Loading
+
+`GeometricMachineLearning` extends `AbstractNeuralNetworks` with HDF5-backed save and load methods for `NeuralNetwork`. These handle GML-specific parameter types (`StiefelManifold`, `SymmetricMatrix`, `SkewSymMatrix`) transparently.
+
+```@docs
+AbstractNeuralNetworks.save(::HDF5.H5DataStore, ::NeuralNetwork)
+AbstractNeuralNetworks.save(::AbstractString, ::NeuralNetwork)
+AbstractNeuralNetworks.load(::Type{NeuralNetwork}, ::HDF5.H5DataStore, ::AbstractNeuralNetworks.Architecture)
+AbstractNeuralNetworks.load(::Type{NeuralNetwork}, ::AbstractString, ::AbstractNeuralNetworks.Architecture)
+```
