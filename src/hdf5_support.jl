@@ -58,6 +58,18 @@ end
 
 _gml_h5load(ds::HDF5.Dataset) = read(ds)
 
+# HDF5 returns group keys alphabetically, so "L10" precedes "L2". Sort by the
+# numeric suffix when all keys match the pattern <letters><digits>, otherwise
+# fall back to lexicographic order so per-layer NamedTuples (bias/scale/weight)
+# are unaffected.
+function _natural_sort_keys(ks)
+    if all(k -> occursin(r"^\D+\d+$", k), ks)
+        return sort(collect(ks),
+            by = k -> (m = match(r"^(\D+)(\d+)$", k); (m[1], parse(Int, m[2]))))
+    end
+    sort(collect(ks))
+end
+
 function _gml_h5load(group::HDF5.Group)
     if haskey(HDF5.attributes(group), "gml_type")
         gml_type = read(HDF5.attributes(group)["gml_type"])
@@ -69,8 +81,9 @@ function _gml_h5load(group::HDF5.Group)
             return SkewSymMatrix(read(group["S"]), read(group["n"]))
         end
     end
-    paramkeys = Tuple(Symbol.(keys(group)))
-    paramvals = Tuple(_gml_h5load(group[k]) for k in keys(group))
+    sorted_keys = _natural_sort_keys(keys(group))
+    paramkeys = Tuple(Symbol.(sorted_keys))
+    paramvals = Tuple(_gml_h5load(group[k]) for k in sorted_keys)
     NamedTuple{paramkeys}(paramvals)
 end
 
