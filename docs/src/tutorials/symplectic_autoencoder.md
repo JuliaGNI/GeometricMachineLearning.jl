@@ -243,8 +243,8 @@ end
 # axislegend(fig_light; position = (.82, .75), backgroundcolor = :transparent, color = :black)
 # axislegend(fig_dark;  position = (.82, .75), backgroundcolor = :transparent, color = :white)
 
-save("sae_validation_light.png", fig_light; px_per_unit = 1.2)
-save("sae_validation_dark.png", fig_dark; px_per_unit = 1.2)
+CairoMakie.save("sae_validation_light.png", fig_light; px_per_unit = 1.2)
+CairoMakie.save("sae_validation_dark.png", fig_dark; px_per_unit = 1.2)
 
 nothing # hide
 ```
@@ -350,8 +350,8 @@ for (i, time) in zip(1:length(time_steps), time_steps)
     plot_transformer_validation!(fig_dark, (i, 1), time; theme = :dark)
 end
 
-save("sae_integrator_validation_light.png", fig_light; px_per_unit = 1.2)
-save("sae_integrator_validation_dark.png", fig_dark; px_per_unit = 1.2)
+CairoMakie.save("sae_integrator_validation_light.png", fig_light; px_per_unit = 1.2)
+CairoMakie.save("sae_integrator_validation_dark.png", fig_dark; px_per_unit = 1.2)
 
 nothing # hide
 ```
@@ -450,8 +450,8 @@ end
 # axislegend(fig_light; position = (.82, .75), backgroundcolor = :transparent, color = :black)
 # axislegend(fig_dark;  position = (.82, .75), backgroundcolor = :transparent, color = :white)
 
-save("psd_validation2_light.png", fig_light; px_per_unit = 1.2)
-save("psd_validation2_dark.png", fig_dark; px_per_unit = 1.2)
+CairoMakie.save("psd_validation2_light.png", fig_light; px_per_unit = 1.2)
+CairoMakie.save("psd_validation2_dark.png", fig_dark; px_per_unit = 1.2)
 
 nothing # hide
 ```
@@ -555,8 +555,8 @@ end
 # axislegend(fig_light; position = (.82, .75), backgroundcolor = :transparent, color = :black)
 # axislegend(fig_dark;  position = (.82, .75), backgroundcolor = :transparent, color = :white)
 
-save("psd_integrator_validation_light.png", fig_light; px_per_unit = 1.2)
-save("psd_integrator_validation_dark.png", fig_dark; px_per_unit = 1.2)
+CairoMakie.save("psd_integrator_validation_light.png", fig_light; px_per_unit = 1.2)
+CairoMakie.save("psd_integrator_validation_dark.png", fig_dark; px_per_unit = 1.2)
 
 nothing # hide
 ```

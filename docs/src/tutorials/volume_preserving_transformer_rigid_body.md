@@ -106,8 +106,8 @@ end # hide
 fig_light = set_up_plot(; theme = :light)[1] # hide
 fig_dark = set_up_plot(; theme = :dark)[1] # hide
 
-save("rigid_body_trajectories_light.png", alpha_colorbuffer(fig_light)) # hide
-save("rigid_body_trajectories_dark.png", alpha_colorbuffer(fig_dark)) # hide
+GLMakie.save("rigid_body_trajectories_light.png", alpha_colorbuffer(fig_light)) # hide
+GLMakie.save("rigid_body_trajectories_dark.png", alpha_colorbuffer(fig_dark)) # hide
 
 nothing # hide
 ```
@@ -299,8 +299,8 @@ rowsize!(fig_light.layout, 1, Aspect(1, 1.))
 rowsize!(fig_dark.layout, 1, Aspect(1, 1.))
 resize_to_layout!(fig_light)
 resize_to_layout!(fig_dark)
-save("rigid_body_evaluation_light.png", alpha_colorbuffer(fig_light))
-save("rigid_body_evaluation_dark.png", alpha_colorbuffer(fig_dark))
+GLMakie.save("rigid_body_evaluation_light.png", alpha_colorbuffer(fig_light))
+GLMakie.save("rigid_body_evaluation_dark.png", alpha_colorbuffer(fig_dark))
 nothing
 ```
 
