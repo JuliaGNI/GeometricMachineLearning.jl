@@ -18,21 +18,16 @@ function parameterlength(::BiasLayer{M, M}) where M
     M 
 end
 
-function (::BiasLayer{M, M})(z::NT, ps::NT) where {
-                                                    M, 
-                                                    AT<:AbstractVector, 
-                                                    NT<:NamedTuple{(:q, :p), Tuple{AT, AT}}
+function (::BiasLayer{M, M})(z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {
+                                                    M,
+                                                    AT<:AbstractVector
                                                     }
     (q = z.q + ps.q, p = z.p + ps.p)
 end
 
-function (::BiasLayer{M, M})(z::NT2, ps::NT1) where {   
-                                                    M, 
-                                                    T, 
-                                                    AT<:AbstractVector{T}, 
-                                                    BT<:Union{AbstractMatrix{T}, AbstractArray{T, 3}}, 
-                                                    NT1<:NamedTuple{(:q, :p), Tuple{AT, AT}}, 
-                                                    NT2<:NamedTuple{(:q, :p), Tuple{BT, BT}}
+function (::BiasLayer{M, M})(z::NamedTuple{(:q, :p), Tuple{BT, BT}}, ps::NamedTuple) where {
+                                                    M,
+                                                    BT<:Union{AbstractMatrix, AbstractArray{<:Any, 3}}
                                                     }
     (q = z.q .+ ps.q, p = z.p .+ ps.p)
 end

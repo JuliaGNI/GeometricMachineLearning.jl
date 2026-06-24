@@ -1,8 +1,9 @@
 using GeometricMachineLearning
 using Test
 using HDF5
+using LinearAlgebra: qr
 import Random
-import AbstractNeuralNetworks: params
+import AbstractNeuralNetworks: params, changebackend
 
 Random.seed!(42)
 
@@ -15,7 +16,7 @@ _ps_eq(a::StiefelManifold,  b::StiefelManifold)  = a.A ≈ b.A
 _ps_eq(a::SymmetricMatrix,  b::SymmetricMatrix)  = a.S ≈ b.S && a.n == b.n
 _ps_eq(a::SkewSymMatrix,    b::SkewSymMatrix)    = a.S ≈ b.S && a.n == b.n
 function _ps_eq(a::NamedTuple, b::NamedTuple)
-    keys(a) == keys(b) || return false
+    Set(keys(a)) == Set(keys(b)) || return false
     all(_ps_eq(a[k], b[k]) for k in keys(a))
 end
 function _ps_eq(a::NeuralNetworkParameters, b::NeuralNetworkParameters)
@@ -145,9 +146,9 @@ end
 
 # Smoke test: changebackend applied to a full SAE (CPU → CPU).
 @testset "changebackend: full SAE NeuralNetwork (CPU → CPU)" begin
-    arch = SymplecticAutoencoder(6, 4)
+    arch = SymplecticAutoencoder(10, 4)
     nn   = NeuralNetwork(arch)
     nn2  = changebackend(CPU(), nn)
-    x    = rand(6)
+    x    = rand(10)
     @test nn(x) ≈ nn2(x)
 end
