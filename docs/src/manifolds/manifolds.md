@@ -193,8 +193,8 @@ function make_plot(; theme = :light)
 end
 
 px_per_unit = Main.output_type == :html ? 1.5 : 2
-save("tangent_space_light.png",        make_plot(; theme = :light)[1]; px_per_unit = px_per_unit)
-save("tangent_space_dark.png",   make_plot(; theme = :dark )[1]; px_per_unit = px_per_unit)
+CairoMakie.save("tangent_space_light.png",        make_plot(; theme = :light)[1]; px_per_unit = px_per_unit)
+CairoMakie.save("tangent_space_dark.png",   make_plot(; theme = :dark )[1]; px_per_unit = px_per_unit)
 
 nothing
 ```

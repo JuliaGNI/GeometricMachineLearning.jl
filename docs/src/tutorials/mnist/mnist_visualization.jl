@@ -62,7 +62,7 @@ fig = Figure(; backgroundcolor = :transparent)
 display(fig)
 filename = "original/image.png"
 ax = plot_image!(fig, first_image')
-save(filename, fig.content[1, 1].scene)
+CairoMakie.save(filename, fig.content[1, 1].scene)
 # close(fig)
 
 for i in 1:16
@@ -71,7 +71,7 @@ for i in 1:16
     p_small = processed_image₁[i];
     file_name = "split/"*string(i)*".png"
     global ax = plot_image!(fig, p_small')
-    save(file_name, ax.scene)
+    CairoMakie.save(file_name, ax.scene)
     # close(fig)
 end
 
@@ -81,7 +81,7 @@ for i in 1:16
     p_small = processed_image₂[i]
     file_name = "flatten/"*string(i)*".png"
     global ax = plot_image!(fig, p_small')
-    save(file_name, ax.scene)
+    CairoMakie.save(file_name, ax.scene)
     # close(fig)
 end
 
@@ -90,7 +90,7 @@ display(fig)
 p_final = fully_processed_image
 filename = "final/image.png"
 ax = plot_image!(fig, p_final')
-save(filename, ax.scene)
+CairoMakie.save(filename, ax.scene)
 # close(fig)
 
 exit()

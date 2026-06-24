@@ -187,7 +187,7 @@ lines!(ax, loss_array3, label="Gradient + Stiefel", color=mpurple)
 lines!(ax, loss_array4, label="Momentum + Stiefel", color=morange)
 axislegend(; position = (.82, .75), backgroundcolor = :transparent, labelcolor = textcolor) # hide
 fig_name = theme == :dark ? "mnist_training_loss_dark.png" : "mnist_training_loss_light.png" # hide
-save(fig_name, fig; px_per_unit = 1.2) # hide
+CairoMakie.save(fig_name, fig; px_per_unit = 1.2) # hide
 end # hide
 make_error_plot(; theme = :dark) # hide
 make_error_plot(; theme = :light) # hide

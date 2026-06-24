@@ -51,7 +51,7 @@ lines!(ax, dl.input[1, 1:200, 1], label=L"\sin(t)", color = morange)
 lines!(ax, dl.input[1, 1:200, 2], label=L"\cos(t)", color = mpurple)
 axislegend(; position = (.82, .75), backgroundcolor = theme == :dark ? :transparent : :white, labelcolor = textcolor) # hide
 fig_name = theme == :dark ? "curve_comparison_dark.png" : "curve_comparison_light.png" # hide
-save(fig_name, fig; px_per_unit = 1.2) # hide
+CairoMakie.save(fig_name, fig; px_per_unit = 1.2) # hide
 end # hide
 make_comparison_plot(; theme = :dark) # hide
 make_comparison_plot(; theme = :light) # hide
@@ -172,8 +172,8 @@ end
 
 fig_dark, ax_dark = plot_training_losses(loss_array_skew, loss_array_arb, loss_array_comp; theme = :dark)
 fig_light, ax_light = plot_training_losses(loss_array_skew, loss_array_arb, loss_array_comp; theme = :light)
-save("training_loss_vpa_light.png", fig_light; px_per_unit = 1.2)
-save("training_loss_vpa_dark.png", fig_dark; px_per_unit = 1.2)
+CairoMakie.save("training_loss_vpa_light.png", fig_light; px_per_unit = 1.2)
+CairoMakie.save("training_loss_vpa_dark.png", fig_dark; px_per_unit = 1.2)
 
 nothing
 ```
@@ -258,8 +258,8 @@ nothing
 
 ```@example volume_preserving_attention
 fig_dark, fig_light, ax_dark, ax_light  = produce_validation_plot(40) # hide
-save("plot40_dark.png", fig_dark; px_per_unit = 1.2) # hide
-save("plot40_light.png", fig_light; px_per_unit = 1.2) # hide
+CairoMakie.save("plot40_dark.png", fig_dark; px_per_unit = 1.2) # hide
+CairoMakie.save("plot40_light.png", fig_light; px_per_unit = 1.2) # hide
 nothing # hide
 ```
 
@@ -270,8 +270,8 @@ In the plot above we can see that the network with the arbitrary weighting perfo
 
 ```@example volume_preserving_attention 
 fig_dark, fig_light, ax_dark, ax_light  = produce_validation_plot(400) # hide
-save("plot400_dark.png", fig_dark; px_per_unit = 1.2) # hide
-save("plot400_light.png", fig_light; px_per_unit = 1.2) # hide
+CairoMakie.save("plot400_dark.png", fig_dark; px_per_unit = 1.2) # hide
+CairoMakie.save("plot400_light.png", fig_light; px_per_unit = 1.2) # hide
 nothing # hide
 ```
 
@@ -290,8 +290,8 @@ o_skew, o_arb, o_comp = set_up_optimizers(nn_skew, nn_arb, nn_comp)
 loss_array_skew, loss_array_arb, loss_array_comp = train_networks!(nn_skew, nn_arb, nn_comp) # hide
 fig_dark, ax_dark = plot_training_losses(loss_array_skew, loss_array_arb, loss_array_comp; theme = :dark) # hide
 fig_light, ax_light = plot_training_losses(loss_array_skew, loss_array_arb, loss_array_comp; theme = :light) # hide
-save("training_loss2_vpa_light.png", fig_light; px_per_unit = 1.2) # hide
-save("training_loss2_vpa_dark.png", fig_dark; px_per_unit = 1.2) # hide
+CairoMakie.save("training_loss2_vpa_light.png", fig_light; px_per_unit = 1.2) # hide
+CairoMakie.save("training_loss2_vpa_dark.png", fig_dark; px_per_unit = 1.2) # hide
 nothing # hide
 ```
 
@@ -305,8 +305,8 @@ nn_skew, nn_arb, nn_comp = make_networks_neural_network_integrators(nn_skew, nn_
 
 fig_dark, fig_light, ax_dark, ax_light = produce_validation_plot(40, nn_skew, nn_arb, nn_comp)
 
-save("plot40_sine2_dark.png", fig_dark; px_per_unit = 1.2) # hide
-save("plot40_sine2_light.png", fig_light; px_per_unit = 1.2) # hide
+CairoMakie.save("plot40_sine2_dark.png", fig_dark; px_per_unit = 1.2) # hide
+CairoMakie.save("plot40_sine2_light.png", fig_light; px_per_unit = 1.2) # hide
 nothing # hide
 ```
 
@@ -319,8 +319,8 @@ And for a longer time interval:
 fig_dark, fig_light, ax_dark, ax_light = produce_validation_plot(200, nn_skew, nn_arb, nn_comp)
 
 
-save("plot200_sine2_dark.png", fig_dark; px_per_unit = 1.2) # hide
-save("plot200_sine2_light.png", fig_light; px_per_unit = 1.2) # hide
+CairoMakie.save("plot200_sine2_dark.png", fig_dark; px_per_unit = 1.2) # hide
+CairoMakie.save("plot200_sine2_light.png", fig_light; px_per_unit = 1.2) # hide
 nothing # hide
 ```
 

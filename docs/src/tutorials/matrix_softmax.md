@@ -128,8 +128,8 @@ end
 
 training_fig_light, training_ax_light = make_training_error_plot(; theme = :light)
 training_fig_dark, training_ax_dark = make_training_error_plot(; theme = :dark)
-save("attention_training_dark.png", training_fig_dark; px_per_unit = 1.2)
-save("attention_training_light.png", training_fig_light; px_per_unit = 1.2)
+CairoMakie.save("attention_training_dark.png", training_fig_dark; px_per_unit = 1.2)
+CairoMakie.save("attention_training_light.png", training_fig_light; px_per_unit = 1.2)
 
 nothing
 ```
@@ -175,8 +175,8 @@ end
 
 fig_light, ax_light = make_validation_plot(n_steps; theme = :light)
 fig_dark, ax_dark = make_validation_plot(n_steps; theme = :dark)
-save("validation_dark.png", fig_dark; px_per_unit = 1.2)
-save("validation_light.png", fig_light; px_per_unit = 1.2)
+CairoMakie.save("validation_dark.png", fig_dark; px_per_unit = 1.2)
+CairoMakie.save("validation_light.png", fig_light; px_per_unit = 1.2)
 
 nothing
 ```
