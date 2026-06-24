@@ -210,7 +210,7 @@ nn_vpt = mtc(nn_vpt)
 nn_st = mtc(nn_st)
 using JLD2 # hide
 # get correct parameters from jld2 file # hide
-f = load("transformer_rigid_body.jld2")  # hide
+f = JLD2.load("transformer_rigid_body.jld2")  # hide
 _nnp(ps::Tuple) = NeuralNetworkParameters{Tuple(Symbol("L$(i)") for i in 1:length(ps))}(ps) # hide
 nn_vpff = NeuralNetwork(nn_vpff.architecture, nn_vpff.model, _nnp(f["nn_vpff_params"]), nn_vpff.backend) # hide
 nn_vpt = NeuralNetwork(nn_vpt.architecture, nn_vpt.model, _nnp(f["nn_vpt_arb_params"]), nn_vpt.backend) # hide

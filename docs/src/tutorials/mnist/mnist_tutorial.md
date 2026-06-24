@@ -140,7 +140,7 @@ And we get the following result:
 using JLD2
 using CairoMakie
 
-data = load("mnist_parameters.jld2")
+data = JLD2.load("mnist_parameters.jld2")
 loss_array1 = data["loss_array1"]
 loss_array2 = data["loss_array2"]
 loss_array3 = data["loss_array3"]
