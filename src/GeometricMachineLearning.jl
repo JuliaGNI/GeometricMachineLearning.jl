@@ -409,4 +409,7 @@ module GeometricMachineLearning
     export SymplecticTransformer
 
     include("map_to_cpu.jl")
+
+    export save, load
+    include("hdf5_support.jl")
 end
