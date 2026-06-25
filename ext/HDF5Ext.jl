@@ -108,7 +108,7 @@ are tagged with a `gml_type` attribute so that [`load`](@ref) can reconstruct
 them faithfully.
 """
 function save(h5::HDF5.H5DataStore, nn::NeuralNetwork)
-    h5save(h5, AbstractNeuralNetworks.params(params(nn)), "/")
+    h5save(h5, params(params(nn)), "/")
 end
 
 """
