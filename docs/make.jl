@@ -1,4 +1,5 @@
 using GeometricMachineLearning
+using HDF5
 using Documenter
 using DocumenterCitations
 using Markdown

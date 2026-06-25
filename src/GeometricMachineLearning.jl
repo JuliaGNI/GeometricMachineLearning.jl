@@ -34,6 +34,7 @@ module GeometricMachineLearning
     import AbstractNeuralNetworks: params, architecture, model, dim
     import AbstractNeuralNetworks: AbstractPullback, NetworkLoss, _compute_loss
     import AbstractNeuralNetworks: networkbackend
+    import AbstractNeuralNetworks: save, load
     # export params, architetcure, model
     export dim
     import NNlib: σ, sigmoid, softmax
@@ -411,5 +412,4 @@ module GeometricMachineLearning
     include("map_to_cpu.jl")
 
     export save, load
-    include("hdf5_support.jl")
 end

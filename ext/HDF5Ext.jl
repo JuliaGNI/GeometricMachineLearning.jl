@@ -1,5 +1,9 @@
+module HDF5Ext
+
 using HDF5
-import AbstractNeuralNetworks: h5save, changebackend, NeuralNetworkBackend, save, load
+using GeometricMachineLearning
+import AbstractNeuralNetworks: h5save, changebackend, NeuralNetworkBackend, save, load,
+                                NeuralNetworkParameters, params, Architecture
 
 # ---------------------------------------------------------------------------
 # h5save — new methods for GML special array types
@@ -152,4 +156,6 @@ function load(::Type{NeuralNetwork}, filename::AbstractString, arch::Architectur
     HDF5.h5open(filename, "r") do h5
         load(NeuralNetwork, h5, arch; backend = backend)
     end
+end
+
 end
