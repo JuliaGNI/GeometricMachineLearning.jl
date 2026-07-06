@@ -137,25 +137,24 @@ loss_array4 = opt4(nn4, dl, batch, n_epochs, FeedForwardLoss())
 And we get the following result:
 
 ```@setup mnist
-using JLD2
+using HDF5
 using CairoMakie
 
-data = JLD2.load("mnist_parameters.jld2")
-loss_array1 = data["loss_array1"]
-loss_array2 = data["loss_array2"]
-loss_array3 = data["loss_array3"]
-loss_array4 = data["loss_array4"]
+HDF5.h5open("mnist_metadata.h5", "r") do meta
+    global loss_array1    = read(meta["loss_array1"])
+    global loss_array2    = read(meta["loss_array2"])
+    global loss_array3    = read(meta["loss_array3"])
+    global loss_array4    = read(meta["loss_array4"])
+    global accuracy_score1 = read(meta["accuracy_score1"])
+    global accuracy_score2 = read(meta["accuracy_score2"])
+    global accuracy_score3 = read(meta["accuracy_score3"])
+    global accuracy_score4 = read(meta["accuracy_score4"])
+end
 
-accuracy_score1 = data["accuracy_score1"]
-accuracy_score2 = data["accuracy_score2"]
-accuracy_score3 = data["accuracy_score3"]
-accuracy_score4 = data["accuracy_score4"]
-
-_nnp(ps::Tuple) = NeuralNetworkParameters{Tuple(Symbol("L$(i)") for i in 1:length(ps))}(ps)
-nn1 = NeuralNetwork(nn1.architecture, nn1.model, _nnp(data["nn1weights"]), CPU())
-nn2 = NeuralNetwork(nn2.architecture, nn2.model, _nnp(data["nn2weights"]), CPU())
-nn3 = NeuralNetwork(nn3.architecture, nn3.model, _nnp(data["nn3weights"]), CPU())
-nn4 = NeuralNetwork(nn4.architecture, nn4.model, _nnp(data["nn4weights"]), CPU())
+nn1 = load(NeuralNetwork, "mnist_nn1.h5", nn1.architecture)
+nn2 = load(NeuralNetwork, "mnist_nn2.h5", nn2.architecture)
+nn3 = load(NeuralNetwork, "mnist_nn3.h5", nn3.architecture)
+nn4 = load(NeuralNetwork, "mnist_nn4.h5", nn4.architecture)
 
 morange = RGBf(255 / 256, 127 / 256, 14 / 256) # hide
 mred = RGBf(214 / 256, 39 / 256, 40 / 256) # hide
