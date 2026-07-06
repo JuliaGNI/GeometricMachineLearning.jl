@@ -15,6 +15,8 @@ _ps_eq(a::AbstractArray,    b::AbstractArray)    = a ≈ b
 _ps_eq(a::StiefelManifold,  b::StiefelManifold)  = a.A ≈ b.A
 _ps_eq(a::SymmetricMatrix,  b::SymmetricMatrix)  = a.S ≈ b.S && a.n == b.n
 _ps_eq(a::SkewSymMatrix,    b::SkewSymMatrix)    = a.S ≈ b.S && a.n == b.n
+_ps_eq(a::LowerTriangular,  b::LowerTriangular)  = a.S ≈ b.S && a.n == b.n
+_ps_eq(a::UpperTriangular,  b::UpperTriangular)  = a.S ≈ b.S && a.n == b.n
 function _ps_eq(a::NamedTuple, b::NamedTuple)
     Set(keys(a)) == Set(keys(b)) || return false
     all(_ps_eq(a[k], b[k]) for k in keys(a))
@@ -98,6 +100,23 @@ end
     end
 end
 
+# VolumePreservingFeedForward uses LowerTriangular / UpperTriangular parameters.
+@testset "save/load roundtrip: VolumePreservingFeedForward (LowerTriangular/UpperTriangular)" begin
+    arch     = VolumePreservingFeedForward(4, 4, 1, tanh)
+    nn       = NeuralNetwork(arch)
+    x        = rand(4)
+    y_before = nn(x)
+
+    mktempdir() do dir
+        path = joinpath(dir, "vpff.h5")
+        save(path, nn)
+        nn2 = load(NeuralNetwork, path, arch)
+
+        @test _ps_eq(params(nn), params(nn2))
+        @test nn2(x) ≈ y_before
+    end
+end
+
 # save / load also work on an already-open HDF5 store (the lower-level API).
 @testset "save/load via open H5DataStore" begin
     arch     = SymplecticAutoencoder(10, 4)
@@ -140,6 +159,22 @@ end
     A  = SkewSymMatrix(rand(6), 4)
     A2 = changebackend(CPU(), A)
     @test A2 isa SkewSymMatrix
+    @test A.S ≈ A2.S
+    @test A.n == A2.n
+end
+
+@testset "changebackend: LowerTriangular (CPU → CPU)" begin
+    A  = LowerTriangular(rand(6), 4)
+    A2 = changebackend(CPU(), A)
+    @test A2 isa LowerTriangular
+    @test A.S ≈ A2.S
+    @test A.n == A2.n
+end
+
+@testset "changebackend: UpperTriangular (CPU → CPU)" begin
+    A  = UpperTriangular(rand(6), 4)
+    A2 = changebackend(CPU(), A)
+    @test A2 isa UpperTriangular
     @test A.S ≈ A2.S
     @test A.n == A2.n
 end

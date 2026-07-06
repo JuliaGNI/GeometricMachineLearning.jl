@@ -34,6 +34,20 @@ function h5save(h5::HDF5.H5DataStore, A::SkewSymMatrix, path::AbstractString)
     group["n"] = A.n
 end
 
+function h5save(h5::HDF5.H5DataStore, A::LowerTriangular, path::AbstractString)
+    group = haskey(h5, path) ? h5[path] : HDF5.create_group(h5, path)
+    HDF5.attributes(group)["gml_type"] = "LowerTriangular"
+    group["S"] = Array(A.S)
+    group["n"] = A.n
+end
+
+function h5save(h5::HDF5.H5DataStore, A::UpperTriangular, path::AbstractString)
+    group = haskey(h5, path) ? h5[path] : HDF5.create_group(h5, path)
+    HDF5.attributes(group)["gml_type"] = "UpperTriangular"
+    group["S"] = Array(A.S)
+    group["n"] = A.n
+end
+
 # ---------------------------------------------------------------------------
 # changebackend — new methods for GML special array types
 #
@@ -52,6 +66,14 @@ end
 
 function changebackend(backend::NeuralNetworkBackend, A::SkewSymMatrix)
     SkewSymMatrix(changebackend(backend, A.S), A.n)
+end
+
+function changebackend(backend::NeuralNetworkBackend, A::LowerTriangular)
+    LowerTriangular(changebackend(backend, A.S), A.n)
+end
+
+function changebackend(backend::NeuralNetworkBackend, A::UpperTriangular)
+    UpperTriangular(changebackend(backend, A.S), A.n)
 end
 
 # ---------------------------------------------------------------------------
@@ -83,6 +105,10 @@ function _gml_h5load(group::HDF5.Group)
             return SymmetricMatrix(read(group["S"]), read(group["n"]))
         elseif gml_type == "SkewSymMatrix"
             return SkewSymMatrix(read(group["S"]), read(group["n"]))
+        elseif gml_type == "LowerTriangular"
+            return LowerTriangular(read(group["S"]), read(group["n"]))
+        elseif gml_type == "UpperTriangular"
+            return UpperTriangular(read(group["S"]), read(group["n"]))
         end
     end
     sorted_keys = _natural_sort_keys(keys(group))
@@ -103,9 +129,9 @@ end
 Save the parameters of `nn` into an already-open HDF5 store.
 
 Extends `AbstractNeuralNetworks.save` with a dispatch on `NeuralNetwork`.
-GML special array types (`StiefelManifold`, `SymmetricMatrix`, `SkewSymMatrix`)
-are tagged with a `gml_type` attribute so that [`load`](@ref) can reconstruct
-them faithfully.
+GML special array types (`StiefelManifold`, `SymmetricMatrix`, `SkewSymMatrix`,
+`LowerTriangular`, `UpperTriangular`) are tagged with a `gml_type` attribute
+so that [`load`](@ref) can reconstruct them faithfully.
 """
 function save(h5::HDF5.H5DataStore, nn::NeuralNetwork)
     h5save(h5, params(params(nn)), "/")
