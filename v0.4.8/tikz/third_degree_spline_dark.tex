@@ -1,0 +1,53 @@
+\documentclass[crop, tikz]{standalone}
+
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[mode=buildnew]{standalone}
+
+\usepackage{xcolor}
+
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{calc}
+\usetikzlibrary{fit}
+%\usepackage{nicematrix}
+
+\tikzset{set/.style={draw,circle,inner sep=0pt,align=center}}
+
+\definecolor{mred}{RGB}{214,39,40}
+\definecolor{mgreen}{RGB}{44,160,44}
+
+\begin{document}
+%\begin{tikzpicture}
+%    \draw[domain=0:1,smooth,variable=\s]plot (\s, 1 - 3/2 * \s^2 + 3/4 * \s^3);
+%    \draw[domain=1:2,smooth,variable=\s]plot (\s, (2 - \s)^3 / 4);
+%\end{tikzpicture}
+\begin{tikzpicture}
+    \begin{axis}[
+        axis lines = left,
+        xlabel = \(s\),
+        ylabel = {\(h(s)\)},
+        color = white,
+    ]
+    % below the first part of the spline is defined
+    \addplot [
+        domain=0:1, 
+        samples=100, 
+        color=mred,
+        style = very thick,
+    ]
+    {1 - 3/2 * x^2 + 3/4 * x^3};
+    % the second part of the spline
+    \addplot [
+        domain=1:2, 
+        samples=100, 
+        color=mred,
+        style = very thick,
+        ]
+        {(2 - x)^3 / 4};
+    
+    \end{axis}
+    \end{tikzpicture}
+\end{document}

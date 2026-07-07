@@ -1,0 +1,14 @@
+\documentclass{standalone}
+\usepackage{graphicx}
+\usepackage{tikz}
+
+\definecolor{mred}{RGB}{214,39,40}
+
+\begin{document}
+\begin{tikzpicture}
+    \node[anchor=south west, inner sep=0pt, outer sep=0pt] (final) at (0, 0) {\includegraphics{final/image}};
+    \begin{scope}[x={(final.south east)},y={(final.north west)}]
+        \draw[help lines,ystep=1, xstep=0.0625, mred, ultra thick] (0,0) grid (1,1);
+    \end{scope}
+\end{tikzpicture}
+\end{document}

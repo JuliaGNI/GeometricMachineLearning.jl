@@ -1,0 +1,46 @@
+\documentclass{standalone}
+\usepackage{tikz}
+\usetikzlibrary{fit, calc, hobby}
+
+\usepackage{soul}
+\usepackage{xcolor}
+\definecolor{morange}{RGB}{255,127,14}
+\definecolor{mblue}{RGB}{31,119,180}
+\definecolor{mred}{RGB}{214,39,40}
+\definecolor{mpurple}{RGB}{148,103,189}
+\definecolor{mgreen}{RGB}{44,160,44}
+
+\begin{document} 
+\begin{tikzpicture}[arrow/.style={-stealth, thick, rounded corners}]
+%\node[anchor=south west,inner sep=0] 
+%at (-3,-2) {\includegraphics[width=\textwidth]{euler.png}};  
+
+\coordinate (A) at (1.2,1.2);
+\coordinate (A')  at ([shift={(-0.5,  0.5)}]A);
+\coordinate (A'') at ([shift={(-0.5, -0.5)}]A);
+
+\coordinate (B) at (1,-1.9);
+\coordinate (C) at (1.5,4);
+
+\coordinate (D) at (6.2,.9);
+\coordinate (D')  at ([shift={(-0.5,  1.0)}]D);
+\coordinate (D'') at ([shift={(-0.5, -1.0)}]D);
+
+\coordinate (FR) at ([shift={(1., -2.0)}]D);
+
+\coordinate (FP) at ([shift={(1., 2.0)}]D);
+
+\draw [fill=mblue] (A) circle (3pt) node [above right] {$A$};
+\draw [fill=mblue] (B) circle (3pt) node [below left]  {$B$};
+\draw [fill=mblue] (C) circle (3pt) node [above left]  {$C$};
+\draw [fill=mblue] (D) circle (3pt) node [right]       {$D$}; 
+
+\draw[mred, thick, arrow] (A)
+    to [curve through={(A') (C) (D') (D)}]
+    (FR) node[below of=FR, yshift=20] {$\tilde{z}_{\mu_1}$};
+    
+\draw[mpurple, thick, arrow] (A)
+    to [curve through={(A'') (B) (D'') (D)}]
+    (FP) node[above of=FP, yshift=-20] {$\tilde{z}_{\mu_2}$};
+\end{tikzpicture}
+\end{document} 
