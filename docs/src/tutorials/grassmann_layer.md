@@ -71,8 +71,8 @@ end # hide
 
 fig_dark, ax_dark = make_rosenbrock(; theme = :dark, alpha = .85)
 fig_light, ax_light = make_rosenbrock(; theme = :light)
-save("rosenbrock_dark.png", alpha_colorbuffer(fig_dark))
-save("rosenbrock_light.png", alpha_colorbuffer(fig_light))
+GLMakie.save("rosenbrock_dark.png", alpha_colorbuffer(fig_dark))
+GLMakie.save("rosenbrock_light.png", alpha_colorbuffer(fig_light))
 
 nothing # hide
 ```
@@ -233,8 +233,8 @@ end
 fig_light, ax_light = make_point_cloud_arrows(; theme = :light)
 fig_dark, ax_dark = make_point_cloud_arrows(; theme = :dark)
 
-save("point_cloud_arrows_light.png", alpha_colorbuffer(fig_light))
-save("point_cloud_arrows_dark.png", alpha_colorbuffer(fig_dark))
+GLMakie.save("point_cloud_arrows_light.png", alpha_colorbuffer(fig_light))
+GLMakie.save("point_cloud_arrows_dark.png", alpha_colorbuffer(fig_dark))
 
 nothing # hide
 ```
@@ -344,7 +344,7 @@ scatter!(ax, coordinates[1, :], coordinates[2, :], coordinates[3, :];
 textcolor = theme == :dark ? :white : :black # hide
 axislegend(; position = (.82, .75), backgroundcolor = :transparent, labelcolor = textcolor) # hide
 file_name = "mapped_points" * (theme == :dark ? "_dark.png" : "_light.png") # hide
-save(file_name, alpha_colorbuffer(fig)) # hide
+GLMakie.save(file_name, alpha_colorbuffer(fig)) # hide
 end # hide
 ```
 

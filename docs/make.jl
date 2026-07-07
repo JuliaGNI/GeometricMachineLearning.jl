@@ -1,4 +1,6 @@
 using GeometricMachineLearning
+using HDF5
+using AbstractNeuralNetworks
 using Documenter
 using DocumenterCitations
 using Markdown
@@ -339,7 +341,7 @@ index_latex_pages = vcat([Dict(_latex_pages)[key] for key in _keys]...)
 
 makedocs(;
     plugins = [bib],
-    modules = [GeometricMachineLearning],
+    modules = [GeometricMachineLearning, Base.get_extension(GeometricMachineLearning, :HDF5Ext)],
     authors = "Michael Kraus, Benedikt Brantner",
     repo = "https://github.com/JuliaGNI/GeometricMachineLearning.jl/blob/{commit}{path}#L{line}",
     sitename = "GeometricMachineLearning.jl",

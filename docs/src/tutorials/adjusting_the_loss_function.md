@@ -119,8 +119,8 @@ axislegend(; position = (.82, .75), backgroundcolor = :transparent) # hide
 fig
 end # hide
  # hide
-save("compare_losses_light.png", make_fig(; theme = :light); px_per_unit = 1.2) # hide
-save("compare_losses_dark.png", make_fig(; theme = :dark); px_per_unit = 1.2) # hide
+CairoMakie.save("compare_losses_light.png", make_fig(; theme = :light); px_per_unit = 1.2) # hide
+CairoMakie.save("compare_losses_dark.png", make_fig(; theme = :dark); px_per_unit = 1.2) # hide
 
 nothing
 ```

@@ -151,12 +151,8 @@ sae_nn_cpu = mtc(sae_nn_gpu)
 ```
 
 ```@setup toda_lattice
-using JLD2
-
-sae_trained_parameters = load("sae_parameters.jld2")["sae_parameters"]
-_nnp(ps::Tuple) = NeuralNetworkParameters{Tuple(Symbol("L$(i)") for i in 1:length(ps))}(ps)
-sae_nn_cpu = NeuralNetwork(sae_arch, Chain(sae_arch), _nnp(sae_trained_parameters), CPU())
-
+using HDF5
+sae_nn_cpu = load(NeuralNetwork, "sae_parameters.h5", sae_arch)
 nothing  # hide
 ```
 
@@ -243,8 +239,8 @@ end
 # axislegend(fig_light; position = (.82, .75), backgroundcolor = :transparent, color = :black)
 # axislegend(fig_dark;  position = (.82, .75), backgroundcolor = :transparent, color = :white)
 
-save("sae_validation_light.png", fig_light; px_per_unit = 1.2)
-save("sae_validation_dark.png", fig_dark; px_per_unit = 1.2)
+CairoMakie.save("sae_validation_light.png", fig_light; px_per_unit = 1.2)
+CairoMakie.save("sae_validation_dark.png", fig_dark; px_per_unit = 1.2)
 
 nothing # hide
 ```
@@ -297,8 +293,7 @@ train_integrator_loss = o_integrator(   integrator_nn,
 We can now evaluate the solution:
 
 ```@example toda_lattice
-nn_integrator_parameters = load("integrator_parameters.jld2")["integrator_parameters"] # hide
-integrator_nn = NeuralNetwork(integrator_architecture, Chain(integrator_architecture), _nnp(nn_integrator_parameters), backend) # hide
+integrator_nn = load(NeuralNetwork, "integrator_parameters.h5", integrator_architecture) # hide
 ics = encoder(sae_nn_cpu)((q = dl.input.q[:, 1:seq_length, 1], p = dl.input.p[:, 1:seq_length, 1])) # hide
 iterate(mtc(integrator_nn), ics; n_points = length(sol.t), prediction_window = seq_length) # hide
 @time "time stepping with transformer" time_series = iterate(mtc(integrator_nn), ics; n_points = length(sol.t), prediction_window = seq_length)
@@ -350,8 +345,8 @@ for (i, time) in zip(1:length(time_steps), time_steps)
     plot_transformer_validation!(fig_dark, (i, 1), time; theme = :dark)
 end
 
-save("sae_integrator_validation_light.png", fig_light; px_per_unit = 1.2)
-save("sae_integrator_validation_dark.png", fig_dark; px_per_unit = 1.2)
+CairoMakie.save("sae_integrator_validation_light.png", fig_light; px_per_unit = 1.2)
+CairoMakie.save("sae_integrator_validation_dark.png", fig_dark; px_per_unit = 1.2)
 
 nothing # hide
 ```
@@ -450,8 +445,8 @@ end
 # axislegend(fig_light; position = (.82, .75), backgroundcolor = :transparent, color = :black)
 # axislegend(fig_dark;  position = (.82, .75), backgroundcolor = :transparent, color = :white)
 
-save("psd_validation2_light.png", fig_light; px_per_unit = 1.2)
-save("psd_validation2_dark.png", fig_dark; px_per_unit = 1.2)
+CairoMakie.save("psd_validation2_light.png", fig_light; px_per_unit = 1.2)
+CairoMakie.save("psd_validation2_dark.png", fig_dark; px_per_unit = 1.2)
 
 nothing # hide
 ```
@@ -482,8 +477,7 @@ train_integrator_loss2 = o_integrator(integrator_nn2, dl_integration, integrator
 ```
 
 ```@setup toda_lattice
-nn_integrator_parameters2 = load("integrator_parameters_psd.jld2")["integrator_parameters"] # hide
-integrator_nn2 = NeuralNetwork(integrator_architecture2, Chain(integrator_architecture2), _nnp(nn_integrator_parameters2), backend) # hide
+integrator_nn2 = load(NeuralNetwork, "integrator_parameters_psd.h5", integrator_architecture2) # hide
 ics = encoder(psd_nn2)((q = dl_cpu.input.q[:, 1:seq_length, 1], p = dl_cpu.input.p[:, 1:seq_length, 1])) # hide
 nothing # hide
 ```
@@ -555,8 +549,8 @@ end
 # axislegend(fig_light; position = (.82, .75), backgroundcolor = :transparent, color = :black)
 # axislegend(fig_dark;  position = (.82, .75), backgroundcolor = :transparent, color = :white)
 
-save("psd_integrator_validation_light.png", fig_light; px_per_unit = 1.2)
-save("psd_integrator_validation_dark.png", fig_dark; px_per_unit = 1.2)
+CairoMakie.save("psd_integrator_validation_light.png", fig_light; px_per_unit = 1.2)
+CairoMakie.save("psd_integrator_validation_dark.png", fig_dark; px_per_unit = 1.2)
 
 nothing # hide
 ```

@@ -89,7 +89,7 @@ ax3 = make_axis(3)
 
 px_per_unit = Main.output_type == :html ? 1 : 2
 add_on = theme == :dark ? "_dark" : "_light"
-save(plot_name * add_on * ".png", fig; px_per_unit = px_per_unit)
+CairoMakie.save(plot_name * add_on * ".png", fig; px_per_unit = px_per_unit)
 end
 
 make_plot(; theme = :dark)

@@ -34,6 +34,7 @@ module GeometricMachineLearning
     import AbstractNeuralNetworks: params, architecture, model, dim
     import AbstractNeuralNetworks: AbstractPullback, NetworkLoss, _compute_loss
     import AbstractNeuralNetworks: networkbackend
+    import AbstractNeuralNetworks: save, load
     # export params, architetcure, model
     export dim
     import NNlib: σ, sigmoid, softmax
@@ -409,4 +410,6 @@ module GeometricMachineLearning
     export SymplecticTransformer
 
     include("map_to_cpu.jl")
+
+    export save, load
 end
