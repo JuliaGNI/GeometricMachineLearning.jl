@@ -213,12 +213,18 @@ _is_go_native_method(::GeometricOptimizers.MomentumMethod) = true
 _is_go_native_method(::GeometricOptimizers.Adam)            = true
 _is_go_native_method(::GeometricOptimizers.OptimizerMethod) = false
 
+_adapt_method_to_T(method::GeometricOptimizers.Adam, ::Type{T}) where T =
+    GeometricOptimizers.Adam(T(method.η), T(method.β₁), T(method.β₂), T(method.δ))
+_adapt_method_to_T(method::GeometricOptimizers.MomentumMethod, ::Type{T}) where T =
+    GeometricOptimizers.MomentumMethod(T(method.α))
+_adapt_method_to_T(method, ::Type) = method
+
 _use_go_cache(method, x) =
     _is_go_native_method(method) && x isa GeometricOptimizers.OptimizerSolution
 
 function _make_optimizer_cache(method, x)
     if _use_go_cache(method, x)
-        GeometricOptimizers.OptimizerCache(method, x)
+        GeometricOptimizers.OptimizerCache(_adapt_method_to_T(method, _eltype(x)), x)
     elseif x isa NamedTuple || x isa NeuralNetworkParameters
         NamedTuple{keys(x)}(Tuple(_make_optimizer_cache(method, x[k]) for k in keys(x)))
     else
@@ -306,8 +312,9 @@ function _leaf_optim_step!(cache::GeometricOptimizers.OptimizerCache,
         dp_leaf, ps_leaf, λY_leaf, method, retraction, step_size)
     T = _eltype(ps_leaf)
     local_grad = _GMLGradient{T, typeof(dp_leaf)}(dp_leaf)
-    if method isa GeometricOptimizers.Adam
-        GeometricOptimizers.update!(cache, state, local_grad, method, ps_leaf)
+    adapted = _adapt_method_to_T(method, T)
+    if adapted isa GeometricOptimizers.Adam
+        GeometricOptimizers.update!(cache, state, local_grad, adapted, ps_leaf)
     else
         GeometricOptimizers.update!(cache, state, local_grad,
                                      GeometricOptimizers.NoHessian{T}(), ps_leaf)
@@ -332,7 +339,7 @@ function _leaf_optim_step!(cache::GeometricOptimizers.OptimizerCache,
                                       GeometricOptimizers.second_moment(cache))
     elseif state isa GeometricOptimizers.MomentumState
         GeometricOptimizers._add!(GeometricOptimizers.momentum(state),
-                                   GeometricOptimizers._mul(method.α,
+                                   GeometricOptimizers._mul(adapted.α,
                                        GeometricOptimizers.gradient_array(cache)))
     end
     state.iterations += 1

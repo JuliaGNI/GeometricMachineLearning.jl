@@ -118,3 +118,57 @@ function Ω(Y::GrassmannManifold{T}, Δ::AbstractMatrix{T}) where T
     # SkewSymMatrix(ΩSt - E * E' * ΩSt * E * E')
     SkewSymMatrix(ΩSt)
 end
+
+function Base.copyto!(A::GrassmannManifold, B::GrassmannManifold)
+    A.A .= B.A
+    nothing
+end
+
+Base.copy(A::GrassmannManifold) = GrassmannManifold(copy(A.A))
+Base.similar(A::GrassmannManifold) = GrassmannManifold(similar(A.A))
+
+function GeometricOptimizers.global_rep(
+    λY::GeometricOptimizers.GlobalSection{T, <:GrassmannManifold{T}},
+    Δ::AbstractMatrix{T}
+) where T
+    N, n = size(λY.Y)
+    GrassmannLieAlgHorMatrix(
+        λY.λ' * Δ,
+        N, n
+    )
+end
+
+function GeometricOptimizers.update_section!(
+    Λᵗ::GeometricOptimizers.GlobalSection{T, <:GrassmannManifold{T}},
+    Λ⁽ᵗ⁻¹⁾::GeometricOptimizers.GlobalSection{T, <:GrassmannManifold{T}},
+    B⁽ᵗ⁻¹⁾::AbstractMatrix{T},
+    retraction
+) where T
+    N, n = B⁽ᵗ⁻¹⁾.N, B⁽ᵗ⁻¹⁾.n
+    expB = retraction(B⁽ᵗ⁻¹⁾)
+    expB.A .= Λ⁽ᵗ⁻¹⁾.Y.A * expB.A[1:n, :] .+ Λ⁽ᵗ⁻¹⁾.λ * expB.A[(n+1):N, :]
+    Λᵗ.Y.A .= @view expB.A[:, 1:n]
+    Λᵗ.λ .= @view expB.A[:, (n+1):N]
+    nothing
+end
+
+function GeometricOptimizers.cayley(B::GrassmannLieAlgHorMatrix{T}) where T
+    backend = networkbackend(B)
+    E = StiefelProjection(B)
+    𝕆 = KernelAbstractions.zeros(backend, T, B.n, B.n)
+    𝕀_small = one(𝕆)
+    𝕀_small2 = hcat(vcat(𝕀_small, 𝕆), vcat(𝕆, 𝕀_small))
+    𝕀_big = one(B)
+    B̂ = hcat(vcat(𝕆, B.B), E)
+    B̄ = hcat(vcat(𝕀_small, 𝕆), vcat(zero(B.B'), -B.B'))'
+    GrassmannManifold((𝕀_big + T(0.5) * B̂ * inv(𝕀_small2 - T(0.5) * B̄' * B̂) * B̄') * (𝕀_big + T(0.5) * B))
+end
+
+function GeometricOptimizers._copyto!(
+    Λ₁::GeometricOptimizers.GlobalSection{T, <:GrassmannManifold{T}},
+    Λ₂::GeometricOptimizers.GlobalSection{T, <:GrassmannManifold{T}}
+) where T
+    copyto!(Λ₁.Y, Λ₂.Y)
+    copyto!(Λ₁.λ, Λ₂.λ)
+    Λ₁
+end

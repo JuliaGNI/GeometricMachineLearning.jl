@@ -318,3 +318,5 @@ function _round(B::StiefelLieAlgHorMatrix; kwargs...)
         B.n
     )
 end
+
+Base.fill!(A::StiefelLieAlgHorMatrix, val) = (fill!(A.A, val); fill!(A.B, val); A)
