@@ -26,15 +26,17 @@ function HNNLoss(arch::HamiltonianArchitecture)
     HNNLoss(hamiltonian_vector_field(arch))
 end
 
-function (loss::HNNLoss)(   ::Union{Chain, AbstractExplicitLayer}, 
-                            ps::Union{NeuralNetworkParameters, NamedTuple}, 
-                            input::QPTOAT, 
-                            output::QPTOAT)
+AbstractNeuralNetworks.NetworkLoss(arch::HamiltonianArchitecture) = HNNLoss(arch)
+
+function (loss::HNNLoss)(::Union{Chain, AbstractExplicitLayer},
+        ps::Union{NeuralNetworkParameters, NamedTuple},
+        input::QPTOAT,
+        output::QPTOAT)
     loss(ps, input, output)
 end
 
-function (loss::HNNLoss)(   ps::Union{NeuralNetworkParameters, NamedTuple},
-                            input::QPTOAT,
-                            output::QPTOAT)
+function (loss::HNNLoss)(ps::Union{NeuralNetworkParameters, NamedTuple},
+        input::QPTOAT,
+        output::QPTOAT)
     norm(loss.hvf(input, ps) - output) / norm(output)
 end

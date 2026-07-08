@@ -25,13 +25,14 @@ function test_optimization_with_adam(;T=Float32, dim₁=6, dim₂=6, n_images=10
     # input dim is dim₁ / patch_length * dim₂ / pach_length; the transformer is called with dim₁ / patch_length and two layers
     model = Chain(Transformer(dl.input_dim, patch_length, 2; Stiefel=true), ClassificationLayer(dl.input_dim, 10, σ))
 
-    ps = NeuralNetwork(model, CPU(), Float32).params
+    nn_obj = NeuralNetwork(model, CPU(), Float32)
+    ps = nn_obj.params
 
     loss = FeedForwardLoss()
 
     loss₁ = loss(model, ps, dl.input, dl.output)
 
-    opt = Optimizer(AdamOptimizer(), ps)
+    opt = Optimizer(Adam(), nn_obj)
     λY = GlobalSection(ps)
     loss_average = optimize_for_one_epoch!(opt, model, ps, dl, batch, loss, λY)
 

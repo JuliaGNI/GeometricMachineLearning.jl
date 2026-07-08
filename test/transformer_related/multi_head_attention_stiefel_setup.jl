@@ -1,5 +1,4 @@
-using GeometricMachineLearning, Test
-using GeometricMachineLearning: init_optimizer_cache
+using GeometricMachineLearning, GeometricOptimizers, Test
 import Random, Test, LinearAlgebra, KernelAbstractions
 
 Random.seed!(1234)
@@ -22,7 +21,7 @@ function check_grad_setup(B::AbstractMatrix{T}, tol=T(10)*eps(T)) where T
     @test LinearAlgebra.norm(B) < tol
 end
 check_grad_setup(gx::NamedTuple) = apply_toNT(check_grad_setup, gx)
-check_grad_setup(B::MomentumCache) = check_grad_setup(B.B)
+check_grad_setup(B::MomentumCache) = check_grad_setup(B.δ)
 
 @doc raw"""
 Check if `initialparameters` and `init_optimizer_cache` do the right thing for `MultiHeadAttentionLayer`.
@@ -33,7 +32,7 @@ function check_multi_head_attention_stiefel_setup(T::Type, N::Int, n::Int)
 
     check_setup(ps)
 
-    gx = init_optimizer_cache(MomentumOptimizer(), ps)
+    gx = Optimizer(MomentumMethod(), ps).cache
     check_grad_setup(gx)
 end
 

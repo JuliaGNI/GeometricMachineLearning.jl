@@ -38,9 +38,9 @@ function svd_test(A, n, train_steps=1000, tol=1e-1; retraction=cayley)
     model = Chain(PSDLayer(2*N, 2*n), PSDLayer(2*n, 2*N))
     ps = NeuralNetwork(model, CPU(), Float64).params
 
-    o₁ = Optimizer(GradientOptimizer(0.01), ps; retraction = retraction)
-    o₂ = Optimizer(MomentumOptimizer(0.01), ps; retraction = retraction)
-    o₃ = Optimizer(AdamOptimizer(0.01), ps; retraction = retraction)
+    o₁ = Optimizer(GradientMethod(), ps; retraction = retraction, step_size = 0.01)
+    o₂ = Optimizer(MomentumMethod(), ps; retraction = retraction, step_size = 0.01)
+    o₃ = Optimizer(Adam(0.01), ps; retraction = retraction)
 
     U₁, Ũ₁, err₁ = train_network!(o₁, model, deepcopy(ps), A, train_steps, tol)
     U₂, Ũ₂, err₂ = train_network!(o₂, model, deepcopy(ps), A, train_steps, tol)

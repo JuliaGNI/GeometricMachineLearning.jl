@@ -145,8 +145,8 @@ end
 
 Base.:*(α::Real, A::SkewSymMatrix) = A*α
 
-function Base.zeros(ST::Type{SkewSymMatrix{<:Real}}, n::Int)
-    zeros(CPU(), ST, n)
+function Base.zeros(::Type{SkewSymMatrix{T}}, n::Int) where T
+    zeros(CPU(), SkewSymMatrix{T}, n)
 end
 
 function Base.zeros(backend::KernelAbstractions.Backend, ::Type{SkewSymMatrix{T}}, n::Int) where T
@@ -342,7 +342,9 @@ function _round(A::AbstractArray; kwargs...)
     round.(A; kwargs...)
 end
 
-# define routines for generalizing ChainRulesCore to SkewSymMatrix 
+Base.fill!(A::SkewSymMatrix, val) = (fill!(A.S, val); A)
+
+# define routines for generalizing ChainRulesCore to SkewSymMatrix
 ChainRulesCore.ProjectTo(A::SkewSymMatrix) = ProjectTo{SkewSymMatrix}(; skew_sym = ProjectTo(A.S))
 (project::ProjectTo{SkewSymMatrix})(dA::AbstractMatrix) = SkewSymMatrix(project.skew_sym(map_to_Skew(dA)), size(dA, 2))
 (project::ProjectTo{SkewSymMatrix})(dA::SkewSymMatrix) = SkewSymMatrix(project.skew_sym(dA.S), dA.n)

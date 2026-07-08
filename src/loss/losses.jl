@@ -1,7 +1,10 @@
+# type piracy! This should go into `AbstractNeuralNetworks`! ...
+AbstractNeuralNetworks.NetworkLoss(nn::NeuralNetwork) = NetworkLoss(architecture(nn))
+
 @doc raw"""
     TransformerLoss(seq_length, prediction_window)
 
-Make an instance of the transformer loss. 
+Make an instance of the transformer loss.
 
 This should be used together with a neural network of type [`TransformerIntegrator`](@ref).
 
@@ -9,7 +12,7 @@ This should be used together with a neural network of type [`TransformerIntegrat
 
 `TransformerLoss` applies a neural network to an input and compares it to the `output` via an ``L_2`` norm:
 
-```jldoctest 
+```jldoctest
 using GeometricMachineLearning
 using LinearAlgebra: norm
 import Random
@@ -40,7 +43,7 @@ So `TransformerLoss` simply does:
 ```math
     \mathtt{loss}(\mathcal{NN}, \mathtt{input}, \mathtt{output}) = || \mathcal{NN}(\mathtt{input})[(\mathtt{sl} - \mathtt{pw} + 1):\mathtt{end}] - \mathtt{output} || / || \mathtt{output} ||,
 ```
-where ``||\cdot||`` is the ``L_2`` norm. 
+where ``||\cdot||`` is the ``L_2`` norm.
 
 # Parameters
 
@@ -52,14 +55,24 @@ struct TransformerLoss <: NetworkLoss
     prediction_window::Int
 end
 
-TransformerLoss(seq_length::Int) = TransformerLoss(seq_length, seq_length)
-
-# This crops the output array of the neural network so that it conforms with the output it should be compared to. This is needed for the transformer loss. 
-function crop_array_for_transformer_loss(nn_output::AT, output::BT) where {T, T2, AT <: AbstractArray{T, 3}, BT <: AbstractArray{T2, 3}}
-    @view nn_output[axes(output, 1), axes(output, 2) .+ size(nn_output, 2) .- size(output, 2), axes(output, 3)]
+function AbstractNeuralNetworks.NetworkLoss(
+        arch::TransformerIntegrator, prediction_window::Integer = 1)
+    TransformerLoss(arch.seq_length, prediction_window)
 end
 
-function (loss::TransformerLoss)(model::Union{Chain, AbstractExplicitLayer}, ps::Union{NeuralNetworkParameters, NamedTuple}, input::AT, output::AT) where {T, AT <: AbstractArray{T, 3}}
+TransformerLoss(seq_length::Int) = TransformerLoss(seq_length, seq_length)
+
+# This crops the output array of the neural network so that it conforms with the output it should be compared to. This is needed for the transformer loss.
+function crop_array_for_transformer_loss(nn_output::AT,
+        output::BT) where {T, T2, AT <: AbstractArray{T, 3}, BT <: AbstractArray{T2, 3}}
+    @view nn_output[
+        axes(output, 1), axes(output, 2) .+ size(nn_output, 2) .- size(output, 2),
+        axes(output, 3)]
+end
+
+function (loss::TransformerLoss)(model::Union{Chain, AbstractExplicitLayer},
+        ps::Union{NeuralNetworkParameters, NamedTuple}, input::AT,
+        output::AT) where {T, AT <: AbstractArray{T, 3}}
     input_dim, input_seq_length = size(input)
     output_dim, output_prediction_window = size(output)
     @assert input_dim == output_dim
@@ -67,39 +80,46 @@ function (loss::TransformerLoss)(model::Union{Chain, AbstractExplicitLayer}, ps:
     @assert output_prediction_window == loss.prediction_window
 
     predicted_output_uncropped = model(input, ps)
-    predicted_output_cropped = crop_array_for_transformer_loss(predicted_output_uncropped, output)
+    predicted_output_cropped = crop_array_for_transformer_loss(
+        predicted_output_uncropped, output)
     _compute_loss(predicted_output_cropped, output)
 end
 
-function (loss::TransformerLoss)(model::Union{Chain, AbstractExplicitLayer}, ps::Union{NeuralNetworkParameters, NamedTuple}, input::AT, output::AT) where {T, AT <: AbstractArray{T, 2}}
+function (loss::TransformerLoss)(model::Union{Chain, AbstractExplicitLayer},
+        ps::Union{NeuralNetworkParameters, NamedTuple}, input::AT,
+        output::AT) where {T, AT <: AbstractArray{T, 2}}
     loss(model, ps, reshape(input, size(input)..., 1), reshape(output, size(output)..., 1))
 end
 
-function (loss::TransformerLoss)(model::Union{Chain, AbstractExplicitLayer}, ps::Union{NeuralNetworkParameters, NamedTuple}, input::T, output::T) where {T <: QPT}
+function (loss::TransformerLoss)(model::Union{Chain, AbstractExplicitLayer},
+        ps::Union{NeuralNetworkParameters, NamedTuple},
+        input::T, output::T) where {T <: QPT}
     loss(model, ps, vcat(input.q, input.p), vcat(output.q, output.p))
 end
 
 # @doc raw"""
 #     ClassificationTransformerLoss()
-# 
+#
 # Make an instance of `ClassificationTransformerLoss`.
-# 
+#
 # This is to be used together with a [`ClassificationTransformer`](@ref).
-# 
+#
 # It takes an input, parses it to the transformer and then crops it to conform with the desired output size.
-# 
+#
 # Suppose the input is of dimension ``\mathtt{td}\times\mathtt{sl}``, where `td` is *transformer dimension* and `sl` is *sequence length*.
-# The output of the transformer will again be of the same dimension: 
-# 
+# The output of the transformer will again be of the same dimension:
+#
 # ```math
 # \mathrm{output}\in\mathbb{R}^{\mathtt{td}\times\mathtt{sl}}.
 # ```
-# 
+#
 # if the output dimension `cl` of the [`ClassificationLayer`](@ref) is differnt form `td`.
 # """
 struct ClassificationTransformerLoss <: NetworkLoss end
 
-function (loss::ClassificationTransformerLoss)(model::Union{Chain, AbstractExplicitLayer}, ps::Union{NeuralNetworkParameters, NamedTuple}, input::AbstractArray, output::AbstractArray)
+function (loss::ClassificationTransformerLoss)(model::Union{Chain, AbstractExplicitLayer},
+        ps::Union{NeuralNetworkParameters, NamedTuple},
+        input::AbstractArray, output::AbstractArray)
     predicted_output_uncropped = model(input, ps)
     # predicted_output_cropped = crop_array_for_transformer_loss(predicted_output_uncropped, output)
     norm(predicted_output_uncropped - output) / norm(output)
@@ -110,13 +130,13 @@ end
 
 Make an instance of `AutoEncoderLoss`.
 
-This loss should always be used together with a neural network of type [`AutoEncoder`](@ref) (and it is also the default for training such a network). 
+This loss should always be used together with a neural network of type [`AutoEncoder`](@ref) (and it is also the default for training such a network).
 
 # Example
 
 `AutoEncoderLoss` applies a neural network to an input and compares it to the `output` via an ``L_2`` norm:
 
-```jldoctest 
+```jldoctest
 using GeometricMachineLearning
 using LinearAlgebra: norm
 import Random
@@ -142,23 +162,29 @@ So `AutoEncoderLoss` simply does:
 ```math
     \mathtt{loss}(\mathcal{NN}, \mathtt{input}) = || \mathcal{NN}(\mathtt{input}) - \mathtt{input} || / || \mathtt{input} ||,
 ```
-where ``||\cdot||`` is the ``L_2`` norm. 
+where ``||\cdot||`` is the ``L_2`` norm.
 
 # Parameters
 
 This loss does not have any parameters.
 """
-struct AutoEncoderLoss <: NetworkLoss end 
+struct AutoEncoderLoss <: NetworkLoss end
+
+AbstractNeuralNetworks.NetworkLoss(::AutoEncoder) = AutoEncoderLoss()
 
 function (loss::AutoEncoderLoss)(nn::NeuralNetwork, input::QPTOAT)
     loss(nn.model, params(nn), input, input)
 end
 
-function (loss::AutoEncoderLoss)(model::Union{Chain, AbstractExplicitLayer}, ps::Union{NeuralNetworkParameters, NamedTuple}, input::QPTOAT)
+function (loss::AutoEncoderLoss)(model::Union{Chain, AbstractExplicitLayer},
+        ps::Union{NeuralNetworkParameters, NamedTuple}, input::QPTOAT)
     loss(model, ps, input, input)
 end
 
-(loss::AutoEncoderLoss)(model::Union{Chain, AbstractExplicitLayer}, ps::Union{NeuralNetworkParameters, NamedTuple}, input::QPTOAT, output::QPTOAT) = FeedForwardLoss()(model, ps, input, output)
+function (loss::AutoEncoderLoss)(model::Union{Chain, AbstractExplicitLayer},
+        ps::Union{NeuralNetworkParameters, NamedTuple}, input::QPTOAT, output::QPTOAT)
+    FeedForwardLoss()(model, ps, input, output)
+end
 
 @doc raw"""
     ReducedLoss(encoder, decoder)
@@ -171,7 +197,7 @@ This loss should be used together with a [`NeuralNetworkIntegrator`](@ref) or [`
 
 `ReducedLoss` applies the *encoder*, *integrator* and *decoder* neural networks in this order to an input and compares it to the `output` via an ``L_2`` norm:
 
-```jldoctest 
+```jldoctest
 using GeometricMachineLearning
 using LinearAlgebra: norm
 import Random
@@ -196,7 +222,7 @@ loss(transformer, input_mat, output_mat) ≈ norm(output_mat - output_prediction
 true
 ```
 
-So the loss computes: 
+So the loss computes:
 
 ```math
 \mathrm{loss}_{\mathcal{E}, \mathcal{D}}(\mathcal{NN}, \mathrm{input}, \mathrm{output}) = ||\mathcal{D}(\mathcal{NN}(\mathcal{E}(\mathrm{input}))) - \mathrm{output}||,
@@ -204,7 +230,8 @@ So the loss computes:
 where ``\mathcal{E}`` is the [`Encoder`](@ref), ``\mathcal{D}`` is the [`Decoder`](@ref).
 ``\mathcal{NN}`` is the neural network we compute the loss of.
 """
-struct ReducedLoss{ET <: NeuralNetwork{<:Encoder}, DT <: NeuralNetwork{<:Decoder}} <: NetworkLoss
+struct ReducedLoss{ET <: NeuralNetwork{<:Encoder}, DT <: NeuralNetwork{<:Decoder}} <:
+       NetworkLoss
     encoder::ET
     decoder::DT
 end
@@ -224,6 +251,7 @@ function ReducedLoss(autoencoder::NeuralNetwork{<:AutoEncoder})
     ReducedLoss(encoder(autoencoder), decoder(autoencoder))
 end
 
-function (loss::ReducedLoss)(model::Chain, params::NeuralNetworkParameters, input::CT, output::CT) where {CT <: QPTOAT}
+function (loss::ReducedLoss)(model::Chain, params::NeuralNetworkParameters,
+        input::CT, output::CT) where {CT <: QPTOAT}
     _compute_loss(loss.decoder(model(loss.encoder(input), params)), output)
 end

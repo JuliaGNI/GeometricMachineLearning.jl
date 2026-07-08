@@ -17,7 +17,7 @@ function train_network(; n_epochs=10)
     nn = setup_network(dl)
     loss = FeedForwardLoss()
 
-    o = Optimizer(AdamOptimizer(), nn)
+    o = Optimizer(Adam(), nn)
     batch = Batch(5, 1)
     loss_array = o(nn, dl, batch, n_epochs, loss)
     T = eltype(dl)

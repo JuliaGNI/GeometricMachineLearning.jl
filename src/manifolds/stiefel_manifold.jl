@@ -182,3 +182,87 @@ function Base.copyto!(A::StiefelManifold, B::StiefelManifold)
     A.A .= B.A
     nothing
 end
+
+Base.copy(A::StiefelManifold) = StiefelManifold(copy(A.A))
+Base.similar(A::StiefelManifold) = StiefelManifold(similar(A.A))
+
+function Base.zero(Y::StiefelManifold{T}) where T
+    N, n = size(Y)
+    backend = KernelAbstractions.get_backend(Y.A)
+    zeros(backend, StiefelLieAlgHorMatrix{T}, N, n)
+end
+
+# Bridge GML's StiefelManifold into GO's manifold optimization infrastructure.
+# GO's methods dispatch on MT<:GO.Manifold{T}, but GML.StiefelManifold<:GML.Manifold{T}
+# (a different type hierarchy), so we extend GO's functions explicitly for GML's type.
+
+function GeometricOptimizers.global_rep(
+    λY::GeometricOptimizers.GlobalSection{T, <:StiefelManifold{T}},
+    Δ::AbstractMatrix{T}
+) where T
+    N, n = size(λY.Y)
+    StiefelLieAlgHorMatrix(
+        SkewSymMatrix(λY.Y.A' * Δ),
+        λY.λ' * Δ,
+        N, n
+    )
+end
+
+function GeometricOptimizers.update_section!(
+    Λᵗ::GeometricOptimizers.GlobalSection{T, <:StiefelManifold{T}},
+    Λ⁽ᵗ⁻¹⁾::GeometricOptimizers.GlobalSection{T, <:StiefelManifold{T}},
+    B⁽ᵗ⁻¹⁾::AbstractMatrix{T},
+    retraction
+) where T
+    N, n = B⁽ᵗ⁻¹⁾.N, B⁽ᵗ⁻¹⁾.n
+    expB = retraction(B⁽ᵗ⁻¹⁾)
+    expB.A .= Λ⁽ᵗ⁻¹⁾.Y.A * expB.A[1:n, :] .+ Λ⁽ᵗ⁻¹⁾.λ * expB.A[(n+1):N, :]
+    Λᵗ.Y.A .= @view expB.A[:, 1:n]
+    Λᵗ.λ .= @view expB.A[:, (n+1):N]
+    nothing
+end
+
+function GeometricOptimizers.cayley(B::StiefelLieAlgHorMatrix{T}) where T
+    E = StiefelProjection(B)
+    𝕀_small = one(B.A)
+    𝕆 = zero(𝕀_small)
+    𝕀_small2 = hcat(vcat(𝕀_small, 𝕆), vcat(𝕆, 𝕀_small))
+    𝕀_big = one(B)
+    A_mat = B.A * 𝕀_small
+    B̂ = hcat(vcat(T(0.5) * A_mat, B.B), E)
+    B̄ = hcat(vcat(𝕀_small, T(0.5) * A_mat), vcat(zero(B.B'), -B.B'))'
+    StiefelManifold((𝕀_big + T(0.5) * B̂ * inv(𝕀_small2 - T(0.5) * B̄' * B̂) * B̄') * (𝕀_big + T(0.5) * B))
+end
+
+function GeometricOptimizers._copyto!(
+    Λ₁::GeometricOptimizers.GlobalSection{T, <:StiefelManifold{T}},
+    Λ₂::GeometricOptimizers.GlobalSection{T, <:StiefelManifold{T}}
+) where T
+    copyto!(Λ₁.Y, Λ₂.Y)
+    copyto!(Λ₁.λ, Λ₂.λ)
+    Λ₁
+end
+
+# GO arithmetic bridges for GML's SkewSymMatrix (GO dispatches by module, not structure).
+GeometricOptimizers._add!(a::SkewSymMatrix{T}, b::SkewSymMatrix{T}) where T = (a.S .+= b.S; a)
+GeometricOptimizers._add!(a::SkewSymMatrix{T}, b::T) where T = (a.S .+= b; a)
+GeometricOptimizers._rac!(B::SkewSymMatrix, A::SkewSymMatrix) = (B.S .= sqrt.(A.S); B)
+GeometricOptimizers._square!(B::SkewSymMatrix, A::SkewSymMatrix) = (B.S .= A.S .^ 2; B)
+GeometricOptimizers._div!(C::SkewSymMatrix, A::SkewSymMatrix, B::SkewSymMatrix) = (C.S .= A.S ./ B.S; C)
+
+# GO arithmetic bridges for GML's StiefelLieAlgHorMatrix.
+function GeometricOptimizers._add!(A::StiefelLieAlgHorMatrix{T}, B::StiefelLieAlgHorMatrix{T}) where T
+    GeometricOptimizers._add!(A.A, B.A); A.B .+= B.B; A
+end
+function GeometricOptimizers._add!(A::StiefelLieAlgHorMatrix{T}, b::T) where T
+    GeometricOptimizers._add!(A.A, b); A.B .+= b; A
+end
+function GeometricOptimizers._rac!(B::StiefelLieAlgHorMatrix, A::StiefelLieAlgHorMatrix)
+    GeometricOptimizers._rac!(B.A, A.A); B.B .= sqrt.(A.B); B
+end
+function GeometricOptimizers._square!(B::StiefelLieAlgHorMatrix, A::StiefelLieAlgHorMatrix)
+    GeometricOptimizers._square!(B.A, A.A); B.B .= A.B .^ 2; B
+end
+function GeometricOptimizers._div!(C::StiefelLieAlgHorMatrix, A::StiefelLieAlgHorMatrix, B::StiefelLieAlgHorMatrix)
+    GeometricOptimizers._div!(C.A, A.A, B.A); C.B .= A.B ./ B.B; C
+end

@@ -198,3 +198,8 @@ function _round(B::GrassmannLieAlgHorMatrix; kwargs...)
         B.n
     )
 end
+
+function Base.copyto!(A::GrassmannLieAlgHorMatrix, B::GrassmannLieAlgHorMatrix)
+    copyto!(A.B, B.B)
+    A
+end
