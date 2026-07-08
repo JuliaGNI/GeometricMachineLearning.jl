@@ -121,8 +121,8 @@ end
 fig_dark, ax_dark = plot_training_losses(loss_array1, loss_array2; theme = :dark)
 fig_light, ax_light = plot_training_losses(loss_array1, loss_array2; theme = :light)
 
-save("softmax_comparison_dark.png", fig_dark; px_per_unit = 1.2)
-save("softmax_comparison_light.png", fig_light; px_per_unit = 1.2)
+CairoMakie.save("softmax_comparison_dark.png", fig_dark; px_per_unit = 1.2)
+CairoMakie.save("softmax_comparison_light.png", fig_light; px_per_unit = 1.2)
 
 nothing
 ```
@@ -171,8 +171,8 @@ end
 
 fig_light, ax_light = make_validation_plot(n_steps; theme = :light)
 fig_dark, ax_dark = make_validation_plot(n_steps; theme = :dark)
-save("softmax_comparison_validation_light.png", fig_light; px_per_unit = 1.2)
-save("softmax_comparison_validation_dark.png", fig_dark; px_per_unit = 1.2)
+CairoMakie.save("softmax_comparison_validation_light.png", fig_light; px_per_unit = 1.2)
+CairoMakie.save("softmax_comparison_validation_dark.png", fig_dark; px_per_unit = 1.2)
 
 nothing
 ```

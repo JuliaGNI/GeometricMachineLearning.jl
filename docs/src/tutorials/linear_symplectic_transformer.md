@@ -118,8 +118,8 @@ end
 fig_dark, ax_dark = plot_training_losses(loss_array_standard, loss_array_symplectic, loss_array_sympnet; theme = :dark)
 fig_light, ax_light = plot_training_losses(loss_array_standard, loss_array_symplectic, loss_array_sympnet; theme = :light)
 
-save("lst_dark.png", fig_dark; px_per_unit = 1.2)
-save("lst_light.png", fig_light; px_per_unit = 1.2)
+CairoMakie.save("lst_dark.png", fig_dark; px_per_unit = 1.2)
+CairoMakie.save("lst_light.png", fig_light; px_per_unit = 1.2)
 
 nothing
 ```
@@ -172,8 +172,8 @@ end
 
 fig_light, ax_light = make_validation_plot(n_steps; theme = :light)
 fig_dark, ax_dark = make_validation_plot(n_steps; theme = :dark)
-save("lst_validation_light.png", fig_light; px_per_unit = 1.2)
-save("lst_validation_dark.png", fig_dark; px_per_unit = 1.2)
+CairoMakie.save("lst_validation_light.png", fig_light; px_per_unit = 1.2)
+CairoMakie.save("lst_validation_dark.png", fig_dark; px_per_unit = 1.2)
 
 nothing
 ```

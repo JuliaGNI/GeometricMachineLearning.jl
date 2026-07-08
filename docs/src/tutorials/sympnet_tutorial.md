@@ -159,7 +159,7 @@ lines!(ax, g_loss_array, label=L"$G$-SympNet", color=morange)
 lines!(ax, la_loss_array, label=L"$LA$-SympNet", color=mpurple)
 axislegend(; position = (.82, .75), backgroundcolor = :transparent, labelcolor = textcolor) # hide
 fig_name = theme == :dark ? "sympnet_training_loss_dark.png" : "sympnet_training_loss_light.png" # hide
-save(fig_name, fig; px_per_unit = 1.2) # hide
+CairoMakie.save(fig_name, fig; px_per_unit = 1.2) # hide
 end # hide
 make_error_plot(; theme = :dark) # hide
 make_error_plot(; theme = :light) # hide
@@ -210,7 +210,7 @@ lines!(ax, la_trajectory.q[1, :], la_trajectory.p[1, :], label=L"$LA$-Sympnet", 
 lines!(ax, g_trajectory.q[1, :], g_trajectory.p[1, :], label=L"$G$-Sympnet", color = morange)
 axislegend(; position = (.82, .45), backgroundcolor = :transparent, labelcolor = textcolor) # hide
 fig_name = theme == :dark ? "sympnet_prediction_dark.png" : "sympnet_prediction_light.png" # hide
-save(fig_name, fig; px_per_unit = 1.2) # hide
+CairoMakie.save(fig_name, fig; px_per_unit = 1.2) # hide
 end # hide
 make_prediction_plot(; theme = :dark) # hide
 make_prediction_plot(; theme = :light) # hide
@@ -284,7 +284,7 @@ lines!(ax, la_loss_array, label=L"$LA$-SympNet", color=mpurple)
 lines!(ax, rn_loss_array, label="ResNet", color=mred)
 axislegend(; position = (.82, .75), backgroundcolor = :transparent, labelcolor = textcolor) # hide
 fig_name = theme == :dark ? "sympnet_resnet_training_loss_dark.png" : "sympnet_resnet_training_loss_light.png" # hide
-save(fig_name, fig; px_per_unit = 1.2) # hide
+CairoMakie.save(fig_name, fig; px_per_unit = 1.2) # hide
 end # hide
 make_error_plot(; theme = :dark) # hide
 make_error_plot(; theme = :light) # hide
@@ -328,7 +328,7 @@ lines!(ax, g_trajectory.q[1, :], g_trajectory.p[1, :], label=L"$G$-Sympnet", col
 lines!(ax, rn_trajectory.q[1, :], rn_trajectory.p[1, :], label="ResNet", color = mred)
 axislegend(; position = (.82, .45), backgroundcolor = :transparent, labelcolor = textcolor) # hide
 fig_name = theme == :dark ? "resnet_sympnet_prediction_dark.png" : "resnet_sympnet_prediction_light.png" # hide
-save(fig_name, fig; px_per_unit = 1.2) # hide
+CairoMakie.save(fig_name, fig; px_per_unit = 1.2) # hide
 end # hide
 make_prediction_plot(; theme = :dark) # hide
 make_prediction_plot(; theme = :light) # hide
@@ -377,7 +377,7 @@ lines!(ax, g_trajectory.q[1, :], g_trajectory.p[1, :], label=L"$G$-Sympnet", col
 lines!(ax, rn_trajectory.q[1, :], rn_trajectory.p[1, :], label="ResNet", color = mred)
 axislegend(; position = (.82, .45), backgroundcolor = :transparent, labelcolor = textcolor) # hide
 fig_name = theme == :dark ? "resnet_sympnet_prediction_long_dark.png" : "resnet_sympnet_prediction_long_light.png" # hide
-save(fig_name, fig; px_per_unit = 1.2) # hide
+CairoMakie.save(fig_name, fig; px_per_unit = 1.2) # hide
 end # hide
 make_prediction_plot(; theme = :dark) # hide
 make_prediction_plot(; theme = :light) # hide

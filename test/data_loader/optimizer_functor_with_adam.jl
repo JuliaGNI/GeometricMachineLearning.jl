@@ -1,4 +1,4 @@
-using AbstractNeuralNetworks: AbstractExplicitLayer, Chain
+import AbstractNeuralNetworks: AbstractExplicitLayer, Chain
 using GeometricMachineLearning, Test
 import Random 
 

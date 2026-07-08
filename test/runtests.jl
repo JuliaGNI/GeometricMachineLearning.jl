@@ -200,3 +200,7 @@ end
 @safetestset "DataLoader for input and output                                                 " begin
     include("data_loader/data_loader_for_input_and_output.jl")
 end
+
+@safetestset "HDF5 save/load for GML special array types                                     " begin
+    include("hdf5_support.jl")
+end

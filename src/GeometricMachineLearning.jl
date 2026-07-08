@@ -26,10 +26,6 @@ using Symbolics: @variables, substitute
 
 using GeometricOptimizers
 using GeometricOptimizers: OptimizerSolution, Geodesic, OptimizerMethod
-export StiefelManifold, GrassmannManifold, rgrad
-
-using GeometricOptimizers: Adam
-export Adam
 
 import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer,
                                AbstractExplicitCell, AbstractNeuralNetwork, NeuralNetwork,
@@ -45,6 +41,7 @@ import AbstractNeuralNetworks: GlorotUniform
 import AbstractNeuralNetworks: params, architecture, model, dim
 import AbstractNeuralNetworks: AbstractPullback, NetworkLoss, _compute_loss
 import AbstractNeuralNetworks: networkbackend
+import AbstractNeuralNetworks: save, load
 # export params, architetcure, model
 export dim
 import NNlib: σ, sigmoid, softmax
@@ -141,6 +138,9 @@ include("manifolds/grassmann_manifold.jl")
 
 include("arrays/stiefel_projection.jl")
 
+export StiefelManifold, GrassmannManifold, Manifold
+export rgrad, metric
+
 include("layers/sympnets.jl")
 include("layers/bias_layer.jl")
 include("layers/resnet.jl")
@@ -169,11 +169,11 @@ export Transformer
 export TransformerIntegrator, StandardTransformerIntegrator
 
 # INCLUDE OPTIMIZERS
+export OptimizerMethod, AbstractCache
 export GradientOptimizer, GradientCache
 export MomentumOptimizer, MomentumCache
 export AdamOptimizerWithDecay
 export AdamOptimizer, AdamCache
-export AdamOptimizerWithDecay
 export BFGSOptimizer, BFGSCache
 
 export Optimizer
@@ -187,6 +187,8 @@ export retraction
 # export ⊙², √ᵉˡᵉ, /ᵉˡᵉ, scalar_add
 export update!
 export check
+
+export Adam
 
 #INCLUDE ABSTRACT TRAINING integrator
 export AbstractTrainingMethod
@@ -396,4 +398,6 @@ export SymplecticAttention, SymplecticAttentionQ, SymplecticAttentionP
 export SymplecticTransformer
 
 include("map_to_cpu.jl")
+
+export save, load
 end

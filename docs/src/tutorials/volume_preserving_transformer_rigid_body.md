@@ -106,8 +106,8 @@ end # hide
 fig_light = set_up_plot(; theme = :light)[1] # hide
 fig_dark = set_up_plot(; theme = :dark)[1] # hide
 
-save("rigid_body_trajectories_light.png", alpha_colorbuffer(fig_light)) # hide
-save("rigid_body_trajectories_dark.png", alpha_colorbuffer(fig_dark)) # hide
+GLMakie.save("rigid_body_trajectories_light.png", alpha_colorbuffer(fig_light)) # hide
+GLMakie.save("rigid_body_trajectories_dark.png", alpha_colorbuffer(fig_dark)) # hide
 
 nothing # hide
 ```
@@ -208,13 +208,10 @@ const mtc = GeometricMachineLearning.map_to_cpu
 nn_vpff = mtc(nn_vpff)
 nn_vpt = mtc(nn_vpt)
 nn_st = mtc(nn_st)
-using JLD2 # hide
-# get correct parameters from jld2 file # hide
-f = load("transformer_rigid_body.jld2")  # hide
-_nnp(ps::Tuple) = NeuralNetworkParameters{Tuple(Symbol("L$(i)") for i in 1:length(ps))}(ps) # hide
-nn_vpff = NeuralNetwork(nn_vpff.architecture, nn_vpff.model, _nnp(f["nn_vpff_params"]), nn_vpff.backend) # hide
-nn_vpt = NeuralNetwork(nn_vpt.architecture, nn_vpt.model, _nnp(f["nn_vpt_arb_params"]), nn_vpt.backend) # hide
-nn_st = NeuralNetwork(nn_st.architecture, nn_st.model, _nnp(f["nn_st_params"]), nn_st.backend) # hide
+using HDF5 # hide
+nn_vpff = load(NeuralNetwork, "transformer_rigid_body_nn_vpff.h5", nn_vpff.architecture) # hide
+nn_vpt = load(NeuralNetwork, "transformer_rigid_body_nn_vpt.h5", nn_vpt.architecture) # hide
+nn_st = load(NeuralNetwork, "transformer_rigid_body_nn_st.h5", nn_st.architecture) # hide
 nothing # hide
 ```
 
@@ -299,8 +296,8 @@ rowsize!(fig_light.layout, 1, Aspect(1, 1.))
 rowsize!(fig_dark.layout, 1, Aspect(1, 1.))
 resize_to_layout!(fig_light)
 resize_to_layout!(fig_dark)
-save("rigid_body_evaluation_light.png", alpha_colorbuffer(fig_light))
-save("rigid_body_evaluation_dark.png", alpha_colorbuffer(fig_dark))
+GLMakie.save("rigid_body_evaluation_light.png", alpha_colorbuffer(fig_light))
+GLMakie.save("rigid_body_evaluation_dark.png", alpha_colorbuffer(fig_dark))
 nothing
 ```
 
