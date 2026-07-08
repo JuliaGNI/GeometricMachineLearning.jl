@@ -189,6 +189,7 @@ const GradientOptimizer = GradientMethod
 const MomentumOptimizer = MomentumMethod
 const AdamOptimizer = Adam
 export GradientOptimizer, MomentumOptimizer, AdamOptimizer
+export AdamOptimizerWithDecay
 
 #INCLUDE ABSTRACT TRAINING integrator
 export AbstractTrainingMethod

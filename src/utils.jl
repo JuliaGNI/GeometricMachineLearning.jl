@@ -172,99 +172,202 @@ Base.:≈(qp₁::QPT, qp₂::QPT) = (qp₁.q ≈ qp₂.q) & (qp₁.p ≈ qp₂.p
 _eltype(x) = eltype(x)
 _eltype(ps::NamedTuple) = _eltype(ps[1])
 _eltype(ps::Tuple) = _eltype(ps[1])
+_eltype(ps::NeuralNetworkParameters) = _eltype(params(ps)[1])
 
-# Backward-compat alias: the old GML name for the abstract cache type.
+# Extend GlobalSection so it works with NeuralNetworkParameters (wraps a NamedTuple).
+GeometricOptimizers.GlobalSection(ps::NeuralNetworkParameters) =
+    GeometricOptimizers.GlobalSection(params(ps))
+
+# Backward-compat alias
 const AbstractCache{T} = GeometricOptimizers.OptimizerCache{T}
 
-# A mutable gradient wrapper that returns a precomputed gradient.
-# Subtypes SimpleSolvers.Gradient (accessible as GeometricOptimizers.Gradient) so it works
-# with GeometricOptimizers' cache update! methods.
+# Gradient wrapper: stores a pre-computed Euclidean gradient and applies rgrad on manifolds.
 mutable struct _GMLGradient{T, VT} <: GeometricOptimizers.Gradient{T}
-    dp::VT  # pre-computed Euclidean gradient (NamedTuple or AbstractArray)
+    dp::VT
 end
-# When called with parameters, apply rgrad and return the Riemannian gradient.
 (g::_GMLGradient{T})(x::GeometricOptimizers.ArrayNamedTuple{T}) where {T} =
     GeometricOptimizers.apply_toNT(rgrad, x, g.dp)
-(g::_GMLGradient{T})(x::AbstractArray{T}) where {T} = g.dp  # euclidean: no rgrad needed
+(g::_GMLGradient{T})(x::AbstractArray{T}) where {T} = g.dp
 
-"""
-    Optimizer
+# State for Euclidean (non-manifold) parameters.
+mutable struct GMLEuclideanState{T, AT<:AbstractArray{T}}
+    iterations::Int
+    m₁::AT
+    m₂::AT
+end
+GMLEuclideanState(x::AbstractArray{T}) where T =
+    GMLEuclideanState{T, typeof(x)}(0, zero(x), zero(x))
 
-GML's neural-network optimizer. Wraps a GeometricOptimizers method together with its
-corresponding cache, state, and retraction.
-"""
+# Adam with exponential learning-rate decay.
+struct AdamOptimizerWithDecay{T<:Real} <: GeometricOptimizers.OptimizerMethod
+    η₁::T; η₂::T; ρ₁::T; ρ₂::T; δ::T; γ::T; n_epochs::Int
+    function AdamOptimizerWithDecay(n_epochs::Int, η₁=1f-2, η₂=1f-6,
+            ρ₁=9f-1, ρ₂=9.9f-1, δ=1f-8; T=typeof(η₁))
+        γ = exp(log(η₂/η₁) / n_epochs)
+        new{T}(T(η₁), T(η₂), T(ρ₁), T(ρ₂), T(δ), T(γ), n_epochs)
+    end
+end
+
+_is_go_native_method(::GeometricOptimizers.GradientMethod) = true
+_is_go_native_method(::GeometricOptimizers.MomentumMethod) = true
+_is_go_native_method(::GeometricOptimizers.Adam)            = true
+_is_go_native_method(::GeometricOptimizers.OptimizerMethod) = false
+
+_use_go_cache(method, x) =
+    _is_go_native_method(method) && x isa GeometricOptimizers.OptimizerSolution
+
+function _make_optimizer_cache(method, x)
+    if _use_go_cache(method, x)
+        GeometricOptimizers.OptimizerCache(method, x)
+    elseif x isa NamedTuple || x isa NeuralNetworkParameters
+        NamedTuple{keys(x)}(Tuple(_make_optimizer_cache(method, x[k]) for k in keys(x)))
+    else
+        GMLEuclideanState(x)
+    end
+end
+
+function _make_optimizer_state(method, x)
+    if _use_go_cache(method, x)
+        GeometricOptimizers.OptimizerState(method, x)
+    elseif x isa NamedTuple || x isa NeuralNetworkParameters
+        NamedTuple{keys(x)}(Tuple(_make_optimizer_state(method, x[k]) for k in keys(x)))
+    else
+        GMLEuclideanState(x)
+    end
+end
+
 mutable struct Optimizer{MT <: GeometricOptimizers.OptimizerMethod, CT, ST, RT}
     method::MT
     cache::CT
     state::ST
     retraction::RT
-    _grad::_GMLGradient  # mutable gradient reference used by optimization_step!
+    step_size::Float64
+    iterations::Int
 end
+
+_default_step_size(method::GeometricOptimizers.Adam)  = Float64(method.η)
+_default_step_size(method::AdamOptimizerWithDecay)     = Float64(method.η₁)
+_default_step_size(::GeometricOptimizers.OptimizerMethod) = 1e-2
+
+_current_step_size(opt::Optimizer, ::Int) = opt.step_size
+_current_step_size(opt::Optimizer{<:AdamOptimizerWithDecay}, t::Int) =
+    Float64(opt.method.η₁ * opt.method.γ^t)
 
 function Optimizer(method::GeometricOptimizers.OptimizerMethod, nn::NeuralNetwork;
-        retraction = GeometricOptimizers.cayley)
+        retraction = GeometricOptimizers.cayley,
+        step_size::Real = _default_step_size(method))
     ps = params(nn)
-    T  = eltype(ps[1])
-    cache = GeometricOptimizers.OptimizerCache(method, ps)
-    state = GeometricOptimizers.OptimizerState(method, ps)
-    grad  = _GMLGradient{T, typeof(ps)}(ps)  # dummy initial dp (gets overwritten)
-    Optimizer(method, cache, state, retraction, grad)
+    Optimizer(method, _make_optimizer_cache(method, ps), _make_optimizer_state(method, ps),
+              retraction, Float64(step_size), 0)
 end
 
-# Convenience constructor that accepts a raw params NamedTuple directly.
-function Optimizer(method::GeometricOptimizers.OptimizerMethod, ps::Union{NamedTuple, NeuralNetworkParameters};
-        retraction = GeometricOptimizers.cayley)
-    T  = eltype(ps[1])
-    cache = GeometricOptimizers.OptimizerCache(method, ps)
-    state = GeometricOptimizers.OptimizerState(method, ps)
-    grad  = _GMLGradient{T, typeof(ps)}(ps)  # dummy initial dp (gets overwritten)
-    Optimizer(method, cache, state, retraction, grad)
+function Optimizer(method::GeometricOptimizers.OptimizerMethod,
+        ps::Union{NamedTuple, NeuralNetworkParameters};
+        retraction = GeometricOptimizers.cayley,
+        step_size::Real = _default_step_size(method))
+    Optimizer(method, _make_optimizer_cache(method, ps), _make_optimizer_state(method, ps),
+              retraction, Float64(step_size), 0)
 end
 
-"""
-    optimization_step!(opt, λY, ps, dp)
+# Euclidean update rules
+function _euclidean_update!(x::AbstractArray{T}, dx::AbstractArray,
+        state::GMLEuclideanState, ::GeometricOptimizers.GradientMethod, step_size) where T
+    x .-= T(step_size) .* dx
+end
+function _euclidean_update!(x::AbstractArray{T}, dx::AbstractArray,
+        state::GMLEuclideanState{T}, method::GeometricOptimizers.MomentumMethod, step_size) where T
+    x .-= T(step_size) .* (dx .+ state.m₁)
+    state.m₁ .+= T(method.α) .* dx
+end
+function _euclidean_update!(x::AbstractArray{T}, dx::AbstractArray,
+        state::GMLEuclideanState{T}, method::GeometricOptimizers.Adam, step_size) where T
+    t = state.iterations; _t = t + 1
+    β₁, β₂, δ = T(method.β₁), T(method.β₂), T(method.δ)
+    fac₁₁ = β₁/(1-β₁^_t); fac₁₂ = (1-β₁)/(1-β₁^_t)
+    fac₂₁ = β₂/(1-β₂^_t); fac₂₂ = (1-β₂)/(1-β₂^_t)
+    state.m₁ .= fac₁₁ .* state.m₁ .+ fac₁₂ .* dx
+    state.m₂ .= fac₂₁ .* state.m₂ .+ fac₂₂ .* dx .^ 2
+    x .-= T(step_size) .* state.m₁ ./ (sqrt.(state.m₂) .+ δ)
+end
+function _euclidean_update!(x::AbstractArray{T}, dx::AbstractArray,
+        state::GMLEuclideanState{T}, method::AdamOptimizerWithDecay, step_size) where T
+    t = state.iterations; _t = t + 1
+    ρ₁, ρ₂, δ = T(method.ρ₁), T(method.ρ₂), T(method.δ)
+    fac₁₁ = ρ₁/(1-ρ₁^_t); fac₁₂ = (1-ρ₁)/(1-ρ₁^_t)
+    fac₂₁ = ρ₂/(1-ρ₂^_t); fac₂₂ = (1-ρ₂)/(1-ρ₂^_t)
+    state.m₁ .= fac₁₁ .* state.m₁ .+ fac₁₂ .* dx
+    state.m₂ .= fac₂₁ .* state.m₂ .+ fac₂₂ .* dx .^ 2
+    x .-= T(step_size) .* state.m₁ ./ (sqrt.(state.m₂) .+ δ)
+end
 
-Perform one optimizer step given a pre-computed Euclidean gradient `dp`.
-
-- `λY`  — the `GlobalSection` of the current parameters `ps`.
-- `ps`  — the current parameter NamedTuple (modified in-place).
-- `dp`  — the Euclidean gradient returned by Zygote.
-"""
-function optimization_step!(opt::Optimizer, λY, ps, dp)
-    opt._grad.dp = dp  # inject the pre-computed gradient
-
-    # Step 1: update the cache (computes gradient in Lie algebra, then direction)
-    if opt.method isa GeometricOptimizers.Adam
-        GeometricOptimizers.update!(opt.cache, opt.state, opt._grad, opt.method, ps)
+# GO-managed leaf step (manifolds, vectors, ArrayNamedTuples)
+function _leaf_optim_step!(cache::GeometricOptimizers.OptimizerCache,
+        state::GeometricOptimizers.OptimizerState,
+        dp_leaf, ps_leaf, λY_leaf, method, retraction, step_size)
+    T = _eltype(ps_leaf)
+    local_grad = _GMLGradient{T, typeof(dp_leaf)}(dp_leaf)
+    if method isa GeometricOptimizers.Adam
+        GeometricOptimizers.update!(cache, state, local_grad, method, ps_leaf)
     else
-        hess = GeometricOptimizers.NoHessian{eltype(ps[1])}()
-        GeometricOptimizers.update!(opt.cache, opt.state, opt._grad, hess, ps)
+        GeometricOptimizers.update!(cache, state, local_grad,
+                                     GeometricOptimizers.NoHessian{T}(), ps_leaf)
     end
-
-    # Step 2: apply retraction — update section(cache) from section(state) + direction
-    GeometricOptimizers.update_section!(
-        GeometricOptimizers.section(opt.cache),
-        GeometricOptimizers.section(opt.state),
-        GeometricOptimizers.direction(opt.cache),
-        opt.retraction
-    )
-
-    # Step 3: copy new manifold point from cache section → cache solution → ps and λY
-    GeometricOptimizers._copyto!(GeometricOptimizers.solution(opt.cache),
-                                  GeometricOptimizers.section(opt.cache))
-    GeometricOptimizers._copyto!(ps, GeometricOptimizers.solution(opt.cache))
-    GeometricOptimizers._copyto!(λY, GeometricOptimizers.section(opt.cache))
-
-    # Step 4: advance the state's section to the new position (needed for next step)
-    GeometricOptimizers.update_section!(
-        GeometricOptimizers.section(opt.state),
-        GeometricOptimizers.section(opt.state),
-        GeometricOptimizers.direction(opt.cache),
-        opt.retraction
-    )
-    opt.state.iterations += 1
+    GeometricOptimizers._rmul!(GeometricOptimizers.direction(cache), step_size)
+    GeometricOptimizers.update_section!(GeometricOptimizers.section(cache),
+                                         GeometricOptimizers.section(state),
+                                         GeometricOptimizers.direction(cache),
+                                         retraction)
+    GeometricOptimizers._copyto!(GeometricOptimizers.solution(cache),
+                                  GeometricOptimizers.section(cache))
+    GeometricOptimizers._copyto!(ps_leaf, GeometricOptimizers.solution(cache))
+    GeometricOptimizers._copyto!(λY_leaf, GeometricOptimizers.section(cache))
+    GeometricOptimizers.update_section!(GeometricOptimizers.section(state),
+                                         GeometricOptimizers.section(state),
+                                         GeometricOptimizers.direction(cache),
+                                         retraction)
+    if state isa GeometricOptimizers.AdamState
+        GeometricOptimizers._copyto!(GeometricOptimizers.first_moment(state),
+                                      GeometricOptimizers.first_moment(cache))
+        GeometricOptimizers._copyto!(GeometricOptimizers.second_moment(state),
+                                      GeometricOptimizers.second_moment(cache))
+    elseif state isa GeometricOptimizers.MomentumState
+        GeometricOptimizers._add!(GeometricOptimizers.momentum(state),
+                                   GeometricOptimizers._mul(method.α,
+                                       GeometricOptimizers.gradient_array(cache)))
+    end
+    state.iterations += 1
     nothing
 end
 
-# Convenience: allow check(opt) to print nothing (backward compat)
+# Euclidean leaf step (plain AbstractArray params)
+function _leaf_optim_step!(cache::GMLEuclideanState, state::GMLEuclideanState,
+        dp_leaf, ps_leaf, λY_leaf, method, retraction, step_size)
+    _euclidean_update!(ps_leaf, dp_leaf, state, method, step_size)
+    state.iterations += 1
+    nothing
+end
+
+# Recursive dispatcher over the parameter tree
+function _tree_optim_step!(caches, states, dp, ps, λY, method, retraction, step_size)
+    if caches isa NamedTuple
+        for k in keys(caches)
+            dp_k = dp[k]
+            dp_k === nothing && continue
+            λY_k = λY isa NamedTuple ? λY[k] : λY
+            _tree_optim_step!(caches[k], states[k], dp_k, ps[k], λY_k,
+                              method, retraction, step_size)
+        end
+    else
+        _leaf_optim_step!(caches, states, dp, ps, λY, method, retraction, step_size)
+    end
+    nothing
+end
+
+function optimization_step!(opt::Optimizer, λY, ps, dp)
+    step = _current_step_size(opt, opt.iterations)
+    _tree_optim_step!(opt.cache, opt.state, dp, ps, λY, opt.method, opt.retraction, step)
+    opt.iterations += 1
+    nothing
+end
+
 check(::Optimizer) = nothing
