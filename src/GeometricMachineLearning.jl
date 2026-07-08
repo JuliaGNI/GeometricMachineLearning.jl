@@ -25,7 +25,9 @@ using SymbolicNeuralNetworks: derivative, _get_contents, _get_params, SymbolicNe
 using Symbolics: @variables, substitute
 
 using GeometricOptimizers
-using GeometricOptimizers: OptimizerSolution, Geodesic, OptimizerMethod
+using GeometricOptimizers: OptimizerSolution, Cayley, Geodesic, cayley, geodesic, retraction,
+                           apply_section, apply_section!, OptimizerMethod,
+                           GradientCache, MomentumCache, AdamCache
 
 import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer,
                                AbstractExplicitCell, AbstractNeuralNetwork, NeuralNetwork,
@@ -168,27 +170,25 @@ export ResNet
 export Transformer
 export TransformerIntegrator, StandardTransformerIntegrator
 
-# INCLUDE OPTIMIZERS
+# INCLUDE OPTIMIZERS — types come from GeometricOptimizers
 export OptimizerMethod, AbstractCache
-export GradientOptimizer, GradientCache
-export MomentumOptimizer, MomentumCache
-export AdamOptimizerWithDecay
-export AdamOptimizer, AdamCache
-export BFGSOptimizer, BFGSCache
-
+export GradientMethod, GradientCache, GradientState
+export MomentumMethod, MomentumCache, MomentumState
+export Adam, AdamCache, AdamState
 export Optimizer
 export optimization_step!
-
 export GlobalSection, apply_section, apply_section!
 export global_rep
 export Geodesic, Cayley
 export geodesic, cayley
 export retraction
-# export ⊙², √ᵉˡᵉ, /ᵉˡᵉ, scalar_add
 export update!
 export check
-
-export Adam
+# backward-compat aliases (old names → new names)
+const GradientOptimizer = GradientMethod
+const MomentumOptimizer = MomentumMethod
+const AdamOptimizer = Adam
+export GradientOptimizer, MomentumOptimizer, AdamOptimizer
 
 #INCLUDE ABSTRACT TRAINING integrator
 export AbstractTrainingMethod

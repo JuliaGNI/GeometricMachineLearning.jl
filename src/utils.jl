@@ -173,28 +173,98 @@ _eltype(x) = eltype(x)
 _eltype(ps::NamedTuple) = _eltype(ps[1])
 _eltype(ps::Tuple) = _eltype(ps[1])
 
-function GradientZygote(F, x::AbstractArray{T}) where {T}
-    F = (_b, _a) -> (GeometricOptimizers._copyto!(_b, Zygote.gradient(loss, _a)[1]))
-    GeometricOptimizers.GradientFunction(F, x)
+# Backward-compat alias: the old GML name for the abstract cache type.
+const AbstractCache{T} = GeometricOptimizers.OptimizerCache{T}
+
+# A mutable gradient wrapper that returns a precomputed gradient.
+# Subtypes SimpleSolvers.Gradient (accessible as GeometricOptimizers.Gradient) so it works
+# with GeometricOptimizers' cache update! methods.
+mutable struct _GMLGradient{T, VT} <: GeometricOptimizers.Gradient{T}
+    dp::VT  # pre-computed Euclidean gradient (NamedTuple or AbstractArray)
+end
+# When called with parameters, apply rgrad and return the Riemannian gradient.
+(g::_GMLGradient{T})(x::GeometricOptimizers.ArrayNamedTuple{T}) where {T} =
+    GeometricOptimizers.apply_toNT(rgrad, x, g.dp)
+(g::_GMLGradient{T})(x::AbstractArray{T}) where {T} = g.dp  # euclidean: no rgrad needed
+
+"""
+    Optimizer
+
+GML's neural-network optimizer. Wraps a GeometricOptimizers method together with its
+corresponding cache, state, and retraction.
+"""
+mutable struct Optimizer{MT <: GeometricOptimizers.OptimizerMethod, CT, ST, RT}
+    method::MT
+    cache::CT
+    state::ST
+    retraction::RT
+    _grad::_GMLGradient  # mutable gradient reference used by optimization_step!
 end
 
-function GMLOptimizer(x::VT, problem::OptimizerProblem{T};
-        options_kwargs...) where {T, VT <: OptimizerSolution{T}}
-    grad = GradientZygote(problem.F, x)
-    Optimizer(x, problem; algorithm = Adam(), linesearch = Static(0.01),
-        gradient = grad, options_kwargs...)
+function Optimizer(method::GeometricOptimizers.OptimizerMethod, nn::NeuralNetwork;
+        retraction = GeometricOptimizers.cayley)
+    ps = params(nn)
+    T  = eltype(ps[1])
+    cache = GeometricOptimizers.OptimizerCache(method, ps)
+    state = GeometricOptimizers.OptimizerState(method, ps)
+    grad  = _GMLGradient{T, typeof(ps)}(ps)  # dummy initial dp (gets overwritten)
+    Optimizer(method, cache, state, retraction, grad)
 end
 
-# type piracy. This should be put in `AbstractNeuralNetworks`!
-function GeometricOptimizers.OptimizerProblem(nn::NeuralNetwork)
-    loss = NetworkLoss(nn)
-    _params = params(nn)
-    OptimizerProblem(ps -> loss(model, ps), NamedTuple{keys(_params)}(values(_params)))
+# Convenience constructor that accepts a raw params NamedTuple directly.
+function Optimizer(method::GeometricOptimizers.OptimizerMethod, ps::Union{NamedTuple, NeuralNetworkParameters};
+        retraction = GeometricOptimizers.cayley)
+    T  = eltype(ps[1])
+    cache = GeometricOptimizers.OptimizerCache(method, ps)
+    state = GeometricOptimizers.OptimizerState(method, ps)
+    grad  = _GMLGradient{T, typeof(ps)}(ps)  # dummy initial dp (gets overwritten)
+    Optimizer(method, cache, state, retraction, grad)
 end
 
-function GeometricOptimizers.Optimizer(
-        algorithm::OptimizerMethod, nn::NeuralNetwork; options_kwargs...)
-    _params = params(nn)
-    GMLOptimizer(
-        NamedTuple{keys(_params)}(values(_params)), OptimizerProblem(nn); options_kwargs...)
+"""
+    optimization_step!(opt, λY, ps, dp)
+
+Perform one optimizer step given a pre-computed Euclidean gradient `dp`.
+
+- `λY`  — the `GlobalSection` of the current parameters `ps`.
+- `ps`  — the current parameter NamedTuple (modified in-place).
+- `dp`  — the Euclidean gradient returned by Zygote.
+"""
+function optimization_step!(opt::Optimizer, λY, ps, dp)
+    opt._grad.dp = dp  # inject the pre-computed gradient
+
+    # Step 1: update the cache (computes gradient in Lie algebra, then direction)
+    if opt.method isa GeometricOptimizers.Adam
+        GeometricOptimizers.update!(opt.cache, opt.state, opt._grad, opt.method, ps)
+    else
+        hess = GeometricOptimizers.NoHessian{eltype(ps[1])}()
+        GeometricOptimizers.update!(opt.cache, opt.state, opt._grad, hess, ps)
+    end
+
+    # Step 2: apply retraction — update section(cache) from section(state) + direction
+    GeometricOptimizers.update_section!(
+        GeometricOptimizers.section(opt.cache),
+        GeometricOptimizers.section(opt.state),
+        GeometricOptimizers.direction(opt.cache),
+        opt.retraction
+    )
+
+    # Step 3: copy new manifold point from cache section → cache solution → ps and λY
+    GeometricOptimizers._copyto!(GeometricOptimizers.solution(opt.cache),
+                                  GeometricOptimizers.section(opt.cache))
+    GeometricOptimizers._copyto!(ps, GeometricOptimizers.solution(opt.cache))
+    GeometricOptimizers._copyto!(λY, GeometricOptimizers.section(opt.cache))
+
+    # Step 4: advance the state's section to the new position (needed for next step)
+    GeometricOptimizers.update_section!(
+        GeometricOptimizers.section(opt.state),
+        GeometricOptimizers.section(opt.state),
+        GeometricOptimizers.direction(opt.cache),
+        opt.retraction
+    )
+    opt.state.iterations += 1
+    nothing
 end
+
+# Convenience: allow check(opt) to print nothing (backward compat)
+check(::Optimizer) = nothing
