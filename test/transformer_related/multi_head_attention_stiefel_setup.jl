@@ -32,7 +32,7 @@ function check_multi_head_attention_stiefel_setup(T::Type, N::Int, n::Int)
 
     check_setup(ps)
 
-    gx = GeometricOptimizers.OptimizerCache(MomentumMethod(), ps)
+    gx = Optimizer(MomentumMethod(), ps).cache
     check_grad_setup(gx)
 end
 

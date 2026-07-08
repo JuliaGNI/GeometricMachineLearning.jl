@@ -34,7 +34,7 @@ function test_multi_head_attention_retraction(T::Type, dim, n_heads, tol=eps(T),
     model = Chain(MultiHeadAttention(dim, n_heads, Stiefel=true))
 
     ps = NeuralNetwork(model, backend, T).params
-    cache = GeometricOptimizers.OptimizerCache(MomentumMethod(), ps)
+    cache = Optimizer(MomentumMethod(), ps).cache
 
     check_retraction_geodesic(cache)
 

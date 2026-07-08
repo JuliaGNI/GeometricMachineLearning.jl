@@ -8,13 +8,14 @@ This checks if the Adam cache was set up in the right way.
 AdamCache fields (from GeometricOptimizers): x, g, δ, Δg, m₁, m₂, m̃₂, section.
 The direction δ and moments m₁, m₂ should be zero-initialised.
 """
+_check_slahm_zero(A::StiefelLieAlgHorMatrix{T}, tol) where T =
+    (@test typeof(A) <: StiefelLieAlgHorMatrix; @test LinearAlgebra.norm(A) < tol)
+_check_slahm_zero(A::NamedTuple, tol) = foreach(v -> _check_slahm_zero(v, tol), values(A))
+
 function check_adam_cache(C::GeometricOptimizers.OptimizerCache{T}, tol=T(10) * eps(T)) where T
     @test C isa AdamCache
-    # direction and first/second moments are zero-initialised
-    @test typeof(C.δ) <: StiefelLieAlgHorMatrix
-    @test typeof(C.m₁) <: StiefelLieAlgHorMatrix
-    @test LinearAlgebra.norm(C.δ) < tol
-    @test LinearAlgebra.norm(C.m₁) < tol
+    _check_slahm_zero(C.δ, tol)
+    _check_slahm_zero(C.m₁, tol)
 end
 check_adam_cache(B::NamedTuple) = apply_toNT(check_adam_cache, B)
 
@@ -25,8 +26,7 @@ The direction δ should be zero-initialised.
 """
 function check_momentum_cache(C::GeometricOptimizers.OptimizerCache{T}, tol=T(10) * eps(T)) where T
     @test C isa MomentumCache
-    @test typeof(C.δ) <: StiefelLieAlgHorMatrix
-    @test LinearAlgebra.norm(C.δ) < tol
+    _check_slahm_zero(C.δ, tol)
 end
 check_momentum_cache(B::NamedTuple) = apply_toNT(check_momentum_cache, B)
 
