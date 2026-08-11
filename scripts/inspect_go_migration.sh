@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -u
+set -euo pipefail
 
 repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || {
     printf 'Run this script from inside the GeometricMachineLearning repository.\n' >&2
@@ -11,9 +11,11 @@ cd "$repo_root" || exit 1
 
 go_root=${GO_ROOT:-"$repo_root/../GeometricOptimizers"}
 run_tests=0
-if [[ "${1:-}" == "--run-tests" ]]; then
-    run_tests=1
-fi
+case "${1:-}" in
+    '') ;;
+    --run-tests) run_tests=1 ;;
+    *) printf 'Usage: %s [--run-tests]\n' "$0" >&2; exit 2 ;;
+esac
 
 timestamp=$(date +%Y%m%d_%H%M%S)
 report_path=${REPORT_PATH:-"$repo_root/go_migration_inspection_${timestamp}.txt"}
@@ -100,7 +102,7 @@ search_command() {
     done
 
     section 'Optimizer/API references'
-    printf '\n$ search_command -n "global_section|GlobalSection|copyto!|_add!|_rac!|_square!|_div!|_rmul!|AdamOptimizer|AbstractCache|GradientMethod|MomentumMethod|Adam(" src test\n'
+    printf '\n$ search_command "global_section|GlobalSection|copyto!|_add!|_rac!|_square!|_div!|_rmul!|AdamOptimizer|AbstractCache|GradientMethod|MomentumMethod|Adam(" src test\n'
     search_command 'global_section|GlobalSection|copyto!|_add!|_rac!|_square!|_div!|_rmul!|AdamOptimizer|AbstractCache|GradientMethod|MomentumMethod|Adam\(' src test || true
 
     section 'Local GeometricOptimizers source'
@@ -127,7 +129,7 @@ search_command() {
     fi
 
     section 'Generated/untracked artifact summary'
-    printf '\n$ git status --short --untracked-files=all | search_command "(^\\?\\?|generated|\\.(zip|aux|fdb_latexmk|fls|log|out|pdf|jld2)$)"\n'
+    printf '\n$ git status --short --untracked-files=all | search_command "(^\\?\\?|generated|\\.(zip|aux|fdb_latexmk|fls|log|out|pdf|jld2)$)" -\n'
     git status --short --untracked-files=all | search_command '(^\?\?|generated|\.(zip|aux|fdb_latexmk|fls|log|out|pdf|jld2)$)' - || true
 
     if [[ "$run_tests" -eq 1 ]]; then
