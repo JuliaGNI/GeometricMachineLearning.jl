@@ -185,8 +185,14 @@ const AbstractCache{T} = GeometricOptimizers.OptimizerCache{T}
 mutable struct _GMLGradient{T, VT} <: GeometricOptimizers.Gradient{T}
     dp::VT
 end
+
+_gml_rgrad(x::Manifold, dp) = rgrad(x, dp)
+_gml_rgrad(x, dp) = dp
+_gml_rgrad(x::NamedTuple, dp::NamedTuple) =
+    GeometricOptimizers.apply_toNT(_gml_rgrad, x, dp)
+
 (g::_GMLGradient{T})(x::GeometricOptimizers.ArrayNamedTuple{T}) where {T} =
-    GeometricOptimizers.apply_toNT(rgrad, x, g.dp)
+    _gml_rgrad(x, g.dp)
 (g::_GMLGradient{T})(x::AbstractArray{T}) where {T} = g.dp
 
 # State for Euclidean (non-manifold) parameters.
@@ -214,7 +220,7 @@ _is_go_native_method(::GeometricOptimizers.Adam)            = true
 _is_go_native_method(::GeometricOptimizers.OptimizerMethod) = false
 
 _adapt_method_to_T(method::GeometricOptimizers.Adam, ::Type{T}) where T =
-    GeometricOptimizers.Adam(T(method.η), T(method.β₁), T(method.β₂), T(method.δ))
+    GeometricOptimizers.Adam(T; β₁ = T(method.β₁), β₂ = T(method.β₂), δ = T(method.δ))
 _adapt_method_to_T(method::GeometricOptimizers.MomentumMethod, ::Type{T}) where T =
     GeometricOptimizers.MomentumMethod(T(method.α))
 _adapt_method_to_T(method, ::Type) = method
@@ -251,7 +257,7 @@ mutable struct Optimizer{MT <: GeometricOptimizers.OptimizerMethod, CT, ST, RT}
     iterations::Int
 end
 
-_default_step_size(method::GeometricOptimizers.Adam)  = Float64(method.η)
+_default_step_size(::GeometricOptimizers.Adam)          = 1e-3
 _default_step_size(method::AdamOptimizerWithDecay)     = Float64(method.η₁)
 _default_step_size(::GeometricOptimizers.OptimizerMethod) = 1e-2
 
@@ -313,7 +319,10 @@ function _leaf_optim_step!(cache::GeometricOptimizers.OptimizerCache,
     T = _eltype(ps_leaf)
     local_grad = _GMLGradient{T, typeof(dp_leaf)}(dp_leaf)
     adapted = _adapt_method_to_T(method, T)
+    state.iterations += 1
     if adapted isa GeometricOptimizers.Adam
+        GeometricOptimizers.update!(cache, state, local_grad, adapted, ps_leaf)
+    elseif adapted isa GeometricOptimizers.MomentumMethod
         GeometricOptimizers.update!(cache, state, local_grad, adapted, ps_leaf)
     else
         GeometricOptimizers.update!(cache, state, local_grad,
@@ -342,7 +351,6 @@ function _leaf_optim_step!(cache::GeometricOptimizers.OptimizerCache,
                                    GeometricOptimizers._mul(adapted.α,
                                        GeometricOptimizers.gradient_array(cache)))
     end
-    state.iterations += 1
     nothing
 end
 

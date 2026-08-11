@@ -83,6 +83,18 @@ function global_section(Y::GrassmannManifold{T}) where T
     typeof(Y.A)(qr!(A).Q)
 end
 
+GeometricOptimizers.global_section(Y::GrassmannManifold) = global_section(Y)
+
+function GeometricOptimizers.apply_section!(
+    Y::GrassmannManifold{T},
+    λY::GeometricOptimizers.GlobalSection{T, <:GrassmannManifold{T}},
+    Y₂::GrassmannManifold{T}
+) where T
+    N, n = size(λY.Y)
+    @views Y.A .= λY.Y.A * Y₂.A[1:n, :] .+ λY.λ * Y₂.A[(n + 1):N, :]
+    Y
+end
+
 @doc raw"""
     Ω(Y::GrassmannManifold{T}, Δ::AbstractMatrix{T}) where T
 
@@ -127,6 +139,11 @@ end
 Base.copy(A::GrassmannManifold) = GrassmannManifold(copy(A.A))
 Base.similar(A::GrassmannManifold) = GrassmannManifold(similar(A.A))
 
+function Base.zero(Y::GrassmannManifold{T}) where T
+    N, n = size(Y)
+    GrassmannLieAlgHorMatrix(zeros(T, N - n, n), N, n)
+end
+
 function GeometricOptimizers.global_rep(
     λY::GeometricOptimizers.GlobalSection{T, <:GrassmannManifold{T}},
     Δ::AbstractMatrix{T}
@@ -146,7 +163,7 @@ function GeometricOptimizers.update_section!(
 ) where T
     N, n = B⁽ᵗ⁻¹⁾.N, B⁽ᵗ⁻¹⁾.n
     expB = retraction(B⁽ᵗ⁻¹⁾)
-    expB.A .= Λ⁽ᵗ⁻¹⁾.Y.A * expB.A[1:n, :] .+ Λ⁽ᵗ⁻¹⁾.λ * expB.A[(n+1):N, :]
+    GeometricOptimizers.apply_section!(expB, Λ⁽ᵗ⁻¹⁾, expB)
     Λᵗ.Y.A .= @view expB.A[:, 1:n]
     Λᵗ.λ .= @view expB.A[:, (n+1):N]
     nothing
@@ -164,6 +181,16 @@ function GeometricOptimizers.cayley(B::GrassmannLieAlgHorMatrix{T}) where T
     GrassmannManifold((𝕀_big + T(0.5) * B̂ * inv(𝕀_small2 - T(0.5) * B̄' * B̂) * B̄') * (𝕀_big + T(0.5) * B))
 end
 
+function GeometricOptimizers.geodesic(B::GrassmannLieAlgHorMatrix)
+    T = eltype(B)
+    E = StiefelProjection(B)
+    backend = networkbackend(B)
+    zero_mat = KernelAbstractions.zeros(backend, T, B.n, B.n)
+    B̂ = hcat(vcat(zero_mat, B.B), E)
+    B̄ = hcat(vcat(one(zero_mat), zero_mat), vcat(zero(B.B'), -B.B'))'
+    GrassmannManifold(one(B) + B̂ * GeometricOptimizers.𝔄(B̂, B̄) * B̄')
+end
+
 function GeometricOptimizers._copyto!(
     Λ₁::GeometricOptimizers.GlobalSection{T, <:GrassmannManifold{T}},
     Λ₂::GeometricOptimizers.GlobalSection{T, <:GrassmannManifold{T}}
@@ -172,3 +199,9 @@ function GeometricOptimizers._copyto!(
     copyto!(Λ₁.λ, Λ₂.λ)
     Λ₁
 end
+
+GeometricOptimizers._add!(A::GrassmannLieAlgHorMatrix, B::GrassmannLieAlgHorMatrix) = (A.B .+= B.B; A)
+GeometricOptimizers._add!(A::GrassmannLieAlgHorMatrix, b::T) where T = (A.B .+= b; A)
+GeometricOptimizers._rac!(B::GrassmannLieAlgHorMatrix, A::GrassmannLieAlgHorMatrix) = (B.B .= sqrt.(A.B); B)
+GeometricOptimizers._square!(B::GrassmannLieAlgHorMatrix, A::GrassmannLieAlgHorMatrix) = (B.B .= A.B .^ 2; B)
+GeometricOptimizers._div!(C::GrassmannLieAlgHorMatrix, A::GrassmannLieAlgHorMatrix, B::GrassmannLieAlgHorMatrix) = (C.B .= A.B ./ B.B; C)

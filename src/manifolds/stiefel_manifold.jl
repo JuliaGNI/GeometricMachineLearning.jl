@@ -136,6 +136,18 @@ function global_section(Y::StiefelManifold{T}) where T
     typeof(Y.A)(qr!(A).Q)
 end
 
+GeometricOptimizers.global_section(Y::StiefelManifold) = global_section(Y)
+
+function GeometricOptimizers.apply_section!(
+    Y::StiefelManifold{T},
+    λY::GeometricOptimizers.GlobalSection{T, <:StiefelManifold{T}},
+    Y₂::StiefelManifold{T}
+) where T
+    N, n = size(λY.Y)
+    @views Y.A .= λY.Y.A * Y₂.A[1:n, :] .+ λY.λ * Y₂.A[(n + 1):N, :]
+    Y
+end
+
 @doc raw"""
     Ω(Y::StiefelManifold{T}, Δ::AbstractMatrix{T}) where T
 
@@ -216,7 +228,7 @@ function GeometricOptimizers.update_section!(
 ) where T
     N, n = B⁽ᵗ⁻¹⁾.N, B⁽ᵗ⁻¹⁾.n
     expB = retraction(B⁽ᵗ⁻¹⁾)
-    expB.A .= Λ⁽ᵗ⁻¹⁾.Y.A * expB.A[1:n, :] .+ Λ⁽ᵗ⁻¹⁾.λ * expB.A[(n+1):N, :]
+    GeometricOptimizers.apply_section!(expB, Λ⁽ᵗ⁻¹⁾, expB)
     Λᵗ.Y.A .= @view expB.A[:, 1:n]
     Λᵗ.λ .= @view expB.A[:, (n+1):N]
     nothing
@@ -232,6 +244,16 @@ function GeometricOptimizers.cayley(B::StiefelLieAlgHorMatrix{T}) where T
     B̂ = hcat(vcat(T(0.5) * A_mat, B.B), E)
     B̄ = hcat(vcat(𝕀_small, T(0.5) * A_mat), vcat(zero(B.B'), -B.B'))'
     StiefelManifold((𝕀_big + T(0.5) * B̂ * inv(𝕀_small2 - T(0.5) * B̄' * B̂) * B̄') * (𝕀_big + T(0.5) * B))
+end
+
+function GeometricOptimizers.geodesic(B::StiefelLieAlgHorMatrix)
+    T = eltype(B)
+    E = StiefelProjection(B)
+    unit = one(B.A)
+    A_mat = B.A * unit
+    B̂ = hcat(vcat(T(0.5) * A_mat, B.B), E)
+    B̄ = hcat(vcat(unit, T(0.5) * A_mat), vcat(zero(B.B'), -B.B'))'
+    StiefelManifold(one(B) + B̂ * GeometricOptimizers.𝔄(B̂, B̄) * B̄')
 end
 
 function GeometricOptimizers._copyto!(
