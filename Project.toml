@@ -36,7 +36,7 @@ ZygoteRules = "700de1a5-db45-46bc-99cf-38207098b444"
 HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
 
 [sources]
-GeometricOptimizers = {path = "../GeometricOptimizers"}
+GeometricOptimizers = {url = "https://github.com/JuliaGNI/GeometricOptimizers.jl.git", rev = "main"}
 
 [extensions]
 HDF5Ext = "HDF5"
@@ -51,6 +51,7 @@ Distances = "0.10"
 ForwardDiff = "0.10, 1"
 GeometricBase = "0.14"
 GeometricEquations = "0.21"
+GeometricOptimizers = "0.2"
 GeometricSolutions = "0.6"
 HDF5 = "0.16, 0.17"
 KernelAbstractions = "0.9"
