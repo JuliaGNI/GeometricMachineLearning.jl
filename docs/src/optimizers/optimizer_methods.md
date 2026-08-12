@@ -1,10 +1,10 @@
 ```@raw latex
-In the previous chapter we introduced a general optimizer framework without giving explicit examples of neural network optimizers; this is done here. This chapter is divided into two sections: we first discuss \textit{standard neural network optimizers} (including Adam) and then the more complicated BFGS optimizer. In the implementation of all these optimizers the \textit{optimizer cache} will play an important role.
+In the previous chapter we introduced a general optimizer framework without giving explicit examples of neural network optimizers; this is done here. This chapter discusses standard neural network optimizers, including gradient descent, momentum, and Adam. In the implementation of all these optimizers the \textit{optimizer cache} will play an important role.
 ```
 
 # Standard Neural Network Optimizers
 
-In this section we discuss optimization methods that are often used in training neural networks. From a perspective of manifolds the *optimizer methods* outlined here operate on ``\mathfrak{g}^\mathrm{hor}`` only. Each of them has a cache associated with it[^1] and this cache is updated with the function [`update!`](@ref). The precise role of this function is described below.
+In this section we discuss optimization methods that are often used in training neural networks. From a perspective of manifolds the *optimizer methods* outlined here operate on ``\mathfrak{g}^\mathrm{hor}`` only. Each of them has a cache associated with it[^1] and this cache is updated by `GeometricOptimizers.update!`. The precise role of this function is described below.
 
 [^1]: In the case of the [gradient optimizer](@ref "The Gradient Optimizer") this cache is trivial.
 

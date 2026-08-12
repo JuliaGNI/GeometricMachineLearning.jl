@@ -8,7 +8,6 @@ Random.seed!(123)
 
 @doc raw"""
 Test that gradient descent reduces loss on a Euclidean (plain matrix) problem.
-BFGSOptimizer is no longer available; this file retains the structure for future extension.
 """
 function gradient_optimizer_euclidean(N; n_steps = 20, step_size = 1e-3)
     B = inv(rand(N, N))

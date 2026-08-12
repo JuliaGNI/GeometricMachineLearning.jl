@@ -47,7 +47,7 @@ The background material, which does not include any original work, covers all th
 
 ## The Optimizer Framework
 
-One of the central parts of this dissertation is an *optimizer framework* that allows the generalization of existing optimizers such as Adam [kingma2014adam](@cite) and BFGS [wright2006numerical; Chapter 6.1](@cite) to homogeneous spaces in a consistent way[^4]. This part contains the following sections:
+One of the central parts of this dissertation is an *optimizer framework* that allows the generalization of existing optimizers such as Adam [kingma2014adam](@cite) to homogeneous spaces in a consistent way[^4]. This part contains the following sections:
 - [Neural Network Optimizers](@ref): here we introduce the concept of a neural network optimizer and discuss the modifications we have to make in order to generalize them to homogeneous spaces.
 - [Retractions](@ref): an important concept in manifold optimization are retractions [absil2008optimization](@cite). We introduce them in this section, discuss how they can be constructed for homogeneous spaces and show the two examples of the *geodesic retraction* and the *Cayley retraction*.
 - [Parallel Transport](@ref): whenever we have an optimizer that contains momentum terms (such as Adam for example) we need to *transport* these momenta. In this section we explain how this can be done straightforwardly when dealing with homogeneous spaces. 

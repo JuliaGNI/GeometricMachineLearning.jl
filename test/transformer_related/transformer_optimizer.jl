@@ -21,7 +21,6 @@ function transformer_gradient_test(T, dim, n_heads, L, seq_length=8, batch_size=
     o₁ = Optimizer(GradientMethod(), ps)
     o₂ = Optimizer(MomentumMethod(), ps)
     o₃ = Optimizer(Adam(), ps)
-    # BFGSOptimizer is not available in GeometricOptimizers manifold optimizers
 
     ps₁ = deepcopy(ps)
     ps₂ = deepcopy(ps)

@@ -313,6 +313,23 @@ function _euclidean_update!(x::AbstractArray{T}, dx::AbstractArray,
     x .-= T(step_size) .* state.m₁ ./ (sqrt.(state.m₂) .+ δ)
 end
 
+function _go_update_leaf!(cache, state, local_grad,
+        method::GeometricOptimizers.Adam, ps_leaf)
+    GeometricOptimizers.update!(cache, state, local_grad, method, ps_leaf)
+end
+
+function _go_update_leaf!(cache, state, local_grad,
+        method::GeometricOptimizers.MomentumMethod, ps_leaf)
+    GeometricOptimizers.update!(cache, state, local_grad, method, ps_leaf)
+end
+
+function _go_update_leaf!(cache, state, local_grad,
+        method::GeometricOptimizers.OptimizerMethod, ps_leaf)
+    T = _eltype(ps_leaf)
+    GeometricOptimizers.update!(cache, state, local_grad,
+                                GeometricOptimizers.NoHessian{T}(), ps_leaf)
+end
+
 # GO-managed leaf step (manifolds, vectors, ArrayNamedTuples)
 function _leaf_optim_step!(cache::GeometricOptimizers.OptimizerCache,
         state::GeometricOptimizers.OptimizerState,
@@ -321,14 +338,7 @@ function _leaf_optim_step!(cache::GeometricOptimizers.OptimizerCache,
     local_grad = _GMLGradient{T, typeof(dp_leaf)}(dp_leaf)
     adapted = _adapt_method_to_T(method, T)
     state.iterations += 1
-    if adapted isa GeometricOptimizers.Adam
-        GeometricOptimizers.update!(cache, state, local_grad, adapted, ps_leaf)
-    elseif adapted isa GeometricOptimizers.MomentumMethod
-        GeometricOptimizers.update!(cache, state, local_grad, adapted, ps_leaf)
-    else
-        GeometricOptimizers.update!(cache, state, local_grad,
-                                     GeometricOptimizers.NoHessian{T}(), ps_leaf)
-    end
+    _go_update_leaf!(cache, state, local_grad, adapted, ps_leaf)
     GeometricOptimizers._rmul!(GeometricOptimizers.direction(cache), step_size)
     GeometricOptimizers.update_section!(GeometricOptimizers.section(cache),
                                          GeometricOptimizers.section(state),

@@ -126,8 +126,8 @@ end
 @safetestset "Check if Adam with decay converges                                              " begin
     include("optimizers/optimizer_convergence_tests/adam_with_learning_rate_decay.jl")
 end
-@safetestset "BFGS Optimizer tests                                                            " begin
-    include("optimizers/bfgs_optimizer.jl")
+@safetestset "Gradient optimizer tests                                                        " begin
+    include("optimizers/gradient_optimizer.jl")
 end
 @info "Starting data and data-loader tests"
 @safetestset "Data                                                                            " begin

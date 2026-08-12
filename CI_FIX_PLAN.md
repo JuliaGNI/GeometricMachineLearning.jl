@@ -1,8 +1,8 @@
 # Workplan: fixing CI on PR #230 and closing issue #234
 
-Status checked on 2026-08-12 on branch `use-geometric-optimizers`. CI run
+Status updated on 2026-08-12 on branch `use-geometric-optimizers`. CI run
 `31570166729` had completed its Julia 1.12 builds but remained in
-`julia-runtest`; R1, R3, and R8 therefore remain unresolved blockers.
+`julia-runtest`; R1, R3, and R8 therefore remain unresolved CI blockers.
 
 Applied fixes now include unit coverage for the former docstring examples,
 removal of Documenter doctests from the package test runner, duplicate
@@ -12,11 +12,20 @@ This update also removes stale BFGS documentation and updates optimizer docs
 and tutorials to the GeometricOptimizers v0.2 API. The remaining upstream,
 dependency, and compile-time work is tracked in the phases below.
 
-Local checks pass for bibliography uniqueness, Julia parsing, stale-reference
-scans, the replacement docstring-example tests, and `git diff --check`. The
-full test runner reaches an existing `GeometricIntegratorsBase` precompile
-failure (`NewtonMethod` is undefined); full Documenter execution remains
-blocked by the existing local `LibCURL_jll`/manifest environment issues.
+The local R8 mitigation is now implemented: the GO-backed leaf update in
+`src/utils.jl` dispatches on concrete optimizer method types instead of
+branching on `isa` at the hot call site. This reduces the method-table fan-out,
+but the success criterion still requires a Julia 1.12 CI run or a cold-session
+regression measurement.
+
+Offline checks pass for bibliography uniqueness, Julia parsing, stale-reference
+scans, and `git diff --check`. Runtime validation could not be repeated in the
+current sandbox because the existing Julia depot is read-only and dependency
+installation requires network access. Phase 0 is also still blocked: the
+local `GeometricOptimizers` checkout declares `0.2.0`, but has no `v0.2.0` tag
+and `0.2.0` is not present in the local General registry. Therefore the GML
+`[sources]` workaround and current Julia compatibility floor remain unchanged
+until the upstream release is tagged and registered.
 
 ---
 
@@ -580,7 +589,9 @@ Added after the 1.12 investigation. This is the canonical action list for R8:
 3. **Reduce the dispatch fan-out in GML**: `_leaf_optim_step!`
    (`src/utils.jl:316-357`) branches on `adapted isa …` at one call site, so a
    single inference target sees the whole `update!` method table. Ordinary
-   dispatch, or a `@nospecialize`d barrier, confines that.
+   dispatch, or a `@nospecialize`d barrier, confines that. **Implemented
+   locally** with `_go_update_leaf!` overloads for `Adam`, `MomentumMethod`,
+   and the fallback `OptimizerMethod` path.
 4. **Do not "fix" it by restructuring the tests.** Moving the optimizer call out
    of the test helper makes CI green while leaving the latency in place for
    every user who wraps training in a function. Acceptable only as a temporary

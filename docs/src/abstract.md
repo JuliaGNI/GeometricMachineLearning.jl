@@ -12,7 +12,7 @@ Geometric machine learning and neural networks are not an entirely novel concept
 
 In Part I we give background information that does not constitute novel work, but lays the foundation for the coming chapters. This first part includes a basic introduction into the theory of Riemannian manifolds, a basic discussion of structure preservation and a short explanation of data-driven reduced order modeling.
 
-Part II discusses a novel optimization framework that generalizes existing neural network optimizers, such as the Adam optimizer and the BFGS optimizer, to manifolds. These new optimizers were necessary to enable the training of a new neural network architecture which we call *symplectic autoencoders* (SAEs).
+Part II discusses a novel optimization framework that generalizes existing neural network optimizers, such as Adam, to manifolds. These optimizers were necessary to enable the training of a new neural network architecture which we call *symplectic autoencoders* (SAEs).
 
 Part III finally introduces various special neural network layers and architectures. Some of them, like *SympNets* and the *multihead attention layer*, are well-known, but others like SAEs, *volume-preserving attention* and the *linear symplectic transformer* are new.
 
