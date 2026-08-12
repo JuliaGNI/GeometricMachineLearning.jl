@@ -34,3 +34,7 @@ function test_tensor_multiplication(first_dim::Int=dim1, second_dim::Int=dim2, t
 end
 
 test_tensor_multiplication()
+
+A = [1 1 1; 1 1 1; 1 1 1;;; 2 2 2; 2 2 2; 2 2 2]
+B = [3 0 0; 0 2 0; 0 0 1]
+@test tensor_mat_mul(A, B) == [3 2 1; 3 2 1; 3 2 1;;; 6 4 2; 6 4 2; 6 4 2]

@@ -38,3 +38,12 @@ function test_constructors_for_custom_arrays(n::Int, N::Int, T::Type)
 end
 
 test_constructors_for_custom_arrays(5, 10, Float32)
+
+@test LowerTriangular([1, 2, 3, 4, 5, 6], 4) ==
+    [0 0 0 0; 1 0 0 0; 2 3 0 0; 4 5 6 0]
+@test UpperTriangular([1, 2, 3, 4, 5, 6], 4) ==
+    [0 1 2 4; 0 0 3 5; 0 0 0 6; 0 0 0 0]
+@test SymmetricMatrix([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 4) ==
+    [1 2 4 7; 2 3 5 8; 4 5 6 9; 7 8 9 10]
+@test SkewSymMatrix([1, 2, 3, 4, 5, 6], 4) ==
+    [0 -1 -2 -4; 1 0 -3 -5; 2 3 0 -6; 4 5 6 0]

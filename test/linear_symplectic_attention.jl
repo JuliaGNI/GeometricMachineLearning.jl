@@ -22,3 +22,6 @@ function test_application_of_lsa(n::Integer=4, seq_length::Integer=5, T=Float64)
 end
 
 test_application_of_lsa()
+
+l = LinearSymplecticAttentionQ(3, 5)
+@test NeuralNetwork(Chain(l)).params.L1.A isa SymmetricMatrix

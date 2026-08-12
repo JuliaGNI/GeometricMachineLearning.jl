@@ -47,6 +47,7 @@ function test_onehotbatch(V::AbstractVector{T}) where {T<:Integer}
 end
 
 test_onehotbatch([1, 2, 5, 0])
+@test onehotbatch([0]) == reshape([1, zeros(Int, 9)...], 10, 1, 1)
 
 @doc raw"""
 Generates an MNIST-like dummy data set.

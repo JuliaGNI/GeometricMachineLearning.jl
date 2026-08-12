@@ -4,16 +4,19 @@ Status checked on 2026-08-12 on branch `use-geometric-optimizers`. CI run
 `31570166729` had completed its Julia 1.12 builds but remained in
 `julia-runtest`; R1, R3, and R8 therefore remain unresolved blockers.
 
-Applied fixes now include the version-independent batch doctests, deferred
-doctest testset, duplicate bibliography removal, experimental Julia 1.13
-matrix entries, test progress markers, and generated-artifact ignore rules.
+Applied fixes now include unit coverage for the former docstring examples,
+removal of Documenter doctests from the package test runner, duplicate
+bibliography removal, experimental Julia 1.13 matrix entries, test progress
+markers, and generated-artifact ignore rules.
 This update also removes stale BFGS documentation and updates optimizer docs
 and tutorials to the GeometricOptimizers v0.2 API. The remaining upstream,
 dependency, and compile-time work is tracked in the phases below.
 
 Local checks pass for bibliography uniqueness, Julia parsing, stale-reference
-scans, and `git diff --check`. Full Documenter execution remains blocked by
-the existing local `LibCURL_jll`/manifest environment issues described below.
+scans, the replacement docstring-example tests, and `git diff --check`. The
+full test runner reaches an existing `GeometricIntegratorsBase` precompile
+failure (`NewtonMethod` is undefined); full Documenter execution remains
+blocked by the existing local `LibCURL_jll`/manifest environment issues.
 
 ---
 
@@ -23,7 +26,7 @@ the existing local `LibCURL_jll`/manifest environment issues described below.
 | --- | --- | --- |
 | Julia 1.10 × {ubuntu, macOS, windows} | ❌ | **R1** unresolvable `GeometricOptimizers` |
 | Julia 1.12 × {ubuntu, macOS, windows} | ⏳ still running after > 1 h 15 min (vs 29 min for the whole job on `main`) | **R8** pathological compile time in the GO-backed optimizer path (all three builds passed; `julia-runtest` does not finish) |
-| Julia ^1.13.0-0 × {ubuntu, macOS, windows} | ⚠️ experimental | **R2** doctests + **R3** precompile |
+| Julia ^1.13.0-0 × {ubuntu, macOS, windows} | ⚠️ experimental | **R3** precompile |
 | Julia nightly × {ubuntu, macOS, windows} | ❌ (`experimental: true`) | **R3** precompile |
 | Documentation | ⏳ | R4 fixed; R5/R6 docs updates applied, full build pending |
 | PDF | ⏳ | R4 fixed; full build pending |
@@ -244,14 +247,22 @@ between 1.12 and 1.13:
 
 This became a *test-suite* failure (not just a docs failure) because the PR
 re-enabled the doctest testset in `test/runtests.jl` — on `main` that line is
-commented out. It runs first, so it aborts the whole suite before any real
-test executes.
+commented out. It ran first, so it aborted the whole suite before any real
+test executed.
 
 Appears to be 1.13-only: codex observed the doctest testset **passing** on 1.12
 before the suite stalled in R8, and my stack samples show a `@safetestset`
 module already under evaluation, which can only happen after the doctest
 testset has returned. So R2 and R8 look independent, and fixing R2 will not
 move the 1.12 jobs.
+
+**Resolution on August 12, 2026:** Documenter doctests are no longer part of
+`test/runtests.jl`; they remain owned by the documentation workflow. The
+examples are covered by ordinary unit tests under `test/`, with duplicate
+coverage integrated into existing array, kernel, loader, layer, and attention
+test files. Standalone example tests remain only for APIs without a natural
+existing test home. This removes the RNG-sensitive doctest failure from the
+Julia 1.13 unit-test matrix without sacrificing behavioral coverage.
 
 ### R3 — Method overwriting during precompilation (Julia ≥ 1.13)
 
@@ -407,25 +418,27 @@ interim from §6 answer 1 is taken instead, then the opposite applies: keep
 `.github/workflows/CI.yml`, and open the tracking issue. The two variants are
 mutually exclusive — pick one deliberately and say which in the PR description.
 
-### Phase 2 — Make the doctests version-invariant
+### Phase 2 — Separate documentation checks from unit tests (completed)
 
 The two `src/data_loader/batch.jl` doctests assert a specific shuffled
-permutation. Rewrite them to assert properties that hold for *any* permutation:
+permutation. The package test runner now excludes Documenter doctests:
 
-* number of batches and the size of each batch, and
-* `sort(collect(union(batches...)))` equals the full index set.
+* `test/runtests.jl` contains no `Documenter.doctest` invocation;
+* the documentation workflow remains responsible for rendering and doctest
+  validation; and
+* ordinary tests cover the examples' behavior using structural assertions.
 
 This is strictly better than the alternatives (seeding the RNG inside the
 doctest still breaks whenever the RNG stream changes; `doctestfilters` would
-hide genuine regressions), and it keeps the doctest testset enabled in
-`test/runtests.jl`.
+hide genuine regressions), while keeping documentation validation in the
+documentation workflow.
 
 Also decide deliberately whether doctests belong in `runtests.jl` at all. They
 are already run by `docs/Makefile`'s `test_docs` target on Julia 1 in the
 Documentation workflow. Running them in the matrix too means every Julia
 release candidate can fail the *unit* test suite for a formatting reason.
-Recommendation: keep them, but move the testset to the **end** of
-`runtests.jl` so a doctest failure no longer aborts everything before it.
+The former examples are integrated into existing domain tests where practical;
+the remaining examples are included as ordinary testsets under `test/`.
 
 ### Phase 3 — Fix the documentation and PDF builds
 
@@ -648,7 +661,7 @@ Phase 0 (upstream release)  ──┬─→ Phase 1 (Project.toml)  ──→ 1.
                               │
 Phase 3a (bib)  ──────────────┼─→ Phase 3b/3c (docs + tutorials) ──→ Documentation + PDF green
                               │
-Phase 2 (doctests)  ──────────┼─→ 1.13 doctest failures gone
+Phase 2 (test-policy) ────────┼─→ 1.13 doctest failures removed from unit CI
                               │
 Phase 4 (upstream/CI policy) ─┘   → 1.13/nightly precompile addressed or accepted
 
@@ -733,6 +746,9 @@ Phase 0 is the formal critical path.
 * [ ] Julia 1.13 passes, or is explicitly marked experimental with a linked
       upstream issue. The CI policy change is applied; the upstream issue is
       still outstanding.
+* [x] Documenter doctests are excluded from `test/runtests.jl`; former examples
+      have unit coverage under `test/`, with duplicate cases integrated into
+      existing domain test files.
 * [ ] Documentation workflow green (`@docs` + every tutorial executes; the
       duplicate bibliography keys have been removed).
 * [ ] PDF workflow green.

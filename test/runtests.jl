@@ -1,5 +1,4 @@
 using SafeTestsets, Test, GeometricMachineLearning
-using Documenter: doctest
 
 # reduced order modeling tests
 @info "Starting reduced-order-modeling tests"
@@ -208,7 +207,18 @@ end
 @safetestset "HDF5 save/load for GML special array types                                     " begin
     include("hdf5_support.jl")
 end
-
-@testset "Doc tests                                                                           " begin
-    doctest(GeometricMachineLearning; manual=false)
+@safetestset "Data loader docstring examples                                                  " begin
+    include("docstrings/data_loader.jl")
+end
+@safetestset "Layer and architecture docstring examples                                      " begin
+    include("docstrings/layers_and_architectures.jl")
+end
+@safetestset "Loss docstring examples                                                        " begin
+    include("docstrings/losses.jl")
+end
+@safetestset "Manifold docstring examples                                                    " begin
+    include("docstrings/manifolds.jl")
+end
+@safetestset "Utility and pullback docstring examples                                        " begin
+    include("docstrings/utilities.jl")
 end

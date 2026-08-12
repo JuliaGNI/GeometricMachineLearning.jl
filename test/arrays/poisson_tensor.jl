@@ -13,6 +13,9 @@ function test_setup(n2::Int, T::DataType)
     @test PoissonTensor(n2, T) ≈ hcat(vcat(zero(one_mat), -one_mat), vcat(one_mat, zero(one_mat)))
 end
 
+@test Matrix(PoissonTensor(CPU(), 4, Float16)) ==
+    Float16[0 0 1 0; 0 0 0 1; -1 0 0 0; 0 -1 0 0]
+
 function test_application(n2::Int, T::DataType)
     @assert iseven(n2) 
 
