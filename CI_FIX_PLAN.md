@@ -4,28 +4,18 @@ Status updated on 2026-08-12 on branch `use-geometric-optimizers`. CI run
 `31570166729` had completed its Julia 1.12 builds but remained in
 `julia-runtest`; R1, R3, and R8 therefore remain unresolved CI blockers.
 
-Applied fixes now include unit coverage for the former docstring examples,
-removal of Documenter doctests from the package test runner, duplicate
-bibliography removal, experimental Julia 1.13 matrix entries, test progress
-markers, and generated-artifact ignore rules.
-This update also removes stale BFGS documentation and updates optimizer docs
-and tutorials to the GeometricOptimizers v0.2 API. The remaining upstream,
-dependency, and compile-time work is tracked in the phases below.
+Applied fixes cover the test policy, documentation cleanup, CI progress
+visibility, generated-artifact hygiene, and the local R8 dispatch mitigation.
+The remaining work is either upstream release/registration, CI confirmation,
+or the separate issue #234 design change; the canonical actions are listed in
+§3 and the verification state is tracked in §7.
 
-The local R8 mitigation is now implemented: the GO-backed leaf update in
-`src/utils.jl` dispatches on concrete optimizer method types instead of
-branching on `isa` at the hot call site. This reduces the method-table fan-out,
-but the success criterion still requires a Julia 1.12 CI run or a cold-session
-regression measurement.
-
-Offline checks pass for bibliography uniqueness, Julia parsing, stale-reference
-scans, and `git diff --check`. Runtime validation could not be repeated in the
-current sandbox because the existing Julia depot is read-only and dependency
-installation requires network access. Phase 0 is also still blocked: the
-local `GeometricOptimizers` checkout declares `0.2.0`, but has no `v0.2.0` tag
-and `0.2.0` is not present in the local General registry. Therefore the GML
-`[sources]` workaround and current Julia compatibility floor remain unchanged
-until the upstream release is tagged and registered.
+The R8 mitigation changes the GO-backed leaf update in `src/utils.jl` from an
+`isa` branch to concrete optimizer-method dispatch. Offline checks pass for
+bibliography uniqueness, Julia parsing, stale-reference scans, and
+`git diff --check`; runtime validation remains blocked by the local read-only
+Julia depot and unavailable network access. Phase 0 is likewise blocked until
+the local `GeometricOptimizers` `0.2.0` checkout is tagged and registered.
 
 ---
 
@@ -74,7 +64,10 @@ triggered by the optimizer call nested in the test helper, amplified by the
 silent `SafeTestsets` output. No production-code defect or test assertion
 failure has been reproduced yet.
 
-### Claude's findings (2026-08-12)
+### Historical corroboration (2026-08-12)
+
+The following independent investigation is retained as evidence only; the
+root causes and required actions are consolidated in §2 and §3 below.
 
 Investigated independently (Julia 1.12.6 from
 `~/.julia/juliaup/julia-1.12.6+0.aarch64.apple.darwin14`, branch
