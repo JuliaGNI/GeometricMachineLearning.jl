@@ -381,15 +381,8 @@ One of such Lie groups is the *group of symplectic matrices* [bendokat2021real](
 
 ## Library Functions
 
-```@docs
-GeometricMachineLearning.geodesic(::StiefelLieAlgHorMatrix)
-GeometricMachineLearning.geodesic(::GrassmannLieAlgHorMatrix)
-GeometricMachineLearning.cayley(::StiefelLieAlgHorMatrix)
-GeometricMachineLearning.cayley(::GrassmannLieAlgHorMatrix)
-GeometricMachineLearning.cayley(::Manifold{T}, ::AbstractMatrix{T}) where T
-GeometricMachineLearning.𝔄(::AbstractMatrix)
-GeometricMachineLearning.𝔄(::AbstractMatrix, ::AbstractMatrix)
-```
+Retractions are provided by `GeometricOptimizers`; GML supplies the manifold
+types and their integration with the optimizer framework.
 
 ```@raw latex
 \begin{comment}

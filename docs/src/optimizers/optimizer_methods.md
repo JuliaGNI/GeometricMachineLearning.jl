@@ -4,7 +4,7 @@ In the previous chapter we introduced a general optimizer framework without givi
 
 # Standard Neural Network Optimizers
 
-In this section we discuss optimization methods that are often used in training neural networks. The [BFGS optimizer](@ref "The BFGS Optimizer") may also be viewed as a *standard neural network optimizer* but is treated in a separate section because of its complexity. From a perspective of manifolds the *optimizer methods* outlined here operate on ``\mathfrak{g}^\mathrm{hor}`` only. Each of them has a cache associated with it[^1] and this cache is updated with the function [`update!`](@ref). The precise role of this function is described below.
+In this section we discuss optimization methods that are often used in training neural networks. From a perspective of manifolds the *optimizer methods* outlined here operate on ``\mathfrak{g}^\mathrm{hor}`` only. Each of them has a cache associated with it[^1] and this cache is updated with the function [`update!`](@ref). The precise role of this function is described below.
 
 [^1]: In the case of the [gradient optimizer](@ref "The Gradient Optimizer") this cache is trivial.
 
@@ -22,12 +22,12 @@ where addition has to be replaced with appropriate operations in the manifold ca
 
 [^2]: In the manifold case the expression ``-\eta\cdot\mathrm{gradient}`` is an element of the [global tangent space](@ref "Global Tangent Spaces") ``\mathfrak{g}^\mathrm{hor}`` and a retraction maps from ``\mathfrak{g}^\mathrm{hor}``. We then still have to compose it with the [updated global section](@ref "Parallel Transport") ``\Lambda^{(t)}``.
 
-When calling [`GradientOptimizer`](@ref) we can specify a learning rate ``\eta`` (or use the default).
+The gradient method is constructed without a learning rate; pass the learning rate to [`Optimizer`](@ref) instead.
 
 ```@example optimizer_methods
 using GeometricMachineLearning  # hide
 const η = 0.01
-method = GradientOptimizer(η)
+method = GradientMethod()
 ```
 
 In order to use the optimizer we need an instance of [`Optimizer`](@ref) that is called with the method and the weights of the neural network:
@@ -35,7 +35,7 @@ In order to use the optimizer we need an instance of [`Optimizer`](@ref) that is
 
 ```@example optimizer_methods
 weight = (A = zeros(4, 4), )
-o = Optimizer(method, weight)
+o = Optimizer(method, weight; step_size = η)
 ```
 
 If we operate on a derivative with [`update!`](@ref) this will compute a *final velocity* that is then used to compute a retraction (or simply perform addition if we do not deal with a manifold):
@@ -63,8 +63,8 @@ In the case of the momentum optimizer the cache is non-trivial:
 
 ```@example optimizer_methods
 const α = 0.5
-method = MomentumOptimizer(η, α)
-o = Optimizer(method, weight)
+method = MomentumMethod(α)
+o = Optimizer(method, weight; step_size = η)
 
 o.cache.A # the cache is stored for each array in `weight` (which is a `NamedTuple`)
 ```
@@ -120,8 +120,8 @@ const ρ₁ = 0.9
 const ρ₂ = 0.99
 const δ = 1e-8
 
-method = AdamOptimizer(η, ρ₁, ρ₂, δ)
-o = Optimizer(method, weight)
+method = Adam(Float64; β₁ = ρ₁, β₂ = ρ₂, δ)
+o = Optimizer(method, weight; step_size = η)
 
 o.cache.Y
 ```
@@ -152,18 +152,8 @@ o.cache.Y
 
 ## Library Functions
 
-```@docs
-OptimizerMethod
-GradientOptimizer
-MomentumOptimizer
-AdamOptimizer
-AdamOptimizerWithDecay
-AbstractCache
-GradientCache
-MomentumCache
-AdamCache
-update!(::Optimizer, ::AbstractCache, ::AbstractArray)
-```
+The method types and caches are provided by `GeometricOptimizers`; GML's
+[`Optimizer`](@ref) adapts them to neural-network and manifold parameters.
 
 ```@raw latex
 \begin{comment}

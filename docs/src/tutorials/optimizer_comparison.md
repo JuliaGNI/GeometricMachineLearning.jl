@@ -29,9 +29,8 @@ scatter!(ax, init_cont..., f(init_cont...); color = mred, marker = :star5)
 
 weights = (xy = init_con, )
 η = 1e-3
-method1 = GradientOptimizer(η)
-method2 = AdamOptimizer(η)
-method3 = BFGSOptimizer(η)
-optimizer1 = Optimizer(method1, weights)
-optimizer2 = Optimizer(method2, weights)
+method1 = GradientMethod()
+method2 = Adam()
+optimizer1 = Optimizer(method1, weights; step_size = η)
+optimizer2 = Optimizer(method2, weights; step_size = η)
 ```

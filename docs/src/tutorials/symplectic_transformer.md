@@ -63,7 +63,7 @@ nn_standard = NeuralNetwork(arch_standard)
 nn_symplectic = NeuralNetwork(arch_symplectic)
 nn_sympnet = NeuralNetwork(arch_sympnet)
 
-o_method = AdamOptimizerWithDecay(n_epochs, Float64)
+o_method = AdamOptimizerWithDecay(n_epochs; T = Float64)
 
 o_standard = Optimizer(o_method, nn_standard)
 o_symplectic = Optimizer(o_method, nn_symplectic)
@@ -187,4 +187,4 @@ We can see that the standard transformer is not able to stay close to the trajec
 parameterlength(nn_standard), parameterlength(nn_symplectic), parameterlength(nn_sympnet)
 ```
 
-It is also interesting to note that the training error for the SympNet gets lower than the one for the symplectic transformer, but it does not manage to outperform it when looking at the validation. 
+It is also interesting to note that the training error for the SympNet gets lower than the one for the symplectic transformer, but it does not manage to outperform it when looking at the validation.

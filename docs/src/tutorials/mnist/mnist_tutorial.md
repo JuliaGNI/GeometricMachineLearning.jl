@@ -102,8 +102,8 @@ const n_epochs = 500
 # an instance of batch is needed for the optimizer
 batch = Batch(batch_size, dl)
 
-opt1 = Optimizer(AdamOptimizer(T), nn1)
-opt2 = Optimizer(AdamOptimizer(T), nn2)
+opt1 = Optimizer(Adam(T), nn1)
+opt2 = Optimizer(Adam(T), nn2)
 
 nothing # hide
 ```
@@ -115,14 +115,14 @@ loss_array1 = opt1(nn1, dl, batch, n_epochs, FeedForwardLoss())
 loss_array2 = opt2(nn2, dl, batch, n_epochs, FeedForwardLoss())
 ```
 
-We furthermore optimize the second neural network (with weights on the manifold) with the [`GradientOptimizer`](@ref) and the [`MomentumOptimizer`](@ref):
+We furthermore optimize the second neural network (with weights on the manifold) with the [`GradientMethod`](@ref) and the [`MomentumMethod`](@ref):
 
 ```@example mnist
 nn3 = NeuralNetwork(model2, backend, T)
 nn4 = NeuralNetwork(model2, backend, T)
 
-opt3 = Optimizer(GradientOptimizer(T(0.001)), nn3)
-opt4 = Optimizer(MomentumOptimizer(T(0.001), T(0.5)), nn4)
+opt3 = Optimizer(GradientMethod(), nn3; step_size = T(0.001))
+opt4 = Optimizer(MomentumMethod(T(0.5)), nn4; step_size = T(0.001))
 
 nothing # hide
 ```

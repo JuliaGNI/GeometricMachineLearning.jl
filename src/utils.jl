@@ -204,7 +204,7 @@ end
 GMLEuclideanState(x::AbstractArray{T}) where T =
     GMLEuclideanState{T, typeof(x)}(0, zero(x), zero(x))
 
-# Adam with exponential learning-rate decay.
+"""Adam optimizer method with exponential learning-rate decay."""
 struct AdamOptimizerWithDecay{T<:Real} <: GeometricOptimizers.OptimizerMethod
     η₁::T; η₂::T; ρ₁::T; ρ₂::T; δ::T; γ::T; n_epochs::Int
     function AdamOptimizerWithDecay(n_epochs::Int, η₁=1f-2, η₂=1f-6,
@@ -248,6 +248,7 @@ function _make_optimizer_state(method, x)
     end
 end
 
+"""Optimizer state combining a GeometricOptimizers method with GML parameters."""
 mutable struct Optimizer{MT <: GeometricOptimizers.OptimizerMethod, CT, ST, RT}
     method::MT
     cache::CT
@@ -378,6 +379,7 @@ function _tree_optim_step!(caches, states, dp, ps, λY, method, retraction, step
     nothing
 end
 
+"""Apply one optimization step to parameters and their gradient."""
 function optimization_step!(opt::Optimizer, λY, ps, dp)
     step = _current_step_size(opt, opt.iterations)
     _tree_optim_step!(opt.cache, opt.state, dp, ps, λY, opt.method, opt.retraction, step)

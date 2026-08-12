@@ -84,10 +84,10 @@ nn1 = NeuralNetwork(arch1)
 nn2 = NeuralNetwork(arch2)
 ```
 
-Training is done with the [`AdamOptimizer`](@ref):
+Training is done with the [`Adam`](@ref):
 
 ```@example softmax_comparison
-o_method = AdamOptimizer()
+o_method = Adam()
 
 o1 = Optimizer(o_method, nn1)
 o2 = Optimizer(o_method, nn2)

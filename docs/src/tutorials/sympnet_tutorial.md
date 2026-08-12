@@ -100,7 +100,7 @@ We have to define an [optimizer](@ref "Standard Neural Network Optimizers") whic
 
 ```@example sympnet
 # set up optimizer; for this we first need to specify the optimization method
-opt_method = AdamOptimizer(type)
+opt_method = Adam(type)
 # we then call the optimizer struct which allocates the cache
 la_opt = Optimizer(opt_method, la_nn)
 g_opt = Optimizer(opt_method, g_nn)

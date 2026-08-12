@@ -119,7 +119,7 @@ psd_nn_cpu = NeuralNetwork(psd_arch, CPU(), eltype(dl_cpu))
 solve!(psd_nn_cpu, dl_cpu)
 ```
 
-The `SymplecticAutoencoder` we train with the [`AdamOptimizerWithDecay`](@ref) however[^2]:
+The `SymplecticAutoencoder` we train with [`AdamOptimizerWithDecay`](@ref) however[^2]:
 
 [^2]: It is not feasible to perform the training on CPU, which is why we use `CUDA` [besard2018juliagpu](@cite) here. We further perform the training in single precision.
 
@@ -134,7 +134,7 @@ dl = DataLoader(dl_cpu, backend, Float32)
 
 
 sae_nn_gpu = NeuralNetwork(sae_arch, CUDADevice(), Float32)
-o = Optimizer(sae_nn_gpu, AdamOptimizerWithDecay(integrator_train_epochs))
+o = Optimizer(AdamOptimizerWithDecay(integrator_train_epochs), sae_nn_gpu)
 
 # train the network
 o(sae_nn_gpu, dl, Batch(batch_size), n_epochs)

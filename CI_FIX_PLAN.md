@@ -1,52 +1,19 @@
 # Workplan: fixing CI on PR #230 and closing issue #234
 
-Status checked on 2026-08-12 on branch `use-geometric-optimizers`. The recorded
-CI run `31570166729` had built all Julia 1.12 jobs successfully but was still
-in `julia-runtest`; the local investigation below therefore treats R8 as an
-unresolved compile-time blocker. The GitHub API was unavailable during this
-update, so no newer run result is inferred.
+Status checked on 2026-08-12 on branch `use-geometric-optimizers`. CI run
+`31570166729` had completed its Julia 1.12 builds but remained in
+`julia-runtest`; R1, R3, and R8 therefore remain unresolved blockers.
 
-No fix for the blocking dependency, optimizer compile-time, API, or upstream
-precompilation issues has been executed — §3 remains a plan for those items.
-The low-risk changes listed below have been applied. The diagnostics in the two
-investigation sections below (local 1.12 runs, timing probes, stack sampling)
-**have** been run; their results are reported there.
+Applied fixes now include the version-independent batch doctests, deferred
+doctest testset, duplicate bibliography removal, experimental Julia 1.13
+matrix entries, test progress markers, and generated-artifact ignore rules.
+This update also removes stale BFGS documentation and updates optimizer docs
+and tutorials to the GeometricOptimizers v0.2 API. The remaining upstream,
+dependency, and compile-time work is tracked in the phases below.
 
-### Applied low-risk fixes (2026-08-12)
-
-The following unambiguous changes from §3 have now been applied in GML:
-
-* The two batch doctests in `src/data_loader/batch.jl` now verify batch counts,
-  sizes, and complete index coverage rather than a Julia-version-specific
-  shuffle order.
-* The doctest testset in `test/runtests.jl` now runs after the regular testsets,
-  so a documentation-only failure cannot prevent the unit tests from running.
-* The duplicate `Kraus:2020:GeometricIntegrators` and
-  `greydanus2019hamiltonian` BibTeX entries were removed, unblocking the first
-  bibliography parsing step for Documentation and PDF builds.
-* Julia `^1.13.0-0` is now marked experimental in `.github/workflows/CI.yml`,
-  matching the documented upstream precompilation failure.
-* `test/runtests.jl` now prints progress markers before each major test group,
-  making a long-running `@safetestset` visible in CI logs.
-* `.gitignore` covers the generated documentation archives, migration
-  inspection logs, and LaTeX auxiliary files listed in Phase 6. Existing
-  untracked artifacts were intentionally not deleted.
-
-These changes do not resolve dependency registration (R1), the Julia 1.12
-compile-time problem (R8), stale documentation/API call sites (R5/R6), or the
-Julia 1.13 precompilation issue (R3). The verification checklist below remains
-the source of truth for those outstanding items.
-
-### Local validation of applied fixes (2026-08-12)
-
-* The bibliography key scan passes with no duplicate keys remaining.
-* `git diff --check` and Julia parser checks pass for the modified Julia files.
-* The focused Documenter doctest could not execute in the current checkout:
-  the Julia 1.13 docs environment has an unusable local `LibCURL_jll` cache,
-  while the Julia 1.12 environment reaches the package load and then reports
-  that the current manifest does not contain the direct
-  `GeometricOptimizers` dependency. This is the existing R1/environment state,
-  not a doctest assertion failure.
+Local checks pass for bibliography uniqueness, Julia parsing, stale-reference
+scans, and `git diff --check`. Full Documenter execution remains blocked by
+the existing local `LibCURL_jll`/manifest environment issues described below.
 
 ---
 
@@ -58,15 +25,14 @@ the source of truth for those outstanding items.
 | Julia 1.12 × {ubuntu, macOS, windows} | ⏳ still running after > 1 h 15 min (vs 29 min for the whole job on `main`) | **R8** pathological compile time in the GO-backed optimizer path (all three builds passed; `julia-runtest` does not finish) |
 | Julia ^1.13.0-0 × {ubuntu, macOS, windows} | ⚠️ experimental | **R2** doctests + **R3** precompile |
 | Julia nightly × {ubuntu, macOS, windows} | ❌ (`experimental: true`) | **R3** precompile |
-| Documentation | ❌ | **R4** duplicate BibTeX keys |
-| PDF | ❌ | **R4** duplicate BibTeX keys |
+| Documentation | ⏳ | R4 fixed; R5/R6 docs updates applied, full build pending |
+| PDF | ⏳ | R4 fixed; full build pending |
 
 Two further breakages are *latent* — they sit behind R4 and will surface the
 moment the bibliography is fixed:
 
-* **R5** `@docs` blocks referencing symbols that no longer exist in GML.
-* **R6** tutorials calling optimizer constructors whose signatures changed in
-  GeometricOptimizers v0.2.
+* **R5** stale `@docs` blocks — removed or limited to GML-owned symbols.
+* **R6** stale optimizer constructors — tutorial call sites updated to v0.2.
 
 And one design defect, tracked separately:
 

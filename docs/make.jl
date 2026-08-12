@@ -155,7 +155,6 @@ _optimizers = optimizer_name => [
     "Retractions" => "optimizers/manifold_related/retractions.md",
     "Parallel Transport" => "optimizers/manifold_related/parallel_transport.md",
     "Optimizer Methods" => "optimizers/optimizer_methods.md",
-    "BFGS Optimizer" => "optimizers/bfgs_optimizer.md",
     ]
 
 _special_layers = "Special Neural Network Layers" => [
@@ -302,7 +301,7 @@ _latex_pages = [
     ],
     "Optimizers" => [   "General Framework for Manifold Optimization" => value_for_key(_optimizers, "Optimizers", "Retractions", "Parallel Transport"),
                         "Optimizer Methods" =>
-                            value_for_key(_optimizers, "Optimizer Methods", "BFGS Optimizer")
+                            value_for_key(_optimizers, "Optimizer Methods")
                         ],
     "Special Neural Network Layers and Architectures" => [
         "Layers" => reduce_to_second_factors(_special_layers),
