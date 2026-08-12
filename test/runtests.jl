@@ -1,10 +1,8 @@
 using SafeTestsets, Test, GeometricMachineLearning
 using Documenter: doctest
 
-@testset "Doc tests                                                                           " begin
-    doctest(GeometricMachineLearning; manual=false)
-end
 # reduced order modeling tests
+@info "Starting reduced-order-modeling tests"
 @safetestset "PSD tests                                                                       " begin
     include("psd_architecture_tests.jl")
 end
@@ -84,6 +82,7 @@ end
     include("layers/resnet_tests.jl")
 end
 # transformer-related tests
+@info "Starting transformer-related tests"
 @safetestset "Test setup of MultiHeadAttention layer Stiefel weights                          " begin
     include("transformer_related/multi_head_attention_stiefel_setup.jl")
 end
@@ -109,6 +108,7 @@ end
 @safetestset "Classification layer                                                            " begin
     include("layers/classification.jl")
 end
+@info "Starting optimizer tests"
 @safetestset "Optimizer #1                                                                    " begin
     include("optimizers/utils/global_sections.jl")
 end
@@ -130,6 +130,7 @@ end
 @safetestset "BFGS Optimizer tests                                                            " begin
     include("optimizers/bfgs_optimizer.jl")
 end
+@info "Starting data and data-loader tests"
 @safetestset "Data                                                                            " begin
     include("data/test_data.jl")
 end
@@ -157,10 +158,12 @@ end
     include("data_loader/draw_batch_for_tensor_test.jl")
 end
 
+@info "Starting network-loss and kernel tests"
 @safetestset "Test NetworkLoss + Optimizer                                                    " begin
     include("network_losses/losses_and_optimization.jl")
 end
 
+@info "Starting integrator and attention tests"
 @safetestset "Test parallel inverses                                                          " begin
     include("kernels/tensor_inverse.jl")
 end
@@ -197,10 +200,15 @@ end
     include("linear_symplectic_transformer.jl")
 end
 
+@info "Starting final data-loader and documentation tests"
 @safetestset "DataLoader for input and output                                                 " begin
     include("data_loader/data_loader_for_input_and_output.jl")
 end
 
 @safetestset "HDF5 save/load for GML special array types                                     " begin
     include("hdf5_support.jl")
+end
+
+@testset "Doc tests                                                                           " begin
+    doctest(GeometricMachineLearning; manual=false)
 end
