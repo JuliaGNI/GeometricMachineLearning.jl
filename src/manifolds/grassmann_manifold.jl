@@ -155,6 +155,22 @@ function GeometricOptimizers.global_rep(
     )
 end
 
+function GeometricOptimizers.geodesic(Y::GrassmannManifold{T}, Δ::AbstractMatrix{T}) where T
+    λY = GeometricOptimizers.GlobalSection(Y)
+    B = GeometricOptimizers.global_rep(λY, Δ)
+    E = StiefelProjection(B)
+    expB = GeometricOptimizers.geodesic(B)
+    GeometricOptimizers.apply_section(λY, GrassmannManifold(expB * E))
+end
+
+function GeometricOptimizers.cayley(Y::GrassmannManifold{T}, Δ::AbstractMatrix{T}) where T
+    λY = GeometricOptimizers.GlobalSection(Y)
+    B = GeometricOptimizers.global_rep(λY, Δ)
+    E = StiefelProjection(B)
+    cayleyB = GeometricOptimizers.cayley(B)
+    GeometricOptimizers.apply_section(λY, GrassmannManifold(cayleyB * E))
+end
+
 function GeometricOptimizers.update_section!(
     Λᵗ::GeometricOptimizers.GlobalSection{T, <:GrassmannManifold{T}},
     Λ⁽ᵗ⁻¹⁾::GeometricOptimizers.GlobalSection{T, <:GrassmannManifold{T}},
