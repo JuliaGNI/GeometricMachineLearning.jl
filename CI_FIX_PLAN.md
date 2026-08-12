@@ -142,7 +142,7 @@ caches therefore becomes a costly intersection target, and GML's
 `_leaf_optim_step!`/`_tree_optim_step!` (`src/utils.jl:316-379`) call
 `GeometricOptimizers.update!` once per parameter leaf with a different
 concrete cache/state type each time. This is a hypothesis derived from the
-backtrace, **not yet proven** — see the proposed next step below.
+backtrace, **not yet proven** — Phase 7 begins by profiling it.
 
 **4. Runtime is fine; it is purely compile time, and it is not `--check-bounds`.**
 
@@ -164,43 +164,7 @@ reaches it through the helper `test_accuracy(N::Integer, n::Integer; …)`, so
 the whole nested call tree has to be inferred as one unit. That matches codex's
 observation that changing `::Integer` to `::Int` does not help.
 
-**5. Consequences for the plan.**
-
-* This is almost certainly **not 1.12-specific**. 1.10 dies at `instantiate`
-  (R1) and 1.13 dies at the doctests (R2), so 1.12 is simply the only job that
-  gets far enough to hit it. Expect it to reappear on 1.13 the moment Phase 2
-  lands, and on 1.10 after Phase 0/1. It is now written up as **R8** in §2 with
-  **Phase 7** in §3, and it is a merge blocker: the test suite does not fail, it
-  just does not finish (GitHub-hosted jobs are killed at 6 h).
-* Ordering nit for Phase 2: moving the doctest testset to the end of
-  `runtests.jl` is right, but it will not help here — the doctests pass on 1.12
-  and the suite still stalls in the first or second `@safetestset`.
-* `@safetestset` buffers everything until a testset completes, so a stalled
-  suite is indistinguishable from a hung one in the CI log. Worth printing a
-  marker (`@info`) before each testset, or switching the offending sets to
-  `@testset`, purely so the next person can see where CI is.
-
-**6. Proposed next steps (cheap → expensive), not yet executed.**
-
-1. Confirm the suspect with `SnoopCompileCore`/`@snoopi_deep` (or
-   `Cthulhu`) on `test_accuracy(10, 6; n_epochs = 1)` and report the worst
-   `InferenceTimingNode`s; `--trace-compile=stderr` also localises the last
-   successfully compiled signature before the spin.
-2. If confirmed, fix it in **GO**, not GML: stop using the `Union` aliases as
-   type-parameter *bounds*. Either drop the bound entirely
-   (`struct AdamCache{T,MT,VT,ST} <: OptimizerCache{T}`, with the invariant
-   enforced in the inner constructor) or make `ArrayNamedTuple` concrete in the
-   names parameter. Both are local changes and neither affects behaviour.
-3. Independently, insert a function barrier in GML: give
-   `_leaf_optim_step!` a `@nospecialize`d entry point, or replace the
-   `adapted isa Adam` / `isa MomentumMethod` chain at `src/utils.jl:321-330`
-   with ordinary dispatch, so each leaf type does not drag the whole `update!`
-   method table into inference at one call site.
-4. Only if 1–3 fail: restructure the test helpers so the optimizer call is not
-   nested (masks the symptom for CI without fixing the user-facing latency —
-   every GML user calling `Optimizer` from inside a function pays this cost).
-
-**7. What I did not verify.** My local `Pkg.test()` run was still spinning in
+**5. What I did not verify.** My local `Pkg.test()` run was still spinning in
 the same testset after 23 min when I stopped investigating, so I never saw it
 complete; I therefore cannot confirm codex's report that the SAE testset
 eventually *passes*, nor rule out failures in any later testset. Someone should
@@ -601,8 +565,7 @@ duplication), Option C as a tracked follow-up.
 
 ### Phase 7 — R8: make the optimizer path compile in reasonable time (blocking)
 
-Added after the 1.12 investigation. The concrete steps are listed under
-"Claude's findings", item 6; summarised here so the plan is self-contained:
+Added after the 1.12 investigation. This is the canonical action list for R8:
 
 1. **Localise it.** `@snoopi_deep` (SnoopCompileCore) on
    `test_accuracy(10, 6; n_epochs = 1)`, or `--trace-compile=stderr` to see the
