@@ -292,14 +292,16 @@ Also in GO#33: `test/adam_optimizer_with_decay.jl` (33 assertions, including
 Stacked and **draft**: `DecayingStatic` lives only on
 `docs-linesearch-on-manifolds` and the weight-decay docs only on
 `manifold-adamw`, so §6.7's "branch GO off `main`" was not possible for this
-item. Base is `manifold-adamw` ([GO#29][go29]), which must merge first, with
-`main` and `docs-linesearch-on-manifolds` merged into it (done locally, not yet
-pushed — until they are, GO#33's diff on GitHub shows all three branches' work
-rather than its own 6 files / +199).
+item. Base is `manifold-adamw` ([GO#29][go29]), which must merge first; `main`
+and `docs-linesearch-on-manifolds` have been merged into it and pushed. The
+GML-side deletion therefore lands after GO#29 and GO#33, not in this PR.
 
-The GML-side deletion therefore lands after GO#29 and GO#33, not in this PR.
+That merge forced one semantic choice — which line search
+`AdamWithEuclideanDecay` defaults to — written up for confirmation in
+[GO#34][go34]. It does not block anything here.
 
 [go29]: https://github.com/JuliaGNI/GeometricOptimizers.jl/pull/29
+[go34]: https://github.com/JuliaGNI/GeometricOptimizers.jl/issues/34
 
 ---
 
@@ -399,6 +401,7 @@ path.
 * [ ] michakraus informed about the `runtests.jl` progress markers.
 * [x] GO branch opened for the §4 move: [GO#33][go33] (draft, base `manifold-adamw`),
       covering `AdamOptimizerWithDecay`.
+* [ ] [GO#34][go34] answered: `AdamWithEuclideanDecay`'s default line search confirmed.
 * [ ] GO#29 merged, then GO#33 undrafted and merged.
 * [ ] `AdamOptimizerWithDecay` deleted from `src/utils.jl` and call sites moved to
       `Optimizer(x, problem; AdamOptimizerWithDecay(n)...)`.
