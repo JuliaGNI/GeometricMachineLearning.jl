@@ -2,7 +2,9 @@
 
 Status updated on 2026-08-13 on branch `use-geometric-optimizers`. CI run
 `31570166729` had completed its Julia 1.12 builds but remained in
-`julia-runtest`; R1, R3, and R8 therefore remain unresolved CI blockers.
+`julia-runtest`. R1 and R8 remain unresolved CI blockers; R3 was fixed upstream
+by `GeometricIntegrators v0.18.0` and still needs confirmation in the full GML
+matrix.
 
 Applied fixes cover the test policy, documentation cleanup, CI progress
 visibility, generated-artifact hygiene, and the local R8 dispatch mitigation.
@@ -145,7 +147,10 @@ test files. Standalone example tests remain only for APIs without a natural
 existing test home. This removes the RNG-sensitive doctest failure from the
 Julia 1.13 unit-test matrix without sacrificing behavioral coverage.
 
-### R3 — Method overwriting during precompilation (Julia ≥ 1.13)
+### R3 — Method overwriting during precompilation (resolved upstream)
+
+!!!info comment by benedict-96
+    This should have been resolved by now (see comment below). If so, you can get rid of it.
 
 `GenericLinearAlgebra v0.4.0` redefines
 `LinearAlgebra.eigencopy_oftype(::UpperHessenberg, S)`, which the stdlib
@@ -157,9 +162,15 @@ GeometricIntegrators v0.17.0 → RungeKutta v0.5.23 → GenericLinearAlgebra v0.
 ```
 
 `GeometricIntegrators` is a *test-only* dependency (`[targets] test`).
-GenericLinearAlgebra's master branch guards the definition with
-`VERSION < v"1.14.0-DEV.2266"`, i.e. it is still broken on 1.13. **This cannot
-be fixed inside GML** other than by constraining/removing the test dependency.
+
+**Resolution on August 13, 2026:** `GeometricIntegrators v0.18.0` removes
+`GenericLinearAlgebra` from its dependencies and upgrades to `RungeKutta v0.6`.
+Its release notes explicitly identify the Julia 1.13 method-overwrite failure
+as the blocker and state that the new release precompiles and loads on Julia
+1.13. The release is registered in General. A minimal Julia 1.13 environment
+resolved `GeometricIntegrators v0.18.0`, precompiled all dependencies, and
+loaded it successfully. The GML CI matrix still needs one run with the new
+resolution before the experimental 1.13/nightly jobs are made required.
 
 ### R4 — Duplicate BibTeX keys (resolved)
 
@@ -196,6 +207,9 @@ GO v0.2 moved the learning rate out of the method and into
 These are `@example` blocks, i.e. they execute during the docs build.
 
 ### R7 — Issue #234: duplicated retraction pipeline
+
+!!!info comment by benedict-96
+    This issue can be left for a later small refactoring effort. It is not critical right now for pr #230 to be merged.
 
 GO's generic retraction is
 
@@ -373,9 +387,17 @@ depends on the outcome.
 **3d.** Re-check `docs/Project.toml` — it must also drop any `[sources]`
 workaround once GO v0.2.0 is registered.
 
-### Phase 4 — Julia 1.13 and nightly (R3)
+### Phase 4 — Julia 1.13 and nightly (R3, upstream fix available)
 
-Not fixable inside GML. Options, in order of preference:
+!!!info comment by benedict-96
+    This issue should have been resolved by now. If it has the text below is superfluous now. In that case you can get rid of it.
+
+The upstream fix is now available in `GeometricIntegrators v0.18.0`. Verify the
+full GML matrix resolves that version and then remove the experimental status
+from the 1.13 jobs if they are green. If resolution selects an older version
+in any workflow, refresh the generated environment artifacts first.
+
+Historical options before the upstream release, in order of preference:
 
 1. **Push upstream.** Open an issue/PR on GenericLinearAlgebra to widen the
    version guard so it also covers 1.13 (currently only
@@ -397,6 +419,9 @@ Note that 1.13 also fails on R2, so Phase 2 must land regardless — otherwise
 option 4 hides two problems instead of one.
 
 ### Phase 5 — Issue #234 (do not block #230 on this)
+
+!!!info comment by benedict-96
+    As mentioned above, this issue is not critical right now.
 
 Three ways to make GO's generic retractions apply to GML's manifolds:
 
