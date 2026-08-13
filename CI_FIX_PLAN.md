@@ -64,7 +64,7 @@ triggered by the optimizer call nested in the test helper, amplified by the
 silent `SafeTestsets` output. No production-code defect or test assertion
 failure has been reproduced yet.
 
-### Independent corroboration (2026-08-12)
+### Julia 1.12 local investigation II (2026-08-12) (analyzed by claude)
 
 The second investigation added evidence that is useful for prioritising R8,
 but does not change the root cause or action list:
@@ -163,20 +163,11 @@ be fixed inside GML** other than by constraining/removing the test dependency.
 
 ### R4 — Duplicate BibTeX keys (resolved)
 
-
-!!!info coment by benedict-96
-    I'm almost certain R4 has been fixed by now. In that case this subsection can be removed.
-
-`docs/src/GeometricMachineLearning.bib` contains each of these twice, with
-identical bodies (almost certainly introduced by merge `172ea601`):
-
-* `Kraus:2020:GeometricIntegrators` — lines 422 and 524
-* `greydanus2019hamiltonian` — lines 650 and 1124
-
-`CitationBibliography(...)` at `docs/make.jl:14` throws on duplicate keys, which
-kills the Documentation and PDF workflows before Documenter even starts. The
-duplicate entries have been removed; retain this section as the historical
-root cause until the documentation workflow is observed green.
+The duplicate `Kraus:2020:GeometricIntegrators` and
+`greydanus2019hamiltonian` entries were removed from
+`docs/src/GeometricMachineLearning.bib`. Keep the bibliography uniqueness
+check in the verification checklist until both documentation workflows are
+observed green.
 
 ### R5 — `@docs` blocks pointing at symbols that no longer exist
 
@@ -320,20 +311,11 @@ doctest still breaks whenever the RNG stream changes; `doctestfilters` would
 hide genuine regressions), while keeping documentation validation in the
 documentation workflow.
 
-Also decide deliberately whether doctests belong in `runtests.jl` at all. They
-are already run by `docs/Makefile`'s `test_docs` target on Julia 1 in the
-Documentation workflow. Running them in the matrix too means every Julia
-release candidate can fail the *unit* test suite for a formatting reason.
-The former examples are integrated into existing domain tests where practical;
-the remaining examples are included as ordinary testsets under `test/`.
-
 ### Phase 3 — Fix the documentation and PDF builds
 
-**3a. Bibliography (unblocks both workflows, ~2 minutes).**
-Delete the second `Kraus:2020:GeometricIntegrators` (line 524) and the second
-`greydanus2019hamiltonian` (line 1124) from
-`docs/src/GeometricMachineLearning.bib`. Diff the pairs first to confirm they
-are byte-identical.
+**3a. Bibliography (completed).**
+The duplicate bibliography keys have been removed. Verify uniqueness as part
+of the documentation checks rather than repeating the deletion step.
 
 **3b. `@docs` blocks (R5).**
 For symbols that now live in GO, do **not** simply add `GeometricOptimizers`

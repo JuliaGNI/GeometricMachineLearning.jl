@@ -19,7 +19,7 @@ Closely linked to the research presented here is the development of a software p
 [^0]: This document was produced with `GeometricMachineLearning` `v0.3`. It may be that the interface will slightly change in future versions, but efforts will be made to keep these changes as small as possible.
 
 ```@docs; canonical = false
-GradientCache
+GradientMethod
 ```
 
 So the docstring shows the name of the type or method, in most cases how to call it and then gives some information explaining what it does and potentially hyperlinks to other similar docstrings ([`GradientMethod`](@ref) in this case); all of this information is indented by a tab. Docstrings may include other information under subheaders **Arguments** (showing the arguments the method can be supplied with), **Examples** (giving more detailed examples (including results) of how to use the method) and **Implementation** (giving details on how the method is implemented). When we reference a docstring it is always printed in blue (e.g. [`GradientMethod`](@ref)), indicating a hyperlink. In addition there is an *index of docstrings* showing all docstrings in chronological order with the associated page number.

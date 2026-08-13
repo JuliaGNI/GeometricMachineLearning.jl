@@ -38,7 +38,9 @@ weight = (A = zeros(4, 4), )
 o = Optimizer(method, weight; step_size = η)
 ```
 
-If we operate on a derivative with [`update!`](@ref) this will compute a *final velocity* that is then used to compute a retraction (or simply perform addition if we do not deal with a manifold):
+If we operate on a derivative with `GeometricOptimizers.update!` this will
+compute a *final velocity* that is then used to compute a retraction (or
+simply perform addition if we do not deal with a manifold):
 
 ```@example optimizer_methods
 dx = (A = one(weight.A), )

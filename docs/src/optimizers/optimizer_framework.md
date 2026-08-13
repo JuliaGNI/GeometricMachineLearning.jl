@@ -22,7 +22,9 @@ Main.definition(raw"Given a neural network ``\mathcal{NN}`` parametrized by ``\T
 " * Main.indentation * raw"with the aim of decreasing the value ``L(\Theta)`` in each optimization step.")
 ```
 
-The past history of the optimization is stored in a cache ([`AdamCache`](@ref), [`MomentumCache`](@ref), [`GradientCache`](@ref), ``\ldots``) in `GeometricMachineLearning`.
+The past history of the optimization is stored in the optimizer state managed
+by `GeometricOptimizers`. GML's [`Optimizer`](@ref) combines that state with
+neural-network parameters and the manifold retraction used for each update.
 
 Optimization for neural networks is (almost always) some variation on gradient descent. The most basic form of gradient descent is a discretization of the *gradient flow equation*:
 
