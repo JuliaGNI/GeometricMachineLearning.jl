@@ -220,6 +220,9 @@ has a distinct signature). Same for `AbstractLieAlgHorMatrix`.
 
 **Option B — a Holy trait in GO**, letting any external hierarchy opt in:
 
+!!!info comment by benedit-96
+    I think this is not a good option. I left it in there for now, but could probably be removed after quickly checking with michakraus.
+
 ```julia
 abstract type ManifoldTrait end
 struct IsHomogeneousSpace <: ManifoldTrait end
@@ -314,7 +317,7 @@ Phase 4 (R8)  ── BLOCKING, start first; needs no dependency resolution to
 Phase 1 (interim Project.toml + 1.10 issue) ──→ 1.10 removed from matrix
 Phase 0 (upstream release)                  ──→ later reverts Phase 1 to target form
 Phase 2 (retractions.md @ref)               ──→ Documentation + PDF green
-Phase 3 (1.13 confirmation)                 ──→ 1.13/nightly de-experimentalised
+Phase 3 (1.13 confirmation)                 ──→ 1.13/nightly de-experimentalised (comment by benedict-96: nightly can stay experimentalised as is the case in all other JuliaGNI repos)
 Phase 5 (#234)                              ──→ separate PR
 §4 (move to GO)                             ──→ AdamOptimizerWithDecay: GO#33
                                                 (draft, stacked on GO#29);
