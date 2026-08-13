@@ -1,453 +1,224 @@
 # Workplan: fixing CI on PR #230 and closing issue #234
 
-Status updated on 2026-08-13 on branch `use-geometric-optimizers`. CI run
-`31570166729` had completed its Julia 1.12 builds but remained in
-`julia-runtest`. R1 and R8 remain unresolved CI blockers; R3 was fixed upstream
-by `GeometricIntegrators v0.18.0` and still needs confirmation in the full GML
-matrix.
+Status 2026-08-13, branch `use-geometric-optimizers`, verified against the
+working tree on that date.
 
-Applied fixes cover the test policy, documentation cleanup, CI progress
-visibility, generated-artifact hygiene, and the local R8 dispatch mitigation.
-The remaining work is either upstream release/registration, CI confirmation,
-or the separate issue #234 design change; the canonical actions are listed in
-§3 and the verification state is tracked in §7.
-
-The R8 mitigation changes the GO-backed leaf update in `src/utils.jl` from an
-`isa` branch to concrete optimizer-method dispatch. Offline checks pass for
-bibliography uniqueness, Julia parsing, stale-reference scans, and
-`git diff --check`; runtime validation remains blocked by the local read-only
-Julia depot and unavailable network access. Phase 0 is likewise blocked until
-the local `GeometricOptimizers` `0.2.0` checkout is tagged and registered.
+**Two blockers remain: R1 (dependency resolution) and R8 (compile time).**
+Everything else is resolved or deliberately deferred out of #230.
 
 ---
 
-## 1. Where we stand
+## 1. Status
 
-| Job | Result | Root cause |
+### Blockers
+
+| ID | Problem | Fix |
 | --- | --- | --- |
-| Julia 1.10 × {ubuntu, macOS, windows} | ❌ | **R1** unresolvable `GeometricOptimizers` |
-| Julia 1.12 × {ubuntu, macOS, windows} | ⏳ still running after > 1 h 15 min (vs 29 min for the whole job on `main`) | **R8** pathological compile time in the GO-backed optimizer path (all three builds passed; `julia-runtest` does not finish) |
-| Julia ^1.13.0-0 × {ubuntu, macOS, windows} | ⚠️ experimental | **R3** precompile |
-| Julia nightly × {ubuntu, macOS, windows} | ❌ (`experimental: true`) | **R3** precompile |
-| Documentation | ⏳ | R4 fixed; R5/R6 docs updates applied, full build pending |
-| PDF | ⏳ | R4 fixed; full build pending |
+| **R1** | `GeometricOptimizers = "0.2"` is not in General (local registry carries only `0.1.0`). `Project.toml` works around it with `[sources]`, which Pkg < 1.11 ignores, so all three Julia 1.10 jobs die at `Pkg.instantiate`. `[sources]` also makes GML itself unregistrable. | Phase 0 / Phase 1 |
+| **R8** | Inference spins in method-table intersection when `GeometricOptimizers.update!` is reached through GML's optimizer tree. 1.12 jobs ran > 1 h 15 min vs ~25–48 min on `main`; run `31570166729` never left `julia-runtest`. Produces no error — a hung job, not a red one. | Phase 4 |
 
-The documentation issues that were latent behind R4 are now addressed:
+### Resolved
 
-* **R4** duplicate bibliography keys — removed.
-* **R5** stale `@docs` blocks — removed or limited to GML-owned symbols.
-* **R6** stale optimizer constructors — tutorial call sites updated to v0.2.
-
-And one design defect, tracked separately:
-
-* **R7** = issue #234: GML's manifolds do not subtype `GeometricOptimizers.Manifold`,
-  so GO's generic retractions never dispatch.
-
-### Julia 1.12 local investigation (2026-08-12) (analyzed by codex)
-
-The requested Julia 1.12.6 run was repeated with a writable temporary depot.
-Dependency setup completed, including `GeometricOptimizers`; doctests and PSD
-tests passed. The apparent stall begins in the next `symplectic_autoencoder`
-testset, but it is compilation rather than a training loop deadlock:
-
-* The first optimizer epoch takes about 13 seconds for compilation, then each
-  later epoch takes about 7 ms; 100 epochs complete and reach the expected
-  accuracy threshold.
-* An instrumented `test_symplecticity(10, 6)` completes in about 18 seconds:
-  the first Jacobian takes about 7.6 seconds, training for 10 epochs about
-  8.7 seconds, and the second Jacobian about 0.3 seconds.
-* Calling the same optimizer code from the test helper function can spend
-  several minutes in Julia 1.12's compiler before producing any output. An
-  interrupt shows billions of allocations in `Compiler` inference and
-  `subtype.c`; changing `N::Integer`/`n::Integer` to `Int` does not resolve it.
-
-Thus the 1.12 latency is a Julia 1.12 inference/compiler pathological case
-triggered by the optimizer call nested in the test helper, amplified by the
-silent `SafeTestsets` output. No production-code defect or test assertion
-failure has been reproduced yet.
-
-### Julia 1.12 local investigation II (2026-08-12) (analyzed by claude)
-
-The second investigation added evidence that is useful for prioritising R8,
-but does not change the root cause or action list:
-
-* This is a regression relative to `main`, not merely a slow Julia 1.12 job:
-  the 1.12 jobs on `main` completed in roughly 25–48 minutes, while PR run
-  `31570166729` was still in `julia-runtest` after 1 hour 15 minutes on all
-  three operating systems.
-* Two `SIGINFO` samples showed the compiler spending its time in
-  `subtype_unionall`, `subtype_tuple_varargs`, `jl_type_union`, and method
-  intersection. That points to signature shape and method-table enumeration,
-  rather than inference of a large function body.
-* The leading upstream hypothesis is GO's union aliases used as type-parameter
-  bounds on optimizer cache/state structs, especially aliases containing
-  `NamedTuple` and `Vararg` members. This remains a hypothesis until profiling
-  or an upstream reproduction confirms it.
-* The same SAE workload is fast when invoked at top level (about 13–18 seconds
-  for a cold first epoch and milliseconds when warm, including the
-  `--check-bounds=yes -g1` case). The pathological latency appears when the
-  optimizer is compiled through the test helper, so changing test structure
-  would only hide a user-facing issue.
-* The independent run did not complete the full 1.12 suite, so the checklist
-  still correctly requires one complete end-to-end run before declaring R8
-  resolved.
-
-## 2. Root causes in detail
-
-### R1 — `GeometricOptimizers` cannot be resolved on Julia 1.10
-
-```
-ERROR: Unsatisfiable requirements detected for package GeometricOptimizers [fc236c15]:
- possible versions are: 0.1.0 or uninstalled; restricted to versions 0.2
-```
-
-`Project.toml` pins `GeometricOptimizers = "0.2"`, but General only carries
-0.1.0. The PR works around this with
-
-```toml
-[sources]
-GeometricOptimizers = {url = "https://github.com/JuliaGNI/GeometricOptimizers.jl.git", rev = "main"}
-```
-
-`[sources]` is honoured only by Pkg ≥ 1.11, so all three 1.10 jobs die at
-`Pkg.instantiate`. Secondary problem: **General rejects any package with a
-`[sources]` block**, so as long as this stays in, GML itself cannot be
-registered either. Third: GML declares `julia = "1.9"` while GO declares
-`julia = "1.10"` — inconsistent even once resolution works.
-
-### R2 — Doctests are sensitive to the RNG stream (Julia 1.13)
-
-`src/data_loader/batch.jl` has two jldoctests that hardcode the output of
-`shuffle` (lines 144–145: `shuffle(1:number_columns)` /
-`shuffle(1:third_dim)` on the global `TaskLocalRNG`). The stream changed
-between 1.12 and 1.13:
-
-| Doctest | Expected | 1.13 produced |
+| ID | Problem | Resolution |
 | --- | --- | --- |
-| `batch.jl:18-34` | `([(1, 5), (1, 3)], [(1, 4), (1, 1)], [(1, 2)])` | `([(1, 3), (1, 1)], [(1, 5), (1, 4)], [(1, 2)])` |
-| `batch.jl:106-130` | `([(1, 1), (4, 1), (2, 1)], [(3, 1)])` | `([(1, 1), (3, 1), (2, 1)], [(4, 1)])` |
-| `batch.jl:106-130` | `([(1, 3), (1, 2), (1, 4)], [(1, 1), (1, 5)])` | `([(1, 5), (1, 4), (1, 1)], [(1, 3), (1, 2)])` |
+| R2 | `src/data_loader/batch.jl` doctests hardcode `shuffle` output; the RNG stream changed in 1.13, and the PR had re-enabled the doctest testset in `test/runtests.jl`, aborting the suite before any real test ran. | 2026-08-12: doctests removed from `test/runtests.jl`; the docs workflow keeps ownership of doctest validation, and the examples' behaviour is covered by structural assertions in existing `test/` files. Preferred over reseeding (breaks on the next stream change) and `doctestfilters` (hides real regressions). |
+| R3 | `GenericLinearAlgebra v0.4.0` redefines `LinearAlgebra.eigencopy_oftype(::UpperHessenberg, S)`; on Julia ≥ 1.13 a hard precompile error. Chain: `GeometricIntegrators → RungeKutta → GenericLinearAlgebra`. | 2026-08-13: `GeometricIntegrators v0.18.0` drops `GenericLinearAlgebra`, moves to `RungeKutta v0.6`, is registered, and precompiles + loads on 1.13 in a minimal environment. Only full-matrix confirmation outstanding (Phase 3). |
+| R4 | Duplicate `Kraus:2020:GeometricIntegrators` and `greydanus2019hamiltonian` BibTeX keys. | Removed; `docs/src/GeometricMachineLearning.bib` verified duplicate-free. (`docs/build/` holds a stale copy — untracked artifact.) |
+| R5 | `@docs` blocks referencing symbols that moved to GO or no longer exist. | Applied; one call site left (Phase 2). |
+| R6 | Tutorials calling GO v0.1 optimizer constructors removed in v0.2. | Applied; no stale `GradientOptimizer` / `MomentumOptimizer` / `AdamOptimizer(η)` / `BFGSOptimizer` call sites remain under `docs/src/`. |
+| — | A long job was indistinguishable from a hung one. | `test/runtests.jl` emits seven `@info` markers, one per testset group. Per §6.9, michakraus still needs to be told. |
+| — | Repo hygiene | PR-only workplan and inspection script removed; BFGS test renamed to `test/optimizers/gradient_optimizer.jl`; tracked MNIST PDFs and stray `.jld2` deleted; generated-artifact patterns added to `.gitignore`. |
 
-This became a *test-suite* failure (not just a docs failure) because the PR
-re-enabled the doctest testset in `test/runtests.jl` — on `main` that line is
-commented out. It ran first, so it aborted the whole suite before any real
-test executed.
+### Deferred out of #230
 
-Appears to be 1.13-only: codex observed the doctest testset **passing** on 1.12
-before the suite stalled in R8, and my stack samples show a `@safetestset`
-module already under evaluation, which can only happen after the doctest
-testset has returned. So R2 and R8 look independent, and fixing R2 will not
-move the 1.12 jobs.
+**R7 / issue #234** — GML's `StiefelManifold`/`GrassmannManifold` subtype
+`GeometricMachineLearning.Manifold`, distinct from
+`GeometricOptimizers.Manifold`, so GO's generic `geodesic`/`cayley` never
+dispatch. Commit `b16267ea` worked around this by re-implementing GO's pipeline
+four times (`geodesic`/`cayley` × `Stiefel`/`Grassmann`), with the same
+duplication on the Lie-algebra-horizontal types and the
+`_copyto!`/`_add!`/`_rac!`/`_square!`/`_div!` family — ~30 bridge methods, plus
+near-verbatim copies of GO's `src/manifolds/*` and `src/arrays/*`. Confirmed
+non-critical for #230. Options in Phase 5.
 
-**Resolution on August 12, 2026:** Documenter doctests are no longer part of
-`test/runtests.jl`; they remain owned by the documentation workflow. The
-examples are covered by ordinary unit tests under `test/`, with duplicate
-coverage integrated into existing array, kernel, loader, layer, and attention
-test files. Standalone example tests remain only for APIs without a natural
-existing test home. This removes the RNG-sensitive doctest failure from the
-Julia 1.13 unit-test matrix without sacrificing behavioral coverage.
+---
 
-### R3 — Method overwriting during precompilation (resolved upstream)
+## 2. R8 in detail
 
-!!!info comment by benedict-96
-    This should have been resolved by now (see comment below). If so, you can get rid of it.
+Two local investigations agree on the mechanism and contradict each other
+nowhere.
 
-`GenericLinearAlgebra v0.4.0` redefines
-`LinearAlgebra.eigencopy_oftype(::UpperHessenberg, S)`, which the stdlib
-already defines (`hessenberg.jl:483`). Julia ≥ 1.13 makes this a hard error
-during precompilation. Dependency chain:
-
-```
-GeometricIntegrators v0.17.0 → RungeKutta v0.5.23 → GenericLinearAlgebra v0.4.0
-```
-
-`GeometricIntegrators` is a *test-only* dependency (`[targets] test`).
-
-**Resolution on August 13, 2026:** `GeometricIntegrators v0.18.0` removes
-`GenericLinearAlgebra` from its dependencies and upgrades to `RungeKutta v0.6`.
-Its release notes explicitly identify the Julia 1.13 method-overwrite failure
-as the blocker and state that the new release precompiles and loads on Julia
-1.13. The release is registered in General. A minimal Julia 1.13 environment
-resolved `GeometricIntegrators v0.18.0`, precompiled all dependencies, and
-loaded it successfully. The GML CI matrix still needs one run with the new
-resolution before the experimental 1.13/nightly jobs are made required.
-
-### R4 — Duplicate BibTeX keys (resolved)
-
-The duplicate `Kraus:2020:GeometricIntegrators` and
-`greydanus2019hamiltonian` entries were removed from
-`docs/src/GeometricMachineLearning.bib`. Keep the bibliography uniqueness
-check in the verification checklist until both documentation workflows are
-observed green.
-
-### R5 — `@docs` blocks pointing at symbols that no longer exist
-
-| File | Entries that will fail |
-| --- | --- |
-| `optimizers/optimizer_framework.md` | `Optimizer` (new struct in `src/utils.jl` has **no docstring**), `optimization_step!`, `optimize_for_one_epoch!` |
-| `optimizers/optimizer_methods.md` | `OptimizerMethod`, `GradientOptimizer`, `MomentumOptimizer`, `AdamOptimizer`, `AbstractCache`, `GradientCache`, `MomentumCache`, `AdamCache` (all GO symbols / aliases → docstrings live in GO, which is not in `modules=[...]`), `update!(::Optimizer, ::AbstractCache, ::AbstractArray)` (method gone), `AdamOptimizerWithDecay` (exists, no docstring) |
-| `optimizers/bfgs_optimizer.md` | `BFGSOptimizer`, `BFGSCache`, `update!(::Optimizer{<:BFGSOptimizer}, ::BFGSCache, ::AbstractArray)` — **BFGS no longer exists in GML at all**; GO exposes it as `_BFGS()` via a completely different entry point (`Optimizer(x, problem; algorithm=_BFGS())`). The page also has live `@example` blocks calling `BFGSCache(B̄)`. |
-| `optimizers/manifold_related/retractions.md` | `GeometricMachineLearning.geodesic(::StiefelLieAlgHorMatrix)`, `…geodesic(::GrassmannLieAlgHorMatrix)`, `…cayley(::StiefelLieAlgHorMatrix)`, `…cayley(::GrassmannLieAlgHorMatrix)`, `…cayley(::Manifold{T}, ::AbstractMatrix{T})`, `GeometricMachineLearning.𝔄(::AbstractMatrix)`, `…𝔄(::AbstractMatrix, ::AbstractMatrix)` — `𝔄` exists only as `GeometricOptimizers.𝔄` |
-| `introduction.md` | `[`GradientOptimizer`](@ref)` cross-references (×2) |
-
-### R6 — Tutorials call constructor signatures that GO v0.2 removed
-
-GO v0.2 moved the learning rate out of the method and into
-`Optimizer(...; step_size=…)`, and deliberately made the old calls fail loudly:
-
-| GO v0.2 reality | Docs still call |
-| --- | --- |
-| `GradientMethod()` — **no arguments** | `GradientOptimizer(η)` (`optimizer_methods.md:30`, `optimizer_comparison.md:32`), `GradientOptimizer(T(0.001))` (`mnist_tutorial.md:124`) |
-| `MomentumMethod(α)` — **one argument** | `MomentumOptimizer(η, α)` (`optimizer_methods.md:66`), `MomentumOptimizer(T(0.001), T(0.5))` (`mnist_tutorial.md:125`) |
-| `Adam(::Type{T}=Float64; β₁, β₂, δ)` | `AdamOptimizer(η)` (`optimizer_comparison.md:33`, `grassmann_layer.md:268`), `AdamOptimizer(η, ρ₁, ρ₂, δ)` (`optimizer_methods.md:123`) |
-| `AdamOptimizerWithDecay(n_epochs, η₁=1f-2, η₂=1f-6, ρ₁, ρ₂, δ; T=typeof(η₁))` | `AdamOptimizerWithDecay(n_epochs, Float64)` (`linear_symplectic_transformer.md:66`, `symplectic_transformer.md:66`) → binds `η₁ = Float64` (a `DataType`); `AdamOptimizerWithDecay(n_epochs, T; η₁=1e-2, η₂=1e-6)` (`volume_preserving_transformer_rigid_body.md:191`) → no such kwargs |
-| `Optimizer(method, nn)` only (`src/utils.jl:268,276`) | `Optimizer(nn, AdamOptimizer(1e-1))` (`grassmann_layer.md:268`), `Optimizer(sae_nn_gpu, AdamOptimizerWithDecay(…))` (`symplectic_autoencoder.md:137`) — **network-first order is gone** |
-| BFGS only via `algorithm=_BFGS()` | `BFGSOptimizer(η)` (`optimizer_comparison.md:34`) |
-
-These are `@example` blocks, i.e. they execute during the docs build.
-
-### R7 — Issue #234: duplicated retraction pipeline
-
-!!!info comment by benedict-96
-    This issue can be left for a later small refactoring effort. It is not critical right now for pr #230 to be merged.
-
-GO's generic retraction is
-
-```julia
-function geodesic(Y::Manifold{T}, Δ::AbstractMatrix{T}) where {T}
-    λY = GlobalSection(Y); B = global_rep(λY, Δ); E = StiefelProjection(B)
-    expB = geodesic(B); λY * typeof(Y)(expB * E)
-end
-```
-
-GML's `StiefelManifold`/`GrassmannManifold` subtype **`GeometricMachineLearning.Manifold`**,
-a distinct abstract type, so this method never applies. Commit `b16267ea`
-worked around it by re-implementing the exact same pipeline four times
-(`geodesic`/`cayley` × `Stiefel`/`Grassmann`) as
-`GeometricOptimizers.geodesic(Y::StiefelManifold{T}, …)` etc. That is the
-symptom issue #234 reports. The same duplication exists for
-`geodesic`/`cayley` on the Lie-algebra-horizontal types and for the
-`_copyto!`/`_add!`/`_rac!`/`_square!`/`_div!` family — roughly 30 bridge
-methods in total, plus near-verbatim copies of GO's `src/manifolds/*` and
-`src/arrays/*`.
-
-### R8 — Pathological compile time in the GO-backed optimizer path
-
-Evidence and analysis are in "Claude's findings" above. In short: inference of
-a call that reaches `GeometricOptimizers.update!` through GML's
-`_tree_optim_step!`/`_leaf_optim_step!` spins in method-table intersection
-(`ml_matches` → `jl_type_intersection_env_s` → `ijl_type_union` →
-`subtype_unionall`). The suspected cause is GO's `Union` aliases
+**Mechanism.** Inference of a call reaching `GeometricOptimizers.update!`
+through `_tree_optim_step!`/`_leaf_optim_step!` spins in `ml_matches` →
+`jl_type_intersection_env_s` → `ijl_type_union` → `subtype_unionall`. `SIGINFO`
+samples land in `subtype_unionall`, `subtype_tuple_varargs`, `jl_type_union`
+and method intersection — signature shape and method-table enumeration, not a
+large function body. Leading hypothesis: GO's union aliases
 (`OptimizerSolution`, `GradientArrayOrNamedTuple`,
-`GlobalSectionSingleOrNamedTuple`) being used as *type-parameter bounds* on
-every optimizer cache and state struct; this is a hypothesis from the
-backtrace, not yet confirmed by profiling.
+`GlobalSectionSingleOrNamedTuple`) used as type-parameter *bounds* on every
+optimizer cache and state struct, especially those with `NamedTuple` and
+`Vararg` members. Read off backtraces, **not confirmed by profiling** — that is
+Phase 4 step 1.
 
-Two properties make R8 different from R1–R6 and easy to underestimate:
+**Not an assertion failure or a deadlock.** On Julia 1.12.6 with a writable
+temporary depot: dependency setup (incl. GO), doctests and PSD tests all pass;
+the first optimizer epoch takes ~13 s of compilation and later epochs ~7 ms,
+with 100 epochs reaching the expected accuracy. Instrumented
+`test_symplecticity(10, 6)` completes in ~18 s (first Jacobian ~7.6 s, 10
+epochs ~8.7 s, second Jacobian ~0.3 s). Narrowing `N::Integer`/`n::Integer` to
+`Int` does not help.
 
-* **It produces no error.** The suite does not fail, it just does not finish.
-  In a CI log that is indistinguishable from a hung runner, so it is a merge
-  blocker for #230 even though nothing is red yet.
-* **It is a user-facing latency bug, not only a test problem.** Every GML user
-  who calls `Optimizer`/`optimization_step!` from inside a function — i.e.
-  everyone who writes a training script as a function — pays this compile cost.
-  Fixing it only in the tests would hide it, not solve it.
+**A user-facing bug, not just a CI one.** The same SAE workload is fast at top
+level (~13–18 s cold, ms warm, including under `--check-bounds=yes -g1`); the
+pathology appears only when the optimizer is compiled *through* a function — so
+every user who wraps training in a function pays it. Restructuring the tests
+would hide it.
 
-It is almost certainly not version-specific: 1.12 is simply the only matrix
-entry that currently gets far enough to reach it (1.10 dies at R1, 1.13 at R2).
+**Not version-specific.** 1.12 is merely the only matrix entry that gets far
+enough; 1.10 dies at R1, 1.13 died at R2.
+
+**Independent of R2.** The doctest testset passed on 1.12 before the stall, and
+stack samples show a `@safetestset` module already evaluating, which happens
+only after that testset returns.
+
+**Never observed end to end.** Neither investigation finished a full 1.12
+suite, so every testset after `symplectic_autoencoder` is unexercised.
 
 ---
 
-## 3. The plan
+## 3. Plan
 
-Phases 0–1 are the critical path (nothing else can be verified until CI can
-resolve dependencies). Phases 2–4 are independent of each other and can be done
-in parallel. Phase 5 is a design change that should **not** block merging #230.
-Phase 7 (R8) was added after the 1.12 investigation; it **is** a merge blocker
-and can be worked on in parallel with everything else, since it needs no
-dependency resolution to reproduce.
+### Phase 0 — Release GeometricOptimizers v0.2.0 (upstream)
 
-### Phase 0 — Release GeometricOptimizers v0.2.0 (upstream, blocking)
+Owner: michakraus / JuliaGNI release rights.
 
-Owner: whoever holds JuliaGNI release rights. Everything else waits on this.
+1. In `../GeometricOptimizers` on `main`: confirm `version = "0.2.0"`, confirm
+   CI green, tag and push.
+2. Register in General (`@JuliaRegistrator register` on the release commit);
+   verify it lands in `General/G/GeometricOptimizers/Versions.toml`.
+3. Sanity-check GO's `[compat]`, in particular `SimpleSolvers = "0.10"` and
+   `julia = "1.10"` — GML inherits those constraints.
 
-1. In `../GeometricOptimizers` on `main`: confirm `version = "0.2.0"` in
-   `Project.toml`, confirm CI is green, tag and push.
-2. Register in General (`@JuliaRegistrator register` on the release commit, or
-   via the registration workflow). Verify the version appears in
-   `General/G/GeometricOptimizers/Versions.toml`.
-3. Sanity-check GO's own `[compat]` — in particular `SimpleSolvers = "0.10"`
-   and `julia = "1.10"` — since GML will inherit those constraints.
-
-*If registration cannot happen before #230 needs to merge*, the only honest
-alternative is to drop Julia 1.10 from the CI matrix and set
-`julia = "1.11"` in `[compat]`, keeping `[sources]`. That trades a CI failure
-for a support regression and still blocks GML's own registration, so it should
-be a conscious decision, not a default.
-
-**Decided (§6, answer 1): this interim is acceptable**, provided an issue is
-opened in GML recording that 1.10 support must be restored once GO v0.2.0 is
-registered. In that case Phase 1's `julia = "1.10"` becomes `julia = "1.11"`
-and the `[sources]` block stays for now — see the note in Phase 1.
+Blocked on release rights and on §6.6 (whether Phase 4 step 2 rides along in
+0.2.0 or follows as 0.2.1).
 
 ### Phase 1 — Make GML resolvable
 
-`Project.toml`:
+**Decided: interim variant** (§6.1) — GO 0.2.0 is not in General, so the target
+form is unreachable. In `Project.toml`:
 
-* Delete the entire `[sources]` block.
-* Keep `GeometricOptimizers = "0.2"` in `[compat]`.
-* Bump `julia = "1.9"` → `"1.10"` (GO's floor; 1.9 was never actually
-  satisfiable with this dependency set).
-* Add compat bounds for any new direct dependency the PR introduced that lacks
-  one (check `ParameterHandling`, `SimpleSolvers` if they are now direct).
+* Keep `[sources]` and `GeometricOptimizers = "0.2"`.
+* `julia = "1.9"` → `"1.11"` (1.9 was never satisfiable with this dependency
+  set; `[sources]` needs Pkg ≥ 1.11).
+* Drop `"1.10"` from the matrix in `.github/workflows/CI.yml`.
+* Open a GML issue: 1.10 support must be restored.
+* Add compat bounds for any new direct dependency lacking one (check
+  `ParameterHandling`, `SimpleSolvers` if now direct).
+* Say in the PR description that this is the interim variant.
 
-Expected effect: 1.10 × 3 OS turn green through `instantiate`, and the
-`General` registration path for GML is unblocked.
+After Phase 0 this reverts to the target form — delete `[sources]`, set
+`julia = "1.10"` (GO's floor), restore 1.10 to the matrix, close the issue —
+which also unblocks GML's registration. The variants are mutually exclusive.
+`docs/Project.toml` has no `[sources]` and needs no change either way.
 
-⚠️ This is the *post-registration* form. If Phase 0 has not happened yet and the
-interim from §6 answer 1 is taken instead, then the opposite applies: keep
-`[sources]`, set `julia = "1.11"`, drop 1.10 from the matrix in
-`.github/workflows/CI.yml`, and open the tracking issue. The two variants are
-mutually exclusive — pick one deliberately and say which in the PR description.
+### Phase 2 — Documentation and PDF builds
 
-### Phase 2 — Separate documentation checks from unit tests (completed)
-
-The two `src/data_loader/batch.jl` doctests assert a specific shuffled
-permutation. The package test runner now excludes Documenter doctests:
-
-* `test/runtests.jl` contains no `Documenter.doctest` invocation;
-* the documentation workflow remains responsible for rendering and doctest
-  validation; and
-* ordinary tests cover the examples' behavior using structural assertions.
-
-This is strictly better than the alternatives (seeding the RNG inside the
-doctest still breaks whenever the RNG stream changes; `doctestfilters` would
-hide genuine regressions), while keeping documentation validation in the
-documentation workflow.
-
-### Phase 3 — Fix the documentation and PDF builds
-
-**3a. Bibliography (completed).**
-The duplicate bibliography keys have been removed. Verify uniqueness as part
-of the documentation checks rather than repeating the deletion step.
-
-**3b. `@docs` blocks (R5).**
-For symbols that now live in GO, do **not** simply add `GeometricOptimizers`
-to `modules=[...]` in `docs/make.jl`: Documenter's default `checkdocs = :all`
-would then demand a page for every GO docstring and produce hundreds of new
-errors. Instead:
-
-* Rewrite `optimizers/optimizer_methods.md` as prose that describes the
-  methods and links out to GO's documentation, keeping `@docs` only for
-  GML-owned symbols.
-* Add docstrings to the GML-owned symbols that the docs reference:
-  `Optimizer` (`src/utils.jl:251`), `AdamOptimizerWithDecay`
-  (`src/utils.jl:208`), `optimization_step!`.
-* `optimizers/bfgs_optimizer.md`: BFGS is gone from GML. Either delete the page
-  (remove it from the `html` nav **and** from the LaTeX page list plus the
-  `value_for_key(_optimizers, "Optimizer Methods", "BFGS Optimizer")` entry in
-  `docs/make.jl`), or rewrite it around GO's `_BFGS()` entry point. Deleting is
-  the lower-risk choice for this PR; note it in the changelog.
-* `manifold_related/retractions.md`: drop the `@docs` entries for the four
-  Lie-algebra `geodesic`/`cayley` methods, `cayley(::Manifold, ::AbstractMatrix)`
-  and the two `𝔄` methods; replace with prose + links. (If Phase 5 lands
-  first, several of these can instead point at GO directly.)
-* `introduction.md`: replace the two `[`GradientOptimizer`](@ref)` links with a
-  symbol that is still documented in GML.
-
-Consider `DocumenterInterLinks` for clean cross-references into GO's docs
-rather than plain-text mentions.
-
-**3c. Tutorials (R6).** This is the largest single chunk of work and the one
-most likely to be underestimated. Every call site in the table under R6 must be
-rewritten to the v0.2 API — learning rates move from the method constructor to
-`Optimizer(...; step_size = …)`:
+**Done.** BFGS is gone from GML, so `docs/src/optimizers/bfgs_optimizer.md` was
+deleted and `docs/make.jl` no longer references it in the HTML nav or the LaTeX
+page list. `optimizer_methods.md` is now prose linking out to GO, with `@docs`
+only for GML-owned symbols. `Optimizer` (`src/utils.jl:251`),
+`AdamOptimizerWithDecay` (`:208`) and `optimization_step!` (`:390`) have
+docstrings. Every R6 call site moved to the v0.2 API, learning rate out of the
+method constructor and into `Optimizer(...; step_size = …)`:
 
 ```julia
-# before
-o = Optimizer(nn, AdamOptimizer(1e-1))
-# after
-o = Optimizer(Adam(Float64), nn; step_size = 1e-1)
+o = Optimizer(nn, AdamOptimizer(1e-1))              # before
+o = Optimizer(Adam(Float64), nn; step_size = 1e-1)  # after
 ```
 
-**Decided (see §6, answer 2): do not restore the old signatures.** Neither the
-network-first `Optimizer(nn, method)` nor the type-first
-`AdamOptimizerWithDecay(n_epochs, T::Type; η₁, η₂)` is to be added back;
-optimizer functionality belongs in GO, not GML. So *every* call site in the R6
-table must be updated in `docs/src/tutorials/` and in the user-facing docs, and
-the break must be called out in the release notes / changelog.
+Per §6.2 the old signatures were **not** restored — neither network-first
+`Optimizer(nn, method)` nor type-first `AdamOptimizerWithDecay(n_epochs,
+T::Type)`. The break belongs in the release notes / changelog.
 
-Corollary that follows from the same answer and is **not** yet reflected
-elsewhere in this plan: `AdamOptimizerWithDecay` itself is currently defined in
-GML (`src/utils.jl:208`), not in GO. By answer 3 that means it should either
-move to GO or get its own workplan file rather than being quietly kept — decide
-this before rewriting the four tutorials that call it, because the target API
-depends on the outcome.
+**Outstanding: one broken cross-reference.**
+`docs/src/optimizers/manifold_related/retractions.md:345` links
+``[`GeometricMachineLearning.𝔄`](@ref)``, but `𝔄` exists only as
+`GeometricOptimizers.𝔄` (GML calls it at `src/manifolds/stiefel_manifold.jl:272`
+and `src/manifolds/grassmann_manifold.jl:207`), so the `@ref` cannot resolve.
+Replace with prose plus a link to GO's docs, or use `DocumenterInterLinks`.
 
-**3d.** Re-check `docs/Project.toml` — it must also drop any `[sources]`
-workaround once GO v0.2.0 is registered.
+Do **not** add `GeometricOptimizers` to `modules=[...]` in `docs/make.jl`:
+Documenter's default `checkdocs = :all` would demand a page for every GO
+docstring and produce hundreds of new errors.
 
-### Phase 4 — Julia 1.13 and nightly (R3, upstream fix available)
+### Phase 3 — Julia 1.13 and nightly
 
-!!!info comment by benedict-96
-    This issue should have been resolved by now. If it has the text below is superfluous now. In that case you can get rid of it.
+`CI.yml` already marks all three `^1.13.0-0` and all three nightly jobs
+`experimental: true`, so the §6.4 policy is in place. Remaining:
 
-The upstream fix is now available in `GeometricIntegrators v0.18.0`. Verify the
-full GML matrix resolves that version and then remove the experimental status
-from the 1.13 jobs if they are green. If resolution selects an older version
-in any workflow, refresh the generated environment artifacts first.
+* Run the full matrix and confirm it resolves `GeometricIntegrators v0.18.0`;
+  if any workflow selects an older version, refresh the generated environment
+  artifacts first.
+* If 1.13 is then green, remove its experimental status.
+* Open the GML issue for restoring required 1.13 support — per §6.4, first
+  check `RungeKutta`/`GeometricIntegrators` open issues for an existing
+  `GenericLinearAlgebra` report to reference.
 
-Historical options before the upstream release, in order of preference:
+### Phase 4 — R8: make the optimizer path compile in reasonable time (blocking)
 
-1. **Push upstream.** Open an issue/PR on GenericLinearAlgebra to widen the
-   version guard so it also covers 1.13 (currently only
-   `VERSION < v"1.14.0-DEV.2266"`), and/or on RungeKutta to relax its
-   GenericLinearAlgebra bound.
-2. **Constrain the test dependency.** Add a `[compat]` entry for
-   `GenericLinearAlgebra` (as an `[extras]` dep) pinning a version that does not
-   trigger the overwrite, if one exists. Needs checking against RungeKutta's
-   own bounds.
-3. **Isolate `GeometricIntegrators`.** It is used by only a handful of test
-   files. Moving those into a separate test target/workflow keeps the main
-   suite runnable on 1.13.
-4. **Accept it for now.** Mark `^1.13.0-0` as `experimental: true` in
-   `.github/workflows/CI.yml` alongside nightly until upstream is fixed. This
-   is the pragmatic choice for merging #230, but it must be paired with option 1
-   so it does not become permanent.
+1. **Localise it.** `@snoopi_deep` (SnoopCompileCore) on
+   `test_accuracy(10, 6; n_epochs = 1)`, or `--trace-compile=stderr` for the
+   last signature compiled before the spin. Decides whether the GO aliases are
+   the cause or merely plausible.
+2. **Fix upstream in GO** if confirmed: stop using `OptimizerSolution` /
+   `GradientArrayOrNamedTuple` / `GlobalSectionSingleOrNamedTuple` as
+   type-parameter *bounds* on the cache and state structs
+   (`optimizer_solution.jl:4-26` and the six struct definitions); enforce the
+   invariant in inner constructors instead. Behaviour unchanged.
+3. **Reduce GML's dispatch fan-out.** *Partly done*: the `adapted isa …` branch
+   in `_leaf_optim_step!` is now concrete dispatch via `_go_update_leaf!`
+   (`src/utils.jl:316-331`), with overloads for `Adam`, `MomentumMethod` and
+   the fallback `OptimizerMethod`. Two `state isa` branches remain in the same
+   function (`:355`, `:360`, for `AdamState`/`MomentumState`) — convert them
+   too if step 1 implicates them.
+4. **Do not "fix" it by restructuring the tests**, except as a temporary
+   unblock with a linked issue (§6.8): that leaves the latency in place for
+   every user who wraps training in a function.
 
-Note that 1.13 also fails on R2, so Phase 2 must land regardless — otherwise
-option 4 hides two problems instead of one.
+Success criterion: 1.12 × ubuntu back to the ~30 min it takes on `main`, and
+`test_accuracy(10, 6; n_epochs = 1)` compiling in seconds.
 
-### Phase 5 — Issue #234 (do not block #230 on this)
+**Coupled to §4:** if the `src/utils.jl` traversal is replaced by GO's native
+NamedTuple handling, step 3 disappears with it — which may make §4 the real fix
+rather than a cleanup.
 
-!!!info comment by benedict-96
-    As mentioned above, this issue is not critical right now.
+The local step-3 mitigation is **not runtime-validated** — the local Julia depot
+is read-only and network access unavailable. Passing offline checks: bibliography
+uniqueness, Julia parsing, stale-reference scans, `git diff --check`.
 
-Three ways to make GO's generic retractions apply to GML's manifolds:
+### Phase 5 — Issue #234 (separate PR, does not block #230)
 
-**Option A — GML's abstract types alias GO's (recommended near-term).**
+**Option A — alias GML's abstract type to GO's. Decided (§6.5).**
 
 ```julia
 const Manifold = GeometricOptimizers.Manifold
 ```
 
-GML keeps its own concrete `StiefelManifold`/`GrassmannManifold` types and all
-their GML-specific methods, but they now subtype GO's abstract `Manifold`, so
-GO's generic `geodesic`/`cayley` dispatch directly. All four bridge methods
-from `b16267ea` can be deleted with **no change to GO**.
+GML keeps its concrete `StiefelManifold`/`GrassmannManifold` types and their
+GML-specific methods, but they now subtype GO's abstract `Manifold`, so GO's
+generic `geodesic`/`cayley` dispatch directly and all four `b16267ea` bridge
+methods can be deleted with no change to GO.
 
-⚠️ Hazard that must be handled as part of this change: `src/manifolds/abstract_manifold.jl`
-is a near-verbatim copy of GO's, so after aliasing, GML's generic methods
+⚠️ Part of the change, not a follow-up: `src/manifolds/abstract_manifold.jl` is
+a near-verbatim copy of GO's, so after aliasing GML's generic methods
 (`Base.rand`, `size`, `getindex`, `copy`, the `similar`/`fill!` error methods,
-broadcasting, `_round`) would have *identical signatures* to GO's and silently
-overwrite them — which on Julia ≥ 1.13 is a hard precompilation error, i.e. it
-would re-create R3 from inside GML. So Option A requires deleting GML's copies
-of those generic methods and keeping only the ones that genuinely differ (e.g.
-`rand` dispatching on GML's `networkbackend`/device types, which needs a
-distinct signature). Do the same for `AbstractLieAlgHorMatrix`.
+broadcasting, `_round`) would have *identical* signatures to GO's and silently
+overwrite them — on Julia ≥ 1.13 a hard precompilation error, i.e. R3
+re-created from inside GML. So delete GML's copies, keeping only what genuinely
+differs (e.g. `rand` dispatching on GML's `networkbackend`/device types, which
+has a distinct signature). Same for `AbstractLieAlgHorMatrix`.
 
-**Option B — a trait in GO.** Give GO a Holy trait so *any* external hierarchy
-can opt in:
+**Option B — a Holy trait in GO**, letting any external hierarchy opt in:
 
 ```julia
 abstract type ManifoldTrait end
@@ -460,183 +231,182 @@ geodesic(Y::AbstractMatrix{T}, Δ::AbstractMatrix{T}) where {T} =
     geodesic(ManifoldTrait(typeof(Y)), Y, Δ)
 ```
 
-with the generic body factored into a shared `_retract(retraction, Y, Δ)` that
-calls `apply_section(λY, …)` instead of `λY * …` (so it no longer depends on
-`Base.:*(::GlobalSection, ::GO.Manifold)` either). Choose this only if GML must
-keep an independent type hierarchy — it is more machinery than Option A for the
-same result, and it changes `geodesic(::AbstractMatrix, ::AbstractMatrix)` from
-a `MethodError` into a custom error.
+with the generic body factored into a shared `_retract(retraction, Y, Δ)`
+calling `apply_section(λY, …)` instead of `λY * …`. Only if GML must keep an
+independent hierarchy: more machinery for the same result, and it turns
+`geodesic(::AbstractMatrix, ::AbstractMatrix)` from a `MethodError` into a
+custom error.
 
-**Option C — full type unification (long-term).** GML stops defining manifold,
-Lie-algebra-horizontal and structured-matrix types altogether and re-exports
-GO's. This deletes `src/manifolds/*` and much of `src/arrays/*` outright. It is
-the right end state, but it is a large refactor touching layers, AD rules,
+**Option C — full type unification (long-term, own issue per §6.5).** GML stops
+defining manifold, Lie-algebra-horizontal and structured-matrix types and
+re-exports GO's, deleting `src/manifolds/*` and much of `src/arrays/*`. The
+right end state, but a large refactor touching layers, AD rules,
 `networkbackend`, `Ω`, GPU kernels operating on `.A`, and `rand` on GML device
-types — and some `Base` methods on GO types would become type piracy. Track it
-as its own issue.
-
-**Recommendation:** Option A now (it closes #234 and deletes the `b16267ea`
-duplication), Option C as a tracked follow-up.
-
-### Phase 6 — Repo hygiene before merge (completed)
-
-The PR-only workplan and inspection script are gone, the former BFGS test has
-been renamed to `test/optimizers/gradient_optimizer.jl`, and the generated
-artifact patterns are covered by `.gitignore`. This pass also removes the
-remaining tracked MNIST PDFs and the stray `.jld2` file; generated outputs
-should not be carried in the source tree.
-
-### Phase 7 — R8: make the optimizer path compile in reasonable time (blocking)
-
-Added after the 1.12 investigation. This is the canonical action list for R8:
-
-1. **Localise it.** `@snoopi_deep` (SnoopCompileCore) on
-   `test_accuracy(10, 6; n_epochs = 1)`, or `--trace-compile=stderr` to see the
-   last signature compiled before the spin. This decides whether the GO type
-   aliases are really the cause or only a plausible one.
-2. **Fix it upstream in GO** if confirmed: stop using `OptimizerSolution` /
-   `GradientArrayOrNamedTuple` / `GlobalSectionSingleOrNamedTuple` as
-   type-parameter *bounds* on the cache and state structs
-   (`optimizer_solution.jl:4-26` and the six struct definitions listed in the
-   findings). Enforce the invariant in inner constructors instead. Behaviour is
-   unchanged, so this can ride along with the Phase 0 release.
-3. **Reduce the dispatch fan-out in GML**: `_leaf_optim_step!`
-   (`src/utils.jl:316-357`) branches on `adapted isa …` at one call site, so a
-   single inference target sees the whole `update!` method table. Ordinary
-   dispatch, or a `@nospecialize`d barrier, confines that. **Implemented
-   locally** with `_go_update_leaf!` overloads for `Adam`, `MomentumMethod`,
-   and the fallback `OptimizerMethod` path.
-4. **Do not "fix" it by restructuring the tests.** Moving the optimizer call out
-   of the test helper makes CI green while leaving the latency in place for
-   every user who wraps training in a function. Acceptable only as a temporary
-   unblock, and only with a linked issue.
-
-Success criterion: the 1.12 × ubuntu job returns to the ~30 min range it has on
-`main`, and `test_accuracy(10, 6; n_epochs = 1)` compiles in seconds rather
-than minutes.
-
-Interaction with §4: if the traversal in `src/utils.jl` is replaced by GO's
-native NamedTuple handling (see below), Phase 7 step 3 disappears with it. That
-makes the §4 follow-up more attractive than "not now" suggests — it may be the
-real fix rather than a cleanup.
+types — and some `Base` methods on GO types would become type piracy.
 
 ---
 
-## 4. Follow-up worth doing, but not now
+## 4. Move optimizer machinery to GO
 
-`src/utils.jl` re-implements optimizer-tree traversal (`_make_optimizer_cache`,
-`_make_optimizer_state`, `_tree_optim_step!`) and a bespoke `GMLEuclideanState`
-holding `m₁`/`m₂` by hand. GO v0.2 already supports NamedTuple-valued solutions
-natively (`GradientArrayOrNamedTuple`, `OptimizerSolution`,
-`GlobalSection(::NamedTuple)`, `ParameterHandling.flatten` for `Manifold`), and
-already has `AdamCache`/`AdamState`/`MomentumCache`/`MomentumState`. Most of
-these 262 new lines are probably replaceable by GO's own machinery. Keep this
-as a separate issue unless Phase 7 profiling confirms that the traversal is
-the actual R8 trigger; in that case, replacing it with GO's native support is
-the smallest correct fix rather than a cleanup-only refactor.
+Per §6.7 **all** of this moves to GO — not optional cleanup:
+
+* `AdamOptimizerWithDecay` (`src/utils.jl:208`) — **done upstream**, see below;
+* the traversal: `_make_optimizer_cache` (`:231`), `_make_optimizer_state`
+  (`:241`), `_tree_optim_step!` (`:377`), `_leaf_optim_step!` (`:334`);
+* the bespoke `GMLEuclideanState` (`:199`) holding `m₁`/`m₂` by hand.
+
+GO v0.2 already supports NamedTuple-valued solutions natively
+(`GradientArrayOrNamedTuple`, `OptimizerSolution`, `GlobalSection(::NamedTuple)`,
+`ParameterHandling.flatten` for `Manifold`) and already has
+`AdamCache`/`AdamState`/`MomentumCache`/`MomentumState`, so most of these ~262
+lines are replaceable by GO's own machinery.
+
+Route: branch `GeometricOptimizers`, move the functionality there, delete it from
+GML, open a GML issue referencing the GO PR with integration left as a future
+task. Normally a follow-up — but if Phase 4 step 1 confirms the traversal is the
+R8 trigger, doing it now is the *smallest correct fix*.
+
+### `AdamOptimizerWithDecay` → [GeometricOptimizers#33][go33] (draft)
+
+[go33]: https://github.com/JuliaGNI/GeometricOptimizers.jl/pull/33
+
+The first item is upstream. GML's method turned out to need no port: GO's
+`DecayingStatic` line search already implements its schedule factor for factor
+(γ = exp(log(η₂/η₁)/n), step η₁γᵗ). What GO lacked was the *name* — 0.2.0 split
+the step size out of the `OptimizerMethod`s, and the bundling of Adam's ρ₁, ρ₂,
+δ with η₁, η₂, n_epochs went with it.
+
+GO#33 restores the name as a convenience pairing returning the
+`(algorithm, linesearch)` NamedTuple, so GML **deletes** `src/utils.jl:208-229`
+and rewrites call sites as:
+
+```julia
+Optimizer(x, problem; AdamOptimizerWithDecay(n_epochs)...)
+```
+
+Also in GO#33: `test/adam_optimizer_with_decay.jl` (33 assertions, including
+`step_size(ls, t) ≈ η₁·γ_gmlᵗ` — the claim that licenses the deletion) and a
+"Two unrelated decays" docs section separating this *learning-rate* decay from
+`AdamWithEuclideanDecay`'s *weight* decay.
+
+Stacked and **draft**: `DecayingStatic` lives only on
+`docs-linesearch-on-manifolds` and the weight-decay docs only on
+`manifold-adamw`, so §6.7's "branch GO off `main`" was not possible for this
+item. Base is `manifold-adamw` ([GO#29][go29]), which must merge first, with
+`main` and `docs-linesearch-on-manifolds` merged into it (done locally, not yet
+pushed — until they are, GO#33's diff on GitHub shows all three branches' work
+rather than its own 6 files / +199).
+
+The GML-side deletion therefore lands after GO#29 and GO#33, not in this PR.
+
+[go29]: https://github.com/JuliaGNI/GeometricOptimizers.jl/pull/29
 
 ---
 
-## 5. Suggested order of execution
+## 5. Order of execution
 
 ```
-Phase 0 (upstream release)  ──┬─→ Phase 1 (Project.toml)  ──→ 1.10 jobs green
-                              │
-Phase 3a (bib)  ──────────────┼─→ Phase 3b/3c (docs + tutorials) ──→ Documentation + PDF green
-                              │
-Phase 2 (test-policy) ────────┼─→ 1.13 doctest failures removed from unit CI
-                              │
-Phase 4 (upstream/CI policy) ─┘   → 1.13/nightly precompile addressed or accepted
+Phase 4 (R8)  ── BLOCKING, start first; needs no dependency resolution to
+                 reproduce. Step 2 should land in GO before Phase 0 tags.
 
-Phase 7 (R8 compile time) — independent, BLOCKING; start now, it needs no
-                            dependency resolution to reproduce. Step 2 should
-                            land in GO before Phase 0 tags v0.2.0.
-Phase 5 (#234)  — separate PR
-Phase 6 (hygiene) — fold into #230 before merge
+Phase 1 (interim Project.toml + 1.10 issue) ──→ 1.10 removed from matrix
+Phase 0 (upstream release)                  ──→ later reverts Phase 1 to target form
+Phase 2 (retractions.md @ref)               ──→ Documentation + PDF green
+Phase 3 (1.13 confirmation)                 ──→ 1.13/nightly de-experimentalised
+Phase 5 (#234)                              ──→ separate PR
+§4 (move to GO)                             ──→ AdamOptimizerWithDecay: GO#33
+                                                (draft, stacked on GO#29);
+                                                traversal: separate GO branch
+                                                + GML issue
 ```
 
-Note that Phases 0–4 can all land and *every* job will still be red or hanging
-until Phase 7 is done, because R8 blocks the only jobs that reach the test
-suite. Phase 7 is therefore the one to start first in practice, even though
-Phase 0 is the formal critical path.
+Phases 0–3 can all land and *every* job will still be red or hanging until
+Phase 4 is done, since R8 blocks the only jobs that reach the test suite. Phase
+4 is therefore first in practice, even though Phase 0 is the formal critical
+path.
 
-## 6. Questions raised by claude with answers provided by benedict-96
+---
 
-1. Can GO v0.2.0 be tagged and registered now? If not, is dropping Julia 1.10
-   support acceptable as an interim?
-2. Restore the backwards-compatible `Optimizer(nn, method)` and
-   `AdamOptimizerWithDecay(n_epochs, T::Type)` signatures (smaller docs diff,
-   no user-facing break) — or update every call site and document the break?
-3. Delete `docs/src/optimizers/bfgs_optimizer.md`, or rewrite it around GO's
-   `_BFGS()`?
-4. Must `^1.13.0-0` stay a required job while GenericLinearAlgebra is broken on it?
-5. For #234: Option A (alias GML's abstract types to GO's) now, with Option C
-   (full unification) as a follow-up issue — agreed?
+## 6. Decisions (questions by claude, answers by benedict-96)
 
-### Answers provided by benedict-96
+1. **Tag and register GO v0.2.0 now; if not, is dropping Julia 1.10 acceptable
+   as an interim?** → Dropping 1.10 is acceptable, provided an issue records
+   that it must be restored. Fix the other CI jobs first.
+2. **Restore backwards-compatible `Optimizer(nn, method)` and
+   `AdamOptimizerWithDecay(n_epochs, T::Type)`, or update every call site?** →
+   Update every call site; optimizer functionality belongs in GO, not GML.
+3. **Delete `bfgs_optimizer.md` or rewrite it around GO's `_BFGS()`?** → Code
+   replicated from GO must be removed from GML. Where optimizer functionality
+   exists in GML but not GO, pause and add a separate workplan file.
+4. **Must `^1.13.0-0` stay required while GenericLinearAlgebra is broken?** →
+   No; make it non-required, open a GML issue for restoring it, and first check
+   `RungeKutta`/`GeometricIntegrators` for an existing `GenericLinearAlgebra`
+   report to reference.
+5. **Option A now for #234, Option C as follow-up?** → Yes — and open the issue
+   for C.
+6. **R8 GO struct-signature change before v0.2.0, or as v0.2.1?** → If it does
+   not change the API, wait for v0.2.1; if it does, open an issue at the
+   appropriate spot and tag michakraus.
+7. **Does "optimizer functionality belongs in GO" extend to
+   `AdamOptimizerWithDecay` and the §4 traversal?** → Yes, all of it. Branch GO
+   off `main`, move it there, delete from GML, and open a GML issue referencing
+   the GO PR, integration left as a future task.
+8. **If R8 needs an upstream Julia fix, may the test helpers be restructured
+   temporarily?** → Yes, hand-in-hand with a new issue describing the problem.
+9. **Per-testset progress markers in `runtests.jl`?** → Yes, but tag michakraus
+   to inform him and ask whether he agrees.
 
-1. Dropping Julia 1.10 support is an acceptable interim solution. In that case we should open an issue to indicate that 1.10 support has to be restored. We can fix the other CIs first though.
-2. We should update every call site to match the current interface. Optimizer functionality should be in `GeometricOptimizers` and not in `GeometricMachineLearning`.
-3. See answer above. If we replicate code from `GeometricOptimizers`in `GeometricMachineLearning`, then this should be removed. If optimizer-related functionality is defined in `GeometricMachineLearning`, but not in `GeometricOptimizers`, then pause and add a seprate workplan file for such a task.
-4. If `GenericLinearAlgebra` breaks the `^1.13.0-0` support, than this support should not be required for now. But we should open an issue in `GeometricMachineLearning` to indicate that this requirement will have to be restored. Also look into the open issues of `RungeKutta`/`GeometricIntegrators` to check if this problem has already been raised and if it has, please reference this `GenericLinearAlgebra` issue in the `GeometricMachineLearning` issue.
-5. Yes, we do A now but need to open an issue for C!
-
-### Further questions raised by claude after the 1.12 investigation (unanswered)
-
-6. R8 step 2 changes GO's cache/state struct signatures. Should that land in GO
-   **before** v0.2.0 is tagged (Phase 0), or as a v0.2.1 afterwards? Landing it
-   first avoids registering a version with a known compile-time pathology, but
-   delays Phase 0, which everything else waits on.
-7. Answer 2 says optimizer functionality belongs in GO. Does that verdict extend
-   to `AdamOptimizerWithDecay` (currently GML-only, `src/utils.jl:208`) and to
-   the `_make_optimizer_cache`/`_tree_optim_step!` traversal in §4 — i.e. should
-   they move to GO as part of this PR, or is the separate-workplan route from
-   answer 3 the intended path?
-8. If Phase 7 turns out to need an upstream Julia fix rather than a GO/GML one,
-   is temporarily restructuring the test helpers (step 4) acceptable to get #230
-   merged, with a tracking issue — or should #230 wait?
-9. Should `runtests.jl` get per-testset progress markers (`@info` before each
-   `@safetestset`)? It is unrelated to the fix, but without it the next
-   long-running job is again indistinguishable from a hung one.
-
-### Further answers provided by benedict-96
-
-6. If this doesn't change the API we can wait for v0.2.1. If it does please open an issue at the appropriate spot and tag michakraus.
-7. All of these should move to GeometricOptimizers. We could do this first by opening a separate branch in that repo (branched off from GeometricOptimizers#main). We can then delete the functionality from `GeometricMachineLearning` but also open an issue that references the pr in `GeometricOptimizers` and leave the integration as a future task.
-8. We can temporaily restructure the test helpers. But this should go hand-in-hand with opening a new issue describing the problem.
-9. You can make this change, but we should hence tag michakraus to inform him of this change and ask whether he agrees.
+---
 
 ## 7. Verification checklist
 
-|> [!IMPORTANT]
-|> For locally running everything, you can access the different Julia versions in ~/.julia/juliaup/.
+> [!IMPORTANT]
+> The different Julia versions are available locally under `~/.julia/juliaup/`.
 
+**R1 / resolution**
+* [ ] Interim applied: `julia = "1.11"`, 1.10 removed from `CI.yml`, tracking
+      issue opened.
 * [ ] GO v0.2.0 visible in General; `Pkg.add("GeometricOptimizers")` gives 0.2.0.
-* [ ] `Project.toml` has no `[sources]`; `julia = "1.10"`.
-* [ ] All three Julia 1.10 jobs pass.
-* [ ] All three Julia 1.12 jobs pass (currently the only end-to-end signal —
-      re-check run `31570166729` once it finishes; if 1.12 is *also* failing for
-      a reason not listed above, this plan is incomplete and needs revisiting
-      before any of it is implemented) - also confer the comment above.
-* [ ] **R8 gone:** 1.12 × ubuntu completes in roughly the ~30 min it takes on
-      `main`, not merely "eventually". A job that passes after several hours has
-      not fixed R8, it has only outlasted it.
-* [ ] One full 1.12 suite has been observed to finish end to end, locally or in
-      CI, so that testsets *after* the symplectic-autoencoder one have actually
-      been exercised at least once. The local investigation did not get that
-      far.
+* [ ] Target form applied: no `[sources]`, `julia = "1.10"`, 1.10 back in the
+      matrix, all three 1.10 jobs pass.
+
+**R8**
 * [ ] `test_accuracy(10, 6; n_epochs = 1)` compiles in seconds from a cold
-      session (the minimal R8 regression check).
-* [ ] Julia 1.13 passes, or is explicitly marked experimental with a linked
-      upstream issue. The CI policy change is applied; the upstream issue is
-      still outstanding.
-* [x] Documenter doctests are excluded from `test/runtests.jl`; former examples
-      have unit coverage under `test/`, with duplicate cases integrated into
-      existing domain test files.
-* [ ] Documentation workflow green (`@docs` + every tutorial executes; the
-      duplicate bibliography keys have been removed).
+      session (minimal regression check).
+* [ ] 1.12 × ubuntu completes in roughly the ~30 min it takes on `main` — a job
+      that passes after several hours has outlasted R8, not fixed it.
+* [ ] All three 1.12 jobs pass. Re-check run `31570166729` once it finishes; if
+      1.12 also fails for a reason not listed here, this plan is incomplete and
+      needs revisiting before more of it is implemented.
+* [ ] One full 1.12 suite observed end to end, so the testsets after
+      `symplectic_autoencoder` are exercised at least once.
+
+**Docs**
+* [x] Doctests excluded from `test/runtests.jl`; former examples covered under
+      `test/`.
+* [x] `docs/src/GeometricMachineLearning.bib` free of duplicate keys.
+* [ ] `retractions.md:345` no longer `@ref`s `GeometricMachineLearning.𝔄`.
+* [ ] Documentation workflow green (every `@docs` entry and tutorial executes).
 * [ ] PDF workflow green.
 * [ ] `docs/Makefile`'s `test_docs` target passes.
+
+**1.13**
+* [x] 1.13 and nightly marked `experimental: true` in `CI.yml`.
+* [ ] Full matrix confirmed to resolve `GeometricIntegrators v0.18.0`.
+* [ ] 1.13 green and de-experimentalised, or the linked upstream issue opened.
+
+**Follow-ups**
+* [ ] michakraus informed about the `runtests.jl` progress markers.
+* [x] GO branch opened for the §4 move: [GO#33][go33] (draft, base `manifold-adamw`),
+      covering `AdamOptimizerWithDecay`.
+* [ ] GO#29 merged, then GO#33 undrafted and merged.
+* [ ] `AdamOptimizerWithDecay` deleted from `src/utils.jl` and call sites moved to
+      `Optimizer(x, problem; AdamOptimizerWithDecay(n)...)`.
+* [ ] GO branch opened for the §4 traversal (`_make_optimizer_cache`,
+      `_make_optimizer_state`, `_tree_optim_step!`, `_leaf_optim_step!`,
+      `GMLEuclideanState`); GML issue opened referencing both GO PRs.
+* [ ] Issue opened for #234 Option C.
 * [ ] Issue #234 closed by a PR that *deletes* the `b16267ea` bridge methods
       rather than adding more.
 * [ ] `git status` clean; no dev artifacts in the diff.
+</content>
