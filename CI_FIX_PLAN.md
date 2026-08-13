@@ -1,6 +1,6 @@
 # Workplan: fixing CI on PR #230 and closing issue #234
 
-Status updated on 2026-08-12 on branch `use-geometric-optimizers`. CI run
+Status updated on 2026-08-13 on branch `use-geometric-optimizers`. CI run
 `31570166729` had completed its Julia 1.12 builds but remained in
 `julia-runtest`; R1, R3, and R8 therefore remain unresolved CI blockers.
 
@@ -30,9 +30,9 @@ the local `GeometricOptimizers` `0.2.0` checkout is tagged and registered.
 | Documentation | ⏳ | R4 fixed; R5/R6 docs updates applied, full build pending |
 | PDF | ⏳ | R4 fixed; full build pending |
 
-Two further breakages are *latent* — they sit behind R4 and will surface the
-moment the bibliography is fixed:
+The documentation issues that were latent behind R4 are now addressed:
 
+* **R4** duplicate bibliography keys — removed.
 * **R5** stale `@docs` blocks — removed or limited to GML-owned symbols.
 * **R6** stale optimizer constructors — tutorial call sites updated to v0.2.
 
@@ -64,116 +64,31 @@ triggered by the optimizer call nested in the test helper, amplified by the
 silent `SafeTestsets` output. No production-code defect or test assertion
 failure has been reproduced yet.
 
-### Historical corroboration (2026-08-12)
+### Independent corroboration (2026-08-12)
 
-The following independent investigation is retained as evidence only; the
-root causes and required actions are consolidated in §2 and §3 below.
+The second investigation added evidence that is useful for prioritising R8,
+but does not change the root cause or action list:
 
-Investigated independently (Julia 1.12.6 from
-`~/.julia/juliaup/julia-1.12.6+0.aarch64.apple.darwin14`, branch
-`use-geometric-optimizers`, working tree as of `b16267ea`). I agree with the
-codex section above — the stall is compile-time, not a hang and not a failing
-assertion — and can add the following.
-
-**1. It is a regression, not "1.12 is just slow".**
-
-All timings below are UTC job durations from the GitHub API.
-
-| Run | 1.12 × ubuntu | 1.12 × macOS | 1.12 × windows |
-| --- | --- | --- | --- |
-| `main`, run `29832781852` (push) | 29 min | 48 min | 25 min |
-| PR #230, run `31570166729` | still `in_progress` at **1 h 15 min** | still `in_progress` | still `in_progress` |
-
-All three PR jobs completed `julia-buildpkg` and are stuck in `julia-runtest`.
-The comparison is against the *whole* job on `main` (including setup and
-buildpkg), so the true ratio for the test step alone is worse than 2.6×.
-The 1.12 row in §1 has been updated accordingly.
-
-**2. The stall is *method-table intersection*, not inference volume.**
-
-I ran `Pkg.test()` locally and sampled the hung process twice with
-`kill -INFO <pid>` (Julia dumps task backtraces on SIGINFO). Both samples were
-identical in shape, at 100 % CPU, with no yield point reached in 10 minutes:
-
-```
-subtype_unionall / subtype_tuple_varargs / subtype_tuple      (subtype.c)
-  ← simple_subtype (jltypes.c:571) ← ijl_type_union (jltypes.c:668)
-  ← intersect_all ← jl_type_intersection_env_s
-  ← jl_typemap_intersection_visitor ← ml_matches (gf.c:4727)
-  ← ijl_matching_methods ← _methods_by_ftype
-  ← find_simple_method_matches (abstractinterpretation.jl:386)
-  ← abstract_call_gf_by_type ← typeinf_ext_toplevel
-```
-
-i.e. the compiler is not busy inferring bodies — it is stuck *enumerating
-matching methods* for a single call, inside `jl_type_union`/`subtype`. That is
-the signature of an expensive type-intersection, which points at signature
-*shape*, not at the amount of code being compiled.
-
-The enclosing frames confirm the location: a `jl_eval_module_expr` (the
-`@safetestset` module) containing an `include` of a test file, compiling the
-callee of a top-level statement — consistent with `all_tests(10, 6)` in
-`test/symplectic_autoencoder_tests.jl:76`.
-
-**3. Prime suspect: GO's union aliases used as type-parameter bounds.**
-
-`GeometricOptimizers/src/optimizer_solution.jl:4-26` defines
-
-```julia
-const ArrayTuple{T}                    = Tuple{Vararg{AbstractArray{T}}}
-const ArrayNamedTuple{T,S}             = NamedTuple{S,<:ArrayTuple{T}}
-const OptimizerSolution{T}             = Union{AbstractVector{T},Manifold{T},ArrayNamedTuple{T}}
-const GradientArrayOrNamedTuple{T}     = Union{AbstractArray{T},ArrayNamedTuple{T}}
-const GlobalSectionSingleOrNamedTuple{T} = Union{GlobalSection{T},GlobalSectionNamedTuple{T}}
-```
-
-and every optimizer cache/state carries them as *bounds*, e.g.
-
-```julia
-struct AdamCache{T,MT<:OptimizerSolution{T},VT<:GradientArrayOrNamedTuple{T},
-                 ST<:GlobalSectionSingleOrNamedTuple{T}} <: OptimizerCache{T}
-```
-
-(`adam_optimizer.jl:16,67`, `gradient_optimizer.jl:18,60`,
-`momentum_optimizer.jl:16,57`, `bfgs_cache.jl:6`, `bfgs_state.jl:13`,
-`dfp_cache.jl:6`). Each bound is a `Union` one of whose members is a
-`NamedTuple` with a *free* name parameter over a `Vararg` tuple — exactly the
-`subtype_unionall` + `subtype_tuple_varargs` + `ijl_type_union` combination
-the backtrace is spinning in. Every method signature mentioning one of these
-caches therefore becomes a costly intersection target, and GML's
-`_leaf_optim_step!`/`_tree_optim_step!` (`src/utils.jl:316-379`) call
-`GeometricOptimizers.update!` once per parameter leaf with a different
-concrete cache/state type each time. This is a hypothesis derived from the
-backtrace, **not yet proven** — Phase 7 begins by profiling it.
-
-**4. Runtime is fine; it is purely compile time, and it is not `--check-bounds`.**
-
-Outside `Pkg.test`, the exact SAE workload is fast (`N, n = 10, 6`,
-`Batch(10)`, `DataLoader(rand(10, 100); autoencoder = true)`):
-
-| Call | Default flags | `--check-bounds=yes -g1` (Pkg.test's flags) |
-| --- | --- | --- |
-| `Optimizer(Adam(), sae_nn)` | 0.87 s | 1.16 s |
-| first epoch (cold, incl. compile) | 13.5 s | 18.1 s |
-| second epoch (warm) | 6.8 ms | 7.5 ms |
-| 10 epochs (warm) | 82 ms | 72 ms |
-
-So `--check-bounds=yes`, which invalidates the pkgimage native code and forces
-a full recompile, is **not** the trigger — I tested that explicitly and it costs
-only ~35 %. The difference between "13 s" and "many minutes" is that my probe
-calls the optimizer at **top level**, whereas `symplectic_autoencoder_tests.jl`
-reaches it through the helper `test_accuracy(N::Integer, n::Integer; …)`, so
-the whole nested call tree has to be inferred as one unit. That matches codex's
-observation that changing `::Integer` to `::Int` does not help.
-
-**5. What I did not verify.** My local `Pkg.test()` run was still spinning in
-the same testset after 23 min when I stopped investigating, so I never saw it
-complete; I therefore cannot confirm codex's report that the SAE testset
-eventually *passes*, nor rule out failures in any later testset. Someone should
-let one full 1.12 run finish (locally or in CI) before §7's checklist item for
-1.12 is ticked.
-
----
+* This is a regression relative to `main`, not merely a slow Julia 1.12 job:
+  the 1.12 jobs on `main` completed in roughly 25–48 minutes, while PR run
+  `31570166729` was still in `julia-runtest` after 1 hour 15 minutes on all
+  three operating systems.
+* Two `SIGINFO` samples showed the compiler spending its time in
+  `subtype_unionall`, `subtype_tuple_varargs`, `jl_type_union`, and method
+  intersection. That points to signature shape and method-table enumeration,
+  rather than inference of a large function body.
+* The leading upstream hypothesis is GO's union aliases used as type-parameter
+  bounds on optimizer cache/state structs, especially aliases containing
+  `NamedTuple` and `Vararg` members. This remains a hypothesis until profiling
+  or an upstream reproduction confirms it.
+* The same SAE workload is fast when invoked at top level (about 13–18 seconds
+  for a cold first epoch and milliseconds when warm, including the
+  `--check-bounds=yes -g1` case). The pathological latency appears when the
+  optimizer is compiled through the test helper, so changing test structure
+  would only hide a user-facing issue.
+* The independent run did not complete the full 1.12 suite, so the checklist
+  still correctly requires one complete end-to-end run before declaring R8
+  resolved.
 
 ## 2. Root causes in detail
 
@@ -246,7 +161,11 @@ GenericLinearAlgebra's master branch guards the definition with
 `VERSION < v"1.14.0-DEV.2266"`, i.e. it is still broken on 1.13. **This cannot
 be fixed inside GML** other than by constraining/removing the test dependency.
 
-### R4 — Duplicate BibTeX keys
+### R4 — Duplicate BibTeX keys (resolved)
+
+
+!!!info coment by benedict-96
+    I'm almost certain R4 has been fixed by now. In that case this subsection can be removed.
 
 `docs/src/GeometricMachineLearning.bib` contains each of these twice, with
 identical bodies (almost certainly introduced by merge `172ea601`):
@@ -255,7 +174,9 @@ identical bodies (almost certainly introduced by merge `172ea601`):
 * `greydanus2019hamiltonian` — lines 650 and 1124
 
 `CitationBibliography(...)` at `docs/make.jl:14` throws on duplicate keys, which
-kills the Documentation and PDF workflows before Documenter even starts.
+kills the Documentation and PDF workflows before Documenter even starts. The
+duplicate entries have been removed; retain this section as the historical
+root cause until the documentation workflow is observed green.
 
 ### R5 — `@docs` blocks pointing at symbols that no longer exist
 
@@ -550,20 +471,13 @@ as its own issue.
 **Recommendation:** Option A now (it closes #234 and deletes the `b16267ea`
 duplication), Option C as a tracked follow-up.
 
-### Phase 6 — Repo hygiene before merge
+### Phase 6 — Repo hygiene before merge (completed)
 
-* Delete `WORKPLAN.md` and `scripts/inspect_go_migration.sh` (dev artifacts
-  added by the PR). Delete this file too once the work is done.
-* Remove the untracked junk currently in the tree: `docs/build.zip`,
-  `docs/build 2.zip`, `go_migration_inspection_*.txt`,
-  `scripts/D:\RESEARCH - UTWENTE\…\network_TEST.jld2`, and the LaTeX
-  `.aux/.log/.fls/.fdb_latexmk/.out/.pdf` files under `docs/src/assets/` and
-  `docs/src/tutorials/mnist/`.
-* Extend `.gitignore` to cover `*.aux`, `*.fls`, `*.fdb_latexmk`, `*.log`,
-  `*.out`, `docs/build*.zip`, `go_migration_inspection_*.txt`.
-* `test/optimizers/bfgs_optimizer.jl` no longer tests BFGS — rename it
-  (e.g. `gradient_optimizer.jl`) and update `test/runtests.jl`, or drop it if
-  it duplicates existing gradient-descent coverage.
+The PR-only workplan and inspection script are gone, the former BFGS test has
+been renamed to `test/optimizers/gradient_optimizer.jl`, and the generated
+artifact patterns are covered by `.gitignore`. This pass also removes the
+remaining tracked MNIST PDFs and the stray `.jld2` file; generated outputs
+should not be carried in the source tree.
 
 ### Phase 7 — R8: make the optimizer path compile in reasonable time (blocking)
 
@@ -609,15 +523,10 @@ holding `m₁`/`m₂` by hand. GO v0.2 already supports NamedTuple-valued soluti
 natively (`GradientArrayOrNamedTuple`, `OptimizerSolution`,
 `GlobalSection(::NamedTuple)`, `ParameterHandling.flatten` for `Manifold`), and
 already has `AdamCache`/`AdamState`/`MomentumCache`/`MomentumState`. Most of
-these 262 new lines are probably replaceable by GO's own machinery. Should be a separate issue; not a CI blocker.
-
-**Revised after the 1.12 investigation:** this may not be optional after all.
-The hand-rolled traversal is exactly the code path R8 spins in, and benedict's
-answer 2 ("optimizer functionality should be in `GeometricOptimizers` and not in
-`GeometricMachineLearning`") points the same way. If Phase 7 step 1 confirms the
-diagnosis, deleting this layer in favour of GO's native NamedTuple support is
-plausibly the *smallest* correct fix, not the largest. Re-evaluate once the
-profiling result is in; it stays a separate issue only if a narrower fix works.
+these 262 new lines are probably replaceable by GO's own machinery. Keep this
+as a separate issue unless Phase 7 profiling confirms that the traversal is
+the actual R8 trigger; in that case, replacing it with GO's native support is
+the smallest correct fix rather than a cleanup-only refactor.
 
 ---
 
@@ -707,7 +616,8 @@ Phase 0 is the formal critical path.
       not fixed R8, it has only outlasted it.
 * [ ] One full 1.12 suite has been observed to finish end to end, locally or in
       CI, so that testsets *after* the symplectic-autoencoder one have actually
-      been exercised at least once. Neither investigation above got that far.
+      been exercised at least once. The local investigation did not get that
+      far.
 * [ ] `test_accuracy(10, 6; n_epochs = 1)` compiles in seconds from a cold
       session (the minimal R8 regression check).
 * [ ] Julia 1.13 passes, or is explicitly marked experimental with a linked
