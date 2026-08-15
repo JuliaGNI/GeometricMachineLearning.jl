@@ -353,14 +353,22 @@ Nothing in this package can go green until these land. The critical path runs en
 
 Not defects — claims this release makes that nothing has actually checked yet.
 
-- **D1. No full test suite has ever been observed end to end.** The local run now reaches the
-  optimizer group, three `@info` markers in, where it used to hang in the first. The four groups
-  after it have never executed. Every blocker found so far was hiding the next one, so the tail
-  should be treated as unknown rather than working.
+- ~~**D1. No full test suite has ever been observed end to end.**~~ **Closed.** The suite now runs
+  to completion, all seven `@info` markers, with no failures — on Julia 1.13.0-rc2, via the pre-push
+  hook. Getting there took four rounds, each uncovering a bug the previous one had been hiding:
+  `_gml_rgrad` skipping the Riemannian projection (found on the 1.10 precompile), the transformer
+  tests importing both modules (found once the reduced-order group cleared), Adam's bias correction
+  (found once the optimizer group was reached) and the docstring tests' missing import (found once
+  the final group was reached).
+
+  Worth keeping the moral: the four bugs were not related to each other, and none was visible until
+  the one before it was cleared. A suite that stops at the first failure reports one problem at a
+  time however many there are.
 
 - **D2. The test suite has never been run on Julia 1.10.** The package precompiles and loads there
-  now, which it did not before, but that is all that has been checked — and `julia = "1.10"` is a
-  claim this release newly makes.
+  now, and resolves from the registry, but no suite has run there — and `julia = "1.10"` is a claim
+  this release newly makes. The full run above was on 1.13.0-rc2. CI covers 1.10 and is the first
+  thing that will exercise it.
 
 - **D3. The Documentation and PDF workflows are unverified.** Both die at resolution long before
   Documenter starts (A1), so the documentation fixes above rest on a static audit of `@ref` targets
