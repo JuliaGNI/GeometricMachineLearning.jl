@@ -37,7 +37,7 @@ to end — but the fix is in GO and needs a 0.2.1. All four are Phase 0.
 | R4 | Duplicate `Kraus:2020:GeometricIntegrators` and `greydanus2019hamiltonian` BibTeX keys. | Removed; `docs/src/GeometricMachineLearning.bib` verified duplicate-free. |
 | R5 | `@docs` blocks and `@ref`s pointing at symbols that moved to GO or no longer exist. | Applied. Earlier revisions of this plan said one call site was left; an audit of every `@ref` target against every `@docs` entry found **seven**. See §4/Phase 2. |
 | R6 | Tutorials calling GO v0.1 optimizer constructors removed in v0.2. | Applied; no stale `GradientOptimizer` / `MomentumOptimizer` / `AdamOptimizer(η)` / `BFGSOptimizer` call sites remain under `docs/src/`. |
-| **R8** | Inference spun in method-table intersection whenever the optimizer path was compiled through a function. 1.12 jobs ran > 1 h 15 min vs ~25–48 min on `main`; run `31570166729` never left `julia-runtest`. A hung job, not a red one. | **Cause located and fix verified — see §2.** GO's six optimizer cache/state structs bound their type parameters by the `OptimizerSolution` / `GradientArrayOrNamedTuple` / `GlobalSectionSingleOrNamedTuple` union aliases. Dropping those bounds takes the repro from *never completing* to 14.3 s cold / 6.9 ms warm. Needs a GO release. |
+| **R8** | Inference spun in method-table intersection whenever the optimizer path was compiled through a function. 1.12 jobs ran > 1 h 15 min vs ~25–48 min on `main`; run `31570166729` never left `julia-runtest`. A hung job, not a red one. | **Cause located and fix verified — see §2.** GO's six optimizer cache/state structs bound their type parameters by the `OptimizerSolution` / `GradientArrayOrNamedTuple` / `GlobalSectionSingleOrNamedTuple` union aliases. Dropping those bounds takes the repro from *never completing* to ~14.5 s cold / 6.5 ms warm. Open upstream as [GO#45][go45], green on all fifteen checks; needs a GO 0.2.1 release. |
 | — | GML did not precompile on Julia 1.10 at all: `cannot assign a value to imported variable GeometricOptimizers.Manifold`. | Found during Phase 3 verification. `using GeometricOptimizers` was a blanket import, and GO exports ~20 names GML defines itself. Replaced with `import GeometricOptimizers` plus an explicit `using GeometricOptimizers: …` list. See §3 — this also fixed a silent correctness bug. |
 | — | A long job was indistinguishable from a hung one. | `test/runtests.jl` emits seven `@info` markers, one per testset group. Per §7.9, michakraus still needs to be told. |
 | — | Repo hygiene | PR-only workplan and inspection script removed; BFGS test renamed to `test/optimizers/gradient_optimizer.jl`; tracked MNIST PDFs and stray `.jld2` deleted; generated-artifact patterns added to `.gitignore`. |
@@ -220,9 +220,11 @@ GI's CompatHelper PR [#239][gi239] does the same bump on `main` and has only its
 0.18.2.
 
 [gi239]: https://github.com/JuliaGNI/GeometricIntegrators.jl/pull/239
+[go45]: https://github.com/JuliaGNI/GeometricOptimizers.jl/pull/45
 
-Alongside: **GO 0.2.1 with the §2 struct-bound fix**, opened as a PR from
-`inference-friendly-cache-parameters`. Per §7.6 this belongs in a patch release
+Alongside: **GO 0.2.1 with the §2 struct-bound fix**, open as [GO#45][go45] and
+green on all fifteen checks — 1.10, 1.12, ^1.13 and nightly across the three
+operating systems, plus Documentation. Per §7.6 this belongs in a patch release
 because it does not change the API — the bounds come off the type parameters,
 not off what the constructors accept, and the outer constructors still reject
 exactly what they always did. Until it is out, CI cannot pass even once
@@ -409,7 +411,6 @@ a follow-up and nothing more.
 ### `AdamOptimizerWithDecay` → [GeometricOptimizers#33][go33] — merged
 
 [go33]: https://github.com/JuliaGNI/GeometricOptimizers.jl/pull/33
-[go29]: https://github.com/JuliaGNI/GeometricOptimizers.jl/pull/29
 [go34]: https://github.com/JuliaGNI/GeometricOptimizers.jl/issues/34
 
 GO#33 has merged (as have GO#29 and GO#35), and GO 0.2.0 ships
@@ -527,11 +528,10 @@ upstream releases land, and no amount of GML-side work substitutes for them.
       warm, measured twice against a throwaway GO copy and once against the
       branch below.
 * [x] GML-side traversal rewrite measured and rejected as ineffective.
-* [x] Fix opened against GO on `inference-friendly-cache-parameters`, with GO's
-      own suite green and a regression test that pins the parameters as
-      unbounded.
-* [ ] GO 0.2.1 released with the six struct bounds removed. No inner
-      constructors: the outer constructors already enforce the invariant (§2).
+* [x] Fix opened upstream as [GO#45][go45], green on all fifteen checks, with a
+      regression test that pins the parameters as unbounded.
+* [ ] [GO#45][go45] merged and GO 0.2.1 released. No inner constructors: the
+      outer constructors already enforce the invariant (§2).
 * [ ] 1.12 × ubuntu completes in roughly the ~30 min it takes on `main` — a job
       that passes after several hours has outlasted R8, not fixed it.
 * [ ] All three 1.12 jobs pass.
