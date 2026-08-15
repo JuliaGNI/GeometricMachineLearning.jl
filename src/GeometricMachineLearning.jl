@@ -24,10 +24,16 @@ import SymbolicNeuralNetworks: input_dimension, output_dimension, SymbolicPullba
 using SymbolicNeuralNetworks: derivative, _get_contents, _get_params, SymbolicNeuralNetwork
 using Symbolics: @variables, substitute
 
-using GeometricOptimizers
+# Only the names GML actually uses are brought in: GeometricOptimizers exports ~20 names that
+# GML defines itself (`Manifold`, `StiefelManifold`, `SkewSymMatrix`, `Optimizer`, `rgrad`, …),
+# and a blanket `using` makes redefining them an error on Julia 1.10.
+import GeometricOptimizers
 using GeometricOptimizers: OptimizerSolution, Cayley, Geodesic, cayley, geodesic, retraction,
                            apply_section, apply_section!, OptimizerMethod,
-                           GradientCache, MomentumCache, AdamCache
+                           GradientCache, MomentumCache, AdamCache,
+                           GradientMethod, MomentumMethod, Adam,
+                           GradientState, MomentumState, AdamState,
+                           GlobalSection, global_rep
 
 import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer,
                                AbstractExplicitCell, AbstractNeuralNetwork, NeuralNetwork,
@@ -171,6 +177,8 @@ export Transformer
 export TransformerIntegrator, StandardTransformerIntegrator
 
 # INCLUDE OPTIMIZERS — types come from GeometricOptimizers
+include("optimizers/optimizer.jl")
+
 export OptimizerMethod, AbstractCache
 export GradientMethod, GradientCache, GradientState
 export MomentumMethod, MomentumCache, MomentumState
