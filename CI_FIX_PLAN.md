@@ -88,7 +88,7 @@ straight swap — ANN 0.6.4 has no `Chain` method and GML relies on SNN's
 | R4 | Duplicate `Kraus:2020:GeometricIntegrators` and `greydanus2019hamiltonian` BibTeX keys. | Removed; `docs/src/GeometricMachineLearning.bib` verified duplicate-free. |
 | R5 | `@docs` blocks and `@ref`s pointing at symbols that moved to GO or no longer exist. | Applied. Earlier revisions of this plan said one call site was left; an audit of every `@ref` target against every `@docs` entry found **seven**. See §4/Phase 2. |
 | R6 | Tutorials calling GO v0.1 optimizer constructors removed in v0.2. | Applied; no stale `GradientOptimizer` / `MomentumOptimizer` / `AdamOptimizer(η)` / `BFGSOptimizer` call sites remain under `docs/src/`. |
-| **R8** | Inference spun in method-table intersection whenever the optimizer path was compiled through a function. 1.12 jobs ran > 1 h 15 min vs ~25–48 min on `main`; run `31570166729` never left `julia-runtest`. A hung job, not a red one. | **Cause located and fix verified — see §2.** GO's optimizer cache and state structs bound their type parameters by the `OptimizerSolution` / `GradientArrayOrNamedTuple` / `GlobalSectionSingleOrNamedTuple` union aliases. Dropping those bounds takes the repro from *never completing* to ~14.5 s cold / 6.5 ms warm. Open upstream as [GO#45][go45] — reviewed, extended to every cache and state plus `OptimizerResult`, green on all fifteen checks; needs a GO 0.2.1 release. |
+| **R8** | Inference spun in method-table intersection whenever the optimizer path was compiled through a function. 1.12 jobs ran > 1 h 15 min vs ~25–48 min on `main`; run `31570166729` never left `julia-runtest`. A hung job, not a red one. | **Cause located and fix verified — see §2.** GO's optimizer cache and state structs bound their type parameters by the `OptimizerSolution` / `GradientArrayOrNamedTuple` / `GlobalSectionSingleOrNamedTuple` union aliases. Dropping those bounds takes the repro from ~10 h to ~14.5 s cold / 6.5 ms warm. Open upstream as [GO#45][go45] — reviewed, extended to every cache and state plus `OptimizerResult`, green on all fifteen checks; needs a GO 0.2.1 release. |
 | — | GML did not precompile on Julia 1.10 at all: `cannot assign a value to imported variable GeometricOptimizers.Manifold`. | Found during Phase 3 verification. `using GeometricOptimizers` was a blanket import, and GO exports ~20 names GML defines itself. Replaced with `import GeometricOptimizers` plus an explicit `using GeometricOptimizers: …` list. See §3 — this also fixed a silent correctness bug. |
 | — | A long job was indistinguishable from a hung one. | `test/runtests.jl` emits seven `@info` markers, one per testset group. Per §7.9, michakraus still needs to be told. |
 | — | Repo hygiene | PR-only workplan and inspection script removed; BFGS test renamed to `test/optimizers/gradient_optimizer.jl`; tracked MNIST PDFs and stray `.jld2` deleted; generated-artifact patterns added to `.gitignore`. |
@@ -180,11 +180,22 @@ intersection involving such a type re-solves that constraint system in
 but with the parameters independent and `s3<:Tuple`, which costs nothing to
 intersect.
 
+**How long it actually takes.** The unfixed repro was described here for most of
+this investigation as *never completing*, on the strength of two runs killed at
+7 and at 10 minutes. It does complete: a run left going against released GO
+finished after **10 h 11 min** (14:50:30 → 01:01:03). That was on a machine
+running test suites and docs builds throughout, so treat it as a contended upper
+bound rather than a clean figure — but the qualitative claim was wrong, and
+"does not complete in any useful time" is the honest phrasing. It also explains
+the CI signature exactly: jobs that ran past 1 h 15 min and one cancelled at 6 h
+were not deadlocked, they were losing a race against the timeout. (That run's
+only assertion failure, `1.38 < 0.35`, is the probe's own fault — it passes
+`n_epochs = 1` to a test whose tolerance assumes 100 — and is not a regression.)
+
 **Verified fix.** Dropping the bounds — `struct AdamCache{T, MT, VT, ST} <:
-OptimizerCache{T}` and so on — takes the single-body repro from *never
-completing* to **~14.5 s cold / 6.5 ms warm**. Measured three times: twice
-against a throwaway copy of GO 0.2.0 and once against the real branch. Nothing
-else changed.
+OptimizerCache{T}` and so on — takes that same single-body repro to **~14.5 s
+cold / 6.5 ms warm**. Measured three times: twice against a throwaway copy of GO
+0.2.0 and once against the real branch. Nothing else changed.
 
 The first cut of [GO#45][go45] did six structs; **review found that was not
 enough.** `BFGSCache`, `BFGSState` (which is also `DFPState`), `DFPCache` and
@@ -210,7 +221,7 @@ What must not carry the aliases is the `struct` parameter list.
 
 **Not a GML-side fix.** Rewriting GML's `_make_optimizer_cache` /
 `_make_optimizer_state` from `isa` branches to dispatch was tried and measured:
-against released GO it still never completes, and against patched GO it is
+against released GO it still does not complete in any useful time, and against patched GO it is
 14.25 s versus 14.55 s for the existing branchy code — i.e. within noise. The
 rewrite was therefore **not** kept, and `_go_update_leaf!` and the two remaining
 `state isa` branches need no further work. The traversal is unimplicated.
@@ -321,8 +332,8 @@ dead weight — both below.
 
 **Still to do here, once GO 0.2.1 exists:** bump `GeometricOptimizers = "0.2"` to
 `"0.2.1"`. As a floor, not as tidiness — `"0.2"` lets the resolver pick 0.2.0 and
-silently reinstate the R8 hang, which presents as a job that never finishes
-rather than as a job that fails.
+silently reinstate the R8 latency, which presents as a job that outlasts its
+timeout rather than as a job that fails.
 
 Two `[compat]` entries worth a look while in here, neither urgent:
 
@@ -430,7 +441,7 @@ experimental permanently, as in the other JuliaGNI repos. Remaining:
 
 Superseded by §2: located, fixed, reviewed and verified. Success criterion met
 locally — `test_accuracy(10, 6; n_epochs = 1)` compiles in ~14 s from cold
-instead of never finishing. What remains is release mechanics:
+instead of ~10 h. What remains is release mechanics:
 
 1. Merge [GO#45][go45] (review addressed; fifteen checks green).
 2. Release and register GO **v0.2.1**. Owner: michakraus / JuliaGNI release
@@ -681,7 +692,7 @@ amount of GML-side work substitutes for them.
 
 **R8**
 * [x] Cause located by profiling, not inferred from backtraces (§2).
-* [x] Fix verified: repro goes from never completing to ~14.5 s cold / 6.5 ms
+* [x] Fix verified: repro goes from ~10 h to ~14.5 s cold / 6.5 ms
       warm, measured twice against a throwaway GO copy and once against the
       branch below.
 * [x] GML-side traversal rewrite measured and rejected as ineffective.
