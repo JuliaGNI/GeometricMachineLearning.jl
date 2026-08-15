@@ -1,4 +1,5 @@
 using Test
+using GeometricMachineLearning
 using LinearAlgebra: norm
 import Random
 

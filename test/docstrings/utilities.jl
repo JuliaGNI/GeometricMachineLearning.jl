@@ -1,4 +1,5 @@
 using Test
+using GeometricMachineLearning
 using GeometricMachineLearning: QPT, _processing
 
 @testset "Utility and pullback docstring examples" begin

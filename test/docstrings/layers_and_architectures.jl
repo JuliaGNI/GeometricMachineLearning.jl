@@ -1,4 +1,5 @@
 using Test
+using GeometricMachineLearning
 using GeometricMachineLearning: UnknownEncoder, params
 
 @testset "Layer and architecture docstring examples" begin

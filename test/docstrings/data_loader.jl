@@ -1,4 +1,5 @@
 using Test
+using GeometricMachineLearning
 using GeometricMachineLearning: convert_input_and_batch_indices_to_array, number_of_batches
 
 @testset "Data loader docstring examples" begin
