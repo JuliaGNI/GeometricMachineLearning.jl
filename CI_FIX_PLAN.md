@@ -520,8 +520,7 @@ Per §7.3 that is replicated GO functionality, so **both the function and its te
 moved to GO** rather than being restored here. GO now has
 
 ```julia
-𝔄exp(B̂, B̄)            = I + B̂ * 𝔄(B̂, B̄) * B̄'
-𝔄exp(B̂, B̄, algorithm) = I + B̂ * 𝔄(B̂, B̄, algorithm) * B̄'
+𝔄exp(B̂, B̄, algorithm = ScaledSquaring()) = I + B̂ * 𝔄(B̂, B̄, algorithm) * B̄'
 ```
 
 unexported as `𝔄` is, and `test/retractions/exponential_accuracy.jl` sweeps
@@ -530,6 +529,16 @@ unexported as `𝔄` is, and `test/retractions/exponential_accuracy.jl` sweeps
 `algorithm` form — 232 assertions. GO's docstring jldoctest asserted the identity
 for a single 10×2 `Float64` lift only, so the shape and element-type coverage is
 new there and nothing is lost here.
+
+The default cost a round of review. As first written `𝔄exp(B̂, B̄)` forwarded to
+the unscaled Taylor series, while `geodesic` — assembling the identical product
+six functions up — defaults to `ScaledSquaring()` because the series leaves the
+manifold for ‖B̄‖ ≳ 50, which is why 0.2.0 changed it. Relative error at
+‖B̄‖ ≈ 146 is 2e24 against `ScaledSquaring`'s 8e-15. The sweep above could not
+see it: `T(0.1) * rand(T, N, n)` keeps the argument near 0.1, where every
+algorithm is exact to `eps` — broad in shape and element type, silent in the one
+dimension that decided whether the default was right. A second testset (8
+assertions) now pins the default at ‖B̄‖ up to ~325 and against `geodesic`.
 
 It is not dead weight upstream: `geodesic` (`retractions.jl:128`) already computed
 that product inline, and `one(B)` for a `StiefelLieAlgHorMatrix` is a plain
