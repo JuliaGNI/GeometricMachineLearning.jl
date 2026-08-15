@@ -1,4 +1,4 @@
-using GeometricMachineLearning, GeometricOptimizers, Test
+using GeometricMachineLearning, Test
 import Random, Test, LinearAlgebra, KernelAbstractions
 
 Random.seed!(1234)

@@ -1,4 +1,4 @@
-using GeometricMachineLearning, GeometricOptimizers, Test
+using GeometricMachineLearning, Test
 using GeometricMachineLearning: geodesic
 using GeometricMachineLearning: cayley
 import Random, Test, LinearAlgebra, KernelAbstractions
