@@ -129,6 +129,13 @@ reading the export list — the list spans continuation lines, and reading it mi
   CI too. It had never been seen because the compile-time stall above hung the suite in the
   reduced-order-modeling group, which runs first.
 
+- **A docstring index that stopped being a list.** Deleting the BFGS page left
+  `value_for_key(_optimizers, "Optimizer Methods")` with a single key, and that method returns a
+  `String` where the multi-key one returns a `Vector{String}`. `docstring_index.md` passes the result
+  straight to `@index` as `Pages`, so the Documentation and PDF builds died with
+  `Cannot convert an object of type String to an object of type Vector{String}`. Wrapped in `[ ]`,
+  as the one other single-entry chapter already was.
+
 - **Four wrong assertions in the `batch.jl` doctests.** The doctests were rewritten on this branch
   to assert rather than print, and three of the assertions compared a `Tuple` against a `Vector`
   (`length.(batches) == [2, 2, 1]`, where the value is `(2, 2, 1)` — never equal in Julia), while a
