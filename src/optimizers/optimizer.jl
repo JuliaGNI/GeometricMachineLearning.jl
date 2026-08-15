@@ -123,8 +123,10 @@ function _euclidean_update!(x::AbstractArray{T}, dx::AbstractArray,
         state::GMLEuclideanState{T}, method::GeometricOptimizers.Adam, step_size) where T
     t = state.iterations; _t = t + 1
     β₁, β₂, δ = T(method.β₁), T(method.β₂), T(method.δ)
-    fac₁₁ = β₁/(1-β₁^_t); fac₁₂ = (1-β₁)/(1-β₁^_t)
-    fac₂₁ = β₂/(1-β₂^_t); fac₂₂ = (1-β₂)/(1-β₂^_t)
+    # the first factor is `(β - β^t)/(1 - β^t)`, not `β/(1 - β^t)`: the latter is ~100x too large
+    # at t = 2 and compounds every step, which inflates the second moment until the update vanishes
+    fac₁₁ = (β₁-β₁^_t)/(1-β₁^_t); fac₁₂ = (1-β₁)/(1-β₁^_t)
+    fac₂₁ = (β₂-β₂^_t)/(1-β₂^_t); fac₂₂ = (1-β₂)/(1-β₂^_t)
     state.m₁ .= fac₁₁ .* state.m₁ .+ fac₁₂ .* dx
     state.m₂ .= fac₂₁ .* state.m₂ .+ fac₂₂ .* dx .^ 2
     x .-= T(step_size) .* state.m₁ ./ (sqrt.(state.m₂) .+ δ)
@@ -133,8 +135,9 @@ function _euclidean_update!(x::AbstractArray{T}, dx::AbstractArray,
         state::GMLEuclideanState{T}, method::AdamOptimizerWithDecay, step_size) where T
     t = state.iterations; _t = t + 1
     ρ₁, ρ₂, δ = T(method.ρ₁), T(method.ρ₂), T(method.δ)
-    fac₁₁ = ρ₁/(1-ρ₁^_t); fac₁₂ = (1-ρ₁)/(1-ρ₁^_t)
-    fac₂₁ = ρ₂/(1-ρ₂^_t); fac₂₂ = (1-ρ₂)/(1-ρ₂^_t)
+    # see the note in the `Adam` method above
+    fac₁₁ = (ρ₁-ρ₁^_t)/(1-ρ₁^_t); fac₁₂ = (1-ρ₁)/(1-ρ₁^_t)
+    fac₂₁ = (ρ₂-ρ₂^_t)/(1-ρ₂^_t); fac₂₂ = (1-ρ₂)/(1-ρ₂^_t)
     state.m₁ .= fac₁₁ .* state.m₁ .+ fac₁₂ .* dx
     state.m₂ .= fac₂₁ .* state.m₂ .+ fac₂₂ .* dx .^ 2
     x .-= T(step_size) .* state.m₁ ./ (sqrt.(state.m₂) .+ δ)

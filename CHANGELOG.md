@@ -108,6 +108,20 @@ reading the export list — the list spans continuation lines, and reading it mi
   [#234](https://github.com/JuliaGNI/GeometricMachineLearning.jl/issues/234), showing up somewhere
   it silently changed results.
 
+- **Adam's bias correction was wrong on the Euclidean path, and stopped training almost
+  immediately.** The first moment coefficient was written `β/(1 - βᵗ)` where it should be
+  `(β - βᵗ)/(1 - βᵗ)`. At `t = 2` that is 49.7 instead of 0.497 — a factor of 100 — and it compounds
+  every step, inflating the second moment until `m₁ / (√m₂ + δ)` is indistinguishable from zero.
+
+  Only `AdamOptimizerWithDecay` showed it. Plain `Adam` is one of the methods GeometricOptimizers
+  owns, so it takes the upstream cache and update; the decaying variant is not, so it falls back to
+  GML's own `_euclidean_update!`, which carried the error. On the regression test the decaying
+  optimizer plateaued at 0.386 from epoch 5 while plain Adam reached 0.115. The trajectory now
+  matches `main` to five significant figures at every epoch sampled.
+
+  Found by the pre-push hook running the full suite — the first time it has ever run to this point,
+  because the compile-time stall used to hang it three groups earlier.
+
 - **The transformer tests no longer import GeometricOptimizers wholesale.** Three
   `multi_head_attention_stiefel_*` files opened with `using GeometricMachineLearning,
   GeometricOptimizers` and then used `StiefelManifold` unqualified, which is ambiguous on Julia
