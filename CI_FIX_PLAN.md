@@ -312,6 +312,13 @@ skipped entirely. In `Project.toml`:
 `.github/workflows/CI.yml` is unchanged: 1.10 stays in the matrix.
 `docs/Project.toml` needs no change.
 
+GML inherits GO v0.2.0's registered `[compat]` whether or not it restates it:
+`julia = "1.10.0 - 1"`, `SimpleSolvers = "0.12"`, `ParameterHandling = "0.5"`,
+`ForwardDiff = "1"`, `LazyArrays = "2"`, `KernelAbstractions = "0.9"`,
+`ChainRulesCore = "1"`, `GeometricBase = "0.14"`. `SimpleSolvers = "0.12"` is
+where R9 comes from, and `ForwardDiff = "1"` is why GML's own `"0.10, 1"` is
+dead weight — both below.
+
 **Still to do here, once GO 0.2.1 exists:** bump `GeometricOptimizers = "0.2"` to
 `"0.2.1"`. As a floor, not as tidiness — `"0.2"` lets the resolver pick 0.2.0 and
 silently reinstate the R8 hang, which presents as a job that never finishes
@@ -345,6 +352,12 @@ o = Optimizer(Adam(Float64), nn; step_size = 1e-1)  # after
 
 Per §7.2 the old signatures were **not** restored. The break belongs in the
 release notes / changelog.
+
+> [!NOTE]
+> `Optimizer(…; step_size = …)` is GML's own wrapper, not GO's, so it survives
+> only as long as the §5 traversal does — and the `AdamOptimizerWithDecay`
+> docstring goes with the type when R11 is resolved. This section documents an
+> API that §5 is scheduled to remove, so re-check it once §5 lands.
 
 **Eight unresolvable cross-references, not one.** Neither workflow can be run
 until Phase 0 — both die at resolution long before Documenter starts — so the
@@ -384,6 +397,12 @@ Re-running the audit afterwards reports no unresolvable target.
 Do **not** add `GeometricOptimizers` to `modules=[...]` in `docs/make.jl`:
 Documenter's default `checkdocs = :all` would demand a page for every GO
 docstring.
+
+The de-referenced spans are plain code now, which is the cheap fix rather than
+the right one. `DocumenterInterLinks` would let GML's docs link into GO's
+properly, so `𝔄`, `cayley` and `update!` become real cross-references again
+instead of prose. GO's own `docs/Project.toml` already carries it; GML's does
+not. Worth doing once the docs workflow can run at all, i.e. after Phase 0.
 
 The static audit is not a substitute for the real build: it catches missing
 `@docs` entries but says nothing about executable blocks, doctests or tutorials.
@@ -669,6 +688,10 @@ amount of GML-side work substitutes for them.
 * [ ] 1.12 × ubuntu completes in roughly the ~30 min it takes on `main` — a job
       that passes after several hours has outlasted R8, not fixed it.
 * [ ] All three 1.12 jobs pass.
+* [ ] One full 1.12 suite observed end to end. The local run now reaches the
+      optimizer group, three markers in, where it used to hang in the first — but
+      the four groups after it have still never been exercised, and every blocker
+      found so far was hiding the next one.
 
 **Julia 1.10**
 * [x] Blanket `using GeometricOptimizers` replaced by an explicit import list.
@@ -701,6 +724,8 @@ amount of GML-side work substitutes for them.
       shipped in 0.2.0.
 * [ ] [GO#34][go34] answered: `AdamWithEuclideanDecay`'s default line search
       confirmed.
+* [x] **R11** diagnosed: GML loads against GO v0.2.0 with no binding conflict;
+      the failure is downstream, in code that imports both modules.
 * [ ] **R11** resolved: `AdamOptimizerWithDecay` deleted from
       `src/optimizers/optimizer.jl` and call sites moved to
       `Optimizer(x, problem; AdamOptimizerWithDecay(n)...)` — coupled to the §5
