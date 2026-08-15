@@ -497,14 +497,29 @@ along with the rest of GML's `modified_exponential.jl`. The test was left behind
 and referred to a function that then existed in neither package — the first thing
 to fail in the optimizer group once R8 stopped hiding it.
 
-Per §7.3 that is replicated GO functionality, so the sweep moved to GO rather
-than being restored here: `test/retractions/exponential_accuracy.jl` now checks
+Per §7.3 that is replicated GO functionality, so **both the function and its test
+moved to GO** rather than being restored here. GO now has
+
+```julia
+𝔄exp(B̂, B̄)            = I + B̂ * 𝔄(B̂, B̄) * B̄'
+𝔄exp(B̂, B̄, algorithm) = I + B̂ * 𝔄(B̂, B̄, algorithm) * B̄'
+```
+
+unexported as `𝔄` is, and `test/retractions/exponential_accuracy.jl` sweeps
 ``\mathbb{I} + B'\mathfrak{A}(B', B'')(B'')^T = \exp(B'(B'')^T)`` over
-`Float32`/`Float64` and every shape with `N = 1:10`, `n = 1:N` — 220 assertions,
-against `𝔄` directly. GO's docstring jldoctest asserted the same identity for a
-single 10×2 `Float64` lift, so the shape and element-type coverage is new there
-and nothing is lost here. The GML file and its `runtests.jl` entry are gone, and
-the remaining `Optimizer #n` labels were closed up.
+`Float32`/`Float64` and every shape with `N = 1:10`, `n = 1:N`, plus the
+`algorithm` form — 232 assertions. GO's docstring jldoctest asserted the identity
+for a single 10×2 `Float64` lift only, so the shape and element-type coverage is
+new there and nothing is lost here.
+
+It is not dead weight upstream: `geodesic` (`retractions.jl:128`) already computed
+that product inline, and `one(B)` for a `StiefelLieAlgHorMatrix` is a plain
+`Matrix`, so the two expressions coincide. `geodesic` was left alone — it wraps in
+`manifold_type(B)` and takes the lift factors apart itself — so folding the
+duplication together is an available follow-up rather than part of this.
+
+The GML file and its `runtests.jl` entry are gone, and the remaining
+`Optimizer #n` labels were closed up.
 
 GO v0.2 already supports NamedTuple-valued solutions natively
 (`GradientArrayOrNamedTuple`, `OptimizerSolution`, `GlobalSection(::NamedTuple)`,
@@ -690,8 +705,9 @@ amount of GML-side work substitutes for them.
       `src/optimizers/optimizer.jl` and call sites moved to
       `Optimizer(x, problem; AdamOptimizerWithDecay(n)...)` — coupled to the §5
       traversal move. Un-exporting it is the stopgap if that has to wait.
-* [x] `𝔄exp`: the orphaned GML test replaced by a shape and element-type sweep in
-      GO's `test/retractions/exponential_accuracy.jl`; GML's file and its
+* [x] `𝔄exp`: function and test both moved to GO — `𝔄exp(B̂, B̄[, algorithm])` in
+      `src/retractions/modified_exponential.jl` and a 232-assertion sweep in
+      `test/retractions/exponential_accuracy.jl`; GML's file and its
       `runtests.jl` entry removed. See §5.
 * [ ] **R10**: ANN given `input_dimension(::Chain)`, SNN's pirated methods
       dropped, GML's import moved from SNN to ANN.
