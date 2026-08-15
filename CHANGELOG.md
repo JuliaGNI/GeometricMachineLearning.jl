@@ -241,21 +241,20 @@ entry says what closing it would take.
 
 Nothing in this package can go green until these land. The critical path runs entirely outside it.
 
-- **A1. `SimpleSolvers` 0.12 versus `GeometricIntegrators`.** GeometricOptimizers v0.2.0 requires
+- **A1. `GeometricIntegrators 0.18.2` is not released.** GeometricOptimizers requires
   `SimpleSolvers = "0.12"`; registered `GeometricIntegrators 0.18.1` requires `"0.11"`. There is no
   overlap, and `GeometricIntegrators` is in both the test target and `docs/Project.toml`, so *every*
   job dies at resolution in about 40 seconds — all twelve CI jobs plus Documentation and PDF, the
   latter two on `make test_docs` with `Unsatisfiable requirements detected for package
   SimpleSolvers`.
 
-  Closing it needs SimpleSolvers 0.12.1, GeometricIntegratorsBase 0.6.3 and GeometricIntegrators
-  0.18.2 tagged and registered. All three exist locally and are what local verification used.
+  SimpleSolvers 0.12.1 and GeometricIntegratorsBase 0.6.3 are registered. This is the last one.
 
-- **A2. GeometricOptimizers 0.2.1 is not released.** [GO#45][go45] is merged but unregistered, so
-  the compile-time fix is not available to a resolver. When it is, GML's bound must go to
-  `GeometricOptimizers = "0.2.1"` **as a floor** — `"0.2"` lets the resolver pick 0.2.0 and silently
-  reinstate a ten-hour compile, which presents as a job that outlasts its timeout rather than one
-  that fails.
+- ~~**A2. GeometricOptimizers 0.2.1 is not released.**~~ **Closed.** v0.2.1 is registered, and the
+  bound here is `GeometricOptimizers = "0.2.1"` — a floor rather than tidiness, since `"0.2"` lets
+  the resolver pick 0.2.0 and silently reinstate a ten-hour compile, which presents as a job that
+  outlasts its timeout rather than one that fails. The compile-time fix is confirmed against the
+  registered version, resolved with nothing developed locally: 13.9 s cold, 6.5 ms warm.
 
 ### B. Known defects
 
