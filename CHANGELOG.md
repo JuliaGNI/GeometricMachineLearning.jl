@@ -330,6 +330,30 @@ Nothing in this package can go green until these land. The critical path runs en
   SymbolicNeuralNetworks' at `src/architectures/hamiltonian_neural_network.jl:86`, so
   `input_dimension(::Chain)` has to exist upstream first.
 
+- **B4. The documentation's executable examples still use the old optimizer internals.** The
+  Documentation and PDF builds get past resolution and doctests now and fail in the `@example`
+  blocks — 32 errors across 12 pages, because the documentation teaches the optimizer by reaching
+  into its cache, and GeometricOptimizers' caches are not shaped like GML's were:
+
+  ```
+  type MomentumCache has no field `A`, available fields: `x`, `g`, `δ`, `Δg`, `g̃`, `g̃_is_current`, `section`
+  type AdamCache has no field `Y`
+  no method matching update!(::Optimizer{GradientMethod, GradientCache{…}}, …)
+  `update_section!` not defined
+  no method matching AdamCache(::@NamedTuple{weight::SymmetricMatrix{Float16, …}}, …)
+  ```
+
+  `optimizer_methods.md` is the bulk of it: eleven call sites building `dx = (A = one(weight.A),)`,
+  calling `update!(o, o.cache, dx)` and printing `o.cache.A` or `o.cache.Y` to show what a cache
+  holds. `parallel_transport.md` uses `update_section!`, which GML no longer exports. The three
+  named `@example` blocks that fail outright are `sympnet`, `rigid_body` and `s2_parallel_transport`.
+
+  This is not a mechanical rename. The pages explain how the optimizer works by showing its
+  internals, and those internals now belong to another package with a different design — so closing
+  this means deciding how much of that exposition GML's documentation should still carry, and
+  rewriting it against the upstream API or handing it to GeometricOptimizers' own documentation. It
+  is the last thing standing between this branch and green Documentation and PDF workflows.
+
 ### C. Follow-ups and cleanups
 
 - **C1. The rest of the optimizer machinery still belongs upstream.** The traversal
@@ -384,10 +408,9 @@ Not defects — claims this release makes that nothing has actually checked yet.
   this release newly makes. The full run above was on 1.13.0-rc2. CI covers 1.10 and is the first
   thing that will exercise it.
 
-- **D3. The Documentation and PDF workflows are unverified.** Both die at resolution long before
-  Documenter starts (A1), so the documentation fixes above rest on a static audit of `@ref` targets
-  against `@docs` entries. That catches missing entries and says nothing about executable blocks,
-  doctests or tutorials. `docs/Makefile`'s `test_docs` target is likewise unrun.
+- ~~**D3. The Documentation and PDF workflows are unverified.**~~ **Superseded by B4.** They run
+  now. The static audit was sound as far as it went — no `@ref` has failed — and, as it warned,
+  it said nothing about executable blocks. Those are what fail now.
 
 - **D4. The upstream fix was measured on one optimizer.** The compile-time figures come from the
   `Adam` path. The quasi-Newton and Newton caches and states were widened on the strength of their
