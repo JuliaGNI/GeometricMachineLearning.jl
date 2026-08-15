@@ -4,12 +4,16 @@ Status 2026-08-15, branch `use-geometric-optimizers`, verified against the
 working tree, the General registry, the GitHub APIs and live runs on Julia
 1.10.11 and 1.12.6 on that date.
 
-**Every remaining blocker is an unreleased upstream package; no GML-side work is
-left.** R1 is gone — GeometricOptimizers v0.2.0 is registered. R9 (new, and not
-in earlier revisions of this plan) needs SimpleSolvers 0.12.1,
+**Every remaining *blocker* is an unreleased upstream package.** R1 is gone —
+GeometricOptimizers v0.2.0 is registered. R9 (new) needs SimpleSolvers 0.12.1,
 GeometricIntegratorsBase 0.6.3 and GeometricIntegrators 0.18.2 released before
-anything resolves. R8 is *solved* — cause located by profiling, fix verified end
-to end — but the fix is in GO and needs a 0.2.1. All four are Phase 0.
+anything resolves. R8 is *solved* — cause located by profiling, fix reviewed and
+merged into [GO#45][go45] — but it needs a 0.2.1. All four are Phase 0.
+
+Two non-blocking items remain on the GML side: **R11**, the
+`AdamOptimizerWithDecay` name collision, which is coupled to §5; and **R10**, an
+`input_dimension` duplication that needs nothing until AbstractNeuralNetworks
+grows a `Chain` method.
 
 > [!IMPORTANT]
 > Local verification is possible now. `~/.julia` is writable, the registry is
@@ -27,6 +31,53 @@ to end — but the fix is in GO and needs a 0.2.1. All four are Phase 0.
 | --- | --- | --- |
 | **R9** | GO 0.2.0 requires `SimpleSolvers = "0.12"`; registered `GeometricIntegrators 0.18.1` requires `"0.11"`. No overlap, and GI is in GML's test target and in `docs/Project.toml`, so **every** job dies at resolution in ~40 s — all twelve CI jobs plus Documentation and PDF, the latter two on `make test_docs` with `Unsatisfiable requirements detected for package SimpleSolvers`. | Phase 0 |
 
+> [!IMPORTANT]
+> GML's last CI run on #230 is from 2026-08-13 09:51 UTC, and GO#29 and GO#33
+> merged at 11:31 and 12:17 that same day, followed by GO#35–#44. **No CI run has
+> ever exercised GML against any of it**, R9 included. Read that run as describing
+> a GO tree that no longer exists.
+
+### Not blocking, but real
+
+**R11 — both packages export `AdamOptimizerWithDecay`.** GO v0.2.0 ships the name
+(GO#33), and GML defines and exports its own
+(`src/optimizers/optimizer.jl:35`, export at `src/GeometricMachineLearning.jl:200`).
+GML itself loads — the selective import in §3 removed the blanket `using` that
+would have made this a load error — but `using GeometricMachineLearning,
+GeometricOptimizers` in *downstream* code fails outright, verified:
+
+```
+UndefVarError: `AdamOptimizerWithDecay` not defined in `Main`
+Hint: It looks like two or more modules export different bindings with this name…
+```
+
+That is the same fault as the transformer tests in §3, one module further out. The
+three in-repo occurrences are fixed; nothing under `docs/src/` or `scripts/` uses
+both modules.
+
+Deleting GML's copy is the fix (§7.2, §7.7) but it is **not** independent of §5:
+GO's `AdamOptimizerWithDecay(n, T; …)` returns an `(algorithm, linesearch)`
+pairing for GO's own `Optimizer(x, problem; method...)`, whereas GML's `Optimizer`
+(`src/optimizers/optimizer.jl:79`) carries a scalar `step_size` and computes the
+schedule in `_current_step_size`. Un-exporting it from GML would clear the
+ambiguity on its own, if a stopgap is wanted before §5 lands.
+
+**R10 — ANN v0.6.4 adds `input_dimension`/`output_dimension`.** Released
+2026-08-14, registered, and resolved into the current manifest. They are defined
+on `AbstractLayer` and exported; GML takes the same two names from
+SymbolicNeuralNetworks instead (`src/GeometricMachineLearning.jl:23`), and SNN 0.3
+defines them by pirating ANN's types. Verified that these really are two distinct
+generic functions (`ANN.input_dimension === SNN.input_dimension` is `false`) and
+that GML's binding resolves to SNN's.
+
+Nothing to do now and no compat change is needed: GML's explicit
+`import SymbolicNeuralNetworks: …` beats the implicit binding from
+`using AbstractNeuralNetworks`, GML re-exports neither name, and
+`AbstractNeuralNetworks = "0.5, 0.6"` already admits 0.6.4. The follow-up is not a
+straight swap — ANN 0.6.4 has no `Chain` method and GML relies on SNN's
+(`src/architectures/hamiltonian_neural_network.jl:86`), so ANN needs
+`input_dimension(::Chain)` first.
+
 ### Resolved
 
 | ID | Problem | Resolution |
@@ -37,7 +88,7 @@ to end — but the fix is in GO and needs a 0.2.1. All four are Phase 0.
 | R4 | Duplicate `Kraus:2020:GeometricIntegrators` and `greydanus2019hamiltonian` BibTeX keys. | Removed; `docs/src/GeometricMachineLearning.bib` verified duplicate-free. |
 | R5 | `@docs` blocks and `@ref`s pointing at symbols that moved to GO or no longer exist. | Applied. Earlier revisions of this plan said one call site was left; an audit of every `@ref` target against every `@docs` entry found **seven**. See §4/Phase 2. |
 | R6 | Tutorials calling GO v0.1 optimizer constructors removed in v0.2. | Applied; no stale `GradientOptimizer` / `MomentumOptimizer` / `AdamOptimizer(η)` / `BFGSOptimizer` call sites remain under `docs/src/`. |
-| **R8** | Inference spun in method-table intersection whenever the optimizer path was compiled through a function. 1.12 jobs ran > 1 h 15 min vs ~25–48 min on `main`; run `31570166729` never left `julia-runtest`. A hung job, not a red one. | **Cause located and fix verified — see §2.** GO's six optimizer cache/state structs bound their type parameters by the `OptimizerSolution` / `GradientArrayOrNamedTuple` / `GlobalSectionSingleOrNamedTuple` union aliases. Dropping those bounds takes the repro from *never completing* to ~14.5 s cold / 6.5 ms warm. Open upstream as [GO#45][go45], green on all fifteen checks; needs a GO 0.2.1 release. |
+| **R8** | Inference spun in method-table intersection whenever the optimizer path was compiled through a function. 1.12 jobs ran > 1 h 15 min vs ~25–48 min on `main`; run `31570166729` never left `julia-runtest`. A hung job, not a red one. | **Cause located and fix verified — see §2.** GO's optimizer cache and state structs bound their type parameters by the `OptimizerSolution` / `GradientArrayOrNamedTuple` / `GlobalSectionSingleOrNamedTuple` union aliases. Dropping those bounds takes the repro from *never completing* to ~14.5 s cold / 6.5 ms warm. Open upstream as [GO#45][go45] — reviewed, extended to every cache and state plus `OptimizerResult`, green on all fifteen checks; needs a GO 0.2.1 release. |
 | — | GML did not precompile on Julia 1.10 at all: `cannot assign a value to imported variable GeometricOptimizers.Manifold`. | Found during Phase 3 verification. `using GeometricOptimizers` was a blanket import, and GO exports ~20 names GML defines itself. Replaced with `import GeometricOptimizers` plus an explicit `using GeometricOptimizers: …` list. See §3 — this also fixed a silent correctness bug. |
 | — | A long job was indistinguishable from a hung one. | `test/runtests.jl` emits seven `@info` markers, one per testset group. Per §7.9, michakraus still needs to be told. |
 | — | Repo hygiene | PR-only workplan and inspection script removed; BFGS test renamed to `test/optimizers/gradient_optimizer.jl`; tracked MNIST PDFs and stray `.jld2` deleted; generated-artifact patterns added to `.gitignore`. |
@@ -129,19 +180,33 @@ intersection involving such a type re-solves that constraint system in
 but with the parameters independent and `s3<:Tuple`, which costs nothing to
 intersect.
 
-**Verified fix.** Dropping the bounds from all six structs —
-`struct AdamCache{T, MT, VT, ST} <: OptimizerCache{T}`, and the same for
-`AdamState`, `MomentumCache`, `MomentumState`, `GradientCache`, `GradientState` —
-takes the single-body repro from *never completing* to **~14.5 s cold / 6.5 ms
-warm**. Measured three times: twice against a throwaway copy of GO 0.2.0 and once
-against the real branch. Nothing else changed.
+**Verified fix.** Dropping the bounds — `struct AdamCache{T, MT, VT, ST} <:
+OptimizerCache{T}` and so on — takes the single-body repro from *never
+completing* to **~14.5 s cold / 6.5 ms warm**. Measured three times: twice
+against a throwaway copy of GO 0.2.0 and once against the real branch. Nothing
+else changed.
+
+The first cut of [GO#45][go45] did six structs; **review found that was not
+enough.** `BFGSCache`, `BFGSState` (which is also `DFPState`), `DFPCache` and
+`OptimizerResult`'s `VT` carried the same bounds, and `OptimizerState(_BFGS(),
+ps)` inferred to a *strictly worse* instance of the shape above — a free `T`
+across four parameters, two of the `NamedTuple`-of-`Vararg` unions written out in
+full, and the same `GlobalSection` `UnionAll` under a `Vararg`. Anyone choosing
+`_BFGS` or `_DFP` on `NamedTuple` or manifold parameters through a function hit
+the identical hang. The merged PR unbinds every cache and state, Newton included
+— whose bounds were never the expensive kind, but which come off so the family
+reads uniformly — and leaves `Optimizer`, `OptimizerProblem`, `HessianBFGS` and
+`HessianDFP` alone, since they are not per-method cache/state structs.
 
 No inner constructors are needed, contrary to what earlier revisions of this plan
-assumed: the invariant is already enforced by the outer constructors, whose own
+assumed: the invariant is already enforced by the constructors, whose own
 signatures take `x::OptimizerSolution{T}` and
 `g::AT where AT<:GradientArrayOrNamedTuple{T}` and build the `GlobalSection`
-themselves. That is the same guarantee, checked by dispatch, at no cost to
-inference.
+themselves — the same guarantee, checked by dispatch, at no cost to inference.
+An earlier draft of the GO#45 description went further and claimed inner
+constructors would *reintroduce* the subtyping query; that was wrong, and review
+caught it. An inner constructor's signature is a method signature like any other.
+What must not carry the aliases is the `struct` parameter list.
 
 **Not a GML-side fix.** Rewriting GML's `_make_optimizer_cache` /
 `_make_optimizer_state` from `isa` branches to dispatch was tried and measured:
@@ -247,6 +312,23 @@ skipped entirely. In `Project.toml`:
 `.github/workflows/CI.yml` is unchanged: 1.10 stays in the matrix.
 `docs/Project.toml` needs no change.
 
+**Still to do here, once GO 0.2.1 exists:** bump `GeometricOptimizers = "0.2"` to
+`"0.2.1"`. As a floor, not as tidiness — `"0.2"` lets the resolver pick 0.2.0 and
+silently reinstate the R8 hang, which presents as a job that never finishes
+rather than as a job that fails.
+
+Two `[compat]` entries worth a look while in here, neither urgent:
+
+* `ForwardDiff = "0.10, 1"` could tighten to `"1"`. GO requires 1, so the
+  resolver picks it regardless — confirmed, the manifest carries 1.4.5 — which
+  makes the `0.10` branch untestable and the bound misleading.
+* `LazyArrays = "=2.3.2"` is an exact pin and resolves happily against GO's
+  `"2"`. Leave it, but it is the first thing to relax if resolution ever fails.
+
+`SimpleSolvers` and `ParameterHandling` are **not** direct GML dependencies —
+nothing under `src/`, `ext/` or `test/` references them — so despite arriving
+through GO they need no compat entries.
+
 ### Phase 2 — Documentation and PDF builds
 
 **Done.** BFGS is gone from GML, so `docs/src/optimizers/bfgs_optimizer.md` was
@@ -317,7 +399,9 @@ experimental permanently, as in the other JuliaGNI repos. Remaining:
   there yet.
 * Confirm on the real matrix that `GeometricIntegrators 0.18.2` is selected. In
   the local resolve it is, and `GenericLinearAlgebra` is absent from the
-  manifest, which is R3 confirmed rather than assumed.
+  manifest, which is R3 confirmed rather than assumed. No refresh of any
+  generated environment is needed first: every `Manifest.toml` is gitignored
+  (`.gitignore:46`), so CI always resolves from scratch.
 * If 1.13 is then green, remove its experimental status.
 * Open the GML issue for restoring required 1.13 support — per §7.4, first check
   `RungeKutta`/`GeometricIntegrators` open issues for an existing
@@ -325,10 +409,21 @@ experimental permanently, as in the other JuliaGNI repos. Remaining:
 
 ### Phase 4 — R8
 
-Superseded by §2: located, fixed and verified. The remaining action is the GO
-0.2.1 release in Phase 0. Success criterion met locally —
-`test_accuracy(10, 6; n_epochs = 1)` compiles in ~14 s from cold instead of
-never finishing.
+Superseded by §2: located, fixed, reviewed and verified. Success criterion met
+locally — `test_accuracy(10, 6; n_epochs = 1)` compiles in ~14 s from cold
+instead of never finishing. What remains is release mechanics:
+
+1. Merge [GO#45][go45] (review addressed; fifteen checks green).
+2. Release and register GO **v0.2.1**. Owner: michakraus / JuliaGNI release
+   rights.
+3. Bump GML's floor to `GeometricOptimizers = "0.2.1"` — see Phase 1.
+4. Re-run the matrix against the success criterion below.
+
+**Cleanup, not blocking.** Two `state isa` branches remain in `_leaf_optim_step!`
+(`src/optimizers/optimizer.jl:182`, `:187`, for `AdamState`/`MomentumState`);
+the `adapted isa …` branch is already concrete dispatch via `_go_update_leaf!`.
+GO#45 did not need them converted, and §2 shows the traversal is unimplicated, so
+this is tidying — and it disappears entirely if the §5 move lands first.
 
 ### Phase 5 — Issue #234 (separate PR, does not block #230)
 
@@ -391,10 +486,25 @@ types — and some `Base` methods on GO types would become type piracy.
 Per §7.7 **all** of this moves to GO — not optional cleanup:
 
 * `AdamOptimizerWithDecay` (`src/optimizers/optimizer.jl:35`) — **done upstream**,
-  see below;
+  see below; the GML-side deletion is R11;
 * the traversal: `_make_optimizer_cache`, `_make_optimizer_state`,
   `_tree_optim_step!`, `_leaf_optim_step!`;
 * the bespoke `GMLEuclideanState` holding `m₁`/`m₂` by hand.
+
+**Done: `𝔄exp`.** `test/optimizers/utils/modified_exponential.jl` tested a
+one-line GML wrapper, `𝔄exp(X, Y) = I + X * 𝔄(X, Y) * Y'`, which this PR deleted
+along with the rest of GML's `modified_exponential.jl`. The test was left behind
+and referred to a function that then existed in neither package — the first thing
+to fail in the optimizer group once R8 stopped hiding it.
+
+Per §7.3 that is replicated GO functionality, so the sweep moved to GO rather
+than being restored here: `test/retractions/exponential_accuracy.jl` now checks
+``\mathbb{I} + B'\mathfrak{A}(B', B'')(B'')^T = \exp(B'(B'')^T)`` over
+`Float32`/`Float64` and every shape with `N = 1:10`, `n = 1:N` — 220 assertions,
+against `𝔄` directly. GO's docstring jldoctest asserted the same identity for a
+single 10×2 `Float64` lift, so the shape and element-type coverage is new there
+and nothing is lost here. The GML file and its `runtests.jl` entry are gone, and
+the remaining `Optimizer #n` labels were closed up.
 
 GO v0.2 already supports NamedTuple-valued solutions natively
 (`GradientArrayOrNamedTuple`, `OptimizerSolution`, `GlobalSection(::NamedTuple)`,
@@ -448,16 +558,20 @@ Phase 0  ── BLOCKING and entirely upstream:
             GeometricIntegrators 0.18.2  → unblocks resolution (R9)
             GeometricOptimizers 0.2.1    → unblocks the suite     (R8)
 
-Phase 1 (target-form Project.toml)          ── done
-Phase 2 (docs, retractions.md @ref)         ── done, unverifiable until Phase 0
+Phase 1 (target-form Project.toml)          ── done; floor → "0.2.1" after release
+Phase 2 (docs, seven @refs)                 ── done, unverifiable until Phase 0
 §3      (1.10 import fix + optimizer move)  ── done
+§5      (𝔄exp sweep moved to GO)            ── done
 Phase 3 (1.10/1.13 confirmation)            ── needs Phase 0
+R11     (delete GML's AdamOptimizerWithDecay) ── coupled to §5; un-export as stopgap
+R10     (input_dimension via ANN not SNN)   ── needs ANN input_dimension(::Chain)
 Phase 5 (#234)                              ── separate PR
 §5      (move traversal to GO)              ── follow-up; GO branch + GML issue
 ```
 
-Every GML-side item is done. Nothing further can go green until the four
-upstream releases land, and no amount of GML-side work substitutes for them.
+Every GML-side item that CI can see is done; R11 and R10 are real but neither
+turns a job red. Nothing goes green until the four upstream releases land, and no
+amount of GML-side work substitutes for them.
 
 ---
 
@@ -530,6 +644,11 @@ upstream releases land, and no amount of GML-side work substitutes for them.
 * [x] GML-side traversal rewrite measured and rejected as ineffective.
 * [x] Fix opened upstream as [GO#45][go45], green on all fifteen checks, with a
       regression test that pins the parameters as unbounded.
+* [x] [GO#45][go45] reviewed and the review addressed: extended from six structs
+      to every cache and state plus `OptimizerResult` — `BFGSState` was a worse
+      instance of the same shape — the test rewritten to assert `ub === Any` per
+      struct rather than throw, and the description's wrong claim about inner
+      constructors corrected.
 * [ ] [GO#45][go45] merged and GO 0.2.1 released. No inner constructors: the
       outer constructors already enforce the invariant (§2).
 * [ ] 1.12 × ubuntu completes in roughly the ~30 min it takes on `main` — a job
@@ -567,9 +686,15 @@ upstream releases land, and no amount of GML-side work substitutes for them.
       shipped in 0.2.0.
 * [ ] [GO#34][go34] answered: `AdamWithEuclideanDecay`'s default line search
       confirmed.
-* [ ] `AdamOptimizerWithDecay` deleted from `src/optimizers/optimizer.jl` and
-      call sites moved to `Optimizer(x, problem; AdamOptimizerWithDecay(n)...)` —
-      blocked on the §5 traversal move, see §5.
+* [ ] **R11** resolved: `AdamOptimizerWithDecay` deleted from
+      `src/optimizers/optimizer.jl` and call sites moved to
+      `Optimizer(x, problem; AdamOptimizerWithDecay(n)...)` — coupled to the §5
+      traversal move. Un-exporting it is the stopgap if that has to wait.
+* [x] `𝔄exp`: the orphaned GML test replaced by a shape and element-type sweep in
+      GO's `test/retractions/exponential_accuracy.jl`; GML's file and its
+      `runtests.jl` entry removed. See §5.
+* [ ] **R10**: ANN given `input_dimension(::Chain)`, SNN's pirated methods
+      dropped, GML's import moved from SNN to ANN.
 * [ ] GO branch opened for the §5 traversal (`_make_optimizer_cache`,
       `_make_optimizer_state`, `_tree_optim_step!`, `_leaf_optim_step!`,
       `GMLEuclideanState`); GML issue opened referencing both GO PRs.
