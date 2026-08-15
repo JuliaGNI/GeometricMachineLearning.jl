@@ -94,14 +94,8 @@ runtime type is a fully concrete nine-field `NamedTuple` of `AdamCache`s. Every
 subsequent call on that `Optimizer` therefore intersects an abstract signature
 against the whole method table, and that is the explosion.
 
-**Where the precision is lost.** Not in GML's traversal, but one level down, in
-GO's cache constructors. `OptimizerCache(Adam(Float64), ps.L1)` for a single
-layer's `(weight, bias, scale)` already infers to
-`AdamCache{Float64, NamedTuple{(:weight, :bias, :scale), var"#s179"}, …}` with a
-free type variable, and for a manifold leaf to
-`AdamCache{Float64, @NamedTuple{weight::Vararg{StiefelManifold{…}, N}}, …}` —
-note the `Vararg` leaking into a `NamedTuple` field. The cause is the bounds on
-the six struct definitions in
+**Where it comes from.** Not from GML's traversal, but one level down, from the
+bounds on GO's six cache and state structs in
 `src/manifold_optimizers/{adam,momentum,gradient}_optimizer.jl`:
 
 ```julia
@@ -111,16 +105,43 @@ struct AdamCache{T, MT<:OptimizerSolution{T},
 ```
 
 Those aliases are `Union`s of `UnionAll`s over `Tuple{Vararg{AbstractArray{T}}}`
-(`src/optimizer_solution.jl:1-26`). Solving the bound leaves a free typevar
-instead of pinning the concrete `NamedTuple`.
+(`src/optimizer_solution.jl:1-26`).
 
-**Verified fix.** In a throwaway copy of GO 0.2.0, dropping the bounds from all
-six structs — `struct AdamCache{T, MT, VT, ST} <: OptimizerCache{T}`, and the
-same for `AdamState`, `MomentumCache`, `MomentumState`, `GradientCache`,
-`GradientState` — takes the single-body repro from *never completing* to
-**14.25 s cold / 6.9 ms warm**. Nothing else changed. The invariant the bounds
-expressed should be enforced in inner constructors instead; behaviour is
-unchanged either way.
+It is worth being exact about *how* they hurt, because the obvious explanation is
+wrong. They do not cost concrete inference: `OptimizerCache(Adam(Float64), ps)`
+on a `NamedTuple` of parameters infers to a `UnionAll` with or without them, and
+removing them does not make it concrete. GO's outer constructors are written in
+the same aliases and are enough to cause that by themselves.
+
+What the bounds add is *coupling*. With them the inferred type is
+
+```julia
+AdamCache{T, NamedTuple{(:Y,:W,:b),s1}, NamedTuple{(:Y,:W,:b),s2}, NamedTuple{(:Y,:W,:b),s3}} where
+    {T, s1<:Tuple{Vararg{AbstractArray{T}}}, s2<:Tuple{Vararg{AbstractArray{T}}},
+        s3<:Tuple{Vararg{GlobalSection{T,AT,λT} where {AT<:AbstractArray{T},
+                                                       λT<:Union{Nothing,AbstractArray{T}}}}}}
+```
+
+— a single `T` tying all four parameters together under three nested `Vararg`
+unions, the last over a three-parameter `UnionAll`. Every method-table
+intersection involving such a type re-solves that constraint system in
+`subtype_unionall`. Without the bounds the same call infers to the same *shape*
+but with the parameters independent and `s3<:Tuple`, which costs nothing to
+intersect.
+
+**Verified fix.** Dropping the bounds from all six structs —
+`struct AdamCache{T, MT, VT, ST} <: OptimizerCache{T}`, and the same for
+`AdamState`, `MomentumCache`, `MomentumState`, `GradientCache`, `GradientState` —
+takes the single-body repro from *never completing* to **~14.5 s cold / 6.5 ms
+warm**. Measured three times: twice against a throwaway copy of GO 0.2.0 and once
+against the real branch. Nothing else changed.
+
+No inner constructors are needed, contrary to what earlier revisions of this plan
+assumed: the invariant is already enforced by the outer constructors, whose own
+signatures take `x::OptimizerSolution{T}` and
+`g::AT where AT<:GradientArrayOrNamedTuple{T}` and build the `GlobalSection`
+themselves. That is the same guarantee, checked by dispatch, at no cost to
+inference.
 
 **Not a GML-side fix.** Rewriting GML's `_make_optimizer_cache` /
 `_make_optimizer_state` from `isa` branches to dispatch was tried and measured:
@@ -200,10 +221,12 @@ GI's CompatHelper PR [#239][gi239] does the same bump on `main` and has only its
 
 [gi239]: https://github.com/JuliaGNI/GeometricIntegrators.jl/pull/239
 
-Alongside: **GO 0.2.1 with the §2 struct-bound fix.** Per §7.6 this waits for a
-patch release because it does not change the API — the bounds are removed from
-the type parameters, not from the values the constructors accept. Until it is
-out, CI cannot pass even once resolution works, because R8 returns.
+Alongside: **GO 0.2.1 with the §2 struct-bound fix**, opened as a PR from
+`inference-friendly-cache-parameters`. Per §7.6 this belongs in a patch release
+because it does not change the API — the bounds come off the type parameters,
+not off what the constructors accept, and the outer constructors still reject
+exactly what they always did. Until it is out, CI cannot pass even once
+resolution works, because R8 returns.
 
 ### Phase 1 — Make GML resolvable
 
@@ -500,11 +523,15 @@ upstream releases land, and no amount of GML-side work substitutes for them.
 
 **R8**
 * [x] Cause located by profiling, not inferred from backtraces (§2).
-* [x] Fix verified in a throwaway GO copy: repro goes from never completing to
-      14.25 s cold / 6.9 ms warm.
+* [x] Fix verified: repro goes from never completing to ~14.5 s cold / 6.5 ms
+      warm, measured twice against a throwaway GO copy and once against the
+      branch below.
 * [x] GML-side traversal rewrite measured and rejected as ineffective.
-* [ ] GO 0.2.1 released with the six struct bounds removed and the invariant
-      moved into inner constructors.
+* [x] Fix opened against GO on `inference-friendly-cache-parameters`, with GO's
+      own suite green and a regression test that pins the parameters as
+      unbounded.
+* [ ] GO 0.2.1 released with the six struct bounds removed. No inner
+      constructors: the outer constructors already enforce the invariant (§2).
 * [ ] 1.12 × ubuntu completes in roughly the ~30 min it takes on `main` — a job
       that passes after several hours has outlasted R8, not fixed it.
 * [ ] All three 1.12 jobs pass.
