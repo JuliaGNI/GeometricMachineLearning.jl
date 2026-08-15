@@ -129,6 +129,13 @@ reading the export list — the list spans continuation lines, and reading it mi
   CI too. It had never been seen because the compile-time stall above hung the suite in the
   reduced-order-modeling group, which runs first.
 
+- **Four wrong assertions in the `batch.jl` doctests.** The doctests were rewritten on this branch
+  to assert rather than print, and three of the assertions compared a `Tuple` against a `Vector`
+  (`length.(batches) == [2, 2, 1]`, where the value is `(2, 2, 1)` — never equal in Julia), while a
+  fourth expected five index pairs from a time-series `DataLoader` that yields four. They failed the
+  Documentation and PDF workflows, which run `make test_docs`; `makedocs` itself has
+  `doctest = false`, so nothing else would have caught them.
+
 - **Seven unresolvable documentation cross-references.** With no `@autodocs` block anywhere, an
   `@ref` resolves only if some `@docs` entry documents that binding. `GeometricMachineLearning.𝔄`,
   `cayley`, `cayley(::StiefelLieAlgHorMatrix)`, `cayley(::StiefelManifold, ::AbstractMatrix)`,

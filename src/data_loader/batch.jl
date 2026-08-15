@@ -28,7 +28,7 @@ batch = Batch(2)
 batches = batch(dl)
 
 @assert length(batches) == 3
-@assert length.(batches) == [2, 2, 1]
+@assert length.(batches) == (2, 2, 1)
 @assert sort(collect(union(batches...))) == [(1, i) for i in 1:5]
 
 true
@@ -126,9 +126,9 @@ batches₂ = batch(dl₂)
 
 @assert number_of_batches(dl₁, batch) == 2
 @assert number_of_batches(dl₂, batch) == 2
-@assert length.(batches₁) == [3, 1]
-@assert length.(batches₂) == [3, 2]
-@assert sort(collect(union(batches₁...))) == [(i, 1) for i in 1:5]
+@assert length.(batches₁) == (3, 1)
+@assert length.(batches₂) == (3, 2)
+@assert sort(collect(union(batches₁...))) == [(i, 1) for i in 1:4]
 @assert sort(collect(union(batches₂...))) == [(1, i) for i in 1:5]
 
 true
