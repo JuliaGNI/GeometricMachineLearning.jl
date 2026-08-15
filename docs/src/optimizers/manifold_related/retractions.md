@@ -49,7 +49,7 @@ Main.remark(raw"We can also use the Cayley retraction at a different point than 
 " * Main.indentation * raw"is a retraction ``\forall{}\bar{A}\in{}SO(N)``.")
 ```
 
-As a retraction is always an approximation of the geodesic map, we now compare the [`cayley`](@ref) retraction for the example we introduced along [Riemannian manifolds](@ref "Geodesic Sprays and the Exponential Map"):
+As a retraction is always an approximation of the geodesic map, we now compare the `cayley` retraction for the example we introduced along [Riemannian manifolds](@ref "Geodesic Sprays and the Exponential Map"):
 
 ```@setup s2_retraction
 using GLMakie
@@ -208,7 +208,7 @@ nothing
 
 The way we use *retractions*[^1] in `GeometricMachineLearning` is slightly different from their classical definition:
 
-[^1]: Classical retractions are also defined in `GeometricMachineLearning` under the same name, i.e. there is e.g. a method [`cayley(::StiefelLieAlgHorMatrix)`](@ref) and a method [`cayley(::StiefelManifold, ::AbstractMatrix)`](@ref) (the latter being the classical retraction); but the user is *strongly discouraged* from using classical retractions as these are computationally inefficient.
+[^1]: Classical retractions are also defined in `GeometricMachineLearning` under the same name, i.e. there is e.g. a method `cayley(::StiefelLieAlgHorMatrix)` and a method `cayley(::StiefelManifold, ::AbstractMatrix)` (the latter being the classical retraction); but the user is *strongly discouraged* from using classical retractions as these are computationally inefficient.
 
 ```@eval
 Main.definition(raw"Given a section ``\lambda:\mathcal{M}\to{}G,`` where ``\mathcal{M}`` is a homogeneous space, a **retraction** is a map ``\mathrm{Retraction}:\mathfrak{g}^\mathrm{hor}\to{}G`` such that 
@@ -314,7 +314,7 @@ and
 \mathtt{cayley}: \mathfrak{g}^\mathrm{hor} \to G, \bar{B} \mapsto \mathrm{Cayley}(\bar{B}),
 ```
 
-where ``\bar{B} = \lambda(Y)^{-1}\Omega(\Delta)\lambda(Y)``. These expressions for `geodesic` and `cayley` are the ones that we typically use in `GeometricMachineLearning` for computational reasons. We show how we can utilize the sparse structure of ``\mathfrak{g}^\mathrm{hor}`` for computing the geodesic retraction and the Cayley retraction (i.e. the expressions ``\exp(\bar{B})`` and ``\mathrm{Cayley}(\bar{B})`` for ``\bar{B}\in\mathfrak{g}^\mathrm{hor}``). Similar derivations can be found in [celledoni2000approximating, fraikin2007optimization, bendokat2021real](@cite).
+where ``\bar{B} = \lambda(Y)^{-1}\Omega(\Delta)\lambda(Y)``. These expressions for [`geodesic`](@ref) and `cayley` are the ones that we typically use in `GeometricMachineLearning` for computational reasons. We show how we can utilize the sparse structure of ``\mathfrak{g}^\mathrm{hor}`` for computing the geodesic retraction and the Cayley retraction (i.e. the expressions ``\exp(\bar{B})`` and ``\mathrm{Cayley}(\bar{B})`` for ``\bar{B}\in\mathfrak{g}^\mathrm{hor}``). Similar derivations can be found in [celledoni2000approximating, fraikin2007optimization, bendokat2021real](@cite).
 
 ```@eval
 Main.remark(raw"Further note that, even though the global section ``\lambda:\mathcal{M} \to G`` is not unique, the final geodesic ``\gamma_\Delta(t) = \lambda(Y)\exp(\lambda(Y)^{-1}\Omega(\Delta)\lambda(Y))E`` does not depend on the particular section we choose.")
@@ -342,7 +342,7 @@ We further use the following:
     \end{aligned}
 ```
 
-where we defined ``\mathfrak{A}(B', B'') := \sum_{n=1}^\infty \frac{1}{n!} ((B'')^TB')^{n-1}.`` Note that evaluating ``\mathfrak{A}`` relies on computing products of *small* matrices of size ``2n\times2n.`` We do this by relying on a simple Taylor expansion (see the docstring for [`GeometricMachineLearning.𝔄`](@ref)). 
+where we defined ``\mathfrak{A}(B', B'') := \sum_{n=1}^\infty \frac{1}{n!} ((B'')^TB')^{n-1}.`` Note that evaluating ``\mathfrak{A}`` relies on computing products of *small* matrices of size ``2n\times2n.`` We do this by relying on a simple Taylor expansion, implemented as `GeometricOptimizers.𝔄` (see the [`GeometricOptimizers` documentation](https://juliagni.github.io/GeometricOptimizers.jl/stable/) for its docstring). 
 
 The final expression we obtain is: 
 

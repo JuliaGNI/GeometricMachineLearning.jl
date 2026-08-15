@@ -73,11 +73,11 @@ and then perform all the steps of the optimizer in ``\mathfrak{g}^\mathrm{hor}.`
 This picture summarizes all steps involved in an optimization step:
 1. map the Euclidean gradient ``\nabla{}L\in\mathbb{R}^{N\times{}n}`` that was obtained via [automatic differentiation](@ref "Pullbacks and Automatic Differentiation") to the Riemannian gradient ``\mathrm{grad}L\in{}T_Y\mathcal{M}`` with the function [`rgrad`](@ref),
 2. obtain the global tangent space representation of ``\mathrm{grad}L`` in ``\mathfrak{g}^\mathrm{hor}`` with the function [`global_rep`](@ref),
-3. perform an [`update!`](@ref); this consists of two steps: (i) update the cache and (ii) output a *final velocity*,
+3. perform an `update!`; this consists of two steps: (i) update the cache and (ii) output a *final velocity*,
 4. use this final velocity to update the [global section](@ref "Global Sections") ``\Lambda\in{}G,``
 5. use the updated global section to update the neural network weight ``\in\mathcal{M}.`` This is done with [`apply_section`](@ref).
 
-The `cache` stores information about previous optimization steps and is dependent on the optimizer. Typically the cache is represented as one or more elements in ``\mathfrak{g}^\mathrm{hor}``. Based on this the optimizer method (represented by [`update!`](@ref) in the figure) computes a *final velocity*. This final velocity is again an element of ``\mathfrak{g}^\mathrm{hor}``. The particular form of the cache and the updating rule depends on which [optimizer method we use](@ref "Standard Neural Network Optimizers").
+The `cache` stores information about previous optimization steps and is dependent on the optimizer. Typically the cache is represented as one or more elements in ``\mathfrak{g}^\mathrm{hor}``. Based on this the optimizer method (represented by `update!` in the figure) computes a *final velocity*. This final velocity is again an element of ``\mathfrak{g}^\mathrm{hor}``. The particular form of the cache and the updating rule depends on which [optimizer method we use](@ref "Standard Neural Network Optimizers").
 
 The final velocity is then fed into a [retraction](@ref "Retractions")[^2]. For computational reasons we split the retraction into two steps, referred to as "Retraction" and [`apply_section`](@ref) above. These two mappings together are equivalent to: 
 

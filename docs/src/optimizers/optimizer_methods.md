@@ -157,6 +157,10 @@ o.cache.Y
 The method types and caches are provided by `GeometricOptimizers`; GML's
 [`Optimizer`](@ref) adapts them to neural-network and manifold parameters.
 
+```@docs
+AdamOptimizerWithDecay
+```
+
 ```@raw latex
 \begin{comment}
 ```

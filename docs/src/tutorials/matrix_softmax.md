@@ -84,7 +84,7 @@ nn1 = NeuralNetwork(arch1)
 nn2 = NeuralNetwork(arch2)
 ```
 
-Training is done with the [`Adam`](@ref):
+Training is done with the `Adam`:
 
 ```@example softmax_comparison
 o_method = Adam()
