@@ -1,8 +1,8 @@
 module GeometricMachineLearning
 
 using AbstractNeuralNetworks
-using BandedMatrices
 using ChainRulesCore
+# `sqeuclidean` is the default distance of every `TrainingMethod` in `src/training_method/`.
 using Distances
 using GeometricBase
 using GeometricSolutions: GeometricSolution, EnsembleSolution, DataSeries, StateVariable,

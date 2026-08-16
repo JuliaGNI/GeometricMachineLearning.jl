@@ -5,11 +5,9 @@ authors = ["Michael Kraus <michael.kraus@ipp.mpg.de>"]
 
 [deps]
 AbstractNeuralNetworks = "60874f82-5ada-4c70-bd1c-fa6be7711c8a"
-BandedMatrices = "aae01518-5342-5314-be14-df237901396f"
 ChainRules = "082447d4-558c-5d27-93f4-14fc19e9eca2"
-ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-ChainRulesTestUtils = "cdddcdb0-9152-4a09-a978-84456f9df70a"
 Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
+ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 GeometricBase = "9a0b12b7-583b-4f04-aa1f-d8551b6addc9"
 GeometricEquations = "c85262ba-a08a-430a-b926-d29770767bf2"
@@ -20,30 +18,26 @@ KernelAbstractions = "63c18a36-062a-441e-b654-da1e3ab1ce7c"
 LazyArrays = "5078a376-72f3-5289-bfd5-ec5146d43c02"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 NNlib = "872c559c-99b0-510c-b3b7-b6c96a88d5cd"
-Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
-SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
-SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
-StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 SymbolicNeuralNetworks = "aed23131-dcd0-47ca-8090-d21e605652e3"
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
-ZygoteRules = "700de1a5-db45-46bc-99cf-38207098b444"
 
 [weakdeps]
 HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
+
+[sources]
+GeometricOptimizers = {path = "../GeometricOptimizers"}
 
 [extensions]
 HDF5Ext = "HDF5"
 
 [compat]
 AbstractNeuralNetworks = "0.6.4"
-BandedMatrices = "1"
 ChainRules = "1"
 ChainRulesCore = "1"
-ChainRulesTestUtils = "1"
 Distances = "0.10"
 ForwardDiff = "0.10, 1"
 GeometricBase = "0.14"
@@ -57,27 +51,21 @@ LazyArrays = "=2.3.2"
 NNlib = "0.8, 0.9"
 ProgressMeter = "1"
 SafeTestsets = "0.1"
-StatsBase = "0.33, 0.34"
 SymbolicNeuralNetworks = "0.5"
 Symbolics = "7"
 TimerOutputs = "0.5, 1"
 Zygote = "0.6"
-ZygoteRules = "0.2.7"
 julia = "1.10"
 
 [extras]
-Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 ChainRulesTestUtils = "cdddcdb0-9152-4a09-a978-84456f9df70a"
-Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 FiniteDifferences = "26cc04aa-876d-5657-8c51-4c34ba976000"
-GeometricEquations = "c85262ba-a08a-430a-b926-d29770767bf2"
 GeometricIntegrators = "dcce2d33-59f6-5b8d-9047-0defad88ae06"
 GeometricProblems = "18cb22b4-ad41-5c80-9c5f-710df63fbdc9"
 HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
-Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
-RungeKutta = "fb486d5c-30a0-4a8a-8415-a8b4ace5a6f7"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Documenter", "ChainRulesTestUtils", "HDF5", "Random", "SafeTestsets", "Test", "GeometricProblems", "FiniteDifferences", "GeometricIntegrators"]
+test = ["ChainRulesTestUtils", "HDF5", "Printf", "SafeTestsets", "Test", "GeometricProblems", "FiniteDifferences", "GeometricIntegrators"]
