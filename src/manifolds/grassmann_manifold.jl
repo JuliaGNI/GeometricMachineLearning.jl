@@ -193,7 +193,8 @@ Compute the Cayley retraction of an element of [`GrassmannLieAlgHorMatrix`](@ref
 
 This is equivalent to [`cayley(::StiefelLieAlgHorMatrix)`](@ref) with ``A = \mathbb{O}``.
 """
-function GeometricOptimizers.cayley(B::GrassmannLieAlgHorMatrix{T}) where T
+function GeometricOptimizers.cayley(B::GrassmannLieAlgHorMatrix)
+    T = eltype(B)
     backend = networkbackend(B)
     E = StiefelProjection(B)
     𝕆 = KernelAbstractions.zeros(backend, T, B.n, B.n)

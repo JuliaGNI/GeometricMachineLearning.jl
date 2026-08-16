@@ -1,6 +1,4 @@
 using GeometricMachineLearning
-# `import`, not `using`: GeometricOptimizers exports ~20 names that GML also defines
-import GeometricOptimizers
 using HDF5
 using AbstractNeuralNetworks
 using Documenter
@@ -342,13 +340,15 @@ index_latex_pages = vcat([Dict(_latex_pages)[key] for key in _keys]...)
 
 makedocs(;
     plugins = [bib],
-    # `GeometricOptimizers` is listed so that the docstrings GML re-exports from it (`GlobalSection`,
-    # `global_rep`, `apply_section`, `geodesic`, `GradientMethod`, ...) can be included in `@docs`
-    # blocks and referenced with `@ref`. `checkdocs_ignored_modules` keeps the `missing_docs` check
-    # from demanding that this manual document all of GeometricOptimizers as well.
-    modules = [GeometricMachineLearning, Base.get_extension(GeometricMachineLearning, :HDF5Ext),
-               GeometricOptimizers],
-    checkdocs_ignored_modules = [GeometricOptimizers],
+    # `GeometricOptimizers` is deliberately *not* listed. `@docs` filters candidate docstrings by
+    # the module they were written in (`d.data[:module]`), not by the module of the binding, so the
+    # `geodesic`/`cayley` methods GML defines on GeometricOptimizers' functions are found from here
+    # anyway. Listing GeometricOptimizers would instead (i) make `missing_docs` demand that this
+    # manual document all 147 of its docstrings — `checkdocs_ignored_modules` does not help, it only
+    # skips *sub*modules — and (ii) pull GeometricOptimizers' own docstrings in, whose internal
+    # `@ref`s resolve in its namespace and point at bindings this manual does not document.
+    # Names owned by GeometricOptimizers are referred to as plain code with a link to its manual.
+    modules = [GeometricMachineLearning, Base.get_extension(GeometricMachineLearning, :HDF5Ext)],
     authors = "Michael Kraus, Benedikt Brantner",
     repo = "https://github.com/JuliaGNI/GeometricMachineLearning.jl/blob/{commit}{path}#L{line}",
     sitename = "GeometricMachineLearning.jl",

@@ -327,7 +327,8 @@ We use the decomposition
 together with the Sherman-Morrison-Woodbury formula, so that only matrices of size
 ``2n\times2n`` have to be inverted.
 """
-function GeometricOptimizers.cayley(B::StiefelLieAlgHorMatrix{T}) where T
+function GeometricOptimizers.cayley(B::StiefelLieAlgHorMatrix)
+    T = eltype(B)
     E = StiefelProjection(B)
     𝕀_small = one(B.A)
     𝕆 = zero(𝕀_small)

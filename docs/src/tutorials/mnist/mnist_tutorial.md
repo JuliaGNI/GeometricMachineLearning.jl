@@ -115,7 +115,7 @@ loss_array1 = opt1(nn1, dl, batch, n_epochs, FeedForwardLoss())
 loss_array2 = opt2(nn2, dl, batch, n_epochs, FeedForwardLoss())
 ```
 
-We furthermore optimize the second neural network (with weights on the manifold) with the [`GradientMethod`](@ref) and the `MomentumMethod`:
+We furthermore optimize the second neural network (with weights on the manifold) with the `GradientMethod` and the `MomentumMethod`:
 
 ```@example mnist
 nn3 = NeuralNetwork(model2, backend, T)

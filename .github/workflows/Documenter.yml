@@ -34,6 +34,11 @@ jobs:
       - name: Make MNIST image
         run: make all -C docs/src/tutorials/mnist
       - uses: julia-actions/julia-buildpkg@v1
+      # Checks `@docs`/`@ref` resolution and `missing_docs` without building the pages. The full
+      # build takes hours before it reports these, and they are the errors a docs change is most
+      # likely to introduce, so run them first and fail fast.
+      - name: Check docstring references
+        run: julia --project=docs docs/check_references.jl
       - uses: julia-actions/julia-docdeploy@v1
         with:
           prefix: xvfb-run

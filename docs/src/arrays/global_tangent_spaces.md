@@ -122,7 +122,7 @@ Y = rand(StiefelManifold, N, n)
 round.(λY_mat' * ΩΔ * λY_mat; digits = 3)
 ```
 
-Performing this computation directly is computationally very inefficient however and the user is strongly discouraged to call `Matrix` on an instance of [`GlobalSection`](@ref). The better option is calling [`global_rep`](@ref):
+Performing this computation directly is computationally very inefficient however and the user is strongly discouraged to call `Matrix` on an instance of `GlobalSection`. The better option is calling `global_rep`:
 
 ```@example global_section
 using GeometricMachineLearning: _round # hide
@@ -130,7 +130,7 @@ using GeometricMachineLearning: _round # hide
 _round(global_rep(λY, Δ); digits = 3)
 ```
 
-Internally [`GlobalSection`](@ref) calls the function [`GeometricMachineLearning.global_section`](@ref) which does the following for the Stiefel manifold: 
+Internally `GlobalSection` calls the function [`GeometricMachineLearning.global_section`](@ref) which does the following for the Stiefel manifold: 
 
 ```julia
 A = randn(N, N - n) # or the gpu equivalent
@@ -160,7 +160,7 @@ Main.proof(raw"The second property is trivially satisfied because the ``Q`` comp
 " * Main.indentation * raw"Now all the coefficients ``r_{ii}`` are non-zero because the matrix we performed the ``QR`` decomposition on has full rank and we can see that if ``(Y^TQ)R`` is zero ``Y^TQ`` also has to be zero.")
 ```
 
-The function [`global_rep`](@ref) furthermore makes use of the following:
+The function `global_rep` furthermore makes use of the following:
 
 ```math
     \mathtt{global\_rep}(Y) = \lambda(Y)^T\Omega(Y,\Delta)\lambda(Y) = EY^T\Delta{}E^T + \begin{bmatrix} \mathbb{O} \\ \bar{\lambda}^T\Delta{}E^T \end{bmatrix} - \begin{bmatrix} \mathbb{O} & E\Delta^T\bar{\lambda} \end{bmatrix},
@@ -183,7 +183,7 @@ Main.proof(raw"We derive the expression above:
 " * Main.indentation * raw"which proofs our assertion.")
 ```
 
-This expression of [`global_rep`](@ref) means we only need ``Y^T\Delta`` and ``\bar{\lambda}^T\Delta`` and this is what is used internally.
+This expression of `global_rep` means we only need ``Y^T\Delta`` and ``\bar{\lambda}^T\Delta`` and this is what is used internally.
 
 We now discuss the global tangent space for the Grassmann manifold. This is similar to the Stiefel case.
 
@@ -223,15 +223,15 @@ StiefelLieAlgHorMatrix(::AbstractMatrix, ::Int)
 GrassmannLieAlgHorMatrix
 GrassmannLieAlgHorMatrix(::AbstractMatrix, ::Int)
 vec(::StiefelLieAlgHorMatrix)
-GlobalSection
-Matrix(::GlobalSection)
-apply_section
-apply_section!
-*(::GeometricOptimizers.GlobalSection, ::GeometricOptimizers.Manifold)
 GeometricMachineLearning.global_section(::StiefelManifold{T}) where T
 GeometricMachineLearning.global_section(::GrassmannManifold{T}) where T
-global_rep
 ```
+
+`GlobalSection` itself, together with `Matrix(::GlobalSection)`, `apply_section`,
+`apply_section!`, `λY * Y` and `global_rep`, is provided by
+[`GeometricOptimizers`](https://juliagni.github.io/GeometricOptimizers.jl/stable/) and documented in
+its manual; `GeometricMachineLearning` re-exports these names and supplies the methods for its own
+manifold types.
 
 
 ```@raw latex

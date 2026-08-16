@@ -107,7 +107,7 @@ nn = NeuralNetwork(model, CPU(), Float64)
 nothing # hide
 ```
 
-We then *lift* the neural network parameters via [`GlobalSection`](@ref).
+We then *lift* the neural network parameters via `GlobalSection`.
 
 ```@example rosenbrock
 λY = GlobalSection(params(nn))
