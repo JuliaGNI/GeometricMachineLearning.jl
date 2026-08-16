@@ -28,8 +28,26 @@ upgrading.
 
 ### Removed (breaking)
 
-- **`BFGSOptimizer` and `BFGSCache`.** GeometricOptimizers has `_BFGS()` and its own cache. GML's
-  copies were a replication of it and are gone, along with `docs/src/optimizers/bfgs_optimizer.md`.
+- **`BFGSOptimizer` and `BFGSCache`**, along with `docs/src/optimizers/bfgs_optimizer.md`.
+
+  This entry used to say that GeometricOptimizers "has `_BFGS()` and its own cache" and that GML's
+  copies "were a replication of it". **That is wrong, and BFGS training of a neural network is
+  currently lost rather than relocated.** The two are different algorithms:
+
+  | | GML's `BFGSOptimizer(η, δ)` | GeometricOptimizers' `BFGS` |
+  |---|---|---|
+  | driven by | `optimization_step!`, gradient only | a cache holding an inverse-Hessian approximation |
+  | step | fixed learning rate `η` | quasi-Newton direction, `Q` sized by the *flattened* parameters |
+  | fits GML's per-leaf tree update? | yes — that is what it was for | no |
+
+  `_is_go_native_method` therefore sends `BFGS` down GML's Euclidean path, where
+  `_euclidean_update!` has no method for it and the step raises a `MethodError`. Bridging it needs
+  `_fill!`, `_difference!`, `outer!` and the `ParameterHandling.flatten` round-trip taught about
+  GML's manifold and lift types — GML's `StiefelManifold` is a *different type* from
+  GeometricOptimizers', and the two hierarchies are unrelated, so none of GO's `Manifold` methods
+  apply. That work is not done.
+
+  Until it is, use `AdamOptimizer()`, `MomentumOptimizer()` or `GradientOptimizer()`.
 - **`SymplecticStiefelManifold`.** Never reachable — the file that defined it was commented out of
   the module.
 - **`default_optimizer`.** The optimizer is now always given explicitly.
