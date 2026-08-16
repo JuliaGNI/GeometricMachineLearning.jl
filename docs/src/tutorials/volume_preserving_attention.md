@@ -339,7 +339,7 @@ GeometricMachineLearning.DummyTransformer
 ```@raw latex
 \section*{Chapter Summary}
 
-In this chapter we showed concrete examples of how to improve transformer neural networks by imbuing them with structure. The two examples we gave were (i) enforcing orthogonality constraints for some of the weights in a vision transformer (i.e. putting some of the weights on the \textit{Stiefel manifold}) and (ii) using a volume-preserving transformer to learn the dynamics of a rigid body. In both cases we observed big improvements over the standard transformer that does not consider structure. In the first case the network was not able to learn anything if orthogonality constraints were not imposed and in the second case we obtained greatly improved long-time performance. At the end we also compared two different approaches to designing the volume-preserving transformer: computing correlations based on a \textit{skew-symmetric weighting} and \textit{computing correlations based on an arbitrary weighting}. We saw that often the arbitrary weighting should be preferred over the skew-symmetric weighting, but the arbitrary weighting may also fail in other cases.
+In this chapter we showed a concrete example of how to improve transformer neural networks by imbuing them with structure: using a volume-preserving transformer to learn the dynamics of a rigid body. We observed big improvements over the standard transformer that does not consider structure, in the form of greatly improved long-time performance. At the end we also compared two different approaches to designing the volume-preserving transformer: computing correlations based on a \textit{skew-symmetric weighting} and \textit{computing correlations based on an arbitrary weighting}. We saw that often the arbitrary weighting should be preferred over the skew-symmetric weighting, but the arbitrary weighting may also fail in other cases.
 ```
 
 ```@raw html
@@ -352,7 +352,6 @@ In this chapter we showed concrete examples of how to improve transformer neural
 Pages = []
 Canonical = false
 
-brantner2023generalizing
 brantner2025volume
 ```
 

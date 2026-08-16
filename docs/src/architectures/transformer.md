@@ -57,7 +57,7 @@ the *downscaling layer*. Both of these layers are dense layers with the activati
 StandardTransformerIntegrator
 Transformer
 ClassificationTransformer
-GeometricMachineLearning.ClassificationLayer
+ClassificationLayer
 GeometricMachineLearning.assign_output_estimate
 ```
 

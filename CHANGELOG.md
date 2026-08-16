@@ -37,38 +37,36 @@ upgrading.
   `𝔄` was already GeometricOptimizers'; `𝔄exp` moved there in
   [GeometricOptimizers#45](https://github.com/JuliaGNI/GeometricOptimizers.jl/pull/45), where it now
   defaults to `ScaledSquaring()` rather than the unscaled Taylor series. Neither was exported.
-
 - **`split_and_flatten` and `onehotbatch`**, together with `src/data_loader/mnist_utils.jl` and the
   unexported index arithmetic behind them (`patch_index`, `within_patch_index`, `index_conversion`).
-
 - **`DataLoader(::AbstractArray{T, 3}, ::AbstractVector)`**, the image-classification constructor.
   Its own docstring described it as "tailored towards being used with the package MLDatasets.jl",
   which is what made it the cut. Every other `DataLoader` constructor is unchanged.
 
-  All of this moved to **[GMLDatasets](https://github.com/JuliaGNI/GMLDatasets.jl)**, along with the
-  MNIST tutorial and the MNIST scripts. GML is a library for scientific machine learning and had no
-  business pulling an image-dataset package into its documentation build to document itself — the
-  MNIST tutorial *downloaded the data set every time the docs were built*. `MLDatasets` is now
-  absent from `docs/Project.toml` and `scripts/Project.toml`, and the docs build is offline again.
+**The MNIST material moved to [GMLDatasets](https://github.com/JuliaGNI/GMLDatasets.jl).** That is
+the last two entries above, along with the MNIST tutorial and the MNIST scripts. GML is a library
+for scientific machine learning and had no business pulling an image-dataset package into its
+documentation build to document itself — the MNIST tutorial *downloaded the data set every time the
+docs were built*. `MLDatasets` is now absent from `docs/Project.toml` and `scripts/Project.toml`,
+and the docs build is offline again.
 
-  No deprecation shims: GMLDatasets depends on GML, so a forwarding shim here would be a dependency
-  cycle. To port a script, add GMLDatasets and change the data-loading lines:
+No deprecation shims: GMLDatasets depends on GML, so a forwarding shim here would be a dependency
+cycle. To port a script, add GMLDatasets and change the data-loading lines:
 
-  ```julia
-  # before
-  using GeometricMachineLearning
-  import MLDatasets
-  train_x, train_y = MLDatasets.MNIST(split = :train)[:]
-  dl = DataLoader(train_x, train_y; patch_length = 7)
+```julia
+# before
+using GeometricMachineLearning
+import MLDatasets
+train_x, train_y = MLDatasets.MNIST(split = :train)[:]
+dl = DataLoader(train_x, train_y; patch_length = 7)
 
-  # after
-  using GeometricMachineLearning, GMLDatasets
-  dl = mnist_data_loader(:train; patch_length = 7)
-  ```
+# after
+using GeometricMachineLearning, GMLDatasets
+dl = mnist_data_loader(:train; patch_length = 7)
+```
 
-  What stayed: `ClassificationTransformer`, `ClassificationLayer`, `ClassificationTransformerLoss`
-  and `accuracy`. None of them is specific to image data, and they are what GMLDatasets' tutorial
-  trains.
+What stayed: `ClassificationTransformer`, `ClassificationLayer`, `ClassificationTransformerLoss` and
+`accuracy`. None of them is specific to image data, and they are what GMLDatasets' tutorial trains.
 
 `BFGSOptimizer`, `BFGSCache`, `SymplecticStiefelManifold`, `default_optimizer`, `split_and_flatten`
 and `onehotbatch` are the whole of the change to the exported surface, checked against
