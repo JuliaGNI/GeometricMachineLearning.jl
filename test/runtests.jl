@@ -126,6 +126,12 @@ end
 @safetestset "Gradient optimizer tests                                                        " begin
     include("optimizers/gradient_optimizer.jl")
 end
+@safetestset "Momentum optimizer tests                                                        " begin
+    include("optimizers/momentum_optimizer.jl")
+end
+@safetestset "Optimizers with structured (non-manifold) weights                               " begin
+    include("optimizers/structured_array_parameters.jl")
+end
 @info "Starting data and data-loader tests"
 @safetestset "Data                                                                            " begin
     include("data/test_data.jl")
