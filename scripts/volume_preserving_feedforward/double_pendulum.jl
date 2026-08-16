@@ -1,6 +1,6 @@
 using Zygote: gradient, pullback
 using GeometricMachineLearning
-using Plots
+using CairoMakie
 using GeometricIntegrators: integrate, ImplicitMidpoint
 using GeometricProblems.DoublePendulum: hodeproblem, default_parameters, timespan, hamiltonian, ϑ
 using GeometricEquations: EnsembleProblem
@@ -82,5 +82,9 @@ ics = (q = θ₀_val, p = p₀_val)
 numerical, t_array = numerical_solution(ics, sys_dim, t_validation, timestep, default_parameters)
 nn₂_solution = iterate(nn₂, numerical[:, 1]; n_points = Int(t_validation / timestep) + 1)
 
-p_validation = plot(t_array, numerical[1, :], label = "numerical solution", color = 1, linewidth = 2)
-plot!(p_validation, t_array, nn₂_solution[1, :], label = "feedforward", color = 3, linewidth = 2)
+fig_validation = Figure()
+ax_validation = Axis(fig_validation[1, 1]; xlabel = L"t", ylabel = L"q_1")
+lines!(ax_validation, t_array, numerical[1, :]; label = "numerical solution", color = Makie.wong_colors()[1], linewidth = 2)
+lines!(ax_validation, t_array, nn₂_solution[1, :]; label = "feedforward", color = Makie.wong_colors()[3], linewidth = 2)
+axislegend(ax_validation)
+p_validation = fig_validation

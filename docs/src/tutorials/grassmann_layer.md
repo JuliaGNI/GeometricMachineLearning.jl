@@ -31,9 +31,7 @@ f(x,y) = ((1 - x)^2 + 100(y - x^2)^2)/1000
 without using the explicit form of the function during sampling. We show the graph of ``f`` for ``(x, y)\in[-1.5, 1.5]^2`` in the following picture:
 
 ```@setup rosenbrock
-using GLMakie, LaTeXStrings
-GLMakie.activate!() # hide
-include("../../gl_makie_transparent_background_hack.jl")
+using CairoMakie, LaTeXStrings
 
 rosenbrock(x::Vector) = ((1.0 - x[1]) ^ 2 + 100.0 * (x[2] - x[1] ^ 2) ^ 2) / 1000
 x, y = -1.5:0.1:1.5, -1.5:0.1:1.5
@@ -71,8 +69,8 @@ end # hide
 
 fig_dark, ax_dark = make_rosenbrock(; theme = :dark, alpha = .85)
 fig_light, ax_light = make_rosenbrock(; theme = :light)
-GLMakie.save("rosenbrock_dark.png", alpha_colorbuffer(fig_dark))
-GLMakie.save("rosenbrock_light.png", alpha_colorbuffer(fig_light))
+CairoMakie.save("rosenbrock_dark.png", fig_dark; px_per_unit = Main.output_type == :html ? 1.5 : 2)
+CairoMakie.save("rosenbrock_light.png", fig_light; px_per_unit = Main.output_type == :html ? 1.5 : 2)
 
 nothing # hide
 ```
@@ -191,7 +189,12 @@ function make_point_cloud_arrows(; theme = :dark)
 textcolor = theme == :dark ? :white : :black
 fig = Figure(; backgroundcolor = :transparent, size = (900, 675))
 ax = Axis3(fig[1, 1];
-                     limits = ((-1.5, 1.5), (-1.5, 1.5), (0.0, rosenbrock([-1.5, -1.5]))),
+                     # These limits have to cover *both* point clouds: the graph of the Rosenbrock
+                     # function, and the cloud around `(2, 2, 2)`. They used to cover only the first,
+                     # so every point of `D_1` and the tail of every arrow fell outside the axis —
+                     # the figure showed half of what its caption describes, and CairoMakie errors on
+                     # a scatter that is clipped away in its entirety.
+                     limits = ((-1.5, 3.0), (-1.5, 3.0), (0.0, 3.0)),
                      azimuth = π / 6,
                      elevation = π / 8,
                      backgroundcolor = (:tomato, .5), # hide
@@ -223,9 +226,11 @@ arrows!(ax, point_cloud[1, indices], point_cloud[2, indices], point_cloud[3, ind
             - grads[1, indices],     - grads[2, indices],     - grads[3, indices]; 
             color = mred, 
             linewidth = .01, 
-            alpha = .01, 
+            # `alpha = .01` was tuned for GLMakie, whose order-independent transparency accumulated
+            # 30 overlapping arrows into something visible. CairoMakie composites them in order, so
+            # at 1% opacity the arrows — the subject of the figure — disappeared entirely.
+            alpha = .5,
             arrowsize = .04,
-            transparency = true
             )
 axislegend(; position = (.92, .75), backgroundcolor = :transparent, labelcolor = textcolor) # hide
 fig, ax
@@ -233,8 +238,8 @@ end
 fig_light, ax_light = make_point_cloud_arrows(; theme = :light)
 fig_dark, ax_dark = make_point_cloud_arrows(; theme = :dark)
 
-GLMakie.save("point_cloud_arrows_light.png", alpha_colorbuffer(fig_light))
-GLMakie.save("point_cloud_arrows_dark.png", alpha_colorbuffer(fig_dark))
+CairoMakie.save("point_cloud_arrows_light.png", fig_light; px_per_unit = Main.output_type == :html ? 1.5 : 2)
+CairoMakie.save("point_cloud_arrows_dark.png", fig_dark; px_per_unit = Main.output_type == :html ? 1.5 : 2)
 
 nothing # hide
 ```
@@ -273,8 +278,6 @@ nothing # hide
 So we use `Zygote` [Zygote.jl-2018](@cite) to compute ``\nabla_\theta\mathcal{NN}`` and we use `compute_wasserstein_gradient` to obtain ``\nabla{}W_2``. We can now train our network:
 
 ```@example rosenbrock
-import CairoMakie # hide
-CairoMakie.activate!() # hide
 using GeometricMachineLearning: params # hide
 # note the small number of training steps
 const training_steps = 80
@@ -326,9 +329,6 @@ nothing # hide
 Now we plot a few points to check how well they match the graph:
 
 ```@example rosenbrock
-using GLMakie # hide
-GLMakie.activate!() # hide
-
 Random.seed!(124)  # hide
 const number_of_points = 35
 coordinates = nn(randn(2, number_of_points))
@@ -344,7 +344,7 @@ scatter!(ax, coordinates[1, :], coordinates[2, :], coordinates[3, :];
 textcolor = theme == :dark ? :white : :black # hide
 axislegend(; position = (.82, .75), backgroundcolor = :transparent, labelcolor = textcolor) # hide
 file_name = "mapped_points" * (theme == :dark ? "_dark.png" : "_light.png") # hide
-GLMakie.save(file_name, alpha_colorbuffer(fig)) # hide
+CairoMakie.save(file_name, fig; px_per_unit = Main.output_type == :html ? 1.5 : 2) # hide
 end # hide
 ```
 

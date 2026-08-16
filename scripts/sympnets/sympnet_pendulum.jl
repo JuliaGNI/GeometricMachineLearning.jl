@@ -6,7 +6,7 @@ using GeometricIntegrators
 using GeometricMachineLearning
 using LinearAlgebra
 using Lux
-using Plots
+using CairoMakie
 using Zygote
 using ProgressMeter
 
@@ -16,7 +16,9 @@ import Random
 # generate data for pendulum
 include("pendulum.jl")
 q, p = pendulum_data()
-plt = plot(q, p, label="Training data.")
+fig = Figure()
+ax = Axis(fig[1, 1]; xlabel = "q", ylabel = "p")
+lines!(ax, q, p; label = "Training data.")
 
 # Sympnet model 
 model = Chain(  Gradient(2, 10, tanh),
@@ -77,5 +79,6 @@ for i in 1:lastindex(q)
 end 
 
 # plot result and save figure to file
-plot(plt, q_learned, p_learned, label="Learned trajectory.")
-savefig("sympnet_pendulum.png")
+lines!(ax, q_learned, p_learned; label = "Learned trajectory.")
+axislegend(ax)
+CairoMakie.save("sympnet_pendulum.png", fig)

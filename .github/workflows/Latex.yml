@@ -26,12 +26,12 @@ jobs:
       - name: install BrenierTwoFluid
         run: |
           cd docs
-          DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' make install_brenier_two_fluid test_docs
+          make install_brenier_two_fluid test_docs
           cd .. 
       - name: Make tikz images
         run: make latex -C docs/src/tikz
       - name: make tex document
-        run: DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' julia --project=docs --color=yes --threads=2 docs/make.jl latex_output
+        run: julia --project=docs --color=yes --threads=2 docs/make.jl latex_output
       - name: Some sed magic 
         run: |
           make copy_png_files -C docs

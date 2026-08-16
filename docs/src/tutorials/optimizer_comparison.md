@@ -2,7 +2,7 @@
 
 ```@example comparison
 using GeometricMachineLearning
-using GLMakie
+using CairoMakie
 import Random
 Random.seed!(123)
 

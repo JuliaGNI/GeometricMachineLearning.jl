@@ -62,9 +62,8 @@ and we see that ``\gamma_{v_x}(t) = \exp(t\cdot{}v_x)``. In `GeometricMachineLea
 We give an example of using this function here:
 
 ```@setup s2_retraction
-using GLMakie
+using CairoMakie
 
-include("../../gl_makie_transparent_background_hack.jl")
 ```
 
 ```@example s2_retraction
@@ -120,8 +119,8 @@ end # hide
 fig_light = set_up_plot(; theme = :light)[1] # hide
 fig_dark = set_up_plot(; theme = :dark)[1] # hide
 
-GLMakie.save("sphere_with_tangent_vec_light.png", alpha_colorbuffer(fig_light)) # hide
-GLMakie.save("sphere_with_tangent_vec_dark.png", alpha_colorbuffer(fig_dark)) # hide
+CairoMakie.save("sphere_with_tangent_vec_light.png", fig_light; px_per_unit = Main.output_type == :html ? 1.5 : 2) # hide
+CairoMakie.save("sphere_with_tangent_vec_dark.png", fig_dark; px_per_unit = Main.output_type == :html ? 1.5 : 2) # hide
 
 nothing # hide
 ```
@@ -150,8 +149,8 @@ end # hide
 fig_light = make_plot_with_solution(; theme = :light) # hide
 fig_dark = make_plot_with_solution(; theme = :dark) # hide
 
-GLMakie.save("sphere_with_tangent_vec_and_geodesic_light.png", alpha_colorbuffer(fig_light)) # hide
-GLMakie.save("sphere_with_tangent_vec_and_geodesic_dark.png", alpha_colorbuffer(fig_dark)) # hide
+CairoMakie.save("sphere_with_tangent_vec_and_geodesic_light.png", fig_light; px_per_unit = Main.output_type == :html ? 1.5 : 2) # hide
+CairoMakie.save("sphere_with_tangent_vec_and_geodesic_dark.png", fig_dark; px_per_unit = Main.output_type == :html ? 1.5 : 2) # hide
 
 nothing # hide
 ```

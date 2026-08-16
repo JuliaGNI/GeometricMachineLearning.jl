@@ -96,4 +96,4 @@ H_est(τ) = sum(network(τ, model))
 # dH_est(τ) = field(τ, model)
 
 #plot results
-plot_network(H, H_est, total_loss; filename="hnn_simple.png")
+plot_hnn(H, H_est, total_loss; filename="hnn_simple.png")

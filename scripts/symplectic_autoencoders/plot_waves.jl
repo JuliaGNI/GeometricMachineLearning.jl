@@ -1,4 +1,4 @@
-using HDF5, Plots
+using HDF5, CairoMakie
 
 data = h5open("snapshot_matrix.h5", "r") do file
     read(file, "data")
@@ -28,7 +28,10 @@ function plot_curves(number_of_params::Int=3, time_instances::Int=3)
 
     Ω = -0.5:(1 / (N - 1)):0.5
 
-    plot_object = plot(; layout=(time_instances,1))
+    fig = Figure()
+    # one row per time instance, as `layout = (time_instances, 1)` gave under Plots
+    axes = [Axis(fig[i, 1]; title = "", titlealign = :left, titlesize = 12)
+            for i in 1:time_instances]
     index_number = 0
 
     function title_gen(t::Real)
@@ -43,19 +46,15 @@ function plot_curves(number_of_params::Int=3, time_instances::Int=3)
     for param_index in param_indices
         index_number += 1
         data_to_plot = data[1:N, (param_index-1) * number_time_indices .+ time_indices]
-        plot!(
-            plot_object, 
-            Ω, 
-            data_to_plot, 
-            layout=(time_instances, 1), 
-            color=3+index_number, 
-            label="μ="*string(μ_collection[param_index])[1:5],
-            title=title_gen.(time_labels), 
-            titleloc = :left, 
-            titlefont = font(12)
-            )
+        for (i, ax) in pairs(axes)
+            ax.title = title_gen(time_labels[i])
+            lines!(ax, Ω, data_to_plot[:, i];
+                   color = Makie.wong_colors()[3 + index_number],
+                   label = "μ="*string(μ_collection[param_index])[1:5])
+        end
     end
-    plot_object
+    axislegend(axes[1])
+    fig
 end
-    
-png(plot_curves(3, 3), "plots/wave_plot")
+
+CairoMakie.save("plots/wave_plot.png", plot_curves(3, 3))

@@ -1,4 +1,4 @@
-using Plots, JLD2, GeometricIntegrators, AbstractNeuralNetworks, GeometricMachineLearning
+using CairoMakie, JLD2, GeometricIntegrators, AbstractNeuralNetworks, GeometricMachineLearning
 
 # this file stores parameters relevant for the NN
 file_nn = jldopen("nn_model", "r")
@@ -65,8 +65,11 @@ end
 
 # Plot of the validation
 
-plt = plot(t, q1, label="Numeric Integration", size=(1000,600))
-plot!(plot1, t, data_matrix[1,:], label="Neural Network")
-vline!(plot1, [seq_length*time_step], color="red",label="Start of Prediction")
+plt = Figure(size = (1000, 600))
+ax = Axis(plt[1, 1])
+lines!(ax, t, q1; label = "Numeric Integration")
+lines!(ax, t, data_matrix[1,:]; label = "Neural Network")
+vlines!(ax, [seq_length*time_step]; color = :red, label = "Start of Prediction")
+axislegend(ax)
 
 #png(plot1, "seq_length"*string(seq_length)*"_prediction_window"*string(prediction_window))

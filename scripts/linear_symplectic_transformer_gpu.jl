@@ -3,7 +3,7 @@ using GeometricMachineLearning
 using GeometricProblems.CoupledHarmonicOscillator: hodeensemble, default_parameters
 using GeometricIntegrators: ImplicitMidpoint, integrate 
 using LaTeXStrings
-using Plots
+using CairoMakie
 using LinearAlgebra: norm
 
 const timestep = .3
@@ -40,9 +40,12 @@ loss_array_standard = o_standard(nn_standard, dl, batch, n_epochs)
 loss_array_symplectic = o_symplectic(nn_symplectic, dl, batch, n_epochs)
 loss_array_sympnet = o_sympnet(nn_sympnet, dl, batch2, n_epochs)
 
-p_train = plot(loss_array_standard; color = 2, xlabel = "epoch", ylabel = "training error", label = "ST", yaxis = :log)
-plot!(p_train, loss_array_symplectic; color = 4, label = "LST")
-plot!(p_train, loss_array_sympnet; color = 3, label = "SympNet")
+fig_train = Figure()
+ax_train = Axis(fig_train[1, 1]; xlabel = "epoch", ylabel = "training error", yscale = log10)
+lines!(ax_train, loss_array_standard; color = Makie.wong_colors()[2], label = "ST")
+lines!(ax_train, loss_array_symplectic; color = Makie.wong_colors()[4], label = "LST")
+lines!(ax_train, loss_array_sympnet; color = Makie.wong_colors()[3], label = "SympNet")
+axislegend(ax_train)
 
 function _convert_to_cpu(dl, nn_standard, nn_symplectic, nn_sympnet)
     DataLoader(dl.input |> Array{Float32}), GeometricMachineLearning.map_to_cpu(nn_standard), GeometricMachineLearning.map_to_cpu(nn_symplectic), GeometricMachineLearning.map_to_cpu(nn_sympnet)
@@ -61,10 +64,14 @@ function make_validation_plot(n_steps = n_steps; kwargs...)
     prediction_symplectic = iterate(nn_symplectic, init_con; n_points = n_steps, prediction_window = seq_length)
     prediction_sympnet = iterate(nn_sympnet, init_con[:, 1]; n_points = n_steps)
 
-    p_validate = plot(prediction_implicit_midpoint[1, :]; color = 1, ylabel = L"q_1", label = "implicit midpoint", kwargs...)
-    plot!(p_validate, prediction_standard[1, :]; color = 2, label = "ST")
-    plot!(p_validate, prediction_symplectic[1, :]; color = 4, label = "LST")
-    plot!(p_validate, prediction_sympnet[1, :]; color = 3, label = "SympNet")
+    fig_validate = Figure()
+    ax_validate = Axis(fig_validate[1, 1]; ylabel = L"q_1", kwargs...)
+    lines!(ax_validate, prediction_implicit_midpoint[1, :]; color = Makie.wong_colors()[1], label = "implicit midpoint")
+    lines!(ax_validate, prediction_standard[1, :]; color = Makie.wong_colors()[2], label = "ST")
+    lines!(ax_validate, prediction_symplectic[1, :]; color = Makie.wong_colors()[4], label = "LST")
+    lines!(ax_validate, prediction_sympnet[1, :]; color = Makie.wong_colors()[3], label = "SympNet")
+    axislegend(ax_validate)
+    p_validate = fig_validate
 
     p_validate, norm(prediction_implicit_midpoint - prediction_standard), norm(prediction_implicit_midpoint - prediction_symplectic), norm(prediction_implicit_midpoint - prediction_sympnet)
 end

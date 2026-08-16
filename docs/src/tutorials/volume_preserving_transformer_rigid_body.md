@@ -56,9 +56,7 @@ nothing # hide
 ```
 
 ```@setup rigid_body
-using GLMakie
-include("../../gl_makie_transparent_background_hack.jl")
-GLMakie.activate!() # hide
+using CairoMakie
 
 morange = RGBf(255 / 256, 127 / 256, 14 / 256) # hide
 mred = RGBf(214 / 256, 39 / 256, 40 / 256) # hide
@@ -106,8 +104,8 @@ end # hide
 fig_light = set_up_plot(; theme = :light)[1] # hide
 fig_dark = set_up_plot(; theme = :dark)[1] # hide
 
-GLMakie.save("rigid_body_trajectories_light.png", alpha_colorbuffer(fig_light)) # hide
-GLMakie.save("rigid_body_trajectories_dark.png", alpha_colorbuffer(fig_dark)) # hide
+CairoMakie.save("rigid_body_trajectories_light.png", fig_light; px_per_unit = Main.output_type == :html ? 1.5 : 2) # hide
+CairoMakie.save("rigid_body_trajectories_dark.png", fig_dark; px_per_unit = Main.output_type == :html ? 1.5 : 2) # hide
 
 nothing # hide
 ```
@@ -296,8 +294,8 @@ rowsize!(fig_light.layout, 1, Aspect(1, 1.))
 rowsize!(fig_dark.layout, 1, Aspect(1, 1.))
 resize_to_layout!(fig_light)
 resize_to_layout!(fig_dark)
-GLMakie.save("rigid_body_evaluation_light.png", alpha_colorbuffer(fig_light))
-GLMakie.save("rigid_body_evaluation_dark.png", alpha_colorbuffer(fig_dark))
+CairoMakie.save("rigid_body_evaluation_light.png", fig_light; px_per_unit = Main.output_type == :html ? 1.5 : 2)
+CairoMakie.save("rigid_body_evaluation_dark.png", fig_dark; px_per_unit = Main.output_type == :html ? 1.5 : 2)
 nothing
 ```
 

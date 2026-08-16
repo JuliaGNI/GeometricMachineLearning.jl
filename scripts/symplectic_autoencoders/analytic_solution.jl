@@ -3,7 +3,7 @@ TODO:
 - Rename this file to "analytic solution". 
 """
 
-using Plots, ForwardDiff
+using CairoMakie, ForwardDiff
 
 T = Float64
 μ_left = T(5/12)
@@ -58,7 +58,17 @@ function plot_time_evolution(T=Float32; spacing=T(.01), time_step=T(0.25), μ=T(
         curves[1:length(Ω), i] = u(t, Ω, μ)
         curves_p[1:length(Ω), i] = p(t, Ω, μ)
     end
-    curves, curves_p, plot(Ω, curves, layout=(length(I), 1)), plot(Ω, curves_p, layout=(length(I), 1))
+    curves, curves_p, _stacked_curves(Ω, curves), _stacked_curves(Ω, curves_p)
+end
+
+"One row per column of `curves`, which is what `layout = (length(I), 1)` gave under Plots."
+function _stacked_curves(Ω, curves)
+    fig = Figure()
+    for i in axes(curves, 2)
+        ax = Axis(fig[i, 1])
+        lines!(ax, Ω, curves[:, i])
+    end
+    fig
 end
 
 function generate_data(T=Float32; spacing=T(.01), time_step=T(0.01), μ_collection=μ_collection)

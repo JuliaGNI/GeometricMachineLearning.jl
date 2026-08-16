@@ -22,7 +22,7 @@ Using the package is very straightforward and is very flexible with respect to t
 ```julia
 using GeometricMachineLearning
 using CUDA # Metal
-using Plots
+using CairoMakie
 
 include("scripts/pendulum.jl")
 
@@ -54,8 +54,12 @@ g_loss_array = g_opt(g_nn, dl, Batch(batch_size), nepochs)
 ics = (q=qp_data.q[:,1], p=qp_data.p[:,1])
 const steps_to_plot = 200
 g_trajectory = Iterate_Sympnet(g_nn, ics; n_points = steps_to_plot)
-p2 = plot(qp_data.q'[1:steps_to_plot], qp_data.p'[1:steps_to_plot], label="training data")
-plot!(p2, g_trajectory.q', g_trajectory.p', label="G Sympnet")
+fig = Figure()
+ax = Axis(fig[1, 1]; xlabel = "q", ylabel = "p")
+lines!(ax, qp_data.q'[1:steps_to_plot], qp_data.p'[1:steps_to_plot], label = "training data")
+lines!(ax, vec(g_trajectory.q'), vec(g_trajectory.p'), label = "G Sympnet")
+axislegend(ax)
+fig
 ```
 More examples like this can be found in the docs.
 
