@@ -1,5 +1,7 @@
-# type piracy! This should go into `AbstractNeuralNetworks`! ...
-AbstractNeuralNetworks.NetworkLoss(nn::NeuralNetwork) = NetworkLoss(architecture(nn))
+# `NetworkLoss(nn::NeuralNetwork)` used to be defined here. Both the function and the argument type
+# belong to `AbstractNeuralNetworks`, so the method was type piracy, and nothing in GML called it.
+# The methods below dispatch on GML's own architectures and are fine; a `NetworkLoss(::NeuralNetwork)`
+# that forwards to `architecture(nn)` belongs in `AbstractNeuralNetworks` itself.
 
 @doc raw"""
     TransformerLoss(seq_length, prediction_window)

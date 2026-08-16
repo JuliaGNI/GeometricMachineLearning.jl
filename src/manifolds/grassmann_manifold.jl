@@ -141,7 +141,8 @@ Base.similar(A::GrassmannManifold) = GrassmannManifold(similar(A.A))
 
 function Base.zero(Y::GrassmannManifold{T}) where T
     N, n = size(Y)
-    GrassmannLieAlgHorMatrix(zeros(T, N - n, n), N, n)
+    backend = networkbackend(Y.A)
+    zeros(backend, GrassmannLieAlgHorMatrix{T}, N, n)
 end
 
 function GeometricOptimizers.global_rep(
@@ -185,6 +186,13 @@ function GeometricOptimizers.update_section!(
     nothing
 end
 
+@doc raw"""
+    cayley(B̄::GrassmannLieAlgHorMatrix)
+
+Compute the Cayley retraction of an element of [`GrassmannLieAlgHorMatrix`](@ref).
+
+This is equivalent to [`cayley(::StiefelLieAlgHorMatrix)`](@ref) with ``A = \mathbb{O}``.
+"""
 function GeometricOptimizers.cayley(B::GrassmannLieAlgHorMatrix{T}) where T
     backend = networkbackend(B)
     E = StiefelProjection(B)
@@ -197,6 +205,13 @@ function GeometricOptimizers.cayley(B::GrassmannLieAlgHorMatrix{T}) where T
     GrassmannManifold((𝕀_big + T(0.5) * B̂ * inv(𝕀_small2 - T(0.5) * B̄' * B̂) * B̄') * (𝕀_big + T(0.5) * B))
 end
 
+@doc raw"""
+    geodesic(B̄::GrassmannLieAlgHorMatrix)
+
+Compute the geodesic of an element of [`GrassmannLieAlgHorMatrix`](@ref).
+
+This is equivalent to [`geodesic(::StiefelLieAlgHorMatrix)`](@ref) with ``A = \mathbb{O}``.
+"""
 function GeometricOptimizers.geodesic(B::GrassmannLieAlgHorMatrix)
     T = eltype(B)
     E = StiefelProjection(B)
@@ -216,8 +231,5 @@ function GeometricOptimizers._copyto!(
     Λ₁
 end
 
-GeometricOptimizers._add!(A::GrassmannLieAlgHorMatrix, B::GrassmannLieAlgHorMatrix) = (A.B .+= B.B; A)
-GeometricOptimizers._add!(A::GrassmannLieAlgHorMatrix, b::T) where T = (A.B .+= b; A)
-GeometricOptimizers._rac!(B::GrassmannLieAlgHorMatrix, A::GrassmannLieAlgHorMatrix) = (B.B .= sqrt.(A.B); B)
-GeometricOptimizers._square!(B::GrassmannLieAlgHorMatrix, A::GrassmannLieAlgHorMatrix) = (B.B .= A.B .^ 2; B)
-GeometricOptimizers._div!(C::GrassmannLieAlgHorMatrix, A::GrassmannLieAlgHorMatrix, B::GrassmannLieAlgHorMatrix) = (C.B .= A.B ./ B.B; C)
+# The elementwise arithmetic GO needs on `GrassmannLieAlgHorMatrix` lives in
+# `src/optimizers/go_bridges.jl`, together with the same bridges for the other GML array types.
