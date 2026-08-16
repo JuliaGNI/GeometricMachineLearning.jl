@@ -205,4 +205,5 @@ function Base.copyto!(A::GrassmannLieAlgHorMatrix, B::GrassmannLieAlgHorMatrix)
     A
 end
 
+# fills the *storage*; see the comment on `fill!(::SkewSymMatrix, ::Any)`
 Base.fill!(A::GrassmannLieAlgHorMatrix, val) = (fill!(A.B, val); A)

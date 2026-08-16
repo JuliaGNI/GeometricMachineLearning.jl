@@ -137,7 +137,8 @@ export GradientLayerQ, GradientLayerP, ActivationLayerQ, ActivationLayerP, Linea
 export Linear
 export ResidualLayer
 export LinearSymplecticLayerP, LinearSymplecticLayerQ
-export SymplecticStiefelLayer
+# `SymplecticStiefelLayer` used to be exported here; the file defining it
+# (`layers/symplectic_stiefel_layer.jl`) is commented out below, so the name never existed.
 
 include("manifolds/abstract_manifold.jl")
 include("manifolds/stiefel_manifold.jl")
@@ -177,6 +178,7 @@ export Transformer
 export TransformerIntegrator, StandardTransformerIntegrator
 
 # INCLUDE OPTIMIZERS — types come from GeometricOptimizers
+include("optimizers/go_bridges.jl")
 include("optimizers/optimizer.jl")
 
 export OptimizerMethod, AbstractCache

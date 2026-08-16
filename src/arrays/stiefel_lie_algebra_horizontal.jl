@@ -325,4 +325,5 @@ function _round(B::StiefelLieAlgHorMatrix; kwargs...)
     )
 end
 
+# fills the *storage*; see the comment on `fill!(::SkewSymMatrix, ::Any)`
 Base.fill!(A::StiefelLieAlgHorMatrix, val) = (fill!(A.A, val); fill!(A.B, val); A)

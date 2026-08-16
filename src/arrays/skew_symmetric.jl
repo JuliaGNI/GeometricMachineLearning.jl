@@ -290,6 +290,9 @@ function Base.zero(A::SkewSymMatrix)
     SkewSymMatrix(zero(A.S), A.n)
 end
 
+# see the comment on `similar(::SymmetricMatrix)`
+Base.similar(A::SkewSymMatrix) = SkewSymMatrix(similar(A.S), A.n)
+
 function networkbackend(A::SkewSymMatrix)
     networkbackend(A.S)
 end
@@ -342,6 +345,10 @@ function _round(A::AbstractArray; kwargs...)
     round.(A; kwargs...)
 end
 
+# this fills the *storage*: `fill!(A, val)` gives a matrix whose strict lower triangle is `val`, whose
+# strict upper triangle is `-val` and whose diagonal stays zero. A skew-symmetric matrix cannot hold a
+# constant, and this is the only sensible reading of `fill!` for it. The optimizer caches use it to
+# poison scratch arrays with `NaN`, where the sign does not matter.
 Base.fill!(A::SkewSymMatrix, val) = (fill!(A.S, val); A)
 
 # define routines for generalizing ChainRulesCore to SkewSymMatrix
