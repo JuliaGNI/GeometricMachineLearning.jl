@@ -168,19 +168,71 @@ reading the export list — the list spans continuation lines, and reading it mi
   `test/runtests.jl` — the docs workflow owns doctest validation, and the examples' behaviour is
   covered by structural assertions under `test/`.
 
+- **The Hamiltonian vector field is built out-of-place.** `SymbolicNeuralNetworks.build_nn_function`
+  returns an `InPlaceBatchedFunction` by default in 0.5, and its result is produced by mutation.
+  `HNNLoss` wraps that function and is differentiated with `Zygote`, which raises `Mutating arrays
+  is not supported`. `hamiltonian_vector_field` now passes `inplace = false`.
+
+- **`SymbolicPullback(::HamiltonianArchitecture)` produced a gradient of the wrong loss.**
+  `SymbolicNeuralNetworks.SymbolicPullback(nn, loss)` sizes the symbolic target of the loss with
+  `output_dimension(nn.model)`, which for a Hamiltonian network is `1` — the scalar Hamiltonian.
+  `HNNLoss` compares against the Hamiltonian *vector field*, whose dimension is that of the network
+  *input*. Under SymbolicNeuralNetworks 0.3 the mismatch was hidden by `Symbolics.Arr` broadcasting
+  and gave a wrong gradient; 0.5's scalar variables turn it into a `DimensionMismatch`. GML now
+  builds the pullback itself with the correct dimension.
+
+- **The symbolic vector field is a vector.** It used to be an ``n\times{}1`` matrix, so evaluating
+  it on a single sample returned a matrix where `HNNLoss` compares it against a vector.
+
+- **`test_hnn_loss_derivative` was never called.** It is defined in
+  `test/hamiltonian_neural_network_tests.jl` and was never invoked, so nothing exercised the
+  `Zygote` gradient of the HNN loss — the one thing that catches the in-place break above. It also
+  asserted on a `.params` field that the gradient has not had since AbstractNeuralNetworks 0.6.
+  Called and repaired, and joined by a test for `SymbolicPullback(::HamiltonianArchitecture)`, which
+  had no coverage at all.
+
+- **`input_dimension` and `output_dimension` are one generic function again.** They used to exist
+  twice: AbstractNeuralNetworks defines and exports them on `AbstractLayer`, SymbolicNeuralNetworks
+  0.3 defined its own by pirating AbstractNeuralNetworks' types, and GML imported
+  SymbolicNeuralNetworks'. 0.5 stopped doing that — it `import`s AbstractNeuralNetworks' and adds
+  the `Chain` methods to them — so GML imports both from AbstractNeuralNetworks now. The `Chain`
+  methods still live in SymbolicNeuralNetworks and still belong upstream, which is
+  [SymbolicNeuralNetworks#35](https://github.com/JuliaGNI/SymbolicNeuralNetworks.jl/issues/35).
+
 ### Added
 
 - **`test/runtests.jl` emits seven `@info` markers**, one per testset group, so that a long job can
-  be told from a hung one.
+  be told from a hung one. The suite runs to completion, all seven markers and no failures, on
+  Julia 1.13.0-rc2 — the first time it has been observed end to end. Getting there took four rounds,
+  each uncovering a bug the previous one had been hiding (`_gml_rgrad` skipping the Riemannian
+  projection, the transformer tests importing both modules, Adam's bias correction, the docstring
+  tests' missing import): none of the four was related to the others, and none was visible until the
+  one before it was cleared.
 - **Generated-artifact patterns in `.gitignore`**, including `docs/src/tutorials/mnist/*.pdf`. The
   existing rules covered the `.aux` and `.log` siblings but not the compiled PDFs.
 
 ### Dependencies
 
 - `GeometricOptimizers` added; the `[sources]` entry that pointed at its `main` branch is gone now
-  that v0.2.0 is registered, which also makes GML registrable again.
+  that it is registered, which also makes GML registrable again. The bound is
+  `GeometricOptimizers = "0.2.1"` — a floor rather than tidiness, since `"0.2"` lets the resolver
+  pick 0.2.0 and silently reinstate the ten-hour compile below, which presents as a job that
+  outlasts its timeout rather than one that fails.
+- `GeometricIntegrators = "0.18.2"`. Until it was registered, GeometricOptimizers' `SimpleSolvers =
+  "0.12"` and `GeometricIntegrators 0.18.1`'s `"0.11"` had no overlap, and since
+  `GeometricIntegrators` is in both the test target and `docs/Project.toml`, *every* job died at
+  resolution in about 40 seconds.
 - `SimpleSolvers` and `ParameterHandling` arrive through GeometricOptimizers but are not referenced
   under `src/`, `ext/` or `test/`, so they get no `[compat]` entries of their own.
+- **`SymbolicNeuralNetworks = "0.5"`** (was `"0.3"`). 0.5 is a refactor of the whole package; what
+  GML relies on is that `_get_params` and `_get_contents` are gone — they were never about
+  symbolics, they clean up what `Zygote` returns, and GML now defines the three methods it uses next
+  to `_processing` in `src/pullbacks/zygote_pullback.jl` — and that generated functions are in-place
+  by default (see *Fixed*). 0.3 is dropped rather than kept alongside: the two APIs differ in the
+  type of `nn.input` as well, so a single source tree cannot serve both, and CI would only ever
+  exercise whichever the resolver picks.
+- **`AbstractNeuralNetworks = "0.6.4"`** (was `"0.5, 0.6"`). SymbolicNeuralNetworks 0.5 requires
+  `"0.6.4"`, so `0.5` could never resolve alongside it.
 
 ## [0.4.8] — 2026-07-07
 
@@ -273,27 +325,11 @@ Cayley retractions.
 ## Open Issues
 
 Everything below came up while getting CI green on
-[#230](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/230) and is **not** fixed. Each
-entry says what closing it would take.
-
-### A. Blocked on upstream releases
-
-Nothing in this package can go green until these land. The critical path runs entirely outside it.
-
-- **A1. `GeometricIntegrators 0.18.2` is not released.** GeometricOptimizers requires
-  `SimpleSolvers = "0.12"`; registered `GeometricIntegrators 0.18.1` requires `"0.11"`. There is no
-  overlap, and `GeometricIntegrators` is in both the test target and `docs/Project.toml`, so *every*
-  job dies at resolution in about 40 seconds — all twelve CI jobs plus Documentation and PDF, the
-  latter two on `make test_docs` with `Unsatisfiable requirements detected for package
-  SimpleSolvers`.
-
-  SimpleSolvers 0.12.1 and GeometricIntegratorsBase 0.6.3 are registered. This is the last one.
-
-- ~~**A2. GeometricOptimizers 0.2.1 is not released.**~~ **Closed.** v0.2.1 is registered, and the
-  bound here is `GeometricOptimizers = "0.2.1"` — a floor rather than tidiness, since `"0.2"` lets
-  the resolver pick 0.2.0 and silently reinstate a ten-hour compile, which presents as a job that
-  outlasts its timeout rather than one that fails. The compile-time fix is confirmed against the
-  registered version, resolved with nothing developed locally: 13.9 s cold, 6.5 ms warm.
+[#230](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/230) and while moving to
+SymbolicNeuralNetworks 0.5 in
+[#235](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/235), and is **not** fixed. Each
+entry says what closing it would take. Entries that have since been closed are not kept here — what
+they resolved to is in the release notes above.
 
 ### B. Known defects
 
@@ -329,18 +365,6 @@ Nothing in this package can go green until these land. The critical path runs en
   The `_gml_rgrad` bug fixed in this release was the same split showing up somewhere it changed
   results silently, which is an argument for closing this sooner rather than later.
 
-- **B3. `input_dimension` and `output_dimension` exist twice.** AbstractNeuralNetworks v0.6.4 defines
-  and exports them on `AbstractLayer`; SymbolicNeuralNetworks 0.3 defines them by pirating
-  AbstractNeuralNetworks' types, and GML imports SymbolicNeuralNetworks'. They are two distinct
-  generic functions with the same name and semantics.
-
-  Not a blocker and no `[compat]` change is needed — the explicit `import SymbolicNeuralNetworks: …`
-  beats the implicit binding, and GML re-exports neither. Closing it needs
-  SymbolicNeuralNetworks to drop its pirated methods and GML to import from AbstractNeuralNetworks,
-  which is not a straight swap: AbstractNeuralNetworks 0.6.4 has no `Chain` method and GML relies on
-  SymbolicNeuralNetworks' at `src/architectures/hamiltonian_neural_network.jl:86`, so
-  `input_dimension(::Chain)` has to exist upstream first.
-
 - **B4. The documentation's executable examples still use the old optimizer internals.** The
   Documentation and PDF builds get past resolution and doctests now and fail in the `@example`
   blocks — 32 errors across 12 pages, because the documentation teaches the optimizer by reaching
@@ -364,6 +388,31 @@ Nothing in this package can go green until these land. The critical path runs en
   this means deciding how much of that exposition GML's documentation should still carry, and
   rewriting it against the upstream API or handing it to GeometricOptimizers' own documentation. It
   is the last thing standing between this branch and green Documentation and PDF workflows.
+
+- **B5. The symbolic pullback of `HNNLoss` is not the gradient of the batched loss.**
+  `SymbolicPullback` differentiates the loss of a *single* sample and sums the per-sample gradients
+  (`reduce = +`), which equals the gradient of the batched loss only when the loss is a sum over
+  samples. `HNNLoss` is not: it divides by `norm(output)` taken over the whole batch. Measured on a
+  `StandardHamiltonianArchitecture(2, 2)` against a `Zygote` gradient of the same loss:
+
+  ```
+  N=1  symbolic=-0.06324019893769198  zygote=-0.06324019893769196  agree=true
+  N=5  symbolic=-0.29982310048056143  zygote=-0.05705562794369161  agree=false
+  ```
+
+  `SymbolicPullback(arch)` is exported and documented as something one passes to `Optimizer` in
+  place of `ZygotePullback`, so this is wrong training, silently, for every batch size above one.
+  It is not new — `reduce = +` is what SymbolicNeuralNetworks 0.3 did too — and it is the same
+  defect SymbolicNeuralNetworks records for `FeedForwardLoss` under *Open Issues → Semantics* in its
+  own changelog, where it is called out as unfixable within a design that differentiates one
+  symbolic sample.
+
+  Closing it means choosing: make `HNNLoss` additive over the batch (it would no longer be scale
+  invariant), or drop the symbolic pullback for architectures whose loss is not additive. Either is
+  a decision about the loss, not a repair, which is why this release only documents it.
+
+  (There is no **B3** any more — it was `input_dimension`/`output_dimension` existing twice, closed
+  by SymbolicNeuralNetworks 0.5; see *Fixed* above. The number is left vacant rather than reused.)
 
 ### C. Follow-ups and cleanups
 
@@ -398,30 +447,29 @@ Nothing in this package can go green until these land. The critical path runs en
   pattern, so the working tree and the net diff are clean, but the blobs are still reachable.
   Rewriting the branch would remove them.
 
+- **C7. `SymbolicPullback(::HamiltonianArchitecture)` duplicates the upstream constructor.** It has
+  to, because `SymbolicNeuralNetworks.SymbolicPullback(nn, loss)` derives the dimension of the
+  loss's target from `output_dimension(nn.model)`, and for an HNN that is the scalar Hamiltonian
+  rather than the vector field the loss compares against (see *Fixed*). Reproducing the constructor
+  means reaching into three names that SymbolicNeuralNetworks does not export —
+  `symbolic_parameter_gradient`, `ParameterGradient`, and the two-argument `SymbolicPullback` inner
+  constructor — so an upstream refactor breaks GML silently at the type level. A keyword on the
+  upstream constructor, or a `NetworkLoss` interface that states its own target dimension, would put
+  this method back to one line.
+
+- **C8. `scripts/` has been dead since SymbolicNeuralNetworks 0.2.** `scripts/test/test_symbolic.jl`
+  calls `Symbolize` and `scripts/loss/build_loss.jl` calls `symbolic_params`; neither has existed
+  for several breaking releases, and `scripts/Project.toml` is in no CI job, so nothing notices.
+  Either port them or delete them — leaving them is the option that keeps costing a reader time.
+
 ### D. Unverified
 
 Not defects — claims this release makes that nothing has actually checked yet.
 
-- ~~**D1. No full test suite has ever been observed end to end.**~~ **Closed.** The suite now runs
-  to completion, all seven `@info` markers, with no failures — on Julia 1.13.0-rc2, via the pre-push
-  hook. Getting there took four rounds, each uncovering a bug the previous one had been hiding:
-  `_gml_rgrad` skipping the Riemannian projection (found on the 1.10 precompile), the transformer
-  tests importing both modules (found once the reduced-order group cleared), Adam's bias correction
-  (found once the optimizer group was reached) and the docstring tests' missing import (found once
-  the final group was reached).
-
-  Worth keeping the moral: the four bugs were not related to each other, and none was visible until
-  the one before it was cleared. A suite that stops at the first failure reports one problem at a
-  time however many there are.
-
 - **D2. The test suite has never been run on Julia 1.10.** The package precompiles and loads there
   now, and resolves from the registry, but no suite has run there — and `julia = "1.10"` is a claim
-  this release newly makes. The full run above was on 1.13.0-rc2. CI covers 1.10 and is the first
+  this release newly makes. The full runs so far were on 1.13.0-rc2. CI covers 1.10 and is the first
   thing that will exercise it.
-
-- ~~**D3. The Documentation and PDF workflows are unverified.**~~ **Superseded by B4.** They run
-  now. The static audit was sound as far as it went — no `@ref` has failed — and, as it warned,
-  it said nothing about executable blocks. Those are what fail now.
 
 - **D4. The upstream fix was measured on one optimizer.** The compile-time figures come from the
   `Adam` path. The quasi-Newton and Newton caches and states were widened on the strength of their

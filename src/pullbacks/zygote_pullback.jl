@@ -33,9 +33,43 @@ end
     ps -> _pullback.loss(model, ps, input_nt_output_nt...), ps)
 
 """
+    _get_contents(returned_pullback)
+
+Unwrap the single element `Zygote` may wrap a pullback result in.
+
+Together with [`_get_params`](@ref) this makes up [`_processing`](@ref).
+"""
+_get_contents(nt::Union{NamedTuple, NeuralNetworkParameters}) = nt
+_get_contents(nt::Tuple{<:Union{NamedTuple, NeuralNetworkParameters}}) = nt[1]
+function _get_contents(nt::AbstractVector{<:Union{NamedTuple, NeuralNetworkParameters}})
+    length(nt) == 1 || throw(ArgumentError(
+        "the pullback returned $(length(nt)) parameter sets, expected one."))
+    nt[1]
+end
+
+"""
+    _get_params(returned_pullback)
+
+Get the parameters out of a pullback result, whether they come as a
+`NeuralNetworkParameters`, wrapped in a `NamedTuple` with a single `params` field, or bare.
+
+Together with [`_get_contents`](@ref) this makes up [`_processing`](@ref).
+"""
+_get_params(nt::NamedTuple) = nt
+_get_params(ps::NeuralNetworkParameters) = params(ps)
+function _get_params(nt::NamedTuple{(:params,), Tuple{AT}}) where {AT}
+    @warn "This function was most likely called because @adjoint for `NeuralNetworkParameters` hasn't been implemented."
+    nt.params
+end
+
+"""
     _processing(returned_pullback)
 
 Strip `returned_pullback` from unnecessary `Zygote`-induces garbage.
+
+These two helpers used to be `SymbolicNeuralNetworks._get_params` and
+`SymbolicNeuralNetworks._get_contents`; SymbolicNeuralNetworks 0.5 removed them, and they were
+never about symbolics in the first place — they clean up what `Zygote` returns.
 
 Also see the docs for [`ZygotePullback`](@ref).
 """

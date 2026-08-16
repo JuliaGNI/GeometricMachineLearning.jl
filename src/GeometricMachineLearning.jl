@@ -20,9 +20,9 @@ using InteractiveUtils
 using TimerOutputs
 import LazyArrays
 import SymbolicNeuralNetworks
-import SymbolicNeuralNetworks: input_dimension, output_dimension, SymbolicPullback
-using SymbolicNeuralNetworks: derivative, _get_contents, _get_params, SymbolicNeuralNetwork
-using Symbolics: @variables, substitute
+import SymbolicNeuralNetworks: SymbolicPullback
+using SymbolicNeuralNetworks: derivative, SymbolicNeuralNetwork
+import Symbolics
 
 # Only the names GML actually uses are brought in: GeometricOptimizers exports ~20 names that
 # GML defines itself (`Manifold`, `StiefelManifold`, `SkewSymMatrix`, `Optimizer`, `rgrad`, …),
@@ -39,6 +39,9 @@ import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer,
                                AbstractExplicitCell, AbstractNeuralNetwork, NeuralNetwork,
                                UnknownArchitecture, FeedForwardLoss
 import AbstractNeuralNetworks: Chain, GridCell
+# `input_dimension`/`output_dimension` are AbstractNeuralNetworks' since v0.6.4; the `Chain`
+# methods GML uses are added to them by SymbolicNeuralNetworks.
+import AbstractNeuralNetworks: input_dimension, output_dimension
 import AbstractNeuralNetworks: Dense, Linear, Recurrent
 import AbstractNeuralNetworks: IdentityActivation, ZeroVector
 import AbstractNeuralNetworks: add!, update!

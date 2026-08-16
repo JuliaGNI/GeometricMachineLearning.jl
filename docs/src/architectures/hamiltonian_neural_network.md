@@ -50,4 +50,6 @@ GeometricMachineLearning.symbolic_hamiltonian_vector_field(::GeometricMachineLea
 GeometricMachineLearning.SymbolicPullback(::HamiltonianArchitecture)
 GeometricMachineLearning.GeneralizedHamiltonianArchitecture
 GeometricMachineLearning._processing
+GeometricMachineLearning._get_contents
+GeometricMachineLearning._get_params
 ```
