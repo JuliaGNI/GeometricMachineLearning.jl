@@ -44,12 +44,17 @@ end
 _is_go_native_method(::GeometricOptimizers.GradientMethod) = true
 _is_go_native_method(::GeometricOptimizers.MomentumMethod) = true
 _is_go_native_method(::GeometricOptimizers.Adam)            = true
+# `AdamOptimizerWithDecay` differs from `Adam` only in the step size, which GML supplies separately
+# through `_current_step_size`, so it uses GO's Adam cache and state like any other Adam.
+_is_go_native_method(::AdamOptimizerWithDecay)              = true
 _is_go_native_method(::GeometricOptimizers.OptimizerMethod) = false
 
 _adapt_method_to_T(method::GeometricOptimizers.Adam, ::Type{T}) where T =
     GeometricOptimizers.Adam(T; β₁ = T(method.β₁), β₂ = T(method.β₂), δ = T(method.δ))
 _adapt_method_to_T(method::GeometricOptimizers.MomentumMethod, ::Type{T}) where T =
     GeometricOptimizers.MomentumMethod(T(method.α))
+_adapt_method_to_T(method::AdamOptimizerWithDecay, ::Type{T}) where T =
+    GeometricOptimizers.Adam(T; β₁ = T(method.ρ₁), β₂ = T(method.ρ₂), δ = T(method.δ))
 _adapt_method_to_T(method, ::Type) = method
 
 _use_go_cache(method, x) =
@@ -67,7 +72,7 @@ end
 
 function _make_optimizer_state(method, x)
     if _use_go_cache(method, x)
-        GeometricOptimizers.OptimizerState(method, x)
+        GeometricOptimizers.OptimizerState(_adapt_method_to_T(method, _eltype(x)), x)
     elseif x isa NamedTuple || x isa NeuralNetworkParameters
         NamedTuple{keys(x)}(Tuple(_make_optimizer_state(method, x[k]) for k in keys(x)))
     else
@@ -116,8 +121,11 @@ function _euclidean_update!(x::AbstractArray{T}, dx::AbstractArray,
 end
 function _euclidean_update!(x::AbstractArray{T}, dx::AbstractArray,
         state::GMLEuclideanState{T}, method::GeometricOptimizers.MomentumMethod, step_size) where T
-    x .-= T(step_size) .* (dx .+ state.m₁)
-    state.m₁ .+= T(method.α) .* dx
+    # `p ← αp + ∇L`, the classic momentum recursion. The decay belongs on `p` and not on `∇L`:
+    # `p ← p + α∇L` is an undamped accumulator that grows without bound for a constant gradient
+    # instead of saturating at `∇L/(1 - α)`. Same recursion as GO's `update!(::MomentumState, ...)`.
+    state.m₁ .= T(method.α) .* state.m₁ .+ dx
+    x .-= T(step_size) .* state.m₁
 end
 function _euclidean_update!(x::AbstractArray{T}, dx::AbstractArray,
         state::GMLEuclideanState{T}, method::GeometricOptimizers.Adam, step_size) where T
@@ -178,19 +186,22 @@ function _leaf_optim_step!(cache::GeometricOptimizers.OptimizerCache,
                                   GeometricOptimizers.section(cache))
     GeometricOptimizers._copyto!(ps_leaf, GeometricOptimizers.solution(cache))
     GeometricOptimizers._copyto!(λY_leaf, GeometricOptimizers.section(cache))
-    GeometricOptimizers.update_section!(GeometricOptimizers.section(state),
-                                         GeometricOptimizers.section(state),
-                                         GeometricOptimizers.direction(cache),
-                                         retraction)
+    # `section(cache)` is `update_section!(section(state), direction, retraction)`, so copying it is
+    # the same thing as retracting a second time -- and a retraction on a manifold is `O(N³)` where
+    # the copy is `O(N²)`.
+    GeometricOptimizers._copyto!(GeometricOptimizers.section(state),
+                                  GeometricOptimizers.section(cache))
     if state isa GeometricOptimizers.AdamState
         GeometricOptimizers._copyto!(GeometricOptimizers.first_moment(state),
                                       GeometricOptimizers.first_moment(cache))
         GeometricOptimizers._copyto!(GeometricOptimizers.second_moment(state),
                                       GeometricOptimizers.second_moment(cache))
     elseif state isa GeometricOptimizers.MomentumState
+        # `p ← αp + ∇L`; see the note in `_euclidean_update!` for the momentum method. This has to
+        # match what `update!(::MomentumCache, ...)` anticipated when it formed the direction.
+        GeometricOptimizers._rmul!(GeometricOptimizers.momentum(state), adapted.α)
         GeometricOptimizers._add!(GeometricOptimizers.momentum(state),
-                                   GeometricOptimizers._mul(adapted.α,
-                                       GeometricOptimizers.gradient_array(cache)))
+                                   GeometricOptimizers.gradient_array(cache))
     end
     nothing
 end
@@ -219,7 +230,16 @@ function _tree_optim_step!(caches, states, dp, ps, λY, method, retraction, step
     nothing
 end
 
-"""Apply one optimization step to parameters and their gradient."""
+"""
+    optimization_step!(opt, λY, ps, dp)
+
+Apply one optimization step to the parameters `ps` and their gradient `dp`.
+
+`λY` is a [`GlobalSection`](@ref) of `ps` (or a `NamedTuple` of them). Note that it is an *output*
+here: the section the optimizer carries from step to step lives in `opt.state`, and `λY` is written
+so that callers who inspect it see the updated section. It therefore has to be allocated once and
+reused, not rebuilt per step -- rebuilding it costs a QR decomposition per manifold weight.
+"""
 function optimization_step!(opt::Optimizer, λY, ps, dp)
     step = _current_step_size(opt, opt.iterations)
     _tree_optim_step!(opt.cache, opt.state, dp, ps, λY, opt.method, opt.retraction, step)
