@@ -30,12 +30,12 @@ deps/src/
 docs/build/
 docs/site/
 docs/build*.zip
-go_migration_inspection_*.txt
+# LaTeX build artifacts next to the .tex sources
 *.aux
 *.fls
 *.fdb_latexmk
-*.log
 *.out
+docs/**/*.log
 # PDFs compiled from the .tex sources next to them
 docs/src/tutorials/mnist/*.pdf
 

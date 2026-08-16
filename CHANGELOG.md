@@ -62,6 +62,17 @@ reading the export list — the list spans continuation lines, and reading it mi
 - **`Adam` is constructed with the element type of the parameters**, e.g. `Adam(Float32)`. Passing a
   mismatched type is caught with a message naming what to pass instead.
 
+- **Two default hyper-parameters changed with the move to GeometricOptimizers' methods**, and a
+  script that relied on the old defaults will train differently:
+
+  | | before | after |
+  |---|---|---|
+  | momentum step size | `MomentumOptimizer()` → `η = 1e-3` | `_default_step_size` → `1e-2` |
+  | Adam's `δ` | `AdamOptimizer()` → `3f-7` | GeometricOptimizers' `Adam` default |
+
+  The gradient method's default step size is unchanged at `1e-2`, and Adam's is unchanged at `1e-3`.
+  Pass `step_size` and `δ` explicitly if the old values matter.
+
 - **Julia 1.10 is the minimum** (`julia = "1.9"` → `"1.10"`), inherited from GeometricOptimizers.
   1.9 was never satisfiable with this dependency set in practice.
 
