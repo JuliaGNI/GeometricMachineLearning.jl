@@ -1,4 +1,6 @@
 using GeometricMachineLearning
+# `import`, not `using`: GeometricOptimizers exports ~20 names that GML also defines
+import GeometricOptimizers
 using HDF5
 using AbstractNeuralNetworks
 using Documenter
@@ -340,7 +342,13 @@ index_latex_pages = vcat([Dict(_latex_pages)[key] for key in _keys]...)
 
 makedocs(;
     plugins = [bib],
-    modules = [GeometricMachineLearning, Base.get_extension(GeometricMachineLearning, :HDF5Ext)],
+    # `GeometricOptimizers` is listed so that the docstrings GML re-exports from it (`GlobalSection`,
+    # `global_rep`, `apply_section`, `geodesic`, `GradientMethod`, ...) can be included in `@docs`
+    # blocks and referenced with `@ref`. `checkdocs_ignored_modules` keeps the `missing_docs` check
+    # from demanding that this manual document all of GeometricOptimizers as well.
+    modules = [GeometricMachineLearning, Base.get_extension(GeometricMachineLearning, :HDF5Ext),
+               GeometricOptimizers],
+    checkdocs_ignored_modules = [GeometricOptimizers],
     authors = "Michael Kraus, Benedikt Brantner",
     repo = "https://github.com/JuliaGNI/GeometricMachineLearning.jl/blob/{commit}{path}#L{line}",
     sitename = "GeometricMachineLearning.jl",

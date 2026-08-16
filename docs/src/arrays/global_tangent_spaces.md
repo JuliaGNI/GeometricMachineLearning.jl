@@ -222,11 +222,12 @@ StiefelLieAlgHorMatrix
 StiefelLieAlgHorMatrix(::AbstractMatrix, ::Int)
 GrassmannLieAlgHorMatrix
 GrassmannLieAlgHorMatrix(::AbstractMatrix, ::Int)
+vec(::StiefelLieAlgHorMatrix)
 GlobalSection
 Matrix(::GlobalSection)
 apply_section
 apply_section!
-*(::GlobalSection, ::Manifold)
+*(::GeometricOptimizers.GlobalSection, ::GeometricOptimizers.Manifold)
 GeometricMachineLearning.global_section(::StiefelManifold{T}) where T
 GeometricMachineLearning.global_section(::GrassmannManifold{T}) where T
 global_rep

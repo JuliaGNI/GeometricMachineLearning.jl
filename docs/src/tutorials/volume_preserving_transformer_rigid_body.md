@@ -38,7 +38,7 @@ using GeometricMachineLearning # hide
 using GeometricIntegrators: integrate, ImplicitMidpoint
 using GeometricProblems.RigidBody: odeproblem, odeensemble, default_parameters
 
-ensemble_problem = odeensemble(ics; timespan = timespan, timestep = timestep, parameters = default_parameters)
+ensemble_problem = odeensemble(ics; timespan = timespan, timestep = timestep, parameters = default_parameters())
 ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
 dl_cpu = DataLoader(ensemble_solution; suppress_info = true)
 nothing # hide
@@ -225,7 +225,7 @@ const t_validation = 120
 function produce_trajectory(ics_val)
     problem = odeproblem(ics_val;   timespan = (0, t_validation), 
                                     timestep = timestep, 
-                                    parameters = default_parameters)
+                                    parameters = default_parameters())
     solution = integrate(problem, ImplicitMidpoint())
     trajectory = Float32.(DataLoader(solution; suppress_info = true).input)
     nn_vpff_solution = iterate(nn_vpff, trajectory[:, 1]; 
@@ -309,7 +309,7 @@ We can see that the volume-preserving transformer performs much better than the 
 We also compare the times it takes to integrate the system with (i) implicit midpoint, (ii) the volume-preserving transformer and (iii) the standard transformer:
 ```@example rigid_body
 function timing() # hide
-problem = odeproblem(ics_val₁; timespan = (0, t_validation), timestep = timestep, parameters = default_parameters) # hide
+problem = odeproblem(ics_val₁; timespan = (0, t_validation), timestep = timestep, parameters = default_parameters()) # hide
 solution = integrate(problem, ImplicitMidpoint()) # hide
 @time "Implicit Midpoint" solution = integrate(problem, ImplicitMidpoint())
 trajectory = Float32.(DataLoader(solution; suppress_info = true).input)

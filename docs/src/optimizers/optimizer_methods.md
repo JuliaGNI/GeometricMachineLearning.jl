@@ -26,6 +26,7 @@ The gradient method is constructed without a learning rate; pass the learning ra
 
 ```@example optimizer_methods
 using GeometricMachineLearning  # hide
+import GeometricOptimizers  # hide
 const η = 0.01
 method = GradientMethod()
 ```
@@ -36,20 +37,20 @@ In order to use the optimizer we need an instance of [`Optimizer`](@ref) that is
 ```@example optimizer_methods
 weight = (A = zeros(4, 4), )
 o = Optimizer(method, weight; step_size = η)
+
+nothing # hide
 ```
 
-If we operate on a derivative with `GeometricOptimizers.update!` this will
-compute a *final velocity* that is then used to compute a retraction (or
-simply perform addition if we do not deal with a manifold):
+We then apply the optimizer to a derivative with [`optimization_step!`](@ref). This computes a *final velocity* from the cache, uses it to compute a retraction (or simply performs addition if we do not deal with a manifold) and writes the result back into the weights:
 
 ```@example optimizer_methods
 dx = (A = one(weight.A), )
-update!(o, o.cache, dx)
+optimization_step!(o, GlobalSection(weight), weight, dx)
 
-dx.A
+weight.A
 ```
 
-So what has happened here is that the gradient `dx` was simply multiplied with ``-\eta`` as the cache of the gradient optimizer is trivial.
+So what has happened here is that the gradient `dx` was simply multiplied with ``-\eta`` and added to the weight, as the cache of the gradient optimizer is trivial.
 
 ## The Momentum Optimizer
 
@@ -66,25 +67,26 @@ In the case of the momentum optimizer the cache is non-trivial:
 ```@example optimizer_methods
 const α = 0.5
 method = MomentumMethod(α)
+weight = (A = zeros(4, 4), )
 o = Optimizer(method, weight; step_size = η)
 
-o.cache.A # the cache is stored for each array in `weight` (which is a `NamedTuple`)
+# the moment is stored for each array in `weight` (which is a `NamedTuple`)
+GeometricOptimizers.momentum(o.state).A
 ```
 
-But as the cache is initialized with zeros it will lead to the same result as the gradient optimizer in the first iteration:
+But as the moment is initialized with zeros it will lead to the same result as the gradient optimizer in the first iteration:
 
 ```@example optimizer_methods
 dx = (A = one(weight.A), )
+optimization_step!(o, GlobalSection(weight), weight, dx)
 
-update!(o, o.cache, dx)
-
-dx.A
+weight.A
 ```
 
 The cache has changed however:
 
 ```@example optimizer_methods
-o.cache.A
+GeometricOptimizers.momentum(o.state).A
 ```
 
 If we have weights on manifolds calling [`Optimizer`](@ref) will automatically allocate the correct cache on ``\mathfrak{g}^\mathrm{hor}``:
@@ -92,7 +94,7 @@ If we have weights on manifolds calling [`Optimizer`](@ref) will automatically a
 ```@example optimizer_methods
 weight = (Y = rand(StiefelManifold, 5, 3), )
 
-Optimizer(method, weight).cache.Y
+GeometricOptimizers.momentum(Optimizer(method, weight).state).Y
 ```
 
 So if the weight is ``Y\in{}St(n,N)`` the corresponding cache is initialized as the zero element on ``\mathfrak{g}^\mathrm{hor}\subset\mathbb{R}^{N\times{}N}`` as this is the global tangent space representation corresponding to the StiefelManifold.
@@ -125,7 +127,7 @@ const δ = 1e-8
 method = Adam(Float64; β₁ = ρ₁, β₂ = ρ₂, δ)
 o = Optimizer(method, weight; step_size = η)
 
-o.cache.Y
+GeometricOptimizers.first_moment(o.state).Y
 ```
 
 ### Weights on Manifolds 
@@ -149,7 +151,7 @@ nothing # hide
  The cache is however exactly the same as for the Adam optimizer:
 
 ```@example optimizer_methods
-o.cache.Y
+GeometricOptimizers.first_moment(o.state).Y
 ```
 
 ## Library Functions
