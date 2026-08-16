@@ -63,7 +63,6 @@ We give an example of using this function here:
 
 ```@setup s2_retraction
 using CairoMakie
-
 ```
 
 ```@example s2_retraction

@@ -53,7 +53,6 @@ As a retraction is always an approximation of the geodesic map, we now compare t
 
 ```@setup s2_retraction
 using CairoMakie
-
 ```
 
 ```@setup s2_retraction

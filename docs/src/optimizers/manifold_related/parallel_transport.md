@@ -44,7 +44,6 @@ To demonstrate parallel transport we again use the example from when we introduc
 
 ```@setup s2_parallel_transport
 using CairoMakie
-
 ```
 
 ```@setup s2_parallel_transport
