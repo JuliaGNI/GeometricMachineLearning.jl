@@ -22,24 +22,38 @@ const MODULES = Module[GeometricMachineLearning,
 
 const SRC = joinpath(@__DIR__, "src")
 
-"""Resolve `text` the way Documenter resolves a `@docs` entry. Returns `(ok, reason)`."""
-function resolve(text::AbstractString)
+"""Resolve `text` the way Documenter resolves a `@docs` entry. Returns `(ok, reason)`.
+
+`mod` is the module the reference is written in: `Main` for a reference on a page, and the
+*defining* module of the docstring for a reference inside one -- which is how Documenter resolves
+them, and why a docstring GML writes on a `GeometricOptimizers` binding still resolves its own
+`@ref`s in GML.
+"""
+function resolve(text::AbstractString, mod::Module = Main; exact_signature::Bool = true)
     ex = try
         Meta.parse(text)
     catch err
         return (false, "does not parse")
     end
     binding = try
-        DocSystem.binding(Main, ex)
+        DocSystem.binding(mod, ex)
     catch err
         return (false, "no such binding")
     end
     DocSystem.iskeyword(binding) && return (true, "")
     DocSystem.defined(binding) || return (false, "undefined binding `$binding`")
-    typesig = try
-        Core.eval(Main, DocSystem.signature(ex, String(text)))
-    catch err
-        return (false, "signature does not evaluate")
+    # A `@docs` entry has to match a specific method, but a `@ref` resolves to whatever anchor the
+    # manual created for the binding -- `[`accuracy(::Chain, ::Tuple, ::DataLoader)`](@ref)` links to
+    # `@docs accuracy` even though no method has that exact signature. Checking a `@ref` against the
+    # signature would reject those.
+    typesig = if exact_signature
+        try
+            Core.eval(mod, DocSystem.signature(ex, String(text)))
+        catch err
+            return (false, "signature does not evaluate")
+        end
+    else
+        Union{}
     end
     docs = DocSystem.getdocs(binding, typesig; modules = MODULES)
     filter!(d -> d.data[:module] in MODULES, docs)
@@ -146,11 +160,57 @@ function missing_docs()
     [(binding, sig) for (binding, sigs) in bindings for sig in sigs]
 end
 
+"""
+The ``[`x`](@ref)`` targets inside the docstrings the manual includes, with the module each
+docstring was written in.
+
+Documenter resolves these too, and they are easy to miss: they live in `src/`, not in the manual.
+"""
+function docstring_refs()
+    refs = Tuple{String, String, Module}[]
+    opening = r"\[`([^`]+)`\]\(@ref\s*([^)]*)\)"
+    for (_, _, text) in docs_entries()
+        ex = try
+            Meta.parse(text)
+        catch
+            continue
+        end
+        binding = try
+            DocSystem.binding(Main, ex)
+        catch
+            continue
+        end
+        typesig = try
+            Core.eval(Main, DocSystem.signature(ex, String(text)))
+        catch
+            continue
+        end
+        docs = DocSystem.getdocs(binding, typesig; modules = MODULES)
+        filter!(d -> d.data[:module] in MODULES, docs)
+        for d in docs
+            body = join(d.text, "")
+            for m in eachmatch(opening, body)
+                target = strip(m.captures[2])
+                isempty(target) && (target = strip(m.captures[1]))
+                startswith(target, "\"") && continue
+                push!(refs, (String(text), String(target), d.data[:module]))
+            end
+        end
+    end
+    unique!(refs)
+    refs
+end
+
 failures = Tuple{String, Int, String, String}[]
 
 for (file, line, text) in docs_entries()
     ok, why = resolve(text)
     ok || push!(failures, (file, line, "@docs  $text", why))
+end
+
+for (owner, target, mod) in docstring_refs()
+    ok, why = resolve(target, mod; exact_signature = false)
+    ok || push!(failures, ("<docstring of $owner>", 0, "@ref   [`$target`]", why))
 end
 
 for (binding, sig) in missing_docs()
@@ -162,7 +222,7 @@ end
 for (file, line, target) in ref_targets()
     # a `@ref` whose target is a section title rather than a code name is out of scope here
     startswith(target, "\"") && continue
-    ok, why = resolve(target)
+    ok, why = resolve(target; exact_signature = false)
     ok || push!(failures, (file, line, "@ref   [`$target`]", why))
 end
 

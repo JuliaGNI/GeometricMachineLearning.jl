@@ -235,7 +235,7 @@ end
 
 Apply one optimization step to the parameters `ps` and their gradient `dp`.
 
-`λY` is a [`GlobalSection`](@ref) of `ps` (or a `NamedTuple` of them). Note that it is an *output*
+`λY` is a `GlobalSection` of `ps` (or a `NamedTuple` of them). Note that it is an *output*
 here: the section the optimizer carries from step to step lives in `opt.state`, and `λY` is written
 so that callers who inspect it see the updated section. It therefore has to be allocated once and
 reused, not rebuilt per step -- rebuilding it costs a QR decomposition per manifold weight.
