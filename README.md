@@ -18,6 +18,8 @@ At its core every neural network comprises three components: a neural network ar
 
 Traditionally, physical properties have been encoded into the loss function (PINN approach), but in `GeometricMachineLearning.jl` this is exclusively done through the architectures and the optimizers of the neural network, thus giving theoretical guarantees that these properties are actually preserved.
 
+The optimizer methods themselves (`GradientMethod`, `MomentumMethod`, `Adam`, and the caches, global sections and retractions that go with them) come from [`GeometricOptimizers.jl`](https://github.com/JuliaGNI/GeometricOptimizers.jl) and are re-exported here; `GeometricMachineLearning.jl` supplies the part that is specific to neural networks, i.e. walking the parameter tree and the manifold layers.
+
 Using the package is very straightforward and is very flexible with respect to the device `(CPU, CUDA, Metal, ...)` and the type `(Float16, Float32, Float64, ...)` you want to use. The following is a simple example to learn a SympNet on data coming from a pendulum:
 ```julia
 using GeometricMachineLearning
@@ -41,8 +43,8 @@ backend = CUDABackend()
 # initialize the network (i.e. the parameters of the network)
 g_nn = NeuralNetwork(gsympnet, backend, type)
 
-# call the optimizer
-g_opt = Optimizer(AdamOptimizer(), g_nn)
+# call the optimizer: the method comes first, the step size is given separately
+g_opt = Optimizer(Adam(type), g_nn; step_size = 1e-3)
 
 const nepochs = 300
 const batch_size = 100
@@ -53,7 +55,7 @@ g_loss_array = g_opt(g_nn, dl, Batch(batch_size), nepochs)
 # plot the result
 ics = (q=qp_data.q[:,1], p=qp_data.p[:,1])
 const steps_to_plot = 200
-g_trajectory = Iterate_Sympnet(g_nn, ics; n_points = steps_to_plot)
+g_trajectory = iterate(g_nn, ics; n_points = steps_to_plot)
 p2 = plot(qp_data.q'[1:steps_to_plot], qp_data.p'[1:steps_to_plot], label="training data")
 plot!(p2, g_trajectory.q', g_trajectory.p', label="G Sympnet")
 ```
