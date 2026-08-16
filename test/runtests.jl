@@ -147,6 +147,9 @@ end
 @safetestset "Test data loader for q and p data                                               " begin
     include("data_loader/batch_data_loader_qp_test.jl")
 end
+@safetestset "TrainingParameters and the step size passed to train!                           " begin
+    include("training_parameters.jl")
+end
 @safetestset "Test the data loader in combination with optimization_step!                     " begin
     include("data_loader/data_loader_optimization_step.jl")
 end

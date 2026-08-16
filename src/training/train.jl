@@ -32,7 +32,7 @@ Different ways of use:
 
 """
 
-function train!(nn::AbstractNeuralNetwork, _data::AbstractTrainingData, m::OptimizerMethod, method = default_method(nn, data); ntraining = DEFAULT_NRUNS, batch_size = missing, showprogress::Bool = false, timer::Bool = false)
+function train!(nn::AbstractNeuralNetwork, _data::AbstractTrainingData, m::OptimizerMethod, method = default_method(nn, _data); ntraining = DEFAULT_NRUNS, batch_size = missing, showprogress::Bool = false, timer::Bool = false, step_size::Real = _default_step_size(m))
 
     # create a timer
     to = TimerOutput()
@@ -54,7 +54,10 @@ function train!(nn::AbstractNeuralNetwork, _data::AbstractTrainingData, m::Optim
     Loss() =  typeof(method) <: TrainingMethod ? loss(method, nn, data) : method(nn, data)
 
     # creation of optimiser
-    @timeit to "Creation of Optimizer" opt = Optimizer(m, nn)
+    # The step size used to live on the optimizer method, so `train!` could set it by construction.
+    # It moved onto `Optimizer`, and this call did not follow — which left the step size unsettable
+    # through `train!` at all.
+    @timeit to "Creation of Optimizer" opt = Optimizer(m, nn; step_size = step_size)
 
     # the global section is allocated once and carried through the whole run, as in
     # `optimize_for_one_epoch!`; building it per step costs a QR decomposition per manifold weight

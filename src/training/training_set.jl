@@ -17,11 +17,11 @@ end
 
 TrainingSet(ts::TrainingSet; nn::NeuralNetwork = nn(ts), tp::TrainingParameters = parameters(ts), data::AbstractTrainingData = data(ts)) = TrainingSet(nn, tp, data)
 
-function TrainingSet(es::EnsembleSolution)
+function TrainingSet(es::EnsembleSolution, mopt = GradientOptimizer())
     data = TrainingData(es)
     arch = default_arch(data, dim(data))
     nn = NeuralNetwork(arch, Float64)
-    tp = TrainingParameters(nn, data)
+    tp = TrainingParameters(nn, data, mopt)
     TrainingSet(nn, tp, data)
 end
 
