@@ -130,7 +130,7 @@ include("activations/softmax.jl")
 export UnknownProblem, NothingFunction
 
 # + operation has been overloaded to work with NamedTuples!
-export _add, apply_toNT, split_and_flatten, add!
+export _add, apply_toNT, add!
 
 # GPU specific operations
 export convert_to_dev, Device, CPUDevice
@@ -306,11 +306,10 @@ export AbstractPullback, ZygotePullback, SymbolicPullback
 include("pullbacks/zygote_pullback.jl")
 include("pullbacks/symbolic_hnn_pullback.jl")
 
-export DataLoader, onehotbatch
+export DataLoader
 export Batch, optimize_for_one_epoch!
 include("data_loader/tensor_assign.jl")
 include("data_loader/matrix_assign.jl")
-include("data_loader/mnist_utils.jl")
 include("data_loader/batch.jl")
 include("data_loader/optimize.jl")
 

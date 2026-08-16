@@ -36,24 +36,6 @@ jld2_to_h5("$T/sae_parameters.jld2",             "sae_parameters",   "$T/sae_par
 jld2_to_h5("$T/integrator_parameters.jld2",      "integrator_parameters", "$T/integrator_parameters.h5")
 jld2_to_h5("$T/integrator_parameters_psd.jld2",  "integrator_parameters", "$T/integrator_parameters_psd.h5")
 
-println("\n=== MNIST ===")
-for i in 1:4
-    jld2_to_h5("$T/mnist/mnist_parameters.jld2", "nn$(i)weights", "$T/mnist/mnist_nn$i.h5")
-end
-
-# Training metadata (loss arrays, accuracy scores, wall-clock times) live in a
-# separate flat HDF5 file so the tutorial need not import JLD2 at all.
-let src = JLD2.load("$T/mnist/mnist_parameters.jld2")
-    HDF5.h5open("$T/mnist/mnist_metadata.h5", "w") do h5
-        for k in ["loss_array1","loss_array2","loss_array3","loss_array4",
-                  "accuracy_score1","accuracy_score2","accuracy_score3","accuracy_score4",
-                  "total_time1","total_time2","total_time3","total_time4"]
-            haskey(src, k) && (h5[k] = src[k])
-        end
-    end
-    println("  mnist_parameters.jld2 [metadata]  →  mnist/mnist_metadata.h5")
-end
-
 println("\n=== Volume-preserving transformer (rigid body) ===")
 jld2_to_h5("$T/transformer_rigid_body.jld2", "nn_vpff_params",    "$T/transformer_rigid_body_nn_vpff.h5")
 jld2_to_h5("$T/transformer_rigid_body.jld2", "nn_vpt_arb_params", "$T/transformer_rigid_body_nn_vpt.h5")

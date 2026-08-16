@@ -13,9 +13,9 @@ latex: latex_no_pdf
 
 latex_no_pdf_no_images: install_brenier_two_fluid latex_docs_no_pdf copy_png_files put_figures_outside_of_minted_environment do_correct_quotation_marks make_correct_thrm_and_dfntn_and_xmpl_and_rmrk_and_proof_environment references_instead_of_hyperlinks correct_appendix remove_home_part remove_numbering_for_some_chapters docstring_indexing fix_long_urls remove_darkmode adjust_image_size adjust_math_expressions
 
-latex_no_pdf: latex_images mnist_image latex_no_pdf_no_images
+latex_no_pdf: latex_images latex_no_pdf_no_images
 
-html: html_images mnist_image html_no_images
+html: html_images html_no_images
 
 html_no_images: install_brenier_two_fluid documenter
 
@@ -49,12 +49,8 @@ html_images:
 latex_images: 
 	$(MAKE) latex -C src/tikz
 
-mnist_image:
-	$(MAKE) all -C src/tutorials/mnist
-
 clean:
 	$(MAKE) empty -C src/tikz ;
-	$(MAKE) clean -C src/tutorials/mnist ;
 	rm -Rf build
 
 latex_docs_no_pdf:
@@ -130,7 +126,6 @@ copy_png_files:
 	find build/optimizers/manifold_related -name \*.png -exec cp {} build \; ;
 	find build/tutorials -name \*.png -exec cp {} build \;
 	find build/reduced_order_modeling -name \*.png -exec cp {} build \;
-	find build/tutorials/mnist -name \*.png -exec cp {} build \;
 
 docstring_indexing:
 	sed -i'' -e 's/\\item \\hyperlinkref{\([0-9]*\)}{\\texttt{\(.*\)}}/\\item \\hyperlinkref{\1}{\\texttt{\2}}: page \\pageref{\1}/g' build/G*.tex;

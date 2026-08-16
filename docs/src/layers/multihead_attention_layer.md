@@ -35,7 +35,7 @@ Written as an equation we get:
 
 where ``P^{(\cdot)}_i\in\mathbb{R}^{(N\div\mathtt{n\_heads})\times{}N}`` for ``Z\in\mathbb{R}^{N\times{}T}.`` Note that we implicitly require that ``N`` is divisible by ``\mathtt{n\_heads}`` here.
 
-Here the various ``P`` matrices can be interpreted as being projections onto lower-dimensional subspaces, hence the designation by the letter ``P``. The columns of the projection matrices span smaller spaces that should *capture features in the input data*. We will show [in an example](@ref "MNIST Tutorial") how training of a neural network can benefit from putting the ``P^{(\cdot)}_i`` matrices on the Stiefel manifold.   
+Here the various ``P`` matrices can be interpreted as being projections onto lower-dimensional subspaces, hence the designation by the letter ``P``. The columns of the projection matrices span smaller spaces that should *capture features in the input data*. The [MNIST tutorial](https://juliagni.github.io/GMLDatasets.jl/latest/mnist/mnist_tutorial/) of `GMLDatasets` shows how training of a neural network can benefit from putting the ``P^{(\cdot)}_i`` matrices on the Stiefel manifold.   
 
 ```@eval
 Main.remark(raw"The `MultiHeadAttention` implemented in `GeometricMachineLearning` has an optional keyword `add_connection`. If this is set to `true` then the output of the `MultiHeadAttention` layer is:

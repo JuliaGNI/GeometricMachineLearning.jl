@@ -3,7 +3,7 @@
 
 Make an instance of the `ClassificationTransformer` based on an instance of [`DataLoader`](@ref).
 
-This is a transformer neural network for classification purposes. At the moment this is only used for training on MNIST, but can in theory be used for any classification problem.
+This is a transformer neural network for classification purposes. `dl` has to store its input as a tensor and its target as a tensor of labels; [`GMLDatasets`](https://github.com/JuliaGNI/GMLDatasets.jl) builds such a [`DataLoader`](@ref) from an image data set, but any classification problem works.
 
 # Arguments
 
