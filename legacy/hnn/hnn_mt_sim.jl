@@ -1,27 +1,26 @@
 using ModelingToolkit
-# using Profile
 using ProgressMeter
 
 #this contains the functions for generating the training data
-include("../scripts/data.jl")
+include("../../scripts/data.jl")
 
 #this contains the functions for generating the plots
-include("../scripts/plots.jl")
+include("../../scripts/plots.jl")
 
 #load ModelingToolkit generated functions
-est   = include("../mt_fun/est.jl")
-field = include("../mt_fun/field.jl")
-loss  = include("../mt_fun/loss.jl")
-step  = include("../mt_fun/step.jl")
+est   = include("../mtk/est.jl")
+field = include("../mtk/field.jl")
+loss  = include("../mtk/loss.jl")
+step  = include("../mtk/step.jl")
 
 #settings and common functionality
-include("../mt_fun/common.jl")
+include("../mtk/common.jl")
 
 #learning rate
 const η = .001
 
 #number of training runs
-const runs = 1000
+const runs = 2000
 
 
 function training!(model, data, target, η, nruns, loss, step)
@@ -68,19 +67,9 @@ end
 #train network
 model, data, target, total_loss = train_mt_hnn(n_in, ld, η, runs)
 
-#time training (after warmup)
-# train_mt_hnn(n_in, ld, η, 1)
-# @time model, data, target, total_loss = train_mt_hnn(n_in, ld, η, runs)
-
-#profile training
-#run with julia --track-allocation=user hnn.jl
-# Profile.clear()
-# Profile.clear_malloc_data()
-# @profile model, data, target, total_loss = train_mt_hnn(n_in, ld, η, runs)
-
 #learned Hamiltonian & vector field
 H_est(τ) = est(τ, expand(model)...)
-# dH_est(τ) = field(τ, expand(model)...)
+dH_est(τ) = field(τ, expand(model)...)
 
 #plot results
-plot_hnn(H, H_est, total_loss; filename="hnn_mt.png")
+plot_network_sim(H, H_est, dH, dH_est, total_loss; filename="hnn_mt_sim.pdf")

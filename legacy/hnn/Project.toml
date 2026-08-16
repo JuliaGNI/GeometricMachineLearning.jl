@@ -1,5 +1,5 @@
-# `CairoMakie` and `LaTeXStrings` look unused from inside `hnn/`: they arrive through
-# `include("../scripts/plots.jl")`, which every script here does.
+# `CairoMakie` and `LaTeXStrings` look unused from inside this directory: they arrive through
+# `include("../../scripts/plots.jl")`, which every script here does.
 [deps]
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"

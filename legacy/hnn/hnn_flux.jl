@@ -9,10 +9,10 @@ using GeometricMachineLearning: get_batch
 
 
 #this contains the functions for generating the training data
-include("../scripts/data.jl")
+include("../../scripts/data.jl")
 
 #this contains the functions for generating the plots
-include("../scripts/plots.jl")
+include("../../scripts/plots.jl")
 
 #layer dimension/width
 const ld = 5
