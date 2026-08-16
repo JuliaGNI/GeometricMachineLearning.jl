@@ -83,15 +83,19 @@ This is calling `SymbolicNeuralNetworks.Jacobian` and then multiplies the result
 """
 function symbolic_hamiltonian_vector_field(nn::SymbolicNeuralNetwork)
     □ = SymbolicNeuralNetworks.Jacobian(nn)
-    input_dim = input_dimension(nn.model)
-    n = input_dim ÷ 2
-    # placeholder for one
-    @variables o
-    o_vec = repeat([o], n)
-    𝕀 = Diagonal(o_vec)
-    𝕆 = zero(𝕀)
-    𝕁 = hcat(vcat(𝕆, -𝕀), vcat(𝕀, 𝕆))
-    substitute(𝕁 * derivative(□)', Dict(o => 1, ))
+    n = input_dimension(nn.model) ÷ 2
+    # The Poisson tensor is built from *integers* on purpose: a `Float64` literal in the symbolic
+    # expression would widen the result of a `Float32` network. `PoissonTensor`, which has the same
+    # convention, is an `AbstractMatrix{Float64}` and would do exactly that.
+    𝕆 = zeros(Int, n, n)
+    𝕀 = Matrix(1I, n, n)
+    𝕁 = [𝕆 𝕀; -𝕀 𝕆]
+    # `Jacobian` uses the convention `□[i, j] = ∂fᵢ/∂xⱼ` and the HNN output is scalar, so the one
+    # row of `derivative(□)` is the gradient of the Hamiltonian. The vector field is built as a
+    # *vector*, so that the generated function returns what `HNNLoss` compares against: a vector
+    # for a single sample, and one column per sample for a batch.
+    ∇H = vec(derivative(□))
+    𝕁 * ∇H
 end
 
 """
@@ -102,11 +106,15 @@ Compute an executable expression of the Hamiltonian vector field of a [`Hamilton
 # Implementation
 
 This first computes a symbolic expression of the vector field using [`symbolic_hamiltonian_vector_field`](@ref).
+
+The function is built with `inplace = false`: [`HNNLoss`](@ref) wraps it and is differentiated with
+`Zygote`, and the in-place kernel `SymbolicNeuralNetworks.build_nn_function` builds by default
+*mutates* its result, which `Zygote` does not support.
 """
 function hamiltonian_vector_field(arch::HamiltonianArchitecture)
     nn = SymbolicNeuralNetwork(arch)
     hvf = symbolic_hamiltonian_vector_field(nn)
-    SymbolicNeuralNetworks.build_nn_function(hvf, nn.params, nn.input)
+    SymbolicNeuralNetworks.build_nn_function(hvf, nn.params, nn.input; inplace = false)
 end
 
 function Chain(arch::HamiltonianArchitecture)
