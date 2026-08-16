@@ -54,7 +54,11 @@ function train!(nn::AbstractNeuralNetwork, _data::AbstractTrainingData, m::Optim
     Loss() =  typeof(method) <: TrainingMethod ? loss(method, nn, data) : method(nn, data)
 
     # creation of optimiser
-    @timeit to "Creation of Optimizer" opt = Optimizer(m, params(nn))
+    @timeit to "Creation of Optimizer" opt = Optimizer(m, nn)
+
+    # the global section is allocated once and carried through the whole run, as in
+    # `optimize_for_one_epoch!`; building it per step costs a QR decomposition per manifold weight
+    @timeit to "Creation of GlobalSection" λY = GlobalSection(params(nn))
 
     # creation of the array to store total loss
     total_loss = zeros(typeof(Loss()), ntraining)
@@ -66,7 +70,7 @@ function train!(nn::AbstractNeuralNetwork, _data::AbstractTrainingData, m::Optim
 
         @timeit to "Computing Grad Loss" ∇params = loss_gradient(Loss, index_batch,  params(nn)) 
 
-        @timeit to "Performing Optimization step" optimization_step!(opt, model(nn), params(nn), ∇params)
+        @timeit to "Performing Optimization step" optimization_step!(opt, λY, params(nn), ∇params)
 
         total_loss[j] = Loss()
 

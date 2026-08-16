@@ -14,3 +14,10 @@ end
 
 test_set_up_and_application(average=false)
 test_set_up_and_application(average=true)
+
+l = ClassificationLayer(2, 2, identity; average = true)
+ps = (weight = [1 0; 0 1],)
+input = [1 2 3; 1 1 1]
+@test l(input, ps) == reshape([2.0, 1.0], 2, 1)
+l = ClassificationLayer(2, 2, identity; average = false)
+@test l(input, ps) == reshape([3, 1], 2, 1)

@@ -122,7 +122,7 @@ nothing # hide
 Note that we have chosen the arrow here to have the same direction as before but only about half the magnitude. We further drew another arrow that we want to parallel transport (the purple arrow). 
 
 ```@example s2_parallel_transport
-using GeometricMachineLearning: update_section! # hide
+using GeometricOptimizers: update_section! # hide
 
 λY = GlobalSection(Y)
 B = global_rep(λY, Δ)

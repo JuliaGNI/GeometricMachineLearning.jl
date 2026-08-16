@@ -83,6 +83,18 @@ function global_section(Y::GrassmannManifold{T}) where T
     typeof(Y.A)(qr!(A).Q)
 end
 
+GeometricOptimizers.global_section(Y::GrassmannManifold) = global_section(Y)
+
+function GeometricOptimizers.apply_section!(
+    Y::GrassmannManifold{T},
+    λY::GeometricOptimizers.GlobalSection{T, <:GrassmannManifold{T}},
+    Y₂::GrassmannManifold{T}
+) where T
+    N, n = size(λY.Y)
+    @views Y.A .= λY.Y.A * Y₂.A[1:n, :] .+ λY.λ * Y₂.A[(n + 1):N, :]
+    Y
+end
+
 @doc raw"""
     Ω(Y::GrassmannManifold{T}, Δ::AbstractMatrix{T}) where T
 
@@ -118,3 +130,107 @@ function Ω(Y::GrassmannManifold{T}, Δ::AbstractMatrix{T}) where T
     # SkewSymMatrix(ΩSt - E * E' * ΩSt * E * E')
     SkewSymMatrix(ΩSt)
 end
+
+function Base.copyto!(A::GrassmannManifold, B::GrassmannManifold)
+    A.A .= B.A
+    nothing
+end
+
+Base.copy(A::GrassmannManifold) = GrassmannManifold(copy(A.A))
+Base.similar(A::GrassmannManifold) = GrassmannManifold(similar(A.A))
+
+function Base.zero(Y::GrassmannManifold{T}) where T
+    N, n = size(Y)
+    backend = networkbackend(Y.A)
+    zeros(backend, GrassmannLieAlgHorMatrix{T}, N, n)
+end
+
+function GeometricOptimizers.global_rep(
+    λY::GeometricOptimizers.GlobalSection{T, <:GrassmannManifold{T}},
+    Δ::AbstractMatrix{T}
+) where T
+    N, n = size(λY.Y)
+    GrassmannLieAlgHorMatrix(
+        λY.λ' * Δ,
+        N, n
+    )
+end
+
+function GeometricOptimizers.geodesic(Y::GrassmannManifold{T}, Δ::AbstractMatrix{T}) where T
+    λY = GeometricOptimizers.GlobalSection(Y)
+    B = GeometricOptimizers.global_rep(λY, Δ)
+    E = StiefelProjection(B)
+    expB = GeometricOptimizers.geodesic(B)
+    GeometricOptimizers.apply_section(λY, GrassmannManifold(expB * E))
+end
+
+function GeometricOptimizers.cayley(Y::GrassmannManifold{T}, Δ::AbstractMatrix{T}) where T
+    λY = GeometricOptimizers.GlobalSection(Y)
+    B = GeometricOptimizers.global_rep(λY, Δ)
+    E = StiefelProjection(B)
+    cayleyB = GeometricOptimizers.cayley(B)
+    GeometricOptimizers.apply_section(λY, GrassmannManifold(cayleyB * E))
+end
+
+function GeometricOptimizers.update_section!(
+    Λᵗ::GeometricOptimizers.GlobalSection{T, <:GrassmannManifold{T}},
+    Λ⁽ᵗ⁻¹⁾::GeometricOptimizers.GlobalSection{T, <:GrassmannManifold{T}},
+    B⁽ᵗ⁻¹⁾::AbstractMatrix{T},
+    retraction
+) where T
+    N, n = B⁽ᵗ⁻¹⁾.N, B⁽ᵗ⁻¹⁾.n
+    expB = retraction(B⁽ᵗ⁻¹⁾)
+    GeometricOptimizers.apply_section!(expB, Λ⁽ᵗ⁻¹⁾, expB)
+    Λᵗ.Y.A .= @view expB.A[:, 1:n]
+    Λᵗ.λ .= @view expB.A[:, (n+1):N]
+    nothing
+end
+
+@doc raw"""
+    cayley(B̄::GrassmannLieAlgHorMatrix)
+
+Compute the Cayley retraction of an element of [`GrassmannLieAlgHorMatrix`](@ref).
+
+This is equivalent to [`cayley(::StiefelLieAlgHorMatrix)`](@ref) with ``A = \mathbb{O}``.
+"""
+function GeometricOptimizers.cayley(B::GrassmannLieAlgHorMatrix)
+    T = eltype(B)
+    backend = networkbackend(B)
+    E = StiefelProjection(B)
+    𝕆 = KernelAbstractions.zeros(backend, T, B.n, B.n)
+    𝕀_small = one(𝕆)
+    𝕀_small2 = hcat(vcat(𝕀_small, 𝕆), vcat(𝕆, 𝕀_small))
+    𝕀_big = one(B)
+    B̂ = hcat(vcat(𝕆, B.B), E)
+    B̄ = hcat(vcat(𝕀_small, 𝕆), vcat(zero(B.B'), -B.B'))'
+    GrassmannManifold((𝕀_big + T(0.5) * B̂ * inv(𝕀_small2 - T(0.5) * B̄' * B̂) * B̄') * (𝕀_big + T(0.5) * B))
+end
+
+@doc raw"""
+    geodesic(B̄::GrassmannLieAlgHorMatrix)
+
+Compute the geodesic of an element of [`GrassmannLieAlgHorMatrix`](@ref).
+
+This is equivalent to [`geodesic(::StiefelLieAlgHorMatrix)`](@ref) with ``A = \mathbb{O}``.
+"""
+function GeometricOptimizers.geodesic(B::GrassmannLieAlgHorMatrix)
+    T = eltype(B)
+    E = StiefelProjection(B)
+    backend = networkbackend(B)
+    zero_mat = KernelAbstractions.zeros(backend, T, B.n, B.n)
+    B̂ = hcat(vcat(zero_mat, B.B), E)
+    B̄ = hcat(vcat(one(zero_mat), zero_mat), vcat(zero(B.B'), -B.B'))'
+    GrassmannManifold(one(B) + B̂ * GeometricOptimizers.𝔄(B̂, B̄) * B̄')
+end
+
+function GeometricOptimizers._copyto!(
+    Λ₁::GeometricOptimizers.GlobalSection{T, <:GrassmannManifold{T}},
+    Λ₂::GeometricOptimizers.GlobalSection{T, <:GrassmannManifold{T}}
+) where T
+    copyto!(Λ₁.Y, Λ₂.Y)
+    copyto!(Λ₁.λ, Λ₂.λ)
+    Λ₁
+end
+
+# The elementwise arithmetic GO needs on `GrassmannLieAlgHorMatrix` lives in
+# `src/optimizers/go_bridges.jl`, together with the same bridges for the other GML array types.

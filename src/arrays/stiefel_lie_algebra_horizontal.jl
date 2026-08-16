@@ -171,6 +171,12 @@ end
 Base.similar(A::StiefelLieAlgHorMatrix, dims::Union{Integer, AbstractUnitRange}...) = zeros(StiefelLieAlgHorMatrix{eltype(A)}, dims...)
 Base.similar(A::StiefelLieAlgHorMatrix) = zeros(StiefelLieAlgHorMatrix{eltype(A)}, A.N, A.n)
 
+function Base.copyto!(A::StiefelLieAlgHorMatrix, B::StiefelLieAlgHorMatrix)
+    copyto!(A.A, B.A)
+    copyto!(A.B, B.B)
+    A
+end
+
 function Base.rand(rng::Random.AbstractRNG, backend::KernelAbstractions.Backend, ::Type{StiefelLieAlgHorMatrix{T}}, N::Integer, n::Integer) where T 
     B = KernelAbstractions.allocate(backend, T, N-n, n)
     rand!(rng, B)
@@ -318,3 +324,6 @@ function _round(B::StiefelLieAlgHorMatrix; kwargs...)
         B.n
     )
 end
+
+# fills the *storage*; see the comment on `fill!(::SkewSymMatrix, ::Any)`
+Base.fill!(A::StiefelLieAlgHorMatrix, val) = (fill!(A.A, val); fill!(A.B, val); A)

@@ -155,7 +155,6 @@ _optimizers = optimizer_name => [
     "Retractions" => "optimizers/manifold_related/retractions.md",
     "Parallel Transport" => "optimizers/manifold_related/parallel_transport.md",
     "Optimizer Methods" => "optimizers/optimizer_methods.md",
-    "BFGS Optimizer" => "optimizers/bfgs_optimizer.md",
     ]
 
 _special_layers = "Special Neural Network Layers" => [
@@ -302,7 +301,7 @@ _latex_pages = [
     ],
     "Optimizers" => [   "General Framework for Manifold Optimization" => value_for_key(_optimizers, "Optimizers", "Retractions", "Parallel Transport"),
                         "Optimizer Methods" =>
-                            value_for_key(_optimizers, "Optimizer Methods", "BFGS Optimizer")
+                            value_for_key(_optimizers, "Optimizer Methods")
                         ],
     "Special Neural Network Layers and Architectures" => [
         "Layers" => reduce_to_second_factors(_special_layers),
@@ -341,6 +340,14 @@ index_latex_pages = vcat([Dict(_latex_pages)[key] for key in _keys]...)
 
 makedocs(;
     plugins = [bib],
+    # `GeometricOptimizers` is deliberately *not* listed. `@docs` filters candidate docstrings by
+    # the module they were written in (`d.data[:module]`), not by the module of the binding, so the
+    # `geodesic`/`cayley` methods GML defines on GeometricOptimizers' functions are found from here
+    # anyway. Listing GeometricOptimizers would instead (i) make `missing_docs` demand that this
+    # manual document all 147 of its docstrings — `checkdocs_ignored_modules` does not help, it only
+    # skips *sub*modules — and (ii) pull GeometricOptimizers' own docstrings in, whose internal
+    # `@ref`s resolve in its namespace and point at bindings this manual does not document.
+    # Names owned by GeometricOptimizers are referred to as plain code with a link to its manual.
     modules = [GeometricMachineLearning, Base.get_extension(GeometricMachineLearning, :HDF5Ext)],
     authors = "Michael Kraus, Benedikt Brantner",
     repo = "https://github.com/JuliaGNI/GeometricMachineLearning.jl/blob/{commit}{path}#L{line}",

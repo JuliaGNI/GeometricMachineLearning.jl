@@ -54,3 +54,7 @@ triangular_assignment_test()
 triangular_multiplication_test()
 triangular_tensor_multiplication_test()
 triangular_tensor_multiplication_pullback_test()
+
+M = [1 2 3 4; 5 6 7 8; 9 10 11 12; 13 14 15 16]
+@test vec(LowerTriangular(M)) == [5, 9, 10, 13, 14, 15]
+@test vec(SkewSymMatrix(M)) ≈ [1.5, 3.0, 1.5, 4.5, 3.0, 1.5]

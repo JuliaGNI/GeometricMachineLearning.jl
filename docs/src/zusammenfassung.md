@@ -10,7 +10,7 @@ In dieser Arbeit bezeichnen wir Methoden des maschinellen Lernens, die auf die s
 
 In Teil I geben wir Hintergrundinformationen wieder, die keine neue Arbeit darstellen, aber die Grundlage für die folgenden Kapitel bilden. Dieser erste Teil enthält eine grundlegende Einführung in die Theorie der Riemannschen Mannigfaltigkeiten, eine Diskussion über Strukturerhaltung und eine kurze Erläuterung von DDROM.
 
-In Teil II wird ein neues Optimierungsframework eingeführt, das bestehende Optimierer für neuronale Netze auf Mannigfaltigkeiten verallgemeinert. Beispiele hierfür sind der Adam-Optimierer und der BFGS-Optimierer. Diese neuen Optimierer waren notwendig, um das Training einer neuen neuronalen Netzwerkarchitektur zu ermöglichen, die wir *symplektische Autoenkoder* (SAE) nennen.
+In Teil II wird ein neues Optimierungsframework eingeführt, das bestehende Optimierer für neuronale Netze auf Mannigfaltigkeiten verallgemeinert. Ein Beispiel hierfür ist der Adam-Optimierer. Diese Optimierer waren notwendig, um das Training einer neuen neuronalen Netzwerkarchitektur zu ermöglichen, die wir *symplektische Autoenkoder* (SAE) nennen.
 
 In Teil III werden schließlich verschiedene spezielle neuronale Netzwerkarchitekturen vorgestellt. Einige von ihnen, wie *SympNets* und *Multi-Head Attention*, stellen keine Neuheiten dar, aber andere, wie SAEs, *Volume-Preserving Attention* und der *lineare symplektische Transformer*, sind originell.
 

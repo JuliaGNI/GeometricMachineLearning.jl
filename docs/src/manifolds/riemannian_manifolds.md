@@ -51,7 +51,7 @@ It is therefore customary to introduce the *exponential map* ``\exp:T_x\mathcal{
 \exp(v_x) := \gamma_{v_x}(1),
 ```
 
-and we see that ``\gamma_{v_x}(t) = \exp(t\cdot{}v_x)``. In `GeometricMachineLearning` we denote the exponential map by [`geodesic`](@ref) to avoid confusion with the matrix exponential map[^2] which is called as `exp` in `Julia`. So we use the definition:
+and we see that ``\gamma_{v_x}(t) = \exp(t\cdot{}v_x)``. In `GeometricMachineLearning` we denote the exponential map by [`geodesic`](@ref geodesic(::StiefelManifold{T}, ::AbstractMatrix{T}) where T) to avoid confusion with the matrix exponential map[^2] which is called as `exp` in `Julia`. So we use the definition:
 
 [^2]: The Riemannian exponential map and the matrix exponential map coincide for many matrix Lie groups.
 
@@ -130,7 +130,7 @@ nothing # hide
 ![A tangent vector on ``\mathcal{M}`` determines a direction.](sphere_with_tangent_vec_dark.png)
 
 
-We now solve the geodesic spray for ``\eta\cdot\Delta`` for ``\eta = 0.1, 0.2, \ldots, 5.5`` with the function [`geodesic`](@ref) and plot the corresponding points:
+We now solve the geodesic spray for ``\eta\cdot\Delta`` for ``\eta = 0.1, 0.2, \ldots, 5.5`` with the function [`geodesic`](@ref geodesic(::StiefelManifold{T}, ::AbstractMatrix{T}) where T) and plot the corresponding points:
 
 ```@example s2_retraction
 Δ_increments = [Δ * η for η in 0.1 : 0.1 : 5.5]
@@ -210,7 +210,7 @@ we call the *gradient optimization scheme*.
 ## Library Functions
 
 ```@docs
-geodesic(::Manifold{T}, ::AbstractMatrix{T}) where T
+geodesic(::StiefelManifold{T}, ::AbstractMatrix{T}) where T
 ```
 
 ```@raw latex

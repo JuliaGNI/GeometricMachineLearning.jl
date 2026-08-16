@@ -31,7 +31,7 @@ Pages = Dict(Main.index_latex_pages)["General Framework for Manifold Optimizatio
 ### Optimizer Methods
 
 ```@index
-Pages = Dict(Main.index_latex_pages)["Optimizer Methods"]
+Pages = [Dict(Main.index_latex_pages)["Optimizer Methods"]]
 ```
 
 ### Layers

@@ -25,12 +25,18 @@ Random.seed!(rng, 123)
 dl = DataLoader(rand(rng, 5))
 batch = Batch(2)
 
-batch(dl)
+batches = batch(dl)
+
+@assert length(batches) == 3
+@assert length.(batches) == (2, 2, 1)
+@assert sort(collect(union(batches...))) == [(1, i) for i in 1:5]
+
+true
 
 # output
 
 [ Info: You have provided a matrix as input. The axes will be interpreted as (i) system dimension and (ii) number of parameters.
-([(1, 5), (1, 3)], [(1, 4), (1, 1)], [(1, 2)])
+true
 ```
 
 Here the first index is always 1 (the time dimension). We get a total number of 3 batches. 
@@ -115,18 +121,21 @@ dl₁ = DataLoader(dat; autoencoder = false, suppress_info = true) # time series
 dl₂ = DataLoader(dat; autoencoder = true, suppress_info = true) # autoencoder-like
 batch = Batch(3)
 
-nob₁ = number_of_batches(dl₁, batch)
-nob₂ = number_of_batches(dl₂, batch)
-println(stdout, "Number of batches of dl₁: ", nob₁)
-println(stdout, "Number of batches of dl₂: ", nob₂)
-println(stdout, batch(dl₁), "\n", batch(dl₂))
+batches₁ = batch(dl₁)
+batches₂ = batch(dl₂)
+
+@assert number_of_batches(dl₁, batch) == 2
+@assert number_of_batches(dl₂, batch) == 2
+@assert length.(batches₁) == (3, 1)
+@assert length.(batches₂) == (3, 2)
+@assert sort(collect(union(batches₁...))) == [(i, 1) for i in 1:4]
+@assert sort(collect(union(batches₂...))) == [(1, i) for i in 1:5]
+
+true
 
 # output
 
-Number of batches of dl₁: 2
-Number of batches of dl₂: 2
-([(1, 1), (4, 1), (2, 1)], [(3, 1)])
-([(1, 3), (1, 2), (1, 4)], [(1, 1), (1, 5)])
+true
 ```
 
 Here we see that in the *autoencoder case* that last minibatch has an additional element.

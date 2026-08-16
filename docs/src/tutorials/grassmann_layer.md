@@ -107,7 +107,7 @@ nn = NeuralNetwork(model, CPU(), Float64)
 nothing # hide
 ```
 
-We then *lift* the neural network parameters via [`GlobalSection`](@ref).
+We then *lift* the neural network parameters via `GlobalSection`.
 
 ```@example rosenbrock
 λY = GlobalSection(params(nn))
@@ -265,7 +265,7 @@ function compute_gradient(ps::NeuralNetworkParameters)
 end
 
 # note the very high value for the learning rate
-optimizer = Optimizer(nn, AdamOptimizer(1e-1))
+optimizer = Optimizer(Adam(), nn; step_size = 1e-1)
 
 nothing # hide
 ```

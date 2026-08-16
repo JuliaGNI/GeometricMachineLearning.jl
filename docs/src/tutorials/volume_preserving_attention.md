@@ -117,9 +117,9 @@ Next we train the networks (here we pick a batch size of 30 and train for 1000 e
 
 ```@setup volume_preserving_attention
 function set_up_optimizers(nn_skew, nn_arb, nn_comp)
-    o_skew = Optimizer(AdamOptimizer(T), nn_skew)
-    o_arb  = Optimizer(AdamOptimizer(T), nn_arb)
-    o_comp = Optimizer(AdamOptimizer(T), nn_comp)
+    o_skew = Optimizer(Adam(T), nn_skew)
+    o_arb  = Optimizer(Adam(T), nn_arb)
+    o_comp = Optimizer(Adam(T), nn_comp)
 
     o_skew, o_arb, o_comp
 end

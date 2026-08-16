@@ -132,6 +132,12 @@ function Base.zero(A::AT) where AT <: AbstractTriangular
     AT(zero(A.S), A.n)
 end
 
+# see the comment on `similar(::SymmetricMatrix)`
+Base.similar(A::AT) where {AT <: AbstractTriangular} = AT(similar(A.S), A.n)
+
+# this fills the *storage*, so the entries outside the stored triangle stay zero
+Base.fill!(A::AbstractTriangular, val) = (fill!(A.S, val); A)
+
 function networkbackend(A::AbstractTriangular)
     networkbackend(A.S)
 end

@@ -29,3 +29,10 @@ end
 
 test_volume_preserving_feedforward(; T = Float32)
 test_volume_preserving_feedforward(; T = Float64)
+
+l = VolumePreservingLowerLayer(2, identity; use_bias = false)
+A = LowerTriangular([1], 2)
+@test l(ones(eltype(A), 2), (weight = A,)) == reshape([1, 2], 2, 1)
+l = VolumePreservingUpperLayer(2, identity; use_bias = false)
+A = UpperTriangular([1], 2)
+@test l(ones(eltype(A), 2), (weight = A,)) == reshape([2, 1], 2, 1)

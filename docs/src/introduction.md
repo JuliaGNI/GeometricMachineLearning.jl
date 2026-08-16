@@ -19,10 +19,10 @@ Closely linked to the research presented here is the development of a software p
 [^0]: This document was produced with `GeometricMachineLearning` `v0.3`. It may be that the interface will slightly change in future versions, but efforts will be made to keep these changes as small as possible.
 
 ```@docs; canonical = false
-GradientCache
+rgrad(::StiefelManifold, ::AbstractMatrix)
 ```
 
-So the docstring shows the name of the type or method, in most cases how to call it and then gives some information explaining what it does and potentially hyperlinks to other similar docstrings ([`GradientOptimizer`](@ref) in this case); all of this information is indented by a tab. Docstrings may include other information under subheaders **Arguments** (showing the arguments the method can be supplied with), **Examples** (giving more detailed examples (including results) of how to use the method) and **Implementation** (giving details on how the method is implemented). When we reference a docstring it is always printed in blue (e.g. [`GradientOptimizer`](@ref)), indicating a hyperlink. In addition there is an *index of docstrings* showing all docstrings in chronological order with the associated page number.
+So the docstring shows the name of the type or method, in most cases how to call it and then gives some information explaining what it does and potentially hyperlinks to other similar docstrings ([`metric(::StiefelManifold, ::AbstractMatrix, ::AbstractMatrix)`](@ref) in this case); all of this information is indented by a tab. Docstrings may include other information under subheaders **Arguments** (showing the arguments the method can be supplied with), **Examples** (giving more detailed examples (including results) of how to use the method) and **Implementation** (giving details on how the method is implemented). When we reference a docstring it is always printed in blue (e.g. [`rgrad(::StiefelManifold, ::AbstractMatrix)`](@ref)), indicating a hyperlink. In addition there is an *index of docstrings* showing all docstrings in chronological order with the associated page number.
 
 Similar to **Library Functions**, which is included in most sections, almost every chapter concludes with a section **Chapter Summary** and an additional section **References** that shows further related reading material. The **Chapter Summary** recaps the important aspects of the corresponding chapter, states again what is new (this may be mathematical or software aspects) and gives information to what other parts of the dissertation the contents of the present chapter are relevant.
 
@@ -47,11 +47,11 @@ The background material, which does not include any original work, covers all th
 
 ## The Optimizer Framework
 
-One of the central parts of this dissertation is an *optimizer framework* that allows the generalization of existing optimizers such as Adam [kingma2014adam](@cite) and BFGS [wright2006numerical; Chapter 6.1](@cite) to homogeneous spaces in a consistent way[^4]. This part contains the following sections:
+One of the central parts of this dissertation is an *optimizer framework* that allows the generalization of existing optimizers such as Adam [kingma2014adam](@cite) to homogeneous spaces in a consistent way[^4]. This part contains the following sections:
 - [Neural Network Optimizers](@ref): here we introduce the concept of a neural network optimizer and discuss the modifications we have to make in order to generalize them to homogeneous spaces.
 - [Retractions](@ref): an important concept in manifold optimization are retractions [absil2008optimization](@cite). We introduce them in this section, discuss how they can be constructed for homogeneous spaces and show the two examples of the *geodesic retraction* and the *Cayley retraction*.
 - [Parallel Transport](@ref): whenever we have an optimizer that contains momentum terms (such as Adam for example) we need to *transport* these momenta. In this section we explain how this can be done straightforwardly when dealing with homogeneous spaces. 
-- [Optimizer methods](@ref "Standard Neural Network Optimizers"): in this section we introduce simple optimizers such as the *gradient optimizer*, the *momentum optimizer* and *Adam* and show how to generalize them to our setting. Due to its increased complexity the BFGS optimizer gets [its own section](@ref "The BFGS Optimizer").
+- [Optimizer methods](@ref "Standard Neural Network Optimizers"): in this section we introduce simple optimizers such as the *gradient optimizer*, the *momentum optimizer* and *Adam* and show how to generalize them to our setting.
 
 [^4]: The optimizer framework was introduced in [brantner2023generalizing](@cite).
 

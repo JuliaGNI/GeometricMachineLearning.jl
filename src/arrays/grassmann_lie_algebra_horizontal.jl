@@ -151,8 +151,9 @@ function Base.zeros(backend::KernelAbstractions.Backend, ::Type{GrassmannLieAlgH
     )
 end
 
-Base.similar(A::GrassmannLieAlgHorMatrix, dims::Union{Integer, AbstractUnitRange}...) = zeros(typeof(A), dims...)
-Base.similar(A::GrassmannLieAlgHorMatrix) = zeros(typeof(A), A.N, A.n)
+Base.similar(A::GrassmannLieAlgHorMatrix, dims::Union{Integer, AbstractUnitRange}...) = zeros(GrassmannLieAlgHorMatrix{eltype(A)}, dims...)
+Base.similar(A::GrassmannLieAlgHorMatrix) = zeros(GrassmannLieAlgHorMatrix{eltype(A)}, A.N, A.n)
+Base.zero(A::GrassmannLieAlgHorMatrix) = zeros(GrassmannLieAlgHorMatrix{eltype(A)}, A.N, A.n)
 
 function Base.rand(rng::Random.AbstractRNG, ::Type{GrassmannLieAlgHorMatrix{T}}, N::Integer, n::Integer) where T
     GrassmannLieAlgHorMatrix(rand(rng, T, N-n, n), N, n)
@@ -198,3 +199,11 @@ function _round(B::GrassmannLieAlgHorMatrix; kwargs...)
         B.n
     )
 end
+
+function Base.copyto!(A::GrassmannLieAlgHorMatrix, B::GrassmannLieAlgHorMatrix)
+    copyto!(A.B, B.B)
+    A
+end
+
+# fills the *storage*; see the comment on `fill!(::SkewSymMatrix, ::Any)`
+Base.fill!(A::GrassmannLieAlgHorMatrix, val) = (fill!(A.B, val); A)

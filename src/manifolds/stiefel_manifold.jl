@@ -136,6 +136,18 @@ function global_section(Y::StiefelManifold{T}) where T
     typeof(Y.A)(qr!(A).Q)
 end
 
+GeometricOptimizers.global_section(Y::StiefelManifold) = global_section(Y)
+
+function GeometricOptimizers.apply_section!(
+    Y::StiefelManifold{T},
+    λY::GeometricOptimizers.GlobalSection{T, <:StiefelManifold{T}},
+    Y₂::StiefelManifold{T}
+) where T
+    N, n = size(λY.Y)
+    @views Y.A .= λY.Y.A * Y₂.A[1:n, :] .+ λY.λ * Y₂.A[(n + 1):N, :]
+    Y
+end
+
 @doc raw"""
     Ω(Y::StiefelManifold{T}, Δ::AbstractMatrix{T}) where T
 
@@ -182,3 +194,187 @@ function Base.copyto!(A::StiefelManifold, B::StiefelManifold)
     A.A .= B.A
     nothing
 end
+
+Base.copy(A::StiefelManifold) = StiefelManifold(copy(A.A))
+Base.similar(A::StiefelManifold) = StiefelManifold(similar(A.A))
+
+function Base.zero(Y::StiefelManifold{T}) where T
+    N, n = size(Y)
+    backend = networkbackend(Y.A)
+    zeros(backend, StiefelLieAlgHorMatrix{T}, N, n)
+end
+
+# Bridge GML's StiefelManifold into GO's manifold optimization infrastructure.
+# GO's methods dispatch on MT<:GO.Manifold{T}, but GML.StiefelManifold<:GML.Manifold{T}
+# (a different type hierarchy), so we extend GO's functions explicitly for GML's type.
+
+function GeometricOptimizers.global_rep(
+    λY::GeometricOptimizers.GlobalSection{T, <:StiefelManifold{T}},
+    Δ::AbstractMatrix{T}
+) where T
+    N, n = size(λY.Y)
+    StiefelLieAlgHorMatrix(
+        SkewSymMatrix(λY.Y.A' * Δ),
+        λY.λ' * Δ,
+        N, n
+    )
+end
+
+@doc raw"""
+    geodesic(Y::StiefelManifold, Δ)
+
+Take as input an element `Y` of the [`StiefelManifold`](@ref) and a tangent vector `Δ` in the
+corresponding tangent space and compute the geodesic (exponential map).
+
+In different notation: take as input an element ``x`` of ``\mathcal{M}`` and an element of
+``T_x\mathcal{M}`` and return ``\mathtt{geodesic}(x, v_x) = \exp(v_x).``
+
+# Examples
+
+```jldoctest
+using GeometricMachineLearning
+
+Y = StiefelManifold([1. 0. 0.;]' |> Matrix)
+Δ = [0. .5 0.;]' |> Matrix
+Y₂ = geodesic(Y, Δ)
+
+Y₂' * Y₂ ≈ [1.;]
+
+# output
+
+true
+```
+
+# Implementation
+
+Internally this calls [`geodesic(::StiefelLieAlgHorMatrix)`](@ref).
+"""
+function GeometricOptimizers.geodesic(Y::StiefelManifold{T}, Δ::AbstractMatrix{T}) where T
+    λY = GeometricOptimizers.GlobalSection(Y)
+    B = GeometricOptimizers.global_rep(λY, Δ)
+    E = StiefelProjection(B)
+    expB = GeometricOptimizers.geodesic(B)
+    GeometricOptimizers.apply_section(λY, StiefelManifold(expB * E))
+end
+
+@doc raw"""
+    cayley(Y::StiefelManifold, Δ)
+
+Take as input an element `Y` of the [`StiefelManifold`](@ref) and a tangent vector `Δ` in the
+corresponding tangent space and compute the Cayley retraction.
+
+In different notation: take as input an element ``x`` of ``\mathcal{M}`` and an element of
+``T_x\mathcal{M}`` and return ``\mathrm{Cayley}(v_x).``
+
+# Examples
+
+```jldoctest
+using GeometricMachineLearning
+
+Y = StiefelManifold([1. 0. 0.;]' |> Matrix)
+Δ = [0. .5 0.;]' |> Matrix
+Y₂ = cayley(Y, Δ)
+
+Y₂' * Y₂ ≈ [1.;]
+
+# output
+
+true
+```
+
+# Implementation
+
+Internally this calls [`cayley(::StiefelLieAlgHorMatrix)`](@ref).
+"""
+function GeometricOptimizers.cayley(Y::StiefelManifold{T}, Δ::AbstractMatrix{T}) where T
+    λY = GeometricOptimizers.GlobalSection(Y)
+    B = GeometricOptimizers.global_rep(λY, Δ)
+    E = StiefelProjection(B)
+    cayleyB = GeometricOptimizers.cayley(B)
+    GeometricOptimizers.apply_section(λY, StiefelManifold(cayleyB * E))
+end
+
+function GeometricOptimizers.update_section!(
+    Λᵗ::GeometricOptimizers.GlobalSection{T, <:StiefelManifold{T}},
+    Λ⁽ᵗ⁻¹⁾::GeometricOptimizers.GlobalSection{T, <:StiefelManifold{T}},
+    B⁽ᵗ⁻¹⁾::AbstractMatrix{T},
+    retraction
+) where T
+    N, n = B⁽ᵗ⁻¹⁾.N, B⁽ᵗ⁻¹⁾.n
+    expB = retraction(B⁽ᵗ⁻¹⁾)
+    GeometricOptimizers.apply_section!(expB, Λ⁽ᵗ⁻¹⁾, expB)
+    Λᵗ.Y.A .= @view expB.A[:, 1:n]
+    Λᵗ.λ .= @view expB.A[:, (n+1):N]
+    nothing
+end
+
+@doc raw"""
+    cayley(B̄::StiefelLieAlgHorMatrix)
+
+Compute the Cayley retraction of an element of [`StiefelLieAlgHorMatrix`](@ref).
+
+# Implementation
+
+We use the decomposition
+
+```math
+\bar{B} = \begin{bmatrix}
+    A & -B^T \\
+    B & \mathbb{O}
+\end{bmatrix} = \begin{bmatrix}  \frac{1}{2}A & \mathbb{I} \\ B & \mathbb{O} \end{bmatrix} \begin{bmatrix}  \mathbb{I} & \mathbb{O} \\ \frac{1}{2}A & -B^T  \end{bmatrix} =: B'(B'')^T
+```
+
+together with the Sherman-Morrison-Woodbury formula, so that only matrices of size
+``2n\times2n`` have to be inverted.
+"""
+function GeometricOptimizers.cayley(B::StiefelLieAlgHorMatrix)
+    T = eltype(B)
+    E = StiefelProjection(B)
+    𝕀_small = one(B.A)
+    𝕆 = zero(𝕀_small)
+    𝕀_small2 = hcat(vcat(𝕀_small, 𝕆), vcat(𝕆, 𝕀_small))
+    𝕀_big = one(B)
+    A_mat = B.A * 𝕀_small
+    B̂ = hcat(vcat(T(0.5) * A_mat, B.B), E)
+    B̄ = hcat(vcat(𝕀_small, T(0.5) * A_mat), vcat(zero(B.B'), -B.B'))'
+    StiefelManifold((𝕀_big + T(0.5) * B̂ * inv(𝕀_small2 - T(0.5) * B̄' * B̂) * B̄') * (𝕀_big + T(0.5) * B))
+end
+
+@doc raw"""
+    geodesic(B̄::StiefelLieAlgHorMatrix)
+
+Compute the geodesic of an element of [`StiefelLieAlgHorMatrix`](@ref).
+
+# Implementation
+
+Internally this is using
+
+```math
+\mathbb{I} + B'\mathfrak{A}(B', B'')B'',
+```
+
+with the decomposition ``\bar{B} = B'(B'')^T`` described for
+[`cayley(::StiefelLieAlgHorMatrix)`](@ref). ``\mathfrak{A}`` is a computationally efficient version
+of the matrix exponential; it lives in `GeometricOptimizers` as `GeometricOptimizers.𝔄`.
+"""
+function GeometricOptimizers.geodesic(B::StiefelLieAlgHorMatrix)
+    T = eltype(B)
+    E = StiefelProjection(B)
+    unit = one(B.A)
+    A_mat = B.A * unit
+    B̂ = hcat(vcat(T(0.5) * A_mat, B.B), E)
+    B̄ = hcat(vcat(unit, T(0.5) * A_mat), vcat(zero(B.B'), -B.B'))'
+    StiefelManifold(one(B) + B̂ * GeometricOptimizers.𝔄(B̂, B̄) * B̄')
+end
+
+function GeometricOptimizers._copyto!(
+    Λ₁::GeometricOptimizers.GlobalSection{T, <:StiefelManifold{T}},
+    Λ₂::GeometricOptimizers.GlobalSection{T, <:StiefelManifold{T}}
+) where T
+    copyto!(Λ₁.Y, Λ₂.Y)
+    copyto!(Λ₁.λ, Λ₂.λ)
+    Λ₁
+end
+
+# The elementwise arithmetic GO needs on `SkewSymMatrix` and `StiefelLieAlgHorMatrix` lives in
+# `src/optimizers/go_bridges.jl`, together with the same bridges for the other GML array types.

@@ -43,7 +43,7 @@ We can now train the network
 ```@example hnn
 batch = Batch(10)
 n_epochs = 100
-o = Optimizer(AdamOptimizer(Float64), hnn)
+o = Optimizer(Adam(Float64), hnn)
 loss_array = o(hnn, dl, batch, n_epochs, loss)
 using CairoMakie # hide
 lines(loss_array) # hide

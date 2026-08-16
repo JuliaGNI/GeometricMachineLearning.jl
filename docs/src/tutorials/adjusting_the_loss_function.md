@@ -26,7 +26,7 @@ data = DataLoader(sol; suppress_info = true)
 nn = NeuralNetwork(GSympNet(2))
 
 # train the network
-o = Optimizer(AdamOptimizer(), nn)
+o = Optimizer(Adam(), nn)
 batch = Batch(32)
 n_epochs = 30
 loss = FeedForwardLoss()

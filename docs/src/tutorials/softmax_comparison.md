@@ -72,7 +72,7 @@ arch2 = StandardTransformerIntegrator(dl.input_dim; transformer_dim = 20,
 nn1 = NeuralNetwork(arch1)
 nn2 = NeuralNetwork(arch2)
 
-o_method = AdamOptimizer()
+o_method = Adam()
 
 o1 = Optimizer(o_method, nn1)
 o2 = Optimizer(o_method, nn2)
