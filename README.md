@@ -56,8 +56,8 @@ const steps_to_plot = 200
 g_trajectory = Iterate_Sympnet(g_nn, ics; n_points = steps_to_plot)
 fig = Figure()
 ax = Axis(fig[1, 1]; xlabel = "q", ylabel = "p")
-lines!(ax, qp_data.q'[1:steps_to_plot], qp_data.p'[1:steps_to_plot], label = "training data")
-lines!(ax, vec(g_trajectory.q'), vec(g_trajectory.p'), label = "G Sympnet")
+lines!(ax, vec(qp_data.q')[1:steps_to_plot], vec(qp_data.p')[1:steps_to_plot]; label = "training data")
+lines!(ax, vec(g_trajectory.q'), vec(g_trajectory.p'); label = "G Sympnet")
 axislegend(ax)
 fig
 ```

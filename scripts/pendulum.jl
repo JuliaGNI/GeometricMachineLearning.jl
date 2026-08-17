@@ -5,10 +5,8 @@ H(x) = x[2]^2 / 2 + (1-cos(x[1]))
 H(q, p) = H([q[1], p[1]])
 H(t, q, p, params) = H(q, p)
 
-# `∇H` and the symplectic gradient `dH` were dropped from this file at some point while
-# `get_data_set` below kept calling `dH`, so it raised `UndefVarError`. Restored here; the gradient
-# of `H(x) = x₂²/2 + (1 - cos x₁)` is written out rather than taken with Zygote, as it used to be,
-# because it is two lines and the script then needs no AD to build its training data.
+# The gradient of `H` and the symplectic gradient built from it. Both are written out rather than
+# taken with automatic differentiation, so that building the training data below needs no AD.
 ∇H(x) = [sin(x[1]), x[2]]
 dH(x) = [0 1; -1 0] * ∇H(x)
 
@@ -27,8 +25,8 @@ end
 A grid of `num`² points in phase space, together with the symplectic gradient at each — the
 `(q, p, q̇, ṗ)` a Hamiltonian neural network trains on.
 
-Returns a `TrainingData`. It used to return a bare `(data, target)` pair of `Matrix{Vector}`, which
-`train!` has not accepted for some time.
+Returns a `TrainingData` of shape `SampledData`, which is what `train!` takes and what
+`default_method` maps to `ExactHnn`.
 """
 function get_data_set(num=10, xymin=-1.2, xymax=+1.2)
 	#range in which the data should be in

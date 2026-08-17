@@ -1,16 +1,12 @@
 # using Profile
 #
-# NOTE: this script does not run to completion yet, and the remaining blocker is in the library, not
-# here. Every training method for a Hamiltonian neural network — `ExactHnn` (which
-# `default_method` picks for these data) and `SEulerA`/`SEulerB` — calls `vectorfield(nn, x, params)`
-# at `src/training_method/hnn_exact_method.jl:6` and `src/training_method/symplectic_euler.jl:13,18`,
+# NOTE: this script does not run to completion, and what stops it is in the library rather than
+# here. Every training method for a Hamiltonian neural network — `ExactHnn`, which `default_method`
+# picks for these data, and `SEulerA`/`SEulerB` — calls `vectorfield(nn, x, params)` at
+# `src/training_method/hnn_exact_method.jl:6` and `src/training_method/symplectic_euler.jl:13,18`,
 # and no such method exists: `vectorfield` resolves only to GeometricBase's methods on
-# `AbstractStateVariable` and `State`. So HNN training through `train!` is broken for every method,
-# independently of this script.
-#
-# Everything upstream of that has been fixed and verified: the optimizer construction, the
-# architecture constructor, the missing `∇H`/`dH` in `pendulum.jl`, the `TrainingData` pipeline and
-# `train!`'s own default-method reference.
+# `AbstractStateVariable` and `State`. HNN training through `train!` is therefore unavailable for
+# every method, independently of this script. See *Open Issues → B6* in `CHANGELOG.md`.
 using GeometricMachineLearning
 
 # this contains the functions for generating the training data
@@ -31,15 +27,15 @@ const ninput = 2
 # number of training runs
 const nruns = 1000
 
-# Optimiser. The step size is no longer part of the method — it moved onto `Optimizer` when the
-# optimizers went to GeometricOptimizers — so it is passed to `train!` below instead. The default
-# for a `MomentumMethod` is `1e-2`, which is what this script used to ask for positionally.
+# Optimiser. The argument is the momentum coefficient; the step size belongs to the `Optimizer`
+# rather than to the method, so it is passed to `train!` below.
 #opt = GradientOptimizer()
 opt = MomentumOptimizer(0.5)
 
 # create HNN
-# The constructor is positional now: (dim, width, nhidden, activation). 
-# is named explicitly, because calling the abstract `HamiltonianArchitecture` warns and defaults to it.
+# The constructor takes `(dim, width, nhidden, activation)` positionally.
+# `StandardHamiltonianArchitecture` is named explicitly, because calling the abstract
+# `HamiltonianArchitecture` warns and defaults to it.
 hnn = StandardHamiltonianArchitecture(ninput, ld, ln)
 
 # create Lux network

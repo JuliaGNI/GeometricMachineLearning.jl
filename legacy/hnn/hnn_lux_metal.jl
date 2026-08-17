@@ -113,4 +113,4 @@ dhnn_est(ξ) = hnn_vf(model, ξ, params, state)
 
 include("../../scripts/plots.jl")
 
-plot_hnn(H, hnn_est, total_loss; filename="hnn_lux.png")
+plot_hnn(H, hnn_est, total_loss; filename="hnn_lux_metal.png")

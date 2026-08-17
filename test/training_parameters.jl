@@ -4,14 +4,13 @@ using Test
 
 include("data/data_generation.jl")
 
-# `TrainingParameters`' third argument used to default to `default_optimizer()`, which was deleted
-# along with the rest of GML's optimizer layer when it moved to GeometricOptimizers. The default was
-# left behind, so `TrainingParameters(nruns, method)` raised
-# `UndefVarError: default_optimizer not defined` for anyone who used it.
+# This file covers the `TrainingParameters` constructors and `train!`'s keywords. It is the only
+# coverage of either that `runtests.jl` includes: the rest lives under `test/train!/`, which
+# `runtests.jl` does not run.
 #
-# Nothing caught that: the only tests that touch `TrainingParameters` live under `test/train!/`,
-# which `runtests.jl` does not include, and they all pass the optimizer explicitly anyway. Hence this
-# file, which *is* included.
+# `TrainingParameters` takes the optimizer as a required third argument — there is no default
+# optimizer — which is what the testset below pins, along with the accessors and the keyword copy
+# constructor.
 @testset "TrainingParameters takes the optimizer explicitly" begin
     m = BasicSympNet()
     o = GradientOptimizer()
@@ -31,17 +30,26 @@ include("data/data_generation.jl")
     @test nruns(TrainingParameters(tp; nruns = 5)) == 5
 end
 
-# The step size moved from the optimizer method onto `Optimizer`, and `train!` built its `Optimizer`
-# without forwarding one — so the step size could not be set through `train!` at all.
+# The step size is a property of the `Optimizer`, not of the optimization method, so `train!` has
+# to forward its `step_size` keyword when it builds one. A `train!` that does not forward it takes
+# `_default_step_size(m)` on every run and trains regardless of what the caller asked for, which is
+# silent rather than an error — hence a test that observes whether the network moves.
+#
+# `train!` recomputes the loss over the *whole* data set after every step, so the value it stores
+# does not depend on which batch was drawn. That gives an assertion needing no seed: at
+# `step_size = 0` no parameter can move, hence every entry of the loss array is the same number.
 @testset "train! forwards a step size" begin
-    nn = NeuralNetwork(GSympNet(2; n_layers = 2), Float64)
     m = BasicSympNet()
     o = GradientOptimizer()
+    ntraining = 5
 
-    loss_default = train!(nn, tra_ps_data, o, m; ntraining = 1, batch_size = (1, 2))
-    @test length(loss_default) == 1
+    nn_frozen = NeuralNetwork(GSympNet(2; n_layers = 2), Float64)
+    loss_frozen = train!(nn_frozen, tra_ps_data, o, m; ntraining, batch_size = (1, 2), step_size = 0.0)
+    @test length(loss_frozen) == ntraining
+    @test all(loss_frozen .== loss_frozen[1])
 
-    nn2 = NeuralNetwork(GSympNet(2; n_layers = 2), Float64)
-    loss_small = train!(nn2, tra_ps_data, o, m; ntraining = 1, batch_size = (1, 2), step_size = 1e-8)
-    @test length(loss_small) == 1
+    nn_moving = NeuralNetwork(GSympNet(2; n_layers = 2), Float64)
+    loss_moving = train!(nn_moving, tra_ps_data, o, m; ntraining, batch_size = (1, 2), step_size = 1e-2)
+    @test length(loss_moving) == ntraining
+    @test !all(loss_moving .== loss_moving[1])
 end

@@ -189,11 +189,11 @@ function make_point_cloud_arrows(; theme = :dark)
 textcolor = theme == :dark ? :white : :black
 fig = Figure(; backgroundcolor = :transparent, size = (900, 675))
 ax = Axis3(fig[1, 1];
-                     # These limits have to cover *both* point clouds: the graph of the Rosenbrock
-                     # function, and the cloud around `(2, 2, 2)`. They used to cover only the first,
-                     # so every point of `D_1` and the tail of every arrow fell outside the axis —
-                     # the figure showed half of what its caption describes, and CairoMakie errors on
-                     # a scatter that is clipped away in its entirety.
+                     # These limits cover *both* point clouds: the graph of the Rosenbrock function,
+                     # and `D_1`, which sits around `(2, 2, 2)`. Limits that hold only the graph put
+                     # `D_1` and the tail of every arrow outside the axis, which shows half of what
+                     # the caption describes and makes CairoMakie fail on a scatter that is clipped
+                     # away in its entirety.
                      limits = ((-1.5, 3.0), (-1.5, 3.0), (0.0, 3.0)),
                      azimuth = π / 6,
                      elevation = π / 8,
@@ -226,9 +226,8 @@ arrows!(ax, point_cloud[1, indices], point_cloud[2, indices], point_cloud[3, ind
             - grads[1, indices],     - grads[2, indices],     - grads[3, indices]; 
             color = mred, 
             linewidth = .01, 
-            # `alpha = .01` was tuned for GLMakie, whose order-independent transparency accumulated
-            # 30 overlapping arrows into something visible. CairoMakie composites them in order, so
-            # at 1% opacity the arrows — the subject of the figure — disappeared entirely.
+            # CairoMakie composites the 30 overlapping arrows in order rather than accumulating
+            # them, so the opacity has to be high enough for a single arrow to read on its own.
             alpha = .5,
             arrowsize = .04,
             )

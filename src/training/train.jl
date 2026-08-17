@@ -20,15 +20,17 @@ Perform a training of a neural networks on data using given method a training Me
 
 Different ways of use:
 
-    train!(neuralnetwork, data, optimizer = GradientOptimizer(1e-2), training_method; nruns = 1000, batch_size = default(data, type), showprogress = false )
+    train!(neuralnetwork, data, optimizer, training_method = default_method(neuralnetwork, data); ntraining = 1000, batch_size = default(data, type), step_size = _default_step_size(optimizer), showprogress = false)
 
 # Arguments
 - `neuralnetwork::LuxNeuralNetwork` : the neural net work using LuxBackend
 - `data` : the data (see [`TrainingData`](@ref))
-- `optimizer = GradientOptimizer`: the optimization method (see [`Optimizer`](@ref))
-- `training_method` : specify the loss function used 
-- `nruns` : number of iteration through the process with default value 
+- `optimizer` : the optimization method, e.g. `GradientOptimizer()` (see [`Optimizer`](@ref))
+- `training_method` : specify the loss function used
+- `ntraining` : number of iterations through the process
 - `batch_size` : size of batch of data used for each step
+- `step_size` : the learning rate. It is a property of the [`Optimizer`](@ref) rather than of the
+  optimization method, and defaults to `_default_step_size(optimizer)`
 
 """
 
@@ -54,9 +56,8 @@ function train!(nn::AbstractNeuralNetwork, _data::AbstractTrainingData, m::Optim
     Loss() =  typeof(method) <: TrainingMethod ? loss(method, nn, data) : method(nn, data)
 
     # creation of optimiser
-    # The step size used to live on the optimizer method, so `train!` could set it by construction.
-    # It moved onto `Optimizer`, and this call did not follow — which left the step size unsettable
-    # through `train!` at all.
+    # The step size is a property of the `Optimizer` rather than of the method `m`, so it has to be
+    # forwarded here; this is the only place `train!` can set it.
     @timeit to "Creation of Optimizer" opt = Optimizer(m, nn; step_size = step_size)
 
     # the global section is allocated once and carried through the whole run, as in

@@ -12,10 +12,8 @@ struct TrainingParameters{TM, TO, Tbatch}
     mopt::TO
     bs::Tbatch
 
-    # `mopt` used to default to `default_optimizer()`, which was deleted with the rest of GML's
-    # optimizer layer when it moved to GeometricOptimizers — the default was left behind and every
-    # call that took it raised `UndefVarError`. The optimizer is now given explicitly, as the
-    # changelog already said it was.
+    # `mopt` is a required argument: the optimizer layer lives in GeometricOptimizers, and there is
+    # no sensible default optimizer for GML to pick on a caller's behalf.
     function TrainingParameters(nruns, method, mopt; batch_size = missing)
         new{typeof(method), typeof(mopt), typeof(batch_size)}(nruns, method, mopt, batch_size)
     end
@@ -25,9 +23,9 @@ function TrainingParameters(tp::TrainingParameters; nruns = nruns(tp), method = 
     TrainingParameters(nruns, method, opt; batch_size = batch_size)
 end
 
-# This took neither an optimizer nor a training method: it called `default_optimizer()` and
-# `default_integrator(nn, data)`, and *neither* exists — the second has been `default_method` for
-# some time. Both are supplied explicitly now.
+# Everything but the optimizer can be inferred from the network and the data: `default_method`
+# picks the training method that matches the data's symbols and shape, and the batch size follows
+# from that method.
 function TrainingParameters(nn::LuxNeuralNetwork, data::AbstractTrainingData, mopt;
         method = default_method(nn, data), nruns = DEFAULT_NRUNS)
     batch_size = complete_batch_size(data, method, missing)

@@ -75,7 +75,7 @@ ax_loss = Axis(plt[2, 1]; title = "Total loss during the training", titlesize = 
 lines!(ax_loss, total_loss; label = "Loss.", linewidth = 3)
 axislegend(ax_loss; position = :lb, nbanks = 2, labelsize = 15)
 
-# `b{0.4h}` in the Plots layout this replaces
+# the loss occupies the bottom 40% of the figure
 rowsize!(plt.layout, 2, Relative(0.4))
 
 CairoMakie.save("sympnet_pendulum.png", plt)

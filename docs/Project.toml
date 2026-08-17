@@ -14,6 +14,8 @@ HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
 LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
+# GeometricMachineLearning itself is deliberately *not* listed here: `docs/Makefile`'s `test_docs`
+# target develops it from the repository root, which is what makes the same file work in CI and in a
+# local clone at any path.
 [sources]
 BrenierTwoFluid = {rev = "main", url = "https://github.com/ToBlick/BrenierTwoFluids.git"}
-GeometricMachineLearning = {path = "/Users/mkraus/Datashare/Julia/GeometricMachineLearning"}

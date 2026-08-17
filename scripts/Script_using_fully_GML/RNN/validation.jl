@@ -72,7 +72,6 @@ plt = Figure(size = (1000, 600))
 ax = Axis(plt[1, 1])
 lines!(ax, t, q1; label = "Numeric Integration")
 lines!(ax, t, data_matrix[1,:]; label = "Neural Network")
-axislegend(ax)
 vlines!(ax, [seq_length*time_step-time_step]; color = :red, label = "Start of Prediction")
 axislegend(ax)
 

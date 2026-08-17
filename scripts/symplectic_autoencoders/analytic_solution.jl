@@ -61,7 +61,7 @@ function plot_time_evolution(T=Float32; spacing=T(.01), time_step=T(0.25), μ=T(
     curves, curves_p, _stacked_curves(Ω, curves), _stacked_curves(Ω, curves_p)
 end
 
-"One row per column of `curves`, which is what `layout = (length(I), 1)` gave under Plots."
+"Stack the columns of `curves` vertically, one row of the figure per column."
 function _stacked_curves(Ω, curves)
     fig = Figure()
     for i in axes(curves, 2)

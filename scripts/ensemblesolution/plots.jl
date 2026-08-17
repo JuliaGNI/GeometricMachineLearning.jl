@@ -2,13 +2,13 @@ using CairoMakie
 using LaTeXStrings
 using StatsBase
 
-# Under Plots each `plot_*` built its own plot object and `plot_result` composed the four into a
-# `grid(2, 2)`. Makie cannot nest one `Figure` inside another, so each of them is split in two: a
-# `plot_*!` that draws into a grid position and returns its axis, and a `plot_*` that wraps it in a
-# figure of its own. `plot_result` uses the former, everything else the latter.
+# Each plot comes in two forms, because a `Figure` cannot be nested inside another one: a `plot_*!`
+# that draws into a grid position of an existing figure and returns its axis, and a `plot_*` that
+# wraps that in a figure of its own. `plot_result`, which composes four panels, uses the former;
+# call the latter to get a single plot on its own.
 "Run `f` on the single cell of a new figure of the given size, and return that figure."
-function _standalone(f, size)
-    fig = Figure(size = size)
+function _standalone(f, figsize)
+    fig = Figure(size = figsize)
     f(fig[1, 1])
     fig
 end
@@ -122,7 +122,7 @@ function plot_result(data::TrainingData, nns::NeuralNetSolution, hamiltonian; ba
     initial_cond = [[linear_trans(rand(), min_q, max_q)..., linear_trans(rand(), min_p, max_p)...] for _ in 1:nb_prediction]
     initial_cond_far = [[linear_trans(rand(), 10*min_q, 10*max_q)..., linear_trans(rand(), 10*min_p, 10*max_p)...] for _ in 1:nb_prediction]
 
-    # the `grid(2, 2)` of the Plots version
+    # the four panels, two by two
     plt = Figure(size = (2000, 1600))
 
     plot_data!(plt[1, 1], data, "Datas"; index = sort!(sample(1:get_nb_trajectory(data), batch_nb_trajectory, replace = false)))
