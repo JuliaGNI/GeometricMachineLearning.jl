@@ -24,8 +24,8 @@ const integrator_batch_size = 4096
 const seq_length = 4
 const integrator_architecture = StandardTransformerIntegrator(reduced_dim; transformer_dim = 20, n_blocks = 3, n_heads = 5, L = 3, upscaling_activation = tanh)
 const integrator_nn = NeuralNetwork(integrator_architecture, backend)
-const integrator_method = AdamOptimizerWithDecay(integrator_train_epochs)
-const o_integrator = Optimizer(integrator_method, integrator_nn)
+const integrator_pairing = AdamOptimizerWithDecay(integrator_train_epochs)
+const o_integrator = Optimizer(integrator_nn; integrator_pairing...)
 
 loss = GeometricMachineLearning.ReducedLoss(encoder(sae_nn), decoder(sae_nn))
 
