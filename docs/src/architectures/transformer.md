@@ -27,7 +27,7 @@ We should also note that such transformers have been used for [the online phase 
 
 ## Classification Transformer
 
-Instead of using the transformer for integration, it can also be used as a image classifier. In this case it is often referred to as "vision transformer" [dosovitskiy2020image](@cite). In this case we append a [`ClassificationLayer`](@ref) to the output of the transformer. This will be used in one of the [examples](@ref "MNIST Tutorial"). 
+Instead of using the transformer for integration, it can also be used as a image classifier. In this case it is often referred to as "vision transformer" [dosovitskiy2020image](@cite). In this case we append a [`ClassificationLayer`](@ref) to the output of the transformer. This is what the [MNIST tutorial](https://juliagni.github.io/GMLDatasets.jl/latest/mnist/mnist_tutorial/) of `GMLDatasets` builds. 
 
 ## The Upscaling
 
@@ -57,6 +57,7 @@ the *downscaling layer*. Both of these layers are dense layers with the activati
 StandardTransformerIntegrator
 Transformer
 ClassificationTransformer
+ClassificationLayer
 GeometricMachineLearning.assign_output_estimate
 ```
 

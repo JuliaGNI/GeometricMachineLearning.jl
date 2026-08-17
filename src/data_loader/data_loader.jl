@@ -187,38 +187,6 @@ function DataLoader(input::AbstractVector{T}, output::AbstractVector{T}; suppres
 end
 
 @doc raw"""
-    DataLoader(data::AbstractArray{T, 3}, target::AbstractVector)
-
-Make an instance of DataLoader for a classification problem.
-
-Target here is a vector of labels. This is tailored towards being used with the package [`MLDatasets.jl`](https://github.com/JuliaML/MLDatasets.jl).
-
-# Arguments
-
-There are two keyword arguments:
-- `patch_length = 7`. This is the length of the patch in the ``x`` and the ``y`` direction;
-- `suppress_info = false`.
-
-For the example of the MNIST data set all images are of size ``49\times49``.
-For `patch_length = 7` the image is therefore split into 16 ``7\times7`` patches [brantner2023generalizing](@cite).
-"""
-function DataLoader(data::AbstractArray{T,3}, target::AbstractVector{T1};
-    patch_length=7,
-    suppress_info=false) where {T,T1}
-    if !suppress_info
-        @info "You provided a tensor and a vector as input. This will be treated as a classification problem (MNIST). Tensor axes: (i) & (ii) image axes and (iii) parameter dimension."
-    end
-    im_dim₁, im_dim₂, n_params = size(data)
-    @assert length(target) == n_params
-    number_of_patches = (im_dim₁ ÷ patch_length) * (im_dim₂ ÷ patch_length)
-    target = onehotbatch(target)
-    data_preprocessed = split_and_flatten(data, patch_length=patch_length, number_of_patches=number_of_patches)
-    DataLoader{T,typeof(data_preprocessed),typeof(target),:TimeSeries}(
-        data_preprocessed, target, patch_length^2, number_of_patches, n_params, 10, 1
-    )
-end
-
-@doc raw"""
     DataLoader(data::QPT)
 
 Make an instance of `DataLoader` based on ``(q, p)`` data.

@@ -1,3 +1,7 @@
+```@raw latex
+In this chapter we discuss an example of improving transformers by imbuing them with structure. We use the volume-preserving transformer to learn the dynamics of a rigid body and compare it to a volume-preserving feedforward neural network and to the standard transformer. At the end we further compare two different approaches to realizing the volume-preserving transformer.
+```
+
 # The Volume-Preserving Transformer for the Rigid Body
 
 Here we train a [volume-preserving feedforward neural network](@ref "Volume-Preserving Feedforward Neural Network"), a [standard transformer](@ref "Standard Transformer") and a [volume-preserving transformer](@ref "Volume-Preserving Transformer") on a rigid body [hairer2006geometric, arnold1978mathematical](@cite). These are also the results presented in [brantner2025volume](@cite). The ODE that describes the rigid body is: 

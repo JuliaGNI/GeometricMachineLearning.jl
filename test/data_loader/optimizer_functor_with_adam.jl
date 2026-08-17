@@ -10,20 +10,32 @@ function Chain(c::Chain, d::AbstractExplicitLayer)
 end
 
 """
-This creates a dummy MNIST data set; i.e. its output are two tensors that look similarly to the ones in the MNIST data set.
+This creates a dummy classification data set: an input tensor already in the *time series* format the
+transformer consumes and a one-hot encoded target.
+
+`GMLDatasets` builds such a `DataLoader` from an image data set — that is what its `patch_length`
+keyword is for. Here the tensors are random, because what is under test is the optimizer and not the
+data, and this way the test needs neither `GMLDatasets` nor its image utilities.
 """
-function create_dummy_mnist(; T=Float32, dim₁=6, dim₂=6, n_images=10)
-    rand(T, dim₁, dim₂, n_images), Int.(floor.(10*rand(T, n_images)))
+function create_dummy_classification_data(; T=Float32, input_dim=9, n_patches=4, n_images=10, n_classes=10)
+    input = rand(T, input_dim, n_patches, n_images)
+    output = zeros(Int, n_classes, 1, n_images)
+    for (i, label) in pairs(rand(1:n_classes, n_images))
+        output[label, 1, i] = 1
+    end
+    DataLoader{T, typeof(input), typeof(output), :TimeSeries}(
+        input, output, input_dim, n_patches, n_images, n_classes, 1
+    )
 end
 
-function test_optimization_with_adam(;T=Float32, dim₁=6, dim₂=6, n_images=10, patch_length=3)
-    dl = DataLoader(create_dummy_mnist(T=T, dim₁=dim₁, dim₂=dim₂, n_images=n_images)...; patch_length=patch_length)
-    
+function test_optimization_with_adam(;T=Float32, input_dim=9, n_patches=4, n_images=10, n_classes=10, n_heads=3)
+    dl = create_dummy_classification_data(; T=T, input_dim=input_dim, n_patches=n_patches, n_images=n_images, n_classes=n_classes)
+
     # batch size is equal to two
     batch = Batch(2)
 
-    # input dim is dim₁ / patch_length * dim₂ / pach_length; the transformer is called with dim₁ / patch_length and two layers
-    model = Chain(Transformer(dl.input_dim, patch_length, 2; Stiefel=true), ClassificationLayer(dl.input_dim, 10, σ))
+    # the transformer is called with `n_heads` heads and two layers
+    model = Chain(Transformer(dl.input_dim, n_heads, 2; Stiefel=true), ClassificationLayer(dl.input_dim, dl.output_dim, σ))
 
     nn_obj = NeuralNetwork(model, CPU(), Float32)
     ps = nn_obj.params

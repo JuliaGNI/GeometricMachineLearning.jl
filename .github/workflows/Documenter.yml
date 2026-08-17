@@ -31,8 +31,6 @@ jobs:
           cd ..
       - name: Make tikz images
         run: make all -C docs/src/tikz
-      - name: Make MNIST image
-        run: make all -C docs/src/tutorials/mnist
       - uses: julia-actions/julia-buildpkg@v1
       # Checks `@docs`/`@ref` resolution and `missing_docs` without building the pages. The full
       # build takes hours before it reports these, and they are the errors a docs change is most
