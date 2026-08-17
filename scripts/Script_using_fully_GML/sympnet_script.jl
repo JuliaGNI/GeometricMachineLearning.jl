@@ -53,31 +53,29 @@ p0 = [0.7]
 #predictions
 q_learned, p_learned = Iterate_Sympnet(nn, q0, p0; n_points = 100)
 
-using Plots
+using CairoMakie
 using LaTeXStrings
 
 nameproblem = :pendulum
 
 data_q, data_p = get_phase_space_data(nameproblem, q0, p0, (0,2pi),0.1)
 
-plt_qp = plot(data_q[:,1], data_p[:,1], label="Training data.",linewidth = 3,mk=*)
-plot!(plt_qp, q_learned[:,1], p_learned[:,1], label="Learned trajectory.", linewidth = 3, guidefontsize=18, tickfontsize=10, size=(1000,800), legendfontsize=15, titlefontsize=15)
-title!("G-SympNet prediction for the simple pendulum")
-xlabel!(L"q")
-ylabel!(L"p")
-plot!(legend=:outerbottom,legendcolumns=2)
+plt = Figure(size = (1000, 800))
 
-plt_loss = plot(total_loss,linewidth = 3, label="Loss.", guidefontsize=18, tickfontsize=10, size=(1000,800), legendfontsize=15, titlefontsize=15)
-title!("Total loss during the training")
-xlabel!(L"n_{training}")
-ylabel!(L"Loss")
-plot!(legend=:outerbottom,legendcolumns=2)
+ax_qp = Axis(plt[1, 1]; title = "G-SympNet prediction for the simple pendulum", titlesize = 15,
+             xlabel = L"q", ylabel = L"p", xlabelsize = 18, ylabelsize = 18,
+             xticklabelsize = 10, yticklabelsize = 10)
+lines!(ax_qp, data_q[:,1], data_p[:,1]; label = "Training data.", linewidth = 3)
+lines!(ax_qp, q_learned[:,1], p_learned[:,1]; label = "Learned trajectory.", linewidth = 3)
+axislegend(ax_qp; position = :lb, nbanks = 2, labelsize = 15)
 
-l = @layout [
-    grid(1,1)
-    b{0.4h}
-]
+ax_loss = Axis(plt[2, 1]; title = "Total loss during the training", titlesize = 15,
+               xlabel = L"n_{training}", ylabel = L"Loss", xlabelsize = 18, ylabelsize = 18,
+               xticklabelsize = 10, yticklabelsize = 10)
+lines!(ax_loss, total_loss; label = "Loss.", linewidth = 3)
+axislegend(ax_loss; position = :lb, nbanks = 2, labelsize = 15)
 
-plt = plot(plt_qp, plt_loss, layout = l)
+# the loss occupies the bottom 40% of the figure
+rowsize!(plt.layout, 2, Relative(0.4))
 
-savefig("sympnet_pendulum.png")
+CairoMakie.save("sympnet_pendulum.png", plt)

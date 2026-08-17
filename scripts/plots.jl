@@ -1,37 +1,54 @@
+using CairoMakie
 using LaTeXStrings
-using Plots
+
+# Fill colours for the contour panels: the Hamiltonian panels use a reversed viridis and the error
+# panel the unreversed one, so that the two read differently at a glance.
+const _reversed_colormap = Reverse(:viridis)
+const _default_colormap = :viridis
+
+"""
+    _contour_panel!(position, X, Y, Z; kwargs...)
+
+A filled contour of `Z` over `X × Y`, on its own axis at `position` in the enclosing figure layout.
+Returns the axis so a caller can draw a second, unfilled contour on top of it.
+"""
+function _contour_panel!(position, X, Y, Z; levels = 7, colormap = _reversed_colormap, kwargs...)
+    ax = Axis(position; kwargs...)
+    contourf!(ax, X, Y, Z; levels = levels, colormap = colormap)
+    ax
+end
 
 function plot_hnn(H, H̃, total_loss; xmin=-1.2, xmax=+1.2, ymin=-1.2, ymax=+1.2, nsamples=100, filename=nothing)
     #get offset of learned Hamiltonian
     H̃₀ = H̃([0,0])
 
-    #plot contour lines of Hamiltonian
     X = range(xmin, stop=xmax, length=nsamples)
     Y = range(ymin, stop=ymax, length=nsamples)
-    plt_cnt = contour(X, Y, [H([x,y]) for y in Y, x in X], linewidth = 0, fill = true, levels = 7, c = cgrad(:default, rev = true))
 
-    #plot contour lines of learned Hamiltonian
-    contour!(plt_cnt, X, Y, [H̃([x,y]) - H̃₀ for y in Y, x in X], linecolor = :black)
+    fig = Figure(size = (1000, 800))
 
-    #plot contours of error of Hamiltonian
-    m = max( [H([x,y]) for y in Y, x in X]...)
-    plt_err = contourf(X, Y, 100*[(H̃([x,y]) - H̃₀ - H([x,y]))/m for y in Y, x in X])
+    # contour lines of the Hamiltonian, with those of the learned one on top
+    ax_cnt = _contour_panel!(fig[1, 1], X, Y, [H([x,y]) for x in X, y in Y];
+                             xlabel = L"q", ylabel = L"p")
+    contour!(ax_cnt, X, Y, [H̃([x,y]) - H̃₀ for x in X, y in Y]; color = :black)
 
-    # plot total loss
-    plt_loss = plot(total_loss, xguide="n(training)", yguide="Total Loss", legend=false, size=(1000,800))
+    # contours of the error of the Hamiltonian, in per cent of its maximum
+    m = maximum(H([x,y]) for x in X, y in Y)
+    _contour_panel!(fig[1, 2], X, Y, 100*[(H̃([x,y]) - H̃₀ - H([x,y]))/m for x in X, y in Y];
+                    colormap = _default_colormap, xlabel = L"q", ylabel = L"p")
 
-    l = @layout [
-            grid(1,2)
-            b{0.4h}
-    ]
+    # total loss, across the full width below the two contour panels
+    ax_loss = Axis(fig[2, 1:2]; xlabel = "n(training)", ylabel = "Total Loss")
+    lines!(ax_loss, total_loss)
 
-    plt = plot(plt_cnt, plt_err, plt_loss, layout = l)
+    # the loss occupies the bottom 40% of the figure
+    rowsize!(fig.layout, 2, Relative(0.4))
 
     if filename !== nothing
-        savefig(filename)
+        CairoMakie.save(filename, fig)
     end
 
-    return plt
+    return fig
 end
 
 
@@ -46,46 +63,48 @@ function plot_network_sim(H, H̃, ∇H, ∇H̃, total_loss; xmin=-1.2, xmax=+1.2
 
     # Hamiltonian vector fields
     v(t,x,v) = v .= ∇H(x)
-    ṽ(t,x,v) = v .= ∇H̃(x)
+    ṽ(t,x,v) = v .= ∇H̃(x)
 
     # compute reference trajectory
     sol_ref = integrate(ODE(v, x₀), TableauGLRK(2), Δt, nt)
 
     # compute learned trajectory
-    sol_hnn = integrate(ODE(ṽ, x₀), TableauGLRK(2), Δt, nt)
+    sol_hnn = integrate(ODE(ṽ, x₀), TableauGLRK(2), Δt, nt)
 
-    # plot contour lines of Hamiltonian
     X = range(xmin, stop=xmax, length=nsamples)
     Y = range(ymin, stop=ymax, length=nsamples)
-    plt_cnt = contour(X, Y, [H([x,y]) for x in X, y in Y], linewidth = 0, fill = true, levels = 7, c = cgrad(:default, rev = true), title=L"$H(q,p)$", xguide=L"$q$", yguide=L"$p$")
 
-    # plot contour lines of learned Hamiltonian
-    contour!(plt_cnt, X, Y, [H̃([x,y]) - H̃₀ for x in X, y in Y], linecolor = :black)
+    fig = Figure(size = (1000, 800))
 
-    # plot total loss
-    plt_loss = plot(total_loss, xguide=L"$n_{\mathrm{training}}$", yguide="Total Loss", yaxis=:log, legend=false)
+    # contour lines of the Hamiltonian, with those of the learned one on top
+    ax_cnt = _contour_panel!(fig[1, 1], X, Y, [H([x,y]) for x in X, y in Y];
+                             title = L"$H(q,p)$", xlabel = L"$q$", ylabel = L"$p$")
+    contour!(ax_cnt, X, Y, [H̃([x,y]) - H̃₀ for x in X, y in Y]; color = :black)
 
-    # plot solutions
-    # plt_sim = contourf(X, Y, [H([x,y]) for x in X, y in Y], linewidth = 0, levels = 7, c = cgrad(:default, rev = true))
-    plt_sim = plot(; xguide=L"$q$", yguide=L"$p$")
-    plot!(plt_sim, sol_ref.q[1,:], sol_ref.q[2,:], label="Reference")
-    plot!(plt_sim, sol_hnn.q[1,:], sol_hnn.q[2,:], label="HNN")
+    # solutions
+    ax_sim = Axis(fig[1, 2]; xlabel = L"$q$", ylabel = L"$p$")
+    lines!(ax_sim, sol_ref.q[1,:], sol_ref.q[2,:]; label = "Reference")
+    lines!(ax_sim, sol_hnn.q[1,:], sol_hnn.q[2,:]; label = "HNN")
+    axislegend(ax_sim)
+
+    # total loss
+    ax_loss = Axis(fig[2, 1]; xlabel = L"$n_{\mathrm{training}}$", ylabel = "Total Loss",
+                   yscale = log10)
+    lines!(ax_loss, total_loss)
 
     # Hamiltonians
     H₀ = H([sol_ref.q[1,0], sol_ref.q[2,0]])
     H̃₀ = H̃([sol_hnn.q[1,0], sol_hnn.q[2,0]])
-    plt_err = plot(; xguide=L"$t$", yguide=L"$\Delta H(q(t))$", legend=:none)
-    plot!(plt_err, sol_ref.t, H.(sol_ref.q) .- H₀, label="Reference")
-    plot!(plt_err, sol_hnn.t, H̃.(sol_hnn.q) .- H̃₀, label="HNN")
+    ax_err = Axis(fig[2, 2]; xlabel = L"$t$", ylabel = L"$\Delta H(q(t))$")
+    lines!(ax_err, sol_ref.t, H.(sol_ref.q) .- H₀)
+    lines!(ax_err, sol_hnn.t, H̃.(sol_hnn.q) .- H̃₀)
 
-    l = @layout grid(2, 2, heights=[0.7, 0.3])
-
-    plt = plot(plt_cnt, plt_sim, plt_loss, plt_err, layout = l)
+    # the two contour panels occupy the top 70% of the figure
+    rowsize!(fig.layout, 1, Relative(0.7))
 
     if filename !== nothing
-        savefig(filename)
+        CairoMakie.save(filename, fig)
     end
 
-    return plt
+    return fig
 end
-

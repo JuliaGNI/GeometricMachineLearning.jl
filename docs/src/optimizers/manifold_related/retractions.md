@@ -52,9 +52,7 @@ Main.remark(raw"We can also use the Cayley retraction at a different point than 
 As a retraction is always an approximation of the geodesic map, we now compare the [`cayley`](@ref cayley(::StiefelLieAlgHorMatrix)) retraction for the example we introduced along [Riemannian manifolds](@ref "Geodesic Sprays and the Exponential Map"):
 
 ```@setup s2_retraction
-using GLMakie
-
-include("../../../gl_makie_transparent_background_hack.jl")
+using CairoMakie
 ```
 
 ```@setup s2_retraction
@@ -157,8 +155,8 @@ end # hide
 fig_light = make_plot(; theme = :light)[1] # hide
 fig_dark = make_plot(; theme = :dark)[1] # hide
 
-GLMakie.save("retraction_comparison_light.png",        alpha_colorbuffer(fig_light)) # hide
-GLMakie.save("retraction_comparison_dark.png",   alpha_colorbuffer(fig_dark)) # hide
+CairoMakie.save("retraction_comparison_light.png", fig_light; px_per_unit = Main.output_type == :html ? 1.5 : 2) # hide
+CairoMakie.save("retraction_comparison_dark.png", fig_dark; px_per_unit = Main.output_type == :html ? 1.5 : 2) # hide
 
 nothing
 ```
@@ -169,9 +167,6 @@ nothing
 We see that for small ``\Delta`` increments the Cayley retraction seems to match the geodesic retraction very well, but for larger values there is a notable discrepancy. We can plot this discrepancy directly: 
 
 ```@setup s2_retraction
-using CairoMakie
-
-CairoMakie.activate!()
 function plot_discrepancies(discrepancies; theme = :light)
     fig = Figure(; backgroundcolor = :transparent) # hide
     text_color = theme == :dark ? :white : :black # hide

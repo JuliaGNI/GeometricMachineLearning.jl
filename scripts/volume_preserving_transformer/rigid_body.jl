@@ -1,7 +1,7 @@
 using CUDA
 using GeometricMachineLearning
 using GeometricMachineLearning: map_to_cpu
-# using Plots; pyplot()
+using CairoMakie
 using JLD2
 using GeometricIntegrators: integrate, ImplicitMidpoint
 using GeometricProblems.RigidBody: odeproblem, odeensemble, default_parameters
@@ -128,21 +128,24 @@ function plot_validation(t_validation; nn₂=nn₂, nn₃=nn₃, nn₄=nn₄, pl
 
     ########################### plot validation
 
-    p_validation = plot(t_array, numerical[1, :], label = "implicit midpoint", color = 1, linewidth = 2, dpi = 400, ylabel = "z", xlabel = "time")
+    fig = Figure()
+    ax = Axis(fig[1, 1]; ylabel = "z", xlabel = "time")
+    lines!(ax, t_array, numerical[1, :]; label = "implicit midpoint", color = Makie.wong_colors()[1], linewidth = 2)
 
-    # plot!(p_validation, t_array, nn₁_solution[1, :], label = "attention only", color = 2, linewidth = 2)
+    # lines!(ax, t_array, nn₁_solution[1, :]; label = "attention only", color = Makie.wong_colors()[2], linewidth = 2)
 
-    plot!(p_validation, t_array, nn₂_solution[1, :], label = "feedforward", color = 3, linewidth = 2)
+    lines!(ax, t_array, nn₂_solution[1, :]; label = "feedforward", color = Makie.wong_colors()[3], linewidth = 2)
 
     if plot_vp_transformer
-        plot!(p_validation, t_array, nn₃_solution[1, :], label = "transformer", color = 4, linewidth = 2)
+        lines!(ax, t_array, nn₃_solution[1, :]; label = "transformer", color = Makie.wong_colors()[4], linewidth = 2)
     end
 
     if plot_regular_transformer
-        plot!(p_validation, t_array, nn₄_solution[1, :], label = "standard transformer", color = 5, linewidth = 2)
+        lines!(ax, t_array, nn₄_solution[1, :]; label = "standard transformer", color = Makie.wong_colors()[5], linewidth = 2)
     end
 
-    p_validation
+    axislegend(ax)
+    fig
 end
 
 p_validation = plot_validation(t_validation; plot_regular_transformer = true, plot_vp_transformer = true)
@@ -150,13 +153,19 @@ p_validation_long = plot_validation(t_validation_long)
 
 ########################### plot training loss
 
-p_training_loss = plot(loss_array₃, label = "transformer", color = 4, linewidth = 2, yaxis = :log, dpi = 400, ylabel = "training loss", xlabel = "epoch")
+p_training_loss = let fig = Figure()
+    ax = Axis(fig[1, 1]; ylabel = "training loss", xlabel = "epoch", yscale = log10)
+    lines!(ax, loss_array₃; label = "transformer", color = Makie.wong_colors()[4], linewidth = 2)
 
-# plot!(loss_array₁, label = "attention only", color = 2, linewidth = 2)
+    # lines!(ax, loss_array₁; label = "attention only", color = Makie.wong_colors()[2], linewidth = 2)
 
-plot!(p_training_loss, loss_array₂, label = "feedforward", color = 3, linewidth = 2)
+    lines!(ax, loss_array₂; label = "feedforward", color = Makie.wong_colors()[3], linewidth = 2)
 
-plot!(p_training_loss, loss_array₄, label = "standard transformer", color = 5, linewidth = 2)
+    lines!(ax, loss_array₄; label = "standard transformer", color = Makie.wong_colors()[5], linewidth = 2)
+
+    axislegend(ax)
+    fig
+end
 
 ########################## plot 3d validation 
 
@@ -181,19 +190,23 @@ function make_validation_plot3d(t_validation::Int, nn::NeuralNetwork)
 
     ########################### plot validation
 
-    p_validation = surface(sphere(1., [0., 0., 0.]), alpha = .2, colorbar = false, dpi = 400, xlabel = L"z_1", ylabel = L"z_2", zlabel = L"z_3", xlims = (-1, 1), ylims = (-1, 1), zlims = (-1, 1), aspect_ratio = :equal)
-    
-    plot!(p_validation, numerical[1, :], numerical[2, :], numerical[3, :], label = "implicit midpoint", color = 1, linewidth = 2, dpi = 400)
-    plot!(p_validation, numerical₂[1, :], numerical₂[2, :], numerical₂[3, :], label = nothing, color = 1, linewidth = 2, dpi = 400)
+    fig = Figure()
+    ax = Axis3(fig[1, 1]; aspect = (1., 1., 1.), xlabel = L"z_1", ylabel = L"z_2", zlabel = L"z_3",
+               limits = ([-1, 1], [-1, 1], [-1, 1]))
+    surface!(ax, sphere(1., [0., 0., 0.])...; alpha = .2, transparency = true)
 
-    plot!(p_validation, nn₁_solution[1, :], nn₁_solution[2,:], nn₁_solution[3, :], label = "volume-preserving transformer", color = 4, linewidth = 2)
-    plot!(p_validation, nn₁_solution₂[1, :], nn₁_solution₂[2,:], nn₁_solution₂[3, :], label = nothing, color = 4, linewidth = 2)
+    lines!(ax, numerical[1, :], numerical[2, :], numerical[3, :]; label = "implicit midpoint", color = Makie.wong_colors()[1], linewidth = 2)
+    lines!(ax, numerical₂[1, :], numerical₂[2, :], numerical₂[3, :]; color = Makie.wong_colors()[1], linewidth = 2)
 
-    p_validation
+    lines!(ax, nn₁_solution[1, :], nn₁_solution[2, :], nn₁_solution[3, :]; label = "volume-preserving transformer", color = Makie.wong_colors()[4], linewidth = 2)
+    lines!(ax, nn₁_solution₂[1, :], nn₁_solution₂[2, :], nn₁_solution₂[3, :]; color = Makie.wong_colors()[4], linewidth = 2)
+
+    axislegend(ax)
+    fig
 end
 
 p_validation3d = make_validation_plot3d(t_validation_long, nn₃)
 
-png(p_validation, joinpath(@__DIR__, "rigid_body/validation_"*string(seq_length)))
-png(p_training_loss, joinpath(@__DIR__, "rigid_body/training_loss_"*string(seq_length)))
-png(p_validation3d, joinpath(@__DIR__, "rigid_body/validation3d_"*string(seq_length)))
+CairoMakie.save(joinpath(@__DIR__, "rigid_body/validation_"*string(seq_length)*".png"), p_validation)
+CairoMakie.save(joinpath(@__DIR__, "rigid_body/training_loss_"*string(seq_length)*".png"), p_training_loss)
+CairoMakie.save(joinpath(@__DIR__, "rigid_body/validation3d_"*string(seq_length)*".png"), p_validation3d)

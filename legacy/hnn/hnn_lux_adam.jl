@@ -37,7 +37,7 @@ end
 end
 
 # generate data
-include("../scripts/data.jl")
+include("../../scripts/data.jl")
 
 data, target = get_data_set()
 # data = reshape(data,100,1)
@@ -139,6 +139,6 @@ dhnn_est(ξ) = hnn_vf(model, ξ, params, state)
 
 # plot results
 
-include("../scripts/plots.jl")
+include("../../scripts/plots.jl")
 
-plot_network(H, hnn_est, total_loss; filename = "hnn_lux_adam.png")
+plot_hnn(H, hnn_est, total_loss; filename = "hnn_lux_adam.png")

@@ -1,4 +1,4 @@
-using Lux, Plots, LinearAlgebra, ProgressMeter, CUDA
+using Lux, LinearAlgebra, ProgressMeter, CUDA
 using GeometricMachineLearning, Random, Zygote
 
 number_data_points = 10000

@@ -28,8 +28,26 @@ upgrading.
 
 ### Removed (breaking)
 
-- **`BFGSOptimizer` and `BFGSCache`.** GeometricOptimizers has `_BFGS()` and its own cache. GML's
-  copies were a replication of it and are gone, along with `docs/src/optimizers/bfgs_optimizer.md`.
+- **`BFGSOptimizer` and `BFGSCache`**, along with `docs/src/optimizers/bfgs_optimizer.md`.
+
+  This entry used to say that GeometricOptimizers "has `_BFGS()` and its own cache" and that GML's
+  copies "were a replication of it". **That is wrong, and BFGS training of a neural network is
+  currently lost rather than relocated.** The two are different algorithms:
+
+  | | GML's `BFGSOptimizer(η, δ)` | GeometricOptimizers' `BFGS` |
+  |---|---|---|
+  | driven by | `optimization_step!`, gradient only | a cache holding an inverse-Hessian approximation |
+  | step | fixed learning rate `η` | quasi-Newton direction, `Q` sized by the *flattened* parameters |
+  | fits GML's per-leaf tree update? | yes — that is what it was for | no |
+
+  `_is_go_native_method` therefore sends `BFGS` down GML's Euclidean path, where
+  `_euclidean_update!` has no method for it and the step raises a `MethodError`. Bridging it needs
+  `_fill!`, `_difference!`, `outer!` and the `ParameterHandling.flatten` round-trip taught about
+  GML's manifold and lift types — GML's `StiefelManifold` is a *different type* from
+  GeometricOptimizers', and the two hierarchies are unrelated, so none of GO's `Manifold` methods
+  apply. That work is not done.
+
+  Until it is, use `AdamOptimizer()`, `MomentumOptimizer()` or `GradientOptimizer()`.
 - **`SymplecticStiefelManifold`.** Never reachable — the file that defined it was commented out of
   the module.
 - **`default_optimizer`.** The optimizer is now always given explicitly.
@@ -110,6 +128,44 @@ continuation lines, and reading it misses them.
 - **`GeometricIntegrators` gains a `[compat]` bound of `0.18.2`.** It is a test-only dependency and
   had none, which let the resolver pick a version whose `SimpleSolvers` requirement conflicts with
   GeometricOptimizers' — a confusing resolver tree instead of a clear "no such version yet".
+
+- **`TrainingParameters` and `TrainingSet` take the optimizer explicitly**, which is the *Removed*
+  entry on `default_optimizer` reaching the constructors that still called it:
+
+  ```julia
+  TrainingParameters(nruns, method)          # before — raised UndefVarError
+  TrainingParameters(nruns, method, mopt)    # after
+
+  TrainingParameters(nn, data)                                    # before — raised UndefVarError
+  TrainingParameters(nn, data, mopt; method = …, nruns = …)       # after
+
+  TrainingSet(es)                            # before
+  TrainingSet(es, mopt = GradientOptimizer())  # after
+  ```
+
+  The two-argument `TrainingParameters(nn, data)` called `default_optimizer()` *and*
+  `default_integrator(nn, data)`, neither of which exists — the second has been `default_method` for
+  some time — so it could not be called at all. The optimizer is a required argument there;
+  `TrainingSet(::EnsembleSolution)` keeps a default, since it is the constructor that exists to fill
+  everything in from a solution.
+
+- **CairoMakie is the only plotting library.** GLMakie is gone from `docs/Project.toml` and the six
+  documentation pages that used it, and Plots from `scripts/` and the legacy `hnn/` scripts. Every
+  2D figure already used CairoMakie and `docs/src/manifolds/manifolds.md` already rendered a 3D
+  scene with it; the six holdouts are static `Axis3` renders with no interactivity or animation, so
+  CairoMakie's lack of per-pixel depth resolution does not bite. The one visible difference is that
+  GLMakie dimmed arrows on the far side of a semi-transparent sphere and CairoMakie draws them at
+  full strength.
+
+  This is what removes `xvfb` from CI: the Documentation and LaTeX workflows no longer install
+  `xorg-dev mesa-utils xvfb libgl1 freeglut3-dev libx*` or wrap anything in `xvfb-run`, and
+  `docs/gl_makie_transparent_background_hack.jl` — a `colorbuffer` trick for saving a transparent
+  background, which CairoMakie does natively — is deleted.
+
+- **`code_generation`, `mt_fun` and `hnn` moved to `legacy/codegen`, `legacy/mtk` and `legacy/hnn`.**
+  None is reachable from the package, its tests or its documentation; they sat next to `src/` and
+  `scripts/` as though they were current, and `hnn/` predates two generations of the optimizer and
+  architecture APIs.
 
 ### Fixed
 
@@ -230,6 +286,21 @@ continuation lines, and reading it misses them.
   methods still live in SymbolicNeuralNetworks and still belong upstream, which is
   [SymbolicNeuralNetworks#35](https://github.com/JuliaGNI/SymbolicNeuralNetworks.jl/issues/35).
 
+- **The step size can be set through `train!` again.** It moved from the optimizer method onto
+  `Optimizer` (see *Changed*), and `train!` kept building `Optimizer(m, nn)` without forwarding one
+  — so every run silently took `_default_step_size(m)` and the documented way of choosing a learning
+  rate did nothing. There is a `step_size` keyword now, defaulting to what the method asks for.
+
+- **The three-argument `train!` always raised.** Its training method defaulted to
+  `default_method(nn, data)` while the parameter is named `_data`, so `data` resolved to GML's
+  exported accessor *function* of that name and the call died with a `MethodError` before it began.
+
+- **`test/training_parameters.jl` is new and is in `runtests.jl`.** Nothing caught either of the two
+  bugs above, or the `default_optimizer` one under *Removed*, because everything that touches
+  `TrainingParameters` lives under `test/train!/`, which `runtests.jl` does not include. The new file
+  pins the step size by asserting that `step_size = 0` leaves the loss — which `train!` recomputes
+  over the whole data set after every step — identical at every step.
+
 ### Added
 
 - **`test/runtests.jl` emits seven `@info` markers**, one per testset group, so that a long job can
@@ -264,6 +335,27 @@ continuation lines, and reading it misses them.
   exercise whichever the resolver picks.
 - **`AbstractNeuralNetworks = "0.6.4"`** (was `"0.5, 0.6"`). SymbolicNeuralNetworks 0.5 requires
   `"0.6.4"`, so `0.5` could never resolve alongside it.
+- **Four dependencies dropped as unused**: `BandedMatrices` (no `BandedMatrix`, no `bandwidth`),
+  `SparseArrays` (no occurrence at all — the only matches for `sparse` are the word in two
+  docstrings), `StatsBase`, and `ZygoteRules` (no `@adjoint`, no `@nograd`). `BandedMatrices` also
+  had a module-level `using` that nothing needed.
+
+  `Distances` looked equally dead and is **not**: `sqeuclidean` is the default distance of every
+  `TrainingMethod` in `src/training_method/`, reached through the module-level `using` rather than a
+  qualified call. It stays, with a comment saying why, and the test suite is what caught it —
+  `test/data/test_batch.jl` failed with `UndefVarError: sqeuclidean` when it went.
+- **`Printf`, `ChainRulesTestUtils` and `SafeTestsets` move from `[deps]` to `[extras]`.** All three
+  are test-only; the last two were already duplicated in `[extras]`. `Printf` joins the test target
+  because `test/custom_ad_rules/kernel_pullbacks.jl` uses it and *is* in `runtests.jl`.
+- **`Aqua` and `RungeKutta` dropped from `[extras]`** — they appear nowhere in the repository and
+  were in no target — along with `GeometricEquations` and `Random`, which are already in `[deps]`.
+  `Documenter` leaves the test target: there is no `doctest` or `DocMeta` anywhere under `test/`, and
+  the documentation workflow owns doctest validation.
+- **`GLMakie` and `Plots` dropped from `docs/Project.toml`**; `Plots`, `Functors`, `Parameters` and
+  `ProfileView` from `scripts/Project.toml`, which also gains the ten packages its own scripts use
+  without declaring (`StatsBase`, `Lux`, `ProgressMeter`, `Distances`, `KernelAbstractions`,
+  `NLsolve`, `BenchmarkTools`, `OffsetArrays`, `SafeTestsets`, `Test`). Several scripts could not run
+  in that environment at all.
 
 ## [0.4.8] — 2026-07-07
 
@@ -442,6 +534,24 @@ they resolved to is in the release notes above.
   invariant), or drop the symbolic pullback for architectures whose loss is not additive. Either is
   a decision about the loss, not a repair, which is why this release only documents it.
 
+- **B6. Training a Hamiltonian neural network through `train!` is broken for every method.** All
+  three call `vectorfield(nn, x, params)` — `ExactHnn` at `src/training_method/hnn_exact_method.jl:6`,
+  `SEulerA` and `SEulerB` at `src/training_method/symplectic_euler.jl:13` and `:18` — and no such
+  method exists. `vectorfield` resolves only to GeometricBase's methods on `AbstractStateVariable`
+  and `State`, so the call raises a `MethodError` as soon as the first gradient is taken.
+
+  Found by repairing `scripts/hnn_pendulum.jl`, which is several API generations behind and hid this
+  behind four earlier failures (the two-argument `MomentumOptimizer`, the keyword
+  `HamiltonianArchitecture` constructor, `∇H`/`dH` deleted from `scripts/pendulum.jl` while
+  `get_data_set` still called them, and `get_data_set` returning a bare `(data, target)` pair where
+  `train!` wants a `TrainingData`). Those four are fixed; the script still does not run to
+  completion, and what stops it is this.
+
+  Nothing under `test/` covers it: the HNN training methods are exercised only from `test/train!/`,
+  which `runtests.jl` does not include. Closing this means deciding what `vectorfield` should be for
+  a `NeuralNetwork{<:HamiltonianArchitecture}` — `hamiltonian_vector_field` is the obvious candidate
+  — and giving it a test that runs.
+
   (There is no **B3** any more — it was `input_dimension`/`output_dimension` existing twice, closed
   by SymbolicNeuralNetworks 0.5; see *Fixed* above. The number is left vacant rather than reused.)
 
@@ -492,6 +602,14 @@ they resolved to is in the release notes above.
   calls `Symbolize` and `scripts/loss/build_loss.jl` calls `symbolic_params`; neither has existed
   for several breaking releases, and `scripts/Project.toml` is in no CI job, so nothing notices.
   Either port them or delete them — leaving them is the option that keeps costing a reader time.
+
+- **C9. Seven include sites under `legacy/` name files that do not exist.** Six `legacy/hnn/`
+  scripts include `../../scripts/data.jl` and `hnn_simple.jl` includes `../../src/training.jl`;
+  neither file exists anywhere in the repository, and neither did before the move to `legacy/`. Of
+  the 29 include targets under `legacy/`, the other 22 resolve. The spelling is now at least
+  consistent with where the files sit, so what remains is a decision about `data.jl`: reconstruct it
+  (it generated the pendulum training data, which `scripts/pendulum.jl` now does) or delete the
+  scripts that need it.
 
 ### D. Unverified
 

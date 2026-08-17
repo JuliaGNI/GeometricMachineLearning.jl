@@ -1,3 +1,4 @@
+using CairoMakie
 using GeometricMachineLearning
 using HDF5
 using LinearAlgebra
@@ -109,9 +110,12 @@ end
 @printf "PSD error: %.5e. " PSD_err
 @printf "SAE error: %.5e\n" err_vec[end]
 
-p = plot(0:n_runs, ones(n_runs+1)*PSD_err, label="PSD error", colour="red",size=(800,500))
-plot!(p, 0:n_runs, err_vec, label="Training loss", linewidth=2, size=(800,500), colour=1)
-png(p, "SAE_PSD_comp")
+fig = Figure(size = (800, 500))
+ax = Axis(fig[1, 1]; xlabel = "training run", ylabel = "error")
+lines!(ax, 0:n_runs, ones(n_runs+1)*PSD_err; label = "PSD error", color = :red)
+lines!(ax, 0:n_runs, err_vec; label = "Training loss", linewidth = 2)
+axislegend(ax)
+CairoMakie.save("SAE_PSD_comp.png", fig)
 
 #=
 function print_symplecticity(::Lux.AbstractExplicitLayer, ::NamedTuple)

@@ -1,6 +1,6 @@
 using GeometricMachineLearning
 using GeometricMachineLearning: map_to_cpu
-using Plots
+using CairoMakie
 using GeometricIntegrators: integrate, ImplicitMidpoint
 using GeometricProblems.RigidBody: odeproblem, default_parameters 
 using GeometricEquations: EnsembleProblem
@@ -71,11 +71,13 @@ function make_validation_plot(t_validation::Int, nn::NeuralNetwork)
 
     ########################### plot validation
 
-    p_validation = plot(t_array, numerical[1, :], label = "numerical solution", color = 1, linewidth = 2)
+    fig = Figure()
+    ax = Axis(fig[1, 1]; xlabel = L"t", ylabel = L"z_1")
+    lines!(ax, t_array, numerical[1, :]; label = "numerical solution", color = Makie.wong_colors()[1], linewidth = 2)
+    lines!(ax, t_array, nn₁_solution[1, :]; label = "volume-preserving feedforward", color = Makie.wong_colors()[2], linewidth = 2)
+    axislegend(ax)
 
-    plot!(p_validation, t_array, nn₁_solution[1, :], label = "volume-preserving feedforward", color = 2, linewidth = 2)
-
-    p_validation
+    fig
 end
 
 function make_validation_plot3d(t_validation::Int, nn::NeuralNetwork)
@@ -85,11 +87,13 @@ function make_validation_plot3d(t_validation::Int, nn::NeuralNetwork)
 
     ########################### plot validation
 
-    p_validation = plot(numerical[1, :], numerical[2, :], numerical[3, :], label = "numerical solution", color = 1, linewidth = 2)
+    fig = Figure()
+    ax = Axis3(fig[1, 1]; aspect = (1., 1., 1.), xlabel = L"z_1", ylabel = L"z_2", zlabel = L"z_3")
+    lines!(ax, numerical[1, :], numerical[2, :], numerical[3, :]; label = "numerical solution", color = Makie.wong_colors()[1], linewidth = 2)
+    lines!(ax, nn₁_solution[1, :], nn₁_solution[2, :], nn₁_solution[3, :]; label = "volume-preserving feedforward", color = Makie.wong_colors()[2], linewidth = 2)
+    axislegend(ax)
 
-    plot!(p_validation, nn₁_solution[1, :], nn₁_solution[2,:], nn₁_solution[3, :], label = "volume-preserving feedforward", color = 2, linewidth = 2)
-
-    p_validation
+    fig
 end
 
 nn₁ = NeuralNetwork(GeometricMachineLearning.DummyNNIntegrator(), nn.model, map_to_cpu(nn.params))
@@ -99,7 +103,12 @@ p_validation = make_validation_plot(t_validation, nn₁)
 p_validation₂ = make_validation_plot(20, nn₁)
 ########################### plot training loss
 
-p_training_loss = plot(loss_array₁, label = "volume-preserving feedforward", color = 2, linewidth = 2, yaxis = :log)
+p_training_loss = let fig = Figure()
+    ax = Axis(fig[1, 1]; xlabel = "epoch", ylabel = "training error", yscale = log10)
+    lines!(ax, loss_array₁; label = "volume-preserving feedforward", color = Makie.wong_colors()[2], linewidth = 2)
+    axislegend(ax)
+    fig
+end
 
 
 ########################### plot trajectories on the sphere
@@ -108,7 +117,7 @@ p_validation3d = make_validation_plot3d(20, nn₁)
 
 ########################### save figures
 
-png(p_validation, joinpath(@__DIR__, "rigid_body/validation"))
-png(p_validation₂, joinpath(@__DIR__, "rigid_body/validation2"))
-png(p_validation3d, joinpath(@__DIR__, "rigid_body/validation3d"))
-png(p_training_loss, joinpath(@__DIR__, "rigid_body/training_loss"))
+CairoMakie.save(joinpath(@__DIR__, "rigid_body/validation.png"), p_validation)
+CairoMakie.save(joinpath(@__DIR__, "rigid_body/validation2.png"), p_validation₂)
+CairoMakie.save(joinpath(@__DIR__, "rigid_body/validation3d.png"), p_validation3d)
+CairoMakie.save(joinpath(@__DIR__, "rigid_body/training_loss.png"), p_training_loss)

@@ -5,6 +5,11 @@ H(x) = x[2]^2 / 2 + (1-cos(x[1]))
 H(q, p) = H([q[1], p[1]])
 H(t, q, p, params) = H(q, p)
 
+# The gradient of `H` and the symplectic gradient built from it. Both are written out rather than
+# taken with automatic differentiation, so that building the training data below needs no AD.
+∇H(x) = [sin(x[1]), x[2]]
+dH(x) = [0 1; -1 0] * ∇H(x)
+
 # vector field methods
 function v(v, t, q, p, params)
     v[1] = p[1]
@@ -14,18 +19,35 @@ function f(f, t, q, p, params)
 end
 
 
-# get data set (includes data & target)
+"""
+    get_data_set(num, xymin, xymax)
+
+A grid of `num`² points in phase space, together with the symplectic gradient at each — the
+`(q, p, q̇, ṗ)` a Hamiltonian neural network trains on.
+
+Returns a `TrainingData` of shape `SampledData`, which is what `train!` takes and what
+`default_method` maps to `ExactHnn`.
+"""
 function get_data_set(num=10, xymin=-1.2, xymax=+1.2)
 	#range in which the data should be in
 	rang = range(xymin, stop=xymax, length=num)
 
 	# all combinations of (x,y) points
-	data = [[x,y] for x in rang, y in rang]
+	points = [[x, y] for x in rang for y in rang]
 
-	#compute the value of the vector field 
-	target = dH.(data)
+	#compute the value of the vector field
+	derivatives = dH.(points)
 
-	return (data, target)
+	raw = (first.(points), last.(points), first.(derivatives), last.(derivatives))
+	accessors = Dict(
+		:shape => SampledData,
+		:nb_points => Data -> length(Data[1]),
+		:q => (Data, n) -> Data[1][n],
+		:p => (Data, n) -> Data[2][n],
+		:q̇ => (Data, n) -> Data[3][n],
+		:ṗ => (Data, n) -> Data[4][n],
+	)
+	TrainingData(raw, accessors)
 end
 
 

@@ -14,7 +14,7 @@ using Zygote
 using HDF5
 using CUDA
 using GeometricIntegrators
-using Plots
+using CairoMakie
 
 include("vector_fields.jl")
 include("initial_condition.jl")
@@ -169,10 +169,13 @@ function plot_comparison_for_reconstructed_trajectories(trajectories, t_step=0)
     n_t_steps = length(trajectories.psd.t)
     t_step_index = Int(ceil(n_t_steps*t_step))
     N = length(trajectories.full.q[t_step_index])÷2
-    plot_object = plot(trajectories.full.q[t_step_index][1:N], label="Numerical solution")
-    plot!(plot_object, trajectories.psd.q[t_step_index][1:N], label="PSD")
-    plot!(plot_object, trajectories.nn.q[t_step_index][1:N], label="NN")
-    png(plot_object, "plots/comparison_for_time_step_"*string(t_step))
+    plot_object = Figure()
+    ax = Axis(plot_object[1, 1])
+    lines!(ax, trajectories.full.q[t_step_index][1:N]; label = "Numerical solution")
+    lines!(ax, trajectories.psd.q[t_step_index][1:N]; label = "PSD")
+    lines!(ax, trajectories.nn.q[t_step_index][1:N]; label = "NN")
+    axislegend(ax)
+    CairoMakie.save("plots/comparison_for_time_step_"*string(t_step)*".png", plot_object)
 end
 
 data_cpu = _cpu_convert(data)
@@ -239,12 +242,15 @@ function plot_projection_reduction_errors(μ_errors)
             psd_projection_vals[it] = psd_projection_val
             psd_reduction_vals[it] = psd_reduction_val
         end
-        plot_object = plot(n_vals, psd_projection_vals, color=2, seriestype=:scatter, markershape=:cross, ylimits=(0,1), label="PSD projection")
-        plot!(plot_object, n_vals, psd_reduction_vals, color=2, seriestype=:scatter, label="PSD reduction")
+        plot_object = Figure()
+        ax = Axis(plot_object[1, 1]; limits = (nothing, (0, 1)))
+        scatter!(ax, n_vals, psd_projection_vals; color = Makie.wong_colors()[2], marker = :cross, label = "PSD projection")
+        scatter!(ax, n_vals, psd_reduction_vals; color = Makie.wong_colors()[2], label = "PSD reduction")
 
-        plot!(plot_object, n_vals, nn_projection_vals, color=3, seriestype=:scatter, markershape=:cross, label="NN projection")        
-        plot!(plot_object, n_vals, nn_reduction_vals, color=3, seriestype=:scatter, label="NN reduction")
-        png(plot_object, "plots/v3mu"*μ[3:end])
+        scatter!(ax, n_vals, nn_projection_vals; color = Makie.wong_colors()[3], marker = :cross, label = "NN projection")
+        scatter!(ax, n_vals, nn_reduction_vals; color = Makie.wong_colors()[3], label = "NN reduction")
+        axislegend(ax)
+        CairoMakie.save("plots/v3mu"*μ[3:end]*".png", plot_object)
     end
 end
 

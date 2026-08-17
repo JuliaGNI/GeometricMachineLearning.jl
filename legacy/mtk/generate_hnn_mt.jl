@@ -4,7 +4,7 @@ using ModelingToolkit
 include("common.jl")
 
 #this file contains the function that evaluates the network
-include("../utils/networks.jl")
+include("../hnn/networks.jl")
 
 #generate code for neural network
 function generate_mt_hnn(n_in, ld)

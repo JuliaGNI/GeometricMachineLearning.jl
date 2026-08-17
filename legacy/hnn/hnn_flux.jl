@@ -9,10 +9,10 @@ using GeometricMachineLearning: get_batch
 
 
 #this contains the functions for generating the training data
-include("../scripts/data.jl")
+include("../../scripts/data.jl")
 
 #this contains the functions for generating the plots
-include("../scripts/plots.jl")
+include("../../scripts/plots.jl")
 
 #layer dimension/width
 const ld = 5
@@ -86,4 +86,4 @@ H_est(τ) = sum(model(τ))
 # dH_est(τ) = [[0 1; -1 0] * ForwardDiff.gradient(H_est,x) for x in τ]
 
 #plot results
-plot_network(H, H_est, total_loss; filename="hnn_flux.png")
+plot_hnn(H, H_est, total_loss; filename="hnn_flux.png")

@@ -43,9 +43,7 @@ So we conveniently take parallel transport of vectors into account by representi
 To demonstrate parallel transport we again use the example from when we introduced the concept of [geodesics](@ref "Geodesic Sprays and the Exponential Map"). We first set up the problem:
 
 ```@setup s2_parallel_transport
-using GLMakie
-
-include("../../../gl_makie_transparent_background_hack.jl")
+using CairoMakie
 ```
 
 ```@setup s2_parallel_transport
@@ -110,8 +108,8 @@ end # hide
 
 fig_light = set_up_plot(; theme = :light)[1]
 fig_dark = set_up_plot(; theme = :dark)[1]
-GLMakie.save("two_vectors_light.png", alpha_colorbuffer(fig_light)) # hide
-GLMakie.save("two_vectors_dark.png", alpha_colorbuffer(fig_dark)) # hide
+CairoMakie.save("two_vectors_light.png", fig_light; px_per_unit = Main.output_type == :html ? 1.5 : 2) # hide
+CairoMakie.save("two_vectors_dark.png", fig_dark; px_per_unit = Main.output_type == :html ? 1.5 : 2) # hide
 
 nothing # hide
 ```
@@ -166,11 +164,11 @@ end # hide
 
 fig_light, ax_light = plot_parallel_transport(; theme = :light) # hide
 fig_dark, ax_dark = plot_parallel_transport(; theme = :dark) # hide
-GLMakie.save("parallel_transport_light.png", fig_light |> alpha_colorbuffer) # hide
-GLMakie.save("parallel_transport_dark.png", fig_dark |> alpha_colorbuffer) # hide
+CairoMakie.save("parallel_transport_light.png", fig_light; px_per_unit = Main.output_type == :html ? 1.5 : 2) # hide
+CairoMakie.save("parallel_transport_dark.png", fig_dark; px_per_unit = Main.output_type == :html ? 1.5 : 2) # hide
 hidedecorations!(ax_light)  # hide
 hidespines!(ax_light) # hide
-GLMakie.save("parallel_transport_naked.png", fig_light |> alpha_colorbuffer) # hide
+CairoMakie.save("parallel_transport_naked.png", fig_light; px_per_unit = Main.output_type == :html ? 1.5 : 2) # hide
 
 nothing # hide
 ```

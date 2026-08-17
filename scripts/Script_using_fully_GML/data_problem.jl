@@ -1,4 +1,3 @@
-using Plots
 using Zygote
 #using  GeometricIntegrators
 using LinearAlgebra

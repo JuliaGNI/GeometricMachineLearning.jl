@@ -8,9 +8,6 @@ using Bibliography
 using LaTeXStrings
 # using Weave
 
-# this is necessary to avoid warnings. See https://documenter.juliadocs.org/dev/man/syntax/
-ENV["GKSwstype"] = "100"
-
 bib = CitationBibliography(joinpath(@__DIR__, "src", "GeometricMachineLearning.bib"))
 sort_bibliography!(bib.entries, :nyt)  # name-year-title
 
@@ -361,7 +358,3 @@ deploydocs(;
     devurl = "latest",
     devbranch = "main",
 )
-
-# got the error "exception = GLFWError (NOT_INITIALIZED): The GLFW library is not initialized" before; also see https://discourse.julialang.org/t/warning-error-closing-screen/111939
-import GLMakie
-GLMakie.closeall()

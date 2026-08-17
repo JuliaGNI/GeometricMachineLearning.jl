@@ -3,7 +3,7 @@ using GeometricMachineLearning
 using LinearAlgebra
 using Lux
 using NLsolve
-using Plots
+using CairoMakie
 using Random
 using Zygote 
 
@@ -104,8 +104,8 @@ err₁ = .5*(sum((z_vec - U₁*ξ_vec₁).^2,dims=1).^.5)
 err₂ = .5*(sum((z_vec - Φ*ξ_vec₂).^2,dims=1).^.5)
 abs_val = .5*(sum(z_vec.^2,dims=1).^.5)
 
-p₁ = plot(vec(err₁./abs_val))
-p₂ = plot(vec(err₂./abs_val))
+p₁ = lines(vec(err₁./abs_val))
+p₂ = lines(vec(err₂./abs_val))
 
 #neural network part
 nn_in = Chain(Gradient(2*N,4*N),Gradient(2*N,4*N;change_q=false),SymplecticStiefelLayer(2*n_m,2*N;inverse=true),Gradient(2*n_m,4*n_m))
@@ -156,8 +156,4 @@ end
 #err_nn = .5*(sum((z_vec-Ξ(ξ_vec_nn,Aa,X)).^2,dims=1).^.5)
 #p_nn = plot(vec(err_nn./abs_val))
 
-#anim1 = @animate for 1∈1:100:n_steps
-#    plot((U₁*ξ_vec₁)[1:N,i],yrange=[0,1])
-#end
-#gif(anim1,"toda_pod",fps=10)
 
