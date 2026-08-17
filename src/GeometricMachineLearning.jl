@@ -120,7 +120,9 @@ export StiefelProjection
 export PoissonTensor
 # `SymplecticLieAlgMatrix`, `SymplecticLieAlgHorMatrix` and `SymplecticProjection` used to be
 # exported here. Nothing has defined them for as long as the git history goes back, so the exports
-# were silent `UndefVarError`s waiting for a caller; see `test/exports.jl`.
+# were silent `UndefVarError`s waiting for a caller. GML has no test that would have caught them —
+# ten exported names are still undefined, which is issue C10; `GeometricOptimizers`' own
+# `test/exports.jl` is the one-assertion-over-`names` shape that closes this class.
 
 include("kernels/assign_q_and_p.jl")
 include("kernels/tensor_mat_mul.jl")

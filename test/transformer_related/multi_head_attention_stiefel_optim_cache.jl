@@ -1,6 +1,8 @@
 using GeometricMachineLearning, Test
-# qualified access only: a blanket `using` would make `StiefelManifold` and friends ambiguous,
-# since GeometricMachineLearning re-exports its own versions of them
+# `StiefelManifold` and the other shared types are one object reached by two names now, so a blanket
+# `using GeometricOptimizers` alongside GML would no longer be ambiguous on them -- only `Optimizer`
+# still resolves to two different things (issue C1). The qualified form stays because it says which
+# package owns what.
 import GeometricOptimizers
 using GeometricOptimizers: GradientCache, MomentumCache, AdamCache
 import Random, LinearAlgebra

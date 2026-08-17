@@ -116,7 +116,11 @@ _step_size(ls::DecayingStatic, t::Int) = Float64(GeometricOptimizers.step_size(l
 _current_step_size(opt::Optimizer, t::Int) = _step_size(opt.step_size, t)
 
 _optimizer_step_size(η::Real) = Float64(η)
-_optimizer_step_size(ls::DecayingStatic) = ls
+# Anything that is not a plain number goes through the same funnel as the `linesearch` keyword below,
+# so that the two entry points accept the same things: `step_size = Static(α)` is a fixed learning
+# rate on both, and anything else reports the `ArgumentError` that explains why a real line search
+# has nothing to search along here, instead of a `MethodError` naming this helper.
+_optimizer_step_size(ls) = _step_size_from_linesearch(ls)
 
 function Optimizer(method::GeometricOptimizers.OptimizerMethod, nn::NeuralNetwork;
         retraction = GeometricOptimizers.cayley,
