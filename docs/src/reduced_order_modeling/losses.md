@@ -13,7 +13,7 @@ A popular trend in recent years has been considering known physical properties o
 ![The three ingredients that go into neural network-based machine learning.](../tikz/ingredients_light.png)
 ![The three ingredients that go into neural network-based machine learning.](../tikz/ingredients_dark.png)
 
-Instead of considering certain properties through the loss function, we instead do so by enforcing them strongly through the network architecture and the optimizer; the latter pertains to [manifold optimization](@ref "Generalization to Homogeneous Spaces"). The advantages of this approach are the strong enforcement of properties that we know our network should have and much easier training because we do not have to tune hyperparameters. 
+Instead of considering certain properties through the loss function, we instead do so by enforcing them strongly through the network architecture and the optimizer; the latter pertains to [manifold optimization](@extref GeometricOptimizers Generalization-to-Homogeneous-Spaces). The advantages of this approach are the strong enforcement of properties that we know our network should have and much easier training because we do not have to tune hyperparameters. 
 
 
 ## Projection and Reduction Errors of Reduced Models

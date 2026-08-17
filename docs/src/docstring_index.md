@@ -4,12 +4,6 @@
 \thispagestyle{empty}
 ```
 
-### Manifolds
-
-```@index
-Pages = Dict(Main.index_latex_pages)["Manifolds"]
-```
-
 ### Geometric Structure
 
 ```@index
@@ -22,16 +16,10 @@ Pages = Dict(Main.index_latex_pages)["Geometric Structure"]
 Pages = Dict(Main.index_latex_pages)["Reduced Order Modeling"]
 ```
 
-### General Framework for Manifold Optimization
+### Optimizer
 
 ```@index
-Pages = Dict(Main.index_latex_pages)["General Framework for Manifold Optimization"]
-```
-
-### Optimizer Methods
-
-```@index
-Pages = [Dict(Main.index_latex_pages)["Optimizer Methods"]]
+Pages = [Dict(Main.index_latex_pages)["Optimizer"]]
 ```
 
 ### Layers
@@ -65,8 +53,8 @@ Pages = [Dict(Main.index_latex_pages)["Learning Nonlinear Spaces"]]
 Pages = Dict(Main.index_latex_pages)["Data Loader"]
 ```
 
-### Special Arrays, Tensors and Pullbacks
+### Tensors and Pullbacks
 
 ```@index
-Pages = Dict(Main.index_latex_pages)["Special Arrays, Tensors and Pullbacks"]
+Pages = Dict(Main.index_latex_pages)["Tensors and Pullbacks"]
 ```

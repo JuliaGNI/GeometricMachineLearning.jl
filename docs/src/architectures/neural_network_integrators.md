@@ -2,7 +2,7 @@
 
 In `GeometricMachineLearning` we can divide most neural network architectures (that are used for applications to physical systems) into two categories: autoencoders and integrators. This is also closely related to the application of reduced order modeling where *autoencoders are used in the offline phase* and *integrators are used in the online phase*.
 
-The term *integrator* in its most general form refers to an approximation of the [flow of an ODE](@ref "The Existence-And-Uniqueness Theorem") by a numerical scheme. Traditionally, for so called *one-step methods*, these numerical schemes are constructed by defining certain relationships between a known time step ``z^{(t)}`` and a future unknown one ``z^{(t+1)}`` [hairer2006geometric, leimkuhler2004simulating](@cite): 
+The term *integrator* in its most general form refers to an approximation of the [flow of an ODE](@extref GeometricOptimizers The-Existence-And-Uniqueness-Theorem) by a numerical scheme. Traditionally, for so called *one-step methods*, these numerical schemes are constructed by defining certain relationships between a known time step ``z^{(t)}`` and a future unknown one ``z^{(t+1)}`` [hairer2006geometric, leimkuhler2004simulating](@cite): 
 
 ```math
     f(z^{(t)}, z^{(t+1)}) = 0.

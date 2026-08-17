@@ -1,6 +1,6 @@
 # Tensors in `GeometricMachineLearning`
 
-We typically store training data as *tensors with three axes* in `GeometricMachineLearning`. This allows for a parallel computation of matrix products, also for the special arrays such as [`LowerTriangular`](@ref), [`UpperTriangular`](@ref), [`SymmetricMatrix`](@ref) and [`SkewSymMatrix`](@ref) and objects of [`Manifold`](@ref) type such as the [`StiefelManifold`](@ref). 
+We typically store training data as *tensors with three axes* in `GeometricMachineLearning`. This allows for a parallel computation of matrix products, also for the special arrays such as [`LowerTriangular`](@extref GeometricOptimizers GeometricOptimizers.LowerTriangular), [`UpperTriangular`](@extref GeometricOptimizers GeometricOptimizers.UpperTriangular), [`SymmetricMatrix`](@extref GeometricOptimizers GeometricOptimizers.SymmetricMatrix) and [`SkewSymMatrix`](@extref GeometricOptimizers GeometricOptimizers.SkewSymMatrix) and objects of [`Manifold`](@extref GeometricOptimizers GeometricOptimizers.Manifold) type such as the [`StiefelManifold`](@extref GeometricOptimizers GeometricOptimizers.StiefelManifold). 
 
 ## Library Functions
 

@@ -7,7 +7,7 @@ The *volume-preserving feedforward layers* in `GeometricMachineLearning` are clo
 ```math
 \mathtt{VPFF}_{A, b}: x \mapsto x + \sigma(Ax + b),
 ```
-where ``\sigma`` is a nonlinearity, ``A`` is the weight and ``b`` is the bias. The matrix ``A`` is either a [`LowerTriangular`](@ref) matrix ``L`` or an [`UpperTriangular`](@ref) matrix ``U``. We demonstrate volume-preservation of these layers by considering the case ``A = L``. The matrix looks as follows:
+where ``\sigma`` is a nonlinearity, ``A`` is the weight and ``b`` is the bias. The matrix ``A`` is either a [`LowerTriangular`](@extref GeometricOptimizers GeometricOptimizers.LowerTriangular) matrix ``L`` or an [`UpperTriangular`](@extref GeometricOptimizers GeometricOptimizers.UpperTriangular) matrix ``U``. We demonstrate volume-preservation of these layers by considering the case ``A = L``. The matrix looks as follows:
 
 ```math 
 L = \begin{pmatrix}
@@ -28,7 +28,7 @@ J = \nabla\mathtt{VPFF}_{L, b} = \begin{pmatrix}
      b_{n1} & \cdots & b_{n(n-1)}      & 1 
 \end{pmatrix},
 ```
-and the determinant of ``J`` is 1, i.e. the map is volume-preserving. A similar statement holds if the matrix ``A`` is [`UpperTriangular`](@ref) instead of [`LowerTriangular`](@ref).
+and the determinant of ``J`` is 1, i.e. the map is volume-preserving. A similar statement holds if the matrix ``A`` is [`UpperTriangular`](@extref GeometricOptimizers GeometricOptimizers.UpperTriangular) instead of [`LowerTriangular`](@extref GeometricOptimizers GeometricOptimizers.LowerTriangular).
 
 ## Library Functions 
 

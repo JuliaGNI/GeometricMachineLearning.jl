@@ -32,7 +32,7 @@ Its gradient (with respect to ``Z``) is:
 \frac{\partial\Sigma(Z)}{\partial{}Z_{ij}} & = \frac{1}{1 + \sum{m, n}\exp(C_{mn})}\sum_{m'n'}\exp(C_{m'n'})\sum_{\ell}(\delta_{jm'}A_{i\ell}Z_{\ell{}n'} + \delta_{jn'}Z_{\ell{}m'}A_{\ell{}i}) \\ & = \frac{1}{1 + \sum_{m,n}\exp(C_{mn})}\{[AZ\exp.(C)^T]_{ij} +  [A^TZ\exp.(C)]_{ij}\}.
 ```
 
-Note that if `A` is a [`SymmetricMatrix`](@ref) the expression than simplifies to:
+Note that if `A` is a [`SymmetricMatrix`](@extref GeometricOptimizers GeometricOptimizers.SymmetricMatrix) the expression than simplifies to:
 
 ```math
 \frac{\partial\Sigma(Z)}{\partial{}Z_{ij}} = 2\frac{1}{1 + \sum_{m,n}\exp(C_{mn})}[AZ\exp.(C)^T]_{ij},
@@ -44,7 +44,7 @@ or written in matrix notation:
 \nabla_Z\Sigma(Z) = 2\frac{1}{1 + \sum_{m,n}\exp(C_{mn})}AZ\exp.(C).
 ```
 
-Whether we use a [`SymmetricMatrix`](@ref) for ``A`` or not can be set with the keyword `symmetric` in [`SymplecticAttention`](@ref).
+Whether we use a [`SymmetricMatrix`](@extref GeometricOptimizers GeometricOptimizers.SymmetricMatrix) for ``A`` or not can be set with the keyword `symmetric` in [`SymplecticAttention`](@ref).
 
 ## Vector Softmax
 
@@ -72,7 +72,7 @@ The first term is equivalent to:
 \mathrm{TermI:}\qquad \sum_n [AZ]_{in}[\mathrm{softmax}_1(C)^T]_{nj} \equiv AZ(\mathrm{softmax}_1(C))^T.
 ```
 
-If we again assume that the matrix `A` is a [`SymmetricMatrix`](@ref) then the expression simplifies to:
+If we again assume that the matrix `A` is a [`SymmetricMatrix`](@extref GeometricOptimizers GeometricOptimizers.SymmetricMatrix) then the expression simplifies to:
 
 ```math
 \nabla_Z\Sigma(Z) = AZ\mathrm{softmax}_1(C).

@@ -153,7 +153,7 @@ with ``|\alpha| = \alpha_1 +...+ \alpha_{2d}``. We impose the following conditio
 Main.definition(raw"``\sigma`` is **``r``-finite** if ``\sigma\in C^r(\mathbb{R},\mathbb{R})`` and ``\int |D^r\sigma(x)|dx <\infty``.")
 ```
 
-We further consider the topology on ``C^r(U, \mathbb{R}^d)`` induced by ``||\cdot ||_{C^r(\cdot, \mathbb{R}^d)}`` and the associated notion of [denseness](@ref "Basic Concepts from General Topology"):
+We further consider the topology on ``C^r(U, \mathbb{R}^d)`` induced by ``||\cdot ||_{C^r(\cdot, \mathbb{R}^d)}`` and the associated notion of [denseness](@extref GeometricOptimizers Basic-Concepts-from-General-Topology):
 
 ```@eval
 Main.definition(raw"Let ``m,d,r\in \mathbb{N}`` with ``m,d>0`` be given, ``U`` an open subset of ``\mathbb{R}^m``, and ``I,J\subset C^r(U,\mathbb{R}^d)``. We say ``J`` is **``r``-uniformly dense on compacta in ``I``** if ``J \subset I`` and for any ``f\in I``, ``\epsilon>0``, and any compact ``K\subset U``, there exists ``g\in J`` such that ``||f-g||_{C^r(K,\mathbb{R}^{d})} < \epsilon``.")
@@ -183,7 +183,7 @@ There are many ``r``-finite activation functions commonly used in neural network
 - The sigmoid activation function: ``\sigma(x) = {1} / (1+e^{-x})``, 
 - The hyperbolic tangent function: ``\tanh(x) = (e^x-e^{-x}) / (e^x+e^{-x})``. 
 
-The universal approximation theorems state that we can, in principle, get arbitrarily close to any symplectomorphism defined on ``\mathbb{R}^{2d}``. But this does not tell us anything about how to optimize the network. This is can be done with any common [neural network optimizer](@ref "Neural Network Optimizers") and these neural network optimizers always rely on a corresponding loss function.  
+The universal approximation theorems state that we can, in principle, get arbitrarily close to any symplectomorphism defined on ``\mathbb{R}^{2d}``. But this does not tell us anything about how to optimize the network. This is can be done with any common [neural network optimizer](@extref GeometricOptimizers The-optimizer-framework,-step-by-step) and these neural network optimizers always rely on a corresponding loss function.  
 
 ## Loss function
 

@@ -93,13 +93,13 @@ The notion of a *pullback in automatic differentiation* is motivated by the conc
 ```math
 f:\mathcal{V}\to\mathcal{W}, a \mapsto f(a) =: b, 
 ```
-a *map of differentials* ``db \mapsto da``. In the differential geometry case ``db`` and ``da`` are part of the associated cotangent spaces, i.e. ``db\in{}T^*_b\mathcal{W}`` and ``da\in{}T^*_a\mathcal{V}``; in AD we (mostly) deal with spaces of arrays, i.e. vector spaces, which means that ``T^*_b\mathcal{W} \simeq \mathcal{W}`` and ``T^*_a\mathcal{V} \simeq \mathcal{V}``. If we have neural network weights on manifolds however, then we have to map weights from ``T^*_a\mathcal{V}`` (the result of an AD routine) to ``T_a\mathcal{V}`` before we can apply a [retraction](@ref "Retractions"). The mapping 
+a *map of differentials* ``db \mapsto da``. In the differential geometry case ``db`` and ``da`` are part of the associated cotangent spaces, i.e. ``db\in{}T^*_b\mathcal{W}`` and ``da\in{}T^*_a\mathcal{V}``; in AD we (mostly) deal with spaces of arrays, i.e. vector spaces, which means that ``T^*_b\mathcal{W} \simeq \mathcal{W}`` and ``T^*_a\mathcal{V} \simeq \mathcal{V}``. If we have neural network weights on manifolds however, then we have to map weights from ``T^*_a\mathcal{V}`` (the result of an AD routine) to ``T_a\mathcal{V}`` before we can apply a [retraction](@extref GeometricOptimizers Retractions). The mapping 
 
 ```math
 T^*_a\mathcal{V} \to T_a\mathcal{V}
 ```
 
-is equivalent to applying the [Riemannian gradient](@ref "The Riemannian Gradient").
+is equivalent to applying the [Riemannian gradient](@extref GeometricOptimizers The-Riemannian-Gradient).
 
 ## Library Functions 
 

@@ -10,7 +10,7 @@ Main.definition(raw"A **neural network architecture** is a parameter-dependent r
 " * Main.indentation * raw"where ``\Theta`` are the *parameters of the neural network* (we call ``\mathbb{P}`` the parameter space). ``\mathbb{P}``, the domain space ``\mathcal{D}`` and the target space ``\mathcal{M}`` of the neural network may be spaces with arbitrary structure in general (i.e. need not be vector spaces).")
 ```
 
-In this text the spaces ``\mathcal{D}`` and ``\mathcal{M}`` are vector spaces in most cases[^1]. The parameter space ``\mathbb{P}`` is however build [from manifolds in many cases](@ref "Neural Network Optimizers"). Weights have to be put on manifolds to realize [certain architectures that would otherwise not be possible](@ref "The Symplectic Autoencoder") and can make training [more efficient in other cases](https://juliagni.github.io/GMLDatasets.jl/latest/mnist/mnist_tutorial/).
+In this text the spaces ``\mathcal{D}`` and ``\mathcal{M}`` are vector spaces in most cases[^1]. The parameter space ``\mathbb{P}`` is however build [from manifolds in many cases](@extref GeometricOptimizers The-optimizer-framework,-step-by-step). Weights have to be put on manifolds to realize [certain architectures that would otherwise not be possible](@ref "The Symplectic Autoencoder") and can make training [more efficient in other cases](https://juliagni.github.io/GMLDatasets.jl/latest/mnist/mnist_tutorial/).
 
 [^1]: One exception is [Grassmann learning](@ref "Example of a Neural Network with a Grassmann Layer") where we learn a vector space.
 
