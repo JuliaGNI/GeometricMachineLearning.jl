@@ -64,7 +64,7 @@ See the constructors [`LinearLayerQ`](@ref) and [`LinearLayerP`](@ref).
 
 # Implementation
 
-`LinearLayer` uses the custom matrix [`SymmetricMatrix`](@ref) for its weight. 
+`LinearLayer` uses the custom matrix [`SymmetricMatrix`](@extref GeometricOptimizers GeometricOptimizers.SymmetricMatrix) for its weight. 
 """
 struct LinearLayer{M, N, C} <: SympNetLayer{M, N}
 end
@@ -81,7 +81,7 @@ This is equivalent to a left multiplication by the matrix:
 \mathbb{O} & \mathbb{I}
 \end{pmatrix}, 
 ```
-where ``A`` is a [`SymmetricMatrix`](@ref).
+where ``A`` is a [`SymmetricMatrix`](@extref GeometricOptimizers GeometricOptimizers.SymmetricMatrix).
 """
 const LinearLayerQ{M, N, TA} = LinearLayer{M, N, :Q}
 
@@ -97,7 +97,7 @@ This is equivalent to a left multiplication by the matrix:
 A & \mathbb{I}
 \end{pmatrix}, 
 ```
-where ``A`` is a [`SymmetricMatrix`](@ref).
+where ``A`` is a [`SymmetricMatrix`](@extref GeometricOptimizers GeometricOptimizers.SymmetricMatrix).
 """
 const LinearLayerP{M, N, TA} = LinearLayer{M, N, :P}
 

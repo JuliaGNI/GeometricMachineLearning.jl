@@ -7,7 +7,7 @@ Super-type of [`VolumePreservingLowerLayer`](@ref) and [`VolumePreservingUpperLa
 x \mapsto \begin{cases} \sigma(Lx + b) & \text{where $L$ is }\mathtt{LowerTriangular}, \\ \sigma(Ux + b) & \text{where $U$ is }\mathtt{UpperTriangular}. \end{cases}
 ```
 
-The functor can be applied to a vector, a matrix or a tensor. The special matrices are implemented as [`LowerTriangular`](@ref) and [`UpperTriangular`](@ref).
+The functor can be applied to a vector, a matrix or a tensor. The special matrices are implemented as [`LowerTriangular`](@extref GeometricOptimizers GeometricOptimizers.LowerTriangular) and [`UpperTriangular`](@extref GeometricOptimizers GeometricOptimizers.UpperTriangular).
 """
 abstract type VolumePreservingFeedForwardLayer{M, N, bias} <: AbstractExplicitLayer{M, N} end 
 

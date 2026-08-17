@@ -106,10 +106,8 @@ function center_align_text(text, width)
     return aligned_text
 end
 
-# The following are fallback functions - maybe you want to put them into a separate file
-function global_section(::AbstractVecOrMat)
-    nothing
-end
+# `global_section(::AbstractVecOrMat) = nothing` used to be defined here, identically to
+# GeometricOptimizers' own fallback. It is imported now.
 
 """
     QPT

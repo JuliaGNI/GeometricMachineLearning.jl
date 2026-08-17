@@ -11,7 +11,7 @@ The optional keyword arguments are:
 - `n_heads::Int=7`: The number of heads in the `MultiHeadAttention` (mha) layers.
 - `L::Int=16`: The number of transformer blocks.
 - `activation=softmax`: The activation function.
-- `Stiefel::Bool=true`: Whether the matrices in the mha layers are on the [`StiefelManifold`](@ref). 
+- `Stiefel::Bool=true`: Whether the matrices in the mha layers are on the [`StiefelManifold`](@extref GeometricOptimizers GeometricOptimizers.StiefelManifold). 
 - `add_connection::Bool=true`: Whether the input is appended to the output of the mha layer. (skip connection)
 """
 struct ClassificationTransformer{AT} <: Architecture 

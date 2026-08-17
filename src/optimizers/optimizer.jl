@@ -31,30 +31,22 @@ end
 GMLEuclideanState(x::AbstractArray{T}) where T =
     GMLEuclideanState{T, typeof(x)}(0, zero(x), zero(x))
 
-"""Adam optimizer method with exponential learning-rate decay."""
-struct AdamOptimizerWithDecay{T<:Real} <: GeometricOptimizers.OptimizerMethod
-    η₁::T; η₂::T; ρ₁::T; ρ₂::T; δ::T; γ::T; n_epochs::Int
-    function AdamOptimizerWithDecay(n_epochs::Int, η₁=1f-2, η₂=1f-6,
-            ρ₁=9f-1, ρ₂=9.9f-1, δ=1f-8; T=typeof(η₁))
-        γ = exp(log(η₂/η₁) / n_epochs)
-        new{T}(T(η₁), T(η₂), T(ρ₁), T(ρ₂), T(δ), T(γ), n_epochs)
-    end
-end
+# `AdamOptimizerWithDecay` used to be defined here, as an `OptimizerMethod` bundling Adam's `ρ₁`,
+# `ρ₂`, `δ` with a learning-rate schedule `η₁`, `η₂`, `n_epochs`. GeometricOptimizers ships the same
+# algorithm — the same `γ = exp(log(η₂/η₁)/n)` — split the way it belongs: the direction is an
+# `Adam` method, the schedule is a `DecayingStatic` line search. Both names are imported, and
+# `Optimizer` below takes a `DecayingStatic` as its `step_size`. Two packages exporting the name was
+# issue B1: `using GeometricMachineLearning, GeometricOptimizers` failed outright on it.
 
 _is_go_native_method(::GeometricOptimizers.GradientMethod) = true
 _is_go_native_method(::GeometricOptimizers.MomentumMethod) = true
 _is_go_native_method(::GeometricOptimizers.Adam)            = true
-# `AdamOptimizerWithDecay` differs from `Adam` only in the step size, which GML supplies separately
-# through `_current_step_size`, so it uses GO's Adam cache and state like any other Adam.
-_is_go_native_method(::AdamOptimizerWithDecay)              = true
 _is_go_native_method(::GeometricOptimizers.OptimizerMethod) = false
 
 _adapt_method_to_T(method::GeometricOptimizers.Adam, ::Type{T}) where T =
     GeometricOptimizers.Adam(T; β₁ = T(method.β₁), β₂ = T(method.β₂), δ = T(method.δ))
 _adapt_method_to_T(method::GeometricOptimizers.MomentumMethod, ::Type{T}) where T =
     GeometricOptimizers.MomentumMethod(T(method.α))
-_adapt_method_to_T(method::AdamOptimizerWithDecay, ::Type{T}) where T =
-    GeometricOptimizers.Adam(T; β₁ = T(method.ρ₁), β₂ = T(method.ρ₂), δ = T(method.δ))
 _adapt_method_to_T(method, ::Type) = method
 
 _use_go_cache(method, x) =
@@ -80,39 +72,85 @@ function _make_optimizer_state(method, x)
     end
 end
 
-"""Optimizer state combining a GeometricOptimizers method with GML parameters."""
-mutable struct Optimizer{MT <: GeometricOptimizers.OptimizerMethod, CT, ST, RT}
+"""
+    Optimizer(method, nn; retraction, step_size)
+    Optimizer(nn; algorithm, linesearch, retraction)
+
+Optimizer state combining a `GeometricOptimizers` method with the parameters of a neural network.
+
+`step_size` is either a number — a fixed learning rate — or a
+`GeometricOptimizers.DecayingStatic`, a learning rate that decays geometrically with the iteration
+number. The second form is the one `GeometricOptimizers` uses itself, so a method paired with a
+schedule splats straight in:
+
+```julia
+opt = Optimizer(nn; AdamOptimizerWithDecay(n_epochs, Float32)...)
+```
+
+# Extended help
+
+The step size is a property of the optimizer and not of the method: the same `Adam()` trains at any
+learning rate. That is the split `GeometricOptimizers` makes — the method supplies a direction, a
+`SimpleSolvers.LinesearchMethod` supplies how far to go along it — and `step_size` is GML's half of
+it for a training loop, which has no objective function for a real line search to evaluate.
+"""
+mutable struct Optimizer{MT <: GeometricOptimizers.OptimizerMethod, CT, ST, RT, SST}
     method::MT
     cache::CT
     state::ST
     retraction::RT
-    step_size::Float64
+    step_size::SST
     iterations::Int
 end
 
 _default_step_size(::GeometricOptimizers.Adam)          = 1e-3
-_default_step_size(method::AdamOptimizerWithDecay)     = Float64(method.η₁)
 _default_step_size(::GeometricOptimizers.OptimizerMethod) = 1e-2
 
-_current_step_size(opt::Optimizer, ::Int) = opt.step_size
-_current_step_size(opt::Optimizer{<:AdamOptimizerWithDecay}, t::Int) =
-    Float64(opt.method.η₁ * opt.method.γ^t)
+_step_size(η::Real, ::Int) = Float64(η)
+# `t` and not `t - 1`: `optimization_step!` increments before it asks, so the first step of a solve
+# is `α(1) = γη₁`. That is what `DecayingStatic` means by iteration `t` — `solve!` calls
+# `increase_iteration_number!` before `solver_step!` — and it is what GML's own
+# `AdamOptimizerWithDecay` did before the schedule moved upstream.
+_step_size(ls::DecayingStatic, t::Int) = Float64(GeometricOptimizers.step_size(ls, t))
+
+_current_step_size(opt::Optimizer, t::Int) = _step_size(opt.step_size, t)
+
+_optimizer_step_size(η::Real) = Float64(η)
+_optimizer_step_size(ls::DecayingStatic) = ls
 
 function Optimizer(method::GeometricOptimizers.OptimizerMethod, nn::NeuralNetwork;
         retraction = GeometricOptimizers.cayley,
-        step_size::Real = _default_step_size(method))
-    ps = params(nn)
-    Optimizer(method, _make_optimizer_cache(method, ps), _make_optimizer_state(method, ps),
-              retraction, Float64(step_size), 0)
+        step_size = _default_step_size(method))
+    Optimizer(method, params(nn); retraction = retraction, step_size = step_size)
 end
 
 function Optimizer(method::GeometricOptimizers.OptimizerMethod,
         ps::Union{NamedTuple, NeuralNetworkParameters};
         retraction = GeometricOptimizers.cayley,
-        step_size::Real = _default_step_size(method))
+        step_size = _default_step_size(method))
     Optimizer(method, _make_optimizer_cache(method, ps), _make_optimizer_state(method, ps),
-              retraction, Float64(step_size), 0)
+              retraction, _optimizer_step_size(step_size), 0)
 end
+
+# The keyword form, so that the `(algorithm, linesearch)` pairing `GeometricOptimizers` returns from
+# `AdamOptimizerWithDecay` splats in unchanged. `linesearch` is the step size under the name
+# upstream gives it; a `Static` carries its own `α`, which is then the fixed learning rate.
+function Optimizer(nn_or_ps::Union{NeuralNetwork, NamedTuple, NeuralNetworkParameters};
+        algorithm::GeometricOptimizers.OptimizerMethod,
+        linesearch = nothing,
+        retraction = GeometricOptimizers.cayley,
+        step_size = linesearch === nothing ? _default_step_size(algorithm) :
+                    _step_size_from_linesearch(linesearch))
+    Optimizer(algorithm, nn_or_ps; retraction = retraction, step_size = step_size)
+end
+
+_step_size_from_linesearch(ls::DecayingStatic) = ls
+_step_size_from_linesearch(ls::GeometricOptimizers.Static) = Float64(ls.α)
+_step_size_from_linesearch(ls) = throw(ArgumentError(
+    "`Optimizer` takes a fixed step size or a `DecayingStatic` schedule, not a $(typeof(ls)). " *
+    "A training loop evaluates its loss on one batch at a time and has no objective for a line " *
+    "search to search along; use `GeometricOptimizers.Optimizer` with an `OptimizerProblem` for " *
+    "that."))
 
 # Euclidean update rules
 function _euclidean_update!(x::AbstractArray{T}, dx::AbstractArray,
@@ -139,17 +177,9 @@ function _euclidean_update!(x::AbstractArray{T}, dx::AbstractArray,
     state.m₂ .= fac₂₁ .* state.m₂ .+ fac₂₂ .* dx .^ 2
     x .-= T(step_size) .* state.m₁ ./ (sqrt.(state.m₂) .+ δ)
 end
-function _euclidean_update!(x::AbstractArray{T}, dx::AbstractArray,
-        state::GMLEuclideanState{T}, method::AdamOptimizerWithDecay, step_size) where T
-    t = state.iterations; _t = t + 1
-    ρ₁, ρ₂, δ = T(method.ρ₁), T(method.ρ₂), T(method.δ)
-    # see the note in the `Adam` method above
-    fac₁₁ = (ρ₁-ρ₁^_t)/(1-ρ₁^_t); fac₁₂ = (1-ρ₁)/(1-ρ₁^_t)
-    fac₂₁ = (ρ₂-ρ₂^_t)/(1-ρ₂^_t); fac₂₂ = (1-ρ₂)/(1-ρ₂^_t)
-    state.m₁ .= fac₁₁ .* state.m₁ .+ fac₁₂ .* dx
-    state.m₂ .= fac₂₁ .* state.m₂ .+ fac₂₂ .* dx .^ 2
-    x .-= T(step_size) .* state.m₁ ./ (sqrt.(state.m₂) .+ δ)
-end
+# There used to be a fourth method here, for `AdamOptimizerWithDecay`, character for character the
+# `Adam` one above with `ρ₁`, `ρ₂` in place of `β₁`, `β₂`. Adam with a decaying learning rate *is*
+# Adam — only `step_size` differs, and that comes in as an argument — so the `Adam` method serves it.
 
 function _go_update_leaf!(cache, state, local_grad,
         method::GeometricOptimizers.Adam, ps_leaf)
@@ -233,17 +263,26 @@ end
 """
     optimization_step!(opt, λY, ps, dp)
 
-Apply one optimization step to the parameters `ps` and their gradient `dp`.
+Apply one optimization step to the parameters `ps` and their gradient `dp`, with the method and step
+size the [`Optimizer`](@ref) `opt` carries.
 
 `λY` is a `GlobalSection` of `ps` (or a `NamedTuple` of them). Note that it is an *output*
 here: the section the optimizer carries from step to step lives in `opt.state`, and `λY` is written
 so that callers who inspect it see the updated section. It therefore has to be allocated once and
 reused, not rebuilt per step -- rebuilding it costs a QR decomposition per manifold weight.
+
+The step counter is incremented *before* the step size is read, so the first step of a run is step 1.
+This matters for a decaying `step_size` and is how `GeometricOptimizers` counts too.
 """
 function optimization_step!(opt::Optimizer, λY, ps, dp)
+    # The increment comes *first*, so the first step of a run is step 1. It matters only for a
+    # decaying `step_size`, and there it matters: reading the schedule before incrementing takes
+    # `α(0) = η₁`, one whole step above what the pre-0.5 `AdamOptimizerWithDecay` took and what
+    # `DecayingStatic` and `GeometricOptimizers.solve!` take. `solve!` counts the same way, by
+    # calling `increase_iteration_number!` before `solver_step!`.
+    opt.iterations += 1
     step = _current_step_size(opt, opt.iterations)
     _tree_optim_step!(opt.cache, opt.state, dp, ps, λY, opt.method, opt.retraction, step)
-    opt.iterations += 1
     nothing
 end
 

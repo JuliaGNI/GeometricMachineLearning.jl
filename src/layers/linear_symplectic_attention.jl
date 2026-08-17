@@ -9,7 +9,7 @@ For more information see [`LinearSymplecticAttentionQ`](@ref) and [`LinearSymple
 
 # Implementation
 
-The coefficients of a [`LinearSymplecticAttention`](@ref) layer is a [`SymmetricMatrix`](@ref):
+The coefficients of a [`LinearSymplecticAttention`](@ref) layer is a [`SymmetricMatrix`](@extref GeometricOptimizers GeometricOptimizers.SymmetricMatrix):
 
 ```jldoctest
 using GeometricMachineLearning

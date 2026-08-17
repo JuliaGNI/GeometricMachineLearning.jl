@@ -18,7 +18,7 @@ The optional keyword arguments to `MultiHeadAttention` are:
 - `add_connection::Bool=true`
 - `activation::AbstractSoftmax=`[`VectorSoftmax`](@ref).
 
-`Stiefel` indicates whether weights are put on the [`StiefelManifold`](@ref) ``St(\mathrm{dim}, \mathrm{dim}\div\mathrm{n\_heads})``.
+`Stiefel` indicates whether weights are put on the [`StiefelManifold`](@extref GeometricOptimizers GeometricOptimizers.StiefelManifold) ``St(\mathrm{dim}, \mathrm{dim}\div\mathrm{n\_heads})``.
 
 `add_connection` indicates whether the input is again added to the output.
 """
