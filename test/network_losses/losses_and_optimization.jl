@@ -19,7 +19,7 @@ function train_network(; n_epochs=10)
 
     o = Optimizer(Adam(), nn)
     batch = Batch(5, 1)
-    loss_array = o(nn, dl, batch, n_epochs, loss)
+    loss_array = o(nn, dl, batch, n_epochs, loss; show_progress = false)
     T = eltype(dl)
     @test loss_array[end] / loss_array[1] < T(0.1)
 end

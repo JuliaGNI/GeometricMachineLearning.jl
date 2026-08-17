@@ -21,5 +21,5 @@ batch = Batch(nbatch, 1, 1)
 
 loss = FeedForwardLoss()
 
-loss_array = o(nn, dl, batch, nepochs, loss)
+loss_array = o(nn, dl, batch, nepochs, loss; show_progress = false)
 @test loss_array[end] < 0.9

@@ -2,6 +2,7 @@ using GeometricMachineLearning, Test
 # qualified access only: a blanket `using` would make `StiefelManifold` and friends ambiguous,
 # since GeometricMachineLearning re-exports its own versions of them
 import GeometricOptimizers
+using GeometricOptimizers: GradientCache, MomentumCache, AdamCache
 import Random, LinearAlgebra
 
 Random.seed!(1234)
