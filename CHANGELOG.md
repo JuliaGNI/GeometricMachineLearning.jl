@@ -165,6 +165,26 @@ and `onehotbatch` are the whole of the change to the exported surface, checked a
 `names(GeometricMachineLearning)` rather than by reading the export list — the list spans
 continuation lines, and reading it misses them.
 
+### Changed
+
+- **GeometricOptimizers 0.4.** The bound was `"0.2.1"` and the resolved version 0.2.2. It moved to
+  `"0.3"` first and to `"0.4"` here, but 0.5.0 is the first release either lands in, so the only
+  move a caller sees is `"0.2.1"` → `"0.4"`. Why the bound cannot stop at 0.3 is above: the
+  interface this release imports only became public API in 0.4.0.
+
+  GO 0.3.0 was a breaking release and **none of what it broke is reachable from here**. It renamed
+  `_BFGS` and `_DFP` to `BFGS` and `DFP` and exported them together with `BFGSState`/`DFPState`, and
+  it removed the exports `NewtonOptimizer`, `BFGSOptimizer` and `DFPOptimizer`, none of which had
+  ever been defined. GML calls no name in either group — its quasi-Newton entry point was its own
+  `BFGSOptimizer`, which this release removes for the reasons above — and `git diff v0.2.2..v0.3.1
+  -- src/` in GO is that rename and its docstrings, and nothing else.
+
+  This entry used to add that GO's `BFGS`/`DFP` exports could not collide because a blanket `using
+  GeometricOptimizers` would make redefining the ~20 names GML defined itself an error on Julia
+  1.10, so there was no blanket `using` to collide with. Neither half of that is true any more: the
+  named `using` list is gone, and so are the types GML defined itself. The names still do not
+  collide, for the plainer reason that GML neither imports nor exports either of them.
+
 ### Changed (breaking)
 
 - **The optimizer constructor takes the method first, and the step size separately.** The learning
