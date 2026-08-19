@@ -46,6 +46,9 @@ end
 @safetestset "PGHNN training on a ParametricDataLoader                                        " begin
     include("generalized_hamiltonian_neural_networks/pghnn_training_test.jl")
 end
+@safetestset "Parametric and forced layers and architectures                                  " begin
+    include("generalized_hamiltonian_neural_networks/parametric_layers_and_architectures_test.jl")
+end
 @safetestset "Manifold Neural Network Layers                                                  " begin
     include("layers/manifold_layers.jl")
 end

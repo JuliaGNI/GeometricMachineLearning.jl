@@ -110,6 +110,13 @@ breaking release).
 
 - `concatenate_array_with_parameters(::AbstractMatrix, ::AbstractVector)` concatenated a batch with
   `vcat` rather than `hcat`, collapsing it into a single long vector ([#207](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/207)).
+- **`ForcedGeneralizedHamiltonianArchitecture` could not be evaluated at all.** The
+  parameter-dependent `NeuralNetwork` functor and the `Optimizer` entry point were defined for
+  `GeneralizedHamiltonianArchitecture` only, and the two are siblings under `HamiltonianArchitecture`
+  rather than sub- and supertype, so `nn(x, μ)` fell through to the generic functor and read the
+  *system* parameters as the *network* parameters.
+- `ParametricResNet(::DataLoader, n_blocks, width; parameters = …)` accepted `parameters` and then
+  dropped it, silently building a network with no parameter dependence.
 
 ### Changed
 

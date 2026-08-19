@@ -33,3 +33,18 @@ function Chain(arch::ForcedGeneralizedHamiltonianArchitecture{FT}) where {FT}
     end
     Chain(layers...)
 end
+
+# `ForcedGeneralizedHamiltonianArchitecture` and `GeneralizedHamiltonianArchitecture` are siblings
+# under `HamiltonianArchitecture`, so the parameter-dependent forward pass and training entry point
+# defined for the latter do not cover this one. `HamiltonianArchitecture` itself is too wide:
+# `StandardHamiltonianArchitecture` takes no system parameters.
+function (nn::NeuralNetwork{<:ForcedGeneralizedHamiltonianArchitecture})(qp::QPTOAT2,
+        problem_params::OptionalParameters)
+    nn.model(qp, problem_params, params(nn))
+end
+
+function (o::Optimizer)(nn::NeuralNetwork{<:ForcedGeneralizedHamiltonianArchitecture},
+        dl::ParametricDataLoader, batch::Batch{:FeedForward}, n_epochs::Integer = 1,
+        loss::NetworkLoss = ParametricLoss(); kwargs...)
+    o(nn, dl, batch, n_epochs, loss, ZygotePullback(loss); kwargs...)
+end

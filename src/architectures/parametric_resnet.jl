@@ -12,7 +12,7 @@ struct ParametricResNet{AT <: Activation, PT <: OptionalParameters} <: NeuralNet
 end
 
 function ParametricResNet(dl::DataLoader, n_blocks::Integer, width::Integer=dl.input_dim; activation=HNN_activation_default, parameters=NullParameters())
-    ParametricResNet(dl.input_dim; width=width, n_blocks=n_blocks, activation)
+    ParametricResNet(dl.input_dim; width=width, n_blocks=n_blocks, activation=activation, parameters=parameters)
 end
 
 function ResNet(input_dim::Integer, n_blocks::Integer, width::Integer=input_dim; activation=HNN_activation_default, parameters=NullParameters())
