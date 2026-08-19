@@ -478,6 +478,15 @@ continuation lines, and reading it misses them.
   same-named helpers in `psd_architecture_tests.jl` and `symplectic_autoencoder_tests.jl` do use
   theirs and keep it.
 
+- **`test/training_parameters.jl` seeds its second testset.** Its `step_size = 1e-2` half asserts
+  `!all(loss_moving .== loss_moving[1])`, and the file's comment claimed the assertion needed no
+  seed. That is true of the `step_size = 0` half and false of this one: `tra_ps_data` contains an
+  all-zero trajectory, and a draw that takes only zero samples for all five runs gives a zero
+  gradient every time and a loss array that never moves. Measured over 60 seeds it happens for one
+  initialisation in sixty, on 1.10 and 1.12 alike — and it duly took out `Julia 1.12 - windows` on a
+  commit that changed nothing but this file's neighbours in the CHANGELOG. Seeded at 123, where the
+  loss spreads by 0.16 on all three versions.
+
 ### Added
 
 - **`test/runtests.jl` emits seven `@info` markers**, one per testset group, so that a long job can

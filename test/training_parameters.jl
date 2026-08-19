@@ -1,6 +1,7 @@
 using GeometricMachineLearning
 using GeometricMachineLearning: nruns, opt, method, batchsize
 using Test
+import Random
 
 include("data/data_generation.jl")
 
@@ -36,9 +37,16 @@ end
 # silent rather than an error — hence a test that observes whether the network moves.
 #
 # `train!` recomputes the loss over the *whole* data set after every step, so the value it stores
-# does not depend on which batch was drawn. That gives an assertion needing no seed: at
-# `step_size = 0` no parameter can move, hence every entry of the loss array is the same number.
+# does not depend on which batch was drawn. That makes the `step_size = 0` half seed-independent: no
+# parameter can move, hence every entry of the loss array is the same number.
+#
+# The `step_size = 1e-2` half is *not* seed-independent, which an earlier version of this comment
+# claimed it was. `tra_ps_data` has an all-zero trajectory in it, and a draw that takes only zero
+# samples for all five runs produces a zero gradient every time and a loss array that never moves --
+# about one initialisation in sixty, measured over 60 seeds on 1.10 and 1.12 alike. That is a 1.7%
+# flake in CI, and it is why the seed is here.
 @testset "train! forwards a step size" begin
+    Random.seed!(123)
     m = BasicSympNet()
     o = GradientOptimizer()
     ntraining = 5
