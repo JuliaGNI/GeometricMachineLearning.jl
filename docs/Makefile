@@ -121,11 +121,15 @@ remove_numbering_for_some_chapters:
 	sed -i'' -e 's/\\section{Chapter Summary}/\\section*{Chapter Summary}/g' build/G*.tex;
 	sed -i'' -e 's/\\section{References}/\\section*{References}/g' build/G*.tex;
 
+# `build/manifolds` and `build/optimizers/manifold_related` used to be listed here. Documenter only
+# creates a `build/` subdirectory for a page tree that still has pages, so those two went away with
+# the chapters that moved to GeometricOptimizers -- and `find` exits non-zero on a missing root,
+# which aborts the recipe and takes the PDF workflow with it. The roots that remain are guarded for
+# the same reason, so that the next chapter to move out does not break the build again.
 copy_png_files:
-	find build/manifolds -name \*.png -exec cp {} build \; ;
-	find build/optimizers/manifold_related -name \*.png -exec cp {} build \; ;
-	find build/tutorials -name \*.png -exec cp {} build \;
-	find build/reduced_order_modeling -name \*.png -exec cp {} build \;
+	for d in tutorials reduced_order_modeling; do \
+		if [ -d "build/$$d" ]; then find "build/$$d" -name \*.png -exec cp {} build \; ; fi; \
+	done
 
 docstring_indexing:
 	sed -i'' -e 's/\\item \\hyperlinkref{\([0-9]*\)}{\\texttt{\(.*\)}}/\\item \\hyperlinkref{\1}{\\texttt{\2}}: page \\pageref{\1}/g' build/G*.tex;

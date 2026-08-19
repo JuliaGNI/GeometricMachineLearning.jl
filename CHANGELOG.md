@@ -17,16 +17,85 @@ breaking release).
 
 **The optimizer machinery moves to [GeometricOptimizers][go].** GML no longer implements its own
 optimizers: the methods, caches, states, global sections and retractions all come from
-GeometricOptimizers v0.2, and GML keeps only the parts that are about neural networks — walking a
+GeometricOptimizers, and GML keeps only the parts that are about neural networks — walking a
 `NeuralNetworkParameters` tree, and the manifold layer types.
+
+**Requires GeometricOptimizers 0.4.** The eleven geometry types GML used to define itself are
+`import`ed from there now, and the interface it needs — `metric`, `check`, `Ω`, `global_section`,
+`apply_section!`, `update_section!`, the retraction types, `AdamOptimizerWithDecay` — only became
+public API in [GeometricOptimizers 0.4.0][go50]. GML does not load against 0.3.
 
 This is a breaking release and the break is not mechanical. Read *Changed (breaking)* before
 upgrading.
 
 [go]: https://github.com/JuliaGNI/GeometricOptimizers.jl
 [go45]: https://github.com/JuliaGNI/GeometricOptimizers.jl/pull/45
+[go50]: https://github.com/JuliaGNI/GeometricOptimizers.jl/pull/50
 
 ### Removed (breaking)
+
+- **GML's copies of eleven types GeometricOptimizers also defines.** `Manifold`, `StiefelManifold`,
+  `GrassmannManifold`, `SkewSymMatrix`, `SymmetricMatrix`, `AbstractTriangular`, `LowerTriangular`,
+  `UpperTriangular`, `AbstractLieAlgHorMatrix`, `StiefelLieAlgHorMatrix`,
+  `GrassmannLieAlgHorMatrix` and `StiefelProjection` are now *imported* from GeometricOptimizers and
+  re-exported. Twelve files go with them — all of `src/arrays/` bar `poisson_tensor.jl`, all of
+  `src/manifolds/`, and `src/optimizers/go_bridges.jl` — about 2500 lines.
+
+  The copies were near-verbatim, but Julia saw them as *distinct types*, so none of
+  GeometricOptimizers' generic machinery dispatched on them: GML re-implemented
+  `geodesic`, `cayley`, `apply_section!`, `global_rep` and `update_section!` once per manifold, and
+  `go_bridges.jl` held some thirty more methods reconnecting the two hierarchies. All of that is
+  gone. This closes **B2**
+  ([#234](https://github.com/JuliaGNI/GeometricMachineLearning.jl/issues/234)).
+
+  `import` rather than `const X = GeometricOptimizers.X`: GML adds constructor methods to several of
+  these types, and extending a type reached through `using` warns on every such method since Julia
+  1.12.
+
+  Not a source break for a caller — the names are still exported and mean the same thing — but the
+  *types* are now GeometricOptimizers', so `x isa GeometricMachineLearning.StiefelManifold` and
+  `x isa GeometricOptimizers.StiefelManifold` are the same question, where before they were
+  different ones with different answers.
+
+- **`AdamOptimizerWithDecay` is GeometricOptimizers'**, and GML's own is deleted. This closes **B1**:
+  both packages exported the name, so `using GeometricMachineLearning, GeometricOptimizers` failed
+  outright on it. It was the same algorithm — Adam's direction with a learning rate decaying by the
+  same `γ = exp(log(η₂/η₁)/n)` — packaged differently, and upstream's packaging is the right one:
+  the direction is an `Adam` method and the schedule is a `DecayingStatic` line search.
+
+  **What a call has to change.** It is now a `(algorithm, linesearch)` pairing rather than an
+  `OptimizerMethod`, so it splats into `Optimizer` instead of being passed positionally, `T` is
+  positional and defaults to `Float64` rather than being taken from `η₁` (so `Float32`), and the
+  moment coefficients are the keywords `β₁`, `β₂` rather than positional `ρ₁`, `ρ₂`:
+
+  ```julia
+  Optimizer(AdamOptimizerWithDecay(n_epochs), nn)                      # before
+  Optimizer(nn; AdamOptimizerWithDecay(n_epochs, Float32)...)          # after
+  ```
+
+- **The optimizer caches stop being exported.** `AbstractCache`, `GradientCache`, `MomentumCache`
+  and `AdamCache`. They are `solver_step!` scratch and stay internal to GeometricOptimizers, for
+  every method alike; reach one as `GeometricOptimizers.AdamCache` if you genuinely need to name it.
+
+- **`update!` stops being exported.** GML imported `AbstractNeuralNetworks.update!` and never added a
+  method to it, so all the export did was shadow `GeometricOptimizers.update!` — a *different*
+  generic function, and the one that actually has methods for the optimizer caches. That one is
+  re-exported now instead.
+
+- **`SymplecticLieAlgMatrix`, `SymplecticLieAlgHorMatrix` and `SymplecticProjection` stop being
+  exported.** Nothing has defined them for as long as the git history goes back, so the exports were
+  silent `UndefVarError`s waiting for a caller.
+
+- **Twelve test files that duplicated GeometricOptimizers' suite**, under `test/arrays/`,
+  `test/manifolds/` and `test/optimizers/utils/`. They tested the shared types, which upstream tests
+  itself; what they covered and upstream did not was ported there first (see its changelog — it
+  turned up four defects in the upstream suite, including a test file that never tested the Stiefel
+  global section). `test/arrays/triangular.jl` keeps the half that tests GML's tensor kernels.
+
+  Eight further files went with them — `test/optimizers/{exponential_retractions, riemannian_gradients,
+  hor_lift, lie_alg_lifts, manifold_optim, momentum_optim_test, standard_optim_test}.jl` and
+  `test/optimizers/manifold_related/legacy_functions.jl`. All were unreachable from `runtests.jl`,
+  and most could not have run: two `include` paths deleted years ago, three `using Lux`.
 
 - **`BFGSOptimizer` and `BFGSCache`**, along with `docs/src/optimizers/bfgs_optimizer.md`.
 
@@ -41,11 +110,16 @@ upgrading.
   | fits GML's per-leaf tree update? | yes — that is what it was for | no |
 
   `_is_go_native_method` therefore sends `BFGS` down GML's Euclidean path, where
-  `_euclidean_update!` has no method for it and the step raises a `MethodError`. Bridging it needs
-  `_fill!`, `_difference!`, `outer!` and the `ParameterHandling.flatten` round-trip taught about
-  GML's manifold and lift types — GML's `StiefelManifold` is a *different type* from
-  GeometricOptimizers', and the two hierarchies are unrelated, so none of GO's `Manifold` methods
-  apply. That work is not done.
+  `_euclidean_update!` has no method for it and the step raises a `MethodError`. That work is not
+  done.
+
+  It did get cheaper, though. This entry used to add that bridging it needs `_fill!`,
+  `_difference!`, `outer!` and the `ParameterHandling.flatten` round-trip *taught about GML's
+  manifold and lift types*, because those were different types from GeometricOptimizers' and none of
+  its `Manifold` methods applied. After the type unification above that half is simply gone —
+  upstream's `flatten`, `_fill!`, `_difference!` and `outer!` already work on these types, because
+  they are now the same types. What remains is routing `BFGS` through the per-leaf tree update at
+  all, which is the same question as **C1**.
 
   Until it is, use `AdamOptimizer()`, `MomentumOptimizer()` or `GradientOptimizer()`.
 - **`SymplecticStiefelManifold`.** Never reachable — the file that defined it was commented out of
@@ -93,20 +167,23 @@ continuation lines, and reading it misses them.
 
 ### Changed
 
-- **GeometricOptimizers 0.3.** The bound was `"0.2.1"` and the resolved version 0.2.2; it is `"0.3"`
-  now and GO 0.3.1 is what the test suite runs against.
+- **GeometricOptimizers 0.4.** The bound was `"0.2.1"` and the resolved version 0.2.2. It moved to
+  `"0.3"` first and to `"0.4"` here, but 0.5.0 is the first release either lands in, so the only
+  move a caller sees is `"0.2.1"` → `"0.4"`. Why the bound cannot stop at 0.3 is above: the
+  interface this release imports only became public API in 0.4.0.
 
-  GO 0.3.0 is a breaking release, and **none of what it broke is reachable from here**. It renamed
+  GO 0.3.0 was a breaking release and **none of what it broke is reachable from here**. It renamed
   `_BFGS` and `_DFP` to `BFGS` and `DFP` and exported them together with `BFGSState`/`DFPState`, and
   it removed the exports `NewtonOptimizer`, `BFGSOptimizer` and `DFPOptimizer`, none of which had
-  ever been defined. GML calls no name in either group: its quasi-Newton entry point was its own
-  `BFGSOptimizer`, which this release removes for the reasons above, and `src/` reaches GO through a
-  qualified `import` plus a named `using` list that holds neither. `git diff v0.2.2..v0.3.1 -- src/`
-  in GO is that rename and its docstrings, and nothing else.
+  ever been defined. GML calls no name in either group — its quasi-Newton entry point was its own
+  `BFGSOptimizer`, which this release removes for the reasons above — and `git diff v0.2.2..v0.3.1
+  -- src/` in GO is that rename and its docstrings, and nothing else.
 
-  GO's export of `BFGS` and `DFP` does not collide here either, for the same reason the named `using`
-  list exists: a blanket `using GeometricOptimizers` would make redefining the ~20 names GML defines
-  itself an error on Julia 1.10, so there is no blanket `using` to collide with.
+  This entry used to add that GO's `BFGS`/`DFP` exports could not collide because a blanket `using
+  GeometricOptimizers` would make redefining the ~20 names GML defined itself an error on Julia
+  1.10, so there was no blanket `using` to collide with. Neither half of that is true any more: the
+  named `using` list is gone, and so are the types GML defined itself. The names still do not
+  collide, for the plainer reason that GML neither imports nor exports either of them.
 
 ### Changed (breaking)
 
@@ -184,7 +261,62 @@ continuation lines, and reading it misses them.
   `scripts/` as though they were current, and `hnn/` predates two generations of the optimizer and
   architecture APIs.
 
+### Documentation
+
+- **The `Manifolds` and `Optimizer` chapters move to GeometricOptimizers**, together with the two
+  `Special Arrays and AD` pages whose data structures are its — `arrays/skew_symmetric_matrix.md` and
+  `arrays/global_tangent_spaces.md`. Thirteen pages, ~3050 lines, documenting types that live there
+  now. `arrays/tensors.md` and `pullbacks/computation_of_pullbacks.md` stay: they document GML's own
+  tensor kernels and AD.
+
+  `optimizers/optimizer_framework.md` splits. Its framework theory merges into upstream's
+  `manifold_optimizers.md`; what is left is a new `optimizers/optimizer.md` covering GML's own
+  `Optimizer`, `optimize_for_one_epoch!` and `optimization_step!` — the parameter tree and the
+  training loop.
+
+- **What the PDF book loses.** `_latex_pages` drops the whole `Background → Manifolds` chapter and
+  the four-page `Optimizers` part, keeping a one-page `Optimizer` chapter, and the Appendix's
+  `Special Arrays, Tensors and Pullbacks` becomes `Tensors and Pullbacks`. The book now opens on
+  geometric structure and takes the manifold optimizers as given, citing them.
+
+- **`DocumenterInterLinks`** enters `docs/Project.toml` and `docs/make.jl`, with a committed
+  inventory under `docs/inventories/`. Thirty-six references from the chapters that stayed into the
+  ones that moved are now real cross-references rather than dangling `@ref`s, and the seven
+  de-referenced code spans C3 complained about (`𝔄`, `cayley`, `update!` …) can be links again.
+  This closes **C3**.
+
 ### Fixed
+
+- **`Matrix + SkewSymMatrix` was a `StackOverflowError`.** `Base.:+(B::AbstractMatrix,
+  A::SkewSymMatrix)` read `B + A`, which is itself. Fixed by the type unification above: upstream's
+  method, which reads `A + B`, has always been right. GeometricOptimizers' suite now asserts that
+  addition against a dense matrix commutes, for all four structured types rather than for the one
+  instance.
+
+- **`parent(::StiefelLieAlgHorMatrix)` referenced an unbound variable.** It returned `(A, B)` where
+  `B` was never defined — an `UndefVarError` for any caller. Also fixed by the unification;
+  upstream returns `(A.A, A.B)`, which is what its `vec(::AbstractLieAlgHorMatrix)` builds on.
+
+- **A decaying step size was read one step early.** `optimization_step!` read the step size *before*
+  incrementing `opt.iterations`, so the first step of a run took `α(0) = η₁` where the pre-0.5
+  `AdamOptimizerWithDecay` incremented first and took `α(1) = γη₁`. Every step of a run was therefore
+  one place early in the schedule. The increment now comes first, which is also how
+  `DecayingStatic` counts and how `GeometricOptimizers.solve!` counts (it calls
+  `increase_iteration_number!` before `solver_step!`) — and what upstream's
+  `test/adam_optimizer_with_decay.jl` asserts GML does. Pinned by `schedule_starts_at_one` in
+  `test/optimizers/optimizer_convergence_tests/adam_with_learning_rate_decay.jl`.
+
+  It affected only a decaying step size; a fixed one is the same at every `t`.
+
+- **A pullback test asserted nothing.** The loop in `test/arrays/triangular.jl` comparing the batched
+  `mat_tensor_mul` pullback against the single-slice one was written as bare expressions rather than
+  `@test`s, so it ran and discarded its results. They are `@test`s now, and they pass.
+
+- **`solve!` was a second generic function.** GML's `solve!(::NeuralNetwork{<:PSDArch}, …)` — solve
+  for the parameters directly, by SVD, rather than training for them — created a new function of that
+  name rather than adding a method to the one a caller already had. It is imported from
+  GeometricOptimizers now, so `using GeometricMachineLearning, GeometricOptimizers` no longer
+  collides on it either.
 
 - **The optimizer path no longer takes ten hours to compile through a function.** Inference spun in
   method-table intersection whenever `GeometricOptimizers.update!` was reached through GML's
@@ -317,6 +449,43 @@ continuation lines, and reading it misses them.
   `TrainingParameters` lives under `test/train!/`, which `runtests.jl` does not include. The new file
   pins the step size by asserting that `step_size = 0` leaves the loss — which `train!` recomputes
   over the whole data set after every step — identical at every step.
+
+- **Four convergence tests seed per invocation instead of once per file.** `svd_optim.jl` and
+  `sae_error_lower_than_psd_error.jl` failed on Julia 1.10 and 1.12 respectively, and neither was a
+  numerical regression: given the same starting point the new optimizer stack agrees with the old to
+  13 significant digits. Each file seeded once at the top and then called its helper *twice*, so the
+  second call started from whatever RNG state the first happened to leave behind — and `Optimizer`
+  now draws more randomness than it did. `GeometricOptimizers._similar` of a manifold parameter is
+  `rand(manifold_constructor(a){T}, size(a)...)`, a fresh random point on the manifold, because
+  upstream makes `Base.similar(::Manifold)` an error on the grounds that uninitialised storage is not
+  a manifold point; `GradientState` allocates its `x̄` slot with it. GML's `StiefelManifold` *is*
+  `GeometricOptimizers`' type now, so that method applies where on `main` the call fell through to
+  `similar(a)` and GML's own `Base.similar(::StiefelManifold)`, which allocated uninitialised storage
+  and drew nothing. Constructing one optimizer over two Stiefel weights draws six batches of normals
+  where it drew four — the four `global_section` batches are unchanged, and each manifold parameter
+  adds one random manifold point. Every draw after the first `Optimizer` construction shifted, and
+  both tests were passing on a thin margin: the `svd_optim.jl` gradient run went from 2% above the
+  optimum to 21%, against a 10% tolerance.
+
+  Seeding each invocation makes the starting point independent of what ran before it. The two
+  assertions clear by 23× and by 2.6–4.5%, and are now stable to 13 digits across 1.10, 1.12 and
+  1.13 — 1.13 had been passing the autoencoder comparison by 0.7%, i.e. by luck. `psd_optim.jl` and
+  `adam_with_learning_rate_decay.jl` have the same shape and get the same treatment; the latter's
+  manifold run also goes from 32 to 128 epochs, because `AdamOptimizerWithDecay(n_epochs)` fixes
+  `γ = exp(log(η₂/η₁)/n_epochs)` and a 32-epoch budget collapses the learning rate to `η₂` before
+  the run has trained — the loss fell by under 2% on 1.13 and *rose* on 1.12. The unused
+  `tol = .35` keyword of `sae_error_lower_than_psd_error.jl`'s `test_accuracy` is gone; the
+  same-named helpers in `psd_architecture_tests.jl` and `symplectic_autoencoder_tests.jl` do use
+  theirs and keep it.
+
+- **`test/training_parameters.jl` seeds its second testset.** Its `step_size = 1e-2` half asserts
+  `!all(loss_moving .== loss_moving[1])`, and the file's comment claimed the assertion needed no
+  seed. That is true of the `step_size = 0` half and false of this one: `tra_ps_data` contains an
+  all-zero trajectory, and a draw that takes only zero samples for all five runs gives a zero
+  gradient every time and a loss array that never moves. Measured over 60 seeds it happens for one
+  initialisation in sixty, on 1.10 and 1.12 alike — and it duly took out `Julia 1.12 - windows` on a
+  commit that changed nothing but this file's neighbours in the CHANGELOG. Seeded at 123, where the
+  loss spreads by 0.16 on all three versions.
 
 ### Added
 
@@ -473,62 +642,6 @@ they resolved to is in the release notes above.
 
 ### B. Known defects
 
-- **B1. Both packages export `AdamOptimizerWithDecay`.** GeometricOptimizers v0.2.0 ships the name
-  and GML defines and exports its own (`src/optimizers/optimizer.jl:35`). GML itself loads, but
-  `using GeometricMachineLearning, GeometricOptimizers` in downstream code fails outright:
-
-  ```
-  UndefVarError: `AdamOptimizerWithDecay` not defined in `Main`
-  Hint: It looks like two or more modules export different bindings with this name…
-  ```
-
-  Deleting GML's copy is the fix, but it is **not** independent of C1: GeometricOptimizers'
-  `AdamOptimizerWithDecay(n, T; …)` returns an `(algorithm, linesearch)` pairing for its own
-  `Optimizer(x, problem; method...)`, whereas GML's `Optimizer` carries a scalar `step_size` and
-  computes the schedule in `_current_step_size`. Un-exporting it would clear the ambiguity on its
-  own if a stopgap is wanted first.
-
-- **B2. `Manifold` is split between the two packages
-  ([#234](https://github.com/JuliaGNI/GeometricMachineLearning.jl/issues/234)).** GML's
-  `StiefelManifold` and `GrassmannManifold` subtype `GeometricMachineLearning.Manifold`, which is
-  distinct from `GeometricOptimizers.Manifold`, so GeometricOptimizers' generic `geodesic` and
-  `cayley` never dispatch on them. Commit `b16267ea` worked around this by re-implementing the
-  pipeline four times, with the same duplication on the Lie-algebra-horizontal types and the
-  `_copyto!`/`_add!`/`_rac!`/`_square!`/`_div!` family — about thirty bridge methods.
-
-  The decided fix is `const Manifold = GeometricOptimizers.Manifold`, which lets all four bridge
-  methods be deleted. It is not a one-liner: `src/manifolds/abstract_manifold.jl` is a near-verbatim
-  copy of GeometricOptimizers', so after aliasing, GML's generic methods would have *identical*
-  signatures to the upstream ones and silently overwrite them — a hard precompilation error on Julia
-  ≥ 1.13. GML's copies have to go in the same change, keeping only what genuinely differs.
-
-  The `_gml_rgrad` bug fixed in this release was the same split showing up somewhere it changed
-  results silently, which is an argument for closing this sooner rather than later.
-
-- **B4. The documentation's executable examples still use the old optimizer internals.** The
-  Documentation and PDF builds get past resolution and doctests now and fail in the `@example`
-  blocks — 32 errors across 12 pages, because the documentation teaches the optimizer by reaching
-  into its cache, and GeometricOptimizers' caches are not shaped like GML's were:
-
-  ```
-  type MomentumCache has no field `A`, available fields: `x`, `g`, `δ`, `Δg`, `g̃`, `g̃_is_current`, `section`
-  type AdamCache has no field `Y`
-  no method matching update!(::Optimizer{GradientMethod, GradientCache{…}}, …)
-  `update_section!` not defined
-  no method matching AdamCache(::@NamedTuple{weight::SymmetricMatrix{Float16, …}}, …)
-  ```
-
-  `optimizer_methods.md` is the bulk of it: eleven call sites building `dx = (A = one(weight.A),)`,
-  calling `update!(o, o.cache, dx)` and printing `o.cache.A` or `o.cache.Y` to show what a cache
-  holds. `parallel_transport.md` uses `update_section!`, which GML no longer exports. The three
-  named `@example` blocks that fail outright are `sympnet`, `rigid_body` and `s2_parallel_transport`.
-
-  This is not a mechanical rename. The pages explain how the optimizer works by showing its
-  internals, and those internals now belong to another package with a different design — so closing
-  this means deciding how much of that exposition GML's documentation should still carry, and
-  rewriting it against the upstream API or handing it to GeometricOptimizers' own documentation. It
-  is the last thing standing between this branch and green Documentation and PDF workflows.
-
 - **B5. The symbolic pullback of `HNNLoss` is not the gradient of the batched loss.**
   `SymbolicPullback` differentiates the loss of a *single* sample and sums the per-sample gradients
   (`reduce = +`), which equals the gradient of the batched loss only when the loss is a sum over
@@ -569,26 +682,31 @@ they resolved to is in the release notes above.
   a `NeuralNetwork{<:HamiltonianArchitecture}` — `hamiltonian_vector_field` is the obvious candidate
   — and giving it a test that runs.
 
-  (There is no **B3** any more — it was `input_dimension`/`output_dimension` existing twice, closed
-  by SymbolicNeuralNetworks 0.5; see *Fixed* above. The number is left vacant rather than reused.)
+  (**B1**, **B2**, **B3** and **B4** are all closed and their entries are gone: B1 and B2 by this
+  release — the duplicated `AdamOptimizerWithDecay` and the split `Manifold`, both under *Removed
+  (breaking)* — B3 by SymbolicNeuralNetworks 0.5, and B4 by `a427add1`, which repaired the
+  documentation build. The numbers are left vacant rather than reused.)
 
 ### C. Follow-ups and cleanups
 
-- **C1. The rest of the optimizer machinery still belongs upstream.** The traversal
-  (`_make_optimizer_cache`, `_make_optimizer_state`, `_tree_optim_step!`, `_leaf_optim_step!`) and
-  the bespoke `GMLEuclideanState` are GML implementations of what GeometricOptimizers v0.2 already
-  supports natively. Route: branch GeometricOptimizers, move it, delete it here, open an issue
-  referencing the upstream PR. B1 unblocks with it.
+- **C1. The parameter-tree traversal still belongs upstream.** `_make_optimizer_cache`,
+  `_make_optimizer_state`, `_tree_optim_step!`, `_leaf_optim_step!` and the bespoke
+  `GMLEuclideanState` are GML implementations of what GeometricOptimizers supports natively for a
+  single parameter. `GMLEuclideanState` in particular duplicates what `GradientState`,
+  `MomentumState` and `AdamState` already do for a plain array.
 
-- **C2. Two `isa` branches remain in `_leaf_optim_step!`** (`src/optimizers/optimizer.jl:182`,
-  `:187`, for `AdamState`/`MomentumState`). Measurement showed the traversal is not implicated in
-  the compile-time problem, so this is tidying, and it disappears entirely if C1 lands first.
+  What has to go upstream is *not* a reuse of GeometricOptimizers' `Optimizer`: that one needs an
+  `OptimizerProblem`, i.e. an objective function, and minibatch training has none — the gradient
+  arrives from AD one batch at a time. It is a new entry point there, a
+  gradient-supplied-externally step over a `NamedTuple` parameter tree. GML's `Optimizer` would then
+  be the `NeuralNetwork` constructor and the training-loop functor, and nothing else.
 
-- **C3. Cross-package documentation links are prose, not links.** The seven `@ref`s fixed above were
-  de-referenced into plain code spans, which is the cheap fix rather than the right one.
-  `DocumenterInterLinks` would let GML's documentation link into GeometricOptimizers' properly, so
-  that `𝔄`, `cayley` and `update!` become real cross-references again. GeometricOptimizers' own
-  `docs/Project.toml` already carries it; GML's does not.
+  `Optimizer` is the one name still exported by both packages, so this is also what closes the last
+  of B1's class of collision.
+
+- **C2. Two `isa` branches remain in `_leaf_optim_step!`** (for `AdamState`/`MomentumState`).
+  Measurement showed the traversal is not implicated in the compile-time problem, so this is tidying,
+  and it disappears entirely if C1 lands first.
 
 - **C4. `[compat]` entries worth revisiting.** `ForwardDiff = "0.10, 1"` is dead weight —
   GeometricOptimizers requires 1, so the resolver picks it regardless and the `0.10` branch is
@@ -627,6 +745,39 @@ they resolved to is in the release notes above.
   consistent with where the files sit, so what remains is a decision about `data.jl`: reconstruct it
   (it generated the pendulum training data, which `scripts/pendulum.jl` now does) or delete the
   scripts that need it.
+
+- **C10. Ten exported names are undefined.** `CPUDevice`, `Device`, `LinearSymplecticLayerP`,
+  `LinearSymplecticLayerQ`, `ResidualLayer`, `aresame`, `convert_to_dev`, `description`, `symbol`
+  and `timestep` are in an `export` list and defined nowhere, so
+  `[n for n in names(GeometricMachineLearning) if !isdefined(GeometricMachineLearning, n)]` returns
+  all ten. They are harmless in the sense that nothing breaks until someone reaches for one, at which
+  point they get `UndefVarError` from a name the package advertises.
+
+  This release removed the three that happened to sit in the export block it was already rewriting
+  (`SymplecticLieAlgMatrix`, `SymplecticLieAlgHorMatrix`, `SymplecticProjection`), which is why the
+  count is ten rather than thirteen. The rest are spread across the module and were left alone
+  deliberately: each needs a decision — define it, or drop the export — and a few are load-bearing
+  names in prose (`description` is `export`ed with the comment "from GeometricBase to print docs",
+  and GeometricBase does define it, so that one is likely an `import` that was never written).
+
+  `GeometricOptimizers`' `test/exports.jl` closes this whole class with one assertion over `names`;
+  this package has no equivalent, and adding one is the actual fix.
+
+- **C11. 41 test files are unreachable from `runtests.jl`.** By area: 20 under `performance_tests/`,
+  5 `orthogonalization_procedures/`, 4 `train!/`, 2 `cuda/`, and 10 singletons (`training_phnn.jl`,
+  `macro_testerror.jl`, `integrator/test_integrator.jl`, `attention_layer/`, `custom_ad_rules/`,
+  `data/`, `kernels/`, `layers/`, `symplectic_autoencoders/`, `transformer_related/`).
+
+  They are not all the same thing, which is why this is one issue and not a deletion. The
+  `performance_tests/` and `cuda/` files need hardware the suite does not assume; the `train!/` files
+  cover `train!`, which **B6** says is broken for every method, so they would fail if enabled; and
+  the singletons are mostly stale. What they have in common is that nothing runs them, so nothing
+  tells you when they rot — `test/optimizers/lie_alg_lifts.jl`, deleted in this release, had been
+  including `../src/arrays/skew_sym.jl` since before that path stopped existing.
+
+  This release deleted the eight that were `GeometricOptimizers` material *and* could not have run.
+  The remainder needs a decision per group: register them behind an environment flag (the GPU and
+  performance ones), fix the thing they test (`train!`), or delete them.
 
 ### D. Unverified
 

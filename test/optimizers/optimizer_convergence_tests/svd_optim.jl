@@ -26,6 +26,13 @@ A = [   0.06476993260924702 0.8369280855305259 0.6245358125914054 0.140729967064
 Random.seed!(1234)
 
 function svd_test(A, n, train_steps=1000, tol=1e-1; retraction=cayley)
+    # Seeded here and not once at the top of the file. `svd_test` is called twice, and with a single
+    # top-level seed the second call starts from whatever RNG state the first one happened to leave
+    # behind -- so the convergence assertions below turned on how much randomness the optimizer
+    # consumes rather than on whether the optimizers converge. GeometricOptimizers 0.4 builds one
+    # more `GlobalSection` per manifold parameter than 0.2 did, and that was enough to move the
+    # second pass from 2% above the optimum to 21%, against a 10% tolerance.
+    Random.seed!(1234)
     N = size(A,1)
     U, Σ, Vt = svd(A)
     U_result = U[:, 1:n]

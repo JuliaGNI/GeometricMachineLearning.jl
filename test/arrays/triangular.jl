@@ -1,25 +1,12 @@
-using GeometricMachineLearning 
+using GeometricMachineLearning
 using GeometricMachineLearning: mat_tensor_mul
-using LinearAlgebra: tr
 using Zygote: pullback
 using Test
 
-function triangular_assignment_test(T=Float64, n::Int=5)
-    A = rand(T, n, n)
-    LT = LowerTriangular(A)
-    UT = UpperTriangular(A)
-
-    @test tr(A) ≈ sum(A - LT - UT)
-end
-
-function triangular_multiplication_test(T=Float64, n::Int=5)
-    Aₗ = rand(LowerTriangular{T}, n)
-    Aᵤ = rand(UpperTriangular{T}, n)
-
-    B = rand(T, n, n)
-    @test Aₗ * B ≈ Matrix{T}(Aₗ) * B
-    @test Aᵤ * B ≈ Matrix{T}(Aᵤ) * B
-end
+# What the triangular types *are* — their storage layout, their arithmetic, their multiplication
+# against a dense matrix — is tested in GeometricOptimizers, which defines them
+# (`test/special_matrices/triangular.jl` there). What is left here is GML's: batching them over the
+# third axis of a tensor with `mat_tensor_mul`, and the pullback of that kernel.
 
 function triangular_tensor_multiplication_test(T=Float64, n::Int=5)
     Aₗ = rand(LowerTriangular{T}, n)
@@ -36,7 +23,7 @@ end
 
 function triangular_tensor_multiplication_pullback_test(T=Float64, n::Int=5)
     Aₗ = rand(LowerTriangular{T}, n)
-    Aᵤ = rand(LowerTriangular{T}, n)
+    Aᵤ = rand(UpperTriangular{T}, n)
 
     B = rand(T, n, n, n)
     C_diff = rand(T, n, n, n)
@@ -44,17 +31,13 @@ function triangular_tensor_multiplication_pullback_test(T=Float64, n::Int=5)
     total_pb_lower = pullback(mat_tensor_mul, Aₗ, B)[2](C_diff)
     total_pb_upper = pullback(mat_tensor_mul, Aᵤ, B)[2](C_diff)
 
+    # The batched pullback has to agree slice by slice with the pullback of the single-slice
+    # product. These were bare expressions and not `@test`s before, so the loop asserted nothing.
     for i in axes(total_pb_lower[2], 3)
-        total_pb_lower[2][:, :, i] ≈ pullback(*, Aₗ, B[:, :, i])[2](C_diff[:, :, i])[2]
-        total_pb_upper[2][:, :, i] ≈ pullback(*, Aᵤ, B[:, :, i])[2](C_diff[:, :, i])[2]
+        @test total_pb_lower[2][:, :, i] ≈ pullback(*, Aₗ, B[:, :, i])[2](C_diff[:, :, i])[2]
+        @test total_pb_upper[2][:, :, i] ≈ pullback(*, Aᵤ, B[:, :, i])[2](C_diff[:, :, i])[2]
     end
 end
 
-triangular_assignment_test()
-triangular_multiplication_test()
 triangular_tensor_multiplication_test()
 triangular_tensor_multiplication_pullback_test()
-
-M = [1 2 3 4; 5 6 7 8; 9 10 11 12; 13 14 15 16]
-@test vec(LowerTriangular(M)) == [5, 9, 10, 13, 14, 15]
-@test vec(SkewSymMatrix(M)) ≈ [1.5, 3.0, 1.5, 4.5, 3.0, 1.5]

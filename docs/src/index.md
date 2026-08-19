@@ -35,7 +35,7 @@ Existing architectures include:
 
 ## Manifolds
 
-`GeometricMachineLearning` supports putting neural network weights on manifolds such as the [Stiefel manifold](@ref "The Stiefel Manifold") and the [Grassmann manifold](@ref "The Grassmann Manifold") and [Riemannian optimization](@ref "Riemannian Manifolds").
+`GeometricMachineLearning` supports putting neural network weights on manifolds such as the [Stiefel manifold](@extref GeometricOptimizers The-Stiefel-Manifold) and the [Grassmann manifold](@extref GeometricOptimizers The-Grassmann-Manifold) and [Riemannian optimization](@extref GeometricOptimizers Riemannian-Manifolds).
 
 ![Weights can be put on manifolds to achieve structure preservation or improved stability.](tikz/tangent_vector_light.png)
 ![Weights can be put on manifolds to achieve structure preservation or improved stability.](tikz/tangent_vector_dark.png)

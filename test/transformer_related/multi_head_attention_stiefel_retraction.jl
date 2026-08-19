@@ -1,6 +1,9 @@
 using GeometricMachineLearning, Test
 using GeometricMachineLearning: geodesic
 using GeometricMachineLearning: cayley
+# The optimizer caches are internal to GeometricOptimizers -- they are `solver_step!` scratch --
+# so they are named qualified rather than through a re-export.
+using GeometricOptimizers: MomentumCache
 import Random, Test, LinearAlgebra, KernelAbstractions
 
 Random.seed!(1234)

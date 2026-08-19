@@ -29,8 +29,8 @@ function test_data_loader(dim=2, number_of_time_steps=100, number_of_parameters=
     o₁ = Optimizer(GradientOptimizer(), nn1)
     o₂ = Optimizer(GradientOptimizer(), nn2)
 
-    o₁(nn1, dl1, batch)
-    o₂(nn2, dl2, batch)
+    o₁(nn1, dl1, batch; show_progress = false)
+    o₂(nn2, dl2, batch; show_progress = false)
 end
 
 test_data_loader()

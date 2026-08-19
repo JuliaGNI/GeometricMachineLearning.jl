@@ -3,10 +3,33 @@ using HDF5
 using AbstractNeuralNetworks
 using Documenter
 using DocumenterCitations
+using DocumenterInterLinks
 using Markdown
 using Bibliography
 using LaTeXStrings
 # using Weave
+
+# The manifold, special-matrix and optimizer chapters moved to `GeometricOptimizers` along with the
+# types they describe (see the changelog), and the chapters that stayed refer to them constantly.
+# This is what keeps those references *references* rather than prose. Closes issue C3, which asked
+# for the same thing for `𝔄`, `cayley` and `update!`.
+#
+# The inventory is given as a *committed file* rather than as a URL. A URL is fetched and takes
+# precedence over the fallback file, and the anchors these references need — the moved chapters —
+# only exist in GeometricOptimizers' published inventory once its 0.4.0 docs have deployed. Reading
+# the committed copy makes this build independent of that ordering, and of the network. Regenerate it
+# after an upstream docs change with
+#
+#     julia --project=docs -e 'using DocInventories; save("docs/inventories/GeometricOptimizers.toml",
+#         Inventory("../GeometricOptimizers/docs/build/objects.inv";
+#                   root_url = "https://juliagni.github.io/GeometricOptimizers.jl/stable/"))'
+#
+links = InterLinks(
+    "GeometricOptimizers" => (
+        "https://juliagni.github.io/GeometricOptimizers.jl/stable/",
+        joinpath(@__DIR__, "inventories", "GeometricOptimizers.toml")
+    ),
+)
 
 bib = CitationBibliography(joinpath(@__DIR__, "src", "GeometricMachineLearning.bib"))
 sort_bibliography!(bib.entries, :nyt)  # name-year-title
@@ -123,19 +146,12 @@ _introduction = output_type == :html ? ("HOME" => "index.md") : ("HOME" =>
         "introduction.md"]
     )
 
-_manifolds = "Manifolds" => [
-    "Concepts from General Topology" => "manifolds/basic_topology.md",
-    "Metric and Vector Spaces" => "manifolds/metric_and_vector_spaces.md",
-    "Foundations of Differential Manifolds" => "manifolds/inverse_function_theorem.md",
-    "General Theory on Manifolds" => "manifolds/manifolds.md",
-    "Differential Equations and the EAU theorem" => "manifolds/existence_and_uniqueness_theorem.md",
-    "Riemannian Manifolds" => "manifolds/riemannian_manifolds.md",
-    "Homogeneous Spaces" => "manifolds/homogeneous_spaces.md",
-    ]
+# The `Manifolds` chapter — general topology through homogeneous spaces — moved to
+# `GeometricOptimizers` with the manifold types it describes, as did `Symmetric and Skew-Symmetric
+# Matrices` and `Global Tangent Spaces` below and the whole `Optimizer` chapter. They are linked
+# into from here through `InterLinks`.
 
 _special_arrays = "Special Arrays and AD" => [
-    "Symmetric and Skew-Symmetric Matrices" => "arrays/skew_symmetric_matrix.md",
-    "Global Tangent Spaces" => "arrays/global_tangent_spaces.md",
     "Tensors" => "arrays/tensors.md",
     "Pullbacks" => "pullbacks/computation_of_pullbacks.md",
     ]
@@ -146,13 +162,9 @@ _structure_preservation = "Structure-Preservation" => [
     "Structure-Preserving Neural Networks" => "structure_preservation/structure_preserving_neural_networks.md",
 ]
 
-optimizer_name = output_type == :html ? "Optimizer" : "Optimizer Framework"
-_optimizers = optimizer_name => [
-    "Optimizers" => "optimizers/optimizer_framework.md",
-    "Retractions" => "optimizers/manifold_related/retractions.md",
-    "Parallel Transport" => "optimizers/manifold_related/parallel_transport.md",
-    "Optimizer Methods" => "optimizers/optimizer_methods.md",
-    ]
+# What is left of the optimizer chapter: the framework belongs to `GeometricOptimizers`, and this
+# page covers the part that is about neural networks — the parameter tree and the training loop.
+_optimizers = "Optimizer" => "optimizers/optimizer.md"
 
 _special_layers = "Special Neural Network Layers" => [
     "Sympnet Layers" => "layers/sympnet_gradient.md",
@@ -208,7 +220,6 @@ _index_of_docstrings = "Index of Docstrings" => "docstring_index.md"
 
 _html_pages = [
     _introduction,
-    _manifolds,
     _special_arrays,
     _structure_preservation,
     _optimizers,
@@ -288,17 +299,17 @@ end
 
 _latex_pages = [
     _introduction,
+    # The `Manifolds` chapter this part opened with, and the `Optimizers` part that followed it,
+    # are `GeometricOptimizers`' documentation now. The book therefore starts from the geometric
+    # structure and takes the manifold optimizers as given; see the changelog.
     "Background" => [
-        "Manifolds" => vcat(reduce_to_second_factors(_manifolds),
-                            value_for_key(_special_arrays, "Global Tangent Spaces"),
-                        ),
         "Geometric Structure" => reduce_to_second_factors(_structure_preservation),
         "Reduced Order Modeling" => reduce_to_second_factors(_reduced_order_modeling),
     ],
-    "Optimizers" => [   "General Framework for Manifold Optimization" => value_for_key(_optimizers, "Optimizers", "Retractions", "Parallel Transport"),
-                        "Optimizer Methods" =>
-                            value_for_key(_optimizers, "Optimizer Methods")
-                        ],
+    # One page, but it still has to be a chapter of *pairs* like the others: `index_latex_pages`
+    # below flattens these values and `docstring_index.md` builds a `Dict` from the result, so a
+    # chapter contributing a bare string breaks that `Dict`.
+    "Optimizer" => ["Optimizer" => reduce_to_second_factors(_optimizers)],
     "Special Neural Network Layers and Architectures" => [
         "Layers" => reduce_to_second_factors(_special_layers),
         "Architectures" => reduce_to_second_factors(_architectures)
@@ -319,9 +330,8 @@ _latex_pages = [
     _index_of_docstrings,
     "Appendix" => [
         "Data Loader" => reduce_to_second_factors(_data_loader),
-        "Special Arrays, Tensors and Pullbacks" =>
-        value_for_key(_special_arrays,  "Symmetric and Skew-Symmetric Matrices",
-                                        "Tensors",
+        "Tensors and Pullbacks" =>
+        value_for_key(_special_arrays,  "Tensors",
                                         "Pullbacks"),
         # we include the last tutorial here
         "Customizing Training" => value_for_key(_tutorials, "Adjusting the Loss Function"),
@@ -335,7 +345,7 @@ filter!(key -> (key ≠ "HOME") & (key ≠ "Index of Docstrings") & (key ≠ "Re
 index_latex_pages = vcat([Dict(_latex_pages)[key] for key in _keys]...)
 
 makedocs(;
-    plugins = [bib],
+    plugins = [bib, links],
     # `GeometricOptimizers` is deliberately *not* listed. `@docs` filters candidate docstrings by
     # the module they were written in (`d.data[:module]`), not by the module of the binding, so the
     # `geodesic`/`cayley` methods GML defines on GeometricOptimizers' functions are found from here

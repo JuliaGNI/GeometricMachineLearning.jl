@@ -63,11 +63,11 @@ nn_standard = NeuralNetwork(arch_standard)
 nn_symplectic = NeuralNetwork(arch_symplectic)
 nn_sympnet = NeuralNetwork(arch_sympnet)
 
-o_method = AdamOptimizerWithDecay(n_epochs; T = Float64)
+o_pairing = AdamOptimizerWithDecay(n_epochs, Float64)
 
-o_standard = Optimizer(o_method, nn_standard)
-o_symplectic = Optimizer(o_method, nn_symplectic)
-o_sympnet = Optimizer(o_method, nn_sympnet)
+o_standard = Optimizer(nn_standard; o_pairing...)
+o_symplectic = Optimizer(nn_symplectic; o_pairing...)
+o_sympnet = Optimizer(nn_sympnet; o_pairing...)
 
 batch = Batch(batch_size, seq_length)
 batch2 = Batch(batch_size)

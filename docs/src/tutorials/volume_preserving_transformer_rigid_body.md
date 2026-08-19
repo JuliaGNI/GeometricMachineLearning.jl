@@ -183,18 +183,18 @@ nn_st = NeuralNetwork(arch_st, backend, T)
 (parameterlength(nn_vpff), parameterlength(nn_vpt), parameterlength(nn_st))
 ```
 
-We now train the various networks. For this we use [`AdamOptimizerWithDecay`](@ref):
+We now train the various networks. For this we use [`AdamOptimizerWithDecay`](@extref GeometricOptimizers The-Adam-Optimizer-with-Decay):
 
 ```@example rigid_body
 const n_epochs = 500000
 const batch_size = 16384
 const feedforward_batch = Batch(batch_size)
 const transformer_batch = Batch(batch_size, seq_length, seq_length)
-const opt_method = AdamOptimizerWithDecay(n_epochs, 1e-2, 1e-6; T = T)
+const opt_pairing = AdamOptimizerWithDecay(n_epochs, T; η₁ = 1e-2, η₂ = 1e-6)
 
-o_vpff = Optimizer(opt_method, nn_vpff)
-o_vpt = Optimizer(opt_method, nn_vpt)
-o_st = Optimizer(opt_method, nn_st)
+o_vpff = Optimizer(nn_vpff; opt_pairing...)
+o_vpt = Optimizer(nn_vpt; opt_pairing...)
+o_st = Optimizer(nn_st; opt_pairing...)
 nothing # hide
 ```
 ```julia

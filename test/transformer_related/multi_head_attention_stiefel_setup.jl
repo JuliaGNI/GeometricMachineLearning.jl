@@ -1,4 +1,6 @@
 using GeometricMachineLearning, Test
+# see the note in `multi_head_attention_stiefel_retraction.jl`
+using GeometricOptimizers: MomentumCache
 import Random, Test, LinearAlgebra, KernelAbstractions
 
 Random.seed!(1234)

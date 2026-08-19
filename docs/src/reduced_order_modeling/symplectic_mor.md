@@ -49,7 +49,7 @@ Main.theorem(raw"A Hamiltonian system on the reduced space ``(\mathbb{R}^{2n}, \
 " * Main.indentation * raw"so the dynamics on ``\mathcal{M}`` can be described through a Hamiltonian ODE on ``\mathbb{R}^{2n}.``")
 ```
 
-For the proof we use the fact that ``\mathcal{M} = \mathcal{R}(\mathbb{R}^{2n})`` is a manifold [whose coordinate chart is the local inverse](@ref "The Immersion Theorem") of ``\mathcal{R}`` which we will call ``\psi``, i.e. around a point ``y\in\mathcal{M}`` we have ``\psi\circ\mathcal{R}(y) = y.``[^3] We further define the *symplectic inverse* of a matrix ``A\in\mathbb{R}^{2N\times2n}`` as 
+For the proof we use the fact that ``\mathcal{M} = \mathcal{R}(\mathbb{R}^{2n})`` is a manifold [whose coordinate chart is the local inverse](@extref GeometricOptimizers The-Immersion-Theorem) of ``\mathcal{R}`` which we will call ``\psi``, i.e. around a point ``y\in\mathcal{M}`` we have ``\psi\circ\mathcal{R}(y) = y.``[^3] We further define the *symplectic inverse* of a matrix ``A\in\mathbb{R}^{2N\times2n}`` as 
 
 [^3]: A similar proof can be found in [yildiz2024data](@cite). Further note that, if we enforced the condition ``\mathcal{P}\circ\mathcal{R} = \mathrm{id}`` exactly, the projection ``\mathcal{P}`` would be equal to the local inverse ``\psi.`` For the proof here we however only require the existence of ``\psi``, not its explicit construction as ``\mathcal{P}.``
 
@@ -104,7 +104,7 @@ For proper symplectic decomposition (PSD) the reduction ``\mathcal{P}`` and the 
 ```math
 \mathcal{R} \equiv \Psi_\mathrm{CL} = \begin{bmatrix} \Phi & \mathbb{O} \\ \mathbb{O} & \Phi \end{bmatrix} \text{ where $\Phi\in{}St(n,N)\subset\mathbb{R}^{N\times{}n}$},
 ```
-i.e. both ``\Phi`` and ``\Psi_\mathrm{CL}`` are elements of the [Stiefel manifold](@ref "The Stiefel Manifold") and we furthermore have ``\Psi_\mathrm{CL}^T\mathbb{J}_{2N}\Psi_\mathrm{CL} = \mathbb{J}_{2n}``, i.e. ``\Psi_\mathrm{CL}`` is symplectic. If the [snapshot matrix](@ref "Snapshot Matrix") is of the form: 
+i.e. both ``\Phi`` and ``\Psi_\mathrm{CL}`` are elements of the [Stiefel manifold](@extref GeometricOptimizers The-Stiefel-Manifold) and we furthermore have ``\Psi_\mathrm{CL}^T\mathbb{J}_{2N}\Psi_\mathrm{CL} = \mathbb{J}_{2n}``, i.e. ``\Psi_\mathrm{CL}`` is symplectic. If the [snapshot matrix](@ref "Snapshot Matrix") is of the form: 
 
 ```math
 M = \left[\begin{array}{c:c:c:c}

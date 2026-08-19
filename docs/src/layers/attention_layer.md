@@ -91,13 +91,13 @@ Besides the traditional attention mechanism `GeometricMachineLearning` therefore
 
 The Cayley transform maps from skew-symmetric matrices to orthonormal matrices. It takes the form[^4]:
 
-[^4]: The Cayley transform here does not have the factor ``1/2`` hat we used when talking about the [Cayley retraction](@ref "Classical Retractions"). This is because now we do not need the retraction property ``d/dt\mathrm{Cayley}(tV)|_{t=0} = V``, but only a map ``\mathfrak{g}\to{}G=SO(N).``
+[^4]: The Cayley transform here does not have the factor ``1/2`` hat we used when talking about the [Cayley retraction](@extref GeometricOptimizers Classical-Retractions). This is because now we do not need the retraction property ``d/dt\mathrm{Cayley}(tV)|_{t=0} = V``, but only a map ``\mathfrak{g}\to{}G=SO(N).``
 
 ```math 
 \mathrm{Cayley}: A \mapsto (\mathbb{I} - A)(\mathbb{I} + A)^{-1}.
 ```
 
-Analogously to when we used the Cayley transform [as a retraction](@ref "Classical Retractions"), we can easily check that ``\mathrm{Cayley}(A)`` is orthogonal if ``A`` is skew-symmetric. For this consider ``\varepsilon \mapsto A(\varepsilon)\in\mathcal{S}_\mathrm{skew}`` with ``A(0) = \mathbb{O}`` and ``A'(0) = B \neq \mathbb{O}``. Then we have: 
+Analogously to when we used the Cayley transform [as a retraction](@extref GeometricOptimizers Classical-Retractions), we can easily check that ``\mathrm{Cayley}(A)`` is orthogonal if ``A`` is skew-symmetric. For this consider ``\varepsilon \mapsto A(\varepsilon)\in\mathcal{S}_\mathrm{skew}`` with ``A(0) = \mathbb{O}`` and ``A'(0) = B \neq \mathbb{O}``. Then we have: 
 
 ```math
 \frac{\delta(\mathrm{Cayley}(A)^T\mathrm{Cayley}(A))}{\delta{}A} = \frac{d}{d\varepsilon}|_{\varepsilon=0} \mathrm{Cayley}(A(\varepsilon))^T \mathrm{Cayley}(A(\varepsilon)) = A'(0)^T + A'(0) = \mathbb{O},
@@ -112,7 +112,7 @@ For this the attention layer is modified in the following way:
 ```math 
 Z := [z^{(1)}, \ldots, z^{(T)}] \mapsto Z\sigma(Z^TAZ),
 ```
-where ``\sigma(C)=\mathrm{Cayley}(C)`` and ``A`` is a matrix of type [`SkewSymMatrix`](@ref) that is learnable, i.e. the parameters of the attention layer are stored in ``A``.
+where ``\sigma(C)=\mathrm{Cayley}(C)`` and ``A`` is a matrix of type [`SkewSymMatrix`](@extref GeometricOptimizers GeometricOptimizers.SkewSymMatrix) that is learnable, i.e. the parameters of the attention layer are stored in ``A``.
 
 ### Second approach: scalar products with an arbitrary weighting
 

@@ -96,7 +96,7 @@ parameterlength(g_nn.model)
 Main.remark(raw"We can also specify whether we would like to start with a layer that changes the ``q``-component or one that changes the ``p``-component. This can be done via the keywords `init_upper` for the `GSympNet`, and `init_upper_linear` and `init_upper_act` for the `LASympNet`.")
 ```
 
-We have to define an [optimizer](@ref "Standard Neural Network Optimizers") which will be used in training of the SympNet. In this example we use [Adam](@ref "The Adam Optimizer"):
+We have to define an [optimizer](@extref GeometricOptimizers Standard-Neural-Network-Optimizers) which will be used in training of the SympNet. In this example we use [Adam](@extref GeometricOptimizers The-Adam-Optimizer):
 
 ```@example sympnet
 # set up optimizer; for this we first need to specify the optimization method

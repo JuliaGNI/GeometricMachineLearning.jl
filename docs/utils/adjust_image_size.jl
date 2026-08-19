@@ -18,12 +18,9 @@ function adjust_image_size(path::AbstractString, size::String, lines::Union{Tupl
 end
 
 new_contents = adjust_image_size(raw"tikz/tangent_vector_light.png", ".5", collection_of_lines)
-new_contents = adjust_image_size(raw"manifolds/sphere_with_tangent_vec_light.png", ".5", split(new_contents, "\n"))
-new_contents = adjust_image_size(raw"manifolds/sphere_with_tangent_vec_and_geodesic_light.png", ".5", split(new_contents, "\n"))
-new_contents = adjust_image_size(raw"optimizers/manifold_related/parallel_transport_light.png", ".5", split(new_contents, "\n"))
-new_contents = adjust_image_size(raw"optimizers/manifold_related/two_vectors_light.png", ".5", split(new_contents, "\n"))
-new_contents = adjust_image_size(raw"optimizers/manifold_related/retraction_comparison_light.png", ".5", split(new_contents, "\n"))
-new_contents = adjust_image_size(raw"optimizers/manifold_related/retraction_discrepancy_light.png", ".5", split(new_contents, "\n"))
+# The `manifolds/` and `optimizers/manifold_related/` figures used to be resized here. Both page
+# trees are GeometricOptimizers' documentation now, so nothing generates those images and the calls
+# matched nothing.
 new_contents = adjust_image_size(raw"tutorials/sympnet_training_loss_light.png", ".5", split(new_contents, "\n"))
 new_contents = adjust_image_size(raw"tikz/gml_venn_light.png", ".5", split(new_contents, "\n"))
 new_contents = adjust_image_size(raw"tikz/symplectic_autoencoder_architecture_light.png", ".65", split(new_contents, "\n"))

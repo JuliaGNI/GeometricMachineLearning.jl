@@ -43,7 +43,7 @@ const dl = backend == CPU() ? DataLoader(dl₁.input) : DataLoader(dl₁.input |
 # hyperparameters concerning training 
 const n_epochs = 500000
 const batch_size = 16384
-const opt_method = AdamOptimizerWithDecay(n_epochs, T; η₁ = 1e-2, η₂ = 1e-6)
+const opt_pairing = AdamOptimizerWithDecay(n_epochs, T; η₁ = 1e-2, η₂ = 1e-6)
 
 # parameters for evaluation 
 ics_val = [sin(1.1), 0., cos(1.1)]
@@ -54,7 +54,7 @@ const t_validation_long = 100
 function train_the_network(nn₀::GeometricMachineLearning.NeuralNetwork, batch::Batch)
     Random.seed!(1234)
 
-    o₀ = Optimizer(opt_method, nn₀)
+    o₀ = Optimizer(nn₀; opt_pairing...)
 
     loss_array = o₀(nn₀, dl, batch, n_epochs)
 

@@ -17,7 +17,7 @@ Main.definition(raw"A **symplectic structure** or **symplectic 2-form** ``\Omega
 
 We forego the precise definition of *closedness* because it would require us to introduce differential forms [arnold1978mathematical, bishop1980tensor](@cite). This property is also closely related to the *Jacobi identity* [kraus2017gempic; Chapter 4.4](@cite). After having defined a symplectic structure, we can introduce *Hamiltonian vector fields*[^1]:
 
-[^1]: Also compare this to the definition of the [Riemannian gradient](@ref "The Riemannian Gradient").
+[^1]: Also compare this to the definition of the [Riemannian gradient](@extref GeometricOptimizers The-Riemannian-Gradient).
 
 ```@eval
 Main.definition(raw"A **Hamiltonian vector field** at ``x\in\mathcal{M}`` corresponding to the function ``H:\mathcal{M}\to\mathbb{R}`` (called **the Hamiltonian**) is a vector field that has the following property:
@@ -59,7 +59,7 @@ We can then reformulate a Hamiltonian vector field as two separate vector fields
 
 ## Solution of Symplectic Systems
 
-The [flow](@ref "The Existence-And-Uniqueness Theorem") of a Hamiltonian ODE has very restrictive properties, the most important one of these is called *symplecticity* [hairer2006geometric](@cite). This property dramatically restricts the dynamically accessible states of the flow map. For a canonical Hamiltonian system symplecticity is defined as follows:
+The [flow](@extref GeometricOptimizers The-Existence-And-Uniqueness-Theorem) of a Hamiltonian ODE has very restrictive properties, the most important one of these is called *symplecticity* [hairer2006geometric](@cite). This property dramatically restricts the dynamically accessible states of the flow map. For a canonical Hamiltonian system symplecticity is defined as follows:
 
 
 ```@eval

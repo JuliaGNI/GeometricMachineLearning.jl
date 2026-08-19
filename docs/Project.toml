@@ -3,8 +3,10 @@ AbstractNeuralNetworks = "60874f82-5ada-4c70-bd1c-fa6be7711c8a"
 Bibliography = "f1be7e48-bf82-45af-a471-ae754a193061"
 BrenierTwoFluid = "698bc5df-bacc-4e45-9592-41ae9e406d75"
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+DocInventories = "43dc2714-ed3b-44b5-b226-857eda1aa7de"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 DocumenterCitations = "daee34ce-89f3-4625-b898-19384cb65244"
+DocumenterInterLinks = "d12716ef-a0f6-4df4-a9f1-a5a34e75c656"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 GeometricIntegrators = "dcce2d33-59f6-5b8d-9047-0defad88ae06"
 GeometricMachineLearning = "194d25b2-d3f5-49f0-af24-c124f4aa80cc"
@@ -14,8 +16,6 @@ HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
 LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
-# GeometricMachineLearning itself is deliberately *not* listed here: `docs/Makefile`'s `test_docs`
-# target develops it from the repository root, which is what makes the same file work in CI and in a
-# local clone at any path.
 [sources]
 BrenierTwoFluid = {rev = "main", url = "https://github.com/ToBlick/BrenierTwoFluids.git"}
+GeometricMachineLearning = {path = ".."}

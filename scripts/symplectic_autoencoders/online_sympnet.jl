@@ -26,8 +26,8 @@ sae_nn = NeuralNetwork(sae_arch, backend)
 const n_epochs = 262144
 const batch_size = 4096
 
-sae_method = AdamOptimizerWithDecay(n_epochs)
-o = Optimizer(sae_nn, sae_method)
+sae_pairing = AdamOptimizerWithDecay(n_epochs)
+o = Optimizer(sae_nn; sae_pairing...)
 
 println("Number of batches: ", GeometricMachineLearning.number_of_batches(dl, Batch(batch_size)))
 
@@ -86,8 +86,8 @@ integrator_batch_size = 4096
 seq_length = 4
 integrator_architecture = StandardTransformerIntegrator(reduced_dim; transformer_dim = 10, n_blocks = 3, n_heads = 5, L = 2, upscaling_activation = tanh)
 integrator_nn = NeuralNetwork(integrator_architecture, backend)
-integrator_method = AdamOptimizerWithDecay(integrator_train_epochs)
-o_integrator = Optimizer(integrator_method, integrator_nn)
+integrator_pairing = AdamOptimizerWithDecay(integrator_train_epochs)
+o_integrator = Optimizer(integrator_nn; integrator_pairing...)
 
 loss = GeometricMachineLearning.ReducedLoss(encoder(sae_nn), decoder(sae_nn))
 

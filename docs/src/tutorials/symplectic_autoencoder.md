@@ -119,7 +119,7 @@ psd_nn_cpu = NeuralNetwork(psd_arch, CPU(), eltype(dl_cpu))
 solve!(psd_nn_cpu, dl_cpu)
 ```
 
-The `SymplecticAutoencoder` we train with [`AdamOptimizerWithDecay`](@ref) however[^2]:
+The `SymplecticAutoencoder` we train with [`AdamOptimizerWithDecay`](@extref GeometricOptimizers The-Adam-Optimizer-with-Decay) however[^2]:
 
 [^2]: It is not feasible to perform the training on CPU, which is why we use `CUDA` [besard2018juliagpu](@cite) here. We further perform the training in single precision.
 
@@ -134,7 +134,7 @@ dl = DataLoader(dl_cpu, backend, Float32)
 
 
 sae_nn_gpu = NeuralNetwork(sae_arch, CUDADevice(), Float32)
-o = Optimizer(AdamOptimizerWithDecay(integrator_train_epochs), sae_nn_gpu)
+o = Optimizer(sae_nn_gpu; AdamOptimizerWithDecay(integrator_train_epochs, Float32)...)
 
 # train the network
 o(sae_nn_gpu, dl, Batch(batch_size), n_epochs)
@@ -269,9 +269,9 @@ integrator_architecture = StandardTransformerIntegrator(reduced_dim;
 
 integrator_nn = NeuralNetwork(integrator_architecture, backend)
 
-integrator_method = AdamOptimizerWithDecay(integrator_train_epochs)
+integrator_pairing = AdamOptimizerWithDecay(integrator_train_epochs)
 
-o_integrator = Optimizer(integrator_method, integrator_nn)
+o_integrator = Optimizer(integrator_nn; integrator_pairing...)
 
 dl = dl_cpu # hide
 # map from autoencoder type to integrator type
@@ -464,8 +464,8 @@ const integrator_architecture2 = StandardTransformerIntegrator(reduced_dim2;
                                                                             L = 3, 
                                                                             upscaling_activation = tanh)
 integrator_nn2 = NeuralNetwork(integrator_architecture2, backend)
-const integrator_method2 = AdamOptimizerWithDecay(integrator_train_epochs)
-const o_integrator2 = Optimizer(integrator_method2, integrator_nn2)
+const integrator_pairing2 = AdamOptimizerWithDecay(integrator_train_epochs)
+const o_integrator2 = Optimizer(integrator_nn2; integrator_pairing2...)
 
 loss2 = GeometricMachineLearning.ReducedLoss(encoder(psd_nn2), decoder(psd_nn2))
 nothing # hide

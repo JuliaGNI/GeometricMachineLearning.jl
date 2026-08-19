@@ -75,7 +75,7 @@ Linear layers of type ``p`` are of the form:
 \begin{pmatrix} q \\ p \end{pmatrix} \mapsto \begin{pmatrix} \mathbb{I} & \mathbb{O} \\ A & \mathbb{I} \end{pmatrix} \begin{pmatrix} q \\ p \end{pmatrix},
 ```
 
-where ``A`` is a symmetric matrix. This is implemented very efficiently in `GeometricMachineLearning` with the special matrix [`SymmetricMatrix`](@ref).
+where ``A`` is a symmetric matrix. This is implemented very efficiently in `GeometricMachineLearning` with the special matrix [`SymmetricMatrix`](@extref GeometricOptimizers GeometricOptimizers.SymmetricMatrix).
 
 ## Library Functions
 

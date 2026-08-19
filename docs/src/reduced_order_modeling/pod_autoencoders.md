@@ -49,7 +49,7 @@ Main.definition(raw"An **autoencoder** is a tuple of two mappings ``(\mathcal{P}
 " * Main.indentation * raw"During training we optimize the autoencoder for minimizing the *projection error*.")
 ```
 
-Unlike in the POD case we have to resort to using [neural network optimizers](@ref "Neural Network Optimizers") in order to adapt the neural network to the data at hand as opposed to simply using SVD. The use of autoencoders instead of POD is extremely advantageous in the case when we deal with problems that exhibit a slowly-decaying Kolmogorov ``n``-width. During training we minimize the [projection error](@ref "Projection Error").
+Unlike in the POD case we have to resort to using [neural network optimizers](@extref GeometricOptimizers The-optimizer-framework,-step-by-step) in order to adapt the neural network to the data at hand as opposed to simply using SVD. The use of autoencoders instead of POD is extremely advantageous in the case when we deal with problems that exhibit a slowly-decaying Kolmogorov ``n``-width. During training we minimize the [projection error](@ref "Projection Error").
 
 ```@eval
 Main.remark(raw"Note that POD can be seen as a special case of an autoencoder where the encoder and the decoder both consist of only one matrix. If we restrict this matrix to be orthonormal, i.e. optimize on the Stiefel manifold, then the best solution we can obtain is equivalent to applying SVD and finding the POD basis.")
