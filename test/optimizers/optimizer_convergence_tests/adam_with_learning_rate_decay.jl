@@ -17,6 +17,9 @@ end
 
 # tests checks if Adam with decay achieves a lower loss value than regular Adam and the two converge reasonably well
 function train_network(; n_epochs=2048)
+    # Seeded per call, as in `svd_optim.jl`: three of these run off one top-level seed, so
+    # without it each one starts from whatever RNG state its predecessor left behind.
+    Random.seed!(123)
     nn₁ = setup_network(dl)
     nn₂ = setup_network(dl)
 
@@ -47,7 +50,12 @@ cache explicitly, and without the routing every weight -- the `StiefelManifold` 
 through to the Euclidean state, whose zero element is a `StiefelLieAlgHorMatrix` and not a manifold
 point.
 """
-function train_manifold_network(; n_epochs = 32)
+# `n_epochs = 128` and not 32: `AdamOptimizerWithDecay(n_epochs)` fixes
+# γ = exp(log(η₂/η₁)/n_epochs), so a 32-epoch budget drives the learning rate to η₂ = 1e-6 almost
+# at once and the run barely trains -- from a seeded start the loss fell by under 2% on 1.13 and
+# *rose* on 1.12. Over 128 epochs the decay is gentle enough that it falls by a factor of six.
+function train_manifold_network(; n_epochs = 128)
+    Random.seed!(123)
     arch = Chain(StiefelLayer(1, 20), Dense(20, 20, tanh), Dense(20, 1, identity))
     nn = NeuralNetwork(arch, CPU(), eltype(dl))
 

@@ -450,6 +450,27 @@ continuation lines, and reading it misses them.
   pins the step size by asserting that `step_size = 0` leaves the loss — which `train!` recomputes
   over the whole data set after every step — identical at every step.
 
+- **Four convergence tests seed per invocation instead of once per file.** `svd_optim.jl` and
+  `sae_error_lower_than_psd_error.jl` failed on Julia 1.10 and 1.12 respectively, and neither was a
+  numerical regression: given the same starting point the new optimizer stack agrees with the old to
+  13 significant digits. Each file seeded once at the top and then called its helper *twice*, so the
+  second call started from whatever RNG state the first happened to leave behind — and GO 0.4 builds
+  one more `GlobalSection` per manifold parameter than 0.2 did, because GML's `StiefelManifold` *is*
+  its type now and its generic manifold machinery engages where `go_bridges.jl` used to. Every draw
+  after the first `Optimizer` construction shifted, and both tests were passing on a thin margin:
+  the `svd_optim.jl` gradient run went from 2% above the optimum to 21%, against a 10% tolerance.
+
+  Seeding each invocation makes the starting point independent of what ran before it. The two
+  assertions clear by 23× and by 2.6–4.5%, and are now stable to 13 digits across 1.10, 1.12 and
+  1.13 — 1.13 had been passing the autoencoder comparison by 0.7%, i.e. by luck. `psd_optim.jl` and
+  `adam_with_learning_rate_decay.jl` have the same shape and get the same treatment; the latter's
+  manifold run also goes from 32 to 128 epochs, because `AdamOptimizerWithDecay(n_epochs)` fixes
+  `γ = exp(log(η₂/η₁)/n_epochs)` and a 32-epoch budget collapses the learning rate to `η₂` before
+  the run has trained — the loss fell by under 2% on 1.13 and *rose* on 1.12. The unused
+  `tol = .35` keyword of `sae_error_lower_than_psd_error.jl`'s `test_accuracy` is gone; the
+  same-named helpers in `psd_architecture_tests.jl` and `symplectic_autoencoder_tests.jl` do use
+  theirs and keep it.
+
 ### Added
 
 - **`test/runtests.jl` emits seven `@info` markers**, one per testset group, so that a long job can

@@ -27,6 +27,13 @@ A = [   0.06476993260924702 0.8369280855305259 0.6245358125914054 0.140729967064
 This tests if the optimizers can find the optimal PSD solution.
 """        
 function svd_test(A, n, train_steps=1000, tol=1e-1; retraction=cayley)
+    # Seeded here and not once at the top of the file, for the reason given at the same place in
+    # `svd_optim.jl`: `svd_test` is called twice, and with a single top-level seed the second call
+    # starts from whatever RNG state the first one happened to leave behind, which makes the
+    # convergence assertions below turn on how much randomness the optimizer consumes. That is what
+    # broke the `StiefelLayer` version of this test on 1.10; this file has the same shape and was one
+    # `GlobalSection` away from the same failure.
+    Random.seed!(1234)
     N2 = size(A,1)
     @assert iseven(N2)
     N = N2÷2
