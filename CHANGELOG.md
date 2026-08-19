@@ -454,11 +454,18 @@ continuation lines, and reading it misses them.
   `sae_error_lower_than_psd_error.jl` failed on Julia 1.10 and 1.12 respectively, and neither was a
   numerical regression: given the same starting point the new optimizer stack agrees with the old to
   13 significant digits. Each file seeded once at the top and then called its helper *twice*, so the
-  second call started from whatever RNG state the first happened to leave behind — and GO 0.4 builds
-  one more `GlobalSection` per manifold parameter than 0.2 did, because GML's `StiefelManifold` *is*
-  its type now and its generic manifold machinery engages where `go_bridges.jl` used to. Every draw
-  after the first `Optimizer` construction shifted, and both tests were passing on a thin margin:
-  the `svd_optim.jl` gradient run went from 2% above the optimum to 21%, against a 10% tolerance.
+  second call started from whatever RNG state the first happened to leave behind — and `Optimizer`
+  now draws more randomness than it did. `GeometricOptimizers._similar` of a manifold parameter is
+  `rand(manifold_constructor(a){T}, size(a)...)`, a fresh random point on the manifold, because
+  upstream makes `Base.similar(::Manifold)` an error on the grounds that uninitialised storage is not
+  a manifold point; `GradientState` allocates its `x̄` slot with it. GML's `StiefelManifold` *is*
+  `GeometricOptimizers`' type now, so that method applies where on `main` the call fell through to
+  `similar(a)` and GML's own `Base.similar(::StiefelManifold)`, which allocated uninitialised storage
+  and drew nothing. Constructing one optimizer over two Stiefel weights draws six batches of normals
+  where it drew four — the four `global_section` batches are unchanged, and each manifold parameter
+  adds one random manifold point. Every draw after the first `Optimizer` construction shifted, and
+  both tests were passing on a thin margin: the `svd_optim.jl` gradient run went from 2% above the
+  optimum to 21%, against a 10% tolerance.
 
   Seeding each invocation makes the starting point independent of what ran before it. The two
   assertions clear by 23× and by 2.6–4.5%, and are now stable to 13 digits across 1.10, 1.12 and
