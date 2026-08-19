@@ -9,11 +9,11 @@ breaking release).
 > [!NOTE]
 > Entries for 0.1.0 through 0.4.8 were reconstructed from git history, the release tags and the
 > merged pull requests, not written at the time. They are accurate about *what* changed and are
-> deliberately coarser about detail than the [Unreleased] section below, which was written
+> deliberately coarser about detail than the 0.5.0 section below, which was written
 > alongside the work. Where a release removed exported names the list is given; where it is a
 > reconstruction of intent, it says so.
 
-## [Unreleased] — targeting 0.5.0
+## [0.5.0] — 2026-08-19
 
 **The optimizer machinery moves to [GeometricOptimizers][go].** GML no longer implements its own
 optimizers: the methods, caches, states, global sections and retractions all come from
@@ -217,7 +217,10 @@ continuation lines, and reading it misses them.
   Pass `step_size` and `δ` explicitly if the old values matter.
 
 - **Julia 1.10 is the minimum** (`julia = "1.9"` → `"1.10"`), inherited from GeometricOptimizers.
-  1.9 was never satisfiable with this dependency set in practice.
+  1.9 was never satisfiable with this dependency set in practice. The claim is measured, not
+  inferred: the full suite is green on 1.10 on Linux, macOS and Windows alike on the release tree
+  ([CI run 32219315656](https://github.com/JuliaGNI/GeometricMachineLearning.jl/actions/runs/32219315656)),
+  which is what closes what used to be open issue **D2**.
 
 - **`GeometricIntegrators` gains a `[compat]` bound of `0.18.2`.** It is a test-only dependency and
   had none, which let the resolver pick a version whose `SimpleSolvers` requirement conflicts with
@@ -782,11 +785,6 @@ they resolved to is in the release notes above.
 ### D. Unverified
 
 Not defects — claims this release makes that nothing has actually checked yet.
-
-- **D2. The test suite has never been run on Julia 1.10.** The package precompiles and loads there
-  now, and resolves from the registry, but no suite has run there — and `julia = "1.10"` is a claim
-  this release newly makes. The full runs so far were on 1.13.0-rc2. CI covers 1.10 and is the first
-  thing that will exercise it.
 
 - **D4. The upstream fix was measured on one optimizer.** The compile-time figures come from the
   `Adam` path. The quasi-Newton and Newton caches and states were widened on the strength of their
