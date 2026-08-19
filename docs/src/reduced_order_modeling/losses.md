@@ -46,6 +46,7 @@ where ``\mathbf{x}^{(t)}`` is the solution of the FOM at point ``t`` and ``\math
 TransformerLoss
 AutoEncoderLoss
 ReducedLoss
+ParametricLoss
 projection_error
 reduction_error
 ```

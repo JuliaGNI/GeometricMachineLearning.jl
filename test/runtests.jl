@@ -37,6 +37,15 @@ end
 @safetestset "Hamiltonian Neural Network                                                      " begin
     include("hamiltonian_neural_network_tests.jl")
 end
+@safetestset "Generalized Hamiltonian Neural Network                                          " begin
+    include("generalized_hamiltonian_neural_networks_test.jl")
+end
+@safetestset "Symbolic pullback for a single-layer PGHNN                                      " begin
+    include("generalized_hamiltonian_neural_networks/pghnn_symbolic_pullback_single_layer_test.jl")
+end
+@safetestset "PGHNN training on a ParametricDataLoader                                        " begin
+    include("generalized_hamiltonian_neural_networks/pghnn_training_test.jl")
+end
 @safetestset "Manifold Neural Network Layers                                                  " begin
     include("layers/manifold_layers.jl")
 end
@@ -127,6 +136,9 @@ end
 end
 @safetestset "Test data loader for a tensor (q and p data)                                    " begin
     include("data_loader/draw_batch_for_tensor_test.jl")
+end
+@safetestset "Parametric DataLoader                                                           " begin
+    include("data_loader/parametric_data_loader_test.jl")
 end
 
 @info "Starting network-loss and kernel tests"

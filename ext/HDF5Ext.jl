@@ -7,6 +7,16 @@ import AbstractNeuralNetworks: changebackend, NeuralNetworkBackend, Architecture
 # `AbstractNeuralNetworks` 0.7, which only re-binds them; reach for them where they are defined.
 import NeuralNetworkParameters: NetworkParameters, params, save, load
 
+# A `NeuralNetworkParameters` nested inside a parameter tree -- the parameter-dependent
+# architectures put one per sub-network. AbstractNeuralNetworks has `save(::H5DataStore,
+# ::NeuralNetworkParameters)` for the top level only.
+#
+# TODO: type piracy -- `h5save` and `NeuralNetworkParameters` are both AbstractNeuralNetworks'.
+# This belongs in ANN's own `ext/HDF5Ext.jl`, next to `h5save(::H5DataStore, ::NamedTuple, …)`.
+function h5save(h5::HDF5.Group, p::NeuralNetworkParameters, path::AbstractString)
+    h5save(h5, params(p), path)
+end
+
 # ---------------------------------------------------------------------------
 # changebackend — new methods for GML special array types
 #
