@@ -142,6 +142,7 @@ include("kernels/inverses/tensor_cayley.jl")
 include("kernels/inverses/tensor_mat_skew_sym_assign.jl")
 include("kernels/vec_tensor_mul.jl")
 
+include("kernels/kernel_ad_routines/matrix_cotangent.jl")
 include("kernels/kernel_ad_routines/assign_q_and_p.jl")
 include("kernels/kernel_ad_routines/tensor_mat_mul.jl")
 include("kernels/kernel_ad_routines/mat_tensor_mul.jl")

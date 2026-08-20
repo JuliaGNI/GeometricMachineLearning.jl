@@ -149,12 +149,6 @@ function (d::MultiHeadAttention{M, M, Stiefel, false})(x::AbstractArray, ps::Nam
     compute_output_of_mha(d, x, ps)
 end
 
-import ChainRules
-# type pyracy! 
-function ChainRules._adjoint_mat_pullback(y::AbstractArray{T, 3}, proj) where T 
-    (NoTangent(), proj(tensor_transpose(y)))
-end
-
 function mat_tensor_mul(Y::AT, x::AbstractArray{T, 3}) where {  T<:Number,
                                                                 BT <: AbstractArray{T}, 
                                                                 ST <: StiefelManifold{T, BT}, 

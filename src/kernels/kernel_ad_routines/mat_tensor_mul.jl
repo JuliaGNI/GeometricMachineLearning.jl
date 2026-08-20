@@ -8,9 +8,8 @@ function ChainRulesCore.rrule(::typeof(mat_tensor_mul), B::AbstractMatrix{T}, A:
     C = mat_tensor_mul(B, A)
     function mat_tensor_mul_pullback(C_diff)
         f̄ = NoTangent()
-        #tensor_transpose_mat_mul
-        B_diff = @thunk sum(tensor_tensor_transpose_mul(C_diff, A), dims=3)
-        A_diff = @thunk mat_tensor_mul(B', C_diff)
+        B_diff = @thunk _matrix_cotangent(B, sum(tensor_tensor_transpose_mul(unthunk(C_diff), A), dims = 3))
+        A_diff = @thunk mat_tensor_mul(B', unthunk(C_diff))
         return f̄, B_diff, A_diff
     end
     return C, mat_tensor_mul_pullback
@@ -51,7 +50,8 @@ end
 
 function ChainRulesCore.rrule(::typeof(lo_mat_mul), S::AbstractVector{T}, A::AbstractArray{T, 3}, n::Int) where T 
     C = lo_mat_mul(S, A, n)
-    function lo_mat_mul_pullback(dC::AbstractArray{T, 3}) 
+    function lo_mat_mul_pullback(dC)
+        dC = unthunk(dC)
         f̄ = NoTangent()
         backend = networkbackend(dC)
         lower_da! = lower_da_kernel!(backend)
@@ -72,7 +72,8 @@ end
 function ChainRulesCore.rrule(::typeof(mat_tensor_mul), B::LowerTriangular{T}, A::AbstractArray{T, 3}) where T
     @assert size(A, 1) == B.n 
     C = mat_tensor_mul(B, A)
-    function lower_triangular_mul_pullback(dC::AbstractArray{T, 3})
+    function lower_triangular_mul_pullback(dC)
+        dC = unthunk(dC)
         f̄, dS, dA, _  = rrule(lo_mat_mul, B.S, A, B.n)[2](dC)
 
         return f̄, LowerTriangular(dS, B.n), dA 
@@ -117,7 +118,8 @@ end
 
 function ChainRulesCore.rrule(::typeof(up_mat_mul), S::AbstractVector{T}, A::AbstractArray{T, 3}, n::Int) where T 
     C = up_mat_mul(S, A, n)
-    function up_mat_mul_pullback(dC::AbstractArray{T, 3}) 
+    function up_mat_mul_pullback(dC)
+        dC = unthunk(dC)
         f̄ = NoTangent()
         backend = networkbackend(dC)
         upper_da! = upper_da_kernel!(backend)
@@ -138,7 +140,8 @@ end
 function ChainRulesCore.rrule(::typeof(mat_tensor_mul), B::UpperTriangular{T}, A::AbstractArray{T, 3}) where T
     @assert size(A, 1) == B.n 
     C = mat_tensor_mul(B, A)
-    function upper_triangular_mul_pullback(dC::AbstractArray{T, 3})
+    function upper_triangular_mul_pullback(dC)
+        dC = unthunk(dC)
         f̄, dS, dA, _ = rrule(up_mat_mul, B.S, A, B.n)[2](dC)
 
         return f̄, UpperTriangular(dS, B.n), dA 
@@ -150,7 +153,8 @@ end
 
 function ChainRulesCore.rrule(::typeof(skew_mat_mul), S::AbstractVector{T}, A::AbstractArray{T, 3}, n::Int) where T 
     C = skew_mat_mul(S, A, n)
-    function skew_mat_mul_pullback(dC::AbstractArray{T, 3})
+    function skew_mat_mul_pullback(dC)
+        dC = unthunk(dC)
         f̄ = NoTangent()
         backend = networkbackend(dC)
         lower_da! = lower_da_kernel!(backend)
@@ -177,7 +181,8 @@ end
 function ChainRulesCore.rrule(::typeof(mat_tensor_mul), B::SkewSymMatrix{T}, A::AbstractArray{T, 3}) where T 
     @assert size(A, 1) == B.n 
     C = mat_tensor_mul(B, A)
-    function skew_sym_mul_pullback(dC::AbstractArray{T, 3})
+    function skew_sym_mul_pullback(dC)
+        dC = unthunk(dC)
         f̄, dS, dA, _ = rrule(skew_mat_mul, B.S, A, B.n)[2](dC)
 
         return f̄, SkewSymMatrix(dS, B.n), dA 
@@ -227,7 +232,8 @@ end
 
 function ChainRulesCore.rrule(::typeof(symmetric_mat_mul), S::AbstractVector{T}, A::AbstractArray{T, 3}, n::Int) where  T 
     C = symmetric_mat_mul(S, A, n)
-    function symmetric_mat_mul_pullback(dC::AbstractArray{T, 3}) 
+    function symmetric_mat_mul_pullback(dC)
+        dC = unthunk(dC)
         backend = networkbackend(dC)
         symmetric_da! = symmetric_da_kernel!(backend)
         symmetric_ds! = symmetric_ds_kernel!(backend)
@@ -247,7 +253,8 @@ end
 function ChainRulesCore.rrule(::typeof(mat_tensor_mul), B::SymmetricMatrix{T}, A::AbstractArray{T, 3}) where T 
     @assert size(A, 1) == B.n 
     C = mat_tensor_mul(B, A)
-    function symmetric_mul_pullback(dC::AbstractArray{T, 3})
+    function symmetric_mul_pullback(dC)
+        dC = unthunk(dC)
         f̄, dS, dA, _ = rrule(symmetric_mat_mul, B.S, A, B.n)[2](dC)        
 
         return f̄, SymmetricMatrix(dS, B.n), dA 
@@ -255,12 +262,3 @@ function ChainRulesCore.rrule(::typeof(mat_tensor_mul), B::SymmetricMatrix{T}, A
 
     return C, symmetric_mul_pullback
 end
-
-############### Thunks
-
-mat_tensor_mul(B::AbstractMatrix, A::Thunk) = Thunk(() -> mat_tensor_mul(B, unthunk(A)))
-    
-function tensor_tensor_transpose_mul(B::Thunk, A::AbstractArray{T, 3}) where T 
-    Thunk(() -> tensor_tensor_transpose_mul(unthunk(B), A))
-end
-
