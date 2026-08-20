@@ -36,7 +36,7 @@ end
 
 function ChainRulesCore.rrule(::typeof(init_output), B::AbstractArray{T, 3}) where T 
     output = init_output(B)
-    function init_output_pullback(output_diff::Union{AbstractArray{T, 3}, Thunk}) where T 
+    function init_output_pullback(_output_diff)
         return NoTangent(), ZeroTangent()
     end
     output, init_output_pullback

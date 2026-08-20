@@ -53,7 +53,8 @@ end
 function ChainRulesCore.rrule(::typeof(tensor_inverse5), A::AT) where {T, AT<:AbstractArray{T, 3}}
     out = tensor_inverse5(A)
     
-    function tensor_inverse_pullback(out_diff::AT)
+    function tensor_inverse_pullback(out_diff)
+        out_diff = unthunk(out_diff)
 
         NoTangent(), - tensor_transpose_tensor_mul(out, tensor_tensor_mul(out_diff, tensor_transpose(out)))
     end 

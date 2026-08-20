@@ -32,7 +32,8 @@ end
 function ChainRulesCore.rrule(::typeof(cpu_inverse), A::AbstractArray)
     B = cpu_inverse(A)
 
-    function cpu_inverse_pullback(dB::AbstractArray)
+    function cpu_inverse_pullback(dB)
+        dB = unthunk(dB)
         dA = zero(dB)
         backend = networkbackend(dB)
 
