@@ -1,3 +1,21 @@
+@doc raw"""
+    WideResNetLayer(dim, width, activation)
+
+A [`ResNetLayer`](@ref) whose hidden layer is `width` wide, independent of `dim`.
+
+`ResNetLayer` applies a single ``\mathrm{dim} \times \mathrm{dim}`` weight, so its capacity is tied
+to the system dimension. This one upscales to `width`, applies the activation, and downscales again:
+
+```math
+    x \mapsto x + \sigma(W_\mathrm{down}\sigma(W_\mathrm{up}x + b_\mathrm{up}) + b),
+```
+
+with ``W_\mathrm{up}\in\mathbb{R}^{\mathrm{width}\times\mathrm{dim}}`` and
+``W_\mathrm{down}\in\mathbb{R}^{\mathrm{dim}\times\mathrm{width}}``. [`ResNet`](@ref) uses it
+whenever the `width` it is given differs from the system dimension.
+
+Also see [`ParametricResNetLayer`](@ref), which additionally takes the parameters of the system.
+"""
 struct WideResNetLayer{M, N, F1} <: AbstractExplicitLayer{M, N}
     width::Int
     activation::F1

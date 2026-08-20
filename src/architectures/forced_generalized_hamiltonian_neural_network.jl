@@ -48,3 +48,5 @@ function (o::Optimizer)(nn::NeuralNetwork{<:ForcedGeneralizedHamiltonianArchitec
         loss::NetworkLoss = ParametricLoss(); kwargs...)
     o(nn, dl, batch, n_epochs, loss, ZygotePullback(loss); kwargs...)
 end
+
+_n_symplectic_integrators(arch::ForcedGeneralizedHamiltonianArchitecture) = arch.n_integrators

@@ -26,6 +26,43 @@ function SymbolicPullback(arch::HamiltonianArchitecture)
     SymbolicPullback(loss, SymbolicNeuralNetworks.ParameterGradient(gradient_function))
 end
 
+# How many `SymplecticEuler` layers the architecture stacks. Only the generalized architectures
+# have more than one; everything else traces as a single pass.
+_n_symplectic_integrators(::Any) = 1
+_n_symplectic_integrators(arch::GeneralizedHamiltonianArchitecture) = arch.n_integrators
+
+@doc raw"""
+    _check_symbolic_pullback_is_tractable(arch)
+
+Throw if building a `SymbolicPullback` for `arch` would not finish.
+
+`SymbolicPullback` traces the whole chain symbolically, and each `SymplecticEuler` layer inlines the
+symbolic gradient of its energy network — an expression that is itself already a derivative. Stacking
+integrators inlines that expression inside itself, so it grows *multiplicatively* rather than
+additively. Measured at `dim = 4, width = 4, nhidden = 1`:
+
+| `n_integrators` | symbolic loss | its parameter derivative | build time |
+|---|---|---|---|
+| 1 | 3.4 ⋅ 10⁵ characters | 1.5 ⋅ 10⁸ characters | ≈ 1.4 s |
+| 2 | 1.4 ⋅ 10⁹ characters | — | does not finish, past 8 GB |
+
+So one integrator is fine — and worth it, the built function evaluates about 100 times faster than
+the `Zygote` pullback — while two are hopeless. Rather than let that look like a hang, refuse it.
+
+Removing the limit means not tracing the inlined chain at all: composing the pullback layer by layer
+from the gradients each `SymplecticEuler` has already built. See
+[issue #245](https://github.com/JuliaGNI/GeometricMachineLearning.jl/issues/245).
+"""
+function _check_symbolic_pullback_is_tractable(arch)
+    n = _n_symplectic_integrators(arch)
+    n > 1 && throw(ArgumentError(
+        "cannot build a `SymbolicPullback` for an architecture with $(n) integrators: the symbolic " *
+        "expression grows multiplicatively with `n_integrators`, and already exceeds 10⁹ terms at " *
+        "two, so the build does not finish. Use `ZygotePullback(loss)`, which is what `Optimizer` " *
+        "uses by default, or reduce `n_integrators` to 1. See GeometricMachineLearning issue #245."))
+    nothing
+end
+
 @doc raw"""
     SymbolicPullback(nn, loss, system_params)
 
@@ -45,6 +82,7 @@ sum of the per-sample gradients.
 """
 function SymbolicPullback(nn::NeuralNetwork, loss::ParametricLoss,
         system_params::OptionalParameters; cse::Bool = true, inplace::Bool = true)
+    _check_symbolic_pullback_is_tractable(nn.architecture)
     symbolic_system_parameters = SymbolicNeuralNetworks.symbolic_variables(system_params, :S)
     symbolic_network_parameters = SymbolicNeuralNetworks.symbolic_variables(params(nn), :W)
 

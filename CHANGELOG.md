@@ -117,6 +117,12 @@ breaking release).
   *system* parameters as the *network* parameters.
 - `ParametricResNet(::DataLoader, n_blocks, width; parameters = …)` accepted `parameters` and then
   dropped it, silently building a network with no parameter dependence.
+- `SymbolicPullback(nn, ::ParametricLoss, μ)` now throws for `n_integrators > 1` instead of appearing
+  to hang. The symbolic expression grows *multiplicatively* with the number of integrators — measured
+  at `dim = 4, width = 4, nhidden = 1`, the loss is 3.4 ⋅ 10⁵ characters at one integrator and
+  1.4 ⋅ 10⁹ at two, and the build never returns. One integrator builds in ≈1.4 s, and the result
+  evaluates about 100× faster than the `Zygote` pullback. See
+  [#245](https://github.com/JuliaGNI/GeometricMachineLearning.jl/issues/245).
 
 ### Changed
 

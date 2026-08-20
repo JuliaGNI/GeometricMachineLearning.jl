@@ -1,3 +1,24 @@
+@doc raw"""
+    ParametricResNet(dim; width, n_blocks, activation, parameters)
+
+A [`ResNet`](@ref) whose blocks also take the parameters of the *system*, built from
+[`ParametricResNetLayer`](@ref)s.
+
+This is the architecture without structure preservation that
+[`GeneralizedHamiltonianArchitecture`](@ref) is compared against: it maps
+``(x, \mu) \mapsto x'`` with the same information available to it, but nothing in it makes the map
+symplectic.
+
+# Keyword arguments
+
+- `width = dim`: the width of the hidden layer of each block,
+- `n_blocks = $(HNN_nhidden_default)`: the number of blocks,
+- `activation = $(HNN_activation_default)`,
+- `parameters = NullParameters()`: a `NamedTuple` of system parameters, used for its shape.
+
+`ResNet(dim; n_blocks, width, parameters)` dispatches here when `parameters` is anything other than
+`NullParameters`.
+"""
 struct ParametricResNet{AT <: Activation, PT <: OptionalParameters} <: NeuralNetworkIntegrator
     sys_dim::Int
     n_blocks::Int

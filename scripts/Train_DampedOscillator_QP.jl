@@ -5,6 +5,8 @@ using CairoMakie
 using JLD2
 using NNlib: relu
 
+include(joinpath(@__DIR__, "parametric_data_helpers.jl"))
+
 # PARAMETERS
 nu         = 0.001                     # friction force coefficient
 ni_dim     = 2                      # number of initial conditions per dimension (so ni_dim^2 total)
@@ -17,8 +19,9 @@ width      = 4                      # width of the neural network
 nhidden    = 3                       # number of hidden layers in the neural network
 batch_size = 5000                    # the size of the batch
 
-path_out = "D:\\RESEARCH - UTWENTE\\GFHNNs\\Damped Oscillator\\network_TEST.jld2"
-#path_out = "/home/tyranowskitm/GFHNNs/DampedOscillator/OUTPUTS/network.jld2"
+# next to the script, unless GML_OUTPUT_DIR says otherwise -- an absolute path from whoever ran it
+# last is no use to anybody else
+path_out = joinpath(get(ENV, "GML_OUTPUT_DIR", @__DIR__), "damped_oscillator_network.jld2")
 
 
 # Generating the initial condition array
@@ -44,44 +47,6 @@ end
 
 
 
-@doc raw"""
-Turn a `NamedTuple` of ``(q,p)`` data into two tensors of the correct format.
-
-This is the tricky part as the structure of the input array(s) needs to conform with the structure of the parameters.
-
-Here the data are rearranged in an array of size ``(n, 2, t_f - 1)`` where ``[t_0, t_1, \ldots, t_f]`` is the vector storing the time steps.
-
-If we deal with different initial conditions as well, we still put everything into the third (parameter) axis.
-
-# Example
-
-```jldoctest
-using GeometricMachineLearning
-
-q = [1. 2. 3.; 4. 5. 6.]
-p = [1.5 2.5 3.5; 4.5 5.5 6.5]
-qp = (q = q, p = p)
-turn_q_p_data_into_correct_format(qp)
-
-# output
-
-(q = [1.0 2.0; 4.0 5.0;;; 2.0 3.0; 5.0 6.0], p = [1.5 2.5; 4.5 5.5;;; 2.5 3.5; 5.5 6.5])
-```
-"""
-function turn_q_p_data_into_correct_format(qp::QPT2{T, 2}) where {T}
-	number_of_time_steps = size(qp.q, 2) - 1 # not counting t₀
-	number_of_initial_conditions = size(qp.q, 1)
-	q_array = zeros(T, 1, 2, number_of_time_steps * number_of_initial_conditions)
-	p_array = zeros(T, 1, 2, number_of_time_steps * number_of_initial_conditions)
-	for initial_condition_index ∈ 0:(number_of_initial_conditions - 1)
-		for time_index ∈ 1:number_of_time_steps
-			q_array[:, 1, initial_condition_index * number_of_time_steps + time_index] .= qp.q[initial_condition_index + 1, time_index]
-			q_array[:, 2, initial_condition_index * number_of_time_steps + time_index] .= qp.q[initial_condition_index + 1, time_index + 1]
-			p_array[:, 1, initial_condition_index * number_of_time_steps + time_index] .= qp.p[initial_condition_index + 1, time_index]
-			p_array[:, 2, initial_condition_index * number_of_time_steps + time_index] .= qp.p[initial_condition_index + 1, time_index + 1]
-		end
-	end
-	(q = q_array, p = p_array)
 end
 
 

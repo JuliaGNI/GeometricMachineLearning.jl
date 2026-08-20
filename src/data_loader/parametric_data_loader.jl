@@ -49,27 +49,6 @@ function ParametricDataLoader(ensemble_solution::EnsembleSolution{T, T1, Vector{
     ParametricDataLoader(data, params)
 end
 
-# """
-#     rearrange_parameters(parameters)
-# 
-# Rearrange `parameters` such that they can be used by [`ParametricDataLoader`](@ref).
-# """
-# function rearrange_parameters(parameters::Vector{<:NamedTuple})
-#     parameters_rearranged = zeros(_eltype(parameters), )
-# end
-
-# function batch_over_two_axes(batch::Batch, number_columns::Int, third_dim::Int, dl::ParametricDataLoader)
-#     time_indices = shuffle(1:number_columns)
-#     parameter_indices = shuffle(1:third_dim)
-#     complete_indices = Iterators.product(time_indices, parameter_indices) |> collect |> vec
-#     batches = ()
-#     n_batches = number_of_batches(dl, batch)
-#     for batch_number in 1:(n_batches - 1)
-#         batches = (batches..., complete_indices[(batch_number - 1) * batch.batch_size + 1 : batch_number * batch.batch_size])
-#     end
-#     (batches..., complete_indices[(n_batches - 1) * batch.batch_size + 1:end])
-# end
-
 function optimize_for_one_epoch!(   opt::Optimizer, 
                                     model, 
                                     ps::Union{NeuralNetworkParameters, NamedTuple}, 

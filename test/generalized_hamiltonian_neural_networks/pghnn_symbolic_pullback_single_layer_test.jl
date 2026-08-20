@@ -61,3 +61,15 @@ end
 # the network actually depends on its parameters here.
 @test any(any(abs.(block) .> 1e-8) for layer in keys(reference_gradient)
           for block in values(reference_gradient[layer]))
+
+# Building the pullback for a stacked architecture is refused rather than left to hang: the symbolic
+# expression grows multiplicatively with `n_integrators` and already exceeds 10⁹ terms at two.
+stacked = NeuralNetwork(GeneralizedHamiltonianArchitecture(dim; n_integrators = 2,
+                                                           parameters = system_parameters))
+@test_throws ArgumentError SymbolicPullback(stacked, loss, system_parameters)
+
+# one integrator is the supported case, and it builds
+single = NeuralNetwork(GeneralizedHamiltonianArchitecture(dim; n_integrators = 1,
+                                                          parameters = system_parameters))
+@test SymbolicPullback(single, loss, system_parameters) isa SymbolicPullback
+
