@@ -1,6 +1,11 @@
 module GeometricMachineLearning
 
 using AbstractNeuralNetworks
+# `AbstractNeuralNetworks` 0.7 no longer exports `NeuralNetworkParameters`: the parameter container
+# moved out to the package of that name, where the type is called `NetworkParameters`, and the alias
+# left behind is deliberately unexported so that every user of it says where it came from. This
+# package uses the name in 31 places and re-exports it below, so it is imported explicitly here.
+import AbstractNeuralNetworks: NeuralNetworkParameters
 using ChainRulesCore
 # `sqeuclidean` is the default distance of every `TrainingMethod` in `src/training_method/`.
 using Distances
