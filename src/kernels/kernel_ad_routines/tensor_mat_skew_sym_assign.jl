@@ -34,7 +34,8 @@ end
 function ChainRulesCore.rrule(::typeof(tensor_mat_skew_sym_assign), Z::AbstractArray{T, 3}, A::AbstractArray{T, 2}) where T
     @assert size(A, 1) == size(Z, 1) 
     B = tensor_mat_skew_sym_assign(Z, A)
-    function tensor_mat_skew_sym_assign_pullback(dB::AbstractArray{T, 3})
+    function tensor_mat_skew_sym_assign_pullback(dB)
+        dB = unthunk(dB)
         f̄ = NoTangent()
         backend = networkbackend(dB)
         dz! = dz_kernel!(backend)

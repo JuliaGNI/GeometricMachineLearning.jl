@@ -15,7 +15,88 @@ breaking release).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Zygote 0.7 silently zeroed every gradient that flows through `assign_q_and_p`.** Its `rrule`
+  built the cotangent of the split with `vcat(qp_diff...)`. Under Zygote 0.6 the two components had
+  always been unthunked by the time they arrived, so that concatenated a `q` block and a `p` block
+  into one gradient vector. Zygote 0.7 stopped unthunking eagerly, so the components arrive as
+  `Thunk`s, and `vcat` of two thunks concatenates nothing — it builds a two-element `Vector{Thunk}`.
+  Zygote then maps `unthunk` over *that*, and the caller gets a two-element `Vector{Vector{T}}`
+  where a length-`2n` vector was due.
+
+  `gradient` catches it (`ProjectTo` throws `DimensionMismatch`), but **`jacobian` does not**: it
+  returns a matrix of zeros. Every symplectic-autoencoder and PSD path runs through
+  `assign_q_and_p`, so the first thing the test suite reported on 0.7 was
+  `test/psd_architecture_tests.jl` failing its symplecticity check against an all-zero Jacobian.
+
+  The rule now unthunks the tangent and both of its components. On 0.7 the PSD decoder Jacobian is
+  again bit-identical to what 0.6 produced.
+
+- **Three kernel `rrule`s returned a cotangent of the wrong rank**, and the type piracy that
+  covered for it is gone. `tensor_mat_mul`, `mat_tensor_mul` and `tensor_transpose_mat_mul` each
+  take a *matrix* argument `B` and gave back an `n×m×1` array for it — `sum(_, dims = 3)` with the
+  trailing singleton axis left on, where the sibling rules for the structured types (`lo_mat_mul`
+  and friends) `reshape` it away. A cotangent has to have the shape of the primal it belongs to.
+
+  That wrong rank is what forced the `ChainRules._adjoint_mat_pullback` method in
+  `src/layers/multi_head_attention.jl`, whose own comment called it `# type pyracy!`: a 3-tensor
+  method added to another package's unexported internal, so that differentiating
+  `mat_tensor_mul(ps.PQ[key]', x)` in `MultiHeadAttention` would not hit a `MethodError`. Fixing
+  the rank at the source makes it unnecessary.
+
+  The pirated method was also, incidentally, the only reason the gradient of a *non*-manifold
+  transformer weight came back as a `Matrix` rather than an `Adjoint{T, Matrix{T}}` — it
+  materialised the transpose on the way through, where `ChainRules`' own rule does not. (This is not
+  GML-specific: plain `Zygote.gradient(W -> sum(W' * x), W)` returns an `Adjoint` too.) Deleting it
+  without more would have quietly changed the type of every such gradient and broken the invariant
+  `test/transformer_related/transformer_gradient.jl` asserts, so the three rules now put their
+  matrix cotangent through `_matrix_cotangent`, which fixes the rank *and* gives it the array type
+  of the primal.
+
+### Changed
+
+- **The kernel `rrule`s honour the ChainRules interface for thunked cotangents.** Twelve pullbacks
+  declared their cotangent as `::AbstractArray{T, 3}` — and the four `tensor_inverse` ones as `::AT`,
+  the primal's *exact* array type, so even a plain `Array` cotangent for a `SubArray` primal was a
+  `MethodError`. A `Thunk` satisfies none of those. They now take the tangent unconstrained and
+  `unthunk` it.
+
+  Eleven `f(::Thunk, ...)` forwarding methods existed to route around the same problem one call site
+  at a time (`tensor_mat_mul(::Thunk, ::AbstractMatrix)`, `tensor_transpose(::Thunk)`,
+  `augment_zeros(::Thunk, _)` and so on), each wrapping the kernel back up in a fresh `Thunk`. Two
+  things were wrong with that. They dispatched on `Thunk` alone, so `InplaceableThunk` — which is an
+  `AbstractThunk` but not a `Thunk`, and which ChainRules also emits — went straight past them into
+  a `MethodError`. And they nested: the rule bodies already wrap the call in `@thunk`, so forwarding
+  built a `Thunk` inside a `Thunk`, and `unthunk` removes one layer of thunking. The caller got a
+  thunk where an array was due — the same silent failure as the `assign_q_and_p` case above.
+
+  Unthunking where the tangent is consumed replaces all eleven, and handles both kinds of thunk.
+
+  `test/custom_ad_rules/kernel_pullbacks.jl` had recorded the gap as six
+  `check_thunked_output_tangent = false` opt-outs. Those are deleted, and the rules pass with the
+  check on.
+
+- `init_output`'s pullback had a `where T` on the inner function that shadowed the `T` of the `rrule`
+  it sits in, on a signature it did not need — the body ignores its argument and returns
+  `ZeroTangent()` regardless.
+
 ### Dependencies
+
+- **`Zygote = "0.7"`** (was `"0.6"`). 0.7 replaced the eager unthunking in `wrap_chainrules_output`
+  with `unthunk_tangent` at the `gradient`/`pullback` boundaries, which is what let thunks reach
+  GML's `rrule`s and surfaced everything under *Fixed* above. Implicit parameters are deprecated in
+  0.7; GML never used them, so nothing here changes on that account.
+
+  0.6 is dropped rather than kept alongside. The resolver always takes the newest admissible
+  version, so `"0.6, 0.7"` is a bound CI would never exercise — the same reasoning that dropped
+  SymbolicNeuralNetworks 0.3 in 0.5.0. Zygote 0.7 requires Julia 1.10, which this package already
+  does.
+
+- **`ChainRules` dropped from `[deps]`.** Removing the `_adjoint_mat_pullback` piracy left it with
+  no reference anywhere under `src/` or `ext/`; only `ChainRulesCore` is used, for `rrule`,
+  `NoTangent`, `ZeroTangent`, `@thunk` and `unthunk`. It still arrives in the manifest through
+  Zygote, so the rules it defines are loaded as before.
 
 - **`LazyArrays` dropped from `[deps]`, and the exact pin with it.** Nothing under `src/`, `test/`,
   `ext/`, `docs/` or `scripts/` referenced it. The last use was `LazyArrays.Vcat` in

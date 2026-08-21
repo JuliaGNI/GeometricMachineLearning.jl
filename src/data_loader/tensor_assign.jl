@@ -87,10 +87,8 @@ function ChainRulesCore.rrule(::typeof(assign_output_estimate), full_output::Abs
     output_estimate = assign_output_estimate(full_output, prediction_window)
     function assign_output_estimate_pullback(output_diff)
         f̄ = NoTangent()
-        batch_diff = @thunk augment_zeros(output_diff, seq_length)
+        batch_diff = @thunk augment_zeros(unthunk(output_diff), seq_length)
         return f̄, batch_diff, NoTangent()
     end
     return output_estimate, assign_output_estimate_pullback
-end     
-
-augment_zeros(output_diff::Thunk, seq_length) = Thunk(() -> augment_zeros(unthunk(output_diff), seq_length))
+end

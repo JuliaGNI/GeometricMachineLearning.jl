@@ -8,18 +8,11 @@ function ChainRulesCore.rrule(::typeof(tensor_mat_mul), A::AbstractArray{T, 3}, 
     C = tensor_mat_mul(A, B)
     function tensor_mat_mul_pullback(C_diff)
         f̄ = NoTangent()
-        #tensor_transpose_mat_mul
-        A_diff = @thunk tensor_mat_mul(C_diff, B')
-        B_diff = @thunk sum(tensor_transpose_tensor_mul(A, C_diff), dims=3)
+        A_diff = @thunk tensor_mat_mul(unthunk(C_diff), B')
+        B_diff = @thunk _matrix_cotangent(B, sum(tensor_transpose_tensor_mul(A, unthunk(C_diff)), dims = 3))
         return f̄, A_diff, B_diff
     end
     return C, tensor_mat_mul_pullback
-end
-
-tensor_mat_mul(A::Thunk, B::AbstractMatrix) = Thunk(() -> tensor_mat_mul(unthunk(A), B))
-
-function tensor_transpose_tensor_mul(A::AbstractArray{T, 3}, B::Thunk) where T 
-    Thunk(() -> tensor_transpose_tensor_mul(A, unthunk(B)))
 end
 
 ############### Symmetric (right mul)
@@ -63,7 +56,8 @@ end
 
 function ChainRulesCore.rrule(::typeof(symmetric_mat_right_mul), A::AbstractArray{T, 3}, S::AbstractVector{T}, n::Int) where  T 
     C = symmetric_mat_right_mul(A, S, n)
-    function symmetric_mat_mul_pullback(dC::AbstractArray{T, 3}) 
+    function symmetric_mat_mul_pullback(dC)
+        dC = unthunk(dC)
         backend = networkbackend(dC)
         symmetric_right_da! = symmetric_right_da_kernel!(backend)
         symmetric_right_ds! = symmetric_right_ds_kernel!(backend)
@@ -83,7 +77,8 @@ end
 function ChainRulesCore.rrule(::typeof(tensor_mat_mul), A::AbstractArray{T, 3}, B::SymmetricMatrix{T}) where T 
     @assert size(A, 2) == B.n 
     C = tensor_mat_mul(A, B)
-    function symmetric_right_mul_pullback(dC::AbstractArray{T, 3})
+    function symmetric_right_mul_pullback(dC)
+        dC = unthunk(dC)
         f̄, dA, dS, _ = rrule(symmetric_mat_right_mul, A, B.S, B.n)[2](dC)        
 
         return f̄, dA, SymmetricMatrix(dS, B.n) 

@@ -5,7 +5,6 @@ authors = ["Michael Kraus <michael.kraus@ipp.mpg.de>"]
 
 [deps]
 AbstractNeuralNetworks = "60874f82-5ada-4c70-bd1c-fa6be7711c8a"
-ChainRules = "082447d4-558c-5d27-93f4-14fc19e9eca2"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
@@ -32,7 +31,6 @@ HDF5Ext = "HDF5"
 
 [compat]
 AbstractNeuralNetworks = "0.6.4"
-ChainRules = "1"
 ChainRulesCore = "1"
 ChainRulesTestUtils = "1"
 Distances = "0.10"
@@ -50,7 +48,7 @@ SafeTestsets = "0.1"
 SymbolicNeuralNetworks = "0.5"
 Symbolics = "7"
 TimerOutputs = "0.5, 1"
-Zygote = "0.6"
+Zygote = "0.7"
 julia = "1.10"
 
 [extras]
