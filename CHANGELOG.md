@@ -62,11 +62,16 @@ breaking release).
   `MethodError`. A `Thunk` satisfies none of those. They now take the tangent unconstrained and
   `unthunk` it.
 
-  Around ten `f(::Thunk, ...)` forwarding methods existed to route around the same problem one call
-  site at a time (`tensor_mat_mul(::Thunk, ::AbstractMatrix)`, `tensor_transpose(::Thunk)`,
-  `augment_zeros(::Thunk, _)` and so on). They only ever dispatched on `Thunk`, so
-  `InplaceableThunk` — which ChainRules also emits — went straight past them. Unthunking where the
-  tangent is consumed replaces all of them.
+  Eleven `f(::Thunk, ...)` forwarding methods existed to route around the same problem one call site
+  at a time (`tensor_mat_mul(::Thunk, ::AbstractMatrix)`, `tensor_transpose(::Thunk)`,
+  `augment_zeros(::Thunk, _)` and so on), each wrapping the kernel back up in a fresh `Thunk`. Two
+  things were wrong with that. They dispatched on `Thunk` alone, so `InplaceableThunk` — which is an
+  `AbstractThunk` but not a `Thunk`, and which ChainRules also emits — went straight past them into
+  a `MethodError`. And they nested: the rule bodies already wrap the call in `@thunk`, so forwarding
+  built a `Thunk` inside a `Thunk`, and `unthunk` removes one layer of thunking. The caller got a
+  thunk where an array was due — the same silent failure as the `assign_q_and_p` case above.
+
+  Unthunking where the tangent is consumed replaces all eleven, and handles both kinds of thunk.
 
   `test/custom_ad_rules/kernel_pullbacks.jl` had recorded the gap as six
   `check_thunked_output_tangent = false` opt-outs. Those are deleted, and the rules pass with the
