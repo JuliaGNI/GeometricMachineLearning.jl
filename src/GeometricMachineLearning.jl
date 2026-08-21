@@ -18,7 +18,6 @@ using Zygote
 using ForwardDiff
 using InteractiveUtils
 using TimerOutputs
-import LazyArrays
 import SymbolicNeuralNetworks
 import SymbolicNeuralNetworks: SymbolicPullback
 using SymbolicNeuralNetworks: derivative, SymbolicNeuralNetwork

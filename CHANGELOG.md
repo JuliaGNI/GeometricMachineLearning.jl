@@ -13,6 +13,32 @@ breaking release).
 > alongside the work. Where a release removed exported names the list is given; where it is a
 > reconstruction of intent, it says so.
 
+## [Unreleased]
+
+### Dependencies
+
+- **`LazyArrays` dropped from `[deps]`, and the exact pin with it.** Nothing under `src/`, `test/`,
+  `ext/`, `docs/` or `scripts/` referenced it. The last use was `LazyArrays.Vcat` in
+  `Base.vec(::StiefelLieAlgHorMatrix)`, which left with the Lie algebras when 0.5.0 stopped keeping a
+  second copy of GeometricOptimizers' geometry, and `3d2b4887` had already turned the module-level
+  `using` into a bare `import` ("Set LazyArrays to imported (not used)") — which is why 0.5.0's sweep
+  for dead dependencies, done by grepping for `using`, kept this one.
+
+  An exact pin on an unused package is not inert, either. GeometricOptimizers *does* use
+  `LazyArrays.Vcat`, in `Base.vec(::AbstractLieAlgHorMatrix)`, and declares `LazyArrays = "2"`;
+  versions resolve per environment, so GML's `"=2.3.2"` was holding the shared LazyArrays at its
+  January 2025 release for the one package in the graph that has a use for it. It arrives through
+  GeometricOptimizers now, free to float. This is also what
+  [#187](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/187) asked about: CompatHelper
+  proposed widening the entry to `"=2.3.2, 2"`, a range whose `=2.3.2` clause `2` already contains.
+
+- **`ForwardDiff = "1"`** (was `"0.10, 1"`). GeometricOptimizers requires 1, so the resolver never
+  had a reason to pick 0.10 and that branch was untestable — the same reasoning that dropped
+  SymbolicNeuralNetworks 0.3 in 0.5.0. The dependency itself is real: `ForwardDiff.jacobian` in
+  `src/reduced_system/reduced_system.jl` is its one call site.
+
+  Together these close **C4**.
+
 ## [0.5.0] — 2026-08-19
 
 **The optimizer machinery moves to [GeometricOptimizers][go].** GML no longer implements its own
@@ -710,11 +736,6 @@ they resolved to is in the release notes above.
 - **C2. Two `isa` branches remain in `_leaf_optim_step!`** (for `AdamState`/`MomentumState`).
   Measurement showed the traversal is not implicated in the compile-time problem, so this is tidying,
   and it disappears entirely if C1 lands first.
-
-- **C4. `[compat]` entries worth revisiting.** `ForwardDiff = "0.10, 1"` is dead weight —
-  GeometricOptimizers requires 1, so the resolver picks it regardless and the `0.10` branch is
-  untestable. `LazyArrays = "=2.3.2"` is an exact pin that currently resolves; it is the first thing
-  to relax if resolution fails.
 
 - **C5. Julia 1.13 and nightly are marked `experimental: true`.** 1.13 should be de-experimentalised
   once it is green, or an upstream issue linked. Nightly stays experimental permanently, as in the
