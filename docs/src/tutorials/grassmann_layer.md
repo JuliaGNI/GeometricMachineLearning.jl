@@ -260,7 +260,7 @@ where `np` is the number of points in ``\mathcal{D}_2`` and ``W_2`` is the *Wass
 where ``\nabla{}W_2`` is equivalent to the function `compute_wasserstein_gradient`.
 
 ```@example rosenbrock
-function compute_gradient(ps::NeuralNetworkParameters)
+function compute_gradient(ps::NetworkParameters)
     samples = randn(2, size(xyz_points, 2))
     estimate, nn_pullback = Zygote.pullback(ps -> model(samples, ps), ps)
 

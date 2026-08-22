@@ -13,7 +13,7 @@ function check_setup(A::AbstractMatrix{T}, tol=T(10)*eps(T)) where T
     @test check(A) < tol
 end
 check_setup(ps::NamedTuple) = apply_toNT(check_setup, ps)
-check_setup(ps::NeuralNetworkParameters) = check_setup(GeometricMachineLearning.params(ps))
+check_setup(ps::NetworkParameters) = check_setup(GeometricMachineLearning.params(ps))
 
 @doc raw"""
 This checks for an arbitrary matrix ``B\in\mathbb{R}^{N\times{}N}`` if ``B\in\mathfrak{g}^\mathrm{hor}``.

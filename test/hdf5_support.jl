@@ -4,6 +4,7 @@ using HDF5
 using LinearAlgebra: qr
 import Random
 import AbstractNeuralNetworks: params, changebackend
+import NeuralNetworkParameters: NetworkParameters
 
 Random.seed!(42)
 
@@ -21,9 +22,39 @@ function _ps_eq(a::NamedTuple, b::NamedTuple)
     Set(keys(a)) == Set(keys(b)) || return false
     all(_ps_eq(a[k], b[k]) for k in keys(a))
 end
-function _ps_eq(a::NeuralNetworkParameters, b::NeuralNetworkParameters)
+function _ps_eq(a::NetworkParameters, b::NetworkParameters)
     keys(a) == keys(b) || return false
     all(_ps_eq(a[k], b[k]) for k in keys(a))
+end
+
+# Reproduces the on-disk layout this package wrote before the traversal moved out: plain nested
+# groups with no `kind`/`keys` attributes, and each structured matrix tagged `gml_type`.
+_legacy_group(h5, path) = path == "/" ? h5 :
+                          (haskey(h5, path) ? h5[path] : HDF5.create_group(h5, path))
+
+function _write_legacy(h5, nt::NamedTuple, path::AbstractString)
+    g = _legacy_group(h5, path)
+    for (k, v) in pairs(nt)
+        _write_legacy(g, v, String(k))
+    end
+end
+
+_write_legacy(h5, x::AbstractArray, path::AbstractString) = (h5[path] = Array(x); nothing)
+
+function _write_legacy(h5, Y::StiefelManifold, path::AbstractString)
+    g = HDF5.create_group(h5, path)
+    HDF5.attributes(g)["gml_type"] = "StiefelManifold"
+    g["A"] = Array(Y.A)
+end
+
+for (T, name) in ((:SymmetricMatrix, "SymmetricMatrix"), (:SkewSymMatrix, "SkewSymMatrix"),
+                  (:LowerTriangular, "LowerTriangular"), (:UpperTriangular, "UpperTriangular"))
+    @eval function _write_legacy(h5, A::$T, path::AbstractString)
+        g = HDF5.create_group(h5, path)
+        HDF5.attributes(g)["gml_type"] = $name
+        g["S"] = Array(A.S)
+        g["n"] = A.n
+    end
 end
 
 # ---------------------------------------------------------------------------
@@ -133,6 +164,34 @@ end
             load(NeuralNetwork, h5, arch)
         end
         @test nn2(x) ≈ y_before
+    end
+end
+
+# ---------------------------------------------------------------------------
+# Files written before the traversal moved out of this package
+# ---------------------------------------------------------------------------
+
+# This package used to write each structured matrix itself, as a group tagged `gml_type` holding the
+# fields under their own names and recording no key order. `NeuralNetworkParameters` recognises the
+# tag and rebuilds through the registry `GeometricOptimizers` fills, so those files still load —
+# which is the whole reason the duplicated reader here could be deleted rather than kept alongside.
+@testset "a file in the old gml_type layout still loads" begin
+    arch = LASympNet(4)          # LinearLayer → SymmetricMatrix, the tagged case
+    nn   = NeuralNetwork(arch)
+    ps   = params(nn)
+    x    = rand(4)
+    y    = nn(x)
+
+    mktempdir() do dir
+        path = joinpath(dir, "legacy.h5")
+        HDF5.h5open(path, "w") do h5
+            _write_legacy(h5, params(ps), "/")
+        end
+        nn2 = load(NeuralNetwork, path, arch)
+
+        @test keys(params(nn2)) == keys(ps)
+        @test _ps_eq(ps, params(nn2))
+        @test nn2(x) ≈ y
     end
 end
 

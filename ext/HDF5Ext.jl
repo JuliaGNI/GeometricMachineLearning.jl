@@ -2,51 +2,31 @@ module HDF5Ext
 
 using HDF5
 using GeometricMachineLearning
-import AbstractNeuralNetworks: h5save, changebackend, NeuralNetworkBackend, save, load,
-                                NeuralNetworkParameters, params, Architecture
+import AbstractNeuralNetworks: changebackend, NeuralNetworkBackend, save, load, Architecture
+import NeuralNetworkParameters: NetworkParameters, params
 
 # ---------------------------------------------------------------------------
-# h5save — new methods for GML special array types
+# The traversal is not here any more.
 #
-# AbstractNeuralNetworks only defines h5save for AbstractArray and NamedTuple.
-# PSDLayer stores StiefelManifold and LASympNet's LinearLayer stores
-# SymmetricMatrix; without these methods h5save throws a MethodError on any
-# network whose parameters include those types.
+# This extension used to carry five `h5save` methods that tagged a `gml_type` attribute, plus
+# `_gml_h5load` and `_natural_sort_keys` to read them back. All three jobs now belong to packages
+# that own the pieces:
+#
+#   * `NeuralNetworkParameters` walks the parameter set and writes it, recording each group's key
+#     order in a `keys` attribute — which is what the `_natural_sort_keys` heuristic here was
+#     standing in for, and it guessed rather than knowing. Names that do not end in a digit were
+#     sorted lexicographically and silently came back in the wrong order.
+#
+#   * `GeometricOptimizers` says where each structured matrix keeps its numbers, through
+#     `freeparameters`/`rebuild`, and registers the types so a file loads with no prototype.
+#     `StiefelManifold` and `SymmetricMatrix` are its types, not this package's, so the methods
+#     were type piracy here — on `h5save` and on the type both.
+#
+# Files written by the old code still load: `NeuralNetworkParameters` recognises the `gml_type`
+# tag and rebuilds through the same registry (see `test/hdf5_support.jl`).
+#
+# What is left is the two entry points that genuinely dispatch on this package's `NeuralNetwork`.
 # ---------------------------------------------------------------------------
-
-function h5save(h5::HDF5.H5DataStore, Y::StiefelManifold, path::AbstractString)
-    group = haskey(h5, path) ? h5[path] : HDF5.create_group(h5, path)
-    HDF5.attributes(group)["gml_type"] = "StiefelManifold"
-    group["A"] = Array(Y.A)
-end
-
-function h5save(h5::HDF5.H5DataStore, A::SymmetricMatrix, path::AbstractString)
-    group = haskey(h5, path) ? h5[path] : HDF5.create_group(h5, path)
-    HDF5.attributes(group)["gml_type"] = "SymmetricMatrix"
-    group["S"] = Array(A.S)
-    group["n"] = A.n
-end
-
-function h5save(h5::HDF5.H5DataStore, A::SkewSymMatrix, path::AbstractString)
-    group = haskey(h5, path) ? h5[path] : HDF5.create_group(h5, path)
-    HDF5.attributes(group)["gml_type"] = "SkewSymMatrix"
-    group["S"] = Array(A.S)
-    group["n"] = A.n
-end
-
-function h5save(h5::HDF5.H5DataStore, A::LowerTriangular, path::AbstractString)
-    group = haskey(h5, path) ? h5[path] : HDF5.create_group(h5, path)
-    HDF5.attributes(group)["gml_type"] = "LowerTriangular"
-    group["S"] = Array(A.S)
-    group["n"] = A.n
-end
-
-function h5save(h5::HDF5.H5DataStore, A::UpperTriangular, path::AbstractString)
-    group = haskey(h5, path) ? h5[path] : HDF5.create_group(h5, path)
-    HDF5.attributes(group)["gml_type"] = "UpperTriangular"
-    group["S"] = Array(A.S)
-    group["n"] = A.n
-end
 
 # ---------------------------------------------------------------------------
 # changebackend — new methods for GML special array types
@@ -54,6 +34,11 @@ end
 # AbstractNeuralNetworks.changebackend handles AbstractArray and NamedTuple.
 # Moving a NeuralNetwork between devices fails for parameters that include
 # StiefelManifold, SymmetricMatrix, or SkewSymMatrix without these methods.
+#
+# These are the same ownership smell as the `h5save` methods above — `changebackend` is
+# `AbstractNeuralNetworks`', the types are `GeometricOptimizers`' — and they belong in a
+# `GeometricOptimizers` extension on `AbstractNeuralNetworks`. That is a separate change with its
+# own release chain, so they stay here for now.
 # ---------------------------------------------------------------------------
 
 function changebackend(backend::NeuralNetworkBackend, Y::StiefelManifold)
@@ -77,110 +62,52 @@ function changebackend(backend::NeuralNetworkBackend, A::UpperTriangular)
 end
 
 # ---------------------------------------------------------------------------
-# Internal recursive loader that reconstructs GML special types from the
-# gml_type attribute written by h5save.  Kept private; used only by the
-# load methods below so that we do not shadow AbstractNeuralNetworks.h5load.
-# ---------------------------------------------------------------------------
-
-_gml_h5load(ds::HDF5.Dataset) = read(ds)
-
-# HDF5 returns group keys alphabetically, so "L10" precedes "L2". Sort by the
-# numeric suffix when all keys match the pattern <letters><digits>, otherwise
-# fall back to lexicographic order so per-layer NamedTuples (bias/scale/weight)
-# are unaffected.
-function _natural_sort_keys(ks)
-    if all(k -> occursin(r"^\D+\d+$", k), ks)
-        return sort(collect(ks),
-            by = k -> (m = match(r"^(\D+)(\d+)$", k); (m[1], parse(Int, m[2]))))
-    end
-    sort(collect(ks))
-end
-
-function _gml_h5load(group::HDF5.Group)
-    if haskey(HDF5.attributes(group), "gml_type")
-        gml_type = read(HDF5.attributes(group)["gml_type"])
-        if gml_type == "StiefelManifold"
-            return StiefelManifold(read(group["A"]))
-        elseif gml_type == "SymmetricMatrix"
-            return SymmetricMatrix(read(group["S"]), read(group["n"]))
-        elseif gml_type == "SkewSymMatrix"
-            return SkewSymMatrix(read(group["S"]), read(group["n"]))
-        elseif gml_type == "LowerTriangular"
-            return LowerTriangular(read(group["S"]), read(group["n"]))
-        elseif gml_type == "UpperTriangular"
-            return UpperTriangular(read(group["S"]), read(group["n"]))
-        end
-    end
-    sorted_keys = _natural_sort_keys(keys(group))
-    paramkeys = Tuple(Symbol.(sorted_keys))
-    paramvals = Tuple(_gml_h5load(group[k]) for k in sorted_keys)
-    NamedTuple{paramkeys}(paramvals)
-end
-
-# ---------------------------------------------------------------------------
-# save — new dispatch on NeuralNetwork, mirroring the existing
-#   save(h5::H5DataStore, p::NeuralNetworkParameters)
-# method in AbstractNeuralNetworks.
+# save / load — dispatch on `NeuralNetwork`, alongside the `NetworkParameters`
+# methods in `NeuralNetworkParameters`.
 # ---------------------------------------------------------------------------
 
 """
     save(h5::HDF5.H5DataStore, nn::NeuralNetwork)
-
-Save the parameters of `nn` into an already-open HDF5 store.
-
-Extends `AbstractNeuralNetworks.save` with a dispatch on `NeuralNetwork`.
-GML special array types (`StiefelManifold`, `SymmetricMatrix`, `SkewSymMatrix`,
-`LowerTriangular`, `UpperTriangular`) are tagged with a `gml_type` attribute
-so that [`load`](@ref) can reconstruct them faithfully.
-"""
-function save(h5::HDF5.H5DataStore, nn::NeuralNetwork)
-    h5save(h5, params(params(nn)), "/")
-end
-
-"""
     save(filename::AbstractString, nn::NeuralNetwork)
 
-Convenience overload: open `filename` for writing, then call
-`save(h5, nn)`.
+Save the parameters of `nn` to an already-open HDF5 store or to a file.
+
+Extends `save` with a dispatch on `NeuralNetwork`; the parameters themselves are written by
+`NeuralNetworkParameters`, which tags each structured leaf with the type to rebuild it as and
+records the key order of every group.
 """
+save(h5::HDF5.H5DataStore, nn::NeuralNetwork) = save(h5, params(nn))
+
 function save(filename::AbstractString, nn::NeuralNetwork)
     HDF5.h5open(filename, "w") do h5
         save(h5, nn)
     end
+    filename
 end
 
-# ---------------------------------------------------------------------------
-# load — new dispatch on NeuralNetwork, mirroring the existing
-#   load(::Type{NeuralNetworkParameters}, h5::H5DataStore)
-# method in AbstractNeuralNetworks.
-# ---------------------------------------------------------------------------
-
 """
-    load(::Type{NeuralNetwork}, h5::HDF5.H5DataStore, arch::Architecture; backend=CPU())
+    load(::Type{NeuralNetwork}, h5, arch::Architecture; backend = CPU())
+    load(::Type{NeuralNetwork}, h5, arch::Architecture, prototype; backend = CPU())
 
-Load network parameters from an already-open HDF5 store and return a
-`NeuralNetwork` for `arch`.
+Load parameters from an HDF5 store or file and return a `NeuralNetwork` for `arch`.
 
-Extends `AbstractNeuralNetworks.load` with a dispatch on `NeuralNetwork`.
-GML special array types are reconstructed from their `gml_type` attribute.
-The element type is preserved as stored (Float32 files reload as Float32).
+The element type is whatever the file holds, so a `Float32` network reloads as `Float32`.
+
+Structured parameters — `StiefelManifold`, `SymmetricMatrix` and the rest — are rebuilt from the
+type each was stored under, which `GeometricOptimizers` registers with
+`NeuralNetworkParameters.register_parameter_type!`. Pass a `prototype` parameter set of the right
+shape to rebuild against it instead and skip the registry altogether.
 """
-function load(::Type{NeuralNetwork}, h5::HDF5.H5DataStore, arch::Architecture;
+function load(::Type{NeuralNetwork}, h5::HDF5.H5DataStore, arch::Architecture, args...;
               backend::NeuralNetworkBackend = CPU())
-    ps = NeuralNetworkParameters(_gml_h5load(h5["/"]))
+    ps = load(NetworkParameters, h5, args...)
     NeuralNetwork(arch, Chain(arch), ps, backend)
 end
 
-"""
-    load(::Type{NeuralNetwork}, filename::AbstractString, arch::Architecture; backend=CPU())
-
-Convenience overload: open `filename` for reading, then call
-`load(NeuralNetwork, h5, arch; backend)`.
-"""
-function load(::Type{NeuralNetwork}, filename::AbstractString, arch::Architecture;
+function load(::Type{NeuralNetwork}, filename::AbstractString, arch::Architecture, args...;
               backend::NeuralNetworkBackend = CPU())
     HDF5.h5open(filename, "r") do h5
-        load(NeuralNetwork, h5, arch; backend = backend)
+        load(NeuralNetwork, h5, arch, args...; backend = backend)
     end
 end
 

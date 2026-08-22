@@ -170,4 +170,4 @@ Base.:≈(qp₁::QPT, qp₂::QPT) = (qp₁.q ≈ qp₂.q) & (qp₁.p ≈ qp₂.p
 _eltype(x) = eltype(x)
 _eltype(ps::NamedTuple) = _eltype(ps[1])
 _eltype(ps::Tuple) = _eltype(ps[1])
-_eltype(ps::NeuralNetworkParameters) = _eltype(params(ps)[1])
+_eltype(ps::NetworkParameters) = _eltype(params(ps)[1])

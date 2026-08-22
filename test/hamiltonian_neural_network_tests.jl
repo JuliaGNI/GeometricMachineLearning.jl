@@ -37,7 +37,7 @@ function test_hnn_loss_derivative(  dim::Integer = 2,
                                     activation::GMLA = GeometricMachineLearning.SigmoidActivation())
     nn, loss, dl = allocate_network_and_data_loader(dim, width, nhidden, activation)
     dp = Zygote.gradient(ps -> loss(ps, dl.input, dl.output), nn.params)[1]
-    @test typeof(dp) <: NeuralNetworkParameters
+    @test typeof(dp) <: NetworkParameters
     @test keys(dp) == keys(nn.params)
 end
 

@@ -42,7 +42,7 @@ using LinearAlgebra: norm  # hide
 # norm of parameters for single layer
 network_parameter_norm(params::NamedTuple) = sum([norm(params[i]) for i in 1:length(params)])
 # norm of parameters for entire network
-function network_parameter_norm(params::NeuralNetworkParameters)
+function network_parameter_norm(params::NetworkParameters)
     sum([network_parameter_norm(params[key]) for key in keys(params)])
 end
 
@@ -60,7 +60,7 @@ struct CustomLoss <: GeometricMachineLearning.NetworkLoss end
 using GeometricMachineLearning: QPTOAT, AbstractExplicitLayer # hide
 
 const λ = .1
-function (loss::CustomLoss)(model::Union{AbstractExplicitLayer, Chain}, params::Union{NeuralNetworkParameters, NamedTuple}, input::QPTOAT, output::QPTOAT)
+function (loss::CustomLoss)(model::Union{AbstractExplicitLayer, Chain}, params::Union{NetworkParameters, NamedTuple}, input::QPTOAT, output::QPTOAT)
     FeedForwardLoss()(model, params, input, output) + λ * network_parameter_norm(params)
 end
 nothing # hide

@@ -1,11 +1,11 @@
 module GeometricMachineLearning
 
 using AbstractNeuralNetworks
-# `AbstractNeuralNetworks` 0.7 no longer exports `NeuralNetworkParameters`: the parameter container
-# moved out to the package of that name, where the type is called `NetworkParameters`, and the alias
-# left behind is deliberately unexported so that every user of it says where it came from. This
-# package uses the name in 31 places and re-exports it below, so it is imported explicitly here.
-import AbstractNeuralNetworks: NeuralNetworkParameters
+# The parameter container lives in `NeuralNetworkParameters` as of `AbstractNeuralNetworks` 0.7,
+# under the name `NetworkParameters`. The import is selective rather than a bare `using`: that
+# package also exports `flatten`/`unflatten` and the leaf protocol, none of which this package
+# extends — `GeometricOptimizers` carries the protocol for the structured matrices.
+import NeuralNetworkParameters: NetworkParameters
 using ChainRulesCore
 # `sqeuclidean` is the default distance of every `TrainingMethod` in `src/training_method/`.
 using Distances
@@ -97,7 +97,7 @@ export Chain, NeuralNetwork
 export Dense, Linear
 export initialparameters
 export parameterlength
-export NeuralNetworkParameters
+export NetworkParameters
 
 export σ, sigmoid, softmax
 
