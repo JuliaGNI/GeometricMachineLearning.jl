@@ -1,0 +1,19 @@
+# Keeps the GitHub Actions in `.github/workflows/` current.
+#
+# Julia dependencies are not handled here — Dependabot has no Julia ecosystem, and
+# `.github/workflows/CompatHelper.yml` already opens the `[compat]` bumps nightly.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    # One PR per action rather than a combined bump: a major of `setup-julia` or `codecov-action`
+    # can need a workflow change alongside it, and that is easier to review on its own.
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "CI"
+    labels:
+      - dependencies
+      - github-actions

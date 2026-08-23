@@ -12,7 +12,7 @@ concurrency:
     cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 jobs:
     test:
-        name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
+        name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ github.event_name }}
         runs-on: ${{ matrix.os }}
         continue-on-error: ${{ matrix.experimental }}
         strategy:
@@ -25,45 +25,45 @@ jobs:
                     - ubuntu-latest
                     - macOS-latest
                     - windows-latest
-                arch:
-                    - x64
                 experimental: [false]
                 include:
                     - version: "^1.13.0-0"
                       os: ubuntu-latest
-                      arch: x64
                       experimental: true
                     - version: "^1.13.0-0"
                       os: macOS-latest
-                      arch: x64
                       experimental: true
                     - version: "^1.13.0-0"
                       os: windows-latest
-                      arch: x64
                       experimental: true
                     - version: "nightly"
                       os: ubuntu-latest
-                      arch: x64
                       experimental: true
                     - version: "nightly"
                       os: macOS-latest
-                      arch: x64
                       experimental: true
                     - version: "nightly"
                       os: windows-latest
-                      arch: x64
                       experimental: true
         steps:
-            - uses: actions/checkout@v4
-            - uses: julia-actions/setup-julia@v1
+            - uses: actions/checkout@v7
+            # No `arch:` pin. `macOS-latest` is aarch64, and setup-julia refuses `x64` there
+            # unless `force-arch` is set — the x64 build would run under Rosetta, which is not
+            # the platform anyone deploys on. Each runner gets its native architecture.
+            - uses: julia-actions/setup-julia@v3
               with:
                   version: ${{ matrix.version }}
-                  arch: ${{ matrix.arch }}
-            - uses: julia-actions/cache@v1
+            # `cache-registries` defaults to true. The registry is the one thing that must not be
+            # reused between runs: the package server's General snapshot already lags the registry
+            # by hours, and caching it adds a second layer of staleness, so a freshly registered
+            # dependency stays invisible to CI for days. Everything else is worth caching.
+            - uses: julia-actions/cache@v3
+              with:
+                  cache-registries: "false"
             - uses: julia-actions/julia-buildpkg@v1
             - uses: julia-actions/julia-runtest@v1
             - uses: julia-actions/julia-processcoverage@v1
-            - uses: codecov/codecov-action@v3
+            - uses: codecov/codecov-action@v7
               env:
                   CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
               with:
