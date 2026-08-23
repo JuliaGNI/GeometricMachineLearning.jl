@@ -172,7 +172,7 @@ end
 function encoder_parameters(nn::NeuralNetwork{<:AutoEncoder})
     n_encoder_layers = length(encoder_model(nn.architecture).layers)
     keys = Tuple(Symbol.(["L$(i)" for i in 1:n_encoder_layers]))
-    NeuralNetworkParameters(NamedTuple{keys}(Tuple([params(nn)[key] for key in keys])))
+    NetworkParameters(NamedTuple{keys}(Tuple([params(nn)[key] for key in keys])))
 end
 
 # """
@@ -188,7 +188,7 @@ function decoder_parameters(nn::NeuralNetwork{<:AutoEncoder})
     n_keys = length(keys_old)
     # "new keys" are the ones describing the keys in the new NamedTuple
     keys_new = Tuple(Symbol.(["L$(i)" for i in 1:n_keys]))
-    NeuralNetworkParameters(NamedTuple{keys_new}(Tuple([params(nn)[key] for key in keys_old])))
+    NetworkParameters(NamedTuple{keys_new}(Tuple([params(nn)[key] for key in keys_old])))
 end
 
 function Chain(arch::AutoEncoder)

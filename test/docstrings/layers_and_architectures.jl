@@ -14,7 +14,7 @@ using GeometricMachineLearning: UnknownEncoder, params
     model = ResNet(3, 0, identity)
     weight = [1 0 0; 0 2 0; 0 0 1]
     bias = [0, 0, 1]
-    ps = NeuralNetworkParameters((L1 = (weight = weight, bias = bias),))
+    ps = NetworkParameters((L1 = (weight = weight, bias = bias),))
     nn = NeuralNetwork(model, Chain(model), ps, CPU())
     @test iterate(nn, [1, 1, 1]; n_points = 4) == [1 2 4 8; 1 3 9 27; 1 3 7 15]
 

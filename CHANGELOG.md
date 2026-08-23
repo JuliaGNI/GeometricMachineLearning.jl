@@ -36,6 +36,39 @@ breaking release).
   of the module already provides, so `GeometricMachineLearning.IdentityActivation` still resolves —
   the line was redundant, not load-bearing.
 
+- **`NeuralNetworkParameters` is no longer exported; the name is `NetworkParameters`.** The parameter
+  container moved out of `AbstractNeuralNetworks` into
+  [NeuralNetworkParameters.jl](https://github.com/JuliaGNI/NeuralNetworkParameters.jl) in
+  `AbstractNeuralNetworks` 0.7, which removed the old name outright rather than leaving an alias, so
+  that one type has one name across the ecosystem. This package follows, at every call site — 31 in
+  `src/`, `docs/` and `test/`, seven more in `scripts/` — and in its export list. It is the same type
+  object, so `::Type{}` dispatch, `<:` bounds and `NetworkParameters{keys}(vals)` construction are
+  unaffected; only the spelling changes.
+
+  ```julia
+  # before
+  using GeometricMachineLearning        # brought NeuralNetworkParameters into scope
+  # after
+  using GeometricMachineLearning        # brings NetworkParameters into scope
+  ```
+
+- **The HDF5 extension no longer carries its own traversal.** Five `h5save` methods tagging a
+  `gml_type` attribute, the `_gml_h5load` reader and the `_natural_sort_keys` key-order heuristic are
+  gone — 73 of the extension's 187 lines. Each job now sits with the package that owns the pieces:
+
+  - `NeuralNetworkParameters` walks the parameter set and writes it, recording each group's key order
+    in a `keys` attribute. `_natural_sort_keys` was standing in for that, and it *guessed*: it sorted
+    on a trailing integer when every name in the group had one and fell back to lexicographic order
+    otherwise, so a group whose names do not end in a digit came back in whatever order sorting gave.
+  - `GeometricOptimizers` says where each structured matrix keeps its numbers, through
+    `freeparameters`/`rebuild`, and registers the types so a file loads with no prototype.
+    `StiefelManifold` and `SymmetricMatrix` are its types, not this package's, so the methods here
+    were type piracy twice over — on `h5save` and on the type.
+
+  Existing files still load. `NeuralNetworkParameters` recognises the `gml_type` tag and rebuilds
+  through the same registry, and `test/hdf5_support.jl` now writes a file in the old layout by hand
+  and reads it back, so the deletion cannot quietly make old files unreadable.
+
 ### Fixed
 
 - **Zygote 0.7 silently zeroed every gradient that flows through `assign_q_and_p`.** Its `rrule`
@@ -102,7 +135,38 @@ breaking release).
   it sits in, on a signature it did not need — the body ignores its argument and returns
   `ZeroTangent()` regardless.
 
+- **`save(filename, nn)` returns `filename`.** It used to return whatever the `h5open` block left
+  behind — the value of the innermost `h5save`, an implementation detail of the traversal. Returning
+  the path is what `NeuralNetworkParameters.save(filename, ps)` does, so the two now agree.
+
+### Added
+
+- **`load(NeuralNetwork, h5, arch, prototype)`** — a parameter set of the right shape to rebuild the
+  structured leaves against. It is the form that needs no registration: `rebuild` has a prototype to
+  take the non-differentiable fields from, so the file's type tags and
+  `NeuralNetworkParameters.register_parameter_type!` are not consulted at all. Both the store and the
+  filename overloads take it.
+
 ### Dependencies
+
+- **`NeuralNetworkParameters = "0.1"`** added, and **`AbstractNeuralNetworks = "0.7"`** (was
+  `"0.6.4"`). The parameter container is defined in the former as of the latter; see *Removed* above.
+
+- **`GeometricOptimizers = "0.4.1"`** (was `"0.4"`). 0.4.1 is the release that carries the
+  `NeuralNetworkParameters` leaf protocol for the manifolds, storage matrices and horizontal lifts,
+  which is what lets this package's HDF5 extension drop its own copy of the traversal.
+
+- **`SymbolicNeuralNetworks = "0.6"`** (was `"0.5"`). 0.5 caps `AbstractNeuralNetworks` at `"0.6.4 -
+  0.6"`, so leaving the bound would have made this package's `[compat]` unsatisfiable rather than
+  merely unresolved. 0.6 is the release that follows the container out to `NeuralNetworkParameters`.
+
+  > **Merge order.** `AbstractNeuralNetworks` 0.7.0, `GeometricOptimizers` 0.4.1 and
+  > `NeuralNetworkParameters` 0.1.1 are all in the General registry as of 2026-08-23.
+  > `SymbolicNeuralNetworks` 0.6.0 is not: its `abstractneuralnetworks-0.7` branch still says
+  > `0.5.0`, and still does `using AbstractNeuralNetworks: QPTOAT`, which 0.7 replaced with
+  > `ArrayOrNamedTuple`, so it does not load as it stands. That is the one release this waits on.
+  >
+  > Until it lands, CI here fails at `Pkg.instantiate`. That is expected, not a regression.
 
 - **`Zygote = "0.7"`** (was `"0.6"`). 0.7 replaced the eager unthunking in `wrap_chainrules_output`
   with `unthunk_tangent` at the `gradient`/`pullback` boundaries, which is what let thunks reach

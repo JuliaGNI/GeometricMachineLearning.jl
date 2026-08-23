@@ -1,8 +1,8 @@
 # Optimizer machinery on top of GeometricOptimizers.
 # Kept out of `utils.jl` because it dispatches on `Manifold`, which is defined later.
 
-# Extend GlobalSection so it works with NeuralNetworkParameters (wraps a NamedTuple).
-GeometricOptimizers.GlobalSection(ps::NeuralNetworkParameters) =
+# Extend GlobalSection so it works with NetworkParameters (wraps a NamedTuple).
+GeometricOptimizers.GlobalSection(ps::NetworkParameters) =
     GeometricOptimizers.GlobalSection(params(ps))
 
 # Backward-compat alias
@@ -55,7 +55,7 @@ _use_go_cache(method, x) =
 function _make_optimizer_cache(method, x)
     if _use_go_cache(method, x)
         GeometricOptimizers.OptimizerCache(_adapt_method_to_T(method, _eltype(x)), x)
-    elseif x isa NamedTuple || x isa NeuralNetworkParameters
+    elseif x isa NamedTuple || x isa NetworkParameters
         NamedTuple{keys(x)}(Tuple(_make_optimizer_cache(method, x[k]) for k in keys(x)))
     else
         GMLEuclideanState(x)
@@ -65,7 +65,7 @@ end
 function _make_optimizer_state(method, x)
     if _use_go_cache(method, x)
         GeometricOptimizers.OptimizerState(_adapt_method_to_T(method, _eltype(x)), x)
-    elseif x isa NamedTuple || x isa NeuralNetworkParameters
+    elseif x isa NamedTuple || x isa NetworkParameters
         NamedTuple{keys(x)}(Tuple(_make_optimizer_state(method, x[k]) for k in keys(x)))
     else
         GMLEuclideanState(x)
@@ -129,7 +129,7 @@ function Optimizer(method::GeometricOptimizers.OptimizerMethod, nn::NeuralNetwor
 end
 
 function Optimizer(method::GeometricOptimizers.OptimizerMethod,
-        ps::Union{NamedTuple, NeuralNetworkParameters};
+        ps::Union{NamedTuple, NetworkParameters};
         retraction = GeometricOptimizers.cayley,
         step_size = _default_step_size(method))
     Optimizer(method, _make_optimizer_cache(method, ps), _make_optimizer_state(method, ps),
@@ -139,7 +139,7 @@ end
 # The keyword form, so that the `(algorithm, linesearch)` pairing `GeometricOptimizers` returns from
 # `AdamOptimizerWithDecay` splats in unchanged. `linesearch` is the step size under the name
 # upstream gives it; a `Static` carries its own `α`, which is then the fixed learning rate.
-function Optimizer(nn_or_ps::Union{NeuralNetwork, NamedTuple, NeuralNetworkParameters};
+function Optimizer(nn_or_ps::Union{NeuralNetwork, NamedTuple, NetworkParameters};
         algorithm::GeometricOptimizers.OptimizerMethod,
         linesearch = nothing,
         retraction = GeometricOptimizers.cayley,

@@ -1,6 +1,11 @@
 module GeometricMachineLearning
 
 using AbstractNeuralNetworks
+# The parameter container lives in `NeuralNetworkParameters` as of `AbstractNeuralNetworks` 0.7,
+# under the name `NetworkParameters`. The import is selective rather than a bare `using`: that
+# package also exports `flatten`/`unflatten` and the leaf protocol, none of which this package
+# extends — `GeometricOptimizers` carries the protocol for the structured matrices.
+import NeuralNetworkParameters: NetworkParameters
 using ChainRulesCore
 # `sqeuclidean` is the default distance of every `TrainingMethod` in `src/training_method/`.
 using Distances
@@ -80,7 +85,9 @@ import AbstractNeuralNetworks: GlorotUniform
 import AbstractNeuralNetworks: params, architecture, model, dim
 import AbstractNeuralNetworks: AbstractPullback, NetworkLoss, _compute_loss
 import AbstractNeuralNetworks: networkbackend
-import AbstractNeuralNetworks: save, load
+# `save` and `load` are `NeuralNetworkParameters`' generics; `AbstractNeuralNetworks` 0.7 only
+# re-binds them. Reach for them where they are defined.
+import NeuralNetworkParameters: save, load
 # export params, architetcure, model
 export dim
 import NNlib: σ, sigmoid, softmax
@@ -92,7 +99,7 @@ export Chain, NeuralNetwork
 export Dense, Linear
 export initialparameters
 export parameterlength
-export NeuralNetworkParameters
+export NetworkParameters
 
 export σ, sigmoid, softmax
 

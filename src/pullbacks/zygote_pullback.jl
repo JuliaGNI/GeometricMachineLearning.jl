@@ -39,9 +39,9 @@ Unwrap the single element `Zygote` may wrap a pullback result in.
 
 Together with [`_get_params`](@ref) this makes up [`_processing`](@ref).
 """
-_get_contents(nt::Union{NamedTuple, NeuralNetworkParameters}) = nt
-_get_contents(nt::Tuple{<:Union{NamedTuple, NeuralNetworkParameters}}) = nt[1]
-function _get_contents(nt::AbstractVector{<:Union{NamedTuple, NeuralNetworkParameters}})
+_get_contents(nt::Union{NamedTuple, NetworkParameters}) = nt
+_get_contents(nt::Tuple{<:Union{NamedTuple, NetworkParameters}}) = nt[1]
+function _get_contents(nt::AbstractVector{<:Union{NamedTuple, NetworkParameters}})
     length(nt) == 1 || throw(ArgumentError(
         "the pullback returned $(length(nt)) parameter sets, expected one."))
     nt[1]
@@ -51,14 +51,14 @@ end
     _get_params(returned_pullback)
 
 Get the parameters out of a pullback result, whether they come as a
-`NeuralNetworkParameters`, wrapped in a `NamedTuple` with a single `params` field, or bare.
+`NetworkParameters`, wrapped in a `NamedTuple` with a single `params` field, or bare.
 
 Together with [`_get_contents`](@ref) this makes up [`_processing`](@ref).
 """
 _get_params(nt::NamedTuple) = nt
-_get_params(ps::NeuralNetworkParameters) = params(ps)
+_get_params(ps::NetworkParameters) = params(ps)
 function _get_params(nt::NamedTuple{(:params,), Tuple{AT}}) where {AT}
-    @warn "This function was most likely called because @adjoint for `NeuralNetworkParameters` hasn't been implemented."
+    @warn "This function was most likely called because @adjoint for `NetworkParameters` hasn't been implemented."
     nt.params
 end
 
