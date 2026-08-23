@@ -160,17 +160,13 @@ breaking release).
   0.6"`, so leaving the bound would have made this package's `[compat]` unsatisfiable rather than
   merely unresolved. 0.6 is the release that follows the container out to `NeuralNetworkParameters`.
 
-  > **Merge order.** Three of these four bounds point at releases that do not exist in the General
-  > registry yet, so this cannot be merged before them, in this order:
+  > **Merge order.** `AbstractNeuralNetworks` 0.7.0, `GeometricOptimizers` 0.4.1 and
+  > `NeuralNetworkParameters` 0.1.1 are all in the General registry as of 2026-08-23.
+  > `SymbolicNeuralNetworks` 0.6.0 is not: its `abstractneuralnetworks-0.7` branch still says
+  > `0.5.0`, and still does `using AbstractNeuralNetworks: QPTOAT`, which 0.7 replaced with
+  > `ArrayOrNamedTuple`, so it does not load as it stands. That is the one release this waits on.
   >
-  > 1. `AbstractNeuralNetworks` 0.7.0 — tagged, awaiting registration.
-  > 2. `GeometricOptimizers` 0.4.1 — the `NeuralNetworkParameters` extension is on `main`; needs a
-  >    version bump, a tag and registration.
-  > 3. `SymbolicNeuralNetworks` 0.6.0 — the `abstractneuralnetworks-0.7` branch still says `0.5.0`,
-  >    and still imports `AbstractNeuralNetworks.QPTOAT`, which 0.7 replaced with
-  >    `ArrayOrNamedTuple`; it does not load as it stands.
-  >
-  > Until then CI here fails at `Pkg.instantiate`. That is expected, not a regression.
+  > Until it lands, CI here fails at `Pkg.instantiate`. That is expected, not a regression.
 
 - **`Zygote = "0.7"`** (was `"0.6"`). 0.7 replaced the eager unthunking in `wrap_chainrules_output`
   with `unthunk_tangent` at the `gradient`/`pullback` boundaries, which is what let thunks reach
