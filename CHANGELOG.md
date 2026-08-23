@@ -9,11 +9,29 @@ breaking release).
 > [!NOTE]
 > Entries for 0.1.0 through 0.4.8 were reconstructed from git history, the release tags and the
 > merged pull requests, not written at the time. They are accurate about *what* changed and are
-> deliberately coarser about detail than the 0.5.0 section below, which was written
+> deliberately coarser about detail than the 0.5.0 and 0.6.0 sections below, which were written
 > alongside the work. Where a release removed exported names the list is given; where it is a
 > reconstruction of intent, it says so.
 
-## [Unreleased]
+## [0.6.0] — 2026-08-24
+
+**The parameter container moves out to [NeuralNetworkParameters.jl][nnp].**
+`AbstractNeuralNetworks` 0.7 took the tree that holds a network's parameters out into its own
+package, and removed the old name rather than leaving an alias, so that one type has one name across
+the ecosystem. This package follows: what was `NeuralNetworkParameters` is `NetworkParameters`, at
+every call site and in the export list. The HDF5 extension follows further — it no longer carries
+its own traversal of the parameter set, because the packages that own the pieces now say how each of
+them is written and rebuilt.
+
+**Requires Zygote 0.7**, which is the other half of this release. 0.7 stopped unthunking cotangents
+eagerly, and thunks reaching this package's `rrule`s exposed three real defects — one of them a
+*silently zeroed* Jacobian through `assign_q_and_p`, on every symplectic-autoencoder and PSD path.
+The type piracy that had been covering for another of them is gone with it. See *Fixed*.
+
+Three exports go — `RecurrentNeuralNetwork`, `LSTMNeuralNetwork` and `NeuralNetworkParameters` —
+and `NetworkParameters` arrives in place of the last. Read *Removed (breaking)* before upgrading.
+
+[nnp]: https://github.com/JuliaGNI/NeuralNetworkParameters.jl
 
 ### Removed (breaking)
 
@@ -160,13 +178,16 @@ breaking release).
   0.6"`, so leaving the bound would have made this package's `[compat]` unsatisfiable rather than
   merely unresolved. 0.6 is the release that follows the container out to `NeuralNetworkParameters`.
 
-  > **Merge order.** `AbstractNeuralNetworks` 0.7.0, `GeometricOptimizers` 0.4.1 and
-  > `NeuralNetworkParameters` 0.1.1 are all in the General registry as of 2026-08-23.
-  > `SymbolicNeuralNetworks` 0.6.0 is not: its `abstractneuralnetworks-0.7` branch still says
-  > `0.5.0`, and still does `using AbstractNeuralNetworks: QPTOAT`, which 0.7 replaced with
-  > `ArrayOrNamedTuple`, so it does not load as it stands. That is the one release this waits on.
+  > **Upstream releases.** All four bounds this release tightens resolve from the General
+  > registry. Every one of them was registered on 2026-08-23, which is why this release is dated
+  > the day after.
   >
-  > Until it lands, CI here fails at `Pkg.instantiate`. That is expected, not a regression.
+  > | bound | version | registered (UTC) |
+  > | --- | --- | --- |
+  > | `AbstractNeuralNetworks = "0.7"` | 0.7.0 | 04:00 |
+  > | `NeuralNetworkParameters = "0.1"` | 0.1.1 | 04:12 |
+  > | `GeometricOptimizers = "0.4.1"` | 0.4.1 | 06:10 |
+  > | `SymbolicNeuralNetworks = "0.6"` | 0.6.0 | 16:11 |
 
 - **`Zygote = "0.7"`** (was `"0.6"`). 0.7 replaced the eager unthunking in `wrap_chainrules_output`
   with `unthunk_tangent` at the `gradient`/`pullback` boundaries, which is what let thunks reach
@@ -204,6 +225,45 @@ breaking release).
   `src/reduced_system/reduced_system.jl` is its one call site.
 
   Together these close **C4**.
+
+### Infrastructure
+
+- **The GitHub Actions are current, and Dependabot keeps them there**
+  ([#248](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/248)). Nothing under
+  `.github/workflows/` had been bumped since it was written, and two of the actions had aged past
+  working. `julia-actions/cache@v1` speaks a cache-service API GitHub has retired, so every job
+  logged `Cache service responded with 400` and CI had been running with **no dependency cache at
+  all** — every job rebuilding and re-precompiling the whole tree from scratch. And three of the
+  pins were `@latest`, which is not a moving alias but a literal tag that neither upstream still
+  moves: `julia-actions/setup-julia@latest` is a November 2024 commit matching no release, and
+  `julia-actions/RegisterAction@latest` a November 2022 one, older than that action's own v0.3.2.
+  Both read as if they track upstream and do not.
+
+  `actions/checkout` v4 → v7, `actions/upload-artifact` v4 → v7, `julia-actions/setup-julia` v1 →
+  v3, `julia-actions/cache` v1 → v3, `codecov/codecov-action` v3 → v7, and
+  `julia-actions/RegisterAction` `@latest` → v0.3.2. `julia-buildpkg`, `julia-runtest`,
+  `julia-processcoverage`, `julia-docdeploy` and `TagBot` were already on their current major.
+
+  The `arch: x64` matrix pin went with them, which **renames every CI job** — the `- x64` component
+  is gone. `macOS-latest` is aarch64, and setup-julia v3 refuses `x64` there unless `force-arch` is
+  set, because that build runs under Rosetta, which is not the platform anyone deploys on. No name
+  was load-bearing: `main`'s branch protection lists no required status checks.
+
+- **CI resolves the registry over git rather than through a package server** (`JULIA_PKG_SERVER: ""`,
+  with `cache-registries: false` so that a restored depot cannot put the staleness straight back).
+  The package servers' snapshot of General lags the registry by hours to days:
+  `AbstractNeuralNetworks` 0.7.0 was registered at 04:00 UTC on 2026-08-23 and jobs were still
+  resolving against a copy that stopped at 0.6.4 hours later, dying in `Pkg.resolve` before running
+  anything. It is not a matter of picking a better server — all eight official mirrors, in both
+  flavours, and the third-party ones too were serving the identical tree; the lag is at the storage
+  server they all pull from.
+
+  This is a workaround, and it is marked as one in `CI.yml`: the cost is the CDN and the registry
+  tarball. That comment also records how to check whether it is still needed —
+  `curl -sL https://pkg.julialang.org/registries` against
+  `gh api repos/JuliaRegistries/General/commits/master --jq .commit.tree.sha`. As of this release it
+  still is: the served snapshot stops at `AbstractNeuralNetworks` 0.6.4 and
+  `SymbolicNeuralNetworks` 0.5.0, both of which this release's `[compat]` excludes.
 
 ## [0.5.0] — 2026-08-19
 
