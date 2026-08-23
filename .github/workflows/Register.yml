@@ -9,6 +9,8 @@ jobs:
   register:
     runs-on: ubuntu-latest
     steps:
-      - uses: julia-actions/RegisterAction@latest
+      # The `latest` tag points at a 2022 commit that matches no release; v0.3.2 (2023-01) is
+      # the newest one there is.
+      - uses: julia-actions/RegisterAction@v0.3.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}

@@ -7,19 +7,25 @@ on:
     tags: '*'
   pull_request:
 
+# Temporary: go straight to the General registry instead of through a package server; see the
+# comment in `CI.yml`. Same workaround as SymbolicNeuralNetworks.jl.
+env:
+  JULIA_PKG_SERVER: ""
 jobs:
   build:
     name: Documentation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
       - name: Install packages for generating tikz images
         run: |
           sudo apt-get install imagemagick
           sudo apt-get install poppler-utils
           sudo apt-get install texlive-xetex
           sudo apt-get install texlive-science
-      - uses: julia-actions/setup-julia@latest
+      # `@latest` is not a moving alias — it is a literal tag, and upstream stopped moving it
+      # in November 2024. Pin the major instead.
+      - uses: julia-actions/setup-julia@v3
         with:
           version: '1'
       - name: Install BrenierTwoFluid package

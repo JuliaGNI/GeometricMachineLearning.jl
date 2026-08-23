@@ -6,11 +6,15 @@ on:
       - main
   pull_request:
 
+# Temporary: go straight to the General registry instead of through a package server; see the
+# comment in `CI.yml`. Same workaround as SymbolicNeuralNetworks.jl.
+env:
+  JULIA_PKG_SERVER: ""
 jobs:
   LatexDocs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: install imagemagick, poppler-utils and texlive
         run: |
             sudo apt-get install imagemagick
@@ -20,7 +24,7 @@ jobs:
             sudo apt-get install latex-cjk-all
             sudo apt-get install texlive-fonts-recommended
             sudo apt-get install texlive-fonts-extra
-      - uses: julia-actions/setup-julia@latest
+      - uses: julia-actions/setup-julia@v3
         with:
           version: '1'
       - name: install BrenierTwoFluid
@@ -53,7 +57,7 @@ jobs:
           xelatex -shell-escape GeometricMachineLearning.jl.tex
           xelatex -shell-escape GeometricMachineLearning.jl.tex
       - name: Upload PDF file
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Docs in PDF version
           path: docs/build/GeometricMachineLearning.jl.pdf
