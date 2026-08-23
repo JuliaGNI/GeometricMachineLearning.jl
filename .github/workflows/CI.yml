@@ -54,12 +54,23 @@ jobs:
               with:
                   version: ${{ matrix.version }}
             # `cache-registries` defaults to true. The registry is the one thing that must not be
-            # reused between runs: the package server's General snapshot already lags the registry
-            # by hours, and caching it adds a second layer of staleness, so a freshly registered
-            # dependency stays invisible to CI for days. Everything else is worth caching.
+            # reused between runs — the step below clones a current one, and a restored copy would
+            # only shadow it. Everything else is worth caching.
             - uses: julia-actions/cache@v3
               with:
                   cache-registries: "false"
+            # Every Julia package server serves the same registry snapshot, and it can sit most of a
+            # day behind the registry: on 2026-08-23 all eight official mirrors, in both the
+            # conservative and the eager flavour, were still on General as of 18:04 the previous
+            # evening — so `AbstractNeuralNetworks` 0.7.0, registered at 04:00, was invisible and
+            # every job failed to resolve. Cloning General over git is the only way to see a version
+            # the moment it is registered. `JULIA_PKG_SERVER` is deliberately left alone, so package
+            # tarballs still come from the CDN; only the registry bypasses it.
+            #
+            # `julia-buildpkg` calls `Pkg.Registry.add()` on Julia >= 1.8, which installs the default
+            # registries only when none are present, so this step wins and nothing is duplicated.
+            - name: Take General from git rather than the package server
+              run: julia -e 'using Pkg; Pkg.Registry.add(Pkg.RegistrySpec(url = "https://github.com/JuliaRegistries/General.git"))'
             - uses: julia-actions/julia-buildpkg@v1
             - uses: julia-actions/julia-runtest@v1
             - uses: julia-actions/julia-processcoverage@v1

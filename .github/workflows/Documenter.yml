@@ -24,6 +24,11 @@ jobs:
       - uses: julia-actions/setup-julia@v3
         with:
           version: '1'
+      # The package server's General snapshot can sit most of a day behind the registry, and every
+      # mirror serves the same one; see the comment in `CI.yml`. `JULIA_PKG_SERVER` is left alone,
+      # so only the registry bypasses the CDN.
+      - name: Take General from git rather than the package server
+        run: julia -e 'using Pkg; Pkg.Registry.add(Pkg.RegistrySpec(url = "https://github.com/JuliaRegistries/General.git"))'
       - name: Install BrenierTwoFluid package
         run: |
           cd docs
