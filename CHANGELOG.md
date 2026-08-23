@@ -15,6 +15,27 @@ breaking release).
 
 ## [Unreleased]
 
+### Removed (breaking)
+
+- **`RecurrentNeuralNetwork` and `LSTMNeuralNetwork`**, along with
+  `src/architectures/recurrent_neural_network.jl`, `src/architectures/LSTM_neural_network.jl` and the
+  driver scripts under `scripts/Script_using_fully_GML/{RNN,LSTM}/`.
+
+  Both were already unusable. `Chain(::RecurrentNeuralNetwork)` returned an
+  `AbstractNeuralNetworks.GridCell` rather than a `Chain`, and the cells it held still defined the
+  pre-0.6 `initialparameters(cell, backend, T; init, rng)` signature, so building a `NeuralNetwork`
+  from one errored out. Nothing in the test suite touched them. AbstractNeuralNetworks 0.7 removes
+  `src/cells/` — `Recurrent`, `LSTM`, `GRU`, `IdentityCell` and `GridCell` — so the imports have to go
+  regardless. The transformer-derived architectures are what GML maintains for time series; the docs
+  had flagged the LSTM implementation as likely to be deprecated since it was written.
+
+  `import AbstractNeuralNetworks: IdentityActivation, ZeroVector` went with them.
+  `Chain(::RecurrentNeuralNetwork)` was the only thing in `src/` that named `IdentityActivation`,
+  and `ZeroVector`'s last use moved to `legacy/` in `ec8e8fa5`. Neither was ever exported by GML,
+  and `IdentityActivation` is an `AbstractNeuralNetworks` export that the blanket `using` at the top
+  of the module already provides, so `GeometricMachineLearning.IdentityActivation` still resolves —
+  the line was redundant, not load-bearing.
+
 ### Fixed
 
 - **Zygote 0.7 silently zeroed every gradient that flows through `assign_q_and_p`.** Its `rrule`
