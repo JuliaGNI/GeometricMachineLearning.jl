@@ -275,7 +275,7 @@ This loss does not have any parameters.
 struct ParametricLoss <: NetworkLoss end
 
 function (loss::ParametricLoss)(model::Chain,
-        params::Union{NamedTuple, NeuralNetworkParameters}, input::CT, output::CT,
+        params::Union{NamedTuple, NetworkParameters}, input::CT, output::CT,
         system_parameters::Union{NamedTuple, AbstractVector}) where {CT <: QPTOAT}
-    _compute_loss(model(input, system_parameters, params), output)
+    _compute_loss(apply_parametric(model, input, system_parameters, params), output)
 end

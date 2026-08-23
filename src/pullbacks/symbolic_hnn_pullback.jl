@@ -50,7 +50,16 @@ So one integrator is fine — and worth it, the built function evaluates about 1
 the `Zygote` pullback — while two are hopeless. Rather than let that look like a hang, refuse it.
 
 Removing the limit means not tracing the inlined chain at all: composing the pullback layer by layer
-from the gradients each `SymplecticEuler` has already built. See
+from the gradients each `SymplecticEuler` has already built.
+
+`SymbolicNeuralNetworks` 0.6 added exactly that construction
+([SNN #49](https://github.com/JuliaGNI/SymbolicNeuralNetworks.jl/issues/49)), but it does not reach
+this case yet. Its seam is a plain `Vector{Num}`, so it assumes every layer maps an array to an
+array; a `SymplecticEuler` built with `return_parameters = true` passes the system parameters on to
+the next layer and returns a `Tuple`, which `layer_seed` cannot seed. `composes_layerwise` says the
+chain decomposes, so `layerwise = :auto` commits to that path and then raises — which is
+[SNN #54](https://github.com/JuliaGNI/SymbolicNeuralNetworks.jl/issues/54). Until the seam can carry
+what a layer passes alongside the state, this limit stays. See
 [issue #245](https://github.com/JuliaGNI/GeometricMachineLearning.jl/issues/245).
 """
 function _check_symbolic_pullback_is_tractable(arch)
@@ -59,7 +68,9 @@ function _check_symbolic_pullback_is_tractable(arch)
         "cannot build a `SymbolicPullback` for an architecture with $(n) integrators: the symbolic " *
         "expression grows multiplicatively with `n_integrators`, and already exceeds 10⁹ terms at " *
         "two, so the build does not finish. Use `ZygotePullback(loss)`, which is what `Optimizer` " *
-        "uses by default, or reduce `n_integrators` to 1. See GeometricMachineLearning issue #245."))
+        "uses by default, or reduce `n_integrators` to 1. See GeometricMachineLearning issue #245, " *
+        "and SymbolicNeuralNetworks issues #49 and #54 for the upstream construction that will " *
+        "eventually lift this."))
     nothing
 end
 

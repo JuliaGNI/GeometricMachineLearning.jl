@@ -51,7 +51,7 @@ end
 
 function optimize_for_one_epoch!(   opt::Optimizer, 
                                     model, 
-                                    ps::Union{NeuralNetworkParameters, NamedTuple}, 
+                                    ps::Union{NetworkParameters, NamedTuple}, 
                                     dl::ParametricDataLoader{T}, 
                                     batch::Batch, 
                                     _pullback::AbstractPullback, 

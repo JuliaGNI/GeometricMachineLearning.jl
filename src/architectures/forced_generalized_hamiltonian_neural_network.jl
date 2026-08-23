@@ -40,7 +40,7 @@ end
 # `StandardHamiltonianArchitecture` takes no system parameters.
 function (nn::NeuralNetwork{<:ForcedGeneralizedHamiltonianArchitecture})(qp::QPTOAT2,
         problem_params::OptionalParameters)
-    nn.model(qp, problem_params, params(nn))
+    apply_parametric(nn.model, qp, problem_params, params(nn))
 end
 
 function (o::Optimizer)(nn::NeuralNetwork{<:ForcedGeneralizedHamiltonianArchitecture},

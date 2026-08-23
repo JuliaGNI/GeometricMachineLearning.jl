@@ -105,45 +105,45 @@ function ForcingLayerQP(dim::Integer, width::Integer=dim, nhidden::Integer=HNN_n
     ForcingLayer(dim, width, nhidden, activation; parameters=parameters, return_parameters=return_parameters, type=:QP)
 end
 
-function (integrator::ForcingLayerQ{M,N,FT,AT,false})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M,N,FT,AT}
+function (integrator::ForcingLayerQ{M,N,FT,AT,false})(qp::QPT2, problem_params::OptionalParameters, params::NetworkParameters) where {M,N,FT,AT}
     input = concatenate_array_with_parameters(qp.q, problem_params)
     (q=qp.q, p=qp.p + integrator.model(input, params))
 end
 
-function (integrator::ForcingLayerP{M,N,FT,AT,false})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M,N,FT,AT}
+function (integrator::ForcingLayerP{M,N,FT,AT,false})(qp::QPT2, problem_params::OptionalParameters, params::NetworkParameters) where {M,N,FT,AT}
     input = concatenate_array_with_parameters(qp.p, problem_params)
     (q=qp.q, p=qp.p + integrator.model(input, params))
 end
 
-function (integrator::ForcingLayerQP{M,N,FT,AT,false})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M,N,FT,AT}
+function (integrator::ForcingLayerQP{M,N,FT,AT,false})(qp::QPT2, problem_params::OptionalParameters, params::NetworkParameters) where {M,N,FT,AT}
     input = concatenate_array_with_parameters(vcat(qp.q, qp.p), problem_params)
     (q=qp.q, p=qp.p + integrator.model(input, params))
 end
 
-function (integrator::ForcingLayerQ{M,N,FT,AT,true})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M,N,FT,AT}
+function (integrator::ForcingLayerQ{M,N,FT,AT,true})(qp::QPT2, problem_params::OptionalParameters, params::NetworkParameters) where {M,N,FT,AT}
     input = concatenate_array_with_parameters(qp.q, problem_params)
     ((q=qp.q, p=qp.p + integrator.model(input, params)), problem_params)
 end
 
-function (integrator::ForcingLayerP{M,N,FT,AT,true})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M,N,FT,AT}
+function (integrator::ForcingLayerP{M,N,FT,AT,true})(qp::QPT2, problem_params::OptionalParameters, params::NetworkParameters) where {M,N,FT,AT}
     input = concatenate_array_with_parameters(qp.p, problem_params)
     ((q=qp.q, p=qp.p + integrator.model(input, params)), problem_params)
 end
 
-function (integrator::ForcingLayerQP{M,N,FT,AT,true})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M,N,FT,AT}
+function (integrator::ForcingLayerQP{M,N,FT,AT,true})(qp::QPT2, problem_params::OptionalParameters, params::NetworkParameters) where {M,N,FT,AT}
     input = concatenate_array_with_parameters(vcat(qp.q, qp.p), problem_params)
     ((q=qp.q, p=qp.p + integrator.model(input, params)), problem_params)
 end
 
-function (integrator::ForcingLayer)(qp_params::Tuple{<:QPTOAT2,<:OptionalParameters}, params::NeuralNetworkParameters)
+function (integrator::ForcingLayer)(qp_params::Tuple{<:QPTOAT2,<:OptionalParameters}, params::NetworkParameters)
     integrator(qp_params..., params)
 end
 
-function (integrator::ForcingLayer)(::TT, ::NeuralNetworkParameters) where {TT<:Tuple}
+function (integrator::ForcingLayer)(::TT, ::NetworkParameters) where {TT<:Tuple}
     error("The input is of type $(TT). This shouldn't be the case!")
 end
 
-function (integrator::ForcingLayer{M,N,FT,AT,Type,true})(qp::AbstractArray, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M,N,FT,AT,Type}
+function (integrator::ForcingLayer{M,N,FT,AT,Type,true})(qp::AbstractArray, problem_params::OptionalParameters, params::NetworkParameters) where {M,N,FT,AT,Type}
     @assert iseven(size(qp, 1))
     n = size(qp, 1) ÷ 2
     qp_split = assign_q_and_p(qp, n)
@@ -151,7 +151,7 @@ function (integrator::ForcingLayer{M,N,FT,AT,Type,true})(qp::AbstractArray, prob
     (vcat(evaluated.q, evaluated.p), problem_params)
 end
 
-function (integrator::ForcingLayer{M,N,FT,AT,Type,false})(qp::AbstractArray, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M,N,FT,AT,Type}
+function (integrator::ForcingLayer{M,N,FT,AT,Type,false})(qp::AbstractArray, problem_params::OptionalParameters, params::NetworkParameters) where {M,N,FT,AT,Type}
     @assert iseven(size(qp, 1))
     n = size(qp, 1) ÷ 2
     qp_split = assign_q_and_p(qp, n)
@@ -159,5 +159,5 @@ function (integrator::ForcingLayer{M,N,FT,AT,Type,false})(qp::AbstractArray, pro
     vcat(evaluated.q, evaluated.p)
 end
 
-(integrator::ForcingLayer)(qp::QPTOAT2, params::NeuralNetworkParameters) = integrator(qp, NullParameters(), params)
+(integrator::ForcingLayer)(qp::QPTOAT2, params::NetworkParameters) = integrator(qp, NullParameters(), params)
 (integrator::ForcingLayer)(qp::QPTOAT2, params::NamedTuple) = integrator(qp, NeuralNetworkParameters(params))

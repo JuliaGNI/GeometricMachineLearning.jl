@@ -106,7 +106,7 @@ se = SymbolicPotentialEnergy(dim, width, nhidden, activation; parameters = param
 network_params = NeuralNetwork(Chain(se); initializer = OneInitializer()).params
 
 built_grad = build_gradient(se)
-grad(qp::AbstractArray, problem_params::OptionalParameters, params::NeuralNetworkParameters) = built_grad(concatenate_array_with_parameters(qp, problem_params), params)
+grad(qp::AbstractArray, problem_params::OptionalParameters, params::NetworkParameters) = built_grad(concatenate_array_with_parameters(qp, problem_params), params)
 
 grad([0.5, 0.25], params, network_params)
 
@@ -189,35 +189,35 @@ function concatenate_array_with_parameters(qp::AbstractMatrix, params::AbstractV
     hcat((concatenate_array_with_parameters(@view(qp[:, i]), params[i]) for i in axes(params, 1))...)
 end
 
-function (integrator::SymplecticEulerA{M, N, FT, AT, false})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
+function (integrator::SymplecticEulerA{M, N, FT, AT, false})(qp::QPT2, problem_params::OptionalParameters, params::NetworkParameters) where {M, N, FT, AT}
     input = concatenate_array_with_parameters(qp.p, problem_params)
     (q = @view((qp.q + integrator.gradient_function(input, params))[:, 1]), p = qp.p)
 end
 
-function (integrator::SymplecticEulerB{M, N, FT, AT, false})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
+function (integrator::SymplecticEulerB{M, N, FT, AT, false})(qp::QPT2, problem_params::OptionalParameters, params::NetworkParameters) where {M, N, FT, AT}
     input = concatenate_array_with_parameters(qp.q, problem_params)
     (q = qp.q, p = @view((qp.p - integrator.gradient_function(input, params))[:, 1]))
 end
 
-function (integrator::SymplecticEulerA{M, N, FT, AT, true})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
+function (integrator::SymplecticEulerA{M, N, FT, AT, true})(qp::QPT2, problem_params::OptionalParameters, params::NetworkParameters) where {M, N, FT, AT}
     input = concatenate_array_with_parameters(qp.p, problem_params)
     ((q = @view((qp.q + integrator.gradient_function(input, params))[:, 1]), p = qp.p), problem_params)
 end
 
-function (integrator::SymplecticEulerB{M, N, FT, AT, true})(qp::QPT2, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT}
+function (integrator::SymplecticEulerB{M, N, FT, AT, true})(qp::QPT2, problem_params::OptionalParameters, params::NetworkParameters) where {M, N, FT, AT}
     input = concatenate_array_with_parameters(qp.q, problem_params)
     ((q = qp.q, p = @view((qp.p - integrator.gradient_function(input, params))[:, 1])), problem_params)
 end
 
-function (integrator::SymplecticEuler)(qp_params::Tuple{<:QPTOAT2, <:OptionalParameters}, params::NeuralNetworkParameters)
+function (integrator::SymplecticEuler)(qp_params::Tuple{<:QPTOAT2, <:OptionalParameters}, params::NetworkParameters)
     integrator(qp_params..., params)
 end
 
-function (integrator::SymplecticEuler)(::TT, ::NeuralNetworkParameters) where {TT <: Tuple}
+function (integrator::SymplecticEuler)(::TT, ::NetworkParameters) where {TT <: Tuple}
     error("The input is of type $(TT). This shouldn't be the case!")
 end
 
-function (integrator::SymplecticEuler{M, N, FT, AT, Type, true})(qp::AbstractArray, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT, Type}
+function (integrator::SymplecticEuler{M, N, FT, AT, Type, true})(qp::AbstractArray, problem_params::OptionalParameters, params::NetworkParameters) where {M, N, FT, AT, Type}
     @assert iseven(size(qp, 1))
     n = size(qp, 1)÷2
     qp_split = assign_q_and_p(qp, n)
@@ -225,7 +225,7 @@ function (integrator::SymplecticEuler{M, N, FT, AT, Type, true})(qp::AbstractArr
     (vcat(evaluated.q, evaluated.p), problem_params)
 end
 
-function (integrator::SymplecticEuler{M, N, FT, AT, Type, false})(qp::AbstractArray, problem_params::OptionalParameters, params::NeuralNetworkParameters) where {M, N, FT, AT, Type}
+function (integrator::SymplecticEuler{M, N, FT, AT, Type, false})(qp::AbstractArray, problem_params::OptionalParameters, params::NetworkParameters) where {M, N, FT, AT, Type}
     @assert iseven(size(qp, 1))
     n = size(qp, 1)÷2
     qp_split = assign_q_and_p(qp, n)
@@ -233,7 +233,7 @@ function (integrator::SymplecticEuler{M, N, FT, AT, Type, false})(qp::AbstractAr
     vcat(evaluated.q, evaluated.p)
 end
 
-(integrator::SymplecticEuler)(qp::QPTOAT2, params::NeuralNetworkParameters) = integrator(qp, NullParameters(), params)
+(integrator::SymplecticEuler)(qp::QPTOAT2, params::NetworkParameters) = integrator(qp, NullParameters(), params)
 
 """
     GeneralizedHamiltonianArchitecture <: HamiltonianArchitecture
@@ -265,20 +265,6 @@ struct GeneralizedHamiltonianArchitecture{AT, PT <: OptionalParameters} <: Hamil
     end
 end
 
-# The parameter-dependent layers pass `(state, system parameters)` down the chain, so `applychain`
-# has to accept that tuple as its data argument.
-#
-# TODO: type piracy -- `applychain` is AbstractNeuralNetworks' and every argument type here is
-# `Base`'s. ANN's own `applychain(layers, x, ps::Union{NamedTuple, NeuralNetworkParameters})` is
-# already generic in `x`; widening the `@generated` method the same way would remove the need.
-@generated function AbstractNeuralNetworks.applychain(layers::Tuple, x::Tuple{<:QPTOAT2, <:OptionalParameters}, ps::Tuple)
-    N = length(fieldtypes((layers)))
-    x_symbols = vcat([:x], [gensym() for _ in 1:N])
-    calls = [:(($(x_symbols[i + 1])) = layers[$i]($(x_symbols[i]), ps[$i])) for i in 1:N]
-    push!(calls, :(return $(x_symbols[N + 1])))
-    return Expr(:block, calls...)
-end
-
 index_qpt(qp::QPT2{T, 2}, i, j) where {T} = (q = qp.q[i, j], p = qp.p[i, j])
 index_gpt(qp::QPT2{T, 3}, i, j, k) where {T} = (q = qp.q[i, j, k], p = qp.p[i, j, k])
 
@@ -296,40 +282,59 @@ function Chain(ghnn_arch::GeneralizedHamiltonianArchitecture)
 end
 
 function (nn::NeuralNetwork{GT})(qp::QPTOAT2, problem_params::OptionalParameters) where {GT <: GeneralizedHamiltonianArchitecture}
-    nn.model(qp, problem_params, params(nn))
+    apply_parametric(nn.model, qp, problem_params, params(nn))
 end
 
-# TODO: type piracy -- `Chain` is AbstractNeuralNetworks' and so is every argument type of the four
-# functors below. A `ParametricChain` wrapper owned by GML, or these methods upstream, would fix it.
-function (model::Chain)(qp::QPTOAT2, problem_params::OptionalParameters, params::Union{NeuralNetworkParameters, NamedTuple})
-    model((qp, problem_params), params)
+@doc raw"""
+    apply_parametric(model, qp, system_parameters, ps)
+
+Apply `model` to `qp` with the parameters of the *system* alongside the state, and the network
+parameters `ps`.
+
+`system_parameters` is either one `OptionalParameters` for the whole input, or — for a batch drawn by
+[`ParametricDataLoader`](@ref) — one entry per sample.
+
+# Implementation
+
+A `Chain` of parameter-dependent layers threads `(state, system parameters)` from layer to layer, so
+this hands the pair to the ordinary two-argument `Chain` functor and lets
+`AbstractNeuralNetworks.applychain` carry it: since AbstractNeuralNetworks 0.7 that method leaves its
+data argument untyped, so a tuple needs no method of its own.
+
+This is a function of GML's rather than a three-argument functor on `Chain`, which would be type
+piracy — `Chain` and every argument type belong to AbstractNeuralNetworks.
+"""
+function apply_parametric(model::Chain, qp::QPTOAT2, problem_params::OptionalParameters,
+        ps::Union{NetworkParameters, NamedTuple})
+    model((qp, problem_params), ps)
 end
 
-function (c::Chain)(qp::QPT2{T, 3}, system_params::AbstractVector, ps::Union{NamedTuple, NeuralNetworkParameters})::QPT2{T} where {T}
+function apply_parametric(c::Chain, qp::QPT2{T, 3}, system_params::AbstractVector,
+        ps::Union{NamedTuple, NetworkParameters})::QPT2{T} where {T}
     @assert size(qp.q, 3) == length(system_params)
     @assert size(qp.q, 2) == 1
-    output_vectorwise = [c(index_gpt(qp, :, 1, i), system_params[i], ps) for i in axes(system_params, 1)]
+    output_vectorwise = [apply_parametric(c, index_gpt(qp, :, 1, i), system_params[i], ps)
+                         for i in axes(system_params, 1)]
     q_output = hcat([single_output_vectorwise.q for single_output_vectorwise ∈ output_vectorwise]...)
     p_output = hcat([single_output_vectorwise.p for single_output_vectorwise ∈ output_vectorwise]...)
-    (q = reshape(q_output, size(q_output, 1), 1, size(q_output, 2)), p = reshape(p_output, size(p_output, 1), 1, size(p_output, 2)))
+    (q = reshape(q_output, size(q_output, 1), 1, size(q_output, 2)),
+     p = reshape(p_output, size(p_output, 1), 1, size(p_output, 2)))
 end
 
-function (c::Chain)(qp::AbstractArray{T, 2}, system_params::AbstractVector, ps::Union{NamedTuple, NeuralNetworkParameters}) where {T}
+function apply_parametric(c::Chain, qp::AbstractArray{T, 2}, system_params::AbstractVector,
+        ps::Union{NamedTuple, NetworkParameters}) where {T}
     @assert _size(qp, 2) == length(system_params)
     qp_reshaped = reshape(qp, size(qp, 1), 1, length(system_params))
-    c(qp_reshaped, system_params, ps)
+    apply_parametric(c, qp_reshaped, system_params, ps)
 end
 
-function (c::Chain)(qp::AbstractArray{T, 3}, system_params::AbstractVector, ps::Union{NamedTuple, NeuralNetworkParameters}) where {T}
+function apply_parametric(c::Chain, qp::AbstractArray{T, 3}, system_params::AbstractVector,
+        ps::Union{NamedTuple, NetworkParameters}) where {T}
     @assert size(qp, 3) == length(system_params)
     @assert size(qp, 2) == 1
     @assert iseven(size(qp, 1))
     n = size(qp, 1)÷2
     qp_split = assign_q_and_p(qp, n)
-    c_output = c(qp_split, system_params, ps)::QPT
+    c_output = apply_parametric(c, qp_split, system_params, ps)::QPT
     reshape(vcat(c_output.q, c_output.p), 2n, length(system_params))
 end
-
-# TODO: type piracy -- `networkbackend` is AbstractNeuralNetworks' and `ApplyArray` is LazyArrays'.
-# Belongs in ANN, which already dispatches `networkbackend` on array types it does not own either.
-AbstractNeuralNetworks.networkbackend(::LazyArrays.ApplyArray) = AbstractNeuralNetworks.CPU()

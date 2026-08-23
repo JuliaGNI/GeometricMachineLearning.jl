@@ -5,7 +5,8 @@
 
 using GeometricMachineLearning
 using GeometricMachineLearning: ForcingLayerQ, ForcingLayerP, ForcingLayerQP,
-                                ParametricResNetLayer, WideResNetLayer, ParametricResNet
+                                ParametricResNetLayer, WideResNetLayer, ParametricResNet,
+                                apply_parametric
 using AbstractNeuralNetworks: params
 using Random: seed!
 using Test
@@ -100,7 +101,7 @@ end
 @testset "ParametricResNet" begin
     arch = ParametricResNet(DIM; width = WIDTH, n_blocks = 2, parameters = SYSTEM_PARAMETERS)
     nn = NeuralNetwork(arch)
-    out = nn.model(rand(DIM), SYSTEM_PARAMETERS, params(nn))
+    out = apply_parametric(nn.model, rand(DIM), SYSTEM_PARAMETERS, params(nn))
     @test size(out) == (DIM,)
     @test finite(out)
 
