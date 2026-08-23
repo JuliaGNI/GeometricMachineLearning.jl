@@ -10,9 +10,26 @@ concurrency:
     # Cancel intermediate builds: only if it is a pull request build.
     group: ${{ github.workflow }}-${{ github.ref }}
     cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+# Temporary: go straight to the General registry instead of through a package server.
+#
+# `AbstractNeuralNetworks` 0.7.0 was registered at 04:00 UTC on 2026-08-23 and the package servers
+# were still serving a registry that stopped at 0.6.4 hours later, so jobs died in `Pkg.resolve`
+# before running anything. It is not a matter of picking a better server: all eight official
+# mirrors, in both the conservative and the eager flavour, and the third-party storage mirrors too,
+# were serving the identical tree — the lag is at the storage server they all pull from. An empty
+# `JULIA_PKG_SERVER` makes Pkg clone the registry over git and fetch packages from their own
+# repositories, which resolves the same environment that resolves locally. Same workaround as
+# SymbolicNeuralNetworks.jl.
+#
+# The cost is speed: no CDN and no registry tarball. Remove this once the package servers have
+# caught up (check with `curl -sL https://pkg.julialang.org/registries` against
+# `gh api repos/JuliaRegistries/General/commits/master --jq .commit.tree.sha`), and check whether it
+# is still needed before assuming it is.
+env:
+  JULIA_PKG_SERVER: ""
 jobs:
     test:
-        name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ github.event_name }}
+        name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
         runs-on: ${{ matrix.os }}
         continue-on-error: ${{ matrix.experimental }}
         strategy:
@@ -25,52 +42,49 @@ jobs:
                     - ubuntu-latest
                     - macOS-latest
                     - windows-latest
+                # `default` is the runner's own architecture. Not `x64`: `macOS-latest` is aarch64,
+                # and setup-julia v3 refuses `x64` there unless `force-arch` is set, because that
+                # build runs under Rosetta.
+                arch:
+                    - default
                 experimental: [false]
                 include:
                     - version: "^1.13.0-0"
                       os: ubuntu-latest
+                      arch: default
                       experimental: true
                     - version: "^1.13.0-0"
                       os: macOS-latest
+                      arch: default
                       experimental: true
                     - version: "^1.13.0-0"
                       os: windows-latest
+                      arch: default
                       experimental: true
                     - version: "nightly"
                       os: ubuntu-latest
+                      arch: default
                       experimental: true
                     - version: "nightly"
                       os: macOS-latest
+                      arch: default
                       experimental: true
                     - version: "nightly"
                       os: windows-latest
+                      arch: default
                       experimental: true
         steps:
             - uses: actions/checkout@v7
-            # No `arch:` pin. `macOS-latest` is aarch64, and setup-julia refuses `x64` there
-            # unless `force-arch` is set — the x64 build would run under Rosetta, which is not
-            # the platform anyone deploys on. Each runner gets its native architecture.
             - uses: julia-actions/setup-julia@v3
               with:
                   version: ${{ matrix.version }}
-            # `cache-registries` defaults to true. The registry is the one thing that must not be
-            # reused between runs — the step below clones a current one, and a restored copy would
-            # only shadow it. Everything else is worth caching.
+                  arch: ${{ matrix.arch }}
+            # `cache-registries` defaults to true; with the git registry above, a restored copy is
+            # whatever the previous run cloned, which puts the staleness straight back. Artifacts,
+            # packages and compiled code are still cached, which is where the time goes.
             - uses: julia-actions/cache@v3
               with:
                   cache-registries: "false"
-            # Every Julia package server serves the same registry snapshot, and it can sit most of a
-            # day behind the registry: on 2026-08-23 all eight official mirrors, in both the
-            # conservative and the eager flavour, were still on General as of 18:04 the previous
-            # evening — so `AbstractNeuralNetworks` 0.7.0, registered at 04:00, was invisible and
-            # every job failed to resolve. Cloning General over git is the only way to see a version
-            # the moment it is registered. `JULIA_PKG_SERVER` is deliberately left alone, so package
-            # tarballs still come from the CDN; only the registry bypasses it.
-            #
-            # `julia-buildpkg` calls `Pkg.Registry.add()` on Julia >= 1.8, which installs the default
-            # registries only when none are present, so this step wins and nothing is duplicated.
-            - name: Take General from git rather than the package server
-              run: julia -e 'using Pkg; Pkg.Registry.add(Pkg.RegistrySpec(url = "https://github.com/JuliaRegistries/General.git"))'
             - uses: julia-actions/julia-buildpkg@v1
             - uses: julia-actions/julia-runtest@v1
             - uses: julia-actions/julia-processcoverage@v1
