@@ -61,13 +61,13 @@ import GeometricOptimizers: solve!
 # them as `GeometricOptimizers.AdamCache` where it needs to name one, and no longer re-exports them.
 
 import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer,
-                               AbstractExplicitCell, AbstractNeuralNetwork, NeuralNetwork,
+                               AbstractNeuralNetwork, NeuralNetwork,
                                UnknownArchitecture, FeedForwardLoss
-import AbstractNeuralNetworks: Chain, GridCell
+import AbstractNeuralNetworks: Chain
 # `input_dimension`/`output_dimension` are AbstractNeuralNetworks' since v0.6.4; the `Chain`
 # methods GML uses are added to them by SymbolicNeuralNetworks.
 import AbstractNeuralNetworks: input_dimension, output_dimension
-import AbstractNeuralNetworks: Dense, Linear, Recurrent
+import AbstractNeuralNetworks: Dense, Linear
 import AbstractNeuralNetworks: IdentityActivation, ZeroVector
 # `update!` used to be imported here too, from `AbstractNeuralNetworks`, and re-exported. GML never
 # added a method to it, so all the export did was shadow `GeometricOptimizers.update!` — which is
@@ -304,8 +304,6 @@ include("architectures/fixed_width_network.jl")
 include("architectures/hamiltonian_neural_network.jl")
 include("architectures/lagrangian_neural_network.jl")
 include("architectures/variable_width_network.jl")
-include("architectures/recurrent_neural_network.jl")
-include("architectures/LSTM_neural_network.jl")
 include("architectures/transformer_neural_network.jl")
 include("architectures/volume_preserving_feedforward.jl")
 include("architectures/volume_preserving_transformer.jl")
@@ -313,8 +311,6 @@ include("architectures/volume_preserving_transformer.jl")
 export HamiltonianArchitecture
 export LagrangianNeuralNetwork
 export SympNet, LASympNet, GSympNet
-export RecurrentNeuralNetwork
-export LSTMNeuralNetwork
 export ClassificationTransformer, ClassificationLayer
 export VolumePreservingFeedForward
 export SymplecticAutoencoder, PSDArch
