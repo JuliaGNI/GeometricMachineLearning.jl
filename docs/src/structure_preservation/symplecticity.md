@@ -115,7 +115,9 @@ It is important to note that symplecticity is a very strong property[^2] that ma
 ```@docs
 PoissonTensor
 GeometricMachineLearning.QPT
+GeometricMachineLearning.QPT2
 GeometricMachineLearning.QPTOAT
+GeometricMachineLearning.QPTOAT2
 ```
 
 ```@raw latex

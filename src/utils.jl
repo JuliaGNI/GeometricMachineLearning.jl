@@ -151,7 +151,16 @@ qp = (q = [1, 2], p = [3, 4])
 ```
 
 """
-const QPT{T} = NamedTuple{(:q, :p), Tuple{AT, AT}} where {T, AT <: AbstractArray{T}}
+const QPT{T} = NamedTuple{(:q, :p), Tuple{AT, AT}} where {T, N, AT <: AbstractArray{T, N}}
+
+@doc raw"""
+    QPT2
+
+[`QPT`](@ref) with the number of dimensions of the two arrays fixed, but their types allowed to
+differ. A `Chain` that splits an input array into `q` and `p` produces views of different types, so
+the layers of a parameter-dependent network dispatch on this rather than on `QPT`.
+"""
+const QPT2{T, N} = NamedTuple{(:q, :p), Tuple{AT₁, AT₂}} where {T, N, AT₁ <: AbstractArray{T, N}, AT₂ <: AbstractArray{T, N}}
 
 @doc raw"""
     QPTOAT
@@ -165,9 +174,82 @@ This could be data in ``(q, p)\in\mathbb{R}^{2d}`` form or come from an arbitrar
 """
 const QPTOAT{T} = Union{QPT{T}, AbstractArray{T}} where {T}
 
+@doc raw"""
+    QPTOAT2
+
+[`QPTOAT`](@ref) with the number of dimensions of the arrays fixed:
+
+```julia
+const QPTOAT2 = Union{QPT2, AbstractArray}
+```
+"""
+const QPTOAT2{T, N} = Union{QPT2{T, N}, AbstractArray{T, N}} where {T, N}
+
 Base.:≈(qp₁::QPT, qp₂::QPT) = (qp₁.q ≈ qp₂.q) & (qp₁.p ≈ qp₂.p)
+
+@doc raw"""
+    _flatten_system_parameters(parameters)
+    _flatten_system_parameters(T, parameters)
+
+Flatten the parameters of the *system* (not of the network) into a vector, together with the
+`NeuralNetworkParameters.ParameterLayout` that puts such a vector back into the original shape.
+
+The parameter-dependent architectures — [`GeneralizedHamiltonianArchitecture`](@ref) and the layers
+it is built from — feed the system parameters to the network as extra input components, so they have
+to be a vector. `NullParameters` flattens to an empty one, which makes the parameter-free case fall
+out of the same code path.
+
+The layout is a *value*, not a closure, so a layer can store it in a field and stay inferable.
+"""
+_flatten_system_parameters(parameters::NamedTuple) = flatten(parameters)
+_flatten_system_parameters(::NullParameters) = flatten(NamedTuple())
+_flatten_system_parameters(::Type{T}, parameters::NamedTuple) where {T} = flatten(T, parameters)
+_flatten_system_parameters(::Type{T}, ::NullParameters) where {T} = flatten(T, NamedTuple())
+
+"""
+    _unwrap_gradient(dp)
+
+Strip the `NetworkParameters` wrappers and the `(params = …,)` layers out of a gradient, so
+that it has the same shape as the parameters it belongs to.
+
+`Zygote` differentiates *through* the `NetworkParameters` struct, so the gradient of a
+parameter set comes back as a `NamedTuple` with a single `params` field. [`_get_params`](@ref) undoes
+that at the top level. The parameter-dependent architectures nest — a `SymplecticEuler` layer
+holds the parameters of a whole sub-network — so the unwrapping has to recurse.
+"""
+_unwrap_gradient(dp) = dp
+_unwrap_gradient(dp::NetworkParameters) = _unwrap_gradient(params(dp))
+_unwrap_gradient(dp::NamedTuple{(:params,)}) = _unwrap_gradient(dp.params)
+_unwrap_gradient(dp::NamedTuple) = map(_unwrap_gradient, dp)
 
 _eltype(x) = eltype(x)
 _eltype(ps::NamedTuple) = _eltype(ps[1])
 _eltype(ps::Tuple) = _eltype(ps[1])
 _eltype(ps::NetworkParameters) = _eltype(params(ps)[1])
+
+# `ParametricDataLoader` stores one `NamedTuple` of system parameters per trajectory, and they all
+# have to agree with the element type of the data.
+function _eltype(parameters::AbstractVector{<:NamedTuple})
+    T = _eltype(first(parameters))
+    for p in parameters
+        _eltype(p) == T || error("The parameters do not all have the same element type.")
+    end
+    T
+end
+
+# `size` that also works on `(q, p)` data, where the first axis is the concatenation of the two.
+_size(x) = size(x)
+function _size(qp::QPT)
+    q_size = _size(qp.q)
+    p_size = _size(qp.p)
+    @assert q_size == p_size
+    (2q_size[1], q_size[2:end]...)
+end
+
+_size(x, a::Integer) = size(x, a)
+function _size(qp::QPT, a::Integer)
+    q_size = _size(qp.q, a)
+    p_size = _size(qp.p, a)
+    @assert q_size == p_size
+    a == 1 ? 2q_size : q_size
+end

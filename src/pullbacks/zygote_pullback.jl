@@ -31,6 +31,12 @@ end
     ps -> _pullback.loss(model, ps, input_nt), ps)
 (_pullback::ZygotePullback)(ps, model, input_nt_output_nt::Tuple{<:QPTOAT, <:QPTOAT})::Tuple = Zygote.pullback(
     ps -> _pullback.loss(model, ps, input_nt_output_nt...), ps)
+# The parameter-dependent architectures take the system parameters as a third element of the
+# input tuple, either as a `NamedTuple` of parameters or as one vector entry per sample.
+(_pullback::ZygotePullback)(ps, model, input_output_params::Tuple{<:QPTOAT, <:QPTOAT, <:NamedTuple})::Tuple = Zygote.pullback(
+    ps -> _pullback.loss(model, ps, input_output_params...), ps)
+(_pullback::ZygotePullback)(ps, model, input_output_params::Tuple{<:QPTOAT, <:QPTOAT, <:AbstractVector})::Tuple = Zygote.pullback(
+    ps -> _pullback.loss(model, ps, input_output_params...), ps)
 
 """
     _get_contents(returned_pullback)

@@ -126,6 +126,22 @@ and `NetworkParameters` arrives in place of the last. Read *Removed (breaking)* 
   matrix cotangent through `_matrix_cotangent`, which fixes the rank *and* gives it the array type
   of the primal.
 
+- `concatenate_array_with_parameters(::AbstractMatrix, ::AbstractVector)` concatenated a batch with
+  `vcat` rather than `hcat`, collapsing it into a single long vector ([#207](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/207)).
+- **`ForcedGeneralizedHamiltonianArchitecture` could not be evaluated at all.** The
+  parameter-dependent `NeuralNetwork` functor and the `Optimizer` entry point were defined for
+  `GeneralizedHamiltonianArchitecture` only, and the two are siblings under `HamiltonianArchitecture`
+  rather than sub- and supertype, so `nn(x, μ)` fell through to the generic functor and read the
+  *system* parameters as the *network* parameters.
+- `ParametricResNet(::DataLoader, n_blocks, width; parameters = …)` accepted `parameters` and then
+  dropped it, silently building a network with no parameter dependence.
+- `SymbolicPullback(nn, ::ParametricLoss, μ)` now throws for `n_integrators > 1` instead of appearing
+  to hang. The symbolic expression grows *multiplicatively* with the number of integrators — measured
+  at `dim = 4, width = 4, nhidden = 1`, the loss is 3.4 ⋅ 10⁵ characters at one integrator and
+  1.4 ⋅ 10⁹ at two, and the build never returns. One integrator builds in ≈1.4 s, and the result
+  evaluates about 100× faster than the `Zygote` pullback. See
+  [#245](https://github.com/JuliaGNI/GeometricMachineLearning.jl/issues/245).
+
 ### Changed
 
 - **The kernel `rrule`s honour the ChainRules interface for thunked cotangents.** Twelve pullbacks
@@ -157,7 +173,44 @@ and `NetworkParameters` arrives in place of the last. Read *Removed (breaking)* 
   behind — the value of the innermost `h5save`, an implementation detail of the traversal. Returning
   the path is what `NeuralNetworkParameters.save(filename, ps)` does, so the two now agree.
 
+- **`SymplecticEuler`, `SymplecticEulerA` and `SymplecticEulerB` are no longer exported** ([#207](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/207)). The
+  names now belong to the layer type of the generalized architectures; the *training methods* they
+  used to name are `SymplecticEulerIntegrator`, `SymplecticEulerIntegratorA` and
+  `SymplecticEulerIntegratorB`. `SEuler`, `SEulerA` and `SEulerB`, which is how they are constructed,
+  are unchanged.
+- `src/architectures/hamiltonian_neural_network.jl` is split: it keeps the abstract
+  `HamiltonianArchitecture`, and `StandardHamiltonianArchitecture` moves to
+  `standard_hamiltonian_neural_network.jl`. `hamiltonian_vector_field` is narrowed from
+  `::HamiltonianArchitecture` to `::StandardHamiltonianArchitecture` accordingly ([#207](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/207)).
+
 ### Added
+
+**Parametric generalized Hamiltonian neural networks (PGHNNs)** ([#207](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/207)). A family of architectures
+whose forward pass takes the parameters of the *system* alongside the state, so one network covers a
+whole parameter range rather than a single problem instance.
+
+- **`GeneralizedHamiltonianArchitecture`** is implemented. It used to be a stub whose constructor
+  threw `error("GHNN still has to be implemented!")`. It composes `n_integrators` symplectic Euler
+  steps, each of which differentiates a learned kinetic or potential energy —
+  `SymbolicKineticEnergy` and `SymbolicPotentialEnergy`, built into an executable gradient by
+  `build_gradient`. The system parameters reach the network as extra input components, flattened
+  with `NeuralNetworkParameters`' `flatten`/`unflatten`.
+- **`ForcedGeneralizedHamiltonianArchitecture`** and **`ForcedSympNet`**, which add `ForcingLayer`s
+  for forcing and dissipation in the `q`, `p` or both coordinates, following the
+  Lagrange–d'Alembert integrator of [marsden2001discrete](@cite).
+- **`ParametricDataLoader`**, which carries one set of system parameters per trajectory and hands
+  the matching parameters to each sample of a batch. Built from an `EnsembleSolution` whose members
+  were integrated at different parameters.
+- **`ParametricLoss`**, `FeedForwardLoss` with the system parameters threaded through, and a
+  `SymbolicPullback(nn, ::ParametricLoss, system_params)` that differentiates it symbolically.
+  Building that pullback refuses `n_integrators > 1`: the symbolic expression grows
+  *multiplicatively* with the number of integrators, so the build does not finish. See
+  [#245](https://github.com/JuliaGNI/GeometricMachineLearning.jl/issues/245).
+- **`ParametricResNet`** and a widened **`ResNet`**, which now takes a `width` separate from the
+  system dimension and uses `WideResNetLayer` when the two differ — the non-structure-preserving
+  baseline the PGHNNs are compared against.
+- `QPT2` and `QPTOAT2`: `QPT`/`QPTOAT` with the array rank fixed but the two array *types* allowed to
+  differ, which is what splitting an input array into `q` and `p` produces.
 
 - **`load(NeuralNetwork, h5, arch, prototype)`** — a parameter set of the right shape to rebuild the
   structured leaves against. It is the form that needs no registration: `rebuild` has a prototype to

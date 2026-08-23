@@ -257,3 +257,25 @@ function (loss::ReducedLoss)(model::Chain, params::NetworkParameters,
         input::CT, output::CT) where {CT <: QPTOAT}
     _compute_loss(loss.decoder(model(loss.encoder(input), params)), output)
 end
+
+@doc raw"""
+    ParametricLoss()
+
+The loss for a network whose forward pass takes the parameters of the system alongside the input,
+i.e. the parameter-dependent architectures built on [`GeneralizedHamiltonianArchitecture`](@ref).
+
+It is `FeedForwardLoss` with the system parameters threaded through:
+
+```math
+L(\mathtt{input}, \mathtt{output}, \mu) = ||\mathcal{NN}(\mathtt{input}, \mu) - \mathtt{output}||.
+```
+
+This loss does not have any parameters.
+"""
+struct ParametricLoss <: NetworkLoss end
+
+function (loss::ParametricLoss)(model::Chain,
+        params::Union{NamedTuple, NetworkParameters}, input::CT, output::CT,
+        system_parameters::Union{NamedTuple, AbstractVector}) where {CT <: QPTOAT}
+    _compute_loss(apply_parametric(model, input, system_parameters, params), output)
+end

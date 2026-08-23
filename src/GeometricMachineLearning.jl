@@ -25,8 +25,12 @@ using InteractiveUtils
 using TimerOutputs
 import SymbolicNeuralNetworks
 import SymbolicNeuralNetworks: SymbolicPullback
-using SymbolicNeuralNetworks: derivative, SymbolicNeuralNetwork
+using SymbolicNeuralNetworks: derivative, SymbolicNeuralNetwork, AbstractSymbolicNeuralNetwork
 import Symbolics
+# The system parameters of a parameter-dependent architecture are flattened into the network's
+# input. Only the two conversions are brought in: the module name would clash with
+# `AbstractNeuralNetworks.NeuralNetworkParameters`, the *type* GML re-exports.
+using NeuralNetworkParameters: flatten, unflatten
 
 # The manifolds, the structured matrix types, the global sections and the retractions are
 # `GeometricOptimizers`' — GML used to carry near-verbatim copies of all eleven types, which Julia
@@ -185,8 +189,11 @@ export StiefelManifold, GrassmannManifold, Manifold
 export rgrad, metric, check
 
 include("layers/sympnets.jl")
+include("layers/forcing_dissipation_layers.jl")
 include("layers/bias_layer.jl")
 include("layers/resnet.jl")
+include("layers/wide_resnet.jl")
+include("layers/parametric_resnet_layer.jl")
 include("layers/manifold_layer.jl")
 include("layers/stiefel_layer.jl")
 include("layers/grassmann_layer.jl")
@@ -295,11 +302,13 @@ export arch
 include("backends/backends.jl")
 include("backends/lux.jl")
 
-export NetworkLoss, TransformerLoss, FeedForwardLoss, AutoEncoderLoss, ReducedLoss, HNNLoss
+export NetworkLoss, TransformerLoss, FeedForwardLoss, AutoEncoderLoss, ReducedLoss, HNNLoss,
+       ParametricLoss
 
 #INCLUDE ARCHITECTURES
 include("architectures/neural_network_integrator.jl")
 include("architectures/resnet.jl")
+include("architectures/parametric_resnet.jl")
 include("architectures/transformer_integrator.jl")
 include("architectures/standard_transformer_integrator.jl")
 include("architectures/sympnet.jl")
@@ -308,6 +317,8 @@ include("architectures/symplectic_autoencoder.jl")
 include("architectures/psd.jl")
 include("architectures/fixed_width_network.jl")
 include("architectures/hamiltonian_neural_network.jl")
+include("architectures/standard_hamiltonian_neural_network.jl")
+include("architectures/generalized_hamiltonian_neural_network.jl")
 include("architectures/lagrangian_neural_network.jl")
 include("architectures/variable_width_network.jl")
 include("architectures/transformer_neural_network.jl")
@@ -321,7 +332,8 @@ export ClassificationTransformer, ClassificationLayer
 export VolumePreservingFeedForward
 export SymplecticAutoencoder, PSDArch
 export HamiltonianArchitecture, StandardHamiltonianArchitecture,
-       GeneralizedHamiltonianArchitecture
+       GeneralizedHamiltonianArchitecture, ForcedGeneralizedHamiltonianArchitecture
+export ForcedSympNet
 
 export solve!, encoder, decoder
 
@@ -339,12 +351,17 @@ export AbstractPullback, ZygotePullback, SymbolicPullback
 include("pullbacks/zygote_pullback.jl")
 include("pullbacks/symbolic_hnn_pullback.jl")
 
-export DataLoader
+export DataLoader, ParametricDataLoader
 export Batch, optimize_for_one_epoch!
 include("data_loader/tensor_assign.jl")
 include("data_loader/matrix_assign.jl")
 include("data_loader/batch.jl")
+# before `optimize.jl`, whose training loop takes either data loader
+include("data_loader/parametric_data_loader.jl")
 include("data_loader/optimize.jl")
+
+include("architectures/forced_sympnet.jl")
+include("architectures/forced_generalized_hamiltonian_neural_network.jl")
 
 # INCLUDE TRAINING parameters
 
@@ -393,8 +410,6 @@ export train!
 
 include("training/train.jl")
 
-export SymplecticEuler
-export SymplecticEulerA, SymplecticEulerB
 export SEuler, SEulerA, SEulerB
 
 include("training_method/symplectic_euler.jl")
