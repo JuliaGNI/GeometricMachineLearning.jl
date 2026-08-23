@@ -85,7 +85,9 @@ import AbstractNeuralNetworks: GlorotUniform
 import AbstractNeuralNetworks: params, architecture, model, dim
 import AbstractNeuralNetworks: AbstractPullback, NetworkLoss, _compute_loss
 import AbstractNeuralNetworks: networkbackend
-import AbstractNeuralNetworks: save, load
+# `save` and `load` are `NeuralNetworkParameters`' generics; `AbstractNeuralNetworks` 0.7 only
+# re-binds them. Reach for them where they are defined.
+import NeuralNetworkParameters: save, load
 # export params, architetcure, model
 export dim
 import NNlib: σ, sigmoid, softmax

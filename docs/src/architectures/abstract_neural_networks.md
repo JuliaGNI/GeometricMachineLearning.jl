@@ -47,7 +47,7 @@ and we see that it consists of two layers: a [`GradientLayerQ`](@ref) and a [`Gr
 
 ## Saving and Loading
 
-`GeometricMachineLearning` extends `AbstractNeuralNetworks` with HDF5-backed save and load methods for `NeuralNetwork`. These handle GML-specific parameter types (`StiefelManifold`, `SymmetricMatrix`, `SkewSymMatrix`) transparently.
+`GeometricMachineLearning` adds HDF5-backed `save` and `load` methods for `NeuralNetwork` to the generics `NeuralNetworkParameters` defines. Writing and reading the parameter set itself belongs to that package; the structured parameter types (`StiefelManifold`, `SymmetricMatrix`, `SkewSymMatrix`, …) come back as themselves because `GeometricOptimizers`, which owns them, registers how each is rebuilt. Passing a prototype parameter set to `load` rebuilds against it and needs no registration at all.
 
 ```@docs
 save(::HDF5.H5DataStore, ::NeuralNetwork)

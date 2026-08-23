@@ -4,7 +4,6 @@ using HDF5
 using LinearAlgebra: qr
 import Random
 import AbstractNeuralNetworks: params, changebackend
-import NeuralNetworkParameters: NetworkParameters
 
 Random.seed!(42)
 
@@ -168,6 +167,40 @@ end
 end
 
 # ---------------------------------------------------------------------------
+# Loading against a prototype — the form that consults no registry
+# ---------------------------------------------------------------------------
+
+# `load(NeuralNetwork, …, prototype)` rebuilds each structured leaf with `rebuild(prototype_leaf,
+# storage)` instead of looking its stored type name up in `NeuralNetworkParameters`' registry. It is
+# the path that works for a type nobody registered, so it needs a test of its own rather than riding
+# on the roundtrips above, which all go through the registry.
+@testset "save/load roundtrip: against a prototype parameter set" begin
+    arch     = SymplecticAutoencoder(10, 4)
+    nn       = NeuralNetwork(arch)
+    x        = rand(10)
+    y_before = nn(x)
+
+    # a second network of the same architecture: same shapes, different numbers
+    prototype = params(NeuralNetwork(arch))
+
+    mktempdir() do dir
+        path = joinpath(dir, "sae_prototype.h5")
+        save(path, nn)
+        nn2 = load(NeuralNetwork, path, arch, prototype)
+
+        @test _ps_eq(params(nn), params(nn2))
+        @test nn2(x) ≈ y_before
+        @test params(nn2)[5].weight isa StiefelManifold
+
+        # and on an already-open store
+        nn3 = HDF5.h5open(path, "r") do h5
+            load(NeuralNetwork, h5, arch, prototype)
+        end
+        @test nn3(x) ≈ y_before
+    end
+end
+
+# ---------------------------------------------------------------------------
 # Files written before the traversal moved out of this package
 # ---------------------------------------------------------------------------
 
@@ -175,23 +208,31 @@ end
 # fields under their own names and recording no key order. `NeuralNetworkParameters` recognises the
 # tag and rebuilds through the registry `GeometricOptimizers` fills, so those files still load —
 # which is the whole reason the duplicated reader here could be deleted rather than kept alongside.
+# `SymmetricMatrix` and `StiefelManifold` are the two shapes the old writer produced, and
+# `GeometricOptimizers` normalises them through different helpers — `S`/`n` for a storage matrix,
+# a bare `A` for a manifold element — so both legs need reading back.
 @testset "a file in the old gml_type layout still loads" begin
-    arch = LASympNet(4)          # LinearLayer → SymmetricMatrix, the tagged case
-    nn   = NeuralNetwork(arch)
-    ps   = params(nn)
-    x    = rand(4)
-    y    = nn(x)
+    for (name, arch, dimin) in (("LASympNet (SymmetricMatrix)", LASympNet(4), 4),
+                                ("SymplecticAutoencoder (StiefelManifold)",
+                                 SymplecticAutoencoder(10, 4), 10))
+        @testset "$name" begin
+            nn = NeuralNetwork(arch)
+            ps = params(nn)
+            x  = rand(dimin)
+            y  = nn(x)
 
-    mktempdir() do dir
-        path = joinpath(dir, "legacy.h5")
-        HDF5.h5open(path, "w") do h5
-            _write_legacy(h5, params(ps), "/")
+            mktempdir() do dir
+                path = joinpath(dir, "legacy.h5")
+                HDF5.h5open(path, "w") do h5
+                    _write_legacy(h5, params(ps), "/")
+                end
+                nn2 = load(NeuralNetwork, path, arch)
+
+                @test keys(params(nn2)) == keys(ps)
+                @test _ps_eq(ps, params(nn2))
+                @test nn2(x) ≈ y
+            end
         end
-        nn2 = load(NeuralNetwork, path, arch)
-
-        @test keys(params(nn2)) == keys(ps)
-        @test _ps_eq(ps, params(nn2))
-        @test nn2(x) ≈ y
     end
 end
 
