@@ -29,6 +29,13 @@ breaking release).
   regardless. The transformer-derived architectures are what GML maintains for time series; the docs
   had flagged the LSTM implementation as likely to be deprecated since it was written.
 
+  `import AbstractNeuralNetworks: IdentityActivation, ZeroVector` went with them.
+  `Chain(::RecurrentNeuralNetwork)` was the only thing in `src/` that named `IdentityActivation`,
+  and `ZeroVector`'s last use moved to `legacy/` in `ec8e8fa5`. Neither was ever exported by GML,
+  and `IdentityActivation` is an `AbstractNeuralNetworks` export that the blanket `using` at the top
+  of the module already provides, so `GeometricMachineLearning.IdentityActivation` still resolves —
+  the line was redundant, not load-bearing.
+
 ### Fixed
 
 - **Zygote 0.7 silently zeroed every gradient that flows through `assign_q_and_p`.** Its `rrule`

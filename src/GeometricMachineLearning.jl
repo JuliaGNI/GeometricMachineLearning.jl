@@ -68,7 +68,6 @@ import AbstractNeuralNetworks: Chain
 # methods GML uses are added to them by SymbolicNeuralNetworks.
 import AbstractNeuralNetworks: input_dimension, output_dimension
 import AbstractNeuralNetworks: Dense, Linear
-import AbstractNeuralNetworks: IdentityActivation, ZeroVector
 # `update!` used to be imported here too, from `AbstractNeuralNetworks`, and re-exported. GML never
 # added a method to it, so all the export did was shadow `GeometricOptimizers.update!` — which is
 # `GeometricBase.update!`, a different generic function, and the one that actually has methods for

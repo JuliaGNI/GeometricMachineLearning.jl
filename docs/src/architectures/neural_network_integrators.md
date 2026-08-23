@@ -39,7 +39,7 @@ where `sl` is short for *sequence length* and `pw` is short for *prediction wind
 
 In `GeometricMachineLearning` all multi-step methods, as is the case with one-step methods, are explicit. There are essentially two ways to construct multi-step methods with neural networks: the older one is using recurrent neural networks such as long short-term memory cells (LSTMs) [hochreiter1997long](@cite) and the newer one is using transformer neural networks [vaswani2017attention](@cite). Both of these approaches have been successfully employed to learn multi-step methods (see [fresca2021comprehensive, lee2020model](@cite) for the former and [hemmasian2023reduced, solera2023beta, brantner2025volume](@cite) for the latter), but because the transformer architecture exhibits superior performance on modern hardware and can be imbued with geometric properties we almost always use a transformer-derived architecture when dealing with time series[^2].
 
-[^2]: `GeometricMachineLearning` used to ship an LSTM implementation. It was removed in favour of the transformer-derived architectures, which are the ones maintained for time series here. 
+[^2]: `GeometricMachineLearning` used to ship an LSTM implementation. It has been removed.
 
 Explicit multi-step methods derived from the transformer are always subtypes of the type [`TransformerIntegrator`](@ref) in `GeometricMachineLearning`. In `GeometricMachineLearning` the [standard transformer](@ref "Standard Transformer"), the [volume-preserving transformer](@ref "Volume-Preserving Transformer") and the [linear symplectic transformer](@ref "Linear Symplectic Transformer") are implemented. 
 
