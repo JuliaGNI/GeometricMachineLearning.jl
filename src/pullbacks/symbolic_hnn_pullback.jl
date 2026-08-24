@@ -14,6 +14,7 @@ Hamiltonian *vector field*, which has the dimension of the network's *input*. Th
 below is the upstream one with that one dimension corrected.
 """
 function SymbolicPullback(arch::HamiltonianArchitecture)
+    _check_symbolic_pullback_is_tractable(arch)
     nn = SymbolicNeuralNetwork(arch)
     loss = HNNLoss(arch)
     soutput = Symbolics.variables(:y, 1:input_dimension(nn.model))
@@ -49,28 +50,45 @@ additively. Measured at `dim = 4, width = 4, nhidden = 1`:
 So one integrator is fine — and worth it, the built function evaluates about 100 times faster than
 the `Zygote` pullback — while two are hopeless. Rather than let that look like a hang, refuse it.
 
-Removing the limit means not tracing the inlined chain at all: composing the pullback layer by layer
-from the gradients each `SymplecticEuler` has already built.
+The way out is not to trace the inlined chain at all, but to compose the pullback layer by layer.
+`SymbolicNeuralNetworks` 0.6 added that construction
+([SNN #49](https://github.com/JuliaGNI/SymbolicNeuralNetworks.jl/issues/49)) and 0.7 widened its seam
+so that it reaches a `SymplecticEuler`, which threads the parameters of the system on to the next layer
+and therefore returns a `Tuple` rather than an array
+([SNN #54](https://github.com/JuliaGNI/SymbolicNeuralNetworks.jl/issues/54); the layer says how it
+meets the seam in `src/architectures/generalized_hamiltonian_neural_network.jl`). So
 
-`SymbolicNeuralNetworks` 0.6 added exactly that construction
-([SNN #49](https://github.com/JuliaGNI/SymbolicNeuralNetworks.jl/issues/49)), but it does not reach
-this case yet. Its seam is a plain `Vector{Num}`, so it assumes every layer maps an array to an
-array; a `SymplecticEuler` built with `return_parameters = true` passes the system parameters on to
-the next layer and returns a `Tuple`, which `layer_seed` cannot seed. `composes_layerwise` says the
-chain decomposes, so `layerwise = :auto` commits to that path and then raises — which is
-[SNN #54](https://github.com/JuliaGNI/SymbolicNeuralNetworks.jl/issues/54). Until the seam can carry
-what a layer passes alongside the state, this limit stays. See
-[issue #245](https://github.com/JuliaGNI/GeometricMachineLearning.jl/issues/245).
+```julia
+SymbolicNeuralNetworks.SymbolicPullback(SymbolicNeuralNetwork(arch), FeedForwardLoss())
+```
+
+builds for any `n_integrators` — four steps for two integrators in about 1.5 s, against an expression
+of 10⁹ terms that never finished — and for an architecture built with `parameters` it is the *only*
+construction that builds, since the monolithic one traces the chain from a plain vector and the layers
+then default the system parameters away.
+
+This function guards the two constructors *in this file*, which still build one expression for the
+whole network by hand, and the limit is still real for them:
+
+- `SymbolicPullback(arch)` uses [`HNNLoss`](@ref), which never applies the model — it evaluates the
+  pre-built Hamiltonian vector field and reads the parameters directly. It is therefore not a function
+  of the chain's prediction at all, which is what a layerwise seed has to start from, so the layerwise
+  construction cannot express it.
+- `SymbolicPullback(nn, loss, system_params)` predates the widened seam. [`ParametricLoss`](@ref) now
+  declares its `loss_expression`, so the upstream constructor can seed it; migrating this one onto it
+  would also retire the input concatenation below, and is
+  [issue #245](https://github.com/JuliaGNI/GeometricMachineLearning.jl/issues/245)'s remaining half.
 """
 function _check_symbolic_pullback_is_tractable(arch)
     n = _n_symplectic_integrators(arch)
     n > 1 && throw(ArgumentError(
-        "cannot build a `SymbolicPullback` for an architecture with $(n) integrators: the symbolic " *
-        "expression grows multiplicatively with `n_integrators`, and already exceeds 10⁹ terms at " *
-        "two, so the build does not finish. Use `ZygotePullback(loss)`, which is what `Optimizer` " *
-        "uses by default, or reduce `n_integrators` to 1. See GeometricMachineLearning issue #245, " *
-        "and SymbolicNeuralNetworks issues #49 and #54 for the upstream construction that will " *
-        "eventually lift this."))
+        "cannot build *this* `SymbolicPullback` for an architecture with $(n) integrators: it builds " *
+        "one symbolic expression for the whole network, which grows multiplicatively with " *
+        "`n_integrators` and already exceeds 10⁹ terms at two, so the build does not finish. " *
+        "`SymbolicNeuralNetworks.SymbolicPullback(SymbolicNeuralNetwork(arch), FeedForwardLoss())` " *
+        "composes the pullback layer by layer instead and has no such limit; `ZygotePullback(loss)`, " *
+        "which is what `Optimizer` uses by default, is the other option. See " *
+        "GeometricMachineLearning issue #245 and SymbolicNeuralNetworks issues #49 and #54."))
     nothing
 end
 

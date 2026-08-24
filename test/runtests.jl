@@ -49,6 +49,9 @@ end
 @safetestset "Parametric and forced layers and architectures                                  " begin
     include("generalized_hamiltonian_neural_networks/parametric_layers_and_architectures_test.jl")
 end
+@safetestset "Layerwise symbolic pullback for a PGHNN                                          " begin
+    include("generalized_hamiltonian_neural_networks/layerwise_symbolic_pullback_test.jl")
+end
 @safetestset "Manifold Neural Network Layers                                                  " begin
     include("layers/manifold_layers.jl")
 end
