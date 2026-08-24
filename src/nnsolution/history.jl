@@ -52,7 +52,7 @@ end
 Base.getindex(history::History, n::Int) = hdata(history)[n]
 Base.iterate(history::History, state = 1) = state > size(history) ? nothing : (history[state],state+1)
 
-function _add(history::History, sg::SingleHistory)
+function _push_history!(history::History, sg::SingleHistory)
     
     history.nbtraining += 1 
 

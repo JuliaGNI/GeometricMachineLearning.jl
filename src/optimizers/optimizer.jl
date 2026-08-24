@@ -15,8 +15,7 @@ end
 
 _gml_rgrad(x::Manifold, dp) = rgrad(x, dp)
 _gml_rgrad(x, dp) = dp
-_gml_rgrad(x::NamedTuple, dp::NamedTuple) =
-    GeometricOptimizers.apply_toNT(_gml_rgrad, x, dp)
+_gml_rgrad(x::NamedTuple, dp::NamedTuple) = map(_gml_rgrad, x, dp)
 
 (g::_GMLGradient{T})(x::GeometricOptimizers.ArrayNamedTuple{T}) where {T} =
     _gml_rgrad(x, g.dp)
@@ -52,10 +51,27 @@ _adapt_method_to_T(method, ::Type) = method
 _use_go_cache(method, x) =
     _is_go_native_method(method) && x isa GeometricOptimizers.OptimizerSolution
 
+# A `NetworkParameters` is always a tree of layers to descend into, never a single
+# `GeometricOptimizers` leaf, so its branch comes *first* — ahead of `_use_go_cache`.
+#
+# Today that ordering is invisible: `NetworkParameters` is not one of the types
+# `GeometricOptimizers.OptimizerSolution` unions, so `_use_go_cache` is false at the root anyway and
+# control reaches the container branch either way. It stops being invisible the moment
+# `GeometricOptimizers` adopts the container and adds it to that union. Then `_use_go_cache` would be
+# true at the *root*, and a whole network would get one cache instead of one per layer -- silently, and
+# with `_leaf_optim_step!` handed the entire tree. Asking the structural question before the
+# capability question is what makes the shape of the cache depend on the shape of the parameters
+# rather than on which types upstream happens to accept this month.
+#
+# The `NamedTuple` branch stays *after* `_use_go_cache`, and that asymmetry is the point: a layer is a
+# `NamedTuple` of arrays, which is exactly what one `GeometricOptimizers` cache is for. Hoisting it
+# too would descend into the individual weights and give each its own `GMLEuclideanState`.
 function _make_optimizer_cache(method, x)
-    if _use_go_cache(method, x)
-        GeometricOptimizers.OptimizerCache(_adapt_method_to_T(method, _eltype(x)), x)
-    elseif x isa NamedTuple || x isa NetworkParameters
+    if x isa NetworkParameters
+        NamedTuple{keys(x)}(Tuple(_make_optimizer_cache(method, x[k]) for k in keys(x)))
+    elseif _use_go_cache(method, x)
+        GeometricOptimizers.OptimizerCache(_adapt_method_to_T(method, parameter_eltype(x)), x)
+    elseif x isa NamedTuple
         NamedTuple{keys(x)}(Tuple(_make_optimizer_cache(method, x[k]) for k in keys(x)))
     else
         GMLEuclideanState(x)
@@ -63,9 +79,11 @@ function _make_optimizer_cache(method, x)
 end
 
 function _make_optimizer_state(method, x)
-    if _use_go_cache(method, x)
-        GeometricOptimizers.OptimizerState(_adapt_method_to_T(method, _eltype(x)), x)
-    elseif x isa NamedTuple || x isa NetworkParameters
+    if x isa NetworkParameters
+        NamedTuple{keys(x)}(Tuple(_make_optimizer_state(method, x[k]) for k in keys(x)))
+    elseif _use_go_cache(method, x)
+        GeometricOptimizers.OptimizerState(_adapt_method_to_T(method, parameter_eltype(x)), x)
+    elseif x isa NamedTuple
         NamedTuple{keys(x)}(Tuple(_make_optimizer_state(method, x[k]) for k in keys(x)))
     else
         GMLEuclideanState(x)
@@ -197,7 +215,7 @@ end
 
 function _go_update_leaf!(cache, state, local_grad,
         method::GeometricOptimizers.OptimizerMethod, ps_leaf)
-    T = _eltype(ps_leaf)
+    T = parameter_eltype(ps_leaf)
     GeometricOptimizers.update!(cache, state, local_grad,
                                 GeometricOptimizers.NoHessian{T}(), ps_leaf)
 end
@@ -206,7 +224,7 @@ end
 function _leaf_optim_step!(cache::GeometricOptimizers.OptimizerCache,
         state::GeometricOptimizers.OptimizerState,
         dp_leaf, ps_leaf, λY_leaf, method, retraction, step_size)
-    T = _eltype(ps_leaf)
+    T = parameter_eltype(ps_leaf)
     local_grad = _GMLGradient{T, typeof(dp_leaf)}(dp_leaf)
     adapted = _adapt_method_to_T(method, T)
     state.iterations += 1
@@ -248,13 +266,35 @@ function _leaf_optim_step!(cache::GMLEuclideanState, state::GMLEuclideanState,
     nothing
 end
 
-# Recursive dispatcher over the parameter tree
+# Recursive dispatcher over the *cache* tree.
+#
+# Deliberately hand-written rather than `NeuralNetworkParameters.foreachparameters`, which walks a
+# parameter tree. Two reasons, and both are load-bearing:
+#
+#  - The recursion is keyed on `caches`, and stops where the cache stops. A cache sits at the *layer*
+#    level, so a layer's `NamedTuple` of weights arrives at `_leaf_optim_step!` whole, which is what
+#    one `GeometricOptimizers` cache is for. `foreachparameters` recurses on the leaf protocol and
+#    would descend past the layer into the individual weights, re-pairing every cache with the wrong
+#    object.
+#  - `λY` is broadcast, not zipped: a single `GlobalSection` may stand in for a whole subtree, which
+#    the ternary below expresses. `foreachparameters` has no such rule — it takes `values` of each
+#    trailing argument, so a bare `GlobalSection` beside a `NamedTuple` of caches is a `MethodError`.
+#
+# The `nothing` skip is the one thing the two have in common, and it is one line here.
+#
+# The `λY` test names both container types for the same reason `_make_optimizer_cache` asks the
+# structural question first: a section tree is something to descend into, whichever type carries it.
+# Today only a `NamedTuple` ever arrives, because the `GlobalSection(::NetworkParameters)` method at
+# the top of this file unwraps the container before `GeometricOptimizers` sees it. That method is
+# GML's to give back once `GeometricOptimizers` depends on `NeuralNetworkParameters` — and its
+# replacement there is expected to return a *container* of sections, at which point `isa NamedTuple`
+# alone would be false and every layer would be handed the whole tree instead of its own section.
 function _tree_optim_step!(caches, states, dp, ps, λY, method, retraction, step_size)
     if caches isa NamedTuple
         for k in keys(caches)
             dp_k = dp[k]
             dp_k === nothing && continue
-            λY_k = λY isa NamedTuple ? λY[k] : λY
+            λY_k = λY isa Union{NamedTuple, NetworkParameters} ? λY[k] : λY
             _tree_optim_step!(caches[k], states[k], dp_k, ps[k], λY_k,
                               method, retraction, step_size)
         end

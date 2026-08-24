@@ -9,9 +9,135 @@ breaking release).
 > [!NOTE]
 > Entries for 0.1.0 through 0.4.8 were reconstructed from git history, the release tags and the
 > merged pull requests, not written at the time. They are accurate about *what* changed and are
-> deliberately coarser about detail than the 0.5.0 and 0.6.0 sections below, which were written
+> deliberately coarser about detail than the 0.5.0 and later sections below, which were written
 > alongside the work. Where a release removed exported names the list is given; where it is a
 > reconstruction of intent, it says so.
+
+## [0.7.0]
+
+**The traversal of a parameter set now belongs to the package that owns the parameters, and the
+traversal of a `NamedTuple` belongs to `Base`.** 0.6.0 handed the HDF5 walk over to
+[NeuralNetworkParameters.jl][nnp] and `GeometricOptimizers`; this release finishes the job for the
+remaining walks. `map_to_cpu` becomes one walk, `apply_toNT` turns out to have been `Base.map` all
+along, and `_eltype` turns out to have been a hand-rolled `parameter_eltype`.
+
+**It also makes the optimizer cache immune to a change coming in `GeometricOptimizers`**, which is
+the half of this release with no visible effect today — see *Fixed*.
+
+### Removed (breaking)
+
+- **`apply_toNT` is gone from the export list and from the package. It was `Base.map`.**
+
+  ```julia
+  apply_toNT(f, a, b)   →   map(f, a, b)
+  ```
+
+  `map` over `NamedTuple`s takes any number of arguments and already throws
+  `ArgumentError: Named tuple names do not match.` on mismatched *or* reordered keys — which is what
+  the hand-rolled `@assert keys(ps[1]) == keys(p)` was approximating, except that Base's check cannot
+  be compiled out the way an `@assert` can. Heterogeneous values map fine, so a `StiefelManifold`
+  beside an ordinary `Matrix` is no obstacle. Verified on Julia 1.10, the compat floor, as well as on
+  1.13.
+
+  `_norm`, `_diff` and `_add` use `map` directly; that is the faithful translation, not a
+  simplification, because `_diff` and `_add` recurse through their own `NamedTuple` methods and
+  `_norm` divides by `√length` one level down. `GeometricOptimizers` carried a
+  character-identical copy of the same function, reached from here by qualified call; that copy goes
+  in its own release, and this change is what frees it.
+
+- **`_eltype` is gone; `NeuralNetworkParameters.parameter_eltype` replaces it.** The two are not the
+  same function — `_eltype` returned the element type of the *first* leaf and read a structured leaf's
+  dense interface, where `parameter_eltype` promotes across every leaf and descends through
+  `freeparameters` — but at the four call sites this package had they cannot disagree, and it is worth
+  saying why rather than claiming a fix that could not fire.
+
+  `_eltype` was only ever asked for a `T` in two places: under `_use_go_cache`, which requires
+  `x isa GeometricOptimizers.OptimizerSolution`, and on the `ps_leaf` that reaches
+  `_leaf_optim_step!`, which is such an `x`. And `OptimizerSolution{T}` is homogeneous in `T` by
+  construction — its `NamedTuple` arm is
+  `ArrayNamedTuple{T} = NamedTuple{S,<:Tuple{Vararg{AbstractArray{T}}}}`. A layer mixing `Float32`
+  and `Float64` weights therefore *fails* that test and recurses to one cache per weight, so a
+  first-leaf answer and a promoted one were never different answers. What the substitution buys is
+  four fewer methods to own and the upstream spelling at the point where the walk is upstream's.
+  Unexported, so this is breaking only for code reaching into the package.
+
+- **`add!(::NamedTuple, ::NamedTuple, ::NamedTuple)` is gone, and `_add` and `add!` are gone from the
+  export list.** The container arm of `add!` had no caller in the package, the tests, the docs or the
+  scripts, and `AbstractNeuralNetworks.add!` — whose generic it was a method of — is about a
+  destination and two summands, which a parameter *tree* is not. `add!` remains available from the
+  package that owns the generic, this one only adding methods for the structured matrix types:
+
+  ```julia
+  using AbstractNeuralNetworks: add!
+  ```
+
+  `_add`'s two siblings `_norm` and `_diff` were never exported, and they are the two of the three
+  that anything in `src/` actually calls; `_add` was the odd one out. Qualified, it still works.
+
+- **`_add(::History, ::SingleHistory)` is now `_push_history!`.** Unexported and internal, one caller.
+  Two unrelated meanings on one name is one too many, and the new name says that it mutates its first
+  argument, which the old one hid.
+
+### Changed
+
+- **`map_to_cpu` is one walk instead of eight methods.** `NeuralNetworkParameters.mapstorage` hands a
+  function the storage of a leaf and rebuilds the leaf around the result, so the five methods that
+  existed to unwrap and reconstruct a `StiefelManifold`, a `SymmetricMatrix`, a `SkewSymMatrix` and
+  the two triangular types collapse into one, the two that recursed into a `NetworkParameters` and a
+  layer go with them, and the plain-array one is all that is left — as `_to_host`, the function handed
+  to the walk. `GeometricOptimizers` supplies the protocol for its own types, so nothing here knows
+  which structured types exist and one added upstream is covered without a change on this side.
+
+  `mapstorage` and not `mapparameters`: the latter hands the function *whole* leaves, which would
+  still need a method per type to reach the storage. The `NeuralNetwork` method stays — the docs
+  tutorials and several scripts call it on a whole network.
+
+  It was **untested**, which is why the rewrite comes with `test/map_to_cpu_tests.jl`: that every
+  structured leaf comes back as the type it went in as, that the `n` a structured leaf carries
+  survives although it is not in its storage, that element types are preserved, that the leaves are
+  copies rather than the same arrays, and that a whole network keeps its architecture, model and
+  backend.
+
+### Fixed
+
+- **The shape of the optimizer cache no longer depends on which types `GeometricOptimizers` happens
+  to accept.** `_make_optimizer_cache` and `_make_optimizer_state` asked the capability question
+  (`x isa GeometricOptimizers.OptimizerSolution`, via `_use_go_cache`) *before* the structural one, so
+  a `NetworkParameters` reached the container branch only because it is not currently a member of that
+  union. The moment `GeometricOptimizers` adopts the container — which is the next thing it does — the
+  root of a network would have matched `_use_go_cache` instead, and a whole network would have been
+  given one cache rather than one per layer, with `_leaf_optim_step!` handed the entire tree and
+  `_GMLGradient` handed a `NetworkParameters` it has no method for. A `MethodError` on the first step
+  of every training run, from a change that reads as purely additive upstream.
+
+  The `NetworkParameters` branch now comes first. The `NamedTuple` branch deliberately stays *after*
+  `_use_go_cache`, and that asymmetry is the fix rather than an oversight: a layer is a `NamedTuple` of
+  arrays, which is exactly what one `GeometricOptimizers` cache is for, so hoisting it too would
+  descend into the individual weights. Behaviour today is unchanged, which is what makes it safe to
+  land before the upstream release rather than with it.
+
+  `_tree_optim_step!` had the same inversion in its descent into `λY`, and it is fixed the same way:
+  the test now names both container types, because a tree of sections is something to descend into
+  whichever type carries it. Today only a `NamedTuple` arrives, since this package's own
+  `GlobalSection(::NetworkParameters)` unwraps the container first — but that method is the one it
+  gives back next, and its replacement upstream returns a container, at which point a single
+  `isa NamedTuple` would have handed every layer the whole tree instead of its own section.
+
+  `test/optimizers/utils/optimization_step.jl` is the regression net, and pins the shape rather than
+  the run: a network's cache and state are `NamedTuple`s keyed by its layers, with one
+  `GeometricOptimizers` cache and one state per layer — not one for the root, and not one per weight.
+  `test/optimizers/structured_array_parameters.jl`, four architectures × four methods, covers the step
+  itself.
+
+### Documentation
+
+- `_tree_optim_step!` records why it is *not* written with
+  `NeuralNetworkParameters.foreachparameters`, having been an obvious candidate. It walks the **cache**
+  tree, which stops at the layer where a cache sits, whereas `foreachparameters` walks the leaf
+  protocol and would descend past the layer into individual weights and re-pair every cache with the
+  wrong object. And `λY` is broadcast rather than zipped — a single `GlobalSection` may stand in for a
+  whole subtree — which `foreachparameters` cannot express, because it takes `values` of each trailing
+  argument. The `nothing`-skip is the only thing the two have in common, and it is one line here.
 
 ## [0.6.0] — 2026-08-24
 

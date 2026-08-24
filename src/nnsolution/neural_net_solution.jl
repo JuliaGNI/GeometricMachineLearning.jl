@@ -25,7 +25,7 @@ struct NeuralNetSolution{TNN <: NeuralNetwork, TP <: AbstractProblem, timestep <
     end
 end
 
-update_history(nns::NeuralNetSolution, sg::SingleHistory) = _add(nns.history, sg)
+update_history(nns::NeuralNetSolution, sg::SingleHistory) = _push_history!(nns.history, sg)
 
 @inline nn(nns::NeuralNetSolution) = nns.nn
 @inline problem(nns::NeuralNetSolution) = nns.problem

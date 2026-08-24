@@ -28,19 +28,12 @@ develop(t::NamedTuple) = vcat([[develop(e)...] for e in t]...)
 
 _tuplediff(t₁::Tuple, t₂::Tuple) = tuple(setdiff(Set(t₁), Set(t₂))...)
 
-function apply_toNT(fun, ps::NamedTuple...)
-    for p in ps
-        @assert keys(ps[1]) == keys(p)
-    end
-    NamedTuple{keys(ps[1])}(fun(p...) for p in zip(ps...))
-end
-
 # overload norm
 function _norm(dx::NT) where {
         AT <: AbstractArray, NT <: NamedTuple{(:q, :p), Tuple{AT, AT}}}
     (norm(dx.q) + norm(dx.p)) / √2
 end # we need this because of a Zygote problem
-_norm(dx::NamedTuple) = sum(apply_toNT(norm, dx)) / √length(dx)
+_norm(dx::NamedTuple) = sum(map(norm, dx)) / √length(dx)
 _norm(A::AbstractArray) = norm(A)
 
 # overloaded +/- operation
@@ -48,9 +41,9 @@ function _diff(dx₁::NT,
         dx₂::NT) where {AT <: AbstractArray, NT <: NamedTuple{(:q, :p), Tuple{AT, AT}}}
     (q = dx₁.q - dx₂.q, p = dx₁.p - dx₂.p)
 end # we need this because of a Zygote problem
-_diff(dx₁::NamedTuple, dx₂::NamedTuple) = apply_toNT(_diff, dx₁, dx₂)
+_diff(dx₁::NamedTuple, dx₂::NamedTuple) = map(_diff, dx₁, dx₂)
 _diff(A::AbstractArray, B::AbstractArray) = A - B
-_add(dx₁::NamedTuple, dx₂::NamedTuple) = apply_toNT(_add, dx₁, dx₂)
+_add(dx₁::NamedTuple, dx₂::NamedTuple) = map(_add, dx₁, dx₂)
 _add(A::AbstractArray, B::AbstractArray) = A + B
 
 function add!(C::AbstractVecOrMat, A::AbstractVecOrMat, B::AbstractVecOrMat)
@@ -58,9 +51,11 @@ function add!(C::AbstractVecOrMat, A::AbstractVecOrMat, B::AbstractVecOrMat)
     C .= A + B
 end
 
-function add!(dx₁::NamedTuple, dx₂::NamedTuple, dx₃::NamedTuple)
-    apply_toNT(add!, dx₁, dx₂, dx₃)
-end
+# There used to be a `NamedTuple` arm of `add!` here, recursing with `apply_toNT`. Nothing in the
+# package, the tests, the docs or the scripts ever called it, and `AbstractNeuralNetworks.add!` --
+# whose generic this is -- is about a destination and two summands, which a parameter *tree* is not.
+# The `AbstractVecOrMat` base case above and the structured-type methods in
+# `src/arrays/gml_extensions.jl` are the arms this package genuinely owns.
 
 # Type pyracy!!
 function Base.:+(a::Float64, b::Tuple{Float64})
@@ -167,7 +162,3 @@ const QPTOAT{T} = Union{QPT{T}, AbstractArray{T}} where {T}
 
 Base.:≈(qp₁::QPT, qp₂::QPT) = (qp₁.q ≈ qp₂.q) & (qp₁.p ≈ qp₂.p)
 
-_eltype(x) = eltype(x)
-_eltype(ps::NamedTuple) = _eltype(ps[1])
-_eltype(ps::Tuple) = _eltype(ps[1])
-_eltype(ps::NetworkParameters) = _eltype(params(ps)[1])
