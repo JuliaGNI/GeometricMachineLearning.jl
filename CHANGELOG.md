@@ -285,6 +285,17 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 ### Changed
 
+- **`_check_symbolic_pullback_is_tractable` says where to go instead**, and now guards
+  `SymbolicPullback(arch)` as well as `SymbolicPullback(nn, ::ParametricLoss, system_params)`
+  ([#251](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/251)). Both still build one
+  expression for the whole network, so the `n_integrators > 1` limit is still real for them — the
+  first because `HNNLoss` evaluates the pre-built Hamiltonian vector field rather than the chain, so
+  there is no prediction for a layerwise seed to start from. `SymbolicPullback(arch)` previously had
+  no guard and failed with an obscure `Symbolics` error instead.
+
+  Migrating `SymbolicPullback(nn, ::ParametricLoss, system_params)` onto the upstream constructor —
+  which would also retire its concatenation of the system parameters onto the network input — is
+  [#245](https://github.com/JuliaGNI/GeometricMachineLearning.jl/issues/245)'s remaining half.
 - `src/architectures/hamiltonian_neural_network.jl` is split: it keeps the abstract
   `HamiltonianArchitecture`, and `StandardHamiltonianArchitecture` moves to
   `standard_hamiltonian_neural_network.jl`. `hamiltonian_vector_field` is narrowed from
@@ -910,6 +921,44 @@ whole parameter range rather than a single problem instance.
   baseline the PGHNNs are compared against.
 - `QPT2` and `QPTOAT2`: `QPT`/`QPTOAT` with the array rank fixed but the two array *types* allowed to
   differ, which is what splitting an input array into `q` and `p` produces.
+- **`SymplecticEuler` declares how it meets the layerwise pullback's seam**, which is what
+  [#245](https://github.com/JuliaGNI/GeometricMachineLearning.jl/issues/245) was waiting for
+  ([#251](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/251)).
+
+  `SymbolicNeuralNetworks` composes the pullback of a chain layer by layer, putting fresh symbolic
+  variables between two layers instead of inlining one layer's expression into the next. Its seam was a
+  plain vector, so it assumed every layer maps an array to an array; a `SymplecticEuler` built with
+  `return_parameters = true` threads the parameters of the system on to the next layer and returns a
+  `Tuple`, which could not be seeded at all
+  ([SNN #54](https://github.com/JuliaGNI/SymbolicNeuralNetworks.jl/issues/54)).
+  SymbolicNeuralNetworks 0.7 widened the seam; `SymplecticEuler` now carries `SymbolicEnergy`'s
+  `parameter_length` and `parameter_layout` and implements `carried_variables`, `seam_value`,
+  `state_expressions` and `seam_arguments`.
+
+  So
+
+  ```julia
+  SymbolicNeuralNetworks.SymbolicPullback(SymbolicNeuralNetwork(arch), FeedForwardLoss())
+  ```
+
+  builds for any `n_integrators` — four steps for two integrators in about 1.5 s, against a monolithic
+  expression of 10⁹ terms that never finished — and agrees with `Zygote` to machine precision.
+
+  For an architecture built with `parameters` it is the *only* construction that builds at all. The
+  monolithic one traces the chain from a plain vector, so every layer defaults its system parameters to
+  `NullParameters` and the energy network's first `Dense` is then short of the components it reads; the
+  build fails inside `Symbolics`. The layerwise construction is given the pair
+  `(state, system parameters)` and differentiates the map that was actually asked for.
+
+  It has one restriction the monolithic construction does not. The sweep runs the forward pass by
+  *calling* each layer, so it inherits `SymplecticEuler`'s own single-sample limit — the `@view(…)[:, 1]`
+  in the layer, and the `@assert size(qp, 2) == 1` in `concatenate_array_with_parameters`. A batch of
+  more than one sample has to be taken sample by sample, as `apply_parametric` already does.
+- **`ParametricLoss` declares its `loss_expression`.** The layerwise construction starts its sweep from
+  ∂L/∂ŷ and cannot guess one here — it applies a loss in its four-argument form, and this loss has five
+  — so it would have declined and fallen back to the monolithic construction, which for a
+  parameter-dependent architecture does not build. The declaration restates `_compute_loss`, which is
+  what the functor itself uses.
 
 - **`scripts/reproduction/hnn_pendulum_simulation.jl` integrates the vector field an HNN learned and
   plots the energy drift.** This is the one capability the `legacy/hnn/` deletion would otherwise
