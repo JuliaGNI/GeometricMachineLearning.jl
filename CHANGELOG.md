@@ -24,7 +24,22 @@ remaining walks. `map_to_cpu` loses six per-type methods, `apply_toNT` turns out
 **It also makes the optimizer cache immune to a change coming in `GeometricOptimizers`**, which is
 the half of this release with no visible effect today — see *Fixed*.
 
+**Requires `GeometricOptimizers` 0.5**, which is where the structured types' `changebackend` and
+`GlobalSection` methods now live.
+
 ### Removed (breaking)
+
+- **The five `changebackend` methods for `GeometricOptimizers`' types are gone, and so is
+  `GeometricOptimizers.GlobalSection(::NetworkParameters)`.** Both were type piracy of the same shape:
+  the generic belongs to one package, the types to another, and this package owns neither. Both now
+  live in `GeometricOptimizers` 0.5, which is what the compat floor moves for.
+
+  The `changebackend` methods also sat inside the **HDF5 extension**, which had nothing to do with
+  HDF5 — so `changebackend(GPU(), nn)` on a network with a manifold weight was a `MethodError` unless
+  HDF5 happened to be loaded. Upstream covers the horizontal lifts too, which were missing here.
+
+  `test/hdf5_support.jl` needs no edit: it imports `changebackend` from `AbstractNeuralNetworks`, and
+  upstream's methods answer by dispatch. Nothing under `src/` referenced `changebackend` at all.
 
 - **`apply_toNT` is gone from the export list and from the package. It was `Base.map`.**
 
