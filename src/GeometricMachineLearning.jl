@@ -172,8 +172,10 @@ include("activations/softmax.jl")
 # are these needed?
 export UnknownProblem, NothingFunction
 
-# + operation has been overloaded to work with NamedTuples!
-export _add, add!
+# `_add`, `_diff` and `_norm` are the `NamedTuple`/`(q, p)` arms of addition, subtraction and the
+# norm, and none of the three is exported: they are helpers of `src/reduced_system/`, not surface.
+# `_add` was the odd one out until 0.7.0, as was `add!` -- which is `AbstractNeuralNetworks`' generic
+# and available from there, this package only adding methods for the structured matrix types.
 
 # GPU specific operations
 export convert_to_dev, Device, CPUDevice

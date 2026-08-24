@@ -281,12 +281,20 @@ end
 #    trailing argument, so a bare `GlobalSection` beside a `NamedTuple` of caches is a `MethodError`.
 #
 # The `nothing` skip is the one thing the two have in common, and it is one line here.
+#
+# The `λY` test names both container types for the same reason `_make_optimizer_cache` asks the
+# structural question first: a section tree is something to descend into, whichever type carries it.
+# Today only a `NamedTuple` ever arrives, because the `GlobalSection(::NetworkParameters)` method at
+# the top of this file unwraps the container before `GeometricOptimizers` sees it. That method is
+# GML's to give back once `GeometricOptimizers` depends on `NeuralNetworkParameters` — and its
+# replacement there is expected to return a *container* of sections, at which point `isa NamedTuple`
+# alone would be false and every layer would be handed the whole tree instead of its own section.
 function _tree_optim_step!(caches, states, dp, ps, λY, method, retraction, step_size)
     if caches isa NamedTuple
         for k in keys(caches)
             dp_k = dp[k]
             dp_k === nothing && continue
-            λY_k = λY isa NamedTuple ? λY[k] : λY
+            λY_k = λY isa Union{NamedTuple, NetworkParameters} ? λY[k] : λY
             _tree_optim_step!(caches[k], states[k], dp_k, ps[k], λY_k,
                               method, retraction, step_size)
         end

@@ -2,7 +2,7 @@
 #
 # One walk covers every leaf. `mapstorage` hands `f` the `freeparameters` of a leaf and `rebuild`s the
 # leaf around the result, so a `StiefelManifold` comes back a `StiefelManifold` and a `SymmetricMatrix`
-# keeps its `n` -- which is precisely what the six per-type methods this replaces were doing by hand.
+# keeps its `n` -- which is precisely what the five per-type methods this replaces were doing by hand.
 # `GeometricOptimizers` supplies the protocol for its own structured types, so nothing here has to know
 # which of them exist, and a type added upstream is covered without a change on this side.
 #

@@ -34,7 +34,7 @@ function train(dev::Device, n_steps, batch_size)
         Base.Threads.@threads for i in 2:batch_size
             dat_in = data_input[batch[i]]
             dat_out = data_input[batch[i]]
-            dp = _add(dp, Zygote.gradient(ps -> loss(dat_in, dat_out, ps, st), ps)[1])
+            dp = GeometricMachineLearning._add(dp, Zygote.gradient(ps -> loss(dat_in, dat_out, ps, st), ps)[1])
         end
 
         GeometricMachineLearning.optimization_step!(opt, model, ps, dp)

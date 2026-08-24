@@ -51,10 +51,11 @@ function add!(C::AbstractVecOrMat, A::AbstractVecOrMat, B::AbstractVecOrMat)
     C .= A + B
 end
 
-# No caller in the package; kept because `add!` is `AbstractNeuralNetworks`' generic and this is the
-# container arm of it, next to the `AbstractVecOrMat` base case above and the structured-type methods
-# in `src/arrays/gml_extensions.jl`.
-add!(dx₁::NamedTuple, dx₂::NamedTuple, dx₃::NamedTuple) = map(add!, dx₁, dx₂, dx₃)
+# There used to be a `NamedTuple` arm of `add!` here, recursing with `apply_toNT`. Nothing in the
+# package, the tests, the docs or the scripts ever called it, and `AbstractNeuralNetworks.add!` --
+# whose generic this is -- is about a destination and two summands, which a parameter *tree* is not.
+# The `AbstractVecOrMat` base case above and the structured-type methods in
+# `src/arrays/gml_extensions.jl` are the arms this package genuinely owns.
 
 # Type pyracy!!
 function Base.:+(a::Float64, b::Tuple{Float64})
