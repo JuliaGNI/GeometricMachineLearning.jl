@@ -23,7 +23,7 @@ function check_adam_cache(C::GeometricOptimizers.OptimizerCache{T}, tol=T(10) * 
     _check_slahm_zero(C.δ, tol)
     _check_slahm_zero(C.m₁, tol)
 end
-check_adam_cache(B::NamedTuple) = apply_toNT(check_adam_cache, B)
+check_adam_cache(B::NamedTuple) = map(check_adam_cache, B)
 
 @doc raw"""
 This checks if the momentum cache was set up in the right way.
@@ -34,7 +34,7 @@ function check_momentum_cache(C::GeometricOptimizers.OptimizerCache{T}, tol=T(10
     @test C isa MomentumCache
     _check_slahm_zero(C.δ, tol)
 end
-check_momentum_cache(B::NamedTuple) = apply_toNT(check_momentum_cache, B)
+check_momentum_cache(B::NamedTuple) = map(check_momentum_cache, B)
 
 @doc raw"""
 This checks if the gradient cache was set up in the right way.
@@ -44,7 +44,7 @@ function check_gradient_cache(C::GeometricOptimizers.OptimizerCache{T}) where T
     @test C isa GradientCache
     @test hasproperty(C, :δ)
 end
-check_gradient_cache(B::NamedTuple) = apply_toNT(check_gradient_cache, B)
+check_gradient_cache(B::NamedTuple) = map(check_gradient_cache, B)
 
 @doc raw"""
 This checks if all the caches are set up in the right way for the `MultiHeadAttention` layer with Stiefel weights.

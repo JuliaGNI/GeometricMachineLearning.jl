@@ -12,7 +12,7 @@ function check_setup(A::AbstractMatrix{T}, tol=T(10)*eps(T)) where T
     @test typeof(A) <: StiefelManifold
     @test check(A) < tol
 end
-check_setup(ps::NamedTuple) = apply_toNT(check_setup, ps)
+check_setup(ps::NamedTuple) = map(check_setup, ps)
 check_setup(ps::NetworkParameters) = check_setup(GeometricMachineLearning.params(ps))
 
 @doc raw"""
@@ -22,7 +22,7 @@ function check_grad_setup(B::AbstractMatrix{T}, tol=T(10)*eps(T)) where T
     @test typeof(B) <: StiefelLieAlgHorMatrix
     @test LinearAlgebra.norm(B) < tol
 end
-check_grad_setup(gx::NamedTuple) = apply_toNT(check_grad_setup, gx)
+check_grad_setup(gx::NamedTuple) = map(check_grad_setup, gx)
 check_grad_setup(B::MomentumCache) = check_grad_setup(B.δ)
 
 @doc raw"""

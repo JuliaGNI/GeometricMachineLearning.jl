@@ -101,6 +101,9 @@ end
 @safetestset "Optimizers with structured (non-manifold) weights                               " begin
     include("optimizers/structured_array_parameters.jl")
 end
+@safetestset "map_to_cpu                                                                      " begin
+    include("map_to_cpu_tests.jl")
+end
 @info "Starting data and data-loader tests"
 @safetestset "Data                                                                            " begin
     include("data/test_data.jl")

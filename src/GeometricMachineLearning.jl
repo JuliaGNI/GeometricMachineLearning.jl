@@ -5,7 +5,13 @@ using AbstractNeuralNetworks
 # under the name `NetworkParameters`. The import is selective rather than a bare `using`: that
 # package also exports `flatten`/`unflatten` and the leaf protocol, none of which this package
 # extends — `GeometricOptimizers` carries the protocol for the structured matrices.
+#
+# Two things do come from there rather than being written again here: `mapstorage`, which reaches the
+# storage of a structured leaf and rebuilds the leaf around the result (`src/map_to_cpu.jl`), and
+# `parameter_eltype`, which promotes over the leaves of a set. A plain `NamedTuple` of layers is
+# walked with `Base.map`, which needs nothing from anybody.
 import NeuralNetworkParameters: NetworkParameters
+using NeuralNetworkParameters: mapstorage, parameter_eltype
 using ChainRulesCore
 # `sqeuclidean` is the default distance of every `TrainingMethod` in `src/training_method/`.
 using Distances
@@ -167,7 +173,7 @@ include("activations/softmax.jl")
 export UnknownProblem, NothingFunction
 
 # + operation has been overloaded to work with NamedTuples!
-export _add, apply_toNT, add!
+export _add, add!
 
 # GPU specific operations
 export convert_to_dev, Device, CPUDevice

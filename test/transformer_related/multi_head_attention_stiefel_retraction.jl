@@ -16,7 +16,7 @@ function check_retraction_geodesic(A::AbstractMatrix{T}, tol=eps(T)) where T
     @test typeof(A_retracted) <: StiefelManifold
     @test LinearAlgebra.norm(A_retracted - StiefelProjection(A_retracted)) < tol
 end
-check_retraction_geodesic(cache::NamedTuple) = apply_toNT(check_retraction_geodesic, cache)
+check_retraction_geodesic(cache::NamedTuple) = map(check_retraction_geodesic, cache)
 check_retraction_geodesic(B::MomentumCache) = check_retraction_geodesic(B.δ)
 
 @doc raw"""
@@ -27,7 +27,7 @@ function check_retraction_cayley(A::AbstractMatrix{T}, tol=eps(T)) where T
     @test typeof(A_retracted) <: StiefelManifold
     @test LinearAlgebra.norm(A_retracted - StiefelProjection(A_retracted)) < tol
 end
-check_retraction_cayley(cache::NamedTuple) = apply_toNT(check_retraction_cayley, cache)
+check_retraction_cayley(cache::NamedTuple) = map(check_retraction_cayley, cache)
 check_retraction_cayley(B::MomentumCache) = check_retraction_cayley(B.δ)
 
 @doc raw"""
