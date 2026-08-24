@@ -279,3 +279,14 @@ function (loss::ParametricLoss)(model::Chain,
         system_parameters::Union{NamedTuple, AbstractVector}) where {CT <: QPTOAT}
     _compute_loss(apply_parametric(model, input, system_parameters, params), output)
 end
+
+# The layerwise `SymbolicPullback` starts its sweep from ∂L/∂ŷ, so it needs the loss as a function of
+# the prediction and the target. It cannot guess one here: the guess applies the loss in its
+# four-argument form, and this loss has five arguments, so `loss_seed` would decline and the
+# construction fall back to the monolithic one -- which for a parameter-dependent architecture does not
+# build at all, since it traces the chain from a plain vector and the layers then default the system
+# parameters away.
+#
+# `_compute_loss` is the relation the functor above makes, so declaring it is a restatement and not a
+# second definition that could drift.
+SymbolicNeuralNetworks.loss_expression(::ParametricLoss, ŷ, y) = _compute_loss(ŷ, y)
