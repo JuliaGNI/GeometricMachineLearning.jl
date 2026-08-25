@@ -50,14 +50,19 @@ _use_go_cache(method, x) =
 # A `NetworkParameters` is always a tree of layers to descend into, never a single
 # `GeometricOptimizers` leaf, so its branch comes *first* — ahead of `_use_go_cache`.
 #
-# Today that ordering is invisible: `NetworkParameters` is not one of the types
-# `GeometricOptimizers.OptimizerSolution` unions, so `_use_go_cache` is false at the root anyway and
-# control reaches the container branch either way. It stops being invisible the moment
-# `GeometricOptimizers` adopts the container and adds it to that union. Then `_use_go_cache` would be
-# true at the *root*, and a whole network would get one cache instead of one per layer -- silently, and
-# with `_leaf_optim_step!` handed the entire tree. Asking the structural question before the
-# capability question is what makes the shape of the cache depend on the shape of the parameters
+# That ordering is **load-bearing**, and was not always. It used to be invisible, because
+# `NetworkParameters` was not one of the types `GeometricOptimizers.OptimizerSolution` unions, so
+# `_use_go_cache` was false at the root anyway and control reached the container branch either way.
+# `GeometricOptimizers` 0.5.0 added the container to that union, so `_use_go_cache` is now true at the
+# *root*: without the test above, a whole network would get one cache instead of one per layer --
+# silently, and with `_leaf_optim_step!` handed the entire tree. Asking the structural question before
+# the capability question is what makes the shape of the cache depend on the shape of the parameters
 # rather than on which types upstream happens to accept this month.
+#
+# One cache for the whole network is the better end state and is what
+# `GeometricOptimizers` 0.6.0 makes possible; getting there means giving `_GMLGradient` a
+# `NetworkParameters` method and dropping `_tree_optim_step!`, which is a change of behaviour -- one
+# `GlobalSection` tree and one `Q` across every layer -- and so its own release.
 #
 # The `NamedTuple` branch stays *after* `_use_go_cache`, and that asymmetry is the point: a layer is a
 # `NamedTuple` of arrays, which is exactly what one `GeometricOptimizers` cache is for. Hoisting it
@@ -143,7 +148,7 @@ function Optimizer(method::GeometricOptimizers.OptimizerMethod, nn::NeuralNetwor
 end
 
 function Optimizer(method::GeometricOptimizers.OptimizerMethod,
-        ps::Union{NamedTuple, NetworkParameters};
+        ps::ParameterSet;
         retraction = GeometricOptimizers.cayley,
         step_size = _default_step_size(method))
     Optimizer(method, _make_optimizer_cache(method, ps), _make_optimizer_state(method, ps),
@@ -290,7 +295,7 @@ function _tree_optim_step!(caches, states, dp, ps, λY, method, retraction, step
         for k in keys(caches)
             dp_k = dp[k]
             dp_k === nothing && continue
-            λY_k = λY isa Union{NamedTuple, NetworkParameters} ? λY[k] : λY
+            λY_k = λY isa ParameterSet ? λY[k] : λY
             _tree_optim_step!(caches[k], states[k], dp_k, ps[k], λY_k,
                               method, retraction, step_size)
         end

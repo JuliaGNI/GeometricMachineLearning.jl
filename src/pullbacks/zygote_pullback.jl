@@ -39,9 +39,9 @@ Unwrap the single element `Zygote` may wrap a pullback result in.
 
 Together with [`_get_params`](@ref) this makes up [`_processing`](@ref).
 """
-_get_contents(nt::Union{NamedTuple, NetworkParameters}) = nt
-_get_contents(nt::Tuple{<:Union{NamedTuple, NetworkParameters}}) = nt[1]
-function _get_contents(nt::AbstractVector{<:Union{NamedTuple, NetworkParameters}})
+_get_contents(nt::ParameterSet) = nt
+_get_contents(nt::Tuple{<:ParameterSet}) = nt[1]
+function _get_contents(nt::AbstractVector{<:ParameterSet})
     length(nt) == 1 || throw(ArgumentError(
         "the pullback returned $(length(nt)) parameter sets, expected one."))
     nt[1]
