@@ -363,6 +363,21 @@ makedocs(;
     pages = output_type == :html ? _html_pages : _latex_pages,
 )
 
+# The tutorials' `@setup` blocks read pre-trained parameters from `docs/src/tutorials/*.h5` so that
+# building the manual does not have to retrain the networks. Documenter copies every non-Markdown
+# file under `src/` into the output, so those weights were published along with the manual — ~3.8 MB
+# per release, and `gh-pages` accumulates a copy for every version. No page links to them (the
+# `load` calls all live in hidden `@setup` blocks), so they are build *inputs* only. Drop them from
+# `build/` here rather than earlier: `makedocs` needs them on disk while it evaluates the blocks.
+const _build_only_data_extensions = (".h5", ".jld2")
+
+for (root, _, files) in walkdir(joinpath(@__DIR__, "build"))
+    for file in files
+        any(ext -> endswith(file, ext), _build_only_data_extensions) || continue
+        rm(joinpath(root, file))
+    end
+end
+
 deploydocs(;
     repo   = "github.com/JuliaGNI/GeometricMachineLearning.jl",
     devurl = "latest",
