@@ -14,15 +14,19 @@ using LaTeXStrings
 # This is what keeps those references *references* rather than prose. Closes issue C3, which asked
 # for the same thing for `𝔄`, `cayley` and `update!`.
 #
-# The inventory is given as a *committed file* rather than as a URL. A URL is fetched and takes
-# precedence over the fallback file, and the anchors these references need — the moved chapters —
-# only exist in GeometricOptimizers' published inventory once its 0.4.0 docs have deployed. Reading
-# the committed copy makes this build independent of that ordering, and of the network. Regenerate it
-# after an upstream docs change with
+# The inventory is given as a *committed file* as well as a URL. The URL is fetched and takes
+# precedence; the committed copy is what makes this build work offline, and what keeps a docs build
+# from failing because upstream happened to be mid-deploy. Regenerate it after an upstream docs
+# release — from the *deployed* inventory of the version `[compat]` requires, pinned rather than
+# `stable/`, so the command reproduces the same file after the next release:
 #
-#     julia --project=docs -e 'using DocInventories; save("docs/inventories/GeometricOptimizers.toml",
-#         Inventory("../GeometricOptimizers/docs/build/objects.inv";
+#     julia --project=docs -e 'using DocInventories; DocInventories.save(
+#         "docs/inventories/GeometricOptimizers.toml",
+#         Inventory("https://juliagni.github.io/GeometricOptimizers.jl/v0.5.0/objects.inv";
 #                   root_url = "https://juliagni.github.io/GeometricOptimizers.jl/stable/"))'
+#
+# `save` is not exported — it has to be qualified. `root_url` is not written to the TOML either; it
+# is `InterLinks` below that supplies the root at build time.
 #
 links = InterLinks(
     "GeometricOptimizers" => (

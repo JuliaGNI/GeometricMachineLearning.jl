@@ -1,497 +1,519 @@
 # DocInventory version 1
 project = "GeometricOptimizers.jl"
-version = "0.4.0"
+version = "0.5.0"
 
 [[jl.constant]]
 name = "GeometricOptimizers.CURVATURE_TOLERANCE"
-uri = "#$"
+uri = "api/#$"
 [[jl.constant]]
 name = "GeometricOptimizers.DEFAULT_STEP_CEILING"
-uri = "#$"
+uri = "api/#$"
 
 [[jl.function]]
 name = "GeometricOptimizers.geodesic"
-uri = "#$"
+uri = "api/#$"
 [[jl.function]]
 name = "GeometricOptimizers.manifold_type"
-uri = "#$"
+uri = "api/#$"
 [[jl.function]]
 name = "GeometricOptimizers.𝔄exp"
-uri = "#GeometricOptimizers.%F0%9D%94%84exp"
+uri = "api/#GeometricOptimizers.%F0%9D%94%84exp"
 
 [[jl.method]]
 name = "Base.:*-Tuple{GlobalSection, Manifold}"
-uri = "#Base.%3A%2A-Tuple%7BGlobalSection%2C%20Manifold%7D"
+uri = "api/#Base.%3A%2A-Tuple%7BGlobalSection%2C%20Manifold%7D"
 [[jl.method]]
 name = "Base.Matrix-Tuple{GlobalSection}"
-uri = "#Base.Matrix-Tuple%7BGlobalSection%7D"
+uri = "api/#Base.Matrix-Tuple%7BGlobalSection%7D"
 [[jl.method]]
 name = "Base.one-Union{Tuple{AbstractLieAlgHorMatrix{T}}, Tuple{T}} where T"
-uri = "#Base.one-Union%7BTuple%7BAbstractLieAlgHorMatrix%7BT%7D%7D%2C%20Tuple%7BT%7D%7D%20where%20T"
+uri = "api/#Base.one-Union%7BTuple%7BAbstractLieAlgHorMatrix%7BT%7D%7D%2C%20Tuple%7BT%7D%7D%20where%20T"
 [[jl.method]]
 name = "Base.parent-Tuple{AbstractLieAlgHorMatrix}"
-uri = "#Base.parent-Tuple%7BAbstractLieAlgHorMatrix%7D"
+uri = "api/#Base.parent-Tuple%7BAbstractLieAlgHorMatrix%7D"
 [[jl.method]]
 name = "Base.rand-Union{Tuple{MT}, Tuple{KernelAbstractions.Backend, Type{MT}, Integer, Integer}} where MT<:Manifold"
-uri = "#Base.rand-Union%7BTuple%7BMT%7D%2C%20Tuple%7BKernelAbstractions.Backend%2C%20Type%7BMT%7D%2C%20Integer%2C%20Integer%7D%7D%20where%20MT%3C%3AManifold"
+uri = "api/#Base.rand-Union%7BTuple%7BMT%7D%2C%20Tuple%7BKernelAbstractions.Backend%2C%20Type%7BMT%7D%2C%20Integer%2C%20Integer%7D%7D%20where%20MT%3C%3AManifold"
 [[jl.method]]
 name = "Base.rand-Union{Tuple{MT}, Tuple{Type{MT}, Integer, Integer}} where MT<:Manifold"
-uri = "#Base.rand-Union%7BTuple%7BMT%7D%2C%20Tuple%7BType%7BMT%7D%2C%20Integer%2C%20Integer%7D%7D%20where%20MT%3C%3AManifold"
+uri = "api/#Base.rand-Union%7BTuple%7BMT%7D%2C%20Tuple%7BType%7BMT%7D%2C%20Integer%2C%20Integer%7D%7D%20where%20MT%3C%3AManifold"
 [[jl.method]]
 name = "Base.vec-Tuple{AbstractLieAlgHorMatrix}"
-uri = "#Base.vec-Tuple%7BAbstractLieAlgHorMatrix%7D"
+uri = "api/#Base.vec-Tuple%7BAbstractLieAlgHorMatrix%7D"
 [[jl.method]]
 name = "Base.vec-Tuple{AbstractTriangular}"
-uri = "#Base.vec-Tuple%7BAbstractTriangular%7D"
+uri = "api/#Base.vec-Tuple%7BAbstractTriangular%7D"
 [[jl.method]]
 name = "Base.vec-Tuple{SkewSymMatrix}"
-uri = "#Base.vec-Tuple%7BSkewSymMatrix%7D"
+uri = "api/#Base.vec-Tuple%7BSkewSymMatrix%7D"
 [[jl.method]]
 name = "GeometricBase.update!-Tuple{GeometricOptimizers.NewtonOptimizerCache, OptimizerState, Gradient, Hessian, AbstractVector}"
-uri = "#GeometricBase.update%21-Tuple%7BGeometricOptimizers.NewtonOptimizerCache%2C%20OptimizerState%2C%20Gradient%2C%20Hessian%2C%20AbstractVector%7D"
+uri = "api/#GeometricBase.update%21-Tuple%7BGeometricOptimizers.NewtonOptimizerCache%2C%20OptimizerState%2C%20Gradient%2C%20Hessian%2C%20AbstractVector%7D"
 [[jl.method]]
 name = "GeometricBase.update!-Tuple{NewtonOptimizerState, Gradient, AbstractVector}"
-uri = "#GeometricBase.update%21-Tuple%7BNewtonOptimizerState%2C%20Gradient%2C%20AbstractVector%7D"
+uri = "api/#GeometricBase.update%21-Tuple%7BNewtonOptimizerState%2C%20Gradient%2C%20AbstractVector%7D"
 [[jl.method]]
 name = "GeometricBase.update!-Union{Tuple{T}, Tuple{GeometricOptimizers.BFGSCache{T}, BFGSState{T}, OptimizerSolution{T}, Union{AbstractArray{T}, NamedTuple{S, <:Tuple{Vararg{AbstractArray{T}}}} where S}}} where T"
-uri = "#GeometricBase.update%21-Union%7BTuple%7BT%7D%2C%20Tuple%7BGeometricOptimizers.BFGSCache%7BT%7D%2C%20BFGSState%7BT%7D%2C%20OptimizerSolution%7BT%7D%2C%20Union%7BAbstractArray%7BT%7D%2C%20NamedTuple%7BS%2C%20%3C%3ATuple%7BVararg%7BAbstractArray%7BT%7D%7D%7D%7D%20where%20S%7D%7D%7D%20where%20T"
+uri = "api/#GeometricBase.update%21-Union%7BTuple%7BT%7D%2C%20Tuple%7BGeometricOptimizers.BFGSCache%7BT%7D%2C%20BFGSState%7BT%7D%2C%20OptimizerSolution%7BT%7D%2C%20Union%7BAbstractArray%7BT%7D%2C%20NamedTuple%7BS%2C%20%3C%3ATuple%7BVararg%7BAbstractArray%7BT%7D%7D%7D%7D%20where%20S%7D%7D%7D%20where%20T"
 [[jl.method]]
 name = "GeometricBase.update!-Union{Tuple{T}, Tuple{GeometricOptimizers.DFPCache{T}, BFGSState{T}, OptimizerSolution{T}, Union{AbstractArray{T}, NamedTuple{S, <:Tuple{Vararg{AbstractArray{T}}}} where S}}} where T"
-uri = "#GeometricBase.update%21-Union%7BTuple%7BT%7D%2C%20Tuple%7BGeometricOptimizers.DFPCache%7BT%7D%2C%20BFGSState%7BT%7D%2C%20OptimizerSolution%7BT%7D%2C%20Union%7BAbstractArray%7BT%7D%2C%20NamedTuple%7BS%2C%20%3C%3ATuple%7BVararg%7BAbstractArray%7BT%7D%7D%7D%7D%20where%20S%7D%7D%7D%20where%20T"
+uri = "api/#GeometricBase.update%21-Union%7BTuple%7BT%7D%2C%20Tuple%7BGeometricOptimizers.DFPCache%7BT%7D%2C%20BFGSState%7BT%7D%2C%20OptimizerSolution%7BT%7D%2C%20Union%7BAbstractArray%7BT%7D%2C%20NamedTuple%7BS%2C%20%3C%3ATuple%7BVararg%7BAbstractArray%7BT%7D%7D%7D%7D%20where%20S%7D%7D%7D%20where%20T"
 [[jl.method]]
 name = "GeometricOptimizers.AdamOptimizerWithDecay-Union{Tuple{Integer}, Tuple{T}, Tuple{Integer, Type{T}}} where T"
-uri = "#GeometricOptimizers.AdamOptimizerWithDecay-Union%7BTuple%7BInteger%7D%2C%20Tuple%7BT%7D%2C%20Tuple%7BInteger%2C%20Type%7BT%7D%7D%7D%20where%20T"
+uri = "api/#GeometricOptimizers.AdamOptimizerWithDecay-Union%7BTuple%7BInteger%7D%2C%20Tuple%7BT%7D%2C%20Tuple%7BInteger%2C%20Type%7BT%7D%7D%7D%20where%20T"
 [[jl.method]]
 name = "GeometricOptimizers.AdamW-Tuple"
-uri = "#$"
+uri = "api/#$"
 [[jl.method]]
 name = "GeometricOptimizers.GrassmannLieAlgHorMatrix-Tuple{AbstractMatrix, Int64}"
-uri = "#GeometricOptimizers.GrassmannLieAlgHorMatrix-Tuple%7BAbstractMatrix%2C%20Int64%7D"
+uri = "api/#GeometricOptimizers.GrassmannLieAlgHorMatrix-Tuple%7BAbstractMatrix%2C%20Int64%7D"
 [[jl.method]]
 name = "GeometricOptimizers.LowerTriangular-Union{Tuple{AbstractMatrix{T}}, Tuple{T}} where T"
-uri = "#GeometricOptimizers.LowerTriangular-Union%7BTuple%7BAbstractMatrix%7BT%7D%7D%2C%20Tuple%7BT%7D%7D%20where%20T"
+uri = "api/#GeometricOptimizers.LowerTriangular-Union%7BTuple%7BAbstractMatrix%7BT%7D%7D%2C%20Tuple%7BT%7D%7D%20where%20T"
 [[jl.method]]
 name = "GeometricOptimizers.Optimizer-Union{Tuple{VT}, Tuple{T}, Tuple{VT, Function}} where {T, VT<:OptimizerSolution{T}}"
-uri = "#GeometricOptimizers.Optimizer-Union%7BTuple%7BVT%7D%2C%20Tuple%7BT%7D%2C%20Tuple%7BVT%2C%20Function%7D%7D%20where%20%7BT%2C%20VT%3C%3AOptimizerSolution%7BT%7D%7D"
+uri = "api/#GeometricOptimizers.Optimizer-Union%7BTuple%7BVT%7D%2C%20Tuple%7BT%7D%2C%20Tuple%7BVT%2C%20Function%7D%7D%20where%20%7BT%2C%20VT%3C%3AOptimizerSolution%7BT%7D%7D"
 [[jl.method]]
 name = "GeometricOptimizers.SkewSymMatrix-Union{Tuple{AbstractMatrix{T}}, Tuple{T}} where T"
-uri = "#GeometricOptimizers.SkewSymMatrix-Union%7BTuple%7BAbstractMatrix%7BT%7D%7D%2C%20Tuple%7BT%7D%7D%20where%20T"
+uri = "api/#GeometricOptimizers.SkewSymMatrix-Union%7BTuple%7BAbstractMatrix%7BT%7D%7D%2C%20Tuple%7BT%7D%7D%20where%20T"
 [[jl.method]]
 name = "GeometricOptimizers.StiefelLieAlgHorMatrix-Tuple{AbstractMatrix, Integer}"
-uri = "#GeometricOptimizers.StiefelLieAlgHorMatrix-Tuple%7BAbstractMatrix%2C%20Integer%7D"
+uri = "api/#GeometricOptimizers.StiefelLieAlgHorMatrix-Tuple%7BAbstractMatrix%2C%20Integer%7D"
 [[jl.method]]
 name = "GeometricOptimizers.StiefelProjection-Union{Tuple{AbstractLieAlgHorMatrix{T}}, Tuple{T}} where T"
-uri = "#GeometricOptimizers.StiefelProjection-Union%7BTuple%7BAbstractLieAlgHorMatrix%7BT%7D%7D%2C%20Tuple%7BT%7D%7D%20where%20T"
+uri = "api/#GeometricOptimizers.StiefelProjection-Union%7BTuple%7BAbstractLieAlgHorMatrix%7BT%7D%7D%2C%20Tuple%7BT%7D%7D%20where%20T"
 [[jl.method]]
 name = "GeometricOptimizers.StiefelProjection-Union{Tuple{AbstractMatrix{T}}, Tuple{T}} where T"
-uri = "#GeometricOptimizers.StiefelProjection-Union%7BTuple%7BAbstractMatrix%7BT%7D%7D%2C%20Tuple%7BT%7D%7D%20where%20T"
+uri = "api/#GeometricOptimizers.StiefelProjection-Union%7BTuple%7BAbstractMatrix%7BT%7D%7D%2C%20Tuple%7BT%7D%7D%20where%20T"
 [[jl.method]]
 name = "GeometricOptimizers.SymmetricMatrix-Union{Tuple{AbstractMatrix{T}}, Tuple{T}} where T"
-uri = "#GeometricOptimizers.SymmetricMatrix-Union%7BTuple%7BAbstractMatrix%7BT%7D%7D%2C%20Tuple%7BT%7D%7D%20where%20T"
+uri = "api/#GeometricOptimizers.SymmetricMatrix-Union%7BTuple%7BAbstractMatrix%7BT%7D%7D%2C%20Tuple%7BT%7D%7D%20where%20T"
 [[jl.method]]
 name = "GeometricOptimizers.UpperTriangular-Union{Tuple{AbstractMatrix{T}}, Tuple{T}} where T"
-uri = "#GeometricOptimizers.UpperTriangular-Union%7BTuple%7BAbstractMatrix%7BT%7D%7D%2C%20Tuple%7BT%7D%7D%20where%20T"
+uri = "api/#GeometricOptimizers.UpperTriangular-Union%7BTuple%7BAbstractMatrix%7BT%7D%7D%2C%20Tuple%7BT%7D%7D%20where%20T"
 [[jl.method]]
 name = "GeometricOptimizers._div!-Tuple{AbstractArray, AbstractArray, AbstractArray}"
-uri = "#GeometricOptimizers._div%21-Tuple%7BAbstractArray%2C%20AbstractArray%2C%20AbstractArray%7D"
+uri = "api/#GeometricOptimizers._div%21-Tuple%7BAbstractArray%2C%20AbstractArray%2C%20AbstractArray%7D"
 [[jl.method]]
 name = "GeometricOptimizers._dot-Tuple{AbstractVecOrMat, AbstractVecOrMat}"
-uri = "#GeometricOptimizers._dot-Tuple%7BAbstractVecOrMat%2C%20AbstractVecOrMat%7D"
+uri = "api/#GeometricOptimizers._dot-Tuple%7BAbstractVecOrMat%2C%20AbstractVecOrMat%7D"
 [[jl.method]]
 name = "GeometricOptimizers._is_decayable-Tuple{StiefelManifold}"
-uri = "#GeometricOptimizers._is_decayable-Tuple%7BStiefelManifold%7D"
+uri = "api/#GeometricOptimizers._is_decayable-Tuple%7BStiefelManifold%7D"
 [[jl.method]]
 name = "GeometricOptimizers._manifold_αmax-Union{Tuple{T}, Tuple{Tuple{}, Tuple{}, T}} where T"
-uri = "#GeometricOptimizers._manifold_%CE%B1max-Union%7BTuple%7BT%7D%2C%20Tuple%7BTuple%7B%7D%2C%20Tuple%7B%7D%2C%20T%7D%7D%20where%20T"
+uri = "api/#GeometricOptimizers._manifold_%CE%B1max-Union%7BTuple%7BT%7D%2C%20Tuple%7BTuple%7B%7D%2C%20Tuple%7B%7D%2C%20T%7D%7D%20where%20T"
 [[jl.method]]
 name = "GeometricOptimizers._optimizer-Union{Tuple{T}, Tuple{OptimizerSolution{T}, OptimizerProblem{T}, OptimizerMethod, LinesearchMethod, Gradient{T}, AbstractRetraction, Options{T}, Real}} where T"
-uri = "#GeometricOptimizers._optimizer-Union%7BTuple%7BT%7D%2C%20Tuple%7BOptimizerSolution%7BT%7D%2C%20OptimizerProblem%7BT%7D%2C%20OptimizerMethod%2C%20LinesearchMethod%2C%20Gradient%7BT%7D%2C%20AbstractRetraction%2C%20Options%7BT%7D%2C%20Real%7D%7D%20where%20T"
+uri = "api/#GeometricOptimizers._optimizer-Union%7BTuple%7BT%7D%2C%20Tuple%7BOptimizerSolution%7BT%7D%2C%20OptimizerProblem%7BT%7D%2C%20OptimizerMethod%2C%20LinesearchMethod%2C%20Gradient%7BT%7D%2C%20AbstractRetraction%2C%20Options%7BT%7D%2C%20Real%7D%7D%20where%20T"
 [[jl.method]]
 name = "GeometricOptimizers._rac!-Tuple{AbstractArray, AbstractArray}"
-uri = "#GeometricOptimizers._rac%21-Tuple%7BAbstractArray%2C%20AbstractArray%7D"
+uri = "api/#GeometricOptimizers._rac%21-Tuple%7BAbstractArray%2C%20AbstractArray%7D"
 [[jl.method]]
 name = "GeometricOptimizers._square!-Tuple{AbstractArray, AbstractArray}"
-uri = "#GeometricOptimizers._square%21-Tuple%7BAbstractArray%2C%20AbstractArray%7D"
+uri = "api/#GeometricOptimizers._square%21-Tuple%7BAbstractArray%2C%20AbstractArray%7D"
+[[jl.method]]
+name = "GeometricOptimizers._squared_gradient_norm-Tuple{ScalarMomentAdam, GeometricOptimizers.ScalarMomentAdamCache, Gradient, StiefelManifold}"
+uri = "api/#GeometricOptimizers._squared_gradient_norm-Tuple%7BScalarMomentAdam%2C%20GeometricOptimizers.ScalarMomentAdamCache%2C%20Gradient%2C%20StiefelManifold%7D"
 [[jl.method]]
 name = "GeometricOptimizers._weight_decay!-Union{Tuple{T}, Tuple{AbstractArray{T}, AbstractArray{T}, T}} where T"
-uri = "#GeometricOptimizers._weight_decay%21-Union%7BTuple%7BT%7D%2C%20Tuple%7BAbstractArray%7BT%7D%2C%20AbstractArray%7BT%7D%2C%20T%7D%7D%20where%20T"
+uri = "api/#GeometricOptimizers._weight_decay%21-Union%7BTuple%7BT%7D%2C%20Tuple%7BAbstractArray%7BT%7D%2C%20AbstractArray%7BT%7D%2C%20T%7D%7D%20where%20T"
 [[jl.method]]
 name = "GeometricOptimizers.apply_section!-Union{Tuple{MT}, Tuple{AT}, Tuple{T}, Tuple{AT, GlobalSection{T, AT, λT} where λT<:Union{Nothing, AbstractArray{T}}, MT}} where {T, AT<:(StiefelManifold{T, AT} where AT<:AbstractMatrix{T}), MT<:(StiefelManifold{T, AT} where AT<:AbstractMatrix{T})}"
-uri = "#GeometricOptimizers.apply_section%21-Union%7BTuple%7BMT%7D%2C%20Tuple%7BAT%7D%2C%20Tuple%7BT%7D%2C%20Tuple%7BAT%2C%20GlobalSection%7BT%2C%20AT%2C%20%CE%BBT%7D%20where%20%CE%BBT%3C%3AUnion%7BNothing%2C%20AbstractArray%7BT%7D%7D%2C%20MT%7D%7D%20where%20%7BT%2C%20AT%3C%3A%28StiefelManifold%7BT%2C%20AT%7D%20where%20AT%3C%3AAbstractMatrix%7BT%7D%29%2C%20MT%3C%3A%28StiefelManifold%7BT%2C%20AT%7D%20where%20AT%3C%3AAbstractMatrix%7BT%7D%29%7D"
+uri = "api/#GeometricOptimizers.apply_section%21-Union%7BTuple%7BMT%7D%2C%20Tuple%7BAT%7D%2C%20Tuple%7BT%7D%2C%20Tuple%7BAT%2C%20GlobalSection%7BT%2C%20AT%2C%20%CE%BBT%7D%20where%20%CE%BBT%3C%3AUnion%7BNothing%2C%20AbstractArray%7BT%7D%7D%2C%20MT%7D%7D%20where%20%7BT%2C%20AT%3C%3A%28StiefelManifold%7BT%2C%20AT%7D%20where%20AT%3C%3AAbstractMatrix%7BT%7D%29%2C%20MT%3C%3A%28StiefelManifold%7BT%2C%20AT%7D%20where%20AT%3C%3AAbstractMatrix%7BT%7D%29%7D"
 [[jl.method]]
 name = "GeometricOptimizers.apply_section-Union{Tuple{AT}, Tuple{T}, Tuple{GlobalSection{T, AT, λT} where λT<:Union{Nothing, AbstractArray{T}}, AT}} where {T, AT<:(StiefelManifold{T, AT} where AT<:AbstractMatrix{T})}"
-uri = "#GeometricOptimizers.apply_section-Union%7BTuple%7BAT%7D%2C%20Tuple%7BT%7D%2C%20Tuple%7BGlobalSection%7BT%2C%20AT%2C%20%CE%BBT%7D%20where%20%CE%BBT%3C%3AUnion%7BNothing%2C%20AbstractArray%7BT%7D%7D%2C%20AT%7D%7D%20where%20%7BT%2C%20AT%3C%3A%28StiefelManifold%7BT%2C%20AT%7D%20where%20AT%3C%3AAbstractMatrix%7BT%7D%29%7D"
+uri = "api/#GeometricOptimizers.apply_section-Union%7BTuple%7BAT%7D%2C%20Tuple%7BT%7D%2C%20Tuple%7BGlobalSection%7BT%2C%20AT%2C%20%CE%BBT%7D%20where%20%CE%BBT%3C%3AUnion%7BNothing%2C%20AbstractArray%7BT%7D%7D%2C%20AT%7D%7D%20where%20%7BT%2C%20AT%3C%3A%28StiefelManifold%7BT%2C%20AT%7D%20where%20AT%3C%3AAbstractMatrix%7BT%7D%29%7D"
 [[jl.method]]
 name = "GeometricOptimizers.cayley-Tuple{GrassmannLieAlgHorMatrix}"
-uri = "#GeometricOptimizers.cayley-Tuple%7BGrassmannLieAlgHorMatrix%7D"
+uri = "api/#GeometricOptimizers.cayley-Tuple%7BGrassmannLieAlgHorMatrix%7D"
 [[jl.method]]
 name = "GeometricOptimizers.cayley-Tuple{StiefelLieAlgHorMatrix}"
-uri = "#GeometricOptimizers.cayley-Tuple%7BStiefelLieAlgHorMatrix%7D"
+uri = "api/#GeometricOptimizers.cayley-Tuple%7BStiefelLieAlgHorMatrix%7D"
 [[jl.method]]
 name = "GeometricOptimizers.cayley-Union{Tuple{T}, Tuple{Manifold{T}, AbstractMatrix{T}}} where T"
-uri = "#GeometricOptimizers.cayley-Union%7BTuple%7BT%7D%2C%20Tuple%7BManifold%7BT%7D%2C%20AbstractMatrix%7BT%7D%7D%7D%20where%20T"
+uri = "api/#GeometricOptimizers.cayley-Union%7BTuple%7BT%7D%2C%20Tuple%7BManifold%7BT%7D%2C%20AbstractMatrix%7BT%7D%7D%7D%20where%20T"
 [[jl.method]]
 name = "GeometricOptimizers.check-Tuple{Manifold}"
-uri = "#GeometricOptimizers.check-Tuple%7BManifold%7D"
+uri = "api/#GeometricOptimizers.check-Tuple%7BManifold%7D"
 [[jl.method]]
 name = "GeometricOptimizers.contains_nonfinite-Tuple{Real}"
-uri = "#GeometricOptimizers.contains_nonfinite-Tuple%7BReal%7D"
+uri = "api/#GeometricOptimizers.contains_nonfinite-Tuple%7BReal%7D"
 [[jl.method]]
 name = "GeometricOptimizers.convergence_measures-Tuple{GeometricOptimizers.OptimizerStatus, Options}"
-uri = "#GeometricOptimizers.convergence_measures-Tuple%7BGeometricOptimizers.OptimizerStatus%2C%20Options%7D"
+uri = "api/#GeometricOptimizers.convergence_measures-Tuple%7BGeometricOptimizers.OptimizerStatus%2C%20Options%7D"
 [[jl.method]]
 name = "GeometricOptimizers.curvature_is_usable-Union{Tuple{T}, Tuple{T, Any, Any}} where T"
-uri = "#GeometricOptimizers.curvature_is_usable-Union%7BTuple%7BT%7D%2C%20Tuple%7BT%2C%20Any%2C%20Any%7D%7D%20where%20T"
+uri = "api/#GeometricOptimizers.curvature_is_usable-Union%7BTuple%7BT%7D%2C%20Tuple%7BT%2C%20Any%2C%20Any%7D%7D%20where%20T"
 [[jl.method]]
 name = "GeometricOptimizers.default_gradient-Union{Tuple{T}, Tuple{OptimizerProblem{T}, AbstractArray}} where T"
-uri = "#GeometricOptimizers.default_gradient-Union%7BTuple%7BT%7D%2C%20Tuple%7BOptimizerProblem%7BT%7D%2C%20AbstractArray%7D%7D%20where%20T"
+uri = "api/#GeometricOptimizers.default_gradient-Union%7BTuple%7BT%7D%2C%20Tuple%7BOptimizerProblem%7BT%7D%2C%20AbstractArray%7D%7D%20where%20T"
 [[jl.method]]
 name = "GeometricOptimizers.default_linesearch-Union{Tuple{T}, Tuple{Type{T}, OptimizerMethod}} where T"
-uri = "#GeometricOptimizers.default_linesearch-Union%7BTuple%7BT%7D%2C%20Tuple%7BType%7BT%7D%2C%20OptimizerMethod%7D%7D%20where%20T"
+uri = "api/#GeometricOptimizers.default_linesearch-Union%7BTuple%7BT%7D%2C%20Tuple%7BType%7BT%7D%2C%20OptimizerMethod%7D%7D%20where%20T"
 [[jl.method]]
 name = "GeometricOptimizers.ensure_descent!-Tuple{GeometricOptimizers.OptimizerCache, OptimizerMethod, Options}"
-uri = "#GeometricOptimizers.ensure_descent%21-Tuple%7BGeometricOptimizers.OptimizerCache%2C%20OptimizerMethod%2C%20Options%7D"
+uri = "api/#GeometricOptimizers.ensure_descent%21-Tuple%7BGeometricOptimizers.OptimizerCache%2C%20OptimizerMethod%2C%20Options%7D"
 [[jl.method]]
 name = "GeometricOptimizers.geodesic-Union{Tuple{T}, Tuple{Manifold{T}, AbstractMatrix{T}}, Tuple{Manifold{T}, AbstractMatrix{T}, GeometricOptimizers.AbstractExponentialAlgorithm}} where T"
-uri = "#GeometricOptimizers.geodesic-Union%7BTuple%7BT%7D%2C%20Tuple%7BManifold%7BT%7D%2C%20AbstractMatrix%7BT%7D%7D%2C%20Tuple%7BManifold%7BT%7D%2C%20AbstractMatrix%7BT%7D%2C%20GeometricOptimizers.AbstractExponentialAlgorithm%7D%7D%20where%20T"
+uri = "api/#GeometricOptimizers.geodesic-Union%7BTuple%7BT%7D%2C%20Tuple%7BManifold%7BT%7D%2C%20AbstractMatrix%7BT%7D%7D%2C%20Tuple%7BManifold%7BT%7D%2C%20AbstractMatrix%7BT%7D%2C%20GeometricOptimizers.AbstractExponentialAlgorithm%7D%7D%20where%20T"
 [[jl.method]]
 name = "GeometricOptimizers.global_rep-Union{Tuple{AT}, Tuple{T}, Tuple{GlobalSection{T, AT, λT} where λT<:Union{Nothing, AbstractArray{T}}, AbstractMatrix{T}}} where {T, AT<:(GrassmannManifold{T, AT} where AT<:AbstractMatrix{T})}"
-uri = "#GeometricOptimizers.global_rep-Union%7BTuple%7BAT%7D%2C%20Tuple%7BT%7D%2C%20Tuple%7BGlobalSection%7BT%2C%20AT%2C%20%CE%BBT%7D%20where%20%CE%BBT%3C%3AUnion%7BNothing%2C%20AbstractArray%7BT%7D%7D%2C%20AbstractMatrix%7BT%7D%7D%7D%20where%20%7BT%2C%20AT%3C%3A%28GrassmannManifold%7BT%2C%20AT%7D%20where%20AT%3C%3AAbstractMatrix%7BT%7D%29%7D"
+uri = "api/#GeometricOptimizers.global_rep-Union%7BTuple%7BAT%7D%2C%20Tuple%7BT%7D%2C%20Tuple%7BGlobalSection%7BT%2C%20AT%2C%20%CE%BBT%7D%20where%20%CE%BBT%3C%3AUnion%7BNothing%2C%20AbstractArray%7BT%7D%7D%2C%20AbstractMatrix%7BT%7D%7D%7D%20where%20%7BT%2C%20AT%3C%3A%28GrassmannManifold%7BT%2C%20AT%7D%20where%20AT%3C%3AAbstractMatrix%7BT%7D%29%7D"
 [[jl.method]]
 name = "GeometricOptimizers.global_rep-Union{Tuple{AT}, Tuple{T}, Tuple{GlobalSection{T, AT, λT} where λT<:Union{Nothing, AbstractArray{T}}, AbstractMatrix{T}}} where {T, AT<:(StiefelManifold{T, AT} where AT<:AbstractMatrix{T})}"
-uri = "#GeometricOptimizers.global_rep-Union%7BTuple%7BAT%7D%2C%20Tuple%7BT%7D%2C%20Tuple%7BGlobalSection%7BT%2C%20AT%2C%20%CE%BBT%7D%20where%20%CE%BBT%3C%3AUnion%7BNothing%2C%20AbstractArray%7BT%7D%7D%2C%20AbstractMatrix%7BT%7D%7D%7D%20where%20%7BT%2C%20AT%3C%3A%28StiefelManifold%7BT%2C%20AT%7D%20where%20AT%3C%3AAbstractMatrix%7BT%7D%29%7D"
+uri = "api/#GeometricOptimizers.global_rep-Union%7BTuple%7BAT%7D%2C%20Tuple%7BT%7D%2C%20Tuple%7BGlobalSection%7BT%2C%20AT%2C%20%CE%BBT%7D%20where%20%CE%BBT%3C%3AUnion%7BNothing%2C%20AbstractArray%7BT%7D%7D%2C%20AbstractMatrix%7BT%7D%7D%7D%20where%20%7BT%2C%20AT%3C%3A%28StiefelManifold%7BT%2C%20AT%7D%20where%20AT%3C%3AAbstractMatrix%7BT%7D%29%7D"
 [[jl.method]]
 name = "GeometricOptimizers.global_section-Union{Tuple{GrassmannManifold{T, AT} where AT<:AbstractMatrix{T}}, Tuple{T}} where T"
-uri = "#GeometricOptimizers.global_section-Union%7BTuple%7BGrassmannManifold%7BT%2C%20AT%7D%20where%20AT%3C%3AAbstractMatrix%7BT%7D%7D%2C%20Tuple%7BT%7D%7D%20where%20T"
+uri = "api/#GeometricOptimizers.global_section-Union%7BTuple%7BGrassmannManifold%7BT%2C%20AT%7D%20where%20AT%3C%3AAbstractMatrix%7BT%7D%7D%2C%20Tuple%7BT%7D%7D%20where%20T"
 [[jl.method]]
 name = "GeometricOptimizers.global_section-Union{Tuple{StiefelManifold{T, AT} where AT<:AbstractMatrix{T}}, Tuple{T}} where T"
-uri = "#GeometricOptimizers.global_section-Union%7BTuple%7BStiefelManifold%7BT%2C%20AT%7D%20where%20AT%3C%3AAbstractMatrix%7BT%7D%7D%2C%20Tuple%7BT%7D%7D%20where%20T"
+uri = "api/#GeometricOptimizers.global_section-Union%7BTuple%7BStiefelManifold%7BT%2C%20AT%7D%20where%20AT%3C%3AAbstractMatrix%7BT%7D%7D%2C%20Tuple%7BT%7D%7D%20where%20T"
 [[jl.method]]
 name = "GeometricOptimizers.gradient-Tuple{GeometricOptimizers.BFGSCache}"
-uri = "#GeometricOptimizers.gradient-Tuple%7BGeometricOptimizers.BFGSCache%7D"
+uri = "api/#GeometricOptimizers.gradient-Tuple%7BGeometricOptimizers.BFGSCache%7D"
 [[jl.method]]
 name = "GeometricOptimizers.gradient-Tuple{GeometricOptimizers.DFPCache}"
-uri = "#GeometricOptimizers.gradient-Tuple%7BGeometricOptimizers.DFPCache%7D"
+uri = "api/#GeometricOptimizers.gradient-Tuple%7BGeometricOptimizers.DFPCache%7D"
 [[jl.method]]
 name = "GeometricOptimizers.gradient-Tuple{GeometricOptimizers.NewtonOptimizerCache}"
-uri = "#GeometricOptimizers.gradient-Tuple%7BGeometricOptimizers.NewtonOptimizerCache%7D"
+uri = "api/#GeometricOptimizers.gradient-Tuple%7BGeometricOptimizers.NewtonOptimizerCache%7D"
 [[jl.method]]
 name = "GeometricOptimizers.gradient_difference!-Tuple{GeometricOptimizers.OptimizerCache, OptimizerState}"
-uri = "#GeometricOptimizers.gradient_difference%21-Tuple%7BGeometricOptimizers.OptimizerCache%2C%20OptimizerState%7D"
+uri = "api/#GeometricOptimizers.gradient_difference%21-Tuple%7BGeometricOptimizers.OptimizerCache%2C%20OptimizerState%7D"
 [[jl.method]]
 name = "GeometricOptimizers.invalidate_latest_gradient!-Tuple{GeometricOptimizers.OptimizerCache}"
-uri = "#GeometricOptimizers.invalidate_latest_gradient%21-Tuple%7BGeometricOptimizers.OptimizerCache%7D"
+uri = "api/#GeometricOptimizers.invalidate_latest_gradient%21-Tuple%7BGeometricOptimizers.OptimizerCache%7D"
 [[jl.method]]
 name = "GeometricOptimizers.isaOptimizerState-Tuple{Any}"
-uri = "#GeometricOptimizers.isaOptimizerState-Tuple%7BAny%7D"
+uri = "api/#GeometricOptimizers.isaOptimizerState-Tuple%7BAny%7D"
 [[jl.method]]
 name = "GeometricOptimizers.isconverged-Tuple{GeometricOptimizers.OptimizerStatus}"
-uri = "#GeometricOptimizers.isconverged-Tuple%7BGeometricOptimizers.OptimizerStatus%7D"
+uri = "api/#GeometricOptimizers.isconverged-Tuple%7BGeometricOptimizers.OptimizerStatus%7D"
 [[jl.method]]
 name = "GeometricOptimizers.latest_gradient-Tuple{GeometricOptimizers.OptimizerCache}"
-uri = "#GeometricOptimizers.latest_gradient-Tuple%7BGeometricOptimizers.OptimizerCache%7D"
+uri = "api/#GeometricOptimizers.latest_gradient-Tuple%7BGeometricOptimizers.OptimizerCache%7D"
 [[jl.method]]
 name = "GeometricOptimizers.latest_gradient_is_current-Tuple{GeometricOptimizers.OptimizerCache, OptimizerState, OptimizerSolution}"
-uri = "#GeometricOptimizers.latest_gradient_is_current-Tuple%7BGeometricOptimizers.OptimizerCache%2C%20OptimizerState%2C%20OptimizerSolution%7D"
+uri = "api/#GeometricOptimizers.latest_gradient_is_current-Tuple%7BGeometricOptimizers.OptimizerCache%2C%20OptimizerState%2C%20OptimizerSolution%7D"
 [[jl.method]]
 name = "GeometricOptimizers.lift_factors-Tuple{StiefelLieAlgHorMatrix}"
-uri = "#GeometricOptimizers.lift_factors-Tuple%7BStiefelLieAlgHorMatrix%7D"
+uri = "api/#GeometricOptimizers.lift_factors-Tuple%7BStiefelLieAlgHorMatrix%7D"
 [[jl.method]]
 name = "GeometricOptimizers.lift_from_columns-Tuple{StiefelLieAlgHorMatrix, AbstractMatrix}"
-uri = "#GeometricOptimizers.lift_from_columns-Tuple%7BStiefelLieAlgHorMatrix%2C%20AbstractMatrix%7D"
+uri = "api/#GeometricOptimizers.lift_from_columns-Tuple%7BStiefelLieAlgHorMatrix%2C%20AbstractMatrix%7D"
 [[jl.method]]
 name = "GeometricOptimizers.linesearch_parameters-Tuple{GeometricOptimizers.OptimizerCache, Any, Any, Any}"
-uri = "#GeometricOptimizers.linesearch_parameters-Tuple%7BGeometricOptimizers.OptimizerCache%2C%20Any%2C%20Any%2C%20Any%7D"
+uri = "api/#GeometricOptimizers.linesearch_parameters-Tuple%7BGeometricOptimizers.OptimizerCache%2C%20Any%2C%20Any%2C%20Any%7D"
 [[jl.method]]
 name = "GeometricOptimizers.linesearch_rejected-Tuple{LinesearchStatus}"
-uri = "#GeometricOptimizers.linesearch_rejected-Tuple%7BLinesearchStatus%7D"
+uri = "api/#GeometricOptimizers.linesearch_rejected-Tuple%7BLinesearchStatus%7D"
 [[jl.method]]
 name = "GeometricOptimizers.manifold_constructor-Tuple{Manifold}"
-uri = "#GeometricOptimizers.manifold_constructor-Tuple%7BManifold%7D"
+uri = "api/#GeometricOptimizers.manifold_constructor-Tuple%7BManifold%7D"
 [[jl.method]]
 name = "GeometricOptimizers.meets_stopping_criteria-Tuple{GeometricOptimizers.OptimizerStatus, Options, Integer}"
-uri = "#GeometricOptimizers.meets_stopping_criteria-Tuple%7BGeometricOptimizers.OptimizerStatus%2C%20Options%2C%20Integer%7D"
+uri = "api/#GeometricOptimizers.meets_stopping_criteria-Tuple%7BGeometricOptimizers.OptimizerStatus%2C%20Options%2C%20Integer%7D"
 [[jl.method]]
 name = "GeometricOptimizers.metric-Tuple{GrassmannManifold, AbstractMatrix, AbstractMatrix}"
-uri = "#GeometricOptimizers.metric-Tuple%7BGrassmannManifold%2C%20AbstractMatrix%2C%20AbstractMatrix%7D"
+uri = "api/#GeometricOptimizers.metric-Tuple%7BGrassmannManifold%2C%20AbstractMatrix%2C%20AbstractMatrix%7D"
 [[jl.method]]
 name = "GeometricOptimizers.metric-Tuple{StiefelManifold, AbstractMatrix, AbstractMatrix}"
-uri = "#GeometricOptimizers.metric-Tuple%7BStiefelManifold%2C%20AbstractMatrix%2C%20AbstractMatrix%7D"
+uri = "api/#GeometricOptimizers.metric-Tuple%7BStiefelManifold%2C%20AbstractMatrix%2C%20AbstractMatrix%7D"
 [[jl.method]]
 name = "GeometricOptimizers.opnorm₁-Tuple{AbstractMatrix}"
-uri = "#GeometricOptimizers.opnorm%E2%82%81-Tuple%7BAbstractMatrix%7D"
+uri = "api/#GeometricOptimizers.opnorm%E2%82%81-Tuple%7BAbstractMatrix%7D"
 [[jl.method]]
 name = "GeometricOptimizers.refresh_latest_gradient!-Tuple{GeometricOptimizers.OptimizerCache, Gradient}"
-uri = "#GeometricOptimizers.refresh_latest_gradient%21-Tuple%7BGeometricOptimizers.OptimizerCache%2C%20Gradient%7D"
+uri = "api/#GeometricOptimizers.refresh_latest_gradient%21-Tuple%7BGeometricOptimizers.OptimizerCache%2C%20Gradient%7D"
 [[jl.method]]
 name = "GeometricOptimizers.restart!-Tuple{BFGSState}"
-uri = "#GeometricOptimizers.restart%21-Tuple%7BBFGSState%7D"
+uri = "api/#GeometricOptimizers.restart%21-Tuple%7BBFGSState%7D"
 [[jl.method]]
 name = "GeometricOptimizers.restart!-Tuple{OptimizerState}"
-uri = "#GeometricOptimizers.restart%21-Tuple%7BOptimizerState%7D"
+uri = "api/#GeometricOptimizers.restart%21-Tuple%7BOptimizerState%7D"
 [[jl.method]]
 name = "GeometricOptimizers.retraction-Tuple{AbstractRetraction, AbstractArray}"
-uri = "#GeometricOptimizers.retraction-Tuple%7BAbstractRetraction%2C%20AbstractArray%7D"
+uri = "api/#GeometricOptimizers.retraction-Tuple%7BAbstractRetraction%2C%20AbstractArray%7D"
 [[jl.method]]
 name = "GeometricOptimizers.retraction_differential-Tuple{AbstractRetraction, Any, Any}"
-uri = "#GeometricOptimizers.retraction_differential-Tuple%7BAbstractRetraction%2C%20Any%2C%20Any%7D"
+uri = "api/#GeometricOptimizers.retraction_differential-Tuple%7BAbstractRetraction%2C%20Any%2C%20Any%7D"
 [[jl.method]]
 name = "GeometricOptimizers.rgrad-Tuple{GrassmannManifold, AbstractMatrix}"
-uri = "#GeometricOptimizers.rgrad-Tuple%7BGrassmannManifold%2C%20AbstractMatrix%7D"
+uri = "api/#GeometricOptimizers.rgrad-Tuple%7BGrassmannManifold%2C%20AbstractMatrix%7D"
 [[jl.method]]
 name = "GeometricOptimizers.rgrad-Tuple{StiefelManifold, AbstractMatrix}"
-uri = "#GeometricOptimizers.rgrad-Tuple%7BStiefelManifold%2C%20AbstractMatrix%7D"
+uri = "api/#GeometricOptimizers.rgrad-Tuple%7BStiefelManifold%2C%20AbstractMatrix%7D"
 [[jl.method]]
 name = "GeometricOptimizers.rhs-Tuple{GeometricOptimizers.BFGSCache}"
-uri = "#GeometricOptimizers.rhs-Tuple%7BGeometricOptimizers.BFGSCache%7D"
+uri = "api/#GeometricOptimizers.rhs-Tuple%7BGeometricOptimizers.BFGSCache%7D"
 [[jl.method]]
 name = "GeometricOptimizers.rhs-Tuple{GeometricOptimizers.DFPCache}"
-uri = "#GeometricOptimizers.rhs-Tuple%7BGeometricOptimizers.DFPCache%7D"
+uri = "api/#GeometricOptimizers.rhs-Tuple%7BGeometricOptimizers.DFPCache%7D"
 [[jl.method]]
 name = "GeometricOptimizers.rhs-Tuple{GeometricOptimizers.NewtonOptimizerCache}"
-uri = "#GeometricOptimizers.rhs-Tuple%7BGeometricOptimizers.NewtonOptimizerCache%7D"
+uri = "api/#GeometricOptimizers.rhs-Tuple%7BGeometricOptimizers.NewtonOptimizerCache%7D"
 [[jl.method]]
 name = "GeometricOptimizers.solution_scale-Tuple{AbstractVecOrMat}"
-uri = "#GeometricOptimizers.solution_scale-Tuple%7BAbstractVecOrMat%7D"
+uri = "api/#GeometricOptimizers.solution_scale-Tuple%7BAbstractVecOrMat%7D"
 [[jl.method]]
 name = "GeometricOptimizers.solver_step!-Union{Tuple{MT}, Tuple{T}, Tuple{OptimizerSolution{T}, OptimizerState{T}, Optimizer{T, MT, OBJ, GT, HT} where {OBJ<:(OptimizerProblem{T}), GT<:Gradient{T}, HT<:Hessian{T}}}} where {T, MT}"
-uri = "#GeometricOptimizers.solver_step%21-Union%7BTuple%7BMT%7D%2C%20Tuple%7BT%7D%2C%20Tuple%7BOptimizerSolution%7BT%7D%2C%20OptimizerState%7BT%7D%2C%20Optimizer%7BT%2C%20MT%2C%20OBJ%2C%20GT%2C%20HT%7D%20where%20%7BOBJ%3C%3A%28OptimizerProblem%7BT%7D%29%2C%20GT%3C%3AGradient%7BT%7D%2C%20HT%3C%3AHessian%7BT%7D%7D%7D%7D%20where%20%7BT%2C%20MT%7D"
+uri = "api/#GeometricOptimizers.solver_step%21-Union%7BTuple%7BMT%7D%2C%20Tuple%7BT%7D%2C%20Tuple%7BOptimizerSolution%7BT%7D%2C%20OptimizerState%7BT%7D%2C%20Optimizer%7BT%2C%20MT%2C%20OBJ%2C%20GT%2C%20HT%7D%20where%20%7BOBJ%3C%3A%28OptimizerProblem%7BT%7D%29%2C%20GT%3C%3AGradient%7BT%7D%2C%20HT%3C%3AHessian%7BT%7D%7D%7D%7D%20where%20%7BT%2C%20MT%7D"
 [[jl.method]]
 name = "GeometricOptimizers.steepest_descent!-Tuple{GeometricOptimizers.OptimizerCache}"
-uri = "#GeometricOptimizers.steepest_descent%21-Tuple%7BGeometricOptimizers.OptimizerCache%7D"
+uri = "api/#GeometricOptimizers.steepest_descent%21-Tuple%7BGeometricOptimizers.OptimizerCache%7D"
 [[jl.method]]
 name = "GeometricOptimizers.step_size-Union{Tuple{T}, Tuple{DecayingStatic{T}, Integer}} where T"
-uri = "#GeometricOptimizers.step_size-Union%7BTuple%7BT%7D%2C%20Tuple%7BDecayingStatic%7BT%7D%2C%20Integer%7D%7D%20where%20T"
+uri = "api/#GeometricOptimizers.step_size-Union%7BTuple%7BT%7D%2C%20Tuple%7BDecayingStatic%7BT%7D%2C%20Integer%7D%7D%20where%20T"
 [[jl.method]]
 name = "GeometricOptimizers.step_αmax-Union{Tuple{T}, Tuple{T, Any}} where T"
-uri = "#GeometricOptimizers.step_%CE%B1max-Union%7BTuple%7BT%7D%2C%20Tuple%7BT%2C%20Any%7D%7D%20where%20T"
+uri = "api/#GeometricOptimizers.step_%CE%B1max-Union%7BTuple%7BT%7D%2C%20Tuple%7BT%2C%20Any%7D%7D%20where%20T"
 [[jl.method]]
 name = "GeometricOptimizers.store_gradient!-Tuple{GeometricOptimizers.OptimizerCache, OptimizerState, Gradient, OptimizerSolution}"
-uri = "#GeometricOptimizers.store_gradient%21-Tuple%7BGeometricOptimizers.OptimizerCache%2C%20OptimizerState%2C%20Gradient%2C%20OptimizerSolution%7D"
+uri = "api/#GeometricOptimizers.store_gradient%21-Tuple%7BGeometricOptimizers.OptimizerCache%2C%20OptimizerState%2C%20Gradient%2C%20OptimizerSolution%7D"
 [[jl.method]]
 name = "GeometricOptimizers.trace-Tuple{GeometricOptimizers.OptimizerResult}"
-uri = "#GeometricOptimizers.trace-Tuple%7BGeometricOptimizers.OptimizerResult%7D"
+uri = "api/#GeometricOptimizers.trace-Tuple%7BGeometricOptimizers.OptimizerResult%7D"
 [[jl.method]]
 name = "GeometricOptimizers.trial_iterate!-Tuple{GeometricOptimizers.OptimizerCache, Any, Any, Any}"
-uri = "#GeometricOptimizers.trial_iterate%21-Tuple%7BGeometricOptimizers.OptimizerCache%2C%20Any%2C%20Any%2C%20Any%7D"
+uri = "api/#GeometricOptimizers.trial_iterate%21-Tuple%7BGeometricOptimizers.OptimizerCache%2C%20Any%2C%20Any%2C%20Any%7D"
 [[jl.method]]
 name = "GeometricOptimizers.trial_slope-Tuple{Gradient, GeometricOptimizers.OptimizerCache, Any, Any}"
-uri = "#GeometricOptimizers.trial_slope-Tuple%7BGradient%2C%20GeometricOptimizers.OptimizerCache%2C%20Any%2C%20Any%7D"
+uri = "api/#GeometricOptimizers.trial_slope-Tuple%7BGradient%2C%20GeometricOptimizers.OptimizerCache%2C%20Any%2C%20Any%7D"
+[[jl.method]]
+name = "GeometricOptimizers.unit_matrix-Union{Tuple{T}, Tuple{Any, Type{T}, Integer}} where T"
+uri = "api/#GeometricOptimizers.unit_matrix-Union%7BTuple%7BT%7D%2C%20Tuple%7BAny%2C%20Type%7BT%7D%2C%20Integer%7D%7D%20where%20T"
 [[jl.method]]
 name = "GeometricOptimizers.update_section!-Union{Tuple{MT}, Tuple{T}, Tuple{GlobalSection{T, MT, λT} where λT<:Union{Nothing, AbstractArray{T}}, AbstractLieAlgHorMatrix{T}, Any}} where {T, MT<:Manifold{T}}"
-uri = "#GeometricOptimizers.update_section%21-Union%7BTuple%7BMT%7D%2C%20Tuple%7BT%7D%2C%20Tuple%7BGlobalSection%7BT%2C%20MT%2C%20%CE%BBT%7D%20where%20%CE%BBT%3C%3AUnion%7BNothing%2C%20AbstractArray%7BT%7D%7D%2C%20AbstractLieAlgHorMatrix%7BT%7D%2C%20Any%7D%7D%20where%20%7BT%2C%20MT%3C%3AManifold%7BT%7D%7D"
+uri = "api/#GeometricOptimizers.update_section%21-Union%7BTuple%7BMT%7D%2C%20Tuple%7BT%7D%2C%20Tuple%7BGlobalSection%7BT%2C%20MT%2C%20%CE%BBT%7D%20where%20%CE%BBT%3C%3AUnion%7BNothing%2C%20AbstractArray%7BT%7D%7D%2C%20AbstractLieAlgHorMatrix%7BT%7D%2C%20Any%7D%7D%20where%20%7BT%2C%20MT%3C%3AManifold%7BT%7D%7D"
 [[jl.method]]
 name = "GeometricOptimizers.value-Tuple{GeometricOptimizers.AbstractOptimizerProblem, OptimizerSolution}"
-uri = "#GeometricOptimizers.value-Tuple%7BGeometricOptimizers.AbstractOptimizerProblem%2C%20OptimizerSolution%7D"
+uri = "api/#GeometricOptimizers.value-Tuple%7BGeometricOptimizers.AbstractOptimizerProblem%2C%20OptimizerSolution%7D"
 [[jl.method]]
 name = "GeometricOptimizers.Ω-Union{Tuple{T}, Tuple{GrassmannManifold{T, AT} where AT<:AbstractMatrix{T}, AbstractMatrix{T}}} where T"
-uri = "#GeometricOptimizers.%CE%A9-Union%7BTuple%7BT%7D%2C%20Tuple%7BGrassmannManifold%7BT%2C%20AT%7D%20where%20AT%3C%3AAbstractMatrix%7BT%7D%2C%20AbstractMatrix%7BT%7D%7D%7D%20where%20T"
+uri = "api/#GeometricOptimizers.%CE%A9-Union%7BTuple%7BT%7D%2C%20Tuple%7BGrassmannManifold%7BT%2C%20AT%7D%20where%20AT%3C%3AAbstractMatrix%7BT%7D%2C%20AbstractMatrix%7BT%7D%7D%7D%20where%20T"
 [[jl.method]]
 name = "GeometricOptimizers.Ω-Union{Tuple{T}, Tuple{StiefelManifold{T, AT} where AT<:AbstractMatrix{T}, AbstractMatrix{T}}} where T"
-uri = "#GeometricOptimizers.%CE%A9-Union%7BTuple%7BT%7D%2C%20Tuple%7BStiefelManifold%7BT%2C%20AT%7D%20where%20AT%3C%3AAbstractMatrix%7BT%7D%2C%20AbstractMatrix%7BT%7D%7D%7D%20where%20T"
+uri = "api/#GeometricOptimizers.%CE%A9-Union%7BTuple%7BT%7D%2C%20Tuple%7BStiefelManifold%7BT%2C%20AT%7D%20where%20AT%3C%3AAbstractMatrix%7BT%7D%2C%20AbstractMatrix%7BT%7D%7D%7D%20where%20T"
 [[jl.method]]
 name = "GeometricOptimizers.𝔄-Tuple{AbstractMatrix, AbstractMatrix}"
-uri = "#GeometricOptimizers.%F0%9D%94%84-Tuple%7BAbstractMatrix%2C%20AbstractMatrix%7D"
+uri = "api/#GeometricOptimizers.%F0%9D%94%84-Tuple%7BAbstractMatrix%2C%20AbstractMatrix%7D"
 [[jl.method]]
 name = "GeometricOptimizers.𝔄-Tuple{AbstractMatrix, GeometricOptimizers.TaylorSeries}"
-uri = "#GeometricOptimizers.%F0%9D%94%84-Tuple%7BAbstractMatrix%2C%20GeometricOptimizers.TaylorSeries%7D"
+uri = "api/#GeometricOptimizers.%F0%9D%94%84-Tuple%7BAbstractMatrix%2C%20GeometricOptimizers.TaylorSeries%7D"
 [[jl.method]]
 name = "GeometricOptimizers.𝔄-Tuple{AbstractMatrix}"
-uri = "#GeometricOptimizers.%F0%9D%94%84-Tuple%7BAbstractMatrix%7D"
+uri = "api/#GeometricOptimizers.%F0%9D%94%84-Tuple%7BAbstractMatrix%7D"
 [[jl.method]]
 name = "SimpleSolvers.direction-Tuple{GeometricOptimizers.BFGSCache}"
-uri = "#SimpleSolvers.direction-Tuple%7BGeometricOptimizers.BFGSCache%7D"
+uri = "api/#SimpleSolvers.direction-Tuple%7BGeometricOptimizers.BFGSCache%7D"
 [[jl.method]]
 name = "SimpleSolvers.direction-Tuple{GeometricOptimizers.DFPCache}"
-uri = "#SimpleSolvers.direction-Tuple%7BGeometricOptimizers.DFPCache%7D"
+uri = "api/#SimpleSolvers.direction-Tuple%7BGeometricOptimizers.DFPCache%7D"
 [[jl.method]]
 name = "SimpleSolvers.direction-Tuple{GeometricOptimizers.NewtonOptimizerCache}"
-uri = "#SimpleSolvers.direction-Tuple%7BGeometricOptimizers.NewtonOptimizerCache%7D"
+uri = "api/#SimpleSolvers.direction-Tuple%7BGeometricOptimizers.NewtonOptimizerCache%7D"
 [[jl.method]]
 name = "SimpleSolvers.linesearch_problem-Union{Tuple{T}, Tuple{OptimizerProblem{T}, Gradient, GeometricOptimizers.OptimizerCache{T}, AbstractRetraction}} where T"
-uri = "#SimpleSolvers.linesearch_problem-Union%7BTuple%7BT%7D%2C%20Tuple%7BOptimizerProblem%7BT%7D%2C%20Gradient%2C%20GeometricOptimizers.OptimizerCache%7BT%7D%2C%20AbstractRetraction%7D%7D%20where%20T"
+uri = "api/#SimpleSolvers.linesearch_problem-Union%7BTuple%7BT%7D%2C%20Tuple%7BOptimizerProblem%7BT%7D%2C%20Gradient%2C%20GeometricOptimizers.OptimizerCache%7BT%7D%2C%20AbstractRetraction%7D%7D%20where%20T"
 [[jl.method]]
 name = "SimpleSolvers.outer!-Union{Tuple{T}, Tuple{AbstractMatrix{T}, AbstractLieAlgHorMatrix{T}, AbstractLieAlgHorMatrix{T}}} where T"
-uri = "#SimpleSolvers.outer%21-Union%7BTuple%7BT%7D%2C%20Tuple%7BAbstractMatrix%7BT%7D%2C%20AbstractLieAlgHorMatrix%7BT%7D%2C%20AbstractLieAlgHorMatrix%7BT%7D%7D%7D%20where%20T"
+uri = "api/#SimpleSolvers.outer%21-Union%7BTuple%7BT%7D%2C%20Tuple%7BAbstractMatrix%7BT%7D%2C%20AbstractLieAlgHorMatrix%7BT%7D%2C%20AbstractLieAlgHorMatrix%7BT%7D%7D%7D%20where%20T"
 [[jl.method]]
 name = "SimpleSolvers.solve!-Union{Tuple{T}, Tuple{OptimizerSolution{T}, OptimizerState, Optimizer{T, ALG, OBJ, GT, HT} where {ALG<:OptimizerMethod, OBJ<:(OptimizerProblem{T}), GT<:Gradient{T}, HT<:Hessian{T}}}} where T"
-uri = "#SimpleSolvers.solve%21-Union%7BTuple%7BT%7D%2C%20Tuple%7BOptimizerSolution%7BT%7D%2C%20OptimizerState%2C%20Optimizer%7BT%2C%20ALG%2C%20OBJ%2C%20GT%2C%20HT%7D%20where%20%7BALG%3C%3AOptimizerMethod%2C%20OBJ%3C%3A%28OptimizerProblem%7BT%7D%29%2C%20GT%3C%3AGradient%7BT%7D%2C%20HT%3C%3AHessian%7BT%7D%7D%7D%7D%20where%20T"
+uri = "api/#SimpleSolvers.solve%21-Union%7BTuple%7BT%7D%2C%20Tuple%7BOptimizerSolution%7BT%7D%2C%20OptimizerState%2C%20Optimizer%7BT%2C%20ALG%2C%20OBJ%2C%20GT%2C%20HT%7D%20where%20%7BALG%3C%3AOptimizerMethod%2C%20OBJ%3C%3A%28OptimizerProblem%7BT%7D%29%2C%20GT%3C%3AGradient%7BT%7D%2C%20HT%3C%3AHessian%7BT%7D%7D%7D%7D%20where%20T"
 
 [[jl.type]]
 name = "GeometricOptimizers.AbstractExponentialAlgorithm"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.AbstractLieAlgHorMatrix"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.AbstractOptimizerProblem"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.AbstractRetraction"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.AbstractTriangular"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.Adam"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.AdamCache"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.AdamFamily"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.AdamState"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.AdamWithEuclideanDecay"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.AugmentedPade"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.BFGS"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.BFGSCache"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.BFGSState"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.Cayley"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.DFP"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.DFPCache"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.DFPState"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.DecayingStatic"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.FirstOrderMethodWithState"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.Geodesic"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.GlobalSection"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.GradientCache"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.GradientMethod"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.GradientState"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.GrassmannLieAlgHorMatrix"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.GrassmannManifold"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.HessianBFGS"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.HessianDFP"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.IterativeHessian"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.LowerTriangular"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.Manifold"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.MomentumCache"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.MomentumMethod"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.MomentumState"
-uri = "#$"
+uri = "api/#$"
+[[jl.type]]
+name = "GeometricOptimizers.NativePade"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.Newton"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.NewtonOptimizerCache"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.NewtonOptimizerState"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.Optimizer"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.OptimizerCache"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.OptimizerMethod"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.OptimizerProblem"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.OptimizerResult"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.OptimizerSolution"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.OptimizerState"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.OptimizerStatus"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.OptimizerTraceEntry"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.ProjectedSkew"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.QuasiNewtonOptimizerMethod"
-uri = "#$"
+uri = "api/#$"
+[[jl.type]]
+name = "GeometricOptimizers.ScalarMomentAdam"
+uri = "api/#$"
+[[jl.type]]
+name = "GeometricOptimizers.ScalarMomentAdamCache"
+uri = "api/#$"
+[[jl.type]]
+name = "GeometricOptimizers.ScalarMomentAdamState"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.ScaledSquaring"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.SkewSymMatrix"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.StiefelLieAlgHorMatrix"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.StiefelManifold"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.StiefelProjection"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.SymmetricMatrix"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.TaylorSeries"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.UpperTriangular"
-uri = "#$"
+uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.VectorStorageMatrix"
-uri = "#$"
+uri = "api/#$"
 
+[[std.doc]]
+dispname = "API"
+name = "api"
+uri = "api/"
 [[std.doc]]
 dispname = "Global Tangent Spaces"
 name = "global_tangent_spaces"
@@ -590,6 +612,10 @@ dispname = "A manifold step does not want alpha le 1"
 name = "A-manifold-step-does-not-want-\\alpha-\\le-1"
 uri = "linesearch_on_manifolds/#A-manifold-step-does-not-want-%5Calpha-%5Cle-1"
 [[std.label]]
+dispname = "API Reference"
+name = "API-Reference"
+uri = "api/#$"
+[[std.label]]
 dispname = "Adding one"
 name = "Adding-one"
 uri = "retractions/#$"
@@ -608,6 +634,10 @@ uri = "manifolds/basic_topology/#$"
 dispname = "Both retractions factor the lift"
 name = "Both-retractions-factor-the-lift"
 uri = "retractions/#$"
+[[std.label]]
+dispname = "Cayley ADAM: a scalar second moment"
+name = "Cayley-ADAM:-a-scalar-second-moment"
+uri = "optimizer_methods/#Cayley-ADAM%3A-a-scalar-second-moment"
 [[std.label]]
 dispname = "Cayley and Geodesic"
 name = "Cayley-and-Geodesic"
@@ -682,9 +712,6 @@ dispname = "In GeometricOptimizers"
 name = "In-GeometricOptimizers"
 uri = "retractions/#$"
 [[std.label]]
-name = "Index"
-uri = "#$"
-[[std.label]]
 dispname = "Keeping a fixed learning rate"
 name = "Keeping-a-fixed-learning-rate"
 uri = "linesearch_on_manifolds/#$"
@@ -696,6 +723,9 @@ uri = "linesearch/#$"
 dispname = "Linesearches on Manifolds"
 name = "Linesearches-on-Manifolds"
 uri = "linesearch_on_manifolds/#$"
+[[std.label]]
+name = "NativePade"
+uri = "retractions/#$"
 [[std.label]]
 dispname = "Optimization on Homogeneous Spaces"
 name = "Optimization-on-Homogeneous-Spaces"
@@ -892,6 +922,14 @@ dispname = "The retractions on the two manifolds"
 name = "The-retractions-on-the-two-manifolds"
 uri = "retractions/#$"
 [[std.label]]
+dispname = "The source's Algorithm 2, symbol by symbol"
+name = "The-source's-Algorithm-2,-symbol-by-symbol"
+uri = "optimizer_methods/#The-source%27s-Algorithm-2%2C-symbol-by-symbol"
+[[std.label]]
+dispname = "The source's projection is global_rep"
+name = "The-source's-projection-*is*-global_rep"
+uri = "optimizer_methods/#The-source%27s-projection-%2Ais%2A-global_rep"
+[[std.label]]
 dispname = "The threshold θ needs no tuning"
 name = "The-threshold-θ-needs-no-tuning"
 uri = "retractions/#The-threshold-%CE%B8-needs-no-tuning"
@@ -943,6 +981,10 @@ uri = "weight_decay/#Where-GeometricMachineLearning%27s-method-belongs"
 dispname = "Where a retraction sits in the algorithm"
 name = "Where-a-retraction-sits-in-the-algorithm"
 uri = "retractions/#$"
+[[std.label]]
+dispname = "Where each symbol lives"
+name = "Where-each-symbol-lives"
+uri = "optimizer_methods/#$"
 [[std.label]]
 dispname = "Which line search"
 name = "Which-line-search"

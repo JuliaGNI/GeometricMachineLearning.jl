@@ -165,6 +165,18 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   whole subtree — which `foreachparameters` cannot express, because it takes `values` of each trailing
   argument. The `nothing`-skip is the only thing the two have in common, and it is one line here.
 
+- **The committed `GeometricOptimizers` inventory tracks 0.5.0**, the version this release requires.
+  0.5.0 moved the docstrings off the index page onto a dedicated `api/` page, so every one of the 168
+  `jl.*` anchors changed — a stale fallback would not have failed the build, it would have silently
+  produced 168 links to anchors that no longer exist, which is worse than having no fallback at all.
+  The file also gains the `ScalarMomentAdam` family, `NativePade` and `unit_matrix`, and loses the
+  `Index` label. All 26 `@extref GeometricOptimizers` targets used here resolve against it unchanged.
+
+  `docs/make.jl` documents regenerating it from the *deployed* inventory of the required version
+  rather than from a sibling checkout's `docs/build`, which is only as current as the last local
+  docs build — here, one release behind. The old one-liner also called `save` unqualified, and
+  `DocInventories` does not export it.
+
 ## [0.6.0] — 2026-08-24
 
 **The parameter container moves out to [NeuralNetworkParameters.jl][nnp].**
