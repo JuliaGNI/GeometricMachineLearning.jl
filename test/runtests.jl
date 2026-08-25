@@ -104,6 +104,9 @@ end
 @safetestset "map_to_cpu                                                                      " begin
     include("map_to_cpu_tests.jl")
 end
+@safetestset "changebackend                                                                   " begin
+    include("changebackend_tests.jl")
+end
 @info "Starting data and data-loader tests"
 @safetestset "Data                                                                            " begin
     include("data/test_data.jl")

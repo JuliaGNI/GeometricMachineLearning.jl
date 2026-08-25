@@ -1,9 +1,8 @@
 using GeometricMachineLearning
 using Test
 using HDF5
-using LinearAlgebra: qr
 import Random
-import AbstractNeuralNetworks: params, changebackend
+import AbstractNeuralNetworks: params
 
 Random.seed!(42)
 
@@ -234,56 +233,4 @@ end
             end
         end
     end
-end
-
-# ---------------------------------------------------------------------------
-# changebackend — new methods for GML special array types
-# ---------------------------------------------------------------------------
-
-@testset "changebackend: StiefelManifold (CPU → CPU)" begin
-    Y  = StiefelManifold(Matrix(qr(randn(6, 4)).Q))
-    Y2 = changebackend(CPU(), Y)
-    @test Y2 isa StiefelManifold
-    @test Y.A ≈ Y2.A
-end
-
-@testset "changebackend: SymmetricMatrix (CPU → CPU)" begin
-    A  = SymmetricMatrix(rand(10), 4)
-    A2 = changebackend(CPU(), A)
-    @test A2 isa SymmetricMatrix
-    @test A.S ≈ A2.S
-    @test A.n == A2.n
-end
-
-@testset "changebackend: SkewSymMatrix (CPU → CPU)" begin
-    A  = SkewSymMatrix(rand(6), 4)
-    A2 = changebackend(CPU(), A)
-    @test A2 isa SkewSymMatrix
-    @test A.S ≈ A2.S
-    @test A.n == A2.n
-end
-
-@testset "changebackend: LowerTriangular (CPU → CPU)" begin
-    A  = LowerTriangular(rand(6), 4)
-    A2 = changebackend(CPU(), A)
-    @test A2 isa LowerTriangular
-    @test A.S ≈ A2.S
-    @test A.n == A2.n
-end
-
-@testset "changebackend: UpperTriangular (CPU → CPU)" begin
-    A  = UpperTriangular(rand(6), 4)
-    A2 = changebackend(CPU(), A)
-    @test A2 isa UpperTriangular
-    @test A.S ≈ A2.S
-    @test A.n == A2.n
-end
-
-# Smoke test: changebackend applied to a full SAE (CPU → CPU).
-@testset "changebackend: full SAE NeuralNetwork (CPU → CPU)" begin
-    arch = SymplecticAutoencoder(10, 4)
-    nn   = NeuralNetwork(arch)
-    nn2  = changebackend(CPU(), nn)
-    x    = rand(10)
-    @test nn(x) ≈ nn2(x)
 end

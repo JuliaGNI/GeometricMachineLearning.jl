@@ -1,10 +1,6 @@
 # Optimizer machinery on top of GeometricOptimizers.
 # Kept out of `utils.jl` because it dispatches on `Manifold`, which is defined later.
 
-# Extend GlobalSection so it works with NetworkParameters (wraps a NamedTuple).
-GeometricOptimizers.GlobalSection(ps::NetworkParameters) =
-    GeometricOptimizers.GlobalSection(params(ps))
-
 # Backward-compat alias
 const AbstractCache{T} = GeometricOptimizers.OptimizerCache{T}
 

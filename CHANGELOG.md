@@ -24,7 +24,33 @@ along, and `_eltype` turns out to have been a hand-rolled `parameter_eltype`.
 **It also makes the optimizer cache immune to a change coming in `GeometricOptimizers`**, which is
 the half of this release with no visible effect today — see *Fixed*.
 
+**Requires `GeometricOptimizers` 0.5**, which is where the structured types' `changebackend` and
+`GlobalSection` methods now live — and, with it, `NeuralNetworkParameters` 0.2 and
+`SymbolicNeuralNetworks` 0.7. The three floors move together because the environment does not
+resolve otherwise: 0.5 drops the `ParameterHandling` shim and lets `NeuralNetworkParameters` do the
+flattening, so the 0.2 container is required rather than preferred — it carries the element type of
+its leaves as `NetworkParameters{T}`'s first type parameter, which is what lets a parameter set be
+an `OptimizerSolution{T}` there — and `SymbolicNeuralNetworks` 0.6 permits only the 0.1 container,
+so it cannot coexist with `GeometricOptimizers` 0.5.
+
 ### Removed (breaking)
+
+- **The five `changebackend` methods for `GeometricOptimizers`' types are gone, and so is
+  `GeometricOptimizers.GlobalSection(::NetworkParameters)`.** Both were type piracy of the same shape:
+  the generic belongs to one package, the types to another, and this package owns neither. Both now
+  live in `GeometricOptimizers` 0.5, which is what the compat floor moves for.
+
+  The `changebackend` methods also sat inside the **HDF5 extension**, which had nothing to do with
+  HDF5 — so `changebackend(GPU(), nn)` on a network with a manifold weight was a `MethodError` unless
+  HDF5 happened to be loaded. And they enumerated five types where upstream dispatches on
+  `Manifold`, `VectorStorageMatrix` and `AbstractLieAlgHorMatrix` in one method, so three families
+  had no method here at all: `GrassmannManifold` and both horizontal lifts.
+
+  Nothing under `src/` referenced `changebackend`, and the tests needed no rewriting — they import it
+  from `AbstractNeuralNetworks`, so upstream's methods answer by dispatch. They did move, to
+  `test/changebackend_tests.jl`, because coverage of a device transfer has no business being
+  reachable only through the HDF5 testset; the three previously uncovered families are asserted
+  there now.
 
 - **`apply_toNT` is gone from the export list and from the package. It was `Base.map`.**
 
