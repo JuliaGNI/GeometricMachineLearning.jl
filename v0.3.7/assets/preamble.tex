@@ -1,0 +1,85 @@
+%% Default preamble BEGIN
+
+\documentclass[twoside]{memoir} % would have to be changed to two sided
+
+\usepackage{./custom}
+
+%% Title Page
+\title{\centering
+\includegraphics[width=.8\textwidth]{assets/logo_without_jl.png}
+}
+\author{Benedikt Brantner}
+\date{September 24, 2024}
+
+\newcommand{\getTitle}{Geometric Machine Learning}
+\newcommand{\getSubTitle}{Structure-Preserving Neural Networks for Scientific Computing}
+\newcommand{\getAuthor}{Benedikt Brantner}
+\newcommand{\getChairman}{\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_}
+\newcommand{\getSupervisor}{Eric Sonnendrücker}
+\newcommand{\getExaminer}{\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_}
+\newcommand{\getSecondExaminer}{\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_}
+\newcommand{\getSubmissionDate}{\_\_\_\_\_\_\_\_\_\_\_}
+\newcommand{\getAcceptanceDate}{\_\_\_\_\_\_\_\_\_\_\_}
+
+\makeatletter       
+\def\@maketitle{
+\raggedright
+\includegraphics[height = 13mm]{assets/logo_ipp.jpg}\hfill\includegraphics[height = 13mm]{assets/logo_tum.pdf}\\[18ex]
+\begin{center}
+{\Huge \bfseries \sffamily \@title }\\[4ex] 
+{\Large  \@author}\\[4ex] 
+\@date\\[8ex]
+\includegraphics[height = 65mm]{parallel_transport_naked.png}
+\end{center}}
+\aliaspagestyle{title}{empty} % suppress the page number after \maketitle
+\makeatother
+\hyphenation{wiss-en-schaft-lich-en}
+\hyphenation{Trans-form-er-In-te-grat-or}
+\hyphenation{Sym-metric-Mat-rix}
+\hyphenation{Skew-Sym-Mat-rix}
+\hyphenation{Geo-met-ric-Ma-chine-Lear-n-ing}
+\hyphenation{Sym-met-ric-Mat-rix}
+\hyphenation{Ab-str-act-Vec-tor}
+\hyphenation{Tr-ans-for-mer-Int-e-gr-a-tor}
+\hyphenation{Tr-ans-for-mer-Int-e-gr-a-tors}
+
+%% TOC settings
+% -- TOC depth
+%   value: [part, chapter, section, subsection,
+%           subsubsection, paragraph, subparagraph]
+\settocdepth{section}  % show "part+chapter+section" in TOC
+% -- TOC spacing
+%   ref: https://tex.stackexchange.com/questions/60317/toc-spacing-in-memoir
+%   doc: memoir/memman.pdf
+%       - Figure 9.2: Layout of a ToC
+%       - Table 9.3: Value of K in macros for styling entries
+\makeatletter
+% {part} to {chapter}
+\setlength{\cftbeforepartskip}{1.5em \@plus \p@}
+% {chapter} to {chapter}
+\setlength{\cftbeforechapterskip}{0.0em \@plus \p@}
+% Part num to chapter title spacing
+\setlength{\cftpartnumwidth}{2.5em \@plus \p@}
+% Chapter num to chapter title spacing
+\setlength{\cftchapternumwidth}{2.5em \@plus \p@}
+% indent before section number
+\setlength{\cftsectionindent}{2.5em \@plus \p@}
+% Section num to section title spacing
+\setlength{\cftsectionnumwidth}{4.0em \@plus \p@}
+\makeatother
+
+\setlength{\afterchapskip}{\baselineskip}
+
+%% Main document begin
+\begin{document}
+
+\input{assets/deckblatt.tex}
+\clearpage
+\setcounter{page}{1}
+
+\frontmatter
+\maketitle
+\clearpage
+
+\pagestyle{headings}
+%% preamble END
