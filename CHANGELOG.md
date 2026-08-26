@@ -13,9 +13,20 @@ breaking release).
 > alongside the work. Where a release removed exported names the list is given; where it is a
 > reconstruction of intent, it says so.
 
-## [Unreleased]
+## [Unreleased] — 0.6.1
 
 ### Changed
+
+- **Julia 1.11 is the minimum**, up from the 1.10 LTS, in step with the rest of this family of
+  packages. Nothing here was accommodating 1.10; the two places that name it —
+  `test/training_parameters.jl` and `test/optimizers/optimizer_convergence_tests/psd_optim.jl` — record
+  where a measurement was taken and how a defect was found, and both stay as the history they are.
+
+- **`GeometricOptimizers = "0.6"`.** 0.6.0 is what takes a whole `NetworkParameters` through the
+  optimizer, and it is breaking: four `outer!`/`_mul!` methods, one `update!(::BFGSState, …)` and
+  `add!` on a parameter set are gone, and two `l2norm` methods moved upstream to `GeometricBase`. None
+  of them had a caller here — the `add!` arm was deleted on this side in 0.7 for the same reason — so
+  the bump is a compat entry and no code. The full suite is green against it.
 
 - **The fifteen sites spelling `Union{NamedTuple, NetworkParameters}` inline now name it.** It is
   `NeuralNetworkParameters.ParameterSet`, added upstream in 0.2.2: the same union, in the package that
