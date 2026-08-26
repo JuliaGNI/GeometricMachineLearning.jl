@@ -11,7 +11,7 @@ using AbstractNeuralNetworks
 # `parameter_eltype`, which promotes over the leaves of a set. A plain `NamedTuple` of layers is
 # walked with `Base.map`, which needs nothing from anybody.
 import NeuralNetworkParameters: NetworkParameters
-using NeuralNetworkParameters: mapstorage, parameter_eltype
+using NeuralNetworkParameters: mapstorage, parameter_eltype, ParameterSet
 using ChainRulesCore
 # `sqeuclidean` is the default distance of every `TrainingMethod` in `src/training_method/`.
 using Distances

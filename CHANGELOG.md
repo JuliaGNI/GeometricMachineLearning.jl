@@ -13,6 +13,44 @@ breaking release).
 > alongside the work. Where a release removed exported names the list is given; where it is a
 > reconstruction of intent, it says so.
 
+## [Unreleased] — 0.6.1
+
+### Changed
+
+- **Julia 1.11 is the minimum**, up from the 1.10 LTS, in step with the rest of this family of
+  packages. Nothing here was accommodating 1.10; the two places that name it —
+  `test/training_parameters.jl` and `test/optimizers/optimizer_convergence_tests/psd_optim.jl` — record
+  where a measurement was taken and how a defect was found, and both stay as the history they are.
+
+- **`GeometricOptimizers = "0.6"`.** 0.6.0 is what takes a whole `NetworkParameters` through the
+  optimizer, and it is breaking: four `outer!`/`_mul!` methods, one `update!(::BFGSState, …)` and
+  `add!` on a parameter set are gone, and two `l2norm` methods moved upstream to `GeometricBase`. None
+  of them had a caller here — the `add!` arm was deleted on this side in 0.7 for the same reason — so
+  the bump is a compat entry and no code. The full suite is green against it.
+
+- **The fifteen sites spelling `Union{NamedTuple, NetworkParameters}` inline now name it.** It is
+  `NeuralNetworkParameters.ParameterSet`, added upstream in 0.2.2: the same union, in the package that
+  owns the type. `SymbolicNeuralNetworks` had it as `EquationSet`, `AbstractNeuralNetworks` spelled it
+  out eight times and `GeometricOptimizers` sixteen; all four name one thing now. Definitionally
+  identical, so no dispatch changes anywhere. Compat is `NeuralNetworkParameters = "0.2.2"`.
+
+### Fixed
+
+- **The comment on `_make_optimizer_cache`'s branch ordering had been wrong for a release.** It said
+  `NetworkParameters` is not one of the types `GeometricOptimizers.OptimizerSolution` unions, and
+  therefore that asking the structural question before the capability question was invisible. 0.5.0 made
+  the container a member, so `_use_go_cache` is true at the *root* now and the ordering is load-bearing:
+  without it a whole network would get one cache instead of one per layer, silently, with
+  `_leaf_optim_step!` handed the entire tree. The code was already right — the ordering was put in
+  ahead of the change it anticipated — and only the comment needed correcting. Found in the review of
+  [GeometricOptimizers #68](https://github.com/JuliaGNI/GeometricOptimizers.jl/pull/68).
+
+  It also records what the better end state is, now that `GeometricOptimizers` 0.6.0 takes a whole
+  container as one solution: one cache for the network, which means giving `_GMLGradient` a
+  `NetworkParameters` method and dropping `_tree_optim_step!`. That is a change of behaviour — one
+  `GlobalSection` tree and one `Q` across every layer instead of one per layer — so it wants its own
+  release rather than being folded in here.
+
 ## [0.7.0]
 
 **The traversal of a parameter set now belongs to the package that owns the parameters, and the

@@ -1,6 +1,6 @@
 name = "GeometricMachineLearning"
 uuid = "194d25b2-d3f5-49f0-af24-c124f4aa80cc"
-version = "0.6.0"
+version = "0.6.1"
 authors = ["Michael Kraus <michael.kraus@ipp.mpg.de>"]
 
 [deps]
@@ -39,19 +39,19 @@ ForwardDiff = "1"
 GeometricBase = "0.14"
 GeometricEquations = "0.21"
 GeometricIntegrators = "0.18.2"
-GeometricOptimizers = "0.5"
+GeometricOptimizers = "0.6"
 GeometricSolutions = "0.6"
 HDF5 = "0.16, 0.17"
 KernelAbstractions = "0.9"
 NNlib = "0.8, 0.9"
-NeuralNetworkParameters = "0.2"
+NeuralNetworkParameters = "0.2.2"
 ProgressMeter = "1"
 SafeTestsets = "0.1"
 SymbolicNeuralNetworks = "0.7"
 Symbolics = "7"
 TimerOutputs = "0.5, 1"
 Zygote = "0.7"
-julia = "1.10"
+julia = "1.11"
 
 [extras]
 ChainRulesTestUtils = "cdddcdb0-9152-4a09-a978-84456f9df70a"
