@@ -39,9 +39,12 @@ Unwrap the single element `Zygote` may wrap a pullback result in.
 
 Together with [`_get_params`](@ref) this makes up [`_processing`](@ref).
 """
-_get_contents(nt::ParameterSet) = nt
-_get_contents(nt::Tuple{<:ParameterSet}) = nt[1]
-function _get_contents(nt::AbstractVector{<:ParameterSet})
+# Both shapes, because a pullback produces both. `NeuralNetworkParameters` rewraps the tangent of a
+# `NetworkParameters` into one, while a reverse pass seeded with a bare `NamedTuple` hands one back.
+_get_contents(nt::NetworkParameters) = nt
+_get_contents(nt::NamedTuple) = nt
+_get_contents(nt::Tuple{<:Union{NetworkParameters, NamedTuple}}) = nt[1]
+function _get_contents(nt::AbstractVector{<:Union{NetworkParameters, NamedTuple}})
     length(nt) == 1 || throw(ArgumentError(
         "the pullback returned $(length(nt)) parameter sets, expected one."))
     nt[1]

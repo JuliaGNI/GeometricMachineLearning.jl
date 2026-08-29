@@ -22,11 +22,58 @@ breaking release).
   `test/training_parameters.jl` and `test/optimizers/optimizer_convergence_tests/psd_optim.jl` — record
   where a measurement was taken and how a defect was found, and both stay as the history they are.
 
-- **`GeometricOptimizers = "0.6"`.** 0.6.0 is what takes a whole `NetworkParameters` through the
-  optimizer, and it is breaking: four `outer!`/`_mul!` methods, one `update!(::BFGSState, …)` and
+- **`GeometricOptimizers = "0.7"`.** 0.6.0 is what takes a whole `NetworkParameters` through the
+  optimizer, and it was breaking: four `outer!`/`_mul!` methods, one `update!(::BFGSState, …)` and
   `add!` on a parameter set are gone, and two `l2norm` methods moved upstream to `GeometricBase`. None
-  of them had a caller here — the `add!` arm was deleted on this side in 0.7 for the same reason — so
-  the bump is a compat entry and no code. The full suite is green against it.
+  of them had a caller here — the `add!` arm was deleted on this side in 0.7 for the same reason.
+
+  0.7.0 goes further and **does** need code here: a whole set of parameters reaches that package only
+  as a `NetworkParameters` now, and a bare `NamedTuple` is turned away. This package hands it one
+  **layer** at a time, so it cannot convert by wrapping at the root; see the entry below. The full
+  suite is green against it, `test/reduced_system.jl` aside — that one needs `GeometricIntegrators`,
+  which still pins `SimpleSolvers` 0.12 and is the ecosystem-wide blocker.
+
+- **`ParameterSet` is gone from the signatures here.** `NeuralNetworkParameters` 0.3.0 removes it, so
+  `Optimizer` and `optimize_for_one_epoch!` take a `NetworkParameters`, `_get_contents` has a method
+  per shape, and the loss functors drop the annotation entirely — it dispatched nothing there, since
+  the model and the input/output types settle every method, and both a container and the bare
+  `NamedTuple` a reverse pass produces reach them.
+
+  `_tree_optim_step!`'s test for a section tree is now `_is_section_tree`, a named predicate rather than
+  an `isa` against a union. It answers one question — descend, or hand this whole section to the layer
+  — and naming it is what keeps the container arm from looking like breadth for its own sake.
+
+- **A *flat* set of parameters gets one optimizer cache again, and the branch order is what decides it.**
+  `_make_optimizer_cache` asks `_is_layer` — "is this one cache's worth?" — *before* asking whether the
+  argument is a tree to descend into. A flat set answers yes to both, and the tree reading is wrong: it
+  gives every individual weight its own cache, and for a manifold weight that is not merely wasteful,
+  because a bare `Manifold` then reaches `_GMLGradient` where a whole layer should have, which is
+  ambiguous against `GeometricOptimizers`' own `Gradient` functor. `_is_layer` accepts a container as
+  well as a bare `NamedTuple` for this reason.
+
+- **A layer is wrapped at the `GeometricOptimizers` boundary, and the flatness rule is written out
+  here.** `_as_go_solution` wraps a layer in a `NetworkParameters` before handing it to
+  `OptimizerCache`, `OptimizerState` or `update!`, and `_leaf_optim_step!` uses the wrapped form
+  throughout. The wrap **shares the leaf arrays**, so the step still writes through to the network's
+  own weights and nothing is copied back — which is what makes this a boundary change and not a
+  change of behaviour.
+
+  What did have to be restated is the test that separates a *layer* from a *subtree*. Upstream made it
+  by dispatch: `ArrayNamedTuple{T}` bounded a `NamedTuple`'s values by `AbstractArray{T}`, so a
+  `NamedTuple` of branches was not one and got a cache per layer rather than one for the whole of it.
+  That alias is gone — it was an alias for `Base.NamedTuple`, so every method on it was a method on a
+  `Base` type — so `_is_layer` says it here, where it is this package's rule rather than a property of
+  whichever types upstream happens to accept this month.
+
+  **One behaviour follows from the wrap rather than from the old bound.** A layer whose weights do not
+  share an element type is now one cache with a promoted `T`, where the `Vararg` bound admitted no `T`
+  at all and the layer fell through to one `GMLEuclideanState` per weight — i.e. no manifold handling.
+  `_adapt_method_to_T` reads the promotion, so the cache is built for the type the layer actually has.
+
+  `_GMLGradient` gains its `NetworkParameters` method as part of this, and `_gml_rgrad` walks with
+  `mapparameters` instead of `Base.map`: it recurses on the branches, so `_gml_rgrad` is only ever
+  called on leaves, and it rebuilds in the shape of its first argument — a container, which is what
+  `GeometricOptimizers._copyto!(gradient_array(cache), ·)` has a method for.
 
 - **The fifteen sites spelling `Union{NamedTuple, NetworkParameters}` inline now name it.** It is
   `NeuralNetworkParameters.ParameterSet`, added upstream in 0.2.2: the same union, in the package that
@@ -45,11 +92,12 @@ breaking release).
   ahead of the change it anticipated — and only the comment needed correcting. Found in the review of
   [GeometricOptimizers #68](https://github.com/JuliaGNI/GeometricOptimizers.jl/pull/68).
 
-  It also records what the better end state is, now that `GeometricOptimizers` 0.6.0 takes a whole
-  container as one solution: one cache for the network, which means giving `_GMLGradient` a
-  `NetworkParameters` method and dropping `_tree_optim_step!`. That is a change of behaviour — one
-  `GlobalSection` tree and one `Q` across every layer instead of one per layer — so it wants its own
-  release rather than being folded in here.
+  It also records what the better end state is, now that `GeometricOptimizers` takes a whole container
+  as one solution: one cache for the network. `_GMLGradient` has its `NetworkParameters` method as of
+  this release, but that is one wrapped **layer** and not the tree — the container branch still splits
+  the network first. Dropping `_tree_optim_step!` and handing the whole tree to one cache is a change
+  of behaviour — one `GlobalSection` tree and one `Q` across every layer instead of one per layer — so
+  it still wants its own release rather than being folded in here.
 
 ## [0.7.0]
 

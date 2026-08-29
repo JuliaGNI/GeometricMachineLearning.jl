@@ -81,7 +81,7 @@ schedule, which `test/adam_optimizer_with_decay.jl` upstream asserts does not ha
 """
 function schedule_starts_at_one(; n_epochs = 100, η₁ = 1e-2, η₂ = 1e-6)
     method = AdamOptimizerWithDecay(n_epochs, Float64; η₁ = η₁, η₂ = η₂)
-    o = Optimizer((weight = zeros(2, 2),); method...)
+    o = Optimizer(NetworkParameters((weight = zeros(2, 2),)); method...)
 
     γ = exp(log(η₂ / η₁) / n_epochs)
     @test o.step_size isa DecayingStatic
@@ -94,7 +94,7 @@ function schedule_starts_at_one(; n_epochs = 100, η₁ = 1e-2, η₂ = 1e-6)
 
     # and the same thing through the public entry point: one step of a Euclidean parameter with a
     # gradient of `1` moves it by `α₁ / (√1 + δ) ≈ α₁`, so the distance travelled reports the α used
-    ps = (weight = zeros(2, 2),)
+    ps = NetworkParameters((weight = zeros(2, 2),))
     opt = Optimizer(ps; method...)
     optimization_step!(opt, GlobalSection(ps), ps, (weight = ones(2, 2),))
     @test opt.iterations == 1

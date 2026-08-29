@@ -73,7 +73,7 @@ function crop_array_for_transformer_loss(nn_output::AT,
 end
 
 function (loss::TransformerLoss)(model::Union{Chain, AbstractExplicitLayer},
-        ps::ParameterSet, input::AT,
+        ps, input::AT,
         output::AT) where {T, AT <: AbstractArray{T, 3}}
     input_dim, input_seq_length = size(input)
     output_dim, output_prediction_window = size(output)
@@ -88,13 +88,13 @@ function (loss::TransformerLoss)(model::Union{Chain, AbstractExplicitLayer},
 end
 
 function (loss::TransformerLoss)(model::Union{Chain, AbstractExplicitLayer},
-        ps::ParameterSet, input::AT,
+        ps, input::AT,
         output::AT) where {T, AT <: AbstractArray{T, 2}}
     loss(model, ps, reshape(input, size(input)..., 1), reshape(output, size(output)..., 1))
 end
 
 function (loss::TransformerLoss)(model::Union{Chain, AbstractExplicitLayer},
-        ps::ParameterSet,
+        ps,
         input::T, output::T) where {T <: QPT}
     loss(model, ps, vcat(input.q, input.p), vcat(output.q, output.p))
 end
@@ -120,7 +120,7 @@ end
 struct ClassificationTransformerLoss <: NetworkLoss end
 
 function (loss::ClassificationTransformerLoss)(model::Union{Chain, AbstractExplicitLayer},
-        ps::ParameterSet,
+        ps,
         input::AbstractArray, output::AbstractArray)
     predicted_output_uncropped = model(input, ps)
     # predicted_output_cropped = crop_array_for_transformer_loss(predicted_output_uncropped, output)
@@ -179,12 +179,12 @@ function (loss::AutoEncoderLoss)(nn::NeuralNetwork, input::QPTOAT)
 end
 
 function (loss::AutoEncoderLoss)(model::Union{Chain, AbstractExplicitLayer},
-        ps::ParameterSet, input::QPTOAT)
+        ps, input::QPTOAT)
     loss(model, ps, input, input)
 end
 
 function (loss::AutoEncoderLoss)(model::Union{Chain, AbstractExplicitLayer},
-        ps::ParameterSet, input::QPTOAT, output::QPTOAT)
+        ps, input::QPTOAT, output::QPTOAT)
     FeedForwardLoss()(model, ps, input, output)
 end
 

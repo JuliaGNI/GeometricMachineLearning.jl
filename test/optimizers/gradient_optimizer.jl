@@ -13,7 +13,7 @@ function gradient_optimizer_euclidean(N; n_steps = 20, step_size = 1e-3)
     B = inv(rand(N, N))
     loss(ps) = norm(ps.A - B) ^ 2
     A = randn(N, N)
-    ps = (A = A,)
+    ps = NetworkParameters((A = A,))
     loss1 = loss(ps)
     o = Optimizer(GradientMethod(), ps; step_size = step_size)
     for _ in 1:n_steps
@@ -33,7 +33,7 @@ function gradient_optimizer_stiefel(N, n; n_steps = 20, step_size = 1e-3)
     B  = YB * YB'
     loss(ps) = norm(ps.Y * ps.Y' - B) ^ 2
     Y  = rand(StiefelManifold, N, n)
-    ps = (Y = Y,)
+    ps = NetworkParameters((Y = Y,))
     loss1 = loss(ps)
     o = Optimizer(GradientMethod(), ps; step_size = step_size)
     for _ in 1:n_steps
