@@ -83,6 +83,27 @@ breaking release).
 
 ### Fixed
 
+- **`_GMLGradient` on a bare `Manifold` was ambiguous, and the branch ordering was the only thing
+  preventing it.** `_GMLGradient{T}` is a `GeometricOptimizers.Gradient{T}` and `Manifold{T}` is an
+  `AbstractMatrix{T}`, so `(::_GMLGradient{T})(::AbstractArray{T})` here and upstream's
+  `(::Gradient{T})(::Manifold{T})` are neither of them more specific on the intersection —
+  `MethodError: … is ambiguous`, several frames into a solve. Asking `_is_layer` before descending
+  keeps a bare `Manifold` from arriving, and that ordering is a correctness fix in its own right, but
+  a routing decision must not be the only thing standing between a caller and an ambiguity.
+
+  There is now a method for it, and the answer it gives is this package's: the Euclidean gradient is
+  already computed and carried in `dp`, so the projection is `rgrad(x, dp)` rather than upstream's
+  `rgrad(x, reshape(grad(vec(x)), …))`, which would evaluate an inner gradient this functor does not
+  have. `test/optimizers/gml_gradient_dispatch.jl` pins it, along with the shapes the optimizer
+  actually produces.
+
+- **An empty set was one cache's worth.** `all` over an empty collection is vacuously true, so
+  `_is_layer(NamedTuple())` was `true` and `OptimizerCache` would have been asked for the element type
+  of a set with no leaves to promote. An empty set is *zero* caches' worth and descends.
+
+- `_get_contents` takes a method per shape in its wrapped forms too, rather than a `Tuple` and an
+  `AbstractVector` over a union of the two. Same rule as everywhere else in this release.
+
 - **The comment on `_make_optimizer_cache`'s branch ordering had been wrong for a release.** It said
   `NetworkParameters` is not one of the types `GeometricOptimizers.OptimizerSolution` unions, and
   therefore that asking the structural question before the capability question was invisible. 0.5.0 made

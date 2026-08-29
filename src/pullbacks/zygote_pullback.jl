@@ -41,10 +41,18 @@ Together with [`_get_params`](@ref) this makes up [`_processing`](@ref).
 """
 # Both shapes, because a pullback produces both. `NeuralNetworkParameters` rewraps the tangent of a
 # `NetworkParameters` into one, while a reverse pass seeded with a bare `NamedTuple` hands one back.
+# A method per shape here as everywhere else in this release, and in the wrapped forms too: a union
+# over `NamedTuple` reads as breadth for its own sake, where two methods say which shape arrived.
 _get_contents(nt::NetworkParameters) = nt
 _get_contents(nt::NamedTuple) = nt
-_get_contents(nt::Tuple{<:Union{NetworkParameters, NamedTuple}}) = nt[1]
-function _get_contents(nt::AbstractVector{<:Union{NetworkParameters, NamedTuple}})
+
+_get_contents(nt::Tuple{<:NetworkParameters}) = nt[1]
+_get_contents(nt::Tuple{<:NamedTuple}) = nt[1]
+
+_get_contents(nt::AbstractVector{<:NetworkParameters}) = _only_set(nt)
+_get_contents(nt::AbstractVector{<:NamedTuple}) = _only_set(nt)
+
+function _only_set(nt)
     length(nt) == 1 || throw(ArgumentError(
         "the pullback returned $(length(nt)) parameter sets, expected one."))
     nt[1]

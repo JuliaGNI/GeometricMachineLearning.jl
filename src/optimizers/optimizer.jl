@@ -20,6 +20,21 @@ _gml_rgrad(x::NetworkParameters, dp) = mapparameters(_gml_rgrad, x, dp)
 (g::_GMLGradient{T})(x::NetworkParameters{T}) where {T} = _gml_rgrad(x, g.dp)
 (g::_GMLGradient{T})(x::AbstractArray{T}) where {T} = g.dp
 
+# `Manifold` and not `AbstractArray` alone, because the two are otherwise **ambiguous** and not merely
+# overlapping. `_GMLGradient{T}` is a `GeometricOptimizers.Gradient{T}`, `Manifold{T}` is an
+# `AbstractMatrix{T}`, and `GeometricOptimizers` has `(::Gradient{T})(::Manifold{T})`; so on a bare
+# manifold neither `(::_GMLGradient{T})(::AbstractArray{T})` above nor that one is more specific, and
+# the call is a run-time `MethodError: ... is ambiguous`. This method is more specific than both.
+#
+# The answer it gives is this package's: the gradient is already computed, so the projection is
+# `rgrad(x, dp)` and not upstream's `rgrad(x, reshape(grad(vec(x)), ...))`, which would evaluate an
+# inner gradient this functor does not have. `_gml_rgrad` is where that lives.
+#
+# `_make_optimizer_cache` below asks `_is_layer` first and so keeps a bare `Manifold` from arriving
+# here at all. That ordering is a correctness fix in its own right -- one cache per layer rather than
+# per weight -- but it must not be the *only* thing standing between a caller and an ambiguity.
+(g::_GMLGradient{T})(x::Manifold{T}) where {T} = _gml_rgrad(x, g.dp)
+
 # State for Euclidean (non-manifold) parameters.
 mutable struct GMLEuclideanState{T, AT<:AbstractArray{T}}
     iterations::Int
@@ -61,9 +76,15 @@ _adapt_method_to_T(method, ::Type) = method
 # A layer whose weights do not share an element type is still one cache, with `T` the promotion over
 # them. `_adapt_method_to_T` reads that promotion, so the cache is built for the element type the
 # layer actually has rather than for one its weights are required to agree on.
-_is_layer(x::NamedTuple) = all(v -> v isa AbstractArray, values(x))
-_is_layer(x::NetworkParameters) = all(v -> v isa AbstractArray, values(x))
+# `!isempty` and not `all` alone: `all` over an empty collection is vacuously true, so without it an
+# empty set would be one cache's worth -- and `OptimizerCache` would then be asked for the element
+# type of a set that has no leaves to promote. An empty set is zero caches' worth, so it descends and
+# yields an empty tree of caches, which is what the step below iterates over zero times.
+_is_layer(x::NamedTuple) = _all_leaves(values(x))
+_is_layer(x::NetworkParameters) = _all_leaves(values(x))
 _is_layer(_) = false
+
+_all_leaves(vs) = !isempty(vs) && all(v -> v isa AbstractArray, vs)
 
 _use_go_cache(method, x) = _is_go_native_method(method) &&
     (x isa GeometricOptimizers.OptimizerSolution || _is_layer(x))
