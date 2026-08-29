@@ -66,3 +66,49 @@ end
     # a layer whose weights do not share an element type is still one cache, with `T` the promotion
     @test GML._is_layer((W = randn(Float32, 2, 2), b = randn(Float64, 2)))
 end
+
+# `_as_go_solution` is the wrap itself, and the property that makes the wrap free: it shares the leaf
+# arrays, so the optimizer step writes through to the network's own weights and nothing is copied
+# back. That is what makes this a boundary change rather than a change of behaviour, and it is the one
+# claim of this release that a reader cannot check by reading a signature.
+@testset "_as_go_solution wraps a layer and shares its arrays" begin
+    W, b = randn(2, 2), randn(2)
+    layer = (W = W, b = b)
+
+    wrapped = GML._as_go_solution(layer)
+    @test wrapped isa NetworkParameters
+    @test wrapped.W === W          # shared, not copied
+    @test wrapped.b === b
+
+    # already in the right shape: passed through untouched
+    ps = NetworkParameters(layer)
+    @test GML._as_go_solution(ps) === ps
+    Y = rand(StiefelManifold, 4, 2)
+    @test GML._as_go_solution(Y) === Y
+    v = randn(3)
+    @test GML._as_go_solution(v) === v
+
+    # a subtree is not a layer, so it is left alone for the tree branch to descend
+    tree = (L1 = (W = randn(2, 2),), L2 = (W = randn(2, 2),))
+    @test GML._as_go_solution(tree) === tree
+end
+
+# `_get_contents` unwraps whatever shape the pullback handed back. Six methods, because a reverse pass
+# produces a container or the bare `NamedTuple` it wraps, and `Zygote` may hand either back bare, in a
+# one-tuple, or in a one-element vector. Each is exercised here: splitting a union into a method per
+# shape means each method needs its own case, or the split trades one tested path for six untested
+# ones.
+@testset "_get_contents unwraps every shape a pullback returns" begin
+    nt = (L1 = (W = randn(2, 2), b = randn(2)),)
+    ps = NetworkParameters(nt)
+
+    for x in (nt, ps)
+        @test GML._get_contents(x) === x
+        @test GML._get_contents((x,)) === x
+        @test GML._get_contents([x]) === x
+    end
+
+    # more than one set is a caller error and says so, rather than silently taking the first
+    @test_throws ArgumentError GML._get_contents([ps, ps])
+    @test_throws ArgumentError GML._get_contents([nt, nt])
+end
