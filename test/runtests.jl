@@ -101,6 +101,9 @@ end
 @safetestset "Optimizers with structured (non-manifold) weights                               " begin
     include("optimizers/structured_array_parameters.jl")
 end
+@safetestset "_GMLGradient dispatch                                                           " begin
+    include("optimizers/gml_gradient_dispatch.jl")
+end
 @safetestset "map_to_cpu                                                                      " begin
     include("map_to_cpu_tests.jl")
 end

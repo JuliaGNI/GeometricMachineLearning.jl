@@ -5,6 +5,13 @@ using GeometricMachineLearning: cayley
 # so they are named qualified rather than through a re-export.
 using GeometricOptimizers: MomentumCache
 import Random, Test, LinearAlgebra, KernelAbstractions
+# The cache and the state hold a `NetworkParameters` per layer: a layer is wrapped at the
+# `GeometricOptimizers` boundary, and the wrap shares the leaf arrays. `mapparameters` and not `map`,
+# because it recurses on the branches and so reaches the leaves whichever shape it is handed.
+#
+# Each helper below has two methods, because two shapes arrive: a wrapped layer is a
+# `NetworkParameters` and the tree above it is a plain `NamedTuple`.
+using NeuralNetworkParameters: NetworkParameters, mapparameters
 
 Random.seed!(1234)
 
@@ -16,7 +23,8 @@ function check_retraction_geodesic(A::AbstractMatrix{T}, tol=eps(T)) where T
     @test typeof(A_retracted) <: StiefelManifold
     @test LinearAlgebra.norm(A_retracted - StiefelProjection(A_retracted)) < tol
 end
-check_retraction_geodesic(cache::NamedTuple) = map(check_retraction_geodesic, cache)
+check_retraction_geodesic(cache::NetworkParameters) = mapparameters(check_retraction_geodesic, cache)
+check_retraction_geodesic(cache::NamedTuple) = mapparameters(check_retraction_geodesic, cache)
 check_retraction_geodesic(B::MomentumCache) = check_retraction_geodesic(B.δ)
 
 @doc raw"""
@@ -27,7 +35,8 @@ function check_retraction_cayley(A::AbstractMatrix{T}, tol=eps(T)) where T
     @test typeof(A_retracted) <: StiefelManifold
     @test LinearAlgebra.norm(A_retracted - StiefelProjection(A_retracted)) < tol
 end
-check_retraction_cayley(cache::NamedTuple) = map(check_retraction_cayley, cache)
+check_retraction_cayley(cache::NetworkParameters) = mapparameters(check_retraction_cayley, cache)
+check_retraction_cayley(cache::NamedTuple) = mapparameters(check_retraction_cayley, cache)
 check_retraction_cayley(B::MomentumCache) = check_retraction_cayley(B.δ)
 
 @doc raw"""

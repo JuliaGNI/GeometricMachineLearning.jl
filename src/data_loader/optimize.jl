@@ -48,7 +48,7 @@ number_of_batches(dl, batch)
 ```
 """
 function optimize_for_one_epoch!(   opt::Optimizer, 
-                                    model, ps::ParameterSet, 
+                                    model, ps::NetworkParameters, 
                                     dl::DataLoader{T}, 
                                     batch::Batch, 
                                     loss::NetworkLoss, 
@@ -58,7 +58,7 @@ end
 
 function optimize_for_one_epoch!(   opt::Optimizer, 
                                     model, 
-                                    ps::ParameterSet, 
+                                    ps::NetworkParameters, 
                                     dl::DataLoader{T}, 
                                     batch::Batch, 
                                     _pullback::AbstractPullback, 

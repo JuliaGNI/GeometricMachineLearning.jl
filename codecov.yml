@@ -1,0 +1,18 @@
+# Without this file Codecov's defaults apply: `target: auto` with `threshold: 0%`, which fails a pull
+# request for *any* decrease. That is sharper than it reads, because Codecov counts a *modified* line
+# as part of the diff: changing a signature's annotation, or splitting one into a method per shape,
+# re-attributes lines that were already uncovered to whoever touched them.
+#
+# 1% on both, matching `GeometricOptimizers` and `SymbolicNeuralNetworks`. `informational` is
+# deliberately *not* set: the check should still be able to fail, and on #255 it did — six genuinely
+# untested methods, which were tested rather than waved through.
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+    patch:
+      default:
+        target: auto
+        threshold: 1%

@@ -6,6 +6,13 @@ using GeometricMachineLearning, Test
 import GeometricOptimizers
 using GeometricOptimizers: GradientCache, MomentumCache, AdamCache
 import Random, LinearAlgebra
+# The cache and the state hold a `NetworkParameters` per layer: a layer is wrapped at the
+# `GeometricOptimizers` boundary, and the wrap shares the leaf arrays. `mapparameters` and not `map`,
+# because it recurses on the branches and so reaches the leaves whichever shape it is handed.
+#
+# Each helper below has two methods, because two shapes arrive: a wrapped layer is a
+# `NetworkParameters` and the tree above it is a plain `NamedTuple`.
+using NeuralNetworkParameters: NetworkParameters, mapparameters
 
 Random.seed!(1234)
 
@@ -16,6 +23,7 @@ The direction δ and moments m₁, m₂ should be zero-initialised.
 """
 _check_slahm_zero(A::StiefelLieAlgHorMatrix{T}, tol) where T =
     (@test typeof(A) <: StiefelLieAlgHorMatrix; @test LinearAlgebra.norm(A) < tol)
+_check_slahm_zero(A::NetworkParameters, tol) = foreach(v -> _check_slahm_zero(v, tol), values(A))
 _check_slahm_zero(A::NamedTuple, tol) = foreach(v -> _check_slahm_zero(v, tol), values(A))
 
 function check_adam_cache(C::GeometricOptimizers.OptimizerCache{T}, tol=T(10) * eps(T)) where T
@@ -23,7 +31,8 @@ function check_adam_cache(C::GeometricOptimizers.OptimizerCache{T}, tol=T(10) * 
     _check_slahm_zero(C.δ, tol)
     _check_slahm_zero(C.m₁, tol)
 end
-check_adam_cache(B::NamedTuple) = map(check_adam_cache, B)
+check_adam_cache(B::NetworkParameters) = mapparameters(check_adam_cache, B)
+check_adam_cache(B::NamedTuple) = mapparameters(check_adam_cache, B)
 
 @doc raw"""
 This checks if the momentum cache was set up in the right way.
@@ -34,7 +43,8 @@ function check_momentum_cache(C::GeometricOptimizers.OptimizerCache{T}, tol=T(10
     @test C isa MomentumCache
     _check_slahm_zero(C.δ, tol)
 end
-check_momentum_cache(B::NamedTuple) = map(check_momentum_cache, B)
+check_momentum_cache(B::NetworkParameters) = mapparameters(check_momentum_cache, B)
+check_momentum_cache(B::NamedTuple) = mapparameters(check_momentum_cache, B)
 
 @doc raw"""
 This checks if the gradient cache was set up in the right way.
@@ -44,7 +54,8 @@ function check_gradient_cache(C::GeometricOptimizers.OptimizerCache{T}) where T
     @test C isa GradientCache
     @test hasproperty(C, :δ)
 end
-check_gradient_cache(B::NamedTuple) = map(check_gradient_cache, B)
+check_gradient_cache(B::NetworkParameters) = mapparameters(check_gradient_cache, B)
+check_gradient_cache(B::NamedTuple) = mapparameters(check_gradient_cache, B)
 
 @doc raw"""
 This checks if all the caches are set up in the right way for the `MultiHeadAttention` layer with Stiefel weights.

@@ -11,11 +11,29 @@ end
 
 _gml_rgrad(x::Manifold, dp) = rgrad(x, dp)
 _gml_rgrad(x, dp) = dp
-_gml_rgrad(x::NamedTuple, dp::NamedTuple) = map(_gml_rgrad, x, dp)
+# `mapparameters` and not `map`: it recurses on the branches, so `_gml_rgrad` is only ever called on
+# leaves, and it rebuilds in the shape of its *first* argument -- a container, which is what
+# `GeometricOptimizers._copyto!(gradient_array(cache), ·)` has a method for. It also normalises its
+# trailing arguments, so `dp` may stay the plain `NamedTuple` the pullback produced.
+_gml_rgrad(x::NetworkParameters, dp) = mapparameters(_gml_rgrad, x, dp)
 
-(g::_GMLGradient{T})(x::GeometricOptimizers.ArrayNamedTuple{T}) where {T} =
-    _gml_rgrad(x, g.dp)
+(g::_GMLGradient{T})(x::NetworkParameters{T}) where {T} = _gml_rgrad(x, g.dp)
 (g::_GMLGradient{T})(x::AbstractArray{T}) where {T} = g.dp
+
+# `Manifold` and not `AbstractArray` alone, because the two are otherwise **ambiguous** and not merely
+# overlapping. `_GMLGradient{T}` is a `GeometricOptimizers.Gradient{T}`, `Manifold{T}` is an
+# `AbstractMatrix{T}`, and `GeometricOptimizers` has `(::Gradient{T})(::Manifold{T})`; so on a bare
+# manifold neither `(::_GMLGradient{T})(::AbstractArray{T})` above nor that one is more specific, and
+# the call is a run-time `MethodError: ... is ambiguous`. This method is more specific than both.
+#
+# The answer it gives is this package's: the gradient is already computed, so the projection is
+# `rgrad(x, dp)` and not upstream's `rgrad(x, reshape(grad(vec(x)), ...))`, which would evaluate an
+# inner gradient this functor does not have. `_gml_rgrad` is where that lives.
+#
+# `_make_optimizer_cache` below asks `_is_layer` first and so keeps a bare `Manifold` from arriving
+# here at all. That ordering is a correctness fix in its own right -- one cache per layer rather than
+# per weight -- but it must not be the *only* thing standing between a caller and an ambiguity.
+(g::_GMLGradient{T})(x::Manifold{T}) where {T} = _gml_rgrad(x, g.dp)
 
 # State for Euclidean (non-manifold) parameters.
 mutable struct GMLEuclideanState{T, AT<:AbstractArray{T}}
@@ -44,48 +62,92 @@ _adapt_method_to_T(method::GeometricOptimizers.MomentumMethod, ::Type{T}) where 
     GeometricOptimizers.MomentumMethod(T(method.α))
 _adapt_method_to_T(method, ::Type) = method
 
-_use_go_cache(method, x) =
-    _is_go_native_method(method) && x isa GeometricOptimizers.OptimizerSolution
+# Whether one `GeometricOptimizers` cache covers `x` whole.
+#
+# A **layer** is a flat `NamedTuple` of arrays, and it is exactly what one cache is for. A `NamedTuple`
+# whose values are branches is a *subtree* and gets one cache per layer instead, which is why the test
+# is flatness and not merely "a `NamedTuple`".
+#
+# The rule lives here rather than upstream because a whole set of parameters reaches
+# `GeometricOptimizers` only as a `NetworkParameters`, and a container says nothing about how deep the
+# tree beneath it is. Splitting a network into layers is this package's decision, so this package makes
+# it; [`_as_go_solution`](@ref) then does the wrap.
+#
+# A layer whose weights do not share an element type is still one cache, with `T` the promotion over
+# them. `_adapt_method_to_T` reads that promotion, so the cache is built for the element type the
+# layer actually has rather than for one its weights are required to agree on.
+# `!isempty` and not `all` alone: `all` over an empty collection is vacuously true, so without it an
+# empty set would be one cache's worth -- and `OptimizerCache` would then be asked for the element
+# type of a set that has no leaves to promote. An empty set is zero caches' worth, so it descends and
+# yields an empty tree of caches, which is what the step below iterates over zero times.
+_is_layer(x::NamedTuple) = _all_leaves(values(x))
+_is_layer(x::NetworkParameters) = _all_leaves(values(x))
+_is_layer(_) = false
+
+_all_leaves(vs) = !isempty(vs) && all(v -> v isa AbstractArray, vs)
+
+_use_go_cache(method, x) = _is_go_native_method(method) &&
+    (x isa GeometricOptimizers.OptimizerSolution || _is_layer(x))
+
+"""
+    _as_go_solution(x)
+
+`x` in the shape `GeometricOptimizers` takes a solution in.
+
+A layer given as a bare `NamedTuple` is wrapped; anything already in the right shape — a container, a
+bare `Manifold`, an `AbstractArray` — is passed through. The wrap **shares the leaf arrays**, so an
+in-place optimizer step writes through to the network's own weights and nothing has to be copied back.
+"""
+_as_go_solution(x::NetworkParameters) = x
+_as_go_solution(x) = _is_layer(x) ? NetworkParameters(x) : x
 
 # A `NetworkParameters` is always a tree of layers to descend into, never a single
 # `GeometricOptimizers` leaf, so its branch comes *first* — ahead of `_use_go_cache`.
 #
-# That ordering is **load-bearing**, and was not always. It used to be invisible, because
-# `NetworkParameters` was not one of the types `GeometricOptimizers.OptimizerSolution` unions, so
-# `_use_go_cache` was false at the root anyway and control reached the container branch either way.
-# `GeometricOptimizers` 0.5.0 added the container to that union, so `_use_go_cache` is now true at the
-# *root*: without the test above, a whole network would get one cache instead of one per layer --
-# silently, and with `_leaf_optim_step!` handed the entire tree. Asking the structural question before
-# the capability question is what makes the shape of the cache depend on the shape of the parameters
-# rather than on which types upstream happens to accept this month.
+# That ordering is **load-bearing**. `NetworkParameters` *is* one of the types
+# `GeometricOptimizers.OptimizerSolution` unions, so `_use_go_cache` is true at the root: without the
+# test above, a whole network would get one cache instead of one per layer -- silently, and with
+# `_leaf_optim_step!` handed the entire tree. Asking the structural question before the capability
+# question is what makes the shape of the cache depend on the shape of the parameters rather than on
+# which types upstream happens to accept.
 #
-# One cache for the whole network is the better end state and is what
-# `GeometricOptimizers` 0.6.0 makes possible; getting there means giving `_GMLGradient` a
-# `NetworkParameters` method and dropping `_tree_optim_step!`, which is a change of behaviour -- one
-# `GlobalSection` tree and one `Q` across every layer -- and so its own release.
+# One cache for the whole network is the better end state, and it is **not** what this does.
+# `_GMLGradient` does take a `NetworkParameters`, but that is one wrapped *layer* and not the tree,
+# because the container branch above splits the network first. Getting to one cache means dropping
+# `_tree_optim_step!` and handing the whole tree over, which is a change of behaviour -- one
+# `GlobalSection` tree and one `Q` across every layer -- so it wants its own release. Nothing here
+# depends on it.
 #
-# The `NamedTuple` branch stays *after* `_use_go_cache`, and that asymmetry is the point: a layer is a
-# `NamedTuple` of arrays, which is exactly what one `GeometricOptimizers` cache is for. Hoisting it
-# too would descend into the individual weights and give each its own `GMLEuclideanState`.
+# **"Is this one cache's worth?" is asked before "is this a tree?"**, and a *flat* set answers yes to
+# both. `_is_layer` is that question: a set whose values are all leaves is a layer, whether it arrives
+# wrapped or as a branch, and one `GeometricOptimizers` cache is exactly what a layer is for. Asking
+# the tree question first would descend into such a set and give every individual weight its own cache
+# -- which for a manifold weight is not merely wasteful but wrong, since a bare `Manifold` then reaches
+# the gradient functor where a whole layer should have.
+#
+# The tree branch comes second and covers both carriers, because a network is a tree of layers whether
+# it is wrapped or not.
 function _make_optimizer_cache(method, x)
-    if x isa NetworkParameters
+    if _is_go_native_method(method) && _is_layer(x)
+        GeometricOptimizers.OptimizerCache(_adapt_method_to_T(method, parameter_eltype(x)),
+                                          _as_go_solution(x))
+    elseif x isa NetworkParameters || x isa NamedTuple
         NamedTuple{keys(x)}(Tuple(_make_optimizer_cache(method, x[k]) for k in keys(x)))
     elseif _use_go_cache(method, x)
         GeometricOptimizers.OptimizerCache(_adapt_method_to_T(method, parameter_eltype(x)), x)
-    elseif x isa NamedTuple
-        NamedTuple{keys(x)}(Tuple(_make_optimizer_cache(method, x[k]) for k in keys(x)))
     else
         GMLEuclideanState(x)
     end
 end
 
 function _make_optimizer_state(method, x)
-    if x isa NetworkParameters
+    if _is_go_native_method(method) && _is_layer(x)
+        GeometricOptimizers.OptimizerState(_adapt_method_to_T(method, parameter_eltype(x)),
+                                          _as_go_solution(x))
+    elseif x isa NetworkParameters || x isa NamedTuple
         NamedTuple{keys(x)}(Tuple(_make_optimizer_state(method, x[k]) for k in keys(x)))
     elseif _use_go_cache(method, x)
         GeometricOptimizers.OptimizerState(_adapt_method_to_T(method, parameter_eltype(x)), x)
-    elseif x isa NamedTuple
-        NamedTuple{keys(x)}(Tuple(_make_optimizer_state(method, x[k]) for k in keys(x)))
     else
         GMLEuclideanState(x)
     end
@@ -148,7 +210,7 @@ function Optimizer(method::GeometricOptimizers.OptimizerMethod, nn::NeuralNetwor
 end
 
 function Optimizer(method::GeometricOptimizers.OptimizerMethod,
-        ps::ParameterSet;
+        ps::NetworkParameters;
         retraction = GeometricOptimizers.cayley,
         step_size = _default_step_size(method))
     Optimizer(method, _make_optimizer_cache(method, ps), _make_optimizer_state(method, ps),
@@ -158,7 +220,7 @@ end
 # The keyword form, so that the `(algorithm, linesearch)` pairing `GeometricOptimizers` returns from
 # `AdamOptimizerWithDecay` splats in unchanged. `linesearch` is the step size under the name
 # upstream gives it; a `Static` carries its own `α`, which is then the fixed learning rate.
-function Optimizer(nn_or_ps::Union{NeuralNetwork, NamedTuple, NetworkParameters};
+function Optimizer(nn_or_ps::Union{NeuralNetwork, NetworkParameters};
         algorithm::GeometricOptimizers.OptimizerMethod,
         linesearch = nothing,
         retraction = GeometricOptimizers.cayley,
@@ -221,15 +283,20 @@ function _go_update_leaf!(cache, state, local_grad,
                                 GeometricOptimizers.NoHessian{T}(), ps_leaf)
 end
 
-# GO-managed leaf step (manifolds, vectors, ArrayNamedTuples)
+# GO-managed leaf step (manifolds, vectors, whole layers)
+#
+# `ps` and not `ps_leaf` from here on: a layer is wrapped for the same reason its cache is, and the
+# wrap shares the arrays, so `_copyto!(ps, solution(cache))` below writes into the weights the caller
+# holds. A bare `Manifold` or `AbstractArray` passes through untouched.
 function _leaf_optim_step!(cache::GeometricOptimizers.OptimizerCache,
         state::GeometricOptimizers.OptimizerState,
         dp_leaf, ps_leaf, λY_leaf, method, retraction, step_size)
     T = parameter_eltype(ps_leaf)
+    ps = _as_go_solution(ps_leaf)
     local_grad = _GMLGradient{T, typeof(dp_leaf)}(dp_leaf)
     adapted = _adapt_method_to_T(method, T)
     state.iterations += 1
-    _go_update_leaf!(cache, state, local_grad, adapted, ps_leaf)
+    _go_update_leaf!(cache, state, local_grad, adapted, ps)
     GeometricOptimizers._rmul!(GeometricOptimizers.direction(cache), step_size)
     GeometricOptimizers.update_section!(GeometricOptimizers.section(cache),
                                          GeometricOptimizers.section(state),
@@ -237,7 +304,7 @@ function _leaf_optim_step!(cache::GeometricOptimizers.OptimizerCache,
                                          retraction)
     GeometricOptimizers._copyto!(GeometricOptimizers.solution(cache),
                                   GeometricOptimizers.section(cache))
-    GeometricOptimizers._copyto!(ps_leaf, GeometricOptimizers.solution(cache))
+    GeometricOptimizers._copyto!(ps, GeometricOptimizers.solution(cache))
     GeometricOptimizers._copyto!(λY_leaf, GeometricOptimizers.section(cache))
     # `section(cache)` is `update_section!(section(state), direction, retraction)`, so copying it is
     # the same thing as retracting a second time -- and a retraction on a manifold is `O(N³)` where
@@ -267,6 +334,16 @@ function _leaf_optim_step!(cache::GMLEuclideanState, state::GMLEuclideanState,
     nothing
 end
 
+# Whether `λY` is a tree of sections to descend into, or a single `GlobalSection` standing in for a
+# whole subtree. Named rather than written as an `isa` union: it is one question, asked once, and the
+# answer decides whether a layer gets its own section or the whole tree. A section tree is a plain
+# `NamedTuple` today, because `GeometricOptimizers`' `GlobalSection(::NetworkParameters)` unwraps the
+# container; the container arm is here so that a change there is a `MethodError` and not a silent
+# hand-off of the whole tree to every layer.
+_is_section_tree(::NamedTuple) = true
+_is_section_tree(::NetworkParameters) = true
+_is_section_tree(_) = false
+
 # Recursive dispatcher over the *cache* tree.
 #
 # Deliberately hand-written rather than `NeuralNetworkParameters.foreachparameters`, which walks a
@@ -285,17 +362,17 @@ end
 #
 # The `λY` test names both container types for the same reason `_make_optimizer_cache` asks the
 # structural question first: a section tree is something to descend into, whichever type carries it.
-# Today only a `NamedTuple` ever arrives, because the `GlobalSection(::NetworkParameters)` method at
-# the top of this file unwraps the container before `GeometricOptimizers` sees it. That method is
-# GML's to give back once `GeometricOptimizers` depends on `NeuralNetworkParameters` — and its
-# replacement there is expected to return a *container* of sections, at which point `isa NamedTuple`
-# alone would be false and every layer would be handed the whole tree instead of its own section.
+# Only a `NamedTuple` ever arrives: `GeometricOptimizers`' own
+# `GlobalSection(ps::NetworkParameters) = GlobalSection(params(ps))` unwraps the container, so a
+# section tree is a plain `NamedTuple` whether the parameters are wrapped or not. Should that ever
+# return a *container* of sections instead, `isa NamedTuple` alone would be false here and every layer
+# would be handed the whole tree instead of its own section.
 function _tree_optim_step!(caches, states, dp, ps, λY, method, retraction, step_size)
     if caches isa NamedTuple
         for k in keys(caches)
             dp_k = dp[k]
             dp_k === nothing && continue
-            λY_k = λY isa ParameterSet ? λY[k] : λY
+            λY_k = _is_section_tree(λY) ? λY[k] : λY
             _tree_optim_step!(caches[k], states[k], dp_k, ps[k], λY_k,
                               method, retraction, step_size)
         end
