@@ -13,7 +13,7 @@ _gml_rgrad(x::Manifold, dp) = rgrad(x, dp)
 _gml_rgrad(x, dp) = dp
 _gml_rgrad(x::NamedTuple, dp::NamedTuple) = map(_gml_rgrad, x, dp)
 
-(g::_GMLGradient{T})(x::GeometricOptimizers.ArrayNamedTuple{T}) where {T} =
+(g::_GMLGradient{T})(x::GeometricOptimizers.ParameterContainer{T}) where {T} =
     _gml_rgrad(x, g.dp)
 (g::_GMLGradient{T})(x::AbstractArray{T}) where {T} = g.dp
 
