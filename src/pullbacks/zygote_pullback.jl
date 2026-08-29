@@ -32,6 +32,14 @@ end
 (_pullback::ZygotePullback)(ps, model, input_nt_output_nt::Tuple{<:QPTOAT, <:QPTOAT})::Tuple = Zygote.pullback(
     ps -> _pullback.loss(model, ps, input_nt_output_nt...), ps)
 
+# Both shapes, because a pullback produces both. `NeuralNetworkParameters` rewraps the tangent of a
+# `NetworkParameters` into one, while a reverse pass seeded with a bare `NamedTuple` hands one back.
+# A method per shape here as everywhere else in this release, and in the wrapped forms too: a union
+# over `NamedTuple` reads as breadth for its own sake, where two methods say which shape arrived.
+#
+# The comment goes *above* the docstring and not between it and the first method: a docstring attaches
+# to whatever follows it immediately, so a comment in between orphans it -- `docs/check_references.jl`
+# reports that as "documented in nowhere".
 """
     _get_contents(returned_pullback)
 
@@ -39,10 +47,6 @@ Unwrap the single element `Zygote` may wrap a pullback result in.
 
 Together with [`_get_params`](@ref) this makes up [`_processing`](@ref).
 """
-# Both shapes, because a pullback produces both. `NeuralNetworkParameters` rewraps the tangent of a
-# `NetworkParameters` into one, while a reverse pass seeded with a bare `NamedTuple` hands one back.
-# A method per shape here as everywhere else in this release, and in the wrapped forms too: a union
-# over `NamedTuple` reads as breadth for its own sake, where two methods say which shape arrived.
 _get_contents(nt::NetworkParameters) = nt
 _get_contents(nt::NamedTuple) = nt
 
