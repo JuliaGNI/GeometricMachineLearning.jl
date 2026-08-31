@@ -1,16 +1,33 @@
+# Canonical CompatHelper workflow. Copied verbatim into every repository under Packages/ and
+# Experiments/ by install-workflows.sh — edit this file and re-run the installer, never a copy in a
+# repository. Byte-identical in all 37; verify-workflows.jl asserts it.
+#
+# COMPATHELPER_PRIV is the DOCUMENTER_KEY deploy key. CompatHelper needs push access to open its
+# pull request, and the GITHUB_TOKEN of a scheduled run cannot trigger CI on the branch it pushes.
+
 name: CompatHelper
+
 on:
-  schedule:
-    - cron: 0 0 * * *
-  workflow_dispatch:
+    schedule:
+        - cron: 0 0 * * *
+    workflow_dispatch:
+
 jobs:
-  CompatHelper:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Pkg.add("CompatHelper")
-        run: julia -e 'using Pkg; Pkg.add("CompatHelper")'
-      - name: CompatHelper.main()
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COMPATHELPER_PRIV: ${{ secrets.DOCUMENTER_KEY }}
-        run: julia -e 'using CompatHelper; CompatHelper.main()'
+    CompatHelper:
+        name: CompatHelper
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        permissions:
+            contents: write
+            pull-requests: write
+        steps:
+            - uses: julia-actions/setup-julia@v3
+              with:
+                  version: "1"
+            - name: Install CompatHelper
+              run: julia -e 'using Pkg; Pkg.add("CompatHelper")'
+            - name: Run CompatHelper
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  COMPATHELPER_PRIV: ${{ secrets.DOCUMENTER_KEY }}
+              run: julia -e 'using CompatHelper; CompatHelper.main()'

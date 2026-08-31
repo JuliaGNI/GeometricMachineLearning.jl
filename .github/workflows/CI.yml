@@ -1,76 +1,87 @@
+# Canonical CI workflow. Copied verbatim into every repository under Packages/ and Experiments/
+# by install-workflows.sh — edit this file and re-run the installer, never a copy in a repository.
+#
+# THIS FILE IS BYTE-IDENTICAL IN ALL 37 REPOSITORIES. That is the whole point, and it is what
+# verify-workflows.jl asserts. Nothing here is parameterised by the package: the two jobs read the
+# package name from Project.toml at run time, exactly as the git hooks do. A repository that needs
+# an extra job gets its own extra workflow file (see QuadratureRules/Symbolic.yml) rather than a
+# local edit here.
+#
+# WHY THE VERSION MATRIX IS ALIASES AND NOT VERSION NUMBERS.
+#
+# A required status check is named after the job that produces it, so `Julia 1.12 - …` embeds a
+# Julia version in the branch-protection configuration of every repository. Bumping a matrix then
+# renames the checks and silently invalidates protection: the old names never report again, and
+# every pull request sits permanently pending with no error shown anywhere.
+#
+# `min` resolves the lower bound of *this* package's `[compat] julia` entry and `1` the current
+# stable release, so one identical matrix still tests the right versions in a tree whose compat
+# floors are 1.10 and 1.11. The check names therefore never change — not when a package raises its
+# floor, and not when Julia releases. That is what lets ci-protection.sh use one static list.
+#
+# `pre` and `nightly` are advisory (`experimental: true` + `continue-on-error`): a failure in an
+# unreleased Julia is information, not a broken build. They are deliberately NOT required checks.
+
 name: CI
+
 on:
     push:
         branches:
             - main
+            - master
         tags: ["*"]
     pull_request:
+    workflow_dispatch:
+
 concurrency:
     # Skip intermediate builds: always.
     # Cancel intermediate builds: only if it is a pull request build.
     group: ${{ github.workflow }}-${{ github.ref }}
     cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
-# Temporary: go straight to the General registry instead of through a package server.
-#
-# `AbstractNeuralNetworks` 0.7.0 was registered at 04:00 UTC on 2026-08-23 and the package servers
-# were still serving a registry that stopped at 0.6.4 hours later, so jobs died in `Pkg.resolve`
-# before running anything. It is not a matter of picking a better server: all eight official
-# mirrors, in both the conservative and the eager flavour, and the third-party storage mirrors too,
-# were serving the identical tree — the lag is at the storage server they all pull from. An empty
-# `JULIA_PKG_SERVER` makes Pkg clone the registry over git and fetch packages from their own
-# repositories, which resolves the same environment that resolves locally. Same workaround as
-# SymbolicNeuralNetworks.jl.
-#
-# The cost is speed: no CDN and no registry tarball. Remove this once the package servers have
-# caught up (check with `curl -sL https://pkg.julialang.org/registries` against
-# `gh api repos/JuliaRegistries/General/commits/master --jq .commit.tree.sha`), and check whether it
-# is still needed before assuming it is.
-env:
-  JULIA_PKG_SERVER: ""
+
 jobs:
     test:
-        name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
+        name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }}
         runs-on: ${{ matrix.os }}
+        timeout-minutes: 90
+        # A pre-release or nightly failure is information, not a broken build.
         continue-on-error: ${{ matrix.experimental }}
+        permissions:
+            # julia-actions/cache proactively deletes the caches it created.
+            actions: write
+            contents: read
+        env:
+            # Instrument and upload coverage in a single matrix entry only. Uploading from all six
+            # makes Codecov merge six reports of the same scope per run, and the merged percentage
+            # then moves for reasons that are not code changes.
+            COVERAGE: ${{ matrix.version == 'min' && matrix.os == 'ubuntu-latest' }}
+            # Two threads, everywhere. GeometricIntegrators and GeometricExamples each set this for
+            # themselves before; a runner has more than one core, and a suite with a threading test
+            # is otherwise silently single-threaded.
+            JULIA_NUM_THREADS: 2
         strategy:
             fail-fast: false
             matrix:
                 version:
-                    - "1.11"
-                    - "1.12"
+                    - "min"
+                    - "1"
                 os:
                     - ubuntu-latest
                     - macOS-latest
                     - windows-latest
-                # `default` is the runner's own architecture. Not `x64`: `macOS-latest` is aarch64,
-                # and setup-julia v3 refuses `x64` there unless `force-arch` is set, because that
-                # build runs under Rosetta.
                 arch:
+                    # 'default' is the runner's native architecture, which is aarch64 on
+                    # macOS-latest; a hardcoded 'x64' would test Julia under Rosetta there.
                     - default
-                experimental: [false]
+                experimental:
+                    - false
                 include:
-                    - version: "^1.13.0-0"
-                      os: ubuntu-latest
-                      arch: default
-                      experimental: true
-                    - version: "^1.13.0-0"
-                      os: macOS-latest
-                      arch: default
-                      experimental: true
-                    - version: "^1.13.0-0"
-                      os: windows-latest
-                      arch: default
-                      experimental: true
-                    - version: "nightly"
+                    - version: "pre"
                       os: ubuntu-latest
                       arch: default
                       experimental: true
                     - version: "nightly"
-                      os: macOS-latest
-                      arch: default
-                      experimental: true
-                    - version: "nightly"
-                      os: windows-latest
+                      os: ubuntu-latest
                       arch: default
                       experimental: true
         steps:
@@ -79,17 +90,80 @@ jobs:
               with:
                   version: ${{ matrix.version }}
                   arch: ${{ matrix.arch }}
-            # `cache-registries` defaults to true; with the git registry above, a restored copy is
-            # whatever the previous run cloned, which puts the staleness straight back. Artifacts,
-            # packages and compiled code are still cached, which is where the time goes.
             - uses: julia-actions/cache@v3
-              with:
-                  cache-registries: "false"
             - uses: julia-actions/julia-buildpkg@v1
             - uses: julia-actions/julia-runtest@v1
+              with:
+                  coverage: ${{ env.COVERAGE }}
             - uses: julia-actions/julia-processcoverage@v1
+              if: env.COVERAGE == 'true'
             - uses: codecov/codecov-action@v7
-              env:
-                  CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+              if: env.COVERAGE == 'true'
               with:
                   files: lcov.info
+                  token: ${{ secrets.CODECOV_TOKEN }}
+                  # A Codecov outage must not fail a merge.
+                  fail_ci_if_error: false
+
+    doctest:
+        # Doctests run here rather than across the test matrix, and rather than only inside the
+        # documentation build. Their output is sensitive to both the Julia version and the
+        # architecture — the last ULP of an `ldiv!` result differs between x86_64 and aarch64 — so
+        # running them on every matrix entry produces failures that are real but are not defects.
+        # One pinned entry gives a required check that can be trusted.
+        #
+        # No coverage here: coverage measured from a doctest run is not a measure of the suite.
+        name: Doctests - ${{ matrix.os }}
+        runs-on: ${{ matrix.os }}
+        timeout-minutes: 60
+        permissions:
+            actions: write
+            contents: read
+        strategy:
+            fail-fast: false
+            matrix:
+                os:
+                    - ubuntu-latest
+        steps:
+            - uses: actions/checkout@v7
+            - uses: julia-actions/setup-julia@v3
+              with:
+                  version: "1"
+            - uses: julia-actions/cache@v3
+            - name: Instantiate the documentation environment
+              run: |
+                  if [ ! -f docs/Project.toml ]; then
+                    echo "no docs/Project.toml in this repository - nothing to doctest"
+                    exit 0
+                  fi
+                  julia --project=docs -e '
+                    using Pkg
+                    Pkg.develop(PackageSpec(path = pwd()))
+                    Pkg.instantiate()'
+            - name: Doctests
+              run: |
+                  if [ ! -f docs/Project.toml ]; then
+                    echo "no docs/Project.toml in this repository - nothing to doctest"
+                    exit 0
+                  fi
+                  julia --project=docs -e '
+                    using TOML
+                    using Documenter: DocMeta, doctest
+                    name = Symbol(TOML.parsefile("Project.toml")["name"])
+                    # `@eval using` at top level, never inside a function: a module loaded inside
+                    # a compiled function is invisible to the world age of that function. The
+                    # binding has to land in Main as well, because doctest() evaluates the
+                    # `CurrentModule = X` of every manual page there.
+                    @eval using $name
+                    m = getfield(Main, name)
+                    # A package whose doctests need more than its own exports in scope declares
+                    # that in docs/doctestsetup.jl, which its docs/make.jl includes too - one
+                    # definition, two callers. CompactBasisFunctions needs QuadratureRules and two
+                    # unexported names; PoincareInvariants sets a submodule up separately.
+                    setup = joinpath("docs", "doctestsetup.jl")
+                    if isfile(setup)
+                        include(abspath(setup))
+                    else
+                        DocMeta.setdocmeta!(m, :DocTestSetup, :(using $name); recursive = true)
+                    end
+                    doctest(m)'

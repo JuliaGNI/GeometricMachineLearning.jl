@@ -375,6 +375,10 @@ makedocs(;
     repo = "https://github.com/JuliaGNI/GeometricMachineLearning.jl/blob/{commit}{path}#L{line}",
     sitename = "GeometricMachineLearning.jl",
     format = format,
+    # Doctests run in the `doctest` job of `.github/workflows/CI.yml`, pinned to one OS and one
+    # Julia version, where they produce a required status check of their own. Running them here as
+    # well would doctest twice per invocation, and this manual is built twice — once as HTML and
+    # once as LaTeX.
     doctest = false,
     pages = output_type == :html ? _html_pages : _latex_pages
 )

@@ -58,7 +58,7 @@ printf '\n%spre-commit%s  %d staged .jl file(s)\n' "$dim" "$nc" "${#staged[@]}"
 status=0
 
 # ---------------------------------------------------------------- 1. formatting (blocking)
-# Honours this repository's own .JuliaFormatter.toml (style = "sciml" in 35 of 35). A hook
+# Honours this repository's own .JuliaFormatter.toml (style = "sciml" in 37 of 37). A hook
 # cannot reach an MCP server, so this calls JuliaFormatter directly rather than through
 # Kaimon's format_code — same engine, different entry point.
 if ! julia --startup-file=no --project=@v1.13 -e '
