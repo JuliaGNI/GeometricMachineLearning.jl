@@ -1,15 +1,15 @@
 using Test, KernelAbstractions, GeometricMachineLearning, Zygote, LinearAlgebra
 using GeometricMachineLearning: ResNetLayer
-import Random 
+import Random
 
 Random.seed!(1234)
 
 @doc raw"""
 This function tests if the `GradientMethod`, `MomentumMethod`, and `Adam` act on the neural network weights via `optimization_step!`.
 """
-function transformer_gradient_test(T, dim, n_heads, L, seq_length=8, batch_size=10)
-    model = Chain(Transformer(dim, n_heads, L, Stiefel=true), ResNetLayer(dim))
-    model = Transformer(dim, n_heads, L, Stiefel=true)
+function transformer_gradient_test(T, dim, n_heads, L, seq_length = 8, batch_size = 10)
+    model = Chain(Transformer(dim, n_heads, L, Stiefel = true), ResNetLayer(dim))
+    model = Transformer(dim, n_heads, L, Stiefel = true)
 
     ps = NeuralNetwork(model, KernelAbstractions.CPU(), T).params
 

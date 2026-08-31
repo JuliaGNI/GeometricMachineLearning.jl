@@ -1,5 +1,6 @@
 # This implements the custom pullback for tensor_transpose_mat_mul
-function ChainRulesCore.rrule(::typeof(tensor_transpose_mat_mul), A::AbstractArray{T, 3}, B::AbstractMatrix{T}) where T
+function ChainRulesCore.rrule(::typeof(tensor_transpose_mat_mul),
+        A::AbstractArray{T, 3}, B::AbstractMatrix{T}) where {T}
     @assert axes(A, 1) == axes(B, 1)
     C = tensor_transpose_mat_mul(A, B)
     function tensor_transpose_mat_mul_pullback(C_diff)

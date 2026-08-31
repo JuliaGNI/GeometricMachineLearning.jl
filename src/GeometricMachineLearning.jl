@@ -58,7 +58,8 @@ import GeometricOptimizers: rgrad, metric, check, Ω, global_section
 import GeometricOptimizers: assign_columns
 import GeometricOptimizers: GlobalSection, global_rep, apply_section, apply_section!,
                             update_section!
-import GeometricOptimizers: AbstractRetraction, Geodesic, Cayley, geodesic, cayley, retraction
+import GeometricOptimizers: AbstractRetraction, Geodesic, Cayley, geodesic, cayley,
+                            retraction
 import GeometricOptimizers: OptimizerMethod, OptimizerSolution,
                             GradientMethod, MomentumMethod, Adam,
                             GradientState, MomentumState, AdamState,

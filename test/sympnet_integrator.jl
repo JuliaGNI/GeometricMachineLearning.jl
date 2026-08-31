@@ -1,13 +1,13 @@
 using GeometricMachineLearning
 using Test
-import Random 
+import Random
 
 Random.seed!(123)
 
 const sys_dim = 2
 const model = GSympNet(sys_dim)
 
-function set_up_and_apply_integrator(; T=Float32)
+function set_up_and_apply_integrator(; T = Float32)
     ics₁ = (q = rand(T, sys_dim ÷ 2), p = rand(T, sys_dim ÷ 2))
     ics₂ = (q = rand(T, sys_dim ÷ 2), p = rand(T, sys_dim ÷ 2))
     𝕁 = PoissonTensor(sys_dim, T)
@@ -24,7 +24,7 @@ function set_up_and_apply_integrator(; T=Float32)
 
     product_final = 𝕁(final_iterate₁, final_iterate₂)
 
-    @test product_final ≉ 0 ≉ product₀ 
+    @test product_final ≉ 0 ≉ product₀
 end
 
 set_up_and_apply_integrator(; T = Float32)

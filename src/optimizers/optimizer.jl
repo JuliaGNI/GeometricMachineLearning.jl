@@ -36,13 +36,14 @@ _gml_rgrad(x::NetworkParameters, dp) = mapparameters(_gml_rgrad, x, dp)
 (g::_GMLGradient{T})(x::Manifold{T}) where {T} = _gml_rgrad(x, g.dp)
 
 # State for Euclidean (non-manifold) parameters.
-mutable struct GMLEuclideanState{T, AT<:AbstractArray{T}}
+mutable struct GMLEuclideanState{T, AT <: AbstractArray{T}}
     iterations::Int
     m₁::AT
     m₂::AT
 end
-GMLEuclideanState(x::AbstractArray{T}) where T =
+function GMLEuclideanState(x::AbstractArray{T}) where {T}
     GMLEuclideanState{T, typeof(x)}(0, zero(x), zero(x))
+end
 
 # `AdamOptimizerWithDecay` used to be defined here, as an `OptimizerMethod` bundling Adam's `ρ₁`,
 # `ρ₂`, `δ` with a learning-rate schedule `η₁`, `η₂`, `n_epochs`. GeometricOptimizers ships the same
@@ -53,13 +54,15 @@ GMLEuclideanState(x::AbstractArray{T}) where T =
 
 _is_go_native_method(::GeometricOptimizers.GradientMethod) = true
 _is_go_native_method(::GeometricOptimizers.MomentumMethod) = true
-_is_go_native_method(::GeometricOptimizers.Adam)            = true
+_is_go_native_method(::GeometricOptimizers.Adam) = true
 _is_go_native_method(::GeometricOptimizers.OptimizerMethod) = false
 
-_adapt_method_to_T(method::GeometricOptimizers.Adam, ::Type{T}) where T =
+function _adapt_method_to_T(method::GeometricOptimizers.Adam, ::Type{T}) where {T}
     GeometricOptimizers.Adam(T; β₁ = T(method.β₁), β₂ = T(method.β₂), δ = T(method.δ))
-_adapt_method_to_T(method::GeometricOptimizers.MomentumMethod, ::Type{T}) where T =
+end
+function _adapt_method_to_T(method::GeometricOptimizers.MomentumMethod, ::Type{T}) where {T}
     GeometricOptimizers.MomentumMethod(T(method.α))
+end
 _adapt_method_to_T(method, ::Type) = method
 
 # Whether one `GeometricOptimizers` cache covers `x` whole.
@@ -86,8 +89,10 @@ _is_layer(_) = false
 
 _all_leaves(vs) = !isempty(vs) && all(v -> v isa AbstractArray, vs)
 
-_use_go_cache(method, x) = _is_go_native_method(method) &&
-    (x isa GeometricOptimizers.OptimizerSolution || _is_layer(x))
+function _use_go_cache(method, x)
+    _is_go_native_method(method) &&
+        (x isa GeometricOptimizers.OptimizerSolution || _is_layer(x))
+end
 
 """
     _as_go_solution(x)
@@ -130,7 +135,7 @@ _as_go_solution(x) = _is_layer(x) ? NetworkParameters(x) : x
 function _make_optimizer_cache(method, x)
     if _is_go_native_method(method) && _is_layer(x)
         GeometricOptimizers.OptimizerCache(_adapt_method_to_T(method, parameter_eltype(x)),
-                                          _as_go_solution(x))
+            _as_go_solution(x))
     elseif x isa NetworkParameters || x isa NamedTuple
         NamedTuple{keys(x)}(Tuple(_make_optimizer_cache(method, x[k]) for k in keys(x)))
     elseif _use_go_cache(method, x)
@@ -143,7 +148,7 @@ end
 function _make_optimizer_state(method, x)
     if _is_go_native_method(method) && _is_layer(x)
         GeometricOptimizers.OptimizerState(_adapt_method_to_T(method, parameter_eltype(x)),
-                                          _as_go_solution(x))
+            _as_go_solution(x))
     elseif x isa NetworkParameters || x isa NamedTuple
         NamedTuple{keys(x)}(Tuple(_make_optimizer_state(method, x[k]) for k in keys(x)))
     elseif _use_go_cache(method, x)
@@ -184,7 +189,7 @@ mutable struct Optimizer{MT <: GeometricOptimizers.OptimizerMethod, CT, ST, RT, 
     iterations::Int
 end
 
-_default_step_size(::GeometricOptimizers.Adam)          = 1e-3
+_default_step_size(::GeometricOptimizers.Adam) = 1e-3
 _default_step_size(::GeometricOptimizers.OptimizerMethod) = 1e-2
 
 _step_size(η::Real, ::Int) = Float64(η)
@@ -214,7 +219,7 @@ function Optimizer(method::GeometricOptimizers.OptimizerMethod,
         retraction = GeometricOptimizers.cayley,
         step_size = _default_step_size(method))
     Optimizer(method, _make_optimizer_cache(method, ps), _make_optimizer_state(method, ps),
-              retraction, _optimizer_step_size(step_size), 0)
+        retraction, _optimizer_step_size(step_size), 0)
 end
 
 # The keyword form, so that the `(algorithm, linesearch)` pairing `GeometricOptimizers` returns from
@@ -231,19 +236,21 @@ end
 
 _step_size_from_linesearch(ls::DecayingStatic) = ls
 _step_size_from_linesearch(ls::GeometricOptimizers.Static) = Float64(ls.α)
-_step_size_from_linesearch(ls) = throw(ArgumentError(
-    "`Optimizer` takes a fixed step size or a `DecayingStatic` schedule, not a $(typeof(ls)). " *
-    "A training loop evaluates its loss on one batch at a time and has no objective for a line " *
-    "search to search along; use `GeometricOptimizers.Optimizer` with an `OptimizerProblem` for " *
-    "that."))
+function _step_size_from_linesearch(ls)
+    throw(ArgumentError(
+        "`Optimizer` takes a fixed step size or a `DecayingStatic` schedule, not a $(typeof(ls)). " *
+        "A training loop evaluates its loss on one batch at a time and has no objective for a line " *
+        "search to search along; use `GeometricOptimizers.Optimizer` with an `OptimizerProblem` for " *
+        "that."))
+end
 
 # Euclidean update rules
 function _euclidean_update!(x::AbstractArray{T}, dx::AbstractArray,
-        state::GMLEuclideanState, ::GeometricOptimizers.GradientMethod, step_size) where T
+        state::GMLEuclideanState, ::GeometricOptimizers.GradientMethod, step_size) where {T}
     x .-= T(step_size) .* dx
 end
 function _euclidean_update!(x::AbstractArray{T}, dx::AbstractArray,
-        state::GMLEuclideanState{T}, method::GeometricOptimizers.MomentumMethod, step_size) where T
+        state::GMLEuclideanState{T}, method::GeometricOptimizers.MomentumMethod, step_size) where {T}
     # `p ← αp + ∇L`, the classic momentum recursion. The decay belongs on `p` and not on `∇L`:
     # `p ← p + α∇L` is an undamped accumulator that grows without bound for a constant gradient
     # instead of saturating at `∇L/(1 - α)`. Same recursion as GO's `update!(::MomentumState, ...)`.
@@ -251,13 +258,16 @@ function _euclidean_update!(x::AbstractArray{T}, dx::AbstractArray,
     x .-= T(step_size) .* state.m₁
 end
 function _euclidean_update!(x::AbstractArray{T}, dx::AbstractArray,
-        state::GMLEuclideanState{T}, method::GeometricOptimizers.Adam, step_size) where T
-    t = state.iterations; _t = t + 1
+        state::GMLEuclideanState{T}, method::GeometricOptimizers.Adam, step_size) where {T}
+    t = state.iterations
+    _t = t + 1
     β₁, β₂, δ = T(method.β₁), T(method.β₂), T(method.δ)
     # the first factor is `(β - β^t)/(1 - β^t)`, not `β/(1 - β^t)`: the latter is ~100x too large
     # at t = 2 and compounds every step, which inflates the second moment until the update vanishes
-    fac₁₁ = (β₁-β₁^_t)/(1-β₁^_t); fac₁₂ = (1-β₁)/(1-β₁^_t)
-    fac₂₁ = (β₂-β₂^_t)/(1-β₂^_t); fac₂₂ = (1-β₂)/(1-β₂^_t)
+    fac₁₁ = (β₁-β₁^_t)/(1-β₁^_t)
+    fac₁₂ = (1-β₁)/(1-β₁^_t)
+    fac₂₁ = (β₂-β₂^_t)/(1-β₂^_t)
+    fac₂₂ = (1-β₂)/(1-β₂^_t)
     state.m₁ .= fac₁₁ .* state.m₁ .+ fac₁₂ .* dx
     state.m₂ .= fac₂₁ .* state.m₂ .+ fac₂₂ .* dx .^ 2
     x .-= T(step_size) .* state.m₁ ./ (sqrt.(state.m₂) .+ δ)
@@ -280,7 +290,7 @@ function _go_update_leaf!(cache, state, local_grad,
         method::GeometricOptimizers.OptimizerMethod, ps_leaf)
     T = parameter_eltype(ps_leaf)
     GeometricOptimizers.update!(cache, state, local_grad,
-                                GeometricOptimizers.NoHessian{T}(), ps_leaf)
+        GeometricOptimizers.NoHessian{T}(), ps_leaf)
 end
 
 # GO-managed leaf step (manifolds, vectors, whole layers)
@@ -299,29 +309,29 @@ function _leaf_optim_step!(cache::GeometricOptimizers.OptimizerCache,
     _go_update_leaf!(cache, state, local_grad, adapted, ps)
     GeometricOptimizers._rmul!(GeometricOptimizers.direction(cache), step_size)
     GeometricOptimizers.update_section!(GeometricOptimizers.section(cache),
-                                         GeometricOptimizers.section(state),
-                                         GeometricOptimizers.direction(cache),
-                                         retraction)
+        GeometricOptimizers.section(state),
+        GeometricOptimizers.direction(cache),
+        retraction)
     GeometricOptimizers._copyto!(GeometricOptimizers.solution(cache),
-                                  GeometricOptimizers.section(cache))
+        GeometricOptimizers.section(cache))
     GeometricOptimizers._copyto!(ps, GeometricOptimizers.solution(cache))
     GeometricOptimizers._copyto!(λY_leaf, GeometricOptimizers.section(cache))
     # `section(cache)` is `update_section!(section(state), direction, retraction)`, so copying it is
     # the same thing as retracting a second time -- and a retraction on a manifold is `O(N³)` where
     # the copy is `O(N²)`.
     GeometricOptimizers._copyto!(GeometricOptimizers.section(state),
-                                  GeometricOptimizers.section(cache))
+        GeometricOptimizers.section(cache))
     if state isa GeometricOptimizers.AdamState
         GeometricOptimizers._copyto!(GeometricOptimizers.first_moment(state),
-                                      GeometricOptimizers.first_moment(cache))
+            GeometricOptimizers.first_moment(cache))
         GeometricOptimizers._copyto!(GeometricOptimizers.second_moment(state),
-                                      GeometricOptimizers.second_moment(cache))
+            GeometricOptimizers.second_moment(cache))
     elseif state isa GeometricOptimizers.MomentumState
         # `p ← αp + ∇L`; see the note in `_euclidean_update!` for the momentum method. This has to
         # match what `update!(::MomentumCache, ...)` anticipated when it formed the direction.
         GeometricOptimizers._rmul!(GeometricOptimizers.momentum(state), adapted.α)
         GeometricOptimizers._add!(GeometricOptimizers.momentum(state),
-                                   GeometricOptimizers.gradient_array(cache))
+            GeometricOptimizers.gradient_array(cache))
     end
     nothing
 end
@@ -374,7 +384,7 @@ function _tree_optim_step!(caches, states, dp, ps, λY, method, retraction, step
             dp_k === nothing && continue
             λY_k = _is_section_tree(λY) ? λY[k] : λY
             _tree_optim_step!(caches[k], states[k], dp_k, ps[k], λY_k,
-                              method, retraction, step_size)
+                method, retraction, step_size)
         end
     else
         _leaf_optim_step!(caches, states, dp, ps, λY, method, retraction, step_size)

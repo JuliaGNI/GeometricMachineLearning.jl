@@ -24,9 +24,9 @@ GML = GeometricMachineLearning
 # already and is being carried in `dp`.
 @testset "a bare Manifold reaches this package's method, not upstream's" begin
     for M in (StiefelManifold, GrassmannManifold)
-        Y  = rand(M, 4, 2)
+        Y = rand(M, 4, 2)
         dp = randn(4, 2)
-        g  = GML._GMLGradient{Float64, typeof(dp)}(dp)
+        g = GML._GMLGradient{Float64, typeof(dp)}(dp)
 
         @test g(Y) == rgrad(Y, dp)
         @test which(g, Tuple{typeof(Y)}).module === GeometricMachineLearning
@@ -37,7 +37,7 @@ end
 # covered and a later narrowing of either shows up here.
 @testset "a wrapped layer and a plain array" begin
     dp = randn(3, 3)
-    g  = GML._GMLGradient{Float64, typeof(dp)}(dp)
+    g = GML._GMLGradient{Float64, typeof(dp)}(dp)
     # a plain array leaf: the gradient is already Euclidean, so it passes through
     @test g(randn(3, 3)) === dp
 

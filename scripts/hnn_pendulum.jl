@@ -59,6 +59,4 @@ total_loss = train!(nn, training_data, opt; ntraining = nruns, step_size = 1e-2)
 
 # plot results
 include("plots.jl")
-plot_hnn(H, nn, total_loss; filename="hnn_pendulum.png")
-
-
+plot_hnn(H, nn, total_loss; filename = "hnn_pendulum.png")

@@ -59,7 +59,8 @@ function test_decoder_output_layers(N::Integer, n::Integer, n_output_layers::Int
     # decoder has exactly n_output_layers more layers than the baseline (n_output_layers = 0) decoder
     baseline_nn = NeuralNetwork(SymplecticAutoencoder(N, n; n_decoder_output_layers = 0))
     baseline_decoder = decoder(baseline_nn)
-    @test length(sae_decoder.model.layers) == length(baseline_decoder.model.layers) + n_output_layers
+    @test length(sae_decoder.model.layers) ==
+          length(baseline_decoder.model.layers) + n_output_layers
 
     # symplecticity still holds
     test_vector = rand(n)

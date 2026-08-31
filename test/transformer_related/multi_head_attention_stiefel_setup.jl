@@ -15,7 +15,7 @@ Random.seed!(1234)
 @doc raw"""
 This checks for an arbitrary matrix ``A\in\mathbb{R}^{N\times{}n}`` if ``A\in{}St(n,N)``.
 """
-function check_setup(A::AbstractMatrix{T}, tol=T(10)*eps(T)) where T
+function check_setup(A::AbstractMatrix{T}, tol = T(10)*eps(T)) where {T}
     @test typeof(A) <: StiefelManifold
     @test check(A) < tol
 end
@@ -26,7 +26,7 @@ check_setup(ps::NetworkParameters) = check_setup(GeometricMachineLearning.params
 @doc raw"""
 This checks for an arbitrary matrix ``B\in\mathbb{R}^{N\times{}N}`` if ``B\in\mathfrak{g}^\mathrm{hor}``.
 """
-function check_grad_setup(B::AbstractMatrix{T}, tol=T(10)*eps(T)) where T
+function check_grad_setup(B::AbstractMatrix{T}, tol = T(10)*eps(T)) where {T}
     @test typeof(B) <: StiefelLieAlgHorMatrix
     @test LinearAlgebra.norm(B) < tol
 end
@@ -38,7 +38,7 @@ check_grad_setup(B::MomentumCache) = check_grad_setup(B.δ)
 Check if `initialparameters` and `init_optimizer_cache` do the right thing for `MultiHeadAttentionLayer`.
 """
 function check_multi_head_attention_stiefel_setup(T::Type, N::Int, n::Int)
-    model = Chain(MultiHeadAttention(N, n, Stiefel=true))
+    model = Chain(MultiHeadAttention(N, n, Stiefel = true))
     ps = GeometricMachineLearning.params(NeuralNetwork(model, KernelAbstractions.CPU(), T))
 
     check_setup(ps)

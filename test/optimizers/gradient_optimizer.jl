@@ -30,9 +30,9 @@ Test that gradient descent reduces loss on the Stiefel manifold.
 """
 function gradient_optimizer_stiefel(N, n; n_steps = 20, step_size = 1e-3)
     YB = rand(StiefelManifold, N, n)
-    B  = YB * YB'
+    B = YB * YB'
     loss(ps) = norm(ps.Y * ps.Y' - B) ^ 2
-    Y  = rand(StiefelManifold, N, n)
+    Y = rand(StiefelManifold, N, n)
     ps = NetworkParameters((Y = Y,))
     loss1 = loss(ps)
     o = Optimizer(GradientMethod(), ps; step_size = step_size)

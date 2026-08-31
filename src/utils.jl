@@ -161,4 +161,3 @@ This could be data in ``(q, p)\in\mathbb{R}^{2d}`` form or come from an arbitrar
 const QPTOAT{T} = Union{QPT{T}, AbstractArray{T}} where {T}
 
 Base.:≈(qp₁::QPT, qp₂::QPT) = (qp₁.q ≈ qp₂.q) & (qp₁.p ≈ qp₂.p)
-

@@ -17,7 +17,9 @@ function set_up_reduced_systems(reduced_dim::Integer, integrator)
     model1 = PSDArch(dl.input_dim, reduced_dim)
 
     # Here the number of decoder blocks is set manually because the default is too big! 
-    model2 = SymplecticAutoencoder(dl.input_dim, reduced_dim; activation = x -> log(1. + exp(x)), n_encoder_layers = 20, n_decoder_layers = 10, n_decoder_blocks = 2)
+    model2 = SymplecticAutoencoder(
+        dl.input_dim, reduced_dim; activation = x -> log(1.0 + exp(x)),
+        n_encoder_layers = 20, n_decoder_layers = 10, n_decoder_blocks = 2)
 
     nn1 = NeuralNetwork(model1)
 
@@ -27,7 +29,7 @@ function set_up_reduced_systems(reduced_dim::Integer, integrator)
 
     rs2 = HRedSys(hodeproblem(), encoder(nn2), decoder(nn2); integrator = integrator)
 
-    rs1, rs2 
+    rs1, rs2
 end
 
 function test_reduced_vector_fields(reduced_dim::Integer, integrator)
@@ -38,7 +40,8 @@ function test_reduced_vector_fields(reduced_dim::Integer, integrator)
     @test reduction_error(rs1) < reduction_error(rs2)
 end
 
-function test_if_reduced_vector_fields_are_divergence_free(v_reduced::Function, f_reduced::Function, parameters::NamedTuple; tol = 1e-10)
+function test_if_reduced_vector_fields_are_divergence_free(
+        v_reduced::Function, f_reduced::Function, parameters::NamedTuple; tol = 1e-10)
     function v_reduced_explicit(q, p)
         v = zero(q)
         v_reduced(v, 0, q, p, parameters)
@@ -54,7 +57,8 @@ function test_if_reduced_vector_fields_are_divergence_free(v_reduced::Function, 
     p̃ = rand(1)
     compute_derivative_q(f) = sum(jacobian(central_fdm(10, 1), q -> f(q, p̃), q̃)[1])
     compute_derivative_p(f) = sum(jacobian(central_fdm(10, 1), p -> f(q̃, p), p̃)[1])
-    div_estimate = compute_derivative_q(v_reduced_explicit) + compute_derivative_p(f_reduced_explicit)
+    div_estimate = compute_derivative_q(v_reduced_explicit) +
+                   compute_derivative_p(f_reduced_explicit)
     @test abs(div_estimate) < tol
 end
 

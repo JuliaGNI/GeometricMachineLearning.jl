@@ -32,7 +32,7 @@ PSD_err = 0
 for i in 1:time_steps
     for j in 1:par
         global PSD_err += norm(hcat(X[:, :, i, j] * Ψ_PSD * Ψ_PSD',
-                                    V[:, :, i, j] * Ψ_PSD * Ψ_PSD')' -
+            V[:, :, i, j] * Ψ_PSD * Ψ_PSD')' -
                                hcat(X[:, :, i, j], V[:, :, i, j])')
     end
 end
@@ -41,30 +41,29 @@ PSD_err = PSD_err / norm_fac
 
 relu(x) = max.(0, x)
 Ψ_enc = Chain(Gradient(2 * N, 4 * N, relu; change_q = true),
-              Gradient(2 * N, 4 * N, relu; change_q = false),
-              PSDLayer(2 * N, 100; inverse = true),
-              Gradient(100, 200, relu; change_q = true),
-              Gradient(100, 200, relu; change_q = false),
-              PSDLayer(100, 50; inverse = true),
-              Gradient(50, 200, relu; change_q = true),
-              Gradient(50, 200, relu; change_q = false),
-              PSDLayer(50, 2 * n; inverse = true),
-              Gradient(2 * n, 4 * n, relu; change_q = false),
-              Gradient(2 * n, 4 * n, relu; change_q = true))
+    Gradient(2 * N, 4 * N, relu; change_q = false),
+    PSDLayer(2 * N, 100; inverse = true),
+    Gradient(100, 200, relu; change_q = true),
+    Gradient(100, 200, relu; change_q = false),
+    PSDLayer(100, 50; inverse = true),
+    Gradient(50, 200, relu; change_q = true),
+    Gradient(50, 200, relu; change_q = false),
+    PSDLayer(50, 2 * n; inverse = true),
+    Gradient(2 * n, 4 * n, relu; change_q = false),
+    Gradient(2 * n, 4 * n, relu; change_q = true))
 Ψ_dec = Chain(Gradient(2 * n, 4 * n, relu; change_q = false),
-              Gradient(2 * n, 4 * n, relu; change_q = true),
-              PSDLayer(50, 2 * n),
-              Gradient(50, 200, relu; change_q = false),
-              Gradient(50, 200, relu; change_q = true),
-              PSDLayer(100, 50),
-              Gradient(100, 200, relu; change_q = false),
-              Gradient(100, 200, relu; change_q = true),
-              PSDLayer(2 * N, 100),
-              Gradient(2 * N, 4 * N, relu; change_q = false),
-              Gradient(2 * N, 4 * N, relu; change_q = true))
+    Gradient(2 * n, 4 * n, relu; change_q = true),
+    PSDLayer(50, 2 * n),
+    Gradient(50, 200, relu; change_q = false),
+    Gradient(50, 200, relu; change_q = true),
+    PSDLayer(100, 50),
+    Gradient(100, 200, relu; change_q = false),
+    Gradient(100, 200, relu; change_q = true),
+    PSDLayer(2 * N, 100),
+    Gradient(2 * N, 4 * N, relu; change_q = false),
+    Gradient(2 * N, 4 * N, relu; change_q = true))
 reconstr = Chain(Ψ_enc, Ψ_dec)
 ps_all, st_all = Lux.setup(Random.default_rng(), reconstr)
-
 
 function loss(x, ps_all, st_all)
     norm(Lux.apply(reconstr, x, ps_all, st_all)[1] - x)
@@ -75,8 +74,10 @@ function loss_minibatch(ps_all, st_all, batch_size = 10)
     for _ in 1:batch_size
         time_step = Int(ceil(time_steps * rand()))
         par_number = Int(ceil(par * rand()))
-        loss_total += loss(hcat(X[:, :, time_step, par_number],
-                                V[:, :, time_steps, par_number])', ps_all, st_all)
+        loss_total += loss(
+            hcat(X[:, :, time_step, par_number],
+                V[:, :, time_steps, par_number])',
+            ps_all, st_all)
     end
     loss_total / batch_size
 end

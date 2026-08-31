@@ -30,9 +30,9 @@ using LaTeXStrings
 #
 links = InterLinks(
     "GeometricOptimizers" => (
-        "https://juliagni.github.io/GeometricOptimizers.jl/stable/",
-        joinpath(@__DIR__, "inventories", "GeometricOptimizers.toml")
-    ),
+    "https://juliagni.github.io/GeometricOptimizers.jl/stable/",
+    joinpath(@__DIR__, "inventories", "GeometricOptimizers.toml")
+),
 )
 
 bib = CitationBibliography(joinpath(@__DIR__, "src", "GeometricMachineLearning.bib"))
@@ -47,12 +47,12 @@ const html_format = Documenter.HTML(;
     canonical = "https://juliagni.github.io/GeometricMachineLearning.jl",
     assets = [
         "assets/extra_styles.css",
-        ],
+    ],
     # specifies that we do not display the package name again (it's already in the logo)
     sidebar_sitename = false,
     # we should get rid of this line again eventually. We will be able to do this once we got rid of library.md
-    size_threshold = 1048576,
-    )
+    size_threshold = 1048576
+)
 
 # if platform is set to "none" then no output pdf is generated
 const latex_format = Documenter.LaTeX(platform = "none")
@@ -80,11 +80,13 @@ function theorem(statement::String, name::String; label::Union{Nothing, String} 
             \t $(statement)""")
     else
         theorem_label = isnothing(label) ? "" : raw"\label{th:" * label * raw"}"
-        Markdown.parse(raw"\begin{thrm}[" * name * "]" * statement * theorem_label * raw"\end{thrm}")
+        Markdown.parse(raw"\begin{thrm}[" * name * "]" * statement * theorem_label *
+                       raw"\end{thrm}")
     end
 end
 
-function theorem(statement::String; name::Union{Nothing, String} = nothing, label::Union{Nothing, String} = nothing)
+function theorem(statement::String; name::Union{Nothing, String} = nothing,
+        label::Union{Nothing, String} = nothing)
     theorem(statement, name; label = label)
 end
 
@@ -142,13 +144,14 @@ const indentation = output_type == :html ? "\t" : ""
 
 _introduction_text = output_type == :html ? "index.md" : "introduction.md"
 
-_introduction = output_type == :html ? ("HOME" => "index.md") : ("HOME" =>
-        ["acknowledgements.md",
+_introduction = output_type == :html ? ("HOME" => "index.md") :
+                ("HOME" =>
+    ["acknowledgements.md",
         "abstract.md",
         "zusammenfassung.md",
         "toc.md",
         "introduction.md"]
-    )
+)
 
 # The `Manifolds` chapter — general topology through homogeneous spaces — moved to
 # `GeometricOptimizers` with the manifold types it describes, as did `Symmetric and Skew-Symmetric
@@ -157,13 +160,13 @@ _introduction = output_type == :html ? ("HOME" => "index.md") : ("HOME" =>
 
 _special_arrays = "Special Arrays and AD" => [
     "Tensors" => "arrays/tensors.md",
-    "Pullbacks" => "pullbacks/computation_of_pullbacks.md",
-    ]
+    "Pullbacks" => "pullbacks/computation_of_pullbacks.md"
+]
 
 _structure_preservation = "Structure-Preservation" => [
     "Symplecticity" => "structure_preservation/symplecticity.md",
     "Volume-Preservation" => "structure_preservation/volume_preservation.md",
-    "Structure-Preserving Neural Networks" => "structure_preservation/structure_preserving_neural_networks.md",
+    "Structure-Preserving Neural Networks" => "structure_preservation/structure_preserving_neural_networks.md"
 ]
 
 # What is left of the optimizer chapter: the framework belongs to `GeometricOptimizers`, and this
@@ -176,15 +179,15 @@ _special_layers = "Special Neural Network Layers" => [
     "(Volume-Preserving) Attention" => "layers/attention_layer.md",
     "Multihead Attention" => "layers/multihead_attention_layer.md",
     "Linear Symplectic Attention" => "layers/linear_symplectic_attention.md",
-    "Symplectic Attention" => "layers/symplectic_attention.md",
-    ]
+    "Symplectic Attention" => "layers/symplectic_attention.md"
+]
 
-_reduced_order_modeling = "Reduced Order Modeling" =>[
+_reduced_order_modeling = "Reduced Order Modeling" => [
     "General Framework" => "reduced_order_modeling/reduced_order_modeling.md",
     "POD and Autoencoders" => "reduced_order_modeling/pod_autoencoders.md",
     "Losses and Errors" => "reduced_order_modeling/losses.md",
-    "Symplectic Model Order Reduction" => "reduced_order_modeling/symplectic_mor.md",
-    ]
+    "Symplectic Model Order Reduction" => "reduced_order_modeling/symplectic_mor.md"
+]
 
 _architectures = "Architectures" => [
     "Using Architectures with `NeuralNetwork`" => "architectures/abstract_neural_networks.md",
@@ -196,13 +199,13 @@ _architectures = "Architectures" => [
     "Standard Transformer" => "architectures/transformer.md",
     "Volume-Preserving Transformer" => "architectures/volume_preserving_transformer.md",
     "Linear Symplectic Transformer" => "architectures/linear_symplectic_transformer.md",
-    "Symplectic Transformer" => "architectures/symplectic_transformer.md",
-    ]
+    "Symplectic Transformer" => "architectures/symplectic_transformer.md"
+]
 
-_data_loader = "Data Loader" =>[
-            "Snapshot matrix & tensor" => "data_loader/snapshot_matrix.md",
-            "Routines" => "data_loader/data_loader.md",
-    ]
+_data_loader = "Data Loader" => [
+    "Snapshot matrix & tensor" => "data_loader/snapshot_matrix.md",
+    "Routines" => "data_loader/data_loader.md"
+]
 
 _tutorials = "Tutorials" => [
     "SympNets" => "tutorials/sympnet_tutorial.md",
@@ -215,8 +218,8 @@ _tutorials = "Tutorials" => [
     "Linear Symplectic Transformer" => "tutorials/linear_symplectic_transformer.md",
     "Symplectic Transformer" => "tutorials/symplectic_transformer.md",
     "Adjusting the Loss Function" => "tutorials/adjusting_the_loss_function.md",
-    "Comparing Optimizers" => "tutorials/optimizer_comparison.md",
-    ]
+    "Comparing Optimizers" => "tutorials/optimizer_comparison.md"
+]
 
 _outlook = "Summary and Outlook" => "outlook.md"
 _references = "References" => "references.md"
@@ -287,13 +290,16 @@ function value_for_key(pairs::Vector{PT}, key::String) where {PT <: Pair{String,
     Dict(pairs)[key]
 end
 
-function value_for_key(pairs::Pair{String, VT}, key::String) where {PT <: Pair{String, <:Any}, VT<:Vector{PT}}
+function value_for_key(
+        pairs::Pair{
+            String, VT}, key::String) where {PT <: Pair{String, <:Any}, VT <: Vector{PT}}
     value_for_key(pairs[2], key)
 end
 
-function value_for_key(pairs::Union{VT, Pair{String, VT}}, keys...) where {
-                                                                PT <: Pair{String, <:Any}, 
-                                                                VT <: Vector{PT}}
+function value_for_key(pairs::Union{VT, Pair{String, VT}},
+        keys...) where {
+        PT <: Pair{String, <:Any},
+        VT <: Vector{PT}}
     values = Vector{String}()
     for key in keys
         push!(values, value_for_key(pairs, key))
@@ -308,7 +314,7 @@ _latex_pages = [
     # structure and takes the manifold optimizers as given; see the changelog.
     "Background" => [
         "Geometric Structure" => reduce_to_second_factors(_structure_preservation),
-        "Reduced Order Modeling" => reduce_to_second_factors(_reduced_order_modeling),
+        "Reduced Order Modeling" => reduce_to_second_factors(_reduced_order_modeling)
     ],
     # One page, but it still has to be a chapter of *pairs* like the others: `index_latex_pages`
     # below flattens these values and `docstring_index.md` builds a `Dict` from the result, so a
@@ -320,14 +326,15 @@ _latex_pages = [
     ],
     # we do not include the last tutorial here
     "Experiments and Applications" => [
-        "Learning a Reduced Model with Symplectic Autoencoders" => value_for_key(_tutorials, "Symplectic Autoencoders"),
+        "Learning a Reduced Model with Symplectic Autoencoders" =>
+            value_for_key(_tutorials, "Symplectic Autoencoders"),
         "Neural Networks as Symplectic Integrators" => value_for_key(_tutorials,
-                                            "SympNets",
-                                            "Linear Symplectic Transformer"),
+            "SympNets",
+            "Linear Symplectic Transformer"),
         "Transformers with Structure" => value_for_key(_tutorials,
-                                            "Volume-Preserving Transformer for the Rigid Body",
-                                            "Volume-Preserving Attention"),
-        "Learning Nonlinear Spaces" => value_for_key(_tutorials, "Grassmann Manifold"),
+            "Volume-Preserving Transformer for the Rigid Body",
+            "Volume-Preserving Attention"),
+        "Learning Nonlinear Spaces" => value_for_key(_tutorials, "Grassmann Manifold")
     ],
     _outlook,
     _references,
@@ -335,17 +342,21 @@ _latex_pages = [
     "Appendix" => [
         "Data Loader" => reduce_to_second_factors(_data_loader),
         "Tensors and Pullbacks" =>
-        value_for_key(_special_arrays,  "Tensors",
-                                        "Pullbacks"),
+            value_for_key(_special_arrays, "Tensors",
+                "Pullbacks"),
         # we include the last tutorial here
-        "Customizing Training" => value_for_key(_tutorials, "Adjusting the Loss Function"),
+        "Customizing Training" =>
+            value_for_key(_tutorials, "Adjusting the Loss Function"),
         "Other Structure-Preserving Properties" => "port_hamiltonian_systems.md"
     ]
 ]
 
 _keys = [page[1] for page in _latex_pages]
 # don't generate docstring indices for specific chapters (introduction, conclusion, ...)
-filter!(key -> (key ≠ "HOME") & (key ≠ "Index of Docstrings") & (key ≠ "References") & (key ≠ "Summary and Outlook"), _keys)
+filter!(
+    key -> (key ≠ "HOME") & (key ≠ "Index of Docstrings") & (key ≠ "References") &
+           (key ≠ "Summary and Outlook"),
+    _keys)
 index_latex_pages = vcat([Dict(_latex_pages)[key] for key in _keys]...)
 
 makedocs(;
@@ -358,13 +369,14 @@ makedocs(;
     # skips *sub*modules — and (ii) pull GeometricOptimizers' own docstrings in, whose internal
     # `@ref`s resolve in its namespace and point at bindings this manual does not document.
     # Names owned by GeometricOptimizers are referred to as plain code with a link to its manual.
-    modules = [GeometricMachineLearning, Base.get_extension(GeometricMachineLearning, :HDF5Ext)],
+    modules = [
+        GeometricMachineLearning, Base.get_extension(GeometricMachineLearning, :HDF5Ext)],
     authors = "Michael Kraus, Benedikt Brantner",
     repo = "https://github.com/JuliaGNI/GeometricMachineLearning.jl/blob/{commit}{path}#L{line}",
     sitename = "GeometricMachineLearning.jl",
     format = format,
     doctest = false,
-    pages = output_type == :html ? _html_pages : _latex_pages,
+    pages = output_type == :html ? _html_pages : _latex_pages
 )
 
 # The tutorials' `@setup` blocks read pre-trained parameters from `docs/src/tutorials/*.h5` so that
@@ -383,7 +395,7 @@ for (root, _, files) in walkdir(joinpath(@__DIR__, "build"))
 end
 
 deploydocs(;
-    repo   = "github.com/JuliaGNI/GeometricMachineLearning.jl",
+    repo = "github.com/JuliaGNI/GeometricMachineLearning.jl",
     devurl = "latest",
-    devbranch = "main",
+    devbranch = "main"
 )

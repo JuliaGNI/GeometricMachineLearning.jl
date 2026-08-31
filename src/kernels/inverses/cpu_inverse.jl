@@ -1,4 +1,4 @@
-@kernel function cpu_inverse_kernel!(B, A) 
+@kernel function cpu_inverse_kernel!(B, A)
     k = @index(Global)
     @views A_temp = A[:, :, k]
     @views B_temp = B[:, :, k]
@@ -13,9 +13,9 @@ function cpu_inverse(A::AbstractArray)
     backend = networkbackend(A)
 
     cpu_inverse! = cpu_inverse_kernel!(backend)
-    cpu_inverse!(B, A, ndrange=size(A, 3))
+    cpu_inverse!(B, A, ndrange = size(A, 3))
 
-    B 
+    B
 end
 
 @kernel function cpu_inverse_pullback_kernel!(dA, A, dB)
@@ -38,7 +38,7 @@ function ChainRulesCore.rrule(::typeof(cpu_inverse), A::AbstractArray)
         backend = networkbackend(dB)
 
         cpu_inverse_pullback! = cpu_inverse_pullback_kernel!(backend)
-        cpu_inverse_pullback!(dA, A, dB, ndrange=size(dB, 3))
+        cpu_inverse_pullback!(dA, A, dB, ndrange = size(dB, 3))
 
         return NoTangent(), dA
     end

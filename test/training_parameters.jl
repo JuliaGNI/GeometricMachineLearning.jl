@@ -52,12 +52,14 @@ end
     ntraining = 5
 
     nn_frozen = NeuralNetwork(GSympNet(2; n_layers = 2), Float64)
-    loss_frozen = train!(nn_frozen, tra_ps_data, o, m; ntraining, batch_size = (1, 2), step_size = 0.0)
+    loss_frozen = train!(
+        nn_frozen, tra_ps_data, o, m; ntraining, batch_size = (1, 2), step_size = 0.0)
     @test length(loss_frozen) == ntraining
     @test all(loss_frozen .== loss_frozen[1])
 
     nn_moving = NeuralNetwork(GSympNet(2; n_layers = 2), Float64)
-    loss_moving = train!(nn_moving, tra_ps_data, o, m; ntraining, batch_size = (1, 2), step_size = 1e-2)
+    loss_moving = train!(
+        nn_moving, tra_ps_data, o, m; ntraining, batch_size = (1, 2), step_size = 1e-2)
     @test length(loss_moving) == ntraining
     @test !all(loss_moving .== loss_moving[1])
 end

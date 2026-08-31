@@ -6,7 +6,8 @@ close(file)
 new_contents = ""
 
 for (i, line) in zip(1:length(collection_of_lines), collection_of_lines)
-    global new_contents *= replace(line, raw"``{\textbackslash}mathcal\{M\}``" => raw"$\mathcal{M}$")
+    global new_contents *= replace(line, raw"``{\textbackslash}mathcal\{M\}``" =>
+        raw"$\mathcal{M}$")
     global new_contents *= "\n"
 end
 

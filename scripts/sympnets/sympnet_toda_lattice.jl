@@ -33,25 +33,25 @@ loss_array = o(nn, dl, batch, n_epochs)
 function make_training_error_plot(; theme = :dark)
     textcolor = theme == :dark ? :white : :black
     fig = Figure(; backgroundcolor = :transparent)
-    ax = Axis(fig[1, 1]; 
+    ax = Axis(fig[1, 1];
         backgroundcolor = :transparent,
-        bottomspinecolor = textcolor, 
+        bottomspinecolor = textcolor,
         topspinecolor = textcolor,
         leftspinecolor = textcolor,
         rightspinecolor = textcolor,
-        xtickcolor = textcolor, 
+        xtickcolor = textcolor,
         ytickcolor = textcolor,
         xticklabelcolor = textcolor,
         yticklabelcolor = textcolor,
-        xlabel=L"t", 
-        ylabel=L"q_1",
+        xlabel = L"t",
+        ylabel = L"q_1",
         xlabelcolor = textcolor,
-        ylabelcolor = textcolor,
+        ylabelcolor = textcolor
     )
 
     # we use linewidth  = 2
     lines!(ax, loss_array; color = mpurple, label = "SympNet", linewidth = 2)
-    axislegend(; position = (.55, .75), backgroundcolor = :transparent, labelcolor = textcolor)
+    axislegend(; position = (0.55, 0.75), backgroundcolor = :transparent, labelcolor = textcolor)
 
     fig, ax
 end
@@ -67,27 +67,28 @@ const n_steps = 1200
 function make_validation_plot(n_steps = n_steps; theme = :dark)
     textcolor = theme == :dark ? :white : :black
     fig = Figure(; backgroundcolor = :transparent)
-    ax = Axis(fig[1, 1]; 
+    ax = Axis(fig[1, 1];
         backgroundcolor = :transparent,
-        bottomspinecolor = textcolor, 
+        bottomspinecolor = textcolor,
         topspinecolor = textcolor,
         leftspinecolor = textcolor,
         rightspinecolor = textcolor,
-        xtickcolor = textcolor, 
+        xtickcolor = textcolor,
         ytickcolor = textcolor,
         xticklabelcolor = textcolor,
         yticklabelcolor = textcolor,
-        xlabel=L"t", 
-        ylabel=L"q_1",
+        xlabel = L"t",
+        ylabel = L"q_1",
         xlabelcolor = textcolor,
-        ylabelcolor = textcolor,
+        ylabelcolor = textcolor
     )
     prediction = iterate(nn, init_con; n_points = n_steps)
 
     # we use linewidth  = 2
-    lines!(ax, dl.input.q[:, n_steps]; color = mblue, label = "Implicit midpoint", linewidth = 2)
+    lines!(ax, dl.input.q[:, n_steps]; color = mblue,
+        label = "Implicit midpoint", linewidth = 2)
     lines!(ax, prediction.q[:, n_steps]; color = mpurple, label = "SympNet", linewidth = 2)
-    axislegend(; position = (.55, .75), backgroundcolor = :transparent, labelcolor = textcolor)
+    axislegend(; position = (0.55, 0.75), backgroundcolor = :transparent, labelcolor = textcolor)
 
     fig, ax
 end

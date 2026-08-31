@@ -14,9 +14,9 @@ end
 
 μ_left = 5/12
 μ_right = 4/6
-μ_collection = μ_left:((μ_right - μ_left) / (n_params - 1)):μ_right 
+μ_collection = μ_left:((μ_right - μ_left) / (n_params - 1)):μ_right
 
-function plot_curves(number_of_params::Int=3, time_instances::Int=3)
+function plot_curves(number_of_params::Int = 3, time_instances::Int = 3)
     number_time_indices = size(data, 2)÷n_params
 
     param_indices = indices(n_params, number_of_params)
@@ -24,7 +24,7 @@ function plot_curves(number_of_params::Int=3, time_instances::Int=3)
 
     time_labels = reshape((0:(1 / (number_time_indices - 1)):1)[time_indices], 1, time_instances)
 
-    N = size(data,1)÷2
+    N = size(data, 1)÷2
 
     Ω = -0.5:(1 / (N - 1)):0.5
 
@@ -35,9 +35,9 @@ function plot_curves(number_of_params::Int=3, time_instances::Int=3)
     index_number = 0
 
     function title_gen(t::Real)
-        output = try 
+        output = try
             "t="*string(t)[1:4]
-        catch 
+        catch
             "t="*string(t)
         end
         output
@@ -45,12 +45,12 @@ function plot_curves(number_of_params::Int=3, time_instances::Int=3)
 
     for param_index in param_indices
         index_number += 1
-        data_to_plot = data[1:N, (param_index-1) * number_time_indices .+ time_indices]
+        data_to_plot = data[1:N, (param_index - 1) * number_time_indices .+ time_indices]
         for (i, ax) in pairs(axs)
             ax.title = title_gen(time_labels[i])
             lines!(ax, Ω, data_to_plot[:, i];
-                   color = Makie.wong_colors()[3 + index_number],
-                   label = "μ="*string(μ_collection[param_index])[1:5])
+                color = Makie.wong_colors()[3 + index_number],
+                label = "μ="*string(μ_collection[param_index])[1:5])
         end
     end
     axislegend(axs[1])

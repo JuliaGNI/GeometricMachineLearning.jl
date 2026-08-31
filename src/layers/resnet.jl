@@ -18,38 +18,59 @@ struct ResNetLayer{M, N, use_bias, F1} <: AbstractExplicitLayer{M, N}
     activation::F1
 end
 
-ResNetLayer(dim::Integer, activation=identity; use_bias::Bool=true) = ResNetLayer{dim, dim, use_bias, typeof(activation)}(activation)
+function ResNetLayer(dim::Integer, activation = identity; use_bias::Bool = true)
+    ResNetLayer{dim, dim, use_bias, typeof(activation)}(activation)
+end
 
-function initialparameters(rng::Random.AbstractRNG, init_weight::AbstractNeuralNetworks.Initializer, ::ResNetLayer{M, M, use_bias}, backend::KernelAbstractions.Backend, ::Type{T}; init_bias = ZeroInitializer()) where {M, use_bias, T}
+function initialparameters(
+        rng::Random.AbstractRNG, init_weight::AbstractNeuralNetworks.Initializer,
+        ::ResNetLayer{M, M, use_bias}, backend::KernelAbstractions.Backend,
+        ::Type{T}; init_bias = ZeroInitializer()) where {M, use_bias, T}
     if use_bias
         weight = KernelAbstractions.allocate(backend, T, M, M)
         bias = KernelAbstractions.allocate(backend, T, M)
         init_weight(rng, weight)
         init_bias(rng, bias)
-        return (weight=weight,
-                bias=bias)
+        return (weight = weight,
+            bias = bias)
     else
         weight = KernelAbstractions.allocate(backend, T, M, M)
         init_weight(rng, weight)
-        return (weight=weight,)
+        return (weight = weight,)
     end
 end
 
-parameterlength(::ResNetLayer{M, M, use_bias}) where {M, use_bias} = use_bias ? M * (M + 1) : M * M
+function parameterlength(::ResNetLayer{M, M, use_bias}) where {M, use_bias}
+    use_bias ? M * (M + 1) : M * M
+end
 
-(d::ResNetLayer{M, M, true})(x::AbstractVecOrMat, ps::NamedTuple) where {M} = x + d.activation.(ps.weight * x .+ ps.bias)
+function (d::ResNetLayer{M, M, true})(x::AbstractVecOrMat, ps::NamedTuple) where {M}
+    x + d.activation.(ps.weight * x .+ ps.bias)
+end
 
-(d::ResNetLayer{M, M, false})(x::AbstractVecOrMat, ps::NamedTuple) where {M} = x + d.activation.(ps.weight * x)
+function (d::ResNetLayer{M, M, false})(x::AbstractVecOrMat, ps::NamedTuple) where {M}
+    x + d.activation.(ps.weight * x)
+end
 
-(d::ResNetLayer{M, M, false})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, T} = x + d.activation.(mat_tensor_mul(ps.weight, x))
+function (d::ResNetLayer{M, M, false})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, T}
+    x + d.activation.(mat_tensor_mul(ps.weight, x))
+end
 
-(d::ResNetLayer{M, M, true})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, T} = x + d.activation.(mat_tensor_mul(ps.weight, x) .+ ps.bias)
+function (d::ResNetLayer{M, M, true})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, T}
+    x + d.activation.(mat_tensor_mul(ps.weight, x) .+ ps.bias)
+end
 
-(d::Dense{M, N, true})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, N, T} = d.σ.(mat_tensor_mul(ps.W, x) .+ ps.b)
+function (d::Dense{M, N, true})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, N, T}
+    d.σ.(mat_tensor_mul(ps.W, x) .+ ps.b)
+end
 
-(d::Dense{M, N, false})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, N, T} = d.σ.(mat_tensor_mul(ps.W, x))
+function (d::Dense{M, N, false})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, N, T}
+    d.σ.(mat_tensor_mul(ps.W, x))
+end
 
-(d::Linear{M, N})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, N, T} = mat_tensor_mul(ps.W, x)
+function (d::Linear{M, N})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, N, T}
+    mat_tensor_mul(ps.W, x)
+end
 
 function (d::Union{Dense{M, N}, ResNetLayer{M, N}})(z::QPT, ps::NamedTuple) where {M, N}
     @assert iseven(M) == iseven(N) == true

@@ -21,7 +21,8 @@ function SymbolicPullback(arch::HamiltonianArchitecture)
     gradient = SymbolicNeuralNetworks.symbolic_parameter_gradient(symbolic_loss, nn)
     # `reduce = +`: the loss of a batch is the sum of the losses of its samples, so its gradient is
     # the sum of the per-sample gradients.
-    gradient_function = SymbolicNeuralNetworks.build_nn_function(gradient, nn.params, nn.input,
-                                                                 soutput; reduce = +)
+    gradient_function = SymbolicNeuralNetworks.build_nn_function(
+        gradient, nn.params, nn.input,
+        soutput; reduce = +)
     SymbolicPullback(loss, SymbolicNeuralNetworks.ParameterGradient(gradient_function))
 end

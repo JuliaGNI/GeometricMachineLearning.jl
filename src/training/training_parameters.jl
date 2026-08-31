@@ -19,7 +19,8 @@ struct TrainingParameters{TM, TO, Tbatch}
     end
 end
 
-function TrainingParameters(tp::TrainingParameters; nruns = nruns(tp), method = method(tp), opt = opt(tp), batch_size = batchsize(tp))
+function TrainingParameters(tp::TrainingParameters; nruns = nruns(tp), method = method(tp),
+        opt = opt(tp), batch_size = batchsize(tp))
     TrainingParameters(nruns, method, opt; batch_size = batch_size)
 end
 
@@ -36,4 +37,3 @@ end
 @inline method(tp::TrainingParameters) = tp.method
 @inline opt(tp::TrainingParameters) = tp.mopt
 @inline batchsize(tp::TrainingParameters) = tp.bs
-

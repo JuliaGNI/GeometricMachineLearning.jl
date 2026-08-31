@@ -3,7 +3,8 @@ This implements the custom pullback tor tensor_tensor_mul
 """
 
 #the @thunk macro means that the computation is only performed in case it is needed
-function ChainRulesCore.rrule(::typeof(tensor_tensor_mul), A::AbstractArray{T, 3}, B::AbstractArray{T, 3}) where T
+function ChainRulesCore.rrule(::typeof(tensor_tensor_mul), A::AbstractArray{T, 3},
+        B::AbstractArray{T, 3}) where {T}
     @assert axes(A, 2) == axes(B, 1)
     C = tensor_tensor_mul(A, B)
     function tensor_tensor_mul_pullback(C_diff)

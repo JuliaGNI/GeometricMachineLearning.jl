@@ -1,12 +1,12 @@
 using CUDA
 using GeometricMachineLearning
 using GeometricProblems.CoupledHarmonicOscillator: hodeensemble, default_parameters
-using GeometricIntegrators: ImplicitMidpoint, integrate 
+using GeometricIntegrators: ImplicitMidpoint, integrate
 using LaTeXStrings
 using CairoMakie
 using LinearAlgebra: norm
 
-const timestep = .3
+const timestep = 0.3
 const n_init_con = 1000
 
 # ensemble problem
@@ -20,7 +20,8 @@ const batch_size = 16384
 const n_epochs = 2000
 
 arch_standard = StandardTransformerIntegrator(dl.input_dim; n_heads = 2)
-arch_symplectic = LinearSymplecticTransformer(dl.input_dim, seq_length; n_sympnet = 2, L = 1, upscaling_dimension = 5 * dl.input_dim)
+arch_symplectic = LinearSymplecticTransformer(
+    dl.input_dim, seq_length; n_sympnet = 2, L = 1, upscaling_dimension = 5 * dl.input_dim)
 arch_sympnet = GSympNet(dl.input_dim; n_layers = 4, upscaling_dimension = 5 * dl.input_dim)
 
 nn_standard = NeuralNetwork(arch_standard, CUDABackend())
@@ -48,10 +49,13 @@ lines!(ax_train, loss_array_sympnet; color = Makie.wong_colors()[3], label = "Sy
 axislegend(ax_train)
 
 function _convert_to_cpu(dl, nn_standard, nn_symplectic, nn_sympnet)
-    DataLoader(dl.input |> Array{Float32}), GeometricMachineLearning.map_to_cpu(nn_standard), GeometricMachineLearning.map_to_cpu(nn_symplectic), GeometricMachineLearning.map_to_cpu(nn_sympnet)
+    DataLoader(dl.input |> Array{Float32}),
+    GeometricMachineLearning.map_to_cpu(nn_standard),
+    GeometricMachineLearning.map_to_cpu(nn_symplectic),
+    GeometricMachineLearning.map_to_cpu(nn_sympnet)
 end
 
-dl, nn_standard, nn_symplectic, nn_sympnet =  _convert_to_cpu(dl, nn_standard, nn_symplectic, nn_sympnet)
+dl, nn_standard, nn_symplectic, nn_sympnet = _convert_to_cpu(dl, nn_standard, nn_symplectic, nn_sympnet)
 
 const index = 1
 init_con = dl.input[:, 1:seq_length, index]
@@ -66,14 +70,17 @@ function make_validation_plot(n_steps = n_steps; kwargs...)
 
     fig_validate = Figure()
     ax_validate = Axis(fig_validate[1, 1]; ylabel = L"q_1", kwargs...)
-    lines!(ax_validate, prediction_implicit_midpoint[1, :]; color = Makie.wong_colors()[1], label = "implicit midpoint")
+    lines!(ax_validate, prediction_implicit_midpoint[1, :];
+        color = Makie.wong_colors()[1], label = "implicit midpoint")
     lines!(ax_validate, prediction_standard[1, :]; color = Makie.wong_colors()[2], label = "ST")
     lines!(ax_validate, prediction_symplectic[1, :]; color = Makie.wong_colors()[4], label = "LST")
     lines!(ax_validate, prediction_sympnet[1, :]; color = Makie.wong_colors()[3], label = "SympNet")
     axislegend(ax_validate)
     p_validate = fig_validate
 
-    p_validate, norm(prediction_implicit_midpoint - prediction_standard), norm(prediction_implicit_midpoint - prediction_symplectic), norm(prediction_implicit_midpoint - prediction_sympnet)
+    p_validate, norm(prediction_implicit_midpoint - prediction_standard),
+    norm(prediction_implicit_midpoint - prediction_symplectic),
+    norm(prediction_implicit_midpoint - prediction_sympnet)
 end
 
 p_validate, error_standard, error_symplectic, error_sympnet = make_validation_plot()

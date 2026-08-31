@@ -1,6 +1,6 @@
 using GeometricMachineLearning
 using Test
-import Random 
+import Random
 
 Random.seed!(123)
 
@@ -8,7 +8,7 @@ const sys_dim = 5
 const model = StandardTransformerIntegrator(sys_dim)
 const seq_length = 5
 
-function set_up_and_apply_integrator(; T=Float32)
+function set_up_and_apply_integrator(; T = Float32)
     ics = rand(T, sys_dim, seq_length)
 
     nn = NeuralNetwork(model, CPU(), T)

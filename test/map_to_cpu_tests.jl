@@ -21,7 +21,7 @@ const N, n = 6, 3
     ps = NetworkParameters((
         L1 = (Y = rand(StiefelManifold{Float64}, N, n), b = randn(N)),
         L2 = (S = SymmetricMatrix(randn(n, n)), A = SkewSymMatrix(randn(n, n))),
-        L3 = (L = LowerTriangular(randn(n, n)), U = UpperTriangular(randn(n, n))),
+        L3 = (L = LowerTriangular(randn(n, n)), U = UpperTriangular(randn(n, n)))
     ))
 
     back = map_to_cpu(ps)
@@ -56,7 +56,8 @@ end
 end
 
 @testset "element type is preserved" begin
-    ps = NetworkParameters((L1 = (W = randn(Float32, 2, 2), S = SymmetricMatrix(randn(Float32, n, n))),))
+    ps = NetworkParameters((L1 = (
+        W = randn(Float32, 2, 2), S = SymmetricMatrix(randn(Float32, n, n))),))
     back = map_to_cpu(ps)
     @test eltype(back.L1.W) === Float32
     @test eltype(back.L1.S) === Float32

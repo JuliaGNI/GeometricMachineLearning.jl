@@ -1,6 +1,5 @@
 abstract type AbstractTrainingData end
 
-
 # """
 # TrainingData stores: \n 
 # \t - problem \n 
@@ -10,7 +9,8 @@ abstract type AbstractTrainingData end
 # \t - dim \n 
 # \t - noisemaker \n 
 # """
-struct TrainingData{TK <: DataSymbol, TS <: AbstractDataShape, TP <: AbstractProblem, TG <: Dict{Symbol, <:Base.Callable}, TN <: Base.Callable} <: AbstractTrainingData 
+struct TrainingData{TK <: DataSymbol, TS <: AbstractDataShape, TP <: AbstractProblem,
+    TG <: Dict{Symbol, <:Base.Callable}, TN <: Base.Callable} <: AbstractTrainingData
     problem::TP
     shape::TS
     get::TG
@@ -18,48 +18,49 @@ struct TrainingData{TK <: DataSymbol, TS <: AbstractDataShape, TP <: AbstractPro
     dim::Int
     noisemaker::TN
 
-    function TrainingData(problem::AbstractProblem, shape::AbstractDataShape, get::Dict{Symbol, <:Base.Callable}, symbols::DataSymbol, dim::Int, noisemaker::Base.Callable)
-        new{typeof(symbols),typeof(shape), typeof(problem), typeof(get), typeof(noisemaker)}(problem, shape, get, symbols, dim, noisemaker)
+    function TrainingData(problem::AbstractProblem, shape::AbstractDataShape,
+            get::Dict{Symbol, <:Base.Callable}, symbols::DataSymbol,
+            dim::Int, noisemaker::Base.Callable)
+        new{typeof(symbols), typeof(shape), typeof(problem),
+            typeof(get), typeof(noisemaker)}(problem, shape, get, symbols, dim, noisemaker)
     end
-
 end
 
-function TrainingData(data, get_data::Dict{Symbol, <:Any}, problem = UnknownProblem(); noisemaker =  NothingFunction())
-    
+function TrainingData(data, get_data::Dict{Symbol, <:Any},
+        problem = UnknownProblem(); noisemaker = NothingFunction())
     _get_data = copy(get_data)
-    
+
     @assert haskey(get_data, :shape)
     shape = _get_data[:shape](data, _get_data)
 
     delete!(_get_data, :shape)
 
-    get = Dict([(key, (args...)->value(data,args...)) for (key,value) in _get_data])
+    get = Dict([(key, (args...)->value(data, args...)) for (key, value) in _get_data])
 
     symbols = DataSymbol(Tuple(keys(get)))
-    
-    dim = 2 * sum( length(get[Tuple(keys(get))[1]](_index_first(shape)...)))
+
+    dim = 2 * sum(length(get[Tuple(keys(get))[1]](_index_first(shape)...)))
 
     TrainingData(problem, shape, get, symbols, dim, noisemaker)
 end
 
-function TrainingData(data::TrainingData; shape = shape(data), get = get_data(data), symbols = data_symbols(data), dim = dim(data), noisemaker =  NothingFunction())
+function TrainingData(data::TrainingData; shape = shape(data), get = get_data(data),
+        symbols = data_symbols(data), dim = dim(data), noisemaker = NothingFunction())
     TrainingData(problem(data), shape, copy(get), symbols, dim, noisemaker)
 end
-
 
 function TrainingData(es::EnsembleSolution)
     get_data = Dict(
         :shape => TrajectoryData,
         :nb_trajectory => Data -> length(Data),
-        :length_trajectory => (Data,i) -> ntime(es),
-        :Δt => Data -> timestep(es),
+        :length_trajectory => (Data, i) -> ntime(es),
+        :Δt => Data -> timestep(es)
     )
     for s in keys(es.problem.ics[1])
-        get_data[s] = (es, i, n) -> solution(es,i)[n-1][s]
+        get_data[s] = (es, i, n) -> solution(es, i)[n - 1][s]
     end
     TrainingData(es, get_data, es.problem)
 end
-
 
 @inline problem(data::TrainingData) = data.problem
 @inline shape(data::TrainingData) = data.shape
@@ -86,20 +87,18 @@ end
 
 @inline min_length(data::TrainingData) = min_length(data.shape)
 
-
 function reshape_intoSampledData(data::TrainingData)
-
     new_shape = reshape_intoSampledData!(shape(data))
 
     #Creating a dictionary and imposing its type
-    new_get = Dict(:a => x->x, :b => x-> x+1)
+    new_get = Dict(:a => x->x, :b => x -> x+1)
     delete!(new_get, :a)
     delete!(new_get, :b)
 
     for s in symbols(data_symbols(data))
         v = []
         for x in eachindex(data)
-            push!(v, get_data(data,s, x...))
+            push!(v, get_data(data, s, x...))
         end
         new_get[s] = n -> v[n]
     end
@@ -107,12 +106,11 @@ function reshape_intoSampledData(data::TrainingData)
     TrainingData(data; shape = new_shape, get = new_get)
 end
 
-
-
 function reduce_symbols(data::TrainingData, symbol::DataSymbol)
 
     #test if it cab be reduced
-    can_reduce(data_symbols(data), symbol) ? nothing : throw(ReductionSymbolError(type(data_symbols(data)), type(symbol)))
+    can_reduce(data_symbols(data), symbol) ? nothing :
+    throw(ReductionSymbolError(type(data_symbols(data)), type(symbol)))
 
     #compute the symetric difference of old and new symbols
     toberemoved = symboldiff(data_symbols(data), symbol)
@@ -126,11 +124,11 @@ function reduce_symbols(data::TrainingData, symbol::DataSymbol)
     new_data
 end
 
-
 function transform_symbols(data::TrainingData, symbol::DataSymbol)
 
     #check if it is possible to do the transformation
-    can_transform(data_symbols(data), symbol) ? nothing : throw(TransformationSymbolError(type(data_symbols(data)), type(symbol)))
+    can_transform(data_symbols(data), symbol) ? nothing :
+    throw(TransformationSymbolError(type(data_symbols(data)), type(symbol)))
 
     #compute the symetric difference of old and new symbols
     toberemoved = symboldiff(data_symbols(data), symbol)
@@ -141,9 +139,7 @@ function transform_symbols(data::TrainingData, symbol::DataSymbol)
     clean_get!(data, toberemoved)
 
     TrainingData(data; symbols = symbol)
-
 end
-
 
 function clean_get!(data::TrainingData, toberemoved::Tuple{Vararg{Symbol}})
     for s in toberemoved

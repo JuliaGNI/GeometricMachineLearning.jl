@@ -1,16 +1,32 @@
 struct BasicSympNetMethod <: SympNetTrainingMethod end
 
-BasicSympNet(;sqdist = sqeuclidean) = TrainingMethod{BasicSympNetMethod, PhaseSpaceSymbol, TrajectoryData, typeof(sqdist)}(sqdist)
-
-function loss_single(::TrainingMethod{BasicSympNetMethod}, nn::AbstractNeuralNetwork{<:SympNet}, qₙ, pₙ, qₙ₊₁, pₙ₊₁, params = params(nn))
-    q̃ₙ₊₁,p̃ₙ₊₁ = nn([qₙ...,pₙ...],params)
-    sqeuclidean(q̃ₙ₊₁,qₙ₊₁) + sqeuclidean(p̃ₙ₊₁,pₙ₊₁)
+function BasicSympNet(; sqdist = sqeuclidean)
+    TrainingMethod{BasicSympNetMethod, PhaseSpaceSymbol, TrajectoryData, typeof(sqdist)}(sqdist)
 end
 
-get_loss(::TrainingMethod{<:BasicSympNetMethod}, ::AbstractNeuralNetwork{<:SympNet}, data::TrainingData{<:DataSymbol{<:PhaseSpaceSymbol}}, args) = 
-(Zygote.ignore_derivatives(get_data(data,:q, args...)), Zygote.ignore_derivatives(get_data(data,:p, args...)), Zygote.ignore_derivatives(get_data(data,:q, next(args...)...)), Zygote.ignore_derivatives(get_data(data,:p, next(args...)...)))
+function loss_single(
+        ::TrainingMethod{BasicSympNetMethod}, nn::AbstractNeuralNetwork{<:SympNet},
+        qₙ, pₙ, qₙ₊₁, pₙ₊₁, params = params(nn))
+    q̃ₙ₊₁, p̃ₙ₊₁ = nn([qₙ..., pₙ...], params)
+    sqeuclidean(q̃ₙ₊₁, qₙ₊₁) + sqeuclidean(p̃ₙ₊₁, pₙ₊₁)
+end
 
-loss(ti::TrainingMethod{<:BasicSympNetMethod}, nn::AbstractNeuralNetwork{<:SympNet}, data::TrainingData{<:DataSymbol{<:PhaseSpaceSymbol}}, index_batch = eachindex(ti, data), params = params(nn)) = 
-mapreduce(args->loss_single(Zygote.ignore_derivatives(ti), nn, get_loss(ti, nn, data, args)..., params),+, index_batch)
+function get_loss(
+        ::TrainingMethod{<:BasicSympNetMethod}, ::AbstractNeuralNetwork{<:SympNet},
+        data::TrainingData{<:DataSymbol{<:PhaseSpaceSymbol}}, args)
+    (Zygote.ignore_derivatives(get_data(data, :q, args...)),
+        Zygote.ignore_derivatives(get_data(data, :p, args...)),
+        Zygote.ignore_derivatives(get_data(data, :q, next(args...)...)),
+        Zygote.ignore_derivatives(get_data(data, :p, next(args...)...)))
+end
+
+function loss(
+        ti::TrainingMethod{<:BasicSympNetMethod}, nn::AbstractNeuralNetwork{<:SympNet},
+        data::TrainingData{<:DataSymbol{<:PhaseSpaceSymbol}},
+        index_batch = eachindex(ti, data), params = params(nn))
+    mapreduce(
+        args->loss_single(Zygote.ignore_derivatives(ti), nn, get_loss(ti, nn, data, args)..., params),
+        +,
+        index_batch)
+end
 min_length_batch(::BasicSympNetMethod) = 2
-

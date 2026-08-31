@@ -66,8 +66,10 @@ function resolve(text::AbstractString, mod::Module = Main; exact_signature::Bool
     (true, "")
 end
 
-markdown_files() = [joinpath(root, f)
-                    for (root, _, files) in walkdir(SRC) for f in files if endswith(f, ".md")]
+function markdown_files()
+    [joinpath(root, f)
+     for (root, _, files) in walkdir(SRC) for f in files if endswith(f, ".md")]
+end
 
 """Every entry of every `@docs` block in the manual, as `(file, line, text)`."""
 function docs_entries()
@@ -130,6 +132,7 @@ signatures_of(::Any) = Type[Union{}]
 function missing_docs()
     bindings = Dict{Docs.Binding, Set{Type}}()
     for mod in MODULES, (binding, doc) in DocSystem.getmeta(mod)
+
         isa(binding, Docs.Binding) || continue
         bindings[binding] = Set(signatures_of(doc))
     end
@@ -214,9 +217,10 @@ for (owner, target, mod) in docstring_refs()
 end
 
 for (binding, sig) in missing_docs()
-    push!(failures, ("<missing_docs>", 0,
-        "$binding$(sig === Union{} ? "" : " :: $sig")",
-        "documented in the package but not included in any `@docs` block"))
+    push!(failures,
+        ("<missing_docs>", 0,
+            "$binding$(sig === Union{} ? "" : " :: $sig")",
+            "documented in the package but not included in any `@docs` block"))
 end
 
 for (file, line, target) in ref_targets()

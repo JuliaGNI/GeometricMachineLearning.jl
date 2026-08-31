@@ -1,6 +1,6 @@
 struct LuxBackend <: AbstractBackend end
 
-struct LuxNeuralNetwork{AT,MT,PT,ST} <: AbstractNeuralNetwork{AT}
+struct LuxNeuralNetwork{AT, MT, PT, ST} <: AbstractNeuralNetwork{AT}
     architecture::AT
     model::MT
     params::PT
@@ -24,7 +24,7 @@ function apply(nn::LuxNeuralNetwork, x, params::Tuple)
     # apply network
     # y, st = Lux.apply(nn.model, x, params, nn.state)
     y = Lux.apply(nn.model, x, params, nn.state)
-    
+
     # update state
     # nn.state .= st
 
@@ -35,7 +35,7 @@ end
 function apply(nn::LuxNeuralNetwork, x, params::NamedTuple)
     # apply network
     y, st = Lux.apply(nn.model, x, params, nn.state)
-    
+
     # update state
     #nn.state .= st
 
@@ -47,17 +47,13 @@ apply(nn::LuxNeuralNetwork, x) = apply(nn, x, params(nn))
 
 (nn::LuxNeuralNetwork)(x, args...) = apply(nn, x, args...)
 
-
 # function update!(::Lux.AbstractExplicitLayer, x::NamedTuple, dx::NamedTuple, η::AbstractFloat)
 #     for obj in keys(x)
 #         x[obj] .+= η * dx[obj]
 #     end
 # end
 
-
 @inline AbstractNeuralNetworks.dim(nn::NeuralNetwork) = dim(nn.architecture)
-
-
 
 # define some custom apply methods for Chain and Dense
 # that use Tuples for parameters instead of NamedTuples

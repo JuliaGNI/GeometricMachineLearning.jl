@@ -13,7 +13,8 @@ import Random
     output_mat = [1.0 2.0; 3.0 4.0]
     loss = TransformerLoss(seq_length, prediction_window)
     @test loss(nn, input_mat, output_mat) ≈
-        norm(output_mat - nn(input_mat)[:, seq_length - prediction_window + 1:end]) / norm(output_mat)
+          norm(output_mat - nn(input_mat)[:, (seq_length - prediction_window + 1):end]) /
+          norm(output_mat)
 
     Random.seed!(123)
     N, n = 4, 1
@@ -31,5 +32,5 @@ import Random
     loss = ReducedLoss(Ψᵉ, Ψᵈ)
     output_prediction = Ψᵈ(transformer(Ψᵉ(input_mat)))
     @test loss(transformer, input_mat, output_mat) ≈
-        norm(output_mat - output_prediction) / norm(output_mat)
+          norm(output_mat - output_prediction) / norm(output_mat)
 end

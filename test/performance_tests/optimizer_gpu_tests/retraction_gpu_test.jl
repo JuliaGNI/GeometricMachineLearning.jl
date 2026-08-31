@@ -1,9 +1,9 @@
 using GeometricMachineLearning
 using GeometricMachineLearning: geodesic
-using Printf 
-using Test 
+using Printf
+using Test
 using GPUArrays
-using CUDA 
+using CUDA
 
 function test_retraction(dev, T, N, n)
     map_to_dev(A::AbstractArray) = GeometricMachineLearning.convert_to_dev(dev, A)
@@ -19,7 +19,7 @@ function test_retraction(dev, T, N, n)
 end
 
 T = Float32
-for N = 1000:1000:5000
+for N in 1000:1000:5000
     n = N÷10
     print("N = ", N, " and n = ", n, "\n")
     @printf "GeometricMachineLearning cpu: "

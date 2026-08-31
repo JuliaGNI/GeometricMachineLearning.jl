@@ -1,4 +1,4 @@
-using CUDA 
+using CUDA
 
 n_executions = 10
 N = 64
@@ -23,8 +23,8 @@ function gpu_run(A, B, n_executions)
 end
 
 function main_gpu(N, n_executions)
-    A = CUDA.rand(N,N)
-    B = CUDA.rand(N,N)
+    A = CUDA.rand(N, N)
+    B = CUDA.rand(N, N)
 
     # make sure this data can be used by other tasks!
     #synchronize()
@@ -37,20 +37,17 @@ function main_cpu(N, n_executions)
 
     A = rand(Float32, N, N)
     B = rand(Float32, N, N)
-    
+
     for i in 1:n_executions
         results[i] = compute(A, B)
     end
 end
 
-
-for N in 2 .^(4:7)
+for N in 2 .^ (4:7)
     for n_executions in 10:30:100
-
-        print("N = ",N," and number of executions is ", n_executions, "\n")
+        print("N = ", N, " and number of executions is ", n_executions, "\n")
 
         @time "execution on the cpu" main_cpu(N, n_executions)
-
 
         @time "execution on the gpu" main_gpu(N, n_executions)
 

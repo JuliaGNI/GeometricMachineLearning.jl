@@ -19,29 +19,28 @@ mpurple = RGBf(148 / 256, 103 / 256, 189 / 256)
 mblue = RGBf(31 / 256, 119 / 256, 180 / 256)
 mgreen = RGBf(44 / 256, 160 / 256, 44 / 256)
 
-const timestep = .3
+const timestep = 0.3
 const n_init_con = 5
 
 # ensemble problem
 ep = hodeensemble([rand(2) for _ in 1:n_init_con], [rand(2) for _ in 1:n_init_con]; timestep = timestep)
 dl = DataLoader(integrate(ep, ImplicitMidpoint()); suppress_info = true)
 
-
 const seq_length = 4
 const batch_size = 1024
 const n_epochs = 500
 
 arch1 = StandardTransformerIntegrator(dl.input_dim; transformer_dim = 20,
-                                                    n_heads = 4, 
-                                                    L = 1, 
-                                                    n_blocks = 2,
-                                                    attention_activation = act1)
+    n_heads = 4,
+    L = 1,
+    n_blocks = 2,
+    attention_activation = act1)
 
 arch2 = StandardTransformerIntegrator(dl.input_dim; transformer_dim = 20,
-                                                    n_heads = 4,
-                                                    L = 1,
-                                                    n_blocks = 2,
-                                                    attention_activation = act2)
+    n_heads = 4,
+    L = 1,
+    n_blocks = 2,
+    attention_activation = act2)
 
 nn1 = NeuralNetwork(arch1)
 nn2 = NeuralNetwork(arch2)
@@ -61,26 +60,26 @@ const n_steps = 300
 function make_training_error_plot(n_steps = n_steps; theme = :dark)
     textcolor = theme == :dark ? :white : :black
     fig = Figure(; backgroundcolor = :transparent)
-    ax = Axis(fig[1, 1]; 
+    ax = Axis(fig[1, 1];
         backgroundcolor = :transparent,
-        bottomspinecolor = textcolor, 
+        bottomspinecolor = textcolor,
         topspinecolor = textcolor,
         leftspinecolor = textcolor,
         rightspinecolor = textcolor,
-        xtickcolor = textcolor, 
+        xtickcolor = textcolor,
         ytickcolor = textcolor,
         xticklabelcolor = textcolor,
         yticklabelcolor = textcolor,
-        xlabel=L"t", 
-        ylabel=L"q_1",
+        xlabel = L"t",
+        ylabel = L"q_1",
         xlabelcolor = textcolor,
-        ylabelcolor = textcolor,
+        ylabelcolor = textcolor
     )
 
     # we use linewidth  = 2
     lines!(ax, loss_array1; color = mpurple, label = "VecSoftM", linewidth = 2)
     lines!(ax, loss_array2; color = mred, label = "MatSoftM", linewidth = 2)
-    axislegend(; position = (.55, .75), backgroundcolor = :transparent, labelcolor = textcolor)
+    axislegend(; position = (0.55, 0.75), backgroundcolor = :transparent, labelcolor = textcolor)
 
     fig, ax
 end
@@ -94,29 +93,31 @@ init_con = (q = dl.input.q[:, 1:seq_length, index], p = dl.input.p[:, 1:seq_leng
 function make_validation_plot(n_steps = n_steps; theme = :dark)
     textcolor = theme == :dark ? :white : :black
     fig = Figure(; backgroundcolor = :transparent)
-    ax = Axis(fig[1, 1]; 
+    ax = Axis(fig[1, 1];
         backgroundcolor = :transparent,
-        bottomspinecolor = textcolor, 
+        bottomspinecolor = textcolor,
         topspinecolor = textcolor,
         leftspinecolor = textcolor,
         rightspinecolor = textcolor,
-        xtickcolor = textcolor, 
+        xtickcolor = textcolor,
         ytickcolor = textcolor,
         xticklabelcolor = textcolor,
         yticklabelcolor = textcolor,
-        xlabel=L"t", 
-        ylabel=L"q_1",
+        xlabel = L"t",
+        ylabel = L"q_1",
         xlabelcolor = textcolor,
-        ylabelcolor = textcolor,
+        ylabelcolor = textcolor
     )
     prediction_vector = iterate(nn1, init_con; n_points = n_steps, prediction_window = seq_length)
     prediction_matrix = iterate(nn2, init_con; n_points = n_steps, prediction_window = seq_length)
 
     # we use linewidth  = 2
-    lines!(ax, dl.input.q[1, 1:n_steps, index]; color = mblue, label = "Implicit midpoint", linewidth = 2)
-    lines!(ax, prediction_vector.q[1, :]; color = mpurple, label = "VecSoftM", linewidth = 2)
+    lines!(ax, dl.input.q[1, 1:n_steps, index]; color = mblue,
+        label = "Implicit midpoint", linewidth = 2)
+    lines!(
+        ax, prediction_vector.q[1, :]; color = mpurple, label = "VecSoftM", linewidth = 2)
     lines!(ax, prediction_matrix.q[1, :]; color = mred, label = "MatSoftM", linewidth = 2)
-    axislegend(; position = (.55, .75), backgroundcolor = :transparent, labelcolor = textcolor)
+    axislegend(; position = (0.55, 0.75), backgroundcolor = :transparent, labelcolor = textcolor)
 
     fig, ax
 end

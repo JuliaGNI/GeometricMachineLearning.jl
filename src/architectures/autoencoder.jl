@@ -32,7 +32,7 @@ Most often this should not be called directly, but rather through the [`encoder`
 
 If a custom `<:Encoder` architecture is implemented it should have the fields `full_dim`, `reduced_dim` and `n_encoder_blocks`.
 """
-abstract type Encoder <: Architecture end 
+abstract type Encoder <: Architecture end
 
 """
     Decoder <: Architecture
@@ -56,7 +56,7 @@ This is the abstract `SymplecticEncoder` type.
 
 See [`Encoder`](@ref) for the super type and [`NonLinearSymplecticEncoder`](@ref) for a derived `struct`.
 """
-abstract type SymplecticEncoder <: Encoder end 
+abstract type SymplecticEncoder <: Encoder end
 
 """
     SymplecticDecoder <: Decoder
@@ -67,7 +67,8 @@ See [`Decoder`](@ref) for the super type and [`NonLinearSymplecticDecoder`](@ref
 """
 abstract type SymplecticDecoder <: Decoder end
 
-const SymplecticDimensionChange = Union{SymplecticCompression, SymplecticEncoder, SymplecticDecoder}
+const SymplecticDimensionChange = Union{
+    SymplecticCompression, SymplecticEncoder, SymplecticDecoder}
 
 """
     UnknownEncoder(full_dim, reduced_dim, n_encoder_blocks)
@@ -94,11 +95,11 @@ typeof(nn) <: NeuralNetwork{<:GeometricMachineLearning.Encoder}
 true
 ```
 """
-struct UnknownEncoder <: Encoder 
+struct UnknownEncoder <: Encoder
     full_dim::Int
     reduced_dim::Int
     n_encoder_blocks::Int
-end 
+end
 
 """
     UnknownDecoder(full_dim, reduced_dim, n_encoder_blocks)
@@ -109,21 +110,21 @@ This should be used if one wants to use an [`Decoder`](@ref) that does not have 
 
 An example of using this can be constructed analogously to [`UnknownDecoder`](@ref).
 """
-struct UnknownDecoder <: Decoder 
-    full_dim::Int 
-    reduced_dim::Int 
+struct UnknownDecoder <: Decoder
+    full_dim::Int
+    reduced_dim::Int
     n_decoder_blocks::Int
 end
 
-struct UnknownSymplecticEncoder <: SymplecticEncoder 
+struct UnknownSymplecticEncoder <: SymplecticEncoder
     full_dim::Int
     reduced_dim::Int
     n_encoder_blocks::Int
-end 
+end
 
-struct UnknownSymplecticDecoder <: SymplecticDecoder 
-    full_dim::Int 
-    reduced_dim::Int 
+struct UnknownSymplecticDecoder <: SymplecticDecoder
+    full_dim::Int
+    reduced_dim::Int
     n_decoder_blocks::Int
 end
 
@@ -131,7 +132,7 @@ end
 # This function gives iterations from the full dimension to the reduced dimension (i.e. the intermediate steps). The iterations are given in ascending order. 
 # """
 function compute_iterations(full_dim::Integer, reduced_dim::Integer, n_blocks::Integer)
-    iterations = Vector{Int}(reduced_dim : (full_dim - reduced_dim) ÷ (n_blocks - 1) : full_dim)
+    iterations = Vector{Int}(reduced_dim:((full_dim - reduced_dim) ÷ (n_blocks - 1)):full_dim)
     iterations[end] = full_dim
     iterations
 end
@@ -147,12 +148,16 @@ end
 # """
 # Takes as input the autoencoder architecture and a vector of integers specifying the layer dimensions in the encoder. Has to return a tuple of `AbstractExplicitLayer`s.
 # """
-encoder_layers_from_iteration(::AutoEncoder, ::AbstractVector{<:Integer}) = error("You have to implement `encoder_layers_from_iteration` for this autoencoder architecture!")
+function encoder_layers_from_iteration(::AutoEncoder, ::AbstractVector{<:Integer})
+    error("You have to implement `encoder_layers_from_iteration` for this autoencoder architecture!")
+end
 
 # """
 # Takes as input the autoencoder architecture and a vector of integers specifying the layer dimensions in the decoder. Has to return a tuple of `AbstractExplicitLayer`s.
 # """
-decoder_layers_from_iteration(::AutoEncoder, ::AbstractVector{<:Integer}) = error("You have to implement `decoder_layers_from_iteration` for this autoencoder architecture!")
+function decoder_layers_from_iteration(::AutoEncoder, ::AbstractVector{<:Integer})
+    error("You have to implement `decoder_layers_from_iteration` for this autoencoder architecture!")
+end
 
 function encoder_model(arch::AutoEncoder)
     encoder_iterations = reverse(compute_encoder_iterations(arch))
@@ -184,7 +189,8 @@ function decoder_parameters(nn::NeuralNetwork{<:AutoEncoder})
     n_decoder_layers = length(decoder_model(nn.architecture).layers)
     all_keys = keys(params(nn))
     # "old keys" are the ones describing the correct parameters in params(nn)
-    keys_old = Tuple(Symbol.(["L$(i)" for i in (length(all_keys) - (n_decoder_layers - 1)):length(all_keys)]))
+    keys_old = Tuple(Symbol.(["L$(i)"
+                              for i in (length(all_keys) - (n_decoder_layers - 1)):length(all_keys)]))
     n_keys = length(keys_old)
     # "new keys" are the ones describing the keys in the new NamedTuple
     keys_new = Tuple(Symbol.(["L$(i)" for i in 1:n_keys]))
@@ -201,17 +207,18 @@ end
 Obtain the *encoder* from an [`AutoEncoder`](@ref) neural network. 
 """
 function encoder(nn::NeuralNetwork{<:AutoEncoder})
-    NeuralNetwork(  UnknownEncoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks), 
-                    encoder_model(nn.architecture), 
-                    encoder_parameters(nn), 
-                    networkbackend(nn))
+    NeuralNetwork(
+        UnknownEncoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks),
+        encoder_model(nn.architecture),
+        encoder_parameters(nn),
+        networkbackend(nn))
 end
 
 function _encoder(nn::NeuralNetwork, full_dim::Integer, reduced_dim::Integer)
-    NeuralNetwork(  UnknownEncoder(full_dim, reduced_dim, length(nn.model.layers)), 
-                    nn.model, 
-                    params(nn), 
-                    networkbackend(nn))
+    NeuralNetwork(UnknownEncoder(full_dim, reduced_dim, length(nn.model.layers)),
+        nn.model,
+        params(nn),
+        networkbackend(nn))
 end
 
 @doc raw"""
@@ -233,11 +240,16 @@ end
 Obtain the *decoder* from an [`AutoEncoder`](@ref) neural network.
 """
 function decoder(nn::NeuralNetwork{<:AutoEncoder})
-    NeuralNetwork(UnknownDecoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks), decoder_model(nn.architecture), decoder_parameters(nn), networkbackend(nn))
+    NeuralNetwork(
+        UnknownDecoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks),
+        decoder_model(nn.architecture),
+        decoder_parameters(nn),
+        networkbackend(nn))
 end
 
 function _decoder(nn::NeuralNetwork, full_dim::Integer, reduced_dim::Integer)
-    NeuralNetwork(UnknownDecoder(full_dim, reduced_dim, length(nn.model.layers)), nn.model, params(nn), networkbackend(nn))
+    NeuralNetwork(UnknownDecoder(full_dim, reduced_dim, length(nn.model.layers)),
+        nn.model, params(nn), networkbackend(nn))
 end
 
 @doc raw"""
@@ -254,9 +266,19 @@ function decoder(nn::NeuralNetwork)
 end
 
 function encoder(nn::NeuralNetwork{<:SymplecticCompression})
-    NeuralNetwork(UnknownSymplecticEncoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks), encoder_model(nn.architecture), encoder_parameters(nn), networkbackend(nn))
+    NeuralNetwork(
+        UnknownSymplecticEncoder(nn.architecture.full_dim, nn.architecture.reduced_dim,
+            nn.architecture.n_encoder_blocks),
+        encoder_model(nn.architecture),
+        encoder_parameters(nn),
+        networkbackend(nn))
 end
 
 function decoder(nn::NeuralNetwork{<:SymplecticCompression})
-    NeuralNetwork(UnknownSymplecticDecoder(nn.architecture.full_dim, nn.architecture.reduced_dim, nn.architecture.n_encoder_blocks), decoder_model(nn.architecture), decoder_parameters(nn), networkbackend(nn))
+    NeuralNetwork(
+        UnknownSymplecticDecoder(nn.architecture.full_dim, nn.architecture.reduced_dim,
+            nn.architecture.n_encoder_blocks),
+        decoder_model(nn.architecture),
+        decoder_parameters(nn),
+        networkbackend(nn))
 end

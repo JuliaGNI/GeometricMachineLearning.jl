@@ -15,13 +15,14 @@ function test_symmetric(dev::GeometricMachineLearning.Device, N)
     B₂ = GeometricMachineLearning.SymmetricMatrix(B) |> map_to_dev
 
     if dev == CUDA.device()
-        @test (typeof(A₂ + B₂) <: GeometricMachineLearning.SymmetricMatrix{T, VT} where {T, VT<:AbstractGPUVector{T}})
+        @test (typeof(A₂ + B₂) <: GeometricMachineLearning.SymmetricMatrix{
+            T, VT} where {T, VT <: AbstractGPUVector{T}})
     end
 
-    @time A₂ + B₂;
+    @time A₂ + B₂
 end
 
-for N = 1000:1000:5000
+for N in 1000:1000:5000
     print("N = ", N, "\n")
     @printf "GeometricMachineLearning cpu: "
     test_symmetric(GeometricMachineLearning.CPUDevice(), N)

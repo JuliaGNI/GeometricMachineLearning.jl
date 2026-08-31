@@ -10,23 +10,23 @@ include("macro_testerror.jl")
 ########################################################################
 
 training_data = tra_ps_data
-nn = NeuralNetwork(HamiltonianArchitecture(2; nhidden=2), Float64)
+nn = NeuralNetwork(HamiltonianArchitecture(2; nhidden = 2), Float64)
 mopt = GradientOptimizer()
 method = SEulerA()
 nruns = 1
-batch_size = (1,2,2)
+batch_size = (1, 2, 2)
 index_batch = get_batch(training_data, batch_size; check = false)
 
 @testnoerror snn = Symbolize(nn, 2)
 
 @test typeof(snn) <: SymbolicNeuralNetwork{<:HamiltonianArchitecture}
 
-@test neuralnet(snn)    == nn
+@test neuralnet(snn) == nn
 #@test architecture(snn) == nn.architecture 
-@test params(snn)       == nn.params
-@test model(snn)        == nn.model
+@test params(snn) == nn.params
+@test model(snn) == nn.model
 
-x = [1,2]
+x = [1, 2]
 @test snn(x) == nn(x)
 
 #=
@@ -48,7 +48,8 @@ GeometricMachineLearning.loss_gradient(snn, method, training_data, index_batch)
 ########################################################################
 Base.size(nt::NamedTuple) = (length(nt),)
 
-total_loss = train!(snn, training_data, mopt, method; ntraining = nruns, batch_size = batch_size)
+total_loss = train!(
+    snn, training_data, mopt, method; ntraining = nruns, batch_size = batch_size)
 
 @test typeof(total_loss) <: AbstractArray
 @test length(total_loss) == nruns

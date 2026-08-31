@@ -6,14 +6,16 @@ mutable struct EnsembleNeuralNetSolution{TNNS <: AbstractArray{<:NeuralNetSoluti
     tab::TNNS
     size::Int
 
-    EnsembleNeuralNetSolution() = new{Vector{NeuralNetSolution}}(Vector{NeuralNetSolution}(), 0)
+    function EnsembleNeuralNetSolution()
+        new{Vector{NeuralNetSolution}}(Vector{NeuralNetSolution}(), 0)
+    end
 
-    EnsembleNeuralNetSolution(nns::NeuralNetSolution) = new{typeof([nns])}([nns],1)
+    EnsembleNeuralNetSolution(nns::NeuralNetSolution) = new{typeof([nns])}([nns], 1)
 
-    function EnsembleNeuralNetSolution(args::NeuralNetSolution...) 
+    function EnsembleNeuralNetSolution(args::NeuralNetSolution...)
         enns = EnsembleNeuralNetSolution()
         for nns in args
-            push!(enns,nns)
+            push!(enns, nns)
         end
     end
 end
@@ -21,8 +23,12 @@ end
 @inline Base.size(enns::EnsembleNeuralNetSolution) = enns.size
 
 Base.getindex(enns::EnsembleNeuralNetSolution, n::Int) = enns.tab[n]
-Base.setindex!(enns::EnsembleNeuralNetSolution, value::NeuralNetSolution, n::Int) = enns.tab[n] = value
-Base.iterate(enns::EnsembleNeuralNetSolution, state = 1) = state > size(enns) ? nothing : (enns[state], state+1)
+function Base.setindex!(enns::EnsembleNeuralNetSolution, value::NeuralNetSolution, n::Int)
+    enns.tab[n] = value
+end
+function Base.iterate(enns::EnsembleNeuralNetSolution, state = 1)
+    state > size(enns) ? nothing : (enns[state], state+1)
+end
 
 function Base.push!(enns::EnsembleNeuralNetSolution, nns::NeuralNetSolution)
     enns.size += 1

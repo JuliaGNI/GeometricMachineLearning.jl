@@ -9,13 +9,14 @@ include("macro_testerror.jl")
 #########################################
 
 training_data = tra_ps_data
-nn = NeuralNetwork(GSympNet(2; nhidden=2), Float64)
+nn = NeuralNetwork(GSympNet(2; nhidden = 2), Float64)
 mopt = GradientOptimizer()
 method = BasicSympNet()
 nruns = 1
-batch_size = (1,2)
+batch_size = (1, 2)
 
-@testnoerror total_loss = train!(nn, training_data, mopt, method; ntraining = nruns, batch_size = batch_size)
+@testnoerror total_loss = train!(
+    nn, training_data, mopt, method; ntraining = nruns, batch_size = batch_size)
 
 @test typeof(total_loss) <: AbstractArray
 @test length(total_loss) == nruns

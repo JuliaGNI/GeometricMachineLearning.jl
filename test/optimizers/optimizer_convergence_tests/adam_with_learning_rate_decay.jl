@@ -10,13 +10,13 @@ Random.seed!(123)
 const sin_vector = sin.(0:0.1:2π)
 const dl = DataLoader(reshape(sin_vector, 1, length(sin_vector), 1))
 
-function setup_network(dl::DataLoader{T}) where T
+function setup_network(dl::DataLoader{T}) where {T}
     arch = Chain(Dense(1, 20, tanh), ResNetLayer(20, tanh), Dense(20, 1, identity))
     NeuralNetwork(arch, CPU(), T)
 end
 
 # tests checks if Adam with decay achieves a lower loss value than regular Adam and the two converge reasonably well
-function train_network(; n_epochs=2048)
+function train_network(; n_epochs = 2048)
     # Seeded per call, as in `svd_optim.jl`: three of these run off one top-level seed, so
     # without it each one starts from whatever RNG state its predecessor left behind.
     Random.seed!(123)

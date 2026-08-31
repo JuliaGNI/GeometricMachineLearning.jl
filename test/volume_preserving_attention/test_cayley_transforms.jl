@@ -1,11 +1,12 @@
-using GeometricMachineLearning: tensor_cayley4, tensor_cayley3, cpu_tensor_cayley, tensor_transpose
-using Test 
+using GeometricMachineLearning: tensor_cayley4, tensor_cayley3, cpu_tensor_cayley,
+                                tensor_transpose
+using Test
 
 function test_orthonormal(A::AbstractMatrix)
     @test A' * A ≈ one(A)
 end
 
-function test_orthonormal(A::AbstractArray{T, 3}) where T 
+function test_orthonormal(A::AbstractArray{T, 3}) where {T}
     for i in axes(A, 3)
         A_temp = @view A[:, :, i]
         test_orthonormal(A_temp)

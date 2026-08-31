@@ -1,7 +1,6 @@
 pretransform(::AbstractTrainingMethod, params::NamedTuple) = params, nothing
 
-posttransform(::AbstractTrainingMethod, params,  args...) = params
-
+posttransform(::AbstractTrainingMethod, params, args...) = params
 
 TuppleNeededTrainingMethod = Union{HnnTrainingMethod, LnnTrainingMethod}
 
@@ -16,9 +15,6 @@ function pretransform(::TuppleNeededTrainingMethod, params::NamedTuple)
     params_tuple, (keys_1, keys_2)
 end
 
-
 function posttransform(::TuppleNeededTrainingMethod, params_grad::Tuple, keys)
-
-    NamedTuple(zip(keys[1],[NamedTuple(zip(k,x)) for (k,x) in zip(keys[2],params_grad)]))
-
+    NamedTuple(zip(keys[1], [NamedTuple(zip(k, x)) for (k, x) in zip(keys[2], params_grad)]))
 end

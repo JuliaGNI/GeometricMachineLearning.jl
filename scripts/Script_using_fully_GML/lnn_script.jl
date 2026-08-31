@@ -4,9 +4,9 @@ using GeometricMachineLearning
 # this contains the functions for generating the training data
 include("../data_problem.jl")
 
-
-function LNN(integrator::TrainingIntegrator{<:LnnTrainingIntegrator}, data::AbstractTrainingData, nameproblem::Symbol = :pendulum, opt =  MomentumOptimizer(1e-3,0.5))
-    
+function LNN(
+        integrator::TrainingIntegrator{<:LnnTrainingIntegrator}, data::AbstractTrainingData,
+        nameproblem::Symbol = :pendulum, opt = MomentumOptimizer(1e-3, 0.5))
     _, n_dim = dict_problem_L[nameproblem]
 
     # layer dimension/width
@@ -28,11 +28,11 @@ function LNN(integrator::TrainingIntegrator{<:LnnTrainingIntegrator}, data::Abst
     nn = NeuralNetwork(lnn, LuxBackend())
 
     # perform training (returns array that contains the total loss for each training step)
-    total_loss = train!(nn, opt, data; ntraining = nruns, ti = integrator, showprogress = true)
+    total_loss = train!(
+        nn, opt, data; ntraining = nruns, ti = integrator, showprogress = true)
 
     return nn, total_loss
 end
-
 
 #=
 Data = get_multiple_trajectory_structure(:pendulum; n_trajectory = 20, n_points = 1000, timestep = 0.1, qmin = -1.2, pmin = -1.2, qmax = 1.2, pmax = 1.2)

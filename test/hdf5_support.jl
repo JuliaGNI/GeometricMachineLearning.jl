@@ -10,12 +10,12 @@ Random.seed!(42)
 # Helpers
 # ---------------------------------------------------------------------------
 
-_ps_eq(a::AbstractArray,    b::AbstractArray)    = a ≈ b
-_ps_eq(a::StiefelManifold,  b::StiefelManifold)  = a.A ≈ b.A
-_ps_eq(a::SymmetricMatrix,  b::SymmetricMatrix)  = a.S ≈ b.S && a.n == b.n
-_ps_eq(a::SkewSymMatrix,    b::SkewSymMatrix)    = a.S ≈ b.S && a.n == b.n
-_ps_eq(a::LowerTriangular,  b::LowerTriangular)  = a.S ≈ b.S && a.n == b.n
-_ps_eq(a::UpperTriangular,  b::UpperTriangular)  = a.S ≈ b.S && a.n == b.n
+_ps_eq(a::AbstractArray, b::AbstractArray) = a ≈ b
+_ps_eq(a::StiefelManifold, b::StiefelManifold) = a.A ≈ b.A
+_ps_eq(a::SymmetricMatrix, b::SymmetricMatrix) = a.S ≈ b.S && a.n == b.n
+_ps_eq(a::SkewSymMatrix, b::SkewSymMatrix) = a.S ≈ b.S && a.n == b.n
+_ps_eq(a::LowerTriangular, b::LowerTriangular) = a.S ≈ b.S && a.n == b.n
+_ps_eq(a::UpperTriangular, b::UpperTriangular) = a.S ≈ b.S && a.n == b.n
 function _ps_eq(a::NamedTuple, b::NamedTuple)
     Set(keys(a)) == Set(keys(b)) || return false
     all(_ps_eq(a[k], b[k]) for k in keys(a))
@@ -27,8 +27,10 @@ end
 
 # Reproduces the on-disk layout this package wrote before the traversal moved out: plain nested
 # groups with no `kind`/`keys` attributes, and each structured matrix tagged `gml_type`.
-_legacy_group(h5, path) = path == "/" ? h5 :
-                          (haskey(h5, path) ? h5[path] : HDF5.create_group(h5, path))
+function _legacy_group(h5, path)
+    path == "/" ? h5 :
+    (haskey(h5, path) ? h5[path] : HDF5.create_group(h5, path))
+end
 
 function _write_legacy(h5, nt::NamedTuple, path::AbstractString)
     g = _legacy_group(h5, path)
@@ -46,7 +48,7 @@ function _write_legacy(h5, Y::StiefelManifold, path::AbstractString)
 end
 
 for (T, name) in ((:SymmetricMatrix, "SymmetricMatrix"), (:SkewSymMatrix, "SkewSymMatrix"),
-                  (:LowerTriangular, "LowerTriangular"), (:UpperTriangular, "UpperTriangular"))
+    (:LowerTriangular, "LowerTriangular"), (:UpperTriangular, "UpperTriangular"))
     @eval function _write_legacy(h5, A::$T, path::AbstractString)
         g = HDF5.create_group(h5, path)
         HDF5.attributes(g)["gml_type"] = $name
@@ -61,9 +63,9 @@ end
 
 # SAE contains PSDLayer → StiefelManifold parameters.
 @testset "save/load roundtrip: SymplecticAutoencoder (StiefelManifold)" begin
-    arch     = SymplecticAutoencoder(10, 4)
-    nn       = NeuralNetwork(arch)
-    x        = rand(10)
+    arch = SymplecticAutoencoder(10, 4)
+    nn = NeuralNetwork(arch)
+    x = rand(10)
     y_before = nn(x)
 
     mktempdir() do dir
@@ -78,9 +80,9 @@ end
 
 # LASympNet contains LinearLayer → SymmetricMatrix parameters.
 @testset "save/load roundtrip: LASympNet (SymmetricMatrix)" begin
-    arch     = LASympNet(4)
-    nn       = NeuralNetwork(arch)
-    x        = rand(4)
+    arch = LASympNet(4)
+    nn = NeuralNetwork(arch)
+    x = rand(4)
     y_before = nn(x)
 
     mktempdir() do dir
@@ -95,9 +97,9 @@ end
 
 # GSympNet has only plain-array parameters; verify the common path still works.
 @testset "save/load roundtrip: GSympNet (plain arrays)" begin
-    arch     = GSympNet(4)
-    nn       = NeuralNetwork(arch)
-    x        = rand(4)
+    arch = GSympNet(4)
+    nn = NeuralNetwork(arch)
+    x = rand(4)
     y_before = nn(x)
 
     mktempdir() do dir
@@ -112,9 +114,9 @@ end
 
 # Float32 roundtrip: GPU training produces Float32 weights.
 @testset "save/load roundtrip: Float32 weights (element type preserved)" begin
-    arch     = SymplecticAutoencoder(10, 4)
-    nn       = NeuralNetwork(arch, CPU(), Float32)
-    x        = rand(Float32, 10)
+    arch = SymplecticAutoencoder(10, 4)
+    nn = NeuralNetwork(arch, CPU(), Float32)
+    x = rand(Float32, 10)
     y_before = nn(x)
 
     mktempdir() do dir
@@ -131,9 +133,9 @@ end
 
 # VolumePreservingFeedForward uses LowerTriangular / UpperTriangular parameters.
 @testset "save/load roundtrip: VolumePreservingFeedForward (LowerTriangular/UpperTriangular)" begin
-    arch     = VolumePreservingFeedForward(4, 4, 1, tanh)
-    nn       = NeuralNetwork(arch)
-    x        = rand(4)
+    arch = VolumePreservingFeedForward(4, 4, 1, tanh)
+    nn = NeuralNetwork(arch)
+    x = rand(4)
     y_before = nn(x)
 
     mktempdir() do dir
@@ -148,9 +150,9 @@ end
 
 # save / load also work on an already-open HDF5 store (the lower-level API).
 @testset "save/load via open H5DataStore" begin
-    arch     = SymplecticAutoencoder(10, 4)
-    nn       = NeuralNetwork(arch)
-    x        = rand(10)
+    arch = SymplecticAutoencoder(10, 4)
+    nn = NeuralNetwork(arch)
+    x = rand(10)
     y_before = nn(x)
 
     mktempdir() do dir
@@ -174,9 +176,9 @@ end
 # the path that works for a type nobody registered, so it needs a test of its own rather than riding
 # on the roundtrips above, which all go through the registry.
 @testset "save/load roundtrip: against a prototype parameter set" begin
-    arch     = SymplecticAutoencoder(10, 4)
-    nn       = NeuralNetwork(arch)
-    x        = rand(10)
+    arch = SymplecticAutoencoder(10, 4)
+    nn = NeuralNetwork(arch)
+    x = rand(10)
     y_before = nn(x)
 
     # a second network of the same architecture: same shapes, different numbers
@@ -212,13 +214,13 @@ end
 # a bare `A` for a manifold element — so both legs need reading back.
 @testset "a file in the old gml_type layout still loads" begin
     for (name, arch, dimin) in (("LASympNet (SymmetricMatrix)", LASympNet(4), 4),
-                                ("SymplecticAutoencoder (StiefelManifold)",
-                                 SymplecticAutoencoder(10, 4), 10))
+        ("SymplecticAutoencoder (StiefelManifold)",
+        SymplecticAutoencoder(10, 4), 10))
         @testset "$name" begin
             nn = NeuralNetwork(arch)
             ps = params(nn)
-            x  = rand(dimin)
-            y  = nn(x)
+            x = rand(dimin)
+            y = nn(x)
 
             mktempdir() do dir
                 path = joinpath(dir, "legacy.h5")

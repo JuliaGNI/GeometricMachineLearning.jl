@@ -1,10 +1,9 @@
-using Lux 
+using Lux
 using CUDA
-using LinearAlgebra 
+using LinearAlgebra
 import Random
 
 function main(N, n_data)
-
     data = Tuple(rand(Float32, N) for i in 1:n_data)
 
     model = Chain(Dense(N, N, tanh), Dense(N, 1, Lux.σ))
@@ -30,11 +29,11 @@ function main(N, n_data)
 
     cpu_performance(N, n_data)
     gpu_performance(N, n_data)
-end 
+end
 
-for N in 2 .^(8:10)
-    for n_data in 2 .^(10:17)
-        print("N = ", N,  " and data size is: ", n_data, "\n")
+for N in 2 .^ (8:10)
+    for n_data in 2 .^ (10:17)
+        print("N = ", N, " and data size is: ", n_data, "\n")
         main(N, n_data)
     end
     print("\n")

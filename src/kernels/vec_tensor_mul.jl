@@ -1,12 +1,13 @@
-@kernel function vec_tensor_mul_kernel!(b::AbstractArray{T, 3}, a::AbstractVector{T}, x::AbstractArray{T, 3}) where T 
+@kernel function vec_tensor_mul_kernel!(
+        b::AbstractArray{T, 3}, a::AbstractVector{T}, x::AbstractArray{T, 3}) where {T}
     i, j, k = @index(Global, NTuple)
-    b[i,j,k] = x[i,j,k]*a[i]
+    b[i, j, k] = x[i, j, k]*a[i]
 end
 
-function vec_tensor_mul(a::AbstractVector{T}, x::AbstractArray{T, 3}) where T 
+function vec_tensor_mul(a::AbstractVector{T}, x::AbstractArray{T, 3}) where {T}
     b = similar(x)
     backend = networkbackend(x)
     vec_tensor_mul! = vec_tensor_mul_kernel!(backend)
-    vec_tensor_mul!(b, a, x, ndrange=size(x))
-    b 
-end 
+    vec_tensor_mul!(b, a, x, ndrange = size(x))
+    b
+end

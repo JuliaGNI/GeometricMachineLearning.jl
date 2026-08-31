@@ -18,7 +18,7 @@ methods, in `src/optimizers/go_bridges.jl`.
 """
 function optimizer_runs(architecture, batch, input_dim; T = Float64, n_epochs = 2)
     nn_and_dl() = (NeuralNetwork(architecture, T),
-                   DataLoader(rand(T, input_dim, 20, 5); suppress_info = true))
+        DataLoader(rand(T, input_dim, 20, 5); suppress_info = true))
 
     for method in (AdamOptimizer(), MomentumOptimizer(), GradientOptimizer())
         nn, dl = nn_and_dl()
@@ -41,7 +41,7 @@ end
 # then fails to match them against the parameter
 @testset "structured weights keep their type in `similar`" begin
     for A in (rand(SymmetricMatrix{Float64}, 4), rand(SkewSymMatrix{Float64}, 4),
-              rand(LowerTriangular{Float64}, 4), rand(UpperTriangular{Float64}, 4))
+        rand(LowerTriangular{Float64}, 4), rand(UpperTriangular{Float64}, 4))
         @test typeof(similar(A)) == typeof(A)
         @test typeof(zero(A)) == typeof(A)
         @test size(similar(A)) == size(A)

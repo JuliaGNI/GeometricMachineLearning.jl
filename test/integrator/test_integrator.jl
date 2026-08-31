@@ -5,8 +5,8 @@ using Test
 include("../data/data_generation.jl")
 include("../macro_testerror.jl")
 
-t₀ = 0.
-t₁ = 1.
+t₀ = 0.0
+t₁ = 1.0
 q₀ = [0.5]
 p₀ = [0.5]
 v₀ = [0.5]
@@ -27,7 +27,6 @@ prob_hnn = HNNProblem(hnn, timespan, Δt, q₀, p₀)
 @test typeof(prob_hnn) <: HODEProblem
 @test equtype(prob_hnn) == HODE
 
-
 #########################################
 # Test for LNNProblem
 #########################################
@@ -41,17 +40,16 @@ prob_lnn = LNNProblem(lnn, timespan, Δt, q₀, p₀, λ₀)
 @test typeof(prob_lnn) <: LODEProblem
 @test equtype(prob_lnn) == LODE
 
-
 #########################################
 # Test for SympNetMethod Integrator
 #########################################
 
-training_data = TrainingData(Data_traps , get_Data_traps, prob_hnn)
+training_data = TrainingData(Data_traps, get_Data_traps, prob_hnn)
 neuralnet = NeuralNetwork(GSympNet(2), Float64)
 mopt = GradientOptimizer()
 method = BasicSympNet()
 nruns = 0
-batch_size = (1,2)
+batch_size = (1, 2)
 training_parameters = TrainingParameters(nruns, method, mopt; batch_size = batch_size)
 
 neural_net_solution = train!(neuralnet, training_data, training_parameters)

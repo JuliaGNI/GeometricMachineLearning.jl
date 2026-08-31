@@ -1,4 +1,4 @@
-using Lux 
+using Lux
 using CUDA
 
 import Random
@@ -12,18 +12,18 @@ data = Tuple([rand(model_size) for i in 1:n_data])
 
 function one_layer_neural_network(x, a, b)
     a'*x + b
-end 
+end
 
 function cpu(n_steps, data)
     ps, st = Lux.setup(Random.default_rng(), model)
     loss(x, ps, st) = sum(Lux.apply(model, x, ps, st)[1])
-    loss_val = 0 
-    for i in 1:n_data 
+    loss_val = 0
+    for i in 1:n_data
         x_val = data[i]
         loss_val += loss(x_val, ps, st)
     end
     loss_val
-end 
+end
 
 function gpu(n_steps, data)
     data = Tuple([data[i] |> cu for i in 1:n_data])
@@ -33,7 +33,7 @@ function gpu(n_steps, data)
 
     function kernel(loss_array, x)
         loss_array[threadIdx().x] = sum(Lux.apply(model, x, ps, st)[1])
-        return 
+        return
     end
 
     dat_temp = data[1]

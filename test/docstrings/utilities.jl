@@ -7,7 +7,7 @@ using GeometricMachineLearning: QPT, _processing
     data2 = (q = rand(5, 4), p = rand(5, 4))
     data3 = (q = rand(5, 4, 2), p = rand(5, 4, 2))
     @test (typeof(data1) <: QPT, typeof(data2) <: QPT, typeof(data3) <: QPT) ==
-        (true, true, true)
+          (true, true, true)
 
     𝕁 = PoissonTensor(4)
     @test 𝕁 * (q = [1, 2], p = [3, 4]) == (q = [3, 4], p = [-1, -2])

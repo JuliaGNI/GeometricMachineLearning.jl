@@ -1,13 +1,14 @@
 using GeometricMachineLearning
 using Test
-import Random 
+import Random
 
 Random.seed!(123)
 
 # compare the `init_upper=true` to `init_upper=false`
-function compare_init_upper_with_init_lower(dim::Integer, seq_length::Integer, third_dim::Integer=10; T = Float64)
-    arch₁ = LinearSymplecticTransformer(dim, seq_length; init_upper=true)
-    arch₂ = LinearSymplecticTransformer(dim, seq_length; init_upper=false)
+function compare_init_upper_with_init_lower(
+        dim::Integer, seq_length::Integer, third_dim::Integer = 10; T = Float64)
+    arch₁ = LinearSymplecticTransformer(dim, seq_length; init_upper = true)
+    arch₂ = LinearSymplecticTransformer(dim, seq_length; init_upper = false)
 
     nn₁ = NeuralNetwork(arch₁, T)
 

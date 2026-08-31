@@ -21,7 +21,7 @@ import AbstractNeuralNetworks: h5save
 # reconstruct them.
 function jld2_to_h5(src_file::String, src_key::String, dst_file::String)
     ps = JLD2.load(src_file)[src_key]   # Tuple{NamedTuple, ...}
-    n  = length(ps)
+    n = length(ps)
     nt = NamedTuple{Tuple(Symbol("L$i") for i in 1:n)}(ps)
     HDF5.h5open(dst_file, "w") do h5
         h5save(h5, nt, "/")
@@ -32,13 +32,13 @@ end
 const T = joinpath(@__DIR__, "..", "docs", "src", "tutorials")
 
 println("=== Symplectic autoencoder ===")
-jld2_to_h5("$T/sae_parameters.jld2",             "sae_parameters",   "$T/sae_parameters.h5")
-jld2_to_h5("$T/integrator_parameters.jld2",      "integrator_parameters", "$T/integrator_parameters.h5")
-jld2_to_h5("$T/integrator_parameters_psd.jld2",  "integrator_parameters", "$T/integrator_parameters_psd.h5")
+jld2_to_h5("$T/sae_parameters.jld2", "sae_parameters", "$T/sae_parameters.h5")
+jld2_to_h5("$T/integrator_parameters.jld2", "integrator_parameters", "$T/integrator_parameters.h5")
+jld2_to_h5("$T/integrator_parameters_psd.jld2", "integrator_parameters", "$T/integrator_parameters_psd.h5")
 
 println("\n=== Volume-preserving transformer (rigid body) ===")
-jld2_to_h5("$T/transformer_rigid_body.jld2", "nn_vpff_params",    "$T/transformer_rigid_body_nn_vpff.h5")
+jld2_to_h5("$T/transformer_rigid_body.jld2", "nn_vpff_params", "$T/transformer_rigid_body_nn_vpff.h5")
 jld2_to_h5("$T/transformer_rigid_body.jld2", "nn_vpt_arb_params", "$T/transformer_rigid_body_nn_vpt.h5")
-jld2_to_h5("$T/transformer_rigid_body.jld2", "nn_st_params",      "$T/transformer_rigid_body_nn_st.h5")
+jld2_to_h5("$T/transformer_rigid_body.jld2", "nn_st_params", "$T/transformer_rigid_body_nn_st.h5")
 
 println("\nDone.")

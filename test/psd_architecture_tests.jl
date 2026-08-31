@@ -1,17 +1,17 @@
 using GeometricMachineLearning
 using Zygote: jacobian
 using Test
-import Random 
+import Random
 
 Random.seed!(123)
 
-function test_accuracy(N::Integer, n::Integer; tol::Real = .35)
+function test_accuracy(N::Integer, n::Integer; tol::Real = 0.35)
     dl = DataLoader(rand(N, 10 * N); autoencoder = true)
 
     psd_nn = NeuralNetwork(PSDArch(N, n))
     psd_error = solve!(psd_nn, dl)
 
-    @test psd_error < tol 
+    @test psd_error < tol
 end
 
 function test_encoder_and_decoder(N::Integer, n::Integer)

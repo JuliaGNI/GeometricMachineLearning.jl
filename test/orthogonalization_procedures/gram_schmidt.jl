@@ -3,7 +3,6 @@ This implements some tests for orthogonalization_procedures: Gram-Schmidt & Hous
     (For the regular and the symplectic Stiefel case.)
 """
 
-
 function gram_schmidt_test(N)
     A = randn(N, N)
     A_orth = gram_schmidt(A)

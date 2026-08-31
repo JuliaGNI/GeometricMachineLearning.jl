@@ -3,7 +3,7 @@
 
 See [`StandardHamiltonianArchitecture`](@ref) and [`GeneralizedHamiltonianArchitecture`](@ref).
 """
-abstract type HamiltonianArchitecture{AT<:Activation} <: Architecture end
+abstract type HamiltonianArchitecture{AT <: Activation} <: Architecture end
 
 const HNN_nhidden_default = 1
 const HNN_activation_default = AbstractNeuralNetworks.TanhActivation()
@@ -34,7 +34,9 @@ struct StandardHamiltonianArchitecture{AT} <: HamiltonianArchitecture{AT}
     nhidden::Int
     activation::AT
 
-    function StandardHamiltonianArchitecture(dim, width=dim, nhidden=HNN_nhidden_default, activation=HNN_activation_default)
+    function StandardHamiltonianArchitecture(
+            dim, width = dim, nhidden = HNN_nhidden_default,
+            activation = HNN_activation_default)
         new{typeof(activation)}(dim, width, nhidden, activation)
     end
 end
@@ -64,9 +66,12 @@ struct GeneralizedHamiltonianArchitecture{AT, IT} <: HamiltonianArchitecture{AT}
     activation::AT
     integrator::IT
 
-    function GeneralizedHamiltonianArchitecture(dim, width=dim, nhidden=HNN_nhidden_default, activation=HNN_activation_default, integrator=GHNN_integrator_default)
+    function GeneralizedHamiltonianArchitecture(
+            dim, width = dim, nhidden = HNN_nhidden_default,
+            activation = HNN_activation_default, integrator = GHNN_integrator_default)
         error("GHNN still has to be implemented!")
-        new{typeof(activation), typeof(integrator)}(dim, width, nhidden, activation, integrator)
+        new{typeof(activation), typeof(integrator)}(
+            dim, width, nhidden, activation, integrator)
     end
 end
 

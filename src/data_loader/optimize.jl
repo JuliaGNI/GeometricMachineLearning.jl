@@ -47,29 +47,30 @@ number_of_batches(dl, batch)
 3
 ```
 """
-function optimize_for_one_epoch!(   opt::Optimizer, 
-                                    model, ps::NetworkParameters, 
-                                    dl::DataLoader{T}, 
-                                    batch::Batch, 
-                                    loss::NetworkLoss, 
-                                    λY) where T
+function optimize_for_one_epoch!(opt::Optimizer,
+        model, ps::NetworkParameters,
+        dl::DataLoader{T},
+        batch::Batch,
+        loss::NetworkLoss,
+        λY) where {T}
     optimize_for_one_epoch!(opt, model, ps, dl, batch, ZygotePullback(loss), λY)
 end
 
-function optimize_for_one_epoch!(   opt::Optimizer, 
-                                    model, 
-                                    ps::NetworkParameters, 
-                                    dl::DataLoader{T}, 
-                                    batch::Batch, 
-                                    _pullback::AbstractPullback, 
-                                    λY) where T
+function optimize_for_one_epoch!(opt::Optimizer,
+        model,
+        ps::NetworkParameters,
+        dl::DataLoader{T},
+        batch::Batch,
+        _pullback::AbstractPullback,
+        λY) where {T}
     count = 0
     total_error = T(0)
     batches = batch(dl)
-    for batch_indices in batches 
+    for batch_indices in batches
         count += 1
         # these `copy`s should not be necessary! coming from a Zygote problem!
-        input_nt_output_nt = convert_input_and_batch_indices_to_array(dl, batch, batch_indices) |> _copy
+        input_nt_output_nt = convert_input_and_batch_indices_to_array(dl, batch, batch_indices) |>
+                             _copy
         loss_value, pullback = _pullback(ps, model, input_nt_output_nt)
         total_error += loss_value
         dp = _processing(pullback(one(loss_value)))
@@ -82,34 +83,41 @@ _copy(a::AbstractArray) = copy(a)
 _copy(qp::QPT) = (q = copy(qp.q), p = copy(qp.p))
 _copy(t::Tuple{<:QPTOAT, <:QPTOAT}) = _copy.(t)
 
-function (o::Optimizer)(nn::NeuralNetwork, 
-                        dl::DataLoader, 
-                        batch::Batch, 
-                        n_epochs::Integer, 
-                        loss::NetworkLoss, 
-                        _pullback::AbstractPullback = ZygotePullback(loss); show_progress = true)
+function (o::Optimizer)(nn::NeuralNetwork,
+        dl::DataLoader,
+        batch::Batch,
+        n_epochs::Integer,
+        loss::NetworkLoss,
+        _pullback::AbstractPullback = ZygotePullback(loss); show_progress = true)
     Λ = GlobalSection(params(nn))
-    progress_object = show_progress == true ? ProgressMeter.Progress(n_epochs; enabled=true) : nothing
+    progress_object = show_progress == true ?
+                      ProgressMeter.Progress(n_epochs; enabled = true) : nothing
     loss_array = zeros(n_epochs)
     for i in 1:n_epochs
-        loss_array[i] = optimize_for_one_epoch!(o, nn.model, params(nn), dl, batch, _pullback, Λ)
-        show_progress == true ? ProgressMeter.next!(progress_object; showvalues = [(:TrainingLoss, loss_array[i])]) : nothing
+        loss_array[i] = optimize_for_one_epoch!(
+            o, nn.model, params(nn), dl, batch, _pullback, Λ)
+        show_progress == true ?
+        ProgressMeter.next!(progress_object; showvalues = [(
+            :TrainingLoss, loss_array[i])]) : nothing
     end
 
     loss_array
 end
 
-function (o::Optimizer)(nn::NeuralNetwork{<:TransformerIntegrator}, dl::DataLoader, batch::Batch{:Transformer}, n_epochs::Int=1; kwargs...)
+function (o::Optimizer)(nn::NeuralNetwork{<:TransformerIntegrator}, dl::DataLoader,
+        batch::Batch{:Transformer}, n_epochs::Int = 1; kwargs...)
     loss = TransformerLoss(batch)
     o(nn, dl, batch, n_epochs, loss; kwargs...)
 end
 
-function (o::Optimizer)(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, dl::DataLoader, batch::Batch{:FeedForward}, n_epochs::Int=1; kwargs...)
+function (o::Optimizer)(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, dl::DataLoader,
+        batch::Batch{:FeedForward}, n_epochs::Int = 1; kwargs...)
     loss = FeedForwardLoss()
     o(nn, dl, batch, n_epochs, loss; kwargs...)
 end
 
-function (o::Optimizer)(nn::NeuralNetwork{<:AutoEncoder}, dl::DataLoader, batch::Batch{:FeedForward}, n_epochs::Int=1; kwargs...)
+function (o::Optimizer)(nn::NeuralNetwork{<:AutoEncoder}, dl::DataLoader,
+        batch::Batch{:FeedForward}, n_epochs::Int = 1; kwargs...)
     loss = AutoEncoderLoss()
     o(nn, dl, batch, n_epochs, loss; kwargs...)
 end

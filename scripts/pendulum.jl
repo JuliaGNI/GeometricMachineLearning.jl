@@ -18,7 +18,6 @@ function f(f, t, q, p, params)
     f[1] = -sin(q[1])
 end
 
-
 """
     get_data_set(num, xymin, xymax)
 
@@ -28,28 +27,27 @@ A grid of `num`² points in phase space, together with the symplectic gradient a
 Returns a `TrainingData` of shape `SampledData`, which is what `train!` takes and what
 `default_method` maps to `ExactHnn`.
 """
-function get_data_set(num=10, xymin=-1.2, xymax=+1.2)
-	#range in which the data should be in
-	rang = range(xymin, stop=xymax, length=num)
+function get_data_set(num = 10, xymin = -1.2, xymax = +1.2)
+    #range in which the data should be in
+    rang = range(xymin, stop = xymax, length = num)
 
-	# all combinations of (x,y) points
-	points = [[x, y] for x in rang for y in rang]
+    # all combinations of (x,y) points
+    points = [[x, y] for x in rang for y in rang]
 
-	#compute the value of the vector field
-	derivatives = dH.(points)
+    #compute the value of the vector field
+    derivatives = dH.(points)
 
-	raw = (first.(points), last.(points), first.(derivatives), last.(derivatives))
-	accessors = Dict(
-		:shape => SampledData,
-		:nb_points => Data -> length(Data[1]),
-		:q => (Data, n) -> Data[1][n],
-		:p => (Data, n) -> Data[2][n],
-		:q̇ => (Data, n) -> Data[3][n],
-		:ṗ => (Data, n) -> Data[4][n],
-	)
-	TrainingData(raw, accessors)
+    raw = (first.(points), last.(points), first.(derivatives), last.(derivatives))
+    accessors = Dict(
+        :shape => SampledData,
+        :nb_points => Data -> length(Data[1]),
+        :q => (Data, n) -> Data[1][n],
+        :p => (Data, n) -> Data[2][n],
+        :q̇ => (Data, n) -> Data[3][n],
+        :ṗ => (Data, n) -> Data[4][n]
+    )
+    TrainingData(raw, accessors)
 end
-
 
 @doc raw"""
 Generates data for a pendulum in 2d with optional arguments:
@@ -59,7 +57,8 @@ Generates data for a pendulum in 2d with optional arguments:
 - `q0`: default is `randn(1)`
 - `p0`: default is `rand(1)`.
 """
-function pendulum_data(; T = Float64, timespan = (T(0.), T(100.)), timestep = T(0.1), q0 = T.(randn(1)), p0 = T.(randn(1)))
+function pendulum_data(; T = Float64, timespan = (T(0.0), T(100.0)),
+        timestep = T(0.1), q0 = T.(randn(1)), p0 = T.(randn(1)))
     # simulate data with geometric Integrators
     ode = HODEProblem(v, f, H, timespan, timestep, q0, p0)
 
@@ -67,13 +66,15 @@ function pendulum_data(; T = Float64, timespan = (T(0.), T(100.)), timestep = T(
     sol = integrate(ode, ImplicitMidpoint())
 
     n_time_steps = length(sol.t)
-    q = reshape(sol.q[:,1].parent, 1, n_time_steps)
-    p = reshape(sol.p[:,1].parent, 1, n_time_steps)
+    q = reshape(sol.q[:, 1].parent, 1, n_time_steps)
+    p = reshape(sol.p[:, 1].parent, 1, n_time_steps)
 
     # return a NamedTuple of the parent arrays.
-    return (q=q, p=p)
+    return (q = q, p = p)
 end
 
-function pendulum_data(ics::NamedTuple{(:q, :p), Tuple{AT, AT}}; timespan = (T(0.), T(100.)), timestep = T(0.1)) where {T, AT<:AbstractVector{T}}
-    pendulum_data(; T=T, timespan=timespan, timestep=timestep, q0=ics.q, p0=ics.p)
+function pendulum_data(
+        ics::NamedTuple{(:q, :p), Tuple{AT, AT}}; timespan = (T(0.0), T(100.0)),
+        timestep = T(0.1)) where {T, AT <: AbstractVector{T}}
+    pendulum_data(; T = T, timespan = timespan, timestep = timestep, q0 = ics.q, p0 = ics.p)
 end

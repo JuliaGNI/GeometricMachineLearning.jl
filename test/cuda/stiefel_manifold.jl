@@ -10,7 +10,8 @@ end
 
 function test_stiefel_lie_alg_hor_matrix(T, N, n)
     B = zeros(backend, StiefelLieAlgHorMatrix{T}, N, n)
-    @test typeof(Y) <: StiefelLieAlgHorMatrix{T, <:SkewSymMatrix{T, <:CuArray{T, 1}}, <:CuArray{T, 2}}
+    @test typeof(Y) <:
+          StiefelLieAlgHorMatrix{T, <:SkewSymMatrix{T, <:CuArray{T, 1}}, <:CuArray{T, 2}}
 end
 
 function test_optimizer(T, N, n)
@@ -25,8 +26,8 @@ function test_optimizer(T, N, n)
     rand!(Random.default_rng(), weight1)
     rand!(Random.default_rng(), weight2)
 
-    dx = ((weight=weight1,), (weight=weight2,))
-    
+    dx = ((weight = weight1,), (weight = weight2,))
+
     o1 = Optimizer(GradientOptimizer(), ps)
     o2 = Optimizer(MomentumOptimizer(), ps)
     o3 = Optimizer(AdamOptimizer(), ps)

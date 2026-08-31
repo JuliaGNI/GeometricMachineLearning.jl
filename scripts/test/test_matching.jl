@@ -1,4 +1,4 @@
-using GeometricMachineLearning 
+using GeometricMachineLearning
 using Test
 
 include("macro_testerror.jl")
@@ -27,5 +27,3 @@ match1 = matching(exacthnn, tra_dps_data)
 match2 = matching(sympeuler, tra_dps_data)
 @test typeof(shape(match2)) == typeof(shape(tra_dps_data))
 @test type(data_symbols(match2)) == PhaseSpaceSymbol
-
-

@@ -26,7 +26,7 @@ training_parameters = TrainingParameters(nruns, method, mopt; batch_size = bs)
 # Test for TrainingSet
 #########################################
 
-hnn = HamiltonianArchitecture(2; nhidden= 2, width = 5)
+hnn = HamiltonianArchitecture(2; nhidden = 2, width = 5)
 nn1 = NeuralNetwork(hnn, Float64)
 
 training_set1 = TrainingSet(nn1, training_parameters, training_data)
@@ -35,7 +35,7 @@ training_set1 = TrainingSet(nn1, training_parameters, training_data)
 @test parameters(training_set1) == training_parameters
 @test data(training_set1) == training_data
 
-lnn = LagrangianNeuralNetwork(2; nhidden= 2, width = 5)
+lnn = LagrangianNeuralNetwork(2; nhidden = 2, width = 5)
 nn2 = NeuralNetwork(hnn, Float64)
 
 training_set2 = TrainingSet(nn2, training_parameters, training_data)
@@ -55,7 +55,7 @@ ensemble_training = EnsembleTraining()
 @test isParametersShared(ensemble_training) == false
 @test isDataShared(ensemble_training) == false
 
-@testerror GeometricMachineLearning.nn(ensemble_training) 
+@testerror GeometricMachineLearning.nn(ensemble_training)
 @testerror parameters(ensemble_training)
 @testerror data(ensemble_training)
 
@@ -66,12 +66,12 @@ push!(ensemble_training, training_set1)
 @test isParametersShared(ensemble_training) == true
 @test isDataShared(ensemble_training) == true
 
-@testnoerror GeometricMachineLearning.nn(ensemble_training) 
+@testnoerror GeometricMachineLearning.nn(ensemble_training)
 @testnoerror parameters(ensemble_training)
 @testnoerror data(ensemble_training)
 
 @test GeometricMachineLearning.nn(ensemble_training) == nn1
-@test parameters(ensemble_training) == training_parameters 
+@test parameters(ensemble_training) == training_parameters
 @test data(ensemble_training) == training_data
 
 ensemble_training2 = EnsembleTraining(training_set2)
@@ -82,9 +82,9 @@ merge!(ensemble_training, ensemble_training2)
 @test isParametersShared(ensemble_training) == true
 @test isDataShared(ensemble_training) == true
 
-@testerror GeometricMachineLearning.nn(ensemble_training) 
+@testerror GeometricMachineLearning.nn(ensemble_training)
 @testnoerror parameters(ensemble_training)
 @testnoerror data(ensemble_training)
 
-@test parameters(ensemble_training) == training_parameters 
+@test parameters(ensemble_training) == training_parameters
 @test data(ensemble_training) == training_data

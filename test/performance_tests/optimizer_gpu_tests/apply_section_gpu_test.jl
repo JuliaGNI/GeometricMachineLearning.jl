@@ -1,7 +1,7 @@
-using GeometricMachineLearning 
+using GeometricMachineLearning
 using CUDA
 using Test
-using GPUArrays  
+using GPUArrays
 using Printf
 
 function test_apply_section(dev, T, N, n)
@@ -11,17 +11,16 @@ function test_apply_section(dev, T, N, n)
     Y₂ = rand(StiefelManifold{T}, N, n) |> map_to_dev
 
     λY = GlobalSection(Y₁)
-    
+
     @time Y₃ = apply_section(λY, Y₂)
 
     if dev == CUDA.device()
-        @test (typeof(Y₃) <: StiefelManifold{T, AT} where {T, AT<:AbstractGPUMatrix})
+        @test (typeof(Y₃) <: StiefelManifold{T, AT} where {T, AT <: AbstractGPUMatrix})
     end
 end
 
-
 T = Float32
-for N = 1000:1000:5000
+for N in 1000:1000:5000
     n = N÷10
     print("N = ", N, " and n = ", n, "\n")
     @printf "GeometricMachineLearning cpu:  \n"

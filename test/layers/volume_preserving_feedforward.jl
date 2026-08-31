@@ -1,14 +1,15 @@
 using GeometricMachineLearning
 using LinearAlgebra: det
 using Zygote: jacobian
-using Test 
+using Test
 
-function test_volume_preservation(layer::GeometricMachineLearning.AbstractExplicitLayer, ps::NamedTuple, b::AbstractVector{T}) where T
+function test_volume_preservation(layer::GeometricMachineLearning.AbstractExplicitLayer,
+        ps::NamedTuple, b::AbstractVector{T}) where {T}
     jac_mat = jacobian(b -> layer(b, ps), b)[1]
     @test det(jac_mat) ≈ one(T)
 end
 
-function test_volume_preserving_feedforward(dim₁ = 5; T::Type=Float32)
+function test_volume_preserving_feedforward(dim₁ = 5; T::Type = Float32)
     layer₁ = VolumePreservingLowerLayer(dim₁; use_bias = false)
     layer₂ = VolumePreservingLowerLayer(dim₁; use_bias = true)
     layer₃ = VolumePreservingUpperLayer(dim₁; use_bias = false)

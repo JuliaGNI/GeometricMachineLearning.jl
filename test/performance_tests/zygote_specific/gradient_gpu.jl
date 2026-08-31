@@ -1,6 +1,6 @@
-using Zygote, CUDA, Printf  
+using Zygote, CUDA, Printf
 
-f(x) = sum(x.^5)
+f(x) = sum(x .^ 5)
 
 function compare(T, vector_dim)
     @printf "cpu"
@@ -8,7 +8,7 @@ function compare(T, vector_dim)
     @time Zygote.gradient(f, vec)[1]
 
     @printf "gpu"
-    vec_gpu = vec |> cu 
+    vec_gpu = vec |> cu
     CUDA.@time Zygote.gradient(f, vec_gpu)[1]
 end
 

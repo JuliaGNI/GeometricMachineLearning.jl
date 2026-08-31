@@ -1,6 +1,6 @@
 using GeometricMachineLearning
 using Test
-import Random 
+import Random
 
 Random.seed!(123)
 
@@ -16,11 +16,11 @@ function test_accuracy(N::Integer, n::Integer; n_epochs::Integer = 100)
     psd_error = solve!(psd_nn, dl)
 
     sae_nn = NeuralNetwork(SymplecticAutoencoder(N, n; n_encoder_layers = 5, n_decoder_layers = 5))
-    
+
     o = Optimizer(Adam(), sae_nn)
     sae_error = o(sae_nn, dl, Batch(10), n_epochs; show_progress = false)[end]
 
-    @test sae_error < psd_error 
+    @test sae_error < psd_error
 end
 
 test_accuracy(10, 4)

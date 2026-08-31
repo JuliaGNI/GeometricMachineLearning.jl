@@ -18,14 +18,14 @@ V = snapshots["V"]
 
 #preprocess data into the currect format
 function reshape_and_vcat(X, V, i, j)
-    vcat(reshape(X[:,:,i,j], size(X, 2)), reshape(V[:,:,i,j], size(V, 2))) |> CUDA.cu
+    vcat(reshape(X[:, :, i, j], size(X, 2)), reshape(V[:, :, i, j], size(V, 2))) |> CUDA.cu
 end
 
 @inline tuplejoin(x) = x
 @inline tuplejoin(x, y) = (x..., y...)
 @inline tuplejoin(x, y, z...) = tuplejoin(tuplejoin(x, y), z...)
 
-Z = mapreduce(i -> map(j -> reshape_and_vcat(X, V, i, j), 1:size(X,4)), tuplejoin, 1:size(X,3))
+Z = mapreduce(i -> map(j -> reshape_and_vcat(X, V, i, j), 1:size(X, 4)), tuplejoin, 1:size(X, 3))
 
 _, N, time_steps, par = size(X)
 n = 10
@@ -43,27 +43,27 @@ PSD_err = mapreduce(i -> norm(Z[i] - Ψ_PSD_full*Ψ_PSD_full'*Z[i]), +, 1:length
 
 relu(x) = max.(0, x)
 Ψ_enc = Chain(Gradient(2 * N, 4 * N, relu; change_q = true),
-              Gradient(2 * N, 4 * N, relu; change_q = false),
-              PSDLayer(2 * N, 100; inverse = true),
-              Gradient(100, 200, relu; change_q = true),
-              Gradient(100, 200, relu; change_q = false),
-              PSDLayer(100, 50; inverse = true),
-              Gradient(50, 200, relu; change_q = true),
-              Gradient(50, 200, relu; change_q = false),
-              PSDLayer(50, 2 * n; inverse = true),
-              Gradient(2 * n, 4 * n, relu; change_q = false),
-              Gradient(2 * n, 4 * n, relu; change_q = true))
+    Gradient(2 * N, 4 * N, relu; change_q = false),
+    PSDLayer(2 * N, 100; inverse = true),
+    Gradient(100, 200, relu; change_q = true),
+    Gradient(100, 200, relu; change_q = false),
+    PSDLayer(100, 50; inverse = true),
+    Gradient(50, 200, relu; change_q = true),
+    Gradient(50, 200, relu; change_q = false),
+    PSDLayer(50, 2 * n; inverse = true),
+    Gradient(2 * n, 4 * n, relu; change_q = false),
+    Gradient(2 * n, 4 * n, relu; change_q = true))
 Ψ_dec = Chain(Gradient(2 * n, 4 * n, relu; change_q = false),
-              Gradient(2 * n, 4 * n, relu; change_q = true),
-              PSDLayer(50, 2 * n),
-              Gradient(50, 200, relu; change_q = false),
-              Gradient(50, 200, relu; change_q = true),
-              PSDLayer(100, 50),
-              Gradient(100, 200, relu; change_q = false),
-              Gradient(100, 200, relu; change_q = true),
-              PSDLayer(2 * N, 100),
-              Gradient(2 * N, 4 * N, relu; change_q = false),
-              Gradient(2 * N, 4 * N, relu; change_q = true))
+    Gradient(2 * n, 4 * n, relu; change_q = true),
+    PSDLayer(50, 2 * n),
+    Gradient(50, 200, relu; change_q = false),
+    Gradient(50, 200, relu; change_q = true),
+    PSDLayer(100, 50),
+    Gradient(100, 200, relu; change_q = false),
+    Gradient(100, 200, relu; change_q = true),
+    PSDLayer(2 * N, 100),
+    Gradient(2 * N, 4 * N, relu; change_q = false),
+    Gradient(2 * N, 4 * N, relu; change_q = true))
 reconstr = Chain(Ψ_enc, Ψ_dec)
 ps_all, st_all = Lux.setup(CUDA.device(), Random.default_rng(), reconstr)
 
@@ -77,9 +77,13 @@ function loss_random(Z, ps_all, st_all)
     loss(z, ps_all, st_all)
 end
 
-loss_minibatch(Z, ps_all, st_all, batch_size=10) = mapreduce(i -> loss_random(Z, ps_all, st_all), +, 1:batch_size)/batch_size
+function loss_minibatch(Z, ps_all, st_all, batch_size = 10)
+    mapreduce(i -> loss_random(Z, ps_all, st_all), +, 1:batch_size)/batch_size
+end
 
-loss_total(Z, ps_all, st_all) = mapreduce(i -> loss(Z[i], ps_all, st_all), +, 1:length(Z))/length(Z)
+function loss_total(Z, ps_all, st_all)
+    mapreduce(i -> loss(Z[i], ps_all, st_all), +, 1:length(Z))/length(Z)
+end
 
 #=
 z_temp = Z[1]
@@ -88,7 +92,6 @@ function kernel(x)
     return 
 end
 =#
-
 
 #optim = StandardOptimizer(1e-3)
 optim = AdamOptimizer()

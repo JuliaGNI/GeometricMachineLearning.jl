@@ -2,7 +2,7 @@ using Test
 
 macro testerror(args...)
     error = false
-    try 
+    try
         eval.(args)
     catch e
         error = true
@@ -11,9 +11,8 @@ macro testerror(args...)
 end
 
 macro testnoerror(args...)
-    
     error = true
-    try 
+    try
         eval.(args)
         error = false
     catch e

@@ -1,12 +1,10 @@
-using CUDA 
-
+using CUDA
 
 function vec_add(x, v, w)
     i = threadIdx().x
     x[i] = v[i] + w[i]
-    return 
+    return
 end
-
 
 vec_size = 10
 
@@ -15,4 +13,4 @@ w = CUDA.rand(vec_size)
 
 x = CUDA.rand(vec_size)
 
-@cuda threads=length(x) vec_add(x, v, w) 
+@cuda threads=length(x) vec_add(x, v, w)

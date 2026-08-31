@@ -14,4 +14,6 @@
 # gradient of a `Matrix{T}` parameter. `ProjectTo` does not help: for a real `Adjoint` it is a
 # `ProjectTo{AbstractArray}`, which keeps whatever wrapper the tangent arrived with.
 _matrix_cotangent(::AbstractMatrix, dB::AbstractArray{<:Number, 3}) = dropdims(dB; dims = 3)
-_matrix_cotangent(::Adjoint, dB::AbstractArray{<:Number, 3}) = collect(dropdims(dB; dims = 3)')'
+function _matrix_cotangent(::Adjoint, dB::AbstractArray{<:Number, 3})
+    collect(dropdims(dB; dims = 3)')'
+end

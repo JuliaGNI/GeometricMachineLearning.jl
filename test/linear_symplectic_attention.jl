@@ -1,10 +1,10 @@
 using GeometricMachineLearning
 using Test
-import Random 
+import Random
 
 Random.seed!(123)
 
-function test_application_of_lsa(n::Integer=4, seq_length::Integer=5, T=Float64)
+function test_application_of_lsa(n::Integer = 4, seq_length::Integer = 5, T = Float64)
     l₁ = LinearSymplecticAttentionQ(n, seq_length)
     l₂ = LinearSymplecticAttentionP(n, seq_length)
     ps₁ = NeuralNetwork(Chain(l₁), CPU(), T).params.L1
@@ -17,7 +17,8 @@ function test_application_of_lsa(n::Integer=4, seq_length::Integer=5, T=Float64)
 
     # test for Array as input
     arr = rand(T, 2 * n, seq_length)
-    @test l₁(arr, ps₁) ≈ vcat(arr[1:n, :] + arr[(n + 1):(2 * n), :] * ps₁.A, arr[(n + 1):(2 * n), :])
+    @test l₁(arr, ps₁) ≈
+          vcat(arr[1:n, :] + arr[(n + 1):(2 * n), :] * ps₁.A, arr[(n + 1):(2 * n), :])
     @test l₂(arr, ps₂) ≈ vcat(arr[1:n, :], arr[(n + 1):(2 * n), :] + arr[1:n, :] * ps₂.A)
 end
 

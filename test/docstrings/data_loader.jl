@@ -33,6 +33,7 @@ using GeometricMachineLearning: convert_input_and_batch_indices_to_array, number
     dl = DataLoader(collect(0.1:0.1:0.9); suppress_info = true)
     indices = [(1, 1), (1, 3), (1, 5)]
     @test convert_input_and_batch_indices_to_array(dl, Batch(3), indices) ==
-        reshape([0.1, 0.3, 0.5], 1, 1, 3)
-    @test number_of_batches(DataLoader([1, 2, 3, 4, 5]; suppress_info = true), Batch(2)) == 3
+          reshape([0.1, 0.3, 0.5], 1, 1, 3)
+    @test number_of_batches(DataLoader([1, 2, 3, 4, 5]; suppress_info = true), Batch(2)) ==
+          3
 end

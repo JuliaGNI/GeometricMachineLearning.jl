@@ -31,14 +31,14 @@ const N, n = 6, 3
 # All eight families, including the three that had no method here before the move: both horizontal
 # lifts, and `GrassmannManifold` -- upstream dispatches on `Manifold`, so it covers that one too.
 leaves = (
-    stiefel   = StiefelManifold(Matrix(qr(randn(N, n)).Q)),
+    stiefel = StiefelManifold(Matrix(qr(randn(N, n)).Q)),
     grassmann = rand(GrassmannManifold{Float64}, N, n),
     symmetric = SymmetricMatrix(rand(10), 4),
-    skew      = SkewSymMatrix(rand(6), 4),
-    lower     = LowerTriangular(rand(6), 4),
-    upper     = UpperTriangular(rand(6), 4),
-    stiefhor  = StiefelLieAlgHorMatrix(SkewSymMatrix(rand(n, n)), rand(N - n, n), N, n),
-    grasshor  = GrassmannLieAlgHorMatrix(rand(N - n, n), N, n),
+    skew = SkewSymMatrix(rand(6), 4),
+    lower = LowerTriangular(rand(6), 4),
+    upper = UpperTriangular(rand(6), 4),
+    stiefhor = StiefelLieAlgHorMatrix(SkewSymMatrix(rand(n, n)), rand(N - n, n), N, n),
+    grasshor = GrassmannLieAlgHorMatrix(rand(N - n, n), N, n)
 )
 
 @testset "every structured family keeps its type and its numbers" begin
@@ -67,9 +67,9 @@ end
 
 @testset "a whole NeuralNetwork moves, manifold weights and all" begin
     arch = SymplecticAutoencoder(10, 4)
-    nn   = NeuralNetwork(arch)
-    nn2  = changebackend(CPU(), nn)
-    x    = rand(10)
+    nn = NeuralNetwork(arch)
+    nn2 = changebackend(CPU(), nn)
+    x = rand(10)
     @test nn(x) ≈ nn2(x)
 end
 
@@ -82,8 +82,8 @@ end
           Base.get_extension(GeometricOptimizers, :AbstractNeuralNetworksExt)
 
     # `StiefelLayer(N, n)` is `x -> Y'x`, so it takes `N` numbers and returns `n`
-    nn  = NeuralNetwork(Chain(StiefelLayer(N, n), Dense(n, n, tanh)))
+    nn = NeuralNetwork(Chain(StiefelLayer(N, n), Dense(n, n, tanh)))
     nn2 = changebackend(CPU(), nn)
-    x   = rand(N)
+    x = rand(N)
     @test nn(x) ≈ nn2(x)
 end

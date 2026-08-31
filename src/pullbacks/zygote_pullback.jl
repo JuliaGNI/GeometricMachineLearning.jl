@@ -29,7 +29,8 @@ end
 
 (_pullback::ZygotePullback)(ps, model, input_nt::QPTOAT)::Tuple = Zygote.pullback(
     ps -> _pullback.loss(model, ps, input_nt), ps)
-(_pullback::ZygotePullback)(ps, model, input_nt_output_nt::Tuple{<:QPTOAT, <:QPTOAT})::Tuple = Zygote.pullback(
+(_pullback::ZygotePullback)(ps, model, input_nt_output_nt::Tuple{
+    <:QPTOAT, <:QPTOAT})::Tuple = Zygote.pullback(
     ps -> _pullback.loss(model, ps, input_nt_output_nt...), ps)
 
 # Both shapes, because a pullback produces both. `NeuralNetworkParameters` rewraps the tangent of a

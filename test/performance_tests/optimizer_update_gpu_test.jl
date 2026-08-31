@@ -1,6 +1,5 @@
 using GeometricMachineLearning, CUDA
 
-
 function adam_update_test(dev, N, n)
     map_to_dev(A::AbstractArray) = GeometricMachineLearning.convert_to_dev(CUDA.device(), A)
 
@@ -14,4 +13,3 @@ function adam_update_test(dev, N, n)
 
     @time update!(o, cache, B)
 end
-

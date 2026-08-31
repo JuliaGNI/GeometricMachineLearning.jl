@@ -1,6 +1,6 @@
 using Test
 using GeometricMachineLearning
-import Random 
+import Random
 
 Random.seed!(123)
 
@@ -9,7 +9,7 @@ const data_set = reshape(data_set_raw, 1, 10)
 
 const dl = DataLoader(data_set)
 
-function test_batching_over_one_axis(batch_size::Int=3)
+function test_batching_over_one_axis(batch_size::Int = 3)
     batch = Batch(batch_size)
     tuple_indices = batch(dl)
     @test length(tuple_indices) == Int(ceil(10 / batch_size))
@@ -37,11 +37,13 @@ end
 
 sort_according_to_first_column(A::Matrix) = A[sortperm(A[:, 1]), :]
 
-function test_batching_over_two_axis_with_seq_length(batch_size::Int=3, seq_length::Int=2, prediction_window::Int=1)
+function test_batching_over_two_axis_with_seq_length(
+        batch_size::Int = 3, seq_length::Int = 2, prediction_window::Int = 1)
     batch = Batch(batch_size, seq_length, prediction_window)
     tuple_indices₂ = batch(dl₂)
-    @test length(tuple_indices₂) == Int(ceil(2 * (10 - (seq_length - 1) - batch.prediction_window) / batch_size)) # have to multiply with two because we deal with tuples
-    num_elems = 10 - (batch.seq_length -1) - batch.prediction_window
+    @test length(tuple_indices₂) ==
+          Int(ceil(2 * (10 - (seq_length - 1) - batch.prediction_window) / batch_size)) # have to multiply with two because we deal with tuples
+    num_elems = 10 - (batch.seq_length - 1) - batch.prediction_window
     indices₁ = hcat(1:num_elems, 1 * ones(Int, num_elems))
     indices₂ = hcat(1:num_elems, 2 * ones(Int, num_elems))
     true_indices₁ = sort_according_to_first_column(vcat(indices₁, indices₂))

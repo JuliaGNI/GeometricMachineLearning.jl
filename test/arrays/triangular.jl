@@ -8,7 +8,7 @@ using Test
 # (`test/special_matrices/triangular.jl` there). What is left here is GML's: batching them over the
 # third axis of a tensor with `mat_tensor_mul`, and the pullback of that kernel.
 
-function triangular_tensor_multiplication_test(T=Float64, n::Int=5)
+function triangular_tensor_multiplication_test(T = Float64, n::Int = 5)
     Aₗ = rand(LowerTriangular{T}, n)
     Aᵤ = rand(UpperTriangular{T}, n)
 
@@ -21,7 +21,7 @@ function triangular_tensor_multiplication_test(T=Float64, n::Int=5)
     end
 end
 
-function triangular_tensor_multiplication_pullback_test(T=Float64, n::Int=5)
+function triangular_tensor_multiplication_pullback_test(T = Float64, n::Int = 5)
     Aₗ = rand(LowerTriangular{T}, n)
     Aᵤ = rand(UpperTriangular{T}, n)
 
@@ -34,8 +34,10 @@ function triangular_tensor_multiplication_pullback_test(T=Float64, n::Int=5)
     # The batched pullback has to agree slice by slice with the pullback of the single-slice
     # product. These were bare expressions and not `@test`s before, so the loop asserted nothing.
     for i in axes(total_pb_lower[2], 3)
-        @test total_pb_lower[2][:, :, i] ≈ pullback(*, Aₗ, B[:, :, i])[2](C_diff[:, :, i])[2]
-        @test total_pb_upper[2][:, :, i] ≈ pullback(*, Aᵤ, B[:, :, i])[2](C_diff[:, :, i])[2]
+        @test total_pb_lower[2][:, :, i] ≈
+              pullback(*, Aₗ, B[:, :, i])[2](C_diff[:, :, i])[2]
+        @test total_pb_upper[2][:, :, i] ≈
+              pullback(*, Aᵤ, B[:, :, i])[2](C_diff[:, :, i])[2]
     end
 end
 

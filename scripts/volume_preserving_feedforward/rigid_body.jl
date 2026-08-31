@@ -2,20 +2,20 @@ using GeometricMachineLearning
 using GeometricMachineLearning: map_to_cpu
 using CairoMakie
 using GeometricIntegrators: integrate, ImplicitMidpoint
-using GeometricProblems.RigidBody: odeproblem, default_parameters 
+using GeometricProblems.RigidBody: odeproblem, default_parameters
 using GeometricEquations: EnsembleProblem
-using LinearAlgebra: norm 
+using LinearAlgebra: norm
 using Zygote: gradient
 using CUDA
-import Random 
+import Random
 
 Random.seed!(123)
-const ics₁ = [(q = [sin(val), 0., cos(val)], ) for val in 0.1:.01:(2*π)]
-const ics₂ = [(q = [0., sin(val), cos(val)], ) for val in 0.1:.01:(2*π)]
+const ics₁ = [(q = [sin(val), 0.0, cos(val)],) for val in 0.1:0.01:(2 * π)]
+const ics₂ = [(q = [0.0, sin(val), cos(val)],) for val in 0.1:0.01:(2 * π)]
 const ics = [ics₁..., ics₂...]
 
-const timestep = .2
-const timespan = (0., 20.)
+const timestep = 0.2
+const timespan = (0.0, 20.0)
 
 const sys_dim = length(ics[1].q)
 
@@ -33,7 +33,8 @@ const T = Float64
 
 const t_validation = 5
 
-ensemble_problem = EnsembleProblem(odeproblem().equation, timespan, timestep, ics, default_parameters)
+ensemble_problem = EnsembleProblem(
+    odeproblem().equation, timespan, timestep, ics, default_parameters)
 ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
 dl₁ = DataLoader(ensemble_solution)
 dl = backend == CPU() ? dl₁ : DataLoader(dl₁.input |> CuArray{T})
@@ -46,35 +47,42 @@ o = Optimizer(opt_method, nn)
 
 batch = Batch(batch_size, 1)
 
-loss_array₁ =  o(nn, dl, batch, n_epochs)
+loss_array₁ = o(nn, dl, batch, n_epochs)
 
-ic = (q = [sin(1.1), 0., cos(1.1)], )
+ic = (q = [sin(1.1), 0.0, cos(1.1)],)
 
 function numerical_solution(sys_dim::Int, t_integration::Int, timestep::Real, ic::NamedTuple)
-    validation_problem = odeproblem(ic; timespan = (0.0, t_integration), timestep = timestep, parameters = default_parameters)
+    validation_problem = odeproblem(ic; timespan = (0.0, t_integration),
+        timestep = timestep, parameters = default_parameters)
     sol = integrate(validation_problem, ImplicitMidpoint())
 
     numerical_solution = zeros(sys_dim, length(sol.t))
-    for i in axes(sol.t, 1) numerical_solution[:, i+1] = sol.q[i] end 
+    for i in axes(sol.t, 1)
+        numerical_solution[:, i + 1] = sol.q[i]
+    end
 
     t_array = zeros(length(sol.t))
-    for i in axes(sol.t, 1) t_array[i+1] = sol.t[i] end
+    for i in axes(sol.t, 1)
+        t_array[i + 1] = sol.t[i]
+    end
 
-    T.(numerical_solution), T.(t_array) 
+    T.(numerical_solution), T.(t_array)
 end
 
 function make_validation_plot(t_validation::Int, nn::NeuralNetwork)
-
     numerical, t_array = numerical_solution(sys_dim, t_validation, timestep, ic)
 
-    nn₁_solution = iterate(nn, numerical[:, 1]; n_points = Int(floor(t_validation / timestep)) + 1)
+    nn₁_solution = iterate(nn, numerical[:, 1]; n_points = Int(floor(t_validation /
+                                                                     timestep)) + 1)
 
     ########################### plot validation
 
     fig = Figure()
     ax = Axis(fig[1, 1]; xlabel = L"t", ylabel = L"z_1")
-    lines!(ax, t_array, numerical[1, :]; label = "numerical solution", color = Makie.wong_colors()[1], linewidth = 2)
-    lines!(ax, t_array, nn₁_solution[1, :]; label = "volume-preserving feedforward", color = Makie.wong_colors()[2], linewidth = 2)
+    lines!(ax, t_array, numerical[1, :]; label = "numerical solution",
+        color = Makie.wong_colors()[1], linewidth = 2)
+    lines!(ax, t_array, nn₁_solution[1, :]; label = "volume-preserving feedforward",
+        color = Makie.wong_colors()[2], linewidth = 2)
     axislegend(ax)
 
     fig
@@ -83,14 +91,19 @@ end
 function make_validation_plot3d(t_validation::Int, nn::NeuralNetwork)
     numerical, _ = numerical_solution(sys_dim, t_validation, timestep, ic)
 
-    nn₁_solution = iterate(nn, numerical[:, 1]; n_points = Int(floor(t_validation / timestep)) + 1)
+    nn₁_solution = iterate(nn, numerical[:, 1]; n_points = Int(floor(t_validation /
+                                                                     timestep)) + 1)
 
     ########################### plot validation
 
     fig = Figure()
-    ax = Axis3(fig[1, 1]; aspect = (1., 1., 1.), xlabel = L"z_1", ylabel = L"z_2", zlabel = L"z_3")
-    lines!(ax, numerical[1, :], numerical[2, :], numerical[3, :]; label = "numerical solution", color = Makie.wong_colors()[1], linewidth = 2)
-    lines!(ax, nn₁_solution[1, :], nn₁_solution[2, :], nn₁_solution[3, :]; label = "volume-preserving feedforward", color = Makie.wong_colors()[2], linewidth = 2)
+    ax = Axis3(fig[1, 1]; aspect = (1.0, 1.0, 1.0),
+        xlabel = L"z_1", ylabel = L"z_2", zlabel = L"z_3")
+    lines!(ax, numerical[1, :], numerical[2, :], numerical[3, :];
+        label = "numerical solution", color = Makie.wong_colors()[1], linewidth = 2)
+    lines!(ax, nn₁_solution[1, :], nn₁_solution[2, :],
+        nn₁_solution[3, :]; label = "volume-preserving feedforward",
+        color = Makie.wong_colors()[2], linewidth = 2)
     axislegend(ax)
 
     fig
@@ -105,11 +118,11 @@ p_validation₂ = make_validation_plot(20, nn₁)
 
 p_training_loss = let fig = Figure()
     ax = Axis(fig[1, 1]; xlabel = "epoch", ylabel = "training error", yscale = log10)
-    lines!(ax, loss_array₁; label = "volume-preserving feedforward", color = Makie.wong_colors()[2], linewidth = 2)
+    lines!(ax, loss_array₁; label = "volume-preserving feedforward",
+        color = Makie.wong_colors()[2], linewidth = 2)
     axislegend(ax)
     fig
 end
-
 
 ########################### plot trajectories on the sphere
 

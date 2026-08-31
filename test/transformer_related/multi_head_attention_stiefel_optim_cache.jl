@@ -21,12 +21,15 @@ This checks if the Adam cache was set up in the right way.
 AdamCache fields (from GeometricOptimizers): x, g, δ, Δg, m₁, m₂, m̃₂, section.
 The direction δ and moments m₁, m₂ should be zero-initialised.
 """
-_check_slahm_zero(A::StiefelLieAlgHorMatrix{T}, tol) where T =
-    (@test typeof(A) <: StiefelLieAlgHorMatrix; @test LinearAlgebra.norm(A) < tol)
-_check_slahm_zero(A::NetworkParameters, tol) = foreach(v -> _check_slahm_zero(v, tol), values(A))
+_check_slahm_zero(A::StiefelLieAlgHorMatrix{T}, tol) where {T} = (
+    @test typeof(A) <: StiefelLieAlgHorMatrix; @test LinearAlgebra.norm(A) < tol)
+function _check_slahm_zero(A::NetworkParameters, tol)
+    foreach(v -> _check_slahm_zero(v, tol), values(A))
+end
 _check_slahm_zero(A::NamedTuple, tol) = foreach(v -> _check_slahm_zero(v, tol), values(A))
 
-function check_adam_cache(C::GeometricOptimizers.OptimizerCache{T}, tol=T(10) * eps(T)) where T
+function check_adam_cache(C::GeometricOptimizers.OptimizerCache{T}, tol = T(10) *
+                                                                          eps(T)) where {T}
     @test C isa AdamCache
     _check_slahm_zero(C.δ, tol)
     _check_slahm_zero(C.m₁, tol)
@@ -39,7 +42,8 @@ This checks if the momentum cache was set up in the right way.
 MomentumCache fields (from GeometricOptimizers): x, g, δ, Δg, section.
 The direction δ should be zero-initialised.
 """
-function check_momentum_cache(C::GeometricOptimizers.OptimizerCache{T}, tol=T(10) * eps(T)) where T
+function check_momentum_cache(C::GeometricOptimizers.OptimizerCache{T}, tol = T(10) *
+                                                                              eps(T)) where {T}
     @test C isa MomentumCache
     _check_slahm_zero(C.δ, tol)
 end
@@ -50,7 +54,7 @@ check_momentum_cache(B::NamedTuple) = mapparameters(check_momentum_cache, B)
 This checks if the gradient cache was set up in the right way.
 GradientCache fields (from GeometricOptimizers): x, g, δ, Δg, section.
 """
-function check_gradient_cache(C::GeometricOptimizers.OptimizerCache{T}) where T
+function check_gradient_cache(C::GeometricOptimizers.OptimizerCache{T}) where {T}
     @test C isa GradientCache
     @test hasproperty(C, :δ)
 end
@@ -62,7 +66,7 @@ This checks if all the caches are set up in the right way for the `MultiHeadAtte
 """
 function test_cache_setups_for_optimizer_for_multihead_attention_layer(T::Type, dim::Int, n_heads::Int)
     @assert dim % n_heads == 0
-    model = Chain(MultiHeadAttention(dim, n_heads, Stiefel=true))
+    model = Chain(MultiHeadAttention(dim, n_heads, Stiefel = true))
     ps = NeuralNetwork(model, CPU(), T).params
 
     o₁ = Optimizer(Adam(), ps)

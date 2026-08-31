@@ -53,12 +53,12 @@ type each was stored under, which `GeometricOptimizers` registers with
 shape, to rebuild against it instead and skip the registry altogether.
 """
 function load(::Type{NeuralNetwork}, h5::HDF5.H5DataStore, arch::Architecture;
-              backend::NeuralNetworkBackend = CPU())
+        backend::NeuralNetworkBackend = CPU())
     NeuralNetwork(arch, Chain(arch), load(NetworkParameters, h5), backend)
 end
 
 function load(::Type{NeuralNetwork}, h5::HDF5.H5DataStore, arch::Architecture, prototype;
-              backend::NeuralNetworkBackend = CPU())
+        backend::NeuralNetworkBackend = CPU())
     NeuralNetwork(arch, Chain(arch), load(NetworkParameters, h5, prototype), backend)
 end
 
@@ -70,14 +70,15 @@ Convenience overload: open `filename` for reading, then call
 [`load`](@ref) on the store.
 """
 function load(::Type{NeuralNetwork}, filename::AbstractString, arch::Architecture;
-              backend::NeuralNetworkBackend = CPU())
+        backend::NeuralNetworkBackend = CPU())
     HDF5.h5open(filename, "r") do h5
         load(NeuralNetwork, h5, arch; backend = backend)
     end
 end
 
-function load(::Type{NeuralNetwork}, filename::AbstractString, arch::Architecture, prototype;
-              backend::NeuralNetworkBackend = CPU())
+function load(
+        ::Type{NeuralNetwork}, filename::AbstractString, arch::Architecture, prototype;
+        backend::NeuralNetworkBackend = CPU())
     HDF5.h5open(filename, "r") do h5
         load(NeuralNetwork, h5, arch, prototype; backend = backend)
     end
