@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+#
+# Shared pre-commit hook. Canonical copy: ~/Research/Knowledge/AI/githooks/pre-commit
+# Installed into each repository's .githooks/ by install-githooks.sh — edit the canonical
+# copy and re-run the installer, never the copy in a repository.
+#
+# Runs on STAGED .jl files only. A whole-tree JuliaFormatter run is not safe to assume
+# terminates: one died inside SciML's `nest!` after 62 minutes of CPU.
+#
+#   1. JuliaFormatter --check   BLOCKS   formatting is mechanical and always fixable
+#   2. fatou lint               WARNS    see below
+#   3. package load             BLOCKS   catches a syntax error or a broken include
+#
+# `fatou lint` deliberately never blocks. Measured 2026-08-31: it produces findings that are
+# wrong and that cannot be suppressed. `unused-import` does not follow `include`, so it flags
+# load-bearing imports in every module file; `docstring-argument-mismatch` cannot see that
+# `f(::Type{T}, s)` binds `T`. There is no inline suppression comment and `fatou.toml` rejects
+# `per-file-ignores`, so a single false positive would otherwise cost the whole rule
+# repository-wide. Full detail: ~/Research/Tasks/Clear the Fatou lint backlog.md
+
+# No `set -u`: macOS's own bash is 3.2, where `"${arr[@]}"` on an empty array is an
+# unbound-variable error rather than an empty expansion.
+set -o pipefail
+
+red=$'\033[0;31m'; yellow=$'\033[0;33m'; green=$'\033[0;32m'; dim=$'\033[2m'; nc=$'\033[0m'
+
+root=$(git rev-parse --show-toplevel) || exit 1
+cd "$root" || exit 1
+
+# Staged Julia files that still exist (A/C/M, not deleted).
+#
+# Read in a loop rather than with `mapfile`. There IS a bash 5 at /opt/homebrew/bin/bash and
+# `/usr/bin/env bash` finds it from an interactive shell — but a hook inherits the PATH of
+# whatever ran git, and an IDE, a GUI client or a launchd job need not have /opt/homebrew/bin on
+# it. Fall back to macOS's bash 3.2 and `mapfile` is *not found*, which leaves the array empty
+# and returns 0: the hook would report "0 staged files" and wave every commit through. This loop
+# costs two lines and cannot do that.
+#
+# Same reason the command substitution is checked: if `git diff` itself fails, an empty result
+# must not be read as "nothing staged". Fail closed.
+if ! staged_raw=$(git diff --cached --name-only --diff-filter=ACM -- '*.jl'); then
+    printf '\n%spre-commit: could not list staged files.%s Refusing to pass silently.\n\n' \
+           "$red" "$nc"
+    exit 1
+fi
+
+staged=()
+while IFS= read -r f; do
+    [ -n "$f" ] && staged+=("$f")
+done <<< "$staged_raw"
+
+if [ ${#staged[@]} -eq 0 ]; then
+    exit 0
+fi
+
+printf '\n%spre-commit%s  %d staged .jl file(s)\n' "$dim" "$nc" "${#staged[@]}"
+
+status=0
+
+# ---------------------------------------------------------------- 1. formatting (blocking)
+# Honours this repository's own .JuliaFormatter.toml (style = "sciml" in 35 of 35). A hook
+# cannot reach an MCP server, so this calls JuliaFormatter directly rather than through
+# Kaimon's format_code — same engine, different entry point.
+if ! julia --startup-file=no --project=@v1.13 -e '
+        using JuliaFormatter
+        ok = format(ARGS; overwrite = false)
+        ok || @error "not formatted:\n" * join(ARGS, "\n")
+        exit(ok ? 0 : 1)
+    ' "${staged[@]}"; then
+    printf '%sformatting: FAILED%s — run JuliaFormatter over the files above, then re-stage.\n' \
+           "$red" "$nc"
+    status=1
+else
+    printf '%sformatting: ok%s\n' "$green" "$nc"
+fi
+
+# ---------------------------------------------------------------- 2. lint (advisory only)
+if command -v fatou >/dev/null 2>&1; then
+    lint_out=$(fatou lint --force-exclude --output concise "${staged[@]}" 2>/dev/null || true)
+    if [ -n "$lint_out" ]; then
+        n=$(printf '%s\n' "$lint_out" | grep -c . || true)
+        printf '%sfatou lint: %s finding(s) — advisory, not blocking%s\n' "$yellow" "$n" "$nc"
+        printf '%s\n' "$lint_out" | sed 's/^/    /'
+    else
+        printf '%sfatou lint: clean%s\n' "$green" "$nc"
+    fi
+fi
+
+# ---------------------------------------------------------------- 3. load test (blocking)
+# Only for an actual package: an experiment repository has a Project.toml without a name.
+pkg=$(sed -n 's/^name[[:space:]]*=[[:space:]]*"\(.*\)"/\1/p' Project.toml 2>/dev/null | head -1)
+if [ -n "$pkg" ]; then
+    if julia --startup-file=no --project=. -e "using $pkg" >/dev/null 2>&1; then
+        printf '%sloads: ok%s\n' "$green" "$nc"
+    else
+        printf '%sloads: FAILED%s — `using %s` errors:\n' "$red" "$nc" "$pkg"
+        julia --startup-file=no --project=. -e "using $pkg" 2>&1 | tail -20 | sed 's/^/    /'
+        status=1
+    fi
+fi
+
+if [ $status -ne 0 ]; then
+    printf '\n%spre-commit failed.%s Use --no-verify only if you know why.\n\n' "$red" "$nc"
+    exit 1
+fi
+
+printf '\n'
+exit 0

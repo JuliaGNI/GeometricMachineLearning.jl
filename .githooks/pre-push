@@ -1,19 +1,68 @@
-# pre-push git hook that runs all tests before pushin
+#!/usr/bin/env bash
+#
+# Shared pre-push hook. Canonical copy: ~/Research/Knowledge/AI/githooks/pre-push
+# Installed into each repository's .githooks/ by install-githooks.sh — edit the canonical
+# copy and re-run the installer, never the copy in a repository.
+#
+# Runs the full test suite, but only when pushing to main/master. The hooks this replaces ran
+# the suite on every push to every branch, which is what made a push take 10-30 minutes with no
+# output and look exactly like a network hang. A topic branch does not need the gate; CI has it.
+#
+# --check-bounds=auto matters. The default for `Pkg.test` is `--check-bounds=yes`, which forces
+# recompilation of every dependency into a separate cache and diverges from what CI and a normal
+# session use. That divergence is the reason a test suite must not run concurrently with another
+# heavy Julia job over the same packages.
+#
+# If you kill this hook, kill its Julia child too: an orphaned test process survives, and nine of
+# them (4-8 days old) had accumulated by 2026-08-31. See ~/Research/Packages/CLAUDE.md.
 
-red='\033[0;31m'
-green='\033[0;32m'
-no_color='\033[0m'
+# No `set -u`: macOS ships bash 3.2, whose handling of unset expansions differs from bash 4+.
+set -o pipefail
 
-reponame=$(basename `git rev-parse --show-toplevel`)
+red=$'\033[0;31m'; green=$'\033[0;32m'; dim=$'\033[2m'; nc=$'\033[0m'
 
+root=$(git rev-parse --show-toplevel)
+cd "$root" || exit 1
 
-echo "\nRunning pre-push hook\n"
-echo "Testing $reponame"
-julia --project=@.  -e "using Pkg; Pkg.test(\"GeometricMachineLearning\")"
+# git feeds "<local ref> <local sha> <remote ref> <remote sha>" on stdin, one line per ref.
+gated=0
+while read -r _local_ref _local_sha remote_ref _remote_sha; do
+    case "$remote_ref" in
+        refs/heads/main|refs/heads/master) gated=1 ;;
+    esac
+done
 
-if [[ $? -ne 0 ]]; then
-        echo "\n${red}ERROR - Tests must pass before push!\n${no_color}"
-  exit 1
+if [ "$gated" -eq 0 ]; then
+    printf '\n%spre-push%s  not main/master — skipping the suite, CI will run it.\n\n' \
+           "$dim" "$nc"
+    exit 0
 fi
 
-echo "\n${green}Git hook was SUCCESSFUL!${no_color}\n"
+pkg=$(sed -n 's/^name[[:space:]]*=[[:space:]]*"\(.*\)"/\1/p' Project.toml 2>/dev/null | head -1)
+reponame=$(basename "$root")
+
+printf '\n%spre-push%s  pushing to main/master — running the full suite for %s.\n' \
+       "$dim" "$nc" "${pkg:-$reponame}"
+printf '%sThis takes 10-30 minutes and prints nothing until it finishes. That is not a hang.%s\n\n' \
+       "$dim" "$nc"
+
+if [ -n "${pkg:-}" ]; then
+    julia --startup-file=no --check-bounds=auto --project=. \
+          -e "using Pkg; Pkg.test(\"$pkg\")"
+else
+    # Not a package — run its runtests.jl directly if it has one.
+    if [ -f test/runtests.jl ]; then
+        julia --startup-file=no --check-bounds=auto --project=. test/runtests.jl
+    else
+        printf '%sno package name and no test/runtests.jl — nothing to run.%s\n\n' "$dim" "$nc"
+        exit 0
+    fi
+fi
+
+if [ $? -ne 0 ]; then
+    printf '\n%sERROR — tests must pass before pushing to main.%s\n\n' "$red" "$nc"
+    exit 1
+fi
+
+printf '\n%sSuite passed.%s\n\n' "$green" "$nc"
+exit 0
