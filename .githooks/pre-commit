@@ -61,11 +61,16 @@ status=0
 # Honours this repository's own .JuliaFormatter.toml (style = "sciml" in 37 of 37). A hook
 # cannot reach an MCP server, so this calls JuliaFormatter directly rather than through
 # Kaimon's format_code — same engine, different entry point.
+# Checked one file at a time. `format(ARGS)` returns a single Bool for the whole batch, so the
+# message could only ever name every staged file — measured 2026-09-05, a commit of seven files
+# with two offenders reported all seven, and finding the real two by hand cost a second rejected
+# commit. Per-file costs nothing: the batch call formats each file individually anyway, and
+# `.JuliaFormatter.toml` is discovered by searching upward from the file either way.
 if ! julia --startup-file=no --project=@v1.13 -e '
         using JuliaFormatter
-        ok = format(ARGS; overwrite = false)
-        ok || @error "not formatted:\n" * join(ARGS, "\n")
-        exit(ok ? 0 : 1)
+        bad = filter(f -> !format(f; overwrite = false), ARGS)
+        isempty(bad) || @error "not formatted:\n" * join(bad, "\n")
+        exit(isempty(bad) ? 0 : 1)
     ' "${staged[@]}"; then
     printf '%sformatting: FAILED%s — run JuliaFormatter over the files above, then re-stage.\n' \
            "$red" "$nc"
@@ -89,12 +94,21 @@ fi
 # ---------------------------------------------------------------- 3. load test (blocking)
 # Only for an actual package: an experiment repository has a Project.toml without a name.
 pkg=$(sed -n 's/^name[[:space:]]*=[[:space:]]*"\(.*\)"/\1/p' Project.toml 2>/dev/null | head -1)
+
+# The output is captured from the one run, not produced by a second one. It is also filtered
+# rather than tailed: for the failure this stage exists to catch, the cause — `ERROR: LoadError`
+# and the file:line — is at the TOP, and `tail -20` kept backtrace frames 15-18 and the
+# "Failed to precompile" summary while discarding it. Measured 2026-09-05: every session that
+# hit this had to re-run Julia by hand to learn why. Dropping the ` [n] frame` and `  @ Module`
+# lines is what those sessions did; it leaves the message and its location in the first lines.
 if [ -n "$pkg" ]; then
-    if julia --startup-file=no --project=. -e "using $pkg" >/dev/null 2>&1; then
+    if load_out=$(julia --startup-file=no --project=. -e "using $pkg" 2>&1); then
         printf '%sloads: ok%s\n' "$green" "$nc"
     else
         printf '%sloads: FAILED%s — `using %s` errors:\n' "$red" "$nc" "$pkg"
-        julia --startup-file=no --project=. -e "using $pkg" 2>&1 | tail -20 | sed 's/^/    /'
+        printf '%s\n' "$load_out" \
+            | grep -vE '^[[:space:]]*\[[0-9]+\][[:space:]]|^[[:space:]]*@ ' \
+            | head -20 | sed 's/^/    /'
         status=1
     fi
 fi
