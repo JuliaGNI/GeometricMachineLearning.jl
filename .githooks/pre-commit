@@ -58,7 +58,7 @@ printf '\n%spre-commit%s  %d staged .jl file(s)\n' "$dim" "$nc" "${#staged[@]}"
 status=0
 
 # ---------------------------------------------------------------- 1. formatting (blocking)
-# Honours this repository's own .JuliaFormatter.toml (style = "sciml" in 37 of 37). A hook
+# Honours this repository's own .JuliaFormatter.toml (style = "sciml" everywhere). A hook
 # cannot reach an MCP server, so this calls JuliaFormatter directly rather than through
 # Kaimon's format_code — same engine, different entry point.
 # Checked one file at a time. `format(ARGS)` returns a single Bool for the whole batch, so the
@@ -80,14 +80,18 @@ else
 fi
 
 # ---------------------------------------------------------------- 2. lint (advisory only)
+# fatou writes its findings AND its summary to stderr, not stdout, and exits 1 when it has any.
+# Capturing stdout alone left `lint_out` empty on every commit — measured 2026-09-07, a file with
+# 7 findings reported "clean" — so this stage was vacuous in all 38 repositories from the day it
+# was added. The verdict comes from the exit status; with findings there is no summary line, so
+# every captured line is one finding.
 if command -v fatou >/dev/null 2>&1; then
-    lint_out=$(fatou lint --force-exclude --output concise "${staged[@]}" 2>/dev/null || true)
-    if [ -n "$lint_out" ]; then
+    if lint_out=$(fatou lint --force-exclude --output concise "${staged[@]}" 2>&1); then
+        printf '%sfatou lint: clean%s\n' "$green" "$nc"
+    else
         n=$(printf '%s\n' "$lint_out" | grep -c . || true)
         printf '%sfatou lint: %s finding(s) — advisory, not blocking%s\n' "$yellow" "$n" "$nc"
         printf '%s\n' "$lint_out" | sed 's/^/    /'
-    else
-        printf '%sfatou lint: clean%s\n' "$green" "$nc"
     fi
 fi
 
