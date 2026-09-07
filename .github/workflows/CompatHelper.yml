@@ -1,6 +1,6 @@
 # Canonical CompatHelper workflow. Copied verbatim into every repository under Packages/ and
 # Experiments/ by install-workflows.sh — edit this file and re-run the installer, never a copy in a
-# repository. Byte-identical in all 37; verify-workflows.jl asserts it.
+# repository. Byte-identical in every repository; verify-workflows.jl asserts it.
 #
 # COMPATHELPER_PRIV is the DOCUMENTER_KEY deploy key. CompatHelper needs push access to open its
 # pull request, and the GITHUB_TOKEN of a scheduled run cannot trigger CI on the branch it pushes.

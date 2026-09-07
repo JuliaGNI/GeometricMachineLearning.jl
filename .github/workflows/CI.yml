@@ -1,7 +1,7 @@
 # Canonical CI workflow. Copied verbatim into every repository under Packages/ and Experiments/
 # by install-workflows.sh — edit this file and re-run the installer, never a copy in a repository.
 #
-# THIS FILE IS BYTE-IDENTICAL IN ALL 37 REPOSITORIES. That is the whole point, and it is what
+# THIS FILE IS BYTE-IDENTICAL IN EVERY REPOSITORY. That is the whole point, and it is what
 # verify-workflows.jl asserts. Nothing here is parameterised by the package: the two jobs read the
 # package name from Project.toml at run time, exactly as the git hooks do. A repository that needs
 # an extra job gets its own extra workflow file (see QuadratureRules/Symbolic.yml) rather than a
