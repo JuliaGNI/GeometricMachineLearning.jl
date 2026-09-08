@@ -16,7 +16,7 @@ type(::DataSymbol{T}) where {T <: AbstractDataSymbol} = T
 symbols(::DataSymbol{AbstractDataSymbol}) = nothing
 symbols(::DataSymbol{PositionSymbol}) = (:q,)
 symbols(::DataSymbol{PhaseSpaceSymbol}) = (:q, :p)
-symbols(::DataSymbol{DerivativePhaseSpaceSymbol}) = (:q, :p, :q̇, :ṗ)
+symbols(::DataSymbol{DerivativePhaseSpaceSymbol}) = (:q, :p, :q̇, :ṗ)
 symbols(::DataSymbol{PosVeloSymbol}) = (:q, :q̇)
 symbols(::DataSymbol{PosVeloAccSymbol}) = (:q, :q̇, :q̈)
 

@@ -258,7 +258,7 @@ function data_tensors_from_geometric_solution(solution::GeometricSolution{T,
         T2,
         TT,
         NT}) where {T <: Number, T2 <: Number, TT <: TimeSeries{T2},
-        TuT, NT <: NamedTuple{(:t, :q, :p, :q̇, :ṗ), TuT}}
+        TuT, NT <: NamedTuple{(:t, :q, :p, :q̇, :ṗ), TuT}}
     sys_dim, input_time_steps = length(solution.dataser.q[0]), length(solution.t)
     data = (q = zeros(T, sys_dim, input_time_steps, 1),
         p = zeros(T, sys_dim, input_time_steps, 1))
@@ -312,7 +312,7 @@ function DataLoader(solution::GeometricSolution{T, T2, TT, NT},
         TT <: TimeSeries{T2},
         TuT,
         NT <: Union{
-            NamedTuple{(:t, :q, :p, :q̇, :ṗ), TuT},
+            NamedTuple{(:t, :q, :p, :q̇, :ṗ), TuT},
             NamedTuple{(:t, :q, :v), TuT},
             NamedTuple{(:t, :q, :q̇), TuT}}}
     data = data_tensors_from_geometric_solution(solution)
@@ -371,7 +371,7 @@ function DataLoader(ensemble_solution::EnsembleSolution{T, T1, Vector{ST}};
         T1,
         TuT,
         TT <: TimeSeries{T1},
-        ST <: GeometricSolution{T, T1, TT, NamedTuple{(:t, :q, :p, :q̇, :ṗ), TuT}}
+        ST <: GeometricSolution{T, T1, TT, NamedTuple{(:t, :q, :p, :q̇, :ṗ), TuT}}
 }
     sys_dim = length(ensemble_solution.s[1].q[0])
     input_time_steps = length(ensemble_solution.t)

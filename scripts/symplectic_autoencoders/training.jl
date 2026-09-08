@@ -122,13 +122,13 @@ function get_nn_encoder_decoder(;
     nn_encoder, nn_decoder
 end
 
-function get_reduced_model(encoder, decoder; n = 5, μ_val = 0.51, Ñ = (N-2),
+function get_reduced_model(encoder, decoder; n = 5, μ_val = 0.51, Ñ = (N-2),
         n_time_steps = n_time_steps, integrator = ImplicitMidpoint(),
         system_type = GeometricMachineLearning.Symplectic())
-    params = (μ = μ_val, Ñ = Ñ, Δx = T(1/(Ñ-1)))
+    params = (μ = μ_val, Ñ = Ñ, Δx = T(1/(Ñ-1)))
     timestep = T(1/(n_time_steps-1))
     timespan = (T(0), T(1))
-    ics = get_initial_condition_vector(μ_val, Ñ)
+    ics = get_initial_condition_vector(μ_val, Ñ)
     v_field_full = v_field(params)
     v_field_reduced = reduced_vector_field_from_full_explicit_vector_field(
         v_field_explicit(params), decoder, N, n)
@@ -199,7 +199,7 @@ encoders_decoders = get_enocders_decoders(n_range)
 
 μ_errors = NamedTuple()
 for μ_test_val in μ_range
-    dummy_rs = get_reduced_model(nothing, nothing; n = 1, μ_val = μ_test_val, Ñ = (N-2))
+    dummy_rs = get_reduced_model(nothing, nothing; n = 1, μ_val = μ_test_val, Ñ = (N-2))
     sol_full = perform_integration_full(dummy_rs)
     errors = NamedTuple()
     for n in n_range
@@ -210,9 +210,9 @@ for μ_test_val in μ_range
         nn_encoder, nn_decoder = encoders_decoders_current.nn
 
         psd_rs = get_reduced_model(
-            psd_encoder, psd_decoder; n = n, μ_val = μ_test_val, Ñ = (N-2))
+            psd_encoder, psd_decoder; n = n, μ_val = μ_test_val, Ñ = (N-2))
         nn_rs = get_reduced_model(
-            nn_encoder, nn_decoder; n = n, μ_val = μ_test_val, Ñ = (N-2))
+            nn_encoder, nn_decoder; n = n, μ_val = μ_test_val, Ñ = (N-2))
 
         reduction_errors = (psd = compute_reduction_error(psd_rs, sol_full),
             nn = compute_reduction_error(nn_rs, sol_full))

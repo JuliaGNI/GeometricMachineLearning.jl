@@ -62,7 +62,7 @@ where the ``\omega`` is an element of the domain ``\Omega = [-0.5, 0.5].`` For t
 ```@example toda_lattice
 import GeometricProblems.TodaLattice as tl
 
-N = tl.Ñ # hide
+N = tl.Ñ # hide
 Δx = 1. / (N - 1) # hide
 Ω = -0.5 : Δx : 0.5 # hide
 tl.μ

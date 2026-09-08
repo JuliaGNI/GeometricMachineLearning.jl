@@ -129,6 +129,24 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   copies rather than the same arrays, and that a whole network keeps its architecture, model and
   backend.
 
+- **Every tracked file is Unicode NFC-normalised.** Nineteen files across `src/`, `test/`,
+  `scripts/` and `docs/` stored `Ñ` (39 times), `ṗ` (18), `Ũ` (10) and `ȳ` (3) as a base letter plus
+  a combining mark, inherited from macOS rather than chosen. `q̇`, `q̈`, `f̄` and `b̄` have no
+  precomposed codepoint and are unchanged.
+
+  Nothing about the compiled code changes: Julia's parser normalises identifiers to NFC, so the
+  symbols were already precomposed and dispatch, field names and method resolution are untouched.
+  No string literal was affected, and no changed line falls inside a `jldoctest` block. Two changed
+  lines do sit in fenced blocks — `docs/src/tutorials/symplectic_autoencoder.md:65` in an
+  `@example` block, and `docs/src/reduced_order_modeling/reduced_order_modeling.md:79` in an
+  `@eval` block, which Documenter does execute. Both are accesses to `GeometricProblems`' `Ñ`,
+  which is defined precomposed there, so both blocks run exactly as before; Documenter compares the
+  output of neither.
+
+  What changes is that the source now matches what a keyboard, an editor search or a `grep` pattern
+  produces; in an NFD file a pattern typed in NFC matches nothing at all, silently. Every changed
+  file is exactly the NFC normalisation of its predecessor.
+
 ### Fixed
 
 - **The shape of the optimizer cache no longer depends on which types `GeometricOptimizers` happens

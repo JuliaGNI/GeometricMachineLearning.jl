@@ -6,9 +6,9 @@ end
 
 function loss_single(
         ::TrainingMethod{HnnExactMethod}, nn::NeuralNetwork{<:HamiltonianArchitecture},
-        qₙ, pₙ, q̇ₙ, ṗₙ, params = params(nn))
+        qₙ, pₙ, q̇ₙ, ṗₙ, params = params(nn))
     dH = vectorfield(nn, [qₙ..., pₙ...], params)
-    sqeuclidean(dH[1], q̇ₙ) + sqeuclidean(dH[2], ṗₙ)
+    sqeuclidean(dH[1], q̇ₙ) + sqeuclidean(dH[2], ṗₙ)
 end
 
 function get_loss(::TrainingMethod{HnnExactMethod},
@@ -17,7 +17,7 @@ function get_loss(::TrainingMethod{HnnExactMethod},
     (Zygote.ignore_derivatives(get_data(data, :q, args...)),
         Zygote.ignore_derivatives(get_data(data, :p, args...)),
         Zygote.ignore_derivatives(get_data(data, :q̇, args...)),
-        Zygote.ignore_derivatives(get_data(data, :ṗ, args...)))
+        Zygote.ignore_derivatives(get_data(data, :ṗ, args...)))
 end
 
 function loss(

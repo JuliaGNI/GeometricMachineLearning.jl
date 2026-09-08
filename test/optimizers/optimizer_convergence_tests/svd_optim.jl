@@ -45,17 +45,17 @@ function svd_test(A, n, train_steps = 1000, tol = 1e-1; retraction = cayley)
     o₂ = Optimizer(MomentumMethod(), ps; retraction = retraction, step_size = 0.01)
     o₃ = Optimizer(Adam(), ps; retraction = retraction, step_size = 0.01)
 
-    U₁, Ũ₁, err₁ = train_network!(o₁, model, deepcopy(ps), A, train_steps, tol)
-    U₂, Ũ₂, err₂ = train_network!(o₂, model, deepcopy(ps), A, train_steps, tol)
-    U₃, Ũ₃, err₃ = train_network!(o₃, model, deepcopy(ps), A, train_steps, tol)
+    U₁, Ũ₁, err₁ = train_network!(o₁, model, deepcopy(ps), A, train_steps, tol)
+    U₂, Ũ₂, err₂ = train_network!(o₂, model, deepcopy(ps), A, train_steps, tol)
+    U₃, Ũ₃, err₃ = train_network!(o₃, model, deepcopy(ps), A, train_steps, tol)
 
     @test check(U₁) < tol
-    @test check(Ũ₁) < tol
+    @test check(Ũ₁) < tol
     @test norm((err₁ - err_best)/err_best) < tol
     @test check(U₂) < tol
     @test norm((err₂ - err_best)/err_best) < tol
     @test check(U₃) < tol
-    @test check(Ũ₃) < tol
+    @test check(Ũ₃) < tol
     @test norm((err₃ - err_best)/err_best) < tol
 end
 
