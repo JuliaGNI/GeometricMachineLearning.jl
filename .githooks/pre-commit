@@ -9,6 +9,7 @@
 #
 #   1. JuliaFormatter --check   BLOCKS   formatting is mechanical and always fixable
 #   2. fatou lint               WARNS    see below
+#   2.5 unicode NFC             BLOCKS   the tree is NFC, so a non-NFC file is a regression
 #   3. package load             BLOCKS   catches a syntax error or a broken include
 #
 # `fatou lint` deliberately never blocks. Measured 2026-08-31: it produces findings that are
@@ -95,17 +96,18 @@ if command -v fatou >/dev/null 2>&1; then
     fi
 fi
 
-# ---------------------------------------------------------------- 2.5 unicode NFC (advisory)
-# Much of this tree is NFD-normalised, inherited from macOS: `ū`, `ḡ`, `ṗ`, `ẋ` stored as a base
+# ---------------------------------------------------------------- 2.5 unicode NFC (blocking)
+# Sources here are NFC-normalised: `ū`, `ḡ`, `ṗ`, `ẋ` as a single codepoint rather than a base
 # letter plus a combining mark. Julia's parser normalises identifiers to NFC, so an NFD file
 # compiles to byte-identical symbols and nothing about dispatch changes — but every byte-matching
 # tool (grep, ripgrep, an editor search, an agent's string replacement, Documenter's doctest
 # comparison) then fails to match a pattern typed in NFC, silently.
 #
-# Advisory, not blocking, and deliberately so while the conversion is in progress: six packages
-# are still NFD, and blocking here would refuse every ordinary commit in them. Promote it to
-# blocking once `nfc.jl --check` is clean across Packages/ and Experiments/ —
-# ~/Research/Tasks/Normalise the Julia sources to NFC.md tracks what remains.
+# Blocking, because the invariant holds tree-wide: every tracked file in Packages/ and
+# Experiments/ is NFC, so anything this stage reports is a regression rather than a backlog.
+#
+# The invariant is `s == Unicode.normalize(s, :NFC)`, never the absence of combining marks:
+# `q̇`, `v̄` and `f̄` have no precomposed codepoint and stay two codepoints under NFC.
 #
 # The check is inlined rather than calling ~/Research/Knowledge/AI/githooks/nfc.jl, for the same
 # reason stages 1 and 3 inline theirs: a hook that skips itself because a path outside the
@@ -121,10 +123,11 @@ if ! nfc_out=$(julia --startup-file=no -e '
         exit(isempty(bad) ? 0 : 1)
     ' "${staged[@]}" 2>&1); then
     n=$(printf '%s\n' "$nfc_out" | grep -c . || true)
-    printf '%sunicode: %s file(s) not NFC — advisory, not blocking%s\n' "$yellow" "$n" "$nc"
+    printf '%sunicode: %s file(s) not NFC%s\n' "$red" "$n" "$nc"
     printf '%s\n' "$nfc_out" | sed 's/^/    /'
     printf '    %sfix: julia --startup-file=no ~/Research/Knowledge/AI/githooks/nfc.jl --apply <files>%s\n' \
            "$dim" "$nc"
+    status=1
 else
     printf '%sunicode: NFC%s\n' "$green" "$nc"
 fi
