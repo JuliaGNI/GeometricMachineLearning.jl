@@ -95,6 +95,40 @@ if command -v fatou >/dev/null 2>&1; then
     fi
 fi
 
+# ---------------------------------------------------------------- 2.5 unicode NFC (advisory)
+# Much of this tree is NFD-normalised, inherited from macOS: `ū`, `ḡ`, `ṗ`, `ẋ` stored as a base
+# letter plus a combining mark. Julia's parser normalises identifiers to NFC, so an NFD file
+# compiles to byte-identical symbols and nothing about dispatch changes — but every byte-matching
+# tool (grep, ripgrep, an editor search, an agent's string replacement, Documenter's doctest
+# comparison) then fails to match a pattern typed in NFC, silently.
+#
+# Advisory, not blocking, and deliberately so while the conversion is in progress: six packages
+# are still NFD, and blocking here would refuse every ordinary commit in them. Promote it to
+# blocking once `nfc.jl --check` is clean across Packages/ and Experiments/ —
+# ~/Research/Tasks/Normalise the Julia sources to NFC.md tracks what remains.
+#
+# The check is inlined rather than calling ~/Research/Knowledge/AI/githooks/nfc.jl, for the same
+# reason stages 1 and 3 inline theirs: a hook that skips itself because a path outside the
+# repository is missing reports "clean" when it checked nothing. Use `nfc.jl --apply` to fix what
+# this reports.
+if ! nfc_out=$(julia --startup-file=no -e '
+        using Unicode
+        bad = filter(ARGS) do f
+            s = read(f, String)
+            isvalid(s) && s != Unicode.normalize(s, :NFC)
+        end
+        isempty(bad) || println(join(bad, "\n"))
+        exit(isempty(bad) ? 0 : 1)
+    ' "${staged[@]}" 2>&1); then
+    n=$(printf '%s\n' "$nfc_out" | grep -c . || true)
+    printf '%sunicode: %s file(s) not NFC — advisory, not blocking%s\n' "$yellow" "$n" "$nc"
+    printf '%s\n' "$nfc_out" | sed 's/^/    /'
+    printf '    %sfix: julia --startup-file=no ~/Research/Knowledge/AI/githooks/nfc.jl --apply <files>%s\n' \
+           "$dim" "$nc"
+else
+    printf '%sunicode: NFC%s\n' "$green" "$nc"
+fi
+
 # ---------------------------------------------------------------- 3. load test (blocking)
 # Only for an actual package: an experiment repository has a Project.toml without a name.
 pkg=$(sed -n 's/^name[[:space:]]*=[[:space:]]*"\(.*\)"/\1/p' Project.toml 2>/dev/null | head -1)
