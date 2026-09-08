@@ -13,6 +13,24 @@ breaking release).
 > alongside the work. Where a release removed exported names the list is given; where it is a
 > reconstruction of intent, it says so.
 
+## [Unreleased] — Unicode normalisation
+
+### Changed
+
+- Every tracked source file is now Unicode NFC-normalised. Nineteen files across `src/`, `test/`,
+  `scripts/` and `docs/` stored `Ñ` (39 times), `ṗ` (18), `Ũ` (10) and `ȳ` (3) as a base letter plus
+  a combining mark, inherited from macOS rather than chosen.
+
+  Nothing about the compiled code changes: Julia's parser normalises identifiers to NFC, so the
+  symbols were already precomposed and dispatch, field names and method resolution are untouched.
+  No string literal was affected, and no changed line falls inside a `jldoctest` block — the one
+  changed line in a fenced block, `docs/src/tutorials/symplectic_autoencoder.md:65`, is inside an
+  `@example` block, whose output Documenter does not compare. What changes is that the source now
+  matches what a keyboard, an editor search or a `grep` pattern produces; in an NFD file a pattern
+  typed in NFC matches nothing at all, silently.
+
+  Every changed file is exactly the NFC normalisation of its predecessor.
+
 ## [Unreleased] — 0.8.0
 
 > [!NOTE]

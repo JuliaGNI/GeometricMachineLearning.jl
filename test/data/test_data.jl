@@ -7,7 +7,7 @@ using Test
 
 keys1 = (:q,)
 keys2 = (:q, :p)
-keys3 = (:q, :p, :q̇, :ṗ)
+keys3 = (:q, :p, :q̇, :ṗ)
 keys4 = (:q, :q̇)
 keys5 = (:q, :q̇, :q̈)
 keys6 = (:q, :p, :s)
@@ -24,7 +24,7 @@ keys6 = (:q, :p, :s)
 @test can_reduce(DataSymbol(keys5), DataSymbol(keys2)) == false
 
 @test symboldiff(DataSymbol(keys2), DataSymbol(keys1)) == (:p,)
-@test symboldiff(DataSymbol(keys3), DataSymbol(keys1)) == (:p, :q̇, :ṗ)
+@test symboldiff(DataSymbol(keys3), DataSymbol(keys1)) == (:p, :q̇, :ṗ)
 
 #########################################
 # Test for DataTraining

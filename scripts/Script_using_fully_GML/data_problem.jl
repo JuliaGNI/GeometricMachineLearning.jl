@@ -244,14 +244,14 @@ function get_multiple_trajectory_structure_with_target(
     Get_p(Data, i, n) = Data.data[Symbol("Trajectory_"*string(i))][:data][n][2]
 
     Get_q̇(Target, i, n) = Target[Symbol("Trajectory_"*string(i))][:target][n][1][1]
-    Get_ṗ(Target, i, n) = Target[Symbol("Trajectory_"*string(i))][:target][n][2][1]
+    Get_ṗ(Target, i, n) = Target[Symbol("Trajectory_"*string(i))][:target][n][2][1]
 
     return dataTarget(
         data_trajectory(
             data, Get_nb_trajectory, Get_length_trajectory, Get_q, Get_p, Get_Δt),
         Target,
         Get_q̇,
-        Get_ṗ)
+        Get_ṗ)
 end
 
 function get_multiple_trajectory_structure_Lagrangian(

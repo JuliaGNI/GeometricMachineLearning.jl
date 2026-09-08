@@ -13,10 +13,10 @@ end
 #the @thunk macro means that the computation is only performed in case it is needed
 function ChainRulesCore.rrule(::typeof(foo_mul), foo::Foo{T}, b::AbstractArray) where {T}
     y = foo_mul(foo, b)
-    function foo_mul_pullback(ȳ)
+    function foo_mul_pullback(ȳ)
         f̄ = NoTangent()
-        f̄oo = @thunk Tangent{Foo{T}}(; A = ȳ * b', c = ZeroTangent())
-        b̄ = @thunk foo.A' * ȳ
+        f̄oo = @thunk Tangent{Foo{T}}(; A = ȳ * b', c = ZeroTangent())
+        b̄ = @thunk foo.A' * ȳ
         return f̄, f̄oo, b̄
     end
     return y, foo_mul_pullback

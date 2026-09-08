@@ -13,7 +13,7 @@ Get_Data = Dict(
     :q => (Data, n) -> Data[1][n][1],
     :p => (Data, n) -> Data[1][n][2],
     :q̇ => (Data, n) -> Data[2][n][1],
-    :ṗ => (Data, n) -> Data[2][n][2]
+    :ṗ => (Data, n) -> Data[2][n][2]
 )
 data = TrainingData(Data, Get_Data)
 

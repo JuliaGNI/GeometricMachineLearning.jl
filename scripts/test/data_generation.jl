@@ -79,7 +79,7 @@ get_Data = Dict(
     :q => (Data, n) -> Data[1][n],
     :p => (Data, n) -> Data[2][n],
     :q̇ => (Data, n) -> Data[3][n],
-    :ṗ => (Data, n) -> Data[4][n]
+    :ṗ => (Data, n) -> Data[4][n]
 )
 sam_dps_data = TrainingData(Data, get_Data)
 
@@ -93,6 +93,6 @@ get_Data = Dict(
     :q => (Data, i, n) -> Data[Symbol("Trajectory"*string(i))][1][n],
     :p => (Data, i, n) -> Data[Symbol("Trajectory"*string(i))][2][n],
     :q̇ => (Data, i, n) -> Data[Symbol("Trajectory"*string(i))][3][n],
-    :ṗ => (Data, i, n) -> Data[Symbol("Trajectory"*string(i))][4][n]
+    :ṗ => (Data, i, n) -> Data[Symbol("Trajectory"*string(i))][4][n]
 )
 tra_dps_data = TrainingData(Data, get_Data)

@@ -8,7 +8,7 @@ _mul(q₁::OffsetVector, A::OffsetMatrix, q₂::OffsetVector) = q₁.parent'*A.p
 _mul(p₁::OffsetVector, p₂::OffsetVector) = p₁.parent'*p₂.parent
 
 function v_f_hamiltonian(params)
-    K = assemble_matrix(params.μ, params.Δx, params.Ñ)
+    K = assemble_matrix(params.μ, params.Δx, params.Ñ)
     function f(f, t, q, p, params)
         #f .= -(_mul(K + OffsetArray(K.parent', OffsetArrays.Origin(0)), q))
         f .= - (K.parent + K.parent') * q / params.Δx
@@ -23,7 +23,7 @@ function v_f_hamiltonian(params)
 end
 
 function v_field(params)
-    K = assemble_matrix(params.μ, params.Δx, params.Ñ).parent
+    K = assemble_matrix(params.μ, params.Δx, params.Ñ).parent
     full_mat = hcat(vcat(K + K', zero(K)), vcat(zero(K), one(K)*params.Δx))
     𝕁N = PoissonTensor(size(K, 1))
     function v(v, t, q, params)
@@ -33,7 +33,7 @@ function v_field(params)
 end
 
 function v_field_explicit(params)
-    K = assemble_matrix(params.μ, params.Δx, params.Ñ).parent
+    K = assemble_matrix(params.μ, params.Δx, params.Ñ).parent
     full_mat = hcat(vcat(K + K', zero(K)), vcat(zero(K), one(K)*params.Δx))
     𝕁N = PoissonTensor(size(K, 1))
     function v(t, q, params)
