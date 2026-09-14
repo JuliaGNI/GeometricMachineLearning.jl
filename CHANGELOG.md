@@ -221,6 +221,32 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 ### Fixed
 
+- **The tensor Cayley kernels are checked for orthonormality in `Float32`.**
+  `test_tensor_cayley2` through `test_tensor_cayley5` each took a `T::Type` argument and then
+  ignored it: every one built its input with `rand(n, n, third_dim)`, which is always `Float64`.
+  `check_all(Float32)` therefore ran exactly the same arithmetic as `check_all(Float64)`. The four
+  now build with `rand(T, n, n, third_dim)`.
+
+  What this adds is the orthonormality assertion in single precision, and for the 5×5 this file
+  remains the only place the kernel is exercised at all.
+  `tensor_cayley2` through `tensor_cayley4` did already run in
+  `Float32`: `test/attention_layer/attention_setup.jl` sends `Float32` parameters through
+  `VolumePreservingAttention` at sequence lengths 2, 3 and 4, which is what selects those three
+  kernels. Those tests assert volume preservation and parameter element type, never `B * B' ≈ I`.
+  They never reach `tensor_cayley5` at all — their fourth case is sequence length 10, which takes
+  the generic `cpu_tensor_cayley` branch instead.
+
+  The kernels pass the orthonormality assertion in single precision with a wide margin, and no
+  tolerance was touched. Over 40 000 random slices per size, the quantity `B * B' ≈ one(B)` actually
+  compares — `norm(B * B' - I)` against `rtol * max(norm(B * B'), norm(I))`, with
+  `rtol = sqrt(eps(Float32))` = 3.45e-4 — reaches at most 0.07% of what it is allowed for the 2×2,
+  0.12% for the 3×3, 0.14% for the 4×4 and 0.15% for the 5×5. The kernels are also type-preserving:
+  a `Float32` input gives a `Float32` result rather than silently promoting.
+
+  `check_all` calls all four sizes, so every Cayley kernel is now exercised in both precisions.
+  `check_orthonormal_property` takes an `AbstractArray` rather than an `Array`, so a GPU backend
+  can reuse it.
+
 - **The `*_inverse_pullback` tests checked one slice ten times.** All five loop `for i in 1:k` but
   indexed every slice with `k` — the slice count, which is the function's own argument, not the loop
   variable — so each iteration re-compared the last slice. The `rrule`s for `tensor_inverse2`,
