@@ -96,4 +96,4 @@ end
 fig_light, ax_light = make_validation_plot(n_steps; theme = :light)
 fig_dark, ax_dark = make_validation_plot(n_steps; theme = :dark)
 
-save("SympNet-TodaLattice.png", fig_light)
+CairoMakie.save("SympNet-TodaLattice.png", fig_light)

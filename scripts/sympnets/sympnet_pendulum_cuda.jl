@@ -14,7 +14,7 @@ using CUDA
 import Random
 
 # generate data for pendulum
-include("pendulum.jl")
+include("../pendulum.jl")
 q, p = pendulum_data()
 fig = Figure()
 ax = Axis(fig[1, 1]; xlabel = "q", ylabel = "p")
