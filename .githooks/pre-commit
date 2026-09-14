@@ -12,12 +12,19 @@
 #   2.5 unicode NFC             BLOCKS   the tree is NFC, so a non-NFC file is a regression
 #   3. package load             BLOCKS   catches a syntax error or a broken include
 #
-# `fatou lint` deliberately never blocks. Measured 2026-08-31: it produces findings that are
-# wrong and that cannot be suppressed. `unused-import` does not follow `include`, so it flags
-# load-bearing imports in every module file; `docstring-argument-mismatch` cannot see that
-# `f(::Type{T}, s)` binds `T`. There is no inline suppression comment and `fatou.toml` rejects
-# `per-file-ignores`, so a single false positive would otherwise cost the whole rule
-# repository-wide. Full detail: ~/Research/Tasks/Clear the Fatou lint backlog.md
+# `fatou lint` deliberately never blocks. It produces findings that are wrong.
+# `unused-import` does not follow `include`, so it flags load-bearing imports in every module
+# file; `docstring-argument-mismatch` cannot see that `f(::Type{T}, s)` binds `T`.
+#
+# Both of those can be silenced one at a time. Measured 2026-09-13: `# fatou-ignore <rule>` on
+# its own line, immediately above the finding, works. A trailing comment on the same line does
+# nothing, and `fatou.toml` still rejects `per-file-ignores`.
+#
+# `parse-error` is what keeps this stage advisory. It is severity `error`, it CANNOT be
+# suppressed, and all 37 findings measured across 32 packages are false. Fatou rejects two
+# constructs that Julia parses: a parenthesised macro call whose body is a `for` block, as in
+# `(@allocated for ... end) ÷ n`, and a `const` whose assignment is on the next line.
+# Full detail: ~/Research/Tasks/Clear the Fatou lint backlog.md
 
 # No `set -u`: macOS's own bash is 3.2, where `"${arr[@]}"` on an empty array is an
 # unbound-variable error rather than an empty expansion.
@@ -86,9 +93,32 @@ fi
 # 7 findings reported "clean" — so this stage was vacuous in all 38 repositories from the day it
 # was added. The verdict comes from the exit status; with findings there is no summary line, so
 # every captured line is one finding.
+#
+# Time-boxed since 2026-09-14. `fatou lint` does not always terminate: on
+# GeometricMachineLearning's generated `src/kernels/inverses/inverse_5x5.jl` — then 25 MB and
+# 91 625 lines — two runs burned a core each for six and a half hours before anyone noticed.
+# An advisory stage that hangs is worse than one that fails, because a hung commit looks like
+# nothing happening rather than like a refusal. 60 s is ~600x the measured whole-tree time for
+# that package after the file was regenerated.
+#
+# `timeout` is coreutils and is not on a stock macOS, so fall back to running bare rather than
+# skipping the stage.
 if command -v fatou >/dev/null 2>&1; then
-    if lint_out=$(fatou lint --force-exclude --output concise "${staged[@]}" 2>&1); then
+    if command -v timeout >/dev/null 2>&1; then
+        fatou_lint() { timeout -k 5 60 fatou "$@"; }
+    else
+        fatou_lint() { fatou "$@"; }
+    fi
+
+    lint_out=$(fatou_lint lint --force-exclude --output concise "${staged[@]}" 2>&1)
+    lint_rc=$?
+
+    if [ "$lint_rc" -eq 0 ]; then
         printf '%sfatou lint: clean%s\n' "$green" "$nc"
+    elif [ "$lint_rc" -ge 124 ]; then
+        # 124 = timed out, 137 = killed after -k. Not a finding, and not a reason to block.
+        printf '%sfatou lint: timed out after 60s — stage skipped, not a failure%s\n' "$yellow" "$nc"
+        printf '    A staged file is pathological for fatou. See Knowledge/AI/Helpers-and-MCPs.md.\n'
     else
         n=$(printf '%s\n' "$lint_out" | grep -c . || true)
         printf '%sfatou lint: %s finding(s) — advisory, not blocking%s\n' "$yellow" "$n" "$nc"
