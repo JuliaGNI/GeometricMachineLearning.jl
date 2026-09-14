@@ -208,9 +208,16 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   — the same defect class as the `::AT` cotangent signatures above. They now match the 5×5, which
   never carried the annotation.
 
-  `legacy/codegen/matrixinverse.jl` emits the complete kernel file — the slice index, the Cartesian
-  output index, the `tensor_inverseN` wrappers and the `rrule` — rather than a `build_function` body
-  that a human then wraps, so regenerating it reproduces what is committed.
+  **The generator now sits beside what it generates**, as
+  `src/kernels/inverses/inverse_generator.jl` rather than `legacy/codegen/matrixinverse.jl`. It is
+  not legacy and it is not dead: it is the authoritative source of the four committed kernels, and
+  anyone editing one of them needs to find it. Nothing includes it, and `Symbolics` stays out of the
+  package's dependencies — the kernels are committed precisely so that building the package never
+  needs a symbolic stack.
+
+  It emits the complete kernel file — the slice index, the Cartesian output index, the
+  `tensor_inverseN` wrappers and the `rrule` — rather than a `build_function` body that a human then
+  wraps, so regenerating it reproduces what is committed.
 
 ### Fixed
 

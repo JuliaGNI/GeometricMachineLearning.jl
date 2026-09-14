@@ -1,6 +1,10 @@
-# Generates the `inverse_NxN.jl` files in `src/kernels/inverses/`. The script writes them into the
+# Generates the four `inverse_NxN.jl` files beside this one. The script writes them into the
 # working directory; run JuliaFormatter over the output with `style = "sciml"` and copy it into
 # place. That reproduces the committed files byte for byte.
+#
+# Nothing includes this file, and `Symbolics` is deliberately not a dependency of the package: the
+# generated kernels are committed so that building the package never needs a symbolic stack. Run
+# the script by hand, in an environment that has `Symbolics` and `JuliaFormatter`.
 #
 # `cse = true` is load-bearing. `build_function` defaults it to `false`, and each entry of the
 # inverse then comes out as one deeply nested expression. JuliaFormatter indents every level of
