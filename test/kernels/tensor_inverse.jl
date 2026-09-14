@@ -12,7 +12,7 @@ function test55_inverse(k::Int = 10)
     end
 end
 
-# test55_inverse()
+test55_inverse()
 
 function test55_inverse_pullback(k::Int = 10)
     A = rand(5, 5, k)
@@ -30,7 +30,7 @@ function test55_inverse_pullback(k::Int = 10)
     end
 end
 
-# test55_inverse_pullback()
+test55_inverse_pullback()
 
 function test44_inverse(k::Int = 10)
     A = rand(4, 4, k)

@@ -147,6 +147,40 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   produces; in an NFD file a pattern typed in NFC matches nothing at all, silently. Every changed
   file is exactly the NFC normalisation of its predecessor.
 
+- **The four `tensor_inverseN` kernels are regenerated with common-subexpression elimination.**
+  `Symbolics.build_function` defaults `cse` to `false`, and without it each entry of the inverse is
+  one deeply nested expression. JuliaFormatter then indents every level of that nesting — up to 512
+  columns on the 5×5 — at a cost quadratic in the depth. The 5×5 kernel was 25 495 007 bytes and
+  91 625 lines, of which **97.8 % was leading whitespace**; with CSE it is 26 657 bytes and 487
+  lines. All four generated kernels together now come to 42 510 bytes, down from 25 586 095.
+
+  **This unblocks the commit hook.** `fatou lint` did not terminate on
+  `src/kernels/inverses/inverse_5x5.jl`, nor on `src/GeometricMachineLearning.jl`, which reaches it
+  through the include chain. The shared `.githooks/pre-commit` runs `fatou lint` on staged files
+  with no timeout, so staging either file hung the commit. The regenerated 5×5 lints in 45 ms, and
+  the whole `src/` tree in 0.1 s. Every clone, CI checkout and `Pkg.add` also stops moving a 25 MB
+  file.
+
+  The expressions are different, so results move in the last digits, but the inverse is the same
+  one. Checked against `LinearAlgebra.inv` for all four sizes in `Float64` and `Float32`: maximum
+  relative error 7.1e-15 and 2.5e-6 over 64 random well-conditioned slices per size, and 8.0e-13
+  over 2000 `rand(5, 5)` slices. `tensor_cayley5` output is orthogonal to 1.5e-15 with determinant
+  1.
+
+  **The 5×5 had no test coverage at all.** `test55_inverse()` and `test55_inverse_pullback()` in
+  `test/kernels/tensor_inverse.jl`, and `test_tensor_cayley5` in `test/kernels/tensor_cayley.jl`,
+  were defined and never called. All three are enabled and pass.
+
+  **The `invNN_kernel!` kernels no longer constrain their two arguments to the same array type.**
+  The 2×2, 3×3 and 4×4 were `(ˍ₋out::AT, A::AT) where {T, AT <: AbstractArray{T, 3}}`, so
+  `tensor_inverseN!(out, A)` with a plain `Array` output and a `SubArray` input was a `MethodError`
+  — the same defect class as the `::AT` cotangent signatures above. They now match the 5×5, which
+  never carried the annotation.
+
+  `legacy/codegen/matrixinverse.jl` emits the complete kernel file — the slice index, the Cartesian
+  output index, the `tensor_inverseN` wrappers and the `rrule` — rather than a `build_function` body
+  that a human then wraps, so regenerating it reproduces what is committed.
+
 ### Fixed
 
 - **The `*_inverse_pullback` tests checked one slice ten times.** All five loop `for i in 1:k` but
