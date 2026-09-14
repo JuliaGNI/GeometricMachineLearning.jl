@@ -1,20 +1,26 @@
-@kernel function inv22_kernel!(ˍ₋out::AT, A::AT) where {T, AT <: AbstractArray{T, 3}}
+@kernel function inv22_kernel!(ˍ₋out, A)
     k = @index(Global)
-    begin
-        @inbounds begin
-            ˍ₋out[1, 1, k] = (/)((getindex)(A, 2, 2, k),
-                (+)((*)((getindex)(A, 1, 1, k), (getindex)(A, 2, 2, k)),
-                    (*)((*)(-1, (getindex)(A, 1, 2, k)), (getindex)(A, 2, 1, k))))
-            ˍ₋out[2, 1, k] = (/)((*)(-1, (getindex)(A, 2, 1, k)),
-                (+)((*)((getindex)(A, 1, 1, k), (getindex)(A, 2, 2, k)),
-                    (*)((*)(-1, (getindex)(A, 1, 2, k)), (getindex)(A, 2, 1, k))))
-            ˍ₋out[1, 2, k] = (/)((*)(-1, (getindex)(A, 1, 2, k)),
-                (+)((*)((getindex)(A, 1, 1, k), (getindex)(A, 2, 2, k)),
-                    (*)((*)(-1, (getindex)(A, 1, 2, k)), (getindex)(A, 2, 1, k))))
-            ˍ₋out[2, 2, k] = (/)((getindex)(A, 1, 1, k),
-                (+)((*)((getindex)(A, 1, 1, k), (getindex)(A, 2, 2, k)),
-                    (*)((*)(-1, (getindex)(A, 1, 2, k)), (getindex)(A, 2, 1, k))))
-            nothing
+    @inbounds begin
+        begin
+            begin
+                t1 = -1
+                t2 = (*)((*)(t1, (getindex)(A, 1, 2, k)), (getindex)(A, 2, 1, k))
+                t3 = (*)((getindex)(A, 1, 1, k), (getindex)(A, 2, 2, k))
+                t4 = (+)(t2, t3)
+                t5 = (/)((getindex)(A, 2, 2, k), t4)
+                t6 = (*)(t1, (getindex)(A, 2, 1, k))
+                t7 = (/)(t6, t4)
+                t8 = (*)(t1, (getindex)(A, 1, 2, k))
+                t9 = (/)(t8, t4)
+                t10 = (/)((getindex)(A, 1, 1, k), t4)
+                @inbounds begin
+                    ˍ₋out[1, 1, k] = t5
+                    ˍ₋out[2, 1, k] = t7
+                    ˍ₋out[1, 2, k] = t9
+                    ˍ₋out[2, 2, k] = t10
+                    nothing
+                end
+            end
         end
     end
 end

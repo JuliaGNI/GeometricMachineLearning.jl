@@ -147,6 +147,78 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   produces; in an NFD file a pattern typed in NFC matches nothing at all, silently. Every changed
   file is exactly the NFC normalisation of its predecessor.
 
+- **The four `tensor_inverseN` kernels are regenerated with common-subexpression elimination.**
+  `Symbolics.build_function` defaults `cse` to `false`, and without it each entry of the inverse is
+  one deeply nested expression. JuliaFormatter then indents every level of that nesting — up to 512
+  columns on the 5×5 — at a cost quadratic in the depth. The 5×5 kernel was 25 495 007 bytes and
+  91 625 lines, of which **97.8 % was leading whitespace**; with CSE it is 26 657 bytes and 487
+  lines. All four generated kernels together now come to 42 510 bytes, down from 25 586 095.
+
+  **This unblocks the commit hook.** `fatou lint` did not terminate on
+  `src/kernels/inverses/inverse_5x5.jl`, nor on `src/GeometricMachineLearning.jl`, which reaches it
+  through the include chain. The shared `.githooks/pre-commit` runs `fatou lint` on staged files
+  with no timeout, so staging either file hung the commit. The regenerated 5×5 lints in 45 ms, and
+  the whole `src/` tree in 0.1 s. Every checkout, working tree and `Pkg.add` also stops carrying a
+  25 MB file. The clone barely moves, and that is the answer to whether the old revisions are worth
+  rewriting out of `.git`: they are not. The 25 495 007-byte blob packs to 464 650 bytes, and all
+  five revisions of the file together come to 0.5 MB of a 420 MB pack.
+
+  **The 5×5 is also about thirty times faster.** Without CSE the kernel rebuilds the whole
+  determinant for each of the 25 entries: one output entry alone is 624 multiplications, the fully
+  expanded 120-monomial Leibniz sum. With CSE the determinant is one shared temporary and the whole
+  kernel is 419 multiplications. `tensor_inverse5!` drops from 969.7 ns to 31.7 ns per slice, and
+  its first call in a fresh process from 10.785 s to 0.350 s — ten seconds of compile time, for one
+  kernel. The 4×4 goes from 55.8 ns to 11.1 ns and the 3×3 from 12.2 ns to 3.1 ns. `Float64`, 4096
+  slices, minimum of 200 repeats after warm-up, a cold process each time.
+
+  The expressions are different, so results move in the last digits, but the inverse is the same
+  one. Checked against `LinearAlgebra.inv` for all four sizes in `Float64` and `Float32`: maximum
+  relative error 7.1e-15 and 2.5e-6 over 64 random well-conditioned slices per size, and 8.0e-13
+  over 2000 `rand(5, 5)` slices. `tensor_cayley5` output is orthogonal to 1.5e-15 with a determinant
+  of 1. Against a `Float64` reference over 2000 slices per size, taken over the whole draw, mean
+  relative error is the same or lower than before at every size and precision: in `Float16`, 5.6e-4
+  against 6.0e-4 (3×3), 9.1e-4 against 9.3e-4 (4×4) and 1.9e-3 against 3.0e-3 (5×5); in `Float32`,
+  2.1e-7 against 4.6e-7 (5×5). The 2×2 is bit-identical.
+
+  **Where it is worse is the ill-conditioned tail, and only there.** Over 4000 slices per size with
+  condition number above 100, three cases regress slightly: `Float64` 3×3 (2.4e-14 against 1.7e-14),
+  `Float32` 3×3 (7.9e-6 against 6.5e-6) and `Float32` 4×4 (4.6e-6 against 4.1e-6). In `Float16` the
+  5×5 overflows to `Inf` on two slices in 4000, at condition numbers 4.5e3 and 7.8e3. That is not a
+  zero denominator — the determinant is a normal number there — but inverse entries of order 1e4
+  against a `Float16` ceiling of 65504. The failure is not new in kind: the old kernel overflows the
+  same way at 3×3, which this change fixes, and at 2×2 the two overflow on the same slice, that size
+  being bit-identical. None of it is reachable from the package. `tensor_inverse5` is called only
+  from `tensor_cayley5`, whose `I + S` has a condition number between 1.08 and 2.18.
+
+- **`volume_preserving_attention_tests` compares each determinant against the exact one instead of
+  against the other.** It asserted `det₁ ≈ det₂` and then `det₂ ≈ det₃` — two independently computed
+  approximations, so their errors add. At N = 3 in `Float16` each is about 2 % out, inside the
+  3.1 % `Float16` tolerance on its own; the second assertion passed only while the two errors
+  pointed the same way. It now asserts `det₁ ≈ det₂` and `det₁ ≈ det₃`, which is what
+  volume preservation means and which does not double the error budget. The 2 % is not new: `det₃`'s
+  deviation is bit-identical before and after the kernel regeneration above.
+
+  **The 5×5 had no test coverage at all.** `test55_inverse()` and `test55_inverse_pullback()` in
+  `test/kernels/tensor_inverse.jl`, and `test_tensor_cayley5` in `test/kernels/tensor_cayley.jl`,
+  were defined and never called. All three are enabled and pass.
+
+  **The `invNN_kernel!` kernels no longer constrain their two arguments to the same array type.**
+  The 2×2, 3×3 and 4×4 were `(ˍ₋out::AT, A::AT) where {T, AT <: AbstractArray{T, 3}}`, so
+  `tensor_inverseN!(out, A)` with a plain `Array` output and a `SubArray` input was a `MethodError`
+  — the same defect class as the `::AT` cotangent signatures above. They now match the 5×5, which
+  never carried the annotation.
+
+  **The generator now sits beside what it generates**, as
+  `src/kernels/inverses/inverse_generator.jl` rather than `legacy/codegen/matrixinverse.jl`. It is
+  not legacy and it is not dead: it is the authoritative source of the four committed kernels, and
+  anyone editing one of them needs to find it. Nothing includes it, and `Symbolics` stays out of the
+  package's dependencies — the kernels are committed precisely so that building the package never
+  needs a symbolic stack.
+
+  It emits the complete kernel file — the slice index, the Cartesian output index, the
+  `tensor_inverseN` wrappers and the `rrule` — rather than a `build_function` body that a human then
+  wraps, so regenerating it reproduces what is committed.
+
 ### Fixed
 
 - **The `*_inverse_pullback` tests checked one slice ten times.** All five loop `for i in 1:k` but
@@ -154,8 +226,8 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   variable — so each iteration re-compared the last slice. The `rrule`s for `tensor_inverse2`,
   `tensor_inverse3`, `tensor_inverse4` and `cpu_inverse` were asserted on a tenth of the slices they
   named; `tensor_inverse5`'s on none, its two entries being commented out. The indices are `i` now,
-  and all five pass slice by slice — the 5×5 pair too, which stays commented out but was checked
-  against the correction.
+  and all five pass slice by slice, the 5×5 pair included — the kernel regeneration entry above
+  enables it.
 
   Two consequences of the wrong index go with it. The per-slice pullback is `pullback_i` rather than
   `pullback_k`, a name that was accurate only while the loop compared slice `k`. And the whole-tensor

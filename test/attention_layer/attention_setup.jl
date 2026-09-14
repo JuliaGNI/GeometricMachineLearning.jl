@@ -18,8 +18,11 @@ function volume_preserving_attention_tests(N, T = Float32)
     det₁ = det(A)
     det₂ = det(model₁(A, ps₁))
     det₃ = det(model₂(A, ps₂))
+    # Both against the exact determinant, never against each other: at N = 3 in Float16 each is
+    # about 2 % out, which is inside the tolerance on its own and outside it when the two errors
+    # happen to point in opposite directions.
     @test det₁ ≈ det₂
-    @test det₂ ≈ det₃
+    @test det₁ ≈ det₃
 end
 
 function check_all(T)
