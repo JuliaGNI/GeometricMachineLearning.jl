@@ -219,6 +219,55 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `tensor_inverseN` wrappers and the `rrule` — rather than a `build_function` body that a human then
   wraps, so regenerating it reproduces what is committed.
 
+- **`scripts/loss/` is deleted, and with it the symbolic training-loss experiment.** The four files
+  were 3,391 lines, 39% of `scripts/`. What is abandoned is an attempt to differentiate a `train!`
+  training-method loss *symbolically* and commit the result. `build_loss.jl` holds a
+  `build_gradloss` that builds `Symbolics.gradient(los(ti, nn, …))` and returns the pair
+  `(sloss, ∇loss)`. `build_loss_test.jl` carries its own copy of `build_gradloss`, and it is that
+  copy which renames the emitted function to `∇loss_single` and writes the method source to a
+  hard-coded absolute path under a previous author's home directory, after comparing the raw
+  `build_function` output against the rewritten form of the same symbolic expression (`r1==r2`).
+  `write_loss_1.jl` (2,909 lines) and `write_loss_2.jl` (298) are two such emissions.
+
+  Two facts decided the deletion. `build_loss.jl` calls `symbolic_params`, which no installed
+  version of SymbolicNeuralNetworks defines, so the generator does not run here. Both emissions
+  dispatch on
+  `TrainingIntegrator{SymplecticEulerA, PhaseSpaceSymbol, TrajectoryData, SqEuclidean}`, and no file
+  under `src/` defines `TrainingIntegrator`, so they do not load. Whether either half could be
+  repaired was not investigated, and this entry claims nothing either way.
+
+  The emissions were also not general: each is frozen onto one concrete signature, a
+  `NeuralNetwork{HamiltonianArchitecture{typeof(tanh)}, Chain{…}}` of fixed width and depth, so a
+  network of any other shape had no method. This is the opposite case to `inverse_generator.jl`
+  above, which is kept because it still reproduces what is committed beside it.
+
+  Symbolic differentiation of a loss is not lost as a capability — SymbolicNeuralNetworks'
+  `SymbolicPullback`, which this package already uses, is where it lives now. What is lost is this
+  particular ahead-of-time, commit-the-gradient approach to it.
+
+  **A sweep for orphans found three**, none repaired here. It covered the names the deleted files
+  defined, the packages they imported, the names they consumed from `src/`, and references to the
+  deleted paths and filenames — of which it found none. It is not a guarantee that nothing else was
+  missed.
+
+  `src/training/train.jl:13-14` holds a commented-out `loss_gradient` method — the signature on `:13`
+  and the body on `:14` — whose body calls `∇loss_single`, a name the two emitted files defined. The
+  lines are left exactly as they were, inert. The `loss_single` generic in `src/training_method/` is
+  a *different* function, still defined, still called there and still exported.
+
+  `src/utils.jl:19-27` defines eight unexported methods — four of `rdevelop`, four of `develop` —
+  whose only references outside their own definition lines were in `build_loss.jl` (`:11`, `:13`,
+  `:14`, `:20`, `:25`). The `develop` in `scripts/test/test.jl` is that script's own local
+  definition, `build_loss_test.jl:5` took its `develop` from its `using` list rather than from
+  `src/utils.jl`, and the `Pkg.develop` calls elsewhere in the repository are a different function.
+  They are left in place.
+
+  `Distances` in `scripts/Project.toml` is left declared but is no longer used under `scripts/`. The
+  references the sweep found were `using Distances` at `build_loss_test.jl:8`, two `sqeuclidean`
+  calls at `build_loss_test.jl:101`, and the `SqEuclidean` type parameter in the emitted files.
+  Nothing under `scripts/` uses `BenchmarkTools` or `KernelAbstractions` either, but that was already
+  so before this change — `Distances` is the one this deletion newly orphans.
+
 ### Fixed
 
 - **The tensor Cayley kernels are checked for orthonormality in `Float32`.**
@@ -1422,10 +1471,13 @@ they resolved to is in the release notes above.
   upstream constructor, or a `NetworkLoss` interface that states its own target dimension, would put
   this method back to one line.
 
-- **C8. `scripts/` has been dead since SymbolicNeuralNetworks 0.2.** `scripts/test/test_symbolic.jl`
-  calls `Symbolize` and `scripts/loss/build_loss.jl` calls `symbolic_params`; neither has existed
-  for several breaking releases, and `scripts/Project.toml` is in no CI job, so nothing notices.
-  Either port them or delete them — leaving them is the option that keeps costing a reader time.
+- **C8. `scripts/test/test_symbolic.jl` is dead.** It calls `Symbolize`, which no installed version
+  of SymbolicNeuralNetworks defines, and `scripts/Project.toml` is in no CI job, so nothing notices.
+  Either port it or delete it — leaving it is the option that keeps costing a reader time.
+
+  This is what is left of the entry. Its other half — `scripts/loss/`, whose `build_loss.jl` called
+  `symbolic_params`, which no installed version defines either — is closed: all four files are
+  deleted, and what that abandons is under *Changed* above.
 
 - **C9. Seven include sites under `legacy/` name files that do not exist.** Six `legacy/hnn/`
   scripts include `../../scripts/data.jl` and `hnn_simple.jl` includes `../../src/training.jl`;
