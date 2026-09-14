@@ -5,6 +5,10 @@ using SafeTestsets, Test, GeometricMachineLearning
 # lines and buries the failure you are looking for. `train!` already defaults `showprogress = false`,
 # so only the functor needs saying.
 
+@safetestset "Reachability of every file under test/                                          " begin
+    include("reachability.jl")
+end
+
 # reduced order modeling tests
 @info "Starting reduced-order-modeling tests"
 @safetestset "PSD tests                                                                       " begin

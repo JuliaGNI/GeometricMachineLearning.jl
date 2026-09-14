@@ -323,6 +323,37 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   docs build — here, one release behind. The old one-liner also called `save` unqualified, and
   `DocInventories` does not export it.
 
+### Infrastructure
+
+- **Test files are guarded for inclusion completeness.** `test/reachability.jl` verifies that every
+  `.jl` file under `test/` is either in the transitive `include` closure of `test/runtests.jl` or
+  named in an `ALLOWED_ORPHANS` allowlist with a one-line reason. The closure is read off the parsed
+  syntax tree, so an `include` that is commented out — with `#` or with `#= … =#` — or that appears
+  inside a string literal is not a live include, without the guard having to re-implement Julia's
+  lexer to say so.
+
+  Unreachable test files are never run, and such files have been repaired by hand from time to
+  time and regressed in silence. Adding a new test file without wiring it in now fails the suite.
+  `test/runtests.jl` runs the new testset first, as `@safetestset "Reachability of every file under
+  test/"`.
+
+  At the time of writing, `test/` holds 102 `.jl` files: 62 reachable from `runtests.jl`, 40
+  unreachable. All 40 are seeded into the allowlist, and each was run on its own in the test
+  environment so that its reason states what the file actually does rather than what its name
+  suggests. Only **two** still run and assert anything —
+  `custom_ad_rules/matrix_vector_multiplication.jl` and `transformer_related/transformer_setup.jl`.
+  Of the rest, 23 stop at `using` a package that is neither a dependency nor a test target (14
+  CUDA, 6 Lux, and one each of GPUArrays, Flux and OffsetArrays), 13 stop on a name or method the
+  package no longer provides — among them `Attention`, `GradientQ` (the layer is `GradientLayerQ`),
+  `SymplecticStiefelManifold`, `Rfac`, `timestep`, a non-existent `src/optimizers/householder.jl`,
+  and `GeometricProblems`' `default_parameters` after it became a function — and two load without
+  error while asserting nothing: `orthogonalization_procedures/gram_schmidt.jl` defines two test
+  functions and calls neither, and one Zygote timing loop runs for minutes without an assertion.
+
+  The walk follows `include` calls whose argument is a string literal. An `include` built from a
+  variable or an interpolation is not followed; no file in `test/` does that today, and the effect
+  if one did would be to report the target as an orphan rather than to pass it silently.
+
 
 ## [0.7.0]
 
@@ -1452,10 +1483,10 @@ they resolved to is in the release notes above.
   `GeometricOptimizers`' `test/exports.jl` closes this whole class with one assertion over `names`;
   this package has no equivalent, and adding one is the actual fix.
 
-- **C11. 41 test files are unreachable from `runtests.jl`.** By area: 20 under `performance_tests/`,
-  5 `orthogonalization_procedures/`, 4 `train!/`, 2 `cuda/`, and 10 singletons (`training_phnn.jl`,
-  `macro_testerror.jl`, `integrator/test_integrator.jl`, `attention_layer/`, `custom_ad_rules/`,
-  `data/`, `kernels/`, `layers/`, `symplectic_autoencoders/`, `transformer_related/`).
+- **C11. 40 test files are unreachable from `runtests.jl`.** By area: 20 under `performance_tests/`,
+  5 `orthogonalization_procedures/`, 5 `train!/`, 2 `cuda/`, and 8 singletons (`training_phnn.jl`,
+  `integrator/test_integrator.jl`, `attention_layer/`, `custom_ad_rules/`, `kernels/`, `layers/`,
+  `symplectic_autoencoders/`, `transformer_related/`).
 
   They are not all the same thing, which is why this is one issue and not a deletion. The
   `performance_tests/` and `cuda/` files need hardware the suite does not assume; the `train!/` files
