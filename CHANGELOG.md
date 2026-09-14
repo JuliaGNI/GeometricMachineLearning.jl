@@ -157,6 +157,11 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   and all five pass slice by slice — the 5×5 pair too, which stays commented out but was checked
   against the correction.
 
+  Two consequences of the wrong index go with it. The per-slice pullback is `pullback_i` rather than
+  `pullback_k`, a name that was accurate only while the loop compared slice `k`. And the whole-tensor
+  cotangent is computed once into `in_diff` above the loop rather than rebuilt on each of the ten
+  iterations, nine of which were redundant.
+
 - **The shape of the optimizer cache no longer depends on which types `GeometricOptimizers` happens
   to accept.** `_make_optimizer_cache` and `_make_optimizer_state` asked the capability question
   (`x isa GeometricOptimizers.OptimizerSolution`, via `_use_go_cache`) *before* the structural one, so
