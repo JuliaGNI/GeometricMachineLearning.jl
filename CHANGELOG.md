@@ -165,7 +165,18 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   one. Checked against `LinearAlgebra.inv` for all four sizes in `Float64` and `Float32`: maximum
   relative error 7.1e-15 and 2.5e-6 over 64 random well-conditioned slices per size, and 8.0e-13
   over 2000 `rand(5, 5)` slices. `tensor_cayley5` output is orthogonal to 1.5e-15 with determinant
-  1.
+  1. Against a `Float64` reference over 2000 slices per size, mean relative error is the same or
+  lower than before at every size and precision but one: in `Float16`, 5.6e-4 against 6.0e-4 (3×3),
+  9.1e-4 against 9.3e-4 (4×4) and 1.9e-3 against 3.0e-3 (5×5); in `Float32`, 2.1e-7 against 4.6e-7
+  (5×5). The 2×2 is bit-identical.
+
+- **`volume_preserving_attention_tests` compares each determinant against the exact one instead of
+  against the other.** It asserted `det₁ ≈ det₂` and then `det₂ ≈ det₃` — two independently computed
+  approximations, so their errors add. At N = 3 in `Float16` each is about 2 % out, inside the
+  3.1 % `Float16` tolerance on its own; the second assertion passed only while the two errors
+  pointed the same way. It now asserts `det₁ ≈ det₂` and `det₁ ≈ det₃`, which is what
+  volume preservation means and which does not double the error budget. The 2 % is not new: `det₃`'s
+  deviation is bit-identical before and after the kernel regeneration above.
 
   **The 5×5 had no test coverage at all.** `test55_inverse()` and `test55_inverse_pullback()` in
   `test/kernels/tensor_inverse.jl`, and `test_tensor_cayley5` in `test/kernels/tensor_cayley.jl`,
