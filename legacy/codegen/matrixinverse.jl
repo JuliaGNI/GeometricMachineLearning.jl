@@ -1,4 +1,6 @@
-# Generates the `inverse_NxN.jl` files in `src/kernels/inverses/`.
+# Generates the `inverse_NxN.jl` files in `src/kernels/inverses/`. The script writes them into the
+# working directory; run JuliaFormatter over the output with `style = "sciml"` and copy it into
+# place. That reproduces the committed files byte for byte.
 #
 # `cse = true` is load-bearing. `build_function` defaults it to `false`, and each entry of the
 # inverse then comes out as one deeply nested expression. JuliaFormatter indents every level of
