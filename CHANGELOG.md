@@ -263,6 +263,18 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `test/optimizers/structured_array_parameters.jl`, four architectures × four methods, covers the step
   itself.
 
+- **`test/runtests.jl` ran the tensor-inverse tests twice.** It included
+  `test/kernels/tensor_inverse.jl` from two `@safetestset` blocks — `"Custom inverse for 2x2, 3x3,
+  4x4, 5x5 matrices"` and `"Test parallel inverses"` — with no GPU guard, no version guard and no
+  other condition on either, so a full `Pkg.test()` evaluated the same 140 assertions 280 times for
+  no added coverage. `"Test parallel inverses"` is the one that stays: it entered with the two kernel
+  test files themselves, alongside its `"Test parallel Cayley"` sibling, and still sits next to it.
+  `"Custom inverse for 2x2, 3x3, 4x4, 5x5 matrices"` arrived four days later inside an unrelated
+  data-loader commit, which added a second `include` of `test/arrays/triangular.jl` in the same
+  breath — a slip, not a second configuration, and the two halves of the file were never a CPU/GPU
+  split. `test/kernels/tensor_cayley.jl` was included once already, and no `include` in
+  `test/runtests.jl` is repeated now.
+
 ### Documentation
 
 - `_tree_optim_step!` records why it is *not* written with

@@ -43,9 +43,6 @@ end
 @safetestset "Custom tensor matrix multiplication                                             " begin
     include("kernels/tensor_mat_mul.jl")
 end
-@safetestset "Custom inverse for 2x2, 3x3, 4x4, 5x5 matrices                                  " begin
-    include("kernels/tensor_inverse.jl")
-end
 @safetestset "Custom AD rules for kernels                                                     " begin
     include("custom_ad_rules/kernel_pullbacks.jl")
 end
