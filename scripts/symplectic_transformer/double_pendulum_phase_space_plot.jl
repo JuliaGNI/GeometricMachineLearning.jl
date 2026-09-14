@@ -19,7 +19,7 @@ initial_conditions = [(q = [π / i, π / j], p = [0.0, π / k])
 initial_conditions = reshape(initial_conditions, length(initial_conditions))
 
 ensemble_problem = EnsembleProblem(hodeproblem().equation, (timespan[1], timespan[2]),
-    timestep, initial_conditions, default_parameters)
+    timestep, initial_conditions, default_parameters())
 
 ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
 
