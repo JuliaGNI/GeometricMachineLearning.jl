@@ -15,9 +15,9 @@ function matrix_inverse(n)
 
     B = inv(collect(A))
 
-    if n ≤ 6
-        B = simplify.(B)
-    end
+    # `simplify.(B)` is deliberately absent. Under Symbolics 7.39.2 it changes nothing here: the
+    # generated string is byte-identical with and without it at every n this script emits. It costs
+    # 0.7 s at n = 5, and it becomes impractical above n = 6.
 
     build_function(B, A; cse = true)[2]
 end
