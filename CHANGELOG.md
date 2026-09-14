@@ -227,6 +227,12 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   Fourteen sites across seven files in `scripts/` now call it. The sites under `docs/src/tutorials/`
   were already correct.
 
+- **The Hamiltonian passed to `plot_result` in `scripts/ensemblesolution/harmonic_oscillator.jl`
+  takes its arguments in the right order.** `HarmonicOscillator.hamiltonian` is
+  `(t, q, p, params)`, but `H` passed the momentum slice as `t`, `0.0` as `q` and the whole state
+  vector as `p`, so every call was a `MethodError` and no contour was ever drawn. `H` now evaluates
+  to `p² / 2m + k q² / 2`, which is what `plots.jl` expects to contour over the phase space grid.
+
 - **The tensor Cayley kernels are checked for orthonormality in `Float32`.**
   `test_tensor_cayley2` through `test_tensor_cayley5` each took a `T::Type` argument and then
   ignored it: every one built its input with `rand(n, n, third_dim)`, which is always `Float64`.
