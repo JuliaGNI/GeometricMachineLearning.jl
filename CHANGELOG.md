@@ -149,6 +149,14 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 ### Fixed
 
+- **The `*_inverse_pullback` tests checked one slice ten times.** All five loop `for i in 1:k` but
+  indexed every slice with `k` — the slice count, which is the function's own argument, not the loop
+  variable — so each iteration re-compared the last slice. The `rrule`s for `tensor_inverse2`,
+  `tensor_inverse3`, `tensor_inverse4` and `cpu_inverse` were asserted on a tenth of the slices they
+  named; `tensor_inverse5`'s on none, its two entries being commented out. The indices are `i` now,
+  and all five pass slice by slice — the 5×5 pair too, which stays commented out but was checked
+  against the correction.
+
 - **The shape of the optimizer cache no longer depends on which types `GeometricOptimizers` happens
   to accept.** `_make_optimizer_cache` and `_make_optimizer_state` asked the capability question
   (`x isa GeometricOptimizers.OptimizerSolution`, via `_use_go_cache`) *before* the structural one, so

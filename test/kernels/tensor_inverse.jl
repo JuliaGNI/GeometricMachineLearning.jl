@@ -22,10 +22,10 @@ function test55_inverse_pullback(k::Int = 10)
     out_diff = rand(5, 5, k)
 
     for i in 1:k
-        pullback_k = Zygote.pullback(inv, A[:, :, k])
+        pullback_k = Zygote.pullback(inv, A[:, :, i])
 
-        @test pullback_total[1][:, :, k] ≈ pullback_k[1]
-        @test pullback_total[2](out_diff)[1][:, :, k] ≈ pullback_k[2](out_diff[:, :, k])[1]
+        @test pullback_total[1][:, :, i] ≈ pullback_k[1]
+        @test pullback_total[2](out_diff)[1][:, :, i] ≈ pullback_k[2](out_diff[:, :, i])[1]
     end
 end
 
@@ -50,10 +50,10 @@ function test44_inverse_pullback(k::Int = 10)
     out_diff = rand(4, 4, k)
 
     for i in 1:k
-        pullback_k = Zygote.pullback(inv, A[:, :, k])
+        pullback_k = Zygote.pullback(inv, A[:, :, i])
 
-        @test pullback_total[1][:, :, k] ≈ pullback_k[1]
-        @test pullback_total[2](out_diff)[1][:, :, k] ≈ pullback_k[2](out_diff[:, :, k])[1]
+        @test pullback_total[1][:, :, i] ≈ pullback_k[1]
+        @test pullback_total[2](out_diff)[1][:, :, i] ≈ pullback_k[2](out_diff[:, :, i])[1]
     end
 end
 
@@ -78,10 +78,10 @@ function test33_inverse_pullback(k::Int = 10)
     out_diff = rand(3, 3, k)
 
     for i in 1:k
-        pullback_k = Zygote.pullback(inv, A[:, :, k])
+        pullback_k = Zygote.pullback(inv, A[:, :, i])
 
-        @test pullback_total[1][:, :, k] ≈ pullback_k[1]
-        @test pullback_total[2](out_diff)[1][:, :, k] ≈ pullback_k[2](out_diff[:, :, k])[1]
+        @test pullback_total[1][:, :, i] ≈ pullback_k[1]
+        @test pullback_total[2](out_diff)[1][:, :, i] ≈ pullback_k[2](out_diff[:, :, i])[1]
     end
 end
 
@@ -106,10 +106,10 @@ function test22_inverse_pullback(k::Int = 10)
     out_diff = rand(2, 2, k)
 
     for i in 1:k
-        pullback_k = Zygote.pullback(inv, A[:, :, k])
+        pullback_k = Zygote.pullback(inv, A[:, :, i])
 
-        @test pullback_total[1][:, :, k] ≈ pullback_k[1]
-        @test pullback_total[2](out_diff)[1][:, :, k] ≈ pullback_k[2](out_diff[:, :, k])[1]
+        @test pullback_total[1][:, :, i] ≈ pullback_k[1]
+        @test pullback_total[2](out_diff)[1][:, :, i] ≈ pullback_k[2](out_diff[:, :, i])[1]
     end
 end
 
@@ -123,10 +123,10 @@ function test_cpu_inverse_pullback(k::Int = 10)
     out_diff = rand(3, 3, k)
 
     for i in 1:k
-        pullback_k = Zygote.pullback(inv, A[:, :, k])
+        pullback_k = Zygote.pullback(inv, A[:, :, i])
 
-        @test pullback_total[1][:, :, k] ≈ pullback_k[1]
-        @test pullback_total[2](out_diff)[1][:, :, k] ≈ pullback_k[2](out_diff[:, :, k])[1]
+        @test pullback_total[1][:, :, i] ≈ pullback_k[1]
+        @test pullback_total[2](out_diff)[1][:, :, i] ≈ pullback_k[2](out_diff[:, :, i])[1]
     end
 end
 
