@@ -38,8 +38,11 @@ end
 @safetestset "Gradient Layer                                                                  " begin
     include("layers/gradient_layer_tests.jl")
 end
-@safetestset "Test symplecticity of upscaling layer                                           " begin
+@safetestset "Test tensor-slice consistency of sympnet layers                                 " begin
     include("layers/sympnet_layers_test.jl")
+end
+@safetestset "Test symplecticity of the sympnet upscaling layer                               " begin
+    include("layers/sympnet_upscaling.jl")
 end
 @safetestset "Hamiltonian Neural Network                                                      " begin
     include("hamiltonian_neural_network_tests.jl")
@@ -61,6 +64,9 @@ end
 end
 # transformer-related tests
 @info "Starting transformer-related tests"
+@safetestset "Test setup of transformer with Stiefel weights                                  " begin
+    include("transformer_related/transformer_setup.jl")
+end
 @safetestset "Test setup of MultiHeadAttention layer Stiefel weights                          " begin
     include("transformer_related/multi_head_attention_stiefel_setup.jl")
 end
