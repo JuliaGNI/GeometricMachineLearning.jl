@@ -282,6 +282,35 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   vector as `p`, so every call was a `MethodError` and no contour was ever drawn. `H` now evaluates
   to `p² / 2m + k q² / 2`, which is what `plots.jl` expects to contour over the phase space grid.
 
+- **Three reproduction scripts run again; two more get one blocker removed but still fail.**
+  `GeometricProblems.DoublePendulum` no longer defines `timespan` or `timestep` — the values are
+  `DEFAULT_TIMESPAN` and `DEFAULT_TIMESTEP` — so `scripts/volume_preserving_feedforward/double_pendulum.jl`
+  and `scripts/symplectic_transformer/double_pendulum.jl` import `DEFAULT_TIMESPAN` instead. The
+  first of the two also dropped an unused `hamiltonian` from that import. Both `CairoMakie` and
+  `GeometricMachineLearning` export `save`, which makes the bare name ambiguous, so
+  `scripts/sympnets/sympnet_toda_lattice.jl` and `scripts/symplectic_transformer/double_pendulum.jl`
+  write `CairoMakie.save`. The second wrote into a `comparison_plots/` directory that nothing
+  creates, and now calls `mkpath` first. Those three now run to completion, or past two minutes of
+  training without error.
+
+  The two `scripts/sympnets/sympnet_pendulum*.jl` included a `pendulum.jl` beside them, where the
+  file is `scripts/pendulum.jl`, one directory up. Correcting the path only moves their failure:
+  both now abort on their first `lines!` call, because `pendulum_data` returns 1×N matrices and
+  Makie wants vectors. Further back they still name `Gradient`, which this package no longer
+  exports, and `Chain`, which is ambiguous with `Lux`'s. They are stale against an API several
+  releases old and need a rewrite, not a repair. **Neither runs.** The CUDA variant fails at the
+  same `lines!` call, before it reaches any CUDA code, so this is not about absent hardware.
+
+- **The double pendulum validation problem got the wrong keyword, and its training the wrong batch.**
+  `GeometricProblems.DoublePendulum.hodeproblem` takes `parameters`, and
+  `scripts/volume_preserving_feedforward/double_pendulum.jl` passed `params`, so the corrected
+  `default_parameters()` above never reached it. The same script built its feedforward batch with
+  `Batch(batch_size, 1)`, which is a `Batch{:Transformer}`; an `Optimizer` call on a
+  `VolumePreservingFeedForward` network has no method for that, and the training threw a
+  `MethodError`. It is `Batch(batch_size)` now. `scripts/volume_preserving_feedforward/rigid_body.jl`
+  built the same wrong batch for the same kind of network, and is corrected with it. That script
+  needs a CUDA driver to reach the call, which is why the fault survived this long.
+
 - **The tensor Cayley kernels are checked for orthonormality in `Float32`.**
   `test_tensor_cayley2` through `test_tensor_cayley5` each took a `T::Type` argument and then
   ignored it: every one built its input with `rand(n, n, third_dim)`, which is always `Float64`.
