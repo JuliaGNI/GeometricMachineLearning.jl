@@ -309,7 +309,7 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   name gets an `UndefVarError` from something the package advertises. Ten such names are in the
   export list today — `CPUDevice`, `Device`, `LinearSymplecticLayerP`, `LinearSymplecticLayerQ`,
   `ResidualLayer`, `aresame`, `convert_to_dev`, `description`, `symbol` and `timestep` — and each
-  carries a one-line reason in the allowlist, so the ten stay visible instead of being rediscovered.
+  carries a short reason in the allowlist, so the ten stay visible instead of being rediscovered.
   This is the assertion *C10* under *Open Issues* names as the fix; the model is
   `GeometricOptimizers`' `test/exports.jl`.
 
@@ -321,7 +321,9 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
   Nothing about the package's surface changes — the ten are still exported and still undefined, and
   deciding each one (define it, or drop the export) remains to be done. What changes is that the
-  class is closed: an eleventh cannot be added without the suite saying so.
+  class is closed in both directions: an eleventh cannot be added without the suite saying so, and
+  an allowlist entry whose name later resolves, or stops being exported, fails until it is removed.
+  So the ten cannot be decided one by one and their stale reasons left behind.
 
 ### Documentation
 
