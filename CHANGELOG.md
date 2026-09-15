@@ -268,6 +268,84 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   Nothing under `scripts/` uses `BenchmarkTools` or `KernelAbstractions` either, but that was already
   so before this change — `Distances` is the one this deletion newly orphans.
 
+- **Six research one-off scripts are deleted.** Each named a symbol the package no longer has, or a
+  data file that does not exist anywhere in this tree; running each one confirmed the failure.
+
+  - `scripts/ForcedHamiltonianSystem.jl` and `scripts/TimeDependentHarmonicOscillator_Analytic.jl`
+    import `QPT2` from `GeometricMachineLearning`, and the second also imports `ParametricLoss`;
+    neither name is defined or exported anywhere in `src/`. The first also calls `ForcedSympNet`,
+    likewise absent. Both raise `UndefVarError: QPT2 not defined`, not at the `using` line but at
+    the docstring'd function definition that uses `QPT2` as a type parameter (line 37 of the first
+    script, line 49 of the second).
+  - `scripts/normal_forms/non_rev_ham.jl`'s first failure is `Chain` at line 4, a three-way
+    ambiguity: `Lux.Chain`, `AbstractNeuralNetworks.Chain` (re-exported by
+    `GeometricMachineLearning`), and `SymbolicUtils.Rewriters.Chain`, declared `public` and loaded
+    transitively — the script never `using`s `SymbolicUtils` itself. Patching that around shows the
+    next blocker is
+    `Gradient`, called bare but never exported (`GradientLayerQ`/`GradientLayerP` are the exported
+    names). `SymplecticMatrix`, removed from the package in `444e6fac` (2023-05-31), sits only
+    inside a function the script never calls, so it is not what stops this script.
+  - `scripts/psd_auto_toda.jl` calls `SymplecticMatrix`, `SymplecticStiefelLayer` (never exported —
+    `src/GeometricMachineLearning.jl:189` says so directly) and `StandardOptimizer`, none of which
+    exist in `src/`. Even the 2026-08-16 commit that replaced this file's `GLMakie`/`Plots` calls
+    with `CairoMakie` left these breaks in place.
+  - `scripts/particles.jl` and `scripts/particles_cuda.jl` read
+    `../[../]ReducedBasisMethods/runs/BoT_Np5e4_k_010_050_np_10_T25.h5`. The sibling
+    `Packages/ReducedBasisMethods` repository exists but has no `runs/` directory and no file of
+    that name in its git history; both scripts fail at `h5open` before either reaches a training
+    step, and `particles_cuda.jl` fails there before any CUDA call.
+
+  None of the six has a replacement inside the package a reader could substitute, so none is a
+  one-line repair. This is filed here rather than under *Removed (breaking)*: `scripts/` is not part
+  of the package, so no user of `GeometricMachineLearning` can break on it — the same reasoning that
+  put the `scripts/loss/` deletion above in this section.
+
+  `NLsolve` and `NNlib` in `scripts/Project.toml` are left declared but are no longer used under
+  `scripts/`, exactly as `Distances` is above. The references were `using NLsolve` at
+  `psd_auto_toda.jl:5`, and `using NNlib: relu` at `ForcedHamiltonianSystem.jl:5` and
+  `TimeDependentHarmonicOscillator_Analytic.jl:6`. A grep for either name over the surviving
+  `scripts/` tree now returns only the `[deps]` lines themselves.
+
+- **`scripts/ensemblesolution/harmonic_oscillator.jl` trains through `DataLoader` + `Batch` +
+  `Optimizer` instead of `TrainingData` + `TrainingSet` + `train!`.** The old path no longer ran: it
+  failed inside `src/data/data_training.jl:57`, `UndefVarError: timestep not defined in
+  GeometricMachineLearning`, before ever reaching the neural network. `BasicSympNetMethod` needed no
+  modern successor — `GSympNet` already trains through the generic `Optimizer` functor, as
+  `scripts/sympnets/sympnet_toda_lattice.jl` already does — so this is the same substitution, not a
+  new one. The script now builds `DataLoader(ensemble_solution)` directly (a method for exactly this
+  `EnsembleSolution` shape already exists at `src/data_loader/data_loader.jl:367`).
+
+  **`plots.jl`'s seven plotting functions are retyped onto `DataLoader` and `NeuralNetwork`, and
+  `plot_result` is called again.** Each keeps its original purpose — the two-form `plot_*!`/`plot_*`
+  convention is unchanged — and only how it reaches its data moves: `_trajectory` reads a
+  trajectory straight out of `dl.input.q`/`dl.input.p` instead of `get_data`;
+  `plot_verification!` and `plot_prediction!` roll a trajectory out with `iterate(nn, ...)` instead
+  of repeated calls to `nns.nn`; `plot_result`'s bounding box and trajectory sampling read
+  `dl.n_params` and `dl.input` instead of `get_nb_trajectory`/`get_data`. The script now ends by
+  calling `plot_result(dl, nn, H; ...)` again, producing the same four-panel PNG
+  (`GSympNet_4-10_on_Harmonic_Oscillator.png`) as before, verified by running it and inspecting the
+  four panels. The whole script runs to completion in about 40 s in an isolated process.
+
+  Two details of `plot_result` are not a straight translation. The bounding box is now
+  `minimum(dl.input.q[:, 1, :])` and its three siblings, over **every** component of every initial
+  condition. The old code built a vector of `NamedTuple`s and called `min(vectors...)`, which
+  compares vectors lexicographically — for the one-degree-of-freedom harmonic oscillator this is
+  the same number, but the lexicographic form is not what a bounding box wants. And the first
+  panel's title is `"Data"`, not `"Datas"`.
+
+  **`plot_loss` is implemented rather than left an empty stub**, and `plot_prediction!` no longer
+  takes a `DataLoader`. `plot_loss!`/`plot_loss` follow the file's two-form convention and draw the
+  `loss_array` the `Optimizer` functor returns on a logarithmic axis; the script saves it as
+  `GSympNet_4-10_on_Harmonic_Oscillator_loss.png`, which is what
+  `scripts/sympnets/sympnet_toda_lattice.jl` already does with its own loss array. Before this,
+  `loss_array` was bound and never read. `plot_prediction!` and `plot_prediction` drop their `dl`
+  argument because neither body ever touched it — every initial condition reaches them through
+  `initial_cond`.
+
+  `scripts/ensemblesolution/harmonic_oscillator.jl` also drops `using GeometricSolutions` and
+  `using GeometricEquations`. No name from either package appears in the file: `hodeensemble` and
+  `exact_solution` both come from `GeometricProblems.HarmonicOscillator`.
+
 ### Fixed
 
 - **The reproduction scripts call `default_parameters()` rather than passing the name.**
@@ -435,6 +513,82 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   class is closed in both directions: an eleventh cannot be added without the suite saying so, and
   an allowlist entry whose name later resolves, or stops being exported, fails until it is removed.
   So the ten cannot be decided one by one and their stale reasons left behind.
+
+- **`scripts/test_attention.jl` and `scripts/test_double_multiplication_derivative.jl` are testsets
+  under `test/` now, not scripts nothing ran.** Both failed identically on evaluating `ps.params`:
+  `NetworkParameters` overloads `getproperty` to reach into the wrapped `NamedTuple`, so `.params`
+  looks up `:params` as a key of that `NamedTuple` instead of returning it, and raises a
+  `FieldError`. The accessor for the wrapped `NamedTuple` is the free function `params(ps)` —
+  imported by this package but not exported.
+
+  Fixing that access was enough to run both, and what they actually probe, once running, is
+  *structure preservation through Zygote*, not a derivative identity: a gradient taken with respect
+  to a `NetworkParameters` wrapper comes back as a `NetworkParameters` whose `SymmetricMatrix` leaf
+  is preserved when the loss expression performs a single `getproperty` on that wrapper
+  (`symplectic_attention_simplified`, `symplectic_linear_map`, `single_multiplication`), and
+  degrades to a plain `Matrix` on the second access (`symplectic_attention`,
+  `double_multiplication`). The `SymplecticAttentionQ` layer's own forward pass also keeps the
+  structure, but by way of a second route described below.
+
+  **The count that decides this is of accesses on the wrapper, not of uses of the leaf.** The two
+  coincide in every case above, which is what makes the weaker reading easy to adopt and wrong.
+  `gradient(p -> (A = p.L1.A; sum(A) + sum(A)), ps)` uses the leaf twice through one access and
+  returns a `SymmetricMatrix`; `gradient(p -> sum(p.L1.A) + sum(p.L1.A), ps)` uses it twice through
+  two accesses and returns a `Matrix`. On this route accesses *below* the wrapper do not count:
+  `p -> (L = p.L1; sum(L.A) + sum(L.A))` reads the inner `NamedTuple` twice and keeps the structure.
+  A third access behaves as the second. The same expressions against `params(ps)`, the bare
+  wrapped `NamedTuple`, keep the structure at any access count — but not because the reverse pass
+  treats them differently. `Zygote.pullback` drops the leaf to a `Matrix` on the second access for
+  the bare `NamedTuple` exactly as it does for the wrapper; what differs is what happens after it.
+  `Zygote.gradient` finishes by projecting, and `ChainRulesCore.ProjectTo` of a `NamedTuple` is a
+  structured projector whose leaf maps the raw `Matrix` back to a `SymmetricMatrix`. `ProjectTo` of
+  a `NetworkParameters` falls back to `identity`, because `NeuralNetworkParameters` defines no
+  method for it, so nothing restores the wrapper's leaf. `_custom_mul` is not involved either —
+  neither expression above calls it. Defining that `ProjectTo` method upstream would close both
+  gaps. Until then the two-access cases are `@test_broken`, honestly, rather than deleted or
+  asserted to work; every other case asserts the `SymmetricMatrix` survives.
+
+  **`getproperty` is not the only route in, and the other one counts at a different level.** A
+  `Chain` reaches its layers through `values(ps)` rather than through `ps.L1`
+  (`AbstractNeuralNetworks/src/chain.jl:56`, `applychain(layers, x, ps::NetworkParameters) =
+  applychain(layers, x, values(ps))`). On that route the accesses that decide the split are the ones
+  on the plain `NamedTuple` the layer is handed, and the wrapper count no longer shields them:
+  `p -> (L = values(p)[1]; sum(L.A) + sum(L.A))` returns a `Matrix`, where the `getproperty` form of
+  the same expression returns a `SymmetricMatrix`. So "below the wrapper is free" holds for
+  `getproperty` and fails for `values`.
+
+  That is what the `SymplecticAttentionQ` case rests on, and it settles what the local binding at
+  `src/layers/symplectic_attention.jl` does — which the comment there calls unexplained. The binding
+  collapses the layer body's two reads of `A` into one access on that `NamedTuple`, and on the
+  `values` route it is load-bearing: an A/B toggling only the binding, same closure, same input,
+  same route, returns a `SymmetricMatrix` with it and a plain `Matrix` without it. The comment is
+  left in place rather than rewritten, since this measures structure preservation only and says
+  nothing about whatever else the binding may have been added for.
+
+  Every case, working or broken, also asserts what the original scripts' "this works" / "this
+  doesn't work" comments never actually stated: the gradient taken with respect to the
+  `NetworkParameters` wrapper is `isapprox` the gradient taken with respect to the bare wrapped
+  `NamedTuple` — measured as exact agreement (`0.0` maximum absolute difference) in every case,
+  including the ones that lose the `SymmetricMatrix` structure. Losing the structure is cosmetic
+  here, not a wrong gradient.
+
+  One of the scripts' "this works" / "this doesn't work" comments was **inverted**, not carried
+  over. `scripts/test_attention.jl` marked the `SymplecticAttentionQ` layer case `# this doesn't
+  work`; it works, and the testset asserts that it does. Re-running that line as the script wrote
+  it returns a `SymmetricMatrix`, and so does the form the testset uses — the script differentiated
+  with respect to a separate hand-built `NetworkParameters` rather than the network's own, and
+  neither choice loses the structure. Why the comment said otherwise is not recoverable from the
+  script, and nothing in it was ever run under a test. Every other case kept the polarity the
+  script gave it.
+
+  `test/attention_layer/symplectic_attention_network_parameters_gradient.jl` and
+  `test/custom_ad_rules/double_multiplication_network_parameters_gradient.jl` are wired into
+  `runtests.jl` directly; `test/reachability.jl`'s allowlist needs no change, since neither file was
+  ever unreachable. The assertion helper both of them call is
+  `test/network_parameters_gradient_structure.jl`, included by each rather than copied into both:
+  a `@safetestset` is its own module, so sharing means including, and the rule the helper's
+  docstring states is the one thing here that must not be allowed to drift between two copies.
+  `test/reachability.jl` reaches it through that include, as it does any other shared file.
 
 ### Documentation
 
