@@ -221,6 +221,18 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 ### Fixed
 
+- **The reproduction scripts call `default_parameters()` rather than passing the name.**
+  `GeometricProblems` defines `default_parameters(::Type{T} = Float64) where {T}` in each problem
+  module, so the bare name is the function itself, not the parameter `NamedTuple` the scripts want.
+  Fourteen sites across seven files in `scripts/` now call it. The sites under `docs/src/tutorials/`
+  were already correct.
+
+- **The Hamiltonian passed to `plot_result` in `scripts/ensemblesolution/harmonic_oscillator.jl`
+  takes its arguments in the right order.** `HarmonicOscillator.hamiltonian` is
+  `(t, q, p, params)`, but `H` passed the momentum slice as `t`, `0.0` as `q` and the whole state
+  vector as `p`, so every call was a `MethodError` and no contour was ever drawn. `H` now evaluates
+  to `p² / 2m + k q² / 2`, which is what `plots.jl` expects to contour over the phase space grid.
+
 - **The tensor Cayley kernels are checked for orthonormality in `Float32`.**
   `test_tensor_cayley2` through `test_tensor_cayley5` each took a `T::Type` argument and then
   ignored it: every one built its input with `rand(n, n, third_dim)`, which is always `Float64`.
@@ -300,6 +312,27 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   breath — a slip, not a second configuration, and the two halves of the file were never a CPU/GPU
   split. `test/kernels/tensor_cayley.jl` was included once already, and no `include` in
   `test/runtests.jl` is repeated now.
+
+- **`git status` no longer reports the data file that a script generates.**
+  `scripts/symplectic_autoencoders/integration.jl` writes a snapshot matrix of about 7.9 MiB. It
+  still writes it, on every run — the script is unchanged — but `.gitignore` did not cover it, so
+  the working tree came back dirty each time and the artefact sat one staging sweep away from
+  entering the history. It is ignored now; deleting it is still a manual step.
+
+  Where it lands depends on how the script is started: the file name reaches `h5open` as a bare
+  relative string, so it is written to the process working directory rather than beside the script.
+  Started from the repository root it appears at the root; started from
+  `scripts/symplectic_autoencoders/`, it appears there. Both invocations are covered — the root by
+  an anchored `/snapshot_matrix*.h5`, which also takes in the `snapshot_matrix2.h5` named by the
+  script's `p_zero` branch, a branch not taken as committed; the script's own directory by
+  `scripts/**/*.h5`.
+
+  Neither pattern matches the six committed network weights under `docs/src/tutorials/` —
+  `sae_parameters.h5`, `integrator_parameters.h5`, `integrator_parameters_psd.h5` and
+  `transformer_rigid_body_nn_{st,vpff,vpt}.h5` — which the tutorials load in `@setup` and `@example`
+  blocks instead of retraining. Keeping the patterns off that directory is what leaves room for a
+  *new* weight file to be committed there: a bare `*.h5` would leave the six already-tracked files
+  alone, but would make `git add` refuse a seventh.
 
 ### Added
 
