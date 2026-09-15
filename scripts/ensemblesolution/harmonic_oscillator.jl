@@ -41,6 +41,9 @@ training_set = TrainingSet(sympnet, training_parameters, training_data)
 #training of the neural network
 neural_net_solution = train!(training_set; showprogress = true)
 
-H(x) = hamiltonian(x[(1 + length(x) ÷ 2):end], 0.0, x[1:length(x)], default_parameters)
+function H(x)
+    hamiltonian(
+        0.0, x[1:(length(x) ÷ 2)], x[(1 + length(x) ÷ 2):end], default_parameters())
+end
 plot_result(training_data, neural_net_solution, H; batch_nb_trajectory = 10,
     filename = "GSympNet 4-10 on Harmonic Oscillator", nb_prediction = 5)
