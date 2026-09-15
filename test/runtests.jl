@@ -50,6 +50,9 @@ end
 @safetestset "Lagrangian Neural Network                                                       " begin
     include("lagrangian_neural_network_tests.jl")
 end
+@safetestset "Symplectic Euler and variational midpoint losses                                " begin
+    include("training_method_losses.jl")
+end
 @safetestset "Manifold Neural Network Layers                                                  " begin
     include("layers/manifold_layers.jl")
 end

@@ -36,6 +36,8 @@ Note that this integrator is implicit in general.
 
 Here the derivatives (i.e. vector field data) ``\dot{q}_i^{(t)}`` and ``\dot{p}_i^{(t)}`` are approximated with finite differences: 
 
+A loss of this kind is [`GeometricMachineLearning.SymplecticEulerLoss`](@ref). Its `:B` variant evaluates the Hamiltonian vector field at ``(q^{(t)}, p^{(t+1)})``, as above, and its `:A` variant at ``(q^{(t+1)}, p^{(t)})``; it compares that field against the finite difference, with the sign convention ``X_H = (\partial{}H/\partial{}p, -\partial{}H/\partial{}q)``.
+
 !!! info
     Usually we use [`Zygote`](https://github.com/FluxML/Zygote.jl) for computing derivatives in `GeometricMachineLearning`, but as the [`Zygote` documentation](https://fluxml.ai/Zygote.jl/dev/limitations/#Second-derivatives-1) itself points out: "Often using a different AD system over Zygote is a better solution [for computing second-order derivatives]." For this reason we compute the loss of the HNN with [`SymbolicNeuralNetworks`](https://github.com/JuliaGNI/SymbolicNeuralNetworks.jl) and optionally also its gradient.
 
@@ -46,6 +48,8 @@ GeometricMachineLearning.hamiltonian_vector_field(::HamiltonianArchitecture)
 GeometricMachineLearning.HamiltonianArchitecture
 GeometricMachineLearning.StandardHamiltonianArchitecture
 GeometricMachineLearning.HNNLoss
+GeometricMachineLearning.SymplecticEulerLoss
+GeometricMachineLearning._symplectic_euler_evaluation_point
 GeometricMachineLearning.symbolic_hamiltonian_vector_field(::GeometricMachineLearning.SymbolicNeuralNetwork)
 GeometricMachineLearning.SymbolicPullback(::HamiltonianArchitecture)
 GeometricMachineLearning.GeneralizedHamiltonianArchitecture

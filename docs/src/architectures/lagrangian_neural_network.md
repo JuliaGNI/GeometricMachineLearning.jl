@@ -49,10 +49,27 @@ therefore built as symbolic expressions with
 that only one differentiation is left for `Zygote` to do. This is the same route
 `hamiltonian_vector_field` takes, and for the same reason.
 
+## Training on positions alone
+
+[`GeometricMachineLearning.LNNLoss`](@ref) needs ``\ddot{q}`` in the data. When only positions are
+available, [`GeometricMachineLearning.VariationalMidpointLoss`](@ref) trains the same architecture
+through the discrete Euler–Lagrange equations of the *midpoint discrete Lagrangian*
+
+```math
+    L_d(q_n, q_{n+1}) = \Delta{}t\,
+        L\!\left( \frac{q_n + q_{n+1}}{2}, \frac{q_{n+1} - q_n}{\Delta{}t} \right),
+```
+
+which ask that ``D_2L_d(q_n, q_{n+1}) + D_1L_d(q_{n+1}, q_{n+2}) = 0`` along the data. Only the
+first derivative of the network is needed for this, because the chain rule through the midpoint is
+written out rather than taken with a nested `Zygote.gradient`.
+
 ## Library Functions
 
 ```@docs
 GeometricMachineLearning.LNNLoss
 GeometricMachineLearning.lagrangian_acceleration
 GeometricMachineLearning._euler_lagrange_acceleration
+GeometricMachineLearning.VariationalMidpointLoss
+GeometricMachineLearning._discrete_lagrangian_derivatives
 ```

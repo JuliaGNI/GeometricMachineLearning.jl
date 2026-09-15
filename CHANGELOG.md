@@ -539,6 +539,66 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   under *Open Issues* records why that machinery is not trustworthy for a loss that is not additive
   over the batch — which this one, dividing by `norm(output)`, is not.
 
+- **`SymplecticEulerLoss` and `VariationalMidpointLoss` carry the training methods' numerical content
+  onto `NetworkLoss`.** Of the four methods the `train!` harness held that had no modern counterpart,
+  two are ported here, one is judged not worth porting, and the fourth — `HnnExactMethod` — was
+  already `HNNLoss`. Nothing is deleted by this change; the `train!` subsystem and its methods are
+  still present and still exported.
+
+  `SymplecticEulerLoss(arch, timestep)` trains a Hamiltonian neural network on a *trajectory*.
+  `HNNLoss` needs ``(\dot{q}, \dot{p})`` in the data; this one needs two consecutive states and the
+  timestep between them, and asks that one symplectic Euler step of the learned Hamiltonian carry the
+  first state to the second. Variant `:A` evaluates the vector field at ``(q_{n+1}, p_n)`` and `:B`
+  at ``(q_n, p_{n+1})``, which is the whole difference between the two methods it replaces.
+
+  **The manual has described this loss since before it could be run.**
+  `docs/src/architectures/hamiltonian_neural_network.md` has a section *HNN Loss for Phase Space
+  Data* giving the formula with the field at ``(q^{(t)}, p^{(t+1)})`` — symplectic Euler B — and the
+  only implementations of it were `SEulerA`/`SEulerB`, which raise a `MethodError` on `vectorfield`
+  before computing anything. The page now points at a loss that runs.
+
+  `VariationalMidpointLoss(arch, timestep)` trains a Lagrangian neural network on positions alone,
+  through the discrete Euler–Lagrange equations
+  ``D_2L_d(q_n, q_{n+1}) + D_1L_d(q_{n+1}, q_{n+2}) = 0`` of the midpoint discrete Lagrangian. It
+  needs neither velocities nor accelerations in the data.
+
+  **`BasicSympNetMethod` gets no port, and nothing is lost by that.** It is still defined and still
+  exported — this change removes no file; the deletion of the `train!` subsystem is a separate
+  change. What is decided here is that its content does not need carrying over. Its `loss_single` is
+  `sqeuclidean(q̃ₙ₊₁, qₙ₊₁) + sqeuclidean(p̃ₙ₊₁, pₙ₊₁)` on a one-step prediction — which is
+  `FeedForwardLoss`, unnormalised and squared. Measured on one network and one pair of states, the
+  method returns `sum(abs2, prediction - target)` and `FeedForwardLoss` returns
+  `norm(prediction - target) / norm(target)`. It also only ever ran at one degree of freedom:
+  `q̃ₙ₊₁, p̃ₙ₊₁ = nn([qₙ..., pₙ...], params)` destructures the output vector into two scalars, so at
+  two degrees of freedom it raises `DimensionMismatch: first collection has length 1 which does not
+  match the length of the second, 2`. A SympNet trained through `DataLoader` + `Batch` + `Optimizer`
+  already uses `FeedForwardLoss`.
+
+  **Neither ported method could be ported by transcription, because neither ran.** `SymplecticEulerA`
+  and `SymplecticEulerB` are *B6*: both call `vectorfield`, which is defined nowhere.
+  `hamiltonian_vector_field` is what they meant, and it is what the loss uses.
+  `VariationalMidPointMethod` failed for two reasons of its own. `discrete_lagrangian` returns the
+  network output, an array, so `Zygote.gradient` refuses it outright — "Output is an array, so the
+  gradient is not defined". And `DL₁`/`DL₂` slice the 2-tuple of gradients `DL` returns with
+  `1:length(qₙ)` and `(1 + length(qₙ)):end`, selecting *tuple entries* rather than vector components,
+  which happens to coincide with the intent at one degree of freedom and is wrong at every other.
+
+  **The derivatives come from compiled symbolic expressions, not from `Zygote` inside the loss.**
+  Differentiating a loss that itself calls `Zygote.gradient` with respect to the parameters fails
+  with `MethodError: no method matching getindex(::IdDict{Any, Any})`, measured in two separate
+  processes. For the variational loss this is avoided by writing the chain rule through the midpoint
+  out by hand — ``D_1L_d = \tfrac{\Delta{}t}{2}\nabla_qL - \nabla_{\dot{q}}L`` and
+  ``D_2L_d = \tfrac{\Delta{}t}{2}\nabla_qL + \nabla_{\dot{q}}L``, both at the midpoint — so that only
+  the network's first input derivative is needed. `test/training_method_losses.jl` checks those two
+  expressions against a `Zygote` gradient of ``L_d`` itself, which is the call they exist in order
+  not to make.
+
+  Each loss is asserted to vanish on a trajectory that satisfies it and to *not* vanish on a
+  perturbed one, so neither assertion can pass for a reason unrelated to the method. One limit is
+  worth stating: the discrete Euler–Lagrange equations of an arbitrary neural-network Lagrangian are
+  a root-finding problem with no guaranteed solution near a given starting pair, so the variational
+  test searches for a starting pair that admits one instead of assuming that any will.
+
 - **`test/exports.jl` asserts that every name the package exports is actually defined.** Julia only
   errors on a dangling `export` when the name is *resolved*, so an exported name that nothing defines
   is silent: the package loads, the docs build and the suite passes, and a user who reaches for the
