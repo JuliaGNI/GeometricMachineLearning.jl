@@ -509,6 +509,35 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   the checks they contain. GPU coverage, if wanted, is separate work: writing new tests that run,
   against a test environment that can load the packages they need.
 
+- **Nine orphaned test files are deleted from the repository.** These lay unreachable from
+  `test/runtests.jl` and appeared in the `ALLOWED_ORPHANS` allowlist. Only one exercises real,
+  passing coverage today: `custom_ad_rules/matrix_vector_multiplication.jl` runs 10 assertions and
+  all 10 pass — its deletion loses that coverage, and it is deleted anyway because the assertions
+  are a ChainRulesCore tutorial example copied verbatim onto a local type, not
+  GeometricMachineLearning content. `orthogonalization_procedures/gram_schmidt.jl` only *defines*
+  `gram_schmidt_test` and `sympl_gram_schmidt_test` and calls neither, so including it runs no
+  computation and checks nothing; nothing is lost by deleting it. It and its four siblings in
+  `orthogonalization_procedures/` are remains from when the module's implementation moved to
+  `legacy/orthogonalization_procedures/`, leaving test fragments behind — though only three of the
+  five have a source counterpart there, and `global_symplectic_section.jl` and
+  `symplectic_householder_aux.jl` do not. The remaining seven files
+  fail when tested in isolation: `global_symplectic_section.jl` on
+  `SymplecticStiefelManifold` (undefined), `householder.jl` on a missing include target
+  `src/optimizers/householder.jl`, `symplectic_householder.jl` on `Rfac` (undefined),
+  `symplectic_householder_aux.jl` on a missing `PoissonTensor` method for `Float32`,
+  `apply_multi_head_attention.jl` on `Attention`, a name the package does not define at all,
+  `linear_wave_equation.jl` because its includes depend on OffsetArrays (not in the test
+  environment), and `training_phnn.jl` on a `MethodError` in its own locally-defined
+  `make_alternative_parameters_by_adding_constant(params::NamedTuple, ...)`: the file passes it
+  `GeometricProblems.CoupledHarmonicOscillator.default_parameters` unevaluated, which used to be a
+  `NamedTuple` constant of that name and is now a function, so it no longer matches the
+  `NamedTuple` dispatch.
+
+  The `test/reachability.jl` allowlist is shortened to match — 17 entries down to 8 — and
+  `Pkg.test()` continues to pass. Two of the allowlist's four groups lose their last entry and their
+  headings go with them: nothing under `test/` now stops at a package the test environment cannot
+  load, and nothing now loads without asserting anything.
+
 ## [0.7.0]
 
 **A layer is wrapped at the `GeometricOptimizers` boundary, and a whole set of parameters is a
