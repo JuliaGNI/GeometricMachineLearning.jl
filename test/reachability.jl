@@ -25,28 +25,6 @@ const ALLOWED_ORPHANS = Dict(
 
     # Stop at `using` a package that is neither a dependency of this package nor a test target, so the
     # test environment cannot load them at all.
-    "cuda/resnet.jl" => "stops at `using CUDA`; CUDA is not a dependency or test target",
-    "cuda/stiefel_manifold.jl" => "stops at `using CUDA`; CUDA is not a dependency or test target",
-    "kernels/vec_add.jl" => "stops at `using CUDA`; CUDA is not a dependency or test target",
-    "performance_tests/flux_lux.jl" => "stops at `import Flux`; Flux is not a dependency or test target",
-    "performance_tests/neural_networks_on_gpu/compute_loss_function_with_mapreduce.jl" => "stops at `using Lux`; Lux is not a dependency or test target",
-    "performance_tests/neural_networks_on_gpu/dense.jl" => "stops at `using Lux`; Lux is not a dependency or test target",
-    "performance_tests/neural_networks_on_gpu/mat_mul_and_sin.jl" => "stops at `using CUDA`; CUDA is not a dependency or test target",
-    "performance_tests/neural_networks_on_gpu/reduce_gpu_test.jl" => "stops at `using CUDA`; CUDA is not a dependency or test target",
-    "performance_tests/optimizer_gpu_tests/adam_update_gpu_test.jl" => "stops at `using CUDA`; CUDA is not a dependency or test target",
-    "performance_tests/optimizer_gpu_tests/apply_section_gpu_test.jl" => "stops at `using CUDA`; CUDA is not a dependency or test target",
-    "performance_tests/optimizer_gpu_tests/retraction_gpu_test.jl" => "stops at `using GPUArrays`; GPUArrays is not a dependency or test target",
-    "performance_tests/optimizer_gpu_tests/stiefel_manifold_global_section_gpu_test.jl" => "stops at `using CUDA`; CUDA is not a dependency or test target",
-    "performance_tests/optimizer_update_gpu_test.jl" => "stops at `using CUDA`; CUDA is not a dependency or test target",
-    "performance_tests/special_array_gpu_tests/skew_symmetric_gpu_test.jl" => "stops at `using CUDA`; CUDA is not a dependency or test target",
-    "performance_tests/special_array_gpu_tests/stiefel_lie_algebra_horizontal_gpu_test.jl" => "stops at `using CUDA`; CUDA is not a dependency or test target",
-    "performance_tests/special_array_gpu_tests/stiefel_manifold_gpu_test.jl" => "stops at `using CUDA`; CUDA is not a dependency or test target",
-    "performance_tests/special_array_gpu_tests/symmetric_gpu_test.jl" => "stops at `using CUDA`; CUDA is not a dependency or test target",
-    "performance_tests/strange_zygote_behaviour/dense_layer_array.jl" => "stops at `using Lux`; Lux is not a dependency or test target",
-    "performance_tests/zygote_specific/compute_loss.jl" => "stops at `using Lux`; Lux is not a dependency or test target",
-    "performance_tests/zygote_specific/dense_gpu.jl" => "stops at `using Lux`; Lux is not a dependency or test target",
-    "performance_tests/zygote_specific/gradient_gpu.jl" => "stops at `using CUDA`; CUDA is not a dependency or test target",
-    "performance_tests/zygote_specific/zygote_lux.jl" => "stops at `using Lux`; Lux is not a dependency or test target",
     "symplectic_autoencoders/linear_wave_equation.jl" => "reaches into `scripts/` for `assemble_matrix.jl`, which stops at `using OffsetArrays`",
 
     # Name something the package does not provide. Each reason is the error that actually stops the
@@ -66,8 +44,7 @@ const ALLOWED_ORPHANS = Dict(
     "training_phnn.jl" => "`MethodError` passing `default_parameters`; `GeometricProblems.default_parameters` is a function, not the value the call expects",
 
     # Load without error and assert nothing, so "it runs" says nothing about whether it still works.
-    "orthogonalization_procedures/gram_schmidt.jl" => "defines `gram_schmidt_test` and `sympl_gram_schmidt_test` and calls neither, so nothing executes",
-    "performance_tests/strange_zygote_behaviour/indexing_in_gradient_call.jl" => "a Zygote timing loop that runs indefinitely without an error or an assertion"
+    "orthogonalization_procedures/gram_schmidt.jl" => "defines `gram_schmidt_test` and `sympl_gram_schmidt_test` and calls neither, so nothing executes"
 )
 
 const TEST_ROOT = @__DIR__

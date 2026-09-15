@@ -354,6 +354,21 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   variable or an interpolation is not followed; no file in `test/` does that today, and the effect
   if one did would be to report the target as an orphan rather than to pass it silently.
 
+- **The 23 allowlisted files that could not load a required package are deleted, not repaired.**
+  `test/performance_tests/` (20 files), `test/cuda/` (2 files) and `test/kernels/vec_add.jl` are
+  gone, along with their entries in `test/reachability.jl`'s `ALLOWED_ORPHANS` — 40 entries down
+  to 17. None of CUDA, Lux, Flux, GPUArrays or Optimisers is a dependency of this package or of its
+  test environment, and no CI job runs on a GPU, so none of these files ever ran there. (`CUDA` and
+  `Lux` are dependencies of `scripts/Project.toml`, which these deleted files did not use.)
+
+  What is lost is not test coverage that ran, but coverage that was only ever advertised. 12 of
+  the 23 are bare `@time`/`@printf` scratch pads with no `@test` at all. The other 11 —
+  `test/cuda/resnet.jl`, `test/cuda/stiefel_manifold.jl`, and 9 files under
+  `test/performance_tests/` — do contain `@test` assertions on GPU array types, but every one of
+  them loads `CUDA`, `GPUArrays` or `Lux` in its first few lines, well before any `@test`, so the
+  load error stops the file before a single assertion runs. None of these 23 files ever exercised
+  the checks they contain. GPU coverage, if wanted, is separate work: writing new tests that run,
+  against a test environment that can load the packages they need.
 
 ## [0.7.0]
 
