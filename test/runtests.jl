@@ -53,6 +53,9 @@ end
 @safetestset "Custom AD rules for kernels                                                     " begin
     include("custom_ad_rules/kernel_pullbacks.jl")
 end
+@safetestset "_custom_mul: NetworkParameters gradient structure                               " begin
+    include("custom_ad_rules/double_multiplication_network_parameters_gradient.jl")
+end
 @safetestset "ResNet                                                                          " begin
     include("layers/resnet_tests.jl")
 end
@@ -79,6 +82,9 @@ end
 
 @safetestset "Attention layer #1                                                              " begin
     include("attention_layer/attention_setup.jl")
+end
+@safetestset "Symplectic attention: NetworkParameters gradient structure                      " begin
+    include("attention_layer/symplectic_attention_network_parameters_gradient.jl")
 end
 @safetestset "Classification layer                                                            " begin
     include("layers/classification.jl")
