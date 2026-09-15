@@ -12,19 +12,11 @@ using Test
 # to re-implement Julia's lexer to know whether an `include` it found is code, and gets `#= … =#`
 # and string literals wrong; the parser has already made that distinction.
 #
-# Every entry below names something the package does not provide. Each reason is the observed first
-# blocker rather than a guess from the file's name: it is the error that actually stops the file,
-# which is not always what a reader would predict from the file's title. The allowlist is a backlog,
-# not a design -- each entry is a file waiting to be repaired, wired in or deleted.
+# The allowlist is empty, so every file under `test/` is reached from `runtests.jl`. An entry is a
+# backlog item, not a design: it names a file waiting to be repaired, wired in or deleted, and its
+# reason is the observed first blocker rather than a guess from the file's name.
 
-const ALLOWED_ORPHANS = Dict(
-    "integrator/test_integrator.jl" => "`MethodError: HamiltonianArchitecture(::Int64)`; the constructor takes different arguments",
-    "train!/test_method.jl" => "`MethodError: HamiltonianArchitecture(::Int64)`",
-    "train!/test_neuralnet_solution.jl" => "`UndefVarError: timestep` inside `GeometricMachineLearning`",
-    "train!/test_timer.jl" => "`MethodError: GSympNet(::Int64; nhidden)`",
-    "train!/test_training.jl" => "`UndefVarError: timestep` inside `GeometricMachineLearning`, raised inside its testset",
-    "train!/test_trainingSet.jl" => "`MethodError: HamiltonianArchitecture(::Int64; nhidden, width)`"
-)
+const ALLOWED_ORPHANS = Dict{String, String}()
 
 const TEST_ROOT = @__DIR__
 

@@ -40,6 +40,59 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 ### Removed (breaking)
 
+- **The `train!` subsystem is gone.** `src/training/` (7 files), `src/nnsolution/` (3), `src/data/`
+  (5), `src/training_method/` (7) and `src/architectures/default_architecture.jl` are deleted —
+  1,438 lines of `src/` — together with their `include` sites and export blocks. The package now
+  exports **130 names where it exported 218**: 88 removed, none added, counted from
+  `names(GeometricMachineLearning)` before and after rather than from the diff, which over-reports
+  because some names are exported on more than one line.
+
+  `DataLoader` + `Batch` + `Optimizer` is the training path. What the harness could do that it
+  cannot is nothing, now that `LNNLoss`, `SymplecticEulerLoss` and
+  `VariationalMidpointLoss` exist — those three ports are the reason this deletion is not a loss of
+  capability, and they landed first for exactly that reason.
+
+  Gone with it: `train!`, `TrainingData`, `TrainingMethod`, `TrainingParameters`, `TrainingSet`,
+  `NeuralNetSolution`, `EnsembleNeuralNetSolution`, `EnsembleTraining`, `History`, `SingleHistory`,
+  the data shapes and symbols (`TrajectoryData`, `SampledData`, `PositionSymbol`,
+  `PhaseSpaceSymbol`, `DerivativePhaseSpaceSymbol`, `PosVeloSymbol`, `PosVeloAccSymbol`,
+  `DataSymbol`), the six training methods and their constructors (`SEuler`, `SEulerA`, `SEulerB`,
+  `ExactHnn`, `ExactLnn`, `VariaMidPoint`, `BasicSympNet`), `default_arch`, `default_method`,
+  `matching`, `loss_single`, `loss_gradient`, and the accessors that went with them.
+
+  **Note that `src/data/batch.jl` was the old batch machinery.** The modern `Batch` is
+  `src/data_loader/batch.jl` and is untouched.
+
+- **Seven exported names that were defined nowhere are no longer exported**, and one that should
+  have resolved now does. `Device`, `CPUDevice`, `convert_to_dev`, `ResidualLayer`,
+  `LinearSymplecticLayerP` and `LinearSymplecticLayerQ` had no definition anywhere under `src/` —
+  reaching for any of them raised `UndefVarError` from a name the package advertised. `timestep`
+  went with the block that exported it. `description` keeps its export and gains the
+  `import GeometricBase: description` it always needed: `GeometricBase` defines that generic but does
+  not export it, so `using GeometricBase` never brought it into scope.
+
+  This closes **C10**. `test/exports.jl`'s allowlist is now **empty**, so the guard asserts outright
+  that every exported name resolves, with no exceptions to trust. The one name here that has a
+  definition is `ResidualLayer`, at `legacy/layers/resnet.jl`, which nothing under `src/` includes;
+  the loaded layer of that shape is `ResNetLayer`.
+
+- **The `train!` tests are gone, and six of them were passing.** Deleted: `test/train!/` (5 files),
+  `test/integrator/test_integrator.jl`, `test/training_parameters.jl`, `test/data/test_data.jl`,
+  `test/data/test_batch.jl`, `test/data/test_matching.jl`, `test/data/data_generation.jl` and
+  `test/macro_testerror.jl` — 820 lines.
+
+  **What that removes is real coverage, not just dead files.** `test/data/test_data.jl`,
+  `test/data/test_batch.jl`, `test/data/test_matching.jl` and `test/training_parameters.jl` ran on
+  every suite and passed: they covered `TrainingData` construction from arrays and from a
+  `GeometricSolution`, the old `get_batch` partitioning, `matching` between a network and a data
+  set, and `TrainingParameters` including the step size handed to `train!`. `test/macro_testerror.jl`
+  covered a test-only macro. All of it tested code that no longer exists, so none of it could be
+  kept — but the subsystem leaves with its tests, rather than its tests having been absent.
+
+  The five files under `test/train!/` and `test/integrator/test_integrator.jl` were **not** running:
+  `runtests.jl` never included them, and *C11* recorded them as unreachable. `test/reachability.jl`'s
+  allowlist is now **empty** as well, so every file under `test/` is reached from `runtests.jl`.
+
 - **The five `changebackend` methods for `GeometricOptimizers`' types are gone, and so is
   `GeometricOptimizers.GlobalSection(::NetworkParameters)`.** Both were type piracy of the same shape:
   the generic belongs to one package, the types to another, and this package owns neither. Both now
@@ -1900,34 +1953,12 @@ they resolved to is in the release notes above.
   invariant), or drop the symbolic pullback for architectures whose loss is not additive. Either is
   a decision about the loss, not a repair, which is why this release only documents it.
 
-- **B6. Training a Hamiltonian neural network through `train!` is broken for every method.** All
-  three call `vectorfield(nn, x, params)` — `ExactHnn` at `src/training_method/hnn_exact_method.jl:10`,
-  `SEulerA` and `SEulerB` at `src/training_method/symplectic_euler.jl:18` and `:25` — and no such
-  method exists. `vectorfield` resolves only to GeometricBase's methods on `AbstractStateVariable`
-  and `State`, so the call raises a `MethodError` as soon as the first gradient is taken.
-
-  **Still open. Untouched.** The test-tree and script-tree restructuring merged as
-  [#264](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/264) –
-  [#276](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/276) left every file above
-  unchanged; the `train!` retirement that would close this (giving `vectorfield` a definition, or
-  replacing it) is Phase B of the restructuring plan and was deliberately deferred, not attempted.
-
-  Found by repairing `scripts/hnn_pendulum.jl`, which is several API generations behind and hid this
-  behind four earlier failures (the two-argument `MomentumOptimizer`, the keyword
-  `HamiltonianArchitecture` constructor, `∇H`/`dH` deleted from `scripts/pendulum.jl` while
-  `get_data_set` still called them, and `get_data_set` returning a bare `(data, target)` pair where
-  `train!` wants a `TrainingData`). Those four are fixed; the script still does not run to
-  completion, and what stops it is this.
-
-  Nothing under `test/` covers it: the HNN training methods are exercised only from `test/train!/`,
-  which `runtests.jl` does not include. Closing this means deciding what `vectorfield` should be for
-  a `NeuralNetwork{<:HamiltonianArchitecture}` — `hamiltonian_vector_field` is the obvious candidate
-  — and giving it a test that runs.
-
-  (**B1**, **B2**, **B3** and **B4** are all closed and their entries are gone: B1 and B2 by this
-  release — the duplicated `AdamOptimizerWithDecay` and the split `Manifold`, both under *Removed
-  (breaking)* — B3 by SymbolicNeuralNetworks 0.5, and B4 by `a427add1`, which repaired the
-  documentation build. The numbers are left vacant rather than reused.)
+  (**B1**, **B2**, **B3**, **B4** and **B6** are all closed and their entries are gone: B1 and B2 by
+  this release — the duplicated `AdamOptimizerWithDecay` and the split `Manifold`, both under
+  *Removed (breaking)* — B3 by SymbolicNeuralNetworks 0.5, B4 by `a427add1`, which repaired the
+  documentation build, and B6 by the `train!` retirement in this release: the three methods that
+  called the non-existent `vectorfield` are gone, and `SymplecticEulerLoss` carries their content on
+  `hamiltonian_vector_field`, with tests that run. The numbers are left vacant rather than reused.)
 
 ### C. Follow-ups and cleanups
 
@@ -1980,59 +2011,6 @@ they resolved to is in the release notes above.
   consistent with where the files sit, so what remains is a decision about `data.jl`: reconstruct it
   (it generated the pendulum training data, which `scripts/pendulum.jl` now does) or delete the
   scripts that need it.
-
-- **C10. Ten exported names are undefined.** `CPUDevice`, `Device`, `LinearSymplecticLayerP`,
-  `LinearSymplecticLayerQ`, `ResidualLayer`, `aresame`, `convert_to_dev`, `description`, `symbol`
-  and `timestep` are in an `export` list and defined nowhere, so
-  `[n for n in names(GeometricMachineLearning) if !isdefined(GeometricMachineLearning, n)]` returns
-  all ten. They are harmless in the sense that nothing breaks until someone reaches for one, at which
-  point they get `UndefVarError` from a name the package advertises.
-
-  This release removed the three that happened to sit in the export block it was already rewriting
-  (`SymplecticLieAlgMatrix`, `SymplecticLieAlgHorMatrix`, `SymplecticProjection`), which is why the
-  count is ten rather than thirteen. The rest are spread across the module and were left alone
-  deliberately: each needs a decision — define it, or drop the export — and a few are load-bearing
-  names in prose (`description` is `export`ed with the comment "from GeometricBase to print docs",
-  and GeometricBase does define it, so that one is likely an `import` that was never written).
-
-  `GeometricOptimizers`' `test/exports.jl` closes this whole class with one assertion over `names`;
-  `test/exports.jl` now does the same here
-  ([#266](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/266)), with these ten
-  allowlisted and each given its reason. The class is closed, so no eleventh can appear unnoticed;
-  what stays open is the decision on each of the ten — define it, or drop the export.
-
-  **Not closed.** The guard exists and the ten are still undefined, unchanged since #266. Two of
-  them, `symbol` and `aresame`, sit in the `train!` subsystem's own export blocks
-  (`test/exports.jl`'s allowlist says so), so their decision is folded into the `train!` retirement
-  in Phase B of the restructuring plan, which remains deferred. The other eight need their own
-  per-name decision independently of that.
-
-- **C11. 6 test files remain unreachable from `runtests.jl`.** All 5 under `train!/`
-  (`test_method.jl`, `test_neuralnet_solution.jl`, `test_timer.jl`, `test_training.jl`,
-  `test_trainingSet.jl`) plus the singleton `integrator/test_integrator.jl`. Re-derived from
-  `test/reachability.jl`'s own closure and allowlist, which agree: `test_files()` minus
-  `REACHABLE` is exactly these six, and `ALLOWED_ORPHANS` has exactly six entries, one per file.
-
-  This is down from the 40 this entry originally reported (corrected to 40 from a stated 41 by
-  [#269](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/269), which also added
-  `test/reachability.jl` and its allowlist). Three further sub-tasks of the test/script
-  restructuring emptied it by group, each shortening the allowlist in the same change:
-  [#270](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/270) deleted the 23
-  GPU/hardware orphans (`performance_tests/`, `cuda/`, `kernels/vec_add.jl`) — 40 down to 17;
-  [#271](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/271) deleted 9 more
-  (`orthogonalization_procedures/`'s five files, `attention_layer/apply_multi_head_attention.jl`,
-  `custom_ad_rules/matrix_vector_multiplication.jl`, `symplectic_autoencoders/linear_wave_equation.jl`,
-  `training_phnn.jl`) — 17 down to 8; and
-  [#275](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/275) wired in the two that
-  worked, `layers/sympnet_upscaling.jl` and `transformer_related/transformer_setup.jl` — 8 down to 6.
-
-  **Not closed.** The remaining six are all one group: `train!` and what it needs to construct.
-  `integrator/test_integrator.jl` hits `MethodError: HamiltonianArchitecture(::Int64)`, and the
-  `train!/` five hit that or `UndefVarError: timestep` or `MethodError: GSympNet(::Int64; nhidden)`
-  — the same class of stale-API defect that **B6** documents for `train!` itself. Closing them
-  needs the `train!` retirement (Phase B of the restructuring plan: repair or delete each,
-  update `runtests.jl` and shorten the allowlist to match), which remains deferred, not this
-  clean-up.
 
 - **C12. The sympnet upscaling chain is symplectic layer by layer, not end to end, and whether it
   is meant to be is undecided.** `PSDLayer(N, N2) → GradientLayerQ(N2) → GradientLayerP(N2) →
