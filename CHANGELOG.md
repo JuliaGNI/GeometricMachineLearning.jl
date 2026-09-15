@@ -362,6 +362,27 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   split. `test/kernels/tensor_cayley.jl` was included once already, and no `include` in
   `test/runtests.jl` is repeated now.
 
+- **`git status` no longer reports the data file that a script generates.**
+  `scripts/symplectic_autoencoders/integration.jl` writes a snapshot matrix of about 7.9 MiB. It
+  still writes it, on every run — the script is unchanged — but `.gitignore` did not cover it, so
+  the working tree came back dirty each time and the artefact sat one staging sweep away from
+  entering the history. It is ignored now; deleting it is still a manual step.
+
+  Where it lands depends on how the script is started: the file name reaches `h5open` as a bare
+  relative string, so it is written to the process working directory rather than beside the script.
+  Started from the repository root it appears at the root; started from
+  `scripts/symplectic_autoencoders/`, it appears there. Both invocations are covered — the root by
+  an anchored `/snapshot_matrix*.h5`, which also takes in the `snapshot_matrix2.h5` named by the
+  script's `p_zero` branch, a branch not taken as committed; the script's own directory by
+  `scripts/**/*.h5`.
+
+  Neither pattern matches the six committed network weights under `docs/src/tutorials/` —
+  `sae_parameters.h5`, `integrator_parameters.h5`, `integrator_parameters_psd.h5` and
+  `transformer_rigid_body_nn_{st,vpff,vpt}.h5` — which the tutorials load in `@setup` and `@example`
+  blocks instead of retraining. Keeping the patterns off that directory is what leaves room for a
+  *new* weight file to be committed there: a bare `*.h5` would leave the six already-tracked files
+  alone, but would make `git add` refuse a seventh.
+
 ### Documentation
 
 - `_tree_optim_step!` records why it is *not* written with
