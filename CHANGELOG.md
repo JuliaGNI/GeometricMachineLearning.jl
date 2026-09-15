@@ -407,6 +407,30 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   *new* weight file to be committed there: a bare `*.h5` would leave the six already-tracked files
   alone, but would make `git add` refuse a seventh.
 
+### Added
+
+- **`test/exports.jl` asserts that every name the package exports is actually defined.** Julia only
+  errors on a dangling `export` when the name is *resolved*, so an exported name that nothing defines
+  is silent: the package loads, the docs build and the suite passes, and a user who reaches for the
+  name gets an `UndefVarError` from something the package advertises. Ten such names are in the
+  export list today — `CPUDevice`, `Device`, `LinearSymplecticLayerP`, `LinearSymplecticLayerQ`,
+  `ResidualLayer`, `aresame`, `convert_to_dev`, `description`, `symbol` and `timestep` — and each
+  carries a short reason in the allowlist, so the ten stay visible instead of being rediscovered.
+  This is the assertion *C10* under *Open Issues* names as the fix; the model is
+  `GeometricOptimizers`' `test/exports.jl`.
+
+  The ten are not one case. `ResidualLayer`'s definition exists, at `legacy/layers/resnet.jl`, which
+  nothing under `src/` includes — the loaded layer of that shape is `ResNetLayer`. `description` and
+  `timestep` are `GeometricBase` generics that package defines but does not export, so each needs an
+  `import` rather than a definition. `Device`, `CPUDevice` and `convert_to_dev` have call sites under
+  `test/performance_tests/`, which *C11* records as unreachable from `runtests.jl`.
+
+  Nothing about the package's surface changes — the ten are still exported and still undefined, and
+  deciding each one (define it, or drop the export) remains to be done. What changes is that the
+  class is closed in both directions: an eleventh cannot be added without the suite saying so, and
+  an allowlist entry whose name later resolves, or stops being exported, fails until it is removed.
+  So the ten cannot be decided one by one and their stale reasons left behind.
+
 ### Documentation
 
 - `_tree_optim_step!` records why it is *not* written with
@@ -1559,7 +1583,9 @@ they resolved to is in the release notes above.
   and GeometricBase does define it, so that one is likely an `import` that was never written).
 
   `GeometricOptimizers`' `test/exports.jl` closes this whole class with one assertion over `names`;
-  this package has no equivalent, and adding one is the actual fix.
+  `test/exports.jl` now does the same here, with these ten allowlisted and each given its reason. The
+  class is closed, so no eleventh can appear unnoticed; what stays open is the decision on each of the
+  ten — define it, or drop the export.
 
 - **C11. 41 test files are unreachable from `runtests.jl`.** By area: 20 under `performance_tests/`,
   5 `orthogonalization_procedures/`, 4 `train!/`, 2 `cuda/`, and 10 singletons (`training_phnn.jl`,
