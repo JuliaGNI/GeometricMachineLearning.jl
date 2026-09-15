@@ -524,17 +524,41 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   Fixing that access was enough to run both, and what they actually probe, once running, is
   *structure preservation through Zygote*, not a derivative identity: a gradient taken with respect
   to a `NetworkParameters` wrapper comes back as a `NetworkParameters` whose `SymmetricMatrix` leaf
-  is preserved when that leaf is used once in the loss expression
-  (`symplectic_attention_simplified`, `symplectic_linear_map`, `single_multiplication`, and the
-  `SymplecticAttentionQ` layer's own forward pass), and degrades to a plain `Matrix` when the leaf is
-  used twice (`symplectic_attention`, `double_multiplication`). The cause sits in the
-  `NetworkParameters` wrapper's own gradient accumulation across the two uses, not in
-  `_custom_mul`: `gradient(p -> sum(p.L1.A) + sum(p.L1.A), ps)`, which never calls `_custom_mul`,
-  loses the structure the same way, while the identical expression against `params(ps)` — the bare
-  wrapped `NamedTuple` — keeps it regardless of how many times the leaf is used. What inside the
-  wrapper's accumulation causes the loss was not isolated further. The two-use cases are
-  `@test_broken`, honestly, rather than deleted or asserted to work; every other case asserts the
-  `SymmetricMatrix` survives.
+  is preserved when the loss expression performs a single `getproperty` on that wrapper
+  (`symplectic_attention_simplified`, `symplectic_linear_map`, `single_multiplication`), and
+  degrades to a plain `Matrix` on the second access (`symplectic_attention`,
+  `double_multiplication`). The `SymplecticAttentionQ` layer's own forward pass also keeps the
+  structure, but by way of a second route described below.
+
+  **The count that decides this is of accesses on the wrapper, not of uses of the leaf.** The two
+  coincide in every case above, which is what makes the weaker reading easy to adopt and wrong.
+  `gradient(p -> (A = p.L1.A; sum(A) + sum(A)), ps)` uses the leaf twice through one access and
+  returns a `SymmetricMatrix`; `gradient(p -> sum(p.L1.A) + sum(p.L1.A), ps)` uses it twice through
+  two accesses and returns a `Matrix`. On this route accesses *below* the wrapper do not count:
+  `p -> (L = p.L1; sum(L.A) + sum(L.A))` reads the inner `NamedTuple` twice and keeps the structure.
+  A third access behaves as the second. The cause therefore sits in the `NetworkParameters`
+  wrapper's own gradient accumulation across repeated accesses, not in `_custom_mul` — neither
+  expression above calls it — while the same expressions against `params(ps)`, the bare wrapped
+  `NamedTuple`, keep the structure at any access count. What inside the wrapper's accumulation
+  causes the loss was not isolated further. The two-access cases are `@test_broken`, honestly,
+  rather than deleted or asserted to work; every other case asserts the `SymmetricMatrix` survives.
+
+  **`getproperty` is not the only route in, and the other one counts at a different level.** A
+  `Chain` reaches its layers through `values(ps)` rather than through `ps.L1`
+  (`AbstractNeuralNetworks/src/chain.jl:56`, `applychain(layers, x, ps::NetworkParameters) =
+  applychain(layers, x, values(ps))`). On that route the accesses that decide the split are the ones
+  on the plain `NamedTuple` the layer is handed, and the wrapper count no longer shields them:
+  `p -> (L = values(p)[1]; sum(L.A) + sum(L.A))` returns a `Matrix`, where the `getproperty` form of
+  the same expression returns a `SymmetricMatrix`. So "below the wrapper is free" holds for
+  `getproperty` and fails for `values`.
+
+  That is what the `SymplecticAttentionQ` case rests on, and it settles what the local binding at
+  `src/layers/symplectic_attention.jl` does — which the comment there calls unexplained. The binding
+  collapses the layer body's two reads of `A` into one access on that `NamedTuple`, and on the
+  `values` route it is load-bearing: an A/B toggling only the binding, same closure, same input,
+  same route, returns a `SymmetricMatrix` with it and a plain `Matrix` without it. The comment is
+  left in place rather than rewritten, since this measures structure preservation only and says
+  nothing about whatever else the binding may have been added for.
 
   Every case, working or broken, also asserts what the original scripts' "this works" / "this
   doesn't work" comments never actually stated: the gradient taken with respect to the
@@ -543,10 +567,23 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   including the ones that lose the `SymmetricMatrix` structure. Losing the structure is cosmetic
   here, not a wrong gradient.
 
+  One of the scripts' "this works" / "this doesn't work" comments was **inverted**, not carried
+  over. `scripts/test_attention.jl` marked the `SymplecticAttentionQ` layer case `# this doesn't
+  work`; it works, and the testset asserts that it does. Re-running that line as the script wrote
+  it returns a `SymmetricMatrix`, and so does the form the testset uses — the script differentiated
+  with respect to a separate hand-built `NetworkParameters` rather than the network's own, and
+  neither choice loses the structure. Why the comment said otherwise is not recoverable from the
+  script, and nothing in it was ever run under a test. Every other case kept the polarity the
+  script gave it.
+
   `test/attention_layer/symplectic_attention_network_parameters_gradient.jl` and
   `test/custom_ad_rules/double_multiplication_network_parameters_gradient.jl` are wired into
   `runtests.jl` directly; `test/reachability.jl`'s allowlist needs no change, since neither file was
-  ever unreachable.
+  ever unreachable. The assertion helper both of them call is
+  `test/network_parameters_gradient_structure.jl`, included by each rather than copied into both:
+  a `@safetestset` is its own module, so sharing means including, and the rule the helper's
+  docstring states is the one thing here that must not be allowed to drift between two copies.
+  `test/reachability.jl` reaches it through that include, as it does any other shared file.
 
 ### Documentation
 
