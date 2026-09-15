@@ -514,6 +514,40 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   an allowlist entry whose name later resolves, or stops being exported, fails until it is removed.
   So the ten cannot be decided one by one and their stale reasons left behind.
 
+- **`scripts/test_attention.jl` and `scripts/test_double_multiplication_derivative.jl` are testsets
+  under `test/` now, not scripts nothing ran.** Both failed identically on evaluating `ps.params`:
+  `NetworkParameters` overloads `getproperty` to reach into the wrapped `NamedTuple`, so `.params`
+  looks up `:params` as a key of that `NamedTuple` instead of returning it, and raises a
+  `FieldError`. The accessor for the wrapped `NamedTuple` is the free function `params(ps)` —
+  imported by this package but not exported.
+
+  Fixing that access was enough to run both, and what they actually probe, once running, is
+  *structure preservation through Zygote*, not a derivative identity: a gradient taken with respect
+  to a `NetworkParameters` wrapper comes back as a `NetworkParameters` whose `SymmetricMatrix` leaf
+  is preserved when that leaf is used once in the loss expression
+  (`symplectic_attention_simplified`, `symplectic_linear_map`, `single_multiplication`, and the
+  `SymplecticAttentionQ` layer's own forward pass), and degrades to a plain `Matrix` when the leaf is
+  used twice (`symplectic_attention`, `double_multiplication`). The cause sits in the
+  `NetworkParameters` wrapper's own gradient accumulation across the two uses, not in
+  `_custom_mul`: `gradient(p -> sum(p.L1.A) + sum(p.L1.A), ps)`, which never calls `_custom_mul`,
+  loses the structure the same way, while the identical expression against `params(ps)` — the bare
+  wrapped `NamedTuple` — keeps it regardless of how many times the leaf is used. What inside the
+  wrapper's accumulation causes the loss was not isolated further. The two-use cases are
+  `@test_broken`, honestly, rather than deleted or asserted to work; every other case asserts the
+  `SymmetricMatrix` survives.
+
+  Every case, working or broken, also asserts what the original scripts' "this works" / "this
+  doesn't work" comments never actually stated: the gradient taken with respect to the
+  `NetworkParameters` wrapper is `isapprox` the gradient taken with respect to the bare wrapped
+  `NamedTuple` — measured as exact agreement (`0.0` maximum absolute difference) in every case,
+  including the ones that lose the `SymmetricMatrix` structure. Losing the structure is cosmetic
+  here, not a wrong gradient.
+
+  `test/attention_layer/symplectic_attention_network_parameters_gradient.jl` and
+  `test/custom_ad_rules/double_multiplication_network_parameters_gradient.jl` are wired into
+  `runtests.jl` directly; `test/reachability.jl`'s allowlist needs no change, since neither file was
+  ever unreachable.
+
 ### Documentation
 
 - `_tree_optim_step!` records why it is *not* written with
