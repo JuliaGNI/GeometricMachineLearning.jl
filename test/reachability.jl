@@ -5,7 +5,8 @@ using Test
 # silence. This guard walks the transitive `include` closure of `runtests.jl` and requires every
 # `test/**/*.jl` to be either inside that closure or named in `ALLOWED_ORPHANS` below with a
 # reason. Adding a test file without wiring it in therefore fails the suite, and a file that is
-# deliberately not run has to say why in one line.
+# deliberately not run has to say why in one line. The allowlist is closed in both directions: an
+# entry whose file is later wired in or deleted fails until the entry goes with it.
 #
 # The closure is read off the parsed syntax tree rather than off the text. A scanner over lines has
 # to re-implement Julia's lexer to know whether an `include` it found is code, and gets `#= … =#`
@@ -129,7 +130,14 @@ end
 const REACHABLE = include_closure("runtests.jl")
 
 @testset "every test file is reachable from runtests.jl or allowlisted" begin
-    unreachable = filter(
-        f -> !(f in REACHABLE) && !haskey(ALLOWED_ORPHANS, f), test_files())
+    files = test_files()
+
+    # A file may be outside the closure only if the allowlist above gives a reason for it.
+    unreachable = filter(f -> !(f in REACHABLE) && !haskey(ALLOWED_ORPHANS, f), files)
     @test unreachable == String[]
+
+    # And the allowlist may not outlive what it excuses. An entry whose file is now included, or no
+    # longer exists, has to go; otherwise the next reader trusts a reason that no longer holds.
+    stale = filter(f -> f in REACHABLE || !(f in files), sort!(collect(keys(ALLOWED_ORPHANS))))
+    @test stale == String[]
 end

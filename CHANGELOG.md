@@ -443,6 +443,10 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `test/runtests.jl` runs the new testset first, as `@safetestset "Reachability of every file under
   test/"`.
 
+  The allowlist is closed in both directions, as `test/exports.jl`'s is: an entry whose file is
+  later wired into `runtests.jl`, or deleted, fails until the entry goes with it. So the 40 cannot
+  be worked through one at a time and their stale reasons left behind.
+
   At the time of writing, `test/` holds 102 `.jl` files: 62 reachable from `runtests.jl`, 40
   unreachable. All 40 are seeded into the allowlist, and each was run on its own in the test
   environment so that its reason states what the file actually does rather than what its name
@@ -1609,6 +1613,11 @@ they resolved to is in the release notes above.
   This release deleted the eight that were `GeometricOptimizers` material *and* could not have run.
   The remainder needs a decision per group: register them behind an environment flag (the GPU and
   performance ones), fix the thing they test (`train!`), or delete them.
+
+  `test/reachability.jl` closes the class in both directions — see *Infrastructure* above. All 40
+  are allowlisted with the blocker each was observed to hit, a forty-first cannot appear unnoticed,
+  and an entry whose file is wired in or deleted fails until it is removed. What stays open is the
+  decision per group.
 
 ### D. Unverified
 
