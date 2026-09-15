@@ -45,7 +45,7 @@ nn = NeuralNetwork(model, backend, T)
 
 o = Optimizer(opt_method, nn)
 
-batch = Batch(batch_size, 1)
+batch = Batch(batch_size)
 
 loss_array₁ = o(nn, dl, batch, n_epochs)
 

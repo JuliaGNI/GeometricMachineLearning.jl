@@ -285,10 +285,13 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 - **Three reproduction scripts run again; two more get one blocker removed but still fail.**
   `GeometricProblems.DoublePendulum` no longer defines `timespan` or `timestep` — the values are
   `DEFAULT_TIMESPAN` and `DEFAULT_TIMESTEP` — so `scripts/volume_preserving_feedforward/double_pendulum.jl`
-  and `scripts/symplectic_transformer/double_pendulum.jl` import `DEFAULT_TIMESPAN` instead. Both
-  `CairoMakie` and `GeometricMachineLearning` export `save`, which makes the bare name ambiguous, so
-  `scripts/sympnets/sympnet_toda_lattice.jl` writes `CairoMakie.save`. Those three now run to
-  completion, or past two minutes of training without error.
+  and `scripts/symplectic_transformer/double_pendulum.jl` import `DEFAULT_TIMESPAN` instead. The
+  first of the two also dropped an unused `hamiltonian` from that import. Both `CairoMakie` and
+  `GeometricMachineLearning` export `save`, which makes the bare name ambiguous, so
+  `scripts/sympnets/sympnet_toda_lattice.jl` and `scripts/symplectic_transformer/double_pendulum.jl`
+  write `CairoMakie.save`. The second wrote into a `comparison_plots/` directory that nothing
+  creates, and now calls `mkpath` first. Those three now run to completion, or past two minutes of
+  training without error.
 
   The two `scripts/sympnets/sympnet_pendulum*.jl` included a `pendulum.jl` beside them, where the
   file is `scripts/pendulum.jl`, one directory up. Correcting the path only moves their failure:
@@ -304,7 +307,9 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `default_parameters()` above never reached it. The same script built its feedforward batch with
   `Batch(batch_size, 1)`, which is a `Batch{:Transformer}`; an `Optimizer` call on a
   `VolumePreservingFeedForward` network has no method for that, and the training threw a
-  `MethodError`. It is `Batch(batch_size)` now.
+  `MethodError`. It is `Batch(batch_size)` now. `scripts/volume_preserving_feedforward/rigid_body.jl`
+  built the same wrong batch for the same kind of network, and is corrected with it. That script
+  needs a CUDA driver to reach the call, which is why the fault survived this long.
 
 - **The tensor Cayley kernels are checked for orthonormality in `Float32`.**
   `test_tensor_cayley2` through `test_tensor_cayley5` each took a `T::Type` argument and then

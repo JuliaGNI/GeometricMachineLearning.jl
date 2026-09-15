@@ -162,8 +162,10 @@ function make_validation_plot(n_steps = n_steps; theme = :dark, symplectic = tru
     fig, ax
 end
 
+mkpath("comparison_plots")
+
 for n_steps in (10, 20, 30, 40, 100, 200, 300, 400, 600, 800, 1000)
     fig_light, ax_light = make_validation_plot(n_steps; theme = :light)
     fig_dark, ax_dark = make_validation_plot(n_steps; theme = :dark)
-    save("comparison_plots/DoublePendulum-Validation_$(n_steps).png", fig_light)
+    CairoMakie.save("comparison_plots/DoublePendulum-Validation_$(n_steps).png", fig_light)
 end

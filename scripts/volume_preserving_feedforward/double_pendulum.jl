@@ -2,8 +2,7 @@ using Zygote: gradient, pullback
 using GeometricMachineLearning
 using CairoMakie
 using GeometricIntegrators: integrate, ImplicitMidpoint
-using GeometricProblems.DoublePendulum: hodeproblem, default_parameters, DEFAULT_TIMESPAN,
-                                        hamiltonian, ϑ
+using GeometricProblems.DoublePendulum: hodeproblem, default_parameters, DEFAULT_TIMESPAN, ϑ
 using GeometricEquations: EnsembleProblem
 using LinearAlgebra: norm
 using Zygote: gradient
