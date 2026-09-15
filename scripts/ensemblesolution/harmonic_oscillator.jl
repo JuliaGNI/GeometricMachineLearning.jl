@@ -1,49 +1,32 @@
 using GeometricMachineLearning
 using GeometricSolutions
 using GeometricEquations
-using Test
 
 using GeometricProblems.HarmonicOscillator
-using GeometricProblems.HarmonicOscillator: hodeensemble, hamiltonian, default_parameters
+using GeometricProblems.HarmonicOscillator: hamiltonian, default_parameters
 
-#create the object ensemble_solution
+# create the object ensemble_solution
 ensemble_problem = hodeensemble(timespan = (0.0, 4.0))
 ensemble_solution = exact_solution(ensemble_problem)
 
 include("plots.jl")
 
-#create the data associated
-training_data = TrainingData(ensemble_solution)
+# `GSympNet` trains through the generic `DataLoader` + `Batch` + `Optimizer` pipeline directly,
+# as `scripts/sympnets/sympnet_toda_lattice.jl` already does.
+dl = DataLoader(ensemble_solution)
 
-@test GeometricMachineLearning.problem(training_data) == ensemble_problem
-@test typeof(shape(training_data)) == TrajectoryData
-@test type(data_symbols(training_data)) == PhaseSpaceSymbol
-@test symbols(training_data) == (:q, :p)
-@test dim(training_data) == 2
-@test noisemaker(training_data) == NothingFunction()
+arch = GSympNet(dl; n_layers = 4, upscaling_dimension = 10)
+nn = NeuralNetwork(arch, Float64)
+o = Optimizer(AdamOptimizer(), nn)
+batch = Batch(100)
+n_epochs = 1000
 
-@test get_Δt(training_data) == 0.1
-@test get_nb_trajectory(training_data) == 100
-@test get_length_trajectory(training_data)[1] == 40
-@test get_nb_point(training_data) === nothing
-
-@test Tuple(keys(GeometricMachineLearning.get_data(training_data))) == (:p, :q)
-
-#creating a training sets
-sympnet = NeuralNetwork(GSympNet(dim(training_data); nhidden = 4, width = 10), Float64)
-nruns = 10000
-method = BasicSympNet()
-mopt = AdamOptimizer()
-training_parameters = TrainingParameters(nruns, method, mopt)
-
-training_set = TrainingSet(sympnet, training_parameters, training_data)
-
-#training of the neural network
-neural_net_solution = train!(training_set; showprogress = true)
+loss_array = o(nn, dl, batch, n_epochs)
 
 function H(x)
     hamiltonian(
         0.0, x[1:(length(x) ÷ 2)], x[(1 + length(x) ÷ 2):end], default_parameters())
 end
-plot_result(training_data, neural_net_solution, H; batch_nb_trajectory = 10,
-    filename = "GSympNet 4-10 on Harmonic Oscillator", nb_prediction = 5)
+
+plot_result(dl, nn, H; batch_nb_trajectory = 10,
+    filename = "GSympNet_4-10_on_Harmonic_Oscillator.png", nb_prediction = 5)

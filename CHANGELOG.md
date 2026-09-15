@@ -109,6 +109,36 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   Two unrelated meanings on one name is one too many, and the new name says that it mutates its first
   argument, which the old one hid.
 
+- **Six research one-off scripts are deleted.** Each named a symbol the package no longer has, or a
+  data file that does not exist anywhere in this tree; running each one confirmed the failure.
+
+  - `scripts/ForcedHamiltonianSystem.jl` and `scripts/TimeDependentHarmonicOscillator_Analytic.jl`
+    import `QPT2` from `GeometricMachineLearning`, and the second also imports `ParametricLoss`;
+    neither name is defined or exported anywhere in `src/`. The first also calls `ForcedSympNet`,
+    likewise absent. Both raise `UndefVarError: QPT2 not defined`, not at the `using` line but at
+    the docstring'd function definition that uses `QPT2` as a type parameter (line 37 of the first
+    script, line 49 of the second).
+  - `scripts/normal_forms/non_rev_ham.jl`'s first failure is `Chain` at line 4, a three-way
+    ambiguity: `Lux.Chain`, `AbstractNeuralNetworks.Chain` (re-exported by
+    `GeometricMachineLearning`), and `SymbolicUtils.Rewriters.Chain`, declared `public` and loaded
+    transitively — the script never `using`s `SymbolicUtils` itself. Patching that around shows the
+    next blocker is
+    `Gradient`, called bare but never exported (`GradientLayerQ`/`GradientLayerP` are the exported
+    names). `SymplecticMatrix`, removed from the package in `444e6fac` (2023-05-31), sits only
+    inside a function the script never calls, so it is not what stops this script.
+  - `scripts/psd_auto_toda.jl` calls `SymplecticMatrix`, `SymplecticStiefelLayer` (never exported —
+    `src/GeometricMachineLearning.jl:189` says so directly) and `StandardOptimizer`, none of which
+    exist in `src/`. Even the 2026-08-16 commit that replaced this file's `GLMakie`/`Plots` calls
+    with `CairoMakie` left these breaks in place.
+  - `scripts/particles.jl` and `scripts/particles_cuda.jl` read
+    `../[../]ReducedBasisMethods/runs/BoT_Np5e4_k_010_050_np_10_T25.h5`. The sibling
+    `Packages/ReducedBasisMethods` repository exists but has no `runs/` directory and no file of
+    that name in its git history; both scripts fail at `h5open` before either reaches a training
+    step, and `particles_cuda.jl` fails there before any CUDA call.
+
+  None of the six has a replacement inside the package a reader could substitute, so none is a
+  one-line repair.
+
 ### Changed
 
 - **`map_to_cpu` is one walk instead of eight methods.** `NeuralNetworkParameters.mapstorage` hands a
@@ -267,6 +297,26 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   calls at `build_loss_test.jl:101`, and the `SqEuclidean` type parameter in the emitted files.
   Nothing under `scripts/` uses `BenchmarkTools` or `KernelAbstractions` either, but that was already
   so before this change — `Distances` is the one this deletion newly orphans.
+
+- **`scripts/ensemblesolution/harmonic_oscillator.jl` trains through `DataLoader` + `Batch` +
+  `Optimizer` instead of `TrainingData` + `TrainingSet` + `train!`.** The old path no longer ran: it
+  failed inside `src/data/data_training.jl:57`, `UndefVarError: timestep not defined in
+  GeometricMachineLearning`, before ever reaching the neural network. `BasicSympNetMethod` needed no
+  modern successor — `GSympNet` already trains through the generic `Optimizer` functor, as
+  `scripts/sympnets/sympnet_toda_lattice.jl` already does — so this is the same substitution, not a
+  new one. The script now builds `DataLoader(ensemble_solution)` directly (a method for exactly this
+  `EnsembleSolution` shape already exists at `src/data_loader/data_loader.jl:367`).
+
+  **`plots.jl`'s seven plotting functions are retyped onto `DataLoader` and `NeuralNetwork`, and
+  `plot_result` is called again.** Each keeps its original purpose — the two-form `plot_*!`/`plot_*`
+  convention is unchanged — and only how it reaches its data moves: `_trajectory` reads a
+  trajectory straight out of `dl.input.q`/`dl.input.p` instead of `get_data`;
+  `plot_verification!` and `plot_prediction!` roll a trajectory out with `iterate(nn, ...)` instead
+  of repeated calls to `nns.nn`; `plot_result`'s bounding box and trajectory sampling read
+  `dl.n_params` and `dl.input` instead of `get_nb_trajectory`/`get_data`. The script now ends by
+  calling `plot_result(dl, nn, H; ...)` again, producing the same four-panel PNG
+  (`GSympNet_4-10_on_Harmonic_Oscillator.png`) as before, verified by running it and inspecting the
+  four panels. The whole script runs to completion in about 40 s in an isolated process.
 
 ### Fixed
 
