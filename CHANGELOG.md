@@ -753,6 +753,12 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   layers", and `layers/sympnet_upscaling.jl`'s new testset carries the actual symplecticity claim as
   "Test symplecticity of the sympnet upscaling layer".
 
+- **C5 is removed from *Open Issues*: its premise no longer holds.**
+  `.github/workflows/CI.yml` no longer pins an explicit `1.13` job — only `pre` and `nightly` are
+  `experimental: true` — resolved by `4281732c` ("Unify the shared GitHub workflows", 2026-08-31),
+  which carries no changelog entry of its own. That predates and is unrelated to every sub-task in
+  this release's test/script restructuring; this close-out only noticed it, and fixed nothing.
+
 ## [0.7.0]
 
 **A layer is wrapped at the `GeometricOptimizers` boundary, and a whole set of parameters is a
@@ -1788,10 +1794,16 @@ they resolved to is in the release notes above.
   a decision about the loss, not a repair, which is why this release only documents it.
 
 - **B6. Training a Hamiltonian neural network through `train!` is broken for every method.** All
-  three call `vectorfield(nn, x, params)` — `ExactHnn` at `src/training_method/hnn_exact_method.jl:6`,
-  `SEulerA` and `SEulerB` at `src/training_method/symplectic_euler.jl:13` and `:18` — and no such
+  three call `vectorfield(nn, x, params)` — `ExactHnn` at `src/training_method/hnn_exact_method.jl:10`,
+  `SEulerA` and `SEulerB` at `src/training_method/symplectic_euler.jl:18` and `:25` — and no such
   method exists. `vectorfield` resolves only to GeometricBase's methods on `AbstractStateVariable`
   and `State`, so the call raises a `MethodError` as soon as the first gradient is taken.
+
+  **Still open. Untouched.** The test-tree and script-tree restructuring merged as
+  [#264](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/264) –
+  [#276](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/276) left every file above
+  unchanged; the `train!` retirement that would close this (giving `vectorfield` a definition, or
+  replacing it) is Phase B of the restructuring plan and was deliberately deferred, not attempted.
 
   Found by repairing `scripts/hnn_pendulum.jl`, which is several API generations behind and hid this
   behind four earlier failures (the two-argument `MomentumOptimizer`, the keyword
@@ -1830,11 +1842,6 @@ they resolved to is in the release notes above.
 - **C2. Two `isa` branches remain in `_leaf_optim_step!`** (for `AdamState`/`MomentumState`).
   Measurement showed the traversal is not implicated in the compile-time problem, so this is tidying,
   and it disappears entirely if C1 lands first.
-
-- **C5. Julia 1.13 and nightly are marked `experimental: true`.** 1.13 should be de-experimentalised
-  once it is green, or an upstream issue linked. Nightly stays experimental permanently, as in the
-  other JuliaGNI repositories. Before opening anything, check `RungeKutta` and `GeometricIntegrators`
-  for an existing `GenericLinearAlgebra` report to reference.
 
 - **C6. Three generated MNIST PDFs are in this branch's history** for three commits, from a
   `git add docs/src` that swept them in. They are untracked again and `.gitignore` now covers the
@@ -1882,30 +1889,63 @@ they resolved to is in the release notes above.
   and GeometricBase does define it, so that one is likely an `import` that was never written).
 
   `GeometricOptimizers`' `test/exports.jl` closes this whole class with one assertion over `names`;
-  `test/exports.jl` now does the same here, with these ten allowlisted and each given its reason. The
-  class is closed, so no eleventh can appear unnoticed; what stays open is the decision on each of the
-  ten — define it, or drop the export.
+  `test/exports.jl` now does the same here
+  ([#266](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/266)), with these ten
+  allowlisted and each given its reason. The class is closed, so no eleventh can appear unnoticed;
+  what stays open is the decision on each of the ten — define it, or drop the export.
 
-- **C11. 40 test files are unreachable from `runtests.jl`.** By area: 20 under `performance_tests/`,
-  5 `orthogonalization_procedures/`, 5 `train!/`, 2 `cuda/`, and 8 singletons (`training_phnn.jl`,
-  `integrator/test_integrator.jl`, `attention_layer/`, `custom_ad_rules/`, `kernels/`, `layers/`,
-  `symplectic_autoencoders/`, `transformer_related/`).
+  **Not closed.** The guard exists and the ten are still undefined, unchanged since #266. Two of
+  them, `symbol` and `aresame`, sit in the `train!` subsystem's own export blocks
+  (`test/exports.jl`'s allowlist says so), so their decision is folded into the `train!` retirement
+  in Phase B of the restructuring plan, which remains deferred. The other eight need their own
+  per-name decision independently of that.
 
-  They are not all the same thing, which is why this is one issue and not a deletion. The
-  `performance_tests/` and `cuda/` files need hardware the suite does not assume; the `train!/` files
-  cover `train!`, which **B6** says is broken for every method, so they would fail if enabled; and
-  the singletons are mostly stale. What they have in common is that nothing runs them, so nothing
-  tells you when they rot — `test/optimizers/lie_alg_lifts.jl`, deleted in this release, had been
-  including `../src/arrays/skew_sym.jl` since before that path stopped existing.
+- **C11. 6 test files remain unreachable from `runtests.jl`.** All 5 under `train!/`
+  (`test_method.jl`, `test_neuralnet_solution.jl`, `test_timer.jl`, `test_training.jl`,
+  `test_trainingSet.jl`) plus the singleton `integrator/test_integrator.jl`. Re-derived from
+  `test/reachability.jl`'s own closure and allowlist, which agree: `test_files()` minus
+  `REACHABLE` is exactly these six, and `ALLOWED_ORPHANS` has exactly six entries, one per file.
 
-  This release deleted the eight that were `GeometricOptimizers` material *and* could not have run.
-  The remainder needs a decision per group: register them behind an environment flag (the GPU and
-  performance ones), fix the thing they test (`train!`), or delete them.
+  This is down from the 40 this entry originally reported (corrected to 40 from a stated 41 by
+  [#269](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/269), which also added
+  `test/reachability.jl` and its allowlist). Three further sub-tasks of the test/script
+  restructuring emptied it by group, each shortening the allowlist in the same change:
+  [#270](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/270) deleted the 23
+  GPU/hardware orphans (`performance_tests/`, `cuda/`, `kernels/vec_add.jl`) — 40 down to 17;
+  [#271](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/271) deleted 9 more
+  (`orthogonalization_procedures/`'s five files, `attention_layer/apply_multi_head_attention.jl`,
+  `custom_ad_rules/matrix_vector_multiplication.jl`, `symplectic_autoencoders/linear_wave_equation.jl`,
+  `training_phnn.jl`) — 17 down to 8; and
+  [#275](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/275) wired in the two that
+  worked, `layers/sympnet_upscaling.jl` and `transformer_related/transformer_setup.jl` — 8 down to 6.
 
-  `test/reachability.jl` closes the class in both directions — see *Infrastructure* above. All 40
-  are allowlisted with the blocker each was observed to hit, a forty-first cannot appear unnoticed,
-  and an entry whose file is wired in or deleted fails until it is removed. What stays open is the
-  decision per group.
+  **Not closed.** The remaining six are all one group: `train!` and what it needs to construct.
+  `integrator/test_integrator.jl` hits `MethodError: HamiltonianArchitecture(::Int64)`, and the
+  `train!/` five hit that or `UndefVarError: timestep` or `MethodError: GSympNet(::Int64; nhidden)`
+  — the same class of stale-API defect that **B6** documents for `train!` itself. Closing them
+  needs the `train!` retirement (Phase B of the restructuring plan: repair or delete each,
+  update `runtests.jl` and shorten the allowlist to match), which remains deferred, not this
+  clean-up.
+
+- **C12. The sympnet upscaling chain is symplectic layer by layer, not end to end, and whether it
+  is meant to be is undecided.** `PSDLayer(N, N2) → GradientLayerQ(N2) → GradientLayerP(N2) →
+  PSDLayer(N2, N)`: each layer satisfies its own exact symplectic identity (`E'𝕁_{N2}E = 𝕁_N`,
+  `G'𝕁_{N2}G = 𝕁_{N2}`, `D𝕁_{N2}D' = 𝕁_N`), but the composition does not, for an algebraic
+  reason rather than a numerical one — the round trip needs the shear pair to preserve the
+  rank-`N` embedded Poisson tensor `E𝕁_N E'`, while the pair actually preserves the full-rank
+  `𝕁_{N2}`, and a rank-`N` matrix cannot equal a rank-`N2` one for `N2 > N`. Measured directly:
+  worst relative round-trip deviation over 20 random chains, `Float64`, weights tied, is `0.0018
+  .. 0.84` at `(N, N2) = (2, 4)`, `0.016 .. 0.087` at `(4, 16)` and `0.026 .. 0.072` at `(20,
+  40)` — shrinking with `N` but never zero — while the three layerwise identities hold to
+  `5.6e-16`–`1.4e-15` at the same sizes. `cond(E) = 1.0` rules out ill-conditioning, and the
+  round-trip deviation stays the same order of magnitude in `Float32` as in `Float64` — unlike the
+  layerwise identities, which drop with it — which rules out rounding as the cause.
+
+  The check is archived as `scripts/sympnet_upscaling_symplecticity.jl`
+  ([#276](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/276)); running it reproduces
+  the figures above. What it does not answer is whether exact end-to-end symplecticity was ever the
+  intended property of this architecture, as opposed to an approximation that improves with `N` —
+  that is a design question for the user, not something this check can settle.
 
 ### D. Unverified
 
