@@ -536,12 +536,17 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   returns a `SymmetricMatrix`; `gradient(p -> sum(p.L1.A) + sum(p.L1.A), ps)` uses it twice through
   two accesses and returns a `Matrix`. On this route accesses *below* the wrapper do not count:
   `p -> (L = p.L1; sum(L.A) + sum(L.A))` reads the inner `NamedTuple` twice and keeps the structure.
-  A third access behaves as the second. The cause therefore sits in the `NetworkParameters`
-  wrapper's own gradient accumulation across repeated accesses, not in `_custom_mul` — neither
-  expression above calls it — while the same expressions against `params(ps)`, the bare wrapped
-  `NamedTuple`, keep the structure at any access count. What inside the wrapper's accumulation
-  causes the loss was not isolated further. The two-access cases are `@test_broken`, honestly,
-  rather than deleted or asserted to work; every other case asserts the `SymmetricMatrix` survives.
+  A third access behaves as the second. The same expressions against `params(ps)`, the bare
+  wrapped `NamedTuple`, keep the structure at any access count — but not because the reverse pass
+  treats them differently. `Zygote.pullback` drops the leaf to a `Matrix` on the second access for
+  the bare `NamedTuple` exactly as it does for the wrapper; what differs is what happens after it.
+  `Zygote.gradient` finishes by projecting, and `ChainRulesCore.ProjectTo` of a `NamedTuple` is a
+  structured projector whose leaf maps the raw `Matrix` back to a `SymmetricMatrix`. `ProjectTo` of
+  a `NetworkParameters` falls back to `identity`, because `NeuralNetworkParameters` defines no
+  method for it, so nothing restores the wrapper's leaf. `_custom_mul` is not involved either —
+  neither expression above calls it. Defining that `ProjectTo` method upstream would close both
+  gaps. Until then the two-access cases are `@test_broken`, honestly, rather than deleted or
+  asserted to work; every other case asserts the `SymmetricMatrix` survives.
 
   **`getproperty` is not the only route in, and the other one counts at a different level.** A
   `Chain` reaches its layers through `values(ps)` rather than through `ps.L1`

@@ -12,9 +12,11 @@ only when the loss expression performs a single `getproperty` on that wrapper. A
 degrades the leaf to a plain `Matrix`. What decides the split is the number of `getproperty` calls
 on the wrapper itself -- not how often the leaf is used, and not how often the plain `NamedTuple`s
 below the wrapper are accessed. `p -> (A = p.L1.A; sum(A) + sum(A))` uses the leaf twice through one
-access and keeps the structure; `p -> sum(p.L1.A) + sum(p.L1.A)` loses it. A gradient taken with
-respect to the bare wrapped `NamedTuple` (`params(ps)`) keeps the structure at any access count.
-`CHANGELOG.md` records the experiment.
+access and keeps the structure; `p -> sum(p.L1.A) + sum(p.L1.A)` loses it. A `Zygote.gradient` taken
+with respect to the bare wrapped `NamedTuple` (`params(ps)`) keeps the structure at any access
+count, because `gradient` projects its result and `ChainRulesCore.ProjectTo` restores the leaf for a
+`NamedTuple` but is `identity` for a `NetworkParameters`. The underlying `Zygote.pullback` loses the
+structure on the second access either way. `CHANGELOG.md` records the experiment.
 
 A wrapper unwrapped with `values` rather than `getproperty` -- which is how `Chain` hands a layer
 its parameters -- counts differently: there the accesses on the plain `NamedTuple` below decide.
