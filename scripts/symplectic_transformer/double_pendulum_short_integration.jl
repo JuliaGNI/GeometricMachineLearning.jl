@@ -22,7 +22,7 @@ initial_conditions = reshape(initial_conditions, length(initial_conditions))
 
 ensemble_problem = EnsembleProblem(
     hodeproblem().equation, (timespan[1], timespan[1] + 15 * timestep),
-    timestep, initial_conditions, default_parameters)
+    timestep, initial_conditions, default_parameters())
 
 ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
 
@@ -115,7 +115,7 @@ function make_plot_for_index(index::Integer = 1)
     const n_steps = 100
     ensemble_problem = EnsembleProblem(
         hodeproblem().equation, (timespan[1], timespan[1] + n_steps * timestep), timestep,
-        [(q = dl.input.q[:, 1, index], p = dl.input.p[:, 1, index]),], default_parameters)
+        [(q = dl.input.q[:, 1, index], p = dl.input.p[:, 1, index]),], default_parameters())
     ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
     dl = DataLoader(ensemble_solution)
     init_con = (q = dl.input.q[:, 1:seq_length, 1], p = dl.input.p[:, 1:seq_length, 1])
