@@ -2,8 +2,7 @@ using Zygote: gradient, pullback
 using GeometricMachineLearning
 using CairoMakie
 using GeometricIntegrators: integrate, ImplicitMidpoint
-using GeometricProblems.DoublePendulum: hodeproblem, default_parameters, timespan,
-                                        hamiltonian, ϑ
+using GeometricProblems.DoublePendulum: hodeproblem, default_parameters, DEFAULT_TIMESPAN, ϑ
 using GeometricEquations: EnsembleProblem
 using LinearAlgebra: norm
 using Zygote: gradient
@@ -13,10 +12,10 @@ Random.seed!(123)
 
 θ₀ = [[π / 4, π / i] for i in 1:20]
 ω₀ = [0.0, π / 8]
-p₀ = [ϑ(timespan[begin], θ, ω₀, default_parameters()) for θ in θ₀]
+p₀ = [ϑ(DEFAULT_TIMESPAN[begin], θ, ω₀, default_parameters()) for θ in θ₀]
 const timestep = 0.06
 
-ensemble_problem = EnsembleProblem(hodeproblem().equation, timespan, timestep,
+ensemble_problem = EnsembleProblem(hodeproblem().equation, DEFAULT_TIMESPAN, timestep,
     [(q = q, p = p) for (q, p) in zip(θ₀, p₀)], default_parameters())
 ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
 
@@ -59,7 +58,7 @@ function setup_and_train(
     nn₀, loss_array
 end
 
-feedforward_batch = Batch(batch_size, 1)
+feedforward_batch = Batch(batch_size)
 
 model₂ = VolumePreservingFeedForward(sys_dim, n_blocks, n_linear, resnet_activation)
 
@@ -68,7 +67,8 @@ nn₂, loss_array₂ = setup_and_train(model₂, feedforward_batch, transformer 
 function numerical_solution(ics::NamedTuple, sys_dim::Int, t_integration::Int,
         timestep::Real, params::NamedTuple)
     validation_problem = hodeproblem(
-        ics.q, ics.p; timespan = (0.0, t_integration), timestep = timestep, params = params)
+        ics.q, ics.p; timespan = (0.0, t_integration), timestep = timestep,
+        parameters = params)
     sol = integrate(validation_problem, ImplicitMidpoint())
 
     numerical_solution = zeros(sys_dim, length(sol.t))
@@ -89,7 +89,7 @@ end
 
 θ₀_val = [π / 4, π / 4]
 ω₀_val = [0.0, π / 8]
-p₀_val = ϑ(timespan[begin], θ₀_val, ω₀, default_parameters())
+p₀_val = ϑ(DEFAULT_TIMESPAN[begin], θ₀_val, ω₀, default_parameters())
 
 ics = (q = θ₀_val, p = p₀_val)
 numerical, t_array = numerical_solution(

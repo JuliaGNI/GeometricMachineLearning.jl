@@ -1,6 +1,6 @@
 using GeometricMachineLearning
 using GeometricMachineLearning: MatrixSoftmax, VectorSoftmax
-using GeometricProblems.DoublePendulum: timespan, timestep, default_parameters, hodeproblem
+using GeometricProblems.DoublePendulum: DEFAULT_TIMESPAN, default_parameters, hodeproblem
 using GeometricEquations: EnsembleProblem
 using GeometricIntegrators: ImplicitMidpoint, integrate
 using LaTeXStrings
@@ -25,7 +25,8 @@ sympnet_paper_initial_conditions = reshape(initial_conditions, length(initial_co
 sympnet_paper_parameters = (l₁ = 1.0, l₂ = 1.0, m₁ = 1.0, m₂ = 1.0, g = 1.0)
 sympnet_paper_timestep = 0.75
 ensemble_problem = EnsembleProblem(
-    hodeproblem().equation, (timespan[1], timespan[2] * 100), sympnet_paper_timestep / 3.0,
+    hodeproblem().equation, (DEFAULT_TIMESPAN[1], DEFAULT_TIMESPAN[2] * 100),
+    sympnet_paper_timestep / 3.0,
     sympnet_paper_initial_conditions, sympnet_paper_parameters)
 
 ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
@@ -161,8 +162,10 @@ function make_validation_plot(n_steps = n_steps; theme = :dark, symplectic = tru
     fig, ax
 end
 
+mkpath("comparison_plots")
+
 for n_steps in (10, 20, 30, 40, 100, 200, 300, 400, 600, 800, 1000)
     fig_light, ax_light = make_validation_plot(n_steps; theme = :light)
     fig_dark, ax_dark = make_validation_plot(n_steps; theme = :dark)
-    save("comparison_plots/DoublePendulum-Validation_$(n_steps).png", fig_light)
+    CairoMakie.save("comparison_plots/DoublePendulum-Validation_$(n_steps).png", fig_light)
 end
