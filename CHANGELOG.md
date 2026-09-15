@@ -458,6 +458,56 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   docs build — here, one release behind. The old one-liner also called `save` unqualified, and
   `DocInventories` does not export it.
 
+### Infrastructure
+
+- **Test files are guarded for inclusion completeness.** `test/reachability.jl` verifies that every
+  `.jl` file under `test/` is either in the transitive `include` closure of `test/runtests.jl` or
+  named in an `ALLOWED_ORPHANS` allowlist with a one-line reason. The closure is read off the parsed
+  syntax tree, so an `include` that is commented out — with `#` or with `#= … =#` — or that appears
+  inside a string literal is not a live include, without the guard having to re-implement Julia's
+  lexer to say so.
+
+  Unreachable test files are never run, and such files have been repaired by hand from time to
+  time and regressed in silence. Adding a new test file without wiring it in now fails the suite.
+  `test/runtests.jl` runs the new testset first, as `@safetestset "Reachability of every file under
+  test/"`.
+
+  The allowlist is closed in both directions, as `test/exports.jl`'s is: an entry whose file is
+  later wired into `runtests.jl`, or deleted, fails until the entry goes with it. So the 40 cannot
+  be worked through one at a time and their stale reasons left behind.
+
+  At the time of writing, `test/` holds 103 `.jl` files: 63 reachable from `runtests.jl`, 40
+  unreachable. All 40 are seeded into the allowlist, and each was run on its own in the test
+  environment so that its reason states what the file actually does rather than what its name
+  suggests. Only **two** still run and assert anything —
+  `custom_ad_rules/matrix_vector_multiplication.jl` and `transformer_related/transformer_setup.jl`.
+  Of the rest, 23 stop at `using` a package that is neither a dependency nor a test target (14
+  CUDA, 6 Lux, and one each of GPUArrays, Flux and OffsetArrays), 13 stop on a name or method the
+  package no longer provides — among them `Attention`, `GradientQ` (the layer is `GradientLayerQ`),
+  `SymplecticStiefelManifold`, `Rfac`, `timestep`, a non-existent `src/optimizers/householder.jl`,
+  and `GeometricProblems`' `default_parameters` after it became a function — and two load without
+  error while asserting nothing: `orthogonalization_procedures/gram_schmidt.jl` defines two test
+  functions and calls neither, and one Zygote timing loop runs for minutes without an assertion.
+
+  The walk follows `include` calls whose argument is a string literal. An `include` built from a
+  variable or an interpolation is not followed; no file in `test/` does that today, and the effect
+  if one did would be to report the target as an orphan rather than to pass it silently.
+
+- **The 23 allowlisted files that could not load a required package are deleted, not repaired.**
+  `test/performance_tests/` (20 files), `test/cuda/` (2 files) and `test/kernels/vec_add.jl` are
+  gone, along with their entries in `test/reachability.jl`'s `ALLOWED_ORPHANS` — 40 entries down
+  to 17. None of CUDA, Lux, Flux, GPUArrays or Optimisers is a dependency of this package or of its
+  test environment, and no CI job runs on a GPU, so none of these files ever ran there. (`CUDA` and
+  `Lux` are dependencies of `scripts/Project.toml`, which these deleted files did not use.)
+
+  What is lost is not test coverage that ran, but coverage that was only ever advertised. 12 of
+  the 23 are bare `@time`/`@printf` scratch pads with no `@test` at all. The other 11 —
+  `test/cuda/resnet.jl`, `test/cuda/stiefel_manifold.jl`, and 9 files under
+  `test/performance_tests/` — do contain `@test` assertions on GPU array types, but every one of
+  them loads `CUDA`, `GPUArrays` or `Lux` in its first few lines, well before any `@test`, so the
+  load error stops the file before a single assertion runs. None of these 23 files ever exercised
+  the checks they contain. GPU coverage, if wanted, is separate work: writing new tests that run,
+  against a test environment that can load the packages they need.
 
 ## [0.7.0]
 
@@ -1592,10 +1642,10 @@ they resolved to is in the release notes above.
   class is closed, so no eleventh can appear unnoticed; what stays open is the decision on each of the
   ten — define it, or drop the export.
 
-- **C11. 41 test files are unreachable from `runtests.jl`.** By area: 20 under `performance_tests/`,
-  5 `orthogonalization_procedures/`, 4 `train!/`, 2 `cuda/`, and 10 singletons (`training_phnn.jl`,
-  `macro_testerror.jl`, `integrator/test_integrator.jl`, `attention_layer/`, `custom_ad_rules/`,
-  `data/`, `kernels/`, `layers/`, `symplectic_autoencoders/`, `transformer_related/`).
+- **C11. 40 test files are unreachable from `runtests.jl`.** By area: 20 under `performance_tests/`,
+  5 `orthogonalization_procedures/`, 5 `train!/`, 2 `cuda/`, and 8 singletons (`training_phnn.jl`,
+  `integrator/test_integrator.jl`, `attention_layer/`, `custom_ad_rules/`, `kernels/`, `layers/`,
+  `symplectic_autoencoders/`, `transformer_related/`).
 
   They are not all the same thing, which is why this is one issue and not a deletion. The
   `performance_tests/` and `cuda/` files need hardware the suite does not assume; the `train!/` files
@@ -1607,6 +1657,11 @@ they resolved to is in the release notes above.
   This release deleted the eight that were `GeometricOptimizers` material *and* could not have run.
   The remainder needs a decision per group: register them behind an environment flag (the GPU and
   performance ones), fix the thing they test (`train!`), or delete them.
+
+  `test/reachability.jl` closes the class in both directions — see *Infrastructure* above. All 40
+  are allowlisted with the blocker each was observed to hit, a forty-first cannot appear unnoticed,
+  and an entry whose file is wired in or deleted fails until it is removed. What stays open is the
+  decision per group.
 
 ### D. Unverified
 
