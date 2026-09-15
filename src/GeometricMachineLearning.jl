@@ -304,7 +304,8 @@ export arch
 include("backends/backends.jl")
 include("backends/lux.jl")
 
-export NetworkLoss, TransformerLoss, FeedForwardLoss, AutoEncoderLoss, ReducedLoss, HNNLoss
+export NetworkLoss, TransformerLoss, FeedForwardLoss, AutoEncoderLoss, ReducedLoss, HNNLoss,
+       LNNLoss
 
 #INCLUDE ARCHITECTURES
 include("architectures/neural_network_integrator.jl")
@@ -343,6 +344,7 @@ include("architectures/default_architecture.jl")
 
 include("loss/losses.jl")
 include("loss/hnn_loss.jl")
+include("loss/lnn_loss.jl")
 
 export AbstractPullback, ZygotePullback, SymbolicPullback
 include("pullbacks/zygote_pullback.jl")

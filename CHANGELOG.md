@@ -492,6 +492,53 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 ### Added
 
+- **`LagrangianNeuralNetwork` is trainable through `DataLoader` + `Batch` + `Optimizer` now.**
+  `LNNLoss` is its loss and `NetworkLoss(::LagrangianNeuralNetwork)` returns one, so the architecture
+  no longer reaches training only through the `train!` harness. The network output is a scalar
+  Lagrangian ``L(q, \dot{q})``; the loss solves that Lagrangian's Euler–Lagrange equations for the
+  acceleration and compares the result against the acceleration in the data, relative to the norm of
+  the data, the way `HNNLoss` compares a vector field. `input` stacks ``q`` on ``\dot{q}`` and has
+  ``2n`` rows; `output` is ``\ddot{q}`` and has ``n``.
+
+  **This repairs the training method it replaces rather than transcribing it.** `loss_single` in
+  `src/training_method/lnn_exact_method.jl` reads `abs(sum(∇q∇q̇L(nn, qₙ, q̇ₙ, params)))`, and it
+  takes a `q̈ₙ` argument it never uses: sweeping that argument over `-5`, `0` and `5` returns
+  `0.291075` every time. It is a penalty on the mixed Hessian block, minimised by any Lagrangian
+  whose position and velocity do not couple, and it fits no data at all. What the method meant to
+  compute is the rest of that same line, commented out — and that expression is incomplete too,
+  contracting with neither ``\dot{q}`` nor ``\ddot{q}``. What `LNNLoss` uses is the Euler–Lagrange
+  equation written out:
+
+  ```
+  ∇q̇∇q̇L q̈ + (∇q∇q̇L)' q̇ = ∇qL
+  ```
+
+  The transpose is load-bearing, because ``\nabla_q\nabla_{\dot{q}}L`` is indexed
+  ``[i, j] = \partial^2L/\partial{}q_i\partial\dot{q}_j`` while the chain rule contracts the first
+  index. `test/lagrangian_neural_network_tests.jl` checks the solve against a closed form for
+  ``L = \tfrac12\dot{q}^TM\dot{q} + q^TC\dot{q} - \tfrac12q^TKq`` with `C` deliberately *not*
+  symmetric, and also checks that the same expression with the transpose dropped does **not**
+  reproduce that closed form — so the assertion cannot pass for a reason unrelated to the index
+  convention.
+
+  **The derivatives come from a compiled symbolic expression, not from `Zygote` inside the loss.**
+  Differentiating a loss that itself calls `Zygote.gradient` with respect to the network parameters
+  fails with `MethodError: no method matching getindex(::IdDict{Any, Any})`; measured in two separate
+  processes. `SymbolicNeuralNetworks.Jacobian` applied to its own result gives the input-Hessian
+  instead, and it agrees with `Zygote.hessian` to `2.8e-17`. This is the route
+  `hamiltonian_vector_field` already took, and this is why.
+
+  The solve inverts ``\nabla_{\dot{q}}\nabla_{\dot{q}}L``, so its conditioning is what decides
+  whether the solved form is usable at all rather than an un-inverted residual. It is asserted in
+  the suite, not merely measured once: `test_velocity_hessian_is_well_conditioned` draws fresh
+  parameters and fresh evaluation points and requires the condition number of that block to stay
+  below `1e8`. On the draws behind the choice it never came close — median between `1.0` and `7.9`,
+  worst `3332`.
+
+  What is **not** added is a `SymbolicPullback` for this architecture. `HNNLoss` has one, and *B5*
+  under *Open Issues* records why that machinery is not trustworthy for a loss that is not additive
+  over the batch — which this one, dividing by `norm(output)`, is not.
+
 - **`test/exports.jl` asserts that every name the package exports is actually defined.** Julia only
   errors on a dangling `export` when the name is *resolved*, so an exported name that nothing defines
   is silent: the package loads, the docs build and the suite passes, and a user who reaches for the
