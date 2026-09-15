@@ -60,10 +60,20 @@ function plot_verification(dl::DataLoader, nn::NeuralNetwork; kwargs...)
     _standalone(gp -> plot_verification!(gp, dl, nn; kwargs...), (1000, 800))
 end
 
-function plot_loss()
+function plot_loss!(gp, loss_array::AbstractVector)
+    ax = Axis(gp; title = "Training error", titlesize = 15, xlabel = L"epoch",
+        ylabel = L"loss", xlabelsize = 14, ylabelsize = 14, yscale = log10)
+
+    lines!(ax, loss_array; linewidth = 3)
+
+    return ax
 end
 
-function plot_prediction!(gp, dl::DataLoader, nn::NeuralNetwork,
+function plot_loss(loss_array::AbstractVector)
+    _standalone(gp -> plot_loss!(gp, loss_array), (1000, 800))
+end
+
+function plot_prediction!(gp, nn::NeuralNetwork,
         initial_cond::AbstractArray, H; scale = 1)
     xmin = -3.5*scale
     xmax = 3.5*scale
@@ -91,21 +101,20 @@ function plot_prediction!(gp, dl::DataLoader, nn::NeuralNetwork,
     return ax
 end
 
-function plot_prediction(dl::DataLoader, nn::NeuralNetwork,
+function plot_prediction(nn::NeuralNetwork,
         initial_cond::AbstractArray, H; kwargs...)
-    _standalone(gp -> plot_prediction!(gp, dl, nn, initial_cond, H; kwargs...), (
+    _standalone(gp -> plot_prediction!(gp, nn, initial_cond, H; kwargs...), (
         1000, 800))
 end
 
 function plot_result(dl::DataLoader, nn::NeuralNetwork, hamiltonian;
         batch_nb_trajectory::Int = dl.n_params,
         batch_verif::Int = 3, filename = nothing, nb_prediction = 2)
-    initial_conditions = [(q = dl.input.q[1, 1, i], p = dl.input.p[1, 1, i])
-                          for i in 1:dl.n_params]
-    min_q = minimum(ic.q for ic in initial_conditions)
-    min_p = minimum(ic.p for ic in initial_conditions)
-    max_q = maximum(ic.q for ic in initial_conditions)
-    max_p = maximum(ic.p for ic in initial_conditions)
+    # the bounding box of every initial condition, over all components
+    min_q = minimum(dl.input.q[:, 1, :])
+    min_p = minimum(dl.input.p[:, 1, :])
+    max_q = maximum(dl.input.q[:, 1, :])
+    max_p = maximum(dl.input.p[:, 1, :])
 
     initial_cond = [[
                         linear_trans(rand(), min_q, max_q), linear_trans(rand(), min_p, max_p)]
@@ -119,12 +128,12 @@ function plot_result(dl::DataLoader, nn::NeuralNetwork, hamiltonian;
 
     plot_data!(plt[1, 1],
         dl,
-        "Datas";
+        "Data";
         index = sort!(sample(1:dl.n_params, batch_nb_trajectory, replace = false)))
     plot_verification!(plt[1, 2], dl, nn;
         index = sort!(sample(1:dl.n_params, batch_verif, replace = false)))
-    plot_prediction!(plt[2, 1], dl, nn, initial_cond, hamiltonian)
-    plot_prediction!(plt[2, 2], dl, nn, initial_cond_far, hamiltonian; scale = 10)
+    plot_prediction!(plt[2, 1], nn, initial_cond, hamiltonian)
+    plot_prediction!(plt[2, 2], nn, initial_cond_far, hamiltonian; scale = 10)
 
     if filename !== nothing
         CairoMakie.save(filename, plt)

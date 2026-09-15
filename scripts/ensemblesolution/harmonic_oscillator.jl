@@ -1,6 +1,4 @@
 using GeometricMachineLearning
-using GeometricSolutions
-using GeometricEquations
 
 using GeometricProblems.HarmonicOscillator
 using GeometricProblems.HarmonicOscillator: hamiltonian, default_parameters
@@ -30,3 +28,5 @@ end
 
 plot_result(dl, nn, H; batch_nb_trajectory = 10,
     filename = "GSympNet_4-10_on_Harmonic_Oscillator.png", nb_prediction = 5)
+
+CairoMakie.save("GSympNet_4-10_on_Harmonic_Oscillator_loss.png", plot_loss(loss_array))
