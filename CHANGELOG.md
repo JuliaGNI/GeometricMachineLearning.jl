@@ -447,7 +447,7 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   later wired into `runtests.jl`, or deleted, fails until the entry goes with it. So the 40 cannot
   be worked through one at a time and their stale reasons left behind.
 
-  At the time of writing, `test/` holds 102 `.jl` files: 62 reachable from `runtests.jl`, 40
+  At the time of writing, `test/` holds 103 `.jl` files: 63 reachable from `runtests.jl`, 40
   unreachable. All 40 are seeded into the allowlist, and each was run on its own in the test
   environment so that its reason states what the file actually does rather than what its name
   suggests. Only **two** still run and assert anything —
