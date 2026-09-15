@@ -19,14 +19,9 @@ using Test
 # wired in or deleted.
 
 const ALLOWED_ORPHANS = Dict(
-    # Runs and asserts something today. Nothing includes it, so nothing notices when that stops
-    # being true.
-    "transformer_related/transformer_setup.jl" => "runs one `@test` on transformer setup with Stiefel weights",
-
     # Name something the package does not provide. Each reason is the error that actually stops the
     # file, which is not always the name a reader would predict from the file's title.
     "integrator/test_integrator.jl" => "`MethodError: HamiltonianArchitecture(::Int64)`; the constructor takes different arguments",
-    "layers/sympnet_upscaling.jl" => "`UndefVarError: GradientQ`; the layer is named `GradientLayerQ`",
     "train!/test_method.jl" => "`MethodError: HamiltonianArchitecture(::Int64)`",
     "train!/test_neuralnet_solution.jl" => "`UndefVarError: timestep` inside `GeometricMachineLearning`",
     "train!/test_timer.jl" => "`MethodError: GSympNet(::Int64; nhidden)`",

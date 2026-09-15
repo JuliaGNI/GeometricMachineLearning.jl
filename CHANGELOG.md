@@ -538,6 +538,55 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   headings go with them: nothing under `test/` now stops at a package the test environment cannot
   load, and nothing now loads without asserting anything.
 
+- **Two more orphaned test files are wired in, not deleted.** `test/layers/sympnet_upscaling.jl` and
+  `test/transformer_related/transformer_setup.jl` are now included from `test/runtests.jl`; their
+  `test/reachability.jl` allowlist entries are removed — 8 entries down to 6.
+
+  `sympnet_upscaling.jl` needed two fixes before it could even run. The layers it built were renamed
+  from `GradientQ`/`GradientP` to `GradientLayerQ`/`GradientLayerP` at some point, which is the
+  `UndefVarError` the allowlist recorded. Its own loop, `for N in 2:2:20, N2 in (2N):2:(4N)`, called
+  `test_symplecticity()` with no arguments, so the two loop variables were dead and the same default
+  case (`N=4, N2=20`) ran 100 times. Fixing the call to `test_symplecticity(N, N2)` exposed a third
+  problem the naming error had always hidden, because the broken loop never reached it: `𝕁 =
+  PoissonTensor(N÷2)` compared an `N×N` round-trip Jacobian against an `(N÷2)×(N÷2)` matrix. The fix,
+  `PoissonTensor(N)`, is confirmed correct by tracing the layer chain — `PSDLayer(N, N2)` upscales,
+  the two `GradientLayer{N2,N2}`s preserve dimension, `PSDLayer(N2, N)` downscales back to `N`, so
+  the Jacobian of the whole chain is `N×N`.
+
+  **With those three fixes, the test still failed intermittently at small `N`.** Measured over 150
+  trials: 12.7% of random draws at `N=2`, 2.7% at `N=4`, 0% at `N≥6`. This is not floating-point
+  noise — the same 150 trials re-run in Float64 gave the same failure rate (11.7%, within sampling
+  noise of the Float32 figure) and the same error magnitudes (mean relative error 0.052 in Float32
+  vs 0.057 in Float64); Float64 would have crushed a rounding artefact by nine orders of magnitude,
+  and did not. It is not conditioning either: `cond(Φ)` for the layer's Stiefel factor is exactly
+  `1.0` in every trial, pass or fail, since `Φ` comes from `qr!(...).Q` and is orthonormal by
+  construction. The actual mechanism: each layer *is* exactly symplectic to Float32 machine
+  precision — the encoder satisfies `E'𝕁_{N2}E = 𝕁_N`, the shear layers satisfy `G'𝕁_{N2}G =
+  𝕁_{N2}`, and `PSDLayer`'s symmetric construction gives the decoder the same identity in the other
+  direction, `Dec·𝕁_{N2}·Dec' = 𝕁_N` — all three confirmed to hold to within `1e-5` of the
+  theoretical identity (measured max deviation 2–5e-7 across `N`) — but the round trip
+  needs `G` to preserve `P = E𝕁_NE'`, and `P` has rank `N < N2` while `𝕁_{N2}` is full rank: they
+  cannot be equal, by a rank argument, regardless of how `Φ` is drawn. Round-trip relative error runs
+  `0.011`–`0.275` across the swept `N`, shrinking with `N` but with no reason to vanish at any finite
+  `N2`.
+
+  So the test asserts what is actually true — the encoder identity `E'𝕁_{N2}E = 𝕁_N`, the shear
+  identity `G'𝕁_{N2}G = 𝕁_{N2}` and the decoder identity `Dec·𝕁_{N2}·Dec' = 𝕁_N`, each to `atol =
+  1e-5` — instead of the round-trip composition, which is only ever approximately symplectic and is
+  neither computed nor asserted. An earlier version of this fix added `Random.seed!(1234)` to pin
+  the round-trip check against this variance; that is removed, since asserting only the exact
+  identities leaves nothing to pin.
+
+  The testset runs 120 distinct `(N, N2)` pairs — 480 assertions, four per case — in `2m44.2s`.
+  The three Jacobian evaluations (encoder, shear pair, decoder) are where the cost is; the
+  comparisons against `𝕁` that follow each one are cheap matrix products.
+
+  `test/runtests.jl`'s testset for `layers/sympnet_layers_test.jl` was labelled "Test symplecticity
+  of upscaling layer", though that file only checks tensor-slice consistency — the guarantee it
+  advertised was never checked anywhere. It is relabelled "Test tensor-slice consistency of sympnet
+  layers", and `layers/sympnet_upscaling.jl`'s new testset carries the actual symplecticity claim as
+  "Test symplecticity of the sympnet upscaling layer".
+
 ## [0.7.0]
 
 **A layer is wrapped at the `GeometricOptimizers` boundary, and a whole set of parameters is a
