@@ -564,7 +564,8 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   precision — the encoder satisfies `E'𝕁_{N2}E = 𝕁_N`, the shear layers satisfy `G'𝕁_{N2}G =
   𝕁_{N2}`, and `PSDLayer`'s symmetric construction gives the decoder the same identity in the other
   direction, `Dec·𝕁_{N2}·Dec' = 𝕁_N` — all three confirmed to hold to within `1e-5` of the
-  theoretical identity (measured max deviation 2–5e-7 across `N`) — but the round trip
+  theoretical identity (measured max deviation `7.8e-7`, at `N=20, N2=80`, over 20 draws at each of
+  the 120 swept pairs) — but the round trip
   needs `G` to preserve `P = E𝕁_NE'`, and `P` has rank `N < N2` while `𝕁_{N2}` is full rank: they
   cannot be equal, by a rank argument, regardless of how `Φ` is drawn. Round-trip relative error runs
   `0.011`–`0.275` across the swept `N`, shrinking with `N` but with no reason to vanish at any finite
@@ -577,9 +578,20 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   the round-trip check against this variance; that is removed, since asserting only the exact
   identities leaves nothing to pin.
 
-  The testset runs 120 distinct `(N, N2)` pairs — 480 assertions, four per case — in `2m44.2s`.
-  The three Jacobian evaluations (encoder, shear pair, decoder) are where the cost is; the
-  comparisons against `𝕁` that follow each one are cheap matrix products.
+  The old version also tied the two `PSDLayer` weights, `ps[4].weight.A = ps[1].weight.A`, with the
+  comment that the first and last layer must share a weight or they map to a different symplectic
+  potential. The tying goes with the round-trip assertion it supported, so its effect is recorded
+  here. It is real but not sufficient: over 100 draws at each of three pairs it pulls the round-trip
+  deviation down by an order of magnitude — median `3.4e-2` against `4.7e-1` at `(N, N2) = (2, 4)`,
+  `5.2e-2` against `7.9e-1` at `(4, 8)`, `3.3e-2` against `7.7e-1` at `(10, 20)` — and the deviation
+  still exceeds the `1e-5` tolerance in 299 of those 300 draws. The rank argument above is what
+  rules the round trip out, and no choice of weights escapes it. The three layer identities the test
+  now asserts each hold whatever the other layers' weights are, so nothing needs tying.
+
+  The testset runs 120 distinct `(N, N2)` pairs — 360 assertions, three per case — in `2m49.1s`.
+  Almost all of that is Zygote compiling the three Jacobian closures, which happens once for the
+  whole file: with those closures already compiled, the same 120-pair sweep takes `0.3s`. The pair
+  count is therefore nearly free, and shrinking the sweep would not make the testset faster.
 
   `test/runtests.jl`'s testset for `layers/sympnet_layers_test.jl` was labelled "Test symplecticity
   of upscaling layer", though that file only checks tensor-slice consistency — the guarantee it

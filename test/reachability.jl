@@ -12,15 +12,12 @@ using Test
 # to re-implement Julia's lexer to know whether an `include` it found is code, and gets `#= … =#`
 # and string literals wrong; the parser has already made that distinction.
 #
-# Every reason below states what running that file in the test environment actually does. The
-# groups are the observed first blocker, not a guess from the file's name: a file that is said to
-# work was seen to exit cleanly, and a file that is said to be broken names the error that stops
-# it. The allowlist is a backlog, not a design -- each entry is a file waiting to be repaired,
-# wired in or deleted.
+# Every entry below names something the package does not provide. Each reason is the observed first
+# blocker rather than a guess from the file's name: it is the error that actually stops the file,
+# which is not always what a reader would predict from the file's title. The allowlist is a backlog,
+# not a design -- each entry is a file waiting to be repaired, wired in or deleted.
 
 const ALLOWED_ORPHANS = Dict(
-    # Name something the package does not provide. Each reason is the error that actually stops the
-    # file, which is not always the name a reader would predict from the file's title.
     "integrator/test_integrator.jl" => "`MethodError: HamiltonianArchitecture(::Int64)`; the constructor takes different arguments",
     "train!/test_method.jl" => "`MethodError: HamiltonianArchitecture(::Int64)`",
     "train!/test_neuralnet_solution.jl" => "`UndefVarError: timestep` inside `GeometricMachineLearning`",
