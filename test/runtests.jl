@@ -8,6 +8,9 @@ using SafeTestsets, Test, GeometricMachineLearning
 @safetestset "Reachability of every file under test/                                          " begin
     include("reachability.jl")
 end
+@safetestset "Exported names are defined                                                      " begin
+    include("exports.jl")
+end
 
 # reduced order modeling tests
 @info "Starting reduced-order-modeling tests"
