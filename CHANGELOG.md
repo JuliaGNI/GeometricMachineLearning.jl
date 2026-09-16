@@ -2207,6 +2207,30 @@ they resolved to is in the release notes above.
   invariant), or drop the symbolic pullback for architectures whose loss is not additive. Either is
   a decision about the loss, not a repair, which is why this release only documents it.
 
+- **B7. `ReducedLoss` cannot be trained through the `Optimizer` functor.** Its only functor method
+  is
+
+  ```julia
+  (loss::ReducedLoss)(model::Chain, params::NetworkParameters, input::CT, output::CT) where {CT}
+  ```
+
+  so the input and the output must share one type exactly. A pair that does not match reaches the
+  `NetworkLoss` fallback in `AbstractNeuralNetworks`, whose body is an `error` call — so what a
+  caller sees is `Functor not defined for NetworkLoss of type ReducedLoss{…}`, not a `MethodError`
+  naming the argument types. Measured on a `SymplecticAutoencoder(8, 2)` and a two-layer `Chain`:
+  two `Array{Float64,3}` arguments dispatch; a `Float32` input against a `Float64` output does not;
+  an array against a `(q, p)` `NamedTuple` does not.
+
+  It is reached by both `scripts/reproduction/symplectic_autoencoders/online_*.jl`, which is how it
+  was found — the new `Scripts.yml` job runs them. Nothing had caught it before because nothing ran
+  it: the only `ReducedLoss` use under `test/` is a docstring example that calls the loss directly,
+  and the training in `docs/src/tutorials/symplectic_autoencoder.md` sits in plain ```julia fences
+  that Documenter renders and never executes. Both scripts are named in `SKIPPED` in
+  `scripts/runscripts.jl` until it is fixed.
+
+  Closing it means deciding what `ReducedLoss` should accept — a second type parameter for the
+  output, or a conversion at the boundary — in `src/loss/losses.jl`.
+
   (**B1**, **B2**, **B3**, **B4** and **B6** are all closed and their entries are gone: B1 and B2 by
   this release — the duplicated `AdamOptimizerWithDecay` and the split `Manifold`, both under
   *Removed (breaking)* — B3 by SymbolicNeuralNetworks 0.5, B4 by `a427add1`, which repaired the
@@ -2255,8 +2279,17 @@ they resolved to is in the release notes above.
   neither file exists anywhere in the repository, and neither did before the move to `legacy/`. Of
   the 29 include targets under `legacy/`, the other 22 resolve. The spelling is now at least
   consistent with where the files sit, so what remains is a decision about `data.jl`: reconstruct it
-  (it generated the pendulum training data, which `scripts/pendulum.jl` now does) or delete the
-  scripts that need it.
+  (it generated the pendulum training data, which `scripts/utilities/pendulum.jl` now does) or
+  delete the scripts that need it.
+
+  **Nine more of those include sites went stale when `scripts/` was restructured.** Seven
+  `legacy/hnn/*.jl` include `../../scripts/plots.jl`, `hnn_lux.jl` also includes
+  `../../scripts/pendulum.jl`, and `legacy/hnn/README.md` and `legacy/hnn/Project.toml` name the
+  first in prose; all of them are `scripts/utilities/` now. They are left alone deliberately: every
+  one of those seven files already stops earlier, on the `data.jl` above, so repointing them fixes
+  nothing that runs — and the seven are not formatted to this repository's own `style = "sciml"`,
+  so staging them at all would have meant a 371-line reformat of dead code around a one-line
+  change. The path correction belongs with whatever settles `data.jl`.
 
 - **C12. The sympnet upscaling chain is symplectic layer by layer, not end to end, and whether it
   is meant to be is undecided.** `PSDLayer(N, N2) → GradientLayerQ(N2) → GradientLayerP(N2) →
