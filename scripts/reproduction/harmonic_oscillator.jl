@@ -14,7 +14,7 @@ ensemble_solution = exact_solution(ensemble_problem)
 include("../utilities/ensemble_plots.jl")
 
 # `GSympNet` trains through the generic `DataLoader` + `Batch` + `Optimizer` pipeline directly,
-# as `scripts/sympnets/sympnet_toda_lattice.jl` already does.
+# as `scripts/reproduction/sympnets/sympnet_toda_lattice.jl` already does.
 dl = DataLoader(ensemble_solution)
 
 arch = GSympNet(dl; n_layers = 4, upscaling_dimension = 10)

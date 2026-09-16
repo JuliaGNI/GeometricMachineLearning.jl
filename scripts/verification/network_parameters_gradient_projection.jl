@@ -1,7 +1,7 @@
 # Check where a gradient loses the SymmetricMatrix structure of a NetworkParameters leaf.
 #
 # Run from the repo root:
-#   julia --startup-file=no --project=. scripts/network_parameters_gradient_projection.jl
+#   julia --startup-file=no --project=. scripts/verification/network_parameters_gradient_projection.jl
 #
 # The reverse pass is not what distinguishes the wrapper from the bare NamedTuple: Zygote.pullback
 # drops the leaf to a plain Matrix on the second getproperty for both. Zygote.gradient projects its

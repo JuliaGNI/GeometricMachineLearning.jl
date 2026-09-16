@@ -20,7 +20,7 @@
 #
 # Run with the package environment:
 #
-#     julia --startup-file=no --project=. scripts/sympnet_upscaling_symplecticity.jl
+#     julia --startup-file=no --project=. scripts/verification/sympnet_upscaling_symplecticity.jl
 
 using GeometricMachineLearning
 using LinearAlgebra: cond, opnorm, rank
