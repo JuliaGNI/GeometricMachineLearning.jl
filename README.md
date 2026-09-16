@@ -26,7 +26,7 @@ using GeometricMachineLearning
 using CUDA # Metal
 using CairoMakie
 
-include("scripts/pendulum.jl")
+include("scripts/utilities/pendulum.jl")
 
 type = Float32 # Float16 etc.
 # get data 

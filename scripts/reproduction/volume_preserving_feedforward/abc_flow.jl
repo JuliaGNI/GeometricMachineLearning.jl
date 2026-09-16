@@ -1,0 +1,118 @@
+using GeometricMachineLearning
+using GeometricMachineLearning: map_to_cpu
+using CairoMakie
+using GeometricIntegrators: integrate, ImplicitMidpoint
+using GeometricProblems.ABCFlow: odeproblem, default_parameters
+using GeometricEquations: EnsembleProblem
+using LinearAlgebra: norm
+using Zygote: gradient
+import Random
+
+# `smoke_size(full, smoke)` returns the second when GML_SMOKE is set, which is how the CI
+# job runs this script end to end in seconds. See scripts/README.md.
+include("../../utilities/smoke.jl")
+
+Random.seed!(123)
+const ics₁ = [(q = [0.0, 0.0, z_val],) for z_val in 0.0:0.01:0.9]
+const ics₂ = [(q = [0.0, y_val, 0.0],) for y_val in 0.0:0.01:0.9]
+const ics = [ics₁..., ics₂...]
+
+const timestep = 0.8
+const timespan = (0.0, 1000.0)
+
+const sys_dim = length(ics[1].q)
+
+const n_blocks = 6
+const n_linear = 2
+const activation = tanh
+
+const batch_size = 16384
+const opt_method = AdamOptimizer()
+const n_epochs = smoke_size(1000, 2)
+
+# This was run on an Apple GPU: `using Metal`, `const backend = MetalBackend()`, `const T =
+# Float32`, and `dl = DataLoader(dl₁.input |> MtlArray{T})` below. Metal is Apple-Silicon only and
+# is not in `scripts/Project.toml`, because it does not install on the Linux runner that gates
+# these scripts -- so the backend here is the CPU, and switching back is those four lines.
+const backend = CPU()
+const T = Float64
+
+const t_validation = 5
+
+ensemble_problem = EnsembleProblem(
+    odeproblem().equation, timespan, timestep, ics, default_parameters())
+ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())
+dl₁ = DataLoader(ensemble_solution)
+dl = dl₁
+
+model = VolumePreservingFeedForward(sys_dim, n_blocks, n_linear, activation)
+
+nn = NeuralNetwork(model, backend, T)
+
+o = Optimizer(opt_method, nn)
+
+# `Batch(batch_size, 1)` is a `Batch{:Transformer}` of sequence length one, and the network here is
+# a `NeuralNetworkIntegrator`, whose loss defaults only for a `Batch{:FeedForward}`.
+batch = Batch(batch_size)
+
+loss_array₁ = o(nn, dl, batch, n_epochs)
+
+ic = (q = [0.0, 0.0, 0.1],)
+
+function numerical_solution(sys_dim::Int, t_integration::Int, timestep::Real, ic::NamedTuple)
+    validation_problem = odeproblem(ic; timespan = (0.0, t_integration),
+        timestep = timestep, parameters = default_parameters())
+    sol = integrate(validation_problem, ImplicitMidpoint())
+
+    numerical_solution = zeros(sys_dim, length(sol.t))
+    for i in axes(sol.t, 1)
+        numerical_solution[:, i + 1] = sol.q[i]
+    end
+
+    t_array = zeros(length(sol.t))
+    for i in axes(sol.t, 1)
+        t_array[i + 1] = sol.t[i]
+    end
+
+    T.(numerical_solution), T.(t_array)
+end
+
+function make_validation_plot(t_validation::Int, nn::NeuralNetwork)
+    numerical, t_array = numerical_solution(sys_dim, t_validation, timestep, ic)
+
+    nn₁_solution = iterate(nn₁, numerical[:, 1]; n_points = Int(floor(t_validation /
+                                                                      timestep)) + 1)
+
+    ########################### plot validation
+
+    fig_validation = Figure()
+    ax_validation = Axis(fig_validation[1, 1]; xlabel = L"t", ylabel = L"x_1")
+    lines!(ax_validation, t_array, numerical[1, :]; label = "numerical solution",
+        color = Makie.wong_colors()[1], linewidth = 2)
+
+    lines!(
+        ax_validation, t_array, nn₁_solution[1, :]; label = "volume-preserving feedforward",
+        color = Makie.wong_colors()[2], linewidth = 2)
+    axislegend(ax_validation)
+
+    fig_validation
+end
+
+nn₁ = NeuralNetwork(GeometricMachineLearning.DummyNNIntegrator(), nn.model,
+    map_to_cpu(nn.params), CPU())
+
+p_validation = make_validation_plot(t_validation, nn₁)
+
+p_validation₂ = make_validation_plot(20, nn₁)
+########################### plot training loss
+
+fig_training_loss = Figure()
+ax_training_loss = Axis(fig_training_loss[1, 1]; xlabel = "epoch", ylabel = "training error", yscale = log10)
+lines!(ax_training_loss, loss_array₁; label = "volume-preserving feedforward",
+    color = Makie.wong_colors()[2], linewidth = 2)
+axislegend(ax_training_loss)
+
+mkpath(joinpath(@__DIR__, "abc_flow"))
+CairoMakie.save(joinpath(@__DIR__, "abc_flow/validation.png"), p_validation)
+CairoMakie.save(joinpath(@__DIR__, "abc_flow/validation2.png"), p_validation₂)
+CairoMakie.save(joinpath(@__DIR__, "abc_flow/training_loss.png"), fig_training_loss)

@@ -457,6 +457,71 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 ### Fixed
 
+- **Eighteen of the 23 reproduction and verification scripts run again, where five did.** Each
+  failure was found by the new CI gate rather than by reading, and each cause was measured. The
+  classes that recur across several files:
+
+  - **`save` and `load` are not exported names any more.** Four scripts called a bare `save` and one
+    a bare `load`; they mean `CairoMakie.save` for a figure and `JLD2.save`/`JLD2.load` for weights.
+  - **Four scripts write into an output directory they do not create** — `comparison_plots/`,
+    `phase_space_samples/`, `abc_flow/`, `rigid_body/`. Each now calls `mkpath` first. This is the
+    class that cannot be found locally: once any earlier run has made the directory, every later run
+    passes, and only a fresh checkout fails.
+  - **Two scripts built a `Float64` network against a `Float32` `DataLoader`.** The networks now
+    name their element type.
+
+  The rest, one by one:
+
+  - `scripts/utilities/convert_jld2_to_h5.jl` **corrupted `docs/Project.toml`.** It activated the
+    documentation environment and called `Pkg.develop(path = "..")` on it, which writes a
+    machine-local absolute path into that file's `[sources]` table — where a relative `{path =
+    ".."}` already stood. It runs in the scripts environment now, which has the three packages it
+    needs, and activates nothing.
+  - `scripts/verification/network_parameters_gradient_projection.jl` could not load:
+    `ChainRulesCore` and `NeuralNetworkParameters` were not in `scripts/Project.toml`. Both are now.
+  - `scripts/reproduction/symplectic_autoencoders/training.jl` called
+    `AdamOptimizer(η, β₁, β₂, δ)`. `Adam` dropped the `η` field it never applied to the direction,
+    and made the other three keywords precisely so that the old positional call fails instead of
+    silently reading `η` as `β₁`. The learning rate is the `Optimizer`'s `step_size` now.
+  - `scripts/reproduction/symplectic_autoencoders/plot_waves.jl` wrote into a `plots/` directory
+    that does not exist, and read a snapshot matrix it never said anything about producing. It
+    creates the directory, and runs `integration.jl` itself when the matrix is absent.
+  - `scripts/reproduction/symplectic_transformer/double_pendulum_phase_space_plot.jl` and
+    `double_pendulum_short_integration.jl` imported `timespan` and `timestep` from
+    `GeometricProblems.DoublePendulum`, which declares neither: they are `DEFAULT_TIMESPAN` and
+    `DEFAULT_TIMESTEP`. The sibling `double_pendulum.jl` was repaired earlier in this release; these
+    two carried the same defect and were not in that sub-task's list.
+  - `double_pendulum_short_integration.jl` also had `const` on a local, which is a lowering error
+    that stops the whole file, and a `dl` that the same function assigned after using the outer one
+    — so the repaired file would have failed on an undefined local. The inner one is `dl_short`.
+  - `scripts/reproduction/sympnets/sympnet_pendulum.jl` indexed its data from zero. `pendulum_data`
+    returns `1 × n_time_steps` matrices and once returned `OffsetArray`s; the script now flattens
+    them with `vec` and counts from one, and its loss draws the predicted index from `2:ntime`
+    rather than `1:ntime`, since it reads the point before.
+  - `scripts/reproduction/volume_preserving_feedforward/abc_flow.jl` loaded `Metal`, which is not a
+    dependency and does not install on the Linux runner, and then built `Batch(batch_size, 1)` — a
+    `Batch{:Transformer}` of sequence length one — for a `NeuralNetworkIntegrator`, whose loss
+    defaults only for a `Batch{:FeedForward}`. It runs on the CPU, with the Apple-GPU setup it was
+    written for recorded in a comment beside the backend constant. **It reproduces its figure in
+    `Float64` on the CPU now, where the committed one was made in `Float32` on the GPU.**
+  - `scripts/reproduction/sympnets/sympnet_pendulum.jl` was three API generations behind.
+    `Gradient(n, upscaling, activation; change_q)` split into `GradientLayerQ` and
+    `GradientLayerP`; `Lux.Chain` rejects those with "Encountered a non-AbstractLuxLayer in Chain",
+    because they are `AbstractNeuralNetworks` layers, so the container is the `Chain` this package
+    exports and the network applies to `(input, parameters)` with no state to thread; and
+    `optimization_step!` takes `GlobalSection(ps)` where the script passed the model. `using Lux`
+    goes with them — nothing in the file needed Lux once the container changed, and while both were
+    loaded a bare `Chain` was ambiguous and resolved to nothing.
+  - `scripts/reproduction/symplectic_autoencoders/training.jl` gets six repairs and is still
+    skipped: `AdamOptimizer`'s signature, `PSDLayer`'s `retraction` keyword (the retraction is the
+    `Optimizer`'s now), `GradientQ`/`GradientP`, `initialparameters`' signature, the bare `loss`
+    that is `AutoEncoderLoss` now, and its output directory. What stops it is the batch loop under
+    *SKIPPED* above.
+  - Both `scripts/reproduction/symplectic_autoencoders/online_*.jl` get their element types, their
+    backend switch, their `JLD2.save`/`CairoMakie.save` qualifications and, for
+    `online_transformer_for_sae.jl`, an explicit statement of the weights dependency it has on
+    `online_sympnet.jl`. What stops them is the `ReducedLoss` defect under *SKIPPED* above.
+
 - **The reproduction scripts call `default_parameters()` rather than passing the name.**
   `GeometricProblems` defines `default_parameters(::Type{T} = Float64) where {T}` in each problem
   module, so the bare name is the function itself, not the parameter `NamedTuple` the scripts want.
@@ -1009,6 +1074,98 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   lines. `ChainRulesTestUtils` and `GeometricIntegrators` move their `[compat]` bounds across with
   them, and `SafeTestsets`' bound goes too: all three were bounds on packages the package itself
   does not depend on.
+- **`scripts/` is gated by CI, for the first time.** `.github/workflows/Scripts.yml` runs
+  `scripts/runscripts.jl`, which runs every `.jl` file under `scripts/verification/` in full and
+  every one under `scripts/reproduction/` with `GML_SMOKE` set, each in its own process. Nothing
+  had ever run these files: the package's suite loads not one of them, and the figures in the
+  manual and the committed weights under `docs/src/tutorials/` were produced by these scripts and
+  by nothing else. They were repaired by hand from time to time — "Bring the scripts to the new
+  AdamOptimizerWithDecay", "`tspan` -> `timespan`" — and each repair regressed in silence.
+
+  **Run as a tree for the first time since the restructuring began, 34 files gave 14 that ran to
+  completion, 5 still computing at a 300 s ceiling, and 15 that failed.** Of the 15, six wanted a
+  GPU this machine does not have, one was an include-only helper that was never an entry point,
+  and eight were rot.
+
+  The gate then found eleven more failures the survey could not, because a survey with a timeout
+  cannot tell "still training" from "works". `transformer_integrator/symplectic_transformer.jl` and
+  `symplectic_transformer_vector_softmax.jl` both read as passes at 300 s — they were still
+  training. At the smoke size they run past the training and fail on `UndefVarError: save`. Four
+  more write into an output directory they never create, which is invisible on any machine where an
+  earlier run has made it and fails on every fresh checkout.
+
+  The job is not a required status check: its name does not begin with `Julia `, and the required
+  list is static across the tree.
+
+- **`scripts/` is three directories with stated purposes.** `verification/` holds the checks that
+  establish a mathematical claim — `sympnet_upscaling_symplecticity.jl`, which measures *C12*, and
+  `network_parameters_gradient_projection.jl`. `reproduction/` holds the runs that produced the
+  committed weights and the manual's figures. `utilities/` holds what the other two include, plus
+  `convert_jld2_to_h5.jl`.
+
+  The split is what lets the gate have no list of what to run: every file under `verification/` and
+  `reproduction/` is an entry point, so a script added to either is gated from the moment it lands,
+  and a file that is included rather than run belongs in `utilities/`. `ensemblesolution/plots.jl`
+  is what made the rule concrete — run on its own it fails with `UndefVarError: DataLoader`,
+  because it was only ever meant to be included from a script that had already loaded the package.
+  It is `utilities/ensemble_plots.jl` now, renamed because `utilities/` is flat and `plots.jl` was
+  taken.
+
+  `scripts/Script_using_fully_GML/plots.jl` is deleted. It was three lines that included
+  `../plots.jl` so that the scripts in that directory could say `include("plots.jl")`; with the
+  directory gone, they include `../utilities/plots.jl` directly. `lnn_script.jl` is
+  `reproduction/lnn_pendulum.jl`, beside the `hnn_pendulum.jl` it mirrors.
+
+  `README.md`'s example includes `scripts/utilities/pendulum.jl` now.
+
+- **Every reproduction script states two sizes, and CI runs the small one.** `utilities/smoke.jl`
+  defines `smoke_size(full, smoke)`, which returns the second when `GML_SMOKE` is set in the
+  environment. A script writes `const n_epochs = smoke_size(2048, 2)` and reproduces its result
+  when run normally. A smoke run establishes that the script still executes end to end and nothing
+  about the result — which is the honest limit of what a runner can check for a job that belongs on
+  a GPU.
+
+  Four scripts take their *backend* from the same switch: `volume_preserving_feedforward/rigid_body.jl`,
+  `volume_preserving_transformer/rigid_body.jl` and the two `symplectic_autoencoders/online_*.jl`
+  read `smoke_size(CUDABackend(), CPU())`, so a full run still trains on the GPU it was written for
+  and a smoke run exercises the same code on the CPU.
+
+  **Five of the 23 entry points are named in `SKIPPED`, each with the reason it is not run.** That
+  list is closed in both directions, as the two test guards' allowlists are: an entry naming a file
+  that is no longer an entry point fails the driver. An entry is a backlog item, not a design — it
+  says these files do *not* work, not that they are fine.
+
+  - `linear_symplectic_transformer_gpu.jl` writes `CUDABackend()` into three constructor calls, and
+    `sympnets/sympnet_pendulum_cuda.jl` calls `CUDA.device()` and `CUDA.zeros` directly, which is
+    the only thing distinguishing it from `sympnet_pendulum.jl`. No CI runner has a GPU.
+  - `symplectic_autoencoders/training.jl` gets six repairs below and still stops at its hand-rolled
+    batch loop, which calls `dl.batch_size` and `redraw_batch!(dl)`. A `DataLoader` has neither:
+    batching is `Batch` and the `Optimizer` functor. What is left is a rewrite of that loop.
+  - Both `symplectic_autoencoders/online_*.jl` stop where they train the reduced integrator, on
+    `Functor not defined for NetworkLoss of type ReducedLoss{…}`. **That is a defect in the loss,
+    not in the scripts.** `ReducedLoss`'s only functor method is
+    `(loss)(model, params, input::CT, output::CT) where CT`, so the input and the output must share
+    one type exactly; a pair that does not — measured, a `Float32` input against a `Float64` output,
+    or an array against a `(q, p)` `NamedTuple` — matches nothing and reaches the `NetworkLoss`
+    fallback, whose `error` call is what a user sees instead of a `MethodError`. Nothing had caught
+    this because nothing runs it: the only `ReducedLoss` use in `test/` is a docstring example that
+    calls it directly, and the symplectic-autoencoder tutorial's training is in plain ```julia
+    fences that Documenter renders and never executes. Repairing it means editing
+    `src/loss/losses.jl`, which this change does not own.
+
+- **`.gitignore` covers the `.jld2` weights and `.pdf` figures the scripts write.** The `.h5` and
+  `.png` patterns were added when nothing ran these scripts; the CI job runs all of them on every
+  pull request, and without the two new patterns each run left the tree dirty. Nothing tracked under
+  `scripts/` has either extension, and both patterns are scoped to `scripts/` so that neither can
+  reach the tracked `.pdf` files under `docs/src/assets/` and `legacy/`.
+
+- **Ten dependencies leave `scripts/Project.toml` and two join it.** `BenchmarkTools`, `Distances`,
+  `GeometricSolutions`, `KernelAbstractions`, `NLsolve`, `NNlib`, `SafeTestsets`,
+  `SymbolicNeuralNetworks`, `Symbolics` and `Test` are declared and used by no file under
+  `scripts/` — the earlier entries in this release record several of them as "left declared", and
+  this is the change that owns the file. `ChainRulesCore` and `NeuralNetworkParameters` join it
+  because `network_parameters_gradient_projection.jl` loads both and neither was declared, which is
+  why that script could not run in the scripts environment at all.
 
 - **C5 is removed from *Open Issues*: its premise no longer holds.**
   `.github/workflows/CI.yml` no longer pins an explicit `1.13` job — only `pre` and `nightly` are
