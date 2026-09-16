@@ -987,16 +987,17 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   before and after, with every testset name and every per-testset pass count the same. The names
   did lose their trailing padding — every one of the 62 was padded with spaces to align the summary
   column, which the drivers do not reproduce — so the `Test` summary columns are narrower and the
-  names are otherwise unchanged. The six `@info "Starting …"` progress markers are gone with the
+  names are otherwise unchanged. The seven `@info "Starting …"` progress markers are gone with the
   inline blocks; each `@safetestset` already prints its own summary as it finishes.
 
-  Every moved file is a `git mv`: `git diff -M origin/main...HEAD` gives 35 renames, 33 of them at
-  100% similarity. Four files carry a content change. Two are an `include` path —
+  Every moved file is a `git mv`: `git diff -M origin/main...HEAD` gives 35 renames, 30 of them at
+  100% similarity. Five files carry a content change. Two are an `include` path —
   `parameters/double_multiplication_network_parameters_gradient.jl` and
   `parameters/symplectic_attention_network_parameters_gradient.jl` now include the helper they share
-  from their own directory instead of from `../`. Two are a comment naming a path this change moved:
-  `parameters/network_parameters_gradient_structure.jl:24` and
-  `reduced_order_modeling/sae_error_lower_than_psd_error.jl:9`.
+  from their own directory instead of from `../`. Three are a comment naming a path this change
+  moved: `parameters/network_parameters_gradient_structure.jl:24`,
+  `reduced_order_modeling/sae_error_lower_than_psd_error.jl:9` and
+  `parameters/changebackend_tests.jl:5`.
 
   `test/Project.toml` replaces the `[extras]`/`[targets]` pair in the package's own `Project.toml`,
   following `GeometricIntegrators`. The difference is that the test environment is now exactly what
