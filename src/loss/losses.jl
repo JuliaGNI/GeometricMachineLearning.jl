@@ -253,7 +253,13 @@ function ReducedLoss(autoencoder::NeuralNetwork{<:AutoEncoder})
     ReducedLoss(encoder(autoencoder), decoder(autoencoder))
 end
 
-function (loss::ReducedLoss)(model::Chain, params::NetworkParameters,
-        input::CT, output::CT) where {CT <: QPTOAT}
+# `params` is deliberately not annotated, as in every other `NetworkLoss` functor: `Zygote.pullback`
+# evaluates the forward pass with the parameters unwrapped, so the closure body receives the
+# underlying `NamedTuple` rather than the `NetworkParameters` passed to `pullback`, and an
+# annotation here makes the method undispatchable under AD. The loss then falls through to the
+# untyped fallback in `AbstractNeuralNetworks`, whose body is an `error`, and the caller sees
+# "Functor not defined for `NetworkLoss`" instead of a `MethodError`.
+function (loss::ReducedLoss)(
+        model::Chain, params, input::CT, output::CT) where {CT <: QPTOAT}
     _compute_loss(loss.decoder(model(loss.encoder(input), params)), output)
 end

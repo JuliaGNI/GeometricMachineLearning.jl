@@ -8,9 +8,6 @@ TODO
 """
 
 using GeometricMachineLearning
-using LinearAlgebra: svd, norm
-using ProgressMeter
-using Zygote
 using HDF5
 using CUDA
 using GeometricIntegrators
@@ -25,6 +22,9 @@ include("../../utilities/initial_condition.jl")
 
 T = Float64
 n_epochs = smoke_size(100, 2)
+# The batch size the hand-rolled loop this replaced never named: it read `dl.batch_size`, which a
+# `DataLoader` has not carried since batching moved into `Batch`.
+batch_size = smoke_size(512, 16)
 n_range = 2:1:smoke_size(15, 3)
 μ_range = (T(0.51), T(0.625), T(0.55), T(0.47))
 # The learning rate is the `Optimizer`'s `step_size`, not the method's: `Adam` lost the `η` field
@@ -35,6 +35,10 @@ const step_size = T(0.001)
 # The retraction belongs to the `Optimizer` now, not to the layer: `PSDLayer(M, N)` takes no
 # keyword.
 retraction = Cayley()
+
+# The snapshot matrix is what `integration.jl` writes, into whichever directory it is run from.
+# Stating the dependency here rather than relying on the caller having run it first.
+isfile("snapshot_matrix.h5") || include("integration.jl")
 
 function gpu_backend()
     data = h5open("snapshot_matrix.h5", "r") do file
@@ -66,89 +70,53 @@ dl = DataLoader(data)
 n_time_steps = size(data, 2) / n_params
 N = size(data, 1)÷2
 
+# Both reductions are neural networks now, because that is what `HRedSys` takes: every one of its
+# constructors wants a `NeuralNetwork{<:SymplecticEncoder}` and a `NeuralNetwork{<:SymplecticDecoder}`,
+# where this script used to build a pair of closures. `PSDArch` is the proper orthogonal
+# decomposition this script used to compute with a hand-written `svd`, and `solve!` is how it is
+# fitted -- there is nothing to train.
 function get_psd_encoder_decoder(; n = 5)
-    Φ = svd(hcat(data[1:N, :], data[(N + 1):(2 * N), :])).U[:, 1:n]
-    PSD = hcat(vcat(Φ, zero(Φ)), vcat(zero(Φ), Φ))
-
-    PSD_cpu = _cpu_convert(PSD)
-    psd_encoder(z) = PSD_cpu'*z
-    psd_decoder(ξ) = PSD_cpu*ξ
-    psd_encoder, psd_decoder
+    psd_nn = NeuralNetwork(PSDArch(2 * N, 2 * n), backend, T)
+    solve!(psd_nn, dl)
+    psd_nn
 end
 
-function get_nn_encoder_decoder(;
-        n = 5, n_epochs = 500, activation = tanh, opt = opt, T = T)
-    Ψᵉ = Chain(
-        GradientLayerQ(2*N, 10*N, activation),
-        GradientLayerP(2*N, 10*N, activation),
-        GradientLayerQ(2*N, 10*N, activation),
-        GradientLayerP(2*N, 10*N, activation),
-        PSDLayer(2*N, 2*n)
-    )
+# `SymplecticAutoencoder` is the architecture the hand-built encoder/decoder chain was spelling out:
+# gradient layers around a `PSDLayer` that changes dimension, in both directions. Building it as an
+# architecture rather than a bare `Chain` is what makes `encoder(nn)` and `decoder(nn)` available,
+# and those are what `HRedSys` needs.
+#
+# Training is `DataLoader` + `Batch` + `Optimizer`. What stood here was a hand-rolled loop over
+# `redraw_batch!(dl)`, counting its own iterations from `dl.batch_size`; a `DataLoader` carries
+# neither, because the batch is a `Batch` and the loop is the `Optimizer` functor. The loop also
+# wrapped both the pullback and the optimization step in `try … catch; continue`, so a training run
+# in which every single step failed was indistinguishable from one that worked.
+function get_nn_encoder_decoder(; n = 5, n_epochs = 500, opt = opt, T = T)
+    sae_arch = SymplecticAutoencoder(
+        2 * N, 2 * n; n_encoder_blocks = 4, n_decoder_blocks = 4,
+        n_encoder_layers = 2, n_decoder_layers = 2)
+    sae_nn = NeuralNetwork(sae_arch, backend, T)
 
-    Ψᵈ = Chain(
-        GradientLayerQ(2*n, 10*n, activation),
-        GradientLayerP(2*n, 10*n, activation),
-        PSDLayer(2*n, 2*N),
-        GradientLayerQ(2*N, 2*N, activation)
-    )
+    optimizer_instance = Optimizer(opt, sae_nn; step_size = step_size, retraction = retraction)
+    optimizer_instance(sae_nn, dl, Batch(batch_size), n_epochs)
 
-    model = Chain(
-        Ψᵉ.layers...,
-        Ψᵈ.layers...
-    )
-
-    # `initialparameters` takes an rng and an initializer now; the `NeuralNetwork` constructor is
-    # the supported way to get a parameter set for a `Chain`.
-    ps = NeuralNetwork(model, backend, T).params
-
-    # The bare `loss(model, ps, dl)` this script used to call is gone; the autoencoder's loss is
-    # `AutoEncoderLoss`, which compares the network's output against its own input.
-    loss = AutoEncoderLoss()
-
-    optimizer_instance = Optimizer(opt, ps; step_size = step_size, retraction = retraction)
-    n_training_iterations = Int(ceil(n_epochs*dl.n_params/dl.batch_size))
-    progress_object = Progress(n_training_iterations; enabled = true)
-
-    for _ in 1:n_training_iterations
-        redraw_batch!(dl)
-        loss_val, pb = try
-            Zygote.pullback(ps -> loss(model, ps, dl.input, dl.input), ps)
-        catch
-            continue
-        end
-        dp = pb(one(loss_val))[1]
-
-        try
-            optimization_step!(optimizer_instance, model, ps, dp)
-        catch
-            continue
-        end
-        ProgressMeter.next!(progress_object; showvalues = [(:TrainingLoss, loss_val)])
-    end
-
-    n_layers = length(model.layers)
-    psᵉ = _cpu_convert(ps[1:length(Ψᵉ.layers)])
-    psᵈ = _cpu_convert(ps[(length(Ψᵉ.layers) + 1):end])
-
-    nn_encoder(z) = Ψᵉ(z, psᵉ)
-    nn_decoder(ξ) = Ψᵈ(ξ, psᵈ)
-
-    nn_encoder, nn_decoder
+    sae_nn
 end
 
-function get_reduced_model(encoder, decoder; n = 5, μ_val = 0.51, Ñ = (N-2),
-        n_time_steps = n_time_steps, integrator = ImplicitMidpoint(),
-        system_type = GeometricMachineLearning.Symplectic())
+# `ReducedSystem` is `HRedSys`, and the reduced vector field is no longer assembled by hand:
+# `reduced_vector_field_from_full_explicit_vector_field` is gone, and the constructor below derives
+# it from the problem and the decoder. `Symplectic()` is gone with it — `HRedSys` is the Hamiltonian
+# reduced system by construction. The problem is the same wave equation `integration.jl` builds.
+function get_reduced_model(autoencoder; μ_val = 0.51, Ñ = (N-2),
+        n_time_steps = n_time_steps, integrator = ImplicitMidpoint())
     params = (μ = μ_val, Ñ = Ñ, Δx = T(1/(Ñ-1)))
     timestep = T(1/(n_time_steps-1))
     timespan = (T(0), T(1))
-    ics = get_initial_condition_vector(μ_val, Ñ)
-    v_field_full = v_field(params)
-    v_field_reduced = reduced_vector_field_from_full_explicit_vector_field(
-        v_field_explicit(params), decoder, N, n)
-    ReducedSystem(N, n, encoder, decoder, v_field_full, v_field_reduced, params, timespan,
-        timestep, ics; integrator = integrator, system_type = system_type)
+    ics_offset = get_initial_condition(μ_val, Ñ)
+    ics = (q = ics_offset.q.parent, p = ics_offset.p.parent)
+    problem = HODEProblem(
+        v_f_hamiltonian(params)..., parameters = params, timespan, timestep, ics)
+    HRedSys(problem, encoder(autoencoder), decoder(autoencoder); integrator = integrator)
 end
 
 function _cpu_convert(ps::Tuple)
@@ -171,14 +139,17 @@ _cpu_convert(A::AbstractArray) = Array(A)
 
 _cpu_convert(Y::StiefelManifold) = StiefelManifold(_cpu_convert(Y.A))
 
+# Neither this nor `plot_comparison_for_reconstructed_trajectories` below is called anywhere in this
+# script, and neither was before. They are carried over rather than deleted, with the two renamed
+# integration entry points applied so that the file names nothing that no longer exists.
 function get_reconstructed_trajectories(psd_rs, nn_rs)
-    psd_time_series = perform_integration_reduced(psd_rs)
-    nn_time_series = perform_integration_reduced(nn_rs)
+    psd_time_series = integrate_reduced_system(psd_rs)
+    nn_time_series = integrate_reduced_system(nn_rs)
     for t in axes(psd_time_series.q, 1)
         psd_time_series.q[t] = psd_rs.decoder(psd_time_series.q[t])
         nn_time_series.q[t] = nn_rs.decoder(nn_time_series.q[t])
     end
-    (psd = psd_time_series, nn = nn_time_series, full = perform_integration_full(psd_rs))
+    (psd = psd_time_series, nn = nn_time_series, full = integrate_full_system(psd_rs))
 end
 
 function plot_comparison_for_reconstructed_trajectories(trajectories, t_step = 0)
@@ -200,11 +171,9 @@ data_cpu = _cpu_convert(data)
 function get_enocders_decoders(n_range)
     encoders_decoders = NamedTuple()
     for n in n_range
-        psd_encoder, psd_decoder = get_psd_encoder_decoder(n = n)
-        nn_encoder, nn_decoder = get_nn_encoder_decoder(n = n, n_epochs = n_epochs)
-        nn_ed = (encoder = nn_encoder, decoder = nn_decoder)
-        psd_ed = (encoder = psd_encoder, decoder = psd_decoder)
-        encoders_decoders_current = (nn = nn_ed, psd = psd_ed)
+        encoders_decoders_current = (
+            nn = get_nn_encoder_decoder(n = n, n_epochs = n_epochs),
+            psd = get_psd_encoder_decoder(n = n))
         encoders_decoders = NamedTuple{(keys(encoders_decoders)..., Symbol("n"*string(n)))}((
             values(encoders_decoders)..., encoders_decoders_current))
     end
@@ -215,25 +184,26 @@ encoders_decoders = get_enocders_decoders(n_range)
 
 μ_errors = NamedTuple()
 for μ_test_val in μ_range
-    dummy_rs = get_reduced_model(nothing, nothing; n = 1, μ_val = μ_test_val, Ñ = (N-2))
-    sol_full = perform_integration_full(dummy_rs)
     errors = NamedTuple()
+    # The full solution does not depend on the reduction, so it is integrated once per `μ`. It used
+    # to come from a `ReducedSystem` built with `nothing` for both encoder and decoder; `HRedSys`
+    # takes neural networks, so the first reduced system of the sweep supplies it instead.
+    sol_full = nothing
     for n in n_range
         current_n_identifier = Symbol("n"*string(n))
-
         encoders_decoders_current = encoders_decoders[current_n_identifier]
-        psd_encoder, psd_decoder = encoders_decoders_current.psd
-        nn_encoder, nn_decoder = encoders_decoders_current.nn
 
         psd_rs = get_reduced_model(
-            psd_encoder, psd_decoder; n = n, μ_val = μ_test_val, Ñ = (N-2))
+            encoders_decoders_current.psd; μ_val = μ_test_val, Ñ = (N-2))
         nn_rs = get_reduced_model(
-            nn_encoder, nn_decoder; n = n, μ_val = μ_test_val, Ñ = (N-2))
+            encoders_decoders_current.nn; μ_val = μ_test_val, Ñ = (N-2))
 
-        reduction_errors = (psd = compute_reduction_error(psd_rs, sol_full),
-            nn = compute_reduction_error(nn_rs, sol_full))
-        projection_errors = (psd = compute_projection_error(psd_rs, sol_full),
-            nn = compute_projection_error(nn_rs, sol_full))
+        sol_full === nothing && (sol_full = integrate_full_system(psd_rs))
+
+        reduction_errors = (psd = reduction_error(psd_rs, sol_full),
+            nn = reduction_error(nn_rs, sol_full))
+        projection_errors = (psd = projection_error(psd_rs, sol_full),
+            nn = projection_error(nn_rs, sol_full))
         temp_errors = (
             reduction_error = reduction_errors, projection_error = projection_errors)
         errors = NamedTuple{(keys(errors)..., current_n_identifier)}((

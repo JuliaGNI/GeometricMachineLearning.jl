@@ -35,15 +35,12 @@ const PROJECT = Base.active_project()
 # hangs is named, rather than killing the whole job at the runner's timeout with nothing to read.
 const TIMEOUT_SECONDS = 900
 
-# The two entries left are the scripts whose subject *is* the GPU path: they name CUDA types
-# directly rather than taking a backend, so there is nothing for a smoke run to switch. Every other
-# GPU script takes its backend from `smoke_size`, runs on the CPU here, and is gated.
+# Both entries are the scripts whose subject *is* the GPU path: they name CUDA types directly
+# rather than taking a backend, so there is nothing for a smoke run to switch. Every other GPU
+# script takes its backend from `smoke_size`, runs on the CPU here, and is gated.
 const SKIPPED = Dict{String, String}(
-    "reproduction/linear_symplectic_transformer_gpu.jl" => "constructs all three networks on a `CUDABackend()` written into the call; no CI runner has a GPU",
-    "reproduction/sympnets/sympnet_pendulum_cuda.jl" => "calls `CUDA.device()` and `CUDA.zeros` directly, which is what distinguishes it from `sympnet_pendulum.jl`; no CI runner has a GPU",
-    "reproduction/symplectic_autoencoders/training.jl" => "its hand-rolled batch loop calls `dl.batch_size` and `redraw_batch!(dl)`, neither of which a `DataLoader` has: batching is `Batch` and the `Optimizer` functor now, so what is left is a rewrite of the loop rather than a repair",
-    "reproduction/symplectic_autoencoders/online_sympnet.jl" => "training the reduced integrator raises `Functor not defined for NetworkLoss` -- `ReducedLoss` binds its input and output to one type parameter, so a pair that does not match exactly reaches the fallback; the repair is in src/loss/losses.jl",
-    "reproduction/symplectic_autoencoders/online_transformer_for_sae.jl" => "the same `ReducedLoss` fallback, reached through the same `Optimizer` call"
+    "reproduction/linear_symplectic_transformer_gpu.jl" => "pipes its training data through `cu`, then constructs all three networks on a `CUDABackend()` written into the call; no CI runner has a GPU",
+    "reproduction/sympnets/sympnet_pendulum_cuda.jl" => "hands `lines!` the `1 x n_time_steps` matrices `pendulum_data` returns and stops there, before any GPU code -- the repaired `sympnet_pendulum.jl` flattens them with `vec`; past that it calls `CUDA.device()` and `CUDA.zeros` directly, which is what distinguishes it from that sibling, and no CI runner has a GPU"
 )
 
 """

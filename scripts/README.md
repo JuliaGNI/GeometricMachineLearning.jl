@@ -38,5 +38,5 @@ To reproduce a result, run the script with `GML_SMOKE` unset. That is the defaul
 ## What the gate does not cover
 
 `SKIPPED` in `scripts/runscripts.jl` names the scripts the job does not run, with the reason for
-each. They are all the same reason today: the script has no CPU branch and no CI runner has a GPU.
-Those files are *not* known to work; they are known to be unreachable from here.
+each. Both have no CPU branch, and no CI runner has a GPU. Those files are *not* known to work;
+they are known to be unreachable from here.

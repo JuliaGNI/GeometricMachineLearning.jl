@@ -457,6 +457,31 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 ### Fixed
 
+- **`ReducedLoss` is trainable through the `Optimizer` functor.** Its functor annotated the
+  parameter argument `params::NetworkParameters`, and it was the only loss in
+  `src/loss/losses.jl` that annotated it at all. `Zygote.pullback` evaluates the forward pass with
+  the parameters **unwrapped** — the closure body receives the underlying `NamedTuple`, not the
+  `NetworkParameters` handed to `pullback` — so the annotated method did not match there and the
+  call fell through to the untyped `NetworkLoss` fallback in `AbstractNeuralNetworks`. That
+  fallback's body is an `error`, so what a caller saw was `Functor not defined for NetworkLoss of
+  type ReducedLoss{…}` rather than a `MethodError` naming the argument types.
+
+  Measured, with one closure and one argument: called plainly it receives a `NetworkParameters`,
+  and through `Zygote.pullback` it receives a `NamedTuple`. The failure is therefore in the
+  forward pass, which is also what the original stack trace shows — Zygote differentiating the
+  `error` call, having already selected the fallback going forwards. The reverse pass is not
+  implicated: the tangent comes back as a `NetworkParameters`, correctly wrapped.
+
+  This is the path the symplectic autoencoder tutorial documents, so it was wrong for every user
+  who followed it, not only for the two scripts here. Nothing had caught it because nothing ran
+  it: the only `ReducedLoss` use under `test/` was a docstring example that calls the loss
+  directly, which dispatches either way, and the tutorial's training sits in a plain ```julia
+  fence that Documenter renders and never executes.
+
+  `test/losses/reduced_loss_optimization.jl` closes that hole — it trains a reduced integrator
+  through the functor, and it was checked to fail, with exactly that message, when the annotation
+  is put back.
+
 - **Twenty of the 25 entry points run to completion, where seven did.** `scripts/` has 25 entry
   points — two under `verification/` and 23 under `reproduction/` — and the survey above found
   seven of them completing, five still computing at the ceiling and 13 failing. Each
@@ -517,11 +542,39 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
     `optimization_step!` takes `GlobalSection(ps)` where the script passed the model. `using Lux`
     goes with them — nothing in the file needed Lux once the container changed, and while both were
     loaded a bare `Chain` was ambiguous and resolved to nothing.
-  - `scripts/reproduction/symplectic_autoencoders/training.jl` gets six repairs and is still
-    skipped: `AdamOptimizer`'s signature, `PSDLayer`'s `retraction` keyword (the retraction is the
-    `Optimizer`'s now), `GradientQ`/`GradientP`, `initialparameters`' signature, the bare `loss`
-    that is `AutoEncoderLoss` now, and its output directory. What stops it is the batch loop under
-    *SKIPPED* above.
+  - **`scripts/reproduction/symplectic_autoencoders/training.jl` is rewritten onto the current
+    API, and its reduction-error study runs again.** It was the furthest behind of any script here,
+    and every layer only became visible once the one above it was repaired: `AdamOptimizer`'s
+    signature, `PSDLayer`'s `retraction` keyword (the retraction is the `Optimizer`'s now),
+    `GradientQ`/`GradientP`, `initialparameters`' signature, the bare `loss` that is
+    `AutoEncoderLoss`, its output directory, and then the two structural ones below.
+
+    Its **training** was a hand-rolled loop over `redraw_batch!(dl)` that counted its own iterations
+    from `dl.batch_size`. A `DataLoader` carries neither: the batch is a `Batch` and the loop is the
+    `Optimizer` functor. That loop also wrapped both the pullback and the optimization step in
+    `try … catch; continue`, so a run in which *every* step failed was indistinguishable from one
+    that worked — which is why the script could be this far out of date without anyone noticing.
+
+    Its **reduced systems** were built from closures over hand-sliced parameters. `ReducedSystem`,
+    `Symplectic`, `perform_integration_full`, `perform_integration_reduced` and
+    `reduced_vector_field_from_full_explicit_vector_field` are all gone, and the replacement
+    `HRedSys` takes a `NeuralNetwork{<:SymplecticEncoder}` and a
+    `NeuralNetwork{<:SymplecticDecoder}`. So the reductions are neural networks now: `PSDArch` with
+    `solve!` for the proper orthogonal decomposition the script computed by hand with `svd`, and
+    `SymplecticAutoencoder` for the encoder/decoder chain it spelled out layer by layer.
+    `integrate_full_system`, `integrate_reduced_system`, `reduction_error` and `projection_error`
+    replace the four retired entry points.
+
+    One thing changes shape. The full solution came from a `ReducedSystem` built with `nothing` for
+    both encoder and decoder; `HRedSys` will not take that, so the first reduced system of each `μ`
+    sweep supplies it. It is the same quantity — the full system does not depend on the reduction —
+    computed once per `μ` as before.
+
+    **It is not deleted in favour of `online_sympnet.jl`, because that script does not cover it**:
+    a different problem (the parametrised wave equation against the Toda lattice), a sweep over
+    fourteen reduced dimensions and four parameter values against one of each, and the PSD-versus-
+    autoencoder projection and reduction error that is this script's whole product, which
+    `online_sympnet.jl` has commented out. The run produces its four `plots/v3mu*.png` again.
   - Both `scripts/reproduction/symplectic_autoencoders/online_*.jl` get their element types, their
     backend switch, their `JLD2.save`/`CairoMakie.save` qualifications and, for
     `online_transformer_for_sae.jl`, an explicit statement of the weights dependency it has on
@@ -1135,28 +1188,16 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   read `smoke_size(CUDABackend(), CPU())`, so a full run still trains on the GPU it was written for
   and a smoke run exercises the same code on the CPU.
 
-  **Five of the 25 entry points are named in `SKIPPED`, each with the reason it is not run.** That
+  **Two of the 25 entry points are named in `SKIPPED`, each with the reason it is not run.** That
   list is closed in both directions, as the two test guards' allowlists are: an entry naming a file
   that is no longer an entry point fails the driver. An entry is a backlog item, not a design — it
   says these files do *not* work, not that they are fine.
 
-  - `linear_symplectic_transformer_gpu.jl` writes `CUDABackend()` into three constructor calls, and
-    `sympnets/sympnet_pendulum_cuda.jl` calls `CUDA.device()` and `CUDA.zeros` directly, which is
-    the only thing distinguishing it from `sympnet_pendulum.jl`. No CI runner has a GPU.
-  - `symplectic_autoencoders/training.jl` gets six repairs below and still stops at its hand-rolled
-    batch loop, which calls `dl.batch_size` and `redraw_batch!(dl)`. A `DataLoader` has neither:
-    batching is `Batch` and the `Optimizer` functor. What is left is a rewrite of that loop.
-  - Both `symplectic_autoencoders/online_*.jl` stop where they train the reduced integrator, on
-    `Functor not defined for NetworkLoss of type ReducedLoss{…}`. **That is a defect in the loss,
-    not in the scripts.** `ReducedLoss`'s only functor method is
-    `(loss)(model, params, input::CT, output::CT) where CT`, so the input and the output must share
-    one type exactly; a pair that does not — measured, a `Float32` input against a `Float64` output,
-    or an array against a `(q, p)` `NamedTuple` — matches nothing and reaches the `NetworkLoss`
-    fallback, whose `error` call is what a user sees instead of a `MethodError`. Nothing had caught
-    this because nothing runs it: the only `ReducedLoss` use in `test/` is a docstring example that
-    calls it directly, and the symplectic-autoencoder tutorial's training is in plain ```julia
-    fences that Documenter renders and never executes. Repairing it means editing
-    `src/loss/losses.jl`, which this change does not own.
+  - `linear_symplectic_transformer_gpu.jl` pipes its training data through `cu` and then writes
+    `CUDABackend()` into three constructor calls; `sympnets/sympnet_pendulum_cuda.jl` hands `lines!`
+    the matrices `pendulum_data` returns and stops there, and past that calls `CUDA.device()` and
+    `CUDA.zeros` directly, which is what distinguishes it from `sympnet_pendulum.jl`. No CI runner
+    has a GPU.
 
 - **`.gitignore` covers the `.jld2` weights and `.pdf` figures the scripts write.** The `.h5` and
   `.png` patterns were added when nothing ran these scripts; the CI job runs all of them on every
@@ -2211,30 +2252,6 @@ they resolved to is in the release notes above.
   Closing it means choosing: make `HNNLoss` additive over the batch (it would no longer be scale
   invariant), or drop the symbolic pullback for architectures whose loss is not additive. Either is
   a decision about the loss, not a repair, which is why this release only documents it.
-
-- **B7. `ReducedLoss` cannot be trained through the `Optimizer` functor.** Its only functor method
-  is
-
-  ```julia
-  (loss::ReducedLoss)(model::Chain, params::NetworkParameters, input::CT, output::CT) where {CT}
-  ```
-
-  so the input and the output must share one type exactly. A pair that does not match reaches the
-  `NetworkLoss` fallback in `AbstractNeuralNetworks`, whose body is an `error` call — so what a
-  caller sees is `Functor not defined for NetworkLoss of type ReducedLoss{…}`, not a `MethodError`
-  naming the argument types. Measured on a `SymplecticAutoencoder(8, 2)` and a two-layer `Chain`:
-  two `Array{Float64,3}` arguments dispatch; a `Float32` input against a `Float64` output does not;
-  an array against a `(q, p)` `NamedTuple` does not.
-
-  It is reached by both `scripts/reproduction/symplectic_autoencoders/online_*.jl`, which is how it
-  was found — the new `Scripts.yml` job runs them. Nothing had caught it before because nothing ran
-  it: the only `ReducedLoss` use under `test/` is a docstring example that calls the loss directly,
-  and the training in `docs/src/tutorials/symplectic_autoencoder.md` sits in plain ```julia fences
-  that Documenter renders and never executes. Both scripts are named in `SKIPPED` in
-  `scripts/runscripts.jl` until it is fixed.
-
-  Closing it means deciding what `ReducedLoss` should accept — a second type parameter for the
-  output, or a conversion at the boundary — in `src/loss/losses.jl`.
 
   (**B1**, **B2**, **B3**, **B4** and **B6** are all closed and their entries are gone: B1 and B2 by
   this release — the duplicated `AdamOptimizerWithDecay` and the split `Manifold`, both under
