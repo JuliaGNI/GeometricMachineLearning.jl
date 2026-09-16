@@ -39,7 +39,3 @@ end
 function ∇q̇∇q̇L(nn::NeuralNetwork{<:LagrangianNeuralNetwork}, q, q̇, params = params(nn))
     ∇∇L(nn, q, q̇, params)[(1 + length(q̇)):end, (1 + length(q̇)):end]
 end
-
-function ∇q∇q̇L(nn::NeuralNetwork{<:LagrangianNeuralNetwork}, q, q̇, params = params(nn))
-    ∇∇L(nn, q, q̇, params)[1:length(q), (1 + length(q̇)):end]
-end

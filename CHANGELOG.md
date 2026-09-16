@@ -40,6 +40,88 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 ### Removed (breaking)
 
+- **`scripts/test/` is gone — 15 files, a third copy of the retired test suite.** Its own
+  `runtests.jl` errored 9 testsets, and every file in it tested the `train!` subsystem this release
+  deletes. Nothing replaces it: the package's suite is `test/`.
+
+  This closes **C8**, whose remaining half was `scripts/test/test_symbolic.jl` calling `Symbolize`,
+  a name no installed version of SymbolicNeuralNetworks defines. It is deleted rather than ported,
+  because porting it would have meant rewriting it around three further retired names — it builds
+  its input with `get_batch` from a `TrainingData` and names `SEulerA()` as its method — and what
+  would survive that is the assertion that a `SymbolicNeuralNetwork` agrees with the network it
+  wraps. `test/hamiltonian_neural_network_tests.jl` is the file that exercises the symbolic path
+  today; it covers `SymbolicPullback` and not that agreement, so the coverage is not carried over.
+
+- **`scripts/Script_using_fully_GML/hnn_script.jl` and `sympnet_script.jl` are gone**, each replaced
+  by a tutorial that is built and checked with the documentation:
+  `docs/src/tutorials/hamiltonian_neural_network.md` for the first,
+  `docs/src/tutorials/sympnet_tutorial.md` for the second. `hnn_script.jl:30` read
+  `hnn = NeuralNetwork(hnn, Float64)`, a self-reference that cannot ever have run.
+
+- **The `train!` subsystem is gone.** `src/training/` (7 files), `src/nnsolution/` (3), `src/data/`
+  (5), `src/training_method/` (7) and `src/architectures/default_architecture.jl` are deleted —
+  1,438 lines of `src/` — together with their `include` sites and export blocks. The package now
+  exports **130 names where it exported 218**: 88 removed, none added, counted from
+  `names(GeometricMachineLearning)` before and after rather than from the diff, which over-reports
+  because some names are exported on more than one line.
+
+  `DataLoader` + `Batch` + `Optimizer` is the training path. What the harness could do that it
+  cannot is nothing, now that `LNNLoss`, `SymplecticEulerLoss` and
+  `VariationalMidpointLoss` exist — those three ports are the reason this deletion is not a loss of
+  capability, and they landed first for exactly that reason.
+
+  Gone with it: `train!`, `TrainingData`, `TrainingMethod`, `TrainingParameters`, `TrainingSet`,
+  `NeuralNetSolution`, `EnsembleNeuralNetSolution`, `EnsembleTraining`, `History`, `SingleHistory`,
+  the data shapes and symbols (`TrajectoryData`, `SampledData`, `PositionSymbol`,
+  `PhaseSpaceSymbol`, `DerivativePhaseSpaceSymbol`, `PosVeloSymbol`, `PosVeloAccSymbol`,
+  `DataSymbol`), the six training methods and their constructors (`SEuler`, `SEulerA`, `SEulerB`,
+  `ExactHnn`, `ExactLnn`, `VariaMidPoint`, `BasicSympNet`), `default_arch`, `default_method`,
+  `matching`, `loss_single`, `loss_gradient`, and the accessors that went with them.
+
+  **Note that `src/data/batch.jl` was the old batch machinery.** The modern `Batch` is
+  `src/data_loader/batch.jl` and is untouched.
+
+  **`Distances` is no longer a dependency.** `sqeuclidean` was the default distance of every
+  `TrainingMethod`, and nothing under `src/`, `test/`, `docs/src/` or `ext/` reaches for the package
+  once those are gone. Both the `[deps]` and the `[compat]` entry go with the `using`.
+
+  **`∇q∇q̇L` is gone from `src/architectures/lagrangian_neural_network.jl`** as well. It is
+  unexported, and its one caller was `src/training_method/lnn_exact_method.jl:10`. What it returned
+  is the mixed Hessian block `LNNLoss` now takes from a compiled symbolic expression instead of from
+  `Zygote`, so keeping it would leave two implementations of one formula. Its three neighbours in
+  that file — `∇L`, `∇∇L` and `∇q̇∇q̇L`, plus the constant `DEFAULT_LNN_NRUNS` — were dead before
+  this release and are left alone; see *C13* under *Open Issues*.
+
+- **Seven exported names that were defined nowhere are no longer exported**, and one that should
+  have resolved now does. `Device`, `CPUDevice`, `convert_to_dev`, `ResidualLayer`,
+  `LinearSymplecticLayerP` and `LinearSymplecticLayerQ` had no definition anywhere under `src/` —
+  reaching for any of them raised `UndefVarError` from a name the package advertised. `timestep`
+  went with the block that exported it. `description` keeps its export and gains the
+  `import GeometricBase: description` it always needed: `GeometricBase` defines that generic but does
+  not export it, so `using GeometricBase` never brought it into scope.
+
+  This closes **C10**. `test/exports.jl`'s allowlist is now **empty**, so the guard asserts outright
+  that every exported name resolves, with no exceptions to trust. The one name here that has a
+  definition is `ResidualLayer`, at `legacy/layers/resnet.jl`, which nothing under `src/` includes;
+  the loaded layer of that shape is `ResNetLayer`.
+
+- **The `train!` tests are gone, and six of them were passing.** Deleted: `test/train!/` (5 files),
+  `test/integrator/test_integrator.jl`, `test/training_parameters.jl`, `test/data/test_data.jl`,
+  `test/data/test_batch.jl`, `test/data/test_matching.jl`, `test/data/data_generation.jl` and
+  `test/macro_testerror.jl` — 820 lines.
+
+  **What that removes is real coverage, not just dead files.** `test/data/test_data.jl`,
+  `test/data/test_batch.jl`, `test/data/test_matching.jl` and `test/training_parameters.jl` ran on
+  every suite and passed: they covered `TrainingData` construction from arrays and from a
+  `GeometricSolution`, the old `get_batch` partitioning, `matching` between a network and a data
+  set, and `TrainingParameters` including the step size handed to `train!`. `test/macro_testerror.jl`
+  covered a test-only macro. All of it tested code that no longer exists, so none of it could be
+  kept — but the subsystem leaves with its tests, rather than its tests having been absent.
+
+  The five files under `test/train!/` and `test/integrator/test_integrator.jl` were **not** running:
+  `runtests.jl` never included them, and *C11* recorded them as unreachable. `test/reachability.jl`'s
+  allowlist is now **empty** as well, so every file under `test/` is reached from `runtests.jl`.
+
 - **The five `changebackend` methods for `GeometricOptimizers`' types are gone, and so is
   `GeometricOptimizers.GlobalSection(::NetworkParameters)`.** Both were type piracy of the same shape:
   the generic belongs to one package, the types to another, and this package owns neither. Both now
@@ -110,6 +192,33 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   argument, which the old one hid.
 
 ### Changed
+
+- **The pendulum scripts train through `DataLoader` + `Batch` + `Optimizer` now, and they run.**
+  `scripts/hnn_pendulum.jl` is where *B6* was diagnosed, and this file recorded that it "still does
+  not run to completion, and what stops it is this". It now runs to completion on `HNNLoss`: the
+  training loss falls from `1.0017` to `0.0041` over 2000 epochs and the script writes its plot.
+
+  `scripts/Script_using_fully_GML/lnn_script.jl` is rebuilt on `LNNLoss`. It had never run under any
+  API generation — it referenced `TrainingIntegrator` and `DataTrajectory`, neither of which exists,
+  and included `../data_problem.jl`, a path that does not exist either. It now trains a Lagrangian
+  neural network on the pendulum, `3.248` down to `0.175` over 200 epochs.
+
+  `LNNLoss` needs a larger step size than `HNNLoss` — `1e-2` against `1e-3` — because its gradient
+  reaches the parameters through a solve against the velocity Hessian, where `HNNLoss` is linear in
+  the gradient of the learned Hamiltonian. At `1e-3` the loss moved from `1.190` to `1.188` over 3%
+  of a run whose own estimate was 48 minutes.
+
+  `get_data_set` in `scripts/pendulum.jl` returns `(input, output)` matrices for
+  `DataLoader(input, output)` instead of a `TrainingData`. `pendulum_data`, which `README.md:29`
+  depends on, is unchanged.
+
+- **`get_LNN_data` in `scripts/Script_using_fully_GML/data_problem.jl` was missing a transpose.** It
+  computes the Euler–Lagrange acceleration as `inv(∇q̇∇q̇L) * (∇qL - ∇q∇q̇L * q̇)`, but `∇q∇q̇L` is
+  indexed `[i, j] = ∂²L/∂qᵢ∂q̇ⱼ` and the chain rule contracts the *first* index, so the term is
+  `∇q∇q̇L' * q̇`. The two agree exactly for the pendulum, whose position and velocity do not couple,
+  and that is the only Lagrangian in `dict_problem_L` — so nothing this function ever produced was
+  wrong. It is corrected because `LNNLoss` solves the same equation in `src/`, and one correct copy
+  of a formula beside one wrong copy is worse than either alone.
 
 - **`map_to_cpu` is one walk instead of eight methods.** `NeuralNetworkParameters.mapstorage` hands a
   function the storage of a leaf and rebuilds the leaf around the result, so the five methods that
@@ -491,6 +600,113 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   alone, but would make `git add` refuse a seventh.
 
 ### Added
+
+- **`LagrangianNeuralNetwork` is trainable through `DataLoader` + `Batch` + `Optimizer` now.**
+  `LNNLoss` is its loss and `NetworkLoss(::LagrangianNeuralNetwork)` returns one, so the architecture
+  no longer reaches training only through the `train!` harness. The network output is a scalar
+  Lagrangian ``L(q, \dot{q})``; the loss solves that Lagrangian's Euler–Lagrange equations for the
+  acceleration and compares the result against the acceleration in the data, relative to the norm of
+  the data, the way `HNNLoss` compares a vector field. `input` stacks ``q`` on ``\dot{q}`` and has
+  ``2n`` rows; `output` is ``\ddot{q}`` and has ``n``.
+
+  **This repairs the training method it replaces rather than transcribing it.** `loss_single` in
+  `src/training_method/lnn_exact_method.jl` reads `abs(sum(∇q∇q̇L(nn, qₙ, q̇ₙ, params)))`, and it
+  takes a `q̈ₙ` argument it never uses: sweeping that argument over `-5`, `0` and `5` returns
+  `0.291075` every time. It is a penalty on the mixed Hessian block, minimised by any Lagrangian
+  whose position and velocity do not couple, and it fits no data at all. What the method meant to
+  compute is the rest of that same line, commented out — and that expression is incomplete too,
+  contracting with neither ``\dot{q}`` nor ``\ddot{q}``. What `LNNLoss` uses is the Euler–Lagrange
+  equation written out:
+
+  ```
+  ∇q̇∇q̇L q̈ + (∇q∇q̇L)' q̇ = ∇qL
+  ```
+
+  The transpose is load-bearing, because ``\nabla_q\nabla_{\dot{q}}L`` is indexed
+  ``[i, j] = \partial^2L/\partial{}q_i\partial\dot{q}_j`` while the chain rule contracts the first
+  index. `test/lagrangian_neural_network_tests.jl` checks the solve against a closed form for
+  ``L = \tfrac12\dot{q}^TM\dot{q} + q^TC\dot{q} - \tfrac12q^TKq`` with `C` deliberately *not*
+  symmetric, and also checks that the same expression with the transpose dropped does **not**
+  reproduce that closed form — so the assertion cannot pass for a reason unrelated to the index
+  convention.
+
+  **The derivatives come from a compiled symbolic expression, not from `Zygote` inside the loss.**
+  Differentiating a loss that itself calls `Zygote.gradient` with respect to the network parameters
+  fails with `MethodError: no method matching getindex(::IdDict{Any, Any})`; measured in two separate
+  processes. `SymbolicNeuralNetworks.Jacobian` applied to its own result gives the input-Hessian
+  instead, and it agrees with `Zygote.hessian` to `2.8e-17`. This is the route
+  `hamiltonian_vector_field` already took, and this is why.
+
+  The solve inverts ``\nabla_{\dot{q}}\nabla_{\dot{q}}L``, so its conditioning is what decides
+  whether the solved form is usable at all rather than an un-inverted residual. It is asserted in
+  the suite, not merely measured once: `test_velocity_hessian_is_well_conditioned` draws fresh
+  parameters and fresh evaluation points and requires the condition number of that block to stay
+  below `1e8`. On the draws behind the choice it never came close — median between `1.0` and `7.9`,
+  worst `3332`.
+
+  What is **not** added is a `SymbolicPullback` for this architecture. `HNNLoss` has one, and *B5*
+  under *Open Issues* records why that machinery is not trustworthy for a loss that is not additive
+  over the batch — which this one, dividing by `norm(output)`, is not.
+
+- **`SymplecticEulerLoss` and `VariationalMidpointLoss` carry the training methods' numerical content
+  onto `NetworkLoss`.** Of the four methods the `train!` harness held that had no modern counterpart,
+  two are ported here, one is judged not worth porting, and the fourth — `HnnExactMethod` — was
+  already `HNNLoss`. These three ports landed before the deletion under *Removed (breaking)* above,
+  so the subsystem leaves with its numerical content already carried over rather than lost with it.
+
+  `SymplecticEulerLoss(arch, timestep)` trains a Hamiltonian neural network on a *trajectory*.
+  `HNNLoss` needs ``(\dot{q}, \dot{p})`` in the data; this one needs two consecutive states and the
+  timestep between them, and asks that one symplectic Euler step of the learned Hamiltonian carry the
+  first state to the second. Variant `:A` evaluates the vector field at ``(q_{n+1}, p_n)`` and `:B`
+  at ``(q_n, p_{n+1})``, which is the whole difference between the two methods it replaces.
+
+  **The manual has described this loss since before it could be run.**
+  `docs/src/architectures/hamiltonian_neural_network.md` has a section *HNN Loss for Phase Space
+  Data* giving the formula with the field at ``(q^{(t)}, p^{(t+1)})`` — symplectic Euler B — and the
+  only implementations of it were `SEulerA`/`SEulerB`, which raise a `MethodError` on `vectorfield`
+  before computing anything. The page now points at a loss that runs.
+
+  `VariationalMidpointLoss(arch, timestep)` trains a Lagrangian neural network on positions alone,
+  through the discrete Euler–Lagrange equations
+  ``D_2L_d(q_n, q_{n+1}) + D_1L_d(q_{n+1}, q_{n+2}) = 0`` of the midpoint discrete Lagrangian. It
+  needs neither velocities nor accelerations in the data.
+
+  **`BasicSympNetMethod` gets no port, and nothing is lost by that.** It goes with the rest of the
+  subsystem under *Removed (breaking)* above, and it is the one method whose content does not need
+  carrying over first, because the package already has it. Its `loss_single` is
+  `sqeuclidean(q̃ₙ₊₁, qₙ₊₁) + sqeuclidean(p̃ₙ₊₁, pₙ₊₁)` on a one-step prediction — which is
+  `FeedForwardLoss`, unnormalised and squared. Measured on one network and one pair of states, the
+  method returns `sum(abs2, prediction - target)` and `FeedForwardLoss` returns
+  `norm(prediction - target) / norm(target)`. It also only ever ran at one degree of freedom:
+  `q̃ₙ₊₁, p̃ₙ₊₁ = nn([qₙ..., pₙ...], params)` destructures the output vector into two scalars, so at
+  two degrees of freedom it raises `DimensionMismatch: first collection has length 1 which does not
+  match the length of the second, 2`. A SympNet trained through `DataLoader` + `Batch` + `Optimizer`
+  already uses `FeedForwardLoss`.
+
+  **Neither ported method could be ported by transcription, because neither ran.** `SymplecticEulerA`
+  and `SymplecticEulerB` are *B6*: both call `vectorfield`, which is defined nowhere.
+  `hamiltonian_vector_field` is what they meant, and it is what the loss uses.
+  `VariationalMidPointMethod` failed for two reasons of its own. `discrete_lagrangian` returns the
+  network output, an array, so `Zygote.gradient` refuses it outright — "Output is an array, so the
+  gradient is not defined". And `DL₁`/`DL₂` slice the 2-tuple of gradients `DL` returns with
+  `1:length(qₙ)` and `(1 + length(qₙ)):end`, selecting *tuple entries* rather than vector components,
+  which happens to coincide with the intent at one degree of freedom and is wrong at every other.
+
+  **The derivatives come from compiled symbolic expressions, not from `Zygote` inside the loss.**
+  Differentiating a loss that itself calls `Zygote.gradient` with respect to the parameters fails
+  with `MethodError: no method matching getindex(::IdDict{Any, Any})`, measured in two separate
+  processes. For the variational loss this is avoided by writing the chain rule through the midpoint
+  out by hand — ``D_1L_d = \tfrac{\Delta{}t}{2}\nabla_qL - \nabla_{\dot{q}}L`` and
+  ``D_2L_d = \tfrac{\Delta{}t}{2}\nabla_qL + \nabla_{\dot{q}}L``, both at the midpoint — so that only
+  the network's first input derivative is needed. `test/training_method_losses.jl` checks those two
+  expressions against a `Zygote` gradient of ``L_d`` itself, which is the call they exist in order
+  not to make.
+
+  Each loss is asserted to vanish on a trajectory that satisfies it and to *not* vanish on a
+  perturbed one, so neither assertion can pass for a reason unrelated to the method. One limit is
+  worth stating: the discrete Euler–Lagrange equations of an arbitrary neural-network Lagrangian are
+  a root-finding problem with no guaranteed solution near a given starting pair, so the variational
+  test searches for a starting pair that admits one instead of assuming that any will.
 
 - **`test/exports.jl` asserts that every name the package exports is actually defined.** Julia only
   errors on a dangling `export` when the name is *resolved*, so an exported name that nothing defines
@@ -1793,34 +2009,12 @@ they resolved to is in the release notes above.
   invariant), or drop the symbolic pullback for architectures whose loss is not additive. Either is
   a decision about the loss, not a repair, which is why this release only documents it.
 
-- **B6. Training a Hamiltonian neural network through `train!` is broken for every method.** All
-  three call `vectorfield(nn, x, params)` — `ExactHnn` at `src/training_method/hnn_exact_method.jl:10`,
-  `SEulerA` and `SEulerB` at `src/training_method/symplectic_euler.jl:18` and `:25` — and no such
-  method exists. `vectorfield` resolves only to GeometricBase's methods on `AbstractStateVariable`
-  and `State`, so the call raises a `MethodError` as soon as the first gradient is taken.
-
-  **Still open. Untouched.** The test-tree and script-tree restructuring merged as
-  [#264](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/264) –
-  [#276](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/276) left every file above
-  unchanged; the `train!` retirement that would close this (giving `vectorfield` a definition, or
-  replacing it) is Phase B of the restructuring plan and was deliberately deferred, not attempted.
-
-  Found by repairing `scripts/hnn_pendulum.jl`, which is several API generations behind and hid this
-  behind four earlier failures (the two-argument `MomentumOptimizer`, the keyword
-  `HamiltonianArchitecture` constructor, `∇H`/`dH` deleted from `scripts/pendulum.jl` while
-  `get_data_set` still called them, and `get_data_set` returning a bare `(data, target)` pair where
-  `train!` wants a `TrainingData`). Those four are fixed; the script still does not run to
-  completion, and what stops it is this.
-
-  Nothing under `test/` covers it: the HNN training methods are exercised only from `test/train!/`,
-  which `runtests.jl` does not include. Closing this means deciding what `vectorfield` should be for
-  a `NeuralNetwork{<:HamiltonianArchitecture}` — `hamiltonian_vector_field` is the obvious candidate
-  — and giving it a test that runs.
-
-  (**B1**, **B2**, **B3** and **B4** are all closed and their entries are gone: B1 and B2 by this
-  release — the duplicated `AdamOptimizerWithDecay` and the split `Manifold`, both under *Removed
-  (breaking)* — B3 by SymbolicNeuralNetworks 0.5, and B4 by `a427add1`, which repaired the
-  documentation build. The numbers are left vacant rather than reused.)
+  (**B1**, **B2**, **B3**, **B4** and **B6** are all closed and their entries are gone: B1 and B2 by
+  this release — the duplicated `AdamOptimizerWithDecay` and the split `Manifold`, both under
+  *Removed (breaking)* — B3 by SymbolicNeuralNetworks 0.5, B4 by `a427add1`, which repaired the
+  documentation build, and B6 by the `train!` retirement in this release: the three methods that
+  called the non-existent `vectorfield` are gone, and `SymplecticEulerLoss` carries their content on
+  `hamiltonian_vector_field`, with tests that run. The numbers are left vacant rather than reused.)
 
 ### C. Follow-ups and cleanups
 
@@ -1858,14 +2052,6 @@ they resolved to is in the release notes above.
   upstream constructor, or a `NetworkLoss` interface that states its own target dimension, would put
   this method back to one line.
 
-- **C8. `scripts/test/test_symbolic.jl` is dead.** It calls `Symbolize`, which no installed version
-  of SymbolicNeuralNetworks defines, and `scripts/Project.toml` is in no CI job, so nothing notices.
-  Either port it or delete it — leaving it is the option that keeps costing a reader time.
-
-  This is what is left of the entry. Its other half — `scripts/loss/`, whose `build_loss.jl` called
-  `symbolic_params`, which no installed version defines either — is closed: all four files are
-  deleted, and what that abandons is under *Changed* above.
-
 - **C9. Seven include sites under `legacy/` name files that do not exist.** Six `legacy/hnn/`
   scripts include `../../scripts/data.jl` and `hnn_simple.jl` includes `../../src/training.jl`;
   neither file exists anywhere in the repository, and neither did before the move to `legacy/`. Of
@@ -1873,59 +2059,6 @@ they resolved to is in the release notes above.
   consistent with where the files sit, so what remains is a decision about `data.jl`: reconstruct it
   (it generated the pendulum training data, which `scripts/pendulum.jl` now does) or delete the
   scripts that need it.
-
-- **C10. Ten exported names are undefined.** `CPUDevice`, `Device`, `LinearSymplecticLayerP`,
-  `LinearSymplecticLayerQ`, `ResidualLayer`, `aresame`, `convert_to_dev`, `description`, `symbol`
-  and `timestep` are in an `export` list and defined nowhere, so
-  `[n for n in names(GeometricMachineLearning) if !isdefined(GeometricMachineLearning, n)]` returns
-  all ten. They are harmless in the sense that nothing breaks until someone reaches for one, at which
-  point they get `UndefVarError` from a name the package advertises.
-
-  This release removed the three that happened to sit in the export block it was already rewriting
-  (`SymplecticLieAlgMatrix`, `SymplecticLieAlgHorMatrix`, `SymplecticProjection`), which is why the
-  count is ten rather than thirteen. The rest are spread across the module and were left alone
-  deliberately: each needs a decision — define it, or drop the export — and a few are load-bearing
-  names in prose (`description` is `export`ed with the comment "from GeometricBase to print docs",
-  and GeometricBase does define it, so that one is likely an `import` that was never written).
-
-  `GeometricOptimizers`' `test/exports.jl` closes this whole class with one assertion over `names`;
-  `test/exports.jl` now does the same here
-  ([#266](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/266)), with these ten
-  allowlisted and each given its reason. The class is closed, so no eleventh can appear unnoticed;
-  what stays open is the decision on each of the ten — define it, or drop the export.
-
-  **Not closed.** The guard exists and the ten are still undefined, unchanged since #266. Two of
-  them, `symbol` and `aresame`, sit in the `train!` subsystem's own export blocks
-  (`test/exports.jl`'s allowlist says so), so their decision is folded into the `train!` retirement
-  in Phase B of the restructuring plan, which remains deferred. The other eight need their own
-  per-name decision independently of that.
-
-- **C11. 6 test files remain unreachable from `runtests.jl`.** All 5 under `train!/`
-  (`test_method.jl`, `test_neuralnet_solution.jl`, `test_timer.jl`, `test_training.jl`,
-  `test_trainingSet.jl`) plus the singleton `integrator/test_integrator.jl`. Re-derived from
-  `test/reachability.jl`'s own closure and allowlist, which agree: `test_files()` minus
-  `REACHABLE` is exactly these six, and `ALLOWED_ORPHANS` has exactly six entries, one per file.
-
-  This is down from the 40 this entry originally reported (corrected to 40 from a stated 41 by
-  [#269](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/269), which also added
-  `test/reachability.jl` and its allowlist). Three further sub-tasks of the test/script
-  restructuring emptied it by group, each shortening the allowlist in the same change:
-  [#270](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/270) deleted the 23
-  GPU/hardware orphans (`performance_tests/`, `cuda/`, `kernels/vec_add.jl`) — 40 down to 17;
-  [#271](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/271) deleted 9 more
-  (`orthogonalization_procedures/`'s five files, `attention_layer/apply_multi_head_attention.jl`,
-  `custom_ad_rules/matrix_vector_multiplication.jl`, `symplectic_autoencoders/linear_wave_equation.jl`,
-  `training_phnn.jl`) — 17 down to 8; and
-  [#275](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/275) wired in the two that
-  worked, `layers/sympnet_upscaling.jl` and `transformer_related/transformer_setup.jl` — 8 down to 6.
-
-  **Not closed.** The remaining six are all one group: `train!` and what it needs to construct.
-  `integrator/test_integrator.jl` hits `MethodError: HamiltonianArchitecture(::Int64)`, and the
-  `train!/` five hit that or `UndefVarError: timestep` or `MethodError: GSympNet(::Int64; nhidden)`
-  — the same class of stale-API defect that **B6** documents for `train!` itself. Closing them
-  needs the `train!` retirement (Phase B of the restructuring plan: repair or delete each,
-  update `runtests.jl` and shorten the allowlist to match), which remains deferred, not this
-  clean-up.
 
 - **C12. The sympnet upscaling chain is symplectic layer by layer, not end to end, and whether it
   is meant to be is undecided.** `PSDLayer(N, N2) → GradientLayerQ(N2) → GradientLayerP(N2) →
@@ -1946,6 +2079,21 @@ they resolved to is in the release notes above.
   the figures above. What it does not answer is whether exact end-to-end symplecticity was ever the
   intended property of this architecture, as opposed to an approximation that improves with `N` —
   that is a design question for the user, not something this check can settle.
+
+- **C13. Four dead names remain in `src/architectures/lagrangian_neural_network.jl`.** `∇L:30`,
+  `∇∇L:35`, `∇q̇∇q̇L:39` and the constant `DEFAULT_LNN_NRUNS:2` have no caller. They were dead
+  before this release, which is why it removes only `∇q∇q̇L`, the one its own deletion orphaned.
+
+  `∇L` last had a caller in `7f1b3dd0` (2023-06-22). `∇q̇∇q̇L` appeared only in the commented-out
+  remainder of `src/training_method/lnn_exact_method.jl:10`, and `∇∇L` survives as its callee alone.
+  `DEFAULT_LNN_NRUNS` was the default `ntraining` of an architecture-local `train!` method added in
+  `aa1e0471` and removed in `a27140af`, when the shared harness took that job over. The constant
+  stayed behind and has had no caller since 2023-06-08.
+
+  All three functions take their derivatives with `Zygote`, which is the route `LNNLoss` cannot
+  use: a nested `Zygote.gradient` inside a loss breaks the parameter gradient. So this is not a
+  second route to one answer that a caller might want. Deleting them is the expected decision; it
+  belongs to a change that owns this file.
 
 ### D. Unverified
 

@@ -2,8 +2,7 @@ using SafeTestsets, Test, GeometricMachineLearning
 
 # A test that trains passes `show_progress = false`. The `Optimizer` functor defaults it to `true`,
 # which is right at a REPL and is noise in a suite -- a 2048-epoch run emits a few hundred progress
-# lines and buries the failure you are looking for. `train!` already defaults `showprogress = false`,
-# so only the functor needs saying.
+# lines and buries the failure you are looking for.
 
 @safetestset "Reachability of every file under test/                                          " begin
     include("reachability.jl")
@@ -46,6 +45,12 @@ end
 end
 @safetestset "Hamiltonian Neural Network                                                      " begin
     include("hamiltonian_neural_network_tests.jl")
+end
+@safetestset "Lagrangian Neural Network                                                       " begin
+    include("lagrangian_neural_network_tests.jl")
+end
+@safetestset "Symplectic Euler and variational midpoint losses                                " begin
+    include("training_method_losses.jl")
 end
 @safetestset "Manifold Neural Network Layers                                                  " begin
     include("layers/manifold_layers.jl")
@@ -127,22 +132,8 @@ end
     include("changebackend_tests.jl")
 end
 @info "Starting data and data-loader tests"
-@safetestset "Data                                                                            " begin
-    include("data/test_data.jl")
-end
-@safetestset "Batch                                                                           " begin
-    include("data/test_batch.jl")
-end
-# @safetestset "Method                                                                          " begin include("train!/test_method.jl") end
-@safetestset "Matching                                                                        " begin
-    include("data/test_matching.jl")
-end
-
 @safetestset "Test data loader for q and p data                                               " begin
     include("data_loader/batch_data_loader_qp_test.jl")
-end
-@safetestset "TrainingParameters and the step size passed to train!                           " begin
-    include("training_parameters.jl")
 end
 @safetestset "Test the data loader in combination with optimization_step!                     " begin
     include("data_loader/data_loader_optimization_step.jl")

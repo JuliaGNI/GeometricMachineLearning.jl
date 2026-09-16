@@ -194,6 +194,7 @@ _architectures = "Architectures" => [
     "Symplectic Autoencoders" => "architectures/symplectic_autoencoder.md",
     "Neural Network Integrators" => "architectures/neural_network_integrators.md",
     "Hamiltonian Neural Network" => "architectures/hamiltonian_neural_network.md",
+    "Lagrangian Neural Network" => "architectures/lagrangian_neural_network.md",
     "SympNet" => "architectures/sympnet.md",
     "Volume-Preserving FeedForward" => "architectures/volume_preserving_feedforward.md",
     "Standard Transformer" => "architectures/transformer.md",
