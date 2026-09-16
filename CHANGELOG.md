@@ -44,6 +44,14 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `runtests.jl` errored 9 testsets, and every file in it tested the `train!` subsystem this release
   deletes. Nothing replaces it: the package's suite is `test/`.
 
+  This closes **C8**, whose remaining half was `scripts/test/test_symbolic.jl` calling `Symbolize`,
+  a name no installed version of SymbolicNeuralNetworks defines. It is deleted rather than ported,
+  because porting it would have meant rewriting it around three further retired names — it builds
+  its input with `get_batch` from a `TrainingData` and names `SEulerA()` as its method — and what
+  would survive that is the assertion that a `SymbolicNeuralNetwork` agrees with the network it
+  wraps. `test/hamiltonian_neural_network_tests.jl` is the file that exercises the symbolic path
+  today; it covers `SymbolicPullback` and not that agreement, so the coverage is not carried over.
+
 - **`scripts/Script_using_fully_GML/hnn_script.jl` and `sympnet_script.jl` are gone**, each replaced
   by a tutorial that is built and checked with the documentation:
   `docs/src/tutorials/hamiltonian_neural_network.md` for the first,
@@ -2032,14 +2040,6 @@ they resolved to is in the release notes above.
   constructor — so an upstream refactor breaks GML silently at the type level. A keyword on the
   upstream constructor, or a `NetworkLoss` interface that states its own target dimension, would put
   this method back to one line.
-
-- **C8. `scripts/test/test_symbolic.jl` is dead.** It calls `Symbolize`, which no installed version
-  of SymbolicNeuralNetworks defines, and `scripts/Project.toml` is in no CI job, so nothing notices.
-  Either port it or delete it — leaving it is the option that keeps costing a reader time.
-
-  This is what is left of the entry. Its other half — `scripts/loss/`, whose `build_loss.jl` called
-  `symbolic_params`, which no installed version defines either — is closed: all four files are
-  deleted, and what that abandons is under *Changed* above.
 
 - **C9. Seven include sites under `legacy/` name files that do not exist.** Six `legacy/hnn/`
   scripts include `../../scripts/data.jl` and `hnn_simple.jl` includes `../../src/training.jl`;
