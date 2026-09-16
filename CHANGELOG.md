@@ -40,6 +40,16 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 ### Removed (breaking)
 
+- **`scripts/test/` is gone — 15 files, a third copy of the retired test suite.** Its own
+  `runtests.jl` errored 9 testsets, and every file in it tested the `train!` subsystem this release
+  deletes. Nothing replaces it: the package's suite is `test/`.
+
+- **`scripts/Script_using_fully_GML/hnn_script.jl` and `sympnet_script.jl` are gone**, each replaced
+  by a tutorial that is built and checked with the documentation:
+  `docs/src/tutorials/hamiltonian_neural_network.md` for the first,
+  `docs/src/tutorials/sympnet_tutorial.md` for the second. `hnn_script.jl:30` read
+  `hnn = NeuralNetwork(hnn, Float64)`, a self-reference that cannot ever have run.
+
 - **The `train!` subsystem is gone.** `src/training/` (7 files), `src/nnsolution/` (3), `src/data/`
   (5), `src/training_method/` (7) and `src/architectures/default_architecture.jl` are deleted —
   1,438 lines of `src/` — together with their `include` sites and export blocks. The package now
@@ -163,6 +173,33 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   argument, which the old one hid.
 
 ### Changed
+
+- **The pendulum scripts train through `DataLoader` + `Batch` + `Optimizer` now, and they run.**
+  `scripts/hnn_pendulum.jl` is where *B6* was diagnosed, and this file recorded that it "still does
+  not run to completion, and what stops it is this". It now runs to completion on `HNNLoss`: the
+  training loss falls from `1.0017` to `0.0041` over 2000 epochs and the script writes its plot.
+
+  `scripts/Script_using_fully_GML/lnn_script.jl` is rebuilt on `LNNLoss`. It had never run under any
+  API generation — it referenced `TrainingIntegrator` and `DataTrajectory`, neither of which exists,
+  and included `../data_problem.jl`, a path that does not exist either. It now trains a Lagrangian
+  neural network on the pendulum, `3.248` down to `0.175` over 200 epochs.
+
+  `LNNLoss` needs a larger step size than `HNNLoss` — `1e-2` against `1e-3` — because its gradient
+  reaches the parameters through a solve against the velocity Hessian, where `HNNLoss` is linear in
+  the gradient of the learned Hamiltonian. At `1e-3` the loss moved from `1.190` to `1.188` over 3%
+  of a run whose own estimate was 48 minutes.
+
+  `get_data_set` in `scripts/pendulum.jl` returns `(input, output)` matrices for
+  `DataLoader(input, output)` instead of a `TrainingData`. `pendulum_data`, which `README.md:29`
+  depends on, is unchanged.
+
+- **`get_LNN_data` in `scripts/Script_using_fully_GML/data_problem.jl` was missing a transpose.** It
+  computes the Euler–Lagrange acceleration as `inv(∇q̇∇q̇L) * (∇qL - ∇q∇q̇L * q̇)`, but `∇q∇q̇L` is
+  indexed `[i, j] = ∂²L/∂qᵢ∂q̇ⱼ` and the chain rule contracts the *first* index, so the term is
+  `∇q∇q̇L' * q̇`. The two agree exactly for the pendulum, whose position and velocity do not couple,
+  and that is the only Lagrangian in `dict_problem_L` — so nothing this function ever produced was
+  wrong. It is corrected because `LNNLoss` solves the same equation in `src/`, and one correct copy
+  of a formula beside one wrong copy is worse than either alone.
 
 - **`map_to_cpu` is one walk instead of eight methods.** `NeuralNetworkParameters.mapstorage` hands a
   function the storage of a leaf and rebuilds the leaf around the result, so the five methods that

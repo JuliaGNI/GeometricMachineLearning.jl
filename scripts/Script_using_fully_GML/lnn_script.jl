@@ -1,55 +1,48 @@
-#import module
+# Train a Lagrangian neural network on the pendulum.
+#
+# The data are `(q, q̇)` on a grid and the acceleration the *exact* Lagrangian implies at each point.
+# `LNNLoss` solves the Euler-Lagrange equations of the *learned* Lagrangian for its own acceleration
+# and compares the two, so a decreasing loss means the network is recovering a Lagrangian whose
+# dynamics match the pendulum's.
 using GeometricMachineLearning
 
-# this contains the functions for generating the training data
-include("../data_problem.jl")
+# this contains the Lagrangians and the functions for generating the training data
+include("data_problem.jl")
 
-function LNN(
-        integrator::TrainingIntegrator{<:LnnTrainingIntegrator}, data::AbstractTrainingData,
-        nameproblem::Symbol = :pendulum, opt = MomentumOptimizer(1e-3, 0.5))
-    _, n_dim = dict_problem_L[nameproblem]
+const problem = :pendulum
 
-    # layer dimension/width
-    ld = 5
+# layer dimension/width
+const ld = 5
 
-    # hidden layers
-    ln = 3
+# hidden layers
+const ln = 3
 
-    # number of inputs/dimension of system
-    ninput = 2*n_dim
+const _, n_dim = dict_problem_L[problem]
 
-    # number of training runs
-    nruns = 3
+# number of inputs/dimension of system
+const ninput = 2 * n_dim
 
-    # create lNN
-    lnn = LagrangianNeuralNetwork(ninput; nhidden = ln, width = ld)
+# number of epochs
+const nepochs = 200
 
-    # create Lux network
-    nn = NeuralNetwork(lnn, LuxBackend())
+const arch = LagrangianNeuralNetwork(ninput; nhidden = ln, width = ld)
 
-    # perform training (returns array that contains the total loss for each training step)
-    total_loss = train!(
-        nn, opt, data; ntraining = nruns, ti = integrator, showprogress = true)
+nn = NeuralNetwork(arch, CPU(), Float64)
 
-    return nn, total_loss
-end
+input, output = get_LNN_data(problem)
+dl = DataLoader(input, output)
 
-#=
-Data = get_multiple_trajectory_structure(:pendulum; n_trajectory = 20, n_points = 1000, timestep = 0.1, qmin = -1.2, pmin = -1.2, qmax = 1.2, pmax = 1.2)
+# `LNNLoss(arch)` is what `NetworkLoss(arch)` returns; naming it is for the reader.
+loss = LNNLoss(arch)
 
-Get_Data = Dict(
-    :Δt => Data -> Data.Δt,
-    :nb_trajectory => Data -> Data.nb_trajectory,
-    :length_trajectory => (Data,i) -> Data.data[Symbol("Trajectory_"*string(i))][:len],
-    :q => (Data,i,n) -> Data.data[Symbol("Trajectory_"*string(i))][:data][n][1],
-)
-data = DataTrajectory(Data, Get_Data)
-
-nn, total_loss = LNN(VariationalMidPointIntegrator(), data, :pendulum, MomentumOptimizer())
-
+# The step size belongs to the `Optimizer`, not to the method. `LNNLoss` needs a larger one than
+# `HNNLoss` does: its gradient reaches the parameters through a solve against the velocity Hessian,
+# where `HNNLoss` is linear in the gradient of the learned Hamiltonian.
+optimizer = Optimizer(Adam(), nn; step_size = 1e-2)
+total_loss = optimizer(nn, dl, Batch(10), nepochs, loss; show_progress = true)
 
 # plot results
-include("../plots.jl")  
-L, n_dim = dict_problem_L[:pendulum]
-plot_hnn(L, nn, total_loss; filename="lnn_pendulum.png", xmin=-1.2, xmax=+1.2, ymin=-1.2, ymax=+1.2)
-=#
+include("plots.jl")
+L, _ = dict_problem_L[problem]
+plot_hnn(L, x -> only(nn(x)), total_loss;
+    filename = "lnn_pendulum.png", xmin = -1.2, xmax = +1.2, ymin = -1.2, ymax = +1.2)
