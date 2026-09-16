@@ -457,16 +457,21 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 ### Fixed
 
-- **Eighteen of the 23 reproduction and verification scripts run again, where five did.** Each
+- **Twenty of the 25 entry points run to completion, where seven did.** `scripts/` has 25 entry
+  points — two under `verification/` and 23 under `reproduction/` — and the survey above found
+  seven of them completing, five still computing at the ceiling and 13 failing. Each
   failure was found by the new CI gate rather than by reading, and each cause was measured. The
   classes that recur across several files:
 
-  - **`save` and `load` are not exported names any more.** Four scripts called a bare `save` and one
-    a bare `load`; they mean `CairoMakie.save` for a figure and `JLD2.save`/`JLD2.load` for weights.
-  - **Four scripts write into an output directory they do not create** — `comparison_plots/`,
-    `phase_space_samples/`, `abc_flow/`, `rigid_body/`. Each now calls `mkpath` first. This is the
-    class that cannot be found locally: once any earlier run has made the directory, every later run
-    passes, and only a fresh checkout fails.
+  - **`save` and `load` are not exported names any more.** Seven scripts called a bare `save` and
+    one a bare `load`; they mean `CairoMakie.save` for a figure and `JLD2.save`/`JLD2.load` for
+    weights.
+  - **Eight scripts write into an output directory they do not create** — `comparison_plots/`,
+    `phase_space_samples/`, `plots/`, `abc_flow/`, `rigid_body/` and
+    `symplectic_autoencoder_validation/`. Each now calls `mkpath` first. This is the class that
+    cannot be found locally: once any earlier run has made the directory, every later run passes,
+    and only a fresh checkout fails. Four of them surfaced as gate failures; the other four were
+    found by reading the save sites of the scripts those four sat beside.
   - **Two scripts built a `Float64` network against a `Float32` `DataLoader`.** The networks now
     name their element type.
 
@@ -1130,7 +1135,7 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   read `smoke_size(CUDABackend(), CPU())`, so a full run still trains on the GPU it was written for
   and a smoke run exercises the same code on the CPU.
 
-  **Five of the 23 entry points are named in `SKIPPED`, each with the reason it is not run.** That
+  **Five of the 25 entry points are named in `SKIPPED`, each with the reason it is not run.** That
   list is closed in both directions, as the two test guards' allowlists are: an entry naming a file
   that is no longer an entry point fails the driver. An entry is a backlog item, not a design — it
   says these files do *not* work, not that they are fine.
