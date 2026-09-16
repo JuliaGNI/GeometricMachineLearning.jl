@@ -21,6 +21,11 @@ dl = DataLoader(dl_cpu_64, backend, Float32)
 
 const reduced_dim = 2
 
+# The weights file is named by the mode. Its shape depends on `GML_SMOKE` -- a smoke run
+# trains a 20-site lattice where a full run trains 200 -- so one name for both would let a
+# full run load smoke-sized weights that an earlier run had left behind.
+const sae_parameters_file = smoke_size("sae_parameters.jld2", "sae_parameters_smoke.jld2")
+
 psd_arch = PSDArch(dl.input_dim, reduced_dim)
 sae_arch = SymplecticAutoencoder(dl.input_dim, reduced_dim; n_encoder_blocks = 4,
     n_decoder_blocks = 4, n_encoder_layers = 2, n_decoder_layers = 2)
@@ -57,7 +62,7 @@ CairoMakie.save("symplectic_autoencoder_validation/compare_errors.pdf", fig)
 
 const mtc = GeometricMachineLearning.map_to_cpu
 
-JLD2.save("sae_parameters.jld2", "sae_parameters",
+JLD2.save(sae_parameters_file, "sae_parameters",
     sae_nn.params |> mtc, "training loss", sae_error)
 
 psd_nn_cpu = mtc(psd_nn)

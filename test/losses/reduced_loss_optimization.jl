@@ -10,14 +10,15 @@ Random.seed!(123)
 # takes. It was unreachable: the loss annotated its parameter argument `::NetworkParameters`, and
 # `Zygote.pullback` evaluates the forward pass with the parameters unwrapped -- the closure body
 # receives the underlying `NamedTuple` -- so the method did not match under AD and the untyped
-# `NetworkLoss` fallback in `AbstractNeuralNetworks` caught the call. That fallback's body is an `error`, so the failure read as "Functor not defined for
-# `NetworkLoss`" rather than as a `MethodError` naming the argument types.
+# `NetworkLoss` fallback in `AbstractNeuralNetworks` caught the call. That fallback's body is an
+# `error`, so the failure read as "Functor not defined for `NetworkLoss`" rather than as a
+# `MethodError` naming the argument types.
 #
 # Nothing had caught it because nothing ran it. The docstring example calls the loss directly,
 # which dispatches, and the tutorial's training is in a plain ```julia fence that Documenter
-# renders and never executes. The two assertions below are therefore split deliberately: the
-# first is the one that fails if the annotation comes back, and the second is what the loss is
-# for.
+# renders and never executes. Restoring the annotation makes the `Optimizer` call below raise
+# that `error`, so this testset errors before any of the three assertions runs; the assertions
+# themselves check what the loss is for.
 @testset "ReducedLoss trains through the Optimizer functor" begin
     reduced_dim = 2
 

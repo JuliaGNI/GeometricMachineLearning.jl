@@ -482,7 +482,7 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   through the functor, and it was checked to fail, with exactly that message, when the annotation
   is put back.
 
-- **Twenty of the 25 entry points run to completion, where seven did.** `scripts/` has 25 entry
+- **Twenty-three of the 25 entry points run to completion, where seven did.** `scripts/` has 25 entry
   points — two under `verification/` and 23 under `reproduction/` — and the survey above found
   seven of them completing, five still computing at the ceiling and 13 failing. Each
   failure was found by the new CI gate rather than by reading, and each cause was measured. The
@@ -578,7 +578,8 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   - Both `scripts/reproduction/symplectic_autoencoders/online_*.jl` get their element types, their
     backend switch, their `JLD2.save`/`CairoMakie.save` qualifications and, for
     `online_transformer_for_sae.jl`, an explicit statement of the weights dependency it has on
-    `online_sympnet.jl`. What stops them is the `ReducedLoss` defect under *SKIPPED* above.
+    `online_sympnet.jl`. Both then ran once the `ReducedLoss` annotation above was removed; neither
+    is skipped.
 
 - **The reproduction scripts call `default_parameters()` rather than passing the name.**
   `GeometricProblems` defines `default_parameters(::Type{T} = Float64) where {T}` in each problem
@@ -2299,19 +2300,28 @@ they resolved to is in the release notes above.
 - **C9. Seven include sites under `legacy/` name files that do not exist.** Six `legacy/hnn/`
   scripts include `../../scripts/data.jl` and `hnn_simple.jl` includes `../../src/training.jl`;
   neither file exists anywhere in the repository, and neither did before the move to `legacy/`. Of
-  the 29 include targets under `legacy/`, the other 22 resolve. The spelling is now at least
+  the include targets under `legacy/`, the other 21 resolved when this was written — see the
+  paragraph below, which is where that number stands now. The spelling is now at least
   consistent with where the files sit, so what remains is a decision about `data.jl`: reconstruct it
   (it generated the pendulum training data, which `scripts/utilities/pendulum.jl` now does) or
   delete the scripts that need it.
 
-  **Nine more of those include sites went stale when `scripts/` was restructured.** Seven
-  `legacy/hnn/*.jl` include `../../scripts/plots.jl`, `hnn_lux.jl` also includes
-  `../../scripts/pendulum.jl`, and `legacy/hnn/README.md` and `legacy/hnn/Project.toml` name the
-  first in prose; all of them are `scripts/utilities/` now. They are left alone deliberately: every
-  one of those seven files already stops earlier, on the `data.jl` above, so repointing them fixes
-  nothing that runs — and the seven are not formatted to this repository's own `style = "sciml"`,
-  so staging them at all would have meant a 371-line reformat of dead code around a one-line
-  change. The path correction belongs with whatever settles `data.jl`.
+  **Eight more of those include sites went stale when `scripts/` was restructured**, across seven
+  files: each of the seven `legacy/hnn/*.jl` includes `../../scripts/plots.jl`, and `hnn_lux.jl`
+  includes `../../scripts/pendulum.jl` as well. `legacy/hnn/README.md` and
+  `legacy/hnn/Project.toml` name the first in prose too, so ten references in nine files. All of
+  those paths are under `scripts/utilities/` now.
+
+  They are left alone deliberately, and the reason covers six of the seven files rather than all
+  seven. Six already stop earlier, on the `data.jl` above, so repointing them fixes nothing that
+  runs. **`hnn_lux.jl` is the exception**: it includes no `data.jl`, both of its includes resolved
+  before this release, and neither does now — this is the one file where the restructuring is what
+  broke it. It is still left alone, because none of the seven is formatted to this repository's own
+  `style = "sciml"` and staging them would have meant reformatting around 340 lines of dead code
+  for a one-line change each. The path correction belongs with whatever settles `data.jl`.
+
+  Counting the include sites whose argument is a string literal: 28 under `legacy/`, of which 15
+  do not resolve and 13 do. Seven of the 15 were already broken before this release.
 
 - **C12. The sympnet upscaling chain is symplectic layer by layer, not end to end, and whether it
   is meant to be is undecided.** `PSDLayer(N, N2) → GradientLayerQ(N2) → GradientLayerP(N2) →

@@ -19,15 +19,24 @@ const dl = DataLoader(dl_cpu_64, backend, Float32)
 
 const reduced_dim = 2
 
+# The weights file is named by the mode. Its shape depends on `GML_SMOKE` -- a smoke run
+# trains a 20-site lattice where a full run trains 200 -- so one name for both would let a
+# full run load smoke-sized weights that an earlier run had left behind.
+const sae_parameters_file = smoke_size("sae_parameters.jld2", "sae_parameters_smoke.jld2")
+
 const sae_arch = SymplecticAutoencoder(dl.input_dim, reduced_dim; n_encoder_blocks = 4,
     n_decoder_blocks = 4, n_encoder_layers = 2, n_decoder_layers = 2)
-# `online_sympnet.jl` writes the autoencoder weights this reads, into whichever directory it is
-# run from. Stating the dependency here rather than relying on the caller having run it first.
-isfile("sae_parameters.jld2") || include("online_sympnet.jl")
+# `online_sympnet.jl` trains the autoencoder whose weights this script integrates, and writes them
+# into whichever directory it is run from. It cannot be `include`d from here -- both scripts define
+# `pr` at top level and this one makes it `const` -- so the dependency is stated and enforced
+# rather than satisfied. `scripts/runscripts.jl` runs the two in this order anyway.
+isfile(sae_parameters_file) || error(
+    "$(sae_parameters_file) is not here. Run online_sympnet.jl first, in this directory and " *
+    "with the same GML_SMOKE setting: it trains the autoencoder whose weights this script needs.")
 
 # `cu` moves the loaded weights onto the GPU; on the CPU backend there is nothing to move.
 const to_backend = backend == CPU() ? identity : cu
-const sae_parameters = JLD2.load("sae_parameters.jld2")["sae_parameters"] |> to_backend
+const sae_parameters = JLD2.load(sae_parameters_file)["sae_parameters"] |> to_backend
 const sae_nn = NeuralNetwork(sae_arch, Chain(sae_arch), sae_parameters, backend)
 
 const integrator_train_epochs = smoke_size(65536, 2)
@@ -57,4 +66,5 @@ train_integrator_loss = o_integrator(
     integrator_nn, dl_integration, integrator_batch, integrator_train_epochs, loss)
 
 const mtc = GeometricMachineLearning.map_to_cpu
-JLD2.save("integrator_parameters.jld2", "integrator_parameters", integrator_nn.params |> mtc)
+JLD2.save(
+    "integrator_parameters.jld2", "integrator_parameters", integrator_nn.params |> mtc)
