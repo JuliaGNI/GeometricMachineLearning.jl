@@ -3,7 +3,7 @@ using GeometricMachineLearning
 using GeometricMachineLearning: _custom_mul, _custom_transpose, params
 import Random
 
-include("../network_parameters_gradient_structure.jl")
+include("network_parameters_gradient_structure.jl")
 
 Random.seed!(1234)
 

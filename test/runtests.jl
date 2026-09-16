@@ -4,209 +4,29 @@ using SafeTestsets, Test, GeometricMachineLearning
 # which is right at a REPL and is noise in a suite -- a 2048-epoch run emits a few hundred progress
 # lines and buries the failure you are looking for.
 
-@safetestset "Reachability of every file under test/                                          " begin
+# One directory per subject, each with its own driver naming the testsets it runs. The drivers are
+# `include`d at top level rather than wrapped in a testset of their own, because `@safetestset`
+# expands to a `module` and a module may not appear inside a testset body.
+#
+# The two guards stay here beside `runtests.jl` rather than in a directory of their own: they check
+# the tree rather than a subject in it, and `reachability.jl` reads `test/` off its own `@__DIR__`.
+
+@safetestset "Reachability of every file under test/" begin
     include("reachability.jl")
 end
-@safetestset "Exported names are defined                                                      " begin
+@safetestset "Exported names are defined" begin
     include("exports.jl")
 end
 
-# reduced order modeling tests
-@info "Starting reduced-order-modeling tests"
-@safetestset "PSD tests                                                                       " begin
-    include("psd_architecture_tests.jl")
-end
-@safetestset "SymplecticAutoencoder tests                                                     " begin
-    include("symplectic_autoencoder_tests.jl")
-end
-@safetestset "Check if autoencoder error is lower than PSD error                              " begin
-    include("sae_error_lower_than_psd_error.jl")
-end
-@safetestset "Check reduced model                                                             " begin
-    include("reduced_system.jl")
-end
-@safetestset "Check parameterlength                                                           " begin
-    include("parameterlength/check_parameterlengths.jl")
-end
-@safetestset "Symplectic Potential (array tests)                                              " begin
-    include("arrays/poisson_tensor.jl")
-end
-@safetestset "Test triangular matrices                                                        " begin
-    include("arrays/triangular.jl")
-end
-@safetestset "Gradient Layer                                                                  " begin
-    include("layers/gradient_layer_tests.jl")
-end
-@safetestset "Test tensor-slice consistency of sympnet layers                                 " begin
-    include("layers/sympnet_layers_test.jl")
-end
-@safetestset "Test symplecticity of the sympnet upscaling layer                               " begin
-    include("layers/sympnet_upscaling.jl")
-end
-@safetestset "Hamiltonian Neural Network                                                      " begin
-    include("hamiltonian_neural_network_tests.jl")
-end
-@safetestset "Lagrangian Neural Network                                                       " begin
-    include("lagrangian_neural_network_tests.jl")
-end
-@safetestset "Symplectic Euler and variational midpoint losses                                " begin
-    include("training_method_losses.jl")
-end
-@safetestset "Manifold Neural Network Layers                                                  " begin
-    include("layers/manifold_layers.jl")
-end
-@safetestset "Custom tensor matrix multiplication                                             " begin
-    include("kernels/tensor_mat_mul.jl")
-end
-@safetestset "Custom AD rules for kernels                                                     " begin
-    include("custom_ad_rules/kernel_pullbacks.jl")
-end
-@safetestset "_custom_mul: NetworkParameters gradient structure                               " begin
-    include("custom_ad_rules/double_multiplication_network_parameters_gradient.jl")
-end
-@safetestset "ResNet                                                                          " begin
-    include("layers/resnet_tests.jl")
-end
-# transformer-related tests
-@info "Starting transformer-related tests"
-@safetestset "Test setup of transformer with Stiefel weights                                  " begin
-    include("transformer_related/transformer_setup.jl")
-end
-@safetestset "Test setup of MultiHeadAttention layer Stiefel weights                          " begin
-    include("transformer_related/multi_head_attention_stiefel_setup.jl")
-end
-@safetestset "Test geodesic and Cayley retr for the MultiHeadAttention layer w/ St weights    " begin
-    include("transformer_related/multi_head_attention_stiefel_retraction.jl")
-end
-@safetestset "Test the correct setup of the various optimizer caches for MultiHeadAttention   " begin
-    include("transformer_related/multi_head_attention_stiefel_optim_cache.jl")
-end
-@safetestset "Check if the transformer can be applied to a tensor.                            " begin
-    include("transformer_related/transformer_application.jl")
-end
-@safetestset "Check if the gradient/pullback of MultiHeadAttention changes type in St case    " begin
-    include("transformer_related/transformer_gradient.jl")
-end
-@safetestset "Check if the optimization_step! changes the parameters of the transformer       " begin
-    include("transformer_related/transformer_optimizer.jl")
-end
-
-@safetestset "Attention layer #1                                                              " begin
-    include("attention_layer/attention_setup.jl")
-end
-@safetestset "Symplectic attention: NetworkParameters gradient structure                      " begin
-    include("attention_layer/symplectic_attention_network_parameters_gradient.jl")
-end
-@safetestset "Classification layer                                                            " begin
-    include("layers/classification.jl")
-end
-@info "Starting optimizer tests"
-@safetestset "Optimizer #2                                                                    " begin
-    include("optimizers/utils/optimization_step.jl")
-end
-@safetestset "Optimizer #3                                                                    " begin
-    include("optimizers/optimizer_convergence_tests/svd_optim.jl")
-end
-@safetestset "Optimizer #4                                                                    " begin
-    include("optimizers/optimizer_convergence_tests/psd_optim.jl")
-end
-@safetestset "Check if Adam with decay converges                                              " begin
-    include("optimizers/optimizer_convergence_tests/adam_with_learning_rate_decay.jl")
-end
-@safetestset "Gradient optimizer tests                                                        " begin
-    include("optimizers/gradient_optimizer.jl")
-end
-@safetestset "Momentum optimizer tests                                                        " begin
-    include("optimizers/momentum_optimizer.jl")
-end
-@safetestset "Optimizers with structured (non-manifold) weights                               " begin
-    include("optimizers/structured_array_parameters.jl")
-end
-@safetestset "_GMLGradient dispatch                                                           " begin
-    include("optimizers/gml_gradient_dispatch.jl")
-end
-@safetestset "map_to_cpu                                                                      " begin
-    include("map_to_cpu_tests.jl")
-end
-@safetestset "changebackend                                                                   " begin
-    include("changebackend_tests.jl")
-end
-@info "Starting data and data-loader tests"
-@safetestset "Test data loader for q and p data                                               " begin
-    include("data_loader/batch_data_loader_qp_test.jl")
-end
-@safetestset "Test the data loader in combination with optimization_step!                     " begin
-    include("data_loader/data_loader_optimization_step.jl")
-end
-@safetestset "Optimizer functor with data loader for Adam                                     " begin
-    include("data_loader/optimizer_functor_with_adam.jl")
-end
-@safetestset "Test data loader for a tensor (q and p data)                                    " begin
-    include("data_loader/draw_batch_for_tensor_test.jl")
-end
-
-@info "Starting network-loss and kernel tests"
-@safetestset "Test NetworkLoss + Optimizer                                                    " begin
-    include("network_losses/losses_and_optimization.jl")
-end
-
-@info "Starting integrator and attention tests"
-@safetestset "Test parallel inverses                                                          " begin
-    include("kernels/tensor_inverse.jl")
-end
-@safetestset "Test parallel Cayley                                                            " begin
-    include("kernels/tensor_cayley.jl")
-end
-
-@safetestset "Test volume-preserving feedforward neural network                               " begin
-    include("layers/volume_preserving_feedforward.jl")
-end
-
-@safetestset "SympNet integrator                                                              " begin
-    include("sympnet_integrator.jl")
-end
-@safetestset "Regular transformer integrator                                                  " begin
-    include("standard_transformer_integrator.jl")
-end
-
-@safetestset "Batch functor(s)                                                                " begin
-    include("batch/batch_functor.jl")
-end
-
-@safetestset "Volume-Preserving Transformer (skew-symmetric tests)                            " begin
-    include("volume_preserving_attention/test_skew_map.jl")
-end
-@safetestset "Volume-Preserving Transformer (cayley-transform tests)                          " begin
-    include("volume_preserving_attention/test_cayley_transforms.jl")
-end
-
-@safetestset "Linear Symplectic Attention                                                     " begin
-    include("linear_symplectic_attention.jl")
-end
-@safetestset "Linear Symplectic Transformer                                                   " begin
-    include("linear_symplectic_transformer.jl")
-end
-
-@info "Starting final data-loader and documentation tests"
-@safetestset "DataLoader for input and output                                                 " begin
-    include("data_loader/data_loader_for_input_and_output.jl")
-end
-
-@safetestset "HDF5 save/load for GML special array types                                     " begin
-    include("hdf5_support.jl")
-end
-@safetestset "Data loader docstring examples                                                  " begin
-    include("docstrings/data_loader.jl")
-end
-@safetestset "Layer and architecture docstring examples                                      " begin
-    include("docstrings/layers_and_architectures.jl")
-end
-@safetestset "Loss docstring examples                                                        " begin
-    include("docstrings/losses.jl")
-end
-@safetestset "Manifold docstring examples                                                    " begin
-    include("docstrings/manifolds.jl")
-end
-@safetestset "Utility and pullback docstring examples                                        " begin
-    include("docstrings/utilities.jl")
-end
+include("arrays/runtests.jl")
+include("kernels/runtests.jl")
+include("layers/runtests.jl")
+include("attention/runtests.jl")
+include("transformers/runtests.jl")
+include("architectures/runtests.jl")
+include("reduced_order_modeling/runtests.jl")
+include("losses/runtests.jl")
+include("optimizers/runtests.jl")
+include("parameters/runtests.jl")
+include("data_loader/runtests.jl")
+include("docstrings/runtests.jl")

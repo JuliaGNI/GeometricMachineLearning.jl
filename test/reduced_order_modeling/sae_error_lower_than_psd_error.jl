@@ -5,10 +5,10 @@ import Random
 Random.seed!(123)
 
 function test_accuracy(N::Integer, n::Integer; n_epochs::Integer = 100)
-    # Seeded per call, for the reason given in
-    # `optimizers/optimizer_convergence_tests/svd_optim.jl`: this is called twice, and the second
-    # call inheriting the first call's RNG state made the comparison below depend on how much
-    # randomness the optimizer consumes instead of on whether the autoencoder beats PSD.
+    # Seeded per call, for the reason given in `optimizers/svd_optim.jl`: this is called twice,
+    # and the second call inheriting the first call's RNG state made the comparison below depend
+    # on how much randomness the optimizer consumes instead of on whether the autoencoder beats
+    # PSD.
     Random.seed!(123)
     dl = DataLoader(rand(N, 10 * N); autoencoder = true)
 

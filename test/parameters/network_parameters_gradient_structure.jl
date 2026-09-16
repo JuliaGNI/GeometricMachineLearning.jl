@@ -21,7 +21,7 @@ structure on the second access either way. `CHANGELOG.md` records the experiment
 A wrapper unwrapped with `values` rather than `getproperty` -- which is how `Chain` hands a layer
 its parameters -- counts differently: there the accesses on the plain `NamedTuple` below decide.
 See the layer testset in
-`test/attention_layer/symplectic_attention_network_parameters_gradient.jl`.
+`test/parameters/symplectic_attention_network_parameters_gradient.jl`.
 
 `preserves_structure` states which side of that split `f` sits on. Both gradients are asserted to
 agree numerically either way, so losing the structure is a change of type and not of value.
