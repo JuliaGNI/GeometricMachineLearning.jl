@@ -970,11 +970,12 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   "Test symplecticity of the sympnet upscaling layer".
 
 - **`test/` is one directory per subject, and the test environment is `test/Project.toml`.** The
-  suite was a flat pile with six single-file directories beside it and 62 `@safetestset` blocks
-  written out inline in `test/runtests.jl`; a reader looking for the attention tests found them
-  split across `attention_layer/`, `transformer_related/` and `volume_preserving_attention/`, and
-  two more sat loose at the top level. There are now twelve subject directories, none of them
-  holding a single file, and each carries its own driver naming the testsets it runs.
+  suite was 15 test files loose at the top of `test/`, four single-file directories (`batch/`,
+  `network_losses/`, `parameterlength/`, `optimizers/utils/`) and 62 `@safetestset` blocks written
+  out inline in `test/runtests.jl`; a reader looking for the attention tests found them split across
+  `attention_layer/`, `transformer_related/` and `volume_preserving_attention/`, with
+  `linear_symplectic_attention.jl` loose at the top level. There are now twelve subject directories,
+  none holding a single file, and each carries its own driver naming the testsets it runs.
   `test/runtests.jl` is twelve `include` lines and the two guards.
 
   The drivers are `include`d at top level rather than wrapped in a testset of their own, because
@@ -983,20 +984,30 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   than a subject in it, and `test/reachability.jl` reads `test/` off its own `@__DIR__`.
 
   **The suite runs exactly what it ran before**: 62 testsets, 4085 passes and 2 `@test_broken`,
-  before and after, with every testset name and every per-testset pass count identical. Every moved
-  file is a `git mv` — `git diff -M` shows 36 renames — and only two carry any content change at
-  all, both of them an `include` path: `parameters/double_multiplication_network_parameters_gradient.jl`
-  and `parameters/symplectic_attention_network_parameters_gradient.jl` now include the helper they
-  share from their own directory instead of from `../`.
+  before and after, with every testset name and every per-testset pass count the same. The names
+  did lose their trailing padding — every one of the 62 was padded with spaces to align the summary
+  column, which the drivers do not reproduce — so the `Test` summary columns are narrower and the
+  names are otherwise unchanged. The six `@info "Starting …"` progress markers are gone with the
+  inline blocks; each `@safetestset` already prints its own summary as it finishes.
+
+  Every moved file is a `git mv`: `git diff -M origin/main...HEAD` gives 35 renames, 33 of them at
+  100% similarity. Four files carry a content change. Two are an `include` path —
+  `parameters/double_multiplication_network_parameters_gradient.jl` and
+  `parameters/symplectic_attention_network_parameters_gradient.jl` now include the helper they share
+  from their own directory instead of from `../`. Two are a comment naming a path this change moved:
+  `parameters/network_parameters_gradient_structure.jl:24` and
+  `reduced_order_modeling/sae_error_lower_than_psd_error.jl:9`.
 
   `test/Project.toml` replaces the `[extras]`/`[targets]` pair in the package's own `Project.toml`,
-  following `GeometricIntegrators`. The difference is not cosmetic: under `[targets]` a package a
-  test file loads but nobody declared is invisible — the file simply fails to load, which reads like
-  a broken test — while a `test/Project.toml` turns the same mistake into a resolve error naming the
-  package. The sixteen entries are what the files under `test/` actually load, derived from their
-  `using`/`import` lines. `ChainRulesTestUtils` and `GeometricIntegrators` move their `[compat]`
-  bounds across with them, and `SafeTestsets`' bound goes too: all three were bounds on packages the
-  package itself does not depend on.
+  following `GeometricIntegrators`. The difference is that the test environment is now exactly what
+  it declares. Under `[targets]` it was the package's own `[deps]` plus the extras, so a test file
+  could load `ForwardDiff` or `Symbolics` without anyone declaring it for the tests, and the day the
+  package dropped that dependency the suite would break for a reason nothing connects to the change.
+  It cannot now: `julia --project=test -e 'using ForwardDiff'` fails, and the sixteen `[deps]`
+  entries are precisely what the files under `test/` load, derived from their `using`/`import`
+  lines. `ChainRulesTestUtils` and `GeometricIntegrators` move their `[compat]` bounds across with
+  them, and `SafeTestsets`' bound goes too: all three were bounds on packages the package itself
+  does not depend on.
 
 - **C5 is removed from *Open Issues*: its premise no longer holds.**
   `.github/workflows/CI.yml` no longer pins an explicit `1.13` job — only `pre` and `nightly` are
