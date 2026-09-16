@@ -1,6 +1,7 @@
 using GeometricMachineLearning
 using GeometricMachineLearning: MatrixSoftmax, VectorSoftmax
-using GeometricProblems.DoublePendulum: DEFAULT_TIMESPAN, DEFAULT_TIMESTEP, default_parameters,
+using GeometricProblems.DoublePendulum: DEFAULT_TIMESPAN, DEFAULT_TIMESTEP,
+                                        default_parameters,
                                         hodeproblem
 using GeometricEquations: EnsembleProblem
 using GeometricIntegrators: ImplicitMidpoint, integrate
@@ -26,7 +27,8 @@ initial_conditions = [(q = [π / i, π / j], p = [0.0, π / k])
 initial_conditions = reshape(initial_conditions, length(initial_conditions))
 
 ensemble_problem = EnsembleProblem(
-    hodeproblem().equation, (DEFAULT_TIMESPAN[1], DEFAULT_TIMESPAN[1] + 15 * DEFAULT_TIMESTEP),
+    hodeproblem().equation, (
+        DEFAULT_TIMESPAN[1], DEFAULT_TIMESPAN[1] + 15 * DEFAULT_TIMESTEP),
     DEFAULT_TIMESTEP, initial_conditions, default_parameters())
 
 ensemble_solution = integrate(ensemble_problem, ImplicitMidpoint())

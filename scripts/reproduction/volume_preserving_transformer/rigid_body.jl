@@ -45,7 +45,8 @@ const T = Float32
 # data loader 
 # `T` is the network's element type either way, so the CPU branch converts too: a Float64
 # `DataLoader` against a Float32 network trips `eltype(A) == eltype(B)` inside the first kernel.
-const dl = backend == CPU() ? DataLoader(T.(dl₁.input)) : DataLoader(dl₁.input |> CuArray{T})
+const dl = backend == CPU() ? DataLoader(T.(dl₁.input)) :
+           DataLoader(dl₁.input |> CuArray{T})
 
 # hyperparameters concerning training 
 const n_epochs = smoke_size(500000, 2)

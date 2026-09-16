@@ -31,9 +31,17 @@ const ROOT = @__DIR__
 # the repository.
 const PROJECT = Base.active_project()
 
-# A smoke run of a reproduction script takes seconds. The ceiling is here so that a script which
-# hangs is named, rather than killing the whole job at the runner's timeout with nothing to read.
-const TIMEOUT_SECONDS = 900
+# The ceiling is here so that a script which hangs is named, rather than killing the whole job at
+# the runner's timeout with nothing to read. It is per mode because the two modes cost differently:
+# a verification script runs in full, and a reproduction script runs at its smoke size and takes
+# seconds, so five minutes there is already far past "still working".
+const TIMEOUT_SECONDS = Dict("verification" => 900, "reproduction" => 300)
+
+# The budget for a whole mode, inside `Scripts.yml`'s `timeout-minutes: 90` less what that job
+# spends instantiating. Without it the per-script ceiling does not keep the promise above: 23
+# reproduction scripts each entitled to the ceiling outlast any runner, and the job then dies at the
+# runner's timeout with no verdict at all. The driver stops first, and names what it did not reach.
+const BUDGET_SECONDS = 3600
 
 # Both entries are the scripts whose subject *is* the GPU path: they name CUDA types directly
 # rather than taking a backend, so there is nothing for a smoke run to switch. Every other GPU
@@ -60,7 +68,7 @@ end
 Run one script in its own process, with its own directory as the working directory. Return the
 verdict, the elapsed seconds and the captured output.
 """
-function run_script(relative::AbstractString; smoke::Bool)
+function run_script(relative::AbstractString; smoke::Bool, timeout::Real)
     path = joinpath(ROOT, relative)
     environment = copy(ENV)
     smoke && (environment["GML_SMOKE"] = "1")
@@ -71,12 +79,14 @@ function run_script(relative::AbstractString; smoke::Bool)
     started = time()
     process = open(log, "w") do io
         p = run(pipeline(command; stdout = io, stderr = io); wait = false)
-        timer = Timer(_ -> (process_running(p) && kill(p, Base.SIGKILL)), TIMEOUT_SECONDS)
+        timer = Timer(_ -> (process_running(p) && kill(p, Base.SIGKILL)), timeout)
         wait(p)
         close(timer)
         return p
     end
     elapsed = time() - started
+    output = read(log, String)
+    rm(log; force = true)
 
     # A process killed by the timer exits with status 0 and a non-zero `termsignal`, so the exit
     # code alone reads a timeout as success.
@@ -87,13 +97,14 @@ function run_script(relative::AbstractString; smoke::Bool)
     else
         "ok"
     end
-    return verdict, elapsed, read(log, String)
+    return verdict, elapsed, output
 end
 
 function main(mode::AbstractString)
     mode in ("verification", "reproduction") ||
         error("usage: runscripts.jl verification|reproduction")
     smoke = mode == "reproduction"
+    timeout = TIMEOUT_SECONDS[mode]
 
     # The skip list may not outlive what it excuses.
     runnable = vcat(entry_points("verification"), entry_points("reproduction"))
@@ -105,14 +116,31 @@ function main(mode::AbstractString)
         return 1
     end
 
+    # Discovery finding nothing is a renamed or emptied directory, not a clean run. Without this the
+    # loop below has nothing to fail on and the driver reports success.
+    scripts = entry_points(mode)
+    if isempty(scripts)
+        println("no entry points under ", mode, "/ -- the directory is empty or has been renamed")
+        return 1
+    end
+
+    deadline = time() + BUDGET_SECONDS
     failures = String[]
-    for relative in entry_points(mode)
+    for (index, relative) in enumerate(scripts)
+        if time() ≥ deadline
+            unreached = scripts[index:end]
+            println("\nthe ", BUDGET_SECONDS, "s budget is spent; ", length(unreached),
+                " script(s) were not run:")
+            foreach(f -> println("  ", f), unreached)
+            append!(failures, unreached)
+            break
+        end
         if haskey(SKIPPED, relative)
             println("skip     ", relative, "  -- ", SKIPPED[relative])
             flush(stdout)
             continue
         end
-        verdict, elapsed, output = run_script(relative; smoke = smoke)
+        verdict, elapsed, output = run_script(relative; smoke = smoke, timeout = timeout)
         println(rpad(verdict, 9), rpad(string(round(elapsed; digits = 1)) * "s", 9), relative)
         if verdict != "ok"
             push!(failures, relative)

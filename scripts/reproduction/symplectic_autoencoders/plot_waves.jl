@@ -1,13 +1,17 @@
 using HDF5, CairoMakie
 
-# The snapshot matrix is what `integration.jl` writes, into whichever directory it is run from.
-# Stating the dependency here rather than relying on the caller having run it first.
-isfile("snapshot_matrix.h5") || include("integration.jl")
+include("../../utilities/snapshot_matrix.jl")
 
-data = h5open("snapshot_matrix.h5", "r") do file
+# The snapshot matrix is what `integration.jl` writes, into whichever directory it is run from.
+# Stating the dependency here rather than relying on the caller having run it first. The name
+# carries the mode, so this never reads a matrix produced at the other size.
+const snapshot_matrix = snapshot_matrix_file()
+isfile(snapshot_matrix) || include("integration.jl")
+
+data = h5open(snapshot_matrix, "r") do file
     read(file, "data")
 end
-n_params = h5open("snapshot_matrix.h5", "r") do file
+n_params = h5open(snapshot_matrix, "r") do file
     read(file, "n_params")
 end
 

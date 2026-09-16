@@ -5,14 +5,18 @@ There are two routines: get_initial_condition and get_initial_condition2. Their 
 using GeometricIntegrators
 using HDF5
 
+# `smoke_size(full, smoke)` returns the second when GML_SMOKE is set, which is how the CI
+# job runs this script end to end in seconds. See scripts/README.md. `snapshot_matrix.jl` also
+# brings in `smoke_size`, and names the output file for the mode it was produced in.
+include("../../utilities/snapshot_matrix.jl")
 include("../../utilities/vector_fields.jl")
 include("../../utilities/initial_condition.jl")
 
-Ñ = 128
+Ñ = smoke_size(128, 16)
 T = Float64
 # params = (μ=T(.5), N=N, Δx=T(1/(N-1)))
-n_params = 20
-n_time_steps = 200
+n_params = smoke_size(20, 2)
+n_time_steps = smoke_size(200, 10)
 p_zero = false
 
 μ_left = T(5/12)
@@ -47,7 +51,7 @@ function perform_multiple_integration(ℙ, n_time_steps, Ñ = Ñ)
 end
 
 function generate_and_safe_data(
-        ℙ, n_time_steps, Ñ = Ñ, n_params = n_params, file_name = "snapshot_matrix.h5")
+        ℙ, n_time_steps, Ñ = Ñ, n_params = n_params, file_name = snapshot_matrix_file())
     h5open(file_name, "w") do h5
         h5["data"] = perform_multiple_integration(ℙ, n_time_steps, Ñ)
         h5["n_params"] = n_params
@@ -56,10 +60,10 @@ end
 
 function generate_and_safe_data(;
         n_params::Integer = n_params, n_time_steps = n_time_steps,
-        Ñ = Ñ, file_name = "snapshot_matrix.h5")
+        Ñ = Ñ, file_name = snapshot_matrix_file())
     ℙ = T(μ_left):T((μ_right - μ_left) / (n_params - 1)):T(μ_right)
     generate_and_safe_data(ℙ, n_time_steps, Ñ, n_params, file_name)
 end
 
-p_zero ? generate_and_safe_data(file_name = "snapshot_matrix2.h5") :
-generate_and_safe_data(file_name = "snapshot_matrix.h5")
+p_zero ? generate_and_safe_data(file_name = snapshot_matrix_file("snapshot_matrix2")) :
+generate_and_safe_data(file_name = snapshot_matrix_file())

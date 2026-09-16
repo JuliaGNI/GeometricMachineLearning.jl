@@ -14,8 +14,9 @@ using GeometricIntegrators
 using CairoMakie
 
 # `smoke_size(full, smoke)` returns the second when GML_SMOKE is set, which is how the CI
-# job runs this script end to end in seconds. See scripts/README.md.
-include("../../utilities/smoke.jl")
+# job runs this script end to end in seconds. See scripts/README.md. `snapshot_matrix.jl` also
+# brings in `smoke_size`, and names the data file for the mode it was produced in.
+include("../../utilities/snapshot_matrix.jl")
 
 include("../../utilities/vector_fields.jl")
 include("../../utilities/initial_condition.jl")
@@ -37,24 +38,26 @@ const step_size = T(0.001)
 retraction = Cayley()
 
 # The snapshot matrix is what `integration.jl` writes, into whichever directory it is run from.
-# Stating the dependency here rather than relying on the caller having run it first.
-isfile("snapshot_matrix.h5") || include("integration.jl")
+# Stating the dependency here rather than relying on the caller having run it first. The name
+# carries the mode, so this never reads a matrix produced at the other size.
+const snapshot_matrix = snapshot_matrix_file()
+isfile(snapshot_matrix) || include("integration.jl")
 
 function gpu_backend()
-    data = h5open("snapshot_matrix.h5", "r") do file
+    data = h5open(snapshot_matrix, "r") do file
         read(file, "data")
     end
-    n_params = h5open("snapshot_matrix.h5", "r") do file
+    n_params = h5open(snapshot_matrix, "r") do file
         read(file, "n_params")
     end
     (CUDABackend(), data |> cu, n_params)
 end
 
 function cpu_backend()
-    data = h5open("snapshot_matrix.h5", "r") do file
+    data = h5open(snapshot_matrix, "r") do file
         read(file, "data")
     end
-    n_params = h5open("snapshot_matrix.h5", "r") do file
+    n_params = h5open(snapshot_matrix, "r") do file
         read(file, "n_params")
     end
     (CPU(), data, n_params)

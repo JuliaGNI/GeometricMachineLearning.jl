@@ -28,6 +28,9 @@ include("../utilities/smoke.jl")
 const n_epochs = smoke_size(2048, 2)
 ```
 
+The include path is relative to the script that writes it, so a script one directory deeper — most
+of them — writes `../../utilities/smoke.jl` instead.
+
 `smoke_size` returns its second argument when `GML_SMOKE` is set in the environment, which is what
 the CI job sets. A smoke run establishes that the script still executes end to end, and nothing
 about the result — that is the honest limit of what a runner can check for a job that belongs on a
