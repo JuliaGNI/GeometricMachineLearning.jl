@@ -81,6 +81,17 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   **Note that `src/data/batch.jl` was the old batch machinery.** The modern `Batch` is
   `src/data_loader/batch.jl` and is untouched.
 
+  **`Distances` is no longer a dependency.** `sqeuclidean` was the default distance of every
+  `TrainingMethod`, and nothing under `src/`, `test/`, `docs/src/` or `ext/` reaches for the package
+  once those are gone. Both the `[deps]` and the `[compat]` entry go with the `using`.
+
+  **`∇q∇q̇L` is gone from `src/architectures/lagrangian_neural_network.jl`** as well. It is
+  unexported, and its one caller was `src/training_method/lnn_exact_method.jl:10`. What it returned
+  is the mixed Hessian block `LNNLoss` now takes from a compiled symbolic expression instead of from
+  `Zygote`, so keeping it would leave two implementations of one formula. Its three neighbours in
+  that file — `∇L`, `∇∇L` and `∇q̇∇q̇L`, plus the constant `DEFAULT_LNN_NRUNS` — were dead before
+  this release and are left alone; see *C13* under *Open Issues*.
+
 - **Seven exported names that were defined nowhere are no longer exported**, and one that should
   have resolved now does. `Device`, `CPUDevice`, `convert_to_dev`, `ResidualLayer`,
   `LinearSymplecticLayerP` and `LinearSymplecticLayerQ` had no definition anywhere under `src/` —
@@ -640,8 +651,8 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 - **`SymplecticEulerLoss` and `VariationalMidpointLoss` carry the training methods' numerical content
   onto `NetworkLoss`.** Of the four methods the `train!` harness held that had no modern counterpart,
   two are ported here, one is judged not worth porting, and the fourth — `HnnExactMethod` — was
-  already `HNNLoss`. Nothing is deleted by this change; the `train!` subsystem and its methods are
-  still present and still exported.
+  already `HNNLoss`. These three ports landed before the deletion under *Removed (breaking)* above,
+  so the subsystem leaves with its numerical content already carried over rather than lost with it.
 
   `SymplecticEulerLoss(arch, timestep)` trains a Hamiltonian neural network on a *trajectory*.
   `HNNLoss` needs ``(\dot{q}, \dot{p})`` in the data; this one needs two consecutive states and the
@@ -660,9 +671,9 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   ``D_2L_d(q_n, q_{n+1}) + D_1L_d(q_{n+1}, q_{n+2}) = 0`` of the midpoint discrete Lagrangian. It
   needs neither velocities nor accelerations in the data.
 
-  **`BasicSympNetMethod` gets no port, and nothing is lost by that.** It is still defined and still
-  exported — this change removes no file; the deletion of the `train!` subsystem is a separate
-  change. What is decided here is that its content does not need carrying over. Its `loss_single` is
+  **`BasicSympNetMethod` gets no port, and nothing is lost by that.** It goes with the rest of the
+  subsystem under *Removed (breaking)* above, and it is the one method whose content does not need
+  carrying over first, because the package already has it. Its `loss_single` is
   `sqeuclidean(q̃ₙ₊₁, qₙ₊₁) + sqeuclidean(p̃ₙ₊₁, pₙ₊₁)` on a one-step prediction — which is
   `FeedForwardLoss`, unnormalised and squared. Measured on one network and one pair of states, the
   method returns `sum(abs2, prediction - target)` and `FeedForwardLoss` returns
@@ -2068,6 +2079,21 @@ they resolved to is in the release notes above.
   the figures above. What it does not answer is whether exact end-to-end symplecticity was ever the
   intended property of this architecture, as opposed to an approximation that improves with `N` —
   that is a design question for the user, not something this check can settle.
+
+- **C13. Four dead names remain in `src/architectures/lagrangian_neural_network.jl`.** `∇L:30`,
+  `∇∇L:35`, `∇q̇∇q̇L:39` and the constant `DEFAULT_LNN_NRUNS:2` have no caller. They were dead
+  before this release, which is why it removes only `∇q∇q̇L`, the one its own deletion orphaned.
+
+  `∇L` last had a caller in `7f1b3dd0` (2023-06-22). `∇q̇∇q̇L` appeared only in the commented-out
+  remainder of `src/training_method/lnn_exact_method.jl:10`, and `∇∇L` survives as its callee alone.
+  `DEFAULT_LNN_NRUNS` was the default `ntraining` of an architecture-local `train!` method added in
+  `aa1e0471` and removed in `a27140af`, when the shared harness took that job over. The constant
+  stayed behind and has had no caller since 2023-06-08.
+
+  All three functions take their derivatives with `Zygote`, which is the route `LNNLoss` cannot
+  use: a nested `Zygote.gradient` inside a loss breaks the parameter gradient. So this is not a
+  second route to one answer that a caller might want. Deleting them is the expected decision; it
+  belongs to a change that owns this file.
 
 ### D. Unverified
 
