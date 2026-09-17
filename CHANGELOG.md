@@ -40,11 +40,49 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 ### Removed (breaking)
 
+- **Seven more files leave `legacy/` — 577 lines that the package already provides, or that no
+  longer refer to anything that exists.** Nothing under `src/`, `test/`, `scripts/`, `docs/` or
+  `.github/` references `legacy/`, so this removes no API and breaks no caller; it is in this
+  section because the directory's other removals are.
+
+  **Five of the seven cannot load.** Each was `include`d on its own in a fresh process with the
+  package loaded, and the first error recorded:
+
+  | file | lines | first error | what the package has instead |
+  |:--|--:|:--|:--|
+  | `layers/activ_symp_layer.jl` | 43 | `UndefVarError: NeuralNetworkLayer` | `ActivationLayerQ`/`ActivationLayerP` |
+  | `layers/grad_symp_layer.jl` | 44 | `UndefVarError: NeuralNetworkLayer` | `GradientLayerQ`/`GradientLayerP` |
+  | `layers/resnet.jl` | 30 | `UndefVarError: NeuralNetworkLayer` | `ResNetLayer` |
+  | `layers/linear_symplectic.jl` | 46 | `Package Lux not found` | `LinearLayerQ`/`LinearLayerP` |
+  | `arrays/sympl_st_E_ts.jl` | 205 | `UndefVarError: SymplecticLieAlgMatrix` | nothing — see below |
+  | `arrays/triang_lower.jl` | 103 | loads | `GeometricOptimizers.LowerTriangular` |
+  | `arrays/triang_upper.jl` | 106 | loads | `GeometricOptimizers.UpperTriangular` |
+
+  `NeuralNetworkLayer` is defined in no repository under `Packages/`, and neither is
+  `SymplecticLieAlgMatrix` or `SymplecticLieAlgHorMatrix`. The two triangular matrices do load and
+  are duplicates: `GeometricOptimizers`' pair has the same design — the entries in a vector, the
+  dimension beside them — and is documented and tested, which these were not.
+
+  **`sympl_st_E_ts.jl` is the one deletion that loses something nothing replaces.** It is `πₑ`, the
+  projection onto the tangent space of the symplectic Stiefel manifold at `E`, and it is the next
+  piece of the symplectic line of work rather than dead weight — but it is written against two Lie
+  algebra types that were never committed anywhere, so it cannot be moved with the rest of that
+  line until they exist. It is recoverable at `6a8e19a7:legacy/arrays/sympl_st_E_ts.jl`, and the
+  place it belongs is `GeometricOptimizers/src/lie_algebras/`, beside the Stiefel and Grassmann
+  horizontal components.
+
+  **What stays in `legacy/`**, and why: the symplectic SR decomposition, the symplectic
+  Gram-Schmidt, the plain Householder QR and `symplectic_stiefel_manifold.jl` are being moved into
+  `GeometricOptimizers`, and leave here once that lands; `embeddings/sin_cos.jl` is the sinusoidal
+  positional encoding of the original transformer paper, which this package has no counterpart to
+  and no caller for, and it is a decision rather than a cleanup.
+
 - **`legacy/hnn/` and `legacy/mtk/` are gone — 17 files, of which 14 are Julia and 866 lines, and
   the package's last Flux and ModelingToolkit code.** Neither name now appears anywhere outside
-  this file. **Lux does**, so it is deliberately not claimed here:
-  `legacy/layers/linear_symplectic.jl` subtypes `Lux.AbstractExplicitLayer`, and
-  `scripts/Project.toml` declares it. They held the first implementation of Hamiltonian neural
+  this file. **Lux does**, so it is deliberately not claimed here: `scripts/Project.toml` declares
+  it and `scripts/reproduction/sympnets/sympnet_pendulum.jl` calls `Lux.Chain`. (The third site,
+  `legacy/layers/linear_symplectic.jl`, went with the entry below.) They held the first
+  implementation of Hamiltonian neural
   networks here, written four ways: by hand with `Zygote`, with Flux, with Lux, and with
   ModelingToolkit generating the derivatives as committed source. Every one of those routes is now
   either inside the package or replaced by a dependency, and **this closes *C9*** — all 28 of the
