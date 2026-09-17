@@ -42,9 +42,9 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 - **`legacy/hnn/` and `legacy/mtk/` are gone — 17 files, of which 14 are Julia and 866 lines, and
   the package's last Flux and ModelingToolkit code.** Neither name now appears anywhere outside
-  this file. **Lux does**, so it is deliberately not claimed here: `src/backends/lux.jl:17,26,37`
-  calls `Lux.setup` and `Lux.apply`, `legacy/layers/linear_symplectic.jl` subtypes
-  `Lux.AbstractExplicitLayer`, and `scripts/Project.toml` declares it. They held the first
+  this file. **Lux does**, so it is deliberately not claimed here:
+  `legacy/layers/linear_symplectic.jl` subtypes `Lux.AbstractExplicitLayer`, and
+  `scripts/Project.toml` declares it. They held the first
   implementation of Hamiltonian neural
   networks here, written four ways: by hand with `Zygote`, with Flux, with Lux, and with
   ModelingToolkit generating the derivatives as committed source. Every one of those routes is now
@@ -89,6 +89,44 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   file fixed a bug rather than merely reshaping the data.
 
   **One capability was missing, and it is added below rather than dropped.**
+
+- **`src/backends/` is gone. Lux is not an operational backend, and it never was one here.** The
+  directory held a backend abstraction with exactly one backend, which could not run, and two
+  exported generics with no methods.
+
+  **`src/backends/lux.jl` was unreachable for two independent reasons, either of which was
+  sufficient.** `Lux` is in no `[deps]`, so every method in the file threw `UndefVarError: Lux` on
+  first call — and `NeuralNetwork(::Architecture, ::LuxBackend)` called `chain(arch, back)`, a
+  function defined in **neither this package nor `AbstractNeuralNetworks`**, so it would have failed
+  there first, before reaching `Lux.setup`. The file also carried a commented-out
+  `@generated Lux.applychain` and two commented-out `Lux.apply` methods.
+
+  **`src/backends/backends.jl` was the abstraction around it**: `abstract type AbstractBackend end`,
+  whose only subtype was `LuxBackend`, plus `function apply! end` and `function jacobian! end` —
+  both exported, both with **zero methods**. An exported name that resolves to a generic no method
+  implements is a promise the package cannot keep.
+
+  **Removed exports: `LuxBackend`, `arch`, `apply!` and `jacobian!`.** `AbstractBackend`,
+  `LuxNeuralNetwork` and `apply` were never exported. Nothing under `src/`, `test/`, `docs/` or
+  `scripts/` referenced any of the seven names outside the deleted files themselves. Backends
+  otherwise reach this package as `KernelAbstractions` devices — `CPU()` and `CUDABackend()` — which
+  this abstraction never described.
+
+  **`AbstractNeuralNetworks.dim(nn::NeuralNetwork)` goes with it, and it was the one live line in
+  the directory.** It let `dim` take a *network* where the three architecture methods take an
+  architecture, and it was type piracy: both the generic and the type belong to
+  `AbstractNeuralNetworks`, so it changed behaviour for every user of that package rather than only
+  for users of this one. Specifically, it turned that package's clean `MethodError` into a logged
+  error and a returned `nothing`.
+
+  It is dropped rather than moved because nothing calls it. The only `dim(` call in the package is
+  `src/loss/lnn_loss.jl:55`, which passes an *architecture* and dispatches to
+  `dim(::LagrangianNeuralNetwork)`. **`dim` remains exported** — it is imported from
+  `AbstractNeuralNetworks` at `src/GeometricMachineLearning.jl:90` and re-exported, and the three
+  architecture methods are untouched.
+
+  This takes the type-piracy count from **13 to 12**, measured with `Aqua.Piracy.hunt` before and
+  after; the hit that disappears is exactly this one.
 
 - **`scripts/test/` is gone — 15 files, a third copy of the retired test suite.** Its own
   `runtests.jl` errored 9 testsets, and every file in it tested the `train!` subsystem this release
