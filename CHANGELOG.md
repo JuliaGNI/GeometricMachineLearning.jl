@@ -956,6 +956,26 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   docs build — here, one release behind. The old one-liner also called `save` unqualified, and
   `DocInventories` does not export it.
 
+- **The HNN tutorial's phase space section exists.** `docs/src/tutorials/hamiltonian_neural_network.md`
+  ended at the bare heading *Training a HNN Based on Phase Space Data*, so the page named a second
+  method of training a Hamiltonian neural network and then stopped. `SymplecticEulerLoss` is
+  implemented in `src/loss/symplectic_euler_loss.jl`, documented in
+  `docs/src/architectures/hamiltonian_neural_network.md` and tested in
+  `test/losses/training_method_losses.jl`; only the tutorial's promise of it was empty.
+
+  The section trains the *same* Hamiltonian as the first one, so the two differ only in the format of
+  the data: the first takes the vector field ``\mathbb{J}z`` on a grid, the second takes pairs of
+  points that grid is carried to by the exact flow ``\exp(\Delta{}t\mathbb{J})``. It also names the
+  variant the two-argument constructor gives, which the architecture page leaves to the docstring:
+  that page's formula is written for `:B` and the constructor defaults to `:A`.
+
+  It is written as `@example` blocks rather than a fenced `julia` block, which is rendered and never
+  run. The four added blocks cost **40 s** of build time, 30 s of it the training, where the four
+  already on the page cost 77 s. At the same 441 samples, 100 epochs and batch size of 10,
+  `SymplecticEulerLoss` is the cheaper of the two losses to train against — 28 s against 61 s, timed
+  on their own in a cold process — and its curve falls from 0.93 to 0.017, so the plot shows
+  something. Both losses are relative residuals, which is why both start near 1.
+
 ### Infrastructure
 
 - **Test files are guarded for inclusion completeness.** `test/reachability.jl` verifies that every
