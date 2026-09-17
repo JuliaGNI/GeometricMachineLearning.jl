@@ -5,14 +5,17 @@
 # establishes that it is not -- for an algebraic reason, not a numerical one.
 #
 # THAT IS THE INTENDED PROPERTY, not a defect. End-to-end symplecticity of the chain is not the
-# design goal: the architecture approximates it, and the approximation improves with `N`. So this
-# script asserts no bound: it prints the exact part -- the three layerwise identities, which hold
-# to machine precision -- beside the inexact part, which is the round-trip deviation.
+# design goal: the architecture only approximates it. The *worst* case over the 20 random chains
+# improves as `N` grows -- 0.84 at `N = 2, N2 = 4` against 0.072 at `N = 20, N2 = 40`, in
+# `Float64` -- but the *best* case moves the other way, from 0.0018 to 0.026. The deviation
+# concentrates as `N` grows; it does not vanish. So this script asserts no bound: it prints the
+# exact part -- the three layerwise identities, which hold to machine precision -- beside the
+# inexact part, which is the round-trip deviation.
 #
 # Five checks, in order:
 #
 #   1. the three layerwise identities hold to machine precision;
-#   2. the round trip does not, and by how much. The deviation shrinks as `N` grows but does not
+#   2. the round trip does not, and by how much. The worst case shrinks as `N` grows but does not
 #      reach zero;
 #   3. untying the encoder and decoder weights makes it far worse, so that constraint is doing real
 #      work and is not decoration;

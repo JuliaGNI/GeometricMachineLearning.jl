@@ -501,10 +501,12 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   through the functor, and it was checked to fail, with exactly that message, when the annotation
   is put back.
 
-- **All 24 entry points run to completion, where seven did.** The survey above ran over the 25
+- **All 25 entry points run to completion, where seven did.** The survey above ran over the 25
   files that were there then, and found seven completing, five still computing at the ceiling and
-  13 failing. One of the 25 is deleted below, leaving 24 — two under `verification/` and 22 under
-  `reproduction/` — and every one of them now runs. Each
+  13 failing. One of those 25 is deleted below, leaving 24, and
+  `verification/symplectic_euler_loss_modified_hamiltonian.jl` arrives with the HNN tutorial entry
+  above — 25 in total, three under `verification/` and 22 under `reproduction/` — and every one of
+  them now runs. Each
   failure was found by the new CI gate rather than by reading, and each cause was measured. The
   classes that recur across several files:
 
@@ -1240,8 +1242,11 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 - **The sympnet upscaling chain is meant to be *approximately* symplectic end to end, and
   `sympnet_upscaling_symplecticity.jl` now says so.** This closes *C12*. The measured behaviour is
-  the designed behaviour: exact end-to-end symplecticity is not the intent, and the approximation
-  improves with `N`. So the script's header states the intent, and states which of the two things it
+  the designed behaviour: exact end-to-end symplecticity is not the intent. The header states how
+  the approximation moves with `N`, which is in one direction only — over the 20 random chains the
+  worst `Float64` round trip falls from 0.84 at `N = 2, N2 = 4` to 0.072 at `N = 20, N2 = 40`,
+  while the best rises from 0.0018 to 0.026. The deviation concentrates; it does not vanish. So the
+  script's header states the intent, and states which of the two things it
   prints is the exact one. It asserts neither: the three layerwise identities come out at
   `5.6e-16`–`1.4e-15` in `Float64` and `2.4e-7`–`7.6e-7` in `Float32`, and the round-trip deviation
   is reported beside them. What the gate checks is that the script runs to completion, which is all
@@ -1250,7 +1255,8 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 - **`scripts/` is three directories with stated purposes.** `verification/` holds the checks that
   establish a mathematical claim — `sympnet_upscaling_symplecticity.jl`, which measures the
-  upscaling chain's symplecticity, and `network_parameters_gradient_projection.jl`.
+  upscaling chain's symplecticity, `network_parameters_gradient_projection.jl`, and
+  `symplectic_euler_loss_modified_hamiltonian.jl`.
   `reproduction/` holds the runs that produced the
   committed weights and the manual's figures. `utilities/` holds what the other two include, plus
   `convert_jld2_to_h5.jl`.
@@ -1277,9 +1283,13 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   about the result — which is the honest limit of what a runner can check for a job that belongs on
   a GPU.
 
-  One entry point carries no size constant and costs nothing to run:
+  Two reproduction scripts carry no size constant of their own.
   `symplectic_autoencoders/analytic_solution.jl` defines functions and computes nothing at top
-  level.
+  level, so it costs nothing to run. `symplectic_autoencoders/plot_waves.jl` plots the snapshot
+  matrix that `symplectic_autoencoders/integration.jl` writes, and includes that script when the
+  file is absent, so the size it runs at is the one `integration.jl` states. The three scripts
+  under `verification/` state no size either, by design: the gate runs them in full, because a
+  check that establishes a mathematical claim has nothing to establish at a smoke size.
 
   Two of the sizes bound an *integration* rather than a training, and both were added late, after
   review found the two scripts still running at their full size on every pull request.
@@ -1301,7 +1311,7 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `linear_symplectic_transformer_gpu.jl` read `smoke_size(CUDABackend(), CPU())`, so a full run
   still trains on the GPU it was written for and a smoke run exercises the same code on the CPU.
 
-  **`SKIPPED` is empty: all 24 entry points run.** The list is closed in both directions, as the
+  **`SKIPPED` is empty: all 25 entry points run.** The list is closed in both directions, as the
   two test guards' allowlists are — an entry naming a file that is no longer an entry point fails
   the driver. It stays empty by intent. An entry there is a backlog item, not a design, and the
   only honest reason for one is hardware the runner does not have; a script skipped because it is
