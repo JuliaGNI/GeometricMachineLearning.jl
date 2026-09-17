@@ -1,19 +1,24 @@
-# Canonical documentation workflow. Copied verbatim into every repository that has a tracked
-# docs/make.jl, by install-workflows.sh — edit this file and re-run the installer, never a copy in a
-# repository.
+# The canonical documentation workflow, plus the three steps this repository's figures and
+# reference check need. GeometricMachineLearning is in DOCS_EXCEPTIONS in install-workflows.sh for
+# that reason, so the installer leaves this file alone rather than overwriting it with the template.
 #
-# The file name is Documenter.yml everywhere. Three repositories called it Documentation.yml and one
-# Documentation.yaml; nothing depends on the file name, but a tree in which the same workflow has
-# three names cannot be checked for drift.
+# The three additions to the canonical body are `Install the TeX toolchain the TikZ figures need`,
+# `Make TikZ images` and `Check docstring references`. Each one has its own comment below saying
+# what it is for; the make step's also says why it sits where it does. Without the first two the
+# build dies with 62 `invalid local image` errors, because every figure it references is a build
+# product that nothing built.
+#
+# Keep the rest in step with Knowledge/AI/githooks/workflows/Documenter.yml: take any other change
+# from there rather than editing it here. That is checked, not merely asked for —
+# GeometricMachineLearning is in DOCS_ADDITIONS in verify-workflows.jl, whose
+# `documenter_additions_intact` requires every behavioural line of the template to survive inside
+# this file, in order. Comments are ignored, so this header is free to differ; a canonical step that
+# is dropped, reordered or edited here is not.
 #
 # DOCTESTS ARE NOT HERE. They run in CI.yml, in a job pinned to one OS and one Julia version, so
 # that they produce a required status check of their own. Before that, five repositories listed
 # `:doctest` in `warnonly` and one had `doctest = false`, which meant a doctest failure was a
 # warning inside a docs build that nothing gated.
-#
-# Two repositories legitimately keep their own version of this file, because their docs are a
-# multi-job pipeline rather than a single build and so are not scaffolding drift:
-# Experiments/GeometricExamples (Weave matrix) and Experiments/SolverBenchmark (sweep matrix).
 
 name: Documentation
 

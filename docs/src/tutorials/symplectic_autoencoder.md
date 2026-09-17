@@ -125,8 +125,8 @@ The `SymplecticAutoencoder` we train with [`AdamOptimizerWithDecay`](@extref Geo
 
 ```@eval
 Main.remark(raw"The training blocks on this page are in plain `julia` fences, so they are shown and
-" * Main.indentation * raw"**not run** when the documentation is built: each took hours on a GPU. What follows every
-" * Main.indentation * raw"one of them is the *committed result* of that run, loaded from an `.h5` file beside this page,
+" * Main.indentation * raw"**not run** when the documentation is built: each took hours on a GPU. What the build uses
+" * Main.indentation * raw"instead is the *committed result* of those runs, loaded from the `.h5` files beside this page,
 " * Main.indentation * raw"so the figures below are produced from the trained networks rather than from a token
 " * Main.indentation * raw"re-training. The code paths themselves are covered by the test suite -- `ReducedLoss` through
 " * Main.indentation * raw"the `Optimizer` functor by `test/losses/reduced_loss_optimization.jl` -- and reproduced at

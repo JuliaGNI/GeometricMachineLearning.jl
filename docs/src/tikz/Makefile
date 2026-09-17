@@ -105,7 +105,12 @@ clean:
 	rm -f *.xdv
 	rm -f *.pdf
 
+# The three logo outputs are named rather than swept: ../assets also holds the tracked
+# logo_tum.pdf, which `rm -f ../assets/*.pdf` would delete.
 empty: clean
 	rm -f *.png
 	rm -f *.svg
 	rm -f ../assets/*.png
+	rm -f ../assets/logo.svg
+	rm -f ../assets/logo-dark.svg
+	rm -f ../assets/logo_without_jl.pdf

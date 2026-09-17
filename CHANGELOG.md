@@ -1048,6 +1048,10 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `GeometricMachineLearning` is now in `DOCS_EXCEPTIONS` in `Knowledge/AI/githooks/install-workflows.sh`
   and in `DOCS_ADDITIONS` in `verify-workflows.jl`, beside `GeometricOptimizers` and `SimpleSolvers`,
   which have the same figure pipeline. Without that the next `--apply` deletes these steps again.
+  The file's header comment now says all of this, in place of the canonical one it inherited, which
+  claimed the file was a verbatim copy and named two other repositories as the only exceptions.
+  `verify-workflows.jl` ignores comments and checks the behavioural lines instead, which is what
+  makes a rewritten header the right place to record the difference.
 
   **An `@example` in `docs/src/tutorials/optimizer_comparison.md` called `Optimizer` on a bare
   `NamedTuple`.** `Optimizer` takes a `NeuralNetwork` or a `NetworkParameters`, so the weights are
@@ -1073,6 +1077,13 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   legitimate way to link a section by title. Checked by reverting both fixes: it exits 1 and names
   `architectures/transformer.md:15` and `tutorials/symplectic_autoencoder.md:114`.
 
+  **It is a fail-fast pass, not a replacement for the build.** The second condition is what bounds
+  it: a `[text](@ref)` that names no heading *and* no documented binding — a mistyped or renamed
+  section title — is the other way Documenter reports `Cannot resolve @ref`, and this script stays
+  quiet about it. Flagging that case would mean re-implementing Documenter's anchor map, including
+  the duplicate-heading ambiguity a set of titles cannot see. `@example` blocks are likewise only
+  checked by the build itself.
+
 - **The logo is vector, and the documentation it deploys is about 3 MB smaller.** The `logo` target
   of `docs/src/tikz/Makefile` rendered three PNGs at 500 dpi and copied them into `docs/src/assets/`:
   4880×1892 pixels, `1594077`, `1599170` and `1587689` bytes, for a sidebar image about 240 px wide.
@@ -1089,8 +1100,10 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
   `.gitignore` names the three generated files exactly rather than sweeping `*.svg` and `*.pdf`,
   because the tracked `logo_tum.pdf` sits beside them. It also covers `/docs/src/tikz/*.pdf` now:
-  `make` writes one PDF per `.tex` and removes them in its `clean` target, so an interrupted run
-  left 63 untracked files behind.
+  `make` writes one PDF per `.tex` and removes them in its `clean` target, and there are 65 `.tex`
+  sources, so an interrupted run left 65 untracked files behind. The Makefile's `empty` target now
+  also removes the three logo outputs it writes into `docs/src/assets/`; it swept only `*.png`
+  there, which was every logo it wrote before this change and none of them after.
 
 - **`docs/make.jl` loses `const buildpath`**, which had no reader.
 
