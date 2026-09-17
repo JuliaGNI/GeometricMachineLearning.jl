@@ -1616,14 +1616,13 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
   **So the size that costs time is the network.** First-epoch cost in a smoke run: 106.4 s at
   width 5 with 3 hidden layers, 49.0 s at (5, 1), 36.9 s at (3, 1) and 21.4 s at (2, 1).
-  `ld = smoke_size(5, 2)` and `ln = smoke_size(3, 1)` are `LagrangianNeuralNetwork`'s own
-  constructor defaults, `width = dimin` and `nhidden = 1`, so a smoke run trains the smallest chain
-  the constructor offers through the same symbolic path as the full one. Measured end to end on the
-  script itself, three fresh processes took 135.5 s, 136.1 s and 136.8 s before, and four take
-  50.8 s, 51.1 s, 51.5 s and 52.2 s after — a 2.6× reduction, with a 1.4 s spread over four random
-  initialisations. The reproduction size is untouched: with `GML_SMOKE` unset the script still
-  trains width 5 with 3 hidden layers for 200 epochs, so the committed figure comes out of the same
-  run as before.
+  `ld = smoke_size(5, ninput)` and `ln = smoke_size(3, 1)` are `LagrangianNeuralNetwork`'s own
+  constructor defaults, `width = dimin` and `nhidden = 1`, so a smoke run trains through the same
+  symbolic path as the full one. Measured end to end on the script itself, three fresh processes
+  took 135.5 s, 136.1 s and 136.8 s before, and four take 50.8 s, 51.1 s, 51.5 s and 52.2 s after —
+  a 2.6× reduction, with a 1.4 s spread over four random initialisations. The reproduction size is
+  untouched: with `GML_SMOKE` unset the script still trains width 5 with 3 hidden layers for 200
+  epochs, so the committed figure comes out of the same run as before.
 
   **The ceiling stays at 300 s.** Widening it would have bought this script room out of a budget the
   mode does not have — the reproduction scripts already take 30.1–50.9 minutes against
