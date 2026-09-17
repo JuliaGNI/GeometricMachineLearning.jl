@@ -4,8 +4,6 @@ using CairoMakie
 using GeometricIntegrators: integrate, ImplicitMidpoint
 using GeometricProblems.ABCFlow: odeproblem, default_parameters
 using GeometricEquations: EnsembleProblem
-using LinearAlgebra: norm
-using Zygote: gradient
 import Random
 
 # `smoke_size(full, smoke)` returns the second when GML_SMOKE is set, which is how the CI

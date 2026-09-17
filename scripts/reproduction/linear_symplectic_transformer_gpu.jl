@@ -1,6 +1,6 @@
 using CUDA
 using GeometricMachineLearning
-using GeometricProblems.CoupledHarmonicOscillator: hodeensemble, default_parameters
+using GeometricProblems.CoupledHarmonicOscillator: hodeensemble
 using GeometricIntegrators: ImplicitMidpoint, integrate
 using LaTeXStrings
 using CairoMakie
