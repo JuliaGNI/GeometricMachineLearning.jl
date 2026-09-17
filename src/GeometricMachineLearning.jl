@@ -247,13 +247,7 @@ export GradientOptimizer, MomentumOptimizer, AdamOptimizer
 # `AdamOptimizerWithDecay` was a second, incompatible export of the same name — issue B1.
 export AdamOptimizerWithDecay, DecayingStatic
 
-# INCLUDE BACKENDS
-export LuxBackend
 export NeuralNetwork
-export arch
-
-include("backends/backends.jl")
-include("backends/lux.jl")
 
 export NetworkLoss, TransformerLoss, FeedForwardLoss, AutoEncoderLoss, ReducedLoss, HNNLoss,
        LNNLoss, SymplecticEulerLoss, VariationalMidpointLoss
@@ -286,7 +280,6 @@ export HamiltonianArchitecture, StandardHamiltonianArchitecture,
 
 export solve!, encoder, decoder
 
-export apply!, jacobian!
 export iterate
 
 include("loss/losses.jl")
