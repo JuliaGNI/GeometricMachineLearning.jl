@@ -8,9 +8,8 @@ We first train a HNN [based on vector field data](@ref "HNN Loss for Vector Fiel
 
 ```@example hnn
 using GeometricMachineLearning # hide
-using GeometricMachineLearning: QPT
-using LinearAlgebra: norm
-using Zygote: gradient
+import Random # hide
+Random.seed!(1234) # hide
 
 𝕁 = PoissonTensor(2)
 vf(z) = 𝕁 * z
@@ -53,3 +52,39 @@ lines(loss_array) # hide
     Usually we use [`Zygote`](https://github.com/FluxML/Zygote.jl) for computing derivatives in `GeometricMachineLearning`, but as the [`Zygote` documentation](https://fluxml.ai/Zygote.jl/dev/limitations/#Second-derivatives-1) itself points out: "Often using a different AD system over Zygote is a better solution [for computing second-order derivatives]." For this reason we compute the loss of the HNN with [`SymbolicNeuralNetworks`](https://github.com/JuliaGNI/SymbolicNeuralNetworks.jl) and optionally also its gradient.
 
 ## Training a HNN Based on Phase Space Data
+
+We now train a HNN on the same system [based on phase space data](@ref "HNN Loss for Phase Space Data"). The data are not vector fields, but pairs of points a fixed timestep apart. We produce such pairs by applying the exact flow of `vf`, which is ``\exp(\Delta{}t\mathbb{J})``, to the points of the domain:
+
+```@example hnn
+const Δt = .1
+next_matrix = exp(Δt * Matrix(𝕁)) * domain_matrix
+dl_pairs = DataLoader(domain_matrix, next_matrix)
+nothing # hide
+```
+
+We start from a new network of the architecture we built above:
+
+```@example hnn
+hnn_pairs = NeuralNetwork(hnn_arch)
+nothing # hide
+```
+
+The loss needs the timestep, because the finite difference it compares the vector field against does:
+
+```@example hnn
+loss_pairs = SymplecticEulerLoss(hnn_arch, Δt)
+nothing # hide
+```
+
+[`GeometricMachineLearning.SymplecticEulerLoss`](@ref) defaults to the `:A` variant, which evaluates the vector field at ``(q^{(t+1)}, p^{(t)})``. Passing `variant = :B` evaluates it at ``(q^{(t)}, p^{(t+1)})`` instead, which is the variant the [loss formula](@ref "HNN Loss for Phase Space Data") is written for. That formula states the evaluation points of the `:B` variant; the warning beside it records that its sign differs from the implementation.
+
+!!! info
+    The data comes from the exact flow, but the loss holds the network to one step of the symplectic Euler method. The two agree only to first order in ``\Delta{}t``. The target of this training is therefore not the Hamiltonian of `vf`, which is ``H(q, p) = (q^2 + p^2) / 2``, but the Hamiltonian whose symplectic Euler step reproduces the exact flow; the two differ at order ``\Delta{}t``. So ``H`` itself does not make this loss vanish, and `scripts/verification/symplectic_euler_loss_modified_hamiltonian.jl` shows the residual it leaves halves when ``\Delta{}t`` does. The first section compares the network against the vector field directly and has no such offset.
+
+We can now train the network:
+
+```@example hnn
+o_pairs = Optimizer(Adam(Float64), hnn_pairs)
+loss_array_pairs = o_pairs(hnn_pairs, dl_pairs, batch, n_epochs, loss_pairs)
+lines(loss_array_pairs) # hide
+```
