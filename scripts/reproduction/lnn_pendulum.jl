@@ -15,16 +15,20 @@ include("../utilities/data_problem.jl")
 
 const problem = :pendulum
 
-# layer dimension/width
-const ld = 5
-
-# hidden layers
-const ln = 3
-
 const _, n_dim = dict_problem_L[problem]
 
 # number of inputs/dimension of system
 const ninput = 2 * n_dim
+
+# Layer dimension/width, and the number of hidden layers. These are the sizes that cost time here,
+# and `nepochs` is not: `LNNLoss` reaches the Euler-Lagrange acceleration through a *symbolic*
+# gradient and Hessian of the chain, and the run's wall clock is the one-time compilation of their
+# pullback, which grows with the chain and falls in the first epoch -- in a smoke run 106s at
+# `(5, 3)`, 49s at `(5, 1)` and 21s at `(2, 1)`, against 1.8s for a second epoch. The smoke sizes
+# below are `LagrangianNeuralNetwork`'s own defaults, `width = dimin` and `nhidden = 1`, so a
+# smoke run trains through the same symbolic path as the full size.
+const ld = smoke_size(5, ninput)
+const ln = smoke_size(3, 1)
 
 # number of epochs
 const nepochs = smoke_size(200, 2)
