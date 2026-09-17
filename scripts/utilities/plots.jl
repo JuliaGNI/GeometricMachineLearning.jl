@@ -62,8 +62,7 @@ trajectories, the training loss, and the energy drift along each trajectory.
 
 `sol_ref` and `sol_hnn` are the solutions of the true and the learned Hamiltonian vector field over
 the same time span. The caller integrates them, so this function needs no solver: the integration
-belongs to the script that chose the method and the step size, and keeping it here is what left the
-previous version calling a `GeometricIntegrators` interface that no longer exists.
+belongs to the script that chooses the method and the step size.
 """
 function plot_network_sim(H, H̃, sol_ref, sol_hnn, total_loss; xmin = -1.2, xmax = +1.2,
         ymin = -1.2, ymax = +1.2, nsamples = 100, filename = nothing)

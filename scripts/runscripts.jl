@@ -39,7 +39,7 @@ const PROJECT = Base.active_project()
 const TIMEOUT_SECONDS = Dict("verification" => 900, "reproduction" => 300)
 
 # The budget for a whole mode, inside `Scripts.yml`'s `timeout-minutes: 90` less what that job
-# spends instantiating. Without it the per-script ceiling does not keep the promise above: 22
+# spends instantiating. Without it the per-script ceiling does not keep the promise above: 23
 # reproduction scripts each entitled to the ceiling outlast any runner, and the job then dies at the
 # runner's timeout with no verdict at all. The driver stops first, and names what it did not reach.
 const BUDGET_SECONDS = 3600

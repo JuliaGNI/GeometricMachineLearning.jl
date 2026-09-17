@@ -41,27 +41,36 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 ### Removed (breaking)
 
 - **`legacy/hnn/` and `legacy/mtk/` are gone — 17 files, of which 14 are Julia and 866 lines, and
-  the package's last Flux, Lux and ModelingToolkit code.** They held the first implementation of
-  Hamiltonian neural
+  the package's last Flux and ModelingToolkit code.** Neither name now appears anywhere outside
+  this file. **Lux does**, so it is deliberately not claimed here: `src/backends/lux.jl:17,26,37`
+  calls `Lux.setup` and `Lux.apply`, `legacy/layers/linear_symplectic.jl` subtypes
+  `Lux.AbstractExplicitLayer`, and `scripts/Project.toml` declares it. They held the first
+  implementation of Hamiltonian neural
   networks here, written four ways: by hand with `Zygote`, with Flux, with Lux, and with
   ModelingToolkit generating the derivatives as committed source. Every one of those routes is now
   either inside the package or replaced by a dependency, and **this closes *C9*** — all 28 of the
   `include` sites it counted were in these two directories, so the `data.jl` question it was waiting
   on is moot rather than answered.
 
-  Sixteen capabilities were audited before deleting anything. **Six were covered**: the
-  scalar-network-plus-`𝕁∇H` architecture, by `src/architectures/hamiltonian_neural_network.jl:125-135`
-  with the identical topology; the loss, by `src/loss/hnn_loss.jl` — on a relative norm where the
-  legacy summed squares; the loss gradient by *both* routes, `Zygote` and symbolic; mini-batch
-  selection, by `Batch`, which partitions an epoch where the legacy sampled with replacement; the
-  contour plot, by `scripts/utilities/plots.jl`; and the training data, by
-  `scripts/utilities/pendulum.jl`.
+  Sixteen capabilities were audited before deleting anything: **seven covered, eight obsolete, one
+  missing**.
 
-  **Nine were obsolete**, and obsolete for the framework rather than for the mathematics: the
-  hand-rolled SGD loops, the `init_adam`/`apply!` wiring, the Flux front end, the manual `Lux.setup`
-  and its `NamedTuple`→`Tuple` parameter conversion, the `@generated Lux.applychain` workaround for
-  nested `Zygote` differentiation — which the package sidesteps entirely by taking the second
-  derivative symbolically — the Metal port, and the whole ModelingToolkit generation step.
+  **The seven covered**: the scalar-network-plus-`𝕁∇H` architecture, by
+  `src/architectures/hamiltonian_neural_network.jl:125-135` with the identical topology; the loss,
+  by `src/loss/hnn_loss.jl` — on a relative norm where the legacy summed squares; the loss gradient
+  by *both* routes, `Zygote` and symbolic; mini-batch selection, by `Batch`, which partitions an
+  epoch where the legacy sampled with replacement; the contour plot, by
+  `scripts/utilities/plots.jl`; the pendulum training data, by
+  `scripts/utilities/pendulum.jl:30-41`; and the pendulum `H`, `∇H` and `dH` the plots need as
+  ground truth, by `scripts/utilities/pendulum.jl:4-11`.
+
+  **The eight obsolete** are obsolete for the framework rather than for the mathematics: the
+  hand-rolled SGD loops; the `init_adam`/`apply!` wiring; the Flux front end; the manual
+  `Lux.setup` and its `NamedTuple`→`Tuple` parameter conversion; the `@generated Lux.applychain`
+  workaround for nested `Zygote` differentiation — which the package sidesteps entirely by taking
+  the second derivative symbolically; the Metal port; the ModelingToolkit generation step; and the
+  hard-wired three-layer MLP with its `expand` parameter flattening, which `NetworkParameters`
+  replaces.
 
   The `legacy/mtk/` mapping onto `SymbolicNeuralNetworks` is four for four: `est.jl` is the network
   itself, `field.jl` is `hamiltonian_vector_field`, `loss.jl` is `HNNLoss`, `step.jl` is
@@ -75,7 +84,7 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   Two things found along the way are worth recording rather than losing. `hnn_lux_metal.jl:57-58`
   commented the Poisson tensor out and returned the plain gradient, so that file was **not an HNN**
   at all. And the legacy training data was inconsistent with the legacy loss: `data.jl` set
-  `target = ∇H.(data)`, the plain gradient, while every loss compared against `𝕁∇H`.
+  `target = ∇H.(data)`, the plain gradient, while every *other* loss compared against `𝕁∇H`.
   `scripts/utilities/pendulum.jl:38` uses `dH.(points)`, the symplectic gradient — so the current
   file fixed a bug rather than merely reshaping the data.
 
