@@ -54,7 +54,7 @@ lines(loss_array) # hide
 
 ## Training a HNN Based on Phase Space Data
 
-We now train a HNN on the same system [based on phase space data](@ref "HNN Loss for Phase Space Data"). The data are no longer vector fields, but pairs of points a fixed timestep apart. We produce such pairs by applying the exact flow of `vf`, which is ``\exp(\Delta{}t\mathbb{J})``, to the points of the domain:
+We now train a HNN on the same system [based on phase space data](@ref "HNN Loss for Phase Space Data"). The data are not vector fields, but pairs of points a fixed timestep apart. We produce such pairs by applying the exact flow of `vf`, which is ``\exp(\Delta{}t\mathbb{J})``, to the points of the domain:
 
 ```@example hnn
 const Δt = .1
