@@ -40,6 +40,47 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 ### Removed (breaking)
 
+- **`legacy/hnn/` and `legacy/mtk/` are gone — 17 files, of which 14 are Julia and 866 lines, and
+  the package's last Flux, Lux and ModelingToolkit code.** They held the first implementation of
+  Hamiltonian neural
+  networks here, written four ways: by hand with `Zygote`, with Flux, with Lux, and with
+  ModelingToolkit generating the derivatives as committed source. Every one of those routes is now
+  either inside the package or replaced by a dependency, and **this closes *C9*** — all 28 of the
+  `include` sites it counted were in these two directories, so the `data.jl` question it was waiting
+  on is moot rather than answered.
+
+  Sixteen capabilities were audited before deleting anything. **Six were covered**: the
+  scalar-network-plus-`𝕁∇H` architecture, by `src/architectures/hamiltonian_neural_network.jl:125-135`
+  with the identical topology; the loss, by `src/loss/hnn_loss.jl` — on a relative norm where the
+  legacy summed squares; the loss gradient by *both* routes, `Zygote` and symbolic; mini-batch
+  selection, by `Batch`, which partitions an epoch where the legacy sampled with replacement; the
+  contour plot, by `scripts/utilities/plots.jl`; and the training data, by
+  `scripts/utilities/pendulum.jl`.
+
+  **Nine were obsolete**, and obsolete for the framework rather than for the mathematics: the
+  hand-rolled SGD loops, the `init_adam`/`apply!` wiring, the Flux front end, the manual `Lux.setup`
+  and its `NamedTuple`→`Tuple` parameter conversion, the `@generated Lux.applychain` workaround for
+  nested `Zygote` differentiation — which the package sidesteps entirely by taking the second
+  derivative symbolically — the Metal port, and the whole ModelingToolkit generation step.
+
+  The `legacy/mtk/` mapping onto `SymbolicNeuralNetworks` is four for four: `est.jl` is the network
+  itself, `field.jl` is `hamiltonian_vector_field`, `loss.jl` is `HNNLoss`, `step.jl` is
+  `SymbolicPullback`. Two things genuinely differ, and neither argues for keeping it. The MTK route
+  was frozen at `n_in = 2`, `ld = 5`, `tanh` and three layers, where
+  `StandardHamiltonianArchitecture` is generic in all four; and it wrote generated source to disk,
+  `step.jl` being 896 kB of scalarised expression, where `SymbolicNeuralNetworks` builds in memory.
+  `generate_hnn_mt.jl` could not be re-run in any case: it calls the removed `@derivatives` macro,
+  and ModelingToolkit is a dependency of nothing in this repository.
+
+  Two things found along the way are worth recording rather than losing. `hnn_lux_metal.jl:57-58`
+  commented the Poisson tensor out and returned the plain gradient, so that file was **not an HNN**
+  at all. And the legacy training data was inconsistent with the legacy loss: `data.jl` set
+  `target = ∇H.(data)`, the plain gradient, while every loss compared against `𝕁∇H`.
+  `scripts/utilities/pendulum.jl:38` uses `dH.(points)`, the symplectic gradient — so the current
+  file fixed a bug rather than merely reshaping the data.
+
+  **One capability was missing, and it is added below rather than dropped.**
+
 - **`scripts/test/` is gone — 15 files, a third copy of the retired test suite.** Its own
   `runtests.jl` errored 9 testsets, and every file in it tested the `train!` subsystem this release
   deletes. Nothing replaces it: the package's suite is `test/`.
@@ -748,6 +789,29 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   alone, but would make `git add` refuse a seventh.
 
 ### Added
+
+- **`scripts/reproduction/hnn_pendulum_simulation.jl` integrates the vector field an HNN learned and
+  plots the energy drift.** This is the one capability the `legacy/hnn/` deletion would otherwise
+  have dropped. `hnn_mt_sim.jl` trained a Hamiltonian network and then *stepped* with it, comparing
+  the trajectory and the energy drift against the true Hamiltonian — and the two questions come
+  apart: a network can match `H` closely on the training grid and still drift in energy over a long
+  integration, which `hnn_pendulum.jl`'s contour plot cannot show.
+
+  Nothing else asked it. `plot_network_sim` in `scripts/utilities/plots.jl` is the plotting half and
+  had survived with **no caller outside `legacy/`**, and no test in the suite touches energy
+  conservation. So deleting the directory without this would have orphaned 57 lines of plotting code
+  and removed the only executable record of the comparison.
+
+  `plot_network_sim` **takes the two solutions now instead of integrating them**. Its old signature
+  took the two vector fields and called `integrate(ODE(v, x₀), TableauGLRK(2), Δt, nt)` with
+  `v(t, x, v)` — an interface that predates `ODEProblem(v, timespan, timestep, q₀)` and `v(v, t, q,
+  params)`, and `TableauGLRK` no longer exists. Since the function had no working caller, nothing
+  had executed that code in a long time. Moving the integration into the script puts the choice of
+  method and step size where it belongs and leaves the utility needing no solver at all.
+
+  One trap it hides: a comprehension over a `DataSeries` keeps that series' 0-based axes, while
+  `collect` on the same series returns a 1-based vector. Broadcasting the two together is a
+  `DimensionMismatch`, so the energy drift is built through `parent`.
 
 - **`LagrangianNeuralNetwork` is trainable through `DataLoader` + `Batch` + `Optimizer` now.**
   `LNNLoss` is its loss and `NetworkLoss(::LagrangianNeuralNetwork)` returns one, so the architecture
@@ -2708,31 +2772,10 @@ they resolved to is in the release notes above.
   upstream constructor, or a `NetworkLoss` interface that states its own target dimension, would put
   this method back to one line.
 
-- **C9. Seven include sites under `legacy/` name files that do not exist.** Six `legacy/hnn/`
-  scripts include `../../scripts/data.jl` and `hnn_simple.jl` includes `../../src/training.jl`;
-  neither file exists anywhere in the repository, and neither did before the move to `legacy/`. Of
-  the include targets under `legacy/`, the other 21 resolved when this was written — see the
-  paragraph below, which is where that number stands now. The spelling is now at least
-  consistent with where the files sit, so what remains is a decision about `data.jl`: reconstruct it
-  (it generated the pendulum training data, which `scripts/utilities/pendulum.jl` now does) or
-  delete the scripts that need it.
-
-  **Eight more of those include sites went stale when `scripts/` was restructured**, across seven
-  files: each of the seven `legacy/hnn/*.jl` includes `../../scripts/plots.jl`, and `hnn_lux.jl`
-  includes `../../scripts/pendulum.jl` as well. `legacy/hnn/README.md` and
-  `legacy/hnn/Project.toml` name the first in prose too, so ten references in nine files. All of
-  those paths are under `scripts/utilities/` now.
-
-  They are left alone deliberately, and the reason covers six of the seven files rather than all
-  seven. Six already stop earlier, on the `data.jl` above, so repointing them fixes nothing that
-  runs. **`hnn_lux.jl` is the exception**: it includes no `data.jl`, both of its includes resolved
-  before this release, and neither does now — this is the one file where the restructuring is what
-  broke it. It is still left alone, because none of the seven is formatted to this repository's own
-  `style = "sciml"` and staging them would have meant reformatting around 340 lines of dead code
-  for a one-line change each. The path correction belongs with whatever settles `data.jl`.
-
-  Counting the include sites whose argument is a string literal: 28 under `legacy/`, of which 15
-  do not resolve and 13 do. Seven of the 15 were already broken before this release.
+  (**C9** is closed by this release and its entry is gone: `legacy/hnn/` and `legacy/mtk/` are
+  deleted, and with them all 28 of the `include` sites it counted. The `data.jl` decision it was
+  waiting on is moot — nothing needs that file any more. See *Removed (breaking)* above. The
+  number is left vacant rather than reused.)
 
   (**C12** and **C13** are closed by this release and their entries are gone. C12 resolved to a
   design answer rather than a repair — approximate end-to-end symplecticity is the intent, and the
