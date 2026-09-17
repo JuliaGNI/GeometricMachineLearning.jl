@@ -8,9 +8,6 @@ We first train a HNN [based on vector field data](@ref "HNN Loss for Vector Fiel
 
 ```@example hnn
 using GeometricMachineLearning # hide
-using GeometricMachineLearning: QPT
-using LinearAlgebra: norm
-using Zygote: gradient
 import Random # hide
 Random.seed!(1234) # hide
 
@@ -79,7 +76,10 @@ loss_pairs = SymplecticEulerLoss(hnn_arch, Δt)
 nothing # hide
 ```
 
-[`GeometricMachineLearning.SymplecticEulerLoss`](@ref) defaults to the `:A` variant, which evaluates the vector field at ``(q^{(t+1)}, p^{(t)})``. Passing `variant = :B` evaluates it at ``(q^{(t)}, p^{(t+1)})`` instead, which is the variant the [loss formula](@ref "HNN Loss for Phase Space Data") is written for.
+[`GeometricMachineLearning.SymplecticEulerLoss`](@ref) defaults to the `:A` variant, which evaluates the vector field at ``(q^{(t+1)}, p^{(t)})``. Passing `variant = :B` evaluates it at ``(q^{(t)}, p^{(t+1)})`` instead, which is the variant the [loss formula](@ref "HNN Loss for Phase Space Data") is written for. That formula states the evaluation points of the `:B` variant; the warning beside it records that its sign differs from the implementation.
+
+!!! info
+    The data comes from the exact flow, but the loss holds the network to one step of the symplectic Euler method. The two agree only to first order in ``\Delta{}t``. The target of this training is therefore not the Hamiltonian of `vf`, which is ``H(q, p) = (q^2 + p^2) / 2``, but the Hamiltonian whose symplectic Euler step reproduces the exact flow; the two differ at order ``\Delta{}t``. So ``H`` itself does not make this loss vanish, and `scripts/verification/symplectic_euler_loss_modified_hamiltonian.jl` shows the residual it leaves halves when ``\Delta{}t`` does. The first section compares the network against the vector field directly and has no such offset.
 
 We can now train the network:
 
