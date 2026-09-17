@@ -970,16 +970,25 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   that page's formula is written for `:B` and the constructor defaults to `:A`.
 
   It is written as `@example` blocks rather than a fenced `julia` block, which is rendered and never
-  run. The four added blocks cost **40 s** of build time, where the four already on the page cost
-  77 s. The two figures are not a comparison of the two losses: the added blocks run second, so they
-  do not pay the compilation the first four have already paid. Timed on its own in a cold process, at
-  441 samples, 100 epochs and batch size of 10, training against `SymplecticEulerLoss` costs 60 s, of
-  which 26 s is the training and the rest is compilation.
+  run. The four added blocks cost about **half** of what the four already on the page cost — 40 s
+  against 77 s in one run, and 42 s against 80 s in another. That is not a comparison of the two
+  losses: the added blocks run second, so they do not pay the compilation the first four have already
+  paid. Timed like for like instead, one fresh process per loss at 441 samples, 100 epochs and batch
+  size of 10, the two cost the same within a few percent — `SymplecticEulerLoss` 60 s cold and 26 s
+  warm, `HNNLoss` 62 s cold and 27 s warm. Treat every figure here as an upper bound: no run had the
+  machine to itself.
 
-  The loss falls from about 1 to about 0.02, so the plot shows something. Both losses are relative
-  residuals, which is why both start near 1. The exact values move from build to build, because the
-  page seeds nothing: three runs gave first and last of `(1.09, 0.026)`, `(0.94, 0.017)` and
-  `(1.63, 0.020)`.
+  The added loss falls from 1.36 to 0.016, and the first section's from 1.15 to 0.027, so both plots
+  show something. Both losses are relative residuals, which is why both start near 1.
+
+- **The HNN tutorial seeds its randomness.** `import Random` and `Random.seed!(1234)`, at the top of
+  the page's single `@example` block, in the form `docs/src/tutorials/sympnet_tutorial.md` already
+  uses. The network initialisation was a fresh draw on every build, so both loss plots changed from
+  one build of the manual to the next and no figure on the page could be quoted. Two independent cold
+  processes now reproduce both curves to every printed digit.
+
+  This changes the vector-field plot of the first section as well as the new one, which is why it is
+  a point of its own rather than part of the entry above.
 
 ### Infrastructure
 

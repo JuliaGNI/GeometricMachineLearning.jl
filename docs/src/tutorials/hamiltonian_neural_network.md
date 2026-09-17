@@ -11,6 +11,8 @@ using GeometricMachineLearning # hide
 using GeometricMachineLearning: QPT
 using LinearAlgebra: norm
 using Zygote: gradient
+import Random # hide
+Random.seed!(1234) # hide
 
 𝕁 = PoissonTensor(2)
 vf(z) = 𝕁 * z
