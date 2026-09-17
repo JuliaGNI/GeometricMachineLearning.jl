@@ -970,11 +970,16 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   that page's formula is written for `:B` and the constructor defaults to `:A`.
 
   It is written as `@example` blocks rather than a fenced `julia` block, which is rendered and never
-  run. The four added blocks cost **40 s** of build time, 30 s of it the training, where the four
-  already on the page cost 77 s. At the same 441 samples, 100 epochs and batch size of 10,
-  `SymplecticEulerLoss` is the cheaper of the two losses to train against — 28 s against 61 s, timed
-  on their own in a cold process — and its curve falls from 0.93 to 0.017, so the plot shows
-  something. Both losses are relative residuals, which is why both start near 1.
+  run. The four added blocks cost **40 s** of build time, where the four already on the page cost
+  77 s. The two figures are not a comparison of the two losses: the added blocks run second, so they
+  do not pay the compilation the first four have already paid. Timed on its own in a cold process, at
+  441 samples, 100 epochs and batch size of 10, training against `SymplecticEulerLoss` costs 60 s, of
+  which 26 s is the training and the rest is compilation.
+
+  The loss falls from about 1 to about 0.02, so the plot shows something. Both losses are relative
+  residuals, which is why both start near 1. The exact values move from build to build, because the
+  page seeds nothing: three runs gave first and last of `(1.09, 0.026)`, `(0.94, 0.017)` and
+  `(1.63, 0.020)`.
 
 ### Infrastructure
 
