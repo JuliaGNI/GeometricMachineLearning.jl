@@ -956,6 +956,52 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   docs build — here, one release behind. The old one-liner also called `save` unqualified, and
   `DocInventories` does not export it.
 
+- **The HNN tutorial's phase space section exists.** `docs/src/tutorials/hamiltonian_neural_network.md`
+  ended at the bare heading *Training a HNN Based on Phase Space Data*, so the page named a second
+  method of training a Hamiltonian neural network and then stopped. `SymplecticEulerLoss` is
+  implemented in `src/loss/symplectic_euler_loss.jl`, documented in
+  `docs/src/architectures/hamiltonian_neural_network.md` and tested in
+  `test/losses/training_method_losses.jl`; only the tutorial's promise of it was empty.
+
+  The section trains the *same* Hamiltonian as the first one, so the two differ only in the format of
+  the data: the first takes the vector field ``\mathbb{J}z`` on a grid, the second takes pairs of
+  points that grid is carried to by the exact flow ``\exp(\Delta{}t\mathbb{J})``. It also names the
+  variant the two-argument constructor gives, which the architecture page leaves to the docstring:
+  that page's formula is written for `:B` and the constructor defaults to `:A`.
+
+  The section says what it is training towards. The data comes from the exact flow and the loss holds
+  the network to one symplectic Euler step, so the minimiser is not the Hamiltonian of the system,
+  ``H(q, p) = (q^2 + p^2)/2``, but the Hamiltonian whose symplectic Euler step reproduces that flow;
+  the two differ at order ``\Delta{}t``. Without
+  that note a trained loss below the true Hamiltonian's own residual reads as a fit better than exact.
+  `scripts/verification/symplectic_euler_loss_modified_hamiltonian.jl` establishes the rule: the true
+  Hamiltonian leaves a residual of 0.05 at ``\Delta{}t = 0.1`` for both variants, and that residual
+  halves when the timestep does.
+
+  It is written as `@example` blocks rather than a fenced `julia` block, which is rendered and never
+  run. The four added blocks cost about **half** of what the four already on the page cost. That is
+  not a comparison of the two losses: the added blocks run second, so they do not pay the compilation
+  the first four have already paid. Timed like for like instead, one fresh process per loss at 441
+  samples, 100 epochs and batch size of 10, the two cost the same within a few percent.
+
+  Two smaller things on the same page. `QPT`, `norm` and `gradient` were imported in the first block
+  and used nowhere, so they are gone — that is the block the seed below is added to. And the link to
+  the architecture page's loss formula now says that the formula states the `:B` evaluation points and
+  that the warning beside it holds, rather than sending the reader to a formula the target page
+  disowns.
+
+  The added loss falls from 1.36 to 0.016, and the first section's from 1.15 to 0.027, so both plots
+  show something. Both losses are relative residuals, which is why both start near 1.
+
+- **The HNN tutorial seeds its randomness.** `import Random` and `Random.seed!(1234)`, at the top of
+  the page's first `@example` block, in the form `docs/src/tutorials/sympnet_tutorial.md` already
+  uses. The network initialisation was a fresh draw on every build, so both loss plots changed from
+  one build of the manual to the next and no figure on the page could be quoted. Two independent cold
+  processes now reproduce both curves to every printed digit.
+
+  This changes the vector-field plot of the first section as well as the new one, which is why it is
+  a point of its own rather than part of the entry above.
+
 ### Infrastructure
 
 - **Test files are guarded for inclusion completeness.** `test/reachability.jl` verifies that every
