@@ -962,13 +962,21 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   passes.** `Aqua.test_all` has nine; `undocumented_names` is off by default. It had never run:
   it was in neither `Project.toml` nor `test/`, so the package had no package-level baseline at all.
   `test/aqua.jl` is included from `test/runtests.jl` as `@safetestset "Aqua's package-level
-  checks"`, and `Aqua` joins `test/Project.toml` at `0.8`.
+  checks"`, after the subject drivers rather than beside the other two tree-level guards: a
+  top-level testset throws when it closes on a failure, so a package-level finding placed first
+  costs every subject result in the run. `Aqua` joins `test/Project.toml` at `0.8`.
 
   `unbound_args`, `undefined_exports`, `project_extras`, `stale_deps`, `deps_compat` and
-  `persistent_tasks` all pass, reporting `Pass 9, Total 9` between them — `deps_compat` emits four
-  assertions and the other five one each. **`persistent_tasks` passes** — the known false failure of
-  that check comes from a TestRunner shim's one-entry `JULIA_LOAD_PATH`, and a plain `Pkg.test()`
-  does not have one.
+  `persistent_tasks` all pass on the released Julia versions, reporting `Pass 9, Total 9` between
+  them — `deps_compat` emits four assertions and the other five one each. With the piracy gate
+  below, the testset totals `Pass 10, Total 10`. **`persistent_tasks` passes** — the known false
+  failure of that check comes from a TestRunner shim's one-entry `JULIA_LOAD_PATH`, and a plain
+  `Pkg.test()` does not have one.
+
+  **`unbound_args` fails on Julia nightly**, on one method, for one failing assertion there. That is
+  the CI matrix's `nightly` job, which is advisory by construction and not a required check. It is
+  recorded under *Open Issues* as *B9*, because a figure quoted without its Julia version is a
+  figure no reader can match against a red job.
 
   **`deps_compat` had to be fixed to get there, and the fix is three lines.** `InteractiveUtils`,
   `LinearAlgebra` and `Random` were in the root `[deps]` with no `[compat]` bound. Each is now
@@ -989,8 +997,16 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   with no parent finalises as soon as it closes — so called bare, the first failing check throws a
   `TestSetException` and the rest never run. That is how the first measurement of this package
   reported `ambiguities` and stopped. `test/aqua.jl` keeps a `@testset` of its own as well, which is
-  redundant on the suite path and is what keeps all six checks reachable when that file is run
-  alone.
+  the parent when that file is run alone, and which is what lets the piracy gate below sit beside
+  `test_all` as a second assertion rather than as a top-level `@test` that ends the file when it
+  fails.
+
+  **A switched-off check detects nothing, so `piracies` gets a gate.** `test/aqua.jl` asserts
+  `length(Aqua.Piracy.hunt(GeometricMachineLearning)) == 13`, which fails when a piracy is added and
+  fails when one is removed without the *B7* entry going with it. `ambiguities` gets no such gate:
+  17 of its 23 are against methods in ArrayLayouts, FillArrays, Symbolics and GeometricOptimizers,
+  so the count moves with those packages' versions rather than with anything in this tree, and an
+  exact assertion would turn the suite red on an unrelated upgrade.
 
 - **Test files are guarded for inclusion completeness.** `test/reachability.jl` verifies that every
   `.jl` file under `test/` is either in the transitive `include` closure of `test/runtests.jl` or
@@ -2391,6 +2407,25 @@ they resolved to is in the release notes above.
 
   **A count is not a finding**, and unlike *B7* these have not been triaged for witnesses. That is
   what closing this starts with.
+
+- **B9. One unbound type parameter, which only Julia nightly reports.** Aqua's `unbound_args` fails
+  on the `nightly` job over `Base.iterate(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, ics::BT;
+  n_points)` at `src/architectures/neural_network_integrator.jl:98`. Its signature is
+  `where {T, AT <: AbstractVector{T}, BT <: NamedTuple{(:q, :p), Tuple{AT, AT}}}`, and `T` never
+  appears in an argument type — it is reachable only through the bound on `AT`, so dispatch cannot
+  determine it and the method can never be called with `T` given explicitly.
+
+  **The check passes on `min`, on `1` and on `pre`, and fails on nightly.** The defect is in the
+  signature and is there on every version; what changes is whether Julia's method introspection
+  surfaces it. So the assertion counts above are the released-Julia figures, and nightly's testset
+  carries one failure among them.
+
+  `nightly` is advisory by construction — `.github/workflows/CI.yml` gives it `experimental: true`
+  and job-level `continue-on-error`, and it is deliberately not a required check — so this does not
+  gate a merge. It is recorded because a red advisory job with nothing to match it against is a red
+  job that the next reader has to re-diagnose.
+
+  Closing it means writing the parameter so that it binds, which is a change to `src/`.
 
 ### C. Follow-ups and cleanups
 
