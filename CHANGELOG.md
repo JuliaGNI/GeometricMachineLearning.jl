@@ -787,14 +787,15 @@ evaluates about 100× faster than the `Zygote` pullback. See
   `check_all(Float32)` therefore ran exactly the same arithmetic as `check_all(Float64)`. The four
   now build with `rand(T, n, n, third_dim)`.
 
-  What this adds is the orthonormality assertion in single precision, and for the 5×5 this file
-  remains the only place the kernel is exercised at all.
+  What this adds is the orthonormality assertion in single precision, and at the time of this
+  change the 5×5 was exercised nowhere but here.
   `tensor_cayley2` through `tensor_cayley4` did already run in
   `Float32`: `test/attention_layer/attention_setup.jl` sends `Float32` parameters through
   `VolumePreservingAttention` at sequence lengths 2, 3 and 4, which is what selects those three
   kernels. Those tests assert volume preservation and parameter element type, never `B * B' ≈ I`.
-  They never reach `tensor_cayley5` at all — their fourth case is sequence length 10, which takes
-  the generic `cpu_tensor_cayley` branch instead.
+  They did not reach `tensor_cayley5` at all — their fourth case is sequence length 10, which takes
+  the generic `cpu_tensor_cayley` branch instead. The *Infrastructure* entry
+  *The volume-preserving attention tests cover sequence length 5* closes both gaps.
 
   The kernels pass the orthonormality assertion in single precision with a wide margin, and no
   tolerance was touched. Over 40 000 random slices per size, the quantity `B * B' ≈ one(B)` actually
@@ -1667,6 +1668,39 @@ whole parameter range rather than a single problem instance.
   only honest reason for one is hardware the runner does not have; a script skipped because it is
   broken is a script nobody is fixing.
 
+- **`lnn_pendulum.jl` takes its network size from `smoke_size` too, and the job stopped going red.**
+  The script hit the 300 s per-script ceiling in `Scripts - ubuntu-latest` on two of six observed
+  runs — 300.1 s and 300.2 s — while the other four passed at 176.8 s, 207.4 s, 235.1 s and
+  262.0 s. Nothing about it was broken. The runner's own speed is what varies: over those same six
+  runs `harmonic_oscillator.jl` spans 53.0–82.3 s and `hnn_pendulum.jl` 100.4–154.2 s, a factor of
+  1.55, and at 262 s this script had no headroom left to absorb that.
+
+  **The epoch count was never the cost.** `nepochs = smoke_size(200, 2)` was already there, and an
+  instrumented smoke run at the full size spends 106.4 s on the first epoch against 1.8 s on the
+  second. What it pays for once is the compilation of the `LNNLoss` pullback:
+  `lagrangian_acceleration` builds a *symbolic* gradient and Hessian of the chain with
+  `SymbolicNeuralNetworks.Jacobian` and compiles both, and those expressions grow with the chain
+  rather than with the number of epochs or of samples. The other phases of that 138.8 s run are the
+  package load at 1.9 s, the data at 3.6 s, building `LNNLoss` at 5.8 s, loading CairoMakie at 3.6 s
+  and the figure at 14.3 s, with 1.4 s in the includes and the two constructors. The figure does not
+  move with its grid either — 14.3 s at `nsamples = 10` against 14.0 s at 100 — because that too is
+  compilation.
+
+  **So the size that costs time is the network.** First-epoch cost in a smoke run: 106.4 s at
+  width 5 with 3 hidden layers, 49.0 s at (5, 1), 36.9 s at (3, 1) and 21.4 s at (2, 1).
+  `ld = smoke_size(5, ninput)` and `ln = smoke_size(3, 1)` are `LagrangianNeuralNetwork`'s own
+  constructor defaults, `width = dimin` and `nhidden = 1`, so a smoke run trains through the same
+  symbolic path as the full one. Measured end to end on the script itself, three fresh processes
+  took 135.5 s, 136.1 s and 136.8 s before, and four take 50.8 s, 51.1 s, 51.5 s and 52.2 s after —
+  a 2.6× reduction, with a 1.4 s spread over four random initialisations. The reproduction size is
+  untouched: with `GML_SMOKE` unset the script still trains width 5 with 3 hidden layers for 200
+  epochs, so the committed figure comes out of the same run as before.
+
+  **The ceiling stays at 300 s.** Widening it would have bought this script room out of a budget the
+  mode does not have — the reproduction scripts already take 30.1–50.9 minutes against
+  `BUDGET_SECONDS = 3600`, and the job 39.9–66.0 minutes against `timeout-minutes: 90` — and it
+  would have turned a real cost into a silent one instead of removing it.
+
 - **The two scripts the gate did not cover are now one repaired and one deleted, and `SKIPPED` is
   empty.**
 
@@ -1754,6 +1788,39 @@ whole parameter range rather than a single problem instance.
   `experimental: true` — resolved by `4281732c` ("Unify the shared GitHub workflows", 2026-08-31),
   which carries no changelog entry of its own. That predates and is unrelated to every sub-task in
   this release's test/script restructuring; this close-out only noticed it, and fixed nothing.
+
+- **The volume-preserving attention tests cover sequence length 5, so `tensor_cayley5` is reached
+  through the attention layer.** `VolumePreservingAttention` dispatches on its sequence length to
+  `tensor_cayley2` through `tensor_cayley5`, and falls back to the generic `cpu_tensor_cayley` for
+  every other length. `check_all` in `test/attention/attention_setup.jl` ran lengths 10, 2, 3 and 4,
+  and 10 takes the fallback — so `tensor_cayley5`, and through it the generated
+  `src/kernels/inverses/inverse_5x5.jl`, was exercised only by the direct kernel tests in
+  `test/kernels/tensor_cayley.jl` and `test/kernels/tensor_inverse.jl`. This retires two statements
+  in *The tensor Cayley kernels are checked for orthonormality in `Float32`* above: that the
+  attention tests do not reach `tensor_cayley5` at all, and that the 5×5 is exercised nowhere but
+  the direct kernel tests. Both are marked there as describing the state at that time.
+
+  The new case asserts what every other length asserts: the parameter element types, and volume
+  preservation as `det₁ ≈ det₂` and `det₁ ≈ det₃`, each computed determinant against the exact one.
+  The testset goes from 48 assertions to 60 — four tests, three element types, five lengths instead
+  of four.
+
+  **`Float16` is the precision that could have failed, and no tolerance was widened to make it
+  pass.** At N = 5, against `det₁ = -0.08386`, the `skew_sym = false` model deviates by 0.73 %
+  relative and the `skew_sym = true` model by 2.26 %, which is 23 % and 72 % of what `≈` allows.
+  That is the tightest case in the file, and it is the same order as N = 3, which already sat at
+  60 % for both models — `Float16` at these sizes has always been close, and N = 5 does not change
+  the picture. `Float32` uses at most 0.62 % of its budget and `Float64` at most 2.5e-6 %.
+
+  The comment above those assertions warns that the two computed determinants must never be
+  compared against each other. N = 5 does not add a new instance of that: `det₂` and `det₃` differ
+  by 49 % of the allowed tolerance there, where at N = 3 they differ by 119 % and the comparison
+  would fail outright.
+
+  `Random.seed!(1234)` is set once at the top of the file and the new call is last in `check_all`,
+  so lengths 10, 2, 3 and 4 draw the same matrices as before within any one `check_all`. But
+  `check_all(Float32)` and `check_all(Float64)` now start from a shifted state and test different
+  matrices. Both pass.
 
 ## [0.7.0]
 
