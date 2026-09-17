@@ -66,9 +66,59 @@ function resolve(text::AbstractString, mod::Module = Main; exact_signature::Bool
     (true, "")
 end
 
+function _collect_md!(pages::Set{String}, s::String)
+    (endswith(s, ".md") && push!(pages, s); nothing)
+end
+function _collect_md!(pages::Set{String}, e::Expr)
+    (foreach(a -> _collect_md!(pages, a), e.args); nothing)
+end
+_collect_md!(::Set{String}, ::Any) = nothing
+
+"""
+The pages `make.jl` builds, as absolute paths.
+
+`walkdir(SRC)` is the wrong set. `docs/src` also holds pages that no `pages =` entry names, and
+Documenter never reads those: their headings would excuse a section `@ref` the build rejects, and
+their own references would be checked against a manual that does not contain them.
+
+`make.jl` assembles `_html_pages` and `_latex_pages` from nested variables, so the list is read off
+its syntax tree -- every page is a string literal ending in `.md` -- rather than duplicated here and
+left to drift. Taking every such literal is the union of the HTML and LaTeX page sets, which is what
+the job builds.
+"""
 function markdown_files()
-    [joinpath(root, f)
-     for (root, _, files) in walkdir(SRC) for f in files if endswith(f, ".md")]
+    pages = Set{String}()
+    _collect_md!(pages, Meta.parseall(read(joinpath(@__DIR__, "make.jl"), String)))
+    isempty(pages) &&
+        error("no `.md` literals in make.jl: the page list moved, and this check would pass blindly")
+    files = String[]
+    for page in sort!(collect(pages))
+        path = joinpath(SRC, page)
+        isfile(path) || error("make.jl lists `$page`, which does not exist under $SRC")
+        push!(files, path)
+    end
+    files
+end
+
+"""
+The lines of `path` outside fenced code blocks, as `(lineno, line)`.
+
+The fence marker is matched with leading whitespace allowed. A fence indented inside a list or an
+admonition is still a fence, and reading it as ordinary text fails in two ways: a matched indented
+pair leaks the block's contents into the scan, and a pair with only one side indented leaves the
+toggle inverted, which drops every remaining line of the file.
+"""
+function prose_lines(path::AbstractString)
+    lines = Tuple{Int, String}[]
+    infence = false
+    for (i, line) in enumerate(eachline(path))
+        if occursin(r"^\s*```", line)
+            infence = !infence
+            continue
+        end
+        infence || push!(lines, (i, line))
+    end
+    lines
 end
 
 """Every entry of every `@docs` block in the manual, as `(file, line, text)`."""
@@ -114,6 +164,41 @@ function ref_targets()
                 explicit = strip(rest[firstindex(rest):prevind(rest, stop)])
                 target = isempty(explicit) ? strip(m.captures[1]) : explicit
                 push!(refs, (relpath(path, SRC), i, String(target)))
+            end
+        end
+    end
+    refs
+end
+
+"""Every markdown heading in the manual, as the text Documenter anchors a section `@ref` by."""
+function section_titles()
+    titles = Set{String}()
+    for path in markdown_files()
+        for (_, line) in prose_lines(path)
+            m = match(r"^#+\s+(.*?)\s*$", line)
+            m === nothing || push!(titles, String(m.captures[1]))
+        end
+    end
+    titles
+end
+
+"""
+Every `[text](@ref)` target in the manual, outside fenced code blocks, whose link text is *not* in
+backticks, as `(file, line, text)`.
+
+Unbackticked is legitimate: `[Some Section](@ref)` is how one links to a section by its title. It
+is a defect only when the text names no section and *does* name a documented binding, which means
+the backticks were forgotten -- and that is what Documenter reports as an unresolved
+`cross_references` error. Nothing else here sees it, because every other pass in this file matches
+backticked references only.
+"""
+function unbackticked_ref_targets()
+    refs = Tuple{String, Int, String}[]
+    opening = r"\[([^\]`]+)\]\(@ref\s*\)"
+    for path in markdown_files()
+        for (i, line) in prose_lines(path)
+            for m in eachmatch(opening, line)
+                push!(refs, (relpath(path, SRC), i, String(strip(m.captures[1]))))
             end
         end
     end
@@ -228,6 +313,16 @@ for (file, line, target) in ref_targets()
     startswith(target, "\"") && continue
     ok, why = resolve(target; exact_signature = false)
     ok || push!(failures, (file, line, "@ref   [`$target`]", why))
+end
+
+let titles = section_titles()
+    for (file, line, target) in unbackticked_ref_targets()
+        target in titles && continue
+        ok, _ = resolve(target; exact_signature = false)
+        ok && push!(failures,
+            (file, line, "@ref   [$target]",
+                "names no section, but `$target` is a documented binding -- the backticks are missing"))
+    end
 end
 
 sort!(failures)

@@ -1023,6 +1023,122 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   This changes the vector-field plot of the first section as well as the new one, which is why it is
   a point of its own rather than part of the entry above.
 
+- **The `Documentation` job is green again.** It had been red since 2026-08-26, for three
+  independent causes. `docs/make.jl` passes no `warnonly`, so it defaults to `Symbol[]` and each of
+  them is fatal: the build ends `encountered errors [:cross_references, :example_block]`.
+
+  **62 `invalid local image` errors, and not one of them was a wrong path.** All 62 name a
+  `tikz/*.png`. Every one of those files is a build product — `.gitignore` carries a bare `*.png`,
+  and `git ls-files docs/src/tikz` returns 68 tracked files of which zero are PNGs — and every name
+  has a tracked `.tex` source and a line in `docs/src/tikz/Makefile`. The workflow simply stopped
+  building them: `4281732c` ("Unify the shared GitHub workflows", 2026-08-31) replaced this
+  repository's `Documenter.yml` with the canonical body and removed the TeX-toolchain install and
+  the `make all -C docs/src/tikz` step with it. `.github/workflows/Documenter.yml` has both again.
+
+  **The make step runs after the documentation environment, not before it**, and that ordering is
+  load-bearing rather than incidental. `grassmann_sampling_light.tex` and `grassmann_sampling_dark.tex`
+  call `julia --project="../.." rosenbrock_plot.jl` through xelatex's shell-escape to draw a Makie
+  surface, and `../..` from `docs/src/tikz` is `docs/`. Run before that environment exists, both
+  fail with `CairoMakie ... does not seem to be installed`, the figure they `\includegraphics` is
+  missing, and the `png` target then dies on the absent PDF — `make` exits 2 and the job fails one
+  step earlier than it used to. The workflow says so at the step, because the obvious tidy-up is to
+  move it up beside the apt install.
+
+  Keeping this file out of the installer's way needs a change outside the repository:
+  `GeometricMachineLearning` is now in `DOCS_EXCEPTIONS` in `Knowledge/AI/githooks/install-workflows.sh`
+  and in `DOCS_ADDITIONS` in `verify-workflows.jl`, beside `GeometricOptimizers` and `SimpleSolvers`,
+  which have the same figure pipeline. Without that the next `--apply` deletes these steps again.
+  The file's header comment now says all of this, in place of the canonical one it inherited, which
+  claimed the file was a verbatim copy and named two other repositories as the only exceptions.
+  `verify-workflows.jl` ignores comments and checks the behavioural lines instead, which is what
+  makes a rewritten header the right place to record the difference.
+
+  **An `@example` in `docs/src/tutorials/optimizer_comparison.md` called `Optimizer` on a bare
+  `NamedTuple`.** `Optimizer` takes a `NeuralNetwork` or a `NetworkParameters`, so the weights are
+  wrapped in the latter. The block also ends with `fig` now, so the page shows its surface rather
+  than the `repr` of an `Optimizer`.
+
+  **Two `@ref`s were missing their backticks**, `[solve!](@ref)` in
+  `docs/src/tutorials/symplectic_autoencoder.md` and
+  `[GeometricMachineLearning.ResNetLayer](@ref)` in `docs/src/architectures/transformer.md`.
+  Unbackticked, Documenter looks for a *section* of that title, finds none, and fails
+  `cross_references`. Both names are documented and their backticked forms elsewhere on the same
+  pages resolve.
+
+- **`docs/check_references.jl` runs in the job again, and no longer misses the case above.** The
+  workflow step that invoked it went with the unification too, leaving the script tracked and called
+  by nothing. It is the cheap half of this job — `@docs` and code `@ref` resolution need only the
+  loaded package, so it fails in seconds where the build takes the better part of an hour.
+
+  It reported `0 unresolved` while the build was dying on two of them, because `ref_targets`
+  matches ``[`x`](@ref)`` and nothing else. It now also reads unbackticked `[text](@ref)`, and
+  flags one only when `text` matches no markdown heading **and** does resolve as a documented
+  binding. That pair of conditions is what keeps it quiet about `[Some Section](@ref)`, which is the
+  legitimate way to link a section by title. Checked by reverting both fixes: it exits 1 and names
+  `architectures/transformer.md:15` and `tutorials/symplectic_autoencoder.md:114`.
+
+  **It is a fail-fast pass, not a replacement for the build.** The second condition is what bounds
+  it: a `[text](@ref)` that names no heading *and* no documented binding — a mistyped or renamed
+  section title — is the other way Documenter reports `Cannot resolve @ref`, and this script stays
+  quiet about it. Flagging that case would mean re-implementing Documenter's anchor map, including
+  the duplicate-heading ambiguity a set of titles cannot see. `@example` blocks are likewise only
+  checked by the build itself.
+
+  **It now reads the pages `make.jl` builds, rather than everything under `docs/src`.** Two files
+  there are in no `pages =` entry — `data_loader/TODO.md` and `tutorials/softmax_comparison.md` —
+  so Documenter never sees them. Their headings could excuse a section `@ref` the build rejects,
+  and their own references were checked against a manual that does not contain them. The page list
+  is read off `make.jl`'s syntax tree, because `_html_pages` and `_latex_pages` are assembled from
+  nested variables and a copy here would drift; 50 of the 52 files are named, all of them exist,
+  and an empty extraction is an error rather than a silent pass.
+
+  **Fence detection allows leading whitespace, and the unbackticked scan uses it too.** A fence
+  indented inside a list or an admonition was read as ordinary text. Where both sides were indented
+  that leaked the block's contents into the scan — which is why a `[Not A Ref](@ref)` shown in a
+  code block would have been flagged — and where only one side was, the toggle stayed inverted and
+  every remaining line of the file was dropped. Both failures were reproduced against the old code
+  on probe pages before the fix. No page in the manual triggers either today.
+
+- **The logo is vector, and the documentation it deploys is about 3 MB smaller.** The `logo` target
+  of `docs/src/tikz/Makefile` rendered three PNGs at 500 dpi and copied them into `docs/src/assets/`:
+  4880×1892 pixels, `1594077`, `1599170` and `1587689` bytes, for a sidebar image about 240 px wide.
+
+  `logo.svg` and `logo-dark.svg` replace the first two. Documenter searches
+  `assets/logo.{svg,png,webp,gif,jpg,jpeg}` in that order, so the SVG is found first, and GitHub
+  Pages serves it gzipped: `222480` bytes on disk and `30986` over the wire, against `1594077` for
+  the PNG, which is already compressed and does not shrink further. The two together go from about
+  3.19 MB to about 62 kB, and are sharp at any size instead of at one.
+
+  The LaTeX manual gets `logo_without_jl.pdf` — `15225` bytes — because xelatex includes PDF
+  natively and cannot include SVG. `docs/src/assets/preamble.tex` names it, and
+  `assets/logo_tum.pdf` was already reaching that build the same way.
+
+  `.gitignore` names the three generated files exactly rather than sweeping `*.svg` and `*.pdf`,
+  because the tracked `logo_tum.pdf` sits beside them. It also covers `/docs/src/tikz/*.pdf` now:
+  `make` writes one PDF per `.tex` and removes them in its `clean` target, and there are 65 `.tex`
+  sources, so an interrupted run left 65 untracked files behind. The Makefile's `empty` target now
+  also removes the three logo outputs it writes into `docs/src/assets/`; it swept only `*.png`
+  there, which was every logo it wrote before this change and none of them after.
+
+- **`docs/make.jl` loses `const buildpath`**, which had no reader.
+
+- **The six plain ```` ```julia ```` fences in the tutorials say why they are not run.** Four are on
+  the symplectic-autoencoder page and two on the volume-preserving-transformer page, and Documenter
+  renders every one of them without executing it. Each is followed by a block that loads the
+  *committed* result of that run from an `.h5` file, so the figures come from the trained networks
+  rather than from a token re-training — but nothing on the page said so, and a reader had no way to
+  tell a displayed-and-skipped block from an executed one. One callout per page now does, in the
+  pages' own `Main.remark` idiom, and it names where each path *is* covered instead: the test suite,
+  and the reproduction scripts CI runs at smoke size.
+
+  **The `ReducedLoss` block is deliberately not converted to an `@example`**, which closes *C1*. It
+  trains at `integrator_train_epochs = 65536`, so an `@example` would need a token epoch count; the
+  very next block loads the committed weights, so the network trained during the build would be
+  discarded on the next line; and the path is already gated by
+  `test/losses/reduced_loss_optimization.jl`, which trains `ReducedLoss` through the `Optimizer`
+  functor on the CPU. Converting it would add training to a job that already takes the better part
+  of an hour and would establish only what a test establishes in seconds.
+
 ### Infrastructure
 
 - **Test files are guarded for inclusion completeness.** `test/reachability.jl` verifies that every
