@@ -1084,6 +1084,21 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   the duplicate-heading ambiguity a set of titles cannot see. `@example` blocks are likewise only
   checked by the build itself.
 
+  **It now reads the pages `make.jl` builds, rather than everything under `docs/src`.** Two files
+  there are in no `pages =` entry — `data_loader/TODO.md` and `tutorials/softmax_comparison.md` —
+  so Documenter never sees them. Their headings could excuse a section `@ref` the build rejects,
+  and their own references were checked against a manual that does not contain them. The page list
+  is read off `make.jl`'s syntax tree, because `_html_pages` and `_latex_pages` are assembled from
+  nested variables and a copy here would drift; 50 of the 52 files are named, all of them exist,
+  and an empty extraction is an error rather than a silent pass.
+
+  **Fence detection allows leading whitespace, and the unbackticked scan uses it too.** A fence
+  indented inside a list or an admonition was read as ordinary text. Where both sides were indented
+  that leaked the block's contents into the scan — which is why a `[Not A Ref](@ref)` shown in a
+  code block would have been flagged — and where only one side was, the toggle stayed inverted and
+  every remaining line of the file was dropped. Both failures were reproduced against the old code
+  on probe pages before the fix. No page in the manual triggers either today.
+
 - **The logo is vector, and the documentation it deploys is about 3 MB smaller.** The `logo` target
   of `docs/src/tikz/Makefile` rendered three PNGs at 500 dpi and copied them into `docs/src/assets/`:
   4880×1892 pixels, `1594077`, `1599170` and `1587689` bytes, for a sidebar image about 240 px wide.
