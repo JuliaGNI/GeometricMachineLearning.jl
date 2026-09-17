@@ -12,9 +12,10 @@
 # what to run, so a script added to either directory is gated from the moment it lands. A file
 # that is included rather than run belongs in `utilities/`.
 #
-# `SKIPPED` is the one exception, and it is closed in both directions: an entry naming a file that
-# no longer exists, or that is no longer an entry point, fails this driver. An entry is a backlog
-# item rather than a design — it says what stops the script running here, not that it is fine.
+# `SKIPPED` is the mechanism for excluding one, and it is empty. It is closed in both directions:
+# an entry naming a file that no longer exists, or that is no longer an entry point, fails this
+# driver. An entry is a backlog item rather than a design — it says what stops the script running
+# here, not that it is fine.
 #
 # Usage, from the repository root:
 #
@@ -38,7 +39,7 @@ const PROJECT = Base.active_project()
 const TIMEOUT_SECONDS = Dict("verification" => 900, "reproduction" => 300)
 
 # The budget for a whole mode, inside `Scripts.yml`'s `timeout-minutes: 90` less what that job
-# spends instantiating. Without it the per-script ceiling does not keep the promise above: 23
+# spends instantiating. Without it the per-script ceiling does not keep the promise above: 22
 # reproduction scripts each entitled to the ceiling outlast any runner, and the job then dies at the
 # runner's timeout with no verdict at all. The driver stops first, and names what it did not reach.
 const BUDGET_SECONDS = 3600

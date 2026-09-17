@@ -58,7 +58,7 @@ lines!(ax_train, loss_array_sympnet; color = Makie.wong_colors()[3], label = "Sy
 axislegend(ax_train)
 
 function _convert_to_cpu(dl, nn_standard, nn_symplectic, nn_sympnet)
-    DataLoader(dl.input |> Array{Float32}),
+    DataLoader(dl.input |> Array{T}),
     GeometricMachineLearning.map_to_cpu(nn_standard),
     GeometricMachineLearning.map_to_cpu(nn_symplectic),
     GeometricMachineLearning.map_to_cpu(nn_sympnet)
