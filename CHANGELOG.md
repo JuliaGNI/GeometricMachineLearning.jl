@@ -1141,6 +1141,56 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 ### Infrastructure
 
+- **Aqua runs in the suite, on the six of the eight checks it runs by default that this package
+  passes.** `Aqua.test_all` has nine; `undocumented_names` is off by default. It had never run:
+  it was in neither `Project.toml` nor `test/`, so the package had no package-level baseline at all.
+  `test/aqua.jl` is included from `test/runtests.jl` as `@safetestset "Aqua's package-level
+  checks"`, after the subject drivers rather than beside the other two tree-level guards: a
+  top-level testset throws when it closes on a failure, so a package-level finding placed first
+  costs every subject result in the run. `Aqua` joins `test/Project.toml` at `0.8`.
+
+  `unbound_args`, `undefined_exports`, `project_extras`, `stale_deps`, `deps_compat` and
+  `persistent_tasks` all pass on the released Julia versions, reporting `Pass 9, Total 9` between
+  them — `deps_compat` emits four assertions and the other five one each. With the piracy gate
+  below, the testset totals `Pass 10, Total 10`. **`persistent_tasks` passes** — the known false
+  failure of that check comes from a TestRunner shim's one-entry `JULIA_LOAD_PATH`, and a plain
+  `Pkg.test()` does not have one.
+
+  **`unbound_args` fails on Julia nightly**, on one method, for one failing assertion there. That is
+  the CI matrix's `nightly` job, which is advisory by construction and not a required check. It is
+  recorded under *Open Issues* as *B9*, because a figure quoted without its Julia version is a
+  figure no reader can match against a red job.
+
+  **`deps_compat` had to be fixed to get there, and the fix is three lines.** `InteractiveUtils`,
+  `LinearAlgebra` and `Random` were in the root `[deps]` with no `[compat]` bound. Each is now
+  `"1"`, which is what `test/Project.toml` already did for its own stdlibs.
+
+  **`ambiguities` and `piracies` are switched off by name, and not marked `broken = true`.** They
+  report 23 and 13. Both counts are recorded under *Open Issues* as *B8* and *B7*, and the 13
+  piracies are recorded there **with a witness each** — a call whose behaviour differs between a
+  process holding only the owning packages and the same process with this one loaded. Three of them
+  change `Base`, so they change every Julia process that loads this package; one turns
+  `dim(nn::NeuralNetwork)`'s `MethodError` into a silently returned `nothing`. Fixing them is a
+  change to `src/` that this file does not own, and `broken = true` would leave a check reporting
+  success while the defects stand — which is the failure mode the two guards below exist to remove.
+  Six checks that fail on a real regression are worth more than eight that are all switched off.
+
+  **`Aqua.test_all` needs an enclosing testset, and the one it gets is `runtests.jl`'s
+  `@safetestset`.** It wraps each check in a `@testset` of its own and adds no parent, and a testset
+  with no parent finalises as soon as it closes — so called bare, the first failing check throws a
+  `TestSetException` and the rest never run. That is how the first measurement of this package
+  reported `ambiguities` and stopped. `test/aqua.jl` keeps a `@testset` of its own as well, which is
+  the parent when that file is run alone, and which is what lets the piracy gate below sit beside
+  `test_all` as a second assertion rather than as a top-level `@test` that ends the file when it
+  fails.
+
+  **A switched-off check detects nothing, so `piracies` gets a gate.** `test/aqua.jl` asserts
+  `length(Aqua.Piracy.hunt(GeometricMachineLearning)) == 13`, which fails when a piracy is added and
+  fails when one is removed without the *B7* entry going with it. `ambiguities` gets no such gate:
+  17 of its 23 are against methods in ArrayLayouts, FillArrays, Symbolics and GeometricOptimizers,
+  so the count moves with those packages' versions rather than with anything in this tree, and an
+  exact assertion would turn the suite red on an unrelated upgrade.
+
 - **Test files are guarded for inclusion completeness.** `test/reachability.jl` verifies that every
   `.jl` file under `test/` is either in the transitive `include` closure of `test/runtests.jl` or
   named in an `ALLOWED_ORPHANS` allowlist with a one-line reason. The closure is read off the parsed
@@ -2541,6 +2591,86 @@ they resolved to is in the release notes above.
   documentation build, and B6 by the `train!` retirement in this release: the three methods that
   called the non-existent `vectorfield` are gone, and `SymplecticEulerLoss` carries their content on
   `hamiltonian_vector_field`, with tests that run. The numbers are left vacant rather than reused.)
+
+- **B7. Thirteen methods are type piracy, and three of them change `Base`.** Aqua's `piracies`
+  check reports 13, and all 13 are genuine under its definition: the function and every argument
+  type belong to other modules. It is switched off in `test/aqua.jl` rather than marked
+  `broken = true`, because each of these has a **witness** — a call whose behaviour differs between
+  a process with only the owning packages loaded and the same process with this one added.
+
+  The three on `Base` are the severe ones, because they change *every* Julia process that loads
+  this package:
+
+  | method | `src` | without GML | with GML |
+  |:--|:--|:--|:--|
+  | `+(::Float64, ::Tuple{Float64})` | `utils.jl:61` | `MethodError` | `3.0` |
+  | `+(::Vector{Float64}, ::Tuple{Float64})` | `utils.jl:67` | `MethodError` | `3.0` — a **scalar**, silently discarding every element but the first |
+  | `isapprox(::@NamedTuple{q, p}, ::…)` | `utils.jl:163` | `MethodError` | `true` |
+
+  The first two already carry a `# Type pyracy!!` comment in the source.
+
+  **`dim(nn::NeuralNetwork)` at `src/backends/lux.jl:56` is the most instructive.** The subject is
+  the *network*, not the architecture: `dim` on an architecture with no method of its own already
+  logs and returns `nothing` upstream (`AbstractNeuralNetworks/src/architecture.jl:8`). `dim` on a
+  `NeuralNetwork` is a clean `MethodError` without this package, and with it loaded the call reaches
+  the architecture fallback instead, logs an error and returns **`nothing`** — for every user of
+  that package, not only for users of this one.
+
+  Three more are functor piracy on `AbstractNeuralNetworks`: `Dense` and `Linear` applied to a
+  three-axis array (`src/layers/resnet.jl:63,67,71`), which is a `MethodError` upstream because `*`
+  cannot take a 3-tensor. `src/layers/resnet.jl:63` is also one of the ambiguities in *B8*, against
+  `Affine`.
+
+  Five are `add!` on `GeometricOptimizers` matrix types
+  (`src/arrays/gml_extensions.jl:17,27,32,39` and `:22`). For four of them the upstream generic is
+  a `CanonicalIndexError` — it does `x .= a .+ b` and those types have no `setindex!` — so the
+  method is load-bearing. `:22`, on `SymmetricMatrix`, is not: that type does support `setindex!`,
+  the upstream generic already returns the right answer, and the only observable difference is that
+  this one allocates where the upstream allocates nothing.
+
+  **Two of the 13 have no value witness, and that is worth saying plainly.** `:22` above, and
+  `add!(C::AbstractVecOrMat, A, B)` at `src/utils.jl:49` — the most invasive of the set, shadowing
+  the upstream three-argument `add!` for *every* vector and matrix including
+  `AbstractNeuralNetworks`' own internal uses. The value it returns is unchanged. Its witness is an
+  allocation regression: it writes `C .= A + B`, materialising the sum, where the upstream generic
+  writes `x .= a .+ b` and allocates nothing. One array per call, so the cost scales — measured in a
+  fresh process at `--check-bounds=auto`, the minimum of 50 calls is 64 bytes for a 1-element
+  vector, 144 at 10, 8256 at 1000, and 112 for a 2×2 matrix, against 0 upstream at every size. Plus
+  a guard weakened from `axes` equality to `size`
+  equality. A performance regression, not a wrong answer.
+
+  Closing this means deciding, method by method, between deleting the piracy and asking the owning
+  package for the method. It is a change to `src/` and it is not small.
+
+- **B8. Twenty-three method ambiguities.** Aqua's `ambiguities` check reports 23, and it is
+  switched off for the same reason as *B7*. Seventeen are `PoissonTensor * v`
+  (`src/arrays/poisson_tensor.jl:71,74,77`) against left-multiply methods in `ArrayLayouts`,
+  `FillArrays`, `Symbolics` and `GeometricOptimizers`. One is the `Dense` functor of *B7* against
+  `AbstractNeuralNetworks.Affine`; one is `_GMLGradient` (`src/optimizers/optimizer.jl:21`) against
+  `SimpleSolvers.Gradient`; and four are the `HNNLoss`, `LNNLoss`, `SymplecticEulerLoss` and
+  `VariationalMidpointLoss` functors against `AbstractNeuralNetworks.NetworkLoss`.
+
+  **A count is not a finding**, and unlike *B7* these have not been triaged for witnesses. That is
+  what closing this starts with.
+
+- **B9. One unbound type parameter, which only Julia nightly reports.** Aqua's `unbound_args` fails
+  on the `nightly` job over `Base.iterate(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, ics::BT;
+  n_points)` at `src/architectures/neural_network_integrator.jl:98`. Its signature is
+  `where {T, AT <: AbstractVector{T}, BT <: NamedTuple{(:q, :p), Tuple{AT, AT}}}`, and `T` never
+  appears in an argument type — it is reachable only through the bound on `AT`, so dispatch cannot
+  determine it and the method can never be called with `T` given explicitly.
+
+  **The check passes on `min`, on `1` and on `pre`, and fails on nightly.** The defect is in the
+  signature and is there on every version; what changes is whether Julia's method introspection
+  surfaces it. So the assertion counts above are the released-Julia figures, and nightly's testset
+  carries one failure among them.
+
+  `nightly` is advisory by construction — `.github/workflows/CI.yml` gives it `experimental: true`
+  and job-level `continue-on-error`, and it is deliberately not a required check — so this does not
+  gate a merge. It is recorded because a red advisory job with nothing to match it against is a red
+  job that the next reader has to re-diagnose.
+
+  Closing it means writing the parameter so that it binds, which is a change to `src/`.
 
 ### C. Follow-ups and cleanups
 
