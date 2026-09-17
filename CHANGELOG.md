@@ -44,8 +44,7 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   the package's last Flux and ModelingToolkit code.** Neither name now appears anywhere outside
   this file. **Lux does**, so it is deliberately not claimed here:
   `legacy/layers/linear_symplectic.jl` subtypes `Lux.AbstractExplicitLayer`, and
-  `scripts/Project.toml` declares it. They held the first
-  implementation of Hamiltonian neural
+  `scripts/Project.toml` declares it. They held the first implementation of Hamiltonian neural
   networks here, written four ways: by hand with `Zygote`, with Flux, with Lux, and with
   ModelingToolkit generating the derivatives as committed source. Every one of those routes is now
   either inside the package or replaced by a dependency, and **this closes *C9*** — all 28 of the
@@ -108,16 +107,20 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
   **Removed exports: `LuxBackend`, `arch`, `apply!` and `jacobian!`.** `AbstractBackend`,
   `LuxNeuralNetwork` and `apply` were never exported. Nothing under `src/`, `test/`, `docs/` or
-  `scripts/` referenced any of the seven names outside the deleted files themselves. Backends
-  otherwise reach this package as `KernelAbstractions` devices — `CPU()` and `CUDABackend()` — which
-  this abstraction never described.
+  `scripts/` referenced any of the seven names outside the deleted files themselves — `arch`
+  survives all over the tree, but only ever as a local variable or parameter name, never as a call
+  to the removed generic. Backends otherwise reach this package as `KernelAbstractions` devices,
+  `CPU()` and `CUDABackend()`, which this abstraction never described.
 
   **`AbstractNeuralNetworks.dim(nn::NeuralNetwork)` goes with it, and it was the one live line in
   the directory.** It let `dim` take a *network* where the three architecture methods take an
   architecture, and it was type piracy: both the generic and the type belong to
   `AbstractNeuralNetworks`, so it changed behaviour for every user of that package rather than only
-  for users of this one. Specifically, it turned that package's clean `MethodError` into a logged
-  error and a returned `nothing`.
+  for users of this one. Without this package `dim(nn)` is a clean `MethodError`, because upstream
+  defines exactly one `dim` — the `@error` fallback on `Architecture` at
+  `AbstractNeuralNetworks/src/architecture.jl:8`. With it loaded the call forwards to the
+  architecture, so it answers correctly where that architecture implements `dim`, and logs an error
+  and returns `nothing` where it does not. Both are behaviour the owning package did not choose.
 
   It is dropped rather than moved because nothing calls it. The only `dim(` call in the package is
   `src/loss/lnn_loss.jl:55`, which passes an *architecture* and dispatches to
