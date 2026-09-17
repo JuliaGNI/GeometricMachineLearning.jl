@@ -1596,6 +1596,40 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   only honest reason for one is hardware the runner does not have; a script skipped because it is
   broken is a script nobody is fixing.
 
+- **`lnn_pendulum.jl` takes its network size from `smoke_size` too, and the job stopped going red.**
+  The script hit the 300 s per-script ceiling in `Scripts - ubuntu-latest` on two of six observed
+  runs — 300.1 s and 300.2 s — while the other four passed at 176.8 s, 207.4 s, 235.1 s and
+  262.0 s. Nothing about it was broken. The runner's own speed is what varies: over those same six
+  runs `harmonic_oscillator.jl` spans 53.0–82.3 s and `hnn_pendulum.jl` 100.4–154.2 s, a factor of
+  1.55, and at 262 s this script had no headroom left to absorb that.
+
+  **The epoch count was never the cost.** `nepochs = smoke_size(200, 2)` was already there, and an
+  instrumented smoke run at the full size spends 106.4 s on the first epoch against 1.8 s on the
+  second. What it pays for once is the compilation of the `LNNLoss` pullback:
+  `lagrangian_acceleration` builds a *symbolic* gradient and Hessian of the chain with
+  `SymbolicNeuralNetworks.Jacobian` and compiles both, and those expressions grow with the chain
+  rather than with the number of epochs or of samples. The other phases of that 138.8 s run are the
+  package load at 1.9 s, the data at 3.6 s, building `LNNLoss` at 5.8 s, loading CairoMakie at 3.6 s
+  and the figure at 14.3 s, with 1.4 s in the includes and the two constructors. The figure does not
+  move with its grid either — 14.3 s at `nsamples = 10` against 14.0 s at 100 — because that too is
+  compilation.
+
+  **So the size that costs time is the network.** First-epoch cost in a smoke run: 106.4 s at
+  width 5 with 3 hidden layers, 49.0 s at (5, 1), 36.9 s at (3, 1) and 21.4 s at (2, 1).
+  `ld = smoke_size(5, 2)` and `ln = smoke_size(3, 1)` are `LagrangianNeuralNetwork`'s own
+  constructor defaults, `width = dimin` and `nhidden = 1`, so a smoke run trains the smallest chain
+  the constructor offers through the same symbolic path as the full one. Measured end to end on the
+  script itself, three fresh processes took 135.5 s, 136.1 s and 136.8 s before, and four take
+  50.8 s, 51.1 s, 51.5 s and 52.2 s after — a 2.6× reduction, with a 1.4 s spread over four random
+  initialisations. The reproduction size is untouched: with `GML_SMOKE` unset the script still
+  trains width 5 with 3 hidden layers for 200 epochs, so the committed figure comes out of the same
+  run as before.
+
+  **The ceiling stays at 300 s.** Widening it would have bought this script room out of a budget the
+  mode does not have — the reproduction scripts already take 30.1–50.9 minutes against
+  `BUDGET_SECONDS = 3600`, and the job 39.9–66.0 minutes against `timeout-minutes: 90` — and it
+  would have turned a real cost into a silent one instead of removing it.
+
 - **The two scripts the gate did not cover are now one repaired and one deleted, and `SKIPPED` is
   empty.**
 
