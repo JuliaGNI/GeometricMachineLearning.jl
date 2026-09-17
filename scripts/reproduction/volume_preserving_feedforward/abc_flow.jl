@@ -80,8 +80,8 @@ end
 function make_validation_plot(t_validation::Int, nn::NeuralNetwork)
     numerical, t_array = numerical_solution(sys_dim, t_validation, timestep, ic)
 
-    nn₁_solution = iterate(nn₁, numerical[:, 1]; n_points = Int(floor(t_validation /
-                                                                      timestep)) + 1)
+    nn_solution = iterate(nn, numerical[:, 1]; n_points = Int(floor(t_validation /
+                                                                    timestep)) + 1)
 
     ########################### plot validation
 
@@ -91,7 +91,7 @@ function make_validation_plot(t_validation::Int, nn::NeuralNetwork)
         color = Makie.wong_colors()[1], linewidth = 2)
 
     lines!(
-        ax_validation, t_array, nn₁_solution[1, :]; label = "volume-preserving feedforward",
+        ax_validation, t_array, nn_solution[1, :]; label = "volume-preserving feedforward",
         color = Makie.wong_colors()[2], linewidth = 2)
     axislegend(ax_validation)
 

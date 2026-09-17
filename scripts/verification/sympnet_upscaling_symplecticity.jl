@@ -4,6 +4,11 @@
 # Each layer is symplectic in its own right. This script checks whether the composition is, and
 # establishes that it is not -- for an algebraic reason, not a numerical one.
 #
+# THAT IS THE INTENDED PROPERTY, not a defect. End-to-end symplecticity of the chain was never the
+# design goal: the architecture is meant to approximate it, and the approximation improves with `N`.
+# What this script gates is therefore the exact part -- the three layerwise identities, which hold
+# to machine precision -- and it *measures* the inexact part rather than asserting a bound on it.
+#
 # Five checks, in order:
 #
 #   1. the three layerwise identities hold to machine precision;

@@ -43,13 +43,10 @@ const TIMEOUT_SECONDS = Dict("verification" => 900, "reproduction" => 300)
 # runner's timeout with no verdict at all. The driver stops first, and names what it did not reach.
 const BUDGET_SECONDS = 3600
 
-# Both entries are the scripts whose subject *is* the GPU path: they name CUDA types directly
-# rather than taking a backend, so there is nothing for a smoke run to switch. Every other GPU
-# script takes its backend from `smoke_size`, runs on the CPU here, and is gated.
-const SKIPPED = Dict{String, String}(
-    "reproduction/linear_symplectic_transformer_gpu.jl" => "pipes its training data through `cu`, then constructs all three networks on a `CUDABackend()` written into the call; no CI runner has a GPU",
-    "reproduction/sympnets/sympnet_pendulum_cuda.jl" => "hands `lines!` the `1 x n_time_steps` matrices `pendulum_data` returns and stops there, before any GPU code -- the repaired `sympnet_pendulum.jl` flattens them with `vec`; past that it calls `CUDA.device()` and `CUDA.zeros` directly, which is what distinguishes it from that sibling, and no CI runner has a GPU"
-)
+# Empty, and meant to stay that way. An entry here is a script the gate does not cover, so the
+# only honest reason for one is hardware this runner does not have -- never a defect left unfixed.
+# Every GPU script takes its backend from `smoke_size`, runs on the CPU here, and is gated.
+const SKIPPED = Dict{String, String}()
 
 """
 Return every `.jl` file under `dir`, relative to `scripts/` and with `/` separators.
