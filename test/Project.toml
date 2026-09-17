@@ -22,10 +22,10 @@ GeometricMachineLearning = {path = ".."}
 
 [compat]
 AbstractNeuralNetworks = "0.8"
-# Aqua 0.8.17 rewrote `test_persistent_tasks` to walk the manifest itself, and it calls `error` on a
-# `[deps]` entry `Base.locate_package` cannot resolve. KernelAbstractions declares `EnzymeCore` in
-# both `[deps]` and `[weakdeps]`, so Pkg does not install it and the walk stops there. Raise this
-# bound once Aqua handles a weak dependency in that position.
+# Aqua 0.8.17's `test_persistent_tasks` builds its own manifest from each package's `Project.toml`,
+# and calls `error` on a `[deps]` entry `Base.locate_package` cannot resolve. KernelAbstractions
+# declares `EnzymeCore` in both `[deps]` and `[weakdeps]`, so Pkg does not install it and the walk
+# stops there. Raise this bound once Aqua handles a weak dependency in that position.
 Aqua = "0.8.0 - 0.8.16"
 ChainRulesTestUtils = "1"
 FiniteDifferences = "0.12"

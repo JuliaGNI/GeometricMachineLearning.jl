@@ -1665,12 +1665,12 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   neither did KernelAbstractions — 0.9.42 in the last green run and in the red one. Only Aqua did,
   0.8.16 to 0.8.17.
 
-  0.8.16 implemented `test_persistent_tasks` by generating a wrapper package with `Pkg.generate`
-  and `Pkg.develop`. 0.8.17 replaced that with a walk over each package's own `Project.toml`, which
-  calls `Base.locate_package` for every entry of its `[deps]` table and calls `error` on the first
-  one that does not resolve. KernelAbstractions 0.9.42 declares `EnzymeCore` in both `[deps]` and
-  `[weakdeps]`. Pkg treats it as weak and does not install it, so the lookup returns `nothing` and
-  the walk stops there.
+  Both versions generate a wrapper package with `Pkg.generate` and precompile it. 0.8.16 resolved
+  that wrapper's environment with `Pkg.develop`. 0.8.17 writes the `Manifest.toml` itself instead,
+  built by walking each package's own `Project.toml`, calling `Base.locate_package` for every entry
+  of its `[deps]` table and `error` on the first one that does not resolve. KernelAbstractions
+  0.9.42 declares `EnzymeCore` in both `[deps]` and `[weakdeps]`. Pkg treats it as weak and does not
+  install it, so the lookup returns `nothing` and the walk stops there.
 
   **The bound is a hyphen range because the two obvious forms do not bite.** Under Julia's compat
   semantics `0.8.16` and `~0.8.16` both still admit 0.8.17, and an exact `=0.8.16` would close the
