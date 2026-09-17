@@ -120,6 +120,44 @@ function ref_targets()
     refs
 end
 
+"""Every markdown heading in the manual, as the text Documenter anchors a section `@ref` by."""
+function section_titles()
+    titles = Set{String}()
+    for path in markdown_files()
+        infence = false
+        for line in eachline(path)
+            startswith(line, "```") && (infence = !infence; continue)
+            infence && continue
+            m = match(r"^#+\s+(.*?)\s*$", line)
+            m === nothing || push!(titles, String(m.captures[1]))
+        end
+    end
+    titles
+end
+
+"""
+Every `[text](@ref)` target in the manual whose link text is *not* in backticks, as
+`(file, line, text)`.
+
+Unbackticked is legitimate: `[Some Section](@ref)` is how one links to a section by its title. It
+is a defect only when the text names no section and *does* name a documented binding, which means
+the backticks were forgotten -- and that is what Documenter reports as an unresolved
+`cross_references` error. Nothing else here sees it, because every other pass in this file matches
+backticked references only.
+"""
+function unbackticked_ref_targets()
+    refs = Tuple{String, Int, String}[]
+    opening = r"\[([^\]`]+)\]\(@ref\s*\)"
+    for path in markdown_files()
+        for (i, line) in enumerate(eachline(path))
+            for m in eachmatch(opening, line)
+                push!(refs, (relpath(path, SRC), i, String(strip(m.captures[1]))))
+            end
+        end
+    end
+    refs
+end
+
 """
 Docstrings in `MODULES` that no `@docs` block includes -- Documenter's `missing_docs` check.
 
@@ -228,6 +266,16 @@ for (file, line, target) in ref_targets()
     startswith(target, "\"") && continue
     ok, why = resolve(target; exact_signature = false)
     ok || push!(failures, (file, line, "@ref   [`$target`]", why))
+end
+
+let titles = section_titles()
+    for (file, line, target) in unbackticked_ref_targets()
+        target in titles && continue
+        ok, _ = resolve(target; exact_signature = false)
+        ok && push!(failures,
+            (file, line, "@ref   [$target]",
+                "names no section, but `$target` is a documented binding -- the backticks are missing"))
+    end
 end
 
 sort!(failures)
