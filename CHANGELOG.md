@@ -1277,11 +1277,10 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `"1"`, which is what `test/Project.toml` already did for its own stdlibs.
 
   **`ambiguities` and `piracies` are switched off by name, and not marked `broken = true`.** They
-  report 23 and 13. Both counts are recorded under *Open Issues* as *B8* and *B7*, and the 13
+  report 23 and 12. Both counts are recorded under *Open Issues* as *B8* and *B7*, and the 12
   piracies are recorded there **with a witness each** — a call whose behaviour differs between a
   process holding only the owning packages and the same process with this one loaded. Three of them
-  change `Base`, so they change every Julia process that loads this package; one turns
-  `dim(nn::NeuralNetwork)`'s `MethodError` into a silently returned `nothing`. Fixing them is a
+  change `Base`, so they change every Julia process that loads this package. Fixing them is a
   change to `src/` that this file does not own, and `broken = true` would leave a check reporting
   success while the defects stand — which is the failure mode the two guards below exist to remove.
   Six checks that fail on a real regression are worth more than eight that are all switched off.
@@ -1296,7 +1295,7 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   fails.
 
   **A switched-off check detects nothing, so `piracies` gets a gate.** `test/aqua.jl` asserts
-  `length(Aqua.Piracy.hunt(GeometricMachineLearning)) == 13`, which fails when a piracy is added and
+  `length(Aqua.Piracy.hunt(GeometricMachineLearning)) == 12`, which fails when a piracy is added and
   fails when one is removed without the *B7* entry going with it. `ambiguities` gets no such gate:
   17 of its 23 are against methods in ArrayLayouts, FillArrays, Symbolics and GeometricOptimizers,
   so the count moves with those packages' versions rather than with anything in this tree, and an
@@ -2703,8 +2702,8 @@ they resolved to is in the release notes above.
   called the non-existent `vectorfield` are gone, and `SymplecticEulerLoss` carries their content on
   `hamiltonian_vector_field`, with tests that run. The numbers are left vacant rather than reused.)
 
-- **B7. Thirteen methods are type piracy, and three of them change `Base`.** Aqua's `piracies`
-  check reports 13, and all 13 are genuine under its definition: the function and every argument
+- **B7. Twelve methods are type piracy, and three of them change `Base`.** Aqua's `piracies`
+  check reports 12, and all 12 are genuine under its definition: the function and every argument
   type belong to other modules. It is switched off in `test/aqua.jl` rather than marked
   `broken = true`, because each of these has a **witness** — a call whose behaviour differs between
   a process with only the owning packages loaded and the same process with this one added.
@@ -2720,14 +2719,7 @@ they resolved to is in the release notes above.
 
   The first two already carry a `# Type pyracy!!` comment in the source.
 
-  **`dim(nn::NeuralNetwork)` at `src/backends/lux.jl:56` is the most instructive.** The subject is
-  the *network*, not the architecture: `dim` on an architecture with no method of its own already
-  logs and returns `nothing` upstream (`AbstractNeuralNetworks/src/architecture.jl:8`). `dim` on a
-  `NeuralNetwork` is a clean `MethodError` without this package, and with it loaded the call reaches
-  the architecture fallback instead, logs an error and returns **`nothing`** — for every user of
-  that package, not only for users of this one.
-
-  Three more are functor piracy on `AbstractNeuralNetworks`: `Dense` and `Linear` applied to a
+  Three are functor piracy on `AbstractNeuralNetworks`: `Dense` and `Linear` applied to a
   three-axis array (`src/layers/resnet.jl:63,67,71`), which is a `MethodError` upstream because `*`
   cannot take a 3-tensor. `src/layers/resnet.jl:63` is also one of the ambiguities in *B8*, against
   `Affine`.
@@ -2739,7 +2731,7 @@ they resolved to is in the release notes above.
   the upstream generic already returns the right answer, and the only observable difference is that
   this one allocates where the upstream allocates nothing.
 
-  **Two of the 13 have no value witness, and that is worth saying plainly.** `:22` above, and
+  **Two of the 12 have no value witness, and that is worth saying plainly.** `:22` above, and
   `add!(C::AbstractVecOrMat, A, B)` at `src/utils.jl:49` — the most invasive of the set, shadowing
   the upstream three-argument `add!` for *every* vector and matrix including
   `AbstractNeuralNetworks`' own internal uses. The value it returns is unchanged. Its witness is an
