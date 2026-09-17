@@ -1729,6 +1729,26 @@ whole parameter range rather than a single problem instance.
   because `network_parameters_gradient_projection.jl` loads both and neither was declared, which is
   why that script could not run in the scripts environment at all.
 
+- **Aqua is bounded to `0.8.0 - 0.8.16` in `test/Project.toml`, because 0.8.17 breaks the
+  `persistent_tasks` check.** Every job of the matrix went red on `main` at `a5c0a1ee`, on Linux,
+  macOS and Windows alike, reporting from `Aqua/src/persistent_tasks.jl:102` that it could not
+  locate `EnzymeCore`, a dependency of `KernelAbstractions`. Nothing in this package moved, and
+  neither did KernelAbstractions — 0.9.42 in the last green run and in the red one. Only Aqua did,
+  0.8.16 to 0.8.17.
+
+  Both versions generate a wrapper package with `Pkg.generate` and precompile it. 0.8.16 resolved
+  that wrapper's environment with `Pkg.develop`. 0.8.17 writes the `Manifest.toml` itself instead,
+  built by walking each package's own `Project.toml`, calling `Base.locate_package` for every entry
+  of its `[deps]` table and `error` on the first one that does not resolve. KernelAbstractions
+  0.9.42 declares `EnzymeCore` in both `[deps]` and `[weakdeps]`. Pkg treats it as weak and does not
+  install it, so the lookup returns `nothing` and the walk stops there.
+
+  **The bound is a hyphen range because the two obvious forms do not bite.** Under Julia's compat
+  semantics `0.8.16` and `~0.8.16` both still admit 0.8.17, and an exact `=0.8.16` would close the
+  floor as well as the ceiling. The check is bounded rather than switched off, for the reason the
+  `ambiguities` and `piracies` entries give above: a switched-off check detects nothing. Raise the
+  bound once Aqua handles a weak dependency in that position.
+
 - **C5 is removed from *Open Issues*: its premise no longer holds.**
   `.github/workflows/CI.yml` no longer pins an explicit `1.13` job — only `pre` and `nightly` are
   `experimental: true` — resolved by `4281732c` ("Unify the shared GitHub workflows", 2026-08-31),
