@@ -31,15 +31,19 @@ nn = NeuralNetwork(hnn, CPU(), Float64)
 input, output = get_data_set()
 dl = DataLoader(input, output)
 
-optimizer = Optimizer(Adam(), nn; step_size = 1e-3)
-total_loss = optimizer(nn, dl, Batch(10), nepochs, HNNLoss(hnn); show_progress = true)
+# `HNNLoss` holds the Hamiltonian vector field it compares against the data. Naming the loss keeps
+# that field for the integration below, where constructing a second `HNNLoss` would build the
+# symbolic derivative again.
+const loss = HNNLoss(hnn)
 
-# The learned Hamiltonian and the vector field built from it. `hamiltonian_vector_field` is what
-# `HNNLoss` compares against the data, so this integrates exactly the quantity that was trained --
+optimizer = Optimizer(Adam(), nn; step_size = 1e-3)
+total_loss = optimizer(nn, dl, Batch(10), nepochs, loss; show_progress = true)
+
+# The learned Hamiltonian and the vector field built from it. `loss.hvf` is what `HNNLoss` compares
+# against the data, so this integrates exactly the quantity that was trained -- the same object,
 # not a second derivative taken again here.
 H̃(x) = only(nn(x))
-const hvf = GeometricMachineLearning.hamiltonian_vector_field(hnn)
-dH̃(x) = hvf(x, nn.params)
+dH̃(x) = loss.hvf(x, nn.params)
 
 # `ODEProblem` calls its vector field as `v(v, t, q, params)`.
 reference_field(v, t, q, params) = (v .= dH(q))

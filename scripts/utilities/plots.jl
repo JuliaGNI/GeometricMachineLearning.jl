@@ -102,7 +102,7 @@ function plot_network_sim(H, H̃, sol_ref, sol_hnn, total_loss; xmin = -1.2, xma
     lines!(ax_err, collect(sol_hnn.t), drift(H̃, sol_hnn); label = "HNN")
     axislegend(ax_err)
 
-    # the two contour panels occupy the top 70% of the figure
+    # the contour and trajectory panels occupy the top 70% of the figure
     rowsize!(fig.layout, 1, Relative(0.7))
 
     if filename !== nothing
