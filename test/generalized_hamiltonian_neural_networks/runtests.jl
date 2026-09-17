@@ -12,3 +12,6 @@ end
 @safetestset "Parametric and forced layers and architectures" begin
     include("parametric_layers_and_architectures_test.jl")
 end
+@safetestset "Layerwise symbolic pullback for a PGHNN" begin
+    include("layerwise_symbolic_pullback_test.jl")
+end

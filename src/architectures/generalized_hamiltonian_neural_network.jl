@@ -133,10 +133,17 @@ function build_gradient(se::SymbolicEnergy)
         inplace = false)
 end
 
-struct SymplecticEuler{M, N, FT <: Base.Callable, MT <: Chain, type, ReturnParameters} <:
+# `parameter_length` and `parameter_layout` are `SymbolicEnergy`'s, carried here because the layer is
+# what the layerwise `SymbolicPullback` asks about its seam -- see `carried_variables` below. `PT` is
+# the *last* type parameter so that every existing partial signature (`SymplecticEulerA{M, N, FT, AT,
+# false}` and the like) goes on matching, with the layout left free.
+struct SymplecticEuler{
+    M, N, FT <: Base.Callable, MT <: Chain, type, ReturnParameters, PT} <:
        AbstractExplicitLayer{M, N}
     gradient_function::FT
     energy_model::MT
+    parameter_length::Int
+    parameter_layout::PT
 end
 
 function parameterlength(integrator::SymplecticEuler)
@@ -162,8 +169,9 @@ function SymplecticEulerA(se::SymbolicKineticEnergy; return_parameters::Bool)
     gradient_function = build_gradient(se)
     c = Chain(se)
     SymplecticEuler{
-        se.dim, se.dim, typeof(gradient_function), typeof(c), :A, return_parameters}(
-        gradient_function, c)
+        se.dim, se.dim, typeof(gradient_function), typeof(c), :A, return_parameters,
+        typeof(se.parameter_layout)}(gradient_function, c, se.parameter_length,
+        se.parameter_layout)
 end
 
 """
@@ -173,8 +181,9 @@ function SymplecticEulerB(se::SymbolicPotentialEnergy; return_parameters::Bool)
     gradient_function = build_gradient(se)
     c = Chain(se)
     SymplecticEuler{
-        se.dim, se.dim, typeof(gradient_function), typeof(c), :B, return_parameters}(
-        gradient_function, c)
+        se.dim, se.dim, typeof(gradient_function), typeof(c), :B, return_parameters,
+        typeof(se.parameter_layout)}(gradient_function, c, se.parameter_length,
+        se.parameter_layout)
 end
 
 # A network with no system parameters gets its input unchanged; without this the empty flat vector
@@ -270,6 +279,84 @@ end
 
 function (integrator::SymplecticEuler)(qp::QPTOAT2, params::NetworkParameters)
     integrator(qp, NullParameters(), params)
+end
+
+# ---------------------------------------------------------------------------------------------------
+# The seam of the layerwise `SymbolicPullback`
+#
+# `SymbolicNeuralNetworks` composes the pullback of a chain layer by layer, putting *fresh* symbolic
+# variables between two layers instead of inlining one layer's expression into the next -- which is
+# what keeps the symbolic material a sum over layers rather than a product. By default that seam is a
+# single vector, the state, so it assumes every layer maps an array to an array.
+#
+# A `SymplecticEuler` built with `return_parameters = true` does not: it threads the parameters of the
+# *system* on to the next layer, so it takes and returns a pair. The four methods below say how it
+# meets the seam; see `SymbolicNeuralNetworks.seam_interface`.
+#
+# Without them the construction declines and the monolithic one takes over, which does not get there:
+# for `n_integrators > 1` its expression exceeds 10⁹ terms and never finishes, and for a system that
+# *has* parameters it cannot be built at all. That last one is worth spelling out -- it traces the chain
+# from a plain vector, so the two-argument functor above defaults the system parameters away, and the
+# energy network's first `Dense` is then short of the components it reads. The build fails inside
+# `Symbolics` rather than quietly returning the parameter-free gradient, but only because the
+# dimensions happen not to line up; the layerwise construction is the one that differentiates the map
+# that was asked for.
+
+# A system with no parameters carries nothing, and says so with an empty tuple rather than an empty
+# array: there is nothing to hand the generated kernels, and the seam is then the plain vector it is
+# for every other layer. The layer still has to be *given* a `NullParameters`, which `seam_value`
+# supplies as a constant.
+function SymbolicNeuralNetworks.carried_variables(integrator::SymplecticEuler)
+    iszero(integrator.parameter_length) ? () :
+    (SymbolicNeuralNetworks.Symbolics.variables(:π, 1:integrator.parameter_length),)
+end
+
+# The kernels take the system parameters flat, which is how the forward pass feeds them to the energy
+# network as well (`concatenate_array_with_parameters`). The layer itself wants them in their own
+# shape, so the seam puts them back through the layout it carries.
+function SymbolicNeuralNetworks.seam_value(integrator::SymplecticEuler, sqp, sparameters)
+    (sqp, unflatten(integrator.parameter_layout, sparameters))
+end
+SymbolicNeuralNetworks.seam_value(::SymplecticEuler, sqp) = (sqp, NullParameters())
+
+# `return_parameters = true` returns the state *and* the system parameters; the sensitivity of the
+# loss pairs with the state. With `false` the output is the state alone, which is the default.
+function SymbolicNeuralNetworks.state_expressions(
+        ::SymplecticEuler{M, N, FT, AT, T, true}, y) where {M, N, FT, AT, T}
+    SymbolicNeuralNetworks.scalar_expressions(first(y))
+end
+
+# The run-time counterpart of `seam_value`. Every data argument of a generated function has to have the
+# state's rank and batch size, so one parameter set for the whole batch is broadcast out to one column
+# per sample -- what `concatenate_array_with_parameters` does for the forward pass.
+function SymbolicNeuralNetworks.seam_arguments(integrator::SymplecticEuler, qp_params::Tuple)
+    state = _seam_state(first(qp_params))
+    iszero(integrator.parameter_length) ? (state,) :
+    (state, _seam_parameters(last(qp_params), state))
+end
+
+# The state alone is only a seam for a parameter-free system. For any other it would hand the kernel a
+# carried datum of the wrong length, which nothing downstream checks -- the batch dimension is checked,
+# the leading one is not -- so say so here rather than compute the wrong gradient. In practice the
+# forward pass of the sweep, which runs first, usually fails on the same input before this is reached;
+# this is the guard for the case where it does not.
+function SymbolicNeuralNetworks.seam_arguments(integrator::SymplecticEuler, qp::QPTOAT2)
+    iszero(integrator.parameter_length) || throw(ArgumentError(
+        "the system of this `SymplecticEuler` has $(integrator.parameter_length) parameter(s), so " *
+        "the pullback has to be given `(state, system parameters)` rather than the state alone."))
+    (_seam_state(qp),)
+end
+
+# The seam holds the `2n` state components as one array, which is how the layer's own array methods
+# take the state too; a `(q, p)` pair is stacked the way `assign_q_and_p` takes it apart again.
+_seam_state(qp::AbstractArray) = qp
+_seam_state(qp::QPT) = vcat(qp.q, qp.p)
+
+function _seam_parameters(parameters::OptionalParameters, ::AbstractVector)
+    _flatten_system_parameters(parameters)[1]
+end
+function _seam_parameters(parameters::OptionalParameters, state::AbstractMatrix)
+    repeat(_flatten_system_parameters(parameters)[1], 1, size(state, 2))
 end
 
 """
