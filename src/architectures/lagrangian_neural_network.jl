@@ -1,6 +1,3 @@
-
-const DEFAULT_LNN_NRUNS = 1000
-
 struct LagrangianNeuralNetwork{AT} <: Architecture
     dimin::Int
     width::Int
@@ -25,6 +22,11 @@ function Chain(nn::LagrangianNeuralNetwork)
         Linear(nn.width, 1; use_bias = false)
     )
 end
+
+# The three derivatives below take the `Zygote` route, which is the reference for what `LNNLoss`
+# computes and not a second implementation of it: a nested `Zygote.gradient` inside a loss breaks
+# the parameter gradient, so the loss reaches the same quantities through
+# `SymbolicNeuralNetworks.Jacobian` instead. They are kept for checking that route by hand.
 
 # gradient of the Lagrangian Neural Network
 function ∇L(nn::NeuralNetwork{<:LagrangianNeuralNetwork}, x, params = params(nn))
