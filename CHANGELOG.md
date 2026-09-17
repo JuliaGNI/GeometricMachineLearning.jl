@@ -87,10 +87,11 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
   **`∇q∇q̇L` is gone from `src/architectures/lagrangian_neural_network.jl`** as well. It is
   unexported, and its one caller was `src/training_method/lnn_exact_method.jl:10`. What it returned
-  is the mixed Hessian block `LNNLoss` now takes from a compiled symbolic expression instead of from
-  `Zygote`, so keeping it would leave two implementations of one formula. Its three neighbours in
-  that file — `∇L`, `∇∇L` and `∇q̇∇q̇L`, plus the constant `DEFAULT_LNN_NRUNS` — were dead before
-  this release and are left alone; see *C13* under *Open Issues*.
+  is the mixed Hessian block `LNNLoss` now takes from a compiled symbolic expression instead of
+  from `Zygote`, so keeping it would leave two implementations of one formula. Its neighbours in
+  that file — `∇L`, `∇∇L` and `∇q̇∇q̇L` — were dead before this release and are kept as the
+  `Zygote` reference for what `LNNLoss` computes symbolically; the constant `DEFAULT_LNN_NRUNS`
+  beside them is removed. Both decisions are under *Changed*.
 
 - **Seven exported names that were defined nowhere are no longer exported**, and one that should
   have resolved now does. `Device`, `CPUDevice`, `convert_to_dev`, `ResidualLayer`,
@@ -192,6 +193,22 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   argument, which the old one hid.
 
 ### Changed
+
+- **`DEFAULT_LNN_NRUNS` is gone from `src/architectures/lagrangian_neural_network.jl`, and the three
+  `Zygote` derivatives beside it stay.** This closes *C13*, and it splits three-to-one against what
+  that entry expected.
+
+  The constant was the default `ntraining` of an architecture-local `train!` removed in `a27140af`,
+  when the shared harness took that job over, and it has had no caller since 2023-06-08. It was
+  never exported, and nothing under `src`, `test`, `docs` or `scripts` named it.
+
+  `∇L` and `∇q̇∇q̇L` have had no caller either, and `∇∇L` only the one inside `∇q̇∇q̇L`
+  (`src/architectures/lagrangian_neural_network.jl:42`) — so the group is unreachable from outside
+  the file. All three are **kept deliberately**: they are
+  the hand-checkable `Zygote` reference for the quantities `LNNLoss` reaches through
+  `SymbolicNeuralNetworks.Jacobian`, which is the route it has to take because a nested
+  `Zygote.gradient` inside a loss breaks the parameter gradient. A comment above `∇L` now says so,
+  so that the next reader does not read three uncalled functions as an oversight.
 
 - **The pendulum scripts train through `DataLoader` + `Batch` + `Optimizer` now, and they run.**
   `scripts/reproduction/hnn_pendulum.jl` is where *B6* was diagnosed, and this file recorded that it
@@ -484,9 +501,12 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   through the functor, and it was checked to fail, with exactly that message, when the annotation
   is put back.
 
-- **Twenty-three of the 25 entry points run to completion, where seven did.** `scripts/` has 25 entry
-  points — two under `verification/` and 23 under `reproduction/` — and the survey above found
-  seven of them completing, five still computing at the ceiling and 13 failing. Each
+- **All 25 entry points run to completion, where seven did.** The survey above ran over the 25
+  files that were there then, and found seven completing, five still computing at the ceiling and
+  13 failing. One of those 25 is deleted below, leaving 24, and
+  `verification/symplectic_euler_loss_modified_hamiltonian.jl` arrives with the HNN tutorial entry
+  above — 25 in total, three under `verification/` and 22 under `reproduction/` — and every one of
+  them now runs. Each
   failure was found by the new CI gate rather than by reading, and each cause was measured. The
   classes that recur across several files:
 
@@ -843,8 +863,9 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   export list today — `CPUDevice`, `Device`, `LinearSymplecticLayerP`, `LinearSymplecticLayerQ`,
   `ResidualLayer`, `aresame`, `convert_to_dev`, `description`, `symbol` and `timestep` — and each
   carries a short reason in the allowlist, so the ten stay visible instead of being rediscovered.
-  This is the assertion *C10* under *Open Issues* names as the fix; the model is
-  `GeometricOptimizers`' `test/exports.jl`.
+  This is the assertion *C10* asked for; the model is `GeometricOptimizers`' `test/exports.jl`.
+  C10 itself is closed by this release — see *Removed (breaking)* above, where the allowlist ends up
+  empty — so it is no longer under *Open Issues*.
 
   The ten are not one case. `ResidualLayer`'s definition exists, at `legacy/layers/resnet.jl`, which
   nothing under `src/` includes — the loaded layer of that shape is `ResNetLayer`. `description` and
@@ -955,6 +976,168 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   rather than from a sibling checkout's `docs/build`, which is only as current as the last local
   docs build — here, one release behind. The old one-liner also called `save` unqualified, and
   `DocInventories` does not export it.
+
+- **The HNN tutorial's phase space section exists.** `docs/src/tutorials/hamiltonian_neural_network.md`
+  ended at the bare heading *Training a HNN Based on Phase Space Data*, so the page named a second
+  method of training a Hamiltonian neural network and then stopped. `SymplecticEulerLoss` is
+  implemented in `src/loss/symplectic_euler_loss.jl`, documented in
+  `docs/src/architectures/hamiltonian_neural_network.md` and tested in
+  `test/losses/training_method_losses.jl`; only the tutorial's promise of it was empty.
+
+  The section trains the *same* Hamiltonian as the first one, so the two differ only in the format of
+  the data: the first takes the vector field ``\mathbb{J}z`` on a grid, the second takes pairs of
+  points that grid is carried to by the exact flow ``\exp(\Delta{}t\mathbb{J})``. It also names the
+  variant the two-argument constructor gives, which the architecture page leaves to the docstring:
+  that page's formula is written for `:B` and the constructor defaults to `:A`.
+
+  The section says what it is training towards. The data comes from the exact flow and the loss holds
+  the network to one symplectic Euler step, so the minimiser is not the Hamiltonian of the system,
+  ``H(q, p) = (q^2 + p^2)/2``, but the Hamiltonian whose symplectic Euler step reproduces that flow;
+  the two differ at order ``\Delta{}t``. Without
+  that note a trained loss below the true Hamiltonian's own residual reads as a fit better than exact.
+  `scripts/verification/symplectic_euler_loss_modified_hamiltonian.jl` establishes the rule: the true
+  Hamiltonian leaves a residual of 0.05 at ``\Delta{}t = 0.1`` for both variants, and that residual
+  halves when the timestep does.
+
+  It is written as `@example` blocks rather than a fenced `julia` block, which is rendered and never
+  run. The four added blocks cost about **half** of what the four already on the page cost. That is
+  not a comparison of the two losses: the added blocks run second, so they do not pay the compilation
+  the first four have already paid. Timed like for like instead, one fresh process per loss at 441
+  samples, 100 epochs and batch size of 10, the two cost the same within a few percent.
+
+  Two smaller things on the same page. `QPT`, `norm` and `gradient` were imported in the first block
+  and used nowhere, so they are gone — that is the block the seed below is added to. And the link to
+  the architecture page's loss formula now says that the formula states the `:B` evaluation points and
+  that the warning beside it holds, rather than sending the reader to a formula the target page
+  disowns.
+
+  The added loss falls from 1.36 to 0.016, and the first section's from 1.15 to 0.027, so both plots
+  show something. Both losses are relative residuals, which is why both start near 1.
+
+- **The HNN tutorial seeds its randomness.** `import Random` and `Random.seed!(1234)`, at the top of
+  the page's first `@example` block, in the form `docs/src/tutorials/sympnet_tutorial.md` already
+  uses. The network initialisation was a fresh draw on every build, so both loss plots changed from
+  one build of the manual to the next and no figure on the page could be quoted. Two independent cold
+  processes now reproduce both curves to every printed digit.
+
+  This changes the vector-field plot of the first section as well as the new one, which is why it is
+  a point of its own rather than part of the entry above.
+
+- **The `Documentation` job is green again.** It had been red since 2026-08-26, for three
+  independent causes. `docs/make.jl` passes no `warnonly`, so it defaults to `Symbol[]` and each of
+  them is fatal: the build ends `encountered errors [:cross_references, :example_block]`.
+
+  **62 `invalid local image` errors, and not one of them was a wrong path.** All 62 name a
+  `tikz/*.png`. Every one of those files is a build product — `.gitignore` carries a bare `*.png`,
+  and `git ls-files docs/src/tikz` returns 68 tracked files of which zero are PNGs — and every name
+  has a tracked `.tex` source and a line in `docs/src/tikz/Makefile`. The workflow simply stopped
+  building them: `4281732c` ("Unify the shared GitHub workflows", 2026-08-31) replaced this
+  repository's `Documenter.yml` with the canonical body and removed the TeX-toolchain install and
+  the `make all -C docs/src/tikz` step with it. `.github/workflows/Documenter.yml` has both again.
+
+  **The make step runs after the documentation environment, not before it**, and that ordering is
+  load-bearing rather than incidental. `grassmann_sampling_light.tex` and `grassmann_sampling_dark.tex`
+  call `julia --project="../.." rosenbrock_plot.jl` through xelatex's shell-escape to draw a Makie
+  surface, and `../..` from `docs/src/tikz` is `docs/`. Run before that environment exists, both
+  fail with `CairoMakie ... does not seem to be installed`, the figure they `\includegraphics` is
+  missing, and the `png` target then dies on the absent PDF — `make` exits 2 and the job fails one
+  step earlier than it used to. The workflow says so at the step, because the obvious tidy-up is to
+  move it up beside the apt install.
+
+  Keeping this file out of the installer's way needs a change outside the repository:
+  `GeometricMachineLearning` is now in `DOCS_EXCEPTIONS` in `Knowledge/AI/githooks/install-workflows.sh`
+  and in `DOCS_ADDITIONS` in `verify-workflows.jl`, beside `GeometricOptimizers` and `SimpleSolvers`,
+  which have the same figure pipeline. Without that the next `--apply` deletes these steps again.
+  The file's header comment now says all of this, in place of the canonical one it inherited, which
+  claimed the file was a verbatim copy and named two other repositories as the only exceptions.
+  `verify-workflows.jl` ignores comments and checks the behavioural lines instead, which is what
+  makes a rewritten header the right place to record the difference.
+
+  **An `@example` in `docs/src/tutorials/optimizer_comparison.md` called `Optimizer` on a bare
+  `NamedTuple`.** `Optimizer` takes a `NeuralNetwork` or a `NetworkParameters`, so the weights are
+  wrapped in the latter. The block also ends with `fig` now, so the page shows its surface rather
+  than the `repr` of an `Optimizer`.
+
+  **Two `@ref`s were missing their backticks**, `[solve!](@ref)` in
+  `docs/src/tutorials/symplectic_autoencoder.md` and
+  `[GeometricMachineLearning.ResNetLayer](@ref)` in `docs/src/architectures/transformer.md`.
+  Unbackticked, Documenter looks for a *section* of that title, finds none, and fails
+  `cross_references`. Both names are documented and their backticked forms elsewhere on the same
+  pages resolve.
+
+- **`docs/check_references.jl` runs in the job again, and no longer misses the case above.** The
+  workflow step that invoked it went with the unification too, leaving the script tracked and called
+  by nothing. It is the cheap half of this job — `@docs` and code `@ref` resolution need only the
+  loaded package, so it fails in seconds where the build takes the better part of an hour.
+
+  It reported `0 unresolved` while the build was dying on two of them, because `ref_targets`
+  matches ``[`x`](@ref)`` and nothing else. It now also reads unbackticked `[text](@ref)`, and
+  flags one only when `text` matches no markdown heading **and** does resolve as a documented
+  binding. That pair of conditions is what keeps it quiet about `[Some Section](@ref)`, which is the
+  legitimate way to link a section by title. Checked by reverting both fixes: it exits 1 and names
+  `architectures/transformer.md:15` and `tutorials/symplectic_autoencoder.md:114`.
+
+  **It is a fail-fast pass, not a replacement for the build.** The second condition is what bounds
+  it: a `[text](@ref)` that names no heading *and* no documented binding — a mistyped or renamed
+  section title — is the other way Documenter reports `Cannot resolve @ref`, and this script stays
+  quiet about it. Flagging that case would mean re-implementing Documenter's anchor map, including
+  the duplicate-heading ambiguity a set of titles cannot see. `@example` blocks are likewise only
+  checked by the build itself.
+
+  **It now reads the pages `make.jl` builds, rather than everything under `docs/src`.** Two files
+  there are in no `pages =` entry — `data_loader/TODO.md` and `tutorials/softmax_comparison.md` —
+  so Documenter never sees them. Their headings could excuse a section `@ref` the build rejects,
+  and their own references were checked against a manual that does not contain them. The page list
+  is read off `make.jl`'s syntax tree, because `_html_pages` and `_latex_pages` are assembled from
+  nested variables and a copy here would drift; 50 of the 52 files are named, all of them exist,
+  and an empty extraction is an error rather than a silent pass.
+
+  **Fence detection allows leading whitespace, and the unbackticked scan uses it too.** A fence
+  indented inside a list or an admonition was read as ordinary text. Where both sides were indented
+  that leaked the block's contents into the scan — which is why a `[Not A Ref](@ref)` shown in a
+  code block would have been flagged — and where only one side was, the toggle stayed inverted and
+  every remaining line of the file was dropped. Both failures were reproduced against the old code
+  on probe pages before the fix. No page in the manual triggers either today.
+
+- **The logo is vector, and the documentation it deploys is about 3 MB smaller.** The `logo` target
+  of `docs/src/tikz/Makefile` rendered three PNGs at 500 dpi and copied them into `docs/src/assets/`:
+  4880×1892 pixels, `1594077`, `1599170` and `1587689` bytes, for a sidebar image about 240 px wide.
+
+  `logo.svg` and `logo-dark.svg` replace the first two. Documenter searches
+  `assets/logo.{svg,png,webp,gif,jpg,jpeg}` in that order, so the SVG is found first, and GitHub
+  Pages serves it gzipped: `222480` bytes on disk and `30986` over the wire, against `1594077` for
+  the PNG, which is already compressed and does not shrink further. The two together go from about
+  3.19 MB to about 62 kB, and are sharp at any size instead of at one.
+
+  The LaTeX manual gets `logo_without_jl.pdf` — `15225` bytes — because xelatex includes PDF
+  natively and cannot include SVG. `docs/src/assets/preamble.tex` names it, and
+  `assets/logo_tum.pdf` was already reaching that build the same way.
+
+  `.gitignore` names the three generated files exactly rather than sweeping `*.svg` and `*.pdf`,
+  because the tracked `logo_tum.pdf` sits beside them. It also covers `/docs/src/tikz/*.pdf` now:
+  `make` writes one PDF per `.tex` and removes them in its `clean` target, and there are 65 `.tex`
+  sources, so an interrupted run left 65 untracked files behind. The Makefile's `empty` target now
+  also removes the three logo outputs it writes into `docs/src/assets/`; it swept only `*.png`
+  there, which was every logo it wrote before this change and none of them after.
+
+- **`docs/make.jl` loses `const buildpath`**, which had no reader.
+
+- **The six plain ```` ```julia ```` fences in the tutorials say why they are not run.** Four are on
+  the symplectic-autoencoder page and two on the volume-preserving-transformer page, and Documenter
+  renders every one of them without executing it. Each is followed by a block that loads the
+  *committed* result of that run from an `.h5` file, so the figures come from the trained networks
+  rather than from a token re-training — but nothing on the page said so, and a reader had no way to
+  tell a displayed-and-skipped block from an executed one. One callout per page now does, in the
+  pages' own `Main.remark` idiom, and it names where each path *is* covered instead: the test suite,
+  and the reproduction scripts CI runs at smoke size.
+
+  **The `ReducedLoss` block is deliberately not converted to an `@example`**, which closes *C1*. It
+  trains at `integrator_train_epochs = 65536`, so an `@example` would need a token epoch count; the
+  very next block loads the committed weights, so the network trained during the build would be
+  discarded on the next line; and the path is already gated by
+  `test/losses/reduced_loss_optimization.jl`, which trains `ReducedLoss` through the `Optimizer`
+  functor on the CPU. Converting it would add training to a job that already takes the better part
+  of an hour and would establish only what a test establishes in seconds.
 
 ### Infrastructure
 
@@ -1219,13 +1402,28 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
     full, and 300 s for a smoke run, which takes seconds and where five minutes already means
     something is wrong.
   - **A whole-mode budget of 3600 s stops the run and names what it did not reach.** The ceiling
-    alone does not keep its own promise: 23 reproduction scripts each entitled to it outlast any
+    alone does not keep its own promise: 22 reproduction scripts each entitled to it outlast any
     runner, and the job then dies at `timeout-minutes` with no verdict at all, which is the
     outcome the ceiling exists to prevent.
 
+- **The sympnet upscaling chain is meant to be *approximately* symplectic end to end, and
+  `sympnet_upscaling_symplecticity.jl` now says so.** This closes *C12*. The measured behaviour is
+  the designed behaviour: exact end-to-end symplecticity is not the intent. The header states how
+  the approximation moves with `N`, which is in one direction only — over the 20 random chains the
+  worst `Float64` round trip falls from 0.84 at `N = 2, N2 = 4` to 0.072 at `N = 20, N2 = 40`,
+  while the best rises from 0.0018 to 0.026. The deviation concentrates; it does not vanish. So the
+  script's header states the intent, and states which of the two things it
+  prints is the exact one. It asserts neither: the three layerwise identities come out at
+  `5.6e-16`–`1.4e-15` in `Float64` and `2.4e-7`–`7.6e-7` in `Float32`, and the round-trip deviation
+  is reported beside them. What the gate checks is that the script runs to completion, which is all
+  a script with no assertions can offer. Nothing about the measurement changed; what changed is that
+  a reader no longer meets it as an open question.
+
 - **`scripts/` is three directories with stated purposes.** `verification/` holds the checks that
-  establish a mathematical claim — `sympnet_upscaling_symplecticity.jl`, which measures *C12*, and
-  `network_parameters_gradient_projection.jl`. `reproduction/` holds the runs that produced the
+  establish a mathematical claim — `sympnet_upscaling_symplecticity.jl`, which measures the
+  upscaling chain's symplecticity, `network_parameters_gradient_projection.jl`, and
+  `symplectic_euler_loss_modified_hamiltonian.jl`.
+  `reproduction/` holds the runs that produced the
   committed weights and the manual's figures. `utilities/` holds what the other two include, plus
   `convert_jld2_to_h5.jl`.
 
@@ -1251,9 +1449,13 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   about the result — which is the honest limit of what a runner can check for a job that belongs on
   a GPU.
 
-  Two entry points carry no size constant, and neither costs anything to run.
+  Two reproduction scripts carry no size constant of their own.
   `symplectic_autoencoders/analytic_solution.jl` defines functions and computes nothing at top
-  level, and `sympnets/sympnet_pendulum_cuda.jl` is in `SKIPPED` below and never runs here.
+  level, so it costs nothing to run. `symplectic_autoencoders/plot_waves.jl` plots the snapshot
+  matrix that `symplectic_autoencoders/integration.jl` writes, and includes that script when the
+  file is absent, so the size it runs at is the one `integration.jl` states. The three scripts
+  under `verification/` state no size either, by design: the gate runs them in full, because a
+  check that establishes a mathematical claim has nothing to establish at a smoke size.
 
   Two of the sizes bound an *integration* rather than a training, and both were added late, after
   review found the two scripts still running at their full size on every pull request.
@@ -1270,21 +1472,64 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `isfile` guard is exactly what makes that silent instead of loud. CI never sees this — a fresh
   checkout has no such file — so it is a hazard for whoever reproduces a result locally.
 
-  Four scripts take their *backend* from the same switch: `volume_preserving_feedforward/rigid_body.jl`,
-  `volume_preserving_transformer/rigid_body.jl` and the two `symplectic_autoencoders/online_*.jl`
-  read `smoke_size(CUDABackend(), CPU())`, so a full run still trains on the GPU it was written for
-  and a smoke run exercises the same code on the CPU.
+  Five scripts take their *backend* from the same switch: `volume_preserving_feedforward/rigid_body.jl`,
+  `volume_preserving_transformer/rigid_body.jl`, the two `symplectic_autoencoders/online_*.jl` and
+  `linear_symplectic_transformer_gpu.jl` read `smoke_size(CUDABackend(), CPU())`, so a full run
+  still trains on the GPU it was written for and a smoke run exercises the same code on the CPU.
 
-  **Two of the 25 entry points are named in `SKIPPED`, each with the reason it is not run.** That
-  list is closed in both directions, as the two test guards' allowlists are: an entry naming a file
-  that is no longer an entry point fails the driver. An entry is a backlog item, not a design — it
-  says these files do *not* work, not that they are fine.
+  **`SKIPPED` is empty: all 25 entry points run.** The list is closed in both directions, as the
+  two test guards' allowlists are — an entry naming a file that is no longer an entry point fails
+  the driver. It stays empty by intent. An entry there is a backlog item, not a design, and the
+  only honest reason for one is hardware the runner does not have; a script skipped because it is
+  broken is a script nobody is fixing.
 
-  - `linear_symplectic_transformer_gpu.jl` pipes its training data through `cu` and then writes
-    `CUDABackend()` into three constructor calls; `sympnets/sympnet_pendulum_cuda.jl` hands `lines!`
-    the matrices `pendulum_data` returns and stops there, and past that calls `CUDA.device()` and
-    `CUDA.zeros` directly, which is what distinguishes it from `sympnet_pendulum.jl`. No CI runner
-    has a GPU.
+- **The two scripts the gate did not cover are now one repaired and one deleted, and `SKIPPED` is
+  empty.**
+
+  `linear_symplectic_transformer_gpu.jl` **is repaired, not deleted**, because the coverage was not
+  there: it is the only script that builds a `LinearSymplecticTransformer`, and the
+  `transformer_integrator/symplectic_transformer.jl` it was compared against builds a
+  `SymplecticTransformer` — a different architecture — and no `GSympNet`. It takes
+  `backend = smoke_size(CUDABackend(), CPU())` like its four siblings now, with `T = Float32`
+  named once, the `cu` on the input made conditional, and smoke sizes on `n_init_con` and
+  `batch_size` as well: 1000 `ImplicitMidpoint` trajectories was the cost here, not the training.
+
+  `sympnets/sympnet_pendulum_cuda.jl` **is deleted.** Repairing the `lines!` call it stopped at
+  would have left a file that still cannot run on a GPU, because it is broken in four further
+  independent places past that point: `Lux.setup(CUDA.device(), rng, model)`, where `setup` takes
+  `(rng, model)`; `optimization_step!(opt, model, ps, dp)`, whose second argument is a
+  `GlobalSection` now; `q_learned[0] = q[0]` on a 1-based array, which cannot ever have run; and a
+  `@cuda threads=length(q)` kernel writing `z[i], z[i+1]` into a 2-element `CUDA.zeros(2)`. Its CPU
+  sibling `sympnet_pendulum.jl` is a full port of the same script and runs. What it demonstrated
+  that the sibling does not — `CUDA.device()` and a hand-written kernel — it demonstrated in code
+  that never executed.
+
+  `scripts/README.md`'s *What the gate does not cover* now answers "nothing", and says why an entry
+  in that list is a backlog item rather than a design.
+
+- **Two defects the gate found in passing are fixed.**
+
+  `volume_preserving_feedforward/abc_flow.jl`'s `make_validation_plot(t_validation, nn)` never used
+  `nn` — the body read the global `nn₁`, and it was harmless only because both call sites passed
+  `nn₁`. It uses the argument now. Three unused imports go with it, in the two files this change
+  already touches: `norm` and `gradient` in `abc_flow.jl`, and `default_parameters` in
+  `linear_symplectic_transformer_gpu.jl`, where it shared its line with `hodeensemble`. None of the
+  three appeared anywhere in its file but on that import line.
+
+  **`test/data_loader/batch_data_loader_qp_test.jl` asserted nothing** — no `@test` at all, so its
+  testset reported `Total 0`. It reports `Pass 10, Total 10` now, from seven `@test` expressions,
+  three of which run once per data shape. Four state the shape bookkeeping that is the file's
+  subject and that nothing else in `test/data_loader/` covers: a `(q, p)` pair of *matrices* is one
+  trajectory, so the second axis is time and `n_params` is 1, where a *bare* matrix of the same
+  shape has its second axis read as the parameter index. Six state that both the matrix and the
+  tensor shape reach the training loop — the loss array has the requested length and is finite, and
+  the parameters moved.
+
+  The assertion this file does *not* make is that the loss fell. `loss_array[end] <
+  loss_array[begin]` was measured and it fails at the file's own seed and sizes,
+  `0.7160869905795496 → 0.716345187420339` on the tensor path: ten plain gradient steps on random
+  data do not reliably descend. An assertion that fails for a reason unconnected to the data loader
+  is the same defect as an assertion that cannot fail.
 
 - **`.gitignore` covers the `.jld2` weights and `.pdf` figures the scripts write.** The `.h5` and
   `.png` patterns were added when nothing ran these scripts; the CI job runs all of them on every
@@ -2489,40 +2734,12 @@ they resolved to is in the release notes above.
   Counting the include sites whose argument is a string literal: 28 under `legacy/`, of which 15
   do not resolve and 13 do. Seven of the 15 were already broken before this release.
 
-- **C12. The sympnet upscaling chain is symplectic layer by layer, not end to end, and whether it
-  is meant to be is undecided.** `PSDLayer(N, N2) → GradientLayerQ(N2) → GradientLayerP(N2) →
-  PSDLayer(N2, N)`: each layer satisfies its own exact symplectic identity (`E'𝕁_{N2}E = 𝕁_N`,
-  `G'𝕁_{N2}G = 𝕁_{N2}`, `D𝕁_{N2}D' = 𝕁_N`), but the composition does not, for an algebraic
-  reason rather than a numerical one — the round trip needs the shear pair to preserve the
-  rank-`N` embedded Poisson tensor `E𝕁_N E'`, while the pair actually preserves the full-rank
-  `𝕁_{N2}`, and a rank-`N` matrix cannot equal a rank-`N2` one for `N2 > N`. Measured directly:
-  worst relative round-trip deviation over 20 random chains, `Float64`, weights tied, is `0.0018
-  .. 0.84` at `(N, N2) = (2, 4)`, `0.016 .. 0.087` at `(4, 16)` and `0.026 .. 0.072` at `(20,
-  40)` — shrinking with `N` but never zero — while the three layerwise identities hold to
-  `5.6e-16`–`1.4e-15` at the same sizes. `cond(E) = 1.0` rules out ill-conditioning, and the
-  round-trip deviation stays the same order of magnitude in `Float32` as in `Float64` — unlike the
-  layerwise identities, which drop with it — which rules out rounding as the cause.
-
-  The check is archived as `scripts/sympnet_upscaling_symplecticity.jl`
-  ([#276](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/276)); running it reproduces
-  the figures above. What it does not answer is whether exact end-to-end symplecticity was ever the
-  intended property of this architecture, as opposed to an approximation that improves with `N` —
-  that is a design question for the user, not something this check can settle.
-
-- **C13. Four dead names remain in `src/architectures/lagrangian_neural_network.jl`.** `∇L:30`,
-  `∇∇L:35`, `∇q̇∇q̇L:39` and the constant `DEFAULT_LNN_NRUNS:2` have no caller. They were dead
-  before this release, which is why it removes only `∇q∇q̇L`, the one its own deletion orphaned.
-
-  `∇L` last had a caller in `7f1b3dd0` (2023-06-22). `∇q̇∇q̇L` appeared only in the commented-out
-  remainder of `src/training_method/lnn_exact_method.jl:10`, and `∇∇L` survives as its callee alone.
-  `DEFAULT_LNN_NRUNS` was the default `ntraining` of an architecture-local `train!` method added in
-  `aa1e0471` and removed in `a27140af`, when the shared harness took that job over. The constant
-  stayed behind and has had no caller since 2023-06-08.
-
-  All three functions take their derivatives with `Zygote`, which is the route `LNNLoss` cannot
-  use: a nested `Zygote.gradient` inside a loss breaks the parameter gradient. So this is not a
-  second route to one answer that a caller might want. Deleting them is the expected decision; it
-  belongs to a change that owns this file.
+  (**C12** and **C13** are closed by this release and their entries are gone. C12 resolved to a
+  design answer rather than a repair — approximate end-to-end symplecticity is the intent, and the
+  verification script now states it. C13 resolved against the expectation its own entry recorded:
+  `DEFAULT_LNN_NRUNS` is removed, and `∇L`, `∇∇L` and `∇q̇∇q̇L` are kept as the `Zygote` reference
+  for what `LNNLoss` computes symbolically. Both are under *Changed*. The numbers are left vacant
+  rather than reused.)
 
 ### D. Unverified
 

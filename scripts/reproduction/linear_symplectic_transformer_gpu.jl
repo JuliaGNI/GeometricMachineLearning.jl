@@ -1,6 +1,6 @@
 using CUDA
 using GeometricMachineLearning
-using GeometricProblems.CoupledHarmonicOscillator: hodeensemble, default_parameters
+using GeometricProblems.CoupledHarmonicOscillator: hodeensemble
 using GeometricIntegrators: ImplicitMidpoint, integrate
 using LaTeXStrings
 using CairoMakie
@@ -11,16 +11,21 @@ using LinearAlgebra: norm
 include("../utilities/smoke.jl")
 
 const timestep = 0.3
-const n_init_con = 1000
+const n_init_con = smoke_size(1000, 5)
+
+# The GPU is what this was run on; the smoke run drops to the CPU so that CI can execute it.
+const backend = smoke_size(CUDABackend(), CPU())
+const T = Float32
 
 # ensemble problem
 ep = hodeensemble([rand(2) for _ in 1:n_init_con], [rand(2) for _ in 1:n_init_con]; timestep = timestep)
 
 dl_nt = DataLoader(integrate(ep, ImplicitMidpoint()))
-dl = DataLoader(vcat(dl_nt.input.q, dl_nt.input.p) |> cu)
+const input = T.(vcat(dl_nt.input.q, dl_nt.input.p))
+dl = DataLoader(backend == CPU() ? input : input |> cu)
 
 const seq_length = 4
-const batch_size = 16384
+const batch_size = smoke_size(16384, 16)
 const n_epochs = smoke_size(2000, 2)
 
 arch_standard = StandardTransformerIntegrator(dl.input_dim; n_heads = 2)
@@ -28,9 +33,9 @@ arch_symplectic = LinearSymplecticTransformer(
     dl.input_dim, seq_length; n_sympnet = 2, L = 1, upscaling_dimension = 5 * dl.input_dim)
 arch_sympnet = GSympNet(dl.input_dim; n_layers = 4, upscaling_dimension = 5 * dl.input_dim)
 
-nn_standard = NeuralNetwork(arch_standard, CUDABackend())
-nn_symplectic = NeuralNetwork(arch_symplectic, CUDABackend())
-nn_sympnet = NeuralNetwork(arch_sympnet, CUDABackend())
+nn_standard = NeuralNetwork(arch_standard, backend, T)
+nn_symplectic = NeuralNetwork(arch_symplectic, backend, T)
+nn_sympnet = NeuralNetwork(arch_sympnet, backend, T)
 
 o_method = AdamOptimizer()
 
@@ -53,7 +58,7 @@ lines!(ax_train, loss_array_sympnet; color = Makie.wong_colors()[3], label = "Sy
 axislegend(ax_train)
 
 function _convert_to_cpu(dl, nn_standard, nn_symplectic, nn_sympnet)
-    DataLoader(dl.input |> Array{Float32}),
+    DataLoader(dl.input |> Array{T}),
     GeometricMachineLearning.map_to_cpu(nn_standard),
     GeometricMachineLearning.map_to_cpu(nn_symplectic),
     GeometricMachineLearning.map_to_cpu(nn_sympnet)

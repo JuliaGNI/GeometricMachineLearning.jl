@@ -167,6 +167,15 @@ Note that we set the keyword `skew_sym` to `false` here. This is different from 
 
 [^1]: A detailed discussion of the consequences of setting this keyword is presented [as a separate example](@ref "Comparing Different `VolumePreservingAttention` Mechanisms").
 
+```@eval
+Main.remark(raw"The two plain `julia` fences on this page are shown and **not run** when the
+" * Main.indentation * raw"documentation is built: the first selects a GPU backend, and the second is the training,
+" * Main.indentation * raw"which took hours on one. The block after each is what the build actually executes -- the CPU
+" * Main.indentation * raw"backend, and the committed network parameters loaded from the `.h5` files beside this page.
+" * Main.indentation * raw"`scripts/reproduction/volume_preserving_transformer/rigid_body.jl` reproduces the training at
+" * Main.indentation * raw"full size, and CI runs it at a smoke size on every pull request.")
+```
+
 ```julia
 using CUDA
 backend = CUDABackend()
