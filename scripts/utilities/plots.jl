@@ -54,25 +54,21 @@ function plot_hnn(H, H̃, total_loss; xmin = -1.2, xmax = +1.2, ymin = -1.2,
     return fig
 end
 
-function plot_network_sim(H, H̃, ∇H, ∇H̃, total_loss; xmin = -1.2, xmax = +1.2,
+"""
+    plot_network_sim(H, H̃, sol_ref, sol_hnn, total_loss; kwargs...)
+
+Four panels comparing a learned Hamiltonian against the true one: its contours, the two phase-space
+trajectories, the training loss, and the energy drift along each trajectory.
+
+`sol_ref` and `sol_hnn` are the solutions of the true and the learned Hamiltonian vector field over
+the same time span. The caller integrates them, so this function needs no solver: the integration
+belongs to the script that chose the method and the step size, and keeping it here is what left the
+previous version calling a `GeometricIntegrators` interface that no longer exists.
+"""
+function plot_network_sim(H, H̃, sol_ref, sol_hnn, total_loss; xmin = -1.2, xmax = +1.2,
         ymin = -1.2, ymax = +1.2, nsamples = 100, filename = nothing)
     # get offset of learned Hamiltonian
     H̃₀ = H̃([0, 0])
-
-    # time step and initial conditions
-    Δt = 0.1
-    nt = 100
-    x₀ = [0.0, 1.0]
-
-    # Hamiltonian vector fields
-    v(t, x, v) = v .= ∇H(x)
-    ṽ(t, x, v) = v .= ∇H̃(x)
-
-    # compute reference trajectory
-    sol_ref = integrate(ODE(v, x₀), TableauGLRK(2), Δt, nt)
-
-    # compute learned trajectory
-    sol_hnn = integrate(ODE(ṽ, x₀), TableauGLRK(2), Δt, nt)
 
     X = range(xmin, stop = xmax, length = nsamples)
     Y = range(ymin, stop = ymax, length = nsamples)
@@ -84,10 +80,11 @@ function plot_network_sim(H, H̃, ∇H, ∇H̃, total_loss; xmin = -1.2, xmax = 
         title = L"$H(q,p)$", xlabel = L"$q$", ylabel = L"$p$")
     contour!(ax_cnt, X, Y, [H̃([x, y]) - H̃₀ for x in X, y in Y]; color = :black)
 
-    # solutions
+    # solutions. A `DataSeries` is indexed from 0 and `sol.q[:, k]` is the series of component `k`,
+    # so both axes are collected into plain vectors before they reach Makie.
     ax_sim = Axis(fig[1, 2]; xlabel = L"$q$", ylabel = L"$p$")
-    lines!(ax_sim, sol_ref.q[1, :], sol_ref.q[2, :]; label = "Reference")
-    lines!(ax_sim, sol_hnn.q[1, :], sol_hnn.q[2, :]; label = "HNN")
+    lines!(ax_sim, collect(sol_ref.q[:, 1]), collect(sol_ref.q[:, 2]); label = "Reference")
+    lines!(ax_sim, collect(sol_hnn.q[:, 1]), collect(sol_hnn.q[:, 2]); label = "HNN")
     axislegend(ax_sim)
 
     # total loss
@@ -95,12 +92,16 @@ function plot_network_sim(H, H̃, ∇H, ∇H̃, total_loss; xmin = -1.2, xmax = 
         yscale = log10)
     lines!(ax_loss, total_loss)
 
-    # Hamiltonians
-    H₀ = H([sol_ref.q[1, 0], sol_ref.q[2, 0]])
-    H̃₀ = H̃([sol_hnn.q[1, 0], sol_hnn.q[2, 0]])
+    # Energy drift along each trajectory, each against its own initial value. The learned
+    # Hamiltonian is only determined up to a constant, so its drift is what is comparable, not its
+    # value.
+    # `parent` is not decoration: a comprehension over a `DataSeries` keeps its 0-based axes, where
+    # `collect(sol.t)` returns a 1-based vector, and Makie broadcasts the two against each other.
+    drift(f, sol) = parent([f(q) for q in sol.q]) .- f(sol.q[begin])
     ax_err = Axis(fig[2, 2]; xlabel = L"$t$", ylabel = L"$\Delta H(q(t))$")
-    lines!(ax_err, sol_ref.t, H.(sol_ref.q) .- H₀)
-    lines!(ax_err, sol_hnn.t, H̃.(sol_hnn.q) .- H̃₀)
+    lines!(ax_err, collect(sol_ref.t), drift(H, sol_ref); label = "Reference")
+    lines!(ax_err, collect(sol_hnn.t), drift(H̃, sol_hnn); label = "HNN")
+    axislegend(ax_err)
 
     # the two contour panels occupy the top 70% of the figure
     rowsize!(fig.layout, 1, Relative(0.7))
