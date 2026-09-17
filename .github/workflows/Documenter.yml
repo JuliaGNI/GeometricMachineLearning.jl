@@ -44,6 +44,10 @@ jobs:
             GKSwstype: "100"
         steps:
             - uses: actions/checkout@v7
+            - name: Install the TeX toolchain the TikZ figures need
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y texlive-xetex texlive-science poppler-utils
             - uses: julia-actions/setup-julia@v3
               with:
                   version: "1"
@@ -54,7 +58,26 @@ jobs:
                     using Pkg
                     Pkg.develop(PackageSpec(path = pwd()))
                     Pkg.instantiate()'
+            # The manual's figures are built from the tracked TikZ sources under docs/src/tikz/.
+            # They are deliberately not committed — .gitignore carries a bare *.png — so they have
+            # to exist before Documenter checks links, or every reference to one is an
+            # `invalid local image` error and the build is fatal. The site logo comes from the same
+            # make target.
+            #
+            # This step runs AFTER the documentation environment, not before it: the two
+            # grassmann_sampling figures call `julia --project="../.."` through xelatex's
+            # shell-escape to draw a Makie surface, and `../..` from docs/src/tikz is docs/. Run
+            # before the environment exists, they fail with `CairoMakie ... does not seem to be
+            # installed` and the make target dies on the missing PDF.
+            - name: Make TikZ images
+              run: make all -C docs/src/tikz
             - uses: julia-actions/julia-buildpkg@v1
+            # The cheap half of this job. `@docs` and code `@ref` resolution need only the loaded
+            # package, so this fails in seconds where the build below takes the better part of an
+            # hour. It is a fail-fast pass, not a replacement: `@example` blocks and section-title
+            # `@ref`s are still only checked by Documenter itself.
+            - name: Check docstring references
+              run: julia --project=docs docs/check_references.jl
             - uses: julia-actions/julia-docdeploy@v1
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

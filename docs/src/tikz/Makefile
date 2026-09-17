@@ -35,10 +35,7 @@ png:
 	pdftocairo	-png -r $(res2) -transp -singlefile	 sympnet_architecture_dark.pdf					sympnet_architecture_dark
 	pdftocairo 	-png -r $(res3) -transp -singlefile  structs_visualization_light.pdf				structs_visualization_light
 	pdftocairo 	-png -r $(res3) -transp -singlefile  structs_visualization_dark.pdf					structs_visualization_dark
-	pdftocairo  -png -r 500     -transp -singlefile  logo_with_name_light.pdf                       logo_with_name_light
-	pdftocairo  -png -r 500     -transp -singlefile  logo_with_name_dark.pdf                        logo_with_name_dark
-	pdftocairo  -png -r 500     -transp -singlefile  logo_with_name_without_jl.pdf                  logo_with_name_without_jl
-	pdftocairo 	-png -r $(res1) -transp -singlefile	 logo.pdf										logo 
+	pdftocairo 	-png -r $(res1) -transp -singlefile	 logo.pdf										logo
 	pdftocairo  -png -r $(res1) -transp -singlefile  symplectic_autoencoder_light.pdf				symplectic_autoencoder_light
 	pdftocairo  -png -r $(res1) -transp -singlefile  symplectic_autoencoder_dark.pdf				symplectic_autoencoder_dark
 	pdftocairo  -png -r $(res1) -transp -singlefile  symplectic_autoencoder_architecture_light.pdf	symplectic_autoencoder_architecture_light
@@ -88,10 +85,17 @@ png:
 	pdftocairo  -png -r $(res1) -transp -singlefile  lpH_equivalence_light.pdf						lpH_equivalence_light
 	pdftocairo  -png -r $(res1) -transp -singlefile  lpH_equivalence_dark.pdf						lpH_equivalence_dark
 
+# The logo is vector, not raster. Rendered at 500 dpi it was a 4880x1892 PNG of 1.6 MB, deployed
+# three times over to gh-pages for a sidebar image about 240 px wide. Documenter takes an SVG --
+# it is first in the list it searches -- and gh-pages serves it gzipped, so the same logo costs
+# about 31 kB on the wire and is sharp at any size.
+#
+# The LaTeX manual gets the PDF instead: xelatex includes PDF natively and cannot include SVG.
+# That copy has to happen before `clean`, which removes every *.pdf here.
 logo:
-	cp logo_with_name_light.png 		../assets/logo.png
-	cp logo_with_name_dark.png 			../assets/logo-dark.png
-	cp logo_with_name_without_jl.png 	../assets/logo_without_jl.png
+	pdftocairo -svg logo_with_name_light.pdf 	../assets/logo.svg
+	pdftocairo -svg logo_with_name_dark.pdf 	../assets/logo-dark.svg
+	cp logo_with_name_without_jl.pdf 			../assets/logo_without_jl.pdf
 
 clean:
 	rm -f *.aux
