@@ -194,12 +194,13 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 ### Changed
 
 - **The pendulum scripts train through `DataLoader` + `Batch` + `Optimizer` now, and they run.**
-  `scripts/hnn_pendulum.jl` is where *B6* was diagnosed, and this file recorded that it "still does
-  not run to completion, and what stops it is this". It now runs to completion on `HNNLoss`: the
-  training loss falls from `1.0017` to `0.0041` over 2000 epochs and the script writes its plot.
+  `scripts/reproduction/hnn_pendulum.jl` is where *B6* was diagnosed, and this file recorded that it
+  "still does not run to completion, and what stops it is this". It now runs to completion on
+  `HNNLoss`: the training loss falls from `1.0017` to `0.0041` over 2000 epochs and the script
+  writes its plot.
 
-  `scripts/Script_using_fully_GML/lnn_script.jl` is rebuilt on `LNNLoss`. It had never run under any
-  API generation — it referenced `TrainingIntegrator` and `DataTrajectory`, neither of which exists,
+  `scripts/reproduction/lnn_pendulum.jl` is rebuilt on `LNNLoss`. It had never run under any API
+  generation — it referenced `TrainingIntegrator` and `DataTrajectory`, neither of which exists,
   and included `../data_problem.jl`, a path that does not exist either. It now trains a Lagrangian
   neural network on the pendulum, `3.248` down to `0.175` over 200 epochs.
 
@@ -208,12 +209,12 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   the gradient of the learned Hamiltonian. At `1e-3` the loss moved from `1.190` to `1.188` over 3%
   of a run whose own estimate was 48 minutes.
 
-  `get_data_set` in `scripts/pendulum.jl` returns `(input, output)` matrices for
+  `get_data_set` in `scripts/utilities/pendulum.jl` returns `(input, output)` matrices for
   `DataLoader(input, output)` instead of a `TrainingData`. `pendulum_data`, which `README.md:29`
   depends on, is unchanged.
 
-- **`get_LNN_data` in `scripts/Script_using_fully_GML/data_problem.jl` was missing a transpose.** It
-  computes the Euler–Lagrange acceleration as `inv(∇q̇∇q̇L) * (∇qL - ∇q∇q̇L * q̇)`, but `∇q∇q̇L` is
+- **`get_LNN_data` in `scripts/utilities/data_problem.jl` was missing a transpose.** It computes the
+  Euler–Lagrange acceleration as `inv(∇q̇∇q̇L) * (∇qL - ∇q∇q̇L * q̇)`, but `∇q∇q̇L` is
   indexed `[i, j] = ∂²L/∂qᵢ∂q̇ⱼ` and the chain rule contracts the *first* index, so the term is
   `∇q∇q̇L' * q̇`. The two agree exactly for the pendulum, whose position and velocity do not couple,
   and that is the only Lagrangian in `dict_problem_L` — so nothing this function ever produced was
@@ -415,14 +416,15 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `TimeDependentHarmonicOscillator_Analytic.jl:6`. A grep for either name over the surviving
   `scripts/` tree now returns only the `[deps]` lines themselves.
 
-- **`scripts/ensemblesolution/harmonic_oscillator.jl` trains through `DataLoader` + `Batch` +
+- **`scripts/reproduction/harmonic_oscillator.jl` trains through `DataLoader` + `Batch` +
   `Optimizer` instead of `TrainingData` + `TrainingSet` + `train!`.** The old path no longer ran: it
   failed inside `src/data/data_training.jl:57`, `UndefVarError: timestep not defined in
   GeometricMachineLearning`, before ever reaching the neural network. `BasicSympNetMethod` needed no
   modern successor — `GSympNet` already trains through the generic `Optimizer` functor, as
-  `scripts/sympnets/sympnet_toda_lattice.jl` already does — so this is the same substitution, not a
-  new one. The script now builds `DataLoader(ensemble_solution)` directly (a method for exactly this
-  `EnsembleSolution` shape already exists at `src/data_loader/data_loader.jl:367`).
+  `scripts/reproduction/sympnets/sympnet_toda_lattice.jl` already does — so this is the same
+  substitution, not a new one. The script now builds `DataLoader(ensemble_solution)` directly (a
+  method for exactly this `EnsembleSolution` shape already exists at
+  `src/data_loader/data_loader.jl:367`).
 
   **`plots.jl`'s seven plotting functions are retyped onto `DataLoader` and `NeuralNetwork`, and
   `plot_result` is called again.** Each keeps its original purpose — the two-form `plot_*!`/`plot_*`
@@ -446,16 +448,140 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   takes a `DataLoader`. `plot_loss!`/`plot_loss` follow the file's two-form convention and draw the
   `loss_array` the `Optimizer` functor returns on a logarithmic axis; the script saves it as
   `GSympNet_4-10_on_Harmonic_Oscillator_loss.png`, which is what
-  `scripts/sympnets/sympnet_toda_lattice.jl` already does with its own loss array. Before this,
-  `loss_array` was bound and never read. `plot_prediction!` and `plot_prediction` drop their `dl`
-  argument because neither body ever touched it — every initial condition reaches them through
-  `initial_cond`.
+  `scripts/reproduction/sympnets/sympnet_toda_lattice.jl` already does with its own loss array.
+  Before this, `loss_array` was bound and never read. `plot_prediction!` and `plot_prediction` drop
+  their `dl` argument because neither body ever touched it — every initial condition reaches them
+  through `initial_cond`.
 
-  `scripts/ensemblesolution/harmonic_oscillator.jl` also drops `using GeometricSolutions` and
+  `scripts/reproduction/harmonic_oscillator.jl` also drops `using GeometricSolutions` and
   `using GeometricEquations`. No name from either package appears in the file: `hodeensemble` and
   `exact_solution` both come from `GeometricProblems.HarmonicOscillator`.
 
 ### Fixed
+
+- **`ReducedLoss` is trainable through the `Optimizer` functor.** Its functor annotated the
+  parameter argument `params::NetworkParameters`, and it was the only loss in
+  `src/loss/losses.jl` that annotated it at all. `Zygote.pullback` evaluates the forward pass with
+  the parameters **unwrapped** — the closure body receives the underlying `NamedTuple`, not the
+  `NetworkParameters` handed to `pullback` — so the annotated method did not match there and the
+  call fell through to the untyped `NetworkLoss` fallback in `AbstractNeuralNetworks`. That
+  fallback's body is an `error`, so what a caller saw was `Functor not defined for NetworkLoss of
+  type ReducedLoss{…}` rather than a `MethodError` naming the argument types.
+
+  Measured, with one closure and one argument: called plainly it receives a `NetworkParameters`,
+  and through `Zygote.pullback` it receives a `NamedTuple`. The failure is therefore in the
+  forward pass, which is also what the original stack trace shows — Zygote differentiating the
+  `error` call, having already selected the fallback going forwards. The reverse pass is not
+  implicated: the tangent comes back as a `NetworkParameters`, correctly wrapped.
+
+  This is the path the symplectic autoencoder tutorial documents, so it was wrong for every user
+  who followed it, not only for the two scripts here. Nothing had caught it because nothing ran
+  it: the only `ReducedLoss` use under `test/` was a docstring example that calls the loss
+  directly, which dispatches either way, and the tutorial's training sits in a plain ```julia
+  fence that Documenter renders and never executes.
+
+  `test/losses/reduced_loss_optimization.jl` closes that hole — it trains a reduced integrator
+  through the functor, and it was checked to fail, with exactly that message, when the annotation
+  is put back.
+
+- **Twenty-three of the 25 entry points run to completion, where seven did.** `scripts/` has 25 entry
+  points — two under `verification/` and 23 under `reproduction/` — and the survey above found
+  seven of them completing, five still computing at the ceiling and 13 failing. Each
+  failure was found by the new CI gate rather than by reading, and each cause was measured. The
+  classes that recur across several files:
+
+  - **`save` and `load` are not exported names any more.** Seven scripts called a bare `save` and
+    one a bare `load`; they mean `CairoMakie.save` for a figure and `JLD2.save`/`JLD2.load` for
+    weights.
+  - **Eight scripts write into an output directory they do not create** — `comparison_plots/`,
+    `phase_space_samples/`, `plots/`, `abc_flow/`, `rigid_body/` and
+    `symplectic_autoencoder_validation/`. Each now calls `mkpath` first. This is the class that
+    cannot be found locally: once any earlier run has made the directory, every later run passes,
+    and only a fresh checkout fails. Four of them surfaced as gate failures; the other four were
+    found by reading the save sites of the scripts those four sat beside.
+  - **Two scripts built a `Float64` network against a `Float32` `DataLoader`.** The networks now
+    name their element type.
+
+  The rest, one by one:
+
+  - `scripts/utilities/convert_jld2_to_h5.jl` **corrupted `docs/Project.toml`.** It activated the
+    documentation environment and called `Pkg.develop(path = "..")` on it, which writes a
+    machine-local absolute path into that file's `[sources]` table — where a relative `{path =
+    ".."}` already stood. It runs in the scripts environment now, which has the three packages it
+    needs, and activates nothing.
+  - `scripts/verification/network_parameters_gradient_projection.jl` could not load:
+    `ChainRulesCore` and `NeuralNetworkParameters` were not in `scripts/Project.toml`. Both are now.
+  - `scripts/reproduction/symplectic_autoencoders/training.jl` called
+    `AdamOptimizer(η, β₁, β₂, δ)`. `Adam` dropped the `η` field it never applied to the direction,
+    and made the other three keywords precisely so that the old positional call fails instead of
+    silently reading `η` as `β₁`. The learning rate is the `Optimizer`'s `step_size` now.
+  - `scripts/reproduction/symplectic_autoencoders/plot_waves.jl` wrote into a `plots/` directory
+    that does not exist, and read a snapshot matrix it never said anything about producing. It
+    creates the directory, and runs `integration.jl` itself when the matrix is absent.
+  - `scripts/reproduction/symplectic_transformer/double_pendulum_phase_space_plot.jl` and
+    `double_pendulum_short_integration.jl` imported `timespan` and `timestep` from
+    `GeometricProblems.DoublePendulum`, which declares neither: they are `DEFAULT_TIMESPAN` and
+    `DEFAULT_TIMESTEP`. The sibling `double_pendulum.jl` was repaired earlier in this release; these
+    two carried the same defect and were not in that sub-task's list.
+  - `double_pendulum_short_integration.jl` also had `const` on a local, which is a lowering error
+    that stops the whole file, and a `dl` that the same function assigned after using the outer one
+    — so the repaired file would have failed on an undefined local. The inner one is `dl_short`.
+  - `scripts/reproduction/sympnets/sympnet_pendulum.jl` indexed its data from zero. `pendulum_data`
+    returns `1 × n_time_steps` matrices and once returned `OffsetArray`s; the script now flattens
+    them with `vec` and counts from one, and its loss draws the predicted index from `2:ntime`
+    rather than `1:ntime`, since it reads the point before.
+  - `scripts/reproduction/volume_preserving_feedforward/abc_flow.jl` loaded `Metal`, which is not a
+    dependency and does not install on the Linux runner, and then built `Batch(batch_size, 1)` — a
+    `Batch{:Transformer}` of sequence length one — for a `NeuralNetworkIntegrator`, whose loss
+    defaults only for a `Batch{:FeedForward}`. It runs on the CPU, with the Apple-GPU setup it was
+    written for recorded in a comment beside the backend constant. **It reproduces its figure in
+    `Float64` on the CPU now, where the committed one was made in `Float32` on the GPU.**
+  - `scripts/reproduction/sympnets/sympnet_pendulum.jl` was three API generations behind.
+    `Gradient(n, upscaling, activation; change_q)` split into `GradientLayerQ` and
+    `GradientLayerP`; `Lux.Chain` rejects those with "Encountered a non-AbstractLuxLayer in Chain",
+    because they are `AbstractNeuralNetworks` layers, so the container is the `Chain` this package
+    exports and the network applies to `(input, parameters)` with no state to thread; and
+    `optimization_step!` takes `GlobalSection(ps)` where the script passed the model. `using Lux`
+    goes with them — nothing in the file needed Lux once the container changed, and while both were
+    loaded a bare `Chain` was ambiguous and resolved to nothing.
+  - **`scripts/reproduction/symplectic_autoencoders/training.jl` is rewritten onto the current
+    API, and its reduction-error study runs again.** It was the furthest behind of any script here,
+    and every layer only became visible once the one above it was repaired: `AdamOptimizer`'s
+    signature, `PSDLayer`'s `retraction` keyword (the retraction is the `Optimizer`'s now),
+    `GradientQ`/`GradientP`, `initialparameters`' signature, the bare `loss` that is
+    `AutoEncoderLoss`, its output directory, and then the two structural ones below.
+
+    Its **training** was a hand-rolled loop over `redraw_batch!(dl)` that counted its own iterations
+    from `dl.batch_size`. A `DataLoader` carries neither: the batch is a `Batch` and the loop is the
+    `Optimizer` functor. That loop also wrapped both the pullback and the optimization step in
+    `try … catch; continue`, so a run in which *every* step failed was indistinguishable from one
+    that worked — which is why the script could be this far out of date without anyone noticing.
+
+    Its **reduced systems** were built from closures over hand-sliced parameters. `ReducedSystem`,
+    `Symplectic`, `perform_integration_full`, `perform_integration_reduced` and
+    `reduced_vector_field_from_full_explicit_vector_field` are all gone, and the replacement
+    `HRedSys` takes a `NeuralNetwork{<:SymplecticEncoder}` and a
+    `NeuralNetwork{<:SymplecticDecoder}`. So the reductions are neural networks now: `PSDArch` with
+    `solve!` for the proper orthogonal decomposition the script computed by hand with `svd`, and
+    `SymplecticAutoencoder` for the encoder/decoder chain it spelled out layer by layer.
+    `integrate_full_system`, `integrate_reduced_system`, `reduction_error` and `projection_error`
+    replace the four retired entry points.
+
+    One thing changes shape. The full solution came from a `ReducedSystem` built with `nothing` for
+    both encoder and decoder; `HRedSys` will not take that, so the first reduced system of each `μ`
+    sweep supplies it. It is the same quantity — the full system does not depend on the reduction —
+    computed once per `μ` as before.
+
+    **It is not deleted in favour of `online_sympnet.jl`, because that script does not cover it**:
+    a different problem (the parametrised wave equation against the Toda lattice), a sweep over
+    fourteen reduced dimensions and four parameter values against one of each, and the PSD-versus-
+    autoencoder projection and reduction error that is this script's whole product, which
+    `online_sympnet.jl` has commented out. The run produces its four `plots/v3mu*.png` again.
+  - Both `scripts/reproduction/symplectic_autoencoders/online_*.jl` get their element types, their
+    backend switch, their `JLD2.save`/`CairoMakie.save` qualifications and, for
+    `online_transformer_for_sae.jl`, an explicit statement of the weights dependency it has on
+    `online_sympnet.jl`. Both then ran once the `ReducedLoss` annotation above was removed; neither
+    is skipped.
 
 - **The reproduction scripts call `default_parameters()` rather than passing the name.**
   `GeometricProblems` defines `default_parameters(::Type{T} = Float64) where {T}` in each problem
@@ -463,25 +589,26 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   Fourteen sites across seven files in `scripts/` now call it. The sites under `docs/src/tutorials/`
   were already correct.
 
-- **The Hamiltonian passed to `plot_result` in `scripts/ensemblesolution/harmonic_oscillator.jl`
-  takes its arguments in the right order.** `HarmonicOscillator.hamiltonian` is
+- **The Hamiltonian passed to `plot_result` in `scripts/reproduction/harmonic_oscillator.jl` takes
+  its arguments in the right order.** `HarmonicOscillator.hamiltonian` is
   `(t, q, p, params)`, but `H` passed the momentum slice as `t`, `0.0` as `q` and the whole state
   vector as `p`, so every call was a `MethodError` and no contour was ever drawn. `H` now evaluates
   to `p² / 2m + k q² / 2`, which is what `plots.jl` expects to contour over the phase space grid.
 
 - **Three reproduction scripts run again; two more get one blocker removed but still fail.**
   `GeometricProblems.DoublePendulum` no longer defines `timespan` or `timestep` — the values are
-  `DEFAULT_TIMESPAN` and `DEFAULT_TIMESTEP` — so `scripts/volume_preserving_feedforward/double_pendulum.jl`
-  and `scripts/symplectic_transformer/double_pendulum.jl` import `DEFAULT_TIMESPAN` instead. The
-  first of the two also dropped an unused `hamiltonian` from that import. Both `CairoMakie` and
-  `GeometricMachineLearning` export `save`, which makes the bare name ambiguous, so
-  `scripts/sympnets/sympnet_toda_lattice.jl` and `scripts/symplectic_transformer/double_pendulum.jl`
-  write `CairoMakie.save`. The second wrote into a `comparison_plots/` directory that nothing
-  creates, and now calls `mkpath` first. Those three now run to completion, or past two minutes of
-  training without error.
+  `DEFAULT_TIMESPAN` and `DEFAULT_TIMESTEP` — so
+  `scripts/reproduction/volume_preserving_feedforward/double_pendulum.jl` and
+  `scripts/reproduction/symplectic_transformer/double_pendulum.jl` import `DEFAULT_TIMESPAN`
+  instead. The first of the two also dropped an unused `hamiltonian` from that import. Both
+  `CairoMakie` and `GeometricMachineLearning` export `save`, which makes the bare name ambiguous, so
+  `scripts/reproduction/sympnets/sympnet_toda_lattice.jl` and
+  `scripts/reproduction/symplectic_transformer/double_pendulum.jl` write `CairoMakie.save`. The
+  second wrote into a `comparison_plots/` directory that nothing creates, and now calls `mkpath`
+  first. Those three now run to completion, or past two minutes of training without error.
 
-  The two `scripts/sympnets/sympnet_pendulum*.jl` included a `pendulum.jl` beside them, where the
-  file is `scripts/pendulum.jl`, one directory up. Correcting the path only moves their failure:
+  The two `scripts/reproduction/sympnets/sympnet_pendulum*.jl` included a `pendulum.jl` beside them,
+  where the file is `scripts/utilities/pendulum.jl`. Correcting the path only moves their failure:
   both now abort on their first `lines!` call, because `pendulum_data` returns 1×N matrices and
   Makie wants vectors. Further back they still name `Gradient`, which this package no longer
   exports, and `Chain`, which is ambiguous with `Lux`'s. They are stale against an API several
@@ -490,13 +617,14 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 - **The double pendulum validation problem got the wrong keyword, and its training the wrong batch.**
   `GeometricProblems.DoublePendulum.hodeproblem` takes `parameters`, and
-  `scripts/volume_preserving_feedforward/double_pendulum.jl` passed `params`, so the corrected
-  `default_parameters()` above never reached it. The same script built its feedforward batch with
-  `Batch(batch_size, 1)`, which is a `Batch{:Transformer}`; an `Optimizer` call on a
+  `scripts/reproduction/volume_preserving_feedforward/double_pendulum.jl` passed `params`, so the
+  corrected `default_parameters()` above never reached it. The same script built its feedforward
+  batch with `Batch(batch_size, 1)`, which is a `Batch{:Transformer}`; an `Optimizer` call on a
   `VolumePreservingFeedForward` network has no method for that, and the training threw a
-  `MethodError`. It is `Batch(batch_size)` now. `scripts/volume_preserving_feedforward/rigid_body.jl`
-  built the same wrong batch for the same kind of network, and is corrected with it. That script
-  needs a CUDA driver to reach the call, which is why the fault survived this long.
+  `MethodError`. It is `Batch(batch_size)` now.
+  `scripts/reproduction/volume_preserving_feedforward/rigid_body.jl` built the same wrong batch for
+  the same kind of network, and is corrected with it. That script needs a CUDA driver to reach the
+  call, which is why the fault survived this long.
 
 - **The tensor Cayley kernels are checked for orthonormality in `Float32`.**
   `test_tensor_cayley2` through `test_tensor_cayley5` each took a `T::Type` argument and then
@@ -579,10 +707,10 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `test/runtests.jl` is repeated now.
 
 - **`git status` no longer reports the data file that a script generates.**
-  `scripts/symplectic_autoencoders/integration.jl` writes a snapshot matrix of about 7.9 MiB. It
-  still writes it, on every run — the script is unchanged — but `.gitignore` did not cover it, so
-  the working tree came back dirty each time and the artefact sat one staging sweep away from
-  entering the history. It is ignored now; deleting it is still a manual step.
+  `scripts/reproduction/symplectic_autoencoders/integration.jl` writes a snapshot matrix of about
+  7.9 MiB at its full size, and still writes one on every run. `.gitignore` did not cover it, so the
+  working tree came back dirty each time and the artefact sat one staging sweep away from entering
+  the history. It is ignored now; deleting it is still a manual step.
 
   Where it lands depends on how the script is started: the file name reaches `h5open` as a bare
   relative string, so it is written to the process working directory rather than beside the script.
@@ -1009,6 +1137,118 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   lines. `ChainRulesTestUtils` and `GeometricIntegrators` move their `[compat]` bounds across with
   them, and `SafeTestsets`' bound goes too: all three were bounds on packages the package itself
   does not depend on.
+- **`scripts/` is gated by CI, for the first time.** `.github/workflows/Scripts.yml` runs
+  `scripts/runscripts.jl`, which runs every `.jl` file under `scripts/verification/` in full and
+  every one under `scripts/reproduction/` with `GML_SMOKE` set, each in its own process. Nothing
+  had ever run these files: the package's suite loads not one of them, and the figures in the
+  manual and the committed weights under `docs/src/tutorials/` were produced by these scripts and
+  by nothing else. They were repaired by hand from time to time — "Bring the scripts to the new
+  AdamOptimizerWithDecay", "`tspan` -> `timespan`" — and each repair regressed in silence.
+
+  **Run as a tree for the first time since the restructuring began, 34 files gave 14 that ran to
+  completion, 5 still computing at a 300 s ceiling, and 15 that failed.** Of the 15, six wanted a
+  GPU this machine does not have, one was an include-only helper that was never an entry point,
+  and eight were rot.
+
+  The gate then found eleven more failures the survey could not, because a survey with a timeout
+  cannot tell "still training" from "works". `transformer_integrator/symplectic_transformer.jl` and
+  `symplectic_transformer_vector_softmax.jl` both read as passes at 300 s — they were still
+  training. At the smoke size they run past the training and fail on `UndefVarError: save`. Four
+  more write into an output directory they never create, which is invisible on any machine where an
+  earlier run has made it and fails on every fresh checkout.
+
+  The job is not a required status check: its name does not begin with `Julia `, and the required
+  list is static across the tree.
+
+  Three properties of the driver are what make a red run mean something:
+
+  - **Discovery finding nothing fails.** A renamed or emptied `reproduction/` would otherwise give
+    a loop with nothing to fail on, and the driver would report success over a gate that had
+    stopped running anything.
+  - **The per-script ceiling is per mode** — 900 s for a `verification/` script, which runs in
+    full, and 300 s for a smoke run, which takes seconds and where five minutes already means
+    something is wrong.
+  - **A whole-mode budget of 3600 s stops the run and names what it did not reach.** The ceiling
+    alone does not keep its own promise: 23 reproduction scripts each entitled to it outlast any
+    runner, and the job then dies at `timeout-minutes` with no verdict at all, which is the
+    outcome the ceiling exists to prevent.
+
+- **`scripts/` is three directories with stated purposes.** `verification/` holds the checks that
+  establish a mathematical claim — `sympnet_upscaling_symplecticity.jl`, which measures *C12*, and
+  `network_parameters_gradient_projection.jl`. `reproduction/` holds the runs that produced the
+  committed weights and the manual's figures. `utilities/` holds what the other two include, plus
+  `convert_jld2_to_h5.jl`.
+
+  The split is what lets the gate have no list of what to run: every file under `verification/` and
+  `reproduction/` is an entry point, so a script added to either is gated from the moment it lands,
+  and a file that is included rather than run belongs in `utilities/`. `ensemblesolution/plots.jl`
+  is what made the rule concrete — run on its own it fails with `UndefVarError: DataLoader`,
+  because it was only ever meant to be included from a script that had already loaded the package.
+  It is `utilities/ensemble_plots.jl` now, renamed because `utilities/` is flat and `plots.jl` was
+  taken.
+
+  `scripts/Script_using_fully_GML/plots.jl` is deleted. It was three lines that included
+  `../plots.jl` so that the scripts in that directory could say `include("plots.jl")`; with the
+  directory gone, they include `../utilities/plots.jl` directly. `lnn_script.jl` is
+  `reproduction/lnn_pendulum.jl`, beside the `hnn_pendulum.jl` it mirrors.
+
+  `README.md`'s example includes `scripts/utilities/pendulum.jl` now.
+
+- **Every reproduction script states two sizes, and CI runs the small one.** `utilities/smoke.jl`
+  defines `smoke_size(full, smoke)`, which returns the second when `GML_SMOKE` is set in the
+  environment. A script writes `const n_epochs = smoke_size(2048, 2)` and reproduces its result
+  when run normally. A smoke run establishes that the script still executes end to end and nothing
+  about the result — which is the honest limit of what a runner can check for a job that belongs on
+  a GPU.
+
+  Two entry points carry no size constant, and neither costs anything to run.
+  `symplectic_autoencoders/analytic_solution.jl` defines functions and computes nothing at top
+  level, and `sympnets/sympnet_pendulum_cuda.jl` is in `SKIPPED` below and never runs here.
+
+  Two of the sizes bound an *integration* rather than a training, and both were added late, after
+  review found the two scripts still running at their full size on every pull request.
+  `symplectic_transformer/double_pendulum_phase_space_plot.jl` integrates an ensemble and saves one
+  figure per member — 500 at the full size, four in a smoke run — and
+  `symplectic_autoencoders/integration.jl` integrates a 128-site lattice at 20 parameter values,
+  where a smoke run does 16 sites at two.
+
+  Because that snapshot matrix now has two shapes, its *name* carries the mode:
+  `utilities/snapshot_matrix.jl` returns `snapshot_matrix.h5` or `snapshot_matrix_smoke.h5`, and
+  `training.jl` and `plot_waves.jl` ask their `isfile` guard for the one they need. The autoencoder
+  weights the two `online_*.jl` scripts cache are named the same way, for the same reason. Without
+  it a full run reads whatever an earlier run of the other mode left in the directory, and the
+  `isfile` guard is exactly what makes that silent instead of loud. CI never sees this — a fresh
+  checkout has no such file — so it is a hazard for whoever reproduces a result locally.
+
+  Four scripts take their *backend* from the same switch: `volume_preserving_feedforward/rigid_body.jl`,
+  `volume_preserving_transformer/rigid_body.jl` and the two `symplectic_autoencoders/online_*.jl`
+  read `smoke_size(CUDABackend(), CPU())`, so a full run still trains on the GPU it was written for
+  and a smoke run exercises the same code on the CPU.
+
+  **Two of the 25 entry points are named in `SKIPPED`, each with the reason it is not run.** That
+  list is closed in both directions, as the two test guards' allowlists are: an entry naming a file
+  that is no longer an entry point fails the driver. An entry is a backlog item, not a design — it
+  says these files do *not* work, not that they are fine.
+
+  - `linear_symplectic_transformer_gpu.jl` pipes its training data through `cu` and then writes
+    `CUDABackend()` into three constructor calls; `sympnets/sympnet_pendulum_cuda.jl` hands `lines!`
+    the matrices `pendulum_data` returns and stops there, and past that calls `CUDA.device()` and
+    `CUDA.zeros` directly, which is what distinguishes it from `sympnet_pendulum.jl`. No CI runner
+    has a GPU.
+
+- **`.gitignore` covers the `.jld2` weights and `.pdf` figures the scripts write.** The `.h5` and
+  `.png` patterns were added when nothing ran these scripts; the CI job runs all of them on every
+  pull request, and without the two new patterns each run left the tree dirty. Nothing tracked under
+  `scripts/` has either extension, and both patterns are scoped to `scripts/` so that neither can
+  reach the tracked `.pdf` files under `docs/src/assets/` and `legacy/`.
+
+- **Ten dependencies leave `scripts/Project.toml` and two join it.** `BenchmarkTools`, `Distances`,
+  `GeometricSolutions`, `KernelAbstractions`, `NLsolve`, `NNlib`, `SafeTestsets`,
+  `SymbolicNeuralNetworks`, `Symbolics` and `Test` are declared and used by no file under
+  `scripts/` — the earlier entries in this release record several of them as "left declared", and
+  this is the change that owns the file. `ChainRulesCore` and `NeuralNetworkParameters` join it
+  because `network_parameters_gradient_projection.jl` loads both and neither was declared, which is
+  why that script could not run in the scripts environment at all.
 
 - **C5 is removed from *Open Issues*: its premise no longer holds.**
   `.github/workflows/CI.yml` no longer pins an explicit `1.13` job — only `pre` and `nightly` are
@@ -2096,10 +2336,28 @@ they resolved to is in the release notes above.
 - **C9. Seven include sites under `legacy/` name files that do not exist.** Six `legacy/hnn/`
   scripts include `../../scripts/data.jl` and `hnn_simple.jl` includes `../../src/training.jl`;
   neither file exists anywhere in the repository, and neither did before the move to `legacy/`. Of
-  the 29 include targets under `legacy/`, the other 22 resolve. The spelling is now at least
+  the include targets under `legacy/`, the other 21 resolved when this was written — see the
+  paragraph below, which is where that number stands now. The spelling is now at least
   consistent with where the files sit, so what remains is a decision about `data.jl`: reconstruct it
-  (it generated the pendulum training data, which `scripts/pendulum.jl` now does) or delete the
-  scripts that need it.
+  (it generated the pendulum training data, which `scripts/utilities/pendulum.jl` now does) or
+  delete the scripts that need it.
+
+  **Eight more of those include sites went stale when `scripts/` was restructured**, across seven
+  files: each of the seven `legacy/hnn/*.jl` includes `../../scripts/plots.jl`, and `hnn_lux.jl`
+  includes `../../scripts/pendulum.jl` as well. `legacy/hnn/README.md` and
+  `legacy/hnn/Project.toml` name the first in prose too, so ten references in nine files. All of
+  those paths are under `scripts/utilities/` now.
+
+  They are left alone deliberately, and the reason covers six of the seven files rather than all
+  seven. Six already stop earlier, on the `data.jl` above, so repointing them fixes nothing that
+  runs. **`hnn_lux.jl` is the exception**: it includes no `data.jl`, both of its includes resolved
+  before this release, and neither does now — this is the one file where the restructuring is what
+  broke it. It is still left alone, because none of the seven is formatted to this repository's own
+  `style = "sciml"` and staging them would have meant reformatting around 340 lines of dead code
+  for a one-line change each. The path correction belongs with whatever settles `data.jl`.
+
+  Counting the include sites whose argument is a string literal: 28 under `legacy/`, of which 15
+  do not resolve and 13 do. Seven of the 15 were already broken before this release.
 
 - **C12. The sympnet upscaling chain is symplectic layer by layer, not end to end, and whether it
   is meant to be is undecided.** `PSDLayer(N, N2) → GradientLayerQ(N2) → GradientLayerP(N2) →

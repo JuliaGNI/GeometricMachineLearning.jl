@@ -1,0 +1,71 @@
+# The gate for `scripts/`, in its own workflow rather than as a second job in CI.yml.
+#
+# CI.yml is byte-identical in every repository under Packages/ and Experiments/ — that is what
+# keeps the required-status-check list static and stops branch protection going stale. A repository
+# that needs an extra job therefore gets an extra file, never a local edit to CI.yml. See
+# ~/Research/Knowledge/AI/githooks/install-workflows.sh.
+#
+# WHY THIS EXISTS.
+#
+# Nothing ran `scripts/` until this job did. The directory was repaired by hand several times —
+# "Bring the scripts to the new AdamOptimizerWithDecay", "`tspan` -> `timespan`" — and each repair
+# regressed in silence, because the package's own suite never loads a single file from it. The
+# figures in the manual and the committed network weights under `docs/src/tutorials/` were produced
+# by these scripts and by nothing else, so a script that stops running takes the only executable
+# record of a result with it.
+#
+# WHAT IT RUNS.
+#
+# `scripts/runscripts.jl` runs every `.jl` file under `verification/` and under `reproduction/`,
+# each in its own process. `verification/` runs in full: those scripts establish a mathematical
+# claim and are written to finish in seconds. `reproduction/` runs with GML_SMOKE set, which is
+# what `utilities/smoke.jl` reads to return the small size of every constant that costs time. A
+# smoke run proves that the script still executes end to end; it says nothing about the result,
+# which is the honest limit of what CI can check for a run that takes hours on a GPU.
+#
+# One entry, not a matrix: this job asks whether the scripts still run, and that question does not
+# have a different answer on a second operating system. The scripts environment is large — CairoMakie,
+# CUDA, Lux — and six copies of it buy nothing.
+#
+# Deliberately not a required status check: its name does not begin with `Julia `, and the required
+# list in ci-protection.sh is static across the tree.
+
+name: Scripts
+
+on:
+    push:
+        branches:
+            - main
+            - master
+        tags: ["*"]
+    pull_request:
+    workflow_dispatch:
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
+jobs:
+    scripts:
+        name: Scripts - ubuntu-latest
+        runs-on: ubuntu-latest
+        timeout-minutes: 90
+        permissions:
+            # julia-actions/cache proactively deletes the caches it created.
+            actions: write
+            contents: read
+        steps:
+            - uses: actions/checkout@v7
+            - uses: julia-actions/setup-julia@v3
+              with:
+                  version: "1"
+            - uses: julia-actions/cache@v3
+            - name: Instantiate the scripts environment
+              # `scripts/Project.toml` reaches the package through `[sources] = {path = ".."}`, so
+              # `Pkg.develop` is neither needed nor wanted here: it would write a machine-local
+              # absolute path into that table.
+              run: julia --startup-file=no --project=scripts -e 'using Pkg; Pkg.instantiate()'
+            - name: Verification scripts
+              run: julia --startup-file=no --project=scripts scripts/runscripts.jl verification
+            - name: Reproduction scripts, smoke sizes
+              run: julia --startup-file=no --project=scripts scripts/runscripts.jl reproduction
