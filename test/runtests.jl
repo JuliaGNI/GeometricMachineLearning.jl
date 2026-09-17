@@ -8,14 +8,18 @@ using SafeTestsets, Test, GeometricMachineLearning
 # `include`d at top level rather than wrapped in a testset of their own, because `@safetestset`
 # expands to a `module` and a module may not appear inside a testset body.
 #
-# The two guards stay here beside `runtests.jl` rather than in a directory of their own: they check
-# the tree rather than a subject in it, and `reachability.jl` reads `test/` off its own `@__DIR__`.
+# The tree-level checks stay here beside `runtests.jl` rather than in a directory of their own:
+# they check the tree rather than a subject in it, and `reachability.jl` reads `test/` off its own
+# `@__DIR__`.
 
 @safetestset "Reachability of every file under test/" begin
     include("reachability.jl")
 end
 @safetestset "Exported names are defined" begin
     include("exports.jl")
+end
+@safetestset "Aqua's package-level checks" begin
+    include("aqua.jl")
 end
 
 include("arrays/runtests.jl")
