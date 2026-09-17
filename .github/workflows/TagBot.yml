@@ -1,15 +1,43 @@
+# Canonical TagBot workflow. Copied verbatim into every package repository under Packages/ by
+# install-workflows.sh — edit this file and re-run the installer, never a copy in a repository.
+# Byte-identical everywhere it is installed; verify-workflows.jl asserts it.
+#
+# The `if:` guard is what keeps this from firing on ordinary issue comments: TagBot is driven by a
+# comment that the registry posts as JuliaTagBot, and by manual dispatch. That guard is a condition,
+# not a job name, so it does not appear in any required status check.
+
 name: TagBot
+
 on:
-  issue_comment:
-    types:
-      - created
-  workflow_dispatch:
+    issue_comment:
+        types:
+            - created
+    workflow_dispatch:
+        inputs:
+            lookback:
+                default: "3"
+
 jobs:
-  TagBot:
-    if: github.event_name == 'workflow_dispatch' || github.actor == 'JuliaTagBot'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: JuliaRegistries/TagBot@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          ssh: ${{ secrets.DOCUMENTER_KEY }}
+    TagBot:
+        name: TagBot
+        if: github.event_name == 'workflow_dispatch' || github.actor == 'JuliaTagBot'
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        permissions:
+            actions: read
+            checks: read
+            contents: write
+            deployments: read
+            issues: read
+            discussions: read
+            packages: read
+            pages: read
+            pull-requests: read
+            repository-projects: read
+            security-events: read
+            statuses: read
+        steps:
+            - uses: JuliaRegistries/TagBot@v1
+              with:
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  ssh: ${{ secrets.DOCUMENTER_KEY }}

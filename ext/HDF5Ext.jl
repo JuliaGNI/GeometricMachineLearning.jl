@@ -2,43 +2,10 @@ module HDF5Ext
 
 using HDF5
 using GeometricMachineLearning
-import AbstractNeuralNetworks: changebackend, NeuralNetworkBackend, Architecture
+import AbstractNeuralNetworks: NeuralNetworkBackend, Architecture
 # `save`, `load`, `params` and the parameter container are `NeuralNetworkParameters`' as of
 # `AbstractNeuralNetworks` 0.7, which only re-binds them; reach for them where they are defined.
 import NeuralNetworkParameters: NetworkParameters, params, save, load
-
-# ---------------------------------------------------------------------------
-# changebackend — new methods for GML special array types
-#
-# AbstractNeuralNetworks.changebackend handles AbstractArray and NamedTuple.
-# Moving a NeuralNetwork between devices fails for parameters that include
-# StiefelManifold, SymmetricMatrix, or SkewSymMatrix without these methods.
-#
-# `changebackend` is `AbstractNeuralNetworks`' and the types are `GeometricOptimizers`', so these
-# methods are piracy the same way the `h5save` ones were before `GeometricOptimizers` took over the
-# leaf protocol. They belong in a `GeometricOptimizers` extension on `AbstractNeuralNetworks`; that
-# is a separate change with its own release chain, so they stay here for now.
-# ---------------------------------------------------------------------------
-
-function changebackend(backend::NeuralNetworkBackend, Y::StiefelManifold)
-    StiefelManifold(changebackend(backend, Y.A))
-end
-
-function changebackend(backend::NeuralNetworkBackend, A::SymmetricMatrix)
-    SymmetricMatrix(changebackend(backend, A.S), A.n)
-end
-
-function changebackend(backend::NeuralNetworkBackend, A::SkewSymMatrix)
-    SkewSymMatrix(changebackend(backend, A.S), A.n)
-end
-
-function changebackend(backend::NeuralNetworkBackend, A::LowerTriangular)
-    LowerTriangular(changebackend(backend, A.S), A.n)
-end
-
-function changebackend(backend::NeuralNetworkBackend, A::UpperTriangular)
-    UpperTriangular(changebackend(backend, A.S), A.n)
-end
 
 # ---------------------------------------------------------------------------
 # save / load — the entry points that dispatch on this package's `NeuralNetwork`.
@@ -86,12 +53,12 @@ type each was stored under, which `GeometricOptimizers` registers with
 shape, to rebuild against it instead and skip the registry altogether.
 """
 function load(::Type{NeuralNetwork}, h5::HDF5.H5DataStore, arch::Architecture;
-              backend::NeuralNetworkBackend = CPU())
+        backend::NeuralNetworkBackend = CPU())
     NeuralNetwork(arch, Chain(arch), load(NetworkParameters, h5), backend)
 end
 
 function load(::Type{NeuralNetwork}, h5::HDF5.H5DataStore, arch::Architecture, prototype;
-              backend::NeuralNetworkBackend = CPU())
+        backend::NeuralNetworkBackend = CPU())
     NeuralNetwork(arch, Chain(arch), load(NetworkParameters, h5, prototype), backend)
 end
 
@@ -103,14 +70,15 @@ Convenience overload: open `filename` for reading, then call
 [`load`](@ref) on the store.
 """
 function load(::Type{NeuralNetwork}, filename::AbstractString, arch::Architecture;
-              backend::NeuralNetworkBackend = CPU())
+        backend::NeuralNetworkBackend = CPU())
     HDF5.h5open(filename, "r") do h5
         load(NeuralNetwork, h5, arch; backend = backend)
     end
 end
 
-function load(::Type{NeuralNetwork}, filename::AbstractString, arch::Architecture, prototype;
-              backend::NeuralNetworkBackend = CPU())
+function load(
+        ::Type{NeuralNetwork}, filename::AbstractString, arch::Architecture, prototype;
+        backend::NeuralNetworkBackend = CPU())
     HDF5.h5open(filename, "r") do h5
         load(NeuralNetwork, h5, arch, prototype; backend = backend)
     end

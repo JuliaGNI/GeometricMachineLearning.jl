@@ -15,7 +15,7 @@ For a *constant* gradient ``g`` the momentum ``p^{(t)} = \alpha{}p^{(t-1)} + g``
 growing one that never saturates, which is what this test rules out.
 """
 function momentum_matches_geometric_sum(; α = 0.9, η = 0.1, n_steps = 10)
-    ps = (A = zeros(2, 2),)
+    ps = NetworkParameters((A = zeros(2, 2),))
     o = Optimizer(MomentumMethod(α), ps; step_size = η)
     λY = GlobalSection(ps)
     previous = 0.0
@@ -36,7 +36,7 @@ function momentum_optimizer_stiefel(N, n; n_steps = 50, step_size = 1e-3, α = 0
     YB = rand(StiefelManifold, N, n)
     B = YB * YB'
     loss(ps) = norm(ps.Y * ps.Y' - B)^2
-    ps = (Y = rand(StiefelManifold, N, n),)
+    ps = NetworkParameters((Y = rand(StiefelManifold, N, n),))
     loss1 = loss(ps)
     o = Optimizer(MomentumMethod(α), ps; step_size = step_size)
     λY = GlobalSection(ps)

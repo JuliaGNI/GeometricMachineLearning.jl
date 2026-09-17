@@ -45,8 +45,8 @@ function PoissonTensor(backend::Backend, n2::Int, T::DataType)
     n = n2÷2
     J = KernelAbstractions.zeros(backend, T, 2*n, 2*n)
     assign_ones_for_poisson_tensor! = assign_ones_for_poisson_tensor_kernel!(backend)
-    assign_ones_for_poisson_tensor!(J, n, ndrange=n2)
-    
+    assign_ones_for_poisson_tensor!(J, n, ndrange = n2)
+
     PoissonTensor{T, typeof(J)}(J, n)
 end
 
@@ -58,7 +58,7 @@ PoissonTensor(backend::Backend, n2::Int) = PoissonTensor(backend, n2, Float32)
 
 PoissonTensor(backend::CPU, n2::Int) = PoissonTensor(backend, n2, Float64)
 
-@kernel function assign_ones_for_poisson_tensor_kernel!(J::AbstractMatrix{T}, n::Int) where T
+@kernel function assign_ones_for_poisson_tensor_kernel!(J::AbstractMatrix{T}, n::Int) where {T}
     i = @index(Global)
     J[map_index_for_poisson_tensor(i, n)...] = i ≤ n ? one(T) : -one(T)
 end
@@ -68,15 +68,23 @@ function _vcat(v::NamedTuple{(:q, :p), Tuple{AT, AT}}) where {AT <: AbstractArra
 end
 
 Base.:*(::PoissonTensor, v::QPT) = (q = v.p, p = -v.q)
-Base.:*(𝕁::PoissonTensor{T}, v::AbstractArray{T,3}) where T = _vcat(𝕁(assign_q_and_p(v, 𝕁.n)))
-Base.:*(𝕁::PoissonTensor{T}, v::AbstractVector{T}) where T = _vcat(𝕁(assign_q_and_p(v, 𝕁.n)))
-Base.:*(𝕁::PoissonTensor{T}, v::AbstractMatrix{T}) where T = _vcat(𝕁(assign_q_and_p(v, 𝕁.n)))
+function Base.:*(𝕁::PoissonTensor{T}, v::AbstractArray{T, 3}) where {T}
+    _vcat(𝕁(assign_q_and_p(v, 𝕁.n)))
+end
+function Base.:*(𝕁::PoissonTensor{T}, v::AbstractVector{T}) where {T}
+    _vcat(𝕁(assign_q_and_p(v, 𝕁.n)))
+end
+function Base.:*(𝕁::PoissonTensor{T}, v::AbstractMatrix{T}) where {T}
+    _vcat(𝕁(assign_q_and_p(v, 𝕁.n)))
+end
 
-function (𝕁::PoissonTensor{T})(v₁::NT, v₂::NT) where {T, AT <: AbstractVector{T}, NT <: NamedTuple{(:q, :p), Tuple{AT, AT}}}
+function (𝕁::PoissonTensor{T})(v₁::NT,
+        v₂::NT) where {
+        T, AT <: AbstractVector{T}, NT <: NamedTuple{(:q, :p), Tuple{AT, AT}}}
     v₁.q' * v₂.p - v₁.p' * v₂.q
 end
 
-function (𝕁::PoissonTensor{T})(v₁::AbstractVector{T}, v₂::AbstractVector{T}) where T 
+function (𝕁::PoissonTensor{T})(v₁::AbstractVector{T}, v₂::AbstractVector{T}) where {T}
     𝕁(assign_q_and_p(v₁, 𝕁.n), assign_q_and_p(v₂, 𝕁.n))
 end
 

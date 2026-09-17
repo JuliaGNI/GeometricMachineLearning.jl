@@ -1,0 +1,32 @@
+# Canonical Codecov configuration. Copied verbatim into the root of every repository under
+# Packages/ and Experiments/ by install-workflows.sh — edit this file and re-run the installer,
+# never a copy in a repository.
+#
+# WHY THIS FILE HAS TO EXIST AT ALL.
+#
+# Without it Codecov's defaults apply: `target: auto` with `threshold: 0%`, which fails a pull
+# request for *any* decrease. That is sharper than it reads, because Codecov counts a *modified*
+# line as part of the diff — changing a signature's annotation, or splitting one into a method per
+# shape, re-attributes lines that were already uncovered to whoever touched them. Measured cases in
+# this tree: GeometricOptimizers #74 reported 13 missing lines on a net movement of 2, and
+# SymbolicNeuralNetworks #61 reported a 0.24 % regression while its hit count went *up* by 22 lines,
+# because the denominator grew faster than the numerator.
+#
+# 1 % on both, so a real regression still fails and drift does not. `informational` is deliberately
+# NOT set: the check should still be able to fail, and on GeometricMachineLearning #255 it did — six
+# genuinely untested methods, which were tested rather than waved through.
+#
+# Coverage is instrumented and uploaded from a single matrix entry (see the COVERAGE expression in
+# CI.yml). Where a repository has a second job whose tests reach code the main suite does not, that
+# job uploads too and Codecov merges the reports — QuadratureRules/Symbolic.yml is the one case.
+
+coverage:
+    status:
+        project:
+            default:
+                target: auto
+                threshold: 1%
+        patch:
+            default:
+                target: auto
+                threshold: 1%

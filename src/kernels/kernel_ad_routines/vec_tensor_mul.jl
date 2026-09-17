@@ -1,4 +1,5 @@
-function ChainRulesCore.rrule(::typeof(vec_tensor_mul), a::AbstractVector{T}, x::AbstractArray{T, 3}) where T 
+function ChainRulesCore.rrule(::typeof(vec_tensor_mul), a::AbstractVector{T}, x::AbstractArray{
+        T, 3}) where {T}
     b = vec_tensor_mul(a, x)
     function vec_tensor_mul_pullback(b_diff)
         a_diff = @thunk tensor_scalar_product(x, unthunk(b_diff))
@@ -9,22 +10,26 @@ function ChainRulesCore.rrule(::typeof(vec_tensor_mul), a::AbstractVector{T}, x:
 end
 
 # This is computing the sum of scalar products for two tensors
-@kernel function tensor_scalar_product_kernel!(a_diff::AbstractVector{T}, x::AbstractArray{T, 3}, b_diff::AbstractArray{T, 3}, range_2, range_3) where T 
+@kernel function tensor_scalar_product_kernel!(
+        a_diff::AbstractVector{T}, x::AbstractArray{T, 3},
+        b_diff::AbstractArray{T, 3}, range_2, range_3) where {T}
     i = @index(Global)
     a_val = zero(T)
-    for j = 1:range_2 
-        for k = 1:range_3
-            a_val += x[i,j,k]*b_diff[i,j,k]
+    for j in 1:range_2
+        for k in 1:range_3
+            a_val += x[i, j, k]*b_diff[i, j, k]
         end
     end
     a_diff[i] = a_val
 end
 
-function tensor_scalar_product(x::AbstractArray{T, 3}, b_diff::AbstractArray{T, 3}) where T 
+function tensor_scalar_product(x::AbstractArray{T, 3}, b_diff::AbstractArray{
+        T, 3}) where {T}
     a_size = size(x, 1)
     backend = networkbackend(x)
     a_diff = KernelAbstractions.zeros(backend, T, a_size)
     tensor_scalar_product! = tensor_scalar_product_kernel!(backend)
-    tensor_scalar_product!(a_diff, x, b_diff, size(x, 2), size(x, 3), ndrange=size(a_diff))
+    tensor_scalar_product!(
+        a_diff, x, b_diff, size(x, 2), size(x, 3), ndrange = size(a_diff))
     a_diff
 end

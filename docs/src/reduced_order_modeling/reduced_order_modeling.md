@@ -76,7 +76,7 @@ function make_axis(i)
         ylabelcolor = text_color,
         backgroundcolor = :transparent)
     # plot 6 time steps
-    domain = lw.compute_domain(lw.Ñ + 2)
+    domain = lw.compute_domain(lw.Ñ + 2)
     for time_step in time_steps
         lines!(ax, domain, lw.u₀(domain .- μ * time_step, μ), color = colors[i])
     end

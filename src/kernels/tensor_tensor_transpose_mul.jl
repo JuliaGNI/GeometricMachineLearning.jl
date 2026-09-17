@@ -8,11 +8,11 @@ This implements the operation (A,B) -> A*B' for two tensors
 
     # creating a temporary sum variable for matrix multiplication
     tmp_sum = zero(eltype(C))
-    for l = 1:size(A)[2]
+    for l in 1:size(A)[2]
         tmp_sum += A[i, l, k] * B[j, l, k]
     end
 
-    C[i,j,k] = tmp_sum
+    C[i, j, k] = tmp_sum
 end
 
 # Creating a wrapper kernel for launching with error checks
@@ -22,10 +22,11 @@ function tensor_tensor_transpose_mul!(C, A, B)
 
     backend = networkbackend(A)
     kernel! = tensor_tensor_transpose_mul_kernel!(backend)
-    kernel!(C, A, B, ndrange=size(C)) 
+    kernel!(C, A, B, ndrange = size(C))
 end
 
-function tensor_tensor_transpose_mul(A::AbstractArray{T, 3}, B::AbstractArray{T, 3}) where T
+function tensor_tensor_transpose_mul(A::AbstractArray{T, 3}, B::AbstractArray{
+        T, 3}) where {T}
     backend = networkbackend(A)
     C = KernelAbstractions.zeros(backend, T, size(A)[1], size(B)[1], size(A)[3])
     tensor_tensor_transpose_mul!(C, A, B)

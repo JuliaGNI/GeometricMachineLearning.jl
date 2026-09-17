@@ -21,8 +21,9 @@ function SymbolicPullback(arch::HamiltonianArchitecture)
     gradient = SymbolicNeuralNetworks.symbolic_parameter_gradient(symbolic_loss, nn)
     # `reduce = +`: the loss of a batch is the sum of the losses of its samples, so its gradient is
     # the sum of the per-sample gradients.
-    gradient_function = SymbolicNeuralNetworks.build_nn_function(gradient, nn.params, nn.input,
-                                                                 soutput; reduce = +)
+    gradient_function = SymbolicNeuralNetworks.build_nn_function(
+        gradient, nn.params, nn.input,
+        soutput; reduce = +)
     SymbolicPullback(loss, SymbolicNeuralNetworks.ParameterGradient(gradient_function))
 end
 
@@ -99,13 +100,14 @@ function SymbolicPullback(nn::NeuralNetwork, loss::ParametricLoss,
 
     input_dim = input_dimension(nn.model)
     _, parameter_layout = _flatten_system_parameters(SymbolicNeuralNetworks.Symbolics.Num,
-                                                     symbolic_system_parameters)
+        symbolic_system_parameters)
     sinput = Symbolics.variables(:x, 1:(input_dim + length(system_params)))
     soutput = Symbolics.variables(:y, 1:output_dimension(nn.model))
     symbolic_system_input = unflatten(parameter_layout, sinput[(input_dim + 1):end])
 
-    symbolic_loss = loss(nn.model, symbolic_network_parameters, sinput[1:input_dim], soutput,
-                         symbolic_system_input)
+    symbolic_loss = loss(
+        nn.model, symbolic_network_parameters, sinput[1:input_dim], soutput,
+        symbolic_system_input)
     differentials = SymbolicNeuralNetworks.symbolic_differentials(symbolic_network_parameters)
     gradient = SymbolicNeuralNetworks.symbolic_derivative(symbolic_loss, differentials)
     gradient_function = SymbolicNeuralNetworks.build_nn_function(
@@ -122,16 +124,17 @@ end
 # network input before it is called; the loss, which knows about them, gets them separately.
 function (_pullback::SymbolicPullback)(ps, model,
         input_output_params::Tuple{<:AbstractMatrix, <:AbstractMatrix,
-                                   <:Union{NamedTuple, AbstractVector}})::Tuple
+            <:Union{NamedTuple, AbstractVector}})::Tuple
     input, output, system_params = input_output_params
     _pullback.loss(model, ps, input, output, system_params),
-        _pullback.fun(concatenate_array_with_parameters(input, system_params), output, ps)
+    _pullback.fun(concatenate_array_with_parameters(input, system_params), output, ps)
 end
 
 # A batch with a time axis: the network is applied sample-wise, so the time and parameter axes are
 # folded into one before the pullback sees them.
 function (_pullback::SymbolicPullback)(ps, model,
-        input_output_params::Tuple{AT, AT, <:Union{NamedTuple, AbstractVector}})::Tuple where {T, AT <: AbstractArray{T, 3}}
+        input_output_params::Tuple{AT, AT, <:Union{NamedTuple, AbstractVector}})::Tuple where {
+        T, AT <: AbstractArray{T, 3}}
     input, output, system_params = input_output_params
     _input = reshape(input, size(input, 1), size(input, 2) * size(input, 3))
     _output = reshape(output, size(output, 1), size(output, 2) * size(output, 3))

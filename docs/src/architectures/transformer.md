@@ -12,7 +12,7 @@ The transformer architecture is sketched below:
 
 It is nothing more than a combination of a [multihead attention layer](@ref "Multihead Attention") and a residual neural network[^1] (ResNet).
 
-[^1]: A layer of type [GeometricMachineLearning.ResNetLayer](@ref) is nothing more than a neural network to whose output we again add the input, i.e. every ResNet is of the form ``\mathrm{ResNet}(x) = x + \mathcal{NN}(x)``.
+[^1]: A layer of type [`GeometricMachineLearning.ResNetLayer`](@ref) is nothing more than a neural network to whose output we again add the input, i.e. every ResNet is of the form ``\mathrm{ResNet}(x) = x + \mathcal{NN}(x)``.
 
 As was explained when we talked about the [attention module](@ref "Reweighting of the Input Sequence"), the attention layer performs a convex reweighting of the input sequence:
 

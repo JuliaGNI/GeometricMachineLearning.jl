@@ -3,7 +3,7 @@ This implements the custom pullback for tensor_mat_mul
 """
 
 #the @thunk macro means that the computation is only performed in case it is needed
-function ChainRulesCore.rrule(::typeof(tensor_mat_mul), A::AbstractArray{T, 3}, B::AbstractMatrix{T}) where T
+function ChainRulesCore.rrule(::typeof(tensor_mat_mul), A::AbstractArray{T, 3}, B::AbstractMatrix{T}) where {T}
     @assert axes(A, 2) == axes(B, 1)
     C = tensor_mat_mul(A, B)
     function tensor_mat_mul_pullback(C_diff)
@@ -17,15 +17,16 @@ end
 
 ############### Symmetric (right mul)
 
-@kernel function symmetric_right_da_kernel!(dA::AT, S::AbstractVector{T}, dC::AT) where {T, AT <: AbstractArray{T, 3}}
+@kernel function symmetric_right_da_kernel!(
+        dA::AT, S::AbstractVector{T}, dC::AT) where {T, AT <: AbstractArray{T, 3}}
     l, m, h = @index(Global, NTuple)
-    
+
     temp = zero(T)
 
-    for j = 1:m
+    for j in 1:m
         temp += S[(m - 1) * m ÷ 2 + j] * dC[l, j, h]
     end
-    for j = (m+1):size(dA, 2)
+    for j in (m + 1):size(dA, 2)
         temp += S[(j - 1) * j ÷ 2 + m] * dC[l, j, h]
     end
 
@@ -34,10 +35,11 @@ end
     nothing
 end
 
-@kernel function symmetric_right_ds_kernel!(dS::AbstractMatrix{T}, B::AT, dC::AT) where {T, AT <: AbstractArray{T, 3}}
+@kernel function symmetric_right_ds_kernel!(
+        dS::AbstractMatrix{T}, B::AT, dC::AT) where {T, AT <: AbstractArray{T, 3}}
     l, h = @index(Global, NTuple)
     temp = zero(T)
-    
+
     for i in axes(dC, 1)
         for k in axes(dC, 2)
             sum_k = (k - 1) * k ÷ 2
@@ -49,12 +51,13 @@ end
         end
     end
 
-    dS[l, h] = temp 
+    dS[l, h] = temp
 
-    nothing 
+    nothing
 end
 
-function ChainRulesCore.rrule(::typeof(symmetric_mat_right_mul), A::AbstractArray{T, 3}, S::AbstractVector{T}, n::Int) where  T 
+function ChainRulesCore.rrule(::typeof(symmetric_mat_right_mul), A::AbstractArray{T, 3},
+        S::AbstractVector{T}, n::Int) where {T}
     C = symmetric_mat_right_mul(A, S, n)
     function symmetric_mat_mul_pullback(dC)
         dC = unthunk(dC)
@@ -71,18 +74,18 @@ function ChainRulesCore.rrule(::typeof(symmetric_mat_right_mul), A::AbstractArra
         NoTangent(), dA, reshape(sum(dS, dims = 2), length(S)), NoTangent()
     end
 
-    C, symmetric_mat_mul_pullback 
+    C, symmetric_mat_mul_pullback
 end
 
-function ChainRulesCore.rrule(::typeof(tensor_mat_mul), A::AbstractArray{T, 3}, B::SymmetricMatrix{T}) where T 
-    @assert size(A, 2) == B.n 
+function ChainRulesCore.rrule(::typeof(tensor_mat_mul), A::AbstractArray{T, 3}, B::SymmetricMatrix{T}) where {T}
+    @assert size(A, 2) == B.n
     C = tensor_mat_mul(A, B)
     function symmetric_right_mul_pullback(dC)
         dC = unthunk(dC)
-        f̄, dA, dS, _ = rrule(symmetric_mat_right_mul, A, B.S, B.n)[2](dC)        
+        f̄, dA, dS, _ = rrule(symmetric_mat_right_mul, A, B.S, B.n)[2](dC)
 
-        return f̄, dA, SymmetricMatrix(dS, B.n) 
-    end 
+        return f̄, dA, SymmetricMatrix(dS, B.n)
+    end
 
     return C, symmetric_right_mul_pullback
 end

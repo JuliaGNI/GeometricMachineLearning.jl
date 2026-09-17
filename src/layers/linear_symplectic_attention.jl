@@ -25,7 +25,7 @@ typeof(ps.A) <: SymmetricMatrix
 true
 ```
 """
-struct LinearSymplecticAttention{M, N, LayerType} <: AbstractExplicitLayer{M, N} 
+struct LinearSymplecticAttention{M, N, LayerType} <: AbstractExplicitLayer{M, N}
     seq_length::Int
 end
 
@@ -67,21 +67,23 @@ end
 function LinearSymplecticAttentionP(M::Integer, seq_length::Integer)
     LinearSymplecticAttention{M, M, :P}(seq_length)
 end
- 
+
 parameterlength(l::LinearSymplecticAttention) = (l.seq_length + 1) * l.seq_length ÷ 2
 
-function initialparameters(rng::AbstractRNG, initializer::AbstractNeuralNetworks.Initializer, l::LinearSymplecticAttention, backend::KernelAbstractions.Backend, T::Type)
+function initialparameters(
+        rng::AbstractRNG, initializer::AbstractNeuralNetworks.Initializer,
+        l::LinearSymplecticAttention, backend::KernelAbstractions.Backend, T::Type)
     S = KernelAbstractions.allocate(backend, T, parameterlength(l))
     initializer(rng, S)
-    (A = SymmetricMatrix(S, l.seq_length), )
+    (A = SymmetricMatrix(S, l.seq_length),)
 end
 
 # Implement multiplication with symmetric matrix from the right!
-function (::LinearSymplecticAttentionQ)(z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where AT
+function (::LinearSymplecticAttentionQ)(z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {AT}
     (q = z.q + _custom_mul(z.p, ps.A), p = z.p)
 end
 
-function (::LinearSymplecticAttentionP)(z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where AT
+function (::LinearSymplecticAttentionP)(z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {AT}
     (q = z.q, p = z.p + _custom_mul(z.q, ps.A))
 end
 
@@ -89,5 +91,5 @@ function (d::LinearSymplecticAttention)(z::AbstractArray, ps::NamedTuple)
     apply_layer_to_nt_and_return_array(z, d, ps)
 end
 
-_custom_mul(z::AbstractArray{T, 3}, A::AbstractMatrix{T}) where T = tensor_mat_mul(z, A)
-_custom_mul(z::AbstractMatrix{T}, A::AbstractMatrix{T}) where T = z * A
+_custom_mul(z::AbstractArray{T, 3}, A::AbstractMatrix{T}) where {T} = tensor_mat_mul(z, A)
+_custom_mul(z::AbstractMatrix{T}, A::AbstractMatrix{T}) where {T} = z * A

@@ -6,8 +6,9 @@ using GeometricIntegrators: ImplicitMidpoint, integrate
 using Random: seed!
 seed!(123)
 
-function make_alternative_parameters_by_adding_constant(params::NamedTuple = default_parameters(),
-        a::Number = 1.)
+function make_alternative_parameters_by_adding_constant(
+        params::NamedTuple = default_parameters(),
+        a::Number = 1.0)
     NamedTuple{keys(params)}(Tuple(value .+ a for value in values(params)))
 end
 
@@ -39,7 +40,7 @@ end
 # Both parameter sets have to turn up somewhere, or the assertion above would also pass on a data
 # loader that always returned the first one.
 returned_parameters = Set(parameters
-                          for n in eachindex(batch_indices)
-                          for parameters in last(convert_input_and_batch_indices_to_array(
-                              dl, batch, batch_indices[n])))
+for n in eachindex(batch_indices)
+for parameters in last(convert_input_and_batch_indices_to_array(
+    dl, batch, batch_indices[n])))
 @test returned_parameters == Set(all_parameters)

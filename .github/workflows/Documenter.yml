@@ -1,47 +1,89 @@
+# The canonical documentation workflow, plus the three steps this repository's figures and
+# reference check need. GeometricMachineLearning is in DOCS_EXCEPTIONS in install-workflows.sh for
+# that reason, so the installer leaves this file alone rather than overwriting it with the template.
+#
+# The three additions to the canonical body are `Install the TeX toolchain the TikZ figures need`,
+# `Make TikZ images` and `Check docstring references`. Each one has its own comment below saying
+# what it is for; the make step's also says why it sits where it does. Without the first two the
+# build dies with 62 `invalid local image` errors, because every figure it references is a build
+# product that nothing built.
+#
+# Keep the rest in step with Knowledge/AI/githooks/workflows/Documenter.yml: take any other change
+# from there rather than editing it here. That is checked, not merely asked for —
+# GeometricMachineLearning is in DOCS_ADDITIONS in verify-workflows.jl, whose
+# `documenter_additions_intact` requires every behavioural line of the template to survive inside
+# this file, in order. Comments are ignored, so this header is free to differ; a canonical step that
+# is dropped, reordered or edited here is not.
+#
+# DOCTESTS ARE NOT HERE. They run in CI.yml, in a job pinned to one OS and one Julia version, so
+# that they produce a required status check of their own. Before that, five repositories listed
+# `:doctest` in `warnonly` and one had `doctest = false`, which meant a doctest failure was a
+# warning inside a docs build that nothing gated.
+
 name: Documentation
 
 on:
-  push:
-    branches:
-      - main
-    tags: '*'
-  pull_request:
+    push:
+        branches:
+            - main
+            - master
+        tags: ["*"]
+    pull_request:
+    workflow_dispatch:
 
-# Temporary: go straight to the General registry instead of through a package server; see the
-# comment in `CI.yml`. Same workaround as SymbolicNeuralNetworks.jl.
-env:
-  JULIA_PKG_SERVER: ""
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
 jobs:
-  build:
-    name: Documentation
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - name: Install packages for generating tikz images
-        run: |
-          sudo apt-get install imagemagick
-          sudo apt-get install poppler-utils
-          sudo apt-get install texlive-xetex
-          sudo apt-get install texlive-science
-      # `@latest` is not a moving alias — it is a literal tag, and upstream stopped moving it
-      # in November 2024. Pin the major instead.
-      - uses: julia-actions/setup-julia@v3
-        with:
-          version: '1'
-      - name: Install BrenierTwoFluid package
-        run: |
-          cd docs
-          make install_brenier_two_fluid test_docs
-          cd ..
-      - name: Make tikz images
-        run: make all -C docs/src/tikz
-      - uses: julia-actions/julia-buildpkg@v1
-      # Checks `@docs`/`@ref` resolution and `missing_docs` without building the pages. The full
-      # build takes hours before it reports these, and they are the errors a docs change is most
-      # likely to introduce, so run them first and fail fast.
-      - name: Check docstring references
-        run: julia --project=docs docs/check_references.jl
-      - uses: julia-actions/julia-docdeploy@v1
+    build:
+        name: Documentation
+        runs-on: ubuntu-latest
+        timeout-minutes: 90
+        permissions:
+            actions: write
+            contents: write
+            statuses: write
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
+            # GR needs a headless backend on the runner. Harmless where the docs use CairoMakie.
+            GKSwstype: "100"
+        steps:
+            - uses: actions/checkout@v7
+            - name: Install the TeX toolchain the TikZ figures need
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y texlive-xetex texlive-science poppler-utils
+            - uses: julia-actions/setup-julia@v3
+              with:
+                  version: "1"
+            - uses: julia-actions/cache@v3
+            - name: Instantiate the documentation environment
+              run: |
+                  julia --project=docs -e '
+                    using Pkg
+                    Pkg.develop(PackageSpec(path = pwd()))
+                    Pkg.instantiate()'
+            # The manual's figures are built from the tracked TikZ sources under docs/src/tikz/.
+            # They are deliberately not committed — .gitignore carries a bare *.png — so they have
+            # to exist before Documenter checks links, or every reference to one is an
+            # `invalid local image` error and the build is fatal. The site logo comes from the same
+            # make target.
+            #
+            # This step runs AFTER the documentation environment, not before it: the two
+            # grassmann_sampling figures call `julia --project="../.."` through xelatex's
+            # shell-escape to draw a Makie surface, and `../..` from docs/src/tikz is docs/. Run
+            # before the environment exists, they fail with `CairoMakie ... does not seem to be
+            # installed` and the make target dies on the missing PDF.
+            - name: Make TikZ images
+              run: make all -C docs/src/tikz
+            - uses: julia-actions/julia-buildpkg@v1
+            # The cheap half of this job. `@docs` and code `@ref` resolution need only the loaded
+            # package, so this fails in seconds where the build below takes the better part of an
+            # hour. It is a fail-fast pass, not a replacement: `@example` blocks and section-title
+            # `@ref`s are still only checked by Documenter itself.
+            - name: Check docstring references
+              run: julia --project=docs docs/check_references.jl
+            - uses: julia-actions/julia-docdeploy@v1
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}

@@ -1,4 +1,5 @@
-@kernel function tensor_mat_skew_sym_assign_kernel!(C::AbstractArray{T, 3}, Z::AbstractArray{T, 3}, A::AbstractMatrix{T}) where T
+@kernel function tensor_mat_skew_sym_assign_kernel!(
+        C::AbstractArray{T, 3}, Z::AbstractArray{T, 3}, A::AbstractMatrix{T}) where {T}
     i, j, k = @index(Global, NTuple)
 
     temp = zero(T)
@@ -16,12 +17,13 @@
     nothing
 end
 
-function tensor_mat_skew_sym_assign!(C::AbstractArray{T, 3}, Z::AbstractArray{T, 3}, A::AbstractMatrix{T}) where {T}
+function tensor_mat_skew_sym_assign!(
+        C::AbstractArray{T, 3}, Z::AbstractArray{T, 3}, A::AbstractMatrix{T}) where {T}
     backend = networkbackend(Z)
 
     tensor_mat_skew_sym_assign_k! = tensor_mat_skew_sym_assign_kernel!(backend)
 
-    tensor_mat_skew_sym_assign_k!(C, Z, A, ndrange=size(C))
+    tensor_mat_skew_sym_assign_k!(C, Z, A, ndrange = size(C))
 end
 
 @doc raw"""
@@ -82,7 +84,8 @@ tensor_mat_skew_sym_assign(Z, A)
  3  0
 ```
 """
-function tensor_mat_skew_sym_assign(Z::AT, A::AbstractMatrix{T})::AT where {T, AT <: AbstractArray{T, 3}}
+function tensor_mat_skew_sym_assign(Z::AT, A::AbstractMatrix{T})::AT where {
+        T, AT <: AbstractArray{T, 3}}
     backend = networkbackend(Z)
 
     C = KernelAbstractions.zeros(backend, T, size(Z, 2), size(Z, 2), size(Z, 3))

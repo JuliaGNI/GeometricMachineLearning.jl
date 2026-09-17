@@ -21,9 +21,14 @@ struct WideResNetLayer{M, N, F1} <: AbstractExplicitLayer{M, N}
     activation::F1
 end
 
-WideResNetLayer(dim::Integer, width::Integer, activation=identity) = WideResNetLayer{dim, dim, typeof(activation)}(width, activation)
+function WideResNetLayer(dim::Integer, width::Integer, activation = identity)
+    WideResNetLayer{dim, dim, typeof(activation)}(width, activation)
+end
 
-function initialparameters(rng::Random.AbstractRNG, init_weight::AbstractNeuralNetworks.Initializer, l::WideResNetLayer{M, M}, backend::KernelAbstractions.Backend, ::Type{T}; init_bias = ZeroInitializer()) where {M, T}
+function initialparameters(
+        rng::Random.AbstractRNG, init_weight::AbstractNeuralNetworks.Initializer,
+        l::WideResNetLayer{M, M}, backend::KernelAbstractions.Backend,
+        ::Type{T}; init_bias = ZeroInitializer()) where {M, T}
     upscale_weight = KernelAbstractions.allocate(backend, T, l.width, M)
     upscale_bias = KernelAbstractions.allocate(backend, T, l.width)
     downscale_weight = KernelAbstractions.allocate(backend, T, M, l.width)
@@ -32,14 +37,21 @@ function initialparameters(rng::Random.AbstractRNG, init_weight::AbstractNeuralN
     init_weight(rng, downscale_weight)
     init_bias(rng, upscale_bias)
     init_bias(rng, bias)
-    (upscale_weight=upscale_weight, downscale_weight=downscale_weight, upscale_bias=upscale_bias, bias=bias)
+    (upscale_weight = upscale_weight, downscale_weight = downscale_weight,
+        upscale_bias = upscale_bias, bias = bias)
 end
 
 parameterlength(l::WideResNetLayer{M, M}) where {M} = l.width * (M + 1) + M * (l.width + 1)
 
-(d::WideResNetLayer{M, M})(x::AbstractVecOrMat, ps::NamedTuple) where {M} = x + d.activation.(ps.downscale_weight * d.activation.(ps.upscale_weight * x .+ ps.upscale_bias) .+ ps.bias)
+function (d::WideResNetLayer{M, M})(x::AbstractVecOrMat, ps::NamedTuple) where {M}
+    x + d.activation.(ps.downscale_weight *
+                  d.activation.(ps.upscale_weight * x .+ ps.upscale_bias) .+ ps.bias)
+end
 
-(d::WideResNetLayer{M, M})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, T} = x + d.activation.(mat_tensor_mul(ps.downscale_weight, d.activation.(mat_tensor_mul(ps.upscale_weight, x) .+ ps.upscale_bias)) .+ ps.bias)
+function (d::WideResNetLayer{M, M})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, T}
+    x + d.activation.(mat_tensor_mul(ps.downscale_weight,
+        d.activation.(mat_tensor_mul(ps.upscale_weight, x) .+ ps.upscale_bias)) .+ ps.bias)
+end
 
 function (d::WideResNetLayer{M, M})(z::QPT, ps::NamedTuple) where {M}
     @assert iseven(M)

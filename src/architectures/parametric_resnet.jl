@@ -19,40 +19,64 @@ symplectic.
 `ResNet(dim; n_blocks, width, parameters)` dispatches here when `parameters` is anything other than
 `NullParameters`.
 """
-struct ParametricResNet{AT <: Activation, PT <: OptionalParameters} <: NeuralNetworkIntegrator
+struct ParametricResNet{AT <: Activation, PT <: OptionalParameters} <:
+       NeuralNetworkIntegrator
     sys_dim::Int
     n_blocks::Int
     width::Int
     parameters::PT
     activation::AT
 
-    function ParametricResNet(dim; width=dim, n_blocks = HNN_nhidden_default, activation=HNN_activation_default, parameters=NullParameters())
-        activation = (typeof(activation) <: Activation) ? activation : Activation(activation)
-        new{typeof(activation), typeof(parameters)}(dim, n_blocks, width, parameters, activation)
+    function ParametricResNet(dim; width = dim, n_blocks = HNN_nhidden_default,
+            activation = HNN_activation_default, parameters = NullParameters())
+        activation = (typeof(activation) <: Activation) ? activation :
+                     Activation(activation)
+        new{typeof(activation), typeof(parameters)}(
+            dim, n_blocks, width, parameters, activation)
     end
 end
 
-function ParametricResNet(dl::DataLoader, n_blocks::Integer, width::Integer=dl.input_dim; activation=HNN_activation_default, parameters=NullParameters())
-    ParametricResNet(dl.input_dim; width=width, n_blocks=n_blocks, activation=activation, parameters=parameters)
+function ParametricResNet(dl::DataLoader, n_blocks::Integer, width::Integer = dl.input_dim;
+        activation = HNN_activation_default, parameters = NullParameters())
+    ParametricResNet(dl.input_dim; width = width, n_blocks = n_blocks,
+        activation = activation, parameters = parameters)
 end
 
-function ResNet(input_dim::Integer, n_blocks::Integer, width::Integer=input_dim; activation=HNN_activation_default, parameters=NullParameters())
-    typeof(parameters) <: NullParameters ? ResNet(input_dim, n_blocks, width, activation) : ParametricResNet(input_dim; n_blocks=n_blocks, width=width, parameters=parameters, activation=activation)
+function ResNet(input_dim::Integer, n_blocks::Integer, width::Integer = input_dim;
+        activation = HNN_activation_default, parameters = NullParameters())
+    typeof(parameters) <: NullParameters ? ResNet(input_dim, n_blocks, width, activation) :
+    ParametricResNet(input_dim; n_blocks = n_blocks, width = width,
+        parameters = parameters, activation = activation)
 end
 
-function ResNet(input_dim::Integer; n_blocks::Integer, width::Integer=input_dim, activation=HNN_activation_default, parameters=NullParameters())
-    ResNet(input_dim, n_blocks, width; activation=activation, parameters=parameters)
+function ResNet(input_dim::Integer; n_blocks::Integer, width::Integer = input_dim,
+        activation = HNN_activation_default, parameters = NullParameters())
+    ResNet(input_dim, n_blocks, width; activation = activation, parameters = parameters)
 end
 
-function Chain(arch::ParametricResNet{AT}) where AT
+function Chain(arch::ParametricResNet{AT}) where {AT}
     layers = ()
-    for _ in 1:arch.n_blocks 
+    for _ in 1:arch.n_blocks
         # nonlinear layers
-        layers = (layers..., ParametricResNetLayer(arch.sys_dim, arch.width, arch.activation; parameters=arch.parameters, return_parameters=true))
+        layers = (layers...,
+            ParametricResNetLayer(arch.sys_dim, arch.width, arch.activation;
+                parameters = arch.parameters, return_parameters = true))
     end
 
     # linear layers for the output
-    layers = (layers..., ParametricResNetLayer(arch.sys_dim, arch.width, identity; parameters=arch.parameters, return_parameters=false))
+    layers = (layers...,
+        ParametricResNetLayer(arch.sys_dim, arch.width, identity;
+            parameters = arch.parameters, return_parameters = false))
 
     Chain(layers...)
+end
+
+# Without this, `nn(x, μ)` reaches `AbstractNeuralNetworks`' generic two-argument functor, which
+# reads the system parameters as the *network* parameters and hands the first layer a `Float64`.
+# `GeneralizedHamiltonianArchitecture` and `ForcedGeneralizedHamiltonianArchitecture` carry the same
+# method for the same reason; a `ParametricResNet` is a `NeuralNetworkIntegrator` and so is covered
+# by neither.
+function (nn::NeuralNetwork{<:ParametricResNet})(qp::QPTOAT2,
+        problem_params::OptionalParameters)
+    apply_parametric(nn.model, qp, problem_params, params(nn))
 end

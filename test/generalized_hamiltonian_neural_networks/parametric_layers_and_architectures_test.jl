@@ -24,7 +24,8 @@ finite(qp::NamedTuple) = finite(qp.q) && finite(qp.p)
 # The `Q`/`P`/`QP` suffix names what the forcing *depends on*, not what it changes: a force enters
 # the `ṗ` equation, so all three add to `p` and leave `q` alone.
 @testset "ForcingLayer$name" for (name, Layer, depends_on) in (
-        ("Q", ForcingLayerQ, (:q,)), ("P", ForcingLayerP, (:p,)), ("QP", ForcingLayerQP, (:q, :p)))
+    ("Q", ForcingLayerQ, (:q,)), ("P", ForcingLayerP, (:p,)), (
+    "QP", ForcingLayerQP, (:q, :p)))
     layer = Layer(DIM; parameters = SYSTEM_PARAMETERS)
     nn = NeuralNetwork(layer)
     @test parameterlength(nn) > 0
@@ -66,12 +67,13 @@ end
     z = (q = rand(HALF), p = rand(HALF))
     out = layer(z, ps)
     @test keys(out) == (:q, :p)
-    @test out ≈ (q = layer(vcat(z.q, z.p), ps)[1:HALF], p = layer(vcat(z.q, z.p), ps)[(HALF + 1):DIM])
+    @test out ≈ (q = layer(vcat(z.q, z.p), ps)[1:HALF],
+        p = layer(vcat(z.q, z.p), ps)[(HALF + 1):DIM])
 end
 
 @testset "ParametricResNetLayer" begin
     layer = ParametricResNetLayer(DIM, WIDTH, tanh;
-                                  parameters = SYSTEM_PARAMETERS, return_parameters = false)
+        parameters = SYSTEM_PARAMETERS, return_parameters = false)
     nn = NeuralNetwork(Chain(layer))
     ps = params(nn).L1
 
@@ -101,9 +103,16 @@ end
 @testset "ParametricResNet" begin
     arch = ParametricResNet(DIM; width = WIDTH, n_blocks = 2, parameters = SYSTEM_PARAMETERS)
     nn = NeuralNetwork(arch)
-    out = apply_parametric(nn.model, rand(DIM), SYSTEM_PARAMETERS, params(nn))
+    input = rand(DIM)
+    out = apply_parametric(nn.model, input, SYSTEM_PARAMETERS, params(nn))
     @test size(out) == (DIM,)
     @test finite(out)
+
+    # And through the network functor, which is how a caller reaches it. Without the method on
+    # `NeuralNetwork{<:ParametricResNet}` this falls through to AbstractNeuralNetworks' generic
+    # two-argument functor, which reads `SYSTEM_PARAMETERS` as the network parameters and hands the
+    # first layer a `Float64`.
+    @test nn(input, SYSTEM_PARAMETERS) ≈ out
 
     # the `DataLoader` constructor used to accept `parameters` and drop it
     dl = DataLoader(rand(DIM, 20); suppress_info = true)
@@ -116,11 +125,20 @@ end
     out = nn(rand(DIM))
     @test size(out) == (DIM,)
     @test finite(out)
+
+    # And it trains on an ordinary `DataLoader`. A `ForcingLayer` holds the parameters of a whole
+    # sub-network, so `Zygote` returns a `(params = …,)` wrapper *inside* the tree as well as at the
+    # top. `_get_params` strips only the top one, and `_tree_optim_step!` then reads `dp.L2.L1` off a
+    # `NamedTuple` whose only field is `params` -- which is why `_processing` recurses.
+    dl = DataLoader(rand(DIM, 10, 2); suppress_info = true)
+    loss_array = Optimizer(AdamOptimizer(), nn)(nn, dl, Batch(4), 2)
+    @test length(loss_array) == 2
+    @test finite(loss_array)
 end
 
 @testset "ForcedGeneralizedHamiltonianArchitecture $forcing_type" for forcing_type in (:Q, :P, :QP)
     arch = ForcedGeneralizedHamiltonianArchitecture(DIM; parameters = SYSTEM_PARAMETERS,
-                                                    forcing_type = forcing_type)
+        forcing_type = forcing_type)
     nn = NeuralNetwork(arch)
     out = nn(rand(DIM), SYSTEM_PARAMETERS)
     @test size(out) == (DIM,)

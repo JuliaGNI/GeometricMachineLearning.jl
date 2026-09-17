@@ -1,0 +1,193 @@
+#!/usr/bin/env bash
+#
+# Shared pre-commit hook. Canonical copy: ~/Research/Knowledge/AI/githooks/pre-commit
+# Installed into each repository's .githooks/ by install-githooks.sh — edit the canonical
+# copy and re-run the installer, never the copy in a repository.
+#
+# Runs on STAGED .jl files only. A whole-tree JuliaFormatter run is not safe to assume
+# terminates: one died inside SciML's `nest!` after 62 minutes of CPU.
+#
+#   1. JuliaFormatter --check   BLOCKS   formatting is mechanical and always fixable
+#   2. fatou lint               WARNS    see below
+#   2.5 unicode NFC             BLOCKS   the tree is NFC, so a non-NFC file is a regression
+#   3. package load             BLOCKS   catches a syntax error or a broken include
+#
+# `fatou lint` deliberately never blocks. It produces findings that are wrong.
+# `unused-import` does not follow `include`, so it flags load-bearing imports in every module
+# file; `docstring-argument-mismatch` cannot see that `f(::Type{T}, s)` binds `T`.
+#
+# Both of those can be silenced one at a time. Measured 2026-09-13: `# fatou-ignore <rule>` on
+# its own line, immediately above the finding, works. A trailing comment on the same line does
+# nothing, and `fatou.toml` still rejects `per-file-ignores`.
+#
+# `parse-error` is what keeps this stage advisory. It is severity `error`, it CANNOT be
+# suppressed, and all 37 findings measured across 32 packages are false. Fatou rejects two
+# constructs that Julia parses: a parenthesised macro call whose body is a `for` block, as in
+# `(@allocated for ... end) ÷ n`, and a `const` whose assignment is on the next line.
+# Full detail: ~/Research/Tasks/Clear the Fatou lint backlog.md
+
+# No `set -u`: macOS's own bash is 3.2, where `"${arr[@]}"` on an empty array is an
+# unbound-variable error rather than an empty expansion.
+set -o pipefail
+
+red=$'\033[0;31m'; yellow=$'\033[0;33m'; green=$'\033[0;32m'; dim=$'\033[2m'; nc=$'\033[0m'
+
+root=$(git rev-parse --show-toplevel) || exit 1
+cd "$root" || exit 1
+
+# Staged Julia files that still exist (A/C/M, not deleted).
+#
+# Read in a loop rather than with `mapfile`. There IS a bash 5 at /opt/homebrew/bin/bash and
+# `/usr/bin/env bash` finds it from an interactive shell — but a hook inherits the PATH of
+# whatever ran git, and an IDE, a GUI client or a launchd job need not have /opt/homebrew/bin on
+# it. Fall back to macOS's bash 3.2 and `mapfile` is *not found*, which leaves the array empty
+# and returns 0: the hook would report "0 staged files" and wave every commit through. This loop
+# costs two lines and cannot do that.
+#
+# Same reason the command substitution is checked: if `git diff` itself fails, an empty result
+# must not be read as "nothing staged". Fail closed.
+if ! staged_raw=$(git diff --cached --name-only --diff-filter=ACM -- '*.jl'); then
+    printf '\n%spre-commit: could not list staged files.%s Refusing to pass silently.\n\n' \
+           "$red" "$nc"
+    exit 1
+fi
+
+staged=()
+while IFS= read -r f; do
+    [ -n "$f" ] && staged+=("$f")
+done <<< "$staged_raw"
+
+if [ ${#staged[@]} -eq 0 ]; then
+    exit 0
+fi
+
+printf '\n%spre-commit%s  %d staged .jl file(s)\n' "$dim" "$nc" "${#staged[@]}"
+
+status=0
+
+# ---------------------------------------------------------------- 1. formatting (blocking)
+# Honours this repository's own .JuliaFormatter.toml (style = "sciml" everywhere). A hook
+# cannot reach an MCP server, so this calls JuliaFormatter directly rather than through
+# Kaimon's format_code — same engine, different entry point.
+# Checked one file at a time. `format(ARGS)` returns a single Bool for the whole batch, so the
+# message could only ever name every staged file — measured 2026-09-05, a commit of seven files
+# with two offenders reported all seven, and finding the real two by hand cost a second rejected
+# commit. Per-file costs nothing: the batch call formats each file individually anyway, and
+# `.JuliaFormatter.toml` is discovered by searching upward from the file either way.
+if ! julia --startup-file=no --project=@v1.13 -e '
+        using JuliaFormatter
+        bad = filter(f -> !format(f; overwrite = false), ARGS)
+        isempty(bad) || @error "not formatted:\n" * join(bad, "\n")
+        exit(isempty(bad) ? 0 : 1)
+    ' "${staged[@]}"; then
+    printf '%sformatting: FAILED%s — run JuliaFormatter over the files above, then re-stage.\n' \
+           "$red" "$nc"
+    status=1
+else
+    printf '%sformatting: ok%s\n' "$green" "$nc"
+fi
+
+# ---------------------------------------------------------------- 2. lint (advisory only)
+# fatou writes its findings AND its summary to stderr, not stdout, and exits 1 when it has any.
+# Capturing stdout alone left `lint_out` empty on every commit — measured 2026-09-07, a file with
+# 7 findings reported "clean" — so this stage was vacuous in all 38 repositories from the day it
+# was added. The verdict comes from the exit status; with findings there is no summary line, so
+# every captured line is one finding.
+#
+# Time-boxed since 2026-09-14. `fatou lint` does not always terminate: on
+# GeometricMachineLearning's generated `src/kernels/inverses/inverse_5x5.jl` — then 25 MB and
+# 91 625 lines — two runs burned a core each for six and a half hours before anyone noticed.
+# An advisory stage that hangs is worse than one that fails, because a hung commit looks like
+# nothing happening rather than like a refusal. 60 s is ~600x the measured whole-tree time for
+# that package after the file was regenerated.
+#
+# `timeout` is coreutils and is not on a stock macOS, so fall back to running bare rather than
+# skipping the stage.
+if command -v fatou >/dev/null 2>&1; then
+    if command -v timeout >/dev/null 2>&1; then
+        fatou_lint() { timeout -k 5 60 fatou "$@"; }
+    else
+        fatou_lint() { fatou "$@"; }
+    fi
+
+    lint_out=$(fatou_lint lint --force-exclude --output concise "${staged[@]}" 2>&1)
+    lint_rc=$?
+
+    if [ "$lint_rc" -eq 0 ]; then
+        printf '%sfatou lint: clean%s\n' "$green" "$nc"
+    elif [ "$lint_rc" -ge 124 ]; then
+        # 124 = timed out, 137 = killed after -k. Not a finding, and not a reason to block.
+        printf '%sfatou lint: timed out after 60s — stage skipped, not a failure%s\n' "$yellow" "$nc"
+        printf '    A staged file is pathological for fatou. See Knowledge/AI/Helpers-and-MCPs.md.\n'
+    else
+        n=$(printf '%s\n' "$lint_out" | grep -c . || true)
+        printf '%sfatou lint: %s finding(s) — advisory, not blocking%s\n' "$yellow" "$n" "$nc"
+        printf '%s\n' "$lint_out" | sed 's/^/    /'
+    fi
+fi
+
+# ---------------------------------------------------------------- 2.5 unicode NFC (blocking)
+# Sources here are NFC-normalised: `ū`, `ḡ`, `ṗ`, `ẋ` as a single codepoint rather than a base
+# letter plus a combining mark. Julia's parser normalises identifiers to NFC, so an NFD file
+# compiles to byte-identical symbols and nothing about dispatch changes — but every byte-matching
+# tool (grep, ripgrep, an editor search, an agent's string replacement, Documenter's doctest
+# comparison) then fails to match a pattern typed in NFC, silently.
+#
+# Blocking, because the invariant holds tree-wide: every tracked file in Packages/ and
+# Experiments/ is NFC, so anything this stage reports is a regression rather than a backlog.
+#
+# The invariant is `s == Unicode.normalize(s, :NFC)`, never the absence of combining marks:
+# `q̇`, `v̄` and `f̄` have no precomposed codepoint and stay two codepoints under NFC.
+#
+# The check is inlined rather than calling ~/Research/Knowledge/AI/githooks/nfc.jl, for the same
+# reason stages 1 and 3 inline theirs: a hook that skips itself because a path outside the
+# repository is missing reports "clean" when it checked nothing. Use `nfc.jl --apply` to fix what
+# this reports.
+if ! nfc_out=$(julia --startup-file=no -e '
+        using Unicode
+        bad = filter(ARGS) do f
+            s = read(f, String)
+            isvalid(s) && s != Unicode.normalize(s, :NFC)
+        end
+        isempty(bad) || println(join(bad, "\n"))
+        exit(isempty(bad) ? 0 : 1)
+    ' "${staged[@]}" 2>&1); then
+    n=$(printf '%s\n' "$nfc_out" | grep -c . || true)
+    printf '%sunicode: %s file(s) not NFC%s\n' "$red" "$n" "$nc"
+    printf '%s\n' "$nfc_out" | sed 's/^/    /'
+    printf '    %sfix: julia --startup-file=no ~/Research/Knowledge/AI/githooks/nfc.jl --apply <files>%s\n' \
+           "$dim" "$nc"
+    status=1
+else
+    printf '%sunicode: NFC%s\n' "$green" "$nc"
+fi
+
+# ---------------------------------------------------------------- 3. load test (blocking)
+# Only for an actual package: an experiment repository has a Project.toml without a name.
+pkg=$(sed -n 's/^name[[:space:]]*=[[:space:]]*"\(.*\)"/\1/p' Project.toml 2>/dev/null | head -1)
+
+# The output is captured from the one run, not produced by a second one. It is also filtered
+# rather than tailed: for the failure this stage exists to catch, the cause — `ERROR: LoadError`
+# and the file:line — is at the TOP, and `tail -20` kept backtrace frames 15-18 and the
+# "Failed to precompile" summary while discarding it. Measured 2026-09-05: every session that
+# hit this had to re-run Julia by hand to learn why. Dropping the ` [n] frame` and `  @ Module`
+# lines is what those sessions did; it leaves the message and its location in the first lines.
+if [ -n "$pkg" ]; then
+    if load_out=$(julia --startup-file=no --project=. -e "using $pkg" 2>&1); then
+        printf '%sloads: ok%s\n' "$green" "$nc"
+    else
+        printf '%sloads: FAILED%s — `using %s` errors:\n' "$red" "$nc" "$pkg"
+        printf '%s\n' "$load_out" \
+            | grep -vE '^[[:space:]]*\[[0-9]+\][[:space:]]|^[[:space:]]*@ ' \
+            | head -20 | sed 's/^/    /'
+        status=1
+    fi
+fi
+
+if [ $status -ne 0 ]; then
+    printf '\n%spre-commit failed.%s Use --no-verify only if you know why.\n\n' "$red" "$nc"
+    exit 1
+fi
+
+printf '\n'
+exit 0

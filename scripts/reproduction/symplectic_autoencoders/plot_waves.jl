@@ -1,0 +1,69 @@
+using HDF5, CairoMakie
+
+include("../../utilities/snapshot_matrix.jl")
+
+# The snapshot matrix is what `integration.jl` writes, into whichever directory it is run from.
+# Stating the dependency here rather than relying on the caller having run it first. The name
+# carries the mode, so this never reads a matrix produced at the other size.
+const snapshot_matrix = snapshot_matrix_file()
+isfile(snapshot_matrix) || include("integration.jl")
+
+data = h5open(snapshot_matrix, "r") do file
+    read(file, "data")
+end
+n_params = h5open(snapshot_matrix, "r") do file
+    read(file, "n_params")
+end
+
+function indices(number_total_indices::Int, number_indices::Int)
+    spacing = number_total_indices/number_indices
+    Int.(ceil.(1:spacing:number_total_indices))
+end
+
+μ_left = 5/12
+μ_right = 4/6
+μ_collection = μ_left:((μ_right - μ_left) / (n_params - 1)):μ_right
+
+function plot_curves(number_of_params::Int = 3, time_instances::Int = 3)
+    number_time_indices = size(data, 2)÷n_params
+
+    param_indices = indices(n_params, number_of_params)
+    time_indices = indices(number_time_indices, time_instances)
+
+    time_labels = reshape((0:(1 / (number_time_indices - 1)):1)[time_indices], 1, time_instances)
+
+    N = size(data, 1)÷2
+
+    Ω = -0.5:(1 / (N - 1)):0.5
+
+    fig = Figure()
+    # one row per time instance, stacked vertically
+    axs = [Axis(fig[i, 1]; title = "", titlealign = :left, titlesize = 12)
+           for i in 1:time_instances]
+    index_number = 0
+
+    function title_gen(t::Real)
+        output = try
+            "t="*string(t)[1:4]
+        catch
+            "t="*string(t)
+        end
+        output
+    end
+
+    for param_index in param_indices
+        index_number += 1
+        data_to_plot = data[1:N, (param_index - 1) * number_time_indices .+ time_indices]
+        for (i, ax) in pairs(axs)
+            ax.title = title_gen(time_labels[i])
+            lines!(ax, Ω, data_to_plot[:, i];
+                color = Makie.wong_colors()[3 + index_number],
+                label = "μ="*string(μ_collection[param_index])[1:5])
+        end
+    end
+    axislegend(axs[1])
+    fig
+end
+
+mkpath("plots")
+CairoMakie.save("plots/wave_plot.png", plot_curves(3, 3))

@@ -3,7 +3,7 @@
 
 See [`SymbolicPotentialEnergy`](@ref) and [`SymbolicKineticEnergy`](@ref).
 """
-struct SymbolicEnergy{AT <: Activation, PT, Kinetic} 
+struct SymbolicEnergy{AT <: Activation, PT, Kinetic}
     dim::Int
     width::Int
     nhidden::Int
@@ -11,11 +11,13 @@ struct SymbolicEnergy{AT <: Activation, PT, Kinetic}
     parameter_layout::PT
     activation::AT
 
-    function SymbolicEnergy(dim, width, nhidden, activation; parameters::OptionalParameters=NullParameters(), type)
+    function SymbolicEnergy(dim, width, nhidden, activation;
+            parameters::OptionalParameters = NullParameters(), type)
         @assert iseven(dim) "The input dimension must be an even integer!"
         flat_parameters, layout = _flatten_system_parameters(parameters)
         _activation = Activation(activation)
-        new{typeof(_activation), typeof(layout), type}(dim, width, nhidden, length(flat_parameters), layout, _activation)
+        new{typeof(_activation), typeof(layout), type}(
+            dim, width, nhidden, length(flat_parameters), layout, _activation)
     end
 end
 
@@ -51,8 +53,12 @@ See [`SymbolicPotentialEnergy`](@ref).
 """
 const SymbolicKineticEnergy{AT, PT} = SymbolicEnergy{AT, PT, :kinetic}
 
-SymbolicPotentialEnergy(args...; kwargs...) = SymbolicEnergy(args...; type = :potential, kwargs...)
-SymbolicKineticEnergy(args...; kwargs...) = SymbolicEnergy(args...; type = :kinetic, kwargs...)
+function SymbolicPotentialEnergy(args...; kwargs...)
+    SymbolicEnergy(args...; type = :potential, kwargs...)
+end
+function SymbolicKineticEnergy(args...; kwargs...)
+    SymbolicEnergy(args...; type = :kinetic, kwargs...)
+end
 
 function Chain(se::SymbolicEnergy)
     inner_layers = Tuple(
@@ -76,13 +82,14 @@ function SymbolicNeuralNetworks.Jacobian(f, nn::AbstractSymbolicNeuralNetwork, d
     Dx = SymbolicNeuralNetworks.symbolic_differentials(nn.input)[1:dim2]
 
     # Evaluation of gradient
-    s∇f = hcat([SymbolicNeuralNetworks.expand_derivatives.(dx.(SymbolicNeuralNetworks.Symbolics.scalarize(f))) for dx in Dx]...)
+    s∇f = hcat([SymbolicNeuralNetworks.expand_derivatives.(dx.(SymbolicNeuralNetworks.Symbolics.scalarize(f)))
+                for dx in Dx]...)
 
     SymbolicNeuralNetworks.Jacobian(f, s∇f, nn)
 end
 
 function SymbolicNeuralNetworks.Jacobian(nn::AbstractSymbolicNeuralNetwork, dim2::Integer)
-    
+
     # Evaluation of the symbolic output
     soutput = nn.model(nn.input, params(nn))
 
@@ -121,11 +128,13 @@ function build_gradient(se::SymbolicEnergy)
     model = Chain(se)
     nn = SymbolicNeuralNetwork(model)
     □ = SymbolicNeuralNetworks.Jacobian(nn, se.dim÷2)
-    SymbolicNeuralNetworks.build_nn_function(SymbolicNeuralNetworks.derivative(□)', nn.params, nn.input;
-                                             inplace = false)
+    SymbolicNeuralNetworks.build_nn_function(
+        SymbolicNeuralNetworks.derivative(□)', nn.params, nn.input;
+        inplace = false)
 end
 
-struct SymplecticEuler{M, N, FT<:Base.Callable, MT<:Chain, type, ReturnParameters} <: AbstractExplicitLayer{M, N}
+struct SymplecticEuler{M, N, FT <: Base.Callable, MT <: Chain, type, ReturnParameters} <:
+       AbstractExplicitLayer{M, N}
     gradient_function::FT
     energy_model::MT
 end
@@ -134,12 +143,17 @@ function parameterlength(integrator::SymplecticEuler)
     parameterlength(integrator.energy_model)
 end
 
-function initialparameters(rng::Random.AbstractRNG, init_weight::AbstractNeuralNetworks.Initializer, integrator::SymplecticEuler, backend::KernelAbstractions.Backend, ::Type{T}) where {T}
+function initialparameters(
+        rng::Random.AbstractRNG, init_weight::AbstractNeuralNetworks.Initializer,
+        integrator::SymplecticEuler,
+        backend::KernelAbstractions.Backend, ::Type{T}) where {T}
     initialparameters(rng, init_weight, integrator.energy_model, backend, T)
 end
 
-const SymplecticEulerA{M, N, FT, AT, ReturnParameters} = SymplecticEuler{M, N, FT, AT, :A, ReturnParameters}
-const SymplecticEulerB{M, N, FT, AT, ReturnParameters} = SymplecticEuler{M, N, FT, AT, :B, ReturnParameters}
+const SymplecticEulerA{M, N, FT, AT, ReturnParameters} = SymplecticEuler{
+    M, N, FT, AT, :A, ReturnParameters}
+const SymplecticEulerB{M, N, FT, AT, ReturnParameters} = SymplecticEuler{
+    M, N, FT, AT, :B, ReturnParameters}
 
 """
 Changes ``q`` (based on the kinetic energy).
@@ -147,7 +161,9 @@ Changes ``q`` (based on the kinetic energy).
 function SymplecticEulerA(se::SymbolicKineticEnergy; return_parameters::Bool)
     gradient_function = build_gradient(se)
     c = Chain(se)
-    SymplecticEuler{se.dim, se.dim, typeof(gradient_function), typeof(c), :A, return_parameters}(gradient_function, c)
+    SymplecticEuler{
+        se.dim, se.dim, typeof(gradient_function), typeof(c), :A, return_parameters}(
+        gradient_function, c)
 end
 
 """
@@ -156,7 +172,9 @@ Changes ``p`` (based on the potential energy).
 function SymplecticEulerB(se::SymbolicPotentialEnergy; return_parameters::Bool)
     gradient_function = build_gradient(se)
     c = Chain(se)
-    SymplecticEuler{se.dim, se.dim, typeof(gradient_function), typeof(c), :B, return_parameters}(gradient_function, c)
+    SymplecticEuler{
+        se.dim, se.dim, typeof(gradient_function), typeof(c), :B, return_parameters}(
+        gradient_function, c)
 end
 
 # A network with no system parameters gets its input unchanged; without this the empty flat vector
@@ -174,7 +192,8 @@ end
 
 function concatenate_array_with_parameters(qp::AbstractArray{T, 3}, params::AbstractVector) where {T}
     @assert size(qp, 3) == length(params)
-    matrices = Tuple(concatenate_array_with_parameters(qp[:, :, i], params[i]) for i in axes(qp, 3))
+    matrices = Tuple(concatenate_array_with_parameters(qp[:, :, i], params[i])
+    for i in axes(qp, 3))
     cat(matrices...; dims = 3)
 end
 
@@ -186,30 +205,42 @@ end
 # matrix with `size(qp, 1) + parameter_length` rows, one column per sample.
 function concatenate_array_with_parameters(qp::AbstractMatrix, params::AbstractVector)
     @assert _size(qp, 2) == length(params)
-    hcat((concatenate_array_with_parameters(@view(qp[:, i]), params[i]) for i in axes(params, 1))...)
+    hcat((concatenate_array_with_parameters(@view(qp[:, i]), params[i])
+    for i in axes(params, 1))...)
 end
 
-function (integrator::SymplecticEulerA{M, N, FT, AT, false})(qp::QPT2, problem_params::OptionalParameters, params::NetworkParameters) where {M, N, FT, AT}
+function (integrator::SymplecticEulerA{M, N, FT, AT, false})(
+        qp::QPT2, problem_params::OptionalParameters,
+        params::NetworkParameters) where {M, N, FT, AT}
     input = concatenate_array_with_parameters(qp.p, problem_params)
     (q = @view((qp.q + integrator.gradient_function(input, params))[:, 1]), p = qp.p)
 end
 
-function (integrator::SymplecticEulerB{M, N, FT, AT, false})(qp::QPT2, problem_params::OptionalParameters, params::NetworkParameters) where {M, N, FT, AT}
+function (integrator::SymplecticEulerB{M, N, FT, AT, false})(
+        qp::QPT2, problem_params::OptionalParameters,
+        params::NetworkParameters) where {M, N, FT, AT}
     input = concatenate_array_with_parameters(qp.q, problem_params)
     (q = qp.q, p = @view((qp.p - integrator.gradient_function(input, params))[:, 1]))
 end
 
-function (integrator::SymplecticEulerA{M, N, FT, AT, true})(qp::QPT2, problem_params::OptionalParameters, params::NetworkParameters) where {M, N, FT, AT}
+function (integrator::SymplecticEulerA{M, N, FT, AT, true})(
+        qp::QPT2, problem_params::OptionalParameters,
+        params::NetworkParameters) where {M, N, FT, AT}
     input = concatenate_array_with_parameters(qp.p, problem_params)
-    ((q = @view((qp.q + integrator.gradient_function(input, params))[:, 1]), p = qp.p), problem_params)
+    ((q = @view((qp.q + integrator.gradient_function(input, params))[:, 1]), p = qp.p),
+        problem_params)
 end
 
-function (integrator::SymplecticEulerB{M, N, FT, AT, true})(qp::QPT2, problem_params::OptionalParameters, params::NetworkParameters) where {M, N, FT, AT}
+function (integrator::SymplecticEulerB{M, N, FT, AT, true})(
+        qp::QPT2, problem_params::OptionalParameters,
+        params::NetworkParameters) where {M, N, FT, AT}
     input = concatenate_array_with_parameters(qp.q, problem_params)
-    ((q = qp.q, p = @view((qp.p - integrator.gradient_function(input, params))[:, 1])), problem_params)
+    ((q = qp.q, p = @view((qp.p - integrator.gradient_function(input, params))[:, 1])),
+        problem_params)
 end
 
-function (integrator::SymplecticEuler)(qp_params::Tuple{<:QPTOAT2, <:OptionalParameters}, params::NetworkParameters)
+function (integrator::SymplecticEuler)(
+        qp_params::Tuple{<:QPTOAT2, <:OptionalParameters}, params::NetworkParameters)
     integrator(qp_params..., params)
 end
 
@@ -217,7 +248,9 @@ function (integrator::SymplecticEuler)(::TT, ::NetworkParameters) where {TT <: T
     error("The input is of type $(TT). This shouldn't be the case!")
 end
 
-function (integrator::SymplecticEuler{M, N, FT, AT, Type, true})(qp::AbstractArray, problem_params::OptionalParameters, params::NetworkParameters) where {M, N, FT, AT, Type}
+function (integrator::SymplecticEuler{M, N, FT, AT, Type, true})(
+        qp::AbstractArray, problem_params::OptionalParameters,
+        params::NetworkParameters) where {M, N, FT, AT, Type}
     @assert iseven(size(qp, 1))
     n = size(qp, 1)÷2
     qp_split = assign_q_and_p(qp, n)
@@ -225,7 +258,9 @@ function (integrator::SymplecticEuler{M, N, FT, AT, Type, true})(qp::AbstractArr
     (vcat(evaluated.q, evaluated.p), problem_params)
 end
 
-function (integrator::SymplecticEuler{M, N, FT, AT, Type, false})(qp::AbstractArray, problem_params::OptionalParameters, params::NetworkParameters) where {M, N, FT, AT, Type}
+function (integrator::SymplecticEuler{M, N, FT, AT, Type, false})(
+        qp::AbstractArray, problem_params::OptionalParameters,
+        params::NetworkParameters) where {M, N, FT, AT, Type}
     @assert iseven(size(qp, 1))
     n = size(qp, 1)÷2
     qp_split = assign_q_and_p(qp, n)
@@ -233,7 +268,9 @@ function (integrator::SymplecticEuler{M, N, FT, AT, Type, false})(qp::AbstractAr
     vcat(evaluated.q, evaluated.p)
 end
 
-(integrator::SymplecticEuler)(qp::QPTOAT2, params::NetworkParameters) = integrator(qp, NullParameters(), params)
+function (integrator::SymplecticEuler)(qp::QPTOAT2, params::NetworkParameters)
+    integrator(qp, NullParameters(), params)
+end
 
 """
     GeneralizedHamiltonianArchitecture <: HamiltonianArchitecture
@@ -251,7 +288,8 @@ The constructor takes the following input arguments:
 4. `n_integrators`: the number of integrators used in the GHNN.
 5. `activation = $(HNN_activation_default)`: the activation function used in the GHNN,
 """
-struct GeneralizedHamiltonianArchitecture{AT, PT <: OptionalParameters} <: HamiltonianArchitecture{AT}
+struct GeneralizedHamiltonianArchitecture{AT, PT <: OptionalParameters} <:
+       HamiltonianArchitecture{AT}
     dim::Int
     width::Int
     nhidden::Int
@@ -259,9 +297,13 @@ struct GeneralizedHamiltonianArchitecture{AT, PT <: OptionalParameters} <: Hamil
     parameters::PT
     activation::AT
 
-    function GeneralizedHamiltonianArchitecture(dim; width=dim, nhidden=HNN_nhidden_default, n_integrators::Integer=1, activation=HNN_activation_default, parameters=NullParameters())
-        activation = (typeof(activation) <: Activation) ? activation : Activation(activation)
-        new{typeof(activation), typeof(parameters)}(dim, width, nhidden, n_integrators, parameters, activation)
+    function GeneralizedHamiltonianArchitecture(
+            dim; width = dim, nhidden = HNN_nhidden_default, n_integrators::Integer = 1,
+            activation = HNN_activation_default, parameters = NullParameters())
+        activation = (typeof(activation) <: Activation) ? activation :
+                     Activation(activation)
+        new{typeof(activation), typeof(parameters)}(
+            dim, width, nhidden, n_integrators, parameters, activation)
     end
 end
 
@@ -270,18 +312,25 @@ index_gpt(qp::QPT2{T, 3}, i, j, k) where {T} = (q = qp.q[i, j, k], p = qp.p[i, j
 
 function Chain(ghnn_arch::GeneralizedHamiltonianArchitecture)
     c = ()
-    kinetic_energy = SymbolicKineticEnergy(ghnn_arch.dim, ghnn_arch.width, ghnn_arch.nhidden, ghnn_arch.activation; parameters=ghnn_arch.parameters)
-    potential_energy = SymbolicPotentialEnergy(ghnn_arch.dim, ghnn_arch.width, ghnn_arch.nhidden, ghnn_arch.activation; parameters=ghnn_arch.parameters)
-    
+    kinetic_energy = SymbolicKineticEnergy(
+        ghnn_arch.dim, ghnn_arch.width, ghnn_arch.nhidden,
+        ghnn_arch.activation; parameters = ghnn_arch.parameters)
+    potential_energy = SymbolicPotentialEnergy(
+        ghnn_arch.dim, ghnn_arch.width, ghnn_arch.nhidden,
+        ghnn_arch.activation; parameters = ghnn_arch.parameters)
+
     for n in 1:ghnn_arch.n_integrators
         c = (c..., SymplecticEulerA(kinetic_energy; return_parameters = true))
-        c = n == ghnn_arch.n_integrators ? (c..., SymplecticEulerB(potential_energy; return_parameters=false)) : (c..., SymplecticEulerB(potential_energy; return_parameters=true))
+        c = n == ghnn_arch.n_integrators ?
+            (c..., SymplecticEulerB(potential_energy; return_parameters = false)) :
+            (c..., SymplecticEulerB(potential_energy; return_parameters = true))
     end
 
     Chain(c...)
 end
 
-function (nn::NeuralNetwork{GT})(qp::QPTOAT2, problem_params::OptionalParameters) where {GT <: GeneralizedHamiltonianArchitecture}
+function (nn::NeuralNetwork{GT})(qp::QPTOAT2,
+        problem_params::OptionalParameters) where {GT <: GeneralizedHamiltonianArchitecture}
     apply_parametric(nn.model, qp, problem_params, params(nn))
 end
 
@@ -315,10 +364,12 @@ function apply_parametric(c::Chain, qp::QPT2{T, 3}, system_params::AbstractVecto
     @assert size(qp.q, 2) == 1
     output_vectorwise = [apply_parametric(c, index_gpt(qp, :, 1, i), system_params[i], ps)
                          for i in axes(system_params, 1)]
-    q_output = hcat([single_output_vectorwise.q for single_output_vectorwise ∈ output_vectorwise]...)
-    p_output = hcat([single_output_vectorwise.p for single_output_vectorwise ∈ output_vectorwise]...)
+    q_output = hcat([single_output_vectorwise.q
+                     for single_output_vectorwise in output_vectorwise]...)
+    p_output = hcat([single_output_vectorwise.p
+                     for single_output_vectorwise in output_vectorwise]...)
     (q = reshape(q_output, size(q_output, 1), 1, size(q_output, 2)),
-     p = reshape(p_output, size(p_output, 1), 1, size(p_output, 2)))
+        p = reshape(p_output, size(p_output, 1), 1, size(p_output, 2)))
 end
 
 function apply_parametric(c::Chain, qp::AbstractArray{T, 2}, system_params::AbstractVector,

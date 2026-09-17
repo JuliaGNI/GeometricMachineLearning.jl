@@ -17,8 +17,8 @@ jobs:
       - uses: actions/checkout@v7
       - name: install imagemagick, poppler-utils and texlive
         run: |
-            sudo apt-get install imagemagick
-            sudo apt-get install poppler-utils
+            sudo apt-get update
+            sudo apt-get install -y imagemagick poppler-utils
             sudo apt-get install texlive-xetex
             sudo apt-get install texlive-science
             sudo apt-get install latex-cjk-all

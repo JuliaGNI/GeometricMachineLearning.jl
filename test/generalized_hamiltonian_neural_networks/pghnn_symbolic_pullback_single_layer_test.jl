@@ -19,7 +19,8 @@ system_parameters = (m = 1.0, ω = π / 2)
 dim, width, nhidden, activation = 2, 2, 1, tanh
 n_samples = 10
 
-se = SymbolicPotentialEnergy(dim, width, nhidden, activation; parameters = system_parameters)
+se = SymbolicPotentialEnergy(
+    dim, width, nhidden, activation; parameters = system_parameters)
 nn = NeuralNetwork(Chain(SymplecticEulerB(se; return_parameters = false)))
 
 loss = ParametricLoss()
@@ -60,16 +61,15 @@ end
 # A gradient of all zeros would pass the loop above if the reference were zero too, so check that
 # the network actually depends on its parameters here.
 @test any(any(abs.(block) .> 1e-8) for layer in keys(reference_gradient)
-          for block in values(reference_gradient[layer]))
+for block in values(reference_gradient[layer]))
 
 # Building the pullback for a stacked architecture is refused rather than left to hang: the symbolic
 # expression grows multiplicatively with `n_integrators` and already exceeds 10⁹ terms at two.
 stacked = NeuralNetwork(GeneralizedHamiltonianArchitecture(dim; n_integrators = 2,
-                                                           parameters = system_parameters))
+    parameters = system_parameters))
 @test_throws ArgumentError SymbolicPullback(stacked, loss, system_parameters)
 
 # one integrator is the supported case, and it builds
 single = NeuralNetwork(GeneralizedHamiltonianArchitecture(dim; n_integrators = 1,
-                                                          parameters = system_parameters))
+    parameters = system_parameters))
 @test SymbolicPullback(single, loss, system_parameters) isa SymbolicPullback
-

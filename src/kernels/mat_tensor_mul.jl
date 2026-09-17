@@ -8,7 +8,7 @@
         tmp_sum += A[i, l] * B[l, j, k]
     end
 
-    C[i,j,k] = tmp_sum
+    C[i, j, k] = tmp_sum
 
     nothing
 end
@@ -20,13 +20,14 @@ Multiply the matrix `A` onto the tensor `B` from the left and store the result i
 
 The function [`mat_tensor_mul`](@ref) calls `mat_tensor_mul!` internally.
 """
-function mat_tensor_mul!(C::AbstractArray{<:Number, 3}, A::AbstractMatrix, B::AbstractArray{<:Number, 3})
+function mat_tensor_mul!(C::AbstractArray{<:Number, 3}, A::AbstractMatrix, B::AbstractArray{
+        <:Number, 3})
     @assert eltype(C) == eltype(A) == eltype(B)
     @assert size(A)[2] == size(B)[1]
 
     backend = networkbackend(A)
     kernel! = mat_tensor_mul_kernel!(backend)
-    kernel!(C, A, B, ndrange=size(C)) 
+    kernel!(C, A, B, ndrange = size(C))
 end
 
 @doc raw"""
@@ -73,27 +74,29 @@ end
 
 ################### SymmetricMatrix
 
-@kernel function symmetric_mat_mul_kernel!(C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where T 
+@kernel function symmetric_mat_mul_kernel!(C::AbstractArray{T, 3}, S::AbstractVector{T},
+        B::AbstractArray{T, 3}, n::Int) where {T}
     i, j, l = @index(Global, NTuple)
 
     tmp_sum = zero(T)
-    for k = 1:i 
+    for k in 1:i
         tmp_sum += S[((i - 1) * i) ÷ 2 + k] * B[k, j, l]
     end
-    for k = (i+1):n 
+    for k in (i + 1):n
         tmp_sum += S[((k - 1) * k) ÷ 2 + i] * B[k, j, l]
     end
     C[i, j, l] = tmp_sum
 end
 
-function symmetric_mat_mul!(C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where T 
+function symmetric_mat_mul!(C::AbstractArray{T, 3}, S::AbstractVector{T},
+        B::AbstractArray{T, 3}, n::Int) where {T}
     backend = networkbackend(C)
 
     symmetric_mat_mul_k! = symmetric_mat_mul_kernel!(backend)
-    symmetric_mat_mul_k!(C, S, B, n, ndrange=size(C))
+    symmetric_mat_mul_k!(C, S, B, n, ndrange = size(C))
 end
 
-function symmetric_mat_mul(S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where T 
+function symmetric_mat_mul(S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where {T}
     C = copy(B)
 
     symmetric_mat_mul!(C, S, B, n)
@@ -108,7 +111,8 @@ Multiply the symmetric matrix `A` onto the tensor `B` from the left and store th
 
 This performs an efficient multiplication based on the special structure of the symmetric matrix `A`.
 """
-function mat_tensor_mul!(C::AbstractArray{<:Number, 3}, A::SymmetricMatrix, B::AbstractArray{<:Number, 3})
+function mat_tensor_mul!(C::AbstractArray{<:Number, 3}, A::SymmetricMatrix, B::AbstractArray{
+        <:Number, 3})
     @assert eltype(C) == eltype(A) == eltype(B)
     @assert A.n == size(C, 1) == size(B, 1)
 
@@ -117,31 +121,34 @@ end
 
 ########################### LowerTriangular
 
-@kernel function lo_mul_kernel!(C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{T, 3}, ::Int) where T
+@kernel function lo_mul_kernel!(C::AbstractArray{T, 3}, S::AbstractVector{T},
+        B::AbstractArray{T, 3}, ::Int) where {T}
     i, j, l = @index(Global, NTuple)
 
     tmp_sum = zero(T)
-    for k = 1:(i-1)
-        tmp_sum +=  S[(i - 2) * (i - 1) ÷ 2 + k] * B[k, j, l]
+    for k in 1:(i - 1)
+        tmp_sum += S[(i - 2) * (i - 1) ÷ 2 + k] * B[k, j, l]
     end
     C[i, j, l] = tmp_sum
 
     nothing
 end
 
-function lo_mat_mul!(C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where T 
+function lo_mat_mul!(
+        C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{
+            T, 3}, n::Int) where {T}
     backend = networkbackend(C)
 
     lo_mat_mul_k! = lo_mul_kernel!(backend)
-    lo_mat_mul_k!(C, S, B, n, ndrange=size(C))
+    lo_mat_mul_k!(C, S, B, n, ndrange = size(C))
 end
 
-function lo_mat_mul(S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where T 
+function lo_mat_mul(S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where {T}
     C = zero(B)
-    
+
     lo_mat_mul!(C, S, B, n)
 
-    C 
+    C
 end
 
 @doc raw"""
@@ -151,7 +158,8 @@ Multiply the lower-triangular matrix `A` onto the tensor `B` from the left and s
 
 This performs an efficient multiplication based on the special structure of the lower-triangular matrix `A`.
 """
-function mat_tensor_mul!(C::AbstractArray{<:Number, 3}, A::LowerTriangular, B::AbstractArray{<:Number, 3})
+function mat_tensor_mul!(C::AbstractArray{<:Number, 3}, A::LowerTriangular, B::AbstractArray{
+        <:Number, 3})
     @assert eltype(C) == eltype(A) == eltype(B)
     @assert A.n == size(C, 1) == size(B, 1)
 
@@ -160,11 +168,12 @@ end
 
 ####################### UpperTriangular
 
-@kernel function up_mul_kernel!(C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where T
+@kernel function up_mul_kernel!(C::AbstractArray{T, 3}, S::AbstractVector{T},
+        B::AbstractArray{T, 3}, n::Int) where {T}
     i, j, l = @index(Global, NTuple)
 
     tmp_sum = zero(T)
-    for k = (i+1):n 
+    for k in (i + 1):n
         tmp_sum += S[(k - 2) * (k - 1) ÷ 2 + i] * B[k, j, l]
     end
     C[i, j, l] = tmp_sum
@@ -172,14 +181,16 @@ end
     nothing
 end
 
-function up_mat_mul!(C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where T 
+function up_mat_mul!(
+        C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{
+            T, 3}, n::Int) where {T}
     backend = networkbackend(C)
 
     up_mat_mul_k! = up_mul_kernel!(backend)
-    up_mat_mul_k!(C, S, B, n, ndrange=size(C))
+    up_mat_mul_k!(C, S, B, n, ndrange = size(C))
 end
 
-function up_mat_mul(S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where T 
+function up_mat_mul(S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where {T}
     C = zero(B)
 
     up_mat_mul!(C, S, B, n)
@@ -194,37 +205,40 @@ Multiply the upper-triangular matrix `A` onto the tensor `B` from the left and s
 
 This performs an efficient multiplication based on the special structure of the upper-triangular matrix `A`.
 """
-function mat_tensor_mul!(C::AbstractArray{<:Number, 3}, A::UpperTriangular, B::AbstractArray{<:Number, 3})
+function mat_tensor_mul!(C::AbstractArray{<:Number, 3}, A::UpperTriangular, B::AbstractArray{
+        <:Number, 3})
     @assert eltype(C) == eltype(A) == eltype(B)
     @assert A.n == size(C, 1) == size(B, 1)
 
     up_mat_mul!(C, A.S, B, A.n)
 end
 
-
 ################## SkewSymMatrix
 
-@kernel function skew_mat_mul_kernel!(C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where T
+@kernel function skew_mat_mul_kernel!(C::AbstractArray{T, 3}, S::AbstractVector{T},
+        B::AbstractArray{T, 3}, n::Int) where {T}
     i, j, l = @index(Global, NTuple)
 
     tmp_sum = zero(T)
-    for k = 1:(i-1)
-        tmp_sum +=  S[(i - 2) * (i - 1) ÷ 2 + k] * B[k, j, l]
+    for k in 1:(i - 1)
+        tmp_sum += S[(i - 2) * (i - 1) ÷ 2 + k] * B[k, j, l]
     end
-    for k = (i+1):n 
+    for k in (i + 1):n
         tmp_sum += -S[(k - 2) * (k - 1) ÷ 2 + i] * B[k, j, l]
     end
     C[i, j, l] = tmp_sum
 end
 
-function skew_mat_mul!(C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where T 
+function skew_mat_mul!(
+        C::AbstractArray{T, 3}, S::AbstractVector{T}, B::AbstractArray{
+            T, 3}, n::Int) where {T}
     backend = networkbackend(C)
 
     skew_mat_mul_k! = skew_mat_mul_kernel!(backend)
-    skew_mat_mul_k!(C, S, B, n, ndrange=size(C))
+    skew_mat_mul_k!(C, S, B, n, ndrange = size(C))
 end
 
-function skew_mat_mul(S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where T 
+function skew_mat_mul(S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where {T}
     C = zero(B)
 
     skew_mat_mul!(C, S, B, n)
@@ -239,7 +253,8 @@ Multiply skew-symmetric the matrix `A` onto the tensor `B` from the left and sto
 
 This performs an efficient multiplication based on the special structure of the skew-symmetric matrix `A`.
 """
-function mat_tensor_mul!(C::AbstractArray{<:Number, 3}, A::SkewSymMatrix, B::AbstractArray{<:Number, 3})
+function mat_tensor_mul!(C::AbstractArray{<:Number, 3}, A::SkewSymMatrix, B::AbstractArray{
+        <:Number, 3})
     @assert eltype(C) == eltype(A) == eltype(B)
     @assert A.n == size(C, 1) == size(B, 1)
 

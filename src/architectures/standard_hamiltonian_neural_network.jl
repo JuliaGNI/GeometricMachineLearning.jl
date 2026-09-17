@@ -19,8 +19,8 @@ struct StandardHamiltonianArchitecture{AT} <: HamiltonianArchitecture{AT}
     nhidden::Int
     activation::AT
 
-    function StandardHamiltonianArchitecture(dim::Integer, width=dim,
-            nhidden=HNN_nhidden_default, activation=HNN_activation_default)
+    function StandardHamiltonianArchitecture(dim::Integer, width = dim,
+            nhidden = HNN_nhidden_default, activation = HNN_activation_default)
         @assert iseven(dim) "The input dimension must be an even integer."
         new{typeof(activation)}(dim, width, nhidden, activation)
     end

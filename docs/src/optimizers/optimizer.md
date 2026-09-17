@@ -26,4 +26,5 @@ opt = Optimizer(nn; AdamOptimizerWithDecay(n_epochs, Float32)...)
 Optimizer
 optimize_for_one_epoch!
 optimization_step!
+GeometricMachineLearning._as_go_solution
 ```

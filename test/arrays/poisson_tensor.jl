@@ -1,23 +1,24 @@
 using GeometricMachineLearning
 using LinearAlgebra: I
 using Test
-import Random 
+import Random
 
 Random.seed!(123)
 
 function test_setup(n2::Int, T::DataType)
-    @assert iseven(n2) 
+    @assert iseven(n2)
     n = n2 ÷ 2
 
     one_mat = Matrix{T}(I(n))
-    @test PoissonTensor(n2, T) ≈ hcat(vcat(zero(one_mat), -one_mat), vcat(one_mat, zero(one_mat)))
+    @test PoissonTensor(n2, T) ≈
+          hcat(vcat(zero(one_mat), -one_mat), vcat(one_mat, zero(one_mat)))
 end
 
 @test Matrix(PoissonTensor(CPU(), 4, Float16)) ==
-    Float16[0 0 1 0; 0 0 0 1; -1 0 0 0; 0 -1 0 0]
+      Float16[0 0 1 0; 0 0 0 1; -1 0 0 0; 0 -1 0 0]
 
 function test_application(n2::Int, T::DataType)
-    @assert iseven(n2) 
+    @assert iseven(n2)
 
     𝕁 = PoissonTensor(n2, T)
     x = rand(T, n2)
@@ -27,7 +28,7 @@ function test_application(n2::Int, T::DataType)
 end
 
 function test_application_nt(n2::Int, T::DataType)
-    @assert iseven(n2) 
+    @assert iseven(n2)
 
     𝕁 = PoissonTensor(n2, T)
     n = n2 ÷ 2

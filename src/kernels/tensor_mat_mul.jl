@@ -4,11 +4,11 @@
 
     # creating a temporary sum variable for matrix multiplication
     tmp_sum = zero(eltype(C))
-    for l = 1:size(A)[2]
+    for l in 1:size(A)[2]
         tmp_sum += A[i, l, k] * B[l, j]
     end
 
-    C[i,j,k] = tmp_sum
+    C[i, j, k] = tmp_sum
 end
 
 @doc raw"""
@@ -23,7 +23,7 @@ function tensor_mat_mul!(C::AbstractArray{<:Number, 3}, A::AbstractArray{<:Numbe
 
     backend = networkbackend(A)
     kernel! = tensor_mat_mul_kernel!(backend)
-    kernel!(C, A, B, ndrange=size(C)) 
+    kernel!(C, A, B, ndrange = size(C))
 end
 
 @doc raw"""
@@ -60,8 +60,9 @@ tensor_mat_mul(A, B)
 function tensor_mat_mul(A::AbstractArray{<:Number, 3}, B::AbstractMatrix)
     @assert eltype(A) == eltype(B)
     T = eltype(A)
-    sizeA = size(A); sizeB = size(B)
-    @assert sizeA[2] == sizeB[1] 
+    sizeA = size(A)
+    sizeB = size(B)
+    @assert sizeA[2] == sizeB[1]
     tensor_shape = (sizeA[1], sizeB[2], sizeA[3])
     backend = networkbackend(A)
     C = KernelAbstractions.zeros(backend, T, tensor_shape...)
@@ -71,31 +72,34 @@ end
 
 ########################### SymmetricMatrix (right multiplication)
 
-@kernel function symmetric_mat_right_mul_kernel!(C::AbstractArray{T, 3}, B::AbstractArray{T, 3}, S::AbstractVector{T}, n::Int) where T
+@kernel function symmetric_mat_right_mul_kernel!(
+        C::AbstractArray{T, 3}, B::AbstractArray{T, 3},
+        S::AbstractVector{T}, n::Int) where {T}
     i, j, l = @index(Global, NTuple)
     tmp_sum = zero(T)
-    
-    for k = j:n
-        tmp_sum += B[i, k, l] * S[(k - 1)* k ÷ 2 + j]
+
+    for k in j:n
+        tmp_sum += B[i, k, l] * S[(k - 1) * k ÷ 2 + j]
     end
-    
-    for k = 1:(j - 1)
+
+    for k in 1:(j - 1)
         tmp_sum += B[i, k, l] * S[(j - 1) * j ÷ 2 + k]
     end
 
     C[i, j, l] = tmp_sum
 end
 
-function symmetric_mat_right_mul!(C::AbstractArray{T, 3}, B::AbstractArray{T, 3}, S::AbstractVector{T}, n::Int) where T
+function symmetric_mat_right_mul!(C::AbstractArray{T, 3}, B::AbstractArray{T, 3},
+        S::AbstractVector{T}, n::Int) where {T}
     backend = networkbackend(C)
-    
+
     symmetric_mat_right_mul_k! = symmetric_mat_right_mul_kernel!(backend)
     symmetric_mat_right_mul_k!(C, B, S, n, ndrange = size(C))
 
     nothing
 end
 
-function symmetric_mat_right_mul(B::AbstractArray{T, 3}, S::AbstractVector{T}, n::Int) where T
+function symmetric_mat_right_mul(B::AbstractArray{T, 3}, S::AbstractVector{T}, n::Int) where {T}
     C = copy(B)
 
     symmetric_mat_right_mul!(C, B, S, n)

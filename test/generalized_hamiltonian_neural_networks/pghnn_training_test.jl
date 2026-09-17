@@ -26,7 +26,8 @@ nn = NeuralNetwork(arch)
 parameters_before = deepcopy(params(nn))
 
 n_epochs = 2
-loss_array = Optimizer(AdamOptimizer(), nn)(nn, dl, Batch(200), n_epochs; show_progress = false)
+loss_array = Optimizer(AdamOptimizer(), nn)(
+    nn, dl, Batch(200), n_epochs; show_progress = false)
 
 @test length(loss_array) == n_epochs
 @test all(isfinite, loss_array)

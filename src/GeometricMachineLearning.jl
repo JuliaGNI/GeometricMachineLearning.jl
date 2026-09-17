@@ -3,12 +3,18 @@ module GeometricMachineLearning
 using AbstractNeuralNetworks
 # The parameter container lives in `NeuralNetworkParameters` as of `AbstractNeuralNetworks` 0.7,
 # under the name `NetworkParameters`. The import is selective rather than a bare `using`: that
-# package also exports `flatten`/`unflatten` and the leaf protocol, none of which this package
-# extends — `GeometricOptimizers` carries the protocol for the structured matrices.
+# package also exports the leaf protocol, which this package does not extend —
+# `GeometricOptimizers` carries the protocol for the structured matrices.
+#
+# Four things do come from there rather than being written again here: `mapstorage`, which reaches
+# the storage of a structured leaf and rebuilds the leaf around the result (`src/map_to_cpu.jl`);
+# `parameter_eltype`, which promotes over the leaves of a set; and `flatten`/`unflatten`, which the
+# parameter-dependent architectures call to put the parameters of the *system* into the network's
+# input. A plain `NamedTuple` of layers is walked with `Base.map`, which needs nothing from anybody.
 import NeuralNetworkParameters: NetworkParameters
+using NeuralNetworkParameters: mapparameters, mapstorage, parameter_eltype, flatten,
+                               unflatten
 using ChainRulesCore
-# `sqeuclidean` is the default distance of every `TrainingMethod` in `src/training_method/`.
-using Distances
 using GeometricBase
 using GeometricSolutions: GeometricSolution, EnsembleSolution, DataSeries, StateVariable,
                           TimeSeries
@@ -25,12 +31,9 @@ using InteractiveUtils
 using TimerOutputs
 import SymbolicNeuralNetworks
 import SymbolicNeuralNetworks: SymbolicPullback
-using SymbolicNeuralNetworks: derivative, SymbolicNeuralNetwork, AbstractSymbolicNeuralNetwork
+using SymbolicNeuralNetworks: derivative, SymbolicNeuralNetwork,
+                              AbstractSymbolicNeuralNetwork
 import Symbolics
-# The system parameters of a parameter-dependent architecture are flattened into the network's
-# input. Only the two conversions are brought in: the module name would clash with
-# `AbstractNeuralNetworks.NeuralNetworkParameters`, the *type* GML re-exports.
-using NeuralNetworkParameters: flatten, unflatten
 
 # The manifolds, the structured matrix types, the global sections and the retractions are
 # `GeometricOptimizers`' — GML used to carry near-verbatim copies of all eleven types, which Julia
@@ -56,7 +59,8 @@ import GeometricOptimizers: rgrad, metric, check, Ω, global_section
 import GeometricOptimizers: assign_columns
 import GeometricOptimizers: GlobalSection, global_rep, apply_section, apply_section!,
                             update_section!
-import GeometricOptimizers: AbstractRetraction, Geodesic, Cayley, geodesic, cayley, retraction
+import GeometricOptimizers: AbstractRetraction, Geodesic, Cayley, geodesic, cayley,
+                            retraction
 import GeometricOptimizers: OptimizerMethod, OptimizerSolution,
                             GradientMethod, MomentumMethod, Adam,
                             GradientState, MomentumState, AdamState,
@@ -107,7 +111,9 @@ export NetworkParameters
 
 export σ, sigmoid, softmax
 
-# from GeometricBase to print docs
+# `GeometricBase` defines `description` but does not export it, so `using GeometricBase` alone does
+# not bring it into scope and re-exporting it needs the explicit import.
+import GeometricBase: description
 export description
 
 include("utils.jl")
@@ -170,19 +176,18 @@ include("activations/softmax.jl")
 # are these needed?
 export UnknownProblem, NothingFunction
 
-# + operation has been overloaded to work with NamedTuples!
-export _add, apply_toNT, add!
-
-# GPU specific operations
-export convert_to_dev, Device, CPUDevice
+# `_add`, `_diff` and `_norm` are the `NamedTuple`/`(q, p)` arms of addition, subtraction and the
+# norm, and none of the three is exported: they are helpers of `src/reduced_system/`, not surface.
+# `_add` was the odd one out until 0.7.0, as was `add!` -- which is `AbstractNeuralNetworks`' generic
+# and available from there, this package only adding methods for the structured matrix types.
 
 export GradientLayerQ, GradientLayerP, ActivationLayerQ, ActivationLayerP, LinearLayerQ,
        LinearLayerP
 export Linear
-export ResidualLayer
-export LinearSymplecticLayerP, LinearSymplecticLayerQ
-# `SymplecticStiefelLayer` used to be exported here; the file defining it
-# (`layers/symplectic_stiefel_layer.jl`) is commented out below, so the name never existed.
+# `SymplecticStiefelLayer`, `ResidualLayer`, `LinearSymplecticLayerP`, `LinearSymplecticLayerQ`,
+# `convert_to_dev`, `Device` and `CPUDevice` were exported here and defined nowhere. The layer of
+# `ResidualLayer`'s shape that this package loads is `ResNetLayer`; the device operations have no
+# implementation at all.
 
 # The manifolds are GeometricOptimizers' too, along with the geometry that goes with them.
 export StiefelManifold, GrassmannManifold, Manifold
@@ -248,62 +253,10 @@ export GradientOptimizer, MomentumOptimizer, AdamOptimizer
 # `AdamOptimizerWithDecay` was a second, incompatible export of the same name — issue B1.
 export AdamOptimizerWithDecay, DecayingStatic
 
-#INCLUDE ABSTRACT TRAINING integrator
-export AbstractTrainingMethod
-
-export loss_single #, loss
-
-export HnnTrainingMethod
-export LnnTrainingMethod
-export SympNetTrainingMethod
-
-include("training_method/abstract_training_method.jl")
-
-# INCLUDE DATA TRAINING STRUCTURE
-export AbstractDataShape, TrajectoryData, SampledData
-export get_length_trajectory, get_Δt, get_nb_point, get_nb_trajectory, get_data
-
-include("data/data_shape.jl")
-
-export AbstractDataSymbol
-export PositionSymbol, PhaseSpaceSymbol, DerivativePhaseSpaceSymbol, PosVeloAccSymbol,
-       PosVeloSymbol
-export DataSymbol
-export can_reduce, symbols, symboldiff
-
-include("data/data_symbol.jl")
-
-# INCLUDE TRAINING INTEGRATOR
-
-export TrainingMethod
-export symbol, shape
-export min_length_batch
-
-include("training_method/training_method.jl")
-
-# INCLUDE DATA TRAINING STRUCTURE
-export AbstractTrainingData
-export TrainingData
-export shape, symbols, dim, noisemaker, data_symbols # , problem
-export reduce_symbols, reshape_intoSampledData
-export aresame
-
-include("data/data_training.jl")
-
-export get_batch, complete_batch_size, check_batch_size
-
-include("data/batch.jl")
-
-# INCLUDE BACKENDS
-export LuxBackend
 export NeuralNetwork
-export arch
-
-include("backends/backends.jl")
-include("backends/lux.jl")
 
 export NetworkLoss, TransformerLoss, FeedForwardLoss, AutoEncoderLoss, ReducedLoss, HNNLoss,
-       ParametricLoss
+       LNNLoss, SymplecticEulerLoss, VariationalMidpointLoss, ParametricLoss
 
 #INCLUDE ARCHITECTURES
 include("architectures/neural_network_integrator.jl")
@@ -337,15 +290,13 @@ export ForcedSympNet
 
 export solve!, encoder, decoder
 
-export train!, apply!, jacobian!
 export iterate
-
-export default_arch
-
-include("architectures/default_architecture.jl")
 
 include("loss/losses.jl")
 include("loss/hnn_loss.jl")
+include("loss/lnn_loss.jl")
+include("loss/symplectic_euler_loss.jl")
+include("loss/variational_midpoint_loss.jl")
 
 export AbstractPullback, ZygotePullback, SymbolicPullback
 include("pullbacks/zygote_pullback.jl")
@@ -362,86 +313,6 @@ include("data_loader/optimize.jl")
 
 include("architectures/forced_sympnet.jl")
 include("architectures/forced_generalized_hamiltonian_neural_network.jl")
-
-# INCLUDE TRAINING parameters
-
-export TrainingParameters
-
-include("training/training_parameters.jl")
-
-# INCLUDE NEURALNET SOLUTION
-
-export SingleHistory
-export parameters, datashape
-export History
-export last, sizemax, nbtraining, show
-
-include("nnsolution/history.jl")
-
-export NeuralNetSolution
-export problem, timestep, history, size_history
-export set_sizemax_history
-
-include("nnsolution/neural_net_solution.jl")
-
-export EnsembleNeuralNetSolution
-export push!, merge!
-
-include("nnsolution/neural_net_solution_ensemble.jl")
-
-# INCLUDE TRAINING integrator
-
-export TrainingSet
-export parameters # , data
-
-include("training/training_set.jl")
-
-export EnsembleTraining
-export isnnShared, isParametersShared, isDataShared
-export parameters, data
-export push!, merge!, size
-
-include("training/ensemble_training.jl")
-
-include("training/nn_parameters_transformation.jl")
-
-export loss_gradient
-export train!
-
-include("training/train.jl")
-
-export SEuler, SEulerA, SEulerB
-
-include("training_method/symplectic_euler.jl")
-
-export HnnExactMethod
-export ExactHnn
-
-include("training_method/hnn_exact_method.jl")
-
-export VariationalMethod
-export VariationalMidPointMethod
-export VariaMidPoint
-
-include("training_method/variational_method.jl")
-
-export LnnExactMethod
-export ExactLnn
-
-include("training_method/lnn_exact_method.jl")
-
-export BasicSympNetMethod
-export BasicSympNet
-
-include("training_method/sympnet_basic_method.jl")
-
-export default_method
-
-include("training/default_method.jl")
-
-# INCLUDE ASSERTION Function
-export matching
-include("training/matching.jl")
 
 include("reduced_system/reduced_system.jl")
 

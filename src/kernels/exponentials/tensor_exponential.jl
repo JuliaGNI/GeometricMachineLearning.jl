@@ -1,11 +1,11 @@
-function tensor_exponential(B::AbstractArray{T, 3}) where T 
+function tensor_exponential(B::AbstractArray{T, 3}) where {T}
     m, m2, m3 = size(B)
     @assert m == m2
     output = init_output(B)
     matrix_mul_tensor = copy(output)
-    
+
     step = 0
-    while true 
+    while true
         step += 1
         previous_step = copy(output)
 
@@ -16,25 +16,25 @@ function tensor_exponential(B::AbstractArray{T, 3}) where T
     output
 end
 
-function init_output(B::AbstractArray{T, 3}) where T 
+function init_output(B::AbstractArray{T, 3}) where {T}
     output = zero(B)
     assign_ones!(output)
     output
 end
 
-function assign_ones!(output::AbstractArray{T, 3}) where T
+function assign_ones!(output::AbstractArray{T, 3}) where {T}
     backend = networkbackend(output)
     assign_ones_backend! = assign_ones_kernel!(backend)
-    dims = (size(output,1), size(output,3))
-    assign_ones_backend!(output, ndrange=dims)
+    dims = (size(output, 1), size(output, 3))
+    assign_ones_backend!(output, ndrange = dims)
 end
 
-@kernel function assign_ones_kernel!(output::AbstractArray{T, 3}) where T 
-    i,k = @index(Global, NTuple)
-    output[i,i,k] = one(T)
+@kernel function assign_ones_kernel!(output::AbstractArray{T, 3}) where {T}
+    i, k = @index(Global, NTuple)
+    output[i, i, k] = one(T)
 end
 
-function ChainRulesCore.rrule(::typeof(init_output), B::AbstractArray{T, 3}) where T 
+function ChainRulesCore.rrule(::typeof(init_output), B::AbstractArray{T, 3}) where {T}
     output = init_output(B)
     function init_output_pullback(_output_diff)
         return NoTangent(), ZeroTangent()

@@ -18,7 +18,7 @@ The forcing layers are inspired by the Lagrange-d'Alembert integrator from [mars
 ```
 for a separable Hamiltonian ``H(q, p) = T(p) + U(q) = p^TM^{-1}p + U(q)`` and external forcing ``f_H.``
 """
-struct ForcingLayer{M,N,PT,CT,type,ReturnParameters} <: AbstractExplicitLayer{M,N}
+struct ForcingLayer{M, N, PT, CT, type, ReturnParameters} <: AbstractExplicitLayer{M, N}
     dim::Int
     width::Int
     nhidden::Int
@@ -29,7 +29,9 @@ end
 
 parameterlength(l::ForcingLayer) = parameterlength(l.model)
 
-function initialparameters(rng::Random.AbstractRNG, init_weight::AbstractNeuralNetworks.Initializer, integrator::ForcingLayer, backend::KernelAbstractions.Backend, ::Type{T}) where {T}
+function initialparameters(
+        rng::Random.AbstractRNG, init_weight::AbstractNeuralNetworks.Initializer,
+        integrator::ForcingLayer, backend::KernelAbstractions.Backend, ::Type{T}) where {T}
     initialparameters(rng, init_weight, integrator.model, backend, T)
 end
 
@@ -38,39 +40,47 @@ end
 
 A layer that is derived from the more general [`ForcingLayer`](@ref) and the resulting forcing only depends on the ``q`` component.
 """
-const ForcingLayerQ{M,N,FT,AT,ReturnParameters} = ForcingLayer{M,N,FT,AT,:Q,ReturnParameters}
+const ForcingLayerQ{M, N, FT, AT, ReturnParameters} = ForcingLayer{
+    M, N, FT, AT, :Q, ReturnParameters}
 
 """
     ForcingLayerP
 
 A layer that is derived from the more general [`ForcingLayer`](@ref) and the resulting forcing only depends on the ``p`` component.
 """
-const ForcingLayerP{M,N,FT,AT,ReturnParameters} = ForcingLayer{M,N,FT,AT,:P,ReturnParameters}
+const ForcingLayerP{M, N, FT, AT, ReturnParameters} = ForcingLayer{
+    M, N, FT, AT, :P, ReturnParameters}
 
 """
     ForcingLayerQP
 
 A layer that is derived from the more general [`ForcingLayer`](@ref) and the resulting forcing only depends on the ``q`` and the ``p`` component.
 """
-const ForcingLayerQP{M,N,FT,AT,ReturnParameters} = ForcingLayer{M,N,FT,AT,:QP,ReturnParameters}
+const ForcingLayerQP{M, N, FT, AT, ReturnParameters} = ForcingLayer{
+    M, N, FT, AT, :QP, ReturnParameters}
 
-function build_chain(dim::Integer, width::Integer, nhidden::Integer, parameter_length::Integer, activation, type::Symbol)
+function build_chain(dim::Integer, width::Integer, nhidden::Integer,
+        parameter_length::Integer, activation, type::Symbol)
     inner_layers = Tuple(
         [Dense(width, width, activation) for _ in 1:nhidden]
     )
 
     Chain(
-        type == :QP ? Dense(dim + parameter_length, width, activation) : Dense(dim ÷ 2 + parameter_length, width, activation),
+        type == :QP ? Dense(dim + parameter_length, width, activation) :
+        Dense(dim ÷ 2 + parameter_length, width, activation),
         inner_layers...,
-        Linear(width, dim ÷ 2; use_bias=false)
+        Linear(width, dim ÷ 2; use_bias = false)
     )
 end
 
-function ForcingLayer(dim::Integer, width::Integer, nhidden::Integer, activation; parameters::OptionalParameters=NullParameters(), return_parameters::Bool, type::Symbol)
+function ForcingLayer(dim::Integer, width::Integer, nhidden::Integer, activation;
+        parameters::OptionalParameters = NullParameters(),
+        return_parameters::Bool, type::Symbol)
     flat_parameters, layout = _flatten_system_parameters(parameters)
     parameter_length = length(flat_parameters)
     c = build_chain(dim, width, nhidden, parameter_length, activation, type)
-    ForcingLayer{dim,dim,typeof(layout),typeof(c),type,return_parameters}(dim, width, nhidden, parameter_length, layout, c)
+    ForcingLayer{dim, dim, typeof(layout), typeof(c), type, return_parameters}(
+        dim, width, nhidden, parameter_length, layout, c)
 end
 
 """
@@ -82,8 +92,12 @@ end
 ForcingLayerQ(dim, width, nhidden, activation; parameters, return_parameters)
 ```
 """
-function ForcingLayerQ(dim::Integer, width::Integer=dim, nhidden::Integer=HNN_nhidden_default, activation=HNN_activation_default; parameters::OptionalParameters=NullParameters(), return_parameters::Bool=false)
-    ForcingLayer(dim, width, nhidden, activation; parameters=parameters, return_parameters=return_parameters, type=:Q)
+function ForcingLayerQ(
+        dim::Integer, width::Integer = dim, nhidden::Integer = HNN_nhidden_default,
+        activation = HNN_activation_default;
+        parameters::OptionalParameters = NullParameters(), return_parameters::Bool = false)
+    ForcingLayer(dim, width, nhidden, activation; parameters = parameters,
+        return_parameters = return_parameters, type = :Q)
 end
 
 """
@@ -97,53 +111,76 @@ See [`ForcingLayerQ`](@ref).
 ForcingLayerP(dim, width, nhidden, activation; parameters, return_parameters)
 ```
 """
-function ForcingLayerP(dim::Integer, width::Integer=dim, nhidden::Integer=HNN_nhidden_default, activation=HNN_activation_default; parameters::OptionalParameters=NullParameters(), return_parameters::Bool=false)
-    ForcingLayer(dim, width, nhidden, activation; parameters=parameters, return_parameters=return_parameters, type=:P)
+function ForcingLayerP(
+        dim::Integer, width::Integer = dim, nhidden::Integer = HNN_nhidden_default,
+        activation = HNN_activation_default;
+        parameters::OptionalParameters = NullParameters(), return_parameters::Bool = false)
+    ForcingLayer(dim, width, nhidden, activation; parameters = parameters,
+        return_parameters = return_parameters, type = :P)
 end
 
-function ForcingLayerQP(dim::Integer, width::Integer=dim, nhidden::Integer=HNN_nhidden_default, activation=HNN_activation_default; parameters::OptionalParameters=NullParameters(), return_parameters::Bool=false)
-    ForcingLayer(dim, width, nhidden, activation; parameters=parameters, return_parameters=return_parameters, type=:QP)
+function ForcingLayerQP(
+        dim::Integer, width::Integer = dim, nhidden::Integer = HNN_nhidden_default,
+        activation = HNN_activation_default;
+        parameters::OptionalParameters = NullParameters(), return_parameters::Bool = false)
+    ForcingLayer(dim, width, nhidden, activation; parameters = parameters,
+        return_parameters = return_parameters, type = :QP)
 end
 
-function (integrator::ForcingLayerQ{M,N,FT,AT,false})(qp::QPT2, problem_params::OptionalParameters, params::NetworkParameters) where {M,N,FT,AT}
+function (integrator::ForcingLayerQ{M, N, FT, AT, false})(
+        qp::QPT2, problem_params::OptionalParameters,
+        params::NetworkParameters) where {M, N, FT, AT}
     input = concatenate_array_with_parameters(qp.q, problem_params)
-    (q=qp.q, p=qp.p + integrator.model(input, params))
+    (q = qp.q, p = qp.p + integrator.model(input, params))
 end
 
-function (integrator::ForcingLayerP{M,N,FT,AT,false})(qp::QPT2, problem_params::OptionalParameters, params::NetworkParameters) where {M,N,FT,AT}
+function (integrator::ForcingLayerP{M, N, FT, AT, false})(
+        qp::QPT2, problem_params::OptionalParameters,
+        params::NetworkParameters) where {M, N, FT, AT}
     input = concatenate_array_with_parameters(qp.p, problem_params)
-    (q=qp.q, p=qp.p + integrator.model(input, params))
+    (q = qp.q, p = qp.p + integrator.model(input, params))
 end
 
-function (integrator::ForcingLayerQP{M,N,FT,AT,false})(qp::QPT2, problem_params::OptionalParameters, params::NetworkParameters) where {M,N,FT,AT}
+function (integrator::ForcingLayerQP{M, N, FT, AT, false})(
+        qp::QPT2, problem_params::OptionalParameters,
+        params::NetworkParameters) where {M, N, FT, AT}
     input = concatenate_array_with_parameters(vcat(qp.q, qp.p), problem_params)
-    (q=qp.q, p=qp.p + integrator.model(input, params))
+    (q = qp.q, p = qp.p + integrator.model(input, params))
 end
 
-function (integrator::ForcingLayerQ{M,N,FT,AT,true})(qp::QPT2, problem_params::OptionalParameters, params::NetworkParameters) where {M,N,FT,AT}
+function (integrator::ForcingLayerQ{M, N, FT, AT, true})(
+        qp::QPT2, problem_params::OptionalParameters,
+        params::NetworkParameters) where {M, N, FT, AT}
     input = concatenate_array_with_parameters(qp.q, problem_params)
-    ((q=qp.q, p=qp.p + integrator.model(input, params)), problem_params)
+    ((q = qp.q, p = qp.p + integrator.model(input, params)), problem_params)
 end
 
-function (integrator::ForcingLayerP{M,N,FT,AT,true})(qp::QPT2, problem_params::OptionalParameters, params::NetworkParameters) where {M,N,FT,AT}
+function (integrator::ForcingLayerP{M, N, FT, AT, true})(
+        qp::QPT2, problem_params::OptionalParameters,
+        params::NetworkParameters) where {M, N, FT, AT}
     input = concatenate_array_with_parameters(qp.p, problem_params)
-    ((q=qp.q, p=qp.p + integrator.model(input, params)), problem_params)
+    ((q = qp.q, p = qp.p + integrator.model(input, params)), problem_params)
 end
 
-function (integrator::ForcingLayerQP{M,N,FT,AT,true})(qp::QPT2, problem_params::OptionalParameters, params::NetworkParameters) where {M,N,FT,AT}
+function (integrator::ForcingLayerQP{M, N, FT, AT, true})(
+        qp::QPT2, problem_params::OptionalParameters,
+        params::NetworkParameters) where {M, N, FT, AT}
     input = concatenate_array_with_parameters(vcat(qp.q, qp.p), problem_params)
-    ((q=qp.q, p=qp.p + integrator.model(input, params)), problem_params)
+    ((q = qp.q, p = qp.p + integrator.model(input, params)), problem_params)
 end
 
-function (integrator::ForcingLayer)(qp_params::Tuple{<:QPTOAT2,<:OptionalParameters}, params::NetworkParameters)
+function (integrator::ForcingLayer)(
+        qp_params::Tuple{<:QPTOAT2, <:OptionalParameters}, params::NetworkParameters)
     integrator(qp_params..., params)
 end
 
-function (integrator::ForcingLayer)(::TT, ::NetworkParameters) where {TT<:Tuple}
+function (integrator::ForcingLayer)(::TT, ::NetworkParameters) where {TT <: Tuple}
     error("The input is of type $(TT). This shouldn't be the case!")
 end
 
-function (integrator::ForcingLayer{M,N,FT,AT,Type,true})(qp::AbstractArray, problem_params::OptionalParameters, params::NetworkParameters) where {M,N,FT,AT,Type}
+function (integrator::ForcingLayer{M, N, FT, AT, Type, true})(
+        qp::AbstractArray, problem_params::OptionalParameters,
+        params::NetworkParameters) where {M, N, FT, AT, Type}
     @assert iseven(size(qp, 1))
     n = size(qp, 1) ÷ 2
     qp_split = assign_q_and_p(qp, n)
@@ -151,7 +188,9 @@ function (integrator::ForcingLayer{M,N,FT,AT,Type,true})(qp::AbstractArray, prob
     (vcat(evaluated.q, evaluated.p), problem_params)
 end
 
-function (integrator::ForcingLayer{M,N,FT,AT,Type,false})(qp::AbstractArray, problem_params::OptionalParameters, params::NetworkParameters) where {M,N,FT,AT,Type}
+function (integrator::ForcingLayer{M, N, FT, AT, Type, false})(
+        qp::AbstractArray, problem_params::OptionalParameters,
+        params::NetworkParameters) where {M, N, FT, AT, Type}
     @assert iseven(size(qp, 1))
     n = size(qp, 1) ÷ 2
     qp_split = assign_q_and_p(qp, n)
@@ -159,5 +198,9 @@ function (integrator::ForcingLayer{M,N,FT,AT,Type,false})(qp::AbstractArray, pro
     vcat(evaluated.q, evaluated.p)
 end
 
-(integrator::ForcingLayer)(qp::QPTOAT2, params::NetworkParameters) = integrator(qp, NullParameters(), params)
-(integrator::ForcingLayer)(qp::QPTOAT2, params::NamedTuple) = integrator(qp, NeuralNetworkParameters(params))
+function (integrator::ForcingLayer)(qp::QPTOAT2, params::NetworkParameters)
+    integrator(qp, NullParameters(), params)
+end
+function (integrator::ForcingLayer)(qp::QPTOAT2, params::NamedTuple)
+    integrator(qp, NeuralNetworkParameters(params))
+end
