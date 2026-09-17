@@ -38,9 +38,6 @@ links = InterLinks(
 bib = CitationBibliography(joinpath(@__DIR__, "src", "GeometricMachineLearning.bib"))
 sort_bibliography!(bib.entries, :nyt)  # name-year-title
 
-# if the docs are generated with github actions, then this changes the path; see: https://github.com/JuliaDocs/Documenter.jl/issues/921 
-const buildpath = haskey(ENV, "CI") ? ".." : ""
-
 const html_format = Documenter.HTML(;
     prettyurls = get(ENV, "CI", nothing) == "true",
     repolink = "https://github.com/JuliaGNI/GeometricMachineLearning.jl",

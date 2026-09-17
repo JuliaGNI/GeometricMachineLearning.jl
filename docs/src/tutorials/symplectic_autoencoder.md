@@ -111,7 +111,7 @@ sae_arch = SymplecticAutoencoder(dl_cpu.input_dim, reduced_dim; n_encoder_blocks
 nothing # hide
 ```
 
-Training a neural network is usually done by calling an instance of [`Optimizer`](@ref) in `GeometricMachineLearning`. [`PSDArch`](@ref) however can be solved directly by using singular value decomposition and this is done by calling [solve!](@ref):  
+Training a neural network is usually done by calling an instance of [`Optimizer`](@ref) in `GeometricMachineLearning`. [`PSDArch`](@ref) however can be solved directly by using singular value decomposition and this is done by calling [`solve!`](@ref):  
 
 ```@example toda_lattice
 psd_nn_cpu = NeuralNetwork(psd_arch, CPU(), eltype(dl_cpu))
@@ -122,6 +122,17 @@ solve!(psd_nn_cpu, dl_cpu)
 The `SymplecticAutoencoder` we train with [`AdamOptimizerWithDecay`](@extref GeometricOptimizers The-Adam-Optimizer-with-Decay) however[^2]:
 
 [^2]: It is not feasible to perform the training on CPU, which is why we use `CUDA` [besard2018juliagpu](@cite) here. We further perform the training in single precision.
+
+```@eval
+Main.remark(raw"The training blocks on this page are in plain `julia` fences, so they are shown and
+" * Main.indentation * raw"**not run** when the documentation is built: each took hours on a GPU. What follows every
+" * Main.indentation * raw"one of them is the *committed result* of that run, loaded from an `.h5` file beside this page,
+" * Main.indentation * raw"so the figures below are produced from the trained networks rather than from a token
+" * Main.indentation * raw"re-training. The code paths themselves are covered by the test suite -- `ReducedLoss` through
+" * Main.indentation * raw"the `Optimizer` functor by `test/losses/reduced_loss_optimization.jl` -- and reproduced at
+" * Main.indentation * raw"full size by `scripts/reproduction/symplectic_autoencoders/`, which CI runs at a smoke size
+" * Main.indentation * raw"on every pull request.")
+```
 
 ```julia
 using CUDA
