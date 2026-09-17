@@ -33,6 +33,7 @@ function check_all(T)
     volume_preserving_attention_tests(2, T)
     volume_preserving_attention_tests(3, T)
     volume_preserving_attention_tests(4, T)
+    volume_preserving_attention_tests(5, T)
 end
 
 check_all(Float16)

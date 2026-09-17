@@ -743,14 +743,15 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `check_all(Float32)` therefore ran exactly the same arithmetic as `check_all(Float64)`. The four
   now build with `rand(T, n, n, third_dim)`.
 
-  What this adds is the orthonormality assertion in single precision, and for the 5×5 this file
-  remains the only place the kernel is exercised at all.
+  What this adds is the orthonormality assertion in single precision, and at the time of this
+  change the 5×5 was exercised nowhere but here.
   `tensor_cayley2` through `tensor_cayley4` did already run in
   `Float32`: `test/attention_layer/attention_setup.jl` sends `Float32` parameters through
   `VolumePreservingAttention` at sequence lengths 2, 3 and 4, which is what selects those three
   kernels. Those tests assert volume preservation and parameter element type, never `B * B' ≈ I`.
-  They never reach `tensor_cayley5` at all — their fourth case is sequence length 10, which takes
-  the generic `cpu_tensor_cayley` branch instead.
+  They did not reach `tensor_cayley5` at all — their fourth case is sequence length 10, which takes
+  the generic `cpu_tensor_cayley` branch instead. The *Infrastructure* entry
+  *The volume-preserving attention tests cover sequence length 5* closes both gaps.
 
   The kernels pass the orthonormality assertion in single precision with a wide margin, and no
   tolerance was touched. Over 40 000 random slices per size, the quantity `B * B' ≈ one(B)` actually
@@ -1716,6 +1717,39 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `experimental: true` — resolved by `4281732c` ("Unify the shared GitHub workflows", 2026-08-31),
   which carries no changelog entry of its own. That predates and is unrelated to every sub-task in
   this release's test/script restructuring; this close-out only noticed it, and fixed nothing.
+
+- **The volume-preserving attention tests cover sequence length 5, so `tensor_cayley5` is reached
+  through the attention layer.** `VolumePreservingAttention` dispatches on its sequence length to
+  `tensor_cayley2` through `tensor_cayley5`, and falls back to the generic `cpu_tensor_cayley` for
+  every other length. `check_all` in `test/attention/attention_setup.jl` ran lengths 10, 2, 3 and 4,
+  and 10 takes the fallback — so `tensor_cayley5`, and through it the generated
+  `src/kernels/inverses/inverse_5x5.jl`, was exercised only by the direct kernel tests in
+  `test/kernels/tensor_cayley.jl` and `test/kernels/tensor_inverse.jl`. This retires two statements
+  in *The tensor Cayley kernels are checked for orthonormality in `Float32`* above: that the
+  attention tests do not reach `tensor_cayley5` at all, and that the 5×5 is exercised nowhere but
+  the direct kernel tests. Both are marked there as describing the state at that time.
+
+  The new case asserts what every other length asserts: the parameter element types, and volume
+  preservation as `det₁ ≈ det₂` and `det₁ ≈ det₃`, each computed determinant against the exact one.
+  The testset goes from 48 assertions to 60 — four tests, three element types, five lengths instead
+  of four.
+
+  **`Float16` is the precision that could have failed, and no tolerance was widened to make it
+  pass.** At N = 5, against `det₁ = -0.08386`, the `skew_sym = false` model deviates by 0.73 %
+  relative and the `skew_sym = true` model by 2.26 %, which is 23 % and 72 % of what `≈` allows.
+  That is the tightest case in the file, and it is the same order as N = 3, which already sat at
+  60 % for both models — `Float16` at these sizes has always been close, and N = 5 does not change
+  the picture. `Float32` uses at most 0.62 % of its budget and `Float64` at most 2.5e-6 %.
+
+  The comment above those assertions warns that the two computed determinants must never be
+  compared against each other. N = 5 does not add a new instance of that: `det₂` and `det₃` differ
+  by 49 % of the allowed tolerance there, where at N = 3 they differ by 119 % and the comparison
+  would fail outright.
+
+  `Random.seed!(1234)` is set once at the top of the file and the new call is last in `check_all`,
+  so lengths 10, 2, 3 and 4 draw the same matrices as before within any one `check_all`. But
+  `check_all(Float32)` and `check_all(Float64)` now start from a shifted state and test different
+  matrices. Both pass.
 
 ## [0.7.0]
 
