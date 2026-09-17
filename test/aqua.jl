@@ -15,7 +15,7 @@ using Test
 #
 # WHAT IS SWITCHED OFF, AND WHY IT IS NOT A `broken = true`.
 #
-# `piracies` reports 13 methods, and all 13 are genuine under Aqua's definition -- the function and
+# `piracies` reports 12 methods, and all 12 are genuine under Aqua's definition -- the function and
 # every argument type belong to other modules. They are not a count waiting to be triaged: each has
 # a witness, a call whose behaviour changes when this package is loaded. Three of them are on
 # `Base`, so they change every Julia process that loads this one:
@@ -24,11 +24,6 @@ using Test
 #     [1.0] + (2.0,)    MethodError without GML, 3.0 with it -- a scalar, src/utils.jl:67
 #                       silently discarding every element but the first
 #     (q, p) ≈ (q, p)   MethodError without GML, true with it             src/utils.jl:163
-#
-# The fourth worth naming here is on `AbstractNeuralNetworks` and not on `Base`. The subject is the
-# *network*: `dim(nn::NeuralNetwork)` at `src/backends/lux.jl:56` is a clean `MethodError` without
-# this package, and with it the call reaches the architecture fallback, logs an error and returns
-# `nothing` -- for every user of `AbstractNeuralNetworks`, not only for users of this one.
 #
 # `ambiguities` reports 23, of which 17 are `PoissonTensor * v` against left-multiply methods in
 # ArrayLayouts, FillArrays, Symbolics and GeometricOptimizers.
@@ -52,5 +47,5 @@ using Test
     # FillArrays, Symbolics and GeometricOptimizers, so the count moves with those packages'
     # versions rather than with anything in this tree, and an exact assertion would turn the suite
     # red on an unrelated upgrade.
-    @test length(Aqua.Piracy.hunt(GeometricMachineLearning)) == 13
+    @test length(Aqua.Piracy.hunt(GeometricMachineLearning)) == 12
 end

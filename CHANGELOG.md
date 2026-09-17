@@ -42,10 +42,9 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 - **`legacy/hnn/` and `legacy/mtk/` are gone — 17 files, of which 14 are Julia and 866 lines, and
   the package's last Flux and ModelingToolkit code.** Neither name now appears anywhere outside
-  this file. **Lux does**, so it is deliberately not claimed here: `src/backends/lux.jl:17,26,37`
-  calls `Lux.setup` and `Lux.apply`, `legacy/layers/linear_symplectic.jl` subtypes
-  `Lux.AbstractExplicitLayer`, and `scripts/Project.toml` declares it. They held the first
-  implementation of Hamiltonian neural
+  this file. **Lux does**, so it is deliberately not claimed here:
+  `legacy/layers/linear_symplectic.jl` subtypes `Lux.AbstractExplicitLayer`, and
+  `scripts/Project.toml` declares it. They held the first implementation of Hamiltonian neural
   networks here, written four ways: by hand with `Zygote`, with Flux, with Lux, and with
   ModelingToolkit generating the derivatives as committed source. Every one of those routes is now
   either inside the package or replaced by a dependency, and **this closes *C9*** — all 28 of the
@@ -89,6 +88,48 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   file fixed a bug rather than merely reshaping the data.
 
   **One capability was missing, and it is added below rather than dropped.**
+
+- **`src/backends/` is gone. Lux is not an operational backend, and it never was one here.** The
+  directory held a backend abstraction with exactly one backend, which could not run, and two
+  exported generics with no methods.
+
+  **`src/backends/lux.jl` was unreachable for two independent reasons, either of which was
+  sufficient.** `Lux` is in no `[deps]`, so every method in the file threw `UndefVarError: Lux` on
+  first call — and `NeuralNetwork(::Architecture, ::LuxBackend)` called `chain(arch, back)`, a
+  function defined in **neither this package nor `AbstractNeuralNetworks`**, so it would have failed
+  there first, before reaching `Lux.setup`. The file also carried a commented-out
+  `@generated Lux.applychain` and two commented-out `Lux.apply` methods.
+
+  **`src/backends/backends.jl` was the abstraction around it**: `abstract type AbstractBackend end`,
+  whose only subtype was `LuxBackend`, plus `function apply! end` and `function jacobian! end` —
+  both exported, both with **zero methods**. An exported name that resolves to a generic no method
+  implements is a promise the package cannot keep.
+
+  **Removed exports: `LuxBackend`, `arch`, `apply!` and `jacobian!`.** `AbstractBackend`,
+  `LuxNeuralNetwork` and `apply` were never exported. Nothing under `src/`, `test/`, `docs/` or
+  `scripts/` referenced any of the seven names outside the deleted files themselves — `arch`
+  survives all over the tree, but only ever as a local variable or parameter name, never as a call
+  to the removed generic. Backends otherwise reach this package as `KernelAbstractions` devices,
+  `CPU()` and `CUDABackend()`, which this abstraction never described.
+
+  **`AbstractNeuralNetworks.dim(nn::NeuralNetwork)` goes with it, and it was the one live line in
+  the directory.** It let `dim` take a *network* where the three architecture methods take an
+  architecture, and it was type piracy: both the generic and the type belong to
+  `AbstractNeuralNetworks`, so it changed behaviour for every user of that package rather than only
+  for users of this one. Without this package `dim(nn)` is a clean `MethodError`, because upstream
+  defines exactly one `dim` — the `@error` fallback on `Architecture` at
+  `AbstractNeuralNetworks/src/architecture.jl:8`. With it loaded the call forwards to the
+  architecture, so it answers correctly where that architecture implements `dim`, and logs an error
+  and returns `nothing` where it does not. Both are behaviour the owning package did not choose.
+
+  It is dropped rather than moved because nothing calls it. The only `dim(` call in the package is
+  `src/loss/lnn_loss.jl:55`, which passes an *architecture* and dispatches to
+  `dim(::LagrangianNeuralNetwork)`. **`dim` remains exported** — it is imported from
+  `AbstractNeuralNetworks` at `src/GeometricMachineLearning.jl:90` and re-exported, and the three
+  architecture methods are untouched.
+
+  This takes the type-piracy count from **13 to 12**, measured with `Aqua.Piracy.hunt` before and
+  after; the hit that disappears is exactly this one.
 
 - **`scripts/test/` is gone — 15 files, a third copy of the retired test suite.** Its own
   `runtests.jl` errored 9 testsets, and every file in it tested the `train!` subsystem this release
@@ -1239,11 +1280,10 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `"1"`, which is what `test/Project.toml` already did for its own stdlibs.
 
   **`ambiguities` and `piracies` are switched off by name, and not marked `broken = true`.** They
-  report 23 and 13. Both counts are recorded under *Open Issues* as *B8* and *B7*, and the 13
+  report 23 and 12. Both counts are recorded under *Open Issues* as *B8* and *B7*, and the 12
   piracies are recorded there **with a witness each** — a call whose behaviour differs between a
   process holding only the owning packages and the same process with this one loaded. Three of them
-  change `Base`, so they change every Julia process that loads this package; one turns
-  `dim(nn::NeuralNetwork)`'s `MethodError` into a silently returned `nothing`. Fixing them is a
+  change `Base`, so they change every Julia process that loads this package. Fixing them is a
   change to `src/` that this file does not own, and `broken = true` would leave a check reporting
   success while the defects stand — which is the failure mode the two guards below exist to remove.
   Six checks that fail on a real regression are worth more than eight that are all switched off.
@@ -1258,7 +1298,7 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   fails.
 
   **A switched-off check detects nothing, so `piracies` gets a gate.** `test/aqua.jl` asserts
-  `length(Aqua.Piracy.hunt(GeometricMachineLearning)) == 13`, which fails when a piracy is added and
+  `length(Aqua.Piracy.hunt(GeometricMachineLearning)) == 12`, which fails when a piracy is added and
   fails when one is removed without the *B7* entry going with it. `ambiguities` gets no such gate:
   17 of its 23 are against methods in ArrayLayouts, FillArrays, Symbolics and GeometricOptimizers,
   so the count moves with those packages' versions rather than with anything in this tree, and an
@@ -2665,8 +2705,8 @@ they resolved to is in the release notes above.
   called the non-existent `vectorfield` are gone, and `SymplecticEulerLoss` carries their content on
   `hamiltonian_vector_field`, with tests that run. The numbers are left vacant rather than reused.)
 
-- **B7. Thirteen methods are type piracy, and three of them change `Base`.** Aqua's `piracies`
-  check reports 13, and all 13 are genuine under its definition: the function and every argument
+- **B7. Twelve methods are type piracy, and three of them change `Base`.** Aqua's `piracies`
+  check reports 12, and all 12 are genuine under its definition: the function and every argument
   type belong to other modules. It is switched off in `test/aqua.jl` rather than marked
   `broken = true`, because each of these has a **witness** — a call whose behaviour differs between
   a process with only the owning packages loaded and the same process with this one added.
@@ -2682,14 +2722,7 @@ they resolved to is in the release notes above.
 
   The first two already carry a `# Type pyracy!!` comment in the source.
 
-  **`dim(nn::NeuralNetwork)` at `src/backends/lux.jl:56` is the most instructive.** The subject is
-  the *network*, not the architecture: `dim` on an architecture with no method of its own already
-  logs and returns `nothing` upstream (`AbstractNeuralNetworks/src/architecture.jl:8`). `dim` on a
-  `NeuralNetwork` is a clean `MethodError` without this package, and with it loaded the call reaches
-  the architecture fallback instead, logs an error and returns **`nothing`** — for every user of
-  that package, not only for users of this one.
-
-  Three more are functor piracy on `AbstractNeuralNetworks`: `Dense` and `Linear` applied to a
+  Three are functor piracy on `AbstractNeuralNetworks`: `Dense` and `Linear` applied to a
   three-axis array (`src/layers/resnet.jl:63,67,71`), which is a `MethodError` upstream because `*`
   cannot take a 3-tensor. `src/layers/resnet.jl:63` is also one of the ambiguities in *B8*, against
   `Affine`.
@@ -2701,7 +2734,7 @@ they resolved to is in the release notes above.
   the upstream generic already returns the right answer, and the only observable difference is that
   this one allocates where the upstream allocates nothing.
 
-  **Two of the 13 have no value witness, and that is worth saying plainly.** `:22` above, and
+  **Two of the 12 have no value witness, and that is worth saying plainly.** `:22` above, and
   `add!(C::AbstractVecOrMat, A, B)` at `src/utils.jl:49` — the most invasive of the set, shadowing
   the upstream three-argument `add!` for *every* vector and matrix including
   `AbstractNeuralNetworks`' own internal uses. The value it returns is unchanged. Its witness is an
