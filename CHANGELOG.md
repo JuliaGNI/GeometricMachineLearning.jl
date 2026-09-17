@@ -193,6 +193,20 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 ### Changed
 
+- **`DEFAULT_LNN_NRUNS` is gone from `src/architectures/lagrangian_neural_network.jl`, and the three
+  `Zygote` derivatives beside it stay.** This closes *C13*, and it splits three-to-one against what
+  that entry expected.
+
+  The constant was the default `ntraining` of an architecture-local `train!` removed in `a27140af`,
+  when the shared harness took that job over, and it has had no caller since 2023-06-08. It was
+  never exported, and nothing under `src`, `test`, `docs` or `scripts` named it.
+
+  `∇L`, `∇∇L` and `∇q̇∇q̇L` have had no caller either, but they are **kept deliberately**: they are
+  the hand-checkable `Zygote` reference for the quantities `LNNLoss` reaches through
+  `SymbolicNeuralNetworks.Jacobian`, which is the route it has to take because a nested
+  `Zygote.gradient` inside a loss breaks the parameter gradient. A comment above `∇L` now says so,
+  so that the next reader does not read three uncalled functions as an oversight.
+
 - **The pendulum scripts train through `DataLoader` + `Batch` + `Optimizer` now, and they run.**
   `scripts/reproduction/hnn_pendulum.jl` is where *B6* was diagnosed, and this file recorded that it
   "still does not run to completion, and what stops it is this". It now runs to completion on
@@ -484,9 +498,10 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   through the functor, and it was checked to fail, with exactly that message, when the annotation
   is put back.
 
-- **Twenty-three of the 25 entry points run to completion, where seven did.** `scripts/` has 25 entry
-  points — two under `verification/` and 23 under `reproduction/` — and the survey above found
-  seven of them completing, five still computing at the ceiling and 13 failing. Each
+- **All 24 entry points run to completion, where seven did.** The survey above ran over the 25
+  files that were there then, and found seven completing, five still computing at the ceiling and
+  13 failing. One of the 25 is deleted below, leaving 24 — two under `verification/` and 22 under
+  `reproduction/` — and every one of them now runs. Each
   failure was found by the new CI gate rather than by reading, and each cause was measured. The
   classes that recur across several files:
 
@@ -1169,13 +1184,22 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
     full, and 300 s for a smoke run, which takes seconds and where five minutes already means
     something is wrong.
   - **A whole-mode budget of 3600 s stops the run and names what it did not reach.** The ceiling
-    alone does not keep its own promise: 23 reproduction scripts each entitled to it outlast any
+    alone does not keep its own promise: 22 reproduction scripts each entitled to it outlast any
     runner, and the job then dies at `timeout-minutes` with no verdict at all, which is the
     outcome the ceiling exists to prevent.
 
+- **The sympnet upscaling chain is meant to be *approximately* symplectic end to end, and
+  `sympnet_upscaling_symplecticity.jl` now says so.** This closes *C12*. The measured behaviour is
+  the designed behaviour: exact end-to-end symplecticity was never the intent, and the
+  approximation improves with `N`. So the script's header states the intent, and the distinction it
+  draws is between what it *gates* — the three layerwise identities, which are exact and hold to
+  `5.6e-16`–`1.4e-15` — and what it *measures* without asserting a bound, which is the round-trip
+  deviation. Nothing about the measurement changed; what changed is that a reader no longer meets it
+  as an open question.
+
 - **`scripts/` is three directories with stated purposes.** `verification/` holds the checks that
-  establish a mathematical claim — `sympnet_upscaling_symplecticity.jl`, which measures *C12*, and
-  `network_parameters_gradient_projection.jl`. `reproduction/` holds the runs that produced the
+  establish a mathematical claim — `sympnet_upscaling_symplecticity.jl`, which measures the
+  upscaling chain's symplecticity, and `network_parameters_gradient_projection.jl`. `reproduction/` holds the runs that produced the
   committed weights and the manual's figures. `utilities/` holds what the other two include, plus
   `convert_jld2_to_h5.jl`.
 
@@ -1201,9 +1225,9 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   about the result — which is the honest limit of what a runner can check for a job that belongs on
   a GPU.
 
-  Two entry points carry no size constant, and neither costs anything to run.
+  One entry point carries no size constant and costs nothing to run:
   `symplectic_autoencoders/analytic_solution.jl` defines functions and computes nothing at top
-  level, and `sympnets/sympnet_pendulum_cuda.jl` is in `SKIPPED` below and never runs here.
+  level.
 
   Two of the sizes bound an *integration* rather than a training, and both were added late, after
   review found the two scripts still running at their full size on every pull request.
@@ -1220,21 +1244,63 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `isfile` guard is exactly what makes that silent instead of loud. CI never sees this — a fresh
   checkout has no such file — so it is a hazard for whoever reproduces a result locally.
 
-  Four scripts take their *backend* from the same switch: `volume_preserving_feedforward/rigid_body.jl`,
-  `volume_preserving_transformer/rigid_body.jl` and the two `symplectic_autoencoders/online_*.jl`
-  read `smoke_size(CUDABackend(), CPU())`, so a full run still trains on the GPU it was written for
-  and a smoke run exercises the same code on the CPU.
+  Five scripts take their *backend* from the same switch: `volume_preserving_feedforward/rigid_body.jl`,
+  `volume_preserving_transformer/rigid_body.jl`, the two `symplectic_autoencoders/online_*.jl` and
+  `linear_symplectic_transformer_gpu.jl` read `smoke_size(CUDABackend(), CPU())`, so a full run
+  still trains on the GPU it was written for and a smoke run exercises the same code on the CPU.
 
-  **Two of the 25 entry points are named in `SKIPPED`, each with the reason it is not run.** That
-  list is closed in both directions, as the two test guards' allowlists are: an entry naming a file
-  that is no longer an entry point fails the driver. An entry is a backlog item, not a design — it
-  says these files do *not* work, not that they are fine.
+  **`SKIPPED` is empty: all 24 entry points run.** The list is closed in both directions, as the
+  two test guards' allowlists are — an entry naming a file that is no longer an entry point fails
+  the driver. It stays empty by intent. An entry there is a backlog item, not a design, and the
+  only honest reason for one is hardware the runner does not have; a script skipped because it is
+  broken is a script nobody is fixing.
 
-  - `linear_symplectic_transformer_gpu.jl` pipes its training data through `cu` and then writes
-    `CUDABackend()` into three constructor calls; `sympnets/sympnet_pendulum_cuda.jl` hands `lines!`
-    the matrices `pendulum_data` returns and stops there, and past that calls `CUDA.device()` and
-    `CUDA.zeros` directly, which is what distinguishes it from `sympnet_pendulum.jl`. No CI runner
-    has a GPU.
+- **The two scripts the gate did not cover are now one repaired and one deleted, and `SKIPPED` is
+  empty.**
+
+  `linear_symplectic_transformer_gpu.jl` **is repaired, not deleted**, because the coverage was not
+  there: it is the only script that builds a `LinearSymplecticTransformer`, and the
+  `transformer_integrator/symplectic_transformer.jl` it was compared against builds a
+  `SymplecticTransformer` — a different architecture — and no `GSympNet`. It takes
+  `backend = smoke_size(CUDABackend(), CPU())` like its four siblings now, with `T = Float32`
+  named once, the `cu` on the input made conditional, and smoke sizes on `n_init_con` and
+  `batch_size` as well: 1000 `ImplicitMidpoint` trajectories was the cost here, not the training.
+
+  `sympnets/sympnet_pendulum_cuda.jl` **is deleted.** Repairing the `lines!` call it stopped at
+  would have left a file that still cannot run on a GPU, because it is broken in four further
+  independent places past that point: `Lux.setup(CUDA.device(), rng, model)`, where `setup` takes
+  `(rng, model)`; `optimization_step!(opt, model, ps, dp)`, whose second argument is a
+  `GlobalSection` now; `q_learned[0] = q[0]` on a 1-based array, which cannot ever have run; and a
+  `@cuda threads=length(q)` kernel writing `z[i], z[i+1]` into a 2-element `CUDA.zeros(2)`. Its CPU
+  sibling `sympnet_pendulum.jl` is a full port of the same script and runs. What it demonstrated
+  that the sibling does not — `CUDA.device()` and a hand-written kernel — it demonstrated in code
+  that never executed.
+
+  `scripts/README.md`'s *What the gate does not cover* now answers "nothing", and says why an entry
+  in that list is a backlog item rather than a design.
+
+- **Two defects the gate found in passing are fixed.**
+
+  `volume_preserving_feedforward/abc_flow.jl`'s `make_validation_plot(t_validation, nn)` never used
+  `nn` — the body read the global `nn₁`, and it was harmless only because both call sites passed
+  `nn₁`. It uses the argument now. Three unused imports go with it, in the two files this change
+  already touches: `norm` and `gradient` in `abc_flow.jl`, and `default_parameters` in
+  `linear_symplectic_transformer_gpu.jl`. Each appeared only on its own import line.
+
+  **`test/data_loader/batch_data_loader_qp_test.jl` asserted nothing** — no `@test` at all, so its
+  testset reported `Total 0`. It reports `Pass 10, Total 10` now, from seven `@test` expressions,
+  three of which run once per data shape. Four state the shape bookkeeping that is the file's
+  subject and that nothing else in `test/data_loader/` covers: a `(q, p)` pair of *matrices* is one
+  trajectory, so the second axis is time and `n_params` is 1, where a *bare* matrix of the same
+  shape has its second axis read as the parameter index. Six state that both the matrix and the
+  tensor shape reach the training loop — the loss array has the requested length and is finite, and
+  the parameters moved.
+
+  The assertion this file does *not* make is that the loss fell. `loss_array[end] <
+  loss_array[begin]` was measured and it fails at the file's own seed and sizes,
+  `0.7160869905795496 → 0.716345187420339` on the tensor path: ten plain gradient steps on random
+  data do not reliably descend. An assertion that fails for a reason unconnected to the data loader
+  is the same defect as an assertion that cannot fail.
 
 - **`.gitignore` covers the `.jld2` weights and `.pdf` figures the scripts write.** The `.h5` and
   `.png` patterns were added when nothing ran these scripts; the CI job runs all of them on every
@@ -2359,40 +2425,12 @@ they resolved to is in the release notes above.
   Counting the include sites whose argument is a string literal: 28 under `legacy/`, of which 15
   do not resolve and 13 do. Seven of the 15 were already broken before this release.
 
-- **C12. The sympnet upscaling chain is symplectic layer by layer, not end to end, and whether it
-  is meant to be is undecided.** `PSDLayer(N, N2) → GradientLayerQ(N2) → GradientLayerP(N2) →
-  PSDLayer(N2, N)`: each layer satisfies its own exact symplectic identity (`E'𝕁_{N2}E = 𝕁_N`,
-  `G'𝕁_{N2}G = 𝕁_{N2}`, `D𝕁_{N2}D' = 𝕁_N`), but the composition does not, for an algebraic
-  reason rather than a numerical one — the round trip needs the shear pair to preserve the
-  rank-`N` embedded Poisson tensor `E𝕁_N E'`, while the pair actually preserves the full-rank
-  `𝕁_{N2}`, and a rank-`N` matrix cannot equal a rank-`N2` one for `N2 > N`. Measured directly:
-  worst relative round-trip deviation over 20 random chains, `Float64`, weights tied, is `0.0018
-  .. 0.84` at `(N, N2) = (2, 4)`, `0.016 .. 0.087` at `(4, 16)` and `0.026 .. 0.072` at `(20,
-  40)` — shrinking with `N` but never zero — while the three layerwise identities hold to
-  `5.6e-16`–`1.4e-15` at the same sizes. `cond(E) = 1.0` rules out ill-conditioning, and the
-  round-trip deviation stays the same order of magnitude in `Float32` as in `Float64` — unlike the
-  layerwise identities, which drop with it — which rules out rounding as the cause.
-
-  The check is archived as `scripts/sympnet_upscaling_symplecticity.jl`
-  ([#276](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/276)); running it reproduces
-  the figures above. What it does not answer is whether exact end-to-end symplecticity was ever the
-  intended property of this architecture, as opposed to an approximation that improves with `N` —
-  that is a design question for the user, not something this check can settle.
-
-- **C13. Four dead names remain in `src/architectures/lagrangian_neural_network.jl`.** `∇L:30`,
-  `∇∇L:35`, `∇q̇∇q̇L:39` and the constant `DEFAULT_LNN_NRUNS:2` have no caller. They were dead
-  before this release, which is why it removes only `∇q∇q̇L`, the one its own deletion orphaned.
-
-  `∇L` last had a caller in `7f1b3dd0` (2023-06-22). `∇q̇∇q̇L` appeared only in the commented-out
-  remainder of `src/training_method/lnn_exact_method.jl:10`, and `∇∇L` survives as its callee alone.
-  `DEFAULT_LNN_NRUNS` was the default `ntraining` of an architecture-local `train!` method added in
-  `aa1e0471` and removed in `a27140af`, when the shared harness took that job over. The constant
-  stayed behind and has had no caller since 2023-06-08.
-
-  All three functions take their derivatives with `Zygote`, which is the route `LNNLoss` cannot
-  use: a nested `Zygote.gradient` inside a loss breaks the parameter gradient. So this is not a
-  second route to one answer that a caller might want. Deleting them is the expected decision; it
-  belongs to a change that owns this file.
+  (**C12** and **C13** are closed by this release and their entries are gone. C12 resolved to a
+  design answer rather than a repair — approximate end-to-end symplecticity is the intent, and the
+  verification script now states it. C13 resolved against the expectation its own entry recorded:
+  `DEFAULT_LNN_NRUNS` is removed, and `∇L`, `∇∇L` and `∇q̇∇q̇L` are kept as the `Zygote` reference
+  for what `LNNLoss` computes symbolically. Both are under *Changed*. The numbers are left vacant
+  rather than reused.)
 
 ### D. Unverified
 
