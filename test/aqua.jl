@@ -20,10 +20,10 @@ using Test
 # a witness, a call whose behaviour changes when this package is loaded. Three of them are on
 # `Base`, so they change every Julia process that loads this one:
 #
-#     1.0 + (2.0,)      MethodError without GML, 3.0 with it              src/utils.jl:61
-#     [1.0] + (2.0,)    MethodError without GML, 3.0 with it -- a scalar, src/utils.jl:67
+#     1.0 + (2.0,)      MethodError without GML, 3.0 with it              src/utils.jl:65
+#     [1.0] + (2.0,)    MethodError without GML, 3.0 with it -- a scalar, src/utils.jl:71
 #                       silently discarding every element but the first
-#     (q, p) ≈ (q, p)   MethodError without GML, true with it             src/utils.jl:163
+#     (q, p) ≈ (q, p)   MethodError without GML, true with it             src/utils.jl:167
 #
 # `ambiguities` reports 18 when `GeometricMachineLearning` is the only package loaded: the 17
 # `PoissonTensor * v` ambiguities against left-multiply methods in ArrayLayouts, FillArrays,

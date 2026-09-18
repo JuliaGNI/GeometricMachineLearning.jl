@@ -3071,9 +3071,9 @@ they resolved to is in the release notes above.
 
   | method | `src` | without GML | with GML |
   |:--|:--|:--|:--|
-  | `+(::Float64, ::Tuple{Float64})` | `utils.jl:61` | `MethodError` | `3.0` |
-  | `+(::Vector{Float64}, ::Tuple{Float64})` | `utils.jl:67` | `MethodError` | `3.0` — a **scalar**, silently discarding every element but the first |
-  | `isapprox(::@NamedTuple{q, p}, ::…)` | `utils.jl:163` | `MethodError` | `true` |
+  | `+(::Float64, ::Tuple{Float64})` | `utils.jl:65` | `MethodError` | `3.0` |
+  | `+(::Vector{Float64}, ::Tuple{Float64})` | `utils.jl:71` | `MethodError` | `3.0` — a **scalar**, silently discarding every element but the first |
+  | `isapprox(::@NamedTuple{q, p}, ::…)` | `utils.jl:167` | `MethodError` | `true` |
 
   The first two already carry a `# Type pyracy!!` comment in the source.
 
@@ -3090,7 +3090,7 @@ they resolved to is in the release notes above.
   this one allocates where the upstream allocates nothing.
 
   **Two of the 12 have no value witness, and that is worth saying plainly.** `:22` above, and
-  `add!(C::AbstractVecOrMat, A, B)` at `src/utils.jl:49` — the most invasive of the set, shadowing
+  `add!(C::AbstractVecOrMat, A, B)` at `src/utils.jl:53` — the most invasive of the set, shadowing
   the upstream three-argument `add!` for *every* vector and matrix including
   `AbstractNeuralNetworks`' own internal uses. The value it returns is unchanged. Its witness is an
   allocation regression: it writes `C .= A + B`, materialising the sum, where the upstream generic
@@ -3111,7 +3111,7 @@ they resolved to is in the release notes above.
   `AbstractNeuralNetworks.NetworkLoss`.
 
   Seventeen of the remaining 18 are `PoissonTensor * v`
-  (`src/arrays/poisson_tensor.jl:71,74,77`) against left-multiply methods in `ArrayLayouts`,
+  (`src/arrays/poisson_tensor.jl:75,78,81`) against left-multiply methods in `ArrayLayouts`,
   `FillArrays`, `Symbolics` and `GeometricOptimizers`; closing them is a design decision (narrowing
   `PoissonTensor`'s `Base.:*` methods while keeping its `AbstractMatrix` supertype) that a later
   release makes, not a witness that is missing. The last is the `Dense` functor of *B7* against

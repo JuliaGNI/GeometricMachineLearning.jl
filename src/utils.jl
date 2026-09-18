@@ -35,8 +35,8 @@ function _norm(dx::NT) where {
     (norm(dx.q) + norm(dx.p)) / √(T(2))
 end # we need this because of a Zygote problem
 function _norm(dx::NamedTuple)
-    T = promote_type(map(eltype, values(dx))...)
-    sum(map(norm, dx)) / √(T(length(dx)))
+    n = sum(map(norm, dx))
+    n / √(typeof(n)(length(dx)))
 end
 _norm(A::AbstractArray) = norm(A)
 

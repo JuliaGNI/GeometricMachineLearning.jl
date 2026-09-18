@@ -61,6 +61,5 @@ end
 @test eltype(PoissonTensor(4)) == Float64
 
 # `PoissonTensor(backend::Backend, n2::Int)` has no method: a caller that names a backend must
-# also name an element type. See `CHANGELOG.md`'s "Removed (breaking)" section for why the CPU
-# and GPU defaults were dropped from this signature.
+# also name an element type. See the "Removed (breaking)" section of `CHANGELOG.md`.
 @test_throws MethodError PoissonTensor(CPU(), 4)

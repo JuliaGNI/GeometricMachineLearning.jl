@@ -1,9 +1,9 @@
-# Same defect as `PSDLayer` (see `test/layers/psd_parameterlength.jl`): `parameterlength(d::
-# MultiHeadAttention{M, M, true})` routed an integer count through `Float64` division and back
-# through `Int(...)`, exact for every size the rest of the suite constructs but not for every size
-# the type accepts. `MultiHeadAttention` stores only `n_heads::Int` and `activation`, so
-# `parameterlength` can be evaluated at a scale no real layer could allocate, and there the old
-# `Float64` path silently rounds to the wrong integer.
+# `parameterlength(d::MultiHeadAttention{M, M, true})` counts parameters with `÷` alone, which is
+# exact by construction for every size that fits in an `Int`. Exactness at every size matters
+# because `MultiHeadAttention` stores only `n_heads::Int` and `activation`, so `parameterlength`
+# can be evaluated at a scale no real layer could allocate -- a scale where `Float64` no longer
+# represents the intermediate product exactly. Same guard as `PSDLayer`'s, in
+# `test/layers/psd_parameterlength.jl`. See `CHANGELOG.md` for the fix this guards.
 
 using GeometricMachineLearning
 using Test
@@ -18,9 +18,10 @@ GML = GeometricMachineLearning
     end
 end
 
-@testset "parameterlength(::MultiHeadAttention{M,M,true}) is exact where the old Float64 path was not" begin
-    # M = 83_767_764, n_heads = 6: `Int(3*M^2 - 3*M*(M + n)/(2*n))` rounds to 19296855159637520
-    # here; the exact value (checked against `BigInt` arithmetic) is 19296855159637518.
+@testset "parameterlength(::MultiHeadAttention{M,M,true}) is exact beyond the Float64 mantissa" begin
+    # `3*M*(M + n)` is about `2.1e16` here, past the `2^53` up to which a `Float64` holds every
+    # integer, so the same count taken through a `Float64` division lands on 19296855159637520.
+    # The exact value, checked against `BigInt` arithmetic, is 19296855159637518.
     M = 83_767_764
     n = 6
     d = GML.MultiHeadAttention{M, M, true, true, GML.VectorSoftmax}(n, GML.VectorSoftmax())
