@@ -705,7 +705,10 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
     error in `Float64`.
   - **`DataLoader(::EnsembleSolution)` types its zero-filled buffer.** The `zeros(sys_dim,
     input_time_steps, n_params)` in `src/data_loader/data_loader.jl` had no element type, unlike
-    the three sibling constructors in the same file that all write `zeros(T, ...)`.
+    the three sibling constructors in the same file that all write `zeros(T, ...)`. The fix is
+    correct by inspection — it matches the three siblings character for character — but the method
+    it fixes is unreachable with this package's current dependencies, so no test exercises it. See
+    *Open Issues* below.
   - **The GO-native leaf optimizer step now scales in the parameter's own element type.**
     `_leaf_optim_step!` (`src/optimizers/optimizer.jl`) called `GeometricOptimizers._rmul!(
     direction(cache), step_size)` with the raw `step_size`, which the step-size funnel always hands
@@ -3146,6 +3149,38 @@ they resolved to is in the release notes above.
   job that the next reader has to re-diagnose.
 
   Closing it means writing the parameter so that it binds, which is a change to `src/`.
+
+- **B10. `DataLoader(::EnsembleSolution{T, T1, Vector{ST}})` at `src/data_loader/data_loader.jl:323`
+  has no test and appears unreachable through this package's current dependencies.** It dispatches
+  on `ST <: Union{GeometricSolution{T, T1, TT, NamedTuple{(:t, :q, :v), TuT}},
+  GeometricSolution{T, T1, TT, NamedTuple{(:t, :q, :q̇), TuT}}}` — a `GeometricSolution` whose
+  `dataser` has exactly the two keys `:q` and `:v` (or `:q̇`) besides `:t`, with no `:p`.
+
+  Checked against `GeometricEquations` 0.21.3 (this package's resolved version): every equation
+  type's own `initialstate(equ, t, ics, params)` reconstructs its `ics` from its own fixed field
+  set regardless of what is passed in, and no type pairs `:v`/`:q̇` without also carrying `:p` —
+  `SODE`/`ODE` give `(:q,)` alone; `PODE`/`HODE` give `(:q, :p)`; `IODE`/`LODE` give
+  `(:q, :p, :v)`; `IDAE`/`LDAE` give `(:q, :p, :v, :λ, :μ)`. Verified directly for `SODE`:
+  `initialstate(equ::SODE, t, ics, params) = (q = _statevariable(ics.q, periodicity(equ)),)`
+  discards everything but `.q` even when `ics` already has a `:v` key. So no
+  `EquationProblem`/`EnsembleProblem` built from any equation type this package depends on can
+  produce a two-key `dataser` — passing a NamedTuple with the right keys through the public
+  constructor does not help, because the equation-specific `initialstate` method throws it away.
+
+  `GeometricSolution` and `EnsembleSolution` each define exactly one inner constructor (taking a
+  `GeometricProblem`/`EnsembleProblem`), so Julia generates no default all-fields constructor for
+  either, and there is no supported way to build one directly. The two low-level bypasses tried —
+  `ccall(:jl_new_struct, ...)` on the (mutable) `GeometricSolution`, and
+  `ccall(:jl_new_struct_uninit, ...)` followed by `setfield!` on each field — both crashed the
+  Julia process with a segmentation fault (the first immediately; the second on a later, unrelated
+  allocation, consistent with GC scanning a partially-initialized object), which is why neither is
+  a technique this package's test suite should rely on.
+
+  The fix in `src/data_loader/data_loader.jl:337` (`zeros(T, ...)` instead of untyped `zeros(...)`)
+  is correct by inspection — it matches the file's three sibling constructors character for
+  character — but is untested. Closing this means either GeometricEquations gaining an equation
+  type whose `initialstate` returns exactly `(:q, :v)` or `(:q, :q̇)`, or deciding the method is
+  dead code and removing it (Part E of the audit, not this one).
 
 ### C. Follow-ups and cleanups
 
