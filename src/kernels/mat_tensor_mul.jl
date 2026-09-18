@@ -67,7 +67,7 @@ function mat_tensor_mul(A::AbstractMatrix, B::AbstractArray{<:Number, 3})
     sizeA = size(A)
     sizeB = size(B)
     backend = networkbackend(A)
-    C = KernelAbstractions.zeros(backend, T, sizeA[1], sizeB[2], sizeB[3])
+    C = KernelAbstractions.allocate(backend, T, sizeA[1], sizeB[2], sizeB[3])
     mat_tensor_mul!(C, A, B)
     C
 end
@@ -97,7 +97,7 @@ function symmetric_mat_mul!(C::AbstractArray{T, 3}, S::AbstractVector{T},
 end
 
 function symmetric_mat_mul(S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where {T}
-    C = copy(B)
+    C = similar(B)
 
     symmetric_mat_mul!(C, S, B, n)
 
@@ -144,7 +144,7 @@ function lo_mat_mul!(
 end
 
 function lo_mat_mul(S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where {T}
-    C = zero(B)
+    C = similar(B)
 
     lo_mat_mul!(C, S, B, n)
 
@@ -191,7 +191,7 @@ function up_mat_mul!(
 end
 
 function up_mat_mul(S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where {T}
-    C = zero(B)
+    C = similar(B)
 
     up_mat_mul!(C, S, B, n)
 
@@ -239,7 +239,7 @@ function skew_mat_mul!(
 end
 
 function skew_mat_mul(S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where {T}
-    C = zero(B)
+    C = similar(B)
 
     skew_mat_mul!(C, S, B, n)
 

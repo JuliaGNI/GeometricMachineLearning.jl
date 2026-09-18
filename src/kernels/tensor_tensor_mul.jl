@@ -23,7 +23,7 @@ end
 
 function tensor_tensor_mul(A::AbstractArray{T, 3}, B::AbstractArray{T, 3}) where {T}
     backend = networkbackend(A)
-    C = KernelAbstractions.zeros(backend, T, size(A)[1], size(B)[2], size(A)[3])
+    C = KernelAbstractions.allocate(backend, T, size(A)[1], size(B)[2], size(A)[3])
     tensor_tensor_mul!(C, A, B)
     C
 end

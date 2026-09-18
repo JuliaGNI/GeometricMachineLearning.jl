@@ -405,6 +405,82 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 ### Changed
 
+- **`MultiHeadAttention` concatenates its heads once instead of once per head.** Both
+  `compute_output_of_mha` methods grew the output by `vcat` inside the head loop, so the
+  intermediate rows grew with the square of the head count. They build the head outputs first and
+  `vcat` over all of them once. The tensor method also allocated a `single_head_output` buffer that
+  was unconditionally reassigned before any read; that is gone, and the head key is
+  `Symbol("head_", i)` rather than `Symbol("head_" * string(i))`.
+
+  **The two methods concatenate differently, and the difference is forced.** `reduce(vcat, …)`
+  takes Base's linear path only for `AbstractVecOrMat`. The matrix method therefore uses it. On the
+  3-tensor method it folds pairwise and stays quadratic — concatenating 32 head tensors of 4×64×16
+  costs 8,646,272 B that way against 539,344 B for a variadic `vcat` — so the tensor method splats
+  instead. A preallocated output written into per head would serve both, but it raises *"Mutating
+  arrays is not supported -- called setindex!"* under Zygote: these are forward passes, so the
+  concatenation has to stay differentiable.
+
+  **The splat needs its result type asserted**, `vcat(head_outputs...)::eltype(head_outputs)`.
+  Splatting a vector hides the argument count from inference: without the assertion the tensor
+  method infers as `Any`, where it was concrete before, and that `Any` propagates out through the
+  layer functor into the whole forward pass. A concatenation has the type of the pieces it
+  concatenates, so the assertion states what is already true, and allocations are identical with it
+  and without. `reduce` needs no assertion, which is the second reason the matrix method uses it.
+
+  `test/attention/multi_head_attention_inference.jl` pins the inferred return type of both methods
+  and of the functor. Nothing else in `test/` asserts the inference of a forward pass, so without it
+  a regression here is invisible to the suite: the layer keeps returning the right numbers.
+
+  Allocations per call, cold processes, the output's checksum unchanged at every size:
+
+  | dimension, heads, length, data | path | before | after |
+  |:--|:--|--:|--:|
+  | 64, 8, 32, 16 | matrix | 176,592 B | 150,096 B |
+  | 64, 8, 32, 16 | tensor | 2,732,208 B | 2,261,296 B |
+  | 128, 16, 64, 16 | matrix | 1,221,424 B | 974,864 B |
+  | 128, 16, 64, 16 | tensor | 19,308,848 B | 15,306,992 B |
+  | 128, 32, 64, 16 | matrix | 2,311,760 B | 1,802,128 B |
+  | 128, 32, 64, 16 | tensor | 36,233,776 B | 28,008,560 B |
+
+  **At 4 heads on an 8×6 matrix the change costs 480 bytes more** — 6,832 against 6,352 — which is
+  the fixed cost of the vector the heads are collected into. The saving only outgrows it once the
+  quadratic term is worth removing, and it grows with the head count: −15 % at 8 heads, −22 % at 32.
+
+- **Buffers the kernels write in full are allocated rather than zeroed.**
+  `KernelAbstractions.zeros` becomes `KernelAbstractions.allocate` in `mat_tensor_mul`,
+  `tensor_mat_mul`, `tensor_tensor_mul`, `tensor_transpose_mat_mul`,
+  `tensor_transpose_tensor_mul` and `tensor_tensor_transpose_mul`; `copy(B)` in
+  `symmetric_mat_mul` and `zero(B)` in `lo_mat_mul`, `up_mat_mul` and `skew_mat_mul` become
+  `similar(B)`. Each of the ten kernels was read first: every one writes every element of `C` over
+  `ndrange = size(C)` — six index it `C[i, j, k]` and four `C[i, j, l]` — so nothing reads an
+  uninitialised element.
+
+  **The honest size of this is small.** In isolation at 64³ `Float32`, `zeros` costs 31.3 µs
+  against `allocate`'s 1.08 µs, `copy` 12.4 µs and `zero` 8.5 µs against `similar`'s 0.04 µs. Inside
+  the multiplies those precede — 3.5 ms to 8 ms at the same size — the saving is under half a
+  percent and does not clear the measurement noise. `mat_tensor_mul` and `tensor_tensor_mul` do drop
+  12,400 bytes per call, because `KernelAbstractions.zeros` allocates more than the array.
+
+  Two buffers that look the same are untouched, for different reasons. `augment_zeros` in
+  `src/data_loader/tensor_assign.jl` zeroes a tensor its kernel writes only a slice of, so there the
+  zeroing carries load. The `kernel_ad_routines` buffers do not: their kernels sum into a local and
+  assign `dA[l, m, h]` or `dS[l, h]` once, over the full `ndrange`, exactly as the forward kernels
+  do. They are left because this part was scoped to the forward path, and they are catalogued as
+  *C15*.
+
+- **Two pieces of dead code beside the buffers are gone.** `convert_input_and_batch_indices_to_array`
+  in `src/data_loader/batch.jl` built a `time_indices` comprehension that nothing read, and
+  `augment_zeros` in `src/data_loader/tensor_assign.jl` destructured `size(output_diff)` twice into
+  the same three names. Neither changes behaviour.
+
+- **The minibatch copies in `optimize_for_one_epoch!` are gone, with `_copy` and its three
+  methods.** They were there under the comment *"these `copy`s should not be necessary! coming from
+  a Zygote problem!"*, which named no issue, no Zygote version and no reproducer — and Zygote has
+  moved from 0.6 to 0.7 since it was written. It no longer applies: training runs without them for
+  `GSympNet` on matrix and on `(q, p)` data, `SymplecticAutoencoder`,
+  `StandardTransformerIntegrator`, `LinearSymplecticTransformer`, and a `DataLoader` carrying a
+  separate output, and the suite is green. Every minibatch of every epoch was being copied for this.
+
 - **`DEFAULT_LNN_NRUNS` is gone from `src/architectures/lagrangian_neural_network.jl`, and the three
   `Zygote` derivatives beside it stay.** This closes *C13*, and it splits three-to-one against what
   that entry expected.
@@ -686,6 +762,32 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `exact_solution` both come from `GeometricProblems.HarmonicOscillator`.
 
 ### Fixed
+
+- **Building the minibatch index set is linear again, and its return type is concrete.**
+  `batch_over_two_axes` grew a tuple by splatting, `batches = (batches..., …)`, once per minibatch.
+  Every iteration built a new tuple type, so the function inferred as
+  `Tuple{Vararg{Vector{Tuple{Int, Int}}}}` — not concrete — and the `for batch_indices in batches`
+  loop in `optimize_for_one_epoch!` dispatched dynamically once per batch. It returns a
+  `Vector{Vector{Tuple{Int, Int}}}` now.
+
+  Measured in cold `--check-bounds=auto` processes, on `DataLoader(rand(Float32, 4, n))` with
+  `Batch(8)`:
+
+  | columns | minibatches | before | after |
+  |--:|--:|--:|--:|
+  | 200 | 25 | 13,904 B, 0.014 ms | 10,464 B, 0.001 ms |
+  | 2,000 | 250 | 369,824 B, 0.587 ms | 99,440 B, 0.009 ms |
+  | 8,000 | 1,000 | 4,530,736 B, 41.77 ms | 397,088 B, 0.032 ms |
+
+  Four times the minibatches used to cost fifteen times the wall clock; it now costs four times the
+  memory and the wall clock grows with it. `test/data_loader/batch_index_set.jl` asserts both
+  properties — that the inferred return type is concrete, and that the allocation ratio between 250
+  and 1,000 minibatches stays below six — so neither can come back unnoticed.
+
+  **The functor's output is a vector, not a tuple, which is visible to callers.** The docstrings of
+  `Batch` and `number_of_batches`, the `data_loader` documentation page and the two tests that
+  mirror those doctests all say so now; `length.(batch(dl))` returns `[2, 2, 1]` where it returned
+  `(2, 2, 1)`. Everything that iterates the result, takes its `length` or `vcat`s it is unaffected.
 
 - **A `Float32` network stays `Float32` through training, `_norm` and a few more corners that used
   to promote silently to `Float64`.**
@@ -3272,6 +3374,32 @@ they resolved to is in the release notes above.
   `DEFAULT_LNN_NRUNS` is removed, and `∇L`, `∇∇L` and `∇q̇∇q̇L` are kept as the `Zygote` reference
   for what `LNNLoss` computes symbolically. Both are under *Changed*. The numbers are left vacant
   rather than reused.)
+
+- **C14. `evaluate_vf_and_compute_∇Ψ` evaluates the decoder twice.**
+  `src/reduced_system/reduced_system.jl` calls `decoder((q = q̃, p = p̃))` for the value, then
+  `ForwardDiff.jacobian(qp -> decoder(qp), vcat(q̃, p̃))` evaluates it again for the derivative. The
+  comment above the function blamed "a problem with nested derivatives in ForwardDiff" and named no
+  version, no issue and no reproducer; that claim is not reproduced here, and the comment now points
+  at this entry instead of asserting it. What is certain is the double evaluation, which is visible
+  in the two calls.
+
+  Closing it means computing the value and the Jacobian in one pass — `DiffResults` is the tool —
+  across the shape change from the `(q, p)` `NamedTuple` the vector fields are splatted from to the
+  flat vector the Jacobian is taken against. `test/reduced_order_modeling/reduced_system.jl`
+  exercises the function, so the change is checkable. It was left out of the audit's Part C
+  deliberately: it is a restructuring with its own verification, not the comment repair that part
+  was scoped to.
+
+- **C15. The `kernel_ad_routines` buffers are still zeroed where allocating would do.**
+  `src/kernels/kernel_ad_routines/` allocates `dA = zero(A)`, `dS = KernelAbstractions.zeros(…)` and
+  the same shape in `tensor_mat_mul.jl`, `tensor_mat_skew_sym_assign.jl` and `vec_tensor_mul.jl`.
+  Their kernels sum into a local and assign the buffer element once, over an `ndrange` equal to the
+  buffer's size, so no element is read before it is written — the same argument that let the forward
+  wrappers move to `allocate` and `similar` under *Changed*.
+
+  This part was scoped to the forward path, so they were not changed with it. The backward pass is
+  where training spends its time, so the gain should be larger here than the forward figures, which
+  is also why it wants its own before-and-after measurement rather than being folded into that pass.
 
 ### D. Unverified
 

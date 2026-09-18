@@ -65,7 +65,7 @@ function tensor_mat_mul(A::AbstractArray{<:Number, 3}, B::AbstractMatrix)
     @assert sizeA[2] == sizeB[1]
     tensor_shape = (sizeA[1], sizeB[2], sizeA[3])
     backend = networkbackend(A)
-    C = KernelAbstractions.zeros(backend, T, tensor_shape...)
+    C = KernelAbstractions.allocate(backend, T, tensor_shape...)
     tensor_mat_mul!(C, A, B)
     C
 end

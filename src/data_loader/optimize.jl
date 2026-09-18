@@ -68,9 +68,7 @@ function optimize_for_one_epoch!(opt::Optimizer,
     batches = batch(dl)
     for batch_indices in batches
         count += 1
-        # these `copy`s should not be necessary! coming from a Zygote problem!
-        input_nt_output_nt = convert_input_and_batch_indices_to_array(dl, batch, batch_indices) |>
-                             _copy
+        input_nt_output_nt = convert_input_and_batch_indices_to_array(dl, batch, batch_indices)
         loss_value, pullback = _pullback(ps, model, input_nt_output_nt)
         total_error += loss_value
         dp = _processing(pullback(one(loss_value)))
@@ -78,10 +76,6 @@ function optimize_for_one_epoch!(opt::Optimizer,
     end
     total_error / count
 end
-
-_copy(a::AbstractArray) = copy(a)
-_copy(qp::QPT) = (q = copy(qp.q), p = copy(qp.p))
-_copy(t::Tuple{<:QPTOAT, <:QPTOAT}) = _copy.(t)
 
 function (o::Optimizer)(nn::NeuralNetwork,
         dl::DataLoader,

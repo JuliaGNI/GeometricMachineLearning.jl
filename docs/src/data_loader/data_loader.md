@@ -68,10 +68,10 @@ batches = batch(dl)
 The output of applying the batch functor is always of the form: 
 
 ```math
-([(b_{1,1}^t, b_{1,1}^p), (b_{1,2}^t, b_{1,2}^p), \ldots], [(b_{2,1}^t, b_{2, 1}^p), (b_{2, 2}^t, b_{2, 2}^p), \ldots], [(b_{3, 1}^t, b_{3, 2}^p), \ldots], \ldots),
+[[(b_{1,1}^t, b_{1,1}^p), (b_{1,2}^t, b_{1,2}^p), \ldots], [(b_{2,1}^t, b_{2, 1}^p), (b_{2, 2}^t, b_{2, 2}^p), \ldots], [(b_{3, 1}^t, b_{3, 2}^p), \ldots], \ldots],
 ```
 
-so it is a tuple of vectors of tuples. One vector represents one batch:
+so it is a vector of vectors of tuples. One vector represents one batch:
 
 ```@example batches
 for (minibatch, i) in zip(batches[1], axes(batches[1], 1))
