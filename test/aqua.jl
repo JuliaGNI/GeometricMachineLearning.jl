@@ -25,13 +25,10 @@ using Test
 #                       silently discarding every element but the first
 #     (q, p) ≈ (q, p)   MethodError without GML, true with it             src/utils.jl:163
 #
-# `ambiguities` reported 23 when `GeometricMachineLearning` is the only package loaded. Four were
-# the loss functors against `AbstractNeuralNetworks`' `(::NetworkLoss)(::NeuralNetwork, …)`, and one
-# was `_GMLGradient` against `SimpleSolvers`' `(::Gradient{T})(::AbstractVector{T})` -- all five
-# fixed by typing the losses' first parameter and adding the missing `_GMLGradient` method
-# (`optimizer.jl`). Measured the same way, that leaves 18: the 17 `PoissonTensor * v` ambiguities
-# against left-multiply methods in ArrayLayouts, FillArrays, Symbolics and GeometricOptimizers
-# (out of scope here, see `## Open Issues`), plus one benign `Dense`/`Affine` pair with no witness.
+# `ambiguities` reports 18 when `GeometricMachineLearning` is the only package loaded: the 17
+# `PoissonTensor * v` ambiguities against left-multiply methods in ArrayLayouts, FillArrays,
+# Symbolics and GeometricOptimizers (out of scope here, see `## Open Issues`), plus one benign
+# `Dense`/`Affine` pair with no witness.
 #
 # **But 18 is not what this file measures, because this file does not run in isolation.** By the
 # time this `@safetestset` runs, `runtests.jl` has already loaded `Zygote`, `GeometricIntegrators`
@@ -63,7 +60,6 @@ using Test
     # A switched-off check detects nothing, so the count it would have reported drifts unobserved,
     # and so does every `src` line named above. This is the gate. It fails when a piracy is added,
     # and it fails when one is removed without the entry above and in `CHANGELOG.md` going with it.
-    #
     @test length(Aqua.Piracy.hunt(GeometricMachineLearning)) == 12
 
     # `ambiguities` gets no such gate, and the measurements above are why it cannot have one. The

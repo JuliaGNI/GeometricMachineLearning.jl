@@ -2966,8 +2966,11 @@ they resolved to is in the release notes above.
   `AbstractMatrix` for their own index types, and `PoissonTensor`'s own
   `getindex(𝕁::PoissonTensor, i, j)` (`poisson_tensor.jl:39`) is exactly as generic on its index
   arguments, so it collides with 9 of them — the same class of defect as the 17 `*` ambiguities,
-  on the same type, and out of scope for the same reason. `test/aqua.jl` asserts 27, the number
-  that actually governs `Pkg.test()`, and says why it is not 18.
+  on the same type, and out of scope for the same reason. `test/aqua.jl` records both numbers and
+  asserts neither: 27 depends on which packages a given process has loaded by the time the check
+  runs, which follows the order `runtests.jl` includes its subjects, so a failure could equally
+  mean an upstream upgrade or a reordering of this suite. The piracy count above it has no such
+  exposure, which is why that one is asserted.
 
 - **B9. One unbound type parameter, which only Julia nightly reports.** Aqua's `unbound_args` fails
   on the `nightly` job over `Base.iterate(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, ics::BT;

@@ -1,8 +1,8 @@
 # `MatrixSoftmax` is the default `attention_activation` of `SymplecticAttentionQ`,
 # `SymplecticAttentionP` and `SymplecticTransformer`, applied to `QᵀAQ` with `A` a learned,
-# unbounded weight. Unlike `VectorSoftmax` (which delegates to `NNlib.softmax`, and does subtract
-# the maximum before exponentiating), both `MatrixSoftmax` methods computed `exp.(x)` directly, so
-# a large-but-ordinary entry overflowed to `Inf` and the normalised result to `NaN`.
+# unbounded weight. Both its methods must subtract the maximum before exponentiating, the way
+# `VectorSoftmax` does through `NNlib.softmax`: a bare `exp.(x)` overflows to `Inf` on a
+# large-but-ordinary entry, and the normalised result is then `NaN`.
 
 using GeometricMachineLearning
 using Test
@@ -22,8 +22,8 @@ end
     y = MatrixSoftmax()(x)
 
     # Subtracting the maximum is exact in exact arithmetic, so for input that does not overflow
-    # either way the shifted and unshifted computations must agree, and must agree with the fixed
-    # implementation's answer.
+    # either way the shifted and unshifted computations must agree, and must agree with what the
+    # implementation returns.
     shifted = exp.(x .- maximum(x))
     unshifted = exp.(x)
     @test shifted ./ sum(shifted) ≈ unshifted ./ sum(unshifted)

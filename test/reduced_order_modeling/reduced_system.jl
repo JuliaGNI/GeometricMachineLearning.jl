@@ -85,11 +85,10 @@ check_if_reduced_vector_fields_are_divergence_free(2, ExplicitMidpoint())
 check_if_reduced_vector_fields_are_divergence_free(2, ExplicitEulerRK())
 
 @doc raw"""
-`HRedSys.timespan` was declared `Tuple{Int, Int}` while the standard constructor takes
-`timespan::Tuple` and forwards it unchanged. A conventional `(0.0, 1.0)` was silently truncated to
-`(0, 1)`, and `(0.0, 1.5)` threw an `InexactError` at construction. The field now has its own type
-parameter and follows the constructor's argument, the way the neighbouring `timestep::T` field
-already does.
+`HRedSys.timespan` carries its own type parameter and follows the constructor's argument, the way
+the neighbouring `timestep::T` field does. The standard constructor takes `timespan::Tuple` and
+forwards it unchanged, so a field declared `Tuple{Int, Int}` would silently truncate a conventional
+`(0.0, 1.0)` to `(0, 1)` and throw an `InexactError` on `(0.0, 1.5)`.
 """
 function test_hredsys_timespan_is_not_truncated()
     model = PSDArch(4, 2)
@@ -105,7 +104,7 @@ function test_hredsys_timespan_is_not_truncated()
         parameters = NamedTuple(), integrator = ImplicitMidpoint())
     @test rs.timespan === (0.0, 1.0)
 
-    # Must not throw an `InexactError`, unlike the `Tuple{Int, Int}` field.
+    # A non-integer endpoint must not throw an `InexactError`.
     rs2 = HRedSys(
         4, 2, encoder(nn), decoder(nn), v_full, f_full, h_full, (0.0, 1.5), 0.1, ics;
         parameters = NamedTuple(), integrator = ImplicitMidpoint())
