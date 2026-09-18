@@ -25,14 +25,29 @@ using Test
 #                       silently discarding every element but the first
 #     (q, p) ≈ (q, p)   MethodError without GML, true with it             src/utils.jl:163
 #
-# `ambiguities` reported 23. Four were the loss functors against `AbstractNeuralNetworks`'
-# `(::NetworkLoss)(::NeuralNetwork, …)`, and one was `_GMLGradient` against `SimpleSolvers`'
-# `(::Gradient{T})(::AbstractVector{T})` -- all five fixed by typing the losses' first parameter and
-# adding the missing `_GMLGradient` method (`optimizer.jl`). The remaining 18 are `PoissonTensor *
-# v` against left-multiply methods in ArrayLayouts, FillArrays, Symbolics and GeometricOptimizers
-# (17 of them -- out of scope here, see `## Open Issues`), plus one benign `Dense`/`Affine` pair
-# with no witness. `ambiguities` stays off: 18 is not 0, and an exact assertion on the 17 would turn
-# the suite red on an unrelated upstream upgrade the way the piracy count does not.
+# `ambiguities` reported 23 when `GeometricMachineLearning` is the only package loaded. Four were
+# the loss functors against `AbstractNeuralNetworks`' `(::NetworkLoss)(::NeuralNetwork, …)`, and one
+# was `_GMLGradient` against `SimpleSolvers`' `(::Gradient{T})(::AbstractVector{T})` -- all five
+# fixed by typing the losses' first parameter and adding the missing `_GMLGradient` method
+# (`optimizer.jl`). Measured the same way, that leaves 18: the 17 `PoissonTensor * v` ambiguities
+# against left-multiply methods in ArrayLayouts, FillArrays, Symbolics and GeometricOptimizers
+# (out of scope here, see `## Open Issues`), plus one benign `Dense`/`Affine` pair with no witness.
+#
+# **But 18 is not what this file measures, because this file does not run in isolation.** By the
+# time this `@safetestset` runs, `runtests.jl` has already loaded `Zygote`, `GeometricIntegrators`
+# and `HDF5` for earlier subjects, and that combination pulls in `BandedMatrices` and `BlockArrays`
+# as transitive extension dependencies -- neither of which loads with `GeometricMachineLearning`
+# alone, or with any *one* of those three added to it. Both packages specialise `getindex` on an
+# `AbstractMatrix` for their own index types (`Block`, `BandRangeType`, …), and
+# `PoissonTensor`'s own `getindex(𝕁::PoissonTensor, i, j)` (`poisson_tensor.jl:39`) is exactly as
+# generic on its index arguments, so it collides with **9** of them -- the same class of defect as
+# the 17 `*` ambiguities, on the same type, out of scope for the same reason. Measured with every
+# package `runtests.jl` loads before this file present, the true total is **27**, and that is the
+# number that governs whether `Pkg.test()` passes.
+#
+# `ambiguities` stays off either way: 27 (or 18) is not 0, and an exact assertion on the
+# `PoissonTensor` pile would turn the suite red on an unrelated upstream upgrade the way the piracy
+# count does not.
 #
 # Fixing the piracy set is a change to `src/` that this file does not own, and it is recorded under
 # `## Open Issues` in `CHANGELOG.md` with the witnesses. Marking it `broken = true` would leave a
@@ -51,10 +66,17 @@ using Test
     #
     @test length(Aqua.Piracy.hunt(GeometricMachineLearning)) == 12
 
-    # `ambiguities` itself gets no exact gate on the 17 `PoissonTensor` ones -- they move with
-    # ArrayLayouts', FillArrays', Symbolics' and GeometricOptimizers' own versions, not with
-    # anything in this tree. But the total is still asserted, so a new ambiguity introduced here
-    # (rather than upstream) does not silently join that pile: it currently accounts for exactly
-    # 18, all of them either the `PoissonTensor` set or the one benign `Dense`/`Affine` pair.
-    @test length(Test.detect_ambiguities(GeometricMachineLearning; recursive = true)) == 18
+    # `ambiguities` itself gets no exact gate on the `PoissonTensor` ones -- they move with
+    # ArrayLayouts', FillArrays', Symbolics', GeometricOptimizers', BandedMatrices' and
+    # BlockArrays' own versions, not with anything in this tree, and the latter two are not even
+    # loaded until other test files pull them in (see above). But the total is still asserted here,
+    # so a new ambiguity introduced by this package (rather than by an upstream version, or by which
+    # packages happen to be loaded by this point in the suite) does not silently join that pile.
+    #
+    # This assertion is therefore less stable than the piracy count above: it depends on the exact
+    # set of packages loaded in this *process* by the time it runs, which depends in turn on the
+    # order `runtests.jl` includes its subjects. If that order changes, or a test-only dependency's
+    # own extensions change, this number can move without anything in `src/` having changed --
+    # re-measure with `Test.detect_ambiguities` before assuming a failure here is a regression.
+    @test length(Test.detect_ambiguities(GeometricMachineLearning; recursive = true)) == 27
 end

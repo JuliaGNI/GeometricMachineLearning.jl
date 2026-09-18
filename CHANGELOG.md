@@ -864,10 +864,15 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `g(::Vector{Float32})` was a run-time ambiguity — the same defect the neighbouring `Manifold`
   method already fixed, for the same reason, and now fixed the same way.
   `Test.detect_ambiguities(GeometricMachineLearning; recursive = true)` drops from 23 to 18 with
-  this and the loss-functor fix above; the remaining 18 are the 17 `PoissonTensor * v` ambiguities
-  (section 12 of the audit, out of scope on this branch) and one benign `Dense`/`Affine` pair with
-  no witness — both recorded under *Open Issues* below, and `test/aqua.jl` now asserts the total
-  directly so it cannot drift unobserved.
+  this and the loss-functor fix above, when `GeometricMachineLearning` is the only package loaded.
+  The remaining 18 are the 17 `PoissonTensor * v` ambiguities (section 12 of the audit, out of
+  scope on this branch) and one benign `Dense`/`Affine` pair with no witness — both recorded under
+  *Open Issues* below. Inside `Pkg.test()` itself the true count is 27: loading `Zygote`,
+  `GeometricIntegrators` and `HDF5` for earlier subjects pulls in `BandedMatrices` and
+  `BlockArrays`, which specialise `getindex` on an `AbstractMatrix` and collide with
+  `PoissonTensor`'s own equally generic one 9 more times — the same class of defect, on the same
+  type, invisible when `GeometricMachineLearning` is measured alone. `test/aqua.jl` asserts 27, the
+  number that actually governs the suite, and says why it is 27 and not 18.
 
 - **Four `DataLoader` constructors no longer return `nothing` on an unexpected `autoencoder`
   keyword.** Each was `if autoencoder == false … elseif autoencoder == true … end` with no `else`,
@@ -2885,8 +2890,9 @@ they resolved to is in the release notes above.
   Closing this means deciding, method by method, between deleting the piracy and asking the owning
   package for the method. It is a change to `src/` and it is not small.
 
-- **B8. Eighteen method ambiguities remain, of the 23 this entry originally reported.** The five
-  that were triaged for witnesses are fixed in this release, under *Fixed* above: `_GMLGradient`
+- **B8. Eighteen method ambiguities remain when `GeometricMachineLearning` is loaded alone — 27
+  inside `Pkg.test()` itself — of the 23 this entry originally reported.** The five that were
+  triaged for witnesses are fixed in this release, under *Fixed* above: `_GMLGradient`
   (`src/optimizers/optimizer.jl:21`) against `SimpleSolvers.Gradient`, and the four loss functors
   — `HNNLoss`, `LNNLoss`, `SymplecticEulerLoss` and `VariationalMidpointLoss` — against
   `AbstractNeuralNetworks.NetworkLoss`.
@@ -2897,8 +2903,17 @@ they resolved to is in the release notes above.
   `PoissonTensor`'s `Base.:*` methods while keeping its `AbstractMatrix` supertype) that a later
   release makes, not a witness that is missing. The last is the `Dense` functor of *B7* against
   `AbstractNeuralNetworks.Affine`, which has no value witness: `Dense` is not a subtype of `Affine`
-  and the two have no common instance, so no call can reach the pair. `test/aqua.jl` now asserts
-  the total directly, so it cannot drift unobserved.
+  and the two have no common instance, so no call can reach the pair.
+
+  **Inside the actual test run there are 9 more, all on the same type.** `runtests.jl` loads
+  `Zygote`, `GeometricIntegrators` and `HDF5` for earlier subjects before `aqua.jl` runs, and that
+  combination pulls in `BandedMatrices` and `BlockArrays` as transitive extension dependencies —
+  neither loads with `GeometricMachineLearning` alone. Both specialise `getindex` on an
+  `AbstractMatrix` for their own index types, and `PoissonTensor`'s own
+  `getindex(𝕁::PoissonTensor, i, j)` (`poisson_tensor.jl:39`) is exactly as generic on its index
+  arguments, so it collides with 9 of them — the same class of defect as the 17 `*` ambiguities,
+  on the same type, and out of scope for the same reason. `test/aqua.jl` asserts 27, the number
+  that actually governs `Pkg.test()`, and says why it is not 18.
 
 - **B9. One unbound type parameter, which only Julia nightly reports.** Aqua's `unbound_args` fails
   on the `nightly` job over `Base.iterate(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, ics::BT;
