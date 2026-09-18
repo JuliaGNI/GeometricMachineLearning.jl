@@ -2110,6 +2110,12 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `ambiguities` and `piracies` entries give above: a switched-off check detects nothing. Raise the
   bound once Aqua handles a weak dependency in that position.
 
+- **The Aqua bound above is lifted.** `test/Project.toml` now reads plain `Aqua = "0.8"` again.
+  Aqua 0.8.18, released 2026-09-18, fixes exactly the case the bound above describes — its own
+  release notes say `test_persistent_tasks` "no longer errors on a weak dependency that is also
+  listed in `[deps]` but not installed" — so `EnzymeCore` behind `KernelAbstractions` no longer
+  stops the manifest walk.
+
 - **C5 is removed from *Open Issues*: its premise no longer holds.**
   `.github/workflows/CI.yml` no longer pins an explicit `1.13` job — only `pre` and `nightly` are
   `experimental: true` — resolved by `4281732c` ("Unify the shared GitHub workflows", 2026-08-31),
