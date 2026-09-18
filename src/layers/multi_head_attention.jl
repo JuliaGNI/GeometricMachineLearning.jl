@@ -118,9 +118,10 @@ function compute_output_of_mha(d::MultiHeadAttention{M, M}, x::AbstractMatrix{T}
         d.activation((ps.PQ[key]' * x)' * (ps.PK[key]' * x) / T(sqrt(dim)))
     end
 
-    # One `vcat` over all heads, not one per head. Splatting a vector hides the argument count from
-    # inference, so the result type is asserted; see the tensor method below for the full reason.
-    vcat(head_outputs...)::eltype(head_outputs)
+    # One `vcat` over all heads, not one per head. The head outputs are matrices, so `reduce` takes
+    # Base's linear path and infers concretely without an assertion. The tensor method below cannot
+    # use it and says why.
+    reduce(vcat, head_outputs)
 end
 
 # @doc raw"""

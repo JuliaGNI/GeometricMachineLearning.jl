@@ -24,3 +24,6 @@ end
 @safetestset "parameterlength(::MultiHeadAttention{M,M,true}) is exact" begin
     include("multi_head_attention_parameterlength.jl")
 end
+@safetestset "compute_output_of_mha infers concretely" begin
+    include("multi_head_attention_inference.jl")
+end

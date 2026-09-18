@@ -412,33 +412,37 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   was unconditionally reassigned before any read; that is gone, and the head key is
   `Symbol("head_", i)` rather than `Symbol("head_" * string(i))`.
 
-  **Two formulations do not work here, and both look like they should.** A preallocated output
-  written into per head raises *"Mutating arrays is not supported -- called setindex!"* under
-  Zygote — these are forward passes, so the concatenation has to stay differentiable. And
-  `reduce(vcat, …)` takes its linear path only for `AbstractVecOrMat`, so on the 3-tensor method it
-  folds pairwise and stays quadratic: concatenating 32 head tensors of 4×64×16 costs 8,646,272 B
-  that way against 539,344 B for the variadic `vcat`. The variadic call is what landed.
+  **The two methods concatenate differently, and the difference is forced.** `reduce(vcat, …)`
+  takes Base's linear path only for `AbstractVecOrMat`. The matrix method therefore uses it. On the
+  3-tensor method it folds pairwise and stays quadratic — concatenating 32 head tensors of 4×64×16
+  costs 8,646,272 B that way against 539,344 B for a variadic `vcat` — so the tensor method splats
+  instead. A preallocated output written into per head would serve both, but it raises *"Mutating
+  arrays is not supported -- called setindex!"* under Zygote: these are forward passes, so the
+  concatenation has to stay differentiable.
 
-  **The variadic call needs its result type asserted**, `vcat(head_outputs...)::eltype(head_outputs)`.
-  Splatting a vector hides the argument count from inference, and without the assertion
-  `compute_output_of_mha` infers as `Union{Vector{Any}, Vector{Float32}, Matrix{Float32}}` for
-  matrix input and as `Any` for tensor input, where both were concrete before — and the `Any`
-  propagates out through the layer functor into the whole forward pass. A concatenation has the type
-  of the pieces it concatenates, so the assertion states what is already true; it costs nothing,
-  with allocations identical at every size above.
+  **The splat needs its result type asserted**, `vcat(head_outputs...)::eltype(head_outputs)`.
+  Splatting a vector hides the argument count from inference: without the assertion the tensor
+  method infers as `Any`, where it was concrete before, and that `Any` propagates out through the
+  layer functor into the whole forward pass. A concatenation has the type of the pieces it
+  concatenates, so the assertion states what is already true, and allocations are identical with it
+  and without. `reduce` needs no assertion, which is the second reason the matrix method uses it.
+
+  `test/attention/multi_head_attention_inference.jl` pins the inferred return type of both methods
+  and of the functor. Nothing else in `test/` asserts the inference of a forward pass, so without it
+  a regression here is invisible to the suite: the layer keeps returning the right numbers.
 
   Allocations per call, cold processes, the output's checksum unchanged at every size:
 
   | dimension, heads, length, data | path | before | after |
   |:--|:--|--:|--:|
-  | 64, 8, 32, 16 | matrix | 176,592 B | 150,272 B |
+  | 64, 8, 32, 16 | matrix | 176,592 B | 150,096 B |
   | 64, 8, 32, 16 | tensor | 2,732,208 B | 2,261,296 B |
-  | 128, 16, 64, 16 | matrix | 1,221,424 B | 975,168 B |
+  | 128, 16, 64, 16 | matrix | 1,221,424 B | 974,864 B |
   | 128, 16, 64, 16 | tensor | 19,308,848 B | 15,306,992 B |
-  | 128, 32, 64, 16 | matrix | 2,311,760 B | 1,802,688 B |
+  | 128, 32, 64, 16 | matrix | 2,311,760 B | 1,802,128 B |
   | 128, 32, 64, 16 | tensor | 36,233,776 B | 28,008,560 B |
 
-  **At 4 heads on an 8×6 matrix the change costs 592 bytes more** — 6,944 against 6,352 — which is
+  **At 4 heads on an 8×6 matrix the change costs 480 bytes more** — 6,832 against 6,352 — which is
   the fixed cost of the vector the heads are collected into. The saving only outgrows it once the
   quadratic term is worth removing, and it grows with the head count: −15 % at 8 heads, −22 % at 32.
 
@@ -447,8 +451,9 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `tensor_mat_mul`, `tensor_tensor_mul`, `tensor_transpose_mat_mul`,
   `tensor_transpose_tensor_mul` and `tensor_tensor_transpose_mul`; `copy(B)` in
   `symmetric_mat_mul` and `zero(B)` in `lo_mat_mul`, `up_mat_mul` and `skew_mat_mul` become
-  `similar(B)`. Each of those kernels was read first: all five write every `C[i, j, l]` over
-  `ndrange = size(C)`, so nothing reads an uninitialised element.
+  `similar(B)`. Each of the ten kernels was read first: every one writes every element of `C` over
+  `ndrange = size(C)` — six index it `C[i, j, k]` and four `C[i, j, l]` — so nothing reads an
+  uninitialised element.
 
   **The honest size of this is small.** In isolation at 64³ `Float32`, `zeros` costs 31.3 µs
   against `allocate`'s 1.08 µs, `copy` 12.4 µs and `zero` 8.5 µs against `similar`'s 0.04 µs. Inside
@@ -456,9 +461,17 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   percent and does not clear the measurement noise. `mat_tensor_mul` and `tensor_tensor_mul` do drop
   12,400 bytes per call, because `KernelAbstractions.zeros` allocates more than the array.
 
-  Two buffers that look the same are deliberately untouched: `augment_zeros` in
-  `src/data_loader/tensor_assign.jl` zeroes a tensor its kernel writes only a slice of, and the
-  `kernel_ad_routines` buffers are accumulators.
+  Two buffers that look the same are untouched, for different reasons. `augment_zeros` in
+  `src/data_loader/tensor_assign.jl` zeroes a tensor its kernel writes only a slice of, so there the
+  zeroing carries load. The `kernel_ad_routines` buffers do not: their kernels sum into a local and
+  assign `dA[l, m, h]` or `dS[l, h]` once, over the full `ndrange`, exactly as the forward kernels
+  do. They are left because this part was scoped to the forward path, and they are catalogued as
+  *C15*.
+
+- **Two pieces of dead code beside the buffers are gone.** `convert_input_and_batch_indices_to_array`
+  in `src/data_loader/batch.jl` built a `time_indices` comprehension that nothing read, and
+  `augment_zeros` in `src/data_loader/tensor_assign.jl` destructured `size(output_diff)` twice into
+  the same three names. Neither changes behaviour.
 
 - **The minibatch copies in `optimize_for_one_epoch!` are gone, with `_copy` and its three
   methods.** They were there under the comment *"these `copy`s should not be necessary! coming from
@@ -3376,6 +3389,17 @@ they resolved to is in the release notes above.
   exercises the function, so the change is checkable. It was left out of the audit's Part C
   deliberately: it is a restructuring with its own verification, not the comment repair that part
   was scoped to.
+
+- **C15. The `kernel_ad_routines` buffers are still zeroed where allocating would do.**
+  `src/kernels/kernel_ad_routines/` allocates `dA = zero(A)`, `dS = KernelAbstractions.zeros(…)` and
+  the same shape in `tensor_mat_mul.jl`, `tensor_mat_skew_sym_assign.jl` and `vec_tensor_mul.jl`.
+  Their kernels sum into a local and assign the buffer element once, over an `ndrange` equal to the
+  buffer's size, so no element is read before it is written — the same argument that let the forward
+  wrappers move to `allocate` and `similar` under *Changed*.
+
+  This part was scoped to the forward path, so they were not changed with it. The backward pass is
+  where training spends its time, so the gain should be larger here than the forward figures, which
+  is also why it wants its own before-and-after measurement rather than being folded into that pass.
 
 ### D. Unverified
 
