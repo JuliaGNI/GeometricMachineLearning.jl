@@ -1,10 +1,9 @@
-# `parameterlength(::PSDLayer{M, N})` used to route an integer count through `Float64` division
-# and back through `Int(...)`. That is exact for every size the rest of the suite constructs, but
-# not for every size the *type* accepts: `PSDLayer{M, N}` is a singleton (it stores nothing sized by
-# `M` or `N`), so `parameterlength` can be called at a scale no real layer could ever allocate, and
-# there the `Float64` intermediate silently rounds -- `Int(...)` on a value like `...784.9999999`
-# gives the wrong integer instead of throwing. The rewrite below computes the same combinatorial
-# count with `÷` alone, which is exact by construction for any size that itself fits in `Int`.
+# `parameterlength(::PSDLayer{M, N})` computes an exact combinatorial parameter count with `÷`
+# alone, which is exact by construction for any size that itself fits in `Int`. Exactness at
+# every size matters because `PSDLayer{M, N}` is a singleton (it stores nothing sized by `M` or
+# `N`), so `parameterlength` can be called at a scale no real layer could ever allocate. See
+# `CHANGELOG.md` for the `Float64`-division formula this replaced and how it could round to the
+# wrong integer instead of throwing.
 
 using GeometricMachineLearning
 using Test

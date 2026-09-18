@@ -1,8 +1,8 @@
-# `GeometricMachineLearning._norm` had three arms for one function, and the two `NamedTuple` arms
-# widened a `Float32` argument to `Float64` (dividing by `√2` and `√length(dx)`, both computed as
-# `Float64`), while the plain-`AbstractArray` arm was already correct. It reaches the user through
-# `reduction_error` and `projection_error`, so a `Float32` reduced system used to report a `Float64`
-# error.
+# `GeometricMachineLearning._norm` has three arms for one function, and all three keep the
+# element type of their argument: the two `NamedTuple` arms divide by `√2` and `√length(dx)` in
+# that type, and the plain-`AbstractArray` arm does so directly. It reaches the user through
+# `reduction_error` and `projection_error`, so a `Float32` reduced system reports its error in
+# `Float32`, not `Float64`. See `CHANGELOG.md` for the fix this guards.
 
 using GeometricMachineLearning
 using Test

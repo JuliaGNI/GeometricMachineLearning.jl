@@ -1,8 +1,8 @@
-# `_leaf_optim_step!` used to scale `direction(cache)` by the raw `step_size` it was handed,
-# unlike its own comment: the three `_euclidean_update!` methods all write `T(step_size)`, and this
-# one did not. The funnel (`_current_step_size`) always hands a `Float64`, no matter what `T` the
-# parameters are, so a `Float32` layer was scaled in `Float64` precision and only rounded back to
-# `Float32` on write -- a different (and more expensive) answer than scaling in `Float32` outright.
+# `_leaf_optim_step!` scales `direction(cache)` by `T(step_size)`, matching the three
+# `_euclidean_update!` methods a few lines below it. The funnel (`_current_step_size`) always
+# hands a `Float64`, no matter what `T` the parameters are, so converting first is what keeps a
+# `Float32` layer scaled at `Float32` precision instead of `Float64` precision rounded back on
+# write. See `CHANGELOG.md` for the fix this guards.
 #
 # The test is invariance rather than a fixed expected value: the leaf step must give the *same*
 # result whether the funnel hands it a `Float64` step size or one already rounded to `T`. Only

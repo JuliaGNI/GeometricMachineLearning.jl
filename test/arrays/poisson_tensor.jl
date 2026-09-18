@@ -60,7 +60,7 @@ end
 # `PoissonTensor(n2)` (no backend, no type) keeps its documented `Float64` default.
 @test eltype(PoissonTensor(4)) == Float64
 
-# `PoissonTensor(backend::Backend, n2::Int)` and `PoissonTensor(backend::CPU, n2::Int)` used to
-# default to `Float32` and `Float64` respectively -- an undocumented split with the CPU and GPU
-# paths disagreeing. Both are gone now: a caller that names a backend has to name a type too.
+# `PoissonTensor(backend::Backend, n2::Int)` has no method: a caller that names a backend must
+# also name an element type. See `CHANGELOG.md`'s "Removed (breaking)" section for why the CPU
+# and GPU defaults were dropped from this signature.
 @test_throws MethodError PoissonTensor(CPU(), 4)

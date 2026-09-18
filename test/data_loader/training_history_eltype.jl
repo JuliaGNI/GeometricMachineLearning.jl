@@ -1,7 +1,7 @@
-# A `Float32` network's training history used to come back `Float64`: `(o::Optimizer)(...)` built
-# `loss_array` with an untyped `zeros(n_epochs)`, no matter what `eltype(dl)` was. This asserts the
-# fix, and that `optimize_for_one_epoch!`'s own accumulator agrees with it: the loss the optimizer
-# returns must be in the data's element type, not promoted to `Float64` along the way.
+# A `Float32` network's training history is `Float32`: `(o::Optimizer)(...)` builds `loss_array`
+# typed to `eltype(dl)`. This asserts that, and that `optimize_for_one_epoch!`'s own accumulator
+# agrees with it: the loss the optimizer returns is in the data's element type, not promoted to
+# `Float64` along the way. See `CHANGELOG.md` for the fix this guards.
 
 using GeometricMachineLearning
 using Test
