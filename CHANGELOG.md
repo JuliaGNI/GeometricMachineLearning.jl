@@ -405,6 +405,53 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 ### Changed
 
+- **`MultiHeadAttention` concatenates its heads once instead of once per head.** Both
+  `compute_output_of_mha` methods grew the output by `vcat` inside the head loop, so the
+  intermediate rows grew with the square of the head count. They build the head outputs first and
+  `vcat` over all of them once. The tensor method also allocated a `single_head_output` buffer that
+  was unconditionally reassigned before any read; that is gone, and the head key is
+  `Symbol("head_", i)` rather than `Symbol("head_" * string(i))`.
+
+  **Two formulations do not work here, and both look like they should.** A preallocated output
+  written into per head raises *"Mutating arrays is not supported -- called setindex!"* under
+  Zygote — these are forward passes, so the concatenation has to stay differentiable. And
+  `reduce(vcat, …)` takes its linear path only for `AbstractVecOrMat`, so on the 3-tensor method it
+  folds pairwise and stays quadratic: concatenating 32 head tensors of 4×64×16 costs 8,646,272 B
+  that way against 539,344 B for the variadic `vcat`. The variadic call is what landed.
+
+  Allocations per call, cold processes, the output's checksum unchanged at every size:
+
+  | dimension, heads, length, data | path | before | after |
+  |:--|:--|--:|--:|
+  | 64, 8, 32, 16 | matrix | 176,592 B | 150,272 B |
+  | 64, 8, 32, 16 | tensor | 2,732,208 B | 2,261,296 B |
+  | 128, 16, 64, 16 | matrix | 1,221,424 B | 975,168 B |
+  | 128, 16, 64, 16 | tensor | 19,308,848 B | 15,306,992 B |
+  | 128, 32, 64, 16 | matrix | 2,311,760 B | 1,802,688 B |
+  | 128, 32, 64, 16 | tensor | 36,233,776 B | 28,008,560 B |
+
+  **At 4 heads on an 8×6 matrix the change costs 592 bytes more** — 6,944 against 6,352 — which is
+  the fixed cost of the vector the heads are collected into. The saving only outgrows it once the
+  quadratic term is worth removing, and it grows with the head count: −15 % at 8 heads, −22 % at 32.
+
+- **Buffers the kernels write in full are allocated rather than zeroed.**
+  `KernelAbstractions.zeros` becomes `KernelAbstractions.allocate` in `mat_tensor_mul`,
+  `tensor_mat_mul`, `tensor_tensor_mul`, `tensor_transpose_mat_mul`,
+  `tensor_transpose_tensor_mul` and `tensor_tensor_transpose_mul`; `copy(B)` in
+  `symmetric_mat_mul` and `zero(B)` in `lo_mat_mul`, `up_mat_mul` and `skew_mat_mul` become
+  `similar(B)`. Each of those kernels was read first: all five write every `C[i, j, l]` over
+  `ndrange = size(C)`, so nothing reads an uninitialised element.
+
+  **The honest size of this is small.** In isolation at 64³ `Float32`, `zeros` costs 31.3 µs
+  against `allocate`'s 1.08 µs, `copy` 12.4 µs and `zero` 8.5 µs against `similar`'s 0.04 µs. Inside
+  the multiplies those precede — 3.5 ms to 8 ms at the same size — the saving is under half a
+  percent and does not clear the measurement noise. `mat_tensor_mul` and `tensor_tensor_mul` do drop
+  12,400 bytes per call, because `KernelAbstractions.zeros` allocates more than the array.
+
+  Two buffers that look the same are deliberately untouched: `augment_zeros` in
+  `src/data_loader/tensor_assign.jl` zeroes a tensor its kernel writes only a slice of, and the
+  `kernel_ad_routines` buffers are accumulators.
+
 - **`DEFAULT_LNN_NRUNS` is gone from `src/architectures/lagrangian_neural_network.jl`, and the three
   `Zygote` derivatives beside it stay.** This closes *C13*, and it splits three-to-one against what
   that entry expected.
@@ -686,6 +733,32 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `exact_solution` both come from `GeometricProblems.HarmonicOscillator`.
 
 ### Fixed
+
+- **Building the minibatch index set is linear again, and its return type is concrete.**
+  `batch_over_two_axes` grew a tuple by splatting, `batches = (batches..., …)`, once per minibatch.
+  Every iteration built a new tuple type, so the function inferred as
+  `Tuple{Vararg{Vector{Tuple{Int, Int}}}}` — not concrete — and the `for batch_indices in batches`
+  loop in `optimize_for_one_epoch!` dispatched dynamically once per batch. It returns a
+  `Vector{Vector{Tuple{Int, Int}}}` now.
+
+  Measured in cold `--check-bounds=auto` processes, on `DataLoader(rand(Float32, 4, n))` with
+  `Batch(8)`:
+
+  | columns | minibatches | before | after |
+  |--:|--:|--:|--:|
+  | 200 | 25 | 13,904 B, 0.014 ms | 10,464 B, 0.001 ms |
+  | 2,000 | 250 | 369,824 B, 0.587 ms | 99,440 B, 0.009 ms |
+  | 8,000 | 1,000 | 4,530,736 B, 41.77 ms | 397,088 B, 0.032 ms |
+
+  Four times the minibatches used to cost fifteen times the wall clock; it now costs four times the
+  memory and the wall clock grows with it. `test/data_loader/batch_index_set.jl` asserts both
+  properties — that the inferred return type is concrete, and that the allocation ratio between 250
+  and 1,000 minibatches stays below six — so neither can come back unnoticed.
+
+  **The functor's output is a vector, not a tuple, which is visible to callers.** The docstrings of
+  `Batch` and `number_of_batches`, the `data_loader` documentation page and the two tests that
+  mirror those doctests all say so now; `length.(batch(dl))` returns `[2, 2, 1]` where it returned
+  `(2, 2, 1)`. Everything that iterates the result, takes its `length` or `vcat`s it is unaffected.
 
 - **A `Float32` network stays `Float32` through training, `_norm` and a few more corners that used
   to promote silently to `Float64`.**

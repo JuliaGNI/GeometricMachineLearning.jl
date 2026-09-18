@@ -24,3 +24,6 @@ end
 @safetestset "A Float32 network's training history stays Float32" begin
     include("training_history_eltype.jl")
 end
+@safetestset "The minibatch index set is concrete and grows linearly" begin
+    include("batch_index_set.jl")
+end

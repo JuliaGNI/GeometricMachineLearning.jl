@@ -9,7 +9,7 @@ See [`Batch(::Int)`](@ref) and [`Batch(::Int, ::Int, ::Int)`](@ref) for the diff
 
 An instance of `Batch` can be called on an instance of `DataLoader` to produce a sequence of samples that contain all the input data, i.e. for training for one epoch. 
 
-The output of applying `batch:Batch` to `dl::DataLoader` is a tuple of vectors of integers. Each of these vectors contains two integers: the first is the *time index* and the second one is the *parameter index*.
+The output of applying `batch:Batch` to `dl::DataLoader` is a vector of vectors of integers. Each of these vectors contains two integers: the first is the *time index* and the second one is the *parameter index*.
 
 # Examples
 
@@ -28,7 +28,7 @@ batch = Batch(2)
 batches = batch(dl)
 
 @assert length(batches) == 3
-@assert length.(batches) == (2, 2, 1)
+@assert length.(batches) == [2, 2, 1]
 @assert sort(collect(union(batches...))) == [(1, i) for i in 1:5]
 
 true
@@ -134,8 +134,8 @@ batches₂ = batch(dl₂)
 
 @assert number_of_batches(dl₁, batch) == 2
 @assert number_of_batches(dl₂, batch) == 2
-@assert length.(batches₁) == (3, 1)
-@assert length.(batches₂) == (3, 2)
+@assert length.(batches₁) == [3, 1]
+@assert length.(batches₂) == [3, 2]
 @assert sort(collect(union(batches₁...))) == [(i, 1) for i in 1:4]
 @assert sort(collect(union(batches₂...))) == [(1, i) for i in 1:5]
 
@@ -166,13 +166,13 @@ function batch_over_two_axes(batch::Batch, number_columns::Int, third_dim::Int, 
     time_indices = shuffle(1:number_columns)
     parameter_indices = shuffle(1:third_dim)
     complete_indices = Iterators.product(time_indices, parameter_indices) |> collect |> vec
-    batches = ()
     n_batches = number_of_batches(dl, batch)
+    batches = Vector{Vector{Tuple{Int, Int}}}(undef, n_batches)
     for batch_number in 1:(n_batches - 1)
-        batches = (batches...,
-            complete_indices[((batch_number - 1) * batch.batch_size + 1):(batch_number * batch.batch_size)])
+        batches[batch_number] = complete_indices[((batch_number - 1) * batch.batch_size + 1):(batch_number * batch.batch_size)]
     end
-    (batches..., complete_indices[((n_batches - 1) * batch.batch_size + 1):end])
+    batches[n_batches] = complete_indices[((n_batches - 1) * batch.batch_size + 1):end]
+    batches
 end
 
 function (batch::Batch)(dl::DataLoader{T,
@@ -377,7 +377,6 @@ function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT, OT},
         ::Batch,
         batch_indices_tuple::Vector{Tuple{Int, Int}}) where {
         T, T1, BT <: AbstractArray{T, 3}, OT <: AbstractArray{T1, 3}}
-    time_indices = [batch_index[1] for batch_index in batch_indices_tuple]
     parameter_indices = [batch_index[2] for batch_index in batch_indices_tuple]
     @views input_batch = dl.input[:, :, parameter_indices]
     @views output_batch = dl.output[:, :, parameter_indices]

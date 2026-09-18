@@ -109,17 +109,15 @@ end
 
 function compute_output_of_mha(d::MultiHeadAttention{M, M}, x::AbstractMatrix{T}, ps::NamedTuple) where {
         M, T}
-    dim, input_length = size(x)
+    dim = size(x, 1)
     @assert dim == M
 
-    output = typeof(x)(zeros(T, 0, input_length))
-    for i in 1:d.n_heads
-        key = Symbol("head_"*string(i))
-        output = vcat(output,
-            ps.PV[key]' * x *
-            d.activation((ps.PQ[key]' * x)' * (ps.PK[key]' * x) / T(sqrt(dim))))
+    head_outputs = map(1:(d.n_heads)) do i
+        key = Symbol("head_", i)
+        ps.PV[key]' * x *
+        d.activation((ps.PQ[key]' * x)' * (ps.PK[key]' * x) / T(sqrt(dim)))
     end
-    output
+    vcat(head_outputs...)
 end
 
 # @doc raw"""
@@ -132,27 +130,25 @@ end
 function compute_output_of_mha(
         d::MultiHeadAttention{M, M}, x::AbstractArray{
             T, 3}, ps::NamedTuple) where {M, T}
-    Dₕ = M ÷ d.n_heads
-    dim, input_length, number_data = size(x)
+    dim = size(x, 1)
     @assert dim == M
 
-    # initialize the output
-    output = similar(x, 0, input_length, number_data)
-
-    # this is the result of a single head attention block
-    single_head_output = similar(x, Dₕ, input_length, number_data)
-
-    for i in 1:d.n_heads
-        key = Symbol("head_"*string(i))
+    # the result of a single head attention block, one per head
+    head_outputs = map(1:(d.n_heads)) do i
+        key = Symbol("head_", i)
         Q_tensor = mat_tensor_mul(ps.PQ[key]', x)
         K_tensor = mat_tensor_mul(ps.PK[key]', x)
         V_tensor = mat_tensor_mul(ps.PV[key]', x)
         QK_tensor = tensor_transpose_tensor_mul(Q_tensor, K_tensor)
 
-        single_head_output = tensor_tensor_mul(V_tensor, d.activation(QK_tensor/T(sqrt(dim))))
-        output = vcat(output, single_head_output)
+        tensor_tensor_mul(V_tensor, d.activation(QK_tensor/T(sqrt(dim))))
     end
-    output
+
+    # One variadic `vcat` over all heads, not one per head. Two things constrain this: a
+    # preallocated output cannot be written into, because Zygote does not differentiate
+    # `setindex!`; and `reduce(vcat, …)` takes its linear path only for vectors and matrices, so on
+    # a 3-tensor it folds pairwise and stays quadratic.
+    vcat(head_outputs...)
 end
 
 function (d::MultiHeadAttention{M, M, Stiefel, true})(x::AbstractArray, ps::NamedTuple) where {

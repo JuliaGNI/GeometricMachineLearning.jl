@@ -83,7 +83,6 @@ end
 function augment_zeros(output_diff::AbstractArray{T, 3}, seq_length) where {T}
     sys_dim, prediction_window, batch_size = size(output_diff)
     backend = networkbackend(output_diff)
-    dim, prediction_window, batch_size = size(output_diff)
     zero_tensor = KernelAbstractions.zeros(backend, T, sys_dim, seq_length, batch_size)
     augment_zeros! = augment_zeros_kernel!(networkbackend(output_diff))
     augment_zeros!(zero_tensor, output_diff, seq_length,

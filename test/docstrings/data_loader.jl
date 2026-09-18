@@ -14,7 +14,7 @@ using GeometricMachineLearning: convert_input_and_batch_indices_to_array, number
     dl = DataLoader(rand(5); suppress_info = true)
     batches = Batch(2)(dl)
     @test length(batches) == 3
-    @test length.(batches) == (2, 2, 1)
+    @test length.(batches) == [2, 2, 1]
     @test sort(collect(union(batches...))) == [(1, i) for i in 1:5]
     @test Batch(2, 3, 2) isa Batch{:Transformer}
 
@@ -25,8 +25,8 @@ using GeometricMachineLearning: convert_input_and_batch_indices_to_array, number
     batches₁ = batch(dl₁)
     batches₂ = batch(dl₂)
     @test number_of_batches(dl₁, batch) == number_of_batches(dl₂, batch) == 2
-    @test length.(batches₁) == (3, 1)
-    @test length.(batches₂) == (3, 2)
+    @test length.(batches₁) == [3, 1]
+    @test length.(batches₂) == [3, 2]
     @test sort(collect(union(batches₁...))) == [(i, 1) for i in 1:4]
     @test sort(collect(union(batches₂...))) == [(1, i) for i in 1:5]
 

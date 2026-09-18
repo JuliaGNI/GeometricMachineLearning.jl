@@ -24,7 +24,7 @@ end
 
 function tensor_transpose_mat_mul(A::AbstractArray{T, 3}, B::AbstractMatrix{T}) where {T}
     backend = networkbackend(A)
-    C = KernelAbstractions.zeros(backend, T, size(A)[2], size(B)[2], size(A)[3])
+    C = KernelAbstractions.allocate(backend, T, size(A)[2], size(B)[2], size(A)[3])
     tensor_transpose_mat_mul!(C, A, B)
     C
 end
