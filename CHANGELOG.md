@@ -711,9 +711,9 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
     direction(cache), step_size)` with the raw `step_size`, which the step-size funnel always hands
     over as a `Float64` regardless of the parameters' type — unlike the three `_euclidean_update!`
     methods a few lines below, which all convert with `T(step_size)` first. A `Float32` layer was
-    therefore scaled at `Float64` precision and only rounded back to `Float32` on write.
-    `_default_step_size`'s two literals are explicitly `Float64(...)` now rather than bare
-    exponent literals, matching the funnel they feed.
+    therefore scaled at `Float64` precision and only rounded back to `Float32` on write. The
+    step-size funnel itself, including `_default_step_size`'s two literals, stays in `Float64` and
+    converts at the point of use, which is the pattern the rest of this file already follows.
   - **`parameterlength` for `PSDLayer` and `MultiHeadAttention{M,M,true}` no longer routes an
     integer count through `Float64` division and back through `Int(...)`.** Both are rewritten
     with `÷` alone, which is exact by construction; the value does not change for any size the
