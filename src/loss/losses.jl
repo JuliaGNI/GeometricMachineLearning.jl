@@ -99,33 +99,11 @@ function (loss::TransformerLoss)(model::Union{Chain, AbstractExplicitLayer},
     loss(model, ps, vcat(input.q, input.p), vcat(output.q, output.p))
 end
 
-# @doc raw"""
-#     ClassificationTransformerLoss()
-#
-# Make an instance of `ClassificationTransformerLoss`.
-#
-# This is to be used together with a [`ClassificationTransformer`](@ref).
-#
-# It takes an input, parses it to the transformer and then crops it to conform with the desired output size.
-#
-# Suppose the input is of dimension ``\mathtt{td}\times\mathtt{sl}``, where `td` is *transformer dimension* and `sl` is *sequence length*.
-# The output of the transformer will again be of the same dimension:
-#
-# ```math
-# \mathrm{output}\in\mathbb{R}^{\mathtt{td}\times\mathtt{sl}}.
-# ```
-#
-# if the output dimension `cl` of the [`ClassificationLayer`](@ref) is differnt form `td`.
-# """
-struct ClassificationTransformerLoss <: NetworkLoss end
-
-function (loss::ClassificationTransformerLoss)(model::Union{Chain, AbstractExplicitLayer},
-        ps,
-        input::AbstractArray, output::AbstractArray)
-    predicted_output_uncropped = model(input, ps)
-    # predicted_output_cropped = crop_array_for_transformer_loss(predicted_output_uncropped, output)
-    norm(predicted_output_uncropped - output) / norm(output)
-end
+# `ClassificationTransformerLoss` stood here, with its functor and a docstring that was already
+# commented out. Nothing constructed it -- not the package, the tests, the docs or the scripts --
+# and its functor did not crop the transformer output to the classification dimension, which was the
+# one thing that would have set it apart: the line that would have done so was commented out too.
+# What it computed was the plain relative error, which `TransformerLoss` above already gives.
 
 @doc raw"""
     AutoEncoderLoss()

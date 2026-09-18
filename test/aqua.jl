@@ -1,4 +1,5 @@
 using Aqua
+using ExplicitImports
 using GeometricMachineLearning
 using Test
 
@@ -20,10 +21,10 @@ using Test
 # a witness, a call whose behaviour changes when this package is loaded. Three of them are on
 # `Base`, so they change every Julia process that loads this one:
 #
-#     1.0 + (2.0,)      MethodError without GML, 3.0 with it              src/utils.jl:65
-#     [1.0] + (2.0,)    MethodError without GML, 3.0 with it -- a scalar, src/utils.jl:71
+#     1.0 + (2.0,)      MethodError without GML, 3.0 with it              src/utils.jl:33
+#     [1.0] + (2.0,)    MethodError without GML, 3.0 with it -- a scalar, src/utils.jl:39
 #                       silently discarding every element but the first
-#     (q, p) ≈ (q, p)   MethodError without GML, true with it             src/utils.jl:167
+#     (q, p) ≈ (q, p)   MethodError without GML, true with it             src/utils.jl:104
 #
 # `ambiguities` reports 18 when `GeometricMachineLearning` is the only package loaded: the 17
 # `PoissonTensor * v` ambiguities against left-multiply methods in ArrayLayouts, FillArrays,
@@ -70,4 +71,41 @@ using Test
     # would therefore go red on an unrelated upgrade, or on a reordering of this suite, with
     # nothing in `src/` having changed. It could not tell that apart from a regression, which is
     # the one thing a gate has to do.
+end
+
+# `ExplicitImports` answers a question Aqua does not ask, and the reason to gate on it is not
+# tidiness: a `using` or an `import` that nothing needs keeps a dependency reachable from the module
+# file, so Aqua's `stale_deps` above sees a package in use that nothing uses. That check only means
+# something once these two are clean.
+#
+# Three of the seven checks run: `no_stale_explicit_imports`, `all_explicit_imports_via_owners` and
+# `no_self_qualified_accesses`. The first two were red before this file gained them -- 13 stale
+# explicit imports, and `StateVariable` imported from `GeometricSolutions`, which re-exports it,
+# rather than from `GeometricBase`, which defines it. The third already passed.
+#
+# THE OTHER FOUR, AND WHY EACH IS OFF.
+#
+#   no_implicit_imports              37 names arrive through a bare `using`, across thirteen packages
+#                                    -- `norm`, `@kernel`, `rrule`, `pullback` and the rest. Naming
+#                                    every one is a change to the whole module header and a judgement
+#                                    per name, not a by-product of a dead-code pass.
+#   all_explicit_imports_are_public  11 names this package imports are not marked `public` upstream
+#                                    -- `Architecture`, `AbstractExplicitLayer`, `add!`,
+#                                    `_compute_loss`, `assign_columns`, `description` among them.
+#                                    Each is deliberate and most are re-exported here; the fix is
+#                                    upstream declaring them, not this package importing less.
+#   all_qualified_accesses_via_owners  2: `GeometricOptimizers.Gradient` and
+#                                    `GeometricOptimizers.direction`, both owned by `SimpleSolvers`.
+#                                    Reaching them through `GeometricOptimizers` is how the rest of
+#                                    `src/optimizers/optimizer.jl` is written.
+#   all_qualified_accesses_are_public  22, the same class as the 11 above: `KernelAbstractions.zeros`,
+#                                    `ForwardDiff.jacobian`, `GeometricOptimizers.momentum` and so on.
+#
+# Each of the four is a real backlog item rather than a taste, and none of them is this branch's.
+@testset "ExplicitImports" begin
+    test_explicit_imports(GeometricMachineLearning;
+        no_implicit_imports = false,
+        all_explicit_imports_are_public = false,
+        all_qualified_accesses_via_owners = false,
+        all_qualified_accesses_are_public = false)
 end

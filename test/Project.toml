@@ -2,6 +2,7 @@
 AbstractNeuralNetworks = "60874f82-5ada-4c70-bd1c-fa6be7711c8a"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 ChainRulesTestUtils = "cdddcdb0-9152-4a09-a978-84456f9df70a"
+ExplicitImports = "7d51a73a-1435-4ff3-83d9-f097790105c7"
 FiniteDifferences = "26cc04aa-876d-5657-8c51-4c34ba976000"
 GeometricIntegrators = "dcce2d33-59f6-5b8d-9047-0defad88ae06"
 GeometricMachineLearning = "194d25b2-d3f5-49f0-af24-c124f4aa80cc"
@@ -24,6 +25,10 @@ GeometricMachineLearning = {path = ".."}
 AbstractNeuralNetworks = "0.8"
 Aqua = "0.8"
 ChainRulesTestUtils = "1"
+# A tight lower bound. `test/aqua.jl` names four of `test_explicit_imports`' seven keyword switches,
+# and 1.15 is the version those switches were read from; a wider bound would be a guess about
+# earlier ones.
+ExplicitImports = "1.15"
 FiniteDifferences = "0.12"
 GeometricIntegrators = "0.18.2"
 GeometricOptimizers = "0.7"

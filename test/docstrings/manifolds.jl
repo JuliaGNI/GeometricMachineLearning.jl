@@ -2,6 +2,10 @@ using Test
 using GeometricMachineLearning
 using LinearAlgebra: I
 using GeometricMachineLearning: global_section
+# `Ω` is GeometricOptimizers', along with the manifolds themselves, and this package neither adds a
+# method to it nor re-exports it. It was reached here as `GeometricMachineLearning.Ω`, which worked
+# only because the module file carried an `import` that nothing in `src/` used.
+using GeometricOptimizers: Ω
 
 @testset "Manifold docstring examples" begin
     Y = StiefelManifold([1 0; 0 1; 0 0; 0 0])
@@ -13,13 +17,13 @@ using GeometricMachineLearning: global_section
 
     E = GrassmannManifold(StiefelProjection(5, 2))
     Δ = [0.0 0.0; 0.0 0.0; 2.0 3.0; 4.0 5.0; 6.0 7.0]
-    ΩE = Matrix(GeometricMachineLearning.Ω(E, Δ))
+    ΩE = Matrix(Ω(E, Δ))
     @test ΩE ≈ -ΩE'
     @test ΩE[3:5, 1:2] ≈ Δ[3:5, :]
 
     E = StiefelManifold(StiefelProjection(5, 2))
     Δ = [0.0 -1.0; 1.0 0.0; 2.0 3.0; 4.0 5.0; 6.0 7.0]
-    ΩE = Matrix(GeometricMachineLearning.Ω(E, Δ))
+    ΩE = Matrix(Ω(E, Δ))
     expected = [0.0 -1.0 -2.0 -4.0 -6.0; 1.0 0.0 -3.0 -5.0 -7.0;
                 2.0 3.0 0.0 0.0 0.0; 4.0 5.0 0.0 0.0 0.0; 6.0 7.0 0.0 0.0 0.0]
     @test ΩE ≈ expected

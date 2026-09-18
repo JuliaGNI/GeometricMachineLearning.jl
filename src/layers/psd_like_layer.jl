@@ -13,7 +13,6 @@ where ``\Phi`` is an element of the Stiefel manifold ``St(n, N)``.
 """
 struct PSDLayer{M, N} <: AbstractExplicitLayer{M, N} end
 
-default_retr = Geodesic()
 function PSDLayer(M::Integer, N::Integer)
     @assert iseven(M)
     @assert iseven(N)

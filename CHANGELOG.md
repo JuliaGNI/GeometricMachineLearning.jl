@@ -40,12 +40,79 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 ### Removed (breaking)
 
+- **Thirty-two names under `src/` had no user anywhere, and are gone** — twenty-five removed from
+  files that survive, and seven that went with the five files below. `src/` goes from 82 files and
+  9,022 lines to 76 and 8,732. Eighty-nine of the 290 lines moved rather than went — see the kernel
+  generator under *Changed*. The count is of names rather than of methods, because several of them
+  are a generic with two, three or four arms and a method count would say more about how they were
+  written than about how much is gone.
+
+  **The breaking part is two exported names**, `UnknownProblem` and `NothingFunction`, which stood
+  in the module file under the comment `# are these needed?`. The answer is
+  no, and the evidence is that the comment's own question had two occurrences in the repository: the
+  definition and the export. `NothingFunction`'s only reader was `is_NothingFunction`, which nothing
+  called either. Both types are removed with the export. Nothing else here changes a name a caller
+  can reach.
+
+  **Five files, none of them included from anywhere or included and never called:**
+
+  | file | what it held |
+  |:--|:--|
+  | `kernels/vector_matrix.jl` | `vec_add!`, 5 lines, never `include`d — and written in **CUDA.jl** syntax (`threadIdx().x`) for a package that does not depend on CUDA |
+  | `kernels/tensor_transpose_tensor_transpose_mul.jl` | a closed cluster: the kernel launched only from the wrapper, the wrapper called only from the constructor, and the constructor's only other occurrence the `include` string |
+  | `data_loader/matrix_assign.jl` | `draw_batch!`, uncalled — and carrying a latent index bug, `Int.(ceil.(rand(T, n) * n_params))` yielding index **0** whenever `rand` returns 0, exactly 1 draw in 2,048 at `Float16` — `rand(Float16)` is uniform over the 2,048 multiples of `2^-11` in `[0, 1)`, and 0 is one of them |
+  | `architectures/fixed_width_network.jl` | `struct FixedWidthNetwork <: Architecture end`, and nothing else |
+  | `architectures/variable_width_network.jl` | `struct VariableWidthNetwork <: Architecture end`, and nothing else |
+
+  **`tensor_exponential` goes but its file stays**, because `init_output` and `assign_ones!` below it
+  are live — `tensor_cayley.jl` and `cpu_inverse.jl` call them. That also retires an unbounded
+  `while true`: the Taylor series had no iteration cap, so an input converging more slowly than
+  `eps(T)` would not have terminated.
+
+  **The rest, by where they were.** `src/utils.jl` loses 63 of its 167 lines, 38 % —
+  `is_NothingFunction`, `∞`, `next`, `tuplejoin`, `rdevelop`, `develop`, `_tuplediff`, `_add`,
+  `write_ones_kernel!`, `_similar`, `type_without_brace` and `center_align_text`, leaving 104.
+  `_similar`'s three methods had exactly two call sites and both were inside itself. Elsewhere:
+  `assign_batch_kernel!` and `assign_output_kernel!` (`data_loader/tensor_assign.jl`, both `@kernel`
+  and never launched — `data_loader/batch.jl` carries its own pair for that job); the `AbstractCache`
+  backward-compat alias, whose export went in 0.5.0 (`optimizers/optimizer.jl`); `default_retr`
+  (`layers/psd_like_layer.jl`, also a non-`const`, untyped module global, so a performance trap as
+  well as dead); `SymplecticDimensionChange` (`architectures/autoencoder.jl`);
+  `ClassificationTransformerLoss` and its functor (`loss/losses.jl`, never constructed, its docstring
+  already commented out, and the line that would have cropped the output to the classification
+  dimension commented out too); the deprecated `Gradient` constructor that `@warn`ed on every call
+  (`layers/sympnets.jl`); and `∇L`, `∇∇L`, `∇q̇∇q̇L` (`architectures/lagrangian_neural_network.jl`).
+
+  **The three Lagrangian derivatives are the one judgement call in the list.** A comment described
+  them as the reference for what `LNNLoss` computes by a different route, and kept them "for checking
+  that route by hand". No test ever took the comparison, and nothing called them, so what stood there
+  was an intention rather than a check. Restoring it means a test; the definitions are in the history
+  either way.
+
+  **Thirteen stale explicit imports and one imported from the wrong module** go with them, in
+  `src/GeometricMachineLearning.jl`: `AbstractLieAlgHorMatrix`, `AbstractNeuralNetwork`,
+  `AbstractRetraction`, `DataSeries`, `EnsembleProblem`, `Model`, `ODEEnsemble`, `ODEProblem`,
+  `OptimizerSolution`, `UnknownArchitecture`, `architecture`, `layer` and `Ω` were imported and never
+  used; `StateVariable` was imported from `GeometricSolutions`, which re-exports it, and now comes
+  from `GeometricBase`, which defines it. This is not tidiness: a live-but-useless `using` keeps a
+  dependency reachable from the module file, so Aqua's `stale_deps` reads it as in use. That check
+  passes today and only means something now that this list is empty — which is why *Added* gates it.
+
+  **How the set was found, and what it does not cover.** Two independent sweeps agreed on it: a
+  parser-based enumeration of all 692 top-level definitions in `src/` and `ext/` against `src/`,
+  `ext/`, `test/`, `docs/src` and `scripts/`, and `julia-methods.jl` over the candidate names. Each
+  name above was then re-grepped across the whole working tree at `e732ff0b` before deletion.
+  **Extensions of foreign generics and callable-object methods — 139 definitions — were not
+  classified and are not in this list**, because a text search cannot answer a dispatch question: an
+  empty grep for one of those is unknown, not a negative. `julia-callers.jl` was not run, and for the
+  names above it is not needed, since none of them extends a foreign generic.
+
 - **`legacy/` no longer exists.** Its last file, `embeddings/sin_cos.jl`, is not deleted but
   promoted: it is `src/layers/positional_encoding.jl` now, rewritten, documented, tested and with a
   caller. See *Added*. **The directory held thirty files at `v0.7.0` and holds none**, emptied over
-  this release in five steps: the kernel generator moved beside the kernels it generates,
-  `legacy/hnn/` and `legacy/mtk/` went together, then the seven superseded files, then the four that
-  moved to `GeometricOptimizers`, then this one.
+  this release in five steps: the kernel generator moved out to `scripts/`, `legacy/hnn/` and
+  `legacy/mtk/` went together, then the seven superseded files, then the four that moved to
+  `GeometricOptimizers`, then this one.
 
 - **The symplectic groundwork leaves `legacy/` for `GeometricOptimizers` — four files, 553
   lines.** It is the last of this repository's symplectic Stiefel material, and it is not deleted
@@ -244,7 +311,7 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   It is dropped rather than moved because nothing calls it. The only `dim(` call in the package is
   `src/loss/lnn_loss.jl:55`, which passes an *architecture* and dispatches to
   `dim(::LagrangianNeuralNetwork)`. **`dim` remains exported** — it is imported from
-  `AbstractNeuralNetworks` at `src/GeometricMachineLearning.jl:90` and re-exported, and the three
+  `AbstractNeuralNetworks` at `src/GeometricMachineLearning.jl:84` and re-exported, and the three
   architecture methods are untouched.
 
   This takes the type-piracy count from **13 to 12**, measured with `Aqua.Piracy.hunt` before and
@@ -366,7 +433,8 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
   `_norm`, `_diff` and `_add` use `map` directly; that is the faithful translation, not a
   simplification, because `_diff` and `_add` recurse through their own `NamedTuple` methods and
-  `_norm` divides by `√length` one level down. `GeometricOptimizers` carried a
+  `_norm` divides by `√length` one level down. (`_add` is itself removed later in this release, as
+  the only one of the three with no caller — see *Removed (breaking)*.) `GeometricOptimizers` carried a
   character-identical copy of the same function, reached from here by qualified call; that copy goes
   in its own release, and this change is what frees it.
 
@@ -489,13 +557,14 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   when the shared harness took that job over, and it has had no caller since 2023-06-08. It was
   never exported, and nothing under `src`, `test`, `docs` or `scripts` named it.
 
-  `∇L` and `∇q̇∇q̇L` have had no caller either, and `∇∇L` only the one inside `∇q̇∇q̇L`
-  (`src/architectures/lagrangian_neural_network.jl:42`) — so the group is unreachable from outside
-  the file. All three are **kept deliberately**: they are
-  the hand-checkable `Zygote` reference for the quantities `LNNLoss` reaches through
+  `∇L` and `∇q̇∇q̇L` have had no caller either, and `∇∇L` only the one inside `∇q̇∇q̇L` — so the
+  group is unreachable from outside the file. They were kept at first, as the hand-checkable
+  `Zygote` reference for the quantities `LNNLoss` reaches through
   `SymbolicNeuralNetworks.Jacobian`, which is the route it has to take because a nested
-  `Zygote.gradient` inside a loss breaks the parameter gradient. A comment above `∇L` now says so,
-  so that the next reader does not read three uncalled functions as an oversight.
+  `Zygote.gradient` inside a loss breaks the parameter gradient. **They are removed later in this
+  same release** — see *Removed (breaking)*: nothing ever took that comparison, so what stood there
+  was an intention rather than a check, and restoring it wants a test rather than three uncalled
+  definitions.
 
 - **The pendulum scripts train through `DataLoader` + `Batch` + `Optimizer` now, and they run.**
   `scripts/reproduction/hnn_pendulum.jl` is where *B6* was diagnosed, and this file recorded that it
@@ -622,12 +691,13 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   — the same defect class as the `::AT` cotangent signatures above. They now match the 5×5, which
   never carried the annotation.
 
-  **The generator now sits beside what it generates**, as
-  `src/kernels/inverses/inverse_generator.jl` rather than `legacy/codegen/matrixinverse.jl`. It is
-  not legacy and it is not dead: it is the authoritative source of the four committed kernels, and
-  anyone editing one of them needs to find it. Nothing includes it, and `Symbolics` stays out of the
-  package's dependencies — the kernels are committed precisely so that building the package never
-  needs a symbolic stack.
+  **The generator is recovered from `legacy/codegen/matrixinverse.jl`** and lives as
+  `scripts/utilities/inverse_generator.jl`. It is not legacy and it is not dead: it is the
+  authoritative source of the four committed kernels, and anyone editing one of them needs to find
+  it. It sits under `scripts/` because nothing includes it and it is run by hand — `Symbolics` stays
+  out of the package's dependencies, the kernels being committed precisely so that building the
+  package never needs a symbolic stack. It is outside `verification/` and `reproduction/`, so the
+  script gate does not run it.
 
   It emits the complete kernel file — the slice index, the Cartesian output index, the
   `tensor_inverseN` wrappers and the `rrule` — rather than a `build_function` body that a human then
@@ -669,12 +739,13 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   lines are left exactly as they were, inert. The `loss_single` generic in `src/training_method/` is
   a *different* function, still defined, still called there and still exported.
 
-  `src/utils.jl:19-27` defines eight unexported methods — four of `rdevelop`, four of `develop` —
-  whose only references outside their own definition lines were in `build_loss.jl` (`:11`, `:13`,
-  `:14`, `:20`, `:25`). The `develop` in `scripts/test/test.jl` is that script's own local
-  definition, `build_loss_test.jl:5` took its `develop` from its `using` list rather than from
-  `src/utils.jl`, and the `Pkg.develop` calls elsewhere in the repository are a different function.
-  They are left in place.
+  `src/utils.jl` defined eight unexported methods — four of `rdevelop`, four of `develop` — whose
+  only references outside their own definition lines were in `build_loss.jl` (`:11`, `:13`, `:14`,
+  `:20`, `:25`). The `develop` in `scripts/test/test.jl` is that script's own local definition,
+  `build_loss_test.jl:5` took its `develop` from its `using` list rather than from `src/utils.jl`,
+  and the `Pkg.develop` calls elsewhere in the repository are a different function. Deleting
+  `scripts/loss/` therefore left all eight without a caller, and **they are removed later in this
+  same release** — see *Removed (breaking)*.
 
   `Distances` in `scripts/Project.toml` is left declared but is no longer used under `scripts/`. The
   references the sweep found were `using Distances` at `build_loss_test.jl:8`, two `sqeuclidean`
@@ -700,7 +771,7 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
     names). `SymplecticMatrix`, removed from the package in `444e6fac` (2023-05-31), sits only
     inside a function the script never calls, so it is not what stops this script.
   - `scripts/psd_auto_toda.jl` calls `SymplecticMatrix`, `SymplecticStiefelLayer` (never exported —
-    `src/GeometricMachineLearning.jl:189` says so directly) and `StandardOptimizer`, none of which
+    `src/GeometricMachineLearning.jl:180` says so directly) and `StandardOptimizer`, none of which
     exist in `src/`. Even the 2026-08-16 commit that replaced this file's `GLMakie`/`Plots` calls
     with `CairoMakie` left these breaks in place.
   - `scripts/particles.jl` and `scripts/particles_cuda.jl` read
@@ -1187,6 +1258,33 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   already used.
 
 ### Added
+
+- **An `ExplicitImports` gate in `test/aqua.jl`, and a test for `accuracy`.** Both close a way for
+  the dead code above to come back.
+
+  `test_explicit_imports` runs with three of its seven checks on:
+  `no_stale_explicit_imports`, `all_explicit_imports_via_owners` and `no_self_qualified_accesses`.
+  The first two were red before this branch — 13 stale imports and one name imported from a
+  re-exporter — and adding an unused `import` to the module file now fails the suite. The other
+  four are off, each with its count and its reason written above the `@testset`: 37 implicit
+  imports, 11 non-public explicit imports, 2 qualified accesses through a non-owner module, and 22
+  non-public qualified accesses. None of the four is a taste, and none is closed here. The test
+  environment gains `ExplicitImports = "1.15"`, a tight lower bound because that is the version the
+  four keyword switches were read from.
+
+  `test/data_loader/accuracy.jl` exercises `accuracy`, which `docs/src/data_loader/data_loader.md`
+  renders and nothing called. The two assertions are exact and independent of the seed: label every
+  sample with the class the untrained network already predicts and the accuracy is 1; rotate every
+  label one class on and it is 0. A third checks that the `NeuralNetwork` method agrees with the
+  `Chain` method.
+
+  **The test also records what writing it exposed.** No two-argument `DataLoader` constructor
+  produces the type `accuracy` dispatches on. Its signature is
+  `DataLoader{T, AT <: AbstractArray{T}, BT <: AbstractArray{T1}}` with `T1 <: Integer`, and every
+  `DataLoader(input, output)` method requires both arrays to share one element type — which a
+  classifier's data, real inputs against integer one-hot targets, never do. The test therefore calls
+  the parametric constructor, not as a shortcut past a public one but because it is the only way in.
+  Closing that gap is a constructor this branch does not add.
 
 - **`PositionalEncoding`, the sinusoidal encoding of [vaswani2017attention], as a layer** — plus the
   exported `positional_encoding(T, dim, seq_length)` that builds the matrix. Attention is
@@ -3226,7 +3324,7 @@ they resolved to is in the release notes above.
   this one allocates where the upstream allocates nothing.
 
   **Two of the 12 have no value witness, and that is worth saying plainly.** `:22` above, and
-  `add!(C::AbstractVecOrMat, A, B)` at `src/utils.jl:53` — the most invasive of the set, shadowing
+  `add!(C::AbstractVecOrMat, A, B)` at `src/utils.jl:21` — the most invasive of the set, shadowing
   the upstream three-argument `add!` for *every* vector and matrix including
   `AbstractNeuralNetworks`' own internal uses. The value it returns is unchanged. Its witness is an
   allocation regression: it writes `C .= A + B`, materialising the sum, where the upstream generic
@@ -3242,7 +3340,7 @@ they resolved to is in the release notes above.
 - **B8. Eighteen method ambiguities remain when `GeometricMachineLearning` is loaded alone — 27
   inside `Pkg.test()` itself — of the 23 this entry originally reported.** The five that were
   triaged for witnesses are fixed in this release, under *Fixed* above: `_GMLGradient`
-  (`src/optimizers/optimizer.jl:21`) against `SimpleSolvers.Gradient`, and the four loss functors
+  (`src/optimizers/optimizer.jl:22`) against `SimpleSolvers.Gradient`, and the four loss functors
   — `HNNLoss`, `LNNLoss`, `SymplecticEulerLoss` and `VariationalMidpointLoss` — against
   `AbstractNeuralNetworks.NetworkLoss`.
 
@@ -3406,6 +3504,31 @@ they resolved to is in the release notes above.
   This part was scoped to the forward path, so they were not changed with it. The backward pass is
   where training spends its time, so the gain should be larger here than the forward figures, which
   is also why it wants its own before-and-after measurement rather than being folded into that pass.
+
+- **C16. Four of `ExplicitImports`' seven checks are switched off in `test/aqua.jl`.** The counts, at
+  the commit that added the gate: **37** names arriving through a bare `using` across thirteen
+  packages;
+  **11** explicit imports of names upstream does not mark `public`; **2** qualified accesses through a
+  non-owner module, `GeometricOptimizers.Gradient` and `GeometricOptimizers.direction`, both owned by
+  `SimpleSolvers`; and **22** qualified accesses to non-public names.
+
+  They are four separate jobs, not one. Naming the 37 is a rewrite of the module header with a
+  judgement per name. The 11 and the 22 are the same class and most of them are not this package's to
+  fix — `Architecture`, `AbstractExplicitLayer`, `add!`, `_compute_loss`, `assign_columns` and
+  `description` are all used deliberately, and the resolution is upstream declaring them `public`.
+  Each check's reason is written above the `@testset` rather than here alone, because switching one
+  back on turns the suite red on the spot.
+
+- **C17. `accuracy` cannot be reached through any public `DataLoader` constructor.** Its signature is
+  `DataLoader{T, AT <: AbstractArray{T}, BT <: AbstractArray{T1}}` with `T1 <: Integer`
+  (`src/data_loader/data_loader.jl:487`), and every `DataLoader(input, output)` method requires the
+  two arrays to share one element type. A classifier's data are the case where they do not: real
+  inputs, integer one-hot targets. So the only way to build an argument for this function is to name
+  the parametric type, which is what `test/data_loader/accuracy.jl` does.
+
+  Closing it is a `DataLoader(input::AbstractArray{T, 3}, output::AbstractArray{T1, 3})` constructor
+  with the two element types free. That is an API addition rather than a cleanup, which is why the
+  test records the gap instead of the same change closing it.
 
 ### D. Unverified
 

@@ -174,23 +174,10 @@ function LinearLayerP(M)
     LinearLayerP{M, M}()
 end
 
-function Gradient(dim::Int, dim2::Int = dim, activation = identity; full_grad::Bool = true,
-        change_q::Bool = true, allow_fast_activation::Bool = true)
-    @warn "You are calling the old constructor. This will be deprecated."
-
-    activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
-
-    iseven(dim) && iseven(dim2) || error("Dimensions must be even!")
-    dim2 ≥ dim || error("Second dimension should be bigger than the first!")
-
-    if change_q
-        return full_grad ? GradientLayerQ{dim, dim, typeof(activation)}(dim2, activation) :
-               ActivationLayerQ{dim, dim, typeof(activation)}(activation)
-    else
-        return full_grad ? GradientLayerP{dim, dim, typeof(activation)}(dim2, activation) :
-               ActivationLayerP{dim, dim, typeof(activation)}(activation)
-    end
-end
+# A `Gradient(dim, dim2, activation; full_grad, change_q)` constructor stood here. It `@warn`ed
+# "You are calling the old constructor. This will be deprecated." on every call, and dispatched to
+# one of the four layers above. Nothing called it, in the package, the tests, the docs or the
+# scripts, so the four constructors above are the only way in.
 
 function initialparameters(
         rng::AbstractRNG, init_weight::AbstractNeuralNetworks.Initializer,
