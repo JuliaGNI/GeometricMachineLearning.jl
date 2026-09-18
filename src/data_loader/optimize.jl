@@ -72,6 +72,7 @@ function optimize_for_one_epoch!(opt::Optimizer,
         input_nt_output_nt = convert_input_and_batch_indices_to_array(dl, batch, batch_indices) |>
                              _copy
         loss_value, pullback = _pullback(ps, model, input_nt_output_nt)
+        @assert loss_value isa T "loss returned a $(typeof(loss_value)), expected $T"
         total_error += loss_value
         dp = _processing(pullback(one(loss_value)))
         optimization_step!(opt, λY, ps, dp)
@@ -92,7 +93,7 @@ function (o::Optimizer)(nn::NeuralNetwork,
     Λ = GlobalSection(params(nn))
     progress_object = show_progress == true ?
                       ProgressMeter.Progress(n_epochs; enabled = true) : nothing
-    loss_array = zeros(n_epochs)
+    loss_array = zeros(eltype(dl), n_epochs)
     for i in 1:n_epochs
         loss_array[i] = optimize_for_one_epoch!(
             o, nn.model, params(nn), dl, batch, _pullback, Λ)

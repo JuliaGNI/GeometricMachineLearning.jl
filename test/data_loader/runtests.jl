@@ -21,3 +21,6 @@ end
 @safetestset "An unexpected `autoencoder` keyword throws rather than returning nothing" begin
     include("autoencoder_keyword.jl")
 end
+@safetestset "A Float32 network's training history stays Float32" begin
+    include("training_history_eltype.jl")
+end
