@@ -102,10 +102,22 @@ end
 #                                    `ForwardDiff.jacobian`, `GeometricOptimizers.momentum` and so on.
 #
 # Each of the four is a real backlog item rather than a taste, and none of them is this branch's.
-@testset "ExplicitImports" begin
-    test_explicit_imports(GeometricMachineLearning;
-        no_implicit_imports = false,
-        all_explicit_imports_are_public = false,
-        all_qualified_accesses_via_owners = false,
-        all_qualified_accesses_are_public = false)
-end
+#
+# WHAT THIS GATE DOES NOT CATCH, and one way it can go red on its own.
+#
+# It reads imports, never definitions. A dead *definition* re-added under `src/` leaves all three
+# checks green, so this closes only the import half of the pass that added it.
+#
+# `all_explicit_imports_via_owners` also has the property the `ambiguities` comment above rejects:
+# it asks *which* upstream module defines a name, so it goes red when a name moves between
+# `GeometricBase`, `GeometricOptimizers` and `AbstractNeuralNetworks` with nothing in `src/` having
+# changed -- which is exactly how `StateVariable` got here. `ExplicitImports = "1.15"` admits any
+# 1.x, so a minor release that sharpens stale detection does the same. Unlike the ambiguity count,
+# a red here names the import and the module to take it from, so it stays a gate: the fix is one
+# line and the message says which. `test_explicit_imports` opens its own `@testset`, so this call
+# needs no wrapper.
+test_explicit_imports(GeometricMachineLearning;
+    no_implicit_imports = false,
+    all_explicit_imports_are_public = false,
+    all_qualified_accesses_via_owners = false,
+    all_qualified_accesses_are_public = false)

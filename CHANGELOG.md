@@ -51,8 +51,19 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   in the module file under the comment `# are these needed?`. The answer is
   no, and the evidence is that the comment's own question had two occurrences in the repository: the
   definition and the export. `NothingFunction`'s only reader was `is_NothingFunction`, which nothing
-  called either. Both types are removed with the export. Nothing else here changes a name a caller
-  can reach.
+  called either. Both types are removed with the export.
+
+  **The thirteen removed imports are the second breaking part**, because an `import` in the module
+  file makes a name resolve as `GeometricMachineLearning.<name>` whether or not the package exports
+  it. Dropping them closes thirteen such paths. Two had users in this repository, and this branch
+  repairs all ten occurrences: four `GeometricMachineLearning.layer` in
+  `test/layers/sympnet_upscaling.jl`, four more in
+  `scripts/verification/sympnet_upscaling_symplecticity.jl` and two
+  `GeometricMachineLearning.Ω` in `test/docstrings/manifolds.jl` now name
+  `AbstractNeuralNetworks.layer` and `GeometricOptimizers.Ω`, which is where both are defined. The
+  other eleven had no user here, so an outside caller is the only one that can notice. What does
+  *not* change is dispatch: no removed definition extends a foreign generic, so no name that
+  survives resolves to a different method.
 
   **Five files, none of them included from anywhere or included and never called:**
 
@@ -64,8 +75,9 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   | `architectures/fixed_width_network.jl` | `struct FixedWidthNetwork <: Architecture end`, and nothing else |
   | `architectures/variable_width_network.jl` | `struct VariableWidthNetwork <: Architecture end`, and nothing else |
 
-  **`tensor_exponential` goes but its file stays**, because `init_output` and `assign_ones!` below it
-  are live — `tensor_cayley.jl` and `cpu_inverse.jl` call them. That also retires an unbounded
+  **`tensor_exponential` goes but its file stays**, because `init_output` below it is live —
+  `tensor_cayley.jl` calls it five times and `cpu_inverse.jl` once — and `init_output` is in turn
+  the only caller of `assign_ones!` next to it. That also retires an unbounded
   `while true`: the Taylor series had no iteration cap, so an input converging more slowly than
   `eps(T)` would not have terminated.
 
@@ -1259,14 +1271,19 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 ### Added
 
-- **An `ExplicitImports` gate in `test/aqua.jl`, and a test for `accuracy`.** Both close a way for
-  the dead code above to come back.
+- **An `ExplicitImports` gate in `test/aqua.jl`, and a test for `accuracy`.** The gate closes the
+  import half of the pass above: an `import` that nothing uses now fails the suite, so the thirteen
+  cannot come back. **It does not close the other half.** `ExplicitImports` reads imports, not
+  definitions, so re-adding any of the thirty-two removed definitions leaves the suite green.
+  Nothing here gates a definition, and nothing cheap could: telling a dead definition from a live
+  one is the dispatch question that took two sweeps above. The `accuracy` test is not a gate on the
+  removal either. It covers a function that survives it.
 
   `test_explicit_imports` runs with three of its seven checks on:
   `no_stale_explicit_imports`, `all_explicit_imports_via_owners` and `no_self_qualified_accesses`.
   The first two were red before this branch — 13 stale imports and one name imported from a
   re-exporter — and adding an unused `import` to the module file now fails the suite. The other
-  four are off, each with its count and its reason written above the `@testset`: 37 implicit
+  four are off, each with its count and its reason written above the call: 37 implicit
   imports, 11 non-public explicit imports, 2 qualified accesses through a non-owner module, and 22
   non-public qualified accesses. None of the four is a taste, and none is closed here. The test
   environment gains `ExplicitImports = "1.15"`, a tight lower bound because that is the version the
