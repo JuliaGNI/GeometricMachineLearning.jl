@@ -18,3 +18,6 @@ end
 @safetestset "DataLoader for input and output" begin
     include("data_loader_for_input_and_output.jl")
 end
+@safetestset "An unexpected `autoencoder` keyword throws rather than returning nothing" begin
+    include("autoencoder_keyword.jl")
+end
