@@ -23,7 +23,7 @@ end
 function parameterlength(::PSDLayer{M, N}) where {M, N}
     M2 = M ÷ 2
     N2 = N ÷ 2
-    N > M ? Int(M2 * (N2 - (M2 + 1) / 2)) : Int(N2 * (M2 - (N2 + 1) / 2))
+    N > M ? M2 * N2 - (M2 * (M2 + 1)) ÷ 2 : N2 * M2 - (N2 * (N2 + 1)) ÷ 2
 end
 
 function initialparameters(
