@@ -35,6 +35,15 @@ _gml_rgrad(x::NetworkParameters, dp) = mapparameters(_gml_rgrad, x, dp)
 # per weight -- but it must not be the *only* thing standing between a caller and an ambiguity.
 (g::_GMLGradient{T})(x::Manifold{T}) where {T} = _gml_rgrad(x, g.dp)
 
+# A bare `AbstractVector`, for the same reason as the `Manifold` method above: `SimpleSolvers` has
+# `(::Gradient{T})(::AbstractVector{T})`, `_GMLGradient{T} <: GeometricOptimizers.Gradient{T}`, and
+# without a method of its own `(::_GMLGradient{T})(::AbstractArray{T})` above and that one are
+# equally specific on a `Vector` -- the call is a run-time `MethodError: ... is ambiguous`. This
+# method is more specific than both: `_GMLGradient{T} <: Gradient{T}` on the first argument and
+# `AbstractVector{T} <: AbstractArray{T}` on the second. The answer is unchanged from the
+# `AbstractArray{T}` method above -- the gradient is already Euclidean, so it is `g.dp`.
+(g::_GMLGradient{T})(x::AbstractVector{T}) where {T} = g.dp
+
 # State for Euclidean (non-manifold) parameters.
 mutable struct GMLEuclideanState{T, AT <: AbstractArray{T}}
     iterations::Int

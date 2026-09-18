@@ -33,6 +33,18 @@ GML = GeometricMachineLearning
     end
 end
 
+# A bare `AbstractVector`. `_GMLGradient{T} <: GeometricOptimizers.Gradient{T}` and `SimpleSolvers`
+# has `(::Gradient{T})(::AbstractVector{T})`, so without a method of its own,
+# `(::_GMLGradient{T})(::AbstractArray{T})` and that one are equally specific on a `Vector` --
+# the call is `MethodError: ... is ambiguous`, same class of defect as the `Manifold` case above.
+@testset "a bare AbstractVector reaches this package's method, not upstream's" begin
+    dp = randn(3)
+    g = GML._GMLGradient{Float64, typeof(dp)}(dp)
+
+    @test g(randn(3)) === dp
+    @test which(g, Tuple{Vector{Float64}}).module === GeometricMachineLearning
+end
+
 # The two shapes the optimizer actually hands it, so that the method above is not the only one
 # covered and a later narrowing of either shows up here.
 @testset "a wrapped layer and a plain array" begin
