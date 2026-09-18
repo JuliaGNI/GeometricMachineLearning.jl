@@ -63,7 +63,8 @@ A layer that adds the sinusoidal positional encoding of [vaswani2017attention](@
 It has no parameters. The sequence length is read from the input's second axis at every call rather
 than fixed at construction, because a transformer here takes the sequence length from its data and
 not from its architecture — the same network is applied to trajectories of different lengths. The
-encoding matrix is therefore built per call, which costs one `dim × seq_length` allocation.
+encoding matrix is therefore built per call, which costs one `dim × seq_length` allocation, and a
+second for the sum.
 
 !!! warning "CPU only"
     [`positional_encoding`](@ref) builds a `Matrix`, so this layer adds a host array to whatever it

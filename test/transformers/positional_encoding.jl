@@ -118,21 +118,41 @@ end
         nn = NeuralNetwork(Transformer(4, 2, 1; positional_encoding = kw), CPU(), Float32)
         @test_throws MethodError nn(rand(Float32, 4))
     end
+
+    # A `(q, p)` pair of vectors is the same defect one level down: each half would broadcast to a
+    # `2 × 1` matrix, so the pair has to be rejected wherever a bare vector is.
+    z = (q = rand(Float32, 2), p = rand(Float32, 2))
+    @test_throws MethodError l(z, NamedTuple())
+
+    for kw in (false, true)
+        nn = NeuralNetwork(Transformer(4, 2, 1; positional_encoding = kw), CPU(), Float32)
+        @test_throws MethodError nn(z)
+    end
 end
 
 @testset "a network carrying the layer can be trained" begin
     # The encoding is a constant, built with a mutating loop. Zygote refuses to differentiate that
-    # loop unless the builder is declared non-differentiable, and without the declaration every
-    # gradient through a network with `positional_encoding = true` raised
+    # loop unless the builder is declared non-differentiable. Without the declaration every
+    # gradient through a network with `positional_encoding = true` raises
     # `Mutating arrays is not supported`. A layer that cannot be trained through is not a layer.
     x = rand(Float32, 4, 5)
+
+    # A gradient that is merely not `nothing` proves nothing, because a rule that returned zeros
+    # gives one too. Zygote returns the parameters' own nested structure, so the leaves are reached
+    # through `values`. With the keyword on, the encoding layer's own entry is `nothing`: it holds
+    # no parameters, so that is the expected shape rather than a missing gradient.
+    nonzero_somewhere(g::AbstractArray) = any(!iszero, g)
+    nonzero_somewhere(::Nothing) = false
+    nonzero_somewhere(g) = any(nonzero_somewhere, values(g))
 
     for kw in (false, true)
         nn = NeuralNetwork(Transformer(4, 2, 1; positional_encoding = kw), CPU(), Float32)
 
         # Both gradients are taken, because the encoding sits between the input and the parameters
-        # and the failure was in the forward trace, which both of them walk.
-        @test Zygote.gradient(p -> sum(nn(x, p)), nn.params)[1] !== nothing
+        # and the failure is in the forward trace, which both of them walk.
+        gradient_wrt_params = Zygote.gradient(p -> sum(nn(x, p)), nn.params)[1]
+        @test keys(gradient_wrt_params) == keys(nn.params)
+        @test nonzero_somewhere(gradient_wrt_params)
 
         gradient_wrt_input = Zygote.gradient(y -> sum(nn(y, nn.params)), x)[1]
         @test size(gradient_wrt_input) == size(x)

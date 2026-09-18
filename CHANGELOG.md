@@ -1101,9 +1101,10 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   The cost is one `dim × seq_length` allocation per call, and a second for the sum.
 
   **It takes a matrix, a batch of matrices or a `(q, p)` pair — the same inputs as the rest of the
-  chain.** A vector is rejected, as it is without the keyword: it has no second axis to read a
-  sequence length from, and broadcasting one against the `dim × 1` encoding would return a matrix,
-  so accepting it would let the keyword change the rank of the output.
+  chain.** A vector is rejected, as it is without the keyword, and so is a `(q, p)` pair of vectors:
+  a vector has no second axis to read a sequence length from, and broadcasting one against the
+  `dim × 1` encoding would return a matrix, so accepting it would let the keyword change the rank of
+  the output.
 
   **`positional_encoding` is declared `@non_differentiable`**, because its arguments are a type and
   two lengths and none of them is a differentiable quantity. Without the declaration Zygote traces
