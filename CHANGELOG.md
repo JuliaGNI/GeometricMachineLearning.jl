@@ -944,7 +944,7 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 - **`MatrixSoftmax` no longer overflows to `NaN` on ordinary input.** Both its methods computed
   `exp.(x)` directly, with no subtraction of the maximum, so
-  `MatrixSoftmax()(Float32[100 0; 0 0])` came back `Float32[NaN 0.0; 0.0 0.0])` — and
+  `MatrixSoftmax()(Float32[100 0; 0 0])` came back `Float32[NaN 0.0; 0.0 0.0]` — and
   `MatrixSoftmax` is the default `attention_activation` of `SymplecticAttentionQ`/`P` and
   `SymplecticTransformer`, applied to an unbounded learned weight, so this was reachable in
   training rather than a corner case. Both methods now subtract the maximum over the axes the sum
@@ -990,6 +990,13 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   sentinel for "inherit from `dl`", not a caller mistake — so it is typed
   `Union{Nothing, Bool}` instead, and its `DT = if …` block gained the `else` the others gained a
   type for, closing the same silent fallthrough without changing what `nothing` means there.
+
+  Two further entry points still declare the keyword untyped: `DataLoader(::AbstractVector)` and
+  `DataLoader(::EnsembleSolution)`. Both only reshape or repack their argument and then forward to
+  one of the constructors above, so a bad `autoencoder` is now caught rather than swallowed — but
+  it is caught one call deeper, and the `TypeError` names the inner constructor rather than the
+  entry point the caller used. Typing them is left for the pass that revisits the two docstrings
+  covering the same keyword.
 
 - **`HRedSys.timespan` no longer truncates to `Int`.** The field was declared `Tuple{Int, Int}`
   while the constructor takes `timespan::Tuple` and forwards it unchanged: a conventional
