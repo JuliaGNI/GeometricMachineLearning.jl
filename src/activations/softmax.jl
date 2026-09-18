@@ -27,12 +27,12 @@ struct MatrixSoftmax <: AbstractSoftmax end
 (::VectorSoftmax)(x::AbstractArray) = softmax(x)
 
 function (::MatrixSoftmax)(x::AbstractMatrix)
-    expX = exp.(x)
+    expX = exp.(x .- maximum(x))
     expX / sum(expX)
 end
 
 function (::MatrixSoftmax)(x::AbstractArray{<:Number, 3})
-    expX = exp.(x)
+    expX = exp.(x .- maximum(x, dims = (1, 2)))
     ∑expX = sum(expX, dims = (1, 2))
     expX ./ ∑expX
 end
