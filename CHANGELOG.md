@@ -40,11 +40,62 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 ### Removed (breaking)
 
+- **Seven more files leave `legacy/` — 579 lines that the package already provides, or that no
+  longer refer to anything that exists.** Nothing under `src/`, `test/`, `scripts/`, `docs/` or
+  `.github/` references `legacy/`, so this removes no API and breaks no caller; it is in this
+  section because the directory's other removals are.
+
+  **Five of the seven cannot load.** Each was `include`d on its own in a fresh process with the
+  package and `LinearAlgebra` loaded, and the first error recorded. `LinearAlgebra` is part of the
+  method rather than an aside: the two triangular files call `LinearAlgebra.mul!` qualified and
+  raise `UndefVarError: LinearAlgebra` without it, so "loads" below is a statement about a process
+  that has both:
+
+  | file | lines | first error | what the package has instead |
+  |:--|--:|:--|:--|
+  | `layers/activ_symp_layer.jl` | 43 | `UndefVarError: NeuralNetworkLayer` | `ActivationLayerQ`/`ActivationLayerP` |
+  | `layers/grad_symp_layer.jl` | 44 | `UndefVarError: NeuralNetworkLayer` | `GradientLayerQ`/`GradientLayerP` |
+  | `layers/resnet.jl` | 30 | `UndefVarError: NeuralNetworkLayer` | `ResNetLayer` |
+  | `layers/linear_symplectic.jl` | 46 | `Package Lux not found` | `LinearLayerQ`/`LinearLayerP` |
+  | `arrays/sympl_st_E_ts.jl` | 206 | `UndefVarError: SymplecticLieAlgMatrix` | nothing — see below |
+  | `arrays/triang_lower.jl` | 104 | loads | `GeometricOptimizers.LowerTriangular` |
+  | `arrays/triang_upper.jl` | 106 | loads | `GeometricOptimizers.UpperTriangular` |
+
+  The line counts are git's, as the 866 of the entry below is. `wc -l` gives 205 and 103 for the
+  two `arrays/` files, because neither ends in a newline; the two conventions differ by one per such
+  file, and by two over the seven.
+
+  `NeuralNetworkLayer` is defined in no repository under `Packages/`, and neither is
+  `SymplecticLieAlgMatrix` or `SymplecticLieAlgHorMatrix`. The two triangular matrices do load and
+  are duplicates: `GeometricOptimizers`' pair has the same design — the entries in a vector, the
+  dimension beside them — and is documented and tested, which these were not.
+
+  **`sympl_st_E_ts.jl` is the one deletion that loses something nothing replaces.** It is `πₑ`, the
+  projection onto the tangent space of the symplectic Stiefel manifold at `E`, and it is the next
+  piece of the symplectic line of work rather than dead weight — but it is written against two Lie
+  algebra types that were never committed anywhere, so it cannot be moved with the rest of that
+  line until they exist. It is recoverable at `6a8e19a7:legacy/arrays/sympl_st_E_ts.jl`, and the
+  place it belongs is `GeometricOptimizers/src/lie_algebras/`, beside the Stiefel and Grassmann
+  horizontal components.
+
+  **What stays in `legacy/`**, and why: `symplectic_householder.jl`, `gram_schmidt.jl` — which
+  holds the ordinary *and* the symplectic process — `householder.jl` and
+  `symplectic_stiefel_manifold.jl` are being moved into `GeometricOptimizers`, and leave here once
+  that lands. `householder.jl`'s own header claims it implements "the regular Householder and the
+  symplectic Householder reflection"; it does not — the symplectic reflection is in
+  `symplectic_householder.jl`, and that header is an `s"""` substitution string rather than a
+  docstring in any case. `embeddings/sin_cos.jl` is the sinusoidal positional encoding of the
+  original transformer paper, which this package has no counterpart to and no caller for, so
+  keeping or placing it is a decision rather than a cleanup.
+
 - **`legacy/hnn/` and `legacy/mtk/` are gone — 17 files, of which 14 are Julia and 866 lines, and
   the package's last Flux and ModelingToolkit code.** Neither name now appears anywhere outside
-  this file. **Lux does**, so it is deliberately not claimed here:
-  `legacy/layers/linear_symplectic.jl` subtypes `Lux.AbstractExplicitLayer`, and
-  `scripts/Project.toml` declares it. They held the first implementation of Hamiltonian neural
+  this file. **Lux does**, so it is deliberately not claimed here. The one file that *used* Lux,
+  `legacy/layers/linear_symplectic.jl`, went with the entry above; what is left is
+  `scripts/Project.toml:15`, which declares a dependency no script loads, and two comments —
+  `scripts/reproduction/sympnets/sympnet_pendulum.jl:30-31`, which records that `Lux.Chain`
+  *rejects* these layers and that the `Chain` used is this package's, and
+  `.github/workflows/Scripts.yml:28`. They held the first implementation of Hamiltonian neural
   networks here, written four ways: by hand with `Zygote`, with Flux, with Lux, and with
   ModelingToolkit generating the derivatives as committed source. Every one of those routes is now
   either inside the package or replaced by a dependency, and **this closes *C9*** — all 28 of the
@@ -193,9 +244,10 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   not export it, so `using GeometricBase` never brought it into scope.
 
   This closes **C10**. `test/exports.jl`'s allowlist is now **empty**, so the guard asserts outright
-  that every exported name resolves, with no exceptions to trust. The one name here that has a
-  definition is `ResidualLayer`, at `legacy/layers/resnet.jl`, which nothing under `src/` includes;
-  the loaded layer of that shape is `ResNetLayer`.
+  that every exported name resolves, with no exceptions to trust. The one name here that still had
+  a definition was `ResidualLayer`, at `legacy/layers/resnet.jl`, which nothing under `src/`
+  included; that file is deleted by the entry above, so `ResidualLayer` now has no definition
+  anywhere in the repository. The loaded layer of that shape is `ResNetLayer`.
 
 - **The `train!` tests are gone, and six of them were passing.** Deleted: `test/train!/` (5 files),
   `test/integrator/test_integrator.jl`, `test/training_parameters.jl`, `test/data/test_data.jl`,
@@ -982,8 +1034,9 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   C10 itself is closed by this release — see *Removed (breaking)* above, where the allowlist ends up
   empty — so it is no longer under *Open Issues*.
 
-  The ten are not one case. `ResidualLayer`'s definition exists, at `legacy/layers/resnet.jl`, which
-  nothing under `src/` includes — the loaded layer of that shape is `ResNetLayer`. `description` and
+  The ten are not one case. `ResidualLayer`'s definition existed, at `legacy/layers/resnet.jl`,
+  which nothing under `src/` included — and that file is deleted in this same release, so the name
+  now resolves nowhere. The loaded layer of that shape is `ResNetLayer`. `description` and
   `timestep` are `GeometricBase` generics that package defines but does not export, so each needs an
   `import` rather than a definition. `Device`, `CPUDevice` and `convert_to_dev` have call sites under
   `test/performance_tests/`, which *C11* records as unreachable from `runtests.jl`.
