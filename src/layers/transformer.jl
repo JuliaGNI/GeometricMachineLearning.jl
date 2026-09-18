@@ -24,7 +24,8 @@ Make an instance of the Transformer with `n_heads` for dimension `dim` and `L` b
      raw""": if a [`PositionalEncoding`](@ref) should be put in front of the chain. Attention is
      permutation-equivariant on its own, so without this the network cannot tell one ordering of a
      sequence from another. It is off by default because the transformers here are usually applied
-     to phase-space trajectories, where the ordering is carried by the data.
+     to phase-space trajectories, where the ordering is carried by the data. Setting it to `true`
+     makes the network CPU-only, for the reason given in [`PositionalEncoding`](@ref).
 """
 function Transformer(dim::Integer, n_heads::Integer, L::Integer;
         activation = t_activation_default,
