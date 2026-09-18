@@ -50,6 +50,11 @@ function positional_encoding(::Type{T}, dim::Integer, seq_length::Integer) where
     P
 end
 
+# The matrix is a constant: its arguments are a type and two lengths, and none of them is a
+# differentiable quantity. Without this declaration Zygote traces into the loop above and refuses
+# the `setindex!`, so a network carrying a `PositionalEncoding` cannot be trained at all.
+ChainRulesCore.@non_differentiable positional_encoding(::Any, ::Any, ::Any)
+
 @doc raw"""
     PositionalEncoding(dim)
 
@@ -63,8 +68,10 @@ encoding matrix is therefore built per call, which costs one `dim × seq_length`
 !!! warning "CPU only"
     [`positional_encoding`](@ref) builds a `Matrix`, so this layer adds a host array to whatever it
     is given. Every other layer here allocates through the backend — `KernelAbstractions.allocate`,
-    or `similar(x, …)` in the forward pass — and this one does not yet, so a network carrying it is
-    a CPU network. Nothing in the test suite would catch that, because the suite has no GPU test.
+    or `similar(x, …)` in the forward pass — and this one does not yet. On a GPU array this is not a
+    slowdown but a failure: the broadcast fails to compile, because the host array cannot be read
+    from a kernel. A network carrying this layer is therefore a CPU network. Nothing in the test
+    suite would catch that, because the suite has no GPU test.
 
 Its Jacobian is the identity, since it adds a constant, so it composes with the structure-preserving
 architectures without changing what they preserve: a [`LinearSymplecticTransformer`](@ref) with this
@@ -103,7 +110,12 @@ end
 
 parameterlength(::PositionalEncoding) = 0
 
-function (::PositionalEncoding{M, M})(x::AbstractArray, ::NamedTuple) where {M}
+# A matrix and a batch of matrices, and deliberately not a vector. A vector has no second axis to
+# read a sequence length from, and broadcasting one against the `M × 1` encoding would return a
+# matrix — so the keyword would change the rank of the output and let an input through that
+# `MultiHeadAttention` rejects anyway.
+function (::PositionalEncoding{M, M})(x::Union{AbstractMatrix, AbstractArray{<:Any, 3}},
+        ::NamedTuple) where {M}
     x .+ positional_encoding(eltype(x), M, size(x, 2))
 end
 

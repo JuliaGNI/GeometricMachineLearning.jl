@@ -4,6 +4,7 @@ using GeometricMachineLearning: initialparameters
 using AbstractNeuralNetworks: parameterlength
 using KernelAbstractions
 import Random
+import Zygote
 
 Random.seed!(1234)
 
@@ -48,7 +49,7 @@ end
     x = rand(Float32, 4, 5)
 
     # Against a literal rather than against `x .+ positional_encoding(...)`, which would restate the
-    # functor's body — the thing the comment at the top of this file warns about. Column 1 of the
+    # functor's body — the thing the first testset's comment warns about. Column 1 of the
     # encoding is `(0, 1, 0, 1)`, so the layer leaves the odd rows of the first column alone and
     # adds one to the even rows.
     @test l(x, NamedTuple())[:, 1] ≈ x[:, 1] .+ Float32[0, 1, 0, 1]
@@ -89,10 +90,9 @@ end
 end
 
 @testset "a (q, p) input is accepted, and agrees with the stacked one" begin
-    # The keyword must not *remove* an input type the transformer otherwise takes. It did: without
-    # this method a `(q, p)` `NamedTuple` raised a `MethodError` with `positional_encoding = true`
-    # and worked without it. `MultiHeadAttention` and `ResNetLayer` both stack such an input, so
-    # this layer does too, and the two paths have to give the same answer.
+    # The keyword must not *remove* an input type the transformer otherwise takes.
+    # `MultiHeadAttention` and `ResNetLayer` both stack such an input, so this layer does too, and
+    # the two paths have to give the same answer.
     l = PositionalEncoding(4)
     z = (q = rand(Float32, 2, 5), p = rand(Float32, 2, 5))
 
@@ -104,6 +104,39 @@ end
     for kw in (false, true)
         nn = NeuralNetwork(Transformer(4, 2, 1; positional_encoding = kw), CPU(), Float32)
         @test nn(z) isa NamedTuple{(:q, :p)}
+    end
+end
+
+@testset "the keyword does not change which inputs the transformer takes" begin
+    # A vector is rejected with the keyword exactly as it is without it. Broadcasting a vector
+    # against the `4 × 1` encoding would return a `4 × 1` matrix, so accepting one here would let
+    # the keyword change the rank of the output.
+    l = PositionalEncoding(4)
+    @test_throws MethodError l(rand(Float32, 4), NamedTuple())
+
+    for kw in (false, true)
+        nn = NeuralNetwork(Transformer(4, 2, 1; positional_encoding = kw), CPU(), Float32)
+        @test_throws MethodError nn(rand(Float32, 4))
+    end
+end
+
+@testset "a network carrying the layer can be trained" begin
+    # The encoding is a constant, built with a mutating loop. Zygote refuses to differentiate that
+    # loop unless the builder is declared non-differentiable, and without the declaration every
+    # gradient through a network with `positional_encoding = true` raised
+    # `Mutating arrays is not supported`. A layer that cannot be trained through is not a layer.
+    x = rand(Float32, 4, 5)
+
+    for kw in (false, true)
+        nn = NeuralNetwork(Transformer(4, 2, 1; positional_encoding = kw), CPU(), Float32)
+
+        # Both gradients are taken, because the encoding sits between the input and the parameters
+        # and the failure was in the forward trace, which both of them walk.
+        @test Zygote.gradient(p -> sum(nn(x, p)), nn.params)[1] !== nothing
+
+        gradient_wrt_input = Zygote.gradient(y -> sum(nn(y, nn.params)), x)[1]
+        @test size(gradient_wrt_input) == size(x)
+        @test all(isfinite, gradient_wrt_input)
     end
 end
 
