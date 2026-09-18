@@ -336,7 +336,7 @@ function DataLoader(ensemble_solution::EnsembleSolution{T, T1, Vector{ST}};
     input_time_steps = length(ensemble_solution.t)
     n_params = length(ensemble_solution.s)
 
-    data = zeros(sys_dim, input_time_steps, n_params)
+    data = zeros(T, sys_dim, input_time_steps, n_params)
 
     for (solution, i) in zip(ensemble_solution.s, axes(ensemble_solution.s, 1))
         for dim in 1:sys_dim
