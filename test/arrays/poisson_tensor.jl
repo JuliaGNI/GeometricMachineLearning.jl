@@ -56,3 +56,11 @@ for n2 in 2:2:10
         test_application_to_nt(n2, T)
     end
 end
+
+# `PoissonTensor(n2)` (no backend, no type) keeps its documented `Float64` default.
+@test eltype(PoissonTensor(4)) == Float64
+
+# `PoissonTensor(backend::Backend, n2::Int)` and `PoissonTensor(backend::CPU, n2::Int)` used to
+# default to `Float32` and `Float64` respectively -- an undocumented split with the CPU and GPU
+# paths disagreeing. Both are gone now: a caller that names a backend has to name a type too.
+@test_throws MethodError PoissonTensor(CPU(), 4)
