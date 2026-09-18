@@ -54,11 +54,10 @@ PoissonTensor(n2::Int, T::DataType) = PoissonTensor(CPU(), n2, T)
 
 PoissonTensor(n2::Int) = PoissonTensor(n2, Float64)
 
-# There used to be `PoissonTensor(backend::Backend, n2::Int)` and `PoissonTensor(backend::CPU,
-# n2::Int)` here, defaulting to `Float32` and `Float64` respectively -- an undocumented split with
-# no stated reason, added in one 2024 commit. Every real call site in `scripts/`, `docs/` and
-# `test/` already passes `T` explicitly whenever it passes a `backend`, so a caller that names a
-# backend now has to name a type too, and the CPU/GPU default cannot silently disagree again.
+# A `PoissonTensor` constructor that takes a `backend` requires an element type argument too --
+# there is no `PoissonTensor(backend, n2)` method. `Float64` and `Float32` disagree on Metal (Apple
+# GPUs have no `Float64` at all), so a shared CPU/GPU default could only be wrong for one side; the
+# caller states the type instead. See `CHANGELOG.md` for how this constructor came to require it.
 
 @kernel function assign_ones_for_poisson_tensor_kernel!(J::AbstractMatrix{T}, n::Int) where {T}
     i = @index(Global)
