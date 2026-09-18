@@ -104,7 +104,9 @@ function HRedSys(odeensemble::HODEEnsemble, encoder::NeuralNetwork{<:SymplecticE
         parameters = odeensemble.parameters[1], integrator = integrator)
 end
 
-# this is much more expensive than it has to be and is due to a problem with nested derivatives in ForwardDiff (should not be necessary to do this twice!)
+# The decoder is evaluated twice: once below for the value, and once more inside
+# `ForwardDiff.jacobian` for the derivative. One pass through `DiffResults` would give both. See
+# issue C14 in `CHANGELOG.md`.
 function evaluate_vf_and_compute_∇Ψ(t, q̃::AbstractVector{T}, p̃::AbstractVector{T},
         parameters, decoder, v_full, f_full) where {T}
     N2 = decoder.architecture.full_dim ÷ 2

@@ -452,6 +452,14 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `src/data_loader/tensor_assign.jl` zeroes a tensor its kernel writes only a slice of, and the
   `kernel_ad_routines` buffers are accumulators.
 
+- **The minibatch copies in `optimize_for_one_epoch!` are gone, with `_copy` and its three
+  methods.** They were there under the comment *"these `copy`s should not be necessary! coming from
+  a Zygote problem!"*, which named no issue, no Zygote version and no reproducer — and Zygote has
+  moved from 0.6 to 0.7 since it was written. It no longer applies: training runs without them for
+  `GSympNet` on matrix and on `(q, p)` data, `SymplecticAutoencoder`,
+  `StandardTransformerIntegrator`, `LinearSymplecticTransformer`, and a `DataLoader` carrying a
+  separate output, and the suite is green. Every minibatch of every epoch was being copied for this.
+
 - **`DEFAULT_LNN_NRUNS` is gone from `src/architectures/lagrangian_neural_network.jl`, and the three
   `Zygote` derivatives beside it stay.** This closes *C13*, and it splits three-to-one against what
   that entry expected.
@@ -3314,6 +3322,21 @@ they resolved to is in the release notes above.
   `DEFAULT_LNN_NRUNS` is removed, and `∇L`, `∇∇L` and `∇q̇∇q̇L` are kept as the `Zygote` reference
   for what `LNNLoss` computes symbolically. Both are under *Changed*. The numbers are left vacant
   rather than reused.)
+
+- **C14. `evaluate_vf_and_compute_∇Ψ` evaluates the decoder twice.**
+  `src/reduced_system/reduced_system.jl` calls `decoder((q = q̃, p = p̃))` for the value, then
+  `ForwardDiff.jacobian(qp -> decoder(qp), vcat(q̃, p̃))` evaluates it again for the derivative. The
+  comment above the function blamed "a problem with nested derivatives in ForwardDiff" and named no
+  version, no issue and no reproducer; that claim is not reproduced here, and the comment now points
+  at this entry instead of asserting it. What is certain is the double evaluation, which is visible
+  in the two calls.
+
+  Closing it means computing the value and the Jacobian in one pass — `DiffResults` is the tool —
+  across the shape change from the `(q, p)` `NamedTuple` the vector fields are splatted from to the
+  flat vector the Jacobian is taken against. `test/reduced_order_modeling/reduced_system.jl`
+  exercises the function, so the change is checkable. It was left out of the audit's Part C
+  deliberately: it is a restructuring with its own verification, not the comment repair that part
+  was scoped to.
 
 ### D. Unverified
 
