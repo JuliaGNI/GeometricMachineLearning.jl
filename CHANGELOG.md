@@ -419,6 +419,14 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   folds pairwise and stays quadratic: concatenating 32 head tensors of 4×64×16 costs 8,646,272 B
   that way against 539,344 B for the variadic `vcat`. The variadic call is what landed.
 
+  **The variadic call needs its result type asserted**, `vcat(head_outputs...)::eltype(head_outputs)`.
+  Splatting a vector hides the argument count from inference, and without the assertion
+  `compute_output_of_mha` infers as `Union{Vector{Any}, Vector{Float32}, Matrix{Float32}}` for
+  matrix input and as `Any` for tensor input, where both were concrete before — and the `Any`
+  propagates out through the layer functor into the whole forward pass. A concatenation has the type
+  of the pieces it concatenates, so the assertion states what is already true; it costs nothing,
+  with allocations identical at every size above.
+
   Allocations per call, cold processes, the output's checksum unchanged at every size:
 
   | dimension, heads, length, data | path | before | after |

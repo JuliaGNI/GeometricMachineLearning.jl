@@ -1,8 +1,8 @@
-# `batch_over_two_axes` builds the minibatch index set. It grew a tuple by splatting, one new tuple
-# type per minibatch, so its return type was `Tuple{Vararg{Vector{Tuple{Int, Int}}}}` — not
-# concrete — and the cost grew with the square of the minibatch count. These two assertions keep
-# that from coming back: the return type is concrete, and four times the minibatches costs about
-# four times the memory rather than twelve. See `CHANGELOG.md` for the fix they guard.
+# `batch_over_two_axes` builds the minibatch index set. These two assertions hold it to the two
+# properties that keep it cheap: its return type is concrete, and four times the minibatches cost
+# about four times the memory. A tuple grown by splatting has neither — it infers as
+# `Tuple{Vararg{Vector{Tuple{Int, Int}}}}` and costs the square of the minibatch count. See
+# `CHANGELOG.md`.
 
 using GeometricMachineLearning
 using GeometricMachineLearning: batch_over_two_axes
@@ -24,7 +24,7 @@ end
 const allocations_250_batches = index_set_allocations(2000)
 const allocations_1000_batches = index_set_allocations(8000)
 
-# Four times the minibatches. Linear growth puts the ratio at four; the tuple version measured
-# 12.25 here. The bound is wide enough for the fixed per-call cost and tight enough to fail if the
-# quadratic growth returns.
+# Four times the minibatches. Linear growth puts the ratio at four; a quadratic index set puts it
+# at 12.25 here. The bound is wide enough for the fixed per-call cost and tight enough to fail on
+# quadratic growth.
 @test allocations_1000_batches / allocations_250_batches < 6
