@@ -25,14 +25,20 @@ using Test
 #                       silently discarding every element but the first
 #     (q, p) ≈ (q, p)   MethodError without GML, true with it             src/utils.jl:163
 #
-# `ambiguities` reports 23, of which 17 are `PoissonTensor * v` against left-multiply methods in
-# ArrayLayouts, FillArrays, Symbolics and GeometricOptimizers.
+# `ambiguities` reported 23. Four were the loss functors against `AbstractNeuralNetworks`'
+# `(::NetworkLoss)(::NeuralNetwork, …)`, and one was `_GMLGradient` against `SimpleSolvers`'
+# `(::Gradient{T})(::AbstractVector{T})` -- all five fixed by typing the losses' first parameter and
+# adding the missing `_GMLGradient` method (`optimizer.jl`). The remaining 18 are `PoissonTensor *
+# v` against left-multiply methods in ArrayLayouts, FillArrays, Symbolics and GeometricOptimizers
+# (17 of them -- out of scope here, see `## Open Issues`), plus one benign `Dense`/`Affine` pair
+# with no witness. `ambiguities` stays off: 18 is not 0, and an exact assertion on the 17 would turn
+# the suite red on an unrelated upstream upgrade the way the piracy count does not.
 #
-# Fixing either set is a change to `src/` that this file does not own, and the two lists are
-# recorded under `## Open Issues` in `CHANGELOG.md` with the witnesses. Marking them `broken = true`
-# would leave a check that reports success while the defects stand, which is the failure mode this
-# test suite's guards exist to remove. Six checks that fail on a real regression are worth more than
-# eight that are all switched off.
+# Fixing the piracy set is a change to `src/` that this file does not own, and it is recorded under
+# `## Open Issues` in `CHANGELOG.md` with the witnesses. Marking it `broken = true` would leave a
+# check that reports success while the defect stands, which is the failure mode this test suite's
+# guards exist to remove. Six checks that fail on a real regression are worth more than eight that
+# are all switched off.
 #
 # `unbound_args` is the one check here whose verdict depends on the Julia version: it passes on
 # `min`, `1` and `pre`, and fails on nightly over one method. That is *B9* under `## Open Issues`.
@@ -43,9 +49,12 @@ using Test
     # and so does every `src` line named above. This is the gate. It fails when a piracy is added,
     # and it fails when one is removed without the entry above and in `CHANGELOG.md` going with it.
     #
-    # `ambiguities` gets no such gate. Seventeen of its 23 are against methods in ArrayLayouts,
-    # FillArrays, Symbolics and GeometricOptimizers, so the count moves with those packages'
-    # versions rather than with anything in this tree, and an exact assertion would turn the suite
-    # red on an unrelated upgrade.
     @test length(Aqua.Piracy.hunt(GeometricMachineLearning)) == 12
+
+    # `ambiguities` itself gets no exact gate on the 17 `PoissonTensor` ones -- they move with
+    # ArrayLayouts', FillArrays', Symbolics' and GeometricOptimizers' own versions, not with
+    # anything in this tree. But the total is still asserted, so a new ambiguity introduced here
+    # (rather than upstream) does not silently join that pile: it currently accounts for exactly
+    # 18, all of them either the `PoissonTensor` set or the one benign `Dense`/`Affine` pair.
+    @test length(Test.detect_ambiguities(GeometricMachineLearning; recursive = true)) == 18
 end
