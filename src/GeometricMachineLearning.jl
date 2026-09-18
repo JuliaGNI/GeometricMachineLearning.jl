@@ -196,6 +196,7 @@ include("layers/resnet.jl")
 include("layers/manifold_layer.jl")
 include("layers/stiefel_layer.jl")
 include("layers/grassmann_layer.jl")
+include("layers/positional_encoding.jl")
 include("layers/multi_head_attention.jl")
 include("layers/volume_preserving_attention.jl")
 include("layers/volume_preserving_feedforward.jl")
@@ -207,6 +208,7 @@ include("layers/classification.jl")
 export StiefelLayer, GrassmannLayer, ManifoldLayer
 export PSDLayer
 export MultiHeadAttention
+export PositionalEncoding, positional_encoding
 export VolumePreservingAttention
 export VolumePreservingFeedForwardLayer
 export VolumePreservingLowerLayer

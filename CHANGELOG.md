@@ -40,6 +40,13 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 ### Removed (breaking)
 
+- **`legacy/` no longer exists.** Its last file, `embeddings/sin_cos.jl`, is not deleted but
+  promoted: it is `src/layers/positional_encoding.jl` now, rewritten, documented, tested and with a
+  caller. See *Added*. **The directory held thirty files at `v0.7.0` and holds none**, emptied over
+  this release in five steps: the kernel generator moved beside the kernels it generates,
+  `legacy/hnn/` and `legacy/mtk/` went together, then the seven superseded files, then the four that
+  moved to `GeometricOptimizers`, then this one.
+
 - **The symplectic groundwork leaves `legacy/` for `GeometricOptimizers` — four files, 553
   lines.** It is the last of this repository's symplectic Stiefel material, and it is not deleted
   but *moved*: `GeometricOptimizers` owns `manifolds/`, `lie_algebras/`, `global_sections/` and
@@ -92,7 +99,8 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   unusable at every size tested — and `SymplecticStiefelManifold` has no `Ω` and no `zero`, so it
   cannot yet be optimized over. Both are recorded as *Open Issues* A22 and A23 there.
 
-  `legacy/` now holds one file, `embeddings/sin_cos.jl`.
+  `legacy/` held one file after this, `embeddings/sin_cos.jl`; the entry above took it, and the
+  directory is gone.
 
 - **Seven more files leave `legacy/` — 579 lines that the package already provides, or that no
   longer refer to anything that exists.** Nothing under `src/`, `test/`, `scripts/`, `docs/` or
@@ -135,9 +143,9 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   **What stayed in `legacy/` at that point** was `symplectic_householder.jl`, `gram_schmidt.jl`,
   `householder.jl` and `symplectic_stiefel_manifold.jl`, pending the move into
   `GeometricOptimizers` — which has since landed, so they are gone too; see the entry above. That
-  leaves `embeddings/sin_cos.jl`, the sinusoidal positional encoding of the original transformer
-  paper, which this package has no counterpart to and no caller for, so keeping or placing it is a
-  decision rather than a cleanup.
+  left `embeddings/sin_cos.jl`, the sinusoidal positional encoding of the original transformer
+  paper, which this package had no counterpart to and no caller for. That decision is taken: it is
+  `PositionalEncoding` in `src/layers/` now, and `legacy/` no longer exists.
 
 - **`legacy/hnn/` and `legacy/mtk/` are gone — 17 files, of which 14 are Julia and 866 lines, and
   the package's last Flux and ModelingToolkit code.** Neither name now appears anywhere outside
@@ -1007,6 +1015,34 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 ### Added
 
+- **`PositionalEncoding`, the sinusoidal encoding of [vaswani2017attention], as a layer** — plus the
+  exported `positional_encoding(T, dim, seq_length)` that builds the matrix. Attention is
+  permutation-equivariant, so on its own it cannot tell one ordering of a sequence from another;
+  this is the standard remedy.
+
+  **It is off by default.** `Transformer` gains a `positional_encoding::Bool = false` keyword that
+  puts the layer at the front of the chain. The default is `false` because the transformers here are
+  usually applied to phase-space trajectories, where the ordering is carried by the data.
+
+  **The layer holds no parameters and stores no sequence length.** The length is read from the
+  input's second axis at every call, because a network here is applied to trajectories of whatever
+  length the data has — the same network to a 3-step and a 9-step series, which the tests assert.
+  The cost is one `dim × seq_length` allocation per call.
+
+  **It does not disturb the geometry.** The layer adds a constant, so its Jacobian is the identity,
+  so a structure-preserving architecture with it in front preserves exactly what it preserved
+  without it. The test asserts that directly, and *not* with `==`: the identity
+  ``(x + \delta + P) - (x + P) = \delta`` is exact in ``\mathbb{R}`` and not in floating point,
+  because each addition rounds and the two round differently. The bound is eight machine epsilons,
+  and the first draft of that test failed by asserting equality.
+
+  **It is written from the paper, not carried over.** `legacy/embeddings/sin_cos.jl` paired its rows
+  off by one — its first row was an unpaired cosine, so rows 2 and 3 shared a frequency instead of
+  rows 1 and 2. The test discriminates on exactly that: it asserts
+  ``P_{2j+1,i}^2 + P_{2j+2,i}^2 = 1``, which holds only when a pair really is the sine and cosine of
+  one angle. Positions are counted from zero, as in the paper, so the first column is
+  ``(0, 1, 0, 1, \ldots)``.
+
 - **`scripts/reproduction/hnn_pendulum_simulation.jl` integrates the vector field an HNN learned and
   plots the energy drift.** This is the one capability the `legacy/hnn/` deletion would otherwise
   have dropped. `hnn_mt_sim.jl` trained a Hamiltonian network and then *stepped* with it, comparing
@@ -1238,6 +1274,11 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `test/reachability.jl` reaches it through that include, as it does any other shared file.
 
 ### Documentation
+
+- **A *Positional Encoding* page**, `docs/src/layers/positional_encoding.md`, joins the
+  *Special Neural Network Layers* chapter. It gives the formula, says why attention needs it at all
+  — permutation-equivariance — and says why this package leaves it off by default, which is the part
+  a reader would otherwise have to infer from the keyword's value.
 
 - `_tree_optim_step!` records why it is *not* written with
   `NeuralNetworkParameters.foreachparameters`, having been an obvious candidate. It walks the **cache**

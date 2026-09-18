@@ -175,6 +175,7 @@ _special_layers = "Special Neural Network Layers" => [
     "Volume-Preserving Layers" => "layers/volume_preserving_feedforward.md",
     "(Volume-Preserving) Attention" => "layers/attention_layer.md",
     "Multihead Attention" => "layers/multihead_attention_layer.md",
+    "Positional Encoding" => "layers/positional_encoding.md",
     "Linear Symplectic Attention" => "layers/linear_symplectic_attention.md",
     "Symplectic Attention" => "layers/symplectic_attention.md"
 ]
