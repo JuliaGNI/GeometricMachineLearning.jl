@@ -3,15 +3,17 @@ module GeometricMachineLearning
 using AbstractNeuralNetworks
 # The parameter container lives in `NeuralNetworkParameters` as of `AbstractNeuralNetworks` 0.7,
 # under the name `NetworkParameters`. The import is selective rather than a bare `using`: that
-# package also exports `flatten`/`unflatten` and the leaf protocol, none of which this package
-# extends — `GeometricOptimizers` carries the protocol for the structured matrices.
+# package also exports the leaf protocol, which this package does not extend —
+# `GeometricOptimizers` carries the protocol for the structured matrices.
 #
-# Two things do come from there rather than being written again here: `mapstorage`, which reaches the
-# storage of a structured leaf and rebuilds the leaf around the result (`src/map_to_cpu.jl`), and
-# `parameter_eltype`, which promotes over the leaves of a set. A plain `NamedTuple` of layers is
-# walked with `Base.map`, which needs nothing from anybody.
+# Four things do come from there rather than being written again here: `mapstorage`, which reaches
+# the storage of a structured leaf and rebuilds the leaf around the result (`src/map_to_cpu.jl`);
+# `parameter_eltype`, which promotes over the leaves of a set; and `flatten`/`unflatten`, which the
+# parameter-dependent architectures call to put the parameters of the *system* into the network's
+# input. A plain `NamedTuple` of layers is walked with `Base.map`, which needs nothing from anybody.
 import NeuralNetworkParameters: NetworkParameters
-using NeuralNetworkParameters: mapparameters, mapstorage, parameter_eltype
+using NeuralNetworkParameters: mapparameters, mapstorage, parameter_eltype, flatten,
+                               unflatten
 using ChainRulesCore
 using GeometricBase
 using GeometricSolutions: GeometricSolution, EnsembleSolution, DataSeries, StateVariable,
@@ -29,7 +31,8 @@ using InteractiveUtils
 using TimerOutputs
 import SymbolicNeuralNetworks
 import SymbolicNeuralNetworks: SymbolicPullback
-using SymbolicNeuralNetworks: derivative, SymbolicNeuralNetwork
+using SymbolicNeuralNetworks: derivative, SymbolicNeuralNetwork,
+                              AbstractSymbolicNeuralNetwork
 import Symbolics
 
 # The manifolds, the structured matrix types, the global sections and the retractions are
@@ -191,8 +194,11 @@ export StiefelManifold, GrassmannManifold, Manifold
 export rgrad, metric, check
 
 include("layers/sympnets.jl")
+include("layers/forcing_dissipation_layers.jl")
 include("layers/bias_layer.jl")
 include("layers/resnet.jl")
+include("layers/wide_resnet.jl")
+include("layers/parametric_resnet_layer.jl")
 include("layers/manifold_layer.jl")
 include("layers/stiefel_layer.jl")
 include("layers/grassmann_layer.jl")
@@ -250,11 +256,12 @@ export AdamOptimizerWithDecay, DecayingStatic
 export NeuralNetwork
 
 export NetworkLoss, TransformerLoss, FeedForwardLoss, AutoEncoderLoss, ReducedLoss, HNNLoss,
-       LNNLoss, SymplecticEulerLoss, VariationalMidpointLoss
+       LNNLoss, SymplecticEulerLoss, VariationalMidpointLoss, ParametricLoss
 
 #INCLUDE ARCHITECTURES
 include("architectures/neural_network_integrator.jl")
 include("architectures/resnet.jl")
+include("architectures/parametric_resnet.jl")
 include("architectures/transformer_integrator.jl")
 include("architectures/standard_transformer_integrator.jl")
 include("architectures/sympnet.jl")
@@ -263,6 +270,8 @@ include("architectures/symplectic_autoencoder.jl")
 include("architectures/psd.jl")
 include("architectures/fixed_width_network.jl")
 include("architectures/hamiltonian_neural_network.jl")
+include("architectures/standard_hamiltonian_neural_network.jl")
+include("architectures/generalized_hamiltonian_neural_network.jl")
 include("architectures/lagrangian_neural_network.jl")
 include("architectures/variable_width_network.jl")
 include("architectures/transformer_neural_network.jl")
@@ -276,7 +285,8 @@ export ClassificationTransformer, ClassificationLayer
 export VolumePreservingFeedForward
 export SymplecticAutoencoder, PSDArch
 export HamiltonianArchitecture, StandardHamiltonianArchitecture,
-       GeneralizedHamiltonianArchitecture
+       GeneralizedHamiltonianArchitecture, ForcedGeneralizedHamiltonianArchitecture
+export ForcedSympNet
 
 export solve!, encoder, decoder
 
@@ -292,12 +302,17 @@ export AbstractPullback, ZygotePullback, SymbolicPullback
 include("pullbacks/zygote_pullback.jl")
 include("pullbacks/symbolic_hnn_pullback.jl")
 
-export DataLoader
+export DataLoader, ParametricDataLoader
 export Batch, optimize_for_one_epoch!
 include("data_loader/tensor_assign.jl")
 include("data_loader/matrix_assign.jl")
 include("data_loader/batch.jl")
+# before `optimize.jl`, whose training loop takes either data loader
+include("data_loader/parametric_data_loader.jl")
 include("data_loader/optimize.jl")
+
+include("architectures/forced_sympnet.jl")
+include("architectures/forced_generalized_hamiltonian_neural_network.jl")
 
 include("reduced_system/reduced_system.jl")
 

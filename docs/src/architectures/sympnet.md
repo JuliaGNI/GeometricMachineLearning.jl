@@ -215,6 +215,7 @@ is the predicted state. In the [example section](@ref "SympNets with `GeometricM
 SympNet
 LASympNet
 GSympNet
+ForcedSympNet
 ```
 
 ```@raw latex

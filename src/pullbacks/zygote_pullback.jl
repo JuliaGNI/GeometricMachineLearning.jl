@@ -32,6 +32,15 @@ end
 (_pullback::ZygotePullback)(ps, model, input_nt_output_nt::Tuple{
     <:QPTOAT, <:QPTOAT})::Tuple = Zygote.pullback(
     ps -> _pullback.loss(model, ps, input_nt_output_nt...), ps)
+# The parameter-dependent architectures take the system parameters as a third element of the
+# input tuple, either as a `NamedTuple` of parameters or as one vector entry per sample.
+(_pullback::ZygotePullback)(ps, model,
+    input_output_params::Tuple{<:QPTOAT, <:QPTOAT, <:NamedTuple})::Tuple = Zygote.pullback(
+    ps -> _pullback.loss(model, ps, input_output_params...), ps)
+(_pullback::ZygotePullback)(ps,
+    model,
+    input_output_params::Tuple{<:QPTOAT, <:QPTOAT, <:AbstractVector})::Tuple = Zygote.pullback(
+    ps -> _pullback.loss(model, ps, input_output_params...), ps)
 
 # Both shapes, because a pullback produces both. `NeuralNetworkParameters` rewraps the tangent of a
 # `NetworkParameters` into one, while a reverse pass seeded with a bare `NamedTuple` hands one back.
@@ -83,10 +92,16 @@ end
 
 Strip `returned_pullback` from unnecessary `Zygote`-induces garbage.
 
-These two helpers used to be `SymbolicNeuralNetworks._get_params` and
+These three helpers used to be `SymbolicNeuralNetworks._get_params` and
 `SymbolicNeuralNetworks._get_contents`; SymbolicNeuralNetworks 0.5 removed them, and they were
 never about symbolics in the first place — they clean up what `Zygote` returns.
 
+[`_unwrap_gradient`](@ref) closes the last step. `_get_params` strips the `(params = …,)` wrapper
+`Zygote` puts around a `NetworkParameters` at the *top* of the tree, and the parameter-dependent
+architectures nest — a `ForcingLayer` holds the parameters of a whole sub-network — so a wrapper
+appears at every level and `_tree_optim_step!` then reads `dp.L2.L1` off a `NamedTuple` whose only
+field is `params`.
+
 Also see the docs for [`ZygotePullback`](@ref).
 """
-_processing = _get_params ∘ _get_contents
+_processing = _unwrap_gradient ∘ _get_params ∘ _get_contents

@@ -18,3 +18,6 @@ end
 @safetestset "DataLoader for input and output" begin
     include("data_loader_for_input_and_output.jl")
 end
+@safetestset "Parametric DataLoader" begin
+    include("parametric_data_loader_test.jl")
+end

@@ -388,6 +388,16 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 ### Changed
 
+- `src/architectures/hamiltonian_neural_network.jl` is split: it keeps the abstract
+  `HamiltonianArchitecture`, and `StandardHamiltonianArchitecture` moves to
+  `standard_hamiltonian_neural_network.jl`. `hamiltonian_vector_field` is narrowed from
+  `::HamiltonianArchitecture` to `::StandardHamiltonianArchitecture` accordingly ([#207](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/207)).
+- **The three parametric and forced training scripts are gated.** They now live under
+  `scripts/reproduction/` with their shared helper under
+  `scripts/utilities/parametric_data_helpers.jl`, so `Scripts.yml` runs them in smoke mode. They
+  arrived as top-level files that nothing ran, and one of them did not parse at all. They carry
+  `smoke_size` constants like every other reproduction script now. A one-off probe that printed two
+  parameter counts was dropped.
 - **`DEFAULT_LNN_NRUNS` is gone from `src/architectures/lagrangian_neural_network.jl`, and the three
   `Zygote` derivatives beside it stay.** This closes *C13*, and it splits three-to-one against what
   that entry expected.
@@ -670,6 +680,40 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 ### Fixed
 
+Five defects in the PGHNN work ([#207](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/207)), all on paths nothing executed: the training test for
+these architectures was not registered in `runtests.jl`, and six of the new files were at 0 %
+coverage.
+
+- `concatenate_array_with_parameters(::AbstractMatrix, ::AbstractVector)` concatenated a batch with
+  `vcat` rather than `hcat`, collapsing it into a single long vector.
+- **`ForcedGeneralizedHamiltonianArchitecture` could not be evaluated at all.** The
+  parameter-dependent `NeuralNetwork` functor and the `Optimizer` entry point were defined for
+  `GeneralizedHamiltonianArchitecture` only, and the two are siblings under `HamiltonianArchitecture`
+  rather than sub- and supertype, so `nn(x, μ)` fell through to the generic functor and read the
+  *system* parameters as the *network* parameters.
+- **`NeuralNetwork{<:ParametricResNet}` had no parameter-dependent functor either**, for the same
+  reason one level along: a `ParametricResNet` is a `NeuralNetworkIntegrator`, which neither
+  existing method covers. `nn(qp, μ)` reached `AbstractNeuralNetworks`' generic two-argument functor,
+  which reads the system parameters as the network parameters and hands the first layer a `Float64`.
+  The test called `apply_parametric` directly, which is why the omission went unseen.
+- `ParametricResNet(::DataLoader, n_blocks, width; parameters = …)` accepted `parameters` and then
+  dropped it, silently building a network with no parameter dependence.
+- **`_processing` recurses.** It strips what `Zygote` returns before an optimizer step, and
+  `_get_params` unwrapped the `(params = …,)` around a `NetworkParameters` only at the *top* of the
+  tree. These architectures nest — a `ForcingLayer` holds the parameters of a whole sub-network — so
+  a wrapper appears at every level, and `_tree_optim_step!` then read `dp.L2.L1` off a `NamedTuple`
+  whose only field is `params`, raising `FieldError: type NamedTuple has no field L1`. Training a
+  `ForcedSympNet` on an ordinary `DataLoader` failed outright. `_processing` is
+  `_unwrap_gradient ∘ _get_params ∘ _get_contents` now, and `ParametricDataLoader`'s training loop,
+  which had been composing the recursive form by hand, calls it like everything else.
+
+`SymbolicPullback(nn, ::ParametricLoss, μ)` also throws for `n_integrators > 1` now instead of
+appearing to hang. The symbolic expression grows *multiplicatively* with the number of integrators —
+measured at `dim = 4, width = 4, nhidden = 1`, the loss is 3.4 ⋅ 10⁵ characters at one integrator and
+1.4 ⋅ 10⁹ at two, and the build never returns. One integrator builds in ≈1.4 s, and the result
+evaluates about 100× faster than the `Zygote` pullback. See
+[#245](https://github.com/JuliaGNI/GeometricMachineLearning.jl/issues/245).
+
 - **`ReducedLoss` is trainable through the `Optimizer` functor.** Its functor annotated the
   parameter argument `params::NetworkParameters`, and it was the only loss in
   `src/loss/losses.jl` that annotated it at all. `Zygote.pullback` evaluates the forward pass with
@@ -943,6 +987,33 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   alone, but would make `git add` refuse a seventh.
 
 ### Added
+
+**Parametric generalized Hamiltonian neural networks (PGHNNs)** ([#207](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/207)). A family of architectures
+whose forward pass takes the parameters of the *system* alongside the state, so one network covers a
+whole parameter range rather than a single problem instance.
+
+- **`GeneralizedHamiltonianArchitecture`** is implemented. It used to be a stub whose constructor
+  threw `error("GHNN still has to be implemented!")`. It composes `n_integrators` symplectic Euler
+  steps, each of which differentiates a learned kinetic or potential energy —
+  `SymbolicKineticEnergy` and `SymbolicPotentialEnergy`, built into an executable gradient by
+  `build_gradient`. The system parameters reach the network as extra input components, flattened
+  with `NeuralNetworkParameters`' `flatten`/`unflatten`.
+- **`ForcedGeneralizedHamiltonianArchitecture`** and **`ForcedSympNet`**, which add `ForcingLayer`s
+  for forcing and dissipation in the `q`, `p` or both coordinates, following the
+  Lagrange–d'Alembert integrator of [marsden2001discrete](@cite).
+- **`ParametricDataLoader`**, which carries one set of system parameters per trajectory and hands
+  the matching parameters to each sample of a batch. Built from an `EnsembleSolution` whose members
+  were integrated at different parameters.
+- **`ParametricLoss`**, `FeedForwardLoss` with the system parameters threaded through, and a
+  `SymbolicPullback(nn, ::ParametricLoss, system_params)` that differentiates it symbolically.
+  Building that pullback refuses `n_integrators > 1`: the symbolic expression grows
+  *multiplicatively* with the number of integrators, so the build does not finish. See
+  [#245](https://github.com/JuliaGNI/GeometricMachineLearning.jl/issues/245).
+- **`ParametricResNet`** and a widened **`ResNet`**, which now takes a `width` separate from the
+  system dimension and uses `WideResNetLayer` when the two differ — the non-structure-preserving
+  baseline the PGHNNs are compared against.
+- `QPT2` and `QPTOAT2`: `QPT`/`QPTOAT` with the array rank fixed but the two array *types* allowed to
+  differ, which is what splitting an input array into `q` and `p` produces.
 
 - **`scripts/reproduction/hnn_pendulum_simulation.jl` integrates the vector field an HNN learned and
   plots the energy drift.** This is the one capability the `legacy/hnn/` deletion would otherwise

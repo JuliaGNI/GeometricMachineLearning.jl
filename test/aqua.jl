@@ -15,7 +15,7 @@ using Test
 #
 # WHAT IS SWITCHED OFF, AND WHY IT IS NOT A `broken = true`.
 #
-# `piracies` reports 12 methods, and all 12 are genuine under Aqua's definition -- the function and
+# `piracies` reports 17 methods, and all 17 are genuine under Aqua's definition -- the function and
 # every argument type belong to other modules. They are not a count waiting to be triaged: each has
 # a witness, a call whose behaviour changes when this package is loaded. Three of them are on
 # `Base`, so they change every Julia process that loads this one:
@@ -23,7 +23,17 @@ using Test
 #     1.0 + (2.0,)      MethodError without GML, 3.0 with it              src/utils.jl:61
 #     [1.0] + (2.0,)    MethodError without GML, 3.0 with it -- a scalar, src/utils.jl:67
 #                       silently discarding every element but the first
-#     (q, p) ≈ (q, p)   MethodError without GML, true with it             src/utils.jl:163
+#     (q, p) ≈ (q, p)   MethodError without GML, true with it             src/utils.jl:185
+#
+# Five are on `SymbolicNeuralNetworks` generics and belong to the parameter-dependent architectures.
+# Each takes an argument that upstream has no shape for -- a second dimension for a `Jacobian`, and
+# a third tuple element carrying the parameters of the system for a `SymbolicPullback` -- so they
+# are upstream's to take rather than this package's to fix, and are collected in
+# [#243](https://github.com/JuliaGNI/GeometricMachineLearning.jl/issues/243):
+#
+#     SymbolicNeuralNetworks.Jacobian(f, nn, dim2)  generalized_hamiltonian_neural_network.jl:80
+#     SymbolicNeuralNetworks.Jacobian(nn, dim2)     generalized_hamiltonian_neural_network.jl:91
+#     three `SymbolicPullback` functors             symbolic_hnn_pullback.jl:125, 135, 144
 #
 # `ambiguities` reports 23, of which 17 are `PoissonTensor * v` against left-multiply methods in
 # ArrayLayouts, FillArrays, Symbolics and GeometricOptimizers.
@@ -47,5 +57,5 @@ using Test
     # FillArrays, Symbolics and GeometricOptimizers, so the count moves with those packages'
     # versions rather than with anything in this tree, and an exact assertion would turn the suite
     # red on an unrelated upgrade.
-    @test length(Aqua.Piracy.hunt(GeometricMachineLearning)) == 12
+    @test length(Aqua.Piracy.hunt(GeometricMachineLearning)) == 17
 end
