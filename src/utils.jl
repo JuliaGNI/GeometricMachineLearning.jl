@@ -31,9 +31,13 @@ _tuplediff(t₁::Tuple, t₂::Tuple) = tuple(setdiff(Set(t₁), Set(t₂))...)
 # overload norm
 function _norm(dx::NT) where {
         AT <: AbstractArray, NT <: NamedTuple{(:q, :p), Tuple{AT, AT}}}
-    (norm(dx.q) + norm(dx.p)) / √2
+    T = eltype(dx.q)
+    (norm(dx.q) + norm(dx.p)) / √(T(2))
 end # we need this because of a Zygote problem
-_norm(dx::NamedTuple) = sum(map(norm, dx)) / √length(dx)
+function _norm(dx::NamedTuple)
+    n = sum(map(norm, dx))
+    n / √(typeof(n)(length(dx)))
+end
 _norm(A::AbstractArray) = norm(A)
 
 # overloaded +/- operation

@@ -20,10 +20,10 @@ using Test
 # a witness, a call whose behaviour changes when this package is loaded. Three of them are on
 # `Base`, so they change every Julia process that loads this one:
 #
-#     1.0 + (2.0,)      MethodError without GML, 3.0 with it              src/utils.jl:61
-#     [1.0] + (2.0,)    MethodError without GML, 3.0 with it -- a scalar, src/utils.jl:67
+#     1.0 + (2.0,)      MethodError without GML, 3.0 with it              src/utils.jl:65
+#     [1.0] + (2.0,)    MethodError without GML, 3.0 with it -- a scalar, src/utils.jl:71
 #                       silently discarding every element but the first
-#     (q, p) ≈ (q, p)   MethodError without GML, true with it             src/utils.jl:163
+#     (q, p) ≈ (q, p)   MethodError without GML, true with it             src/utils.jl:167
 #
 # `ambiguities` reports 18 when `GeometricMachineLearning` is the only package loaded: the 17
 # `PoissonTensor * v` ambiguities against left-multiply methods in ArrayLayouts, FillArrays,
@@ -36,7 +36,7 @@ using Test
 # as transitive extension dependencies -- neither of which loads with `GeometricMachineLearning`
 # alone, or with any *one* of those three added to it. Both packages specialise `getindex` on an
 # `AbstractMatrix` for their own index types (`Block`, `BandRangeType`, …), and
-# `PoissonTensor`'s own `getindex(𝕁::PoissonTensor, i, j)` (`poisson_tensor.jl:39`) is exactly as
+# `PoissonTensor`'s own `getindex(𝕁::PoissonTensor, i, j)` (`poisson_tensor.jl:42`) is exactly as
 # generic on its index arguments, so it collides with **9** of them -- the same class of defect as
 # the 17 `*` ambiguities, on the same type, out of scope for the same reason. Measured with every
 # package `runtests.jl` loads before this file present, the true total is **27**, and that is the

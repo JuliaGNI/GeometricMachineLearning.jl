@@ -40,7 +40,7 @@ function parameterlength(::MultiHeadAttention{M, M, false}) where {M}
 end
 
 function parameterlength(d::MultiHeadAttention{M, M, true}) where {M}
-    Int(3*M^2 - 3*M*(M + d.n_heads)/(2*d.n_heads))
+    3*M^2 - (3*M*(M + d.n_heads)) ÷ (2*d.n_heads)
 end
 
 function initialparameters(

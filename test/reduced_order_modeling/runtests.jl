@@ -12,3 +12,6 @@ end
 @safetestset "Check reduced model" begin
     include("reduced_system.jl")
 end
+@safetestset "_norm keeps the element type of its argument" begin
+    include("norm_eltype.jl")
+end

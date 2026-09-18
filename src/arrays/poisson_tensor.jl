@@ -1,6 +1,8 @@
 
 @doc raw"""
     PoissonTensor(n2)
+    PoissonTensor(n2, T)
+    PoissonTensor(backend, n2, T)
 
 Returns a (canonical) Poisson tensor of size ``2n\times2n``:
 
@@ -13,7 +15,8 @@ Returns a (canonical) Poisson tensor of size ``2n\times2n``:
 
 # Arguments
 
-It can also be called with a `backend` and a `type`:
+The element type `T` defaults to `Float64` and the backend to `CPU()`. A call that names a
+`backend` has to name a `T` as well:
 ```jldoctest
 using GeometricMachineLearning
 
@@ -54,9 +57,10 @@ PoissonTensor(n2::Int, T::DataType) = PoissonTensor(CPU(), n2, T)
 
 PoissonTensor(n2::Int) = PoissonTensor(n2, Float64)
 
-PoissonTensor(backend::Backend, n2::Int) = PoissonTensor(backend, n2, Float32)
-
-PoissonTensor(backend::CPU, n2::Int) = PoissonTensor(backend, n2, Float64)
+# A `PoissonTensor` constructor that takes a `backend` requires an element type argument too --
+# there is no `PoissonTensor(backend, n2)` method. `Float64` and `Float32` disagree on Metal (Apple
+# GPUs have no `Float64` at all), so a shared CPU/GPU default could only be wrong for one side; the
+# caller states the type instead. See the "Removed (breaking)" section of `CHANGELOG.md`.
 
 @kernel function assign_ones_for_poisson_tensor_kernel!(J::AbstractMatrix{T}, n::Int) where {T}
     i = @index(Global)

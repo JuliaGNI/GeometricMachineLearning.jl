@@ -56,3 +56,10 @@ for n2 in 2:2:10
         test_application_to_nt(n2, T)
     end
 end
+
+# `PoissonTensor(n2)` (no backend, no type) keeps its documented `Float64` default.
+@test eltype(PoissonTensor(4)) == Float64
+
+# `PoissonTensor(backend::Backend, n2::Int)` has no method: a caller that names a backend must
+# also name an element type. See the "Removed (breaking)" section of `CHANGELOG.md`.
+@test_throws MethodError PoissonTensor(CPU(), 4)

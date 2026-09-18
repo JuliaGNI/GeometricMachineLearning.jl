@@ -316,7 +316,7 @@ function _leaf_optim_step!(cache::GeometricOptimizers.OptimizerCache,
     adapted = _adapt_method_to_T(method, T)
     state.iterations += 1
     _go_update_leaf!(cache, state, local_grad, adapted, ps)
-    GeometricOptimizers._rmul!(GeometricOptimizers.direction(cache), step_size)
+    GeometricOptimizers._rmul!(GeometricOptimizers.direction(cache), T(step_size))
     GeometricOptimizers.update_section!(GeometricOptimizers.section(cache),
         GeometricOptimizers.section(state),
         GeometricOptimizers.direction(cache),

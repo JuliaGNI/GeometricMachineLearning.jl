@@ -21,3 +21,6 @@ end
 @safetestset "Linear Symplectic Attention" begin
     include("linear_symplectic_attention.jl")
 end
+@safetestset "parameterlength(::MultiHeadAttention{M,M,true}) is exact" begin
+    include("multi_head_attention_parameterlength.jl")
+end

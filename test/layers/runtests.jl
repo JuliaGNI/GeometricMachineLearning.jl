@@ -21,3 +21,9 @@ end
 @safetestset "Test volume-preserving feedforward neural network" begin
     include("volume_preserving_feedforward.jl")
 end
+@safetestset "parameterlength(::PSDLayer) is exact" begin
+    include("psd_parameterlength.jl")
+end
+@safetestset "parameterlength(::GrassmannLayer) is an integer count" begin
+    include("grassmann_parameterlength.jl")
+end

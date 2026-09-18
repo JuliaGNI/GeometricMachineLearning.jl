@@ -147,6 +147,15 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   paper, which this package had no counterpart to and no caller for. That decision is taken: it is
   `PositionalEncoding` in `src/layers/` now, and `legacy/` no longer exists.
 
+- **`PoissonTensor(backend::Backend, n2::Int)` and `PoissonTensor(backend::CPU, n2::Int)` are
+  gone.** They defaulted to `Float32` and `Float64` respectively — an undocumented split, added in
+  one 2024 commit with no stated reason, so the CPU and GPU paths silently disagreed on the
+  element type of a Poisson tensor built without one (`eltype(PoissonTensor(CPU(), 4)) == Float64`
+  against `eltype(PoissonTensor(SomeGPUBackend(), 4)) == Float32`). Every call site in `scripts/`,
+  `docs/` and `test/` that names a `backend` already names a `T` too, so a caller now has to as
+  well: `PoissonTensor(backend, n2, T)`. `PoissonTensor(n2)` (no backend at all) is unaffected and
+  keeps its documented `Float64` default.
+
 - **`legacy/hnn/` and `legacy/mtk/` are gone — 17 files, of which 14 are Julia and 866 lines, and
   the package's last Flux and ModelingToolkit code.** Neither name now appears anywhere outside
   this file. **Lux does**, so it is deliberately not claimed here. The one file that *used* Lux,
@@ -643,7 +652,7 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `scripts/reproduction/sympnets/sympnet_toda_lattice.jl` already does — so this is the same
   substitution, not a new one. The script now builds `DataLoader(ensemble_solution)` directly (a
   method for exactly this `EnsembleSolution` shape already exists at
-  `src/data_loader/data_loader.jl:367`).
+  `src/data_loader/data_loader.jl:369`).
 
   **`plots.jl`'s seven plotting functions are retyped onto `DataLoader` and `NeuralNetwork`, and
   `plot_result` is called again.** Each keeps its original purpose — the two-form `plot_*!`/`plot_*`
@@ -677,6 +686,68 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `exact_solution` both come from `GeometricProblems.HarmonicOscillator`.
 
 ### Fixed
+
+- **A `Float32` network stays `Float32` through training, `_norm` and a few more corners that used
+  to promote silently to `Float64`.**
+
+  - **The training history `(o::Optimizer)(nn, dl, batch, n_epochs, loss)` returns is now
+    `float(eltype(dl))`.** `zeros(n_epochs)` at `src/data_loader/optimize.jl` had no element type,
+    so a `Float32` network's loss curve came back `Vector{Float64}` even when every loss value
+    written into it was `Float32`. It is `float(eltype(dl))` rather than `eltype(dl)` because a
+    loader over integer data would otherwise get an integer history, and the first `Float` loss
+    written into it would raise `InexactError` where the untyped `zeros` did not. `float` is the
+    identity on every floating-point type, so the `Float32` case is unaffected. (Some losses widen the accumulator to `Float64` regardless — see
+    `AbstractNeuralNetworks`' own `_norm(::NamedTuple)`, which has the identical `√length(dx)`
+    defect this release fixes in this package's `_norm` below — but the returned array is typed
+    now, so it narrows back to `T` on write either way.)
+  - **`_norm` returns the element type of its argument for all three of its methods.** The `(q, p)`
+    arm divided by `√2` and the generic `NamedTuple` arm by `√length(dx)`, both `Float64` literals
+    that widened a `Float32` sum; the plain-`AbstractArray` arm was already correct. This reaches
+    users through `reduction_error` and `projection_error`
+    (`src/reduced_system/reduced_system.jl`), so a `Float32` reduced-order model used to report its
+    error in `Float64`. **The test asserts `_norm` itself, not those two callers** — their element
+    type follows from `_norm`'s, and nothing pins it.
+  - **`DataLoader(::EnsembleSolution)` types its zero-filled buffer.** The `zeros(sys_dim,
+    input_time_steps, n_params)` in `src/data_loader/data_loader.jl` had no element type, unlike
+    the three sibling constructors in the same file that all write `zeros(T, ...)`. The fix is
+    correct by inspection — it matches the three siblings character for character — but the method
+    it fixes is unreachable with this package's current dependencies, so no test exercises it. See
+    *Open Issues* below.
+  - **The GO-native leaf optimizer step now scales in the parameter's own element type.**
+    `_leaf_optim_step!` (`src/optimizers/optimizer.jl`) called `GeometricOptimizers._rmul!(
+    direction(cache), step_size)` with the raw `step_size`, which the step-size funnel always hands
+    over as a `Float64` regardless of the parameters' type — unlike the three `_euclidean_update!`
+    methods a few lines below, which all convert with `T(step_size)` first. A `Float32` layer was
+    therefore scaled at `Float64` precision and only rounded back to `Float32` on write. The
+    step-size funnel itself, including `_default_step_size`'s two literals, stays in `Float64` and
+    converts at the point of use, which is the pattern the rest of this file already follows.
+  - **`parameterlength` for `PSDLayer` and `MultiHeadAttention{M,M,true}` no longer routes an
+    integer count through `Float64` division and back through `Int(...)`.** Both are rewritten
+    with `÷` alone, which is exact by construction; the value does not change for any size the
+    existing tests use, but the old `Float64` path silently rounds to the wrong integer once the
+    intermediate product exceeds `2^53` (verified against `BigInt` arithmetic).
+  - **`parameterlength(::GrassmannLayer{M, N})` returned a `UnitRange` whenever `M >= N`.** A
+    colon stood where the product belongs — `(M - N):N` instead of `(M - N) * N` — so
+    `parameterlength(GrassmannLayer(10, 4))` was `6:5`, an empty range, rather than `24`. It was
+    the third member of the set audited here and the only one that was wrong in kind rather than
+    in rounding. Nothing asserted it: `parameterlength` is reported, not used to size an array,
+    and the layer's own test only trains a chain containing it. The count is now the dimension of
+    the Grassmann manifold, `k * (n - k)` for `n = max(M, N)` and `k = min(M, N)`, and the test
+    derives that independently and checks it is symmetric in the two sizes.
+  - **`ClassificationLayer`'s `average = true` and `average = false` methods were inspected for
+    the same class of defect and found not to have it.** Their two doctests
+    (`src/layers/classification.jl`) show different element types — `Matrix{Float64}` for
+    `average = true`, `Matrix{Int64}` for `average = false` — because both doctests hand the layer
+    a hand-written `Int` weight and an `Int` input directly, bypassing `initialparameters`. Through
+    any real construction the weight is `KernelAbstractions.allocate(device, T, ...)` for the
+    network's own `T`, and both methods then return `T`, checked here for `T = Float32` on a
+    2-axis and a 3-axis input: `sum(mat_tensor_mul(weight, output), dims = 2) / size(output, 2)`
+    (the average) and `weight * @view output[:, end:end]` (the last column) both promote an `Int`
+    weight the same way a `Float32` one does not need to be promoted at all. Left as intended, not
+    fixed: an average is a division and must turn an all-`Int` input into a float, the same as
+    `Base.mean` does, while picking the last column is a plain selection and need not, the same as
+    `last` does not — the doctests are the one place both operands are `Int` at once, and they are
+    left unchanged.
 
 - **`ReducedLoss` is trainable through the `Optimizer` functor.** Its functor annotated the
   parameter argument `params::NetworkParameters`, and it was the only loss in
@@ -3012,9 +3083,9 @@ they resolved to is in the release notes above.
 
   | method | `src` | without GML | with GML |
   |:--|:--|:--|:--|
-  | `+(::Float64, ::Tuple{Float64})` | `utils.jl:61` | `MethodError` | `3.0` |
-  | `+(::Vector{Float64}, ::Tuple{Float64})` | `utils.jl:67` | `MethodError` | `3.0` — a **scalar**, silently discarding every element but the first |
-  | `isapprox(::@NamedTuple{q, p}, ::…)` | `utils.jl:163` | `MethodError` | `true` |
+  | `+(::Float64, ::Tuple{Float64})` | `utils.jl:65` | `MethodError` | `3.0` |
+  | `+(::Vector{Float64}, ::Tuple{Float64})` | `utils.jl:71` | `MethodError` | `3.0` — a **scalar**, silently discarding every element but the first |
+  | `isapprox(::@NamedTuple{q, p}, ::…)` | `utils.jl:167` | `MethodError` | `true` |
 
   The first two already carry a `# Type pyracy!!` comment in the source.
 
@@ -3031,7 +3102,7 @@ they resolved to is in the release notes above.
   this one allocates where the upstream allocates nothing.
 
   **Two of the 12 have no value witness, and that is worth saying plainly.** `:22` above, and
-  `add!(C::AbstractVecOrMat, A, B)` at `src/utils.jl:49` — the most invasive of the set, shadowing
+  `add!(C::AbstractVecOrMat, A, B)` at `src/utils.jl:53` — the most invasive of the set, shadowing
   the upstream three-argument `add!` for *every* vector and matrix including
   `AbstractNeuralNetworks`' own internal uses. The value it returns is unchanged. Its witness is an
   allocation regression: it writes `C .= A + B`, materialising the sum, where the upstream generic
@@ -3052,7 +3123,7 @@ they resolved to is in the release notes above.
   `AbstractNeuralNetworks.NetworkLoss`.
 
   Seventeen of the remaining 18 are `PoissonTensor * v`
-  (`src/arrays/poisson_tensor.jl:71,74,77`) against left-multiply methods in `ArrayLayouts`,
+  (`src/arrays/poisson_tensor.jl:75,78,81`) against left-multiply methods in `ArrayLayouts`,
   `FillArrays`, `Symbolics` and `GeometricOptimizers`; closing them is a design decision (narrowing
   `PoissonTensor`'s `Base.:*` methods while keeping its `AbstractMatrix` supertype) that a later
   release makes, not a witness that is missing. The last is the `Dense` functor of *B7* against
@@ -3064,7 +3135,7 @@ they resolved to is in the release notes above.
   combination pulls in `BandedMatrices` and `BlockArrays` as transitive extension dependencies —
   neither loads with `GeometricMachineLearning` alone. Both specialise `getindex` on an
   `AbstractMatrix` for their own index types, and `PoissonTensor`'s own
-  `getindex(𝕁::PoissonTensor, i, j)` (`poisson_tensor.jl:39`) is exactly as generic on its index
+  `getindex(𝕁::PoissonTensor, i, j)` (`poisson_tensor.jl:42`) is exactly as generic on its index
   arguments, so it collides with 9 of them — the same class of defect as the 17 `*` ambiguities,
   on the same type, and out of scope for the same reason. `test/aqua.jl` records both numbers and
   asserts neither: 27 depends on which packages a given process has loaded by the time the check
@@ -3090,6 +3161,38 @@ they resolved to is in the release notes above.
   job that the next reader has to re-diagnose.
 
   Closing it means writing the parameter so that it binds, which is a change to `src/`.
+
+- **B10. `DataLoader(::EnsembleSolution{T, T1, Vector{ST}})` at `src/data_loader/data_loader.jl:325`
+  has no test and appears unreachable through this package's current dependencies.** It dispatches
+  on `ST <: Union{GeometricSolution{T, T1, TT, NamedTuple{(:t, :q, :v), TuT}},
+  GeometricSolution{T, T1, TT, NamedTuple{(:t, :q, :q̇), TuT}}}` — a `GeometricSolution` whose
+  `dataser` has exactly the two keys `:q` and `:v` (or `:q̇`) besides `:t`, with no `:p`.
+
+  Checked against `GeometricEquations` 0.21.3 (this package's resolved version): every equation
+  type's own `initialstate(equ, t, ics, params)` reconstructs its `ics` from its own fixed field
+  set regardless of what is passed in, and no type pairs `:v`/`:q̇` without also carrying `:p` —
+  `SODE`/`ODE` give `(:q,)` alone; `PODE`/`HODE` give `(:q, :p)`; `IODE`/`LODE` give
+  `(:q, :p, :v)`; `IDAE`/`LDAE` give `(:q, :p, :v, :λ, :μ)`. Verified directly for `SODE`:
+  `initialstate(equ::SODE, t, ics, params) = (q = _statevariable(ics.q, periodicity(equ)),)`
+  discards everything but `.q` even when `ics` already has a `:v` key. So no
+  `EquationProblem`/`EnsembleProblem` built from any equation type this package depends on can
+  produce a two-key `dataser` — passing a NamedTuple with the right keys through the public
+  constructor does not help, because the equation-specific `initialstate` method throws it away.
+
+  `GeometricSolution` and `EnsembleSolution` each define exactly one inner constructor (taking a
+  `GeometricProblem`/`EnsembleProblem`), so Julia generates no default all-fields constructor for
+  either, and there is no supported way to build one directly. The two low-level bypasses tried —
+  `ccall(:jl_new_struct, ...)` on the (mutable) `GeometricSolution`, and
+  `ccall(:jl_new_struct_uninit, ...)` followed by `setfield!` on each field — both crashed the
+  Julia process with a segmentation fault (the first immediately; the second on a later, unrelated
+  allocation, consistent with GC scanning a partially-initialized object), which is why neither is
+  a technique this package's test suite should rely on.
+
+  The fix in `src/data_loader/data_loader.jl:339` (`zeros(T, ...)` instead of untyped `zeros(...)`)
+  is correct by inspection — it matches the file's three sibling constructors character for
+  character — but is untested. Closing this means either GeometricEquations gaining an equation
+  type whose `initialstate` returns exactly `(:q, :v)` or `(:q, :q̇)`, or deciding the method is
+  dead code and removing it (Part E of the audit, not this one).
 
 ### C. Follow-ups and cleanups
 
