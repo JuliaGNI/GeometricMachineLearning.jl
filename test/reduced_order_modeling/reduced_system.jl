@@ -83,3 +83,33 @@ test_reduced_vector_fields(2, ExplicitMidpoint())
 check_if_reduced_vector_fields_are_divergence_free(2, ImplicitMidpoint())
 check_if_reduced_vector_fields_are_divergence_free(2, ExplicitMidpoint())
 check_if_reduced_vector_fields_are_divergence_free(2, ExplicitEulerRK())
+
+@doc raw"""
+`HRedSys.timespan` was declared `Tuple{Int, Int}` while the standard constructor takes
+`timespan::Tuple` and forwards it unchanged. A conventional `(0.0, 1.0)` was silently truncated to
+`(0, 1)`, and `(0.0, 1.5)` threw an `InexactError` at construction. The field now has its own type
+parameter and follows the constructor's argument, the way the neighbouring `timestep::T` field
+already does.
+"""
+function test_hredsys_timespan_is_not_truncated()
+    model = PSDArch(4, 2)
+    nn = NeuralNetwork(model)
+    v_full(v, t, q, p, parameters) = (v .= 0)
+    f_full(f, t, q, p, parameters) = (f .= 0)
+    h_full(t, q, p, parameters) = 0.0
+    ics = (q = GeometricMachineLearning.StateVariable(zeros(4)),
+        p = GeometricMachineLearning.StateVariable(zeros(4)))
+
+    rs = HRedSys(
+        4, 2, encoder(nn), decoder(nn), v_full, f_full, h_full, (0.0, 1.0), 0.1, ics;
+        parameters = NamedTuple(), integrator = ImplicitMidpoint())
+    @test rs.timespan === (0.0, 1.0)
+
+    # Must not throw an `InexactError`, unlike the `Tuple{Int, Int}` field.
+    rs2 = HRedSys(
+        4, 2, encoder(nn), decoder(nn), v_full, f_full, h_full, (0.0, 1.5), 0.1, ics;
+        parameters = NamedTuple(), integrator = ImplicitMidpoint())
+    @test rs2.timespan === (0.0, 1.5)
+end
+
+test_hredsys_timespan_is_not_truncated()

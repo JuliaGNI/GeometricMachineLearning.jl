@@ -46,7 +46,8 @@ struct HRedSys{
     HRT <: Function,
     InT, # type of integrator
     PT,  # type of parameters (of the vector field/hamiltonian)
-    IT <: NamedTuple{(:q, :p), Tuple{ST, ST}} where ST <: StateVariable{T}
+    IT <: NamedTuple{(:q, :p), Tuple{ST, ST}} where ST <: StateVariable{T},
+    TT <: Tuple # type of timespan
 }
     N::Int
     n::Int
@@ -60,7 +61,7 @@ struct HRedSys{
     h_reduced::HRT
     integrator::InT
     parameters::PT
-    timespan::Tuple{Int, Int}
+    timespan::TT
     timestep::T
     ics::IT
 end
@@ -74,7 +75,7 @@ function HRedSys(N::Integer, n::Integer, encoder::NeuralNetwork{<:SymplecticEnco
         integrator = ImplicitMidpoint()) where {T <: Real}
     HRedSys{typeof(timestep), typeof(encoder), typeof(decoder), typeof(v_full),
         typeof(f_full), typeof(h_full), typeof(v_reduced), typeof(f_reduced),
-        typeof(h_reduced), typeof(integrator), typeof(parameters), typeof(ics)}(
+        typeof(h_reduced), typeof(integrator), typeof(parameters), typeof(ics), typeof(timespan)}(
         N, n, encoder, decoder, v_full, f_full, h_full, v_reduced, f_reduced,
         h_reduced, integrator, parameters, timespan, timestep, ics)
 end
