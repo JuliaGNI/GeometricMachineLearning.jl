@@ -40,6 +40,60 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 ### Removed (breaking)
 
+- **The symplectic groundwork leaves `legacy/` for `GeometricOptimizers` — four files, 553
+  lines.** It is the last of this repository's symplectic Stiefel material, and it is not deleted
+  but *moved*: `GeometricOptimizers` owns `manifolds/`, `lie_algebras/`, `global_sections/` and
+  `retractions/`, and the code implements the interface those already define. Nothing here
+  referenced any of it, so no API changes and nothing breaks.
+
+  | file | lines | where it went |
+  |:--|--:|:--|
+  | `orthogonalization_procedures/symplectic_householder.jl` | 287 | `GeometricOptimizers/src/decompositions/symplectic_sr.jl` — `sr`, `sr!`, `Sfac`, `Rfac`, `SR` |
+  | `symplectic_stiefel_manifold.jl` | 69 | `GeometricOptimizers/src/manifolds/symplectic_stiefel_manifold.jl` — `SymplecticStiefelManifold` |
+  | `orthogonalization_procedures/gram_schmidt.jl` | 54 | **in part** — `sympl_gram_schmidt` is `symplectic_gram_schmidt` there |
+  | `orthogonalization_procedures/householder.jl` | 143 | **nowhere** |
+
+  **Two of the four did not move in full, and that is a loss rather than a tidy-up.** The plain
+  `gram_schmidt`/`gram_schmidt!` and all nine definitions of `householder.jl` are dropped, because
+  they duplicate `LinearAlgebra.qr`, which is what `rand(::Manifold, …)` already calls. Both were
+  measured correct first, over eight seeds at 6×4: `‖QᵀQ - I‖` runs `1.6e-16` to `7.4e-16`
+  for the Gram-Schmidt and `3.8e-16` to `1.4e-15` for `householderQ`.
+
+  The duplication is exact where it matters, and `householder.jl`'s own header is wrong about it.
+  That header — which is an `s"""` substitution string rather than a docstring, so it documents
+  nothing — claims the file implements "the regular Householder **and the symplectic Householder**
+  reflection", and that the multiplications are "different from what is normally done with
+  Householder transforms and specific for our optimizers". It implements no symplectic reflection;
+  that is `symplectic_householder.jl`, which did move. And both of its operators are reproduced by
+  `qr` to about `1e-15`: `qr(A).Q * X` against `HouseDecom(A)(X)`, and `Matrix(qr(A).Q)' * Y`
+  against `adjoint(HouseDecom(A))(Y)`.
+
+  **One thing is genuinely lost.** `gram_schmidt!(A, start)` orthonormalises columns `start:n`
+  against columns `1:start-1` taken as already orthonormal — extending a partial orthonormal set,
+  which `qr` has no single-call equivalent for. Nothing here used it, and no caller is left behind,
+  but "a second implementation, not a capability" would be too strong for that one method.
+
+  `gram_schmidt.jl`'s local `normalize` is `symplectic_normalize` upstream. The rename is not
+  cosmetic: defined inside a module that does `using LinearAlgebra`, that name **shadows
+  `LinearAlgebra.normalize` for the whole module**, so `normalize(v)` becomes a `MethodError` —
+  measured in a throwaway module rather than argued.
+
+  **The move repaired seven defects**, none of which this repository would ever have found, because
+  nothing had run the code since 2023: six `PoissonTensor` calls in four methods, with the arguments
+  in the wrong order or half the dimension; two methods returning an undefined variable; wrong
+  element types in two places; a `Float64` literal `.5` in `metric` that widened a `Float32` point's
+  metric to `Float64`; a struct declaring only an inner constructor, which made `copy` and
+  everything built on it a `MethodError`; the `normalize` shadowing above; and a `global_section`
+  that returned the whole ``2N\times2N`` factor instead of the completion. The details are in
+  [GeometricOptimizers#90](https://github.com/JuliaGNI/GeometricOptimizers.jl/pull/90).
+
+  **Know what you are getting before you reach for it there.** The decomposition is **not backward
+  stable** — no re-orthogonalization step, a residual that grows with the size, and `Float32`
+  unusable at every size tested — and `SymplecticStiefelManifold` has no `Ω` and no `zero`, so it
+  cannot yet be optimized over. Both are recorded as *Open Issues* A22 and A23 there.
+
+  `legacy/` now holds one file, `embeddings/sin_cos.jl`.
+
 - **Seven more files leave `legacy/` — 579 lines that the package already provides, or that no
   longer refer to anything that exists.** Nothing under `src/`, `test/`, `scripts/`, `docs/` or
   `.github/` references `legacy/`, so this removes no API and breaks no caller; it is in this
@@ -78,15 +132,12 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   place it belongs is `GeometricOptimizers/src/lie_algebras/`, beside the Stiefel and Grassmann
   horizontal components.
 
-  **What stays in `legacy/`**, and why: `symplectic_householder.jl`, `gram_schmidt.jl` — which
-  holds the ordinary *and* the symplectic process — `householder.jl` and
-  `symplectic_stiefel_manifold.jl` are being moved into `GeometricOptimizers`, and leave here once
-  that lands. `householder.jl`'s own header claims it implements "the regular Householder and the
-  symplectic Householder reflection"; it does not — the symplectic reflection is in
-  `symplectic_householder.jl`, and that header is an `s"""` substitution string rather than a
-  docstring in any case. `embeddings/sin_cos.jl` is the sinusoidal positional encoding of the
-  original transformer paper, which this package has no counterpart to and no caller for, so
-  keeping or placing it is a decision rather than a cleanup.
+  **What stayed in `legacy/` at that point** was `symplectic_householder.jl`, `gram_schmidt.jl`,
+  `householder.jl` and `symplectic_stiefel_manifold.jl`, pending the move into
+  `GeometricOptimizers` — which has since landed, so they are gone too; see the entry above. That
+  leaves `embeddings/sin_cos.jl`, the sinusoidal positional encoding of the original transformer
+  paper, which this package has no counterpart to and no caller for, so keeping or placing it is a
+  decision rather than a cleanup.
 
 - **`legacy/hnn/` and `legacy/mtk/` are gone — 17 files, of which 14 are Julia and 866 lines, and
   the package's last Flux and ModelingToolkit code.** Neither name now appears anywhere outside
@@ -1417,8 +1468,9 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   computation and checks nothing; nothing is lost by deleting it. It and its four siblings in
   `orthogonalization_procedures/` are remains from when the module's implementation moved to
   `legacy/orthogonalization_procedures/`, leaving test fragments behind — though only three of the
-  five have a source counterpart there, and `global_symplectic_section.jl` and
-  `symplectic_householder_aux.jl` do not. The remaining seven files
+  five had a source counterpart there, and `global_symplectic_section.jl` and
+  `symplectic_householder_aux.jl` did not. (That directory is gone as of the entry above, so none
+  has one now.) The remaining seven files
   fail when tested in isolation: `global_symplectic_section.jl` on
   `SymplecticStiefelManifold` (undefined), `householder.jl` on a missing include target
   `src/optimizers/householder.jl`, `symplectic_householder.jl` on `Rfac` (undefined),
