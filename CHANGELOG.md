@@ -692,10 +692,11 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
   - **The training history `(o::Optimizer)(nn, dl, batch, n_epochs, loss)` returns is now
     `eltype(dl)`.** `zeros(n_epochs)` at `src/data_loader/optimize.jl` had no element type, so a
-    `Float32` network's loss curve came back `Vector{Float64}` even though
-    `optimize_for_one_epoch!` accumulates the actual loss in `T` throughout. The accumulator now
-    asserts `loss_value isa T` rather than converting, so a loss that ever returns something else
-    fails loudly instead of quietly changing the accumulator's type.
+    `Float32` network's loss curve came back `Vector{Float64}` even when every loss value written
+    into it was `Float32`. (Some losses widen the accumulator to `Float64` regardless — see
+    `AbstractNeuralNetworks`' own `_norm(::NamedTuple)`, which has the identical `√length(dx)`
+    defect this release fixes in this package's `_norm` below — but the returned array is typed
+    now, so it narrows back to `T` on write either way.)
   - **`_norm` returns the element type of its argument for all three of its methods.** The `(q, p)`
     arm divided by `√2` and the generic `NamedTuple` arm by `√length(dx)`, both `Float64` literals
     that widened a `Float32` sum; the plain-`AbstractArray` arm was already correct. This reaches
