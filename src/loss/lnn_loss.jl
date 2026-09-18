@@ -128,7 +128,7 @@ function (loss::LNNLoss)(::Union{Chain, AbstractExplicitLayer},
     loss(ps, input, output)
 end
 
-function (loss::LNNLoss)(ps,
+function (loss::LNNLoss)(ps::Union{NetworkParameters, NamedTuple},
         input::AbstractArray,
         output::AbstractArray)
     norm(loss.acceleration(input, ps) - output) / norm(output)

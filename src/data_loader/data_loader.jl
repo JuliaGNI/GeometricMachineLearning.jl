@@ -111,17 +111,18 @@ DataLoader{Int64, Array{Int64, 3}, Nothing, :TimeSeries}([1 4; 2 5; 3 6;;; 7 10;
 ```
 the `@info` statement is not printed.
 """
-function DataLoader(data::AbstractArray{T, 3}; autoencoder = false, suppress_info = false) where {T}
+function DataLoader(
+        data::AbstractArray{T, 3}; autoencoder::Bool = false, suppress_info = false) where {T}
     if !suppress_info
         @info "You have provided a tensor with three axes as input. They will be interpreted as \n (i) system dimension, (ii) number of time steps and (iii) number of params."
     end
     input_dim, input_time_steps, n_params = size(data)
 
-    if autoencoder == false
-        DataLoader{T, typeof(data), Nothing, :TimeSeries}(
-            data, nothing, input_dim, input_time_steps, n_params, nothing, nothing)
-    elseif autoencoder == true
+    if autoencoder
         DataLoader{T, typeof(data), Nothing, :RegularData}(
+            data, nothing, input_dim, input_time_steps, n_params, nothing, nothing)
+    else
+        DataLoader{T, typeof(data), Nothing, :TimeSeries}(
             data, nothing, input_dim, input_time_steps, n_params, nothing, nothing)
     end
 end
@@ -139,21 +140,22 @@ See [`DataLoader(::AbstractArray{<:Number, 3})`](@ref) for details.
 
 Internally the data are reshaped to a tensor of shape `(size(data)..., 1)` to make for a consistent representation.
 """
-function DataLoader(data::AbstractMatrix{T}; autoencoder = true, suppress_info = false) where {T}
+function DataLoader(
+        data::AbstractMatrix{T}; autoencoder::Bool = true, suppress_info = false) where {T}
     if !suppress_info
         @info "You have provided a matrix as input. The axes will be interpreted as (i) system dimension and (ii) number of parameters."
     end
 
-    if autoencoder == false
-        input_dim, time_steps = size(data)
-        reshaped_data = reshape(data, input_dim, time_steps, 1)
-        return DataLoader{T, typeof(reshaped_data), Nothing, :TimeSeries}(
-            reshaped_data, nothing, input_dim, time_steps, 1, nothing, nothing)
-    elseif autoencoder == true
+    if autoencoder
         input_dim, n_params = size(data)
         reshaped_data = reshape(data, input_dim, 1, n_params)
         return DataLoader{T, typeof(reshaped_data), Nothing, :RegularData}(
             reshaped_data, nothing, input_dim, 1, n_params, nothing, nothing)
+    else
+        input_dim, time_steps = size(data)
+        reshaped_data = reshape(data, input_dim, time_steps, 1)
+        return DataLoader{T, typeof(reshaped_data), Nothing, :TimeSeries}(
+            reshaped_data, nothing, input_dim, time_steps, 1, nothing, nothing)
     end
 end
 
@@ -208,29 +210,29 @@ Apart from this the input is treated similarly as if it were an `Array`, i.e. ev
 See e.g. [`DataLoader{::AbstractArray{<:Number, 3}}`](@ref).
 """
 function DataLoader(data::NamedTuple{(:q, :p), Tuple{AT, AT}};
-        autoencoder = false,
+        autoencoder::Bool = false,
         suppress_info = false) where {T, AT <: AbstractMatrix{T}}
     if !suppress_info
         @info "You have provided a NamedTuple with keys q and p; the data are matrices. This is interpreted as *symplectic data*."
     end
 
-    if autoencoder == false
-        dim2, time_steps = size(data.q)
-        reshaped_data = (q = reshape(data.q, dim2, time_steps, 1),
-            p = reshape(data.p, dim2, time_steps, 1))
-        return DataLoader{T, typeof(reshaped_data), Nothing, :TimeSeries}(
-            reshaped_data, nothing, dim2 * 2, time_steps, 1, nothing, nothing)
-    elseif autoencoder == true
+    if autoencoder
         dim2, n_params = size(data.q)
         reshaped_data = (
             q = reshape(data.q, dim2, 1, n_params), p = reshape(data.p, dim2, 1, n_params))
         return DataLoader{T, typeof(reshaped_data), Nothing, :RegularData}(
             reshaped_data, nothing, dim2 * 2, 1, n_params, nothing, nothing)
+    else
+        dim2, time_steps = size(data.q)
+        reshaped_data = (q = reshape(data.q, dim2, time_steps, 1),
+            p = reshape(data.p, dim2, time_steps, 1))
+        return DataLoader{T, typeof(reshaped_data), Nothing, :TimeSeries}(
+            reshaped_data, nothing, dim2 * 2, time_steps, 1, nothing, nothing)
     end
 end
 
 function DataLoader(data::NamedTuple{(:q, :p), Tuple{AT, AT}};
-        autoencoder = false,
+        autoencoder::Bool = false,
         suppress_info = false) where {T, AT <: AbstractArray{T, 3}}
     if !suppress_info
         @info "You have provided a NamedTuple with keys q and p; the data are tensors. This is interpreted as *symplectic data*."
@@ -238,11 +240,11 @@ function DataLoader(data::NamedTuple{(:q, :p), Tuple{AT, AT}};
 
     dim2, time_steps, n_params = size(data.q)
 
-    if autoencoder == false
-        DataLoader{T, typeof(data), Nothing, :TimeSeries}(
-            data, nothing, dim2 * 2, time_steps, n_params, nothing, nothing)
-    elseif autoencoder == true
+    if autoencoder
         DataLoader{T, typeof(data), Nothing, :RegularData}(
+            data, nothing, dim2 * 2, time_steps, n_params, nothing, nothing)
+    else
+        DataLoader{T, typeof(data), Nothing, :TimeSeries}(
             data, nothing, dim2 * 2, time_steps, n_params, nothing, nothing)
     end
 end
@@ -439,13 +441,13 @@ See the docstring for [`DataLoader(data::AbstractArray{<:Number, 3})`](@ref).
 function DataLoader(dl::DataLoader{T1, <:QPTOAT, Nothing, Type},
         backend::KernelAbstractions.Backend = networkbackend(dl),
         T::DataType = T1;
-        autoencoder = nothing
+        autoencoder::Union{Nothing, Bool} = nothing
 ) where {T1, Type}
     DT = if isnothing(autoencoder)
         Type
-    elseif autoencoder == true
+    elseif autoencoder
         :RegularData
-    elseif autoencoder == false
+    else
         :TimeSeries
     end
 

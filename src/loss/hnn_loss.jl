@@ -35,7 +35,7 @@ function (loss::HNNLoss)(::Union{Chain, AbstractExplicitLayer},
     loss(ps, input, output)
 end
 
-function (loss::HNNLoss)(ps,
+function (loss::HNNLoss)(ps::Union{NetworkParameters, NamedTuple},
         input::QPTOAT,
         output::QPTOAT)
     norm(loss.hvf(input, ps) - output) / norm(output)

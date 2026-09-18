@@ -26,6 +26,7 @@ end
     include("exports.jl")
 end
 
+include("activations/runtests.jl")
 include("arrays/runtests.jl")
 include("kernels/runtests.jl")
 include("layers/runtests.jl")
