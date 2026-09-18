@@ -719,6 +719,20 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
     with `÷` alone, which is exact by construction; the value does not change for any size the
     existing tests use, but the old `Float64` path silently rounds to the wrong integer once the
     intermediate product exceeds `2^53` (verified against `BigInt` arithmetic).
+  - **`ClassificationLayer`'s `average = true` and `average = false` methods were inspected for
+    the same class of defect and found not to have it.** Their two doctests
+    (`src/layers/classification.jl`) show different element types — `Matrix{Float64}` for
+    `average = true`, `Matrix{Int64}` for `average = false` — because both doctests hand the layer
+    a hand-written `Int` weight and an `Int` input directly, bypassing `initialparameters`. Through
+    any real construction the weight is `KernelAbstractions.allocate(device, T, ...)` for the
+    network's own `T`, and both methods then return `T`, checked here for `T = Float32` on a
+    2-axis and a 3-axis input: `sum(mat_tensor_mul(weight, output), dims = 2) / size(output, 2)`
+    (the average) and `weight * @view output[:, end:end]` (the last column) both promote an `Int`
+    weight the same way a `Float32` one does not need to be promoted at all. Left as intended, not
+    fixed: an average is a division and must turn an all-`Int` input into a float, the same as
+    `Base.mean` does, while picking the last column is a plain selection and need not, the same as
+    `last` does not — the doctests are the one place both operands are `Int` at once, and they are
+    left unchanged.
 
 - **`ReducedLoss` is trainable through the `Optimizer` functor.** Its functor annotated the
   parameter argument `params::NetworkParameters`, and it was the only loss in
