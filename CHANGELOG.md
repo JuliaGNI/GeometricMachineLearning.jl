@@ -147,6 +147,15 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   paper, which this package had no counterpart to and no caller for. That decision is taken: it is
   `PositionalEncoding` in `src/layers/` now, and `legacy/` no longer exists.
 
+- **`PoissonTensor(backend::Backend, n2::Int)` and `PoissonTensor(backend::CPU, n2::Int)` are
+  gone.** They defaulted to `Float32` and `Float64` respectively — an undocumented split, added in
+  one 2024 commit with no stated reason, so the CPU and GPU paths silently disagreed on the
+  element type of a Poisson tensor built without one (`eltype(PoissonTensor(CPU(), 4)) == Float64`
+  against `eltype(PoissonTensor(SomeGPUBackend(), 4)) == Float32`). Every call site in `scripts/`,
+  `docs/` and `test/` that names a `backend` already names a `T` too, so a caller now has to as
+  well: `PoissonTensor(backend, n2, T)`. `PoissonTensor(n2)` (no backend at all) is unaffected and
+  keeps its documented `Float64` default.
+
 - **`legacy/hnn/` and `legacy/mtk/` are gone — 17 files, of which 14 are Julia and 866 lines, and
   the package's last Flux and ModelingToolkit code.** Neither name now appears anywhere outside
   this file. **Lux does**, so it is deliberately not claimed here. The one file that *used* Lux,
@@ -677,6 +686,38 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `exact_solution` both come from `GeometricProblems.HarmonicOscillator`.
 
 ### Fixed
+
+- **A `Float32` network stays `Float32` through training, `_norm` and a few more corners that used
+  to promote silently to `Float64`.**
+
+  - **The training history `(o::Optimizer)(nn, dl, batch, n_epochs, loss)` returns is now
+    `eltype(dl)`.** `zeros(n_epochs)` at `src/data_loader/optimize.jl` had no element type, so a
+    `Float32` network's loss curve came back `Vector{Float64}` even though
+    `optimize_for_one_epoch!` accumulates the actual loss in `T` throughout. The accumulator now
+    asserts `loss_value isa T` rather than converting, so a loss that ever returns something else
+    fails loudly instead of quietly changing the accumulator's type.
+  - **`_norm` returns the element type of its argument for all three of its methods.** The `(q, p)`
+    arm divided by `√2` and the generic `NamedTuple` arm by `√length(dx)`, both `Float64` literals
+    that widened a `Float32` sum; the plain-`AbstractArray` arm was already correct. This reaches
+    users through `reduction_error` and `projection_error`
+    (`src/reduced_system/reduced_system.jl`), so a `Float32` reduced-order model used to report its
+    error in `Float64`.
+  - **`DataLoader(::EnsembleSolution)` types its zero-filled buffer.** The `zeros(sys_dim,
+    input_time_steps, n_params)` in `src/data_loader/data_loader.jl` had no element type, unlike
+    the three sibling constructors in the same file that all write `zeros(T, ...)`.
+  - **The GO-native leaf optimizer step now scales in the parameter's own element type.**
+    `_leaf_optim_step!` (`src/optimizers/optimizer.jl`) called `GeometricOptimizers._rmul!(
+    direction(cache), step_size)` with the raw `step_size`, which the step-size funnel always hands
+    over as a `Float64` regardless of the parameters' type — unlike the three `_euclidean_update!`
+    methods a few lines below, which all convert with `T(step_size)` first. A `Float32` layer was
+    therefore scaled at `Float64` precision and only rounded back to `Float32` on write.
+    `_default_step_size`'s two literals are explicitly `Float64(...)` now rather than bare
+    exponent literals, matching the funnel they feed.
+  - **`parameterlength` for `PSDLayer` and `MultiHeadAttention{M,M,true}` no longer routes an
+    integer count through `Float64` division and back through `Int(...)`.** Both are rewritten
+    with `÷` alone, which is exact by construction; the value does not change for any size the
+    existing tests use, but the old `Float64` path silently rounds to the wrong integer once the
+    intermediate product exceeds `2^53` (verified against `BigInt` arithmetic).
 
 - **`ReducedLoss` is trainable through the `Optimizer` functor.** Its functor annotated the
   parameter argument `params::NetworkParameters`, and it was the only loss in
