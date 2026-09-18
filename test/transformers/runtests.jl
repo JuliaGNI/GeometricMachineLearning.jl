@@ -3,6 +3,9 @@ using SafeTestsets
 @safetestset "Test setup of transformer with Stiefel weights" begin
     include("transformer_setup.jl")
 end
+@safetestset "Sinusoidal positional encoding" begin
+    include("positional_encoding.jl")
+end
 @safetestset "Check if the transformer can be applied to a tensor." begin
     include("transformer_application.jl")
 end
