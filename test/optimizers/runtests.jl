@@ -24,3 +24,6 @@ end
 @safetestset "_GMLGradient dispatch" begin
     include("gml_gradient_dispatch.jl")
 end
+@safetestset "The GO-native leaf step scales in the parameter's own element type" begin
+    include("step_size_element_type.jl")
+end

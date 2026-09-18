@@ -198,8 +198,8 @@ mutable struct Optimizer{MT <: GeometricOptimizers.OptimizerMethod, CT, ST, RT, 
     iterations::Int
 end
 
-_default_step_size(::GeometricOptimizers.Adam) = 1e-3
-_default_step_size(::GeometricOptimizers.OptimizerMethod) = 1e-2
+_default_step_size(::GeometricOptimizers.Adam) = Float64(1e-3)
+_default_step_size(::GeometricOptimizers.OptimizerMethod) = Float64(1e-2)
 
 _step_size(η::Real, ::Int) = Float64(η)
 # `t` and not `t - 1`: `optimization_step!` increments before it asks, so the first step of a solve
@@ -316,7 +316,7 @@ function _leaf_optim_step!(cache::GeometricOptimizers.OptimizerCache,
     adapted = _adapt_method_to_T(method, T)
     state.iterations += 1
     _go_update_leaf!(cache, state, local_grad, adapted, ps)
-    GeometricOptimizers._rmul!(GeometricOptimizers.direction(cache), step_size)
+    GeometricOptimizers._rmul!(GeometricOptimizers.direction(cache), T(step_size))
     GeometricOptimizers.update_section!(GeometricOptimizers.section(cache),
         GeometricOptimizers.section(state),
         GeometricOptimizers.direction(cache),
