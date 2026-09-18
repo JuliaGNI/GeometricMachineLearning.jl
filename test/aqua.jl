@@ -66,17 +66,12 @@ using Test
     #
     @test length(Aqua.Piracy.hunt(GeometricMachineLearning)) == 12
 
-    # `ambiguities` itself gets no exact gate on the `PoissonTensor` ones -- they move with
-    # ArrayLayouts', FillArrays', Symbolics', GeometricOptimizers', BandedMatrices' and
-    # BlockArrays' own versions, not with anything in this tree, and the latter two are not even
-    # loaded until other test files pull them in (see above). But the total is still asserted here,
-    # so a new ambiguity introduced by this package (rather than by an upstream version, or by which
-    # packages happen to be loaded by this point in the suite) does not silently join that pile.
-    #
-    # This assertion is therefore less stable than the piracy count above: it depends on the exact
-    # set of packages loaded in this *process* by the time it runs, which depends in turn on the
-    # order `runtests.jl` includes its subjects. If that order changes, or a test-only dependency's
-    # own extensions change, this number can move without anything in `src/` having changed --
-    # re-measure with `Test.detect_ambiguities` before assuming a failure here is a regression.
-    @test length(Test.detect_ambiguities(GeometricMachineLearning; recursive = true)) == 27
+    # `ambiguities` gets no such gate, and the measurements above are why it cannot have one. The
+    # remaining ambiguities are the `PoissonTensor` pile, so the count moves with ArrayLayouts',
+    # FillArrays', Symbolics', GeometricOptimizers', BandedMatrices' and BlockArrays' versions
+    # rather than with anything in this tree -- and with *which* of them a given process has
+    # loaded, which depends on the order `runtests.jl` includes its subjects. An exact assertion
+    # would therefore go red on an unrelated upgrade, or on a reordering of this suite, with
+    # nothing in `src/` having changed. It could not tell that apart from a regression, which is
+    # the one thing a gate has to do.
 end

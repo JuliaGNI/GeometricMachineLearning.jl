@@ -871,8 +871,9 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `GeometricIntegrators` and `HDF5` for earlier subjects pulls in `BandedMatrices` and
   `BlockArrays`, which specialise `getindex` on an `AbstractMatrix` and collide with
   `PoissonTensor`'s own equally generic one 9 more times — the same class of defect, on the same
-  type, invisible when `GeometricMachineLearning` is measured alone. `test/aqua.jl` asserts 27, the
-  number that actually governs the suite, and says why it is 27 and not 18.
+  type, invisible when `GeometricMachineLearning` is measured alone. `test/aqua.jl` records both
+  numbers and asserts neither: a count that moves with six upstream packages, and with which of
+  them a given process happens to have loaded, cannot tell a regression from an upgrade.
 
 - **Four `DataLoader` constructors no longer return `nothing` on an unexpected `autoencoder`
   keyword.** Each was `if autoencoder == false … elseif autoencoder == true … end` with no `else`,
