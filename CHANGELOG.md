@@ -3123,7 +3123,7 @@ they resolved to is in the release notes above.
   combination pulls in `BandedMatrices` and `BlockArrays` as transitive extension dependencies —
   neither loads with `GeometricMachineLearning` alone. Both specialise `getindex` on an
   `AbstractMatrix` for their own index types, and `PoissonTensor`'s own
-  `getindex(𝕁::PoissonTensor, i, j)` (`poisson_tensor.jl:39`) is exactly as generic on its index
+  `getindex(𝕁::PoissonTensor, i, j)` (`poisson_tensor.jl:42`) is exactly as generic on its index
   arguments, so it collides with 9 of them — the same class of defect as the 17 `*` ambiguities,
   on the same type, and out of scope for the same reason. `test/aqua.jl` records both numbers and
   asserts neither: 27 depends on which packages a given process has loaded by the time the check
