@@ -1098,7 +1098,23 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   **The layer holds no parameters and stores no sequence length.** The length is read from the
   input's second axis at every call, because a network here is applied to trajectories of whatever
   length the data has — the same network to a 3-step and a 9-step series, which the tests assert.
-  The cost is one `dim × seq_length` allocation per call.
+  The cost is one `dim × seq_length` allocation per call, and a second for the sum.
+
+  **It takes a matrix, a batch of matrices or a `(q, p)` pair — the same inputs as the rest of the
+  chain.** A vector is rejected, as it is without the keyword, and so is a `(q, p)` pair of vectors:
+  a vector has no second axis to read a sequence length from, and broadcasting one against the
+  `dim × 1` encoding would return a matrix, so accepting it would let the keyword change the rank of
+  the output.
+
+  **`positional_encoding` is declared `@non_differentiable`**, because its arguments are a type and
+  two lengths and none of them is a differentiable quantity. Without the declaration Zygote traces
+  into the builder's loop and refuses the `setindex!`, so no network carrying the layer could be
+  trained at all. The test takes a gradient through a `Transformer` both ways.
+
+  **It builds a host `Matrix`, so a network carrying it is CPU-only.** Every other layer allocates
+  through the backend, and on a GPU array the broadcast does not merely slow down — it fails to
+  compile. The docstrings of both the layer and the `Transformer` keyword carry this. No test can
+  catch it, because the suite has no GPU test.
 
   **It does not disturb the geometry.** The layer adds a constant, so its Jacobian is the identity,
   so a structure-preserving architecture with it in front preserves exactly what it preserved
@@ -1111,8 +1127,8 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   off by one — its first row was an unpaired cosine, so rows 2 and 3 shared a frequency instead of
   rows 1 and 2. The test discriminates on exactly that: it asserts
   ``P_{2j+1,i}^2 + P_{2j+2,i}^2 = 1``, which holds only when a pair really is the sine and cosine of
-  one angle. Positions are counted from zero, as in the paper, so the first column is
-  ``(0, 1, 0, 1, \ldots)``.
+  one angle. Positions are counted from zero — the paper gives no base for ``pos``, and zero is the
+  standard reading — so the first column is ``(0, 1, 0, 1, \ldots)``.
 
 - **`scripts/reproduction/hnn_pendulum_simulation.jl` integrates the vector field an HNN learned and
   plots the energy drift.** This is the one capability the `legacy/hnn/` deletion would otherwise
@@ -3193,6 +3209,21 @@ they resolved to is in the release notes above.
   character — but is untested. Closing this means either GeometricEquations gaining an equation
   type whose `initialstate` returns exactly `(:q, :v)` or `(:q, :q̇)`, or deciding the method is
   dead code and removing it (Part E of the audit, not this one).
+
+- **B11. `PositionalEncoding` is CPU-only, and the failure is a compile error rather than a
+  slowdown.** `positional_encoding` builds its matrix with `Matrix{T}(undef, …)`, so the layer's
+  `x .+ P` adds a host array to whatever it is given. Every other layer allocates through the
+  backend — `KernelAbstractions.allocate`, or `similar(x, …)` in the forward pass. Broadcasting a
+  host `Matrix` against a device array does not fall back to the CPU; it fails to compile, because
+  the host array cannot be read from a kernel.
+
+  **No test can catch this, because the suite has no GPU test.** That is what makes it worth an
+  entry rather than a docstring alone: a green matrix says nothing about it. Both docstrings — the
+  layer's and the `positional_encoding` keyword of [`Transformer`](@ref) — carry the warning.
+
+  Closing it means giving the builder the backend, so that it allocates through
+  `KernelAbstractions.allocate` and fills with a kernel instead of a loop, and it cannot be verified
+  here without a GPU job to run it under.
 
 ### C. Follow-ups and cleanups
 
