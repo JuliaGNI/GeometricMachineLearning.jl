@@ -839,6 +839,56 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   *new* weight file to be committed there: a bare `*.h5` would leave the six already-tracked files
   alone, but would make `git add` refuse a seventh.
 
+- **`MatrixSoftmax` no longer overflows to `NaN` on ordinary input.** Both its methods computed
+  `exp.(x)` directly, with no subtraction of the maximum, so
+  `MatrixSoftmax()(Float32[100 0; 0 0])` came back `Float32[NaN 0.0; 0.0 0.0])` — and
+  `MatrixSoftmax` is the default `attention_activation` of `SymplecticAttentionQ`/`P` and
+  `SymplecticTransformer`, applied to an unbounded learned weight, so this was reachable in
+  training rather than a corner case. Both methods now subtract the maximum over the axes the sum
+  runs over, matching what `VectorSoftmax` already gets from `NNlib.softmax`; well-scaled input is
+  unaffected, because the shift is exact in exact arithmetic.
+
+- **The four training losses' three-argument functor no longer collides with
+  `AbstractNeuralNetworks`' `(::NetworkLoss)(::NeuralNetwork, input, output)`.** `HNNLoss`,
+  `LNNLoss`, `SymplecticEulerLoss` and `VariationalMidpointLoss` all defined `(loss)(ps, input,
+  output)` with an untyped `ps`, exactly as specific as upstream's method taking a `NeuralNetwork`
+  in that slot — so `loss(nn, input, output)` was a run-time `MethodError: ... is ambiguous` for
+  every one of them, not a call. `ps` is now `Union{NetworkParameters, NamedTuple}`, which excludes
+  a `NeuralNetwork`; the call now resolves to upstream's method and returns the same number as
+  calling with the parameters directly.
+
+- **`_GMLGradient` gained the `AbstractVector` method it was missing.** It is a
+  `GeometricOptimizers.Gradient{T}`, and `SimpleSolvers` defines
+  `(::Gradient{T})(::AbstractVector{T})`; without a method of its own on a bare vector, this
+  package's `(::_GMLGradient{T})(::AbstractArray{T})` and that one were equally specific, so
+  `g(::Vector{Float32})` was a run-time ambiguity — the same defect the neighbouring `Manifold`
+  method already fixed, for the same reason, and now fixed the same way.
+  `Test.detect_ambiguities(GeometricMachineLearning; recursive = true)` drops from 23 to 18 with
+  this and the loss-functor fix above; the remaining 18 are the 17 `PoissonTensor * v` ambiguities
+  (section 12 of the audit, out of scope on this branch) and one benign `Dense`/`Affine` pair with
+  no witness — both recorded under *Open Issues* below, and `test/aqua.jl` now asserts the total
+  directly so it cannot drift unobserved.
+
+- **Four `DataLoader` constructors no longer return `nothing` on an unexpected `autoencoder`
+  keyword.** Each was `if autoencoder == false … elseif autoencoder == true … end` with no `else`,
+  so `DataLoader(data; autoencoder = nothing)` fell through the branch and returned `nothing`
+  instead of a `DataLoader`, with nothing pointing back at the keyword — the failure then surfaced
+  far away, as a `MethodError` on `nothing` or a stray `DataLoader{…, Nothing}` type parameter. The
+  keyword is now `autoencoder::Bool` on the `AbstractArray{<:Number, 3}`, `AbstractMatrix` and both
+  `NamedTuple{(:q, :p)}` constructors, and each is restructured as `if/else`, so the mistake is a
+  `TypeError` at the constructor. The fifth affected site, the `DataLoader(dl, backend)`
+  changebackend method, keeps `nothing` as its keyword's default — there it is the documented
+  sentinel for "inherit from `dl`", not a caller mistake — so it is typed
+  `Union{Nothing, Bool}` instead, and its `DT = if …` block gained the `else` the others gained a
+  type for, closing the same silent fallthrough without changing what `nothing` means there.
+
+- **`HRedSys.timespan` no longer truncates to `Int`.** The field was declared `Tuple{Int, Int}`
+  while the constructor takes `timespan::Tuple` and forwards it unchanged: a conventional
+  `(0.0, 1.0)` was silently truncated to `(0, 1)`, and `(0.0, 1.5)` threw
+  `InexactError: Int64(1.5)` at construction. The field now has its own type parameter, `TT <:
+  Tuple`, and follows the constructor's argument — the pattern the neighbouring `timestep::T` field
+  already used.
+
 ### Added
 
 - **`scripts/reproduction/hnn_pendulum_simulation.jl` integrates the vector field an HNN learned and
@@ -2835,16 +2885,20 @@ they resolved to is in the release notes above.
   Closing this means deciding, method by method, between deleting the piracy and asking the owning
   package for the method. It is a change to `src/` and it is not small.
 
-- **B8. Twenty-three method ambiguities.** Aqua's `ambiguities` check reports 23, and it is
-  switched off for the same reason as *B7*. Seventeen are `PoissonTensor * v`
-  (`src/arrays/poisson_tensor.jl:71,74,77`) against left-multiply methods in `ArrayLayouts`,
-  `FillArrays`, `Symbolics` and `GeometricOptimizers`. One is the `Dense` functor of *B7* against
-  `AbstractNeuralNetworks.Affine`; one is `_GMLGradient` (`src/optimizers/optimizer.jl:21`) against
-  `SimpleSolvers.Gradient`; and four are the `HNNLoss`, `LNNLoss`, `SymplecticEulerLoss` and
-  `VariationalMidpointLoss` functors against `AbstractNeuralNetworks.NetworkLoss`.
+- **B8. Eighteen method ambiguities remain, of the 23 this entry originally reported.** The five
+  that were triaged for witnesses are fixed in this release, under *Fixed* above: `_GMLGradient`
+  (`src/optimizers/optimizer.jl:21`) against `SimpleSolvers.Gradient`, and the four loss functors
+  — `HNNLoss`, `LNNLoss`, `SymplecticEulerLoss` and `VariationalMidpointLoss` — against
+  `AbstractNeuralNetworks.NetworkLoss`.
 
-  **A count is not a finding**, and unlike *B7* these have not been triaged for witnesses. That is
-  what closing this starts with.
+  Seventeen of the remaining 18 are `PoissonTensor * v`
+  (`src/arrays/poisson_tensor.jl:71,74,77`) against left-multiply methods in `ArrayLayouts`,
+  `FillArrays`, `Symbolics` and `GeometricOptimizers`; closing them is a design decision (narrowing
+  `PoissonTensor`'s `Base.:*` methods while keeping its `AbstractMatrix` supertype) that a later
+  release makes, not a witness that is missing. The last is the `Dense` functor of *B7* against
+  `AbstractNeuralNetworks.Affine`, which has no value witness: `Dense` is not a subtype of `Affine`
+  and the two have no common instance, so no call can reach the pair. `test/aqua.jl` now asserts
+  the total directly, so it cannot drift unobserved.
 
 - **B9. One unbound type parameter, which only Julia nightly reports.** Aqua's `unbound_args` fails
   on the `nightly` job over `Base.iterate(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, ics::BT;
