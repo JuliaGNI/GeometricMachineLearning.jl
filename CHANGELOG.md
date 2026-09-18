@@ -42,7 +42,10 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 - **`legacy/` no longer exists.** Its last file, `embeddings/sin_cos.jl`, is not deleted but
   promoted: it is `src/layers/positional_encoding.jl` now, rewritten, documented, tested and with a
-  caller. See *Added*. The directory held twelve files when this release opened and holds none.
+  caller. See *Added*. **The directory held thirty files at `v0.7.0` and holds none**, emptied over
+  this release in five steps: the kernel generator moved beside the kernels it generates,
+  `legacy/hnn/` and `legacy/mtk/` went together, then the seven superseded files, then the four that
+  moved to `GeometricOptimizers`, then this one.
 
 - **The symplectic groundwork leaves `legacy/` for `GeometricOptimizers` — four files, 553
   lines.** It is the last of this repository's symplectic Stiefel material, and it is not deleted
