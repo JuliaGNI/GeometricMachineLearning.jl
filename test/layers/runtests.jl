@@ -24,3 +24,6 @@ end
 @safetestset "parameterlength(::PSDLayer) is exact" begin
     include("psd_parameterlength.jl")
 end
+@safetestset "parameterlength(::GrassmannLayer) is an integer count" begin
+    include("grassmann_parameterlength.jl")
+end

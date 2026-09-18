@@ -36,7 +36,7 @@ using Test
 # as transitive extension dependencies -- neither of which loads with `GeometricMachineLearning`
 # alone, or with any *one* of those three added to it. Both packages specialise `getindex` on an
 # `AbstractMatrix` for their own index types (`Block`, `BandRangeType`, …), and
-# `PoissonTensor`'s own `getindex(𝕁::PoissonTensor, i, j)` (`poisson_tensor.jl:39`) is exactly as
+# `PoissonTensor`'s own `getindex(𝕁::PoissonTensor, i, j)` (`poisson_tensor.jl:42`) is exactly as
 # generic on its index arguments, so it collides with **9** of them -- the same class of defect as
 # the 17 `*` ambiguities, on the same type, out of scope for the same reason. Measured with every
 # package `runtests.jl` loads before this file present, the true total is **27**, and that is the

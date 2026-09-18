@@ -652,7 +652,7 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `scripts/reproduction/sympnets/sympnet_toda_lattice.jl` already does — so this is the same
   substitution, not a new one. The script now builds `DataLoader(ensemble_solution)` directly (a
   method for exactly this `EnsembleSolution` shape already exists at
-  `src/data_loader/data_loader.jl:367`).
+  `src/data_loader/data_loader.jl:369`).
 
   **`plots.jl`'s seven plotting functions are retyped onto `DataLoader` and `NeuralNetwork`, and
   `plot_result` is called again.** Each keeps its original purpose — the two-form `plot_*!`/`plot_*`
@@ -691,9 +691,12 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   to promote silently to `Float64`.**
 
   - **The training history `(o::Optimizer)(nn, dl, batch, n_epochs, loss)` returns is now
-    `eltype(dl)`.** `zeros(n_epochs)` at `src/data_loader/optimize.jl` had no element type, so a
-    `Float32` network's loss curve came back `Vector{Float64}` even when every loss value written
-    into it was `Float32`. (Some losses widen the accumulator to `Float64` regardless — see
+    `float(eltype(dl))`.** `zeros(n_epochs)` at `src/data_loader/optimize.jl` had no element type,
+    so a `Float32` network's loss curve came back `Vector{Float64}` even when every loss value
+    written into it was `Float32`. It is `float(eltype(dl))` rather than `eltype(dl)` because a
+    loader over integer data would otherwise get an integer history, and the first `Float` loss
+    written into it would raise `InexactError` where the untyped `zeros` did not. `float` is the
+    identity on every floating-point type, so the `Float32` case is unaffected. (Some losses widen the accumulator to `Float64` regardless — see
     `AbstractNeuralNetworks`' own `_norm(::NamedTuple)`, which has the identical `√length(dx)`
     defect this release fixes in this package's `_norm` below — but the returned array is typed
     now, so it narrows back to `T` on write either way.)
@@ -702,7 +705,8 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
     that widened a `Float32` sum; the plain-`AbstractArray` arm was already correct. This reaches
     users through `reduction_error` and `projection_error`
     (`src/reduced_system/reduced_system.jl`), so a `Float32` reduced-order model used to report its
-    error in `Float64`.
+    error in `Float64`. **The test asserts `_norm` itself, not those two callers** — their element
+    type follows from `_norm`'s, and nothing pins it.
   - **`DataLoader(::EnsembleSolution)` types its zero-filled buffer.** The `zeros(sys_dim,
     input_time_steps, n_params)` in `src/data_loader/data_loader.jl` had no element type, unlike
     the three sibling constructors in the same file that all write `zeros(T, ...)`. The fix is
@@ -722,6 +726,14 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
     with `÷` alone, which is exact by construction; the value does not change for any size the
     existing tests use, but the old `Float64` path silently rounds to the wrong integer once the
     intermediate product exceeds `2^53` (verified against `BigInt` arithmetic).
+  - **`parameterlength(::GrassmannLayer{M, N})` returned a `UnitRange` whenever `M >= N`.** A
+    colon stood where the product belongs — `(M - N):N` instead of `(M - N) * N` — so
+    `parameterlength(GrassmannLayer(10, 4))` was `6:5`, an empty range, rather than `24`. It was
+    the third member of the set audited here and the only one that was wrong in kind rather than
+    in rounding. Nothing asserted it: `parameterlength` is reported, not used to size an array,
+    and the layer's own test only trains a chain containing it. The count is now the dimension of
+    the Grassmann manifold, `k * (n - k)` for `n = max(M, N)` and `k = min(M, N)`, and the test
+    derives that independently and checks it is symmetric in the two sizes.
   - **`ClassificationLayer`'s `average = true` and `average = false` methods were inspected for
     the same class of defect and found not to have it.** Their two doctests
     (`src/layers/classification.jl`) show different element types — `Matrix{Float64}` for
@@ -3150,7 +3162,7 @@ they resolved to is in the release notes above.
 
   Closing it means writing the parameter so that it binds, which is a change to `src/`.
 
-- **B10. `DataLoader(::EnsembleSolution{T, T1, Vector{ST}})` at `src/data_loader/data_loader.jl:323`
+- **B10. `DataLoader(::EnsembleSolution{T, T1, Vector{ST}})` at `src/data_loader/data_loader.jl:325`
   has no test and appears unreachable through this package's current dependencies.** It dispatches
   on `ST <: Union{GeometricSolution{T, T1, TT, NamedTuple{(:t, :q, :v), TuT}},
   GeometricSolution{T, T1, TT, NamedTuple{(:t, :q, :q̇), TuT}}}` — a `GeometricSolution` whose
@@ -3176,7 +3188,7 @@ they resolved to is in the release notes above.
   allocation, consistent with GC scanning a partially-initialized object), which is why neither is
   a technique this package's test suite should rely on.
 
-  The fix in `src/data_loader/data_loader.jl:337` (`zeros(T, ...)` instead of untyped `zeros(...)`)
+  The fix in `src/data_loader/data_loader.jl:339` (`zeros(T, ...)` instead of untyped `zeros(...)`)
   is correct by inspection — it matches the file's three sibling constructors character for
   character — but is untested. Closing this means either GeometricEquations gaining an equation
   type whose `initialstate` returns exactly `(:q, :v)` or `(:q, :q̇)`, or deciding the method is

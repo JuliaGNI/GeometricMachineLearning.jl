@@ -11,10 +11,17 @@ using Test
 GML = GeometricMachineLearning
 
 @testset "parameterlength(::PSDLayer) is exact at ordinary sizes" begin
+    # Derived independently of the closed form in `src`, which this would otherwise only restate.
+    # The count is the dimension of the Stiefel manifold St(n, k): its first column is free in
+    # `n - 1` directions once normalised, the second in `n - 2` once orthogonalised against the
+    # first, and so on, so the dimension is the sum below. `src` writes the same number as
+    # `k*n - k*(k+1)/2`.
+    stiefel_dimension(n, k) = sum(n - i for i in 1:k)
+
     for (M, N) in ((4, 6), (6, 4), (20, 30), (30, 20))
         l = GML.PSDLayer{M, N}()
         M2, N2 = M ÷ 2, N ÷ 2
-        expected = N > M ? M2 * N2 - (M2 * (M2 + 1)) ÷ 2 : N2 * M2 - (N2 * (N2 + 1)) ÷ 2
+        expected = N > M ? stiefel_dimension(N2, M2) : stiefel_dimension(M2, N2)
         @test GML.parameterlength(l) == expected
     end
 end

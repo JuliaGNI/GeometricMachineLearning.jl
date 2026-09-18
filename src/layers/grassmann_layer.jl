@@ -25,5 +25,5 @@ function initialparameters(rng::AbstractRNG, init::AbstractNeuralNetworks.Initia
 end
 
 function parameterlength(::GrassmannLayer{M, N}) where {M, N}
-    N > M ? (N - M)*M : (M - N):N
+    N > M ? (N - M) * M : (M - N) * N
 end

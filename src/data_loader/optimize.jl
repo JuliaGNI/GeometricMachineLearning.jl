@@ -92,7 +92,7 @@ function (o::Optimizer)(nn::NeuralNetwork,
     Λ = GlobalSection(params(nn))
     progress_object = show_progress == true ?
                       ProgressMeter.Progress(n_epochs; enabled = true) : nothing
-    loss_array = zeros(eltype(dl), n_epochs)
+    loss_array = zeros(float(eltype(dl)), n_epochs)
     for i in 1:n_epochs
         loss_array[i] = optimize_for_one_epoch!(
             o, nn.model, params(nn), dl, batch, _pullback, Λ)
