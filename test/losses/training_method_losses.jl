@@ -9,6 +9,45 @@ import Random
 
 Random.seed!(1234)
 
+# ---------------------------------------------------------------- ambiguity with `NetworkLoss`
+
+@doc raw"""
+Each three-argument loss functor `(loss)(ps, input, output)` must not collide with
+`AbstractNeuralNetworks`' own `(::NetworkLoss)(::NeuralNetwork, input, output)`. Before the first
+argument was typed, the two were ambiguous -- same argument count, neither more specific -- and
+`loss(nn, input, output)` was a `MethodError: ... is ambiguous` rather than a call. Typing the
+first parameter as `Union{NetworkParameters, NamedTuple}` excludes a `NeuralNetwork`, so the call
+now resolves to upstream's method, which itself forwards to `loss(nn.params, input, output)` -- the
+two must therefore return the same number.
+"""
+function test_loss_of_a_network_matches_loss_of_its_parameters()
+    hnn_arch = StandardHamiltonianArchitecture(2, 4, 1)
+    nn = NeuralNetwork(hnn_arch)
+    loss = HNNLoss(hnn_arch)
+    input, output = randn(2, 5), randn(2, 5)
+    @test loss(nn, input, output) == loss(params(nn), input, output)
+
+    lnn_arch = LagrangianNeuralNetwork(2; width = 4, nhidden = 1)
+    nn = NeuralNetwork(lnn_arch)
+    loss = LNNLoss(lnn_arch)
+    input, output = randn(2, 5), randn(1, 5)
+    @test loss(nn, input, output) == loss(params(nn), input, output)
+
+    se_arch = StandardHamiltonianArchitecture(2, 4, 1)
+    nn = NeuralNetwork(se_arch)
+    loss = SymplecticEulerLoss(se_arch, 0.1)
+    input, output = randn(2, 5), randn(2, 5)
+    @test loss(nn, input, output) == loss(params(nn), input, output)
+
+    vm_arch = LagrangianNeuralNetwork(2; width = 4, nhidden = 1)
+    nn = NeuralNetwork(vm_arch)
+    loss = VariationalMidpointLoss(vm_arch, 0.05)
+    input, output = randn(2, 5), randn(1, 5)
+    @test loss(nn, input, output) == loss(params(nn), input, output)
+end
+
+test_loss_of_a_network_matches_loss_of_its_parameters()
+
 # ---------------------------------------------------------------- SymplecticEulerLoss
 
 @doc raw"""
