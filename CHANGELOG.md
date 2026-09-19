@@ -87,18 +87,33 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 - **`PoissonTensor`'s `Base.:*` and `Base.getindex` no longer claim every argument type.** The
   three array methods of `*` take `StridedVector`, `StridedMatrix` and `StridedArray{T, 3}` in
-  place of the `Abstract…` equivalents, and `getindex` takes `::Int` indices in place of untyped
-  ones. The second type parameter is constrained to `AT <: AbstractMatrix{T}` at the same time.
+  place of the `Abstract…` equivalents, and `getindex` takes `Union{Int, Colon, AbstractVector{<:Integer}}`
+  indices in place of untyped ones. The second type parameter is constrained to `AT <: AbstractMatrix{T}`
+  at the same time.
 
-  This is under a breaking heading for one reason: **a non-strided right-hand side now reaches
-  Julia's generic `AbstractMatrix` multiply** instead of the specialised method. The value is the
-  same — `PoissonTensor` carries `getindex` and `size` and is the matrix it claims to be, and
-  `𝕁 * (q; p) = (p; -q)` either way — and only the fast path is given up, for an argument no call
-  site in this repository builds. A 3-tensor has no generic fallback, so a non-strided one is now a
-  `MethodError`; nothing here passes one. `StridedArray` still covers `Array`, a strided
-  `SubArray`, and the GPU arrays, since `CuArray` and `MtlArray` are `DenseArray`s. An `Adjoint` or
-  a `Transpose` of a `Matrix` is **not** strided and takes the generic path, at the same value. The
-  `(q, p)` `NamedTuple` method is untouched.
+  **The `getindex` narrowing forwards bulk indices whole**, so `𝕁[1:2, :]` and `𝕁[:, 1]` work on a
+  GPU backend exactly as they do on a CPU backend — the wrapped array receives the whole index and
+  answers or throws with no scalar indexing in between. This was measured on a real Apple GPU
+  (`MetalBackend()`, `MtlArray`, `Float32`), where both operations return the correct value.
+
+  **The breaking part comes from the `*` narrowing on the CPU side.** On a non-strided CPU
+  right-hand side a call falls back to Julia's generic `AbstractMatrix` multiply, which gives the same
+  result — `PoissonTensor` carries `getindex` and `size` and is the matrix it claims to be, and `𝕁 *
+  (q; p) = (p; -q)` either way — but gives up the fast path: 48 scalar index reads for a 4×3 argument
+  where the strided path reads none. A 3-tensor has no generic fallback, so a non-strided one is now a
+  `MethodError`; nothing in this repository passes one. `StridedArray` covers `Array`, a strided
+  `SubArray`, and the GPU arrays, since `CuArray` and `MtlArray` are `DenseArray`s. An `Adjoint` or a
+  `Transpose` of a `Matrix` is **not** strided and takes this fallback path.
+
+  **On a GPU backend, the `*` narrowing is now closed by a package extension.** `ext/GPUArraysCoreExt.jl`
+  adds three methods for `*(::PoissonTensor{T}, ::AnyGPUVector{T})`, `AnyGPUMatrix{T}` and `AnyGPUArray{T, 3}`;
+  they restore the fast path for wrapped GPU arrays — `view(A, [1, 2, 3, 4], :)` and `A'` — which do not
+  satisfy `Strided…` and would otherwise raise "Scalar indexing is disallowed." on a device. `AnyGPUArray`
+  is the union of `AbstractGPUArray` and `WrappedGPUArray`, the latter being what covers the non-strided
+  wrapping cases; the extension adds no ambiguity to the 1-ambiguity total measured in a cold process with
+  Zygote, GeometricIntegrators and HDF5 loaded (the configuration `test/aqua.jl` runs in). This was verified
+  on an Apple GPU (`MetalBackend()`, `MtlArray`, `Float32`), where `𝕁 * view(A, [1, 2, 3, 4], :)` and
+  `𝕁 * B'` both return the correct value. The `(q, p)` `NamedTuple` method is untouched.
 
   What it buys is under *Fixed*.
 
@@ -1383,7 +1398,39 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   Tuple`, and follows the constructor's argument — the pattern the neighbouring `timestep::T` field
   already used.
 
+- **`PoissonTensor` now handles wrapped GPU arrays via a package extension.** The `*` narrowing to
+  `Strided…` right-hand sides recorded under *Removed (breaking)* was a breaking change on a GPU
+  backend, where non-strided GPU arrays raised "Scalar indexing is disallowed." A `SubArray` wrapping
+  a `CuArray` or `MtlArray`, such as `view(A, [1, 2, 3, 4], :)` or `A'`, is non-strided and fell
+  through to the generic multiply. `ext/GPUArraysCoreExt.jl` now carries three methods of `*` for
+  `AnyGPUVector{T}`, `AnyGPUMatrix{T}` and `AnyGPUArray{T, 3}`, covering the wrapped cases while
+  leaving the fast path untouched: `AnyGPUArray` is the union of `AbstractGPUArray` and
+  `WrappedGPUArray`, the latter being what wraps a strided array in an indexing operation that hides
+  its stride. An unwrapped `CuArray` or `MtlArray` is a `DenseArray` and `Strided`, so it already
+  took the fast path and is unchanged.
+
+  Measured on an Apple GPU (`MetalBackend()`, `MtlArray`, `Float32`): `𝕁 * view(A, [1, 2, 3, 4], :)`
+  and `𝕁 * B'` (an `Adjoint` of an `MtlMatrix`) both return the correct value. **This behaviour was
+  verified locally and is not exercised by CI**, which has no GPU runner. The extension adds no
+  ambiguity to the count: measured in a cold process with Zygote, GeometricIntegrators and HDF5
+  loaded (the configuration `test/aqua.jl` runs under), the ambiguity count is 1 with the extension
+  and 1 without. See `src/arrays/poisson_tensor.jl:114-120` for the source comments documenting the
+  design, and `test/arrays/poisson_tensor.jl` "the GPU extension loads and carries the three
+  wrapped-array methods" for the CI-exercisable gate.
+
 ### Added
+
+- **A package extension for `GPUArraysCore` restores `PoissonTensor * wrapped_gpu_array`.**
+  `ext/GPUArraysCoreExt.jl` adds `GPUArraysCore = "0.2"` as a weak dependency under `[weakdeps]` and
+  `[compat]`. The bound introduces no new floor: `AbstractNeuralNetworks`, a hard dependency, already
+  pins `GPUArraysCore = "0.2.0"`. The extension carries the three methods of `*` for wrapped GPU
+  arrays — `AnyGPUVector{T}`, `AnyGPUMatrix{T}` and `AnyGPUArray{T, 3}` — that the `Strided…` bound
+  excludes. `AnyGPUArray` is the union of `AbstractGPUArray` and `WrappedGPUArray` from `GPUArraysCore`,
+  and the distinction is the whole point: unwrapped `CuArray` and `MtlArray` are `DenseArray`s and
+  already `Strided`, so they took the fast path all along. The wrapping case — a `SubArray` hiding a
+  GPU array's stride, or an `Adjoint` or `Transpose` wrapping one — is what failed and what the
+  extension recovers. See `ext/GPUArraysCoreExt.jl:1-23` for the source comments documenting why the
+  bound is `AnyGPU…` and not `AbstractGPUArray`.
 
 - **An `ExplicitImports` gate in `test/aqua.jl`, and a test for `accuracy`.** The gate closes the
   import half of the pass above: an `import` that nothing uses now fails the suite, so the thirteen
@@ -1690,6 +1737,17 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   a `@safetestset` is its own module, so sharing means including, and the rule the helper's
   docstring states is the one thing here that must not be allowed to drift between two copies.
   `test/reachability.jl` reaches it through that include, as it does any other shared file.
+
+- **A bulk `getindex` testset for `PoissonTensor` now verifies device array compatibility.**
+  `test/arrays/poisson_tensor.jl` gains a testset "a bulk index reaches the wrapped array whole"
+  with a stand-in array type that refuses scalar `getindex` (mirroring a GPU array's behaviour) and
+  asserts four operations: `𝕁[1:2, :]`, `𝕁[:, 1]`, `𝕁[[1, 3], [2, 4]]` and a comprehension.
+  Each was verified to raise with the earlier pre-fix commit `158f26d9` and to pass with the fix.
+  The stand-in is `NoScalarIndexMatrix`, an `AbstractMatrix` wrapper that forwards bulk indices
+  whole and raises on any scalar `getindex` — a property that is gated here, not in CI, which has
+  no GPU runner. The point of the testset is that the property is checked: `PoissonTensor`'s narrowed
+  `getindex` forwards the whole index to its wrapped array, so a GPU array backend stays usable
+  without requiring a GPU machine to run the gate.
 
 ### Documentation
 
@@ -3430,12 +3488,15 @@ they resolved to is in the release notes above.
   invariant), or drop the symbolic pullback for architectures whose loss is not additive. Either is
   a decision about the loss, not a repair, which is why this release only documents it.
 
-  (**B1**, **B2**, **B3**, **B4** and **B6** are all closed and their entries are gone: B1 and B2 by
+  (**B1**, **B2**, **B3**, **B4**, **B6** and **B8** are all closed and their entries are gone: B1 and B2 by
   this release — the duplicated `AdamOptimizerWithDecay` and the split `Manifold`, both under
   *Removed (breaking)* — B3 by SymbolicNeuralNetworks 0.5, B4 by `a427add1`, which repaired the
-  documentation build, and B6 by the `train!` retirement in this release: the three methods that
+  documentation build, and B6 and B8 by this release: B6 by the `train!` retirement (the three methods that
   called the non-existent `vectorfield` are gone, and `SymplecticEulerLoss` carries their content on
-  `hamiltonian_vector_field`, with tests that run. The numbers are left vacant rather than reused.)
+  `hamiltonian_vector_field`, with tests that run), and B8 by the narrowing of `PoissonTensor`'s `Base.:*`
+  to `Strided…` right-hand sides and `Base.getindex` to `Union{Int, Colon, AbstractVector{<:Integer}}`
+  indices, reducing method ambiguities from 18 to 1 as asserted in `test/aqua.jl`. The numbers are
+  left vacant rather than reused.)
 
 - **B7. Three methods are type piracy, and closing them is an API change rather than a deletion.**
   Aqua's `piracies` check reports 3, down from the 12 this entry opened with; the other nine were

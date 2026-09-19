@@ -109,10 +109,10 @@ end
     @test 𝕁 * m == Matrix(𝕁) * m
 end
 
-@testset "`getindex` is typed on `Int` and every other index shape still works" begin
-    # The scalar method is the only one defined; a range, a `Colon` and a `CartesianIndex` are
-    # `Base`'s generic `AbstractArray` indexing built on top of it, and each has to give what the
-    # wrapped matrix gives for the same index pair.
+@testset "`getindex` names its index types and every index shape still works" begin
+    # `_ForwardedIndex` covers an `Int`, a `Colon` and an `AbstractVector{<:Integer}`; a
+    # `CartesianIndex` and `end` are `Base`'s generic `AbstractArray` indexing built on top of
+    # those. Each has to give what the wrapped matrix gives for the same index pair.
     𝕁 = PoissonTensor(4, Float64)
     M = Matrix(𝕁)
 
@@ -122,6 +122,47 @@ end
     @test 𝕁[:, 1] == M[:, 1]
     @test 𝕁[CartesianIndex(3, 1)] == M[3, 1]
     @test 𝕁[end, end] == M[end, end]
+end
+
+# A stand-in for a `PoissonTensor` built on a GPU backend. The GPU array libraries answer a bulk
+# index in one call and raise "Scalar indexing is disallowed." on a scalar one, so a wrapper that
+# does exactly that tests the property in CI with no device attached. The same four cases were run
+# against a real Apple GPU -- see the `PoissonTensor` entry in `CHANGELOG.md`.
+struct NoScalarIndexMatrix{T} <: AbstractMatrix{T}
+    A::Matrix{T}
+end
+Base.size(C::NoScalarIndexMatrix) = size(C.A)
+Base.getindex(::NoScalarIndexMatrix, ::Int, ::Int) = error("Scalar indexing is disallowed.")
+Base.getindex(C::NoScalarIndexMatrix, I...) = getindex(C.A, I...)
+
+@testset "a bulk index reaches the wrapped array whole" begin
+    # `getindex` forwards the index rather than letting `Base` decompose it into scalar lookups.
+    # Without that, each of these four raises, which is what a GPU-backed `PoissonTensor` does.
+    M = Matrix(PoissonTensor(4, Float64))
+    𝕁 = PoissonTensor{Float64, NoScalarIndexMatrix{Float64}}(NoScalarIndexMatrix(M), 2)
+
+    @test 𝕁[1:2, :] == M[1:2, :]
+    @test 𝕁[:, 1] == M[:, 1]
+    @test 𝕁[[1, 3], [2, 4]] == M[[1, 3], [2, 4]]
+    @test 𝕁[:, :] == M
+end
+
+@testset "the GPU extension loads and carries the three wrapped-array methods" begin
+    # What is assertable without a device: that the extension is loaded, and that it defines the
+    # three `*` methods it is meant to. `GPUArraysCore` reaches every session through
+    # `AbstractNeuralNetworks`, so the extension loads here and on CI without anything asking for
+    # it.
+    #
+    # What is NOT asserted here, because CI has no GPU runner: the behaviour itself. That
+    # `𝕁 * view(A, [1, 2, 3, 4], :)` and `𝕁 * B'` answer on a device rather than raising "Scalar
+    # indexing is disallowed." was measured on an Apple GPU and is recorded in `CHANGELOG.md`.
+    # Nothing below stands behind that claim -- a CPU stand-in would take the strided path and
+    # prove nothing about it.
+    ext = Base.get_extension(GeometricMachineLearning, :GPUArraysCoreExt)
+    @test ext !== nothing
+
+    gpu_methods = filter(m -> m.module === ext, methods(Base.:*, (PoissonTensor, Any)))
+    @test length(gpu_methods) == 3
 end
 
 @testset "the narrowed `*` methods still resolve against an upstream special type" begin

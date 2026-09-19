@@ -101,7 +101,7 @@ end
 #                                    `GeometricOptimizers.direction`, both owned by `SimpleSolvers`.
 #                                    Reaching them through `GeometricOptimizers` is how the rest of
 #                                    `src/optimizers/optimizer.jl` is written.
-#   all_qualified_accesses_are_public  22, the same class as the 10 above: `KernelAbstractions.zeros`,
+#   all_qualified_accesses_are_public  24, the same class as the 10 above: `KernelAbstractions.zeros`,
 #                                    `ForwardDiff.jacobian`, `GeometricOptimizers.momentum` and so on.
 #
 # Each of the four is a real backlog item rather than a taste, and none of them is this branch's.

@@ -18,9 +18,6 @@ end # we need this because of a Zygote problem
 _diff(dx₁::NamedTuple, dx₂::NamedTuple) = map(_diff, dx₁, dx₂)
 _diff(A::AbstractArray, B::AbstractArray) = A - B
 
-# `global_section(::AbstractVecOrMat) = nothing` used to be defined here, identically to
-# GeometricOptimizers' own fallback. It is imported now.
-
 """
     QPT
 
