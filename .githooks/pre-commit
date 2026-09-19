@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Shared pre-commit hook. Canonical copy: ~/Research/Knowledge/AI/githooks/pre-commit
+# Shared pre-commit hook. Canonical copy: ~/Research/Knowledge/Harness/githooks/pre-commit
 # Installed into each repository's .githooks/ by install-githooks.sh — edit the canonical
 # copy and re-run the installer, never the copy in a repository.
 #
@@ -118,7 +118,7 @@ if command -v fatou >/dev/null 2>&1; then
     elif [ "$lint_rc" -ge 124 ]; then
         # 124 = timed out, 137 = killed after -k. Not a finding, and not a reason to block.
         printf '%sfatou lint: timed out after 60s — stage skipped, not a failure%s\n' "$yellow" "$nc"
-        printf '    A staged file is pathological for fatou. See Knowledge/AI/Helpers-and-MCPs.md.\n'
+        printf '    A staged file is pathological for fatou. See Knowledge/Harness/Helpers-and-MCPs.md.\n'
     else
         n=$(printf '%s\n' "$lint_out" | grep -c . || true)
         printf '%sfatou lint: %s finding(s) — advisory, not blocking%s\n' "$yellow" "$n" "$nc"
@@ -139,7 +139,7 @@ fi
 # The invariant is `s == Unicode.normalize(s, :NFC)`, never the absence of combining marks:
 # `q̇`, `v̄` and `f̄` have no precomposed codepoint and stay two codepoints under NFC.
 #
-# The check is inlined rather than calling ~/Research/Knowledge/AI/githooks/nfc.jl, for the same
+# The check is inlined rather than calling ~/Research/Knowledge/Harness/githooks/nfc.jl, for the same
 # reason stages 1 and 3 inline theirs: a hook that skips itself because a path outside the
 # repository is missing reports "clean" when it checked nothing. Use `nfc.jl --apply` to fix what
 # this reports.
@@ -155,7 +155,7 @@ if ! nfc_out=$(julia --startup-file=no -e '
     n=$(printf '%s\n' "$nfc_out" | grep -c . || true)
     printf '%sunicode: %s file(s) not NFC%s\n' "$red" "$n" "$nc"
     printf '%s\n' "$nfc_out" | sed 's/^/    /'
-    printf '    %sfix: julia --startup-file=no ~/Research/Knowledge/AI/githooks/nfc.jl --apply <files>%s\n' \
+    printf '    %sfix: julia --startup-file=no ~/Research/Knowledge/Harness/githooks/nfc.jl --apply <files>%s\n' \
            "$dim" "$nc"
     status=1
 else

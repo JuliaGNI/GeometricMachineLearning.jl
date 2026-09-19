@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Shared pre-push hook. Canonical copy: ~/Research/Knowledge/AI/githooks/pre-push
+# Shared pre-push hook. Canonical copy: ~/Research/Knowledge/Harness/githooks/pre-push
 # Installed into each repository's .githooks/ by install-githooks.sh — edit the canonical
 # copy and re-run the installer, never the copy in a repository.
 #
