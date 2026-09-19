@@ -8,8 +8,8 @@
 # build dies with 62 `invalid local image` errors, because every figure it references is a build
 # product that nothing built.
 #
-# Keep the rest in step with Knowledge/AI/githooks/workflows/Documenter.yml: take any other change
-# from there rather than editing it here. That is checked, not merely asked for —
+# Keep the rest in step with Environment/Harness/githooks/workflows/Documenter.yml: take any
+# other change from there rather than editing it here. That is checked, not merely asked for —
 # GeometricMachineLearning is in DOCS_ADDITIONS in verify-workflows.jl, whose
 # `documenter_additions_intact` requires every behavioural line of the template to survive inside
 # this file, in order. Comments are ignored, so this header is free to differ; a canonical step that
