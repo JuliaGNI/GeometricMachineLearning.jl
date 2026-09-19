@@ -40,6 +40,83 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
 ### Removed (breaking)
 
+- **Nine of the package's twelve type piracies are deleted, and three of them were on `Base`.**
+  Aqua's `piracies` count goes from 12 to 3, and `test/aqua.jl` asserts the new number. What
+  remains is the three `Dense`/`Linear` three-axis functors of *B7*, which are an API question
+  rather than a deletion.
+
+  **The three on `Base` changed every Julia process that loaded this package**, which is what makes
+  removing them breaking for a caller who had come to rely on them:
+
+  | method | `src` | with GML, before |
+  |:--|:--|:--|
+  | `+(::Float64, ::Tuple{Float64})` | `utils.jl:33` | `1.0 + (2.0,)` returned `3.0`; a `MethodError` without the package |
+  | `+(::Vector{Float64}, ::Tuple{Float64})` | `utils.jl:39` | `[1.0] + (2.0,)` returned `3.0` — a **scalar**, silently discarding every element but the first |
+  | `isapprox(::@NamedTuple{q, p}, ::@NamedTuple{q, p})` | `utils.jl:104` | `(q = …, p = …) ≈ (q = …, p = …)` returned a `Bool` |
+
+  The two `+` methods had no caller in `src/`, `ext/`, `test/`, `docs/` or `scripts/`, and the
+  second was wrong on its own terms. The `≈` had exactly one, in `test/arrays/poisson_tensor.jl`,
+  which now compares the two fields instead. A caller who wants the old behaviour writes
+  `a.q ≈ b.q && a.p ≈ b.p`.
+
+  **The other six are the `add!` family on `GeometricOptimizers`' structured matrix types** —
+  `SkewSymMatrix`, `SymmetricMatrix`, the triangular family and the two Lie-algebra-horizontal
+  lifts — together with the `AbstractVecOrMat` base case they recursed into. `src/arrays/gml_extensions.jl`
+  is deleted with them, as is the `import AbstractNeuralNetworks: add!` that made them piracy in
+  the first place.
+
+  This corrects what *B7* said about them. That entry called four of the six load-bearing, because
+  the upstream generic is a `CanonicalIndexError` on those types. The reasoning is right and the
+  conclusion is not: **nothing called them.** `add!` had no occurrence in `src/`, `ext/`, `test/`,
+  `docs/src` or `scripts/` beyond the definitions and their own recursion, and
+  `AbstractNeuralNetworks` itself calls only the two-argument form on plain arrays. A caller who
+  wants these reaches `GeometricOptimizers`, which defines the identical set against its own
+  generic.
+
+  **`add!` is no longer exported, but it was until recently, and the deleted file's comment was
+  stale rather than wrong.** That comment read "It is exported by GML and has been since 0.1".
+  `export _add, apply_toNT, add!` stands at v0.5.0 and v0.6.0, and at v0.4.8 with
+  `split_and_flatten` beside it; the export went **earlier in this same release**, which is the
+  change recorded under *Removed (breaking)* as "`_add` and `add!` are gone from the export list".
+  So at this branch's base `:add! ∉ names(GeometricMachineLearning)` and the module file imports
+  the generic without re-exporting it — which is why deleting the methods is safe — but a 0.6.0
+  caller could reach them by name. That is what keeps this entry under a breaking heading.
+
+  `AbstractTriangular` goes from the module file's imports with them: it was there for
+  `gml_extensions.jl` and for nothing else.
+
+- **`PoissonTensor`'s `Base.:*` and `Base.getindex` no longer claim every argument type.** The
+  three array methods of `*` take `StridedVector`, `StridedMatrix` and `StridedArray{T, 3}` in
+  place of the `Abstract…` equivalents, and `getindex` takes `Union{Int, Colon, AbstractVector{<:Integer}}`
+  indices in place of untyped ones. The second type parameter is constrained to `AT <: AbstractMatrix{T}`
+  at the same time.
+
+  **The `getindex` narrowing forwards bulk indices whole**, so `𝕁[1:2, :]` and `𝕁[:, 1]` work on a
+  GPU backend exactly as they do on a CPU backend — the wrapped array receives the whole index and
+  answers or throws with no scalar indexing in between. This was measured on a real Apple GPU
+  (`MetalBackend()`, `MtlArray`, `Float32`), where both operations return the correct value.
+
+  **The breaking part comes from the `*` narrowing on the CPU side.** On a non-strided CPU
+  right-hand side a call falls back to Julia's generic `AbstractMatrix` multiply, which gives the same
+  result — `PoissonTensor` carries `getindex` and `size` and is the matrix it claims to be, and `𝕁 *
+  (q; p) = (p; -q)` either way — but gives up the fast path: 48 scalar index reads for a 4×3 argument
+  where the strided path reads none. A 3-tensor has no generic fallback, so a non-strided one is now a
+  `MethodError`; nothing in this repository passes one. `StridedArray` covers `Array`, a strided
+  `SubArray`, and the GPU arrays, since `CuArray` and `MtlArray` are `DenseArray`s. An `Adjoint` or a
+  `Transpose` of a `Matrix` is **not** strided and takes this fallback path.
+
+  **On a GPU backend, the `*` narrowing is now closed by a package extension.** `ext/GPUArraysCoreExt.jl`
+  adds three methods for `*(::PoissonTensor{T}, ::AnyGPUVector{T})`, `AnyGPUMatrix{T}` and `AnyGPUArray{T, 3}`;
+  they restore the fast path for wrapped GPU arrays — `view(A, [1, 2, 3, 4], :)` and `A'` — which do not
+  satisfy `Strided…` and would otherwise raise "Scalar indexing is disallowed." on a device. `AnyGPUArray`
+  is the union of `AbstractGPUArray` and `WrappedGPUArray`, the latter being what covers the non-strided
+  wrapping cases; the extension adds no ambiguity to the 1-ambiguity total measured in a cold process with
+  Zygote, GeometricIntegrators and HDF5 loaded (the configuration `test/aqua.jl` runs in). This was verified
+  on an Apple GPU (`MetalBackend()`, `MtlArray`, `Float32`), where `𝕁 * view(A, [1, 2, 3, 4], :)` and
+  `𝕁 * B'` both return the correct value. The `(q, p)` `NamedTuple` method is untouched.
+
+  What it buys is under *Fixed*.
+
 - **Thirty-two names under `src/` had no user anywhere, and are gone** — twenty-five removed from
   files that survive, and seven that went with the five files below. `src/` goes from 82 files and
   9,022 lines to 76 and 8,732. Eighty-nine of the 290 lines moved rather than went — see the kernel
@@ -323,7 +400,7 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   It is dropped rather than moved because nothing calls it. The only `dim(` call in the package is
   `src/loss/lnn_loss.jl:55`, which passes an *architecture* and dispatches to
   `dim(::LagrangianNeuralNetwork)`. **`dim` remains exported** — it is imported from
-  `AbstractNeuralNetworks` at `src/GeometricMachineLearning.jl:84` and re-exported, and the three
+  `AbstractNeuralNetworks` at `src/GeometricMachineLearning.jl:83` and re-exported, and the three
   architecture methods are untouched.
 
   This takes the type-piracy count from **13 to 12**, measured with `Aqua.Piracy.hunt` before and
@@ -475,6 +552,11 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   ```julia
   using AbstractNeuralNetworks: add!
   ```
+
+  Those structured-type methods went too, later in this same release — see *Removed (breaking)*
+  above, where the whole `add!` family is deleted as piracy with no caller. This package now adds
+  no method to `AbstractNeuralNetworks.add!` at all, and the import above is still how a caller
+  reaches the generic.
 
   `_add`'s two siblings `_norm` and `_diff` were never exported, and they are the two of the three
   that anything in `src/` actually calls; `_add` was the odd one out. Qualified, it still works.
@@ -783,7 +865,7 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
     names). `SymplecticMatrix`, removed from the package in `444e6fac` (2023-05-31), sits only
     inside a function the script never calls, so it is not what stops this script.
   - `scripts/psd_auto_toda.jl` calls `SymplecticMatrix`, `SymplecticStiefelLayer` (never exported —
-    `src/GeometricMachineLearning.jl:180` says so directly) and `StandardOptimizer`, none of which
+    `src/GeometricMachineLearning.jl:179` says so directly) and `StandardOptimizer`, none of which
     exist in `src/`. Even the 2026-08-16 commit that replaced this file's `GLMakie`/`Plots` calls
     with `CairoMakie` left these breaks in place.
   - `scripts/particles.jl` and `scripts/particles_cuda.jl` read
@@ -845,6 +927,47 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `exact_solution` both come from `GeometricProblems.HarmonicOscillator`.
 
 ### Fixed
+
+- **Multiplying a `PoissonTensor` by a `StiefelManifold` threw a `MethodError`, and twenty-five
+  other ambiguities went with it.** Both names are exported by this package, so this was two
+  exported types that could not be multiplied:
+
+  ```julia
+  𝕁 = PoissonTensor(4, Float32)
+  Y = StiefelManifold(Matrix(qr!(rand(Float32, 4, 2)).Q)[:, 1:2])
+  𝕁 * Y      # MethodError: *(::PoissonTensor{Float32, …}, ::StiefelManifold{…}) is ambiguous
+  ```
+
+  The cause was that `PoissonTensor <: AbstractMatrix{T}` while `*(𝕁::PoissonTensor{T},
+  v::AbstractMatrix{T})` claimed the whole right-hand side, so it collided with every
+  `*(::AbstractMatrix, ::X)` that `ArrayLayouts`, `FillArrays`, `Symbolics` and
+  `GeometricOptimizers` define for their own special array type `X`. Narrowing the three array
+  methods to a `Strided…` right-hand side excludes each `X` — see *Removed (breaking)* — and the
+  call above now resolves to `GeometricOptimizers`' own `*(::AbstractMatrix, ::StiefelManifold)`,
+  so the answer comes from the package that owns the type.
+
+  **Nine more were the same defect on the same type, through `getindex`**, and they were visible
+  only from inside `Pkg.test()`: `runtests.jl` loads `Zygote`, `GeometricIntegrators` and `HDF5`
+  before `aqua.jl`, which pulls in `BandedMatrices` and `BlockArrays` as transitive extension
+  dependencies, and neither loads with this package alone. Both add `getindex` methods to
+  `AbstractMatrix` for their own index types, and `getindex(𝕁::PoissonTensor, i, j)` was exactly as
+  generic on its indices. Typing them `::Int` — the one method an `AbstractArray` has to supply,
+  with every other index shape built on it by `Base` — excludes them.
+
+  | measured on | before | after |
+  |:--|--:|--:|
+  | `GeometricMachineLearning` loaded alone | 18 | 1 |
+  | with everything `runtests.jl` loads before `aqua.jl` | 27 | 1 |
+
+  The two numbers agreeing is the point, and it is what lets `test/aqua.jl` assert the count now:
+  the one pair left is this package's `Dense` functor against `AbstractNeuralNetworks.Affine`, and
+  nothing outside this repository's own `[compat]` moves it. That pair is benign — `Dense` is not a
+  subtype of `Affine` and the two have no common instance, so no call can reach it — and it is
+  recorded as *B7*. **This closes *B8*.**
+
+  The five ambiguities that had already been triaged for witnesses were fixed earlier in this
+  release, and took the count from 23 to 18: `_GMLGradient` against `SimpleSolvers.Gradient`, and
+  the four loss functors against `AbstractNeuralNetworks.NetworkLoss`.
 
 - **Building the minibatch index set is linear again, and its return type is concrete.**
   `batch_over_two_axes` grew a tuple by splatting, `batches = (batches..., …)`, once per minibatch.
@@ -1242,6 +1365,12 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   numbers and asserts neither: a count that moves with six upstream packages, and with which of
   them a given process happens to have loaded, cannot tell a regression from an upgrade.
 
+  **Both of those 26 are closed later in this same release**, by narrowing `PoissonTensor`'s `*`
+  and `getindex` — see *Fixed* above. The count is 1 afterwards, the same alone and in the suite,
+  and `test/aqua.jl` does then assert it: the objection here was to asserting a number that moved
+  with six upstream packages, and the pair that remains moves with none of them. *B8* is closed and
+  no longer under *Open Issues*; the benign pair is recorded as part of *B7*.
+
 - **Four `DataLoader` constructors no longer return `nothing` on an unexpected `autoencoder`
   keyword.** Each was `if autoencoder == false … elseif autoencoder == true … end` with no `else`,
   so `DataLoader(data; autoencoder = nothing)` fell through the branch and returned `nothing`
@@ -1269,7 +1398,39 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   Tuple`, and follows the constructor's argument — the pattern the neighbouring `timestep::T` field
   already used.
 
+- **`PoissonTensor` now handles wrapped GPU arrays via a package extension.** The `*` narrowing to
+  `Strided…` right-hand sides recorded under *Removed (breaking)* was a breaking change on a GPU
+  backend, where non-strided GPU arrays raised "Scalar indexing is disallowed." A `SubArray` wrapping
+  a `CuArray` or `MtlArray`, such as `view(A, [1, 2, 3, 4], :)` or `A'`, is non-strided and fell
+  through to the generic multiply. `ext/GPUArraysCoreExt.jl` now carries three methods of `*` for
+  `AnyGPUVector{T}`, `AnyGPUMatrix{T}` and `AnyGPUArray{T, 3}`, covering the wrapped cases while
+  leaving the fast path untouched: `AnyGPUArray` is the union of `AbstractGPUArray` and
+  `WrappedGPUArray`, the latter being what wraps a strided array in an indexing operation that hides
+  its stride. An unwrapped `CuArray` or `MtlArray` is a `DenseArray` and `Strided`, so it already
+  took the fast path and is unchanged.
+
+  Measured on an Apple GPU (`MetalBackend()`, `MtlArray`, `Float32`): `𝕁 * view(A, [1, 2, 3, 4], :)`
+  and `𝕁 * B'` (an `Adjoint` of an `MtlMatrix`) both return the correct value. **This behaviour was
+  verified locally and is not exercised by CI**, which has no GPU runner. The extension adds no
+  ambiguity to the count: measured in a cold process with Zygote, GeometricIntegrators and HDF5
+  loaded (the configuration `test/aqua.jl` runs under), the ambiguity count is 1 with the extension
+  and 1 without. See `src/arrays/poisson_tensor.jl:114-120` for the source comments documenting the
+  design, and `test/arrays/poisson_tensor.jl` "the GPU extension loads and carries the three
+  wrapped-array methods" for the CI-exercisable gate.
+
 ### Added
+
+- **A package extension for `GPUArraysCore` restores `PoissonTensor * wrapped_gpu_array`.**
+  `ext/GPUArraysCoreExt.jl` adds `GPUArraysCore = "0.2"` as a weak dependency under `[weakdeps]` and
+  `[compat]`. The bound introduces no new floor: `AbstractNeuralNetworks`, a hard dependency, already
+  pins `GPUArraysCore = "0.2.0"`. The extension carries the three methods of `*` for wrapped GPU
+  arrays — `AnyGPUVector{T}`, `AnyGPUMatrix{T}` and `AnyGPUArray{T, 3}` — that the `Strided…` bound
+  excludes. `AnyGPUArray` is the union of `AbstractGPUArray` and `WrappedGPUArray` from `GPUArraysCore`,
+  and the distinction is the whole point: unwrapped `CuArray` and `MtlArray` are `DenseArray`s and
+  already `Strided`, so they took the fast path all along. The wrapping case — a `SubArray` hiding a
+  GPU array's stride, or an `Adjoint` or `Transpose` wrapping one — is what failed and what the
+  extension recovers. See `ext/GPUArraysCoreExt.jl:1-23` for the source comments documenting why the
+  bound is `AnyGPU…` and not `AbstractGPUArray`.
 
 - **An `ExplicitImports` gate in `test/aqua.jl`, and a test for `accuracy`.** The gate closes the
   import half of the pass above: an `import` that nothing uses now fails the suite, so the thirteen
@@ -1577,6 +1738,17 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   docstring states is the one thing here that must not be allowed to drift between two copies.
   `test/reachability.jl` reaches it through that include, as it does any other shared file.
 
+- **A bulk `getindex` testset for `PoissonTensor` now verifies device array compatibility.**
+  `test/arrays/poisson_tensor.jl` gains a testset "a bulk index reaches the wrapped array whole"
+  with a stand-in array type that refuses scalar `getindex` (mirroring a GPU array's behaviour) and
+  asserts four operations: `𝕁[1:2, :]`, `𝕁[:, 1]`, `𝕁[[1, 3], [2, 4]]` and a comprehension.
+  Each was verified to raise with the earlier pre-fix commit `158f26d9` and to pass with the fix.
+  The stand-in is `NoScalarIndexMatrix`, an `AbstractMatrix` wrapper that forwards bulk indices
+  whole and raises on any scalar `getindex` — a property that is gated here, not in CI, which has
+  no GPU runner. The point of the testset is that the property is checked: `PoissonTensor`'s narrowed
+  `getindex` forwards the whole index to its wrapped array, so a GPU array backend stays usable
+  without requiring a GPU machine to run the gate.
+
 ### Documentation
 
 - **A *Positional Encoding* page**, `docs/src/layers/positional_encoding.md`, joins the
@@ -1801,6 +1973,12 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   success while the defects stand — which is the failure mode the two guards below exist to remove.
   Six checks that fail on a real regression are worth more than eight that are all switched off.
 
+  Those were the numbers when this file was added, and **both fell later in this same release**:
+  the ambiguity triage took 23 to 18, and the piracy and `PoissonTensor` passes then took the two
+  counts to **3 and 1** — see *Removed (breaking)* and *Fixed* above. *B8* is closed and gone from
+  *Open Issues*; *B7* now covers only the three `resnet.jl` functors. Both checks are still off by
+  name, for the reason given here, and both counts are now asserted instead.
+
   **`Aqua.test_all` needs an enclosing testset, and the one it gets is `runtests.jl`'s
   `@safetestset`.** It wraps each check in a `@testset` of its own and adds no parent, and a testset
   with no parent finalises as soon as it closes — so called bare, the first failing check throws a
@@ -1816,6 +1994,12 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   17 of its 23 are against methods in ArrayLayouts, FillArrays, Symbolics and GeometricOptimizers,
   so the count moves with those packages' versions rather than with anything in this tree, and an
   exact assertion would turn the suite red on an unrelated upgrade.
+
+  The asserted piracy count is **3** later in this same release, and `ambiguities` **does** get a
+  gate there. The objection above was specific to the `PoissonTensor` pile rather than to gating
+  ambiguities as such, and narrowing that type's `*` and `getindex` removed the pile: the one pair
+  left is between this package and `AbstractNeuralNetworks`, and nothing outside this repository's
+  own `[compat]` moves it.
 
 - **Test files are guarded for inclusion completeness.** `test/reachability.jl` verifies that every
   `.jl` file under `test/` is either in the transitive `include` closure of `test/runtests.jl` or
@@ -3304,83 +3488,41 @@ they resolved to is in the release notes above.
   invariant), or drop the symbolic pullback for architectures whose loss is not additive. Either is
   a decision about the loss, not a repair, which is why this release only documents it.
 
-  (**B1**, **B2**, **B3**, **B4** and **B6** are all closed and their entries are gone: B1 and B2 by
+  (**B1**, **B2**, **B3**, **B4**, **B6** and **B8** are all closed and their entries are gone: B1 and B2 by
   this release — the duplicated `AdamOptimizerWithDecay` and the split `Manifold`, both under
   *Removed (breaking)* — B3 by SymbolicNeuralNetworks 0.5, B4 by `a427add1`, which repaired the
-  documentation build, and B6 by the `train!` retirement in this release: the three methods that
+  documentation build, and B6 and B8 by this release: B6 by the `train!` retirement (the three methods that
   called the non-existent `vectorfield` are gone, and `SymplecticEulerLoss` carries their content on
-  `hamiltonian_vector_field`, with tests that run. The numbers are left vacant rather than reused.)
+  `hamiltonian_vector_field`, with tests that run), and B8 by the narrowing of `PoissonTensor`'s `Base.:*`
+  to `Strided…` right-hand sides and `Base.getindex` to `Union{Int, Colon, AbstractVector{<:Integer}}`
+  indices, reducing method ambiguities from 18 to 1 as asserted in `test/aqua.jl`. The numbers are
+  left vacant rather than reused.)
 
-- **B7. Twelve methods are type piracy, and three of them change `Base`.** Aqua's `piracies`
-  check reports 12, and all 12 are genuine under its definition: the function and every argument
-  type belong to other modules. It is switched off in `test/aqua.jl` rather than marked
-  `broken = true`, because each of these has a **witness** — a call whose behaviour differs between
-  a process with only the owning packages loaded and the same process with this one added.
-
-  The three on `Base` are the severe ones, because they change *every* Julia process that loads
-  this package:
+- **B7. Three methods are type piracy, and closing them is an API change rather than a deletion.**
+  Aqua's `piracies` check reports 3, down from the 12 this entry opened with; the other nine were
+  deleted in this release and are under *Removed (breaking)* above. All three are genuine under
+  Aqua's definition — the function and every argument type belong to other modules — and all three
+  are one thing: a functor on a *layer* type this package does not own, applied to a three-axis
+  array.
 
   | method | `src` | without GML | with GML |
   |:--|:--|:--|:--|
-  | `+(::Float64, ::Tuple{Float64})` | `utils.jl:65` | `MethodError` | `3.0` |
-  | `+(::Vector{Float64}, ::Tuple{Float64})` | `utils.jl:71` | `MethodError` | `3.0` — a **scalar**, silently discarding every element but the first |
-  | `isapprox(::@NamedTuple{q, p}, ::…)` | `utils.jl:167` | `MethodError` | `true` |
+  | `(::Dense{M, N, true})(::AbstractArray{T, 3}, ::NamedTuple)` | `layers/resnet.jl:63` | `MethodError` | the layer applied along the third axis |
+  | `(::Dense{M, N, false})(::AbstractArray{T, 3}, ::NamedTuple)` | `layers/resnet.jl:67` | the same | the same |
+  | `(::Linear{M, N})(::AbstractArray{T, 3}, ::NamedTuple)` | `layers/resnet.jl:71` | the same | the same |
 
-  The first two already carry a `# Type pyracy!!` comment in the source.
+  `Dense` and `Linear` are `AbstractNeuralNetworks`', and upstream a 3-tensor argument is a
+  `MethodError` because `*` cannot take one. So the witness is not a changed answer but a new one:
+  a call that throws without this package loaded returns a value with it.
 
-  Three are functor piracy on `AbstractNeuralNetworks`: `Dense` and `Linear` applied to a
-  three-axis array (`src/layers/resnet.jl:63,67,71`), which is a `MethodError` upstream because `*`
-  cannot take a 3-tensor. `src/layers/resnet.jl:63` is also one of the ambiguities in *B8*, against
-  `Affine`.
+  Closing this means either `AbstractNeuralNetworks` gaining the three-axis methods, or this
+  package wrapping the two layer types in its own. Both are an API change, and neither is a
+  by-product of a piracy pass — which is why these three stayed when the other nine went.
 
-  Five are `add!` on `GeometricOptimizers` matrix types
-  (`src/arrays/gml_extensions.jl:17,27,32,39` and `:22`). For four of them the upstream generic is
-  a `CanonicalIndexError` — it does `x .= a .+ b` and those types have no `setindex!` — so the
-  method is load-bearing. `:22`, on `SymmetricMatrix`, is not: that type does support `setindex!`,
-  the upstream generic already returns the right answer, and the only observable difference is that
-  this one allocates where the upstream allocates nothing.
-
-  **Two of the 12 have no value witness, and that is worth saying plainly.** `:22` above, and
-  `add!(C::AbstractVecOrMat, A, B)` at `src/utils.jl:21` — the most invasive of the set, shadowing
-  the upstream three-argument `add!` for *every* vector and matrix including
-  `AbstractNeuralNetworks`' own internal uses. The value it returns is unchanged. Its witness is an
-  allocation regression: it writes `C .= A + B`, materialising the sum, where the upstream generic
-  writes `x .= a .+ b` and allocates nothing. One array per call, so the cost scales — measured in a
-  fresh process at `--check-bounds=auto`, the minimum of 50 calls is 64 bytes for a 1-element
-  vector, 144 at 10, 8256 at 1000, and 112 for a 2×2 matrix, against 0 upstream at every size. Plus
-  a guard weakened from `axes` equality to `size`
-  equality. A performance regression, not a wrong answer.
-
-  Closing this means deciding, method by method, between deleting the piracy and asking the owning
-  package for the method. It is a change to `src/` and it is not small.
-
-- **B8. Eighteen method ambiguities remain when `GeometricMachineLearning` is loaded alone — 27
-  inside `Pkg.test()` itself — of the 23 this entry originally reported.** The five that were
-  triaged for witnesses are fixed in this release, under *Fixed* above: `_GMLGradient`
-  (`src/optimizers/optimizer.jl:22`) against `SimpleSolvers.Gradient`, and the four loss functors
-  — `HNNLoss`, `LNNLoss`, `SymplecticEulerLoss` and `VariationalMidpointLoss` — against
-  `AbstractNeuralNetworks.NetworkLoss`.
-
-  Seventeen of the remaining 18 are `PoissonTensor * v`
-  (`src/arrays/poisson_tensor.jl:75,78,81`) against left-multiply methods in `ArrayLayouts`,
-  `FillArrays`, `Symbolics` and `GeometricOptimizers`; closing them is a design decision (narrowing
-  `PoissonTensor`'s `Base.:*` methods while keeping its `AbstractMatrix` supertype) that a later
-  release makes, not a witness that is missing. The last is the `Dense` functor of *B7* against
-  `AbstractNeuralNetworks.Affine`, which has no value witness: `Dense` is not a subtype of `Affine`
-  and the two have no common instance, so no call can reach the pair.
-
-  **Inside the actual test run there are 9 more, all on the same type.** `runtests.jl` loads
-  `Zygote`, `GeometricIntegrators` and `HDF5` for earlier subjects before `aqua.jl` runs, and that
-  combination pulls in `BandedMatrices` and `BlockArrays` as transitive extension dependencies —
-  neither loads with `GeometricMachineLearning` alone. Both specialise `getindex` on an
-  `AbstractMatrix` for their own index types, and `PoissonTensor`'s own
-  `getindex(𝕁::PoissonTensor, i, j)` (`poisson_tensor.jl:42`) is exactly as generic on its index
-  arguments, so it collides with 9 of them — the same class of defect as the 17 `*` ambiguities,
-  on the same type, and out of scope for the same reason. `test/aqua.jl` records both numbers and
-  asserts neither: 27 depends on which packages a given process has loaded by the time the check
-  runs, which follows the order `runtests.jl` includes its subjects, so a failure could equally
-  mean an upstream upgrade or a reordering of this suite. The piracy count above it has no such
-  exposure, which is why that one is asserted.
+  `src/layers/resnet.jl:63` is also the one remaining method ambiguity, against
+  `AbstractNeuralNetworks.Affine`. That pair is benign and has no witness at all: `Dense` is not a
+  subtype of `Affine` and the two have no common instance, so no call can reach it. `test/aqua.jl`
+  asserts both counts — 3 piracies and 1 ambiguity — so neither can drift, in either direction.
 
 - **B9. One unbound type parameter, which only Julia nightly reports.** Aqua's `unbound_args` fails
   on the `nightly` job over `Base.iterate(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, ics::BT;

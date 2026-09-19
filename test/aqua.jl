@@ -11,47 +11,50 @@ using Test
 # a testset with no parent finalises as soon as it closes -- so called bare, the first failing check
 # throws a `TestSetException` and the rest never run. On the suite path the `@safetestset` in
 # `runtests.jl` is that parent. The `@testset` below is that parent when this file is run on its
-# own, and it is also what lets the piracy count at the end be a second assertion rather than a
-# top-level `@test` that aborts the file the moment it fails.
+# own, and it is also what lets the two counts at the end be further assertions rather than
+# top-level `@test`s that abort the file the moment one fails.
 #
 # WHAT IS SWITCHED OFF, AND WHY IT IS NOT A `broken = true`.
 #
-# `piracies` reports 12 methods, and all 12 are genuine under Aqua's definition -- the function and
-# every argument type belong to other modules. They are not a count waiting to be triaged: each has
-# a witness, a call whose behaviour changes when this package is loaded. Three of them are on
-# `Base`, so they change every Julia process that loads this one:
+# `piracies` reports 3 methods, and all 3 are genuine under Aqua's definition -- the function and
+# every argument type belong to other modules. They are not a count waiting to be triaged. All
+# three are the same thing: a three-argument functor for a *layer* type that this package does not
+# own, `AbstractNeuralNetworks`' `Dense` and `Linear`, added so that the layer accepts a 3-tensor
+# input as well as a matrix.
 #
-#     1.0 + (2.0,)      MethodError without GML, 3.0 with it              src/utils.jl:33
-#     [1.0] + (2.0,)    MethodError without GML, 3.0 with it -- a scalar, src/utils.jl:39
-#                       silently discarding every element but the first
-#     (q, p) ≈ (q, p)   MethodError without GML, true with it             src/utils.jl:104
+#     Dense{M, N, true}   on an AbstractArray{T, 3}    src/layers/resnet.jl:63
+#     Dense{M, N, false}  on an AbstractArray{T, 3}    src/layers/resnet.jl:67
+#     Linear{M, N}        on an AbstractArray{T, 3}    src/layers/resnet.jl:71
 #
-# `ambiguities` reports 18 when `GeometricMachineLearning` is the only package loaded: the 17
-# `PoissonTensor * v` ambiguities against left-multiply methods in ArrayLayouts, FillArrays,
-# Symbolics and GeometricOptimizers (out of scope here, see `## Open Issues`), plus one benign
-# `Dense`/`Affine` pair with no witness.
+# Closing these means either upstream gaining the 3-tensor methods or this package wrapping the two
+# layer types, and both are an API change rather than a tidy-up. They are *B7* under
+# `## Open Issues` in `CHANGELOG.md` with that reasoning.
 #
-# **But 18 is not what this file measures, because this file does not run in isolation.** By the
-# time this `@safetestset` runs, `runtests.jl` has already loaded `Zygote`, `GeometricIntegrators`
-# and `HDF5` for earlier subjects, and that combination pulls in `BandedMatrices` and `BlockArrays`
-# as transitive extension dependencies -- neither of which loads with `GeometricMachineLearning`
-# alone, or with any *one* of those three added to it. Both packages specialise `getindex` on an
-# `AbstractMatrix` for their own index types (`Block`, `BandRangeType`, …), and
-# `PoissonTensor`'s own `getindex(𝕁::PoissonTensor, i, j)` (`poisson_tensor.jl:42`) is exactly as
-# generic on its index arguments, so it collides with **9** of them -- the same class of defect as
-# the 17 `*` ambiguities, on the same type, out of scope for the same reason. Measured with every
-# package `runtests.jl` loads before this file present, the true total is **27**, and that is the
-# number that governs whether `Pkg.test()` passes.
+# `ambiguities` reports 1, and the same 1 whether this package is loaded alone or with everything
+# `runtests.jl` loads before this file. It is a `Dense{M, N, true}` functor against
+# `AbstractNeuralNetworks.Affine`'s, and it is benign: `Dense` is not a subtype of `Affine` and the
+# two have no common instance, so no call can reach the pair. It is the same `resnet.jl:63` method
+# as the first piracy above.
 #
-# `ambiguities` stays off either way: 27 (or 18) is not 0, and an exact assertion on the
-# `PoissonTensor` pile would turn the suite red on an unrelated upstream upgrade the way the piracy
-# count does not.
+# The two settings agreeing is what makes the gate below trustworthy, and it holds because no
+# method of this package claims an argument position wholesale on `PoissonTensor`. That type is an
+# `AbstractMatrix{T}`, so such a method meets every special-array method another package writes
+# against `AbstractMatrix`:
 #
-# Fixing the piracy set is a change to `src/` that this file does not own, and it is recorded under
-# `## Open Issues` in `CHANGELOG.md` with the witnesses. Marking it `broken = true` would leave a
-# check that reports success while the defect stands, which is the failure mode this test suite's
-# guards exist to remove. Six checks that fail on a real regression are worth more than eight that
-# are all switched off.
+#   `*(𝕁::PoissonTensor{T}, v::Strided…)` takes a `Strided…` right-hand side, which excludes each
+#       special array type `X` that ArrayLayouts, FillArrays, Symbolics and GeometricOptimizers
+#       define a `*(::AbstractMatrix, ::X)` for, and still covers everything the package builds.
+#   `getindex(𝕁::PoissonTensor, i::Int, j::Int)` types its indices, which excludes the `Block`,
+#       `BlockIndex` and `BandRangeType` methods BandedMatrices and BlockArrays add to
+#       `AbstractMatrix`. Neither of those two loads with this package alone, so an untyped index
+#       pair here is a collision visible only from inside the suite.
+#
+# `ambiguities` still stays off, because 1 is not 0 and Aqua's check has no way to exempt a pair.
+# The assertion below replaces it and is strictly better here: it names the number, so it fails
+# both when an ambiguity is added and when this one is closed without the comment going with it.
+#
+# Marking either check `broken = true` would leave a check that reports success while the defect
+# stands, which is the failure mode this test suite's guards exist to remove.
 #
 # `unbound_args` is the one check here whose verdict depends on the Julia version: it passes on
 # `min`, `1` and `pre`, and fails on nightly over one method. That is *B9* under `## Open Issues`.
@@ -61,16 +64,16 @@ using Test
     # A switched-off check detects nothing, so the count it would have reported drifts unobserved,
     # and so does every `src` line named above. This is the gate. It fails when a piracy is added,
     # and it fails when one is removed without the entry above and in `CHANGELOG.md` going with it.
-    @test length(Aqua.Piracy.hunt(GeometricMachineLearning)) == 12
+    @test length(Aqua.Piracy.hunt(GeometricMachineLearning)) == 3
 
-    # `ambiguities` gets no such gate, and the measurements above are why it cannot have one. The
-    # remaining ambiguities are the `PoissonTensor` pile, so the count moves with ArrayLayouts',
-    # FillArrays', Symbolics', GeometricOptimizers', BandedMatrices' and BlockArrays' versions
-    # rather than with anything in this tree -- and with *which* of them a given process has
-    # loaded, which depends on the order `runtests.jl` includes its subjects. An exact assertion
-    # would therefore go red on an unrelated upgrade, or on a reordering of this suite, with
-    # nothing in `src/` having changed. It could not tell that apart from a regression, which is
-    # the one thing a gate has to do.
+    # The ambiguity count gets the same gate, and it can carry one because the single pair is
+    # between a method of this package and one of `AbstractNeuralNetworks`'. The count is the same
+    # in isolation and in the suite, and nothing outside this repository's own `[compat]` moves it
+    # -- so a red here is a regression, not an unrelated upstream upgrade and not a reordering of
+    # this suite. A count that moved with ArrayLayouts', FillArrays', Symbolics',
+    # GeometricOptimizers', BandedMatrices' and BlockArrays' versions, and with *which* of them a
+    # given process had loaded, could not tell those apart, and could not be asserted.
+    @test length(Test.detect_ambiguities(GeometricMachineLearning; recursive = true)) == 1
 end
 
 # `ExplicitImports` answers a question Aqua does not ask, and the reason to gate on it is not
@@ -89,16 +92,16 @@ end
 #                                    -- `norm`, `@kernel`, `rrule`, `pullback` and the rest. Naming
 #                                    every one is a change to the whole module header and a judgement
 #                                    per name, not a by-product of a dead-code pass.
-#   all_explicit_imports_are_public  11 names this package imports are not marked `public` upstream
-#                                    -- `Architecture`, `AbstractExplicitLayer`, `add!`,
-#                                    `_compute_loss`, `assign_columns`, `description` among them.
+#   all_explicit_imports_are_public  10 names this package imports are not marked `public` upstream
+#                                    -- `Architecture`, `AbstractExplicitLayer`, `_compute_loss`,
+#                                    `assign_columns`, `description`, `dim` among them.
 #                                    Each is deliberate and most are re-exported here; the fix is
 #                                    upstream declaring them, not this package importing less.
 #   all_qualified_accesses_via_owners  2: `GeometricOptimizers.Gradient` and
 #                                    `GeometricOptimizers.direction`, both owned by `SimpleSolvers`.
 #                                    Reaching them through `GeometricOptimizers` is how the rest of
 #                                    `src/optimizers/optimizer.jl` is written.
-#   all_qualified_accesses_are_public  22, the same class as the 11 above: `KernelAbstractions.zeros`,
+#   all_qualified_accesses_are_public  24, the same class as the 10 above: `KernelAbstractions.zeros`,
 #                                    `ForwardDiff.jacobian`, `GeometricOptimizers.momentum` and so on.
 #
 # Each of the four is a real backlog item rather than a taste, and none of them is this branch's.
