@@ -1478,6 +1478,21 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   index; they now read `e^{a_{i'}}` and `e^{A_{i'j'}}`. `src/data_loader/batch.jl`'s "this is
   neeced" says what a kernel needs and why.
 
+- **Three more docstring typos, of two kinds the entry above missed.** That sweep read the prose and
+  the identifiers; these are single characters inside the argument bullets, where a reader sees a
+  rendering defect rather than a misspelling.
+
+  `StandardTransformerIntegrator`'s `n_blocks` bullet had a space before its colon —
+  `raw""" : the number of …` where its five siblings write `raw""":` — so it rendered as
+  `` `n_blocks::Int = 1` : the number of … ``. It was the only one of the 38 interpolated bullets in
+  `src/` with that defect; the `attention_activation` bullet beside it had the same one and was
+  fixed earlier in this release.
+
+  Two bullets annotated a keyword's type with one colon instead of two:
+  `add_connection:Bool` in the same docstring, and `average:Bool=false` in
+  `src/layers/classification.jl`. Both now read `::Bool`, and the `classification.jl` one also takes
+  the spacing its neighbours use. These were the only two such bullets in `src/`.
+
 ### Added
 
 - **A package extension for `GPUArraysCore` restores `PoissonTensor * wrapped_gpu_array`.**
