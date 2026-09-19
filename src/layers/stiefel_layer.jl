@@ -1,6 +1,3 @@
-# """
-# Defines a layer that performs simple multiplication with an element of the Stiefel manifold.
-# """
 struct StiefelLayer{M, N} <: ManifoldLayer{M, N} end
 
 function StiefelLayer(n::Integer, N::Integer)

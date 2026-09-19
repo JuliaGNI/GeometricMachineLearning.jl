@@ -1823,6 +1823,17 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   documented as `true` all along. The other fourteen pass on `main` and are drift guards, not
   reproductions: they establish the baseline and will catch the defect if it happens again.
 
+- **`test/transformers/symplectic_transformer_chain.jl` builds both `Chain(::SymplecticTransformer)`
+  method shapes and asserts the layer count and sequence of layer types.** `SymplecticTransformer(4)`
+  takes the `:NoUpscale` path and yields 6 layers; `SymplecticTransformer(4; transformer_dim = 8)`
+  takes `:Upscale` and yields 8 — the six, plus a `PSDLayer` at each end.
+
+  Both shapes were unreached by any test before: `create_layers_for_transformer_dimension_equal_system_dimension`
+  and its `unequal` sibling are only called by these chain constructors. `git grep 'SymplecticTransformer' -- test/`
+  found only two comments and the construction at `test/attention/documented_defaults.jl`, and nothing
+  built a `Chain` from one. The file is wired into `test/transformers/runtests.jl` as the safetestset
+  "Symplectic Transformer chain construction". 12 assertions, all passing.
+
 ### Documentation
 
 - **A *Positional Encoding* page**, `docs/src/layers/positional_encoding.md`, joins the
@@ -2064,6 +2075,14 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `SympNetLayer` functor, said only that it calls the helper above it, and is deleted.
   `assign_q_and_p.jl` and `sympnets.jl` were not on the audit's list; they are the same defect,
   found by the same sweep.
+
+  Eight plain commented-out docstrings — `# """` blocks — are swept separately. Four said
+  something the function name does not and become ordinary comments, in
+  `src/architectures/autoencoder.jl` (three) and `src/architectures/symplectic_autoencoder.jl`.
+  Three said something already carried by the name and signature below and are deleted, in
+  `src/layers/stiefel_layer.jl` and `src/architectures/autoencoder.jl` (on `encoder_parameters`
+  and `decoder_parameters`). One, in `src/data_loader/tensor_assign.jl`, was already resolved
+  earlier on this branch.
 
 - **`TODO.md` is deleted from the repository root.** Of its three items, two are already done —
   `LagrangianNeuralNetwork` is exported and tested, and `PoissonTensor` generalises the symplectic

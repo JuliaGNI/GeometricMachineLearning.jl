@@ -21,3 +21,6 @@ end
 @safetestset "Linear Symplectic Transformer" begin
     include("linear_symplectic_transformer.jl")
 end
+@safetestset "Symplectic Transformer chain construction" begin
+    include("symplectic_transformer_chain.jl")
+end
