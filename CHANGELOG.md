@@ -565,6 +565,29 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   Two unrelated meanings on one name is one too many, and the new name says that it mutates its first
   argument, which the old one hid.
 
+- **`SymplecticAttentionQ(M)` and `SymplecticAttentionP(M)` now default to `symmetric = true`.** They
+  defaulted to `false` before, while their docstrings interpolated a constant saying `true` — the
+  documented default was not the one a caller got. The only in-tree caller, `SymplecticTransformer`,
+  already passed `symmetric = true` explicitly, so nothing in the package, the tests, the docs or the
+  scripts changes behaviour. An external caller of either layer now gets a `SymplecticAttention{M, M,
+  LayerType, :symmetric}` with a `SymmetricMatrix` weight instead of a plain matrix, and a
+  `parameterlength` that reflects the symmetric constraint — for `M = 4` (i.e. `M2 = 2`), `(2+1)*2÷2
+  = 3` instead of `2*2 = 4`.
+
+  The keyword is now also typed `::Bool`, so passing a non-boolean value is a `MethodError` rather
+  than silently taking the `:arbitrary` branch.
+
+- **`AbstractNeuralNetworks.NetworkLoss(nn::NeuralNetwork)` is deleted, as type piracy.** The
+  function and the argument type both belong to `AbstractNeuralNetworks`, so the method owned
+  neither, and nothing in the package, the tests, the docs or the scripts called it. A
+  `NetworkLoss(::NeuralNetwork)` forwarding to `architecture(nn)` belongs in
+  `AbstractNeuralNetworks` itself.
+
+  The three `NetworkLoss` methods that remain are unaffected, because each dispatches on a GML-owned
+  architecture rather than on the container: `NetworkLoss(::HamiltonianArchitecture)`
+  (`src/loss/hnn_loss.jl`), `NetworkLoss(::LagrangianNeuralNetwork)` (`src/loss/lnn_loss.jl`) and
+  `NetworkLoss(::TransformerIntegrator, prediction_window)` (`src/loss/losses.jl`).
+
 ### Changed
 
 - **`MultiHeadAttention` concatenates its heads once instead of once per head.** Both
@@ -925,6 +948,21 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `scripts/reproduction/harmonic_oscillator.jl` also drops `using GeometricSolutions` and
   `using GeometricEquations`. No name from either package appears in the file: `hodeensemble` and
   `exact_solution` both come from `GeometricProblems.HarmonicOscillator`.
+
+- **Default constants now use the lowercase `<prefix>_<name>_default` naming convention.**
+  Seven constants are renamed: `ST_N_SYMPNET_DEFAULT`, `ST_L_DEFAULT`,
+  `ST_SYMPNET_ACTIVATION_DEFAULT` and `ST_ATTENTION_ACTIVATION_DEFAULT` in
+  `src/architectures/symplectic_transformer.jl`, `STI_ATTENTION_ACTIVATION_DEFAULT` in
+  `src/architectures/standard_transformer_integrator.jl`, and
+  `SYMPLECTICATTENTION_SYMMETRIC_DEFAULT` and `SYMPLECTICATTENTION_ACTIVATION_DEFAULT` in
+  `src/layers/symplectic_attention.jl`. Each takes the lowercase form its neighbours already use —
+  `st_n_sympnet_default`, `sti_attention_activation_default`, `sa_symmetric_default` and so on —
+  joining the 31 constants in `src/` that spell it that way. The first two files had both spellings
+  side by side. None of the seven is exported.
+
+  `src/architectures/hamiltonian_neural_network.jl`'s three (`HNN_nhidden_default`,
+  `HNN_activation_default`, `GHNN_integrator_default`) are deliberately left: they are internally
+  consistent in an acronym-prefixed form, and PR #207 rewrites that file.
 
 ### Fixed
 
@@ -1418,6 +1456,23 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   design, and `test/arrays/poisson_tensor.jl` "the GPU extension loads and carries the three
   wrapped-array methods" for the CI-exercisable gate.
 
+- **`SymplecticTransformer`'s docstring and `n_sympnet`'s rendering were corrected.** The
+  `symmetric` keyword's bullet had no description at all, and said `symmetric::Bool=false` where
+  the constructor defaults to `true`. Both the description and the default are now correct,
+  interpolating the constant like the other four keywords do.
+
+  `n_sympnet`'s bullet rendered its default as `(2)` because of a stray opening paren in the
+  interpolation string. It now renders as `2`.
+
+- **Several typos are fixed.** `create_layers_for_transformer_dimension_eqaul_system_dimension` and
+  its `uneqaul` sibling are corrected to `equal`; both are internal to
+  `src/architectures/symplectic_transformer.jl`, which holds all five occurrences, and
+  `linear_symplectic_transformer.jl` never had the pair. The two softmax docstrings in
+  `src/activations/softmax.jl` wrote `\sum_{i'=1}^d e^{a_i}` and
+  `\sum_{i'=1,j'=1}^{d,\bar{d}} e^{A_{ij}}`, summing a term that does not depend on the summation
+  index; they now read `e^{a_{i'}}` and `e^{A_{i'j'}}`. `src/data_loader/batch.jl`'s "this is
+  neeced" says what a kernel needs and why.
+
 ### Added
 
 - **A package extension for `GPUArraysCore` restores `PoissonTensor * wrapped_gpu_array`.**
@@ -1749,6 +1804,20 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `getindex` forwards the whole index to its wrapped array, so a GPU array backend stays usable
   without requiring a GPU machine to run the gate.
 
+- **`test/attention/documented_defaults.jl` reads each keyword default off a constructed object
+  and compares it with the constant.** A keyword default written as a literal and documented
+  through a constant can drift apart silently — the docstring interpolates the constant, the
+  caller gets the literal, and nothing compares the two. Only a test that constructs the object
+  and reads the default it actually got can catch that.
+
+  The file covers `SymplecticAttentionQ`/`SymplecticAttentionP` (which carry `symmetric` in a
+  type parameter, so the default is read off the type), `SymplecticTransformer` (which carries
+  it in a field), and `StandardTransformerIntegrator` — sixteen assertions total. **Two of them
+  fail on `main`**: the `symmetric` type parameter of each attention layer, recorded under
+  *Removed (breaking)* above, where `symmetric` now defaults to `true` and the constant was
+  documented as `true` all along. The other fourteen pass on `main` and are drift guards, not
+  reproductions: they establish the baseline and will catch the defect if it happens again.
+
 ### Documentation
 
 - **A *Positional Encoding* page**, `docs/src/layers/positional_encoding.md`, joins the
@@ -1937,6 +2006,63 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `test/losses/reduced_loss_optimization.jl`, which trains `ReducedLoss` through the `Optimizer`
   functor on the CPU. Converting it would add training to a job that already takes the better part
   of an hour and would establish only what a test establishes in seconds.
+
+- **The binding `A = ps.A` in `SymplecticAttentionQ{:symmetric}` is load-bearing, not an
+  incidental allocation.** The comment that stood there asked "for some reason we have to
+  allocate a local variable here. This should be further investigated." The reason: reading
+  `ps.A` twice through the wrapper degrades the Zygote gradient leaf from a `SymmetricMatrix`
+  to a plain `Matrix`. This was measured — removing the binding makes
+  `test/parameters/symplectic_attention_network_parameters_gradient.jl` fail with `Matrix{Float64}
+  <: SymmetricMatrix` evaluated false. The comment now states that and points at the test. The
+  binding costs no allocation; it is the number of accesses that decides the structure.
+
+- **Fourteen historical comment blocks are rewritten or removed.** Everything but `CHANGELOG.md`
+  describes the package as it is, not how it got that way. Where a block carried only an account
+  of deletion (a tombstone) it is gone; where it carried a present-tense fact, the fact stays and
+  the history goes. Most of the fourteen were written by earlier parts of this same release, as
+  tombstones for what they removed.
+
+  Gone entirely, each already carried by the release notes above: the `AbstractCache` alias, the
+  `ClassificationTransformerLoss` and `NetworkLoss(::NeuralNetwork)` removals, the deprecated
+  `Gradient` constructor, `go_bridges.jl`, `assign_batch_kernel!`/`assign_output_kernel!`, the
+  `SymplecticLieAlgMatrix` exports and the `∇L`/`∇∇L`/`∇q̇∇q̇L` definitions. Kept as a present-tense
+  fact with the history dropped: `_go_update_leaf!` has three methods and not four because Adam with
+  a decaying learning rate *is* Adam, only `step_size` differing; `update!` is not imported from
+  `AbstractNeuralNetworks` because that is a different generic from the `GeometricBase.update!` with
+  methods for the optimizer caches; and `LNNLoss` reaches its derivatives through
+  `SymbolicNeuralNetworks.Jacobian` because a nested `Zygote.gradient` inside a loss breaks the
+  parameter gradient.
+
+  **One of the fourteen was false.** `src/GeometricMachineLearning.jl` claimed "ten exported names
+  are still undefined, which is issue C10". Aqua's `undefined_exports` passes, `test/exports.jl`'s
+  allowlist is empty, and C10 is closed by this release — see *Removed (breaking)* above.
+
+- **One comment, copied into five kernel files, named the wrong operation in four of them.** `#
+  Simple kernel for tensor-matrix multiplication (maybe you need to add a block index here!)`
+  headed `mat_tensor_mul.jl`, `tensor_mat_mul.jl`, `tensor_tensor_mul.jl`,
+  `tensor_transpose_tensor_mul.jl` and `tensor_tensor_transpose_mul.jl`. Only the second is a
+  tensor-matrix multiplication. Each now states its own operation as an indexed assignment — for
+  example `C[:, :, k] = A[:, :, k]' * B[:, :, k]` for `tensor_transpose_tensor_mul.jl` — and the
+  parenthesis, which was a musing rather than a statement, is dropped.
+
+- **Commented-out code is removed.** Two dead `retraction` methods and a `#= … =#` block holding a
+  `Base.:*` and an `rgrad` method in `src/layers/manifold_layer.jl`; a superseded positional
+  constructor in `src/architectures/standard_transformer_integrator.jl`; a superseded
+  `orthonormal_activation_cayley(::AbstractMatrix)` in `src/layers/volume_preserving_attention.jl`;
+  and two commented-out lines, an `import` and an `export`, in `src/GeometricMachineLearning.jl`.
+  None has a live call site.
+
+  Five commented-out docstrings — `# @doc raw"""` blocks — are separate. Four said something the
+  function name does not and become ordinary comments, in `src/layers/multi_head_attention.jl`
+  (two), `src/kernels/assign_q_and_p.jl` and `src/layers/sympnets.jl`. The fifth, on the
+  `SympNetLayer` functor, said only that it calls the helper above it, and is deleted.
+  `assign_q_and_p.jl` and `sympnets.jl` were not on the audit's list; they are the same defect,
+  found by the same sweep.
+
+- **`TODO.md` is deleted from the repository root.** Of its three items, two are already done —
+  `LagrangianNeuralNetwork` is exported and tested, and `PoissonTensor` generalises the symplectic
+  matrix to any even dimension — and the third goes to `## Open Issues` as a follow-up item rather
+  than being silently left behind.
 
 ### Infrastructure
 
@@ -3688,6 +3814,23 @@ they resolved to is in the release notes above.
   Closing it is a `DataLoader(input::AbstractArray{T, 3}, output::AbstractArray{T1, 3})` constructor
   with the two element types free. That is an API addition rather than a cleanup, which is why the
   test records the gap instead of the same change closing it.
+
+- **C18. `src/kernels/exponentials/tensor_exponential.jl` no longer defines `tensor_exponential`;
+  it holds the identity tensor and its `rrule`, used by `tensor_cayley.jl` and `cpu_inverse.jl`.**
+  The file name, and the `exponentials/` directory around it, are wider than what they hold. A
+  comment in the file itself cites "issue C18" by number, so this entry exists to keep that reference
+  valid. Renaming both the file and the directory is the fix.
+
+- **C19. `_make_block_for_initialization` has two methods** — `src/architectures/symplectic_transformer.jl`
+  and `src/architectures/linear_symplectic_transformer.jl` — that differ only in which fields they read
+  from their argument: one reads `arch.transformer_dim` and `arch.sympnet_activation`, the other reads
+  `arch.dim` and `arch.activation`. The bodies are otherwise identical. This stood as a `TODO` in the
+  source; a comment must stand on its own, so it is recorded here instead. Closing it means agreeing
+  on one set of field names across the two architectures, or passing the dimension and the activation
+  in rather than reading them off `arch`.
+
+- **C20. There is no Knet.jl example for the Hamiltonian neural network.** The deleted `TODO.md` asked
+  for one. Recorded rather than dropped; nothing depends on it.
 
 ### D. Unverified
 
