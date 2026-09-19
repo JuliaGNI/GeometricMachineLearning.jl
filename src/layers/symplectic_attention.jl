@@ -75,14 +75,14 @@ function SymplecticAttentionQ(M::Integer; symmetric::Bool = sa_symmetric_default
         activation::AbstractSoftmax = sa_activation_default)
     @assert iseven(M) "Dimension must be even!"
     AT = typeof(activation)
-    symmetric == false ? SymplecticAttention{M, M, :Q, :arbitrary, AT}(activation) :
+    !symmetric ? SymplecticAttention{M, M, :Q, :arbitrary, AT}(activation) :
     SymplecticAttention{M, M, :Q, :symmetric, AT}(activation)
 end
 function SymplecticAttentionP(M::Integer; symmetric::Bool = sa_symmetric_default,
         activation::AbstractSoftmax = sa_activation_default)
     @assert iseven(M) "Dimension must be even!"
     AT = typeof(activation)
-    symmetric == false ? SymplecticAttention{M, M, :P, :arbitrary, AT}(activation) :
+    !symmetric ? SymplecticAttention{M, M, :P, :arbitrary, AT}(activation) :
     SymplecticAttention{M, M, :P, :symmetric, AT}(activation)
 end
 
@@ -129,8 +129,8 @@ function (d::SymplecticAttentionQ{M, M, :arbitrary})(
 end
 
 # `A = ps.A` once, and then `A` twice: the local binding is what keeps the `SymmetricMatrix`
-# structure in the Zygote gradient of this layer. Read through the wrapper twice, the gradient leaf
-# degrades to a plain `Matrix` -- `test/parameters/symplectic_attention_network_parameters_gradient.jl`
+# structure in the Zygote gradient of this layer. Read `ps.A` twice and the gradient leaf degrades
+# to a plain `Matrix` -- `test/parameters/symplectic_attention_network_parameters_gradient.jl`
 # asserts both halves of that, and the last testset there covers this method. The binding costs no
 # allocation; it is the number of accesses that decides the structure.
 function (d::SymplecticAttentionQ{M, M, :symmetric})(

@@ -1,5 +1,5 @@
 """
-A few data loader/tensor assignment functions that were developed during Cemracs. 
+A few data loader/tensor assignment functions.
 
 They assign batched tensors during training based on a tensor with three axes: (i) system dimension, (ii) parameter dependence (including initial conditions), (iii) time step.
 
@@ -52,9 +52,7 @@ function assign_output_estimate(full_output::AbstractArray{T, 3}, prediction_win
     output_estimate
 end
 
-# """
-# Used for differentiating assign_output_estimate (this appears in the loss). 
-# """
+# Used for differentiating `assign_output_estimate`, which appears in the loss.
 @kernel function augment_zeros_kernel!(
         zero_tensor::AbstractArray{T, 3}, output_diff::AbstractArray{T, 3},
         seq_length, prediction_window) where {T}

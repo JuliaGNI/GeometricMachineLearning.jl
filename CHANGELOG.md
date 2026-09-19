@@ -565,18 +565,6 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   Two unrelated meanings on one name is one too many, and the new name says that it mutates its first
   argument, which the old one hid.
 
-- **`SymplecticAttentionQ(M)` and `SymplecticAttentionP(M)` now default to `symmetric = true`.** They
-  defaulted to `false` before, while their docstrings interpolated a constant saying `true` — the
-  documented default was not the one a caller got. The only in-tree caller, `SymplecticTransformer`,
-  already passed `symmetric = true` explicitly, so nothing in the package, the tests, the docs or the
-  scripts changes behaviour. An external caller of either layer now gets a `SymplecticAttention{M, M,
-  LayerType, :symmetric}` with a `SymmetricMatrix` weight instead of a plain matrix, and a
-  `parameterlength` that reflects the symmetric constraint — for `M = 4` (i.e. `M2 = 2`), `(2+1)*2÷2
-  = 3` instead of `2*2 = 4`.
-
-  The keyword is now also typed `::Bool`, so passing a non-boolean value is a `MethodError` rather
-  than silently taking the `:arbitrary` branch.
-
 - **`AbstractNeuralNetworks.NetworkLoss(nn::NeuralNetwork)` is deleted, as type piracy.** The
   function and the argument type both belong to `AbstractNeuralNetworks`, so the method owned
   neither, and nothing in the package, the tests, the docs or the scripts called it. A
@@ -964,6 +952,22 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `src/architectures/hamiltonian_neural_network.jl`'s three (`HNN_nhidden_default`,
   `HNN_activation_default`, `GHNN_integrator_default`) are deliberately left: they are internally
   consistent in an acronym-prefixed form, and PR #207 rewrites that file.
+
+### Changed (breaking)
+
+- **`SymplecticAttentionQ(M)` and `SymplecticAttentionP(M)` now default to `symmetric = true`.** They
+  defaulted to `false` before, while their docstrings interpolated a constant saying `true` — the
+  documented default was not the one a caller got. The only in-tree caller, `SymplecticTransformer`,
+  passes `symmetric = arch.symmetric` at `src/architectures/symplectic_transformer.jl:90` and `:94`,
+  where that value is `true` only because the constructor defaults to `st_symmetric_default`, which is
+  `true` at `src/architectures/symplectic_transformer.jl:6`, so nothing in the package, the tests, the
+  docs or the scripts changes behaviour. An external caller of either layer now gets a
+  `SymplecticAttention{M, M, LayerType, :symmetric}` with a `SymmetricMatrix` weight instead of a plain
+  matrix, and a `parameterlength` that reflects the symmetric constraint — for `M = 4` (i.e. `M2 = 2`),
+  `(2+1)*2÷2 = 3` instead of `2*2 = 4`.
+
+  The keyword is now also typed `::Bool`, so passing a non-boolean value is a `MethodError` rather
+  than silently taking the `:arbitrary` branch.
 
 ### Fixed
 
@@ -2011,16 +2015,17 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 - **The binding `A = ps.A` in `SymplecticAttentionQ{:symmetric}` is load-bearing, not an
   incidental allocation.** The comment that stood there asked "for some reason we have to
   allocate a local variable here. This should be further investigated." The reason: reading
-  `ps.A` twice through the wrapper degrades the Zygote gradient leaf from a `SymmetricMatrix`
-  to a plain `Matrix`. This was measured — removing the binding makes
-  `test/parameters/symplectic_attention_network_parameters_gradient.jl` fail with `Matrix{Float64}
-  <: SymmetricMatrix` evaluated false. The comment now states that and points at the test. The
-  binding costs no allocation; it is the number of accesses that decides the structure.
+  `ps.A` twice degrades the Zygote gradient leaf from a `SymmetricMatrix` to a
+  plain `Matrix`. This was measured — removing the binding makes
+  `test/parameters/symplectic_attention_network_parameters_gradient.jl` fail with
+  `Matrix{Float64} <: SymmetricMatrix` evaluated false. The comment now states that
+  and points at the test. The binding costs no allocation; it is the number of
+  accesses that decides the structure.
 
-- **Fourteen historical comment blocks are rewritten or removed.** Everything but `CHANGELOG.md`
+- **Historical comment blocks are rewritten or removed.** Everything but `CHANGELOG.md`
   describes the package as it is, not how it got that way. Where a block carried only an account
   of deletion (a tombstone) it is gone; where it carried a present-tense fact, the fact stays and
-  the history goes. Most of the fourteen were written by earlier parts of this same release, as
+  the history goes. Most were written by earlier parts of this same release, as
   tombstones for what they removed.
 
   Gone entirely, each already carried by the release notes above: the `AbstractCache` alias, the
@@ -2034,7 +2039,7 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `SymbolicNeuralNetworks.Jacobian` because a nested `Zygote.gradient` inside a loss breaks the
   parameter gradient.
 
-  **One of the fourteen was false.** `src/GeometricMachineLearning.jl` claimed "ten exported names
+  **One of the historical comment blocks was false.** `src/GeometricMachineLearning.jl` claimed "ten exported names
   are still undefined, which is issue C10". Aqua's `undefined_exports` passes, `test/exports.jl`'s
   allowlist is empty, and C10 is closed by this release — see *Removed (breaking)* above.
 

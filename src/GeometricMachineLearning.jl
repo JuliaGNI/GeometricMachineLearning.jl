@@ -152,11 +152,6 @@ include("kernels/kernel_ad_routines/vec_tensor_mul.jl")
 export MatrixSoftmax, VectorSoftmax
 include("activations/softmax.jl")
 
-# `UnknownProblem` and `NothingFunction` were exported here, under the comment "are these needed?".
-# The answer was no: neither type had a use anywhere in the package, the tests, the docs or the
-# scripts, and `NothingFunction`'s only reader was an `is_NothingFunction` predicate that nothing
-# called either. Both types are gone with the export.
-
 # `_diff` and `_norm` are the `NamedTuple`/`(q, p)` arms of subtraction and the norm, and neither is
 # exported: they are helpers of `src/reduced_system/`, not surface. Nothing named `_add` stands
 # beside them, and nothing here adds a method to `AbstractNeuralNetworks.add!`: that would be
@@ -166,10 +161,6 @@ include("activations/softmax.jl")
 export GradientLayerQ, GradientLayerP, ActivationLayerQ, ActivationLayerP, LinearLayerQ,
        LinearLayerP
 export Linear
-# `SymplecticStiefelLayer`, `ResidualLayer`, `LinearSymplecticLayerP`, `LinearSymplecticLayerQ`,
-# `convert_to_dev`, `Device` and `CPUDevice` were exported here and defined nowhere. The layer of
-# `ResidualLayer`'s shape that this package loads is `ResNetLayer`; the device operations have no
-# implementation at all.
 
 # The manifolds are GeometricOptimizers' too, along with the geometry that goes with them.
 export StiefelManifold, GrassmannManifold, Manifold
@@ -225,8 +216,7 @@ const GradientOptimizer = GradientMethod
 const MomentumOptimizer = MomentumMethod
 const AdamOptimizer = Adam
 export GradientOptimizer, MomentumOptimizer, AdamOptimizer
-# Re-exported from GeometricOptimizers, which owns the one definition of them now. GML's own
-# `AdamOptimizerWithDecay` was a second, incompatible export of the same name — issue B1.
+# Re-exported from GeometricOptimizers, which owns the one definition of them.
 export AdamOptimizerWithDecay, DecayingStatic
 
 export NeuralNetwork

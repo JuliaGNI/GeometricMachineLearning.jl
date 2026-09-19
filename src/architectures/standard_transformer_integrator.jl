@@ -26,7 +26,7 @@ The following are optional keyword arguments:
      raw""": the activation used in the upscaling layer.
 - `resnet_activation = """ * "$(sti_resnet_activation_default)`" *
      raw""": the activation used for the [`ResNetLayer`](@ref).
-- `attention_activation = """ * "$(sti_attention_activation_default)` " *
+- `attention_activation = """ * "$(sti_attention_activation_default)`" *
      raw""": the activation used for the [`MultiHeadAttention`](@ref) layer.
 - `add_connection:Bool = """ * "$(sti_add_connection_default)`" *
      raw""": specifies if the input should be added to the output.

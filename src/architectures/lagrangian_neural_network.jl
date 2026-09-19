@@ -22,7 +22,3 @@ function Chain(nn::LagrangianNeuralNetwork)
         Linear(nn.width, 1; use_bias = false)
     )
 end
-
-# The gradient, the Hessian and the `q̇q̇` block of the Hessian of this network are `LNNLoss`'s
-# business, and it reaches them through `SymbolicNeuralNetworks.Jacobian` rather than through
-# `Zygote`: a nested `Zygote.gradient` inside a loss breaks the parameter gradient.
