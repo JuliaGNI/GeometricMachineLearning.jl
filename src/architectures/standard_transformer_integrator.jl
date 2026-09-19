@@ -19,7 +19,7 @@ It is a composition of [`MultiHeadAttention`](@ref) layers and [`ResNetLayer`](@
 The following are optional keyword arguments:
 - `transformer_dim::Int = sys_dim`: this is the dimension *after the upscaling*.
 - `n_blocks::Int = """ * "$(sti_n_blocks_default)`" *
-     raw""" : the number of [`ResNetLayer`](@ref) blocks.
+     raw""": the number of [`ResNetLayer`](@ref) blocks.
 - `n_heads::Int = sys_dim`: the number of heads in the multihead attention layer.
 - `L::Int = """ * "$(sti_L_default)`" * raw""": the number of transformer blocks.
 - `upscaling_activation = """ * "$(sti_upscaling_activation_default)`" *
@@ -28,7 +28,7 @@ The following are optional keyword arguments:
      raw""": the activation used for the [`ResNetLayer`](@ref).
 - `attention_activation = """ * "$(sti_attention_activation_default)`" *
      raw""": the activation used for the [`MultiHeadAttention`](@ref) layer.
-- `add_connection:Bool = """ * "$(sti_add_connection_default)`" *
+- `add_connection::Bool = """ * "$(sti_add_connection_default)`" *
      raw""": specifies if the input should be added to the output.
 """
 struct StandardTransformerIntegrator{AT1, AT2, AT3} <: TransformerIntegrator

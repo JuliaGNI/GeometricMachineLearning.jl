@@ -17,7 +17,7 @@ where ``X`` is a matrix and ``\mathtt{compute\_vector}`` specifices how this mat
 # Arguments
 
 `ClassificationLayer` has the following optional keyword argument: 
-- `average:Bool=false`.
+- `average::Bool = false`.
 
 If this keyword argument is set to `true`, then the output is computed as 
 ```math
