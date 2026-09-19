@@ -227,7 +227,7 @@ end
     output[i, j, k] = data[i, indices[1, k] + seq_length + j - 1, indices[2, k]]
 end
 
-# this is neeced if we want to use the vector of tuples in a kernel
+# A kernel cannot index a `Vector{Tuple{Int, Int}}`, so the batch indices go in as a `2 × n` matrix.
 function convert_vector_of_tuples_to_matrix(backend::Backend, batch_indices_tuple::Vector{Tuple{
         Int, Int}})
     _batch_size = length(batch_indices_tuple)

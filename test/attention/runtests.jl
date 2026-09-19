@@ -27,3 +27,6 @@ end
 @safetestset "compute_output_of_mha infers concretely" begin
     include("multi_head_attention_inference.jl")
 end
+@safetestset "Documented keyword defaults are the constructed ones" begin
+    include("documented_defaults.jl")
+end
