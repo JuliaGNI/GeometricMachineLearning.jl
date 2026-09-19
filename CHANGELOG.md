@@ -68,12 +68,19 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   This corrects what *B7* said about them. That entry called four of the six load-bearing, because
   the upstream generic is a `CanonicalIndexError` on those types. The reasoning is right and the
   conclusion is not: **nothing called them.** `add!` had no occurrence in `src/`, `ext/`, `test/`,
-  `docs/src` or `scripts/` beyond the definitions and their own recursion, `AbstractNeuralNetworks`
-  itself calls only the two-argument form on plain arrays, and the family was never exported — the
-  module file imported the generic without re-exporting it, so `:add! ∉ names(GeometricMachineLearning)`.
-  The comment in the deleted file claiming it had been exported since 0.1 was false. A caller who
+  `docs/src` or `scripts/` beyond the definitions and their own recursion, and
+  `AbstractNeuralNetworks` itself calls only the two-argument form on plain arrays. A caller who
   wants these reaches `GeometricOptimizers`, which defines the identical set against its own
   generic.
+
+  **`add!` is no longer exported, but it was until recently, and the deleted file's comment was
+  stale rather than wrong.** That comment read "It is exported by GML and has been since 0.1".
+  `export _add, apply_toNT, add!` stands at v0.5.0 and v0.6.0, and at v0.4.8 with
+  `split_and_flatten` beside it; the export went **earlier in this same release**, which is the
+  change recorded under *Removed (breaking)* as "`_add` and `add!` are gone from the export list".
+  So at this branch's base `:add! ∉ names(GeometricMachineLearning)` and the module file imports
+  the generic without re-exporting it — which is why deleting the methods is safe — but a 0.6.0
+  caller could reach them by name. That is what keeps this entry under a breaking heading.
 
   `AbstractTriangular` goes from the module file's imports with them: it was there for
   `gml_extensions.jl` and for nothing else.
@@ -89,8 +96,9 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `𝕁 * (q; p) = (p; -q)` either way — and only the fast path is given up, for an argument no call
   site in this repository builds. A 3-tensor has no generic fallback, so a non-strided one is now a
   `MethodError`; nothing here passes one. `StridedArray` still covers `Array`, a strided
-  `SubArray`, an `Adjoint` of a `Matrix`, and the GPU arrays, since `CuArray` and `MtlArray` are
-  `DenseArray`s. The `(q, p)` `NamedTuple` method is untouched.
+  `SubArray`, and the GPU arrays, since `CuArray` and `MtlArray` are `DenseArray`s. An `Adjoint` or
+  a `Transpose` of a `Matrix` is **not** strided and takes the generic path, at the same value. The
+  `(q, p)` `NamedTuple` method is untouched.
 
   What it buys is under *Fixed*.
 
@@ -529,6 +537,11 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   ```julia
   using AbstractNeuralNetworks: add!
   ```
+
+  Those structured-type methods went too, later in this same release — see *Removed (breaking)*
+  above, where the whole `add!` family is deleted as piracy with no caller. This package now adds
+  no method to `AbstractNeuralNetworks.add!` at all, and the import above is still how a caller
+  reaches the generic.
 
   `_add`'s two siblings `_norm` and `_diff` were never exported, and they are the two of the three
   that anything in `src/` actually calls; `_add` was the odd one out. Qualified, it still works.
@@ -1336,6 +1349,12 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   type, invisible when `GeometricMachineLearning` is measured alone. `test/aqua.jl` records both
   numbers and asserts neither: a count that moves with six upstream packages, and with which of
   them a given process happens to have loaded, cannot tell a regression from an upgrade.
+
+  **Both of those 26 are closed later in this same release**, by narrowing `PoissonTensor`'s `*`
+  and `getindex` — see *Fixed* above. The count is 1 afterwards, the same alone and in the suite,
+  and `test/aqua.jl` does then assert it: the objection here was to asserting a number that moved
+  with six upstream packages, and the pair that remains moves with none of them. *B8* is closed and
+  no longer under *Open Issues*; the benign pair is recorded as part of *B7*.
 
 - **Four `DataLoader` constructors no longer return `nothing` on an unexpected `autoencoder`
   keyword.** Each was `if autoencoder == false … elseif autoencoder == true … end` with no `else`,

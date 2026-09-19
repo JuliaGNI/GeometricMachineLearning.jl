@@ -45,9 +45,8 @@ function test_application_to_nt(n2::Int, T::DataType)
     n = n2 ÷ 2
     qp = (q = rand(T, n), p = rand(T, n))
 
-    # Compared field by field rather than with `≈` on the two `NamedTuple`s: `Base.:≈` had a method
-    # for that here, and it was piracy on `Base` -- see the "Removed (breaking)" section of
-    # `CHANGELOG.md`.
+    # Compared field by field rather than with `≈` on the two `NamedTuple`s: `Base` defines no `≈`
+    # for a pair of `NamedTuple`s, and a method for it here would be piracy on `Base`.
     out = 𝕁 * qp
     @test out.q ≈ qp.p
     @test out.p ≈ -qp.q
@@ -62,9 +61,9 @@ for n2 in 2:2:10
     end
 end
 
-# The three array methods of `*` take a `Strided…` right-hand side, so that they no longer claim
-# every `*(::AbstractMatrix, ::X)` another package defines for its own `X`. Two properties have to
-# hold for that narrowing to be safe, and neither is visible in the ambiguity count.
+# The three array methods of `*` take a `Strided…` right-hand side, so that they do not claim every
+# `*(::AbstractMatrix, ::X)` another package defines for its own `X`. Two properties have to hold
+# for that bound to be safe, and neither is visible in the ambiguity count.
 @testset "a non-strided right-hand side falls through to the generic multiply" begin
     𝕁 = PoissonTensor(4, Float64)
     A = rand(4, 3)
@@ -105,15 +104,15 @@ end
     @test (𝕁 * qp).p == -qp.q
 
     # And each array result agrees with the plain matrix product, which is what a non-strided
-    # argument now falls through to.
+    # argument falls through to.
     @test 𝕁 * v == Matrix(𝕁) * v
     @test 𝕁 * m == Matrix(𝕁) * m
 end
 
 @testset "`getindex` is typed on `Int` and every other index shape still works" begin
     # The scalar method is the only one defined; a range, a `Colon` and a `CartesianIndex` are
-    # `Base`'s generic `AbstractArray` indexing built on top of it, and each has to give what
-    # forwarding the whole index pair to the wrapped matrix used to give.
+    # `Base`'s generic `AbstractArray` indexing built on top of it, and each has to give what the
+    # wrapped matrix gives for the same index pair.
     𝕁 = PoissonTensor(4, Float64)
     M = Matrix(𝕁)
 
@@ -126,8 +125,9 @@ end
 end
 
 @testset "the narrowed `*` methods still resolve against an upstream special type" begin
-    # The witness the ambiguity closed: both names are exported by this package, and before the
-    # narrowing this call was a `MethodError` naming GeometricOptimizers' own left-multiply.
+    # The witness for the ambiguity the `Strided…` bound closes: both names are exported by this
+    # package, so a caller can write this call, and it has to resolve to GeometricOptimizers' own
+    # left-multiply rather than being ambiguous against this package's `*`.
     𝕁 = PoissonTensor(4, Float32)
     Y = StiefelManifold(Matrix(qr!(rand(Float32, 4, 2)).Q)[:, 1:2])
 

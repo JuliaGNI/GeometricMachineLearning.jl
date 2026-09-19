@@ -11,8 +11,8 @@ using Test
 # a testset with no parent finalises as soon as it closes -- so called bare, the first failing check
 # throws a `TestSetException` and the rest never run. On the suite path the `@safetestset` in
 # `runtests.jl` is that parent. The `@testset` below is that parent when this file is run on its
-# own, and it is also what lets the piracy count at the end be a second assertion rather than a
-# top-level `@test` that aborts the file the moment it fails.
+# own, and it is also what lets the two counts at the end be further assertions rather than
+# top-level `@test`s that abort the file the moment one fails.
 #
 # WHAT IS SWITCHED OFF, AND WHY IT IS NOT A `broken = true`.
 #
@@ -30,33 +30,24 @@ using Test
 # layer types, and both are an API change rather than a tidy-up. They are *B7* under
 # `## Open Issues` in `CHANGELOG.md` with that reasoning.
 #
-# There were 12 until the piracy pass of 0.8.0. It removed the three `Base` piracies -- two
-# `+(::Float64, ::Tuple{Float64})`-shaped methods with no caller anywhere, and an `≈` on a `(q, p)`
-# `NamedTuple` pair with one caller, in `test/arrays/poisson_tensor.jl` -- and the six `add!`
-# methods on GeometricOptimizers'
-# structured matrix types, which had no caller either and which GeometricOptimizers already defines
-# against its own generic.
-#
 # `ambiguities` reports 1, and the same 1 whether this package is loaded alone or with everything
 # `runtests.jl` loads before this file. It is a `Dense{M, N, true}` functor against
 # `AbstractNeuralNetworks.Affine`'s, and it is benign: `Dense` is not a subtype of `Affine` and the
 # two have no common instance, so no call can reach the pair. It is the same `resnet.jl:63` method
 # as the first piracy above.
 #
-# That number was 18 in isolation and 27 in the suite before 0.8.0, and the difference is worth
-# recording because it is what makes the gate below trustworthy now. Both piles were on
-# `PoissonTensor`, which is an `AbstractMatrix{T}`, and both came from a method of this package's
-# claiming an argument position wholesale:
+# The two settings agreeing is what makes the gate below trustworthy, and it holds because no
+# method of this package claims an argument position wholesale on `PoissonTensor`. That type is an
+# `AbstractMatrix{T}`, so such a method meets every special-array method another package writes
+# against `AbstractMatrix`:
 #
-#   17  `*(𝕁::PoissonTensor{T}, v::AbstractVector/Matrix/Array{T, 3})` collided with every
-#       `*(::AbstractMatrix, ::X)` that ArrayLayouts, FillArrays, Symbolics and GeometricOptimizers
-#       define for their own special array type `X`. A `Strided…` right-hand side excludes each `X`
-#       and keeps everything the package builds.
-#    9  `getindex(𝕁::PoissonTensor, i, j)` collided with the `getindex` methods BandedMatrices and
-#       BlockArrays add to `AbstractMatrix` for `Block`, `BlockIndex` and `BandRangeType`. Typing
-#       the indices `::Int` -- the one method an `AbstractArray` must supply -- excludes them.
-#       Neither package loads with this one alone, which is why these nine were visible only from
-#       inside the suite, and why the two counts differed.
+#   `*(𝕁::PoissonTensor{T}, v::Strided…)` takes a `Strided…` right-hand side, which excludes each
+#       special array type `X` that ArrayLayouts, FillArrays, Symbolics and GeometricOptimizers
+#       define a `*(::AbstractMatrix, ::X)` for, and still covers everything the package builds.
+#   `getindex(𝕁::PoissonTensor, i::Int, j::Int)` types its indices, which excludes the `Block`,
+#       `BlockIndex` and `BandRangeType` methods BandedMatrices and BlockArrays add to
+#       `AbstractMatrix`. Neither of those two loads with this package alone, so an untyped index
+#       pair here is a collision visible only from inside the suite.
 #
 # `ambiguities` still stays off, because 1 is not 0 and Aqua's check has no way to exempt a pair.
 # The assertion below replaces it and is strictly better here: it names the number, so it fails
@@ -75,14 +66,13 @@ using Test
     # and it fails when one is removed without the entry above and in `CHANGELOG.md` going with it.
     @test length(Aqua.Piracy.hunt(GeometricMachineLearning)) == 3
 
-    # The ambiguity count now gets the same gate, which it could not have while the `PoissonTensor`
-    # pile stood. The objection then was that the pile moved with ArrayLayouts', FillArrays',
-    # Symbolics', GeometricOptimizers', BandedMatrices' and BlockArrays' versions, and with *which*
-    # of them a given process had loaded -- so an exact assertion would have gone red on an
-    # unrelated upgrade or on a reordering of this suite, with nothing in `src/` having changed,
-    # and it could not have told that apart from a regression. Neither holds of the one pair left:
-    # both of its methods are this package's and `AbstractNeuralNetworks`', the count is the same
-    # in isolation and in the suite, and nothing outside this repository's own `[compat]` moves it.
+    # The ambiguity count gets the same gate, and it can carry one because the single pair is
+    # between a method of this package and one of `AbstractNeuralNetworks`'. The count is the same
+    # in isolation and in the suite, and nothing outside this repository's own `[compat]` moves it
+    # -- so a red here is a regression, not an unrelated upstream upgrade and not a reordering of
+    # this suite. A count that moved with ArrayLayouts', FillArrays', Symbolics',
+    # GeometricOptimizers', BandedMatrices' and BlockArrays' versions, and with *which* of them a
+    # given process had loaded, could not tell those apart, and could not be asserted.
     @test length(Test.detect_ambiguities(GeometricMachineLearning; recursive = true)) == 1
 end
 
@@ -102,16 +92,16 @@ end
 #                                    -- `norm`, `@kernel`, `rrule`, `pullback` and the rest. Naming
 #                                    every one is a change to the whole module header and a judgement
 #                                    per name, not a by-product of a dead-code pass.
-#   all_explicit_imports_are_public  11 names this package imports are not marked `public` upstream
-#                                    -- `Architecture`, `AbstractExplicitLayer`, `add!`,
-#                                    `_compute_loss`, `assign_columns`, `description` among them.
+#   all_explicit_imports_are_public  10 names this package imports are not marked `public` upstream
+#                                    -- `Architecture`, `AbstractExplicitLayer`, `_compute_loss`,
+#                                    `assign_columns`, `description`, `dim` among them.
 #                                    Each is deliberate and most are re-exported here; the fix is
 #                                    upstream declaring them, not this package importing less.
 #   all_qualified_accesses_via_owners  2: `GeometricOptimizers.Gradient` and
 #                                    `GeometricOptimizers.direction`, both owned by `SimpleSolvers`.
 #                                    Reaching them through `GeometricOptimizers` is how the rest of
 #                                    `src/optimizers/optimizer.jl` is written.
-#   all_qualified_accesses_are_public  22, the same class as the 11 above: `KernelAbstractions.zeros`,
+#   all_qualified_accesses_are_public  22, the same class as the 10 above: `KernelAbstractions.zeros`,
 #                                    `ForwardDiff.jacobian`, `GeometricOptimizers.momentum` and so on.
 #
 # Each of the four is a real backlog item rather than a taste, and none of them is this branch's.

@@ -85,11 +85,11 @@ end
 # type `X` -- seventeen ambiguities, each of which throws a `MethodError` on a call a user can
 # write, `PoissonTensor(4, Float32) * StiefelManifold(...)` among them. `StridedArray` excludes
 # every such `X` while still covering what this package produces and consumes: `Array`, a strided
-# `SubArray`, an `Adjoint` of a `Matrix`, and the GPU arrays, because `CuArray` and `MtlArray` are
-# `DenseArray`s.
+# `SubArray`, and the GPU arrays, because `CuArray` and `MtlArray` are `DenseArray`s. An `Adjoint`
+# of a `Matrix` is not strided and takes the generic path below.
 #
-# A non-strided matrix or vector now reaches Julia's generic `AbstractMatrix` multiply instead,
-# which is the same answer: this type carries `getindex` and `size` and *is* the matrix it claims
+# A non-strided matrix or vector reaches Julia's generic `AbstractMatrix` multiply, which gives the
+# same answer: this type carries `getindex` and `size` and *is* the matrix it claims
 # to be, and `𝕁 * (q; p) = (p; -q)` either way. Only the fast path is given up, and only for an
 # argument no call site here builds. There is no generic fallback for a 3-tensor right-hand side,
 # so that method's narrowing turns a non-strided 3-tensor into a `MethodError`; nothing in the

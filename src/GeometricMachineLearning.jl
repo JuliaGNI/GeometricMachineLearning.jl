@@ -168,10 +168,10 @@ include("activations/softmax.jl")
 # called either. Both types are gone with the export.
 
 # `_diff` and `_norm` are the `NamedTuple`/`(q, p)` arms of subtraction and the norm, and neither is
-# exported: they are helpers of `src/reduced_system/`, not surface. `_add` sat beside them with no
-# caller of its own and is gone, and so is the `add!` family: those methods were piracy on
-# `AbstractNeuralNetworks.add!` that nothing here called, and `GeometricOptimizers` defines the same
-# set against its own generic for a caller that wants them.
+# exported: they are helpers of `src/reduced_system/`, not surface. Nothing named `_add` stands
+# beside them, and nothing here adds a method to `AbstractNeuralNetworks.add!`: that would be
+# piracy, and `GeometricOptimizers` already defines the three-argument `add!` on the structured
+# matrix types against its own generic, for a caller that wants them.
 
 export GradientLayerQ, GradientLayerP, ActivationLayerQ, ActivationLayerP, LinearLayerQ,
        LinearLayerP
