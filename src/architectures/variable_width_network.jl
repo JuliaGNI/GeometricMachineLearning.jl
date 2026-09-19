@@ -1,2 +1,0 @@
-
-struct VariableWidthNetwork <: Architecture end

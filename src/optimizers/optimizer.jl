@@ -1,8 +1,9 @@
 # Optimizer machinery on top of GeometricOptimizers.
 # Kept out of `utils.jl` because it dispatches on `Manifold`, which is defined later.
 
-# Backward-compat alias
-const AbstractCache{T} = GeometricOptimizers.OptimizerCache{T}
+# `const AbstractCache{T} = GeometricOptimizers.OptimizerCache{T}` sat here as a backward-compat
+# alias. Its export went several releases back, and nothing in the package named it after that, so
+# the alias went with the name it was compatible with.
 
 # Gradient wrapper: stores a pre-computed Euclidean gradient and applies rgrad on manifolds.
 mutable struct _GMLGradient{T, VT} <: GeometricOptimizers.Gradient{T}

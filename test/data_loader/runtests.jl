@@ -27,3 +27,6 @@ end
 @safetestset "The minibatch index set is concrete and grows linearly" begin
     include("batch_index_set.jl")
 end
+@safetestset "Classifier accuracy" begin
+    include("accuracy.jl")
+end

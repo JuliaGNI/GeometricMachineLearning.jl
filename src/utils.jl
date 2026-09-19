@@ -1,33 +1,3 @@
-# Convenient structure
-struct NothingFunction <: Function end
-(::NothingFunction)(args...) = nothing
-is_NothingFunction(f::Function) = typeof(f) == NothingFunction
-
-struct UnknownProblem <: AbstractProblem end
-
-const ∞ = Inf
-
-# Functions on typple and named tuple
-
-@inline next(i::Int, j::Int) = (i, j + 1)
-@inline next(i::Int) = (i + 1,)
-
-@inline tuplejoin(x) = x
-@inline tuplejoin(x, y) = (x..., y...)
-@inline tuplejoin(x, y, z...) = tuplejoin(tuplejoin(x, y), z...)
-
-rdevelop(x) = x
-rdevelop(t::Tuple{Any}) = [rdevelop(t[1])...]
-rdevelop(t::Tuple) = [rdevelop(t[1])..., rdevelop(t[2:end])...]
-rdevelop(t::NamedTuple) = vcat([[rdevelop(e)...] for e in t]...)
-
-develop(x) = [x]
-develop(t::Tuple{Any}) = [develop(t[1])...]
-develop(t::Tuple) = [develop(t[1])..., develop(t[2:end])...]
-develop(t::NamedTuple) = vcat([[develop(e)...] for e in t]...)
-
-_tuplediff(t₁::Tuple, t₂::Tuple) = tuple(setdiff(Set(t₁), Set(t₂))...)
-
 # overload norm
 function _norm(dx::NT) where {
         AT <: AbstractArray, NT <: NamedTuple{(:q, :p), Tuple{AT, AT}}}
@@ -40,15 +10,13 @@ function _norm(dx::NamedTuple)
 end
 _norm(A::AbstractArray) = norm(A)
 
-# overloaded +/- operation
+# overloaded - operation
 function _diff(dx₁::NT,
         dx₂::NT) where {AT <: AbstractArray, NT <: NamedTuple{(:q, :p), Tuple{AT, AT}}}
     (q = dx₁.q - dx₂.q, p = dx₁.p - dx₂.p)
 end # we need this because of a Zygote problem
 _diff(dx₁::NamedTuple, dx₂::NamedTuple) = map(_diff, dx₁, dx₂)
 _diff(A::AbstractArray, B::AbstractArray) = A - B
-_add(dx₁::NamedTuple, dx₂::NamedTuple) = map(_add, dx₁, dx₂)
-_add(A::AbstractArray, B::AbstractArray) = A + B
 
 function add!(C::AbstractVecOrMat, A::AbstractVecOrMat, B::AbstractVecOrMat)
     @assert size(A) == size(B) == size(C)
@@ -72,37 +40,6 @@ function Base.:+(a::Vector{Float64}, b::Tuple{Float64})
     x, = b
     y, = a
     return y + x
-end
-
-# Kernel that is needed for functions relating to `SymmetricMatrix` and `SkewSymMatrix`
-@kernel function write_ones_kernel!(unit_matrix::AbstractMatrix{T}) where {T}
-    i = @index(Global)
-    unit_matrix[i, i] = one(T)
-end
-
-# overloaded similar operation to work with NamedTuples
-_similar(x) = similar(x)
-
-function _similar(x::Tuple)
-    Tuple(_similar(_x) for _x in x)
-end
-
-function _similar(x::NamedTuple)
-    NamedTuple{keys(x)}(_similar(values(x)))
-end
-
-# utils functions on string
-function type_without_brace(var)
-    type_str = string(typeof(var))
-    replace(type_str, r"\{.*\}" => "")
-end
-
-function center_align_text(text, width)
-    padding = max(0, width - length(text))
-    left_padding = repeat(" ", padding ÷ 2)
-    right_padding = repeat(" ", padding - length(left_padding))
-    aligned_text = left_padding * text * right_padding
-    return aligned_text
 end
 
 # `global_section(::AbstractVecOrMat) = nothing` used to be defined here, identically to

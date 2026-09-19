@@ -1,20 +1,7 @@
-function tensor_exponential(B::AbstractArray{T, 3}) where {T}
-    m, m2, m3 = size(B)
-    @assert m == m2
-    output = init_output(B)
-    matrix_mul_tensor = copy(output)
-
-    step = 0
-    while true
-        step += 1
-        previous_step = copy(output)
-
-        matrix_mul_tensor = tensor_tensor_mul(matrix_mul_tensor, B)/step
-        output += matrix_mul_tensor
-        norm(previous_step - output)/m3 < eps(T) ? break : nothing
-    end
-    output
-end
+# `tensor_exponential` -- the matrix exponential of every slice, by its Taylor series -- used to head
+# this file. Nothing called it, and its `while true` had no iteration cap, so an input whose series
+# converged more slowly than `eps(T)` would have looped for ever. What remains here is what
+# `tensor_cayley.jl` and `cpu_inverse.jl` use: the identity tensor and its `rrule`.
 
 function init_output(B::AbstractArray{T, 3}) where {T}
     output = zero(B)

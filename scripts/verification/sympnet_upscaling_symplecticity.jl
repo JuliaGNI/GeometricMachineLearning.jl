@@ -31,6 +31,9 @@
 #     julia --startup-file=no --project=. scripts/verification/sympnet_upscaling_symplecticity.jl
 
 using GeometricMachineLearning
+# `layer(chain, i)` is AbstractNeuralNetworks' accessor, and GeometricMachineLearning neither adds
+# a method to it nor re-exports it.
+using AbstractNeuralNetworks: layer
 using LinearAlgebra: cond, opnorm, rank
 using Random
 using Zygote: jacobian
@@ -50,12 +53,11 @@ function upscaling_jacobians(N, N2, T; share_weights = true)
     ps = NeuralNetwork(model, CPU(), T).params
     share_weights && (ps[4].weight.A = ps[1].weight.A)
 
-    encoder = jacobian(x -> GeometricMachineLearning.layer(model, 1)(x, ps[1]), rand(T, N))[1]
+    encoder = jacobian(x -> layer(model, 1)(x, ps[1]), rand(T, N))[1]
     shear = jacobian(
-        y -> GeometricMachineLearning.layer(model, 3)(
-            GeometricMachineLearning.layer(model, 2)(y, ps[2]), ps[3]),
+        y -> layer(model, 3)(layer(model, 2)(y, ps[2]), ps[3]),
         rand(T, N2))[1]
-    decoder = jacobian(y -> GeometricMachineLearning.layer(model, 4)(y, ps[4]), rand(T, N2))[1]
+    decoder = jacobian(y -> layer(model, 4)(y, ps[4]), rand(T, N2))[1]
     round_trip = jacobian(x -> model(x, ps), rand(T, N))[1]
 
     return (; encoder, shear, decoder, round_trip,

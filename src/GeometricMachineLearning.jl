@@ -14,10 +14,8 @@ import NeuralNetworkParameters: NetworkParameters
 using NeuralNetworkParameters: mapparameters, mapstorage, parameter_eltype
 using ChainRulesCore
 using GeometricBase
-using GeometricSolutions: GeometricSolution, EnsembleSolution, DataSeries, StateVariable,
-                          TimeSeries
-using GeometricEquations: EnsembleProblem, ODEProblem, HODEProblem, ODEEnsemble,
-                          HODEEnsemble
+using GeometricSolutions: GeometricSolution, EnsembleSolution, TimeSeries
+using GeometricEquations: HODEProblem, HODEEnsemble
 using KernelAbstractions
 using LinearAlgebra
 using NNlib
@@ -47,18 +45,16 @@ import GeometricOptimizers
 import GeometricOptimizers: Manifold, StiefelManifold, GrassmannManifold
 import GeometricOptimizers: SkewSymMatrix, SymmetricMatrix, AbstractTriangular,
                             LowerTriangular, UpperTriangular, StiefelProjection
-import GeometricOptimizers: AbstractLieAlgHorMatrix, StiefelLieAlgHorMatrix,
-                            GrassmannLieAlgHorMatrix
-import GeometricOptimizers: rgrad, metric, check, Ω, global_section
+import GeometricOptimizers: StiefelLieAlgHorMatrix, GrassmannLieAlgHorMatrix
+import GeometricOptimizers: rgrad, metric, check, global_section
 # `assign_columns(Q, N, n)` — the first `n` columns of a `QR` factor, allocated on `Q`'s backend.
 # It is upstream's, and internal there; the three manifold layers below initialise their weights
 # with it.
 import GeometricOptimizers: assign_columns
 import GeometricOptimizers: GlobalSection, global_rep, apply_section, apply_section!,
                             update_section!
-import GeometricOptimizers: AbstractRetraction, Geodesic, Cayley, geodesic, cayley,
-                            retraction
-import GeometricOptimizers: OptimizerMethod, OptimizerSolution,
+import GeometricOptimizers: Geodesic, Cayley, geodesic, cayley, retraction
+import GeometricOptimizers: OptimizerMethod,
                             GradientMethod, MomentumMethod, Adam,
                             GradientState, MomentumState, AdamState,
                             AdamOptimizerWithDecay, DecayingStatic
@@ -70,9 +66,8 @@ import GeometricOptimizers: solve!
 # The optimizer *caches* stay internal upstream — they are `solver_step!` scratch — so GML reaches
 # them as `GeometricOptimizers.AdamCache` where it needs to name one, and no longer re-exports them.
 
-import AbstractNeuralNetworks: Architecture, Model, AbstractExplicitLayer,
-                               AbstractNeuralNetwork, NeuralNetwork,
-                               UnknownArchitecture, FeedForwardLoss
+import AbstractNeuralNetworks: Architecture, AbstractExplicitLayer, NeuralNetwork,
+                               FeedForwardLoss
 import AbstractNeuralNetworks: Chain
 # `input_dimension`/`output_dimension` are AbstractNeuralNetworks' since v0.6.4; the `Chain`
 # methods GML uses are added to them by SymbolicNeuralNetworks.
@@ -83,17 +78,15 @@ import AbstractNeuralNetworks: Dense, Linear
 # `GeometricBase.update!`, a different generic function, and the one that actually has methods for
 # the optimizer caches. It is imported from GeometricOptimizers with the rest of them below.
 import AbstractNeuralNetworks: add!
-import AbstractNeuralNetworks: layer
 import AbstractNeuralNetworks: initialparameters
 import AbstractNeuralNetworks: parameterlength
 import AbstractNeuralNetworks: GlorotUniform
-import AbstractNeuralNetworks: params, architecture, model, dim
+import AbstractNeuralNetworks: params, model, dim
 import AbstractNeuralNetworks: AbstractPullback, NetworkLoss, _compute_loss
 import AbstractNeuralNetworks: networkbackend
 # `save` and `load` are `NeuralNetworkParameters`' generics; `AbstractNeuralNetworks` 0.7 only
 # re-binds them. Reach for them where they are defined.
 import NeuralNetworkParameters: save, load
-# export params, architetcure, model
 export dim
 import NNlib: σ, sigmoid, softmax
 import Base: iterate, eltype
@@ -109,8 +102,10 @@ export NetworkParameters
 export σ, sigmoid, softmax
 
 # `GeometricBase` defines `description` but does not export it, so `using GeometricBase` alone does
-# not bring it into scope and re-exporting it needs the explicit import.
-import GeometricBase: description
+# not bring it into scope and re-exporting it needs the explicit import. `StateVariable` is reached
+# from here rather than from `GeometricSolutions`, which only re-exports it: importing a name from a
+# module that does not own it is what `check_all_explicit_imports_via_owners` reports.
+import GeometricBase: description, StateVariable
 export description
 
 include("utils.jl")
@@ -142,7 +137,6 @@ include("kernels/tensor_tensor_mul.jl")
 include("kernels/tensor_transpose_tensor_mul.jl")
 include("kernels/tensor_tensor_transpose_mul.jl")
 include("kernels/tensor_transpose_mat_mul.jl")
-include("kernels/tensor_transpose_tensor_transpose_mul.jl")
 include("kernels/mat_tensor_mul.jl")
 include("kernels/tensor_transpose.jl")
 include("kernels/exponentials/tensor_exponential.jl")
@@ -170,13 +164,15 @@ include("kernels/kernel_ad_routines/vec_tensor_mul.jl")
 export MatrixSoftmax, VectorSoftmax
 include("activations/softmax.jl")
 
-# are these needed?
-export UnknownProblem, NothingFunction
+# `UnknownProblem` and `NothingFunction` were exported here, under the comment "are these needed?".
+# The answer was no: neither type had a use anywhere in the package, the tests, the docs or the
+# scripts, and `NothingFunction`'s only reader was an `is_NothingFunction` predicate that nothing
+# called either. Both types are gone with the export.
 
-# `_add`, `_diff` and `_norm` are the `NamedTuple`/`(q, p)` arms of addition, subtraction and the
-# norm, and none of the three is exported: they are helpers of `src/reduced_system/`, not surface.
-# `_add` was the odd one out until 0.7.0, as was `add!` -- which is `AbstractNeuralNetworks`' generic
-# and available from there, this package only adding methods for the structured matrix types.
+# `_diff` and `_norm` are the `NamedTuple`/`(q, p)` arms of subtraction and the norm, and neither is
+# exported: they are helpers of `src/reduced_system/`, not surface. `_add` sat beside them with no
+# caller of its own and is gone; `add!` is `AbstractNeuralNetworks`' generic and available from
+# there, this package only adding methods for the structured matrix types.
 
 export GradientLayerQ, GradientLayerP, ActivationLayerQ, ActivationLayerP, LinearLayerQ,
        LinearLayerP
@@ -204,7 +200,6 @@ include("layers/transformer.jl")
 include("layers/psd_like_layer.jl")
 include("layers/classification.jl")
 
-# include("layers/symplectic_stiefel_layer.jl")
 export StiefelLayer, GrassmannLayer, ManifoldLayer
 export PSDLayer
 export MultiHeadAttention
@@ -263,10 +258,8 @@ include("architectures/sympnet.jl")
 include("architectures/autoencoder.jl")
 include("architectures/symplectic_autoencoder.jl")
 include("architectures/psd.jl")
-include("architectures/fixed_width_network.jl")
 include("architectures/hamiltonian_neural_network.jl")
 include("architectures/lagrangian_neural_network.jl")
-include("architectures/variable_width_network.jl")
 include("architectures/transformer_neural_network.jl")
 include("architectures/volume_preserving_feedforward.jl")
 include("architectures/volume_preserving_transformer.jl")
@@ -297,7 +290,6 @@ include("pullbacks/symbolic_hnn_pullback.jl")
 export DataLoader
 export Batch, optimize_for_one_epoch!
 include("data_loader/tensor_assign.jl")
-include("data_loader/matrix_assign.jl")
 include("data_loader/batch.jl")
 include("data_loader/optimize.jl")
 

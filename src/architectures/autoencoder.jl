@@ -67,9 +67,6 @@ See [`Decoder`](@ref) for the super type and [`NonLinearSymplecticDecoder`](@ref
 """
 abstract type SymplecticDecoder <: Decoder end
 
-const SymplecticDimensionChange = Union{
-    SymplecticCompression, SymplecticEncoder, SymplecticDecoder}
-
 """
     UnknownEncoder(full_dim, reduced_dim, n_encoder_blocks)
 
