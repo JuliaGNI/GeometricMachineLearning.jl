@@ -2108,10 +2108,12 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   architecture works on a GPU.** It claimed exactly that, and named `CUDA.jl`, `AMDGPU.jl`,
   `Metal.jl` and `oneAPI.jl` as packages the package "naturally integrates". Two of the four things
   a reader would try first do not run at all — see **B12** and **B13** below — and the sentence had
-  nothing behind it either way, because **there is no GPU test under `test/` and no GPU job in
-  CI**. The only GPU reference in the repository,
+  nothing behind it either way, because **no test in this repository runs on a device, and there is
+  no GPU job in CI**. The two places that come closest do not: the one GPU script,
   `scripts/reproduction/linear_symplectic_transformer_gpu.jl`, drops to `CPU()` under `GML_SMOKE`,
-  which is how CI runs it.
+  which is how CI runs it; and `test/arrays/poisson_tensor.jl:150` asserts that
+  `ext/GPUArraysCoreExt.jl` loads and defines its three `*` methods, and says in its own comment
+  that the behaviour behind them is not what it stands for.
 
   The section now separates what the package is *written against* — any `KernelAbstractions`
   backend — from what has been *run*, says in bold that none of it is tested, and names the two
@@ -2121,10 +2123,12 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   | | matrix input | tensor input |
   |:--|:--|:--|
   | `GSympNet`, `LASympNet` | ✓ | ✓ |
-  | `StandardTransformerIntegrator`, `SymplecticTransformer` | ✓ | ✓ |
+  | `StandardTransformerIntegrator` | ✓ | ✓ |
+  | `SymplecticTransformer` at its default `transformer_dim` | ✓ | ✓ |
   | `LinearSymplecticTransformer` | ✓ | ✓ |
   | `VolumePreservingFeedForward`, `VolumePreservingTransformer` | **B12** | ✓ |
   | `SymplecticAutoencoder`, `PSDArch`, `MultiHeadAttention(…; Stiefel = true)` | **B13**, at construction | **B13**, at construction |
+  | `SymplecticTransformer` with `transformer_dim ≠ dim`, `ClassificationTransformer`, `Transformer(…; Stiefel = true)` | **B13**, at construction | **B13**, at construction |
 
   `mat_tensor_mul`, `tensor_tensor_mul`, `tensor_transpose`, `tensor_transpose_tensor_mul` and
   `map_to_cpu` all run, and so does training: `Optimizer(AdamOptimizer(), nn)(nn, dl, Batch(8), 2,
@@ -3789,8 +3793,9 @@ they resolved to is in the release notes above.
   disallowed* on matrix input.** `src/layers/volume_preserving_feedforward.jl` multiplies the
   layer's `LowerTriangular`/`UpperTriangular` weight by the input. At the registered
   `GeometricOptimizers` 0.7.0 that product has no method of its own and falls through to
-  `LinearAlgebra`'s `*(::AbstractMatrix, ::AbstractMatrix)` at `matmul.jl:116`, which asks the
-  argument for one entry at a time; `GPUArraysCore` refuses. The tensor path goes through this
+  `LinearAlgebra`'s generic `*(::AbstractMatrix, ::AbstractMatrix)`, which asks the
+  argument for one entry at a time; `GPUArraysCore` refuses. (The line of `matmul.jl` that method
+  sits on moves between Julia versions, so it is deliberately not cited here.) The tensor path goes through this
   package's own `mat_tensor_mul` kernel and is unaffected, which is why only the matrix shape
   fails.
 
@@ -3810,10 +3815,19 @@ they resolved to is in the release notes above.
   `assign_columns(typeof(weight)(qr!(weight).Q), size(weight)...)`. `LinearAlgebra.qr!` is a host
   factorization, `Metal.jl` implements no `qr` for an `MtlArray`, and the LAPACK path dies on
   `unsafe_convert` of a private buffer. `NeuralNetwork(SymplecticAutoencoder(8, 4),
-  MetalBackend(), Float32)` throws before any forward pass, and so do `PSDArch`,
-  `MultiHeadAttention(…; Stiefel = true)`, `StiefelLayer` and `GrassmannLayer` — all four measured
-  on 2026-09-20. `CUDA.jl` has `qr!` through CUSOLVER, so the reach of this one beyond Metal is
-  unestablished.
+  MetalBackend(), Float32)` throws before any forward pass. `CUDA.jl` has `qr!` through CUSOLVER,
+  so the reach of this one beyond Metal is unestablished.
+
+  **It is every architecture that holds one of these three layers, not the three obvious ones.**
+  Measured on 2026-09-20, each throwing `Cannot access the contents of a private buffer` at
+  construction: `StiefelLayer`, `GrassmannLayer`, `SymplecticAutoencoder`, `PSDArch`,
+  `MultiHeadAttention(…; Stiefel = true)`, `Transformer(…; Stiefel = true)`,
+  `ClassificationTransformer` — whose `Stiefel` keyword **defaults to `true`** — and
+  `SymplecticTransformer` whenever `transformer_dim ≠ dim`, which is the branch that wraps the
+  chain in two `PSDLayer`s. The two that do *not* throw mark the boundary:
+  `SymplecticTransformer` at its default `transformer_dim = dim` takes the `:NoUpscale` branch and
+  has no `PSDLayer`, and `Transformer` itself defaults to `Stiefel = false`, which is also why
+  `StandardTransformerIntegrator` is unaffected.
 
   **The replacement exists upstream and is not yet released.** `GeometricOptimizers` #95 added
   `_cholesky_qr2` — CholeskyQR2, matrix products and triangular solves only, so it runs wherever
