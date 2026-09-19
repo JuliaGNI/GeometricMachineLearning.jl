@@ -83,9 +83,7 @@ end
 
 Strip `returned_pullback` from unnecessary `Zygote`-induces garbage.
 
-These two helpers used to be `SymbolicNeuralNetworks._get_params` and
-`SymbolicNeuralNetworks._get_contents`; SymbolicNeuralNetworks 0.5 removed them, and they were
-never about symbolics in the first place — they clean up what `Zygote` returns.
+Nothing about `_get_params` and `_get_contents` is symbolic: they clean up what `Zygote` returns.
 
 Also see the docs for [`ZygotePullback`](@ref).
 """

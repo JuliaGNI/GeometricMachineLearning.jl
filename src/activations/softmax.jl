@@ -6,7 +6,7 @@ abstract type AbstractSoftmax <: AbstractNeuralNetworks.Activation end
 Turn an arbitrary vector into a probability vector with:
 
 ```math
-[\mathrm{softmax}(a)]_i = \frac{e^{a_i}}{\sum_{i'=1}^de^{a_i}}. 
+[\mathrm{softmax}(a)]_i = \frac{e^{a_i}}{\sum_{i'=1}^de^{a_{i'}}}.
 ```
 
 This is what is most often understood under the name "softmax". [`MatrixSoftmax`](@ref) is the matrix version.
@@ -19,7 +19,7 @@ struct VectorSoftmax <: AbstractSoftmax end
 Like [`VectorSoftmax`](@ref) but for matrices:
 
 ```math
-[\mathrm{softmax}(A)]_{ij} = \frac{e^{A_{ij}}}{\sum_{i'=1, j'=1}^{d,\bar{d}}e^{A_{ij}}}. 
+[\mathrm{softmax}(A)]_{ij} = \frac{e^{A_{ij}}}{\sum_{i'=1, j'=1}^{d,\bar{d}}e^{A_{i'j'}}}.
 ```
 """
 struct MatrixSoftmax <: AbstractSoftmax end

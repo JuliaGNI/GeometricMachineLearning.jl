@@ -1,7 +1,5 @@
-# `tensor_exponential` -- the matrix exponential of every slice, by its Taylor series -- used to head
-# this file. Nothing called it, and its `while true` had no iteration cap, so an input whose series
-# converged more slowly than `eps(T)` would have looped for ever. What remains here is what
-# `tensor_cayley.jl` and `cpu_inverse.jl` use: the identity tensor and its `rrule`.
+# The identity tensor and its `rrule`, used by `tensor_cayley.jl` and `cpu_inverse.jl`. The file
+# name is wider than what it holds; renaming it, and `exponentials/` with it, is issue C18.
 
 function init_output(B::AbstractArray{T, 3}) where {T}
     output = zero(B)

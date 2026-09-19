@@ -1,10 +1,6 @@
 # Optimizer machinery on top of GeometricOptimizers.
 # Kept out of `utils.jl` because it dispatches on `Manifold`, which is defined later.
 
-# `const AbstractCache{T} = GeometricOptimizers.OptimizerCache{T}` sat here as a backward-compat
-# alias. Its export went several releases back, and nothing in the package named it after that, so
-# the alias went with the name it was compatible with.
-
 # Gradient wrapper: stores a pre-computed Euclidean gradient and applies rgrad on manifolds.
 mutable struct _GMLGradient{T, VT} <: GeometricOptimizers.Gradient{T}
     dp::VT
@@ -55,12 +51,9 @@ function GMLEuclideanState(x::AbstractArray{T}) where {T}
     GMLEuclideanState{T, typeof(x)}(0, zero(x), zero(x))
 end
 
-# `AdamOptimizerWithDecay` used to be defined here, as an `OptimizerMethod` bundling Adam's `ρ₁`,
-# `ρ₂`, `δ` with a learning-rate schedule `η₁`, `η₂`, `n_epochs`. GeometricOptimizers ships the same
-# algorithm — the same `γ = exp(log(η₂/η₁)/n)` — split the way it belongs: the direction is an
-# `Adam` method, the schedule is a `DecayingStatic` line search. Both names are imported, and
-# `Optimizer` below takes a `DecayingStatic` as its `step_size`. Two packages exporting the name was
-# issue B1: `using GeometricMachineLearning, GeometricOptimizers` failed outright on it.
+# Adam with a decaying learning rate is GeometricOptimizers', and split the way it belongs: the
+# direction is an `Adam` method, the schedule is a `DecayingStatic` line search. Both names are
+# imported, and `Optimizer` below takes a `DecayingStatic` as its `step_size`.
 
 _is_go_native_method(::GeometricOptimizers.GradientMethod) = true
 _is_go_native_method(::GeometricOptimizers.MomentumMethod) = true
@@ -204,9 +197,8 @@ _default_step_size(::GeometricOptimizers.OptimizerMethod) = 1e-2
 
 _step_size(η::Real, ::Int) = Float64(η)
 # `t` and not `t - 1`: `optimization_step!` increments before it asks, so the first step of a solve
-# is `α(1) = γη₁`. That is what `DecayingStatic` means by iteration `t` — `solve!` calls
-# `increase_iteration_number!` before `solver_step!` — and it is what GML's own
-# `AdamOptimizerWithDecay` did before the schedule moved upstream.
+# is `α(1) = γη₁`. That is what `DecayingStatic` means by iteration `t`: `solve!` calls
+# `increase_iteration_number!` before `solver_step!`.
 _step_size(ls::DecayingStatic, t::Int) = Float64(GeometricOptimizers.step_size(ls, t))
 
 _current_step_size(opt::Optimizer, t::Int) = _step_size(opt.step_size, t)
@@ -282,9 +274,9 @@ function _euclidean_update!(x::AbstractArray{T}, dx::AbstractArray,
     state.m₂ .= fac₂₁ .* state.m₂ .+ fac₂₂ .* dx .^ 2
     x .-= T(step_size) .* state.m₁ ./ (sqrt.(state.m₂) .+ δ)
 end
-# There used to be a fourth method here, for `AdamOptimizerWithDecay`, character for character the
-# `Adam` one above with `ρ₁`, `ρ₂` in place of `β₁`, `β₂`. Adam with a decaying learning rate *is*
-# Adam — only `step_size` differs, and that comes in as an argument — so the `Adam` method serves it.
+# `_euclidean_update!` has three methods and not four: Adam with a decaying learning rate *is*
+# Adam — only `step_size` differs, and that comes in as an argument — so the `Adam` method above
+# serves it too.
 
 function _go_update_leaf!(cache, state, local_grad,
         method::GeometricOptimizers.Adam, ps_leaf)
@@ -419,9 +411,9 @@ This matters for a decaying `step_size` and is how `GeometricOptimizers` counts 
 function optimization_step!(opt::Optimizer, λY, ps, dp)
     # The increment comes *first*, so the first step of a run is step 1. It matters only for a
     # decaying `step_size`, and there it matters: reading the schedule before incrementing takes
-    # `α(0) = η₁`, one whole step above what the pre-0.5 `AdamOptimizerWithDecay` took and what
-    # `DecayingStatic` and `GeometricOptimizers.solve!` take. `solve!` counts the same way, by
-    # calling `increase_iteration_number!` before `solver_step!`.
+    # `α(0) = η₁`, one whole step above what `DecayingStatic` and `GeometricOptimizers.solve!`
+    # take. `solve!` counts the same way, by calling `increase_iteration_number!` before
+    # `solver_step!`.
     opt.iterations += 1
     step = _current_step_size(opt, opt.iterations)
     _tree_optim_step!(opt.cache, opt.state, dp, ps, λY, opt.method, opt.retraction, step)
