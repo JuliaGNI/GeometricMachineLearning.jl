@@ -2104,6 +2104,35 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   matrix to any even dimension — and the third goes to `## Open Issues` as a follow-up item rather
   than being silently left behind.
 
+- **The *GPU Support* section of `docs/src/index.md` no longer claims that every layer and
+  architecture works on a GPU.** It claimed exactly that, and named `CUDA.jl`, `AMDGPU.jl`,
+  `Metal.jl` and `oneAPI.jl` as packages the package "naturally integrates". Two of the four things
+  a reader would try first do not run at all — see **B12** and **B13** below — and the sentence had
+  nothing behind it either way, because **there is no GPU test under `test/` and no GPU job in
+  CI**. The only GPU reference in the repository,
+  `scripts/reproduction/linear_symplectic_transformer_gpu.jl`, drops to `CPU()` under `GML_SMOKE`,
+  which is how CI runs it.
+
+  The section now separates what the package is *written against* — any `KernelAbstractions`
+  backend — from what has been *run*, says in bold that none of it is tested, and names the two
+  failures. What replaced the claim was measured on 2026-09-20 on an Apple M4 Max through
+  `Metal.jl`, in `Float32`, at `e1d44f0b` with the registered `GeometricOptimizers` 0.7.0:
+
+  | | matrix input | tensor input |
+  |:--|:--|:--|
+  | `GSympNet`, `LASympNet` | ✓ | ✓ |
+  | `StandardTransformerIntegrator`, `SymplecticTransformer` | ✓ | ✓ |
+  | `LinearSymplecticTransformer` | ✓ | ✓ |
+  | `VolumePreservingFeedForward`, `VolumePreservingTransformer` | **B12** | ✓ |
+  | `SymplecticAutoencoder`, `PSDArch`, `MultiHeadAttention(…; Stiefel = true)` | **B13**, at construction | **B13**, at construction |
+
+  `mat_tensor_mul`, `tensor_tensor_mul`, `tensor_transpose`, `tensor_transpose_tensor_mul` and
+  `map_to_cpu` all run, and so does training: `Optimizer(AdamOptimizer(), nn)(nn, dl, Batch(8), 2,
+  FeedForwardLoss())` on a `GSympNet(4)` returns a finite `Vector{Float32}` and leaves the
+  parameters `MtlMatrix{Float32, Metal.PrivateStorage}`. That last one is new in this release and
+  is two other entries meeting: `T(step_size)` at the optimizer call site, and the training history
+  that now carries the network's own element type.
+
 ### Infrastructure
 
 - **Aqua runs in the suite, on the six of the eight checks it runs by default that this package
@@ -3755,6 +3784,48 @@ they resolved to is in the release notes above.
   Closing it means giving the builder the backend, so that it allocates through
   `KernelAbstractions.allocate` and fills with a kernel instead of a loop, and it cannot be verified
   here without a GPU job to run it under.
+
+- **B12. `VolumePreservingFeedForward` and `VolumePreservingTransformer` raise *Scalar indexing is
+  disallowed* on matrix input.** `src/layers/volume_preserving_feedforward.jl` multiplies the
+  layer's `LowerTriangular`/`UpperTriangular` weight by the input. At the registered
+  `GeometricOptimizers` 0.7.0 that product has no method of its own and falls through to
+  `LinearAlgebra`'s `*(::AbstractMatrix, ::AbstractMatrix)` at `matmul.jl:116`, which asks the
+  argument for one entry at a time; `GPUArraysCore` refuses. The tensor path goes through this
+  package's own `mat_tensor_mul` kernel and is unaffected, which is why only the matrix shape
+  fails.
+
+  **The guard is `GPUArraysCore`'s, shared by `CUDA.jl`, `AMDGPU.jl` and `oneAPI.jl`, so this is
+  not a Metal limitation** — Metal is only where it was measured.
+
+  It is not this package's `*` to fix, and **it is already fixed upstream but not yet released.**
+  `GeometricOptimizers` #96 gives both triangulars and `StiefelProjection` kernel products;
+  measured on the device on 2026-09-20 against that package's `main`,
+  `LowerTriangular{Float32, MtlVector} * MtlMatrix` returns an `MtlMatrix` and dispatches to a
+  `GeometricOptimizers` method. Closing this entry is a `[compat]` bump to the release that carries
+  #96, and no change to `src/` here.
+
+- **B13. The manifold layers fail at construction on a device, because they orthonormalize with a
+  host `qr!`.** `src/layers/stiefel_layer.jl:14`, `src/layers/grassmann_layer.jl:24` and
+  `src/layers/psd_like_layer.jl:34` each write
+  `assign_columns(typeof(weight)(qr!(weight).Q), size(weight)...)`. `LinearAlgebra.qr!` is a host
+  factorization, `Metal.jl` implements no `qr` for an `MtlArray`, and the LAPACK path dies on
+  `unsafe_convert` of a private buffer. `NeuralNetwork(SymplecticAutoencoder(8, 4),
+  MetalBackend(), Float32)` throws before any forward pass, and so do `PSDArch`,
+  `MultiHeadAttention(…; Stiefel = true)`, `StiefelLayer` and `GrassmannLayer` — all four measured
+  on 2026-09-20. `CUDA.jl` has `qr!` through CUSOLVER, so the reach of this one beyond Metal is
+  unestablished.
+
+  **The replacement exists upstream and is not yet released.** `GeometricOptimizers` #95 added
+  `_cholesky_qr2` — CholeskyQR2, matrix products and triangular solves only, so it runs wherever
+  its argument already is — and `_orthonormal_columns`, which redraws when the Gram matrix is too
+  ill-conditioned to factorize. On the device on 2026-09-20, `_cholesky_qr2` of an `MtlArray`
+  `Float32` 8×4 returned an `MtlMatrix` with `‖QᵀQ − I‖ = 1.2e-7`. The same release **deletes
+  `assign_columns`**, which `src/GeometricMachineLearning.jl` imports, so the `[compat]` bump and
+  the rewrite of these three call sites are one change, not two.
+
+  It needs one thing that does not exist yet: both upstream names are private. Depending on an
+  underscore name across a package boundary is what `assign_columns` already did and is what breaks
+  here, so closing this entry waits on a public orthonormalizing entry point upstream.
 
 ### C. Follow-ups and cleanups
 
