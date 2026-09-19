@@ -400,7 +400,7 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   It is dropped rather than moved because nothing calls it. The only `dim(` call in the package is
   `src/loss/lnn_loss.jl:55`, which passes an *architecture* and dispatches to
   `dim(::LagrangianNeuralNetwork)`. **`dim` remains exported** — it is imported from
-  `AbstractNeuralNetworks` at `src/GeometricMachineLearning.jl:83` and re-exported, and the three
+  `AbstractNeuralNetworks` at `src/GeometricMachineLearning.jl:80` and re-exported, and the three
   architecture methods are untouched.
 
   This takes the type-piracy count from **13 to 12**, measured with `Aqua.Piracy.hunt` before and
@@ -583,10 +583,11 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `NetworkLoss(::NeuralNetwork)` forwarding to `architecture(nn)` belongs in
   `AbstractNeuralNetworks` itself.
 
-  The three `NetworkLoss` methods that remain are unaffected, because each dispatches on a GML-owned
+  The four `NetworkLoss` methods that remain are unaffected, because each dispatches on a GML-owned
   architecture rather than on the container: `NetworkLoss(::HamiltonianArchitecture)`
-  (`src/loss/hnn_loss.jl`), `NetworkLoss(::LagrangianNeuralNetwork)` (`src/loss/lnn_loss.jl`) and
-  `NetworkLoss(::TransformerIntegrator, prediction_window)` (`src/loss/losses.jl`).
+  (`src/loss/hnn_loss.jl:29`), `NetworkLoss(::LagrangianNeuralNetwork)` (`src/loss/lnn_loss.jl:122`),
+  `NetworkLoss(::TransformerIntegrator, prediction_window)` (`src/loss/losses.jl:59`) and
+  `NetworkLoss(::AutoEncoder)` (`src/loss/losses.jl:146`).
 
 ### Changed
 
@@ -888,7 +889,7 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
     names). `SymplecticMatrix`, removed from the package in `444e6fac` (2023-05-31), sits only
     inside a function the script never calls, so it is not what stops this script.
   - `scripts/psd_auto_toda.jl` calls `SymplecticMatrix`, `SymplecticStiefelLayer` (never exported —
-    `src/GeometricMachineLearning.jl:179` says so directly) and `StandardOptimizer`, none of which
+    `src/GeometricMachineLearning.jl:169` says so directly) and `StandardOptimizer`, none of which
     exist in `src/`. Even the 2026-08-16 commit that replaced this file's `GLMakie`/`Plots` calls
     with `CairoMakie` left these breaks in place.
   - `scripts/particles.jl` and `scripts/particles_cuda.jl` read
@@ -2026,8 +2027,8 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `ClassificationTransformerLoss` and `NetworkLoss(::NeuralNetwork)` removals, the deprecated
   `Gradient` constructor, `go_bridges.jl`, `assign_batch_kernel!`/`assign_output_kernel!`, the
   `SymplecticLieAlgMatrix` exports and the `∇L`/`∇∇L`/`∇q̇∇q̇L` definitions. Kept as a present-tense
-  fact with the history dropped: `_go_update_leaf!` has three methods and not four because Adam with
-  a decaying learning rate *is* Adam, only `step_size` differing; `update!` is not imported from
+  fact with the history dropped: `_euclidean_update!` has three methods and not four because Adam
+  with a decaying learning rate *is* Adam, only `step_size` differing; `update!` is not imported from
   `AbstractNeuralNetworks` because that is a different generic from the `GeometricBase.update!` with
   methods for the optimizer caches; and `LNNLoss` reaches its derivatives through
   `SymbolicNeuralNetworks.Jacobian` because a nested `Zygote.gradient` inside a loss breaks the

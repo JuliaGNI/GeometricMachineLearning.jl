@@ -73,7 +73,7 @@ import AbstractNeuralNetworks: input_dimension, output_dimension
 import AbstractNeuralNetworks: Dense, Linear
 # `update!` is deliberately not among these: `AbstractNeuralNetworks`' is a different generic
 # function from `GeometricOptimizers.update!` — which is `GeometricBase.update!`, the one with
-# methods for the optimizer caches. GML imports that one, from GeometricOptimizers, below.
+# methods for the optimizer caches. GML imports that one, from GeometricOptimizers, above.
 import AbstractNeuralNetworks: initialparameters
 import AbstractNeuralNetworks: parameterlength
 import AbstractNeuralNetworks: GlorotUniform

@@ -21,7 +21,7 @@ See [`SymplecticAttentionQ`](@ref) and [`SymplecticAttentionP`](@ref).
 ```math
 C = Q^TAQ,
 ```
-where ``Q`` is the ``q``-part of an input ``Z`` (see [`QPT`](@ref)). The matrix ``A`` is a weighting that can either be symmetric or skew-symmetric (this can be adjusted with the key-word `symmetric::Bool`).
+where ``Q`` is the ``q``-part of an input ``Z`` (see [`QPT`](@ref)). The matrix ``A`` is a weighting that is either symmetric or arbitrary (this can be adjusted with the key-word `symmetric::Bool`).
 
 # Extended help
 
@@ -45,7 +45,7 @@ SymplecticAttentionQ(M; symmetric::Bool, activation)
 
 The default for the keywords are $(sa_symmetric_default) and $(sa_activation_default).
 
-You may want to alter the activation function (either [`MatrixSoftmax`](@ref) or [`VectorSoftmax`](@ref)), but it is almost always better to set the keyword `symmetric` to `true`.
+You may want to alter the activation function (either [`MatrixSoftmax`](@ref) or [`VectorSoftmax`](@ref)), but it is almost always better to leave the keyword `symmetric` at `true`.
 """
 const SymplecticAttentionQ{M, N, Symmetric, AT} = SymplecticAttention{
     M, N, :Q, Symmetric, AT}
@@ -63,7 +63,7 @@ SymplecticAttentionP(M; symmetric::Bool, activation)
 
 The default for the keywords are $(sa_symmetric_default) and $(sa_activation_default).
 
-You may want to alter the activation function (either [`MatrixSoftmax`](@ref) or [`VectorSoftmax`](@ref)), but it is almost always better to set the keyword `symmetric` to `true`.
+You may want to alter the activation function (either [`MatrixSoftmax`](@ref) or [`VectorSoftmax`](@ref)), but it is almost always better to leave the keyword `symmetric` at `true`.
 """
 const SymplecticAttentionP{M, N, Symmetric, AT} = SymplecticAttention{
     M, N, :P, Symmetric, AT}

@@ -274,8 +274,9 @@ function _euclidean_update!(x::AbstractArray{T}, dx::AbstractArray,
     state.m₂ .= fac₂₁ .* state.m₂ .+ fac₂₂ .* dx .^ 2
     x .-= T(step_size) .* state.m₁ ./ (sqrt.(state.m₂) .+ δ)
 end
-# Three methods and not four: Adam with a decaying learning rate *is* Adam — only `step_size`
-# differs, and that comes in as an argument — so the `Adam` method above serves it too.
+# `_euclidean_update!` has three methods and not four: Adam with a decaying learning rate *is*
+# Adam — only `step_size` differs, and that comes in as an argument — so the `Adam` method above
+# serves it too.
 
 function _go_update_leaf!(cache, state, local_grad,
         method::GeometricOptimizers.Adam, ps_leaf)
