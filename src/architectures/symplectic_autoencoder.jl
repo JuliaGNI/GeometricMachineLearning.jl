@@ -114,9 +114,8 @@ function SymplecticAutoencoder(
     end
 end
 
-# """
-# This function gives iterations from the full dimension to the reduced dimension (i.e. the intermediate steps). The iterations are given in ascending order. Only even steps are allowed here.
-# """
+# The intermediate steps from the full dimension to the reduced dimension, in ascending order. Only
+# even steps are allowed here.
 function compute_iterations_for_symplectic_system(full_dim::Integer, reduced_dim::Integer, n_blocks::Integer)
     full_dim2 = full_dim ÷ 2
     reduced_dim2 = reduced_dim ÷ 2

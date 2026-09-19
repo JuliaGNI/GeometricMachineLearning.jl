@@ -8,22 +8,3 @@ end
 function (d::ManifoldLayer{M, N})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, N, T}
     N > M ? mat_tensor_mul(ps.weight, x) : mat_tensor_mul(ps.weight', x)
 end
-
-# function retraction(::ManifoldLayer{N, M, Geodesic}, B::NamedTuple{(:weight,),Tuple{AT}}) where {N, M, AT<:AbstractLieAlgHorMatrix}
-#     geodesic(B)
-# end
-# 
-# function retraction(::ManifoldLayer{N, M, Cayley}, B::NamedTuple{(:weight,),Tuple{AT}}) where {N, M, AT<:AbstractLieAlgHorMatrix}
-#     cayley(B)
-# end
-
-#=
-#function to improve readability when dealing with NamedTuple (for Manifold layers)
-function Base.:*(Y::NamedTuple{(:weight, ), Tuple{AT}}, x::AbstractVecOrMat) where AT <: Manifold
-    Y.weight*x
-end
-
-function rgrad(d::ManifoldLayer, ps, dx)
-    (weight = rgrad(ps.weight, dx.weight), )
-end
-=#

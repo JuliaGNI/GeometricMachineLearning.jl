@@ -64,10 +64,6 @@ function orthonormal_activation_cayley(
     tensor_cayley5(A)
 end
 
-# function orthonormal_activation_cayley(A::AbstractMatrix{T}) where T 
-#     reshape(orthonormal_activation_cayley(reshape(A, size(A)..., 1)), size(A)...)
-# end
-
 function parameterlength(::VolumePreservingAttention{M, M, :skew_sym}) where {M}
     M * (M-1) ÷ 2
 end

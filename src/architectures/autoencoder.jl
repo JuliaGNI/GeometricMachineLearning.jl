@@ -125,9 +125,7 @@ struct UnknownSymplecticDecoder <: SymplecticDecoder
     n_decoder_blocks::Int
 end
 
-# """
-# This function gives iterations from the full dimension to the reduced dimension (i.e. the intermediate steps). The iterations are given in ascending order. 
-# """
+# The intermediate steps from the full dimension to the reduced dimension, in ascending order.
 function compute_iterations(full_dim::Integer, reduced_dim::Integer, n_blocks::Integer)
     iterations = Vector{Int}(reduced_dim:((full_dim - reduced_dim) ÷ (n_blocks - 1)):full_dim)
     iterations[end] = full_dim
@@ -142,16 +140,14 @@ function compute_decoder_iterations(arch::AutoEncoder)
     compute_iterations(arch.full_dim, arch.reduced_dim, arch.n_decoder_blocks)
 end
 
-# """
-# Takes as input the autoencoder architecture and a vector of integers specifying the layer dimensions in the encoder. Has to return a tuple of `AbstractExplicitLayer`s.
-# """
+# An implementation returns a tuple of `AbstractExplicitLayer`s, one per encoder layer dimension in
+# the vector.
 function encoder_layers_from_iteration(::AutoEncoder, ::AbstractVector{<:Integer})
     error("You have to implement `encoder_layers_from_iteration` for this autoencoder architecture!")
 end
 
-# """
-# Takes as input the autoencoder architecture and a vector of integers specifying the layer dimensions in the decoder. Has to return a tuple of `AbstractExplicitLayer`s.
-# """
+# An implementation returns a tuple of `AbstractExplicitLayer`s, one per decoder layer dimension in
+# the vector.
 function decoder_layers_from_iteration(::AutoEncoder, ::AbstractVector{<:Integer})
     error("You have to implement `decoder_layers_from_iteration` for this autoencoder architecture!")
 end
@@ -166,22 +162,12 @@ function decoder_model(arch::AutoEncoder)
     Chain(decoder_layers_from_iteration(arch, decoder_iterations)...)
 end
 
-# """
-#     encoder_parameters(nn::NeuralNetwork{<:AutoEncoder})
-# 
-# Take a neural network of type [`AutoEncoder`](@ref) and return the parameters of the [`Encoder`](@ref).
-# """
 function encoder_parameters(nn::NeuralNetwork{<:AutoEncoder})
     n_encoder_layers = length(encoder_model(nn.architecture).layers)
     keys = Tuple(Symbol.(["L$(i)" for i in 1:n_encoder_layers]))
     NetworkParameters(NamedTuple{keys}(Tuple([params(nn)[key] for key in keys])))
 end
 
-# """
-#     decoder_parameters(nn::NeuralNetwork{<:AutoEncoder})
-# 
-# Take a neural network of type [`AutoEncoder`](@ref) and return the parameters of the [`Decoder`](@ref).
-# """
 function decoder_parameters(nn::NeuralNetwork{<:AutoEncoder})
     n_decoder_layers = length(decoder_model(nn.architecture).layers)
     all_keys = keys(params(nn))

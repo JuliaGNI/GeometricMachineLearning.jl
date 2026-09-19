@@ -22,10 +22,3 @@ function Chain(nn::LagrangianNeuralNetwork)
         Linear(nn.width, 1; use_bias = false)
     )
 end
-
-# `∇L`, `∇∇L` and `∇q̇∇q̇L` stood here: the gradient, the Hessian and the `q̇q̇` block of the Hessian
-# of the network, each by a `Zygote.gradient` or `Zygote.hessian` over the input. They were described
-# as the reference for what `LNNLoss` computes, but nothing called them and no test compared the two
-# routes, so the reference was never taken. `LNNLoss` reaches the same quantities through
-# `SymbolicNeuralNetworks.Jacobian`, because a nested `Zygote.gradient` inside a loss breaks the
-# parameter gradient. Restoring the comparison means a test, not three uncalled definitions.

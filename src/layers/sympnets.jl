@@ -174,11 +174,6 @@ function LinearLayerP(M)
     LinearLayerP{M, M}()
 end
 
-# A `Gradient(dim, dim2, activation; full_grad, change_q)` constructor stood here. It `@warn`ed
-# "You are calling the old constructor. This will be deprecated." on every call, and dispatched to
-# one of the four layers above. Nothing called it, in the package, the tests, the docs or the
-# scripts, so the four constructors above are the only way in.
-
 function initialparameters(
         rng::AbstractRNG, init_weight::AbstractNeuralNetworks.Initializer,
         d::GradientLayer{M, M}, backend::Backend, ::Type{T};
@@ -270,11 +265,8 @@ end
     (q = x.q, p = x.p + custom_mat_mul(ps.weight, x.q))
 end
 
-# @doc raw"""
-# This function is used in the wrappers where the input to the SympNet layers is not a `NamedTuple` (as it should be) but an `AbstractArray`.
-# 
-# It converts the Array to a `NamedTuple` (via `assign_q_and_p`), then calls the SympNet routine(s) and converts back to an `AbstractArray` (with `vcat`).
-# """
+# For the wrappers whose input to a SympNet layer is an `AbstractArray` rather than the `NamedTuple`
+# the layer wants: split it with `assign_q_and_p`, apply the layer, and `vcat` the halves back.
 function apply_layer_to_nt_and_return_array(x::AbstractArray, d::AbstractExplicitLayer, ps::NamedTuple)
     N2 = size(x, 1)÷2
     qp = assign_q_and_p(x, N2)
@@ -282,11 +274,6 @@ function apply_layer_to_nt_and_return_array(x::AbstractArray, d::AbstractExplici
     return vcat(output.q, output.p)
 end
 
-# @doc raw"""
-# This is called when a [`SympNetLayer`](@ref) is applied to a `NamedTuple`. 
-# 
-# It calls [`GeometricMachineLearning.apply_layer_to_nt_and_return_array`](@ref).
-# """
 @inline function (d::SympNetLayer)(x::AbstractArray, ps::NamedTuple)
     apply_layer_to_nt_and_return_array(x, d, ps)
 end

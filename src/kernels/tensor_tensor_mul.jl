@@ -1,4 +1,4 @@
-# Simple kernel for tensor-matrix multiplication (maybe you need to add a block index here!)
+# `c[:, :, k] = a[:, :, k] * b[:, :, k]`: slice by slice, one thread per output entry.
 @kernel function tensor_tensor_mul_kernel!(c, a, b)
     i, j, k = @index(Global, NTuple)
 

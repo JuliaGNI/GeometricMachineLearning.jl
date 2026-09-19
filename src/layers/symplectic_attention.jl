@@ -1,5 +1,5 @@
-const SYMPLECTICATTENTION_SYMMETRIC_DEFAULT::Bool = true
-const SYMPLECTICATTENTION_ACTIVATION_DEFAULT::AbstractSoftmax = MatrixSoftmax()
+const sa_symmetric_default::Bool = true
+const sa_activation_default::AbstractSoftmax = MatrixSoftmax()
 
 @doc raw"""
     SymplecticAttention
@@ -21,7 +21,7 @@ See [`SymplecticAttentionQ`](@ref) and [`SymplecticAttentionP`](@ref).
 ```math
 C = Q^TAQ,
 ```
-where ``Q`` is the ``q``-part of an input ``Z`` (see [`QPT`](@ref)). The matrix ``A`` is a weighting that can either be symmetric or skew-symmetric (this can be adjusted with the key-word `symmetric::Bool`).
+where ``Q`` is the ``q``-part of an input ``Z`` (see [`QPT`](@ref)). The matrix ``A`` is a weighting that is either symmetric or arbitrary (this can be adjusted with the key-word `symmetric::Bool`).
 
 # Extended help
 
@@ -43,9 +43,9 @@ A constant that is derived from [`SymplecticAttention`](@ref). This only changes
 SymplecticAttentionQ(M; symmetric::Bool, activation)
 ```
 
-The default for the keywords are $(SYMPLECTICATTENTION_SYMMETRIC_DEFAULT) and $(SYMPLECTICATTENTION_ACTIVATION_DEFAULT).
+The default for the keywords are $(sa_symmetric_default) and $(sa_activation_default).
 
-You may want to alter the activation function (either [`MatrixSoftmax`](@ref) or [`VectorSoftmax`](@ref)), but its almost always better to set the keyword `symmetric` to `true`.
+You may want to alter the activation function (either [`MatrixSoftmax`](@ref) or [`VectorSoftmax`](@ref)), but it is almost always better to leave the keyword `symmetric` at `true`.
 """
 const SymplecticAttentionQ{M, N, Symmetric, AT} = SymplecticAttention{
     M, N, :Q, Symmetric, AT}
@@ -61,34 +61,39 @@ A constant that is derived from [`SymplecticAttention`](@ref). This only changes
 SymplecticAttentionP(M; symmetric::Bool, activation)
 ```
 
-The default for the keywords are $(SYMPLECTICATTENTION_SYMMETRIC_DEFAULT) and $(SYMPLECTICATTENTION_ACTIVATION_DEFAULT).
+The default for the keywords are $(sa_symmetric_default) and $(sa_activation_default).
 
-You may want to alter the activation function (either [`MatrixSoftmax`](@ref) or [`VectorSoftmax`](@ref)), but its almost always better to set the keyword `symmetric` to `true`.
+You may want to alter the activation function (either [`MatrixSoftmax`](@ref) or [`VectorSoftmax`](@ref)), but it is almost always better to leave the keyword `symmetric` at `true`.
 """
 const SymplecticAttentionP{M, N, Symmetric, AT} = SymplecticAttention{
     M, N, :P, Symmetric, AT}
 
-function SymplecticAttentionQ(M::Integer; symmetric = false, activation::AbstractSoftmax = MatrixSoftmax())
+# The keyword defaults are the two constants at the top of this file, and not literals repeated
+# here: the docstrings above interpolate the constants, so reading the default off the constant is
+# what makes the documented default the one a caller gets.
+function SymplecticAttentionQ(M::Integer; symmetric::Bool = sa_symmetric_default,
+        activation::AbstractSoftmax = sa_activation_default)
     @assert iseven(M) "Dimension must be even!"
     AT = typeof(activation)
-    symmetric == false ? SymplecticAttention{M, M, :Q, :arbitrary, AT}(activation) :
+    !symmetric ? SymplecticAttention{M, M, :Q, :arbitrary, AT}(activation) :
     SymplecticAttention{M, M, :Q, :symmetric, AT}(activation)
 end
-function SymplecticAttentionP(M::Integer; symmetric = false, activation::AbstractSoftmax = MatrixSoftmax())
+function SymplecticAttentionP(M::Integer; symmetric::Bool = sa_symmetric_default,
+        activation::AbstractSoftmax = sa_activation_default)
     @assert iseven(M) "Dimension must be even!"
     AT = typeof(activation)
-    symmetric == false ? SymplecticAttention{M, M, :P, :arbitrary, AT}(activation) :
+    !symmetric ? SymplecticAttention{M, M, :P, :arbitrary, AT}(activation) :
     SymplecticAttention{M, M, :P, :symmetric, AT}(activation)
 end
 
 function parameterlength(::SymplecticAttention{
-        M, M, LayerType, :arbitrary})::Integer where {M, LayerType}
+        M, M, LayerType, :arbitrary}) where {M, LayerType}
     M2 = M ÷ 2
     M2 * M2
 end
 
 function parameterlength(::SymplecticAttention{
-        M, M, LayerType, :symmetric})::Integer where {M, LayerType}
+        M, M, LayerType, :symmetric}) where {M, LayerType}
     M2 = M ÷ 2
     (M2 + 1) * M2 ÷ 2
 end
@@ -123,9 +128,14 @@ function (d::SymplecticAttentionQ{M, M, :arbitrary})(
         p = z.p)
 end
 
+# `A = ps.A` once, and then `A` twice: the local binding is what keeps the `SymmetricMatrix`
+# structure in the Zygote gradient of this layer. Read `ps.A` twice and the gradient leaf degrades
+# to a plain `Matrix` -- `test/parameters/symplectic_attention_network_parameters_gradient.jl`
+# asserts both halves of that, and the last testset there covers this method. The binding costs no
+# allocation; it is the number of accesses that decides the structure.
 function (d::SymplecticAttentionQ{M, M, :symmetric})(
         z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {AT, M}
-    A = ps.A # for some reason we have to allocate a local variable here. This should be further investigated.
+    A = ps.A
     PAP = _custom_mul(_custom_mul(_custom_transpose(z.p), A), z.p)
     σPAP = d.activation(PAP)
     (q = z.q + _custom_mul(_custom_mul(A, z.p), 2 * σPAP), p = z.p)
@@ -140,6 +150,7 @@ function (d::SymplecticAttentionP{M, M, :arbitrary})(
              _custom_mul(_custom_mul(ps.A', z.q), σQAQ)))
 end
 
+# One access to `ps.A`, for the reason given at the `SymplecticAttentionQ` method above.
 function (d::SymplecticAttentionP{M, M, :symmetric})(
         z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {AT, M}
     A = ps.A
