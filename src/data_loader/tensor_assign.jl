@@ -6,11 +6,9 @@ They assign batched tensors during training based on a tensor with three axes: (
 All of this uses KernelAbstractions and should work with any GPU supported by Julia.
 """
 
-# `assign_batch_kernel!` and `assign_output_kernel!` used to head this file: a pair of `@kernel`s
-# that assigned a sequential batch and its target out of the full data tensor. Neither was ever
-# launched. `src/data_loader/batch.jl` carries its own pair for that job --
-# `assign_input_from_vector_of_tuples_kernel!` and `assign_output_from_vector_of_tuples_kernel!`,
-# which index by a vector of `(time_step, parameter)` tuples -- so both here are gone.
+# Assigning a batch and its target out of the full data tensor is `src/data_loader/batch.jl`'s job:
+# `assign_input_from_vector_of_tuples_kernel!` and `assign_output_from_vector_of_tuples_kernel!`
+# index by a vector of `(time_step, parameter)` tuples. What is here estimates the output instead.
 
 @kernel function assign_output_estimate_kernel!(
         output_estimate::AbstractArray{T, 3}, full_output::AbstractArray{T, 3},

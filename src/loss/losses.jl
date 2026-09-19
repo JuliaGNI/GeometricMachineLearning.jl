@@ -1,7 +1,6 @@
-# `NetworkLoss(nn::NeuralNetwork)` used to be defined here. Both the function and the argument type
-# belong to `AbstractNeuralNetworks`, so the method was type piracy, and nothing in GML called it.
-# The methods below dispatch on GML's own architectures and are fine; a `NetworkLoss(::NeuralNetwork)`
-# that forwards to `architecture(nn)` belongs in `AbstractNeuralNetworks` itself.
+# The `NetworkLoss` methods below dispatch on GML's own architectures, which is what keeps them out
+# of piracy. A `NetworkLoss(::NeuralNetwork)` forwarding to `architecture(nn)` would be piracy on
+# both counts, and belongs in `AbstractNeuralNetworks` itself.
 
 @doc raw"""
     TransformerLoss(seq_length, prediction_window)
@@ -98,12 +97,6 @@ function (loss::TransformerLoss)(model::Union{Chain, AbstractExplicitLayer},
         input::T, output::T) where {T <: QPT}
     loss(model, ps, vcat(input.q, input.p), vcat(output.q, output.p))
 end
-
-# `ClassificationTransformerLoss` stood here, with its functor and a docstring that was already
-# commented out. Nothing constructed it -- not the package, the tests, the docs or the scripts --
-# and its functor did not crop the transformer output to the classification dimension, which was the
-# one thing that would have set it apart: the line that would have done so was commented out too.
-# What it computed was the plain relative error, which `TransformerLoss` above already gives.
 
 @doc raw"""
     AutoEncoderLoss()

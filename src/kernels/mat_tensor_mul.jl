@@ -1,4 +1,4 @@
-# Simple kernel for tensor-matrix multiplication (maybe you need to add a block index here!)
+# `C[:, :, k] = A * B[:, :, k]`: a matrix times every slice of a tensor, one thread per output entry.
 @kernel function mat_tensor_mul_kernel!(C, A, B)
     i, j, k = @index(Global, NTuple)
 

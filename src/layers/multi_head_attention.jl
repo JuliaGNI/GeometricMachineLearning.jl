@@ -124,13 +124,7 @@ function compute_output_of_mha(d::MultiHeadAttention{M, M}, x::AbstractMatrix{T}
     reduce(vcat, head_outputs)
 end
 
-# @doc raw"""
-#     compute_output_of_mha(d::MultiHeadAttention, x, ps)
-# 
-# Apply [`MultiHeadAttention`](@ref) layer `d` to `x`. 
-# 
-# This is the same, independent of whether the input is added to the output or not. 
-# """
+# Apply `d` to `x`, the same way whether or not the input is added to the output.
 function compute_output_of_mha(
         d::MultiHeadAttention{M, M}, x::AbstractArray{
             T, 3}, ps::NamedTuple) where {M, T}
@@ -175,11 +169,7 @@ function mat_tensor_mul(Y::AT,
     mat_tensor_mul(Y.parent.A', x)
 end
 
-# @doc raw"""
-#     mat_tensor_mul(Y::StiefelManifold, x::AbstractArray{<:Number, 3})
-# 
-# Multiply `Y` with all matrices stored in `x` (parallelize over the third axis).
-# """
+# Multiply `Y` with every matrix stored in `x`, parallelised over the third axis.
 function mat_tensor_mul(Y::StiefelManifold, x::AbstractArray{<:Number, 3})
     mat_tensor_mul(Y.A, x)
 end
