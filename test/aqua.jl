@@ -16,42 +16,54 @@ using Test
 #
 # WHAT IS SWITCHED OFF, AND WHY IT IS NOT A `broken = true`.
 #
-# `piracies` reports 12 methods, and all 12 are genuine under Aqua's definition -- the function and
-# every argument type belong to other modules. They are not a count waiting to be triaged: each has
-# a witness, a call whose behaviour changes when this package is loaded. Three of them are on
-# `Base`, so they change every Julia process that loads this one:
+# `piracies` reports 3 methods, and all 3 are genuine under Aqua's definition -- the function and
+# every argument type belong to other modules. They are not a count waiting to be triaged. All
+# three are the same thing: a three-argument functor for a *layer* type that this package does not
+# own, `AbstractNeuralNetworks`' `Dense` and `Linear`, added so that the layer accepts a 3-tensor
+# input as well as a matrix.
 #
-#     1.0 + (2.0,)      MethodError without GML, 3.0 with it              src/utils.jl:33
-#     [1.0] + (2.0,)    MethodError without GML, 3.0 with it -- a scalar, src/utils.jl:39
-#                       silently discarding every element but the first
-#     (q, p) ≈ (q, p)   MethodError without GML, true with it             src/utils.jl:104
+#     Dense{M, N, true}   on an AbstractArray{T, 3}    src/layers/resnet.jl:63
+#     Dense{M, N, false}  on an AbstractArray{T, 3}    src/layers/resnet.jl:67
+#     Linear{M, N}        on an AbstractArray{T, 3}    src/layers/resnet.jl:71
 #
-# `ambiguities` reports 18 when `GeometricMachineLearning` is the only package loaded: the 17
-# `PoissonTensor * v` ambiguities against left-multiply methods in ArrayLayouts, FillArrays,
-# Symbolics and GeometricOptimizers (out of scope here, see `## Open Issues`), plus one benign
-# `Dense`/`Affine` pair with no witness.
+# Closing these means either upstream gaining the 3-tensor methods or this package wrapping the two
+# layer types, and both are an API change rather than a tidy-up. They are *B7* under
+# `## Open Issues` in `CHANGELOG.md` with that reasoning.
 #
-# **But 18 is not what this file measures, because this file does not run in isolation.** By the
-# time this `@safetestset` runs, `runtests.jl` has already loaded `Zygote`, `GeometricIntegrators`
-# and `HDF5` for earlier subjects, and that combination pulls in `BandedMatrices` and `BlockArrays`
-# as transitive extension dependencies -- neither of which loads with `GeometricMachineLearning`
-# alone, or with any *one* of those three added to it. Both packages specialise `getindex` on an
-# `AbstractMatrix` for their own index types (`Block`, `BandRangeType`, …), and
-# `PoissonTensor`'s own `getindex(𝕁::PoissonTensor, i, j)` (`poisson_tensor.jl:42`) is exactly as
-# generic on its index arguments, so it collides with **9** of them -- the same class of defect as
-# the 17 `*` ambiguities, on the same type, out of scope for the same reason. Measured with every
-# package `runtests.jl` loads before this file present, the true total is **27**, and that is the
-# number that governs whether `Pkg.test()` passes.
+# There were 12 until the piracy pass of 0.8.0. It removed the three `Base` piracies -- two
+# `+(::Float64, ::Tuple{Float64})`-shaped methods with no caller anywhere, and an `≈` on a `(q, p)`
+# `NamedTuple` pair with one caller, in `test/arrays/poisson_tensor.jl` -- and the six `add!`
+# methods on GeometricOptimizers'
+# structured matrix types, which had no caller either and which GeometricOptimizers already defines
+# against its own generic.
 #
-# `ambiguities` stays off either way: 27 (or 18) is not 0, and an exact assertion on the
-# `PoissonTensor` pile would turn the suite red on an unrelated upstream upgrade the way the piracy
-# count does not.
+# `ambiguities` reports 1, and the same 1 whether this package is loaded alone or with everything
+# `runtests.jl` loads before this file. It is a `Dense{M, N, true}` functor against
+# `AbstractNeuralNetworks.Affine`'s, and it is benign: `Dense` is not a subtype of `Affine` and the
+# two have no common instance, so no call can reach the pair. It is the same `resnet.jl:63` method
+# as the first piracy above.
 #
-# Fixing the piracy set is a change to `src/` that this file does not own, and it is recorded under
-# `## Open Issues` in `CHANGELOG.md` with the witnesses. Marking it `broken = true` would leave a
-# check that reports success while the defect stands, which is the failure mode this test suite's
-# guards exist to remove. Six checks that fail on a real regression are worth more than eight that
-# are all switched off.
+# That number was 18 in isolation and 27 in the suite before 0.8.0, and the difference is worth
+# recording because it is what makes the gate below trustworthy now. Both piles were on
+# `PoissonTensor`, which is an `AbstractMatrix{T}`, and both came from a method of this package's
+# claiming an argument position wholesale:
+#
+#   17  `*(𝕁::PoissonTensor{T}, v::AbstractVector/Matrix/Array{T, 3})` collided with every
+#       `*(::AbstractMatrix, ::X)` that ArrayLayouts, FillArrays, Symbolics and GeometricOptimizers
+#       define for their own special array type `X`. A `Strided…` right-hand side excludes each `X`
+#       and keeps everything the package builds.
+#    9  `getindex(𝕁::PoissonTensor, i, j)` collided with the `getindex` methods BandedMatrices and
+#       BlockArrays add to `AbstractMatrix` for `Block`, `BlockIndex` and `BandRangeType`. Typing
+#       the indices `::Int` -- the one method an `AbstractArray` must supply -- excludes them.
+#       Neither package loads with this one alone, which is why these nine were visible only from
+#       inside the suite, and why the two counts differed.
+#
+# `ambiguities` still stays off, because 1 is not 0 and Aqua's check has no way to exempt a pair.
+# The assertion below replaces it and is strictly better here: it names the number, so it fails
+# both when an ambiguity is added and when this one is closed without the comment going with it.
+#
+# Marking either check `broken = true` would leave a check that reports success while the defect
+# stands, which is the failure mode this test suite's guards exist to remove.
 #
 # `unbound_args` is the one check here whose verdict depends on the Julia version: it passes on
 # `min`, `1` and `pre`, and fails on nightly over one method. That is *B9* under `## Open Issues`.
@@ -61,16 +73,17 @@ using Test
     # A switched-off check detects nothing, so the count it would have reported drifts unobserved,
     # and so does every `src` line named above. This is the gate. It fails when a piracy is added,
     # and it fails when one is removed without the entry above and in `CHANGELOG.md` going with it.
-    @test length(Aqua.Piracy.hunt(GeometricMachineLearning)) == 12
+    @test length(Aqua.Piracy.hunt(GeometricMachineLearning)) == 3
 
-    # `ambiguities` gets no such gate, and the measurements above are why it cannot have one. The
-    # remaining ambiguities are the `PoissonTensor` pile, so the count moves with ArrayLayouts',
-    # FillArrays', Symbolics', GeometricOptimizers', BandedMatrices' and BlockArrays' versions
-    # rather than with anything in this tree -- and with *which* of them a given process has
-    # loaded, which depends on the order `runtests.jl` includes its subjects. An exact assertion
-    # would therefore go red on an unrelated upgrade, or on a reordering of this suite, with
-    # nothing in `src/` having changed. It could not tell that apart from a regression, which is
-    # the one thing a gate has to do.
+    # The ambiguity count now gets the same gate, which it could not have while the `PoissonTensor`
+    # pile stood. The objection then was that the pile moved with ArrayLayouts', FillArrays',
+    # Symbolics', GeometricOptimizers', BandedMatrices' and BlockArrays' versions, and with *which*
+    # of them a given process had loaded -- so an exact assertion would have gone red on an
+    # unrelated upgrade or on a reordering of this suite, with nothing in `src/` having changed,
+    # and it could not have told that apart from a regression. Neither holds of the one pair left:
+    # both of its methods are this package's and `AbstractNeuralNetworks`', the count is the same
+    # in isolation and in the suite, and nothing outside this repository's own `[compat]` moves it.
+    @test length(Test.detect_ambiguities(GeometricMachineLearning; recursive = true)) == 1
 end
 
 # `ExplicitImports` answers a question Aqua does not ask, and the reason to gate on it is not

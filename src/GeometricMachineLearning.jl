@@ -37,13 +37,13 @@ import Symbolics
 # [#234](https://github.com/JuliaGNI/GeometricMachineLearning.jl/issues/234).
 #
 # `import` and not `using ...: ...`: GML adds constructor methods to several of these types (in
-# `layers/`, `arrays/gml_extensions.jl` and the kernels), and extending a *type* reached through
-# `using` warns on every such method since Julia 1.12 — "Constructor for type … was extended in
-# `GeometricMachineLearning` without explicit qualification or import". Everything imported here is
-# re-exported below, which is what keeps `using GeometricMachineLearning` alone sufficient.
+# `layers/` and the kernels), and extending a *type* reached through `using` warns on every such
+# method since Julia 1.12 — "Constructor for type … was extended in `GeometricMachineLearning`
+# without explicit qualification or import". Everything imported here is re-exported below, which
+# is what keeps `using GeometricMachineLearning` alone sufficient.
 import GeometricOptimizers
 import GeometricOptimizers: Manifold, StiefelManifold, GrassmannManifold
-import GeometricOptimizers: SkewSymMatrix, SymmetricMatrix, AbstractTriangular,
+import GeometricOptimizers: SkewSymMatrix, SymmetricMatrix,
                             LowerTriangular, UpperTriangular, StiefelProjection
 import GeometricOptimizers: StiefelLieAlgHorMatrix, GrassmannLieAlgHorMatrix
 import GeometricOptimizers: rgrad, metric, check, global_section
@@ -77,7 +77,6 @@ import AbstractNeuralNetworks: Dense, Linear
 # added a method to it, so all the export did was shadow `GeometricOptimizers.update!` — which is
 # `GeometricBase.update!`, a different generic function, and the one that actually has methods for
 # the optimizer caches. It is imported from GeometricOptimizers with the rest of them below.
-import AbstractNeuralNetworks: add!
 import AbstractNeuralNetworks: initialparameters
 import AbstractNeuralNetworks: parameterlength
 import AbstractNeuralNetworks: GlorotUniform
@@ -112,10 +111,9 @@ include("utils.jl")
 
 include("data_loader/data_loader.jl")
 
-# INCLUDE ARRAYS — the structured matrix types come from GeometricOptimizers; `PoissonTensor` is
-# GML's own, and `gml_extensions.jl` holds what GML adds to the upstream types.
+# INCLUDE ARRAYS — the structured matrix types come from GeometricOptimizers, which also carries
+# every method GML needs on them. `PoissonTensor` is GML's own and is the only one defined here.
 include("arrays/poisson_tensor.jl")
-include("arrays/gml_extensions.jl")
 
 # Re-exported from GeometricOptimizers, so that `using GeometricMachineLearning` on its own still
 # gives a caller the matrix types its layers are parametrized by.
@@ -171,8 +169,9 @@ include("activations/softmax.jl")
 
 # `_diff` and `_norm` are the `NamedTuple`/`(q, p)` arms of subtraction and the norm, and neither is
 # exported: they are helpers of `src/reduced_system/`, not surface. `_add` sat beside them with no
-# caller of its own and is gone; `add!` is `AbstractNeuralNetworks`' generic and available from
-# there, this package only adding methods for the structured matrix types.
+# caller of its own and is gone, and so is the `add!` family: those methods were piracy on
+# `AbstractNeuralNetworks.add!` that nothing here called, and `GeometricOptimizers` defines the same
+# set against its own generic for a caller that wants them.
 
 export GradientLayerQ, GradientLayerP, ActivationLayerQ, ActivationLayerP, LinearLayerQ,
        LinearLayerP

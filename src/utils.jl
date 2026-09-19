@@ -18,30 +18,6 @@ end # we need this because of a Zygote problem
 _diff(dx₁::NamedTuple, dx₂::NamedTuple) = map(_diff, dx₁, dx₂)
 _diff(A::AbstractArray, B::AbstractArray) = A - B
 
-function add!(C::AbstractVecOrMat, A::AbstractVecOrMat, B::AbstractVecOrMat)
-    @assert size(A) == size(B) == size(C)
-    C .= A + B
-end
-
-# There used to be a `NamedTuple` arm of `add!` here, recursing with `apply_toNT`. Nothing in the
-# package, the tests, the docs or the scripts ever called it, and `AbstractNeuralNetworks.add!` --
-# whose generic this is -- is about a destination and two summands, which a parameter *tree* is not.
-# The `AbstractVecOrMat` base case above and the structured-type methods in
-# `src/arrays/gml_extensions.jl` are the arms this package genuinely owns.
-
-# Type pyracy!!
-function Base.:+(a::Float64, b::Tuple{Float64})
-    x, = b
-    return a + x
-end
-
-# Type pyracy!!
-function Base.:+(a::Vector{Float64}, b::Tuple{Float64})
-    x, = b
-    y, = a
-    return y + x
-end
-
 # `global_section(::AbstractVecOrMat) = nothing` used to be defined here, identically to
 # GeometricOptimizers' own fallback. It is imported now.
 
@@ -100,5 +76,3 @@ const QPTOAT = Union{QPT, AbstractArray}
 This could be data in ``(q, p)\in\mathbb{R}^{2d}`` form or come from an arbitrary vector space.
 """
 const QPTOAT{T} = Union{QPT{T}, AbstractArray{T}} where {T}
-
-Base.:≈(qp₁::QPT, qp₂::QPT) = (qp₁.q ≈ qp₂.q) & (qp₁.p ≈ qp₂.p)
