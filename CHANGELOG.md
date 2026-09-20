@@ -3820,14 +3820,16 @@ they resolved to is in the release notes above.
 
   **It is every architecture that holds one of these three layers, not the three obvious ones.**
   Measured on 2026-09-20, each throwing `Cannot access the contents of a private buffer` at
-  construction: `StiefelLayer`, `GrassmannLayer`, `SymplecticAutoencoder`, `PSDArch`,
+  construction: `StiefelLayer`, `GrassmannLayer`, `PSDLayer`, `SymplecticAutoencoder`, `PSDArch`,
   `MultiHeadAttention(…; Stiefel = true)`, `Transformer(…; Stiefel = true)`,
   `ClassificationTransformer` — whose `Stiefel` keyword **defaults to `true`** — and
   `SymplecticTransformer` whenever `transformer_dim ≠ dim`, which is the branch that wraps the
   chain in two `PSDLayer`s. The two that do *not* throw mark the boundary:
   `SymplecticTransformer` at its default `transformer_dim = dim` takes the `:NoUpscale` branch and
-  has no `PSDLayer`, and `Transformer` itself defaults to `Stiefel = false`, which is also why
-  `StandardTransformerIntegrator` is unaffected.
+  has no `PSDLayer`, and `Transformer` itself defaults to `Stiefel = false`.
+  `StandardTransformerIntegrator` is unaffected: it constructs `MultiHeadAttention` directly at
+  `src/architectures/standard_transformer_integrator.jl:64` with no `Stiefel` keyword, relying
+  on that layer's own default `Stiefel = false` (`src/layers/multi_head_attention.jl:31`).
 
   **The replacement exists upstream and is not yet released.** `GeometricOptimizers` #95 added
   `_cholesky_qr2` — CholeskyQR2, matrix products and triangular solves only, so it runs wherever
