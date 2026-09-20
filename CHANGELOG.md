@@ -2109,9 +2109,12 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `Metal.jl` and `oneAPI.jl` as packages the package "naturally integrates". Two of the four things
   a reader would try first do not run at all — see **B12** and **B13** below — and the sentence had
   nothing behind it either way, because **no test in this repository runs on a device, and there is
-  no GPU job in CI**. The two places that come closest do not: the one GPU script,
-  `scripts/reproduction/linear_symplectic_transformer_gpu.jl`, drops to `CPU()` under `GML_SMOKE`,
-  which is how CI runs it; and `test/arrays/poisson_tensor.jl:150` asserts that
+  no GPU job in CI**. Six scripts under `scripts/` select a device backend. Five of them
+  use `smoke_size(CUDABackend(), CPU())` and drop to `CPU()` under `GML_SMOKE`, which is
+  how CI runs them, including `scripts/reproduction/linear_symplectic_transformer_gpu.jl:17`.
+  The sixth, `scripts/reproduction/symplectic_autoencoders/training.jl`, does not use
+  `smoke_size`; it tries `gpu_backend()` at lines 46-70 and falls back to `cpu_backend()`
+  when CUDA is absent. And `test/arrays/poisson_tensor.jl:150` asserts that
   `ext/GPUArraysCoreExt.jl` loads and defines its three `*` methods, and says in its own comment
   that the behaviour behind them is not what it stands for.
 
@@ -2133,7 +2136,8 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `mat_tensor_mul`, `tensor_tensor_mul`, `tensor_transpose`, `tensor_transpose_tensor_mul` and
   `map_to_cpu` all run, and so does training: `Optimizer(AdamOptimizer(), nn)(nn, dl, Batch(8), 2,
   FeedForwardLoss())` on a `GSympNet(4)` returns a finite `Vector{Float32}` and leaves the
-  parameters `MtlMatrix{Float32, Metal.PrivateStorage}`. That last one is new in this release and
+  parameters as `MtlMatrix{Float32}` (weight) and `MtlVector{Float32}` (bias, scale) in
+  `Metal.PrivateStorage`. That last one is new in this release and
   is two other entries meeting: `T(step_size)` at the optimizer call site, and the training history
   that now carries the network's own element type.
 
@@ -3809,9 +3813,9 @@ they resolved to is in the release notes above.
   `GeometricOptimizers` method. Closing this entry is a `[compat]` bump to the release that carries
   #96, and no change to `src/` here.
 
-- **B13. The manifold layers fail at construction on a device, because they orthonormalize with a
-  host `qr!`.** `src/layers/stiefel_layer.jl:14`, `src/layers/grassmann_layer.jl:24` and
-  `src/layers/psd_like_layer.jl:34` each write
+- **B13. The three layers that orthonormalize their weight fail at construction on a device,
+  because they use a host `qr!`.** `src/layers/stiefel_layer.jl:14`,
+  `src/layers/grassmann_layer.jl:24` and `src/layers/psd_like_layer.jl:34` each write
   `assign_columns(typeof(weight)(qr!(weight).Q), size(weight)...)`. `LinearAlgebra.qr!` is a host
   factorization, `Metal.jl` implements no `qr` for an `MtlArray`, and the LAPACK path dies on
   `unsafe_convert` of a private buffer. `NeuralNetwork(SymplecticAutoencoder(8, 4),
