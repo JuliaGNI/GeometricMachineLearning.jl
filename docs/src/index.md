@@ -50,7 +50,16 @@ Many layers have been adapted in order to be used for problems in scientific mac
 
 ## GPU Support
 
-All neural network layers and architectures that are implemented in `GeometricMachineLearning` have GPU support via the package `KernelAbstractions.jl` [churavy2020kernel](@cite), so `GeometricMachineLearning` naturally integrates `CUDA.jl` [besard2018juliagpu](@cite), `AMDGPU.jl`, `Metal.jl` [besard2022metal](@cite) and `oneAPI.jl` [besard2022one](@cite).
+`GeometricMachineLearning` allocates and computes through `KernelAbstractions.jl` [churavy2020kernel](@cite), so its layers and architectures are written against any backend that package supports: `CUDA.jl` [besard2018juliagpu](@cite), `AMDGPU.jl`, `Metal.jl` [besard2022metal](@cite) and `oneAPI.jl` [besard2022one](@cite).
+
+**None of that is tested.** There is no GPU test under `test/` and no GPU job in CI, so a green test matrix says nothing about the GPU path. What is written below was measured by hand on an Apple M4 Max through `Metal.jl`, in `Float32`, because Apple GPUs have no `Float64` at all.
+
+What ran on that device: the tensor kernels and `map_to_cpu`; the forward pass of `GSympNet`, `LASympNet`, `StandardTransformerIntegrator`, `LinearSymplecticTransformer` and `SymplecticTransformer` at its default `transformer_dim`, on both matrix and tensor input; the forward pass of `VolumePreservingFeedForward` and `VolumePreservingTransformer` on tensor input; and training a network with `Optimizer`, which returns a `Float32` history and leaves the parameters on the device.
+
+Two things did not run.
+
+- `VolumePreservingFeedForward` and `VolumePreservingTransformer` applied to a **matrix** raise *Scalar indexing is disallowed*. The product of a structured matrix by a matrix belongs to `GeometricOptimizers`, and the guard belongs to `GPUArraysCore`, which `CUDA.jl`, `AMDGPU.jl` and `oneAPI.jl` share. The tensor path is unaffected.
+- The three layers that orthonormalize their weight — `StiefelLayer`, `GrassmannLayer` and `PSDLayer` — fail at **construction** on a `Metal.jl` device. They orthonormalize with `LinearAlgebra.qr!`, which is a host factorization, and `Metal.jl` implements no `qr` for an `MtlArray`. `SymplecticAutoencoder`, `PSDArch` and `MultiHeadAttention(…; Stiefel = true)` were measured failing this way. Every other architecture that holds one of these layers fails the same way, which reaches `SymplecticTransformer` whenever `transformer_dim ≠ dim`, `ClassificationTransformer`, and any `Transformer(…; Stiefel = true)`. This was measured on `Metal.jl` alone: `CUDA.jl` supplies `qr!` through CUSOLVER, so whether the same construction fails on a CUDA device is untested rather than known either way.
 
 ## Tutorials 
 

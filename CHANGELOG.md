@@ -2104,6 +2104,43 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   matrix to any even dimension — and the third goes to `## Open Issues` as a follow-up item rather
   than being silently left behind.
 
+- **The *GPU Support* section of `docs/src/index.md` no longer claims that every layer and
+  architecture works on a GPU.** It claimed exactly that, and named `CUDA.jl`, `AMDGPU.jl`,
+  `Metal.jl` and `oneAPI.jl` as packages the package "naturally integrates". Two of the four things
+  a reader would try first do not run at all — see **B12** and **B13** below — and the sentence had
+  nothing behind it either way, because **no test in this repository runs on a device, and there is
+  no GPU job in CI**. Six scripts under `scripts/` select a device backend. Five of them
+  use `smoke_size(CUDABackend(), CPU())` and drop to `CPU()` under `GML_SMOKE`, which is
+  how CI runs them, including `scripts/reproduction/linear_symplectic_transformer_gpu.jl:17`.
+  The sixth, `scripts/reproduction/symplectic_autoencoders/training.jl`, does not use
+  `smoke_size`; it tries `gpu_backend()` at lines 46-70 and falls back to `cpu_backend()`
+  when CUDA is absent. And `test/arrays/poisson_tensor.jl:150` asserts that
+  `ext/GPUArraysCoreExt.jl` loads and defines its three `*` methods, and says in its own comment
+  that the behaviour behind them is not what it stands for.
+
+  The section now separates what the package is *written against* — any `KernelAbstractions`
+  backend — from what has been *run*, says in bold that none of it is tested, and names the two
+  failures. What replaced the claim was measured on 2026-09-20 on an Apple M4 Max through
+  `Metal.jl`, in `Float32`, at `e1d44f0b` with the registered `GeometricOptimizers` 0.7.0:
+
+  | | matrix input | tensor input |
+  |:--|:--|:--|
+  | `GSympNet`, `LASympNet` | ✓ | ✓ |
+  | `StandardTransformerIntegrator` | ✓ | ✓ |
+  | `SymplecticTransformer` at its default `transformer_dim` | ✓ | ✓ |
+  | `LinearSymplecticTransformer` | ✓ | ✓ |
+  | `VolumePreservingFeedForward`, `VolumePreservingTransformer` | **B12** | ✓ |
+  | `SymplecticAutoencoder`, `PSDArch`, `MultiHeadAttention(…; Stiefel = true)` | **B13**, at construction | **B13**, at construction |
+  | `SymplecticTransformer` with `transformer_dim ≠ dim`, `ClassificationTransformer`, `Transformer(…; Stiefel = true)` | **B13**, at construction | **B13**, at construction |
+
+  `mat_tensor_mul`, `tensor_tensor_mul`, `tensor_transpose`, `tensor_transpose_tensor_mul` and
+  `map_to_cpu` all run, and so does training: `Optimizer(AdamOptimizer(), nn)(nn, dl, Batch(8), 2,
+  FeedForwardLoss())` on a `GSympNet(4)` returns a finite `Vector{Float32}` and leaves the
+  parameters as `MtlMatrix{Float32}` (weight) and `MtlVector{Float32}` (bias, scale) in
+  `Metal.PrivateStorage`. That last one is new in this release and
+  is two other entries meeting: `T(step_size)` at the optimizer call site, and the training history
+  that now carries the network's own element type.
+
 ### Infrastructure
 
 - **Aqua runs in the suite, on the six of the eight checks it runs by default that this package
@@ -3755,6 +3792,70 @@ they resolved to is in the release notes above.
   Closing it means giving the builder the backend, so that it allocates through
   `KernelAbstractions.allocate` and fills with a kernel instead of a loop, and it cannot be verified
   here without a GPU job to run it under.
+
+- **B12. `VolumePreservingFeedForward` and `VolumePreservingTransformer` raise *Scalar indexing is
+  disallowed* on matrix input.** `src/layers/volume_preserving_feedforward.jl` multiplies the
+  layer's `LowerTriangular`/`UpperTriangular` weight by the input. At the registered
+  `GeometricOptimizers` 0.7.0 that product has no method of its own and falls through to
+  `LinearAlgebra`'s generic `*(::AbstractMatrix, ::AbstractMatrix)`, which asks the argument for
+  one entry at a time; `GPUArraysCore` refuses. (The line of `matmul.jl` that method sits on moves
+  between Julia versions, so it is deliberately not cited here.) The tensor path goes through this
+  package's own `mat_tensor_mul` kernel and is unaffected, which is why only the matrix shape
+  fails.
+
+  **The guard is `GPUArraysCore`'s, shared by `CUDA.jl`, `AMDGPU.jl` and `oneAPI.jl`, so this is
+  not a Metal limitation** — Metal is only where it was measured.
+
+  It is not this package's `*` to fix, and **it is already fixed on
+  [`GeometricOptimizers` `main`](https://github.com/JuliaGNI/GeometricOptimizers.jl/tree/main), in
+  no release.** `GeometricOptimizers`
+  [#96](https://github.com/JuliaGNI/GeometricOptimizers.jl/pull/96) gives both triangulars and
+  `StiefelProjection` kernel products; measured on the device on 2026-09-20 against that branch,
+  `LowerTriangular{Float32, MtlVector} * MtlMatrix` returns an `MtlMatrix` and dispatches to a
+  `GeometricOptimizers` method. Closing this entry is a `[compat]` bump to the first release that
+  carries #96, and no change to `src/` here. The entry names the branch rather than a version
+  because that version does not exist yet — a few unrelated changes go into `main` before it is
+  cut.
+
+- **B13. The three layers that orthonormalize their weight fail at construction on a device,
+  because they use a host `qr!`.** `src/layers/stiefel_layer.jl:14`,
+  `src/layers/grassmann_layer.jl:24` and `src/layers/psd_like_layer.jl:34` each write
+  `assign_columns(typeof(weight)(qr!(weight).Q), size(weight)...)`. `LinearAlgebra.qr!` is a host
+  factorization, `Metal.jl` implements no `qr` for an `MtlArray`, and the LAPACK path dies on
+  `unsafe_convert` of a private buffer. `NeuralNetwork(SymplecticAutoencoder(8, 4),
+  MetalBackend(), Float32)` throws before any forward pass. `CUDA.jl` has `qr!` through CUSOLVER,
+  so the reach of this one beyond Metal is unestablished.
+
+  **It is every architecture that holds one of these three layers, not the three obvious ones.**
+  Measured on 2026-09-20, each throwing `Cannot access the contents of a private buffer` at
+  construction: `StiefelLayer`, `GrassmannLayer`, `PSDLayer`, `SymplecticAutoencoder`, `PSDArch`,
+  `MultiHeadAttention(…; Stiefel = true)`, `Transformer(…; Stiefel = true)`,
+  `ClassificationTransformer` — whose `Stiefel` keyword **defaults to `true`** — and
+  `SymplecticTransformer` whenever `transformer_dim ≠ dim`, which is the branch that wraps the
+  chain in two `PSDLayer`s. The two that do *not* throw mark the boundary:
+  `SymplecticTransformer` at its default `transformer_dim = dim` takes the `:NoUpscale` branch and
+  has no `PSDLayer`, and `Transformer` itself defaults to `Stiefel = false`.
+  `StandardTransformerIntegrator` is unaffected: it constructs `MultiHeadAttention` directly at
+  `src/architectures/standard_transformer_integrator.jl:64` with no `Stiefel` keyword, relying
+  on that layer's own default `Stiefel = false` (`src/layers/multi_head_attention.jl:31`).
+
+  **The replacement is on
+  [`GeometricOptimizers` `main`](https://github.com/JuliaGNI/GeometricOptimizers.jl/tree/main) and
+  in no release.** [#95](https://github.com/JuliaGNI/GeometricOptimizers.jl/pull/95) added
+  `_cholesky_qr2` — CholeskyQR2, matrix products and triangular solves only, so it runs wherever
+  its argument already is — and a redraw for when the Gram matrix is too ill-conditioned to
+  factorize. On the device on 2026-09-20, `_cholesky_qr2` of an `MtlArray` `Float32` 8×4 returned
+  an `MtlMatrix` with `‖QᵀQ − I‖ = 1.2e-7`. That branch also **deletes `assign_columns`**, which
+  `src/GeometricMachineLearning.jl` imports, so the `[compat]` bump and the rewrite of these three
+  call sites are one change, not two.
+
+  **What this entry is rewritten against is now settled.** Both names #95 added were private, and
+  reaching across a package boundary for a name its owner never made public is exactly what
+  `assign_columns` already was — which is what breaks here.
+  [#102](https://github.com/JuliaGNI/GeometricOptimizers.jl/pull/102) closed that: the redraw is
+  exported as `orthonormal_columns(draw)`, where `draw` returns a fresh matrix on each call. So
+  nothing here is undecided, and only the release is outstanding — a few unrelated changes go into
+  `main` before it is cut.
 
 ### C. Follow-ups and cleanups
 
