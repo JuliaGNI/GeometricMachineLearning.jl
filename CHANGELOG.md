@@ -3813,9 +3813,9 @@ they resolved to is in the release notes above.
   `StiefelProjection` kernel products; measured on the device on 2026-09-20 against that branch,
   `LowerTriangular{Float32, MtlVector} * MtlMatrix` returns an `MtlMatrix` and dispatches to a
   `GeometricOptimizers` method. Closing this entry is a `[compat]` bump to the first release that
-  carries #96, and no change to `src/` here. That release is not imminent — more unrelated work is
-  going into `main` first — so the entry stays open against the branch rather than against a
-  version number.
+  carries #96, and no change to `src/` here. The entry names the branch rather than a version
+  because that version does not exist yet — a few unrelated changes go into `main` before it is
+  cut.
 
 - **B13. The three layers that orthonormalize their weight fail at construction on a device,
   because they use a host `qr!`.** `src/layers/stiefel_layer.jl:14`,
@@ -3854,8 +3854,8 @@ they resolved to is in the release notes above.
   `assign_columns` already was — which is what breaks here.
   [#102](https://github.com/JuliaGNI/GeometricOptimizers.jl/pull/102) closed that: the redraw is
   exported as `orthonormal_columns(draw)`, where `draw` returns a fresh matrix on each call. So
-  nothing is undecided, and only the release is outstanding. It is not imminent — more unrelated
-  work is going into `main` first.
+  nothing here is undecided, and only the release is outstanding — a few unrelated changes go into
+  `main` before it is cut.
 
 ### C. Follow-ups and cleanups
 
