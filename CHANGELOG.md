@@ -3797,21 +3797,25 @@ they resolved to is in the release notes above.
   disallowed* on matrix input.** `src/layers/volume_preserving_feedforward.jl` multiplies the
   layer's `LowerTriangular`/`UpperTriangular` weight by the input. At the registered
   `GeometricOptimizers` 0.7.0 that product has no method of its own and falls through to
-  `LinearAlgebra`'s generic `*(::AbstractMatrix, ::AbstractMatrix)`, which asks the
-  argument for one entry at a time; `GPUArraysCore` refuses. (The line of `matmul.jl` that method
-  sits on moves between Julia versions, so it is deliberately not cited here.) The tensor path goes through this
+  `LinearAlgebra`'s generic `*(::AbstractMatrix, ::AbstractMatrix)`, which asks the argument for
+  one entry at a time; `GPUArraysCore` refuses. (The line of `matmul.jl` that method sits on moves
+  between Julia versions, so it is deliberately not cited here.) The tensor path goes through this
   package's own `mat_tensor_mul` kernel and is unaffected, which is why only the matrix shape
   fails.
 
   **The guard is `GPUArraysCore`'s, shared by `CUDA.jl`, `AMDGPU.jl` and `oneAPI.jl`, so this is
   not a Metal limitation** — Metal is only where it was measured.
 
-  It is not this package's `*` to fix, and **it is already fixed upstream but not yet released.**
-  `GeometricOptimizers` #96 gives both triangulars and `StiefelProjection` kernel products;
-  measured on the device on 2026-09-20 against that package's `main`,
+  It is not this package's `*` to fix, and **it is already fixed on
+  [`GeometricOptimizers` `main`](https://github.com/JuliaGNI/GeometricOptimizers.jl/tree/main), in
+  no release.** `GeometricOptimizers`
+  [#96](https://github.com/JuliaGNI/GeometricOptimizers.jl/pull/96) gives both triangulars and
+  `StiefelProjection` kernel products; measured on the device on 2026-09-20 against that branch,
   `LowerTriangular{Float32, MtlVector} * MtlMatrix` returns an `MtlMatrix` and dispatches to a
-  `GeometricOptimizers` method. Closing this entry is a `[compat]` bump to the release that carries
-  #96, and no change to `src/` here.
+  `GeometricOptimizers` method. Closing this entry is a `[compat]` bump to the first release that
+  carries #96, and no change to `src/` here. That release is not imminent — more unrelated work is
+  going into `main` first — so the entry stays open against the branch rather than against a
+  version number.
 
 - **B13. The three layers that orthonormalize their weight fail at construction on a device,
   because they use a host `qr!`.** `src/layers/stiefel_layer.jl:14`,
@@ -3835,17 +3839,23 @@ they resolved to is in the release notes above.
   `src/architectures/standard_transformer_integrator.jl:64` with no `Stiefel` keyword, relying
   on that layer's own default `Stiefel = false` (`src/layers/multi_head_attention.jl:31`).
 
-  **The replacement exists upstream and is not yet released.** `GeometricOptimizers` #95 added
+  **The replacement is on
+  [`GeometricOptimizers` `main`](https://github.com/JuliaGNI/GeometricOptimizers.jl/tree/main) and
+  in no release.** [#95](https://github.com/JuliaGNI/GeometricOptimizers.jl/pull/95) added
   `_cholesky_qr2` — CholeskyQR2, matrix products and triangular solves only, so it runs wherever
-  its argument already is — and `_orthonormal_columns`, which redraws when the Gram matrix is too
-  ill-conditioned to factorize. On the device on 2026-09-20, `_cholesky_qr2` of an `MtlArray`
-  `Float32` 8×4 returned an `MtlMatrix` with `‖QᵀQ − I‖ = 1.2e-7`. The same release **deletes
-  `assign_columns`**, which `src/GeometricMachineLearning.jl` imports, so the `[compat]` bump and
-  the rewrite of these three call sites are one change, not two.
+  its argument already is — and a redraw for when the Gram matrix is too ill-conditioned to
+  factorize. On the device on 2026-09-20, `_cholesky_qr2` of an `MtlArray` `Float32` 8×4 returned
+  an `MtlMatrix` with `‖QᵀQ − I‖ = 1.2e-7`. That branch also **deletes `assign_columns`**, which
+  `src/GeometricMachineLearning.jl` imports, so the `[compat]` bump and the rewrite of these three
+  call sites are one change, not two.
 
-  It needs one thing that does not exist yet: both upstream names are private. Depending on an
-  underscore name across a package boundary is what `assign_columns` already did and is what breaks
-  here, so closing this entry waits on a public orthonormalizing entry point upstream.
+  **What this entry is rewritten against is now settled.** Both names #95 added were private, and
+  reaching across a package boundary for a name its owner never made public is exactly what
+  `assign_columns` already was — which is what breaks here.
+  [#102](https://github.com/JuliaGNI/GeometricOptimizers.jl/pull/102) closed that: the redraw is
+  exported as `orthonormal_columns(draw)`, where `draw` returns a fresh matrix on each call. So
+  nothing is undecided, and only the release is outstanding. It is not imminent — more unrelated
+  work is going into `main` first.
 
 ### C. Follow-ups and cleanups
 
