@@ -12,6 +12,9 @@ end
 @safetestset "Manifold Neural Network Layers" begin
     include("manifold_layers.jl")
 end
+@safetestset "The manifold layers initialise an orthonormal weight" begin
+    include("manifold_layer_orthonormality.jl")
+end
 @safetestset "ResNet" begin
     include("resnet_tests.jl")
 end

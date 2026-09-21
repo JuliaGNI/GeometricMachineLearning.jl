@@ -969,6 +969,17 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   The keyword is now also typed `::Bool`, so passing a non-boolean value is a `MethodError` rather
   than silently taking the `:arbitrary` branch.
 
+- **`VolumePreservingLowerLayer` and `VolumePreservingUpperLayer` applied to a vector return a
+  vector.** They returned an `n × 1` `Matrix`. Neither layer does the shaping: their `:no_bias`
+  method is `x + d.activation.(ps.weight * x)`, and `GeometricOptimizers` 0.8 is where
+  `LowerTriangular * ::AbstractVector` stopped returning an `n × 1` matrix — which is what
+  `LinearAlgebra` returns for every other matrix type, so the old shape was the anomaly. The
+  broadcast then widened `x` to match it. The two doctests on those layers and the two assertions
+  in `test/layers/volume_preserving_feedforward.jl` are corrected to the vector. A caller who
+  needs the old shape writes `reshape(y, :, 1)`.
+
+  A matrix or a 3-tensor argument is unaffected; only the vector shape moves.
+
 ### Fixed
 
 - **Multiplying a `PoissonTensor` by a `StiefelManifold` threw a `MethodError`, and twenty-five
@@ -2140,6 +2151,77 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `Metal.PrivateStorage`. That last one is new in this release and
   is two other entries meeting: `T(step_size)` at the optimizer call site, and the training history
   that now carries the network's own element type.
+
+- **The *GPU Support* section is rewritten a second time, against the released
+  `GeometricOptimizers` 0.8.0.** The first rewrite, above, named two things that did not run on a
+  device and said the fix for both sat on an upstream branch in no release. That release exists
+  now, this package requires it — see *Dependencies* — and both failures are gone, so a section
+  that still listed them would be wrong in the same way the sentence it replaced was.
+
+  Re-measured on 2026-09-21 on an Apple M4 Max through `Metal.jl` in `Float32`, at
+  `GeometricOptimizers` 0.8.0. Every architecture tried was constructed on `MetalBackend()` and
+  applied to both a matrix and a 3-tensor, and every one answered: `GSympNet`, `LASympNet`,
+  `StandardTransformerIntegrator`, `LinearSymplecticTransformer`, `SymplecticTransformer` at both
+  its default `transformer_dim` and an upscaling one, `VolumePreservingFeedForward`,
+  `VolumePreservingTransformer`, `SymplecticAutoencoder`, `PSDArch` and
+  `Transformer(…; Stiefel = true)`. `ClassificationTransformer` was constructed only, its input
+  being an image. `mat_tensor_mul`, `tensor_tensor_mul`, `tensor_transpose` and
+  `tensor_transpose_tensor_mul` return an `MtlArray`, `mat_tensor_mul` agreeing with its host
+  result exactly, and `map_to_cpu` returns a host `Matrix`. Training reaches the manifold weights
+  as well:
+  `Optimizer(AdamOptimizer(), nn)(nn, dl, Batch(8), 2, AutoEncoderLoss())` on a `PSDArch(8, 4)`
+  returns a finite `Vector{Float32}` and leaves the weight a
+  `StiefelManifold{Float32, MtlMatrix{Float32, Metal.PrivateStorage}}`.
+
+  **The paragraph saying none of this is tested stays, and is still the important one.** There is
+  still no GPU test under `test/` and no GPU job in CI, so every line above is a hand measurement
+  on one vendor's device, not something the matrix would catch going red.
+
+### Dependencies
+
+- **`GeometricOptimizers = "0.8"`** (was `"0.7"`), in `Project.toml` and `test/Project.toml`. This
+  is the release that closes **B12** and **B13**, the two GPU failures that stood under
+  `## Open Issues` and that were never this package's to fix. The bound is a floor rather than a
+  preference: 0.7 does not resolve against the `src/` this release ships.
+
+  **`assign_columns` is deleted upstream, so the three manifold layers are rewritten.**
+  `src/layers/stiefel_layer.jl`, `src/layers/grassmann_layer.jl` and `src/layers/psd_like_layer.jl`
+  each wrote `assign_columns(typeof(weight)(qr!(weight).Q), size(weight)...)`. `LinearAlgebra.qr!`
+  is a host factorization and `Metal.jl` implements no `qr` for an `MtlArray`, which is why the
+  call threw at construction on a device and took `SymplecticAutoencoder`, `PSDArch`,
+  `ClassificationTransformer`, `Transformer(…; Stiefel = true)` and `SymplecticTransformer` with
+  `transformer_dim ≠ dim` with it. They now draw through `orthonormal_columns`, which
+  orthonormalizes with CholeskyQR2 — matrix products and triangular solves only — and so runs
+  wherever the draw was allocated. `import GeometricOptimizers: assign_columns` in
+  `src/GeometricMachineLearning.jl` becomes `import GeometricOptimizers: orthonormal_columns`.
+
+  The layers hand it a closure that refills the buffer they allocated and returns it. That is the
+  contract the function documents: a breakdown is answered by drawing *again*, so what it needs is
+  fresh entries and not a fresh array.
+
+  `test/layers/manifold_layer_orthonormality.jl` is new, and asserts what the rewrite has to keep:
+  the initial weight of `StiefelLayer`, `GrassmannLayer` and `PSDLayer` satisfies
+  `check(Y) < 100 * eps(T)` at `Float32` and `Float64`, over both branches of each layer's
+  `N > M ? (N, M) : (M, N)` allocation. The bound is against a worst residual of `3.7 * eps(T)`
+  measured over 300 draws per element type. **It cannot catch what B13 was**, because a host `qr!`
+  produces an orthonormal factor too; catching that needs a device, and nothing in CI supplies
+  one.
+
+  **B12 needed no change to `src/` at all.** `LowerTriangular * ::AbstractMatrix` had no method of
+  its own and fell through to a generic multiply that reads one entry at a time, which
+  `GPUArraysCore` refuses; 0.8 gives both triangulars and `StiefelProjection` kernel products.
+
+  The one consequence that is not about GPUs is in *Changed (breaking)* above: the same release
+  makes `LowerTriangular * ::AbstractVector` return a vector.
+
+  **One test reacted to the new orthonormalization rather than to any of that.**
+  `test/reduced_order_modeling/reduced_system.jl` asserted an ordering that holds for four seeds in
+  twelve, and the committed seed was one of them; CholeskyQR2 draws a different network from
+  Householder `qr!`, and the assertion fails. It is not a property, it was as fragile at 0.7.0, and
+  it is now **C21** under `## Open Issues` with the measurement. The seed was not touched.
+
+  > Both were confirmed on the device on 2026-09-21 against the registered 0.8.0, not against a
+  > branch. See the *GPU Support* entry under *Documentation*.
 
 ### Infrastructure
 
@@ -3793,70 +3875,6 @@ they resolved to is in the release notes above.
   `KernelAbstractions.allocate` and fills with a kernel instead of a loop, and it cannot be verified
   here without a GPU job to run it under.
 
-- **B12. `VolumePreservingFeedForward` and `VolumePreservingTransformer` raise *Scalar indexing is
-  disallowed* on matrix input.** `src/layers/volume_preserving_feedforward.jl` multiplies the
-  layer's `LowerTriangular`/`UpperTriangular` weight by the input. At the registered
-  `GeometricOptimizers` 0.7.0 that product has no method of its own and falls through to
-  `LinearAlgebra`'s generic `*(::AbstractMatrix, ::AbstractMatrix)`, which asks the argument for
-  one entry at a time; `GPUArraysCore` refuses. (The line of `matmul.jl` that method sits on moves
-  between Julia versions, so it is deliberately not cited here.) The tensor path goes through this
-  package's own `mat_tensor_mul` kernel and is unaffected, which is why only the matrix shape
-  fails.
-
-  **The guard is `GPUArraysCore`'s, shared by `CUDA.jl`, `AMDGPU.jl` and `oneAPI.jl`, so this is
-  not a Metal limitation** — Metal is only where it was measured.
-
-  It is not this package's `*` to fix, and **it is already fixed on
-  [`GeometricOptimizers` `main`](https://github.com/JuliaGNI/GeometricOptimizers.jl/tree/main), in
-  no release.** `GeometricOptimizers`
-  [#96](https://github.com/JuliaGNI/GeometricOptimizers.jl/pull/96) gives both triangulars and
-  `StiefelProjection` kernel products; measured on the device on 2026-09-20 against that branch,
-  `LowerTriangular{Float32, MtlVector} * MtlMatrix` returns an `MtlMatrix` and dispatches to a
-  `GeometricOptimizers` method. Closing this entry is a `[compat]` bump to the first release that
-  carries #96, and no change to `src/` here. The entry names the branch rather than a version
-  because that version does not exist yet — a few unrelated changes go into `main` before it is
-  cut.
-
-- **B13. The three layers that orthonormalize their weight fail at construction on a device,
-  because they use a host `qr!`.** `src/layers/stiefel_layer.jl:14`,
-  `src/layers/grassmann_layer.jl:24` and `src/layers/psd_like_layer.jl:34` each write
-  `assign_columns(typeof(weight)(qr!(weight).Q), size(weight)...)`. `LinearAlgebra.qr!` is a host
-  factorization, `Metal.jl` implements no `qr` for an `MtlArray`, and the LAPACK path dies on
-  `unsafe_convert` of a private buffer. `NeuralNetwork(SymplecticAutoencoder(8, 4),
-  MetalBackend(), Float32)` throws before any forward pass. `CUDA.jl` has `qr!` through CUSOLVER,
-  so the reach of this one beyond Metal is unestablished.
-
-  **It is every architecture that holds one of these three layers, not the three obvious ones.**
-  Measured on 2026-09-20, each throwing `Cannot access the contents of a private buffer` at
-  construction: `StiefelLayer`, `GrassmannLayer`, `PSDLayer`, `SymplecticAutoencoder`, `PSDArch`,
-  `MultiHeadAttention(…; Stiefel = true)`, `Transformer(…; Stiefel = true)`,
-  `ClassificationTransformer` — whose `Stiefel` keyword **defaults to `true`** — and
-  `SymplecticTransformer` whenever `transformer_dim ≠ dim`, which is the branch that wraps the
-  chain in two `PSDLayer`s. The two that do *not* throw mark the boundary:
-  `SymplecticTransformer` at its default `transformer_dim = dim` takes the `:NoUpscale` branch and
-  has no `PSDLayer`, and `Transformer` itself defaults to `Stiefel = false`.
-  `StandardTransformerIntegrator` is unaffected: it constructs `MultiHeadAttention` directly at
-  `src/architectures/standard_transformer_integrator.jl:64` with no `Stiefel` keyword, relying
-  on that layer's own default `Stiefel = false` (`src/layers/multi_head_attention.jl:31`).
-
-  **The replacement is on
-  [`GeometricOptimizers` `main`](https://github.com/JuliaGNI/GeometricOptimizers.jl/tree/main) and
-  in no release.** [#95](https://github.com/JuliaGNI/GeometricOptimizers.jl/pull/95) added
-  `_cholesky_qr2` — CholeskyQR2, matrix products and triangular solves only, so it runs wherever
-  its argument already is — and a redraw for when the Gram matrix is too ill-conditioned to
-  factorize. On the device on 2026-09-20, `_cholesky_qr2` of an `MtlArray` `Float32` 8×4 returned
-  an `MtlMatrix` with `‖QᵀQ − I‖ = 1.2e-7`. That branch also **deletes `assign_columns`**, which
-  `src/GeometricMachineLearning.jl` imports, so the `[compat]` bump and the rewrite of these three
-  call sites are one change, not two.
-
-  **What this entry is rewritten against is now settled.** Both names #95 added were private, and
-  reaching across a package boundary for a name its owner never made public is exactly what
-  `assign_columns` already was — which is what breaks here.
-  [#102](https://github.com/JuliaGNI/GeometricOptimizers.jl/pull/102) closed that: the redraw is
-  exported as `orthonormal_columns(draw)`, where `draw` returns a fresh matrix on each call. So
-  nothing here is undecided, and only the release is outstanding — a few unrelated changes go into
-  `main` before it is cut.
-
 ### C. Follow-ups and cleanups
 
 - **C1. The parameter-tree traversal still belongs upstream.** `_make_optimizer_cache`,
@@ -3972,6 +3990,37 @@ they resolved to is in the release notes above.
 
 - **C20. There is no Knet.jl example for the Hamiltonian neural network.** The deleted `TODO.md` asked
   for one. Recorded rather than dropped; nothing depends on it.
+
+- **C21. "An untrained autoencoder reduces worse than PSD" is not a property, and the suite no
+  longer asserts it under an explicit integrator.**
+  `test/reduced_order_modeling/reduced_system.jl` asserted both
+  `projection_error(rs1) < projection_error(rs2)` and
+  `reduction_error(rs1) < reduction_error(rs2)` for `ImplicitMidpoint()` and for
+  `ExplicitMidpoint()`, with `rs1` a `PSDArch` and `rs2` an untrained 20-encoder-layer
+  `SymplecticAutoencoder` over a softplus.
+
+  The second one is a coin flip. `projection_error` compares the two autoencoders on the *full*
+  solution, but `reduction_error` integrates the *reduced* system, and an untrained network's
+  reduced vector field is one an explicit method diverges on — `reduction_error(rs2)` then comes
+  back `NaN`, and `NaN` is not ordered against anything. Measured over seeds 1 to 12, identically
+  at `GeometricOptimizers` 0.7.0 and 0.8.0:
+
+  | assertion | `ImplicitMidpoint` | `ExplicitMidpoint` |
+  |:--|:--|:--|
+  | `projection_error(rs1) < projection_error(rs2)` | 12 / 12 | 11 / 12 |
+  | `reduction_error(rs1) < reduction_error(rs2)` | 12 / 12 | **4 / 12**, with 4 `NaN` and 4 in the opposite order |
+
+  `Random.seed!(123)` was one of the four that pass, which is the only reason the suite was green.
+  The `GeometricOptimizers` bump in this release changes the manifold layers' orthonormalization
+  from Householder `qr!` to CholeskyQR2, so the seed draws a different network and the assertion
+  fails — the bump exposed this, it did not cause it.
+
+  The explicit-integrator case now runs the projection-error assertion only, through a
+  `compare_reduction_error` keyword, and the measurement is written above the function. **The seed
+  was not changed**, because tuning it would have restored a green suite without restoring a true
+  claim. Closing this entry means deciding what the reduction error of an untrained network is
+  supposed to be worth testing at all — training the two networks first would make the comparison
+  mean something, at a cost the suite does not currently pay.
 
 ### D. Unverified
 

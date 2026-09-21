@@ -32,12 +32,25 @@ function set_up_reduced_systems(reduced_dim::Integer, integrator)
     rs1, rs2
 end
 
-function test_reduced_vector_fields(reduced_dim::Integer, integrator)
+# We expect the neural network projection & reduction errors to be higher than the PSD projection &
+# reduction errors if we don't train.
+#
+# `compare_reduction_error` is off for an explicit integrator, because there the second half of that
+# expectation is not a property. `projection_error` compares the two autoencoders on the *full*
+# solution, but `reduction_error` integrates the *reduced* system, and the reduced vector field of an
+# untrained `SymplecticAutoencoder` is one `ExplicitMidpoint` diverges on -- so `reduction_error(rs2)`
+# comes back `NaN` and the comparison is not between two numbers. Measured over seeds 1 to 12, and
+# the same at `GeometricOptimizers` 0.7 and 0.8: `ImplicitMidpoint` orders the two for every seed,
+# `ExplicitMidpoint` for four of twelve, with four `NaN` and four in the opposite order. The
+# committed seed was one of the four. That is *C21* in `CHANGELOG.md`.
+function test_reduced_vector_fields(reduced_dim::Integer, integrator;
+        compare_reduction_error = true)
     rs1, rs2 = set_up_reduced_systems(reduced_dim, integrator)
 
-    # we expect the neural network projection & reduction errors to be higher than the PSD projection & reduction errors if we don't train
     @test projection_error(rs1) < projection_error(rs2)
-    @test reduction_error(rs1) < reduction_error(rs2)
+    if compare_reduction_error
+        @test reduction_error(rs1) < reduction_error(rs2)
+    end
 end
 
 function test_if_reduced_vector_fields_are_divergence_free(
@@ -78,7 +91,7 @@ function check_if_reduced_vector_fields_are_divergence_free(reduced_dim::Integer
 end
 
 test_reduced_vector_fields(2, ImplicitMidpoint())
-test_reduced_vector_fields(2, ExplicitMidpoint())
+test_reduced_vector_fields(2, ExplicitMidpoint(); compare_reduction_error = false)
 
 check_if_reduced_vector_fields_are_divergence_free(2, ImplicitMidpoint())
 check_if_reduced_vector_fields_are_divergence_free(2, ExplicitMidpoint())
