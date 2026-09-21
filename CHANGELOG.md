@@ -13,12 +13,7 @@ breaking release).
 > alongside the work. Where a release removed exported names the list is given; where it is a
 > reconstruction of intent, it says so.
 
-## [Unreleased] — 0.8.0
-
-> [!NOTE]
-> Not released. This was written as `[0.7.0]` before 0.6.1 and 0.7.0 were cut, and the number was
-> taken by the release below; the work it describes -- `apply_toNT`, `_eltype`, `map_to_cpu` -- is
-> still to do.
+## [0.8.0] — 2026-09-21
 
 **The traversal of a parameter set now belongs to the package that owns the parameters, and the
 traversal of a `NamedTuple` belongs to `Base`.** 0.6.0 handed the HDF5 walk over to
@@ -26,17 +21,21 @@ traversal of a `NamedTuple` belongs to `Base`.** 0.6.0 handed the HDF5 walk over
 remaining walks. `map_to_cpu` becomes one walk, `apply_toNT` turns out to have been `Base.map` all
 along, and `_eltype` turns out to have been a hand-rolled `parameter_eltype`.
 
+**Most of the rest is a whole-package audit, closed.** Nine of the twelve type piracies are gone,
+three of them on `Base`; thirty-two names under `src/` that had no user anywhere are gone, and with
+them `legacy/`, `src/backends/` and the whole `train!` subsystem; a `Float32` network stays
+`Float32` through training, `_norm` and the optimizer cache; and the advertised GPU support works
+on a device, where five architectures threw at construction. This release deletes far more than it
+adds, so read *Removed (breaking)* before upgrading.
+
 **It also makes the optimizer cache immune to a change coming in `GeometricOptimizers`**, which is
 the half of this release with no visible effect today — see *Fixed*.
 
-**Requires `GeometricOptimizers` 0.5**, which is where the structured types' `changebackend` and
-`GlobalSection` methods now live — and, with it, `NeuralNetworkParameters` 0.2 and
-`SymbolicNeuralNetworks` 0.7. The three floors move together because the environment does not
-resolve otherwise: 0.5 drops the `ParameterHandling` shim and lets `NeuralNetworkParameters` do the
-flattening, so the 0.2 container is required rather than preferred — it carries the element type of
-its leaves as `NetworkParameters{T}`'s first type parameter, which is what lets a parameter set be
-an `OptimizerSolution{T}` there — and `SymbolicNeuralNetworks` 0.6 permits only the 0.1 container,
-so it cannot coexist with `GeometricOptimizers` 0.5.
+**Requires `GeometricOptimizers` 0.8**, which is where the GPU half of this release comes from: 0.8
+deletes `assign_columns`, so the three manifold layers draw their initial weight through
+`orthonormal_columns` rather than a host `qr!`, and it gives the triangular types and
+`StiefelProjection` the kernel products a device needs. 0.7 does not resolve against the `src/`
+this release ships. See *Dependencies*.
 
 ### Removed (breaking)
 
