@@ -56,10 +56,10 @@ Many layers have been adapted in order to be used for problems in scientific mac
 
 Everything tried on that device ran. Constructed, and then applied to both a matrix and a 3-tensor: `GSympNet`, `LASympNet`, `StandardTransformerIntegrator`, `LinearSymplecticTransformer`, `SymplecticTransformer` at both its default `transformer_dim` and an upscaling one, `VolumePreservingFeedForward`, `VolumePreservingTransformer`, `SymplecticAutoencoder`, `PSDArch` and `Transformer(…; Stiefel = true)`. `ClassificationTransformer` was constructed but not applied, because its input is an image. The tensor kernels and `map_to_cpu` run, and so does training with `Optimizer`, which returns a `Float32` history and leaves the parameters on the device — for `PSDArch` that includes the manifold weights, which stay a `StiefelManifold` over an `MtlMatrix`.
 
-Two failures that earlier versions had are gone, and `GeometricOptimizers` 0.8 closed both rather than anything here.
+Two of those results rest on `GeometricOptimizers` rather than on anything here.
 
-- `VolumePreservingFeedForward` and `VolumePreservingTransformer` applied to a **matrix** raised *Scalar indexing is disallowed*. The product of a `LowerTriangular` or `UpperTriangular` weight by a matrix had no method of its own and fell through to a generic multiply that reads one entry at a time, which `GPUArraysCore` refuses. `GeometricOptimizers` supplies a kernel for that product now.
-- `StiefelLayer`, `GrassmannLayer` and `PSDLayer` failed at **construction**, taking every architecture that holds one of them with them. They orthonormalized their weight with `LinearAlgebra.qr!`, which is a host factorization, and `Metal.jl` implements no `qr` for an `MtlArray`. They call `GeometricOptimizers.orthonormal_columns` now, which is CholeskyQR2 — matrix products and triangular solves only — and so runs wherever its argument already is.
+- `VolumePreservingFeedForward` and `VolumePreservingTransformer` applied to a **matrix** multiply a `LowerTriangular` or `UpperTriangular` weight by that matrix. `GeometricOptimizers` supplies a `KernelAbstractions` kernel for that product, so the call does not fall through to a generic multiply that reads one entry at a time, which `GPUArraysCore` refuses.
+- `StiefelLayer`, `GrassmannLayer` and `PSDLayer`, and so every architecture that holds one of them, orthonormalize their weight at **construction** through `GeometricOptimizers.orthonormal_columns`. That is CholeskyQR2 — matrix products and triangular solves only — so it runs wherever the draw was allocated. `LinearAlgebra.qr!` is a host factorization and `Metal.jl` implements no `qr` for an `MtlArray`, so a device needs the other one.
 
 ## Tutorials 
 

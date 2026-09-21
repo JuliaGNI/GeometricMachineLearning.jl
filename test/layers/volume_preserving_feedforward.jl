@@ -31,9 +31,9 @@ end
 test_volume_preserving_feedforward(; T = Float32)
 test_volume_preserving_feedforward(; T = Float64)
 
-# A vector in, a vector out. These two read `reshape([1, 2], 2, 1)` while `GeometricOptimizers`
-# 0.7 returned an `n × 1` matrix from `LowerTriangular * ::AbstractVector`; 0.8 returns a vector,
-# which is what `LinearAlgebra` does everywhere else.
+# A vector in, a vector out. Neither layer shapes the result: the `:no_bias` method is
+# `x + d.activation.(ps.weight * x)`, and `LowerTriangular * ::AbstractVector` returns a vector,
+# which is what `LinearAlgebra` returns for every other matrix type.
 l = VolumePreservingLowerLayer(2, identity; use_bias = false)
 A = LowerTriangular([1], 2)
 @test l(ones(eltype(A), 2), (weight = A,)) == [1, 2]

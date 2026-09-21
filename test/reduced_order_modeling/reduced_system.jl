@@ -39,10 +39,10 @@ end
 # expectation is not a property. `projection_error` compares the two autoencoders on the *full*
 # solution, but `reduction_error` integrates the *reduced* system, and the reduced vector field of an
 # untrained `SymplecticAutoencoder` is one `ExplicitMidpoint` diverges on -- so `reduction_error(rs2)`
-# comes back `NaN` and the comparison is not between two numbers. Measured over seeds 1 to 12, and
-# the same at `GeometricOptimizers` 0.7 and 0.8: `ImplicitMidpoint` orders the two for every seed,
-# `ExplicitMidpoint` for four of twelve, with four `NaN` and four in the opposite order. The
-# committed seed was one of the four. That is *C21* in `CHANGELOG.md`.
+# comes back `NaN` and the comparison is not between two numbers. At the seed above it is `NaN`.
+# Measured over seeds 1 to 12: `ImplicitMidpoint` orders the two for every seed, `ExplicitMidpoint`
+# for four of twelve, with four `NaN` and four in the opposite order. That is *C21* in
+# `CHANGELOG.md`.
 function test_reduced_vector_fields(reduced_dim::Integer, integrator;
         compare_reduction_error = true)
     rs1, rs2 = set_up_reduced_systems(reduced_dim, integrator)

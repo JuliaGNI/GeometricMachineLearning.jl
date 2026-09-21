@@ -4010,10 +4010,11 @@ they resolved to is in the release notes above.
   | `projection_error(rs1) < projection_error(rs2)` | 12 / 12 | 11 / 12 |
   | `reduction_error(rs1) < reduction_error(rs2)` | 12 / 12 | **4 / 12**, with 4 `NaN` and 4 in the opposite order |
 
-  `Random.seed!(123)` was one of the four that pass, which is the only reason the suite was green.
-  The `GeometricOptimizers` bump in this release changes the manifold layers' orthonormalization
-  from Householder `qr!` to CholeskyQR2, so the seed draws a different network and the assertion
-  fails — the bump exposed this, it did not cause it.
+  The committed `Random.seed!(123)` is not among those twelve; it is a thirteenth draw, and it
+  happened to be one that passed. The `GeometricOptimizers` bump in this release changes the
+  manifold layers' orthonormalization from Householder `qr!` to CholeskyQR2, so that seed now
+  draws a different network, and at 0.8.0 `reduction_error(rs2)` under `ExplicitMidpoint` is
+  `NaN`. The bump exposed this; it did not cause it, and the table above is the same at 0.7.0.
 
   The explicit-integrator case now runs the projection-error assertion only, through a
   `compare_reduction_error` keyword, and the measurement is written above the function. **The seed
