@@ -2215,10 +2215,12 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   makes `LowerTriangular * ::AbstractVector` return a vector.
 
   **One test reacted to the new orthonormalization rather than to any of that.**
-  `test/reduced_order_modeling/reduced_system.jl` asserted an ordering that holds for four seeds in
-  twelve, and the committed seed was one of them; CholeskyQR2 draws a different network from
-  Householder `qr!`, and the assertion fails. It is not a property, it was as fragile at 0.7.0, and
-  it is now **C21** under `## Open Issues` with the measurement. The seed was not touched.
+  `test/reduced_order_modeling/reduced_system.jl` asserted an ordering that holds for four of the
+  twelve seeds it was measured on. The committed seed is not one of those twelve — it is a
+  thirteenth draw, and it passed at 0.7.0. CholeskyQR2 draws a different network from Householder
+  `qr!`, so at 0.8.0 that seed gives `NaN` and the assertion fails. It is not a property, it was as
+  fragile at 0.7.0, and it is now **C21** under `## Open Issues` with the measurement. The seed was
+  not touched.
 
   > Both were confirmed on the device on 2026-09-21 against the registered 0.8.0, not against a
   > branch. See the *GPU Support* entry under *Documentation*.
