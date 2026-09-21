@@ -92,16 +92,16 @@ end
 #                                    -- `norm`, `@kernel`, `rrule`, `pullback` and the rest. Naming
 #                                    every one is a change to the whole module header and a judgement
 #                                    per name, not a by-product of a dead-code pass.
-#   all_explicit_imports_are_public  10 names this package imports are not marked `public` upstream
+#   all_explicit_imports_are_public  9 names this package imports are not marked `public` upstream
 #                                    -- `Architecture`, `AbstractExplicitLayer`, `_compute_loss`,
-#                                    `assign_columns`, `description`, `dim` among them.
-#                                    Each is deliberate and most are re-exported here; the fix is
-#                                    upstream declaring them, not this package importing less.
+#                                    `description`, `dim` among them. Each is deliberate and most
+#                                    are re-exported here; the fix is upstream declaring them, not
+#                                    this package importing less.
 #   all_qualified_accesses_via_owners  2: `GeometricOptimizers.Gradient` and
 #                                    `GeometricOptimizers.direction`, both owned by `SimpleSolvers`.
 #                                    Reaching them through `GeometricOptimizers` is how the rest of
 #                                    `src/optimizers/optimizer.jl` is written.
-#   all_qualified_accesses_are_public  24, the same class as the 10 above: `KernelAbstractions.zeros`,
+#   all_qualified_accesses_are_public  24, the same class as the 9 above: `KernelAbstractions.zeros`,
 #                                    `ForwardDiff.jacobian`, `GeometricOptimizers.momentum` and so on.
 #
 # Each of the four is a real backlog item rather than a taste, and none of them is this branch's.

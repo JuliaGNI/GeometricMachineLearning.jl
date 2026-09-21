@@ -30,8 +30,10 @@ function initialparameters(
         ::PSDLayer{M, N}, backend::KernelAbstractions.Backend, T::Type) where {M, N}
     weight = N > M ? KernelAbstractions.allocate(backend, T, N ÷ 2, M ÷ 2) :
              KernelAbstractions.allocate(backend, T, M ÷ 2, N ÷ 2)
-    initializer(rng, weight)
-    (weight = StiefelManifold(assign_columns(typeof(weight)(qr!(weight).Q), size(weight)...)),)
+    (weight = StiefelManifold(orthonormal_columns() do
+        initializer(rng, weight)
+        weight
+    end),)
 end
 
 function (::PSDLayer{M, N})(qp::NamedTuple{(:q, :p), Tuple{AT1, AT2}},
