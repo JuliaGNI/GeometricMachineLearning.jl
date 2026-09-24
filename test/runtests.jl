@@ -26,6 +26,14 @@ end
     include("exports.jl")
 end
 
+# Metal runs on every Apple-silicon Mac, and before the subjects, so that
+# `Pkg.test(test_args = ["metal"])` can stop after it, with only the two checks above run first. Asked for that way it also runs off
+# Apple silicon, where it fails rather than passing with nothing run; `metal/metal.jl` says why.
+if "metal" in ARGS || (Sys.isapple() && Sys.ARCH === :aarch64)
+    include("metal/runtests.jl")
+end
+"metal" in ARGS && exit()
+
 include("activations/runtests.jl")
 include("arrays/runtests.jl")
 include("kernels/runtests.jl")

@@ -1,0 +1,61 @@
+# Metal tests, in their own workflow rather than as a second job in CI.yml.
+#
+# CI.yml is byte-identical in every repository under Packages/ and Experiments/ -- that is what
+# makes the required-status-check list static and keeps branch protection from silently going stale.
+# A repository that needs an extra job therefore gets an extra file, never a local edit to CI.yml.
+# See ~/Research/Environment/Harness/githooks/install-workflows.sh.
+#
+# WHAT THIS ADDS TO CI.yml.
+#
+# CI.yml's `macOS-latest` entry already runs the Metal tests, because `test/runtests.jl` includes
+# `test/metal/` on every Apple-silicon Mac. They skip there if the device is not functional. This
+# job runs them without the subjects (`test_args: metal`), on macOS 15 rather than on whatever
+# `macos-latest` points to, and fails if Metal is not functional, so it cannot pass without having
+# run them.
+#
+# The runner's GPU is Apple's paravirtual device. Metal.jl supports it from 1.10 and on macOS 15 or
+# later only; on `macos-14` Metal is not functional. It is good for correctness and for nothing
+# timed.
+#
+# This job is deliberately NOT a required status check -- its name does not begin with `Julia `.
+
+name: Metal
+
+on:
+    push:
+        branches:
+            - main
+        tags: ["*"]
+    pull_request:
+    workflow_dispatch:
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
+jobs:
+    metal:
+        name: Metal - Julia ${{ matrix.version }} - ${{ matrix.os }}
+        runs-on: ${{ matrix.os }}
+        timeout-minutes: 60
+        permissions:
+            actions: write
+            contents: read
+        strategy:
+            fail-fast: false
+            matrix:
+                version:
+                    - "min"
+                    - "1"
+                os:
+                    - macos-15
+        steps:
+            - uses: actions/checkout@v7
+            - uses: julia-actions/setup-julia@v3
+              with:
+                  version: ${{ matrix.version }}
+            - uses: julia-actions/cache@v3
+            - uses: julia-actions/julia-buildpkg@v1
+            - uses: julia-actions/julia-runtest@v1
+              with:
+                  test_args: metal
