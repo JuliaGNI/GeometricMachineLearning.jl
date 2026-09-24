@@ -27,8 +27,8 @@ if Metal.functional()
 
     @testset "the GPU extension's wrapped-array products answer on Metal" begin
         # A `SubArray` and an `Adjoint` over an `MtlArray` are not strided, so they miss the fast
-        # path of `PoissonTensor`'s `*` and reach `ext/GPUArraysCoreExt.jl`. Without it they fell
-        # through to the generic multiply and raised "Scalar indexing is disallowed.".
+        # path of `PoissonTensor`'s `*` and reach `ext/GPUArraysCoreExt.jl`. Without it they fall
+        # through to the generic multiply and raise "Scalar indexing is disallowed.".
         𝕁 = PoissonTensor(backend, 4, T)
         J = Matrix(PoissonTensor(4, T))
         A = rand(T, 6, 3)

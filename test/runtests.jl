@@ -26,13 +26,13 @@ end
     include("exports.jl")
 end
 
-# Metal runs on every Apple-silicon Mac, and before the subjects, so that
-# `Pkg.test(test_args = ["metal"])` can stop after it, with only the two checks above run first. Asked for that way it also runs off
-# Apple silicon, where it fails rather than passing with nothing run; `metal/metal.jl` says why.
-if "metal" in ARGS || (Sys.isapple() && Sys.ARCH === :aarch64)
+# `Pkg.test(test_args = ["metal"])` runs the Metal tests after the two checks above and stops. Asked
+# for that way they also run off Apple silicon, where they fail rather than pass with nothing run;
+# `metal/metal.jl` says why. A full run takes them last instead, for the reason given above.
+if "metal" in ARGS
     include("metal/runtests.jl")
+    exit()
 end
-"metal" in ARGS && exit()
 
 include("activations/runtests.jl")
 include("arrays/runtests.jl")
@@ -50,4 +50,10 @@ include("docstrings/runtests.jl")
 
 @safetestset "Aqua's package-level checks" begin
     include("aqua.jl")
+end
+
+# Metal runs on every Apple-silicon Mac, and last, so that a failure on the device hides no host
+# result.
+if Sys.isapple() && Sys.ARCH === :aarch64
+    include("metal/runtests.jl")
 end
