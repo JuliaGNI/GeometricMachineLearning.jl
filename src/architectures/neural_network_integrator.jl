@@ -96,9 +96,8 @@ The optional keyword argument is
 The number of integration steps that should be performed.
 """
 function Base.iterate(nn::NeuralNetwork{<:NeuralNetworkIntegrator},
-        ics::BT;
-        n_points = 100) where {
-        T, AT <: AbstractVector{T}, BT <: NamedTuple{(:q, :p), Tuple{AT, AT}}}
+        ics::NamedTuple{(:q, :p), Tuple{AT, AT}};
+        n_points = 100) where {T, AT <: AbstractVector{T}}
     n_dim2 = length(ics.q)
     backend = networkbackend(ics.q)
 

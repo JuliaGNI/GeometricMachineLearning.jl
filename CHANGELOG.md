@@ -20,8 +20,13 @@ breaking release).
 - **The test suite runs on an Apple GPU on every Apple-silicon Mac.** `test/metal/` checks the two device paths that were measured by hand and not tested before: the products of a `PoissonTensor` with a wrapped device array, `𝕁 * view(A, [1, 2, 3, 4], :)` and `𝕁 * B'`, which `ext/GPUArraysCoreExt.jl` carries; and the `tensor_mat_mul!` kernel on `MetalBackend()`. Each result must stay on the device and match the host in `Float32`, with scalar indexing off. Where `Metal.functional()` is `false` the tests skip themselves, which is what happens inside a sandbox. `Pkg.test(test_args = ["metal"])` runs them without the subject tests, and then a missing device fails the run. Metal (1.10 or later) is a test dependency on every platform; it installs and precompiles on Linux and Windows, and nothing there loads it. On an Apple M4 Max with Metal 1.11.1 all five assertions pass.
 - **A `Metal` workflow runs the Metal tests on GitHub's `macos-15` runner**, for the `min` and `1` Julia versions. The runner's GPU is Apple's paravirtual device, which Metal.jl supports from 1.10 and on macOS 15 or later. The job is not a required check. CI's `macOS-latest` entry runs the same tests as part of the full suite, and that entry is required.
 
+### Fixed
+
+- **Aqua's `unbound_args` check passes on Julia nightly.** The `iterate` method for a `NeuralNetworkIntegrator` on `(q, p)` initial conditions, in `src/architectures/neural_network_integrator.jl`, took `ics::BT` with `BT <: NamedTuple{(:q, :p), Tuple{AT, AT}}` and `AT <: AbstractVector{T}`. `T` sat only inside the bound of `AT`, which sat only inside the bound of `BT`, and the body reads `T` to allocate the trajectory. Julia 1.14's `Test.detect_unbound_args` reports such a method; 1.11 to 1.13 do not. The argument is now `ics::NamedTuple{(:q, :p), Tuple{AT, AT}}` with `where {T, AT <: AbstractVector{T}}`. The two signatures are the same type, so dispatch does not change. This closes *B9*, and the `nightly` CI job's Aqua testset no longer fails. Eight other methods in `src/` bind a parameter only through the bound of another one, and nightly reports none of them: 1.14 reports such a parameter only where the method body reads it.
+
 ### Documentation
 
+- **The `@docs` block in `docs/src/architectures/neural_network_integrators.md` names the new signature** of the `iterate` method above.
 - **The *GPU Support* section of `docs/src/index.md` names the two device paths the suite now tests**, where it said that nothing on the GPU path was tested.
 
 ## [0.8.0] — 2026-09-21
@@ -3820,25 +3825,6 @@ they resolved to is in the release notes above.
   `AbstractNeuralNetworks.Affine`. That pair is benign and has no witness at all: `Dense` is not a
   subtype of `Affine` and the two have no common instance, so no call can reach it. `test/aqua.jl`
   asserts both counts — 3 piracies and 1 ambiguity — so neither can drift, in either direction.
-
-- **B9. One unbound type parameter, which only Julia nightly reports.** Aqua's `unbound_args` fails
-  on the `nightly` job over `Base.iterate(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, ics::BT;
-  n_points)` at `src/architectures/neural_network_integrator.jl:98`. Its signature is
-  `where {T, AT <: AbstractVector{T}, BT <: NamedTuple{(:q, :p), Tuple{AT, AT}}}`, and `T` never
-  appears in an argument type — it is reachable only through the bound on `AT`, so dispatch cannot
-  determine it and the method can never be called with `T` given explicitly.
-
-  **The check passes on `min`, on `1` and on `pre`, and fails on nightly.** The defect is in the
-  signature and is there on every version; what changes is whether Julia's method introspection
-  surfaces it. So the assertion counts above are the released-Julia figures, and nightly's testset
-  carries one failure among them.
-
-  `nightly` is advisory by construction — `.github/workflows/CI.yml` gives it `experimental: true`
-  and job-level `continue-on-error`, and it is deliberately not a required check — so this does not
-  gate a merge. It is recorded because a red advisory job with nothing to match it against is a red
-  job that the next reader has to re-diagnose.
-
-  Closing it means writing the parameter so that it binds, which is a change to `src/`.
 
 - **B10. `DataLoader(::EnsembleSolution{T, T1, Vector{ST}})` at `src/data_loader/data_loader.jl:325`
   has no test and appears unreachable through this package's current dependencies.** It dispatches

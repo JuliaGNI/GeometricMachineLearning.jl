@@ -55,9 +55,6 @@ using Test
 #
 # Marking either check `broken = true` would leave a check that reports success while the defect
 # stands, which is the failure mode this test suite's guards exist to remove.
-#
-# `unbound_args` is the one check here whose verdict depends on the Julia version: it passes on
-# `min`, `1` and `pre`, and fails on nightly over one method. That is *B9* under `## Open Issues`.
 @testset "Aqua" begin
     Aqua.test_all(GeometricMachineLearning; ambiguities = false, piracies = false)
 
