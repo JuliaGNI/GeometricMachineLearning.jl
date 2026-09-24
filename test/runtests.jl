@@ -26,6 +26,14 @@ end
     include("exports.jl")
 end
 
+# `Pkg.test(test_args = ["metal"])` runs the Metal tests after the two checks above and stops. Asked
+# for that way they also run off Apple silicon, where they fail rather than pass with nothing run;
+# `metal/metal.jl` says why. A full run takes them last instead, for the reason given above.
+if "metal" in ARGS
+    include("metal/runtests.jl")
+    exit()
+end
+
 include("activations/runtests.jl")
 include("arrays/runtests.jl")
 include("kernels/runtests.jl")
@@ -42,4 +50,10 @@ include("docstrings/runtests.jl")
 
 @safetestset "Aqua's package-level checks" begin
     include("aqua.jl")
+end
+
+# Metal runs on every Apple-silicon Mac, and last, so that a failure on the device hides no host
+# result.
+if Sys.isapple() && Sys.ARCH === :aarch64
+    include("metal/runtests.jl")
 end

@@ -13,6 +13,17 @@ breaking release).
 > alongside the work. Where a release removed exported names the list is given; where it is a
 > reconstruction of intent, it says so.
 
+## [Unreleased]
+
+### Added
+
+- **The test suite runs on an Apple GPU on every Apple-silicon Mac.** `test/metal/` checks the two device paths that were measured by hand and not tested before: the products of a `PoissonTensor` with a wrapped device array, `𝕁 * view(A, [1, 2, 3, 4], :)` and `𝕁 * B'`, which `ext/GPUArraysCoreExt.jl` carries; and the `tensor_mat_mul!` kernel on `MetalBackend()`. Each result must stay on the device and match the host in `Float32`, with scalar indexing off. Where `Metal.functional()` is `false` the tests skip themselves, which is what happens inside a sandbox. `Pkg.test(test_args = ["metal"])` runs them without the subject tests, and then a missing device fails the run. Metal (1.10 or later) is a test dependency on every platform; it installs and precompiles on Linux and Windows, and nothing there loads it. On an Apple M4 Max with Metal 1.11.1 all five assertions pass.
+- **A `Metal` workflow runs the Metal tests on GitHub's `macos-15` runner**, for the `min` and `1` Julia versions. The runner's GPU is Apple's paravirtual device, which Metal.jl supports from 1.10 and on macOS 15 or later. The job is not a required check. CI's `macOS-latest` entry runs the same tests as part of the full suite, and that entry is required.
+
+### Documentation
+
+- **The *GPU Support* section of `docs/src/index.md` names the two device paths the suite now tests**, where it said that nothing on the GPU path was tested.
+
 ## [0.8.0] — 2026-09-21
 
 **The traversal of a parameter set now belongs to the package that owns the parameters, and the
