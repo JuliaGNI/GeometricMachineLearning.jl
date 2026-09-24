@@ -3800,6 +3800,10 @@ they resolved to is in the release notes above.
   indices, reducing method ambiguities from 18 to 1 as asserted in `test/aqua.jl`. The numbers are
   left vacant rather than reused.)
 
+  (**B9** is closed in *[Unreleased]* and its entry is gone: the `iterate` method it named binds
+  every type parameter, and Aqua's `unbound_args` passes on Julia nightly. See *Fixed* above. The
+  number is left vacant rather than reused.)
+
 - **B7. Three methods are type piracy, and closing them is an API change rather than a deletion.**
   Aqua's `piracies` check reports 3, down from the 12 this entry opened with; the other nine were
   deleted in this release and are under *Removed (breaking)* above. All three are genuine under
