@@ -40,8 +40,8 @@ function Base.iterate(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, ics::AT;
     valuation
 end
 
-function Base.iterate(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, ics::BT;
-        n_points = 100) where {AT <: AbstractVector, BT <: NamedTuple{(:q,), Tuple{AT}}}
+function Base.iterate(nn::NeuralNetwork{<:NeuralNetworkIntegrator},
+        ics::NamedTuple{(:q,), Tuple{AT}}; n_points = 100) where {AT <: AbstractVector}
     (q = iterate(nn, ics.q; n_points = n_points),)
 end
 
