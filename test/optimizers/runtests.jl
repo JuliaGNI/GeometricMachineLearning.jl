@@ -27,3 +27,6 @@ end
 @safetestset "The GO-native leaf step scales in the parameter's own element type" begin
     include("step_size_element_type.jl")
 end
+@safetestset "One method per layer: GeometricOptimizers.CompositeMethod" begin
+    include("composite_method.jl")
+end

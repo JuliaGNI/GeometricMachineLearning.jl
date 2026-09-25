@@ -38,7 +38,9 @@ ForwardDiff = "1"
 GPUArraysCore = "0.2"
 GeometricBase = "0.14"
 GeometricEquations = "0.21"
-GeometricOptimizers = "0.7"
+# 0.8 for `CompositeMethod`, `leafmethod`, `accepts_parameter_set` and `sync_state!`, which the
+# optimizer below is written in terms of. None of the four is in 0.7.
+GeometricOptimizers = "0.8"
 GeometricSolutions = "0.6"
 HDF5 = "0.16, 0.17"
 InteractiveUtils = "1"

@@ -38,6 +38,61 @@ its leaves as `NetworkParameters{T}`'s first type parameter, which is what lets 
 an `OptimizerSolution{T}` there — and `SymbolicNeuralNetworks` 0.6 permits only the 0.1 container,
 so it cannot coexist with `GeometricOptimizers` 0.5.
 
+### Added
+
+- **One optimizer method per layer**, through `GeometricOptimizers.CompositeMethod`. `Optimizer` and
+  `optimization_step!` take one wherever they take a method: `_make_optimizer_cache`,
+  `_make_optimizer_state` and `_leaf_optim_step!` resolve the layer's method with
+  `GeometricOptimizers.leafmethod` and then behave exactly as they do for that method, so a layer
+  stepped under a composite is bit-for-bit a layer stepped under the method selected for it.
+
+  ```julia
+  method = GeometricOptimizers.CompositeMethod(;
+      manifold = GeometricOptimizers.ScalarMomentAdam(Float32),
+      array = GeometricOptimizers.Adam(Float32))
+  optimizer = Optimizer(method, nn; retraction = cayley, step_size = 1.0f-3)
+  ```
+
+  A symplectic autoencoder is the shape this exists for: its PSD layers carry only Stiefel weights
+  and its SympNet layers only Euclidean ones, and `ScalarMomentAdam` accepts exactly one
+  `StiefelManifold` solution. A caller wanting that split had to add methods to those three
+  underscore-prefixed functions **from outside this package** — type piracy on four internals, which
+  breaks silently at run time on any refactor here, in the middle of whatever it was training. There
+  is now a supported way to say it.
+
+- **`_as_go_solution(x, method)` and `_as_go_leaf(x, method)`**, which hand a method whose scope is a
+  single weight that weight rather than the layer holding it — and its gradient and its section with
+  it. Which methods those are is `GeometricOptimizers.accepts_parameter_set` and not a list of type
+  names kept here; *when* to unwrap, and the error naming the layer and the method when a layer holds
+  more than one weight, is this package's, because the grouping into layers is.
+
+### Changed
+
+- **`_leaf_optim_step!` no longer carries a list of which methods keep what.** The
+  `if state isa AdamState … elseif state isa MomentumState` chain that copied the moments or advanced
+  the momentum is now one call to `GeometricOptimizers.sync_state!`, which dispatches on the state
+  and the method in the package that defines both. That chain was a list of methods maintained where
+  the methods are not defined, and it had the failure mode such a list has: `ScalarMomentAdam` was
+  simply missing from it.
+
+- **`_go_update_leaf!` dispatches on `GeometricOptimizers.FirstOrderMethodWithState`** rather than on
+  `Adam` and `MomentumMethod` by name. That union is the split upstream's own `solver_step!` makes —
+  a method that builds its direction out of state of its own needs the *method*, everything else
+  needs the Hessian and has none — so a method joining it upstream no longer leaves a stale list
+  behind here, silently taking the Hessian branch.
+
+- **`ScalarMomentAdam` is now a GO-native method here**, and `_adapt_method_to_T` converts it as it
+  converts `Adam`. It previously fell through to `GMLEuclideanState`, which is coordinate-wise Adam
+  on the ambient array: not the method, and not on the manifold.
+
+- **`_make_optimizer_cache` and `_make_optimizer_state` ask the layer question before the capability
+  question.** The structural-before-capability ordering the comments there are about is unchanged —
+  `_is_layer` is still asked first and a flat set is still one cache — but `_is_go_native_method` is
+  now asked of the *layer's* method, which for a composite exists only once a layer is in hand.
+
+- **Requires `GeometricOptimizers` 0.8**, for `CompositeMethod`, `leafmethod`,
+  `accepts_parameter_set` and `sync_state!`. None of the four is in 0.7.
+
 ### Removed (breaking)
 
 - **Nine of the package's twelve type piracies are deleted, and three of them were on `Base`.**

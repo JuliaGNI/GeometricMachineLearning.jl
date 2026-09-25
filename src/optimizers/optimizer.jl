@@ -58,13 +58,33 @@ end
 _is_go_native_method(::GeometricOptimizers.GradientMethod) = true
 _is_go_native_method(::GeometricOptimizers.MomentumMethod) = true
 _is_go_native_method(::GeometricOptimizers.Adam) = true
+# `ScalarMomentAdam` is driven through the same cache as the other three: `_go_update_leaf!` hands
+# `update!` the method (it is a `FirstOrderMethodWithState`) and `GeometricOptimizers.sync_state!`
+# carries its scalar second moment back into the state. Without this arm it fell through to
+# `GMLEuclideanState`, which is coordinate-wise Adam on the ambient array -- not the method, and not
+# on the manifold.
+_is_go_native_method(::GeometricOptimizers.ScalarMomentAdam) = true
 _is_go_native_method(::GeometricOptimizers.OptimizerMethod) = false
+# A `CompositeMethod` is whatever it selects, and what it selects depends on the leaf -- so this
+# question cannot be answered about the composite itself, only about a leaf's method. Every call
+# site below resolves the leaf's method with `leafmethod` before asking, and this arm is what says
+# so if one is ever added that does not.
+_is_go_native_method(::GeometricOptimizers.CompositeMethod) = throw(ArgumentError(
+    "`_is_go_native_method` is a question about a leaf's method; resolve the composite with " *
+    "`GeometricOptimizers.leafmethod(method, leaf)` first"))
 
 function _adapt_method_to_T(method::GeometricOptimizers.Adam, ::Type{T}) where {T}
     GeometricOptimizers.Adam(T; β₁ = T(method.β₁), β₂ = T(method.β₂), δ = T(method.δ))
 end
 function _adapt_method_to_T(method::GeometricOptimizers.MomentumMethod, ::Type{T}) where {T}
     GeometricOptimizers.MomentumMethod(T(method.α))
+end
+# As for `Adam`: `ScalarMomentAdam` carries parameters of its own and is not converted by
+# `Optimizer`, so it has to be constructed with the element type of the parameters or its cache
+# constructor raises. `ambient_norm` is a mode and not a number, so it is carried across unchanged.
+function _adapt_method_to_T(method::GeometricOptimizers.ScalarMomentAdam, ::Type{T}) where {T}
+    GeometricOptimizers.ScalarMomentAdam(T; β₁ = T(method.β₁), β₂ = T(method.β₂),
+        δ = T(method.δ), ambient_norm = method.ambient_norm)
 end
 _adapt_method_to_T(method, ::Type) = method
 
@@ -99,15 +119,59 @@ end
 
 """
     _as_go_solution(x)
+    _as_go_solution(x, method)
 
-`x` in the shape `GeometricOptimizers` takes a solution in.
+`x` in the shape `GeometricOptimizers` takes a solution in for `method`.
 
 A layer given as a bare `NamedTuple` is wrapped; anything already in the right shape — a container, a
 bare `Manifold`, an `AbstractArray` — is passed through. The wrap **shares the leaf arrays**, so an
 in-place optimizer step writes through to the network's own weights and nothing has to be copied back.
+
+The two-argument form additionally *unwraps* for a method whose scope is a single leaf rather than a
+set of them. `GeometricOptimizers.ScalarMomentAdam` is the one that is: its second moment is a
+scalar, which is a statement about one manifold and means nothing pooled across a set, so it rejects
+a container even when that container holds exactly one Stiefel weight. Which methods those are is
+upstream's `accepts_parameter_set` and not a list of type names kept here; *when* to unwrap — a
+layer of exactly one weight, and an error naming the layer otherwise — is this package's rule,
+because the grouping into layers is.
 """
 _as_go_solution(x::NetworkParameters) = x
 _as_go_solution(x) = _is_layer(x) ? NetworkParameters(x) : x
+
+function _as_go_solution(x, method)
+    GeometricOptimizers.accepts_parameter_set(method) && return _as_go_solution(x)
+    _single_weight(x, method)
+end
+
+"""
+    _as_go_leaf(x, method)
+
+The *unwrap* half of [`_as_go_solution`](@ref), for the gradient and the section tree that travel
+beside a solution.
+
+Neither wants the wrap — `_gml_rgrad` normalises a plain `NamedTuple` gradient itself, and a section
+tree is copied into as it stands — but both have to follow the solution through the unwrap, so that
+a method whose scope is a single weight is handed that weight's gradient and that weight's section
+rather than the layer's.
+"""
+function _as_go_leaf(x, method)
+    GeometricOptimizers.accepts_parameter_set(method) ? x : _single_weight(x, method)
+end
+
+# The unwrap, and the error that stands in for it. A method of single-leaf scope selected for a layer
+# that holds more than one weight is a mistake in the *selector*, and saying which layer and which
+# method is what makes it findable; without this it surfaces several frames down as upstream's
+# scope `ArgumentError`, which knows nothing about layers.
+_single_weight(x::Union{NetworkParameters, NamedTuple}, method) = _single_weight(values(x), x, method)
+_single_weight(x, ::Any) = x
+
+function _single_weight(weights, layer, method)
+    length(weights) == 1 || throw(ArgumentError(
+        "$(nameof(typeof(method))) takes a single weight as its solution, but the layer it was " *
+        "selected for holds $(length(weights)) ($(join(keys(layer), ", "))); select a method " *
+        "that accepts a parameter set for this layer"))
+    only(weights)
+end
 
 # A `NetworkParameters` is always a tree of layers to descend into, never a single
 # `GeometricOptimizers` leaf, so its branch comes *first* — ahead of `_use_go_cache`.
@@ -135,27 +199,48 @@ _as_go_solution(x) = _is_layer(x) ? NetworkParameters(x) : x
 #
 # The tree branch comes second and covers both carriers, because a network is a tree of layers whether
 # it is wrapped or not.
+# Whether `x` is something to descend into rather than something one `GeometricOptimizers` object is
+# built for. A flat set is *not* a branch: it is a layer, and one cache is what a layer is for.
+_is_branch(x) = (x isa NetworkParameters || x isa NamedTuple) && !_is_layer(x)
+
+# The method that steps `x`, which for a `GeometricOptimizers.CompositeMethod` depends on `x` and for
+# every other method is the method itself. A branch is passed through untouched: it is descended
+# into, and its layers are what get asked, so a selector is never shown a whole network.
+#
+# **This is why the layer test now comes first in the three branches below.** A composite cannot
+# answer `_is_go_native_method` about itself -- that is a property of the method it selects, which
+# depends on the leaf -- so asking it before establishing that `x` is a layer would raise on every
+# tree root. The ordering the original comment is about, structure before capability, is unchanged:
+# `_is_layer` is still the first question, and a flat set is still one cache.
+_leaf_method(method, x) = _is_branch(x) ? method : GeometricOptimizers.leafmethod(method, x)
+
 function _make_optimizer_cache(method, x)
-    if _is_go_native_method(method) && _is_layer(x)
-        GeometricOptimizers.OptimizerCache(_adapt_method_to_T(method, parameter_eltype(x)),
-            _as_go_solution(x))
+    leaf_method = _leaf_method(method, x)
+    if _is_layer(x) && _is_go_native_method(leaf_method)
+        GeometricOptimizers.OptimizerCache(
+            _adapt_method_to_T(leaf_method, parameter_eltype(x)),
+            _as_go_solution(x, leaf_method))
     elseif x isa NetworkParameters || x isa NamedTuple
         NamedTuple{keys(x)}(Tuple(_make_optimizer_cache(method, x[k]) for k in keys(x)))
-    elseif _use_go_cache(method, x)
-        GeometricOptimizers.OptimizerCache(_adapt_method_to_T(method, parameter_eltype(x)), x)
+    elseif _use_go_cache(leaf_method, x)
+        GeometricOptimizers.OptimizerCache(
+            _adapt_method_to_T(leaf_method, parameter_eltype(x)), x)
     else
         GMLEuclideanState(x)
     end
 end
 
 function _make_optimizer_state(method, x)
-    if _is_go_native_method(method) && _is_layer(x)
-        GeometricOptimizers.OptimizerState(_adapt_method_to_T(method, parameter_eltype(x)),
-            _as_go_solution(x))
+    leaf_method = _leaf_method(method, x)
+    if _is_layer(x) && _is_go_native_method(leaf_method)
+        GeometricOptimizers.OptimizerState(
+            _adapt_method_to_T(leaf_method, parameter_eltype(x)),
+            _as_go_solution(x, leaf_method))
     elseif x isa NetworkParameters || x isa NamedTuple
         NamedTuple{keys(x)}(Tuple(_make_optimizer_state(method, x[k]) for k in keys(x)))
-    elseif _use_go_cache(method, x)
-        GeometricOptimizers.OptimizerState(_adapt_method_to_T(method, parameter_eltype(x)), x)
+    elseif _use_go_cache(leaf_method, x)
+        GeometricOptimizers.OptimizerState(
+            _adapt_method_to_T(leaf_method, parameter_eltype(x)), x)
     else
         GMLEuclideanState(x)
     end
@@ -278,13 +363,13 @@ end
 # Adam — only `step_size` differs, and that comes in as an argument — so the `Adam` method above
 # serves it too.
 
+# The split upstream's `solver_step!` makes, and made here for the same reason: a
+# `FirstOrderMethodWithState` builds its direction out of state of its own and so needs the *method*,
+# and everything else needs the Hessian and has none. Written as that union rather than as one arm
+# per method, so that a method joining it upstream -- `ScalarMomentAdam` did -- does not leave a
+# stale list behind here silently taking the Hessian branch instead.
 function _go_update_leaf!(cache, state, local_grad,
-        method::GeometricOptimizers.Adam, ps_leaf)
-    GeometricOptimizers.update!(cache, state, local_grad, method, ps_leaf)
-end
-
-function _go_update_leaf!(cache, state, local_grad,
-        method::GeometricOptimizers.MomentumMethod, ps_leaf)
+        method::GeometricOptimizers.FirstOrderMethodWithState, ps_leaf)
     GeometricOptimizers.update!(cache, state, local_grad, method, ps_leaf)
 end
 
@@ -304,9 +389,15 @@ function _leaf_optim_step!(cache::GeometricOptimizers.OptimizerCache,
         state::GeometricOptimizers.OptimizerState,
         dp_leaf, ps_leaf, λY_leaf, method, retraction, step_size)
     T = parameter_eltype(ps_leaf)
-    ps = _as_go_solution(ps_leaf)
-    local_grad = _GMLGradient{T, typeof(dp_leaf)}(dp_leaf)
-    adapted = _adapt_method_to_T(method, T)
+    adapted = _adapt_method_to_T(GeometricOptimizers.leafmethod(method, ps_leaf), T)
+    ps = _as_go_solution(ps_leaf, adapted)
+    # The gradient and the section tree take the *unwrap* half only: `_gml_rgrad` normalises a plain
+    # `NamedTuple` gradient itself and the section tree is copied into as it stands, so neither wants
+    # the wrap. Both have to follow the solution through the unwrap, though -- a method whose scope
+    # is a single weight is handed that weight's gradient and that weight's section.
+    dp = _as_go_leaf(dp_leaf, adapted)
+    λY = _as_go_leaf(λY_leaf, adapted)
+    local_grad = _GMLGradient{T, typeof(dp)}(dp)
     state.iterations += 1
     _go_update_leaf!(cache, state, local_grad, adapted, ps)
     GeometricOptimizers._rmul!(GeometricOptimizers.direction(cache), T(step_size))
@@ -317,31 +408,27 @@ function _leaf_optim_step!(cache::GeometricOptimizers.OptimizerCache,
     GeometricOptimizers._copyto!(GeometricOptimizers.solution(cache),
         GeometricOptimizers.section(cache))
     GeometricOptimizers._copyto!(ps, GeometricOptimizers.solution(cache))
-    GeometricOptimizers._copyto!(λY_leaf, GeometricOptimizers.section(cache))
+    GeometricOptimizers._copyto!(λY, GeometricOptimizers.section(cache))
     # `section(cache)` is `update_section!(section(state), direction, retraction)`, so copying it is
     # the same thing as retracting a second time -- and a retraction on a manifold is `O(N³)` where
     # the copy is `O(N²)`.
     GeometricOptimizers._copyto!(GeometricOptimizers.section(state),
         GeometricOptimizers.section(cache))
-    if state isa GeometricOptimizers.AdamState
-        GeometricOptimizers._copyto!(GeometricOptimizers.first_moment(state),
-            GeometricOptimizers.first_moment(cache))
-        GeometricOptimizers._copyto!(GeometricOptimizers.second_moment(state),
-            GeometricOptimizers.second_moment(cache))
-    elseif state isa GeometricOptimizers.MomentumState
-        # `p ← αp + ∇L`; see the note in `_euclidean_update!` for the momentum method. This has to
-        # match what `update!(::MomentumCache, ...)` anticipated when it formed the direction.
-        GeometricOptimizers._rmul!(GeometricOptimizers.momentum(state), adapted.α)
-        GeometricOptimizers._add!(GeometricOptimizers.momentum(state),
-            GeometricOptimizers.gradient_array(cache))
-    end
+    # What a method carries out of a step -- a momentum, a pair of moments -- and whether the cache's
+    # copy is the one to keep is the method's own knowledge, and upstream's since 0.8. This was a
+    # chain of `isa` tests over the state types here, which is a list of methods maintained in the
+    # package that does not define them: `ScalarMomentAdam` was simply missing from it.
+    GeometricOptimizers.sync_state!(state, cache, adapted)
     nothing
 end
 
 # Euclidean leaf step (plain AbstractArray params)
 function _leaf_optim_step!(cache::GMLEuclideanState, state::GMLEuclideanState,
         dp_leaf, ps_leaf, λY_leaf, method, retraction, step_size)
-    _euclidean_update!(ps_leaf, dp_leaf, state, method, step_size)
+    # The composite is resolved here too: this arm is reached for a leaf whose selected method has
+    # no `GeometricOptimizers` cache, and `_euclidean_update!` dispatches on that method.
+    _euclidean_update!(ps_leaf, dp_leaf, state,
+        GeometricOptimizers.leafmethod(method, ps_leaf), step_size)
     state.iterations += 1
     nothing
 end
