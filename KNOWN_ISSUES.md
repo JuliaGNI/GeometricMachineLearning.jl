@@ -363,7 +363,7 @@ Not defects — claims this release makes that nothing has actually checked yet.
 
 ## Found late
 
-### K1 · Three source comments still send the reader to the Open Issues section of `CHANGELOG.md`, which no longer exists.
+### K1 · Four source comments still send the reader to the Open Issues section of `CHANGELOG.md`, which no longer exists.
 
 - **location:** `src/reduced_system/reduced_system.jl:109`
 - **kind:** found late
@@ -376,8 +376,12 @@ Not defects — claims this release makes that nothing has actually checked yet.
   test/reduced_order_modeling/reduced_system.jl:44:# for four of twelve, with four `NaN` and four in the opposite order. That is *C21* in
   test/aqua.jl:30:# layer types, and both are an API change rather than a tidy-up. They are *B7* under
   test/aqua.jl:31:# `## Open Issues` in `CHANGELOG.md` with that reasoning.
+  $ grep -n 'CHANGELOG' test/aqua.jl
+  31:# `## Open Issues` in `CHANGELOG.md` with that reasoning.
+  63:    # and it fails when one is removed without the entry above and in `CHANGELOG.md` going with it.
   ```
 
-  The IDs are still valid; the comments at `reduced_system.jl:109`, `test/aqua.jl:31` and
-  `test/reduced_order_modeling/reduced_system.jl:44–45` name `CHANGELOG.md` rather than
-  `KNOWN_ISSUES.md`. The fix is a follow-up change to those comments.
+  The IDs are still valid; the comments at `src/reduced_system/reduced_system.jl:109`,
+  `test/aqua.jl:31`, `test/aqua.jl:63` and `test/reduced_order_modeling/reduced_system.jl:44–45`
+  name `CHANGELOG.md` rather than `KNOWN_ISSUES.md`. The fix is a follow-up change to those
+  comments.
