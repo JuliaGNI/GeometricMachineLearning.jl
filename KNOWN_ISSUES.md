@@ -360,3 +360,24 @@ Not defects — claims this release makes that nothing has actually checked yet.
   The compile-time figures come from the
   `Adam` path. The quasi-Newton and Newton caches and states were widened on the strength of their
   *inferred types* — a sound argument, but not a measurement. Catalogued upstream as GeometricOptimizers C15.
+
+## Found late
+
+### K1 · Three source comments still send the reader to the Open Issues section of `CHANGELOG.md`, which no longer exists.
+
+- **location:** `src/reduced_system/reduced_system.jl:109`
+- **kind:** found late
+- **found:** 2026-09-26
+- **evidence:**
+  ```
+  $ grep -rnE 'Open Issues|issue C1[48]|\*C21\*|\*B7\*' src test
+  src/kernels/exponentials/tensor_exponential.jl:2:# name is wider than what it holds; renaming it, and `exponentials/` with it, is issue C18.
+  src/reduced_system/reduced_system.jl:109:# issue C14 in `CHANGELOG.md`.
+  test/reduced_order_modeling/reduced_system.jl:44:# for four of twelve, with four `NaN` and four in the opposite order. That is *C21* in
+  test/aqua.jl:30:# layer types, and both are an API change rather than a tidy-up. They are *B7* under
+  test/aqua.jl:31:# `## Open Issues` in `CHANGELOG.md` with that reasoning.
+  ```
+
+  The IDs are still valid; the comments at `reduced_system.jl:109`, `test/aqua.jl:31` and
+  `test/reduced_order_modeling/reduced_system.jl:44–45` name `CHANGELOG.md` rather than
+  `KNOWN_ISSUES.md`. The fix is a follow-up change to those comments.
