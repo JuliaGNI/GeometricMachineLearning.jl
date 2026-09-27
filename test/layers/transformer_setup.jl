@@ -1,4 +1,7 @@
 using Test, KernelAbstractions, GeometricMachineLearning
+import Random
+
+Random.seed!(1234)
 
 @doc raw"""
 This function tests the setup of the transformer with Stiefel weights.
