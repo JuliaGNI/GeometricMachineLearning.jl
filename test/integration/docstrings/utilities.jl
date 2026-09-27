@@ -1,6 +1,9 @@
 using Test
 using GeometricMachineLearning
 using GeometricMachineLearning: QPT, _processing
+import Random
+
+Random.seed!(1234)
 
 @testset "Utility and pullback docstring examples" begin
     data1 = (q = rand(5), p = rand(5))

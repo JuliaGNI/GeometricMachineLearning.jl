@@ -129,7 +129,7 @@ Main.remark(raw"The training blocks on this page are in plain `julia` fences, so
 " * Main.indentation * raw"instead is the *committed result* of those runs, loaded from the `.h5` files beside this page,
 " * Main.indentation * raw"so the figures below are produced from the trained networks rather than from a token
 " * Main.indentation * raw"re-training. The code paths themselves are covered by the test suite -- `ReducedLoss` through
-" * Main.indentation * raw"the `Optimizer` functor by `test/losses/reduced_loss_optimization.jl` -- and reproduced at
+" * Main.indentation * raw"the `Optimizer` functor by `test/integration/reduced_loss_optimization.jl` -- and reproduced at
 " * Main.indentation * raw"full size by `scripts/reproduction/symplectic_autoencoders/`, which CI runs at a smoke size
 " * Main.indentation * raw"on every pull request.")
 ```

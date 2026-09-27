@@ -2,6 +2,9 @@ using GeometricMachineLearning
 using GeometricMachineLearning: mat_tensor_mul, tensor_mat_skew_sym_assign,
                                 tensor_transpose_tensor_mul, tensor_transpose
 using Test
+import Random
+
+Random.seed!(1234)
 
 function isskew(A::AbstractMatrix)
     @test -A ≈ A'

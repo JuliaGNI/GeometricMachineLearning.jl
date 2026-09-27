@@ -2,6 +2,9 @@ using GeometricMachineLearning: tensor_inverse2, tensor_inverse3, tensor_inverse
                                 tensor_inverse5, cpu_inverse
 using Test
 import Zygote
+import Random
+
+Random.seed!(1234)
 
 function test55_inverse(k::Int = 10)
     A = rand(5, 5, k)

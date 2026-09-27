@@ -18,7 +18,7 @@ using Test
 
 const ALLOWED_ORPHANS = Dict{String, String}()
 
-const TEST_ROOT = @__DIR__
+const TEST_ROOT = normpath(joinpath(@__DIR__, ".."))
 
 """
 Collect into `targets` every path that `ex` includes with a string literal, resolved against `dir`.
