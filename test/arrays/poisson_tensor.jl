@@ -155,7 +155,7 @@ end
     #
     # What is NOT asserted here: the behaviour itself. That `𝕁 * view(A, [1, 2, 3, 4], :)` and
     # `𝕁 * B'` answer on a device rather than raising "Scalar indexing is disallowed." is asserted
-    # on an Apple GPU in `test/metal/metal.jl`. Nothing below stands behind that claim -- a CPU
+    # on an Apple GPU in `test/devices/metal.jl`. Nothing below stands behind that claim -- a CPU
     # stand-in would take the strided path and prove nothing about it.
     ext = Base.get_extension(GeometricMachineLearning, :GPUArraysCoreExt)
     @test ext !== nothing

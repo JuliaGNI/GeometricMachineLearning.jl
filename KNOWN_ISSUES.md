@@ -38,7 +38,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   called the non-existent `vectorfield` are gone, and `SymplecticEulerLoss` carries their content on
   `hamiltonian_vector_field`, with tests that run), and B8 by the narrowing of `PoissonTensor`'s `Base.:*`
   to `Strided…` right-hand sides and `Base.getindex` to `Union{Int, Colon, AbstractVector{<:Integer}}`
-  indices, reducing method ambiguities from 18 to 1 as asserted in `test/aqua.jl`. The numbers are
+  indices, reducing method ambiguities from 18 to 1 as asserted in `test/quality/aqua.jl`. The numbers are
   left vacant rather than reused.)
 
   (**B9** is closed by this release and its entry is gone: the `iterate` method it named binds
@@ -73,7 +73,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
   `src/layers/resnet.jl:63` is also the one remaining method ambiguity, against
   `AbstractNeuralNetworks.Affine`. That pair is benign and has no witness at all: `Dense` is not a
-  subtype of `Affine` and the two have no common instance, so no call can reach it. `test/aqua.jl`
+  subtype of `Affine` and the two have no common instance, so no call can reach it. `test/quality/aqua.jl`
   asserts both counts — 3 piracies and 1 ambiguity — so neither can drift, in either direction.
 
 ### B10 · `DataLoader(::EnsembleSolution{T, T1, Vector{ST}})` at `src/data_loader/data_loader.jl:325` has no test and appears unreachable through this package's current dependencies.
@@ -220,7 +220,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
   Closing it means computing the value and the Jacobian in one pass — `DiffResults` is the tool —
   across the shape change from the `(q, p)` `NamedTuple` the vector fields are splatted from to the
-  flat vector the Jacobian is taken against. `test/reduced_order_modeling/reduced_system.jl`
+  flat vector the Jacobian is taken against. `test/reduced_system/reduced_system.jl`
   exercises the function, so the change is checkable. It was left out of the audit's Part C
   deliberately: it is a restructuring with its own verification, not the comment repair that part
   was scoped to.
@@ -241,9 +241,9 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   where training spends its time, so the gain should be larger here than the forward figures, which
   is also why it wants its own before-and-after measurement rather than being folded into that pass.
 
-### C16 · Four of `ExplicitImports`' seven checks are switched off in `test/aqua.jl`.
+### C16 · Four of `ExplicitImports`' seven checks are switched off in `test/quality/aqua.jl`.
 
-- **location:** `test/aqua.jl`
+- **location:** `test/quality/aqua.jl`
 - **kind:** upstream
 - **found:** 2026-09-18
 - **evidence:**
@@ -313,11 +313,11 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
 ### C21 · "An untrained autoencoder reduces worse than PSD" is not a property, and the suite no longer asserts it under an explicit integrator.
 
-- **location:** `test/reduced_order_modeling/reduced_system.jl`
+- **location:** `test/reduced_system/reduced_system.jl`
 - **kind:** missing test
 - **found:** 2026-09-21
 - **evidence:**
-  `test/reduced_order_modeling/reduced_system.jl` asserted both
+  `test/reduced_system/reduced_system.jl` asserted both
   `projection_error(rs1) < projection_error(rs2)` and
   `reduction_error(rs1) < reduction_error(rs2)` for `ImplicitMidpoint()` and for
   `ExplicitMidpoint()`, with `rs1` a `PSDArch` and `rs2` an untrained 20-encoder-layer
@@ -373,15 +373,15 @@ Not defects — claims this release makes that nothing has actually checked yet.
   $ grep -rnE 'Open Issues|issue C1[48]|\*C21\*|\*B7\*' src test
   src/kernels/exponentials/tensor_exponential.jl:2:# name is wider than what it holds; renaming it, and `exponentials/` with it, is issue C18.
   src/reduced_system/reduced_system.jl:109:# issue C14 in `CHANGELOG.md`.
-  test/reduced_order_modeling/reduced_system.jl:44:# for four of twelve, with four `NaN` and four in the opposite order. That is *C21* in
-  test/aqua.jl:30:# layer types, and both are an API change rather than a tidy-up. They are *B7* under
-  test/aqua.jl:31:# `## Open Issues` in `CHANGELOG.md` with that reasoning.
-  $ grep -n 'CHANGELOG' test/aqua.jl
+  test/quality/aqua.jl:30:# layer types, and both are an API change rather than a tidy-up. They are *B7* under
+  test/quality/aqua.jl:31:# `## Open Issues` in `CHANGELOG.md` with that reasoning.
+  test/reduced_system/reduced_system.jl:44:# for four of twelve, with four `NaN` and four in the opposite order. That is *C21* in
+  $ grep -n 'CHANGELOG' test/quality/aqua.jl
   31:# `## Open Issues` in `CHANGELOG.md` with that reasoning.
   63:    # and it fails when one is removed without the entry above and in `CHANGELOG.md` going with it.
   ```
 
   The IDs are still valid; the comments at `src/reduced_system/reduced_system.jl:109`,
-  `test/aqua.jl:31`, `test/aqua.jl:63` and `test/reduced_order_modeling/reduced_system.jl:44–45`
+  `test/quality/aqua.jl:31`, `test/quality/aqua.jl:63` and `test/reduced_system/reduced_system.jl:44–45`
   name `CHANGELOG.md` rather than `KNOWN_ISSUES.md`. The fix is a follow-up change to those
   comments.

@@ -1,6 +1,9 @@
 using Test
 using GeometricMachineLearning
 using GeometricMachineLearning: convert_input_and_batch_indices_to_array, number_of_batches
+import Random
+
+Random.seed!(1234)
 
 @testset "Data loader docstring examples" begin
     data = [1 2 3; 4 5 6]

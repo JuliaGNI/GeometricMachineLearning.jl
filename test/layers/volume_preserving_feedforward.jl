@@ -2,6 +2,9 @@ using GeometricMachineLearning
 using LinearAlgebra: det
 using Zygote: jacobian
 using Test
+import Random
+
+Random.seed!(1234)
 
 function test_volume_preservation(layer::GeometricMachineLearning.AbstractExplicitLayer,
         ps::NamedTuple, b::AbstractVector{T}) where {T}

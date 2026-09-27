@@ -1,11 +1,10 @@
-# What this package does on a real Apple GPU. `runtests.jl` includes this directory on every
-# Apple-silicon Mac.
+# What this package does on a real Apple GPU. `runtests.jl` includes this file in the `metal` group
+# only, which `Pkg.test(test_args = ["metal"])` asks for.
 #
-# Where `Metal.functional()` is `false` the file skips itself: on a Mac without a usable device, and
+# Asked for, a missing device is a failure rather than a skip: on a Mac without a usable device, and
 # inside a sandbox, where `Metal.device()` can be a null device although the hardware is present.
-# `Pkg.test(test_args = ["metal"])` asks for this directory alone, and then a missing device is a
-# failure rather than a skip. `.github/workflows/Metal.yml` runs it that way, so that job cannot
-# pass without having run these tests.
+# `.github/workflows/Metal.yml` runs the group, so that job cannot pass without having run these
+# tests.
 #
 # `Float32` throughout, because Metal has no `Float64`. Scalar indexing is turned off, so a product
 # that reads an array one element at a time raises instead of answering slowly.
@@ -50,8 +49,6 @@ if Metal.functional()
         tensor_mat_mul!(c, MtlArray(a), MtlArray(b))
         @test all(i -> Array(c)[:, :, i] ≈ a[:, :, i] * b, 1:100)
     end
-elseif "metal" in ARGS
-    @test Metal.functional()
 else
-    @info "Metal is not functional here; the Metal tests are skipped."
+    @test Metal.functional()
 end

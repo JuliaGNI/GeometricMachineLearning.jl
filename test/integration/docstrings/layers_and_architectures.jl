@@ -1,6 +1,9 @@
 using Test
 using GeometricMachineLearning
 using GeometricMachineLearning: UnknownEncoder, params
+import Random
+
+Random.seed!(1234)
 
 @testset "Layer and architecture docstring examples" begin
     l = LinearSymplecticAttentionQ(3, 5)

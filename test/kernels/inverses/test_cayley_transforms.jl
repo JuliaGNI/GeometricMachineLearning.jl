@@ -1,6 +1,9 @@
 using GeometricMachineLearning: tensor_cayley4, tensor_cayley3, cpu_tensor_cayley,
                                 tensor_transpose
 using Test
+import Random
+
+Random.seed!(1234)
 
 function test_orthonormal(A::AbstractMatrix)
     @test A' * A ≈ one(A)

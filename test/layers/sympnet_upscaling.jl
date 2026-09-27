@@ -3,6 +3,9 @@ using GeometricMachineLearning, Test, Zygote
 # not re-export it; it was reached here as `GeometricMachineLearning.layer`, which worked only
 # because the module file carried an `import` that nothing in `src/` used.
 using AbstractNeuralNetworks: layer
+import Random
+
+Random.seed!(1234)
 
 # This computes the Jacobians of the encoder, the shear pair and the decoder, and asserts the
 # three exact symplectic identities the upscaling chain is built from -- not the round-trip

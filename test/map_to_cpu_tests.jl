@@ -1,6 +1,6 @@
 # `map_to_cpu` walks a parameter set with `NeuralNetworkParameters.mapstorage`, so the structured
 # types have to survive the round trip rather than come back densified. The GPU tests in
-# `test/metal/` do not cover `map_to_cpu`, so what is pinned here is the walk and the
+# `test/devices/metal.jl` do not cover `map_to_cpu`, so what is pinned here is the walk and the
 # reconstruction, not the device transfer: `Array{T}` of a host array is a copy, which is enough to
 # show that every leaf was visited and rebuilt.
 
