@@ -2,7 +2,7 @@
 # `ext/AbstractNeuralNetworksExt.jl` -- one method on `Union{Manifold, VectorStorageMatrix,
 # AbstractLieAlgHorMatrix}` that delegates to `NeuralNetworkParameters.mapstorage`.
 #
-# These testsets used to live in `test/integration/hdf5_support.jl`, because the five per-type
+# These testsets used to live in `test/parameters/hdf5_support.jl`, because the five per-type
 # methods they covered used to live in this package's HDF5 extension. Both halves of that were
 # wrong the same way: `changebackend` has nothing to do with HDF5, so neither the methods nor
 # their coverage may depend on HDF5 being loaded. Nothing here loads it.
