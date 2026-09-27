@@ -1,19 +1,61 @@
-# Keeps the GitHub Actions in `.github/workflows/` current.
+# Canonical Dependabot configuration. Copied verbatim to .github/dependabot.yml in every repository
+# under Packages/ and Experiments/ by install-workflows.sh — edit this file and re-run the installer,
+# never a copy in a repository. Byte-identical in every repository; verify-workflows.jl asserts it.
 #
-# Julia dependencies are not handled here — Dependabot has no Julia ecosystem, and
-# `.github/workflows/CompatHelper.yml` already opens the `[compat]` bumps nightly.
+# Julia only. The actions the workflows pin are bumped here, in the canonical workflows: a
+# github-actions update would edit one installed copy and make it drift from the template.
+#
+# A directory without a Project.toml is skipped without an error, so one list serves every
+# repository. The standard libraries are ignored because their bound stays at "1": Dependabot pins
+# them to the minor of the Julia it runs, which breaks the `min` job of a package with a 1.10 floor.
+# The list is every non-JLL stdlib of Julia 1.10 to 1.13.
+
 version: 2
 updates:
-  - package-ecosystem: github-actions
-    directory: /
+  - package-ecosystem: "julia"
+    directories:
+      - "/"
+      - "/docs"
+      - "/test"
     schedule:
-      interval: weekly
-      day: monday
-    # One PR per action rather than a combined bump: a major of `setup-julia` or `codecov-action`
-    # can need a workflow change alongside it, and that is easier to review on its own.
-    open-pull-requests-limit: 10
-    commit-message:
-      prefix: "CI"
-    labels:
-      - dependencies
-      - github-actions
+      interval: "weekly"
+    ignore:
+      - dependency-name: "ArgTools"
+      - dependency-name: "Artifacts"
+      - dependency-name: "Base64"
+      - dependency-name: "CRC32c"
+      - dependency-name: "Dates"
+      - dependency-name: "DelimitedFiles"
+      - dependency-name: "Distributed"
+      - dependency-name: "Downloads"
+      - dependency-name: "FileWatching"
+      - dependency-name: "Future"
+      - dependency-name: "InteractiveUtils"
+      - dependency-name: "JuliaSyntaxHighlighting"
+      - dependency-name: "LazyArtifacts"
+      - dependency-name: "LibCURL"
+      - dependency-name: "LibGit2"
+      - dependency-name: "Libdl"
+      - dependency-name: "LinearAlgebra"
+      - dependency-name: "Logging"
+      - dependency-name: "Markdown"
+      - dependency-name: "Mmap"
+      - dependency-name: "NetworkOptions"
+      - dependency-name: "Pkg"
+      - dependency-name: "Printf"
+      - dependency-name: "Profile"
+      - dependency-name: "REPL"
+      - dependency-name: "Random"
+      - dependency-name: "SHA"
+      - dependency-name: "Serialization"
+      - dependency-name: "SharedArrays"
+      - dependency-name: "Sockets"
+      - dependency-name: "SparseArrays"
+      - dependency-name: "Statistics"
+      - dependency-name: "StyledStrings"
+      - dependency-name: "SuiteSparse"
+      - dependency-name: "TOML"
+      - dependency-name: "Tar"
+      - dependency-name: "Test"
+      - dependency-name: "UUIDs"
+      - dependency-name: "Unicode"
