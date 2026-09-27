@@ -36,23 +36,23 @@ batch = Batch(batch_size, seq_length)
 
 loss_array1 = o1(nn1, dl, batch, n_epochs; show_progress = false)
 loss_array2 = o2(nn2, dl, batch, n_epochs; show_progress = false)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1000-element Vector{Float64}:
- 3.4683103725165534
- 3.2231537693179035
+ 3.468310372516554
+ 3.2231537693179044
  3.0508421765534957
  2.8208081911363267
- 2.536544044676889
- 2.315192116122507
- 2.1004433938392166
- 2.0672923142988564
- 1.7650523986217457
- 1.6013422215334334
+ 2.53654404467689
+ 2.3151921161225077
+ 2.100443393839217
+ 2.067292314298857
+ 1.7650523986217461
+ 1.6013422215334336
  ⋮
- 0.009877520422538597
- 0.01144296003068812
- 0.012921864784712418
- 0.012876992475353118
- 0.012333072288994783
- 0.011274619661198523
- 0.01117136113458054
- 0.0110667078317423
- 0.01068327610989574</code></pre><p><img src="../attention_training_light.png" alt="Training loss for the different networks."/> <img src="../attention_training_dark.png" alt="Training loss for the different networks."/></p><p><img src="../validation_light.png" alt="Predicting trajectories with transformers based on the vector softmax and the matrix softmax."/> <img src="../validation_dark.png" alt="Predicting trajectories with transformers based on the vector softmax and the matrix softmax."/></p><p>A similar page can be found <a href="../softmax_comparison/#Comparing-Matrix-and-Vector-Softmax-as-Activation-Functions-in-a-Transformer">here</a>.</p><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-1"><a class="tag is-link" href="#citeref-1">1</a>We here use the implementation of the coupled harmonic oscillator from <a href="https://github.com/JuliaGNI/GeometricProblems.jl"><code>GeometricProblems</code></a>.</li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../volume_preserving_attention/">« Volume-Preserving Attention</a><a class="docs-footer-nextpage" href="../volume_preserving_transformer_rigid_body/">Volume-Preserving Transformer for the Rigid Body »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Saturday 26 September 2026 19:06">Saturday 26 September 2026</span>. Using Julia version 1.13.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ 0.010757795374249543
+ 0.010581494841756224
+ 0.011520229972093635
+ 0.010398088680923047
+ 0.010947453956993475
+ 0.010584809851389817
+ 0.011998563635833319
+ 0.01066391835947427
+ 0.01013660943317007</code></pre><p><img src="../attention_training_light.png" alt="Training loss for the different networks."/> <img src="../attention_training_dark.png" alt="Training loss for the different networks."/></p><p><img src="../validation_light.png" alt="Predicting trajectories with transformers based on the vector softmax and the matrix softmax."/> <img src="../validation_dark.png" alt="Predicting trajectories with transformers based on the vector softmax and the matrix softmax."/></p><p>A similar page can be found <a href="../softmax_comparison/#Comparing-Matrix-and-Vector-Softmax-as-Activation-Functions-in-a-Transformer">here</a>.</p><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-1"><a class="tag is-link" href="#citeref-1">1</a>We here use the implementation of the coupled harmonic oscillator from <a href="https://github.com/JuliaGNI/GeometricProblems.jl"><code>GeometricProblems</code></a>.</li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../volume_preserving_attention/">« Volume-Preserving Attention</a><a class="docs-footer-nextpage" href="../volume_preserving_transformer_rigid_body/">Volume-Preserving Transformer for the Rigid Body »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Sunday 27 September 2026 12:47">Sunday 27 September 2026</span>. Using Julia version 1.13.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
