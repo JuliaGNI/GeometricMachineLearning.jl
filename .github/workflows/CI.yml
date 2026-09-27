@@ -2,7 +2,7 @@
 # by install-workflows.sh — edit this file and re-run the installer, never a copy in a repository.
 #
 # THIS FILE IS BYTE-IDENTICAL IN EVERY REPOSITORY. That is the whole point, and it is what
-# verify-workflows.jl asserts. Nothing here is parameterised by the package: the two jobs read the
+# verify-workflows.jl asserts. Nothing here is parameterised by the package: the jobs read the
 # package name from Project.toml at run time, exactly as the git hooks do. A repository that needs
 # an extra job gets its own extra workflow file (see QuadratureRules/Symbolic.yml) rather than a
 # local edit here.
@@ -21,6 +21,10 @@
 #
 # `pre` and `nightly` are advisory (`experimental: true` + `continue-on-error`): a failure in an
 # unreleased Julia is information, not a broken build. They are deliberately NOT required checks.
+#
+# `downgrade` is advisory too, for a different reason: it tests the `[compat]` lower bounds, which
+# no other job tests, so it is red wherever a floor is false. It becomes a required check only once
+# it is green in every repository.
 
 name: CI
 
@@ -104,6 +108,48 @@ jobs:
                   token: ${{ secrets.CODECOV_TOKEN }}
                   # A Codecov outage must not fail a merge.
                   fail_ci_if_error: false
+
+    downgrade:
+        # The `[compat]` lower bounds. `min` tests the lowest Julia with the newest dependencies,
+        # which leaves every dependency floor untested: a floor can name a version that cannot be
+        # installed at all, or that conflicts with a sibling's floor, and nothing notices. This job
+        # resolves every direct dependency of the root Project.toml to exactly its lower bound on
+        # the lowest Julia, and `forcedeps` fails, naming the entry, when one cannot sit at its
+        # bound. Then it runs the suite there, so a floor that installs but lacks something the
+        # package calls fails too. `projects` is left at `.`, so the floors in test/Project.toml
+        # and the test-only dependencies are not floor-tested.
+        #
+        # The stdlibs are skipped because their version is fixed by the Julia version. The list is
+        # every stdlib a repository here depends on, and the common rest; add one when a
+        # repository takes a stdlib that is not on it.
+        name: Downgrade - ubuntu-latest
+        runs-on: ubuntu-latest
+        timeout-minutes: 120
+        # Advisory: see the header.
+        continue-on-error: true
+        permissions:
+            actions: write
+            contents: read
+        env:
+            JULIA_NUM_THREADS: 2
+        steps:
+            - uses: actions/checkout@v7
+            - uses: julia-actions/setup-julia@v3
+              with:
+                  version: min
+            - uses: julia-actions/cache@v3
+            - uses: julia-actions/julia-downgrade-compat@v2
+              with:
+                  mode: forcedeps
+                  julia_version: min
+                  skip: ArgTools,Artifacts,Base64,CRC32c,Dates,DelimitedFiles,Distributed,Downloads,FileWatching,Future,InteractiveUtils,LazyArtifacts,LibCURL,LibGit2,Libdl,LinearAlgebra,Logging,Markdown,Mmap,NetworkOptions,Pkg,Printf,Profile,REPL,Random,SHA,Serialization,SharedArrays,Sockets,SparseArrays,Statistics,TOML,Tar,Test,UUIDs,Unicode
+            - uses: julia-actions/julia-buildpkg@v1
+            - uses: julia-actions/julia-runtest@v1
+              with:
+                  # Keep the resolved floors: a re-resolve would move them back up, and the
+                  # Dependabot default would force the newest version of the bumped entry.
+                  allow_reresolve: false
+                  force_latest_compatible_version: false
 
     doctest:
         # Doctests run here rather than across the test matrix, and rather than only inside the
