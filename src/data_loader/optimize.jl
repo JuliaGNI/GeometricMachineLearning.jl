@@ -84,13 +84,13 @@ function (o::Optimizer)(nn::NeuralNetwork,
         loss::NetworkLoss,
         _pullback::AbstractPullback = ZygotePullback(loss); show_progress = true)
     Λ = GlobalSection(params(nn))
-    progress_object = show_progress == true ?
+    progress_object = show_progress ?
                       ProgressMeter.Progress(n_epochs; enabled = true) : nothing
     loss_array = zeros(float(eltype(dl)), n_epochs)
     for i in 1:n_epochs
         loss_array[i] = optimize_for_one_epoch!(
             o, nn.model, params(nn), dl, batch, _pullback, Λ)
-        show_progress == true ?
+        show_progress ?
         ProgressMeter.next!(progress_object; showvalues = [(
             :TrainingLoss, loss_array[i])]) : nothing
     end
