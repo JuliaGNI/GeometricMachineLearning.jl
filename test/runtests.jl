@@ -46,6 +46,7 @@ if "core" in GROUPS
     @safetestset "PSD tests" include("architectures/psd_architecture_tests.jl")
     @safetestset "SymplecticAutoencoder tests" include("architectures/symplectic_autoencoder_tests.jl")
     @safetestset "Check if autoencoder error is lower than PSD error" include("architectures/sae_error_lower_than_psd_error.jl")
+    @safetestset "Poincaré integral invariant of a decoded loop" include("architectures/poincare_invariant.jl")
     @safetestset "Check reduced model" include("reduced_system/reduced_system.jl")
     @safetestset "_norm keeps the element type of its argument" include("norm_eltype.jl")
     @safetestset "Symplectic Euler and variational midpoint losses" include("loss/training_method_losses.jl")
