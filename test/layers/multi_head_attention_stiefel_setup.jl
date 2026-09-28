@@ -46,7 +46,7 @@ function check_multi_head_attention_stiefel_setup(T::Type, N::Int, n::Int)
 
     check_setup_calls[] = 0
     check_setup(ps)
-    nleaves = foldparameters((n, _) -> n + 1, 0, ps)
+    nleaves = foldparameters((acc, _) -> acc + 1, 0, ps)
     @test nleaves > 0
     @test check_setup_calls[] == nleaves
 
