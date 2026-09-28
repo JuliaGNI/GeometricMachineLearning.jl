@@ -59,9 +59,8 @@ jobs:
             # makes Codecov merge six reports of the same scope per run, and the merged percentage
             # then moves for reasons that are not code changes.
             COVERAGE: ${{ matrix.version == 'min' && matrix.os == 'ubuntu-latest' }}
-            # Two threads, everywhere. GeometricIntegrators and GeometricExamples each set this for
-            # themselves before; a runner has more than one core, and a suite with a threading test
-            # is otherwise silently single-threaded.
+            # Two threads, everywhere: a runner has more than one core, and a suite with a threading
+            # test is otherwise silently single-threaded.
             JULIA_NUM_THREADS: 2
         strategy:
             fail-fast: false

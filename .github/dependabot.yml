@@ -9,10 +9,9 @@
 # entry for a dependency of the root: those environments contain the package, so the resolver
 # applies the root's bounds, and `test-layout.jl --check` reports a shared entry there. A shared
 # bound moves in the root only, and a dependency that only the test or docs environment uses gets
-# no automated bump. The
-# standard libraries are ignored because their bound stays at "1": Dependabot pins them to the
-# minor of the Julia it runs, which breaks the `min` job of a package with a 1.10 floor. The list
-# is every non-JLL stdlib of Julia 1.10 to 1.13.
+# no automated bump. The standard libraries are ignored because their bound stays at "1":
+# Dependabot pins them to the minor of the Julia it runs, which breaks the `min` job of a package
+# with a 1.10 floor. The list is every non-JLL stdlib of Julia 1.10 to 1.13.
 
 version: 2
 updates:
