@@ -34,7 +34,6 @@ breaking release).
 
 ### Documentation
 
-- **`docs/src/structure_preservation/symplecticity.md` derives the first Poincaré integral invariant.** A new section states and proves $\oint_{\Psi\circ\gamma} p \cdot dq = \oint_\gamma p \cdot dq$ for a symplectic $\Psi: \mathbb{R}^{2n} \to \mathbb{R}^{2N}$ and a contractible loop $\gamma$, says which of the two conditions implies the other and why the loop identity is therefore a complement to the pointwise definition rather than a replacement, and records the under-resolution failure mode together with the reason the quadrature has to be spectral. It points at `PoincareInvariants.jl` for that quadrature and at the test file above.
 - **The *GPU Support* section of `docs/src/index.md` names the two device paths the suite now tests**, where it said that nothing on the GPU path was tested.
 
 ## [0.8.0] — 2026-09-21

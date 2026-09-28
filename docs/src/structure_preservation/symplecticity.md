@@ -111,35 +111,6 @@ It is important to note that symplecticity is a very strong property[^2] that ma
 
 [^2]: Symplecticity imposes in general greater restrictions on the flow map than e.g. conservation of energy. The famous *Ge-Marsden theorem* [ge1988lie](@cite) says that one cannot achieve preservation of energy and preservation of symplecticity at the same time, unless the numerical method is the exact integral of the Hamiltonian ODE. In practice we hence almost always choose a symplectic over an energy-preserving scheme.
 
-## The First Poincaré Integral Invariant
-
-The definition of symplecticity given above is *pointwise*: it constrains the Jacobian at every ``z`` separately. It has an integrated counterpart that constrains a finite closed curve instead, and for a map that is built to be symplectic — such as the decoder of a [symplectic autoencoder](@ref "Symplectic Autoencoders") — this is often the easier of the two to evaluate:
-
-```@eval
-Main.theorem(raw"Let ``\Psi:\mathbb{R}^{2n}\to\mathbb{R}^{2N}`` satisfy ``(\nabla_z\Psi)^T\mathbb{J}_{2N}\nabla_z\Psi = \mathbb{J}_{2n}`` and let ``\gamma`` be a contractible closed loop in its domain. Then
-" * Main.indentation * raw"```math
-" * Main.indentation * raw"\oint_{\Psi\circ\gamma}p\cdot{}dq = \oint_\gamma{}p\cdot{}dq.
-" * Main.indentation * raw"```
-" * Main.indentation * raw"The quantity ``\oint{}p\cdot{}dq`` is called the **first Poincaré integral invariant** [arnold1978mathematical, hairer2006geometric](@cite).", name = "First Poincaré Integral Invariant")
-```
-
-```@eval
-Main.proof(raw"Write ``\theta = p\cdot{}dq`` for the canonical one-form. With the convention ``\Omega = \mathbb{J}^T`` fixed above we have ``d\theta = dp\wedge{}dq = \Omega``. Transposing ``(\nabla_z\Psi)^T\mathbb{J}_{2N}\nabla_z\Psi = \mathbb{J}_{2n}`` gives ``(\nabla_z\Psi)^T\mathbb{J}_{2N}^T\nabla_z\Psi = \mathbb{J}_{2n}^T``, which says precisely that ``\Psi`` pulls the symplectic structure of ``\mathbb{R}^{2N}`` back to that of ``\mathbb{R}^{2n}``, i.e. ``\Psi^*\Omega_{2N} = \Omega_{2n}``. Now take a surface ``S`` with ``\partial{}S = \gamma``, which exists because ``\gamma`` is contractible, and apply Stokes' theorem twice:
-" * Main.indentation * raw"```math
-" * Main.indentation * raw"\oint_{\Psi\circ\gamma}\theta_{2N} = \oint_\gamma\Psi^*\theta_{2N} = \int_S\Psi^*\Omega_{2N} = \int_S\Omega_{2n} = \oint_\gamma\theta_{2n}.
-" * Main.indentation * raw"```")
-```
-
-The implication only goes one way, and it is worth being explicit about which way:
-
-```@eval
-Main.remark(raw"The pointwise condition is the *stronger* statement. It implies the loop identity, as the proof above shows, but the converse is false: the loop integral collapses a matrix identity into a single scalar, and because it integrates, violations of opposite sign along the loop cancel. A map can preserve ``\oint{}p\cdot{}dq`` on every loop one happens to try and still fail to be symplectic. The loop invariant is therefore a complement to the pointwise check and not a replacement for it.")
-```
-
-What it offers in exchange is a different kind of coverage. The pointwise condition is checked at a single point and to first order around it, and doing so requires the full ``2N\times{}2n`` Jacobian; the loop identity is a statement about a finite curve, and evaluating it needs nothing but ``K`` forward evaluations of ``\Psi``. In the reduced-order-modeling setting it also makes a distinction the pointwise condition cannot express at all. Comparing ``\oint{}p\cdot{}dq`` over a latent loop with the same integral over its decoded image measures symplecticity alone, a property of the architecture; comparing the decoded image with the orbit the loop was encoded from measures how well the learned manifold matches the true one. The two errors are separated by looking at different pairs of the same three numbers.
-
-In practice the integral is not taken over a curve but over samples of one, and this is where the diagnostic is easy to misuse. The identity holds for the curve, whereas the number is computed from finitely many points, and the resolution required is set by the curvature of the *image*: a latent loop that is amply sampled by any criterion in latent space can still be badly under-resolved once a strongly nonlinear decoder has bent it, and the resulting quadrature error is indistinguishable from a loss of symplecticity. The quadrature therefore matters. The obvious choice, a shoelace sum over the polygon through the sampled points, is only second order however smooth the curve is, because it is the geometry rather than the integrand that is being approximated. `GeometricMachineLearning` does not implement the quadrature itself; [`PoincareInvariants`](https://github.com/JuliaGNI/PoincareInvariants.jl) does, and its default plan differentiates the loop spectrally, which reaches machine precision as soon as the loop is resolved at all. `test/architectures/poincare_invariant.jl` uses it to check the decoders of [`PSDArch`](@ref) and [`SymplecticAutoencoder`](@ref) against both failure modes.
-
 ## Library Functions
 ```@docs
 PoissonTensor
