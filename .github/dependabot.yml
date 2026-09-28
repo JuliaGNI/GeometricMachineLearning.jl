@@ -5,11 +5,11 @@
 # Julia only. The actions the workflows pin are bumped here, in the canonical workflows: a
 # github-actions update would edit one installed copy and make it drift from the template.
 #
-# Only the root Project.toml is updated. test/Project.toml repeats each shared root bound, and
-# `test-layout.jl --check` requires the two entries to be equal; a separate bump in /test breaks
-# that equality. docs/Project.toml is treated the same way. So a shared bound moves in the root and
-# is copied by hand, and a dependency that only the test or docs environment uses gets no
-# automated bump. The
+# Only the root Project.toml is updated. test/Project.toml and docs/Project.toml carry no [compat]
+# entry for a dependency of the root: those environments contain the package, so the resolver
+# applies the root's bounds, and `test-layout.jl --check` reports a shared entry there. A shared
+# bound moves in the root only, and a dependency that only the test or docs environment uses gets
+# no automated bump. The
 # standard libraries are ignored because their bound stays at "1": Dependabot pins them to the
 # minor of the Julia it runs, which breaks the `min` job of a package with a 1.10 floor. The list
 # is every non-JLL stdlib of Julia 1.10 to 1.13.
