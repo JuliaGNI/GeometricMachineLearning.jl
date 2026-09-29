@@ -47,19 +47,17 @@ printf '%sThis takes 10-30 minutes and prints nothing until it finishes. That is
        "$dim" "$nc"
 
 if [ -n "${pkg:-}" ]; then
-    julia --startup-file=no --check-bounds=auto --project=. \
-          -e "using Pkg; Pkg.test(\"$pkg\")"
+    suite=(julia --startup-file=no --check-bounds=auto --project=. \
+                 -e "using Pkg; Pkg.test(\"$pkg\")")
+elif [ -f test/runtests.jl ]; then
+    # Not a package — run its runtests.jl directly.
+    suite=(julia --startup-file=no --check-bounds=auto --project=. test/runtests.jl)
 else
-    # Not a package — run its runtests.jl directly if it has one.
-    if [ -f test/runtests.jl ]; then
-        julia --startup-file=no --check-bounds=auto --project=. test/runtests.jl
-    else
-        printf '%sno package name and no test/runtests.jl — nothing to run.%s\n\n' "$dim" "$nc"
-        exit 0
-    fi
+    printf '%sno package name and no test/runtests.jl — nothing to run.%s\n\n' "$dim" "$nc"
+    exit 0
 fi
 
-if [ $? -ne 0 ]; then
+if ! "${suite[@]}"; then
     printf '\n%sERROR — tests must pass before pushing to main.%s\n\n' "$red" "$nc"
     exit 1
 fi
