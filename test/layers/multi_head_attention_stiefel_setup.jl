@@ -8,20 +8,23 @@ import Random, Test, LinearAlgebra, KernelAbstractions
 #
 # Each helper below has two methods, because two shapes arrive: a wrapped layer is a
 # `NetworkParameters` and the tree above it is a plain `NamedTuple`.
-using NeuralNetworkParameters: NetworkParameters, mapparameters
+using NeuralNetworkParameters: NetworkParameters, mapparameters, foldparameters
 
 Random.seed!(1234)
+
+# counts the calls of the matrix method of `check_setup`, so that the test sees that it ran on every leaf
+const check_setup_calls = Ref(0)
 
 @doc raw"""
 This checks for an arbitrary matrix ``A\in\mathbb{R}^{N\times{}n}`` if ``A\in{}St(n,N)``.
 """
 function check_setup(A::AbstractMatrix{T}, tol = T(10)*eps(T)) where {T}
+    check_setup_calls[] += 1
     @test typeof(A) <: StiefelManifold
     @test check(A) < tol
 end
 check_setup(ps::NetworkParameters) = mapparameters(check_setup, ps)
 check_setup(ps::NamedTuple) = mapparameters(check_setup, ps)
-check_setup(ps::NetworkParameters) = check_setup(GeometricMachineLearning.params(ps))
 
 @doc raw"""
 This checks for an arbitrary matrix ``B\in\mathbb{R}^{N\times{}N}`` if ``B\in\mathfrak{g}^\mathrm{hor}``.
@@ -41,7 +44,11 @@ function check_multi_head_attention_stiefel_setup(T::Type, N::Int, n::Int)
     model = Chain(MultiHeadAttention(N, n, Stiefel = true))
     ps = GeometricMachineLearning.params(NeuralNetwork(model, KernelAbstractions.CPU(), T))
 
+    check_setup_calls[] = 0
     check_setup(ps)
+    nleaves = foldparameters((acc, _) -> acc + 1, 0, ps)
+    @test nleaves > 0
+    @test check_setup_calls[] == nleaves
 
     gx = Optimizer(MomentumMethod(), ps).cache
     check_grad_setup(gx)

@@ -70,6 +70,7 @@ struct GeneralizedHamiltonianArchitecture{AT, IT} <: HamiltonianArchitecture{AT}
             dim, width = dim, nhidden = HNN_nhidden_default,
             activation = HNN_activation_default, integrator = GHNN_integrator_default)
         error("GHNN still has to be implemented!")
+        # fatou-ignore unreachable-code
         new{typeof(activation), typeof(integrator)}(
             dim, width, nhidden, activation, integrator)
     end
