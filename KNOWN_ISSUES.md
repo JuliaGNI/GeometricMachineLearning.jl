@@ -396,10 +396,10 @@ Not defects — claims this release makes that nothing has actually checked yet.
 - **evidence:**
   JET 0.12 loads Revise, and Revise's file watcher runs out of file handles. On Julia 1.13.1,
   the full-run log of `run-tests.jl <repository> full` holds 5 blocks
-  `UNHANDLED TASK ERROR: IOError: FolderMonitor: too many open files (EMFILE)` on the branch
-  that adds `test/quality/jet.jl`, and 0 in the same run on `origin/main` (ea0c397). The blocks
-  are not test failures: both runs are green, and every testset count of the base is equal on the
-  branch.
+  `UNHANDLED TASK ERROR: IOError: FolderMonitor: too many open files (EMFILE)` when the suite
+  includes `test/quality/jet.jl`, and 0 in the same run at ea0c397, which does not include it.
+  The blocks are not test failures: both runs are green, and every testset of ea0c397 has the
+  same count in both.
 
 ## The test suite
 
