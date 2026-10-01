@@ -20,6 +20,11 @@ const rrule = GML.ChainRulesCore.rrule
 # also gets a line per element type of its launchers, which analyses the generated
 # `cpu_<kernel>` function directly, at the `CompilerMetadata` context that the launcher builds.
 # This uses internals of KernelAbstractions (`launch_config`, `mkcontext`, `blocks`, `Kernel.f`).
+# Two kinds of dispatch stay unseen, `KNOWN_ISSUES.md` K3: a type-unstable argument of a kernel
+# launch, because its dispatch sits in KernelAbstractions' frames; and, in
+# `assign_ones_for_poisson_tensor_kernel!`, an unstable target array `J` or size `n` of its
+# splatted store, because JET never reports a dynamic dispatch in the kernel's own frame. A
+# barrier on a value inside each kernel body is reported.
 function kernel_body_reports(kernel, ndrange, args...)
     k = kernel(CPU())
     nd, _, iterspace, dynamic = KernelAbstractions.launch_config(k, ndrange, nothing)
@@ -58,10 +63,16 @@ const A3{T} = Array{T, 3}
             (A3{Float32}, A3{Float32}, Matrix{Float32}); target_modules = TARGET)))
         @test isempty(kernel_body_reports(GML.tensor_mat_mul_kernel!, (3, 4, 2),
             zeros(Float32, 3, 4, 2), zeros(Float32, 3, 5, 2), zeros(Float32, 5, 4)))
-        @test isempty(JET.get_reports(JET.report_opt(GML.symmetric_mat_right_mul!,
-            (A3{Float64}, A3{Float64}, Vector{Float64}, Int); target_modules = TARGET)))
-        @test isempty(kernel_body_reports(GML.symmetric_mat_right_mul_kernel!, (2, 3, 2),
-            zeros(2, 3, 2), zeros(2, 3, 2), zeros(6), 3))
+        # `symmetric_mat_right_mul!` through `tensor_mat_mul!` with a `SymmetricMatrix`:
+        # `Float32` in test/architectures/linear_symplectic_transformer.jl, `Float64` in
+        # test/kernels/tensor_mat_mul.jl
+        for T in (Float32, Float64)
+            @test isempty(JET.get_reports(JET.report_opt(GML.symmetric_mat_right_mul!,
+                (A3{T}, A3{T}, Vector{T}, Int); target_modules = TARGET)))
+            @test isempty(kernel_body_reports(
+                GML.symmetric_mat_right_mul_kernel!, (2, 3, 2),
+                zeros(T, 2, 3, 2), zeros(T, 2, 3, 2), zeros(T, 6), 3))
+        end
 
         # src/kernels/tensor_tensor_mul.jl and the three transposed products
         for T in (Float16, Float32, Float64)
@@ -229,17 +240,19 @@ const A3{T} = Array{T, 3}
             (DataLoader{Float64, A3{Float64}, Nothing, :RegularData},
                 Batch{:FeedForward},
                 Indices); target_modules = TARGET)))
-        for T in (Float32, Float64)
+        for (T, BatchType) in ((Float32, Batch{:Transformer}), (
+            Float64, Batch{:FeedForward}))
             # the optimizer functor in test/data_loader/training_history_eltype.jl
             @test isempty(JET.get_reports(JET.report_opt(
                 GML.convert_input_and_batch_indices_to_array,
                 (DataLoader{T, A3{T}, Nothing, :TimeSeries}, Batch{:FeedForward}, Indices);
                 target_modules = TARGET)))
-            # input and output: test/architectures/lagrangian_neural_network_tests.jl
-            # (`Float64`) and test/data_loader/data_loader_for_input_and_output.jl (`Float32`)
+            # input and output: test/data_loader/data_loader_for_input_and_output.jl
+            # (`Float32`, `Batch(10, 1, 1)`) and
+            # test/architectures/lagrangian_neural_network_tests.jl (`Float64`, `Batch(10)`)
             reports = JET.get_reports(JET.report_opt(
                 GML.convert_input_and_batch_indices_to_array,
-                (DataLoader{T, A3{T}, A3{T}, :TimeSeries}, Batch{:Transformer}, Indices);
+                (DataLoader{T, A3{T}, A3{T}, :TimeSeries}, BatchType, Indices);
                 target_modules = TARGET))
             @test_broken isempty(reports)  # #325
             @test isempty(kernel_body_reports(

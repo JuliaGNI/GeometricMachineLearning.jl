@@ -395,8 +395,30 @@ Not defects — claims this release makes that nothing has actually checked yet.
 - **found:** 2026-10-01
 - **evidence:**
   JET 0.12 loads Revise, and Revise's file watcher runs out of file handles. On Julia 1.13.1,
-  `grep -c 'UNHANDLED TASK ERROR'` counts 5 blocks
-  `UNHANDLED TASK ERROR: IOError: FolderMonitor: too many open files (EMFILE)` in the log of
-  `run-tests.jl <repository> quality/jet.jl`, and 0 in the log of
-  `run-tests.jl <repository> quality/exports.jl`, which does not load JET. The blocks are not
-  test failures: the file passes 140 of 143, with 3 broken.
+  the full-run log of `run-tests.jl <repository> full` holds 5 blocks
+  `UNHANDLED TASK ERROR: IOError: FolderMonitor: too many open files (EMFILE)` on the branch
+  that adds `test/quality/jet.jl`, and 0 in the same run on `origin/main` (ea0c397). The blocks
+  are not test failures: both runs are green, and every testset count of the base is equal on the
+  branch.
+
+## The test suite
+
+### K3 · `test/quality/jet.jl` does not see an unstable kernel-launch argument, nor two barriers in the Poisson-tensor kernel
+
+- **location:** `test/quality/jet.jl`
+- **kind:** missing test
+- **found:** 2026-10-01
+- **evidence:**
+  Julia 1.13.1, JET 0.12.2, `mutate.jl <repository> … quality/jet.jl`. Three mutants that put
+  `Base.inferencebarrier` on an argument of a kernel launch SURVIVED (140 pass, 3 broken):
+  `kernel!(c, Base.inferencebarrier(a), b, ndrange = size(c))` in
+  `src/kernels/tensor_tensor_mul.jl`; `augment_zeros!(zero_tensor,
+  Base.inferencebarrier(output_diff), seq_length, …)` in `src/data_loader/tensor_assign.jl`; and
+  `skew_mat_mul_k!(C, S, Base.inferencebarrier(B), n, …)` in `src/kernels/mat_tensor_mul.jl`. At
+  `target_modules = (GeometricMachineLearning,)` a barrier on a launch argument gives 0 reports,
+  and the same barrier in an `@assert` of the same launcher gives 3: the kernel functor takes
+  `args...`, so the dispatch sits in KernelAbstractions' frames, which the filter drops. In
+  `assign_ones_for_poisson_tensor_kernel!` (`src/arrays/poisson_tensor.jl:91`) two mutants
+  SURVIVED: a barrier on `n` in `map_index_for_poisson_tensor(i, n)`, and a barrier on the written
+  array `J`; a barrier on the stored value is CAUGHT. JET never reports a dynamic dispatch in the
+  kernel's own frame. A barrier on a value inside each kernel body is CAUGHT.
