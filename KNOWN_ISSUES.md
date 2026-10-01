@@ -385,3 +385,18 @@ Not defects — claims this release makes that nothing has actually checked yet.
   `test/quality/aqua.jl:31`, `test/quality/aqua.jl:63` and `test/reduced_system/reduced_system.jl:44–45`
   name `CHANGELOG.md` rather than `KNOWN_ISSUES.md`. The fix is a follow-up change to those
   comments.
+
+## Upstream
+
+### K2 · Revise prints EMFILE errors in the test log
+
+- **location:** `test/quality/jet.jl:3`
+- **kind:** upstream
+- **found:** 2026-10-01
+- **evidence:**
+  JET 0.12 loads Revise, and Revise's file watcher runs out of file handles. On Julia 1.13.1,
+  `grep -c 'UNHANDLED TASK ERROR'` counts 5 blocks
+  `UNHANDLED TASK ERROR: IOError: FolderMonitor: too many open files (EMFILE)` in the log of
+  `run-tests.jl <repository> quality/jet.jl`, and 0 in the log of
+  `run-tests.jl <repository> quality/exports.jl`, which does not load JET. The blocks are not
+  test failures: the file passes 140 of 143, with 3 broken.

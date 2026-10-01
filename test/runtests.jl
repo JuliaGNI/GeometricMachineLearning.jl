@@ -81,6 +81,7 @@ if "core" in GROUPS
     @safetestset "Manifold docstring examples" include("integration/docstrings/manifolds.jl")
     @safetestset "Utility and pullback docstring examples" include("integration/docstrings/utilities.jl")
     @safetestset "Aqua's package-level checks" include("quality/aqua.jl")
+    @safetestset "JET" include("quality/jet.jl")
 end
 if "slow" in GROUPS
     @safetestset "Test symplecticity of the sympnet upscaling layer" include("layers/sympnet_upscaling.jl")
