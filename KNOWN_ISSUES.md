@@ -410,7 +410,7 @@ Not defects — claims this release makes that nothing has actually checked yet.
 - **found:** 2026-10-01
 - **evidence:**
   Julia 1.13.1, JET 0.12.2, `mutate.jl <repository> … quality/jet.jl`. Three mutants that put
-  `Base.inferencebarrier` on an argument of a kernel launch SURVIVED (140 pass, 3 broken):
+  `Base.inferencebarrier` on an argument of a kernel launch SURVIVED (142 pass, 3 broken):
   `kernel!(c, Base.inferencebarrier(a), b, ndrange = size(c))` in
   `src/kernels/tensor_tensor_mul.jl`; `augment_zeros!(zero_tensor,
   Base.inferencebarrier(output_diff), seq_length, …)` in `src/data_loader/tensor_assign.jl`; and
