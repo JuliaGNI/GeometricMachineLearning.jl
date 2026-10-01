@@ -19,8 +19,9 @@ const rrule = GML.ChainRulesCore.rrule
 # JET drops the reports of a kernel body when it analyses the launcher, so each `@kernel` method
 # also gets a line per element type of its launchers, which analyses the generated
 # `cpu_<kernel>` function directly, at the `CompilerMetadata` context that the launcher builds.
-# It filters with `JET.AnyFrameModule(GML)`, so that a dispatch in a function that the kernel
-# body calls counts. This uses internals of KernelAbstractions (`launch_config`, `mkcontext`, `blocks`, `Kernel.f`).
+# This uses internals of KernelAbstractions (`launch_config`, `mkcontext`, `blocks`, `Kernel.f`).
+# These lines filter with `JET.AnyFrameModule(GML)`, so that a dispatch in a function that the
+# kernel body calls counts.
 # Two kinds of dispatch stay unseen, `KNOWN_ISSUES.md` K3: a type-unstable argument of a kernel
 # launch, because its dispatch sits in KernelAbstractions' frames; and, in
 # `assign_ones_for_poisson_tensor_kernel!`, an unstable target array `J` or size `n` of its
