@@ -60,34 +60,24 @@ status=0
 # the test convention. `test-layout.jl` is installed beside this hook by install-githooks.sh; a
 # missing copy blocks rather than skips, because a stage that skips itself reports "clean" when
 # it checked nothing. It checks the working tree, not the index.
-#
-# GMLDatasets keeps its old layout until its migration part of the plan "Unify the test suites"
-# is built, so the stage is off there.
-# Delete the name from the `case` when the repository migrates.
 if ! test_raw=$(git diff --cached --name-only -- test/); then
     printf '\n%spre-commit: could not list staged files.%s Refusing to pass silently.\n\n' \
            "$red" "$nc"
     exit 1
 fi
 if [ -n "$test_raw" ]; then
-    name=$(sed -n 's/^name[[:space:]]*=[[:space:]]*"\(.*\)"/\1/p' Project.toml 2>/dev/null | head -1)
-    case "$name" in
-        GMLDatasets)
-            printf '%stest layout: off in %s until it migrates%s\n' "$yellow" "$name" "$nc" ;;
-        *)
-            if [ ! -f .githooks/test-layout.jl ]; then
-                printf '%stest layout: .githooks/test-layout.jl is missing%s — re-run install-githooks.sh --apply.\n' \
-                       "$red" "$nc"
-                status=1
-            elif layout_out=$(julia --startup-file=no .githooks/test-layout.jl --check "$root" 2>&1); then
-                printf '%stest layout: ok%s\n' "$green" "$nc"
-            else
-                printf '%stest layout: FAILED%s — the tests are not in the layout of the convention:\n' \
-                       "$red" "$nc"
-                printf '%s\n' "$layout_out" | sed 's/^/    /'
-                status=1
-            fi ;;
-    esac
+    if [ ! -f .githooks/test-layout.jl ]; then
+        printf '%stest layout: .githooks/test-layout.jl is missing%s — re-run install-githooks.sh --apply.\n' \
+               "$red" "$nc"
+        status=1
+    elif layout_out=$(julia --startup-file=no .githooks/test-layout.jl --check "$root" 2>&1); then
+        printf '%stest layout: ok%s\n' "$green" "$nc"
+    else
+        printf '%stest layout: FAILED%s — the tests are not in the layout of the convention:\n' \
+               "$red" "$nc"
+        printf '%s\n' "$layout_out" | sed 's/^/    /'
+        status=1
+    fi
 fi
 
 staged=()
