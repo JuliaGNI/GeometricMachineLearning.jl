@@ -36,6 +36,8 @@ Main.proof(raw"If we take as test function ``\tilde{\psi}_i = Ve_i``, then we ge
 " * Main.indentation * raw"and since this must be true for every ``i = 1, \ldots, n`` we obtain the desired expression for the reduced vector field.")
 ```
 
+In `GeometricMachineLearning` POD is implemented as [`PODArch`](@ref): calling [`solve!`](@ref) on it computes ``V`` with an SVD, so no training is needed.
+
 In recent years another approach to model ``\mathcal{P}`` and ``\mathcal{R}`` has become popular, namely to use neural networks to do so.
 
 # Autoencoders
@@ -85,6 +87,7 @@ GeometricMachineLearning.Encoder
 GeometricMachineLearning.Decoder
 GeometricMachineLearning.UnknownEncoder
 GeometricMachineLearning.UnknownDecoder
+PODArch
 encoder
 decoder
 ```
