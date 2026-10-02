@@ -403,7 +403,7 @@ Not defects — claims this release makes that nothing has actually checked yet.
 
 ### K4 · Metal.jl 1.11.1 needs a Metal device to precompile, so a sandboxed run with no Metal cache fails before the tests
 
-- **location:** `test/devices/metal.jl`
+- **location:** `test/Project.toml:16`
 - **kind:** upstream
 - **found:** 2026-10-02
 - **evidence:**
@@ -416,7 +416,7 @@ Not defects — claims this release makes that nothing has actually checked yet.
   ERROR: LoadError: BoundsError: attempt to access 0-element Vector{Metal.MTL.MTLDevice} at index [1]
       @ ~/.julia/packages/Metal/oQt6k/lib/mtl/device.jl:29 [inlined]
       @ ~/.julia/packages/Metal/oQt6k/src/precompile.jl:18 [inlined]
-  in expression starting at /Users/mkraus/.julia/packages/Metal/oQt6k/src/precompile.jl:3
+  in expression starting at ~/.julia/packages/Metal/oQt6k/src/precompile.jl:3
   ```
 
   On Julia 1.13.1 the same run is green, because a Metal cache that was precompiled outside the
