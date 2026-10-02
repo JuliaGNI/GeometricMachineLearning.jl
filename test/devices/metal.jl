@@ -1,10 +1,13 @@
-# What this package does on a real Apple GPU. `runtests.jl` includes this file in the `metal` group
-# only, which `Pkg.test(test_args = ["metal"])` asks for.
+# What this package does on a real Apple GPU. `runtests.jl` includes this file in the `metal` group,
+# which a run with no test arguments on an Apple-silicon Mac selects, and which
+# `Pkg.test(test_args = ["metal"])` asks for anywhere.
 #
-# Asked for, a missing device is a failure rather than a skip: on a Mac without a usable device, and
-# inside a sandbox, where `Metal.device()` can be a null device although the hardware is present.
-# `.github/workflows/Metal.yml` runs the group, so that job cannot pass without having run these
-# tests.
+# Where `Metal.functional()` is true, the tests below run. Where it is false, the file records one
+# skip, `@test_skip Metal.functional()`, and runs no other test: on a Mac without a usable device,
+# and inside a sandbox, where `Metal.device()` can be a null device although the hardware is present.
+# The skip is visible in the Test Summary as `Broken 1`, and does not fail the run. The guarantee that
+# the tests ran is `.github/workflows/Metal.yml`: a step before the tests fails that job where
+# `Metal.functional()` is false.
 #
 # `Float32` throughout, because Metal has no `Float64`. Scalar indexing is turned off, so a product
 # that reads an array one element at a time raises instead of answering slowly.
@@ -50,5 +53,5 @@ if Metal.functional()
         @test all(i -> Array(c)[:, :, i] ≈ a[:, :, i] * b, 1:100)
     end
 else
-    @test Metal.functional()
+    @test_skip Metal.functional()
 end

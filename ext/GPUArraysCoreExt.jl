@@ -19,8 +19,8 @@ module GPUArraysCoreExt
 # without.
 #
 # This file's behaviour is device-only. `test/devices/metal.jl` asserts it on an Apple GPU, in the
-# `metal` test group, which the `Metal` workflow runs; the default groups of the test matrix do not
-# reach it.
+# `metal` test group, which the `Metal` workflow runs, and which a run with no test arguments selects
+# on an Apple-silicon Mac only.
 
 using GPUArraysCore: AnyGPUArray, AnyGPUMatrix, AnyGPUVector
 using GeometricMachineLearning

@@ -401,6 +401,41 @@ Not defects — claims this release makes that nothing has actually checked yet.
   The blocks are not test failures: both runs are green, and every testset of ea0c397 has the
   same count in both.
 
+### K4 · Metal.jl 1.11.1 needs a Metal device to precompile, so a sandboxed run with no Metal cache fails before the tests
+
+- **location:** `test/Project.toml:16`
+- **kind:** upstream
+- **found:** 2026-10-02
+- **evidence:**
+  Metal.jl 1.11.1's precompile workload calls `mtlfunction(identity, Tuple{Nothing})`
+  (`src/precompile.jl:18`), which calls `device()`. Inside the macOS sandbox the device list is
+  empty. On Julia 1.11.9, where no precompiled Metal cache exists for these flags, a sandboxed
+  `run-tests.jl <repository> full` stops before the first test:
+
+  ```
+  ERROR: LoadError: BoundsError: attempt to access 0-element Vector{Metal.MTL.MTLDevice} at index [1]
+      @ ~/.julia/packages/Metal/oQt6k/lib/mtl/device.jl:29 [inlined]
+      @ ~/.julia/packages/Metal/oQt6k/src/precompile.jl:18 [inlined]
+  in expression starting at ~/.julia/packages/Metal/oQt6k/src/precompile.jl:3
+  ```
+
+  On Julia 1.13.1 the same run is green, because a Metal cache that was precompiled outside the
+  sandbox (`compiled/v1.13/Metal/` in the depot) matches the flags of `Pkg.test()`. The test file
+  itself records a skip where `Metal.functional()` is false; only the precompile fails. Closing this
+  is a Metal.jl change: a workload that does not run where no device exists.
+
+## Documentation
+
+### K5 · The `PositionalEncoding` docstring names `test/metal/`, which does not exist
+
+- **location:** `src/layers/positional_encoding.jl:75`
+- **kind:** docs
+- **found:** 2026-10-02
+- **evidence:**
+  The docstring says "the GPU tests in `test/metal/` do not cover this layer". The Metal tests
+  are in `test/devices/metal.jl`, and `origin/main` at 97bf0d8 has no `test/metal/` directory.
+  The fix is a change of that path under `src/`.
+
 ## The test suite
 
 ### K3 · `test/quality/jet.jl` does not see an unstable kernel-launch argument, nor two barriers in the Poisson-tensor kernel
