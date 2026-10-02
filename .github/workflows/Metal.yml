@@ -7,11 +7,12 @@
 #
 # WHAT THIS ADDS TO CI.yml.
 #
-# CI.yml's `macOS-latest` entry already runs the Metal tests, because `test/runtests.jl` includes
-# `test/metal/` on every Apple-silicon Mac. They skip there if the device is not functional. This
-# job runs them without the subjects (`test_args: metal`), on macOS 15 rather than on whatever
-# `macos-latest` points to, and fails if Metal is not functional, so it cannot pass without having
-# run them.
+# CI.yml's `macOS-latest` entry already runs the Metal tests, because with no test arguments
+# `test/runtests.jl` selects the `metal` group, `test/devices/metal.jl`, on every Apple-silicon Mac.
+# There the file records a skip if the device is not functional, and the job stays green. This job
+# runs the `metal` group alone (`test_args: metal`), on macOS 15 rather than on whatever
+# `macos-latest` points to. Its step "Metal is functional" fails the job before the tests if Metal
+# is not functional, so it cannot pass without having run them.
 #
 # The runner's GPU is Apple's paravirtual device. Metal.jl supports it from 1.10 and on macOS 15 or
 # later only; on `macos-14` Metal is not functional. It is good for correctness and for nothing
@@ -56,6 +57,17 @@ jobs:
                   version: ${{ matrix.version }}
             - uses: julia-actions/cache@v3
             - uses: julia-actions/julia-buildpkg@v1
+            # The test environment does not exist yet: `julia-runtest` builds it. So the check
+            # loads Metal in a temporary environment, at the bound of `test/Project.toml`.
+            - name: Metal is functional
+              run: |
+                  julia --color=yes -e '
+                      using Pkg
+                      Pkg.activate(; temp = true)
+                      Pkg.add(name = "Metal", version = "1.10 - 1")
+                      using Metal
+                      Metal.functional() || error("Metal is not functional on this runner")
+                      Metal.versioninfo()'
             - uses: julia-actions/julia-runtest@v1
               with:
                   test_args: metal

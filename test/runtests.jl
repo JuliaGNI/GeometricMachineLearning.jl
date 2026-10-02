@@ -1,6 +1,8 @@
 using SafeTestsets
 
-const GROUPS = isempty(ARGS) ? ["core", "slow"] : ARGS
+const GROUPS = isempty(ARGS) ?
+               (Sys.isapple() && Sys.ARCH === :aarch64 ? ["core", "slow", "metal"] :
+                ["core", "slow"]) : ARGS
 
 if "core" in GROUPS
     @safetestset "Reachability of every file under test/" include("quality/reachability.jl")
