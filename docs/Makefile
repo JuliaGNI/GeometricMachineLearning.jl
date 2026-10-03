@@ -3,21 +3,13 @@
 
 all: test_docs html
 
-latex_no_images: latex_no_pdf_no_images
+latex: latex_no_pdf
 	$(MAKE) compile_tex;
 	$(MAKE) compile_tex
 
-latex: latex_no_pdf 
-	$(MAKE) compile_tex;
-	$(MAKE) compile_tex
+latex_no_pdf: install_brenier_two_fluid latex_docs_no_pdf copy_png_files put_figures_outside_of_minted_environment do_correct_quotation_marks make_correct_thrm_and_dfntn_and_xmpl_and_rmrk_and_proof_environment references_instead_of_hyperlinks correct_appendix remove_home_part remove_numbering_for_some_chapters docstring_indexing fix_long_urls remove_darkmode adjust_image_size adjust_math_expressions
 
-latex_no_pdf_no_images: install_brenier_two_fluid latex_docs_no_pdf copy_png_files put_figures_outside_of_minted_environment do_correct_quotation_marks make_correct_thrm_and_dfntn_and_xmpl_and_rmrk_and_proof_environment references_instead_of_hyperlinks correct_appendix remove_home_part remove_numbering_for_some_chapters docstring_indexing fix_long_urls remove_darkmode adjust_image_size adjust_math_expressions
-
-latex_no_pdf: latex_no_pdf_no_images
-
-html: html_no_images
-
-html_no_images: install_brenier_two_fluid documenter
+html: install_brenier_two_fluid documenter
 
 test_docs: 
 	cd ..; julia --project=docs  -e ';									\
