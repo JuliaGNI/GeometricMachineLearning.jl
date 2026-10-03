@@ -18,7 +18,9 @@ Core.eval(GeometricMachineLearning, :(@doc "See [`$(BAD)`](@ref)." PositionalEnc
 include($(repr(MAKE)))
 """
 
-cmd = `$(Base.julia_cmd()) --startup-file=no --project=$(Base.active_project()) -e $script`
+# `Base.julia_cmd()` passes on the `--color` of this process, and CI runs the tests with
+# `--color=yes`; `--color=no` keeps ANSI escapes out of the text the patterns below match.
+cmd = `$(Base.julia_cmd()) --startup-file=no --color=no --project=$(Base.active_project()) -e $script`
 output = IOBuffer()
 process = run(pipeline(ignorestatus(cmd); stdout = output, stderr = output))
 text = String(take!(output))
