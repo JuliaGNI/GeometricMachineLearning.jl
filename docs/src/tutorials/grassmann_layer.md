@@ -8,8 +8,8 @@ Here we show how to implement a neural network that contains a layer whose weigh
 
 We visualize this:
 
-![We can build a neural network that creates new samples from an unknown distribution.](../tikz/grassmann_sampling_light.png)
-![We can build a neural network that creates new samples from an unknown distribution.](../tikz/grassmann_sampling_dark.png)
+![We can build a neural network that creates new samples from an unknown distribution.](https://juliagni.github.io/GeometricFigures.jl/figures/manifolds/grassmann-sampling/png300/grassmann-sampling_light.png)
+![We can build a neural network that creates new samples from an unknown distribution.](https://juliagni.github.io/GeometricFigures.jl/figures/manifolds/grassmann-sampling/png300/grassmann-sampling_dark.png)
 
 So assume that we are given data on a nonlinear manifold:
 

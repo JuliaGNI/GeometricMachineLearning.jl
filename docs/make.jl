@@ -1,3 +1,8 @@
+# The cheap half of the build comes first. `@docs` blocks and code `@ref`s need only the loaded
+# package, so a bad reference stops the build here, in the time the package takes to load, and not
+# after `makedocs` has run every example. `check_references.jl` throws on an unresolved reference.
+include(joinpath(@__DIR__, "check_references.jl"))
+
 using GeometricMachineLearning
 using HDF5
 using AbstractNeuralNetworks
@@ -7,7 +12,18 @@ using DocumenterInterLinks
 using Markdown
 using Bibliography
 using LaTeXStrings
+import Downloads
 # using Weave
+
+# Every TikZ figure of this manual, the logo among them, is compiled and published by
+# GeometricFigures (https://juliagni.github.io/GeometricFigures.jl/). The pages link the published
+# files, and the logo is downloaded to where Documenter looks for it. A failed download throws.
+Downloads.download(
+    "https://juliagni.github.io/GeometricFigures.jl/figures/logos/logo-with-name/logo-with-name_light.svg",
+    joinpath(@__DIR__, "src", "assets", "logo.svg"))
+Downloads.download(
+    "https://juliagni.github.io/GeometricFigures.jl/figures/logos/logo-with-name/logo-with-name_dark.svg",
+    joinpath(@__DIR__, "src", "assets", "logo-dark.svg"))
 
 # The manifold, special-matrix and optimizer chapters moved to `GeometricOptimizers` along with the
 # types they describe (see the changelog), and the chapters that stayed refer to them constantly.
@@ -44,6 +60,9 @@ const html_format = Documenter.HTML(;
     canonical = "https://juliagni.github.io/GeometricMachineLearning.jl",
     assets = [
         "assets/extra_styles.css",
+        # Shows the `_light` or the `_dark` image of each figure, whichever the theme needs.
+        asset("https://juliagni.github.io/GeometricFigures.jl/figures.css";
+            class = :css, islocal = false)
     ],
     # specifies that we do not display the package name again (it's already in the logo)
     sidebar_sitename = false,
@@ -381,6 +400,26 @@ makedocs(;
     doctest = false,
     pages = output_type == :html ? _html_pages : _latex_pages
 )
+
+# The LaTeX manual takes the light PDF of each figure. Documenter's LaTeX writer does not fetch a
+# remote image: it prints the URL into `\includegraphics` and warns. So each light figure that a
+# `.tex` file in `build/` names, as a page's SVG or PNG or as a PDF in `assets/preamble.tex`, is
+# downloaded as a PDF into `build/`, where `xelatex` runs, and the URL becomes the file name. A
+# dark figure keeps its URL: `make remove_darkmode` takes it out of the document.
+if output_type == :latex
+    light_figure = r"https://juliagni\.github\.io/GeometricFigures\.jl/figures/([\w-]+)/([\w-]+)/(?:png[0-9]+/)?\2_light\.(?:svg|png|pdf)"
+    for file in filter(endswith(".tex"), readdir(joinpath(@__DIR__, "build"); join = true))
+        tex = read(file, String)
+        for m in eachmatch(light_figure, tex)
+            topic, name = m.captures
+            pdf = joinpath(@__DIR__, "build", "$(name)_light.pdf")
+            isfile(pdf) || Downloads.download(
+                "https://juliagni.github.io/GeometricFigures.jl/figures/$(topic)/$(name)/$(name)_light.pdf",
+                pdf)
+        end
+        write(file, replace(tex, light_figure => s"\2_light.pdf"))
+    end
+end
 
 # The tutorials' `@setup` blocks read pre-trained parameters from `docs/src/tutorials/*.h5` so that
 # building the manual does not have to retrain the networks. Documenter copies every non-Markdown

@@ -37,6 +37,7 @@ breaking release).
 ### Documentation
 
 - **The *GPU Support* section of `docs/src/index.md` names the two device paths the suite now tests**, where it said that nothing on the GPU path was tested.
+- **The manual's 27 TikZ figures and its logo come from [GeometricFigures](https://juliagni.github.io/GeometricFigures.jl/), and `docs/src/tikz/` with its 65 sources is gone.** Each page links the published light and dark SVG of a figure, and the 300-dpi PNG of the Grassmann sampling figure; `docs/make.jl` loads GeometricFigures' `figures.css` as a remote asset to show the one that the theme needs, and `extra_styles.css` loses its two `prefers-color-scheme` image rules. `make.jl` downloads the logo, and a failed download throws. Documenter's LaTeX writer does not fetch a remote image, so for `latex_output` `make.jl` downloads the light PDF of each figure that the `.tex` files name into `docs/build/` and puts the file name in place of the URL; `Latex.yml` and `docs/Makefile` no longer build the TikZ sources. `docs/check_references.jl` runs at the top of `make.jl`, before `makedocs`, and throws on an unresolved reference instead of calling `exit`; `test/quality/docs_make_checks_references.jl` checks that a bad `@ref` in a docstring stops `make.jl` there. `.github/workflows/Documenter.yml` is the canonical template again, without its TeX, TikZ and reference-check steps.
 
 ## [0.8.0] — 2026-09-21
 

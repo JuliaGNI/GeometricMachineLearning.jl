@@ -10,8 +10,8 @@ For this consider a PPDE written in the form: ``F(z(\mu);\mu)=0`` where ``z(\mu)
 
 In modeling any PDE we have to choose a discretization (particle discretization, finite element method, ...) of ``V`` which will be denoted by ``V_h \simeq \mathbb{R}^N``. The space ``V_h`` is not infinite-dimensional but its dimension ``N`` is still very large. Solving a discretized PDE in this space is typically very expensive. In reduced order modeling we utilize the fact that slightly different choices of parameters ``\mu`` will give qualitatively similar solutions. We can therefore perform a few simulations in the full space ``V_h`` and then make successive simulations cheaper by *learning* from the past simulations:
 
-![Schematic representation of a reduced order modeling framework. The width of the individual blocks represent how long it takes to perform a simulation.](../tikz/reduced_order_modeling_idea_light.png)
-![Schematic representation of a reduced order modeling framework. The width of the individual blocks represent how long it takes to perform a simulation.](../tikz/reduced_order_modeling_idea_dark.png)
+![Schematic representation of a reduced order modeling framework. The width of the individual blocks represent how long it takes to perform a simulation.](https://juliagni.github.io/GeometricFigures.jl/figures/reduced-order-modeling/reduced-order-modeling-idea/reduced-order-modeling-idea_light.svg)
+![Schematic representation of a reduced order modeling framework. The width of the individual blocks represent how long it takes to perform a simulation.](https://juliagni.github.io/GeometricFigures.jl/figures/reduced-order-modeling/reduced-order-modeling-idea/reduced-order-modeling-idea_dark.svg)
 
 In the figure above we refer to the discretized PDE as the *full order model* (FOM) and to the cheaper representation (that we construct in a data-driven manner) as the *reduced order model* (ROM). We now introduce the *solution manifold*, which is a crucial concept in reduced order modeling.
 
@@ -27,8 +27,8 @@ A motivation for reduced order modeling is that even though the space ``V_h`` is
 
 [^1]: The systems we deal with usually have much greater dimension of course. The dimension of ``V_h`` will be in the thousands and the dimension of the solution manifold will be a few orders of magnitudes smaller. Because this cannot be easily visualized, we resort to showing a two-dimensional manifold in a three-dimensional space here. 
 
-![A representation of a two-dimensional solution manifold embedded in three-dimensional Euclidean space.](../tikz/solution_manifold_2_light.png)
-![A representation of a two-dimensional solution manifold embedded in three-dimensional Euclidean space.](../tikz/solution_manifold_2_dark.png)
+![A representation of a two-dimensional solution manifold embedded in three-dimensional Euclidean space.](https://juliagni.github.io/GeometricFigures.jl/figures/reduced-order-modeling/solution-manifold-2/solution-manifold-2_light.svg)
+![A representation of a two-dimensional solution manifold embedded in three-dimensional Euclidean space.](https://juliagni.github.io/GeometricFigures.jl/figures/reduced-order-modeling/solution-manifold-2/solution-manifold-2_dark.svg)
 
 As an actual example of a solution manifold consider the one-dimensional wave equation [blickhan2023registration](@cite): 
 
@@ -116,8 +116,8 @@ The third step can be done with various machine learning (ML) techniques. Tradit
 
 After having obtained ``\mathcal{P}`` and ``\mathcal{R}`` we still need to solve the *reduced system*. Solving the reduced system is typically referred to as the *online phase* in reduced order modeling. This is sketched below: 
 
-![The offline phase in reduced order modeling consists of finding the reduction and the reconstruction. In the online phase we solve the reduced model.](../tikz/offline_online_light.png)
-![The offline phase in reduced order modeling consists of finding the reduction and the reconstruction. In the online phase we solve the reduced model.](../tikz/offline_online_dark.png)
+![The offline phase in reduced order modeling consists of finding the reduction and the reconstruction. In the online phase we solve the reduced model.](https://juliagni.github.io/GeometricFigures.jl/figures/reduced-order-modeling/offline-online/offline-online_light.svg)
+![The offline phase in reduced order modeling consists of finding the reduction and the reconstruction. In the online phase we solve the reduced model.](https://juliagni.github.io/GeometricFigures.jl/figures/reduced-order-modeling/offline-online/offline-online_dark.svg)
 
 In this figure the online phase consists of applying the mapping ``\mathcal{NN}`` in the low-dimensional space in order to predict the next time step; this can either be done with a standard integrator [Kraus:2020:GeometricIntegrators](@cite) or, as is indicated here, [with a neural network](@ref "Neural Network Integrators"). Crucially this step can be made very cheap when compared to the full-order model[^3]. In the following we discuss how an equation for the reduced model can be found classically, without relying on a neural network for the online phase.
 

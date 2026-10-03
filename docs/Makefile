@@ -13,9 +13,9 @@ latex: latex_no_pdf
 
 latex_no_pdf_no_images: install_brenier_two_fluid latex_docs_no_pdf copy_png_files put_figures_outside_of_minted_environment do_correct_quotation_marks make_correct_thrm_and_dfntn_and_xmpl_and_rmrk_and_proof_environment references_instead_of_hyperlinks correct_appendix remove_home_part remove_numbering_for_some_chapters docstring_indexing fix_long_urls remove_darkmode adjust_image_size adjust_math_expressions
 
-latex_no_pdf: latex_images latex_no_pdf_no_images
+latex_no_pdf: latex_no_pdf_no_images
 
-html: html_images html_no_images
+html: html_no_images
 
 html_no_images: install_brenier_two_fluid documenter
 
@@ -43,14 +43,9 @@ remove_brenier_two_fluid:
 documenter:
 	julia --color=yes --project=. --threads=8 make.jl html_output
 
-html_images:
-	$(MAKE) all -C src/tikz
-
-latex_images: 
-	$(MAKE) latex -C src/tikz
-
+# The logo is downloaded by make.jl.
 clean:
-	$(MAKE) empty -C src/tikz ;
+	rm -f src/assets/logo.svg src/assets/logo-dark.svg ;
 	rm -Rf build
 
 latex_docs_no_pdf:
@@ -66,7 +61,6 @@ put_figures_outside_of_minted_environment:
 	sed -i'' -e 's/\\\\textwidth/\\textwidth/g' build/G*.tex;
 	sed -i'' -e 's/\\\\label/\\label/g' build/G*.tex;
 	sed -i'' -e 's/\\\\caption/\\caption/g' build/G*.tex;
-	sed -i'' -e 's/..\/tikz/tikz/g' build/G*.tex;
 	echo -en '\n\n' >> build/GeometricMachineLearning.jl.tex 
 	sed -ni'' -e '/DeleteThisAndTheLineBefore/{x;d;};1h;1!{x;p;};${x;p;}' build/G*.tex;
 	sed -i'' -e '/DeleteThisAndTheLineAfter/{N;s/\n.*//;}' build/G*.tex;
