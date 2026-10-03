@@ -19,14 +19,14 @@ function adjust_image_size(path::AbstractString, size::String,
     new_contents *= "\n"
 end
 
-new_contents = adjust_image_size(raw"tikz/tangent_vector_light.png", ".5", collection_of_lines)
+new_contents = adjust_image_size(raw"tangent-vector_light.pdf", ".5", collection_of_lines)
 # The `manifolds/` and `optimizers/manifold_related/` figures used to be resized here. Both page
 # trees are GeometricOptimizers' documentation now, so nothing generates those images and the calls
 # matched nothing.
 new_contents = adjust_image_size(
     raw"tutorials/sympnet_training_loss_light.png", ".5", split(new_contents, "\n"))
-new_contents = adjust_image_size(raw"tikz/gml_venn_light.png", ".5", split(new_contents, "\n"))
-new_contents = adjust_image_size(raw"tikz/symplectic_autoencoder_architecture_light.png",
+new_contents = adjust_image_size(raw"gml-venn_light.pdf", ".5", split(new_contents, "\n"))
+new_contents = adjust_image_size(raw"symplectic-autoencoder-architecture_light.pdf",
     ".65", split(new_contents, "\n"))
 new_contents = adjust_image_size(raw"tutorials/sae_validation_light.png", ".7", split(new_contents, "\n"))
 new_contents = adjust_image_size(
@@ -36,9 +36,9 @@ new_contents = adjust_image_size(
     raw"tutorials/sympnet_resnet_training_loss_light.png", ".5", split(new_contents, "\n"))
 new_contents = adjust_image_size(
     raw"tutorials/resnet_sympnet_prediction_light.png", ".55", split(new_contents, "\n"))
-new_contents = adjust_image_size(raw"tikz/symplectic_autoencoder_light.png", ".65", split(new_contents, "\n"))
-new_contents = adjust_image_size(raw"tikz/sae_venn_light.png", ".35", split(new_contents, "\n"))
-new_contents = adjust_image_size(raw"tikz/transformer_upscaling_light.png", ".6", split(new_contents, "\n"))
+new_contents = adjust_image_size(raw"symplectic-autoencoder_light.pdf", ".65", split(new_contents, "\n"))
+new_contents = adjust_image_size(raw"sae-venn_light.pdf", ".35", split(new_contents, "\n"))
+new_contents = adjust_image_size(raw"transformer-upscaling_light.pdf", ".6", split(new_contents, "\n"))
 new_contents = adjust_image_size(raw"tutorials/resnet_sympnet_prediction_long_light.png",
     ".55", split(new_contents, "\n"))
 new_contents = adjust_image_size(raw"tutorials/lst_light.png", ".5", split(new_contents, "\n"))
@@ -51,10 +51,10 @@ new_contents = adjust_image_size(raw"tutorials/plot40_light.png", ".5", split(ne
 new_contents = adjust_image_size(raw"tutorials/plot200_light.png", ".5", split(new_contents, "\n"))
 new_contents = adjust_image_size(raw"tutorials/plot40_sine2_light.png", ".5", split(new_contents, "\n"))
 new_contents = adjust_image_size(raw"tutorials/plot200_sine2_light.png", ".5", split(new_contents, "\n"))
-new_contents = adjust_image_size(raw"tikz/third_degree_spline_light.png", ".3", split(new_contents, "\n"))
-new_contents = adjust_image_size(raw"tikz/multiple_parameters_light.png", ".5", split(new_contents, "\n"))
+new_contents = adjust_image_size(raw"third-degree-spline_light.pdf", ".3", split(new_contents, "\n"))
+new_contents = adjust_image_size(raw"multiple-parameters_light.pdf", ".5", split(new_contents, "\n"))
 new_contents = adjust_image_size(
-    raw"tikz/linear_symplectic_transformer_light.png", ".3", split(new_contents, "\n"))
+    raw"linear-symplectic-transformer_light.pdf", ".3", split(new_contents, "\n"))
 new_contents = adjust_image_size(raw"tutorials/plot40_light.png", ".5", split(new_contents, "\n"))
 new_contents = adjust_image_size(raw"tutorials/training_loss2_vpa_light.png", ".5", split(new_contents, "\n"))
 new_contents = adjust_image_size(raw"tutorials/plot400_light.png", ".5", split(new_contents, "\n"))

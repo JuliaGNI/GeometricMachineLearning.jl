@@ -48,8 +48,8 @@ h(s)  = \begin{cases}
 
 Plotted on the relevant domain it looks like this: 
 
-![Third degree spline.](../tikz/third_degree_spline_light.png)
-![Third degree spline.](../tikz/third_degree_spline_dark.png)
+![Third degree spline.](https://juliagni.github.io/GeometricFigures.jl/figures/problems/third-degree-spline/third-degree-spline_light.svg)
+![Third degree spline.](https://juliagni.github.io/GeometricFigures.jl/figures/problems/third-degree-spline/third-degree-spline_dark.svg)
 
 We end up with the following choice of parametrized initial conditions: 
 

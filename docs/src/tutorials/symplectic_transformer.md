@@ -2,8 +2,8 @@
 
 In this section we compare the symplectic transformer to the [standard transformer](@ref "Standard Transformer"). The example we treat here is the *coupled harmonic oscillator*:
 
-![Visualization of the coupled harmonic oscillator.](../tikz/coupled_harmonic_oscillator_light.png)
-![Visualization of the coupled harmonic oscillator.](../tikz/coupled_harmonic_oscillator_dark.png)
+![Visualization of the coupled harmonic oscillator.](https://juliagni.github.io/GeometricFigures.jl/figures/problems/coupled-harmonic-oscillator/coupled-harmonic-oscillator_light.svg)
+![Visualization of the coupled harmonic oscillator.](https://juliagni.github.io/GeometricFigures.jl/figures/problems/coupled-harmonic-oscillator/coupled-harmonic-oscillator_dark.svg)
 
 It is a [Hamiltonian system](@ref "Symplectic Systems") with 
 

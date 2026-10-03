@@ -24,8 +24,8 @@ where ``\sigma(x) = 1 / (1 + e^{-x})`` is the sigmoid activation function. The s
 - ``m_2``: mass 2,
 - ``k``: coupling strength between the two masses. 
 
-![Visualization of the coupled harmonic oscillator.](../tikz/coupled_harmonic_oscillator_light.png)
-![Visualization of the coupled harmonic oscillator.](../tikz/coupled_harmonic_oscillator_dark.png)
+![Visualization of the coupled harmonic oscillator.](https://juliagni.github.io/GeometricFigures.jl/figures/problems/coupled-harmonic-oscillator/coupled-harmonic-oscillator_light.svg)
+![Visualization of the coupled harmonic oscillator.](https://juliagni.github.io/GeometricFigures.jl/figures/problems/coupled-harmonic-oscillator/coupled-harmonic-oscillator_dark.svg)
 
 We will leave the parameters fixed but alter the initial conditions[^1]:
 

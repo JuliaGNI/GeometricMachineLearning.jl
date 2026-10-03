@@ -2,8 +2,8 @@
 
 The volume-preserving transformer [brantner2025volume](@cite) is, similar to the standard transformer, a combination of two different neural networks: a [volume-preserving attention layer](@ref "Volume-Preserving Attention") and a [volume-preserving feedforward layer](@ref "Volume-Preserving Feedforward Neural Network"). It is visualized below:
 
-![Visualization of the Volume-Preserving Transformer architecture.](../tikz/vp_transformer_light.png)
-![Visualization of the Volume-Preserving Transformer architecture.](../tikz/vp_transformer_dark.png)
+![Visualization of the Volume-Preserving Transformer architecture.](https://juliagni.github.io/GeometricFigures.jl/figures/neural-networks/vp-transformer/vp-transformer_light.svg)
+![Visualization of the Volume-Preserving Transformer architecture.](https://juliagni.github.io/GeometricFigures.jl/figures/neural-networks/vp-transformer/vp-transformer_dark.svg)
 
 In the figure we indicate that we leave out the *add connection*. When talking about the [standard transformer](@ref "Standard Transformer") we said that the add connection is optional and can be included via the keyword argument `add_connection`. For the volume-preserving transformer this is not true: it is always excluded.
 

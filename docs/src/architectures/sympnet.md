@@ -28,8 +28,8 @@ The tilde in the above equation indicates *predicted data*. With standard SympNe
 
 SympNets preserve symplecticity by exploiting the ``(q, p)`` structure of the system. This is visualized below:
 
-![Visualization of the SympNet architecture.](../tikz/sympnet_architecture_light.png)
-![Visualization of the SympNet architecture.](../tikz/sympnet_architecture_dark.png)
+![Visualization of the SympNet architecture.](https://juliagni.github.io/GeometricFigures.jl/figures/neural-networks/sympnet-architecture/sympnet-architecture_light.svg)
+![Visualization of the SympNet architecture.](https://juliagni.github.io/GeometricFigures.jl/figures/neural-networks/sympnet-architecture/sympnet-architecture_dark.svg)
 
 In the figure above we see that an update for ``q`` is based on data coming from ``p`` and an update for ``p`` is based on data coming from ``q``. ``T_i:\mathbb{R}^d\to\mathbb{R}^d`` is an operation that changes ``p`` when ``i`` is even and changes ``q`` when odd. It has the special property that its Jacobian is a symmetric matrix. There are two types of SympNet architectures: ``LA``-SympNets and ``G``-SympNets. 
  

@@ -84,6 +84,7 @@ if "core" in GROUPS
     @safetestset "Utility and pullback docstring examples" include("integration/docstrings/utilities.jl")
     @safetestset "Aqua's package-level checks" include("quality/aqua.jl")
     @safetestset "JET" include("quality/jet.jl")
+    @safetestset "docs/make.jl stops on a bad @ref before makedocs" include("quality/docs_make_checks_references.jl")
 end
 if "slow" in GROUPS
     @safetestset "Test symplecticity of the sympnet upscaling layer" include("layers/sympnet_upscaling.jl")
