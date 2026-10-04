@@ -1,7 +1,6 @@
 using GeometricMachineLearning, Test, Zygote
 # `layer(chain, i)` is AbstractNeuralNetworks' accessor. This package adds no method to it and does
-# not re-export it; it was reached here as `GeometricMachineLearning.layer`, which worked only
-# because the module file carried an `import` that nothing in `src/` used.
+# not re-export it.
 using AbstractNeuralNetworks: layer
 import Random
 
@@ -11,7 +10,7 @@ Random.seed!(1234)
 # three exact symplectic identities the upscaling chain is built from -- not the round-trip
 # composition, which is only *approximately* symplectic and is neither computed nor asserted here
 # (the embedded Poisson tensor `E𝕁_NE'` has rank `N < N2`, so it cannot equal the full-rank
-# `𝕁_{N2}`; see the `sympnet_upscaling.jl` entry under `[Unreleased]`, `### Infrastructure`, in
+# `𝕁_{N2}`; see the `sympnet_upscaling.jl` entry under `[0.8.0]`, `### Infrastructure`, in
 # `CHANGELOG.md` for the measured round-trip error).
 function test_symplecticity(N = 4, N2 = 20, T = Float32)
     model = Chain(PSDLayer(N, N2), GradientLayerQ(N2, 2*N2, tanh),
