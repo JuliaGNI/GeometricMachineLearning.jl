@@ -7,8 +7,8 @@
 # of the convention, and `using`, `seed`, `label` and `compat` for the rules that have no number.
 #
 # Two rules are not checked here, because no layout shows them: D6, the 60 s budget of a `core`
-# file, and the JET half of D4, `test/quality/jet.jl` where the package has a hot or kernel path.
-# `run-tests.jl <repository> core` reports D6.
+# file, cold, and the JET half of D4, `test/quality/jet.jl` where the package has a hot or kernel
+# path. `run-tests.jl <repository> core` reports D6.
 #
 # The rule `compat` keeps the bounds in one place: the [compat] table of test/Project.toml or
 # docs/Project.toml has no entry for a dependency that Project.toml has in [deps] or [weakdeps],
