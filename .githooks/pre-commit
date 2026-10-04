@@ -145,7 +145,7 @@ if command -v fatou >/dev/null 2>&1; then
     elif [ "$lint_rc" -ge 124 ]; then
         # 124 = timed out, 137 = killed after -k. Not a finding, and not a reason to block.
         printf '%sfatou lint: timed out after 60s — stage skipped, not a failure%s\n' "$yellow" "$nc"
-        printf '    A staged file is pathological for fatou. See Environment/Harness/Helpers-and-MCPs.md.\n'
+        printf '    A staged file is pathological for fatou. See Environment/Notes/Helpers-and-MCPs.md.\n'
     else
         n=$(printf '%s\n' "$lint_out" | grep -c . || true)
         printf '%sfatou lint: %s finding(s) — advisory, not blocking%s\n' "$yellow" "$n" "$nc"
