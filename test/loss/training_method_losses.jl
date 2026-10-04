@@ -156,7 +156,10 @@ end
 test_timestep_does_not_widen_the_element_type()
 
 function test_symplectic_euler_training(; n = 1, Δt = 1.0e-2, n_epochs = 20)
-    arch = StandardHamiltonianArchitecture(2n, 5, 2)
+    # The shape of the tests above. The assertion is that training reduces the loss, which does
+    # not depend on the width and depth, and a new shape is a fresh `Zygote` specialisation of the
+    # whole loss.
+    arch = StandardHamiltonianArchitecture(2n, 4, 1)
     nn = NeuralNetwork(arch)
     loss = SymplecticEulerLoss(arch, Δt)
     hvf = hamiltonian_vector_field(arch)
@@ -324,7 +327,8 @@ intended use of this loss, and it does not depend on the network's own initial d
 self-generated trajectory would.
 """
 function test_variational_training(; Δt = 0.05, samples = 60, n_epochs = 20)
-    arch = LagrangianNeuralNetwork(2; width = 5, nhidden = 2)
+    # The shape of the tests above, for the reason `test_symplectic_euler_training` gives.
+    arch = LagrangianNeuralNetwork(2; width = 4, nhidden = 1)
     nn = NeuralNetwork(arch)
     loss = VariationalMidpointLoss(arch, Δt)
 

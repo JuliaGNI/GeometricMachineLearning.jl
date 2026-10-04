@@ -38,8 +38,11 @@ function test_symplecticity(N = 4, N2 = 20, T = Float32)
     @test isapprox(Dec * 𝕁_N2 * Dec', 𝕁_N, atol = 1e-5)
 end
 
-for N in 2:2:20
-    for N2 in (2 * N):2:(4 * N)
-        test_symplecticity(N, N2)
-    end
+# `PSDLayer{M, N}` and `GradientLayer{M, N, …}` carry the sizes in their types, so each new pair
+# `(N, N2)` is a fresh compilation of the whole chain. These 12 pairs, out of the 120 with `N` in
+# `2:2:20` and `N2` in `(2N):2:(4N)`, cover the edges: the smallest pair `(2, 4)`, `N2 = 2N`,
+# `N2 = 4N`, `N2` not a multiple of `N`, and the largest `N = 20`.
+for (N, N2) in ((2, 4), (2, 6), (2, 8), (4, 10), (6, 12), (6, 20),
+    (8, 24), (10, 30), (12, 36), (14, 42), (20, 40), (20, 80))
+    test_symplecticity(N, N2)
 end
