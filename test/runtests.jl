@@ -43,7 +43,6 @@ if "core" in GROUPS
     @safetestset "Symplectic Transformer chain construction" include("architectures/symplectic_transformer_chain.jl")
     @safetestset "Check parameterlength" include("architectures/check_parameterlengths.jl")
     @safetestset "Hamiltonian Neural Network" include("architectures/hamiltonian_neural_network_tests.jl")
-    @safetestset "Lagrangian Neural Network" include("architectures/lagrangian_neural_network_tests.jl")
     @safetestset "SympNet integrator" include("architectures/sympnet_integrator.jl")
     @safetestset "PSD tests" include("architectures/psd_architecture_tests.jl")
     @safetestset "SymplecticAutoencoder tests" include("architectures/symplectic_autoencoder_tests.jl")
@@ -87,6 +86,7 @@ if "core" in GROUPS
     @safetestset "docs/make.jl stops on a bad @ref before makedocs" include("quality/docs_make_checks_references.jl")
 end
 if "slow" in GROUPS
+    @safetestset "Lagrangian Neural Network" include("architectures/lagrangian_neural_network_tests.jl")
     @safetestset "Test symplecticity of the sympnet upscaling layer" include("layers/sympnet_upscaling.jl")
     @safetestset "Doctests" include("quality/doctests.jl")
 end
