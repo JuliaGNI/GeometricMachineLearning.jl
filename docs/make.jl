@@ -4,6 +4,7 @@
 include(joinpath(@__DIR__, "check_references.jl"))
 
 using GeometricMachineLearning
+# loads `AbstractNeuralNetworks`' HDF5 extension, whose `save` and `load` the tutorials call
 using HDF5
 using AbstractNeuralNetworks
 using Documenter
@@ -387,8 +388,7 @@ makedocs(;
     # skips *sub*modules — and (ii) pull GeometricOptimizers' own docstrings in, whose internal
     # `@ref`s resolve in its namespace and point at bindings this manual does not document.
     # Names owned by GeometricOptimizers are referred to as plain code with a link to its manual.
-    modules = [
-        GeometricMachineLearning, Base.get_extension(GeometricMachineLearning, :HDF5Ext)],
+    modules = [GeometricMachineLearning],
     authors = "Michael Kraus, Benedikt Brantner",
     repo = "https://github.com/JuliaGNI/GeometricMachineLearning.jl/blob/{commit}{path}#L{line}",
     sitename = "GeometricMachineLearning.jl",

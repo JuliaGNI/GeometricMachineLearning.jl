@@ -128,11 +128,12 @@ function (d::SymplecticAttentionQ{M, M, :arbitrary})(
         p = z.p)
 end
 
-# `A = ps.A` once, and then `A` twice: the local binding is what keeps the `SymmetricMatrix`
-# structure in the Zygote gradient of this layer. Read `ps.A` twice and the gradient leaf degrades
-# to a plain `Matrix` -- `test/parameters/symplectic_attention_network_parameters_gradient.jl`
-# asserts both halves of that, and the last testset there covers this method. The binding costs no
-# allocation; it is the number of accesses that decides the structure.
+# `A = ps.A` once, and then `A` twice. Before `NeuralNetworkParameters` 0.4 the local binding was
+# what kept the `SymmetricMatrix` structure in a Zygote gradient taken through a
+# `NetworkParameters`: a second `ps.A` degraded the gradient leaf to a plain `Matrix` (issue #319).
+# Since 0.4 that gradient is the storage gradient, which keeps the structure however often the leaf
+# is read; `test/layers/symplectic_attention_network_parameters_gradient.jl` covers this method. The
+# binding costs no allocation and stays.
 function (d::SymplecticAttentionQ{M, M, :symmetric})(
         z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {AT, M}
     A = ps.A

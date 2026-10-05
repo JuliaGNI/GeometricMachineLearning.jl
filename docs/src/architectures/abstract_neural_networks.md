@@ -47,11 +47,4 @@ and we see that it consists of two layers: a [`GradientLayerQ`](@ref) and a [`Gr
 
 ## Saving and Loading
 
-`GeometricMachineLearning` adds HDF5-backed `save` and `load` methods for `NeuralNetwork` to the generics `NeuralNetworkParameters` defines. Writing and reading the parameter set itself belongs to that package; the structured parameter types (`StiefelManifold`, `SymmetricMatrix`, `SkewSymMatrix`, …) come back as themselves because `GeometricOptimizers`, which owns them, registers how each is rebuilt. Passing a prototype parameter set to `load` rebuilds against it and needs no registration at all.
-
-```@docs
-save(::HDF5.H5DataStore, ::NeuralNetwork)
-save(::AbstractString, ::NeuralNetwork)
-load(::Type{NeuralNetwork}, ::HDF5.H5DataStore, ::AbstractNeuralNetworks.Architecture)
-load(::Type{NeuralNetwork}, ::AbstractString, ::AbstractNeuralNetworks.Architecture)
-```
+`save` and `load` for a `NeuralNetwork` are `AbstractNeuralNetworks`', which defines them in its HDF5 extension on the generics `NeuralNetworkParameters` provides: `using HDF5` loads them. Writing and reading the parameter set itself belongs to `NeuralNetworkParameters`; the structured parameter types (`StiefelManifold`, `SymmetricMatrix`, `SkewSymMatrix`, …) come back as themselves because `GeometricOptimizers`, which owns them, registers how each is rebuilt. Passing a prototype parameter set to `load` rebuilds against it and needs no registration at all. A network loads on the CPU; `changebackend(backend, nn)` moves it to a device.

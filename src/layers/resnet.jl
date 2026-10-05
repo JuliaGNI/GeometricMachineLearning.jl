@@ -60,18 +60,6 @@ function (d::ResNetLayer{M, M, true})(x::AbstractArray{T, 3}, ps::NamedTuple) wh
     x + d.activation.(mat_tensor_mul(ps.weight, x) .+ ps.bias)
 end
 
-function (d::Dense{M, N, true})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, N, T}
-    d.σ.(mat_tensor_mul(ps.W, x) .+ ps.b)
-end
-
-function (d::Dense{M, N, false})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, N, T}
-    d.σ.(mat_tensor_mul(ps.W, x))
-end
-
-function (d::Linear{M, N})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, N, T}
-    mat_tensor_mul(ps.W, x)
-end
-
 function (d::Union{Dense{M, N}, ResNetLayer{M, N}})(z::QPT, ps::NamedTuple) where {M, N}
     @assert iseven(M) == iseven(N) == true
     @assert size(z.q, 1) * 2 == M

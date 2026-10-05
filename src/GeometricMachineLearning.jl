@@ -42,7 +42,7 @@ import Symbolics
 import GeometricOptimizers
 import GeometricOptimizers: Manifold, StiefelManifold, GrassmannManifold
 import GeometricOptimizers: SkewSymMatrix, SymmetricMatrix,
-                            LowerTriangular, UpperTriangular, StiefelProjection
+                            StrictlyLowerTriangular, StrictlyUpperTriangular, StiefelProjection
 import GeometricOptimizers: StiefelLieAlgHorMatrix, GrassmannLieAlgHorMatrix
 import GeometricOptimizers: rgrad, metric, check, global_section
 # `orthonormal_columns(draw)` orthonormalizes `draw()` with CholeskyQR2, which runs on whatever
@@ -114,7 +114,7 @@ include("arrays/poisson_tensor.jl")
 # Re-exported from GeometricOptimizers, so that `using GeometricMachineLearning` on its own still
 # gives a caller the matrix types its layers are parametrized by.
 export SymmetricMatrix, SkewSymMatrix
-export LowerTriangular, UpperTriangular
+export StrictlyLowerTriangular, StrictlyUpperTriangular
 export StiefelLieAlgHorMatrix, GrassmannLieAlgHorMatrix
 export StiefelProjection
 # GML's own

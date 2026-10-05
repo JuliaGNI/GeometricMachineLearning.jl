@@ -4,10 +4,10 @@
 Super-type of [`VolumePreservingLowerLayer`](@ref) and [`VolumePreservingUpperLayer`](@ref). The layers do the following: 
 
 ```math
-x \mapsto \begin{cases} \sigma(Lx + b) & \text{where $L$ is }\mathtt{LowerTriangular}, \\ \sigma(Ux + b) & \text{where $U$ is }\mathtt{UpperTriangular}. \end{cases}
+x \mapsto \begin{cases} \sigma(Lx + b) & \text{where $L$ is }\mathtt{StrictlyLowerTriangular}, \\ \sigma(Ux + b) & \text{where $U$ is }\mathtt{StrictlyUpperTriangular}. \end{cases}
 ```
 
-The functor can be applied to a vector, a matrix or a tensor. The special matrices are implemented as [`LowerTriangular`](@extref GeometricOptimizers GeometricOptimizers.LowerTriangular) and [`UpperTriangular`](@extref GeometricOptimizers GeometricOptimizers.UpperTriangular).
+The functor can be applied to a vector, a matrix or a tensor. The special matrices are implemented as [`StrictlyLowerTriangular`](@extref GeometricOptimizers GeometricOptimizers.StrictlyLowerTriangular) and [`StrictlyUpperTriangular`](@extref GeometricOptimizers GeometricOptimizers.StrictlyUpperTriangular).
 """
 abstract type VolumePreservingFeedForwardLayer{M, N, bias} <: AbstractExplicitLayer{M, N} end
 
@@ -36,7 +36,7 @@ x = \begin{pmatrix} 1 \\ 1 \end{pmatrix}
 using GeometricMachineLearning
 
 l = VolumePreservingLowerLayer(2, identity; use_bias=false)
-A = LowerTriangular([1,], 2)
+A = StrictlyLowerTriangular([1,], 2)
 ps = (weight = A, )
 x = ones(eltype(A), 2)
 
@@ -93,7 +93,7 @@ x = \begin{pmatrix} 1 \\ 1 \end{pmatrix}
 using GeometricMachineLearning
 
 l = VolumePreservingUpperLayer(2, identity; use_bias=false)
-A = UpperTriangular([1,], 2)
+A = StrictlyUpperTriangular([1,], 2)
 ps = (weight = A, )
 x = ones(eltype(A), 2)
 
@@ -141,7 +141,7 @@ function initialparameters(
     init_weight!(rng, S)
     init_bias!(rng, b)
 
-    (weight = LowerTriangular(S, M), bias = b)
+    (weight = StrictlyLowerTriangular(S, M), bias = b)
 end
 
 function initialparameters(
@@ -153,7 +153,7 @@ function initialparameters(
     init_weight!(rng, S)
     init_bias!(rng, b)
 
-    (weight = UpperTriangular(S, M), bias = b)
+    (weight = StrictlyUpperTriangular(S, M), bias = b)
 end
 
 function initialparameters(
@@ -163,7 +163,7 @@ function initialparameters(
     S = KernelAbstractions.allocate(backend, T, parameterlength(d))
     init_weight!(rng, S)
 
-    (weight = LowerTriangular(S, M),)
+    (weight = StrictlyLowerTriangular(S, M),)
 end
 
 function initialparameters(
@@ -173,7 +173,7 @@ function initialparameters(
     S = KernelAbstractions.allocate(backend, T, parameterlength(d))
     init_weight!(rng, S)
 
-    (weight = UpperTriangular(S, M),)
+    (weight = StrictlyUpperTriangular(S, M),)
 end
 
 function (d::VolumePreservingFeedForwardLayer{M, M, :bias})(

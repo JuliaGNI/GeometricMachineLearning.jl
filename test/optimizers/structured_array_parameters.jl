@@ -8,7 +8,7 @@ Random.seed!(123)
 @doc raw"""
 Every optimizer method has to work with the structured matrix types GML uses as *ordinary* weights:
 `SymmetricMatrix` (SympNet and symplectic attention layers), `SkewSymMatrix` (volume-preserving
-attention) and `LowerTriangular`/`UpperTriangular` (volume-preserving feedforward layers).
+attention) and `StrictlyLowerTriangular`/`StrictlyUpperTriangular` (volume-preserving feedforward layers).
 
 These have their own storage and no `setindex!`, so they need a type-preserving `similar` and
 elementwise `_add!`/`_rac!`/`_square!`/`_div!`/`_rmul!` written on the free parameters; without them
@@ -41,7 +41,7 @@ end
 # then fails to match them against the parameter
 @testset "structured weights keep their type in `similar`" begin
     for A in (rand(SymmetricMatrix{Float64}, 4), rand(SkewSymMatrix{Float64}, 4),
-        rand(LowerTriangular{Float64}, 4), rand(UpperTriangular{Float64}, 4))
+        rand(StrictlyLowerTriangular{Float64}, 4), rand(StrictlyUpperTriangular{Float64}, 4))
         @test typeof(similar(A)) == typeof(A)
         @test typeof(zero(A)) == typeof(A)
         @test size(similar(A)) == size(A)
@@ -51,7 +51,7 @@ end
 @testset "`LASympNet` (SymmetricMatrix)" begin
     optimizer_runs(LASympNet(4), Batch(5), 4)
 end
-@testset "`VolumePreservingFeedForward` (Lower/UpperTriangular)" begin
+@testset "`VolumePreservingFeedForward` (the triangular matrices)" begin
     optimizer_runs(VolumePreservingFeedForward(4), Batch(5), 4)
 end
 @testset "`VolumePreservingTransformer` (SkewSymMatrix + triangular)" begin

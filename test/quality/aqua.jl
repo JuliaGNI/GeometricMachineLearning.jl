@@ -3,43 +3,20 @@ using ExplicitImports
 using GeometricMachineLearning
 using Test
 
-# Aqua's package-level checks. Six of the eight `Aqua.test_all` enables by default run; `ambiguities`
-# and `piracies` are switched off by name, and the reason is below rather than in the changelog
-# alone, because switching one back on turns the suite red on the spot.
+# Aqua's package-level checks, all eight that `Aqua.test_all` enables by default.
 #
 # `Aqua.test_all` wraps each of its checks in a `@testset` of its own and adds no enclosing one, and
 # a testset with no parent finalises as soon as it closes -- so called bare, the first failing check
 # throws a `TestSetException` and the rest never run. On the suite path the `@safetestset` in
 # `runtests.jl` is that parent. The `@testset` below is that parent when this file is run on its
-# own, and it is also what lets the two counts at the end be further assertions rather than
-# top-level `@test`s that abort the file the moment one fails.
+# own.
 #
-# WHAT IS SWITCHED OFF, AND WHY IT IS NOT A `broken = true`.
-#
-# `piracies` reports 3 methods, and all 3 are genuine under Aqua's definition -- the function and
-# every argument type belong to other modules. They are not a count waiting to be triaged. All
-# three are the same thing: a three-argument functor for a *layer* type that this package does not
-# own, `AbstractNeuralNetworks`' `Dense` and `Linear`, added so that the layer accepts a 3-tensor
-# input as well as a matrix.
-#
-#     Dense{M, N, true}   on an AbstractArray{T, 3}    src/layers/resnet.jl:63
-#     Dense{M, N, false}  on an AbstractArray{T, 3}    src/layers/resnet.jl:67
-#     Linear{M, N}        on an AbstractArray{T, 3}    src/layers/resnet.jl:71
-#
-# Closing these means either upstream gaining the 3-tensor methods or this package wrapping the two
-# layer types, and both are an API change rather than a tidy-up. They are *B7* under
-# `## Open Issues` in `CHANGELOG.md` with that reasoning.
-#
-# `ambiguities` reports 1, and the same 1 whether this package is loaded alone or with everything
-# `runtests.jl` loads before this file. It is a `Dense{M, N, true}` functor against
-# `AbstractNeuralNetworks.Affine`'s, and it is benign: `Dense` is not a subtype of `Affine` and the
-# two have no common instance, so no call can reach the pair. It is the same `resnet.jl:63` method
-# as the first piracy above.
-#
-# The two settings agreeing is what makes the gate below trustworthy, and it holds because no
-# method of this package claims an argument position wholesale on `PoissonTensor`. That type is an
-# `AbstractMatrix{T}`, so such a method meets every special-array method another package writes
-# against `AbstractMatrix`:
+# `ambiguities` and `piracies` were switched off until 0.9, with a count gate for each in their
+# place: three pirated 3-tensor functors on `AbstractNeuralNetworks`' `Dense` and `Linear`, and one
+# ambiguity between the first of them and `Affine`'s. `AbstractNeuralNetworks` 0.9 defines those
+# methods itself, so they are deleted here and both checks run. No method of this package claims an
+# argument position wholesale on `PoissonTensor`, which is an `AbstractMatrix{T}` and would
+# otherwise meet every special-array method another package writes against `AbstractMatrix`:
 #
 #   `*(𝕁::PoissonTensor{T}, v::Strided…)` takes a `Strided…` right-hand side, which excludes each
 #       special array type `X` that ArrayLayouts, FillArrays, Symbolics and GeometricOptimizers
@@ -48,29 +25,8 @@ using Test
 #       `BlockIndex` and `BandRangeType` methods BandedMatrices and BlockArrays add to
 #       `AbstractMatrix`. Neither of those two loads with this package alone, so an untyped index
 #       pair here is a collision visible only from inside the suite.
-#
-# `ambiguities` still stays off, because 1 is not 0 and Aqua's check has no way to exempt a pair.
-# The assertion below replaces it and is strictly better here: it names the number, so it fails
-# both when an ambiguity is added and when this one is closed without the comment going with it.
-#
-# Marking either check `broken = true` would leave a check that reports success while the defect
-# stands, which is the failure mode this test suite's guards exist to remove.
 @testset "Aqua" begin
-    Aqua.test_all(GeometricMachineLearning; ambiguities = false, piracies = false)
-
-    # A switched-off check detects nothing, so the count it would have reported drifts unobserved,
-    # and so does every `src` line named above. This is the gate. It fails when a piracy is added,
-    # and it fails when one is removed without the entry above and in `CHANGELOG.md` going with it.
-    @test length(Aqua.Piracy.hunt(GeometricMachineLearning)) == 3
-
-    # The ambiguity count gets the same gate, and it can carry one because the single pair is
-    # between a method of this package and one of `AbstractNeuralNetworks`'. The count is the same
-    # in isolation and in the suite, and nothing outside this repository's own `[compat]` moves it
-    # -- so a red here is a regression, not an unrelated upstream upgrade and not a reordering of
-    # this suite. A count that moved with ArrayLayouts', FillArrays', Symbolics',
-    # GeometricOptimizers', BandedMatrices' and BlockArrays' versions, and with *which* of them a
-    # given process had loaded, could not tell those apart, and could not be asserted.
-    @test length(Test.detect_ambiguities(GeometricMachineLearning; recursive = true)) == 1
+    Aqua.test_all(GeometricMachineLearning)
 end
 
 # `ExplicitImports` answers a question Aqua does not ask, and the reason to gate on it is not
