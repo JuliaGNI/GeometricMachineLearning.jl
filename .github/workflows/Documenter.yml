@@ -1,5 +1,5 @@
 # Canonical documentation workflow. Copied verbatim into every repository that has a tracked
-# docs/make.jl, by install-workflows.sh — edit this file and re-run the installer, never a copy in a
+# docs/make.jl, by harness workflows — edit this file and re-run the installer, never a copy in a
 # repository.
 #
 # The file name is Documenter.yml everywhere. Three repositories called it Documentation.yml and one
@@ -11,9 +11,9 @@
 # `:doctest` in `warnonly` and one had `doctest = false`, which meant a doctest failure was a
 # warning inside a docs build that nothing gated.
 #
-# Two repositories legitimately keep their own version of this file, because their docs are a
-# multi-job pipeline rather than a single build and so are not scaffolding drift:
-# Experiments/GeometricExamples (Weave matrix) and Experiments/SolverBenchmark (sweep matrix).
+# A repository whose docs are a multi-job pipeline rather than a single build, such as a Weave
+# matrix or a sweep matrix, legitimately keeps its own version of this file; it is not
+# scaffolding drift. The profile's `docs_exceptions` lists them.
 
 name: Documentation
 

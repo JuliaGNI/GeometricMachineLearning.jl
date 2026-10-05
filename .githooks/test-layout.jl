@@ -118,7 +118,7 @@ end
 """
 The top-level directories of `test/` that are a separate suite: one with a `Project.toml` in its
 tree, and no file that `runtests.jl` lists. Such a suite has its own environment and its own
-runner, such as the device tests of GeometricSolvers in `test/gpu/`, one environment per vendor,
+runner, such as device tests in `test/gpu/`, one environment per vendor,
 and the rules of the convention do not apply to its files. A directory with a listed file is part
 of the suite of `runtests.jl`, whatever environment it holds.
 """

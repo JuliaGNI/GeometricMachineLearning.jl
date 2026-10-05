@@ -1,5 +1,5 @@
 # Canonical Dependabot configuration. Copied verbatim to .github/dependabot.yml in every repository
-# under Packages/ and Experiments/ by install-workflows.sh — edit this file and re-run the installer,
+# under Packages/ and Experiments/ by harness workflows — edit this file and re-run the installer,
 # never a copy in a repository. Byte-identical in every repository; verify-workflows.jl asserts it.
 #
 # Julia only. The actions the workflows pin are bumped here, in the canonical workflows: a

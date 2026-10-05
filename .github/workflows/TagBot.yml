@@ -1,5 +1,5 @@
 # Canonical TagBot workflow. Copied verbatim into every package repository under Packages/ by
-# install-workflows.sh — edit this file and re-run the installer, never a copy in a repository.
+# harness workflows — edit this file and re-run the installer, never a copy in a repository.
 # Byte-identical everywhere it is installed; verify-workflows.jl asserts it.
 #
 # The `if:` guard is what keeps this from firing on ordinary issue comments: TagBot is driven by a
