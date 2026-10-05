@@ -32,7 +32,7 @@ GPUArraysCoreExt = "GPUArraysCore"
 HDF5Ext = "HDF5"
 
 [compat]
-AbstractNeuralNetworks = "0.8"
+AbstractNeuralNetworks = "0.8, 0.9"
 ChainRulesCore = "1"
 ForwardDiff = "1"
 GPUArraysCore = "0.2"
