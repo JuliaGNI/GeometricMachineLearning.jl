@@ -8,8 +8,8 @@ CurrentModule = GeometricMachineLearning
 
 In that regard its aim is similar to traditional *geometric numerical integration* [hairer2006geometric, Kraus:2020:GeometricIntegrators](@cite) in that it models maps that share properties with the analytic solution of a differential equation:
 
-![](tikz/gml_venn_light.png)
-![](tikz/gml_venn_dark.png)
+![](https://juliagni.github.io/GeometricFigures.jl/figures/neural-networks/gml-venn/gml-venn_light.svg)
+![](https://juliagni.github.io/GeometricFigures.jl/figures/neural-networks/gml-venn/gml-venn_dark.svg)
 
 ## Installation
 
@@ -37,8 +37,8 @@ Existing architectures include:
 
 `GeometricMachineLearning` supports putting neural network weights on manifolds such as the [Stiefel manifold](@extref GeometricOptimizers The-Stiefel-Manifold) and the [Grassmann manifold](@extref GeometricOptimizers The-Grassmann-Manifold) and [Riemannian optimization](@extref GeometricOptimizers Riemannian-Manifolds).
 
-![Weights can be put on manifolds to achieve structure preservation or improved stability.](tikz/tangent_vector_light.png)
-![Weights can be put on manifolds to achieve structure preservation or improved stability.](tikz/tangent_vector_dark.png)
+![Weights can be put on manifolds to achieve structure preservation or improved stability.](https://juliagni.github.io/GeometricFigures.jl/figures/manifolds/tangent-vector/tangent-vector_light.svg)
+![Weights can be put on manifolds to achieve structure preservation or improved stability.](https://juliagni.github.io/GeometricFigures.jl/figures/manifolds/tangent-vector/tangent-vector_dark.svg)
 
 When `GeometricMachineLearning` optimizes on manifolds it uses the framework introduced in [brantner2023generalizing](@cite). Optimization is necessary for some neural network architectures such as [symplectic autoencoders](@ref "The Symplectic Autoencoder") and can be critical for others such as the [standard transformer](https://juliagni.github.io/GMLDatasets.jl/latest/mnist/mnist_tutorial/) [kong2023momentum, zhang2021orthogonality](@cite).
 
@@ -52,14 +52,14 @@ Many layers have been adapted in order to be used for problems in scientific mac
 
 `GeometricMachineLearning` allocates and computes through `KernelAbstractions.jl` [churavy2020kernel](@cite), so its layers and architectures are written against any backend that package supports: `CUDA.jl` [besard2018juliagpu](@cite), `AMDGPU.jl`, `Metal.jl` [besard2022metal](@cite) and `oneAPI.jl` [besard2022one](@cite).
 
-**None of that is tested.** There is no GPU test under `test/` and no GPU job in CI, so a green test matrix says nothing about the GPU path. What is written below was measured by hand on an Apple M4 Max through `Metal.jl`, in `Float32`, because Apple GPUs have no `Float64` at all.
+**Little of that is tested.** `test/devices/metal.jl` runs two checks on an Apple GPU, in the `metal` test group, which the `Metal` job and the `macOS-latest` job of CI run: the products of a `PoissonTensor` with a wrapped device array, and the `tensor_mat_mul!` kernel. A green test matrix says nothing about the rest of the GPU path. What is written below was measured by hand on an Apple M4 Max through `Metal.jl`, in `Float32`, because Apple GPUs have no `Float64` at all, and against `GeometricOptimizers` 0.8.0.
 
-What ran on that device: the tensor kernels and `map_to_cpu`; the forward pass of `GSympNet`, `LASympNet`, `StandardTransformerIntegrator`, `LinearSymplecticTransformer` and `SymplecticTransformer` at its default `transformer_dim`, on both matrix and tensor input; the forward pass of `VolumePreservingFeedForward` and `VolumePreservingTransformer` on tensor input; and training a network with `Optimizer`, which returns a `Float32` history and leaves the parameters on the device.
+Everything tried on that device ran. Constructed, and then applied to both a matrix and a 3-tensor: `GSympNet`, `LASympNet`, `StandardTransformerIntegrator`, `LinearSymplecticTransformer`, `SymplecticTransformer` at both its default `transformer_dim` and an upscaling one, `VolumePreservingFeedForward`, `VolumePreservingTransformer`, `SymplecticAutoencoder`, `PSDArch` and `Transformer(…; Stiefel = true)`. `ClassificationTransformer` was constructed but not applied, because its input is an image. The tensor kernels and `map_to_cpu` run, and so does training with `Optimizer`, which returns a `Float32` history and leaves the parameters on the device — for `PSDArch` that includes the manifold weights, which stay a `StiefelManifold` over an `MtlMatrix`.
 
-Two things did not run.
+Two of those results rest on `GeometricOptimizers` rather than on anything here.
 
-- `VolumePreservingFeedForward` and `VolumePreservingTransformer` applied to a **matrix** raise *Scalar indexing is disallowed*. The product of a structured matrix by a matrix belongs to `GeometricOptimizers`, and the guard belongs to `GPUArraysCore`, which `CUDA.jl`, `AMDGPU.jl` and `oneAPI.jl` share. The tensor path is unaffected.
-- The three layers that orthonormalize their weight — `StiefelLayer`, `GrassmannLayer` and `PSDLayer` — fail at **construction** on a `Metal.jl` device. They orthonormalize with `LinearAlgebra.qr!`, which is a host factorization, and `Metal.jl` implements no `qr` for an `MtlArray`. `SymplecticAutoencoder`, `PSDArch` and `MultiHeadAttention(…; Stiefel = true)` were measured failing this way. Every other architecture that holds one of these layers fails the same way, which reaches `SymplecticTransformer` whenever `transformer_dim ≠ dim`, `ClassificationTransformer`, and any `Transformer(…; Stiefel = true)`. This was measured on `Metal.jl` alone: `CUDA.jl` supplies `qr!` through CUSOLVER, so whether the same construction fails on a CUDA device is untested rather than known either way.
+- `VolumePreservingFeedForward` and `VolumePreservingTransformer` applied to a **matrix** multiply a `LowerTriangular` or `UpperTriangular` weight by that matrix. `GeometricOptimizers` supplies a `KernelAbstractions` kernel for that product, so the call does not fall through to a generic multiply that reads one entry at a time, which `GPUArraysCore` refuses.
+- `StiefelLayer`, `GrassmannLayer` and `PSDLayer`, and so every architecture that holds one of them, orthonormalize their weight at **construction** through `GeometricOptimizers.orthonormal_columns`. That is CholeskyQR2 — matrix products and triangular solves only — so it runs wherever the draw was allocated. `LinearAlgebra.qr!` is a host factorization and `Metal.jl` implements no `qr` for an `MtlArray`, so a device needs the other one.
 
 ## Tutorials 
 

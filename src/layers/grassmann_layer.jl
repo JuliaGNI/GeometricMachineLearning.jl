@@ -20,8 +20,10 @@ function initialparameters(rng::AbstractRNG, init::AbstractNeuralNetworks.Initia
         ::GrassmannLayer{N, M}, backend::NeuralNetworkBackend, ::Type{T}) where {M, N, T}
     weight = N > M ? KernelAbstractions.allocate(backend, T, N, M) :
              KernelAbstractions.allocate(backend, T, M, N)
-    init(rng, weight)
-    (weight = GrassmannManifold(assign_columns(typeof(weight)(qr!(weight).Q), size(weight)...)),)
+    (weight = GrassmannManifold(orthonormal_columns() do
+        init(rng, weight)
+        weight
+    end),)
 end
 
 function parameterlength(::GrassmannLayer{M, N}) where {M, N}

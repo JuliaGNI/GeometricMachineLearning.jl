@@ -44,7 +44,7 @@ l(x, ps)
 
 # output
 
-2×1 Matrix{Int64}:
+2-element Vector{Int64}:
  1
  2
 ```
@@ -101,7 +101,7 @@ l(x, ps)
 
 # output
 
-2×1 Matrix{Int64}:
+2-element Vector{Int64}:
  2
  1
 ```

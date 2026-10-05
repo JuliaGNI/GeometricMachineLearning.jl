@@ -8,6 +8,9 @@
 
 using GeometricMachineLearning
 using Test
+import Random
+
+Random.seed!(1234)
 
 @testset "DataLoader(::AbstractArray{<:Number, 3})" begin
     data = rand(Float32, 2, 3, 4)

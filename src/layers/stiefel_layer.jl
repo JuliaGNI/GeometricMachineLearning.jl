@@ -10,8 +10,10 @@ function initialparameters(
         ::Type{T}) where {M, N, T}
     weight = N > M ? KernelAbstractions.allocate(backend, T, N, M) :
              KernelAbstractions.allocate(backend, T, M, N)
-    initializer(rng, weight)
-    (weight = StiefelManifold(assign_columns(typeof(weight)(qr!(weight).Q), size(weight)...)),)
+    (weight = StiefelManifold(orthonormal_columns() do
+        initializer(rng, weight)
+        weight
+    end),)
 end
 
 function parameterlength(::StiefelLayer{M, N}) where {M, N}

@@ -72,7 +72,7 @@ second for the sum.
     or `similar(x, …)` in the forward pass — and this one does not yet. On a GPU array this is not a
     slowdown but a failure: the broadcast fails to compile, because the host array cannot be read
     from a kernel. A network carrying this layer is therefore a CPU network. Nothing in the test
-    suite would catch that, because the suite has no GPU test.
+    suite would catch that, because the GPU tests in `test/metal/` do not cover this layer.
 
 Its Jacobian is the identity, since it adds a constant, so it composes with the structure-preserving
 architectures without changing what they preserve: a [`LinearSymplecticTransformer`](@ref) with this

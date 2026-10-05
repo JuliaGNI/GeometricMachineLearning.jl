@@ -2,6 +2,9 @@ using GeometricMachineLearning
 using GeometricMachineLearning: mat_tensor_mul
 using Zygote: pullback
 using Test
+import Random
+
+Random.seed!(1234)
 
 # What the triangular types *are* — their storage layout, their arithmetic, their multiplication
 # against a dense matrix — is tested in GeometricOptimizers, which defines them

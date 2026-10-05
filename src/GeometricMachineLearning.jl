@@ -45,10 +45,10 @@ import GeometricOptimizers: SkewSymMatrix, SymmetricMatrix,
                             LowerTriangular, UpperTriangular, StiefelProjection
 import GeometricOptimizers: StiefelLieAlgHorMatrix, GrassmannLieAlgHorMatrix
 import GeometricOptimizers: rgrad, metric, check, global_section
-# `assign_columns(Q, N, n)` — the first `n` columns of a `QR` factor, allocated on `Q`'s backend.
-# It is upstream's, and internal there; the three manifold layers below initialise their weights
-# with it.
-import GeometricOptimizers: assign_columns
+# `orthonormal_columns(draw)` orthonormalizes `draw()` with CholeskyQR2, which runs on whatever
+# backend `draw` allocated on. The three manifold layers below initialise their weights with it,
+# because `LinearAlgebra.qr!` is a host factorization and `Metal` implements no `qr` at all.
+import GeometricOptimizers: orthonormal_columns
 import GeometricOptimizers: GlobalSection, global_rep, apply_section, apply_section!,
                             update_section!
 import GeometricOptimizers: Geodesic, Cayley, geodesic, cayley, retraction

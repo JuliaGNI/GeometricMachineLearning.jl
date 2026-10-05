@@ -48,8 +48,8 @@ h(s)  = \begin{cases}
 
 Plotted on the relevant domain it looks like this: 
 
-![Third degree spline.](../tikz/third_degree_spline_light.png)
-![Third degree spline.](../tikz/third_degree_spline_dark.png)
+![Third degree spline.](https://juliagni.github.io/GeometricFigures.jl/figures/problems/third-degree-spline/third-degree-spline_light.svg)
+![Third degree spline.](https://juliagni.github.io/GeometricFigures.jl/figures/problems/third-degree-spline/third-degree-spline_dark.svg)
 
 We end up with the following choice of parametrized initial conditions: 
 
@@ -129,7 +129,7 @@ Main.remark(raw"The training blocks on this page are in plain `julia` fences, so
 " * Main.indentation * raw"instead is the *committed result* of those runs, loaded from the `.h5` files beside this page,
 " * Main.indentation * raw"so the figures below are produced from the trained networks rather than from a token
 " * Main.indentation * raw"re-training. The code paths themselves are covered by the test suite -- `ReducedLoss` through
-" * Main.indentation * raw"the `Optimizer` functor by `test/losses/reduced_loss_optimization.jl` -- and reproduced at
+" * Main.indentation * raw"the `Optimizer` functor by `test/integration/reduced_loss_optimization.jl` -- and reproduced at
 " * Main.indentation * raw"full size by `scripts/reproduction/symplectic_autoencoders/`, which CI runs at a smoke size
 " * Main.indentation * raw"on every pull request.")
 ```

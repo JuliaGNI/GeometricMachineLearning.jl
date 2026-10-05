@@ -1,45 +1,95 @@
-using SafeTestsets, Test, GeometricMachineLearning
+using SafeTestsets
 
-# A test that trains passes `show_progress = false`. The `Optimizer` functor defaults it to `true`,
-# which is right at a REPL and is noise in a suite -- a 2048-epoch run emits a few hundred progress
-# lines and buries the failure you are looking for.
+const GROUPS = isempty(ARGS) ?
+               (Sys.isapple() && Sys.ARCH === :aarch64 ? ["core", "slow", "metal"] :
+                ["core", "slow"]) : ARGS
 
-# One directory per subject, each with its own driver naming the testsets it runs. The drivers are
-# `include`d at top level rather than wrapped in a testset of their own, because `@safetestset`
-# expands to a `module` and a module may not appear inside a testset body.
-#
-# The tree-level checks stay here beside `runtests.jl` rather than in a directory of their own:
-# they check the tree rather than a subject in it, and `reachability.jl` reads `test/` off its own
-# `@__DIR__`.
-#
-# `aqua.jl` runs after the subject drivers and not beside the other two. A top-level testset throws
-# when it closes on a failure, which ends the file, so whatever runs first can hide everything
-# behind it. `reachability.jl` and `exports.jl` earn that position: they say whether the suite is
-# well-formed at all, and a failure in either makes the rest not worth reading. Aqua's checks do
-# not -- a package-level finding says nothing about whether a subject is correct, and placed first
-# it costs every subject result in the run.
-
-@safetestset "Reachability of every file under test/" begin
-    include("reachability.jl")
+if "core" in GROUPS
+    @safetestset "Reachability of every file under test/" include("quality/reachability.jl")
+    @safetestset "Exported names are defined" include("quality/exports.jl")
+    @safetestset "MatrixSoftmax" include("activations/softmax.jl")
+    @safetestset "Symplectic Potential (array tests)" include("arrays/poisson_tensor.jl")
+    @safetestset "Test triangular matrices" include("arrays/triangular.jl")
+    @safetestset "Custom tensor matrix multiplication" include("kernels/tensor_mat_mul.jl")
+    @safetestset "Custom AD rules for kernels" include("kernels/kernel_pullbacks.jl")
+    @safetestset "Test parallel inverses" include("kernels/tensor_inverse.jl")
+    @safetestset "Test parallel Cayley" include("kernels/tensor_cayley.jl")
+    @safetestset "Volume-Preserving Transformer (skew-symmetric tests)" include("kernels/test_skew_map.jl")
+    @safetestset "Volume-Preserving Transformer (cayley-transform tests)" include("kernels/inverses/test_cayley_transforms.jl")
+    @safetestset "Gradient Layer" include("layers/gradient_layer_tests.jl")
+    @safetestset "Test tensor-slice consistency of sympnet layers" include("layers/sympnet_layers_test.jl")
+    @safetestset "Manifold Neural Network Layers" include("layers/manifold_layers.jl")
+    @safetestset "The manifold layers initialise an orthonormal weight" include("layers/manifold_layer_orthonormality.jl")
+    @safetestset "ResNet" include("layers/resnet_tests.jl")
+    @safetestset "Classification layer" include("layers/classification.jl")
+    @safetestset "Test volume-preserving feedforward neural network" include("layers/volume_preserving_feedforward.jl")
+    @safetestset "parameterlength(::PSDLayer) is exact" include("layers/psd_parameterlength.jl")
+    @safetestset "parameterlength(::GrassmannLayer) is an integer count" include("layers/grassmann_parameterlength.jl")
+    @safetestset "Attention layer #1" include("layers/attention_setup.jl")
+    @safetestset "Test setup of MultiHeadAttention layer Stiefel weights" include("layers/multi_head_attention_stiefel_setup.jl")
+    @safetestset "Test geodesic and Cayley retr for the MultiHeadAttention layer w/ St weights" include("layers/multi_head_attention_stiefel_retraction.jl")
+    @safetestset "Test the correct setup of the various optimizer caches for MultiHeadAttention" include("layers/multi_head_attention_stiefel_optim_cache.jl")
+    @safetestset "Linear Symplectic Attention" include("layers/linear_symplectic_attention.jl")
+    @safetestset "parameterlength(::MultiHeadAttention{M,M,true}) is exact" include("layers/multi_head_attention_parameterlength.jl")
+    @safetestset "compute_output_of_mha infers concretely" include("layers/multi_head_attention_inference.jl")
+    @safetestset "Documented keyword defaults are the constructed ones" include("documented_defaults.jl")
+    @safetestset "Test setup of transformer with Stiefel weights" include("layers/transformer_setup.jl")
+    @safetestset "Sinusoidal positional encoding" include("layers/positional_encoding.jl")
+    @safetestset "Check if the transformer can be applied to a tensor." include("layers/transformer_application.jl")
+    @safetestset "Check if the gradient/pullback of MultiHeadAttention changes type in St case" include("layers/transformer_gradient.jl")
+    @safetestset "Check if the optimization_step! changes the parameters of the transformer" include("layers/transformer_optimizer.jl")
+    @safetestset "Regular transformer integrator" include("architectures/standard_transformer_integrator.jl")
+    @safetestset "Linear Symplectic Transformer" include("architectures/linear_symplectic_transformer.jl")
+    @safetestset "Symplectic Transformer chain construction" include("architectures/symplectic_transformer_chain.jl")
+    @safetestset "Check parameterlength" include("architectures/check_parameterlengths.jl")
+    @safetestset "Hamiltonian Neural Network" include("architectures/hamiltonian_neural_network_tests.jl")
+    @safetestset "SympNet integrator" include("architectures/sympnet_integrator.jl")
+    @safetestset "PSD tests" include("architectures/psd_architecture_tests.jl")
+    @safetestset "SymplecticAutoencoder tests" include("architectures/symplectic_autoencoder_tests.jl")
+    @safetestset "Check if autoencoder error is lower than PSD error" include("architectures/sae_error_lower_than_psd_error.jl")
+    @safetestset "Check reduced model" include("reduced_system/reduced_system.jl")
+    @safetestset "_norm keeps the element type of its argument" include("norm_eltype.jl")
+    @safetestset "Symplectic Euler and variational midpoint losses" include("loss/training_method_losses.jl")
+    @safetestset "Test NetworkLoss + Optimizer" include("integration/losses_and_optimization.jl")
+    @safetestset "ReducedLoss through the Optimizer functor" include("integration/reduced_loss_optimization.jl")
+    @safetestset "Optimizer #2" include("optimizers/optimization_step.jl")
+    @safetestset "Optimizer #3" include("optimizers/svd_optim.jl")
+    @safetestset "Optimizer #4" include("optimizers/psd_optim.jl")
+    @safetestset "Check if Adam with decay converges" include("optimizers/adam_with_learning_rate_decay.jl")
+    @safetestset "Gradient optimizer tests" include("optimizers/gradient_optimizer.jl")
+    @safetestset "Momentum optimizer tests" include("optimizers/momentum_optimizer.jl")
+    @safetestset "Optimizers with structured (non-manifold) weights" include("optimizers/structured_array_parameters.jl")
+    @safetestset "_GMLGradient dispatch" include("optimizers/gml_gradient_dispatch.jl")
+    @safetestset "The GO-native leaf step scales in the parameter's own element type" include("optimizers/step_size_element_type.jl")
+    @safetestset "_custom_mul: NetworkParameters gradient structure" include("layers/double_multiplication_network_parameters_gradient.jl")
+    @safetestset "Symplectic attention: NetworkParameters gradient structure" include("layers/symplectic_attention_network_parameters_gradient.jl")
+    @safetestset "map_to_cpu" include("map_to_cpu_tests.jl")
+    @safetestset "changebackend" include("integration/changebackend_tests.jl")
+    @safetestset "HDF5 save/load for GML special array types" include("integration/hdf5_support.jl")
+    @safetestset "Test data loader for q and p data" include("data_loader/batch_data_loader_qp_test.jl")
+    @safetestset "Test the data loader in combination with optimization_step!" include("data_loader/data_loader_optimization_step.jl")
+    @safetestset "Optimizer functor with data loader for Adam" include("data_loader/optimizer_functor_with_adam.jl")
+    @safetestset "Test data loader for a tensor (q and p data)" include("data_loader/draw_batch_for_tensor_test.jl")
+    @safetestset "Batch functor(s)" include("data_loader/batch_functor.jl")
+    @safetestset "DataLoader for input and output" include("data_loader/data_loader_for_input_and_output.jl")
+    @safetestset "An unexpected `autoencoder` keyword throws rather than returning nothing" include("data_loader/autoencoder_keyword.jl")
+    @safetestset "A Float32 network's training history stays Float32" include("data_loader/training_history_eltype.jl")
+    @safetestset "The minibatch index set is concrete and grows linearly" include("data_loader/batch_index_set.jl")
+    @safetestset "Classifier accuracy" include("data_loader/accuracy.jl")
+    @safetestset "Data loader docstring examples" include("integration/docstrings/data_loader.jl")
+    @safetestset "Layer and architecture docstring examples" include("integration/docstrings/layers_and_architectures.jl")
+    @safetestset "Loss docstring examples" include("integration/docstrings/losses.jl")
+    @safetestset "Manifold docstring examples" include("integration/docstrings/manifolds.jl")
+    @safetestset "Utility and pullback docstring examples" include("integration/docstrings/utilities.jl")
+    @safetestset "Aqua's package-level checks" include("quality/aqua.jl")
+    @safetestset "JET" include("quality/jet.jl")
+    @safetestset "docs/make.jl stops on a bad @ref before makedocs" include("quality/docs_make_checks_references.jl")
 end
-@safetestset "Exported names are defined" begin
-    include("exports.jl")
+if "slow" in GROUPS
+    @safetestset "Lagrangian Neural Network" include("architectures/lagrangian_neural_network_tests.jl")
+    @safetestset "Test symplecticity of the sympnet upscaling layer" include("layers/sympnet_upscaling.jl")
+    @safetestset "Doctests" include("quality/doctests.jl")
 end
-
-include("activations/runtests.jl")
-include("arrays/runtests.jl")
-include("kernels/runtests.jl")
-include("layers/runtests.jl")
-include("attention/runtests.jl")
-include("transformers/runtests.jl")
-include("architectures/runtests.jl")
-include("reduced_order_modeling/runtests.jl")
-include("losses/runtests.jl")
-include("optimizers/runtests.jl")
-include("parameters/runtests.jl")
-include("data_loader/runtests.jl")
-include("docstrings/runtests.jl")
-
-@safetestset "Aqua's package-level checks" begin
-    include("aqua.jl")
+if "metal" in GROUPS
+    @safetestset "Metal: the GPU extension and a kernel on an Apple GPU" include("devices/metal.jl")
 end

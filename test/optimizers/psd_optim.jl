@@ -37,7 +37,7 @@ function svd_test(A, n, train_steps = 1000, tol = 1e-1; retraction = cayley)
     N2 = size(A, 1)
     @assert iseven(N2)
     N = N2÷2
-    U, Σ, Vt = svd(reshape(A, N, size(A, 2)*2))
+    U, _, _ = svd(reshape(A, N, size(A, 2)*2))
     U_result_sing = U[:, 1:n]
     U_result = hcat(vcat(U_result_sing, zero(U_result_sing)), vcat(zero(U_result_sing), U_result_sing))
 
@@ -50,7 +50,7 @@ function svd_test(A, n, train_steps = 1000, tol = 1e-1; retraction = cayley)
     o₃ = Optimizer(Adam(), ps; retraction = retraction, step_size = 0.01)
 
     U₁, Ũ₁, err₁ = train_network!(o₁, model, deepcopy(ps), A, train_steps, tol)
-    U₂, Ũ₂, err₂ = train_network!(o₂, model, deepcopy(ps), A, train_steps, tol)
+    U₂, _, err₂ = train_network!(o₂, model, deepcopy(ps), A, train_steps, tol)
     U₃, Ũ₃, err₃ = train_network!(o₃, model, deepcopy(ps), A, train_steps, tol)
 
     @test check(U₁) < tol

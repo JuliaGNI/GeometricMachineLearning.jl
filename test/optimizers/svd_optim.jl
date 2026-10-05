@@ -34,7 +34,7 @@ function svd_test(A, n, train_steps = 1000, tol = 1e-1; retraction = cayley)
     # second pass from 2% above the optimum to 21%, against a 10% tolerance.
     Random.seed!(1234)
     N = size(A, 1)
-    U, Σ, Vt = svd(A)
+    U, _, _ = svd(A)
     U_result = U[:, 1:n]
 
     err_best = norm(A - U_result*U_result'*A)
@@ -46,7 +46,7 @@ function svd_test(A, n, train_steps = 1000, tol = 1e-1; retraction = cayley)
     o₃ = Optimizer(Adam(), ps; retraction = retraction, step_size = 0.01)
 
     U₁, Ũ₁, err₁ = train_network!(o₁, model, deepcopy(ps), A, train_steps, tol)
-    U₂, Ũ₂, err₂ = train_network!(o₂, model, deepcopy(ps), A, train_steps, tol)
+    U₂, _, err₂ = train_network!(o₂, model, deepcopy(ps), A, train_steps, tol)
     U₃, Ũ₃, err₃ = train_network!(o₃, model, deepcopy(ps), A, train_steps, tol)
 
     @test check(U₁) < tol

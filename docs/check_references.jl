@@ -5,8 +5,9 @@
 # keeps only the docstrings whose *defining* module (`d.data[:module]`) is in
 # `makedocs(modules = …)`; a `@ref` to a code name resolves against the docstrings the manual
 # actually includes. Both passes need only the loaded package, so this runs in seconds where
-# `makedocs` takes hours. It is the cheap half of the Documentation job, not a replacement for it:
-# `@example`/`@setup` blocks and section-title `@ref`s are not covered.
+# `makedocs` takes hours. `make.jl` includes it before `makedocs`, as the cheap half of the build,
+# not a replacement for it: `@example`/`@setup` blocks and section-title `@ref`s are not covered.
+# It also runs on its own:
 #
 #     julia --project=docs docs/check_references.jl
 
@@ -330,4 +331,5 @@ for (file, line, what, why) in failures
     println("FAIL $file:$line\n     $what\n     $why")
 end
 println("\n$(length(failures)) unresolved reference(s)")
-exit(isempty(failures) ? 0 : 1)
+# An error rather than `exit`, because `make.jl` includes this file before `makedocs`.
+isempty(failures) || error("$(length(failures)) unresolved reference(s)")

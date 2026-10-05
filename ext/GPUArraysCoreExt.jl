@@ -18,9 +18,9 @@ module GPUArraysCoreExt
 # BandedMatrices and BlockArrays loaded, the ambiguity count is 1 with these methods and 1
 # without.
 #
-# This file's behaviour is device-only and CI has no GPU runner, so nothing here is exercised by
-# the test matrix. It was verified on an Apple GPU through Metal; the measurement is recorded in
-# `CHANGELOG.md`.
+# This file's behaviour is device-only. `test/devices/metal.jl` asserts it on an Apple GPU, in the
+# `metal` test group, which the `Metal` workflow runs, and which a run with no test arguments selects
+# on an Apple-silicon Mac only.
 
 using GPUArraysCore: AnyGPUArray, AnyGPUMatrix, AnyGPUVector
 using GeometricMachineLearning

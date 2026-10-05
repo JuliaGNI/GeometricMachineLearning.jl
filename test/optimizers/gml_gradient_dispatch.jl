@@ -10,6 +10,9 @@ using GeometricMachineLearning
 using GeometricOptimizers: StiefelManifold, GrassmannManifold, rgrad
 using NeuralNetworkParameters: NetworkParameters
 using Test
+import Random
+
+Random.seed!(1234)
 
 GML = GeometricMachineLearning
 

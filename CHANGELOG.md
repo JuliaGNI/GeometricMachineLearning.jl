@@ -13,12 +13,35 @@ breaking release).
 > alongside the work. Where a release removed exported names the list is given; where it is a
 > reconstruction of intent, it says so.
 
-## [Unreleased] — 0.8.0
+## [Unreleased]
 
-> [!NOTE]
-> Not released. This was written as `[0.7.0]` before 0.6.1 and 0.7.0 were cut, and the number was
-> taken by the release below; the work it describes -- `apply_toNT`, `_eltype`, `map_to_cpu` -- is
-> still to do.
+### Added
+
+- **The test suite runs on an Apple GPU in its `metal` group.** `test/devices/metal.jl` checks the two device paths that were measured by hand and not tested before: the products of a `PoissonTensor` with a wrapped device array, `𝕁 * view(A, [1, 2, 3, 4], :)` and `𝕁 * B'`, which `ext/GPUArraysCoreExt.jl` carries; and the `tensor_mat_mul!` kernel on `MetalBackend()`. Each result must stay on the device and match the host in `Float32`, with scalar indexing off. `Pkg.test(test_args = ["metal"])` runs them without the subject tests, and a missing device records a skip, which happens inside a sandbox. Metal (1.10 or later) is a test dependency on every platform; it installs and precompiles on Linux and Windows, and nothing there loads it. On an Apple M4 Max with Metal 1.11.1 all five assertions pass.
+- **A `Metal` workflow runs the Metal tests on GitHub's `macos-15` runner**, for the `min` and `1` Julia versions. The runner's GPU is Apple's paravirtual device, which Metal.jl supports from 1.10 and on macOS 15 or later. The workflow includes a step "Metal is functional" before the tests that fails the job where the device is unavailable, so it cannot pass without having run the tests. The job is not a required check. However, the Metal tests also run in two required checks—CI.yml's `Julia min - macOS-latest - default` and `Julia 1 - macOS-latest - default`—which execute `test/runtests.jl` with no test arguments on Apple silicon, selecting the `metal` group.
+- **`test/quality/jet.jl` checks the kernel launchers with JET.** It runs in `core`, directly after `quality/aqua.jl`, and takes about 14 s. Each function that launches a kernel of `src/` on the `CPU()` backend, the pullbacks among them, and the `Batch` functor that `test/data_loader/batch_index_set.jl` measures with `@allocated` get one `JET.report_opt` line per element type that the tests use, with `target_modules = (GeometricMachineLearning,)`. Each `@kernel` method also gets a line that analyses its generated `cpu_<kernel>` function at the launcher's context, because JET drops the reports of a kernel body when it analyses the launcher. 142 lines pass on Julia 1.11.9 (JET 0.9.20) and 1.13.1 (JET 0.12.2). Three lines report a runtime dispatch on both versions and are `@test_broken` with issue #325: `PoissonTensor(::CPU, ::Int, ::DataType)`, and the input-and-output method of `convert_input_and_batch_indices_to_array` at `Float32` and `Float64`. Where JET does not work, the file records one `@test_skip`. JET joins `test/Project.toml` with no `[compat]` bound. `KNOWN_ISSUES.md` K2 records the Revise `EMFILE` messages that JET brings into the test log, and K3 the dispatches that the lines do not see: an unstable argument of a kernel launch, and two barriers in the Poisson-tensor kernel.
+- **A test calls `iterate` on `(q,)` initial conditions.** No test reached the `NeuralNetworkIntegrator` `iterate` method that takes `ics::NamedTuple{(:q,), Tuple{AT}}`. `test/docstrings/layers_and_architectures.jl` runs the docstring's `ResNet` from `(q = [1, 1, 1],)` for four points and expects the same trajectory as the vector form, `[1 2 4 8; 1 3 9 27; 1 3 7 15]`.
+
+### Changed
+
+- **The package needs Julia 1.12 or later** (`[compat] julia = "1.12"`, was `"1.11"`). On Julia 1.11.9, the gradient of an `LNNLoss` with respect to the network parameters stops with `StackOverflowError` in type inference ("Internal error: during type inference of … Encountered stack overflow") on macOS and Windows; the `Julia min` job on Linux passes. The overflow comes from SymbolicUtils 4.49.0, whose `rrule` for `SymbolicUtils.Code.create_array` returns an exactly typed tuple of tangents, one per array element; Zygote's reverse pass through the generated Hessian of `lagrangian_acceleration` is then inferred far deeper. With the 4.48.0 rule restored, or in a task with a 64 MB stack, the same gradient passes on 1.11.9; Julia 1.12.7 and 1.13.1 pass it on the root task. This closes #327: the `Julia min` jobs on macOS and Windows had failed in the *Lagrangian Neural Network* testset since 2026-10-01, and every testset after it was never run there.
+- **`test/Project.toml` has no `[compat]` entry for a dependency of the package.** The entries for AbstractNeuralNetworks, GeometricOptimizers, HDF5, KernelAbstractions, LinearAlgebra, NeuralNetworkParameters, Random and Zygote are gone: the test environment contains the package, so the bounds of `Project.toml` apply there, and an entry in `test/Project.toml` can only repeat or narrow them. `NeuralNetworkParameters = "0.3"` was narrower than the package's `"0.3, 0.4"`.
+- **The test suite follows one flat layout.** `test/runtests.jl` is one list of `@safetestset "<label>" include("<path>")` lines in the groups `core`, `slow` and `metal`, selected by `ARGS`; with no arguments it runs `core` and `slow`, and `metal` too on an Apple-silicon Mac, so `Pkg.test()` and CI run every test they ran before. The 14 nested `test/<subject>/runtests.jl` drivers are gone. A test file sits where the source it tests sits: `test/attention/` and `test/transformers/` went into `test/layers/`, `test/architectures/` and `test/kernels/`; `test/reduced_order_modeling/` into `test/architectures/` and `test/reduced_system/`; `test/losses/training_method_losses.jl` into `test/loss/`; the tests that span the package, the docstring examples among them, into `test/integration/`; and `aqua.jl`, `exports.jl` and `reachability.jl` into `test/quality/`. `test/docstrings/layers_and_architectures.jl`, named in *Added* above, is now `test/integration/docstrings/layers_and_architectures.jl`. `test/layers/sympnet_upscaling.jl` is in `slow`. Thirteen files that drew random numbers without a seed now call `Random.seed!(1234)`. The shared helper of the two gradient-structure tests is `test/helpers/network_parameters_gradient_structure.jl`, and its `@test_broken` names issue #319.
+- **The doctests run in the test suite.** `test/quality/doctests.jl`, in the `slow` group, runs `doctest(GeometricMachineLearning)` as the `Doctests` job of `CI.yml` does. `Documenter` joins `test/Project.toml`, with no `[compat]` bound, as a test-only dependency.
+- **The test suite compiles less.** `test/layers/sympnet_upscaling.jl` checks its three symplectic identities on 12 pairs `(N, N2)` instead of all 120 with `N` in `2:2:20` and `N2` in `(2N):2:(4N)`: `(2, 4)`, `(2, 6)`, `(2, 8)`, `(4, 10)`, `(6, 12)`, `(6, 20)`, `(8, 24)`, `(10, 30)`, `(12, 36)`, `(14, 42)`, `(20, 40)` and `(20, 80)`. They keep the smallest pair, `N2 = 2N`, `N2 = 4N`, `N2` not a multiple of `N`, and the largest `N`. The layers carry the sizes in their types, so each pair is a new compilation (about 1.3 s per pair, not once per file as the [0.8.0] entry assumed); the file has 36 assertions instead of 360, and takes 19.7 s cold; it stays in `slow`. The two training tests of `test/loss/training_method_losses.jl` use the network shape of the rest of the file, `StandardHamiltonianArchitecture(2n, 4, 1)` and `LagrangianNeuralNetwork(2; width = 4, nhidden = 1)`, in place of `(2n, 5, 2)` and `width = 5, nhidden = 2`; each still asserts that training reduces the loss. `test/architectures/lagrangian_neural_network_tests.jl` moves from `core` to `slow`: it takes 122.7 s cold, above the 60 s of a `core` file. It still runs in CI and in `Pkg.test()`, and leaves only the local `core` run. Every other `core` file takes at most 37.9 s cold. The times are cold, from one fresh Julia process that runs the `core` files in the order of `test/runtests.jl` (and from one fresh process for each of the two files named), on an Apple M4 Max with Julia 1.13.1, at a load average below 4 at the start.
+- **The optimizer reads `show_progress` as a `Bool`** instead of comparing it with `== true`. A non-`Bool` value now raises a `TypeError`: before, `nothing`, `0` or a string hid the progress bar with no error, and `1` or `1.0` showed it. Every call in the tests and the manual passes `false`, and every call in `scripts/` passes `true`.
+- **fatou reports no finding in `src/` or `test/`.** Only tests and one lint suppression changed; no behaviour of the package changed. `test/layers/multi_head_attention_stiefel_setup.jl` defined `check_setup(ps::NetworkParameters)` twice, and the later method silently replaced the `mapparameters` one, which never ran. The later method is deleted, and the test now asserts that the matrix method of `check_setup` runs once per leaf of the parameters, counted with `foldparameters`. The unused destructured values `Σ`, `Vt` and `Ũ₂` in `test/optimizers/psd_optim.jl` and `test/optimizers/svd_optim.jl` are now `_`; those files check `Ũ₁` and `Ũ₃` and never checked `Ũ₂`. The unreachable `new{…}(…)` after the `error` in the `GeneralizedHamiltonianArchitecture` constructor stays, because it records the field order for the future constructor, under `# fatou-ignore unreachable-code`.
+
+### Fixed
+
+- **Aqua's `unbound_args` check passes on Julia nightly.** The `iterate` method for a `NeuralNetworkIntegrator` on `(q, p)` initial conditions, in `src/architectures/neural_network_integrator.jl`, took `ics::BT` with `BT <: NamedTuple{(:q, :p), Tuple{AT, AT}}` and `AT <: AbstractVector{T}`. `T` sat only inside the bound of `AT`, which sat only inside the bound of `BT`, and the body reads `T` to allocate the trajectory. Julia 1.14's `Test.detect_unbound_args` reports such a method; 1.11 to 1.13 do not. The argument is now `ics::NamedTuple{(:q, :p), Tuple{AT, AT}}` with `where {T, AT <: AbstractVector{T}}`: `AT` occurs in the argument type, so `T` is one step away and bound. The two signatures are the same type, so dispatch does not change. The `(q,)` method just above it takes `ics::NamedTuple{(:q,), Tuple{AT}}` in the same way, also with no change to its type. This closes *B9*, and the `nightly` CI job's Aqua testset no longer fails. Seven other methods in `src/` have parameters one level deep in the signature — each in the bound of a type variable appearing in an argument type — and are bound by `Base.Compiler.constrains_var`; nightly does not report them.
+
+### Documentation
+
+- **The *GPU Support* section of `docs/src/index.md` names the two device paths the suite now tests**, where it said that nothing on the GPU path was tested.
+- **The manual's 27 TikZ figures and its logo come from [GeometricFigures](https://juliagni.github.io/GeometricFigures.jl/), and `docs/src/tikz/` with its 65 sources is gone.** Each page links the published light and dark SVG of a figure, and the 300-dpi PNG of the Grassmann sampling figure; `docs/make.jl` loads GeometricFigures' `figures.css` as a remote asset to show the one that the theme needs, and `extra_styles.css` loses its two `prefers-color-scheme` image rules. `make.jl` downloads the logo, and a failed download throws. Documenter's LaTeX writer does not fetch a remote image, so for `latex_output` `make.jl` downloads the light PDF of each figure that the `.tex` files name into `docs/build/` and puts the file name in place of the URL; `Latex.yml` and `docs/Makefile` no longer build the TikZ sources, and `docs/Makefile` drops its `latex_no_images`, `latex_no_pdf_no_images` and `html_no_images` targets: `latex`, `latex_no_pdf` and `html` run their recipes. `docs/check_references.jl` runs at the top of `make.jl`, before `makedocs`, and throws on an unresolved reference instead of calling `exit`; `test/quality/docs_make_checks_references.jl` checks that a bad `@ref` in a docstring stops `make.jl` there. `.github/workflows/Documenter.yml` is the canonical template again, without its TeX, TikZ and reference-check steps.
+
+## [0.8.0] — 2026-09-21
 
 **The traversal of a parameter set now belongs to the package that owns the parameters, and the
 traversal of a `NamedTuple` belongs to `Base`.** 0.6.0 handed the HDF5 walk over to
@@ -26,72 +49,21 @@ traversal of a `NamedTuple` belongs to `Base`.** 0.6.0 handed the HDF5 walk over
 remaining walks. `map_to_cpu` becomes one walk, `apply_toNT` turns out to have been `Base.map` all
 along, and `_eltype` turns out to have been a hand-rolled `parameter_eltype`.
 
+**Most of the rest is a whole-package audit, closed.** Nine of the twelve type piracies are gone,
+three of them on `Base`; thirty-two names under `src/` that had no user anywhere are gone, and with
+them `legacy/`, `src/backends/` and the whole `train!` subsystem; a `Float32` network stays
+`Float32` through training, `_norm` and the optimizer cache; and the advertised GPU support works
+on a device, where five architectures threw at construction. This release deletes far more than it
+adds, so read *Removed (breaking)* before upgrading.
+
 **It also makes the optimizer cache immune to a change coming in `GeometricOptimizers`**, which is
 the half of this release with no visible effect today — see *Fixed*.
 
-**Requires `GeometricOptimizers` 0.5**, which is where the structured types' `changebackend` and
-`GlobalSection` methods now live — and, with it, `NeuralNetworkParameters` 0.2 and
-`SymbolicNeuralNetworks` 0.7. The three floors move together because the environment does not
-resolve otherwise: 0.5 drops the `ParameterHandling` shim and lets `NeuralNetworkParameters` do the
-flattening, so the 0.2 container is required rather than preferred — it carries the element type of
-its leaves as `NetworkParameters{T}`'s first type parameter, which is what lets a parameter set be
-an `OptimizerSolution{T}` there — and `SymbolicNeuralNetworks` 0.6 permits only the 0.1 container,
-so it cannot coexist with `GeometricOptimizers` 0.5.
-
-### Added
-
-- **One optimizer method per layer**, through `GeometricOptimizers.CompositeMethod`. `Optimizer` and
-  `optimization_step!` take one wherever they take a method: `_make_optimizer_cache`,
-  `_make_optimizer_state` and `_leaf_optim_step!` resolve the layer's method with
-  `GeometricOptimizers.leafmethod` and then behave exactly as they do for that method, so a layer
-  stepped under a composite is bit-for-bit a layer stepped under the method selected for it.
-
-  ```julia
-  method = GeometricOptimizers.CompositeMethod(;
-      manifold = GeometricOptimizers.ScalarMomentAdam(Float32),
-      array = GeometricOptimizers.Adam(Float32))
-  optimizer = Optimizer(method, nn; retraction = cayley, step_size = 1.0f-3)
-  ```
-
-  A symplectic autoencoder is the shape this exists for: its PSD layers carry only Stiefel weights
-  and its SympNet layers only Euclidean ones, and `ScalarMomentAdam` accepts exactly one
-  `StiefelManifold` solution. A caller wanting that split had to add methods to those three
-  underscore-prefixed functions **from outside this package** — type piracy on four internals, which
-  breaks silently at run time on any refactor here, in the middle of whatever it was training. There
-  is now a supported way to say it.
-
-- **`_as_go_solution(x, method)` and `_as_go_leaf(x, method)`**, which hand a method whose scope is a
-  single weight that weight rather than the layer holding it — and its gradient and its section with
-  it. Which methods those are is `GeometricOptimizers.accepts_parameter_set` and not a list of type
-  names kept here; *when* to unwrap, and the error naming the layer and the method when a layer holds
-  more than one weight, is this package's, because the grouping into layers is.
-
-### Changed
-
-- **`_leaf_optim_step!` no longer carries a list of which methods keep what.** The
-  `if state isa AdamState … elseif state isa MomentumState` chain that copied the moments or advanced
-  the momentum is now one call to `GeometricOptimizers.sync_state!`, which dispatches on the state
-  and the method in the package that defines both. That chain was a list of methods maintained where
-  the methods are not defined, and it had the failure mode such a list has: `ScalarMomentAdam` was
-  simply missing from it.
-
-- **`_go_update_leaf!` dispatches on `GeometricOptimizers.FirstOrderMethodWithState`** rather than on
-  `Adam` and `MomentumMethod` by name. That union is the split upstream's own `solver_step!` makes —
-  a method that builds its direction out of state of its own needs the *method*, everything else
-  needs the Hessian and has none — so a method joining it upstream no longer leaves a stale list
-  behind here, silently taking the Hessian branch.
-
-- **`ScalarMomentAdam` is now a GO-native method here**, and `_adapt_method_to_T` converts it as it
-  converts `Adam`. It previously fell through to `GMLEuclideanState`, which is coordinate-wise Adam
-  on the ambient array: not the method, and not on the manifold.
-
-- **`_make_optimizer_cache` and `_make_optimizer_state` ask the layer question before the capability
-  question.** The structural-before-capability ordering the comments there are about is unchanged —
-  `_is_layer` is still asked first and a flat set is still one cache — but `_is_go_native_method` is
-  now asked of the *layer's* method, which for a composite exists only once a layer is in hand.
-
-- **Requires `GeometricOptimizers` 0.8**, for `CompositeMethod`, `leafmethod`,
-  `accepts_parameter_set` and `sync_state!`. None of the four is in 0.7.
+**Requires `GeometricOptimizers` 0.8**, which is where the GPU half of this release comes from: 0.8
+deletes `assign_columns`, so the three manifold layers draw their initial weight through
+`orthonormal_columns` rather than a host `qr!`, and it gives the triangular types and
+`StiefelProjection` the kernel products a device needs. 0.7 does not resolve against the `src/`
+this release ships. See *Dependencies*.
 
 ### Removed (breaking)
 
@@ -1023,6 +995,17 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
 
   The keyword is now also typed `::Bool`, so passing a non-boolean value is a `MethodError` rather
   than silently taking the `:arbitrary` branch.
+
+- **`VolumePreservingLowerLayer` and `VolumePreservingUpperLayer` applied to a vector return a
+  vector.** They returned an `n × 1` `Matrix`. Neither layer does the shaping: their `:no_bias`
+  method is `x + d.activation.(ps.weight * x)`, and `GeometricOptimizers` 0.8 is where
+  `LowerTriangular * ::AbstractVector` stopped returning an `n × 1` matrix — which is what
+  `LinearAlgebra` returns for every other matrix type, so the old shape was the anomaly. The
+  broadcast then widened `x` to match it. The two doctests on those layers and the two assertions
+  in `test/layers/volume_preserving_feedforward.jl` are corrected to the vector. A caller who
+  needs the old shape writes `reshape(y, :, 1)`.
+
+  A matrix or a 3-tensor argument is unaffected; only the vector shape moves.
 
 ### Fixed
 
@@ -2195,6 +2178,79 @@ so it cannot coexist with `GeometricOptimizers` 0.5.
   `Metal.PrivateStorage`. That last one is new in this release and
   is two other entries meeting: `T(step_size)` at the optimizer call site, and the training history
   that now carries the network's own element type.
+
+- **The *GPU Support* section is rewritten a second time, against the released
+  `GeometricOptimizers` 0.8.0.** The first rewrite, above, named two things that did not run on a
+  device and said the fix for both sat on an upstream branch in no release. That release exists
+  now, this package requires it — see *Dependencies* — and both failures are gone, so a section
+  that still listed them would be wrong in the same way the sentence it replaced was.
+
+  Re-measured on 2026-09-21 on an Apple M4 Max through `Metal.jl` in `Float32`, at
+  `GeometricOptimizers` 0.8.0. Every architecture tried was constructed on `MetalBackend()` and
+  applied to both a matrix and a 3-tensor, and every one answered: `GSympNet`, `LASympNet`,
+  `StandardTransformerIntegrator`, `LinearSymplecticTransformer`, `SymplecticTransformer` at both
+  its default `transformer_dim` and an upscaling one, `VolumePreservingFeedForward`,
+  `VolumePreservingTransformer`, `SymplecticAutoencoder`, `PSDArch` and
+  `Transformer(…; Stiefel = true)`. `ClassificationTransformer` was constructed only, its input
+  being an image. `mat_tensor_mul`, `tensor_tensor_mul`, `tensor_transpose` and
+  `tensor_transpose_tensor_mul` return an `MtlArray`, `mat_tensor_mul` agreeing with its host
+  result exactly, and `map_to_cpu` returns a host `Matrix`. Training reaches the manifold weights
+  as well:
+  `Optimizer(AdamOptimizer(), nn)(nn, dl, Batch(8), 2, AutoEncoderLoss())` on a `PSDArch(8, 4)`
+  returns a finite `Vector{Float32}` and leaves the weight a
+  `StiefelManifold{Float32, MtlMatrix{Float32, Metal.PrivateStorage}}`.
+
+  **The paragraph saying none of this is tested stays, and is still the important one.** There is
+  still no GPU test under `test/` and no GPU job in CI, so every line above is a hand measurement
+  on one vendor's device, not something the matrix would catch going red.
+
+### Dependencies
+
+- **`GeometricOptimizers = "0.8"`** (was `"0.7"`), in `Project.toml` and `test/Project.toml`. This
+  is the release that closes **B12** and **B13**, the two GPU failures that stood under
+  `## Open Issues` and that were never this package's to fix. The bound is a floor rather than a
+  preference: 0.7 does not resolve against the `src/` this release ships.
+
+  **`assign_columns` is deleted upstream, so the three manifold layers are rewritten.**
+  `src/layers/stiefel_layer.jl`, `src/layers/grassmann_layer.jl` and `src/layers/psd_like_layer.jl`
+  each wrote `assign_columns(typeof(weight)(qr!(weight).Q), size(weight)...)`. `LinearAlgebra.qr!`
+  is a host factorization and `Metal.jl` implements no `qr` for an `MtlArray`, which is why the
+  call threw at construction on a device and took `SymplecticAutoencoder`, `PSDArch`,
+  `ClassificationTransformer`, `Transformer(…; Stiefel = true)` and `SymplecticTransformer` with
+  `transformer_dim ≠ dim` with it. They now draw through `orthonormal_columns`, which
+  orthonormalizes with CholeskyQR2 — matrix products and triangular solves only — and so runs
+  wherever the draw was allocated. `import GeometricOptimizers: assign_columns` in
+  `src/GeometricMachineLearning.jl` becomes `import GeometricOptimizers: orthonormal_columns`.
+
+  The layers hand it a closure that refills the buffer they allocated and returns it. That is the
+  contract the function documents: a breakdown is answered by drawing *again*, so what it needs is
+  fresh entries and not a fresh array.
+
+  `test/layers/manifold_layer_orthonormality.jl` is new, and asserts what the rewrite has to keep:
+  the initial weight of `StiefelLayer`, `GrassmannLayer` and `PSDLayer` satisfies
+  `check(Y) < 100 * eps(T)` at `Float32` and `Float64`, over both branches of each layer's
+  `N > M ? (N, M) : (M, N)` allocation. The bound is against a worst residual of `3.7 * eps(T)`
+  measured over 300 draws per element type. **It cannot catch what B13 was**, because a host `qr!`
+  produces an orthonormal factor too; catching that needs a device, and nothing in CI supplies
+  one.
+
+  **B12 needed no change to `src/` at all.** `LowerTriangular * ::AbstractMatrix` had no method of
+  its own and fell through to a generic multiply that reads one entry at a time, which
+  `GPUArraysCore` refuses; 0.8 gives both triangulars and `StiefelProjection` kernel products.
+
+  The one consequence that is not about GPUs is in *Changed (breaking)* above: the same release
+  makes `LowerTriangular * ::AbstractVector` return a vector.
+
+  **One test reacted to the new orthonormalization rather than to any of that.**
+  `test/reduced_order_modeling/reduced_system.jl` asserted an ordering that holds for four of the
+  twelve seeds it was measured on. The committed seed is not one of those twelve — it is a
+  thirteenth draw, and it passed at 0.7.0. CholeskyQR2 draws a different network from Householder
+  `qr!`, so at 0.8.0 that seed gives `NaN` and the assertion fails. It is not a property, it was as
+  fragile at 0.7.0, and it is now **C21** under `## Open Issues` with the measurement. The seed was
+  not touched.
+
+  > Both were confirmed on the device on 2026-09-21 against the registered 0.8.0, not against a
+  > branch. See the *GPU Support* entry under *Documentation*.
 
 ### Infrastructure
 
@@ -3710,328 +3766,3 @@ First release: manifold types (`StiefelManifold`, `GrassmannManifold`), the stru
 (`SkewSymMatrix`, `SymmetricMatrix`, the triangular and Lie-algebra-horizontal families), SympNets,
 manifold layers, multi-head attention, the data loader, and Riemannian optimizers with geodesic and
 Cayley retractions.
-
----
-
-## Open Issues
-
-Everything below came up while getting CI green on
-[#230](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/230) and while moving to
-SymbolicNeuralNetworks 0.5 in
-[#235](https://github.com/JuliaGNI/GeometricMachineLearning.jl/pull/235), and is **not** fixed. Each
-entry says what closing it would take. Entries that have since been closed are not kept here — what
-they resolved to is in the release notes above.
-
-### B. Known defects
-
-- **B5. The symbolic pullback of `HNNLoss` is not the gradient of the batched loss.**
-  `SymbolicPullback` differentiates the loss of a *single* sample and sums the per-sample gradients
-  (`reduce = +`), which equals the gradient of the batched loss only when the loss is a sum over
-  samples. `HNNLoss` is not: it divides by `norm(output)` taken over the whole batch. Measured on a
-  `StandardHamiltonianArchitecture(2, 2)` against a `Zygote` gradient of the same loss:
-
-  ```
-  N=1  symbolic=-0.06324019893769198  zygote=-0.06324019893769196  agree=true
-  N=5  symbolic=-0.29982310048056143  zygote=-0.05705562794369161  agree=false
-  ```
-
-  `SymbolicPullback(arch)` is exported and documented as something one passes to `Optimizer` in
-  place of `ZygotePullback`, so this is wrong training, silently, for every batch size above one.
-  It is not new — `reduce = +` is what SymbolicNeuralNetworks 0.3 did too — and it is the same
-  defect SymbolicNeuralNetworks records for `FeedForwardLoss` under *Open Issues → Semantics* in its
-  own changelog, where it is called out as unfixable within a design that differentiates one
-  symbolic sample.
-
-  Closing it means choosing: make `HNNLoss` additive over the batch (it would no longer be scale
-  invariant), or drop the symbolic pullback for architectures whose loss is not additive. Either is
-  a decision about the loss, not a repair, which is why this release only documents it.
-
-  (**B1**, **B2**, **B3**, **B4**, **B6** and **B8** are all closed and their entries are gone: B1 and B2 by
-  this release — the duplicated `AdamOptimizerWithDecay` and the split `Manifold`, both under
-  *Removed (breaking)* — B3 by SymbolicNeuralNetworks 0.5, B4 by `a427add1`, which repaired the
-  documentation build, and B6 and B8 by this release: B6 by the `train!` retirement (the three methods that
-  called the non-existent `vectorfield` are gone, and `SymplecticEulerLoss` carries their content on
-  `hamiltonian_vector_field`, with tests that run), and B8 by the narrowing of `PoissonTensor`'s `Base.:*`
-  to `Strided…` right-hand sides and `Base.getindex` to `Union{Int, Colon, AbstractVector{<:Integer}}`
-  indices, reducing method ambiguities from 18 to 1 as asserted in `test/aqua.jl`. The numbers are
-  left vacant rather than reused.)
-
-- **B7. Three methods are type piracy, and closing them is an API change rather than a deletion.**
-  Aqua's `piracies` check reports 3, down from the 12 this entry opened with; the other nine were
-  deleted in this release and are under *Removed (breaking)* above. All three are genuine under
-  Aqua's definition — the function and every argument type belong to other modules — and all three
-  are one thing: a functor on a *layer* type this package does not own, applied to a three-axis
-  array.
-
-  | method | `src` | without GML | with GML |
-  |:--|:--|:--|:--|
-  | `(::Dense{M, N, true})(::AbstractArray{T, 3}, ::NamedTuple)` | `layers/resnet.jl:63` | `MethodError` | the layer applied along the third axis |
-  | `(::Dense{M, N, false})(::AbstractArray{T, 3}, ::NamedTuple)` | `layers/resnet.jl:67` | the same | the same |
-  | `(::Linear{M, N})(::AbstractArray{T, 3}, ::NamedTuple)` | `layers/resnet.jl:71` | the same | the same |
-
-  `Dense` and `Linear` are `AbstractNeuralNetworks`', and upstream a 3-tensor argument is a
-  `MethodError` because `*` cannot take one. So the witness is not a changed answer but a new one:
-  a call that throws without this package loaded returns a value with it.
-
-  Closing this means either `AbstractNeuralNetworks` gaining the three-axis methods, or this
-  package wrapping the two layer types in its own. Both are an API change, and neither is a
-  by-product of a piracy pass — which is why these three stayed when the other nine went.
-
-  `src/layers/resnet.jl:63` is also the one remaining method ambiguity, against
-  `AbstractNeuralNetworks.Affine`. That pair is benign and has no witness at all: `Dense` is not a
-  subtype of `Affine` and the two have no common instance, so no call can reach it. `test/aqua.jl`
-  asserts both counts — 3 piracies and 1 ambiguity — so neither can drift, in either direction.
-
-- **B9. One unbound type parameter, which only Julia nightly reports.** Aqua's `unbound_args` fails
-  on the `nightly` job over `Base.iterate(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, ics::BT;
-  n_points)` at `src/architectures/neural_network_integrator.jl:98`. Its signature is
-  `where {T, AT <: AbstractVector{T}, BT <: NamedTuple{(:q, :p), Tuple{AT, AT}}}`, and `T` never
-  appears in an argument type — it is reachable only through the bound on `AT`, so dispatch cannot
-  determine it and the method can never be called with `T` given explicitly.
-
-  **The check passes on `min`, on `1` and on `pre`, and fails on nightly.** The defect is in the
-  signature and is there on every version; what changes is whether Julia's method introspection
-  surfaces it. So the assertion counts above are the released-Julia figures, and nightly's testset
-  carries one failure among them.
-
-  `nightly` is advisory by construction — `.github/workflows/CI.yml` gives it `experimental: true`
-  and job-level `continue-on-error`, and it is deliberately not a required check — so this does not
-  gate a merge. It is recorded because a red advisory job with nothing to match it against is a red
-  job that the next reader has to re-diagnose.
-
-  Closing it means writing the parameter so that it binds, which is a change to `src/`.
-
-- **B10. `DataLoader(::EnsembleSolution{T, T1, Vector{ST}})` at `src/data_loader/data_loader.jl:325`
-  has no test and appears unreachable through this package's current dependencies.** It dispatches
-  on `ST <: Union{GeometricSolution{T, T1, TT, NamedTuple{(:t, :q, :v), TuT}},
-  GeometricSolution{T, T1, TT, NamedTuple{(:t, :q, :q̇), TuT}}}` — a `GeometricSolution` whose
-  `dataser` has exactly the two keys `:q` and `:v` (or `:q̇`) besides `:t`, with no `:p`.
-
-  Checked against `GeometricEquations` 0.21.3 (this package's resolved version): every equation
-  type's own `initialstate(equ, t, ics, params)` reconstructs its `ics` from its own fixed field
-  set regardless of what is passed in, and no type pairs `:v`/`:q̇` without also carrying `:p` —
-  `SODE`/`ODE` give `(:q,)` alone; `PODE`/`HODE` give `(:q, :p)`; `IODE`/`LODE` give
-  `(:q, :p, :v)`; `IDAE`/`LDAE` give `(:q, :p, :v, :λ, :μ)`. Verified directly for `SODE`:
-  `initialstate(equ::SODE, t, ics, params) = (q = _statevariable(ics.q, periodicity(equ)),)`
-  discards everything but `.q` even when `ics` already has a `:v` key. So no
-  `EquationProblem`/`EnsembleProblem` built from any equation type this package depends on can
-  produce a two-key `dataser` — passing a NamedTuple with the right keys through the public
-  constructor does not help, because the equation-specific `initialstate` method throws it away.
-
-  `GeometricSolution` and `EnsembleSolution` each define exactly one inner constructor (taking a
-  `GeometricProblem`/`EnsembleProblem`), so Julia generates no default all-fields constructor for
-  either, and there is no supported way to build one directly. The two low-level bypasses tried —
-  `ccall(:jl_new_struct, ...)` on the (mutable) `GeometricSolution`, and
-  `ccall(:jl_new_struct_uninit, ...)` followed by `setfield!` on each field — both crashed the
-  Julia process with a segmentation fault (the first immediately; the second on a later, unrelated
-  allocation, consistent with GC scanning a partially-initialized object), which is why neither is
-  a technique this package's test suite should rely on.
-
-  The fix in `src/data_loader/data_loader.jl:339` (`zeros(T, ...)` instead of untyped `zeros(...)`)
-  is correct by inspection — it matches the file's three sibling constructors character for
-  character — but is untested. Closing this means either GeometricEquations gaining an equation
-  type whose `initialstate` returns exactly `(:q, :v)` or `(:q, :q̇)`, or deciding the method is
-  dead code and removing it (Part E of the audit, not this one).
-
-- **B11. `PositionalEncoding` is CPU-only, and the failure is a compile error rather than a
-  slowdown.** `positional_encoding` builds its matrix with `Matrix{T}(undef, …)`, so the layer's
-  `x .+ P` adds a host array to whatever it is given. Every other layer allocates through the
-  backend — `KernelAbstractions.allocate`, or `similar(x, …)` in the forward pass. Broadcasting a
-  host `Matrix` against a device array does not fall back to the CPU; it fails to compile, because
-  the host array cannot be read from a kernel.
-
-  **No test can catch this, because the suite has no GPU test.** That is what makes it worth an
-  entry rather than a docstring alone: a green matrix says nothing about it. Both docstrings — the
-  layer's and the `positional_encoding` keyword of [`Transformer`](@ref) — carry the warning.
-
-  Closing it means giving the builder the backend, so that it allocates through
-  `KernelAbstractions.allocate` and fills with a kernel instead of a loop, and it cannot be verified
-  here without a GPU job to run it under.
-
-- **B12. `VolumePreservingFeedForward` and `VolumePreservingTransformer` raise *Scalar indexing is
-  disallowed* on matrix input.** `src/layers/volume_preserving_feedforward.jl` multiplies the
-  layer's `LowerTriangular`/`UpperTriangular` weight by the input. At the registered
-  `GeometricOptimizers` 0.7.0 that product has no method of its own and falls through to
-  `LinearAlgebra`'s generic `*(::AbstractMatrix, ::AbstractMatrix)`, which asks the argument for
-  one entry at a time; `GPUArraysCore` refuses. (The line of `matmul.jl` that method sits on moves
-  between Julia versions, so it is deliberately not cited here.) The tensor path goes through this
-  package's own `mat_tensor_mul` kernel and is unaffected, which is why only the matrix shape
-  fails.
-
-  **The guard is `GPUArraysCore`'s, shared by `CUDA.jl`, `AMDGPU.jl` and `oneAPI.jl`, so this is
-  not a Metal limitation** — Metal is only where it was measured.
-
-  It is not this package's `*` to fix, and **it is already fixed on
-  [`GeometricOptimizers` `main`](https://github.com/JuliaGNI/GeometricOptimizers.jl/tree/main), in
-  no release.** `GeometricOptimizers`
-  [#96](https://github.com/JuliaGNI/GeometricOptimizers.jl/pull/96) gives both triangulars and
-  `StiefelProjection` kernel products; measured on the device on 2026-09-20 against that branch,
-  `LowerTriangular{Float32, MtlVector} * MtlMatrix` returns an `MtlMatrix` and dispatches to a
-  `GeometricOptimizers` method. Closing this entry is a `[compat]` bump to the first release that
-  carries #96, and no change to `src/` here. The entry names the branch rather than a version
-  because that version does not exist yet — a few unrelated changes go into `main` before it is
-  cut.
-
-- **B13. The three layers that orthonormalize their weight fail at construction on a device,
-  because they use a host `qr!`.** `src/layers/stiefel_layer.jl:14`,
-  `src/layers/grassmann_layer.jl:24` and `src/layers/psd_like_layer.jl:34` each write
-  `assign_columns(typeof(weight)(qr!(weight).Q), size(weight)...)`. `LinearAlgebra.qr!` is a host
-  factorization, `Metal.jl` implements no `qr` for an `MtlArray`, and the LAPACK path dies on
-  `unsafe_convert` of a private buffer. `NeuralNetwork(SymplecticAutoencoder(8, 4),
-  MetalBackend(), Float32)` throws before any forward pass. `CUDA.jl` has `qr!` through CUSOLVER,
-  so the reach of this one beyond Metal is unestablished.
-
-  **It is every architecture that holds one of these three layers, not the three obvious ones.**
-  Measured on 2026-09-20, each throwing `Cannot access the contents of a private buffer` at
-  construction: `StiefelLayer`, `GrassmannLayer`, `PSDLayer`, `SymplecticAutoencoder`, `PSDArch`,
-  `MultiHeadAttention(…; Stiefel = true)`, `Transformer(…; Stiefel = true)`,
-  `ClassificationTransformer` — whose `Stiefel` keyword **defaults to `true`** — and
-  `SymplecticTransformer` whenever `transformer_dim ≠ dim`, which is the branch that wraps the
-  chain in two `PSDLayer`s. The two that do *not* throw mark the boundary:
-  `SymplecticTransformer` at its default `transformer_dim = dim` takes the `:NoUpscale` branch and
-  has no `PSDLayer`, and `Transformer` itself defaults to `Stiefel = false`.
-  `StandardTransformerIntegrator` is unaffected: it constructs `MultiHeadAttention` directly at
-  `src/architectures/standard_transformer_integrator.jl:64` with no `Stiefel` keyword, relying
-  on that layer's own default `Stiefel = false` (`src/layers/multi_head_attention.jl:31`).
-
-  **The replacement is on
-  [`GeometricOptimizers` `main`](https://github.com/JuliaGNI/GeometricOptimizers.jl/tree/main) and
-  in no release.** [#95](https://github.com/JuliaGNI/GeometricOptimizers.jl/pull/95) added
-  `_cholesky_qr2` — CholeskyQR2, matrix products and triangular solves only, so it runs wherever
-  its argument already is — and a redraw for when the Gram matrix is too ill-conditioned to
-  factorize. On the device on 2026-09-20, `_cholesky_qr2` of an `MtlArray` `Float32` 8×4 returned
-  an `MtlMatrix` with `‖QᵀQ − I‖ = 1.2e-7`. That branch also **deletes `assign_columns`**, which
-  `src/GeometricMachineLearning.jl` imports, so the `[compat]` bump and the rewrite of these three
-  call sites are one change, not two.
-
-  **What this entry is rewritten against is now settled.** Both names #95 added were private, and
-  reaching across a package boundary for a name its owner never made public is exactly what
-  `assign_columns` already was — which is what breaks here.
-  [#102](https://github.com/JuliaGNI/GeometricOptimizers.jl/pull/102) closed that: the redraw is
-  exported as `orthonormal_columns(draw)`, where `draw` returns a fresh matrix on each call. So
-  nothing here is undecided, and only the release is outstanding — a few unrelated changes go into
-  `main` before it is cut.
-
-### C. Follow-ups and cleanups
-
-- **C1. The parameter-tree traversal still belongs upstream.** `_make_optimizer_cache`,
-  `_make_optimizer_state`, `_tree_optim_step!`, `_leaf_optim_step!` and the bespoke
-  `GMLEuclideanState` are GML implementations of what GeometricOptimizers supports natively for a
-  single parameter. `GMLEuclideanState` in particular duplicates what `GradientState`,
-  `MomentumState` and `AdamState` already do for a plain array.
-
-  What has to go upstream is *not* a reuse of GeometricOptimizers' `Optimizer`: that one needs an
-  `OptimizerProblem`, i.e. an objective function, and minibatch training has none — the gradient
-  arrives from AD one batch at a time. It is a new entry point there, a
-  gradient-supplied-externally step over a `NamedTuple` parameter tree. GML's `Optimizer` would then
-  be the `NeuralNetwork` constructor and the training-loop functor, and nothing else.
-
-  `Optimizer` is the one name still exported by both packages, so this is also what closes the last
-  of B1's class of collision.
-
-- **C2. Two `isa` branches remain in `_leaf_optim_step!`** (for `AdamState`/`MomentumState`).
-  Measurement showed the traversal is not implicated in the compile-time problem, so this is tidying,
-  and it disappears entirely if C1 lands first.
-
-- **C6. Three generated MNIST PDFs are in this branch's history** for three commits, from a
-  `git add docs/src` that swept them in. They are untracked again and `.gitignore` now covers the
-  pattern, so the working tree and the net diff are clean, but the blobs are still reachable.
-  Rewriting the branch would remove them.
-
-- **C7. `SymbolicPullback(::HamiltonianArchitecture)` duplicates the upstream constructor.** It has
-  to, because `SymbolicNeuralNetworks.SymbolicPullback(nn, loss)` derives the dimension of the
-  loss's target from `output_dimension(nn.model)`, and for an HNN that is the scalar Hamiltonian
-  rather than the vector field the loss compares against (see *Fixed*). Reproducing the constructor
-  means reaching into three names that SymbolicNeuralNetworks does not export —
-  `symbolic_parameter_gradient`, `ParameterGradient`, and the two-argument `SymbolicPullback` inner
-  constructor — so an upstream refactor breaks GML silently at the type level. A keyword on the
-  upstream constructor, or a `NetworkLoss` interface that states its own target dimension, would put
-  this method back to one line.
-
-  (**C9** is closed by this release and its entry is gone: `legacy/hnn/` and `legacy/mtk/` are
-  deleted, and with them all 28 of the `include` sites it counted. The `data.jl` decision it was
-  waiting on is moot — nothing needs that file any more. See *Removed (breaking)* above. The
-  number is left vacant rather than reused.)
-
-  (**C12** and **C13** are closed by this release and their entries are gone. C12 resolved to a
-  design answer rather than a repair — approximate end-to-end symplecticity is the intent, and the
-  verification script now states it. C13 resolved against the expectation its own entry recorded:
-  `DEFAULT_LNN_NRUNS` is removed, and `∇L`, `∇∇L` and `∇q̇∇q̇L` are kept as the `Zygote` reference
-  for what `LNNLoss` computes symbolically. Both are under *Changed*. The numbers are left vacant
-  rather than reused.)
-
-- **C14. `evaluate_vf_and_compute_∇Ψ` evaluates the decoder twice.**
-  `src/reduced_system/reduced_system.jl` calls `decoder((q = q̃, p = p̃))` for the value, then
-  `ForwardDiff.jacobian(qp -> decoder(qp), vcat(q̃, p̃))` evaluates it again for the derivative. The
-  comment above the function blamed "a problem with nested derivatives in ForwardDiff" and named no
-  version, no issue and no reproducer; that claim is not reproduced here, and the comment now points
-  at this entry instead of asserting it. What is certain is the double evaluation, which is visible
-  in the two calls.
-
-  Closing it means computing the value and the Jacobian in one pass — `DiffResults` is the tool —
-  across the shape change from the `(q, p)` `NamedTuple` the vector fields are splatted from to the
-  flat vector the Jacobian is taken against. `test/reduced_order_modeling/reduced_system.jl`
-  exercises the function, so the change is checkable. It was left out of the audit's Part C
-  deliberately: it is a restructuring with its own verification, not the comment repair that part
-  was scoped to.
-
-- **C15. The `kernel_ad_routines` buffers are still zeroed where allocating would do.**
-  `src/kernels/kernel_ad_routines/` allocates `dA = zero(A)`, `dS = KernelAbstractions.zeros(…)` and
-  the same shape in `tensor_mat_mul.jl`, `tensor_mat_skew_sym_assign.jl` and `vec_tensor_mul.jl`.
-  Their kernels sum into a local and assign the buffer element once, over an `ndrange` equal to the
-  buffer's size, so no element is read before it is written — the same argument that let the forward
-  wrappers move to `allocate` and `similar` under *Changed*.
-
-  This part was scoped to the forward path, so they were not changed with it. The backward pass is
-  where training spends its time, so the gain should be larger here than the forward figures, which
-  is also why it wants its own before-and-after measurement rather than being folded into that pass.
-
-- **C16. Four of `ExplicitImports`' seven checks are switched off in `test/aqua.jl`.** The counts, at
-  the commit that added the gate: **37** names arriving through a bare `using` across thirteen
-  packages;
-  **11** explicit imports of names upstream does not mark `public`; **2** qualified accesses through a
-  non-owner module, `GeometricOptimizers.Gradient` and `GeometricOptimizers.direction`, both owned by
-  `SimpleSolvers`; and **22** qualified accesses to non-public names.
-
-  They are four separate jobs, not one. Naming the 37 is a rewrite of the module header with a
-  judgement per name. The 11 and the 22 are the same class and most of them are not this package's to
-  fix — `Architecture`, `AbstractExplicitLayer`, `add!`, `_compute_loss`, `assign_columns` and
-  `description` are all used deliberately, and the resolution is upstream declaring them `public`.
-  Each check's reason is written above the `@testset` rather than here alone, because switching one
-  back on turns the suite red on the spot.
-
-- **C17. `accuracy` cannot be reached through any public `DataLoader` constructor.** Its signature is
-  `DataLoader{T, AT <: AbstractArray{T}, BT <: AbstractArray{T1}}` with `T1 <: Integer`
-  (`src/data_loader/data_loader.jl:487`), and every `DataLoader(input, output)` method requires the
-  two arrays to share one element type. A classifier's data are the case where they do not: real
-  inputs, integer one-hot targets. So the only way to build an argument for this function is to name
-  the parametric type, which is what `test/data_loader/accuracy.jl` does.
-
-  Closing it is a `DataLoader(input::AbstractArray{T, 3}, output::AbstractArray{T1, 3})` constructor
-  with the two element types free. That is an API addition rather than a cleanup, which is why the
-  test records the gap instead of the same change closing it.
-
-- **C18. `src/kernels/exponentials/tensor_exponential.jl` no longer defines `tensor_exponential`;
-  it holds the identity tensor and its `rrule`, used by `tensor_cayley.jl` and `cpu_inverse.jl`.**
-  The file name, and the `exponentials/` directory around it, are wider than what they hold. A
-  comment in the file itself cites "issue C18" by number, so this entry exists to keep that reference
-  valid. Renaming both the file and the directory is the fix.
-
-- **C19. `_make_block_for_initialization` has two methods** — `src/architectures/symplectic_transformer.jl`
-  and `src/architectures/linear_symplectic_transformer.jl` — that differ only in which fields they read
-  from their argument: one reads `arch.transformer_dim` and `arch.sympnet_activation`, the other reads
-  `arch.dim` and `arch.activation`. The bodies are otherwise identical. This stood as a `TODO` in the
-  source; a comment must stand on its own, so it is recorded here instead. Closing it means agreeing
-  on one set of field names across the two architectures, or passing the dimension and the activation
-  in rather than reading them off `arch`.
-
-- **C20. There is no Knet.jl example for the Hamiltonian neural network.** The deleted `TODO.md` asked
-  for one. Recorded rather than dropped; nothing depends on it.
-
-### D. Unverified
-
-Not defects — claims this release makes that nothing has actually checked yet.
-
-- **D4. The upstream fix was measured on one optimizer.** The compile-time figures come from the
-  `Adam` path. The quasi-Newton and Newton caches and states were widened on the strength of their
-  *inferred types* — a sound argument, but not a measurement. Catalogued upstream as GeometricOptimizers C15.

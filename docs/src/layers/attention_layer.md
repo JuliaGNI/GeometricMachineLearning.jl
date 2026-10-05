@@ -68,8 +68,8 @@ The softmax activation acts vector-wise, i.e. if we supply it with a matrix ``C`
 
 The output of a softmax is a *probability vector* (also called *stochastic vector*) and the matrix ``Y = [y^{(1)}, \ldots, y^{(T)}]``, where each column is a probability vector, is sometimes referred to as a "stochastic matrix" [jacobs1992discrete](@cite). This attention mechanism finds application in *transformer neural networks* [vaswani2017attention](@cite). The problem with this matrix from a geometric point of view is that all the columns are independent of each other and the nonlinear transformation could in theory produce a stochastic matrix for which all columns are identical and thus lead to a loss of information. So the softmax activation function is inherently non-geometric. We visualize this with the figure below:
 
-![Visualization of the reweighting of the input sequence. Here the different coefficients are mostly independent of each other and could in theory produce the same reweighting for each output vector.](../tikz/convex_recombination_light.png)
-![Visualization of the reweighting of the input sequence. Here the different coefficients are mostly independent of each other and could in theory produce the same reweighting for each output vector.](../tikz/convex_recombination_dark.png)
+![Visualization of the reweighting of the input sequence. Here the different coefficients are mostly independent of each other and could in theory produce the same reweighting for each output vector.](https://juliagni.github.io/GeometricFigures.jl/figures/neural-networks/convex-recombination/convex-recombination_light.svg)
+![Visualization of the reweighting of the input sequence. Here the different coefficients are mostly independent of each other and could in theory produce the same reweighting for each output vector.](https://juliagni.github.io/GeometricFigures.jl/figures/neural-networks/convex-recombination/convex-recombination_dark.svg)
 
 So the ``y`` coefficients responsible for producing the first output vector are independent from those producing the second output vector etc., they have the condition ``\sum_{i=1}^Ty^{(j)}_iz_\mu^{(i)}`` for each column ``j`` imposed on them, but the coefficients for two different columns are independent of each other.
 
@@ -135,8 +135,8 @@ C = \begin{bmatrix}
 
 This correlation matrix can now again be used as an input for the Cayley transform to produce an orthogonal matrix. Mathematically this is also equivalent to first computing all correlations ``Z^TAZ`` and then mapping the lower triangular to the upper triangular and negating these elements. This is visualized below: 
 
-![The lower-triangular part is copied to the upper-triangular part and the respective entries are negated.](../tikz/skew_sym_mapping_light.png)
-![The lower-triangular part is copied to the upper-triangular part and the respective entries are negated.](../tikz/skew_sym_mapping_dark.png)
+![The lower-triangular part is copied to the upper-triangular part and the respective entries are negated.](https://juliagni.github.io/GeometricFigures.jl/figures/neural-networks/skew-sym-mapping/skew-sym-mapping_light.svg)
+![The lower-triangular part is copied to the upper-triangular part and the respective entries are negated.](https://juliagni.github.io/GeometricFigures.jl/figures/neural-networks/skew-sym-mapping/skew-sym-mapping_dark.svg)
 
 Internally `GeometricMachineLearning` computes this more efficiently with the function [`GeometricMachineLearning.tensor_mat_skew_sym_assign`](@ref). We show a comparison of the two approaches in the [examples section](@ref "Comparing Different `VolumePreservingAttention` Mechanisms").
 
