@@ -8,7 +8,8 @@ Random.seed!(123)
 @doc raw"""
 Every optimizer method has to work with the structured matrix types GML uses as *ordinary* weights:
 `SymmetricMatrix` (SympNet and symplectic attention layers), `SkewSymMatrix` (volume-preserving
-attention) and `StrictlyLowerTriangular`/`StrictlyUpperTriangular` (volume-preserving feedforward layers).
+attention) and `StrictlyLowerTriangular`/`StrictlyUpperTriangular` (volume-preserving feedforward
+layers).
 
 These have their own storage and no `setindex!`, so they need a type-preserving `similar` and
 elementwise `_add!`/`_rac!`/`_square!`/`_div!`/`_rmul!` written on the free parameters; without them
@@ -31,7 +32,7 @@ function optimizer_runs(architecture, batch, input_dim; T = Float64, n_epochs = 
     # `AdamOptimizerWithDecay` is a `(algorithm, linesearch)` pairing rather than a method, so it
     # goes in through the keyword constructor
     nn, dl = nn_and_dl()
-    o = Optimizer(nn; AdamOptimizerWithDecay(n_epochs, T)...)
+    o = Optimizer(nn; AdamOptimizerWithDecay(n_epochs)...)
     loss_array = o(nn, dl, batch, n_epochs; show_progress = false)
     @test length(loss_array) == n_epochs
     @test all(isfinite, loss_array)

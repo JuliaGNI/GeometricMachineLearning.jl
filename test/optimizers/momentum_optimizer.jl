@@ -16,11 +16,10 @@ growing one that never saturates, which is what this test rules out.
 """
 function momentum_matches_geometric_sum(; α = 0.9, η = 0.1, n_steps = 10)
     ps = NetworkParameters((A = zeros(2, 2),))
-    o = Optimizer(MomentumMethod(α), ps; step_size = η)
-    λY = GlobalSection(ps)
+    o = Optimizer(MomentumMethod(; α = α), ps; step_size = η)
     previous = 0.0
     for t in 1:n_steps
-        optimization_step!(o, λY, ps, (A = ones(2, 2),))
+        optimization_step!(ps, o, (A = ones(2, 2),))
         step = previous - ps.A[1, 1]
         previous = ps.A[1, 1]
         @test step ≈ η * (1 - α^t) / (1 - α)
@@ -38,10 +37,9 @@ function momentum_optimizer_stiefel(N, n; n_steps = 50, step_size = 1e-3, α = 0
     loss(ps) = norm(ps.Y * ps.Y' - B)^2
     ps = NetworkParameters((Y = rand(StiefelManifold, N, n),))
     loss1 = loss(ps)
-    o = Optimizer(MomentumMethod(α), ps; step_size = step_size)
-    λY = GlobalSection(ps)
+    o = Optimizer(MomentumMethod(; α = α), ps; step_size = step_size)
     for _ in 1:n_steps
-        optimization_step!(o, λY, ps, Zygote.gradient(loss, ps)[1])
+        optimization_step!(ps, o, Zygote.gradient(loss, ps)[1])
     end
     @test loss(ps) < loss1
     @test ps.Y' * ps.Y ≈ I

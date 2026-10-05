@@ -63,7 +63,7 @@ nn_standard = NeuralNetwork(arch_standard)
 nn_symplectic = NeuralNetwork(arch_symplectic)
 nn_sympnet = NeuralNetwork(arch_sympnet)
 
-o_pairing = AdamOptimizerWithDecay(n_epochs, Float64)
+o_pairing = AdamOptimizerWithDecay(n_epochs)
 
 o_standard = Optimizer(nn_standard; o_pairing...)
 o_symplectic = Optimizer(nn_symplectic; o_pairing...)

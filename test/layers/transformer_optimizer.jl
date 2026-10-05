@@ -26,12 +26,9 @@ function transformer_gradient_test(T, dim, n_heads, L, seq_length = 8, batch_siz
     ps₂ = deepcopy(ps)
     ps₃ = deepcopy(ps)
 
-    λY₁ = GlobalSection(ps₁)
-    λY₂ = GlobalSection(ps₂)
-    λY₃ = GlobalSection(ps₃)
-    optimization_step!(o₁, λY₁, ps₁, dx)
-    optimization_step!(o₂, λY₂, ps₂, dx)
-    optimization_step!(o₃, λY₃, ps₃, dx)
+    optimization_step!(ps₁, o₁, dx)
+    optimization_step!(ps₂, o₂, dx)
+    optimization_step!(ps₃, o₃, dx)
     @test typeof(ps₁) == typeof(ps₂) == typeof(ps₃) == typeof(ps)
     @test ps₁[1].PQ.head_1 ≈ ps₂[1].PQ.head_1
     @test ps₁[1].PQ.head_1 ≉ ps₃[1].PQ.head_1

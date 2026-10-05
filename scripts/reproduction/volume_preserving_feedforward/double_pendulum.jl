@@ -42,7 +42,7 @@ const T = eltype(dl)
 # hyperparameters concerning training 
 const n_epochs = smoke_size(1000, 2)
 const batch_size = 1024
-const opt_method = AdamOptimizer(T)
+const opt_method = AdamOptimizer()
 const resnet_activation = tanh
 
 const t_validation = 30

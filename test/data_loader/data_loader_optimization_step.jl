@@ -17,8 +17,7 @@ function test_data_loader(sys_dim, n_time_steps, n_params, T = Float32)
     dx = Zygote.gradient(ps -> loss(model, ps, dl.input, dl.input), ps)[1]
     ps_copy = deepcopy(ps)
     o = Optimizer(GradientOptimizer(), ps)
-    λY = GlobalSection(ps)
-    optimization_step!(o, λY, ps, dx)
+    optimization_step!(ps, o, dx)
     @test ps !== ps_copy
 end
 

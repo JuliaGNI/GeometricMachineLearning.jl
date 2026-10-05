@@ -51,7 +51,7 @@ const dl = backend == CPU() ? DataLoader(T.(dl₁.input)) :
 # hyperparameters concerning training 
 const n_epochs = smoke_size(500000, 2)
 const batch_size = 16384
-const opt_pairing = AdamOptimizerWithDecay(n_epochs, T; η₁ = 1e-2, η₂ = 1e-6)
+const opt_pairing = AdamOptimizerWithDecay(n_epochs; η₁ = 1e-2, η₂ = 1e-6)
 
 # parameters for evaluation 
 ics_val = [sin(1.1), 0.0, cos(1.1)]

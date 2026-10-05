@@ -31,7 +31,7 @@ n_range = 2:1:smoke_size(15, 3)
 # The learning rate is the `Optimizer`'s `step_size`, not the method's: `Adam` lost the `η` field
 # it never applied to the direction, and `β₁`, `β₂` and `δ` became keywords so that the old
 # positional call fails instead of silently reading `η` as `β₁`.
-opt = AdamOptimizer(T; β₁ = T(0.9), β₂ = T(0.99), δ = T(1.0e-8))
+opt = AdamOptimizer(; β₁ = T(0.9), β₂ = T(0.99), δ = T(1.0e-8))
 const step_size = T(0.001)
 # The retraction belongs to the `Optimizer` now, not to the layer: `PSDLayer(M, N)` takes no
 # keyword.

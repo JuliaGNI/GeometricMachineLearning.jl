@@ -199,7 +199,7 @@ const n_epochs = 500000
 const batch_size = 16384
 const feedforward_batch = Batch(batch_size)
 const transformer_batch = Batch(batch_size, seq_length, seq_length)
-const opt_pairing = AdamOptimizerWithDecay(n_epochs, T; η₁ = 1e-2, η₂ = 1e-6)
+const opt_pairing = AdamOptimizerWithDecay(n_epochs; η₁ = 1e-2, η₂ = 1e-6)
 
 o_vpff = Optimizer(nn_vpff; opt_pairing...)
 o_vpt = Optimizer(nn_vpt; opt_pairing...)

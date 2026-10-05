@@ -6,12 +6,11 @@ using AbstractNeuralNetworks
 # package also exports `flatten`/`unflatten` and the leaf protocol, none of which this package
 # extends — `GeometricOptimizers` carries the protocol for the structured matrices.
 #
-# Two things do come from there rather than being written again here: `mapstorage`, which reaches the
-# storage of a structured leaf and rebuilds the leaf around the result (`src/map_to_cpu.jl`), and
-# `parameter_eltype`, which promotes over the leaves of a set. A plain `NamedTuple` of layers is
-# walked with `Base.map`, which needs nothing from anybody.
+# One thing does come from there rather than being written again here: `mapstorage`, which reaches
+# the storage of a structured leaf and rebuilds the leaf around the result (`src/map_to_cpu.jl`).
+# A plain `NamedTuple` of layers is walked with `Base.map`, which needs nothing from anybody.
 import NeuralNetworkParameters: NetworkParameters
-using NeuralNetworkParameters: mapparameters, mapstorage, parameter_eltype
+using NeuralNetworkParameters: mapstorage
 using ChainRulesCore
 using GeometricBase
 using GeometricSolutions: GeometricSolution, EnsembleSolution, TimeSeries
@@ -55,7 +54,13 @@ import GeometricOptimizers: Geodesic, Cayley, geodesic, cayley, retraction
 import GeometricOptimizers: OptimizerMethod,
                             GradientMethod, MomentumMethod, Adam,
                             GradientState, MomentumState, AdamState,
-                            AdamOptimizerWithDecay, DecayingStatic
+                            AdamOptimizerWithDecay, DecayingStatic,
+                            ScalarMomentAdam, ScalarMomentAdamState,
+                            CompositeMethod, CompositeState
+# The training step is `GeometricOptimizers`' own: `Optimizer` holds a `TrainingOptimizer`, and
+# `optimization_step!` gets a method for `Optimizer` rather than a second function of the name, so a
+# `Main` that loads both packages has one `optimization_step!` and not two.
+import GeometricOptimizers: TrainingOptimizer, optimization_step!
 import GeometricOptimizers: update!
 # `solve!` is imported rather than started afresh so that GML's `solve!(::NeuralNetwork{<:PSDArch},
 # …)` — solve for the parameters directly, by SVD, instead of training for them — is a method of the
@@ -201,6 +206,8 @@ export OptimizerMethod
 export GradientMethod, GradientState
 export MomentumMethod, MomentumState
 export Adam, AdamState
+export ScalarMomentAdam, ScalarMomentAdamState
+export CompositeMethod, CompositeState
 export Optimizer
 export optimization_step!
 export GlobalSection, global_section, apply_section, apply_section!, update_section!
