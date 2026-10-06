@@ -5,7 +5,7 @@ Make an instance of `StandardAutoencoder` for dimensions `full_dim` and `reduced
 
 # The architecture
 
-A standard autoencoder [goodfellow2016deep](@cite) has an encoder ``\Psi^\mathrm{enc}:\mathbb{R}^N\to\mathbb{R}^n`` and a decoder ``\Psi^\mathrm{dec}:\mathbb{R}^n\to\mathbb{R}^N`` that are both feedforward networks of [`Dense`](@ref) layers, with no structure imposed on either. The encoder is
+A standard autoencoder [goodfellow2016deep](@cite) has an encoder ``\Psi^\mathrm{enc}:\mathbb{R}^N\to\mathbb{R}^n`` and a decoder ``\Psi^\mathrm{dec}:\mathbb{R}^n\to\mathbb{R}^N`` that are both feedforward networks of `Dense` layers, with no structure imposed on either. The encoder is
 
 ```math
 \Psi^\mathrm{enc} = L^\mathrm{out}_{w\to{}n}\circ{}L_{w\to{}w}\circ\cdots\circ{}L_{w\to{}w}\circ{}L_{N\to{}w},
@@ -67,6 +67,11 @@ function StandardAutoencoder(full_dim::Integer, reduced_dim::Integer;
     StandardAutoencoder{typeof(activation)}(full_dim, reduced_dim, width, n_encoder_layers,
         n_decoder_layers, 2, 2, activation)
 end
+
+# The layers do not depend on intermediate dimensions, only on the two ends. `compute_iterations`
+# would build a range of step zero for `full_dim == reduced_dim`, which the constructor allows.
+compute_encoder_iterations(arch::StandardAutoencoder) = [arch.reduced_dim, arch.full_dim]
+compute_decoder_iterations(arch::StandardAutoencoder) = [arch.reduced_dim, arch.full_dim]
 
 function _standard_autoencoder_layers(arch::StandardAutoencoder, input_dim::Integer,
         output_dim::Integer, n_layers::Integer)

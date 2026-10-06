@@ -75,7 +75,7 @@ Main.proof(raw"If we take as test function ``\tilde{\psi}_i = (\nabla\Psi^\mathr
 " * Main.indentation * raw"and since this must be true for every ``i = 1, \ldots, n`` we obtain the desired expression for the reduced vector field.")
 ```
 
-A standard autoencoder of this kind, with [`Dense`](@ref) layers in the encoder and the decoder, is implemented as [`StandardAutoencoder`](@ref).
+A standard autoencoder of this kind, with `Dense` layers in the encoder and the decoder, is implemented as [`StandardAutoencoder`](@ref).
 
 Both POD and standard autoencoders suffer from the problem that they completely neglect the structure of the differential equation and the data they are applied to. This can have grave consequences [peng2016symplectic, tyranowski2023symplectic, buchfink2023symplectic](@cite). [Hamiltonian model order reduction](@ref "Hamiltonian Model Order Reduction") can improve the approximation significantly in these situations.
 

@@ -50,7 +50,7 @@ function test_not_symplectic(N::Integer, n::Integer)
     @test !(J' * PoissonTensor(N) * J ≈ PoissonTensor(n))
 end
 
-for (N, n) in ((10, 4), (4, 2), (7, 3))
+for (N, n) in ((10, 4), (4, 2), (7, 3), (4, 4))
     test_encoder_and_decoder(N, n)
     test_parameter_count(N, n, 2N, 2, 2)
 end
