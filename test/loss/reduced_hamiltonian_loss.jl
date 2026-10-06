@@ -1,17 +1,17 @@
 using GeometricMachineLearning
 using GeometricMachineLearning: _reduced_hamiltonian_gradient, params
-using ForwardDiff: gradient
 using Zygote: Zygote
 using Test
+using LinearAlgebra: norm
 import Random
 
 Random.seed!(1234)
 
 H(X) = vec(sum(abs2, X[3:4, :]; dims = 1)) ./ 2 .+ X[2, :]          # |p|²/2 + q₂ on ℝ⁴
-reduced_gradient(dec, z) = reduce(hcat, [gradient(ζ -> H(reshape(dec(ζ), 4, 1))[1], ζ) for ζ in eachcol(z)])
+reduced_gradient(dec, z) = reduce(hcat, [Zygote.gradient(ζ -> H(reshape(dec(ζ), 4, 1))[1], collect(ζ))[1] for ζ in eachcol(z)])
 targets(dec, z) = vcat(dec(z), reduced_gradient(dec, z))
 
-# The central differences agree with forward-mode AD.
+# The central differences agree with automatic differentiation.
 function test_gradient()
     dec = decoder(NeuralNetwork(SymplecticAutoencoder(4, 2; n_encoder_blocks = 2, n_decoder_blocks = 2)))
     z = randn(2, 30)
@@ -43,7 +43,8 @@ function test_differentiable()
     teacher = decoder(NeuralNetwork(SymplecticAutoencoder(4, 2; n_encoder_blocks = 2, n_decoder_blocks = 2)))
     z = randn(2, 30)
     loss = ReducedHamiltonianLoss(H)
-    dp = Zygote.gradient(ps -> loss(dec.model, ps, z, targets(teacher, z)), params(dec))[1]
+    out = targets(teacher, z)
+    dp = Zygote.gradient(ps -> loss(dec.model, ps, z, out), params(dec))[1]
     @test dp !== nothing
 end
 
@@ -61,7 +62,18 @@ function test_training()
     @test loss(student, z, out) < before / 2
 end
 
+# Where every target gradient of the batch vanishes, the gradient term is the absolute error, not NaN.
+function test_zero_target_gradient()
+    dec = decoder(NeuralNetwork(SymplecticAutoencoder(4, 2; n_encoder_blocks = 2, n_decoder_blocks = 2)))
+    z = randn(2, 10)
+    out = vcat(dec(z), zeros(2, 10))
+    l = ReducedHamiltonianLoss(H)(dec, z, out)
+    @test isfinite(l)
+    @test l ≈ norm(reduced_gradient(dec, z)) rtol = 1e-4
+end
+
 test_gradient()
+test_zero_target_gradient()
 test_self_consistency()
 test_weight()
 test_differentiable()

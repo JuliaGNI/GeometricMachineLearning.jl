@@ -7,8 +7,10 @@ The loss fits a [`Decoder`](@ref) ``\Psi^\mathrm{dec}:\mathbb{R}^{2n}\to\mathbb{
 
 ```math
 L = \frac{\lVert\Psi^\mathrm{dec}(z) - x^*\rVert}{\lVert x^*\rVert}
-  + \lambda\,\frac{\lVert\nabla_z(H\circ\Psi^\mathrm{dec})(z) - g^*\rVert}{\lVert g^*\rVert}.
+  + \lambda\,\frac{\lVert\nabla_z(H\circ\Psi^\mathrm{dec})(z) - g^*\rVert}{\lVert g^*\rVert},
 ```
+
+with the absolute error in place of a relative one whose target vanishes on the batch (``g^* = 0`` where every latent point of the batch is a critical point of the target).
 
 For a symplectic decoder, as in a [`SymplecticAutoencoder`](@ref), the reduced vector field is ``\mathbb{J}_{2n}\nabla_z(H\circ\Psi^\mathrm{dec})``, so the second term fits the reduced dynamics directly: their orbits are the level sets of ``H\circ\Psi^\mathrm{dec}``, and a small error in its gradient gives nearly the same phase portrait, its critical points and separatrices included. A fit of the states alone can be small while this gradient is not, in particular where ``H\circ\Psi^\mathrm{dec}`` is steep.
 
@@ -63,6 +65,10 @@ function ReducedHamiltonianLoss(hamiltonian; λ::Real = 1, h::Real = 1e-4)
     ReducedHamiltonianLoss(hamiltonian, T(λ), T(h))
 end
 
+# The relative error, and the absolute one where the target vanishes: a batch of latent points that
+# are all critical points of the target has g* = 0.
+_relative_error(prediction, target) = (n = norm(target); iszero(n) ? norm(prediction) : norm(prediction - target) / n)
+
 # The gradient of `H∘model` with respect to each column of `z`, by central differences.
 function _reduced_hamiltonian_gradient(loss::ReducedHamiltonianLoss, model, ps, z::AbstractMatrix)
     n = size(z, 1)
@@ -82,9 +88,8 @@ function (loss::ReducedHamiltonianLoss)(model::Union{Chain, AbstractExplicitLaye
     n = size(input, 1)
     x_target = output[1:(end - n), :]
     g_target = output[(end - n + 1):end, :]
-    state_error = norm(model(input, ps) - x_target) / norm(x_target)
-    gradient_error = norm(_reduced_hamiltonian_gradient(loss, model, ps, input) - g_target) /
-                     norm(g_target)
+    state_error = _relative_error(model(input, ps), x_target)
+    gradient_error = _relative_error(_reduced_hamiltonian_gradient(loss, model, ps, input), g_target)
     state_error + loss.λ * gradient_error
 end
 
