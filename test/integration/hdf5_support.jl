@@ -78,6 +78,24 @@ end
     end
 end
 
+# Plain Dense layers; the architecture rebuilds the model that the weights are read into.
+@testset "save/load roundtrip: StandardAutoencoder" begin
+    arch = StandardAutoencoder(10, 4; width = 12, n_encoder_layers = 2, n_decoder_layers = 3)
+    nn = NeuralNetwork(arch)
+    x = rand(10)
+    y_before = nn(x)
+
+    mktempdir() do dir
+        path = joinpath(dir, "ae.h5")
+        save(path, nn)
+        nn2 = load(NeuralNetwork, path, arch)
+
+        @test _ps_eq(params(nn), params(nn2))
+        @test nn2(x) ≈ y_before
+        @test encoder(nn2)(x) ≈ encoder(nn)(x)
+    end
+end
+
 # LASympNet contains LinearLayer → SymmetricMatrix parameters.
 @testset "save/load roundtrip: LASympNet (SymmetricMatrix)" begin
     arch = LASympNet(4)
