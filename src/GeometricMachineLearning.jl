@@ -233,6 +233,7 @@ include("architectures/sympnet.jl")
 include("architectures/autoencoder.jl")
 include("architectures/symplectic_autoencoder.jl")
 include("architectures/psd.jl")
+include("architectures/standard_autoencoder.jl")
 include("architectures/hamiltonian_neural_network.jl")
 include("architectures/lagrangian_neural_network.jl")
 include("architectures/transformer_neural_network.jl")
@@ -244,7 +245,7 @@ export LagrangianNeuralNetwork
 export SympNet, LASympNet, GSympNet
 export ClassificationTransformer, ClassificationLayer
 export VolumePreservingFeedForward
-export SymplecticAutoencoder, PSDArch
+export SymplecticAutoencoder, PSDArch, StandardAutoencoder
 export HamiltonianArchitecture, StandardHamiltonianArchitecture,
        GeneralizedHamiltonianArchitecture
 
