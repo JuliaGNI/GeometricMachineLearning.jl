@@ -37,7 +37,7 @@ A decoder fitted to its own states and reduced gradients has a loss of the size 
 
 ```jldoctest
 using GeometricMachineLearning
-using ForwardDiff: gradient
+using Zygote: gradient
 import Random
 Random.seed!(123)
 
@@ -45,7 +45,7 @@ H(X) = vec(sum(abs2, X[3:4, :]; dims = 1)) ./ 2 .+ X[2, :]   # |p|²/2 + q₂ on
 dec = decoder(NeuralNetwork(SymplecticAutoencoder(4, 2; n_encoder_blocks = 2, n_decoder_blocks = 2)))
 z = randn(2, 20)
 x = dec(z)
-g = reduce(hcat, [gradient(ζ -> H(reshape(dec(ζ), 4, 1))[1], ζ) for ζ in eachcol(z)])
+g = reduce(hcat, [gradient(ζ -> H(reshape(dec(ζ), 4, 1))[1], collect(ζ))[1] for ζ in eachcol(z)])
 loss = ReducedHamiltonianLoss(H)
 loss(dec, z, vcat(x, g)) < 1e-6
 
