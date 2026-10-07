@@ -61,8 +61,18 @@ function test_without_reconstruction()
     @test LatentVectorFieldLoss(arch, H; reconstruction = false)(nn, x, v) ≈ LatentVectorFieldLoss(arch, H)(nn, x, v) - rec rtol = 1e-10
 end
 
+# The energy term is the relative error of H∘Ψ^dec∘Ψ^enc against H.
+function test_energy()
+    nn = NeuralNetwork(arch)
+    x = randn(4, 30); v = XH(x)
+    vf = LatentVectorFieldLoss(arch, H; reconstruction = false)(nn, x, v)
+    Hd = H(decoder(nn)(encoder(nn)(x)))
+    @test LatentVectorFieldLoss(arch, H; reconstruction = false, energy = true)(nn, x, v) ≈ vf + norm(Hd - H(x)) / norm(H(x)) rtol = 1e-8
+end
+
 test_against_autodiff()
 test_without_reconstruction()
+test_energy()
 test_weight()
 test_differentiable()
 test_training()

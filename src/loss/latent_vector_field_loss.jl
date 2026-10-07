@@ -1,5 +1,5 @@
 @doc raw"""
-    LatentVectorFieldLoss(arch, hamiltonian; λ = 1, h = 1e-4, reconstruction = true)
+    LatentVectorFieldLoss(arch, hamiltonian; λ = 1, h = 1e-4, reconstruction = true, energy = false)
 
 Make an instance of `LatentVectorFieldLoss` for an [`AutoEncoder`](@ref) architecture `arch` and a Hamiltonian ``H`` on the full space.
 
@@ -23,6 +23,12 @@ Both derivatives are central differences with step `h`: ``\nabla_\xi(H\circ\Psi^
 - `hamiltonian`: a function that maps a matrix of states in ``\mathbb{R}^{2N}``, one per column, to the vector of their energies. It has to be differentiable by Zygote.
 - `λ = 1`: the weight of the vector-field term.
 - `h = 1e-4`: the step of the central differences.
+- `energy = false`: with `true` the loss also has the relative energy error
+  ``\lVert H(\Psi^\mathrm{dec}(\xi)) - H(x)\rVert/\lVert H(x)\rVert``: the reduced Hamiltonian
+  ``H\circ\Psi^\mathrm{dec}`` has to take the energy of the state it encodes. Unlike the
+  reconstruction it does not tie ``\Psi^\mathrm{dec}(\xi)`` to ``x``, and unlike the vector-field
+  term it keeps its weight where the vector field vanishes. Together with `reconstruction = false`
+  it replaces the reconstruction term.
 - `reconstruction = true`: with `false` the reconstruction term is left out and the loss is the vector-field term alone, ``\lambda`` times its relative error. Only the reduced dynamics are then fitted; nothing ties ``\Psi^\mathrm{dec}(\xi)`` to ``x`` except through ``H\circ\Psi^\mathrm{dec}``.
 
 # Functor
@@ -60,15 +66,16 @@ struct LatentVectorFieldLoss{N, HT, T} <: NetworkLoss
     λ::T
     h::T
     reconstruction::Bool
-    function LatentVectorFieldLoss{N}(hamiltonian::HT, λ::T, h::T, reconstruction::Bool = true) where {N, HT, T}
-        new{N, HT, T}(hamiltonian, λ, h, reconstruction)
+    energy::Bool
+    function LatentVectorFieldLoss{N}(hamiltonian::HT, λ::T, h::T, reconstruction::Bool = true, energy::Bool = false) where {N, HT, T}
+        new{N, HT, T}(hamiltonian, λ, h, reconstruction, energy)
     end
 end
 
-function LatentVectorFieldLoss(arch::AutoEncoder, hamiltonian; λ::Real = 1, h::Real = 1e-4, reconstruction::Bool = true)
+function LatentVectorFieldLoss(arch::AutoEncoder, hamiltonian; λ::Real = 1, h::Real = 1e-4, reconstruction::Bool = true, energy::Bool = false)
     T = float(promote_type(typeof(λ), typeof(h)))
     N = length(encoder_model(arch).layers)
-    LatentVectorFieldLoss{N}(hamiltonian, T(λ), T(h), reconstruction)
+    LatentVectorFieldLoss{N}(hamiltonian, T(λ), T(h), reconstruction, energy)
 end
 
 n_encoder_layers(::LatentVectorFieldLoss{N}) where {N} = N
@@ -106,10 +113,12 @@ function (loss::LatentVectorFieldLoss)(model::Chain, ps, input::AbstractMatrix, 
     enc, ps_enc, dec, ps_dec = _split_autoencoder(loss, model, ps)
     h = convert(eltype(input), loss.h)
     ξ = enc(input, ps_enc)
-    reconstruction_error = loss.reconstruction ? _relative_vf_error(dec(ξ, ps_dec), input) : zero(eltype(input))
+    decoded = dec(ξ, ps_dec)
+    reconstruction_error = loss.reconstruction ? _relative_vf_error(decoded, input) : zero(eltype(input))
+    energy_error = loss.energy ? _relative_vf_error(loss.hamiltonian(decoded), loss.hamiltonian(input)) : zero(eltype(input))
     pushed_forward = (enc(input .+ h .* output, ps_enc) .- enc(input .- h .* output, ps_enc)) ./ (2h)
     reduced = _poisson_latent(_latent_hamiltonian_gradient(loss, dec, ps_dec, ξ))
-    reconstruction_error + loss.λ * _relative_vf_error(reduced, pushed_forward)
+    reconstruction_error + energy_error + loss.λ * _relative_vf_error(reduced, pushed_forward)
 end
 
 # A `DataLoader` built from an input and an output matrix holds them as tensors with a trailing
