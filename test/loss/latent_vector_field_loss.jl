@@ -53,7 +53,16 @@ function test_training()
     @test loss(nn, x, v) < before / 2
 end
 
+# Without the reconstruction term the loss is the vector-field term alone.
+function test_without_reconstruction()
+    nn = NeuralNetwork(arch)
+    x = randn(4, 30); v = XH(x)
+    rec = LatentVectorFieldLoss(arch, H; λ = 0)(nn, x, v)
+    @test LatentVectorFieldLoss(arch, H; reconstruction = false)(nn, x, v) ≈ LatentVectorFieldLoss(arch, H)(nn, x, v) - rec rtol = 1e-10
+end
+
 test_against_autodiff()
+test_without_reconstruction()
 test_weight()
 test_differentiable()
 test_training()
