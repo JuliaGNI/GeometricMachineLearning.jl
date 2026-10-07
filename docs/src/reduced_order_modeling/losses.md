@@ -40,12 +40,15 @@ e_\mathrm{red}(\mu) := \sqrt{
 ```
 where ``\mathbf{x}^{(t)}`` is the solution of the FOM at point ``t`` and ``\mathbf{x}^{(t)}_r`` is the solution of the ROM (in the reduced basis) at point ``t``. The reduction error, as opposed to the projection error, not only measures how well the solution manifold is represented by the reduced basis, but also measures how well the FOM dynamics are approximated by the ROM dynamics (via the induced vector field on the reduced basis). The corresponding function in `GeometricMachineLearning` is [`reduction_error`](@ref). The reduction error is, in contract to the projection error, typically not used during training (even though some authors are using a similar error to do so [lee2020model](@cite)).
 
+[`LatentVectorFieldLoss`](@ref) trains encoder and decoder on states of the full system and on its vector field there: besides the reconstruction it compares the reduced vector field ``\mathbb{J}_{2n}\nabla_\xi(H\circ\Psi^\mathrm{dec})`` at ``\xi=\Psi^\mathrm{enc}(x)`` with the full vector field pushed forward by the encoder.
+
 ## Library Functions
 
 ```@docs
 TransformerLoss
 AutoEncoderLoss
 ReducedLoss
+LatentVectorFieldLoss
 projection_error
 reduction_error
 ```
