@@ -12,6 +12,9 @@ L = \frac{\lVert\Psi^\mathrm{dec}(\xi) - x\rVert}{\lVert x\rVert}
 
 the reconstruction error plus ``\lambda`` times the error of the *reduced vector field* against the full vector field pushed forward by the encoder, both relative and with the norms taken over the batch.
 
+!!! warning "Reconstruction and dynamics can contradict each other"
+    The reconstruction term asks that ``\Psi^\mathrm{dec}(\Psi^\mathrm{enc}(x)) = x``; the vector-field and energy terms ask that the reduced Hamiltonian system reproduce the full system's trajectories and energies. Where no symplectic chart can do both (for instance where the data contain a separatrix that a single chart cannot reconstruct), a network trained on both must fail one of them, and the loss decides which. All terms are relative errors summed with unit weights (and `λ`), so nothing depends on units; but that is a convention for where the network gives way, not a resolution of the conflict.
+
 !!! warning "The vector field has to be the one the data follow"
     When the states lie on a submanifold, as the states of a constrained system do, the target is the system's vector field there, which is tangent to it, and not ``\mathbb{J}_{2N}\nabla{}H`` of a Hamiltonian that merely restricts to the right energy on it. The push-forward of a field that leaves the submanifold involves the derivatives of the encoder off the data, which do not describe how encoded trajectories move. The second term compares the two vector fields in the latent space: it vanishes when the encoder maps the trajectories of the full system onto those of the reduced one, which for a symplectic decoder are the level sets of ``H\circ\Psi^\mathrm{dec}``. No target decoder and no latent targets are needed, only states and the full vector field. Where the pushed-forward field vanishes on the whole batch, the absolute error replaces the relative one.
 
