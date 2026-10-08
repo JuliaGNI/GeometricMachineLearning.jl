@@ -16,7 +16,7 @@
 #
 # `min` resolves the lower bound of *this* package's `[compat] julia` entry and `1` the current
 # stable release, so one identical matrix still tests the right versions in a tree whose compat
-# floors are 1.10 and 1.11. The check names therefore never change — not when a package raises its
+# floors are 1.10, 1.11 and 1.12. The check names therefore never change — not when a package raises its
 # floor, and not when Julia releases. That is what lets harness ci-protection use one static list.
 #
 # `pre` and `nightly` are advisory (`experimental: true` + `continue-on-error`): a failure in an
@@ -57,8 +57,10 @@ jobs:
         env:
             # Instrument and upload coverage in a single matrix entry only. Uploading from all six
             # makes Codecov merge six reports of the same scope per run, and the merged percentage
-            # then moves for reasons that are not code changes.
-            COVERAGE: ${{ matrix.version == 'min' && matrix.os == 'ubuntu-latest' }}
+            # then moves for reasons that are not code changes. The entry is `1`, not `min`:
+            # instrumentation makes the job that carries the coverage the slowest of the matrix,
+            # and `min` is already the slowest Julia.
+            COVERAGE: ${{ matrix.version == '1' && matrix.os == 'ubuntu-latest' }}
             # Two threads, everywhere: a runner has more than one core, and a suite with a threading
             # test is otherwise silently single-threaded.
             JULIA_NUM_THREADS: 2
@@ -94,6 +96,11 @@ jobs:
                   version: ${{ matrix.version }}
                   arch: ${{ matrix.arch }}
             - uses: julia-actions/cache@v3
+              with:
+                  # Save only from a job that succeeds. A cancelled or failed job saves a partial
+                  # cache, the next run of the branch restores it, and that job then precompiles
+                  # some 300 packages again.
+                  save-always: false
             - uses: julia-actions/julia-buildpkg@v1
             - uses: julia-actions/julia-runtest@v1
               with:
