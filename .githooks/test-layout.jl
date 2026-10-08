@@ -34,7 +34,7 @@ struct Entry
     line::Int
 end
 
-const GROUP_NAMES = ("core", "slow", "metal", "cuda", "broken")
+const GROUP_NAMES = ("core", "slow", "doctests", "metal", "cuda", "broken")
 const GATE = r"\b(ARGS|ENV)\b"
 const ISSUE = r"#\d+|issues/\d+"
 # the top-level directories of test/ that mirror no directory of src/
@@ -373,8 +373,12 @@ function violations(repo)
         v("D9", "the package has doctests and test/quality/doctests.jl does not exist")
     end
     for e in filter(e -> e.path == q("doctests.jl"), L.entries)
-        e.group == "slow" ||
-            v("D9", "test/quality/doctests.jl is in group \"$(something(e.group, "none"))\", not \"slow\"")
+        e.group in ("slow", "doctests") ||
+            v("D9",
+                "test/quality/doctests.jl is in group \"$(something(e.group, "none"))\", not \"slow\" or \"doctests\"")
+    end
+    for e in filter(e -> e.group == "doctests" && e.path != q("doctests.jl"), L.entries)
+        v("D9", "$(rel(e.path)) is in group \"doctests\", which holds only test/quality/doctests.jl")
     end
 
     # D3: test/<path>.jl sits where src/<path>.jl does
