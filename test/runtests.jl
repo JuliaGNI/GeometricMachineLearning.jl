@@ -50,6 +50,7 @@ if "core" in GROUPS
     @safetestset "Check reduced model" include("reduced_system/reduced_system.jl")
     @safetestset "_norm keeps the element type of its argument" include("norm_eltype.jl")
     @safetestset "Symplectic Euler and variational midpoint losses" include("loss/training_method_losses.jl")
+    @safetestset "LatentVectorFieldLoss" include("loss/latent_vector_field_loss.jl")
     @safetestset "Test NetworkLoss + Optimizer" include("integration/losses_and_optimization.jl")
     @safetestset "ReducedLoss through the Optimizer functor" include("integration/reduced_loss_optimization.jl")
     @safetestset "Optimizer #2" include("optimizers/optimization_step.jl")
