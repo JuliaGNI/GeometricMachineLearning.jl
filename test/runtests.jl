@@ -88,6 +88,8 @@ end
 if "slow" in GROUPS
     @safetestset "Lagrangian Neural Network" include("architectures/lagrangian_neural_network_tests.jl")
     @safetestset "Test symplecticity of the sympnet upscaling layer" include("layers/sympnet_upscaling.jl")
+end
+if "doctests" in GROUPS
     @safetestset "Doctests" include("quality/doctests.jl")
 end
 if "metal" in GROUPS
