@@ -373,21 +373,27 @@ function violations(repo)
         v("D9", "the package has doctests and test/quality/doctests.jl does not exist")
     end
     for e in filter(e -> e.path == q("doctests.jl"), L.entries)
-        e.group in ("slow", "doctests") ||
+        e.group == "doctests" ||
             v("D9",
-                "test/quality/doctests.jl is in group \"$(something(e.group, "none"))\", not \"slow\" or \"doctests\"")
+                "test/quality/doctests.jl is in group \"$(something(e.group, "none"))\", not \"doctests\"")
     end
     for e in filter(e -> e.group == "doctests" && e.path != q("doctests.jl"), L.entries)
         v("D9", "$(rel(e.path)) is in group \"doctests\", which holds only test/quality/doctests.jl")
     end
 
-    # D3: test/<path>.jl sits where src/<path>.jl does
+    # D3: test/<path>.jl sits where src/<path>.jl does; a top-level test/<name>.jl has a
+    # src/<name>.jl of that exact name (`readdir`: `isfile` ignores case on macOS)
     for f in L.files
+        isdir(src) || break
         r = rel(f)
         first(splitpath(r)) in OWN_DIRS && continue
         d = dirname(r)
-        isempty(d) || !isdir(src) || isdir(joinpath(src, d)) ||
-            v("D3", "$r has no directory src/$d to mirror")
+        if isempty(d)
+            r in readdir(src) && isfile(joinpath(src, r)) ||
+                v("D3", "$r is at the top level of test/ and mirrors no src/$r")
+        else
+            isdir(joinpath(src, d)) || v("D3", "$r has no directory src/$d to mirror")
+        end
     end
 
     # D5, D7, using, seed: what each test file does
