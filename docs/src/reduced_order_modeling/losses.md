@@ -40,12 +40,15 @@ e_\mathrm{red}(\mu) := \sqrt{
 ```
 where ``\mathbf{x}^{(t)}`` is the solution of the FOM at point ``t`` and ``\mathbf{x}^{(t)}_r`` is the solution of the ROM (in the reduced basis) at point ``t``. The reduction error, as opposed to the projection error, not only measures how well the solution manifold is represented by the reduced basis, but also measures how well the FOM dynamics are approximated by the ROM dynamics (via the induced vector field on the reduced basis). The corresponding function in `GeometricMachineLearning` is [`reduction_error`](@ref). The reduction error is, in contract to the projection error, typically not used during training (even though some authors are using a similar error to do so [lee2020model](@cite)).
 
+For a decoder whose reduced dynamics matter more than the pointwise reconstruction, [`ReducedHamiltonianLoss`](@ref) fits the states together with the gradient of the reduced Hamiltonian ``H\circ\Psi^\mathrm{dec}``, which for a symplectic decoder is the reduced vector field up to ``\mathbb{J}``.
+
 ## Library Functions
 
 ```@docs
 TransformerLoss
 AutoEncoderLoss
 ReducedLoss
+ReducedHamiltonianLoss
 projection_error
 reduction_error
 ```
