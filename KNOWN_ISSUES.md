@@ -45,37 +45,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   every type parameter, and Aqua's `unbound_args` passes on Julia nightly. See *Fixed* above. The
   number is left vacant rather than reused.)
 
-### B7 · Three methods are type piracy, and closing them is an API change rather than a deletion.
-
-- **location:** `src/layers/resnet.jl:63`
-- **kind:** defect
-- **found:** 2026-09-19
-- **evidence:**
-  Aqua's `piracies` check reports 3, down from the 12 this entry opened with; the other nine were
-  deleted in this release and are under *Removed (breaking)* above. All three are genuine under
-  Aqua's definition — the function and every argument type belong to other modules — and all three
-  are one thing: a functor on a *layer* type this package does not own, applied to a three-axis
-  array.
-
-  | method | `src` | without GML | with GML |
-  |:--|:--|:--|:--|
-  | `(::Dense{M, N, true})(::AbstractArray{T, 3}, ::NamedTuple)` | `layers/resnet.jl:63` | `MethodError` | the layer applied along the third axis |
-  | `(::Dense{M, N, false})(::AbstractArray{T, 3}, ::NamedTuple)` | `layers/resnet.jl:67` | the same | the same |
-  | `(::Linear{M, N})(::AbstractArray{T, 3}, ::NamedTuple)` | `layers/resnet.jl:71` | the same | the same |
-
-  `Dense` and `Linear` are `AbstractNeuralNetworks`', and upstream a 3-tensor argument is a
-  `MethodError` because `*` cannot take one. So the witness is not a changed answer but a new one:
-  a call that throws without this package loaded returns a value with it.
-
-  Closing this means either `AbstractNeuralNetworks` gaining the three-axis methods, or this
-  package wrapping the two layer types in its own. Both are an API change, and neither is a
-  by-product of a piracy pass — which is why these three stayed when the other nine went.
-
-  `src/layers/resnet.jl:63` is also the one remaining method ambiguity, against
-  `AbstractNeuralNetworks.Affine`. That pair is benign and has no witness at all: `Dense` is not a
-  subtype of `Affine` and the two have no common instance, so no call can reach it. `test/quality/aqua.jl`
-  asserts both counts — 3 piracies and 1 ambiguity — so neither can drift, in either direction.
-
 ### B10 · `DataLoader(::EnsembleSolution{T, T1, Vector{ST}})` at `src/data_loader/data_loader.jl:325` has no test and appears unreachable through this package's current dependencies.
 
 - **location:** `src/data_loader/data_loader.jl:325`
@@ -135,36 +104,18 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
 ## C. Follow-ups and cleanups
 
-### C1 · The parameter-tree traversal still belongs upstream.
+### C1 · `Optimizer` is exported by both this package and GeometricOptimizers.
 
-- **location:** —
+- **location:** `src/optimizers/optimizer.jl`
 - **kind:** upstream
 - **found:** 2026-08-17
 - **evidence:**
-  `_make_optimizer_cache`,
-  `_make_optimizer_state`, `_tree_optim_step!`, `_leaf_optim_step!` and the bespoke
-  `GMLEuclideanState` are GML implementations of what GeometricOptimizers supports natively for a
-  single parameter. `GMLEuclideanState` in particular duplicates what `GradientState`,
-  `MomentumState` and `AdamState` already do for a plain array.
-
-  What has to go upstream is *not* a reuse of GeometricOptimizers' `Optimizer`: that one needs an
-  `OptimizerProblem`, i.e. an objective function, and minibatch training has none — the gradient
-  arrives from AD one batch at a time. It is a new entry point there, a
-  gradient-supplied-externally step over a `NamedTuple` parameter tree. GML's `Optimizer` would then
-  be the `NeuralNetwork` constructor and the training-loop functor, and nothing else.
-
-  `Optimizer` is the one name still exported by both packages, so this is also what closes the last
-  of B1's class of collision.
-
-### C2 · Two `isa` branches remain in `_leaf_optim_step!`
-
-- **location:** —
-- **kind:** defect
-- **found:** 2026-08-16
-- **evidence:**
-  (for `AdamState`/`MomentumState`).
-  Measurement showed the traversal is not implicated in the compile-time problem, so this is tidying,
-  and it disappears entirely if C1 lands first.
+  The parameter-tree traversal this entry was opened for went upstream in 0.9: the training step is
+  `GeometricOptimizers.TrainingOptimizer`, and GML's `Optimizer` only pairs one with a network and
+  carries the training-loop functor. What remains is the name. GML's `Optimizer` and
+  GeometricOptimizers' `Optimizer` (the one `solve!` takes) are different types, both exported, so a
+  `Main` that `using`s both packages cannot write `Optimizer` unqualified. It is the last of B1's class
+  of collision. Closing it means renaming one of them, which is an API change in either package.
 
 ### C6 · Three generated MNIST PDFs are in this branch's history
 
@@ -363,7 +314,7 @@ Not defects — claims this release makes that nothing has actually checked yet.
 
 ## Found late
 
-### K1 · Four source comments still send the reader to the Open Issues section of `CHANGELOG.md`, which no longer exists.
+### K1 · Two source comments still send the reader to the Open Issues section of `CHANGELOG.md`, which no longer exists.
 
 - **location:** `src/reduced_system/reduced_system.jl:109`
 - **kind:** found late
@@ -373,17 +324,11 @@ Not defects — claims this release makes that nothing has actually checked yet.
   $ grep -rnE 'Open Issues|issue C1[48]|\*C21\*|\*B7\*' src test
   src/kernels/exponentials/tensor_exponential.jl:2:# name is wider than what it holds; renaming it, and `exponentials/` with it, is issue C18.
   src/reduced_system/reduced_system.jl:109:# issue C14 in `CHANGELOG.md`.
-  test/quality/aqua.jl:30:# layer types, and both are an API change rather than a tidy-up. They are *B7* under
-  test/quality/aqua.jl:31:# `## Open Issues` in `CHANGELOG.md` with that reasoning.
   test/reduced_system/reduced_system.jl:44:# for four of twelve, with four `NaN` and four in the opposite order. That is *C21* in
-  $ grep -n 'CHANGELOG' test/quality/aqua.jl
-  31:# `## Open Issues` in `CHANGELOG.md` with that reasoning.
-  63:    # and it fails when one is removed without the entry above and in `CHANGELOG.md` going with it.
   ```
 
-  The IDs are still valid; the comments at `src/reduced_system/reduced_system.jl:109`,
-  `test/quality/aqua.jl:31`, `test/quality/aqua.jl:63` and `test/reduced_system/reduced_system.jl:44–45`
-  name `CHANGELOG.md` rather than `KNOWN_ISSUES.md`. The fix is a follow-up change to those
+  The IDs are still valid; the comments at `src/reduced_system/reduced_system.jl:109` and
+  `test/reduced_system/reduced_system.jl:44–45` name `CHANGELOG.md` rather than `KNOWN_ISSUES.md`. The fix is a follow-up change to those
   comments.
 
 ## Upstream

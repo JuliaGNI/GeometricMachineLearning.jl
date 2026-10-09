@@ -12,7 +12,7 @@ using Random
 using Test
 
 import GeometricOptimizers: StiefelManifold, SymmetricMatrix, SkewSymMatrix,
-                            LowerTriangular, UpperTriangular
+                            StrictlyLowerTriangular, StrictlyUpperTriangular
 
 Random.seed!(1234)
 
@@ -22,7 +22,7 @@ const N, n = 6, 3
     ps = NetworkParameters((
         L1 = (Y = rand(StiefelManifold{Float64}, N, n), b = randn(N)),
         L2 = (S = SymmetricMatrix(randn(n, n)), A = SkewSymMatrix(randn(n, n))),
-        L3 = (L = LowerTriangular(randn(n, n)), U = UpperTriangular(randn(n, n)))
+        L3 = (L = StrictlyLowerTriangular(randn(n, n)), U = StrictlyUpperTriangular(randn(n, n)))
     ))
 
     back = map_to_cpu(ps)
@@ -35,8 +35,8 @@ const N, n = 6, 3
     @test back.L1.Y isa StiefelManifold
     @test back.L2.S isa SymmetricMatrix
     @test back.L2.A isa SkewSymMatrix
-    @test back.L3.L isa LowerTriangular
-    @test back.L3.U isa UpperTriangular
+    @test back.L3.L isa StrictlyLowerTriangular
+    @test back.L3.U isa StrictlyUpperTriangular
 
     # the `n` a structured leaf carries is not in its storage; `rebuild` takes it from the prototype
     @test back.L2.S.n == ps.L2.S.n

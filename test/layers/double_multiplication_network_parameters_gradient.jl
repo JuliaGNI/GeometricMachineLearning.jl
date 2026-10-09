@@ -22,12 +22,12 @@ ps = NetworkParameters((L1 = (A = S,),))
 t = rand(4, 4)
 
 @testset "_custom_mul: NetworkParameters gradient structure" begin
-    @testset "single_multiplication (one wrapper access: structure kept)" begin
+    @testset "single_multiplication" begin
         network_parameters_gradient_structure_test(
-            _ps -> single_multiplication(t, _ps), ps, true)
+            _ps -> single_multiplication(t, _ps), ps)
     end
-    @testset "double_multiplication (two wrapper accesses: structure lost)" begin
+    @testset "double_multiplication" begin
         network_parameters_gradient_structure_test(
-            _ps -> double_multiplication(t, _ps), ps, false)
+            _ps -> double_multiplication(t, _ps), ps)
     end
 end

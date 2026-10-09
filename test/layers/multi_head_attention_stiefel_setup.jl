@@ -50,7 +50,7 @@ function check_multi_head_attention_stiefel_setup(T::Type, N::Int, n::Int)
     @test nleaves > 0
     @test check_setup_calls[] == nleaves
 
-    gx = Optimizer(MomentumMethod(), ps).cache
+    gx = Optimizer(MomentumMethod(), ps).training.cache
     check_grad_setup(gx)
 end
 

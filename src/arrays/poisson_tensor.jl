@@ -39,6 +39,11 @@ struct PoissonTensor{T, AT <: AbstractMatrix{T}} <: AbstractMatrix{T}
     n::Int
 end
 
+# The backend of the dense matrix it wraps. `GeometricOptimizers` asks it of both factors of a
+# product with one of its manifolds or structured matrices, and refuses a product across two
+# backends.
+KernelAbstractions.get_backend(𝕁::PoissonTensor) = KernelAbstractions.get_backend(𝕁.J)
+
 # The index types are named rather than left open. An untyped index pair claims every index type,
 # and it then collides with the `getindex` methods BandedMatrices and BlockArrays add to
 # `AbstractMatrix` for their own: nine ambiguities, of the same kind as the seventeen that the

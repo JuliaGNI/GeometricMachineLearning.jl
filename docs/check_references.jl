@@ -12,14 +12,12 @@
 #     julia --project=docs docs/check_references.jl
 
 using GeometricMachineLearning
-using HDF5 # so that the extension below is loaded, as in make.jl
 using AbstractNeuralNetworks # signatures in `@docs` blocks name types from here
 using Documenter
 using Documenter: DocSystem
 
 # keep in sync with `modules` in make.jl
-const MODULES = Module[GeometricMachineLearning,
-    Base.get_extension(GeometricMachineLearning, :HDF5Ext)]
+const MODULES = Module[GeometricMachineLearning]
 
 const SRC = joinpath(@__DIR__, "src")
 

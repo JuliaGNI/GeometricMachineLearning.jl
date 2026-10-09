@@ -119,7 +119,7 @@ function mat_tensor_mul!(C::AbstractArray{<:Number, 3}, A::SymmetricMatrix, B::A
     symmetric_mat_mul!(C, A.S, B, A.n)
 end
 
-########################### LowerTriangular
+########################### StrictlyLowerTriangular
 
 @kernel function lo_mul_kernel!(C::AbstractArray{T, 3}, S::AbstractVector{T},
         B::AbstractArray{T, 3}, ::Int) where {T}
@@ -152,21 +152,21 @@ function lo_mat_mul(S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where 
 end
 
 @doc raw"""
-    mat_tensor_mul!(C, A::LowerTriangular, B)
+    mat_tensor_mul!(C, A::StrictlyLowerTriangular, B)
 
 Multiply the lower-triangular matrix `A` onto the tensor `B` from the left and store the result in `C`.
 
 This performs an efficient multiplication based on the special structure of the lower-triangular matrix `A`.
 """
-function mat_tensor_mul!(C::AbstractArray{<:Number, 3}, A::LowerTriangular, B::AbstractArray{
-        <:Number, 3})
+function mat_tensor_mul!(C::AbstractArray{<:Number, 3}, A::StrictlyLowerTriangular,
+        B::AbstractArray{<:Number, 3})
     @assert eltype(C) == eltype(A) == eltype(B)
     @assert A.n == size(C, 1) == size(B, 1)
 
     lo_mat_mul!(C, A.S, B, A.n)
 end
 
-####################### UpperTriangular
+####################### StrictlyUpperTriangular
 
 @kernel function up_mul_kernel!(C::AbstractArray{T, 3}, S::AbstractVector{T},
         B::AbstractArray{T, 3}, n::Int) where {T}
@@ -199,14 +199,14 @@ function up_mat_mul(S::AbstractVector{T}, B::AbstractArray{T, 3}, n::Int) where 
 end
 
 @doc raw"""
-    mat_tensor_mul!(C, A::UpperTriangular, B)
+    mat_tensor_mul!(C, A::StrictlyUpperTriangular, B)
 
 Multiply the upper-triangular matrix `A` onto the tensor `B` from the left and store the result in `C`.
 
 This performs an efficient multiplication based on the special structure of the upper-triangular matrix `A`.
 """
-function mat_tensor_mul!(C::AbstractArray{<:Number, 3}, A::UpperTriangular, B::AbstractArray{
-        <:Number, 3})
+function mat_tensor_mul!(C::AbstractArray{<:Number, 3}, A::StrictlyUpperTriangular,
+        B::AbstractArray{<:Number, 3})
     @assert eltype(C) == eltype(A) == eltype(B)
     @assert A.n == size(C, 1) == size(B, 1)
 

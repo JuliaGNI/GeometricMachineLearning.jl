@@ -1,5 +1,5 @@
 @doc raw"""
-    optimize_for_one_epoch!(opt, model, ps, dl, batch, loss, λY)
+    optimize_for_one_epoch!(opt, model, ps, dl, batch, loss)
 
 Sample the data contained in `dl` according to `batch` and optimize for these batches.
 
@@ -24,7 +24,6 @@ All the arguments are mandatory (there are no defaults):
 4. the data (i.e. an instance of [`DataLoader`](@ref)).
 5. `batch`::[`Batch`](@ref): stores `batch_size` (and optionally `seq_length` and `prediction_window`).
 6. `loss::NetworkLoss`.
-7. the *section* `λY` of the parameters `ps`.
 
 # Implementation
 
@@ -51,9 +50,8 @@ function optimize_for_one_epoch!(opt::Optimizer,
         model, ps::NetworkParameters,
         dl::DataLoader{T},
         batch::Batch,
-        loss::NetworkLoss,
-        λY) where {T}
-    optimize_for_one_epoch!(opt, model, ps, dl, batch, ZygotePullback(loss), λY)
+        loss::NetworkLoss) where {T}
+    optimize_for_one_epoch!(opt, model, ps, dl, batch, ZygotePullback(loss))
 end
 
 function optimize_for_one_epoch!(opt::Optimizer,
@@ -61,8 +59,7 @@ function optimize_for_one_epoch!(opt::Optimizer,
         ps::NetworkParameters,
         dl::DataLoader{T},
         batch::Batch,
-        _pullback::AbstractPullback,
-        λY) where {T}
+        _pullback::AbstractPullback) where {T}
     count = 0
     total_error = T(0)
     batches = batch(dl)
@@ -72,7 +69,7 @@ function optimize_for_one_epoch!(opt::Optimizer,
         loss_value, pullback = _pullback(ps, model, input_nt_output_nt)
         total_error += loss_value
         dp = _processing(pullback(one(loss_value)))
-        optimization_step!(opt, λY, ps, dp)
+        optimization_step!(ps, opt, dp)
     end
     total_error / count
 end
@@ -83,13 +80,12 @@ function (o::Optimizer)(nn::NeuralNetwork,
         n_epochs::Integer,
         loss::NetworkLoss,
         _pullback::AbstractPullback = ZygotePullback(loss); show_progress = true)
-    Λ = GlobalSection(params(nn))
     progress_object = show_progress ?
                       ProgressMeter.Progress(n_epochs; enabled = true) : nothing
     loss_array = zeros(float(eltype(dl)), n_epochs)
     for i in 1:n_epochs
         loss_array[i] = optimize_for_one_epoch!(
-            o, nn.model, params(nn), dl, batch, _pullback, Λ)
+            o, nn.model, params(nn), dl, batch, _pullback)
         show_progress ?
         ProgressMeter.next!(progress_object; showvalues = [(
             :TrainingLoss, loss_array[i])]) : nothing

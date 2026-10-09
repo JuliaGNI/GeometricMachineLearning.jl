@@ -17,8 +17,7 @@ function optimization_step_test(N, n, T)
     o = Optimizer(m, ps)
 
     ps2 = deepcopy(ps)
-    λY = GlobalSection(ps)
-    optimization_step!(o, λY, ps, dx)
+    optimization_step!(ps, o, dx)
     @test typeof(ps[1].weight) <: StiefelManifold
     for (layers1, layers2) in zip(values(ps), values(ps2))
         for key in keys(layers1)
@@ -35,23 +34,16 @@ for N in 4:N_max
     end
 end
 
-# The regression net for the branch order in `_make_optimizer_cache`/`_make_optimizer_state`: a
-# `NetworkParameters` is a tree to descend into, so it is recognised *structurally*, before the
-# capability question `_use_go_cache` asks. The shape that follows is one `GeometricOptimizers` cache
-# per *layer* -- not one for the root, which is what putting the capability question first would give
-# the moment `GeometricOptimizers` adds the container to `OptimizerSolution`, and not one per weight,
-# which is what hoisting the `NamedTuple` branch as well would give.
-@testset "one cache and one state per layer, keyed by the network's layers" begin
+# The whole network is one `GeometricOptimizers.TrainingOptimizer`: one cache and one state over the
+# whole parameter set, and not one per layer as before 0.9.
+@testset "one cache and one state over the whole network" begin
     model = Chain(StiefelLayer(6, 3), Dense(6, 6, tanh))
     nn = NeuralNetwork(model, KernelAbstractions.CPU(), Float32)
     o = Optimizer(AdamOptimizer(), nn)
 
-    for tree in (o.cache, o.state)
-        @test tree isa NamedTuple
-        @test keys(tree) == keys(GeometricMachineLearning.params(nn))
-    end
-    @test o.cache.L1 isa GeometricOptimizers.OptimizerCache
-    @test o.cache.L2 isa GeometricOptimizers.OptimizerCache
-    @test o.state.L1 isa GeometricOptimizers.OptimizerState
-    @test o.state.L2 isa GeometricOptimizers.OptimizerState
+    @test o.training isa GeometricOptimizers.TrainingOptimizer
+    @test o.training.cache isa GeometricOptimizers.AdamCache{Float32}
+    @test o.training.state isa AdamState{Float32}
+    @test keys(GeometricOptimizers.solution(o.training.state)) ==
+          keys(GeometricMachineLearning.params(nn))
 end

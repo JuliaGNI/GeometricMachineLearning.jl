@@ -17,10 +17,74 @@ breaking release).
 
 ### Added
 
+- **One optimizer method per leaf, through `CompositeMethod`.** `CompositeMethod` and
+  `CompositeState` are re-exported from `GeometricOptimizers`, with `ScalarMomentAdam` and
+  `ScalarMomentAdamState`. `Optimizer(CompositeMethod(; manifold = ScalarMomentAdam(), array = Adam()), nn)`
+  gives every leaf of the network's parameters the cache and the state of the method chosen for it,
+  which is what a network with Stiefel weights beside Euclidean ones needs to use `ScalarMomentAdam`:
+  that method steps a single `StiefelManifold`. A caller that wanted the split before had to add
+  methods to `_make_optimizer_cache`, `_make_optimizer_state` and `_leaf_optim_step!` from outside
+  this package. `test/optimizers/composite_method.jl` checks the per-leaf states and that a composite
+  of `Adam` on every leaf reproduces `Adam` exactly.
 - **The test suite runs on an Apple GPU in its `metal` group.** `test/devices/metal.jl` checks the two device paths that were measured by hand and not tested before: the products of a `PoissonTensor` with a wrapped device array, `𝕁 * view(A, [1, 2, 3, 4], :)` and `𝕁 * B'`, which `ext/GPUArraysCoreExt.jl` carries; and the `tensor_mat_mul!` kernel on `MetalBackend()`. Each result must stay on the device and match the host in `Float32`, with scalar indexing off. `Pkg.test(test_args = ["metal"])` runs them without the subject tests, and a missing device records a skip, which happens inside a sandbox. Metal (1.10 or later) is a test dependency on every platform; it installs and precompiles on Linux and Windows, and nothing there loads it. On an Apple M4 Max with Metal 1.11.1 all five assertions pass.
 - **A `Metal` workflow runs the Metal tests on GitHub's `macos-15` runner**, for the `min` and `1` Julia versions. The runner's GPU is Apple's paravirtual device, which Metal.jl supports from 1.10 and on macOS 15 or later. The workflow includes a step "Metal is functional" before the tests that fails the job where the device is unavailable, so it cannot pass without having run the tests. The job is not a required check. However, the Metal tests also run in two required checks—CI.yml's `Julia min - macOS-latest - default` and `Julia 1 - macOS-latest - default`—which execute `test/runtests.jl` with no test arguments on Apple silicon, selecting the `metal` group.
 - **`test/quality/jet.jl` checks the kernel launchers with JET.** It runs in `core`, directly after `quality/aqua.jl`, and takes about 14 s. Each function that launches a kernel of `src/` on the `CPU()` backend, the pullbacks among them, and the `Batch` functor that `test/data_loader/batch_index_set.jl` measures with `@allocated` get one `JET.report_opt` line per element type that the tests use, with `target_modules = (GeometricMachineLearning,)`. Each `@kernel` method also gets a line that analyses its generated `cpu_<kernel>` function at the launcher's context, because JET drops the reports of a kernel body when it analyses the launcher. 142 lines pass on Julia 1.11.9 (JET 0.9.20) and 1.13.1 (JET 0.12.2). Three lines report a runtime dispatch on both versions and are `@test_broken` with issue #325: `PoissonTensor(::CPU, ::Int, ::DataType)`, and the input-and-output method of `convert_input_and_batch_indices_to_array` at `Float32` and `Float64`. Where JET does not work, the file records one `@test_skip`. JET joins `test/Project.toml` with no `[compat]` bound. `KNOWN_ISSUES.md` K2 records the Revise `EMFILE` messages that JET brings into the test log, and K3 the dispatches that the lines do not see: an unstable argument of a kernel launch, and two barriers in the Poisson-tensor kernel.
 - **A test calls `iterate` on `(q,)` initial conditions.** No test reached the `NeuralNetworkIntegrator` `iterate` method that takes `ics::NamedTuple{(:q,), Tuple{AT}}`. `test/docstrings/layers_and_architectures.jl` runs the docstring's `ResNet` from `(q = [1, 1, 1],)` for four points and expects the same trajectory as the vector form, `[1 2 4 8; 1 3 9 27; 1 3 7 15]`.
+
+### Changed (breaking)
+
+- **The training step is `GeometricOptimizers.TrainingOptimizer`.** `Optimizer` holds one, over the
+  whole parameter set of the network, in its only field `training`; the fields `method`, `cache`,
+  `state`, `retraction`, `step_size` and `iterations` are gone. One cache and one state cover the
+  whole set, where there used to be one per layer, and every method steps every kind of leaf the same
+  way `GeometricOptimizers` does: no leaf is stepped by this package's own Euclidean update rules
+  (`GMLEuclideanState`) any more. `GeometricOptimizers`' G4 checked that `TrainingOptimizer`
+  reproduces this package's 0.8 iterates: exactly for `Adam`, and to `4eps(T)` for `GradientMethod` and
+  `MomentumMethod` on manifold weights. `ScalarMomentAdam` trains the Stiefel weights of a network
+  through a `CompositeMethod` (see *Added*); the step used to raise a `MethodError`, since this
+  package had no method of its own for it.
+- **`optimization_step!(ps, opt, dp)` replaces `optimization_step!(opt, λY, ps, dp)`**, and
+  `optimize_for_one_epoch!` loses its last argument `λY`. The section is carried by the optimizer's
+  state, so the caller no longer builds a `GlobalSection` of the parameters for it.
+  `optimization_step!` is `GeometricOptimizers`' function, extended for `Optimizer`, so a `Main` that
+  loads both packages has one `optimization_step!` and not two. `dp` is the gradient a pullback
+  returns, a `NetworkParameters` or the bare `NamedTuple` of the same shape.
+- **`retraction` takes `Cayley()` or `Geodesic()`**, the retraction types, and no longer the
+  functions `cayley` and `geodesic`. The default is `Cayley()`.
+- **The methods carry no element type**, as in `GeometricOptimizers` 0.9: `Adam()`,
+  `Adam(; β₁, β₂, δ)`, `MomentumMethod(; α)` and `AdamOptimizerWithDecay(n_epochs; η₁, η₂)` in place
+  of `Adam(Float32)`, `Adam(T; …)`, `MomentumMethod(α)` and `AdamOptimizerWithDecay(n_epochs, T)`.
+  `Optimizer` converts the method to the element type of the parameters.
+- **`LowerTriangular` and `UpperTriangular` are `StrictlyLowerTriangular` and
+  `StrictlyUpperTriangular`**, the names `GeometricOptimizers` 0.9 gives them, which no longer collide
+  with `LinearAlgebra`'s. A file saved with one of them by 0.8 or earlier is tagged with the old name
+  and still loads (JuliaGNI/GeometricOptimizers.jl#146); `test/integration/hdf5_support.jl` loads a
+  `VolumePreservingFeedForward` network written in the old layout.
+- **Requires `GeometricOptimizers` 0.9, `AbstractNeuralNetworks` 0.9, `NeuralNetworkParameters`
+  0.4.2, `GeometricBase` 0.15 and `SymbolicNeuralNetworks` 0.9.** No registered `GeometricOptimizers`
+  before 0.9 allows `NeuralNetworkParameters` 0.4 or `AbstractNeuralNetworks` 0.9, and no registered
+  `SymbolicNeuralNetworks` before 0.9 allows either (JuliaGNI/SymbolicNeuralNetworks.jl#80), so the
+  five move together. Under `NeuralNetworkParameters` 0.4 a Zygote gradient taken through a
+  `NetworkParameters` is the gradient with respect to each leaf's storage: a `SymmetricMatrix` leaf
+  keeps its type however often the loss reads it, which closes #319, and its off-diagonal entries are
+  twice those of the cotangent of the dense matrix. `test/helpers/network_parameters_gradient_structure.jl`
+  asserts both.
+
+### Removed (breaking)
+
+- **The three-axis methods of `Dense` and `Linear`, and the HDF5 extension.** `AbstractNeuralNetworks`
+  0.9 defines both itself: `Dense`, `Linear` and `Affine` take inputs of rank 3 and more, and its
+  `HDF5Ext` has `save` and `load` for a `NeuralNetwork`, so `using HDF5` still loads them. Here they
+  were type piracy, the three methods in `src/layers/resnet.jl` and the four in `ext/HDF5Ext.jl`.
+  Aqua's `piracies` and `ambiguities` checks now run in `test/quality/aqua.jl` and report none; they
+  were switched off with counts of 3 and 1 in their place (*B7* in `KNOWN_ISSUES.md`, now closed).
+  `load(NeuralNetwork, …)` loses its `backend` keyword: the network loads on the CPU, and
+  `changebackend(backend, nn)` moves it.
+- **`GMLEuclideanState`, `_GMLGradient` and the per-layer optimizer walk** (`_make_optimizer_cache`,
+  `_make_optimizer_state`, `_tree_optim_step!`, `_leaf_optim_step!`, `_as_go_solution`) are gone with
+  it, and with them `test/optimizers/gml_gradient_dispatch.jl` and
+  `test/optimizers/step_size_element_type.jl`, which tested two of them. *C2* in `KNOWN_ISSUES.md`
+  is closed; *C1* is narrowed to the one thing left, the name `Optimizer`, which both packages export.
 
 ### Changed
 

@@ -145,7 +145,7 @@ dl = DataLoader(dl_cpu, backend, Float32)
 
 
 sae_nn_gpu = NeuralNetwork(sae_arch, CUDADevice(), Float32)
-o = Optimizer(sae_nn_gpu; AdamOptimizerWithDecay(integrator_train_epochs, Float32)...)
+o = Optimizer(sae_nn_gpu; AdamOptimizerWithDecay(integrator_train_epochs)...)
 
 # train the network
 o(sae_nn_gpu, dl, Batch(batch_size), n_epochs)

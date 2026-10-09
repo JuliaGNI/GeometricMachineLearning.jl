@@ -3,6 +3,7 @@ using GeometricMachineLearning
 using GeometricMachineLearning: ResNetLayer, params
 using LinearAlgebra: I
 using Test
+import GeometricOptimizers
 import Random
 
 Random.seed!(123)
@@ -28,7 +29,7 @@ function train_network(; n_epochs = 2048)
     # pairing its own `Optimizer` takes, so it splats rather than being passed positionally. The
     # element type is positional and defaults to `Float64` here, where GML's own version took it
     # from `η₁` and so defaulted to `Float32`.
-    o₂ = Optimizer(nn₂; AdamOptimizerWithDecay(n_epochs, eltype(dl))...)
+    o₂ = Optimizer(nn₂; AdamOptimizerWithDecay(n_epochs)...)
 
     batch = Batch(5, 1)
     loss = FeedForwardLoss()
@@ -59,7 +60,7 @@ function train_manifold_network(; n_epochs = 128)
     arch = Chain(StiefelLayer(1, 20), Dense(20, 20, tanh), Dense(20, 1, identity))
     nn = NeuralNetwork(arch, CPU(), eltype(dl))
 
-    o = Optimizer(nn; AdamOptimizerWithDecay(n_epochs, eltype(dl))...)
+    o = Optimizer(nn; AdamOptimizerWithDecay(n_epochs)...)
     loss_array = o(nn, dl, Batch(5, 1), n_epochs, FeedForwardLoss(); show_progress = false)
 
     @test all(isfinite, loss_array)
@@ -72,32 +73,31 @@ end
 @doc raw"""
 The schedule is walked from ``t = 1``, not from ``t = 0``.
 
-`optimization_step!` increments `opt.iterations` *before* it reads the step size, so the first step
-of a run takes ``\alpha(1) = \gamma\eta_1`` and not ``\alpha(0) = \eta_1``. That is how the pre-0.5
-`AdamOptimizerWithDecay` counted — it incremented `o.step` before `update!` — and how
+`optimization_step!` increments the iteration number *before* it reads the step size, so the first
+step of a run takes ``\alpha(1) = \gamma\eta_1`` and not ``\alpha(0) = \eta_1``. That is how the
+pre-0.5 `AdamOptimizerWithDecay` counted — it incremented `o.step` before `update!` — and how
 `DecayingStatic` counts, because `GeometricOptimizers.solve!` calls `increase_iteration_number!`
 before `solver_step!`. Reading before incrementing put every step of a run one place early in the
 schedule, which `test/adam_optimizer_with_decay.jl` upstream asserts does not happen.
 """
 function schedule_starts_at_one(; n_epochs = 100, η₁ = 1e-2, η₂ = 1e-6)
-    method = AdamOptimizerWithDecay(n_epochs, Float64; η₁ = η₁, η₂ = η₂)
+    method = AdamOptimizerWithDecay(n_epochs; η₁ = η₁, η₂ = η₂)
     o = Optimizer(NetworkParameters((weight = zeros(2, 2),)); method...)
 
     γ = exp(log(η₂ / η₁) / n_epochs)
-    @test o.step_size isa DecayingStatic
-    @test o.iterations == 0
+    @test o.training.linesearch isa DecayingStatic
+    @test GeometricOptimizers.iteration_number(o.training.state) == 0
 
     for t in 1:4
-        o.iterations += 1
-        @test GeometricMachineLearning._current_step_size(o, o.iterations) ≈ η₁ * γ^t
+        @test GeometricOptimizers.step_size(o.training.linesearch, t) ≈ η₁ * γ^t
     end
 
     # and the same thing through the public entry point: one step of a Euclidean parameter with a
     # gradient of `1` moves it by `α₁ / (√1 + δ) ≈ α₁`, so the distance travelled reports the α used
     ps = NetworkParameters((weight = zeros(2, 2),))
     opt = Optimizer(ps; method...)
-    optimization_step!(opt, GlobalSection(ps), ps, (weight = ones(2, 2),))
-    @test opt.iterations == 1
+    optimization_step!(ps, opt, (weight = ones(2, 2),))
+    @test GeometricOptimizers.iteration_number(opt.training.state) == 1
     @test abs(ps.weight[1, 1]) ≈ η₁ * γ rtol = 1e-6
 end
 

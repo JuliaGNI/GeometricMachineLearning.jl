@@ -2,32 +2,25 @@ using Test
 using GeometricMachineLearning
 using GeometricMachineLearning: params
 using LinearAlgebra: norm
+using NeuralNetworkParameters: storage_gradient
 using Zygote: gradient
 
 """
-Assert which shape the `SymmetricMatrix` leaf of a gradient has, and that the shape is cosmetic.
+Assert the shape and the value of the `SymmetricMatrix` leaf of a gradient taken with respect to a
+`NetworkParameters` wrapper.
 
-A gradient taken with respect to a `NetworkParameters` wrapper keeps its `SymmetricMatrix` leaf
-only when the loss expression performs a single `getproperty` on that wrapper. A second access
-degrades the leaf to a plain `Matrix`. What decides the split is the number of `getproperty` calls
-on the wrapper itself -- not how often the leaf is used, and not how often the plain `NamedTuple`s
-below the wrapper are accessed. `p -> (A = p.L1.A; sum(A) + sum(A))` uses the leaf twice through one
-access and keeps the structure; `p -> sum(p.L1.A) + sum(p.L1.A)` loses it. A `Zygote.gradient` taken
-with respect to the bare wrapped `NamedTuple` (`params(ps)`) keeps the structure at any access
-count, because `gradient` projects its result and `ChainRulesCore.ProjectTo` restores the leaf for a
-`NamedTuple` but is `identity` for a `NetworkParameters`. The underlying `Zygote.pullback` loses the
-structure on the second access either way. `CHANGELOG.md` records the experiment.
+Since `NeuralNetworkParameters` 0.4 that gradient is the gradient with respect to the leaf's
+*storage*: `NeuralNetworkParameters` converts the cotangent of each leaf with `storage_gradient`. A
+`SymmetricMatrix` keeps each off-diagonal number once and shows it twice, so its storage gradient
+doubles the off-diagonal entries of the cotangent of the dense matrix, and it is a `SymmetricMatrix`
+however often the loss reads the leaf. Until 0.4 a second `getproperty` on the wrapper degraded the
+leaf to a plain `Matrix` (issue #319).
 
-A wrapper unwrapped with `values` rather than `getproperty` -- which is how `Chain` hands a layer
-its parameters -- counts differently: there the accesses on the plain `NamedTuple` below decide.
-See the layer testset in
-`test/layers/symplectic_attention_network_parameters_gradient.jl`.
-
-`preserves_structure` states which side of that split `f` sits on. Both gradients are asserted to
-agree numerically either way, so losing the structure is a change of type and not of value.
+A `Zygote.gradient` taken with respect to the bare wrapped `NamedTuple` (`params(ps)`) is the
+cotangent of the dense matrix, projected back onto a `SymmetricMatrix` by
+`ChainRulesCore.ProjectTo`. The two are asserted to differ by exactly `storage_gradient`.
 """
-function network_parameters_gradient_structure_test(
-        f, ps::NetworkParameters, preserves_structure::Bool)
+function network_parameters_gradient_structure_test(f, ps::NetworkParameters)
     g_wrapped = gradient(_ps -> norm(f(_ps)), ps)[1]
     g_bare = gradient(_ps -> norm(f(_ps)), params(ps))[1]
 
@@ -35,11 +28,6 @@ function network_parameters_gradient_structure_test(
     a_bare = g_bare.L1.A
 
     @test typeof(a_bare) <: SymmetricMatrix
-    if preserves_structure
-        @test typeof(a_wrapped) <: SymmetricMatrix
-    else
-        @test_broken typeof(a_wrapped) <: SymmetricMatrix  # issue #319
-    end
-
-    @test isapprox(Matrix(a_wrapped), Matrix(a_bare))
+    @test typeof(a_wrapped) <: SymmetricMatrix
+    @test isapprox(Matrix(a_wrapped), Matrix(storage_gradient(ps.L1.A, a_bare)))
 end

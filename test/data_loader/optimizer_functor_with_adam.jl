@@ -50,8 +50,7 @@ function test_optimization_with_adam(; T = Float32, input_dim = 9, n_patches = 4
     loss₁ = loss(model, ps, dl.input, dl.output)
 
     opt = Optimizer(Adam(), nn_obj)
-    λY = GlobalSection(ps)
-    loss_average = optimize_for_one_epoch!(opt, model, ps, dl, batch, loss, λY)
+    loss_average = optimize_for_one_epoch!(opt, model, ps, dl, batch, loss)
 
     loss₃ = loss(model, ps, dl.input, dl.output)
 

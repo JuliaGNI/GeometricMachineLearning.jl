@@ -26,7 +26,7 @@ A = [0.06476993260924702 0.8369280855305259 0.6245358125914054 0.140729967064923
 """
 This tests if the optimizers can find the optimal PSD solution.
 """
-function svd_test(A, n, train_steps = 1000, tol = 1e-1; retraction = cayley)
+function svd_test(A, n, train_steps = 1000, tol = 1e-1; retraction = Cayley())
     # Seeded here and not once at the top of the file, for the reason given at the same place in
     # `svd_optim.jl`: `svd_test` is called twice, and with a single top-level seed the second call
     # starts from whatever RNG state the first one happened to leave behind, which makes the
@@ -69,13 +69,12 @@ function train_network!(o::Optimizer, model::Chain, ps::NetworkParameters,
 
     for _ in 1:train_steps
         dx = Zygote.gradient(error, ps)[1]
-        λY = GlobalSection(ps)
-        optimization_step!(o, λY, ps, dx)
+        optimization_step!(ps, o, dx)
         #println(error(ps))
     end
     ps[1].weight, ps[2].weight, error(ps)
 end
 
-for retraction in (geodesic, cayley)
+for retraction in (Geodesic(), Cayley())
     svd_test(A, 4, retraction = retraction)
 end

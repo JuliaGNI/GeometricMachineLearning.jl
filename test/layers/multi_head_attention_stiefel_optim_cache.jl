@@ -6,9 +6,9 @@ using GeometricMachineLearning, Test
 import GeometricOptimizers
 using GeometricOptimizers: GradientCache, MomentumCache, AdamCache
 import Random, LinearAlgebra
-# The cache and the state hold a `NetworkParameters` per layer: a layer is wrapped at the
-# `GeometricOptimizers` boundary, and the wrap shares the leaf arrays. `mapparameters` and not `map`,
-# because it recurses on the branches and so reaches the leaves whichever shape it is handed.
+# The cache holds one `NetworkParameters` over the whole network, the shape of the parameters.
+# `mapparameters` and not `map`, because it recurses on the branches and so reaches the leaves
+# whichever shape it is handed.
 #
 # Each helper below has two methods, because two shapes arrive: a wrapped layer is a
 # `NetworkParameters` and the tree above it is a plain `NamedTuple`.
@@ -73,9 +73,9 @@ function test_cache_setups_for_optimizer_for_multihead_attention_layer(T::Type, 
     o₂ = Optimizer(MomentumMethod(), ps)
     o₃ = Optimizer(GradientMethod(), ps)
 
-    check_adam_cache(o₁.cache)
-    check_momentum_cache(o₂.cache)
-    check_gradient_cache(o₃.cache)
+    check_adam_cache(o₁.training.cache)
+    check_momentum_cache(o₂.training.cache)
+    check_gradient_cache(o₃.training.cache)
 end
 
 test_cache_setups_for_optimizer_for_multihead_attention_layer(Float32, 64, 8)

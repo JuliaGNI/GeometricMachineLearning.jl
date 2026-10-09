@@ -28,28 +28,24 @@ ps = NetworkParameters((L1 = (A = S,),))
 t = (q = rand(2, 2), p = rand(2, 2))
 
 @testset "Symplectic attention: NetworkParameters gradient structure" begin
-    @testset "symplectic_attention (two wrapper accesses: structure lost)" begin
+    @testset "symplectic_attention" begin
         network_parameters_gradient_structure_test(
-            _ps -> symplectic_attention(t, _ps), ps, false)
+            _ps -> symplectic_attention(t, _ps), ps)
     end
-    @testset "symplectic_attention_simplified (one wrapper access: structure kept)" begin
+    @testset "symplectic_attention_simplified" begin
         network_parameters_gradient_structure_test(
-            _ps -> symplectic_attention_simplified(t, _ps), ps, true)
+            _ps -> symplectic_attention_simplified(t, _ps), ps)
     end
-    @testset "symplectic_linear_map (one wrapper access: structure kept)" begin
+    @testset "symplectic_linear_map" begin
         network_parameters_gradient_structure_test(
-            _ps -> symplectic_linear_map(t, _ps), ps, true)
+            _ps -> symplectic_linear_map(t, _ps), ps)
     end
 end
 
-# The layer keeps the structure although its body reads `A` twice. `Chain` reaches the layer
-# through `values(_ps)` rather than through a `getproperty` on the wrapper, and on that route the
-# count that decides the split is the one on the plain `NamedTuple` the layer is handed. The local
-# binding at `src/layers/symplectic_attention.jl` makes that count one, and is what keeps the
-# structure here: the same body written without it, reached the same way, degrades the leaf to a
-# plain `Matrix`.
+# The same through a layer, which `Chain` reaches through `values(_ps)` rather than through a
+# `getproperty` on the wrapper.
 @testset "SymplecticAttentionQ layer: NetworkParameters gradient structure" begin
     l = SymplecticAttentionQ(4; symmetric = true)
     nn = NeuralNetwork(Chain(l))
-    network_parameters_gradient_structure_test(_ps -> nn(t, _ps), params(nn), true)
+    network_parameters_gradient_structure_test(_ps -> nn(t, _ps), params(nn))
 end

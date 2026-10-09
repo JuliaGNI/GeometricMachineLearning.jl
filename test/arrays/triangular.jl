@@ -12,8 +12,8 @@ Random.seed!(1234)
 # third axis of a tensor with `mat_tensor_mul`, and the pullback of that kernel.
 
 function triangular_tensor_multiplication_test(T = Float64, n::Int = 5)
-    Aₗ = rand(LowerTriangular{T}, n)
-    Aᵤ = rand(UpperTriangular{T}, n)
+    Aₗ = rand(StrictlyLowerTriangular{T}, n)
+    Aᵤ = rand(StrictlyUpperTriangular{T}, n)
 
     B = rand(T, n, n, n)
     AₗB = mat_tensor_mul(Aₗ, B)
@@ -25,8 +25,8 @@ function triangular_tensor_multiplication_test(T = Float64, n::Int = 5)
 end
 
 function triangular_tensor_multiplication_pullback_test(T = Float64, n::Int = 5)
-    Aₗ = rand(LowerTriangular{T}, n)
-    Aᵤ = rand(UpperTriangular{T}, n)
+    Aₗ = rand(StrictlyLowerTriangular{T}, n)
+    Aᵤ = rand(StrictlyUpperTriangular{T}, n)
 
     B = rand(T, n, n, n)
     C_diff = rand(T, n, n, n)

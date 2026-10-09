@@ -100,7 +100,7 @@ We have to define an [optimizer](@extref GeometricOptimizers Standard-Neural-Net
 
 ```@example sympnet
 # set up optimizer; for this we first need to specify the optimization method
-opt_method = Adam(type)
+opt_method = Adam()
 # we then call the optimizer struct which allocates the cache
 la_opt = Optimizer(opt_method, la_nn)
 g_opt = Optimizer(opt_method, g_nn)

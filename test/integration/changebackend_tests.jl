@@ -35,8 +35,8 @@ leaves = (
     grassmann = rand(GrassmannManifold{Float64}, N, n),
     symmetric = SymmetricMatrix(rand(10), 4),
     skew = SkewSymMatrix(rand(6), 4),
-    lower = LowerTriangular(rand(6), 4),
-    upper = UpperTriangular(rand(6), 4),
+    lower = StrictlyLowerTriangular(rand(6), 4),
+    upper = StrictlyUpperTriangular(rand(6), 4),
     stiefhor = StiefelLieAlgHorMatrix(SkewSymMatrix(rand(n, n)), rand(N - n, n), N, n),
     grasshor = GrassmannLieAlgHorMatrix(rand(N - n, n), N, n)
 )
