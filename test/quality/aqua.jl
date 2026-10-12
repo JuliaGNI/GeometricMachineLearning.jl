@@ -59,10 +59,10 @@ end
 #
 # The two `via_owners` checks ask *which* upstream module defines a name, so they go red when a name
 # moves between `GeometricBase`, `GeometricOptimizers` and `AbstractNeuralNetworks` with nothing in
-# `src/` having changed -- which is how `StateVariable` got here. `ExplicitImports = "1.15"` admits
-# any 1.x, so a minor release that sharpens stale detection does the same. A red here names the
-# import and the module to take it from, so it stays a gate: the fix is one line and the message
-# says which. `test_explicit_imports` opens its own `@testset`, so this call needs no wrapper.
+# `src/` having changed. `ExplicitImports = "1.15"` admits any 1.x, so a minor release that sharpens
+# stale detection does the same. A red here names the import and the module to take it from, so it
+# stays a gate: the fix is one line and the message says which. `test_explicit_imports` opens its
+# own `@testset`, so this call needs no wrapper.
 test_explicit_imports(GeometricMachineLearning;
     no_implicit_imports = false,
     all_explicit_imports_are_public = false,

@@ -36,8 +36,9 @@ import Symbolics
 # `import` and not `using ...: ...`: GML adds constructor methods to several of these types (in
 # `layers/` and the kernels), and extending a *type* reached through `using` warns on every such
 # method since Julia 1.12 — "Constructor for type … was extended in `GeometricMachineLearning`
-# without explicit qualification or import". Everything imported here is re-exported below, which
-# is what keeps `using GeometricMachineLearning` alone sufficient.
+# without explicit qualification or import". Everything imported here is re-exported below, except
+# `orthonormal_columns`, `TrainingOptimizer` and `optimization_step!`; the re-exports are what keep
+# `using GeometricMachineLearning` alone sufficient.
 import GeometricOptimizers
 import GeometricOptimizers: Manifold, StiefelManifold, GrassmannManifold
 import GeometricOptimizers: SkewSymMatrix, SymmetricMatrix,

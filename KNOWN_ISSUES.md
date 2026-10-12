@@ -34,11 +34,11 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   (**B1**, **B2**, **B3**, **B4**, **B6** and **B8** are all closed and their entries are gone: B1 and B2 by
   this release — the duplicated `AdamOptimizerWithDecay` and the split `Manifold`, both under
   *Removed (breaking)* — B3 by SymbolicNeuralNetworks 0.5, B4 by `a427add1`, which repaired the
-  documentation build, and B6 and B8 by this release: B6 by the `train!` retirement (the three methods that
+  documentation build, and B6 and B8 by this release: B6 by the retirement of the `train!` subsystem (the three methods that
   called the non-existent `vectorfield` are gone, and `SymplecticEulerLoss` carries their content on
   `hamiltonian_vector_field`, with tests that run), and B8 by the narrowing of `PoissonTensor`'s `Base.:*`
   to `Strided…` right-hand sides and `Base.getindex` to `Union{Int, Colon, AbstractVector{<:Integer}}`
-  indices, reducing method ambiguities from 18 to 1 as asserted in `test/quality/aqua.jl`. The numbers are
+  indices, reducing method ambiguities from 18 to 1. The numbers are
   left vacant rather than reused.)
 
   (**B9** is closed by this release and its entry is gone: the `iterate` method it named binds
@@ -299,6 +299,58 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   `test/reduced_system/reduced_system.jl:44–45` name `CHANGELOG.md` rather than `KNOWN_ISSUES.md`.
   The fix is a follow-up change to those comments.
 
+### K7 · A network with a Stiefel leaf raises in `mat_tensor_mul` when the data has another element type.
+
+- **location:** `src/kernels/mat_tensor_mul.jl`
+- **kind:** found late
+- **found:** 2026-10-12, by the critics of part M1a; the kernel code is older than that part
+- **evidence:**
+  A `Float32` `Chain(StiefelLayer(6, 3), Dense(3, 2, tanh))` trained with `train!` on `Float64`
+  data, and a `Float64` one on `Float32` data, raise `AssertionError: eltype(A) == eltype(B)` in
+  `mat_tensor_mul`, reached through `src/layers/manifold_layer.jl` under Zygote. A network of
+  `Dense` layers alone trains on mixed precisions.
+
+  ```julia
+  x = rand(Float32, 6, 12)
+  nn = NeuralNetwork(Chain(StiefelLayer(6, 3), Dense(3, 2, tanh)), Float64)
+  train!(nn, NetworkOptimizer(nn), DataLoader(x, x[1:2, :]), Batch(4), 2; loss = FeedForwardLoss())
+  ```
+
+### K8 · A `DataLoader` of one sample cannot be batched.
+
+- **location:** `src/data_loader/batch.jl`
+- **kind:** found late
+- **found:** 2026-10-12, by the critics of part M1a
+- **evidence:**
+  `DataLoader(x, x)` with `x = rand(Float32, 2, 1)` and `Batch(1)` raises the time-series
+  assertion "The number of time steps has to be greater than sequence length + prediction window"
+  when `train!` draws its minibatches.
+
+### K11 · A comment in `adam_with_learning_rate_decay.jl` reports a past experiment.
+
+- **location:** `test/optimizers/adam_with_learning_rate_decay.jl`
+- **kind:** found late
+- **found:** 2026-10-12, by the critics of part M1a; the comment is older than that part
+- **evidence:**
+  The comment above `train_manifold_network` says "from a seeded start the loss fell by under 2%
+  on 1.13 and *rose* on 1.12". The fix states only the present constraint: a 32-epoch budget
+  drives the learning rate to `η₂` almost at once, and 128 epochs train.
+
+### K12 · `Batch` never draws the last sample of a `DataLoader` of matrices.
+
+- **location:** `src/data_loader/batch.jl`
+- **kind:** found late
+- **found:** 2026-10-12, by the critics of part M1a
+- **evidence:**
+  On a `DataLoader(x, x)` with `x = rand(2, 10)`, the minibatches of `Batch(bs)` hold the samples
+  1 to 9 for each `bs` in 1, 3, 4 and 10; sample 10 is in none of them. `Batch(1)` gives 9
+  minibatches.
+
+  ```
+  1 nbatches 9 samples [(1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1), (7, 1), (8, 1), (9, 1)]
+  10 nbatches 1 samples [(1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1), (7, 1), (8, 1), (9, 1)]
+  ```
+
 ## Upstream
 
 ### K2 · Revise prints EMFILE errors in the test log
@@ -337,6 +389,28 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   itself records a skip where `Metal.functional()` is false; only the precompile fails. Closing this
   is a Metal.jl change: a workload that does not run where no device exists.
 
+### K6 · The gradient of a `SymmetricMatrix` leaf with respect to a `NetworkParameters` differs from the one with respect to the bare `NamedTuple`.
+
+- **location:** `test/helpers/network_parameters_gradient_structure.jl`
+- **kind:** upstream
+- **found:** 2026-10-12, with the move to NeuralNetworkParameters 0.5; issue #319
+- **evidence:**
+  Under NeuralNetworkParameters 0.5, `Zygote.gradient` with respect to a `NetworkParameters` gives
+  a `SymmetricMatrix` leaf that holds the gradient with respect to the leaf's storage, at any number
+  of accesses; with respect to the bare `NamedTuple` it gives the projection of the dense gradient.
+  The off-diagonal entries of the first are twice those of the second; the diagonals are equal. A
+  test of `isapprox(Matrix(a_wrapped), Matrix(a_bare))` in
+  `layers/symplectic_attention_network_parameters_gradient.jl` evaluates:
+
+  ```
+  Expression: isapprox(Matrix(a_wrapped), Matrix(a_bare))
+   Evaluated: isapprox([0.6575109961994726 1.1214311018548968; 1.1214311018548968 0.46185556373061615],
+                       [0.6575109961994726 0.5607155509274484; 0.5607155509274484 0.46185556373061615])
+  ```
+
+  The helper asserts this relation. Which of the two a training step needs is the pullback shape of
+  issue #319.
+
 ## Documentation
 
 ### K5 · The `PositionalEncoding` docstring names `test/metal/`, which does not exist
@@ -371,66 +445,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   array `J`; a barrier on the stored value is CAUGHT. JET never reports a dynamic dispatch in the
   kernel's own frame. A barrier on a value inside each kernel body is CAUGHT.
 
-### K6 · The gradient of a `SymmetricMatrix` leaf with respect to a `NetworkParameters` differs from the one with respect to the bare `NamedTuple`.
-
-- **location:** `test/helpers/network_parameters_gradient_structure.jl`
-- **kind:** upstream
-- **found:** 2026-10-12, with the move to NeuralNetworkParameters 0.5; issue #319
-- **evidence:**
-  Under NeuralNetworkParameters 0.5, `Zygote.gradient` with respect to a `NetworkParameters` gives
-  a `SymmetricMatrix` leaf that holds the gradient with respect to the leaf's storage, at any number
-  of accesses; with respect to the bare `NamedTuple` it gives the projection of the dense gradient.
-  The off-diagonal entries of the first are twice those of the second; the diagonals are equal. A
-  test of `isapprox(Matrix(a_wrapped), Matrix(a_bare))` in
-  `layers/symplectic_attention_network_parameters_gradient.jl` evaluates:
-
-  ```
-  Expression: isapprox(Matrix(a_wrapped), Matrix(a_bare))
-   Evaluated: isapprox([0.6575109961994726 1.1214311018548968; 1.1214311018548968 0.46185556373061615],
-                       [0.6575109961994726 0.5607155509274484; 0.5607155509274484 0.46185556373061615])
-  ```
-
-  The helper asserts this relation. Which of the two a training step needs is the pullback shape of
-  issue #319.
-
-### K7 · A network with a Stiefel leaf raises in `mat_tensor_mul` when the data has another element type.
-
-- **location:** `src/kernels/mat_tensor_mul.jl`
-- **kind:** found late
-- **found:** 2026-10-12, by the critics of part M1a; the kernel code is older than that part
-- **evidence:**
-  A `Float32` `Chain(StiefelLayer(6, 3), Dense(3, 2, tanh))` trained with `train!` on `Float64`
-  data, and a `Float64` one on `Float32` data, raise `AssertionError: eltype(A) == eltype(B)` in
-  `mat_tensor_mul`, reached through `src/layers/manifold_layer.jl` under Zygote. A network of
-  `Dense` layers alone trains on mixed precisions.
-
-  ```julia
-  x = rand(Float32, 6, 12)
-  nn = NeuralNetwork(Chain(StiefelLayer(6, 3), Dense(3, 2, tanh)), Float64)
-  train!(nn, NetworkOptimizer(nn), DataLoader(x, x[1:2, :]), Batch(4), 2; loss = FeedForwardLoss())
-  ```
-
-### K8 · A `DataLoader` of one sample cannot be batched.
-
-- **location:** `src/data_loader/batch.jl`
-- **kind:** found late
-- **found:** 2026-10-12, by the critics of part M1a
-- **evidence:**
-  `DataLoader(x, x)` with `x = rand(Float32, 2, 1)` and `Batch(1)` raises the time-series
-  assertion "The number of time steps has to be greater than sequence length + prediction window"
-  when `train!` draws its minibatches.
-
-### K9 · The GPU paragraph of the manual reports training with `Optimizer`.
-
-- **location:** `docs/src/index.md:57`
-- **kind:** docs
-- **found:** 2026-10-12, by the critics of part M1a
-- **evidence:**
-  The paragraph says "so does training with `Optimizer`, which returns a `Float32` history and
-  leaves the parameters on the device". The run it reports used the `Optimizer` of
-  GeometricMachineLearning 0.8, which `NetworkOptimizer` and `train!` replace; no Metal run of
-  `train!` is recorded.
-
 ### K10 · The two training tests of `adam_with_learning_rate_decay.jl` run in `Float64` only.
 
 - **location:** `test/optimizers/adam_with_learning_rate_decay.jl`
@@ -442,28 +456,3 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   Neither function takes an element type, so neither runs over `REAL_ELTYPES`. The third testset
   of the file, `schedule_starts_at_one`, loops over `REAL_ELTYPES`. The fix builds `dl` per `T`
   and loops both functions over `REAL_ELTYPES`.
-
-### K11 · A comment in `adam_with_learning_rate_decay.jl` reports a past experiment.
-
-- **location:** `test/optimizers/adam_with_learning_rate_decay.jl`
-- **kind:** found late
-- **found:** 2026-10-12, by the critics of part M1a; the comment is older than that part
-- **evidence:**
-  The comment above `train_manifold_network` says "from a seeded start the loss fell by under 2%
-  on 1.13 and *rose* on 1.12". The fix states only the present constraint: a 32-epoch budget
-  drives the learning rate to `η₂` almost at once, and 128 epochs train.
-
-### K12 · `Batch` never draws the last sample of a `DataLoader` of matrices.
-
-- **location:** `src/data_loader/batch.jl`
-- **kind:** found late
-- **found:** 2026-10-12, by the critics of part M1a
-- **evidence:**
-  On a `DataLoader(x, x)` with `x = rand(2, 10)`, the minibatches of `Batch(bs)` hold the samples
-  1 to 9 for each `bs` in 1, 3, 4 and 10; sample 10 is in none of them. `Batch(1)` gives 9
-  minibatches.
-
-  ```
-  1 nbatches 9 samples [(1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1), (7, 1), (8, 1), (9, 1)]
-  10 nbatches 1 samples [(1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1), (7, 1), (8, 1), (9, 1)]
-  ```

@@ -1,7 +1,7 @@
 # What a training step does to a layer the loss does not read.
 #
-# Under NeuralNetworkParameters 0.5 the gradient of such a layer is a zero leaf of the layer's own
-# type, not `nothing`, and `NetworkOptimizer` hands the whole gradient to
+# NeuralNetworkParameters gives the gradient of such a layer as a zero leaf of the layer's own type,
+# not `nothing`, and `NetworkOptimizer` hands the whole gradient to
 # `GeometricOptimizers.optimization_step!`: GeometricMachineLearning skips no leaf. This script prints
 # how far each leaf moves, in both precisions and under each first-order method:
 #
