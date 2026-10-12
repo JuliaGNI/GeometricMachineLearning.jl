@@ -22,6 +22,8 @@ Because the decoder has this particular property, the reduced system can be desc
 
 where ``(\nabla_\xi\Psi^d)^+`` is the *symplectic inverse* of ``\nabla_\xi\Psi^d`` (for more details see the docs on the [`AutoEncoder`](@ref) type).
 
+For an autoencoder without this structure, whose decoder is not symplectic and whose reduced system is therefore not Hamiltonian, see [`StandardAutoencoder`](@ref).
+
 # Arguments
 
 Besides the required arguments `full_dim` and `reduced_dim` you can provide the following keyword arguments:
