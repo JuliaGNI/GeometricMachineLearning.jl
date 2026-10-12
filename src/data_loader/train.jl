@@ -30,18 +30,22 @@ function train!(nn::NeuralNetwork, opt::NetworkOptimizer, dl::DataLoader, batch:
         throw(ArgumentError("`train!` needs at least one epoch; `n_epochs` is $(n_epochs)."))
     pullback = ZygotePullback(loss)
     progress = ProgressMeter.Progress(n_epochs; enabled = show_progress)
-    map(1:n_epochs) do _
-        value = _train_epoch!(nn, opt, dl, batch, pullback)
-        ProgressMeter.next!(progress; showvalues = [(:TrainingLoss, value)])
-        value
+    # A loop and not `map(1:n_epochs) do`: the closure around `_train_epoch!` makes the first call
+    # of a transformer compile several times as long.
+    history = [_train_epoch!(nn, opt, dl, batch, pullback, progress)]
+    for _ in 2:n_epochs
+        push!(history, _train_epoch!(nn, opt, dl, batch, pullback, progress))
     end
+    history
 end
 
 # The sum takes the type of the first minibatch's loss, so nothing is converted.
-function _train_epoch!(nn, opt, dl, batch, pullback)
+function _train_epoch!(nn, opt, dl, batch, pullback, progress)
     batches = batch(dl)
-    sum(_train_step!(nn, opt, dl, batch, pullback, indices) for indices in batches) /
-    length(batches)
+    total = sum(_train_step!(nn, opt, dl, batch, pullback, indices) for indices in batches)
+    value = total / length(batches)
+    ProgressMeter.next!(progress; showvalues = [(:TrainingLoss, value)])
+    value
 end
 
 function _train_step!(nn, opt, dl, batch, pullback, indices)
