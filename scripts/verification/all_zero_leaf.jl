@@ -17,8 +17,7 @@
 
 using GeometricMachineLearning
 using GeometricMachineLearning: params
-# `GeometricOptimizers`' step, reached through this package: the scripts environment has no entry for it
-using GeometricMachineLearning: optimization_step!
+using GeometricOptimizers: optimization_step!
 using Printf
 import Random
 import Zygote

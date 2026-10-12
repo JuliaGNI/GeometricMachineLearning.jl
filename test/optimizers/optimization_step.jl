@@ -61,7 +61,8 @@ end
 
 # The training step is the hot path of `train!`. It is inferred, and on a Euclidean layer it allocates
 # nothing. With a Stiefel leaf `GeometricOptimizers`' own step allocates (about 2 to 4 kB here), and
-# the step through `NetworkOptimizer` allocates the same bytes, within 32.
+# the step through `NetworkOptimizer` allocates the same bytes, within 256: Windows reads up to 48
+# bytes apart. One copy of the 64 × 64 gradient leaf is 16 kB in `Float32`, 64 times the tolerance.
 @testset "the step through NetworkOptimizer is inferred and allocates nothing of its own ($T)" for T in REAL_ELTYPES
     for algorithm in (GradientMethod(), MomentumMethod(), Adam())
         ps = NetworkParameters((L1 = (W = rand(T, 3, 3), b = rand(T, 3)),))
@@ -71,14 +72,14 @@ end
         @test allocations(optimization_step!, ps, o, dp) == 0
         @test eltype(ps.L1.W) === eltype(ps.L1.b) === T
 
-        ps = NetworkParameters((L1 = (W = rand(T, 3, 3), b = rand(T, 3)),
+        ps = NetworkParameters((L1 = (W = rand(T, 64, 64), b = rand(T, 64)),
             L2 = (Y = rand(StiefelManifold{T}, 4, 2),)))
-        dp = NetworkParameters((L1 = (W = rand(T, 3, 3), b = rand(T, 3)),
+        dp = NetworkParameters((L1 = (W = rand(T, 64, 64), b = rand(T, 64)),
             L2 = (Y = rand(T, 4, 2),)))
         o = NetworkOptimizer(ps; algorithm)
         @inferred optimization_step!(ps, o, dp)
         @test abs(allocations(optimization_step!, ps, o, dp) -
-                  allocations(optimization_step!, ps, o.optimizer, dp)) ≤ 32
+                  allocations(optimization_step!, ps, o.optimizer, dp)) ≤ 256
         @test ps.L2.Y isa StiefelManifold{T}
     end
     @test allocations((a, b, c) -> collect(a), 1:3, 1, 1) > 0

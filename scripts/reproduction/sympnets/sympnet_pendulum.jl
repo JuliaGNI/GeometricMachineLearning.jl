@@ -4,8 +4,7 @@ Simple implementation of a pendulum for SympNets.
 
 using GeometricIntegrators
 using GeometricMachineLearning
-# `GeometricOptimizers`' step, reached through this package: the scripts environment has no entry for it
-using GeometricMachineLearning: optimization_step!
+using GeometricOptimizers: optimization_step!
 using LinearAlgebra
 using CairoMakie
 using Zygote
