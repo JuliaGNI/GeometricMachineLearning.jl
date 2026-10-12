@@ -430,3 +430,40 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   leaves the parameters on the device". The run it reports used the `Optimizer` of
   GeometricMachineLearning 0.8, which `NetworkOptimizer` and `train!` replace; no Metal run of
   `train!` is recorded.
+
+### K10 · The two training tests of `adam_with_learning_rate_decay.jl` run in `Float64` only.
+
+- **location:** `test/optimizers/adam_with_learning_rate_decay.jl`
+- **kind:** missing test
+- **found:** 2026-10-12, by the critics of part M1a; the precision is older than that part
+- **evidence:**
+  `train_network` and `train_manifold_network` build their `DataLoader` from
+  `sin.(0:0.1:2π)`, a `Vector{Float64}`, and take the network's element type from `eltype(dl)`.
+  Neither function takes an element type, so neither runs over `REAL_ELTYPES`. The third testset
+  of the file, `schedule_starts_at_one`, loops over `REAL_ELTYPES`. The fix builds `dl` per `T`
+  and loops both functions over `REAL_ELTYPES`.
+
+### K11 · A comment in `adam_with_learning_rate_decay.jl` reports a past experiment.
+
+- **location:** `test/optimizers/adam_with_learning_rate_decay.jl`
+- **kind:** found late
+- **found:** 2026-10-12, by the critics of part M1a; the comment is older than that part
+- **evidence:**
+  The comment above `train_manifold_network` says "from a seeded start the loss fell by under 2%
+  on 1.13 and *rose* on 1.12". The fix states only the present constraint: a 32-epoch budget
+  drives the learning rate to `η₂` almost at once, and 128 epochs train.
+
+### K12 · `Batch` never draws the last sample of a `DataLoader` of matrices.
+
+- **location:** `src/data_loader/batch.jl`
+- **kind:** found late
+- **found:** 2026-10-12, by the critics of part M1a
+- **evidence:**
+  On a `DataLoader(x, x)` with `x = rand(2, 10)`, the minibatches of `Batch(bs)` hold the samples
+  1 to 9 for each `bs` in 1, 3, 4 and 10; sample 10 is in none of them. `Batch(1)` gives 9
+  minibatches.
+
+  ```
+  1 nbatches 9 samples [(1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1), (7, 1), (8, 1), (9, 1)]
+  10 nbatches 1 samples [(1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1), (7, 1), (8, 1), (9, 1)]
+  ```
