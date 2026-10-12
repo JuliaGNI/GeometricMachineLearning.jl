@@ -14,8 +14,8 @@ _ps_eq(a::AbstractArray, b::AbstractArray) = a ≈ b
 _ps_eq(a::StiefelManifold, b::StiefelManifold) = a.A ≈ b.A
 _ps_eq(a::SymmetricMatrix, b::SymmetricMatrix) = a.S ≈ b.S && a.n == b.n
 _ps_eq(a::SkewSymMatrix, b::SkewSymMatrix) = a.S ≈ b.S && a.n == b.n
-_ps_eq(a::LowerTriangular, b::LowerTriangular) = a.S ≈ b.S && a.n == b.n
-_ps_eq(a::UpperTriangular, b::UpperTriangular) = a.S ≈ b.S && a.n == b.n
+_ps_eq(a::StrictlyLowerTriangular, b::StrictlyLowerTriangular) = a.S ≈ b.S && a.n == b.n
+_ps_eq(a::StrictlyUpperTriangular, b::StrictlyUpperTriangular) = a.S ≈ b.S && a.n == b.n
 function _ps_eq(a::NamedTuple, b::NamedTuple)
     Set(keys(a)) == Set(keys(b)) || return false
     all(_ps_eq(a[k], b[k]) for k in keys(a))
@@ -48,7 +48,8 @@ function _write_legacy(h5, Y::StiefelManifold, path::AbstractString)
 end
 
 for (T, name) in ((:SymmetricMatrix, "SymmetricMatrix"), (:SkewSymMatrix, "SkewSymMatrix"),
-    (:LowerTriangular, "LowerTriangular"), (:UpperTriangular, "UpperTriangular"))
+    (:StrictlyLowerTriangular, "StrictlyLowerTriangular"), (
+    :StrictlyUpperTriangular, "StrictlyUpperTriangular"))
     @eval function _write_legacy(h5, A::$T, path::AbstractString)
         g = HDF5.create_group(h5, path)
         HDF5.attributes(g)["gml_type"] = $name
@@ -131,8 +132,8 @@ end
     end
 end
 
-# VolumePreservingFeedForward uses LowerTriangular / UpperTriangular parameters.
-@testset "save/load roundtrip: VolumePreservingFeedForward (LowerTriangular/UpperTriangular)" begin
+# VolumePreservingFeedForward uses StrictlyLowerTriangular / StrictlyUpperTriangular parameters.
+@testset "save/load roundtrip: VolumePreservingFeedForward (StrictlyLowerTriangular/StrictlyUpperTriangular)" begin
     arch = VolumePreservingFeedForward(4, 4, 1, tanh)
     nn = NeuralNetwork(arch)
     x = rand(4)

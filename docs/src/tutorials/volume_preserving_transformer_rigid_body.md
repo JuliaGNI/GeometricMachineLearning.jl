@@ -222,8 +222,8 @@ nn_st = mtc(nn_st)
 using HDF5 # hide
 # the two files store the type names `LowerTriangular` and `UpperTriangular` # hide
 const NNP = parentmodule(NetworkParameters) # hide
-NNP.register_parameter_type!("LowerTriangular", (S, md) -> LowerTriangular(S.S, S.n)) # hide
-NNP.register_parameter_type!("UpperTriangular", (S, md) -> UpperTriangular(S.S, S.n)) # hide
+NNP.register_parameter_type!("LowerTriangular", (S, md) -> StrictlyLowerTriangular(S.S, S.n)) # hide
+NNP.register_parameter_type!("UpperTriangular", (S, md) -> StrictlyUpperTriangular(S.S, S.n)) # hide
 nn_vpff = load(NeuralNetwork, "transformer_rigid_body_nn_vpff.h5", nn_vpff.architecture) # hide
 nn_vpt = load(NeuralNetwork, "transformer_rigid_body_nn_vpt.h5", nn_vpt.architecture) # hide
 nn_st = load(NeuralNetwork, "transformer_rigid_body_nn_st.h5", nn_st.architecture) # hide

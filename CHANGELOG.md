@@ -25,6 +25,8 @@ breaking release).
 
 ### Changed (breaking)
 
+- **`LowerTriangular` and `UpperTriangular` are renamed `StrictlyLowerTriangular` and `StrictlyUpperTriangular`**, as in GeometricOptimizers 0.9, and are re-exported under the new names. A file saved with the old names no longer loads through the registry. The rigid-body tutorial registers the two old names for its committed files.
+
 - **The `[compat]` bounds move to the versions the training API needs**: GeometricOptimizers `"0.9"`, AbstractNeuralNetworks `"0.9.1"`, NeuralNetworkParameters `"0.5"`, SymbolicNeuralNetworks `"0.9"`, GeometricBase `"0.15"`, GeometricEquations `"0.21.5"` and GeometricSolutions `"0.6.6"`. HDF5 leaves `[compat]` and `[weakdeps]`.
 
 ### Added

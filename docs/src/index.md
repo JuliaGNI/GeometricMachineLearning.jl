@@ -58,7 +58,7 @@ Everything tried on that device ran. Constructed, and then applied to both a mat
 
 Two of those results rest on `GeometricOptimizers` rather than on anything here.
 
-- `VolumePreservingFeedForward` and `VolumePreservingTransformer` applied to a **matrix** multiply a `LowerTriangular` or `UpperTriangular` weight by that matrix. `GeometricOptimizers` supplies a `KernelAbstractions` kernel for that product, so the call does not fall through to a generic multiply that reads one entry at a time, which `GPUArraysCore` refuses.
+- `VolumePreservingFeedForward` and `VolumePreservingTransformer` applied to a **matrix** multiply a `StrictlyLowerTriangular` or `StrictlyUpperTriangular` weight by that matrix. `GeometricOptimizers` supplies a `KernelAbstractions` kernel for that product, so the call does not fall through to a generic multiply that reads one entry at a time, which `GPUArraysCore` refuses.
 - `StiefelLayer`, `GrassmannLayer` and `PSDLayer`, and so every architecture that holds one of them, orthonormalize their weight at **construction** through `GeometricOptimizers.orthonormal_columns`. That is CholeskyQR2 — matrix products and triangular solves only — so it runs wherever the draw was allocated. `LinearAlgebra.qr!` is a host factorization and `Metal.jl` implements no `qr` for an `MtlArray`, so a device needs the other one.
 
 ## Tutorials 
