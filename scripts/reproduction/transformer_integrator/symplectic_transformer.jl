@@ -55,17 +55,17 @@ nn3 = NeuralNetwork(arch3)
 const batch_size = 1024
 const n_epochs = smoke_size(3000, 2)
 
-o_method = AdamOptimizer()
+o_method = Adam()
 
-o1 = Optimizer(o_method, nn1)
-o2 = Optimizer(o_method, nn2)
-o3 = Optimizer(o_method, nn3)
+o1 = NetworkOptimizer(nn1; algorithm = o_method)
+o2 = NetworkOptimizer(nn2; algorithm = o_method)
+o3 = NetworkOptimizer(nn3; algorithm = o_method)
 
 batch = Batch(batch_size, seq_length)
 
-loss_array1 = o1(nn1, dl, batch, n_epochs)
-loss_array2 = o2(nn2, dl, batch, n_epochs)
-loss_array3 = o3(nn3, dl, batch, n_epochs)
+loss_array1 = train!(nn1, o1, dl, batch, n_epochs)
+loss_array2 = train!(nn2, o2, dl, batch, n_epochs)
+loss_array3 = train!(nn3, o3, dl, batch, n_epochs)
 
 function make_training_error_plot(; theme = :dark, symplectic = true)
     textcolor = theme == :dark ? :white : :black

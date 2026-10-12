@@ -26,11 +26,11 @@ data = DataLoader(sol; suppress_info = true)
 nn = NeuralNetwork(GSympNet(2))
 
 # train the network
-o = Optimizer(Adam(), nn)
+o = NetworkOptimizer(nn; algorithm = Adam())
 batch = Batch(32)
 n_epochs = 30
 loss = FeedForwardLoss()
-loss_array = o(nn, data, batch, n_epochs, loss; show_progress = false)
+loss_array = train!(nn, o, data, batch, n_epochs; loss, show_progress = false)
 print(loss_array[end])
 ```
 
@@ -71,7 +71,8 @@ And we train the same network with this new loss:
 ```@example change_loss
 loss = CustomLoss()
 nn_custom = NeuralNetwork(GSympNet(2))
-loss_array = o(nn_custom, data, batch, n_epochs, loss; show_progress = false)
+o_custom = NetworkOptimizer(nn_custom; algorithm = Adam())
+loss_array = train!(nn_custom, o_custom, data, batch, n_epochs; loss, show_progress = false)
 print(loss_array[end])
 ```
 

@@ -28,7 +28,7 @@ const n_linear = 2
 const activation = tanh
 
 const batch_size = 16384
-const opt_method = AdamOptimizer()
+const opt_method = Adam()
 const n_epochs = smoke_size(20000, 2)
 
 # The GPU is what this was run on; the smoke run drops to the CPU so that CI can execute it.
@@ -48,11 +48,11 @@ model = VolumePreservingFeedForward(sys_dim, n_blocks, n_linear, activation)
 
 nn = NeuralNetwork(model, backend, T)
 
-o = Optimizer(opt_method, nn)
+o = NetworkOptimizer(nn; algorithm = opt_method)
 
 batch = Batch(batch_size)
 
-loss_array₁ = o(nn, dl, batch, n_epochs)
+loss_array₁ = train!(nn, o, dl, batch, n_epochs)
 
 ic = (q = [sin(1.1), 0.0, cos(1.1)],)
 

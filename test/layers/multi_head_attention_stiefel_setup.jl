@@ -2,12 +2,11 @@ using GeometricMachineLearning, Test
 # see the note in `multi_head_attention_stiefel_retraction.jl`
 using GeometricOptimizers: MomentumCache
 import Random, Test, LinearAlgebra, KernelAbstractions
-# The cache and the state hold a `NetworkParameters` per layer: a layer is wrapped at the
-# `GeometricOptimizers` boundary, and the wrap shares the leaf arrays. `mapparameters` and not `map`,
-# because it recurses on the branches and so reaches the leaves whichever shape it is handed.
+# One cache covers the whole network, and its fields hold a `NetworkParameters` of the network's
+# shape. `mapparameters` and not `map`, because it recurses on the branches and so reaches the leaves.
 #
-# Each helper below has two methods, because two shapes arrive: a wrapped layer is a
-# `NetworkParameters` and the tree above it is a plain `NamedTuple`.
+# Each helper below has a method for a `NetworkParameters` and one for a plain `NamedTuple`, because
+# the parameters of a network arrive as the one and the cache's fields as the other.
 using NeuralNetworkParameters: NetworkParameters, mapparameters, foldparameters
 
 Random.seed!(1234)
@@ -50,7 +49,8 @@ function check_multi_head_attention_stiefel_setup(T::Type, N::Int, n::Int)
     @test nleaves > 0
     @test check_setup_calls[] == nleaves
 
-    gx = Optimizer(MomentumMethod(), ps).cache
+    gx = NetworkOptimizer(ps; algorithm = MomentumMethod()).optimizer.cache
+    @test gx isa MomentumCache
     check_grad_setup(gx)
 end
 

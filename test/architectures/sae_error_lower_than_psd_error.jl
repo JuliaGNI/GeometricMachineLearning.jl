@@ -17,8 +17,8 @@ function test_accuracy(N::Integer, n::Integer; n_epochs::Integer = 100)
 
     sae_nn = NeuralNetwork(SymplecticAutoencoder(N, n; n_encoder_layers = 5, n_decoder_layers = 5))
 
-    o = Optimizer(Adam(), sae_nn)
-    sae_error = o(sae_nn, dl, Batch(10), n_epochs; show_progress = false)[end]
+    o = NetworkOptimizer(sae_nn; algorithm = Adam())
+    sae_error = train!(sae_nn, o, dl, Batch(10), n_epochs; show_progress = false)[end]
 
     @test sae_error < psd_error
 end

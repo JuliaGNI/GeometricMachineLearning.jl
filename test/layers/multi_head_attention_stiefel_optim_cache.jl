@@ -1,17 +1,13 @@
 using GeometricMachineLearning, Test
-# `StiefelManifold` and the other shared types are one object reached by two names now, so a blanket
-# `using GeometricOptimizers` alongside GML would no longer be ambiguous on them -- only `Optimizer`
-# still resolves to two different things (issue C1). The qualified form stays because it says which
-# package owns what.
+# The qualified form says which package owns what.
 import GeometricOptimizers
 using GeometricOptimizers: GradientCache, MomentumCache, AdamCache
 import Random, LinearAlgebra
-# The cache and the state hold a `NetworkParameters` per layer: a layer is wrapped at the
-# `GeometricOptimizers` boundary, and the wrap shares the leaf arrays. `mapparameters` and not `map`,
-# because it recurses on the branches and so reaches the leaves whichever shape it is handed.
+# One cache covers the whole network, and its fields hold a `NetworkParameters` of the network's
+# shape. `mapparameters` and not `map`, because it recurses on the branches and so reaches the leaves.
 #
-# Each helper below has two methods, because two shapes arrive: a wrapped layer is a
-# `NetworkParameters` and the tree above it is a plain `NamedTuple`.
+# Each helper below has a method for a `NetworkParameters` and one for a plain `NamedTuple`, so that
+# it reaches the leaves whichever of the two it is handed.
 using NeuralNetworkParameters: NetworkParameters, mapparameters
 
 Random.seed!(1234)
@@ -69,13 +65,13 @@ function test_cache_setups_for_optimizer_for_multihead_attention_layer(T::Type, 
     model = Chain(MultiHeadAttention(dim, n_heads, Stiefel = true))
     ps = NeuralNetwork(model, CPU(), T).params
 
-    o₁ = Optimizer(Adam(), ps)
-    o₂ = Optimizer(MomentumMethod(), ps)
-    o₃ = Optimizer(GradientMethod(), ps)
+    o₁ = NetworkOptimizer(ps; algorithm = Adam())
+    o₂ = NetworkOptimizer(ps; algorithm = MomentumMethod())
+    o₃ = NetworkOptimizer(ps; algorithm = GradientMethod())
 
-    check_adam_cache(o₁.cache)
-    check_momentum_cache(o₂.cache)
-    check_gradient_cache(o₃.cache)
+    check_adam_cache(o₁.optimizer.cache)
+    check_momentum_cache(o₂.optimizer.cache)
+    check_gradient_cache(o₃.optimizer.cache)
 end
 
 test_cache_setups_for_optimizer_for_multihead_attention_layer(Float32, 64, 8)

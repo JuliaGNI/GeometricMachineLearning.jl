@@ -36,8 +36,9 @@ dl = DataLoader(input, output)
 # symbolic derivative again.
 const loss = HNNLoss(hnn)
 
-optimizer = Optimizer(Adam(), nn; step_size = 1e-3)
-total_loss = optimizer(nn, dl, Batch(10), nepochs, loss; show_progress = true)
+optimizer = NetworkOptimizer(nn; algorithm = Adam(), linesearch = 1e-3)
+total_loss = train!(
+    nn, optimizer, dl, Batch(10), nepochs; loss = loss, show_progress = true)
 
 # The learned Hamiltonian and the vector field built from it. `loss.hvf` is what `HNNLoss` compares
 # against the data, so this integrates exactly the quantity that was trained -- the same object,

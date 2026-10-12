@@ -38,12 +38,12 @@ const n_epochs = smoke_size(262144, 2)
 const batch_size = 4096
 
 sae_pairing = AdamOptimizerWithDecay(n_epochs)
-o = Optimizer(sae_nn; sae_pairing...)
+o = NetworkOptimizer(sae_nn; sae_pairing...)
 
 println("Number of batches: ", GeometricMachineLearning.number_of_batches(dl, Batch(batch_size)))
 
 psd_error = solve!(psd_nn, dl)
-sae_error = o(sae_nn, dl, Batch(batch_size), n_epochs)
+sae_error = train!(sae_nn, o, dl, Batch(batch_size), n_epochs)
 
 fig = Figure()
 ax = Axis(fig[1, 1], xlabel = "epoch", ylabel = "training error")
@@ -106,7 +106,7 @@ integrator_architecture = StandardTransformerIntegrator(
 # the fallback raises is `Functor not defined`, not a `MethodError`.
 integrator_nn = NeuralNetwork(integrator_architecture, backend, Float32)
 integrator_pairing = AdamOptimizerWithDecay(integrator_train_epochs)
-o_integrator = Optimizer(integrator_nn; integrator_pairing...)
+o_integrator = NetworkOptimizer(integrator_nn; integrator_pairing...)
 
 loss = GeometricMachineLearning.ReducedLoss(encoder(sae_nn), decoder(sae_nn))
 
@@ -116,8 +116,8 @@ dl_integration = DataLoader(dl; autoencoder = false)
 # the regular transformer can't deal with symplectic data!
 dl_integration = DataLoader(vcat(dl_integration.input.q, dl_integration.input.p))
 integrator_batch = Batch(integrator_batch_size, seq_length)
-train_integrator_loss = o_integrator(
-    integrator_nn, dl_integration, integrator_batch, integrator_train_epochs, loss)
+train_integrator_loss = train!(integrator_nn, o_integrator, dl_integration,
+    integrator_batch, integrator_train_epochs; loss = loss)
 
 JLD2.save("integrator_parameters.jld2", "integrator_parameters",
     integrator_nn.params |> mtc, "training loss", train_integrator_loss)

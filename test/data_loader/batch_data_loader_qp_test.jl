@@ -40,14 +40,14 @@ function test_data_loader(dim = 2, number_of_time_steps = 100,
     nn2 = NeuralNetwork(arch2, CPU(), T)
 
     batch = Batch(batch_size)
-    o₁ = Optimizer(GradientOptimizer(), nn1)
-    o₂ = Optimizer(GradientOptimizer(), nn2)
+    o₁ = NetworkOptimizer(nn1; algorithm = GradientMethod())
+    o₂ = NetworkOptimizer(nn2; algorithm = GradientMethod())
 
     params₁ = deepcopy(nn1.params)
     params₂ = deepcopy(nn2.params)
 
-    loss_array₁ = o₁(nn1, dl1, batch, n_epochs; show_progress = false)
-    loss_array₂ = o₂(nn2, dl2, batch, n_epochs; show_progress = false)
+    loss_array₁ = train!(nn1, o₁, dl1, batch, n_epochs; show_progress = false)
+    loss_array₂ = train!(nn2, o₂, dl2, batch, n_epochs; show_progress = false)
 
     # Both shapes reach the training loop and a step is taken for each. The assertion is that the
     # parameters moved, not that the loss fell: the data are random, so a fall over `n_epochs`

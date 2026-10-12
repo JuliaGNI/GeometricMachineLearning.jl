@@ -1,4 +1,5 @@
 using Test, LinearAlgebra, GeometricMachineLearning
+using GeometricOptimizers: optimization_step!
 import Random
 
 Random.seed!(1234)
@@ -6,13 +7,12 @@ Random.seed!(1234)
 function stiefel_layer_test(T, M, N, tol = 1.0f-1)
     model = Chain(StiefelLayer(M, N), StiefelLayer(N, N))
     ps = NeuralNetwork(model, T).params
-    o = Optimizer(Adam(T; β₁ = T(5.0f-1), β₂ = T(5.0f-1), δ = T(3.0f-7)), ps;
-        step_size = T(1.0f0))
+    o = NetworkOptimizer(ps; algorithm = Adam(; β₁ = 5.0f-1, β₂ = 5.0f-1, δ = 3.0f-7),
+        linesearch = T(1.0f0))
 
-    dx = (L1 = (weight = rand(T, N, M),), L2 = (weight = rand(T, N, N),))
+    dx = NetworkParameters((L1 = (weight = rand(T, N, M),), L2 = (weight = rand(T, N, N),)))
     ps_copy = deepcopy(ps)
-    λY = GlobalSection(ps)
-    optimization_step!(o, λY, ps, dx)
+    optimization_step!(ps, o, dx)
     # check that the new weight is different from the old one
     @test norm(ps_copy[1].weight - ps[1].weight) > T(tol)
     # check that the updated elements are on the Stiefel Manifold 
@@ -23,14 +23,13 @@ end
 function grassmann_layer_test(T, M, N, tol = 1.0f-1)
     model = Chain(GrassmannLayer(M, N), StiefelLayer(N, N))
     ps = NeuralNetwork(model, T).params
-    o = Optimizer(Adam(T; β₁ = T(5.0f-1), β₂ = T(5.0f-1), δ = T(3.0f-7)), ps;
-        step_size = T(1.0f0))
+    o = NetworkOptimizer(ps; algorithm = Adam(; β₁ = 5.0f-1, β₂ = 5.0f-1, δ = 3.0f-7),
+        linesearch = T(1.0f0))
 
-    dx = (L1 = (weight = rand(T, N, M),), L2 = (weight = rand(T, N, N),))
+    dx = NetworkParameters((L1 = (weight = rand(T, N, M),), L2 = (weight = rand(T, N, N),)))
     ps_copy = deepcopy(ps)
-    λY = GlobalSection(ps)
     for i in 1:4
-        optimization_step!(o, λY, ps, dx)
+        optimization_step!(ps, o, dx)
     end
     # check that the new weight is different from the old one
     @test norm(ps_copy[1].weight - ps[1].weight) > T(tol)

@@ -100,10 +100,10 @@ We have to define an [optimizer](@extref GeometricOptimizers Standard-Neural-Net
 
 ```@example sympnet
 # set up optimizer; for this we first need to specify the optimization method
-opt_method = Adam(type)
-# we then call the optimizer struct which allocates the cache
-la_opt = Optimizer(opt_method, la_nn)
-g_opt = Optimizer(opt_method, g_nn)
+opt_method = Adam()
+# we then build the optimizer, which allocates the cache in the element type of the network
+la_opt = NetworkOptimizer(la_nn; algorithm = opt_method)
+g_opt = NetworkOptimizer(g_nn; algorithm = opt_method)
 
 nothing # hide
 ```
@@ -120,8 +120,8 @@ batch = Batch(batch_size)
 const nepochs = 100
 
 # perform training (returns array that contains the total loss for each training step)
-g_loss_array = g_opt(g_nn, dl, batch, nepochs; show_progress = false)
-la_loss_array = la_opt(la_nn, dl, batch, nepochs; show_progress = false)
+g_loss_array = train!(g_nn, g_opt, dl, batch, nepochs; show_progress = false)
+la_loss_array = train!(la_nn, la_opt, dl, batch, nepochs; show_progress = false)
 nothing # hide
 ```
 
@@ -242,9 +242,9 @@ parameterlength(rn_nn)
 We now train the network ``\ldots``
 
 ```@example sympnet
-rn_opt = Optimizer(opt_method, rn_nn)
+rn_opt = NetworkOptimizer(rn_nn; algorithm = opt_method)
 
-rn_loss_array = rn_opt(rn_nn, dl, batch, nepochs; show_progress = false)
+rn_loss_array = train!(rn_nn, rn_opt, dl, batch, nepochs; show_progress = false)
 nothing # hide
 ```
 

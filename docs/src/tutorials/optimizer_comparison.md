@@ -27,14 +27,14 @@ init_cont = Tuple(init_con)
 mred = RGBf(214 / 256, 39 / 256, 40 / 256) # hide
 scatter!(ax, init_cont..., f(init_cont...); color = mred, marker = :star5)
 
-# `Optimizer` takes a `NeuralNetwork` or a `NetworkParameters`, so the bare `NamedTuple` of
+# `NetworkOptimizer` takes a `NeuralNetwork` or a `NetworkParameters`, so the bare `NamedTuple` of
 # weights has to be wrapped in the latter.
 weights = NetworkParameters((xy = init_con, ))
 η = 1e-3
 method1 = GradientMethod()
 method2 = Adam()
-optimizer1 = Optimizer(method1, weights; step_size = η)
-optimizer2 = Optimizer(method2, weights; step_size = η)
+optimizer1 = NetworkOptimizer(weights; algorithm = method1, linesearch = η)
+optimizer2 = NetworkOptimizer(weights; algorithm = method2, linesearch = η)
 
 fig
 ```

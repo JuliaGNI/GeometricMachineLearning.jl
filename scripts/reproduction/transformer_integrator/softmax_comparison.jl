@@ -49,15 +49,15 @@ arch2 = StandardTransformerIntegrator(dl.input_dim; transformer_dim = 20,
 nn1 = NeuralNetwork(arch1)
 nn2 = NeuralNetwork(arch2)
 
-o_method = AdamOptimizer()
+o_method = Adam()
 
-o1 = Optimizer(o_method, nn1)
-o2 = Optimizer(o_method, nn2)
+o1 = NetworkOptimizer(nn1; algorithm = o_method)
+o2 = NetworkOptimizer(nn2; algorithm = o_method)
 
 batch = Batch(batch_size, seq_length)
 
-loss_array1 = o1(nn1, dl, batch, n_epochs)
-loss_array2 = o2(nn2, dl, batch, n_epochs)
+loss_array1 = train!(nn1, o1, dl, batch, n_epochs)
+loss_array2 = train!(nn2, o2, dl, batch, n_epochs)
 
 const n_steps = 300
 

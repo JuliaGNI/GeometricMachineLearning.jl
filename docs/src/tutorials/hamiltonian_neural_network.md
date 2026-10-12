@@ -42,8 +42,8 @@ We can now train the network
 ```@example hnn
 batch = Batch(10)
 n_epochs = 100
-o = Optimizer(Adam(Float64), hnn)
-loss_array = o(hnn, dl, batch, n_epochs, loss)
+o = NetworkOptimizer(hnn; algorithm = Adam())
+loss_array = train!(hnn, o, dl, batch, n_epochs; loss)
 using CairoMakie # hide
 lines(loss_array) # hide
 ```
@@ -84,7 +84,7 @@ nothing # hide
 We can now train the network:
 
 ```@example hnn
-o_pairs = Optimizer(Adam(Float64), hnn_pairs)
-loss_array_pairs = o_pairs(hnn_pairs, dl_pairs, batch, n_epochs, loss_pairs)
+o_pairs = NetworkOptimizer(hnn_pairs; algorithm = Adam())
+loss_array_pairs = train!(hnn_pairs, o_pairs, dl_pairs, batch, n_epochs; loss = loss_pairs)
 lines(loss_array_pairs) # hide
 ```

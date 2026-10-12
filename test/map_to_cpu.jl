@@ -12,7 +12,8 @@ using Random
 using Test
 
 import GeometricOptimizers: StiefelManifold, SymmetricMatrix, SkewSymMatrix,
-                            LowerTriangular, UpperTriangular
+                            StrictlyLowerTriangular as LowerTriangular,
+                            StrictlyUpperTriangular as UpperTriangular
 
 Random.seed!(1234)
 

@@ -67,6 +67,10 @@ end
 
 Base.size(𝕁::PoissonTensor) = size(𝕁.J)
 
+# The backend of the stored matrix. GeometricOptimizers' checked products ask every operand for one,
+# so `𝕁 * Y` with a `StiefelManifold` `Y` raises without it.
+KernelAbstractions.get_backend(𝕁::PoissonTensor) = KernelAbstractions.get_backend(𝕁.J)
+
 function PoissonTensor(backend::Backend, n2::Int, T::DataType)
     @assert iseven(n2)
     n = n2÷2

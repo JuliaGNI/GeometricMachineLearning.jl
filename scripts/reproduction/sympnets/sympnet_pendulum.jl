@@ -4,6 +4,8 @@ Simple implementation of a pendulum for SympNets.
 
 using GeometricIntegrators
 using GeometricMachineLearning
+# `GeometricOptimizers`' step, reached through this package: the scripts environment has no entry for it
+using GeometricMachineLearning: optimization_step!
 using LinearAlgebra
 using CairoMakie
 using Zygote
@@ -66,18 +68,16 @@ function full_loss(ps, q, p)
 end
 
 # define momentum optimizer and initialize
-method = AdamOptimizer()
+method = Adam()
 # initial gradients for calling Cache constructor
-opt = Optimizer(method, ps)
-# `optimization_step!` takes the global section of the parameters, not the model.
-λY = GlobalSection(ps)
+opt = NetworkOptimizer(ps; algorithm = method)
 
 # training 
 println("initial loss: ", full_loss(ps, q, p))
 training_steps = smoke_size(1000, 2)
 @showprogress for i in 1:training_steps
     dp = Zygote.gradient(ps -> loss(ps, q, p), ps)[1]
-    optimization_step!(opt, λY, ps, dp)
+    optimization_step!(ps, opt, dp)
 end
 println("final loss: ", full_loss(ps, q, p))
 

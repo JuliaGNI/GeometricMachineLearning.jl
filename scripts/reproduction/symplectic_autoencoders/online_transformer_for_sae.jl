@@ -52,7 +52,7 @@ const integrator_architecture = StandardTransformerIntegrator(
 # the fallback raises is `Functor not defined`, not a `MethodError`.
 const integrator_nn = NeuralNetwork(integrator_architecture, backend, Float32)
 const integrator_pairing = AdamOptimizerWithDecay(integrator_train_epochs)
-const o_integrator = Optimizer(integrator_nn; integrator_pairing...)
+const o_integrator = NetworkOptimizer(integrator_nn; integrator_pairing...)
 
 loss = GeometricMachineLearning.ReducedLoss(encoder(sae_nn), decoder(sae_nn))
 
@@ -62,8 +62,8 @@ dl_integration = DataLoader(dl; autoencoder = false)
 # the regular transformer can't deal with symplectic data!
 dl_integration = DataLoader(vcat(dl_integration.input.q, dl_integration.input.p))
 integrator_batch = Batch(integrator_batch_size, seq_length)
-train_integrator_loss = o_integrator(
-    integrator_nn, dl_integration, integrator_batch, integrator_train_epochs, loss)
+train_integrator_loss = train!(integrator_nn, o_integrator, dl_integration,
+    integrator_batch, integrator_train_epochs; loss = loss)
 
 const mtc = GeometricMachineLearning.map_to_cpu
 JLD2.save(

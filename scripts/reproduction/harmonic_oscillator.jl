@@ -13,17 +13,17 @@ ensemble_solution = exact_solution(ensemble_problem)
 
 include("../utilities/ensemble_plots.jl")
 
-# `GSympNet` trains through the generic `DataLoader` + `Batch` + `Optimizer` pipeline directly,
+# `GSympNet` trains through the generic `DataLoader` + `Batch` + `NetworkOptimizer` pipeline directly,
 # as `scripts/reproduction/sympnets/sympnet_toda_lattice.jl` already does.
 dl = DataLoader(ensemble_solution)
 
 arch = GSympNet(dl; n_layers = 4, upscaling_dimension = 10)
 nn = NeuralNetwork(arch, Float64)
-o = Optimizer(AdamOptimizer(), nn)
+o = NetworkOptimizer(nn; algorithm = Adam())
 batch = Batch(100)
 n_epochs = smoke_size(1000, 2)
 
-loss_array = o(nn, dl, batch, n_epochs)
+loss_array = train!(nn, o, dl, batch, n_epochs)
 
 function H(x)
     hamiltonian(

@@ -1,7 +1,7 @@
-# A `Float32` network's training history is `Float32`: `(o::Optimizer)(...)` builds `loss_array`
-# typed to `eltype(dl)`. This asserts that, and that `optimize_for_one_epoch!`'s own accumulator
-# agrees with it: the loss the optimizer returns is in the data's element type, not promoted to
-# `Float64` along the way. See `CHANGELOG.md` for the fix this guards.
+# A `Float32` network's training history on `Float32` data is `Float32`: `train!` gives the history
+# the type of the loss value, and the epoch's accumulator keeps that type, so nothing is promoted to
+# `Float64` along the way. `test/data_loader/train.jl` checks a network and data of two element
+# types.
 
 using GeometricMachineLearning
 using Test
@@ -12,9 +12,10 @@ Random.seed!(11)
 function test_training_history_eltype(T::DataType)
     nn = NeuralNetwork(GSympNet(4), CPU(), T)
     dl = DataLoader(rand(T, 4, 64); autoencoder = false, suppress_info = true)
-    o = Optimizer(GradientOptimizer(), nn)
+    o = NetworkOptimizer(nn; algorithm = GradientMethod())
 
-    history = o(nn, dl, Batch(8), 2, FeedForwardLoss(); show_progress = false)
+    history = train!(
+        nn, o, dl, Batch(8), 2; loss = FeedForwardLoss(), show_progress = false)
 
     @test eltype(history) == T
     @test history isa Vector{T}

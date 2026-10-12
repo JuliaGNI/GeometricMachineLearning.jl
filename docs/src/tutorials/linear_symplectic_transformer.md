@@ -63,18 +63,18 @@ nn_standard = NeuralNetwork(arch_standard)
 nn_symplectic = NeuralNetwork(arch_symplectic)
 nn_sympnet = NeuralNetwork(arch_sympnet)
 
-o_pairing = AdamOptimizerWithDecay(n_epochs, Float64)
+o_pairing = AdamOptimizerWithDecay(n_epochs)
 
-o_standard = Optimizer(nn_standard; o_pairing...)
-o_symplectic = Optimizer(nn_symplectic; o_pairing...)
-o_sympnet = Optimizer(nn_sympnet; o_pairing...)
+o_standard = NetworkOptimizer(nn_standard; o_pairing...)
+o_symplectic = NetworkOptimizer(nn_symplectic; o_pairing...)
+o_sympnet = NetworkOptimizer(nn_sympnet; o_pairing...)
 
 batch = Batch(batch_size, seq_length)
 batch2 = Batch(batch_size)
 
-loss_array_standard = o_standard(nn_standard, dl, batch, n_epochs; show_progress = false)
-loss_array_symplectic = o_symplectic(nn_symplectic, dl, batch, n_epochs; show_progress = false)
-loss_array_sympnet = o_sympnet(nn_sympnet, dl, batch2, n_epochs; show_progress = false)
+loss_array_standard = train!(nn_standard, o_standard, dl, batch, n_epochs; show_progress = false)
+loss_array_symplectic = train!(nn_symplectic, o_symplectic, dl, batch, n_epochs; show_progress = false)
+loss_array_sympnet = train!(nn_sympnet, o_sympnet, dl, batch2, n_epochs; show_progress = false)
 
 nothing # hide
 ```

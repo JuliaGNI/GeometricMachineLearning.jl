@@ -34,10 +34,11 @@ dl = DataLoader(input, output)
 # in the data. It is the loss `NetworkLoss(hnn)` returns, so naming it is for the reader.
 loss = HNNLoss(hnn)
 
-# The step size belongs to the `Optimizer`, not to the method: the same `Adam()` trains at any
-# learning rate. `1e-3` is already Adam's default here and is named for the reader.
-optimizer = Optimizer(Adam(), nn; step_size = 1e-3)
-total_loss = optimizer(nn, dl, Batch(10), nepochs, loss; show_progress = true)
+# The step size is the `NetworkOptimizer`'s `linesearch`, not the method's: the same `Adam()` trains
+# at any learning rate. `1e-3` is already Adam's default here and is named for the reader.
+optimizer = NetworkOptimizer(nn; algorithm = Adam(), linesearch = 1e-3)
+total_loss = train!(
+    nn, optimizer, dl, Batch(10), nepochs; loss = loss, show_progress = true)
 
 # plot results
 include("../utilities/plots.jl")
