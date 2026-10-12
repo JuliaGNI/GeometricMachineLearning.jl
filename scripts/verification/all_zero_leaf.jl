@@ -9,7 +9,7 @@
 #     `GradientMethod`, `MomentumMethod` and `Adam`; under `AdamWithEuclideanDecay` the Euclidean one
 #     decays and the Stiefel one does not;
 #   - a leaf the loss reads for the first 5 steps and not after keeps moving on its momentum under
-#     `MomentumMethod` and `Adam`;
+#     `MomentumMethod`, `Adam` and `AdamWithEuclideanDecay`, and stays under `GradientMethod`;
 #   - a layer without numbers, `NamedTuple()`, steps without an error.
 #
 # Run from the repository root, with the test environment:

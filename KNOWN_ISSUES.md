@@ -34,12 +34,12 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   (**B1**, **B2**, **B3**, **B4**, **B6** and **B8** are all closed and their entries are gone: B1 and B2 by
   this release — the duplicated `AdamOptimizerWithDecay` and the split `Manifold`, both under
   *Removed (breaking)* — B3 by SymbolicNeuralNetworks 0.5, B4 by `a427add1`, which repaired the
-  documentation build, and B6 and B8 by this release: B6 by the retirement of the `train!` subsystem (the three methods that
-  called the non-existent `vectorfield` are gone, and `SymplecticEulerLoss` carries their content on
-  `hamiltonian_vector_field`, with tests that run), and B8 by the narrowing of `PoissonTensor`'s `Base.:*`
-  to `Strided…` right-hand sides and `Base.getindex` to `Union{Int, Colon, AbstractVector{<:Integer}}`
-  indices, reducing method ambiguities from 18 to 1. The numbers are
-  left vacant rather than reused.)
+  documentation build, and B6 and B8 by this release: B6 by the deletion of `src/training_method/`
+  (the three methods that called the non-existent `vectorfield` are gone, and `SymplecticEulerLoss`
+  carries their content on `hamiltonian_vector_field`, with tests that run), and B8 by the narrowing
+  of `PoissonTensor`'s `Base.:*` to `Strided…` right-hand sides and `Base.getindex` to
+  `Union{Int, Colon, AbstractVector{<:Integer}}` indices, reducing method ambiguities from 18 to 1.
+  The numbers are left vacant rather than reused.)
 
   (**B9** is closed by this release and its entry is gone: the `iterate` method it named binds
   every type parameter, and Aqua's `unbound_args` passes on Julia nightly. See *Fixed* above. The
