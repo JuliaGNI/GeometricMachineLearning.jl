@@ -38,7 +38,7 @@ Downloads.download(
 #
 #     julia --project=docs -e 'using DocInventories; DocInventories.save(
 #         "docs/inventories/GeometricOptimizers.toml",
-#         Inventory("https://juliagni.github.io/GeometricOptimizers.jl/v0.5.0/objects.inv";
+#         Inventory("https://juliagni.github.io/GeometricOptimizers.jl/v0.9.0/objects.inv";
 #                   root_url = "https://juliagni.github.io/GeometricOptimizers.jl/stable/"))'
 #
 # `save` is not exported — it has to be qualified. `root_url` is not written to the TOML either; it

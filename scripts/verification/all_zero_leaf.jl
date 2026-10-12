@@ -12,12 +12,13 @@
 #     `MomentumMethod`, `Adam` and `AdamWithEuclideanDecay`, and stays under `GradientMethod`;
 #   - a layer without numbers, `NamedTuple()`, steps without an error.
 #
-# Run from the repository root, with the test environment:
-#   julia --startup-file=no --project=. -e 'using TestEnv; TestEnv.activate(); include("scripts/verification/all_zero_leaf.jl")'
+# Run from the repository root, with the scripts environment:
+#   julia --startup-file=no --project=scripts scripts/verification/all_zero_leaf.jl
 
 using GeometricMachineLearning
 using GeometricMachineLearning: params
-using GeometricOptimizers: optimization_step!
+# `GeometricOptimizers`' step, reached through this package: the scripts environment has no entry for it
+using GeometricMachineLearning: optimization_step!
 using Printf
 import Random
 import Zygote
