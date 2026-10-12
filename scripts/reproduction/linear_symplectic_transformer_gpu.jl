@@ -39,9 +39,9 @@ nn_sympnet = NeuralNetwork(arch_sympnet, backend, T)
 
 o_method = Adam()
 
-o_standard = NetworkOptimizer(nn_standard; algorithm = o_method)
-o_symplectic = NetworkOptimizer(nn_symplectic; algorithm = o_method)
-o_sympnet = NetworkOptimizer(nn_sympnet; algorithm = o_method)
+o_standard = TrainingOptimizer(nn_standard.params; algorithm = o_method)
+o_symplectic = TrainingOptimizer(nn_symplectic.params; algorithm = o_method)
+o_sympnet = TrainingOptimizer(nn_sympnet.params; algorithm = o_method)
 
 batch = Batch(batch_size, seq_length)
 batch2 = Batch(batch_size)

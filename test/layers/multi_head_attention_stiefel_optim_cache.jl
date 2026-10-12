@@ -65,13 +65,13 @@ function test_cache_setups_for_optimizer_for_multihead_attention_layer(T::Type, 
     model = Chain(MultiHeadAttention(dim, n_heads, Stiefel = true))
     ps = NeuralNetwork(model, CPU(), T).params
 
-    o₁ = NetworkOptimizer(ps; algorithm = Adam())
-    o₂ = NetworkOptimizer(ps; algorithm = MomentumMethod())
-    o₃ = NetworkOptimizer(ps; algorithm = GradientMethod())
+    o₁ = TrainingOptimizer(ps; algorithm = Adam())
+    o₂ = TrainingOptimizer(ps; algorithm = MomentumMethod())
+    o₃ = TrainingOptimizer(ps; algorithm = GradientMethod())
 
-    check_adam_cache(o₁.optimizer.cache)
-    check_momentum_cache(o₂.optimizer.cache)
-    check_gradient_cache(o₃.optimizer.cache)
+    check_adam_cache(o₁.cache)
+    check_momentum_cache(o₂.cache)
+    check_gradient_cache(o₃.cache)
 end
 
 test_cache_setups_for_optimizer_for_multihead_attention_layer(Float32, 64, 8)

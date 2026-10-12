@@ -65,9 +65,9 @@ nn_sympnet = NeuralNetwork(arch_sympnet)
 
 o_pairing = AdamOptimizerWithDecay(n_epochs)
 
-o_standard = NetworkOptimizer(nn_standard; o_pairing...)
-o_symplectic = NetworkOptimizer(nn_symplectic; o_pairing...)
-o_sympnet = NetworkOptimizer(nn_sympnet; o_pairing...)
+o_standard = TrainingOptimizer(nn_standard.params; o_pairing...)
+o_symplectic = TrainingOptimizer(nn_symplectic.params; o_pairing...)
+o_sympnet = TrainingOptimizer(nn_sympnet.params; o_pairing...)
 
 batch = Batch(batch_size, seq_length)
 batch2 = Batch(batch_size)

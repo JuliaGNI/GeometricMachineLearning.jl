@@ -52,7 +52,7 @@ const integrator_architecture = StandardTransformerIntegrator(
 # the fallback raises is `Functor not defined`, not a `MethodError`.
 const integrator_nn = NeuralNetwork(integrator_architecture, backend, Float32)
 const integrator_pairing = AdamOptimizerWithDecay(integrator_train_epochs)
-const o_integrator = NetworkOptimizer(integrator_nn; integrator_pairing...)
+const o_integrator = TrainingOptimizer(integrator_nn.params; integrator_pairing...)
 
 loss = GeometricMachineLearning.ReducedLoss(encoder(sae_nn), decoder(sae_nn))
 

@@ -10,7 +10,7 @@ function test_accuracy(N::Integer, n::Integer; tol::Real = 0.35, n_epochs::Integ
 
     sae_nn = NeuralNetwork(SymplecticAutoencoder(N, n))
 
-    o = NetworkOptimizer(sae_nn; algorithm = Adam())
+    o = TrainingOptimizer(sae_nn.params; algorithm = Adam())
     sae_error = train!(sae_nn, o, dl, Batch(10), n_epochs; show_progress = false)[end]
 
     @test sae_error < tol
@@ -39,7 +39,7 @@ function test_symplecticity(N::Integer, n::Integer)
 
     # test if it's still symplectic after training
     dl = DataLoader(rand(N, 10 * N); autoencoder = true)
-    o = NetworkOptimizer(sae_nn; algorithm = Adam())
+    o = TrainingOptimizer(sae_nn.params; algorithm = Adam())
     train!(sae_nn, o, dl, Batch(10), 10; show_progress = false)
     sympl_mat = jacobian(vec -> sae_decoder(vec), test_vector)[1]
     @test PoissonTensor(n) ≈ sympl_mat' * PoissonTensor(N) * sympl_mat

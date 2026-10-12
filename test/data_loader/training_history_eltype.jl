@@ -12,7 +12,7 @@ Random.seed!(11)
 function test_training_history_eltype(T::DataType)
     nn = NeuralNetwork(GSympNet(4), CPU(), T)
     dl = DataLoader(rand(T, 4, 64); autoencoder = false, suppress_info = true)
-    o = NetworkOptimizer(nn; algorithm = GradientMethod())
+    o = TrainingOptimizer(nn.params; algorithm = GradientMethod())
 
     history = train!(
         nn, o, dl, Batch(8), 2; loss = FeedForwardLoss(), show_progress = false)

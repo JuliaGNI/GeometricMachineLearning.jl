@@ -54,7 +54,7 @@ function setup_and_train(
         model::Union{GeometricMachineLearning.Architecture, GeometricMachineLearning.Chain},
         batch::Batch; transformer::Bool = true)
     nn₀ = NeuralNetwork(model, backend, T)
-    o₀ = NetworkOptimizer(nn₀; algorithm = opt_method)
+    o₀ = TrainingOptimizer(nn₀.params; algorithm = opt_method)
 
     loss_array = transformer ?
                  train!(nn₀, o₀, dl, batch, n_epochs; loss = transformer_loss) :

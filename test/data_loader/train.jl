@@ -13,7 +13,7 @@ include("../helpers/eltypes.jl")
     x = randn(T, 2, 40)
     dl = DataLoader(x, A * x; suppress_info = true)
     nn = NeuralNetwork(Chain(Dense(2, 2, identity)), T)
-    opt = NetworkOptimizer(nn; algorithm = Adam(), linesearch = T(0.01))
+    opt = TrainingOptimizer(nn.params; algorithm = Adam(), linesearch = T(0.01))
     history = train!(
         nn, opt, dl, Batch(8), 200; loss = FeedForwardLoss(), show_progress = false)
     @test eltype(history) === T
@@ -30,7 +30,7 @@ end
     function trained(epochs...)
         Random.seed!(3)
         nn = NeuralNetwork(Chain(StiefelLayer(6, 3), Dense(3, 2, tanh)), T)
-        opt = NetworkOptimizer(nn; algorithm = Adam())
+        opt = TrainingOptimizer(nn.params; algorithm = Adam())
         for n in epochs
             train!(
                 nn, opt, dl, Batch(10), n; loss = FeedForwardLoss(), show_progress = false)
@@ -41,7 +41,7 @@ end
     nn₂, opt₂ = trained(10)
     @test params(nn₁).L1.weight isa StiefelManifold{T}
     @test params(nn₁) == params(nn₂)
-    @test opt₁.optimizer.state.iterations == opt₂.optimizer.state.iterations == 30
+    @test opt₁.state.iterations == opt₂.state.iterations == 30
 end
 
 # The history has the type of the loss value, and nothing is converted: the network's element type
@@ -54,7 +54,7 @@ end
         dl = DataLoader(x, x; suppress_info = true)
         nn = NeuralNetwork(Chain(Dense(2, 2, identity)), Tnn)
         history = train!(
-            nn, NetworkOptimizer(nn), dl, Batch(5), 2; loss = FeedForwardLoss(),
+            nn, TrainingOptimizer(nn.params), dl, Batch(5), 2; loss = FeedForwardLoss(),
             show_progress = false)
         @test eltype(history) === Thistory
     end
@@ -69,7 +69,7 @@ end
     batch = Batch(4)
     loss = FeedForwardLoss()
     nn = NeuralNetwork(Chain(Dense(2, 2, tanh)), T)
-    opt = NetworkOptimizer(nn; algorithm = GradientMethod(), linesearch = floatmin(T))
+    opt = TrainingOptimizer(nn.params; algorithm = GradientMethod(), linesearch = floatmin(T))
     p₀ = deepcopy(params(nn))
     Random.seed!(8)
     losses = map(batch(dl)) do indices
@@ -86,7 +86,43 @@ end
     @test history[1] ≈ sum(losses) / 3
 end
 
-# Without `loss`, `train!` trains on the loss that matches the architecture and the batch.
+# `train!` steps with the gradient of the `pullback` it is given. One epoch of one minibatch with
+# `GradientMethod` moves the parameters by `-η` times the symbolic gradient at `p₀`, and the history
+# is the symbolic pullback's loss value.
+@testset "train! trains a Hamiltonian network with SymbolicPullback ($T)" for T in REAL_ELTYPES
+    Random.seed!(9)
+    arch = StandardHamiltonianArchitecture(2, 4, 1, GeometricMachineLearning.SigmoidActivation())
+    dl = DataLoader(randn(T, 2, 8), randn(T, 2, 8); suppress_info = true)
+    nn = NeuralNetwork(arch, CPU(), T)
+    p₀ = deepcopy(params(nn))
+    loss = HNNLoss(arch)
+    pullback = SymbolicPullback(arch)
+    batch = Batch(8)
+    Random.seed!(2)
+    data = GeometricMachineLearning.convert_input_and_batch_indices_to_array(
+        dl, batch, only(batch(dl)))
+    value, back = pullback(p₀, nn.model, data)
+    g = back(one(value))
+    η = T(0.1)
+    opt = TrainingOptimizer(params(nn); algorithm = GradientMethod(), linesearch = η)
+    Random.seed!(2)
+    history = train!(nn, opt, dl, batch, 1; loss, pullback, show_progress = false)
+    @test history == [value]
+    @test eltype(history) === T
+    for (layer, layer₀, gradient) in zip(values(params(nn)), values(p₀), values(g))
+        for k in keys(layer)
+            @test layer[k] ≈ layer₀[k] .- η .* gradient[k]
+            @test layer[k] != layer₀[k]
+        end
+    end
+    zygote_value, zygote_back = ZygotePullback(loss)(p₀, nn.model, data)
+    zygote_g = GeometricMachineLearning._get_contents(zygote_back(one(zygote_value)))
+    @test zygote_value ≈ value
+    @test_broken zygote_g.L1.W ≈ g.L1.W  # issue #343
+end
+
+# Without `loss`, `train!` trains on the loss that matches the architecture and the batch, and on
+# any other network it says that it needs one.
 @testset "train!'s default losses" begin
     transformer_batch = Batch(4, 3)
     @test GeometricMachineLearning._default_loss(GSympNet(4; n_layers = 2), Batch(4)) isa
@@ -96,19 +132,29 @@ end
         transformer_batch) == TransformerLoss(transformer_batch)
     autoencoder = SymplecticAutoencoder(4, 2; n_encoder_blocks = 2, n_decoder_blocks = 2)
     @test GeometricMachineLearning._default_loss(autoencoder, Batch(4)) isa AutoEncoderLoss
+
+    nn = NeuralNetwork(Chain(Dense(2, 2, identity)))
+    dl = DataLoader(rand(2, 10), rand(2, 10); suppress_info = true)
+    raised = try
+        train!(nn, TrainingOptimizer(params(nn)), dl, Batch(5), 1; show_progress = false)
+    catch e
+        e
+    end
+    @test raised isa ArgumentError
+    @test occursin("`loss`", raised.msg)
 end
 
 @testset "train! refuses n_epochs < 1 before any step" begin
     Random.seed!(5)
     nn = NeuralNetwork(Chain(Dense(2, 2, identity)))
     dl = DataLoader(rand(2, 10), rand(2, 10); suppress_info = true)
-    opt = NetworkOptimizer(nn)
+    opt = TrainingOptimizer(nn.params)
     p₀ = deepcopy(params(nn))
     for n in (0, -1)
         @test_throws ArgumentError train!(
             nn, opt, dl, Batch(5), n; loss = FeedForwardLoss(),
             show_progress = false)
     end
-    @test opt.optimizer.state.iterations == 0
+    @test opt.state.iterations == 0
     @test params(nn) == p₀
 end

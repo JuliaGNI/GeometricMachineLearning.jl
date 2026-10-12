@@ -201,9 +201,9 @@ const feedforward_batch = Batch(batch_size)
 const transformer_batch = Batch(batch_size, seq_length, seq_length)
 const opt_pairing = AdamOptimizerWithDecay(n_epochs; η₁ = 1e-2, η₂ = 1e-6)
 
-o_vpff = NetworkOptimizer(nn_vpff; opt_pairing...)
-o_vpt = NetworkOptimizer(nn_vpt; opt_pairing...)
-o_st = NetworkOptimizer(nn_st; opt_pairing...)
+o_vpff = TrainingOptimizer(nn_vpff.params; opt_pairing...)
+o_vpt = TrainingOptimizer(nn_vpt.params; opt_pairing...)
+o_st = TrainingOptimizer(nn_st.params; opt_pairing...)
 nothing # hide
 ```
 ```julia

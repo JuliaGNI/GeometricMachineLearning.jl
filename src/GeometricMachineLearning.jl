@@ -37,7 +37,7 @@ import Symbolics
 # `layers/` and the kernels), and extending a *type* reached through `using` warns on every such
 # method since Julia 1.12 — "Constructor for type … was extended in `GeometricMachineLearning`
 # without explicit qualification or import". Everything imported here is re-exported below, except
-# `orthonormal_columns`, `TrainingOptimizer` and `optimization_step!`; the re-exports are what keep
+# `orthonormal_columns` and `optimization_step!`; the re-exports are what keep
 # `using GeometricMachineLearning` alone sufficient.
 import GeometricOptimizers
 import GeometricOptimizers: Manifold, StiefelManifold, GrassmannManifold
@@ -55,8 +55,8 @@ import GeometricOptimizers: GlobalSection, global_rep, apply_section, apply_sect
 import GeometricOptimizers: Geodesic, Cayley, geodesic, cayley, retraction
 import GeometricOptimizers: GradientMethod, MomentumMethod, Adam, AdamWithEuclideanDecay,
                             AdamOptimizerWithDecay, DecayingStatic
-# The training step. `TrainingOptimizer` and `optimization_step!` are not re-exported:
-# `NetworkOptimizer` wraps the one and `train!` calls the other.
+# The training step. `train!` takes a `TrainingOptimizer` and calls `optimization_step!`, which is
+# not re-exported.
 import GeometricOptimizers: TrainingOptimizer, optimization_step!
 import GeometricOptimizers: update!
 # `solve!` is imported rather than started afresh so that GML's `solve!(::NeuralNetwork{<:PSDArch},
@@ -196,17 +196,6 @@ export TransformerIntegrator, StandardTransformerIntegrator
 
 # INCLUDE OPTIMIZERS — the methods, sections and retractions come from GeometricOptimizers.
 include("optimizers/optimizer.jl")
-
-export NetworkOptimizer
-export GlobalSection, global_section, apply_section, apply_section!, update_section!
-export global_rep
-export Geodesic, Cayley
-export geodesic, cayley
-export retraction
-export update!
-# Re-exported from GeometricOptimizers, which owns the one definition of them.
-export GradientMethod, MomentumMethod, Adam, AdamWithEuclideanDecay
-export AdamOptimizerWithDecay, DecayingStatic
 
 export NeuralNetwork
 

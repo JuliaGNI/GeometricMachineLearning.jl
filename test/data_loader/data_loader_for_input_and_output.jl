@@ -16,7 +16,7 @@ nepochs = 2000
 model = Chain(Dense(1, nwidth), Dense(nwidth, 1))
 nn = NeuralNetwork(model, Float32)
 dl = DataLoader(xsamples, ysamples)
-o = NetworkOptimizer(nn; algorithm = Adam())
+o = TrainingOptimizer(nn.params; algorithm = Adam())
 batch = Batch(nbatch, 1, 1)
 
 loss = FeedForwardLoss()

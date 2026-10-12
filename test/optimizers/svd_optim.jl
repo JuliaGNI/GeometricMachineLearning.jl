@@ -42,9 +42,9 @@ function svd_test(A, n, train_steps = 1000, tol = 1e-1; retraction = Cayley())
     model = Chain(StiefelLayer(N, n), StiefelLayer(n, N))
     ps = NeuralNetwork(model, CPU(), Float64).params
 
-    o₁ = NetworkOptimizer(ps; algorithm = GradientMethod(), retraction, linesearch = 0.01)
-    o₂ = NetworkOptimizer(ps; algorithm = MomentumMethod(), retraction, linesearch = 0.01)
-    o₃ = NetworkOptimizer(ps; algorithm = Adam(), retraction, linesearch = 0.01)
+    o₁ = TrainingOptimizer(ps; algorithm = GradientMethod(), retraction, linesearch = 0.01)
+    o₂ = TrainingOptimizer(ps; algorithm = MomentumMethod(), retraction, linesearch = 0.01)
+    o₃ = TrainingOptimizer(ps; algorithm = Adam(), retraction, linesearch = 0.01)
 
     U₁, Ũ₁, err₁ = train_network!(o₁, model, deepcopy(ps), A, train_steps, tol)
     U₂, _, err₂ = train_network!(o₂, model, deepcopy(ps), A, train_steps, tol)
@@ -60,7 +60,7 @@ function svd_test(A, n, train_steps = 1000, tol = 1e-1; retraction = Cayley())
     @test norm((err₃ - err_best)/err_best) < tol
 end
 
-function train_network!(o::NetworkOptimizer, model::Chain, ps::NetworkParameters,
+function train_network!(o::TrainingOptimizer, model::Chain, ps::NetworkParameters,
         A::AbstractMatrix, train_steps, tol)
     error(ps) = norm(A - model(A, ps))
 

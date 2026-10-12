@@ -52,7 +52,7 @@ function test_multi_head_attention_retraction(
     model = Chain(MultiHeadAttention(dim, n_heads, Stiefel = true))
 
     ps = NeuralNetwork(model, backend, T).params
-    cache = NetworkOptimizer(ps; algorithm = MomentumMethod()).optimizer.cache
+    cache = TrainingOptimizer(ps; algorithm = MomentumMethod()).cache
     @test cache isa MomentumCache
 
     check_retraction_geodesic(cache)

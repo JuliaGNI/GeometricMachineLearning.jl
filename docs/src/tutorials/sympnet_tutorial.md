@@ -102,8 +102,8 @@ We have to define an [optimizer](@extref GeometricOptimizers Standard-Neural-Net
 # set up optimizer; for this we first need to specify the optimization method
 opt_method = Adam()
 # we then build the optimizer, which allocates the cache in the element type of the network
-la_opt = NetworkOptimizer(la_nn; algorithm = opt_method)
-g_opt = NetworkOptimizer(g_nn; algorithm = opt_method)
+la_opt = TrainingOptimizer(la_nn.params; algorithm = opt_method)
+g_opt = TrainingOptimizer(g_nn.params; algorithm = opt_method)
 
 nothing # hide
 ```
@@ -242,7 +242,7 @@ parameterlength(rn_nn)
 We now train the network ``\ldots``
 
 ```@example sympnet
-rn_opt = NetworkOptimizer(rn_nn; algorithm = opt_method)
+rn_opt = TrainingOptimizer(rn_nn.params; algorithm = opt_method)
 
 rn_loss_array = train!(rn_nn, rn_opt, dl, batch, nepochs; show_progress = false)
 nothing # hide

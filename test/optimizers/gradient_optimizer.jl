@@ -16,7 +16,7 @@ function gradient_optimizer_euclidean(N; n_steps = 20, step_size = 1e-3)
     A = randn(N, N)
     ps = NetworkParameters((A = A,))
     loss1 = loss(ps)
-    o = NetworkOptimizer(ps; algorithm = GradientMethod(), linesearch = step_size)
+    o = TrainingOptimizer(ps; algorithm = GradientMethod(), linesearch = step_size)
     for _ in 1:n_steps
         ∇L = Zygote.gradient(loss, ps)[1]
         optimization_step!(ps, o, ∇L)
@@ -35,7 +35,7 @@ function gradient_optimizer_stiefel(N, n; n_steps = 20, step_size = 1e-3)
     Y = rand(StiefelManifold, N, n)
     ps = NetworkParameters((Y = Y,))
     loss1 = loss(ps)
-    o = NetworkOptimizer(ps; algorithm = GradientMethod(), linesearch = step_size)
+    o = TrainingOptimizer(ps; algorithm = GradientMethod(), linesearch = step_size)
     for _ in 1:n_steps
         ∇L = Zygote.gradient(loss, ps)[1]
         optimization_step!(ps, o, ∇L)

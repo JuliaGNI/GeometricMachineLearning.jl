@@ -22,7 +22,7 @@ function optimizer_runs(architecture, batch, input_dim; T = Float64, n_epochs = 
 
     for method in (Adam(), MomentumMethod(), GradientMethod())
         nn, dl = nn_and_dl()
-        o = NetworkOptimizer(nn; algorithm = method)
+        o = TrainingOptimizer(nn.params; algorithm = method)
         loss_array = train!(nn, o, dl, batch, n_epochs; show_progress = false)
         @test length(loss_array) == n_epochs
         @test all(isfinite, loss_array)
@@ -31,7 +31,7 @@ function optimizer_runs(architecture, batch, input_dim; T = Float64, n_epochs = 
     # `AdamOptimizerWithDecay` is a `(algorithm, linesearch)` pairing rather than a method, so it
     # splats into the keywords
     nn, dl = nn_and_dl()
-    o = NetworkOptimizer(nn; AdamOptimizerWithDecay(n_epochs)...)
+    o = TrainingOptimizer(nn.params; AdamOptimizerWithDecay(n_epochs)...)
     loss_array = train!(nn, o, dl, batch, n_epochs; show_progress = false)
     @test length(loss_array) == n_epochs
     @test all(isfinite, loss_array)

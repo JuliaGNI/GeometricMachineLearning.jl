@@ -43,10 +43,10 @@ dl = DataLoader(input, output)
 # `LNNLoss(arch)` is what `NetworkLoss(arch)` returns; naming it is for the reader.
 loss = LNNLoss(arch)
 
-# The step size is the `NetworkOptimizer`'s `linesearch`, not the method's. `LNNLoss` needs a larger
+# The step size is the `TrainingOptimizer`'s `linesearch`, not the method's. `LNNLoss` needs a larger
 # one than `HNNLoss` does: its gradient reaches the parameters through a solve against the velocity
 # Hessian, where `HNNLoss` is linear in the gradient of the learned Hamiltonian.
-optimizer = NetworkOptimizer(nn; algorithm = Adam(), linesearch = 1e-2)
+optimizer = TrainingOptimizer(nn.params; algorithm = Adam(), linesearch = 1e-2)
 total_loss = train!(
     nn, optimizer, dl, Batch(10), nepochs; loss = loss, show_progress = true)
 

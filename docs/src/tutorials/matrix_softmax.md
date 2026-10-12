@@ -89,8 +89,8 @@ Training is done with the `Adam`:
 ```@example softmax_comparison
 o_method = Adam()
 
-o1 = NetworkOptimizer(nn1; algorithm = o_method)
-o2 = NetworkOptimizer(nn2; algorithm = o_method)
+o1 = TrainingOptimizer(nn1.params; algorithm = o_method)
+o2 = TrainingOptimizer(nn2.params; algorithm = o_method)
 
 batch = Batch(batch_size, seq_length)
 

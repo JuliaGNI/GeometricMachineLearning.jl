@@ -23,9 +23,9 @@ function transformer_gradient_test(T, dim, n_heads, L, seq_length = 8, batch_siz
     ps₂ = deepcopy(ps)
     ps₃ = deepcopy(ps)
 
-    o₁ = NetworkOptimizer(ps₁; algorithm = GradientMethod())
-    o₂ = NetworkOptimizer(ps₂; algorithm = MomentumMethod())
-    o₃ = NetworkOptimizer(ps₃; algorithm = Adam())
+    o₁ = TrainingOptimizer(ps₁; algorithm = GradientMethod())
+    o₂ = TrainingOptimizer(ps₂; algorithm = MomentumMethod())
+    o₃ = TrainingOptimizer(ps₃; algorithm = Adam())
 
     optimization_step!(ps₁, o₁, dx)
     optimization_step!(ps₂, o₂, dx)

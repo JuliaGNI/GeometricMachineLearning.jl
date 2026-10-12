@@ -262,7 +262,7 @@ function compute_gradient(ps::NetworkParameters)
 end
 
 # note the very high value for the learning rate
-optimizer = NetworkOptimizer(nn; algorithm = Adam(), linesearch = 1e-1)
+optimizer = TrainingOptimizer(nn.params; algorithm = Adam(), linesearch = 1e-1)
 
 nothing # hide
 ```

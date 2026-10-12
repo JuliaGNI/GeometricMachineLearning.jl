@@ -38,7 +38,7 @@ const n_epochs = smoke_size(262144, 2)
 const batch_size = 4096
 
 sae_pairing = AdamOptimizerWithDecay(n_epochs)
-o = NetworkOptimizer(sae_nn; sae_pairing...)
+o = TrainingOptimizer(sae_nn.params; sae_pairing...)
 
 println("Number of batches: ", GeometricMachineLearning.number_of_batches(dl, Batch(batch_size)))
 
@@ -106,7 +106,7 @@ integrator_architecture = StandardTransformerIntegrator(
 # the fallback raises is `Functor not defined`, not a `MethodError`.
 integrator_nn = NeuralNetwork(integrator_architecture, backend, Float32)
 integrator_pairing = AdamOptimizerWithDecay(integrator_train_epochs)
-o_integrator = NetworkOptimizer(integrator_nn; integrator_pairing...)
+o_integrator = TrainingOptimizer(integrator_nn.params; integrator_pairing...)
 
 loss = GeometricMachineLearning.ReducedLoss(encoder(sae_nn), decoder(sae_nn))
 

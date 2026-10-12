@@ -15,7 +15,7 @@ Main.remark(raw"As with any neural network we have to make the following choices
 " * Main.indentation * raw"5. choose a *number of epochs*,
 " * Main.indentation * raw"where points 1 and 3 depend on a variable number of hyperparameters.")
 ```
-For the symplectic autoencoder point 1 is done by calling [`SymplecticAutoencoder`](@ref), point 2 is done by calling `NeuralNetwork`, point 3 is done by calling [`NetworkOptimizer`](@ref) and point 4 is done by calling [`Batch`](@ref).
+For the symplectic autoencoder point 1 is done by calling [`SymplecticAutoencoder`](@ref), point 2 is done by calling `NeuralNetwork`, point 3 is done by calling [`TrainingOptimizer`](@extref GeometricOptimizers GeometricOptimizers.TrainingOptimizer) and point 4 is done by calling [`Batch`](@ref).
 
 ## The system
 
@@ -111,7 +111,7 @@ sae_arch = SymplecticAutoencoder(dl_cpu.input_dim, reduced_dim; n_encoder_blocks
 nothing # hide
 ```
 
-Training a neural network is usually done by calling [`train!`](@ref) with a [`NetworkOptimizer`](@ref) in `GeometricMachineLearning`. [`PSDArch`](@ref) however can be solved directly by using singular value decomposition and this is done by calling [`solve!`](@ref):  
+Training a neural network is usually done by calling [`train!`](@ref) with a [`TrainingOptimizer`](@extref GeometricOptimizers GeometricOptimizers.TrainingOptimizer) in `GeometricMachineLearning`. [`PSDArch`](@ref) however can be solved directly by using singular value decomposition and this is done by calling [`solve!`](@ref):  
 
 ```@example toda_lattice
 psd_nn_cpu = NeuralNetwork(psd_arch, CPU(), eltype(dl_cpu))
@@ -145,7 +145,7 @@ dl = DataLoader(dl_cpu, backend, Float32)
 
 
 sae_nn_gpu = NeuralNetwork(sae_arch, CUDADevice(), Float32)
-o = NetworkOptimizer(sae_nn_gpu; AdamOptimizerWithDecay(integrator_train_epochs)...)
+o = TrainingOptimizer(sae_nn_gpu.params; AdamOptimizerWithDecay(integrator_train_epochs)...)
 
 # train the network
 train!(sae_nn_gpu, o, dl, Batch(batch_size), n_epochs)
@@ -282,7 +282,7 @@ integrator_nn = NeuralNetwork(integrator_architecture, backend)
 
 integrator_pairing = AdamOptimizerWithDecay(integrator_train_epochs)
 
-o_integrator = NetworkOptimizer(integrator_nn; integrator_pairing...)
+o_integrator = TrainingOptimizer(integrator_nn.params; integrator_pairing...)
 
 dl = dl_cpu # hide
 # map from autoencoder type to integrator type
@@ -477,7 +477,7 @@ const integrator_architecture2 = StandardTransformerIntegrator(reduced_dim2;
                                                                             upscaling_activation = tanh)
 integrator_nn2 = NeuralNetwork(integrator_architecture2, backend)
 const integrator_pairing2 = AdamOptimizerWithDecay(integrator_train_epochs)
-const o_integrator2 = NetworkOptimizer(integrator_nn2; integrator_pairing2...)
+const o_integrator2 = TrainingOptimizer(integrator_nn2.params; integrator_pairing2...)
 
 loss2 = GeometricMachineLearning.ReducedLoss(encoder(psd_nn2), decoder(psd_nn2))
 nothing # hide

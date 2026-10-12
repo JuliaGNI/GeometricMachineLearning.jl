@@ -40,8 +40,8 @@ function test_data_loader(dim = 2, number_of_time_steps = 100,
     nn2 = NeuralNetwork(arch2, CPU(), T)
 
     batch = Batch(batch_size)
-    o₁ = NetworkOptimizer(nn1; algorithm = GradientMethod())
-    o₂ = NetworkOptimizer(nn2; algorithm = GradientMethod())
+    o₁ = TrainingOptimizer(nn1.params; algorithm = GradientMethod())
+    o₂ = TrainingOptimizer(nn2.params; algorithm = GradientMethod())
 
     params₁ = deepcopy(nn1.params)
     params₂ = deepcopy(nn2.params)

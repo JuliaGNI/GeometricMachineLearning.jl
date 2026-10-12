@@ -28,11 +28,11 @@ n_epochs = smoke_size(100, 2)
 batch_size = smoke_size(512, 16)
 n_range = 2:1:smoke_size(15, 3)
 μ_range = (T(0.51), T(0.625), T(0.55), T(0.47))
-# The learning rate is the `NetworkOptimizer`'s `linesearch`, not the method's: `Adam` has no `η`
+# The learning rate is the `TrainingOptimizer`'s `linesearch`, not the method's: `Adam` has no `η`
 # field, and `β₁`, `β₂` and `δ` are keywords.
 opt = Adam(; β₁ = 0.9, β₂ = 0.99, δ = 1.0e-8)
 const step_size = T(0.001)
-# The retraction belongs to the `NetworkOptimizer`, not to the layer: `PSDLayer(M, N)` takes no
+# The retraction belongs to the `TrainingOptimizer`, not to the layer: `PSDLayer(M, N)` takes no
 # keyword.
 retraction = Cayley()
 
@@ -88,7 +88,7 @@ end
 # architecture rather than a bare `Chain` is what makes `encoder(nn)` and `decoder(nn)` available,
 # and those are what `HRedSys` needs.
 #
-# Training is `DataLoader` + `Batch` + `NetworkOptimizer`, and the loop is `train!`: the batch is a
+# Training is `DataLoader` + `Batch` + `TrainingOptimizer`, and the loop is `train!`: the batch is a
 # `Batch`, and a failed step raises its error.
 function get_nn_encoder_decoder(; n = 5, n_epochs = 500, opt = opt, T = T)
     sae_arch = SymplecticAutoencoder(
@@ -96,8 +96,8 @@ function get_nn_encoder_decoder(; n = 5, n_epochs = 500, opt = opt, T = T)
         n_encoder_layers = 2, n_decoder_layers = 2)
     sae_nn = NeuralNetwork(sae_arch, backend, T)
 
-    optimizer_instance = NetworkOptimizer(
-        sae_nn; algorithm = opt, linesearch = step_size, retraction = retraction)
+    optimizer_instance = TrainingOptimizer(
+        sae_nn.params; algorithm = opt, linesearch = step_size, retraction = retraction)
     train!(sae_nn, optimizer_instance, dl, Batch(batch_size), n_epochs)
 
     sae_nn

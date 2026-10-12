@@ -313,7 +313,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   ```julia
   x = rand(Float32, 6, 12)
   nn = NeuralNetwork(Chain(StiefelLayer(6, 3), Dense(3, 2, tanh)), Float64)
-  train!(nn, NetworkOptimizer(nn), DataLoader(x, x[1:2, :]), Batch(4), 2; loss = FeedForwardLoss())
+  train!(nn, TrainingOptimizer(nn.params), DataLoader(x, x[1:2, :]), Batch(4), 2; loss = FeedForwardLoss())
   ```
 
 ### K8 · A `DataLoader` of one sample cannot be batched.
@@ -350,6 +350,20 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   1 nbatches 9 samples [(1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1), (7, 1), (8, 1), (9, 1)]
   10 nbatches 1 samples [(1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1), (7, 1), (8, 1), (9, 1)]
   ```
+
+### K13 · `SymbolicPullback(arch)` gives the gradient of the per-sample sum, not of `HNNLoss`.
+
+- **location:** `src/pullbacks/symbolic_hnn_pullback.jl`
+- **kind:** found late
+- **found:** 2026-10-12, while adding the `pullback` keyword of `train!` (#342); issue #343
+- **evidence:**
+  The value of the pullback is the batch loss `norm(F(X) - Y) / norm(Y)`, but the gradient is
+  built with `reduce = +`, so it is the gradient of the sum of the per-sample losses. On one
+  minibatch of 5 samples in `Float64`, `dL/dW1[1]` is `0.002695929479656911` by a central finite
+  difference, `0.0026959294110209093` by Zygote and `0.004388379726963325` by the symbolic
+  pullback; the symbolic gradient agrees with Zygote's gradient of the per-sample sum to `5.2e-17`.
+  `main` at cfe4aea3 gives the same numbers. `test/data_loader/train.jl` marks the comparison with
+  Zygote `@test_broken`.
 
 ## Upstream
 

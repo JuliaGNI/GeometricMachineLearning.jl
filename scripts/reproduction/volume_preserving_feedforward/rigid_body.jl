@@ -48,7 +48,7 @@ model = VolumePreservingFeedForward(sys_dim, n_blocks, n_linear, activation)
 
 nn = NeuralNetwork(model, backend, T)
 
-o = NetworkOptimizer(nn; algorithm = opt_method)
+o = TrainingOptimizer(nn.params; algorithm = opt_method)
 
 batch = Batch(batch_size)
 

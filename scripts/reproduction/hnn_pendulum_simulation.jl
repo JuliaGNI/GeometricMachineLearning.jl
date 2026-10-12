@@ -36,7 +36,7 @@ dl = DataLoader(input, output)
 # symbolic derivative again.
 const loss = HNNLoss(hnn)
 
-optimizer = NetworkOptimizer(nn; algorithm = Adam(), linesearch = 1e-3)
+optimizer = TrainingOptimizer(nn.params; algorithm = Adam(), linesearch = 1e-3)
 total_loss = train!(
     nn, optimizer, dl, Batch(10), nepochs; loss = loss, show_progress = true)
 

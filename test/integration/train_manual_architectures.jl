@@ -56,7 +56,7 @@ end
         @testset "$name" begin
             nn = NeuralNetwork(arch, T)
             p₀ = deepcopy(params(nn))
-            opt = NetworkOptimizer(nn; algorithm = Adam())
+            opt = TrainingOptimizer(nn.params; algorithm = Adam())
             history = loss === nothing ?
                       train!(nn, opt, dl, batch, 2; show_progress = false) :
                       train!(nn, opt, dl, batch, 2; loss, show_progress = false)

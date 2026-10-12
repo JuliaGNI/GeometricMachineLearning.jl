@@ -37,7 +37,7 @@ Random.seed!(123)
         StandardTransformerIntegrator(reduced_dim; transformer_dim = 10, n_blocks = 1,
             n_heads = 2, L = 1, upscaling_activation = tanh), CPU(), Float64)
 
-    o = NetworkOptimizer(integrator; algorithm = Adam())
+    o = TrainingOptimizer(integrator.params; algorithm = Adam())
     batch = Batch(8, 4)
 
     # The parameters reach the loss through `Zygote.pullback` here, which is what an annotated

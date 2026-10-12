@@ -47,7 +47,7 @@ model = VolumePreservingFeedForward(sys_dim, n_blocks, n_linear, activation)
 
 nn = NeuralNetwork(model, backend, T)
 
-o = NetworkOptimizer(nn; algorithm = opt_method)
+o = TrainingOptimizer(nn.params; algorithm = opt_method)
 
 # `Batch(batch_size, 1)` is a `Batch{:Transformer}` of sequence length one, and the network here is
 # a `NeuralNetworkIntegrator`, whose loss defaults only for a `Batch{:FeedForward}`.

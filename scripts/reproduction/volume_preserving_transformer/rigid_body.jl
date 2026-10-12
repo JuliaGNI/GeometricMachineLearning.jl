@@ -62,7 +62,7 @@ const t_validation_long = 100
 function train_the_network(nn₀::GeometricMachineLearning.NeuralNetwork, batch::Batch)
     Random.seed!(1234)
 
-    o₀ = NetworkOptimizer(nn₀; opt_pairing...)
+    o₀ = TrainingOptimizer(nn₀.params; opt_pairing...)
 
     loss_array = train!(nn₀, o₀, dl, batch, n_epochs)
 

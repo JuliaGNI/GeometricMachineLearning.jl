@@ -171,7 +171,7 @@ function test_symplectic_euler_training(; n = 1, Δt = 1.0e-2, n_epochs = 20)
     nn = NeuralNetwork(arch)
     dl = DataLoader(input, output; suppress_info = true)
     loss_array = train!(
-        nn, NetworkOptimizer(nn; algorithm = Adam()), dl, Batch(10), n_epochs;
+        nn, TrainingOptimizer(nn.params; algorithm = Adam()), dl, Batch(10), n_epochs;
         loss, show_progress = false)
     @test loss_array[end] < loss_array[1]
 end
@@ -341,7 +341,7 @@ function test_variational_training(; Δt = 0.05, samples = 60, n_epochs = 20)
 
     dl = DataLoader(vcat(qₙ, qₙ₊₁), qₙ₊₂; suppress_info = true)
     loss_array = train!(
-        nn, NetworkOptimizer(nn; algorithm = Adam()), dl, Batch(10), n_epochs;
+        nn, TrainingOptimizer(nn.params; algorithm = Adam()), dl, Batch(10), n_epochs;
         loss, show_progress = false)
     @test loss_array[end] < loss_array[1]
 end

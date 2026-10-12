@@ -14,7 +14,7 @@ function optimization_step_test(N, n, T)
     # gradient
     dx = NetworkParameters((L1 = (weight = rand(T, N, n),),
         L2 = (W = rand(T, N, N), b = rand(T, N))))
-    o = NetworkOptimizer(ps; algorithm = Adam())
+    o = TrainingOptimizer(ps; algorithm = Adam())
 
     ps2 = deepcopy(ps)
     optimization_step!(ps, o, dx)
@@ -40,12 +40,12 @@ end
 @testset "one cache and one state over the whole network ($T)" for T in REAL_ELTYPES
     model = Chain(StiefelLayer(6, 3), Dense(6, 6, tanh))
     nn = NeuralNetwork(model, KernelAbstractions.CPU(), T)
-    o = NetworkOptimizer(nn; algorithm = Adam())
+    o = TrainingOptimizer(nn.params; algorithm = Adam())
 
-    @test o.optimizer.cache isa GeometricOptimizers.OptimizerCache{T}
-    @test o.optimizer.state isa GeometricOptimizers.OptimizerState{T}
-    for x in (GeometricOptimizers.solution(o.optimizer.cache),
-        GeometricOptimizers.solution(o.optimizer.state))
+    @test o.cache isa GeometricOptimizers.OptimizerCache{T}
+    @test o.state isa GeometricOptimizers.OptimizerState{T}
+    for x in (GeometricOptimizers.solution(o.cache),
+        GeometricOptimizers.solution(o.state))
         @test x isa NetworkParameters
         @test keys(x) == keys(GeometricMachineLearning.params(nn))
         @test x.L1.weight isa StiefelManifold{T}
@@ -60,26 +60,22 @@ function allocations(f::F, a::A, b::B, c::C) where {F, A, B, C}
 end
 
 # The training step is the hot path of `train!`. It is inferred, and on a Euclidean layer it allocates
-# nothing. With a Stiefel leaf `GeometricOptimizers`' own step allocates (about 2 to 4 kB here), and
-# the step through `NetworkOptimizer` allocates the same bytes, within 256: Windows reads up to 48
-# bytes apart. One copy of the 64 × 64 gradient leaf is 16 kB in `Float32`, 64 times the tolerance.
-@testset "the step through NetworkOptimizer is inferred and allocates nothing of its own ($T)" for T in REAL_ELTYPES
+# nothing. With a Stiefel leaf it is inferred and keeps the leaf on the manifold.
+@testset "the training step is inferred and allocates nothing on a Euclidean layer ($T)" for T in REAL_ELTYPES
     for algorithm in (GradientMethod(), MomentumMethod(), Adam())
         ps = NetworkParameters((L1 = (W = rand(T, 3, 3), b = rand(T, 3)),))
         dp = NetworkParameters((L1 = (W = rand(T, 3, 3), b = rand(T, 3)),))
-        o = NetworkOptimizer(ps; algorithm)
+        o = TrainingOptimizer(ps; algorithm)
         @inferred optimization_step!(ps, o, dp)
         @test allocations(optimization_step!, ps, o, dp) == 0
         @test eltype(ps.L1.W) === eltype(ps.L1.b) === T
 
-        ps = NetworkParameters((L1 = (W = rand(T, 64, 64), b = rand(T, 64)),
+        ps = NetworkParameters((L1 = (W = rand(T, 3, 3), b = rand(T, 3)),
             L2 = (Y = rand(StiefelManifold{T}, 4, 2),)))
-        dp = NetworkParameters((L1 = (W = rand(T, 64, 64), b = rand(T, 64)),
+        dp = NetworkParameters((L1 = (W = rand(T, 3, 3), b = rand(T, 3)),
             L2 = (Y = rand(T, 4, 2),)))
-        o = NetworkOptimizer(ps; algorithm)
+        o = TrainingOptimizer(ps; algorithm)
         @inferred optimization_step!(ps, o, dp)
-        @test abs(allocations(optimization_step!, ps, o, dp) -
-                  allocations(optimization_step!, ps, o.optimizer, dp)) ≤ 256
         @test ps.L2.Y isa StiefelManifold{T}
     end
     @test allocations((a, b, c) -> collect(a), 1:3, 1, 1) > 0

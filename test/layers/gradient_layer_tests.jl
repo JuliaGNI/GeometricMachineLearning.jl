@@ -25,7 +25,7 @@ end
 function test_gradient_layer_derivative_and_update(T, M, N, batch_size = 10)
     dummy_model = Chain(GradientLayerP(M, N, tanh), GradientLayerQ(M, N, tanh))
     ps = params(NeuralNetwork(dummy_model, CPU(), T))
-    o = NetworkOptimizer(ps; algorithm = Adam(; β₁ = 0.9, β₂ = 0.999, δ = 3e-7),
+    o = TrainingOptimizer(ps; algorithm = Adam(; β₁ = 0.9, β₂ = 0.999, δ = 3e-7),
         linesearch = T(0.1))
 
     # test for vector

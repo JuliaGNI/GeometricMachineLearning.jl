@@ -49,7 +49,7 @@ function check_multi_head_attention_stiefel_setup(T::Type, N::Int, n::Int)
     @test nleaves > 0
     @test check_setup_calls[] == nleaves
 
-    gx = NetworkOptimizer(ps; algorithm = MomentumMethod()).optimizer.cache
+    gx = TrainingOptimizer(ps; algorithm = MomentumMethod()).cache
     @test gx isa MomentumCache
     check_grad_setup(gx)
 end

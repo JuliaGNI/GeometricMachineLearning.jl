@@ -27,7 +27,7 @@ arch = GSympNet(dl; upscaling_dimension = 4)
 nn = NeuralNetwork(arch)
 o_method = Adam()
 
-o = NetworkOptimizer(nn; algorithm = o_method)
+o = TrainingOptimizer(nn.params; algorithm = o_method)
 
 batch = Batch(256)
 const n_epochs = smoke_size(1024, 2)

@@ -70,10 +70,10 @@ const n_epochs = smoke_size(3000, 2)
 
 o_method = Adam()
 
-o1 = NetworkOptimizer(nn1; algorithm = o_method)
-o2 = NetworkOptimizer(nn2; algorithm = o_method)
-o3 = NetworkOptimizer(nn3; algorithm = o_method)
-o4 = NetworkOptimizer(nn4; algorithm = o_method)
+o1 = TrainingOptimizer(nn1.params; algorithm = o_method)
+o2 = TrainingOptimizer(nn2.params; algorithm = o_method)
+o3 = TrainingOptimizer(nn3.params; algorithm = o_method)
+o4 = TrainingOptimizer(nn4.params; algorithm = o_method)
 
 batch = Batch(batch_size, seq_length)
 

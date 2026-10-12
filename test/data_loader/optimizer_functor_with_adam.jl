@@ -49,7 +49,7 @@ function test_optimization_with_adam(; T = Float32, input_dim = 9, n_patches = 4
 
     loss₁ = loss(model, ps, dl.input, dl.output)
 
-    opt = NetworkOptimizer(nn_obj; algorithm = Adam())
+    opt = TrainingOptimizer(nn_obj.params; algorithm = Adam())
     loss_average = only(train!(nn_obj, opt, dl, batch, 1; loss, show_progress = false))
 
     loss₃ = loss(model, ps, dl.input, dl.output)

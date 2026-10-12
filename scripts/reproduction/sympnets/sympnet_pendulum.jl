@@ -69,7 +69,7 @@ end
 # define momentum optimizer and initialize
 method = Adam()
 # initial gradients for calling Cache constructor
-opt = NetworkOptimizer(ps; algorithm = method)
+opt = TrainingOptimizer(ps; algorithm = method)
 
 # training 
 println("initial loss: ", full_loss(ps, q, p))

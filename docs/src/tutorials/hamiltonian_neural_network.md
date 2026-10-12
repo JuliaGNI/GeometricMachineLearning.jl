@@ -42,7 +42,7 @@ We can now train the network
 ```@example hnn
 batch = Batch(10)
 n_epochs = 100
-o = NetworkOptimizer(hnn; algorithm = Adam())
+o = TrainingOptimizer(hnn.params; algorithm = Adam())
 loss_array = train!(hnn, o, dl, batch, n_epochs; loss)
 using CairoMakie # hide
 lines(loss_array) # hide
@@ -84,7 +84,7 @@ nothing # hide
 We can now train the network:
 
 ```@example hnn
-o_pairs = NetworkOptimizer(hnn_pairs; algorithm = Adam())
+o_pairs = TrainingOptimizer(hnn_pairs.params; algorithm = Adam())
 loss_array_pairs = train!(hnn_pairs, o_pairs, dl_pairs, batch, n_epochs; loss = loss_pairs)
 lines(loss_array_pairs) # hide
 ```

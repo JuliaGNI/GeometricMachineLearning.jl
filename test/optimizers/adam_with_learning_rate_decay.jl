@@ -25,11 +25,11 @@ function train_network(; n_epochs = 2048)
     nn₁ = setup_network(dl)
     nn₂ = setup_network(dl)
 
-    o₁ = NetworkOptimizer(nn₁; algorithm = Adam())
+    o₁ = TrainingOptimizer(nn₁.params; algorithm = Adam())
     # `AdamOptimizerWithDecay` is GeometricOptimizers', and returns the `(algorithm, linesearch)`
     # pairing the keywords take, so it splats rather than being passed positionally. Its argument
     # counts optimization steps, and the optimizer converts it to the element type of the network.
-    o₂ = NetworkOptimizer(nn₂; AdamOptimizerWithDecay(n_epochs)...)
+    o₂ = TrainingOptimizer(nn₂.params; AdamOptimizerWithDecay(n_epochs)...)
 
     batch = Batch(5, 1)
     loss = FeedForwardLoss()
@@ -56,7 +56,7 @@ function train_manifold_network(; n_epochs = 128)
     arch = Chain(StiefelLayer(1, 20), Dense(20, 20, tanh), Dense(20, 1, identity))
     nn = NeuralNetwork(arch, CPU(), eltype(dl))
 
-    o = NetworkOptimizer(nn; AdamOptimizerWithDecay(n_epochs)...)
+    o = TrainingOptimizer(nn.params; AdamOptimizerWithDecay(n_epochs)...)
     loss_array = train!(nn, o, dl, Batch(5, 1), n_epochs; loss = FeedForwardLoss(),
         show_progress = false)
 
@@ -81,11 +81,11 @@ function schedule_starts_at_one(T; n_epochs = 100, η₁ = 1e-2, η₂ = 1e-6)
     # One step of a Euclidean parameter with a gradient of `1` moves it by `α₁ / (√1 + δ) ≈ α₁`, so
     # the distance travelled reports the α used.
     ps = NetworkParameters((weight = zeros(T, 2, 2),))
-    opt = NetworkOptimizer(ps; AdamOptimizerWithDecay(n_epochs; η₁, η₂)...)
-    @test opt.optimizer.linesearch isa DecayingStatic
-    @test opt.optimizer.state.iterations == 0
+    opt = TrainingOptimizer(ps; AdamOptimizerWithDecay(n_epochs; η₁, η₂)...)
+    @test opt.linesearch isa DecayingStatic
+    @test opt.state.iterations == 0
     optimization_step!(ps, opt, NetworkParameters((weight = ones(T, 2, 2),)))
-    @test opt.optimizer.state.iterations == 1
+    @test opt.state.iterations == 1
     @test eltype(ps.weight) === T
     @test abs(ps.weight[1, 1]) ≈ η₁ * γ rtol = 1e-6
 end

@@ -7,7 +7,7 @@ Random.seed!(1234)
 function stiefel_layer_test(T, M, N, tol = 1.0f-1)
     model = Chain(StiefelLayer(M, N), StiefelLayer(N, N))
     ps = NeuralNetwork(model, T).params
-    o = NetworkOptimizer(ps; algorithm = Adam(; β₁ = 5.0f-1, β₂ = 5.0f-1, δ = 3.0f-7),
+    o = TrainingOptimizer(ps; algorithm = Adam(; β₁ = 5.0f-1, β₂ = 5.0f-1, δ = 3.0f-7),
         linesearch = T(1.0f0))
 
     dx = NetworkParameters((L1 = (weight = rand(T, N, M),), L2 = (weight = rand(T, N, N),)))
@@ -23,7 +23,7 @@ end
 function grassmann_layer_test(T, M, N, tol = 1.0f-1)
     model = Chain(GrassmannLayer(M, N), StiefelLayer(N, N))
     ps = NeuralNetwork(model, T).params
-    o = NetworkOptimizer(ps; algorithm = Adam(; β₁ = 5.0f-1, β₂ = 5.0f-1, δ = 3.0f-7),
+    o = TrainingOptimizer(ps; algorithm = Adam(; β₁ = 5.0f-1, β₂ = 5.0f-1, δ = 3.0f-7),
         linesearch = T(1.0f0))
 
     dx = NetworkParameters((L1 = (weight = rand(T, N, M),), L2 = (weight = rand(T, N, N),)))
