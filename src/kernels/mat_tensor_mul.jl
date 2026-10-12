@@ -154,13 +154,12 @@ end
 @doc raw"""
     mat_tensor_mul!(C, A::StrictlyLowerTriangular, B)
 
-Multiply the lower-triangular matrix `A` onto the tensor `B` from the left and store the result in `C`.
+Multiply the strictly lower-triangular matrix `A` onto the tensor `B` from the left and store the result in `C`.
 
-This performs an efficient multiplication based on the special structure of the lower-triangular matrix `A`.
+This performs an efficient multiplication based on the special structure of the strictly lower-triangular matrix `A`.
 """
 function mat_tensor_mul!(C::AbstractArray{<:Number, 3}, A::StrictlyLowerTriangular,
-        B::AbstractArray{
-            <:Number, 3})
+        B::AbstractArray{<:Number, 3})
     @assert eltype(C) == eltype(A) == eltype(B)
     @assert A.n == size(C, 1) == size(B, 1)
 
@@ -202,13 +201,12 @@ end
 @doc raw"""
     mat_tensor_mul!(C, A::StrictlyUpperTriangular, B)
 
-Multiply the upper-triangular matrix `A` onto the tensor `B` from the left and store the result in `C`.
+Multiply the strictly upper-triangular matrix `A` onto the tensor `B` from the left and store the result in `C`.
 
-This performs an efficient multiplication based on the special structure of the upper-triangular matrix `A`.
+This performs an efficient multiplication based on the special structure of the strictly upper-triangular matrix `A`.
 """
 function mat_tensor_mul!(C::AbstractArray{<:Number, 3}, A::StrictlyUpperTriangular,
-        B::AbstractArray{
-            <:Number, 3})
+        B::AbstractArray{<:Number, 3})
     @assert eltype(C) == eltype(A) == eltype(B)
     @assert A.n == size(C, 1) == size(B, 1)
 
