@@ -5,7 +5,7 @@ import Random
 
 Random.seed!(123)
 
-# `ReducedLoss` trained through the `Optimizer` functor, which is the path the symplectic
+# `ReducedLoss` trained through `train!`, which is the path the symplectic
 # autoencoder tutorial documents and the path `scripts/reproduction/symplectic_autoencoders/`
 # takes. It was unreachable: the loss annotated its parameter argument `::NetworkParameters`, and
 # `Zygote.pullback` evaluates the forward pass with the parameters unwrapped -- the closure body
@@ -16,10 +16,10 @@ Random.seed!(123)
 #
 # Nothing had caught it because nothing ran it. The docstring example calls the loss directly,
 # which dispatches, and the tutorial's training is in a plain ```julia fence that Documenter
-# renders and never executes. Restoring the annotation makes the `Optimizer` call below raise
+# renders and never executes. Restoring the annotation makes the `train!` call below raise
 # that `error`, so this testset errors before any of the three assertions runs; the assertions
 # themselves check what the loss is for.
-@testset "ReducedLoss trains through the Optimizer functor" begin
+@testset "ReducedLoss trains through train!" begin
     reduced_dim = 2
 
     q = rand(Float64, 6, 30, 2)
@@ -37,12 +37,12 @@ Random.seed!(123)
         StandardTransformerIntegrator(reduced_dim; transformer_dim = 10, n_blocks = 1,
             n_heads = 2, L = 1, upscaling_activation = tanh), CPU(), Float64)
 
-    o = Optimizer(Adam(), integrator)
+    o = TrainingOptimizer(integrator.params; algorithm = Adam())
     batch = Batch(8, 4)
 
     # The parameters reach the loss through `Zygote.pullback` here, which is what an annotated
     # `params` argument breaks; calling the loss directly would pass either way.
-    loss_array = o(integrator, dl_reduced, batch, 10, loss; show_progress = false)
+    loss_array = train!(integrator, o, dl_reduced, batch, 10; loss, show_progress = false)
 
     @test length(loss_array) == 10
     @test all(isfinite, loss_array)

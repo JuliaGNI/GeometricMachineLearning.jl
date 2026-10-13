@@ -1,4 +1,5 @@
 using GeometricMachineLearning, LinearAlgebra, KernelAbstractions, Test, Zygote, Random
+using GeometricOptimizers: optimization_step!
 
 Random.seed!(1234)
 
@@ -26,7 +27,7 @@ A = [0.06476993260924702 0.8369280855305259 0.6245358125914054 0.140729967064923
 """
 This tests if the optimizers can find the optimal PSD solution.
 """
-function svd_test(A, n, train_steps = 1000, tol = 1e-1; retraction = cayley)
+function svd_test(A, n, train_steps = 1000, tol = 1e-1; retraction = Cayley())
     # Seeded here and not once at the top of the file, for the reason given at the same place in
     # `svd_optim.jl`: `svd_test` is called twice, and with a single top-level seed the second call
     # starts from whatever RNG state the first one happened to leave behind, which makes the
@@ -45,9 +46,9 @@ function svd_test(A, n, train_steps = 1000, tol = 1e-1; retraction = cayley)
     model = Chain(PSDLayer(2*N, 2*n), PSDLayer(2*n, 2*N))
     ps = NeuralNetwork(model, CPU(), Float64).params
 
-    o₁ = Optimizer(GradientMethod(), ps; retraction = retraction, step_size = 0.01)
-    o₂ = Optimizer(MomentumMethod(), ps; retraction = retraction, step_size = 0.01)
-    o₃ = Optimizer(Adam(), ps; retraction = retraction, step_size = 0.01)
+    o₁ = TrainingOptimizer(ps; algorithm = GradientMethod(), retraction, linesearch = 0.01)
+    o₂ = TrainingOptimizer(ps; algorithm = MomentumMethod(), retraction, linesearch = 0.01)
+    o₃ = TrainingOptimizer(ps; algorithm = Adam(), retraction, linesearch = 0.01)
 
     U₁, Ũ₁, err₁ = train_network!(o₁, model, deepcopy(ps), A, train_steps, tol)
     U₂, _, err₂ = train_network!(o₂, model, deepcopy(ps), A, train_steps, tol)
@@ -63,19 +64,18 @@ function svd_test(A, n, train_steps = 1000, tol = 1e-1; retraction = cayley)
     @test norm((err₃ - err_best)/err_best) < tol
 end
 
-function train_network!(o::Optimizer, model::Chain, ps::NetworkParameters,
+function train_network!(o::TrainingOptimizer, model::Chain, ps::NetworkParameters,
         A::AbstractMatrix, train_steps, tol)
     error(ps) = norm(A - model(A, ps))
 
     for _ in 1:train_steps
         dx = Zygote.gradient(error, ps)[1]
-        λY = GlobalSection(ps)
-        optimization_step!(o, λY, ps, dx)
+        optimization_step!(ps, o, dx)
         #println(error(ps))
     end
     ps[1].weight, ps[2].weight, error(ps)
 end
 
-for retraction in (geodesic, cayley)
+for retraction in (Geodesic(), Cayley())
     svd_test(A, 4, retraction = retraction)
 end

@@ -73,15 +73,15 @@ function ChainRulesCore.rrule(::typeof(lo_mat_mul), S::AbstractVector{T},
     return C, lo_mat_mul_pullback
 end
 
-function ChainRulesCore.rrule(::typeof(mat_tensor_mul), B::LowerTriangular{T}, A::AbstractArray{
-        T, 3}) where {T}
+function ChainRulesCore.rrule(::typeof(mat_tensor_mul), B::StrictlyLowerTriangular{T},
+        A::AbstractArray{T, 3}) where {T}
     @assert size(A, 1) == B.n
     C = mat_tensor_mul(B, A)
     function lower_triangular_mul_pullback(dC)
         dC = unthunk(dC)
         f̄, dS, dA, _ = rrule(lo_mat_mul, B.S, A, B.n)[2](dC)
 
-        return f̄, LowerTriangular(dS, B.n), dA
+        return f̄, StrictlyLowerTriangular(dS, B.n), dA
     end
     return C, lower_triangular_mul_pullback
 end
@@ -144,15 +144,15 @@ function ChainRulesCore.rrule(::typeof(up_mat_mul), S::AbstractVector{T},
     return C, up_mat_mul_pullback
 end
 
-function ChainRulesCore.rrule(::typeof(mat_tensor_mul), B::UpperTriangular{T}, A::AbstractArray{
-        T, 3}) where {T}
+function ChainRulesCore.rrule(::typeof(mat_tensor_mul), B::StrictlyUpperTriangular{T},
+        A::AbstractArray{T, 3}) where {T}
     @assert size(A, 1) == B.n
     C = mat_tensor_mul(B, A)
     function upper_triangular_mul_pullback(dC)
         dC = unthunk(dC)
         f̄, dS, dA, _ = rrule(up_mat_mul, B.S, A, B.n)[2](dC)
 
-        return f̄, UpperTriangular(dS, B.n), dA
+        return f̄, StrictlyUpperTriangular(dS, B.n), dA
     end
     return C, upper_triangular_mul_pullback
 end

@@ -43,14 +43,14 @@ backend = CUDABackend()
 # initialize the network (i.e. the parameters of the network)
 g_nn = NeuralNetwork(gsympnet, backend, type)
 
-# call the optimizer: the method comes first, the step size is given separately
-g_opt = Optimizer(Adam(type), g_nn; step_size = 1e-3)
+# set up the optimizer: the method and the step size are keywords
+g_opt = TrainingOptimizer(g_nn.params; algorithm = Adam(), linesearch = 1e-3)
 
 const nepochs = 300
 const batch_size = 100
 
 # train the network
-g_loss_array = g_opt(g_nn, dl, Batch(batch_size), nepochs)
+g_loss_array = train!(g_nn, g_opt, dl, Batch(batch_size), nepochs)
 
 # plot the result
 ics = (q=qp_data.q[:,1], p=qp_data.p[:,1])

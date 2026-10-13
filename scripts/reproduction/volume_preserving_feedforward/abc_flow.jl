@@ -25,7 +25,7 @@ const n_linear = 2
 const activation = tanh
 
 const batch_size = 16384
-const opt_method = AdamOptimizer()
+const opt_method = Adam()
 const n_epochs = smoke_size(1000, 2)
 
 # This was run on an Apple GPU: `using Metal`, `const backend = MetalBackend()`, `const T =
@@ -47,13 +47,13 @@ model = VolumePreservingFeedForward(sys_dim, n_blocks, n_linear, activation)
 
 nn = NeuralNetwork(model, backend, T)
 
-o = Optimizer(opt_method, nn)
+o = TrainingOptimizer(nn.params; algorithm = opt_method)
 
 # `Batch(batch_size, 1)` is a `Batch{:Transformer}` of sequence length one, and the network here is
 # a `NeuralNetworkIntegrator`, whose loss defaults only for a `Batch{:FeedForward}`.
 batch = Batch(batch_size)
 
-loss_array₁ = o(nn, dl, batch, n_epochs)
+loss_array₁ = train!(nn, o, dl, batch, n_epochs)
 
 ic = (q = [0.0, 0.0, 0.1],)
 

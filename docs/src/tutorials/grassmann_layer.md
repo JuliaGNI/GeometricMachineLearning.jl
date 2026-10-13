@@ -105,13 +105,6 @@ nn = NeuralNetwork(model, CPU(), Float64)
 nothing # hide
 ```
 
-We then *lift* the neural network parameters via `GlobalSection`.
-
-```@example rosenbrock
-λY = GlobalSection(params(nn))
-nothing # hide
-```
-
 As the cost function ``c`` for the Wasserstein loss[^3] we simply use:
 
 [^3]: For each Wasserstein loss we need to define such a cost function. For this particular choice of ``c`` the Wasserstein distance corresponds to a ``W_2`` loss.
@@ -269,7 +262,7 @@ function compute_gradient(ps::NetworkParameters)
 end
 
 # note the very high value for the learning rate
-optimizer = Optimizer(Adam(), nn; step_size = 1e-1)
+optimizer = TrainingOptimizer(nn.params; algorithm = Adam(), linesearch = 1e-1)
 
 nothing # hide
 ```
@@ -278,13 +271,14 @@ So we use `Zygote` [Zygote.jl-2018](@cite) to compute ``\nabla_\theta\mathcal{NN
 
 ```@example rosenbrock
 using GeometricMachineLearning: params # hide
+using GeometricOptimizers: optimization_step!
 # note the small number of training steps
 const training_steps = 80
 loss_array = zeros(training_steps)
 for i in 1:training_steps
     val, dp = compute_gradient(params(nn))
     loss_array[i] = val
-    optimization_step!(optimizer, λY, params(nn), dp)
+    optimization_step!(params(nn), optimizer, dp)
 end
 ```
 

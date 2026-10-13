@@ -27,13 +27,14 @@ GeometricMachineLearning = {path = ".."}
 [compat]
 Aqua = "0.8"
 ChainRulesTestUtils = "1"
-# A tight lower bound. `test/quality/aqua.jl` names four of `test_explicit_imports`' seven keyword switches,
+# A tight lower bound. `test/quality/aqua.jl` names three of `test_explicit_imports`' seven keyword switches,
 # and 1.15 is the version those switches were read from; a wider bound would be a guess about
 # earlier ones.
 ExplicitImports = "1.15"
 FiniteDifferences = "0.12"
 GeometricIntegrators = "0.18.2"
 GeometricProblems = "0.8, 0.9"
+HDF5 = "0.16, 0.17"
 Metal = "1.10"
 Printf = "1"
 SafeTestsets = "0.1"

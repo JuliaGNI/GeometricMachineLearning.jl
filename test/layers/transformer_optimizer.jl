@@ -1,5 +1,6 @@
 using Test, KernelAbstractions, GeometricMachineLearning, Zygote, LinearAlgebra
 using GeometricMachineLearning: ResNetLayer
+using GeometricOptimizers: optimization_step!
 import Random
 
 Random.seed!(1234)
@@ -18,20 +19,17 @@ function transformer_gradient_test(T, dim, n_heads, L, seq_length = 8, batch_siz
     loss(ps, input) = norm(model(input, ps))
     dx = Zygote.gradient(ps -> loss(ps, input), ps)[1]
 
-    o₁ = Optimizer(GradientMethod(), ps)
-    o₂ = Optimizer(MomentumMethod(), ps)
-    o₃ = Optimizer(Adam(), ps)
-
     ps₁ = deepcopy(ps)
     ps₂ = deepcopy(ps)
     ps₃ = deepcopy(ps)
 
-    λY₁ = GlobalSection(ps₁)
-    λY₂ = GlobalSection(ps₂)
-    λY₃ = GlobalSection(ps₃)
-    optimization_step!(o₁, λY₁, ps₁, dx)
-    optimization_step!(o₂, λY₂, ps₂, dx)
-    optimization_step!(o₃, λY₃, ps₃, dx)
+    o₁ = TrainingOptimizer(ps₁; algorithm = GradientMethod())
+    o₂ = TrainingOptimizer(ps₂; algorithm = MomentumMethod())
+    o₃ = TrainingOptimizer(ps₃; algorithm = Adam())
+
+    optimization_step!(ps₁, o₁, dx)
+    optimization_step!(ps₂, o₂, dx)
+    optimization_step!(ps₃, o₃, dx)
     @test typeof(ps₁) == typeof(ps₂) == typeof(ps₃) == typeof(ps)
     @test ps₁[1].PQ.head_1 ≈ ps₂[1].PQ.head_1
     @test ps₁[1].PQ.head_1 ≉ ps₃[1].PQ.head_1

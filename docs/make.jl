@@ -38,7 +38,7 @@ Downloads.download(
 #
 #     julia --project=docs -e 'using DocInventories; DocInventories.save(
 #         "docs/inventories/GeometricOptimizers.toml",
-#         Inventory("https://juliagni.github.io/GeometricOptimizers.jl/v0.5.0/objects.inv";
+#         Inventory("https://juliagni.github.io/GeometricOptimizers.jl/v0.9.0/objects.inv";
 #                   root_url = "https://juliagni.github.io/GeometricOptimizers.jl/stable/"))'
 #
 # `save` is not exported — it has to be qualified. `root_url` is not written to the TOML either; it
@@ -387,8 +387,7 @@ makedocs(;
     # skips *sub*modules — and (ii) pull GeometricOptimizers' own docstrings in, whose internal
     # `@ref`s resolve in its namespace and point at bindings this manual does not document.
     # Names owned by GeometricOptimizers are referred to as plain code with a link to its manual.
-    modules = [
-        GeometricMachineLearning, Base.get_extension(GeometricMachineLearning, :HDF5Ext)],
+    modules = [GeometricMachineLearning],
     authors = "Michael Kraus, Benedikt Brantner",
     repo = "https://github.com/JuliaGNI/GeometricMachineLearning.jl/blob/{commit}{path}#L{line}",
     sitename = "GeometricMachineLearning.jl",

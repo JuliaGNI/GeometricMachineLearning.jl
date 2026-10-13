@@ -28,12 +28,11 @@ n_epochs = smoke_size(100, 2)
 batch_size = smoke_size(512, 16)
 n_range = 2:1:smoke_size(15, 3)
 μ_range = (T(0.51), T(0.625), T(0.55), T(0.47))
-# The learning rate is the `Optimizer`'s `step_size`, not the method's: `Adam` lost the `η` field
-# it never applied to the direction, and `β₁`, `β₂` and `δ` became keywords so that the old
-# positional call fails instead of silently reading `η` as `β₁`.
-opt = AdamOptimizer(T; β₁ = T(0.9), β₂ = T(0.99), δ = T(1.0e-8))
+# The learning rate is the `TrainingOptimizer`'s `linesearch`, not the method's: `Adam` has no `η`
+# field, and `β₁`, `β₂` and `δ` are keywords.
+opt = Adam(; β₁ = 0.9, β₂ = 0.99, δ = 1.0e-8)
 const step_size = T(0.001)
-# The retraction belongs to the `Optimizer` now, not to the layer: `PSDLayer(M, N)` takes no
+# The retraction belongs to the `TrainingOptimizer`, not to the layer: `PSDLayer(M, N)` takes no
 # keyword.
 retraction = Cayley()
 
@@ -89,19 +88,17 @@ end
 # architecture rather than a bare `Chain` is what makes `encoder(nn)` and `decoder(nn)` available,
 # and those are what `HRedSys` needs.
 #
-# Training is `DataLoader` + `Batch` + `Optimizer`. What stood here was a hand-rolled loop over
-# `redraw_batch!(dl)`, counting its own iterations from `dl.batch_size`; a `DataLoader` carries
-# neither, because the batch is a `Batch` and the loop is the `Optimizer` functor. The loop also
-# wrapped both the pullback and the optimization step in `try … catch; continue`, so a training run
-# in which every single step failed was indistinguishable from one that worked.
+# Training is `DataLoader` + `Batch` + `TrainingOptimizer`, and the loop is `train!`: the batch is a
+# `Batch`, and a failed step raises its error.
 function get_nn_encoder_decoder(; n = 5, n_epochs = 500, opt = opt, T = T)
     sae_arch = SymplecticAutoencoder(
         2 * N, 2 * n; n_encoder_blocks = 4, n_decoder_blocks = 4,
         n_encoder_layers = 2, n_decoder_layers = 2)
     sae_nn = NeuralNetwork(sae_arch, backend, T)
 
-    optimizer_instance = Optimizer(opt, sae_nn; step_size = step_size, retraction = retraction)
-    optimizer_instance(sae_nn, dl, Batch(batch_size), n_epochs)
+    optimizer_instance = TrainingOptimizer(
+        sae_nn.params; algorithm = opt, linesearch = step_size, retraction = retraction)
+    train!(sae_nn, optimizer_instance, dl, Batch(batch_size), n_epochs)
 
     sae_nn
 end

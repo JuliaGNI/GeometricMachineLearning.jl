@@ -89,13 +89,13 @@ Training is done with the `Adam`:
 ```@example softmax_comparison
 o_method = Adam()
 
-o1 = Optimizer(o_method, nn1)
-o2 = Optimizer(o_method, nn2)
+o1 = TrainingOptimizer(nn1.params; algorithm = o_method)
+o2 = TrainingOptimizer(nn2.params; algorithm = o_method)
 
 batch = Batch(batch_size, seq_length)
 
-loss_array1 = o1(nn1, dl, batch, n_epochs; show_progress = false)
-loss_array2 = o2(nn2, dl, batch, n_epochs; show_progress = false)
+loss_array1 = train!(nn1, o1, dl, batch, n_epochs; show_progress = false)
+loss_array2 = train!(nn2, o2, dl, batch, n_epochs; show_progress = false)
 ```
 
 ```@setup softmax_comparison

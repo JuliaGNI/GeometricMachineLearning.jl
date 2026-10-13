@@ -199,17 +199,17 @@ const n_epochs = 500000
 const batch_size = 16384
 const feedforward_batch = Batch(batch_size)
 const transformer_batch = Batch(batch_size, seq_length, seq_length)
-const opt_pairing = AdamOptimizerWithDecay(n_epochs, T; η₁ = 1e-2, η₂ = 1e-6)
+const opt_pairing = AdamOptimizerWithDecay(n_epochs; η₁ = 1e-2, η₂ = 1e-6)
 
-o_vpff = Optimizer(nn_vpff; opt_pairing...)
-o_vpt = Optimizer(nn_vpt; opt_pairing...)
-o_st = Optimizer(nn_st; opt_pairing...)
+o_vpff = TrainingOptimizer(nn_vpff.params; opt_pairing...)
+o_vpt = TrainingOptimizer(nn_vpt.params; opt_pairing...)
+o_st = TrainingOptimizer(nn_st.params; opt_pairing...)
 nothing # hide
 ```
 ```julia
-o_vpff(nn_vpff, dl, feedforward_batch, n_epochs)
-o_vpt(nn_vpt, dl, transformer_batch, n_epochs)
-o_st(nn_st, dl, transformer_batch, n_epochs)
+train!(nn_vpff, o_vpff, dl, feedforward_batch, n_epochs)
+train!(nn_vpt, o_vpt, dl, transformer_batch, n_epochs)
+train!(nn_st, o_st, dl, transformer_batch, n_epochs)
 ```
 
 After the networks have been trained we map the parameters to cpu:
@@ -220,6 +220,10 @@ nn_vpff = mtc(nn_vpff)
 nn_vpt = mtc(nn_vpt)
 nn_st = mtc(nn_st)
 using HDF5 # hide
+# the two files store the type names `LowerTriangular` and `UpperTriangular` # hide
+const NNP = parentmodule(NetworkParameters) # hide
+NNP.register_parameter_type!("LowerTriangular", (S, md) -> StrictlyLowerTriangular(S.S, S.n)) # hide
+NNP.register_parameter_type!("UpperTriangular", (S, md) -> StrictlyUpperTriangular(S.S, S.n)) # hide
 nn_vpff = load(NeuralNetwork, "transformer_rigid_body_nn_vpff.h5", nn_vpff.architecture) # hide
 nn_vpt = load(NeuralNetwork, "transformer_rigid_body_nn_vpt.h5", nn_vpt.architecture) # hide
 nn_st = load(NeuralNetwork, "transformer_rigid_body_nn_st.h5", nn_st.architecture) # hide

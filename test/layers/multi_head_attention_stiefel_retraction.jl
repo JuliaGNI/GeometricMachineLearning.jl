@@ -5,12 +5,11 @@ using GeometricMachineLearning: cayley
 # so they are named qualified rather than through a re-export.
 using GeometricOptimizers: MomentumCache
 import Random, Test, LinearAlgebra, KernelAbstractions
-# The cache and the state hold a `NetworkParameters` per layer: a layer is wrapped at the
-# `GeometricOptimizers` boundary, and the wrap shares the leaf arrays. `mapparameters` and not `map`,
-# because it recurses on the branches and so reaches the leaves whichever shape it is handed.
+# One cache covers the whole network, and its fields hold a `NetworkParameters` of the network's
+# shape. `mapparameters` and not `map`, because it recurses on the branches and so reaches the leaves.
 #
-# Each helper below has two methods, because two shapes arrive: a wrapped layer is a
-# `NetworkParameters` and the tree above it is a plain `NamedTuple`.
+# Each helper below has a method for a `NetworkParameters` and one for a plain `NamedTuple`, so that
+# it reaches the leaves whichever of the two it is handed.
 using NeuralNetworkParameters: NetworkParameters, mapparameters
 
 Random.seed!(1234)
@@ -53,7 +52,8 @@ function test_multi_head_attention_retraction(
     model = Chain(MultiHeadAttention(dim, n_heads, Stiefel = true))
 
     ps = NeuralNetwork(model, backend, T).params
-    cache = Optimizer(MomentumMethod(), ps).cache
+    cache = TrainingOptimizer(ps; algorithm = MomentumMethod()).cache
+    @test cache isa MomentumCache
 
     check_retraction_geodesic(cache)
 

@@ -20,8 +20,8 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   N=5  symbolic=-0.29982310048056143  zygote=-0.05705562794369161  agree=false
   ```
 
-  `SymbolicPullback(arch)` is exported and documented as something one passes to `Optimizer` in
-  place of `ZygotePullback`, so this is wrong training, silently, for every batch size above one.
+  `SymbolicPullback(arch)` is exported as a pullback to use in place of `ZygotePullback`, so this
+  is wrong training, silently, for every batch size above one.
   It is not new — `reduce = +` is what SymbolicNeuralNetworks 0.3 did too — and it is the same
   defect SymbolicNeuralNetworks records for `FeedForwardLoss` under *Open Issues → Semantics* in its
   own changelog, where it is called out as unfixable within a design that differentiates one
@@ -34,47 +34,16 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   (**B1**, **B2**, **B3**, **B4**, **B6** and **B8** are all closed and their entries are gone: B1 and B2 by
   this release — the duplicated `AdamOptimizerWithDecay` and the split `Manifold`, both under
   *Removed (breaking)* — B3 by SymbolicNeuralNetworks 0.5, B4 by `a427add1`, which repaired the
-  documentation build, and B6 and B8 by this release: B6 by the `train!` retirement (the three methods that
-  called the non-existent `vectorfield` are gone, and `SymplecticEulerLoss` carries their content on
-  `hamiltonian_vector_field`, with tests that run), and B8 by the narrowing of `PoissonTensor`'s `Base.:*`
-  to `Strided…` right-hand sides and `Base.getindex` to `Union{Int, Colon, AbstractVector{<:Integer}}`
-  indices, reducing method ambiguities from 18 to 1 as asserted in `test/quality/aqua.jl`. The numbers are
-  left vacant rather than reused.)
+  documentation build, and B6 and B8 by this release: B6 by the deletion of `src/training_method/`
+  (the three methods that called the non-existent `vectorfield` are gone, and `SymplecticEulerLoss`
+  carries their content on `hamiltonian_vector_field`, with tests that run), and B8 by the narrowing
+  of `PoissonTensor`'s `Base.:*` to `Strided…` right-hand sides and `Base.getindex` to
+  `Union{Int, Colon, AbstractVector{<:Integer}}` indices, reducing method ambiguities from 18 to 1.
+  The numbers are left vacant rather than reused.)
 
   (**B9** is closed by this release and its entry is gone: the `iterate` method it named binds
   every type parameter, and Aqua's `unbound_args` passes on Julia nightly. See *Fixed* above. The
   number is left vacant rather than reused.)
-
-### B7 · Three methods are type piracy, and closing them is an API change rather than a deletion.
-
-- **location:** `src/layers/resnet.jl:63`
-- **kind:** defect
-- **found:** 2026-09-19
-- **evidence:**
-  Aqua's `piracies` check reports 3, down from the 12 this entry opened with; the other nine were
-  deleted in this release and are under *Removed (breaking)* above. All three are genuine under
-  Aqua's definition — the function and every argument type belong to other modules — and all three
-  are one thing: a functor on a *layer* type this package does not own, applied to a three-axis
-  array.
-
-  | method | `src` | without GML | with GML |
-  |:--|:--|:--|:--|
-  | `(::Dense{M, N, true})(::AbstractArray{T, 3}, ::NamedTuple)` | `layers/resnet.jl:63` | `MethodError` | the layer applied along the third axis |
-  | `(::Dense{M, N, false})(::AbstractArray{T, 3}, ::NamedTuple)` | `layers/resnet.jl:67` | the same | the same |
-  | `(::Linear{M, N})(::AbstractArray{T, 3}, ::NamedTuple)` | `layers/resnet.jl:71` | the same | the same |
-
-  `Dense` and `Linear` are `AbstractNeuralNetworks`', and upstream a 3-tensor argument is a
-  `MethodError` because `*` cannot take one. So the witness is not a changed answer but a new one:
-  a call that throws without this package loaded returns a value with it.
-
-  Closing this means either `AbstractNeuralNetworks` gaining the three-axis methods, or this
-  package wrapping the two layer types in its own. Both are an API change, and neither is a
-  by-product of a piracy pass — which is why these three stayed when the other nine went.
-
-  `src/layers/resnet.jl:63` is also the one remaining method ambiguity, against
-  `AbstractNeuralNetworks.Affine`. That pair is benign and has no witness at all: `Dense` is not a
-  subtype of `Affine` and the two have no common instance, so no call can reach it. `test/quality/aqua.jl`
-  asserts both counts — 3 piracies and 1 ambiguity — so neither can drift, in either direction.
 
 ### B10 · `DataLoader(::EnsembleSolution{T, T1, Vector{ST}})` at `src/data_loader/data_loader.jl:325` has no test and appears unreachable through this package's current dependencies.
 
@@ -134,37 +103,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   here without a GPU job to run it under.
 
 ## C. Follow-ups and cleanups
-
-### C1 · The parameter-tree traversal still belongs upstream.
-
-- **location:** —
-- **kind:** upstream
-- **found:** 2026-08-17
-- **evidence:**
-  `_make_optimizer_cache`,
-  `_make_optimizer_state`, `_tree_optim_step!`, `_leaf_optim_step!` and the bespoke
-  `GMLEuclideanState` are GML implementations of what GeometricOptimizers supports natively for a
-  single parameter. `GMLEuclideanState` in particular duplicates what `GradientState`,
-  `MomentumState` and `AdamState` already do for a plain array.
-
-  What has to go upstream is *not* a reuse of GeometricOptimizers' `Optimizer`: that one needs an
-  `OptimizerProblem`, i.e. an objective function, and minibatch training has none — the gradient
-  arrives from AD one batch at a time. It is a new entry point there, a
-  gradient-supplied-externally step over a `NamedTuple` parameter tree. GML's `Optimizer` would then
-  be the `NeuralNetwork` constructor and the training-loop functor, and nothing else.
-
-  `Optimizer` is the one name still exported by both packages, so this is also what closes the last
-  of B1's class of collision.
-
-### C2 · Two `isa` branches remain in `_leaf_optim_step!`
-
-- **location:** —
-- **kind:** defect
-- **found:** 2026-08-16
-- **evidence:**
-  (for `AdamState`/`MomentumState`).
-  Measurement showed the traversal is not implicated in the compile-time problem, so this is tidying,
-  and it disappears entirely if C1 lands first.
 
 ### C6 · Three generated MNIST PDFs are in this branch's history
 
@@ -241,25 +179,20 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   where training spends its time, so the gain should be larger here than the forward figures, which
   is also why it wants its own before-and-after measurement rather than being folded into that pass.
 
-### C16 · Four of `ExplicitImports`' seven checks are switched off in `test/quality/aqua.jl`.
+### C16 · One of `ExplicitImports`' seven checks is switched off in `test/quality/aqua.jl`, and two run with a list of names.
 
 - **location:** `test/quality/aqua.jl`
 - **kind:** upstream
 - **found:** 2026-09-18
 - **evidence:**
-  The counts, at
-  the commit that added the gate: **37** names arriving through a bare `using` across thirteen
-  packages;
-  **11** explicit imports of names upstream does not mark `public`; **2** qualified accesses through a
-  non-owner module, `GeometricOptimizers.Gradient` and `GeometricOptimizers.direction`, both owned by
-  `SimpleSolvers`; and **22** qualified accesses to non-public names.
-
-  They are four separate jobs, not one. Naming the 37 is a rewrite of the module header with a
-  judgement per name. The 11 and the 22 are the same class and most of them are not this package's to
-  fix — `Architecture`, `AbstractExplicitLayer`, `add!`, `_compute_loss`, `assign_columns` and
-  `description` are all used deliberately, and the resolution is upstream declaring them `public`.
-  Each check's reason is written above the `@testset` rather than here alone, because switching one
-  back on turns the suite red on the spot.
+  `no_implicit_imports` is off: **37** names arrive through a bare `using` across thirteen packages,
+  and naming them is a rewrite of the module header with a judgement per name.
+  `all_explicit_imports_are_public` and `all_qualified_accesses_are_public` run with a list of the
+  names this package reaches in other packages that those packages do not declare `public`: **10**
+  explicit imports and **10** qualified accesses, none of them in `GeometricOptimizers`.
+  `Architecture`, `AbstractExplicitLayer`, `_compute_loss`, `dim` and the rest are used
+  deliberately, and the resolution is upstream declaring them `public`. Each check's reason is
+  written beside it in the test file.
 
 ### C17 · `accuracy` cannot be reached through any public `DataLoader` constructor.
 
@@ -347,23 +280,9 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   supposed to be worth testing at all — training the two networks first would make the comparison
   mean something, at a cost the suite does not currently pay.
 
-## D. Unverified
-
-Not defects — claims this release makes that nothing has actually checked yet.
-
-### D4 · The upstream fix was measured on one optimizer.
-
-- **location:** —
-- **kind:** not verified
-- **found:** 2026-08-16
-- **evidence:**
-  The compile-time figures come from the
-  `Adam` path. The quasi-Newton and Newton caches and states were widened on the strength of their
-  *inferred types* — a sound argument, but not a measurement. Catalogued upstream as GeometricOptimizers C15.
-
 ## Found late
 
-### K1 · Four source comments still send the reader to the Open Issues section of `CHANGELOG.md`, which no longer exists.
+### K1 · Two source comments still send the reader to the Open Issues section of `CHANGELOG.md`, which no longer exists.
 
 - **location:** `src/reduced_system/reduced_system.jl:109`
 - **kind:** found late
@@ -373,18 +292,78 @@ Not defects — claims this release makes that nothing has actually checked yet.
   $ grep -rnE 'Open Issues|issue C1[48]|\*C21\*|\*B7\*' src test
   src/kernels/exponentials/tensor_exponential.jl:2:# name is wider than what it holds; renaming it, and `exponentials/` with it, is issue C18.
   src/reduced_system/reduced_system.jl:109:# issue C14 in `CHANGELOG.md`.
-  test/quality/aqua.jl:30:# layer types, and both are an API change rather than a tidy-up. They are *B7* under
-  test/quality/aqua.jl:31:# `## Open Issues` in `CHANGELOG.md` with that reasoning.
   test/reduced_system/reduced_system.jl:44:# for four of twelve, with four `NaN` and four in the opposite order. That is *C21* in
-  $ grep -n 'CHANGELOG' test/quality/aqua.jl
-  31:# `## Open Issues` in `CHANGELOG.md` with that reasoning.
-  63:    # and it fails when one is removed without the entry above and in `CHANGELOG.md` going with it.
   ```
 
-  The IDs are still valid; the comments at `src/reduced_system/reduced_system.jl:109`,
-  `test/quality/aqua.jl:31`, `test/quality/aqua.jl:63` and `test/reduced_system/reduced_system.jl:44–45`
-  name `CHANGELOG.md` rather than `KNOWN_ISSUES.md`. The fix is a follow-up change to those
-  comments.
+  The IDs are still valid; the comments at `src/reduced_system/reduced_system.jl:109` and
+  `test/reduced_system/reduced_system.jl:44–45` name `CHANGELOG.md` rather than `KNOWN_ISSUES.md`.
+  The fix is a follow-up change to those comments.
+
+### K7 · A network with a Stiefel leaf raises in `mat_tensor_mul` when the data has another element type.
+
+- **location:** `src/kernels/mat_tensor_mul.jl`
+- **kind:** found late
+- **found:** 2026-10-12, by the critics of part M1a; the kernel code is older than that part
+- **evidence:**
+  A `Float32` `Chain(StiefelLayer(6, 3), Dense(3, 2, tanh))` trained with `train!` on `Float64`
+  data, and a `Float64` one on `Float32` data, raise `AssertionError: eltype(A) == eltype(B)` in
+  `mat_tensor_mul`, reached through `src/layers/manifold_layer.jl` under Zygote. A network of
+  `Dense` layers alone trains on mixed precisions.
+
+  ```julia
+  x = rand(Float32, 6, 12)
+  nn = NeuralNetwork(Chain(StiefelLayer(6, 3), Dense(3, 2, tanh)), Float64)
+  train!(nn, TrainingOptimizer(nn.params), DataLoader(x, x[1:2, :]), Batch(4), 2; loss = FeedForwardLoss())
+  ```
+
+### K8 · A `DataLoader` of one sample cannot be batched.
+
+- **location:** `src/data_loader/batch.jl`
+- **kind:** found late
+- **found:** 2026-10-12, by the critics of part M1a
+- **evidence:**
+  `DataLoader(x, x)` with `x = rand(Float32, 2, 1)` and `Batch(1)` raises the time-series
+  assertion "The number of time steps has to be greater than sequence length + prediction window"
+  when `train!` draws its minibatches.
+
+### K11 · A comment in `adam_with_learning_rate_decay.jl` reports a past experiment.
+
+- **location:** `test/optimizers/adam_with_learning_rate_decay.jl`
+- **kind:** found late
+- **found:** 2026-10-12, by the critics of part M1a; the comment is older than that part
+- **evidence:**
+  The comment above `train_manifold_network` says "from a seeded start the loss fell by under 2%
+  on 1.13 and *rose* on 1.12". The fix states only the present constraint: a 32-epoch budget
+  drives the learning rate to `η₂` almost at once, and 128 epochs train.
+
+### K12 · `Batch` never draws the last sample of a `DataLoader` of matrices.
+
+- **location:** `src/data_loader/batch.jl`
+- **kind:** found late
+- **found:** 2026-10-12, by the critics of part M1a
+- **evidence:**
+  On a `DataLoader(x, x)` with `x = rand(2, 10)`, the minibatches of `Batch(bs)` hold the samples
+  1 to 9 for each `bs` in 1, 3, 4 and 10; sample 10 is in none of them. `Batch(1)` gives 9
+  minibatches.
+
+  ```
+  1 nbatches 9 samples [(1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1), (7, 1), (8, 1), (9, 1)]
+  10 nbatches 1 samples [(1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1), (7, 1), (8, 1), (9, 1)]
+  ```
+
+### K13 · `SymbolicPullback(arch)` gives the gradient of the per-sample sum, not of `HNNLoss`.
+
+- **location:** `src/pullbacks/symbolic_hnn_pullback.jl`
+- **kind:** found late
+- **found:** 2026-10-12, while adding the `pullback` keyword of `train!` (#342); issue #343
+- **evidence:**
+  The value of the pullback is the batch loss `norm(F(X) - Y) / norm(Y)`, but the gradient is
+  built with `reduce = +`, so it is the gradient of the sum of the per-sample losses. On one
+  minibatch of 5 samples in `Float64`, `dL/dW1[1]` is `0.002695929479656911` by a central finite
+  difference, `0.0026959294110209093` by Zygote and `0.004388379726963325` by the symbolic
+  pullback; the symbolic gradient agrees with Zygote's gradient of the per-sample sum to `5.2e-17`.
+  `main` at cfe4aea3 gives the same numbers. `test/data_loader/train.jl` marks the comparison with
+  Zygote `@test_broken`.
 
 ## Upstream
 
@@ -424,6 +403,28 @@ Not defects — claims this release makes that nothing has actually checked yet.
   itself records a skip where `Metal.functional()` is false; only the precompile fails. Closing this
   is a Metal.jl change: a workload that does not run where no device exists.
 
+### K6 · The gradient of a `SymmetricMatrix` leaf with respect to a `NetworkParameters` differs from the one with respect to the bare `NamedTuple`.
+
+- **location:** `test/helpers/network_parameters_gradient_structure.jl`
+- **kind:** upstream
+- **found:** 2026-10-12, with the move to NeuralNetworkParameters 0.5; issue #319
+- **evidence:**
+  Under NeuralNetworkParameters 0.5, `Zygote.gradient` with respect to a `NetworkParameters` gives
+  a `SymmetricMatrix` leaf that holds the gradient with respect to the leaf's storage, at any number
+  of accesses; with respect to the bare `NamedTuple` it gives the projection of the dense gradient.
+  The off-diagonal entries of the first are twice those of the second; the diagonals are equal. A
+  test of `isapprox(Matrix(a_wrapped), Matrix(a_bare))` in
+  `layers/symplectic_attention_network_parameters_gradient.jl` evaluates:
+
+  ```
+  Expression: isapprox(Matrix(a_wrapped), Matrix(a_bare))
+   Evaluated: isapprox([0.6575109961994726 1.1214311018548968; 1.1214311018548968 0.46185556373061615],
+                       [0.6575109961994726 0.5607155509274484; 0.5607155509274484 0.46185556373061615])
+  ```
+
+  The helper asserts this relation. Which of the two a training step needs is the pullback shape of
+  issue #319.
+
 ## Documentation
 
 ### K5 · The `PositionalEncoding` docstring names `test/metal/`, which does not exist
@@ -453,7 +454,19 @@ Not defects — claims this release makes that nothing has actually checked yet.
   `target_modules = (GeometricMachineLearning,)` a barrier on a launch argument gives 0 reports,
   and the same barrier in an `@assert` of the same launcher gives 3: the kernel functor takes
   `args...`, so the dispatch sits in KernelAbstractions' frames, which the filter drops. In
-  `assign_ones_for_poisson_tensor_kernel!` (`src/arrays/poisson_tensor.jl:91`) two mutants
+  `assign_ones_for_poisson_tensor_kernel!` (`src/arrays/poisson_tensor.jl:95`) two mutants
   SURVIVED: a barrier on `n` in `map_index_for_poisson_tensor(i, n)`, and a barrier on the written
   array `J`; a barrier on the stored value is CAUGHT. JET never reports a dynamic dispatch in the
   kernel's own frame. A barrier on a value inside each kernel body is CAUGHT.
+
+### K10 · The two training tests of `adam_with_learning_rate_decay.jl` run in `Float64` only.
+
+- **location:** `test/optimizers/adam_with_learning_rate_decay.jl`
+- **kind:** missing test
+- **found:** 2026-10-12, by the critics of part M1a; the precision is older than that part
+- **evidence:**
+  `train_network` and `train_manifold_network` build their `DataLoader` from
+  `sin.(0:0.1:2π)`, a `Vector{Float64}`, and take the network's element type from `eltype(dl)`.
+  Neither function takes an element type, so neither runs over `REAL_ELTYPES`. The third testset
+  of the file, `schedule_starts_at_one`, loops over `REAL_ELTYPES`. The fix builds `dl` per `T`
+  and loops both functions over `REAL_ELTYPES`.

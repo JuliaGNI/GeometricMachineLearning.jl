@@ -1,4 +1,5 @@
 using GeometricMachineLearning
+using GeometricOptimizers: optimization_step!
 using Zygote
 using Test
 using LinearAlgebra: norm
@@ -15,11 +16,10 @@ function gradient_optimizer_euclidean(N; n_steps = 20, step_size = 1e-3)
     A = randn(N, N)
     ps = NetworkParameters((A = A,))
     loss1 = loss(ps)
-    o = Optimizer(GradientMethod(), ps; step_size = step_size)
+    o = TrainingOptimizer(ps; algorithm = GradientMethod(), linesearch = step_size)
     for _ in 1:n_steps
         ∇L = Zygote.gradient(loss, ps)[1]
-        λY = GlobalSection(ps)
-        optimization_step!(o, λY, ps, ∇L)
+        optimization_step!(ps, o, ∇L)
     end
     loss2 = loss(ps)
     @test loss1 > loss2
@@ -35,11 +35,10 @@ function gradient_optimizer_stiefel(N, n; n_steps = 20, step_size = 1e-3)
     Y = rand(StiefelManifold, N, n)
     ps = NetworkParameters((Y = Y,))
     loss1 = loss(ps)
-    o = Optimizer(GradientMethod(), ps; step_size = step_size)
+    o = TrainingOptimizer(ps; algorithm = GradientMethod(), linesearch = step_size)
     for _ in 1:n_steps
         ∇L = Zygote.gradient(loss, ps)[1]
-        λY = GlobalSection(ps)
-        optimization_step!(o, λY, ps, ∇L)
+        optimization_step!(ps, o, ∇L)
     end
     loss2 = loss(ps)
     @test loss1 > loss2

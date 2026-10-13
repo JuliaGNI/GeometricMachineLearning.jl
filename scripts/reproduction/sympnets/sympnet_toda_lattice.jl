@@ -25,14 +25,14 @@ dl = DataLoader(integrate(ep, ImplicitMidpoint()); suppress_info = true)
 arch = GSympNet(dl; upscaling_dimension = 4)
 
 nn = NeuralNetwork(arch)
-o_method = AdamOptimizer()
+o_method = Adam()
 
-o = Optimizer(o_method, nn)
+o = TrainingOptimizer(nn.params; algorithm = o_method)
 
 batch = Batch(256)
 const n_epochs = smoke_size(1024, 2)
 
-loss_array = o(nn, dl, batch, n_epochs)
+loss_array = train!(nn, o, dl, batch, n_epochs)
 
 function make_training_error_plot(; theme = :dark)
     textcolor = theme == :dark ? :white : :black

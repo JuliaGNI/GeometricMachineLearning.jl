@@ -1,5 +1,6 @@
 using GeometricMachineLearning
 using GeometricMachineLearning: params
+using GeometricOptimizers: optimization_step!
 using Test
 using KernelAbstractions
 import Random, Zygote
@@ -24,19 +25,18 @@ end
 function test_gradient_layer_derivative_and_update(T, M, N, batch_size = 10)
     dummy_model = Chain(GradientLayerP(M, N, tanh), GradientLayerQ(M, N, tanh))
     ps = params(NeuralNetwork(dummy_model, CPU(), T))
-    o = Optimizer(Adam(T; β₁ = T(0.9), β₂ = T(0.999), δ = T(3e-7)), ps;
-        step_size = T(0.1))
+    o = TrainingOptimizer(ps; algorithm = Adam(; β₁ = 0.9, β₂ = 0.999, δ = 3e-7),
+        linesearch = T(0.1))
 
-    # test for vector 
+    # test for vector
     x = rand(T, M)
     gs = Zygote.gradient(ps -> sum(dummy_model(x, ps)), ps)[1]
-    λY = GlobalSection(ps)
-    optimization_step!(o, λY, ps, gs)
+    optimization_step!(ps, o, gs)
 
-    # test for matrix 
+    # test for matrix
     X = rand(T, M, batch_size)
     gs = Zygote.gradient(ps -> sum(dummy_model(X, ps)), ps)[1]
-    optimization_step!(o, λY, ps, gs)
+    optimization_step!(ps, o, gs)
 end
 
 types = (Float32, Float64)

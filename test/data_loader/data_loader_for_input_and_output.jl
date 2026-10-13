@@ -16,10 +16,10 @@ nepochs = 2000
 model = Chain(Dense(1, nwidth), Dense(nwidth, 1))
 nn = NeuralNetwork(model, Float32)
 dl = DataLoader(xsamples, ysamples)
-o = Optimizer(Adam(), nn)
+o = TrainingOptimizer(nn.params; algorithm = Adam())
 batch = Batch(nbatch, 1, 1)
 
 loss = FeedForwardLoss()
 
-loss_array = o(nn, dl, batch, nepochs, loss; show_progress = false)
+loss_array = train!(nn, o, dl, batch, nepochs; loss, show_progress = false)
 @test loss_array[end] < 0.9

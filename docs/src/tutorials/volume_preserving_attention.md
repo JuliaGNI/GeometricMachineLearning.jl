@@ -117,9 +117,9 @@ Next we train the networks (here we pick a batch size of 30 and train for 1000 e
 
 ```@setup volume_preserving_attention
 function set_up_optimizers(nn_skew, nn_arb, nn_comp)
-    o_skew = Optimizer(Adam(T), nn_skew)
-    o_arb  = Optimizer(Adam(T), nn_arb)
-    o_comp = Optimizer(Adam(T), nn_comp)
+    o_skew = TrainingOptimizer(nn_skew.params; algorithm = Adam())
+    o_arb  = TrainingOptimizer(nn_arb.params; algorithm = Adam())
+    o_comp = TrainingOptimizer(nn_comp.params; algorithm = Adam())
 
     o_skew, o_arb, o_comp
 end
@@ -134,9 +134,9 @@ const batch = Batch(batch_size, seq_length, prediction_window)
 const batch2 = Batch(batch_size)
 
 function train_networks!(nn_skew, nn_arb, nn_comp)
-    loss_array_skew = o_skew(nn_skew, dl, batch, n_epochs, TransformerLoss(batch); show_progress = false)
-    loss_array_arb  = o_arb( nn_arb,  dl, batch, n_epochs, TransformerLoss(batch); show_progress = false)
-    loss_array_comp = o_comp(nn_comp, dl, batch2, n_epochs, FeedForwardLoss(); show_progress = false)
+    loss_array_skew = train!(nn_skew, o_skew, dl, batch, n_epochs; loss = TransformerLoss(batch), show_progress = false)
+    loss_array_arb  = train!(nn_arb,  o_arb,  dl, batch, n_epochs; loss = TransformerLoss(batch), show_progress = false)
+    loss_array_comp = train!(nn_comp, o_comp, dl, batch2, n_epochs; loss = FeedForwardLoss(), show_progress = false)
 
     loss_array_skew, loss_array_arb, loss_array_comp
 end

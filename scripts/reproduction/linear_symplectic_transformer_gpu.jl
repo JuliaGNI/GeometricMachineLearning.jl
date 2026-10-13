@@ -37,18 +37,18 @@ nn_standard = NeuralNetwork(arch_standard, backend, T)
 nn_symplectic = NeuralNetwork(arch_symplectic, backend, T)
 nn_sympnet = NeuralNetwork(arch_sympnet, backend, T)
 
-o_method = AdamOptimizer()
+o_method = Adam()
 
-o_standard = Optimizer(o_method, nn_standard)
-o_symplectic = Optimizer(o_method, nn_symplectic)
-o_sympnet = Optimizer(o_method, nn_sympnet)
+o_standard = TrainingOptimizer(nn_standard.params; algorithm = o_method)
+o_symplectic = TrainingOptimizer(nn_symplectic.params; algorithm = o_method)
+o_sympnet = TrainingOptimizer(nn_sympnet.params; algorithm = o_method)
 
 batch = Batch(batch_size, seq_length)
 batch2 = Batch(batch_size)
 
-loss_array_standard = o_standard(nn_standard, dl, batch, n_epochs)
-loss_array_symplectic = o_symplectic(nn_symplectic, dl, batch, n_epochs)
-loss_array_sympnet = o_sympnet(nn_sympnet, dl, batch2, n_epochs)
+loss_array_standard = train!(nn_standard, o_standard, dl, batch, n_epochs)
+loss_array_symplectic = train!(nn_symplectic, o_symplectic, dl, batch, n_epochs)
+loss_array_sympnet = train!(nn_sympnet, o_sympnet, dl, batch2, n_epochs)
 
 fig_train = Figure()
 ax_train = Axis(fig_train[1, 1]; xlabel = "epoch", ylabel = "training error", yscale = log10)

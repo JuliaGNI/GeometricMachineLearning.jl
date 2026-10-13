@@ -154,8 +154,8 @@ function test_lnn_training(; n = 1, n_epochs = 30)
     # Start the training from a different draw, so the target is not already met.
     nn = NeuralNetwork(arch)
     dl = DataLoader(input, output; suppress_info = true)
-    optimizer = Optimizer(Adam(), nn)
-    loss_array = optimizer(nn, dl, Batch(10), n_epochs, loss; show_progress = false)
+    optimizer = TrainingOptimizer(nn.params; algorithm = Adam())
+    loss_array = train!(nn, optimizer, dl, Batch(10), n_epochs; loss, show_progress = false)
 
     @test loss_array[end] < loss_array[1]
 end

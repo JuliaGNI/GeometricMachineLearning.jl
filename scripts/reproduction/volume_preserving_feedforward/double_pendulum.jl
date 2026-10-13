@@ -42,7 +42,7 @@ const T = eltype(dl)
 # hyperparameters concerning training 
 const n_epochs = smoke_size(1000, 2)
 const batch_size = 1024
-const opt_method = AdamOptimizer(T)
+const opt_method = Adam()
 const resnet_activation = tanh
 
 const t_validation = 30
@@ -54,10 +54,11 @@ function setup_and_train(
         model::Union{GeometricMachineLearning.Architecture, GeometricMachineLearning.Chain},
         batch::Batch; transformer::Bool = true)
     nn₀ = NeuralNetwork(model, backend, T)
-    o₀ = Optimizer(opt_method, nn₀)
+    o₀ = TrainingOptimizer(nn₀.params; algorithm = opt_method)
 
-    loss_array = transformer ? o₀(nn₀, dl, batch, n_epochs, transformer_loss) :
-                 o₀(nn₀, dl, batch, n_epochs)
+    loss_array = transformer ?
+                 train!(nn₀, o₀, dl, batch, n_epochs; loss = transformer_loss) :
+                 train!(nn₀, o₀, dl, batch, n_epochs)
 
     nn₀, loss_array
 end

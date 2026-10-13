@@ -6,10 +6,6 @@ using Test
 # `using GeometricMachineLearning; ResidualLayer(2)` is an `UndefVarError` for a name the package
 # advertises. The allowlist below is empty, so every exported name resolves; an entry is added here
 # only with the reason a name is exported and defined nowhere.
-#
-# The assertions below test what the loaded module defines. `ext/HDF5Ext.jl` loads alongside HDF5
-# and this test does not load HDF5, so a name defined only in that extension would read as undefined
-# here. No exported name is in that position today.
 const UNDEFINED_EXPORTS = Dict{Symbol, String}()
 
 @testset "every exported name is defined" begin
@@ -22,4 +18,23 @@ const UNDEFINED_EXPORTS = Dict{Symbol, String}()
     # And the allowlist may not outlive what it excuses. An entry whose name now resolves, or is no
     # longer exported, has to go; otherwise the next reader trusts a reason that no longer holds.
     @test sort(setdiff(collect(keys(UNDEFINED_EXPORTS)), undefined_exports)) == Symbol[]
+end
+
+# A caller who loads both packages keeps every name of both: each name the two export is one binding,
+# so neither `using` shadows the other, and `Optimizer` is `GeometricOptimizers`' solver.
+@testset "using GeometricOptimizers and GeometricMachineLearning together" begin
+    m = Module()
+    Core.eval(m, :(using GeometricOptimizers, GeometricMachineLearning))
+    @test Core.eval(m, :(Optimizer === GeometricOptimizers.Optimizer))
+
+    GO = Core.eval(m, :GeometricOptimizers)
+    shared = intersect(names(GO), names(GeometricMachineLearning))
+    @test :Adam in shared
+    @test filter(n -> getfield(GO, n) !== getfield(GeometricMachineLearning, n), shared) ==
+          Symbol[]
+
+    # no alias names a method under a second name
+    for alias in (:GradientOptimizer, :MomentumOptimizer, :AdamOptimizer)
+        @test !isdefined(GeometricMachineLearning, alias)
+    end
 end

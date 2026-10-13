@@ -6,12 +6,11 @@ using AbstractNeuralNetworks
 # package also exports `flatten`/`unflatten` and the leaf protocol, none of which this package
 # extends — `GeometricOptimizers` carries the protocol for the structured matrices.
 #
-# Two things do come from there rather than being written again here: `mapstorage`, which reaches the
-# storage of a structured leaf and rebuilds the leaf around the result (`src/map_to_cpu.jl`), and
-# `parameter_eltype`, which promotes over the leaves of a set. A plain `NamedTuple` of layers is
-# walked with `Base.map`, which needs nothing from anybody.
+# One thing does come from there rather than being written again here: `mapstorage`, which reaches
+# the storage of a structured leaf and rebuilds the leaf around the result (`src/map_to_cpu.jl`). A
+# plain `NamedTuple` of layers is walked with `Base.map`, which needs nothing from anybody.
 import NeuralNetworkParameters: NetworkParameters
-using NeuralNetworkParameters: mapparameters, mapstorage, parameter_eltype
+using NeuralNetworkParameters: mapstorage
 using ChainRulesCore
 using GeometricBase
 using GeometricSolutions: GeometricSolution, EnsembleSolution, TimeSeries
@@ -37,12 +36,14 @@ import Symbolics
 # `import` and not `using ...: ...`: GML adds constructor methods to several of these types (in
 # `layers/` and the kernels), and extending a *type* reached through `using` warns on every such
 # method since Julia 1.12 — "Constructor for type … was extended in `GeometricMachineLearning`
-# without explicit qualification or import". Everything imported here is re-exported below, which
-# is what keeps `using GeometricMachineLearning` alone sufficient.
+# without explicit qualification or import". Everything imported here is re-exported below, except
+# `orthonormal_columns` and `optimization_step!`; the re-exports are what keep
+# `using GeometricMachineLearning` alone sufficient.
 import GeometricOptimizers
 import GeometricOptimizers: Manifold, StiefelManifold, GrassmannManifold
 import GeometricOptimizers: SkewSymMatrix, SymmetricMatrix,
-                            LowerTriangular, UpperTriangular, StiefelProjection
+                            StrictlyLowerTriangular, StrictlyUpperTriangular,
+                            StiefelProjection
 import GeometricOptimizers: StiefelLieAlgHorMatrix, GrassmannLieAlgHorMatrix
 import GeometricOptimizers: rgrad, metric, check, global_section
 # `orthonormal_columns(draw)` orthonormalizes `draw()` with CholeskyQR2, which runs on whatever
@@ -52,17 +53,16 @@ import GeometricOptimizers: orthonormal_columns
 import GeometricOptimizers: GlobalSection, global_rep, apply_section, apply_section!,
                             update_section!
 import GeometricOptimizers: Geodesic, Cayley, geodesic, cayley, retraction
-import GeometricOptimizers: OptimizerMethod,
-                            GradientMethod, MomentumMethod, Adam,
-                            GradientState, MomentumState, AdamState,
+import GeometricOptimizers: GradientMethod, MomentumMethod, Adam, AdamWithEuclideanDecay,
                             AdamOptimizerWithDecay, DecayingStatic
+# The training step. `train!` takes a `TrainingOptimizer` and calls `optimization_step!`, which is
+# not re-exported.
+import GeometricOptimizers: TrainingOptimizer, optimization_step!
 import GeometricOptimizers: update!
 # `solve!` is imported rather than started afresh so that GML's `solve!(::NeuralNetwork{<:PSDArch},
 # …)` — solve for the parameters directly, by SVD, instead of training for them — is a method of the
 # same verb a caller already has from GeometricOptimizers, and not a second function of the name.
 import GeometricOptimizers: solve!
-# The optimizer *caches* stay internal upstream — they are `solver_step!` scratch — so GML reaches
-# them as `GeometricOptimizers.AdamCache` where it needs to name one, and does not re-export them.
 
 import AbstractNeuralNetworks: Architecture, AbstractExplicitLayer, NeuralNetwork,
                                FeedForwardLoss
@@ -114,7 +114,7 @@ include("arrays/poisson_tensor.jl")
 # Re-exported from GeometricOptimizers, so that `using GeometricMachineLearning` on its own still
 # gives a caller the matrix types its layers are parametrized by.
 export SymmetricMatrix, SkewSymMatrix
-export LowerTriangular, UpperTriangular
+export StrictlyLowerTriangular, StrictlyUpperTriangular
 export StiefelLieAlgHorMatrix, GrassmannLieAlgHorMatrix
 export StiefelProjection
 # GML's own
@@ -194,30 +194,8 @@ export ResNet
 export Transformer
 export TransformerIntegrator, StandardTransformerIntegrator
 
-# INCLUDE OPTIMIZERS — the methods, states, sections and retractions come from GeometricOptimizers.
+# INCLUDE OPTIMIZERS — the methods, sections and retractions come from GeometricOptimizers.
 include("optimizers/optimizer.jl")
-
-export OptimizerMethod
-export GradientMethod, GradientState
-export MomentumMethod, MomentumState
-export Adam, AdamState
-export Optimizer
-export optimization_step!
-export GlobalSection, global_section, apply_section, apply_section!, update_section!
-export global_rep
-export Geodesic, Cayley
-export geodesic, cayley
-export retraction
-export update!
-# The optimizer caches are not exported, for every method alike: see the note at the
-# GeometricOptimizers imports above.
-# backward-compat aliases (old names → new names)
-const GradientOptimizer = GradientMethod
-const MomentumOptimizer = MomentumMethod
-const AdamOptimizer = Adam
-export GradientOptimizer, MomentumOptimizer, AdamOptimizer
-# Re-exported from GeometricOptimizers, which owns the one definition of them.
-export AdamOptimizerWithDecay, DecayingStatic
 
 export NeuralNetwork
 
@@ -263,10 +241,10 @@ include("pullbacks/zygote_pullback.jl")
 include("pullbacks/symbolic_hnn_pullback.jl")
 
 export DataLoader
-export Batch, optimize_for_one_epoch!
+export Batch, train!
 include("data_loader/tensor_assign.jl")
 include("data_loader/batch.jl")
-include("data_loader/optimize.jl")
+include("data_loader/train.jl")
 
 include("reduced_system/reduced_system.jl")
 

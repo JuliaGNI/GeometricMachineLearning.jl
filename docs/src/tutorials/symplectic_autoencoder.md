@@ -15,7 +15,7 @@ Main.remark(raw"As with any neural network we have to make the following choices
 " * Main.indentation * raw"5. choose a *number of epochs*,
 " * Main.indentation * raw"where points 1 and 3 depend on a variable number of hyperparameters.")
 ```
-For the symplectic autoencoder point 1 is done by calling [`SymplecticAutoencoder`](@ref), point 2 is done by calling `NeuralNetwork`, point 3 is done by calling [`Optimizer`](@ref) and point 4 is done by calling [`Batch`](@ref).
+For the symplectic autoencoder point 1 is done by calling [`SymplecticAutoencoder`](@ref), point 2 is done by calling `NeuralNetwork`, point 3 is done by calling [`TrainingOptimizer`](@extref GeometricOptimizers GeometricOptimizers.TrainingOptimizer) and point 4 is done by calling [`Batch`](@ref).
 
 ## The system
 
@@ -111,7 +111,7 @@ sae_arch = SymplecticAutoencoder(dl_cpu.input_dim, reduced_dim; n_encoder_blocks
 nothing # hide
 ```
 
-Training a neural network is usually done by calling an instance of [`Optimizer`](@ref) in `GeometricMachineLearning`. [`PSDArch`](@ref) however can be solved directly by using singular value decomposition and this is done by calling [`solve!`](@ref):  
+Training a neural network is usually done by calling [`train!`](@ref) with a [`TrainingOptimizer`](@extref GeometricOptimizers GeometricOptimizers.TrainingOptimizer) in `GeometricMachineLearning`. [`PSDArch`](@ref) however can be solved directly by using singular value decomposition and this is done by calling [`solve!`](@ref):  
 
 ```@example toda_lattice
 psd_nn_cpu = NeuralNetwork(psd_arch, CPU(), eltype(dl_cpu))
@@ -129,7 +129,7 @@ Main.remark(raw"The training blocks on this page are in plain `julia` fences, so
 " * Main.indentation * raw"instead is the *committed result* of those runs, loaded from the `.h5` files beside this page,
 " * Main.indentation * raw"so the figures below are produced from the trained networks rather than from a token
 " * Main.indentation * raw"re-training. The code paths themselves are covered by the test suite -- `ReducedLoss` through
-" * Main.indentation * raw"the `Optimizer` functor by `test/integration/reduced_loss_optimization.jl` -- and reproduced at
+" * Main.indentation * raw"`train!` by `test/integration/reduced_loss_optimization.jl` -- and reproduced at
 " * Main.indentation * raw"full size by `scripts/reproduction/symplectic_autoencoders/`, which CI runs at a smoke size
 " * Main.indentation * raw"on every pull request.")
 ```
@@ -145,10 +145,10 @@ dl = DataLoader(dl_cpu, backend, Float32)
 
 
 sae_nn_gpu = NeuralNetwork(sae_arch, CUDADevice(), Float32)
-o = Optimizer(sae_nn_gpu; AdamOptimizerWithDecay(integrator_train_epochs, Float32)...)
+o = TrainingOptimizer(sae_nn_gpu.params; AdamOptimizerWithDecay(integrator_train_epochs)...)
 
 # train the network
-o(sae_nn_gpu, dl, Batch(batch_size), n_epochs)
+train!(sae_nn_gpu, o, dl, Batch(batch_size), n_epochs)
 ```
 
 After training we map the network parameters to cpu:
@@ -282,7 +282,7 @@ integrator_nn = NeuralNetwork(integrator_architecture, backend)
 
 integrator_pairing = AdamOptimizerWithDecay(integrator_train_epochs)
 
-o_integrator = Optimizer(integrator_nn; integrator_pairing...)
+o_integrator = TrainingOptimizer(integrator_nn.params; integrator_pairing...)
 
 dl = dl_cpu # hide
 # map from autoencoder type to integrator type
@@ -294,11 +294,12 @@ nothing # hide
 ```julia
 loss = GeometricMachineLearning.ReducedLoss(encoder(sae_nn_gpu), decoder(sae_nn_gpu))
 
-train_integrator_loss = o_integrator(   integrator_nn, 
-                                        dl_integration, 
-                                        integrator_batch, 
-                                        integrator_train_epochs, 
-                                        loss)
+train_integrator_loss = train!( integrator_nn, 
+                                o_integrator, 
+                                dl_integration, 
+                                integrator_batch, 
+                                integrator_train_epochs; 
+                                loss)
 ```
 
 We can now evaluate the solution:
@@ -476,7 +477,7 @@ const integrator_architecture2 = StandardTransformerIntegrator(reduced_dim2;
                                                                             upscaling_activation = tanh)
 integrator_nn2 = NeuralNetwork(integrator_architecture2, backend)
 const integrator_pairing2 = AdamOptimizerWithDecay(integrator_train_epochs)
-const o_integrator2 = Optimizer(integrator_nn2; integrator_pairing2...)
+const o_integrator2 = TrainingOptimizer(integrator_nn2.params; integrator_pairing2...)
 
 loss2 = GeometricMachineLearning.ReducedLoss(encoder(psd_nn2), decoder(psd_nn2))
 nothing # hide
@@ -484,7 +485,7 @@ nothing # hide
 
 For training we leave `dl_integration`, `integrator_batch` and `integrator_train_epochs` unchanged:
 ```julia
-train_integrator_loss2 = o_integrator(integrator_nn2, dl_integration, integrator_batch, integrator_train_epochs, loss2)
+train_integrator_loss2 = train!(integrator_nn2, o_integrator2, dl_integration, integrator_batch, integrator_train_epochs; loss = loss2)
 ```
 
 ```@setup toda_lattice
