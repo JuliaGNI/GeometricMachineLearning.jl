@@ -15,10 +15,10 @@ Random.seed!(1234)
 Each three-argument loss functor `(loss)(ps, input, output)` must not collide with
 `AbstractNeuralNetworks`' own `(::NetworkLoss)(::NeuralNetwork, input, output)`. With an untyped
 first argument the two are ambiguous -- same argument count, neither more specific -- and
-`loss(nn, input, output)` is a `MethodError: ... is ambiguous` rather than a call. Typing the
-first parameter as `Union{NetworkParameters, NamedTuple}` excludes a `NeuralNetwork`, so the call
-resolves to upstream's method, which itself forwards to `loss(nn.params, input, output)` -- the
-two must therefore return the same number.
+`loss(nn, input, output)` is a `MethodError: ... is ambiguous` rather than a call. Typing the first
+parameter `::NetworkParameters` excludes a `NeuralNetwork`, so the call resolves to upstream's
+method, which itself forwards to `loss(nn.params, input, output)` -- the two must therefore return
+the same number.
 """
 function test_loss_of_a_network_matches_loss_of_its_parameters()
     hnn_arch = StandardHamiltonianArchitecture(2, 4, 1)

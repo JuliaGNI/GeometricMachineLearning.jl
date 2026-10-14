@@ -5,20 +5,12 @@ import Random
 
 Random.seed!(123)
 
-# `ReducedLoss` trained through `train!`, which is the path the symplectic
-# autoencoder tutorial documents and the path `scripts/reproduction/symplectic_autoencoders/`
-# takes. It was unreachable: the loss annotated its parameter argument `::NetworkParameters`, and
-# `Zygote.pullback` evaluates the forward pass with the parameters unwrapped -- the closure body
-# receives the underlying `NamedTuple` -- so the method did not match under AD and the untyped
-# `NetworkLoss` fallback in `AbstractNeuralNetworks` caught the call. That fallback's body is an
-# `error`, so the failure read as "Functor not defined for `NetworkLoss`" rather than as a
-# `MethodError` naming the argument types.
-#
-# Nothing had caught it because nothing ran it. The docstring example calls the loss directly,
-# which dispatches, and the tutorial's training is in a plain ```julia fence that Documenter
-# renders and never executes. Restoring the annotation makes the `train!` call below raise
-# that `error`, so this testset errors before any of the three assertions runs; the assertions
-# themselves check what the loss is for.
+# `ReducedLoss` trained through `train!`, which is the path the symplectic autoencoder tutorial
+# documents and the path `scripts/reproduction/symplectic_autoencoders/` takes. The loss annotates
+# its parameter argument `::NetworkParameters`, and NeuralNetworkParameters 0.5's `Zygote` rule keeps
+# the wrapper on the forward pass, so the annotation is dispatchable under AD. The docstring example
+# calls the loss directly, which dispatches, and the tutorial's training is in a plain ```julia fence
+# that Documenter renders and never executes; this testset is the one that runs the training.
 @testset "ReducedLoss trains through train!" begin
     reduced_dim = 2
 
@@ -40,8 +32,8 @@ Random.seed!(123)
     o = TrainingOptimizer(integrator.params; algorithm = Adam())
     batch = Batch(8, 4)
 
-    # The parameters reach the loss through `Zygote.pullback` here, which is what an annotated
-    # `params` argument breaks; calling the loss directly would pass either way.
+    # The parameters reach the loss through `Zygote.pullback`, which under NeuralNetworkParameters
+    # 0.5 keeps the `NetworkParameters` the loss annotates.
     loss_array = train!(integrator, o, dl_reduced, batch, 10; loss, show_progress = false)
 
     @test length(loss_array) == 10
