@@ -17,7 +17,7 @@ breaking release).
 
 ### Removed (breaking)
 
-- **`NetworkLoss(::TransformerIntegrator, prediction_window)` is gone; the default loss is `NetworkLoss(nn.architecture, batch)`.** `train!`'s default is now the two-argument `NetworkLoss(arch, batch)`, so a transformer's prediction window comes from the `Batch` it trains on instead of from the architecture. The old method took `prediction_window = 1`, which against `Batch`'s default `seq_length` was a conflict; `NetworkLoss(transformer, Batch(seq, pred))` replaces it, and `NetworkLoss(transformer, n::Integer)` is a `MethodError`. Migrate `NetworkLoss(arch)` to `NetworkLoss(arch, batch)`, or to `TransformerLoss(batch)` for a transformer.
+- **`NetworkLoss(::TransformerIntegrator, prediction_window)` is gone; the default loss is `NetworkLoss(nn.architecture, batch)`.** `train!`'s default is now the two-argument `NetworkLoss(arch, batch)`, so a transformer's prediction window comes from the `Batch` it trains on instead of from the architecture. The old method took `prediction_window = 1`, which against `Batch`'s default `seq_length` was a conflict; `NetworkLoss(transformer, Batch(seq, pred))` replaces it, and `NetworkLoss(transformer, n::Integer)` is a `MethodError`. Migrate `NetworkLoss(transformer)` and `NetworkLoss(transformer, n)` to `NetworkLoss(transformer, batch)` or `TransformerLoss(batch)`.
 
 - **`train!`'s `pullback` keyword is gone.** `loss` takes a `NetworkLoss` or an `AbstractPullback`, and a `NetworkLoss` is trained through a `ZygotePullback`. Migrate `train!(nn, o, dl, batch, n; loss = HNNLoss(arch), pullback = SymbolicPullback(arch))` to `train!(nn, o, dl, batch, n; loss = SymbolicPullback(arch))`. `train!` builds the pullback once per call, not once per step.
 
@@ -61,7 +61,7 @@ breaking release).
 
   The symbolic gradient was `4.73`× the Zygote one before and is the same number as it now.
 
-- **This closes issues #319 and #343.** C7 is rewritten rather than closed: it now reaches one private SymbolicNeuralNetworks name, `symbolic_parameter_gradient`, where `flat_parameter_gradient` is flat and wants an `unflatten` per step; the pullback is the upstream type `SymbolicPullback(loss, fun)` with a call method of this package for `SymbolicPullback{<:HNNLoss, <:_HNNParameterGradient}`. K14 records that `train!` infers its history as an abstract `Vector`; its run-time element type is `T`, and every test asserts it.
+- **This closes issues #319 and #343.**
 
 ### Added
 
@@ -71,6 +71,8 @@ breaking release).
 - **A `Metal` workflow runs the Metal tests on GitHub's `macos-15` runner**, for the `min` and `1` Julia versions. The runner's GPU is Apple's paravirtual device, which Metal.jl supports from 1.10 and on macOS 15 or later. The workflow includes a step "Metal is functional" before the tests that fails the job where the device is unavailable, so it cannot pass without having run the tests. The job is not a required check. However, the Metal tests also run in two required checks—CI.yml's `Julia min - macOS-latest - default` and `Julia 1 - macOS-latest - default`—which execute `test/runtests.jl` with no test arguments on Apple silicon, selecting the `metal` group.
 - **`test/quality/jet.jl` checks the kernel launchers with JET.** It runs in `core`, directly after `quality/aqua.jl`, and takes about 14 s. Each function that launches a kernel of `src/` on the `CPU()` backend, the pullbacks among them, and the `Batch` functor that `test/data_loader/batch_index_set.jl` measures with `@allocated` get one `JET.report_opt` line per element type that the tests use, with `target_modules = (GeometricMachineLearning,)`. Each `@kernel` method also gets a line that analyses its generated `cpu_<kernel>` function at the launcher's context, because JET drops the reports of a kernel body when it analyses the launcher. 142 lines pass on Julia 1.11.9 (JET 0.9.20) and 1.13.1 (JET 0.12.2). Three lines report a runtime dispatch on both versions and are `@test_broken` with issue #325: `PoissonTensor(::CPU, ::Int, ::DataType)`, and the input-and-output method of `convert_input_and_batch_indices_to_array` at `Float32` and `Float64`. Where JET does not work, the file records one `@test_skip`. JET joins `test/Project.toml` with no `[compat]` bound. `KNOWN_ISSUES.md` K2 records the Revise `EMFILE` messages that JET brings into the test log, and K3 the dispatches that the lines do not see: an unstable argument of a kernel launch, and two barriers in the Poisson-tensor kernel.
 - **A test calls `iterate` on `(q,)` initial conditions.** No test reached the `NeuralNetworkIntegrator` `iterate` method that takes `ics::NamedTuple{(:q,), Tuple{AT}}`. `test/docstrings/layers_and_architectures.jl` runs the docstring's `ResNet` from `(q = [1, 1, 1],)` for four points and expects the same trajectory as the vector form, `[1 2 4 8; 1 3 9 27; 1 3 7 15]`.
+
+- **`NetworkLoss(arch)` is defined for a `NeuralNetworkIntegrator` `arch` and returns `FeedForwardLoss()`.** It is the default loss of that architecture: `train!` takes it for a `Batch{:FeedForward}` when no `loss` is given. A caller can name the default, or pass it explicitly, without relying on `train!`'s keyword default.
 
 ### Changed
 

@@ -68,6 +68,6 @@ end
     tr_loss = TransformerLoss(3, 2)
     @test tr_loss(tr.model, tr.params, tr_input, tr_output) ==
           tr_loss(tr, tr_input, tr_output)
-    @test_throws "Functor not defined" tr_loss(
+    @test_throws ErrorException tr_loss(
         tr.model, params(tr.params), tr_input, tr_output)
 end

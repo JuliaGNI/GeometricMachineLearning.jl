@@ -65,12 +65,15 @@ _as_pullback(p::AbstractPullback) = p
 
 # The default loss of an architecture and a batch. The two-argument methods live here and not beside
 # `NetworkLoss(::AutoEncoder)` in `src/loss/losses.jl`, because `Batch` is included after `src/loss/`.
-NetworkLoss(::TransformerIntegrator, batch::Batch{:Transformer}) = TransformerLoss(batch)
-function NetworkLoss(
+function AbstractNeuralNetworks.NetworkLoss(
+        ::TransformerIntegrator, batch::Batch{:Transformer})
+    TransformerLoss(batch)
+end
+function AbstractNeuralNetworks.NetworkLoss(
         arch::Union{NeuralNetworkIntegrator, AutoEncoder}, ::Batch{:FeedForward})
     NetworkLoss(arch)
 end
-function NetworkLoss(arch::Architecture, batch::Batch)
+function AbstractNeuralNetworks.NetworkLoss(arch::Architecture, batch::Batch)
     throw(ArgumentError("`train!` has no default loss for a $(nameof(typeof(arch))) with a " *
                         "$(typeof(batch)); pass the loss as the keyword `loss`."))
 end

@@ -1,10 +1,11 @@
 using GeometricMachineLearning
-using GeometricMachineLearning: HNNLoss, NetworkLoss, QPTOAT, params, ZygotePullback
+using GeometricMachineLearning: NetworkLoss, QPTOAT, params, ZygotePullback
 using NeuralNetworkParameters: NetworkParameters
 using Test
 import Random
 
 include("../helpers/eltypes.jl")
+include("../helpers/leaves.jl")
 
 # The target is in the model class, so the loss goes to zero; the factor 100 leaves margin in
 # `Float32`.
@@ -89,8 +90,8 @@ end
 
 # `train!` steps with the gradient of the `loss` it is given. One epoch of one minibatch with
 # `GradientMethod` moves the parameters by `-η` times the symbolic gradient at `p₀`, and the history
-# is the pullback's loss value. `SymbolicPullback`'s gradient is the gradient of the batch loss, so
-# it equals `ZygotePullback`'s on the same batch (issue #343).
+# is the pullback's loss value. `test/pullbacks/symbolic_hnn_pullback.jl` tests the gradient itself
+# against `ZygotePullback`'s (issue #343).
 @testset "train! trains a Hamiltonian network with SymbolicPullback ($T)" for T in REAL_ELTYPES
     Random.seed!(9)
     arch = StandardHamiltonianArchitecture(2, 4, 1, GeometricMachineLearning.SigmoidActivation())
@@ -111,21 +112,9 @@ end
     @test history == [value]
     @test value isa T
     @test eltype(history) === T
-    for (layer, layer₀, gradient) in zip(values(params(nn)), values(p₀), values(g))
-        for k in keys(layer)
-            @test eltype(gradient[k]) === T
-            @test layer[k] ≈ layer₀[k] .- η .* gradient[k]
-            @test layer[k] != layer₀[k]
-        end
-    end
-    zygote_value, zygote_back = ZygotePullback(HNNLoss(arch))(p₀, nn.model, data)
-    zygote_g = zygote_back(one(zygote_value))
-    @test zygote_value ≈ value
-    for (name, leaf) in pairs(zygote_g)
-        for k in keys(leaf)
-            @test eltype(leaf[k]) === T
-            @test g[name][k] ≈ leaf[k] rtol = T(√eps(T))
-        end
+    foreach_leaf(params(nn), p₀, g) do layer, layer₀, gradient
+        @test layer ≈ layer₀ .- η .* gradient
+        @test layer != layer₀
     end
 end
 

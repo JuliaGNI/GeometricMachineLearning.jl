@@ -56,5 +56,4 @@ GeometricMachineLearning._symplectic_euler_evaluation_point
 GeometricMachineLearning.symbolic_hamiltonian_vector_field(::GeometricMachineLearning.SymbolicNeuralNetwork)
 GeometricMachineLearning.SymbolicPullback(::HamiltonianArchitecture)
 GeometricMachineLearning.GeneralizedHamiltonianArchitecture
-GeometricMachineLearning._HNNParameterGradient
 ```

@@ -16,11 +16,9 @@ Random.seed!(1234)
     @test 𝕁 * (q = [1, 2], p = [3, 4]) == (q = [3, 4], p = [-1, -2])
 
     # the `ZygotePullback` docstring: `back(Δ)` is a `NetworkParameters`, not a one-tuple of one
-    loss = AutoEncoderLoss()
-    _pullback = ZygotePullback(loss)
+    pb = ZygotePullback(AutoEncoderLoss())
     nn = NeuralNetwork(Chain(Dense(10, 2, tanh), Dense(2, 10, tanh)))
-    input = rand(10)
-    _, back = _pullback(nn.params, nn.model, input)
-    @test back(1) isa NetworkParameters
-    @test keys(back(1)) == (:L1, :L2)
+    _, back = pb(nn.params, nn.model, rand(10))
+    g = back(1)
+    @test (g isa NetworkParameters, keys(g)) == (true, (:L1, :L2))
 end

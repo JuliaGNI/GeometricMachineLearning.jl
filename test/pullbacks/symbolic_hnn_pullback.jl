@@ -7,6 +7,7 @@ using Test
 import Random
 
 include("../helpers/eltypes.jl")
+include("../helpers/leaves.jl")
 
 # About 1.8e19 in `Float32` and 1.8e154 in `Float64`: the scale at which the product of the two
 # norms overflows and each norm does not.
@@ -19,9 +20,12 @@ extreme_scale(::Type{Float64}) = Float64(1e155)
 extreme_scale_underflow(::Type{Float32}) = Float32(1e23)
 extreme_scale_underflow(::Type{Float64}) = Float64(1e170)
 
-# The pullback does not depend on the element type, so every testset shares one build.
+# None of these depends on the element type, so every testset shares one build. The reference has a
+# loss of its own, so it does not depend on the code under test.
 const arch = StandardHamiltonianArchitecture(2, 4, 1, SigmoidActivation())
 const pullback = SymbolicPullback(arch)
+const reference = ZygotePullback(HNNLoss(arch))
+const hvf = GeometricMachineLearning.hamiltonian_vector_field(arch)
 
 # The symbolic pullback is the gradient of `HNNLoss` on the batch: the generated per-sample
 # gradients of the surrogate `½‖rᵢ‖²`, scaled by `1/(‖R‖‖Y‖)`. Two batch sizes: at `N = 1` the
@@ -37,23 +41,19 @@ const pullback = SymbolicPullback(arch)
 
         value, back = pullback(ps, nn.model, (X, Y))
         g = back(one(value))
-        zygote_value, zygote_back = ZygotePullback(HNNLoss(arch))(
-            ps, nn.model, (X, Y))
+        zygote_value, zygote_back = reference(ps, nn.model, (X, Y))
         zg = zygote_back(one(zygote_value))
 
         @test value isa T
         @test value ≈ zygote_value rtol = T(√eps(T))
         @test g isa NetworkParameters
         @test keys(g) == keys(ps)
-        for (name, leaf) in pairs(g)
-            for k in keys(leaf)
-                @test eltype(leaf[k]) === T
-                @test leaf[k] ≈ zg[name][k] rtol = T(√eps(T))
-            end
+        foreach_leaf(g, zg) do leaf, ref
+            @test eltype(leaf) === T
+            @test leaf ≈ ref rtol = T(√eps(T))
         end
 
         # the value is `HNNLoss` itself, so a wrong scale cannot hide behind a different value
-        hvf = GeometricMachineLearning.hamiltonian_vector_field(arch)
         @test value ≈ norm(hvf(X, ps) - Y) / norm(Y) rtol = T(√eps(T))
     end
 end
@@ -79,22 +79,18 @@ end
 
         @test value isa T
         @test isfinite(value)
-        for (name, leaf) in pairs(g)
-            for k in keys(leaf)
-                @test eltype(leaf[k]) === T
-                @test all(isfinite, leaf[k])
-                @test any(!iszero, leaf[k])
-            end
+        foreach_leaf(g) do leaf
+            @test eltype(leaf) === T
+            @test all(isfinite, leaf)
+            @test any(!iszero, leaf)
         end
 
         agreement || continue
-        zygote_value, zygote_back = ZygotePullback(HNNLoss(arch))(ps, nn.model, (X, Y))
+        zygote_value, zygote_back = reference(ps, nn.model, (X, Y))
         zg = zygote_back(one(zygote_value))
         @test value ≈ zygote_value rtol = T(√eps(T))
-        for (name, leaf) in pairs(g)
-            for k in keys(leaf)
-                @test leaf[k] ≈ zg[name][k] rtol = T(√eps(T))
-            end
+        foreach_leaf(g, zg) do leaf, ref
+            @test leaf ≈ ref rtol = T(√eps(T))
         end
     end
 end
@@ -106,7 +102,7 @@ end
     nn = NeuralNetwork(arch, CPU(), T)
     ps = params(nn)
     X = randn(Random.Xoshiro(17), T, 2, 5)
-    Y = GeometricMachineLearning.hamiltonian_vector_field(arch)(X, ps)
+    Y = hvf(X, ps)
 
     value, back = pullback(ps, nn.model, (X, Y))
     g = back(one(value))
@@ -114,16 +110,14 @@ end
     @test value isa T
     @test value == zero(T)
     @test g isa NetworkParameters
-    for (name, leaf) in pairs(g)
-        for k in keys(leaf)
-            @test eltype(leaf[k]) === T
-            @test all(iszero, leaf[k])
-        end
+    foreach_leaf(g) do leaf
+        @test eltype(leaf) === T
+        @test all(iszero, leaf)
     end
 end
 
-# The gradient is linear in the seed, as `ZygotePullback`'s is, and a seed of the parameters'
-# element type comes back in that element type whatever seed `Δ` is given.
+# The gradient is linear in the seed, as `ZygotePullback`'s is, and has the parameters' element type
+# whatever the seed's.
 @testset "the seed scales the gradient ($T)" for T in REAL_ELTYPES
     Random.seed!(24)
     nn = NeuralNetwork(arch, CPU(), T)
@@ -132,30 +126,25 @@ end
     Y = randn(Random.Xoshiro(20), T, 2, 5)
 
     value, back = pullback(ps, nn.model, (X, Y))
-    _, zygote_back = ZygotePullback(HNNLoss(arch))(ps, nn.model, (X, Y))
+    _, zygote_back = reference(ps, nn.model, (X, Y))
 
     @test value isa T
     g₁ = back(one(value))
     g₂ = back(T(2))
     zg₂ = zygote_back(T(2))
 
-    for (name, leaf) in pairs(g₂)
-        for k in keys(leaf)
-            @test eltype(leaf[k]) === T
-            @test eltype(g₁[name][k]) === T
-            @test leaf[k] ≈ 2 .* g₁[name][k] rtol = T(√eps(T))
-            @test leaf[k] ≈ zg₂[name][k] rtol = T(√eps(T))
-        end
+    foreach_leaf(g₂, g₁, zg₂) do leaf, leaf₁, ref
+        @test eltype(leaf) === T
+        @test eltype(leaf₁) === T
+        @test leaf ≈ 2 .* leaf₁ rtol = T(√eps(T))
+        @test leaf ≈ ref rtol = T(√eps(T))
     end
 
-    # a seed of the other float type is converted to the parameters', and the gradient keeps their
-    # element type
+    # a seed of the other float type gives the same gradient, in the parameters' element type
     g_other = back(T === Float32 ? 1.0 : 1.0f0)
-    for (name, leaf) in pairs(g_other)
-        for k in keys(leaf)
-            @test eltype(leaf[k]) === T
-            @test leaf[k] ≈ g₁[name][k] rtol = T(√eps(T))
-        end
+    foreach_leaf(g_other, g₁) do leaf, leaf₁
+        @test eltype(leaf) === T
+        @test leaf ≈ leaf₁ rtol = T(√eps(T))
     end
 end
 
@@ -172,15 +161,13 @@ end
 
     value, back = pullback(ps, nn.model, (X, Y))
     g = back(one(value))
-    zygote_value, zygote_back = ZygotePullback(HNNLoss(arch))(ps, nn.model, (X, Y))
+    zygote_value, zygote_back = reference(ps, nn.model, (X, Y))
     zg = zygote_back(one(zygote_value))
 
     @test g isa NetworkParameters
-    for (name, leaf) in pairs(g)
-        for k in keys(leaf)
-            @test eltype(leaf[k]) === T
-            @test eltype(zg[name][k]) === T
-            @test leaf[k] ≈ zg[name][k] rtol = √eps(Float32)
-        end
+    foreach_leaf(g, zg) do leaf, ref
+        @test eltype(leaf) === T
+        @test eltype(ref) === T
+        @test leaf ≈ ref rtol = √eps(Float32)
     end
 end

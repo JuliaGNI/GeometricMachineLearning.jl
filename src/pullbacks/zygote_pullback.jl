@@ -5,38 +5,20 @@ The pullback based on the [`Zygote`](https://github.com/FluxML/Zygote.jl) backen
 
 # Examples
 
-For a network that is trained on inputs only:
+For a network that is trained on inputs only, `back(Δ)` is a `NetworkParameters` with the keys of
+the parameters the pullback was built from:
 ```jldoctest
 using GeometricMachineLearning
-using GeometricMachineLearning: AutoEncoderLoss, ZygotePullback
 
-loss = AutoEncoderLoss()
-_pullback = ZygotePullback(loss)
+pb = ZygotePullback(AutoEncoderLoss())
 nn = NeuralNetwork(Chain(Dense(10, 2, tanh), Dense(2, 10, tanh)))
-input = rand(10)
-value, back = _pullback(nn.params, nn.model, input)
-back(1) isa NetworkParameters
+value, back = pb(nn.params, nn.model, rand(10))
+g = back(1)
+(g isa NetworkParameters, keys(g))
 
 # output
 
-true
-```
-
-The keys of the returned parameter set are those of the parameters the pullback was built from:
-```jldoctest
-using GeometricMachineLearning
-using GeometricMachineLearning: AutoEncoderLoss, ZygotePullback
-
-loss = AutoEncoderLoss()
-_pullback = ZygotePullback(loss)
-nn = NeuralNetwork(Chain(Dense(10, 2, tanh), Dense(2, 10, tanh)))
-input = rand(10)
-value, back = _pullback(nn.params, nn.model, input)
-keys(back(1)) == (:L1, :L2)
-
-# output
-
-true
+(true, (:L1, :L2))
 ```
 """
 struct ZygotePullback{NNLT} <: AbstractPullback{NNLT}

@@ -8,6 +8,7 @@ import Random
 import Zygote
 
 include("../helpers/eltypes.jl")
+include("../helpers/leaves.jl")
 
 # A `NetworkLoss` that reads `ps.L1.A` twice, in the form of `double_multiplication` in
 # `test/layers/double_multiplication_network_parameters_gradient.jl`: one read leaves the leaf a
@@ -45,12 +46,10 @@ end
         @test value isa T
         @test g isa NetworkParameters
         @test keys(g) == keys(ps)
-        for (name, leaf) in pairs(g)
-            @test keys(leaf) == keys(ps[name])
-            for k in keys(leaf)
-                @test eltype(leaf[k]) === T
-                @test size(leaf[k]) == size(ps[name][k])
-            end
+        @test all(name -> keys(g[name]) == keys(ps[name]), keys(ps))
+        foreach_leaf(g, ps) do leaf, p
+            @test eltype(leaf) === T
+            @test size(leaf) == size(p)
         end
         # The Stiefel leaf's tangent is an `Adjoint` of its storage rather than a `StiefelManifold`:
         # the manifold layer's functor reads the weight through an adjoint, and Zygote keeps the
