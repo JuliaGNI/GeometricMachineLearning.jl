@@ -25,6 +25,7 @@ extreme_scale_underflow(::Type{Float64}) = Float64(1e170)
 @testset "SymbolicPullback of a Hamiltonian network is HNNLoss's gradient ($T)" for T in REAL_ELTYPES
     for N in (1, 5)
         arch = StandardHamiltonianArchitecture(2, 4, 1, SigmoidActivation())
+        Random.seed!(21)
         nn = NeuralNetwork(arch, CPU(), T)
         ps = params(nn)
         X = randn(Random.Xoshiro(11), T, 2, N)
@@ -55,10 +56,11 @@ end
 
 # The two norms are divided by separately, and each of them divides a gradient entry rather than
 # the seed: their product overflows where neither norm does, and `inv` of the product is then a zero
-# gradient. The seed scalar underflows at the second scale, where the gradient entries stay of order
-# one. Neither scale is a power of two, so round-off shows.
+# gradient. The scalar `1/(‖R‖‖Y‖)` is zero at the second scale, where the per-entry divisions keep
+# every leaf finite and non-zero. Neither scale is a power of two, so round-off shows.
 @testset "the scale divides by each norm ($T)" for T in REAL_ELTYPES
     arch = StandardHamiltonianArchitecture(2, 4, 1, SigmoidActivation())
+    Random.seed!(22)
     nn = NeuralNetwork(arch, CPU(), T)
     ps = params(nn)
     X = randn(Random.Xoshiro(13), T, 2, 5)
@@ -98,6 +100,7 @@ end
 # gradient is the zero set rather than `NaN` from an unguarded `inv`.
 @testset "a zero residual gives a zero gradient ($T)" for T in REAL_ELTYPES
     arch = StandardHamiltonianArchitecture(2, 4, 1, SigmoidActivation())
+    Random.seed!(23)
     nn = NeuralNetwork(arch, CPU(), T)
     ps = params(nn)
     X = randn(Random.Xoshiro(17), T, 2, 5)
@@ -121,6 +124,7 @@ end
 # element type comes back in that element type whatever seed `Δ` is given.
 @testset "the seed scales the gradient ($T)" for T in REAL_ELTYPES
     arch = StandardHamiltonianArchitecture(2, 4, 1, SigmoidActivation())
+    Random.seed!(24)
     nn = NeuralNetwork(arch, CPU(), T)
     ps = params(nn)
     X = randn(Random.Xoshiro(19), T, 2, 5)
@@ -129,6 +133,7 @@ end
     value, back = SymbolicPullback(arch)(ps, nn.model, (X, Y))
     _, zygote_back = ZygotePullback(HNNLoss(arch))(ps, nn.model, (X, Y))
 
+    @test value isa T
     g₁ = back(one(value))
     g₂ = back(T(2))
     zg₂ = zygote_back(T(2))

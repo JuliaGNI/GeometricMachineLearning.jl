@@ -42,6 +42,7 @@ end
         value, back = ZygotePullback(FeedForwardLoss())(
             ps, nn.model, (network.input, network.output))
         g = back(one(value))
+        @test value isa T
         @test g isa NetworkParameters
         @test keys(g) == keys(ps)
         for (name, leaf) in pairs(g)
