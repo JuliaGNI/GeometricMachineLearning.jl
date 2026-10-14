@@ -407,12 +407,29 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   Float32 Zygote.pullback value => Any
   ```
 
-  The same call on a pair of matrices infers `Float32`, and the forward loss and
-  `model(x, ps)` infer concretely on the 3-tensors as well. The first call in `@code_warntype` where
-  the value becomes `Any` is therefore `Zygote.pullback(f, ::NetworkParameters)` on that minibatch:
-  the first `Any` of its body is `%5 = ZygoteRulesExt.Any::Core.Const(Any)`, and its inferred return
-  type is a tuple whose first field is `Any`. `train!` accumulates its history over those values, so
-  its inferred return type is `Vector`.
+  The same call on a pair of matrices infers `Float32`, and the forward loss and `model(x, ps)`
+  infer concretely on the 3-tensors as well. Measured by `k14_chain.jl` (run: `julia
+  --startup-file=no --project=<tree> -e 'using TestEnv; TestEnv.activate();
+  include("k14_chain.jl")'`), which prints the inferred value type at each link of the chain, the
+  value first becomes `Any` inside Zygote's pullback: `Zygote._pullback(Context(), f, ps)` is `Any`
+  on the 3-tensors and `Float32` on the matrices. NeuralNetworkParameters reaches it through
+  `invoke(ZygoteRules.pullback, Tuple{Any, Vararg{Any}}, f, ps)` at `ext/ZygoteRulesExt.jl:25`,
+  whose generic method is Zygote's own. The script's 3-tensor rows, both precisions:
+
+  ```
+  Float32 3-tensor forward f(::NetworkParameters)                                    => Float32
+  Float32 3-tensor ZygotePullback value                                              => Any
+  Float32 3-tensor Zygote.pullback(f, ::NetworkParameters) value                     => Any
+  Float32 3-tensor Zygote._pullback(Context(), f, ::NetworkParameters) value         => Any
+  Float64 3-tensor forward f(::NetworkParameters)                                    => Float64
+  Float64 3-tensor ZygotePullback value                                              => Any
+  Float64 3-tensor Zygote.pullback(f, ::NetworkParameters) value                     => Any
+  Float64 3-tensor Zygote._pullback(Context(), f, ::NetworkParameters) value         => Any
+  ```
+
+  `Zygote.pullback(z -> sum(model(z, ps)), x)` on the 3-tensor alone is `Any` too, so the widening
+  sits in Zygote's adjoint of the layer rather than in the loss or the wrapper. `train!` accumulates
+  its history over those values, so its inferred return type is `Vector`.
 
   The call's run-time result is `Vector{T}`, and every test asserts `eltype(history) === T`; what is
   lost is the compile-time type, not the behaviour. `ZygotePullback`'s own call carries no return
