@@ -3,11 +3,15 @@
 # Run from the repo root:
 #   julia --startup-file=no --project=. scripts/verification/network_parameters_gradient_projection.jl
 #
-# The reverse pass is not what distinguishes the wrapper from the bare NamedTuple: Zygote.pullback
-# drops the leaf to a plain Matrix on the second getproperty for both. Zygote.gradient projects its
-# result afterwards, and ChainRulesCore.ProjectTo of a NamedTuple is a structured projector whose
-# leaf maps the Matrix back to a SymmetricMatrix, while ProjectTo of a NetworkParameters falls back
-# to identity. CHANGELOG.md records the rule this establishes.
+# It prints the leaf type of a pullback and of a gradient of two losses that read `ps.L1.A` once and
+# twice. With one access both shapes keep the `SymmetricMatrix{Float64, Vector{Float64}}` leaf. With
+# two, the pullback of a bare `NamedTuple` drops the leaf to a plain `Matrix{Float64}`, while the
+# pullback of a `NetworkParameters` gives a `SymmetricMatrix{Float64, Vector{Float64}}`: the wrapper
+# already carries the gradient with respect to the leaf's storage. `Zygote.gradient` projects both
+# shapes afterwards, and `ChainRulesCore.ProjectTo` of a `NamedTuple` is a structured projector whose
+# leaf maps a `Matrix` back to a `SymmetricMatrix`, while `ProjectTo` of a `NetworkParameters` is a
+# projector onto that type, whose leaf stays the `SymmetricMatrix` it wraps.
+# CHANGELOG.md records the rule this establishes.
 
 using GeometricMachineLearning
 using NeuralNetworkParameters: NetworkParameters
