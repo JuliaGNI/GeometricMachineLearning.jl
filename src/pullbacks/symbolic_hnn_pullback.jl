@@ -76,13 +76,11 @@ function (g::_HNNParameterGradient)(input, output, ps)
     # and `pinv(0)` is zero, so their product is the zero set rather than `NaN`. That is what
     # ChainRules' `norm` pullback gives `Zygote` at the same point. Each norm divides every gradient
     # entry, and the seed is not folded into the one scalar `1/(‖R‖‖Y‖)`: in `Float32` that scalar is
-    # subnormal once `‖R‖‖Y‖` passes `1/floatmin(Float32) ≈ 8.5e37` and is zero at the `Y` scale
-    # `1e23` of the test's underflow row, where the per-entry divisions keep every leaf finite and
-    # non-zero.
+    # subnormal once `‖R‖‖Y‖` passes `1/floatmin(Float32) ≈ 8.5e37`, where the per-entry divisions
+    # keep every leaf finite and non-zero. The generated gradient has the data's element type, so
+    # each leaf is converted to the parameters'.
     inv_R = pinv(norm_R)
     norm_Y = norm(output)
     TP = parameter_eltype(ps)
-    Δ -> (
-        c = convert(TP, Δ);
-        mapstorage(x -> x .* c .* inv_R ./ norm_Y, g.gradient_function(input, output, ps)))
+    Δ -> mapstorage(x -> TP.(x .* Δ .* inv_R ./ norm_Y), g.gradient_function(input, output, ps))
 end

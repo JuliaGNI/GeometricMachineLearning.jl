@@ -63,8 +63,8 @@ end
 end
 
 # The gradient of a `SymmetricMatrix` leaf is the gradient with respect to the leaf's *storage*, so
-# the off-diagonal entries are twice those of the projection of the dense gradient (issue #319,
-# decision 8). The reference is a `Zygote.gradient` with respect to the bare `NamedTuple` the wrapper
+# the off-diagonal entries are twice those of the projection of the dense gradient (issue #319).
+# The reference is a `Zygote.gradient` with respect to the bare `NamedTuple` the wrapper
 # holds, which projects; one read of the leaf gives either relation, and two make the wrapped one
 # visible.
 @testset "a SymmetricMatrix leaf holds its storage gradient ($T)" for T in REAL_ELTYPES

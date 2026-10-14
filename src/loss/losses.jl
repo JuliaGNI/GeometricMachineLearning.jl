@@ -143,7 +143,7 @@ AbstractNeuralNetworks.NetworkLoss(::NeuralNetworkIntegrator) = FeedForwardLoss(
 AbstractNeuralNetworks.NetworkLoss(::AutoEncoder) = AutoEncoderLoss()
 
 function (loss::AutoEncoderLoss)(nn::NeuralNetwork, input::QPTOAT)
-    loss(nn.model, params(nn), input, input)
+    loss(nn.model, params(nn), input)
 end
 
 function (loss::AutoEncoderLoss)(model::Union{Chain, AbstractExplicitLayer},

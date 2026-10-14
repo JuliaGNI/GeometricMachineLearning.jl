@@ -32,9 +32,8 @@ function train!(nn::NeuralNetwork, opt::TrainingOptimizer, dl::DataLoader, batch
         show_progress::Bool = true)
     n_epochs ≥ 1 ||
         throw(ArgumentError("`train!` needs at least one epoch; `n_epochs` is $(n_epochs)."))
-    # One dispatch per call, not one per step: a pullback is cheap to build once and the loop below
-    # holds a single concrete closure.
-    pullback = _pullback(loss)
+    # The pullback is built once per call, not once per step.
+    pullback = _as_pullback(loss)
     progress = ProgressMeter.Progress(n_epochs; enabled = show_progress)
     # A loop and not `map(1:n_epochs) do`: the closure around `_train_epoch!` makes the first call
     # of a transformer compile several times as long.
@@ -61,8 +60,8 @@ function _train_step!(nn, opt, dl, batch, pullback, indices)
     value
 end
 
-_pullback(l::NetworkLoss) = ZygotePullback(l)
-_pullback(p::AbstractPullback) = p
+_as_pullback(l::NetworkLoss) = ZygotePullback(l)
+_as_pullback(p::AbstractPullback) = p
 
 # The default loss of an architecture and a batch. The two-argument methods live here and not beside
 # `NetworkLoss(::AutoEncoder)` in `src/loss/losses.jl`, because `Batch` is included after `src/loss/`.

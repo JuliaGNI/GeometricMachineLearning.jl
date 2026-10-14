@@ -39,7 +39,7 @@ breaking release).
 
 ### Changed (breaking)
 
-- **`ZygotePullback`'s `back(Δ)` is a `NetworkParameters`, not a one-tuple of one, as `SymbolicPullback`'s already was.** A structured leaf holds its storage gradient: a `SymmetricMatrix` leaf comes back as a `SymmetricMatrix` whose off-diagonal entries are twice those of the projection of the dense gradient, which is the quantity an optimizer step needs (issue #319, closed). Both `ZygotePullback` methods take `ps::NetworkParameters`, so a bare `NamedTuple` is a `MethodError`.
+- **`ZygotePullback`'s `back(Δ)` is a `NetworkParameters`, not a one-tuple of one, as `SymbolicPullback`'s already was.** A structured leaf holds its storage gradient: a `SymmetricMatrix` leaf comes back as a `SymmetricMatrix` whose off-diagonal entries are twice those of the projection of the dense gradient, which is the quantity an optimizer step needs (issue #319, closed). Both `ZygotePullback` methods take `ps::NetworkParameters`, so a bare `NamedTuple` of parameters is not a `MethodError`: it misses both and reaches AbstractNeuralNetworks' untyped `AbstractPullback` fallback, which raises `ErrorException("Pullback not implemented for input-output pair!")` for an (input, output) pair and `ErrorException("Pullback not implemented for single input!")` for a single input.
 
 - **A loss functor takes a `NetworkParameters`.** The `Union{NetworkParameters, NamedTuple}` arm of `HNNLoss`, `LNNLoss`, `SymplecticEulerLoss` and `VariationalMidpointLoss` is gone, and `AutoEncoderLoss`, `TransformerLoss` and `ReducedLoss` annotate theirs `::NetworkParameters`. NeuralNetworkParameters 0.5's Zygote rule keeps the wrapper on the forward pass, so the annotation is dispatchable under AD and a gradient set of another shape can no longer reach a loss silently. Migrate a custom loss's `params::Union{NetworkParameters, NamedTuple}` to `ps::NetworkParameters`, and a hand-rolled pullback that unwraps its result to one that does not.
 
@@ -51,7 +51,7 @@ breaking release).
 
 ### Fixed
 
-- **The symbolic HNN pullback is the gradient of `HNNLoss` on the batch** (choice (A) of B5's three options, which keeps every loss and moves the pullback instead). `SymbolicPullback(arch)` generates the per-sample gradient of the surrogate `½‖rᵢ‖²` with `reduce = +` and scales the sum by `1/(‖R‖‖Y‖)`, taken from one forward pass more than the loss value needs, which is the cost the choice names. Each norm divides every gradient entry on its own: their product overflows in `Float32` when both norms are about `1.8e19`, where neither norm does, and the scalar `1/(‖R‖‖Y‖)` is subnormal once that product passes `1/floatmin(Float32) ≈ 8.5e37`. At a zero residual the scale is `pinv(‖R‖)`, which is zero, so the gradient is the zero set as `ZygotePullback`'s is. Measured on a `StandardHamiltonianArchitecture(2, 4, 1, SigmoidActivation())` against a `Zygote` gradient of the same batch, at `Random.seed!(1)` with `N = 5` in `Float64`:
+- **The symbolic HNN pullback is the gradient of `HNNLoss` on the batch**. `SymbolicPullback(arch)` generates the per-sample gradient of the surrogate `½‖rᵢ‖²` with `reduce = +` and scales the sum by `1/(‖R‖‖Y‖)`, taken from one forward pass more than the loss value needs. Each norm divides every gradient entry on its own: their product overflows in `Float32` when both norms are about `1.8e19`, where neither norm does, and the scalar `1/(‖R‖‖Y‖)` is subnormal once that product passes `1/floatmin(Float32) ≈ 8.5e37`. At a zero residual the scale is `pinv(‖R‖)`, which is zero, so the gradient is the zero set as `ZygotePullback`'s is. Measured on a `StandardHamiltonianArchitecture(2, 4, 1, SigmoidActivation())` against a `Zygote` gradient of the same batch, at `Random.seed!(1)` with `N = 5` in `Float64`:
 
   | | `dL/dW₁[1]` | value |
   |:--|--:|--:|
@@ -61,9 +61,7 @@ breaking release).
 
   The symbolic gradient was `4.73`× the Zygote one before and is the same number as it now.
 
-- **`ExplicitImports`' `all_qualified_accesses_are_public` and `all_explicit_imports_are_public` run with `ParameterGradient` removed from the ignore list**, because `SymbolicPullback(::HamiltonianArchitecture)` no longer reaches it.
-
-- **This closes known issues B5, K6 and K13, and issues #319 and #343.** C7 is rewritten rather than closed: it now reaches one private SymbolicNeuralNetworks name, `symbolic_parameter_gradient`, where `flat_parameter_gradient` is flat and wants an `unflatten` per step; the two-field constructor `SymbolicPullback(loss, fun)` and the call protocol `fun(input, output, ps)(Δ)` are documented under *Implementation* in the exported docstring. K14 records that `train!` infers its history as an abstract `Vector`; its run-time element type is `T`, and every test asserts it. B5, K6 and K13 are the entries of `KNOWN_ISSUES.md` that this release removes. With B5's removal and C7's rewrite go the notes those two entries carried for the numbers that stay vacant: B1, B2, B3, B4, B6, B8 and B9 (B5), and C9, C12 and C13 (C7).
+- **This closes issues #319 and #343.** C7 is rewritten rather than closed: it now reaches one private SymbolicNeuralNetworks name, `symbolic_parameter_gradient`, where `flat_parameter_gradient` is flat and wants an `unflatten` per step; the two-field constructor `SymbolicPullback(loss, fun)` and the call protocol `fun(input, output, ps)(Δ)` are documented under *Implementation* in the exported docstring. K14 records that `train!` infers its history as an abstract `Vector`; its run-time element type is `T`, and every test asserts it.
 
 ### Added
 

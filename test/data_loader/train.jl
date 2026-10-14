@@ -170,9 +170,9 @@ end
     @test length(history) == 2
 end
 
-# `loss` takes a `NetworkLoss` or an `AbstractPullback` (decision 34). `train!` builds the pullback
-# it trains on once per call and not once per step: the test-local method on `_pullback` counts the
-# builds, and the body of the `AbstractPullback` counts the minibatches.
+# `loss` takes a `NetworkLoss` or an `AbstractPullback`. `train!` builds the pullback it trains on
+# once per call and not once per step: the test-local method on `_as_pullback` counts the builds,
+# and the body of the `AbstractPullback` counts the minibatches.
 #
 # Not numeric: the assertion counts calls, and the elements are loss types.
 @testset "loss takes a pullback, and builds it once per call" begin
@@ -191,10 +191,10 @@ end
         calls[] += 1
         ZygotePullback(pb.loss)(ps, model, input_nt_output_nt)
     end
-    # A `NetworkLoss` whose `_pullback` is a method of this file: `train!` calls `_pullback` once per
-    # call, so the count is of its builds and not of its steps.
+    # A `NetworkLoss` whose `_as_pullback` is a method of this file: `train!` calls `_as_pullback`
+    # once per call, so the count is of its builds and not of its steps.
     struct CountingLoss <: NetworkLoss end
-    function GeometricMachineLearning._pullback(::CountingLoss)
+    function GeometricMachineLearning._as_pullback(::CountingLoss)
         builds[] += 1
         ZygotePullback(FeedForwardLoss())
     end

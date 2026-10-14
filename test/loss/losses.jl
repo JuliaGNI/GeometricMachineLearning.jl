@@ -8,7 +8,7 @@ import Random
 
 include("../helpers/eltypes.jl")
 
-# The four-argument method reconstructs its input and ignores the target (decision 32), so an
+# The four-argument method reconstructs its input and ignores the target, so an
 # autoencoder is trained on the input alone. `FeedForwardLoss` on the same four arguments is the
 # other value: without it the assertion would hold of any method that ignored its target.
 @testset "AutoEncoderLoss reconstructs its input ($T)" for T in REAL_ELTYPES
@@ -27,7 +27,7 @@ include("../helpers/eltypes.jl")
     @test loss(model, ps, x, y) isa T
 end
 
-# A loss's `ps` is a `NetworkParameters` (decision 9), so a bare `NamedTuple` reaches no method of a
+# A loss's `ps` is a `NetworkParameters`, so a bare `NamedTuple` reaches no method of a
 # GML loss rather than a silently different gradient: which of the two AD hands the loss is what an
 # untyped argument hides. The four-argument methods of a training loss carry the same annotation,
 # and their model slot is reached by `AbstractNeuralNetworks`' own untyped fallback where the wrapper
