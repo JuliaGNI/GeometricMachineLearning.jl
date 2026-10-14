@@ -408,11 +408,12 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   ```
 
   The same call on a pair of matrices infers `Float32`, and the forward loss and `model(x, ps)`
-  infer concretely on the 3-tensors as well. Measured by `k14_chain.jl` (run: `julia
-  --startup-file=no --project=<tree> -e 'using TestEnv; TestEnv.activate();
-  include("k14_chain.jl")'`), which prints the inferred value type at each link of the chain, the
-  value first becomes `Any` inside Zygote's pullback: `Zygote._pullback(Context(), f, ps)` is `Any`
-  on the 3-tensors and `Float32` on the matrices. NeuralNetworkParameters reaches it through
+  infer concretely on the 3-tensors as well. The first `Any` in `@code_warntype` of
+  `Zygote.pullback(f, ::NetworkParameters)` on that minibatch is the one inside Zygote's own
+  pullback, which `k14_chain.jl` measures link by link (run: `julia --startup-file=no
+  --project=<tree> -e 'using TestEnv; TestEnv.activate(); include("k14_chain.jl")'`): the value first
+  becomes `Any` at `Zygote._pullback(Context(), f, ps)`, which is `Any` on the 3-tensors and
+  `Float32` on the matrices, and NeuralNetworkParameters reaches it through
   `invoke(ZygoteRules.pullback, Tuple{Any, Vararg{Any}}, f, ps)` at `ext/ZygoteRulesExt.jl:25`,
   whose generic method is Zygote's own. The script's 3-tensor rows, both precisions:
 
