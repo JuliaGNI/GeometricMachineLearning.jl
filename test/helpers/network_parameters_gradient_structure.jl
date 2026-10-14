@@ -17,7 +17,7 @@ holds the gradient with respect to the leaf's storage, the lower triangle: its d
 That is the quantity a training step needs: the loss reads the leaf's storage, and the gradient with
 respect to it is what the optimizer steps with, so the wrapper's is the one a pullback returns
 (decision 8). The projection is what a gradient of the bare `NamedTuple` gives, which is why a loss
-functor takes a `NetworkParameters` and the `Union` arm that also admitted a `NamedTuple` is gone.
+functor takes a `NetworkParameters`: a `NamedTuple` reaches no method of a GML loss.
 """
 function network_parameters_gradient_structure_test(f, ps::NetworkParameters)
     g_wrapped = gradient(_ps -> norm(f(_ps)), ps)[1]

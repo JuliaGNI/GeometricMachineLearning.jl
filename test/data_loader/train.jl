@@ -89,9 +89,8 @@ end
 
 # `train!` steps with the gradient of the `loss` it is given. One epoch of one minibatch with
 # `GradientMethod` moves the parameters by `-η` times the symbolic gradient at `p₀`, and the history
-# is the pullback's loss value. Both pullbacks give the same loss on the same batch and, since B5 is
-# fixed, the same gradient: the symbolic one was the gradient of the per-sample sum until it was
-# scaled by the batch's residual norm (issue #343).
+# is the pullback's loss value. `SymbolicPullback`'s gradient is the gradient of the batch loss, so
+# it equals `ZygotePullback`'s on the same batch (issue #343).
 @testset "train! trains a Hamiltonian network with SymbolicPullback ($T)" for T in REAL_ELTYPES
     Random.seed!(9)
     arch = StandardHamiltonianArchitecture(2, 4, 1, GeometricMachineLearning.SigmoidActivation())
@@ -110,9 +109,11 @@ end
     Random.seed!(2)
     history = train!(nn, opt, dl, batch, 1; loss = pullback, show_progress = false)
     @test history == [value]
+    @test value isa T
     @test eltype(history) === T
     for (layer, layer₀, gradient) in zip(values(params(nn)), values(p₀), values(g))
         for k in keys(layer)
+            @test eltype(gradient[k]) === T
             @test layer[k] ≈ layer₀[k] .- η .* gradient[k]
             @test layer[k] != layer₀[k]
         end
@@ -122,6 +123,7 @@ end
     @test zygote_value ≈ value
     for (name, leaf) in pairs(zygote_g)
         for k in keys(leaf)
+            @test eltype(leaf[k]) === T
             @test g[name][k] ≈ leaf[k] rtol = T(√eps(T))
         end
     end
@@ -136,8 +138,8 @@ end
     transformer = StandardTransformerIntegrator(4; n_heads = 2, L = 1, n_blocks = 1)
     @test NetworkLoss(transformer, Batch(4, 3)) == TransformerLoss(3, 3)
     @test NetworkLoss(transformer, Batch(4, 3, 2)) == TransformerLoss(3, 2)
-    # a prediction window is the batch's now, not the architecture's: a window of 1 against the
-    # `Batch` default of `seq_length` was the conflict the old two-argument method had
+    # a prediction window is the batch's, not the architecture's: `TransformerLoss(batch)` takes
+    # both lengths from the `Batch` it trains on
     @test_throws MethodError NetworkLoss(transformer, 1)
     @test NetworkLoss(GSympNet(4; n_layers = 2), Batch(4)) isa FeedForwardLoss
     autoencoder = SymplecticAutoencoder(10, 4)
@@ -168,18 +170,19 @@ end
     @test length(history) == 2
 end
 
-# `loss` takes a `NetworkLoss` or an `AbstractPullback`; the `pullback` keyword of 0.8 is gone
-# (decision 34). A pullback is built once per call, not once per step, so the closure that counts
-# the calls sees one per minibatch and no more.
+# `loss` takes a `NetworkLoss` or an `AbstractPullback` (decision 34). `train!` builds the pullback
+# it trains on once per call and not once per step: the test-local method on `_pullback` counts the
+# builds, and the body of the `AbstractPullback` counts the minibatches.
 #
 # Not numeric: the assertion counts calls, and the elements are loss types.
 @testset "loss takes a pullback, and builds it once per call" begin
     Random.seed!(25)
     calls = Ref(0)
+    builds = Ref(0)
     # An `AbstractPullback` whose body counts its calls: the loss it trains on is its own `loss`
-    # field, so the count is of the pullback `train!` built, and `train!` builds one per call. The
-    # arguments are typed, because upstream's own method on `AbstractPullback` is otherwise as
-    # specific in one slot and less specific in the others.
+    # field, so the body runs once per minibatch. The arguments are typed, because upstream's own
+    # method on `AbstractPullback` is otherwise as specific in one slot and less specific in the
+    # others.
     struct CountingPullback{L} <: AbstractPullback{L}
         loss::L
     end
@@ -188,6 +191,13 @@ end
         calls[] += 1
         ZygotePullback(pb.loss)(ps, model, input_nt_output_nt)
     end
+    # A `NetworkLoss` whose `_pullback` is a method of this file: `train!` calls `_pullback` once per
+    # call, so the count is of its builds and not of its steps.
+    struct CountingLoss <: NetworkLoss end
+    function GeometricMachineLearning._pullback(::CountingLoss)
+        builds[] += 1
+        ZygotePullback(FeedForwardLoss())
+    end
 
     nn = NeuralNetwork(Chain(Dense(2, 2, identity)))
     dl = DataLoader(rand(2, 12), rand(2, 12); suppress_info = true)
@@ -195,7 +205,11 @@ end
         loss = CountingPullback(FeedForwardLoss()), show_progress = false)
     @test calls[] == 3
 
-    # the keyword that named the pullback is not there any more
+    train!(nn, TrainingOptimizer(params(nn)), dl, Batch(4), 1;
+        loss = CountingLoss(), show_progress = false)
+    @test builds[] == 1
+
+    # a keyword that names a pullback of `loss` is not one of `train!`'s
     @test_throws MethodError train!(nn, TrainingOptimizer(params(nn)), dl, Batch(4), 1;
         loss = FeedForwardLoss(), pullback = ZygotePullback(FeedForwardLoss()),
         show_progress = false)

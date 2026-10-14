@@ -23,11 +23,15 @@ include("../helpers/eltypes.jl")
     @test loss(nn, x, y) == loss(nn, x)
     @test loss(model, ps, x, y) == loss(model, ps, x)
     @test loss(model, ps, x, y) != FeedForwardLoss()(model, ps, x, y)
+    @test loss(model, ps, x) isa T
+    @test loss(model, ps, x, y) isa T
 end
 
-# A loss's `ps` is a `NetworkParameters` (decision 9). The two-shape arm that also admitted a bare
-# `NamedTuple` is gone, so one is a `MethodError` rather than a silently different gradient: which
-# of the two AD hands the loss is what the arm hid.
+# A loss's `ps` is a `NetworkParameters` (decision 9), so a bare `NamedTuple` reaches no method of a
+# GML loss rather than a silently different gradient: which of the two AD hands the loss is what an
+# untyped argument hides. The four-argument methods of a training loss carry the same annotation,
+# and their model slot is reached by `AbstractNeuralNetworks`' own untyped fallback where the wrapper
+# is missing.
 #
 # Not numeric: the element type of the data does not reach the method selection, so this is not run
 # over `REAL_ELTYPES`.
@@ -54,4 +58,16 @@ end
         # the bare `NamedTuple` under the wrapper is not
         @test_throws MethodError loss(params(ps), input, output)
     end
+
+    # `TransformerLoss` has no three-argument method, so its four-argument ones are what the
+    # annotation reaches: the wrapper is accepted, and a bare `NamedTuple` under it reaches no method
+    # of this package -- `AbstractNeuralNetworks`' own untyped fallback refuses it.
+    transformer = StandardTransformerIntegrator(4; n_heads = 2, L = 1, n_blocks = 1)
+    tr = NeuralNetwork(transformer, CPU(), Float64)
+    tr_input, tr_output = randn(4, 3, 2), randn(4, 2, 2)
+    tr_loss = TransformerLoss(3, 2)
+    @test tr_loss(tr.model, tr.params, tr_input, tr_output) ==
+          tr_loss(tr, tr_input, tr_output)
+    @test_throws "Functor not defined" tr_loss(
+        tr.model, params(tr.params), tr_input, tr_output)
 end

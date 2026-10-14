@@ -1,5 +1,5 @@
 using GeometricMachineLearning
-using GeometricMachineLearning: FeedForwardLoss, QPTOAT, StiefelLayer, SymplecticAttentionQ
+using GeometricMachineLearning: FeedForwardLoss, QPTOAT, LASympNet, StiefelLayer
 using AbstractNeuralNetworks: AbstractExplicitLayer, Chain, Dense, NeuralNetwork, params
 using LinearAlgebra: Adjoint, Diagonal, diag
 using NeuralNetworkParameters: NetworkParameters
@@ -23,16 +23,15 @@ function (::DoubleReadLoss)(
 end
 
 # One pullback shape: `back(Δ)` is a `NetworkParameters` with the keys of the parameters it was built
-# from, not a one-tuple of one. The rows below build the same assertion on a dense `Chain`, on a
-# network with a `SymmetricMatrix` leaf and on a Stiefel one, because a leaf type is where a shape
-# claim can break silently: the generated tangent has the leaf's own type or its storage, and
-# nothing in the `NetworkParameters` wrapper says which.
+# from, not a one-tuple of one. The rows below build the same assertion on a dense `Chain`, on an
+# `LA` SympNet, which holds a `SymmetricMatrix` leaf, and on a Stiefel one, because a leaf type is
+# where a shape claim can break silently: the generated tangent has the leaf's own type or its
+# storage, and nothing in the `NetworkParameters` wrapper says which.
 @testset "ZygotePullback's back(Δ) is a NetworkParameters ($T)" for T in REAL_ELTYPES
     networks = (
         (model = Chain(Dense(4, 2, tanh)), input = rand(T, 4, 3), output = rand(T, 2, 3)),
-        (model = Chain(SymplecticAttentionQ(4; symmetric = true)),
-            input = (q = rand(T, 2, 2), p = rand(T, 2, 2)),
-            output = (q = rand(T, 2, 2), p = rand(T, 2, 2))),
+        (model = LASympNet(4; depth = 1, nhidden = 1),
+            input = rand(T, 4, 3), output = rand(T, 4, 3)),
         (model = Chain(StiefelLayer(6, 3), Dense(3, 2, tanh)), input = rand(T, 6, 3),
             output = rand(T, 2, 3))
     )
@@ -49,6 +48,7 @@ end
             @test keys(leaf) == keys(ps[name])
             for k in keys(leaf)
                 @test eltype(leaf[k]) === T
+                @test size(leaf[k]) == size(ps[name][k])
             end
         end
         # The Stiefel leaf's tangent is an `Adjoint` of its storage rather than a `StiefelManifold`:
@@ -77,6 +77,7 @@ end
 
     projected = Zygote.gradient(p -> DoubleReadLoss()(nn.model, p, x), params(ps))[1]
     B = Matrix(projected.L1.A)
-    @test typeof(g.L1.A) <: SymmetricMatrix
+    @test value isa T
+    @test g.L1.A isa SymmetricMatrix{T}
     @test Matrix(g.L1.A) ≈ 2B - Diagonal(diag(B))
 end
