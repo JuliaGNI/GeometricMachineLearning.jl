@@ -67,7 +67,7 @@ function crop_array_for_transformer_loss(nn_output::AT,
 end
 
 function (loss::TransformerLoss)(model::Union{Chain, AbstractExplicitLayer},
-        ps, input::AT,
+        ps::NetworkParameters, input::AT,
         output::AT) where {T, AT <: AbstractArray{T, 3}}
     input_dim, input_seq_length = size(input)
     output_dim, output_prediction_window = size(output)
@@ -82,13 +82,13 @@ function (loss::TransformerLoss)(model::Union{Chain, AbstractExplicitLayer},
 end
 
 function (loss::TransformerLoss)(model::Union{Chain, AbstractExplicitLayer},
-        ps, input::AT,
+        ps::NetworkParameters, input::AT,
         output::AT) where {T, AT <: AbstractArray{T, 2}}
     loss(model, ps, reshape(input, size(input)..., 1), reshape(output, size(output)..., 1))
 end
 
 function (loss::TransformerLoss)(model::Union{Chain, AbstractExplicitLayer},
-        ps,
+        ps::NetworkParameters,
         input::T, output::T) where {T <: QPT}
     loss(model, ps, vcat(input.q, input.p), vcat(output.q, output.p))
 end

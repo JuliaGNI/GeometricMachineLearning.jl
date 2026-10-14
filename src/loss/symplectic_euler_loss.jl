@@ -74,7 +74,7 @@ function _symplectic_euler_evaluation_point(
 end
 
 function (loss::SymplecticEulerLoss)(::Union{Chain, AbstractExplicitLayer},
-        ps, input::AbstractArray, output::AbstractArray)
+        ps::NetworkParameters, input::AbstractArray, output::AbstractArray)
     loss(ps, input, output)
 end
 

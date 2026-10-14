@@ -29,7 +29,7 @@ end
 AbstractNeuralNetworks.NetworkLoss(arch::HamiltonianArchitecture) = HNNLoss(arch)
 
 function (loss::HNNLoss)(::Union{Chain, AbstractExplicitLayer},
-        ps,
+        ps::NetworkParameters,
         input::QPTOAT,
         output::QPTOAT)
     loss(ps, input, output)

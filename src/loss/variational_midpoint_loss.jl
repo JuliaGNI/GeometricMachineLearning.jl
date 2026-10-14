@@ -89,7 +89,7 @@ function _discrete_lagrangian_derivatives(loss::VariationalMidpointLoss, ps,
 end
 
 function (loss::VariationalMidpointLoss)(::Union{Chain, AbstractExplicitLayer},
-        ps, input::AbstractArray, output::AbstractArray)
+        ps::NetworkParameters, input::AbstractArray, output::AbstractArray)
     loss(ps, input, output)
 end
 
