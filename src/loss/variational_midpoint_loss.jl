@@ -94,7 +94,7 @@ function (loss::VariationalMidpointLoss)(::Union{Chain, AbstractExplicitLayer},
 end
 
 function (loss::VariationalMidpointLoss)(
-        ps::Union{NetworkParameters, NamedTuple}, input::AbstractArray, output::AbstractArray)
+        ps::NetworkParameters, input::AbstractArray, output::AbstractArray)
     n = size(input, 1) ÷ 2
     qₙ = reshape(selectdim(input, 1, 1:n), n, :)
     qₙ₊₁ = reshape(selectdim(input, 1, (n + 1):(2n)), n, :)

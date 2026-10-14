@@ -79,7 +79,7 @@ function (loss::SymplecticEulerLoss)(::Union{Chain, AbstractExplicitLayer},
 end
 
 function (loss::SymplecticEulerLoss)(
-        ps::Union{NetworkParameters, NamedTuple}, input::AbstractArray, output::AbstractArray)
+        ps::NetworkParameters, input::AbstractArray, output::AbstractArray)
     evaluation_point = _symplectic_euler_evaluation_point(loss, input, output)
     # The timestep is converted to the data's element type rather than promoted against it: a
     # `Float64` timestep must not widen the loss of a `Float32` network. `HNNLoss` has no constant
