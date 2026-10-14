@@ -20,7 +20,7 @@ Random.seed!(1234)
     _pullback = ZygotePullback(loss)
     nn = NeuralNetwork(Chain(Dense(10, 2, tanh), Dense(2, 10, tanh)))
     input = rand(10)
-    value, back = _pullback(nn.params, nn.model, input)
+    _, back = _pullback(nn.params, nn.model, input)
     @test back(1) isa NetworkParameters
     @test keys(back(1)) == (:L1, :L2)
 end
