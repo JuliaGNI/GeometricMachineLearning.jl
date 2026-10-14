@@ -20,8 +20,9 @@ extreme_scale_underflow(::Type{Float32}) = Float32(1e23)
 extreme_scale_underflow(::Type{Float64}) = Float64(1e170)
 
 # The symbolic pullback is the gradient of `HNNLoss` on the batch: the generated per-sample
-# gradients of the surrogate `½‖rᵢ‖²`, scaled by the one scalar the batch loss divides by. Two batch
-# sizes, because the scale is one only at N = 1: a batch of one sample is the per-sample sum.
+# gradients of the surrogate `½‖rᵢ‖²`, scaled by `1/(‖R‖‖Y‖)`. Two batch sizes: at `N = 1` the
+# sum is a single per-sample gradient and the scale still divides, while `N = 5` is where the
+# gradient of the per-sample sum and the gradient of the batch loss differ.
 @testset "SymbolicPullback of a Hamiltonian network is HNNLoss's gradient ($T)" for T in REAL_ELTYPES
     for N in (1, 5)
         arch = StandardHamiltonianArchitecture(2, 4, 1, SigmoidActivation())
