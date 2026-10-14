@@ -60,8 +60,8 @@ struct CustomLoss <: GeometricMachineLearning.NetworkLoss end
 using GeometricMachineLearning: QPTOAT, AbstractExplicitLayer # hide
 
 const λ = .1
-function (loss::CustomLoss)(model::Union{AbstractExplicitLayer, Chain}, params::Union{NetworkParameters, NamedTuple}, input::QPTOAT, output::QPTOAT)
-    FeedForwardLoss()(model, params, input, output) + λ * network_parameter_norm(params)
+function (loss::CustomLoss)(model::Union{AbstractExplicitLayer, Chain}, ps::NetworkParameters, input::QPTOAT, output::QPTOAT)
+    FeedForwardLoss()(model, ps, input, output) + λ * network_parameter_norm(ps)
 end
 nothing # hide
 ```
