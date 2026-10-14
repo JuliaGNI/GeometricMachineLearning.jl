@@ -136,7 +136,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   and naming them is a rewrite of the module header with a judgement per name.
   `all_explicit_imports_are_public` and `all_qualified_accesses_are_public` run with a list of the
   names this package reaches in other packages that those packages do not declare `public`: **10**
-  explicit imports and **10** qualified accesses, none of them in `GeometricOptimizers`.
+  explicit imports and **9** qualified accesses, none of them in `GeometricOptimizers`.
   `Architecture`, `AbstractExplicitLayer`, `_compute_loss`, `dim` and the rest are used
   deliberately, and the resolution is upstream declaring them `public`. Each check's reason is
   written beside it in the test file.
@@ -384,7 +384,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
 ### K14 · `train!` infers its history as an abstract `Vector`, although the run-time history is `Vector{T}`.
 
-- **location:** —
+- **location:** `NeuralNetworkParameters ext/ZygoteRulesExt.jl:25`
 - **kind:** upstream
 - **found:** 2026-10-14, part M1b; M1a verifier finding #3 (2026-10-13)
 - **evidence:**
@@ -410,12 +410,10 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   The same call on a pair of matrices infers `Float32`, and the forward loss and `model(x, ps)`
   infer concretely on the 3-tensors as well. The first `Any` in `@code_warntype` of
   `Zygote.pullback(f, ::NetworkParameters)` on that minibatch is the one inside Zygote's own
-  pullback, which `k14_chain.jl` measures link by link (run: `julia --startup-file=no
-  --project=<tree> -e 'using TestEnv; TestEnv.activate(); include("k14_chain.jl")'`): the value first
-  becomes `Any` at `Zygote._pullback(Context(), f, ps)`, which is `Any` on the 3-tensors and
-  `Float32` on the matrices, and NeuralNetworkParameters reaches it through
+  pullback: the value first becomes `Any` at `Zygote._pullback(Context(), f, ps)`, which is `Any` on
+  the 3-tensors and `Float32` on the matrices, and NeuralNetworkParameters reaches it through
   `invoke(ZygoteRules.pullback, Tuple{Any, Vararg{Any}}, f, ps)` at `ext/ZygoteRulesExt.jl:25`,
-  whose generic method is Zygote's own. The script's 3-tensor rows, both precisions:
+  whose generic method is Zygote's own. Its 3-tensor rows, both precisions:
 
   ```
   Float32 3-tensor forward f(::NetworkParameters)                                    => Float32
