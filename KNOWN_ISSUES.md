@@ -86,9 +86,10 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   dimension of the network's input. GML's construction therefore reaches
   `SymbolicNeuralNetworks.symbolic_parameter_gradient`, which no exported name replaces:
   `flat_parameter_gradient` is flat, so it wants an `unflatten` per step, and `ParameterGradient` is
-  not used. The two-field constructor `SymbolicPullback(loss, fun)` and the call protocol
-  `fun(input, output, ps)(Δ)` are documented under *Implementation* in the exported docstring, so
-  that private name is the one an upstream refactor breaks.
+  not used. The pullback is the upstream type `SymbolicPullback(loss, fun)`, with a call method of
+  this package for `SymbolicPullback{<:HNNLoss, <:_HNNParameterGradient}` that is more specific
+  than the upstream call in every argument. That private name is the one an upstream refactor
+  breaks.
 
 ### C14 · `evaluate_vf_and_compute_∇Ψ` evaluates the decoder twice.
 
