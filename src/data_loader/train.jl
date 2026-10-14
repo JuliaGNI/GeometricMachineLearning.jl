@@ -1,24 +1,25 @@
 """
-    train!(nn, opt, dl, batch, n_epochs; loss, pullback = ZygotePullback(loss), show_progress = true)
+    train!(nn, opt, dl, batch, n_epochs; loss, show_progress = true)
 
 Train the neural network `nn` with the `GeometricOptimizers.TrainingOptimizer` `opt` on the data of
 the [`DataLoader`](@ref) `dl` for `n_epochs` epochs, and return the loss history.
 
 Each epoch draws the minibatches of `dl` with the [`Batch`](@ref) `batch` and takes one step per
-minibatch: `pullback` computes the loss on the minibatch and its gradient, and
-`GeometricOptimizers.optimization_step!` writes the new parameters into `params(nn)`, with the
-whole gradient, a zero leaf included. Entry `i` of the history is the mean of the minibatch losses
-of epoch `i`, each evaluated before its step. The history has the element type of the loss value,
-so a `Float64` network on `Float32` data gives a `Vector{Float64}`.
+minibatch: `loss` computes the loss on the minibatch and its gradient, and
+`GeometricOptimizers.optimization_step!` writes the new parameters into `params(nn)`, with the whole
+gradient, a zero leaf included. Entry `i` of the history is the mean of the minibatch losses of epoch
+`i`, each evaluated before its step. The history has the element type of the loss value, so a
+`Float64` network on `Float32` data gives a `Vector{Float64}`.
 
-`loss` is a `NetworkLoss`. Without it, a [`TransformerIntegrator`](@ref) with a
+`loss` is a `NetworkLoss` of AbstractNeuralNetworks or an `AbstractPullback`; a `NetworkLoss` is
+trained through a [`ZygotePullback`](@ref). Without it, a [`TransformerIntegrator`](@ref) with a
 `Batch{:Transformer}` trains on [`TransformerLoss`](@ref)`(batch)`, a
 [`NeuralNetworkIntegrator`](@ref) with a `Batch{:FeedForward}` on `FeedForwardLoss()`, and an
-autoencoder with a `Batch{:FeedForward}` on [`AutoEncoderLoss`](@ref)`()`; any other network needs
-`loss`, and `train!` raises an `ArgumentError` without it.
+autoencoder with a `Batch{:FeedForward}` on [`AutoEncoderLoss`](@ref)`()`; any other combination
+needs `loss`, and `train!` raises an `ArgumentError` without it.
 
-`pullback` is an `AbstractPullback` of `loss`, by default a [`ZygotePullback`](@ref). A Hamiltonian network trains on its symbolic
-gradient with `loss = HNNLoss(arch)` and `pullback = SymbolicPullback(arch)`.
+A Hamiltonian network trains on its symbolic gradient with `loss = SymbolicPullback(arch)`. The
+`pullback` keyword of 0.8 is gone: pass the pullback as `loss`.
 
 `opt` is built for `params(nn)`, with `TrainingOptimizer(params(nn); algorithm, linesearch,
 retraction)`. It keeps the iteration number, the moments and the global sections, so a second call
@@ -27,10 +28,14 @@ with the same `opt` resumes the training where the first one stopped; the only r
 before any step.
 """
 function train!(nn::NeuralNetwork, opt::TrainingOptimizer, dl::DataLoader, batch::Batch,
-        n_epochs::Integer; loss::NetworkLoss = _default_loss(nn.architecture, batch),
-        pullback::AbstractPullback = ZygotePullback(loss), show_progress::Bool = true)
+        n_epochs::Integer;
+        loss::Union{NetworkLoss, AbstractPullback} = NetworkLoss(nn.architecture, batch),
+        show_progress::Bool = true)
     n_epochs ≥ 1 ||
         throw(ArgumentError("`train!` needs at least one epoch; `n_epochs` is $(n_epochs)."))
+    # One dispatch per call, not one per step: a pullback is cheap to build once and the loop below
+    # holds a single concrete closure.
+    pullback = _pullback(loss)
     progress = ProgressMeter.Progress(n_epochs; enabled = show_progress)
     # A loop and not `map(1:n_epochs) do`: the closure around `_train_epoch!` makes the first call
     # of a transformer compile several times as long.
@@ -53,14 +58,21 @@ end
 function _train_step!(nn, opt, dl, batch, pullback, indices)
     value, back = pullback(params(nn), nn.model,
         convert_input_and_batch_indices_to_array(dl, batch, indices))
-    optimization_step!(params(nn), opt, _get_contents(back(one(value))))
+    optimization_step!(params(nn), opt, back(one(value)))
     value
 end
 
-_default_loss(::TransformerIntegrator, batch::Batch{:Transformer}) = TransformerLoss(batch)
-_default_loss(::NeuralNetworkIntegrator, ::Batch{:FeedForward}) = FeedForwardLoss()
-_default_loss(arch::AutoEncoder, ::Batch{:FeedForward}) = NetworkLoss(arch)
-function _default_loss(arch, batch)
+_pullback(l::NetworkLoss) = ZygotePullback(l)
+_pullback(p::AbstractPullback) = p
+
+# The default loss of an architecture and a batch. The two-argument methods live here and not beside
+# `NetworkLoss(::AutoEncoder)` in `src/loss/losses.jl`, because `Batch` is included after `src/loss/`.
+NetworkLoss(::TransformerIntegrator, batch::Batch{:Transformer}) = TransformerLoss(batch)
+function NetworkLoss(
+        arch::Union{NeuralNetworkIntegrator, AutoEncoder}, ::Batch{:FeedForward})
+    NetworkLoss(arch)
+end
+function NetworkLoss(arch::Architecture, batch::Batch)
     throw(ArgumentError("`train!` has no default loss for a $(nameof(typeof(arch))) with a " *
                         "$(typeof(batch)); pass the loss as the keyword `loss`."))
 end

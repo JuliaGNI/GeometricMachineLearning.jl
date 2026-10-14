@@ -56,11 +56,6 @@ struct TransformerLoss <: NetworkLoss
     prediction_window::Int
 end
 
-function AbstractNeuralNetworks.NetworkLoss(
-        arch::TransformerIntegrator, prediction_window::Integer = 1)
-    TransformerLoss(arch.seq_length, prediction_window)
-end
-
 TransformerLoss(seq_length::Int) = TransformerLoss(seq_length, seq_length)
 
 # This crops the output array of the neural network so that it conforms with the output it should be compared to. This is needed for the transformer loss.
@@ -107,7 +102,7 @@ This loss should always be used together with a neural network of type [`AutoEnc
 
 # Example
 
-`AutoEncoderLoss` applies a neural network to an input and compares it to the `output` via an ``L_2`` norm:
+`AutoEncoderLoss` applies a neural network to an input and compares it to the input via an ``L_2`` norm:
 
 ```jldoctest
 using GeometricMachineLearning
@@ -139,10 +134,12 @@ where ``||\cdot||`` is the ``L_2`` norm.
 
 # Parameters
 
-This loss does not have any parameters.
+This loss does not have any parameters. The four-argument method reconstructs its input and
+ignores the target it is given, so an autoencoder is trained on the input alone.
 """
 struct AutoEncoderLoss <: NetworkLoss end
 
+AbstractNeuralNetworks.NetworkLoss(::NeuralNetworkIntegrator) = FeedForwardLoss()
 AbstractNeuralNetworks.NetworkLoss(::AutoEncoder) = AutoEncoderLoss()
 
 function (loss::AutoEncoderLoss)(nn::NeuralNetwork, input::QPTOAT)
@@ -150,13 +147,13 @@ function (loss::AutoEncoderLoss)(nn::NeuralNetwork, input::QPTOAT)
 end
 
 function (loss::AutoEncoderLoss)(model::Union{Chain, AbstractExplicitLayer},
-        ps, input::QPTOAT)
-    loss(model, ps, input, input)
+        ps::NetworkParameters, input::QPTOAT)
+    FeedForwardLoss()(model, ps, input, input)
 end
 
 function (loss::AutoEncoderLoss)(model::Union{Chain, AbstractExplicitLayer},
-        ps, input::QPTOAT, output::QPTOAT)
-    FeedForwardLoss()(model, ps, input, output)
+        ps::NetworkParameters, input::QPTOAT, output::QPTOAT)
+    loss(model, ps, input)
 end
 
 @doc raw"""
@@ -224,13 +221,7 @@ function ReducedLoss(autoencoder::NeuralNetwork{<:AutoEncoder})
     ReducedLoss(encoder(autoencoder), decoder(autoencoder))
 end
 
-# `params` is deliberately not annotated, as in every other `NetworkLoss` functor: `Zygote.pullback`
-# evaluates the forward pass with the parameters unwrapped, so the closure body receives the
-# underlying `NamedTuple` rather than the `NetworkParameters` passed to `pullback`, and an
-# annotation here makes the method undispatchable under AD. The loss then falls through to the
-# untyped fallback in `AbstractNeuralNetworks`, whose body is an `error`, and the caller sees
-# "Functor not defined for `NetworkLoss`" instead of a `MethodError`.
 function (loss::ReducedLoss)(
-        model::Chain, params, input::CT, output::CT) where {CT <: QPTOAT}
-    _compute_loss(loss.decoder(model(loss.encoder(input), params)), output)
+        model::Chain, ps::NetworkParameters, input::CT, output::CT) where {CT <: QPTOAT}
+    _compute_loss(loss.decoder(model(loss.encoder(input), ps)), output)
 end
