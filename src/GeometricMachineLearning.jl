@@ -9,8 +9,10 @@ using AbstractNeuralNetworks
 # One thing does come from there rather than being written again here: `mapstorage`, which reaches
 # the storage of a structured leaf and rebuilds the leaf around the result (`src/map_to_cpu.jl`). A
 # plain `NamedTuple` of layers is walked with `Base.map`, which needs nothing from anybody.
+# `parameter_eltype` gives the element type a parameter set holds, which is what a seeded gradient
+# is converted to.
 import NeuralNetworkParameters: NetworkParameters
-using NeuralNetworkParameters: mapstorage
+using NeuralNetworkParameters: mapstorage, parameter_eltype
 using ChainRulesCore
 using GeometricBase
 using GeometricSolutions: GeometricSolution, EnsembleSolution, TimeSeries
