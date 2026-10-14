@@ -74,7 +74,7 @@ test_explicit_imports(GeometricMachineLearning;
 # declaring it. No `GeometricOptimizers` name is on either list.
 const NON_PUBLIC_QUALIFIED = (
     :Initializer, :TanhActivation, :dim,                         # AbstractNeuralNetworks
-    :Jacobian, :ParameterGradient, :symbolic_parameter_gradient, # SymbolicNeuralNetworks
+    :Jacobian, :symbolic_parameter_gradient,                     # SymbolicNeuralNetworks
     :variables,                                                  # Symbolics
     :copyto!, :zeros,                                            # KernelAbstractions
     :jacobian)                                                   # ForwardDiff
