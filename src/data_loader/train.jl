@@ -18,8 +18,7 @@ trained through a [`ZygotePullback`](@ref). Without it, a [`TransformerIntegrato
 autoencoder with a `Batch{:FeedForward}` on [`AutoEncoderLoss`](@ref)`()`; any other combination
 needs `loss`, and `train!` raises an `ArgumentError` without it.
 
-A Hamiltonian network trains on its symbolic gradient with `loss = SymbolicPullback(arch)`. The
-`pullback` keyword of 0.8 is gone: pass the pullback as `loss`.
+A Hamiltonian network trains on its symbolic gradient with `loss = SymbolicPullback(arch)`.
 
 `opt` is built for `params(nn)`, with `TrainingOptimizer(params(nn); algorithm, linesearch,
 retraction)`. It keeps the iteration number, the moments and the global sections, so a second call
