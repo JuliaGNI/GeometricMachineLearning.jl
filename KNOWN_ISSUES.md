@@ -74,6 +74,22 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   pattern, so the working tree and the net diff are clean, but the blobs are still reachable.
   Rewriting the branch would remove them.
 
+### C7 · `SymbolicPullback(::HamiltonianArchitecture)` reaches one private SymbolicNeuralNetworks name.
+
+- **location:** `src/pullbacks/symbolic_hnn_pullback.jl`
+- **kind:** upstream
+- **found:** 2026-08-16
+- **evidence:**
+  `SymbolicNeuralNetworks.SymbolicPullback(nn, loss)` cannot be used, because it sizes the symbolic
+  target of the loss with `output_dimension(nn.model)`, which for a Hamiltonian network is `1` — the
+  scalar Hamiltonian — while `HNNLoss` compares against the Hamiltonian *vector field*, which has the
+  dimension of the network's input. GML's construction therefore reaches
+  `SymbolicNeuralNetworks.symbolic_parameter_gradient`, which no exported name replaces:
+  `flat_parameter_gradient` is flat, so it wants an `unflatten` per step, and `ParameterGradient` is
+  no longer used. The two-field constructor `SymbolicPullback(loss, fun)` and the call protocol
+  `fun(input, output, ps)(Δ)` are documented under *Implementation* in the exported docstring, so
+  that private name is the one an upstream refactor breaks.
+
 ### C14 · `evaluate_vf_and_compute_∇Ψ` evaluates the decoder twice.
 
 - **location:** `src/reduced_system/reduced_system.jl`
@@ -372,7 +388,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 - **kind:** upstream
 - **found:** 2026-10-14, part M1b; M1a verifier finding #3 (2026-10-13)
 - **evidence:**
-  In a cold process, at the first call, `@inferred train!(nn, opt, dl, Batch(4), 2; loss =
+  In a cold process, at the first call, `@inferred train!(nn, opt, dl, Batch(8), 2; loss =
   FeedForwardLoss(), show_progress = false)` on `Chain(Dense(2, 2, identity))` fails in both
   precisions:
 
@@ -383,14 +399,24 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   threw      = return type Vector{Float32} does not match inferred return type Vector
   ```
 
-  `ZygotePullback`'s call is annotated `::Tuple`, which lowers to
-  `convert(Tuple, ex)::Tuple`: the conversion is the identity on a tuple, so it does not widen the
-  body. The value infers as `Any` because `Zygote.pullback`'s own return type is a tuple of `Any`,
-  and the history is an accumulator over those values. The call's run-time result is `Vector{T}`,
-  and every test asserts `eltype(history) === T`; what is lost is the compile-time type, not the
-  behaviour.
+  `DataLoader`'s minibatch is a pair of 3-tensors, `Tuple{Array{Float32,3}, Array{Float32,3}}`, and
+  `ZygotePullback`'s value infers on it as follows:
 
-  A `Base.inferencebarrier` on the loss value in `_train_step!` restores the concrete type, and
-  part M1b rejected one: `inferencebarrier` is not a type assertion, and the same widening reaches
-  a caller that builds its own loop on `ZygotePullback` without `train!`. The fix belongs to
-  NeuralNetworkParameters or Zygote, where `pullback`'s return type is decided.
+  ```
+  Float32 minibatch data => Tuple{Array{Float32, 3}, Array{Float32, 3}}
+  Float32 Zygote.pullback value => Any
+  ```
+
+  The same call on a pair of matrices infers `Float32`, and the forward loss and
+  `model(x, ps)` infer concretely on the 3-tensors as well. The first call in `@code_warntype` where
+  the value becomes `Any` is therefore `Zygote.pullback(f, ::NetworkParameters)` on that minibatch:
+  the first `Any` of its body is `%5 = ZygoteRulesExt.Any::Core.Const(Any)`, and its inferred return
+  type is a tuple whose first field is `Any`. `train!` accumulates its history over those values, so
+  its inferred return type is `Vector`.
+
+  The call's run-time result is `Vector{T}`, and every test asserts `eltype(history) === T`; what is
+  lost is the compile-time type, not the behaviour. `ZygotePullback`'s own call carries no return
+  annotation. A `Base.inferencebarrier` on the loss value hides the type instead of restoring it,
+  and the same widening reaches a caller that builds its own loop on `ZygotePullback` without
+  `train!`. The fix belongs to Zygote, whose adjoint of `AbstractNeuralNetworks`' `Dense` on a
+  3-tensor gives the `Any`.

@@ -45,27 +45,25 @@ breaking release).
 
 - **The four-argument `AutoEncoderLoss` ignores its target and reconstructs its input.** `AutoEncoderLoss()(model, ps, x, y)` is now `AutoEncoderLoss()(model, ps, x)`, which is the formula of the two-argument method. Migrate a call that wanted the four-argument loss to compare an input against a different target to `FeedForwardLoss()`.
 
-- **The symbolic HNN pullback is the gradient of `HNNLoss` on the batch.** `SymbolicPullback(arch)` generates the per-sample gradient of the surrogate `½‖rᵢ‖²` with `reduce = +` and scales the sum by `1/(‖R‖‖Y‖)`, taken from one forward pass more than the loss value needs; the two norms are divided by separately, so the product that would overflow at about `1.8e19` in `Float32` is never formed. At a zero residual the scale is `pinv(‖R‖)`, which is zero, so the gradient is the zero set as `ZygotePullback`'s is. Measured on a `StandardHamiltonianArchitecture(2, 4, 1, SigmoidActivation())` against a `Zygote` gradient of the same batch, at `Random.seed!(1)` with `N = 5` in `Float64`:
-
-  | | `dL/dW₁[1]` | value |
-  |:--|--:|--:|
-  | `3484c6a7`, symbolic | `-0.31944922367924455` | `1.1255393024461056` |
-  | `3484c6a7`, Zygote | `-0.06758902470068295` | `1.1255393024461056` |
-  | this branch, symbolic | `-0.06758902470068294` | `1.1255393024461056` |
-
-  The symbolic gradient was `4.73`× the Zygote one before and agrees with it to `2.3e-16` now. This closes B5 and K13 and fixes issues #343 and #319.
-
-- **C7 is rewritten to one private SymbolicNeuralNetworks name.** `SymbolicPullback(::HamiltonianArchitecture)` reaches `SymbolicNeuralNetworks.symbolic_parameter_gradient`; no exported name gives a symbolic gradient in the parameter set's own shape. `ParameterGradient` is no longer used: the pullback stores a GML callable that scales the generated gradient by the batch's norms. The call protocol `fun(input, output, ps)(Δ)` and the two-argument constructor are documented under *Implementation* in the exported docstring.
-
 - **`LowerTriangular` and `UpperTriangular` are renamed `StrictlyLowerTriangular` and `StrictlyUpperTriangular`**, as in GeometricOptimizers 0.9, and are re-exported under the new names. A file saved with the old names no longer loads through the registry. The rigid-body tutorial registers the two old names for its committed files.
 
 - **The `[compat]` bounds move to the versions the training API needs**: GeometricOptimizers `"0.9"`, AbstractNeuralNetworks `"0.9.1"`, NeuralNetworkParameters `"0.5"`, SymbolicNeuralNetworks `"0.9"`, GeometricBase `"0.15"`, GeometricEquations `"0.21.5"` and GeometricSolutions `"0.6.6"`. HDF5 leaves `[compat]` and `[weakdeps]`.
 
 ### Fixed
 
-- **Aqua's `piracies` and `ambiguities` checks both pass** (0 piracies, 0 ambiguities, after M1a removed the three 3-tensor `Dense`/`Linear` functors and the HDF5 methods). `ExplicitImports`' `all_qualified_accesses_are_public` and `all_explicit_imports_are_public` run with `ParameterGradient` removed from the ignore list, because `SymbolicPullback(::HamiltonianArchitecture)` no longer reaches it.
+- **The symbolic HNN pullback is the gradient of `HNNLoss` on the batch** (choice (A) of B5's three options, which keeps every loss and moves the pullback instead). `SymbolicPullback(arch)` generates the per-sample gradient of the surrogate `½‖rᵢ‖²` with `reduce = +` and scales the sum by `1/(‖R‖‖Y‖)`, taken from one forward pass more than the loss value needs, which is the cost the choice names. Each norm divides a gradient entry on its own: their product overflows at about `1.8e19` in `Float32`, where neither norm does, and the seed scalar they would form goes subnormal past `1e40`. At a zero residual the scale is `pinv(‖R‖)`, which is zero, so the gradient is the zero set as `ZygotePullback`'s is. Measured on a `StandardHamiltonianArchitecture(2, 4, 1, SigmoidActivation())` against a `Zygote` gradient of the same batch, at `Random.seed!(1)` with `N = 5` in `Float64`:
 
-- **This closes known issues B5, C7, K6, K13 and K14**, and issues #319 and #343. C7 is rewritten rather than closed: it reaches one private SymbolicNeuralNetworks name, `symbolic_parameter_gradient`, and no exported name gives a symbolic gradient in the parameter set's own shape. K14 records that `train!` infers its history as an abstract `Vector`; its run-time element type is `T`, and every test asserts it.
+  | | `dL/dW₁[1]` | value |
+  |:--|--:|--:|
+  | `3484c6a7`, symbolic | `-0.31944922367924455` | `1.1255393024461056` |
+  | `3484c6a7`, Zygote | `-0.06758902470068295` | `1.1255393024461056` |
+  | this branch, symbolic | `-0.06758902470068295` | `1.1255393024461056` |
+
+  The symbolic gradient was `4.73`× the Zygote one before and is the same number as it now.
+
+- **`ExplicitImports`' `all_qualified_accesses_are_public` and `all_explicit_imports_are_public` run with `ParameterGradient` removed from the ignore list**, because `SymbolicPullback(::HamiltonianArchitecture)` no longer reaches it.
+
+- **This closes known issues B5, K6 and K13, and issues #319 and #343.** C7 is rewritten rather than closed: it now reaches one private SymbolicNeuralNetworks name, `symbolic_parameter_gradient`, where `flat_parameter_gradient` is flat and wants an `unflatten` per step; the two-field constructor `SymbolicPullback(loss, fun)` and the call protocol `fun(input, output, ps)(Δ)` are documented under *Implementation* in the exported docstring. K14 records that `train!` infers its history as an abstract `Vector`; its run-time element type is `T`, and every test asserts it. B5, K6, K13 and C7 were the only entries of `KNOWN_ISSUES.md` that this release removes, together with the notes they carried for the numbers that stay vacant: B1, B2, B3, B4, B6, B8 and B9, and C9, C12 and C13.
 
 ### Added
 
