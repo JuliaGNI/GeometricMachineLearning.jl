@@ -17,9 +17,15 @@ breaking release).
 
 ### Removed (breaking)
 
+- **`NetworkLoss(::TransformerIntegrator, prediction_window)` is gone; the default loss is `NetworkLoss(nn.architecture, batch)`.** `train!`'s default is now the two-argument `NetworkLoss(arch, batch)`, so a transformer's prediction window comes from the `Batch` it trains on instead of from the architecture. The old method took `prediction_window = 1`, which against `Batch`'s default `seq_length` was a conflict; `NetworkLoss(transformer, Batch(seq, pred))` replaces it, and `NetworkLoss(transformer, n::Integer)` is a `MethodError`. Migrate `NetworkLoss(arch)` to `NetworkLoss(arch, batch)`, or to `TransformerLoss(batch)` for a transformer.
+
+- **`train!`'s `pullback` keyword is gone.** `loss` takes a `NetworkLoss` or an `AbstractPullback`, and a `NetworkLoss` is trained through a `ZygotePullback`. Migrate `train!(nn, o, dl, batch, n; loss = HNNLoss(arch), pullback = SymbolicPullback(arch))` to `train!(nn, o, dl, batch, n; loss = SymbolicPullback(arch))`. `train!` builds the pullback once per call, not once per step.
+
+- **`_processing`, `_get_contents` and `_get_params` are gone**, together with `_only_set`. `ZygotePullback`'s `back(Δ)` returns a `NetworkParameters` directly, as `SymbolicPullback`'s does, so a caller no longer unwraps it. Migrate `pb(ps, model, data)[2](1) |> _processing` to `pb(ps, model, data)[2](1)`.
+
 - **`Optimizer`, the callable optimizers and their aliases are gone; training uses GeometricOptimizers' `TrainingOptimizer`.** `TrainingOptimizer`, re-exported by GeometricMachineLearning from GeometricOptimizers 0.9, is built on the parameters of a network: `TrainingOptimizer(nn.params; algorithm = Adam(), linesearch = default_step_size(algorithm), retraction = Cayley())`. Migrate `Optimizer(method, nn; step_size = η, retraction = cayley)` to `TrainingOptimizer(nn.params; algorithm = method, linesearch = η, retraction = Cayley())`, and `Optimizer(nn; AdamOptimizerWithDecay(n, T)...)` to `TrainingOptimizer(nn.params; AdamOptimizerWithDecay(n)...)`. The `n` of `AdamOptimizerWithDecay` counts optimization steps, one per minibatch. One cache and one state now cover the whole parameter set; 0.8 had one per layer. `Optimizer` is no longer exported by GeometricMachineLearning, so with both packages loaded, `Optimizer` is GeometricOptimizers' solver.
 
-- **`train!` replaces the four callable methods of `Optimizer`.** `train!(nn, opt, dl, batch, n_epochs; loss, pullback = ZygotePullback(loss), show_progress = true)` replaces `(o::Optimizer)(nn, dl, batch, n_epochs[, loss, pullback])` and `optimize_for_one_epoch!`, which is removed from the exports. Migrate `o(nn, dl, batch, n, loss; kw...)` to `train!(nn, o, dl, batch, n; loss, kw...)`. `loss` is a `NetworkLoss`, and `pullback` is any `AbstractPullback`: a Hamiltonian network trains with `loss = HNNLoss(arch)` and `pullback = SymbolicPullback(arch)`. The sixth positional `AbstractPullback` that 0.8 allowed is gone. Without `loss`, a `TransformerIntegrator` with a `Batch{:Transformer}` trains on `TransformerLoss(batch)`, a `NeuralNetworkIntegrator` with a `Batch{:FeedForward}` on `FeedForwardLoss()`, and an autoencoder with a `Batch{:FeedForward}` on `AutoEncoderLoss()`; any other combination raises an `ArgumentError` that asks for `loss`. The `λY` argument and the per-call `GlobalSection` are gone: `opt` holds the sections, moments and iteration number, so a second `train!` call with the same `opt` resumes the first, and `train!` draws no random numbers beyond the minibatch shuffle. `n_epochs < 1` raises an `ArgumentError` before any step. The loss history has the element type of the loss value, so a `Float64` network on `Float32` data gives a `Vector{Float64}`.
+- **`train!` replaces the four callable methods of `Optimizer`.** `train!(nn, opt, dl, batch, n_epochs; loss, show_progress = true)` replaces `(o::Optimizer)(nn, dl, batch, n_epochs[, loss, pullback])` and `optimize_for_one_epoch!`, which is removed from the exports. Migrate `o(nn, dl, batch, n, loss; kw...)` to `train!(nn, o, dl, batch, n; loss, kw...)`. `loss` is a `NetworkLoss` or an `AbstractPullback`, and a `NetworkLoss` is trained through a `ZygotePullback`: a Hamiltonian network trains with `loss = SymbolicPullback(arch)`. The sixth positional `AbstractPullback` that 0.8 allowed is gone, and so is the `pullback` keyword — pass the pullback as `loss`. Without `loss`, a `TransformerIntegrator` with a `Batch{:Transformer}` trains on `TransformerLoss(batch)`, a `NeuralNetworkIntegrator` with a `Batch{:FeedForward}` on `FeedForwardLoss()`, and an autoencoder with a `Batch{:FeedForward}` on `AutoEncoderLoss()`; any other combination raises an `ArgumentError` that asks for `loss`. The `λY` argument and the per-call `GlobalSection` are gone: `opt` holds the sections, moments and iteration number, so a second `train!` call with the same `opt` resumes the first, and `train!` draws no random numbers beyond the minibatch shuffle. `n_epochs < 1` raises an `ArgumentError` before any step. The loss history has the element type of the loss value, so a `Float64` network on `Float32` data gives a `Vector{Float64}`.
 
 - **A hand-written loop steps with `GeometricOptimizers.optimization_step!(nn.params, opt, dp)`.** The 0.8 method `optimization_step!(opt, λY, ps, dp)` is removed. GeometricMachineLearning imports `optimization_step!` but does not export it, so a caller qualifies it.
 
@@ -33,9 +39,33 @@ breaking release).
 
 ### Changed (breaking)
 
+- **`ZygotePullback`'s `back(Δ)` is a `NetworkParameters`, not a one-tuple of one, as `SymbolicPullback`'s already was.** A structured leaf holds its storage gradient: a `SymmetricMatrix` leaf comes back as a `SymmetricMatrix` whose off-diagonal entries are twice those of the projection of the dense gradient, which is the quantity an optimizer step needs (issue #319, closed). Both `ZygotePullback` methods take `ps::NetworkParameters`, so a bare `NamedTuple` is a `MethodError`.
+
+- **A loss functor takes a `NetworkParameters`.** The `Union{NetworkParameters, NamedTuple}` arm of `HNNLoss`, `LNNLoss`, `SymplecticEulerLoss` and `VariationalMidpointLoss` is gone, and `AutoEncoderLoss`, `TransformerLoss` and `ReducedLoss` annotate theirs `::NetworkParameters`. NeuralNetworkParameters 0.5's Zygote rule keeps the wrapper on the forward pass, so the annotation is dispatchable under AD and a gradient set of another shape can no longer reach a loss silently. Migrate a custom loss's `params::Union{NetworkParameters, NamedTuple}` to `ps::NetworkParameters`, and a hand-rolled pullback that unwraps its result to one that does not.
+
+- **The four-argument `AutoEncoderLoss` ignores its target and reconstructs its input.** `AutoEncoderLoss()(model, ps, x, y)` is now `AutoEncoderLoss()(model, ps, x)`, which is the formula of the two-argument method. Migrate a call that wanted the four-argument loss to compare an input against a different target to `FeedForwardLoss()`.
+
+- **The symbolic HNN pullback is the gradient of `HNNLoss` on the batch.** `SymbolicPullback(arch)` generates the per-sample gradient of the surrogate `½‖rᵢ‖²` with `reduce = +` and scales the sum by `1/(‖R‖‖Y‖)`, taken from one forward pass more than the loss value needs; the two norms are divided by separately, so the product that would overflow at about `1.8e19` in `Float32` is never formed. At a zero residual the scale is `pinv(‖R‖)`, which is zero, so the gradient is the zero set as `ZygotePullback`'s is. Measured on a `StandardHamiltonianArchitecture(2, 4, 1, SigmoidActivation())` against a `Zygote` gradient of the same batch, at `Random.seed!(1)` with `N = 5` in `Float64`:
+
+  | | `dL/dW₁[1]` | value |
+  |:--|--:|--:|
+  | `3484c6a7`, symbolic | `-0.31944922367924455` | `1.1255393024461056` |
+  | `3484c6a7`, Zygote | `-0.06758902470068295` | `1.1255393024461056` |
+  | this branch, symbolic | `-0.06758902470068294` | `1.1255393024461056` |
+
+  The symbolic gradient was `4.73`× the Zygote one before and agrees with it to `2.3e-16` now. This closes B5 and K13 and fixes issues #343 and #319.
+
+- **C7 is rewritten to one private SymbolicNeuralNetworks name.** `SymbolicPullback(::HamiltonianArchitecture)` reaches `SymbolicNeuralNetworks.symbolic_parameter_gradient`; no exported name gives a symbolic gradient in the parameter set's own shape. `ParameterGradient` is no longer used: the pullback stores a GML callable that scales the generated gradient by the batch's norms. The call protocol `fun(input, output, ps)(Δ)` and the two-argument constructor are documented under *Implementation* in the exported docstring.
+
 - **`LowerTriangular` and `UpperTriangular` are renamed `StrictlyLowerTriangular` and `StrictlyUpperTriangular`**, as in GeometricOptimizers 0.9, and are re-exported under the new names. A file saved with the old names no longer loads through the registry. The rigid-body tutorial registers the two old names for its committed files.
 
 - **The `[compat]` bounds move to the versions the training API needs**: GeometricOptimizers `"0.9"`, AbstractNeuralNetworks `"0.9.1"`, NeuralNetworkParameters `"0.5"`, SymbolicNeuralNetworks `"0.9"`, GeometricBase `"0.15"`, GeometricEquations `"0.21.5"` and GeometricSolutions `"0.6.6"`. HDF5 leaves `[compat]` and `[weakdeps]`.
+
+### Fixed
+
+- **Aqua's `piracies` and `ambiguities` checks both pass** (0 piracies, 0 ambiguities, after M1a removed the three 3-tensor `Dense`/`Linear` functors and the HDF5 methods). `ExplicitImports`' `all_qualified_accesses_are_public` and `all_explicit_imports_are_public` run with `ParameterGradient` removed from the ignore list, because `SymbolicPullback(::HamiltonianArchitecture)` no longer reaches it.
+
+- **This closes known issues B5, C7, K6, K13 and K14**, and issues #319 and #343. C7 is rewritten rather than closed: it reaches one private SymbolicNeuralNetworks name, `symbolic_parameter_gradient`, and no exported name gives a symbolic gradient in the parameter set's own shape. K14 records that `train!` infers its history as an abstract `Vector`; its run-time element type is `T`, and every test asserts it.
 
 ### Added
 

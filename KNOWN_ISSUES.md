@@ -4,47 +4,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
 ## B. Known defects
 
-### B5 · The symbolic pullback of `HNNLoss` is not the gradient of the batched loss.
-
-- **location:** —
-- **kind:** defect
-- **found:** 2026-08-16
-- **evidence:**
-  `SymbolicPullback` differentiates the loss of a *single* sample and sums the per-sample gradients
-  (`reduce = +`), which equals the gradient of the batched loss only when the loss is a sum over
-  samples. `HNNLoss` is not: it divides by `norm(output)` taken over the whole batch. Measured on a
-  `StandardHamiltonianArchitecture(2, 2)` against a `Zygote` gradient of the same loss:
-
-  ```
-  N=1  symbolic=-0.06324019893769198  zygote=-0.06324019893769196  agree=true
-  N=5  symbolic=-0.29982310048056143  zygote=-0.05705562794369161  agree=false
-  ```
-
-  `SymbolicPullback(arch)` is exported as a pullback to use in place of `ZygotePullback`, so this
-  is wrong training, silently, for every batch size above one.
-  It is not new — `reduce = +` is what SymbolicNeuralNetworks 0.3 did too — and it is the same
-  defect SymbolicNeuralNetworks records for `FeedForwardLoss` under *Open Issues → Semantics* in its
-  own changelog, where it is called out as unfixable within a design that differentiates one
-  symbolic sample.
-
-  Closing it means choosing: make `HNNLoss` additive over the batch (it would no longer be scale
-  invariant), or drop the symbolic pullback for architectures whose loss is not additive. Either is
-  a decision about the loss, not a repair, which is why this release only documents it.
-
-  (**B1**, **B2**, **B3**, **B4**, **B6** and **B8** are all closed and their entries are gone: B1 and B2 by
-  this release — the duplicated `AdamOptimizerWithDecay` and the split `Manifold`, both under
-  *Removed (breaking)* — B3 by SymbolicNeuralNetworks 0.5, B4 by `a427add1`, which repaired the
-  documentation build, and B6 and B8 by this release: B6 by the deletion of `src/training_method/`
-  (the three methods that called the non-existent `vectorfield` are gone, and `SymplecticEulerLoss`
-  carries their content on `hamiltonian_vector_field`, with tests that run), and B8 by the narrowing
-  of `PoissonTensor`'s `Base.:*` to `Strided…` right-hand sides and `Base.getindex` to
-  `Union{Int, Colon, AbstractVector{<:Integer}}` indices, reducing method ambiguities from 18 to 1.
-  The numbers are left vacant rather than reused.)
-
-  (**B9** is closed by this release and its entry is gone: the `iterate` method it named binds
-  every type parameter, and Aqua's `unbound_args` passes on Julia nightly. See *Fixed* above. The
-  number is left vacant rather than reused.)
-
 ### B10 · `DataLoader(::EnsembleSolution{T, T1, Vector{ST}})` at `src/data_loader/data_loader.jl:325` has no test and appears unreachable through this package's current dependencies.
 
 - **location:** `src/data_loader/data_loader.jl:325`
@@ -114,34 +73,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   `git add docs/src` that swept them in. They are untracked again and `.gitignore` now covers the
   pattern, so the working tree and the net diff are clean, but the blobs are still reachable.
   Rewriting the branch would remove them.
-
-### C7 · `SymbolicPullback(::HamiltonianArchitecture)` duplicates the upstream constructor.
-
-- **location:** —
-- **kind:** upstream
-- **found:** 2026-08-16
-- **evidence:**
-  It has
-  to, because `SymbolicNeuralNetworks.SymbolicPullback(nn, loss)` derives the dimension of the
-  loss's target from `output_dimension(nn.model)`, and for an HNN that is the scalar Hamiltonian
-  rather than the vector field the loss compares against (see *Fixed*). Reproducing the constructor
-  means reaching into three names that SymbolicNeuralNetworks does not export —
-  `symbolic_parameter_gradient`, `ParameterGradient`, and the two-argument `SymbolicPullback` inner
-  constructor — so an upstream refactor breaks GML silently at the type level. A keyword on the
-  upstream constructor, or a `NetworkLoss` interface that states its own target dimension, would put
-  this method back to one line.
-
-  (**C9** is closed by this release and its entry is gone: `legacy/hnn/` and `legacy/mtk/` are
-  deleted, and with them all 28 of the `include` sites it counted. The `data.jl` decision it was
-  waiting on is moot — nothing needs that file any more. See *Removed (breaking)* above. The
-  number is left vacant rather than reused.)
-
-  (**C12** and **C13** are closed by this release and their entries are gone. C12 resolved to a
-  design answer rather than a repair — approximate end-to-end symplecticity is the intent, and the
-  verification script now states it. C13 resolved against the expectation its own entry recorded:
-  `DEFAULT_LNN_NRUNS` is removed, and `∇L`, `∇∇L` and `∇q̇∇q̇L` are kept as the `Zygote` reference
-  for what `LNNLoss` computes symbolically. Both are under *Changed*. The numbers are left vacant
-  rather than reused.)
 
 ### C14 · `evaluate_vf_and_compute_∇Ψ` evaluates the decoder twice.
 
@@ -351,20 +282,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   10 nbatches 1 samples [(1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1), (7, 1), (8, 1), (9, 1)]
   ```
 
-### K13 · `SymbolicPullback(arch)` gives the gradient of the per-sample sum, not of `HNNLoss`.
-
-- **location:** `src/pullbacks/symbolic_hnn_pullback.jl`
-- **kind:** found late
-- **found:** 2026-10-12, while adding the `pullback` keyword of `train!` (#342); issue #343
-- **evidence:**
-  The value of the pullback is the batch loss `norm(F(X) - Y) / norm(Y)`, but the gradient is
-  built with `reduce = +`, so it is the gradient of the sum of the per-sample losses. On one
-  minibatch of 5 samples in `Float64`, `dL/dW1[1]` is `0.002695929479656911` by a central finite
-  difference, `0.0026959294110209093` by Zygote and `0.004388379726963325` by the symbolic
-  pullback; the symbolic gradient agrees with Zygote's gradient of the per-sample sum to `5.2e-17`.
-  `main` at cfe4aea3 gives the same numbers. `test/data_loader/train.jl` marks the comparison with
-  Zygote `@test_broken`.
-
 ## Upstream
 
 ### K2 · Revise prints EMFILE errors in the test log
@@ -402,28 +319,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   sandbox (`compiled/v1.13/Metal/` in the depot) matches the flags of `Pkg.test()`. The test file
   itself records a skip where `Metal.functional()` is false; only the precompile fails. Closing this
   is a Metal.jl change: a workload that does not run where no device exists.
-
-### K6 · The gradient of a `SymmetricMatrix` leaf with respect to a `NetworkParameters` differs from the one with respect to the bare `NamedTuple`.
-
-- **location:** `test/helpers/network_parameters_gradient_structure.jl`
-- **kind:** upstream
-- **found:** 2026-10-12, with the move to NeuralNetworkParameters 0.5; issue #319
-- **evidence:**
-  Under NeuralNetworkParameters 0.5, `Zygote.gradient` with respect to a `NetworkParameters` gives
-  a `SymmetricMatrix` leaf that holds the gradient with respect to the leaf's storage, at any number
-  of accesses; with respect to the bare `NamedTuple` it gives the projection of the dense gradient.
-  The off-diagonal entries of the first are twice those of the second; the diagonals are equal. A
-  test of `isapprox(Matrix(a_wrapped), Matrix(a_bare))` in
-  `layers/symplectic_attention_network_parameters_gradient.jl` evaluates:
-
-  ```
-  Expression: isapprox(Matrix(a_wrapped), Matrix(a_bare))
-   Evaluated: isapprox([0.6575109961994726 1.1214311018548968; 1.1214311018548968 0.46185556373061615],
-                       [0.6575109961994726 0.5607155509274484; 0.5607155509274484 0.46185556373061615])
-  ```
-
-  The helper asserts this relation. Which of the two a training step needs is the pullback shape of
-  issue #319.
 
 ## Documentation
 
@@ -470,3 +365,32 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   Neither function takes an element type, so neither runs over `REAL_ELTYPES`. The third testset
   of the file, `schedule_starts_at_one`, loops over `REAL_ELTYPES`. The fix builds `dl` per `T`
   and loops both functions over `REAL_ELTYPES`.
+
+### K14 · `train!` infers its history as an abstract `Vector`, although the run-time history is `Vector{T}`.
+
+- **location:** —
+- **kind:** upstream
+- **found:** 2026-10-14, part M1b; M1a verifier finding #3 (2026-10-13)
+- **evidence:**
+  In a cold process, at the first call, `@inferred train!(nn, opt, dl, Batch(4), 2; loss =
+  FeedForwardLoss(), show_progress = false)` on `Chain(Dense(2, 2, identity))` fails in both
+  precisions:
+
+  ```
+  PRECISION  = Float64
+  threw      = return type Vector{Float64} does not match inferred return type Vector
+  PRECISION  = Float32
+  threw      = return type Vector{Float32} does not match inferred return type Vector
+  ```
+
+  `ZygotePullback`'s call is annotated `::Tuple`, which lowers to
+  `convert(Tuple, ex)::Tuple`: the conversion is the identity on a tuple, so it does not widen the
+  body. The value infers as `Any` because `Zygote.pullback`'s own return type is a tuple of `Any`,
+  and the history is an accumulator over those values. The call's run-time result is `Vector{T}`,
+  and every test asserts `eltype(history) === T`; what is lost is the compile-time type, not the
+  behaviour.
+
+  A `Base.inferencebarrier` on the loss value in `_train_step!` restores the concrete type, and
+  part M1b rejected one: `inferencebarrier` is not a type assertion, and the same widening reaches
+  a caller that builds its own loop on `ZygotePullback` without `train!`. The fix belongs to
+  NeuralNetworkParameters or Zygote, where `pullback`'s return type is decided.
