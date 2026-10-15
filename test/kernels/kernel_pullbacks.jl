@@ -88,6 +88,23 @@ end
     end
 end
 
+# The seed is converted before the pullback computes, so a `Float64` seed gives exactly the
+# cotangents of its `Float32` rounding. The last row cancels: computed in `Float64`, the cotangent
+# of `W` keeps a residue of `eps(Float32) / 4` that the rounded seed does not have.
+@testset "a seed of the other precision is converted at entry" begin
+    for (f, args) in rules(Float32)
+        y, pullback = rrule(f, args...)
+        ȳ = Float64.(rand(Float32, size(y))) .+ eps(Float32) / 4
+        @test pullback(ȳ) == pullback(Float32.(ȳ))
+    end
+    W = ones(Float32, 2, 1)
+    x = Float32[1 -1; 0 0]
+    ȳ = [1 + Float64(eps(Float32)) / 4 1.0]
+    pullback = rrule(_mul, W', x)[2]
+    @test ȳ isa Matrix{Float64}
+    @test pullback(ȳ) == pullback(Float32.(ȳ))
+end
+
 # The `Float64` rules are checked by `test_rrule` above; the `Float32` ones against finite
 # differences in `Float64` on the same data, at the accuracy of `Float32`.
 @testset "Float32 cotangents against Float64 finite differences" begin

@@ -31,11 +31,13 @@ with_leaf(ps, W) = NetworkParameters((L1 = NamedTuple{keys(ps.L1)}((W,)),))
             @test g isa TT{T}
             @test isapprox(g.S, fd; rtol = tolerance(T))
         end
-        ps = NetworkParameters((L1 = (W = rand(SymmetricMatrix{T}, 4),),))
-        g = gradient(p -> sum(abs2, sin.(_mul(z, p.L1.W))), ps)[1].L1.W
-        fd = storage_fd(W -> sum(abs2, sin.(_mul(Float64.(z), W))), ps.L1.W)
-        @test g isa SymmetricMatrix{T}
-        @test isapprox(g.S, fd; rtol = tolerance(T))
+        for TT in (SymmetricMatrix, SkewSymMatrix, StrictlyLowerTriangular, StrictlyUpperTriangular)
+            ps = NetworkParameters((L1 = (W = rand(TT{T}, 4),),))
+            g = gradient(p -> sum(abs2, sin.(_mul(z, p.L1.W))), ps)[1].L1.W
+            fd = storage_fd(W -> sum(abs2, sin.(_mul(Float64.(z), W))), ps.L1.W)
+            @test g isa TT{T}
+            @test isapprox(g.S, fd; rtol = tolerance(T))
+        end
     end
 end
 
@@ -70,7 +72,8 @@ end
 end
 
 # A Stiefel weight multiplied as `Y'` gets a dense `Matrix` gradient leaf, on matrix input as on
-# tensor input, and the two agree on the same data.
+# tensor input, and the two agree on the same data. The same holds for every head of a
+# `MultiHeadAttention`, with Stiefel weights and with dense ones.
 @testset "a Stiefel weight multiplied as its adjoint: the gradient leaf is a Matrix" begin
     for T in (Float32, Float64)
         nn = NeuralNetwork(Chain(StiefelLayer(6, 3)), CPU(), T)
@@ -83,9 +86,20 @@ end
         @test isapprox(g_matrix, g_tensor; rtol = sqrt(eps(T)))
         @test isapprox(g_matrix, 2 * x * (Matrix(ps.L1.weight)' * x)'; rtol = sqrt(eps(T)))
 
-        mha = NeuralNetwork(Chain(MultiHeadAttention(4, 2; Stiefel = true)), CPU(), T)
-        g = gradient(p -> sum(abs2, mha.model(rand(T, 4, 3, 5), p)), params(mha))[1].L1
-        @test all(head -> head isa Matrix{T}, (
-            values(g.PQ)..., values(g.PK)..., values(g.PV)...))
+        for Stiefel in (true, false)
+            mha = NeuralNetwork(Chain(MultiHeadAttention(4, 2; Stiefel = Stiefel)), CPU(), T)
+            ps = params(mha)
+            x = rand(T, 4, 3)
+            g_matrix = gradient(p -> sum(abs2, mha.model(x, p)), ps)[1].L1
+            g_tensor = gradient(p -> sum(abs2, mha.model(reshape(x, 4, 3, 1), p)), ps)[1].L1
+            for g in (g_matrix, g_tensor)
+                @test all(head -> head isa Matrix{T}, (
+                    values(g.PQ)..., values(g.PK)..., values(g.PV)...))
+            end
+            for key in (:PQ, :PK, :PV), head in keys(g_matrix[key])
+
+                @test isapprox(g_matrix[key][head], g_tensor[key][head]; rtol = sqrt(eps(T)))
+            end
+        end
     end
 end

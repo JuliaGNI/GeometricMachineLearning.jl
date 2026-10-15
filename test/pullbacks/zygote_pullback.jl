@@ -1,7 +1,7 @@
 using GeometricMachineLearning
 using GeometricMachineLearning: FeedForwardLoss, QPTOAT, LASympNet, StiefelLayer
 using AbstractNeuralNetworks: AbstractExplicitLayer, Chain, Dense, NeuralNetwork, params
-using LinearAlgebra: Adjoint, Diagonal, diag
+using LinearAlgebra: Diagonal, diag
 using NeuralNetworkParameters: NetworkParameters
 using Test
 import Random
@@ -51,11 +51,12 @@ end
             @test eltype(leaf) === T
             @test size(leaf) == size(p)
         end
-        # The Stiefel leaf's tangent is an `Adjoint` of its storage rather than a `StiefelManifold`:
-        # the manifold layer's functor reads the weight through an adjoint, and Zygote keeps the
-        # cotangent's own type instead of projecting it back onto the leaf's.
+        # The Stiefel leaf's tangent is a dense `Matrix` of its storage rather than a
+        # `StiefelManifold`: the manifold layer reads the weight through an adjoint, whose product
+        # `_mul` hands the parent a dense cotangent, and Zygote keeps that type instead of
+        # projecting it back onto the leaf's.
         if network.model isa Chain && network.model.layers[1] isa StiefelLayer
-            @test g.L1.weight isa Adjoint{T, Matrix{T}}
+            @test g.L1.weight isa Matrix{T}
             @test size(g.L1.weight) == size(ps.L1.weight)
         end
     end

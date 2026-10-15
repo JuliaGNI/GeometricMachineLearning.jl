@@ -287,15 +287,15 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   belongs with the data signatures of the losses as a whole: either each loss accepts only the data
   its vector field can take, or `(q, p)` data is converted before it reaches the field.
 
-### K16 · `scripts/utilities/inverse_generator.jl` does not reproduce the committed kernels byte for byte, although its header says it does.
+### K16 · `scripts/utilities/inverse_generator.jl` reproduces the wrappers of the committed inverse files byte for byte, but not their kernels.
 
 - **location:** `scripts/utilities/inverse_generator.jl:1`
 - **kind:** found late
 - **found:** 2026-10-15, by the builder of part M3; the same output comes from the generator of `origin/main` at `2a63f26a`
 - **evidence:**
-  Run under Symbolics 7.39.2 (the version the script names) and 7.45.0, both with SymbolicUtils
-  4.51.0, and formatted with `style = "sciml"`, the generator writes the four
-  `inverse_NxN.jl` files with the factors of each product in another order, from line 6 or 7 on:
+  Formatted with `style = "sciml"`, the generator writes the kernel of each of the four
+  `inverse_NxN.jl` files, the part before `function tensor_inverseN(`, with the factors of some
+  products in another order than the committed file, from line 6 or 7 on:
 
   ```
   <                 t2 = (*)((*)(t1, (getindex)(A, 2, 1, k)), (getindex)(A, 1, 2, k))
@@ -303,9 +303,15 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   >                 t2 = (*)((*)(t1, (getindex)(A, 1, 2, k)), (getindex)(A, 2, 1, k))
   ```
 
-  The part of each file after the kernel, from `function tensor_inverseN` on, is byte for byte
-  what the generator writes. The header names no SymbolicUtils version, so the run that produced
-  the committed kernels cannot be repeated.
+  The order depends on the Julia version, not on the package versions. With Symbolics 7.39.2,
+  SymbolicUtils 4.46.6 and JuliaFormatter 2.14.0 fixed, Julia 1.11.9, 1.12.6, 1.12.7 and 1.13.1
+  each give a different order, and none of them reproduces all four committed kernels; 1.12.6
+  reproduces the 2×2 one. On Julia 1.13.1, SymbolicUtils 4.46.6 and 4.51.0 give identical output,
+  and two runs on one Julia version give identical output. The Julia build that made the committed
+  kernels on 2026-09-14 is no longer installed, so that run cannot be repeated.
+
+  The rest of each file, from `function tensor_inverseN(` to the end, is byte for byte what the
+  generator's `wrapper_source(n)` writes, and the script's header claims no more than that.
 
 ## Upstream
 

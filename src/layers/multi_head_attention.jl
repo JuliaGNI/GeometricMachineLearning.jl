@@ -114,8 +114,8 @@ function compute_output_of_mha(d::MultiHeadAttention{M, M}, x::AbstractMatrix{T}
 
     head_outputs = map(1:(d.n_heads)) do i
         key = Symbol("head_", i)
-        ps.PV[key]' * x *
-        d.activation((ps.PQ[key]' * x)' * (ps.PK[key]' * x) / T(sqrt(dim)))
+        _mul(ps.PV[key]', x) *
+        d.activation(_mul(ps.PQ[key]', x)' * _mul(ps.PK[key]', x) / T(sqrt(dim)))
     end
 
     # One `vcat` over all heads, not one per head. The head outputs are matrices, so `reduce` takes

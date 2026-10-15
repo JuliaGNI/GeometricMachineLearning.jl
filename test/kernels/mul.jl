@@ -30,7 +30,7 @@ end
             @test _mul(W, x[:, 1, 1]) isa Vector{T}
         end
         z = rand(T, 3, 4, 5)
-        for W in (rand(T, 4, 6), rand(SymmetricMatrix{T}, 4))
+        for W in (rand(T, 4, 6), (rand(TT{T}, 4) for TT in STRUCTURED)...)
             y = @inferred _mul(z, W)
             @test y isa Array{T, 3}
             @test y ≈ slices(zk -> zk * Matrix(W), z)

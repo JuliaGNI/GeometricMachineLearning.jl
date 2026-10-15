@@ -97,7 +97,7 @@ function ChainRulesCore.rrule(::typeof(_mul), W::Adjoint{<:Number, <:AbstractMat
     y = _mul(W, x)
     project_x = ProjectTo(x)
     function _mul_adjoint_pullback(ȳ)
-        ȳ = unthunk(ȳ)
+        ȳ = _seed(eltype(y), ȳ)
         ȳ isa AbstractZero && return NoTangent(), ZeroTangent(), ZeroTangent()
         ȳ_matrix = _matrix(ȳ)
         x_matrix = _matrix(x)
