@@ -5,17 +5,18 @@
 
 Multiply a matrix and a tensor, or two tensors, slice by slice along the third axis.
 
-- The **left product** multiplies `W` onto `x` from the left. `x` is a vector, a matrix or a
-  tensor, and its first axis is contracted with the second axis of `W`. It is one GEMM: `x` is
-  reshaped into a matrix with `size(x, 1)` rows, so that `_mul(W, x)[:, :, k] == W * x[:, :, k]`.
+- The **left product** multiplies `W` onto `x` from the left. For a vector or a matrix `x` it is
+  `W * x`. For a tensor it is one GEMM: `x` is reshaped into a matrix with `size(x, 1)` rows, so
+  that `_mul(W, x)[:, :, k] == W * x[:, :, k]`.
 - The **right product** multiplies `W` onto every slice of the tensor `x` from the right,
   `_mul(x, W)[:, :, k] == x[:, :, k] * W`. It is one GEMM between two `permutedims`.
 - The **tensor product** multiplies the slices of two tensors pairwise,
   `_mul(x, y)[:, :, k] == x[:, :, k] * y[:, :, k]`, with the `tensor_tensor_mul` kernel.
 
-A `SymmetricMatrix`, `SkewSymMatrix`, `StrictlyLowerTriangular` or `StrictlyUpperTriangular` is made
-dense once per call, on its own backend, before the product, and its gradient reaches the storage
-through `ProjectTo`. Element types are promoted as `*` promotes them.
+A `SymmetricMatrix`, `SkewSymMatrix`, `StrictlyLowerTriangular` or `StrictlyUpperTriangular` weight
+multiplies a vector or a matrix through its own `*`. Before a GEMM with a tensor, and as the right
+argument of a left product, it is made dense once per call, on its own backend, and its gradient
+reaches the storage through `ProjectTo`. Element types are promoted as `*` promotes them.
 
 # Examples
 
@@ -67,6 +68,8 @@ _mul(A, B)
  6  4  2
 ```
 """
+_mul(W::AbstractMatrix, x::AbstractVecOrMat) = W * _dense(x)
+
 function _mul(W::AbstractMatrix, x::AbstractArray)
     reshape(_dense(W) * _matrix(x), size(W, 1), Base.tail(size(x))...)
 end
@@ -85,14 +88,14 @@ function _dense(W::Union{
 end
 _dense(x::AbstractArray) = x
 
-# `x` with its trailing axes folded into the second. A matrix is not reshaped, which would hide an
-# `Adjoint` or a structured matrix from the methods of `*` behind a `ReshapedArray`.
+# `x` as a dense matrix: its trailing axes folded into the second, or, for a structured matrix,
+# `_dense(x)`. A matrix is not reshaped, which would hide an `Adjoint` behind a `ReshapedArray`.
 _matrix(x::AbstractMatrix) = _dense(x)
 _matrix(x::AbstractArray) = reshape(x, size(x, 1), :)
 
-# The cotangent of `W` in `_mul(W', x)` is the adjoint of a dense matrix, so that the `rrule` of
-# `adjoint` hands the parent a dense `Matrix`. The generic rule of `*` returns a dense cotangent
-# here, which that `rrule` wraps, and a `Matrix` parameter then gets an `Adjoint` gradient.
+# Without this rule a `Matrix` parameter `P` multiplied as `_mul(P', x)` gets an `Adjoint`
+# gradient: the generic rule of `*` gives `W` a dense cotangent `C`, and the rule of `adjoint` hands
+# `C'` to `P`. This rule gives `W` the cotangent `C'` instead, so that `P` receives `C`.
 function ChainRulesCore.rrule(::typeof(_mul), W::Adjoint{<:Number, <:AbstractMatrix}, x::AbstractArray)
     y = _mul(W, x)
     project_x = ProjectTo(x)

@@ -1,6 +1,5 @@
 using GeometricMachineLearning
 using GeometricMachineLearning: _mul
-using LinearAlgebra: Adjoint
 using Zygote: gradient
 using Test
 import Random
