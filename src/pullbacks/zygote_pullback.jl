@@ -5,86 +5,37 @@ The pullback based on the [`Zygote`](https://github.com/FluxML/Zygote.jl) backen
 
 # Examples
 
-For a network that is trained on inputs only:
+For a network that is trained on inputs only, `back(Δ)` is a `NetworkParameters` with the keys of
+the parameters the pullback was built from:
 ```jldoctest
 using GeometricMachineLearning
-using GeometricMachineLearning: _processing
 
-loss = AutoEncoderLoss()
-_pullback = ZygotePullback(loss)
+pb = ZygotePullback(AutoEncoderLoss())
 nn = NeuralNetwork(Chain(Dense(10, 2, tanh), Dense(2, 10, tanh)))
-input = rand(10)
-_pullback(nn.params, nn.model, input)[2](1) |> _processing |> typeof
+value, back = pb(nn.params, nn.model, rand(10))
+g = back(1)
+(g isa NetworkParameters, keys(g))
 
 # output
 
-@NamedTuple{L1::@NamedTuple{W::Matrix{Float64}, b::Vector{Float64}}, L2::@NamedTuple{W::Matrix{Float64}, b::Vector{Float64}}}
+(true, (:L1, :L2))
 ```
-
-In this example [`_processing`](@ref) is used to get around some `Zygote` quirks.
 """
 struct ZygotePullback{NNLT} <: AbstractPullback{NNLT}
     loss::NNLT
 end
 
-(_pullback::ZygotePullback)(ps, model, input_nt::QPTOAT)::Tuple = Zygote.pullback(
-    ps -> _pullback.loss(model, ps, input_nt), ps)
-(_pullback::ZygotePullback)(ps, model, input_nt_output_nt::Tuple{
-    <:QPTOAT, <:QPTOAT})::Tuple = Zygote.pullback(
-    ps -> _pullback.loss(model, ps, input_nt_output_nt...), ps)
-
-# Both shapes, because a pullback produces both. `NeuralNetworkParameters` rewraps the tangent of a
-# `NetworkParameters` into one, while a reverse pass seeded with a bare `NamedTuple` hands one back.
-# A method per shape here as everywhere else in this release, and in the wrapped forms too: a union
-# over `NamedTuple` reads as breadth for its own sake, where two methods say which shape arrived.
-#
-# The comment goes *above* the docstring and not between it and the first method: a docstring attaches
-# to whatever follows it immediately, so a comment in between orphans it -- `docs/check_references.jl`
-# reports that as "documented in nowhere".
-"""
-    _get_contents(returned_pullback)
-
-Unwrap the single element `Zygote` may wrap a pullback result in.
-
-Together with [`_get_params`](@ref) this makes up [`_processing`](@ref).
-"""
-_get_contents(nt::NetworkParameters) = nt
-_get_contents(nt::NamedTuple) = nt
-
-_get_contents(nt::Tuple{<:NetworkParameters}) = nt[1]
-_get_contents(nt::Tuple{<:NamedTuple}) = nt[1]
-
-_get_contents(nt::AbstractVector{<:NetworkParameters}) = _only_set(nt)
-_get_contents(nt::AbstractVector{<:NamedTuple}) = _only_set(nt)
-
-function _only_set(nt)
-    length(nt) == 1 || throw(ArgumentError(
-        "the pullback returned $(length(nt)) parameter sets, expected one."))
-    nt[1]
+# One method for a network that is trained on inputs only, and one for a network that is trained on
+# an `(input, output)` pair: the two shapes a `NetworkLoss` takes. A method per shape and not a
+# union over them, which says nothing about which one arrived.
+function (_pullback::ZygotePullback)(ps::NetworkParameters, model, input_nt::QPTOAT)
+    value, pb = Zygote.pullback(ps -> _pullback.loss(model, ps, input_nt), ps)
+    value, Δ -> only(pb(Δ))
 end
 
-"""
-    _get_params(returned_pullback)
-
-Get the parameters out of a pullback result, whether they come as a
-`NetworkParameters`, wrapped in a `NamedTuple` with a single `params` field, or bare.
-
-Together with [`_get_contents`](@ref) this makes up [`_processing`](@ref).
-"""
-_get_params(nt::NamedTuple) = nt
-_get_params(ps::NetworkParameters) = params(ps)
-function _get_params(nt::NamedTuple{(:params,), Tuple{AT}}) where {AT}
-    @warn "This function was most likely called because @adjoint for `NetworkParameters` hasn't been implemented."
-    nt.params
+function (_pullback::ZygotePullback)(
+        ps::NetworkParameters, model, input_nt_output_nt::Tuple{<:QPTOAT, <:QPTOAT})
+    value, pb = Zygote.pullback(
+        ps -> _pullback.loss(model, ps, input_nt_output_nt...), ps)
+    value, Δ -> only(pb(Δ))
 end
-
-"""
-    _processing(returned_pullback)
-
-Strip `returned_pullback` from unnecessary `Zygote`-induces garbage.
-
-Nothing about `_get_params` and `_get_contents` is symbolic: they clean up what `Zygote` returns.
-
-Also see the docs for [`ZygotePullback`](@ref).
-"""
-_processing = _get_params ∘ _get_contents

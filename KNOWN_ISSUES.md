@@ -4,47 +4,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
 ## B. Known defects
 
-### B5 · The symbolic pullback of `HNNLoss` is not the gradient of the batched loss.
-
-- **location:** —
-- **kind:** defect
-- **found:** 2026-08-16
-- **evidence:**
-  `SymbolicPullback` differentiates the loss of a *single* sample and sums the per-sample gradients
-  (`reduce = +`), which equals the gradient of the batched loss only when the loss is a sum over
-  samples. `HNNLoss` is not: it divides by `norm(output)` taken over the whole batch. Measured on a
-  `StandardHamiltonianArchitecture(2, 2)` against a `Zygote` gradient of the same loss:
-
-  ```
-  N=1  symbolic=-0.06324019893769198  zygote=-0.06324019893769196  agree=true
-  N=5  symbolic=-0.29982310048056143  zygote=-0.05705562794369161  agree=false
-  ```
-
-  `SymbolicPullback(arch)` is exported as a pullback to use in place of `ZygotePullback`, so this
-  is wrong training, silently, for every batch size above one.
-  It is not new — `reduce = +` is what SymbolicNeuralNetworks 0.3 did too — and it is the same
-  defect SymbolicNeuralNetworks records for `FeedForwardLoss` under *Open Issues → Semantics* in its
-  own changelog, where it is called out as unfixable within a design that differentiates one
-  symbolic sample.
-
-  Closing it means choosing: make `HNNLoss` additive over the batch (it would no longer be scale
-  invariant), or drop the symbolic pullback for architectures whose loss is not additive. Either is
-  a decision about the loss, not a repair, which is why this release only documents it.
-
-  (**B1**, **B2**, **B3**, **B4**, **B6** and **B8** are all closed and their entries are gone: B1 and B2 by
-  this release — the duplicated `AdamOptimizerWithDecay` and the split `Manifold`, both under
-  *Removed (breaking)* — B3 by SymbolicNeuralNetworks 0.5, B4 by `a427add1`, which repaired the
-  documentation build, and B6 and B8 by this release: B6 by the deletion of `src/training_method/`
-  (the three methods that called the non-existent `vectorfield` are gone, and `SymplecticEulerLoss`
-  carries their content on `hamiltonian_vector_field`, with tests that run), and B8 by the narrowing
-  of `PoissonTensor`'s `Base.:*` to `Strided…` right-hand sides and `Base.getindex` to
-  `Union{Int, Colon, AbstractVector{<:Integer}}` indices, reducing method ambiguities from 18 to 1.
-  The numbers are left vacant rather than reused.)
-
-  (**B9** is closed by this release and its entry is gone: the `iterate` method it named binds
-  every type parameter, and Aqua's `unbound_args` passes on Julia nightly. See *Fixed* above. The
-  number is left vacant rather than reused.)
-
 ### B10 · `DataLoader(::EnsembleSolution{T, T1, Vector{ST}})` at `src/data_loader/data_loader.jl:325` has no test and appears unreachable through this package's current dependencies.
 
 - **location:** `src/data_loader/data_loader.jl:325`
@@ -115,33 +74,22 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   pattern, so the working tree and the net diff are clean, but the blobs are still reachable.
   Rewriting the branch would remove them.
 
-### C7 · `SymbolicPullback(::HamiltonianArchitecture)` duplicates the upstream constructor.
+### C7 · `SymbolicPullback(::HamiltonianArchitecture)` reaches one private SymbolicNeuralNetworks name.
 
-- **location:** —
+- **location:** `src/pullbacks/symbolic_hnn_pullback.jl`
 - **kind:** upstream
 - **found:** 2026-08-16
 - **evidence:**
-  It has
-  to, because `SymbolicNeuralNetworks.SymbolicPullback(nn, loss)` derives the dimension of the
-  loss's target from `output_dimension(nn.model)`, and for an HNN that is the scalar Hamiltonian
-  rather than the vector field the loss compares against (see *Fixed*). Reproducing the constructor
-  means reaching into three names that SymbolicNeuralNetworks does not export —
-  `symbolic_parameter_gradient`, `ParameterGradient`, and the two-argument `SymbolicPullback` inner
-  constructor — so an upstream refactor breaks GML silently at the type level. A keyword on the
-  upstream constructor, or a `NetworkLoss` interface that states its own target dimension, would put
-  this method back to one line.
-
-  (**C9** is closed by this release and its entry is gone: `legacy/hnn/` and `legacy/mtk/` are
-  deleted, and with them all 28 of the `include` sites it counted. The `data.jl` decision it was
-  waiting on is moot — nothing needs that file any more. See *Removed (breaking)* above. The
-  number is left vacant rather than reused.)
-
-  (**C12** and **C13** are closed by this release and their entries are gone. C12 resolved to a
-  design answer rather than a repair — approximate end-to-end symplecticity is the intent, and the
-  verification script now states it. C13 resolved against the expectation its own entry recorded:
-  `DEFAULT_LNN_NRUNS` is removed, and `∇L`, `∇∇L` and `∇q̇∇q̇L` are kept as the `Zygote` reference
-  for what `LNNLoss` computes symbolically. Both are under *Changed*. The numbers are left vacant
-  rather than reused.)
+  `SymbolicNeuralNetworks.SymbolicPullback(nn, loss)` cannot be used, because it sizes the symbolic
+  target of the loss with `output_dimension(nn.model)`, which for a Hamiltonian network is `1` — the
+  scalar Hamiltonian — while `HNNLoss` compares against the Hamiltonian *vector field*, which has the
+  dimension of the network's input. GML's construction therefore reaches
+  `SymbolicNeuralNetworks.symbolic_parameter_gradient`, which no exported name replaces:
+  `flat_parameter_gradient` is flat, so it wants an `unflatten` per step, and `ParameterGradient` is
+  not used. The pullback is the upstream type `SymbolicPullback(loss, fun)`, with a call method of
+  this package for `SymbolicPullback{<:HNNLoss, <:_HNNParameterGradient}` that is more specific
+  than the upstream call in every argument. That private name is the one an upstream refactor
+  breaks.
 
 ### C14 · `evaluate_vf_and_compute_∇Ψ` evaluates the decoder twice.
 
@@ -189,7 +137,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   and naming them is a rewrite of the module header with a judgement per name.
   `all_explicit_imports_are_public` and `all_qualified_accesses_are_public` run with a list of the
   names this package reaches in other packages that those packages do not declare `public`: **10**
-  explicit imports and **10** qualified accesses, none of them in `GeometricOptimizers`.
+  explicit imports and **9** qualified accesses, none of them in `GeometricOptimizers`.
   `Architecture`, `AbstractExplicitLayer`, `_compute_loss`, `dim` and the rest are used
   deliberately, and the resolution is upstream declaring them `public`. Each check's reason is
   written beside it in the test file.
@@ -351,19 +299,26 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   10 nbatches 1 samples [(1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1), (7, 1), (8, 1), (9, 1)]
   ```
 
-### K13 · `SymbolicPullback(arch)` gives the gradient of the per-sample sum, not of `HNNLoss`.
+### K15 · `HNNLoss` and `SymbolicPullback(arch)` accept `(q, p)` data in their signatures and fail on it inside the generated vector field.
 
-- **location:** `src/pullbacks/symbolic_hnn_pullback.jl`
+- **location:** `src/loss/hnn_loss.jl:33`
 - **kind:** found late
-- **found:** 2026-10-12, while adding the `pullback` keyword of `train!` (#342); issue #343
+- **found:** #344, review round 2 (2026-10-14); the `HNNLoss` signatures are older than that pull request
 - **evidence:**
-  The value of the pullback is the batch loss `norm(F(X) - Y) / norm(Y)`, but the gradient is
-  built with `reduce = +`, so it is the gradient of the sum of the per-sample losses. On one
-  minibatch of 5 samples in `Float64`, `dL/dW1[1]` is `0.002695929479656911` by a central finite
-  difference, `0.0026959294110209093` by Zygote and `0.004388379726963325` by the symbolic
-  pullback; the symbolic gradient agrees with Zygote's gradient of the per-sample sum to `5.2e-17`.
-  `main` at cfe4aea3 gives the same numbers. `test/data_loader/train.jl` marks the comparison with
-  Zygote `@test_broken`.
+  `HNNLoss`'s two functors (`src/loss/hnn_loss.jl:31-41`) and the call method of
+  `SymbolicPullback(arch)` (`src/pullbacks/symbolic_hnn_pullback.jl:38`) type the data as
+  `QPTOAT`, which admits a `(q = …, p = …)` `NamedTuple`. The loss hands that data to the generated
+  `hvf`, which calls `ndims` on it. With `(q = randn(1, 5), p = randn(1, 5))` as input and output,
+  the symbolic pullback, `HNNLoss` and `ZygotePullback(HNNLoss(arch))` all raise:
+
+  ```
+  MethodError: no method matching ndims(::@NamedTuple{q::Matrix{Float64}, p::Matrix{Float64}})
+  ```
+
+  Narrowing the pullback's method alone changes nothing: the data then reaches the upstream
+  `SymbolicPullback` call, which also accepts a `NamedTuple` and fails in the same place. The fix
+  belongs with the data signatures of the losses as a whole: either each loss accepts only the data
+  its vector field can take, or `(q, p)` data is converted before it reaches the field.
 
 ## Upstream
 
@@ -402,28 +357,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   sandbox (`compiled/v1.13/Metal/` in the depot) matches the flags of `Pkg.test()`. The test file
   itself records a skip where `Metal.functional()` is false; only the precompile fails. Closing this
   is a Metal.jl change: a workload that does not run where no device exists.
-
-### K6 · The gradient of a `SymmetricMatrix` leaf with respect to a `NetworkParameters` differs from the one with respect to the bare `NamedTuple`.
-
-- **location:** `test/helpers/network_parameters_gradient_structure.jl`
-- **kind:** upstream
-- **found:** 2026-10-12, with the move to NeuralNetworkParameters 0.5; issue #319
-- **evidence:**
-  Under NeuralNetworkParameters 0.5, `Zygote.gradient` with respect to a `NetworkParameters` gives
-  a `SymmetricMatrix` leaf that holds the gradient with respect to the leaf's storage, at any number
-  of accesses; with respect to the bare `NamedTuple` it gives the projection of the dense gradient.
-  The off-diagonal entries of the first are twice those of the second; the diagonals are equal. A
-  test of `isapprox(Matrix(a_wrapped), Matrix(a_bare))` in
-  `layers/symplectic_attention_network_parameters_gradient.jl` evaluates:
-
-  ```
-  Expression: isapprox(Matrix(a_wrapped), Matrix(a_bare))
-   Evaluated: isapprox([0.6575109961994726 1.1214311018548968; 1.1214311018548968 0.46185556373061615],
-                       [0.6575109961994726 0.5607155509274484; 0.5607155509274484 0.46185556373061615])
-  ```
-
-  The helper asserts this relation. Which of the two a training step needs is the pullback shape of
-  issue #319.
 
 ## Documentation
 
@@ -470,3 +403,58 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   Neither function takes an element type, so neither runs over `REAL_ELTYPES`. The third testset
   of the file, `schedule_starts_at_one`, loops over `REAL_ELTYPES`. The fix builds `dl` per `T`
   and loops both functions over `REAL_ELTYPES`.
+
+### K14 · `train!` infers its history as an abstract `Vector`, although the run-time history is `Vector{T}`.
+
+- **location:** `NeuralNetworkParameters ext/ZygoteRulesExt.jl:25`
+- **kind:** upstream
+- **found:** 2026-10-14, part M1b; M1a verifier finding #3 (2026-10-13)
+- **evidence:**
+  In a cold process, at the first call, `@inferred train!(nn, opt, dl, Batch(8), 2; loss =
+  FeedForwardLoss(), show_progress = false)` on `Chain(Dense(2, 2, identity))` fails in both
+  precisions:
+
+  ```
+  PRECISION  = Float64
+  threw      = return type Vector{Float64} does not match inferred return type Vector
+  PRECISION  = Float32
+  threw      = return type Vector{Float32} does not match inferred return type Vector
+  ```
+
+  `DataLoader`'s minibatch is a pair of 3-tensors, `Tuple{Array{Float32,3}, Array{Float32,3}}`, and
+  `ZygotePullback`'s value infers on it as follows:
+
+  ```
+  Float32 minibatch data => Tuple{Array{Float32, 3}, Array{Float32, 3}}
+  Float32 Zygote.pullback value => Any
+  ```
+
+  The same call on a pair of matrices infers `Float32`, and the forward loss and `model(x, ps)`
+  infer concretely on the 3-tensors as well. The first `Any` in `@code_warntype` of
+  `Zygote.pullback(f, ::NetworkParameters)` on that minibatch is the one inside Zygote's own
+  pullback: the value first becomes `Any` at `Zygote._pullback(Context(), f, ps)`, which is `Any` on
+  the 3-tensors and `Float32` on the matrices, and NeuralNetworkParameters reaches it through
+  `invoke(ZygoteRules.pullback, Tuple{Any, Vararg{Any}}, f, ps)` at `ext/ZygoteRulesExt.jl:25`,
+  whose generic method is Zygote's own. Its 3-tensor rows, both precisions:
+
+  ```
+  Float32 3-tensor forward f(::NetworkParameters)                                    => Float32
+  Float32 3-tensor ZygotePullback value                                              => Any
+  Float32 3-tensor Zygote.pullback(f, ::NetworkParameters) value                     => Any
+  Float32 3-tensor Zygote._pullback(Context(), f, ::NetworkParameters) value         => Any
+  Float64 3-tensor forward f(::NetworkParameters)                                    => Float64
+  Float64 3-tensor ZygotePullback value                                              => Any
+  Float64 3-tensor Zygote.pullback(f, ::NetworkParameters) value                     => Any
+  Float64 3-tensor Zygote._pullback(Context(), f, ::NetworkParameters) value         => Any
+  ```
+
+  `Zygote.pullback(z -> sum(model(z, ps)), x)` on the 3-tensor alone is `Any` too, so the widening
+  sits in Zygote's adjoint of the layer rather than in the loss or the wrapper. `train!` accumulates
+  its history over those values, so its inferred return type is `Vector`.
+
+  The call's run-time result is `Vector{T}`, and every test asserts `eltype(history) === T`; what is
+  lost is the compile-time type, not the behaviour. `ZygotePullback`'s own call carries no return
+  annotation. A `Base.inferencebarrier` on the loss value hides the type instead of restoring it,
+  and the same widening reaches a caller that builds its own loop on `ZygotePullback` without
+  `train!`. The fix belongs to Zygote, whose adjoint of `AbstractNeuralNetworks`' `Dense` on a
+  3-tensor gives the `Any`.

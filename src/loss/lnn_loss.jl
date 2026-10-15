@@ -122,13 +122,13 @@ end
 AbstractNeuralNetworks.NetworkLoss(arch::LagrangianNeuralNetwork) = LNNLoss(arch)
 
 function (loss::LNNLoss)(::Union{Chain, AbstractExplicitLayer},
-        ps,
+        ps::NetworkParameters,
         input::AbstractArray,
         output::AbstractArray)
     loss(ps, input, output)
 end
 
-function (loss::LNNLoss)(ps::Union{NetworkParameters, NamedTuple},
+function (loss::LNNLoss)(ps::NetworkParameters,
         input::AbstractArray,
         output::AbstractArray)
     norm(loss.acceleration(input, ps) - output) / norm(output)

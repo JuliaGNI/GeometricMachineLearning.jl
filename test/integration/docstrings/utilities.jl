@@ -1,6 +1,6 @@
 using Test
 using GeometricMachineLearning
-using GeometricMachineLearning: QPT, _processing
+using GeometricMachineLearning: AutoEncoderLoss, QPT, ZygotePullback
 import Random
 
 Random.seed!(1234)
@@ -15,11 +15,10 @@ Random.seed!(1234)
     𝕁 = PoissonTensor(4)
     @test 𝕁 * (q = [1, 2], p = [3, 4]) == (q = [3, 4], p = [-1, -2])
 
-    loss = AutoEncoderLoss()
-    _pullback = ZygotePullback(loss)
+    # the `ZygotePullback` docstring: `back(Δ)` is a `NetworkParameters`, not a one-tuple of one
+    pb = ZygotePullback(AutoEncoderLoss())
     nn = NeuralNetwork(Chain(Dense(10, 2, tanh), Dense(2, 10, tanh)))
-    input = rand(10)
-    processed = _pullback(nn.params, nn.model, input)[2](1) |> _processing
-    @test processed isa NamedTuple
-    @test keys(processed) == (:L1, :L2)
+    _, back = pb(nn.params, nn.model, rand(10))
+    g = back(1)
+    @test (g isa NetworkParameters, keys(g)) == (true, (:L1, :L2))
 end
