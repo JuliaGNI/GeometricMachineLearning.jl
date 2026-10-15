@@ -313,6 +313,19 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   The rest of each file, from `function tensor_inverseN(` to the end, is byte for byte what the
   generator's `wrapper_source(n)` writes, and the script's header claims no more than that.
 
+### K17 · `assign_q_and_p` and `PoissonTensor * v` drop the rows from `2N + 1` on without an error.
+
+- **location:** `src/kernels/assign_q_and_p.jl`
+- **kind:** defect
+- **found:** #345, review of 2026-10-15; the behaviour is the same on `origin/main` at `2a63f26a`
+- **evidence:**
+  `assign_q_and_p(x, N)` takes `x[1:N, …]` for `q` and the next `N` rows for `p`, and checks nothing
+  about `size(x, 1)`. An input with `size(x, 1) > 2N` loses its trailing rows silently, and
+  `PoissonTensor * v` reaches the same method.
+
+  Closing it means an error for `size(x, 1) != 2N`. That changes the public behaviour of
+  `assign_q_and_p` and of `PoissonTensor * v`, so it is a change of its own and not a cleanup.
+
 ## Upstream
 
 ### K2 · Revise prints EMFILE errors in the test log
