@@ -1,6 +1,6 @@
 using GeometricMachineLearning
-using GeometricMachineLearning: mat_tensor_mul, tensor_mat_skew_sym_assign,
-                                tensor_transpose_tensor_mul, tensor_transpose
+using GeometricMachineLearning: _mul, tensor_mat_skew_sym_assign,
+                                tensor_transpose_tensor_mul
 using Test
 import Random
 
@@ -20,7 +20,7 @@ end
 function test_first_option(n::Int = 10, seq_length::Int = 10, batch_size::Int = 20)
     A = rand(SkewSymMatrix, n)
     x = rand(n, seq_length, batch_size)
-    xAx = tensor_transpose_tensor_mul(x, mat_tensor_mul(A, x))
+    xAx = tensor_transpose_tensor_mul(x, _mul(A, x))
     isskew(xAx)
 end
 
@@ -28,7 +28,7 @@ function test_second_option(n::Int = 10, seq_length::Int = 10, batch_size::Int =
     A = rand(n, n)
     x = rand(n, seq_length, batch_size)
     xAx = tensor_mat_skew_sym_assign(x, A) / √n
-    isskew(xAx - tensor_transpose(xAx))
+    isskew(xAx - permutedims(xAx, (2, 1, 3)))
 end
 
 test_first_option()

@@ -134,9 +134,9 @@ function compute_output_of_mha(
     # the result of a single head attention block, one per head
     head_outputs = map(1:(d.n_heads)) do i
         key = Symbol("head_", i)
-        Q_tensor = mat_tensor_mul(ps.PQ[key]', x)
-        K_tensor = mat_tensor_mul(ps.PK[key]', x)
-        V_tensor = mat_tensor_mul(ps.PV[key]', x)
+        Q_tensor = _mul(ps.PQ[key]', x)
+        K_tensor = _mul(ps.PK[key]', x)
+        V_tensor = _mul(ps.PV[key]', x)
         QK_tensor = tensor_transpose_tensor_mul(Q_tensor, K_tensor)
 
         tensor_tensor_mul(V_tensor, d.activation(QK_tensor/T(sqrt(dim))))
@@ -159,19 +159,6 @@ end
 function (d::MultiHeadAttention{M, M, Stiefel, false})(x::AbstractArray, ps::NamedTuple) where {
         M, Stiefel}
     compute_output_of_mha(d, x, ps)
-end
-
-function mat_tensor_mul(Y::AT,
-        x::AbstractArray{T, 3}) where {T <: Number,
-        BT <: AbstractArray{T},
-        ST <: StiefelManifold{T, BT},
-        AT <: Adjoint{T, ST}}
-    mat_tensor_mul(Y.parent.A', x)
-end
-
-# Multiply `Y` with every matrix stored in `x`, parallelised over the third axis.
-function mat_tensor_mul(Y::StiefelManifold, x::AbstractArray{<:Number, 3})
-    mat_tensor_mul(Y.A, x)
 end
 
 function (d::MultiHeadAttention)(z::QPT, ps::NamedTuple)

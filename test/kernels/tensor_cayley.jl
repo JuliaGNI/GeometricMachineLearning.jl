@@ -1,6 +1,5 @@
 using GeometricMachineLearning: tensor_cayley2, tensor_cayley3, tensor_cayley4,
                                 tensor_cayley5
-using GeometricMachineLearning: tensor_transpose
 using Test
 import Random
 
@@ -15,25 +14,25 @@ end
 
 function test_tensor_cayley2(T::Type = Float32, third_dim::Int = 10)
     A = rand(T, 2, 2, third_dim)
-    B = tensor_cayley2(A - tensor_transpose(A))
+    B = tensor_cayley2(A - permutedims(A, (2, 1, 3)))
     check_orthonormal_property(B)
 end
 
 function test_tensor_cayley3(T::Type = Float32, third_dim::Int = 10)
     A = rand(T, 3, 3, third_dim)
-    B = tensor_cayley3(A - tensor_transpose(A))
+    B = tensor_cayley3(A - permutedims(A, (2, 1, 3)))
     check_orthonormal_property(B)
 end
 
 function test_tensor_cayley4(T::Type = Float32, third_dim::Int = 10)
     A = rand(T, 4, 4, third_dim)
-    B = tensor_cayley4(A - tensor_transpose(A))
+    B = tensor_cayley4(A - permutedims(A, (2, 1, 3)))
     check_orthonormal_property(B)
 end
 
 function test_tensor_cayley5(T::Type = Float32, third_dim::Int = 10)
     A = rand(T, 5, 5, third_dim)
-    B = tensor_cayley5(A - tensor_transpose(A))
+    B = tensor_cayley5(A - permutedims(A, (2, 1, 3)))
     check_orthonormal_property(B)
 end
 

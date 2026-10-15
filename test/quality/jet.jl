@@ -40,43 +40,7 @@ const A3{T} = Array{T, 3}
 
 @testset "JET" begin
     if isdefined(JET, :JET_AVAILABLE) ? JET.JET_AVAILABLE : JET.JET_LOADABLE
-        # src/kernels/assign_q_and_p.jl: `test_rrule` in test/kernels/kernel_pullbacks.jl
-        @test isempty(JET.get_reports(JET.report_opt(GML.assign_q_and_p,
-            (Vector{Float64}, Int); target_modules = TARGET)))
-        @test isempty(JET.get_reports(JET.report_opt(GML.assign_q_and_p,
-            (Matrix{Float64}, Int); target_modules = TARGET)))
-        @test isempty(JET.get_reports(JET.report_opt(GML.assign_q_and_p,
-            (A3{Float64}, Int); target_modules = TARGET)))
-        @test isempty(kernel_body_reports(GML.assign_first_half!, 2, zeros(2), zeros(4)))
-        @test isempty(kernel_body_reports(
-            GML.assign_second_half!, 2, zeros(2), zeros(4), 2))
-        @test isempty(kernel_body_reports(GML.assign_first_half!, (2, 3), zeros(2, 3),
-            zeros(4, 3)))
-        @test isempty(kernel_body_reports(GML.assign_second_half!, (2, 3), zeros(2, 3),
-            zeros(4, 3), 2))
-        @test isempty(kernel_body_reports(
-            GML.assign_first_half!, (2, 3, 2), zeros(2, 3, 2),
-            zeros(4, 3, 2)))
-        @test isempty(kernel_body_reports(GML.assign_second_half!, (2, 3, 2),
-            zeros(2, 3, 2), zeros(4, 3, 2), 2))
-
-        # src/kernels/tensor_mat_mul.jl: `tensor_mat_mul!` in test/kernels/tensor_mat_mul.jl
-        @test isempty(JET.get_reports(JET.report_opt(GML.tensor_mat_mul!,
-            (A3{Float32}, A3{Float32}, Matrix{Float32}); target_modules = TARGET)))
-        @test isempty(kernel_body_reports(GML.tensor_mat_mul_kernel!, (3, 4, 2),
-            zeros(Float32, 3, 4, 2), zeros(Float32, 3, 5, 2), zeros(Float32, 5, 4)))
-        # `symmetric_mat_right_mul!` through `tensor_mat_mul!` with a `SymmetricMatrix`:
-        # `Float32` in test/architectures/linear_symplectic_transformer.jl, `Float64` in
-        # test/kernels/tensor_mat_mul.jl
-        for T in (Float32, Float64)
-            @test isempty(JET.get_reports(JET.report_opt(GML.symmetric_mat_right_mul!,
-                (A3{T}, A3{T}, Vector{T}, Int); target_modules = TARGET)))
-            @test isempty(kernel_body_reports(
-                GML.symmetric_mat_right_mul_kernel!, (2, 3, 2),
-                zeros(T, 2, 3, 2), zeros(T, 2, 3, 2), zeros(T, 6), 3))
-        end
-
-        # src/kernels/tensor_tensor_mul.jl and the three transposed products
+        # src/kernels/tensor_tensor_mul.jl and the two transposed products
         for T in (Float16, Float32, Float64)
             @test isempty(JET.get_reports(JET.report_opt(GML.tensor_tensor_mul!,
                 (A3{T}, A3{T}, A3{T}); target_modules = TARGET)))
@@ -93,83 +57,18 @@ const A3{T} = Array{T, 3}
             @test isempty(kernel_body_reports(GML.tensor_tensor_transpose_mul_kernel!,
                 (2, 3, 2), zeros(T, 2, 3, 2), zeros(T, 2, 4, 2), zeros(T, 3, 4, 2)))
         end
-        @test isempty(JET.get_reports(JET.report_opt(GML.tensor_transpose_mat_mul!,
-            (A3{Float64}, A3{Float64}, Matrix{Float64}); target_modules = TARGET)))
-        @test isempty(kernel_body_reports(GML.tensor_transpose_mat_mul_kernel!, (2, 3, 2),
-            zeros(2, 3, 2), zeros(4, 2, 2), zeros(4, 3)))
 
-        # src/kernels/tensor_transpose.jl and src/kernels/exponentials/tensor_exponential.jl
+        # src/kernels/exponentials/tensor_exponential.jl
         for T in (Float16, Float32, Float64)
-            @test isempty(JET.get_reports(JET.report_opt(GML.tensor_transpose!,
-                (A3{T}, A3{T}); target_modules = TARGET)))
-            @test isempty(kernel_body_reports(GML.tensor_transpose_kernel!, (3, 2, 2),
-                zeros(T, 3, 2, 2), zeros(T, 2, 3, 2)))
             @test isempty(JET.get_reports(JET.report_opt(GML.assign_ones!, (A3{T},);
                 target_modules = TARGET)))
             @test isempty(kernel_body_reports(GML.assign_ones_kernel!, (3, 2),
                 zeros(T, 3, 3, 2)))
         end
 
-        # src/kernels/vec_tensor_mul.jl: `test_rrule` in test/kernels/kernel_pullbacks.jl
-        @test isempty(JET.get_reports(JET.report_opt(GML.vec_tensor_mul,
-            (Vector{Float64}, A3{Float64}); target_modules = TARGET)))
-        @test isempty(kernel_body_reports(GML.vec_tensor_mul_kernel!, (2, 3, 2),
-            zeros(2, 3, 2), zeros(2), zeros(2, 3, 2)))
-
-        # src/kernels/mat_tensor_mul.jl
-        for T in (Float32, Float64)
-            @test isempty(JET.get_reports(JET.report_opt(GML.mat_tensor_mul!,
-                (A3{T}, Matrix{T}, A3{T}); target_modules = TARGET)))
-            @test isempty(kernel_body_reports(GML.mat_tensor_mul_kernel!, (2, 3, 2),
-                zeros(T, 2, 3, 2), zeros(T, 2, 4), zeros(T, 4, 3, 2)))
-            @test isempty(JET.get_reports(JET.report_opt(GML.symmetric_mat_mul!,
-                (A3{T}, Vector{T}, A3{T}, Int); target_modules = TARGET)))
-            @test isempty(kernel_body_reports(GML.symmetric_mat_mul_kernel!, (3, 2, 2),
-                zeros(T, 3, 2, 2), zeros(T, 6), zeros(T, 3, 2, 2), 3))
-        end
-        @test isempty(JET.get_reports(JET.report_opt(GML.lo_mat_mul!,
-            (A3{Float64}, Vector{Float64}, A3{Float64}, Int); target_modules = TARGET)))
-        @test isempty(kernel_body_reports(GML.lo_mul_kernel!, (3, 2, 2), zeros(3, 2, 2),
-            zeros(3), zeros(3, 2, 2), 3))
-        @test isempty(JET.get_reports(JET.report_opt(GML.up_mat_mul!,
-            (A3{Float64}, Vector{Float64}, A3{Float64}, Int); target_modules = TARGET)))
-        @test isempty(kernel_body_reports(GML.up_mul_kernel!, (3, 2, 2), zeros(3, 2, 2),
-            zeros(3), zeros(3, 2, 2), 3))
-        for T in (Float16, Float32, Float64)
-            @test isempty(JET.get_reports(JET.report_opt(GML.skew_mat_mul!,
-                (A3{T}, Vector{T}, A3{T}, Int); target_modules = TARGET)))
-            @test isempty(kernel_body_reports(GML.skew_mat_mul_kernel!, (3, 2, 2),
-                zeros(T, 3, 2, 2), zeros(T, 3), zeros(T, 3, 2, 2), 3))
-        end
-
-        # src/kernels/kernel_ad_routines/: the pullbacks that launch kernels, at the `Float64`
-        # types of `test_rrule` in test/kernels/kernel_pullbacks.jl and of
-        # test/optimizers/structured_array_parameters.jl
-        S, Ss, B, dC = zeros(3), zeros(6), zeros(3, 3, 2), zeros(3, 3, 2)
-        for f in (GML.lo_mat_mul, GML.up_mat_mul, GML.skew_mat_mul)
-            @test isempty(JET.get_reports(JET.report_opt(rrule(f, S, B, 3)[2],
-                (A3{Float64},); target_modules = TARGET)))
-        end
-        @test isempty(JET.get_reports(JET.report_opt(
-            rrule(GML.symmetric_mat_mul, Ss, B, 3)[2],
-            (A3{Float64},); target_modules = TARGET)))
-        @test isempty(JET.get_reports(JET.report_opt(
-            rrule(GML.symmetric_mat_right_mul, B, Ss, 3)[2], (A3{Float64},);
-            target_modules = TARGET)))
-        @test isempty(kernel_body_reports(GML.lower_da_kernel!, size(dC), zero(dC), S, dC))
-        @test isempty(kernel_body_reports(GML.lower_ds_kernel!, (3, 2), zeros(3, 2), B, dC))
-        @test isempty(kernel_body_reports(GML.upper_da_kernel!, size(dC), zero(dC), S, dC))
-        @test isempty(kernel_body_reports(GML.upper_ds_kernel!, (3, 2), zeros(3, 2), B, dC))
-        @test isempty(kernel_body_reports(GML.symmetric_da_kernel!, size(dC), zero(dC), Ss,
-            dC))
-        @test isempty(kernel_body_reports(GML.symmetric_ds_kernel!, (6, 2), zeros(6, 2), B,
-            dC))
-        @test isempty(kernel_body_reports(
-            GML.symmetric_right_da_kernel!, size(dC), zero(dC),
-            Ss, dC))
-        @test isempty(kernel_body_reports(
-            GML.symmetric_right_ds_kernel!, (6, 2), zeros(6, 2),
-            B, dC))
+        # src/kernels/kernel_ad_routines/: the pullback that launches kernels, at the `Float64`
+        # types of `test_rrule` in test/kernels/kernel_pullbacks.jl
+        B, dC = zeros(3, 3, 2), zeros(3, 3, 2)
         Z, M = zeros(3, 4, 2), zeros(3, 3)
         @test isempty(JET.get_reports(JET.report_opt(
             rrule(GML.tensor_mat_skew_sym_assign, Z, M)[2], (A3{Float64},);
@@ -178,12 +77,6 @@ const A3{T} = Array{T, 3}
             zeros(4, 4, 2), 3, 4))
         @test isempty(kernel_body_reports(GML.da_kernel!, (3, 3, 2), zeros(3, 3, 2), Z, M,
             zeros(4, 4, 2), 3, 4))
-        for T in (Float32, Float64)
-            @test isempty(JET.get_reports(JET.report_opt(GML.tensor_scalar_product,
-                (A3{T}, A3{T}); target_modules = TARGET)))
-            @test isempty(kernel_body_reports(GML.tensor_scalar_product_kernel!, 3,
-                zeros(T, 3), zeros(T, 3, 4, 2), zeros(T, 3, 4, 2), 4, 2))
-        end
 
         # src/kernels/inverses/: `cpu_inverse` and its pullback in test/kernels/tensor_inverse.jl
         @test isempty(JET.get_reports(JET.report_opt(GML.cpu_inverse, (A3{Float64},);

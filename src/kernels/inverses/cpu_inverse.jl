@@ -33,7 +33,8 @@ function ChainRulesCore.rrule(::typeof(cpu_inverse), A::AbstractArray)
     B = cpu_inverse(A)
 
     function cpu_inverse_pullback(dB)
-        dB = unthunk(dB)
+        dB = _seed(eltype(A), dB)
+        dB isa AbstractZero && return NoTangent(), ZeroTangent()
         dA = zero(dB)
         backend = networkbackend(dB)
 
@@ -44,10 +45,4 @@ function ChainRulesCore.rrule(::typeof(cpu_inverse), A::AbstractArray)
     end
 
     return B, cpu_inverse_pullback
-end
-
-function cpu_tensor_cayley(A::AbstractArray)
-    one_A = init_output(A)
-
-    tensor_tensor_mul(one_A - A, cpu_inverse(one_A + A))
 end

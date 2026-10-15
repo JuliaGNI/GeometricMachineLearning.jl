@@ -120,11 +120,11 @@ end
 
 function (d::SymplecticAttentionQ{M, M, :arbitrary})(
         z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {AT, M}
-    PAP = _custom_mul(_custom_mul(_custom_transpose(z.p), ps.A), z.p)
+    PAP = _mul(_mul(_custom_transpose(z.p), ps.A), z.p)
     σPAP = d.activation(PAP)
     (
-        q = z.q + (_custom_mul(_custom_mul(ps.A, z.p), _custom_transpose(σPAP)) +
-             _custom_mul(_custom_mul(ps.A', z.p), σPAP)),
+        q = z.q + (_mul(_mul(ps.A, z.p), _custom_transpose(σPAP)) +
+             _mul(_mul(ps.A', z.p), σPAP)),
         p = z.p)
 end
 
@@ -136,37 +136,32 @@ end
 function (d::SymplecticAttentionQ{M, M, :symmetric})(
         z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {AT, M}
     A = ps.A
-    PAP = _custom_mul(_custom_mul(_custom_transpose(z.p), A), z.p)
+    PAP = _mul(_mul(_custom_transpose(z.p), A), z.p)
     σPAP = d.activation(PAP)
-    (q = z.q + _custom_mul(_custom_mul(A, z.p), 2 * σPAP), p = z.p)
+    (q = z.q + _mul(_mul(A, z.p), 2 * σPAP), p = z.p)
 end
 
 function (d::SymplecticAttentionP{M, M, :arbitrary})(
         z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {AT, M}
-    QAQ = _custom_mul(_custom_mul(_custom_transpose(z.q), ps.A), z.q)
+    QAQ = _mul(_mul(_custom_transpose(z.q), ps.A), z.q)
     σQAQ = d.activation(QAQ)
     (q = z.q,
-        p = z.p + (_custom_mul(_custom_mul(ps.A, z.q), _custom_transpose(σQAQ)) +
-             _custom_mul(_custom_mul(ps.A', z.q), σQAQ)))
+        p = z.p + (_mul(_mul(ps.A, z.q), _custom_transpose(σQAQ)) +
+             _mul(_mul(ps.A', z.q), σQAQ)))
 end
 
 # One access to `ps.A`, for the reason given at the `SymplecticAttentionQ` method above.
 function (d::SymplecticAttentionP{M, M, :symmetric})(
         z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {AT, M}
     A = ps.A
-    QAQ = _custom_mul(_custom_mul(_custom_transpose(z.q), A), z.q)
+    QAQ = _mul(_mul(_custom_transpose(z.q), A), z.q)
     σQAQ = d.activation(QAQ)
-    (q = z.q, p = z.p + _custom_mul(_custom_mul(A, z.q), 2 * σQAQ))
+    (q = z.q, p = z.p + _mul(_mul(A, z.q), 2 * σQAQ))
 end
 
 function (d::SymplecticAttention)(z::AbstractArray, ps::NamedTuple)
     apply_layer_to_nt_and_return_array(z, d, ps)
 end
 
-_custom_mul(A::AbstractMatrix{T}, z::AbstractArray{T, 3}) where {T} = mat_tensor_mul(A, z)
-function _custom_mul(Z1::AbstractArray{T, 3}, Z2::AbstractArray{T, 3}) where {T}
-    tensor_tensor_mul(Z1, Z2)
-end
-
 _custom_transpose(Z::AbstractMatrix) = Z'
-_custom_transpose(z::AbstractArray{T, 3}) where {T} = tensor_transpose(z)
+_custom_transpose(z::AbstractArray{<:Number, 3}) = permutedims(z, (2, 1, 3))

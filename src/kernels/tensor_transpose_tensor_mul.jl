@@ -1,7 +1,3 @@
-"""
-This implements the operation (A,B) -> A'*B for two tensors
-"""
-
 # `C[:, :, k] = A[:, :, k]' * B[:, :, k]`: slice by slice, one thread per output entry.
 @kernel function tensor_transpose_tensor_mul_kernel!(C, A, B)
     i, j, k = @index(Global, NTuple)

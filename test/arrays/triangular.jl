@@ -1,5 +1,5 @@
 using GeometricMachineLearning
-using GeometricMachineLearning: mat_tensor_mul
+using GeometricMachineLearning: _mul
 using Zygote: pullback
 using Test
 import Random
@@ -9,15 +9,15 @@ Random.seed!(1234)
 # What the triangular types *are* — their storage layout, their arithmetic, their multiplication
 # against a dense matrix — is tested in GeometricOptimizers, which defines them
 # (`test/special_matrices/triangular.jl` there). What is left here is GML's: batching them over the
-# third axis of a tensor with `mat_tensor_mul`, and the pullback of that kernel.
+# third axis of a tensor with `_mul`, and the pullback of that product.
 
 function triangular_tensor_multiplication_test(T = Float64, n::Int = 5)
     Aₗ = rand(StrictlyLowerTriangular{T}, n)
     Aᵤ = rand(StrictlyUpperTriangular{T}, n)
 
     B = rand(T, n, n, n)
-    AₗB = mat_tensor_mul(Aₗ, B)
-    AᵤB = mat_tensor_mul(Aᵤ, B)
+    AₗB = _mul(Aₗ, B)
+    AᵤB = _mul(Aᵤ, B)
     for i in 1:n
         @test AₗB[:, :, i] ≈ Aₗ * B[:, :, i]
         @test AᵤB[:, :, i] ≈ Aᵤ * B[:, :, i]
@@ -31,8 +31,8 @@ function triangular_tensor_multiplication_pullback_test(T = Float64, n::Int = 5)
     B = rand(T, n, n, n)
     C_diff = rand(T, n, n, n)
 
-    total_pb_lower = pullback(mat_tensor_mul, Aₗ, B)[2](C_diff)
-    total_pb_upper = pullback(mat_tensor_mul, Aᵤ, B)[2](C_diff)
+    total_pb_lower = pullback(_mul, Aₗ, B)[2](C_diff)
+    total_pb_upper = pullback(_mul, Aᵤ, B)[2](C_diff)
 
     # The batched pullback has to agree slice by slice with the pullback of the single-slice
     # product. These were bare expressions and not `@test`s before, so the loop asserted nothing.

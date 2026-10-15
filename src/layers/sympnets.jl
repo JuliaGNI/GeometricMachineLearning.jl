@@ -215,54 +215,39 @@ function parameterlength(::LinearLayer{M, M}) where {M}
     (M ÷ 2) * (M ÷ 2 + 1) ÷ 2
 end
 
-# Multiplies a matrix with a vector, a matrix or a tensor.
-custom_mat_mul(weight::AbstractMatrix, x::AbstractVecOrMat) = weight*x
-function custom_mat_mul(weight::AbstractMatrix, x::AbstractArray{T, 3}) where {T}
-    mat_tensor_mul(weight, x)
-end
-
-function custom_vec_mul(scale::AbstractVector, x::AbstractVecOrMat)
-    scale .* x
-end
-function custom_vec_mul(scale::AbstractVector{T}, x::AbstractArray{T, 3}) where {T}
-    vec_tensor_mul(scale, x)
-end
-
 @inline function (d::ActivationLayerQ{M, M})(x::NamedTuple, ps) where {M}
     size(x.q, 1) == M÷2 || error("Dimension mismatch.")
-    return (q = x.q + custom_vec_mul(ps.scale, d.activation.(x.p)), p = x.p)
+    return (q = x.q + ps.scale .* d.activation.(x.p), p = x.p)
 end
 
 @inline function (d::ActivationLayerP{M, M})(x::NamedTuple, ps) where {M}
     size(x.q, 1) == M÷2 || error("Dimension mismatch.")
-    return (q = x.q, p = x.p + custom_vec_mul(ps.scale, d.activation.(x.q)))
+    return (q = x.q, p = x.p + ps.scale .* d.activation.(x.q))
 end
 
 @inline function (d::GradientLayerQ{M, M})(x::NamedTuple, ps) where {M}
     size(x.q, 1) == M÷2 || error("Dimension mismatch.")
     (
-        q = x.q + custom_mat_mul(ps.weight',
-            (custom_vec_mul(ps.scale, d.activation.(custom_mat_mul(ps.weight, x.p) .+
-                                                    ps.bias)))),
+        q = x.q + _mul(ps.weight',
+            ps.scale .* d.activation.(_mul(ps.weight, x.p) .+ ps.bias)),
         p = x.p)
 end
 
 @inline function (d::GradientLayerP{M, M})(x::NamedTuple, ps) where {M}
     size(x.q, 1) == M÷2 || error("Dimension mismatch.")
     (q = x.q,
-        p = x.p + custom_mat_mul(ps.weight',
-            (custom_vec_mul(ps.scale, d.activation.(custom_mat_mul(ps.weight, x.q) .+
-                                                    ps.bias)))))
+        p = x.p + _mul(ps.weight',
+            ps.scale .* d.activation.(_mul(ps.weight, x.q) .+ ps.bias)))
 end
 
 @inline function (d::LinearLayerQ{M, M})(x::NamedTuple, ps) where {M}
     size(x.q, 1) == M÷2 || error("Dimension mismatch.")
-    (q = x.q + custom_mat_mul(ps.weight, x.p), p = x.p)
+    (q = x.q + _mul(ps.weight, x.p), p = x.p)
 end
 
 @inline function (d::LinearLayerP{M, M})(x::NamedTuple, ps) where {M}
     size(x.q, 1) == M÷2 || error("Dimension mismatch.")
-    (q = x.q, p = x.p + custom_mat_mul(ps.weight, x.q))
+    (q = x.q, p = x.p + _mul(ps.weight, x.q))
 end
 
 # For the wrappers whose input to a SympNet layer is an `AbstractArray` rather than the `NamedTuple`

@@ -111,22 +111,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   deliberately: it is a restructuring with its own verification, not the comment repair that part
   was scoped to.
 
-### C15 · The `kernel_ad_routines` buffers are still zeroed where allocating would do.
-
-- **location:** `src/kernels/kernel_ad_routines/`
-- **kind:** defect
-- **found:** 2026-09-18
-- **evidence:**
-  `src/kernels/kernel_ad_routines/` allocates `dA = zero(A)`, `dS = KernelAbstractions.zeros(…)` and
-  the same shape in `tensor_mat_mul.jl`, `tensor_mat_skew_sym_assign.jl` and `vec_tensor_mul.jl`.
-  Their kernels sum into a local and assign the buffer element once, over an `ndrange` equal to the
-  buffer's size, so no element is read before it is written — the same argument that let the forward
-  wrappers move to `allocate` and `similar` under *Changed*.
-
-  This part was scoped to the forward path, so they were not changed with it. The backward pass is
-  where training spends its time, so the gain should be larger here than the forward figures, which
-  is also why it wants its own before-and-after measurement rather than being folded into that pass.
-
 ### C16 · One of `ExplicitImports`' seven checks is switched off in `test/quality/aqua.jl`, and two run with a list of names.
 
 - **location:** `test/quality/aqua.jl`
@@ -247,23 +231,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   `test/reduced_system/reduced_system.jl:44–45` name `CHANGELOG.md` rather than `KNOWN_ISSUES.md`.
   The fix is a follow-up change to those comments.
 
-### K7 · A network with a Stiefel leaf raises in `mat_tensor_mul` when the data has another element type.
-
-- **location:** `src/kernels/mat_tensor_mul.jl`
-- **kind:** found late
-- **found:** 2026-10-12, by the critics of part M1a; the kernel code is older than that part
-- **evidence:**
-  A `Float32` `Chain(StiefelLayer(6, 3), Dense(3, 2, tanh))` trained with `train!` on `Float64`
-  data, and a `Float64` one on `Float32` data, raise `AssertionError: eltype(A) == eltype(B)` in
-  `mat_tensor_mul`, reached through `src/layers/manifold_layer.jl` under Zygote. A network of
-  `Dense` layers alone trains on mixed precisions.
-
-  ```julia
-  x = rand(Float32, 6, 12)
-  nn = NeuralNetwork(Chain(StiefelLayer(6, 3), Dense(3, 2, tanh)), Float64)
-  train!(nn, TrainingOptimizer(nn.params), DataLoader(x, x[1:2, :]), Batch(4), 2; loss = FeedForwardLoss())
-  ```
-
 ### K8 · A `DataLoader` of one sample cannot be batched.
 
 - **location:** `src/data_loader/batch.jl`
@@ -319,6 +286,26 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   `SymbolicPullback` call, which also accepts a `NamedTuple` and fails in the same place. The fix
   belongs with the data signatures of the losses as a whole: either each loss accepts only the data
   its vector field can take, or `(q, p)` data is converted before it reaches the field.
+
+### K16 · `scripts/utilities/inverse_generator.jl` does not reproduce the committed kernels byte for byte, although its header says it does.
+
+- **location:** `scripts/utilities/inverse_generator.jl:1`
+- **kind:** found late
+- **found:** 2026-10-15, by the builder of part M3; the same output comes from the generator of `origin/main` at `2a63f26a`
+- **evidence:**
+  Run under Symbolics 7.39.2 (the version the script names) and 7.45.0, both with SymbolicUtils
+  4.51.0, and formatted with `style = "sciml"`, the generator writes the four
+  `inverse_NxN.jl` files with the factors of each product in another order, from line 6 or 7 on:
+
+  ```
+  <                 t2 = (*)((*)(t1, (getindex)(A, 2, 1, k)), (getindex)(A, 1, 2, k))
+  ---
+  >                 t2 = (*)((*)(t1, (getindex)(A, 1, 2, k)), (getindex)(A, 2, 1, k))
+  ```
+
+  The part of each file after the kernel, from `function tensor_inverseN` on, is byte for byte
+  what the generator writes. The header names no SymbolicUtils version, so the run that produced
+  the committed kernels cannot be repeated.
 
 ## Upstream
 

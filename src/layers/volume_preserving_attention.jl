@@ -95,7 +95,7 @@ function (d::VolumePreservingAttention{M, M, :skew_sym})(
             T, 3}, ps::NamedTuple) where {T, M}
     tensor_tensor_mul(x,
         orthonormal_activation_cayley(d,
-            tensor_transpose_tensor_mul(x, mat_tensor_mul(ps.A, x))
+            tensor_transpose_tensor_mul(x, _mul(ps.A, x))
         )
     )
 end
@@ -105,7 +105,7 @@ function (d::VolumePreservingAttention{M, M, :arbitrary})(
             T, 3}, ps::NamedTuple) where {T, M}
     x_interim = tensor_mat_skew_sym_assign(x, ps.A) / T(√M)
     tensor_tensor_mul(x,
-        orthonormal_activation_cayley(d, x_interim - tensor_transpose(x_interim))
+        orthonormal_activation_cayley(d, x_interim - permutedims(x_interim, (2, 1, 3)))
     )
 end
 
