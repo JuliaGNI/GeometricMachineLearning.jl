@@ -299,6 +299,27 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   10 nbatches 1 samples [(1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1), (7, 1), (8, 1), (9, 1)]
   ```
 
+### K15 · `HNNLoss` and `SymbolicPullback(arch)` accept `(q, p)` data in their signatures and fail on it inside the generated vector field.
+
+- **location:** `src/loss/hnn_loss.jl:33`
+- **kind:** found late
+- **found:** #344, review round 2 (2026-10-14); the `HNNLoss` signatures are older than that pull request
+- **evidence:**
+  `HNNLoss`'s two functors (`src/loss/hnn_loss.jl:31-41`) and the call method of
+  `SymbolicPullback(arch)` (`src/pullbacks/symbolic_hnn_pullback.jl:38`) type the data as
+  `QPTOAT`, which admits a `(q = …, p = …)` `NamedTuple`. The loss hands that data to the generated
+  `hvf`, which calls `ndims` on it. With `(q = randn(1, 5), p = randn(1, 5))` as input and output,
+  the symbolic pullback, `HNNLoss` and `ZygotePullback(HNNLoss(arch))` all raise:
+
+  ```
+  MethodError: no method matching ndims(::@NamedTuple{q::Matrix{Float64}, p::Matrix{Float64}})
+  ```
+
+  Narrowing the pullback's method alone changes nothing: the data then reaches the upstream
+  `SymbolicPullback` call, which also accepts a `NamedTuple` and fails in the same place. The fix
+  belongs with the data signatures of the losses as a whole: either each loss accepts only the data
+  its vector field can take, or `(q, p)` data is converted before it reaches the field.
+
 ## Upstream
 
 ### K2 · Revise prints EMFILE errors in the test log
