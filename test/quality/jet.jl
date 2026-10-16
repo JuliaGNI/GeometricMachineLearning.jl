@@ -58,7 +58,7 @@ const A3{T} = Array{T, 3}
                 (2, 3, 2), zeros(T, 2, 3, 2), zeros(T, 2, 4, 2), zeros(T, 3, 4, 2)))
         end
 
-        # src/kernels/exponentials/tensor_exponential.jl
+        # src/kernels/identity_tensor.jl
         for T in (Float16, Float32, Float64)
             @test isempty(JET.get_reports(JET.report_opt(GML.assign_ones!, (A3{T},);
                 target_modules = TARGET)))
@@ -91,16 +91,7 @@ const A3{T} = Array{T, 3}
         @test isempty(kernel_body_reports(GML.da_kernel!, (3, 3, 2), zeros(3, 3, 2), Z, M,
             zeros(4, 4, 2), 3, 4))
 
-        # src/kernels/inverses/: `cpu_inverse` and its pullback in test/kernels/tensor_inverse.jl
-        @test isempty(JET.get_reports(JET.report_opt(GML.cpu_inverse, (A3{Float64},);
-            target_modules = TARGET)))
-        @test isempty(kernel_body_reports(GML.cpu_inverse_kernel!, 2, zero(B), B))
-        Id = zeros(3, 3, 2)
-        foreach(i -> Id[i, i, :] .= 1, 1:3)
-        @test isempty(JET.get_reports(JET.report_opt(rrule(GML.cpu_inverse, Id)[2],
-            (A3{Float64},); target_modules = TARGET)))
-        @test isempty(kernel_body_reports(GML.cpu_inverse_pullback_kernel!, 2, zero(B), B,
-            dC))
+        # src/kernels/inverses/: the symbolic inverses in test/kernels/tensor_inverse.jl
         for T in (Float16, Float32, Float64)
             for (f, k, n) in ((GML.tensor_inverse2!, GML.inv22_kernel!, 2),
                 (GML.tensor_inverse3!, GML.inv33_kernel!, 3),

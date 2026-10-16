@@ -1,5 +1,5 @@
 using GeometricMachineLearning: tensor_tensor_mul, tensor_transpose_tensor_mul,
-                                tensor_mat_skew_sym_assign, cpu_inverse, tensor_inverse2,
+                                tensor_mat_skew_sym_assign, tensor_inverse2,
                                 tensor_inverse3, tensor_inverse4, tensor_inverse5,
                                 init_output, tensor_cayley,
                                 _mul
@@ -33,7 +33,6 @@ function main(first_dim, second_dim, third_dim, third_tensor_dim)
         rand(first_dim, first_dim))
     test_rrule(_mul, rand(first_dim, second_dim)', rand(first_dim, third_dim, third_tensor_dim))
     test_rrule(_mul, rand(first_dim, second_dim)', rand(first_dim, third_dim))
-    test_rrule(cpu_inverse, invertible(Float64, first_dim, third_tensor_dim))
     test_rrule(init_output, rand(first_dim, first_dim, third_tensor_dim))
     test_rrule(tensor_cayley, skew(Float64, first_dim, third_tensor_dim))
 end
@@ -62,7 +61,6 @@ function rules(T)
         (tensor_transpose_tensor_mul, (rand(T, 4, 3, 2), rand(T, 4, 5, 2))),
         (tensor_mat_skew_sym_assign, (rand(T, 3, 4, 2), rand(T, 3, 3))),
         (_mul, (rand(T, 4, 3)', rand(T, 4, 5, 2))),
-        (cpu_inverse, (invertible(T, 3, 2),)),
         (tensor_inverse2, (invertible(T, 2, 2),)),
         (tensor_inverse3, (invertible(T, 3, 2),)),
         (tensor_inverse4, (invertible(T, 4, 2),)),

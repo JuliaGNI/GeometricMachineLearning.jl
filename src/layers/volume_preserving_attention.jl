@@ -3,9 +3,9 @@
 
 Make an instance of `VolumePreservingAttention` for a specific dimension and sequence length.
 
-The sequence length is `0` by default. 
-
-Setting `seq_length` to `0` for all sequence lengths but does not apply the fast Cayley activation.
+The sequence length is `0` by default, and a layer built with `0` applies to data of any sequence
+length: the Cayley transform of the data is one kernel, [`tensor_cayley`](@ref), rather than a
+symbolic inverse, and every sequence length runs on the CPU and on a device.
 
 # Arguments 
 
@@ -20,10 +20,12 @@ Applying a layer of type `VolumePreservingAttention` does the following:
 
 # Implementation
 
-The fast activation is only implemented for sequence lengths of 2, 3, 4 and 5. 
-Other sequence lengths only work on CPU (for now).
+The activation is one kernel, [`tensor_cayley`](@ref), which solves ``(\mathbb{I} + C)\Lambda =
+\mathbb{I} - C`` by row-pivoted Gauss–Jordan elimination, one work item per slice: it runs at any
+sequence length, on the CPU and on a device, and in the element type of the data.
 
-The fast Cayley activation is using inverses that have been computed symbolically.
+The sequence lengths 2, 3, 4 and 5 use the closed forms `tensor_cayley2` to `tensor_cayley5`
+instead, whose inverses have been computed symbolically.
 """
 struct VolumePreservingAttention{M, N, ScalarProductType, SL} <: AbstractExplicitLayer{M, N}
     function VolumePreservingAttention(dim::Int, seq_length::Int = 0; skew_sym::Bool = false)

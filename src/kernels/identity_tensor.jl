@@ -1,5 +1,5 @@
-# The identity tensor and its `rrule`, used by `tensor_cayley.jl` and `cpu_inverse.jl`. The file
-# name is wider than what it holds; renaming it, and `exponentials/` with it, is issue C18.
+# The identity tensor and its `rrule`, which the closed forms of the Cayley transform of a batch of
+# small slices, `tensor_cayley2` to `tensor_cayley5`, use to form `I ± C`.
 
 function init_output(B::AbstractArray{T, 3}) where {T}
     output = zero(B)

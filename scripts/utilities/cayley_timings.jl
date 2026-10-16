@@ -1,28 +1,30 @@
 # The forward and the backward time of the Cayley transform of a batch of 1000 skew slices at scale
-# 1, `tensor_cayley`, against the closed forms it would replace: `tensor_cayleyN` for N = 2 to 5 and
-# `cpu_tensor_cayley` for N = 6 to 8, each where the tree still defines it. BLAS is pinned to one
-# thread, and every variant, every N and every element type runs in a fresh process; a process makes
-# one warm-up call it does not time, then takes the median of five timed calls. The parent prints the
-# ratio of the kernel to the closed form, forward and backward.
+# 1, `tensor_cayley`, against the closed form the tree defines for that slice size: `tensor_cayleyN`
+# for N = 2 to 5. A size whose closed form the tree does not define, N = 6 to 8, prints the kernel's
+# own time and no ratio. BLAS is pinned to one thread, and every variant, every N and every element
+# type runs in a fresh process; a process makes one warm-up call it does not time, then takes the
+# median of five timed calls. The parent prints the ratio of the kernel to the closed form, forward
+# and backward.
 #
-# The closed forms that the kernel replaces are deleted by the outcome this table decides, so the
-# figures come from a branch commit that holds both the kernel and every closed form, and the
-# `CHANGELOG.md` entry of that outcome cites the hash of that commit. After the deletions the script
-# times only the variants still defined (`isdefined`).
+# The table that decided which closed forms stay carried a column for N = 6 to 8 as well, against the
+# batch inverse of a long slice, which the tree no longer defines. That column came from a commit
+# that still held it, and the `CHANGELOG.md` entry of the change names the commit.
 #
-# Run from the repository root, with the scripts environment; one process of one variant is the
-# second form, which the first starts:
-#   julia --startup-file=no --project=scripts scripts/utilities/cayley_timings.jl
-#   julia --startup-file=no --project=scripts scripts/utilities/cayley_timings.jl tensor_cayley 4 Float32
+# Run from the repository root, with the package's own environment, which carries `Zygote` and the
+# standard libraries this script uses; `--project=scripts` resolves them as well, and CUDA with them:
+#   julia --startup-file=no --project=. scripts/utilities/cayley_timings.jl
+#   julia --startup-file=no --project=. scripts/utilities/cayley_timings.jl tensor_cayley 4 Float32
 #
-# Metal has no reference for N = 6 to 8, because `cpu_tensor_cayley` calls `inv` inside a kernel, and
-# Metal is not a dependency of `scripts/Project.toml`. The Metal column runs `measure` through
-# Kaimon, in a scratch environment that develops the worktree and adds Metal, as
+# Metal has no closed form to compare against, because the symbolic inverses cover 2 to 5 only, and
+# `Metal` is not a dependency of the package. Its column runs `measure` through Kaimon, in a scratch
+# environment that develops this worktree and adds Metal. This file runs its table only when it is
+# not included, so a session reaches `measure` by including it and calling it:
 #
+#   julia> include("scripts/utilities/cayley_timings.jl")
 #   julia> measure("tensor_cayley", 6, Float32, Metal.@sync)
 #
-# because a Metal launch returns before the kernel has run. That column prints the kernel's own time
-# and no ratio.
+# `Metal.@sync` is what makes the figure a time rather than a launch: without it the call returns
+# before the kernel has run.
 
 using GeometricMachineLearning
 using LinearAlgebra: BLAS
@@ -64,19 +66,15 @@ function measure(variant, n, ::Type{T}, sync = identity) where {T}
     forward, backward
 end
 
-# The closed form of the transform of an `n × n` slice, where the tree still defines it.
-function reference(n)
-    n <= 5 ? "tensor_cayley$n" : "cpu_tensor_cayley"
-end
+# The closed form of the transform of an `n × n` slice, where the tree defines one.
+reference(n) = n <= 5 ? "tensor_cayley$n" : nothing
 
 function one_process(variant, n, T)
     cmd = `$(Base.julia_cmd()) --startup-file=no --project=$(Base.active_project()) $(@__FILE__) $variant $n $T`
     parse.(Float64, split(readchomp(cmd)))
 end
 
-if length(ARGS) == 3
-    println(join(measure(ARGS[1], parse(Int, ARGS[2]), getfield(Base, Symbol(ARGS[3]))), " "))
-else
+function table()
     @printf("%-17s %-2s %-8s %11s %11s  %s\n",
         "variant", "N", "T", "forward µs", "backward µs",
         "ratio kernel/closed form")
@@ -84,7 +82,7 @@ else
 
         kernel = one_process(KERNEL, n, T)
         name = reference(n)
-        if isdefined(GeometricMachineLearning, Symbol(name))
+        if name !== nothing && isdefined(GeometricMachineLearning, Symbol(name))
             closed = one_process(name, n, T)
             @printf("%-17s %-2d %-8s %11.1f %11.1f  forward %.2f, backward %.2f\n",
                 KERNEL, n, T, kernel[1], kernel[2], kernel[1] / closed[1],
@@ -94,4 +92,10 @@ else
                 KERNEL, n, T, kernel[1], kernel[2])
         end
     end
+end
+
+if length(ARGS) == 3
+    println(join(measure(ARGS[1], parse(Int, ARGS[2]), getfield(Base, Symbol(ARGS[3]))), " "))
+elseif !isinteractive()
+    table()
 end

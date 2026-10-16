@@ -1,5 +1,5 @@
 using GeometricMachineLearning: tensor_inverse2, tensor_inverse3, tensor_inverse4,
-                                tensor_inverse5, cpu_inverse
+                                tensor_inverse5
 using Test
 import Zygote
 import Random
@@ -121,21 +121,3 @@ function test22_inverse_pullback(k::Int = 10)
 end
 
 test22_inverse_pullback()
-
-function test_cpu_inverse_pullback(k::Int = 10)
-    A = rand(3, 3, k)
-
-    pullback_total = Zygote.pullback(cpu_inverse, A)
-
-    out_diff = rand(3, 3, k)
-    in_diff = pullback_total[2](out_diff)[1]
-
-    for i in 1:k
-        pullback_i = Zygote.pullback(inv, A[:, :, i])
-
-        @test pullback_total[1][:, :, i] ≈ pullback_i[1]
-        @test in_diff[:, :, i] ≈ pullback_i[2](out_diff[:, :, i])[1]
-    end
-end
-
-test_cpu_inverse_pullback()

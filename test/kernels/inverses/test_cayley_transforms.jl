@@ -1,4 +1,4 @@
-using GeometricMachineLearning: tensor_cayley4, tensor_cayley3, cpu_tensor_cayley
+using GeometricMachineLearning: tensor_cayley4, tensor_cayley3
 using Test
 import Random
 
@@ -23,8 +23,6 @@ function test_cayley_transforms(third_dim::Int = 10)
     A₃ = A₃ - permutedims(A₃, (2, 1, 3))
     test_orthonormal(tensor_cayley4(A₄))
     test_orthonormal(tensor_cayley3(A₃))
-    test_orthonormal(cpu_tensor_cayley(A₄))
-    test_orthonormal(cpu_tensor_cayley(A₃))
 end
 
 test_cayley_transforms()

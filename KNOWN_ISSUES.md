@@ -89,16 +89,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   deliberately, and the resolution is upstream declaring them `public`. Each check's reason is
   written beside it in the test file.
 
-### C18 · `src/kernels/exponentials/tensor_exponential.jl` no longer defines `tensor_exponential`; it holds the identity tensor and its `rrule`, used by `tensor_cayley.jl` and `cpu_inverse.jl`.
-
-- **location:** `src/kernels/exponentials/tensor_exponential.jl`
-- **kind:** defect
-- **found:** 2026-09-19
-- **evidence:**
-  The file name, and the `exponentials/` directory around it, are wider than what they hold. A
-  comment in the file itself cites "issue C18" by number, so this entry exists to keep that reference
-  valid. Renaming both the file and the directory is the fix.
-
 ### C19 · `_make_block_for_initialization` has two methods
 
 - **location:** `src/architectures/symplectic_transformer.jl`

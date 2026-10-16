@@ -81,7 +81,7 @@ function wrapper_source(n)
 end
 
 # The four sizes the package ships. `VolumePreservingAttention` dispatches on the sequence length
-# and falls back to `cpu_tensor_cayley` for every other one.
+# and falls back to `tensor_cayley` for every other one.
 for n in 2:5
     println("$(n)x$(n)...")
     write("inverse_$(n)x$(n).jl", kernel_source(n) * "\n\n" * wrapper_source(n))
