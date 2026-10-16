@@ -71,13 +71,11 @@ end
         end
 
         if pivot != col
-            for j in 1:n
-                a = A[col, j, k]
-                A[col, j, k] = A[pivot, j, k]
-                A[pivot, j, k] = a
-                b = Λ[col, j, k]
-                Λ[col, j, k] = Λ[pivot, j, k]
-                Λ[pivot, j, k] = b
+            for X in (A, Λ), j in 1:n
+
+                a = X[col, j, k]
+                X[col, j, k] = X[pivot, j, k]
+                X[pivot, j, k] = a
             end
         end
 

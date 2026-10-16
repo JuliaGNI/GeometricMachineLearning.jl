@@ -237,6 +237,31 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   Closing it means an error for `size(x, 1) != 2N`. That changes the public behaviour of
   `assign_q_and_p` and of `PoissonTensor * v`, so it is a change of its own and not a cleanup.
 
+### K19 · In `Float32` the Cayley kernel returns non-finite slices for a skew `C` of norm 1e8, where no method is accurate.
+
+- **location:** `src/kernels/cayley.jl`
+- **kind:** found late
+- **found:** 2026-10-17, by the critics of part M4
+- **evidence:**
+  On 200 skew `Float32` slices of `N = 5` whose largest `‖Cₖ‖₂` is 6.55e8, `tensor_cayley` returns
+  non-finite values in 23 of them and raises no error. The scale is far outside check 3's `{1, 1e2}`,
+  and no method is accurate there: `tensor_cayley5`, the closed form that stays, is non-finite in 197
+  of the same 200 slices, and the dense solve `(I + Cₖ) \ (I − Cₖ)` is finite on all 200 but has an
+  orthogonality error `‖ΛₖᵀΛₖ − I‖∞` of 7.3e4 at worst, which is no answer at that scale. What leaves
+  the `Float32` range is the elimination's own intermediate values rather than a small pivot: on the
+  two of those slices checked, the same elimination in `Float64`, whose range holds them, reaches a
+  largest intermediate entry of 4.6e183 and 2.5e207, against a smallest pivot of 1.2e8 and 2.6e8, and
+  `Float32`'s largest finite value is 3.4e38. The kernel's error on its 177 finite slices is at most
+  284.
+
+  ```julia
+  R = 1.0f8 * randn(Float32, 5, 5, 200)
+  C = R - permutedims(R, (2, 1, 3))
+  nonfinite(L) = count(k -> !all(isfinite, L[:, :, k]), 1:200)
+  nonfinite(tensor_cayley(C))    # 23 of 200
+  nonfinite(tensor_cayley5(C))   # 197 of 200
+  ```
+
 ## Upstream
 
 ### K2 · Revise prints EMFILE errors in the test log

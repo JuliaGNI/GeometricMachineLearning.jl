@@ -24,8 +24,9 @@ The activation is one kernel, [`tensor_cayley`](@ref), which solves ``(\mathbb{I
 \mathbb{I} - C`` by row-pivoted Gauss–Jordan elimination, one work item per slice: it runs at any
 sequence length, on the CPU and on a device, and in the element type of the data.
 
-The sequence lengths 2, 3, 4 and 5 use the closed forms `tensor_cayley2` to `tensor_cayley5`
-instead, whose inverses have been computed symbolically.
+The layer's `seq_length` chooses the activation: a `seq_length` of 2, 3, 4 or 5 uses the closed form
+`tensor_cayley2` to `tensor_cayley5`, whose inverse has been computed symbolically, and every other
+`seq_length`, `0` included, uses the kernel, whatever the length of the data the layer is applied to.
 """
 struct VolumePreservingAttention{M, N, ScalarProductType, SL} <: AbstractExplicitLayer{M, N}
     function VolumePreservingAttention(dim::Int, seq_length::Int = 0; skew_sym::Bool = false)
@@ -105,12 +106,19 @@ end
 function (d::VolumePreservingAttention{M, M, :arbitrary})(
         x::AbstractArray{
             T, 3}, ps::NamedTuple) where {T, M}
-    x_interim = tensor_mat_skew_sym_assign(x, ps.A) / T(√M)
-    tensor_tensor_mul(x,
-        orthonormal_activation_cayley(d, x_interim - permutedims(x_interim, (2, 1, 3)))
-    )
+    tensor_tensor_mul(x, orthonormal_activation_cayley(d, arbitrary_operand(x, ps)))
 end
 
 function (d::VolumePreservingAttention)(x::AbstractMatrix, ps::NamedTuple)
     reshape(d(reshape(x, size(x)..., 1), ps), size(x)...)
+end
+
+# The operand `C` of the `:arbitrary` path, whose Cayley transform the layer takes: the scalar
+# products of the columns of `x` weighted by `A`, divided by `√M`, made skew by one subtraction of a
+# permutation of the same array. Both terms are the same array, so `C + Cᵀ` is exactly zero. The
+# `:skew_sym` path forms `xᵀAx` instead, which is skew only to rounding.
+function arbitrary_operand(x::AbstractArray{T, 3}, ps::NamedTuple) where {T}
+    M = size(x, 1)
+    x_interim = tensor_mat_skew_sym_assign(x, ps.A) / T(√M)
+    x_interim - permutedims(x_interim, (2, 1, 3))
 end

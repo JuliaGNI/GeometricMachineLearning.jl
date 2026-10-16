@@ -8,7 +8,7 @@
 # forms are what `tensor_cayley` replaces.
 
 using GeometricMachineLearning
-using GeometricMachineLearning: tensor_cayley, tensor_mat_skew_sym_assign,
+using GeometricMachineLearning: tensor_cayley, arbitrary_operand,
                                 tensor_transpose_tensor_mul, _mul
 using ChainRulesCore: AbstractZero, ZeroTangent, rrule
 using LinearAlgebra: BLAS, I, opnorm
@@ -17,24 +17,14 @@ import Random
 
 Random.seed!(1234)
 
-# The references below are solves of 8×8 systems, thousands of them, and threaded LAPACK spends more
-# time waking its threads than solving: with BLAS on this machine's twelve threads the orthogonality
-# rows over their 84 batches take about two minutes, and 2.6 s on one thread, where the value rows
-# take 10.9 s. The file pins one thread for its own work and restores the count it found at the end,
-# so no later testset inherits it.
+# The references below are solves of up to 8×8 systems, thousands of them, and threaded LAPACK spends
+# more time waking its threads than solving: the file pins one thread for its own work and restores
+# the count it found at the end, so no later testset inherits it.
 const BLAS_THREADS = BLAS.get_num_threads()
 BLAS.set_num_threads(1)
 
 const SLICES = 1000
 const SCALES = (1, 1e2)
-
-function identity_tensor(::Type{T}, n::Int, k::Int) where {T}
-    E = zeros(T, n, n, k)
-    for i in 1:n
-        E[i, i, :] .= one(T)
-    end
-    E
-end
 
 # The largest `‖Cₖ‖₂` over the slices of `C`, as a `Float64`.
 function largest_norm(C::AbstractArray)
@@ -50,18 +40,14 @@ function skew_tensor(::Type{T}, n::Int, s, k::Int = SLICES) where {T}
     R - permutedims(R, (2, 1, 3))
 end
 
-# (ii) The `:arbitrary` path of the layer: `tensor_mat_skew_sym_assign(x, A) / √M`, then
-# `x_interim - permutedims(x_interim, (2, 1, 3))`. That path is linear in `A`, so the whole tensor is
-# scaled by one factor on `A` to put its largest `‖Cₖ‖₂` at `s`.
+# (ii) The `:arbitrary` path of the layer, which is its own `arbitrary_operand`:
+# `tensor_mat_skew_sym_assign(x, A) / √M`, then `x_interim - permutedims(x_interim, (2, 1, 3))`. The
+# path is linear in `A`, so scaling the tensor it returns by one factor puts its largest `‖Cₖ‖₂` at
+# `s`, which is all `scale_to` needs.
 function arbitrary_tensor(::Type{T}, n::Int, s) where {T}
     x = randn(T, n, n, SLICES)
     A = randn(T, n, n)
-    scale_to(arbitrary_path(x, A), s)
-end
-
-function arbitrary_path(x::AbstractArray{T, 3}, A::AbstractMatrix) where {T}
-    x_interim = tensor_mat_skew_sym_assign(x, A) / T(√size(x, 1))
-    x_interim - permutedims(x_interim, (2, 1, 3))
+    scale_to(arbitrary_operand(x, (A = A,)), s)
 end
 
 # (iii) The `:skew_sym` path of the layer: `Zᵀ A Z` for a `SkewSymMatrix` `A`. That is quadratic in
@@ -92,14 +78,21 @@ function big_reference_solve(::Type{T}, Ck::AbstractMatrix) where {T}
     T.((Id + C) \ (Id - C))
 end
 
-# The same maximum over the pivoted references, which is what the ratio clause compares against.
+# The orthogonality error of one slice, `‖ΛᵀΛ − I‖∞`: the matrix infinity norm, which is the norm the
+# kernel's bound and the ratio clause are written in.
+function orthogonality_error(Λ::AbstractMatrix{T}) where {T}
+    Id = Matrix{T}(I, size(Λ))
+    Float64(opnorm(Λ' * Λ - Id, Inf))
+end
+
+# The batch maximum of that error over the pivoted references, which is what the ratio clause
+# compares against.
 function reference_orthogonality_error(C::AbstractArray{T, 3}) where {T}
-    n = size(C, 1)
-    E = Matrix{T}(I, n, n)
+    # Every slice is measured with `opnorm(ΛᵀΛ − I, Inf)`, the metric the kernel's own error is
+    # measured in, so the ratio is a ratio of like quantities.
     worst = 0.0
     for k in axes(C, 3)
-        X = reference_solve(T, @view(C[:, :, k]))
-        worst = max(worst, Float64(maximum(abs, X' * X - E)))
+        worst = max(worst, orthogonality_error(reference_solve(T, @view(C[:, :, k]))))
     end
     worst
 end
@@ -113,57 +106,58 @@ end
 # Every row of the orthogonality check: the ratio against the pivoted reference on all three input
 # sets, and the absolute bound on the two exactly skew ones.
 function orthogonality_rows(::Type{T}, n::Int, s) where {T}
-    kernel_error = Ref(0.0)
-    reference_error = Ref(0.0)
-    worst_absolute = Ref(0.0)
     for (set, C) in (("hand-built", skew_tensor(T, n, s)),
         ("arbitrary", arbitrary_tensor(T, n, s)),
         ("skew_sym", skew_sym_tensor(T, n, s)))
         Λ = tensor_cayley(C)
-        E = identity_tensor(T, n, size(C, 3))
-        ΛᵀΛ = tensor_transpose_tensor_mul(Λ, Λ)
-        kernel_error[] = Float64(maximum(abs, ΛᵀΛ - E))
-        reference_error[] = reference_orthogonality_error(C)
+        kernel_error = maximum(orthogonality_error(@view Λ[:, :, k]) for k in axes(C, 3))
+        reference_error = reference_orthogonality_error(C)
 
         # The ratio clause holds on every input set; the reference's own error is not zero, so the
         # factor is a real bound rather than an equality.
-        @test kernel_error[] <= 4 * reference_error[]
+        @test kernel_error <= 4 * reference_error
 
+        # The absolute clause is per slice; `:skew_sym` carries the ratio clause alone, because its
+        # own reference breaks the absolute bound there.
         if set != "skew_sym"
+            worst = 0.0
             for k in axes(C, 3)
-                bound = bound_per_slice(T, @view(C[:, :, k]), n)
-                error_k = Float64(maximum(abs, (@view ΛᵀΛ[:, :, k]) .- (@view E[:, :, k])))
-                worst_absolute[] = max(worst_absolute[], error_k / bound)
+                error_k = orthogonality_error(@view Λ[:, :, k])
+                worst = max(worst, error_k / bound_per_slice(T, @view(C[:, :, k]), n))
             end
-            @test worst_absolute[] <= 1
+            @test worst <= 1
         end
     end
 end
 
 # The value row: per slice, the distance from the `BigFloat` solve, rounded to `T`, under the same
-# bound. `Λᵀ` is orthogonal wherever `Λ` is, so the orthogonality rows alone do not pin the value.
+# bound, on every input set. `Λᵀ` is orthogonal wherever `Λ` is, so the orthogonality rows alone do
+# not pin the value.
 function value_rows(::Type{T}, n::Int, s) where {T}
-    for (set, C) in (("hand-built", skew_tensor(T, n, s)),
-        ("arbitrary", arbitrary_tensor(T, n, s)))
+    for (_, C) in (("hand-built", skew_tensor(T, n, s)),
+        ("arbitrary", arbitrary_tensor(T, n, s)),
+        ("skew_sym", skew_sym_tensor(T, n, s)))
         Λ = tensor_cayley(C)
-        worst = Ref(0.0)
+        worst = 0.0
         for k in axes(C, 3)
             bound = bound_per_slice(T, @view(C[:, :, k]), n)
             error_k = Float64(maximum(abs, (@view Λ[:, :, k]) .-
                                            big_reference_solve(T, @view(C[:, :, k]))))
-            worst[] = max(worst[], error_k / bound)
+            worst = max(worst, error_k / bound)
         end
-        @test worst[] <= 1
+        @test worst <= 1
     end
 end
 
 @testset "tensor_cayley: the input of the layer is always skew" begin
-    for T in (Float32, Float64), n in 2:4
+    for T in (Float32, Float64), n in (2, 3, 5)
 
         x = randn(T, n, n, 7)
         A = randn(T, n, n)
-        # The `:arbitrary` path is exactly skew: one subtraction of a permutation of the same array.
-        C = arbitrary_path(x, A)
+        # The layer's own `:arbitrary` operand is exactly skew: one subtraction of a permutation of
+        # the same array. `M = 4` is the one size here whose `√M` is exact, so the sizes that run
+        # exercise the rounding of the divisor as well.
+        C = arbitrary_operand(x, (A = A,))
         @test iszero(C + permutedims(C, (2, 1, 3)))
         # The `:skew_sym` path is skew only to rounding, so nothing is asserted exactly on it. Its
         # deviation is far below the orthogonality rows' bound, which is what those rows measure.
@@ -180,8 +174,7 @@ end
     value_rows(T, n, s)
 end
 
-@testset "tensor_cayley: the pullback, N = $n" for T in (Float32, Float64),
-    n in (2, 3, 5, 8)
+@testset "tensor_cayley: the pullback, N = $n" for T in (Float32, Float64), n in 2:8
 
     C = skew_tensor(T, n, 1, 7)
     Λ̄ = randn(T, n, n, 7)

@@ -62,15 +62,18 @@ end
 end
 
 # The Cayley kernel's own device rows: it launches where scalar indexing is off, its result stays on
-# the device, and it matches the per-slice solve on the host at the bound of its orthogonality rows.
+# the device and matches the per-slice solve on the host at the bound of its orthogonality rows, and
+# its pullback is the derivative of that value.
 @testset "tensor_cayley and its pullback on a JLArray" begin
-    for T in (Float32, Float64), n in (2, 3, 8)
+    for T in (Float32, Float64), n in 2:8
 
         R = rand(T, n, n, 4)
         C = R - permutedims(R, (2, 1, 3))
+        seed = rand(T, n, n, 4)
+        D = rand(T, n, n, 4)
+
         Λ, pullback = rrule(tensor_cayley, JLArray(C))
-        Λ̄ = rand(T, n, n, 4)
-        _, C̄ = pullback(JLArray(Λ̄))
+        _, C̄ = pullback(JLArray(seed))
         @test ondevice(Λ) && ondevice(C̄)
 
         Id = Matrix{T}(I, n, n)
@@ -78,7 +81,20 @@ end
         bound = 10 * n * eps(T) * (1 + maximum(opnorm(C[:, :, k], 2)^2 for k in axes(C, 3)))
         @test maximum(abs, Array(Λ) - reference) <= bound
 
-        _, C̄_host = rrule(tensor_cayley, C)[2](Λ̄)
+        # The strict rows of check 4, on the device: the `Float64` central difference of the device
+        # pullback with `h = cbrt(eps)`, and the `Float32` pullback against the `Float64` one, which
+        # is compared relatively because its scale is the data's.
+        if T === Float64
+            h = cbrt(eps(T))
+            loss(X) = sum(seed .* Array(tensor_cayley(JLArray(X))))
+            fd = (loss(C + h * D) - loss(C - h * D)) / (2h)
+            @test abs(sum(Array(C̄) .* D) - fd) / abs(fd) <= 1e-6
+        else
+            C̄64 = Array(rrule(tensor_cayley, JLArray(Float64.(C)))[2](JLArray(Float64.(seed)))[2])
+            @test maximum(abs, Array(C̄) - Float32.(C̄64)) <= bound * maximum(abs, C̄64)
+        end
+
+        _, C̄_host = rrule(tensor_cayley, C)[2](seed)
         @test maximum(abs, Array(C̄) - C̄_host) <= bound * maximum(abs, C̄_host)
     end
 end

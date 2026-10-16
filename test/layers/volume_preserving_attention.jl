@@ -80,22 +80,23 @@ function tolerance(d, x, ps)
     10 * size(x, 2) * eps(T) * (1 + worst) * Float64(maximum(abs, Array(x)))
 end
 
-# The layer, its parameters, and the data of one case, all on the host; the device case converts
-# them, as `test/devices/jlarray.jl` does, rather than initialising them on the device.
-function case(N, T; skew_sym)
-    d = VolumePreservingAttention(N, N; skew_sym)
+# A layer of dimension 4 and sequence length `SL` (`0` for the default, which takes data of any
+# length), its parameters and its data, all on the host; a device case converts them, as
+# `test/devices/jlarray.jl` does, rather than initialising them on the device.
+function case(SL, seq_length, T; skew_sym)
+    d = VolumePreservingAttention(4, SL; skew_sym)
     model = Chain(d)
     ps = NeuralNetwork(model, CPU(), T).params.L1
-    x = randn(T, N, N, 3)
+    x = randn(T, 4, seq_length, 3)
     d, ps, x
 end
 
 @testset "VolumePreservingAttention runs at every sequence length, T = $T" for T in (Float32, Float64)
     for N in 2:8, skew_sym in (false, true)
 
-        d, ps, x = case(N, T; skew_sym)
-        device = VolumePreservingAttention(N, N; skew_sym)
-        ps_device = (A = skew_sym ? SkewSymMatrix(JLArray(ps.A.S), N) : JLArray(ps.A),)
+        d, ps, x = case(N, N, T; skew_sym)
+        device = VolumePreservingAttention(4, N; skew_sym)
+        ps_device = (A = skew_sym ? SkewSymMatrix(JLArray(ps.A.S), 4) : JLArray(ps.A),)
 
         y_device = device(JLArray(x), ps_device)
         @test ondevice(y_device)
@@ -108,18 +109,17 @@ end
         gx_device = gradient(z -> sum(device(z, ps_device)), JLArray(x))[1]
         gx_host = gradient(z -> sum(d(z, ps)), x)[1]
         @test ondevice(gx_device)
-        @test maximum(abs, Array(gx_device) - gx_host) <=
-              tolerance(d, x, ps) * 10
+        @test maximum(abs, Array(gx_device) - gx_host) <= tolerance(d, x, ps)
 
         # The gradient with respect to the weight, on the device against the host.
         gA_device = gradient(A -> sum(device(JLArray(x), (A = A,))), ps_device.A)[1]
         gA_host = gradient(A -> sum(d(x, (A = A,))), ps.A)[1]
         if skew_sym
             @test ondevice(gA_device.S)
-            @test maximum(abs, Array(gA_device.S) - gA_host.S) <= tolerance(d, x, ps) * 10
+            @test maximum(abs, Array(gA_device.S) - gA_host.S) <= tolerance(d, x, ps)
         else
             @test ondevice(gA_device)
-            @test maximum(abs, Array(gA_device) - gA_host) <= tolerance(d, x, ps) * 10
+            @test maximum(abs, Array(gA_device) - gA_host) <= tolerance(d, x, ps)
         end
     end
 end
@@ -128,10 +128,7 @@ end
     Float64)
     for seq_length in (3, 7), skew_sym in (false, true)
 
-        d = VolumePreservingAttention(4; skew_sym)
-        model = Chain(d)
-        ps = NeuralNetwork(model, CPU(), T).params.L1
-        x = randn(T, 4, seq_length, 3)
+        d, ps, x = case(0, seq_length, T; skew_sym)
 
         y = d(x, ps)
         @test size(y) == size(x)
@@ -142,12 +139,29 @@ end
         @test ondevice(y_device)
         @test maximum(abs, Array(y_device) - reference_forward(d, x, ps)) <=
               tolerance(d, x, ps)
+
+        # The default layer has no symbolic inverse, so its pullback runs the kernel's; both
+        # gradients are compared with the host's, as at a fixed sequence length.
+        gx_device = gradient(z -> sum(d(z, ps_device)), JLArray(x))[1]
+        gx_host = gradient(z -> sum(d(z, ps)), x)[1]
+        @test ondevice(gx_device)
+        @test maximum(abs, Array(gx_device) - gx_host) <= tolerance(d, x, ps)
+
+        gA_device = gradient(A -> sum(d(JLArray(x), (A = A,))), ps_device.A)[1]
+        gA_host = gradient(A -> sum(d(x, (A = A,))), ps.A)[1]
+        if skew_sym
+            @test ondevice(gA_device.S)
+            @test maximum(abs, Array(gA_device.S) - gA_host.S) <= tolerance(d, x, ps)
+        else
+            @test ondevice(gA_device)
+            @test maximum(abs, Array(gA_device) - gA_host) <= tolerance(d, x, ps)
+        end
     end
 end
 
 @testset "the gradient of VolumePreservingAttention at N = 6 against finite differences" begin
     T = Float64
-    d, ps, x = case(6, T; skew_sym = false)
+    d, ps, x = case(6, 6, T; skew_sym = false)
     Λ̄ = randn(T, size(x))
     fd = j′vp(central_fdm(5, 1), z -> d(z, ps), Λ̄, x)[1]
     analytic = gradient(z -> sum(Λ̄ .* d(z, ps)), x)[1]
