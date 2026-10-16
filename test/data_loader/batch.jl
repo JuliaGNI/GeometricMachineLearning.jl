@@ -162,7 +162,9 @@ end
     @test batch == Batch(2, 4, 1)
     minibatches = batch(dl)
     @test length(minibatches) == 5
-    @test length(Batch(2)(dl)) == 5
+    # `Batch(2)` would pair the first patch with the one output column, so it raises
+    @test_throws ArgumentError Batch(2)(dl)
+    @test_throws "Batch(batch_size, dl)" number_of_batches(dl, Batch(2))
     for indices in minibatches
         input_batch, output_batch = convert_input_and_batch_indices_to_array(dl, batch, indices)
         @test size(input_batch) == (9, 4, 2)

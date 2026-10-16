@@ -153,11 +153,19 @@ number_of_batches(dl::DataLoader, batch::Batch) = cld(
 # The start positions of one parameter index: the input window must fit the input's time axis, and
 # the target must fit its own. The target is the output at offset `0` where the loader holds one,
 # the input at offset `seq_length` where it is a time series without an output, and there is none
-# where the loader is a set of samples without an output.
+# where the loader is a set of samples without an output. A `Batch(batch_size)` pairs the input and
+# the output step by step, so it needs one length on the two time axes.
 function number_of_start_positions(dl::DataLoader{T, AT, OT, K},
         batch::Batch) where {T, AT, OT, K}
     input_window = dl.input_time_steps - batch.seq_length + 1
     target_window = if OT <: AbstractArray
+        if batch isa Batch{:FeedForward} && dl.input_time_steps != dl.output_time_steps
+            throw(ArgumentError(
+                "`Batch(batch_size)` pairs the input and the output time step by time step, " *
+                "and the `DataLoader` has $(dl.input_time_steps) time steps and " *
+                "$(dl.output_time_steps) in its output; `Batch(batch_size, dl)` draws the " *
+                "whole sequence of each sample."))
+        end
         dl.output_time_steps - batch.prediction_window + 1
     elseif K === :TimeSeries
         input_window - batch.prediction_window
