@@ -104,6 +104,8 @@ breaking release).
 
   `cpu_inverse`, its `rrule` and `cpu_tensor_cayley` are deleted, because nothing calls them after this change. The identity tensor that the closed forms use moved from `src/kernels/exponentials/tensor_exponential.jl` to `src/kernels/identity_tensor.jl`, which holds `init_output`, `assign_ones!` and the `rrule` of `init_output`, so the file name matches what it holds, and known issue C18 leaves `KNOWN_ISSUES.md`.
 
+  `test/kernels/cayley.jl` is new: the exact skewness of the layer's `:arbitrary` path, the kernel's orthogonality error against the pivoted reference and against the bound `10·n·eps(T)·(1 + ‖Cₖ‖₂²)`, its value against a `BigFloat` solve, and its pullback against a central difference. `test/layers/volume_preserving_attention.jl` is new: the forward pass against an independent host computation and the gradient, on the host and on a `JLArray`, at N = 2 to 8 and with `SL = 0` at sequence lengths 3 and 7. `test/devices/jlarray.jl` and `test/devices/metal.jl` gain the kernel's device rows, the Metal one a `Float32` testset that also runs the layer's forward pass at N = 2 to 8, and `test/quality/jet.jl` reaches the kernel, its kernel body and its pullback in `Float16`, `Float32` and `Float64`.
+
   `scripts/utilities/cayley_timings.jl` is new. It times `tensor_cayley` on a batch of 1000 skew slices at scale 1 against the closed form `tensor_cayleyN` of the same `N`, for `N` = 2 to 8 and both element types. Each variant, `N` and element type runs in its own fresh process, with BLAS pinned to one thread and one untimed warm-up call; a time is the median of five calls, forward and backward. The script prints the kernel's two times and the ratio of the kernel to the closed form. For `N` = 6 to 8 there is no closed form in the tree, so it prints the kernel's times alone.
 
   Check 1, the medians the decision rests on, was run at commit `76cee621`, the commit of this branch that still held every closed form, including the batch inverse of `cpu_tensor_cayley`, which the N = 6 to 8 ratios are against. The shipped script cannot reproduce that column, because `cpu_tensor_cayley` is deleted. Machine: Apple M-series, Julia 1.13.2, shared with other work, at a load average between 49 and 88 at the start and the end of the run; BLAS on one thread; batch of 1000 skew slices at scale 1. The two µs columns are the kernel's own forward and backward times, and each ratio is the kernel over the closed form.
@@ -133,7 +135,15 @@ breaking release).
   forward 0.47 then 1.51 and Float64 forward 1.46 then 1.33; N = 3, Float32 forward 1.71 then 1.79
   and Float64 forward 1.23 then 1.68; N = 4, Float32 forward 0.59 then 1.70 and Float64 forward 1.13
   in both; N = 5, Float32 forward 1.43 then 1.42 and Float64 forward 1.27 then 1.23. Every backward
-  ratio is below 1 in both runs.
+  ratio on the CPU is below 1 in both runs.
+
+  The Metal column, `Float32`, with every timed call wrapped in `Metal.@sync` and the same `measure`,
+  on an Apple M4 Max (`AGXG16CDevice`), through the test environment, which carries Metal where
+  `scripts/Project.toml` does not: the ratio of the kernel to the closed form is 0.61 forward and
+  5.56 backward at N = 2, 0.41 and 0.71 at N = 3, 1.33 and 1.53 at N = 4, and 1.78 and 0.95 at
+  N = 5; the kernel's own forward time at N = 6, 7 and 8 is 2544.8, 1771.5 and 2297.3 µs, against
+  292.3 at N = 2. The N = 2 backward ratio of 5.56 is the row check 1's rule names for the GPU: the
+  closed form for N = 2 stays on the CPU columns alone, and on this column too.
 
   The orthogonality check in `test/kernels/cayley.jl` compares the kernel's `ΛᵀΛ − I` with the pivoted reference `(I + Cₖ) \ (I − Cₖ)` over `N` = 2 to 8, both element types and two scales, on three input sets. The worst ratio of the kernel's error to the reference's, against a limit of 4, is 1.54 for a hand-built skew tensor `R − Rᵀ`, 2.45 for the layer's `:arbitrary` path and 1.30 for its `:skew_sym` path. On the two exactly skew sets the kernel's own error is within the bound `10·n·eps(T)·(1 + ‖Cₖ‖₂²)`, its worst at 0.100 of the bound; on `:skew_sym`, where `C` is skew only to rounding, the pivoted reference itself exceeds that bound by a factor of 3.2, so that set carries the ratio clause alone.
 
