@@ -81,7 +81,6 @@ const A3{T} = Array{T, 3}
 
         # src/kernels/kernel_ad_routines/: the pullback that launches kernels, at the `Float64`
         # types of `test_rrule` in test/kernels/kernel_pullbacks.jl
-        B, dC = zeros(3, 3, 2), zeros(3, 3, 2)
         Z, M = zeros(3, 4, 2), zeros(3, 3)
         @test isempty(JET.get_reports(JET.report_opt(
             rrule(GML.tensor_mat_skew_sym_assign, Z, M)[2], (A3{Float64},);
