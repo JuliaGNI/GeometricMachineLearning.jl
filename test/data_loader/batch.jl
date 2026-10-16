@@ -34,6 +34,7 @@ end
         # every sample is drawn, once, the tenth included
         @test sort(vcat(minibatches...)) == [(t, 1) for t in 1:10]
         @test length(minibatches) == 4
+        @test number_of_batches(dl, batch) == 4
 
         data = gathered(dl, batch)
         inputs = first.(data)

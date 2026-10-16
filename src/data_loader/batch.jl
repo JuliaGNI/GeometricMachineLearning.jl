@@ -184,36 +184,24 @@ end
 function batch_over_two_axes(batch::Batch, number_columns::Int, third_dim::Int)
     complete_indices = vec(
         collect(Iterators.product(shuffle(1:number_columns), shuffle(1:third_dim))))
-    batches = Vector{Vector{Tuple{Int, Int}}}()
-    for i in 1:cld(length(complete_indices), batch.batch_size)
-        push!(batches,
-            complete_indices[((i - 1) * batch.batch_size + 1):min(i * batch.batch_size, end)])
-    end
-    batches
+    map(collect, Iterators.partition(complete_indices, batch.batch_size))
 end
 
 function (batch::Batch)(dl::DataLoader)
     batch_over_two_axes(batch, number_of_start_positions(dl, batch), dl.n_params)
 end
 
-@kernel function assign_from_vector_of_tuples_kernel!(
-        input::AT, data::BT, indices::AbstractArray{Int, 2},
-        offset) where {
-        T, AT <: AbstractArray{T, 3}, BT <: AbstractArray{T, 3}}
+@kernel function assign_from_vector_of_tuples_kernel!(gathered, data, indices, offset)
     i, j, k = @index(Global, NTuple)
 
-    input[i, j, k] = data[i, indices[1, k] + offset + j - 1, indices[2, k]]
+    gathered[i, j, k] = data[i, indices[1, k] + offset + j - 1, indices[2, k]]
 end
 
 # A kernel cannot index a `Vector{Tuple{Int, Int}}`, so the batch indices go in as a `2 × n` matrix:
 # the host builds it and the backend takes it in one copy.
 function convert_vector_of_tuples_to_matrix(backend::Backend,
         batch_indices_tuple::Vector{Tuple{Int, Int}})
-    batch_indices = zeros(Int, 2, length(batch_indices_tuple))
-    for t in axes(batch_indices_tuple, 1)
-        batch_indices[1, t], batch_indices[2, t] = batch_indices_tuple[t]
-    end
-    map_to_new_backend(batch_indices, backend)
+    map_to_new_backend([index[i] for i in 1:2, index in batch_indices_tuple], backend)
 end
 
 # The gather kernel, applied to a tensor or to the `q` and `p` of a `(q, p)` pair. The gathered
@@ -271,15 +259,16 @@ function convert_input_and_batch_indices_to_array(
     batch_size = length(batch_indices_tuple)
     indices = convert_vector_of_tuples_to_matrix(networkbackend(dl), batch_indices_tuple)
     input = gather(dl.input, dl.input_dim, indices, 0, batch.seq_length, batch_size)
-    # a loader that holds an output is a set of samples whatever its kind: the target is its output
-    if dl.output !== nothing
-        return input,
-        gather(dl.output, dl.output_dim, indices, 0, batch.prediction_window,
-            batch_size)
-    end
+    # a loader that holds an output is a set of samples whatever its kind: the target is its output;
     # without one, a time series predicts its own continuation and a set of samples has no target
-    K === :TimeSeries || return input
-    input,
-    gather(dl.input, dl.input_dim, indices, batch.seq_length, batch.prediction_window,
-        batch_size)
+    if dl.output !== nothing
+        input,
+        gather(dl.output, dl.output_dim, indices, 0, batch.prediction_window, batch_size)
+    elseif K === :TimeSeries
+        input,
+        gather(dl.input, dl.input_dim, indices, batch.seq_length, batch.prediction_window,
+            batch_size)
+    else
+        input
+    end
 end

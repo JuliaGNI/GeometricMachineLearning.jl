@@ -94,7 +94,7 @@ breaking release).
 
 - **`Pkg.test` gains a `JLArray` device test in the `core` group.** `test/devices/jlarray.jl` runs `tensor_tensor_mul` and its pullback, `_mul` with each structured weight in the forward pass and in the storage gradient, and `assign_q_and_p` on a `JLArray` under `allowscalar(false)`. `JLArrays`, `GPUArraysCore` and `ChainRulesCore` join `test/Project.toml`, with `JLArrays = "0.3"`. `NNlib.batched_mul` is not used for `tensor_tensor_mul`, because on a backend with no NNlib extension, JLArray and Metal among them, it falls back to scalar indexing.
 
-- **`DataLoader(input, output)` accepts two element types, one of them an integer.** `DataLoader(input::AbstractArray{T, 3}, output::AbstractArray{<:Integer, 3})` sits beside the method whose two arguments share one element type, so a classifier's data — a real input, an integer one-hot target — are one call and `accuracy` is reachable without naming the parametric type (known issue C17, which leaves `KNOWN_ISSUES.md`). The two element types are independent, and two of which neither is an integer stay a `MethodError`.
+- **`DataLoader(input, output)` accepts two element types, one of them an integer.** It is one method, `DataLoader(input::AbstractArray{T, 3}, output::AbstractArray{T1, 3}) where {T, T1 <: Union{T, Integer}}`, so the output's element type is the input's or an integer: a classifier's data — a real input, an integer one-hot target — are one call and `accuracy` is reachable without naming the parametric type (known issue C17, which leaves `KNOWN_ISSUES.md`). Any other pair of element types is a `MethodError`.
 
 ### Changed
 
