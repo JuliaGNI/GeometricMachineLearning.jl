@@ -68,7 +68,7 @@ catch
     cpu_backend()
 end
 
-dl = DataLoader(data)
+dl = DataLoader(data; autoencoder = true)
 n_time_steps = size(data, 2) / n_params
 N = size(data, 1)÷2
 

@@ -7,7 +7,7 @@ Random.seed!(123)
 const data_set_raw = 1:10
 const data_set = reshape(data_set_raw, 1, 10)
 
-const dl = DataLoader(data_set)
+const dl = DataLoader(data_set; autoencoder = true)
 
 function test_batching_over_one_axis(batch_size::Int = 3)
     batch = Batch(batch_size)

@@ -1,18 +1,16 @@
-using GeometricMachineLearning
-using Random
-using Test
-
 # `accuracy` is documented API -- `docs/src/data_loader/data_loader.md` renders both its methods --
 # and nothing in the package, the tests or the scripts called it. A documented function with no
 # caller and no test is a function nobody notices breaking, so this file exercises it rather than
 # the docs entry being dropped.
 #
-# It also records what the audit found on the way: **no two-argument `DataLoader` constructor
-# produces the type this function dispatches on.** The signature is
-# `DataLoader{T, AT <: AbstractArray{T}, BT <: AbstractArray{T1}}` with `T1 <: Integer`, and every
-# `DataLoader(input, output)` method requires both arrays to share one element type. A classifier's
-# data are exactly the case where they differ: real inputs, integer one-hot targets. So the parametric
-# constructor below is not a shortcut past a public one -- it is the only way in.
+# The loader comes from `DataLoader(input, output)`, which is C17's constructor: its two element
+# types are free, so a real input and an integer one-hot target are one call. Until M2 the only way
+# to build this argument was to name the parametric type, and the file said so.
+
+using GeometricMachineLearning
+using Random
+using Test
+using Zygote
 
 Random.seed!(1234)
 
@@ -29,9 +27,7 @@ function classification_loader(classes::AbstractVector{<:Integer})
     for (k, c) in pairs(classes)
         output[c, 1, k] = 1
     end
-    GeometricMachineLearning.DataLoader{
-        Float32, Array{Float32, 3}, Array{Int64, 3}, :TimeSeries}(
-        input, output, input_dim, seq_length, n_params, n_classes, 1)
+    DataLoader(input, output; suppress_info = true)
 end
 
 model = Chain(Dense(input_dim, n_classes, tanh))
@@ -57,4 +53,24 @@ end
         @test GeometricMachineLearning.accuracy(nn, dl) ==
               GeometricMachineLearning.accuracy(model, ps, dl)
     end
+end
+
+# Edge 10: the crop of `assign_output_estimate` is the last `prediction_window` columns, and its
+# gradient is Zygote's `getindex` adjoint — zero on the cropped columns, and a cotangent of the
+# primal's element type whatever the seed's.
+@testset "assign_output_estimate crops the last columns ($T)" for T in (Float32, Float64)
+    x = T.(reshape(1:(3 * 5 * 4), 3, 5, 4))
+    @test GeometricMachineLearning.assign_output_estimate(x, 2) == x[:, 4:5, :]
+    @test GeometricMachineLearning.assign_output_estimate(x, 5) == x
+    @test eltype(GeometricMachineLearning.assign_output_estimate(x, 2)) === T
+end
+
+@testset "the gradient of assign_output_estimate is Zygote's ($T)" for T in (Float32, Float64)
+    x = T.(reshape(1:(3 * 5 * 4), 3, 5, 4))
+    crop(z) = GeometricMachineLearning.assign_output_estimate(z, 2)
+    gradient = only(Zygote.gradient(z -> sum(abs2, crop(z)), x))
+    @test all(iszero, gradient[:, 1:3, :])
+    @test gradient[:, 4:5, :] == 2 .* x[:, 4:5, :]
+    _, back = Zygote.pullback(crop, x)
+    @test eltype(only(back(ones(Float64, 3, 2, 4)))) === T
 end

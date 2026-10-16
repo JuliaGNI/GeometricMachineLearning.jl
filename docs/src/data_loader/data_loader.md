@@ -8,7 +8,7 @@ The data loader can be called with various types of arrays as input, for example
 using GeometricMachineLearning # hide
 SnapshotMatrix = [ 1; 2;; 3; 4;; 5; 6;; 7; 8;; 9; 10 ]
 
-dl = DataLoader(SnapshotMatrix; suppress_info = true)
+dl = DataLoader(SnapshotMatrix; autoencoder = true, suppress_info = true)
 ```
 
 or a snapshot tensor: 
@@ -20,13 +20,13 @@ SnapshotTensor = [ 1;  2;; 3; 4;; 5; 6;; 7; 8;; 9; 10 ;;;]
 dl = DataLoader(SnapshotTensor; suppress_info = true)
 ```
 
-Here the `DataLoader` has different properties `:RegularData` and `:TimeSeries`. This indicates that in the first case we treat all columns in the input tensor independently; this is mostly used for [autoencoder problems](@ref "Autoencoders"). In the second case we have *time series-like data*, which are mostly used for [integration problems](@ref "Neural Network Integrators"). As shown above the default when using a matrix is `:RegularData` and the default when using a tensor is `:TimeSeries`.
+Here the `DataLoader` has different properties `:RegularData` and `:TimeSeries`. This indicates that in the first case we treat all columns in the input tensor independently; this is mostly used for [autoencoder problems](@ref "Autoencoders"). In the second case we have *time series-like data*, which are mostly used for [integration problems](@ref "Neural Network Integrators"). The default is `:TimeSeries` for a matrix and for a tensor alike, and `autoencoder = true` is what makes a matrix a set of samples; a loader that is given an *output* as well, `DataLoader(input, output)`, always holds a set of samples, whatever its kind.
 
-We can also treat a problem with a matrix as input as a time series-like problem by providing an additional keyword argument: `autoencoder=false`:
+`autoencoder = false`, the default, leaves a matrix as a time series:
 
 ```@example snapshot_matrix
 dl = DataLoader(SnapshotMatrix; autoencoder=false, suppress_info = true)
-@assert typeof(dl) == DataLoader{Int64, Array{Int64, 3}, Nothing, :TimeSeries} # hide
+@assert typeof(dl) == DataLoader{Int64, Array{Int64, 3}, Nothing, :TimeSeries, Nothing} # hide
 dl |> typeof
 ```
 
@@ -36,7 +36,7 @@ If we deal with hamiltonian systems we typically split the coordinates into a ``
 using GeometricMachineLearning # hide
 SymplecticSnapshotTensor = (q = SnapshotTensor, p = SnapshotTensor)
 dl = DataLoader(SymplecticSnapshotTensor)
-@assert typeof(dl) == DataLoader{Int64, @NamedTuple{q::Array{Int64, 3}, p::Array{Int64, 3}}, Nothing, :TimeSeries} # hide
+@assert typeof(dl) == DataLoader{Int64, @NamedTuple{q::Array{Int64, 3}, p::Array{Int64, 3}}, Nothing, :TimeSeries, Nothing} # hide
 dl |> typeof
 ```
 
@@ -106,7 +106,7 @@ batch = Batch(3)
 batch(dl)
 ```
 
-In those two examples the `autoencoder` keyword was set to `true` (the default). This is why the first index was always `1`. This changes if we set `autoencoder = false`: 
+In the first of those two examples the `autoencoder` keyword was set to `true`, which is why the first index was always `1`. The second sets it to `false`, the default: 
 
 ```@example
 using GeometricMachineLearning # hide

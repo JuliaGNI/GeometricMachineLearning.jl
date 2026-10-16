@@ -21,9 +21,8 @@ function test_data_loader(dim = 2, number_of_time_steps = 100,
     dl2 = DataLoader(dummy_qp_data_tensor(dim, number_of_time_steps, number_of_parameters, T))
 
     # A `(q, p)` pair is symplectic data, so the second axis is time and a pair of matrices is one
-    # trajectory. A bare matrix reads its second axis as the parameter index instead, which is what
-    # makes this path worth asserting: the same array shape means different things under the two
-    # constructors.
+    # trajectory. With `autoencoder = true` the same shape reads that axis as the parameter index
+    # instead, which is what makes this path worth asserting.
     @test size(dl1.input.q) == (dim ÷ 2, number_of_time_steps, 1)
     @test (dl1.input_dim, dl1.input_time_steps, dl1.n_params) ==
           (dim, number_of_time_steps, 1)

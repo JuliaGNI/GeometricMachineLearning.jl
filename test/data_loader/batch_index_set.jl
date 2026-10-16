@@ -12,7 +12,7 @@ import Random
 Random.seed!(123)
 
 @test isconcretetype(Base.infer_return_type(
-    batch_over_two_axes, Tuple{Batch, Int, Int, DataLoader}))
+    batch_over_two_axes, Tuple{Batch, Int, Int}))
 
 function index_set_allocations(n_columns::Int, batch_size::Int = 8)
     dl = DataLoader(rand(Float32, 4, n_columns); autoencoder = false, suppress_info = true)

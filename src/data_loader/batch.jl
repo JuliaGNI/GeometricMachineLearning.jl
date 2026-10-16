@@ -22,7 +22,7 @@ import Random
 rng = Random.TaskLocalRNG()
 Random.seed!(rng, 123)
 
-dl = DataLoader(rand(rng, 5))
+dl = DataLoader(rand(rng, 5); autoencoder = true)
 batch = Batch(2)
 
 batches = batch(dl)
@@ -98,14 +98,11 @@ function Batch(batch_size::Int, seq_length::Int, prediction_window::Int = seq_le
     Batch{:Transformer}(batch_size, seq_length, prediction_window)
 end
 
-function Batch(::Int, ::Nothing, ::Int)
-    error("Cannot provide prediction window alone. Need sequence length!")
-end
-
+# The classifier's batch: one draw per sample, with the whole input sequence and the whole output.
+# Both lengths are the loader's. Its old prediction window of `0` would gather an output of width 0.
 function Batch(batch_size::Int,
-        dl::DataLoader{T, AT, OT, :TimeSeries}) where {
-        T, T1, AT <: AbstractArray{T, 3}, OT <: AbstractArray{T1, 3}}
-    Batch(batch_size, dl.input_time_steps, 0)
+        dl::DataLoader{T, AT, OT, K, Int}) where {T, AT, OT <: AbstractArray, K}
+    Batch(batch_size, dl.input_time_steps, dl.output_time_steps)
 end
 
 @doc raw"""
@@ -113,7 +110,10 @@ end
 
 Compute the number of batches.
 
-Here the distinction is between data that are *time-series like* and data that are *autoencoder like*.
+One epoch draws every start position of every parameter index once, in minibatches of the batch
+size, so the count is `cld(n · n_params, batch_size)` with `n` the number of those positions and
+`samples without replacement`: two indices are never drawn twice. The last minibatch holds what is
+left.
 
 # Examples
 
@@ -148,99 +148,91 @@ true
 
 Here we see that in the *autoencoder case* that last minibatch has an additional element.
 """
-function number_of_batches(dl::DataLoader{T, AT, OT, :TimeSeries},
-        batch::Batch) where {T, BT <: AbstractArray{T, 3},
-        AT <: Union{BT, NamedTuple{(:q, :p), Tuple{BT, BT}}}, OT}
-    @assert dl.input_time_steps ≥ (batch.seq_length + batch.prediction_window) "The number of time steps has to be greater than sequence length + prediction window."
-    Int(ceil((dl.input_time_steps - (batch.seq_length - 1) - batch.prediction_window) *
-             dl.n_params / batch.batch_size))
-end
+number_of_batches(dl::DataLoader, batch::Batch) = cld(
+    number_of_start_positions(dl, batch) * dl.n_params, batch.batch_size)
 
-function number_of_batches(dl::DataLoader{T, AT, OT, :RegularData},
-        batch::Batch) where {T, BT <: AbstractArray{T, 3},
-        AT <: Union{BT, NamedTuple{(:q, :p), Tuple{BT, BT}}}, OT}
-    Int(ceil(dl.input_time_steps * dl.n_params / batch.batch_size))
-end
-
-function batch_over_two_axes(batch::Batch, number_columns::Int, third_dim::Int, dl::DataLoader)
-    time_indices = shuffle(1:number_columns)
-    parameter_indices = shuffle(1:third_dim)
-    complete_indices = Iterators.product(time_indices, parameter_indices) |> collect |> vec
-    n_batches = number_of_batches(dl, batch)
-    batches = Vector{Vector{Tuple{Int, Int}}}(undef, n_batches)
-    for batch_number in 1:(n_batches - 1)
-        batches[batch_number] = complete_indices[((batch_number - 1) * batch.batch_size + 1):(batch_number * batch.batch_size)]
+# The start positions of one parameter index: the input window must fit the input's time axis, and
+# the target must fit its own. The target is the output at offset `0` where the loader holds one,
+# the input at offset `seq_length` where it is a time series without an output, and there is none
+# where the loader is a set of samples without an output.
+function number_of_start_positions(dl::DataLoader{T, AT, OT, K},
+        batch::Batch) where {T, AT, OT, K}
+    input_window = dl.input_time_steps - batch.seq_length + 1
+    target_window = if OT <: AbstractArray
+        dl.output_time_steps - batch.prediction_window + 1
+    elseif K === :TimeSeries
+        input_window - batch.prediction_window
+    else
+        input_window
     end
-    batches[n_batches] = complete_indices[((n_batches - 1) * batch.batch_size + 1):end]
+    check_window(min(input_window, target_window), dl, batch)
+end
+
+# A loader and a batch that leave no start position are a caller's mistake: an epoch of no minibatch
+# trains nothing and says nothing, so the three numbers that decide it are named here.
+function check_window(n::Int, dl::DataLoader, batch::Batch)
+    n ≥ 1 ||
+        throw(ArgumentError("the `DataLoader` has $(dl.input_time_steps) time steps, and the " *
+                            "`Batch` asks for a sequence length of $(batch.seq_length) and a " *
+                            "prediction window of $(batch.prediction_window), which leaves no " *
+                            "start position."))
+    n
+end
+
+# The index set of one epoch: the product of the shuffled start positions and parameter indices, cut
+# into minibatches of the batch size.
+function batch_over_two_axes(batch::Batch, number_columns::Int, third_dim::Int)
+    complete_indices = vec(
+        collect(Iterators.product(shuffle(1:number_columns), shuffle(1:third_dim))))
+    batches = Vector{Vector{Tuple{Int, Int}}}()
+    for i in 1:cld(length(complete_indices), batch.batch_size)
+        push!(batches,
+            complete_indices[((i - 1) * batch.batch_size + 1):min(i * batch.batch_size, end)])
+    end
     batches
 end
 
-function (batch::Batch)(dl::DataLoader{T,
-        BT,
-        OT,
-        :RegularData}) where {T, AT <: AbstractArray{T, 3},
-        BT <: Union{AT, NamedTuple{(:q, :p), Tuple{AT, AT}}}, OT}
-    batch_over_two_axes(batch, dl.input_time_steps, dl.n_params, dl)
+function (batch::Batch)(dl::DataLoader)
+    batch_over_two_axes(batch, number_of_start_positions(dl, batch), dl.n_params)
 end
 
-function (batch::Batch)(dl::DataLoader{T,
-        BT,
-        OT,
-        :TimeSeries}) where {T, AT <: AbstractArray{T, 3},
-        BT <: Union{AT, NamedTuple{(:q, :p), Tuple{AT, AT}}}, OT}
-    batch_over_two_axes(
-        batch, dl.input_time_steps - (batch.seq_length - 1) - batch.prediction_window,
-        dl.n_params, dl)
-end
-
-@kernel function assign_input_from_vector_of_tuples_kernel!(
-        q_input::AT, p_input::AT, input::NamedTuple{(:q, :p), Tuple{AT, AT}},
-        indices::AbstractArray{Int, 2}) where {T, AT <: AbstractArray{T, 3}}
+@kernel function assign_from_vector_of_tuples_kernel!(
+        input::AT, data::BT, indices::AbstractArray{Int, 2},
+        offset) where {
+        T, AT <: AbstractArray{T, 3}, BT <: AbstractArray{T, 3}}
     i, j, k = @index(Global, NTuple)
 
-    q_input[i, j, k] = input.q[i, indices[1, k] + j - 1, indices[2, k]]
-    p_input[i, j, k] = input.p[i, indices[1, k] + j - 1, indices[2, k]]
+    input[i, j, k] = data[i, indices[1, k] + offset + j - 1, indices[2, k]]
 end
 
-@kernel function assign_input_from_vector_of_tuples_kernel!(input::AT, data::AT,
-        indices::AbstractArray{Int, 2}) where {T, AT <: AbstractArray{T, 3}}
-    i, j, k = @index(Global, NTuple)
-
-    input[i, j, k] = data[i, indices[1, k] + j - 1, indices[2, k]]
-end
-
-@kernel function assign_output_from_vector_of_tuples_kernel!(
-        q_output::AT, p_output::AT, input::NamedTuple{(:q, :p), Tuple{AT, AT}},
-        indices::AbstractArray{Int, 2},
-        seq_length::Int) where {T, AT <: AbstractArray{T, 3}}
-    i, j, k = @index(Global, NTuple)
-
-    q_output[i, j, k] = input.q[i, indices[1, k] + seq_length + j - 1, indices[2, k]]
-    p_output[i, j, k] = input.p[i, indices[1, k] + seq_length + j - 1, indices[2, k]]
-end
-
-@kernel function assign_output_from_vector_of_tuples_kernel!(
-        output::AT, data::AT, indices::AbstractArray{Int, 2},
-        seq_length::Int) where {T, AT <: AbstractArray{T, 3}}
-    i, j, k = @index(Global, NTuple)
-
-    output[i, j, k] = data[i, indices[1, k] + seq_length + j - 1, indices[2, k]]
-end
-
-# A kernel cannot index a `Vector{Tuple{Int, Int}}`, so the batch indices go in as a `2 × n` matrix.
-function convert_vector_of_tuples_to_matrix(backend::Backend, batch_indices_tuple::Vector{Tuple{
-        Int, Int}})
-    _batch_size = length(batch_indices_tuple)
-
-    batch_indices = KernelAbstractions.allocate(backend, Int, 2, _batch_size)
-    batch_indices_temp = zeros(Int, size(batch_indices)...)
+# A kernel cannot index a `Vector{Tuple{Int, Int}}`, so the batch indices go in as a `2 × n` matrix:
+# the host builds it and the backend takes it in one copy.
+function convert_vector_of_tuples_to_matrix(backend::Backend,
+        batch_indices_tuple::Vector{Tuple{Int, Int}})
+    batch_indices = zeros(Int, 2, length(batch_indices_tuple))
     for t in axes(batch_indices_tuple, 1)
-        batch_indices_temp[1, t] = batch_indices_tuple[t][1]
-        batch_indices_temp[2, t] = batch_indices_tuple[t][2]
+        batch_indices[1, t], batch_indices[2, t] = batch_indices_tuple[t]
     end
-    batch_indices = typeof(batch_indices)(batch_indices_temp)
+    map_to_new_backend(batch_indices, backend)
+end
 
-    batch_indices
+# The gather kernel, applied to a tensor or to the `q` and `p` of a `(q, p)` pair. The gathered
+# tensor holds `width` positions from `offset` on, for every drawn start position and parameter
+# index, and has the element type of the data it reads — so one integer target stays integer. The
+# first axis is the loader's own `output_dim`/`input_dim`, halved for each of a `(q, p)` pair.
+function gather(data::AbstractArray{T, 3}, dim::Int, indices::AbstractArray{Int, 2},
+        offset::Int, width::Int, batch_size::Int) where {T}
+    backend = networkbackend(data)
+    gathered = KernelAbstractions.allocate(backend, T, dim, width, batch_size)
+    gather! = assign_from_vector_of_tuples_kernel!(backend)
+    gather!(gathered, data, indices, offset, ndrange = size(gathered))
+    gathered
+end
+
+function gather(data::NamedTuple{(:q, :p), Tuple{AT, AT}}, dim::Int,
+        indices::AbstractArray{Int, 2}, offset::Int, width::Int,
+        batch_size::Int) where {T, AT <: AbstractArray{T, 3}}
+    map(tensor -> gather(tensor, dim ÷ 2, indices, offset, width, batch_size), data)
 end
 
 @doc raw"""
@@ -253,7 +245,8 @@ Assign batch data based on (i) input and (ii) batch indices.
 ```jldoctest
 using GeometricMachineLearning
 
-dl = DataLoader([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]; suppress_info = true)
+dl = DataLoader([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
+    autoencoder = true, suppress_info = true)
 batch = Batch(3)
 batch_indices = [(1, 1), (1, 3), (1, 5)]
 
@@ -272,139 +265,21 @@ GeometricMachineLearning.convert_input_and_batch_indices_to_array(dl, batch, bat
  0.5
 ```
 """
-function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT},
-        batch::Batch,
-        batch_indices_tuple::Vector{Tuple{Int, Int}}) where {
-        T, AT <: AbstractArray{T, 3}, BT <: NamedTuple{(:q, :p), Tuple{AT, AT}}}
-    backend = networkbackend(dl.input.q)
-
-    # the batch size is smaller for the last batch
-    _batch_size = length(batch_indices_tuple)
-
-    batch_indices = convert_vector_of_tuples_to_matrix(backend, batch_indices_tuple)
-
-    q_input = KernelAbstractions.allocate(
-        backend, T, dl.input_dim ÷ 2, batch.seq_length, _batch_size)
-    p_input = similar(q_input)
-
-    assign_input_from_vector_of_tuples! = assign_input_from_vector_of_tuples_kernel!(backend)
-    assign_input_from_vector_of_tuples!(q_input, p_input, dl.input, batch_indices,
-        ndrange = (dl.input_dim ÷ 2, batch.seq_length, _batch_size))
-
-    q_output = KernelAbstractions.allocate(
-        backend, T, dl.input_dim ÷ 2, batch.prediction_window, _batch_size)
-    p_output = similar(q_output)
-
-    assign_output_from_vector_of_tuples! = assign_output_from_vector_of_tuples_kernel!(backend)
-    assign_output_from_vector_of_tuples!(
-        q_output, p_output, dl.input, batch_indices, batch.seq_length,
-        ndrange = (dl.input_dim ÷ 2, batch.prediction_window, _batch_size))
-
-    (q = q_input, p = p_input), (q = q_output, p = p_output)
-end
-
-function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT}, batch::Batch,
-        batch_indices_tuple::Vector{Tuple{Int, Int}}) where {T, BT <: AbstractArray{T, 3}}
-    backend = networkbackend(dl.input)
-
-    # the batch size is smaller for the last batch 
-    _batch_size = length(batch_indices_tuple)
-
-    batch_indices = convert_vector_of_tuples_to_matrix(backend, batch_indices_tuple)
-
-    input = KernelAbstractions.allocate(
-        backend, T, dl.input_dim, batch.seq_length, _batch_size)
-
-    assign_input_from_vector_of_tuples! = assign_input_from_vector_of_tuples_kernel!(backend)
-    assign_input_from_vector_of_tuples!(input, dl.input, batch_indices,
-        ndrange = (dl.input_dim, batch.seq_length, _batch_size))
-
-    output = KernelAbstractions.allocate(
-        backend, T, dl.input_dim, batch.prediction_window, _batch_size)
-
-    assign_output_from_vector_of_tuples! = assign_output_from_vector_of_tuples_kernel!(backend)
-    assign_output_from_vector_of_tuples!(output, dl.input, batch_indices, batch.seq_length,
-        ndrange = (dl.input_dim, batch.prediction_window, _batch_size))
-
-    input, output
-end
-
 function convert_input_and_batch_indices_to_array(
-        dl::DataLoader{T, BT, Nothing, :RegularData},
-        batch::Batch,
-        batch_indices_tuple::Vector{Tuple{Int, Int}}) where {
-        T, AT <: AbstractArray{T, 3}, BT <: NamedTuple{(:q, :p), Tuple{AT, AT}}}
-    backend = networkbackend(dl.input.q)
-
-    # the batch size is smaller for the last batch
-    _batch_size = length(batch_indices_tuple)
-
-    batch_indices = convert_vector_of_tuples_to_matrix(backend, batch_indices_tuple)
-
-    q_input = KernelAbstractions.allocate(
-        backend, T, dl.input_dim ÷ 2, batch.seq_length, _batch_size)
-    p_input = similar(q_input)
-
-    assign_input_from_vector_of_tuples! = assign_input_from_vector_of_tuples_kernel!(backend)
-    assign_input_from_vector_of_tuples!(q_input, p_input, dl.input, batch_indices,
-        ndrange = (dl.input_dim ÷ 2, batch.seq_length, _batch_size))
-
-    (q = q_input, p = p_input)
-end
-
-function convert_input_and_batch_indices_to_array(
-        dl::DataLoader{T, BT, Nothing, :RegularData}, batch::Batch,
-        batch_indices_tuple::Vector{Tuple{Int, Int}}) where {T, BT <: AbstractArray{T, 3}}
-    backend = networkbackend(dl.input)
-
-    # the batch size is smaller for the last batch 
-    _batch_size = length(batch_indices_tuple)
-
-    batch_indices = convert_vector_of_tuples_to_matrix(backend, batch_indices_tuple)
-
-    input = KernelAbstractions.allocate(
-        backend, T, dl.input_dim, batch.seq_length, _batch_size)
-
-    assign_input_from_vector_of_tuples! = assign_input_from_vector_of_tuples_kernel!(backend)
-    assign_input_from_vector_of_tuples!(input, dl.input, batch_indices,
-        ndrange = (dl.input_dim, batch.seq_length, _batch_size))
-
-    input
-end
-
-# for the case when the DataLoader also contains an output
-function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT, OT},
-        ::Batch,
-        batch_indices_tuple::Vector{Tuple{Int, Int}}) where {
-        T, T1, BT <: AbstractArray{T, 3}, OT <: AbstractArray{T1, 3}}
-    parameter_indices = [batch_index[2] for batch_index in batch_indices_tuple]
-    @views input_batch = dl.input[:, :, parameter_indices]
-    @views output_batch = dl.output[:, :, parameter_indices]
-
-    input_batch, output_batch
-end
-
-function convert_input_and_batch_indices_to_array(dl::DataLoader{T, BT, BT}, batch::Batch,
-        batch_indices_tuple::Vector{Tuple{Int, Int}}) where {T, BT <: AbstractArray{T, 3}}
-    backend = networkbackend(dl.input)
-
-    # the batch size is smaller for the last batch 
-    _batch_size = length(batch_indices_tuple)
-
-    batch_indices = convert_vector_of_tuples_to_matrix(backend, batch_indices_tuple)
-
-    input = KernelAbstractions.allocate(
-        backend, T, dl.input_dim, batch.seq_length, _batch_size)
-
-    assign_input_from_vector_of_tuples! = assign_input_from_vector_of_tuples_kernel!(backend)
-    assign_input_from_vector_of_tuples!(input, dl.input, batch_indices,
-        ndrange = (dl.input_dim, batch.seq_length, _batch_size))
-
-    output = KernelAbstractions.allocate(
-        backend, T, dl.output_dim, batch.prediction_window, _batch_size)
-
-    assign_input_from_vector_of_tuples!(output, dl.output, batch_indices,
-        ndrange = (dl.output_dim, batch.prediction_window, _batch_size))
-
-    input, output
+        dl::DataLoader{T, AT, OT, K}, batch::Batch,
+        batch_indices_tuple::Vector{Tuple{Int, Int}}) where {T, AT, OT, K}
+    batch_size = length(batch_indices_tuple)
+    indices = convert_vector_of_tuples_to_matrix(networkbackend(dl), batch_indices_tuple)
+    input = gather(dl.input, dl.input_dim, indices, 0, batch.seq_length, batch_size)
+    # a loader that holds an output is a set of samples whatever its kind: the target is its output
+    if dl.output !== nothing
+        return input,
+        gather(dl.output, dl.output_dim, indices, 0, batch.prediction_window,
+            batch_size)
+    end
+    # without one, a time series predicts its own continuation and a set of samples has no target
+    K === :TimeSeries || return input
+    input,
+    gather(dl.input, dl.input_dim, indices, batch.seq_length, batch.prediction_window,
+        batch_size)
 end
