@@ -120,7 +120,7 @@ DataLoader{Int64, Array{Int64, 3}, Nothing, :TimeSeries, Nothing}([1 4; 2 5; 3 6
 ```
 the `@info` statement is not printed.
 """
-function DataLoader(
+Base.@constprop :aggressive function DataLoader(
         data::AbstractArray{T, 3}; autoencoder::Bool = false, suppress_info = false) where {T}
     if !suppress_info
         @info "You have provided a tensor with three axes as input. They will be interpreted as \n (i) system dimension, (ii) number of time steps and (iii) number of params."
@@ -225,7 +225,7 @@ function DataLoader(data::NamedTuple{(:q, :p), Tuple{AT, AT}};
         autoencoder = autoencoder, suppress_info = true)
 end
 
-function DataLoader(data::NamedTuple{(:q, :p), Tuple{AT, AT}};
+Base.@constprop :aggressive function DataLoader(data::NamedTuple{(:q, :p), Tuple{AT, AT}};
         autoencoder::Bool = false,
         suppress_info = false) where {T, AT <: AbstractArray{T, 3}}
     if !suppress_info

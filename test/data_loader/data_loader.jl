@@ -23,6 +23,14 @@ kind(dl::DataLoader) = typeof(dl).parameters[4]
     @test kind(DataLoader(rand(T, 10); suppress_info = true)) === :TimeSeries
     @test kind(DataLoader(tensor; suppress_info = true)) === :TimeSeries
     @test kind(DataLoader((q = matrix, p = matrix); suppress_info = true)) === :TimeSeries
+    # A literal keyword fixes the loader's kind, so the tensor constructors infer a concrete type.
+    @test (@inferred (() -> DataLoader(tensor; suppress_info = true))()) isa DataLoader
+    @test (@inferred (() -> DataLoader((q = tensor, p = tensor);
+        suppress_info = true))()) isa DataLoader
+    @test (@inferred (() -> DataLoader(tensor; autoencoder = true,
+        suppress_info = true))()) isa DataLoader
+    @test (@inferred (() -> DataLoader((q = tensor, p = tensor); autoencoder = true,
+        suppress_info = true))()) isa DataLoader
     @test kind(DataLoader((q = tensor, p = tensor); suppress_info = true)) === :TimeSeries
     @test kind(DataLoader((q = rand(T, 10), p = rand(T, 10)); suppress_info = true)) ===
           :TimeSeries

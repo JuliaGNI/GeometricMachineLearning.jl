@@ -1,10 +1,5 @@
-# Each of these constructors branches on `autoencoder`, so a value that is neither `true` nor
-# `false` -- `nothing` being the case that actually arises, since it is the sentinel a caller
-# reaches for when in doubt -- must be rejected at the keyword rather than inside the branch.
-# Declaring the keyword `autoencoder::Bool` makes it a `TypeError` at the call the keyword is
-# passed to, which is where the mistake is. Without the declaration such a value falls through an
-# `if`/`elseif` with no `else`, and the constructor returns `nothing` instead of a `DataLoader`
-# with no indication of why.
+# Data-set constructors accept `autoencoder::Bool`. A value outside `Bool`, such as `nothing`,
+# is rejected at the keyword with a `TypeError` rather than interpreted as a loader kind.
 
 using GeometricMachineLearning
 using Test
@@ -35,11 +30,8 @@ end
     @test_throws TypeError DataLoader(data; autoencoder = nothing, suppress_info = true)
 end
 
-# The fifth site, `DataLoader(dl, backend)`, is not one of the four above: its `autoencoder =
-# nothing` default is not a mistake to reject, it is the sentinel meaning "inherit from `dl`". It
-# takes `Union{Nothing, Bool}` instead, and its `DT = if …` block carries the `else` that the type
-# gives the other four, so a value outside that union is a `TypeError` there too and nothing falls
-# through.
+# `DataLoader(dl, backend)` accepts `autoencoder::Union{Nothing, Bool}`: `nothing` inherits the
+# loader's kind, a Boolean selects it, and a value outside the union raises a `TypeError`.
 @testset "DataLoader(dl, backend): nothing means inherit, and nothing falls through" begin
     dl = DataLoader(rand(Float32, 2, 3, 4); autoencoder = true, suppress_info = true)
 

@@ -99,7 +99,7 @@ function Batch(batch_size::Int, seq_length::Int, prediction_window::Int = seq_le
 end
 
 # The classifier's batch: one draw per sample, with the whole input sequence and the whole output.
-# Its fifth type parameter is `Int`, because both lengths come from a loader that holds an output.
+# The loader's fifth type parameter is `Int`, because both lengths come from a loader with an output.
 function Batch(batch_size::Int,
         dl::DataLoader{T, AT, OT, K, Int}) where {T, AT, OT <: AbstractArray, K}
     Batch(batch_size, dl.input_time_steps, dl.output_time_steps)

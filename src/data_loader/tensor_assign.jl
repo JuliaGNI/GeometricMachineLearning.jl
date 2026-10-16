@@ -1,6 +1,6 @@
 # Assigning a batch and its target out of the full data tensor is `src/data_loader/batch.jl`'s job:
-# its gather kernel indexes by a vector of `(time_step, parameter)` tuples. What is here estimates
-# the output instead.
+# its gather kernel reads a matrix of `(time_step, parameter)` indices. This file crops the
+# estimated output instead.
 
 @doc raw"""
     assign_output_estimate(full_output, prediction_window)
