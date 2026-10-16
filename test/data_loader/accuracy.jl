@@ -1,10 +1,10 @@
 # `accuracy` is documented API -- `docs/src/data_loader/data_loader.md` renders both its methods --
-# and nothing in the package, the tests or the scripts called it. A documented function with no
-# caller and no test is a function nobody notices breaking, so this file exercises it rather than
-# the docs entry being dropped.
+# and no other function of the package and no script calls it. A documented function with no
+# caller and no test is a function nobody notices breaking, so this file exercises it.
 #
-# The loader comes from `DataLoader(input, output)`, whose two element types are free, so a real
-# input and an integer one-hot target are one call.
+# The loader comes from `DataLoader(input, output)`. The output's element type is the input's
+# or an integer, so a real input and an integer one-hot target are one call; any other pair of
+# element types is a `MethodError`.
 
 using GeometricMachineLearning
 using Random
