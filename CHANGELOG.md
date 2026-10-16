@@ -98,7 +98,7 @@ breaking release).
 
 ### Changed
 
-- **`VolumePreservingAttention` computes the Cayley transform in one kernel, `tensor_cayley`, at every sequence length and on a device array; the batch inverse that served the other lengths is deleted, and the closed forms for N = 2 to 5 stay, with N = 4 and 5 waiting for the user's ruling.**
+- **`VolumePreservingAttention` computes the Cayley transform in one kernel, `tensor_cayley`, at every sequence length and on a device array; the batch inverse that served the other lengths is deleted, and the closed forms for N = 2 to 5 stay.**
 
   `src/kernels/cayley.jl` is new. `tensor_cayley(C::AbstractArray{T, 3})` is internal and not exported. It computes `(I + Cₖ)⁻¹(I − Cₖ)` for every slice `k` by row-pivoted Gauss–Jordan elimination on the pair `(I + Cₖ, I − Cₖ)`, one work item per slice, with the loop bound read from `size(C, 1)` at run time. Its `rrule` computes `C̄ = −(I + Λ)ᵀ Λ̄ (I + Λ)ᵀ / 2` from `Λ` alone: no second solve, no identity tensor, and no `Zygote.pullback` of `inv` inside a kernel. The activation of `VolumePreservingAttention` for every sequence length but 2 to 5 runs this kernel, so those lengths run on a device; the path it replaces, `cpu_inverse`, called `inv` and `Zygote.pullback(inv, ·)` on one slice inside a kernel, which this change removes.
 
@@ -131,11 +131,11 @@ breaking release).
   still holds, the decision is the same. The kernel's own times agree within 3 % of the table above,
   except one N = 6 Float32 forward reading, 606.8 → 263.1. The closed form's own time is what moves,
   by up to 3.3× (96 µs to 28.8 µs at N = 2, Float32, forward), so one median at these sizes is not a
-  figure of the code alone. The rows the decision rests on are above 1 in both runs: N = 2, Float32
-  forward 0.47 then 1.51 and Float64 forward 1.46 then 1.33; N = 3, Float32 forward 1.71 then 1.79
-  and Float64 forward 1.23 then 1.68; N = 4, Float32 forward 0.59 then 1.70 and Float64 forward 1.13
-  in both; N = 5, Float32 forward 1.43 then 1.42 and Float64 forward 1.27 then 1.23. Every backward
-  ratio on the CPU is below 1 in both runs.
+  figure of the code alone. The forward ratios, first run then second: N = 2, Float32 0.47 then 1.51
+  and Float64 1.46 then 1.33; N = 3, Float32 1.71 then 1.79 and Float64 1.23 then 1.68; N = 4,
+  Float32 0.59 then 1.70 and Float64 1.13 in both; N = 5, Float32 1.43 then 1.42 and Float64 1.27
+  then 1.23. Every N from 2 to 5 has a forward ratio above 1 in both runs; every backward ratio on
+  the CPU is below 1 in both runs.
 
   The Metal column, `Float32`, with every timed call wrapped in `Metal.@sync` and the same `measure`,
   on an Apple M4 Max (`AGXG16CDevice`), through the test environment, which carries Metal where
@@ -147,7 +147,7 @@ breaking release).
 
   The orthogonality check in `test/kernels/cayley.jl` compares the kernel's `ΛᵀΛ − I` with the pivoted reference `(I + Cₖ) \ (I − Cₖ)` over `N` = 2 to 8, both element types and two scales, on three input sets. The worst ratio of the kernel's error to the reference's, against a limit of 4, is 1.54 for a hand-built skew tensor `R − Rᵀ`, 2.45 for the layer's `:arbitrary` path and 1.30 for its `:skew_sym` path. On the two exactly skew sets the kernel's own error is within the bound `10·n·eps(T)·(1 + ‖Cₖ‖₂²)`, its worst at 0.100 of the bound; on `:skew_sym`, where `C` is skew only to rounding, the pivoted reference itself exceeds that bound by a factor of 3.2, so that set carries the ratio clause alone.
 
-  The closed forms `tensor_cayley2` to `tensor_cayley5` and their dispatch stay. A closed form stays while the kernel is slower than it at a median ratio above 1, and N = 6 to 8 are replaced whatever their ratio. N = 2 stays on its Float64 forward ratio of 1.46. N = 3 stays on its Float32 forward ratio of 1.71 and its Float64 forward ratio of 1.23. N = 4 stays until the user rules, on its Float64 forward ratio of 1.13, and N = 5 stays until the user rules, on its Float64 forward ratio of 1.27 and its Float32 forward ratio of 1.43. For N = 4 and 5 the question the numbers leave open is the user's to decide: keep the closed forms, or take the line savings of replacing them with the kernel. N = 6 to 8 are replaced: the kernel's ratios there run from 0.16 to 0.64.
+  The closed forms `tensor_cayley2` to `tensor_cayley5` and their dispatch stay. A closed form stays while the kernel is slower than it at a median ratio above 1, and N = 6 to 8 are replaced whatever their ratio. N = 2 stays on its Float64 forward ratio of 1.46. N = 3 stays on its Float32 forward ratio of 1.71 and its Float64 forward ratio of 1.23. N = 4 stays on its Float64 forward ratio of 1.13 in both runs and its Metal ratios of 1.33 forward and 1.53 backward. N = 5 stays on its Float32 forward ratio of 1.43 then 1.42, its Float64 forward ratio of 1.27 then 1.23 and its Metal forward ratio of 1.78. N = 4 and 5 are the user's call rather than the part's, because the kernel is slower forward there in every `Float64` run and on Metal; the user kept their closed forms, `inverse_4x4.jl` and `inverse_5x5.jl` with their 690 generated lines. N = 6 to 8 are replaced: the kernel's ratios there run from 0.16 to 0.64.
 
 - `Pkg.test()` no longer runs the doctests. `test/quality/doctests.jl` is now the group `doctests`, which an empty `ARGS` does not run; `Pkg.test(test_args = ["doctests"])` runs it. In CI the Doctests job stays their runner, so the test matrix no longer runs them a second time.
 - **CI uploads coverage from the `Julia 1 - ubuntu-latest` job instead of `Julia min`, and a test job saves the Julia cache only when it succeeds.**

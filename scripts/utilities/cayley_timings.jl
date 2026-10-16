@@ -15,10 +15,12 @@
 #   julia --startup-file=no --project=. scripts/utilities/cayley_timings.jl
 #   julia --startup-file=no --project=. scripts/utilities/cayley_timings.jl tensor_cayley 4 Float32
 #
-# Metal has no closed form to compare against, because the symbolic inverses cover 2 to 5 only, and
-# `Metal` is not a dependency of the package. Its column runs `measure` through Kaimon, in a scratch
-# environment that develops this worktree and adds Metal. This file runs its table only when it is
-# not included, so a session reaches `measure` by including it and calling it:
+# Metal has no reference for N = 6 to 8: the batch inverse that served those rows called `inv` inside
+# a kernel, and the tree does not define it, so those rows print the kernel's time alone. N = 2 to 5
+# compare against the closed forms, which run on Metal as well; `Metal` is not a dependency of the
+# package, so its column runs `measure` through Kaimon, in a scratch environment that develops this
+# worktree and adds Metal. This file runs its table only when it is not included, so a session
+# reaches `measure` by including it and calling it:
 #
 #   julia> include("scripts/utilities/cayley_timings.jl")
 #   julia> measure("tensor_cayley", 6, Float32, Metal.@sync)
