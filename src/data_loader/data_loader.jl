@@ -147,7 +147,7 @@ a tensor of shape `(size(data)..., 1)`: one trajectory of one parameter. With `a
 the matrix is a set of samples instead, so that axis is the parameter index and the time axis has
 length one.
 """
-function DataLoader(
+Base.@constprop :aggressive function DataLoader(
         data::AbstractMatrix{T}; autoencoder::Bool = false, suppress_info = false) where {T}
     if !suppress_info
         @info "You have provided a matrix as input. The axes will be interpreted as (i) system dimension and (ii) $(autoencoder ? "number of parameters" : "number of time steps")."
@@ -213,7 +213,7 @@ In this case the field `input_dim` of `DataLoader` is interpreted as the sum of 
 Apart from this the input is treated similarly as if it were an `Array`, i.e. everything is converted to tensors internally.
 See e.g. [`DataLoader{::AbstractArray{<:Number, 3}}`](@ref).
 """
-function DataLoader(data::NamedTuple{(:q, :p), Tuple{AT, AT}};
+Base.@constprop :aggressive function DataLoader(data::NamedTuple{(:q, :p), Tuple{AT, AT}};
         autoencoder::Bool = false,
         suppress_info = false) where {T, AT <: AbstractMatrix{T}}
     if !suppress_info
@@ -244,42 +244,31 @@ function DataLoader(data::NamedTuple{(:q, :p), Tuple{VT, VT}};
         autoencoder = autoencoder, suppress_info = suppress_info)
 end
 
-# The 1-based tensor of one coordinate of one solution, or of each member of an ensemble along the
-# parameter axis, with the axes `(system dimension, time steps, parameters)`.
-function states_tensor(states::AbstractVector, n_params::Int = 1)
-    Array{eltype(first(states))}(undef, length(first(states)), length(states), n_params)
-end
-
-# The states of one coordinate into the column `i` of `data`. The `q` of a solution carries the
-# `DataSeries` time axis `0:n` and a `DataLoader` tensor is 1-based on all three axes, so the states
-# are copied in one at a time and no whole coordinate is built on the way.
-function data_tensor!(data, states::AbstractVector, i::Int)
-    for (t, state) in enumerate(states)
-        data[:, t, i] = state
+# The 1-based tensor of one coordinate over a vector of trajectories — one solution, or the members
+# of an ensemble — with the axes `(system dimension, time steps, trajectories)`. The `q` of a
+# solution carries the `DataSeries` time axis `0:n`, so the states are copied in one at a time.
+function data_tensor(trajectories::AbstractVector)
+    states = first(trajectories)
+    data = Array{eltype(first(states))}(
+        undef, length(first(states)), length(states), length(trajectories))
+    for (k, trajectory) in enumerate(trajectories)
+        for (t, state) in enumerate(trajectory)
+            data[:, t, k] = state
+        end
     end
-    data
-end
-
-data_tensor(states::AbstractVector) = data_tensor!(states_tensor(states), states, 1)
-
-# The tensor of one coordinate over the members of an ensemble, along the parameter axis.
-function ensemble_data_tensor(solutions, coordinate::Symbol)
-    data = states_tensor(getproperty(first(solutions), coordinate), length(solutions))
-    foreach(i -> data_tensor!(data, getproperty(solutions[i], coordinate), i),
-        eachindex(solutions))
     data
 end
 
 function data_tensors_from_geometric_solution(
         solution::GeometricSolution{
         <:Number, <:Number, <:Any, <:NamedTuple{(:t, :q, :p, :q̇, :ṗ)}})
-    (q = data_tensor(solution.q), p = data_tensor(solution.p))
+    (q = data_tensor([solution.q]), p = data_tensor([solution.p]))
 end
 
 function data_tensors_from_geometric_solution(solution::GeometricSolution{
         <:Number, <:Number,
         <:Any, <:Union{NamedTuple{(:t, :q, :v)}, NamedTuple{(:t, :q, :q̇)}}})
-    data_tensor(solution.q)
+    data_tensor([solution.q])
 end
 
 """
@@ -314,7 +303,7 @@ function DataLoader(ensemble_solution::EnsembleSolution{T, T1, Vector{ST}};
         TT <: TimeSeries{T1}, ST <: Union{
             GeometricSolution{T, T1, TT, NamedTuple{(:t, :q, :v), TuT}},
             GeometricSolution{T, T1, TT, NamedTuple{(:t, :q, :q̇), TuT}}}}
-    DataLoader(ensemble_data_tensor(ensemble_solution.s, :q);
+    DataLoader(data_tensor([s.q for s in ensemble_solution.s]);
         autoencoder = autoencoder, suppress_info = suppress_info)
 end
 
@@ -342,18 +331,18 @@ function DataLoader(ensemble_solution::EnsembleSolution{T, T1, Vector{ST}};
         TT <: TimeSeries{T1}, ST <: GeometricSolution{T, T1, TT,
             NamedTuple{(:t, :q, :p, :q̇, :ṗ), TuT}}}
     DataLoader(
-        (q = ensemble_data_tensor(ensemble_solution.s, :q),
-            p = ensemble_data_tensor(ensemble_solution.s, :p));
+        (q = data_tensor([s.q for s in ensemble_solution.s]),
+            p = data_tensor([s.p for s in ensemble_solution.s]));
         autoencoder = autoencoder, suppress_info = suppress_info)
 end
 
-# `Base.copyto!` carries a host array to any backend; `KernelAbstractions.copyto!` has a method for
-# the CPU alone, and a device backend such as `JLArray`'s has none.
+# An array already on the backend is returned as it is. `Base.copyto!` carries a host array to any
+# backend; `KernelAbstractions.copyto!` has a method for the CPU alone, and a device backend such as
+# `JLArray`'s has none.
 function map_to_new_backend(input::AbstractArray{T},
         backend::KernelAbstractions.Backend) where {T}
-    converted = KernelAbstractions.allocate(backend, T, size(input)...)
-    Base.copyto!(converted, input)
-    converted
+    networkbackend(input) == backend && return input
+    Base.copyto!(KernelAbstractions.allocate(backend, T, size(input)...), input)
 end
 
 # `map` over a `(q, p)` named tuple reaches each of the two tensors; over a plain array it would
@@ -397,7 +386,7 @@ function DataLoader(dl::DataLoader{T1, <:QPTOAT, Nothing, K},
 ) where {T1, K, T}
     kind = isnothing(autoencoder) ? K : data_set_kind(autoencoder)
     input = T == T1 ? dl.input : map_to_type(dl.input, T)
-    input = backend == networkbackend(dl) ? input : map_to_new_backend(input, backend)
+    input = map_to_new_backend(input, backend)
 
     DataLoader{T, typeof(input), Nothing, kind}(
         input, nothing, dl.input_dim, dl.input_time_steps, dl.n_params, nothing, nothing)

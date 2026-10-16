@@ -31,6 +31,15 @@ kind(dl::DataLoader) = typeof(dl).parameters[4]
         suppress_info = true))()) isa DataLoader
     @test (@inferred (() -> DataLoader((q = tensor, p = tensor); autoencoder = true,
         suppress_info = true))()) isa DataLoader
+    # ... and so do the matrix and vector constructors, which forward to them
+    vector = rand(T, 10)
+    @test (@inferred (() -> DataLoader(matrix; suppress_info = true))()) isa DataLoader
+    @test (@inferred (() -> DataLoader(vector; autoencoder = true,
+        suppress_info = true))()) isa DataLoader
+    @test (@inferred (() -> DataLoader((q = matrix, p = matrix);
+        suppress_info = true))()) isa DataLoader
+    @test (@inferred (() -> DataLoader((q = vector, p = vector); autoencoder = true,
+        suppress_info = true))()) isa DataLoader
     @test kind(DataLoader((q = tensor, p = tensor); suppress_info = true)) === :TimeSeries
     @test kind(DataLoader((q = rand(T, 10), p = rand(T, 10)); suppress_info = true)) ===
           :TimeSeries

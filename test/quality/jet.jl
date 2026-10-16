@@ -125,7 +125,7 @@ const A3{T} = Array{T, 3}
             GML.convert_input_and_batch_indices_to_array,
             (TimeSeriesQP, Batch{:Transformer}, Indices); target_modules = TARGET)))
         # the one gather kernel of a `(q, p)` input: `gather` launches it once per tensor
-        @test isempty(kernel_body_reports(GML.assign_from_vector_of_tuples_kernel!,
+        @test isempty(kernel_body_reports(GML.gather_kernel!,
             (2, 3, 4), zeros(2, 3, 4), zeros(2, 8, 4), indices, 3))
         # test/integration/docstrings/data_loader.jl
         @test isempty(JET.get_reports(JET.report_opt(
@@ -150,7 +150,7 @@ const A3{T} = Array{T, 3}
                 (DataLoader{T, A3{T}, A3{T}, :TimeSeries, Int}, BatchType, Indices);
                 target_modules = TARGET)))
             # the gather kernel, once per element type
-            @test isempty(kernel_body_reports(GML.assign_from_vector_of_tuples_kernel!,
+            @test isempty(kernel_body_reports(GML.gather_kernel!,
                 (2, 3, 4), zeros(T, 2, 3, 4), zeros(T, 2, 8, 4), indices, 3))
         end
         # the `Batch` functor under `@allocated` in test/data_loader/batch_index_set.jl, and

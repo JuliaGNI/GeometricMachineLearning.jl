@@ -192,7 +192,7 @@ function (batch::Batch)(dl::DataLoader)
     batch_over_two_axes(batch, number_of_start_positions(dl, batch), dl.n_params)
 end
 
-@kernel function assign_from_vector_of_tuples_kernel!(gathered, data, indices, offset)
+@kernel function gather_kernel!(gathered, data, indices, offset)
     i, j, k = @index(Global, NTuple)
 
     gathered[i, j, k] = data[i, indices[1, k] + offset + j - 1, indices[2, k]]
@@ -207,21 +207,19 @@ end
 
 # The gather kernel, applied to a tensor or to the `q` and `p` of a `(q, p)` pair. The gathered
 # tensor holds `width` positions from `offset` on, for every drawn start position and parameter
-# index, and has the element type of the data it reads — so one integer target stays integer. The
-# first axis is the loader's own `output_dim`/`input_dim`, halved for each of a `(q, p)` pair.
-function gather(data::AbstractArray{T, 3}, dim::Int, indices::AbstractArray{Int, 2},
-        offset::Int, width::Int, batch_size::Int) where {T}
+# index, and has the element type of the data it reads — so one integer target stays integer.
+function gather(data::AbstractArray{T, 3}, indices::AbstractMatrix{Int}, offset::Int,
+        width::Int) where {T}
     backend = networkbackend(data)
-    gathered = KernelAbstractions.allocate(backend, T, dim, width, batch_size)
-    gather! = assign_from_vector_of_tuples_kernel!(backend)
-    gather!(gathered, data, indices, offset, ndrange = size(gathered))
+    gathered = KernelAbstractions.allocate(
+        backend, T, size(data, 1), width, size(indices, 2))
+    gather_kernel!(backend)(gathered, data, indices, offset, ndrange = size(gathered))
     gathered
 end
 
-function gather(data::NamedTuple{(:q, :p), Tuple{AT, AT}}, dim::Int,
-        indices::AbstractArray{Int, 2}, offset::Int, width::Int,
-        batch_size::Int) where {T, AT <: AbstractArray{T, 3}}
-    map(tensor -> gather(tensor, dim ÷ 2, indices, offset, width, batch_size), data)
+function gather(data::NamedTuple{(:q, :p), Tuple{AT, AT}}, indices::AbstractMatrix{Int},
+        offset::Int, width::Int) where {AT <: AbstractArray{<:Any, 3}}
+    map(tensor -> gather(tensor, indices, offset, width), data)
 end
 
 @doc raw"""
@@ -257,18 +255,14 @@ GeometricMachineLearning.convert_input_and_batch_indices_to_array(dl, batch, bat
 function convert_input_and_batch_indices_to_array(
         dl::DataLoader{T, AT, OT, K}, batch::Batch,
         batch_indices_tuple::Vector{Tuple{Int, Int}}) where {T, AT, OT, K}
-    batch_size = length(batch_indices_tuple)
     indices = convert_vector_of_tuples_to_matrix(networkbackend(dl), batch_indices_tuple)
-    input = gather(dl.input, dl.input_dim, indices, 0, batch.seq_length, batch_size)
+    input = gather(dl.input, indices, 0, batch.seq_length)
     # a loader that holds an output is a set of samples whatever its kind: the target is its output;
     # without one, a time series predicts its own continuation and a set of samples has no target
-    if dl.output !== nothing
-        input,
-        gather(dl.output, dl.output_dim, indices, 0, batch.prediction_window, batch_size)
+    if OT <: AbstractArray
+        (input, gather(dl.output, indices, 0, batch.prediction_window))
     elseif K === :TimeSeries
-        input,
-        gather(dl.input, dl.input_dim, indices, batch.seq_length, batch.prediction_window,
-            batch_size)
+        (input, gather(dl.input, indices, batch.seq_length, batch.prediction_window))
     else
         input
     end
