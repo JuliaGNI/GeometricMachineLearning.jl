@@ -66,6 +66,19 @@ const A3{T} = Array{T, 3}
                 zeros(T, 3, 3, 2)))
         end
 
+        # src/kernels/cayley.jl: `tensor_cayley` in test/kernels/cayley.jl,
+        # test/layers/volume_preserving_attention.jl, test/devices/jlarray.jl and
+        # test/devices/metal.jl
+        for T in (Float16, Float32, Float64)
+            @test isempty(JET.get_reports(JET.report_opt(GML.tensor_cayley, (A3{T},);
+                target_modules = TARGET)))
+            @test isempty(kernel_body_reports(GML.tensor_cayley_kernel!, 2,
+                zeros(T, 3, 3, 2), zeros(T, 3, 3, 2), zeros(T, 3, 3, 2)))
+            @test isempty(JET.get_reports(JET.report_opt(
+                rrule(GML.tensor_cayley, zeros(T, 3, 3, 2))[2], (A3{T},);
+                target_modules = TARGET)))
+        end
+
         # src/kernels/kernel_ad_routines/: the pullback that launches kernels, at the `Float64`
         # types of `test_rrule` in test/kernels/kernel_pullbacks.jl
         B, dC = zeros(3, 3, 2), zeros(3, 3, 2)

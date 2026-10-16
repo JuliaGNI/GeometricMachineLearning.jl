@@ -258,6 +258,7 @@ Attention was used before [the transformer](@ref "Standard Transformer") was int
 
 ```@docs
 GeometricMachineLearning.tensor_mat_skew_sym_assign
+GeometricMachineLearning.tensor_cayley
 VolumePreservingAttention
 ```
 

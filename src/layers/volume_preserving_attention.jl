@@ -37,7 +37,7 @@ end
 
 function orthonormal_activation_cayley(::VolumePreservingAttention, A::AbstractArray{
         T, 3}) where {T}
-    cpu_tensor_cayley(A)
+    tensor_cayley(A)
 end
 
 function orthonormal_activation_cayley(

@@ -13,11 +13,33 @@
 # that reads an array one element at a time raises instead of answering slowly.
 
 using GeometricMachineLearning
-using GeometricMachineLearning: _mul, tensor_tensor_mul
+using GeometricMachineLearning: _mul, tensor_tensor_mul, tensor_cayley
 import KernelAbstractions
+using LinearAlgebra: I, dot, opnorm
 using Metal
 using Test
 import Random
+
+# The layer's forward pass on the host, slice by slice: the same scalar products the kernel computes
+# for `C`, a dense solve of the Cayley transform, and the product with the data. It returns the
+# slices of `C` as well, because the bound of the kernel's orthogonality rows is written in them.
+function host_forward(x::AbstractArray{T, 3}, A::AbstractMatrix) where {T}
+    M = size(x, 1)
+    out = similar(x)
+    C = zeros(T, M, M, size(x, 3))
+    for k in axes(x, 3)
+        X = Matrix(view(x, :, :, k))
+        L = zeros(T, M, M)
+        for i in 1:M, j in 1:(i - 1)
+
+            L[i, j] = dot(view(X, :, i), A * view(X, :, j))
+        end
+        C[:, :, k] = (L - L') / T(√M)
+        Id = Matrix{T}(I, M, M)
+        out[:, :, k] = X * ((Id + C[:, :, k]) \ (Id - C[:, :, k]))
+    end
+    out, C
+end
 
 if Metal.functional()
     Metal.allowscalar(false)
@@ -58,6 +80,35 @@ if Metal.functional()
         for (device, host) in products
             @test KernelAbstractions.get_backend(device) == backend
             @test Array(device) ≈ host
+        end
+    end
+
+    # The Cayley kernel and the layer that uses it, at every sequence length: each result stays on
+    # the device and matches a host computation of the same transform, at the bound of the kernel's
+    # orthogonality rows.
+    @testset "tensor_cayley and VolumePreservingAttention on Metal" begin
+        for n in 2:8
+            R = rand(T, n, n, 8)
+            C = R - permutedims(R, (2, 1, 3))
+            Λ = tensor_cayley(MtlArray(C))
+            @test KernelAbstractions.get_backend(Λ) == backend
+            Id = Matrix{T}(I, n, n)
+            reference = cat(((Id + C[:, :, k]) \ (Id - C[:, :, k]) for k in axes(C, 3))...;
+                dims = 3)
+            bound = 10 * n * eps(T) *
+                    (1 + maximum(opnorm(C[:, :, k], 2)^2 for k in axes(C, 3)))
+            @test maximum(abs, Array(Λ) - reference) <= bound
+
+            d = VolumePreservingAttention(n, n)
+            ps = NeuralNetwork(Chain(d), CPU(), T).params.L1
+            x = rand(T, n, n, 8)
+            y = d(MtlArray(x), (A = MtlArray(ps.A),))
+            expected, C_layer = host_forward(x, ps.A)
+            layer_bound = 10 * n * eps(T) *
+                          (1 + maximum(opnorm(C_layer[:, :, k], 2)^2 for k in axes(x, 3))) *
+                          maximum(abs, x)
+            @test KernelAbstractions.get_backend(y) == backend
+            @test maximum(abs, Array(y) - expected) <= layer_bound
         end
     end
 else
