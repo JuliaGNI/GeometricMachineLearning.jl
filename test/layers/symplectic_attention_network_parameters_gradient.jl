@@ -1,6 +1,6 @@
 using Test
 using GeometricMachineLearning
-using GeometricMachineLearning: _custom_mul, _custom_transpose, params
+using GeometricMachineLearning: _mul, _custom_transpose, params
 import Random
 
 include("../helpers/network_parameters_gradient_structure.jl")
@@ -9,18 +9,18 @@ Random.seed!(1234)
 
 function symplectic_attention(z::NamedTuple{(:q, :p), Tuple{AT, AT}},
         _ps::Union{NamedTuple, NetworkParameters}) where {AT <: AbstractArray}
-    expPAP = exp.(_custom_mul(_custom_mul(_custom_transpose(z.p), _ps.L1.A), z.p))
-    (q = z.q + _custom_mul(_custom_mul(_ps.L1.A, z.p), 2 * expPAP) / sum(expPAP), p = z.p)
+    expPAP = exp.(_mul(_mul(_custom_transpose(z.p), _ps.L1.A), z.p))
+    (q = z.q + _mul(_mul(_ps.L1.A, z.p), 2 * expPAP) / sum(expPAP), p = z.p)
 end
 
 function symplectic_attention_simplified(z::NamedTuple{(:q, :p), Tuple{AT, AT}},
         _ps::Union{NamedTuple, NetworkParameters}) where {AT <: AbstractArray}
-    (q = z.p + _custom_mul(_custom_mul(z.p, _ps.L1.A), z.p), p = z.p)
+    (q = z.p + _mul(_mul(z.p, _ps.L1.A), z.p), p = z.p)
 end
 
 function symplectic_linear_map(z::NamedTuple{(:q, :p), Tuple{AT, AT}},
         _ps::Union{NamedTuple, NetworkParameters}) where {AT <: AbstractArray}
-    (q = z.q + _custom_mul(_ps.L1.A, z.p), p = z.p)
+    (q = z.q + _mul(_ps.L1.A, z.p), p = z.p)
 end
 
 S = rand(SymmetricMatrix, 2)

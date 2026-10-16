@@ -176,29 +176,10 @@ function initialparameters(
     (weight = StrictlyUpperTriangular(S, M),)
 end
 
-function (d::VolumePreservingFeedForwardLayer{M, M, :bias})(
-        x::AbstractArray{
-            T, 3}, ps) where {T, M}
-    x + d.activation.(mat_tensor_mul(ps.weight, x) .+ ps.bias)
+function (d::VolumePreservingFeedForwardLayer{M, M, :bias})(x::AbstractArray, ps) where {M}
+    x + d.activation.(_mul(ps.weight, x) .+ ps.bias)
 end
 
-function (d::VolumePreservingFeedForwardLayer{M, M, :no_bias})(
-        x::AbstractArray{
-            T, 3}, ps) where {T, M}
-    x + d.activation.(mat_tensor_mul(ps.weight, x))
-end
-
-function (d::VolumePreservingFeedForwardLayer{M, M, :bias})(x::AbstractMatrix{T}, ps) where {
-        T, M}
-    x + d.activation.(ps.weight * x .+ ps.bias)
-end
-
-function (d::VolumePreservingFeedForwardLayer{M, M, :bias})(x::AbstractVector{T}, ps) where {
-        T, M}
-    x + d.activation.(ps.weight * x + ps.bias)
-end
-
-function (d::VolumePreservingFeedForwardLayer{M, M, :no_bias})(x::AbstractVecOrMat{T}, ps) where {
-        T, M}
-    x + d.activation.(ps.weight * x)
+function (d::VolumePreservingFeedForwardLayer{M, M, :no_bias})(x::AbstractArray, ps) where {M}
+    x + d.activation.(_mul(ps.weight, x))
 end

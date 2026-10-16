@@ -200,10 +200,7 @@ function ChainRulesCore.rrule(::typeof(tensor_inverse4), A::AT) where {
     out = tensor_inverse4(A)
 
     function tensor_inverse_pullback(out_diff)
-        out_diff = unthunk(out_diff)
-
-        NoTangent(),
-        - tensor_transpose_tensor_mul(out, tensor_tensor_mul(out_diff, tensor_transpose(out)))
+        _tensor_inverse_pullback(out, out_diff)
     end
     out, tensor_inverse_pullback
 end

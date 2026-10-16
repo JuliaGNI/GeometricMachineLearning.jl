@@ -1,6 +1,8 @@
 # Generates the four `src/kernels/inverses/inverse_NxN.jl` files. The script writes them into the
 # working directory; run JuliaFormatter over the output with `style = "sciml"` and copy it into
-# place. That reproduces the committed files byte for byte.
+# place. The part of each committed file from `function tensor_inverseN(` to the end is what
+# `wrapper_source(n)` writes, byte for byte. The kernel above it is not reproduced byte for byte:
+# the order of the factors in its products changes with the Julia version (`KNOWN_ISSUES.md`, K16).
 #
 # `Symbolics` is deliberately not a dependency of the package: the generated kernels are committed
 # so that building the package never needs a symbolic stack. Run the script by hand, in an
@@ -71,10 +73,7 @@ function wrapper_source(n)
         out = tensor_inverse$(n)(A)
 
         function tensor_inverse_pullback(out_diff)
-            out_diff = unthunk(out_diff)
-
-            NoTangent(),
-            - tensor_transpose_tensor_mul(out, tensor_tensor_mul(out_diff, tensor_transpose(out)))
+            _tensor_inverse_pullback(out, out_diff)
         end
         out, tensor_inverse_pullback
     end

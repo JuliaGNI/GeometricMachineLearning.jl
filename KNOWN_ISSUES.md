@@ -111,22 +111,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   deliberately: it is a restructuring with its own verification, not the comment repair that part
   was scoped to.
 
-### C15 · The `kernel_ad_routines` buffers are still zeroed where allocating would do.
-
-- **location:** `src/kernels/kernel_ad_routines/`
-- **kind:** defect
-- **found:** 2026-09-18
-- **evidence:**
-  `src/kernels/kernel_ad_routines/` allocates `dA = zero(A)`, `dS = KernelAbstractions.zeros(…)` and
-  the same shape in `tensor_mat_mul.jl`, `tensor_mat_skew_sym_assign.jl` and `vec_tensor_mul.jl`.
-  Their kernels sum into a local and assign the buffer element once, over an `ndrange` equal to the
-  buffer's size, so no element is read before it is written — the same argument that let the forward
-  wrappers move to `allocate` and `similar` under *Changed*.
-
-  This part was scoped to the forward path, so they were not changed with it. The backward pass is
-  where training spends its time, so the gain should be larger here than the forward figures, which
-  is also why it wants its own before-and-after measurement rather than being folded into that pass.
-
 ### C16 · One of `ExplicitImports`' seven checks is switched off in `test/quality/aqua.jl`, and two run with a list of names.
 
 - **location:** `test/quality/aqua.jl`
@@ -247,23 +231,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   `test/reduced_system/reduced_system.jl:44–45` name `CHANGELOG.md` rather than `KNOWN_ISSUES.md`.
   The fix is a follow-up change to those comments.
 
-### K7 · A network with a Stiefel leaf raises in `mat_tensor_mul` when the data has another element type.
-
-- **location:** `src/kernels/mat_tensor_mul.jl`
-- **kind:** found late
-- **found:** 2026-10-12, by the critics of part M1a; the kernel code is older than that part
-- **evidence:**
-  A `Float32` `Chain(StiefelLayer(6, 3), Dense(3, 2, tanh))` trained with `train!` on `Float64`
-  data, and a `Float64` one on `Float32` data, raise `AssertionError: eltype(A) == eltype(B)` in
-  `mat_tensor_mul`, reached through `src/layers/manifold_layer.jl` under Zygote. A network of
-  `Dense` layers alone trains on mixed precisions.
-
-  ```julia
-  x = rand(Float32, 6, 12)
-  nn = NeuralNetwork(Chain(StiefelLayer(6, 3), Dense(3, 2, tanh)), Float64)
-  train!(nn, TrainingOptimizer(nn.params), DataLoader(x, x[1:2, :]), Batch(4), 2; loss = FeedForwardLoss())
-  ```
-
 ### K8 · A `DataLoader` of one sample cannot be batched.
 
 - **location:** `src/data_loader/batch.jl`
@@ -319,6 +286,45 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   `SymbolicPullback` call, which also accepts a `NamedTuple` and fails in the same place. The fix
   belongs with the data signatures of the losses as a whole: either each loss accepts only the data
   its vector field can take, or `(q, p)` data is converted before it reaches the field.
+
+### K16 · `scripts/utilities/inverse_generator.jl` reproduces the wrappers of the committed inverse files byte for byte, but not their kernels.
+
+- **location:** `scripts/utilities/inverse_generator.jl:1`
+- **kind:** found late
+- **found:** 2026-10-15, by the builder of part M3; the same output comes from the generator of `origin/main` at `2a63f26a`
+- **evidence:**
+  Formatted with `style = "sciml"`, the generator writes the kernel of each of the four
+  `inverse_NxN.jl` files, the part before `function tensor_inverseN(`, with the factors of some
+  products in another order than the committed file, from line 6 or 7 on:
+
+  ```
+  <                 t2 = (*)((*)(t1, (getindex)(A, 2, 1, k)), (getindex)(A, 1, 2, k))
+  ---
+  >                 t2 = (*)((*)(t1, (getindex)(A, 1, 2, k)), (getindex)(A, 2, 1, k))
+  ```
+
+  The order depends on the Julia version, not on the package versions. With Symbolics 7.39.2,
+  SymbolicUtils 4.46.6 and JuliaFormatter 2.14.0 fixed, Julia 1.11.9, 1.12.6, 1.12.7 and 1.13.1
+  each give a different order, and none of them reproduces all four committed kernels; 1.12.6
+  reproduces the 2×2 one. On Julia 1.13.1, SymbolicUtils 4.46.6 and 4.51.0 give identical output,
+  and two runs on one Julia version give identical output. The Julia build that made the committed
+  kernels on 2026-09-14 is no longer installed, so that run cannot be repeated.
+
+  The rest of each file, from `function tensor_inverseN(` to the end, is byte for byte what the
+  generator's `wrapper_source(n)` writes, and the script's header claims no more than that.
+
+### K17 · `assign_q_and_p` and `PoissonTensor * v` drop the rows from `2N + 1` on without an error.
+
+- **location:** `src/kernels/assign_q_and_p.jl`
+- **kind:** defect
+- **found:** #345, review of 2026-10-15; the behaviour is the same on `origin/main` at `2a63f26a`
+- **evidence:**
+  `assign_q_and_p(x, N)` takes `x[1:N, …]` for `q` and the next `N` rows for `p`, and checks nothing
+  about `size(x, 1)`. An input with `size(x, 1) > 2N` loses its trailing rows silently, and
+  `PoissonTensor * v` reaches the same method.
+
+  Closing it means an error for `size(x, 1) != 2N`. That changes the public behaviour of
+  `assign_q_and_p` and of `PoissonTensor * v`, so it is a change of its own and not a cleanup.
 
 ## Upstream
 

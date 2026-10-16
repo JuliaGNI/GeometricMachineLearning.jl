@@ -38,8 +38,8 @@ end
 
 function (::PSDLayer{M, N})(qp::NamedTuple{(:q, :p), Tuple{AT1, AT2}},
         ps::NamedTuple) where {M, N, AT1 <: AbstractArray, AT2 <: AbstractArray}
-    N > M ? (q = custom_mat_mul(ps.weight, qp.q), p = custom_mat_mul(ps.weight, qp.p)) :
-    (q = custom_mat_mul(ps.weight', qp.q), p = custom_mat_mul(ps.weight', qp.p))
+    N > M ? (q = _mul(ps.weight, qp.q), p = _mul(ps.weight, qp.p)) :
+    (q = _mul(ps.weight', qp.q), p = _mul(ps.weight', qp.p))
 end
 
 function (l::PSDLayer{M, N})(x::AbstractArray, ps::NamedTuple) where {M, N}

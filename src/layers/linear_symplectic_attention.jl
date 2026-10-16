@@ -80,16 +80,13 @@ end
 
 # Implement multiplication with symmetric matrix from the right!
 function (::LinearSymplecticAttentionQ)(z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {AT}
-    (q = z.q + _custom_mul(z.p, ps.A), p = z.p)
+    (q = z.q + _mul(z.p, ps.A), p = z.p)
 end
 
 function (::LinearSymplecticAttentionP)(z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {AT}
-    (q = z.q, p = z.p + _custom_mul(z.q, ps.A))
+    (q = z.q, p = z.p + _mul(z.q, ps.A))
 end
 
 function (d::LinearSymplecticAttention)(z::AbstractArray, ps::NamedTuple)
     apply_layer_to_nt_and_return_array(z, d, ps)
 end
-
-_custom_mul(z::AbstractArray{T, 3}, A::AbstractMatrix{T}) where {T} = tensor_mat_mul(z, A)
-_custom_mul(z::AbstractMatrix{T}, A::AbstractMatrix{T}) where {T} = z * A

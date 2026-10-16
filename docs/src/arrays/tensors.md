@@ -5,13 +5,5 @@ We typically store training data as *tensors with three axes* in `GeometricMachi
 ## Library Functions
 
 ```@docs
-GeometricMachineLearning.tensor_mat_mul(::AbstractArray{<:Number, 3}, ::AbstractMatrix)
-GeometricMachineLearning.tensor_mat_mul!(::AbstractArray{<:Number, 3}, ::AbstractArray{<:Number, 3}, ::AbstractMatrix)
-GeometricMachineLearning.tensor_mat_mul!(::AbstractArray{<:Number, 3}, ::AbstractArray{<:Number, 3}, ::SymmetricMatrix)
-GeometricMachineLearning.mat_tensor_mul(::AbstractMatrix, ::AbstractArray{<:Number, 3})
-GeometricMachineLearning.mat_tensor_mul!(::AbstractArray{<:Number, 3}, ::AbstractMatrix, ::AbstractArray{<:Number, 3})
-GeometricMachineLearning.mat_tensor_mul!(::AbstractArray{<:Number, 3}, ::StrictlyLowerTriangular, ::AbstractArray{<:Number, 3})
-GeometricMachineLearning.mat_tensor_mul!(::AbstractArray{<:Number, 3}, ::StrictlyUpperTriangular, ::AbstractArray{<:Number, 3})
-GeometricMachineLearning.mat_tensor_mul!(::AbstractArray{<:Number, 3}, ::SkewSymMatrix, ::AbstractArray{<:Number, 3})
-GeometricMachineLearning.mat_tensor_mul!(::AbstractArray{<:Number, 3}, ::SymmetricMatrix, ::AbstractArray{<:Number, 3})
+GeometricMachineLearning._mul
 ```

@@ -13,7 +13,7 @@
 # that reads an array one element at a time raises instead of answering slowly.
 
 using GeometricMachineLearning
-using GeometricMachineLearning: tensor_mat_mul!
+using GeometricMachineLearning: _mul, tensor_tensor_mul
 import KernelAbstractions
 using Metal
 using Test
@@ -45,12 +45,20 @@ if Metal.functional()
         @test Array(adjoint_product) ≈ J * B'
     end
 
-    @testset "tensor_mat_mul! on Metal matches the host" begin
-        a = rand(T, 5, 12, 100)
-        b = rand(T, 12, 10)
-        c = KernelAbstractions.zeros(backend, T, 5, 10, 100)
-        tensor_mat_mul!(c, MtlArray(a), MtlArray(b))
-        @test all(i -> Array(c)[:, :, i] ≈ a[:, :, i] * b, 1:100)
+    @testset "_mul and tensor_tensor_mul on Metal match the host" begin
+        x = rand(T, 12, 10, 100)
+        W = rand(T, 5, 12)
+        S = rand(SymmetricMatrix{T}, 12)
+        V = rand(T, 10, 4)
+        y = rand(T, 10, 7, 100)
+        products = ((_mul(MtlArray(W), MtlArray(x)), _mul(W, x)),
+            (_mul(SymmetricMatrix(MtlArray(S.S), S.n), MtlArray(x)), _mul(S, x)),
+            (_mul(MtlArray(x), MtlArray(V)), _mul(x, V)),
+            (tensor_tensor_mul(MtlArray(x), MtlArray(y)), tensor_tensor_mul(x, y)))
+        for (device, host) in products
+            @test KernelAbstractions.get_backend(device) == backend
+            @test Array(device) ≈ host
+        end
     end
 else
     @test_skip Metal.functional()

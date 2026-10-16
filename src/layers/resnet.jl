@@ -44,20 +44,12 @@ function parameterlength(::ResNetLayer{M, M, use_bias}) where {M, use_bias}
     use_bias ? M * (M + 1) : M * M
 end
 
-function (d::ResNetLayer{M, M, true})(x::AbstractVecOrMat, ps::NamedTuple) where {M}
-    x + d.activation.(ps.weight * x .+ ps.bias)
+function (d::ResNetLayer{M, M, true})(x::AbstractArray, ps::NamedTuple) where {M}
+    x + d.activation.(_mul(ps.weight, x) .+ ps.bias)
 end
 
-function (d::ResNetLayer{M, M, false})(x::AbstractVecOrMat, ps::NamedTuple) where {M}
-    x + d.activation.(ps.weight * x)
-end
-
-function (d::ResNetLayer{M, M, false})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, T}
-    x + d.activation.(mat_tensor_mul(ps.weight, x))
-end
-
-function (d::ResNetLayer{M, M, true})(x::AbstractArray{T, 3}, ps::NamedTuple) where {M, T}
-    x + d.activation.(mat_tensor_mul(ps.weight, x) .+ ps.bias)
+function (d::ResNetLayer{M, M, false})(x::AbstractArray, ps::NamedTuple) where {M}
+    x + d.activation.(_mul(ps.weight, x))
 end
 
 function (d::Union{Dense{M, N}, ResNetLayer{M, N}})(z::QPT, ps::NamedTuple) where {M, N}

@@ -38,14 +38,16 @@ function ChainRulesCore.rrule(::typeof(tensor_mat_skew_sym_assign),
     @assert size(A, 1) == size(Z, 1)
     B = tensor_mat_skew_sym_assign(Z, A)
     function tensor_mat_skew_sym_assign_pullback(dB)
-        dB = unthunk(dB)
+        dB = _seed(T, dB)
+        dB isa AbstractZero && return NoTangent(), ZeroTangent(), ZeroTangent()
         f̄ = NoTangent()
         backend = networkbackend(dB)
         dz! = dz_kernel!(backend)
         da! = da_kernel!(backend)
 
-        dZ = zero(Z)
-        dA = KernelAbstractions.zeros(backend, T, size(A)..., size(dB, 3))
+        # Both kernels assign every element of their buffer once, so neither buffer is zeroed.
+        dZ = similar(Z)
+        dA = KernelAbstractions.allocate(backend, T, size(A)..., size(dB, 3))
 
         sys_dim, seq_length, _ = size(Z)
 

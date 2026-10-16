@@ -81,7 +81,7 @@ end
 
 function (d::ClassificationLayer{M, N, true})(output::AbstractArray{T, 3}, ps::NamedTuple) where {
         M, N, T}
-    d.activation(sum(mat_tensor_mul(ps.weight, output), dims = 2)/size(output, 2))
+    d.activation(sum(_mul(ps.weight, output), dims = 2)/size(output, 2))
 end
 
 function (d::ClassificationLayer{M, N, true})(output::AbstractArray{T, 2}, ps::NamedTuple) where {
@@ -91,7 +91,7 @@ end
 
 function (d::ClassificationLayer{M, N, false})(output::AbstractArray{T, 3}, ps::NamedTuple) where {
         M, N, T}
-    d.activation(assign_output_estimate(mat_tensor_mul(ps.weight, output), 1))
+    d.activation(assign_output_estimate(_mul(ps.weight, output), 1))
 end
 
 function (d::ClassificationLayer{M, N, false})(output::AbstractArray{T, 2}, ps::NamedTuple) where {
