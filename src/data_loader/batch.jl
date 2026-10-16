@@ -99,7 +99,7 @@ function Batch(batch_size::Int, seq_length::Int, prediction_window::Int = seq_le
 end
 
 # The classifier's batch: one draw per sample, with the whole input sequence and the whole output.
-# Both lengths are the loader's. Its old prediction window of `0` would gather an output of width 0.
+# Its fifth type parameter is `Int`, because both lengths come from a loader that holds an output.
 function Batch(batch_size::Int,
         dl::DataLoader{T, AT, OT, K, Int}) where {T, AT, OT <: AbstractArray, K}
     Batch(batch_size, dl.input_time_steps, dl.output_time_steps)
@@ -111,9 +111,8 @@ end
 Compute the number of batches.
 
 One epoch draws every start position of every parameter index once, in minibatches of the batch
-size, so the count is `cld(n · n_params, batch_size)` with `n` the number of those positions and
-`samples without replacement`: two indices are never drawn twice. The last minibatch holds what is
-left.
+size, so the count is `cld(n · n_params, batch_size)` with `n` the number of start positions of one
+parameter index. No two indices are drawn twice, and the last minibatch holds what is left.
 
 # Examples
 
@@ -168,14 +167,16 @@ function number_of_start_positions(dl::DataLoader{T, AT, OT, K},
     check_window(min(input_window, target_window), dl, batch)
 end
 
-# A loader and a batch that leave no start position are a caller's mistake: an epoch of no minibatch
-# trains nothing and says nothing, so the three numbers that decide it are named here.
+# A loader or a batch that leaves no minibatch is a caller's mistake: an epoch of none trains
+# nothing and says nothing, so the numbers that decide it are named here. The message is built only
+# where it is thrown, so the check itself allocates nothing.
 function check_window(n::Int, dl::DataLoader, batch::Batch)
-    n ≥ 1 ||
-        throw(ArgumentError("the `DataLoader` has $(dl.input_time_steps) time steps, and the " *
-                            "`Batch` asks for a sequence length of $(batch.seq_length) and a " *
-                            "prediction window of $(batch.prediction_window), which leaves no " *
-                            "start position."))
+    n ≥ 1 && dl.n_params ≥ 1 || throw(ArgumentError(
+        "the `DataLoader` has $(dl.input_time_steps) time steps" *
+        (dl.output === nothing ? "" : " and $(dl.output_time_steps) in its output") *
+        ", with `n_params = $(dl.n_params)`, and the `Batch` asks for a sequence length of " *
+        "$(batch.seq_length) and a prediction window of $(batch.prediction_window), which " *
+        "leaves no minibatch."))
     n
 end
 

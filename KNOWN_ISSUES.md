@@ -297,6 +297,22 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   are in `test/devices/metal.jl`, and `origin/main` at 97bf0d8 has no `test/metal/` directory.
   The fix is a change of that path under `src/`.
 
+### K18 · The tensor-sampling formula in the `DataLoader` manual is one short
+
+- **location:** `docs/src/data_loader/data_loader.md:141`
+- **kind:** docs
+- **found:** 2026-10-16
+- **evidence:**
+  Item 1 of *Sampling from a tensor* gives the start positions as
+  `shuffle(1:(input_time_steps − seq_length − prediction_window))`, and item 4 takes `n_batches`
+  from them. The code takes
+  `n = min(input_time_steps − seq_length + 1, target_steps − prediction_window + 1)` start
+  positions of one parameter index, and counts `cld(n · n_params, batch_size)` minibatches
+  (`src/data_loader/batch.jl`: `number_of_start_positions` and `number_of_batches`). The formula
+  is one short of the code's, and the line is byte for byte the same at `d751ecd9` and on this
+  branch, so no part of the 0.9 work introduced the difference. The correction is a change of
+  that text.
+
 ## The test suite
 
 ### K3 · `test/quality/jet.jl` does not see an unstable kernel-launch argument, nor two barriers in the Poisson-tensor kernel

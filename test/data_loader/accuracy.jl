@@ -3,9 +3,8 @@
 # caller and no test is a function nobody notices breaking, so this file exercises it rather than
 # the docs entry being dropped.
 #
-# The loader comes from `DataLoader(input, output)`, which is C17's constructor: its two element
-# types are free, so a real input and an integer one-hot target are one call. Until M2 the only way
-# to build this argument was to name the parametric type, and the file said so.
+# The loader comes from `DataLoader(input, output)`, whose two element types are free, so a real
+# input and an integer one-hot target are one call.
 
 using GeometricMachineLearning
 using Random
@@ -55,9 +54,9 @@ end
     end
 end
 
-# Edge 10: the crop of `assign_output_estimate` is the last `prediction_window` columns, and its
-# gradient is Zygote's `getindex` adjoint — zero on the cropped columns, and a cotangent of the
-# primal's element type whatever the seed's.
+# The crop of `assign_output_estimate` is the last `prediction_window` columns, and its gradient is
+# Zygote's `getindex` adjoint — zero on the cropped columns, and a cotangent of the primal's element
+# type whatever the seed's.
 @testset "assign_output_estimate crops the last columns ($T)" for T in (Float32, Float64)
     x = T.(reshape(1:(3 * 5 * 4), 3, 5, 4))
     @test GeometricMachineLearning.assign_output_estimate(x, 2) == x[:, 4:5, :]

@@ -106,7 +106,7 @@ batch = Batch(3)
 batch(dl)
 ```
 
-In the first of those two examples the `autoencoder` keyword was set to `true`, which is why the first index was always `1`. The second sets it to `false`, the default: 
+In those two examples the `autoencoder` keyword was set to `true`, which is why the first index is always `1`. This changes with `autoencoder = false`, the default: 
 
 ```@example
 using GeometricMachineLearning # hide

@@ -49,12 +49,13 @@ end
 
 # The fifth parameter is the type of the two output fields, which is `Nothing` for a loader without
 # an output and `Int` with one. A caller that names the first four — `DataLoader{T, AT, OT,
-# :TimeSeries}(…)`, which is how `GMLDatasets` builds a loader — gets it filled in from the fields.
-function DataLoader{T, AT, OT, K}(input::AT, output::OT, input_dim::Int,
-        input_time_steps::Int, n_params::Int, output_dim, output_time_steps) where {
-        T, AT, OT, K}
-    DataLoader{T, AT, OT, K, typeof(output_dim)}(input, output, input_dim,
-        input_time_steps, n_params, output_dim, output_time_steps)
+# :TimeSeries}(…)`, which is how `GMLDatasets` builds a loader — gets it filled in from the fields,
+# and the five counts are converted to `Int` whatever integer type the caller passes.
+function DataLoader{T, AT, OT, K}(input::AT, output::OT, input_dim, input_time_steps,
+        n_params, output_dim, output_time_steps) where {T, AT, OT, K}
+    S = output_dim === nothing ? Nothing : Int
+    DataLoader{T, AT, OT, K, S}(input, output, input_dim, input_time_steps, n_params,
+        output_dim, output_time_steps)
 end
 
 # The two decisions `autoencoder` makes at every constructor that takes a data set: the kind it
@@ -243,24 +244,29 @@ function DataLoader(data::NamedTuple{(:q, :p), Tuple{VT, VT}};
         autoencoder = autoencoder, suppress_info = suppress_info)
 end
 
-# One 1-based data tensor out of the coordinate of one solution. The `q` of a solution carries the
+# The 1-based tensor of one coordinate of one solution, or of each member of an ensemble along the
+# parameter axis, with the axes `(system dimension, time steps, parameters)`.
+function states_tensor(states::AbstractVector, n_params::Int = 1)
+    Array{eltype(first(states))}(undef, length(first(states)), length(states), n_params)
+end
+
+# The states of one coordinate into the column `i` of `data`. The `q` of a solution carries the
 # `DataSeries` time axis `0:n` and a `DataLoader` tensor is 1-based on all three axes, so the states
-# are copied in one at a time.
-function data_tensor(q::AbstractVector)
-    data = Array{eltype(first(q))}(undef, length(first(q)), length(q), 1)
-    for (t, state) in enumerate(q)
-        data[:, t, 1] = state
+# are copied in one at a time and no whole coordinate is built on the way.
+function data_tensor!(data, states::AbstractVector, i::Int)
+    for (t, state) in enumerate(states)
+        data[:, t, i] = state
     end
     data
 end
 
+data_tensor(states::AbstractVector) = data_tensor!(states_tensor(states), states, 1)
+
 # The tensor of one coordinate over the members of an ensemble, along the parameter axis.
 function ensemble_data_tensor(solutions, coordinate::Symbol)
-    first_data = data_tensor(getproperty(first(solutions), coordinate))
-    data = similar(first_data, size(first_data, 1), size(first_data, 2), length(solutions))
-    for (i, solution) in pairs(solutions)
-        data[:, :, i] = data_tensor(getproperty(solution, coordinate))
-    end
+    data = states_tensor(getproperty(first(solutions), coordinate), length(solutions))
+    foreach(i -> data_tensor!(data, getproperty(solutions[i], coordinate), i),
+        eachindex(solutions))
     data
 end
 
@@ -341,10 +347,12 @@ function DataLoader(ensemble_solution::EnsembleSolution{T, T1, Vector{ST}};
         autoencoder = autoencoder, suppress_info = suppress_info)
 end
 
+# `Base.copyto!` carries a host array to any backend; `KernelAbstractions.copyto!` has a method for
+# the CPU alone, and a device backend such as `JLArray`'s has none.
 function map_to_new_backend(input::AbstractArray{T},
         backend::KernelAbstractions.Backend) where {T}
     converted = KernelAbstractions.allocate(backend, T, size(input)...)
-    KernelAbstractions.copyto!(backend, converted, input)
+    Base.copyto!(converted, input)
     converted
 end
 
