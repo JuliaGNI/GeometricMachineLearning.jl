@@ -83,6 +83,8 @@ if "core" in GROUPS
     @safetestset "train! takes a TrainingOptimizer's algorithm and linesearch" include("optimizers/optimizer.jl")
     @safetestset "The minibatch index set is concrete and grows linearly" include("data_loader/batch_index_set.jl")
     @safetestset "Classifier accuracy" include("data_loader/accuracy.jl")
+    @safetestset "DataLoader batching" include("data_loader/batch.jl")
+    @safetestset "DataLoader constructors" include("data_loader/data_loader.jl")
     @safetestset "Data loader docstring examples" include("integration/docstrings/data_loader.jl")
     @safetestset "Layer and architecture docstring examples" include("integration/docstrings/layers_and_architectures.jl")
     @safetestset "Loss docstring examples" include("integration/docstrings/losses.jl")

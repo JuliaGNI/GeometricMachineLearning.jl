@@ -4,43 +4,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
 ## B. Known defects
 
-### B10 · `DataLoader(::EnsembleSolution{T, T1, Vector{ST}})` at `src/data_loader/data_loader.jl:325` has no test and appears unreachable through this package's current dependencies.
-
-- **location:** `src/data_loader/data_loader.jl:325`
-- **kind:** missing test
-- **found:** 2026-09-18
-- **evidence:**
-  It dispatches
-  on `ST <: Union{GeometricSolution{T, T1, TT, NamedTuple{(:t, :q, :v), TuT}},
-  GeometricSolution{T, T1, TT, NamedTuple{(:t, :q, :q̇), TuT}}}` — a `GeometricSolution` whose
-  `dataser` has exactly the two keys `:q` and `:v` (or `:q̇`) besides `:t`, with no `:p`.
-
-  Checked against `GeometricEquations` 0.21.3 (this package's resolved version): every equation
-  type's own `initialstate(equ, t, ics, params)` reconstructs its `ics` from its own fixed field
-  set regardless of what is passed in, and no type pairs `:v`/`:q̇` without also carrying `:p` —
-  `SODE`/`ODE` give `(:q,)` alone; `PODE`/`HODE` give `(:q, :p)`; `IODE`/`LODE` give
-  `(:q, :p, :v)`; `IDAE`/`LDAE` give `(:q, :p, :v, :λ, :μ)`. Verified directly for `SODE`:
-  `initialstate(equ::SODE, t, ics, params) = (q = _statevariable(ics.q, periodicity(equ)),)`
-  discards everything but `.q` even when `ics` already has a `:v` key. So no
-  `EquationProblem`/`EnsembleProblem` built from any equation type this package depends on can
-  produce a two-key `dataser` — passing a NamedTuple with the right keys through the public
-  constructor does not help, because the equation-specific `initialstate` method throws it away.
-
-  `GeometricSolution` and `EnsembleSolution` each define exactly one inner constructor (taking a
-  `GeometricProblem`/`EnsembleProblem`), so Julia generates no default all-fields constructor for
-  either, and there is no supported way to build one directly. The two low-level bypasses tried —
-  `ccall(:jl_new_struct, ...)` on the (mutable) `GeometricSolution`, and
-  `ccall(:jl_new_struct_uninit, ...)` followed by `setfield!` on each field — both crashed the
-  Julia process with a segmentation fault (the first immediately; the second on a later, unrelated
-  allocation, consistent with GC scanning a partially-initialized object), which is why neither is
-  a technique this package's test suite should rely on.
-
-  The fix in `src/data_loader/data_loader.jl:339` (`zeros(T, ...)` instead of untyped `zeros(...)`)
-  is correct by inspection — it matches the file's three sibling constructors character for
-  character — but is untested. Closing this means either GeometricEquations gaining an equation
-  type whose `initialstate` returns exactly `(:q, :v)` or `(:q, :q̇)`, or deciding the method is
-  dead code and removing it (Part E of the audit, not this one).
-
 ### B11 · `PositionalEncoding` is CPU-only, and the failure is a compile error rather than a slowdown.
 
 - **location:** —
@@ -125,23 +88,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   `Architecture`, `AbstractExplicitLayer`, `_compute_loss`, `dim` and the rest are used
   deliberately, and the resolution is upstream declaring them `public`. Each check's reason is
   written beside it in the test file.
-
-### C17 · `accuracy` cannot be reached through any public `DataLoader` constructor.
-
-- **location:** `src/data_loader/data_loader.jl:487`
-- **kind:** defect
-- **found:** 2026-09-18
-- **evidence:**
-  Its signature is
-  `DataLoader{T, AT <: AbstractArray{T}, BT <: AbstractArray{T1}}` with `T1 <: Integer`
-  (`src/data_loader/data_loader.jl:487`), and every `DataLoader(input, output)` method requires the
-  two arrays to share one element type. A classifier's data are the case where they do not: real
-  inputs, integer one-hot targets. So the only way to build an argument for this function is to name
-  the parametric type, which is what `test/data_loader/accuracy.jl` does.
-
-  Closing it is a `DataLoader(input::AbstractArray{T, 3}, output::AbstractArray{T1, 3})` constructor
-  with the two element types free. That is an API addition rather than a cleanup, which is why the
-  test records the gap instead of the same change closing it.
 
 ### C18 · `src/kernels/exponentials/tensor_exponential.jl` no longer defines `tensor_exponential`; it holds the identity tensor and its `rrule`, used by `tensor_cayley.jl` and `cpu_inverse.jl`.
 
@@ -231,16 +177,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   `test/reduced_system/reduced_system.jl:44–45` name `CHANGELOG.md` rather than `KNOWN_ISSUES.md`.
   The fix is a follow-up change to those comments.
 
-### K8 · A `DataLoader` of one sample cannot be batched.
-
-- **location:** `src/data_loader/batch.jl`
-- **kind:** found late
-- **found:** 2026-10-12, by the critics of part M1a
-- **evidence:**
-  `DataLoader(x, x)` with `x = rand(Float32, 2, 1)` and `Batch(1)` raises the time-series
-  assertion "The number of time steps has to be greater than sequence length + prediction window"
-  when `train!` draws its minibatches.
-
 ### K11 · A comment in `adam_with_learning_rate_decay.jl` reports a past experiment.
 
 - **location:** `test/optimizers/adam_with_learning_rate_decay.jl`
@@ -250,21 +186,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   The comment above `train_manifold_network` says "from a seeded start the loss fell by under 2%
   on 1.13 and *rose* on 1.12". The fix states only the present constraint: a 32-epoch budget
   drives the learning rate to `η₂` almost at once, and 128 epochs train.
-
-### K12 · `Batch` never draws the last sample of a `DataLoader` of matrices.
-
-- **location:** `src/data_loader/batch.jl`
-- **kind:** found late
-- **found:** 2026-10-12, by the critics of part M1a
-- **evidence:**
-  On a `DataLoader(x, x)` with `x = rand(2, 10)`, the minibatches of `Batch(bs)` hold the samples
-  1 to 9 for each `bs` in 1, 3, 4 and 10; sample 10 is in none of them. `Batch(1)` gives 9
-  minibatches.
-
-  ```
-  1 nbatches 9 samples [(1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1), (7, 1), (8, 1), (9, 1)]
-  10 nbatches 1 samples [(1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1), (7, 1), (8, 1), (9, 1)]
-  ```
 
 ### K15 · `HNNLoss` and `SymbolicPullback(arch)` accept `(q, p)` data in their signatures and fail on it inside the generated vector field.
 
@@ -375,6 +296,20 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   The docstring says "the GPU tests in `test/metal/` do not cover this layer". The Metal tests
   are in `test/devices/metal.jl`, and `origin/main` at 97bf0d8 has no `test/metal/` directory.
   The fix is a change of that path under `src/`.
+
+### K18 · The tensor-sampling formula in the `DataLoader` manual is one short
+
+- **location:** `docs/src/data_loader/data_loader.md:143`
+- **kind:** docs
+- **found:** 2026-10-16
+- **evidence:**
+  Item 1 of *Sampling from a tensor* gives the start positions as
+  `shuffle(1:(input_time_steps − seq_length − prediction_window))`. For the time-series loader
+  without an output shown on that page, `number_of_start_positions` takes
+  `n = input_time_steps − seq_length − prediction_window + 1`, and `number_of_batches` counts
+  `cld(n · n_params, batch_size)` minibatches (`src/data_loader/batch.jl`). For the example's
+  five time steps and `Batch(4, 2, 0)`, the formula gives three start positions per parameter
+  and the code gives four. The correction is to add `+ 1` to the formula's upper bound.
 
 ## The test suite
 

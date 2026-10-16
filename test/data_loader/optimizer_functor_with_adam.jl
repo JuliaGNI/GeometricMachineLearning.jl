@@ -35,8 +35,10 @@ function test_optimization_with_adam(; T = Float32, input_dim = 9, n_patches = 4
         T = T, input_dim = input_dim, n_patches = n_patches,
         n_images = n_images, n_classes = n_classes)
 
-    # batch size is equal to two
-    batch = Batch(2)
+    # The batch is drawn over the images: `Batch(2, dl)` takes the loader's own
+    # sequence length and output width, so one minibatch holds the whole patch sequence and the
+    # whole one-hot output of its two images.
+    batch = Batch(2, dl)
 
     # the transformer is called with `n_heads` heads and two layers
     model = Chain(Transformer(dl.input_dim, n_heads, 2; Stiefel = true),

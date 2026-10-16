@@ -1,5 +1,4 @@
 using GeometricMachineLearning: tensor_tensor_mul, tensor_transpose_tensor_mul,
-                                assign_output_estimate,
                                 tensor_mat_skew_sym_assign, cpu_inverse, tensor_inverse2,
                                 tensor_inverse3, tensor_inverse4, tensor_inverse5,
                                 init_output,
@@ -23,7 +22,6 @@ function main(first_dim, second_dim, third_dim, third_tensor_dim)
         rand(second_dim, third_dim, third_tensor_dim))
     test_rrule(tensor_transpose_tensor_mul, rand(second_dim, first_dim, third_tensor_dim),
         rand(second_dim, third_dim, third_tensor_dim))
-    test_rrule(assign_output_estimate, rand(first_dim, second_dim, third_tensor_dim), 1)
     test_rrule(
         tensor_mat_skew_sym_assign, rand(first_dim, second_dim, third_tensor_dim + 1),
         rand(first_dim, first_dim))
