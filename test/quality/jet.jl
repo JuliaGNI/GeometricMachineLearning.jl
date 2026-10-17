@@ -58,14 +58,6 @@ const A3{T} = Array{T, 3}
                 (2, 3, 2), zeros(T, 2, 3, 2), zeros(T, 2, 4, 2), zeros(T, 3, 4, 2)))
         end
 
-        # src/kernels/identity_tensor.jl
-        for T in (Float16, Float32, Float64)
-            @test isempty(JET.get_reports(JET.report_opt(GML.assign_ones!, (A3{T},);
-                target_modules = TARGET)))
-            @test isempty(kernel_body_reports(GML.assign_ones_kernel!, (3, 2),
-                zeros(T, 3, 3, 2)))
-        end
-
         # src/kernels/cayley.jl: `tensor_cayley`, its kernel and its pullback
         for T in (Float16, Float32, Float64)
             @test isempty(JET.get_reports(JET.report_opt(GML.tensor_cayley, (A3{T},);
@@ -88,16 +80,8 @@ const A3{T} = Array{T, 3}
         @test isempty(kernel_body_reports(GML.da_kernel!, (3, 3, 2), zeros(3, 3, 2), Z, M,
             zeros(4, 4, 2), 3, 4))
 
-        # src/kernels/inverses/: the symbolic inverses in test/kernels/tensor_inverse.jl
+        # src/kernels/inverses/tensor_mat_skew_sym_assign.jl
         for T in (Float16, Float32, Float64)
-            for (f, k, n) in ((GML.tensor_inverse2!, GML.inv22_kernel!, 2),
-                (GML.tensor_inverse3!, GML.inv33_kernel!, 3),
-                (GML.tensor_inverse4!, GML.inv44_kernel!, 4),
-                (GML.tensor_inverse5!, GML.inv55_kernel!, 5))
-                @test isempty(JET.get_reports(JET.report_opt(f, (A3{T}, A3{T});
-                    target_modules = TARGET)))
-                @test isempty(kernel_body_reports(k, 2, zeros(T, n, n, 2), zeros(T, n, n, 2)))
-            end
             @test isempty(JET.get_reports(JET.report_opt(GML.tensor_mat_skew_sym_assign!,
                 (A3{T}, A3{T}, Matrix{T}); target_modules = TARGET)))
             @test isempty(kernel_body_reports(GML.tensor_mat_skew_sym_assign_kernel!,

@@ -98,46 +98,15 @@ breaking release).
 
 ### Changed
 
-- **`VolumePreservingAttention` computes the Cayley transform with the kernel `tensor_cayley` at every sequence length other than 2 to 5, 0 included, and on device arrays; the batch inverse that served those lengths is deleted.** `tensor_cayley(C)` is internal and not exported. It computes `(I + Cₖ)⁻¹(I − Cₖ)` for every slice `k` by row-pivoted Gauss–Jordan elimination, one work item per slice. Its `rrule` computes `C̄ = −(I + Λ)ᵀ Λ̄ (I + Λ)ᵀ / 2` from `Λ` alone, with no second solve and no identity tensor.
+- **`VolumePreservingAttention` computes the Cayley transform with the kernel `tensor_cayley` at every sequence length, 0 included, and on device arrays; the batch inverses are deleted.** `tensor_cayley(C)` is internal and not exported. It computes `(I + Cₖ)⁻¹(I − Cₖ)` for every slice `k` by row-pivoted Gauss–Jordan elimination, one work item per slice. Its `rrule` computes `C̄ = −(I + Λ)ᵀ Λ̄ (I + Λ)ᵀ / 2` from `Λ` alone, with no second solve and no identity tensor.
 
-  `cpu_inverse`, its `rrule` and `cpu_tensor_cayley` are deleted. The identity tensor that the closed forms use moved from `src/kernels/exponentials/tensor_exponential.jl` to `src/kernels/identity_tensor.jl`, so that the file name matches what it holds; this closes known issue C18, which leaves `KNOWN_ISSUES.md`.
+  `cpu_inverse`, its `rrule` and `cpu_tensor_cayley` are deleted, and so are the closed forms `tensor_cayley2` to `tensor_cayley5`, the symbolic inverses `tensor_inverse2` to `tensor_inverse5` with their pullback, the identity tensor `init_output`, and `scripts/utilities/inverse_generator.jl`. This closes known issues C18 and K16, which leave `KNOWN_ISSUES.md`.
 
   New tests: `test/kernels/cayley.jl` checks the kernel's orthogonality and value, and its pullback against a central difference, for N = 2 to 8. `test/layers/volume_preserving_attention.jl` checks the layer's forward pass and gradients for N = 2 to 8, on the host and on a `JLArray`. `test/devices/jlarray.jl`, `test/devices/metal.jl` and `test/quality/jet.jl` reach the kernel, the last in `Float16`, `Float32` and `Float64`.
 
-  `scripts/utilities/cayley_timings.jl` is new. It times `tensor_cayley` against the closed form `tensor_cayleyN` on a batch of 1000 skew slices at scale 1, for N = 2 to 8 and both element types. Each variant, N and element type runs in a fresh process with BLAS on one thread and one untimed warm-up call; a time is the median of five calls, forward and backward. For N = 6 to 8 there is no closed form, so the script prints the kernel's times alone.
-
-  CPU, from two runs of the script on an Apple M-series machine with Julia 1.13.2, at a load average of 3.7 to 4.6. The ratio is the kernel over the closed form.
-
-  | N | T | forward µs, run 1 / run 2 | backward µs, run 1 / run 2 | ratio forward, run 1 / run 2 | ratio backward, run 1 / run 2 |
-  |:--|:--|--:|--:|--:|--:|
-  | 2 | Float32 | 23.9 / 24.2 | 31.0 / 31.0 | 0.85 / 0.86 | 0.51 / 0.49 |
-  | 3 | Float32 | 54.1 / 54.4 | 62.5 / 64.7 | 1.06 / 1.17 | 0.53 / 0.54 |
-  | 4 | Float32 | 93.2 / 93.6 | 109.2 / 116.0 | 1.24 / 1.31 | 0.54 / 0.57 |
-  | 5 | Float32 | 139.7 / 140.5 | 173.6 / 169.7 | 1.07 / 1.04 | 0.50 / 0.50 |
-  | 6 | Float32 | 209.1 / 214.0 | 293.4 / 280.4 | no closed form | no closed form |
-  | 7 | Float32 | 315.9 / 307.5 | 429.1 / 410.4 | no closed form | no closed form |
-  | 8 | Float32 | 407.2 / 406.1 | 545.2 / 553.1 | no closed form | no closed form |
-  | 2 | Float64 | 27.9 / 28.5 | 31.0 / 34.6 | 0.83 / 0.87 | 0.43 / 0.47 |
-  | 3 | Float64 | 57.4 / 59.2 | 59.9 / 63.3 | 1.25 / 1.42 | 0.40 / 0.41 |
-  | 4 | Float64 | 94.6 / 93.8 | 111.8 / 119.2 | 1.06 / 0.93 | 0.42 / 0.46 |
-  | 5 | Float64 | 145.3 / 145.5 | 184.5 / 178.0 | 1.09 / 0.86 | 0.43 / 0.41 |
-  | 6 | Float64 | 234.8 / 240.6 | 288.8 / 289.8 | no closed form | no closed form |
-  | 7 | Float64 | 326.3 / 323.6 | 468.4 / 479.0 | no closed form | no closed form |
-  | 8 | Float64 | 459.7 / 449.1 | 551.0 / 591.6 | no closed form | no closed form |
-
-  At N = 2 the kernel's forward time is below the closed form's in both runs and both element types,
-  at ratios 0.83 to 0.87. At N = 3 to 5 the forward ratios lie between 0.86 and 1.42, above 1 in some
-  runs and below 1 in others. The backward ratio is below 1 at N = 2 to 5 in every run.
-
-  Metal, `Float32`, on the `AGXG16CDevice` Metal device, with the script's own `measure` on `MtlArray`
-  and every timed call synchronized on the device, as the script's header documents. These are
-  warm-session figures from four runs. The forward ratio at N = 2 is 0.28, 1.28, 0.86 and 0.51, so one
-  run's ratio moves by up to 4.6× at N = 2. At N = 3 to 5 the forward ratios lie between 0.48 and 1.20.
-  The backward ratios lie between 0.44 and 0.99 at every N.
+  The closed forms went because the kernel is not meaningfully slower. Against them, on 1000 skew slices of size N = 2 to 5 on an Apple M-series CPU under load, the kernel's forward time lay between 0.83 and 1.42 of theirs and its backward time between 0.40 and 0.57. On Metal, in `Float32`, the forward ratio lay between 0.28 and 1.28 and the backward ratio between 0.44 and 0.99. These are two cold CPU runs and four warm Metal runs, and one Metal ratio moved by up to 4.6× at N = 2, so the figures are noisy; no ratio exceeded 2.
 
   The orthogonality check in `test/kernels/cayley.jl` compares the kernel's `‖ΛₖᵀΛₖ − I‖∞` with that of the pivoted reference `(I + Cₖ) \ (I − Cₖ)`, for N = 2 to 8, both element types and two scales, on three input sets. The ratio of the kernel's error to the reference's is held to a limit of 4 on all three sets. On the two exactly skew sets the kernel's error must also lie within `10·n·eps(T)·(1 + ‖Cₖ‖₂²)`; on the `:skew_sym` set, where `C` is skew only to rounding, the ratio is the only check. The value rows compare each `Λₖ` with a `BigFloat` solve rounded to `T` on the same three sets.
-
-  The closed forms `tensor_cayley2` to `tensor_cayley5` and their dispatch are kept for sequence lengths 2 to 5. Every other sequence length, 0 included, uses `tensor_cayley` on the CPU and on devices. The figures for N = 2 to 5 are in the tables above.
 
 - `Pkg.test()` no longer runs the doctests. `test/quality/doctests.jl` is now the group `doctests`, which an empty `ARGS` does not run; `Pkg.test(test_args = ["doctests"])` runs it. In CI the Doctests job stays their runner, so the test matrix no longer runs them a second time.
 - **CI uploads coverage from the `Julia 1 - ubuntu-latest` job instead of `Julia min`, and a test job saves the Julia cache only when it succeeds.**

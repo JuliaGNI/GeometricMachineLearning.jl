@@ -19,9 +19,7 @@ Applying a layer of type `VolumePreservingAttention` does the following:
 
 # Implementation
 
-The layer's `seq_length` chooses the activation: a `seq_length` of 2, 3, 4 or 5 uses the closed form
-`tensor_cayley2` to `tensor_cayley5`, whose inverse has been computed symbolically. Every other
-`seq_length`, `0` included, uses [`tensor_cayley`](@ref), which solves ``(\mathbb{I} + C)\Lambda =
+The Cayley transform is computed by [`tensor_cayley`](@ref), which solves ``(\mathbb{I} + C)\Lambda =
 \mathbb{I} - C`` by row-pivoted Gauss–Jordan elimination at any sequence length, on the CPU and on a
 device, and in the element type of the data.
 """
@@ -38,30 +36,6 @@ end
 function orthonormal_activation_cayley(::VolumePreservingAttention, A::AbstractArray{
         T, 3}) where {T}
     tensor_cayley(A)
-end
-
-function orthonormal_activation_cayley(
-        ::VolumePreservingAttention{M, M, ScalarProductType, 2},
-        A::AbstractArray{T, 3}) where {T, M, ScalarProductType}
-    tensor_cayley2(A)
-end
-
-function orthonormal_activation_cayley(
-        ::VolumePreservingAttention{M, M, ScalarProductType, 3},
-        A::AbstractArray{T, 3}) where {T, M, ScalarProductType}
-    tensor_cayley3(A)
-end
-
-function orthonormal_activation_cayley(
-        ::VolumePreservingAttention{M, M, ScalarProductType, 4},
-        A::AbstractArray{T, 3}) where {T, M, ScalarProductType}
-    tensor_cayley4(A)
-end
-
-function orthonormal_activation_cayley(
-        ::VolumePreservingAttention{M, M, ScalarProductType, 5},
-        A::AbstractArray{T, 3}) where {T, M, ScalarProductType}
-    tensor_cayley5(A)
 end
 
 function parameterlength(::VolumePreservingAttention{M, M, :skew_sym}) where {M}

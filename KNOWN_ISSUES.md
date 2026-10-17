@@ -198,32 +198,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   belongs with the data signatures of the losses as a whole: either each loss accepts only the data
   its vector field can take, or `(q, p)` data is converted before it reaches the field.
 
-### K16 · `scripts/utilities/inverse_generator.jl` reproduces the wrappers of the committed inverse files byte for byte, but not their kernels.
-
-- **location:** `scripts/utilities/inverse_generator.jl:1`
-- **kind:** found late
-- **found:** 2026-10-15, by the builder of part M3; the same output comes from the generator of `origin/main` at `2a63f26a`
-- **evidence:**
-  Formatted with `style = "sciml"`, the generator writes the kernel of each of the four
-  `inverse_NxN.jl` files, the part before `function tensor_inverseN(`, with the factors of some
-  products in another order than the committed file, from line 6 or 7 on:
-
-  ```
-  <                 t2 = (*)((*)(t1, (getindex)(A, 2, 1, k)), (getindex)(A, 1, 2, k))
-  ---
-  >                 t2 = (*)((*)(t1, (getindex)(A, 1, 2, k)), (getindex)(A, 2, 1, k))
-  ```
-
-  The order depends on the Julia version, not on the package versions. With Symbolics 7.39.2,
-  SymbolicUtils 4.46.6 and JuliaFormatter 2.14.0 fixed, Julia 1.11.9, 1.12.6, 1.12.7 and 1.13.1
-  each give a different order, and none of them reproduces all four committed kernels; 1.12.6
-  reproduces the 2×2 one. On Julia 1.13.1, SymbolicUtils 4.46.6 and 4.51.0 give identical output,
-  and two runs on one Julia version give identical output. The Julia build that made the committed
-  kernels on 2026-09-14 is no longer installed, so that run cannot be repeated.
-
-  The rest of each file, from `function tensor_inverseN(` to the end, is byte for byte what the
-  generator's `wrapper_source(n)` writes, and the script's header claims no more than that.
-
 ### K17 · `assign_q_and_p` and `PoissonTensor * v` drop the rows from `2N + 1` on without an error.
 
 - **location:** `src/kernels/assign_q_and_p.jl`
@@ -245,8 +219,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 - **evidence:**
   On 200 skew `Float32` slices of `N = 5` whose largest `‖Cₖ‖₂` is 6.55e8, `tensor_cayley` returns
   non-finite values in 23 of them and raises no error. The scale is far outside check 3's `{1, 1e2}`,
-  and no method is accurate there: `tensor_cayley5`, the closed form that stays, is non-finite in 197
-  of the same 200 slices, and the dense solve `(I + Cₖ) \ (I − Cₖ)` is finite on all 200 but has an
+  and no method is accurate there: the dense solve `(I + Cₖ) \ (I − Cₖ)` is finite on all 200 but has an
   orthogonality error `‖ΛₖᵀΛₖ − I‖∞` of 7.3e4 at worst, which is no answer at that scale. The cause
   is cancellation in the last pivot, not overflow: in all 23 non-finite slices the last `Float32`
   pivot is exactly `0`. The same elimination in `Float64` gives a last pivot of magnitude 1.7 to 15
@@ -256,14 +229,13 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   slices is at most 284.
 
   ```julia
-  using GeometricMachineLearning: tensor_cayley, tensor_cayley5
+  using GeometricMachineLearning: tensor_cayley
   import Random
   Random.seed!(3)
   R = 1.0f8 * randn(Float32, 5, 5, 200)
   C = R - permutedims(R, (2, 1, 3))
   nonfinite(L) = count(k -> !all(isfinite, L[:, :, k]), 1:200)
   nonfinite(tensor_cayley(C))    # 23 of 200
-  nonfinite(tensor_cayley5(C))   # 197 of 200
   ```
 
 ## Upstream
