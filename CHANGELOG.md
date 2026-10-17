@@ -98,60 +98,46 @@ breaking release).
 
 ### Changed
 
-- **`VolumePreservingAttention` computes the Cayley transform on the generic path, the kernel `tensor_cayley`, at every sequence length without a closed form and on a device array; the batch inverse that served those lengths is deleted, and the closed forms for N = 2 to 5 keep their own dispatch.**
+- **`VolumePreservingAttention` computes the Cayley transform with the kernel `tensor_cayley` at every sequence length other than 2 to 5, 0 included, and on device arrays; the batch inverse that served those lengths is deleted.** `tensor_cayley(C)` is internal and not exported. It computes `(I + Cₖ)⁻¹(I − Cₖ)` for every slice `k` by row-pivoted Gauss–Jordan elimination, one work item per slice. Its `rrule` computes `C̄ = −(I + Λ)ᵀ Λ̄ (I + Λ)ᵀ / 2` from `Λ` alone, with no second solve and no identity tensor.
 
-  `src/kernels/cayley.jl` is new. `tensor_cayley(C::AbstractArray{T, 3})` is internal and not exported. It computes `(I + Cₖ)⁻¹(I − Cₖ)` for every slice `k` by row-pivoted Gauss–Jordan elimination on the pair `(I + Cₖ, I − Cₖ)`, one work item per slice, with the loop bound read from `size(C, 1)` at run time. Its `rrule` computes `C̄ = −(I + Λ)ᵀ Λ̄ (I + Λ)ᵀ / 2` from `Λ` alone: no second solve, no identity tensor, and no `Zygote.pullback` of `inv` inside a kernel. The activation of `VolumePreservingAttention` for every sequence length but 2 to 5 runs this kernel, so those lengths run on a device; the path it replaces, `cpu_inverse`, called `inv` and `Zygote.pullback(inv, ·)` on one slice inside a kernel, which this change removes.
+  `cpu_inverse`, its `rrule` and `cpu_tensor_cayley` are deleted. The identity tensor that the closed forms use moved from `src/kernels/exponentials/tensor_exponential.jl` to `src/kernels/identity_tensor.jl`, so that the file name matches what it holds; this closes known issue C18, which leaves `KNOWN_ISSUES.md`.
 
-  `cpu_inverse`, its `rrule` and `cpu_tensor_cayley` are deleted, because nothing calls them after this change. The identity tensor that the closed forms use moved from `src/kernels/exponentials/tensor_exponential.jl` to `src/kernels/identity_tensor.jl`, which holds `init_output`, `assign_ones!` and the `rrule` of `init_output`, so the file name matches what it holds, and known issue C18 leaves `KNOWN_ISSUES.md`.
+  New tests: `test/kernels/cayley.jl` checks the kernel's orthogonality and value, and its pullback against a central difference, for N = 2 to 8. `test/layers/volume_preserving_attention.jl` checks the layer's forward pass and gradients for N = 2 to 8, on the host and on a `JLArray`. `test/devices/jlarray.jl`, `test/devices/metal.jl` and `test/quality/jet.jl` reach the kernel, the last in `Float16`, `Float32` and `Float64`.
 
-  `test/kernels/cayley.jl` is new: the exact skewness of the layer's own `:arbitrary` operand, the kernel's orthogonality error against the pivoted reference and against the bound `10·n·eps(T)·(1 + ‖Cₖ‖₂²)`, its value against a `BigFloat` solve, and its pullback against a central difference at every `N` in 2 to 8. `test/layers/volume_preserving_attention.jl` is new: the forward pass of a layer of dimension 4 against an independent host computation and the gradient of the data and of the weight, on the host and on a `JLArray`, at every sequence length in 2 to 8 and with `SL = 0` at sequence lengths 3 and 7. `test/devices/jlarray.jl` and `test/devices/metal.jl` gain the kernel's device rows, the `JLArray` one the same strict rows at every `N` in 2 to 8, the Metal one a `Float32` testset that also runs the layer's forward pass at N = 2 to 8, and `test/quality/jet.jl` reaches the kernel, its kernel body and its pullback in `Float16`, `Float32` and `Float64`.
+  `scripts/utilities/cayley_timings.jl` is new. It times `tensor_cayley` against the closed form `tensor_cayleyN` on a batch of 1000 skew slices at scale 1, for N = 2 to 8 and both element types. Each variant, N and element type runs in a fresh process with BLAS on one thread and one untimed warm-up call; a time is the median of five calls, forward and backward. For N = 6 to 8 there is no closed form, so the script prints the kernel's times alone.
 
-  `scripts/utilities/cayley_timings.jl` is new. It times `tensor_cayley` on a batch of 1000 skew slices at scale 1 against the closed form `tensor_cayleyN` of the same `N`, for `N` = 2 to 8 and both element types. Each variant, `N` and element type runs in its own fresh process, with BLAS pinned to one thread and one untimed warm-up call; a time is the median of five calls, forward and backward. The script prints the kernel's two times and the ratio of the kernel to the closed form. For `N` = 6 to 8 there is no closed form in the tree, so it prints the kernel's times alone.
+  CPU, from two runs of the script on an Apple M-series machine with Julia 1.13.2, at a load average of 3.7 to 4.6. The ratio is the kernel over the closed form.
 
-  Check 1's CPU medians were run at commit `76cee621`, the commit of this branch that still held every closed form, including the batch inverse of `cpu_tensor_cayley`, which the N = 6 to 8 ratios are against. The shipped script cannot reproduce that column, because `cpu_tensor_cayley` is deleted; the Metal column below it is the shipped script's own, as it says there. Machine: Apple M-series, Julia 1.13.2, shared with other work, at a load average between 49 and 88 at the start and the end of the run; BLAS on one thread; batch of 1000 skew slices at scale 1. The two µs columns are the kernel's own forward and backward times, and each ratio is the kernel over the closed form.
-
-  | N | T | forward kernel µs | backward kernel µs | ratio forward | ratio backward |
+  | N | T | forward µs, run 1 / run 2 | backward µs, run 1 / run 2 | ratio forward, run 1 / run 2 | ratio backward, run 1 / run 2 |
   |:--|:--|--:|--:|--:|--:|
-  | 2 | Float32 | 45.3 | 43.0 | 0.47 | 0.63 |
-  | 3 | Float32 | 74.7 | 72.3 | 1.71 | 0.58 |
-  | 4 | Float32 | 123.8 | 135.1 | 0.59 | 0.66 |
-  | 5 | Float32 | 184.5 | 224.3 | 1.43 | 0.66 |
-  | 6 | Float32 | 606.8 | 337.0 | 0.64 | 0.26 |
-  | 7 | Float32 | 372.0 | 485.5 | 0.33 | 0.30 |
-  | 8 | Float32 | 521.4 | 656.9 | 0.38 | 0.33 |
-  | 2 | Float64 | 48.8 | 51.0 | 1.46 | 0.65 |
-  | 3 | Float64 | 75.4 | 100.7 | 1.23 | 0.69 |
-  | 4 | Float64 | 124.4 | 168.6 | 1.13 | 0.62 |
-  | 5 | Float64 | 185.2 | 245.0 | 1.27 | 0.60 |
-  | 6 | Float64 | 289.8 | 384.5 | 0.16 | 0.23 |
-  | 7 | Float64 | 416.1 | 533.4 | 0.30 | 0.28 |
-  | 8 | Float64 | 565.8 | 756.6 | 0.34 | 0.33 |
+  | 2 | Float32 | 23.9 / 24.2 | 31.0 / 31.0 | 0.85 / 0.86 | 0.51 / 0.49 |
+  | 3 | Float32 | 54.1 / 54.4 | 62.5 / 64.7 | 1.06 / 1.17 | 0.53 / 0.54 |
+  | 4 | Float32 | 93.2 / 93.6 | 109.2 / 116.0 | 1.24 / 1.31 | 0.54 / 0.57 |
+  | 5 | Float32 | 139.7 / 140.5 | 173.6 / 169.7 | 1.07 / 1.04 | 0.50 / 0.50 |
+  | 6 | Float32 | 209.1 / 214.0 | 293.4 / 280.4 | no closed form | no closed form |
+  | 7 | Float32 | 315.9 / 307.5 | 429.1 / 410.4 | no closed form | no closed form |
+  | 8 | Float32 | 407.2 / 406.1 | 545.2 / 553.1 | no closed form | no closed form |
+  | 2 | Float64 | 27.9 / 28.5 | 31.0 / 34.6 | 0.83 / 0.87 | 0.43 / 0.47 |
+  | 3 | Float64 | 57.4 / 59.2 | 59.9 / 63.3 | 1.25 / 1.42 | 0.40 / 0.41 |
+  | 4 | Float64 | 94.6 / 93.8 | 111.8 / 119.2 | 1.06 / 0.93 | 0.42 / 0.46 |
+  | 5 | Float64 | 145.3 / 145.5 | 184.5 / 178.0 | 1.09 / 0.86 | 0.43 / 0.41 |
+  | 6 | Float64 | 234.8 / 240.6 | 288.8 / 289.8 | no closed form | no closed form |
+  | 7 | Float64 | 326.3 / 323.6 | 468.4 / 479.0 | no closed form | no closed form |
+  | 8 | Float64 | 459.7 / 449.1 | 551.0 / 591.6 | no closed form | no closed form |
 
-  Run again on the shipped script at a lower load average (14.8 to 25.0), with the closed forms it
-  still holds, the decision is the same. The kernel's own times agree within 3 % of the table above,
-  except one N = 6 Float32 forward reading, 606.8 → 263.1. The closed form's own time is what moves,
-  by up to 3.3× (96 µs to 28.8 µs at N = 2, Float32, forward), so one median at these sizes is not a
-  figure of the code alone. The forward ratios, first run then second: N = 2, Float32 0.47 then 1.51
-  and Float64 1.46 then 1.33; N = 3, Float32 1.71 then 1.79 and Float64 1.23 then 1.68; N = 4,
-  Float32 0.59 then 1.70 and Float64 1.13 in both; N = 5, Float32 1.43 then 1.42 and Float64 1.27
-  then 1.23. Every N from 2 to 5 has a forward ratio above 1 in both runs; every backward ratio on
-  the CPU is below 1 in both runs.
+  At N = 2 the kernel's forward time is below the closed form's in both runs and both element types,
+  at ratios 0.83 to 0.87. At N = 3 to 5 the forward ratios lie between 0.86 and 1.42, above 1 in some
+  runs and below 1 in others. The backward ratio is below 1 at N = 2 to 5 in every run.
 
-  The Metal column, `Float32`, is this script's own `measure`, with `MtlArray` as the constructor of
-  its batch and its seed and with every timed call wrapped in a call that synchronizes the device,
-  which is what `Metal.@sync` does to an expression; the header documents that call. On an Apple M4
-  Max (`AGXG16CDevice`), through the test environment, which carries Metal where
-  `scripts/Project.toml` does not, the ratio of the kernel to the closed form is 0.73 forward and
-  0.84 backward at N = 2, 0.82 and 0.94 at N = 3, 1.51 and 0.90 at N = 4, and 2.28 and 0.93 at N = 5;
-  a second run on the same machine gives 0.68 and 0.61, 0.76 and 0.99, 1.50 and 0.85, and 2.29 and
-  0.99. The kernel's own forward time at N = 6, 7 and 8 is 1582.4, 2103.2 and 2374.5 µs in the first
-  run and 2806.5, 1845.8 and 1744.0 in the second, against 263.8 and 263.6 at N = 2: the times move
-  between runs more than the ratios do. The Metal forward ratio is above 1 at N = 4 and N = 5 in both
-  runs, and below 1 at N = 2 and N = 3.
+  Metal, `Float32`, on the `AGXG16CDevice` Metal device, with the script's own `measure` on `MtlArray`
+  and every timed call synchronized on the device, as the script's header documents. These are
+  warm-session figures from four runs. The forward ratio at N = 2 is 0.28, 1.28, 0.86 and 0.51, so one
+  run's ratio moves by up to 4.6× at N = 2. At N = 3 to 5 the forward ratios lie between 0.48 and 1.20.
+  The backward ratios lie between 0.44 and 0.99 at every N.
 
-  The orthogonality check in `test/kernels/cayley.jl` compares the kernel's `‖ΛₖᵀΛₖ − I‖∞` with the pivoted reference `(I + Cₖ) \ (I − Cₖ)` over `N` = 2 to 8, both element types and two scales, on three input sets: the matrix infinity norm of each slice, not its largest entry. The worst ratio of the kernel's error to the reference's, against a limit of 4, is 1.91 for a hand-built skew tensor `R − Rᵀ`, 1.57 for the layer's `:arbitrary` path and 1.34 for its `:skew_sym` path. On the two exactly skew sets the kernel's own error is within the bound `10·n·eps(T)·(1 + ‖Cₖ‖₂²)`, its worst at 0.11 of the bound; on `:skew_sym`, where `C` is skew only to rounding, the pivoted reference itself exceeds that bound by a factor of 3.58, so that set carries the ratio clause alone. The value rows compare each `Λₖ` with a `BigFloat` solve rounded to `T` on the same three sets.
+  The orthogonality check in `test/kernels/cayley.jl` compares the kernel's `‖ΛₖᵀΛₖ − I‖∞` with that of the pivoted reference `(I + Cₖ) \ (I − Cₖ)`, for N = 2 to 8, both element types and two scales, on three input sets. The ratio of the kernel's error to the reference's is held to a limit of 4 on all three sets. On the two exactly skew sets the kernel's error must also lie within `10·n·eps(T)·(1 + ‖Cₖ‖₂²)`; on the `:skew_sym` set, where `C` is skew only to rounding, the ratio is the only check. The value rows compare each `Λₖ` with a `BigFloat` solve rounded to `T` on the same three sets.
 
-  The closed forms `tensor_cayley2` to `tensor_cayley5` and their dispatch stay. A closed form stays while the kernel is slower than it at a median ratio above 1, and N = 6 to 8 are replaced whatever their ratio. N = 2 stays on its Float64 forward ratio of 1.46. N = 3 stays on its Float32 forward ratio of 1.71 and its Float64 forward ratio of 1.23. N = 4 stays on its Float64 forward ratio of 1.13 in both runs and its Metal forward ratio of 1.51 then 1.50. N = 5 stays on its Float32 forward ratio of 1.43 then 1.42, its Float64 forward ratio of 1.27 then 1.23 and its Metal forward ratio of 2.28 then 2.29. N = 4 and 5 are the user's call rather than the part's, because the kernel is slower forward there in every `Float64` run and on Metal; the user kept their closed forms, `inverse_4x4.jl` and `inverse_5x5.jl` with their 690 generated lines. N = 6 to 8 are replaced: the kernel's ratios there run from 0.16 to 0.64.
+  The closed forms `tensor_cayley2` to `tensor_cayley5` and their dispatch are kept for sequence lengths 2 to 5. Every other sequence length, 0 included, uses `tensor_cayley` on the CPU and on devices. The figures for N = 2 to 5 are in the tables above.
 
 - `Pkg.test()` no longer runs the doctests. `test/quality/doctests.jl` is now the group `doctests`, which an empty `ARGS` does not run; `Pkg.test(test_args = ["doctests"])` runs it. In CI the Doctests job stays their runner, so the test matrix no longer runs them a second time.
 - **CI uploads coverage from the `Julia 1 - ubuntu-latest` job instead of `Julia min`, and a test job saves the Julia cache only when it succeeds.**

@@ -15,34 +15,14 @@
 using GeometricMachineLearning
 using GeometricMachineLearning: _mul, tensor_tensor_mul, tensor_cayley
 import KernelAbstractions
-using LinearAlgebra: I, dot
 using Metal
 using Test
 import Random
 
-# The bound `10 n eps(T) (1 + ‖Cₖ‖₂²)` of the kernel's orthogonality and value rows.
-include("../helpers/cayley_bound.jl")
-
-# The layer's forward pass on the host, slice by slice: the same scalar products the kernel computes
-# for `C`, a dense solve of the Cayley transform, and the product with the data. It returns the
-# slices of `C` as well, because the bound of the kernel's orthogonality rows is written in them.
-function host_forward(x::AbstractArray{T, 3}, A::AbstractMatrix) where {T}
-    M = size(x, 1)
-    out = similar(x)
-    C = zeros(T, M, M, size(x, 3))
-    for k in axes(x, 3)
-        X = Matrix(view(x, :, :, k))
-        L = zeros(T, M, M)
-        for i in 1:M, j in 1:(i - 1)
-
-            L[i, j] = dot(view(X, :, i), A * view(X, :, j))
-        end
-        C[:, :, k] = (L - L') / T(√M)
-        Id = Matrix{T}(I, M, M)
-        out[:, :, k] = X * ((Id + C[:, :, k]) \ (Id - C[:, :, k]))
-    end
-    out, C
-end
+# The bound `10 n eps(T) (1 + ‖Cₖ‖₂²)` of the kernel's orthogonality and value rows, the dense
+# reference `cayley_reference`, the skew batch `skew_batch`, and `arbitrary_C`, the host form of the
+# layer's `C`.
+include("../helpers/cayley.jl")
 
 if Metal.functional()
     Metal.allowscalar(false)
@@ -91,25 +71,22 @@ if Metal.functional()
     # orthogonality rows.
     @testset "tensor_cayley and VolumePreservingAttention on Metal" begin
         for n in 2:8
-            R = rand(T, n, n, 8)
-            C = R - permutedims(R, (2, 1, 3))
+            C = skew_batch(T, n, 8)
             Λ = tensor_cayley(MtlArray(C))
             @test KernelAbstractions.get_backend(Λ) == backend
-            Id = Matrix{T}(I, n, n)
-            reference = cat(((Id + C[:, :, k]) \ (Id - C[:, :, k]) for k in axes(C, 3))...;
-                dims = 3)
-            bound = maximum(cayley_bound(T, @view(C[:, :, k]), n) for k in axes(C, 3))
-            @test maximum(abs, Array(Λ) - reference) <= bound
+            @test maximum(abs, Array(Λ) - cayley_reference(C)) <= cayley_bound(C)
 
+            # The layer's forward pass against the host: the same `C`, a dense solve of the
+            # transform, and the product with the data, at the bound scaled by the data.
             d = VolumePreservingAttention(n, n)
             ps = NeuralNetwork(Chain(d), CPU(), T).params.L1
             x = rand(T, n, n, 8)
             y = d(MtlArray(x), (A = MtlArray(ps.A),))
-            expected, C_layer = host_forward(x, ps.A)
-            layer_bounds = (cayley_bound(T, @view(C_layer[:, :, k]), n) for k in axes(x, 3))
-            layer_bound = maximum(layer_bounds) * maximum(abs, x)
+            C_layer = arbitrary_C(x, ps.A)
+            expected = stack(k -> x[:, :, k] * cayley_reference(C_layer[:, :, k]), axes(x, 3))
             @test KernelAbstractions.get_backend(y) == backend
-            @test maximum(abs, Array(y) - expected) <= layer_bound
+            @test maximum(abs, Array(y) - expected) <=
+                  cayley_bound(C_layer) * maximum(abs, x)
         end
     end
 else

@@ -4,8 +4,7 @@
 Make an instance of `VolumePreservingAttention` for a specific dimension and sequence length.
 
 The sequence length is `0` by default, and a layer built with `0` applies to data of any sequence
-length: the Cayley transform of the data is one kernel, [`tensor_cayley`](@ref), rather than a
-symbolic inverse, and every sequence length runs on the CPU and on a device.
+length.
 
 # Arguments 
 
@@ -20,13 +19,11 @@ Applying a layer of type `VolumePreservingAttention` does the following:
 
 # Implementation
 
-The generic activation uses [`tensor_cayley`](@ref), which solves ``(\mathbb{I} + C)\Lambda =
-\mathbb{I} - C`` by row-pivoted Gauss–Jordan elimination, one work item per slice. It runs at any
-sequence length, on the CPU and on a device, and in the element type of the data.
-
 The layer's `seq_length` chooses the activation: a `seq_length` of 2, 3, 4 or 5 uses the closed form
-`tensor_cayley2` to `tensor_cayley5`, whose inverse has been computed symbolically, and every other
-`seq_length`, `0` included, uses the kernel, whatever the length of the data the layer is applied to.
+`tensor_cayley2` to `tensor_cayley5`, whose inverse has been computed symbolically. Every other
+`seq_length`, `0` included, uses [`tensor_cayley`](@ref), which solves ``(\mathbb{I} + C)\Lambda =
+\mathbb{I} - C`` by row-pivoted Gauss–Jordan elimination at any sequence length, on the CPU and on a
+device, and in the element type of the data.
 """
 struct VolumePreservingAttention{M, N, ScalarProductType, SL} <: AbstractExplicitLayer{M, N}
     function VolumePreservingAttention(dim::Int, seq_length::Int = 0; skew_sym::Bool = false)

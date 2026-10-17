@@ -7,14 +7,14 @@ using GeometricMachineLearning: _mul, tensor_tensor_mul, tensor_cayley, assign_q
 using ChainRulesCore: rrule
 using GPUArraysCore: allowscalar
 using JLArrays: JLArray, JLBackend
-using LinearAlgebra: I
 import KernelAbstractions
 using Zygote: gradient
 using Test
 import Random
 
-# The bound `10 n eps(T) (1 + ‖Cₖ‖₂²)` of the kernel's orthogonality and value rows.
-include("../helpers/cayley_bound.jl")
+# The bound `10 n eps(T) (1 + ‖Cₖ‖₂²)` of the kernel's orthogonality and value rows, the dense
+# reference `cayley_reference` and the skew batch `skew_batch`.
+include("../helpers/cayley.jl")
 
 Random.seed!(123)
 allowscalar(false)
@@ -70,8 +70,7 @@ end
 @testset "tensor_cayley and its pullback on a JLArray" begin
     for T in (Float32, Float64), n in 2:8
 
-        R = rand(T, n, n, 4)
-        C = R - permutedims(R, (2, 1, 3))
+        C = skew_batch(T, n, 4)
         seed = rand(T, n, n, 4)
         D = rand(T, n, n, 4)
 
@@ -79,10 +78,8 @@ end
         _, C̄ = pullback(JLArray(seed))
         @test ondevice(Λ) && ondevice(C̄)
 
-        Id = Matrix{T}(I, n, n)
-        reference = cat(((Id + C[:, :, k]) \ (Id - C[:, :, k]) for k in axes(C, 3))...; dims = 3)
-        bound = maximum(cayley_bound(T, @view(C[:, :, k]), n) for k in axes(C, 3))
-        @test maximum(abs, Array(Λ) - reference) <= bound
+        bound = cayley_bound(C)
+        @test maximum(abs, Array(Λ) - cayley_reference(C)) <= bound
 
         # The strict rows of check 4, on the device: the `Float64` central difference of the device
         # pullback with `h = cbrt(eps)`, and the `Float32` pullback against the `Float64` one, which

@@ -17,11 +17,8 @@ const verbose = false
 # `n × n` slices that are far from singular, for the inverse rules.
 invertible(T, n, k) = cat((rand(T, n, n) + n * I for _ in 1:k)...; dims = 3)
 
-# A skew batch for the Cayley rule, whose slices are square.
-function skew(T, n, k)
-    R = rand(T, n, n, k)
-    R - permutedims(R, (2, 1, 3))
-end
+# `skew_batch`, a skew batch for the Cayley rule, whose slices are square.
+include("../helpers/cayley.jl")
 
 function main(first_dim, second_dim, third_dim, third_tensor_dim)
     test_rrule(tensor_tensor_mul, rand(first_dim, second_dim, third_tensor_dim),
@@ -34,7 +31,7 @@ function main(first_dim, second_dim, third_dim, third_tensor_dim)
     test_rrule(_mul, rand(first_dim, second_dim)', rand(first_dim, third_dim, third_tensor_dim))
     test_rrule(_mul, rand(first_dim, second_dim)', rand(first_dim, third_dim))
     test_rrule(init_output, rand(first_dim, first_dim, third_tensor_dim))
-    test_rrule(tensor_cayley, skew(Float64, first_dim, third_tensor_dim))
+    test_rrule(tensor_cayley, skew_batch(Float64, first_dim, third_tensor_dim))
 end
 
 const dim_range = 10
@@ -66,7 +63,7 @@ function rules(T)
         (tensor_inverse4, (invertible(T, 4, 2),)),
         (tensor_inverse5, (invertible(T, 5, 2),)),
         (init_output, (rand(T, 3, 3, 2),)),
-        (tensor_cayley, (skew(T, 3, 2),)))
+        (tensor_cayley, (skew_batch(T, 3, 2),)))
 end
 
 @testset "a zero seed gives a zero cotangent for every argument" begin

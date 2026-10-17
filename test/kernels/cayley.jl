@@ -14,9 +14,9 @@ using LinearAlgebra: BLAS, I, opnorm
 using Test
 import Random
 
-# The bound `10 n eps(T) (1 + ‖Cₖ‖₂²)` of the orthogonality and value rows, shared with the device
-# rows of the kernel and with the layer's forward pass.
-include("../helpers/cayley_bound.jl")
+# The bound `10 n eps(T) (1 + ‖Cₖ‖₂²)` of the orthogonality and value rows, and the dense reference
+# `cayley_reference`, shared with the device rows of the kernel and with the layer's tests.
+include("../helpers/cayley.jl")
 
 Random.seed!(1234)
 
@@ -66,18 +66,12 @@ function skew_sym_path(x::AbstractArray{T, 3}, A::AbstractMatrix) where {T}
     tensor_transpose_tensor_mul(x, _mul(A, x))
 end
 
-# The per-slice reference of the orthogonality rows is the solve `(I + Cₖ) \ (I - Cₖ)` in the
-# working precision. The value row solves in `BigFloat` and rounds to `T`, so its reference
-# approximates the transform itself rather than another elimination in the working precision.
-function reference_solve(::Type{T}, Ck::AbstractMatrix) where {T}
-    Id = Matrix{T}(I, size(Ck))
-    (Id + Ck) \ (Id - Ck)
-end
-
+# The per-slice reference of the orthogonality rows is `cayley_reference`, the solve
+# `(I + Cₖ) \ (I - Cₖ)` in the working precision. The value row solves in `BigFloat` and rounds to
+# `T`, so its reference approximates the transform itself rather than another elimination in the
+# working precision.
 function big_reference_solve(::Type{T}, Ck::AbstractMatrix) where {T}
-    Id = Matrix{BigFloat}(I, size(Ck))
-    C = BigFloat.(Ck)
-    T.((Id + C) \ (Id - C))
+    T.(cayley_reference(BigFloat.(Ck)))
 end
 
 # The orthogonality error of one slice, `‖ΛᵀΛ − I‖∞`: the matrix infinity norm, which is the norm the
@@ -94,14 +88,14 @@ function reference_orthogonality_error(C::AbstractArray{T, 3}) where {T}
     # measured in, so the ratio is a ratio of like quantities.
     worst = 0.0
     for k in axes(C, 3)
-        worst = max(worst, orthogonality_error(reference_solve(T, @view(C[:, :, k]))))
+        worst = max(worst, orthogonality_error(cayley_reference(@view(C[:, :, k]))))
     end
     worst
 end
 
-# Every row of the orthogonality check: the ratio against the pivoted reference on all three input
-# sets, and the absolute bound on the two exactly skew ones.
-function orthogonality_rows(::Type{T}, n::Int, s) where {T}
+# Every row of the check, on each of the three input sets: the orthogonality ratio against the
+# pivoted reference, the absolute orthogonality bound on the two exactly skew sets, and the value.
+function cayley_rows(::Type{T}, n::Int, s) where {T}
     for (set, C) in (("hand-built", skew_tensor(T, n, s)),
         ("arbitrary", arbitrary_tensor(T, n, s)),
         ("skew_sym", skew_sym_tensor(T, n, s)))
@@ -124,18 +118,10 @@ function orthogonality_rows(::Type{T}, n::Int, s) where {T}
             end
             @test worst <= 1
         end
-    end
-end
 
-# The value row: per slice, the distance from the `BigFloat` solve, rounded to `T`, under the same
-# bound, on every input set. `Λᵀ` is orthogonal wherever `Λ` is, so the orthogonality rows alone do
-# not pin the value.
-function value_rows(::Type{T}, n::Int, s) where {T}
-    for (_, C) in (("hand-built", skew_tensor(T, n, s)),
-        ("arbitrary", arbitrary_tensor(T, n, s)),
-        ("skew_sym", skew_sym_tensor(T, n, s)))
-        @test eltype(C) === T
-        Λ = tensor_cayley(C)
+        # The value: per slice, the distance from the `BigFloat` solve, rounded to `T`, under the
+        # same bound. `Λᵀ` is orthogonal wherever `Λ` is, so the orthogonality rows alone do not pin
+        # the value.
         worst = 0.0
         for k in axes(C, 3)
             bound = cayley_bound(T, @view(C[:, :, k]), n)
@@ -153,8 +139,8 @@ end
         x = randn(T, n, n, 7)
         A = randn(T, n, n)
         # The layer's own `:arbitrary` operand is exactly skew: one subtraction of a permutation of
-        # the same array. `M = 4` is the one size here whose `√M` is exact, so the sizes that run
-        # exercise the rounding of the divisor as well.
+        # the same array. The sizes leave out `M = 4`, whose `√M` is exact, so that each of them
+        # exercises the rounding of the divisor as well.
         C = arbitrary_operand(x, (A = A,))
         @test iszero(C + permutedims(C, (2, 1, 3)))
         # The `:skew_sym` path is skew only to rounding, so nothing is asserted exactly on it. Its
@@ -168,8 +154,7 @@ end
 @testset "tensor_cayley: the orthogonality error and the value, N = $n, s = $s" for T in (Float32, Float64),
     s in SCALES, n in 2:8
 
-    orthogonality_rows(T, n, s)
-    value_rows(T, n, s)
+    cayley_rows(T, n, s)
 end
 
 @testset "tensor_cayley: the pullback, N = $n" for T in (Float32, Float64), n in 2:8
@@ -191,7 +176,7 @@ end
         # rows: the cotangent is compared relatively, because its scale is the data's.
         C̄32 = rrule(tensor_cayley, C)[2](Λ̄)[2]
         C̄64 = rrule(tensor_cayley, Float64.(C))[2](Float64.(Λ̄))[2]
-        bound = 10 * n * eps(T) * (1 + largest_norm(C)^2)
+        bound = cayley_bound(C)
         @test maximum(abs, C̄32 - Float32.(C̄64)) <= bound * maximum(abs, C̄64)
     end
 

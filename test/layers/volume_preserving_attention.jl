@@ -12,42 +12,19 @@ using FiniteDifferences: central_fdm, j′vp
 using GPUArraysCore: allowscalar
 using JLArrays: JLArray, JLBackend
 import KernelAbstractions
-using LinearAlgebra: I, dot
 using Zygote: gradient
 using Test
 import Random
 
 # The bound `10 n eps(T) (1 + ‖Cₖ‖₂²)` of the kernel's orthogonality and value rows, which the
-# forward pass below is compared against, scaled by the data.
-include("../helpers/cayley_bound.jl")
+# forward pass below is compared against, scaled by the data; the dense reference
+# `cayley_reference`; and `arbitrary_C`, the host form of the `:arbitrary` path's `C`.
+include("../helpers/cayley.jl")
 
 Random.seed!(1234)
 allowscalar(false)
 
 ondevice(x) = KernelAbstractions.get_backend(x) isa JLBackend
-
-function cayley_reference(C::AbstractMatrix{T}) where {T}
-    Id = Matrix{T}(I, size(C))
-    (Id + C) \ (Id - C)
-end
-
-# The `:arbitrary` path's `C`, slice by slice: the lower triangle of the scalar products of the
-# columns of `Z` weighted by `A`, divided by `√M`, and made skew by subtracting its own transpose —
-# the same triangle, the same divisor and the same subtraction the layer makes.
-function arbitrary_C(x::AbstractArray{T, 3}, A::AbstractMatrix) where {T}
-    M, seq = size(x, 1), size(x, 2)
-    C = zeros(T, seq, seq, size(x, 3))
-    for k in axes(x, 3)
-        X = Matrix(@view x[:, :, k])
-        L = zeros(T, seq, seq)
-        for i in 1:seq, j in 1:(i - 1)
-
-            L[i, j] = dot(@view(X[:, i]), A * @view(X[:, j]))
-        end
-        C[:, :, k] = (L - L') / T(√M)
-    end
-    C
-end
 
 function skew_sym_C(x::AbstractArray{T, 3}, A) where {T}
     C = zeros(T, size(x, 2), size(x, 2), size(x, 3))
@@ -77,12 +54,7 @@ end
 
 # The bound of the Cayley kernel's value row, scaled by the largest entry of the data: the product
 # `Z Λ` multiplies the transform's error by `Z`.
-function tolerance(d, x, ps)
-    T = eltype(x)
-    C = C_tensor(d, x, ps)
-    bound = maximum(cayley_bound(T, @view(C[:, :, k]), size(x, 2)) for k in axes(x, 3))
-    bound * Float64(maximum(abs, Array(x)))
-end
+tolerance(d, x, ps) = cayley_bound(C_tensor(d, x, ps)) * Float64(maximum(abs, x))
 
 # A layer of dimension 4 and sequence length `SL` (`0` for the default, which takes data of any
 # length), its parameters and its data, all on the host; a device case converts them, as
@@ -99,10 +71,9 @@ end
     for N in 2:8, skew_sym in (false, true)
 
         d, ps, x = case(N, N, T; skew_sym)
-        device = VolumePreservingAttention(4, N; skew_sym)
         ps_device = (A = skew_sym ? SkewSymMatrix(JLArray(ps.A.S), 4) : JLArray(ps.A),)
 
-        y_device = device(JLArray(x), ps_device)
+        y_device = d(JLArray(x), ps_device)
         @test ondevice(y_device)
 
         # The forward pass against the independent host computation.
@@ -110,13 +81,13 @@ end
         @test maximum(abs, Array(y_device) - reference) <= tolerance(d, x, ps)
 
         # The gradient with respect to the data, on the device against the host.
-        gx_device = gradient(z -> sum(device(z, ps_device)), JLArray(x))[1]
+        gx_device = gradient(z -> sum(d(z, ps_device)), JLArray(x))[1]
         gx_host = gradient(z -> sum(d(z, ps)), x)[1]
         @test ondevice(gx_device)
         @test maximum(abs, Array(gx_device) - gx_host) <= tolerance(d, x, ps)
 
         # The gradient with respect to the weight, on the device against the host.
-        gA_device = gradient(A -> sum(device(JLArray(x), (A = A,))), ps_device.A)[1]
+        gA_device = gradient(A -> sum(d(JLArray(x), (A = A,))), ps_device.A)[1]
         gA_host = gradient(A -> sum(d(x, (A = A,))), ps.A)[1]
         if skew_sym
             @test ondevice(gA_device.S)

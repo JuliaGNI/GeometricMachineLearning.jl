@@ -66,9 +66,7 @@ const A3{T} = Array{T, 3}
                 zeros(T, 3, 3, 2)))
         end
 
-        # src/kernels/cayley.jl: `tensor_cayley` in test/kernels/cayley.jl,
-        # test/layers/volume_preserving_attention.jl, test/devices/jlarray.jl and
-        # test/devices/metal.jl
+        # src/kernels/cayley.jl: `tensor_cayley`, its kernel and its pullback
         for T in (Float16, Float32, Float64)
             @test isempty(JET.get_reports(JET.report_opt(GML.tensor_cayley, (A3{T},);
                 target_modules = TARGET)))

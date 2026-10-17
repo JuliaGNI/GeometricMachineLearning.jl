@@ -247,12 +247,13 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   non-finite values in 23 of them and raises no error. The scale is far outside check 3's `{1, 1e2}`,
   and no method is accurate there: `tensor_cayley5`, the closed form that stays, is non-finite in 197
   of the same 200 slices, and the dense solve `(I + Cₖ) \ (I − Cₖ)` is finite on all 200 but has an
-  orthogonality error `‖ΛₖᵀΛₖ − I‖∞` of 7.3e4 at worst, which is no answer at that scale. What leaves
-  the `Float32` range is the elimination's own intermediate values rather than a small pivot: on the
-  two of those slices checked, the same elimination in `Float64`, whose range holds them, reaches a
-  largest intermediate entry of 4.6e183 and 2.5e207, against a smallest pivot of 1.2e8 and 2.6e8, and
-  `Float32`'s largest finite value is 3.4e38. The kernel's error on its 177 finite slices is at most
-  284.
+  orthogonality error `‖ΛₖᵀΛₖ − I‖∞` of 7.3e4 at worst, which is no answer at that scale. The cause
+  is cancellation in the last pivot, not overflow: in all 23 non-finite slices the last `Float32`
+  pivot is exactly `0`. The same elimination in `Float64` gives a last pivot of magnitude 1.7 to 15
+  on those slices, and no intermediate entry above 6.8e8. In `Float32` the rounding of the earlier
+  steps, about `eps(Float32) · ‖Cₖ‖₂ ≈ 78`, is larger than that pivot; for odd `N` the skew `Cₖ` is
+  singular, so the pivot of `I + Cₖ` is small at that scale. The kernel's error on its 177 finite
+  slices is at most 284.
 
   ```julia
   using GeometricMachineLearning: tensor_cayley, tensor_cayley5
