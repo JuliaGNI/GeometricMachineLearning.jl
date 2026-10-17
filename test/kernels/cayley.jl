@@ -15,6 +15,10 @@ using LinearAlgebra: BLAS, I, opnorm
 using Test
 import Random
 
+# The bound `10 n eps(T) (1 + ‖Cₖ‖₂²)` of the orthogonality and value rows, shared with the device
+# rows of the kernel and with the layer's forward pass.
+include("../helpers/cayley_bound.jl")
+
 Random.seed!(1234)
 
 # The references below are solves of up to 8×8 systems, thousands of them, and threaded LAPACK spends
@@ -97,12 +101,6 @@ function reference_orthogonality_error(C::AbstractArray{T, 3}) where {T}
     worst
 end
 
-# The bounds of the orthogonality rows, per slice: the absolute clause `10 n eps(T) (1 + ‖Cₖ‖₂²)`,
-# and the ratio clause's own factor on the reference's error.
-function bound_per_slice(::Type{T}, Ck::AbstractMatrix, n::Int) where {T}
-    10.0 * n * eps(T) * (1.0 + Float64(opnorm(Ck, 2))^2)
-end
-
 # Every row of the orthogonality check: the ratio against the pivoted reference on all three input
 # sets, and the absolute bound on the two exactly skew ones.
 function orthogonality_rows(::Type{T}, n::Int, s) where {T}
@@ -123,7 +121,7 @@ function orthogonality_rows(::Type{T}, n::Int, s) where {T}
             worst = 0.0
             for k in axes(C, 3)
                 error_k = orthogonality_error(@view Λ[:, :, k])
-                worst = max(worst, error_k / bound_per_slice(T, @view(C[:, :, k]), n))
+                worst = max(worst, error_k / cayley_bound(T, @view(C[:, :, k]), n))
             end
             @test worst <= 1
         end
@@ -140,7 +138,7 @@ function value_rows(::Type{T}, n::Int, s) where {T}
         Λ = tensor_cayley(C)
         worst = 0.0
         for k in axes(C, 3)
-            bound = bound_per_slice(T, @view(C[:, :, k]), n)
+            bound = cayley_bound(T, @view(C[:, :, k]), n)
             error_k = Float64(maximum(abs, (@view Λ[:, :, k]) .-
                                            big_reference_solve(T, @view(C[:, :, k]))))
             worst = max(worst, error_k / bound)

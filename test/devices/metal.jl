@@ -15,10 +15,13 @@
 using GeometricMachineLearning
 using GeometricMachineLearning: _mul, tensor_tensor_mul, tensor_cayley
 import KernelAbstractions
-using LinearAlgebra: I, dot, opnorm
+using LinearAlgebra: I, dot
 using Metal
 using Test
 import Random
+
+# The bound `10 n eps(T) (1 + ‖Cₖ‖₂²)` of the kernel's orthogonality and value rows.
+include("../helpers/cayley_bound.jl")
 
 # The layer's forward pass on the host, slice by slice: the same scalar products the kernel computes
 # for `C`, a dense solve of the Cayley transform, and the product with the data. It returns the
@@ -95,8 +98,7 @@ if Metal.functional()
             Id = Matrix{T}(I, n, n)
             reference = cat(((Id + C[:, :, k]) \ (Id - C[:, :, k]) for k in axes(C, 3))...;
                 dims = 3)
-            bound = 10 * n * eps(T) *
-                    (1 + maximum(opnorm(C[:, :, k], 2)^2 for k in axes(C, 3)))
+            bound = maximum(cayley_bound(T, @view(C[:, :, k]), n) for k in axes(C, 3))
             @test maximum(abs, Array(Λ) - reference) <= bound
 
             d = VolumePreservingAttention(n, n)
@@ -104,9 +106,8 @@ if Metal.functional()
             x = rand(T, n, n, 8)
             y = d(MtlArray(x), (A = MtlArray(ps.A),))
             expected, C_layer = host_forward(x, ps.A)
-            layer_bound = 10 * n * eps(T) *
-                          (1 + maximum(opnorm(C_layer[:, :, k], 2)^2 for k in axes(x, 3))) *
-                          maximum(abs, x)
+            layer_bounds = (cayley_bound(T, @view(C_layer[:, :, k]), n) for k in axes(x, 3))
+            layer_bound = maximum(layer_bounds) * maximum(abs, x)
             @test KernelAbstractions.get_backend(y) == backend
             @test maximum(abs, Array(y) - expected) <= layer_bound
         end

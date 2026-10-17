@@ -12,10 +12,14 @@ using FiniteDifferences: central_fdm, j′vp
 using GPUArraysCore: allowscalar
 using JLArrays: JLArray, JLBackend
 import KernelAbstractions
-using LinearAlgebra: I, dot, opnorm
+using LinearAlgebra: I, dot
 using Zygote: gradient
 using Test
 import Random
+
+# The bound `10 n eps(T) (1 + ‖Cₖ‖₂²)` of the kernel's orthogonality and value rows, which the
+# forward pass below is compared against, scaled by the data.
+include("../helpers/cayley_bound.jl")
 
 Random.seed!(1234)
 allowscalar(false)
@@ -76,8 +80,8 @@ end
 function tolerance(d, x, ps)
     T = eltype(x)
     C = C_tensor(d, x, ps)
-    worst = maximum(Float64(opnorm(@view(C[:, :, k]), 2))^2 for k in axes(x, 3))
-    10 * size(x, 2) * eps(T) * (1 + worst) * Float64(maximum(abs, Array(x)))
+    bound = maximum(cayley_bound(T, @view(C[:, :, k]), size(x, 2)) for k in axes(x, 3))
+    bound * Float64(maximum(abs, Array(x)))
 end
 
 # A layer of dimension 4 and sequence length `SL` (`0` for the default, which takes data of any

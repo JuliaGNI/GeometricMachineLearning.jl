@@ -7,11 +7,14 @@ using GeometricMachineLearning: _mul, tensor_tensor_mul, tensor_cayley, assign_q
 using ChainRulesCore: rrule
 using GPUArraysCore: allowscalar
 using JLArrays: JLArray, JLBackend
-using LinearAlgebra: I, opnorm
+using LinearAlgebra: I
 import KernelAbstractions
 using Zygote: gradient
 using Test
 import Random
+
+# The bound `10 n eps(T) (1 + ‖Cₖ‖₂²)` of the kernel's orthogonality and value rows.
+include("../helpers/cayley_bound.jl")
 
 Random.seed!(123)
 allowscalar(false)
@@ -78,7 +81,7 @@ end
 
         Id = Matrix{T}(I, n, n)
         reference = cat(((Id + C[:, :, k]) \ (Id - C[:, :, k]) for k in axes(C, 3))...; dims = 3)
-        bound = 10 * n * eps(T) * (1 + maximum(opnorm(C[:, :, k], 2)^2 for k in axes(C, 3)))
+        bound = maximum(cayley_bound(T, @view(C[:, :, k]), n) for k in axes(C, 3))
         @test maximum(abs, Array(Λ) - reference) <= bound
 
         # The strict rows of check 4, on the device: the `Float64` central difference of the device
