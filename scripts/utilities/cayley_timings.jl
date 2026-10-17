@@ -6,18 +6,12 @@
 # median of five timed calls. The parent prints the ratio of the kernel to the closed form, forward
 # and backward.
 #
-# The table that decides which closed forms stay has a column for N = 6 to 8 as well, against the
-# batch inverse of a long slice, which the tree does not define: that column belongs to the branch
-# commit that holds it, which the `CHANGELOG.md` entry of the change names, so the shipped script
-# prints the kernel's own time there instead.
-#
 # Run from the repository root, with the package's own environment, which carries `Zygote` and the
 # standard libraries this script uses; `--project=scripts` resolves them as well, and CUDA with them:
 #   julia --startup-file=no --project=. scripts/utilities/cayley_timings.jl
 #   julia --startup-file=no --project=. scripts/utilities/cayley_timings.jl tensor_cayley 4 Float32
 #
-# Metal has no reference for N = 6 to 8: the batch inverse they would compare against calls `inv`
-# inside a kernel, and the tree does not define it, so those rows print the kernel's time alone.
+# Metal rows for N = 6 to 8 print the kernel's time alone.
 # N = 2 to 5 compare against the closed forms, which run on Metal as well; `Metal` is not a
 # dependency of the package, so its column runs `measure` in a process whose environment carries
 # Metal, which `scripts/Project.toml` does not. This file runs its table only as the program, so a
@@ -47,7 +41,7 @@ median(v) = sort(v)[(length(v) + 1) ÷ 2]
 # One untimed warm-up call, then `RUNS` timed calls, in µs. `sync` wraps one timed call and is the
 # identity except on a device, where the figure is a time rather than a launch.
 function times(f, sync = identity)
-    f()
+    sync(f())
     median([(@elapsed sync(f())) * 1e6 for _ in 1:RUNS])
 end
 

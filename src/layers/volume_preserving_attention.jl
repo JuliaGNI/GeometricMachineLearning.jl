@@ -20,8 +20,8 @@ Applying a layer of type `VolumePreservingAttention` does the following:
 
 # Implementation
 
-The activation is one kernel, [`tensor_cayley`](@ref), which solves ``(\mathbb{I} + C)\Lambda =
-\mathbb{I} - C`` by row-pivoted Gauss–Jordan elimination, one work item per slice: it runs at any
+The generic activation uses [`tensor_cayley`](@ref), which solves ``(\mathbb{I} + C)\Lambda =
+\mathbb{I} - C`` by row-pivoted Gauss–Jordan elimination, one work item per slice. It runs at any
 sequence length, on the CPU and on a device, and in the element type of the data.
 
 The layer's `seq_length` chooses the activation: a `seq_length` of 2, 3, 4 or 5 uses the closed form

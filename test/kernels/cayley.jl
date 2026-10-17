@@ -4,8 +4,7 @@
 #
 # The three input sets are the ones the layer produces: a hand-built skew tensor, the `:arbitrary`
 # path and the `:skew_sym` path, both of them through the layer's own functions. The reference is the
-# per-slice solve `(I + Cₖ) \ (I - Cₖ)` in the working precision, written here, because the closed
-# forms are what `tensor_cayley` replaces.
+# per-slice solve `(I + Cₖ) \ (I - Cₖ)` in the working precision, independent of the kernel.
 
 using GeometricMachineLearning
 using GeometricMachineLearning: tensor_cayley, arbitrary_operand,
@@ -36,9 +35,9 @@ function largest_norm(C::AbstractArray)
 end
 
 # The tensor scaled so that its largest `‖Cₖ‖₂` is `s`.
-scale_to(C::AbstractArray, s) = C * (s / largest_norm(C))
+scale_to(C::AbstractArray{T}, s) where {T} = C * T(s / largest_norm(C))
 
-# (i) A hand-built skew tensor, `R - Rᵀ` for `R = s * randn`, which is skew to rounding.
+# (i) A hand-built skew tensor, `R - Rᵀ` for `R = s * randn`, which is exactly skew.
 function skew_tensor(::Type{T}, n::Int, s, k::Int = SLICES) where {T}
     R = T(s) * randn(T, n, n, k)
     R - permutedims(R, (2, 1, 3))
@@ -67,10 +66,9 @@ function skew_sym_path(x::AbstractArray{T, 3}, A::AbstractMatrix) where {T}
     tensor_transpose_tensor_mul(x, _mul(A, x))
 end
 
-# The per-slice reference of the orthogonality rows and of the value row: the solve
-# `(I + Cₖ) \ (I - Cₖ)` in the working precision, and in `BigFloat` for the value row. The two
-# agree to the last bits of `T`, so the value row's reference is the transform itself rather than
-# another elimination.
+# The per-slice reference of the orthogonality rows is the solve `(I + Cₖ) \ (I - Cₖ)` in the
+# working precision. The value row solves in `BigFloat` and rounds to `T`, so its reference
+# approximates the transform itself rather than another elimination in the working precision.
 function reference_solve(::Type{T}, Ck::AbstractMatrix) where {T}
     Id = Matrix{T}(I, size(Ck))
     (Id + Ck) \ (Id - Ck)
@@ -107,6 +105,7 @@ function orthogonality_rows(::Type{T}, n::Int, s) where {T}
     for (set, C) in (("hand-built", skew_tensor(T, n, s)),
         ("arbitrary", arbitrary_tensor(T, n, s)),
         ("skew_sym", skew_sym_tensor(T, n, s)))
+        @test eltype(C) === T
         Λ = tensor_cayley(C)
         kernel_error = maximum(orthogonality_error(@view Λ[:, :, k]) for k in axes(C, 3))
         reference_error = reference_orthogonality_error(C)
@@ -135,6 +134,7 @@ function value_rows(::Type{T}, n::Int, s) where {T}
     for (_, C) in (("hand-built", skew_tensor(T, n, s)),
         ("arbitrary", arbitrary_tensor(T, n, s)),
         ("skew_sym", skew_sym_tensor(T, n, s)))
+        @test eltype(C) === T
         Λ = tensor_cayley(C)
         worst = 0.0
         for k in axes(C, 3)

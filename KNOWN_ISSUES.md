@@ -255,6 +255,9 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   284.
 
   ```julia
+  using GeometricMachineLearning: tensor_cayley, tensor_cayley5
+  import Random
+  Random.seed!(3)
   R = 1.0f8 * randn(Float32, 5, 5, 200)
   C = R - permutedims(R, (2, 1, 3))
   nonfinite(L) = count(k -> !all(isfinite, L[:, :, k]), 1:200)

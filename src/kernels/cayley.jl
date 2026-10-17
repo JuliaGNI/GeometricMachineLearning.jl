@@ -13,12 +13,16 @@ computed by row-pivoted Gauss–Jordan elimination on the pair ``(\mathbb{I} + C
 [`VolumePreservingAttention`](@ref), which forms ``C`` skew-symmetric.
 
 `C` is assumed skew-symmetric, and this is not checked: a check would cost a reduction per slice on
-a device. The result is the Cayley transform of any `C` whose ``\mathbb{I} + C_k`` is nonsingular;
-for a skew `C` its orthogonality error ``\|\Lambda_k^T\Lambda_k - \mathbb{I}\|_\infty`` is the error
-of a row-pivoted elimination — at most four times that of a dense `(I + C_k) \ (I - C_k)`, and at
-most ``10n\varepsilon(1 + \|C_k\|_2^2)`` for the element type's machine epsilon ``\varepsilon``,
-where `n = size(C, 1)`. A skew-symmetric ``C_k`` has the positive definite symmetric part
-``\mathbb{I}``, which is what bounds the pivots.
+a device. For nonsingular ``\mathbb{I} + C_k``, the algorithm computes the Cayley transform.
+
+The tests exercise sizes 2 to 8 at scales 1 and 1e2. On exactly skew inputs, they bound each
+slice's orthogonality error ``\|\Lambda_k^T\Lambda_k - \mathbb{I}\|_\infty`` by
+``10n\varepsilon(1 + \|C_k\|_2^2)``, where `n = size(C, 1)` and ``\varepsilon`` is the element
+type's machine epsilon. They also bound the batch maximum error by four times the batch maximum
+of a dense `(I + C_k) \ (I - C_k)` reference, including the layer's inputs that are skew only to
+rounding. These are tested bounds, not guarantees for arbitrary magnitudes: elimination can
+overflow at large scales. For skew ``C_k``, the symmetric part of ``\mathbb{I} + C_k`` is
+positive definite.
 
 The element type `T` is an `AbstractFloat`. Every buffer comes from `similar(C)`, so the result has
 the element type `T` and lives on the backend of `C`. The loop bound is read from `size(C, 1)` at
@@ -108,7 +112,8 @@ function ChainRulesCore.rrule(::typeof(tensor_cayley), C::AbstractArray{T, 3}) w
         Λ̄ = _seed(T, Λ̄)
         Λ̄ isa AbstractZero && return NoTangent(), ZeroTangent()
         Y = Λ̄ + tensor_transpose_tensor_mul(Λ, Λ̄)
-        NoTangent(), -(Y + tensor_tensor_transpose_mul(Y, Λ)) / 2
+        Z = tensor_tensor_transpose_mul(Y, Λ)
+        NoTangent(), @. -(Y + Z) / T(2)
     end
 
     Λ, tensor_cayley_pullback
