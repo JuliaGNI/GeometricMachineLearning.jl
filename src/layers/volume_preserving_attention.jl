@@ -3,9 +3,8 @@
 
 Make an instance of `VolumePreservingAttention` for a specific dimension and sequence length.
 
-The sequence length is `0` by default. 
-
-Setting `seq_length` to `0` for all sequence lengths but does not apply the fast Cayley activation.
+The sequence length is `0` by default, and a layer built with `0` applies to data of any sequence
+length.
 
 # Arguments 
 
@@ -20,10 +19,9 @@ Applying a layer of type `VolumePreservingAttention` does the following:
 
 # Implementation
 
-The fast activation is only implemented for sequence lengths of 2, 3, 4 and 5. 
-Other sequence lengths only work on CPU (for now).
-
-The fast Cayley activation is using inverses that have been computed symbolically.
+The Cayley transform is computed by [`tensor_cayley`](@ref), which solves ``(\mathbb{I} + C)\Lambda =
+\mathbb{I} - C`` by row-pivoted Gauss–Jordan elimination at any sequence length, on the CPU and on a
+device, and in the element type of the data.
 """
 struct VolumePreservingAttention{M, N, ScalarProductType, SL} <: AbstractExplicitLayer{M, N}
     function VolumePreservingAttention(dim::Int, seq_length::Int = 0; skew_sym::Bool = false)
@@ -37,31 +35,7 @@ end
 
 function orthonormal_activation_cayley(::VolumePreservingAttention, A::AbstractArray{
         T, 3}) where {T}
-    cpu_tensor_cayley(A)
-end
-
-function orthonormal_activation_cayley(
-        ::VolumePreservingAttention{M, M, ScalarProductType, 2},
-        A::AbstractArray{T, 3}) where {T, M, ScalarProductType}
-    tensor_cayley2(A)
-end
-
-function orthonormal_activation_cayley(
-        ::VolumePreservingAttention{M, M, ScalarProductType, 3},
-        A::AbstractArray{T, 3}) where {T, M, ScalarProductType}
-    tensor_cayley3(A)
-end
-
-function orthonormal_activation_cayley(
-        ::VolumePreservingAttention{M, M, ScalarProductType, 4},
-        A::AbstractArray{T, 3}) where {T, M, ScalarProductType}
-    tensor_cayley4(A)
-end
-
-function orthonormal_activation_cayley(
-        ::VolumePreservingAttention{M, M, ScalarProductType, 5},
-        A::AbstractArray{T, 3}) where {T, M, ScalarProductType}
-    tensor_cayley5(A)
+    tensor_cayley(A)
 end
 
 function parameterlength(::VolumePreservingAttention{M, M, :skew_sym}) where {M}
@@ -103,12 +77,19 @@ end
 function (d::VolumePreservingAttention{M, M, :arbitrary})(
         x::AbstractArray{
             T, 3}, ps::NamedTuple) where {T, M}
-    x_interim = tensor_mat_skew_sym_assign(x, ps.A) / T(√M)
-    tensor_tensor_mul(x,
-        orthonormal_activation_cayley(d, x_interim - permutedims(x_interim, (2, 1, 3)))
-    )
+    tensor_tensor_mul(x, orthonormal_activation_cayley(d, arbitrary_operand(x, ps)))
 end
 
 function (d::VolumePreservingAttention)(x::AbstractMatrix, ps::NamedTuple)
     reshape(d(reshape(x, size(x)..., 1), ps), size(x)...)
+end
+
+# The operand `C` of the `:arbitrary` path, whose Cayley transform the layer takes: the scalar
+# products of the columns of `x` weighted by `A`, divided by `√M`, made skew by one subtraction of a
+# permutation of the same array. Both terms are the same array, so `C + Cᵀ` is exactly zero. The
+# `:skew_sym` path forms `xᵀAx` instead, which is skew only to rounding.
+function arbitrary_operand(x::AbstractArray{T, 3}, ps::NamedTuple) where {T}
+    M = size(x, 1)
+    x_interim = tensor_mat_skew_sym_assign(x, ps.A) / T(√M)
+    x_interim - permutedims(x_interim, (2, 1, 3))
 end

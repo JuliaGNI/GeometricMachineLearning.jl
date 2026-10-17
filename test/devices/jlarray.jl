@@ -1,9 +1,9 @@
-# The products of `src/kernels/` on a device array that has no BLAS and no NNlib extension: a
-# `JLArray` with scalar indexing off, so that a product that reads one element at a time raises.
+# The kernels of `src/kernels/` on a device array that has no BLAS and no NNlib extension: a
+# `JLArray` with scalar indexing off, so that a kernel that reads one element at a time raises.
 # Each result must stay on `JLBackend()` and match the host.
 
 using GeometricMachineLearning
-using GeometricMachineLearning: _mul, tensor_tensor_mul, assign_q_and_p
+using GeometricMachineLearning: _mul, tensor_tensor_mul, tensor_cayley, assign_q_and_p
 using ChainRulesCore: rrule
 using GPUArraysCore: allowscalar
 using JLArrays: JLArray, JLBackend
@@ -11,6 +11,10 @@ import KernelAbstractions
 using Zygote: gradient
 using Test
 import Random
+
+# The bound `10 n eps(T) (1 + ‖Cₖ‖₂²)` of the kernel's orthogonality and value rows, the dense
+# reference `cayley_reference` and the skew batch `skew_batch`.
+include("../helpers/cayley.jl")
 
 Random.seed!(123)
 allowscalar(false)
@@ -57,5 +61,40 @@ end
             @test ondevice(qp.q) && ondevice(qp.p)
             @test Array(qp.p) == Array(v)[4:6, :]
         end
+    end
+end
+
+# The Cayley kernel's own device rows: it launches where scalar indexing is off, its result stays on
+# the device and matches the per-slice solve on the host at the bound of its orthogonality rows, and
+# its pullback is the derivative of that value.
+@testset "tensor_cayley and its pullback on a JLArray" begin
+    for T in (Float32, Float64), n in 2:8
+
+        C = skew_batch(T, n, 4)
+        seed = rand(T, n, n, 4)
+        D = rand(T, n, n, 4)
+
+        Λ, pullback = rrule(tensor_cayley, JLArray(C))
+        _, C̄ = pullback(JLArray(seed))
+        @test ondevice(Λ) && ondevice(C̄)
+
+        bound = cayley_bound(C)
+        @test maximum(abs, Array(Λ) - cayley_reference(C)) <= bound
+
+        # The strict rows of check 4, on the device: the `Float64` central difference of the device
+        # pullback with `h = cbrt(eps)`, and the `Float32` pullback against the `Float64` one, which
+        # is compared relatively because its scale is the data's.
+        if T === Float64
+            h = cbrt(eps(T))
+            loss(X) = sum(seed .* Array(tensor_cayley(JLArray(X))))
+            fd = (loss(C + h * D) - loss(C - h * D)) / (2h)
+            @test abs(sum(Array(C̄) .* D) - fd) / abs(fd) <= 1e-6
+        else
+            C̄64 = Array(rrule(tensor_cayley, JLArray(Float64.(C)))[2](JLArray(Float64.(seed)))[2])
+            @test maximum(abs, Array(C̄) - Float32.(C̄64)) <= bound * maximum(abs, C̄64)
+        end
+
+        _, C̄_host = rrule(tensor_cayley, C)[2](seed)
+        @test maximum(abs, Array(C̄) - C̄_host) <= bound * maximum(abs, C̄_host)
     end
 end

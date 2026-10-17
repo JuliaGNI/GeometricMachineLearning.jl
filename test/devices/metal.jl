@@ -13,11 +13,16 @@
 # that reads an array one element at a time raises instead of answering slowly.
 
 using GeometricMachineLearning
-using GeometricMachineLearning: _mul, tensor_tensor_mul
+using GeometricMachineLearning: _mul, tensor_tensor_mul, tensor_cayley
 import KernelAbstractions
 using Metal
 using Test
 import Random
+
+# The bound `10 n eps(T) (1 + ‖Cₖ‖₂²)` of the kernel's orthogonality and value rows, the dense
+# reference `cayley_reference`, the skew batch `skew_batch`, and `arbitrary_C`, the host form of the
+# layer's `C`.
+include("../helpers/cayley.jl")
 
 if Metal.functional()
     Metal.allowscalar(false)
@@ -58,6 +63,30 @@ if Metal.functional()
         for (device, host) in products
             @test KernelAbstractions.get_backend(device) == backend
             @test Array(device) ≈ host
+        end
+    end
+
+    # The Cayley kernel and the layer that uses it, at every sequence length: each result stays on
+    # the device and matches a host computation of the same transform, at the bound of the kernel's
+    # orthogonality rows.
+    @testset "tensor_cayley and VolumePreservingAttention on Metal" begin
+        for n in 2:8
+            C = skew_batch(T, n, 8)
+            Λ = tensor_cayley(MtlArray(C))
+            @test KernelAbstractions.get_backend(Λ) == backend
+            @test maximum(abs, Array(Λ) - cayley_reference(C)) <= cayley_bound(C)
+
+            # The layer's forward pass against the host: the same `C`, a dense solve of the
+            # transform, and the product with the data, at the bound scaled by the data.
+            d = VolumePreservingAttention(n, n)
+            ps = NeuralNetwork(Chain(d), CPU(), T).params.L1
+            x = rand(T, n, n, 8)
+            y = d(MtlArray(x), (A = MtlArray(ps.A),))
+            C_layer = arbitrary_C(x, ps.A)
+            expected = stack(k -> x[:, :, k] * cayley_reference(C_layer[:, :, k]), axes(x, 3))
+            @test KernelAbstractions.get_backend(y) == backend
+            @test maximum(abs, Array(y) - expected) <=
+                  cayley_bound(C_layer) * maximum(abs, x)
         end
     end
 else

@@ -1,12 +1,8 @@
 using GeometricMachineLearning: tensor_tensor_mul, tensor_transpose_tensor_mul,
-                                tensor_mat_skew_sym_assign, cpu_inverse, tensor_inverse2,
-                                tensor_inverse3, tensor_inverse4, tensor_inverse5,
-                                init_output,
-                                _mul
+                                tensor_mat_skew_sym_assign, tensor_cayley, _mul
 using ChainRulesCore: rrule, AbstractZero, NoTangent, ZeroTangent, @thunk
 using ChainRulesTestUtils
 using FiniteDifferences: central_fdm, j′vp
-using LinearAlgebra: I
 using Test
 import Random
 
@@ -14,8 +10,8 @@ Random.seed!(1234)
 
 const verbose = false
 
-# `n × n` slices that are far from singular, for the inverse rules.
-invertible(T, n, k) = cat((rand(T, n, n) + n * I for _ in 1:k)...; dims = 3)
+# `skew_batch`, a skew batch for the Cayley rule, whose slices are square.
+include("../helpers/cayley.jl")
 
 function main(first_dim, second_dim, third_dim, third_tensor_dim)
     test_rrule(tensor_tensor_mul, rand(first_dim, second_dim, third_tensor_dim),
@@ -27,8 +23,7 @@ function main(first_dim, second_dim, third_dim, third_tensor_dim)
         rand(first_dim, first_dim))
     test_rrule(_mul, rand(first_dim, second_dim)', rand(first_dim, third_dim, third_tensor_dim))
     test_rrule(_mul, rand(first_dim, second_dim)', rand(first_dim, third_dim))
-    test_rrule(cpu_inverse, invertible(Float64, first_dim, third_tensor_dim))
-    test_rrule(init_output, rand(first_dim, first_dim, third_tensor_dim))
+    test_rrule(tensor_cayley, skew_batch(Float64, first_dim, third_tensor_dim))
 end
 
 const dim_range = 10
@@ -44,23 +39,13 @@ for _ in 1:num_tests
     verbose && println()
 end
 
-for (n, f) in enumerate((
-    tensor_inverse2, tensor_inverse3, tensor_inverse4, tensor_inverse5))
-    test_rrule(f, invertible(Float64, n + 1, 3))
-end
-
 # Every `rrule` of `src/kernels/` with a primal of element type `T`, and its arguments.
 function rules(T)
     ((tensor_tensor_mul, (rand(T, 3, 4, 2), rand(T, 4, 5, 2))),
         (tensor_transpose_tensor_mul, (rand(T, 4, 3, 2), rand(T, 4, 5, 2))),
         (tensor_mat_skew_sym_assign, (rand(T, 3, 4, 2), rand(T, 3, 3))),
         (_mul, (rand(T, 4, 3)', rand(T, 4, 5, 2))),
-        (cpu_inverse, (invertible(T, 3, 2),)),
-        (tensor_inverse2, (invertible(T, 2, 2),)),
-        (tensor_inverse3, (invertible(T, 3, 2),)),
-        (tensor_inverse4, (invertible(T, 4, 2),)),
-        (tensor_inverse5, (invertible(T, 5, 2),)),
-        (init_output, (rand(T, 3, 3, 2),)))
+        (tensor_cayley, (skew_batch(T, 3, 2),)))
 end
 
 @testset "a zero seed gives a zero cotangent for every argument" begin
@@ -81,7 +66,7 @@ end
         c̄ = pullback(S.(y))
         @test c̄[1] isa NoTangent
         for c in Base.tail(c̄)
-            @test f === init_output ? c isa AbstractZero : eltype(c) === T
+            @test eltype(c) === T
         end
     end
 end
