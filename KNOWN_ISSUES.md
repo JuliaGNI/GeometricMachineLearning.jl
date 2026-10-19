@@ -256,6 +256,33 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   five time steps and `Batch(4, 2, 0)`, the formula gives three start positions per parameter
   and the code gives four. The correction is to add `+ 1` to the formula's upper bound.
 
+### K20 · The `VolumePreservingFeedForwardLayer` docstring's formula omits the input term.
+
+- **location:** `src/layers/volume_preserving_feedforward.jl:7`
+- **kind:** docs
+- **found:** 2026-10-19
+- **evidence:**
+  The docstring gives `x ↦ σ(Lx + b)` for a `StrictlyLowerTriangular` `L`, and `x ↦ σ(Ux + b)` for
+  an upper one. The two functors add the input: `x + d.activation.(_mul(ps.weight, x) .+ ps.bias)`
+  and `x + d.activation.(_mul(ps.weight, x))`, which is what makes the layer volume-preserving for a
+  strictly triangular weight, and what
+  `docs/src/architectures/volume_preserving_feedforward.md:17,21` states as `x + Lx` and
+  `x + σ(Lx + b)`. The docstring renders on the layer's page, so the page and the code disagree
+  there. The fix is the formula in the docstring, not the code.
+
+### K22 · The `SymplecticAutoencoder` docstring says `decoder_init_q` makes the first decoder layer of `p` type, and it makes it a `q` layer.
+
+- **location:** `src/architectures/symplectic_autoencoder.jl:36`
+- **kind:** docs
+- **found:** 2024-06-19
+- **evidence:**
+  The docstring says "`decoder_init_q::Bool = true`: Specifies if the first layer in each decoder
+  block should be of $p$ type", and the default is `true`. `decoder_layers_from_iteration` with
+  `true` passes `isodd`, which makes the block's first gradient layer a `GradientLayerQ`, and
+  `test/layers/bool_type_parameters.jl` pins `(:q, :p, :psd, :q, :p, :psd)` for
+  `decoder_init_q = true`. The encoder's sentence says `q` for the same `true`, so the fix is the
+  decoder's sentence, not the dispatch.
+
 ## The test suite
 
 ### K3 · `test/quality/jet.jl` does not see an unstable kernel-launch argument, nor two barriers in the Poisson-tensor kernel
@@ -345,20 +372,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   `train!`. The fix belongs to Zygote, whose adjoint of `AbstractNeuralNetworks`' `Dense` on a
   3-tensor gives the `Any`.
 
-### K20 · The `VolumePreservingFeedForwardLayer` docstring's formula omits the input term.
-
-- **location:** `src/layers/volume_preserving_feedforward.jl:7`
-- **kind:** docs
-- **found:** 2026-10-19
-- **evidence:**
-  The docstring gives `x ↦ σ(Lx + b)` for a `StrictlyLowerTriangular` `L`, and `x ↦ σ(Ux + b)` for
-  an upper one. The two functors add the input: `x + d.activation.(_mul(ps.weight, x) .+ ps.bias)`
-  and `x + d.activation.(_mul(ps.weight, x))`, which is what makes the layer volume-preserving for a
-  strictly triangular weight, and what
-  `docs/src/architectures/volume_preserving_feedforward.md:17,21` states as `x + Lx` and
-  `x + σ(Lx + b)`. The docstring renders on the layer's page, so the page and the code disagree
-  there. The fix is the formula in the docstring, not the code.
-
 ### K21 · The `MultiHeadAttention` allocation comparison is sensitive to what ran before it in the same process.
 
 - **location:** `test/layers/multi_head_attention_allocation.jl:67-83`
@@ -370,5 +383,5 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   file as its unit, and it passes in the full suite on 1.13.2 and on 1.12.7. A supplemental
   per-file reporter that replays `test/architectures/forward_pass_inference.jl` in the same process
   first reports 332240 bytes of difference for `Float32` with one head — 852 pass, 1 fail, 1 broken.
-  No cause is established for that figure; it is far above the per-pass key the comparison exists
-  to catch, whose excess over the same 1000 passes is 192000 bytes. The tolerance is not widened.
+  No cause is established for that figure; it is not the per-pass key the comparison exists to
+  catch, whose excess over the same 1000 passes is 192000 bytes. The tolerance is not widened.
