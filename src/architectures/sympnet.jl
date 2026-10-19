@@ -56,24 +56,19 @@ struct LASympNet{AT, InitUpperLinear, InitUpperAct} <:
     depth::Int
     nhidden::Int
     activation::AT
-
-    function LASympNet(dim::Int; depth = la_depth_default,
-            nhidden = la_nhidden_default,
-            activation = la_activation_default,
-            init_upper_linear = la_init_upper_linear_default,
-            init_upper_act = la_init_upper_act_default)
-        new{typeof(activation), init_upper_linear, init_upper_act}(dim, min(depth, 5), nhidden, activation)
-    end
-
-    function LASympNet(dl::DataLoader; depth = la_depth_default,
-            nhidden = la_nhidden_default,
-            activation = la_activation_default,
-            init_upper_linear = la_init_upper_linear_default,
-            init_upper_act = la_init_upper_act_default)
-        new{typeof(activation), init_upper_linear, init_upper_act}(
-            dl.input_dim, min(depth, 5), nhidden, activation)
-    end
 end
+
+function LASympNet(dim::Int; depth = la_depth_default,
+        nhidden = la_nhidden_default,
+        activation = la_activation_default,
+        init_upper_linear::Bool = la_init_upper_linear_default,
+        init_upper_act::Bool = la_init_upper_act_default)
+    LASympNet{typeof(activation), init_upper_linear, init_upper_act}(
+        dim, min(depth, 5), nhidden, activation)
+end
+
+# A `DataLoader` names the dimension and nothing else, so its constructor is the dimension one.
+LASympNet(dl::DataLoader; kwargs...) = LASympNet(dl.input_dim; kwargs...)
 
 @inline AbstractNeuralNetworks.dim(arch::SympNet) = arch.dim
 
@@ -103,110 +98,63 @@ struct GSympNet{AT} <: SympNet{AT}
     dim::Int
     upscaling_dimension::Int
     n_layers::Int
-    act::AT
+    activation::AT
     init_upper::Bool
+end
 
-    function GSympNet(dim; upscaling_dimension = 2 * dim,
-            n_layers = g_n_layers_default,
-            activation = g_activation_default,
-            init_upper = g_init_upper_default)
-        new{typeof(activation)}(dim, upscaling_dimension, n_layers, activation, init_upper)
-    end
+function GSympNet(dim; upscaling_dimension = 2 * dim,
+        n_layers = g_n_layers_default,
+        activation = g_activation_default,
+        init_upper::Bool = g_init_upper_default)
+    GSympNet{typeof(activation)}(dim, upscaling_dimension, n_layers, activation, init_upper)
+end
 
-    function GSympNet(dl::DataLoader; upscaling_dimension = 2 * dl.input_dim,
-            n_layers = g_n_layers_default,
-            activation = g_activation_default,
-            init_upper = g_init_upper_default)
-        new{typeof(activation)}(
-            dl.input_dim, upscaling_dimension, n_layers, activation, init_upper)
+# A `DataLoader` names the dimension and the upscaling, so its constructor is the dimension one.
+function GSympNet(dl::DataLoader; upscaling_dimension = 2 * dl.input_dim, kwargs...)
+    GSympNet(dl.input_dim; upscaling_dimension, kwargs...)
+end
+
+# `n` gradient layers, alternating between the two halves, the first of them acting on `q` when
+# `init_upper`. Both the SympNet and the transformer architectures build their blocks with this.
+function _gradient_layers(dim::Integer, upscaling_dimension::Integer, activation,
+        n::Integer, init_upper::Bool)
+    is_upper_criterion = init_upper ? isodd : iseven
+    layers = ()
+    for i in 1:n
+        layers = is_upper_criterion(i) ?
+                 (layers..., GradientLayerQ(dim, upscaling_dimension, activation)) :
+                 (layers..., GradientLayerP(dim, upscaling_dimension, activation))
     end
+    layers
 end
 
 function Chain(arch::GSympNet)
-    layers = ()
-    is_upper_criterion = arch.init_upper ? isodd : iseven
-    for i in 1:arch.n_layers
-        layers = (layers...,
-            if is_upper_criterion(i)
-                GradientLayerQ(arch.dim, arch.upscaling_dimension, arch.act)
-            else
-                GradientLayerP(arch.dim, arch.upscaling_dimension, arch.act)
-            end
-        )
-    end
-    Chain(layers...)
+    Chain(_gradient_layers(arch.dim, arch.upscaling_dimension, arch.activation,
+        arch.n_layers, arch.init_upper)...)
 end
 
-function Chain(arch::LASympNet{AT, true, false}) where {AT}
+# One chain for all four `(init_upper_linear, init_upper_act)` pairs: the linear layers start with
+# the half `InitUpperLinear` names and alternate, and the two activation layers are `(q, p)` in that
+# order when `InitUpperAct` is set and `(p, q)` otherwise.
+function Chain(arch::LASympNet{
+        AT, InitUpperLinear, InitUpperAct}) where {AT, InitUpperLinear,
+        InitUpperAct}
+    is_upper_criterion = InitUpperLinear ? isodd : iseven
     layers = ()
     for _ in 1:arch.nhidden
-        for j in 1:(arch.depth)
-            layers = isodd(j) ? (layers..., LinearLayerQ(arch.dim)) :
+        for j in 1:arch.depth
+            layers = is_upper_criterion(j) ? (layers..., LinearLayerQ(arch.dim)) :
                      (layers..., LinearLayerP(arch.dim))
         end
         layers = (layers..., BiasLayer(arch.dim))
-        layers = (layers..., ActivationLayerP(arch.dim, arch.activation))
-        layers = (layers..., ActivationLayerQ(arch.dim, arch.activation))
+        layers = InitUpperAct ?
+                 (layers..., ActivationLayerQ(arch.dim, arch.activation),
+            ActivationLayerP(arch.dim, arch.activation)) :
+                 (layers..., ActivationLayerP(arch.dim, arch.activation),
+            ActivationLayerQ(arch.dim, arch.activation))
     end
-    for j in 1:(arch.depth)
-        layers = isodd(j) ? (layers..., LinearLayerQ(arch.dim)) :
-                 (layers..., LinearLayerP(arch.dim))
-    end
-    layers = (layers..., BiasLayer(arch.dim))
-    Chain(layers...)
-end
-
-function Chain(arch::LASympNet{AT, false, true}) where {AT}
-    layers = ()
-    for i in 1:arch.nhidden
-        for j in 1:arch.depth
-            layers = isodd(j) ? (layers..., LinearLayerP(arch.dim)) :
-                     (layers..., LinearLayerQ(arch.dim))
-        end
-        layers = (layers..., BiasLayer(arch.dim))
-        layers = (layers..., ActivationLayerQ(arch.dim, arch.activation))
-        layers = (layers..., ActivationLayerP(arch.dim, arch.activation))
-    end
-    for j in 1:(arch.depth)
-        layers = isodd(j) ? (layers..., LinearLayerP(arch.dim)) :
-                 (layers..., LinearLayerQ(arch.dim))
-    end
-    layers = (layers..., BiasLayer(arch.dim))
-    Chain(layers...)
-end
-
-function Chain(arch::LASympNet{AT, false, false}) where {AT}
-    layers = ()
-    for i in 1:arch.nhidden
-        for j in 1:arch.depth
-            layers = isodd(j) ? (layers..., LinearLayerP(arch.dim)) :
-                     (layers..., LinearLayerQ(arch.dim))
-        end
-        layers = (layers..., BiasLayer(arch.dim))
-        layers = (layers..., ActivationLayerP(arch.dim, arch.activation))
-        layers = (layers..., ActivationLayerQ(arch.dim, arch.activation))
-    end
-    for j in 1:(arch.depth)
-        layers = isodd(j) ? (layers..., LinearLayerP(arch.dim)) :
-                 (layers..., LinearLayerQ(arch.dim))
-    end
-    layers = (layers..., BiasLayer(arch.dim))
-    Chain(layers...)
-end
-
-function Chain(arch::LASympNet{AT, true, true}) where {AT}
-    layers = ()
-    for i in 1:arch.nhidden
-        for j in 1:arch.depth
-            layers = isodd(j) ? (layers..., LinearLayerQ(arch.dim)) :
-                     (layers..., LinearLayerP(arch.dim))
-        end
-        layers = (layers..., BiasLayer(arch.dim))
-        layers = (layers..., ActivationLayerQ(arch.dim, arch.activation))
-        layers = (layers..., ActivationLayerP(arch.dim, arch.activation))
-    end
-    for j in 1:(arch.depth)
-        layers = isodd(j) ? (layers..., LinearLayerQ(arch.dim)) :
+    for j in 1:arch.depth
+        layers = is_upper_criterion(j) ? (layers..., LinearLayerQ(arch.dim)) :
                  (layers..., LinearLayerP(arch.dim))
     end
     layers = (layers..., BiasLayer(arch.dim))

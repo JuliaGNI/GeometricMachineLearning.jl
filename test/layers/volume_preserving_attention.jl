@@ -18,7 +18,7 @@ import Random
 
 # The bound `10 n eps(T) (1 + ‖Cₖ‖₂²)` of the kernel's orthogonality and value rows, which the
 # forward pass below is compared against, scaled by the data; the dense reference
-# `cayley_reference`; and `arbitrary_C`, the host form of the `:arbitrary` path's `C`.
+# `cayley_reference`; and `arbitrary_C`, the host form of the `skew_sym = false` path's `C`.
 include("../helpers/cayley.jl")
 
 Random.seed!(1234)
@@ -37,7 +37,7 @@ function skew_sym_C(x::AbstractArray{T, 3}, A) where {T}
 end
 
 function C_tensor(d, x, ps)
-    d isa VolumePreservingAttention{<:Any, <:Any, :skew_sym} ?
+    d isa VolumePreservingAttention{<:Any, <:Any, true} ?
     skew_sym_C(x, ps.A) : arbitrary_C(x, ps.A)
 end
 

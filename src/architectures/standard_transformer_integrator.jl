@@ -37,7 +37,7 @@ struct StandardTransformerIntegrator{AT1, AT2, AT3} <: TransformerIntegrator
     n_heads::Int
     n_blocks::Int
     L::Int
-    upsacling_activation::AT1
+    upscaling_activation::AT1
     resnet_activation::AT2
     attention_activation::AT3
     add_connection::Bool
@@ -58,7 +58,7 @@ end
 
 function Chain(arch::StandardTransformerIntegrator)
     layers = arch.sys_dim == arch.transformer_dim ? () :
-             (Dense(arch.sys_dim, arch.transformer_dim, arch.upsacling_activation),)
+             (Dense(arch.sys_dim, arch.transformer_dim, arch.upscaling_activation),)
     for _ in 1:arch.L
         layers = (layers...,
             MultiHeadAttention(

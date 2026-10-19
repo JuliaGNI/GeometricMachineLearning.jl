@@ -27,7 +27,8 @@ end
 
 function initialparameters(
         rng::AbstractRNG, initializer::AbstractNeuralNetworks.Initializer,
-        ::PSDLayer{M, N}, backend::KernelAbstractions.Backend, T::Type) where {M, N}
+        ::PSDLayer{M, N}, backend::KernelAbstractions.Backend,
+        ::Type{T}) where {M, N, T}
     weight = N > M ? KernelAbstractions.allocate(backend, T, N ÷ 2, M ÷ 2) :
              KernelAbstractions.allocate(backend, T, M ÷ 2, N ÷ 2)
     (weight = StiefelManifold(orthonormal_columns() do

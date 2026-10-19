@@ -35,25 +35,36 @@ positional_encoding(Float32, 4, 3)[:, 1]
 ```
 """
 function positional_encoding(::Type{T}, dim::Integer, seq_length::Integer) where {T}
-    P = Matrix{T}(undef, dim, seq_length)
-    for i in 1:dim
-        # Row pairs `(1,2)`, `(3,4)`, … share the frequency `λ^j`, so the pair index is the row
-        # index shifted before the halving. `i ÷ 2` would pair `(2,3)`, `(4,5)`, … instead, and
-        # leave row 1 unpaired.
-        j = (i - 1) ÷ 2
-        λʲ = T(10)^(T(-8) * T(j) / T(dim))
-        for pos in 1:seq_length
-            θ = T(pos - 1) * λʲ
-            P[i, pos] = isodd(i) ? sin(θ) : cos(θ)
-        end
-    end
+    positional_encoding(CPU(), T, dim, seq_length)
+end
+
+# One entry per index pair, on `backend`: `j = (i - 1) ÷ 2` is the row pair's index.
+@kernel function positional_encoding_kernel!(P::AbstractMatrix{T}) where {T}
+    i, pos = @index(Global, NTuple)
+    # Row pairs `(1,2)`, `(3,4)`, … share the frequency `λ^j`, so the pair index is the row index
+    # shifted before the halving. `i ÷ 2` would pair `(2,3)`, `(4,5)`, … instead, and leave row 1
+    # unpaired.
+    j = (i - 1) ÷ 2
+    λʲ = T(10)^(T(-8) * T(j) / T(size(P, 1)))
+    θ = T(pos - 1) * λʲ
+    P[i, pos] = isodd(i) ? sin(θ) : cos(θ)
+
+    nothing
+end
+
+# The encoding as an array of `backend`'s own, filled by the kernel above. `CPU()` gives the
+# `Matrix` the three-argument method returns.
+function positional_encoding(backend::Backend, ::Type{T}, dim::Integer,
+        seq_length::Integer) where {T}
+    P = KernelAbstractions.allocate(backend, T, dim, seq_length)
+    positional_encoding_kernel!(backend)(P; ndrange = size(P))
     P
 end
 
-# The matrix is a constant: its arguments are a type and two lengths, and none of them is a
-# differentiable quantity. Without this declaration Zygote traces into the loop above and refuses
-# the `setindex!`, so a network carrying a `PositionalEncoding` cannot be trained at all.
-ChainRulesCore.@non_differentiable positional_encoding(::Any, ::Any, ::Any)
+# The matrix is a constant: its arguments are a type, two lengths and a backend, and none of them is
+# a differentiable quantity. Without this declaration Zygote traces into the kernel launch and
+# refuses it, so a network carrying a `PositionalEncoding` cannot be trained at all.
+ChainRulesCore.@non_differentiable positional_encoding(::Any...)
 
 @doc raw"""
     PositionalEncoding(dim)
@@ -63,16 +74,8 @@ A layer that adds the sinusoidal positional encoding of [vaswani2017attention](@
 It has no parameters. The sequence length is read from the input's second axis at every call rather
 than fixed at construction, because a transformer here takes the sequence length from its data and
 not from its architecture — the same network is applied to trajectories of different lengths. The
-encoding matrix is therefore built per call, which costs one `dim × seq_length` allocation, and a
-second for the sum.
-
-!!! warning "CPU only"
-    [`positional_encoding`](@ref) builds a `Matrix`, so this layer adds a host array to whatever it
-    is given. Every other layer here allocates through the backend — `KernelAbstractions.allocate`,
-    or `similar(x, …)` in the forward pass — and this one does not yet. On a GPU array this is not a
-    slowdown but a failure: the broadcast fails to compile, because the host array cannot be read
-    from a kernel. A network carrying this layer is therefore a CPU network. Nothing in the test
-    suite would catch that, because the GPU tests in `test/metal/` do not cover this layer.
+encoding matrix is therefore built per call, which costs one `dim × seq_length` allocation on the
+input's own backend, and a second for the sum.
 
 Its Jacobian is the identity, since it adds a constant, so it composes with the structure-preserving
 architectures without changing what they preserve: a [`LinearSymplecticTransformer`](@ref) with this
@@ -117,8 +120,18 @@ parameterlength(::PositionalEncoding) = 0
 # `MultiHeadAttention` rejects anyway.
 function (::PositionalEncoding{M, M})(x::Union{AbstractMatrix, AbstractArray{<:Any, 3}},
         ::NamedTuple) where {M}
-    x .+ positional_encoding(eltype(x), M, size(x, 2))
+    x .+ _encoding_for(x, Val(M))
 end
+
+# The encoding matrix of a layer of dimension `M` for `x`, allocated on `x`'s backend. It is a
+# constant of the layer and not a function of the data's values, so it is declared
+# non-differentiable: Zygote traces no further, which is what keeps the backend lookup out of the
+# trace as well.
+function _encoding_for(x::AbstractArray, ::Val{M}) where {M}
+    positional_encoding(networkbackend(x), eltype(x), M, size(x, 2))
+end
+
+ChainRulesCore.@non_differentiable _encoding_for(::Any, ::Any)
 
 # A `(q, p)` input is stacked, encoded at the full dimension `M`, and split again — which is what
 # `MultiHeadAttention` and `ResNetLayer` do with the same input, so a chain accepts `(q, p)` with

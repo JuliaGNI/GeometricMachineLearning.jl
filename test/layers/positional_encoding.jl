@@ -2,6 +2,8 @@ using Test
 using GeometricMachineLearning
 using GeometricMachineLearning: initialparameters
 using AbstractNeuralNetworks: parameterlength
+using GPUArraysCore: allowscalar
+using JLArrays: JLArray, JLBackend
 using KernelAbstractions
 import Random
 import Zygote
@@ -173,4 +175,41 @@ end
     nn = NeuralNetwork(with_encoding, CPU(), Float32)
     @test nn.params[1] == NamedTuple()
     @test size(nn(rand(Float32, 4, 5))) == (4, 5)
+end
+
+@testset "the encoding is built on the input's backend" begin
+    # The encoding matrix and the layer allocate on the backend of their input: a host `Matrix`
+    # against a device array is a compile error, not a slowdown, because the host array cannot be
+    # read from a kernel. The JLArray below runs with scalar indexing forbidden.
+    allowscalar(false)
+    try
+        for T in (Float32, Float64)
+            host = positional_encoding(T, 4, 3)
+            device = positional_encoding(JLBackend(), T, 4, 3)
+            @test device isa JLArray
+            @test eltype(device) === T
+            @test Array(device) == host
+
+            l = PositionalEncoding(4)
+            x = rand(T, 4, 3)
+            x_device = JLArray(x)
+
+            y_device = l(x_device, NamedTuple())
+            @test y_device isa JLArray
+            @test eltype(y_device) === T
+            @test Array(y_device) == l(x, NamedTuple())
+
+            # Over a batch, and through the `(q, p)` path: the two halves keep the backend.
+            batch = JLArray(rand(T, 4, 5, 2))
+            @test l(batch, NamedTuple()) isa JLArray
+
+            z = (q = JLArray(rand(T, 2, 5)), p = JLArray(rand(T, 2, 5)))
+            split = l(z, NamedTuple())
+            @test split.q isa JLArray
+            @test Array(vcat(split.q, split.p)) ==
+                  l(vcat(Array(z.q), Array(z.p)), NamedTuple())
+        end
+    finally
+        allowscalar(true)
+    end
 end

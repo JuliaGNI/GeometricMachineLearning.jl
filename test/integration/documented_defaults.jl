@@ -16,9 +16,8 @@ GML = GeometricMachineLearning
     for constructor in (SymplecticAttentionQ, SymplecticAttentionP)
         l = constructor(4)
 
-        # `symmetric` is the fourth type parameter, `:symmetric` or `:arbitrary`.
-        expected = GML.sa_symmetric_default ? :symmetric : :arbitrary
-        @test typeof(l).parameters[4] === expected
+        # `symmetric` is the fourth type parameter, and it is the keyword's `Bool`.
+        @test typeof(l).parameters[4] === GML.sa_symmetric_default
 
         @test l.activation === GML.sa_activation_default
     end
@@ -40,7 +39,7 @@ end
 
     @test arch.n_blocks === GML.sti_n_blocks_default
     @test arch.L === GML.sti_L_default
-    @test arch.upsacling_activation === GML.sti_upscaling_activation_default
+    @test arch.upscaling_activation === GML.sti_upscaling_activation_default
     @test arch.resnet_activation === GML.sti_resnet_activation_default
     @test arch.attention_activation === GML.sti_attention_activation_default
     @test arch.add_connection === GML.sti_add_connection_default

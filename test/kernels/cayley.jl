@@ -2,9 +2,10 @@
 # error is the error of a row-pivoted elimination, that its value is the value of the transform, and
 # that its pullback is the derivative of that value.
 #
-# The three input sets are the ones the layer produces: a hand-built skew tensor, the `:arbitrary`
-# path and the `:skew_sym` path, both of them through the layer's own functions. The reference is the
-# per-slice solve `(I + Cₖ) \ (I - Cₖ)` in the working precision, independent of the kernel.
+# The three input sets are the ones the layer produces: a hand-built skew tensor, the
+# `skew_sym = false` path and the `skew_sym = true` path, both of them through the layer's own
+# functions. The reference is the per-slice solve `(I + Cₖ) \ (I - Cₖ)` in the working precision,
+# independent of the kernel.
 
 using GeometricMachineLearning
 using GeometricMachineLearning: tensor_cayley, arbitrary_operand,
@@ -43,7 +44,7 @@ function skew_tensor(::Type{T}, n::Int, s, k::Int = SLICES) where {T}
     R - permutedims(R, (2, 1, 3))
 end
 
-# (ii) The `:arbitrary` path of the layer, which is its own `arbitrary_operand`:
+# (ii) The `skew_sym = false` path of the layer, which is its own `arbitrary_operand`:
 # `tensor_mat_skew_sym_assign(x, A) / √M`, then `x_interim - permutedims(x_interim, (2, 1, 3))`. The
 # path is linear in `A`, so scaling the tensor it returns by one factor puts its largest `‖Cₖ‖₂` at
 # `s`, which is all `scale_to` needs.
@@ -53,8 +54,9 @@ function arbitrary_tensor(::Type{T}, n::Int, s) where {T}
     scale_to(arbitrary_operand(x, (A = A,)), s)
 end
 
-# (iii) The `:skew_sym` path of the layer: `Zᵀ A Z` for a `SkewSymMatrix` `A`. That is quadratic in
-# `Z`, so `Z` is scaled by the square root of the factor that puts the largest `‖Cₖ‖₂` at `s`.
+# (iii) The `skew_sym = true` path of the layer: `Zᵀ A Z` for a `SkewSymMatrix` `A`. That is
+# quadratic in `Z`, so `Z` is scaled by the square root of the factor that puts the largest `‖Cₖ‖₂`
+# at `s`.
 function skew_sym_tensor(::Type{T}, n::Int, s) where {T}
     x = randn(T, n, n, SLICES)
     A = rand(SkewSymMatrix{T}, n)
@@ -108,8 +110,8 @@ function cayley_rows(::Type{T}, n::Int, s) where {T}
         # factor is a real bound rather than an equality.
         @test kernel_error <= 4 * reference_error
 
-        # The absolute clause is per slice; `:skew_sym` carries the ratio clause alone, because its
-        # own reference breaks the absolute bound there.
+        # The absolute clause is per slice; `skew_sym = true` carries the ratio clause alone,
+        # because its own reference breaks the absolute bound there.
         if set != "skew_sym"
             worst = 0.0
             for k in axes(C, 3)
@@ -138,13 +140,14 @@ end
 
         x = randn(T, n, n, 7)
         A = randn(T, n, n)
-        # The layer's own `:arbitrary` operand is exactly skew: one subtraction of a permutation of
-        # the same array. The sizes leave out `M = 4`, whose `√M` is exact, so that each of them
-        # exercises the rounding of the divisor as well.
+        # The layer's own `skew_sym = false` operand is exactly skew: one subtraction of a
+        # permutation of the same array. The sizes leave out `M = 4`, whose `√M` is exact, so that
+        # each of them exercises the rounding of the divisor as well.
         C = arbitrary_operand(x, (A = A,))
         @test iszero(C + permutedims(C, (2, 1, 3)))
-        # The `:skew_sym` path is skew only to rounding, so nothing is asserted exactly on it. Its
-        # deviation is far below the orthogonality rows' bound, which is what those rows measure.
+        # The `skew_sym = true` path is skew only to rounding, so nothing is asserted exactly on
+        # it. Its deviation is far below the orthogonality rows' bound, which is what those rows
+        # measure.
         C2 = skew_sym_path(x, rand(SkewSymMatrix{T}, n))
         deviation = maximum(abs, C2 + permutedims(C2, (2, 1, 3)))
         @test deviation <= 100 * eps(T) * n * maximum(abs, C2)

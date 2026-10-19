@@ -95,23 +95,11 @@ function SymplecticAutoencoder(
     @assert n_encoder_blocks ≤ full_dim - reduced_dim "The number of encoder blocks is too big!"
     @assert n_decoder_blocks ≤ full_dim - reduced_dim "The number of decoder blocks is too big!"
 
-    if encoder_init_q && decoder_init_q
-        SymplecticAutoencoder{:EncoderInitQ, :DecoderInitQ, typeof(activation)}(
-            full_dim, reduced_dim, n_encoder_layers, n_encoder_blocks, n_decoder_layers,
-            n_decoder_blocks, n_decoder_output_layers, sympnet_upscale, activation)
-    elseif encoder_init_q && !decoder_init_q
-        SymplecticAutoencoder{:EncoderInitQ, :DecoderInitP, typeof(activation)}(
-            full_dim, reduced_dim, n_encoder_layers, n_encoder_blocks, n_decoder_layers,
-            n_decoder_blocks, n_decoder_output_layers, sympnet_upscale, activation)
-    elseif !encoder_init_q && decoder_init_q
-        SymplecticAutoencoder{:EncoderInitP, :DecoderInitQ, typeof(activation)}(
-            full_dim, reduced_dim, n_encoder_layers, n_encoder_blocks, n_decoder_layers,
-            n_decoder_blocks, n_decoder_output_layers, sympnet_upscale, activation)
-    elseif !encoder_init_q && !decoder_init_q
-        SymplecticAutoencoder{:EncoderInitP, :DecoderInitP, typeof(activation)}(
-            full_dim, reduced_dim, n_encoder_layers, n_encoder_blocks, n_decoder_layers,
-            n_decoder_blocks, n_decoder_output_layers, sympnet_upscale, activation)
-    end
+    # The two keywords are the first two type parameters, so the four combinations are four types
+    # and the choice needs no branch.
+    SymplecticAutoencoder{encoder_init_q, decoder_init_q, typeof(activation)}(
+        full_dim, reduced_dim, n_encoder_layers, n_encoder_blocks, n_decoder_layers,
+        n_decoder_blocks, n_decoder_output_layers, sympnet_upscale, activation)
 end
 
 # The intermediate steps from the full dimension to the reduced dimension, in ascending order. Only
@@ -151,12 +139,12 @@ function encoder_or_decoder_layers_from_iteration(
     encoder_layers
 end
 
-function encoder_layers_from_iteration(arch::SymplecticAutoencoder{:EncoderInitQ},
+function encoder_layers_from_iteration(arch::SymplecticAutoencoder{true},
         encoder_iterations::AbstractVector{<:Integer})
     encoder_or_decoder_layers_from_iteration(arch, encoder_iterations, arch.n_encoder_layers, isodd)
 end
 
-function encoder_layers_from_iteration(arch::SymplecticAutoencoder{:EncoderInitP},
+function encoder_layers_from_iteration(arch::SymplecticAutoencoder{false},
         encoder_iterations::AbstractVector{<:Integer})
     encoder_or_decoder_layers_from_iteration(arch, encoder_iterations, arch.n_encoder_layers, iseven)
 end
@@ -172,13 +160,13 @@ function _append_decoder_output_layers(arch::SymplecticAutoencoder, layers::Tupl
     layers
 end
 
-function decoder_layers_from_iteration(arch::SymplecticAutoencoder{<:Any, :DecoderInitQ},
+function decoder_layers_from_iteration(arch::SymplecticAutoencoder{<:Any, true},
         decoder_iterations::AbstractVector{<:Integer})
     layers = encoder_or_decoder_layers_from_iteration(arch, decoder_iterations, arch.n_decoder_layers, isodd)
     _append_decoder_output_layers(arch, layers, isodd)
 end
 
-function decoder_layers_from_iteration(arch::SymplecticAutoencoder{<:Any, :DecoderInitP},
+function decoder_layers_from_iteration(arch::SymplecticAutoencoder{<:Any, false},
         decoder_iterations::AbstractVector{<:Integer})
     layers = encoder_or_decoder_layers_from_iteration(arch, decoder_iterations, arch.n_decoder_layers, iseven)
     _append_decoder_output_layers(arch, layers, iseven)

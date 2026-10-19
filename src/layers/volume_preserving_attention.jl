@@ -23,13 +23,9 @@ The Cayley transform is computed by [`tensor_cayley`](@ref), which solves ``(\ma
 \mathbb{I} - C`` by row-pivoted Gauss–Jordan elimination at any sequence length, on the CPU and on a
 device, and in the element type of the data.
 """
-struct VolumePreservingAttention{M, N, ScalarProductType, SL} <: AbstractExplicitLayer{M, N}
+struct VolumePreservingAttention{M, N, SkewSym, SL} <: AbstractExplicitLayer{M, N}
     function VolumePreservingAttention(dim::Int, seq_length::Int = 0; skew_sym::Bool = false)
-        if skew_sym
-            return new{dim, dim, :skew_sym, seq_length}()
-        else
-            return new{dim, dim, :arbitrary, seq_length}()
-        end
+        new{dim, dim, skew_sym, seq_length}()
     end
 end
 
@@ -38,18 +34,18 @@ function orthonormal_activation_cayley(::VolumePreservingAttention, A::AbstractA
     tensor_cayley(A)
 end
 
-function parameterlength(::VolumePreservingAttention{M, M, :skew_sym}) where {M}
+function parameterlength(::VolumePreservingAttention{M, M, true}) where {M}
     M * (M-1) ÷ 2
 end
 
-function parameterlength(::VolumePreservingAttention{M, M, :arbitrary}) where {M}
+function parameterlength(::VolumePreservingAttention{M, M, false}) where {M}
     M ^ 2
 end
 
 function initialparameters(
         rng::AbstractRNG, initializer!::AbstractNeuralNetworks.Initializer,
-        d::VolumePreservingAttention{M, M, :skew_sym},
-        backend::KernelAbstractions.Backend, T::Type) where {M}
+        d::VolumePreservingAttention{M, M, true},
+        backend::KernelAbstractions.Backend, ::Type{T}) where {M, T}
     V = KernelAbstractions.allocate(backend, T, parameterlength(d))
     initializer!(rng, V)
     (A = SkewSymMatrix(V, M),)
@@ -57,14 +53,14 @@ end
 
 function initialparameters(
         rng::AbstractRNG, initializer!::AbstractNeuralNetworks.Initializer,
-        ::VolumePreservingAttention{M, M, :arbitrary},
-        backend::KernelAbstractions.Backend, T::Type) where {M}
+        ::VolumePreservingAttention{M, M, false},
+        backend::KernelAbstractions.Backend, ::Type{T}) where {M, T}
     A = KernelAbstractions.allocate(backend, T, M, M)
     initializer!(rng, A)
     (A = A,)
 end
 
-function (d::VolumePreservingAttention{M, M, :skew_sym})(
+function (d::VolumePreservingAttention{M, M, true})(
         x::AbstractArray{
             T, 3}, ps::NamedTuple) where {T, M}
     tensor_tensor_mul(x,
@@ -74,7 +70,7 @@ function (d::VolumePreservingAttention{M, M, :skew_sym})(
     )
 end
 
-function (d::VolumePreservingAttention{M, M, :arbitrary})(
+function (d::VolumePreservingAttention{M, M, false})(
         x::AbstractArray{
             T, 3}, ps::NamedTuple) where {T, M}
     tensor_tensor_mul(x, orthonormal_activation_cayley(d, arbitrary_operand(x, ps)))
@@ -84,10 +80,10 @@ function (d::VolumePreservingAttention)(x::AbstractMatrix, ps::NamedTuple)
     reshape(d(reshape(x, size(x)..., 1), ps), size(x)...)
 end
 
-# The operand `C` of the `:arbitrary` path, whose Cayley transform the layer takes: the scalar
+# The operand `C` of the `skew_sym = false` path, whose Cayley transform the layer takes: the scalar
 # products of the columns of `x` weighted by `A`, divided by `√M`, made skew by one subtraction of a
 # permutation of the same array. Both terms are the same array, so `C + Cᵀ` is exactly zero. The
-# `:skew_sym` path forms `xᵀAx` instead, which is skew only to rounding.
+# `skew_sym = true` path forms `xᵀAx` instead, which is skew only to rounding.
 function arbitrary_operand(x::AbstractArray{T, 3}, ps::NamedTuple) where {T}
     M = size(x, 1)
     x_interim = tensor_mat_skew_sym_assign(x, ps.A) / T(√M)

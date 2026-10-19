@@ -15,7 +15,7 @@ abstract type SympNetLayer{M, N} <: AbstractExplicitLayer{M, N} end
 See the docstrings for the constructors [`GradientLayerQ`](@ref) and [`GradientLayerP`](@ref).
 """
 struct GradientLayer{M, N, TA, C} <: SympNetLayer{M, N}
-    second_dim::Integer
+    second_dim::Int
     activation::TA
 end
 
@@ -83,7 +83,7 @@ This is equivalent to a left multiplication by the matrix:
 ```
 where ``A`` is a [`SymmetricMatrix`](@extref GeometricOptimizers GeometricOptimizers.SymmetricMatrix).
 """
-const LinearLayerQ{M, N, TA} = LinearLayer{M, N, :Q}
+const LinearLayerQ{M, N} = LinearLayer{M, N, :Q}
 
 @doc raw"""
     LinearLayerP(n)
@@ -151,11 +151,11 @@ This can be recovered from [`GradientLayerP`](@ref) by setting ``M`` equal to `n
 const ActivationLayerP{M, N, TA} = ActivationLayer{M, N, TA, :P}
 
 function GradientLayerQ(M, upscaling_dimension, activation)
-    GradientLayer{M, M, typeof(activation), :Q}(upscaling_dimension, activation)
+    GradientLayer{M, M, typeof(activation), :Q}(Int(upscaling_dimension), activation)
 end
 
 function GradientLayerP(M, upscaling_dimension, activation)
-    GradientLayer{M, M, typeof(activation), :P}(upscaling_dimension, activation)
+    GradientLayer{M, M, typeof(activation), :P}(Int(upscaling_dimension), activation)
 end
 
 function ActivationLayerQ(M, activation)
@@ -215,39 +215,24 @@ function parameterlength(::LinearLayer{M, M}) where {M}
     (M ÷ 2) * (M ÷ 2 + 1) ÷ 2
 end
 
-@inline function (d::ActivationLayerQ{M, M})(x::NamedTuple, ps) where {M}
-    size(x.q, 1) == M÷2 || error("Dimension mismatch.")
-    return (q = x.q + ps.scale .* d.activation.(x.p), p = x.p)
+# The half a layer acts on is its last type parameter: `:Q` changes `q` and leaves `p` alone, `:P`
+# the other way round. A layer's own change is a function of the half it reads, so `_shift` is the
+# one place the two are told apart, and each family below is one method for both halves.
+@inline _shift(::Val{:Q}, z::NamedTuple, f::F) where {F} = (q = z.q + f(z.p), p = z.p)
+@inline _shift(::Val{:P}, z::NamedTuple, f::F) where {F} = (q = z.q, p = z.p + f(z.q))
+
+@inline function (d::ActivationLayer{M, M, TA, C})(z::NamedTuple, ps) where {M, TA, C}
+    _shift(Val(C), z, x -> ps.scale .* d.activation.(x))
 end
 
-@inline function (d::ActivationLayerP{M, M})(x::NamedTuple, ps) where {M}
-    size(x.q, 1) == M÷2 || error("Dimension mismatch.")
-    return (q = x.q, p = x.p + ps.scale .* d.activation.(x.q))
+@inline function (d::GradientLayer{M, M, TA, C})(z::NamedTuple, ps) where {M, TA, C}
+    _shift(Val(C), z,
+        x -> _mul(ps.weight',
+            ps.scale .* d.activation.(_mul(ps.weight, x) .+ ps.bias)))
 end
 
-@inline function (d::GradientLayerQ{M, M})(x::NamedTuple, ps) where {M}
-    size(x.q, 1) == M÷2 || error("Dimension mismatch.")
-    (
-        q = x.q + _mul(ps.weight',
-            ps.scale .* d.activation.(_mul(ps.weight, x.p) .+ ps.bias)),
-        p = x.p)
-end
-
-@inline function (d::GradientLayerP{M, M})(x::NamedTuple, ps) where {M}
-    size(x.q, 1) == M÷2 || error("Dimension mismatch.")
-    (q = x.q,
-        p = x.p + _mul(ps.weight',
-            ps.scale .* d.activation.(_mul(ps.weight, x.q) .+ ps.bias)))
-end
-
-@inline function (d::LinearLayerQ{M, M})(x::NamedTuple, ps) where {M}
-    size(x.q, 1) == M÷2 || error("Dimension mismatch.")
-    (q = x.q + _mul(ps.weight, x.p), p = x.p)
-end
-
-@inline function (d::LinearLayerP{M, M})(x::NamedTuple, ps) where {M}
-    size(x.q, 1) == M÷2 || error("Dimension mismatch.")
-    (q = x.q, p = x.p + _mul(ps.weight, x.q))
+@inline function (d::LinearLayer{M, M, C})(z::NamedTuple, ps) where {M, C}
+    _shift(Val(C), z, x -> _mul(ps.weight, x))
 end
 
 # For the wrappers whose input to a SympNet layer is an `AbstractArray` rather than the `NamedTuple`

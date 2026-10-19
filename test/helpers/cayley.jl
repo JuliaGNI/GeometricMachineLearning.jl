@@ -29,9 +29,9 @@ function skew_batch(::Type{T}, n::Int, k::Int) where {T}
     R - permutedims(R, (2, 1, 3))
 end
 
-# The `:arbitrary` path's `C` on the host, slice by slice: the lower triangle of the scalar products
-# of the columns of `x` weighted by `A`, divided by `√M`, and made skew by subtracting its own
-# transpose — the same triangle, the same divisor and the same subtraction the layer makes.
+# The `skew_sym = false` path's `C` on the host, slice by slice: the lower triangle of the scalar
+# products of the columns of `x` weighted by `A`, divided by `√M`, and made skew by subtracting its
+# own transpose — the same triangle, the same divisor and the same subtraction the layer makes.
 function arbitrary_C(x::AbstractArray{T, 3}, A::AbstractMatrix) where {T}
     M, seq = size(x, 1), size(x, 2)
     C = zeros(T, seq, seq, size(x, 3))

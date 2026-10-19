@@ -30,12 +30,12 @@ const d = 3
 
 arch = VolumePreservingFeedForward(d)
 
-@assert typeof(Chain(arch).layers[1]) <: VolumePreservingLowerLayer{3, 3, :no_bias, typeof(identity)} # hide
-@assert typeof(Chain(arch).layers[2]) <: VolumePreservingUpperLayer{3, 3, :bias, typeof(identity)} # hide
-@assert typeof(Chain(arch).layers[3]) <: VolumePreservingLowerLayer{3, 3, :bias, typeof(tanh)} # hide
-@assert typeof(Chain(arch).layers[4]) <: VolumePreservingUpperLayer{3, 3, :bias, typeof(tanh)} # hide
-@assert typeof(Chain(arch).layers[5]) <: VolumePreservingLowerLayer{3, 3, :no_bias, typeof(identity)} # hide
-@assert typeof(Chain(arch).layers[6]) <: VolumePreservingUpperLayer{3, 3, :bias, typeof(identity)} # hide
+@assert typeof(Chain(arch).layers[1]) <: VolumePreservingLowerLayer{3, 3, false, typeof(identity)} # hide
+@assert typeof(Chain(arch).layers[2]) <: VolumePreservingUpperLayer{3, 3, true, typeof(identity)} # hide
+@assert typeof(Chain(arch).layers[3]) <: VolumePreservingLowerLayer{3, 3, true, typeof(tanh)} # hide
+@assert typeof(Chain(arch).layers[4]) <: VolumePreservingUpperLayer{3, 3, true, typeof(tanh)} # hide
+@assert typeof(Chain(arch).layers[5]) <: VolumePreservingLowerLayer{3, 3, false, typeof(identity)} # hide
+@assert typeof(Chain(arch).layers[6]) <: VolumePreservingUpperLayer{3, 3, true, typeof(identity)} # hide
 
 for layer in Chain(arch)
     println(stdout, layer)

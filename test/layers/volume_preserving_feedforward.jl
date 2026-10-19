@@ -34,7 +34,7 @@ end
 test_volume_preserving_feedforward(; T = Float32)
 test_volume_preserving_feedforward(; T = Float64)
 
-# A vector in, a vector out. Neither layer shapes the result: the `:no_bias` method is
+# A vector in, a vector out. Neither layer shapes the result: the layer without a bias is
 # `x + d.activation.(ps.weight * x)`, and `StrictlyLowerTriangular * ::AbstractVector` returns a vector,
 # which is what `LinearAlgebra` returns for every other matrix type.
 l = VolumePreservingLowerLayer(2, identity; use_bias = false)
