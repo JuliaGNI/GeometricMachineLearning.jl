@@ -119,10 +119,9 @@ function compute_output_of_mha(
     # One variadic `vcat` over all heads, not one per head. Two things constrain this: a
     # preallocated output cannot be written into, because Zygote does not differentiate
     # `setindex!`; and `reduce(vcat, …)` takes its linear path only for vectors and matrices, so on
-    # a 3-tensor it folds pairwise and stays quadratic. Splatting a vector in turn hides the
-    # argument count from inference, which makes the call return `Any`, so the result type is
-    # asserted: a concatenation has the type of the pieces it concatenates.
-    vcat(values(head_outputs)...)::eltype(values(head_outputs))
+    # a 3-tensor it folds pairwise and stays quadratic. `values` gives a tuple, whose length is in
+    # its type, so the splat's argument count is known and `vcat` infers concretely.
+    vcat(values(head_outputs)...)
 end
 
 function (d::MultiHeadAttention{M, M, Stiefel, true})(x::AbstractArray, ps::NamedTuple) where {

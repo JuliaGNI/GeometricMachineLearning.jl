@@ -99,7 +99,7 @@ A & \mathbb{I}
 ```
 where ``A`` is a [`SymmetricMatrix`](@extref GeometricOptimizers GeometricOptimizers.SymmetricMatrix).
 """
-const LinearLayerP{M, N, TA} = LinearLayer{M, N, :P}
+const LinearLayerP{M, N} = LinearLayer{M, N, :P}
 
 @doc raw"""
     ActivationLayer <: SympNetLayer
@@ -150,28 +150,30 @@ This can be recovered from [`GradientLayerP`](@ref) by setting ``M`` equal to `n
 """
 const ActivationLayerP{M, N, TA} = ActivationLayer{M, N, TA, :P}
 
+# The dimension is a type parameter, and it is converted to an `Int` so that an `Int32` dimension
+# names the same layer as an `Int` one. `second_dim` is an `Int` for the same reason.
 function GradientLayerQ(M, upscaling_dimension, activation)
-    GradientLayer{M, M, typeof(activation), :Q}(Int(upscaling_dimension), activation)
+    GradientLayer{Int(M), Int(M), typeof(activation), :Q}(upscaling_dimension, activation)
 end
 
 function GradientLayerP(M, upscaling_dimension, activation)
-    GradientLayer{M, M, typeof(activation), :P}(Int(upscaling_dimension), activation)
+    GradientLayer{Int(M), Int(M), typeof(activation), :P}(upscaling_dimension, activation)
 end
 
 function ActivationLayerQ(M, activation)
-    ActivationLayerQ{M, M, typeof(activation)}(activation)
+    ActivationLayerQ{Int(M), Int(M), typeof(activation)}(activation)
 end
 
 function ActivationLayerP(M, activation)
-    ActivationLayerP{M, M, typeof(activation)}(activation)
+    ActivationLayerP{Int(M), Int(M), typeof(activation)}(activation)
 end
 
 function LinearLayerQ(M)
-    LinearLayerQ{M, M}()
+    LinearLayerQ{Int(M), Int(M)}()
 end
 
 function LinearLayerP(M)
-    LinearLayerP{M, M}()
+    LinearLayerP{Int(M), Int(M)}()
 end
 
 function initialparameters(
@@ -221,17 +223,23 @@ end
 @inline _shift(::Val{:Q}, z::NamedTuple, f::F) where {F} = (q = z.q + f(z.p), p = z.p)
 @inline _shift(::Val{:P}, z::NamedTuple, f::F) where {F} = (q = z.q, p = z.p + f(z.q))
 
+# Every input half has `M ÷ 2` rows, and a half of any other length is rejected before it reaches
+# the broadcast: a one-row scale or a one-column weight would otherwise broadcast against it and
+# return a value rather than raise.
 @inline function (d::ActivationLayer{M, M, TA, C})(z::NamedTuple, ps) where {M, TA, C}
+    size(z.q, 1) == M ÷ 2 || error("Dimension mismatch.")
     _shift(Val(C), z, x -> ps.scale .* d.activation.(x))
 end
 
 @inline function (d::GradientLayer{M, M, TA, C})(z::NamedTuple, ps) where {M, TA, C}
+    size(z.q, 1) == M ÷ 2 || error("Dimension mismatch.")
     _shift(Val(C), z,
         x -> _mul(ps.weight',
             ps.scale .* d.activation.(_mul(ps.weight, x) .+ ps.bias)))
 end
 
 @inline function (d::LinearLayer{M, M, C})(z::NamedTuple, ps) where {M, C}
+    size(z.q, 1) == M ÷ 2 || error("Dimension mismatch.")
     _shift(Val(C), z, x -> _mul(ps.weight, x))
 end
 

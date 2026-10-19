@@ -39,6 +39,8 @@ const DENSE_WEIGHT = [1.0 -2.0; 0.5 3.0]
                 @test y.q == z.q
                 @test y.p == z.p + update
             end
+            @test eltype(y.q) === T
+            @test eltype(y.p) === T
         end
 
         @test typeof(ps.A) <: SymmetricMatrix
@@ -62,6 +64,8 @@ const DENSE_WEIGHT = [1.0 -2.0; 0.5 3.0]
                 @test y.p == z.p + update
                 @test y.q == z.q
             end
+            @test eltype(y.q) === T
+            @test eltype(y.p) === T
         end
     end
 
@@ -83,6 +87,8 @@ const DENSE_WEIGHT = [1.0 -2.0; 0.5 3.0]
             half_out = d isa SymplecticAttentionQ ? Y.q : Y.p
             @test isapprox(half_out, (d isa SymplecticAttentionQ ? X.q : X.p) + reference;
                 rtol = 8 * eps(T))
+            @test eltype(Y.q) === T
+            @test eltype(Y.p) === T
         end
     end
 end
@@ -102,6 +108,8 @@ end
         y = d(z, ps)
         @test y.q == expected.q
         @test y.p == expected.p
+        @test eltype(y.q) === T
+        @test eltype(y.p) === T
     end
 end
 

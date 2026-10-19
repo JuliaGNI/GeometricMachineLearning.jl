@@ -1,12 +1,15 @@
 # The architecture constructors that build gradient layers. One `_gradient_layers` builds the
-# alternating `Q`/`P` tuple for `GSympNet`, `LASympNet`, `LinearSymplecticTransformer` and
-# `SymplecticTransformer`; `LASympNet` has one `Chain` method; the `DataLoader` constructors
-# delegate to the dimension ones; the activation field has one name; and `encoder` and `decoder`
-# dispatch on the architecture family rather than repeat themselves for `SymplecticCompression`.
+# alternating `Q`/`P` tuple for `GSympNet`, `LinearSymplecticTransformer` and
+# `SymplecticTransformer`; `LASympNet` builds its chain of linear, bias and activation layers in its
+# one `Chain` method; the `DataLoader` constructors delegate to the dimension ones; the activation
+# field has one name; and `encoder` and `decoder` dispatch on the architecture family rather than
+# repeat themselves for `SymplecticCompression`.
 
 using GeometricMachineLearning
 using Test
 import Random
+
+include("../helpers/eltypes.jl")
 
 GML = GeometricMachineLearning
 
@@ -49,6 +52,36 @@ expected_layers(letters, dim) = Tuple(layer_of(letter, dim) for letter in letter
                   init_upper_linear, init_upper_act)).layers)
               for init_upper_linear in (true, false) for init_upper_act in (true, false)]
     @test length(unique(chains)) == 4
+
+    # And the one method gives the parent commit's numbers, bit for bit: the output of `Chain(arch)`
+    # on a fixed input with a seeded parameter draw, for all four init combinations and both
+    # precisions. A consolidation that changed the layer order or a layer's half would keep the type
+    # pins above and change these.
+    recorded = Dict(
+        Float32 => Dict(
+            (false, false) => Float32[0.6712964, -7.429632, -1.3637329, -4.1821103],
+            (false, true) => Float32[1.645875, -3.3657727, -0.62259567, -1.9627066],
+            (true, false) => Float32[-0.24205601, -6.9744425, -2.618807, -9.395262],
+            (true, true) => Float32[-0.4790964, -6.646101, -1.8006339, -8.6097145]),
+        Float64 => Dict(
+            (false, false) => [0.8941395918067143, -0.15713251495323832,
+                0.5244622422207745, 0.020362058891310042],
+            (false, true) => [5.557287751876066, 1.6364188650827753,
+                -0.770298151205102, 2.6477895852312754],
+            (true, false) => [-0.6688705250610155, 2.379906628391023,
+                5.361852478306595, 3.809708762796686],
+            (true, true) => [1.0159831533442056, 2.220683843079769, 4.014010476373879,
+                5.307298641957572]))
+    for T in REAL_ELTYPES, (init_upper_linear, init_upper_act) in keys(recorded[T])
+
+        Random.seed!(1234)
+        nn = NeuralNetwork(
+            Chain(LASympNet(4; depth = 2, nhidden = 1,
+                init_upper_linear, init_upper_act)), T)
+        y = nn(T[0.25, -0.5, 1.0, 0.75])
+        @test y == recorded[T][(init_upper_linear, init_upper_act)]
+        @test eltype(y) === T
+    end
 end
 
 @testset "_gradient_layers is the one builder" begin
@@ -59,9 +92,6 @@ end
           (
         GradientLayerP(4, 8, tanh), GradientLayerQ(4, 8, tanh), GradientLayerP(4, 8, tanh))
     @test GML._gradient_layers(4, 8, tanh, 0, true) == ()
-
-    # The two copies of `_make_block_for_initialization` are gone with it.
-    @test !isdefined(GML, :_make_block_for_initialization)
 
     # `GSympNet`
     @test Chain(GSympNet(4; n_layers = 3, init_upper = true)).layers ==
@@ -101,10 +131,28 @@ end
     @test LASympNet(4).activation === GeometricMachineLearning.la_activation_default
 end
 
-@testset "encoder and decoder dispatch on the family" begin
-    # The `Unknown…` architecture is the family's: a symplectic compression gets the symplectic one,
-    # any other autoencoder the plain one.
-    psd = NeuralNetwork(PSDArch(10, 6))
+# A plain autoencoder: an `AutoEncoder` that is not a `SymplecticCompression`. The package exports
+# no such architecture, and the extraction contract is stated for the whole `AutoEncoder` family, so
+# the test carries the smallest one that the family's own defaults can work with.
+struct PlainAE <: GML.AutoEncoder
+    full_dim::Int
+    reduced_dim::Int
+    n_encoder_blocks::Int
+    n_decoder_blocks::Int
+end
+
+function GML.encoder_layers_from_iteration(::PlainAE, iterations::AbstractVector{<:Integer})
+    Tuple(Dense(iterations[i], iterations[i + 1], tanh) for i in 1:(length(iterations) - 1))
+end
+
+function GML.decoder_layers_from_iteration(::PlainAE, iterations::AbstractVector{<:Integer})
+    Tuple(Dense(iterations[i], iterations[i + 1], tanh) for i in 1:(length(iterations) - 1))
+end
+
+@testset "encoder and decoder dispatch on the family ($T)" for T in REAL_ELTYPES
+    # The `Unknown…` architecture is the family's: a symplectic compression gets the symplectic pair,
+    # a `SymplecticAutoencoder` its own more specific pair, and any other autoencoder the plain pair.
+    psd = NeuralNetwork(PSDArch(10, 6), T)
     @test encoder(psd).architecture isa GML.UnknownSymplecticEncoder
     @test decoder(psd).architecture isa GML.UnknownSymplecticDecoder
     @test encoder(psd).model == Chain(PSDLayer(10, 6))
@@ -112,12 +160,56 @@ end
 
     # A `SymplecticAutoencoder` keeps the more specific pair, and that pair is what `ReducedLoss`
     # reaches.
-    sae = NeuralNetwork(SymplecticAutoencoder(10, 6))
+    sae = NeuralNetwork(SymplecticAutoencoder(10, 6), T)
     @test encoder(sae).architecture isa GML.NonLinearSymplecticEncoder
     @test decoder(sae).architecture isa GML.NonLinearSymplecticDecoder
 
-    plain = NeuralNetwork(Chain(Dense(4, 2, tanh)))
+    plain = NeuralNetwork(PlainAE(4, 2, 2, 2), T)
     @test encoder(plain).architecture isa GML.UnknownEncoder
     @test decoder(plain).architecture isa GML.UnknownDecoder
-    @test encoder(plain).model === plain.model
+    @test encoder(plain).model == Chain(Dense(4, 2, tanh))
+    @test decoder(plain).model == Chain(Dense(2, 4, tanh))
+end
+
+# The parent commit's extracted outputs, recorded with `Random.seed!(1234)` before each
+# construction. A family whose extraction read a different layer or parameter set would keep the
+# architecture pins above and change these.
+const SAE_ENCODER = Dict(Float32 => Float32[0.15669091, 0.7164222, -1.1033975, 0.8176635],
+    Float64 => [-0.409368774186764, -0.8029998896258992, -0.41057518851605,
+        -1.2001449127752595])
+const SAE_DECODER = Dict(
+    Float32 => Float32[-0.07482409, -0.19738668, -0.0027087256, -0.123147756, -0.4845962,
+        -0.0010920409],
+    Float64 => [0.05112928569034923, -0.04986197974271, -0.29760147449272983,
+        0.08014507338494671, -0.09722504625813055, -0.483863676661336])
+const PSD_ENCODER = Dict(Float32 => Float32[-0.1435017, -1.0084076, 0.8436968, -1.2431364],
+    Float64 => [-1.044708942694323, -0.1885918208443702, -0.9941642836571767,
+        0.703830342244029])
+const PSD_DECODER = Dict(
+    Float32 => Float32[0.11643271, 0.034739837, 0.18771407, 0.28160548, 0.15652193,
+        0.38236013],
+    Float64 => [0.05023505070185648, 0.10229526181541179, -0.1923853401148286,
+        0.18422381783200356, 0.25921822149706536, -0.3858335114881796])
+
+@testset "the extracted networks give the parent's numbers ($T)" for T in REAL_ELTYPES
+    x = T[0.25, -0.5, 1.0, 0.75, -1.25, 0.5]
+    reduced = T[0.1, -0.2, 0.3, -0.4]
+
+    Random.seed!(1234)
+    sae = NeuralNetwork(
+        SymplecticAutoencoder(6, 4;
+            n_encoder_blocks = 2, n_decoder_blocks = 2), T)
+    encoded, decoded = encoder(sae)(x), decoder(sae)(reduced)
+    @test encoded == SAE_ENCODER[T]
+    @test decoded == SAE_DECODER[T]
+
+    Random.seed!(1234)
+    psd = NeuralNetwork(PSDArch(6, 4), T)
+    @test encoder(psd)(x) == PSD_ENCODER[T]
+    @test decoder(psd)(reduced) == PSD_DECODER[T]
+
+    for y in (encoded, decoded, encoder(psd)(x), decoder(psd)(reduced))
+        @test y isa AbstractVector{T}
+        @test eltype(y) === T
+    end
 end

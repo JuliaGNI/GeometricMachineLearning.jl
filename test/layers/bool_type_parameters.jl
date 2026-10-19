@@ -57,27 +57,32 @@ end
     # The two triangles allocate one storage vector and wrap it: the strict lower triangle of a
     # `4 × 4` matrix has six entries, so that is the length for both, and the leaf differs.
     rng() = Random.MersenneTwister(1)
-    ps_lower = initialparameters(rng(), GlorotUniform(), lower, CPU(), Float32)
-    ps_upper = initialparameters(rng(), GlorotUniform(), upper, CPU(), Float32)
-    @test keys(ps_lower) == (:weight,)
-    @test keys(ps_upper) == (:weight, :bias)
-    @test length(ps_lower.weight.S) == 6
-    @test length(ps_upper.weight.S) == 6
-    @test ps_lower.weight isa StrictlyLowerTriangular
-    @test ps_upper.weight isa StrictlyUpperTriangular
-    @test ps_upper.bias isa Vector{Float32}
+    for T in (Float32, Float64)
+        ps_lower = initialparameters(rng(), GlorotUniform(), lower, CPU(), T)
+        ps_upper = initialparameters(rng(), GlorotUniform(), upper, CPU(), T)
+        @test keys(ps_lower) == (:weight,)
+        @test keys(ps_upper) == (:weight, :bias)
+        @test length(ps_lower.weight.S) == 6
+        @test length(ps_upper.weight.S) == 6
+        @test eltype(ps_lower.weight.S) === T
+        @test eltype(ps_upper.weight.S) === T
+        @test ps_lower.weight isa StrictlyLowerTriangular
+        @test ps_upper.weight isa StrictlyUpperTriangular
+        @test ps_upper.bias isa Vector{T}
 
-    ps_no_bias = initialparameters(rng(), GlorotUniform(),
-        VolumePreservingLowerLayer(4; use_bias = false), CPU(), Float32)
-    @test keys(ps_no_bias) == (:weight,)
+        ps_no_bias = initialparameters(rng(), GlorotUniform(),
+            VolumePreservingLowerLayer(4; use_bias = false), CPU(), T)
+        @test keys(ps_no_bias) == (:weight,)
 
-    # One name for the bias initialiser: `init_bias`, as in `ResNetLayer` and `sympnets.jl`. The
-    # keyword is what a caller reaches, so the test reaches it, and the old spelling is gone.
-    @test all(iszero, ps_upper.bias)
-    drawn = initialparameters(rng(), GlorotUniform(), upper, CPU(), Float32;
-        init_bias = GlorotUniform())
-    @test !all(iszero, drawn.bias)
-    @test drawn.weight.S == ps_upper.weight.S
+        # One name for the bias initialiser: `init_bias`, as in `ResNetLayer` and `sympnets.jl`.
+        # The keyword is what a caller reaches, so the test reaches it.
+        @test all(iszero, ps_upper.bias)
+        drawn = initialparameters(rng(), GlorotUniform(), upper, CPU(), T;
+            init_bias = GlorotUniform())
+        @test !all(iszero, drawn.bias)
+        @test drawn.bias isa Vector{T}
+        @test drawn.weight.S == ps_upper.weight.S
+    end
     @test_throws MethodError initialparameters(
         rng(), GlorotUniform(), upper, CPU(), Float32; init_bias! = ZeroInitializer())
 end

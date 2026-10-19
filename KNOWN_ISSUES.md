@@ -344,3 +344,17 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   and the same widening reaches a caller that builds its own loop on `ZygotePullback` without
   `train!`. The fix belongs to Zygote, whose adjoint of `AbstractNeuralNetworks`' `Dense` on a
   3-tensor gives the `Any`.
+
+### K20 · The `VolumePreservingFeedForwardLayer` docstring's formula omits the input term.
+
+- **location:** `src/layers/volume_preserving_feedforward.jl:7`
+- **kind:** docs
+- **found:** 2026-10-19, part M5; the formula is older than that part
+- **evidence:**
+  The docstring gives `x ↦ σ(Lx + b)` for a `StrictlyLowerTriangular` `L`, and `x ↦ σ(Ux + b)` for
+  an upper one. The two functors add the input: `x + d.activation.(_mul(ps.weight, x) .+ ps.bias)`
+  and `x + d.activation.(_mul(ps.weight, x))`, which is what makes the layer volume-preserving for a
+  strictly triangular weight, and what
+  `docs/src/architectures/volume_preserving_feedforward.md:17,21` states as `x + σ(Lx + b)` and
+  `x + Lx`. The docstring renders on the layer's page, so the page and the code disagree there. The
+  fix is the formula in the docstring, not the code.

@@ -33,6 +33,8 @@ end
             y = d(x, ps)
             @test y.q == expected.q
             @test y.p == expected.p
+            @test eltype(y.q) === T
+            @test eltype(y.p) === T
         end
 
         # The matrix argument of the same layer: the bias and the scale broadcast down the columns.
@@ -43,6 +45,8 @@ end
             moved = p.weight' * (p.scale .* tanh.(p.weight * repeat(half, 1, 3) .+ p.bias))
             @test Y.q == (d isa GradientLayerQ ? X.q + moved : X.q)
             @test Y.p == (d isa GradientLayerQ ? X.p : X.p + moved)
+            @test eltype(Y.q) === T
+            @test eltype(Y.p) === T
         end
     end
 
@@ -57,11 +61,15 @@ end
             y = d(x, ps)
             @test y.q == expected.q
             @test y.p == expected.p
+            @test eltype(y.q) === T
+            @test eltype(y.p) === T
         end
 
         X = (q = repeat(q, 1, 3), p = repeat(p_half, 1, 3))
         @test ActivationLayerQ(4, tanh)(X, ps).q == X.q .+ ps.scale .* tanh.(X.p)
         @test ActivationLayerP(4, tanh)(X, ps).p == X.p .+ ps.scale .* tanh.(X.q)
+        @test eltype(ActivationLayerQ(4, tanh)(X, ps).q) === T
+        @test eltype(ActivationLayerP(4, tanh)(X, ps).p) === T
     end
 
     @testset "LinearLayer" begin
@@ -73,6 +81,8 @@ end
             y = d(x, ps)
             @test y.q == expected.q
             @test y.p == expected.p
+            @test eltype(y.q) === T
+            @test eltype(y.p) === T
         end
 
         X = (q = repeat(q, 1, 3), p = repeat(p_half, 1, 3))
@@ -80,6 +90,34 @@ end
         @test LinearLayerP(4)(X, ps).p == X.p .+ p.symmetric * X.q
         @test LinearLayerQ(4)(X, ps).p == X.p
         @test LinearLayerP(4)(X, ps).q == X.q
+        @test eltype(LinearLayerQ(4)(X, ps).q) === T
+        @test eltype(LinearLayerP(4)(X, ps).p) === T
+    end
+
+    @testset "a half of the wrong length is rejected" begin
+        # Dimension 4 acts on halves of two rows. The parameters below are shaped to a half of
+        # three, so nothing but the layer's own check rejects the input: a one-element scale
+        # broadcasts, and the 3×3 and 4×3 weights multiply the three rows it is given.
+        wrong = (q = T[1, 2, 3], p = T[1, 2, 3])
+        weight = T[1 0.5 -1; 0 1 0.5; -1 0 1]
+        gradient = (weight = T[1 0 0.5; 0 1 -1; 0.5 0 1; 1 -1 0],
+            bias = T[0.1, -0.2, 0.3, 0.4], scale = T[0.5, -1.0, 2.0, 1.0])
+        cases = ((ActivationLayerQ(4, tanh), (scale = T[0.5],)),
+            (ActivationLayerP(4, tanh), (scale = T[0.5],)),
+            (GradientLayerQ(4, 6, tanh), gradient),
+            (GradientLayerP(4, 6, tanh), gradient),
+            (LinearLayerQ(4), (weight = weight,)),
+            (LinearLayerP(4), (weight = weight,)))
+        for (d, ps) in cases
+            @test_throws "Dimension mismatch." d(wrong, ps)
+
+            # The array path splits six rows into halves of three and reaches the same check.
+            @test_throws "Dimension mismatch." d(zeros(T, 6), ps)
+
+            # The check reads `q`: a pair whose halves differ in length is rejected as well, so a
+            # `p` of the layer's own length cannot stand in for the dimension.
+            @test_throws "Dimension mismatch." d((q = T[1, 2, 3], p = T[1, 2]), ps)
+        end
     end
 end
 
@@ -103,15 +141,24 @@ end
     @test fieldtype(typeof(d), :second_dim) === Int
     @test d.second_dim === 8
 
-    # The dimension itself is a type parameter, so an `Int32` one names a layer of the same kind;
-    # `second_dim` is an `Int` either way, which is what makes it concrete.
-    d32 = GradientLayerQ(Int32(4), 8, tanh)
-    @test d32.second_dim === 8
-    @test isconcretetype(fieldtype(typeof(d32), :second_dim))
+    # The dimension is a type parameter as well as a field, and both are an `Int`: an `Int32`
+    # dimension names the same layer as an `Int` one, not a second type that prints alike.
+    for (d32, d64) in ((GradientLayerQ(Int32(4), 8, tanh), GradientLayerQ(4, 8, tanh)),
+        (GradientLayerP(Int32(4), 8, tanh), GradientLayerP(4, 8, tanh)),
+        (ActivationLayerQ(Int32(4), tanh), ActivationLayerQ(4, tanh)),
+        (ActivationLayerP(Int32(4), tanh), ActivationLayerP(4, tanh)),
+        (LinearLayerQ(Int32(4)), LinearLayerQ(4)),
+        (LinearLayerP(Int32(4)), LinearLayerP(4)))
+        @test typeof(d32) === typeof(d64)
+        @test typeof(d32).parameters[1] isa Int
+    end
+    @test GradientLayerQ(Int32(4), Int32(8), tanh).second_dim === 8
+    @test isconcretetype(fieldtype(typeof(GradientLayerQ(Int32(4), 8, tanh)), :second_dim))
 
-    # `LinearLayerQ` carries the half as its third and last type parameter. An alias with a fourth
-    # one would accept `LinearLayerQ{4, 4, tanh}` and drop the `tanh`, so the count is the guard.
+    # `LinearLayerQ` carries the half as its third and last type parameter, so no activation fits
+    # after it: a three-parameter alias raises rather than dropping the third.
     @test length(Base.unwrap_unionall(LinearLayerQ).parameters) == 3
+    @test_throws "too many parameters" LinearLayerQ{4, 4, typeof(tanh)}
     @test LinearLayerQ{4, 4} === GeometricMachineLearning.LinearLayer{4, 4, :Q}
     @test LinearLayerQ{4, 4} !== LinearLayerP{4, 4}
 end

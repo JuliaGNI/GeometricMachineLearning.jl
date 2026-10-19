@@ -123,12 +123,14 @@ function (::PositionalEncoding{M, M})(x::Union{AbstractMatrix, AbstractArray{<:A
     x .+ _encoding_for(x, Val(M))
 end
 
-# The encoding matrix of a layer of dimension `M` for `x`, allocated on `x`'s backend. It is a
-# constant of the layer and not a function of the data's values, so it is declared
-# non-differentiable: Zygote traces no further, which is what keeps the backend lookup out of the
-# trace as well.
+# The encoding matrix of a layer of dimension `M` for `x`, allocated on the backend of `x`. The
+# backend comes from `KernelAbstractions.get_backend` and not from `networkbackend`, which answers
+# `CPUStatic()` for a static array, and no `positional_encoding` method takes that backend: a static
+# array's encoding is a plain `Matrix`, which the broadcast adds into its own type. It is a constant
+# of the layer and not a function of the data's values, so it is declared non-differentiable:
+# Zygote traces no further, which is what keeps the backend lookup out of the trace as well.
 function _encoding_for(x::AbstractArray, ::Val{M}) where {M}
-    positional_encoding(networkbackend(x), eltype(x), M, size(x, 2))
+    positional_encoding(KernelAbstractions.get_backend(x), eltype(x), M, size(x, 2))
 end
 
 ChainRulesCore.@non_differentiable _encoding_for(::Any, ::Any)

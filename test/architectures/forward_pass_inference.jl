@@ -4,9 +4,12 @@
 #
 # The list holds every exported architecture that can be applied to data: the two SympNets, the
 # volume-preserving feedforward network and transformer, the ResNet, the two compressions, the four
-# transformer integrators, the generic `Transformer`, and the Hamiltonian and Lagrangian networks.
-# `GeneralizedHamiltonianArchitecture`'s constructor throws and builds no network, so it has no
-# forward pass to check.
+# transformer integrators, the generic `Transformer`, the `ClassificationTransformer`, and the
+# Hamiltonian and Lagrangian networks. `GeneralizedHamiltonianArchitecture`'s constructor throws and
+# builds no network, so it has no forward pass to check. The structured leaves a chain of them can
+# hold are covered by a `Stiefel` transformer (a `StiefelManifold` weight) and a `skew_sym`
+# volume-preserving transformer (a `SkewSymMatrix` weight), since both defaults select the dense
+# leaf.
 
 using GeometricMachineLearning
 using Test
@@ -29,7 +32,11 @@ function cases(::Type{T}) where {T}
     (LinearSymplecticTransformer(4, 3; L = 1), rand(T, 4, 3)),
     (SymplecticTransformer(4; L = 1), rand(T, 4, 3)),
     (VolumePreservingTransformer(4, 3; L = 1), rand(T, 4, 3)),
+    (VolumePreservingTransformer(4, 3; L = 1, skew_sym = true), rand(T, 4, 3)),
     (Chain(Transformer(4, 2, 1)), rand(T, 4, 3)),
+    (Chain(Transformer(4, 2, 1; Stiefel = true)), rand(T, 4, 3)),
+    (ClassificationTransformer(4, 3, 2, 1, softmax, true, true), rand(T, 4, 3, 2)),
+    (ClassificationTransformer(4, 3, 2, 1, softmax, false, true), rand(T, 4, 3, 2)),
     (StandardHamiltonianArchitecture(2, 4), rand(T, 2)),
     (LagrangianNeuralNetwork(2; width = 4), rand(T, 2))
 end

@@ -1,9 +1,11 @@
 # `MultiHeadAttention` builds its head keys once, in `initialparameters`, and its forward pass reads
-# them off the parameter `NamedTuple`s. The check below measures that: a forward pass allocates what
-# the same head products with the keys written out allocate, to within 16 bytes.
+# them off the parameter `NamedTuple`s. The check below measures that: over 1000 passes a forward
+# pass allocates what the same head products with the keys written out allocate, to within 1024
+# bytes.
 #
 # A key built per head per pass is not visible in any value, so the allocation is the only
-# observable, and 16 bytes is well below one key's cost.
+# observable. One key costs at least 240 bytes a pass, so a rebuilt key exceeds the tolerance
+# below by more than two orders of magnitude.
 
 using GeometricMachineLearning
 using GeometricMachineLearning: compute_output_of_mha, _mul, tensor_tensor_mul,
@@ -52,11 +54,14 @@ function constant_keys_tensor(d, x, ps, ::Val{2})
         head_output(d, ps.PQ.head_2, ps.PK.head_2, ps.PV.head_2, x))
 end
 
-# The allocation of one call, measured through a function barrier: the arguments are one concrete
-# tuple, so the call under the timer has concrete types, and the first call warms it.
-function allocations(f::F, args::A) where {F, A}
+# The allocation of `k` calls, measured through a function barrier: the arguments are one concrete
+# tuple, so the calls under the timer have concrete types, and the first call warms them.
+const PASSES = 1000
+function allocations(f::F, args::A, k::Integer) where {F, A}
     f(args...)
-    @allocated f(args...)
+    @allocated for _ in 1:k
+        f(args...)
+    end
 end
 
 @testset "a forward pass allocates what literal head keys allocate ($T, n_heads = $n_heads)" for T in (
@@ -68,12 +73,12 @@ end
 
     for (data, reference) in ((rand(T, 8, 6), constant_keys),
         (rand(T, 8, 6, 3), constant_keys_tensor))
-        measured = allocations(compute_output_of_mha, (d, data, ps))
-        literal = allocations(reference, (d, data, ps, Val(n_heads)))
+        measured = allocations(compute_output_of_mha, (d, data, ps), PASSES)
+        literal = allocations(reference, (d, data, ps, Val(n_heads)), PASSES)
 
-        # The control: the reference allocates a result, so the barrier sees allocations at all.
+        # The control: the reference allocates a result per pass, so the barrier sees allocations.
         @test literal > 0
-        @test measured - literal <= 16
+        @test abs(measured - literal) <= 1024
     end
 end
 
@@ -107,9 +112,12 @@ end
     end
 end
 
-@testset "the forward pass gives what the literal keys give ($T)" for T in (Float32, Float64)
+@testset "the forward pass gives what the literal keys give ($T, Stiefel = $Stiefel)" for T in (
+        Float32, Float64),
+    Stiefel in (false, true)
     # The allocation equality above would also hold between two wrong answers; this pins the answer.
-    d = MultiHeadAttention(8, 2)
+    # Both leaves: a dense weight and a `StiefelManifold` one.
+    d = MultiHeadAttention(8, 2; Stiefel)
     ps = mha_parameters(d, T)
     x = rand(T, 8, 5)
     x_tensor = rand(T, 8, 5, 2)
