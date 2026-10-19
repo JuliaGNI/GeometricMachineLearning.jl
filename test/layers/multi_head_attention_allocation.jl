@@ -83,9 +83,10 @@ end
 end
 
 @testset "one initialparameters builds the head keys once ($T)" for T in (Float32, Float64)
-    # One method for `MultiHeadAttention`, whatever the `Stiefel` flag: the flag is a type parameter
-    # the method branches on. `AbstractNeuralNetworks` defines a fallback for any `Model`, so the
-    # count is over the methods this package defines for the layer.
+    # One method for `MultiHeadAttention`, whatever the `Stiefel` flag: the flag is a type
+    # parameter, and the projection's two forms are `_projection_weight`'s two methods, not a
+    # branch here. `AbstractNeuralNetworks` defines a fallback for any `Model`, so the count is over
+    # the methods this package defines for the layer.
     matching = filter(m -> m.module === GeometricMachineLearning,
         methods(initialparameters,
             (Random.AbstractRNG, Initializer,

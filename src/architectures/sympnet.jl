@@ -114,8 +114,9 @@ function GSympNet(dl::DataLoader; upscaling_dimension = 2 * dl.input_dim, kwargs
     GSympNet(dl.input_dim; upscaling_dimension, kwargs...)
 end
 
-# `n` gradient layers, alternating between the two halves, the first of them acting on `q` when
-# `init_upper`. Both the SympNet and the transformer architectures build their blocks with this.
+# `n` gradient layers, alternating between the two halves, the first of them acting on `q`
+# when `init_upper`. `GSympNet` and the two transformer integrators build their gradient blocks
+# with it.
 function _gradient_layers(dim::Integer, upscaling_dimension::Integer, activation,
         n::Integer, init_upper::Bool)
     is_upper_criterion = init_upper ? isodd : iseven

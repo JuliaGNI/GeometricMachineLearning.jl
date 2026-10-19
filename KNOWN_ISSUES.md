@@ -349,12 +349,26 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
 - **location:** `src/layers/volume_preserving_feedforward.jl:7`
 - **kind:** docs
-- **found:** 2026-10-19, part M5; the formula is older than that part
+- **found:** 2026-10-19
 - **evidence:**
   The docstring gives `x ↦ σ(Lx + b)` for a `StrictlyLowerTriangular` `L`, and `x ↦ σ(Ux + b)` for
   an upper one. The two functors add the input: `x + d.activation.(_mul(ps.weight, x) .+ ps.bias)`
   and `x + d.activation.(_mul(ps.weight, x))`, which is what makes the layer volume-preserving for a
   strictly triangular weight, and what
-  `docs/src/architectures/volume_preserving_feedforward.md:17,21` states as `x + σ(Lx + b)` and
-  `x + Lx`. The docstring renders on the layer's page, so the page and the code disagree there. The
-  fix is the formula in the docstring, not the code.
+  `docs/src/architectures/volume_preserving_feedforward.md:17,21` states as `x + Lx` and
+  `x + σ(Lx + b)`. The docstring renders on the layer's page, so the page and the code disagree
+  there. The fix is the formula in the docstring, not the code.
+
+### K21 · The `MultiHeadAttention` allocation comparison is sensitive to what ran before it in the same process.
+
+- **location:** `test/layers/multi_head_attention_allocation.jl:67-83`
+- **kind:** found late
+- **found:** 2026-10-19
+- **evidence:**
+  The testset asserts `abs(measured - literal) <= 1024` bytes over 1000 forward passes, where
+  `literal` is the same head products with the keys written out. It passes as a named run with the
+  file as its unit, and it passes in the full suite on 1.13.2 and on 1.12.7. A supplemental
+  per-file reporter that replays `test/architectures/forward_pass_inference.jl` in the same process
+  first reports 332240 bytes of difference for `Float32` with one head — 852 pass, 1 fail, 1 broken.
+  No cause is established for that figure; it is far above the per-pass key the comparison exists
+  to catch, whose excess over the same 1000 passes is 192000 bytes. The tolerance is not widened.

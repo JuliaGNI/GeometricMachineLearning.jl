@@ -3,9 +3,9 @@
 # return the right numbers and hide the `Any` downstream, which no value assertion catches.
 #
 # The list holds every exported architecture that can be applied to data: the two SympNets, the
-# volume-preserving feedforward network and transformer, the ResNet, the two compressions, the four
-# transformer integrators, the generic `Transformer`, the `ClassificationTransformer`, and the
-# Hamiltonian and Lagrangian networks. `GeneralizedHamiltonianArchitecture`'s constructor throws and
+# volume-preserving feedforward network, the ResNet, the two compressions, the four transformer
+# integrators, the generic `Transformer`, the `ClassificationTransformer`, and the Hamiltonian
+# and Lagrangian networks. `GeneralizedHamiltonianArchitecture`'s constructor throws and
 # builds no network, so it has no forward pass to check. The structured leaves a chain of them can
 # hold are covered by a `Stiefel` transformer (a `StiefelManifold` weight) and a `skew_sym`
 # volume-preserving transformer (a `SkewSymMatrix` weight), since both defaults select the dense

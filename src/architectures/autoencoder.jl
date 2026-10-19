@@ -184,9 +184,11 @@ function Chain(arch::AutoEncoder)
     Chain(encoder_model(arch).layers..., decoder_model(arch).layers...)
 end
 
-# The architecture of the extracted network is its family's `Unknown…` type: a
-# `SymplecticCompression` gets the symplectic one, any other `AutoEncoder` the plain one. One method
-# per function, so the two families cannot drift apart.
+# The architecture of the extracted network is the `Unknown…` type of its family: a
+# `SymplecticCompression` gets the symplectic one, any other `AutoEncoder` the plain one.
+# `SymplecticAutoencoder` is one too, and its own, more specific `encoder` and `decoder` keep its
+# `NonLinearSymplectic…` pair. One method per function here, so the two families cannot drift
+# apart.
 _unknown_encoder(::AutoEncoder) = UnknownEncoder
 _unknown_encoder(::SymplecticCompression) = UnknownSymplecticEncoder
 _unknown_decoder(::AutoEncoder) = UnknownDecoder

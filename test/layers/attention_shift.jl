@@ -3,9 +3,9 @@
 # an independent formula written as the same operations: the pin is bit for bit, and a swap of
 # `_shift`'s two branches fails every one of them.
 #
-# `SymplecticAttention` weights the scalar products with a `SymmetricMatrix` (`symmetric = true`) or
-# a dense matrix (`symmetric = false`), so the two leaves of the part are both here. The activation
-# is `MatrixSoftmax`, the layer's default.
+# `SymplecticAttention` weights the scalar products with a `SymmetricMatrix` (`symmetric = true`)
+# or a dense matrix (`symmetric = false`), so both weightings are covered here. The activation is
+# `MatrixSoftmax`, the layer's default.
 
 using GeometricMachineLearning
 using Test
