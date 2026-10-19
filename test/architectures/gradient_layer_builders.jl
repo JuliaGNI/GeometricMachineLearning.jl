@@ -53,10 +53,10 @@ expected_layers(letters, dim) = Tuple(layer_of(letter, dim) for letter in letter
               for init_upper_linear in (true, false) for init_upper_act in (true, false)]
     @test length(unique(chains)) == 4
 
-    # And the one method gives the parent commit's numbers, bit for bit: the output of `Chain(arch)`
-    # on a fixed input with a seeded parameter draw, for all four init combinations and both
-    # precisions. A consolidation that changed the layer order or a layer's half would keep the type
-    # pins above and change these.
+    # And the one method gives the recorded numbers, bit for bit: the output of `Chain(arch)` on a
+    # fixed input with a seeded parameter draw, for all four init combinations and both precisions.
+    # A change of the layer order or of a layer's half would keep the type pins above and change
+    # these.
     recorded = Dict(
         Float32 => Dict(
             (false, false) => Float32[0.6712964, -7.429632, -1.3637329, -4.1821103],
@@ -171,9 +171,9 @@ end
     @test decoder(plain).model == Chain(Dense(2, 4, tanh))
 end
 
-# The parent commit's extracted outputs, with `Random.seed!(1234)` drawn before each construction.
-# A family whose extraction read a different layer or parameter set would keep the architecture pins
-# above and change these.
+# The recorded outputs of the extracted networks, with `Random.seed!(1234)` drawn before each
+# construction. A family whose extraction read a different layer or parameter set would keep the
+# architecture pins above and change these.
 #
 # A `StiefelManifold` leaf is the CholeskyQR2 of a seeded draw, and the OpenBLAS of Julia 1.12.7 and
 # 1.13.2 (0.3.29 and 0.3.30) factorises the same draw to different last bits, so every leaf is
@@ -218,7 +218,7 @@ overwrite_stiefels!(::Base.RefValue{Int}, x) = nothing
 
 fixed_leaves!(counter, nn) = (overwrite_stiefels!(counter, GML.params(nn)); nothing)
 
-@testset "the extracted networks give the parent's numbers ($T)" for T in REAL_ELTYPES
+@testset "the extracted networks give the recorded numbers ($T)" for T in REAL_ELTYPES
     x = T[0.25, -0.5, 1.0, 0.75, -1.25, 0.5]
     reduced = T[0.1, -0.2, 0.3, -0.4]
 

@@ -1,5 +1,5 @@
 # Every architecture the package exports infers the element type of its forward pass. `@inferred` is
-# the assertion: a consolidation that turned a statically dispatched call into a dynamic one would
+# the assertion: a change that turned a statically dispatched call into a dynamic one would
 # return the right numbers and hide the `Any` downstream, which no value assertion catches.
 #
 # The list holds every exported architecture that can be applied to data: the two SympNets, the

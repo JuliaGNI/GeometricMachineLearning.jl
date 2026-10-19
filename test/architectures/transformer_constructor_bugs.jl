@@ -18,7 +18,7 @@ GML = GeometricMachineLearning
     @test !isempty(gradient_layers)
     @test all(l -> l.activation === sin, gradient_layers)
 
-    # The default is still the constant the docstring interpolates.
+    # The default is the constant the docstring interpolates.
     @test LinearSymplecticTransformer(4, 3).activation ===
           GeometricMachineLearning.lst_activation_default
 end

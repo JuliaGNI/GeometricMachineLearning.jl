@@ -1,5 +1,6 @@
 @doc raw"""
     positional_encoding(T, dim, seq_length)
+    positional_encoding(backend, T, dim, seq_length)
 
 The sinusoidal positional encoding of [vaswani2017attention](@cite), as a `dim × seq_length`
 matrix:
@@ -17,6 +18,9 @@ geometrically, so a pair of rows encodes the position at one wavelength. The sho
 Positions are counted from zero — the paper writes only "`pos` is the position" and gives no base,
 and zero is the standard reading — so the first column is
 ``(0, 1, 0, 1, \ldots)``.
+
+With a `KernelAbstractions` backend as first argument, the matrix is allocated on that backend and
+filled by a kernel; without one it is a `Matrix` on the CPU.
 
 # Examples
 

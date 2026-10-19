@@ -4,8 +4,8 @@
 # `SymplecticAttention`, and the two init keywords in `SymplecticAutoencoder`. The keyword's value is
 # the parameter.
 #
-# The layers are pinned by their type parameters and by the chains they build, and the keywords stay
-# `Bool`: a non-`Bool` value is rejected, which is what "the public keyword stays `Bool`" means.
+# The layers are pinned by their type parameters and by the chains they build, and the keywords are
+# `Bool`: a non-`Bool` value is rejected with a `TypeError`.
 
 using GeometricMachineLearning
 using GeometricMachineLearning: VolumePreservingFeedForwardLayer
@@ -31,7 +31,7 @@ end
 
 @testset "the feedforward layers are one struct with a triangle parameter" begin
     # One struct, and the two exported names are aliases of it, so `VolumePreservingLowerLayer`
-    # still names the type in a signature or a `@docs` block.
+    # names the type in a signature or a `@docs` block.
     @test !isabstracttype(VolumePreservingFeedForwardLayer)
     @test fieldnames(VolumePreservingFeedForwardLayer) == (:activation,)
     @test VolumePreservingLowerLayer{4, 4, false, typeof(identity)} ===

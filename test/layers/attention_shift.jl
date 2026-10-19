@@ -123,7 +123,7 @@ end
     @test which(SymplecticAttentionQ(4; symmetric = false), arguments) ===
           which(SymplecticAttentionP(4; symmetric = false), arguments)
 
-    # The two weightings are still two methods: the symmetric path reads the one weight, and the
+    # The two weightings are two methods: the symmetric path reads the one weight, and the
     # arbitrary path reads its transpose as well.
     @test which(SymplecticAttentionQ(4), arguments) !==
           which(SymplecticAttentionQ(4; symmetric = false), arguments)
