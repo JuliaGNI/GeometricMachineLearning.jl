@@ -2,13 +2,14 @@ using Test
 using GeometricMachineLearning
 using GeometricMachineLearning: initialparameters
 using AbstractNeuralNetworks: parameterlength
-using GPUArraysCore: allowscalar
 import GPUArraysCore
 import AbstractNeuralNetworks
 using JLArrays: JLArray, JLBackend
 using KernelAbstractions
 import Random
 import Zygote
+
+include("../helpers/eltypes.jl")
 
 Random.seed!(1234)
 
@@ -180,49 +181,57 @@ end
 end
 
 @testset "the encoding is built on the input's backend" begin
-    # The encoding matrix and the layer allocate on the backend of their input: a host `Matrix`
-    # against a device array is a compile error, not a slowdown, because the host array cannot be
-    # read from a kernel. The JLArray below runs with scalar indexing forbidden.
+    # The encoding matrix and the layer allocate on the backend of their input. A `JLArray`
+    # broadcast reads a host `Matrix` without complaint, and only a GPU kernel cannot read one, so
+    # what rules out host storage in the layer is the assertion that `_encoding_for` returns a
+    # `JLArray`.
     #
-    # `allowscalar` sets a process-wide default, so the values in force before the block are put
-    # back afterwards rather than left allowed for every later testset of the run.
-    previous = get(task_local_storage(), :ScalarIndexing, nothing)
-    allowscalar(false)
-    try
-        for T in (Float32, Float64)
-            host = positional_encoding(T, 4, 3)
-            device = positional_encoding(JLBackend(), T, 4, 3)
-            @test device isa JLArray
-            @test eltype(device) === T
-            @test Array(device) == host
+    # Scalar indexing is forbidden for the duration, and both of its states are read rather than
+    # written: `@allowscalar` and `task_local_storage(...) do` each put back what they found, and
+    # the task-local key and the process-wide default are independent of each other.
+    default_scalar_indexing = GPUArraysCore.requested_scalar_indexing[]
+    GPUArraysCore.@allowscalar begin
+        task_local_storage(:ScalarIndexing, GPUArraysCore.ScalarDisallowed) do
+            for T in (Float32, Float64)
+                host = positional_encoding(T, 4, 3)
+                device = positional_encoding(JLBackend(), T, 4, 3)
+                @test device isa JLArray
+                @test eltype(device) === T
+                @test Array(device) == host
 
-            l = PositionalEncoding(4)
-            x = rand(T, 4, 3)
-            x_device = JLArray(x)
+                l = PositionalEncoding(4)
+                x = rand(T, 4, 3)
+                x_device = JLArray(x)
 
-            # What the layer adds is the device encoding, not a host `Matrix`: a `JLArray`
-            # broadcast reads a host matrix without complaint, so only the added object shows it.
-            @test GeometricMachineLearning._encoding_for(x_device, Val(4)) isa JLArray
+                # A scalar read is an error in this block, not a silent transfer to the host.
+                @test_throws "Scalar indexing is disallowed" x_device[1]
 
-            y_device = l(x_device, NamedTuple())
-            @test y_device isa JLArray
-            @test eltype(y_device) === T
-            @test Array(y_device) == l(x, NamedTuple())
+                # What the layer adds is the device encoding, not a host `Matrix`.
+                @test GeometricMachineLearning._encoding_for(x_device, Val(4)) isa JLArray
 
-            # Over a batch, and through the `(q, p)` path: the two halves keep the backend.
-            batch = JLArray(rand(T, 4, 5, 2))
-            @test GeometricMachineLearning._encoding_for(batch, Val(4)) isa JLArray
-            @test l(batch, NamedTuple()) isa JLArray
+                y_device = l(x_device, NamedTuple())
+                @test y_device isa JLArray
+                @test eltype(y_device) === T
+                @test Array(y_device) == l(x, NamedTuple())
 
-            z = (q = JLArray(rand(T, 2, 5)), p = JLArray(rand(T, 2, 5)))
-            split = l(z, NamedTuple())
-            @test split.q isa JLArray
-            @test Array(vcat(split.q, split.p)) ==
-                  l(vcat(Array(z.q), Array(z.p)), NamedTuple())
+                # Over a batch, and through the `(q, p)` path: the two halves keep the backend.
+                batch = JLArray(rand(T, 4, 5, 2))
+                @test GeometricMachineLearning._encoding_for(batch, Val(4)) isa JLArray
+                @test l(batch, NamedTuple()) isa JLArray
+
+                z = (q = JLArray(rand(T, 2, 5)), p = JLArray(rand(T, 2, 5)))
+                split = l(z, NamedTuple())
+                @test split.q isa JLArray
+                @test Array(vcat(split.q, split.p)) ==
+                      l(vcat(Array(z.q), Array(z.p)), NamedTuple())
+            end
         end
-    finally
-        task_local_storage(:ScalarIndexing, previous)
-        GPUArraysCore.requested_scalar_indexing[] = previous
+
+        # The inner block put the task-local key back to the `ScalarAllowed` that `@allowscalar`
+        # set, and the process-wide default is the value captured before the outer block.
+        @test get(task_local_storage(), :ScalarIndexing, nothing) ===
+              GPUArraysCore.ScalarAllowed
+        @test GPUArraysCore.requested_scalar_indexing[] === default_scalar_indexing
     end
 end
 
@@ -231,9 +240,11 @@ end
     # encoding is built on `KernelAbstractions.get_backend`, the CPU for a static array, and the
     # broadcast gives a static array back.
     l = PositionalEncoding(4)
-    x = AbstractNeuralNetworks.MArray{Tuple{4, 3}, Float32}(rand(Float32, 4, 3))
-    y = l(x, NamedTuple())
-    @test y isa AbstractNeuralNetworks.StaticArraysCore.StaticArray
-    @test eltype(y) === Float32
-    @test Array(y) == l(Array(x), NamedTuple())
+    for T in REAL_ELTYPES
+        x = AbstractNeuralNetworks.MArray{Tuple{4, 3}, T}(rand(T, 4, 3))
+        y = l(x, NamedTuple())
+        @test y isa AbstractNeuralNetworks.StaticArraysCore.StaticArray
+        @test eltype(y) === T
+        @test Array(y) == l(Array(x), NamedTuple())
+    end
 end

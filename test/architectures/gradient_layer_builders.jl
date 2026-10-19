@@ -171,40 +171,72 @@ end
     @test decoder(plain).model == Chain(Dense(2, 4, tanh))
 end
 
-# The parent commit's extracted outputs, recorded with `Random.seed!(1234)` before each
-# construction. A family whose extraction read a different layer or parameter set would keep the
-# architecture pins above and change these.
-const SAE_ENCODER = Dict(Float32 => Float32[0.15669091, 0.7164222, -1.1033975, 0.8176635],
-    Float64 => [-0.409368774186764, -0.8029998896258992, -0.41057518851605,
-        -1.2001449127752595])
+# The parent commit's extracted outputs, with `Random.seed!(1234)` drawn before each construction.
+# A family whose extraction read a different layer or parameter set would keep the architecture pins
+# above and change these.
+#
+# A `StiefelManifold` leaf is the CholeskyQR2 of a seeded draw, and the OpenBLAS of Julia 1.12.7 and
+# 1.13.2 (0.3.29 and 0.3.30) factorises the same draw to different last bits, so every leaf is
+# overwritten with a fixed selection before the pinned pass. The four vectors below are identical on
+# the two versions.
+const SAE_ENCODER = Dict(
+    Float32 => Float32[-0.14297527, -1.047717, -1.1896557, -0.8492112],
+    Float64 => [-0.3912090654971454, -1.1381624844184113, -0.9884120694402656,
+        -0.6646612400702108])
 const SAE_DECODER = Dict(
-    Float32 => Float32[-0.07482409, -0.19738668, -0.0027087256, -0.123147756, -0.4845962,
-        -0.0010920409],
-    Float64 => [0.05112928569034923, -0.04986197974271, -0.29760147449272983,
-        0.08014507338494671, -0.09722504625813055, -0.483863676661336])
-const PSD_ENCODER = Dict(Float32 => Float32[-0.1435017, -1.0084076, 0.8436968, -1.2431364],
-    Float64 => [-1.044708942694323, -0.1885918208443702, -0.9941642836571767,
-        0.703830342244029])
-const PSD_DECODER = Dict(
-    Float32 => Float32[0.11643271, 0.034739837, 0.18771407, 0.28160548, 0.15652193,
-        0.38236013],
-    Float64 => [0.05023505070185648, 0.10229526181541179, -0.1923853401148286,
-        0.18422381783200356, 0.25921822149706536, -0.3858335114881796])
+    Float32 => Float32[-0.18219787, 0.0, -0.10663684, -0.4, 0.0, -0.3],
+    Float64 => [-0.25069325449750246, 0.0, -0.17555611823221984, -0.4, 0.0, -0.3])
+const PSD_ENCODER = Dict(Float32 => Float32[0.25, 0.5, 0.75, 1.25],
+    Float64 => [0.25, 0.5, 0.75, 1.25])
+const PSD_DECODER = Dict(Float32 => Float32[0.0, -0.1, -0.2, 0.0, -0.3, -0.4],
+    Float64 => [0.0, -0.1, -0.2, 0.0, -0.3, -0.4])
+
+# Column `j` is `±e[mod(j - 1 + which, rows) + 1]`, so the columns are exactly orthonormal for every
+# `which`, and the four leaves below get four different selections.
+function signed_selection(::Type{T}, rows::Integer, cols::Integer, which::Integer) where {T}
+    S = zeros(T, rows, cols)
+    for j in 1:cols
+        S[mod(j - 1 + which, rows) + 1, j] = isodd(which + j) ? -one(T) : one(T)
+    end
+    S
+end
+
+# One selection per leaf, in parameter order: the SAE's encoder and decoder weight, then the
+# `PSDArch`'s.
+function overwrite_stiefels!(counter::Base.RefValue{Int}, Y::StiefelManifold{T}) where {T}
+    counter[] += 1
+    Y.A .= signed_selection(T, size(Y.A, 1), size(Y.A, 2), counter[])
+    nothing
+end
+function overwrite_stiefels!(counter::Base.RefValue{Int}, x::NamedTuple)
+    (foreach(y -> overwrite_stiefels!(counter, y), values(x)); nothing)
+end
+function overwrite_stiefels!(counter::Base.RefValue{Int}, x::GML.NetworkParameters)
+    overwrite_stiefels!(counter, GML.params(x))
+end
+overwrite_stiefels!(::Base.RefValue{Int}, x) = nothing
+
+fixed_leaves!(counter, nn) = (overwrite_stiefels!(counter, GML.params(nn)); nothing)
 
 @testset "the extracted networks give the parent's numbers ($T)" for T in REAL_ELTYPES
     x = T[0.25, -0.5, 1.0, 0.75, -1.25, 0.5]
     reduced = T[0.1, -0.2, 0.3, -0.4]
 
+    # One counter over both networks, so that no two leaves of the test carry the same selection.
+    leaves = Ref(0)
+
     Random.seed!(1234)
     sae = NeuralNetwork(
         SymplecticAutoencoder(6, 4;
             n_encoder_blocks = 2, n_decoder_blocks = 2), T)
+    fixed_leaves!(leaves, sae)
     encoded, decoded = encoder(sae)(x), decoder(sae)(reduced)
     @test encoded == SAE_ENCODER[T]
     @test decoded == SAE_DECODER[T]
 
     Random.seed!(1234)
     psd = NeuralNetwork(PSDArch(6, 4), T)
+    fixed_leaves!(leaves, psd)
     @test encoder(psd)(x) == PSD_ENCODER[T]
     @test decoder(psd)(reduced) == PSD_DECODER[T]
 

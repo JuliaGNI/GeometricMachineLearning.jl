@@ -4,8 +4,8 @@
 # bytes.
 #
 # A key built per head per pass is not visible in any value, so the allocation is the only
-# observable. One key costs at least 240 bytes a pass, so a rebuilt key exceeds the tolerance
-# below by more than two orders of magnitude.
+# observable. One key costs 192 bytes a pass on Julia 1.13.2 (192000 bytes over 1000 passes with
+# one head), which is 187 times the 1024-byte tolerance above.
 
 using GeometricMachineLearning
 using GeometricMachineLearning: compute_output_of_mha, _mul, tensor_tensor_mul,
@@ -121,7 +121,15 @@ end
     ps = mha_parameters(d, T)
     x = rand(T, 8, 5)
     x_tensor = rand(T, 8, 5, 2)
-    @test compute_output_of_mha(d, x, ps) == constant_keys(d, x, ps, Val(2))
-    @test compute_output_of_mha(d, x_tensor, ps) ==
-          constant_keys_tensor(d, x_tensor, ps, Val(2))
+    matrix = compute_output_of_mha(d, x, ps)
+    tensor = compute_output_of_mha(d, x_tensor, ps)
+    @test matrix == constant_keys(d, x, ps, Val(2))
+    @test tensor == constant_keys_tensor(d, x_tensor, ps, Val(2))
+
+    # The values alone do not separate the two precisions, so the element type and the shape are
+    # pinned as well.
+    @test eltype(matrix) === T
+    @test eltype(tensor) === T
+    @test matrix isa Matrix{T}
+    @test tensor isa Array{T, 3}
 end
