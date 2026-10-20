@@ -74,16 +74,14 @@ const SymplecticAttentionP{M, N, Symmetric, AT} = SymplecticAttention{
 function SymplecticAttentionQ(M::Integer; symmetric::Bool = sa_symmetric_default,
         activation::AbstractSoftmax = sa_activation_default)
     @assert iseven(M) "Dimension must be even!"
-    AT = typeof(activation)
-    !symmetric ? SymplecticAttention{M, M, :Q, :arbitrary, AT}(activation) :
-    SymplecticAttention{M, M, :Q, :symmetric, AT}(activation)
+    SymplecticAttention{M, M, :Q, symmetric ? :symmetric : :arbitrary, typeof(activation)}(
+        activation)
 end
 function SymplecticAttentionP(M::Integer; symmetric::Bool = sa_symmetric_default,
         activation::AbstractSoftmax = sa_activation_default)
     @assert iseven(M) "Dimension must be even!"
-    AT = typeof(activation)
-    !symmetric ? SymplecticAttention{M, M, :P, :arbitrary, AT}(activation) :
-    SymplecticAttention{M, M, :P, :symmetric, AT}(activation)
+    SymplecticAttention{M, M, :P, symmetric ? :symmetric : :arbitrary, typeof(activation)}(
+        activation)
 end
 
 function parameterlength(::SymplecticAttention{
@@ -102,7 +100,7 @@ function initialparameters(rng::AbstractRNG,
         initializer::AbstractNeuralNetworks.Initializer,
         l::SymplecticAttention{M, M, LayerType, :symmetric},
         backend::KernelAbstractions.Backend,
-        T::Type) where {M, LayerType}
+        ::Type{T}) where {M, LayerType, T}
     S = KernelAbstractions.allocate(backend, T, parameterlength(l))
     initializer(rng, S)
     (A = SymmetricMatrix(S, M ÷ 2),)
@@ -112,51 +110,32 @@ function initialparameters(rng::AbstractRNG,
         initializer::AbstractNeuralNetworks.Initializer,
         ::SymplecticAttention{M, M, LayerType, :arbitrary},
         backend::KernelAbstractions.Backend,
-        T::Type) where {M, LayerType}
+        ::Type{T}) where {M, LayerType, T}
     A = KernelAbstractions.allocate(backend, T, M ÷ 2, M ÷ 2)
     initializer(rng, A)
     (A = A,)
 end
 
-function (d::SymplecticAttentionQ{M, M, :arbitrary})(
-        z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {AT, M}
-    PAP = _mul(_mul(_custom_transpose(z.p), ps.A), z.p)
-    σPAP = d.activation(PAP)
-    (
-        q = z.q + (_mul(_mul(ps.A, z.p), _custom_transpose(σPAP)) +
-             _mul(_mul(ps.A', z.p), σPAP)),
-        p = z.p)
+function (d::SymplecticAttention{M, M, LayerType, :arbitrary})(
+        z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {M, LayerType, AT}
+    _shift(Val(LayerType), z,
+        function (x)
+            XAX = _mul(_mul(_custom_transpose(x), ps.A), x)
+            σXAX = d.activation(XAX)
+            _mul(_mul(ps.A, x), _custom_transpose(σXAX)) + _mul(_mul(ps.A', x), σXAX)
+        end)
 end
 
 # `A = ps.A` once, and then `A` twice: the local binding is what keeps the `SymmetricMatrix`
 # structure in the Zygote gradient of this layer. Read `ps.A` twice and the gradient leaf degrades
-# to a plain `Matrix` -- `test/parameters/symplectic_attention_network_parameters_gradient.jl`
+# to a plain `Matrix` -- `test/layers/symplectic_attention_network_parameters_gradient.jl`
 # asserts both halves of that, and the last testset there covers this method. The binding costs no
 # allocation; it is the number of accesses that decides the structure.
-function (d::SymplecticAttentionQ{M, M, :symmetric})(
-        z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {AT, M}
+function (d::SymplecticAttention{M, M, LayerType, :symmetric})(
+        z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {M, LayerType, AT}
     A = ps.A
-    PAP = _mul(_mul(_custom_transpose(z.p), A), z.p)
-    σPAP = d.activation(PAP)
-    (q = z.q + _mul(_mul(A, z.p), 2 * σPAP), p = z.p)
-end
-
-function (d::SymplecticAttentionP{M, M, :arbitrary})(
-        z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {AT, M}
-    QAQ = _mul(_mul(_custom_transpose(z.q), ps.A), z.q)
-    σQAQ = d.activation(QAQ)
-    (q = z.q,
-        p = z.p + (_mul(_mul(ps.A, z.q), _custom_transpose(σQAQ)) +
-             _mul(_mul(ps.A', z.q), σQAQ)))
-end
-
-# One access to `ps.A`, for the reason given at the `SymplecticAttentionQ` method above.
-function (d::SymplecticAttentionP{M, M, :symmetric})(
-        z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {AT, M}
-    A = ps.A
-    QAQ = _mul(_mul(_custom_transpose(z.q), A), z.q)
-    σQAQ = d.activation(QAQ)
-    (q = z.q, p = z.p + _mul(_mul(A, z.q), 2 * σQAQ))
+    _shift(Val(LayerType), z,
+        x -> _mul(_mul(A, x), 2 * d.activation(_mul(_mul(_custom_transpose(x), A), x))))
 end
 
 function (d::SymplecticAttention)(z::AbstractArray, ps::NamedTuple)

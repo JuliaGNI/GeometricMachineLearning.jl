@@ -72,19 +72,16 @@ parameterlength(l::LinearSymplecticAttention) = (l.seq_length + 1) * l.seq_lengt
 
 function initialparameters(
         rng::AbstractRNG, initializer::AbstractNeuralNetworks.Initializer,
-        l::LinearSymplecticAttention, backend::KernelAbstractions.Backend, T::Type)
+        l::LinearSymplecticAttention, backend::KernelAbstractions.Backend, ::Type{T}) where {T}
     S = KernelAbstractions.allocate(backend, T, parameterlength(l))
     initializer(rng, S)
     (A = SymmetricMatrix(S, l.seq_length),)
 end
 
 # Implement multiplication with symmetric matrix from the right!
-function (::LinearSymplecticAttentionQ)(z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {AT}
-    (q = z.q + _mul(z.p, ps.A), p = z.p)
-end
-
-function (::LinearSymplecticAttentionP)(z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {AT}
-    (q = z.q, p = z.p + _mul(z.q, ps.A))
+function (::LinearSymplecticAttention{M, N, LayerType})(
+        z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {M, N, LayerType, AT}
+    _shift(Val(LayerType), z, x -> _mul(x, ps.A))
 end
 
 function (d::LinearSymplecticAttention)(z::AbstractArray, ps::NamedTuple)

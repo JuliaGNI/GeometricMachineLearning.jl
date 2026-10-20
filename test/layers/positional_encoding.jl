@@ -3,6 +3,8 @@ using GeometricMachineLearning
 using GeometricMachineLearning: initialparameters
 using AbstractNeuralNetworks: parameterlength
 using KernelAbstractions
+using JLArrays: JLArray, JLBackend
+import GPUArraysCore
 import Random
 import Zygote
 
@@ -131,8 +133,8 @@ end
 end
 
 @testset "a network carrying the layer can be trained" begin
-    # The encoding is a constant, built with a mutating loop. Zygote refuses to differentiate that
-    # loop unless the builder is declared non-differentiable. Without the declaration every
+    # The encoding is a constant, built with a mutating broadcast. Zygote refuses to differentiate
+    # that broadcast unless the builder is declared non-differentiable. Without the declaration every
     # gradient through a network with `positional_encoding = true` raises
     # `Mutating arrays is not supported`. A layer that cannot be trained through is not a layer.
     x = rand(Float32, 4, 5)
@@ -157,6 +159,31 @@ end
         gradient_wrt_input = Zygote.gradient(y -> sum(nn(y, nn.params)), x)[1]
         @test size(gradient_wrt_input) == size(x)
         @test all(isfinite, gradient_wrt_input)
+    end
+end
+
+@testset "the layer runs on a JLArray with scalar indexing disallowed ($T)" for T in (Float32, Float64)
+    x = T[sin(i + 2j) for i in 1:4, j in 1:3]
+    x_device = JLArray(x)
+    l = PositionalEncoding(4)
+    GPUArraysCore.@allowscalar begin
+        task_local_storage(:ScalarIndexing, GPUArraysCore.ScalarDisallowed) do
+            # Scalar indexing is off in this block, so a host loop over the device array raises.
+            @test_throws "Scalar indexing is disallowed" x_device[1]
+            # A broadcast on a JLArray also reads a host matrix, so the output alone cannot show
+            # where the encoding lives: the encoding itself must be a JLArray.
+            P = GeometricMachineLearning._positional_encoding_like(x_device, 4)
+            @test P isa JLArray{T, 2}
+            @test Array(P) == positional_encoding(T, 4, 3)
+            y = l(x_device, NamedTuple())
+            @test y isa JLArray{T, 2}
+            @test KernelAbstractions.get_backend(y) isa JLBackend
+            @test Array(y) == l(x, NamedTuple())
+
+            y = l(JLArray(reshape(x, 4, 3, 1)), NamedTuple())
+            @test y isa JLArray{T, 3}
+            @test Array(y)[:, :, 1] == l(x, NamedTuple())
+        end
     end
 end
 

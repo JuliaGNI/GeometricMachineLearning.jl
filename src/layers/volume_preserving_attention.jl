@@ -25,11 +25,7 @@ device, and in the element type of the data.
 """
 struct VolumePreservingAttention{M, N, ScalarProductType, SL} <: AbstractExplicitLayer{M, N}
     function VolumePreservingAttention(dim::Int, seq_length::Int = 0; skew_sym::Bool = false)
-        if skew_sym
-            return new{dim, dim, :skew_sym, seq_length}()
-        else
-            return new{dim, dim, :arbitrary, seq_length}()
-        end
+        new{dim, dim, skew_sym ? :skew_sym : :arbitrary, seq_length}()
     end
 end
 
@@ -49,7 +45,7 @@ end
 function initialparameters(
         rng::AbstractRNG, initializer!::AbstractNeuralNetworks.Initializer,
         d::VolumePreservingAttention{M, M, :skew_sym},
-        backend::KernelAbstractions.Backend, T::Type) where {M}
+        backend::KernelAbstractions.Backend, ::Type{T}) where {M, T}
     V = KernelAbstractions.allocate(backend, T, parameterlength(d))
     initializer!(rng, V)
     (A = SkewSymMatrix(V, M),)
@@ -58,7 +54,7 @@ end
 function initialparameters(
         rng::AbstractRNG, initializer!::AbstractNeuralNetworks.Initializer,
         ::VolumePreservingAttention{M, M, :arbitrary},
-        backend::KernelAbstractions.Backend, T::Type) where {M}
+        backend::KernelAbstractions.Backend, ::Type{T}) where {M, T}
     A = KernelAbstractions.allocate(backend, T, M, M)
     initializer!(rng, A)
     (A = A,)

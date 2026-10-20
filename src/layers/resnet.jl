@@ -14,41 +14,42 @@ The ResNet layer takes the following arguments:
 The following is a keyword argument:
 - `use_bias::Bool = true`: This determines whether a bias ``b`` is used.
 """
-struct ResNetLayer{M, N, use_bias, F1} <: AbstractExplicitLayer{M, N}
+struct ResNetLayer{M, N, bias, F1} <: AbstractExplicitLayer{M, N}
     activation::F1
 end
 
 function ResNetLayer(dim::Integer, activation = identity; use_bias::Bool = true)
-    ResNetLayer{dim, dim, use_bias, typeof(activation)}(activation)
+    ResNetLayer{dim, dim, use_bias ? :bias : :no_bias, typeof(activation)}(activation)
+end
+
+# The bias of a layer whose bias parameter is `:bias` or `:no_bias`: a vector of length `M` filled
+# by `init_bias`, or an empty `NamedTuple`. A layer merges it with its weight, which it draws first.
+function _bias_parameters(::Val{:no_bias}, rng, init_bias, backend, ::Type{T}, M) where {T}
+    NamedTuple()
+end
+function _bias_parameters(::Val{:bias}, rng, init_bias, backend, ::Type{T}, M) where {T}
+    bias = KernelAbstractions.allocate(backend, T, M)
+    init_bias(rng, bias)
+    (bias = bias,)
 end
 
 function initialparameters(
         rng::Random.AbstractRNG, init_weight::AbstractNeuralNetworks.Initializer,
-        ::ResNetLayer{M, M, use_bias}, backend::KernelAbstractions.Backend,
-        ::Type{T}; init_bias = ZeroInitializer()) where {M, use_bias, T}
-    if use_bias
-        weight = KernelAbstractions.allocate(backend, T, M, M)
-        bias = KernelAbstractions.allocate(backend, T, M)
-        init_weight(rng, weight)
-        init_bias(rng, bias)
-        return (weight = weight,
-            bias = bias)
-    else
-        weight = KernelAbstractions.allocate(backend, T, M, M)
-        init_weight(rng, weight)
-        return (weight = weight,)
-    end
+        ::ResNetLayer{M, M, bias}, backend::KernelAbstractions.Backend,
+        ::Type{T}; init_bias = ZeroInitializer()) where {M, bias, T}
+    weight = KernelAbstractions.allocate(backend, T, M, M)
+    init_weight(rng, weight)
+    merge((weight = weight,), _bias_parameters(Val(bias), rng, init_bias, backend, T, M))
 end
 
-function parameterlength(::ResNetLayer{M, M, use_bias}) where {M, use_bias}
-    use_bias ? M * (M + 1) : M * M
-end
+parameterlength(::ResNetLayer{M, M, :bias}) where {M} = M * (M + 1)
+parameterlength(::ResNetLayer{M, M, :no_bias}) where {M} = M * M
 
-function (d::ResNetLayer{M, M, true})(x::AbstractArray, ps::NamedTuple) where {M}
+function (d::ResNetLayer{M, M, :bias})(x::AbstractArray, ps::NamedTuple) where {M}
     x + d.activation.(_mul(ps.weight, x) .+ ps.bias)
 end
 
-function (d::ResNetLayer{M, M, false})(x::AbstractArray, ps::NamedTuple) where {M}
+function (d::ResNetLayer{M, M, :no_bias})(x::AbstractArray, ps::NamedTuple) where {M}
     x + d.activation.(_mul(ps.weight, x))
 end
 
