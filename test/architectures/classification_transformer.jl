@@ -12,4 +12,9 @@ Random.seed!(0)
         dl; n_heads = 2, L = 3, activation = tanh, Stiefel = false,
         add_connection = false) ===
           ClassificationTransformer(4, 2, 2, 3, tanh, false, false)
+    # The two flags differ, so a constructor that swaps them gives another architecture.
+    @test ClassificationTransformer(dl; Stiefel = true, add_connection = false) ===
+          ClassificationTransformer(4, 2, 7, 16, softmax, true, false)
+    @test ClassificationTransformer(dl; Stiefel = false, add_connection = true) ===
+          ClassificationTransformer(4, 2, 7, 16, softmax, false, true)
 end

@@ -76,15 +76,29 @@ function initialparameters(
         PV = NamedTuple{keys}(map(h -> h[3], heads)))
 end
 
-# The forward pass reads the heads off the parameters by position, never by a key built at run time.
-# The result is a tuple, so the one `vcat` over it infers concretely; a preallocated output cannot
-# be written into instead, because Zygote does not differentiate `setindex!`.
+# The projections of the `n` heads `head_1`, …, `head_n`, in that order, whatever the order of the
+# fields of `nt`. The keys are built when the method is generated for `n`, never on a forward pass;
+# a missing head is an error.
+@generated function _heads(nt::NamedTuple, ::Val{n}) where {n}
+    Expr(:tuple, (:(getfield(nt, $(QuoteNode(Symbol("head_", i))))) for i in 1:n)...)
+end
+
+# The heads of the query, key and value projections, matched by name. The query projection gives
+# the number of heads.
+function _heads(ps::NamedTuple)
+    n = Val(length(ps.PQ))
+    (_heads(ps.PQ, n), _heads(ps.PK, n), _heads(ps.PV, n))
+end
+
+# The forward pass reads each head by its name. The result is a tuple, so the one `vcat` over it
+# infers concretely; a preallocated output cannot be written into instead, because Zygote does not
+# differentiate `setindex!`.
 function compute_output_of_mha(d::MultiHeadAttention{M, M}, x::AbstractMatrix{T}, ps::NamedTuple) where {
         M, T}
     dim = size(x, 1)
     @assert dim == M
 
-    head_outputs = map(values(ps.PQ), values(ps.PK), values(ps.PV)) do PQ, PK, PV
+    head_outputs = map(_heads(ps)...) do PQ, PK, PV
         _mul(PV', x) * d.activation(_mul(PQ', x)' * _mul(PK', x) / T(sqrt(dim)))
     end
 
@@ -99,7 +113,7 @@ function compute_output_of_mha(
     @assert dim == M
 
     # the result of a single head attention block, one per head
-    head_outputs = map(values(ps.PQ), values(ps.PK), values(ps.PV)) do PQ, PK, PV
+    head_outputs = map(_heads(ps)...) do PQ, PK, PV
         Q_tensor = _mul(PQ', x)
         K_tensor = _mul(PK', x)
         V_tensor = _mul(PV', x)

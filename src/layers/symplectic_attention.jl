@@ -127,11 +127,10 @@ end
 # testset of `test/layers/symplectic_attention_network_parameters_gradient.jl` asserts it.
 function (d::SymplecticAttention{M, M, C, :symmetric})(
         z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {AT, M, C}
-    A = ps.A
     _shift(Val(C), z,
         function (y)
-            σYAY = d.activation(_mul(_mul(_custom_transpose(y), A), y))
-            _mul(_mul(A, y), 2 * σYAY)
+            σYAY = d.activation(_mul(_mul(_custom_transpose(y), ps.A), y))
+            _mul(_mul(ps.A, y), 2 * σYAY)
         end)
 end
 

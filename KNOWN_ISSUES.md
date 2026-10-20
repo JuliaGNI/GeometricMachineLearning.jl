@@ -202,6 +202,27 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   nonfinite(tensor_cayley(C))    # 23 of 200
   ```
 
+### K20 · `LagrangianNeuralNetwork` names its activation field `act`, where every other architecture says `activation`.
+
+- **location:** `src/architectures/lagrangian_neural_network.jl:5`
+- **kind:** found late
+- **found:** 2026-10-20, by the critics of part M5; the field is the same on `origin/main` at
+  `4c4a8320`
+- **evidence:**
+  `grep -n "act::" src/architectures/lagrangian_neural_network.jl` gives `5:    act::AT`, read
+  at `:16` and `:20` as `nn.act`. `GSympNet` and `LASympNet` both name the field `activation`. A
+  rename changes a public field name, so it goes with a change of its own.
+
+### K21 · `ClassificationLayer`'s `initialparameters` names its initialiser `init_weight!`, where every other layer says `init_weight`.
+
+- **location:** `src/layers/classification.jl:74`
+- **kind:** found late
+- **found:** 2026-10-20, by the critics of part M5; the name is the same on `origin/main` at
+  `4c4a8320`
+- **evidence:**
+  `grep -rn "init_weight!" src/layers/` gives only `classification.jl:74` and `:78`. The name is a
+  positional argument, so a rename changes no call.
+
 ## Upstream
 
 ### K2 · Revise prints EMFILE errors in the test log
