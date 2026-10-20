@@ -2,28 +2,6 @@
 
 What is known to be wrong in GeometricMachineLearning and is not fixed.
 
-## B. Known defects
-
-### B11 · `PositionalEncoding` is CPU-only, and the failure is a compile error rather than a slowdown.
-
-- **location:** —
-- **kind:** defect
-- **found:** 2026-09-18
-- **evidence:**
-  `positional_encoding` builds its matrix with `Matrix{T}(undef, …)`, so the layer's
-  `x .+ P` adds a host array to whatever it is given. Every other layer allocates through the
-  backend — `KernelAbstractions.allocate`, or `similar(x, …)` in the forward pass. Broadcasting a
-  host `Matrix` against a device array does not fall back to the CPU; it fails to compile, because
-  the host array cannot be read from a kernel.
-
-  **No test can catch this, because the suite has no GPU test.** That is what makes it worth an
-  entry rather than a docstring alone: a green matrix says nothing about it. Both docstrings — the
-  layer's and the `positional_encoding` keyword of [`Transformer`](@ref) — carry the warning.
-
-  Closing it means giving the builder the backend, so that it allocates through
-  `KernelAbstractions.allocate` and fills with a kernel instead of a loop, and it cannot be verified
-  here without a GPU job to run it under.
-
 ## C. Follow-ups and cleanups
 
 ### C6 · Three generated MNIST PDFs are in this branch's history
@@ -88,20 +66,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   `Architecture`, `AbstractExplicitLayer`, `_compute_loss`, `dim` and the rest are used
   deliberately, and the resolution is upstream declaring them `public`. Each check's reason is
   written beside it in the test file.
-
-### C19 · `_make_block_for_initialization` has two methods
-
-- **location:** `src/architectures/symplectic_transformer.jl`
-- **kind:** dead code
-- **found:** 2026-09-19
-- **evidence:**
-  — `src/architectures/symplectic_transformer.jl`
-  and `src/architectures/linear_symplectic_transformer.jl` — that differ only in which fields they read
-  from their argument: one reads `arch.transformer_dim` and `arch.sympnet_activation`, the other reads
-  `arch.dim` and `arch.activation`. The bodies are otherwise identical. This stood as a `TODO` in the
-  source; a comment must stand on its own, so it is recorded here instead. Closing it means agreeing
-  on one set of field names across the two architectures, or passing the dimension and the activation
-  in rather than reading them off `arch`.
 
 ### C20 · There is no Knet.jl example for the Hamiltonian neural network.
 
@@ -277,16 +241,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   is a Metal.jl change: a workload that does not run where no device exists.
 
 ## Documentation
-
-### K5 · The `PositionalEncoding` docstring names `test/metal/`, which does not exist
-
-- **location:** `src/layers/positional_encoding.jl:75`
-- **kind:** docs
-- **found:** 2026-10-02
-- **evidence:**
-  The docstring says "the GPU tests in `test/metal/` do not cover this layer". The Metal tests
-  are in `test/devices/metal.jl`, and `origin/main` at 97bf0d8 has no `test/metal/` directory.
-  The fix is a change of that path under `src/`.
 
 ### K18 · The tensor-sampling formula in the `DataLoader` manual is one short
 

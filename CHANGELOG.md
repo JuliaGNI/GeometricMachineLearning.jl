@@ -55,7 +55,21 @@ breaking release).
 
 - **The `[compat]` bounds move to the versions the training API needs**: GeometricOptimizers `"0.9"`, AbstractNeuralNetworks `"0.9.1"`, NeuralNetworkParameters `"0.5"`, SymbolicNeuralNetworks `"0.9"`, GeometricBase `"0.15"`, GeometricEquations `"0.21.5"` and GeometricSolutions `"0.6.6"`. HDF5 leaves `[compat]` and `[weakdeps]`.
 
+- **`GSympNet`'s activation field is `activation`, not `act`, as in `LASympNet`.** Migrate `arch.act` to `arch.activation`.
+
+- **`StandardTransformerIntegrator`'s field `upsacling_activation` is `upscaling_activation`,** the name of its keyword. Migrate `arch.upsacling_activation` to `arch.upscaling_activation`.
+
+- **`VolumePreservingFeedForwardLayer` is one concrete struct, and `VolumePreservingLowerLayer` and `VolumePreservingUpperLayer` are aliases of it.** The struct has a fifth type parameter, `Triangle`, which is `:lower` or `:upper` in the aliases; before, it was an abstract type with two subtypes. The constructors and the four type parameters of the two names are unchanged. The bias initialiser keyword of `initialparameters` is `init_bias`, as for `GradientLayer` and `ResNetLayer`; it was `init_bias!`.
+
+- **`LinearLayerQ` and `LinearLayerP` take two type parameters, `{M, N}`.** The third, unused one is gone. `GradientLayerQ(M, n, σ)` stores both dimensions as `Int`, so `GradientLayerQ(Int32(4), Int32(8), tanh)` has the type of `GradientLayerQ(4, 8, tanh)`.
+
 ### Fixed
+
+- **`LinearSymplecticTransformer(dim, seq_length; activation = sin)` no longer raises a `MethodError`.** Its constructor built the architecture with `tanh`'s type whatever the activation was. The given activation now reaches every gradient layer of its chain.
+
+- **`PositionalEncoding` runs on a device array.** The encoding is allocated on the backend of the input and filled by one broadcast, where it was a host matrix filled by a scalar loop. The "CPU only" warnings in its docstring and in the `positional_encoding` keyword of `Transformer` are gone. This closes known issues B11 and K5.
+
+- **The docstring of `VolumePreservingFeedForwardLayer` gives the map as `x ↦ x + σ(Lx + b)`,** where it omitted the `x +`.
 
 - **The symbolic HNN pullback is the gradient of `HNNLoss` on the batch**. `SymbolicPullback(arch)` generates the per-sample gradient of the surrogate `½‖rᵢ‖²` with `reduce = +` and scales the sum by `1/(‖R‖‖Y‖)`, taken from the residual of the loss value, so a step evaluates the Hamiltonian vector field once. Each norm divides every gradient entry on its own: their product overflows in `Float32` when both norms are about `1.8e19`, where neither norm does, and the scalar `1/(‖R‖‖Y‖)` is subnormal once that product passes `1/floatmin(Float32) ≈ 8.5e37`. At a zero residual the scale is `pinv(‖R‖)`, which is zero, so the gradient is the zero set as `ZygotePullback`'s is. Measured on a `StandardHamiltonianArchitecture(2, 4, 1, SigmoidActivation())` against a `Zygote` gradient of the same batch, at `Random.seed!(1)` with `N = 5` in `Float64`:
 
@@ -142,6 +156,8 @@ breaking release).
   | `tensor_mat_skew_sym_assign` pullback (C15) | Float64 | — | 8387.2 → 8354.8 |
 
 - **The kernels that zero their output are gone, and `tensor_mat_skew_sym_assign`'s pullback allocates without zeroing.** After the deletions in the entry above, the only zeroed buffers left under `src/kernels/kernel_ad_routines/` were the two of `tensor_mat_skew_sym_assign`'s pullback. Both kernels assign every element once over `ndrange = size`, so both now use `similar` or `KernelAbstractions.allocate`, and no accumulating rule remains. This closes known issue C15, which leaves `KNOWN_ISSUES.md`.
+
+- **The SympNet, symplectic attention and transformer layers share their code, and the outputs do not change.** The `q` and `p` variants of the SympNet layers, `SymplecticAttention` and `LinearSymplecticAttention` each share one functor through `_shift`. `GSympNet`, `LinearSymplecticTransformer` and `SymplecticTransformer` build their gradient layers with one `_gradient_layers`, which closes known issue C19. `MultiHeadAttention` builds its head keys once at initialisation, so a forward pass allocates no key; it draws its weights in the same order as before, query, key and value for each head, so a seeded network has the same parameters. Every method under `src/layers` takes an element type as `::Type{T}`. The outputs of the touched architectures in `Float32` and `Float64` are pinned to values recorded on the base commit at 8 ULPs, and the forward pass of every exported architecture is `@inferred` in both precisions.
 
 ### Fixed
 

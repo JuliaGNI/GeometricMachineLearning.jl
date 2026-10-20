@@ -36,36 +36,21 @@ struct LinearSymplecticTransformer{AT} <: TransformerIntegrator where {AT}
             L::Int = lst_L_default,
             activation = lst_activation_default,
             init_upper::Bool = lst_init_upper_default)
-        new{typeof(tanh)}(
+        new{typeof(activation)}(
             dim, seq_length, n_sympnet, upscaling_dimension, L, activation, init_upper)
     end
-end
-
-function _make_block_for_initialization(
-        layers::Tuple, arch::LinearSymplecticTransformer{AT},
-        is_upper_criterion::Function) where {AT}
-    for i in 1:arch.n_sympnet
-        layers = (layers...,
-            if is_upper_criterion(i)
-                GradientLayerQ(arch.dim, arch.upscaling_dimension, arch.activation)
-            else
-                GradientLayerP(arch.dim, arch.upscaling_dimension, arch.activation)
-            end
-        )
-    end
-
-    layers
 end
 
 function Chain(arch::LinearSymplecticTransformer{AT}) where {AT}
     # if `isodd(i)` and `arch.init_upper==true`, then do `GradientLayerQ`.
     is_upper_criterion = arch.init_upper ? isodd : iseven
+    gradient_layers = _gradient_layers(arch.n_sympnet, arch.dim, arch.upscaling_dimension,
+        arch.activation, is_upper_criterion)
     layers = ()
     for _ in 1:arch.L
-        layers = (layers..., LinearSymplecticAttentionQ(arch.dim, arch.seq_length))
-        layers = _make_block_for_initialization(layers, arch, is_upper_criterion)
-        layers = (layers..., LinearSymplecticAttentionP(arch.dim, arch.seq_length))
-        layers = _make_block_for_initialization(layers, arch, is_upper_criterion)
+        layers = (layers..., LinearSymplecticAttentionQ(arch.dim, arch.seq_length),
+            gradient_layers...,
+            LinearSymplecticAttentionP(arch.dim, arch.seq_length), gradient_layers...)
     end
 
     Chain(layers...)

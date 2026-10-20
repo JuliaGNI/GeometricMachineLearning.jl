@@ -1,15 +1,18 @@
 @doc raw"""
     VolumePreservingFeedForwardLayer <: AbstractExplicitLayer
 
-Super-type of [`VolumePreservingLowerLayer`](@ref) and [`VolumePreservingUpperLayer`](@ref). The layers do the following: 
+The layer type of which [`VolumePreservingLowerLayer`](@ref) and [`VolumePreservingUpperLayer`](@ref) are the two triangles. The layers do the following: 
 
 ```math
-x \mapsto \begin{cases} \sigma(Lx + b) & \text{where $L$ is }\mathtt{StrictlyLowerTriangular}, \\ \sigma(Ux + b) & \text{where $U$ is }\mathtt{StrictlyUpperTriangular}. \end{cases}
+x \mapsto \begin{cases} x + \sigma(Lx + b) & \text{where $L$ is }\mathtt{StrictlyLowerTriangular}, \\ x + \sigma(Ux + b) & \text{where $U$ is }\mathtt{StrictlyUpperTriangular}. \end{cases}
 ```
 
 The functor can be applied to a vector, a matrix or a tensor. The special matrices are implemented as [`StrictlyLowerTriangular`](@extref GeometricOptimizers GeometricOptimizers.StrictlyLowerTriangular) and [`StrictlyUpperTriangular`](@extref GeometricOptimizers GeometricOptimizers.StrictlyUpperTriangular).
 """
-abstract type VolumePreservingFeedForwardLayer{M, N, bias} <: AbstractExplicitLayer{M, N} end
+struct VolumePreservingFeedForwardLayer{M, N, bias, AT, Triangle} <:
+       AbstractExplicitLayer{M, N}
+    activation::AT
+end
 
 @doc raw"""
     VolumePreservingLowerLayer(dim)
@@ -55,18 +58,8 @@ The constructor can be called with the optional arguments:
 - `activation=tanh`: the activation function. 
 - `use_bias::Bool=true` (keyword argument): specifies whether a bias should be used. 
 """
-struct VolumePreservingLowerLayer{M, N, bias, AT} <:
-       VolumePreservingFeedForwardLayer{M, N, bias}
-    activation::AT
-
-    function VolumePreservingLowerLayer(sys_dim::Int, activation = tanh; use_bias::Bool = true)
-        if use_bias
-            return new{sys_dim, sys_dim, :bias, typeof(activation)}(activation)
-        else
-            return new{sys_dim, sys_dim, :no_bias, typeof(activation)}(activation)
-        end
-    end
-end
+const VolumePreservingLowerLayer{M, N, bias, AT} = VolumePreservingFeedForwardLayer{
+    M, N, bias, AT, :lower}
 
 @doc raw"""
     VolumePreservingUpperLayer(dim)
@@ -112,18 +105,21 @@ The constructor can be called with the optional arguments:
 - `activation=tanh`: the activation function. 
 - `use_bias::Bool=true` (keyword argument): specifies whether a bias should be used. 
 """
-struct VolumePreservingUpperLayer{M, N, bias, AT} <:
-       VolumePreservingFeedForwardLayer{M, N, bias}
-    activation::AT
+const VolumePreservingUpperLayer{M, N, bias, AT} = VolumePreservingFeedForwardLayer{
+    M, N, bias, AT, :upper}
 
-    function VolumePreservingUpperLayer(sys_dim::Int, activation = tanh; use_bias::Bool = true)
-        if use_bias
-            return new{sys_dim, sys_dim, :bias, typeof(activation)}(activation)
-        else
-            return new{sys_dim, sys_dim, :no_bias, typeof(activation)}(activation)
-        end
-    end
+function VolumePreservingLowerLayer(sys_dim::Int, activation = tanh; use_bias::Bool = true)
+    bias = use_bias ? :bias : :no_bias
+    VolumePreservingLowerLayer{sys_dim, sys_dim, bias, typeof(activation)}(activation)
 end
+
+function VolumePreservingUpperLayer(sys_dim::Int, activation = tanh; use_bias::Bool = true)
+    bias = use_bias ? :bias : :no_bias
+    VolumePreservingUpperLayer{sys_dim, sys_dim, bias, typeof(activation)}(activation)
+end
+
+_triangular(::VolumePreservingLowerLayer) = StrictlyLowerTriangular
+_triangular(::VolumePreservingUpperLayer) = StrictlyUpperTriangular
 
 function parameterlength(::VolumePreservingFeedForwardLayer{M, M, :no_bias}) where {M}
     M * (M - 1) ÷ 2
@@ -133,47 +129,25 @@ function parameterlength(::VolumePreservingFeedForwardLayer{M, M, :bias}) where 
 end
 
 function initialparameters(
-        rng::AbstractRNG, init_weight!::AbstractNeuralNetworks.Initializer,
-        d::VolumePreservingLowerLayer{M, M, :bias}, backend::Backend,
-        ::Type{T}; init_bias! = ZeroInitializer()) where {M, T}
+        rng::AbstractRNG, init_weight::AbstractNeuralNetworks.Initializer,
+        d::VolumePreservingFeedForwardLayer{M, M, :bias}, backend::Backend,
+        ::Type{T}; init_bias = ZeroInitializer()) where {M, T}
     S = KernelAbstractions.allocate(backend, T, parameterlength(d) - M)
     b = KernelAbstractions.allocate(backend, T, M)
-    init_weight!(rng, S)
-    init_bias!(rng, b)
+    init_weight(rng, S)
+    init_bias(rng, b)
 
-    (weight = StrictlyLowerTriangular(S, M), bias = b)
+    (weight = _triangular(d)(S, M), bias = b)
 end
 
 function initialparameters(
-        rng::AbstractRNG, init_weight!::AbstractNeuralNetworks.Initializer,
-        d::VolumePreservingUpperLayer{M, M, :bias}, backend::Backend,
-        ::Type{T}; init_bias! = ZeroInitializer()) where {M, T}
-    S = KernelAbstractions.allocate(backend, T, parameterlength(d) - M)
-    b = KernelAbstractions.allocate(backend, T, M)
-    init_weight!(rng, S)
-    init_bias!(rng, b)
-
-    (weight = StrictlyUpperTriangular(S, M), bias = b)
-end
-
-function initialparameters(
-        rng::AbstractRNG, init_weight!::AbstractNeuralNetworks.Initializer,
-        d::VolumePreservingLowerLayer{M, M, :no_bias}, backend::Backend,
-        ::Type{T}; init_bias! = ZeroInitializer()) where {M, T}
+        rng::AbstractRNG, init_weight::AbstractNeuralNetworks.Initializer,
+        d::VolumePreservingFeedForwardLayer{M, M, :no_bias}, backend::Backend,
+        ::Type{T}; init_bias = ZeroInitializer()) where {M, T}
     S = KernelAbstractions.allocate(backend, T, parameterlength(d))
-    init_weight!(rng, S)
+    init_weight(rng, S)
 
-    (weight = StrictlyLowerTriangular(S, M),)
-end
-
-function initialparameters(
-        rng::AbstractRNG, init_weight!::AbstractNeuralNetworks.Initializer,
-        d::VolumePreservingUpperLayer{M, M, :no_bias}, backend::Backend,
-        ::Type{T}; init_bias! = ZeroInitializer()) where {M, T}
-    S = KernelAbstractions.allocate(backend, T, parameterlength(d))
-    init_weight!(rng, S)
-
-    (weight = StrictlyUpperTriangular(S, M),)
+    (weight = _triangular(d)(S, M),)
 end
 
 function (d::VolumePreservingFeedForwardLayer{M, M, :bias})(x::AbstractArray, ps) where {M}

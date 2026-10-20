@@ -35,25 +35,36 @@ positional_encoding(Float32, 4, 3)[:, 1]
 ```
 """
 function positional_encoding(::Type{T}, dim::Integer, seq_length::Integer) where {T}
-    P = Matrix{T}(undef, dim, seq_length)
-    for i in 1:dim
-        # Row pairs `(1,2)`, `(3,4)`, … share the frequency `λ^j`, so the pair index is the row
-        # index shifted before the halving. `i ÷ 2` would pair `(2,3)`, `(4,5)`, … instead, and
-        # leave row 1 unpaired.
-        j = (i - 1) ÷ 2
-        λʲ = T(10)^(T(-8) * T(j) / T(dim))
-        for pos in 1:seq_length
-            θ = T(pos - 1) * λʲ
-            P[i, pos] = isodd(i) ? sin(θ) : cos(θ)
-        end
-    end
-    P
+    _fill_encoding!(Matrix{T}(undef, dim, seq_length))
 end
 
-# The matrix is a constant: its arguments are a type and two lengths, and none of them is a
-# differentiable quantity. Without this declaration Zygote traces into the loop above and refuses
-# the `setindex!`, so a network carrying a `PositionalEncoding` cannot be trained at all.
+# The entry in row `i` and column `pos` of the encoding of dimension `dim`. Row pairs `(1,2)`,
+# `(3,4)`, … share the frequency `λ^j`, so the pair index is the row index shifted before the
+# halving. `i ÷ 2` would pair `(2,3)`, `(4,5)`, … instead, and leave row 1 unpaired.
+function _encoding_entry(::Type{T}, dim::Integer, i::Integer, pos::Integer) where {T}
+    j = (i - 1) ÷ 2
+    λʲ = T(10)^(T(-8) * T(j) / T(dim))
+    θ = T(pos - 1) * λʲ
+    isodd(i) ? sin(θ) : cos(θ)
+end
+
+# Fill `P` with the encoding by one broadcast, which runs as a kernel on a device array.
+function _fill_encoding!(P::AbstractMatrix{T}) where {T}
+    dim, seq_length = size(P)
+    P .= _encoding_entry.(T, dim, 1:dim, transpose(1:seq_length))
+end
+
+# The encoding for the input `x` of a layer of dimension `M`, allocated on the backend of `x`.
+function _encoding_for(x::AbstractArray, M::Integer)
+    _fill_encoding!(similar(x, eltype(x), M, size(x, 2)))
+end
+
+# The matrix is a constant: its arguments are a type and two lengths, or an input of which only
+# the type and the size are read, and none of them is a differentiable quantity. Without these
+# declarations Zygote traces into the in-place fill above and refuses it, so a network carrying a
+# `PositionalEncoding` cannot be trained at all.
 ChainRulesCore.@non_differentiable positional_encoding(::Any, ::Any, ::Any)
+ChainRulesCore.@non_differentiable _encoding_for(::Any, ::Any)
 
 @doc raw"""
     PositionalEncoding(dim)
@@ -66,13 +77,8 @@ not from its architecture — the same network is applied to trajectories of dif
 encoding matrix is therefore built per call, which costs one `dim × seq_length` allocation, and a
 second for the sum.
 
-!!! warning "CPU only"
-    [`positional_encoding`](@ref) builds a `Matrix`, so this layer adds a host array to whatever it
-    is given. Every other layer here allocates through the backend — `KernelAbstractions.allocate`,
-    or `similar(x, …)` in the forward pass — and this one does not yet. On a GPU array this is not a
-    slowdown but a failure: the broadcast fails to compile, because the host array cannot be read
-    from a kernel. A network carrying this layer is therefore a CPU network. Nothing in the test
-    suite would catch that, because the GPU tests in `test/metal/` do not cover this layer.
+The encoding is allocated with `similar(x, …)`, on the backend of the input `x`, and filled by one
+broadcast, so the layer runs on a device array as it does on a host array.
 
 Its Jacobian is the identity, since it adds a constant, so it composes with the structure-preserving
 architectures without changing what they preserve: a [`LinearSymplecticTransformer`](@ref) with this
@@ -117,7 +123,7 @@ parameterlength(::PositionalEncoding) = 0
 # `MultiHeadAttention` rejects anyway.
 function (::PositionalEncoding{M, M})(x::Union{AbstractMatrix, AbstractArray{<:Any, 3}},
         ::NamedTuple) where {M}
-    x .+ positional_encoding(eltype(x), M, size(x, 2))
+    x .+ _encoding_for(x, M)
 end
 
 # A `(q, p)` input is stacked, encoded at the full dimension `M`, and split again — which is what

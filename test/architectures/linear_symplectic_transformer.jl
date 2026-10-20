@@ -24,3 +24,16 @@ end
 
 compare_init_upper_with_init_lower(5, 4)
 compare_init_upper_with_init_lower(3, 10; T = Float32)
+
+@testset "the activation keyword reaches the architecture and every gradient layer ($T)" for T in (
+    Float32, Float64)
+    arch = LinearSymplecticTransformer(4, 3; activation = sin)
+    @test arch.activation === sin
+
+    gradient_layers = filter(l -> l isa GeometricMachineLearning.GradientLayer, Chain(arch).layers)
+    @test length(gradient_layers) == 2 * arch.n_sympnet * arch.L
+    @test all(l -> l.activation === sin, gradient_layers)
+
+    nn = NeuralNetwork(arch, CPU(), T)
+    @test eltype(nn(rand(T, 4, 3))) === T
+end

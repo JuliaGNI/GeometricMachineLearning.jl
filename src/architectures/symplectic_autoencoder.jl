@@ -95,23 +95,10 @@ function SymplecticAutoencoder(
     @assert n_encoder_blocks ≤ full_dim - reduced_dim "The number of encoder blocks is too big!"
     @assert n_decoder_blocks ≤ full_dim - reduced_dim "The number of decoder blocks is too big!"
 
-    if encoder_init_q && decoder_init_q
-        SymplecticAutoencoder{:EncoderInitQ, :DecoderInitQ, typeof(activation)}(
-            full_dim, reduced_dim, n_encoder_layers, n_encoder_blocks, n_decoder_layers,
-            n_decoder_blocks, n_decoder_output_layers, sympnet_upscale, activation)
-    elseif encoder_init_q && !decoder_init_q
-        SymplecticAutoencoder{:EncoderInitQ, :DecoderInitP, typeof(activation)}(
-            full_dim, reduced_dim, n_encoder_layers, n_encoder_blocks, n_decoder_layers,
-            n_decoder_blocks, n_decoder_output_layers, sympnet_upscale, activation)
-    elseif !encoder_init_q && decoder_init_q
-        SymplecticAutoencoder{:EncoderInitP, :DecoderInitQ, typeof(activation)}(
-            full_dim, reduced_dim, n_encoder_layers, n_encoder_blocks, n_decoder_layers,
-            n_decoder_blocks, n_decoder_output_layers, sympnet_upscale, activation)
-    elseif !encoder_init_q && !decoder_init_q
-        SymplecticAutoencoder{:EncoderInitP, :DecoderInitP, typeof(activation)}(
-            full_dim, reduced_dim, n_encoder_layers, n_encoder_blocks, n_decoder_layers,
-            n_decoder_blocks, n_decoder_output_layers, sympnet_upscale, activation)
-    end
+    SymplecticAutoencoder{encoder_init_q ? :EncoderInitQ : :EncoderInitP,
+        decoder_init_q ? :DecoderInitQ : :DecoderInitP, typeof(activation)}(
+        full_dim, reduced_dim, n_encoder_layers, n_encoder_blocks, n_decoder_layers,
+        n_decoder_blocks, n_decoder_output_layers, sympnet_upscale, activation)
 end
 
 # The intermediate steps from the full dimension to the reduced dimension, in ascending order. Only

@@ -43,3 +43,26 @@ A = StrictlyLowerTriangular([1], 2)
 l = VolumePreservingUpperLayer(2, identity; use_bias = false)
 A = StrictlyUpperTriangular([1], 2)
 @test l(ones(eltype(A), 2), (weight = A,)) == [2, 1]
+
+# The two triangles are one layer type with a triangle parameter, and each keeps its own exported
+# name and its own parameters: `bias`, then the activation type.
+@testset "the lower and the upper layer keep their names and their parameters" begin
+    for (L, other) in ((VolumePreservingLowerLayer, VolumePreservingUpperLayer),
+        (VolumePreservingUpperLayer, VolumePreservingLowerLayer))
+        @test L(3) isa L{3, 3, :bias, typeof(tanh)}
+        @test L(3, identity; use_bias = false) isa L{3, 3, :no_bias, typeof(identity)}
+        @test L(3) isa VolumePreservingFeedForwardLayer
+        @test !(L(3) isa other)
+    end
+end
+
+# The bias initialiser is the keyword `init_bias`, as in every other layer with a bias.
+@testset "init_bias sets the bias ($T)" for T in (Float32, Float64)
+    for L in (VolumePreservingLowerLayer, VolumePreservingUpperLayer)
+        ps = initialparameters(Random.Xoshiro(0),
+            GeometricMachineLearning.AbstractNeuralNetworks.GlorotUniform(), L(3), CPU(), T;
+            init_bias = GeometricMachineLearning.AbstractNeuralNetworks.OneInitializer())
+        @test ps.bias == ones(T, 3)
+        @test eltype(ps.weight) === T
+    end
+end

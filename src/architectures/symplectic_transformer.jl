@@ -66,34 +66,20 @@ struct SymplecticTransformer{SAT, AAT, Upscaling} <: TransformerIntegrator
     end
 end
 
-function _make_block_for_initialization(layers::Tuple, arch::SymplecticTransformer{AT},
-        is_upper_criterion::Function) where {AT}
-    for i in 1:arch.n_sympnet
-        layers = (layers...,
-            if is_upper_criterion(i)
-                GradientLayerQ(arch.transformer_dim, arch.upscaling_dimension, arch.sympnet_activation)
-            else
-                GradientLayerP(arch.transformer_dim, arch.upscaling_dimension, arch.sympnet_activation)
-            end
-        )
-    end
-
-    layers
-end
-
 function create_layers_for_transformer_dimension_equal_system_dimension(arch::SymplecticTransformer)
     # if `isodd(i)` and `arch.init_upper==true`, then do `GradientLayerQ`.
     is_upper_criterion = arch.init_upper ? isodd : iseven
+    gradient_layers = _gradient_layers(arch.n_sympnet, arch.transformer_dim,
+        arch.upscaling_dimension, arch.sympnet_activation, is_upper_criterion)
     layers = ()
     for _ in 1:arch.L
         layers = (layers...,
             SymplecticAttentionQ(arch.transformer_dim; symmetric = arch.symmetric,
-                activation = arch.attention_activation))
-        layers = _make_block_for_initialization(layers, arch, is_upper_criterion)
-        layers = (layers...,
+                activation = arch.attention_activation),
+            gradient_layers...,
             SymplecticAttentionP(arch.transformer_dim; symmetric = arch.symmetric,
-                activation = arch.attention_activation))
-        layers = _make_block_for_initialization(layers, arch, is_upper_criterion)
+                activation = arch.attention_activation),
+            gradient_layers...)
     end
 
     layers

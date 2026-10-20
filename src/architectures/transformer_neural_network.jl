@@ -28,16 +28,17 @@ struct ClassificationTransformer{AT} <: Architecture
         new{AT}(transformer_dim, classification_dim, n_heads,
             n_layers, σ, Stiefel, add_connection)
     end
-    function ClassificationTransformer(dl::DataLoader{T, BT, CT};
-            n_heads::Int = 7,
-            L::Int = 16,
-            activation::AT = softmax,
-            Stiefel::Bool = true,
-            add_connection::Bool = true) where {
-            T, T1, BT <: AbstractArray{T, 3}, CT <: AbstractArray{T1, 3}, AT}
-        new{AT}(
-            dl.input_dim, dl.output_dim, n_heads, L, activation, Stiefel, add_connection)
-    end
+end
+
+function ClassificationTransformer(dl::DataLoader{T, BT, CT};
+        n_heads::Int = 7,
+        L::Int = 16,
+        activation = softmax,
+        Stiefel::Bool = true,
+        add_connection::Bool = true) where {
+        T, T1, BT <: AbstractArray{T, 3}, CT <: AbstractArray{T1, 3}}
+    ClassificationTransformer(
+        dl.input_dim, dl.output_dim, n_heads, L, activation, Stiefel, add_connection)
 end
 
 function Chain(arch::ClassificationTransformer)

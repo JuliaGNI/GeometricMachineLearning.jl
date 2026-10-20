@@ -29,3 +29,23 @@ end
 
 set_up_and_apply_integrator(; T = Float32)
 set_up_and_apply_integrator(; T = Float64)
+
+@testset "both SympNets store their activation as activation" begin
+    @test GSympNet(4; activation = sin).activation === sin
+    @test LASympNet(4; activation = sin).activation === sin
+end
+
+@testset "the DataLoader constructors give the dimension constructors' result" begin
+    dl = DataLoader(rand(4, 20); suppress_info = true)
+    @test GSympNet(dl) === GSympNet(4)
+    @test GSympNet(dl; upscaling_dimension = 6, n_layers = 3, activation = sin,
+        init_upper = false) ===
+          GSympNet(
+        4; upscaling_dimension = 6, n_layers = 3, activation = sin, init_upper = false)
+    @test LASympNet(dl) === LASympNet(4)
+    @test LASympNet(
+        dl; depth = 3, nhidden = 2, activation = sin, init_upper_linear = false,
+        init_upper_act = false) ===
+          LASympNet(4; depth = 3, nhidden = 2, activation = sin, init_upper_linear = false,
+        init_upper_act = false)
+end

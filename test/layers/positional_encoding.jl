@@ -3,6 +3,8 @@ using GeometricMachineLearning
 using GeometricMachineLearning: initialparameters
 using AbstractNeuralNetworks: parameterlength
 using KernelAbstractions
+import GPUArraysCore
+using JLArrays: JLArray
 import Random
 import Zygote
 
@@ -131,8 +133,8 @@ end
 end
 
 @testset "a network carrying the layer can be trained" begin
-    # The encoding is a constant, built with a mutating loop. Zygote refuses to differentiate that
-    # loop unless the builder is declared non-differentiable. Without the declaration every
+    # The encoding is a constant, filled in place. Zygote refuses to differentiate that fill
+    # unless the builder is declared non-differentiable. Without the declaration every
     # gradient through a network with `positional_encoding = true` raises
     # `Mutating arrays is not supported`. A layer that cannot be trained through is not a layer.
     x = rand(Float32, 4, 5)
@@ -173,4 +175,36 @@ end
     nn = NeuralNetwork(with_encoding, CPU(), Float32)
     @test nn.params[1] == NamedTuple()
     @test size(nn(rand(Float32, 4, 5))) == (4, 5)
+end
+
+# A JLArray broadcast reads a host matrix without complaint, and only a GPU kernel cannot, so the
+# value of the layer on a JLArray does not show where the encoding lives. The assertion that the
+# encoding built for a JLArray input is itself a JLArray does. Scalar indexing is disallowed for
+# this task alone, inside an outer `@allowscalar`, so that the setting of every other test file is
+# the same after this testset as before it.
+@testset "on a JLArray the encoding is built on the device ($T)" for T in (Float32, Float64)
+    l = PositionalEncoding(4)
+    x = rand(Random.Xoshiro(0), T, 4, 5)
+    x3 = rand(Random.Xoshiro(1), T, 4, 5, 2)
+    requested = GPUArraysCore.requested_scalar_indexing[]
+
+    GPUArraysCore.@allowscalar begin
+        task_local_storage(:ScalarIndexing, GPUArraysCore.ScalarDisallowed) do
+            x_device = JLArray(x)
+            @test_throws "Scalar indexing is disallowed" x_device[1]
+
+            @test GeometricMachineLearning._encoding_for(x_device, 4) isa JLArray{T, 2}
+            @test GeometricMachineLearning._encoding_for(JLArray(x3), 4) isa JLArray{T, 2}
+
+            y = l(x_device, NamedTuple())
+            @test y isa JLArray{T, 2}
+            @test Array(y) == l(x, NamedTuple())
+
+            y3 = l(JLArray(x3), NamedTuple())
+            @test y3 isa JLArray{T, 3}
+            @test Array(y3) == l(x3, NamedTuple())
+        end
+        @test task_local_storage(:ScalarIndexing) == GPUArraysCore.ScalarAllowed
+    end
+    @test GPUArraysCore.requested_scalar_indexing[] === requested
 end
