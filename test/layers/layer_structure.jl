@@ -60,13 +60,28 @@ type_variables(t) = t isa UnionAll ? 1 + type_variables(t.body) : 0
 end
 
 @testset "a SympNet layer raises on a half of the wrong size ($T)" for T in REAL_ELTYPES
-    for l in (GradientLayerQ(4, 6, tanh), GradientLayerP(4, 6, tanh),
-        ActivationLayerQ(4, tanh), ActivationLayerP(4, tanh), LinearLayerQ(4), LinearLayerP(4))
-        ps = params(NeuralNetwork(Chain(l), CPU(), T))[1]
-        for n in (1, 3)
-            @test_throws Exception l((q = ones(T, n, 3), p = ones(T, n, 3)), ps)
+    # In a layer of dimension 2 the scale has length 1 and broadcasts against a half of any length,
+    # so there a half of the wrong size can pass the update unless the layer checks the dimension.
+    for (M, layers) in (
+        (4,
+        (GradientLayerQ(4, 6, tanh),
+            GradientLayerP(4, 6, tanh), ActivationLayerQ(4, tanh),
+            ActivationLayerP(4, tanh), LinearLayerQ(4), LinearLayerP(4))),
+        (2, (ActivationLayerQ(2, tanh), ActivationLayerP(2, tanh))))
+        for l in layers
+            ps = params(NeuralNetwork(Chain(l), CPU(), T))[1]
+            m = M ÷ 2
+            for n in (m - 1, m + 1, m + 3)
+                n == 0 && continue
+                @test_throws ErrorException("Dimension mismatch.") l(
+                    (q = ones(T, n, 3), p = ones(T, n, 3)), ps)
+                @test_throws ErrorException("Dimension mismatch.") l(
+                    (q = ones(T, n), p = ones(T, n)), ps)
+                @test_throws ErrorException("Dimension mismatch.") l(
+                    (q = ones(T, n, 3), p = ones(T, m, 3)), ps)
+            end
+            @test eltype(l((q = ones(T, m, 3), p = ones(T, m, 3)), ps).q) === T
         end
-        @test eltype(l((q = ones(T, 2, 3), p = ones(T, 2, 3)), ps).q) === T
     end
 end
 
@@ -181,6 +196,20 @@ end
         ps.PQ.head_2, ps.PK.head_2, ps.PV.head_2] ==
           expected
     @test eltype(ps.PQ.head_1) === T
+end
+
+@testset "MultiHeadAttention finds each head by its name, $(ndims(x)) dimensions ($T)" for T in REAL_ELTYPES,
+    x in (T[sin(i + 2j) for i in 1:6, j in 1:3], T[sin(i + 2j + 3k)
+                                                   for i in 1:6, j in 1:3, k in 1:2])
+
+    Random.seed!(3)
+    d = MultiHeadAttention(6, 3)
+    ps = params(NeuralNetwork(Chain(d), CPU(), T))[1]
+    reordered(nt) = (head_3 = nt.head_3, head_1 = nt.head_1, head_2 = nt.head_2)
+    y = d(x, ps)
+    @test eltype(y) === T
+    @test d(x, (PQ = reordered(ps.PQ), PK = ps.PK, PV = ps.PV)) == y
+    @test d(x, (PQ = reordered(ps.PQ), PK = reordered(ps.PK), PV = reordered(ps.PV))) == y
 end
 
 @testset "every type argument in src/layers/ is spelled ::Type{T}" begin

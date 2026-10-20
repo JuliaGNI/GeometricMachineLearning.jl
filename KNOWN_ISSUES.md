@@ -202,6 +202,33 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   nonfinite(tensor_cayley(C))    # 23 of 200
   ```
 
+### K20 · `LagrangianNeuralNetwork` stores its activation in the field `act`, where every other architecture names it `activation`.
+
+- **location:** `src/architectures/lagrangian_neural_network.jl:5`
+- **kind:** docs
+- **found:** 2026-10-20, by the critics of part M5; the field is the same on `origin/main` at `4c4a8320`
+- **evidence:**
+  ```
+  $ grep -rn " act::\|\.act\b" src/architectures/
+  src/architectures/lagrangian_neural_network.jl:5:    act::AT
+  src/architectures/lagrangian_neural_network.jl:16:        [Dense(nn.width, nn.width, nn.act) for _ in 1:nn.nhidden]
+  src/architectures/lagrangian_neural_network.jl:20:        Dense(nn.dimin, nn.width, nn.act),
+  ```
+
+  The constructor's keyword is `activation`; only the field keeps the short name. The fix renames
+  the field, which changes a public field name.
+
+### K21 · A comment in `symplectic_attention.jl` names a test file under `test/parameters/`, which does not exist.
+
+- **location:** `src/layers/symplectic_attention.jl:131`
+- **kind:** docs
+- **found:** 2026-10-20, by the critics of part M5; the comment is the same on `origin/main` at `4c4a8320`
+- **evidence:**
+  The comment above the symmetric forward method of `SymplecticAttention` names
+  `test/parameters/symplectic_attention_network_parameters_gradient.jl`. The file is
+  `test/layers/symplectic_attention_network_parameters_gradient.jl`, and `test/parameters/` does not
+  exist. The fix changes the path in the comment.
+
 ## Upstream
 
 ### K2 · Revise prints EMFILE errors in the test log

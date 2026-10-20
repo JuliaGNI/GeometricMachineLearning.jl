@@ -71,14 +71,20 @@ function initialparameters(
         PV = NamedTuple{head_keys}(map(head -> head.PV, heads)))
 end
 
-# The forward methods read the head keys off the type of `ps.PQ`, where `initialparameters` puts
-# them once, and find each head's key and value projections by that key.
+# The keys `(:head_1, …, :head_N)` of `N` heads, as a constant: the generated function builds the
+# symbols once for each `N`, when it compiles, and not on each call.
+@generated function _head_keys(::Val{N}) where {N}
+    Expr(:tuple, (QuoteNode(Symbol("head_", i)) for i in 1:N)...)
+end
+
+# The forward methods find the projections of head `i` by the name `head_i`, whatever the order of
+# the fields of `ps.PQ`, `ps.PK` and `ps.PV`.
 function compute_output_of_mha(d::MultiHeadAttention{M, M}, x::AbstractMatrix{T}, ps::NamedTuple) where {
         M, T}
     dim = size(x, 1)
     @assert dim == M
 
-    head_keys = keys(ps.PQ)
+    head_keys = _head_keys(Val(length(ps.PQ)))
     head_outputs = map(1:(d.n_heads)) do i
         key = head_keys[i]
         _mul(ps.PV[key]', x) *
@@ -99,7 +105,7 @@ function compute_output_of_mha(
     @assert dim == M
 
     # the result of a single head attention block, one per head
-    head_keys = keys(ps.PQ)
+    head_keys = _head_keys(Val(length(ps.PQ)))
     head_outputs = map(1:(d.n_heads)) do i
         key = head_keys[i]
         Q_tensor = _mul(ps.PQ[key]', x)

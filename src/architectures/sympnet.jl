@@ -129,8 +129,7 @@ end
 # layers and a bias. The linear layers alternate and start with `LinearLayerQ` if
 # `InitUpperLinear`; the activation layers are `ActivationLayerQ` first if `InitUpperAct`.
 function Chain(arch::LASympNet{
-        AT, InitUpperLinear, InitUpperAct}) where {
-        AT, InitUpperLinear, InitUpperAct}
+        <:Any, InitUpperLinear, InitUpperAct}) where {InitUpperLinear, InitUpperAct}
     linear_layers = ntuple(
         j -> isodd(j) == InitUpperLinear ? LinearLayerQ(arch.dim) : LinearLayerP(arch.dim),
         arch.depth)
