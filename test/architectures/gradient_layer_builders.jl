@@ -10,6 +10,7 @@ using Test
 import Random
 
 include("../helpers/eltypes.jl")
+include("../helpers/ulps.jl")
 
 GML = GeometricMachineLearning
 
@@ -53,10 +54,10 @@ expected_layers(letters, dim) = Tuple(layer_of(letter, dim) for letter in letter
               for init_upper_linear in (true, false) for init_upper_act in (true, false)]
     @test length(unique(chains)) == 4
 
-    # And the one method gives the recorded numbers, bit for bit: the output of `Chain(arch)` on a
-    # fixed input with a seeded parameter draw, for all four init combinations and both precisions.
-    # A change of the layer order or of a layer's half would keep the type pins above and change
-    # these.
+    # And the one method gives the recorded numbers, within 8 ULPs of the last place: the output of
+    # `Chain(arch)` on a fixed input with a seeded parameter draw, for all four init combinations
+    # and both precisions. A change of the layer order or of a layer's half would keep the type pins
+    # above and move these by a fraction.
     recorded = Dict(
         Float32 => Dict(
             (false, false) => Float32[0.6712964, -7.429632, -1.3637329, -4.1821103],
@@ -79,7 +80,7 @@ expected_layers(letters, dim) = Tuple(layer_of(letter, dim) for letter in letter
             Chain(LASympNet(4; depth = 2, nhidden = 1,
                 init_upper_linear, init_upper_act)), T)
         y = nn(T[0.25, -0.5, 1.0, 0.75])
-        @test y == recorded[T][(init_upper_linear, init_upper_act)]
+        @test at_ulps(y, recorded[T][(init_upper_linear, init_upper_act)])
         @test eltype(y) === T
     end
 end
@@ -173,12 +174,12 @@ end
 
 # The recorded outputs of the extracted networks, with `Random.seed!(1234)` drawn before each
 # construction. A family whose extraction read a different layer or parameter set would keep the
-# architecture pins above and change these.
+# architecture pins above and move these by a fraction, thousands of ULPs away.
 #
 # A `StiefelManifold` leaf is the CholeskyQR2 of a seeded draw, and the OpenBLAS of Julia 1.12.7 and
 # 1.13.2 (0.3.29 and 0.3.30) factorises the same draw to different last bits, so every leaf is
-# overwritten with a fixed selection before the pinned pass. The four vectors below are identical on
-# the two versions.
+# overwritten with a fixed selection before the pinned pass. The dense layers still move the vectors
+# by 1 to 2 ULPs between x86_64 and arm64, so they are compared at 8 ULPs.
 const SAE_ENCODER = Dict(
     Float32 => Float32[-0.14297527, -1.047717, -1.1896557, -0.8492112],
     Float64 => [-0.3912090654971454, -1.1381624844184113, -0.9884120694402656,
@@ -231,14 +232,14 @@ fixed_leaves!(counter, nn) = (overwrite_stiefels!(counter, GML.params(nn)); noth
             n_encoder_blocks = 2, n_decoder_blocks = 2), T)
     fixed_leaves!(leaves, sae)
     encoded, decoded = encoder(sae)(x), decoder(sae)(reduced)
-    @test encoded == SAE_ENCODER[T]
-    @test decoded == SAE_DECODER[T]
+    @test at_ulps(encoded, SAE_ENCODER[T])
+    @test at_ulps(decoded, SAE_DECODER[T])
 
     Random.seed!(1234)
     psd = NeuralNetwork(PSDArch(6, 4), T)
     fixed_leaves!(leaves, psd)
-    @test encoder(psd)(x) == PSD_ENCODER[T]
-    @test decoder(psd)(reduced) == PSD_DECODER[T]
+    @test at_ulps(encoder(psd)(x), PSD_ENCODER[T])
+    @test at_ulps(decoder(psd)(reduced), PSD_DECODER[T])
 
     for y in (encoded, decoded, encoder(psd)(x), decoder(psd)(reduced))
         @test y isa AbstractVector{T}
