@@ -14,8 +14,8 @@ The ResNet layer takes the following arguments:
 The following is a keyword argument:
 - `use_bias::Bool = true`: This determines whether a bias ``b`` is used.
 """
-# The bias is the type parameter `:bias` or `:no_bias`, as in `VolumePreservingFeedForwardLayer`.
 struct ResNetLayer{M, N, bias, F1} <: AbstractExplicitLayer{M, N}
+    # The bias is the type parameter `:bias` or `:no_bias`, as in `VolumePreservingFeedForwardLayer`.
     activation::F1
 end
 
