@@ -30,11 +30,14 @@ set_up_and_apply_integrator(; T = Float64)
     @test arch.upscaling_activation === tanh
 
     # `Dense` stores `tanh` as AbstractNeuralNetworks' `TanhActivation()`, so the comparison is with
-    # the activation that `Dense` makes of `tanh`, and against the one it makes of the default.
+    # the activation that `Dense` makes of `tanh`. With the default `upscaling_activation` the
+    # upscaling layer carries what `Dense` makes of `identity`, not `Dense`'s own default `tanh`.
     upscaling = Chain(arch).layers[1]
     @test upscaling isa GeometricMachineLearning.Dense
     @test upscaling.σ === GeometricMachineLearning.Dense(4, 6, tanh).σ
-    @test upscaling.σ !== GeometricMachineLearning.Dense(4, 6, identity).σ
+
+    default = StandardTransformerIntegrator(4; transformer_dim = 6, n_heads = 2)
+    @test Chain(default).layers[1].σ === GeometricMachineLearning.Dense(4, 6, identity).σ
 
     nn = NeuralNetwork(arch, CPU(), T)
     @test eltype(nn(rand(T, 4, 3))) === T
