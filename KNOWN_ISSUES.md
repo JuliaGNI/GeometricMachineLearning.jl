@@ -256,6 +256,52 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   The fix checks `size(x.p, 1)` as well, which changes only the message of an error that is
   raised already.
 
+### K23 · `decoder` gives the decoder of an `AutoEncoder` the block count of the encoder.
+
+- **location:** `src/architectures/autoencoder.jl:236`
+- **kind:** defect
+- **found:** 2026-10-21, by the branch verifier of part M5; the two `decoder` methods on `origin/main` at `4c4a8320` pass the same field
+- **evidence:**
+  `decoder(nn::NeuralNetwork{<:AutoEncoder})` builds an `UnknownDecoder` or an
+  `UnknownSymplecticDecoder` with `arch.n_encoder_blocks` as its third argument, which fills the
+  field `n_decoder_blocks`. When the two counts of the autoencoder differ, the decoder holds the
+  wrong one:
+
+  ```julia
+  struct ProbeAE <: GeometricMachineLearning.AutoEncoder
+      full_dim::Int; reduced_dim::Int; n_encoder_blocks::Int; n_decoder_blocks::Int
+  end
+  # with `encoder_layers_from_iteration` and `decoder_layers_from_iteration` defined for it
+  decoder(NeuralNetwork(ProbeAE(6, 2, 2, 3), CPU(), Float64)).architecture
+  # GeometricMachineLearning.UnknownDecoder(6, 2, 2)
+  ```
+
+  The model and the parameters of the decoder come from `decoder_model(arch)` and
+  `decoder_parameters(nn)`, which read `arch.n_decoder_blocks`, so only the stored field is wrong.
+  `SymplecticAutoencoder` has a `decoder` method of its own and is not affected. The fix passes
+  `arch.n_decoder_blocks`.
+
+### K24 · The docstrings of `LinearSymplecticTransformer` and `SymplecticTransformer` say that `n_sympnet = 1` gives one `GradientLayerQ` and one `GradientLayerP`.
+
+- **location:** `src/architectures/linear_symplectic_transformer.jl:22`
+- **kind:** docs
+- **found:** 2026-10-21, by the branch verifier of part M5; the docstrings and the chains are the same on `origin/main` at `4c4a8320`
+- **evidence:**
+  Each transformer unit puts the same `n_sympnet` gradient layers after its `Q` attention layer and
+  after its `P` attention layer, and the alternation starts again in each block. With
+  `n_sympnet = 1` and the default `init_upper = true`, both gradient layers are `GradientLayerQ`:
+
+  ```julia
+  [typeof(l) for l in Chain(LinearSymplecticTransformer(4, 3; n_sympnet = 1)).layers]
+  # LinearSymplecticAttentionQ, GradientLayerQ, LinearSymplecticAttentionP, GradientLayerQ
+  [typeof(l) for l in Chain(SymplecticTransformer(4; n_sympnet = 1)).layers]
+  # SymplecticAttentionQ, GradientLayerQ, SymplecticAttentionP, GradientLayerQ
+  ```
+
+  The same sentence is at `src/architectures/symplectic_transformer.jl:35`. The count
+  `2n_sympnet` holds for one unit, `L = 1`. The fix states the layers of one unit as the chain
+  builds them, or changes the chain, which changes the network.
+
 ## Upstream
 
 ### K2 · Revise prints EMFILE errors in the test log

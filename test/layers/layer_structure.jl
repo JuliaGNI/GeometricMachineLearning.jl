@@ -1,5 +1,6 @@
-# The layers encode each structural choice as a `Symbol` type parameter, chosen in one expression
-# from the public `Bool` keyword; a `Q`/`P` pair, a lower/upper pair and the two weight kinds of
+# The volume-preserving, symplectic-attention and ResNet layers and the symplectic autoencoder
+# encode each structural choice as a `Symbol` type parameter, chosen in one expression from the
+# public `Bool` keyword; a `Q`/`P` pair, a lower/upper pair and the two weight kinds of
 # multi-head attention share one method; the dimension field of a gradient layer is concrete; and
 # every type argument under `src/layers/` is spelled `::Type{T}`.
 
