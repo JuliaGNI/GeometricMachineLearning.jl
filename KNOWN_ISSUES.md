@@ -302,6 +302,34 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   `2n_sympnet` holds for one unit, `L = 1`. The fix states the layers of one unit as the chain
   builds them, or changes the chain, which changes the network.
 
+### K25 · The docstring of `SymplecticAutoencoder` says that `decoder_init_q = true` makes the first layer of each decoder block a ``p``-type layer, where it is a `GradientLayerQ`.
+
+- **location:** `src/architectures/symplectic_autoencoder.jl:36`
+- **kind:** docs
+- **found:** 2026-10-21, by the branch verifier of part M5; the docstring is the same on `origin/main` at `4c4a8320`
+- **evidence:**
+  `decoder_init_q = true` selects `:DecoderInitQ`, whose `decoder_layers_from_iteration` passes
+  `isodd`, so layer 1 of each decoder block is a `GradientLayerQ`:
+
+  ```julia
+  ae = NeuralNetwork(SymplecticAutoencoder(8, 4; decoder_init_q = true), CPU(), Float64)
+  first(decoder(ae).model.layers) isa GradientLayerQ    # true
+  ```
+
+  The fix writes ``q`` for ``p`` in the docstring.
+
+### K26 · The docstring of `UnknownDecoder` names its third argument `n_encoder_blocks` and links to itself for an example.
+
+- **location:** `src/architectures/autoencoder.jl:102`
+- **kind:** docs
+- **found:** 2026-10-21, by the branch verifier of part M5; the docstring is the same on `origin/main` at `4c4a8320`
+- **evidence:**
+  The signature line reads `UnknownDecoder(full_dim, reduced_dim, n_encoder_blocks)`, and the third
+  argument fills the field `n_decoder_blocks` (`src/architectures/autoencoder.jl:113`). The last
+  line says that an example "can be constructed analogously to [`UnknownDecoder`](@ref)", which
+  links the docstring to itself; the example is in the docstring of `UnknownEncoder`. The fix names
+  the argument `n_decoder_blocks` and links `UnknownEncoder`.
+
 ## Upstream
 
 ### K2 · Revise prints EMFILE errors in the test log
