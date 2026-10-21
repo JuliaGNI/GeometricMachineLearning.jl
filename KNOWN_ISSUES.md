@@ -202,10 +202,10 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   nonfinite(tensor_cayley(C))    # 23 of 200
   ```
 
-### K20 · `LagrangianNeuralNetwork` stores its activation in the field `act`, where every other architecture names it `activation`.
+### K20 · `LagrangianNeuralNetwork` stores its activation in the field `act`, where every other architecture with one activation names it `activation`.
 
 - **location:** `src/architectures/lagrangian_neural_network.jl:5`
-- **kind:** docs
+- **kind:** found late
 - **found:** 2026-10-20, by the critics of part M5; the field is the same on `origin/main` at `4c4a8320`
 - **evidence:**
   ```
@@ -228,6 +228,33 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   `test/parameters/symplectic_attention_network_parameters_gradient.jl`. The file is
   `test/layers/symplectic_attention_network_parameters_gradient.jl`, and `test/parameters/` does not
   exist. The fix changes the path in the comment.
+
+### K22 · The forward methods of the SympNet layers check the rows of `q` only, so a `p` of the wrong size fails later, with another error than the layer's own.
+
+- **location:** `src/layers/sympnets.jl:224`
+- **kind:** found late
+- **found:** 2026-10-21, by the critics of part M5; the check is the same on `origin/main` at `4c4a8320`
+- **evidence:**
+  Each of the three forward methods on a `(q, p)` input starts with
+  `size(x.q, 1) == M ÷ 2 || error("Dimension mismatch.")`. A `p` of the wrong size passes that
+  check, and the update fails in its product or in its unbroadcast `+`; no case returns a value.
+
+  ```julia
+  ps = (scale = [0.5],)
+  ActivationLayerP(2, tanh)((q = [1.0], p = [1.0, 2.0, 3.0]), ps)
+  # DimensionMismatch: a has size (3,), b has size (1,), mismatch at dim 1
+  ActivationLayerQ(2, tanh)((q = ones(1, 4), p = ones(3, 4)), ps)
+  # DimensionMismatch: a has size (1, 4), b has size (3, 4), mismatch at dim 1
+  ActivationLayerP(2, tanh)((q = [1.0, 2.0, 3.0], p = [1.0]), ps)
+  # Dimension mismatch.
+  ```
+
+  With the same `q` and `p` of 1 and 3 rows, `GradientLayerQ(2, 4, tanh)` raises a
+  `DimensionMismatch` of the matrix product, and `LinearLayerQ(2)` the `AssertionError`
+  `A.n == size(B, 1)` of the `SymmetricMatrix` product.
+
+  The fix checks `size(x.p, 1)` as well, which changes only the message of an error that is
+  raised already.
 
 ## Upstream
 
