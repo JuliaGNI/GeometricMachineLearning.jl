@@ -89,7 +89,7 @@ end
 
 function (loss::TransformerLoss)(model::Union{Chain, AbstractExplicitLayer},
         ps::NetworkParameters,
-        input::T, output::T) where {T <: QPT}
+        input::T, output::T) where {T <: NamedTupleOfArrays{<:Any, (:q, :p)}}
     loss(model, ps, vcat(input.q, input.p), vcat(output.q, output.p))
 end
 
@@ -142,17 +142,17 @@ struct AutoEncoderLoss <: NetworkLoss end
 AbstractNeuralNetworks.NetworkLoss(::NeuralNetworkIntegrator) = FeedForwardLoss()
 AbstractNeuralNetworks.NetworkLoss(::AutoEncoder) = AutoEncoderLoss()
 
-function (loss::AutoEncoderLoss)(nn::NeuralNetwork, input::QPTOAT)
+function (loss::AutoEncoderLoss)(nn::NeuralNetwork, input::ArrayOrNamedTuple)
     loss(nn.model, params(nn), input)
 end
 
 function (loss::AutoEncoderLoss)(model::Union{Chain, AbstractExplicitLayer},
-        ps::NetworkParameters, input::QPTOAT)
+        ps::NetworkParameters, input::ArrayOrNamedTuple)
     FeedForwardLoss()(model, ps, input, input)
 end
 
 function (loss::AutoEncoderLoss)(model::Union{Chain, AbstractExplicitLayer},
-        ps::NetworkParameters, input::QPTOAT, output::QPTOAT)
+        ps::NetworkParameters, input::ArrayOrNamedTuple, output::ArrayOrNamedTuple)
     loss(model, ps, input)
 end
 
@@ -221,7 +221,7 @@ function ReducedLoss(autoencoder::NeuralNetwork{<:AutoEncoder})
     ReducedLoss(encoder(autoencoder), decoder(autoencoder))
 end
 
-function (loss::ReducedLoss)(
-        model::Chain, ps::NetworkParameters, input::CT, output::CT) where {CT <: QPTOAT}
+function (loss::ReducedLoss)(model::Chain, ps::NetworkParameters, input::CT,
+        output::CT) where {CT <: ArrayOrNamedTuple}
     _compute_loss(loss.decoder(model(loss.encoder(input), ps)), output)
 end

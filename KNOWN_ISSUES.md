@@ -185,7 +185,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 - **evidence:**
   `HNNLoss`'s two functors (`src/loss/hnn_loss.jl:31-41`) and the call method of
   `SymbolicPullback(arch)` (`src/pullbacks/symbolic_hnn_pullback.jl:38`) type the data as
-  `QPTOAT`, which admits a `(q = …, p = …)` `NamedTuple`. The loss hands that data to the generated
+  `ArrayOrNamedTuple`, which admits a `(q = …, p = …)` `NamedTuple`. The loss hands that data to the generated
   `hvf`, which calls `ndims` on it. With `(q = randn(1, 5), p = randn(1, 5))` as input and output,
   the symbolic pullback, `HNNLoss` and `ZygotePullback(HNNLoss(arch))` all raise:
 

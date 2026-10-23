@@ -1,5 +1,6 @@
 using GeometricMachineLearning
-using GeometricMachineLearning: NetworkLoss, QPTOAT, params, ZygotePullback
+using GeometricMachineLearning: NetworkLoss, params, ZygotePullback
+using AbstractNeuralNetworks: ArrayOrNamedTuple
 using NeuralNetworkParameters: NetworkParameters
 using Test
 import Random
@@ -21,6 +22,28 @@ include("../helpers/leaves.jl")
     @test eltype(history) === T
     @test length(history) == 200
     @test history[end] < history[1] / 100
+end
+
+# A `Chain` whose second layer is a `Chain` has a parameter set with a nested level, and the gradient
+# that `ZygotePullback` returns has that level too. `Chain(::Chain, ::AbstractExplicitLayer)` flattens,
+# so the inner `Chain` goes second. A full-batch `GradientMethod` step of size 0.01 on a least-squares
+# loss lowers the loss, so the second entry of the history is below the first.
+@testset "train! trains a Chain that holds a Chain with ZygotePullback ($T)" for T in REAL_ELTYPES
+    Random.seed!(10)
+    x = randn(T, 2, 20)
+    dl = DataLoader(x, T[1 2; -1 3] * x; suppress_info = true)
+    model = Chain(Dense(2, 3, tanh), Chain(Dense(3, 3, tanh), Dense(3, 2, identity)))
+    nn = NeuralNetwork(model, T)
+    @test model.layers[2] isa Chain
+    @test keys(params(nn).L2) == (:L1, :L2)
+    p₀ = deepcopy(params(nn))
+    opt = TrainingOptimizer(nn.params; algorithm = GradientMethod(), linesearch = T(0.01))
+    history = train!(nn, opt, dl, Batch(20), 2;
+        loss = ZygotePullback(FeedForwardLoss()), show_progress = false)
+    @test eltype(history) === T
+    @test length(history) == 2
+    @test history[2] < history[1]
+    @test params(nn).L2.L1.W != p₀.L2.L1.W
 end
 
 # The iteration number, the moments and the global sections live in `opt` only, so two calls of 5
@@ -176,7 +199,8 @@ end
         loss::L
     end
     function (pb::CountingPullback)(
-            ps::NetworkParameters, model, input_nt_output_nt::Tuple{<:QPTOAT, <:QPTOAT})
+            ps::NetworkParameters, model,
+            input_nt_output_nt::Tuple{<:ArrayOrNamedTuple, <:ArrayOrNamedTuple})
         calls[] += 1
         ZygotePullback(pb.loss)(ps, model, input_nt_output_nt)
     end

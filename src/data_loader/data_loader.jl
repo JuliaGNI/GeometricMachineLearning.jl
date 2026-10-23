@@ -202,7 +202,7 @@ function DataLoader(input::AbstractVector{T}, output::AbstractVector{T}; suppres
 end
 
 @doc raw"""
-    DataLoader(data::QPT)
+    DataLoader(data::NamedTuple{(:q, :p)})
 
 Make an instance of `DataLoader` based on ``(q, p)`` data.
 
@@ -345,15 +345,18 @@ function map_to_new_backend(input::AbstractArray{T},
     Base.copyto!(KernelAbstractions.allocate(backend, T, size(input)...), input)
 end
 
-# `map` over a `(q, p)` named tuple reaches each of the two tensors; over a plain array it would
-# map the array's elements instead, which is why an array has a method of its own.
-function map_to_new_backend(input::QPT, backend::KernelAbstractions.Backend)
+# `map` over a named tuple of arrays, such as `(q, p)` data, reaches each of its tensors; over a
+# plain array it would map the array's elements instead, which is why an array has a method of its
+# own.
+function map_to_new_backend(input::NamedTupleOfArrays, backend::KernelAbstractions.Backend)
     map(tensor -> map_to_new_backend(tensor, backend), input)
 end
 
 map_to_type(input::AbstractArray, ::Type{T}) where {T} = T.(input)
 
-map_to_type(input::QPT, ::Type{T}) where {T} = map(tensor -> map_to_type(tensor, T), input)
+function map_to_type(input::NamedTupleOfArrays, ::Type{T}) where {T}
+    map(tensor -> map_to_type(tensor, T), input)
+end
 
 @doc raw"""
     DataLoader(dl, backend)
@@ -379,7 +382,7 @@ By default this inherits the autoencoder property form `dl`.
 
 See the docstring for [`DataLoader(data::AbstractArray{<:Number, 3})`](@ref).
 """
-function DataLoader(dl::DataLoader{T1, <:QPTOAT, Nothing, K},
+function DataLoader(dl::DataLoader{T1, <:ArrayOrNamedTuple, Nothing, K},
         backend::KernelAbstractions.Backend = networkbackend(dl),
         ::Type{T} = T1;
         autoencoder::Union{Nothing, Bool} = nothing
@@ -430,6 +433,6 @@ accuracy(nn::NeuralNetwork, dl::DataLoader) = accuracy(nn.model, params(nn), dl)
 Base.eltype(::DataLoader{T}) where {T} = T
 
 networkbackend(dl::DataLoader) = networkbackend(dl.input)
-function networkbackend(dl::DataLoader{T, <:QPT{T}}) where {T}
+function networkbackend(dl::DataLoader{T, <:NamedTupleOfArrays{T, (:q, :p)}}) where {T}
     networkbackend(dl.input.q)
 end
