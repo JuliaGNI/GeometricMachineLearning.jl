@@ -2,8 +2,9 @@
 # tuple together but not their array types, so in `(q, p)` data `q` may be a view where `p` is an
 # `Array`. The layers, the losses, `ZygotePullback`, `PoissonTensor`, `_diff` and the `DataLoader`
 # take such data, and the expected value of each call is the same call on two `Array`s. The methods
-# that read the keys `q` and `p` refuse a named tuple with other keys; `map_to_type` and
-# `map_to_new_backend`, which only map over a named tuple, take any keys.
+# that read the keys `q` and `p` refuse a named tuple with other keys; `map_to_type`,
+# `map_to_new_backend` and `networkbackend`, which only map over a named tuple or read its first
+# array, take any keys.
 
 using GeometricMachineLearning
 using GeometricMachineLearning: ResNetLayer, map_to_type, map_to_new_backend, _diff,
@@ -35,6 +36,9 @@ include("../helpers/eltypes.jl")
     loss = TransformerLoss(3, 3)
     @test loss(attention.model, params(attention), mixed, mixed) ==
           loss(attention.model, params(attention), qp, qp)
+    # the input and the output need not have one type either
+    @test loss(attention.model, params(attention), mixed, qp) ==
+          loss(attention.model, params(attention), qp, qp)
 
     autoencoder_loss = AutoEncoderLoss()
     @test autoencoder_loss(dense.model, params(dense), mixed) ==
@@ -46,6 +50,8 @@ include("../helpers/eltypes.jl")
     reduced_loss = ReducedLoss(encoder(NeuralNetwork(Chain(Dense(4, 4, tanh)), T)),
         decoder(NeuralNetwork(Chain(Dense(4, 4, tanh)), T)))
     @test reduced_loss(dense.model, params(dense), mixed, mixed) ==
+          reduced_loss(dense.model, params(dense), qp, qp)
+    @test reduced_loss(dense.model, params(dense), mixed, qp) ==
           reduced_loss(dense.model, params(dense), qp, qp)
 
     # both shapes of `ZygotePullback`: an input alone, and an (input, output) pair
@@ -90,16 +96,23 @@ end
     @test_throws MethodError PoissonTensor(4) * (a = [1.0, 2.0], b = [3.0, 4.0])
     # the generic `_diff` of two named tuples differences each entry
     @test _diff(ab, ab) == (a = zero(ab.a), b = zero(ab.b))
-    dl = DataLoader{Float64, typeof(ab), Nothing, :TimeSeries}(
-        ab, nothing, 4, 3, 2, nothing, nothing)
-    @test_throws MethodError networkbackend(dl)
 end
 
-@testset "map_to_type and map_to_new_backend take any named tuple of arrays ($T)" for T in REAL_ELTYPES
+@testset "map_to_type, map_to_new_backend and networkbackend take any named tuple of arrays ($T)" for T in REAL_ELTYPES
+    Random.seed!(12)
     ab = (a = rand(2, 3), b = rand(2, 3))
     converted = map_to_type(ab, T)
     @test keys(converted) == (:a, :b)
     @test converted.a == T.(ab.a)
     @test eltype(converted.b) === T
     @test map_to_new_backend(ab, CPU()) === ab
+
+    # the copying constructor's default backend is the backend of the loader's first array
+    ab3 = (a = rand(2, 3, 2), b = rand(2, 3, 2))
+    dl = DataLoader{Float64, typeof(ab3), Nothing, :TimeSeries}(
+        ab3, nothing, 4, 3, 2, nothing, nothing)
+    @test networkbackend(dl) == CPU()
+    converted_dl = DataLoader(dl, T)
+    @test eltype(converted_dl) === T
+    @test converted_dl.input == (a = T.(ab3.a), b = T.(ab3.b))
 end

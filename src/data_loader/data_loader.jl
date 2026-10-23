@@ -433,6 +433,6 @@ accuracy(nn::NeuralNetwork, dl::DataLoader) = accuracy(nn.model, params(nn), dl)
 Base.eltype(::DataLoader{T}) where {T} = T
 
 networkbackend(dl::DataLoader) = networkbackend(dl.input)
-function networkbackend(dl::DataLoader{T, <:NamedTupleOfArrays{T, (:q, :p)}}) where {T}
-    networkbackend(dl.input.q)
+function networkbackend(dl::DataLoader{T, <:NamedTupleOfArrays{T}}) where {T}
+    networkbackend(first(dl.input))
 end

@@ -89,7 +89,8 @@ end
 
 function (loss::TransformerLoss)(model::Union{Chain, AbstractExplicitLayer},
         ps::NetworkParameters,
-        input::T, output::T) where {T <: NamedTupleOfArrays{<:Any, (:q, :p)}}
+        input::NamedTupleOfArrays{<:Any, (:q, :p)},
+        output::NamedTupleOfArrays{<:Any, (:q, :p)})
     loss(model, ps, vcat(input.q, input.p), vcat(output.q, output.p))
 end
 
@@ -221,7 +222,7 @@ function ReducedLoss(autoencoder::NeuralNetwork{<:AutoEncoder})
     ReducedLoss(encoder(autoencoder), decoder(autoencoder))
 end
 
-function (loss::ReducedLoss)(model::Chain, ps::NetworkParameters, input::CT,
-        output::CT) where {CT <: ArrayOrNamedTuple}
+function (loss::ReducedLoss)(model::Chain, ps::NetworkParameters,
+        input::ArrayOrNamedTuple, output::ArrayOrNamedTuple)
     _compute_loss(loss.decoder(model(loss.encoder(input), ps)), output)
 end

@@ -183,7 +183,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 - **kind:** found late
 - **found:** #344, review round 2 (2026-10-14); the `HNNLoss` signatures are older than that pull request
 - **evidence:**
-  `HNNLoss`'s two functors (`src/loss/hnn_loss.jl:31-41`) and the call method of
+  `HNNLoss`'s two functors (`src/loss/hnn_loss.jl:31-42`) and the call method of
   `SymbolicPullback(arch)` (`src/pullbacks/symbolic_hnn_pullback.jl:38-40`) type the data as
   `ArrayOrNamedTuple`, which admits a `(q = …, p = …)` `NamedTuple`. The loss hands that data to
   the generated `hvf`, which calls `ndims` on it. With `(q = randn(1, 5), p = randn(1, 5))` as
@@ -243,12 +243,12 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
 - **location:** `src/data_loader/data_loader.jl:216`
 - **kind:** defect
-- **found:** 2026-10-23, by the critic of part B1; the constructors are older than that part
+- **found:** #353 (2026-10-23); the constructors are older than that pull request
 - **evidence:**
   The three methods at `src/data_loader/data_loader.jl:216-245` take
   `NamedTuple{(:q, :p), Tuple{AT, AT}}` (and `Tuple{VT, VT}`), so `q` and `p` must have one
-  array type, while `_norm` and `_diff` (`src/utils.jl`), the loss at `src/loss/losses.jl:92` and
-  the `MultiHeadAttention` call take `NamedTupleOfArrays`, which admits two. A view for `q` and a
+  array type, while the `TransformerLoss` method at `src/loss/losses.jl:92` and the
+  `MultiHeadAttention` call take `NamedTupleOfArrays`, which admits two. A view for `q` and a
   `Matrix` for `p` raises:
 
   ```julia
