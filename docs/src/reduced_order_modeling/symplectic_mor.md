@@ -225,7 +225,7 @@ Canonical = false
 
 lee2020model
 fresca2021comprehensive
-blickhan2023registration
+Blickhan:2024
 chatterjee2000introduction
 peng2016symplectic
 buchfink2023symplectic

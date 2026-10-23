@@ -30,7 +30,7 @@ A motivation for reduced order modeling is that even though the space ``V_h`` is
 ![A representation of a two-dimensional solution manifold embedded in three-dimensional Euclidean space.](https://juliagni.github.io/GeometricFigures.jl/figures/reduced-order-modeling/solution-manifold-2/solution-manifold-2_light.svg)
 ![A representation of a two-dimensional solution manifold embedded in three-dimensional Euclidean space.](https://juliagni.github.io/GeometricFigures.jl/figures/reduced-order-modeling/solution-manifold-2/solution-manifold-2_dark.svg)
 
-As an actual example of a solution manifold consider the one-dimensional wave equation [blickhan2023registration](@cite): 
+As an actual example of a solution manifold consider the one-dimensional wave equation [Blickhan:2024](@cite): 
 
 ```math
 \partial_{tt}^2q(t,\omega;\mu) = \mu^2\partial_{\omega\omega}^2q(t,\omega;\mu)\text{ on }I\times\Omega,
@@ -154,9 +154,9 @@ The Kolmogorov ``n``-width [arbes2023kolmogorov](@cite) measures how well some s
 d_n(\mathcal{M}) := \mathrm{inf}_{V_n\subset{}V;\mathrm{dim}V_n=n}\mathrm{sup}(u\in\mathcal{M})\mathrm{inf}_{v_n\in{}V_n}|| u - v_n ||_V,
 ```
 
-with ``\mathcal{M}\subset{}V`` and ``V`` is a (typically infinite-dimensional) Banach space. For advection-dominated problems (among others) the *decay of the Kolmogorov ``n``-width is very slow*, i.e. one has to pick ``n`` very high in order to obtain useful approximations (see [greif2019decay](@cite) and [blickhan2023registration](@cite)). As [proper orthogonal decomposition](@ref "Proper Orthogonal Decomposition") is a linear approximation to the solution manifold, this does not work very well if the decay of the Kolmogorov ``n``-width is slow.
+with ``\mathcal{M}\subset{}V`` and ``V`` is a (typically infinite-dimensional) Banach space. For advection-dominated problems (among others) the *decay of the Kolmogorov ``n``-width is very slow*, i.e. one has to pick ``n`` very high in order to obtain useful approximations (see [greif2019decay](@cite) and [Blickhan:2024](@cite)). As [proper orthogonal decomposition](@ref "Proper Orthogonal Decomposition") is a linear approximation to the solution manifold, this does not work very well if the decay of the Kolmogorov ``n``-width is slow.
 
-In order to overcome this, techniques based on neural networks [lee2020model](@cite) and optimal transport [blickhan2023registration](@cite) have been used. 
+In order to overcome this, techniques based on neural networks [lee2020model](@cite) and optimal transport [Blickhan:2024](@cite) have been used. 
 
 ```@raw latex
 \begin{comment}
@@ -169,7 +169,7 @@ Canonical = false
 
 fresca2021comprehensive
 lee2020model
-blickhan2023registration
+Blickhan:2024
 ```
 
 ```@raw latex
