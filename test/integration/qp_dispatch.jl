@@ -21,7 +21,7 @@ include("../helpers/eltypes.jl")
     p = rand(T, 2, 3, 2)
     mixed = (q = q, p = p)
     qp = (q = collect(q), p = p)
-    @test !(typeof(mixed.q) === typeof(mixed.p))
+    @test typeof(mixed.q) !== typeof(mixed.p)
 
     dense = NeuralNetwork(Chain(Dense(4, 4, tanh)), T)
     resnet = NeuralNetwork(Chain(ResNetLayer(4, tanh)), T)
@@ -38,6 +38,10 @@ include("../helpers/eltypes.jl")
 
     autoencoder_loss = AutoEncoderLoss()
     @test autoencoder_loss(dense.model, params(dense), mixed) ==
+          autoencoder_loss(dense.model, params(dense), qp)
+    @test autoencoder_loss(dense, mixed) == autoencoder_loss(dense, qp)
+    # the four-argument method reconstructs its input and ignores the output
+    @test autoencoder_loss(dense.model, params(dense), mixed, qp) ==
           autoencoder_loss(dense.model, params(dense), qp)
     reduced_loss = ReducedLoss(encoder(NeuralNetwork(Chain(Dense(4, 4, tanh)), T)),
         decoder(NeuralNetwork(Chain(Dense(4, 4, tanh)), T)))
@@ -78,9 +82,10 @@ end
         nn = NeuralNetwork(Chain(layer))
         @test_throws MethodError nn(ab)
     end
-    # `TransformerLoss` has no method for `ab`; AbstractNeuralNetworks' fallback for a loss raises
+    # `TransformerLoss` has no method for `ab`, so AbstractNeuralNetworks' fallback for a loss raises.
+    # The message is the assertion: `@test_throws ErrorException` also passes on a `FieldError`.
     attention = NeuralNetwork(Chain(MultiHeadAttention(4, 2)))
-    @test_throws ErrorException TransformerLoss(3, 3)(
+    @test_throws "Functor not defined for `NetworkLoss`" TransformerLoss(3, 3)(
         attention.model, params(attention), ab, ab)
     @test_throws MethodError PoissonTensor(4) * (a = [1.0, 2.0], b = [3.0, 4.0])
     # the generic `_diff` of two named tuples differences each entry
