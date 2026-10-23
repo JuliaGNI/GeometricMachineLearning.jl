@@ -8,7 +8,7 @@ Random.seed!(1234)
 
 @testset "Utility and pullback docstring examples" begin
     # `(q, p)` data of vectors, matrices and tensors is the type that the `(q, p)` methods of the
-    # layers, the losses and `PoissonTensor` dispatch on
+    # layers, `TransformerLoss` and `PoissonTensor` dispatch on
     QP = NamedTupleOfArrays{<:Any, (:q, :p)}
     data1 = (q = rand(5), p = rand(5))
     data2 = (q = rand(5, 4), p = rand(5, 4))
