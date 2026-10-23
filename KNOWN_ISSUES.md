@@ -184,7 +184,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 - **found:** #344, review round 2 (2026-10-14); the `HNNLoss` signatures are older than that pull request
 - **evidence:**
   `HNNLoss`'s two functors (`src/loss/hnn_loss.jl:31-41`) and the call method of
-  `SymbolicPullback(arch)` (`src/pullbacks/symbolic_hnn_pullback.jl:39`) type the data as
+  `SymbolicPullback(arch)` (`src/pullbacks/symbolic_hnn_pullback.jl:38-40`) type the data as
   `ArrayOrNamedTuple`, which admits a `(q = …, p = …)` `NamedTuple`. The loss hands that data to
   the generated `hvf`, which calls `ndims` on it. With `(q = randn(1, 5), p = randn(1, 5))` as
   input and output, the symbolic pullback, `HNNLoss` and `ZygotePullback(HNNLoss(arch))` all
@@ -258,9 +258,8 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   ```
 
   The same call with `q = A` gives a `DataLoader` with `input_dim == 4`. The docstring at
-  `src/data_loader/data_loader.jl:205` documents `DataLoader(data::NamedTuple{(:q, :p)})`, which
-  is wider than the methods. Closing it means widening the three signatures to
-  `NamedTupleOfArrays{T, (:q, :p)}`, or narrowing the docstring.
+  `src/data_loader/data_loader.jl:205` states the one-type signature. Closing it means widening the
+  three signatures to `NamedTupleOfArrays{T, (:q, :p)}`, and the docstring with them.
 
 ## Upstream
 

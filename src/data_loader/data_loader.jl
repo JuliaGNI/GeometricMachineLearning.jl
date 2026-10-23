@@ -202,7 +202,7 @@ function DataLoader(input::AbstractVector{T}, output::AbstractVector{T}; suppres
 end
 
 @doc raw"""
-    DataLoader(data::NamedTuple{(:q, :p)})
+    DataLoader(data::NamedTuple{(:q, :p), Tuple{AT, AT}})
 
 Make an instance of `DataLoader` based on ``(q, p)`` data.
 
