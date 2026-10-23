@@ -124,7 +124,8 @@ end
 # `MultiHeadAttention` and `ResNetLayer` do with the same input, so a chain accepts `(q, p)` with
 # this layer in front exactly as it does without it. Without this method the `positional_encoding`
 # keyword would *remove* an input type the transformer otherwise takes.
-function (d::PositionalEncoding{M, M})(z::QPT, ps::NamedTuple) where {M}
+function (d::PositionalEncoding{M, M})(
+        z::NamedTupleOfArrays{<:Any, (:q, :p)}, ps::NamedTuple) where {M}
     @assert size(z.q, 1) * 2 == M
     assign_q_and_p(d(vcat(z.q, z.p), ps), M ÷ 2)
 end

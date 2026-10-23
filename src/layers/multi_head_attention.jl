@@ -161,7 +161,7 @@ function (d::MultiHeadAttention{M, M, Stiefel, false})(x::AbstractArray, ps::Nam
     compute_output_of_mha(d, x, ps)
 end
 
-function (d::MultiHeadAttention)(z::QPT, ps::NamedTuple)
+function (d::MultiHeadAttention)(z::NamedTupleOfArrays{<:Any, (:q, :p)}, ps::NamedTuple)
     N2 = size(z.q, 1)
     output = d(vcat(z.q, z.p), ps)
     assign_q_and_p(output, N2)

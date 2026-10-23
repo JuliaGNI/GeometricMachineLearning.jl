@@ -1,15 +1,19 @@
 using Test
 using GeometricMachineLearning
-using GeometricMachineLearning: AutoEncoderLoss, QPT, ZygotePullback
+using GeometricMachineLearning: AutoEncoderLoss, ZygotePullback
+using AbstractNeuralNetworks: NamedTupleOfArrays
 import Random
 
 Random.seed!(1234)
 
 @testset "Utility and pullback docstring examples" begin
+    # `(q, p)` data of vectors, matrices and tensors is the type that the `(q, p)` methods of the
+    # layers, `TransformerLoss` and `PoissonTensor` dispatch on
+    QP = NamedTupleOfArrays{<:Any, (:q, :p)}
     data1 = (q = rand(5), p = rand(5))
     data2 = (q = rand(5, 4), p = rand(5, 4))
     data3 = (q = rand(5, 4, 2), p = rand(5, 4, 2))
-    @test (typeof(data1) <: QPT, typeof(data2) <: QPT, typeof(data3) <: QPT) ==
+    @test (typeof(data1) <: QP, typeof(data2) <: QP, typeof(data3) <: QP) ==
           (true, true, true)
 
     𝕁 = PoissonTensor(4)

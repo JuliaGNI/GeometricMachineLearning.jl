@@ -28,13 +28,14 @@ end
 # One method for a network that is trained on inputs only, and one for a network that is trained on
 # an `(input, output)` pair: the two shapes a `NetworkLoss` takes. A method per shape and not a
 # union over them, which says nothing about which one arrived.
-function (_pullback::ZygotePullback)(ps::NetworkParameters, model, input_nt::QPTOAT)
+function (_pullback::ZygotePullback)(ps::NetworkParameters, model, input_nt::ArrayOrNamedTuple)
     value, pb = Zygote.pullback(ps -> _pullback.loss(model, ps, input_nt), ps)
     value, Δ -> only(pb(Δ))
 end
 
 function (_pullback::ZygotePullback)(
-        ps::NetworkParameters, model, input_nt_output_nt::Tuple{<:QPTOAT, <:QPTOAT})
+        ps::NetworkParameters, model,
+        input_nt_output_nt::Tuple{<:ArrayOrNamedTuple, <:ArrayOrNamedTuple})
     value, pb = Zygote.pullback(
         ps -> _pullback.loss(model, ps, input_nt_output_nt...), ps)
     value, Δ -> only(pb(Δ))

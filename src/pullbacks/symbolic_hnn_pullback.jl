@@ -32,10 +32,12 @@ struct _HNNParameterGradient{FT}
     gradient_function::FT
 end
 
-# More specific than `SymbolicNeuralNetworks`' call in every argument, which computes the value and
-# the gradient separately and would evaluate `hvf` twice.
+# More specific than `SymbolicNeuralNetworks`' call, which computes the value and the gradient
+# separately and would evaluate `hvf` twice: narrower in the pullback and the parameters, and the
+# same in the data.
 function (pb::SymbolicPullback{<:HNNLoss, <:_HNNParameterGradient})(
-        ps::NetworkParameters, model, (input, output)::Tuple{<:QPTOAT, <:QPTOAT})
+        ps::NetworkParameters, model,
+        (input, output)::Tuple{<:ArrayOrNamedTuple, <:ArrayOrNamedTuple})
     norm_R = norm(pb.loss.hvf(input, ps) - output)
     norm_Y = norm(output)
     # `pinv`: a zero residual gives the zero gradient, not `NaN`. Each norm divides each entry on its

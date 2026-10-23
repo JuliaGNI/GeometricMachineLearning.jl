@@ -21,7 +21,7 @@ See [`SymplecticAttentionQ`](@ref) and [`SymplecticAttentionP`](@ref).
 ```math
 C = Q^TAQ,
 ```
-where ``Q`` is the ``q``-part of an input ``Z`` (see [`QPT`](@ref)). The matrix ``A`` is a weighting that is either symmetric or arbitrary (this can be adjusted with the key-word `symmetric::Bool`).
+where ``Q`` is the ``q``-part of an input ``Z``, a `NamedTuple` with the keys `q` and `p`. The matrix ``A`` is a weighting that is either symmetric or arbitrary (this can be adjusted with the key-word `symmetric::Bool`).
 
 # Extended help
 

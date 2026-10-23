@@ -125,7 +125,7 @@ end
 # There is no generic fallback for a 3-tensor right-hand side, so that method's narrowing turns a
 # non-strided CPU 3-tensor into a `MethodError`; nothing in the package, the tests or the scripts
 # passes one.
-Base.:*(::PoissonTensor, v::QPT) = (q = v.p, p = -v.q)
+Base.:*(::PoissonTensor, v::NamedTupleOfArrays{<:Any, (:q, :p)}) = (q = v.p, p = -v.q)
 function Base.:*(𝕁::PoissonTensor{T}, v::StridedArray{T, 3}) where {T}
     _vcat(𝕁(assign_q_and_p(v, 𝕁.n)))
 end
@@ -146,7 +146,7 @@ function (𝕁::PoissonTensor{T})(v₁::AbstractVector{T}, v₂::AbstractVector{
     𝕁(assign_q_and_p(v₁, 𝕁.n), assign_q_and_p(v₂, 𝕁.n))
 end
 
-(𝕁::PoissonTensor)(qp::QPTOAT) = 𝕁 * qp
+(𝕁::PoissonTensor)(qp::ArrayOrNamedTuple) = 𝕁 * qp
 
 # This assigns the right index for the symplectic potential. To be used with `assign_ones_for_poisson_tensor_kernel!`.
 function map_index_for_poisson_tensor(i::Int, n::Int)

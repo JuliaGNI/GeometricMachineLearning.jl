@@ -89,6 +89,7 @@ if "core" in GROUPS
     @safetestset "Loss docstring examples" include("integration/docstrings/losses.jl")
     @safetestset "Manifold docstring examples" include("integration/docstrings/manifolds.jl")
     @safetestset "Utility and pullback docstring examples" include("integration/docstrings/utilities.jl")
+    @safetestset "The (q, p) methods dispatch on NamedTupleOfArrays" include("integration/qp_dispatch.jl")
     @safetestset "Aqua's package-level checks" include("quality/aqua.jl")
     @safetestset "JET" include("quality/jet.jl")
     @safetestset "docs/make.jl stops on a bad @ref before makedocs" include("quality/docs_make_checks_references.jl")
