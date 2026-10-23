@@ -8,7 +8,7 @@ In general we distinguish between *losses* that are used during training of a ne
 
 ## A Note on Physics-Informed Neural Networks
 
-A popular trend in recent years has been considering known physical properties of the differential equation, or the entire differential equation, through the loss function [raissi2019physics](@cite). This is one way of considering physical properties, and `GeometricMachineLearning` allows for a [flexible implementation of custom losses](@ref "Adjusting the Loss Function"), but this is nonetheless discouraged. In general a neural networks consists of *three ingredients*:
+A popular trend in recent years has been considering known physical properties of the differential equation, or the entire differential equation, through the loss function [RaissiPerdikarisKarniadakis:2019](@cite). This is one way of considering physical properties, and `GeometricMachineLearning` allows for a [flexible implementation of custom losses](@ref "Adjusting the Loss Function"), but this is nonetheless discouraged. In general a neural networks consists of *three ingredients*:
 
 ![The three ingredients that go into neural network-based machine learning.](https://juliagni.github.io/GeometricFigures.jl/figures/reduced-order-modeling/ingredients/ingredients_light.svg)
 ![The three ingredients that go into neural network-based machine learning.](https://juliagni.github.io/GeometricFigures.jl/figures/reduced-order-modeling/ingredients/ingredients_dark.svg)
@@ -61,7 +61,7 @@ Canonical = false
 Pages = []
 
 lee2020model
-raissi2019physics
+RaissiPerdikarisKarniadakis:2019
 ```
 
 ```@raw latex

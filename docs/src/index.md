@@ -40,7 +40,7 @@ Existing architectures include:
 ![Weights can be put on manifolds to achieve structure preservation or improved stability.](https://juliagni.github.io/GeometricFigures.jl/figures/manifolds/tangent-vector/tangent-vector_light.svg)
 ![Weights can be put on manifolds to achieve structure preservation or improved stability.](https://juliagni.github.io/GeometricFigures.jl/figures/manifolds/tangent-vector/tangent-vector_dark.svg)
 
-When `GeometricMachineLearning` optimizes on manifolds it uses the framework introduced in [brantner2023generalizing](@cite). Optimization is necessary for some neural network architectures such as [symplectic autoencoders](@ref "The Symplectic Autoencoder") and can be critical for others such as the [standard transformer](https://juliagni.github.io/GMLDatasets.jl/latest/mnist/mnist_tutorial/) [kong2023momentum, zhang2021orthogonality](@cite).
+When `GeometricMachineLearning` optimizes on manifolds it uses the framework introduced in [Brantner:2023](@cite). Optimization is necessary for some neural network architectures such as [symplectic autoencoders](@ref "The Symplectic Autoencoder") and can be critical for others such as the [standard transformer](https://juliagni.github.io/GMLDatasets.jl/latest/mnist/mnist_tutorial/) [kong2023momentum, zhang2021orthogonality](@cite).
 
 
 

@@ -39,7 +39,7 @@ but is strictly linear. Symplectic autoencoders offer a way of (i) constructing 
 
 For this case we observed speed-ups of up to a factor 1000 when a [symplectic autoencoder was combined with a transformer in the online phase](@ref "Symplectic Autoencoders and the Toda Lattice"). We also compared the symplectic autoencoder to a PSD, and showed that the PSD was unable to learn a useful two-dimensional representation.
 
-Like PSD, symplectic autoencoders have the property that they induce a Hamiltonian system on the reduced space. This distinguishes them from "weakly symplectic autoencoders" [buchfink2023symplectic, yildiz2024data](@cite) that only approximately obtain a Hamiltonian system on a restricted domain by using a "physics-informed neural networks" [raissi2019physics](@cite) approach.
+Like PSD, symplectic autoencoders have the property that they induce a Hamiltonian system on the reduced space. This distinguishes them from "weakly symplectic autoencoders" [buchfink2023symplectic, yildiz2024data](@cite) that only approximately obtain a Hamiltonian system on a restricted domain by using a "physics-informed neural networks" [RaissiPerdikarisKarniadakis:2019](@cite) approach.
 
 We also mention that the development of symplectic autoencoders required generalizing existing neural network optimizers to manifolds[^2]. This is further discussed below.
 
