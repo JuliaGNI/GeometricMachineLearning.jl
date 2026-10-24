@@ -68,7 +68,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
 ## Found late
 
-### K1 · A test comment still sends the reader to the Open Issues section of `CHANGELOG.md`, which no longer exists.
+### K1 · A test comment sends the reader to an Open Issues section of `CHANGELOG.md`, which does not exist.
 
 - **location:** `test/reduced_system/reduced_system.jl:44`
 - **kind:** found late

@@ -113,7 +113,7 @@ function evaluate_vf_and_compute_∇Ψ(t, q̃::AbstractVector{T}, p̃::AbstractV
     result = ForwardDiff.jacobian!(
         DiffResults.JacobianResult(similar(ξ, 2 * N2), ξ), decoder, ξ)
     z = DiffResults.value(result)
-    q, p = z[1:N2], z[(N2 + 1):end]
+    q, p = @views z[1:N2], z[(N2 + 1):end]
     v_intermediate = zeros(T, N2)
     f_intermediate = zeros(T, N2)
     v_full(v_intermediate, t, q, p, parameters)
