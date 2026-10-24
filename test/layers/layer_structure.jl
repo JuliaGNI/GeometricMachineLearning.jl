@@ -1,13 +1,14 @@
 # The volume-preserving, symplectic-attention and ResNet layers and the symplectic autoencoder
 # encode each structural choice as a `Symbol` type parameter, chosen in one expression from the
 # public `Bool` keyword; a `Q`/`P` pair, a lower/upper pair and the two weight kinds of
-# multi-head attention share one method; the dimension field of a gradient layer is concrete; and
+# multi-head attention share one method; the SympNet layers store their dimensions as `Int`; and
 # every type argument under `src/layers/` is spelled `::Type{T}`.
 
 using GeometricMachineLearning
 using GeometricMachineLearning: GradientLayer, LinearLayer, ResNetLayer, initialparameters,
                                 params
 using AbstractNeuralNetworks: parameterlength, ZeroInitializer, OneInitializer
+using LinearAlgebra: I
 using Test
 import Random
 
@@ -50,12 +51,12 @@ end
         joinpath("layers", "linear_symplectic_attention.jl"))) == 1
 end
 
-# The number of type variables of the alias `t`. Julia drops a variable that the body of an alias
-# does not use, so an unused one shows only in the source text; this pins the two that are used.
-type_variables(t) = t isa UnionAll ? 1 + type_variables(t.body) : 0
-
-@testset "the linear SympNet aliases take two parameters" begin
-    @test type_variables(LinearLayerQ) == type_variables(LinearLayerP) == 2
+# Julia drops a type variable that the body of an alias does not use, so the alias type is the same
+# with or without it, and an unused variable shows only in the source text.
+@testset "the linear SympNet aliases name two parameters" begin
+    source = read(joinpath(pkgdir(GML), "src", "layers", "sympnets.jl"), String)
+    @test occursin("const LinearLayerQ{M, N} = LinearLayer{M, N, :Q}", source)
+    @test occursin("const LinearLayerP{M, N} = LinearLayer{M, N, :P}", source)
     @test LinearLayerQ{4, 4} === LinearLayer{4, 4, :Q}
     @test LinearLayerP{4, 4} === LinearLayer{4, 4, :P}
 end
@@ -86,16 +87,21 @@ end
     end
 end
 
-@testset "a gradient layer stores its dimensions as Int" begin
+@testset "a SympNet layer stores its dimensions as Int" begin
     for l in (GradientLayerQ(4, 8, tanh), GradientLayerQ(Int32(4), 8, tanh),
         GradientLayerP(4, Int32(8), tanh))
         @test isconcretetype(fieldtype(typeof(l), :second_dim))
         @test l.second_dim === 8
     end
     @test GradientLayerQ(Int32(4), Int32(8), tanh) === GradientLayerQ(4, 8, tanh)
+    @test GradientLayerP(Int32(4), Int32(8), tanh) === GradientLayerP(4, 8, tanh)
+    @test ActivationLayerQ(Int32(4), tanh) === ActivationLayerQ(4, tanh)
+    @test ActivationLayerP(Int32(4), tanh) === ActivationLayerP(4, tanh)
+    @test LinearLayerQ(Int32(4)) === LinearLayerQ(4)
+    @test LinearLayerP(Int32(4)) === LinearLayerP(4)
 end
 
-@testset "every Bool keyword becomes a Symbol type parameter" begin
+@testset "each Bool keyword of a ladder becomes a Symbol type parameter" begin
     for skew_sym in (true, false)
         @test typeof(VolumePreservingAttention(4, 3; skew_sym)) ===
               VolumePreservingAttention{4, 4, skew_sym ? :skew_sym : :arbitrary, 3}
@@ -197,6 +203,23 @@ end
         ps.PQ.head_2, ps.PK.head_2, ps.PV.head_2] ==
           expected
     @test eltype(ps.PQ.head_1) === T
+end
+
+@testset "MultiHeadAttention draws Stiefel weights head by head ($T)" for T in REAL_ELTYPES
+    # The same order with `Stiefel = true`, where each weight is a point of the Stiefel manifold
+    # that `StiefelLayer` draws.
+    rng = Random.Xoshiro(7)
+    ps = initialparameters(rng, GML.AbstractNeuralNetworks.GlorotUniform(),
+        MultiHeadAttention(4, 2; Stiefel = true), CPU(), T)
+    rng = Random.Xoshiro(7)
+    expected = [initialparameters(rng, GML.AbstractNeuralNetworks.GlorotUniform(),
+                    GML.StiefelLayer{4, 2}(), CPU(), T).weight
+                for _ in 1:6]
+    weights = [ps.PQ.head_1, ps.PK.head_1, ps.PV.head_1,
+        ps.PQ.head_2, ps.PK.head_2, ps.PV.head_2]
+    @test all(W -> W isa StiefelManifold{T}, weights)
+    @test [W.A for W in weights] == [W.A for W in expected]
+    @test all(W -> W.A' * W.A ≈ I(2), weights)
 end
 
 @testset "MultiHeadAttention finds each head by its name, $(ndims(x)) dimensions ($T)" for T in REAL_ELTYPES,

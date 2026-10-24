@@ -150,6 +150,8 @@ This can be recovered from [`GradientLayerP`](@ref) by setting ``M`` equal to `n
 """
 const ActivationLayerP{M, N, TA} = ActivationLayer{M, N, TA, :P}
 
+# Each constructor converts the dimension to an `Int`, so that an `Int32` dimension names the same
+# layer as an `Int` one.
 function GradientLayerQ(M, upscaling_dimension, activation)
     GradientLayer{Int(M), Int(M), typeof(activation), :Q}(upscaling_dimension, activation)
 end
@@ -159,19 +161,19 @@ function GradientLayerP(M, upscaling_dimension, activation)
 end
 
 function ActivationLayerQ(M, activation)
-    ActivationLayerQ{M, M, typeof(activation)}(activation)
+    ActivationLayerQ{Int(M), Int(M), typeof(activation)}(activation)
 end
 
 function ActivationLayerP(M, activation)
-    ActivationLayerP{M, M, typeof(activation)}(activation)
+    ActivationLayerP{Int(M), Int(M), typeof(activation)}(activation)
 end
 
 function LinearLayerQ(M)
-    LinearLayerQ{M, M}()
+    LinearLayerQ{Int(M), Int(M)}()
 end
 
 function LinearLayerP(M)
-    LinearLayerP{M, M}()
+    LinearLayerP{Int(M), Int(M)}()
 end
 
 function initialparameters(

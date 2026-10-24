@@ -21,7 +21,7 @@ include("../helpers/pinned_outputs.jl")
     nn = pinned_network(model, T, architecture_seed(i))
     y = nn(pin_input(T, dim, cols))
     @test eltype(y) === T
-    @test within_ulps(vec(y), ARCHITECTURE_PINS[(name, T)])
+    @test pin_ulps(vec(y), ARCHITECTURE_PINS[(name, T)]) ≤ PIN_ULPS
 end
 
 @testset "encoder and decoder of $name ($T)" for (i, (
@@ -33,8 +33,8 @@ end
     yd = decoder(nn)(pin_input(T, reduced, 3))
     @test eltype(ye) === T
     @test eltype(yd) === T
-    @test within_ulps(vec(ye), AUTOENCODER_PINS[(name, :encoder, T)])
-    @test within_ulps(vec(yd), AUTOENCODER_PINS[(name, :decoder, T)])
+    @test pin_ulps(vec(ye), AUTOENCODER_PINS[(name, :encoder, T)]) ≤ PIN_ULPS
+    @test pin_ulps(vec(yd), AUTOENCODER_PINS[(name, :decoder, T)]) ≤ PIN_ULPS
 end
 
 @testset "LASympNet layer types, init_upper_linear = $linear, init_upper_act = $act" for linear in (true,

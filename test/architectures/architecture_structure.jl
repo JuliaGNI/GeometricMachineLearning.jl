@@ -1,6 +1,7 @@
 # The architectures keep their keywords: a non-default activation reaches every layer that takes
-# it, the activation field has one name across the SympNets, the `DataLoader` constructors give the
-# architecture of the dimension they read, and the chain builders that shared a body are one method.
+# it, the activation field has one name across the SympNets, the `DataLoader` constructors of
+# `LASympNet`, `GSympNet` and `ClassificationTransformer` give the architecture of the dimensions
+# they read, and the chain builders that shared a body are one method.
 
 using GeometricMachineLearning
 using GeometricMachineLearning: GradientLayer
@@ -57,6 +58,20 @@ end
     g = GSympNet(dl; n_layers = 3, activation = sin, init_upper = false)
     @test g === GSympNet(4; n_layers = 3, activation = sin, init_upper = false)
     @test g.upscaling_dimension == 8
+end
+
+@testset "a DataLoader gives the ClassificationTransformer of its dimensions ($T)" for T in REAL_ELTYPES
+    dl = DataLoader(rand(T, 4, 3, 5), rand(T, 2, 1, 5); suppress_info = true)
+    @test ClassificationTransformer(dl) ===
+          ClassificationTransformer(4, 2, 7, 16, softmax, true, true)
+    @test ClassificationTransformer(
+        dl; n_heads = 2, L = 3, activation = tanh, Stiefel = false, add_connection = false) ===
+          ClassificationTransformer(4, 2, 2, 3, tanh, false, false)
+    # The two flags differ, so a constructor that swaps them gives another architecture.
+    @test ClassificationTransformer(dl; Stiefel = true, add_connection = false) ===
+          ClassificationTransformer(4, 2, 7, 16, softmax, true, false)
+    @test ClassificationTransformer(dl; Stiefel = false, add_connection = true) ===
+          ClassificationTransformer(4, 2, 7, 16, softmax, false, true)
 end
 
 @testset "one chain builder where the bodies were the same" begin

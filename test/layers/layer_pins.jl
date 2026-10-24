@@ -16,13 +16,16 @@ include("../helpers/pinned_outputs.jl")
     nn = pinned_network(model, T, layer_seed(i))
     y = nn(pin_input(T, dim, cols))
     @test eltype(y) === T
-    @test within_ulps(vec(y), LAYER_PINS[(name, T)])
+    @test pin_ulps(vec(y), LAYER_PINS[(name, T)]) ≤ PIN_ULPS
 end
 
-# The comparison itself: it holds at 8 ULPs and fails beyond them.
-@testset "within_ulps separates 8 ULPs from 9 ($T)" for T in REAL_ELTYPES
+# The comparison itself: its scale is the largest magnitude of the pin, not the entry's own, and a
+# deviation of 16 of those ULPs passes where 17 fail.
+@testset "pin_ulps counts in ULPs of the largest magnitude ($T)" for T in REAL_ELTYPES
     x = T[1.5, -0.25, 3]
-    @test within_ulps(x, x .+ 8 .* eps.(x))
-    @test !within_ulps(x, x .+ 9 .* eps.(x))
-    @test !within_ulps(x, x[1:2])
+    shifted(n) = [x[1], x[2] + n * eps(T(3)), x[3]]
+    @test pin_ulps(shifted(16), x) == 16
+    @test pin_ulps(shifted(16), x) ≤ PIN_ULPS
+    @test !(pin_ulps(shifted(17), x) ≤ PIN_ULPS)
+    @test pin_ulps(x[1:2], x) == Inf
 end

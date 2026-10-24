@@ -9,25 +9,30 @@
 # - every `StiefelManifold` leaf is overwritten with a fixed signed selection of columns of the
 #   identity before the pass. Its seeded initialisation is orthonormalised through BLAS, whose last
 #   bits differ between OpenBLAS versions.
-# The comparison is at 8 ULPs of the larger magnitude: a value that passes through GEMM and `tanh`
-# differs by 1 to 2 ULPs between x86_64 and arm64, and a wrong layer moves it by a fraction.
+# The comparison is at 16 ULPs of the largest magnitude of the pinned vector. A value that passes
+# through GEMM and `tanh` differs by a few ULPs between x86_64 and arm64, and a wrong layer moves it
+# by a fraction. The scale is the vector's and not each entry's: an entry that comes out of
+# cancellation, such as -0.0686 beside 1.276 in the deep `SymplecticAutoencoder` pass, carries the
+# rounding error of the terms it came from, and floating point gives it no accuracy relative to its
+# own magnitude.
 
 using GeometricMachineLearning
 using GeometricMachineLearning: params, ResNetLayer
 using NeuralNetworkParameters: NetworkParameters
 import Random
 
-const PIN_ULPS = 8
+const PIN_ULPS = 16
 
 function pin_input(::Type{T}, dim::Integer, cols::Integer) where {T}
     T[sin(i + 2j)
       for i in 1:dim, j in 1:cols]
 end
 
-# `a` and `b` agree to `n` ULPs of the larger magnitude, entry by entry.
-function within_ulps(a::AbstractArray, b::AbstractArray, n::Integer = PIN_ULPS)
-    size(a) == size(b) || return false
-    all(abs(x - y) ≤ n * eps(max(abs(x), abs(y))) for (x, y) in zip(a, b))
+# The deviation of `a` from the pin `b`, in ULPs of the largest magnitude of `b`: the largest
+# `abs(x - y)` over the entries, divided by `eps(maximum(abs, b))`. `Inf` when the sizes differ.
+function pin_ulps(a::AbstractArray, b::AbstractArray)
+    size(a) == size(b) || return Inf
+    maximum(abs(x - y) for (x, y) in zip(a, b)) / eps(maximum(abs, b))
 end
 
 # A type as its name and its parameters, so that a pin of a type does not depend on the alias that

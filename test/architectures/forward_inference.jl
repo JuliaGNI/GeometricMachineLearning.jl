@@ -14,6 +14,9 @@ input(::Type{T}, dim, cols) where {T} = T[sin(i + 2j) for i in 1:dim, j in 1:col
 const ARCHITECTURES = (
     ("ResNet", ResNet(4, 2, tanh), 4, 3),
     ("StandardTransformerIntegrator", StandardTransformerIntegrator(4; n_heads = 2), 4, 3),
+    # The default is one head per dimension, so this is a 32-head attention.
+    ("StandardTransformerIntegrator, default heads",
+        StandardTransformerIntegrator(32), 32, 3),
     ("VolumePreservingTransformer", VolumePreservingTransformer(4, 3), 4, 3),
     ("LagrangianNeuralNetwork", LagrangianNeuralNetwork(4), 4, 3),
     ("LASympNet", LASympNet(4), 4, 3),
