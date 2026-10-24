@@ -223,18 +223,18 @@ _shift(::Val{:Q}, z::NamedTuple, f) = (q = z.q + f(z.p), p = z.p)
 _shift(::Val{:P}, z::NamedTuple, f) = (q = z.q, p = z.p + f(z.q))
 
 @inline function (d::ActivationLayer{M, M, TA, C})(x::NamedTuple, ps) where {M, TA, C}
-    size(x.q, 1) == M ÷ 2 || error("Dimension mismatch.")
+    size(x.q, 1) == size(x.p, 1) == M ÷ 2 || error("Dimension mismatch.")
     _shift(Val(C), x, y -> ps.scale .* d.activation.(y))
 end
 
 @inline function (d::GradientLayer{M, M, TA, C})(x::NamedTuple, ps) where {M, TA, C}
-    size(x.q, 1) == M ÷ 2 || error("Dimension mismatch.")
+    size(x.q, 1) == size(x.p, 1) == M ÷ 2 || error("Dimension mismatch.")
     _shift(Val(C), x,
         y -> _mul(ps.weight', ps.scale .* d.activation.(_mul(ps.weight, y) .+ ps.bias)))
 end
 
 @inline function (d::LinearLayer{M, M, C})(x::NamedTuple, ps) where {M, C}
-    size(x.q, 1) == M ÷ 2 || error("Dimension mismatch.")
+    size(x.q, 1) == size(x.p, 1) == M ÷ 2 || error("Dimension mismatch.")
     _shift(Val(C), x, y -> _mul(ps.weight, y))
 end
 

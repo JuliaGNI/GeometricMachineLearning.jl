@@ -81,6 +81,10 @@ end
                     (q = ones(T, n), p = ones(T, n)), ps)
                 @test_throws ErrorException("Dimension mismatch.") l(
                     (q = ones(T, n, 3), p = ones(T, m, 3)), ps)
+                @test_throws ErrorException("Dimension mismatch.") l(
+                    (q = ones(T, m, 3), p = ones(T, n, 3)), ps)
+                @test_throws ErrorException("Dimension mismatch.") l(
+                    (q = ones(T, m), p = ones(T, n)), ps)
             end
             @test eltype(l((q = ones(T, m, 3), p = ones(T, m, 3)), ps).q) === T
         end
