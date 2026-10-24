@@ -78,4 +78,9 @@ end
     @test encoder(plain).architecture isa UnknownEncoder
     @test decoder(plain).architecture isa UnknownDecoder
     @test eltype(decoder(plain)(encoder(plain)(pin_input(T, 6, 3)))) === T
+
+    # The encoder and the decoder each keep the block count of their own half.
+    uneven = NeuralNetwork(PlainAE(6, 2, 2, 3), CPU(), T)
+    @test encoder(uneven).architecture.n_encoder_blocks == 2
+    @test decoder(uneven).architecture.n_decoder_blocks == 3
 end

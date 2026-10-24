@@ -233,7 +233,7 @@ Obtain the *decoder* from an [`AutoEncoder`](@ref) neural network.
 function decoder(nn::NeuralNetwork{<:AutoEncoder})
     arch = nn.architecture
     NeuralNetwork(
-        _unknown_decoder(arch)(arch.full_dim, arch.reduced_dim, arch.n_encoder_blocks),
+        _unknown_decoder(arch)(arch.full_dim, arch.reduced_dim, arch.n_decoder_blocks),
         decoder_model(arch),
         decoder_parameters(nn),
         networkbackend(nn))
