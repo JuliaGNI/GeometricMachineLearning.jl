@@ -76,7 +76,8 @@ test_explicit_imports(GeometricMachineLearning;
 const NON_PUBLIC_QUALIFIED = (
     :Initializer, :dim,                                          # AbstractNeuralNetworks
     :zeros,                                                      # KernelAbstractions
-    :jacobian)                                                   # ForwardDiff
+    :jacobian!,                                                  # ForwardDiff
+    :JacobianResult, :jacobian, :value)                          # DiffResults
 const NON_PUBLIC_IMPORTS = (
     :AbstractExplicitLayer, :Architecture, :_compute_loss, :dim, :model, # AbstractNeuralNetworks
     :load, :save,                                                        # NeuralNetworkParameters

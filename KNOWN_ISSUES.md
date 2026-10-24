@@ -15,26 +15,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   pattern, so the working tree and the net diff are clean, but the blobs are still reachable.
   Rewriting the branch would remove them.
 
-### C14 · `evaluate_vf_and_compute_∇Ψ` evaluates the decoder twice.
-
-- **location:** `src/reduced_system/reduced_system.jl`
-- **kind:** defect
-- **found:** 2026-09-18
-- **evidence:**
-  `src/reduced_system/reduced_system.jl` calls `decoder((q = q̃, p = p̃))` for the value, then
-  `ForwardDiff.jacobian(qp -> decoder(qp), vcat(q̃, p̃))` evaluates it again for the derivative. The
-  comment above the function blamed "a problem with nested derivatives in ForwardDiff" and named no
-  version, no issue and no reproducer; that claim is not reproduced here, and the comment now points
-  at this entry instead of asserting it. What is certain is the double evaluation, which is visible
-  in the two calls.
-
-  Closing it means computing the value and the Jacobian in one pass — `DiffResults` is the tool —
-  across the shape change from the `(q, p)` `NamedTuple` the vector fields are splatted from to the
-  flat vector the Jacobian is taken against. `test/reduced_system/reduced_system.jl`
-  exercises the function, so the change is checkable. It was left out of the audit's Part C
-  deliberately: it is a restructuring with its own verification, not the comment repair that part
-  was scoped to.
-
 ### C16 · One of `ExplicitImports`' seven checks is switched off in `test/quality/aqua.jl`, and two run with a list of names.
 
 - **location:** `test/quality/aqua.jl`
@@ -45,7 +25,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   and naming them is a rewrite of the module header with a judgement per name.
   `all_explicit_imports_are_public` and `all_qualified_accesses_are_public` run with a list of the
   names this package reaches in other packages that those packages do not declare `public`: **9**
-  explicit imports and **4** qualified accesses, none of them in `GeometricOptimizers`.
+  explicit imports and **7** qualified accesses, none of them in `GeometricOptimizers`.
   `Architecture`, `AbstractExplicitLayer`, `_compute_loss`, `dim` and the rest are used
   deliberately, and the resolution is upstream declaring them `public`. Each check's reason is
   written beside it in the test file.
@@ -88,22 +68,19 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
 ## Found late
 
-### K1 · Two source comments still send the reader to the Open Issues section of `CHANGELOG.md`, which no longer exists.
+### K1 · A test comment still sends the reader to the Open Issues section of `CHANGELOG.md`, which no longer exists.
 
-- **location:** `src/reduced_system/reduced_system.jl:109`
+- **location:** `test/reduced_system/reduced_system.jl:44`
 - **kind:** found late
 - **found:** 2026-09-26
 - **evidence:**
   ```
   $ grep -rnE 'Open Issues|issue C1[48]|\*C21\*|\*B7\*' src test
-  src/kernels/exponentials/tensor_exponential.jl:2:# name is wider than what it holds; renaming it, and `exponentials/` with it, is issue C18.
-  src/reduced_system/reduced_system.jl:109:# issue C14 in `CHANGELOG.md`.
   test/reduced_system/reduced_system.jl:44:# for four of twelve, with four `NaN` and four in the opposite order. That is *C21* in
   ```
 
-  The IDs are still valid; the comments at `src/reduced_system/reduced_system.jl:109` and
-  `test/reduced_system/reduced_system.jl:44–45` name `CHANGELOG.md` rather than `KNOWN_ISSUES.md`.
-  The fix is a follow-up change to those comments.
+  The ID is still valid; the comment at `test/reduced_system/reduced_system.jl:44–45` names
+  `CHANGELOG.md` rather than `KNOWN_ISSUES.md`. The fix is a follow-up change to that comment.
 
 ### K11 · A comment in `adam_with_learning_rate_decay.jl` reports a past experiment.
 
