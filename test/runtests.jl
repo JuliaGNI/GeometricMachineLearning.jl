@@ -48,7 +48,6 @@ if "core" in GROUPS
     @safetestset "Linear Symplectic Transformer" include("architectures/linear_symplectic_transformer.jl")
     @safetestset "Symplectic Transformer chain construction" include("architectures/symplectic_transformer_chain.jl")
     @safetestset "Check parameterlength" include("architectures/check_parameterlengths.jl")
-    @safetestset "Hamiltonian Neural Network" include("architectures/hamiltonian_neural_network_tests.jl")
     @safetestset "SympNet integrator" include("architectures/sympnet_integrator.jl")
     @safetestset "PSD tests" include("architectures/psd_architecture_tests.jl")
     @safetestset "SymplecticAutoencoder tests" include("architectures/symplectic_autoencoder_tests.jl")
@@ -58,7 +57,6 @@ if "core" in GROUPS
     @safetestset "The forward pass of every exported architecture infers" include("architectures/forward_inference.jl")
     @safetestset "Check reduced model" include("reduced_system/reduced_system.jl")
     @safetestset "_norm keeps the element type of its argument" include("utils.jl")
-    @safetestset "Symplectic Euler and variational midpoint losses" include("loss/training_method_losses.jl")
     @safetestset "Test NetworkLoss + Optimizer" include("integration/losses_and_optimization.jl")
     @safetestset "ReducedLoss through train!" include("integration/reduced_loss_optimization.jl")
     @safetestset "Optimizer #2" include("optimizers/optimization_step.jl")
@@ -71,7 +69,6 @@ if "core" in GROUPS
     @safetestset "_mul: NetworkParameters gradient structure" include("layers/double_multiplication_network_parameters_gradient.jl")
     @safetestset "Symplectic attention: NetworkParameters gradient structure" include("layers/symplectic_attention_network_parameters_gradient.jl")
     @safetestset "ZygotePullback returns a NetworkParameters" include("pullbacks/zygote_pullback.jl")
-    @safetestset "SymbolicPullback of HNNLoss is the gradient of the batched loss" include("pullbacks/symbolic_hnn_pullback.jl")
     @safetestset "AutoEncoderLoss and a loss's NetworkParameters" include("loss/losses.jl")
     @safetestset "map_to_cpu" include("map_to_cpu.jl")
     @safetestset "changebackend" include("integration/changebackend_tests.jl")
@@ -101,7 +98,6 @@ if "core" in GROUPS
     @safetestset "docs/make.jl stops on a bad @ref before makedocs" include("quality/docs_make_checks_references.jl")
 end
 if "slow" in GROUPS
-    @safetestset "Lagrangian Neural Network" include("architectures/lagrangian_neural_network_tests.jl")
     @safetestset "Test symplecticity of the sympnet upscaling layer" include("layers/sympnet_upscaling.jl")
     @safetestset "train! trains every architecture of the manual" include("integration/train_manual_architectures.jl")
 end

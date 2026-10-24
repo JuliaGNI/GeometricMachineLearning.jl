@@ -25,7 +25,7 @@ A grid of `num`² points in phase space, together with the symplectic gradient a
 `(q, p)` and `(q̇, ṗ)` a Hamiltonian neural network trains on.
 
 Returns `(input, output)`, both `2 × num²` matrices, which is what `DataLoader(input, output)` takes
-and what `HNNLoss` compares.
+and what `HNNLoss` of HamiltonianNeuralNetworks.jl compares.
 """
 function get_data_set(num = 10, xymin = -1.2, xymax = +1.2)
     #range in which the data should be in

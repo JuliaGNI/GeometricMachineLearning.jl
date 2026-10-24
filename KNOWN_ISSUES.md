@@ -15,23 +15,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   pattern, so the working tree and the net diff are clean, but the blobs are still reachable.
   Rewriting the branch would remove them.
 
-### C7 · `SymbolicPullback(::HamiltonianArchitecture)` reaches one private SymbolicNeuralNetworks name.
-
-- **location:** `src/pullbacks/symbolic_hnn_pullback.jl`
-- **kind:** upstream
-- **found:** 2026-08-16
-- **evidence:**
-  `SymbolicNeuralNetworks.SymbolicPullback(nn, loss)` cannot be used, because it sizes the symbolic
-  target of the loss with `output_dimension(nn.model)`, which for a Hamiltonian network is `1` — the
-  scalar Hamiltonian — while `HNNLoss` compares against the Hamiltonian *vector field*, which has the
-  dimension of the network's input. GML's construction therefore reaches
-  `SymbolicNeuralNetworks.symbolic_parameter_gradient`, which no exported name replaces:
-  `flat_parameter_gradient` is flat, so it wants an `unflatten` per step, and `ParameterGradient` is
-  not used. The pullback is the upstream type `SymbolicPullback(loss, fun)`, with a call method of
-  this package for `SymbolicPullback{<:HNNLoss, <:_HNNParameterGradient}` that is more specific
-  than the upstream call in the pullback and the parameters, and as specific in the data. That
-  private name is the one an upstream refactor breaks.
-
 ### C14 · `evaluate_vf_and_compute_∇Ψ` evaluates the decoder twice.
 
 - **location:** `src/reduced_system/reduced_system.jl`
@@ -66,15 +49,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   `Architecture`, `AbstractExplicitLayer`, `_compute_loss`, `dim` and the rest are used
   deliberately, and the resolution is upstream declaring them `public`. Each check's reason is
   written beside it in the test file.
-
-### C20 · There is no Knet.jl example for the Hamiltonian neural network.
-
-- **location:** `TODO.md`
-- **kind:** docs
-- **found:** 2026-09-19
-- **evidence:**
-  The deleted `TODO.md` asked
-  for one. Recorded rather than dropped; nothing depends on it.
 
 ### C21 · "An untrained autoencoder reduces worse than PSD" is not a property, and the suite no longer asserts it under an explicit integrator.
 
@@ -141,28 +115,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   on 1.13 and *rose* on 1.12". The fix states only the present constraint: a 32-epoch budget
   drives the learning rate to `η₂` almost at once, and 128 epochs train.
 
-### K15 · `HNNLoss` and `SymbolicPullback(arch)` accept `(q, p)` data in their signatures and fail on it inside the generated vector field.
-
-- **location:** `src/loss/hnn_loss.jl:33`
-- **kind:** found late
-- **found:** #344, review round 2 (2026-10-14); the `HNNLoss` signatures are older than that pull request
-- **evidence:**
-  `HNNLoss`'s two functors (`src/loss/hnn_loss.jl:31-42`) and the call method of
-  `SymbolicPullback(arch)` (`src/pullbacks/symbolic_hnn_pullback.jl:38-40`) type the data as
-  `ArrayOrNamedTuple`, which admits a `(q = …, p = …)` `NamedTuple`. The loss hands that data to
-  the generated `hvf`, which calls `ndims` on it. With `(q = randn(1, 5), p = randn(1, 5))` as
-  input and output, the symbolic pullback, `HNNLoss` and `ZygotePullback(HNNLoss(arch))` all
-  raise:
-
-  ```
-  MethodError: no method matching ndims(::@NamedTuple{q::Matrix{Float64}, p::Matrix{Float64}})
-  ```
-
-  Narrowing the pullback's method alone changes nothing: the data then reaches the upstream
-  `SymbolicPullback` call, which also accepts a `NamedTuple` and fails in the same place. The fix
-  belongs with the data signatures of the losses as a whole: either each loss accepts only the data
-  its vector field can take, or `(q, p)` data is converted before it reaches the field.
-
 ### K17 · `assign_q_and_p` and `PoissonTensor * v` drop the rows from `2N + 1` on without an error.
 
 - **location:** `src/kernels/assign_q_and_p.jl`
@@ -224,22 +176,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   The same call with `q = A` gives a `DataLoader` with `input_dim == 4`. The docstring at
   `src/data_loader/data_loader.jl:205` states the one-type signature. Closing it means widening the
   three signatures to `NamedTupleOfArrays{T, (:q, :p)}`, and the docstring with them.
-
-### K21 · `LagrangianNeuralNetwork` stores its activation in the field `act`, where every other architecture with one activation names it `activation`.
-
-- **location:** `src/architectures/lagrangian_neural_network.jl:5`
-- **kind:** found late
-- **found:** 2026-10-20, by the critics of part M5; the field is the same on `origin/main` at `4c4a8320`
-- **evidence:**
-  ```
-  $ grep -rn " act::\|\.act\b" src/architectures/
-  src/architectures/lagrangian_neural_network.jl:5:    act::AT
-  src/architectures/lagrangian_neural_network.jl:16:        [Dense(nn.width, nn.width, nn.act) for _ in 1:nn.nhidden]
-  src/architectures/lagrangian_neural_network.jl:20:        Dense(nn.dimin, nn.width, nn.act),
-  ```
-
-  The constructor's keyword is `activation`; only the field keeps the short name. The fix renames
-  the field, which changes a public field name.
 
 ### K22 · A comment in `symplectic_attention.jl` names a test file under `test/parameters/`, which does not exist.
 

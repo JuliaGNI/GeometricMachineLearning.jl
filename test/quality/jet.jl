@@ -129,7 +129,7 @@ const A3{T} = Array{T, 3}
                 target_modules = TARGET)))
             # input and output: test/data_loader/data_loader_for_input_and_output.jl
             # (`Float32`, `Batch(10, 1, 1)`) and
-            # test/architectures/lagrangian_neural_network_tests.jl (`Float64`, `Batch(10)`)
+            # test/data_loader/train.jl (`Float64`, `Batch(8)`)
             @test isempty(JET.get_reports(JET.report_opt(
                 GML.convert_input_and_batch_indices_to_array,
                 (DataLoader{T, A3{T}, A3{T}, :TimeSeries, Int}, BatchType, Indices);

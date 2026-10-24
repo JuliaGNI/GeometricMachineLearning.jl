@@ -102,12 +102,13 @@ end
 # The right-hand side of the three array methods is `Strided…`, not `Abstract…`, and the bound is
 # load-bearing rather than cosmetic. `PoissonTensor <: AbstractMatrix{T}`, so a method claiming the
 # whole of `AbstractVecOrMat` on the right collides with every `*(::AbstractMatrix, ::X)` that
-# ArrayLayouts, FillArrays, Symbolics and GeometricOptimizers define for their own special array
-# type `X` -- seventeen ambiguities, each of which throws a `MethodError` on a call a user can
-# write, `PoissonTensor(4, Float32) * StiefelManifold(...)` among them. `StridedArray` excludes
-# every such `X` while still covering what this package produces and consumes: `Array`, a strided
-# `SubArray`, and the GPU arrays, because `CuArray` and `MtlArray` are `DenseArray`s. An `Adjoint`
-# of a `Matrix` is not strided and takes the generic path below.
+# ArrayLayouts, FillArrays, Symbolics (which HamiltonianNeuralNetworks.jl loads) and
+# GeometricOptimizers define for their own special array type `X` -- seventeen ambiguities, each of
+# which throws a `MethodError` on a call a user can write, `PoissonTensor(4, Float32) *
+# StiefelManifold(...)` among them. `StridedArray` excludes every such `X` while still covering
+# what this package produces and consumes: `Array`, a strided `SubArray`, and the GPU arrays,
+# because `CuArray` and `MtlArray` are `DenseArray`s. An `Adjoint` of a `Matrix` is not strided and
+# takes the generic path below.
 #
 # A non-strided matrix or vector on the CPU reaches Julia's generic `AbstractMatrix` multiply, which
 # gives the same answer: this type carries `getindex` and `size` and *is* the matrix it claims to

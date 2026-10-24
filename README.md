@@ -12,7 +12,7 @@
 [![Build Status](https://github.com/JuliaGNI/GeometricMachineLearning.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/JuliaGNI/GeometricMachineLearning.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/JuliaGNI/GeometricMachineLearning.jl/branch/main/graph/badge.svg?token=CFT76RROW2)](https://codecov.io/gh/JuliaGNI/GeometricMachineLearning.jl)
 
-`GeometricMachineLearning.jl` offers a flexible tool for designing neural networks for dynamical systems with geometric structure, such as Hamiltonian (symplectic) or Lagrangian (variational) systems.
+`GeometricMachineLearning.jl` offers a flexible tool for designing neural networks for dynamical systems with geometric structure, such as Hamiltonian (symplectic) or divergence-free (volume-preserving) systems. Hamiltonian and Lagrangian neural networks are in [HamiltonianNeuralNetworks.jl](https://juliagml.github.io/HamiltonianNeuralNetworks.jl/latest/) and [LagrangianNeuralNetworks.jl](https://juliagml.github.io/LagrangianNeuralNetworks.jl/dev/).
 
 At its core every neural network comprises three components: a neural network architecture, a loss function and an optimizer. 
 

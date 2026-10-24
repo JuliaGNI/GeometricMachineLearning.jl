@@ -2,8 +2,9 @@ module GPUArraysCoreExt
 
 # `PoissonTensor`'s three array methods of `Base.:*` take a `Strided…` right-hand side. That bound
 # is what keeps them from colliding with every `*(::AbstractMatrix, ::X)` that ArrayLayouts,
-# FillArrays, Symbolics and GeometricOptimizers define for their own array type `X` -- seventeen
-# ambiguities, and the reason for the bound is set out in `src/arrays/poisson_tensor.jl`.
+# FillArrays, Symbolics (which HamiltonianNeuralNetworks.jl loads) and GeometricOptimizers define
+# for their own array type `X` -- seventeen ambiguities, and the reason for the bound is set out in
+# `src/arrays/poisson_tensor.jl`.
 #
 # A GPU array is itself strided, because `CuArray` and `MtlArray` are `DenseArray`s, so the fast
 # path already covers it. A *wrapped* one is not: `view(A, [1, 2, 3, 4], :)` and `A'` are a

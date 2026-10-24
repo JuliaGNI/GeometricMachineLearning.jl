@@ -1,6 +1,5 @@
 # The forward pass of every architecture that the package exports infers its result type, and the
-# result has the element type of the network. `GeneralizedHamiltonianArchitecture` has no chain:
-# its constructor raises "GHNN still has to be implemented!".
+# result has the element type of the network.
 
 using GeometricMachineLearning
 using Test
@@ -18,7 +17,6 @@ const ARCHITECTURES = (
     ("StandardTransformerIntegrator, default heads",
         StandardTransformerIntegrator(32), 32, 3),
     ("VolumePreservingTransformer", VolumePreservingTransformer(4, 3), 4, 3),
-    ("LagrangianNeuralNetwork", LagrangianNeuralNetwork(4), 4, 3),
     ("LASympNet", LASympNet(4), 4, 3),
     ("GSympNet", GSympNet(4), 4, 3),
     ("ClassificationTransformer",
@@ -26,7 +24,6 @@ const ARCHITECTURES = (
     ("VolumePreservingFeedForward", VolumePreservingFeedForward(4), 4, 3),
     ("SymplecticAutoencoder", SymplecticAutoencoder(8, 4), 8, 3),
     ("PSDArch", PSDArch(8, 4), 8, 3),
-    ("StandardHamiltonianArchitecture", StandardHamiltonianArchitecture(4), 4, 3),
     ("LinearSymplecticTransformer", LinearSymplecticTransformer(4, 3), 4, 3),
     ("SymplecticTransformer", SymplecticTransformer(4), 4, 3))
 

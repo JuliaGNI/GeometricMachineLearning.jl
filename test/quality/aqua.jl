@@ -18,16 +18,17 @@ using Test
 #
 # `ambiguities` stays off, and the assertion below replaces it. Aqua's check runs in a process of its
 # own and asks about whatever that process loaded, so its count moves with ArrayLayouts',
-# FillArrays', Symbolics', GeometricOptimizers', BandedMatrices' and BlockArrays' versions, and with
-# *which* of them a given process had loaded. `detect_ambiguities` on this package, in this process,
+# FillArrays', GeometricOptimizers', BandedMatrices' and BlockArrays' versions, and with *which* of
+# them a given process had loaded. `detect_ambiguities` on this package, in this process,
 # asks only about the methods it defines; the count is zero, and no method of this package claims an
 # argument position wholesale on `PoissonTensor`, which is what keeps it there. That type is an
 # `AbstractMatrix{T}`, so such a method meets every special-array method another package writes
 # against `AbstractMatrix`:
 #
 #   `*(𝕁::PoissonTensor{T}, v::Strided…)` takes a `Strided…` right-hand side, which excludes each
-#       special array type `X` that ArrayLayouts, FillArrays, Symbolics and GeometricOptimizers
-#       define a `*(::AbstractMatrix, ::X)` for, and still covers everything the package builds.
+#       special array type `X` that ArrayLayouts, FillArrays, GeometricOptimizers and
+#       Symbolics (which HamiltonianNeuralNetworks.jl loads) define a `*(::AbstractMatrix, ::X)`
+#       for, and still covers everything the package builds.
 #   `getindex(𝕁::PoissonTensor, i::Int, j::Int)` types its indices, which excludes the `Block`,
 #       `BlockIndex` and `BandRangeType` methods BandedMatrices and BlockArrays add to
 #       `AbstractMatrix`. Neither of those two loads with this package alone, so an untyped index
@@ -73,14 +74,11 @@ test_explicit_imports(GeometricMachineLearning;
 # those packages do not declare public; each is deliberate, and the fix for each is upstream
 # declaring it. No `GeometricOptimizers` name is on either list.
 const NON_PUBLIC_QUALIFIED = (
-    :Initializer, :TanhActivation, :dim,                         # AbstractNeuralNetworks
-    :Jacobian, :symbolic_parameter_gradient,                     # SymbolicNeuralNetworks
-    :variables,                                                  # Symbolics
+    :Initializer, :dim,                                          # AbstractNeuralNetworks
     :copyto!, :zeros,                                            # KernelAbstractions
     :jacobian)                                                   # ForwardDiff
 const NON_PUBLIC_IMPORTS = (
     :AbstractExplicitLayer, :Architecture, :_compute_loss, :dim, :model, # AbstractNeuralNetworks
-    :derivative,                                                         # SymbolicNeuralNetworks
     :load, :save,                                                        # NeuralNetworkParameters
     :_vcat, :assign_q_and_p)                       # this package, imported by `GPUArraysCoreExt`
 

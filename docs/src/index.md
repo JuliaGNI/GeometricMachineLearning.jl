@@ -4,7 +4,7 @@ CurrentModule = GeometricMachineLearning
 
 # Geometric Machine Learning
 
-`GeometricMachineLearning` is a package for *structure-preserving scientific machine learning*. It contains models that can learn dynamical systems with geometric structure, such as Hamiltonian (symplectic) or Lagrangian (variational) systems.
+`GeometricMachineLearning` is a package for *structure-preserving scientific machine learning*. It contains models that can learn dynamical systems with geometric structure, such as Hamiltonian (symplectic) or divergence-free (volume-preserving) systems. Hamiltonian and Lagrangian neural networks are in [HamiltonianNeuralNetworks.jl](https://juliagml.github.io/HamiltonianNeuralNetworks.jl/latest/) and [LagrangianNeuralNetworks.jl](https://juliagml.github.io/LagrangianNeuralNetworks.jl/dev/).
 
 In that regard its aim is similar to traditional *geometric numerical integration* [hairer2006geometric, Kraus:2020:GeometricIntegrators](@cite) in that it models maps that share properties with the analytic solution of a differential equation:
 
