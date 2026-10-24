@@ -5,39 +5,12 @@ H(x) = x[2]^2 / 2 + (1-cos(x[1]))
 H(q, p) = H([q[1], p[1]])
 H(t, q, p, params) = H(q, p)
 
-# The gradient of `H` and the symplectic gradient built from it. Both are written out rather than
-# taken with automatic differentiation, so that building the training data below needs no AD.
-∇H(x) = [sin(x[1]), x[2]]
-dH(x) = [0 1; -1 0] * ∇H(x)
-
 # vector field methods
 function v(v, t, q, p, params)
     v[1] = p[1]
 end
 function f(f, t, q, p, params)
     f[1] = -sin(q[1])
-end
-
-"""
-    get_data_set(num, xymin, xymax)
-
-A grid of `num`² points in phase space, together with the symplectic gradient at each — the
-`(q, p)` and `(q̇, ṗ)` a Hamiltonian neural network trains on.
-
-Returns `(input, output)`, both `2 × num²` matrices, which is what `DataLoader(input, output)` takes
-and what `HNNLoss` compares.
-"""
-function get_data_set(num = 10, xymin = -1.2, xymax = +1.2)
-    #range in which the data should be in
-    rang = range(xymin, stop = xymax, length = num)
-
-    # all combinations of (x,y) points
-    points = [[x, y] for x in rang for y in rang]
-
-    #compute the value of the vector field
-    derivatives = dH.(points)
-
-    (reduce(hcat, points), reduce(hcat, derivatives))
 end
 
 @doc raw"""

@@ -210,8 +210,6 @@ _architectures = "Architectures" => [
     "Using Architectures with `NeuralNetwork`" => "architectures/abstract_neural_networks.md",
     "Symplectic Autoencoders" => "architectures/symplectic_autoencoder.md",
     "Neural Network Integrators" => "architectures/neural_network_integrators.md",
-    "Hamiltonian Neural Network" => "architectures/hamiltonian_neural_network.md",
-    "Lagrangian Neural Network" => "architectures/lagrangian_neural_network.md",
     "SympNet" => "architectures/sympnet.md",
     "Volume-Preserving FeedForward" => "architectures/volume_preserving_feedforward.md",
     "Standard Transformer" => "architectures/transformer.md",
@@ -227,7 +225,6 @@ _data_loader = "Data Loader" => [
 
 _tutorials = "Tutorials" => [
     "SympNets" => "tutorials/sympnet_tutorial.md",
-    "Hamiltonian Neural Network" => "tutorials/hamiltonian_neural_network.md",
     "Symplectic Autoencoders" => "tutorials/symplectic_autoencoder.md",
     "Grassmann Manifold" => "tutorials/grassmann_layer.md",
     "Volume-Preserving Attention" => "tutorials/volume_preserving_attention.md",

@@ -13,7 +13,6 @@ include("../helpers/eltypes.jl")
 function manual_architectures(T)
     feedforward = DataLoader(rand(T, 4, 12, 3); suppress_info = true)
     transformer_batch = Batch(4, 3)
-    hnn = StandardHamiltonianArchitecture(2, 4)
     attention_data = DataLoader(rand(T, 1, 12, 2); suppress_info = true)
     attention_batch = Batch(4, 3, 1)
     attention_chain(skew_sym) = Chain(Dense(1, 2, tanh),
@@ -38,9 +37,6 @@ function manual_architectures(T)
             SymplecticAutoencoder(4, 2; n_encoder_blocks = 2, n_decoder_blocks = 2),
             DataLoader(rand(T, 4, 12); autoencoder = true, suppress_info = true), Batch(4),
             nothing),
-        ("StandardHamiltonianArchitecture", hnn,
-            DataLoader(rand(T, 2, 12), rand(T, 2, 12); suppress_info = true), Batch(4),
-            HNNLoss(hnn)),
         ("VolumePreservingAttention, skew_sym = true", attention_chain(true),
             attention_data, attention_batch, TransformerLoss(attention_batch)),
         ("VolumePreservingAttention, skew_sym = false", attention_chain(false),

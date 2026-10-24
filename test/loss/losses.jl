@@ -1,6 +1,5 @@
 using GeometricMachineLearning
-using GeometricMachineLearning: AutoEncoderLoss, FeedForwardLoss, HNNLoss, LNNLoss,
-                                SymplecticEulerLoss, VariationalMidpointLoss
+using GeometricMachineLearning: AutoEncoderLoss, FeedForwardLoss
 using AbstractNeuralNetworks: Chain, Dense, NeuralNetwork, params
 using NeuralNetworkParameters: NetworkParameters
 using Test
@@ -29,35 +28,20 @@ end
 
 # A loss's `ps` is a `NetworkParameters`, so a bare `NamedTuple` reaches no method of a
 # GML loss rather than a silently different gradient: which of the two AD hands the loss is what an
-# untyped argument hides. The four-argument methods of a training loss carry the same annotation,
-# and their model slot is reached by `AbstractNeuralNetworks`' own untyped fallback where the wrapper
-# is missing.
+# untyped argument hides. The four-argument methods of a loss carry the annotation, and their model
+# slot is reached by `AbstractNeuralNetworks`' own untyped fallback where the wrapper is missing.
 #
 # Not numeric: the element type of the data does not reach the method selection, so this is not run
 # over `REAL_ELTYPES`.
 @testset "a loss takes a NetworkParameters" begin
     Random.seed!(23)
-    hnn_arch = StandardHamiltonianArchitecture(2, 4, 1)
-    lnn_arch = LagrangianNeuralNetwork(2; width = 4, nhidden = 1)
 
-    hnn_input, hnn_output = randn(2, 3), randn(2, 3)
-    lnn_input, lnn_output = randn(2, 3), randn(1, 3)
-
-    losses = (
-        (HNNLoss(hnn_arch), hnn_arch, hnn_input, hnn_output),
-        (LNNLoss(lnn_arch), lnn_arch, lnn_input, lnn_output),
-        (SymplecticEulerLoss(hnn_arch, 0.1), hnn_arch, hnn_input, hnn_output),
-        (VariationalMidpointLoss(lnn_arch, 0.05), lnn_arch, lnn_input, lnn_output)
-    )
-    for (loss, arch, input, output) in losses
-        nn = NeuralNetwork(arch, CPU(), Float64)
-        ps = params(nn)
-        # the wrapper is accepted, and the same number comes back through the `NeuralNetwork`
-        # method, which forwards to the wrapper
-        @test loss(nn, input, output) == loss(ps, input, output)
-        # the bare `NamedTuple` under the wrapper is not
-        @test_throws MethodError loss(params(ps), input, output)
-    end
+    # the three-argument method: the wrapper is accepted, and the bare `NamedTuple` under it is not
+    model = Chain(Dense(4, 2, tanh), Dense(2, 4, tanh))
+    ae = NeuralNetwork(model, CPU(), Float64)
+    x = randn(4, 3)
+    @test AutoEncoderLoss()(ae, x) == AutoEncoderLoss()(model, ae.params, x)
+    @test_throws MethodError AutoEncoderLoss()(model, params(ae.params), x)
 
     # `TransformerLoss` has no three-argument method, so its four-argument ones are what the
     # annotation reaches: the wrapper is accepted, and a bare `NamedTuple` under it reaches no method

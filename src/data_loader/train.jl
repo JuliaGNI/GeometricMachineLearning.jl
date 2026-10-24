@@ -18,7 +18,10 @@ trained through a [`ZygotePullback`](@ref). Without it, a [`TransformerIntegrato
 autoencoder with a `Batch{:FeedForward}` on [`AutoEncoderLoss`](@ref)`()`; any other combination
 needs `loss`, and `train!` raises an `ArgumentError` without it.
 
-A Hamiltonian network trains on its symbolic gradient with `loss = SymbolicPullback(arch)`.
+A network of HamiltonianNeuralNetworks.jl trains on vector-field data with
+`loss = SymbolicPullback(arch)` of that package, and on consecutive states with a loss such as its
+`SymplecticEulerLoss(arch, timestep)`; see its
+[manual](https://juliagml.github.io/HamiltonianNeuralNetworks.jl/latest/).
 
 `opt` is built for `params(nn)`, with `TrainingOptimizer(params(nn); algorithm, linesearch,
 retraction)`. It keeps the iteration number, the moments and the global sections, so a second call

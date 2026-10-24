@@ -6,7 +6,6 @@ using Test
 import Random
 
 include("../helpers/eltypes.jl")
-include("../helpers/leaves.jl")
 
 # The target is in the model class, so the loss goes to zero; the factor 100 leaves margin in
 # `Float32`.
@@ -111,36 +110,6 @@ end
     @test history[1] ≈ sum(losses) / 3
 end
 
-# `train!` steps with the gradient of the `loss` it is given. One epoch of one minibatch with
-# `GradientMethod` moves the parameters by `-η` times the symbolic gradient at `p₀`, and the history
-# is the pullback's loss value. `test/pullbacks/symbolic_hnn_pullback.jl` tests the gradient itself
-# against `ZygotePullback`'s (issue #343).
-@testset "train! trains a Hamiltonian network with SymbolicPullback ($T)" for T in REAL_ELTYPES
-    Random.seed!(9)
-    arch = StandardHamiltonianArchitecture(2, 4, 1, GeometricMachineLearning.SigmoidActivation())
-    dl = DataLoader(randn(T, 2, 8), randn(T, 2, 8); suppress_info = true)
-    nn = NeuralNetwork(arch, CPU(), T)
-    p₀ = deepcopy(params(nn))
-    pullback = SymbolicPullback(arch)
-    batch = Batch(8)
-    Random.seed!(2)
-    data = GeometricMachineLearning.convert_input_and_batch_indices_to_array(
-        dl, batch, only(batch(dl)))
-    value, back = pullback(p₀, nn.model, data)
-    g = back(one(value))
-    η = T(0.1)
-    opt = TrainingOptimizer(params(nn); algorithm = GradientMethod(), linesearch = η)
-    Random.seed!(2)
-    history = train!(nn, opt, dl, batch, 1; loss = pullback, show_progress = false)
-    @test history == [value]
-    @test value isa T
-    @test eltype(history) === T
-    foreach_leaf(params(nn), p₀, g) do layer, layer₀, gradient
-        @test layer ≈ layer₀ .- η .* gradient
-        @test layer != layer₀
-    end
-end
-
 # Without `loss`, `train!` trains on the loss that matches the architecture and the batch, and on
 # any other combination it says that it needs one.
 #
@@ -156,11 +125,9 @@ end
     @test NetworkLoss(GSympNet(4; n_layers = 2), Batch(4)) isa FeedForwardLoss
     autoencoder = SymplecticAutoencoder(10, 4)
     @test NetworkLoss(autoencoder, Batch(4)) isa AutoEncoderLoss
-    # a Hamiltonian network, a transformer with a `Batch{:FeedForward}` and an unknown architecture
-    # all reach the fallback
-    for (arch, batch) in ((StandardHamiltonianArchitecture(2, 4, 1), Batch(4)),
-        (transformer, Batch(4)), (
-        NeuralNetwork(Chain(Dense(2, 2, identity))).architecture, Batch(4)))
+    # a transformer with a `Batch{:FeedForward}` and an unknown architecture both reach the fallback
+    for (arch, batch) in ((transformer, Batch(4)),
+        (NeuralNetwork(Chain(Dense(2, 2, identity))).architecture, Batch(4)))
         @test_throws ArgumentError NetworkLoss(arch, batch)
     end
 

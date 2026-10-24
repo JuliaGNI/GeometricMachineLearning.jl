@@ -6,13 +6,11 @@ using AbstractNeuralNetworks
 # package also exports `flatten`/`unflatten` and the leaf protocol, none of which this package
 # extends — `GeometricOptimizers` carries the protocol for the structured matrices.
 #
-# Two things come from there rather than being written again here: `mapstorage`, which reaches
-# the storage of a structured leaf and rebuilds the leaf around the result (`src/map_to_cpu.jl`), and
-# `parameter_eltype`, which gives the element type a parameter set holds — what a seeded gradient
-# is converted to. A plain `NamedTuple` of layers is walked with `Base.map`, which needs nothing
-# from anybody.
+# `mapstorage` comes from there rather than being written again here: it reaches the storage of a
+# structured leaf and rebuilds the leaf around the result (`src/map_to_cpu.jl`). A plain
+# `NamedTuple` of layers is walked with `Base.map`, which needs nothing from anybody.
 import NeuralNetworkParameters: NetworkParameters
-using NeuralNetworkParameters: mapstorage, parameter_eltype
+using NeuralNetworkParameters: mapstorage
 using ChainRulesCore
 using GeometricBase
 using GeometricSolutions: GeometricSolution, EnsembleSolution, TimeSeries
@@ -26,10 +24,6 @@ using Zygote
 using ForwardDiff
 using InteractiveUtils
 using TimerOutputs
-import SymbolicNeuralNetworks
-import SymbolicNeuralNetworks: SymbolicPullback
-using SymbolicNeuralNetworks: derivative, SymbolicNeuralNetwork
-import Symbolics
 
 # The manifolds, the structured matrix types, the global sections and the retractions are
 # `GeometricOptimizers`': the same objects, so upstream's generic machinery dispatches on them and
@@ -69,8 +63,6 @@ import GeometricOptimizers: solve!
 import AbstractNeuralNetworks: Architecture, AbstractExplicitLayer, NeuralNetwork,
                                FeedForwardLoss
 import AbstractNeuralNetworks: Chain
-# `input_dimension`/`output_dimension` are AbstractNeuralNetworks' since v0.6.4; the `Chain`
-# methods GML uses are added to them by SymbolicNeuralNetworks.
 import AbstractNeuralNetworks: input_dimension, output_dimension
 import AbstractNeuralNetworks: Dense, Linear
 # `update!` is deliberately not among these: `AbstractNeuralNetworks`' is a different generic
@@ -188,8 +180,7 @@ include("optimizers/optimizer.jl")
 
 export NeuralNetwork
 
-export NetworkLoss, TransformerLoss, FeedForwardLoss, AutoEncoderLoss, ReducedLoss, HNNLoss,
-       LNNLoss, SymplecticEulerLoss, VariationalMidpointLoss
+export NetworkLoss, TransformerLoss, FeedForwardLoss, AutoEncoderLoss, ReducedLoss
 
 #INCLUDE ARCHITECTURES
 include("architectures/neural_network_integrator.jl")
@@ -200,34 +191,23 @@ include("architectures/sympnet.jl")
 include("architectures/autoencoder.jl")
 include("architectures/symplectic_autoencoder.jl")
 include("architectures/psd.jl")
-include("architectures/hamiltonian_neural_network.jl")
-include("architectures/lagrangian_neural_network.jl")
 include("architectures/transformer_neural_network.jl")
 include("architectures/volume_preserving_feedforward.jl")
 include("architectures/volume_preserving_transformer.jl")
 
-export HamiltonianArchitecture
-export LagrangianNeuralNetwork
 export SympNet, LASympNet, GSympNet
 export ClassificationTransformer, ClassificationLayer
 export VolumePreservingFeedForward
 export SymplecticAutoencoder, PSDArch
-export HamiltonianArchitecture, StandardHamiltonianArchitecture,
-       GeneralizedHamiltonianArchitecture
 
 export solve!, encoder, decoder
 
 export iterate
 
 include("loss/losses.jl")
-include("loss/hnn_loss.jl")
-include("loss/lnn_loss.jl")
-include("loss/symplectic_euler_loss.jl")
-include("loss/variational_midpoint_loss.jl")
 
-export AbstractPullback, ZygotePullback, SymbolicPullback
+export AbstractPullback, ZygotePullback
 include("pullbacks/zygote_pullback.jl")
-include("pullbacks/symbolic_hnn_pullback.jl")
 
 export DataLoader
 export Batch, train!
