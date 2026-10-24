@@ -63,7 +63,6 @@ import GeometricOptimizers: solve!
 import AbstractNeuralNetworks: Architecture, AbstractExplicitLayer, NeuralNetwork,
                                FeedForwardLoss
 import AbstractNeuralNetworks: Chain
-# `input_dimension`/`output_dimension` are AbstractNeuralNetworks' since v0.6.4.
 import AbstractNeuralNetworks: input_dimension, output_dimension
 import AbstractNeuralNetworks: Dense, Linear
 # `update!` is deliberately not among these: `AbstractNeuralNetworks`' is a different generic
