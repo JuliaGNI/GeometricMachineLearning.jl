@@ -40,7 +40,7 @@ end
 
     @test arch.n_blocks === GML.sti_n_blocks_default
     @test arch.L === GML.sti_L_default
-    @test arch.upsacling_activation === GML.sti_upscaling_activation_default
+    @test arch.upscaling_activation === GML.sti_upscaling_activation_default
     @test arch.resnet_activation === GML.sti_resnet_activation_default
     @test arch.attention_activation === GML.sti_attention_activation_default
     @test arch.add_connection === GML.sti_add_connection_default

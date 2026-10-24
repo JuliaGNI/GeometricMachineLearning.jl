@@ -35,25 +35,39 @@ positional_encoding(Float32, 4, 3)[:, 1]
 ```
 """
 function positional_encoding(::Type{T}, dim::Integer, seq_length::Integer) where {T}
-    P = Matrix{T}(undef, dim, seq_length)
-    for i in 1:dim
-        # Row pairs `(1,2)`, `(3,4)`, … share the frequency `λ^j`, so the pair index is the row
-        # index shifted before the halving. `i ÷ 2` would pair `(2,3)`, `(4,5)`, … instead, and
-        # leave row 1 unpaired.
-        j = (i - 1) ÷ 2
-        λʲ = T(10)^(T(-8) * T(j) / T(dim))
-        for pos in 1:seq_length
-            θ = T(pos - 1) * λʲ
-            P[i, pos] = isodd(i) ? sin(θ) : cos(θ)
-        end
-    end
-    P
+    _positional_encoding!(Matrix{T}(undef, dim, seq_length))
 end
 
-# The matrix is a constant: its arguments are a type and two lengths, and none of them is a
-# differentiable quantity. Without this declaration Zygote traces into the loop above and refuses
-# the `setindex!`, so a network carrying a `PositionalEncoding` cannot be trained at all.
+# The entry in row `i` and column `pos` of the `dim`-row encoding.
+function _positional_encoding_entry(::Type{T}, dim::Integer, i::Integer, pos::Integer) where {T}
+    # Row pairs `(1,2)`, `(3,4)`, … share the frequency `λ^j`, so the pair index is the row index
+    # shifted before the halving. `i ÷ 2` would pair `(2,3)`, `(4,5)`, … instead, and leave row 1
+    # unpaired.
+    j = (i - 1) ÷ 2
+    λʲ = T(10)^(T(-8) * T(j) / T(dim))
+    θ = T(pos - 1) * λʲ
+    isodd(i) ? sin(θ) : cos(θ)
+end
+
+# Fill `P` with the encoding of its size, by one broadcast over its indices, so that `P` may live
+# on any backend.
+function _positional_encoding!(P::AbstractMatrix{T}) where {T}
+    dim = size(P, 1)
+    entry(i, pos) = _positional_encoding_entry(T, dim, i, pos)
+    P .= entry.(axes(P, 1), transpose(axes(P, 2)))
+end
+
+# The encoding for the input `x` of a layer of dimension `M`, allocated on the backend of `x`.
+function _positional_encoding_like(x::AbstractArray, M::Integer)
+    _positional_encoding!(similar(x, eltype(x), M, size(x, 2)))
+end
+
+# The matrix is a constant: it depends on its arguments only through a type, a backend and lengths,
+# and none of them is a differentiable quantity. Without these declarations Zygote traces into the
+# broadcast that fills the matrix and refuses the mutation, so a network carrying a
+# `PositionalEncoding` cannot be trained at all.
 ChainRulesCore.@non_differentiable positional_encoding(::Any, ::Any, ::Any)
+ChainRulesCore.@non_differentiable _positional_encoding_like(::Any, ::Any)
 
 @doc raw"""
     PositionalEncoding(dim)
@@ -63,16 +77,8 @@ A layer that adds the sinusoidal positional encoding of [vaswani2017attention](@
 It has no parameters. The sequence length is read from the input's second axis at every call rather
 than fixed at construction, because a transformer here takes the sequence length from its data and
 not from its architecture — the same network is applied to trajectories of different lengths. The
-encoding matrix is therefore built per call, which costs one `dim × seq_length` allocation, and a
-second for the sum.
-
-!!! warning "CPU only"
-    [`positional_encoding`](@ref) builds a `Matrix`, so this layer adds a host array to whatever it
-    is given. Every other layer here allocates through the backend — `KernelAbstractions.allocate`,
-    or `similar(x, …)` in the forward pass — and this one does not yet. On a GPU array this is not a
-    slowdown but a failure: the broadcast fails to compile, because the host array cannot be read
-    from a kernel. A network carrying this layer is therefore a CPU network. Nothing in the test
-    suite would catch that, because the GPU tests in `test/metal/` do not cover this layer.
+encoding matrix is therefore built per call, on the backend of the input, which costs one
+`dim × seq_length` allocation, and a second for the sum.
 
 Its Jacobian is the identity, since it adds a constant, so it composes with the structure-preserving
 architectures without changing what they preserve: a [`LinearSymplecticTransformer`](@ref) with this
@@ -117,7 +123,7 @@ parameterlength(::PositionalEncoding) = 0
 # `MultiHeadAttention` rejects anyway.
 function (::PositionalEncoding{M, M})(x::Union{AbstractMatrix, AbstractArray{<:Any, 3}},
         ::NamedTuple) where {M}
-    x .+ positional_encoding(eltype(x), M, size(x, 2))
+    x .+ _positional_encoding_like(x, M)
 end
 
 # A `(q, p)` input is stacked, encoded at the full dimension `M`, and split again — which is what

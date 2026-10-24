@@ -2,28 +2,6 @@
 
 What is known to be wrong in GeometricMachineLearning and is not fixed.
 
-## B. Known defects
-
-### B11 · `PositionalEncoding` is CPU-only, and the failure is a compile error rather than a slowdown.
-
-- **location:** —
-- **kind:** defect
-- **found:** 2026-09-18
-- **evidence:**
-  `positional_encoding` builds its matrix with `Matrix{T}(undef, …)`, so the layer's
-  `x .+ P` adds a host array to whatever it is given. Every other layer allocates through the
-  backend — `KernelAbstractions.allocate`, or `similar(x, …)` in the forward pass. Broadcasting a
-  host `Matrix` against a device array does not fall back to the CPU; it fails to compile, because
-  the host array cannot be read from a kernel.
-
-  **No test can catch this, because the suite has no GPU test.** That is what makes it worth an
-  entry rather than a docstring alone: a green matrix says nothing about it. Both docstrings — the
-  layer's and the `positional_encoding` keyword of [`Transformer`](@ref) — carry the warning.
-
-  Closing it means giving the builder the backend, so that it allocates through
-  `KernelAbstractions.allocate` and fills with a kernel instead of a loop, and it cannot be verified
-  here without a GPU job to run it under.
-
 ## C. Follow-ups and cleanups
 
 ### C6 · Three generated MNIST PDFs are in this branch's history
@@ -88,20 +66,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   `Architecture`, `AbstractExplicitLayer`, `_compute_loss`, `dim` and the rest are used
   deliberately, and the resolution is upstream declaring them `public`. Each check's reason is
   written beside it in the test file.
-
-### C19 · `_make_block_for_initialization` has two methods
-
-- **location:** `src/architectures/symplectic_transformer.jl`
-- **kind:** dead code
-- **found:** 2026-09-19
-- **evidence:**
-  — `src/architectures/symplectic_transformer.jl`
-  and `src/architectures/linear_symplectic_transformer.jl` — that differ only in which fields they read
-  from their argument: one reads `arch.transformer_dim` and `arch.sympnet_activation`, the other reads
-  `arch.dim` and `arch.activation`. The bodies are otherwise identical. This stood as a `TODO` in the
-  source; a comment must stand on its own, so it is recorded here instead. Closing it means agreeing
-  on one set of field names across the two architectures, or passing the dimension and the activation
-  in rather than reading them off `arch`.
 
 ### C20 · There is no Knet.jl example for the Hamiltonian neural network.
 
@@ -261,6 +225,82 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   `src/data_loader/data_loader.jl:205` states the one-type signature. Closing it means widening the
   three signatures to `NamedTupleOfArrays{T, (:q, :p)}`, and the docstring with them.
 
+### K21 · `LagrangianNeuralNetwork` stores its activation in the field `act`, where every other architecture with one activation names it `activation`.
+
+- **location:** `src/architectures/lagrangian_neural_network.jl:5`
+- **kind:** found late
+- **found:** 2026-10-20, by the critics of part M5; the field is the same on `origin/main` at `4c4a8320`
+- **evidence:**
+  ```
+  $ grep -rn " act::\|\.act\b" src/architectures/
+  src/architectures/lagrangian_neural_network.jl:5:    act::AT
+  src/architectures/lagrangian_neural_network.jl:16:        [Dense(nn.width, nn.width, nn.act) for _ in 1:nn.nhidden]
+  src/architectures/lagrangian_neural_network.jl:20:        Dense(nn.dimin, nn.width, nn.act),
+  ```
+
+  The constructor's keyword is `activation`; only the field keeps the short name. The fix renames
+  the field, which changes a public field name.
+
+### K22 · A comment in `symplectic_attention.jl` names a test file under `test/parameters/`, which does not exist.
+
+- **location:** `src/layers/symplectic_attention.jl:131`
+- **kind:** docs
+- **found:** 2026-10-20, by the critics of part M5; the comment is the same on `origin/main` at `4c4a8320`
+- **evidence:**
+  The comment above the symmetric forward method of `SymplecticAttention` names
+  `test/parameters/symplectic_attention_network_parameters_gradient.jl`. The file is
+  `test/layers/symplectic_attention_network_parameters_gradient.jl`, and `test/parameters/` does not
+  exist. The fix changes the path in the comment.
+
+### K25 · The docstrings of `LinearSymplecticTransformer` and `SymplecticTransformer` say that `n_sympnet = 1` gives one `GradientLayerQ` and one `GradientLayerP`.
+
+- **location:** `src/architectures/linear_symplectic_transformer.jl:22`
+- **kind:** docs
+- **found:** 2026-10-21, by the branch verifier of part M5; the docstrings and the chains are the same on `origin/main` at `4c4a8320`
+- **evidence:**
+  Each transformer unit puts the same `n_sympnet` gradient layers after its `Q` attention layer and
+  after its `P` attention layer, and the alternation starts again in each block. With
+  `n_sympnet = 1` and the default `init_upper = true`, both gradient layers are `GradientLayerQ`:
+
+  ```julia
+  [typeof(l) for l in Chain(LinearSymplecticTransformer(4, 3; n_sympnet = 1)).layers]
+  # LinearSymplecticAttentionQ, GradientLayerQ, LinearSymplecticAttentionP, GradientLayerQ
+  [typeof(l) for l in Chain(SymplecticTransformer(4; n_sympnet = 1)).layers]
+  # SymplecticAttentionQ, GradientLayerQ, SymplecticAttentionP, GradientLayerQ
+  ```
+
+  The same sentence is at `src/architectures/symplectic_transformer.jl:35`. The count
+  `2n_sympnet` holds for one unit, `L = 1`. The fix states the layers of one unit as the chain
+  builds them, or changes the chain, which changes the network.
+
+### K26 · The docstring of `SymplecticAutoencoder` says that `decoder_init_q = true` makes the first layer of each decoder block a ``p``-type layer, where it is a `GradientLayerQ`.
+
+- **location:** `src/architectures/symplectic_autoencoder.jl:36`
+- **kind:** docs
+- **found:** 2026-10-21, by the branch verifier of part M5; the docstring is the same on `origin/main` at `4c4a8320`
+- **evidence:**
+  `decoder_init_q = true` selects `:DecoderInitQ`, whose `decoder_layers_from_iteration` passes
+  `isodd`, so layer 1 of each decoder block is a `GradientLayerQ`:
+
+  ```julia
+  ae = NeuralNetwork(SymplecticAutoencoder(8, 4; decoder_init_q = true), CPU(), Float64)
+  first(decoder(ae).model.layers) isa GradientLayerQ    # true
+  ```
+
+  The fix writes ``q`` for ``p`` in the docstring.
+
+### K27 · The docstring of `UnknownDecoder` names its third argument `n_encoder_blocks` and links to itself for an example.
+
+- **location:** `src/architectures/autoencoder.jl:102`
+- **kind:** docs
+- **found:** 2026-10-21, by the branch verifier of part M5; the docstring is the same on `origin/main` at `4c4a8320`
+- **evidence:**
+  The signature line reads `UnknownDecoder(full_dim, reduced_dim, n_encoder_blocks)`, and the third
+  argument fills the field `n_decoder_blocks` (`src/architectures/autoencoder.jl:113`). The last
+  line says that an example "can be constructed analogously to [`UnknownDecoder`](@ref)", which
+  links the docstring to itself; the example is in the docstring of `UnknownEncoder`. The fix names
+  the argument `n_decoder_blocks` and links `UnknownEncoder`.
+
 ## Upstream
 
 ### K2 · Revise prints EMFILE errors in the test log
@@ -300,16 +340,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   is a Metal.jl change: a workload that does not run where no device exists.
 
 ## Documentation
-
-### K5 · The `PositionalEncoding` docstring names `test/metal/`, which does not exist
-
-- **location:** `src/layers/positional_encoding.jl:75`
-- **kind:** docs
-- **found:** 2026-10-02
-- **evidence:**
-  The docstring says "the GPU tests in `test/metal/` do not cover this layer". The Metal tests
-  are in `test/devices/metal.jl`, and `origin/main` at 97bf0d8 has no `test/metal/` directory.
-  The fix is a change of that path under `src/`.
 
 ### K18 · The tensor-sampling formula in the `DataLoader` manual is one short
 

@@ -43,77 +43,50 @@ function parameterlength(d::MultiHeadAttention{M, M, true}) where {M}
     3*M^2 - (3*M*(M + d.n_heads)) ÷ (2*d.n_heads)
 end
 
-function initialparameters(
-        rng::AbstractRNG, initializer::AbstractNeuralNetworks.Initializer,
-        d::MultiHeadAttention{M, M, false},
-        backend::KernelAbstractions.Backend, T::Type) where {M}
-    # number of "hidden" dimension (dimension of projection) 
-    Dₕ = M ÷ d.n_heads
-    # projections for queries, keys and values.
-    PQ = NamedTuple()
-    PK = NamedTuple()
-    PV = NamedTuple()
-
-    for head in 1:d.n_heads
-        key = Symbol("head_"*string(head))
-
-        PQ_weight = KernelAbstractions.allocate(backend, T, M, Dₕ)
-        PK_weight = KernelAbstractions.allocate(backend, T, M, Dₕ)
-        PV_weight = KernelAbstractions.allocate(backend, T, M, Dₕ)
-        initializer(rng, PQ_weight)
-        initializer(rng, PK_weight)
-        initializer(rng, PV_weight)
-
-        PQ = merge(PQ,
-            NamedTuple{(key,)}((PQ_weight,))
-        )
-        PK = merge(PK,
-            NamedTuple{(key,)}((PK_weight,))
-        )
-        PV = merge(PV,
-            NamedTuple{(key,)}((PV_weight,))
-        )
-    end
-    (PQ = PQ, PK = PK, PV = PV)
+# The projection of one head, `M × Dₕ`: a plain matrix, or a point of the Stiefel manifold.
+function _head_weight(rng, initializer, ::Val{false}, M, Dₕ, backend, ::Type{T}) where {T}
+    weight = KernelAbstractions.allocate(backend, T, M, Dₕ)
+    initializer(rng, weight)
+    weight
+end
+function _head_weight(rng, initializer, ::Val{true}, M, Dₕ, backend, ::Type{T}) where {T}
+    initialparameters(rng, initializer, StiefelLayer{M, Dₕ}(), backend, T).weight
 end
 
 function initialparameters(
         rng::AbstractRNG, initializer::AbstractNeuralNetworks.Initializer,
-        d::MultiHeadAttention{M, M, true},
-        backend::KernelAbstractions.Backend, ::Type{T}) where {M, T}
-    # number of "hidden" dimension (dimension of projection) 
+        d::MultiHeadAttention{M, M, Stiefel},
+        backend::KernelAbstractions.Backend, ::Type{T}) where {M, Stiefel, T}
+    # the dimension of the projection of one head
     Dₕ = M ÷ d.n_heads
-    # projections for queries, keys and vectors.
-    PQ = NamedTuple()
-    PK = NamedTuple()
-    PV = NamedTuple()
-
-    for head in 1:d.n_heads
-        key = Symbol("head_"*string(head))
-
-        PQ = merge(PQ,
-            NamedTuple{(key,)}(values(initialparameters(
-                rng, initializer, StiefelLayer{M, Dₕ}(), backend, T)))
-        )
-        PK = merge(PK,
-            NamedTuple{(key,)}(values(initialparameters(
-                rng, initializer, StiefelLayer{M, Dₕ}(), backend, T)))
-        )
-        PV = merge(PV,
-            NamedTuple{(key,)}(values(initialparameters(
-                rng, initializer, StiefelLayer{M, Dₕ}(), backend, T)))
-        )
-    end
-    (PQ = PQ, PK = PK, PV = PV)
+    # The draws go head by head, and in each head to the query, the key and the value projection.
+    heads = ntuple(
+        _ -> (PQ = _head_weight(rng, initializer, Val(Stiefel), M, Dₕ, backend, T),
+            PK = _head_weight(rng, initializer, Val(Stiefel), M, Dₕ, backend, T),
+            PV = _head_weight(rng, initializer, Val(Stiefel), M, Dₕ, backend, T)),
+        d.n_heads)
+    head_keys = ntuple(i -> Symbol("head_", i), d.n_heads)
+    (PQ = NamedTuple{head_keys}(map(head -> head.PQ, heads)),
+        PK = NamedTuple{head_keys}(map(head -> head.PK, heads)),
+        PV = NamedTuple{head_keys}(map(head -> head.PV, heads)))
 end
 
+# The keys `(:head_1, …, :head_N)` of `N` heads, as a constant: the generated function builds the
+# symbols once for each `N`, when it compiles, and not on each call.
+@generated function _head_keys(::Val{N}) where {N}
+    Expr(:tuple, (QuoteNode(Symbol("head_", i)) for i in 1:N)...)
+end
+
+# The forward methods find the projections of head `i` by the name `head_i`, whatever the order of
+# the fields of `ps.PQ`, `ps.PK` and `ps.PV`.
 function compute_output_of_mha(d::MultiHeadAttention{M, M}, x::AbstractMatrix{T}, ps::NamedTuple) where {
         M, T}
     dim = size(x, 1)
     @assert dim == M
 
+    head_keys = _head_keys(Val(length(ps.PQ)))
     head_outputs = map(1:(d.n_heads)) do i
-        key = Symbol("head_", i)
+        key = head_keys[i]
         _mul(ps.PV[key]', x) *
         d.activation(_mul(ps.PQ[key]', x)' * _mul(ps.PK[key]', x) / T(sqrt(dim)))
     end
@@ -132,8 +105,9 @@ function compute_output_of_mha(
     @assert dim == M
 
     # the result of a single head attention block, one per head
+    head_keys = _head_keys(Val(length(ps.PQ)))
     head_outputs = map(1:(d.n_heads)) do i
-        key = Symbol("head_", i)
+        key = head_keys[i]
         Q_tensor = _mul(ps.PQ[key]', x)
         K_tensor = _mul(ps.PK[key]', x)
         V_tensor = _mul(ps.PV[key]', x)
