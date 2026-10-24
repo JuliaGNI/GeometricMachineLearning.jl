@@ -45,7 +45,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   and naming them is a rewrite of the module header with a judgement per name.
   `all_explicit_imports_are_public` and `all_qualified_accesses_are_public` run with a list of the
   names this package reaches in other packages that those packages do not declare `public`: **9**
-  explicit imports and **5** qualified accesses, none of them in `GeometricOptimizers`.
+  explicit imports and **4** qualified accesses, none of them in `GeometricOptimizers`.
   `Architecture`, `AbstractExplicitLayer`, `_compute_loss`, `dim` and the rest are used
   deliberately, and the resolution is upstream declaring them `public`. Each check's reason is
   written beside it in the test file.
