@@ -6,7 +6,7 @@ A neural network framework can be seen as a collection of (i) a neural network a
 
 `GeometricMachineLearning` provides a few standard loss functions that are used as defaults [for specific neural networks](@ref "Different Neural Network Losses").
 
-If these standard losses do not satisfy the user's needs, it is very easy to implement custom loss functions. Adding terms to the loss function is standard practice in machine learning to either increase stability [goodfellow2016deep](@cite) or to *inform* the network about physical properties[^1] [raissi2019physics](@cite).
+If these standard losses do not satisfy the user's needs, it is very easy to implement custom loss functions. Adding terms to the loss function is standard practice in machine learning to either increase stability [goodfellow2016deep](@cite) or to *inform* the network about physical properties[^1] [RaissiPerdikarisKarniadakis:2019](@cite).
 
 [^1]: Note however that we discourage using so-called [physics-informed neural networks](@ref "A Note on Physics-Informed Neural Networks") as they do not preserve any physical properties but only give a potential improvement on stability in the region where we have training data.
 
@@ -57,10 +57,10 @@ We now implement a custom loss such that:
 
 ```@example change_loss
 struct CustomLoss <: GeometricMachineLearning.NetworkLoss end
-using GeometricMachineLearning: QPTOAT, AbstractExplicitLayer # hide
+using AbstractNeuralNetworks: ArrayOrNamedTuple, AbstractExplicitLayer # hide
 
 const λ = .1
-function (loss::CustomLoss)(model::Union{AbstractExplicitLayer, Chain}, ps::NetworkParameters, input::QPTOAT, output::QPTOAT)
+function (loss::CustomLoss)(model::Union{AbstractExplicitLayer, Chain}, ps::NetworkParameters, input::ArrayOrNamedTuple, output::ArrayOrNamedTuple)
     FeedForwardLoss()(model, ps, input, output) + λ * network_parameter_norm(ps)
 end
 nothing # hide
@@ -153,5 +153,5 @@ Wit the second loss function, for which the norm of the resulting network parame
 Pages = []
 Canonical = false
 
-raissi2019physics
+RaissiPerdikarisKarniadakis:2019
 ```

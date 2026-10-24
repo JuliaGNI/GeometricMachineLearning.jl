@@ -1,6 +1,7 @@
 using GeometricMachineLearning
-using GeometricMachineLearning: FeedForwardLoss, QPTOAT, LASympNet, StiefelLayer
-using AbstractNeuralNetworks: AbstractExplicitLayer, Chain, Dense, NeuralNetwork, params
+using GeometricMachineLearning: FeedForwardLoss, LASympNet, StiefelLayer
+using AbstractNeuralNetworks: AbstractExplicitLayer, ArrayOrNamedTuple, Chain, Dense,
+                              NeuralNetwork, params
 using LinearAlgebra: Diagonal, diag
 using NeuralNetworkParameters: NetworkParameters
 using Test
@@ -18,7 +19,7 @@ include("../helpers/leaves.jl")
 struct DoubleReadLoss <: GeometricMachineLearning.NetworkLoss end
 
 function (::DoubleReadLoss)(
-        model::Union{Chain, AbstractExplicitLayer}, ps, input::QPTOAT)
+        model::Union{Chain, AbstractExplicitLayer}, ps, input::ArrayOrNamedTuple)
     A = ps.L1.A
     sum(abs2, model(input, ps).q) + sum(abs2, A) + sum(abs2, A)
 end

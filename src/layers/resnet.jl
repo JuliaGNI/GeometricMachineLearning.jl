@@ -53,7 +53,8 @@ function (d::ResNetLayer{M, M, :no_bias})(x::AbstractArray, ps::NamedTuple) wher
     x + d.activation.(_mul(ps.weight, x))
 end
 
-function (d::Union{Dense{M, N}, ResNetLayer{M, N}})(z::QPT, ps::NamedTuple) where {M, N}
+function (d::Union{Dense{M, N}, ResNetLayer{M, N}})(
+        z::NamedTupleOfArrays{<:Any, (:q, :p)}, ps::NamedTuple) where {M, N}
     @assert iseven(M) == iseven(N) == true
     @assert size(z.q, 1) * 2 == M
     N2 = N ÷ 2

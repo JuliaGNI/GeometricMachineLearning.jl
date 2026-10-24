@@ -29,8 +29,8 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   `flat_parameter_gradient` is flat, so it wants an `unflatten` per step, and `ParameterGradient` is
   not used. The pullback is the upstream type `SymbolicPullback(loss, fun)`, with a call method of
   this package for `SymbolicPullback{<:HNNLoss, <:_HNNParameterGradient}` that is more specific
-  than the upstream call in every argument. That private name is the one an upstream refactor
-  breaks.
+  than the upstream call in the pullback and the parameters, and as specific in the data. That
+  private name is the one an upstream refactor breaks.
 
 ### C14 · `evaluate_vf_and_compute_∇Ψ` evaluates the decoder twice.
 
@@ -147,11 +147,12 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 - **kind:** found late
 - **found:** #344, review round 2 (2026-10-14); the `HNNLoss` signatures are older than that pull request
 - **evidence:**
-  `HNNLoss`'s two functors (`src/loss/hnn_loss.jl:31-41`) and the call method of
-  `SymbolicPullback(arch)` (`src/pullbacks/symbolic_hnn_pullback.jl:38`) type the data as
-  `QPTOAT`, which admits a `(q = …, p = …)` `NamedTuple`. The loss hands that data to the generated
-  `hvf`, which calls `ndims` on it. With `(q = randn(1, 5), p = randn(1, 5))` as input and output,
-  the symbolic pullback, `HNNLoss` and `ZygotePullback(HNNLoss(arch))` all raise:
+  `HNNLoss`'s two functors (`src/loss/hnn_loss.jl:31-42`) and the call method of
+  `SymbolicPullback(arch)` (`src/pullbacks/symbolic_hnn_pullback.jl:38-40`) type the data as
+  `ArrayOrNamedTuple`, which admits a `(q = …, p = …)` `NamedTuple`. The loss hands that data to
+  the generated `hvf`, which calls `ndims` on it. With `(q = randn(1, 5), p = randn(1, 5))` as
+  input and output, the symbolic pullback, `HNNLoss` and `ZygotePullback(HNNLoss(arch))` all
+  raise:
 
   ```
   MethodError: no method matching ndims(::@NamedTuple{q::Matrix{Float64}, p::Matrix{Float64}})
@@ -202,7 +203,29 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   nonfinite(tensor_cayley(C))    # 23 of 200
   ```
 
-### K20 · `LagrangianNeuralNetwork` stores its activation in the field `act`, where every other architecture with one activation names it `activation`.
+### K20 · The `DataLoader((q = …, p = …))` constructors require one array type for `q` and `p`.
+
+- **location:** `src/data_loader/data_loader.jl:216`
+- **kind:** defect
+- **found:** #353 (2026-10-23); the constructors are older than that pull request
+- **evidence:**
+  The three methods at `src/data_loader/data_loader.jl:216-245` take
+  `NamedTuple{(:q, :p), Tuple{AT, AT}}` (and `Tuple{VT, VT}`), so `q` and `p` must have one
+  array type, while the `TransformerLoss` method at `src/loss/losses.jl:92` and the
+  `MultiHeadAttention` call take `NamedTupleOfArrays`, which admits two. A view for `q` and a
+  `Matrix` for `p` raises:
+
+  ```julia
+  A = randn(2, 10); B = randn(2, 10)
+  DataLoader((q = view(A, :, 1:10), p = B); suppress_info = true)
+  # MethodError: no method matching DataLoader(::@NamedTuple{q::SubArray{Float64, 2, …}, p::Matrix{Float64}})
+  ```
+
+  The same call with `q = A` gives a `DataLoader` with `input_dim == 4`. The docstring at
+  `src/data_loader/data_loader.jl:205` states the one-type signature. Closing it means widening the
+  three signatures to `NamedTupleOfArrays{T, (:q, :p)}`, and the docstring with them.
+
+### K21 · `LagrangianNeuralNetwork` stores its activation in the field `act`, where every other architecture with one activation names it `activation`.
 
 - **location:** `src/architectures/lagrangian_neural_network.jl:5`
 - **kind:** found late
@@ -218,7 +241,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   The constructor's keyword is `activation`; only the field keeps the short name. The fix renames
   the field, which changes a public field name.
 
-### K21 · A comment in `symplectic_attention.jl` names a test file under `test/parameters/`, which does not exist.
+### K22 · A comment in `symplectic_attention.jl` names a test file under `test/parameters/`, which does not exist.
 
 - **location:** `src/layers/symplectic_attention.jl:131`
 - **kind:** docs
@@ -229,7 +252,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   `test/layers/symplectic_attention_network_parameters_gradient.jl`, and `test/parameters/` does not
   exist. The fix changes the path in the comment.
 
-### K22 · The forward methods of the SympNet layers check the rows of `q` only, so a `p` of the wrong size fails later, with another error than the layer's own.
+### K23 · The forward methods of the SympNet layers check the rows of `q` only, so a `p` of the wrong size fails later, with another error than the layer's own.
 
 - **location:** `src/layers/sympnets.jl:224`
 - **kind:** found late
@@ -256,7 +279,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   The fix checks `size(x.p, 1)` as well, which changes only the message of an error that is
   raised already.
 
-### K23 · `decoder` gives the decoder of an `AutoEncoder` the block count of the encoder.
+### K24 · `decoder` gives the decoder of an `AutoEncoder` the block count of the encoder.
 
 - **location:** `src/architectures/autoencoder.jl:236`
 - **kind:** defect
@@ -281,7 +304,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   `SymplecticAutoencoder` has a `decoder` method of its own and is not affected. The fix passes
   `arch.n_decoder_blocks`.
 
-### K24 · The docstrings of `LinearSymplecticTransformer` and `SymplecticTransformer` say that `n_sympnet = 1` gives one `GradientLayerQ` and one `GradientLayerP`.
+### K25 · The docstrings of `LinearSymplecticTransformer` and `SymplecticTransformer` say that `n_sympnet = 1` gives one `GradientLayerQ` and one `GradientLayerP`.
 
 - **location:** `src/architectures/linear_symplectic_transformer.jl:22`
 - **kind:** docs
@@ -302,7 +325,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   `2n_sympnet` holds for one unit, `L = 1`. The fix states the layers of one unit as the chain
   builds them, or changes the chain, which changes the network.
 
-### K25 · The docstring of `SymplecticAutoencoder` says that `decoder_init_q = true` makes the first layer of each decoder block a ``p``-type layer, where it is a `GradientLayerQ`.
+### K26 · The docstring of `SymplecticAutoencoder` says that `decoder_init_q = true` makes the first layer of each decoder block a ``p``-type layer, where it is a `GradientLayerQ`.
 
 - **location:** `src/architectures/symplectic_autoencoder.jl:36`
 - **kind:** docs
@@ -318,7 +341,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
   The fix writes ``q`` for ``p`` in the docstring.
 
-### K26 · The docstring of `UnknownDecoder` names its third argument `n_encoder_blocks` and links to itself for an example.
+### K27 · The docstring of `UnknownDecoder` names its third argument `n_encoder_blocks` and links to itself for an example.
 
 - **location:** `src/architectures/autoencoder.jl:102`
 - **kind:** docs

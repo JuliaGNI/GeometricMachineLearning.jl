@@ -87,7 +87,7 @@ or
   + b . 
 ```
 
-The superscripts ``\mathrm{up}`` and ``\mathrm{low}`` indicate whether the ``q`` or the ``p`` part is first changed[^3]. The learnable parameters are the symmetric matrices ``A^i\in\mathcal{S}_\mathrm{sym}(d)`` and the bias ``b\in\mathbb{R}^{2d}``. The integer ``w`` is the number of linear layers in one block. It can be shown that five of these layers, i.e. ``w\geq{}5``, can represent any linear symplectic map [jin2022optimal](@cite), so ``w`` need not be larger than five. We denote the set of symplectic linear layers by ``\mathcal{M}^L``.
+The superscripts ``\mathrm{up}`` and ``\mathrm{low}`` indicate whether the ``q`` or the ``p`` part is first changed[^3]. The learnable parameters are the symmetric matrices ``A^i\in\mathcal{S}_\mathrm{sym}(d)`` and the bias ``b\in\mathbb{R}^{2d}``. The integer ``w`` is the number of linear layers in one block. It can be shown that five of these layers, i.e. ``w\geq{}5``, can represent any linear symplectic map [JinLinXiao:2022](@cite), so ``w`` need not be larger than five. We denote the set of symplectic linear layers by ``\mathcal{M}^L``.
 
 [^3]: "up" means we first change the ``q`` part and "low" means we first change the ``p`` part. This can be set via the keyword `init_upper_linear` in [`LASympNet`](@ref). 
 

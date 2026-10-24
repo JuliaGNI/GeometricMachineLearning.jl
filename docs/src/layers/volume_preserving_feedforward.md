@@ -1,6 +1,6 @@
 # Volume-Preserving Feedforward Layer 
 
-The *volume-preserving feedforward layers* in `GeometricMachineLearning` are closely related to [SympNet layers](@ref "SympNet Layers"). We note that [bajars2023locally](@cite) proposes more complicated volume-preserving feedforward neural networks than the ones presented here. These are motivated by a classical theorem [kang1995volume](@cite); but for reasons of simplicity and their similarity to SympNet layers we resort to simpler ones.
+The *volume-preserving feedforward layers* in `GeometricMachineLearning` are closely related to [SympNet layers](@ref "SympNet Layers"). We note that [bajars2023locally](@cite) proposes more complicated volume-preserving feedforward neural networks than the ones presented here. These are motivated by a classical theorem [FengShang:1995](@cite); but for reasons of simplicity and their similarity to SympNet layers we resort to simpler ones.
 
 [Volume-preserving](@ref "Divergence-Free Vector Fields") feedforward layers in `GeometricMachineLearning` are a special type of ResNet layer for which we restrict the weight matrices to be of a particular form. Each layer computes: 
 

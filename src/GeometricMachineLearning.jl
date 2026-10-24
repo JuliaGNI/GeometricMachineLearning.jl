@@ -82,6 +82,9 @@ import AbstractNeuralNetworks: GlorotUniform
 import AbstractNeuralNetworks: params, model, dim
 import AbstractNeuralNetworks: AbstractPullback, NetworkLoss, _compute_loss
 import AbstractNeuralNetworks: networkbackend
+# The input and output types of a network: `NamedTupleOfArrays{T, (:q, :p)}` is data in `(q, p)`
+# form, and `ArrayOrNamedTuple{T}` is an array or a named tuple of arrays with any keys.
+using AbstractNeuralNetworks: NamedTupleOfArrays, ArrayOrNamedTuple
 # `save` and `load` are `NeuralNetworkParameters`' generics; `AbstractNeuralNetworks` 0.7 only
 # re-binds them. Reach for them where they are defined.
 import NeuralNetworkParameters: save, load

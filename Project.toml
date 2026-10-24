@@ -30,7 +30,7 @@ GPUArraysCore = "46192b85-c4d5-4398-a991-12ede77f4527"
 GPUArraysCoreExt = "GPUArraysCore"
 
 [compat]
-AbstractNeuralNetworks = "0.9.1"
+AbstractNeuralNetworks = "0.9.2"
 ChainRulesCore = "1"
 ForwardDiff = "1"
 GPUArraysCore = "0.2"
