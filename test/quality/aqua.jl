@@ -48,7 +48,7 @@ end
 # `all_qualified_accesses_via_owners` and `no_self_qualified_accesses`. Two more run in the testset
 # below with a list of names, and `no_implicit_imports` is off:
 #
-#   no_implicit_imports              37 names arrive through a bare `using`, across thirteen packages
+#   no_implicit_imports              33 names arrive through a bare `using`, across twelve packages
 #                                    -- `norm`, `@kernel`, `rrule`, `pullback` and the rest. Naming
 #                                    every one is a change to the whole module header and a judgement
 #                                    per name, not a by-product of a dead-code pass.

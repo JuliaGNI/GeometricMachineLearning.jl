@@ -6,13 +6,11 @@ using AbstractNeuralNetworks
 # package also exports `flatten`/`unflatten` and the leaf protocol, none of which this package
 # extends — `GeometricOptimizers` carries the protocol for the structured matrices.
 #
-# Two things come from there rather than being written again here: `mapstorage`, which reaches
-# the storage of a structured leaf and rebuilds the leaf around the result (`src/map_to_cpu.jl`), and
-# `parameter_eltype`, which gives the element type a parameter set holds — what a seeded gradient
-# is converted to. A plain `NamedTuple` of layers is walked with `Base.map`, which needs nothing
-# from anybody.
+# `mapstorage` comes from there rather than being written again here: it reaches the storage of a
+# structured leaf and rebuilds the leaf around the result (`src/map_to_cpu.jl`). A plain
+# `NamedTuple` of layers is walked with `Base.map`, which needs nothing from anybody.
 import NeuralNetworkParameters: NetworkParameters
-using NeuralNetworkParameters: mapstorage, parameter_eltype
+using NeuralNetworkParameters: mapstorage
 using ChainRulesCore
 using GeometricBase
 using GeometricSolutions: GeometricSolution, EnsembleSolution, TimeSeries
