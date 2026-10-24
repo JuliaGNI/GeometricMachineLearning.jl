@@ -17,15 +17,14 @@
 # `unused-import` does not follow `include`, so it flags load-bearing imports in every module
 # file; `docstring-argument-mismatch` cannot see that `f(::Type{T}, s)` binds `T`.
 #
-# Both of those can be silenced one at a time. Measured 2026-09-13: `# fatou-ignore <rule>` on
-# its own line, immediately above the finding, works. A trailing comment on the same line does
-# nothing, and `fatou.toml` still rejects `per-file-ignores`.
+# Both of those can be silenced one at a time. `# fatou-ignore <rule>` on its own line, directly
+# above the finding, silences it. A trailing comment on the same line does nothing, and
+# `fatou.toml` still rejects `per-file-ignores`.
 #
 # `parse-error` is what keeps this stage advisory. It is severity `error`, it CANNOT be
 # suppressed, and all 37 findings measured across 32 packages are false. Fatou rejects two
 # constructs that Julia parses: a parenthesised macro call whose body is a `for` block, as in
 # `(@allocated for ... end) ÷ n`, and a `const` whose assignment is on the next line.
-# Full detail: ~/Research/Tasks/Clear the Fatou lint backlog.md
 
 # No `set -u`: macOS's own bash is 3.2, where `"${arr[@]}"` on an empty array is an
 # unbound-variable error rather than an empty expansion.
@@ -147,7 +146,7 @@ if command -v fatou >/dev/null 2>&1; then
     elif [ "$lint_rc" -ge 124 ]; then
         # 124 = timed out, 137 = killed after -k. Not a finding, and not a reason to block.
         printf '%sfatou lint: timed out after 60s — stage skipped, not a failure%s\n' "$yellow" "$nc"
-        printf '    A staged file is pathological for fatou. See Environment/Notes/Helpers-and-MCPs.md.\n'
+        printf '    A staged file is pathological for fatou.\n'
     else
         n=$(printf '%s\n' "$lint_out" | grep -c . || true)
         printf '%sfatou lint: %s finding(s) — advisory, not blocking%s\n' "$yellow" "$n" "$nc"
