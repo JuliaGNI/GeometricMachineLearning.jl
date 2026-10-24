@@ -36,6 +36,13 @@ end
 @testset "a loss takes a NetworkParameters" begin
     Random.seed!(23)
 
+    # the three-argument method: the wrapper is accepted, and the bare `NamedTuple` under it is not
+    model = Chain(Dense(4, 2, tanh), Dense(2, 4, tanh))
+    ae = NeuralNetwork(model, CPU(), Float64)
+    x = randn(4, 3)
+    @test AutoEncoderLoss()(ae, x) == AutoEncoderLoss()(model, ae.params, x)
+    @test_throws MethodError AutoEncoderLoss()(model, params(ae.params), x)
+
     # `TransformerLoss` has no three-argument method, so its four-argument ones are what the
     # annotation reaches: the wrapper is accepted, and a bare `NamedTuple` under it reaches no method
     # of this package -- `AbstractNeuralNetworks`' own untyped fallback refuses it.

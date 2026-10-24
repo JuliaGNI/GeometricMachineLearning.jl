@@ -75,7 +75,7 @@ test_explicit_imports(GeometricMachineLearning;
 # declaring it. No `GeometricOptimizers` name is on either list.
 const NON_PUBLIC_QUALIFIED = (
     :Initializer, :dim,                                          # AbstractNeuralNetworks
-    :copyto!, :zeros,                                            # KernelAbstractions
+    :zeros,                                                      # KernelAbstractions
     :jacobian)                                                   # ForwardDiff
 const NON_PUBLIC_IMPORTS = (
     :AbstractExplicitLayer, :Architecture, :_compute_loss, :dim, :model, # AbstractNeuralNetworks
