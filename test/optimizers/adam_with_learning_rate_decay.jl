@@ -49,8 +49,7 @@ an ordinary `Adam` and the manifold weights take GeometricOptimizers' Adam cache
 """
 # `n_epochs = 128` and not 32: `AdamOptimizerWithDecay(n_epochs)` fixes
 # γ = exp(log(η₂/η₁)/n_epochs), so a 32-epoch budget drives the learning rate to η₂ = 1e-6 almost
-# at once and the run barely trains -- from a seeded start the loss fell by under 2% on 1.13 and
-# *rose* on 1.12. Over 128 epochs the decay is gentle enough that it falls by a factor of six.
+# at once and the run barely trains. Over 128 epochs the decay is gentle enough that the run trains.
 function train_manifold_network(; n_epochs = 128)
     Random.seed!(123)
     arch = Chain(StiefelLayer(1, 20), Dense(20, 20, tanh), Dense(20, 1, identity))

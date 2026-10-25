@@ -68,30 +68,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
 ## Found late
 
-### K1 · A test comment sends the reader to an Open Issues section of `CHANGELOG.md`, which does not exist.
-
-- **location:** `test/reduced_system/reduced_system.jl:44`
-- **kind:** found late
-- **found:** 2026-09-26
-- **evidence:**
-  ```
-  $ grep -rnE 'Open Issues|issue C1[48]|\*C21\*|\*B7\*' src test
-  test/reduced_system/reduced_system.jl:44:# for four of twelve, with four `NaN` and four in the opposite order. That is *C21* in
-  ```
-
-  The ID is still valid; the comment at `test/reduced_system/reduced_system.jl:44–45` names
-  `CHANGELOG.md` rather than `KNOWN_ISSUES.md`. The fix is a follow-up change to that comment.
-
-### K11 · A comment in `adam_with_learning_rate_decay.jl` reports a past experiment.
-
-- **location:** `test/optimizers/adam_with_learning_rate_decay.jl`
-- **kind:** found late
-- **found:** 2026-10-12, by the critics of part M1a; the comment is older than that part
-- **evidence:**
-  The comment above `train_manifold_network` says "from a seeded start the loss fell by under 2%
-  on 1.13 and *rose* on 1.12". The fix states only the present constraint: a 32-epoch budget
-  drives the learning rate to `η₂` almost at once, and 128 epochs train.
-
 ### K17 · `assign_q_and_p` and `PoissonTensor * v` drop the rows from `2N + 1` on without an error.
 
 - **location:** `src/kernels/assign_q_and_p.jl`
@@ -154,66 +130,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   `src/data_loader/data_loader.jl:205` states the one-type signature. Closing it means widening the
   three signatures to `NamedTupleOfArrays{T, (:q, :p)}`, and the docstring with them.
 
-### K22 · A comment in `symplectic_attention.jl` names a test file under `test/parameters/`, which does not exist.
-
-- **location:** `src/layers/symplectic_attention.jl:131`
-- **kind:** docs
-- **found:** 2026-10-20, by the critics of part M5; the comment is the same on `origin/main` at `4c4a8320`
-- **evidence:**
-  The comment above the symmetric forward method of `SymplecticAttention` names
-  `test/parameters/symplectic_attention_network_parameters_gradient.jl`. The file is
-  `test/layers/symplectic_attention_network_parameters_gradient.jl`, and `test/parameters/` does not
-  exist. The fix changes the path in the comment.
-
-### K25 · The docstrings of `LinearSymplecticTransformer` and `SymplecticTransformer` say that `n_sympnet = 1` gives one `GradientLayerQ` and one `GradientLayerP`.
-
-- **location:** `src/architectures/linear_symplectic_transformer.jl:22`
-- **kind:** docs
-- **found:** 2026-10-21, by the branch verifier of part M5; the docstrings and the chains are the same on `origin/main` at `4c4a8320`
-- **evidence:**
-  Each transformer unit puts the same `n_sympnet` gradient layers after its `Q` attention layer and
-  after its `P` attention layer, and the alternation starts again in each block. With
-  `n_sympnet = 1` and the default `init_upper = true`, both gradient layers are `GradientLayerQ`:
-
-  ```julia
-  [typeof(l) for l in Chain(LinearSymplecticTransformer(4, 3; n_sympnet = 1)).layers]
-  # LinearSymplecticAttentionQ, GradientLayerQ, LinearSymplecticAttentionP, GradientLayerQ
-  [typeof(l) for l in Chain(SymplecticTransformer(4; n_sympnet = 1)).layers]
-  # SymplecticAttentionQ, GradientLayerQ, SymplecticAttentionP, GradientLayerQ
-  ```
-
-  The same sentence is at `src/architectures/symplectic_transformer.jl:35`. The count
-  `2n_sympnet` holds for one unit, `L = 1`. The fix states the layers of one unit as the chain
-  builds them, or changes the chain, which changes the network.
-
-### K26 · The docstring of `SymplecticAutoencoder` says that `decoder_init_q = true` makes the first layer of each decoder block a ``p``-type layer, where it is a `GradientLayerQ`.
-
-- **location:** `src/architectures/symplectic_autoencoder.jl:36`
-- **kind:** docs
-- **found:** 2026-10-21, by the branch verifier of part M5; the docstring is the same on `origin/main` at `4c4a8320`
-- **evidence:**
-  `decoder_init_q = true` selects `:DecoderInitQ`, whose `decoder_layers_from_iteration` passes
-  `isodd`, so layer 1 of each decoder block is a `GradientLayerQ`:
-
-  ```julia
-  ae = NeuralNetwork(SymplecticAutoencoder(8, 4; decoder_init_q = true), CPU(), Float64)
-  first(decoder(ae).model.layers) isa GradientLayerQ    # true
-  ```
-
-  The fix writes ``q`` for ``p`` in the docstring.
-
-### K27 · The docstring of `UnknownDecoder` names its third argument `n_encoder_blocks` and links to itself for an example.
-
-- **location:** `src/architectures/autoencoder.jl:102`
-- **kind:** docs
-- **found:** 2026-10-21, by the branch verifier of part M5; the docstring is the same on `origin/main` at `4c4a8320`
-- **evidence:**
-  The signature line reads `UnknownDecoder(full_dim, reduced_dim, n_encoder_blocks)`, and the third
-  argument fills the field `n_decoder_blocks` (`src/architectures/autoencoder.jl:113`). The last
-  line says that an example "can be constructed analogously to [`UnknownDecoder`](@ref)", which
-  links the docstring to itself; the example is in the docstring of `UnknownEncoder`. The fix names
-  the argument `n_decoder_blocks` and links `UnknownEncoder`.
-
 ## Upstream
 
 ### K2 · Revise prints EMFILE errors in the test log
@@ -251,22 +167,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   sandbox (`compiled/v1.13/Metal/` in the depot) matches the flags of `Pkg.test()`. The test file
   itself records a skip where `Metal.functional()` is false; only the precompile fails. Closing this
   is a Metal.jl change: a workload that does not run where no device exists.
-
-## Documentation
-
-### K18 · The tensor-sampling formula in the `DataLoader` manual is one short
-
-- **location:** `docs/src/data_loader/data_loader.md:143`
-- **kind:** docs
-- **found:** 2026-10-16
-- **evidence:**
-  Item 1 of *Sampling from a tensor* gives the start positions as
-  `shuffle(1:(input_time_steps − seq_length − prediction_window))`. For the time-series loader
-  without an output shown on that page, `number_of_start_positions` takes
-  `n = input_time_steps − seq_length − prediction_window + 1`, and `number_of_batches` counts
-  `cld(n · n_params, batch_size)` minibatches (`src/data_loader/batch.jl`). For the example's
-  five time steps and `Batch(4, 2, 0)`, the formula gives three start positions per parameter
-  and the code gives four. The correction is to add `+ 1` to the formula's upper bound.
 
 ## The test suite
 

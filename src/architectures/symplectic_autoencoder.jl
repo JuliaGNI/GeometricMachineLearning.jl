@@ -33,7 +33,7 @@ Besides the required arguments `full_dim` and `reduced_dim` you can provide the 
 - `sympnet_upscale::Integer = 5`: The *upscaling dimension* of the GSympNet. See [`GradientLayerQ`](@ref) and [`GradientLayerP`](@ref).
 - `activation = tanh`: The activation in the gradient layers.
 - `encoder_init_q::Bool = true`: Specifies if the first layer in each encoder block should be of $q$ type.
-- `decoder_init_q::Bool = true`: Specifies if the first layer in each decoder block should be of $p$ type.
+- `decoder_init_q::Bool = true`: Specifies if the first layer in each decoder block should be of $q$ type.
 """
 struct SymplecticAutoencoder{EncoderInit, DecoderInit, AT} <: SymplecticCompression
     full_dim::Int

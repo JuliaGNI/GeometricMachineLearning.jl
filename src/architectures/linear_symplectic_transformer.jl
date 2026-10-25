@@ -19,7 +19,7 @@ You can provide the additional optional keyword arguments:
      raw""": The activation function for the SympNet layers. 
 - `init_upper::Bool=true`: Specifies if the first layer is a ``q``-type layer (`init_upper=true`) or if it is a ``p``-type layer (`init_upper=false`).
 
-The number of SympNet layers in the network is `2n_sympnet`, i.e. for `n_sympnet = 1` we have one [`GradientLayerQ`](@ref) and one [`GradientLayerP`](@ref).
+Each transformer unit has `n_sympnet` gradient layers after its ``q`` attention layer and `n_sympnet` after its ``p`` attention layer, so one unit has `2n_sympnet` SympNet layers. In each group of `n_sympnet` layers the type alternates between [`GradientLayerQ`](@ref) and [`GradientLayerP`](@ref), starting with the type that `init_upper` selects. For `n_sympnet = 1` and `init_upper = true` each group is one [`GradientLayerQ`](@ref).
 """
 struct LinearSymplecticTransformer{AT} <: TransformerIntegrator where {AT}
     dim::Int
