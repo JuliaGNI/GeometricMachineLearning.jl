@@ -132,6 +132,22 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   `ParametricDataLoader`'s `(q, p)` constructor has the same one-type restriction and widens with
   it.
 
+### K23 · `ZygotePullback`'s backward pass on a 3-tensor batch infers as `Union{Nothing, NetworkParameters}`; one sample infers concretely.
+
+- **location:** `src/pullbacks/zygote_pullback.jl:37-43`
+- **kind:** defect
+- **found:** 2026-10-25, by the review of the parametric core of #207; the same inference shows on
+  `origin/main` at `a664f5c9`
+- **evidence:**
+  On Julia 1.13.2, `Base.return_types` of `only(pb(one(v)))` gives
+  `Union{Nothing, NetworkParameters}` for a batch in each of these forms: `apply_parametric`'s
+  closure over the columns, a callable struct in place of the closure, the form that indexes one
+  sample per step, and the user path `ZygotePullback(ParametricLoss())`. One sample gives
+  `NetworkParameters{Float64, (:L1,), …}`. `main`'s own `ZygotePullback(FeedForwardLoss())` on
+  `Chain(Dense(2, 2, identity))` and a `2 × 1 × 8` tensor gives
+  `Any[Union{Nothing, NetworkParameters}]`. The callable struct and the closure give gradients that
+  differ by `0.0` in `Float32` and in `Float64`.
+
 ## Upstream
 
 ### K2 · Revise prints EMFILE errors in the test log
