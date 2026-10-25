@@ -99,13 +99,13 @@ struct UnknownEncoder <: Encoder
 end
 
 """
-    UnknownDecoder(full_dim, reduced_dim, n_encoder_blocks)
+    UnknownDecoder(full_dim, reduced_dim, n_decoder_blocks)
 
 Make an instance of `UnknownDecoder`.
 
 This should be used if one wants to use an [`Decoder`](@ref) that does not have any specific structure.
 
-An example of using this can be constructed analogously to [`UnknownDecoder`](@ref).
+An example of using this can be constructed analogously to [`UnknownEncoder`](@ref).
 """
 struct UnknownDecoder <: Decoder
     full_dim::Int

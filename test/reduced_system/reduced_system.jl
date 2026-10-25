@@ -42,7 +42,7 @@ end
 # comes back `NaN` and the comparison is not between two numbers. At the seed above it is `NaN`.
 # Measured over seeds 1 to 12: `ImplicitMidpoint` orders the two for every seed, `ExplicitMidpoint`
 # for four of twelve, with four `NaN` and four in the opposite order. That is *C21* in
-# `CHANGELOG.md`.
+# `KNOWN_ISSUES.md`.
 function test_reduced_vector_fields(reduced_dim::Integer, integrator;
         compare_reduction_error = true)
     rs1, rs2 = set_up_reduced_systems(reduced_dim, integrator)

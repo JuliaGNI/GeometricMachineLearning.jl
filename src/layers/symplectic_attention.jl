@@ -128,7 +128,7 @@ end
 
 # `A = ps.A` once, and then `A` twice: the local binding is what keeps the `SymmetricMatrix`
 # structure in the Zygote gradient of this layer. Read `ps.A` twice and the gradient leaf degrades
-# to a plain `Matrix` -- `test/parameters/symplectic_attention_network_parameters_gradient.jl`
+# to a plain `Matrix` -- `test/layers/symplectic_attention_network_parameters_gradient.jl`
 # asserts both halves of that, and the last testset there covers this method. The binding costs no
 # allocation; it is the number of accesses that decides the structure.
 function (d::SymplecticAttention{M, M, LayerType, :symmetric})(

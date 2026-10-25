@@ -95,6 +95,8 @@ breaking release).
 
 - **A `(q, p)` input whose `p` has the wrong size raises the layer's own `ErrorException("Dimension mismatch.")`.** The forward methods of `ActivationLayer`, `GradientLayer` and `LinearLayer` checked the size of `q` and not the size of `p`, so a `p` of the wrong size raised whichever error its first operation produced: a `DimensionMismatch` from a matrix product or a broadcast, or an `AssertionError` from the `SymmetricMatrix` product. Each method now checks `q` and `p` together. No valid input changes. This closes known issue K23, which leaves `KNOWN_ISSUES.md`. The test is `test/layers/layer_structure.jl`, testset "a SympNet layer raises on a half of the wrong size".
 
+- **This closes known issues K1, K11, K18, K22, K25, K26 and K27, which leave `KNOWN_ISSUES.md`.** Comments, docstrings and the DataLoader manual now state the current code: the reduced-system test names C21 in `KNOWN_ISSUES.md`; the `AdamOptimizerWithDecay` test states the present constraint; the symplectic attention comment cites the real test path; the transformer docstrings give the gradient layers of one unit as the chain builds them; the `SymplecticAutoencoder` docstring says `decoder_init_q` gives a q-type first layer; the `UnknownDecoder` docstring names `n_decoder_blocks` and links `UnknownEncoder`; and the tensor-sampling formula gains the `+ 1` of its upper bound. No behaviour changes, and C21 stays open.
+
 ### Added
 
 - **`KernelAbstractions.get_backend` is defined for `PoissonTensor`.** GeometricOptimizers 0.9 asks every operand of a checked product for its backend, so `𝕁 * Y` with a `StiefelManifold` raised `ArgumentError: Implement KernelAbstractions.get_backend(::PoissonTensor...)` without it.
