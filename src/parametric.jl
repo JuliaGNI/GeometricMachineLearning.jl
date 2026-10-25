@@ -41,7 +41,8 @@ of the system.
 `x` is one sample — a vector, or a `(q, p)` named tuple of vectors — with one `μ`, an
 `OptionalParameters`. Or `x` is a batch of `k` samples — a `2d × 1 × k` tensor, or a `(q, p)` named
 tuple of `d × 1 × k` tensors — with a vector of `k` values of `μ`, one per sample, as a
-[`ParametricDataLoader`](@ref) draws them. The output has the shape of the input.
+[`ParametricDataLoader`](@ref) draws them. A batch holds at least one sample. The output has the
+shape of the input.
 
 The `Chain` receives the pair `(x, μ)`, so its first layer takes one sample and its `μ`, and a layer
 that returns such a pair passes `μ` on to the next. A batch is applied sample by sample.
@@ -75,26 +76,32 @@ apply_parametric(model, x, [(a = 10.0,), (a = 20.0,)], ps)
 ```
 """
 function apply_parametric(model::Chain,
-        x::Union{AbstractVector, NamedTupleOfArrays{<:Any, (:q, :p)}},
+        x::Union{
+            AbstractVector, NamedTuple{(:q, :p), <:Tuple{AbstractVector, AbstractVector}}},
         μ::OptionalParameters, ps::NetworkParameters)
     model((x, μ), ps)
 end
 
+# A batch maps over the columns of its `d × k` reshape, not over indexed samples: under Zygote, the
+# adjoint of each `getindex` allocates a cotangent of the whole batch, so indexed samples cost O(k²).
 function apply_parametric(model::Chain, x::AbstractArray{<:Any, 3}, μs::AbstractVector,
         ps::NetworkParameters)
     check_parametric_batch(size(x), μs)
-    outputs = [apply_parametric(model, x[:, 1, i], μ, ps) for (i, μ) in enumerate(μs)]
+    outputs = map((xᵢ, μ) -> apply_parametric(model, xᵢ, μ, ps), sample_columns(x), μs)
     reshape(reduce(hcat, outputs), :, 1, length(μs))
 end
 
 function apply_parametric(model::Chain, x::NamedTupleOfArrays{<:Any, (:q, :p)},
         μs::AbstractVector, ps::NetworkParameters)
     check_parametric_batch(size(x.q), μs)
-    outputs = [apply_parametric(model, (q = x.q[:, 1, i], p = x.p[:, 1, i]), μ, ps)
-               for (i, μ) in enumerate(μs)]
+    outputs = map((q, p, μ) -> apply_parametric(model, (q = q, p = p), μ, ps),
+        sample_columns(x.q), sample_columns(x.p), μs)
     (q = reshape(reduce(hcat, [output.q for output in outputs]), :, 1, length(μs)),
         p = reshape(reduce(hcat, [output.p for output in outputs]), :, 1, length(μs)))
 end
+
+# The samples of a `d × 1 × k` batch, as the `k` columns of its `d × k` reshape.
+sample_columns(x::AbstractArray{<:Any, 3}) = eachcol(reshape(x, size(x, 1), size(x, 3)))
 
 # A batch holds one time step per sample and one `μ` per sample.
 function check_parametric_batch(input_size::NTuple{3, Int}, μs::AbstractVector)

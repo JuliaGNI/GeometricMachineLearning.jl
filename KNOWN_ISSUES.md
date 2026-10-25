@@ -132,24 +132,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   `ParametricDataLoader`'s `(q, p)` constructor has the same one-type restriction and widens with
   it.
 
-### K21 · `concatenate_array_with_parameters` and `apply_parametric` raise Base's empty-reduction error on a batch of zero samples.
-
-- **location:** `src/parametric.jl`
-- **kind:** found late
-- **found:** 2026-10-25, by the critics of the parametric core
-- **evidence:**
-  Both reduce the samples with `reduce(hcat, …)` and no `init`. No `ParametricDataLoader` draws an
-  empty minibatch, and no `init` gives a width that holds for every network. A direct call fails:
-
-  ```julia
-  using GeometricMachineLearning: concatenate_array_with_parameters
-  concatenate_array_with_parameters(zeros(Float32, 2, 0), NamedTuple{(:a,), Tuple{Float32}}[])
-  # ArgumentError: reducing over an empty collection is not allowed; …
-  ```
-
-  `apply_parametric` on a `2 × 1 × 0` tensor with no `μ` raises the same error. A `2 × 0` matrix
-  with one `μ` gives a `3 × 0` matrix.
-
 ## Upstream
 
 ### K2 · Revise prints EMFILE errors in the test log

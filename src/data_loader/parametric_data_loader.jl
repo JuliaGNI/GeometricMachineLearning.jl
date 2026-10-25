@@ -36,7 +36,7 @@ struct ParametricDataLoader{
             AT <: Union{AbstractArray{T, 3},
                 NamedTuple{(:q, :p), Tuple{AT3, AT3}} where {AT3 <: AbstractArray{T, 3}}},
             PT <: AbstractVector{<:NamedTuple}}
-        _, input_time_steps, n_params = data_size(input)
+        input_time_steps, n_params = data_size(input)
         n_params ≥ 1 && length(parameters) == n_params || throw(ArgumentError(
             "the data hold $(n_params) trajectories and there are $(length(parameters)) " *
             "system parameters; a `ParametricDataLoader` takes one for each trajectory, " *
@@ -56,12 +56,13 @@ struct ParametricDataLoader{
     end
 end
 
-data_size(input::AbstractArray{<:Any, 3}) = size(input)
+# The number of time steps and the number of trajectories of the data.
+data_size(input::AbstractArray{<:Any, 3}) = (size(input, 2), size(input, 3))
 
 function data_size(input::NamedTuple{(:q, :p)})
     size(input.q) == size(input.p) || throw(ArgumentError(
         "`q` has the size $(size(input.q)) and `p` has the size $(size(input.p))."))
-    size(input.q)
+    data_size(input.q)
 end
 
 function ParametricDataLoader(ensemble_solution::EnsembleSolution{T,

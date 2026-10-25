@@ -1,8 +1,11 @@
 using GeometricMachineLearning
 using GeometricMachineLearning: concatenate_array_with_parameters, apply_parametric,
-                                NullParameters
+                                NullParameters, ParametricLoss, ZygotePullback
+using FiniteDifferences: central_fdm, grad
+using LinearAlgebra: norm
 using Test
 import Random
+import Zygote
 
 include("helpers/eltypes.jl")
 include("helpers/parametric_affine.jl")
@@ -84,6 +87,69 @@ end
     @test_throws DimensionMismatch apply_parametric(model, X, μs[1:3], ps)
     @test_throws DimensionMismatch apply_parametric(
         model, reshape(X, 2, 2, 2), μs[1:2], ps)
+end
+
+# The one-sample method takes a vector or a `(q, p)` pair of vectors; a pair of tensors with one `μ`
+# matches no method.
+@testset "apply_parametric takes one sample as vectors" begin
+    ps = NetworkParameters((L1 = (W = [0.5 -1 0.25; 1.5 0.75 -2], b = [0.1, -0.3]),))
+    model = Chain(ParametricAffine{2}(1))
+    X = reshape([0.3, -0.7, 1.1, 0.2], 2, 1, 2)
+    @test applicable(apply_parametric, model, (q = [0.3], p = [-0.7]), (a = 2.0,), ps)
+    @test !applicable(
+        apply_parametric, model, (q = X[1:1, :, :], p = X[2:2, :, :]), (a = 2.0,), ps)
+end
+
+# The bytes that the pullback of `ParametricLoss` and the call of its closure allocate on `data`: the
+# least of three readings after two calls that compile.
+function pullback_bytes(model, ps, data)
+    function run()
+        value, back = ZygotePullback(ParametricLoss())(ps, model, data)
+        back(one(value))
+    end
+    run()
+    run()
+    minimum(@allocated(run()) for _ in 1:3)
+end
+
+# A batch of `k` samples costs O(k): the bytes of one more sample, between 64 and 1024 samples, are
+# at most twice the bytes per sample at 64. A sample indexed one at a time in the differentiated path
+# costs a cotangent of the whole batch, O(k²) in all.
+@testset "the pullback of a batch allocates linearly in its size ($form)" for form in (:array, :qp)
+    ps = NetworkParameters((L1 = (W = [0.5 -1 0.25; 1.5 0.75 -2], b = [0.1, -0.3]),))
+    model = Chain(ParametricAffine{2}(1))
+    function batch(k)
+        rng = Random.Xoshiro(k)
+        X, Y = randn(rng, 2, 1, k), randn(rng, 2, 1, k)
+        μs = [(a = randn(rng),) for _ in 1:k]
+        form === :array ? (X, Y, μs) :
+        ((q = X[1:1, :, :], p = X[2:2, :, :]), (q = Y[1:1, :, :], p = Y[2:2, :, :]), μs)
+    end
+    b64 = pullback_bytes(model, ps, batch(64))
+    b1024 = pullback_bytes(model, ps, batch(1024))
+    @test (b1024 - b64) / 960 ≤ 2 * b64 / 64
+end
+
+# The gradient of the loss with respect to the input, against central finite differences of the same
+# loss over the entries of the input.
+@testset "the input gradient of ParametricLoss ($form)" for form in (:array, :qp)
+    ps = NetworkParameters((L1 = (W = [0.5 -1 0.25; 1.5 0.75 -2], b = [0.1, -0.3]),))
+    model = Chain(ParametricAffine{2}(1))
+    rng = Random.Xoshiro(3)
+    k = 4
+    X, Y = randn(rng, 2, 1, k), randn(rng, 2, 1, k)
+    μs = [(a = randn(rng),) for _ in 1:k]
+    as_input(v) = form === :array ? reshape(v, 2, 1, k) :
+                  (q = reshape(v[1:k], 1, 1, k), p = reshape(v[(k + 1):end], 1, 1, k))
+    as_vector(x) = form === :array ? vec(x) : vcat(vec(x.q), vec(x.p))
+    y = form === :array ? Y : (q = Y[1:1, :, :], p = Y[2:2, :, :])
+    loss(x) = ParametricLoss()(model, ps, x, y, μs)
+    v = form === :array ? vec(X) : vcat(vec(X[1, 1, :]), vec(X[2, 1, :]))
+
+    computed = only(Zygote.gradient(loss, as_input(v)))
+    @test computed !== nothing
+    reference = only(grad(central_fdm(5, 1), loss ∘ as_input, v))
+    @test norm(as_vector(computed) - reference) ≤ 1e-6 * norm(reference)
 end
 
 @testset "the parametric names are public and not exported" begin
