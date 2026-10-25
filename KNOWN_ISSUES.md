@@ -132,7 +132,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   `ParametricDataLoader`'s `(q, p)` constructor has the same one-type restriction and widens with
   it.
 
-### K23 · `ZygotePullback`'s backward pass on a 3-tensor batch infers as `Union{Nothing, NetworkParameters}`; one sample infers concretely.
+### K29 · `ZygotePullback`'s backward pass on a 3-tensor batch infers as `Union{Nothing, NetworkParameters}`; one sample infers concretely.
 
 - **location:** `src/pullbacks/zygote_pullback.jl:37-43`
 - **kind:** defect
@@ -163,7 +163,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   The blocks are not test failures: both runs are green, and every testset of ea0c397 has the
   same count in both.
 
-### K22 · AbstractNeuralNetworks' loss norm of a `(q, p)` named tuple promotes `Float32` to `Float64`.
+### K28 · AbstractNeuralNetworks' loss norm of a `(q, p)` named tuple promotes `Float32` to `Float64`.
 
 - **location:** AbstractNeuralNetworks 0.9.3, `src/losses.jl:73`
 - **kind:** upstream
