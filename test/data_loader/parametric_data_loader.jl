@@ -112,6 +112,9 @@ end
     message = argument_error_message(() -> Batch(2, 3, 1)(dl))
     @test occursin("3", message)
     @test occursin("sequence length", message)
+    # a prediction window other than one is an error before any step, with the time steps to spare
+    message = argument_error_message(() -> Batch{:FeedForward}(2, 1, 2)(dl))
+    @test occursin("prediction window of 2", message)
 
     # a parameter vector of the wrong length, and no trajectory
     message = argument_error_message(() -> ParametricDataLoader(data, μs[1:2]))
@@ -135,6 +138,24 @@ end
     message = argument_error_message(
         () -> ParametricDataLoader((q = data[1:1, :, :], p = data[:, :, :]), μs))
     @test occursin("(1, $(nt), $(m))", message) && occursin("(2, $(nt), $(m))", message)
+
+    # `q` and `p` of one array type, as `gather` batches them
+    @test_throws MethodError ParametricDataLoader(
+        (q = data[1:d, :, :], p = view(data, (d + 1):(2d), :, :)), μs)
+    views = ParametricDataLoader(
+        (q = view(data, 1:d, :, :), p = view(data, (d + 1):(2d), :, :)), μs)
+    input, output, _ = convert_input_and_batch_indices_to_array(views, Batch(2), [(1, 2)])
+    @test sample(input, 1) == data[:, 1, 2] && sample(output, 1) == data[:, 2, 2]
+
+    # every `μ` with the keys of the first, in its order and at every level, and its leaf sizes
+    for parameters in ([(a = 1.0,), (b = 2.0,), (a = 3.0,)],
+        [(a = 1.0, b = 2.0), (b = 3.0, a = 4.0), (a = 5.0, b = 6.0)],
+        [(a = 1.0,), (a = 2.0, b = 3.0), (a = 3.0,)],
+        [(a = (c = 1.0,),), (a = (e = 2.0,),), (a = (c = 3.0,),)],
+        [(a = [1.0, 2.0],), (a = [1.0, 2.0, 3.0],), (a = [1.0, 2.0],)])
+        message = argument_error_message(() -> ParametricDataLoader(data, parameters))
+        @test occursin("system parameter 2", message)
+    end
 end
 
 # The network is `(x, μ) ↦ W [x; flatten(μ)] + b`. `train!` without `loss` and with

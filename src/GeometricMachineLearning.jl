@@ -12,8 +12,9 @@ using AbstractNeuralNetworks
 import NeuralNetworkParameters: NetworkParameters
 using NeuralNetworkParameters: mapstorage
 # `flatten` puts the parameters of a system into the input of a network that takes them
-# (`src/parametric.jl`), and `parameter_eltype` checks their element type against the data's.
-using NeuralNetworkParameters: flatten, parameter_eltype
+# (`src/parametric.jl`); `parameter_eltype` checks their element type against the data's, and
+# `parameterlayout` their shape against each other's.
+using NeuralNetworkParameters: flatten, parameter_eltype, parameterlayout
 using ChainRulesCore
 using GeometricBase
 using GeometricSolutions: GeometricSolution, EnsembleSolution, TimeSeries

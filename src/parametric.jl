@@ -74,12 +74,8 @@ apply_parametric(model, x, [(a = 10.0,), (a = 20.0,)], ps)
  24.0
 ```
 """
-function apply_parametric(model::Chain, x::AbstractVector, μ::OptionalParameters,
-        ps::NetworkParameters)
-    model((x, μ), ps)
-end
-
-function apply_parametric(model::Chain, x::NamedTupleOfArrays{<:Any, (:q, :p)},
+function apply_parametric(model::Chain,
+        x::Union{AbstractVector, NamedTupleOfArrays{<:Any, (:q, :p)}},
         μ::OptionalParameters, ps::NetworkParameters)
     model((x, μ), ps)
 end

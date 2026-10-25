@@ -129,6 +129,26 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   The same call with `q = A` gives a `DataLoader` with `input_dim == 4`. The docstring at
   `src/data_loader/data_loader.jl:205` states the one-type signature. Closing it means widening the
   three signatures to `NamedTupleOfArrays{T, (:q, :p)}`, and the docstring with them.
+  `ParametricDataLoader`'s `(q, p)` constructor has the same one-type restriction and widens with
+  it.
+
+### K21 · `concatenate_array_with_parameters` and `apply_parametric` raise Base's empty-reduction error on a batch of zero samples.
+
+- **location:** `src/parametric.jl`
+- **kind:** found late
+- **found:** 2026-10-25, by the critics of the parametric core
+- **evidence:**
+  Both reduce the samples with `reduce(hcat, …)` and no `init`. No `ParametricDataLoader` draws an
+  empty minibatch, and no `init` gives a width that holds for every network. A direct call fails:
+
+  ```julia
+  using GeometricMachineLearning: concatenate_array_with_parameters
+  concatenate_array_with_parameters(zeros(Float32, 2, 0), NamedTuple{(:a,), Tuple{Float32}}[])
+  # ArgumentError: reducing over an empty collection is not allowed; …
+  ```
+
+  `apply_parametric` on a `2 × 1 × 0` tensor with no `μ` raises the same error. A `2 × 0` matrix
+  with one `μ` gives a `3 × 0` matrix.
 
 ## Upstream
 
@@ -144,6 +164,23 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   includes `test/quality/jet.jl`, and 0 in the same run at ea0c397, which does not include it.
   The blocks are not test failures: both runs are green, and every testset of ea0c397 has the
   same count in both.
+
+### K22 · AbstractNeuralNetworks' loss norm of a `(q, p)` named tuple promotes `Float32` to `Float64`.
+
+- **location:** AbstractNeuralNetworks 0.9.3, `src/losses.jl:73`
+- **kind:** upstream
+- **found:** 2026-10-25, by the critics of the parametric core
+- **evidence:**
+  `_norm(dx::NamedTuple) = sum(map(_norm, values(dx))) / √length(dx)` divides by the square root of
+  an `Int`, which is a `Float64`. So `ParametricLoss` returns a `Float64` on `Float32` `(q, p)`
+  data, and `train!` on a `Float32` `(q, p)` `ParametricDataLoader` returns a `Vector{Float64}`
+  history. Array data keep `Float32`.
+
+  ```julia
+  import AbstractNeuralNetworks
+  x = (q = rand(Float32, 2, 1, 3), p = rand(Float32, 2, 1, 3))
+  typeof(AbstractNeuralNetworks._norm(x))    # Float64
+  ```
 
 ### K4 · Metal.jl 1.11.1 needs a Metal device to precompile, so a sandboxed run with no Metal cache fails before the tests
 
