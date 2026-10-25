@@ -165,4 +165,5 @@ Batch(::Int, ::Int, ::Int)
 GeometricMachineLearning.number_of_batches
 GeometricMachineLearning.convert_input_and_batch_indices_to_array
 GeometricMachineLearning.accuracy
+GeometricMachineLearning.ParametricDataLoader
 ```

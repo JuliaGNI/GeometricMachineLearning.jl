@@ -2,7 +2,8 @@
     train!(nn, opt, dl, batch, n_epochs; loss, show_progress = true)
 
 Train the neural network `nn` with the `GeometricOptimizers.TrainingOptimizer` `opt` on the data of
-the [`DataLoader`](@ref) `dl` for `n_epochs` epochs, and return the loss history.
+the [`DataLoader`](@ref) or [`ParametricDataLoader`](@ref) `dl` for `n_epochs` epochs, and return
+the loss history.
 
 Each epoch draws the minibatches of `dl` with the [`Batch`](@ref) `batch` and takes one step per
 minibatch: `loss` computes the loss on the minibatch and its gradient, and
@@ -15,8 +16,9 @@ gradient, a zero leaf included. Entry `i` of the history is the mean of the mini
 trained through a [`ZygotePullback`](@ref). Without it, a [`TransformerIntegrator`](@ref) with a
 `Batch{:Transformer}` trains on [`TransformerLoss`](@ref)`(batch)`, a
 [`NeuralNetworkIntegrator`](@ref) with a `Batch{:FeedForward}` on `FeedForwardLoss()`, and an
-autoencoder with a `Batch{:FeedForward}` on [`AutoEncoderLoss`](@ref)`()`; any other combination
-needs `loss`, and `train!` raises an `ArgumentError` without it.
+autoencoder with a `Batch{:FeedForward}` on [`AutoEncoderLoss`](@ref)`()`, and any network on a
+`ParametricDataLoader` on [`ParametricLoss`](@ref)`()`; any other combination needs `loss`, and
+`train!` raises an `ArgumentError` without it.
 
 A network of HamiltonianNeuralNetworks.jl trains on vector-field data with
 `loss = SymbolicPullback(arch)` of that package, and on consecutive states with a loss such as its
@@ -29,9 +31,9 @@ with the same `opt` resumes the training where the first one stopped; the only r
 `train!` draws are those of the minibatch shuffle. `n_epochs < 1` is an `ArgumentError`, raised
 before any step.
 """
-function train!(nn::NeuralNetwork, opt::TrainingOptimizer, dl::DataLoader, batch::Batch,
-        n_epochs::Integer;
-        loss::Union{NetworkLoss, AbstractPullback} = NetworkLoss(nn.architecture, batch),
+function train!(nn::NeuralNetwork, opt::TrainingOptimizer,
+        dl::Union{DataLoader, ParametricDataLoader}, batch::Batch, n_epochs::Integer;
+        loss::Union{NetworkLoss, AbstractPullback} = default_loss(nn, dl, batch),
         show_progress::Bool = true)
     n_epochs ≥ 1 ||
         throw(ArgumentError("`train!` needs at least one epoch; `n_epochs` is $(n_epochs)."))
@@ -65,6 +67,13 @@ end
 
 _as_pullback(l::NetworkLoss) = ZygotePullback(l)
 _as_pullback(p::AbstractPullback) = p
+
+# A `DataLoader` takes the default loss of the architecture and the batch; a `ParametricDataLoader`
+# draws the system parameters of each sample, which `ParametricLoss` hands to the network.
+function default_loss(nn::NeuralNetwork, ::DataLoader, batch::Batch)
+    NetworkLoss(nn.architecture, batch)
+end
+default_loss(::NeuralNetwork, ::ParametricDataLoader, ::Batch) = ParametricLoss()
 
 # The default loss of an architecture and a batch. The two-argument methods live here and not beside
 # `NetworkLoss(::AutoEncoder)` in `src/loss/losses.jl`, because `Batch` is included after `src/loss/`.
