@@ -6,6 +6,7 @@ authors = ["Michael Kraus <michael.kraus@ipp.mpg.de>"]
 [deps]
 AbstractNeuralNetworks = "60874f82-5ada-4c70-bd1c-fa6be7711c8a"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
+DiffResults = "163ba53b-c6d8-5494-b064-1a9d43ac40c5"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 GeometricBase = "9a0b12b7-583b-4f04-aa1f-d8551b6addc9"
 GeometricEquations = "c85262ba-a08a-430a-b926-d29770767bf2"
@@ -30,6 +31,7 @@ GPUArraysCoreExt = "GPUArraysCore"
 [compat]
 AbstractNeuralNetworks = "0.9.2"
 ChainRulesCore = "1"
+DiffResults = "1.1"
 ForwardDiff = "1"
 GPUArraysCore = "0.2"
 GeometricBase = "0.15"

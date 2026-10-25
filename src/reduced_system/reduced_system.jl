@@ -104,19 +104,23 @@ function HRedSys(odeensemble::HODEEnsemble, encoder::NeuralNetwork{<:SymplecticE
         parameters = odeensemble.parameters[1], integrator = integrator)
 end
 
-# The decoder is evaluated twice: once below for the value, and once more inside
-# `ForwardDiff.jacobian` for the derivative. One pass through `DiffResults` would give both. See
-# issue C14 in `CHANGELOG.md`.
+# The full vector fields at the decoded point `Ψ(ξ)`, `ξ = (q̃, p̃)`, and the Jacobian `∇Ψ` at `ξ`.
+# `ForwardDiff.jacobian!` gives both `Ψ(ξ)` and `∇Ψ` from the passes of the decoder in dual numbers:
+# one pass where `length(ξ)` is at most ForwardDiff's chunk threshold (12 by default), and one
+# pass per chunk above it.
 function evaluate_vf_and_compute_∇Ψ(t, q̃::AbstractVector{T}, p̃::AbstractVector{T},
         parameters, decoder, v_full, f_full) where {T}
     N2 = decoder.architecture.full_dim ÷ 2
+    ξ = vcat(q̃, p̃)
+    result = ForwardDiff.jacobian!(
+        DiffResults.JacobianResult(similar(ξ, 2 * N2), ξ), decoder, ξ)
+    z = DiffResults.value(result)
+    q, p = @views z[1:N2], z[(N2 + 1):end]
     v_intermediate = zeros(T, N2)
     f_intermediate = zeros(T, N2)
-    decoded_nt = decoder((q = q̃, p = p̃))
-    v_full(v_intermediate, t, decoded_nt..., parameters)
-    f_full(f_intermediate, t, decoded_nt..., parameters)
-    ∇Ψ = ForwardDiff.jacobian(qp -> decoder(qp), vcat(q̃, p̃))
-    v_intermediate, f_intermediate, ∇Ψ
+    v_full(v_intermediate, t, q, p, parameters)
+    f_full(f_intermediate, t, q, p, parameters)
+    v_intermediate, f_intermediate, DiffResults.jacobian(result)
 end
 
 @doc raw"""

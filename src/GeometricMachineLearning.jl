@@ -22,6 +22,7 @@ using ProgressMeter
 using Random
 using Zygote
 using ForwardDiff
+import DiffResults
 using InteractiveUtils
 using TimerOutputs
 
