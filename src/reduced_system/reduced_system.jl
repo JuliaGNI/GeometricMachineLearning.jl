@@ -105,7 +105,9 @@ function HRedSys(odeensemble::HODEEnsemble, encoder::NeuralNetwork{<:SymplecticE
 end
 
 # The full vector fields at the decoded point `Ψ(ξ)`, `ξ = (q̃, p̃)`, and the Jacobian `∇Ψ` at `ξ`.
-# One pass of the decoder in dual numbers gives both `Ψ(ξ)` and `∇Ψ`.
+# `ForwardDiff.jacobian!` gives both `Ψ(ξ)` and `∇Ψ` from the passes of the decoder in dual numbers:
+# one pass where `length(ξ)` is at most ForwardDiff's chunk threshold (12 by default), and one
+# pass per chunk above it.
 function evaluate_vf_and_compute_∇Ψ(t, q̃::AbstractVector{T}, p̃::AbstractVector{T},
         parameters, decoder, v_full, f_full) where {T}
     N2 = decoder.architecture.full_dim ÷ 2
