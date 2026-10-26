@@ -182,18 +182,24 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 - **evidence:**
   `changebackend(backend, x::AbstractArray)` allocates with `KernelAbstractions.allocate` and fills
   the copy through `KernelAbstractions.copyto!(backend, dest, src)`. `JLArrays` implements no
-  `copyto!(::JLBackend, ::JLArray, ::Array)`, so
+  `copyto!(::JLBackend, ::JLArray, ::Array)`:
+
+  ```
+  julia> KernelAbstractions.copyto!(JLBackend(), JLArray(zeros(Float32, 2)), zeros(Float32, 2))
+  ERROR: MethodError: no method matching copyto!(::JLBackend, ::JLArray{Float32, 1}, ::Vector{Float32})
+  ```
+
+  so
 
   ```julia
   changebackend(JLBackend(), params(NeuralNetwork(Chain(Dense(4, 8, tanh)), CPU(), Float32)))
   ```
 
-  raises `MethodError: no method matching copyto!(::JLBackend, …)`, and the message names
-  `copyto!` rather than `changebackend`. The device tests and `scripts/metal_check.jl` therefore move
-  a parameter set leaf by leaf: `test/helpers/device.jl`'s `to_device` rebuilds each structured leaf
-  around `JLArray` storage, and the metal script does the same with `MtlArray`. The fix is a
-  `copyto!` method in `JLArrays`, or a device-array path through `Base.copyto!` in
-  `AbstractNeuralNetworks`.
+  raises a `MethodError` whose message names `copyto!` rather than `changebackend`. The device tests
+  and `scripts/metal_check.jl` therefore move a parameter set leaf by leaf: `test/helpers/device.jl`'s
+  `to_device` rebuilds each structured leaf around `JLArray` storage, and the metal script does the
+  same with `MtlArray`. The fix is a `copyto!` method in `JLArrays`, or a device-array path through
+  `Base.copyto!` in `AbstractNeuralNetworks`.
 
 ## The test suite
 
