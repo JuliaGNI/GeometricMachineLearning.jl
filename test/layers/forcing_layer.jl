@@ -107,6 +107,25 @@ end
     end
 end
 
+# A 3-tensor is a batch of `(q, p)` states with one time step: the parameters are repeated below
+# every column of every slice, as they are below every column of a matrix.
+@testset "ForcingLayer$name on a 3-tensor of samples ($T)" for (name, FT, constructor) in FORCING_LAYERS,
+    T in REAL_ELTYPES
+
+    Random.seed!(5)
+    x = rand(T, DIM, 3, 2)
+    layer = forcing_layer(constructor; parameters = SYSTEM_PARAMETERS)
+    ps = layer_parameters(layer, T)
+    z = (q = x[1:HALF, :, :], p = x[(HALF + 1):end, :, :])
+    expected = layer.model(
+        concatenate_array_with_parameters(read_state(Val(FT), z), SYSTEM_PARAMETERS), ps)
+    output = layer((x, SYSTEM_PARAMETERS), ps)
+    @test size(output) == size(x)
+    @test eltype(output) === T
+    @test output[1:HALF, :, :] == z.q
+    @test isapprox(output[(HALF + 1):end, :, :] - z.p, expected; rtol = 10 * eps(T))
+end
+
 @testset "ForcingLayer$name returns μ with return_parameters ($T)" for (name, FT, constructor) in FORCING_LAYERS,
     T in REAL_ELTYPES
 
