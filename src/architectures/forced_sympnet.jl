@@ -5,8 +5,9 @@ const fs_n_forcing_layers_default = 2
 
 Make a forced SympNet with dimension ``d.``
 
-A forced SympNet is a [`GSympNet`](@ref) with a [`ForcingLayer`](@ref) in front of every
-[`GradientLayerP`](@ref), so that each step which changes ``p`` also adds a learned forcing to it:
+A forced SympNet has the layer sequence of a [`GSympNet`](@ref), with a [`ForcingLayer`](@ref) in
+front of every [`GradientLayerP`](@ref), so that each step which changes ``p`` also adds a learned
+forcing to it:
 
 ```math
 \begin{pmatrix} q \\ p \end{pmatrix} \mapsto
@@ -23,6 +24,9 @@ The layer sequence follows the loop index ``i \in \{1, \ldots, n\_layers\}``: fo
 odd ``i`` is a [`GradientLayerQ`](@ref), and the even ``i`` a [`ForcingLayer`](@ref) followed by a
 [`GradientLayerP`](@ref); without it, the other way around. The chain therefore holds `n_layers`
 gradient layers and one forcing layer per step that changes ``p``.
+
+`d` is the full phase-space dimension, which is even, so that a forcing has `d ÷ 2` rows; an odd
+dimension raises an `ArgumentError` at construction.
 
 There exists an additional constructor that can be called by supplying an instance of
 [`DataLoader`](@ref).

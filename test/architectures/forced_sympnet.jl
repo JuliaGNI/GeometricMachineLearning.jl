@@ -67,7 +67,7 @@ end
 end
 
 # The forced chain holds the network of each forcing layer in a type parameter, so the forward pass
-# of the whole architecture infers; with a `Chain` field it infers `Any`.
+# of the whole architecture infers; with a `Chain` field it would infer `Any`.
 @testset "the forward pass of a ForcedSympNet infers ($T)" for T in REAL_ELTYPES
     Random.seed!(7)
     nn = NeuralNetwork(

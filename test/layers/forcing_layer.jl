@@ -145,7 +145,7 @@ end
 end
 
 # A forcing layer holds its network in a type parameter, so the forward pass infers the type of its
-# output on every form it takes; a layer whose `model` is typed `Chain` leaves it `Any`.
+# output on every form it takes; a layer whose `model` is typed `Chain` would leave it `Any`.
 @testset "the forward pass of ForcingLayer$name infers ($T)" for (name, _, constructor) in FORCING_LAYERS,
     T in REAL_ELTYPES
 

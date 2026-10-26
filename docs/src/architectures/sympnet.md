@@ -166,7 +166,7 @@ component, and `:QP` both. All three add to ``p``, because that is where a forci
 
 ## Universal Approximation Theorems
 
-In order to state the *universal approximation theorem* for both architectures we first need a few definitions:
+In order to state the *universal approximation theorem* for both symplectic architectures we first need a few definitions:
  
 Let ``U`` be an open set of ``\mathbb{R}^{2d}``, and let us denote by ``\mathcal{SP}^r(U)`` the set of ``C^r`` smooth symplectic maps on ``U``. We now define a topology on ``C^r(K, \mathbb{R}^{2d})``, the set of ``C^r``-smooth maps from a compact set ``K\subset{}U`` to ``\mathbb{R}^{2d}`` through the norm
 
