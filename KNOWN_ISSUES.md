@@ -30,42 +30,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   deliberately, and the resolution is upstream declaring them `public`. Each check's reason is
   written beside it in the test file.
 
-### C21 · "An untrained autoencoder reduces worse than PSD" is not a property, and the suite no longer asserts it under an explicit integrator.
-
-- **location:** `test/reduced_system/reduced_system.jl`
-- **kind:** missing test
-- **found:** 2026-09-21
-- **evidence:**
-  `test/reduced_system/reduced_system.jl` asserted both
-  `projection_error(rs1) < projection_error(rs2)` and
-  `reduction_error(rs1) < reduction_error(rs2)` for `ImplicitMidpoint()` and for
-  `ExplicitMidpoint()`, with `rs1` a `PSDArch` and `rs2` an untrained 20-encoder-layer
-  `SymplecticAutoencoder` over a softplus.
-
-  The second one is a coin flip. `projection_error` compares the two autoencoders on the *full*
-  solution, but `reduction_error` integrates the *reduced* system, and an untrained network's
-  reduced vector field is one an explicit method diverges on — `reduction_error(rs2)` then comes
-  back `NaN`, and `NaN` is not ordered against anything. Measured over seeds 1 to 12, identically
-  at `GeometricOptimizers` 0.7.0 and 0.8.0:
-
-  | assertion | `ImplicitMidpoint` | `ExplicitMidpoint` |
-  |:--|:--|:--|
-  | `projection_error(rs1) < projection_error(rs2)` | 12 / 12 | 11 / 12 |
-  | `reduction_error(rs1) < reduction_error(rs2)` | 12 / 12 | **4 / 12**, with 4 `NaN` and 4 in the opposite order |
-
-  The committed `Random.seed!(123)` is not among those twelve; it is a thirteenth draw, and it
-  happened to be one that passed. The `GeometricOptimizers` bump in this release changes the
-  manifold layers' orthonormalization from Householder `qr!` to CholeskyQR2, so that seed now
-  draws a different network, and at 0.8.0 `reduction_error(rs2)` under `ExplicitMidpoint` is
-  `NaN`. The bump exposed this; it did not cause it, and the table above is the same at 0.7.0.
-
-  The explicit-integrator case now runs the projection-error assertion only, through a
-  `compare_reduction_error` keyword, and the measurement is written above the function. **The seed
-  was not changed**, because tuning it would have restored a green suite without restoring a true
-  claim. Closing this entry means deciding what the reduction error of an untrained network is
-  supposed to be worth testing at all — training the two networks first would make the comparison
-  mean something, at a cost the suite does not currently pay.
-
 ## Found late
 
 ### K17 · `assign_q_and_p` drops the rows from `2N + 1` on without an error.
@@ -210,6 +174,27 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   itself records a skip where `Metal.functional()` is false; only the precompile fails. Closing this
   is a Metal.jl change: a workload that does not run where no device exists.
 
+### K31 · `changebackend` cannot move a parameter set onto a `JLBackend`.
+
+- **location:** `AbstractNeuralNetworks` `src/utils/changebackend.jl:3`
+- **kind:** upstream
+- **found:** 2026-10-26, part M7
+- **evidence:**
+  `changebackend(backend, x::AbstractArray)` allocates with `KernelAbstractions.allocate` and fills
+  the copy through `KernelAbstractions.copyto!(backend, dest, src)`. `JLArrays` implements no
+  `copyto!(::JLBackend, ::JLArray, ::Array)`, so
+
+  ```julia
+  changebackend(JLBackend(), params(NeuralNetwork(Chain(Dense(4, 8, tanh)), CPU(), Float32)))
+  ```
+
+  raises `MethodError: no method matching copyto!(::JLBackend, …)`, and the message names
+  `copyto!` rather than `changebackend`. The device tests and `scripts/metal_check.jl` therefore move
+  a parameter set leaf by leaf: `test/helpers/device.jl`'s `to_device` rebuilds each structured leaf
+  around `JLArray` storage, and the metal script does the same with `MtlArray`. The fix is a
+  `copyto!` method in `JLArrays`, or a device-array path through `Base.copyto!` in
+  `AbstractNeuralNetworks`.
+
 ## The test suite
 
 ### K3 · `test/quality/jet.jl` does not see an unstable kernel-launch argument
@@ -230,18 +215,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   CAUGHT with 3 reports (47 pass, 3 fail): the kernel functor takes `args...`, so the dispatch sits
   in KernelAbstractions' frames, which the filter drops. A barrier on a value inside the kernel
   body of `tensor_tensor_mul_kernel!` is CAUGHT (47 pass, 3 fail).
-
-### K10 · The two training tests of `adam_with_learning_rate_decay.jl` run in `Float64` only.
-
-- **location:** `test/optimizers/adam_with_learning_rate_decay.jl`
-- **kind:** missing test
-- **found:** 2026-10-12, by the critics of part M1a; the precision is older than that part
-- **evidence:**
-  `train_network` and `train_manifold_network` build their `DataLoader` from
-  `sin.(0:0.1:2π)`, a `Vector{Float64}`, and take the network's element type from `eltype(dl)`.
-  Neither function takes an element type, so neither runs over `REAL_ELTYPES`. The third testset
-  of the file, `schedule_starts_at_one`, loops over `REAL_ELTYPES`. The fix builds `dl` per `T`
-  and loops both functions over `REAL_ELTYPES`.
 
 ### K14 · `train!` infers its history as an abstract `Vector`, although the run-time history is `Vector{T}`.
 
