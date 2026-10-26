@@ -101,11 +101,11 @@ end
         @test !Base.isexported(GeometricMachineLearning, name)
     end
 
-    page = read(
-        joinpath(pkgdir(GeometricMachineLearning), "docs", "src", "architectures",
-            "neural_network_integrators.md"),
-        String)
+    # `eachline` drops the line ending, including the carriage return of a CRLF checkout, so a name
+    # is matched as the whole line it occupies in the `@docs` block
+    page = collect(eachline(joinpath(pkgdir(GeometricMachineLearning), "docs", "src",
+        "architectures", "neural_network_integrators.md")))
     for name in ("WideResNetLayer", "ParametricResNetLayer", "ParametricResNet")
-        @test occursin("GeometricMachineLearning.$name\n", page)
+        @test ("GeometricMachineLearning.$name") in page
     end
 end
