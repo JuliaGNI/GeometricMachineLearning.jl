@@ -11,9 +11,9 @@ _flatten_system_parameters(::Type{T}, μ::NamedTuple) where {T} = flatten(T, μ)
 _flatten_system_parameters(::Type{T}, ::NullParameters) where {T} = flatten(T, NamedTuple())
 
 # The input of a parametric layer: the state with the flattened system parameters below it, in the
-# element type of the state. One `μ` goes below every column of a matrix; a vector of them goes one
-# below each column, so the columns are concatenated side by side. Without system parameters the state
-# is the input as it is.
+# element type of the state. One `μ` goes below every column of a matrix, and below every column of
+# every slice of a 3-tensor; a vector of them goes one below each column of a matrix, so the columns
+# are concatenated side by side. Without system parameters the state is the input as it is.
 concatenate_array_with_parameters(x::AbstractArray, ::NullParameters) = x
 
 function concatenate_array_with_parameters(x::AbstractVector, μ::NamedTuple)
@@ -23,6 +23,11 @@ end
 function concatenate_array_with_parameters(x::AbstractMatrix, μ::NamedTuple)
     flat = first(_flatten_system_parameters(eltype(x), μ))
     vcat(x, repeat(flat, 1, size(x, 2)))
+end
+
+function concatenate_array_with_parameters(x::AbstractArray{<:Any, 3}, μ::NamedTuple)
+    flat = first(_flatten_system_parameters(eltype(x), μ))
+    cat(x, repeat(reshape(flat, :, 1, 1), 1, size(x, 2), size(x, 3)); dims = 1)
 end
 
 function concatenate_array_with_parameters(x::AbstractMatrix, μs::AbstractVector)

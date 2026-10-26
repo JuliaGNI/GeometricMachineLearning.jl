@@ -33,6 +33,17 @@ flat(::Type{T}, μ) where {T} = T[μ.a; μ.b[1]; μ.b[2]]
     @test concatenated == T[1 2 3; 4 5 6; 2 2 2; 1 1 1; -3 -3 -3]
     @test eltype(concatenated) === T
 
+    # one `μ` below every column of every slice of a 3-tensor
+    tensor = reshape(T[1:12;], 2, 2, 3)
+    μ2_flat = T[2, 1, -3]                     # the `flat` of `μ(2)`, written out
+    concatenated = concatenate_array_with_parameters(tensor, μ(2))
+    @test size(concatenated) == (2 + length(μ2_flat), 2, 3)
+    @test eltype(concatenated) === T
+    for k in 1:3, j in 1:2
+
+        @test concatenated[:, j, k] == vcat(tensor[:, j, k], μ2_flat)
+    end
+
     # no system parameters: the state itself
     @test concatenate_array_with_parameters(x, NullParameters()) === x
     @test concatenate_array_with_parameters(x[:, 1], NullParameters()) == x[:, 1]

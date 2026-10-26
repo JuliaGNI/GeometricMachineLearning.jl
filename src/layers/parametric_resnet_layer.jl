@@ -12,7 +12,9 @@ computes
 
 where ``\mu`` are the system parameters. ``W_\mathrm{up}`` is therefore
 ``\mathrm{width}\times(\mathrm{dim} + |\mu|)`` wide, and without system parameters the map is that
-of a [`WideResNetLayer`](@ref) with the same width and weights.
+of a [`WideResNetLayer`](@ref) with the same width and weights. The input is a vector, a matrix of
+samples, a tensor of samples, or a `(q, p)` pair of any of these, with one `μ` — the forms that
+[`WideResNetLayer`](@ref) takes.
 
 # Keyword arguments
 

@@ -71,7 +71,8 @@ end
     @test !all(iszero, ps.upscale_weight[:, (DIM + 1):end])
 
     for input in (randn(Random.Xoshiro(2), T, DIM),
-        randn(Random.Xoshiro(3), T, DIM, 3))
+        randn(Random.Xoshiro(3), T, DIM, 3),
+        randn(Random.Xoshiro(8), T, DIM, 3, 2))
         output = l(input, μ, ps)
         @test size(output) == size(input)
         @test eltype(output) === T
