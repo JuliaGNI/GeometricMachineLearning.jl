@@ -85,11 +85,11 @@ There exists an additional constructor that can be called by supplying an instan
 
 Keyword arguments are:
 - `upscaling_dimension::Int = 2d`: The *upscaling dimension* of the gradient layer. See the documentation for [`GradientLayerQ`](@ref) and [`GradientLayerP`](@ref) for further explanation.
-- `n_layers::Int""" * "$(g_n_layers_default)`" *
+- `n_layers::Int = """ * "$(g_n_layers_default)`" *
      raw""": The number of layers (i.e. the total number of [`GradientLayerQ`](@ref) and [`GradientLayerP`](@ref)).
-- `activation""" * "$(g_activation_default)`" *
+- `activation = """ * "$(g_activation_default)`" *
      raw""": The activation function that is applied.
-- `init_upper::Bool""" * "$(g_init_upper_default)`" *
+- `init_upper::Bool = """ * "$(g_init_upper_default)`" *
      raw""": Initialize the gradient layer so that it first modifies the $q$-component.
 """
 struct GSympNet{AT} <: SympNet{AT}

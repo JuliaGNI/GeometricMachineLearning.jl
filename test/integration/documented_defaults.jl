@@ -8,9 +8,49 @@
 # the type; the architecture carries it in a field.
 
 using GeometricMachineLearning
+using GeometricMachineLearning: Dense, ForcedSympNet, ForcingLayer, ForcingLayerQ,
+                                ForcingLayerP, ForcingLayerQP
 using Test
 
 GML = GeometricMachineLearning
+
+@testset "ForcingLayer: the constructed default is the documented default" begin
+    for constructor in (ForcingLayer, ForcingLayerQ, ForcingLayerP, ForcingLayerQP)
+        l = constructor(4)
+
+        # `width = dim`, and the activation is the one the inner network's first layer carries
+        @test l.dim === 4
+        @test l.width === 4
+        @test l.nhidden === GML.f_nhidden_default
+        @test l.model.layers[1].σ === Dense(4, 4, GML.f_activation_default).σ
+    end
+
+    # the `type` and `return_parameters` defaults, which the instance type carries
+    @test ForcingLayer(4) isa ForcingLayer{4, 4, :P, false}
+
+    # `parameters = NullParameters()` leaves the flat system parameters out of the input layer, so a
+    # `:Q` or `:P` forcing spans the two values of `dim ÷ 2` and a `:QP` one the four of `dim`; the
+    # two system parameters of the last line lengthen a `:Q` input by their flat vector
+    @test ForcingLayer(4).model.layers[1] isa Dense{2, 4}
+    @test ForcingLayerQ(4).model.layers[1] isa Dense{2, 4}
+    @test ForcingLayerP(4).model.layers[1] isa Dense{2, 4}
+    @test ForcingLayerQP(4).model.layers[1] isa Dense{4, 4}
+    @test ForcingLayerQ(4; parameters = (m = 1.0, ω = π / 2)).model.layers[1] isa
+          Dense{4, 4}
+end
+
+@testset "ForcedSympNet: the constructed default is the documented default" begin
+    arch = ForcedSympNet(4)
+
+    @test arch.upscaling_dimension === 2 * arch.dim
+    @test arch.n_layers === GML.g_n_layers_default
+    @test arch.n_forcing_layers === GML.fs_n_forcing_layers_default
+    @test arch.activation === GML.g_activation_default
+    @test arch.init_upper === GML.g_init_upper_default
+
+    # `forcing_type = :P` is the first type parameter, which `Chain` hands to every forcing layer
+    @test typeof(arch).parameters[1] === :P
+end
 
 @testset "SymplecticAttention: the constructed default is the documented default" begin
     for constructor in (SymplecticAttentionQ, SymplecticAttentionP)
