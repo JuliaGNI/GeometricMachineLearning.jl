@@ -165,6 +165,28 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   goes through `apply_parametric` sample by sample. Closing it means either a method for a 3-tensor
   or a signature narrowed to `AbstractVecOrMat`.
 
+### K32 · `ResNet`'s constructors annotate `dim`, `n_blocks` and `width` as `Integer`, but every one ends in the `Int` field constructor, so an `Int32` argument raises a `MethodError`.
+
+- **location:** `src/architectures/resnet.jl:49`
+- **kind:** defect
+- **found:** 2026-10-26
+- **evidence:**
+  `ResNet(sys_dim::Integer, n_blocks::Integer, activation)` forwards its three arguments to the
+  four-argument method, whose fields are `Int`, and `ResNet(dl, n_blocks, width = dl.input_dim)`
+  does the same with `width`. The `dim::Integer` of the docstring therefore admits more than the
+  code takes:
+
+  ```julia
+  using GeometricMachineLearning: ResNet
+  ResNet(Int32(4), 2, tanh)
+  # MethodError: no method matching ResNet(::Int32, ::Int64, ::Int32, ::typeof(tanh))
+  ResNet(Int32(4), 2, 6, tanh)
+  # MethodError: no method matching ResNet(::Int32, ::Int64, ::Int64, ::typeof(tanh))
+  ```
+
+  `Int` arguments are taken. Closing it means a four-argument method that converts its three
+  integers, which widens the arguments `ResNet` applies to, so it is a change of its own.
+
 ## Upstream
 
 ### K2 · Revise prints EMFILE errors in the test log
