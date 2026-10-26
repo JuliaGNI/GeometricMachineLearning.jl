@@ -154,6 +154,7 @@ export StiefelManifold, GrassmannManifold, Manifold
 export rgrad, metric, check
 
 include("layers/sympnets.jl")
+include("layers/forcing_layer.jl")
 include("layers/bias_layer.jl")
 include("layers/resnet.jl")
 include("layers/wide_resnet.jl")
@@ -197,6 +198,7 @@ public WideResNetLayer, ParametricResNetLayer, ParametricResNet
 include("architectures/transformer_integrator.jl")
 include("architectures/standard_transformer_integrator.jl")
 include("architectures/sympnet.jl")
+include("architectures/forced_sympnet.jl")
 include("architectures/autoencoder.jl")
 include("architectures/symplectic_autoencoder.jl")
 include("architectures/psd.jl")
@@ -205,6 +207,9 @@ include("architectures/volume_preserving_feedforward.jl")
 include("architectures/volume_preserving_transformer.jl")
 
 export SympNet, LASympNet, GSympNet
+# The forced SympNet and the forcing layers are public and not exported, so the export list stays as
+# it is; they are reached as `GeometricMachineLearning.ForcedSympNet` and the like.
+public ForcedSympNet, ForcingLayer, ForcingLayerQ, ForcingLayerP, ForcingLayerQP
 export ClassificationTransformer, ClassificationLayer
 export VolumePreservingFeedForward
 export SymplecticAutoencoder, PSDArch

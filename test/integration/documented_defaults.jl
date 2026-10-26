@@ -8,9 +8,36 @@
 # the type; the architecture carries it in a field.
 
 using GeometricMachineLearning
+using GeometricMachineLearning: Dense, ForcedSympNet, ForcingLayer, ForcingLayerQ,
+                                ForcingLayerP, ForcingLayerQP
 using Test
 
 GML = GeometricMachineLearning
+
+@testset "ForcingLayer: the constructed default is the documented default" begin
+    for constructor in (ForcingLayer, ForcingLayerQ, ForcingLayerP, ForcingLayerQP)
+        l = constructor(4)
+
+        # `width = dim`, and the activation is the one the inner network's first layer carries
+        @test l.dim === 4
+        @test l.width === 4
+        @test l.nhidden === GML.f_nhidden_default
+        @test l.model.layers[1].σ === Dense(4, 4, GML.f_activation_default).σ
+    end
+
+    # the generic constructor's own two keyword defaults
+    @test ForcingLayer(4) isa ForcingLayer{4, 4, :P, false}
+end
+
+@testset "ForcedSympNet: the constructed default is the documented default" begin
+    arch = ForcedSympNet(4)
+
+    @test arch.upscaling_dimension === 2 * arch.dim
+    @test arch.n_layers === GML.g_n_layers_default
+    @test arch.n_forcing_layers === GML.fs_n_forcing_layers_default
+    @test arch.activation === GML.g_activation_default
+    @test arch.init_upper === GML.g_init_upper_default
+end
 
 @testset "SymplecticAttention: the constructed default is the documented default" begin
     for constructor in (SymplecticAttentionQ, SymplecticAttentionP)

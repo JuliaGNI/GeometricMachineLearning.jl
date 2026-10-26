@@ -134,6 +134,36 @@ model = Chain(arch).layers
 
 The keyword `init_upper` for [`GSympNet`](@ref) is similar as in the case for [`LASympNet`](@ref). The keyword `upscaling_dimension` is explained in the section on the [SympNet gradient layer](@ref "SympNet Gradient Layer").
 
+## Forced ``G``-SympNets
+
+A ``G``-SympNet is symplectic: its map preserves the symplectic form, as the flow of a Hamiltonian
+system does. A damped system is not of that form: a friction or an external force enters the
+``\dot{p}`` equation as a term that no gradient layer can represent. A *forced* ``G``-SympNet adds a
+[`ForcingLayer`](@ref GeometricMachineLearning.ForcingLayer) in front of every gradient layer that
+changes ``p``:
+
+```math
+\begin{pmatrix} q \\ p \end{pmatrix} \mapsto
+\begin{pmatrix} q \\ p + \nabla V(q) + f(z) \end{pmatrix},
+```
+
+where ``f`` is a neural network of its own. The resulting map is not symplectic, which is what lets
+it model a non-conservative system.
+[`ForcedSympNet`](@ref GeometricMachineLearning.ForcedSympNet) is the architecture, and
+[`ForcingLayer`](@ref GeometricMachineLearning.ForcingLayer) the layer it is built from.
+
+```@example
+using GeometricMachineLearning
+using GeometricMachineLearning: ForcedSympNet
+
+arch = ForcedSympNet(4; upscaling_dimension = 10, n_layers = 2, forcing_type = :P)
+
+model = Chain(arch).layers
+```
+
+The `forcing_type` keyword says what the forcing reads: `:Q` the ``q`` component, `:P` the ``p``
+component, and `:QP` both. All three add to ``p``, because that is where a forcing enters.
+
 ## Universal Approximation Theorems
 
 In order to state the *universal approximation theorem* for both architectures we first need a few definitions:
@@ -215,6 +245,11 @@ is the predicted state. In the [example section](@ref "SympNets with `GeometricM
 SympNet
 LASympNet
 GSympNet
+GeometricMachineLearning.ForcedSympNet
+GeometricMachineLearning.ForcingLayer
+GeometricMachineLearning.ForcingLayerQ
+GeometricMachineLearning.ForcingLayerP
+GeometricMachineLearning.ForcingLayerQP
 ```
 
 ```@raw latex
