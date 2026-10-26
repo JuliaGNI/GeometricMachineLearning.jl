@@ -20,12 +20,13 @@ const nu = 0.001
 const ni_dim = 2
 
 # the time grid
-const T = 13
+const t_final = 13
 const nt = smoke_size(100, 20)
-const dt = T / nt
+const dt = t_final / nt
 
 const width = 4
-const nhidden = 3
+const n_layers = 3
+const n_forcing_layers = 2
 const batch_size = smoke_size(5000, 8)
 const n_epochs = smoke_size(100000, 2)
 
@@ -52,14 +53,14 @@ end
 
 const dl = DataLoader(turn_q_p_data_into_correct_format((q = q, p = p)))
 
-const arch = ForcedSympNet(
-    2; upscaling_dimension = width, n_layers = nhidden, forcing_type = :P)
+const arch = ForcedSympNet(2; upscaling_dimension = width, n_layers = n_layers,
+    n_forcing_layers = n_forcing_layers, forcing_type = :P)
 const nn = NeuralNetwork(arch, Float64)
 const opt = TrainingOptimizer(nn.params; algorithm = Adam())
 
 const loss_array = train!(nn, opt, dl, Batch(batch_size), n_epochs)
 
 JLD2.save(path_out, "parameters", GeometricMachineLearning.map_to_cpu(nn.params),
-    "training loss", loss_array, "ni_dim", ni_dim, "T", T, "nt", nt,
-    "n_epochs", n_epochs, "width", width, "nhidden", nhidden,
-    "batch_size", batch_size, "nu", nu)
+    "training loss", loss_array, "ni_dim", ni_dim, "t_final", t_final, "nt", nt,
+    "n_epochs", n_epochs, "width", width, "n_layers", n_layers,
+    "n_forcing_layers", n_forcing_layers, "batch_size", batch_size, "nu", nu)

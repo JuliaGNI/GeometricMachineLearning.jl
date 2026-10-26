@@ -137,6 +137,7 @@ end
 end
 
 @testset "a DataLoader gives the forced SympNet of its input dimension ($T)" for T in REAL_ELTYPES
+    Random.seed!(9)
     dl = DataLoader(rand(T, DIM, 10); suppress_info = true)
     @test ForcedSympNet(dl; n_layers = 3, forcing_type = :Q, upscaling_dimension = UPSCALING) ===
           ForcedSympNet(DIM; n_layers = 3, forcing_type = :Q, upscaling_dimension = UPSCALING)

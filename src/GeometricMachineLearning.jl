@@ -207,8 +207,8 @@ include("architectures/volume_preserving_feedforward.jl")
 include("architectures/volume_preserving_transformer.jl")
 
 export SympNet, LASympNet, GSympNet
-# The forced SympNet and the forcing layers are public and not exported, so the export list stays as
-# it is; they are reached as `GeometricMachineLearning.ForcedSympNet` and the like.
+# The forced SympNet and the forcing layers are public and not exported; they are reached as
+# `GeometricMachineLearning.ForcedSympNet` and the like.
 public ForcedSympNet, ForcingLayer, ForcingLayerQ, ForcingLayerP, ForcingLayerQP
 export ClassificationTransformer, ClassificationLayer
 export VolumePreservingFeedForward

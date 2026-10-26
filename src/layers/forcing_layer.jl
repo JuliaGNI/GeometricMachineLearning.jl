@@ -170,9 +170,13 @@ _forcing_input(::Val{:QP}, z) = vcat(z.q, z.p)
 
 # The forward pass on a `(q, p)` state with the system parameters beside it. `ps` is untyped and
 # forwarded to the layer's `Chain`: the chain says what it takes, and for this layer that is the
-# `NetworkParameters` its own `initialparameters` returned.
+# `NetworkParameters` its own `initialparameters` returned. Both halves are checked, because a layer
+# that does not read `q` returns it as it is.
 function _forcing_forward(l::ForcingLayer{M, M, FT, ReturnParameters}, z, μ,
         ps) where {M, FT, ReturnParameters}
+    size(z.q, 1) == size(z.p, 1) == M ÷ 2 || throw(DimensionMismatch(
+        "a forcing layer of dimension $M takes a q and a p of $(M ÷ 2) rows each; these have " *
+        "$(size(z.q, 1)) and $(size(z.p, 1))."))
     forcing = l.model(concatenate_array_with_parameters(_forcing_input(Val(FT), z), μ), ps)
     output = (q = z.q, p = z.p + forcing)
     ReturnParameters ? (output, μ) : output

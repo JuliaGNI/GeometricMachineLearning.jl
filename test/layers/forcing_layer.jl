@@ -57,7 +57,6 @@ end
         @test output.q == z.q
         @test size(output.p) == size(z.p)
         @test eltype(output.p) === T
-        @test isapprox(output.p, z.p + expected; rtol = 10 * eps(T))
         @test isapprox(output.p - z.p, expected; rtol = 10 * eps(T))
     end
     @test isapprox(layer(vcat(q, p), ps), vcat(layer(z, ps).q, layer(z, ps).p))
@@ -224,11 +223,14 @@ end
     @test_throws ArgumentError ForcingLayerQP(3)
     @test_throws ArgumentError ForcingLayer(4, 4, 1, tanh; type = :X)
 
-    # the layer reads `dim ÷ 2` rows of each half, so a dimension of the wrong size is a
-    # `DimensionMismatch` at the call
-    layer = ForcingLayerQ(DIM)
-    ps = layer_parameters(layer, Float64)
-    @test_throws DimensionMismatch layer((q = rand(HALF + 1), p = rand(HALF)), ps)
+    # the layer takes `dim ÷ 2` rows in each half, so a half of the wrong size is a
+    # `DimensionMismatch` at the call, also the half a layer does not read
+    for (_, _, constructor) in FORCING_LAYERS
+        layer = forcing_layer(constructor)
+        ps = layer_parameters(layer, Float64)
+        @test_throws DimensionMismatch layer((q = rand(HALF + 1), p = rand(HALF)), ps)
+        @test_throws DimensionMismatch layer((q = rand(HALF), p = rand(HALF + 1)), ps)
+    end
 end
 
 # A tuple that is neither a state, nor a state with its system parameters, matches no method:

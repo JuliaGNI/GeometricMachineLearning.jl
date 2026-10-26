@@ -148,7 +148,7 @@ changes ``p``:
 ```
 
 where ``f`` is a neural network of its own and ``z`` the component it reads. The resulting map is
-not symplectic, which is what lets it model a non-conservative system.
+in general not symplectic, which is what lets it model a non-conservative system.
 [`ForcedSympNet`](@ref GeometricMachineLearning.ForcedSympNet) is the architecture, and
 [`ForcingLayer`](@ref GeometricMachineLearning.ForcingLayer) the layer it is built from.
 
