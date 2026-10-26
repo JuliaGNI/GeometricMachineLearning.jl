@@ -1,20 +1,26 @@
 using GeometricMachineLearning, Test
 import Random
 
+include("../helpers/eltypes.jl")
+
 Random.seed!(1234)
 
-function test_set_up_and_application(T = Float32, sys_dim = 49, output_dim = 10,
-        seq_length = 16, batch_size = 32; average = false)
+function test_set_up_and_application(::Type{T}, sys_dim = 49, output_dim = 10,
+        seq_length = 16, batch_size = 32; average = false) where {T}
     d = Chain(ClassificationLayer(sys_dim, output_dim, σ, average = average))
     ps = NeuralNetwork(d, CPU(), T).params
     output₁ = d(rand(T, sys_dim, seq_length), ps)
     output₂ = d(rand(T, sys_dim, seq_length, batch_size), ps)
+    @test eltype(output₁) === T
+    @test eltype(output₂) === T
     @test size(output₁) == (10, 1)
     @test size(output₂) == (10, 1, batch_size)
 end
 
-test_set_up_and_application(average = false)
-test_set_up_and_application(average = true)
+for T in REAL_ELTYPES
+    test_set_up_and_application(T; average = false)
+    test_set_up_and_application(T; average = true)
+end
 
 l = ClassificationLayer(2, 2, identity; average = true)
 ps = (weight = [1 0; 0 1],)

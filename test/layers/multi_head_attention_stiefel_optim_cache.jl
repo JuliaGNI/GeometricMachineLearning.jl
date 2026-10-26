@@ -10,6 +10,8 @@ import Random, LinearAlgebra
 # it reaches the leaves whichever of the two it is handed.
 using NeuralNetworkParameters: NetworkParameters, mapparameters
 
+include("../helpers/eltypes.jl")
+
 Random.seed!(1234)
 
 @doc raw"""
@@ -65,6 +67,8 @@ function test_cache_setups_for_optimizer_for_multihead_attention_layer(T::Type, 
     model = Chain(MultiHeadAttention(dim, n_heads, Stiefel = true))
     ps = NeuralNetwork(model, CPU(), T).params
 
+    @test eltype(ps[1].PQ.head_1) === T
+
     o₁ = TrainingOptimizer(ps; algorithm = Adam())
     o₂ = TrainingOptimizer(ps; algorithm = MomentumMethod())
     o₃ = TrainingOptimizer(ps; algorithm = GradientMethod())
@@ -74,4 +78,6 @@ function test_cache_setups_for_optimizer_for_multihead_attention_layer(T::Type, 
     check_gradient_cache(o₃.cache)
 end
 
-test_cache_setups_for_optimizer_for_multihead_attention_layer(Float32, 64, 8)
+for T in REAL_ELTYPES
+    test_cache_setups_for_optimizer_for_multihead_attention_layer(T, 64, 8)
+end

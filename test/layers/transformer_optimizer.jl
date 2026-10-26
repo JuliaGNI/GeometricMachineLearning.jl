@@ -3,6 +3,8 @@ using GeometricMachineLearning: ResNetLayer
 using GeometricOptimizers: optimization_step!
 import Random
 
+include("../helpers/eltypes.jl")
+
 Random.seed!(1234)
 
 @doc raw"""
@@ -30,9 +32,12 @@ function transformer_gradient_test(T, dim, n_heads, L, seq_length = 8, batch_siz
     optimization_step!(ps₁, o₁, dx)
     optimization_step!(ps₂, o₂, dx)
     optimization_step!(ps₃, o₃, dx)
+    @test eltype(model(input, ps)) === T
     @test typeof(ps₁) == typeof(ps₂) == typeof(ps₃) == typeof(ps)
     @test ps₁[1].PQ.head_1 ≈ ps₂[1].PQ.head_1
     @test ps₁[1].PQ.head_1 ≉ ps₃[1].PQ.head_1
 end
 
-transformer_gradient_test(Float32, 10, 5, 4)
+for T in REAL_ELTYPES
+    transformer_gradient_test(T, 10, 5, 4)
+end

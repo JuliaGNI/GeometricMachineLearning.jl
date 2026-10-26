@@ -2,6 +2,8 @@ using Test, KernelAbstractions, GeometricMachineLearning
 using GeometricMachineLearning: ResNetLayer
 import Random
 
+include("../helpers/eltypes.jl")
+
 Random.seed!(1234)
 
 @doc raw"""
@@ -21,6 +23,10 @@ function transformer_application_test(T, dim, n_heads, L, seq_length = 8, batch_
     @test size(model₂(input₁, ps₂)) == size(input₁)
     @test size(model₁(input₂, ps₁)) == size(input₂)
     @test size(model₂(input₂, ps₂)) == size(input₂)
+    @test eltype(model₁(input₁, ps₁)) === T
+    @test eltype(model₂(input₂, ps₂)) === T
 end
 
-transformer_application_test(Float32, 10, 5, 4)
+for T in REAL_ELTYPES
+    transformer_application_test(T, 10, 5, 4)
+end

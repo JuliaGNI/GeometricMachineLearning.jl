@@ -9,6 +9,8 @@ import Random, Test, LinearAlgebra, KernelAbstractions
 # the parameters of a network arrive as the one and the cache's fields as the other.
 using NeuralNetworkParameters: NetworkParameters, mapparameters, foldparameters
 
+include("../helpers/eltypes.jl")
+
 Random.seed!(1234)
 
 # counts the calls of the matrix method of `check_setup`, so that the test sees that it ran on every leaf
@@ -43,6 +45,8 @@ function check_multi_head_attention_stiefel_setup(T::Type, N::Int, n::Int)
     model = Chain(MultiHeadAttention(N, n, Stiefel = true))
     ps = GeometricMachineLearning.params(NeuralNetwork(model, KernelAbstractions.CPU(), T))
 
+    @test eltype(ps[1].PQ.head_1) === T
+
     check_setup_calls[] = 0
     check_setup(ps)
     nleaves = foldparameters((acc, _) -> acc + 1, 0, ps)
@@ -54,4 +58,6 @@ function check_multi_head_attention_stiefel_setup(T::Type, N::Int, n::Int)
     check_grad_setup(gx)
 end
 
-check_multi_head_attention_stiefel_setup(Float32, 64, 8)
+for T in REAL_ELTYPES
+    check_multi_head_attention_stiefel_setup(T, 64, 8)
+end

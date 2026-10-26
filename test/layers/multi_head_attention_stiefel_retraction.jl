@@ -12,6 +12,8 @@ import Random, Test, LinearAlgebra, KernelAbstractions
 # it reaches the leaves whichever of the two it is handed.
 using NeuralNetworkParameters: NetworkParameters, mapparameters
 
+include("../helpers/eltypes.jl")
+
 Random.seed!(1234)
 
 @doc raw"""
@@ -20,6 +22,7 @@ This function computes the geodesic retraction of an element of `StiefelLieAlgHo
 function check_retraction_geodesic(A::AbstractMatrix{T}, tol = eps(T)) where {T}
     A_retracted = geodesic(A)
     @test typeof(A_retracted) <: StiefelManifold
+    @test eltype(A_retracted) === T
     @test LinearAlgebra.norm(A_retracted - StiefelProjection(A_retracted)) < tol
 end
 function check_retraction_geodesic(cache::NetworkParameters)
@@ -36,6 +39,7 @@ This function computes the cayley retraction of an element of `StiefelLieAlgHorM
 function check_retraction_cayley(A::AbstractMatrix{T}, tol = eps(T)) where {T}
     A_retracted = cayley(A)
     @test typeof(A_retracted) <: StiefelManifold
+    @test eltype(A_retracted) === T
     @test LinearAlgebra.norm(A_retracted - StiefelProjection(A_retracted)) < tol
 end
 function check_retraction_cayley(cache::NetworkParameters)
@@ -60,4 +64,6 @@ function test_multi_head_attention_retraction(
     check_retraction_cayley(cache)
 end
 
-test_multi_head_attention_retraction(Float32, 64, 8)
+for T in REAL_ELTYPES
+    test_multi_head_attention_retraction(T, 64, 8)
+end
