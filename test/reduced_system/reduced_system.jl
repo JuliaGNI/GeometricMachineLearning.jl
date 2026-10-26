@@ -43,11 +43,12 @@ end
 # `reduction_error(rs2)` can come back `NaN`, which is not ordered against anything. An implicit
 # method keeps both errors numbers, which is all an untrained network supports.
 function test_reduced_vector_fields(reduced_dim::Integer, integrator, ::Type{T}) where {T}
-    rs1, rs2, nn1, _ = set_up_reduced_systems(reduced_dim, integrator, T)
+    rs1, rs2, nn1, nn2 = set_up_reduced_systems(reduced_dim, integrator, T)
 
     # the networks the reduced systems are built from are of the requested element type, and so is
-    # what their decoder returns
+    # what their decoder returns -- including the autoencoder's, whose activation is the file's own
     @test eltype(decoder(nn1)(rand(T, reduced_dim))) === T
+    @test eltype(decoder(nn2)(rand(T, reduced_dim))) === T
     @test projection_error(rs1) < projection_error(rs2)
     if integrator isa ImplicitMidpoint
         @test isfinite(reduction_error(rs1)) && isfinite(reduction_error(rs2))
