@@ -22,8 +22,9 @@ end
 
 # The names this package does not hand to `using GeometricMachineLearning`: `update!` and `solve!`
 # are `GeometricOptimizers`'/`SimpleSolvers`' verbs, `iterate` is `Base`'s, and `PoissonTensor` is
-# gone. The first three keep their bindings -- this package adds methods to each -- so a test for
-# them is a test on the export and not on the definition.
+# gone. The first three stay bound -- `solve!` carries this package's methods, while `update!` and
+# `iterate` are their owners' objects -- so a test for them is a test on the export and not on the
+# definition.
 const NOT_EXPORTED = (:update!, :solve!, :iterate, :PoissonTensor)
 
 @testset "the four names are not exported" begin
