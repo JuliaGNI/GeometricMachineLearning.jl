@@ -152,6 +152,22 @@ end
     @test norm(as_vector(computed) - reference) ≤ 1e-6 * norm(reference)
 end
 
+# The gradient that the pullback of `ParametricLoss` returns infers as its run-time type, for one sample
+# and for a batch. The `(q, p)` form is left out: AbstractNeuralNetworks' loss of a `(q, p)` named tuple
+# infers its gradient as a `Union` on its own (KNOWN_ISSUES K30).
+@testset "the gradient of ParametricLoss infers concretely ($T)" for T in REAL_ELTYPES
+    ps = NetworkParameters((L1 = (W = T[0.5 -1 0.25; 1.5 0.75 -2], b = T[0.1, -0.3]),))
+    model = Chain(ParametricAffine{2}(1))
+    rng = Random.Xoshiro(5)
+    k = 4
+    X, Y = randn(rng, T, 2, 1, k), randn(rng, T, 2, 1, k)
+    μs = [(a = randn(rng, T),) for _ in 1:k]
+    for data in ((X[:, 1, 1], Y[:, 1, 1], μs[1]), (X, Y, μs))
+        value, back = ZygotePullback(ParametricLoss())(ps, model, data)
+        @test (@inferred back(one(value))) isa NetworkParameters{T}
+    end
+end
+
 @testset "the parametric names are public and not exported" begin
     for name in (:apply_parametric, :ParametricLoss, :ParametricDataLoader)
         @test Base.ispublic(GeometricMachineLearning, name)

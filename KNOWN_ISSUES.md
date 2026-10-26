@@ -132,23 +132,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   `ParametricDataLoader`'s `(q, p)` constructor has the same one-type restriction and widens with
   it.
 
-### K29 · `ZygotePullback(ParametricLoss())`'s backward pass on a 3-tensor batch infers as `Union{Nothing, NetworkParameters}`; one sample infers concretely.
-
-- **location:** `src/parametric.jl:87-101`
-- **kind:** defect
-- **found:** #357, review of 2026-10-26; the batch methods of `apply_parametric` cause it, and
-  `origin/main` at `a664f5c9` does not show it
-- **evidence:**
-  On Julia 1.13.2, `Base.return_types` of `only(pb(one(v)))` gives
-  `Union{Nothing, NetworkParameters}` for a batch in each of these forms: `apply_parametric`'s
-  closure over the columns, a callable struct in place of the closure, the form that indexes one
-  sample per step, and the user path `ZygotePullback(ParametricLoss())`. One sample gives
-  `NetworkParameters{Float64, (:L1,), …}`. `ZygotePullback(FeedForwardLoss())` on
-  `Chain(Dense(2, 2, identity))` and a `2 × 1 × 8` tensor gives a concrete
-  `NetworkParameters{T, (:L1,), …}` in `Float32` and `Float64`, on `a664f5c9` and on this branch.
-  The callable struct and the closure give gradients that differ by `0.0` in `Float32` and in
-  `Float64`.
-
 ## Upstream
 
 ### K2 · Revise prints EMFILE errors in the test log
@@ -179,6 +162,30 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   import AbstractNeuralNetworks
   x = (q = rand(Float32, 2, 1, 3), p = rand(Float32, 2, 1, 3))
   typeof(AbstractNeuralNetworks._norm(x))    # Float64
+  ```
+
+### K30 · The gradient of AbstractNeuralNetworks' loss of a `(q, p)` named tuple infers as `Union{Nothing, NetworkParameters}`.
+
+- **location:** AbstractNeuralNetworks 0.9.3, `src/losses.jl:86`
+- **kind:** upstream
+- **found:** #357, review of 2026-10-26; the same inference shows on `origin/main` at `a664f5c9`
+- **evidence:**
+  On Julia 1.13.2 and `a664f5c9`, `Base.return_types` of the pullback of
+  `ps -> _compute_loss((q = ps.L1.W * q, p = ps.L1.b .* p), (q = yq, p = yp))` gives
+  `Tuple{Union{Nothing, NetworkParameters}}` in `Float32` and `Float64`, and the same function
+  with `vcat` in place of the named tuples gives the concrete `NetworkParameters{T, (:L1,), …}`. So
+  `ZygotePullback(ParametricLoss())` on `(q, p)` data infers its gradient as that `Union`, for one
+  sample and for a batch, and a plain sum of squares over the `(q, p)` output of a batch infers
+  concretely. The run-time gradient is a `NetworkParameters`.
+
+  ```julia
+  using GeometricMachineLearning, Zygote
+  import AbstractNeuralNetworks
+  ps = NetworkParameters((L1 = (W = rand(1, 1), b = rand(1)),))
+  q, p, yq, yp = rand(1), rand(1), rand(1), rand(1)
+  v, pb = Zygote.pullback(ps -> AbstractNeuralNetworks._compute_loss(
+      (q = ps.L1.W * q, p = ps.L1.b .* p), (q = yq, p = yp)), ps)
+  Base.return_types(pb, (typeof(v),))    # Tuple{Union{Nothing, NetworkParameters}}
   ```
 
 ### K4 · Metal.jl 1.11.1 needs a Metal device to precompile, so a sandboxed run with no Metal cache fails before the tests

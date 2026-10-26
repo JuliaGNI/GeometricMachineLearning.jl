@@ -13,8 +13,10 @@ import NeuralNetworkParameters: NetworkParameters
 using NeuralNetworkParameters: mapstorage
 # `flatten` puts the parameters of a system into the input of a network that takes them
 # (`src/parametric.jl`); `parameter_eltype` checks their element type against the data's, and
-# `parameterlayout` their shape against each other's.
-using NeuralNetworkParameters: flatten, parameter_eltype, parameterlayout
+# `parameterlayout` their shape against each other's. `map_cotangent` and `storage_gradient` turn the
+# cotangent of a parameter set into its gradient in the reverse rule of a batch.
+using NeuralNetworkParameters: flatten, parameter_eltype, parameterlayout, map_cotangent,
+                               storage_gradient
 using ChainRulesCore
 using GeometricBase
 using GeometricSolutions: GeometricSolution, EnsembleSolution, TimeSeries

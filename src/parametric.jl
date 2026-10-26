@@ -87,21 +87,47 @@ end
 function apply_parametric(model::Chain, x::AbstractArray{<:Any, 3}, μs::AbstractVector,
         ps::NetworkParameters)
     check_parametric_batch(size(x), μs)
-    outputs = map((xᵢ, μ) -> apply_parametric(model, xᵢ, μ, ps), sample_columns(x), μs)
+    outputs = map_samples((xᵢ, μ, ps) -> apply_parametric(model, xᵢ, μ, ps), ps,
+        sample_columns(x), μs)
     reshape(reduce(hcat, outputs), :, 1, length(μs))
 end
 
+# The output of a sample is stacked, `q` above `p`, so that its cotangent is an array, which the rule
+# of `map_samples` hands to Zygote as it is.
 function apply_parametric(model::Chain, x::NamedTupleOfArrays{<:Any, (:q, :p)},
         μs::AbstractVector, ps::NetworkParameters)
     check_parametric_batch(size(x.q), μs)
-    outputs = map((q, p, μ) -> apply_parametric(model, (q = q, p = p), μ, ps),
-        sample_columns(x.q), sample_columns(x.p), μs)
-    (q = reshape(reduce(hcat, [output.q for output in outputs]), :, 1, length(μs)),
-        p = reshape(reduce(hcat, [output.p for output in outputs]), :, 1, length(μs)))
+    outputs = map_samples(ps, sample_columns(x.q), sample_columns(x.p), μs) do q, p, μ, ps
+        output = apply_parametric(model, (q = q, p = p), μ, ps)
+        vcat(output.q, output.p)
+    end
+    stacked = reduce(hcat, outputs)
+    d = size(x.q, 1)
+    (q = reshape(stacked[1:d, :], :, 1, length(μs)),
+        p = reshape(stacked[(d + 1):end, :], :, 1, length(μs)))
 end
 
 # The samples of a `d × 1 × k` batch, as the `k` columns of its `d × k` reshape.
 sample_columns(x::AbstractArray{<:Any, 3}) = eachcol(reshape(x, size(x, 1), size(x, 3)))
+
+# `f(sample..., ps)` for each sample, where sample `i` is element `i` of each of `samples`.
+map_samples(f, ps, samples...) = map((sample...) -> f(sample..., ps), samples...)
+
+# Zygote's adjoint of `map` adds the gradients of the closure it maps, which holds `ps`, from `nothing`,
+# so the gradient of `ps` infers as `Union{Nothing, NetworkParameters}`. This rule pulls each sample
+# back on its own and adds the gradients of `ps`, as `NetworkParameters`, from the first sample on; a
+# batch holds at least one sample. `f` holds the `Chain`, whose trainable parameters are in `ps`, so
+# `f` has no gradient.
+function ChainRulesCore.rrule(::typeof(map_samples), f, ps::NetworkParameters, samples...)
+    outputs_and_pullbacks = map((sample...) -> Zygote.pullback(f, sample..., ps), samples...)
+    function map_samples_pullback(Δoutputs)
+        Δs = map(((_, pullback), Δ) -> pullback(Δ), outputs_and_pullbacks, unthunk(Δoutputs))
+        Δps = sum(Δ -> map_cotangent(storage_gradient, ps, last(Δ)), Δs)
+        Δsamples = ntuple(i -> map(Δ -> Δ[i], Δs), length(samples))
+        (NoTangent(), NoTangent(), Δps, Δsamples...)
+    end
+    map(first, outputs_and_pullbacks), map_samples_pullback
+end
 
 # A batch holds one time step per sample and one `μ` per sample.
 function check_parametric_batch(input_size::NTuple{3, Int}, μs::AbstractVector)
