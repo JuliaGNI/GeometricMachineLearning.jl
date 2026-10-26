@@ -45,3 +45,16 @@ end
     @test arch.attention_activation === GML.sti_attention_activation_default
     @test arch.add_connection === GML.sti_add_connection_default
 end
+
+# The exception to the `<prefix>_<keyword>_default` convention: `width` defaults to the `dim` the
+# constructor is given, or to `dl.input_dim` in the `DataLoader` constructor, so no module constant
+# can hold it and no literal can drift from the docstring. The assertion is that the constructed
+# value is the documented one.
+@testset "ParametricResNet: the constructed default is the documented default" begin
+    arch = GML.ParametricResNet(4)
+
+    @test arch.width == arch.sys_dim
+    @test arch.n_blocks === GML.prn_n_blocks_default
+    @test arch.activation === GML.prn_activation_default
+    @test arch.parameters isa GML.NullParameters
+end
