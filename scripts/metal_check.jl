@@ -23,7 +23,7 @@
 # that this process loaded, and the sweep stops unless the environment tracks a local path for it.
 
 using GeometricMachineLearning
-using GeometricMachineLearning: params
+import GeometricMachineLearning: GeometricOptimizers, params
 using GeometricMachineLearning.GeometricOptimizers
 using GPUArraysCore: allowscalar
 using KernelAbstractions
@@ -125,9 +125,8 @@ function network_rows(name, arch, x, batch; loss = nothing, retraction = Cayley(
                     # backend has no generator of its own; a device with one reseeds it here, so the
                     # two twins draw the same section and the row compares one run with another.
                     Random.seed!(11)
-                    try
+                    if hasproperty(Metal, :default_rng)
                         Random.seed!(Metal.default_rng(), 11)
-                    catch
                     end
                     o_device = TrainingOptimizer(ps_device; algorithm, retraction)
                     h_device = train!(device, o_device,
