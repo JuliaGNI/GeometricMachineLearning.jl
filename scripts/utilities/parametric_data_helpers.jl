@@ -1,6 +1,6 @@
-# Used by the training scripts in this directory that take the parameters of the system. These
-# helpers turn an ensemble of trajectories into the data and the system parameters that
-# `ParametricDataLoader` takes: one `NamedTuple` of system parameters per sample.
+# Used by the training scripts that take the parameters of the system. These helpers turn an
+# ensemble of trajectories into the data and the system parameters that `ParametricDataLoader`
+# takes: one `NamedTuple` of system parameters per sample.
 #
 # They are here rather than in each script because the reshaping is the same for every script of
 # this kind. They do not belong in `scripts/` either -- generating and reshaping data sets is

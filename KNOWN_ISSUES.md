@@ -131,6 +131,38 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   `ParametricDataLoader`'s `(q, p)` constructor has the same one-type restriction and widens with
   it.
 
+### K31 · `ParametricResNetLayer` admits any `AbstractArray` in its forward pass, but a 3-tensor with a `NamedTuple` `μ` raises a `MethodError` from inside the layer.
+
+- **location:** `src/layers/parametric_resnet_layer.jl:65`
+- **kind:** defect
+- **found:** 2026-10-26
+- **evidence:**
+  The two `AbstractArray` methods at `src/layers/parametric_resnet_layer.jl:65` and `:72` take any
+  array, and the docstring calls the layer a `WideResNetLayer` "whose hidden layer also sees the
+  parameters"; `WideResNetLayer` takes a 3-tensor, and `concatenate_array_with_parameters` has
+  methods for a vector and a matrix only, so the error comes from inside the layer:
+
+  ```julia
+  using GeometricMachineLearning
+  using GeometricMachineLearning: ParametricResNetLayer, WideResNetLayer
+  using AbstractNeuralNetworks: initialparameters, GlorotUniform
+  import Random
+
+  l = ParametricResNetLayer(4, 7, tanh; parameters = (a = 1.0, b = 2.0))
+  ps = initialparameters(Random.Xoshiro(1), GlorotUniform(), l, CPU(), Float64)
+  x = randn(Random.Xoshiro(2), 4, 3, 2)
+  size(WideResNetLayer(4, 7, tanh)(x, ps))        # (4, 3, 2)
+  l(x, (a = 1.0, b = 2.0), ps)
+  # MethodError: no method matching concatenate_array_with_parameters(
+  #     ::Array{Float64, 3}, ::@NamedTuple{a::Float64, b::Float64})
+  ```
+
+  `hasmethod` is `true` for that call, so the signature admits it and the error names an internal
+  function. Nothing in this release reaches the missing method: the tests pass a vector, a matrix
+  and a `(q, p)` pair, and the batch path of `ParametricResNet` goes through `apply_parametric`
+  sample by sample. Closing it means either a method for a 3-tensor or a signature narrowed to
+  `AbstractVecOrMat`.
+
 ## Upstream
 
 ### K2 · Revise prints EMFILE errors in the test log

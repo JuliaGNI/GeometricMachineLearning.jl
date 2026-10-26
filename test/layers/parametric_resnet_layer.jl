@@ -4,8 +4,8 @@
 # weight are deliberately nonzero: a layer that drops the parameters cannot pass.
 
 using GeometricMachineLearning
-using GeometricMachineLearning: WideResNetLayer, ParametricResNetLayer, NullParameters,
-                                parameterlength
+using GeometricMachineLearning: WideResNetLayer, ParametricResNetLayer, ResNetLayer,
+                                NullParameters, parameterlength
 using AbstractNeuralNetworks: initialparameters, GlorotUniform
 using Test
 import Random
@@ -44,6 +44,20 @@ end
     # applicable as it is
     @test size(l(randn(Random.Xoshiro(2), DIM), SYSTEM_PARAMETERS, ps)) == (DIM,)
     @test size(l(randn(Random.Xoshiro(3), DIM, 3), SYSTEM_PARAMETERS, ps)) == (DIM, 3)
+end
+
+# A `(q, p)` pair splits the state in two, so an odd dimension cannot hold one; the parametric layer
+# raises what `ResNetLayer` raises.
+@testset "an odd dimension with a (q, p) pair raises as ResNetLayer does" begin
+    z = (q = [1.0], p = [1.0])
+
+    plain = ResNetLayer(3, tanh; use_bias = true)
+    plain_ps = initialparameters(Random.Xoshiro(2), GlorotUniform(), plain, CPU(), Float64)
+    @test_throws AssertionError plain(z, plain_ps)
+
+    l = ParametricResNetLayer(3, 5, tanh; parameters = SYSTEM_PARAMETERS)
+    ps = initialparameters(Random.Xoshiro(3), GlorotUniform(), l, CPU(), Float64)
+    @test_throws AssertionError l(z, SYSTEM_PARAMETERS, ps)
 end
 
 @testset "the forward pass of ParametricResNetLayer is the closed form ($T)" for T in REAL_ELTYPES

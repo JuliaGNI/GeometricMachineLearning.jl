@@ -16,8 +16,14 @@ In `GeometricMachineLearning` the specific ResNet that we use consists of a seri
 
 - `dim::Integer`: the system dimension.
 - `n_blocks::Integer`: the number of blocks before the linear output layer.
-- `width::Integer = dim`: the width of the hidden layer of each block. See [`WideResNetLayer`](@ref).
-- `activation`: the activation of every block but the last, which applies the identity.
+- `width::Integer`: the width of the hidden layer of each block, which is `dim` in
+  `ResNet(dim, n_blocks, activation)` and the third positional argument of
+  `ResNet(dim, n_blocks, width, activation)` and of `ResNet(dl, n_blocks, width)`, where it
+  defaults to `dl.input_dim`. See [`WideResNetLayer`](@ref).
+- `activation`: the third positional argument of `ResNet(dim, n_blocks, activation)` and the fourth
+  of `ResNet(dim, n_blocks, width, activation)`, where `ResNet(dl, n_blocks, width)` takes it as
+  the keyword `activation = tanh`. It applies to every block but the last, which applies the
+  identity.
 
 # Constructor
 

@@ -50,6 +50,16 @@ end
         atol = 10 * eps(T), rtol = 10 * eps(T))
 end
 
+# Unlike `ResNet`, this architecture makes no choice on the width: every block is a
+# `ParametricResNetLayer`, also where the width is the system dimension.
+@testset "ParametricResNet keeps its own layer at a width equal to the dimension" begin
+    for width in (DIM, WIDTH)
+        layers = Chain(ParametricResNet(DIM; width = width, n_blocks = 2)).layers
+        @test length(layers) == 3
+        @test all(l -> l isa ParametricResNetLayer, layers)
+    end
+end
+
 @testset "the DataLoader constructor keeps the system parameters (bug 5)" begin
     dl = DataLoader(rand(Random.Xoshiro(4), DIM, 20); suppress_info = true)
     arch = ParametricResNet(dl, 2, WIDTH; parameters = MU)
