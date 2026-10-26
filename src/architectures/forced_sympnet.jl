@@ -73,6 +73,10 @@ end
 
 ForcedSympNet(dl::DataLoader; kwargs...) = ForcedSympNet(dl.input_dim; kwargs...)
 
+# The `dim` of the `SympNet`s answers the stored dimension; `ForcedSympNet` is a
+# `NeuralNetworkIntegrator` and not a `SympNet`, so it needs the method of its own.
+@inline AbstractNeuralNetworks.dim(arch::ForcedSympNet) = arch.dim
+
 # The alternating gradient layers of `GSympNet`, with a forcing layer in front of every layer that
 # changes `p`.
 function Chain(arch::ForcedSympNet{FT}) where {FT}

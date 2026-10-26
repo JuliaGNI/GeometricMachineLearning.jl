@@ -6,6 +6,7 @@
 
 using GeometricMachineLearning
 using GeometricMachineLearning: ForcedSympNet, ForcingLayer, params
+using AbstractNeuralNetworks: AbstractNeuralNetworks
 using NeuralNetworkParameters: NetworkParameters, foldparameters, foreachparameters
 using Test
 import Random
@@ -148,4 +149,12 @@ end
         @test Base.ispublic(GeometricMachineLearning, name)
         @test !Base.isexported(GeometricMachineLearning, name)
     end
+end
+
+# `AbstractNeuralNetworks`' fallback for an architecture without a `dim` method logs an error and
+# returns `nothing`, so the assertion is the value and not only that the call runs.
+@testset "a ForcedSympNet answers its dimension as the SympNets do" begin
+    @test AbstractNeuralNetworks.dim(ForcedSympNet(DIM; upscaling_dimension = UPSCALING)) ==
+          DIM
+    @test AbstractNeuralNetworks.dim(GSympNet(DIM; upscaling_dimension = UPSCALING)) == DIM
 end
