@@ -91,6 +91,19 @@ end
     @test eltype(output.p) === T
     @test isapprox(output.p - z.p, expected; rtol = 10 * eps(T))
     @test isapprox(layer((vcat(z.q, z.p), SYSTEM_PARAMETERS), ps), vcat(output.q, output.p))
+
+    # without system parameters the input is the state the forcing reads as it is, and the layer
+    # takes a matrix either bare or beside `NullParameters()`
+    layer = forcing_layer(constructor)
+    ps = layer_parameters(layer, T)
+    expected = layer.model(read_state(Val(FT), z), ps)
+    for output in (layer(z, ps), layer((z, NullParameters()), ps))
+        @test output.q == z.q
+        @test size(output.p) == size(z.p)
+        @test eltype(output.p) === T
+        @test isapprox(output.p - z.p, expected; rtol = 10 * eps(T))
+        @test isapprox(layer(vcat(z.q, z.p), ps), vcat(output.q, output.p))
+    end
 end
 
 @testset "ForcingLayer$name returns μ with return_parameters ($T)" for (name, FT, constructor) in FORCING_LAYERS,
@@ -108,6 +121,23 @@ end
     output, μ = layer((vcat(z.q, z.p), SYSTEM_PARAMETERS), ps)
     @test μ === SYSTEM_PARAMETERS
     @test size(output) == (DIM,)
+    @test eltype(output) === T
+
+    # a matrix of states returns `μ` beside a matrix of outputs, in both the named-tuple and the
+    # stacked form; the expected forcing repeats the flat system parameters below every column
+    z = (q = rand(T, HALF, 3), p = rand(T, HALF, 3))
+    expected = layer.model(
+        vcat(read_state(Val(FT), z), repeat(flat(T), 1, size(z.q, 2))), ps)
+    output, μ = layer((z, SYSTEM_PARAMETERS), ps)
+    @test μ === SYSTEM_PARAMETERS
+    @test size(output.q) == size(z.q)
+    @test size(output.p) == size(z.p)
+    @test eltype(output.p) === T
+    @test isapprox(output.p - z.p, expected; rtol = 10 * eps(T))
+
+    output, μ = layer((vcat(z.q, z.p), SYSTEM_PARAMETERS), ps)
+    @test μ === SYSTEM_PARAMETERS
+    @test size(output) == (DIM, 3)
     @test eltype(output) === T
 end
 
@@ -161,8 +191,8 @@ end
     @test_throws DimensionMismatch layer((q = rand(HALF + 1), p = rand(HALF)), ps)
 end
 
-# A tuple that is neither a state, nor a state with its system parameters, matches no method: the
-# catch-all of the branch that raised "This shouldn't be the case!" is not ported.
+# A tuple that is neither a state, nor a state with its system parameters, matches no method:
+# there is no catch-all.
 @testset "a forcing layer has no catch-all" begin
     layer = ForcingLayerQ(DIM)
     ps = layer_parameters(layer, Float64)

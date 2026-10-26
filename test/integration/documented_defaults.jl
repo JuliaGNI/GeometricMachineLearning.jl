@@ -27,6 +27,16 @@ GML = GeometricMachineLearning
 
     # the generic constructor's own two keyword defaults
     @test ForcingLayer(4) isa ForcingLayer{4, 4, :P, false}
+
+    # `parameters = NullParameters()` leaves the flat system parameters out of the input layer, so a
+    # `:Q` or `:P` forcing spans the two values of `dim ÷ 2` and a `:QP` one the four of `dim`; the
+    # two system parameters of the last line lengthen a `:Q` input by their flat vector
+    @test ForcingLayer(4).model.layers[1] isa Dense{2, 4}
+    @test ForcingLayerQ(4).model.layers[1] isa Dense{2, 4}
+    @test ForcingLayerP(4).model.layers[1] isa Dense{2, 4}
+    @test ForcingLayerQP(4).model.layers[1] isa Dense{4, 4}
+    @test ForcingLayerQ(4; parameters = (m = 1.0, ω = π / 2)).model.layers[1] isa
+          Dense{4, 4}
 end
 
 @testset "ForcedSympNet: the constructed default is the documented default" begin
@@ -37,6 +47,9 @@ end
     @test arch.n_forcing_layers === GML.fs_n_forcing_layers_default
     @test arch.activation === GML.g_activation_default
     @test arch.init_upper === GML.g_init_upper_default
+
+    # `forcing_type = :P` is the first type parameter, which `Chain` hands to every forcing layer
+    @test typeof(arch).parameters[1] === :P
 end
 
 @testset "SymplecticAttention: the constructed default is the documented default" begin
