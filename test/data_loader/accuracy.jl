@@ -127,6 +127,19 @@ end
     @test a == (n_params - 1 / 2) / n_params
 end
 
+# A `Bool` one-hot target is an integer target too: the count is halved in floating point, not in the
+# label type, so a half error does not have to fit in a `Bool`.
+@testset "a Bool target gives the accuracy of the Int64 one" begin
+    classes = copy(predicted)
+    classes[1] = 0
+    int_dl = classification_loader(classes)
+    bool_dl = DataLoader(int_dl.input, Bool.(int_dl.output); suppress_info = true)
+    a = GeometricMachineLearning.accuracy(model, ps, bool_dl)
+    @test a isa Float32
+    @test a == (Float32(n_params) - Float32(1) / 2) / Float32(n_params)
+    @test a == GeometricMachineLearning.accuracy(model, ps, int_dl)
+end
+
 @testset "the NeuralNetwork method agrees with the Chain method" begin
     for classes in (predicted, rotated)
         dl = classification_loader(classes)
