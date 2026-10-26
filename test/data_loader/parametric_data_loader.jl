@@ -110,18 +110,18 @@ end
 
     # one time step per sample: a sequence length other than one is an error before any step
     message = argument_error_message(() -> Batch(2, 3, 1)(dl))
-    @test occursin("3", message)
-    @test occursin("sequence length", message)
+    @test occursin("sequence length of 3", message)
     # a prediction window other than one is an error before any step, with the time steps to spare
     message = argument_error_message(() -> Batch{:FeedForward}(2, 1, 2)(dl))
     @test occursin("prediction window of 2", message)
 
     # a parameter vector of the wrong length, and no trajectory
     message = argument_error_message(() -> ParametricDataLoader(data, μs[1:2]))
-    @test occursin("2", message) && occursin("3", message)
+    @test occursin("hold 3 trajectories", message) &&
+          occursin("there are 2 system parameters", message)
     message = argument_error_message(
         () -> ParametricDataLoader(zeros(2d, nt, 0), NamedTuple{(:a,), Tuple{Float64}}[]))
-    @test occursin("0", message)
+    @test occursin("hold 0 trajectories", message)
 
     # too few time steps for the batch
     message = argument_error_message(() -> Batch(2)(ParametricDataLoader(data[:, 1:1, :], μs)))
