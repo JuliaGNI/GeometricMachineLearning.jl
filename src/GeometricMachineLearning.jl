@@ -13,9 +13,10 @@ import NeuralNetworkParameters: NetworkParameters
 using NeuralNetworkParameters: mapstorage
 using ChainRulesCore
 using GeometricBase
-# `integrate` is GeometricBase's generic, and the trajectory methods are methods of it: a bare
-# `using` would give this module a function of its own under that name, and a caller who loads
-# this package and `GeometricIntegrators` would then hold two verbs instead of one.
+# `integrate` is GeometricBase's generic, and the trajectory methods are methods of it. The import is
+# what makes the definitions below add methods to that function: written against a name that only a
+# `using` supplied, they would start a function of this module's own, and a caller who loads this
+# package and `GeometricIntegrators` would then hold two verbs instead of one.
 import GeometricBase: integrate
 using GeometricSolutions: GeometricSolution, EnsembleSolution, TimeSeries
 using GeometricEquations: HODEProblem, HODEEnsemble
