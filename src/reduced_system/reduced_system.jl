@@ -19,8 +19,8 @@ where
 - `f_full`: a (differentiable) mapping defined the same way as in GeometricIntegrators.
 - `v_reduced`: a (differentiable) mapping defined the same way as in GeometricIntegrators.
 - `f_reduced`: a (differentiable) mapping defined the same way as in GeometricIntegrators.
-- `integrator`: is used for integrating the reduced system.
-- `parameters`: a NamedTuple that parametrizes the vector fields (the same for full_vector_field and reduced_vector_field)
+- `integrator`: is used for integrating the reduced system. It is a required keyword argument, here and in the two `HRedSys(odeensemble, encoder, decoder)` constructors.
+- `parameters`: a NamedTuple that parametrizes the vector fields (the same for full_vector_field and reduced_vector_field). It defaults to `NullParameters()`; the two constructors that take a `HODEProblem` or a `HODEEnsemble` take it from the problem.
 - `timespan`: a tuple `(t₀, tₗ)` that specifies start and end point of the time interval over which integration is performed. 
 - `timestep`: the time step 
 - `ics`: the initial condition for the big system.
@@ -31,7 +31,7 @@ The other, and more convenient, constructor is:
 HRedSys(odeensemble, encoder, decoder) 
 ```
 where `odeensemble` can be a `HODEEnsemble` or a `HODEProblem`. `encoder` and `decoder` have to be neural networks.
-With this constructor one can also pass an integrator via the keyword argument `integrator`, which is required: neither constructor picks one for the caller.
+The keyword argument `integrator` is required here as in the standard constructor: no constructor picks one for the caller.
 Internally this calls the functions [`build_v_reduced`](@ref) and [`build_f_reduced`](@ref) in order to build the reduced vector fields.
 """
 struct HRedSys{

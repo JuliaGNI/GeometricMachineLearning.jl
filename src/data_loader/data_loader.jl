@@ -418,11 +418,12 @@ function accuracy(model::Chain,
     ind = argmax(output_estimate, dims = 1)
     # get tensor of maximum elements
     tensor_of_maximum_elements[ind] .= T1(1)
-    # The count is an `Int` on every backend, and the fraction is read in the element type of the
-    # loader's input: an integer division here would return a `Float64` for a `Float32` run, which
-    # then meets `Float32` data as a promotion the caller did not ask for.
+    # The count is halved, not floored: a wrongly labelled sample differs from the target in two
+    # entries of its one-hot column and a sample that carries no label differs in one, so half the
+    # difference is the number of errors. The fraction is then read in `T`, the element type of the
+    # loader's input; reading it in the output's would widen a `Float32` loader's result.
     n = size(dl.output, 3)
-    errors = sum(abs.(dl.output - tensor_of_maximum_elements)) ÷ T1(2)
+    errors = sum(abs.(dl.output - tensor_of_maximum_elements)) / T1(2)
     T(n - errors) / T(n)
 end
 

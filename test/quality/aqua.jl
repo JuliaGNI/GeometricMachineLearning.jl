@@ -54,8 +54,8 @@ end
 # stays a gate: the fix is one line and the message says which. `test_explicit_imports` opens its
 # own `@testset`, so this call needs no wrapper.
 #
-# `update!` is the one import that nothing in `src/` uses, and it is deliberate: the package no
-# longer exports it, so the import is not there for a re-export, but `GeometricMachineLearning.update!`
+# `update!` is the one import that nothing in `src/` uses, and it is deliberate: the package does not
+# export it, so the import is not there for a re-export, but `GeometricMachineLearning.update!`
 # is the binding a caller reaches the `GeometricOptimizers`/`GeometricBase` verb under, and
 # `test/quality/exports.jl` asserts it is that object. Nothing here defines a method on it, which is
 # what leaves the import with no use to find.

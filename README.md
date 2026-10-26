@@ -55,7 +55,7 @@ g_loss_array = train!(g_nn, g_opt, dl, Batch(batch_size), nepochs)
 # plot the result
 ics = (q=qp_data.q[:,1], p=qp_data.p[:,1])
 const steps_to_plot = 200
-g_trajectory = iterate(g_nn, ics; n_points = steps_to_plot)
+g_trajectory = integrate(g_nn, ics; n_points = steps_to_plot)
 fig = Figure()
 ax = Axis(fig[1, 1]; xlabel = "q", ylabel = "p")
 lines!(ax, vec(qp_data.q')[1:steps_to_plot], vec(qp_data.p')[1:steps_to_plot]; label = "training data")

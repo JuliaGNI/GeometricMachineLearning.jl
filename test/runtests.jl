@@ -104,5 +104,5 @@ if "doctests" in GROUPS
     @safetestset "Doctests" include("quality/doctests.jl")
 end
 if "metal" in GROUPS
-    @safetestset "Metal: the GPU extension and a kernel on an Apple GPU" include("devices/metal.jl")
+    @safetestset "Metal: the tensor products and the Cayley kernel on an Apple GPU" include("devices/metal.jl")
 end

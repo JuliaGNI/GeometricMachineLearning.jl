@@ -77,6 +77,7 @@ The training data can very easily be obtained by using the packages [`GeometricP
 ```@example toda_lattice
 using GeometricIntegrators: integrate, ImplicitMidpoint
 using GeometricMachineLearning 
+using GeometricMachineLearning: solve! # the PSD architecture is solved, not trained
 import Random # hide
 
 pr = tl.hodeproblem(; timespan = (0.0, 800.))

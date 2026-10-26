@@ -107,11 +107,10 @@ include("utils.jl")
 
 include("data_loader/data_loader.jl")
 
-# INCLUDE ARRAYS — the structured matrix types come from GeometricOptimizers, which also carries
-# every method GML needs on them; this package defines none of its own.
-
-# Re-exported from GeometricOptimizers, so that `using GeometricMachineLearning` on its own still
-# gives a caller the matrix types its layers are parametrized by.
+# The structured matrix types come from GeometricOptimizers, which also carries every method GML
+# needs on them; this package defines none of its own. They are re-exported here, so that `using
+# GeometricMachineLearning` on its own still gives a caller the matrix types its layers are
+# parametrized by.
 export SymmetricMatrix, SkewSymMatrix
 export StrictlyLowerTriangular, StrictlyUpperTriangular
 export StiefelLieAlgHorMatrix, GrassmannLieAlgHorMatrix

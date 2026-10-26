@@ -4,7 +4,7 @@
 include(joinpath(@__DIR__, "check_references.jl"))
 
 using GeometricMachineLearning
-using GeometricOptimizers: solve! # the tutorials call it, and this package no longer exports it
+using GeometricOptimizers: solve! # the manual's `@docs solve!` entry names it, and this package does not export it
 using HDF5
 using AbstractNeuralNetworks
 using Documenter

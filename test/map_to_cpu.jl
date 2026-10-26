@@ -6,6 +6,7 @@
 
 using GeometricMachineLearning
 using GeometricMachineLearning: map_to_cpu
+using GPUArraysCore: allowscalar
 using JLArrays: JLBackend
 using LinearAlgebra
 using NeuralNetworkParameters: NetworkParameters, params
@@ -16,6 +17,10 @@ import GeometricOptimizers: StiefelManifold, SymmetricMatrix, SkewSymMatrix,
                             StrictlyLowerTriangular, StrictlyUpperTriangular
 
 Random.seed!(1234)
+
+# Scalar indexing is off for the whole file, so a `_to_host` that read a device array one element at
+# a time would raise rather than answer slowly.
+allowscalar(false)
 
 const N, n = 6, 3
 
@@ -88,21 +93,28 @@ end
 # The copy is a network of the host, in its backend and in its fourth type parameter alike: the
 # leaves are host arrays, so a backend left on the device would send the next forward pass there
 # with data it cannot read.
-@testset "a device network comes back on the CPU" begin
-    nn = NeuralNetwork(Chain(Dense(N, 3, tanh)), JLBackend(), Float32)
+@testset "a device network comes back on the CPU ($T)" for T in (Float32, Float64)
+    nn = NeuralNetwork(Chain(Dense(N, 3, tanh)), JLBackend(), T)
     back = map_to_cpu(nn)
 
     @test back.backend isa CPU
     @test typeof(back).parameters[4] === CPU
-    @test params(back).L1.W isa Matrix{Float32}
-    @test params(back).L1.b isa Vector{Float32}
+    @test params(back).L1.W isa Matrix{T}
+    @test params(back).L1.b isa Vector{T}
+    @test eltype(params(back).L1.W) === T
+    @test eltype(params(back).L1.b) === T
     @test back.architecture === nn.architecture
 end
 
-@testset "a host network keeps its backend and its type parameter" begin
-    nn = NeuralNetwork(Chain(Dense(N, 3, tanh)), CPU(), Float32)
-    back = map_to_cpu(nn)
+# A host backend is a property of the caller's own network, and a copy does not change it: `CPU()`
+# comes back `CPU()`, and `CPU(; static = true)` comes back static.
+@testset "a host network keeps its backend and its type parameter ($T)" for T in (Float32, Float64)
+    for backend in (CPU(), CPU(; static = true))
+        nn = NeuralNetwork(Chain(Dense(N, 3, tanh)), backend, T)
+        back = map_to_cpu(nn)
 
-    @test back.backend isa CPU
-    @test typeof(back).parameters[4] === CPU
+        @test back.backend === nn.backend
+        @test typeof(back).parameters[4] === CPU
+        @test eltype(params(back).L1.W) === T
+    end
 end

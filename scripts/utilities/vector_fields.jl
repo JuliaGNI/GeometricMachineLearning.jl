@@ -3,8 +3,9 @@ using LinearAlgebra: I
 include("assemble_matrix.jl")
 
 # The canonical Poisson tensor as the dense matrix it is: `[0 I(n); -I(n) 0]` of `n2 × n2`, with
-# `n = n2 ÷ 2`.
+# `n = n2 ÷ 2`. The dimension of a Poisson tensor is even.
 function poisson_matrix(n2::Integer, ::Type{T} = Float64) where {T}
+    iseven(n2) || throw(ArgumentError("the dimension of a Poisson tensor is even, got $n2"))
     n = n2 ÷ 2
     [zeros(T, n, n) Matrix{T}(I, n, n); -Matrix{T}(I, n, n) zeros(T, n, n)]
 end
