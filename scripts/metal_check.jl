@@ -21,7 +21,8 @@
 # The tree's `Manifest.toml` is gitignored and pins the released GeometricOptimizers, so a session
 # opened on the checkout loads that release with no warning, and a row that fails there is the
 # release's. The first line below prints the version and the directory of the `GeometricOptimizers`
-# this process loaded, and the sweep stops unless that directory is the one the environment resolves.
+# this process loaded, and the sweep stops unless the environment tracks a path for it and that
+# directory is the one it tracks.
 
 using GeometricMachineLearning
 import GeometricMachineLearning: GeometricOptimizers, params
@@ -37,12 +38,13 @@ import Zygote
 
 const T = Float32
 
-# The distance a row is held to, in units of its own largest entry: a device result and its host twin
-# agree to a few ulps of that entry and not to the bit, and a `Float32` entry of `1e5` has an ulp of
-# `0.008`, which no absolute bound below it can hold. The eight architectures differ by four orders of
-# magnitude in the entries they compare — the largest entry of `LASympNet`'s pullback is `1e5` — so the
-# distance is taken in each row's units, and a row of `O(1)` values is held to `BOUND` absolutely.
-# Measured here, the worst row is `3e-7`.
+# The distance a row is held to, in units of its own largest host entry: a device result and its host
+# twin agree to a few ulps of that entry and not to the bit, and a `Float32` entry of `1e5` has an ulp
+# of `0.008`, which no absolute bound below it can hold. The eight architectures differ by four orders
+# of magnitude in the entries they compare — the largest entry of `LASympNet`'s pullback is `1e5` — so
+# the distance is taken in each row's units: `BOUND` is about 17 `eps(Float32)` of the row's largest
+# host magnitude, and for a row whose values are `O(1)` it is that absolute bound. Measured here, the
+# worst row is `3e-7`.
 const BOUND = 2e-6
 
 const GO_UUID = Base.UUID("fc236c15-5557-4942-aa65-b650f329279e")
@@ -51,15 +53,21 @@ const GO_DIR = pkgdir(GeometricOptimizers)
 println("GeometricOptimizers ", pkgversion(GeometricOptimizers), " at ", GO_DIR)
 
 # The rows measure the module this process loaded, and the environment says only which directory that
-# should be: a session that loaded a released GeometricOptimizers keeps that module through
-# `Pkg.develop`, because a package is loaded once per process.
-const GO_SOURCE = Pkg.dependencies()[GO_UUID].source
-if abspath(GO_DIR) != abspath(GO_SOURCE)
-    error("the loaded GeometricOptimizers is at ", GO_DIR,
-        ", and the environment resolves ", GO_SOURCE,
-        ". A session that loaded a released GeometricOptimizers keeps that module through " *
-        "`Pkg.develop`; restart the session so that the sweep measures the tree the " *
-        "environment names")
+# must be. Two things hold before a row runs, each with a stop of its own: the environment tracks a
+# path for `GeometricOptimizers`, so that it is a checkout and not a release, and the module this
+# process loaded came from that path, because a package is loaded once per process and a session that
+# loaded the release keeps it through `Pkg.develop`.
+const GO_DEP = Pkg.dependencies()[GO_UUID]
+if !GO_DEP.is_tracking_path
+    error(
+        "the environment does not track a path for GeometricOptimizers: it resolves the release ",
+        GO_DEP.source, ". A manifest that pins the release, as this tree's gitignored ",
+        "`Manifest.toml` does, resolves it; `Pkg.develop` the local checkout instead")
+elseif abspath(GO_DIR) != abspath(GO_DEP.source)
+    error("the loaded GeometricOptimizers is at ", GO_DIR, ", and the environment tracks ",
+        GO_DEP.source, ". A session that loaded a released GeometricOptimizers keeps that ",
+        "module through `Pkg.develop`; restart the session so that the sweep measures the tree ",
+        "the environment names")
 end
 
 const BACKEND = get_backend(MtlArray(zeros(T, 1)))
@@ -193,7 +201,7 @@ function metal_check()
             randn(T, 4, 12, 4), Batch(6)))
     # A latent dimension of four and not two: at two, two of this parameter set's `StiefelManifold`
     # weights hold a single column, whose horizontal lift has an empty skew block, and a Metal launch of
-    # an empty array raises `DivideError` (`KNOWN_ISSUES.md`, K32).
+    # an empty array raises `DivideError` (`KNOWN_ISSUES.md`, K34).
     append!(rows,
         network_rows("SymplecticAutoencoder", SymplecticAutoencoder(8, 4),
             randn(T, 8, 12, 4), Batch(6); retraction = Geodesic(), autoencoder = true))

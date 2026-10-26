@@ -203,7 +203,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   so `scripts/metal_check.jl` uses it. The fix is a `copyto!` method in `JLArrays`, or a device-array
   path through `Base.copyto!` in `AbstractNeuralNetworks`.
 
-### K32 · A `StiefelManifold` weight of one column gives an empty skew block, and a Metal `rmul!` of an empty array raises.
+### K34 · A `StiefelManifold` weight of one column gives an empty skew block, and a Metal `rmul!` of an empty array raises.
 
 - **location:** `GeometricOptimizers` `src/lie_algebras/stiefel_lie_algebra_horizontal.jl:178`
 - **kind:** upstream
@@ -245,7 +245,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 ### K33 · An epoch of `train!` on a Metal array advances the CPU random stream, so a two-epoch run draws its second epoch's minibatches differently from the host's.
 
 - **location:** `src/data_loader/batch.jl:195`
-- **kind:** upstream
+- **kind:** not verified
 - **found:** 2026-10-26, part M7
 - **evidence:**
   `train!` draws its minibatches with `shuffle` from the task-local stream, and nothing else. From one

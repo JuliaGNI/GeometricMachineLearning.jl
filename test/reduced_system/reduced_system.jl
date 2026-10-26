@@ -97,9 +97,15 @@ function check_if_reduced_vector_fields_are_divergence_free(
     nothing
 end
 
+# Two loops and not one: the file seeds its stream once and each call draws the networks it builds,
+# so the divergence calls below, which build their own, would move the draws that the projection
+# comparison of `test_reduced_vector_fields` starts from.
 for T in REAL_ELTYPES
     test_reduced_vector_fields(2, ImplicitMidpoint(), T)
     test_reduced_vector_fields(2, ExplicitMidpoint(), T)
+end
+
+for T in REAL_ELTYPES
     check_if_reduced_vector_fields_are_divergence_free(2, ImplicitMidpoint(), T)
     check_if_reduced_vector_fields_are_divergence_free(2, ExplicitMidpoint(), T)
     check_if_reduced_vector_fields_are_divergence_free(2, ExplicitEulerRK(), T)
