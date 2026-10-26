@@ -22,8 +22,8 @@ In `GeometricMachineLearning` the specific ResNet that we use consists of a seri
   defaults to `dl.input_dim`. See [`WideResNetLayer`](@ref).
 - `activation`: the third positional argument of `ResNet(dim, n_blocks, activation)` and the fourth
   of `ResNet(dim, n_blocks, width, activation)`, where `ResNet(dl, n_blocks, width)` takes it as
-  the keyword `activation = tanh`. It applies to every block but the last, which applies the
-  identity.
+  the keyword `activation = tanh`. It applies to each of the `n_blocks` blocks; the linear output
+  layer applies the identity.
 
 # Constructor
 

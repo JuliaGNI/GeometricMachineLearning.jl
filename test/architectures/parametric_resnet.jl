@@ -4,9 +4,8 @@
 # `helpers/resnet_forward.jl`, over `params(nn)` read back one layer at a time.
 
 using GeometricMachineLearning
-using GeometricMachineLearning: ParametricResNet, ParametricResNetLayer, WideResNetLayer,
-                                NullParameters, ParametricDataLoader, params,
-                                parameterlength
+using GeometricMachineLearning: ParametricResNet, ParametricResNetLayer, NullParameters,
+                                ParametricDataLoader, params, parameterlength
 using Test
 import Random
 
@@ -60,7 +59,7 @@ end
     end
 end
 
-@testset "the DataLoader constructor keeps the system parameters (bug 5)" begin
+@testset "the DataLoader constructor keeps the system parameters" begin
     dl = DataLoader(rand(Random.Xoshiro(4), DIM, 20); suppress_info = true)
     arch = ParametricResNet(dl, 2, WIDTH; parameters = MU)
 

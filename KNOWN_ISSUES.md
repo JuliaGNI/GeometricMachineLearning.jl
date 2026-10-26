@@ -150,18 +150,20 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
   l = ParametricResNetLayer(4, 7, tanh; parameters = (a = 1.0, b = 2.0))
   ps = initialparameters(Random.Xoshiro(1), GlorotUniform(), l, CPU(), Float64)
+  w = WideResNetLayer(4, 7, tanh)
+  wps = initialparameters(Random.Xoshiro(1), GlorotUniform(), w, CPU(), Float64)
   x = randn(Random.Xoshiro(2), 4, 3, 2)
-  size(WideResNetLayer(4, 7, tanh)(x, ps))        # (4, 3, 2)
+  size(w(x, wps))                                 # (4, 3, 2)
   l(x, (a = 1.0, b = 2.0), ps)
   # MethodError: no method matching concatenate_array_with_parameters(
   #     ::Array{Float64, 3}, ::@NamedTuple{a::Float64, b::Float64})
   ```
 
   `hasmethod` is `true` for that call, so the signature admits it and the error names an internal
-  function. Nothing in this release reaches the missing method: the tests pass a vector, a matrix
-  and a `(q, p)` pair, and the batch path of `ParametricResNet` goes through `apply_parametric`
-  sample by sample. Closing it means either a method for a 3-tensor or a signature narrowed to
-  `AbstractVecOrMat`.
+  function. Nothing in this release reaches the missing method: the tests pass a vector, a matrix, a
+  3-tensor without system parameters and a `(q, p)` pair, and the batch path of `ParametricResNet`
+  goes through `apply_parametric` sample by sample. Closing it means either a method for a 3-tensor
+  or a signature narrowed to `AbstractVecOrMat`.
 
 ## Upstream
 

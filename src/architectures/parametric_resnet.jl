@@ -11,7 +11,7 @@ The architecture without structure preservation that the generalized Hamiltonian
 [HamiltonianNeuralNetworks.jl](https://juliagml.github.io/HamiltonianNeuralNetworks.jl/latest/) is
 compared against: it maps ``(x, \mu) \mapsto x'`` with the same information available to it, but
 nothing in it makes the map symplectic. Unlike `ResNet` it uses a `ParametricResNetLayer` at every
-width, and the last block applies the identity activation.
+width, and the linear output layer applies the identity activation.
 
 # Keyword arguments
 
@@ -19,7 +19,7 @@ width, and the last block applies the identity activation.
 - `n_blocks = """ * "$(prn_n_blocks_default)`" *
      raw""": the number of blocks before the linear one.
 - `activation = """ * "$(prn_activation_default)`" *
-     raw""": the activation of every block but the last.
+     raw""": the activation of every block.
 - `parameters = NullParameters()`: a `NamedTuple` of system parameters, used only for its shape.
 
 # Constructor
