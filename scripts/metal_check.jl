@@ -66,8 +66,10 @@ to_device(ps::NetworkParameters) = mapparameters(to_device, ps)
 # The device result's distance from its host twin, over the two levels of a parameter set and over a
 # plain array alike.
 deviation(device, host) = maximum(abs, Array(device) .- host)
-deviation(device::NetworkParameters, host) = maximum(abs,
-    first(flatten(mapstorage(Array, device))) .- first(flatten(host)))
+function deviation(device::NetworkParameters, host)
+    maximum(abs,
+        first(flatten(mapstorage(Array, device))) .- first(flatten(host)))
+end
 
 function check_row(name, f)
     status = try
@@ -100,12 +102,14 @@ function network_rows(name, arch, x, batch; loss = nothing, retraction = Cayley(
     rows = Pair{String, Any}[]
     push!(rows,
         check_row("$name, forward",
-            () -> deviation(host.model(x_device, ps_device), host.model(x, ps_host)) <= BOUND))
+            () -> deviation(host.model(x_device, ps_device), host.model(x, ps_host)) <=
+                  BOUND))
     push!(rows,
         check_row("$name, pullback",
             () -> let g_device = Zygote.gradient(p -> sum(abs2, host.model(x_device, p)),
                     ps_device)[1],
                 g_host = Zygote.gradient(p -> sum(abs2, host.model(x, p)), ps_host)[1]
+
                 deviation(g_device, g_host) <= BOUND
             end))
     for algorithm in (Adam(), GradientMethod())
@@ -131,7 +135,6 @@ function network_rows(name, arch, x, batch; loss = nothing, retraction = Cayley(
                         show_progress = false, loss_kw...)
                     deviation(h_device, h_host) <= BOUND
                 end))
-        )
     end
     rows
 end
@@ -139,21 +142,27 @@ end
 function metal_check()
     allowscalar(false)
     rows = Pair{String, Any}[]
-    append!(rows, network_rows("a Dense chain", Chain(Dense(4, 8, tanh), Dense(8, 4)),
-        randn(T, 4, 12, 4), Batch(6); loss = FeedForwardLoss()))
-    append!(rows, network_rows("a StiefelLayer chain",
-        Chain(StiefelLayer(4, 8), Dense(8, 4, tanh)), randn(T, 4, 12, 4), Batch(6);
-        loss = FeedForwardLoss(), retraction = Geodesic()))
+    append!(rows,
+        network_rows("a Dense chain", Chain(Dense(4, 8, tanh), Dense(8, 4)),
+            randn(T, 4, 12, 4), Batch(6); loss = FeedForwardLoss()))
+    append!(rows,
+        network_rows("a StiefelLayer chain",
+            Chain(StiefelLayer(4, 8), Dense(8, 4, tanh)), randn(T, 4, 12, 4), Batch(6);
+            loss = FeedForwardLoss(), retraction = Geodesic()))
     append!(rows, network_rows("GSympNet", GSympNet(4), randn(T, 4, 12, 4), Batch(6)))
     append!(rows, network_rows("LASympNet", LASympNet(4), randn(T, 4, 12, 4), Batch(6)))
-    append!(rows, network_rows("VolumePreservingFeedForward", VolumePreservingFeedForward(4),
-        randn(T, 4, 12, 4), Batch(6)))
-    append!(rows, network_rows("SymplecticAutoencoder", SymplecticAutoencoder(8, 2),
-        randn(T, 8, 12, 4), Batch(6); retraction = Geodesic(), autoencoder = true))
-    append!(rows, network_rows("StandardTransformerIntegrator", StandardTransformerIntegrator(4),
-        randn(T, 4, 8, 12), Batch(6, 3)))
-    append!(rows, network_rows("VolumePreservingTransformer", VolumePreservingTransformer(4, 3),
-        randn(T, 4, 8, 12), Batch(6, 3)))
+    append!(rows,
+        network_rows("VolumePreservingFeedForward", VolumePreservingFeedForward(4),
+            randn(T, 4, 12, 4), Batch(6)))
+    append!(rows,
+        network_rows("SymplecticAutoencoder", SymplecticAutoencoder(8, 2),
+            randn(T, 8, 12, 4), Batch(6); retraction = Geodesic(), autoencoder = true))
+    append!(rows,
+        network_rows("StandardTransformerIntegrator", StandardTransformerIntegrator(4),
+            randn(T, 4, 8, 12), Batch(6, 3)))
+    append!(rows,
+        network_rows("VolumePreservingTransformer", VolumePreservingTransformer(4, 3),
+            randn(T, 4, 8, 12), Batch(6, 3)))
     for (name, status) in rows
         println(status === :pass ? "PASS  " : "FAIL  ", name,
             status === :pass ? "" : "  ($(status))")
