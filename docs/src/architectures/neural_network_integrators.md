@@ -57,7 +57,10 @@ Main.remark(raw"For standard multi-step methods (that are not neural network-bas
 ```@docs
 NeuralNetworkIntegrator
 ResNet
+GeometricMachineLearning.WideResNetLayer
 GeometricMachineLearning.ResNetLayer
+GeometricMachineLearning.ParametricResNet
+GeometricMachineLearning.ParametricResNetLayer
 integrate(::NeuralNetwork{<:NeuralNetworkIntegrator}, ::NamedTuple{(:q, :p), Tuple{AT, AT}}) where {T, AT<:AbstractVector{T}}
 TransformerIntegrator
 integrate(::NeuralNetwork{<:TransformerIntegrator}, ::NamedTuple{(:q, :p), Tuple{AT, AT}}) where {T, AT<:AbstractMatrix{T}}

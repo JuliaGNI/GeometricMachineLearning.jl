@@ -45,3 +45,14 @@ end
     @test arch.attention_activation === GML.sti_attention_activation_default
     @test arch.add_connection === GML.sti_add_connection_default
 end
+
+# `width` has no constant of its own: its default is the dimension the constructor is given, so
+# there is no literal that could drift from the docstring, and the assertion is that the two agree.
+@testset "ParametricResNet: the constructed default is the documented default" begin
+    arch = GML.ParametricResNet(4)
+
+    @test arch.width == arch.sys_dim
+    @test arch.n_blocks === GML.prn_n_blocks_default
+    @test arch.activation === GML.prn_activation_default
+    @test arch.parameters isa GML.NullParameters
+end
