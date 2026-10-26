@@ -40,9 +40,8 @@ end
 # The reduction errors are asserted finite and not ordered. `projection_error` compares the two
 # autoencoders on the *full* solution, but `reduction_error` integrates the *reduced* system, and the
 # reduced vector field of an untrained `SymplecticAutoencoder` is one an explicit method diverges on:
-# under `ExplicitMidpoint` at the seed above `reduction_error(rs2)` comes back `NaN`, which is not
-# ordered against anything. An implicit method keeps both errors numbers, which is all an untrained
-# network supports.
+# `reduction_error(rs2)` can come back `NaN`, which is not ordered against anything. An implicit
+# method keeps both errors numbers, which is all an untrained network supports.
 function test_reduced_vector_fields(reduced_dim::Integer, integrator, ::Type{T}) where {T}
     rs1, rs2, nn1, _ = set_up_reduced_systems(reduced_dim, integrator, T)
 
@@ -83,9 +82,9 @@ function test_if_reduced_vector_fields_are_divergence_free(rs::HRedSys)
     nothing
 end
 
-# The divergence of the reduced fields is evaluated in the problem's own `Float64` — the state and
-# the vector fields are the problem's, and a network of another element type promotes into them — so
-# the bound below is `Float64`'s in both precisions.
+# The divergence of the reduced fields is evaluated in the problem's own `Float64`: the state and the
+# vector fields are the problem's. The bound below is `Float64`'s, and the three calls name
+# `Float64` rather than looping over `REAL_ELTYPES`.
 function check_if_reduced_vector_fields_are_divergence_free(
         reduced_dim::Integer, integrator,
         ::Type{T}) where {T}

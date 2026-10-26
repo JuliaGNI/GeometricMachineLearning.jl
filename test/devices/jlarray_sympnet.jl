@@ -1,6 +1,7 @@
-# The three symplectic-network families on a device array: `GSympNet` and `LASympNet`, whose layers
-# are named by their weight matrices, and `VolumePreservingFeedForward`, whose weights are the two
-# strict triangular types. Scalar indexing is off for the whole file.
+# The three symplectic-network families on a device array: `GSympNet`, whose leaves are plain arrays
+# and vectors, `LASympNet`, whose weights are `SymmetricMatrix` leaves, and
+# `VolumePreservingFeedForward`, whose weights are the two strict triangular types. Scalar indexing
+# is off for the whole file.
 #
 # None of the three holds a manifold weight, so `train!` takes its default loss for a
 # `NeuralNetworkIntegrator` and a `Batch{:FeedForward}`, and the default `Cayley()` retraction is

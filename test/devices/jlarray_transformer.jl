@@ -2,8 +2,9 @@
 # weights inside a `NamedTuple` leaf, which is the one leaf shape a two-level walk does not reach, so
 # the leaf assertion of the helper walks into it.
 #
-# The batch is the transformer's: `Batch(n, L)` draws minibatches of `n` sequences of length `L`, and
-# the loader's input carries that length in its second dimension.
+# The batch is the transformer's: `Batch(n, L)` draws minibatches of `n` sequences of `L` time steps,
+# and the second axis of a `DataLoader`'s input is the time axis, eight steps here, so `Batch(6, 3)`
+# takes windows of three of them.
 
 using GeometricMachineLearning
 using GPUArraysCore: allowscalar
