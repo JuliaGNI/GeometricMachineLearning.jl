@@ -36,23 +36,23 @@ batch = Batch(batch_size, seq_length)
 
 loss_array1 = train!(nn1, o1, dl, batch, n_epochs; show_progress = false)
 loss_array2 = train!(nn2, o2, dl, batch, n_epochs; show_progress = false)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1000-element Vector{Float64}:
- 3.468310372516554
+ 3.4683103725165543
  3.2231537693179044
  3.0508421765534957
  2.8208081911363267
  2.53654404467689
  2.3151921161225077
  2.100443393839217
- 2.067292314298857
+ 2.0672923142988573
  1.7650523986217461
- 1.6013422215334336
+ 1.6013422215334339
  ⋮
- 0.011162223499578572
- 0.010696326968698908
- 0.012673708223587137
- 0.011739252062330341
- 0.010363512994351547
- 0.009285189317969017
- 0.009876674734190374
- 0.008591241516998534
- 0.009183372217672986</code></pre><p><img src="../attention_training_light.png" alt="Training loss for the different networks."/> <img src="../attention_training_dark.png" alt="Training loss for the different networks."/></p><p><img src="../validation_light.png" alt="Predicting trajectories with transformers based on the vector softmax and the matrix softmax."/> <img src="../validation_dark.png" alt="Predicting trajectories with transformers based on the vector softmax and the matrix softmax."/></p><p>A similar page can be found <a href="../softmax_comparison/#Comparing-Matrix-and-Vector-Softmax-as-Activation-Functions-in-a-Transformer">here</a>.</p><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-1"><a class="tag is-link" href="#citeref-1">1</a>We here use the implementation of the coupled harmonic oscillator from <a href="https://github.com/JuliaGNI/GeometricProblems.jl"><code>GeometricProblems</code></a>.</li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../volume_preserving_attention/">« Volume-Preserving Attention</a><a class="docs-footer-nextpage" href="../volume_preserving_transformer_rigid_body/">Volume-Preserving Transformer for the Rigid Body »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Sunday 25 October 2026 14:32">Sunday 25 October 2026</span>. Using Julia version 1.13.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ 0.01209142495147661
+ 0.010454680122537289
+ 0.010318275585110524
+ 0.010076010141832214
+ 0.010907840177687561
+ 0.010661154887167644
+ 0.010643342637316977
+ 0.010893210287177994
+ 0.010911829365076606</code></pre><p><img src="../attention_training_light.png" alt="Training loss for the different networks."/> <img src="../attention_training_dark.png" alt="Training loss for the different networks."/></p><p><img src="../validation_light.png" alt="Predicting trajectories with transformers based on the vector softmax and the matrix softmax."/> <img src="../validation_dark.png" alt="Predicting trajectories with transformers based on the vector softmax and the matrix softmax."/></p><p>A similar page can be found <a href="../softmax_comparison/#Comparing-Matrix-and-Vector-Softmax-as-Activation-Functions-in-a-Transformer">here</a>.</p><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-1"><a class="tag is-link" href="#citeref-1">1</a>We here use the implementation of the coupled harmonic oscillator from <a href="https://github.com/JuliaGNI/GeometricProblems.jl"><code>GeometricProblems</code></a>.</li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../volume_preserving_attention/">« Volume-Preserving Attention</a><a class="docs-footer-nextpage" href="../volume_preserving_transformer_rigid_body/">Volume-Preserving Transformer for the Rigid Body »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Monday 26 October 2026 11:38">Monday 26 October 2026</span>. Using Julia version 1.13.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
