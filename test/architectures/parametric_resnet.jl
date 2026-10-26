@@ -5,7 +5,8 @@
 
 using GeometricMachineLearning
 using GeometricMachineLearning: ParametricResNet, ParametricResNetLayer, NullParameters,
-                                ParametricDataLoader, params, parameterlength
+                                ParametricDataLoader, params, parameterlength,
+                                apply_parametric
 using Test
 import Random
 
@@ -89,6 +90,44 @@ end
     @test parameterlength(NeuralNetwork(arch)) -
           parameterlength(NeuralNetwork(parameter_free)) ==
           (2 + 1) * WIDTH * 3
+end
+
+# The loader gives the system dimension and the system parameters, so the architecture equals the
+# one built from them by hand, as a tensor and as a `(q, p)` pair.
+@testset "the ParametricDataLoader constructor reads the dimension and μ off the loader ($T)" for T in REAL_ELTYPES
+    m, nt = 3, 5
+    μs = [(a = T(j), b = T[j, -j]) for j in 1:m]
+    tensor = randn(Random.Xoshiro(8), T, DIM, nt, m)
+    pair = (q = tensor[1:(DIM ÷ 2), :, :], p = tensor[(DIM ÷ 2 + 1):end, :, :])
+
+    for dl in (ParametricDataLoader(tensor, μs), ParametricDataLoader(pair, μs))
+        expected = ParametricResNet(DIM; width = WIDTH, n_blocks = 2, parameters = μs[1])
+        arch = ParametricResNet(dl, 2, WIDTH)
+        @test arch.sys_dim == DIM
+        @test arch.width == WIDTH
+        @test arch.n_blocks == 2
+        @test arch.activation === expected.activation
+        @test arch.parameters == μs[1]
+        @test Chain(arch).layers == Chain(expected).layers
+        nn = NeuralNetwork(arch, T)
+        @test parameterlength(nn) == parameterlength(NeuralNetwork(expected, T))
+        # on the same parameters, the two forward passes agree
+        x = randn(Random.Xoshiro(9), T, DIM)
+        @test nn(x, μs[2]) == apply_parametric(Chain(expected), x, μs[2], params(nn))
+
+        # `width` defaults to the system dimension
+        @test ParametricResNet(dl, 2).width == DIM
+    end
+
+    dl = ParametricDataLoader(tensor, μs)
+    nn = NeuralNetwork(ParametricResNet(dl, 1, WIDTH), T)
+    initial = deepcopy(params(nn))
+    opt = TrainingOptimizer(nn.params; algorithm = Adam())
+    history = train!(nn, opt, dl, Batch(4), 2; show_progress = false)
+    @test length(history) == 2
+    @test eltype(history) === T
+    @test all(isfinite, history)
+    @test params(nn)[1].upscale_weight != initial[1].upscale_weight
 end
 
 @testset "train! of a ParametricResNet on a ParametricDataLoader ($T)" for T in REAL_ELTYPES

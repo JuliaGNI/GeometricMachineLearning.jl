@@ -191,7 +191,6 @@ export NetworkLoss, TransformerLoss, FeedForwardLoss, AutoEncoderLoss, ReducedLo
 #INCLUDE ARCHITECTURES
 include("architectures/neural_network_integrator.jl")
 include("architectures/resnet.jl")
-include("architectures/parametric_resnet.jl")
 # The two parametric layers and the architecture that pairs them with the exported `ResNet` are
 # public and not exported, so that the export list does not grow with the parametric family.
 public WideResNetLayer, ParametricResNetLayer, ParametricResNet
@@ -230,6 +229,8 @@ include("data_loader/tensor_assign.jl")
 include("data_loader/batch.jl")
 include("data_loader/parametric_data_loader.jl")
 include("data_loader/train.jl")
+# after the loader, because a constructor of `ParametricResNet` takes a `ParametricDataLoader`
+include("architectures/parametric_resnet.jl")
 
 # The training of a network that takes the parameters of the system beside its input.
 public apply_parametric, ParametricLoss, ParametricDataLoader

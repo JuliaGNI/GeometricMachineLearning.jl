@@ -30,7 +30,10 @@ width, and the linear output layer applies the identity activation.
 ParametricResNet(dl, n_blocks, width)
 ```
 
-where `dl` is an instance of [`DataLoader`](@ref) and `width` defaults to `dl.input_dim`.
+where `dl` is an instance of [`DataLoader`](@ref) and `width` defaults to `dl.input_dim`, or an
+instance of [`ParametricDataLoader`](@ref). The latter gives the system dimension, the rows of its
+data or of `q` and `p` together, which is also the default of `width`, and the system parameters,
+whose first `μ` the architecture keeps for its shape; it therefore takes no `parameters` keyword.
 
 The forward pass is [`apply_parametric`](@ref), or the functor `nn(x, μ)` of the `NeuralNetwork`
 built around it.
@@ -54,6 +57,16 @@ function ParametricResNet(dl::DataLoader, n_blocks::Integer, width::Integer = dl
     ParametricResNet(dl.input_dim; width = width, n_blocks = n_blocks,
         activation = activation, parameters = parameters)
 end
+
+function ParametricResNet(dl::ParametricDataLoader, n_blocks::Integer,
+        width::Integer = _system_dimension(dl.input); activation = prn_activation_default)
+    ParametricResNet(_system_dimension(dl.input); width = width, n_blocks = n_blocks,
+        activation = activation, parameters = first(dl.parameters))
+end
+
+# The rows of a `2d × nt × m` tensor, or of the `q` and `p` of a `(q, p)` pair of them.
+_system_dimension(input::AbstractArray{<:Any, 3}) = size(input, 1)
+_system_dimension(input::NamedTuple{(:q, :p)}) = size(input.q, 1) + size(input.p, 1)
 
 function Chain(arch::ParametricResNet{AT}) where {AT}
     layers = ()
