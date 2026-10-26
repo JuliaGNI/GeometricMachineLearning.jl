@@ -226,3 +226,29 @@ function (loss::ReducedLoss)(model::Chain, ps::NetworkParameters,
         input::ArrayOrNamedTuple, output::ArrayOrNamedTuple)
     _compute_loss(loss.decoder(model(loss.encoder(input), ps)), output)
 end
+
+@doc raw"""
+    ParametricLoss()
+
+Make an instance of the loss of a network whose forward pass takes the parameters ``\mu`` of the
+system beside its input.
+
+`ParametricLoss()(model, ps, input, output, μ)` applies the network with
+[`apply_parametric`](@ref) and compares the result with `output` in the relative ``L_2`` norm:
+
+```math
+\mathrm{loss}(\mathcal{NN}, \mathrm{input}, \mathrm{output}, \mu) = ||\mathcal{NN}(\mathrm{input}, \mu) - \mathrm{output}|| / ||\mathrm{output}||.
+```
+
+This is `FeedForwardLoss` with the system parameters passed to the network. `μ` is one
+`OptionalParameters` for one sample, or a vector of them, one per sample of a batch, as a
+[`ParametricDataLoader`](@ref) draws it. `train!` on a `ParametricDataLoader` trains on this loss
+when no `loss` is given.
+"""
+struct ParametricLoss <: NetworkLoss end
+
+function (loss::ParametricLoss)(model::Chain, ps::NetworkParameters,
+        input::ArrayOrNamedTuple, output::ArrayOrNamedTuple,
+        μ::Union{OptionalParameters, AbstractVector})
+    _compute_loss(apply_parametric(model, input, μ, ps), output)
+end
