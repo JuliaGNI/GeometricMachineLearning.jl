@@ -4,82 +4,93 @@ using Zygote: jacobian
 import Random
 
 include("../helpers/poisson.jl")
+include("../helpers/eltypes.jl")
 
 Random.seed!(123)
 
-function test_accuracy(N::Integer, n::Integer; tol::Real = 0.35, n_epochs::Integer = 100)
-    dl = DataLoader(rand(N, 10 * N); autoencoder = true)
+function test_accuracy(::Type{T}, N::Integer, n::Integer; tol::Real = 0.35,
+        n_epochs::Integer = 100) where {T}
+    dl = DataLoader(rand(T, N, 10 * N); autoencoder = true)
 
-    sae_nn = NeuralNetwork(SymplecticAutoencoder(N, n))
+    sae_nn = NeuralNetwork(SymplecticAutoencoder(N, n), T)
 
     o = TrainingOptimizer(sae_nn.params; algorithm = Adam())
     sae_error = train!(sae_nn, o, dl, Batch(10), n_epochs; show_progress = false)[end]
 
+    @test eltype(sae_error) === T
     @test sae_error < tol
 end
 
-function test_encoder_and_decoder(N::Integer, n::Integer)
-    sae_nn = NeuralNetwork(SymplecticAutoencoder(N, n))
+function test_encoder_and_decoder(::Type{T}, N::Integer, n::Integer) where {T}
+    sae_nn = NeuralNetwork(SymplecticAutoencoder(N, n), T)
     sae_encoder = encoder(sae_nn)
     sae_decoder = decoder(sae_nn)
 
-    test_vec = rand(N)
-    test_mat = rand(N, N)
+    test_vec = rand(T, N)
+    test_mat = rand(T, N, N)
 
+    @test eltype(sae_nn(test_vec)) === T
     @test sae_nn(test_vec) ≈ sae_decoder(sae_encoder(test_vec))
     @test sae_nn(test_mat) ≈ sae_decoder(sae_encoder(test_mat))
 end
 
-function test_symplecticity(N::Integer, n::Integer)
-    sae_nn = NeuralNetwork(SymplecticAutoencoder(N, n))
+function test_symplecticity(::Type{T}, N::Integer, n::Integer) where {T}
+    sae_nn = NeuralNetwork(SymplecticAutoencoder(N, n), T)
     sae_decoder = decoder(sae_nn)
-    test_vector = rand(n)
+    test_vector = rand(T, n)
 
     # this matrix should be symplectic
     sympl_mat = jacobian(vec -> sae_decoder(vec), test_vector)[1]
-    @test poisson_matrix(n) ≈ sympl_mat' * poisson_matrix(N) * sympl_mat
+    @test eltype(sympl_mat) === T
+    @test eltype(sympl_mat' * poisson_matrix(N, T) * sympl_mat) === T
+    @test poisson_matrix(n, T) ≈ sympl_mat' * poisson_matrix(N, T) * sympl_mat
 
     # test if it's still symplectic after training
-    dl = DataLoader(rand(N, 10 * N); autoencoder = true)
+    dl = DataLoader(rand(T, N, 10 * N); autoencoder = true)
     o = TrainingOptimizer(sae_nn.params; algorithm = Adam())
     train!(sae_nn, o, dl, Batch(10), 10; show_progress = false)
     sympl_mat = jacobian(vec -> sae_decoder(vec), test_vector)[1]
-    @test poisson_matrix(n) ≈ sympl_mat' * poisson_matrix(N) * sympl_mat
+    @test poisson_matrix(n, T) ≈ sympl_mat' * poisson_matrix(N, T) * sympl_mat
 end
 
-function test_decoder_output_layers(N::Integer, n::Integer, n_output_layers::Integer)
-    sae_nn = NeuralNetwork(SymplecticAutoencoder(N, n; n_decoder_output_layers = n_output_layers))
+function test_decoder_output_layers(::Type{T}, N::Integer, n::Integer,
+        n_output_layers::Integer) where {T}
+    sae_nn = NeuralNetwork(
+        SymplecticAutoencoder(N, n; n_decoder_output_layers = n_output_layers), T)
     sae_encoder = encoder(sae_nn)
     sae_decoder = decoder(sae_nn)
 
     # composition still works
-    test_vec = rand(N)
-    test_mat = rand(N, N)
+    test_vec = rand(T, N)
+    test_mat = rand(T, N, N)
+    @test eltype(sae_nn(test_vec)) === T
     @test sae_nn(test_vec) ≈ sae_decoder(sae_encoder(test_vec))
     @test sae_nn(test_mat) ≈ sae_decoder(sae_encoder(test_mat))
 
     # decoder has exactly n_output_layers more layers than the baseline (n_output_layers = 0) decoder
-    baseline_nn = NeuralNetwork(SymplecticAutoencoder(N, n; n_decoder_output_layers = 0))
+    baseline_nn = NeuralNetwork(SymplecticAutoencoder(N, n; n_decoder_output_layers = 0), T)
     baseline_decoder = decoder(baseline_nn)
     @test length(sae_decoder.model.layers) ==
           length(baseline_decoder.model.layers) + n_output_layers
 
     # symplecticity still holds
-    test_vector = rand(n)
+    test_vector = rand(T, n)
     sympl_mat = jacobian(vec -> sae_decoder(vec), test_vector)[1]
-    @test poisson_matrix(n) ≈ sympl_mat' * poisson_matrix(N) * sympl_mat
+    @test poisson_matrix(n, T) ≈ sympl_mat' * poisson_matrix(N, T) * sympl_mat
 end
 
-function all_tests(N::Integer, n::Integer; kwargs...)
-    test_accuracy(N, n; kwargs...)
-    test_encoder_and_decoder(N, n; kwargs...)
-    test_symplecticity(N, n)
+function all_tests(::Type{T}, N::Integer, n::Integer; kwargs...) where {T}
+    test_accuracy(T, N, n; kwargs...)
+    test_encoder_and_decoder(T, N, n; kwargs...)
+    test_symplecticity(T, N, n)
 end
 
-all_tests(10, 6)
-all_tests(20, 10)
+for T in REAL_ELTYPES
+    all_tests(T, 10, 6)
+    all_tests(T, 20, 10)
 
-# test the nonlinear decoder output layers
-test_decoder_output_layers(10, 6, 1)
-test_decoder_output_layers(10, 6, 2)
-test_decoder_output_layers(20, 10, 3)
+    # test the nonlinear decoder output layers
+    test_decoder_output_layers(T, 10, 6, 1)
+    test_decoder_output_layers(T, 10, 6, 2)
+    test_decoder_output_layers(T, 20, 10, 3)
+end

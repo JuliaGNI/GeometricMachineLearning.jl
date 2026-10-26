@@ -3,6 +3,8 @@ using GeometricMachineLearning: params
 using Test
 import Random
 
+include("../helpers/eltypes.jl")
+
 Random.seed!(123)
 
 @doc raw"""
@@ -16,7 +18,7 @@ the optimizer cache cannot even be allocated. Those live in GeometricOptimizers,
 types — see `VectorStorageMatrix` there. GML used to carry its own copies of both the types and the
 methods, in `src/optimizers/go_bridges.jl`.
 """
-function optimizer_runs(architecture, batch, input_dim; T = Float64, n_epochs = 2)
+function optimizer_runs(architecture, batch, input_dim, ::Type{T}; n_epochs = 2) where {T}
     nn_and_dl() = (NeuralNetwork(architecture, T),
         DataLoader(rand(T, input_dim, 20, 5); suppress_info = true))
 
@@ -24,6 +26,7 @@ function optimizer_runs(architecture, batch, input_dim; T = Float64, n_epochs = 
         nn, dl = nn_and_dl()
         o = TrainingOptimizer(nn.params; algorithm = method)
         loss_array = train!(nn, o, dl, batch, n_epochs; show_progress = false)
+        @test eltype(loss_array) === T
         @test length(loss_array) == n_epochs
         @test all(isfinite, loss_array)
     end
@@ -33,30 +36,32 @@ function optimizer_runs(architecture, batch, input_dim; T = Float64, n_epochs = 
     nn, dl = nn_and_dl()
     o = TrainingOptimizer(nn.params; AdamOptimizerWithDecay(n_epochs)...)
     loss_array = train!(nn, o, dl, batch, n_epochs; show_progress = false)
+    @test eltype(loss_array) === T
     @test length(loss_array) == n_epochs
     @test all(isfinite, loss_array)
 end
 
 # the cache has to keep the parameter's type, or the optimizer allocates dense scratch arrays and
 # then fails to match them against the parameter
-@testset "structured weights keep their type in `similar`" begin
-    for A in (rand(SymmetricMatrix{Float64}, 4), rand(SkewSymMatrix{Float64}, 4),
-        rand(StrictlyLowerTriangular{Float64}, 4), rand(StrictlyUpperTriangular{Float64}, 4))
+@testset "structured weights keep their type in `similar` ($T)" for T in REAL_ELTYPES
+    for A in (rand(SymmetricMatrix{T}, 4), rand(SkewSymMatrix{T}, 4),
+        rand(StrictlyLowerTriangular{T}, 4), rand(StrictlyUpperTriangular{T}, 4))
+        @test eltype(A) === T
         @test typeof(similar(A)) == typeof(A)
         @test typeof(zero(A)) == typeof(A)
         @test size(similar(A)) == size(A)
     end
 end
 
-@testset "`LASympNet` (SymmetricMatrix)" begin
-    optimizer_runs(LASympNet(4), Batch(5), 4)
+@testset "`LASympNet` (SymmetricMatrix), $T" for T in REAL_ELTYPES
+    optimizer_runs(LASympNet(4), Batch(5), 4, T)
 end
-@testset "`VolumePreservingFeedForward` (StrictlyLower/StrictlyUpperTriangular)" begin
-    optimizer_runs(VolumePreservingFeedForward(4), Batch(5), 4)
+@testset "`VolumePreservingFeedForward` (StrictlyLower/StrictlyUpperTriangular), $T" for T in REAL_ELTYPES
+    optimizer_runs(VolumePreservingFeedForward(4), Batch(5), 4, T)
 end
-@testset "`VolumePreservingTransformer` (SkewSymMatrix + triangular)" begin
-    optimizer_runs(VolumePreservingTransformer(4, 3), Batch(5, 3), 4)
+@testset "`VolumePreservingTransformer` (SkewSymMatrix + triangular), $T" for T in REAL_ELTYPES
+    optimizer_runs(VolumePreservingTransformer(4, 3), Batch(5, 3), 4, T)
 end
-@testset "`LinearSymplecticTransformer` (SymmetricMatrix)" begin
-    optimizer_runs(LinearSymplecticTransformer(4, 3), Batch(5, 3), 4)
+@testset "`LinearSymplecticTransformer` (SymmetricMatrix), $T" for T in REAL_ELTYPES
+    optimizer_runs(LinearSymplecticTransformer(4, 3), Batch(5, 3), 4, T)
 end

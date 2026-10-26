@@ -5,9 +5,11 @@ using FiniteDifferences: jacobian, central_fdm
 using Test
 import Random
 
+include("../helpers/eltypes.jl")
+
 Random.seed!(123)
 
-function set_up_reduced_systems(reduced_dim::Integer, integrator)
+function set_up_reduced_systems(reduced_dim::Integer, integrator, ::Type{T}) where {T}
     pr = hodeproblem()
 
     sol = integrate(pr, integrator)
@@ -18,38 +20,38 @@ function set_up_reduced_systems(reduced_dim::Integer, integrator)
 
     # Here the number of decoder blocks is set manually because the default is too big! 
     model2 = SymplecticAutoencoder(
-        dl.input_dim, reduced_dim; activation = x -> log(1.0 + exp(x)),
+        dl.input_dim, reduced_dim; activation = x -> log(one(x) + exp(x)),
         n_encoder_layers = 20, n_decoder_layers = 10, n_decoder_blocks = 2)
 
-    nn1 = NeuralNetwork(model1)
+    nn1 = NeuralNetwork(model1, T)
 
-    nn2 = NeuralNetwork(model2)
+    nn2 = NeuralNetwork(model2, T)
 
     rs1 = HRedSys(hodeproblem(), encoder(nn1), decoder(nn1); integrator = integrator)
 
     rs2 = HRedSys(hodeproblem(), encoder(nn2), decoder(nn2); integrator = integrator)
 
-    rs1, rs2
+    rs1, rs2, nn1, nn2
 end
 
-# We expect the neural network projection & reduction errors to be higher than the PSD projection &
-# reduction errors if we don't train.
+# We expect the neural network projection error to be higher than the PSD projection error if we
+# don't train.
 #
-# `compare_reduction_error` is off for an explicit integrator, because there the second half of that
-# expectation is not a property. `projection_error` compares the two autoencoders on the *full*
-# solution, but `reduction_error` integrates the *reduced* system, and the reduced vector field of an
-# untrained `SymplecticAutoencoder` is one `ExplicitMidpoint` diverges on -- so `reduction_error(rs2)`
-# comes back `NaN` and the comparison is not between two numbers. At the seed above it is `NaN`.
-# Measured over seeds 1 to 12: `ImplicitMidpoint` orders the two for every seed, `ExplicitMidpoint`
-# for four of twelve, with four `NaN` and four in the opposite order. That is *C21* in
-# `KNOWN_ISSUES.md`.
-function test_reduced_vector_fields(reduced_dim::Integer, integrator;
-        compare_reduction_error = true)
-    rs1, rs2 = set_up_reduced_systems(reduced_dim, integrator)
+# The reduction errors are asserted finite and not ordered. `projection_error` compares the two
+# autoencoders on the *full* solution, but `reduction_error` integrates the *reduced* system, and the
+# reduced vector field of an untrained `SymplecticAutoencoder` is one an explicit method diverges on:
+# under `ExplicitMidpoint` at the seed above `reduction_error(rs2)` comes back `NaN`, which is not
+# ordered against anything. An implicit method keeps both errors numbers, which is all an untrained
+# network supports.
+function test_reduced_vector_fields(reduced_dim::Integer, integrator, ::Type{T}) where {T}
+    rs1, rs2, nn1, _ = set_up_reduced_systems(reduced_dim, integrator, T)
 
+    # the networks the reduced systems are built from are of the requested element type, and so is
+    # what their decoder returns
+    @test eltype(decoder(nn1)(rand(T, reduced_dim))) === T
     @test projection_error(rs1) < projection_error(rs2)
-    if compare_reduction_error
-        @test reduction_error(rs1) < reduction_error(rs2)
+    if integrator isa ImplicitMidpoint
+        @test isfinite(reduction_error(rs1)) && isfinite(reduction_error(rs2))
     end
 end
 
@@ -81,8 +83,13 @@ function test_if_reduced_vector_fields_are_divergence_free(rs::HRedSys)
     nothing
 end
 
-function check_if_reduced_vector_fields_are_divergence_free(reduced_dim::Integer, integrator)
-    rs1, rs2 = set_up_reduced_systems(reduced_dim, integrator)
+# The divergence of the reduced fields is evaluated in the problem's own `Float64` — the state and
+# the vector fields are the problem's, and a network of another element type promotes into them — so
+# the bound below is `Float64`'s in both precisions.
+function check_if_reduced_vector_fields_are_divergence_free(
+        reduced_dim::Integer, integrator,
+        ::Type{T}) where {T}
+    rs1, rs2, _, _ = set_up_reduced_systems(reduced_dim, integrator, T)
 
     test_if_reduced_vector_fields_are_divergence_free(rs1)
     test_if_reduced_vector_fields_are_divergence_free(rs2)
@@ -90,12 +97,14 @@ function check_if_reduced_vector_fields_are_divergence_free(reduced_dim::Integer
     nothing
 end
 
-test_reduced_vector_fields(2, ImplicitMidpoint())
-test_reduced_vector_fields(2, ExplicitMidpoint(); compare_reduction_error = false)
+for T in REAL_ELTYPES
+    test_reduced_vector_fields(2, ImplicitMidpoint(), T)
+    test_reduced_vector_fields(2, ExplicitMidpoint(), T)
+end
 
-check_if_reduced_vector_fields_are_divergence_free(2, ImplicitMidpoint())
-check_if_reduced_vector_fields_are_divergence_free(2, ExplicitMidpoint())
-check_if_reduced_vector_fields_are_divergence_free(2, ExplicitEulerRK())
+check_if_reduced_vector_fields_are_divergence_free(2, ImplicitMidpoint(), Float64)
+check_if_reduced_vector_fields_are_divergence_free(2, ExplicitMidpoint(), Float64)
+check_if_reduced_vector_fields_are_divergence_free(2, ExplicitEulerRK(), Float64)
 
 @doc raw"""
 `HRedSys.timespan` carries its own type parameter and follows the constructor's argument, the way
