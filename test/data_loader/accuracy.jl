@@ -99,6 +99,34 @@ end
     @test a < one(T)
 end
 
+# An integer input reads the fraction in `float(Int64)`: a half error is not an integer, so the
+# integer type itself cannot hold the result.
+@testset "an integer input gives a Float64, half errors included" begin
+    int_input = rand(0:3, input_dim, 1, n_params)
+    int_model = Chain(Dense(input_dim, n_classes, tanh))
+    int_ps = GeometricMachineLearning.params(NeuralNetwork(int_model, Float64))
+    estimate = GeometricMachineLearning.assign_output_estimate(int_model(int_input, int_ps), 1)
+    labels = [argmax(estimate[:, 1, k]) for k in 1:n_params]
+    function int_loader(classes)
+        output = zeros(Int64, n_classes, 1, n_params)
+        for (k, c) in pairs(classes)
+            iszero(c) || (output[c, 1, k] = 1)
+        end
+        DataLoader(int_input, output; suppress_info = true)
+    end
+    @test eltype(int_loader(labels)) === Int64
+
+    a = GeometricMachineLearning.accuracy(int_model, int_ps, int_loader(labels))
+    @test a isa Float64
+    @test a == 1
+
+    unlabelled = copy(labels)
+    unlabelled[1] = 0
+    a = GeometricMachineLearning.accuracy(int_model, int_ps, int_loader(unlabelled))
+    @test a isa Float64
+    @test a == (n_params - 1 / 2) / n_params
+end
+
 @testset "the NeuralNetwork method agrees with the Chain method" begin
     for classes in (predicted, rotated)
         dl = classification_loader(classes)

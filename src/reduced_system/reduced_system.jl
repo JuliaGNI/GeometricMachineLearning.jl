@@ -10,7 +10,7 @@ It can be called using two different constructors.
 The standard constructor is:
 
 ```julia
-HRedSys(N, n; encoder, decoder, v_full, f_full, v_reduced, f_reduced, parameters, timespan, timestep, ics, projection_error)
+HRedSys(N, n, encoder, decoder, v_full, f_full, h_full, timespan, timestep, ics; integrator, parameters, v_reduced, f_reduced, h_reduced)
 ``` 
 where 
 - `encoder`: a function ``\mathbb{R}^{2N}\mapsto{}\mathbb{R}^{2n}``
@@ -20,7 +20,7 @@ where
 - `v_reduced`: a (differentiable) mapping defined the same way as in GeometricIntegrators.
 - `f_reduced`: a (differentiable) mapping defined the same way as in GeometricIntegrators.
 - `integrator`: is used for integrating the reduced system. It is a required keyword argument, here and in the two `HRedSys(odeensemble, encoder, decoder)` constructors.
-- `parameters`: a NamedTuple that parametrizes the vector fields (the same for full_vector_field and reduced_vector_field). It defaults to `NullParameters()`; the two constructors that take a `HODEProblem` or a `HODEEnsemble` take it from the problem.
+- `parameters`: the parameters (a NamedTuple or `NullParameters()`) that parametrize the vector fields (the same for full_vector_field and reduced_vector_field). It defaults to `NullParameters()`; the two constructors that take a `HODEProblem` or a `HODEEnsemble` take it from the problem.
 - `timespan`: a tuple `(t₀, tₗ)` that specifies start and end point of the time interval over which integration is performed. 
 - `timestep`: the time step 
 - `ics`: the initial condition for the big system.
@@ -28,7 +28,7 @@ where
 The other, and more convenient, constructor is:
 
 ```julia
-HRedSys(odeensemble, encoder, decoder) 
+HRedSys(odeensemble, encoder, decoder; integrator)
 ```
 where `odeensemble` can be a `HODEEnsemble` or a `HODEProblem`. `encoder` and `decoder` have to be neural networks.
 The keyword argument `integrator` is required here as in the standard constructor: no constructor picks one for the caller.
