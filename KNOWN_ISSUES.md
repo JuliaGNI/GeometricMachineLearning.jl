@@ -218,16 +218,18 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 - **kind:** missing test
 - **found:** 2026-10-01
 - **evidence:**
-  Julia 1.13.1, JET 0.12.2, `mutate.jl <repository> … quality/jet.jl`. Three mutants that put
-  `Base.inferencebarrier` on an argument of a kernel launch SURVIVED (142 pass, 3 broken):
-  `kernel!(c, Base.inferencebarrier(a), b, ndrange = size(c))` in
-  `src/kernels/tensor_tensor_mul.jl`; `augment_zeros!(zero_tensor,
-  Base.inferencebarrier(output_diff), seq_length, …)` in `src/data_loader/tensor_assign.jl`; and
-  `skew_mat_mul_k!(C, S, Base.inferencebarrier(B), n, …)` in `src/kernels/mat_tensor_mul.jl`. At
-  `target_modules = (GeometricMachineLearning,)` a barrier on a launch argument gives 0 reports,
-  and the same barrier in an `@assert` of the same launcher gives 3: the kernel functor takes
-  `args...`, so the dispatch sits in KernelAbstractions' frames, which the filter drops. A barrier
-  on a value inside each kernel body is CAUGHT.
+  Julia 1.13.2, `mutate.jl <repository> <file> <from> <to> quality/jet.jl`, one mutant per run.
+  Three mutants that put `Base.inferencebarrier` on an argument of a kernel launch SURVIVED, each
+  with 50 pass, 0 fail: `kernel!(c, Base.inferencebarrier(a), b, ndrange = size(c))` in
+  `src/kernels/tensor_tensor_mul.jl`; `tensor_mat_skew_sym_assign_k!(C,
+  Base.inferencebarrier(Z), A, ndrange = size(C))` in
+  `src/kernels/inverses/tensor_mat_skew_sym_assign.jl`; and `gather_kernel!(backend)(gathered,
+  Base.inferencebarrier(data), indices, offset, ndrange = size(gathered))` in
+  `src/data_loader/batch.jl`. At `target_modules = (GeometricMachineLearning,)` a barrier on a
+  launch argument gives 0 reports, and the same barrier in an `@assert` of the same launcher is
+  CAUGHT with 3 reports (47 pass, 3 fail): the kernel functor takes `args...`, so the dispatch sits
+  in KernelAbstractions' frames, which the filter drops. A barrier on a value inside the kernel
+  body of `tensor_tensor_mul_kernel!` is CAUGHT (47 pass, 3 fail).
 
 ### K10 · The two training tests of `adam_with_learning_rate_decay.jl` run in `Float64` only.
 

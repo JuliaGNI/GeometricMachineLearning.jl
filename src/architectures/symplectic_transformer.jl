@@ -66,6 +66,9 @@ struct SymplecticTransformer{SAT, AAT, Upscaling} <: TransformerIntegrator
     end
 end
 
+# It holds no sequence length and integrates over the width of the input it is handed.
+_seq_length(::SymplecticTransformer, ics::AbstractMatrix) = size(ics, 2)
+
 function create_layers_for_transformer_dimension_equal_system_dimension(arch::SymplecticTransformer)
     gradient_layers = _gradient_layers(arch.transformer_dim, arch.upscaling_dimension,
         arch.sympnet_activation, arch.n_sympnet, arch.init_upper)

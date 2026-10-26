@@ -12,15 +12,10 @@ where `sl` stands for *sequence length* and `pw` stands for *prediction window*,
 """
 abstract type TransformerIntegrator <: Architecture end
 
-# The number of columns a transformer integrates over. A `StandardTransformerIntegrator` and a
-# `SymplecticTransformer` hold no sequence length of their own and take the width of the input they
-# are handed; every other `TransformerIntegrator` stores one, and integrates over that.
-function _seq_length(arch::TransformerIntegrator, ics::AbstractMatrix)
-    if arch isa StandardTransformerIntegrator || arch isa SymplecticTransformer
-        return size(ics, 2)
-    end
-    arch.seq_length
-end
+# The number of columns a transformer integrates over. A `TransformerIntegrator` stores its sequence
+# length and integrates over that. `StandardTransformerIntegrator` and `SymplecticTransformer` hold
+# none of their own; their methods, beside their definitions, take the width of the input.
+_seq_length(arch::TransformerIntegrator, ::AbstractMatrix) = arch.seq_length
 
 @doc raw"""
     DummyTransformer(seq_length)
