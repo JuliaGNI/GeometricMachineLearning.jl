@@ -12,9 +12,9 @@
 # element raises instead of answering slowly.
 
 using GeometricMachineLearning
-using GeometricMachineLearning: params
-using GeometricOptimizers: SymmetricMatrix, SkewSymMatrix, StrictlyLowerTriangular,
-                           StrictlyUpperTriangular, StiefelManifold
+using GeometricMachineLearning: params, SymmetricMatrix, SkewSymMatrix,
+                                StrictlyLowerTriangular,
+                                StrictlyUpperTriangular, StiefelManifold
 using GPUArraysCore: allowscalar
 using JLArrays: JLArray, JLBackend
 using Test
