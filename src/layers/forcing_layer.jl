@@ -52,11 +52,12 @@ forcing has `dim ÷ 2` rows. Use the constructors [`ForcingLayerQ`](@ref), [`For
 and [`ForcingLayerQP`](@ref), which fix the type, unless you build one from a
 [`ForcedSympNet`](@ref).
 """
-struct ForcingLayer{M, N, type, ReturnParameters} <: AbstractExplicitLayer{M, N}
+struct ForcingLayer{M, N, type, ReturnParameters, MT <: Chain} <:
+       AbstractExplicitLayer{M, N}
     dim::Int
     width::Int
     nhidden::Int
-    model::Chain
+    model::MT
 end
 
 # The network of a forcing layer: a first dense layer over the state the forcing reads and the
@@ -81,7 +82,7 @@ function ForcingLayer(dim::Integer, width::Integer = dim,
     parameter_length = length(first(_flatten_system_parameters(parameters)))
     model = _forcing_model(
         Int(dim), Int(width), Int(nhidden), parameter_length, activation, type)
-    ForcingLayer{Int(dim), Int(dim), type, return_parameters}(
+    ForcingLayer{Int(dim), Int(dim), type, return_parameters, typeof(model)}(
         Int(dim), Int(width), Int(nhidden), model)
 end
 

@@ -45,6 +45,7 @@ end
 @testset "ForcingLayer$name returns q and p plus the forcing ($T)" for (name, FT, constructor) in FORCING_LAYERS,
     T in REAL_ELTYPES
 
+    Random.seed!(1)
     q, p = rand(T, HALF), rand(T, HALF)
     z = (q = q, p = p)
 
@@ -81,6 +82,7 @@ end
 @testset "ForcingLayer$name on a matrix of states ($T)" for (name, FT, constructor) in FORCING_LAYERS,
     T in REAL_ELTYPES
 
+    Random.seed!(2)
     z = (q = rand(T, HALF, 3), p = rand(T, HALF, 3))
     layer = forcing_layer(constructor; parameters = SYSTEM_PARAMETERS)
     ps = layer_parameters(layer, T)
@@ -109,6 +111,7 @@ end
 @testset "ForcingLayer$name returns μ with return_parameters ($T)" for (name, FT, constructor) in FORCING_LAYERS,
     T in REAL_ELTYPES
 
+    Random.seed!(3)
     z = (q = rand(T, HALF), p = rand(T, HALF))
     layer = forcing_layer(constructor; parameters = SYSTEM_PARAMETERS,
         return_parameters = true)
@@ -139,6 +142,41 @@ end
     @test μ === SYSTEM_PARAMETERS
     @test size(output) == (DIM, 3)
     @test eltype(output) === T
+end
+
+# A forcing layer holds its network in a type parameter, so the forward pass infers the type of its
+# output on every form it takes; a layer whose `model` is typed `Chain` leaves it `Any`.
+@testset "the forward pass of ForcingLayer$name infers ($T)" for (name, _, constructor) in FORCING_LAYERS,
+    T in REAL_ELTYPES
+
+    Random.seed!(4)
+    q, p = rand(T, HALF), rand(T, HALF)
+    z = (q = q, p = p)
+    z_matrix = (q = rand(T, HALF, 3), p = rand(T, HALF, 3))
+
+    # without system parameters: a stacked vector, a stacked matrix, and a state beside
+    # `NullParameters()`
+    layer = forcing_layer(constructor)
+    ps = layer_parameters(layer, T)
+    @test eltype(@inferred layer(vcat(q, p), ps)) === T
+    @test eltype(@inferred layer(vcat(z_matrix.q, z_matrix.p), ps)) === T
+    output = @inferred layer((z, NullParameters()), ps)
+    @test eltype(output.p) === T
+
+    # with system parameters: a state beside them, and a stacked state beside them
+    layer = forcing_layer(constructor; parameters = SYSTEM_PARAMETERS)
+    ps = layer_parameters(layer, T)
+    output = @inferred layer((z, SYSTEM_PARAMETERS), ps)
+    @test eltype(output.p) === T
+    @test eltype(@inferred layer((vcat(q, p), SYSTEM_PARAMETERS), ps)) === T
+
+    # the form that returns the system parameters beside the output
+    layer = forcing_layer(constructor; parameters = SYSTEM_PARAMETERS,
+        return_parameters = true)
+    ps = layer_parameters(layer, T)
+    output, μ = @inferred layer((z, SYSTEM_PARAMETERS), ps)
+    @test μ === SYSTEM_PARAMETERS
+    @test eltype(output.p) === T
 end
 
 # The suffix names what the forcing *reads*: a force enters the `ṗ` equation, so all three types add
@@ -179,6 +217,7 @@ end
 end
 
 @testset "a forcing layer refuses an odd dimension and an unknown forcing type" begin
+    Random.seed!(5)
     @test_throws ArgumentError ForcingLayerQ(3)
     @test_throws ArgumentError ForcingLayerP(3)
     @test_throws ArgumentError ForcingLayerQP(3)
@@ -194,6 +233,7 @@ end
 # A tuple that is neither a state, nor a state with its system parameters, matches no method:
 # there is no catch-all.
 @testset "a forcing layer has no catch-all" begin
+    Random.seed!(6)
     layer = ForcingLayerQ(DIM)
     ps = layer_parameters(layer, Float64)
     @test_throws MethodError layer((rand(HALF), rand(HALF)), ps)

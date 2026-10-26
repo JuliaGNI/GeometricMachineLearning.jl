@@ -52,7 +52,7 @@ end
         sequence = FORCED_SEQUENCES[(init_upper, n_layers)]
 
         # `n_layers` gradient layers and one forcing layer per step that changes `p`
-        @test length(sequence) == n_layers + count(==(:f), sequence)
+        @test count(l -> l isa Union{GradientLayerQ, GradientLayerP}, layers) == n_layers
         @test length(layers) == length(sequence)
         @test typeof.(layers) == map(symbol -> typeof(layer_of(symbol, arch)), sequence)
 
@@ -64,6 +64,20 @@ end
         end
         @test length(forcing_indices(arch)) == count(==(:f), sequence)
     end
+end
+
+# The forced chain holds the network of each forcing layer in a type parameter, so the forward pass
+# of the whole architecture infers; with a `Chain` field it infers `Any`.
+@testset "the forward pass of a ForcedSympNet infers ($T)" for T in REAL_ELTYPES
+    Random.seed!(7)
+    nn = NeuralNetwork(
+        ForcedSympNet(DIM; n_layers = 4, upscaling_dimension = UPSCALING, forcing_type = :QP),
+        CPU(), T)
+    x = T[sin(i + 2j) for i in 1:DIM, j in 1:3]
+    y = @inferred nn(x)
+    @test eltype(y) === T
+    y = @inferred nn(x[:, 1])
+    @test eltype(y) === T
 end
 
 # With every forcing parameter zero the forcing term is zero, and the network is the chain of its
