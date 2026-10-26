@@ -16,7 +16,7 @@ const DIM = 4
 const HALF = DIM ÷ 2
 const UPSCALING = 6
 
-# the indices of the forcing layers of a forced SympNet, and of the gradient layers around them
+# the indices of the forcing layers of a forced SympNet
 forcing_indices(arch) = findall(l -> l isa ForcingLayer, collect(Chain(arch).layers))
 
 arch_forcing_type(::ForcedSympNet{FT}) where {FT} = FT

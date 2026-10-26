@@ -29,8 +29,7 @@ const nhidden = 3
 const batch_size = smoke_size(5000, 8)
 const n_epochs = smoke_size(100000, 2)
 
-# next to the script, unless GML_OUTPUT_DIR says otherwise -- an absolute path from whoever ran it
-# last is no use to anybody else
+# into the working directory, unless GML_OUTPUT_DIR names another one
 const path_out = joinpath(get(ENV, "GML_OUTPUT_DIR", pwd()),
     "damped_oscillator_network.jld2")
 

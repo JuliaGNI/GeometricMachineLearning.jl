@@ -39,9 +39,9 @@ where ``f`` is the layer's network, ``\mu`` the flattened parameters of the syst
 [`ForcingLayerQP`](@ref). The network's last layer has `dim ÷ 2` rows, so the term has the length
 of `p` whatever the type.
 
-The step this adds a term to is the symplectic-Euler step of the [`GradientLayerQ`](@ref) and
-[`GradientLayerP`](@ref) layers of a [`GSympNet`](@ref), and [`ForcedSympNet`](@ref) is the
-architecture that alternates the two.
+The step this adds a term to is the symplectic-Euler step of a [`GradientLayerP`](@ref) of a
+[`GSympNet`](@ref); [`ForcedSympNet`](@ref) is the architecture that puts one in front of every
+such step.
 
 # Constructor
 
