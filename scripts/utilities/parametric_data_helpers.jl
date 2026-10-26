@@ -19,10 +19,7 @@ There is one entry fewer than there are time steps in `t`, because a sample is a
 states and the last one is only ever a target.
 """
 function turn_parameters_into_correct_format(t::AbstractVector, IC::AbstractVector{<:NamedTuple})
-    vec_of_params = NamedTuple[]
-    for time_step in t
-        time_step == t[end] || push!(vec_of_params, (t = time_step,))
-    end
+    vec_of_params = [(t = time_step,) for time_step in t[begin:(end - 1)]]
     vcat((vec_of_params for _ in axes(IC, 1))...)
 end
 
@@ -94,7 +91,7 @@ function forced_harmonic_oscillator_solution(
 
         q[j, i] = (initial_condition.p - Omega * amplitude) / omega * sin(omega * time) +
                   initial_condition.q * cos(omega * time) + amplitude * sin(Omega * time)
-        p[j, i] = -omega^2 * initial_condition.q * sin(omega * time) +
+        p[j, i] = -omega * initial_condition.q * sin(omega * time) +
                   (initial_condition.p - Omega * amplitude) * cos(omega * time) +
                   Omega * amplitude * cos(Omega * time)
     end

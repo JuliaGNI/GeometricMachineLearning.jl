@@ -75,9 +75,9 @@ end
 # Without this, `nn(x, μ)` reaches `AbstractNeuralNetworks`' generic two-argument functor, which
 # reads the system parameters as the *network* parameters and hands the first layer a `Float64`.
 # A `ParametricResNet` is a `NeuralNetworkIntegrator`, which carries no method of its own for a
-# network whose forward pass takes the parameters of the system.
+# network whose forward pass takes the parameters of the system. Every input goes to
+# `apply_parametric`, one `μ` or a vector of them, which raises for a shape it does not take.
 function (nn::NeuralNetwork{<:ParametricResNet})(
-        x::Union{AbstractVector, NamedTupleOfArrays{<:Any, (:q, :p)}},
-        μ::OptionalParameters)
+        x, μ::Union{OptionalParameters, AbstractVector{<:NamedTuple}})
     apply_parametric(nn.model, x, μ, params(nn))
 end

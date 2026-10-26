@@ -1,6 +1,7 @@
 # The forward pass of `WideResNetLayer` and of `ParametricResNetLayer`, written out with `*` and
 # `reshape`. This is the oracle of the tests of `src/layers/wide_resnet.jl`,
-# `src/layers/parametric_resnet_layer.jl` and `src/architectures/parametric_resnet.jl`: it goes
+# `src/layers/parametric_resnet_layer.jl`, `src/architectures/resnet.jl` and
+# `src/architectures/parametric_resnet.jl`: it goes
 # through neither `_mul` nor `concatenate_array_with_parameters`, so a layer that drops the residual
 # input or the system parameters cannot reproduce it.
 

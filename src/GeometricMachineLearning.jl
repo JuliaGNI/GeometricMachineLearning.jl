@@ -193,7 +193,7 @@ include("architectures/neural_network_integrator.jl")
 include("architectures/resnet.jl")
 include("architectures/parametric_resnet.jl")
 # The two parametric layers and the architecture that pairs them with the exported `ResNet` are
-# public and not exported, so that 0.9's export list does not grow with the parametric family.
+# public and not exported, so that the export list does not grow with the parametric family.
 public WideResNetLayer, ParametricResNetLayer, ParametricResNet
 include("architectures/transformer_integrator.jl")
 include("architectures/standard_transformer_integrator.jl")

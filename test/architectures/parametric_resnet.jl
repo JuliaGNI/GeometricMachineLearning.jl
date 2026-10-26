@@ -49,6 +49,20 @@ end
         atol = 10 * eps(T), rtol = 10 * eps(T))
 end
 
+# A batch and a vector of `μ` go to `apply_parametric` too, not to `AbstractNeuralNetworks`' generic
+# functor, which would read the `μ` as the parameters of the network.
+@testset "nn(x, μs) of a ParametricResNet is the forward pass of each sample ($T)" for T in REAL_ELTYPES
+    nn = NeuralNetwork(ParametricResNet(DIM; width = WIDTH, n_blocks = 2, parameters = MU), T)
+    μs = [(a = T(MU.a) + j, b = T.(MU.b)) for j in 1:3]
+    x = randn(Random.Xoshiro(5), T, DIM, 1, 3)
+    output = nn(x, μs)
+    @test size(output) == size(x)
+    for k in 1:3
+        @test isapprox(output[:, 1, k], nn(x[:, 1, k], μs[k]);
+            atol = 10 * eps(T), rtol = 10 * eps(T))
+    end
+end
+
 # Unlike `ResNet`, this architecture makes no choice on the width: every block is a
 # `ParametricResNetLayer`, also where the width is the system dimension.
 @testset "ParametricResNet keeps its own layer at a width equal to the dimension" begin

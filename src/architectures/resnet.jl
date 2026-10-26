@@ -46,6 +46,10 @@ struct ResNet{AT} <: NeuralNetworkIntegrator
     activation::AT
 end
 
+function ResNet(sys_dim::Integer, n_blocks::Integer, width::Integer, activation)
+    ResNet{typeof(activation)}(sys_dim, n_blocks, width, activation)
+end
+
 function ResNet(sys_dim::Integer, n_blocks::Integer, activation)
     ResNet(sys_dim, n_blocks, sys_dim, activation)
 end
