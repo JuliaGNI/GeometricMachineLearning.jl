@@ -11,6 +11,12 @@ using AbstractNeuralNetworks
 # `NamedTuple` of layers is walked with `Base.map`, which needs nothing from anybody.
 import NeuralNetworkParameters: NetworkParameters
 using NeuralNetworkParameters: mapstorage
+# `flatten` puts the parameters of a system into the input of a network that takes them
+# (`src/parametric.jl`); `parameter_eltype` checks their element type against the data's, and
+# `parameterlayout` their shape against each other's. `map_cotangent` and `storage_gradient` turn the
+# cotangent of a parameter set into its gradient in the reverse rule of a batch.
+using NeuralNetworkParameters: flatten, parameter_eltype, parameterlayout, map_cotangent,
+                               storage_gradient
 using ChainRulesCore
 using GeometricBase
 using GeometricSolutions: GeometricSolution, EnsembleSolution, TimeSeries
@@ -205,6 +211,7 @@ export solve!, encoder, decoder
 
 export iterate
 
+include("parametric.jl")
 include("loss/losses.jl")
 
 export AbstractPullback, ZygotePullback
@@ -214,7 +221,11 @@ export DataLoader
 export Batch, train!
 include("data_loader/tensor_assign.jl")
 include("data_loader/batch.jl")
+include("data_loader/parametric_data_loader.jl")
 include("data_loader/train.jl")
+
+# The training of a network that takes the parameters of the system beside its input.
+public apply_parametric, ParametricLoss, ParametricDataLoader
 
 include("reduced_system/reduced_system.jl")
 
