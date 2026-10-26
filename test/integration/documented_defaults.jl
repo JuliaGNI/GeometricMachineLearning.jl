@@ -25,7 +25,7 @@ GML = GeometricMachineLearning
         @test l.model.layers[1].σ === Dense(4, 4, GML.f_activation_default).σ
     end
 
-    # the generic constructor's own two keyword defaults
+    # the `type` and `return_parameters` defaults, which the instance type carries
     @test ForcingLayer(4) isa ForcingLayer{4, 4, :P, false}
 
     # `parameters = NullParameters()` leaves the flat system parameters out of the input layer, so a

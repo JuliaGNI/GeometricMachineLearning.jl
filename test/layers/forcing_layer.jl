@@ -201,6 +201,7 @@ end
 # The entries `initialparameters` allocates are the input layer, the hidden layers and the linear map
 # back to `dim ÷ 2` rows; the closed form beside the counted one is written out from those three.
 @testset "parameterlength of a forcing layer is what it allocates ($T)" for T in REAL_ELTYPES
+    Random.seed!(8)
     for layer in (ForcingLayerQ(DIM), ForcingLayerP(DIM, 8, 2),
         ForcingLayerQP(DIM, 8, 1, tanh; parameters = SYSTEM_PARAMETERS))
         ps = layer_parameters(layer, T)
