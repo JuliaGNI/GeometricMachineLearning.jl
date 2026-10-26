@@ -39,8 +39,7 @@ flat(::Type{T}, μ) where {T} = T[μ.a; μ.b[1]; μ.b[2]]
     concatenated = concatenate_array_with_parameters(tensor, μ(2))
     @test size(concatenated) == (2 + length(μ2_flat), 2, 3)
     @test eltype(concatenated) === T
-    for k in 1:3, j in 1:2
-
+    for (k, j) in Iterators.product(1:3, 1:2)
         @test concatenated[:, j, k] == vcat(tensor[:, j, k], μ2_flat)
     end
 
