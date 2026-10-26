@@ -4,6 +4,8 @@ using Zygote: gradient
 using Test
 import Random
 
+include("../helpers/eltypes.jl")
+
 Random.seed!(123)
 
 const STRUCTURED = (
@@ -16,7 +18,7 @@ function slices(f, x::AbstractArray{<:Number, 3})
 end
 
 @testset "_mul: left, right and tensor products against slice-by-slice references" begin
-    for T in (Float32, Float64)
+    for T in REAL_ELTYPES
         x = rand(T, 4, 5, 3)
         for W in (rand(T, 6, 4), rand(T, 4, 6)', (rand(TT{T}, 4) for TT in STRUCTURED)...)
             Wd = Matrix(W)
@@ -43,7 +45,7 @@ end
 # A matrix argument on the right of a left product is multiplied as it stands, not through a
 # reshape, which would turn a structured matrix into a `ReshapedArray`.
 @testset "_mul: a matrix times a structured matrix" begin
-    for T in (Float32, Float64), TT in STRUCTURED
+    for T in REAL_ELTYPES, TT in STRUCTURED
 
         z = rand(T, 3, 4)
         A = rand(TT{T}, 4)
@@ -64,7 +66,7 @@ end
 # The cotangent of a dense `Matrix` parameter multiplied as `W'` is a `Matrix`, not an `Adjoint`,
 # at every rank of the data.
 @testset "_mul: the cotangent of W in _mul(W', x) is a Matrix" begin
-    for T in (Float32, Float64)
+    for T in REAL_ELTYPES
         W = rand(T, 4, 3)
         for x in (rand(T, 4), rand(T, 4, 5), rand(T, 4, 5, 2))
             g = gradient(w -> sum(abs2, _mul(w', x)), W)[1]

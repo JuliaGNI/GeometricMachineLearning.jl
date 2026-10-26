@@ -8,6 +8,8 @@ import GPUArraysCore
 import Random
 import Zygote
 
+include("../helpers/eltypes.jl")
+
 Random.seed!(1234)
 
 @testset "the encoding matrix is the formula of the paper" begin
@@ -162,7 +164,7 @@ end
     end
 end
 
-@testset "the layer runs on a JLArray with scalar indexing disallowed ($T)" for T in (Float32, Float64)
+@testset "the layer runs on a JLArray with scalar indexing disallowed ($T)" for T in REAL_ELTYPES
     x = T[sin(i + 2j) for i in 1:4, j in 1:3]
     x_device = JLArray(x)
     l = PositionalEncoding(4)

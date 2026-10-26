@@ -7,7 +7,9 @@
 using GeometricMachineLearning
 using Test
 
-@testset "MatrixSoftmax is finite and normalised for $T" for T in (Float32, Float64)
+include("../helpers/eltypes.jl")
+
+@testset "MatrixSoftmax is finite and normalised for $T" for T in REAL_ELTYPES
     x = T[100 0; 0 0]
     y = MatrixSoftmax()(x)
 

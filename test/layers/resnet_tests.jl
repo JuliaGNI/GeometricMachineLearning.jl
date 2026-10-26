@@ -2,6 +2,8 @@ using GeometricMachineLearning, Test
 using GeometricMachineLearning: ResNetLayer
 import Random
 
+include("../helpers/eltypes.jl")
+
 Random.seed!(1234)
 
 function test_resnet(M, batch_size = 10, T = Float32)
@@ -18,7 +20,7 @@ function test_resnet(M, batch_size = 10, T = Float32)
     @test isapprox(model₂(A, ps₂)[:, :, 1], model₂(A₁, ps₂))
 end
 
-types = (Float32, Float64)
+types = REAL_ELTYPES
 for T in types
     for M in 1:2:7
         for batch_size in 1:2:7

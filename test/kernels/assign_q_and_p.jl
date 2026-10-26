@@ -3,6 +3,8 @@ using Zygote: gradient
 using Test
 import Random
 
+include("../helpers/eltypes.jl")
+
 Random.seed!(123)
 
 rows(x, r) = x[r, ntuple(_ -> :, ndims(x) - 1)...]
@@ -11,7 +13,7 @@ rows(x, r) = x[r, ntuple(_ -> :, ndims(x) - 1)...]
 # the shape of the input.
 @testset "assign_q_and_p: the gradient of one half" begin
     N = 3
-    for T in (Float32, Float64), x in (rand(T, 2N), rand(T, 2N, 4), rand(T, 2N, 4, 5))
+    for T in REAL_ELTYPES, x in (rand(T, 2N), rand(T, 2N, 4), rand(T, 2N, 4, 5))
 
         g = gradient(z -> sum(assign_q_and_p(z, N).p), x)[1]
         @test g isa typeof(x)
@@ -23,7 +25,7 @@ end
 
 @testset "assign_q_and_p: the halves are the first N rows and the N after them" begin
     N = 2
-    for T in (Float32, Float64),
+    for T in REAL_ELTYPES,
         x in (rand(T, 2N + 1), rand(T, 2N + 1, 3), rand(T, 2N + 1, 3, 4))
 
         for n in (N, Int32(N))

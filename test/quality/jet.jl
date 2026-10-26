@@ -3,6 +3,8 @@ using KernelAbstractions: KernelAbstractions, CPU
 using JET
 using Test
 
+include("../helpers/eltypes.jl")
+
 const GML = GeometricMachineLearning
 const TARGET = (GML,)
 const rrule = GML.ChainRulesCore.rrule
@@ -49,7 +51,7 @@ const A3{T} = Array{T, 3}
             @test isempty(kernel_body_reports(GML.tensor_transpose_tensor_mul_kernel!,
                 (2, 3, 2), zeros(T, 2, 3, 2), zeros(T, 4, 2, 2), zeros(T, 4, 3, 2)))
         end
-        for T in (Float32, Float64)
+        for T in REAL_ELTYPES
             @test isempty(JET.get_reports(JET.report_opt(GML.tensor_tensor_transpose_mul!,
                 (A3{T}, A3{T}, A3{T}); target_modules = TARGET)))
             @test isempty(kernel_body_reports(GML.tensor_tensor_transpose_mul_kernel!,
@@ -147,7 +149,7 @@ const A3{T} = Array{T, 3}
 
         # src/data_loader/tensor_assign.jl: `assign_output_estimate` in
         # test/data_loader/accuracy.jl, in both precisions
-        for T in (Float32, Float64)
+        for T in REAL_ELTYPES
             @test isempty(JET.get_reports(JET.report_opt(GML.assign_output_estimate,
                 (A3{T}, Int); target_modules = TARGET)))
         end

@@ -2,6 +2,8 @@ using Test, LinearAlgebra, GeometricMachineLearning
 using GeometricOptimizers: optimization_step!
 import Random
 
+include("../helpers/eltypes.jl")
+
 Random.seed!(1234)
 
 function stiefel_layer_test(T, M, N, tol = 1.0f-1)
@@ -38,7 +40,7 @@ function grassmann_layer_test(T, M, N, tol = 1.0f-1)
     @test typeof(ps[2].weight) <: StiefelManifold{T}
 end
 
-types = (Float32, Float64)
+types = REAL_ELTYPES
 N_max = 10
 
 for T in types

@@ -1,6 +1,8 @@
 using Test, GeometricMachineLearning
 import Random
 
+include("../helpers/eltypes.jl")
+
 Random.seed!(1234)
 
 # `StiefelLayer`, `GrassmannLayer` and `PSDLayer` orthonormalize the weight they initialise. They
@@ -21,7 +23,7 @@ const LAYERS = ((StiefelLayer, 4, 10), (StiefelLayer, 10, 4),
     (GrassmannLayer, 4, 10), (GrassmannLayer, 10, 4),
     (PSDLayer, 4, 10), (PSDLayer, 10, 4))
 
-for T in (Float32, Float64)
+for T in REAL_ELTYPES
     for (layer, first_dim, second_dim) in LAYERS
         weight = NeuralNetwork(Chain(layer(first_dim, second_dim)), T).params.L1.weight
         @test eltype(weight) == T

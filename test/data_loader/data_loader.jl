@@ -12,12 +12,14 @@ using GeometricIntegrators: integrate, ImplicitMidpoint
 using GeometricProblems.HarmonicOscillator: hodeensemble, hodeproblem
 using GeometricProblems.RigidBody: odeensemble, odeproblem, default_parameters
 
+include("../helpers/eltypes.jl")
+
 Random.seed!(1234)
 
 # The kind of a loader is its fourth type parameter.
 kind(dl::DataLoader) = typeof(dl).parameters[4]
 
-@testset "every constructor defaults autoencoder = false ($T)" for T in (Float32, Float64)
+@testset "every constructor defaults autoencoder = false ($T)" for T in REAL_ELTYPES
     matrix = rand(T, 3, 10)
     tensor = rand(T, 3, 10, 2)
     @test kind(DataLoader(matrix; suppress_info = true)) === :TimeSeries
@@ -171,7 +173,7 @@ end
 
 # The conversion to another element type keeps the kind and the counts, and the other backend
 # branch is the identity.
-@testset "DataLoader(dl, T) converts and keeps the kind ($T)" for T in (Float32, Float64)
+@testset "DataLoader(dl, T) converts and keeps the kind ($T)" for T in REAL_ELTYPES
     other = T === Float32 ? Float64 : Float32
     dl = DataLoader(rand(other, 2, 3, 4); suppress_info = true)
     converted = DataLoader(dl, T)
