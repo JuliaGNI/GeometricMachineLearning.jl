@@ -73,9 +73,10 @@ const n_steps = 50
 
 function make_validation_plot(n_steps = n_steps; kwargs...)
     prediction_implicit_midpoint = dl.input[:, 1:n_steps, index]
-    prediction_standard = iterate(nn_standard, init_con; n_points = n_steps, prediction_window = seq_length)
-    prediction_symplectic = iterate(nn_symplectic, init_con; n_points = n_steps, prediction_window = seq_length)
-    prediction_sympnet = iterate(nn_sympnet, init_con[:, 1]; n_points = n_steps)
+    prediction_standard = integrate(nn_standard, init_con; n_points = n_steps, prediction_window = seq_length)
+    prediction_symplectic = integrate(
+        nn_symplectic, init_con; n_points = n_steps, prediction_window = seq_length)
+    prediction_sympnet = integrate(nn_sympnet, init_con[:, 1]; n_points = n_steps)
 
     fig_validate = Figure()
     ax_validate = Axis(fig_validate[1, 1]; ylabel = L"q_1", kwargs...)

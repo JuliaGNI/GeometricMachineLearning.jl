@@ -86,7 +86,7 @@ function make_validation_plot(n_steps = n_steps; theme = :dark)
         xlabelcolor = textcolor,
         ylabelcolor = textcolor
     )
-    prediction = iterate(nn, init_con; n_points = n_steps)
+    prediction = integrate(nn, init_con; n_points = n_steps)
 
     # we use linewidth  = 2
     lines!(ax, dl.input.q[:, n_steps]; color = mblue,

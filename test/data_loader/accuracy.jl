@@ -20,13 +20,13 @@ const n_params = 6
 
 const input = rand(Float32, input_dim, seq_length, n_params)
 
-# One `DataLoader` per label assignment, over the same input.
-function classification_loader(classes::AbstractVector{<:Integer})
+# One `DataLoader` per label assignment and element type, over the same input.
+function classification_loader(classes::AbstractVector{<:Integer}, ::Type{T} = Float32) where {T}
     output = zeros(Int64, n_classes, 1, n_params)
     for (k, c) in pairs(classes)
         output[c, 1, k] = 1
     end
-    DataLoader(input, output; suppress_info = true)
+    DataLoader(T.(input), output; suppress_info = true)
 end
 
 model = Chain(Dense(input_dim, n_classes, tanh))
@@ -44,6 +44,19 @@ rotated = [mod1(c + 1, n_classes) for c in predicted]
     @test GeometricMachineLearning.accuracy(model, ps, classification_loader(predicted)) ==
           1
     @test GeometricMachineLearning.accuracy(model, ps, classification_loader(rotated)) == 0
+end
+
+# The fraction is read in the element type of the loader's input, so a `Float32` run of the model
+# gives a `Float32` measure and does not silently widen at the last step.
+@testset "the accuracy has the element type of the loader's input ($T)" for T in (Float32, Float64)
+    dl = classification_loader(predicted, T)
+    @test eltype(dl) === T
+    @test GeometricMachineLearning.accuracy(model, ps, dl) isa T
+    @test GeometricMachineLearning.accuracy(model, ps, dl) == one(T)
+
+    wrong = classification_loader(rotated, T)
+    @test GeometricMachineLearning.accuracy(model, ps, wrong) isa T
+    @test iszero(GeometricMachineLearning.accuracy(model, ps, wrong))
 end
 
 @testset "the NeuralNetwork method agrees with the Chain method" begin

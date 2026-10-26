@@ -78,8 +78,8 @@ end
 function make_validation_plot(t_validation::Int, nn::NeuralNetwork)
     numerical, t_array = numerical_solution(sys_dim, t_validation, timestep, ic)
 
-    nn_solution = iterate(nn, numerical[:, 1]; n_points = Int(floor(t_validation /
-                                                                    timestep)) + 1)
+    nn_solution = integrate(nn, numerical[:, 1]; n_points = Int(floor(t_validation /
+                                                                      timestep)) + 1)
 
     ########################### plot validation
 

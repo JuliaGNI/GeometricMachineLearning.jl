@@ -31,7 +31,7 @@ The other, and more convenient, constructor is:
 HRedSys(odeensemble, encoder, decoder) 
 ```
 where `odeensemble` can be a `HODEEnsemble` or a `HODEProblem`. `encoder` and `decoder` have to be neural networks.
-With this constructor one can also pass an integrator via the keyword argument `integrator`. The default is `ImplicitMidpoint()`. 
+With this constructor one can also pass an integrator via the keyword argument `integrator`, which is required: neither constructor picks one for the caller.
 Internally this calls the functions [`build_v_reduced`](@ref) and [`build_f_reduced`](@ref) in order to build the reduced vector fields.
 """
 struct HRedSys{
@@ -68,11 +68,11 @@ end
 
 function HRedSys(N::Integer, n::Integer, encoder::NeuralNetwork{<:SymplecticEncoder},
         decoder::NeuralNetwork{<:SymplecticDecoder}, v_full, f_full,
-        h_full, timespan::Tuple, timestep::T, ics; parameters = parameters,
+        h_full, timespan::Tuple, timestep::T, ics; parameters = NullParameters(),
         v_reduced = build_v_reduced(v_full, f_full, decoder),
         f_reduced = build_f_reduced(v_full, f_full, decoder),
         h_reduced = build_h_reduced(h_full, decoder),
-        integrator = ImplicitMidpoint()) where {T <: Real}
+        integrator) where {T <: Real}
     HRedSys{typeof(timestep), typeof(encoder), typeof(decoder), typeof(v_full),
         typeof(f_full), typeof(h_full), typeof(v_reduced), typeof(f_reduced),
         typeof(h_reduced), typeof(integrator), typeof(parameters), typeof(ics), typeof(timespan)}(
@@ -81,7 +81,7 @@ function HRedSys(N::Integer, n::Integer, encoder::NeuralNetwork{<:SymplecticEnco
 end
 
 function HRedSys(odeproblem::HODEProblem, encoder::NeuralNetwork{<:SymplecticEncoder},
-        decoder::NeuralNetwork{<:SymplecticDecoder}; integrator = ImplicitMidpoint())
+        decoder::NeuralNetwork{<:SymplecticDecoder}; integrator)
     N = encoder.architecture.full_dim
     n = encoder.architecture.reduced_dim
     v_eq = odeproblem.equation.v
@@ -93,7 +93,7 @@ function HRedSys(odeproblem::HODEProblem, encoder::NeuralNetwork{<:SymplecticEnc
 end
 
 function HRedSys(odeensemble::HODEEnsemble, encoder::NeuralNetwork{<:SymplecticEncoder},
-        decoder::NeuralNetwork{<:SymplecticDecoder}; integrator = ImplicitMidpoint())
+        decoder::NeuralNetwork{<:SymplecticDecoder}; integrator)
     N = encoder.architecture.full_dim
     n = encoder.architecture.reduced_dim
     v_eq = odeensemble.equation.v

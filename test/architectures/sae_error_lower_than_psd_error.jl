@@ -1,4 +1,5 @@
 using GeometricMachineLearning
+using GeometricMachineLearning: solve!
 using Test
 import Random
 

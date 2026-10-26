@@ -138,12 +138,12 @@ function plot_validation(t_validation; nn₂ = nn₂, nn₃ = nn₃, nn₄ = nn�
         plot_regular_transformer = false, plot_vp_transformer = false)
     numerical, t_array = numerical_solution(sys_dim, t_validation, timestep, ics_val)
 
-    # nn₁_solution = iterate(nn₁, numerical[:, 1:seq_length]; n_points = Int(floor(t_validation / timestep)) + 1)
-    nn₂_solution = iterate(nn₂, numerical[:, 1]; n_points = Int(floor(t_validation /
-                                                                      timestep)) + 1)
-    nn₃_solution = iterate(nn₃, numerical[:, 1:seq_length];
+    # nn₁_solution = integrate(nn₁, numerical[:, 1:seq_length]; n_points = Int(floor(t_validation / timestep)) + 1)
+    nn₂_solution = integrate(nn₂, numerical[:, 1]; n_points = Int(floor(t_validation /
+                                                                        timestep)) + 1)
+    nn₃_solution = integrate(nn₃, numerical[:, 1:seq_length];
         n_points = Int(floor(t_validation / timestep)) + 1, prediction_window = seq_length)
-    nn₄_solution = iterate(nn₄, numerical[:, 1:seq_length];
+    nn₄_solution = integrate(nn₄, numerical[:, 1:seq_length];
         n_points = Int(floor(t_validation / timestep)) + 1, prediction_window = seq_length)
 
     ########################### plot validation
@@ -214,10 +214,10 @@ function make_validation_plot3d(t_validation::Int, nn::NeuralNetwork)
                         NeuralNetwork{<:GeometricMachineLearning.TransformerIntegrator} ?
                         seq_length : 1
 
-    nn₁_solution = iterate(
+    nn₁_solution = integrate(
         nn, numerical[:, 1:seq_length]; n_points = Int(floor(t_validation / timestep)) + 1,
         prediction_window = prediction_window)
-    nn₁_solution₂ = iterate(
+    nn₁_solution₂ = integrate(
         nn, numerical₂[:, 1:seq_length]; n_points = Int(floor(t_validation / timestep)) + 1,
         prediction_window = prediction_window)
 

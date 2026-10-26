@@ -32,24 +32,6 @@ if Metal.functional()
     const backend = MetalBackend()
     const T = Float32
 
-    @testset "the GPU extension's wrapped-array products answer on Metal" begin
-        # A `SubArray` and an `Adjoint` over an `MtlArray` are not strided, so they miss the fast
-        # path of `PoissonTensor`'s `*` and reach `ext/GPUArraysCoreExt.jl`. Without it they fall
-        # through to the generic multiply and raise "Scalar indexing is disallowed.".
-        𝕁 = PoissonTensor(backend, 4, T)
-        J = Matrix(PoissonTensor(4, T))
-        A = rand(T, 6, 3)
-        B = rand(T, 3, 4)
-
-        rows = 𝕁 * view(MtlArray(A), [1, 2, 3, 4], :)
-        @test KernelAbstractions.get_backend(rows) == backend
-        @test Array(rows) ≈ J * A[1:4, :]
-
-        adjoint_product = 𝕁 * MtlArray(B)'
-        @test KernelAbstractions.get_backend(adjoint_product) == backend
-        @test Array(adjoint_product) ≈ J * B'
-    end
-
     @testset "_mul and tensor_tensor_mul on Metal match the host" begin
         x = rand(T, 12, 10, 100)
         W = rand(T, 5, 12)

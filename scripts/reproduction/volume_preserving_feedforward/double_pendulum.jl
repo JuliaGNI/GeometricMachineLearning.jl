@@ -99,7 +99,7 @@ p₀_val = ϑ(DEFAULT_TIMESPAN[begin], θ₀_val, ω₀, default_parameters())
 ics = (q = θ₀_val, p = p₀_val)
 numerical, t_array = numerical_solution(
     ics, sys_dim, t_validation, timestep, default_parameters())
-nn₂_solution = iterate(nn₂, numerical[:, 1]; n_points = Int(t_validation / timestep) + 1)
+nn₂_solution = integrate(nn₂, numerical[:, 1]; n_points = Int(t_validation / timestep) + 1)
 
 fig_validation = Figure()
 ax_validation = Axis(fig_validation[1, 1]; xlabel = L"t", ylabel = L"q_1")

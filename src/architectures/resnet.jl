@@ -20,7 +20,7 @@ ResNet(dl, n_blocks)
 
 where `dl` is an instance of `DataLoader`.
 
-See [`iterate`](@ref) for an example of this.
+See [`integrate`](@ref) for an example of this.
 """
 struct ResNet{AT} <: NeuralNetworkIntegrator
     sys_dim::Int

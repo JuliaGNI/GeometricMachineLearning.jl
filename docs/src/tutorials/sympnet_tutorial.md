@@ -169,7 +169,7 @@ nothing # hide
 ![Training loss for SympNet.](sympnet_training_loss_light.png)
 ![Training loss for SympNet.](sympnet_training_loss_dark.png)
 
-Now we can make a prediction. We compare the initial data with a prediction starting from the same phase space point using the function [`GeometricMachineLearning.iterate`](@ref):
+Now we can make a prediction. We compare the initial data with a prediction starting from the same phase space point using the function [`GeometricMachineLearning.integrate`](@ref):
 
 ```@example sympnet
 ics = (q=dl.input.q[:, 1, 1], p=dl.input.p[:, 1, 1])
@@ -177,8 +177,8 @@ ics = (q=dl.input.q[:, 1, 1], p=dl.input.p[:, 1, 1])
 steps_to_plot = 200
 
 #predictions
-la_trajectory = iterate(la_nn, ics; n_points = steps_to_plot)
-g_trajectory =  iterate(g_nn, ics; n_points = steps_to_plot)
+la_trajectory = integrate(la_nn, ics; n_points = steps_to_plot)
+g_trajectory =  integrate(g_nn, ics; n_points = steps_to_plot)
 nothing # hide
 ```
 
@@ -297,7 +297,7 @@ nothing # hide
 And we see that the loss is significantly lower than for both the ``LA``-SympNet and the ``G``-SympNet. We can also plot the prediction:
 
 ```@example sympnet
-rn_trajectory = iterate(rn_nn, ics; n_points = steps_to_plot)
+rn_trajectory = integrate(rn_nn, ics; n_points = steps_to_plot)
 nothing # hide
 ```
 
@@ -344,9 +344,9 @@ We see that the ResNet is slowly gaining energy which consitutes unphysical beha
 steps_to_plot = 400
 
 #predictions
-la_trajectory = iterate(la_nn, ics; n_points = steps_to_plot)
-g_trajectory =  iterate(g_nn, ics; n_points = steps_to_plot)
-rn_trajectory = iterate(rn_nn, ics; n_points = steps_to_plot)
+la_trajectory = integrate(la_nn, ics; n_points = steps_to_plot)
+g_trajectory =  integrate(g_nn, ics; n_points = steps_to_plot)
+rn_trajectory = integrate(rn_nn, ics; n_points = steps_to_plot)
 nothing # hide
 ```
 

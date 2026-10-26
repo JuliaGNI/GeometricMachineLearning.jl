@@ -230,7 +230,7 @@ nn_st = load(NeuralNetwork, "transformer_rigid_body_nn_st.h5", nn_st.architectur
 nothing # hide
 ```
 
-After this we use [`iterate`](@ref) to obtain predicted orbits:
+After this we use [`integrate`](@ref) to obtain predicted orbits:
 
 ```@example rigid_body
 ics_val₁ = [0., sin(0.9), cos(0.9 + π)]
@@ -243,11 +243,11 @@ function produce_trajectory(ics_val)
                                     parameters = default_parameters())
     solution = integrate(problem, ImplicitMidpoint())
     trajectory = Float32.(DataLoader(solution; suppress_info = true).input)
-    nn_vpff_solution = iterate(nn_vpff, trajectory[:, 1]; 
+    nn_vpff_solution = integrate(nn_vpff, trajectory[:, 1]; 
                                             n_points = Int(floor(t_validation / timestep)) + 1)
-    nn_vpt_solution = iterate(nn_vpt, trajectory[:, 1:seq_length];
+    nn_vpt_solution = integrate(nn_vpt, trajectory[:, 1:seq_length];
                                             n_points = Int(floor(t_validation / timestep)) + 1)
-    nn_st_solution = iterate(nn_st, trajectory[:, 1:seq_length];
+    nn_st_solution = integrate(nn_st, trajectory[:, 1:seq_length];
                                             n_points = Int(floor(t_validation / timestep)) + 1)
     trajectory, nn_vpff_solution, nn_vpt_solution, nn_st_solution
 end
@@ -328,10 +328,10 @@ problem = odeproblem(ics_val₁; timespan = (0, t_validation), timestep = timest
 solution = integrate(problem, ImplicitMidpoint()) # hide
 @time "Implicit Midpoint" solution = integrate(problem, ImplicitMidpoint())
 trajectory = Float32.(DataLoader(solution; suppress_info = true).input)
-iterate(nn_vpt, trajectory[:, 1:seq_length]; n_points = Int(floor(t_validation / timestep)) + 1) # hide
-@time "VPT" iterate(nn_vpt, trajectory[:, 1:seq_length]; n_points = Int(floor(t_validation / timestep)) + 1)
-iterate(nn_st, trajectory[:, 1:seq_length]; n_points = Int(floor(t_validation / timestep)) + 1) # hide
-@time "ST" iterate(nn_st, trajectory[:, 1:seq_length]; n_points = Int(floor(t_validation / timestep)) + 1)
+integrate(nn_vpt, trajectory[:, 1:seq_length]; n_points = Int(floor(t_validation / timestep)) + 1) # hide
+@time "VPT" integrate(nn_vpt, trajectory[:, 1:seq_length]; n_points = Int(floor(t_validation / timestep)) + 1)
+integrate(nn_st, trajectory[:, 1:seq_length]; n_points = Int(floor(t_validation / timestep)) + 1) # hide
+@time "ST" integrate(nn_st, trajectory[:, 1:seq_length]; n_points = Int(floor(t_validation / timestep)) + 1)
 nothing # hide
 end # hide
 timing() # hide

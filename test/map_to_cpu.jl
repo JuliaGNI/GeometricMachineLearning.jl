@@ -1,11 +1,12 @@
 # `map_to_cpu` walks a parameter set with `NeuralNetworkParameters.mapstorage`, so the structured
 # types have to survive the round trip rather than come back densified. The GPU tests in
-# `test/devices/metal.jl` do not cover `map_to_cpu`, so what is pinned here is the walk and the
-# reconstruction, not the device transfer: `Array{T}` of a host array is a copy, which is enough to
-# show that every leaf was visited and rebuilt.
+# `test/devices/metal.jl` do not cover `map_to_cpu`, so the device half is pinned on a `JLArray`:
+# a copy of a `JLBackend` network is a network of the host, in its leaves and in its backend.
+# `Array{T}` of a host array is a copy, which shows that every leaf was visited and rebuilt.
 
 using GeometricMachineLearning
 using GeometricMachineLearning: map_to_cpu
+using JLArrays: JLBackend
 using LinearAlgebra
 using NeuralNetworkParameters: NetworkParameters, params
 using Random
@@ -82,4 +83,26 @@ end
     @test params(back) isa NetworkParameters
     @test keys(params(back)) == keys(params(nn))
     @test params(back).L1.weight isa StiefelManifold
+end
+
+# The copy is a network of the host, in its backend and in its fourth type parameter alike: the
+# leaves are host arrays, so a backend left on the device would send the next forward pass there
+# with data it cannot read.
+@testset "a device network comes back on the CPU" begin
+    nn = NeuralNetwork(Chain(Dense(N, 3, tanh)), JLBackend(), Float32)
+    back = map_to_cpu(nn)
+
+    @test back.backend isa CPU
+    @test typeof(back).parameters[4] === CPU
+    @test params(back).L1.W isa Matrix{Float32}
+    @test params(back).L1.b isa Vector{Float32}
+    @test back.architecture === nn.architecture
+end
+
+@testset "a host network keeps its backend and its type parameter" begin
+    nn = NeuralNetwork(Chain(Dense(N, 3, tanh)), CPU(), Float32)
+    back = map_to_cpu(nn)
+
+    @test back.backend isa CPU
+    @test typeof(back).parameters[4] === CPU
 end

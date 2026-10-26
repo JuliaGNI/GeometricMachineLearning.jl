@@ -68,18 +68,17 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
 ## Found late
 
-### K17 · `assign_q_and_p` and `PoissonTensor * v` drop the rows from `2N + 1` on without an error.
+### K17 · `assign_q_and_p` drops the rows from `2N + 1` on without an error.
 
 - **location:** `src/kernels/assign_q_and_p.jl`
 - **kind:** defect
 - **found:** #345, review of 2026-10-15; the behaviour is the same on `origin/main` at `2a63f26a`
 - **evidence:**
   `assign_q_and_p(x, N)` takes `x[1:N, …]` for `q` and the next `N` rows for `p`, and checks nothing
-  about `size(x, 1)`. An input with `size(x, 1) > 2N` loses its trailing rows silently, and
-  `PoissonTensor * v` reaches the same method.
+  about `size(x, 1)`. An input with `size(x, 1) > 2N` loses its trailing rows silently.
 
   Closing it means an error for `size(x, 1) != 2N`. That changes the public behaviour of
-  `assign_q_and_p` and of `PoissonTensor * v`, so it is a change of its own and not a cleanup.
+  `assign_q_and_p`, so it is a change of its own and not a cleanup.
 
 ### K19 · In `Float32` the Cayley kernel returns non-finite slices for a skew `C` of norm 1e8, where no method is accurate.
 
@@ -170,7 +169,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
 ## The test suite
 
-### K3 · `test/quality/jet.jl` does not see an unstable kernel-launch argument, nor two barriers in the Poisson-tensor kernel
+### K3 · `test/quality/jet.jl` does not see an unstable kernel-launch argument
 
 - **location:** `test/quality/jet.jl`
 - **kind:** missing test
@@ -184,11 +183,8 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   `skew_mat_mul_k!(C, S, Base.inferencebarrier(B), n, …)` in `src/kernels/mat_tensor_mul.jl`. At
   `target_modules = (GeometricMachineLearning,)` a barrier on a launch argument gives 0 reports,
   and the same barrier in an `@assert` of the same launcher gives 3: the kernel functor takes
-  `args...`, so the dispatch sits in KernelAbstractions' frames, which the filter drops. In
-  `assign_ones_for_poisson_tensor_kernel!` (`src/arrays/poisson_tensor.jl:95`) two mutants
-  SURVIVED: a barrier on `n` in `map_index_for_poisson_tensor(i, n)`, and a barrier on the written
-  array `J`; a barrier on the stored value is CAUGHT. JET never reports a dynamic dispatch in the
-  kernel's own frame. A barrier on a value inside each kernel body is CAUGHT.
+  `args...`, so the dispatch sits in KernelAbstractions' frames, which the filter drops. A barrier
+  on a value inside each kernel body is CAUGHT.
 
 ### K10 · The two training tests of `adam_with_learning_rate_decay.jl` run in `Float64` only.
 

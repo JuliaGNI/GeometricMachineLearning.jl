@@ -4,6 +4,8 @@ using GeometricMachineLearning, Test, Zygote
 using AbstractNeuralNetworks: layer
 import Random
 
+include("../helpers/poisson.jl")
+
 Random.seed!(1234)
 
 # This computes the Jacobians of the encoder, the shear pair and the decoder, and asserts the
@@ -18,8 +20,8 @@ function test_symplecticity(N = 4, N2 = 20, T = Float32)
     ps = NeuralNetwork(model, CPU(), T).params
     x = rand(T, N)
 
-    𝕁_N = PoissonTensor(N, T)
-    𝕁_N2 = PoissonTensor(N2, T)
+    𝕁_N = poisson_matrix(N, T)
+    𝕁_N2 = poisson_matrix(N2, T)
 
     # Encoder identity: PSDLayer is linear, so its Jacobian is the map itself.
     E = Zygote.jacobian(x -> layer(model, 1)(x, ps[1]), x)[1]

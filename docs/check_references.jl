@@ -12,6 +12,7 @@
 #     julia --project=docs docs/check_references.jl
 
 using GeometricMachineLearning
+using GeometricOptimizers: solve! # the manual documents `solve!`, which this package no longer exports
 using AbstractNeuralNetworks # signatures in `@docs` blocks name types from here
 using Documenter
 using Documenter: DocSystem

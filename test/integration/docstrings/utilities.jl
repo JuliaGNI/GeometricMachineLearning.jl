@@ -1,14 +1,16 @@
 using Test
 using GeometricMachineLearning
-using GeometricMachineLearning: AutoEncoderLoss, ZygotePullback
+using GeometricMachineLearning: AutoEncoderLoss, ZygotePullback, _vcat
 using AbstractNeuralNetworks: NamedTupleOfArrays
 import Random
+
+include("../../helpers/poisson.jl")
 
 Random.seed!(1234)
 
 @testset "Utility and pullback docstring examples" begin
     # `(q, p)` data of vectors, matrices and tensors is the type that the `(q, p)` methods of the
-    # layers, `TransformerLoss` and `PoissonTensor` dispatch on
+    # layers and `TransformerLoss` dispatch on
     QP = NamedTupleOfArrays{<:Any, (:q, :p)}
     data1 = (q = rand(5), p = rand(5))
     data2 = (q = rand(5, 4), p = rand(5, 4))
@@ -16,8 +18,7 @@ Random.seed!(1234)
     @test (typeof(data1) <: QP, typeof(data2) <: QP, typeof(data3) <: QP) ==
           (true, true, true)
 
-    𝕁 = PoissonTensor(4)
-    @test 𝕁 * (q = [1, 2], p = [3, 4]) == (q = [3, 4], p = [-1, -2])
+    @test poisson_matrix(4) * _vcat((q = [1, 2], p = [3, 4])) == [3, 4, -1, -2]
 
     # the `ZygotePullback` docstring: `back(Δ)` is a `NetworkParameters`, not a one-tuple of one
     pb = ZygotePullback(AutoEncoderLoss())

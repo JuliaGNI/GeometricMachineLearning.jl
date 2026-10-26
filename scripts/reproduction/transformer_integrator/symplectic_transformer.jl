@@ -126,9 +126,9 @@ function make_validation_plot(n_steps = n_steps; theme = :dark, symplectic = tru
         xlabelcolor = textcolor,
         ylabelcolor = textcolor
     )
-    prediction1 = iterate(nn1, init_con; n_points = n_steps, prediction_window = seq_length)
-    prediction2 = iterate(nn2, init_con; n_points = n_steps, prediction_window = seq_length)
-    prediction3 = iterate(nn3, init_con; n_points = n_steps, prediction_window = seq_length)
+    prediction1 = integrate(nn1, init_con; n_points = n_steps, prediction_window = seq_length)
+    prediction2 = integrate(nn2, init_con; n_points = n_steps, prediction_window = seq_length)
+    prediction3 = integrate(nn3, init_con; n_points = n_steps, prediction_window = seq_length)
 
     # we use linewidth  = 2
     lines!(ax, (n_steps - (50)):n_steps, dl.input.q[1, (n_steps - (50)):n_steps, index];

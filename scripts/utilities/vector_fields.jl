@@ -1,5 +1,13 @@
 using OffsetArrays
+using LinearAlgebra: I
 include("assemble_matrix.jl")
+
+# The canonical Poisson tensor as the dense matrix it is: `[0 I(n); -I(n) 0]` of `n2 × n2`, with
+# `n = n2 ÷ 2`.
+function poisson_matrix(n2::Integer, ::Type{T} = Float64) where {T}
+    n = n2 ÷ 2
+    [zeros(T, n, n) Matrix{T}(I, n, n); -Matrix{T}(I, n, n) zeros(T, n, n)]
+end
 
 function _mul(A::OffsetMatrix, q::OffsetVector)
     OffsetArray(A.parent*q.parent, OffsetArrays.Origin(0))
@@ -25,7 +33,7 @@ end
 function v_field(params)
     K = assemble_matrix(params.μ, params.Δx, params.Ñ).parent
     full_mat = hcat(vcat(K + K', zero(K)), vcat(zero(K), one(K)*params.Δx))
-    𝕁N = PoissonTensor(size(K, 1))
+    𝕁N = poisson_matrix(size(K, 1))
     function v(v, t, q, params)
         v .= 𝕁N * full_mat * q / params.Δx
     end
@@ -35,7 +43,7 @@ end
 function v_field_explicit(params)
     K = assemble_matrix(params.μ, params.Δx, params.Ñ).parent
     full_mat = hcat(vcat(K + K', zero(K)), vcat(zero(K), one(K)*params.Δx))
-    𝕁N = PoissonTensor(size(K, 1))
+    𝕁N = poisson_matrix(size(K, 1))
     function v(t, q, params)
         𝕁N * full_mat * q / params.Δx
     end

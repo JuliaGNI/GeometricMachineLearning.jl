@@ -46,7 +46,7 @@ function plot_verification!(gp, dl::DataLoader,
         lines!(ax, _trajectory(dl, :q, i), _trajectory(dl, :p, i);
             label = "Training data "*string(i), linewidth = 3)
         init_con = (q = dl.input.q[:, 1, i], p = dl.input.p[:, 1, i])
-        prediction = iterate(nn, init_con; n_points = dl.input_time_steps)
+        prediction = integrate(nn, init_con; n_points = dl.input_time_steps)
         scatterlines!(ax, vec(prediction.q), vec(prediction.p);
             label = "Learned trajectory "*string(i), alpha = 0.8)
     end
@@ -91,7 +91,7 @@ function plot_prediction!(gp, nn::NeuralNetwork,
     i = 0
     for qp0 in initial_cond
         i += 1
-        valuation = iterate(nn, qp0; n_points = 100)
+        valuation = integrate(nn, qp0; n_points = 100)
         scatterlines!(ax, valuation[1, :], valuation[2, :];
             label = "Prediction "*string(i), alpha = 0.8)
     end
