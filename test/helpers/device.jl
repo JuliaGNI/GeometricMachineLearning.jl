@@ -16,7 +16,12 @@ using GeometricMachineLearning: NetworkParameters, params, SymmetricMatrix, Skew
                                 StrictlyLowerTriangular, StrictlyUpperTriangular,
                                 StiefelManifold
 using JLArrays: JLArray, JLBackend
+# `mapparameters` comes through `AbstractNeuralNetworks`, which re-uses it for its own static backend,
+# and not from `NeuralNetworkParameters` directly: a check that activates a scratch environment adds
+# the packages it names, and `head_facts.jl` names this one.
+using AbstractNeuralNetworks: mapparameters
 import KernelAbstractions
+import Random
 
 to_device(x::AbstractArray) = JLArray(x)
 to_device(x::StiefelManifold) = StiefelManifold(JLArray(x.A))
@@ -26,11 +31,9 @@ to_device(x::StrictlyLowerTriangular) = StrictlyLowerTriangular(JLArray(x.S), x.
 to_device(x::StrictlyUpperTriangular) = StrictlyUpperTriangular(JLArray(x.S), x.n)
 to_device(x::NamedTuple) = map(to_device, x)
 
-# The two levels of a parameter set: each layer's leaves, and the set rebuilt around them.
-function to_device(ps::NetworkParameters)
-    names = keys(ps)
-    NetworkParameters(NamedTuple{names}(map(name -> map(to_device, getproperty(ps, name)), names)))
-end
+# The two levels of a parameter set: `mapparameters` walks each layer's leaves and rebuilds the set
+# around them.
+to_device(ps::NetworkParameters) = mapparameters(to_device, ps)
 
 # The network `arch` of the host, with its parameter set on the device. A `StiefelLayer` is built
 # inside a `Chain`, because a bare model's `initialparameters` is a `NamedTuple` and
@@ -38,6 +41,41 @@ end
 function network_on_device(arch, ::Type{T}) where {T}
     nn = NeuralNetwork(arch, CPU(), T)
     NeuralNetwork(nn.architecture, nn.model, to_device(params(nn)), JLBackend())
+end
+
+# Two epochs of `Adam` on data of the device, the network afterwards, and its parameter set as it was
+# before the first step: `train!` writes the new parameters in place, so the copy is what a step can be
+# seen against. The batch is a keyword because each family draws its minibatches its own way; the loss
+# is one because `train!` has no default one for a plain `Chain`; and the retraction is one because a
+# manifold leaf of a `JLArray` needs `Geodesic()`.
+function two_epochs(arch, ::Type{T}, data, n_epochs; batch, retraction = Cayley(),
+        loss = nothing, autoencoder = false) where {T}
+    Random.seed!(13)
+    nn = network_on_device(arch, T)
+    p₀ = deepcopy(params(nn))
+    dl = DataLoader(JLArray(data); suppress_info = true, autoencoder)
+    opt = TrainingOptimizer(params(nn); algorithm = Adam(), retraction)
+    loss_kw = loss === nothing ? (;) : (; loss)
+    history = train!(nn, opt, dl, batch, n_epochs; show_progress = false, loss_kw...)
+    history, nn, p₀
+end
+
+# Whether a step moved the parameter set at all: a step that writes back what it was handed leaves
+# every leaf as it was, and the assertions of a training testset would not see it. The difference is a
+# reduction on the device, so no leaf is read one element at a time, and a leaf a network does not
+# train (`nothing`) is skipped.
+function parameters_moved(before, after)
+    moved = Ref(false)
+    differ(a, b) = !iszero(sum(abs, parent(b) .- parent(a)))
+    changed(a::AbstractArray, b::AbstractArray) = (moved[] |= differ(a, b))
+    changed(a, b) = nothing
+    walk(a::NamedTuple, b::NamedTuple) = foreach(k -> walk(a[k], b[k]), keys(a))
+    walk(a, b) = changed(a, b)
+    for name in keys(after), k in keys(after[name])
+
+        walk(before[name][k], after[name][k])
+    end
+    moved[]
 end
 
 # The backend a leaf lives on. `parent` of a plain array is the array itself, and `parent` of a

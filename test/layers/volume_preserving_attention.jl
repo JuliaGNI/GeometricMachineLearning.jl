@@ -101,8 +101,7 @@ end
     end
 end
 
-@testset "VolumePreservingAttention with SL = 0 runs every sequence length, T = $T" for T in (Float32,
-    Float64)
+@testset "VolumePreservingAttention with SL = 0 runs every sequence length, T = $T" for T in REAL_ELTYPES
     for seq_length in (3, 7), skew_sym in (false, true)
 
         d, ps, x = case(0, seq_length, T; skew_sym)

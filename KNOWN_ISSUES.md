@@ -196,10 +196,75 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   ```
 
   raises a `MethodError` whose message names `copyto!` rather than `changebackend`. The device tests
-  and `scripts/metal_check.jl` therefore move a parameter set leaf by leaf: `test/helpers/device.jl`'s
-  `to_device` rebuilds each structured leaf around `JLArray` storage, and the metal script does the
-  same with `MtlArray`. The fix is a `copyto!` method in `JLArrays`, or a device-array path through
-  `Base.copyto!` in `AbstractNeuralNetworks`.
+  therefore move a parameter set leaf by leaf: `test/helpers/device.jl`'s `to_device` rebuilds each
+  structured leaf around `JLArray` storage. A `MetalBackend` has no such gap —
+  `changebackend(get_backend(MtlArray(zeros(Float32, 1))), params(nn))` returns the set with every
+  leaf's storage on the device and its type kept, `StiefelManifold` and `NamedTuple` leaves included —
+  so `scripts/metal_check.jl` uses it. The fix is a `copyto!` method in `JLArrays`, or a device-array
+  path through `Base.copyto!` in `AbstractNeuralNetworks`.
+
+### K32 · A `StiefelManifold` weight of one column gives an empty skew block, and a Metal `rmul!` of an empty array raises.
+
+- **location:** `GeometricOptimizers` `src/lie_algebras/stiefel_lie_algebra_horizontal.jl:178`
+- **kind:** upstream
+- **found:** 2026-10-26, part M7
+- **evidence:**
+  The horizontal lift of a Stiefel point of `N` rows and `n` columns carries a `SkewSymMatrix` of
+  dimension `n`, whose storage holds `n(n - 1) / 2` entries — none at all where `n` is one. The
+  optimizer's cache and state then hold empty storages for that leaf, and a Metal launch of an empty
+  array divides by zero:
+
+  ```
+  julia> train!(device, opt, DataLoader(MtlArray(randn(Float32, 8, 12, 4)); autoencoder = true), Batch(6), 2)
+  ERROR: DivideError: integer division error
+    [5] mod at int.jl:327 [inlined]
+    [6] #partition##2 at nditeration.jl:158 [inlined]
+   [11] launch_config at MetalKernels.jl:91 [inlined]
+   [12] (::KernelAbstractions.Kernel{…generic_rmul_kernel!…})
+   [14] generic_rmul! at linalg.jl:981 [inlined]
+   [15] rmul! at linalg.jl:985 [inlined]
+   [23] _StorageStep at named_tuple_wrapper.jl:114 [inlined]
+  ```
+
+  for `SymplecticAutoencoder(8, 2)`, whose parameter set holds `StiefelManifold` weights of `(4, 1)`
+  and `(2, 1)`. Walking the optimizer after the failure finds the empty storage in each of
+  `cache.g`, `cache.δ`, `cache.Δg`, `cache.g̃`, `cache.m₁`, `cache.m₂` and `state.g`, `state.ḡ`,
+  `state.m₁`, `state.m₂`:
+
+  ```
+  ZERO opt.cache.g.params[L5][weight](parent)[1] :: SkewSymMatrix{Float32, MtlVector{Float32, Metal.PrivateStorage}} (0,)
+  ZERO opt.cache.g.params[L7][weight](parent)[1] :: SkewSymMatrix{Float32, MtlVector{Float32, Metal.PrivateStorage}} (0,)
+  ```
+
+  A CPU- or `JLArray`-backed launch over an empty range is a no-op, which is why
+  `test/devices/jlarray_autoencoder.jl` trains this network and no test sees the defect. The fix is a
+  `rmul!` that skips an empty array on the device side, or a horizontal lift that allocates no block
+  for `n = 1`. Until then `scripts/metal_check.jl` sweeps `SymplecticAutoencoder(8, 4)`, whose
+  manifold weights have two and three columns.
+
+### K33 · An epoch of `train!` on a Metal array advances the CPU random stream, so a two-epoch run draws its second epoch's minibatches differently from the host's.
+
+- **location:** `src/data_loader/batch.jl:195`
+- **kind:** upstream
+- **found:** 2026-10-26, part M7
+- **evidence:**
+  `train!` draws its minibatches with `shuffle` from the task-local stream, and nothing else. From one
+  seed, the host's epoch leaves that stream exactly where the two shuffles left it, and the device's
+  epoch does not:
+
+  ```
+  after the seed:  0.5805097055341872
+  host  one epoch: Float32[1.2209982]  rng next 0.5692702072139225
+  device one epoch: Float32[1.2209982]  rng next 0.24892438522171267
+  ```
+
+  The draw is in the device path and not in the model: a single gather of a minibatch on the device
+  moves the stream, and so does a single `optimization_step!`, while the same calls on the host move
+  it not at all. Two epochs inside one `train!` therefore hand the device and the host different
+  minibatches from the second epoch on, which reads as a disagreement of `1e-2` in the loss history.
+  `scripts/metal_check.jl` works around it by calling `train!` once per epoch with the stream reseeded
+  before each. Which of `Metal`, `GPUArrays`, `GeometricOptimizers` or `Zygote` draws is not
+  established.
 
 ## The test suite
 

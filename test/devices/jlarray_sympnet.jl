@@ -19,24 +19,16 @@ include("../helpers/device.jl")
 Random.seed!(123)
 allowscalar(false)
 
-function two_epochs(arch, ::Type{T}) where {T}
-    Random.seed!(13)
-    nn = network_on_device(arch, T)
-    dl = DataLoader(JLArray(rand(T, 4, 12, 4)); suppress_info = true)
-    opt = TrainingOptimizer(params(nn); algorithm = Adam())
-    history = train!(nn, opt, dl, Batch(6), 2; show_progress = false)
-    history, nn
-end
-
 @testset "$name trains two epochs on a JLArray, T = $T" for (name, arch) in (
         ("GSympNet", GSympNet(4)),
         ("LASympNet", LASympNet(4)),
         ("VolumePreservingFeedForward", VolumePreservingFeedForward(4))),
     T in REAL_ELTYPES
 
-    history, nn = two_epochs(arch, T)
+    history, nn, p₀ = two_epochs(arch, T, rand(T, 4, 12, 4), 2; batch = Batch(6))
     @test eltype(history) === T
     @test length(history) == 2
     @test all(isfinite, history)
     @test leaves_on_device(params(nn), T)
+    @test parameters_moved(p₀, params(nn))
 end

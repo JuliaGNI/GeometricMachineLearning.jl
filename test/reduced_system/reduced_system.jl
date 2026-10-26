@@ -83,9 +83,9 @@ function test_if_reduced_vector_fields_are_divergence_free(rs::HRedSys)
     nothing
 end
 
-# The divergence of the reduced fields is evaluated in the problem's own `Float64`: the state and the
-# vector fields are the problem's. The bound below is `Float64`'s, and the three calls name
-# `Float64` rather than looping over `REAL_ELTYPES`.
+# The state the divergence is estimated at is drawn in `Float64` and the central difference is taken
+# in `Float64`, so the bound below is the noise floor of that estimate and serves both element types.
+# The network's weights are the caller's `T`, so the field that the estimate differentiates is `T`'s.
 function check_if_reduced_vector_fields_are_divergence_free(
         reduced_dim::Integer, integrator,
         ::Type{T}) where {T}
@@ -100,11 +100,10 @@ end
 for T in REAL_ELTYPES
     test_reduced_vector_fields(2, ImplicitMidpoint(), T)
     test_reduced_vector_fields(2, ExplicitMidpoint(), T)
+    check_if_reduced_vector_fields_are_divergence_free(2, ImplicitMidpoint(), T)
+    check_if_reduced_vector_fields_are_divergence_free(2, ExplicitMidpoint(), T)
+    check_if_reduced_vector_fields_are_divergence_free(2, ExplicitEulerRK(), T)
 end
-
-check_if_reduced_vector_fields_are_divergence_free(2, ImplicitMidpoint(), Float64)
-check_if_reduced_vector_fields_are_divergence_free(2, ExplicitMidpoint(), Float64)
-check_if_reduced_vector_fields_are_divergence_free(2, ExplicitEulerRK(), Float64)
 
 @doc raw"""
 `HRedSys.timespan` carries its own type parameter and follows the constructor's argument, the way

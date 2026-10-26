@@ -31,11 +31,10 @@ Random.seed!(1234)
 function svd_test(
         ::Type{T}, A, n, train_steps = 1000, tol = 1e-1; retraction = Cayley()) where {T}
     # Seeded here and not once at the top of the file. `svd_test` is called twice per precision, and
-    # with a single top-level seed the second call starts from whatever RNG state the first one
-    # happened to leave behind -- so the convergence assertions below turned on how much randomness
-    # the optimizer consumes rather than on whether the optimizers converge. GeometricOptimizers 0.4
-    # builds one more `GlobalSection` per manifold parameter than 0.2 did, and that was enough to
-    # move the second pass from 2% above the optimum to 21%, against a 10% tolerance.
+    # with a single top-level seed the second call starts from whatever RNG state the first one left
+    # behind: constructing a `TrainingOptimizer` draws a random completion for every manifold
+    # parameter it holds, so the convergence assertions below would turn on how much randomness the
+    # three optimizers consume rather than on whether they converge.
     Random.seed!(1234)
     N = size(A, 1)
     U, _, _ = svd(A)
