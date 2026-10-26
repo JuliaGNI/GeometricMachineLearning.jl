@@ -404,7 +404,9 @@ end
 
 Compute the accuracy of a neural network classifier.
 
-This needs an instance of [`DataLoader`](@ref) that stores the *test data*.
+This needs an instance of [`DataLoader`](@ref) that stores the *test data*. The result is one minus
+the fraction of errors, where a wrongly labelled sample is one error and a sample that carries no
+label is half an error. Its type is `float(T)`, for `T` the element type of the loader's input.
 """
 function accuracy(model::Chain,
         ps::NetworkParameters,
@@ -417,8 +419,15 @@ function accuracy(model::Chain,
     ind = argmax(output_estimate, dims = 1)
     # get tensor of maximum elements
     tensor_of_maximum_elements[ind] .= T1(1)
-    (size(dl.output, 3) - sum(abs.(dl.output - tensor_of_maximum_elements)) / T1(2)) /
-    size(dl.output, 3)
+    # The count is halved, not floored: a wrongly labelled sample differs from the target in two
+    # entries of its one-hot column and a sample that carries no label differs in one, so half the
+    # difference is the number of errors. The fraction is then read in `float(T)`, for `T` the
+    # element type of the loader's input; reading it in the output's would widen a `Float32`
+    # loader's result, and reading it in an integer `T` fails on a half error.
+    n = size(dl.output, 3)
+    errors = sum(abs.(dl.output - tensor_of_maximum_elements)) / 2
+    F = float(T)
+    F(n - errors) / F(n)
 end
 
 @doc raw"""

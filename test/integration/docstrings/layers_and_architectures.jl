@@ -19,8 +19,8 @@ Random.seed!(1234)
     bias = [0, 0, 1]
     ps = NetworkParameters((L1 = (weight = weight, bias = bias),))
     nn = NeuralNetwork(model, Chain(model), ps, CPU())
-    @test iterate(nn, [1, 1, 1]; n_points = 4) == [1 2 4 8; 1 3 9 27; 1 3 7 15]
-    @test iterate(nn, (q = [1, 1, 1],); n_points = 4) ==
+    @test integrate(nn, [1, 1, 1]; n_points = 4) == [1 2 4 8; 1 3 9 27; 1 3 7 15]
+    @test integrate(nn, (q = [1, 1, 1],); n_points = 4) ==
           (q = [1 2 4 8; 1 3 9 27; 1 3 7 15],)
 
     dl = DataLoader(rand(2, 20); suppress_info = true)

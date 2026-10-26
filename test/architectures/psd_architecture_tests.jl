@@ -1,7 +1,10 @@
 using GeometricMachineLearning
+using GeometricMachineLearning: solve!
 using Zygote: jacobian
 using Test
 import Random
+
+include("../helpers/poisson.jl")
 
 Random.seed!(123)
 
@@ -33,13 +36,13 @@ function test_symplecticity(N::Integer, n::Integer)
 
     # this matrix should be symplectic
     sympl_mat = jacobian(vec -> psd_decoder(vec), test_vector)[1]
-    @test PoissonTensor(n) ≈ sympl_mat' * PoissonTensor(N) * sympl_mat
+    @test poisson_matrix(n) ≈ sympl_mat' * poisson_matrix(N) * sympl_mat
 
     # test if it's still symplectic after computing psd 
     dl = DataLoader(rand(N, 10 * N); autoencoder = true)
     solve!(psd_nn, dl)
     sympl_mat = jacobian(vec -> psd_decoder(vec), test_vector)[1]
-    @test PoissonTensor(n) ≈ sympl_mat' * PoissonTensor(N) * sympl_mat
+    @test poisson_matrix(n) ≈ sympl_mat' * poisson_matrix(N) * sympl_mat
 end
 
 function all_tests(N::Integer, n::Integer; kwargs...)

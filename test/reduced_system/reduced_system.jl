@@ -1,5 +1,5 @@
 using GeometricMachineLearning
-using GeometricProblems.CoupledHarmonicOscillator: hodeproblem
+using GeometricProblems.CoupledHarmonicOscillator: hodeproblem, hodeensemble
 using GeometricIntegrators: integrate, ImplicitMidpoint, ExplicitEulerRK, ExplicitMidpoint
 using FiniteDifferences: jacobian, central_fdm
 using Test
@@ -125,3 +125,39 @@ function test_hredsys_timespan_is_not_truncated()
 end
 
 test_hredsys_timespan_is_not_truncated()
+
+@doc raw"""
+`HRedSys` takes its integrator from the caller and its parameters from a constructor of its own:
+the positional constructor defaults `parameters` to `NullParameters()` and requires `integrator`,
+and the `HODEProblem` and `HODEEnsemble` constructors require it too. None of the three names an
+integrator, so a call that forgets one raises an `UndefKeywordError` instead of building a system
+around a scheme the caller never chose.
+"""
+function test_hredsys_keywords()
+    model = PSDArch(4, 2)
+    nn = NeuralNetwork(model)
+    v_full(v, t, q, p, parameters) = (v .= 0)
+    f_full(f, t, q, p, parameters) = (f .= 0)
+    h_full(t, q, p, parameters) = 0.0
+    ics = (q = GeometricMachineLearning.StateVariable(zeros(4)),
+        p = GeometricMachineLearning.StateVariable(zeros(4)))
+
+    @test_throws UndefKeywordError HRedSys(
+        4, 2, encoder(nn), decoder(nn), v_full, f_full, h_full, (0.0, 1.0), 0.1, ics)
+    @test_throws UndefKeywordError HRedSys(
+        4, 2, encoder(nn), decoder(nn), v_full, f_full, h_full, (0.0, 1.0), 0.1, ics;
+        parameters = NamedTuple())
+    # The two constructors that take an equation require it as well.
+    @test_throws UndefKeywordError HRedSys(hodeproblem(), encoder(nn), decoder(nn))
+    @test_throws UndefKeywordError HRedSys(hodeensemble(), encoder(nn), decoder(nn))
+
+    # A call that names the integrator and no parameters gets the empty parameter set that the
+    # vector fields above are written against.
+    rs = HRedSys(
+        4, 2, encoder(nn), decoder(nn), v_full, f_full, h_full, (0.0, 1.0), 0.1, ics;
+        integrator = ImplicitMidpoint())
+    @test rs.parameters isa GeometricMachineLearning.GeometricBase.NullParameters
+    @test rs.integrator === ImplicitMidpoint()
+end
+
+test_hredsys_keywords()

@@ -34,9 +34,17 @@ using GeometricMachineLearning
 # `layer(chain, i)` is AbstractNeuralNetworks' accessor, and GeometricMachineLearning neither adds
 # a method to it nor re-exports it.
 using AbstractNeuralNetworks: layer
-using LinearAlgebra: cond, opnorm, rank
+using LinearAlgebra: I, cond, opnorm, rank
 using Random
 using Zygote: jacobian
+
+# The canonical Poisson tensor as the dense matrix it is: `[0 I(n); -I(n) 0]` of `n2 × n2`, with
+# `n = n2 ÷ 2`. The dimension of a Poisson tensor is even.
+function poisson_matrix(n2::Integer, ::Type{T} = Float64) where {T}
+    iseven(n2) || throw(ArgumentError("the dimension of a Poisson tensor is even, got $n2"))
+    n = n2 ÷ 2
+    [zeros(T, n, n) Matrix{T}(I, n, n); -Matrix{T}(I, n, n) zeros(T, n, n)]
+end
 
 """
 Build the upscaling chain and return the Jacobians of its three stages at random points, together
@@ -61,7 +69,7 @@ function upscaling_jacobians(N, N2, T; share_weights = true)
     round_trip = jacobian(x -> model(x, ps), rand(T, N))[1]
 
     return (; encoder, shear, decoder, round_trip,
-        𝕁_N = Matrix(PoissonTensor(N, T)), 𝕁_N2 = Matrix(PoissonTensor(N2, T)))
+        𝕁_N = poisson_matrix(N, T), 𝕁_N2 = poisson_matrix(N2, T))
 end
 
 "Relative deviation of `A` from `B` in the operator norm."

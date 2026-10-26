@@ -8,6 +8,7 @@ TODO
 """
 
 using GeometricMachineLearning
+using GeometricMachineLearning: solve!
 using HDF5
 using CUDA
 using GeometricIntegrators

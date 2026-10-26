@@ -19,6 +19,11 @@ using NeuralNetworkParameters: flatten, parameter_eltype, parameterlayout, map_c
                                storage_gradient
 using ChainRulesCore
 using GeometricBase
+# `integrate` is GeometricBase's generic, and the trajectory methods are methods of it. The import is
+# what makes the definitions below add methods to that function: written against a name that only a
+# `using` supplied, they would start a function of this module's own, and a caller who loads this
+# package and `GeometricIntegrators` would then hold two verbs instead of one.
+import GeometricBase: integrate
 using GeometricSolutions: GeometricSolution, EnsembleSolution, TimeSeries
 using GeometricEquations: HODEProblem, HODEEnsemble
 using KernelAbstractions
@@ -29,8 +34,6 @@ using Random
 using Zygote
 using ForwardDiff
 import DiffResults
-using InteractiveUtils
-using TimerOutputs
 
 # The manifolds, the structured matrix types, the global sections and the retractions are
 # `GeometricOptimizers`': the same objects, so upstream's generic machinery dispatches on them and
@@ -89,7 +92,7 @@ using AbstractNeuralNetworks: NamedTupleOfArrays, ArrayOrNamedTuple
 import NeuralNetworkParameters: save, load
 export dim
 import NNlib: σ, sigmoid, softmax
-import Base: iterate, eltype
+import Base: eltype
 
 export CPU, GPU
 export Chain, NeuralNetwork
@@ -111,18 +114,14 @@ include("utils.jl")
 
 include("data_loader/data_loader.jl")
 
-# INCLUDE ARRAYS — the structured matrix types come from GeometricOptimizers, which also carries
-# every method GML needs on them. `PoissonTensor` is GML's own and is the only one defined here.
-include("arrays/poisson_tensor.jl")
-
-# Re-exported from GeometricOptimizers, so that `using GeometricMachineLearning` on its own still
-# gives a caller the matrix types its layers are parametrized by.
+# The structured matrix types come from GeometricOptimizers, which also carries every method GML
+# needs on them; this package defines none of its own. They are re-exported here, so that `using
+# GeometricMachineLearning` on its own still gives a caller the matrix types its layers are
+# parametrized by.
 export SymmetricMatrix, SkewSymMatrix
 export StrictlyLowerTriangular, StrictlyUpperTriangular
 export StiefelLieAlgHorMatrix, GrassmannLieAlgHorMatrix
 export StiefelProjection
-# GML's own
-export PoissonTensor
 
 include("kernels/assign_q_and_p.jl")
 include("kernels/tensor_tensor_mul.jl")
@@ -140,15 +139,15 @@ include("kernels/kernel_ad_routines/tensor_mat_skew_sym_assign.jl")
 export MatrixSoftmax, VectorSoftmax
 include("activations/softmax.jl")
 
-# `_diff` and `_norm` are the `NamedTuple`/`(q, p)` arms of subtraction and the norm, and neither is
-# exported: they are helpers of `src/reduced_system/`, not surface. Nothing named `_add` stands
-# beside them, and nothing here adds a method to `AbstractNeuralNetworks.add!`: that would be
-# piracy, and `GeometricOptimizers` already defines the three-argument `add!` on the structured
-# matrix types against its own generic, for a caller that wants them.
+# `_diff`, `_norm` and `_vcat` are the `NamedTuple`/`(q, p)` arms of subtraction, the norm and
+# concatenation, and none of them is exported: they are helpers of `src/reduced_system/` and
+# `src/layers/`, not surface. Nothing named `_add` stands beside them, and nothing here adds a
+# method to `AbstractNeuralNetworks.add!`: that would be piracy, and `GeometricOptimizers` already
+# defines the three-argument `add!` on the structured matrix types against its own generic, for a
+# caller that wants them.
 
 export GradientLayerQ, GradientLayerP, ActivationLayerQ, ActivationLayerP, LinearLayerQ,
        LinearLayerP
-export Linear
 
 # The manifolds are GeometricOptimizers' too, along with the geometry that goes with them.
 export StiefelManifold, GrassmannManifold, Manifold
@@ -185,8 +184,6 @@ export TransformerIntegrator, StandardTransformerIntegrator
 # INCLUDE OPTIMIZERS — the methods, sections and retractions come from GeometricOptimizers.
 include("optimizers/optimizer.jl")
 
-export NeuralNetwork
-
 export NetworkLoss, TransformerLoss, FeedForwardLoss, AutoEncoderLoss, ReducedLoss
 
 #INCLUDE ARCHITECTURES
@@ -207,9 +204,13 @@ export ClassificationTransformer, ClassificationLayer
 export VolumePreservingFeedForward
 export SymplecticAutoencoder, PSDArch
 
-export solve!, encoder, decoder
+# `solve!` is not here: it is `SimpleSolvers`', this package adds methods to it, and a caller who
+# wants it takes it from there or from `GeometricOptimizers`.
+export encoder, decoder
 
-export iterate
+# The verb a caller of this package writes for a trajectory. `iterate` is `Base`'s function, and a
+# network method on it takes over a name every `for` loop in the caller's own code resolves.
+export integrate
 
 include("parametric.jl")
 include("loss/losses.jl")

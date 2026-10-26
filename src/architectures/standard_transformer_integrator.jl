@@ -56,6 +56,9 @@ function StandardTransformerIntegrator(sys_dim::Int; transformer_dim::Int = sys_
         resnet_activation, attention_activation, add_connection)
 end
 
+# It holds no sequence length and integrates over the width of the input it is handed.
+_seq_length(::StandardTransformerIntegrator, ics::AbstractMatrix) = size(ics, 2)
+
 function Chain(arch::StandardTransformerIntegrator)
     layers = arch.sys_dim == arch.transformer_dim ? () :
              (Dense(arch.sys_dim, arch.transformer_dim, arch.upscaling_activation),)

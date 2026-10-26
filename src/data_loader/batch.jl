@@ -54,8 +54,8 @@ function TransformerLoss(batch::Batch{:Transformer})
     TransformerLoss(batch.seq_length, batch.prediction_window)
 end
 
-function Base.iterate(nn::NeuralNetwork, ics, batch::Batch{:Transformer}; n_points = 100)
-    iterate(nn, ics; n_points = n_points, prediction_window = batch.prediction_window)
+function integrate(nn::NeuralNetwork, ics, batch::Batch{:Transformer}; n_points = 100)
+    integrate(nn, ics; n_points = n_points, prediction_window = batch.prediction_window)
 end
 
 @doc raw"""

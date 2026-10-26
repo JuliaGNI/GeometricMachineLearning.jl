@@ -77,6 +77,7 @@ The training data can very easily be obtained by using the packages [`GeometricP
 ```@example toda_lattice
 using GeometricIntegrators: integrate, ImplicitMidpoint
 using GeometricMachineLearning 
+using GeometricMachineLearning: solve! # the PSD architecture is solved, not trained
 import Random # hide
 
 pr = tl.hodeproblem(; timespan = (0.0, 800.))
@@ -307,8 +308,8 @@ We can now evaluate the solution:
 ```@example toda_lattice
 integrator_nn = load(NeuralNetwork, "integrator_parameters.h5", integrator_architecture) # hide
 ics = encoder(sae_nn_cpu)((q = dl.input.q[:, 1:seq_length, 1], p = dl.input.p[:, 1:seq_length, 1])) # hide
-iterate(mtc(integrator_nn), ics; n_points = length(sol.t), prediction_window = seq_length) # hide
-@time "time stepping with transformer" time_series = iterate(mtc(integrator_nn), ics; n_points = length(sol.t), prediction_window = seq_length)
+integrate(mtc(integrator_nn), ics; n_points = length(sol.t), prediction_window = seq_length) # hide
+@time "time stepping with transformer" time_series = integrate(mtc(integrator_nn), ics; n_points = length(sol.t), prediction_window = seq_length)
 nothing # hide
 ```
 
@@ -335,7 +336,7 @@ function plot_transformer_validation!(fig, coordinates, t_steps::Integer=100; th
     lines!(ax_val, Ω, sae_rs.decoder((q = sol_sae_reduced.dataser.q[t_steps], p = sol_sae_reduced.dataser.p[t_steps])).q, 
         label = rich("SAE + Implicit Midpoint"; color = textcolor), color = mgreen)
 
-    time_series = iterate(mtc(integrator_nn), ics; n_points = t_steps, prediction_window = seq_length)
+    time_series = integrate(mtc(integrator_nn), ics; n_points = t_steps, prediction_window = seq_length)
     # prediction = (q = time_series.q[:, end], p = time_series.p[:, end])
     prediction = (q = time_series.q[:, end], p = time_series.p[:, end])
     sol = decoder(sae_nn_cpu)(prediction)
@@ -497,8 +498,8 @@ nothing # hide
 We again integrate the system and then plot the result:
 
 ```@example toda_lattice
-iterate(mtc(integrator_nn2), ics; n_points = length(sol.t), prediction_window = seq_length) # hide
-@time "time stepping with transformer" time_series2 = iterate(mtc(integrator_nn2), ics; n_points = length(sol.t), prediction_window = seq_length)
+integrate(mtc(integrator_nn2), ics; n_points = length(sol.t), prediction_window = seq_length) # hide
+@time "time stepping with transformer" time_series2 = integrate(mtc(integrator_nn2), ics; n_points = length(sol.t), prediction_window = seq_length)
 nothing # hide
 ```
 
@@ -536,7 +537,7 @@ function plot_validation!(fig, coordinates::Tuple, t_steps::Integer=100; theme =
     lines!(ax_val, Ω, psd_rs2.decoder((q = sol_psd_reduced2.dataser.q[t_steps], p = sol_psd_reduced2.dataser.p[t_steps])).q, 
         label = rich("PSD + Implicit Midpoint"; color = textcolor), color = morange)
 
-    time_series2 = iterate(mtc(integrator_nn2), ics; n_points = t_steps, prediction_window = seq_length)
+    time_series2 = integrate(mtc(integrator_nn2), ics; n_points = t_steps, prediction_window = seq_length)
     # prediction = (q = time_series.q[:, end], p = time_series.p[:, end])
     prediction2 = (q = time_series2.q[:, end], p = time_series2.p[:, end])
     sol = decoder(psd_nn2)(prediction2)

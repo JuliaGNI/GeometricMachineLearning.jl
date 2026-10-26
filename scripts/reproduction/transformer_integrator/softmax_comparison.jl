@@ -112,8 +112,8 @@ function make_validation_plot(n_steps = n_steps; theme = :dark)
         xlabelcolor = textcolor,
         ylabelcolor = textcolor
     )
-    prediction_vector = iterate(nn1, init_con; n_points = n_steps, prediction_window = seq_length)
-    prediction_matrix = iterate(nn2, init_con; n_points = n_steps, prediction_window = seq_length)
+    prediction_vector = integrate(nn1, init_con; n_points = n_steps, prediction_window = seq_length)
+    prediction_matrix = integrate(nn2, init_con; n_points = n_steps, prediction_window = seq_length)
 
     # we use linewidth  = 2
     lines!(ax, dl.input.q[1, 1:n_steps, index]; color = mblue,

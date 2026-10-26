@@ -1,11 +1,13 @@
 # `map_to_cpu` walks a parameter set with `NeuralNetworkParameters.mapstorage`, so the structured
 # types have to survive the round trip rather than come back densified. The GPU tests in
-# `test/devices/metal.jl` do not cover `map_to_cpu`, so what is pinned here is the walk and the
-# reconstruction, not the device transfer: `Array{T}` of a host array is a copy, which is enough to
-# show that every leaf was visited and rebuilt.
+# `test/devices/metal.jl` do not cover `map_to_cpu`, so the device half is pinned on a `JLArray`:
+# a copy of a `JLBackend` network is a network of the host, in its leaves and in its backend.
+# `Array{T}` of a host array is a copy, which shows that every leaf was visited and rebuilt.
 
 using GeometricMachineLearning
 using GeometricMachineLearning: map_to_cpu
+using GPUArraysCore: allowscalar
+using JLArrays: JLBackend
 using LinearAlgebra
 using NeuralNetworkParameters: NetworkParameters, params
 using Random
@@ -15,6 +17,10 @@ import GeometricOptimizers: StiefelManifold, SymmetricMatrix, SkewSymMatrix,
                             StrictlyLowerTriangular, StrictlyUpperTriangular
 
 Random.seed!(1234)
+
+# Scalar indexing is off for the whole file, so a `_to_host` that read a device array one element at
+# a time would raise rather than answer slowly.
+allowscalar(false)
 
 const N, n = 6, 3
 
@@ -82,4 +88,33 @@ end
     @test params(back) isa NetworkParameters
     @test keys(params(back)) == keys(params(nn))
     @test params(back).L1.weight isa StiefelManifold
+end
+
+# The copy is a network of the host, in its backend and in its fourth type parameter alike: the
+# leaves are host arrays, so a backend left on the device would send the next forward pass there
+# with data it cannot read.
+@testset "a device network comes back on the CPU ($T)" for T in (Float32, Float64)
+    nn = NeuralNetwork(Chain(Dense(N, 3, tanh)), JLBackend(), T)
+    back = map_to_cpu(nn)
+
+    @test back.backend isa CPU
+    @test typeof(back).parameters[4] === CPU
+    @test params(back).L1.W isa Matrix{T}
+    @test params(back).L1.b isa Vector{T}
+    @test eltype(params(back).L1.W) === T
+    @test eltype(params(back).L1.b) === T
+    @test back.architecture === nn.architecture
+end
+
+# A host backend is a property of the caller's own network, and a copy does not change it: `CPU()`
+# comes back `CPU()`, and `CPU(; static = true)` comes back static.
+@testset "a host network keeps its backend and its type parameter ($T)" for T in (Float32, Float64)
+    for backend in (CPU(), CPU(; static = true))
+        nn = NeuralNetwork(Chain(Dense(N, 3, tanh)), backend, T)
+        back = map_to_cpu(nn)
+
+        @test back.backend === nn.backend
+        @test typeof(back).parameters[4] === CPU
+        @test eltype(params(back).L1.W) === T
+    end
 end

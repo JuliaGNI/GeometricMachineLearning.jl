@@ -8,8 +8,7 @@ if "core" in GROUPS
     @safetestset "Reachability of every file under test/" include("quality/reachability.jl")
     @safetestset "Exported names are defined" include("quality/exports.jl")
     @safetestset "MatrixSoftmax" include("activations/softmax.jl")
-    @safetestset "Symplectic Potential (array tests)" include("arrays/poisson_tensor.jl")
-    @safetestset "Test triangular matrices" include("arrays/triangular.jl")
+    @safetestset "Test triangular matrices" include("integration/triangular.jl")
     @safetestset "_mul: left, right and tensor products" include("kernels/mul.jl")
     @safetestset "assign_q_and_p splits by slicing" include("kernels/assign_q_and_p.jl")
     @safetestset "Custom AD rules for kernels" include("kernels/kernel_pullbacks.jl")
@@ -108,5 +107,5 @@ if "doctests" in GROUPS
     @safetestset "Doctests" include("quality/doctests.jl")
 end
 if "metal" in GROUPS
-    @safetestset "Metal: the GPU extension and a kernel on an Apple GPU" include("devices/metal.jl")
+    @safetestset "Metal: the tensor products and the Cayley kernel on an Apple GPU" include("devices/metal.jl")
 end

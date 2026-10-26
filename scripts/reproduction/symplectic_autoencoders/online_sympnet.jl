@@ -3,6 +3,7 @@ using GeometricIntegrators: integrate, ImplicitMidpoint
 using CairoMakie
 using GeometricProblems.TodaLattice: hodeensemble
 using GeometricMachineLearning
+using GeometricMachineLearning: solve!
 using JLD2
 import Random
 
@@ -147,7 +148,7 @@ function plot_validation(t_steps::Integer = 100)
     # axislegend(; position = (.82, .75), backgroundcolor = :transparent, color = text_color)
     CairoMakie.save(name * ".pdf", fig_val)
 
-    @time "time stepping with transformer" time_series = iterate(
+    @time "time stepping with transformer" time_series = integrate(
         mtc(integrator_nn), ics; n_points = t_steps, prediction_window = seq_length)
     # prediction = (q = time_series.q[:, end], p = time_series.p[:, end])
     prediction = time_series[:, end]

@@ -19,7 +19,7 @@ where ``\varphi^h`` is the flow map of the ODE for a time step ``h``.
 """
 abstract type NeuralNetworkIntegrator <: Architecture end
 
-function Base.iterate(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, ics::AT;
+function integrate(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, ics::AT;
         n_points = 100) where {T, AT <: AbstractVector{T}}
     n_dim = length(ics)
     backend = networkbackend(ics)
@@ -40,13 +40,13 @@ function Base.iterate(nn::NeuralNetwork{<:NeuralNetworkIntegrator}, ics::AT;
     valuation
 end
 
-function Base.iterate(nn::NeuralNetwork{<:NeuralNetworkIntegrator},
+function integrate(nn::NeuralNetwork{<:NeuralNetworkIntegrator},
         ics::NamedTuple{(:q,), Tuple{AT}}; n_points = 100) where {AT <: AbstractVector}
-    (q = iterate(nn, ics.q; n_points = n_points),)
+    (q = integrate(nn, ics.q; n_points = n_points),)
 end
 
 @doc raw"""
-    iterate(nn, ics)
+    integrate(nn, ics)
 
 This function computes a trajectory for a [`NeuralNetworkIntegrator`](@ref) that has already been trained for valuation purposes.
 
@@ -56,7 +56,7 @@ It takes as input:
 
 # Examples
 
-To demonstrate `iterate` we use a simple ResNet that does:
+To demonstrate `integrate` we use a simple ResNet that does:
 
 ```math
 \mathrm{ResNet}: x \mapsto \begin{pmatrix} 1 & 0 & 0 \\ 0 & 2 & 0 \\ 0 & 0 & 1\end{pmatrix}x + \begin{pmatrix} 0 \\ 0 \\ 1 \end{pmatrix}
@@ -78,7 +78,7 @@ ps = NetworkParameters((L1 = (weight = weight, bias = bias), ))
 nn = NeuralNetwork(model, Chain(model), ps, CPU())
 
 ics = [1, 1, 1]
-iterate(nn, ics; n_points = 4)
+integrate(nn, ics; n_points = 4)
 
 # output
 
@@ -95,7 +95,7 @@ The optional keyword argument is
 
 The number of integration steps that should be performed.
 """
-function Base.iterate(nn::NeuralNetwork{<:NeuralNetworkIntegrator},
+function integrate(nn::NeuralNetwork{<:NeuralNetworkIntegrator},
         ics::NamedTuple{(:q, :p), Tuple{AT, AT}};
         n_points = 100) where {T, AT <: AbstractVector{T}}
     n_dim2 = length(ics.q)

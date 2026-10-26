@@ -35,6 +35,7 @@ ChainRulesTestUtils = "1"
 # earlier ones.
 ExplicitImports = "1.15"
 FiniteDifferences = "0.12"
+GPUArraysCore = "0.2"
 GeometricIntegrators = "0.18.2"
 GeometricProblems = "0.8, 0.9"
 HDF5 = "0.16, 0.17"

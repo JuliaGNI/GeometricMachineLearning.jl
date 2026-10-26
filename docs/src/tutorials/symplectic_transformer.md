@@ -156,9 +156,9 @@ function make_validation_plot(n_steps = n_steps; theme = :dark)
         xlabelcolor = textcolor,
         ylabelcolor = textcolor,
     )
-    prediction_standard = iterate(nn_standard, init_con; n_points = n_steps, prediction_window = seq_length)
-    prediction_symplectic = iterate(nn_symplectic, init_con; n_points = n_steps, prediction_window = seq_length)
-    prediction_sympnet = iterate(nn_sympnet, init_con_ff; n_points = n_steps)
+    prediction_standard = integrate(nn_standard, init_con; n_points = n_steps, prediction_window = seq_length)
+    prediction_symplectic = integrate(nn_symplectic, init_con; n_points = n_steps, prediction_window = seq_length)
+    prediction_sympnet = integrate(nn_sympnet, init_con_ff; n_points = n_steps)
 
     # we use linewidth  = 2
     lines!(ax, dl.input.q[1, 1:n_steps, index]; color = mblue, label = "Implicit midpoint", linewidth = 2)

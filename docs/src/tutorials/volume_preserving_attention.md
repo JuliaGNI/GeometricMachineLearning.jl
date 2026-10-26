@@ -231,9 +231,9 @@ textcolor = theme == :dark ? :white : :black # hide
         xlabelcolor = textcolor,
         ylabelcolor = textcolor,
         )
-    validation_skew = iterate(nn_skew, initial_condition; n_points = n_points, prediction_window = 1)
-    validation_arb  = iterate(nn_arb,  initial_condition; n_points = n_points, prediction_window = 1)
-    validation_comp = iterate(nn_comp, initial_condition[:, 1]; n_points = n_points)
+    validation_skew = integrate(nn_skew, initial_condition; n_points = n_points, prediction_window = 1)
+    validation_arb  = integrate(nn_arb,  initial_condition; n_points = n_points, prediction_window = 1)
+    validation_comp = integrate(nn_comp, initial_condition[:, 1]; n_points = n_points)
 
     p2 = type == :cos ? lines!(dl.input[1, 1:n_points, 2], color = mpurple, label = "reference") : plot(dl.input[1, 1:n_points, 1], color = mpurple, label = "reference")
 

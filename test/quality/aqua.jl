@@ -17,22 +17,11 @@ using Test
 # `save`/`load` methods on `NeuralNetwork`, are `AbstractNeuralNetworks`' own.
 #
 # `ambiguities` stays off, and the assertion below replaces it. Aqua's check runs in a process of its
-# own and asks about whatever that process loaded, so its count moves with ArrayLayouts',
-# FillArrays', GeometricOptimizers', BandedMatrices' and BlockArrays' versions, and with *which* of
-# them a given process had loaded. `detect_ambiguities` on this package, in this process,
-# asks only about the methods it defines; the count is zero, and no method of this package claims an
-# argument position wholesale on `PoissonTensor`, which is what keeps it there. That type is an
-# `AbstractMatrix{T}`, so such a method meets every special-array method another package writes
-# against `AbstractMatrix`:
-#
-#   `*(𝕁::PoissonTensor{T}, v::Strided…)` takes a `Strided…` right-hand side, which excludes each
-#       special array type `X` that ArrayLayouts, FillArrays, GeometricOptimizers and
-#       Symbolics (which HamiltonianNeuralNetworks.jl loads) define a `*(::AbstractMatrix, ::X)`
-#       for, and still covers everything the package builds.
-#   `getindex(𝕁::PoissonTensor, i::Int, j::Int)` types its indices, which excludes the `Block`,
-#       `BlockIndex` and `BandRangeType` methods BandedMatrices and BlockArrays add to
-#       `AbstractMatrix`. Neither of those two loads with this package alone, so an untyped index
-#       pair here is a collision visible only from inside the suite.
+# own and asks about whatever that process loaded, so its count moves with the versions of the
+# packages a run loads, and with *which* of them a given process had loaded. `detect_ambiguities` on
+# this package, in this process, asks only about the methods it defines, and its count is zero. The
+# switch stays off rather than becoming a gate on an upstream count that no line of this package
+# controls.
 @testset "Aqua" begin
     Aqua.test_all(GeometricMachineLearning; ambiguities = false)
 
@@ -64,8 +53,15 @@ end
 # stale detection does the same. A red here names the import and the module to take it from, so it
 # stays a gate: the fix is one line and the message says which. `test_explicit_imports` opens its
 # own `@testset`, so this call needs no wrapper.
+#
+# `update!` is the one import that nothing in `src/` uses, and it is deliberate: the package does not
+# export it, so the import is not there for a re-export, but `GeometricMachineLearning.update!`
+# is the binding a caller reaches the `GeometricOptimizers`/`GeometricBase` verb under, and
+# `test/quality/exports.jl` asserts it is that object. Nothing here defines a method on it, which is
+# what leaves the import with no use to find.
 test_explicit_imports(GeometricMachineLearning;
     no_implicit_imports = false,
+    no_stale_explicit_imports = (ignore = (:update!,),),
     all_explicit_imports_are_public = false,
     all_qualified_accesses_are_public = false)
 
@@ -80,8 +76,7 @@ const NON_PUBLIC_QUALIFIED = (
     :JacobianResult, :jacobian, :value)                          # DiffResults
 const NON_PUBLIC_IMPORTS = (
     :AbstractExplicitLayer, :Architecture, :_compute_loss, :dim, :model, # AbstractNeuralNetworks
-    :load, :save,                                                        # NeuralNetworkParameters
-    :_vcat, :assign_q_and_p)                       # this package, imported by `GPUArraysCoreExt`
+    :load, :save)                                                        # NeuralNetworkParameters
 
 @testset "every name reached in GeometricOptimizers is public" begin
     @test check_all_qualified_accesses_are_public(GeometricMachineLearning;

@@ -20,13 +20,16 @@ const n_params = 6
 
 const input = rand(Float32, input_dim, seq_length, n_params)
 
-# One `DataLoader` per label assignment, over the same input.
-function classification_loader(classes::AbstractVector{<:Integer})
+# One `DataLoader` per label assignment and element type, over the same input. A label of `0` marks a
+# sample that carries none: its one-hot column stays zero, so the target differs from the prediction
+# in one entry where a wrong label differs in two.
+function classification_loader(classes::AbstractVector{<:Integer}, ::Type{T} = Float32) where {T}
     output = zeros(Int64, n_classes, 1, n_params)
     for (k, c) in pairs(classes)
+        iszero(c) && continue
         output[c, 1, k] = 1
     end
-    DataLoader(input, output; suppress_info = true)
+    DataLoader(T.(input), output; suppress_info = true)
 end
 
 model = Chain(Dense(input_dim, n_classes, tanh))
@@ -44,6 +47,97 @@ rotated = [mod1(c + 1, n_classes) for c in predicted]
     @test GeometricMachineLearning.accuracy(model, ps, classification_loader(predicted)) ==
           1
     @test GeometricMachineLearning.accuracy(model, ps, classification_loader(rotated)) == 0
+end
+
+# The fraction is read in the element type of the loader's input, so a `Float32` run of the model
+# gives a `Float32` measure and does not silently widen at the last step. A loader of the model's own
+# element type cannot tell the loader's type from the model's output's; the mixed pair below does.
+@testset "the accuracy has the element type of the loader's input ($T)" for T in (Float32, Float64)
+    dl = classification_loader(predicted, T)
+    @test eltype(dl) === T
+    @test GeometricMachineLearning.accuracy(model, ps, dl) isa T
+    @test GeometricMachineLearning.accuracy(model, ps, dl) == one(T)
+
+    wrong = classification_loader(rotated, T)
+    @test GeometricMachineLearning.accuracy(model, ps, wrong) isa T
+    @test iszero(GeometricMachineLearning.accuracy(model, ps, wrong))
+end
+
+# The loader's element type decides the result, not the element type of the model or of its output: a
+# `Float64` model on a `Float32` loader gives a `Float32`. The two networks do not agree on every
+# label, so the mixed case labels the loader from the `Float64` network's own predictions.
+@testset "a Float64 model on a Float32 loader still gives a Float32" begin
+    nn64 = NeuralNetwork(model, Float64)
+    ps64 = GeometricMachineLearning.params(nn64)
+    dl32 = classification_loader(predicted, Float32)
+
+    # the output this loader makes is `Float64` here, so the two element types differ
+    estimate64 = GeometricMachineLearning.assign_output_estimate(nn64.model(dl32.input, ps64), 1)
+    @test eltype(estimate64) === Float64
+
+    @test GeometricMachineLearning.accuracy(nn64, dl32) isa Float32
+    @test GeometricMachineLearning.accuracy(nn64.model, ps64, dl32) isa Float32
+
+    # labelled with what the `Float64` network predicts, every label is correct
+    predicted64 = [argmax(estimate64[:, 1, k]) for k in 1:n_params]
+    @test GeometricMachineLearning.accuracy(nn64,
+        classification_loader(predicted64, Float32)) == one(Float32)
+
+    @test GeometricMachineLearning.accuracy(nn64,
+        classification_loader(predicted, Float64)) isa Float64
+end
+
+# A sample that carries no label is half an error: the difference between the target and the
+# prediction is 1 in its one-hot column, where a wrong label gives 2, and the count is halved rather
+# than floored. A floored count drops that sample and reports every label as correct.
+@testset "a sample with no label halves the error count ($T)" for T in (Float32, Float64)
+    classes = copy(predicted)
+    classes[1] = 0
+    a = GeometricMachineLearning.accuracy(model, ps, classification_loader(classes, T))
+    @test a isa T
+    @test a == (T(n_params) - T(1) / 2) / T(n_params)
+    @test a < one(T)
+end
+
+# An integer input reads the fraction in `float(Int64)`: a half error is not an integer, so the
+# integer type itself cannot hold the result.
+@testset "an integer input gives a Float64, half errors included" begin
+    int_input = rand(0:3, input_dim, 1, n_params)
+    int_model = Chain(Dense(input_dim, n_classes, tanh))
+    int_ps = GeometricMachineLearning.params(NeuralNetwork(int_model, Float64))
+    estimate = GeometricMachineLearning.assign_output_estimate(int_model(int_input, int_ps), 1)
+    labels = [argmax(estimate[:, 1, k]) for k in 1:n_params]
+    function int_loader(classes)
+        output = zeros(Int64, n_classes, 1, n_params)
+        for (k, c) in pairs(classes)
+            iszero(c) || (output[c, 1, k] = 1)
+        end
+        DataLoader(int_input, output; suppress_info = true)
+    end
+    @test eltype(int_loader(labels)) === Int64
+
+    a = GeometricMachineLearning.accuracy(int_model, int_ps, int_loader(labels))
+    @test a isa Float64
+    @test a == 1
+
+    unlabelled = copy(labels)
+    unlabelled[1] = 0
+    a = GeometricMachineLearning.accuracy(int_model, int_ps, int_loader(unlabelled))
+    @test a isa Float64
+    @test a == (n_params - 1 / 2) / n_params
+end
+
+# A `Bool` one-hot target is an integer target too: the count is halved in floating point, not in the
+# label type, so a half error does not have to fit in a `Bool`.
+@testset "a Bool target gives the accuracy of the Int64 one" begin
+    classes = copy(predicted)
+    classes[1] = 0
+    int_dl = classification_loader(classes)
+    bool_dl = DataLoader(int_dl.input, Bool.(int_dl.output); suppress_info = true)
+    a = GeometricMachineLearning.accuracy(model, ps, bool_dl)
+    @test a isa Float32
+    @test a == (Float32(n_params) - Float32(1) / 2) / Float32(n_params)
+    @test a == GeometricMachineLearning.accuracy(model, ps, int_dl)
 end
 
 @testset "the NeuralNetwork method agrees with the Chain method" begin

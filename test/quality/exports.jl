@@ -20,6 +20,24 @@ const UNDEFINED_EXPORTS = Dict{Symbol, String}()
     @test sort(setdiff(collect(keys(UNDEFINED_EXPORTS)), undefined_exports)) == Symbol[]
 end
 
+# The names this package does not hand to `using GeometricMachineLearning`: `update!` and `solve!`
+# are `GeometricOptimizers`'/`SimpleSolvers`' verbs, `iterate` is `Base`'s, and `PoissonTensor` is
+# gone. The first three stay bound -- `solve!` carries this package's methods, while `update!` and
+# `iterate` are their owners' objects -- so a test for them is a test on the export and not on the
+# definition.
+const NOT_EXPORTED = (:update!, :solve!, :iterate, :PoissonTensor)
+
+@testset "the four names are not exported" begin
+    for name in NOT_EXPORTED
+        @test !Base.isexported(GeometricMachineLearning, name)
+        @test !(name in names(GeometricMachineLearning))
+    end
+    # The two verbs are still bound here, as the owners' objects.
+    @test nameof(parentmodule(GeometricMachineLearning.update!)) === :GeometricBase
+    @test nameof(parentmodule(GeometricMachineLearning.solve!)) === :SimpleSolvers
+    @test !isdefined(GeometricMachineLearning, :PoissonTensor)
+end
+
 # A caller who loads both packages keeps every name of both: each name the two export is one binding,
 # so neither `using` shadows the other, and `Optimizer` is `GeometricOptimizers`' solver.
 @testset "using GeometricOptimizers and GeometricMachineLearning together" begin

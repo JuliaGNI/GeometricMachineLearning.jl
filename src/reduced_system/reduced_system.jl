@@ -10,7 +10,7 @@ It can be called using two different constructors.
 The standard constructor is:
 
 ```julia
-HRedSys(N, n; encoder, decoder, v_full, f_full, v_reduced, f_reduced, parameters, timespan, timestep, ics, projection_error)
+HRedSys(N, n, encoder, decoder, v_full, f_full, h_full, timespan, timestep, ics; integrator, parameters, v_reduced, f_reduced, h_reduced)
 ``` 
 where 
 - `encoder`: a function ``\mathbb{R}^{2N}\mapsto{}\mathbb{R}^{2n}``
@@ -19,8 +19,8 @@ where
 - `f_full`: a (differentiable) mapping defined the same way as in GeometricIntegrators.
 - `v_reduced`: a (differentiable) mapping defined the same way as in GeometricIntegrators.
 - `f_reduced`: a (differentiable) mapping defined the same way as in GeometricIntegrators.
-- `integrator`: is used for integrating the reduced system.
-- `parameters`: a NamedTuple that parametrizes the vector fields (the same for full_vector_field and reduced_vector_field)
+- `integrator`: is used for integrating the reduced system. It is a required keyword argument, here and in the two `HRedSys(odeensemble, encoder, decoder)` constructors.
+- `parameters`: the parameters (a NamedTuple or `NullParameters()`) that parametrize the vector fields (the same for full_vector_field and reduced_vector_field). It defaults to `NullParameters()`; the two constructors that take a `HODEProblem` or a `HODEEnsemble` take it from the problem.
 - `timespan`: a tuple `(t₀, tₗ)` that specifies start and end point of the time interval over which integration is performed. 
 - `timestep`: the time step 
 - `ics`: the initial condition for the big system.
@@ -28,10 +28,10 @@ where
 The other, and more convenient, constructor is:
 
 ```julia
-HRedSys(odeensemble, encoder, decoder) 
+HRedSys(odeensemble, encoder, decoder; integrator)
 ```
 where `odeensemble` can be a `HODEEnsemble` or a `HODEProblem`. `encoder` and `decoder` have to be neural networks.
-With this constructor one can also pass an integrator via the keyword argument `integrator`. The default is `ImplicitMidpoint()`. 
+The keyword argument `integrator` is required here as in the standard constructor: no constructor picks one for the caller.
 Internally this calls the functions [`build_v_reduced`](@ref) and [`build_f_reduced`](@ref) in order to build the reduced vector fields.
 """
 struct HRedSys{
@@ -68,11 +68,11 @@ end
 
 function HRedSys(N::Integer, n::Integer, encoder::NeuralNetwork{<:SymplecticEncoder},
         decoder::NeuralNetwork{<:SymplecticDecoder}, v_full, f_full,
-        h_full, timespan::Tuple, timestep::T, ics; parameters = parameters,
+        h_full, timespan::Tuple, timestep::T, ics; parameters = NullParameters(),
         v_reduced = build_v_reduced(v_full, f_full, decoder),
         f_reduced = build_f_reduced(v_full, f_full, decoder),
         h_reduced = build_h_reduced(h_full, decoder),
-        integrator = ImplicitMidpoint()) where {T <: Real}
+        integrator) where {T <: Real}
     HRedSys{typeof(timestep), typeof(encoder), typeof(decoder), typeof(v_full),
         typeof(f_full), typeof(h_full), typeof(v_reduced), typeof(f_reduced),
         typeof(h_reduced), typeof(integrator), typeof(parameters), typeof(ics), typeof(timespan)}(
@@ -81,7 +81,7 @@ function HRedSys(N::Integer, n::Integer, encoder::NeuralNetwork{<:SymplecticEnco
 end
 
 function HRedSys(odeproblem::HODEProblem, encoder::NeuralNetwork{<:SymplecticEncoder},
-        decoder::NeuralNetwork{<:SymplecticDecoder}; integrator = ImplicitMidpoint())
+        decoder::NeuralNetwork{<:SymplecticDecoder}; integrator)
     N = encoder.architecture.full_dim
     n = encoder.architecture.reduced_dim
     v_eq = odeproblem.equation.v
@@ -93,7 +93,7 @@ function HRedSys(odeproblem::HODEProblem, encoder::NeuralNetwork{<:SymplecticEnc
 end
 
 function HRedSys(odeensemble::HODEEnsemble, encoder::NeuralNetwork{<:SymplecticEncoder},
-        decoder::NeuralNetwork{<:SymplecticDecoder}; integrator = ImplicitMidpoint())
+        decoder::NeuralNetwork{<:SymplecticDecoder}; integrator)
     N = encoder.architecture.full_dim
     n = encoder.architecture.reduced_dim
     v_eq = odeensemble.equation.v

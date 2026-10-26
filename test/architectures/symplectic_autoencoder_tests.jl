@@ -3,6 +3,8 @@ using Test
 using Zygote: jacobian
 import Random
 
+include("../helpers/poisson.jl")
+
 Random.seed!(123)
 
 function test_accuracy(N::Integer, n::Integer; tol::Real = 0.35, n_epochs::Integer = 100)
@@ -35,14 +37,14 @@ function test_symplecticity(N::Integer, n::Integer)
 
     # this matrix should be symplectic
     sympl_mat = jacobian(vec -> sae_decoder(vec), test_vector)[1]
-    @test PoissonTensor(n) ≈ sympl_mat' * PoissonTensor(N) * sympl_mat
+    @test poisson_matrix(n) ≈ sympl_mat' * poisson_matrix(N) * sympl_mat
 
     # test if it's still symplectic after training
     dl = DataLoader(rand(N, 10 * N); autoencoder = true)
     o = TrainingOptimizer(sae_nn.params; algorithm = Adam())
     train!(sae_nn, o, dl, Batch(10), 10; show_progress = false)
     sympl_mat = jacobian(vec -> sae_decoder(vec), test_vector)[1]
-    @test PoissonTensor(n) ≈ sympl_mat' * PoissonTensor(N) * sympl_mat
+    @test poisson_matrix(n) ≈ sympl_mat' * poisson_matrix(N) * sympl_mat
 end
 
 function test_decoder_output_layers(N::Integer, n::Integer, n_output_layers::Integer)
@@ -65,7 +67,7 @@ function test_decoder_output_layers(N::Integer, n::Integer, n_output_layers::Int
     # symplecticity still holds
     test_vector = rand(n)
     sympl_mat = jacobian(vec -> sae_decoder(vec), test_vector)[1]
-    @test PoissonTensor(n) ≈ sympl_mat' * PoissonTensor(N) * sympl_mat
+    @test poisson_matrix(n) ≈ sympl_mat' * poisson_matrix(N) * sympl_mat
 end
 
 function all_tests(N::Integer, n::Integer; kwargs...)

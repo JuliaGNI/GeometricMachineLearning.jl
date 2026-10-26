@@ -1,10 +1,9 @@
 # AbstractNeuralNetworks' `NamedTupleOfArrays{T, S}` ties the element types of the arrays of a named
 # tuple together but not their array types, so in `(q, p)` data `q` may be a view where `p` is an
-# `Array`. The layers, the losses, `ZygotePullback`, `PoissonTensor`, `_diff` and the `DataLoader`
-# take such data, and the expected value of each call is the same call on two `Array`s. The methods
-# that read the keys `q` and `p` refuse a named tuple with other keys; `map_to_type`,
-# `map_to_new_backend` and `networkbackend`, which only map over a named tuple or read its first
-# array, take any keys.
+# `Array`. The layers, the losses, `ZygotePullback`, `_diff` and the `DataLoader` take such data,
+# and the expected value of each call is the same call on two `Array`s. The methods that read the
+# keys `q` and `p` refuse a named tuple with other keys; `map_to_type`, `map_to_new_backend` and
+# `networkbackend`, which only map over a named tuple or read its first array, take any keys.
 
 using GeometricMachineLearning
 using GeometricMachineLearning: ResNetLayer, map_to_type, map_to_new_backend, _diff,
@@ -14,6 +13,7 @@ using Test
 import Random
 
 include("../helpers/eltypes.jl")
+include("../helpers/poisson.jl")
 
 @testset "(q, p) methods take q and p of different array types ($T)" for T in REAL_ELTYPES
     Random.seed!(11)
@@ -64,10 +64,9 @@ include("../helpers/eltypes.jl")
         @test back_mixed(one(T)).L1.W ≈ back_qp(one(T)).L1.W
     end
 
-    𝕁 = PoissonTensor(4)
+    𝕁 = poisson_matrix(4, T)
     z = (q = view(T[1, 2, 0], 1:2), p = T[3, 4])
-    @test 𝕁 * z == (q = T[3, 4], p = T[-1, -2])
-    @test 𝕁(z) == (q = T[3, 4], p = T[-1, -2])
+    @test 𝕁 * vcat(z.q, z.p) == vcat(z.p, -z.q)
     @test _diff(mixed, mixed) == (q = zero(qp.q), p = zero(qp.p))
 
     # a loader on `mixed` converts to the other precision: `networkbackend`, `map_to_type` and
@@ -93,7 +92,7 @@ end
     attention = NeuralNetwork(Chain(MultiHeadAttention(4, 2)))
     @test_throws "Functor not defined for `NetworkLoss`" TransformerLoss(3, 3)(
         attention.model, params(attention), ab, ab)
-    @test_throws MethodError PoissonTensor(4) * (a = [1.0, 2.0], b = [3.0, 4.0])
+    @test_throws MethodError poisson_matrix(4) * (a = [1.0, 2.0], b = [3.0, 4.0])
     # the generic `_diff` of two named tuples differences each entry
     @test _diff(ab, ab) == (a = zero(ab.a), b = zero(ab.b))
 end

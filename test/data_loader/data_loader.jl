@@ -4,6 +4,7 @@
 # `(input, output)` method that lets a classifier's data be built without naming the parametric type.
 
 using GeometricMachineLearning
+using GeometricMachineLearning: solve!
 using Test
 import Random
 

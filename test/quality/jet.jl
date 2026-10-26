@@ -22,11 +22,9 @@ const rrule = GML.ChainRulesCore.rrule
 # This uses internals of KernelAbstractions (`launch_config`, `mkcontext`, `blocks`, `Kernel.f`).
 # These lines filter with `JET.AnyFrameModule(GML)`, so that a dispatch in a function that the
 # kernel body calls counts.
-# Two kinds of dispatch stay unseen, `KNOWN_ISSUES.md` K3: a type-unstable argument of a kernel
-# launch, because its dispatch sits in KernelAbstractions' frames; and, in
-# `assign_ones_for_poisson_tensor_kernel!`, an unstable target array `J` or size `n` of its
-# splatted store, because JET never reports a dynamic dispatch in the kernel's own frame. A
-# barrier on a value inside each kernel body is reported.
+# One kind of dispatch stays unseen, `KNOWN_ISSUES.md` K3: a type-unstable argument of a kernel
+# launch, because its dispatch sits in KernelAbstractions' frames. JET never reports a dynamic
+# dispatch in a kernel's own frame, and a barrier on a value inside a kernel body is reported.
 function kernel_body_reports(kernel, ndrange, args...)
     k = kernel(CPU())
     nd, _, iterspace, dynamic = KernelAbstractions.launch_config(k, ndrange, nothing)
@@ -86,18 +84,6 @@ const A3{T} = Array{T, 3}
                 (A3{T}, A3{T}, Matrix{T}); target_modules = TARGET)))
             @test isempty(kernel_body_reports(GML.tensor_mat_skew_sym_assign_kernel!,
                 (4, 4, 2), zeros(T, 4, 4, 2), zeros(T, 3, 4, 2), zeros(T, 3, 3)))
-        end
-
-        # src/arrays/poisson_tensor.jl: `PoissonTensor(CPU(), 4, Float16)` in
-        # test/arrays/poisson_tensor.jl; `Float32` in test/devices/metal.jl. The element type is
-        # a `DataType` argument, so one line holds both.
-        reports = JET.get_reports(JET.report_opt(PoissonTensor, (CPU, Int, DataType);
-            target_modules = TARGET))
-        @test_broken isempty(reports)  # #325
-        for T in (Float16, Float32)
-            @test isempty(kernel_body_reports(
-                GML.assign_ones_for_poisson_tensor_kernel!, 4,
-                zeros(T, 4, 4), 2))
         end
 
         # src/data_loader/batch.jl

@@ -12,6 +12,11 @@ where `sl` stands for *sequence length* and `pw` stands for *prediction window*,
 """
 abstract type TransformerIntegrator <: Architecture end
 
+# The number of columns a transformer integrates over. A `TransformerIntegrator` stores its sequence
+# length and integrates over that. `StandardTransformerIntegrator` and `SymplecticTransformer` hold
+# none of their own; their methods, beside their definitions, take the width of the input.
+_seq_length(arch::TransformerIntegrator, ::AbstractMatrix) = arch.seq_length
+
 @doc raw"""
     DummyTransformer(seq_length)
 
@@ -24,7 +29,7 @@ struct DummyTransformer <: TransformerIntegrator
 end
 
 @doc raw"""
-    iterate(nn, ics)
+    integrate(nn, ics)
 
 Iterate the neural network of type [`TransformerIntegrator`](@ref) for initial conditions `ics`.
 
@@ -38,7 +43,7 @@ The following are optional keyword arguments:
 - `n_points::Int=100`: The number of time steps for which we run the prediction.
 - `prediction_window::Int=size(ics.q, 2)`: The prediction window (i.e. the number of steps we predict into the future) is equal to the sequence length (i.e. the number of input time steps) by default.  
 """
-function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator},
+function integrate(nn::NeuralNetwork{<:TransformerIntegrator},
         ics::NamedTuple{(:q, :p), Tuple{AT, AT}};
         n_points::Int = 100,
         prediction_window::Union{Nothing, Int} = size(ics.q, 2)) where {
@@ -49,9 +54,7 @@ function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator},
         return ics
     end
 
-    seq_length = typeof(nn.architecture) <:
-                 Union{StandardTransformerIntegrator, SymplecticTransformer} ?
-                 size(ics.q, 2) : nn.architecture.seq_length
+    seq_length = _seq_length(nn.architecture, ics.q)
 
     n_dim = size(ics.q, 1)
     backend = networkbackend(ics.q)
@@ -86,7 +89,7 @@ function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator},
     (q = q_valuation[:, 1:n_points], p = p_valuation[:, 1:n_points])
 end
 
-function Base.iterate(::NeuralNetwork{<:TransformerIntegrator},
+function integrate(::NeuralNetwork{<:TransformerIntegrator},
         ics::AT;
         n_points::Int = 100,
         prediction_window::Union{Nothing, Int} = size(ics, 2)) where {
@@ -94,14 +97,12 @@ function Base.iterate(::NeuralNetwork{<:TransformerIntegrator},
     error("You have to provide a matrix as initial condition for the transformer!")
 end
 
-function Base.iterate(nn::NeuralNetwork{<:TransformerIntegrator},
+function integrate(nn::NeuralNetwork{<:TransformerIntegrator},
         ics::AT;
         n_points::Int = 100,
         prediction_window::Union{Nothing, Int} = size(ics, 2)) where {
         T, AT <: AbstractMatrix{T}}
-    seq_length = typeof(nn.architecture) <:
-                 Union{StandardTransformerIntegrator, SymplecticTransformer} ?
-                 size(ics, 2) : nn.architecture.seq_length
+    seq_length = _seq_length(nn.architecture, ics)
 
     # if the number of predicted points is zero, just return the initial condition
     if n_points == 0

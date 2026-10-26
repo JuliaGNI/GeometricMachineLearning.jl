@@ -8,11 +8,17 @@
 #
 # `mapstorage` and not `mapparameters`: the latter hands `f` *whole* leaves, which would still need one
 # method per structured type to reach the storage.
+#
+# A network lands on the host: the `CPU` backend it was handed if it was already on one, and `CPU()`
+# otherwise. Its fourth type parameter is that backend's type, because a copy whose leaves are host
+# arrays but whose backend is still the device it came from would send its next forward pass to that
+# device with host data.
 _to_host(A::AbstractArray{T}) where {T} = Array{T}(A)
 
 map_to_cpu(ps) = mapstorage(_to_host, ps)
 
-function map_to_cpu(nn::NeuralNetwork{AT, MT, <:Any, BT}) where {AT, MT, BT}
+function map_to_cpu(nn::NeuralNetwork{AT, MT}) where {AT, MT}
     ps = map_to_cpu(params(nn))
-    NeuralNetwork{AT, MT, typeof(ps), BT}(nn.architecture, nn.model, ps, nn.backend)
+    backend = nn.backend isa CPU ? nn.backend : CPU()
+    NeuralNetwork{AT, MT, typeof(ps), typeof(backend)}(nn.architecture, nn.model, ps, backend)
 end
