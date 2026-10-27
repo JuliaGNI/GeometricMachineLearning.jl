@@ -247,13 +247,20 @@ export HRedSys, reduction_error, projection_error, integrate_reduced_system,
 
 include("layers/linear_symplectic_attention.jl")
 include("layers/symplectic_attention.jl")
+include("layers/inverse_layers.jl")
 include("architectures/linear_symplectic_transformer.jl")
 include("architectures/symplectic_transformer.jl")
+include("architectures/weight_tied_symplectic_autoencoder.jl")
 
 export LinearSymplecticAttention, LinearSymplecticAttentionQ, LinearSymplecticAttentionP
 export LinearSymplecticTransformer
 export SymplecticAttention, SymplecticAttentionQ, SymplecticAttentionP
 export SymplecticTransformer
+export inverse_layer
+export InverseGradientLayer, InverseGradientLayerQ, InverseGradientLayerP
+export InverseSymplecticAttention, InverseSymplecticAttentionQ, InverseSymplecticAttentionP
+export TransposePSDLayer
+export WeightTiedSymplecticAutoencoder
 
 include("map_to_cpu.jl")
 

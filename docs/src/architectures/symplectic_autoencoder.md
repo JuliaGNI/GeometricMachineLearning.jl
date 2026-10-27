@@ -135,6 +135,15 @@ We also see that the intermediate dimension in the decoder is `54`  for the spec
 
 ```@docs
 SymplecticAutoencoder
+WeightTiedSymplecticAutoencoder
+inverse_layer
+InverseGradientLayer
+InverseGradientLayerQ
+InverseGradientLayerP
+InverseSymplecticAttention
+InverseSymplecticAttentionQ
+InverseSymplecticAttentionP
+TransposePSDLayer
 ```
 
 ```@raw latex
