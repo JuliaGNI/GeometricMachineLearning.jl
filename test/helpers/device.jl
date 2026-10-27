@@ -3,7 +3,7 @@
 # `changebackend(JLBackend(), ps)` cannot do this: it copies through
 # `KernelAbstractions.copyto!(backend, dest, src)`, and `AbstractNeuralNetworks`' method for that call
 # has no `JLArrays` method, so the copy raises a `MethodError` whose message names `copyto!` and not
-# `changebackend`. The entry that records the defect is in `KNOWN_ISSUES.md`.
+# `changebackend`. The entry that records the defect is K31 in `KNOWN_ISSUES.md`.
 #
 # The walk is over the two levels of the set, so every structured type needs the constructor that
 # rebuilds it around device storage: a `StiefelManifold` around its `.A`, and a `SymmetricMatrix`, a
