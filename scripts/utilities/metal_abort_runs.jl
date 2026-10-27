@@ -147,6 +147,7 @@ struct RunLog
     endline::Union{Nothing, String}
     functional::Bool
     layer::String
+    validation::Bool
     compile_time::Float64
     finite::Bool
     reports::Vector{NamedTuple{
@@ -295,8 +296,9 @@ function read_run(path::AbstractString; reports::AbstractString = REPORTS)
     end
 
     RunLog(
-        path, arm, index, pid, exitcode, elapsed, endline, functional, layer, compile_time,
-        finite, attached)
+        path, arm, index, pid, exitcode, elapsed, endline, functional, layer,
+        any(l -> occursin("Metal API Validation Enabled", l), lines), compile_time, finite,
+        attached)
 end
 
 "The copied crash report of a run, or the one in the reports directory."
@@ -307,8 +309,8 @@ end
 
 """
 The rule, over what a log holds: `:abort` when a report of this run's own pid exists, `:ok` when the
-run trained a cold first call on a functional device with the debug layer set and exited with 0, and
-`:void` with the reason for anything else.
+run trained a cold first call on a functional device with the debug layer set and shown active and
+exited with 0, and `:void` with the reason for anything else.
 """
 function verdict(run::RunLog)
     matched = filter(r -> r.match, run.reports)
@@ -322,6 +324,8 @@ function verdict(run::RunLog)
         reason = "no functional Metal device")
     run.layer != "1" && return (status = :void, signature = :none,
         reason = "MTL_DEBUG_LAYER is $(run.layer)")
+    run.validation || return (status = :void, signature = :none,
+        reason = "the validation layer left no line")
     run.endline === nothing && return (status = :void, signature = :none,
         reason = "log has no M8-END line")
     occursin("status=ok", run.endline) || return (status = :void, signature = :none,
@@ -519,10 +523,11 @@ end
 
 """
 The audit's own test, over logs that this function writes: a clean run, a run on a non-functional
-device, a warm run, a run without the debug layer, a reused pid, a death whose only new report
-carries another pid, a death with a report of its own pid, and an arm of fewer than `RUNS_PER_ARM`
-clean runs. Each is one way of reporting a run that did not happen, and each must come back as the
-verdict it is, never as `:ok`.
+device, a warm run, a run without the debug layer, a run whose validation layer left no line, a
+reused pid, a death whose only new report carries another pid, a death with a report of its own
+pid, a report of a run's pid that the parent did not attach, and an arm of fewer than
+`RUNS_PER_ARM` clean runs. Each is one way of reporting a run that did not happen, and each must
+come back as the verdict it is, never as `:ok`.
 """
 function selftest()
     root = mktempdir()
@@ -530,6 +535,7 @@ function selftest()
     mkpath(reports)
     write(joinpath(reports, "julia-2026-01-01-000000.ips"), "{\n  \"pid\" : 999,\n}\n")
     body = """
+    Metal API Validation Enabled
     M8-ENV MTL_DEBUG_LAYER="1" julia=1.13.3 nthreads=16 project=-
     M8-PKG name=Metal version=1.11.1 path=-
     M8-DEVICE functional=true type=MTLDevice name=AGXG16CDevice
@@ -537,12 +543,13 @@ function selftest()
     M8-END status=ok elapsed=1.0
     """
     function fixture(dir, index, pid, exit; layer = "1", device = true, compile = "1.0e9",
-            endline = "M8-END status=ok", extra = "")
+            endline = "M8-END status=ok", validation = true, extra = "")
         path = joinpath(dir, "run-" * lpad(index, 3, '0') * ".log")
         text = replace(body, "MTL_DEBUG_LAYER=\"1\"" => "MTL_DEBUG_LAYER=\"$layer\"",
             "compile_time=1.0e9" => "compile_time=$compile", "M8-END status=ok" => endline)
         device ||
             (text = replace(text, "M8-DEVICE functional=true" => "M8-DEVICE functional=false"))
+        validation || (text = replace(text, "Metal API Validation Enabled\n" => ""))
         open(path, "w") do io
             emit(io, "RUN", :arm => "lasympnet", :pid => pid,
                 :time => 0.0, :concurrent => false)
@@ -582,6 +589,11 @@ function selftest()
     mkpath(four)
     fixture(four, 1, 1004, 0; layer = "")
     check("no layer", verdict_of(four, 1).status, :void)
+
+    four_b = joinpath(root, "validation")
+    mkpath(four_b)
+    fixture(four_b, 1, 1010, 0; validation = false)
+    check("no validation line", verdict_of(four_b, 1).status, :void)
 
     five = joinpath(root, "pid")
     mkpath(five)
