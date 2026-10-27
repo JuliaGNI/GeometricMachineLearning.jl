@@ -328,12 +328,12 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   The stack of the runs is Julia 1.13.3, this package at `1d2faead`, `GeometricOptimizers` 0.9.1,
   Metal.jl 1.11.1, GPUCompiler 2.10.0, KernelAbstractions 0.9.45 and LLVM.jl 9.13.2. The stack of the
   2026-09-22 aborts was Julia 1.13.0, Metal.jl 1.11.1, GPUCompiler 2.8.1, KernelAbstractions 0.9.42
-  and LLVM.jl 9.13.1: **the same Metal.jl**, whose `flush_batched_queues!` commits another task's open
-  command buffer with no lock, and which 1.12.0 changed. Metal.jl 1.12.0 is not selectable from this
-  environment: `Pkg.status(; outdated = true)` prints `Metal v1.11.1 (<v1.12.0)` with no constraint
-  beside it and `KernelAbstractions v0.9.45 (<v0.10.3)` restricted by this package,
-  `GeometricOptimizers`, `AbstractNeuralNetworks` and Metal.jl, and which of the two holds the other
-  down is not established.
+  and LLVM.jl 9.13.1: **the same Metal.jl**, whose `flush_batched_queues!` walks every active
+  batched queue and flushes it with no lock, the caller's task's or another task's. Metal.jl 1.12.0
+  is not selectable from this environment: `Pkg.status(; outdated = true)` prints
+  `Metal v1.11.1 (<v1.12.0)` with no constraint beside it and `KernelAbstractions v0.9.45
+  (<v0.10.3)` restricted by this package, `GeometricOptimizers`, `AbstractNeuralNetworks` and
+  Metal.jl, and which of the two holds the other down is not established.
 
   The third arm is not counted here. Its concurrency is a second request to one session, which no
   script can make: `scripts/utilities/metal_abort_session.jl` holds its two halves, and

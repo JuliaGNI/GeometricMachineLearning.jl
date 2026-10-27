@@ -36,8 +36,8 @@
 # `M8-FORWARD`, `M8-PULLBACK`, `M8-TRAIN`, `M8-READ` and `M8-END`; the person running it adds the
 # two lines that a session cannot write:
 #
-#     M8-IPS run=<N> report=<pid> file=<julia-*.ips> match=<true|false> signature=<encoder|malloc|other>| symbols=<...>
-#     M8-ARM-RUN run=<N> pid=<pid> exit=<code> elapsed=<s> matched=<n>
+#     M8-IPS run=<N> report=<pid> file=<julia-*.ips> match=<true|false> signature=<encoder|malloc|other> symbols=<a|b|c>
+#     M8-ARM-RUN run=<N> pid=<pid> exit=<code> elapsed=<s> matched=<n> concurrent=<true|false>
 #
 # and copies each report whose `"pid"` is the run's into the same directory as
 # `run-<NNN>.<julia-*.ips>`.
@@ -54,8 +54,8 @@ using Metal, GeometricMachineLearning, GeometricOptimizers, KernelAbstractions, 
 The training half of one run: the device and the stack, a forward pass and a pullback on one
 network, then the first training call of a new network between the stamps `M8_T0` and `M8_T1`.
 
-It ends by printing its own verdict — the stamps, the trainer's `threadid()` and the readings the
-second `ex` made — so that the run's line in the log says whether it overlapped.
+It ends by printing the stamps `T0` and `T1` and this thread's `threadid()` in its `M8-TRAIN` line,
+which the reading half's `M8-READ` line is read against to say whether the two overlapped.
 """
 function training(arm::AbstractString = "lasympnet")
     t0 = time()
