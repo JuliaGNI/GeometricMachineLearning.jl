@@ -301,6 +301,15 @@ function read_run(path::AbstractString; reports::AbstractString = REPORTS)
         attached)
 end
 
+"The pid a run printed of itself, or 0 for a process that printed none."
+function run_pid(path::AbstractString)
+    for line in readlines(path)
+        startswith(line, "M8-RUN ") || continue
+        return parse(Int, something(value_of(line, "pid"), "0"))
+    end
+    0
+end
+
 "The copied crash report of a run, or the one in the reports directory."
 function report_path(log::AbstractString, index::Int, file::AbstractString, reports::AbstractString)
     copy = joinpath(dirname(log), "run-" * lpad(index, 3, '0') * "." * file)
@@ -371,7 +380,6 @@ function run_arm(arm::AbstractString, from::Int, to::Int, out::AbstractString;
                 _no_space(join(before, ",")))
         end
         code = 0
-        pid = 0
         elapsed = 0.0
         open(logpath, "a") do io
             t0 = time()
@@ -380,9 +388,11 @@ function run_arm(arm::AbstractString, from::Int, to::Int, out::AbstractString;
                     stderr = io);
                 wait = true)
             code = p.exitcode
-            pid = getpid(p)
             elapsed = time() - t0
         end
+        # The run's own pid, which it prints before any Metal work: the parent's handle on a
+        # process that has exited no longer answers `getpid`.
+        pid = run_pid(logpath)
         code == 0 || sleep(CRASH_REPORTER_WAIT)
         after = report_files(reports)
         new = setdiff(after, before)
