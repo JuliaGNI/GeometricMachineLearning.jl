@@ -5,6 +5,8 @@ using Test
 using KernelAbstractions
 import Random, Zygote
 
+include("../helpers/eltypes.jl")
+
 Random.seed!(1234)
 
 function test_gradient_layer_application(T, M, N, batch_size = 10)
@@ -39,7 +41,7 @@ function test_gradient_layer_derivative_and_update(T, M, N, batch_size = 10)
     optimization_step!(ps, o, gs)
 end
 
-types = (Float32, Float64)
+types = REAL_ELTYPES
 for T in types
     for M in 4:2:10
         for N in M:2:(2 * M)

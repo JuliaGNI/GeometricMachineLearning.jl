@@ -1,6 +1,8 @@
 using GeometricMachineLearning, LinearAlgebra, KernelAbstractions, Test, Zygote, Random
 using GeometricOptimizers: optimization_step!
 
+include("../helpers/eltypes.jl")
+
 Random.seed!(1234)
 
 A = [0.06476993260924702 0.8369280855305259 0.6245358125914054 0.14072996706492302 0.3057604800441981
@@ -27,10 +29,11 @@ A = [0.06476993260924702 0.8369280855305259 0.6245358125914054 0.140729967064923
 """
 This tests if the optimizers can find the optimal PSD solution.
 """
-function svd_test(A, n, train_steps = 1000, tol = 1e-1; retraction = Cayley())
+function svd_test(
+        ::Type{T}, A, n, train_steps = 1000, tol = 1e-1; retraction = Cayley()) where {T}
     # Seeded here and not once at the top of the file, for the reason given at the same place in
-    # `svd_optim.jl`: `svd_test` is called twice, and with a single top-level seed the second call
-    # starts from whatever RNG state the first one happened to leave behind, which makes the
+    # `svd_optim.jl`: `svd_test` is called more than once, and with a single top-level seed each call
+    # starts from whatever RNG state its predecessor happened to leave behind, which makes the
     # convergence assertions below turn on how much randomness the optimizer consumes. That is what
     # broke the `StiefelLayer` version of this test on 1.10; this file has the same shape and was one
     # `GlobalSection` away from the same failure.
@@ -44,7 +47,9 @@ function svd_test(A, n, train_steps = 1000, tol = 1e-1; retraction = Cayley())
 
     err_best = norm(A - U_result*U_result'*A)
     model = Chain(PSDLayer(2*N, 2*n), PSDLayer(2*n, 2*N))
-    ps = NeuralNetwork(model, CPU(), Float64).params
+    ps = NeuralNetwork(model, CPU(), T).params
+    @test eltype(A) === T
+    @test eltype(ps[1].weight) === T
 
     o₁ = TrainingOptimizer(ps; algorithm = GradientMethod(), retraction, linesearch = 0.01)
     o₂ = TrainingOptimizer(ps; algorithm = MomentumMethod(), retraction, linesearch = 0.01)
@@ -54,13 +59,17 @@ function svd_test(A, n, train_steps = 1000, tol = 1e-1; retraction = Cayley())
     U₂, _, err₂ = train_network!(o₂, model, deepcopy(ps), A, train_steps, tol)
     U₃, Ũ₃, err₃ = train_network!(o₃, model, deepcopy(ps), A, train_steps, tol)
 
-    @test check(U₁) < tol
-    @test check(Ũ₁) < tol
+    # The retraction keeps the two weights orthonormal to its own round-off, which is read in `T`.
+    # The three convergence rows below compare distances to the optimum at the percentage budget
+    # `tol`, which is the optimizer's budget and not a property of the element type.
+    bound = 100 * sqrt(eps(T))
+    @test check(U₁) < bound
+    @test check(Ũ₁) < bound
     @test norm((err₁ - err_best)/err_best) < tol
-    @test check(U₂) < tol
+    @test check(U₂) < bound
     @test norm((err₂ - err_best)/err_best) < tol
-    @test check(U₃) < tol
-    @test check(Ũ₃) < tol
+    @test check(U₃) < bound
+    @test check(Ũ₃) < bound
     @test norm((err₃ - err_best)/err_best) < tol
 end
 
@@ -76,6 +85,7 @@ function train_network!(o::TrainingOptimizer, model::Chain, ps::NetworkParameter
     ps[1].weight, ps[2].weight, error(ps)
 end
 
-for retraction in (Geodesic(), Cayley())
-    svd_test(A, 4, retraction = retraction)
+for T in REAL_ELTYPES, retraction in (Geodesic(), Cayley())
+
+    svd_test(T, T.(A), 4, retraction = retraction)
 end

@@ -13,6 +13,11 @@ if "core" in GROUPS
     @safetestset "assign_q_and_p splits by slicing" include("kernels/assign_q_and_p.jl")
     @safetestset "Custom AD rules for kernels" include("kernels/kernel_pullbacks.jl")
     @safetestset "The products of src/kernels/ on a JLArray" include("devices/jlarray.jl")
+    @safetestset "train! on a JLArray: the Dense and the StiefelLayer chains" include("devices/jlarray_layers.jl")
+    @safetestset "train! on a JLArray: the three symplectic networks" include("devices/jlarray_sympnet.jl")
+    @safetestset "train! on a JLArray: the symplectic autoencoder" include("devices/jlarray_autoencoder.jl")
+    @safetestset "train! on a JLArray: the standard transformer integrator" include("devices/jlarray_transformer.jl")
+    @safetestset "A pullback of a device network returns its gradient leaves on the device" include("devices/jlarray_gradient_backend.jl")
     @safetestset "Product gradients of structured and Stiefel weights" include("integration/product_gradients.jl")
     @safetestset "A Stiefel network trains on data of the other precision" include("integration/mixed_precision_training.jl")
     @safetestset "tensor_cayley: skew inputs, the orthogonality bound and the pullback" include("kernels/cayley.jl")
@@ -114,4 +119,5 @@ if "doctests" in GROUPS
 end
 if "metal" in GROUPS
     @safetestset "Metal: the tensor products and the Cayley kernel on an Apple GPU" include("devices/metal.jl")
+    @safetestset "Metal: eight architectures against their host twins" include("devices/metal_check.jl")
 end

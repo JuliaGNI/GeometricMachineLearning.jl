@@ -5,6 +5,8 @@ using Zygote: gradient
 using Test
 import Random
 
+include("../helpers/eltypes.jl")
+
 Random.seed!(123)
 
 # The finite-difference gradient of `loss(W)` with respect to the storage `W.S` of a structured
@@ -21,7 +23,7 @@ tolerance(T) = T === Float64 ? 1e-8 : sqrt(eps(Float32))
 with_leaf(ps, W) = NetworkParameters((L1 = NamedTuple{keys(ps.L1)}((W,)),))
 
 @testset "a structured weight in _mul: the storage gradient equals finite differences" begin
-    for T in (Float32, Float64)
+    for T in REAL_ELTYPES
         x = rand(T, 4, 5, 3)
         z = rand(T, 3, 4, 5)
         for TT in (SymmetricMatrix, SkewSymMatrix, StrictlyLowerTriangular, StrictlyUpperTriangular)
@@ -42,7 +44,7 @@ with_leaf(ps, W) = NetworkParameters((L1 = NamedTuple{keys(ps.L1)}((W,)),))
 end
 
 @testset "LinearLayerQ: the same gradient on a matrix and on the same data as a tensor" begin
-    for T in (Float32, Float64)
+    for T in REAL_ELTYPES
         nn = NeuralNetwork(Chain(LinearLayerQ(4)), CPU(), T)
         ps = params(nn)
         x = rand(T, 4, 7)
@@ -57,7 +59,7 @@ end
 end
 
 @testset "the symplectic attention layers on a tensor: the storage gradient equals finite differences" begin
-    for T in (Float32, Float64),
+    for T in REAL_ELTYPES,
         (layer, x) in ((LinearSymplecticAttentionQ(4, 5), rand(T, 4, 5, 3)),
             (SymplecticAttentionQ(4; symmetric = true), rand(T, 4, 3, 2)))
 
@@ -75,7 +77,7 @@ end
 # tensor input, and the two agree on the same data. The same holds for every head of a
 # `MultiHeadAttention`, with Stiefel weights and with dense ones.
 @testset "a Stiefel weight multiplied as its adjoint: the gradient leaf is a Matrix" begin
-    for T in (Float32, Float64)
+    for T in REAL_ELTYPES
         nn = NeuralNetwork(Chain(StiefelLayer(6, 3)), CPU(), T)
         ps = params(nn)
         x = rand(T, 6, 5)

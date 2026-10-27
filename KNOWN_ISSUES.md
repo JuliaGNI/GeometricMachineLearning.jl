@@ -30,41 +30,29 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   deliberately, and the resolution is upstream declaring them `public`. Each check's reason is
   written beside it in the test file.
 
-### C21 · "An untrained autoencoder reduces worse than PSD" is not a property, and the suite no longer asserts it under an explicit integrator.
+### C21 · "An untrained autoencoder projects worse than PSD" is not a property, and the suite asserts it on one draw.
 
 - **location:** `test/reduced_system/reduced_system.jl`
 - **kind:** missing test
 - **found:** 2026-09-21
 - **evidence:**
-  `test/reduced_system/reduced_system.jl` asserted both
-  `projection_error(rs1) < projection_error(rs2)` and
-  `reduction_error(rs1) < reduction_error(rs2)` for `ImplicitMidpoint()` and for
-  `ExplicitMidpoint()`, with `rs1` a `PSDArch` and `rs2` an untrained 20-encoder-layer
-  `SymplecticAutoencoder` over a softplus.
+  `test_reduced_vector_fields` asserts `projection_error(rs1) < projection_error(rs2)` under
+  `ImplicitMidpoint()` and under `ExplicitMidpoint()`, in `Float32` and in `Float64`, with `rs1` a
+  `PSDArch` and `rs2` an untrained 20-encoder-layer `SymplecticAutoencoder` over a softplus. The
+  file seeds its stream once, with `Random.seed!(123)`, so the four assertions rest on the draws
+  that seed gives in the order the file makes them. With the seed set before each call of
+  `set_up_reduced_systems`, over seeds 1 to 12:
 
-  The second one is a coin flip. `projection_error` compares the two autoencoders on the *full*
-  solution, but `reduction_error` integrates the *reduced* system, and an untrained network's
-  reduced vector field is one an explicit method diverges on — `reduction_error(rs2)` then comes
-  back `NaN`, and `NaN` is not ordered against anything. Measured over seeds 1 to 12, identically
-  at `GeometricOptimizers` 0.7.0 and 0.8.0:
-
-  | assertion | `ImplicitMidpoint` | `ExplicitMidpoint` |
+  | element type | `ImplicitMidpoint` | `ExplicitMidpoint` |
   |:--|:--|:--|
-  | `projection_error(rs1) < projection_error(rs2)` | 12 / 12 | 11 / 12 |
-  | `reduction_error(rs1) < reduction_error(rs2)` | 12 / 12 | **4 / 12**, with 4 `NaN` and 4 in the opposite order |
+  | `Float64` | 12 / 12 | 11 / 12 |
+  | `Float32` | 11 / 12 | 9 / 12 |
 
-  The committed `Random.seed!(123)` is not among those twelve; it is a thirteenth draw, and it
-  happened to be one that passed. The `GeometricOptimizers` bump in this release changes the
-  manifold layers' orthonormalization from Householder `qr!` to CholeskyQR2, so that seed now
-  draws a different network, and at 0.8.0 `reduction_error(rs2)` under `ExplicitMidpoint` is
-  `NaN`. The bump exposed this; it did not cause it, and the table above is the same at 0.7.0.
-
-  The explicit-integrator case now runs the projection-error assertion only, through a
-  `compare_reduction_error` keyword, and the measurement is written above the function. **The seed
-  was not changed**, because tuning it would have restored a green suite without restoring a true
-  claim. Closing this entry means deciding what the reduction error of an untrained network is
-  supposed to be worth testing at all — training the two networks first would make the comparison
-  mean something, at a cost the suite does not currently pay.
+  The reduction errors are asserted finite under `ImplicitMidpoint()` and are not ordered: the
+  reduced vector field of an untrained network is one an explicit method diverges on, and
+  `reduction_error(rs2)` then comes back `NaN`, which is not ordered against anything. Closing this
+  entry means deciding what of an untrained network is worth testing at all — training the two
+  networks first would make the comparison mean something, at a cost the suite does not pay.
 
 ## Found late
 
@@ -210,6 +198,98 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   itself records a skip where `Metal.functional()` is false; only the precompile fails. Closing this
   is a Metal.jl change: a workload that does not run where no device exists.
 
+### K31 · `changebackend` cannot move a parameter set onto a `JLBackend`.
+
+- **location:** `AbstractNeuralNetworks` `src/utils/changebackend.jl:3`
+- **kind:** upstream
+- **found:** 2026-10-26, part M7
+- **evidence:**
+  `changebackend(backend, x::AbstractArray)` allocates with `KernelAbstractions.allocate` and fills
+  the copy through `KernelAbstractions.copyto!(backend, dest, src)`. `JLArrays` implements no
+  `copyto!(::JLBackend, ::JLArray, ::Array)`:
+
+  ```
+  julia> KernelAbstractions.copyto!(JLBackend(), JLArray(zeros(Float32, 2)), zeros(Float32, 2))
+  ERROR: MethodError: no method matching copyto!(::JLBackend, ::JLArray{Float32, 1}, ::Vector{Float32})
+  ```
+
+  so
+
+  ```julia
+  changebackend(JLBackend(), params(NeuralNetwork(Chain(Dense(4, 8, tanh)), CPU(), Float32)))
+  ```
+
+  raises a `MethodError` whose message names `copyto!` rather than `changebackend`. The device tests
+  therefore move a parameter set leaf by leaf: `test/helpers/device.jl`'s `to_device` rebuilds each
+  structured leaf around `JLArray` storage. A `MetalBackend` has no such gap —
+  `changebackend(get_backend(MtlArray(zeros(Float32, 1))), params(nn))` returns the set with every
+  leaf's storage on the device and its type kept, `StiefelManifold` and `NamedTuple` leaves included —
+  so `test/devices/metal_check.jl` uses it. The fix is a `copyto!` method in `JLArrays`, or a device-array
+  path through `Base.copyto!` in `AbstractNeuralNetworks`.
+
+### K34 · A `StiefelManifold` weight of one column gives an empty skew block, and a Metal `rmul!` of an empty array raises.
+
+- **location:** `GeometricOptimizers` `src/lie_algebras/stiefel_lie_algebra_horizontal.jl:178`
+- **kind:** upstream
+- **found:** 2026-10-26, part M7
+- **evidence:**
+  The horizontal lift of a Stiefel point of `N` rows and `n` columns carries a `SkewSymMatrix` of
+  dimension `n`, whose storage holds `n(n - 1) / 2` entries — none at all where `n` is one. The
+  optimizer's cache and state then hold empty storages for that leaf, and a Metal launch of an empty
+  array divides by zero:
+
+  ```
+  julia> train!(device, opt, DataLoader(MtlArray(randn(Float32, 8, 12, 4)); autoencoder = true), Batch(6), 2)
+  ERROR: DivideError: integer division error
+    [5] mod at int.jl:327 [inlined]
+    [6] #partition##2 at nditeration.jl:158 [inlined]
+   [11] launch_config at MetalKernels.jl:91 [inlined]
+   [12] (::KernelAbstractions.Kernel{…generic_rmul_kernel!…})
+   [14] generic_rmul! at linalg.jl:981 [inlined]
+   [15] rmul! at linalg.jl:985 [inlined]
+   [23] _StorageStep at named_tuple_wrapper.jl:114 [inlined]
+  ```
+
+  for `SymplecticAutoencoder(8, 2)`, whose parameter set holds `StiefelManifold` weights of `(4, 1)`
+  and `(2, 1)`. Walking the optimizer after the failure finds the empty storage in each of
+  `cache.g`, `cache.δ`, `cache.Δg`, `cache.g̃`, `cache.m₁`, `cache.m₂` and `state.g`, `state.ḡ`,
+  `state.m₁`, `state.m₂`:
+
+  ```
+  ZERO opt.cache.g.params[L5][weight](parent)[1] :: SkewSymMatrix{Float32, MtlVector{Float32, Metal.PrivateStorage}} (0,)
+  ZERO opt.cache.g.params[L7][weight](parent)[1] :: SkewSymMatrix{Float32, MtlVector{Float32, Metal.PrivateStorage}} (0,)
+  ```
+
+  A CPU- or `JLArray`-backed launch over an empty range is a no-op, which is why
+  `test/devices/jlarray_autoencoder.jl` trains this network and no test sees the defect. The fix is a
+  `rmul!` that skips an empty array on the device side, or a horizontal lift that allocates no block
+  for `n = 1`. Until then `test/devices/metal_check.jl` sweeps `SymplecticAutoencoder(8, 4)`, whose
+  manifold weights have two and three columns.
+
+### K33 · An epoch of `train!` on a Metal array advances the CPU random stream, so a two-epoch run draws its second epoch's minibatches differently from the host's.
+
+- **location:** `src/data_loader/batch.jl:195`
+- **kind:** not verified
+- **found:** 2026-10-26, part M7
+- **evidence:**
+  `train!` draws its minibatches with `shuffle` from the task-local stream, and nothing else. From one
+  seed, the host's epoch leaves that stream exactly where the two shuffles left it, and the device's
+  epoch does not:
+
+  ```
+  after the seed:  0.5805097055341872
+  host  one epoch: Float32[1.2209982]  rng next 0.5692702072139225
+  device one epoch: Float32[1.2209982]  rng next 0.24892438522171267
+  ```
+
+  The draw is in the device path and not in the model: a single gather of a minibatch on the device
+  moves the stream, and so does a single `optimization_step!`, while the same calls on the host move
+  it not at all. Two epochs inside one `train!` therefore hand the device and the host different
+  minibatches from the second epoch on, which reads as a disagreement of `1e-2` in the loss history.
+  `test/devices/metal_check.jl` works around it by calling `train!` once per epoch with the stream reseeded
+  before each. Which of `Metal`, `GPUArrays`, `GeometricOptimizers` or `Zygote` draws is not
+  established.
+
 ## The test suite
 
 ### K3 · `test/quality/jet.jl` does not see an unstable kernel-launch argument
@@ -230,18 +310,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   CAUGHT with 3 reports (47 pass, 3 fail): the kernel functor takes `args...`, so the dispatch sits
   in KernelAbstractions' frames, which the filter drops. A barrier on a value inside the kernel
   body of `tensor_tensor_mul_kernel!` is CAUGHT (47 pass, 3 fail).
-
-### K10 · The two training tests of `adam_with_learning_rate_decay.jl` run in `Float64` only.
-
-- **location:** `test/optimizers/adam_with_learning_rate_decay.jl`
-- **kind:** missing test
-- **found:** 2026-10-12, by the critics of part M1a; the precision is older than that part
-- **evidence:**
-  `train_network` and `train_manifold_network` build their `DataLoader` from
-  `sin.(0:0.1:2π)`, a `Vector{Float64}`, and take the network's element type from `eltype(dl)`.
-  Neither function takes an element type, so neither runs over `REAL_ELTYPES`. The third testset
-  of the file, `schedule_starts_at_one`, loops over `REAL_ELTYPES`. The fix builds `dl` per `T`
-  and loops both functions over `REAL_ELTYPES`.
 
 ### K14 · `train!` infers its history as an abstract `Vector`, although the run-time history is `Vector{T}`.
 

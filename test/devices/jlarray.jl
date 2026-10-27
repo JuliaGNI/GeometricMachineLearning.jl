@@ -15,6 +15,7 @@ import Random
 # The bound `10 n eps(T) (1 + ‖Cₖ‖₂²)` of the kernel's orthogonality and value rows, the dense
 # reference `cayley_reference` and the skew batch `skew_batch`.
 include("../helpers/cayley.jl")
+include("../helpers/eltypes.jl")
 
 Random.seed!(123)
 allowscalar(false)
@@ -22,7 +23,7 @@ allowscalar(false)
 ondevice(x) = KernelAbstractions.get_backend(x) isa JLBackend
 
 @testset "tensor_tensor_mul and its pullback on a JLArray" begin
-    for T in (Float32, Float64)
+    for T in REAL_ELTYPES
         a, b, c̄ = rand(T, 3, 4, 5), rand(T, 4, 2, 5), rand(T, 3, 2, 5)
         c, pullback = rrule(tensor_tensor_mul, JLArray(a), JLArray(b))
         _, ā, b̄ = pullback(JLArray(c̄))
@@ -35,7 +36,7 @@ ondevice(x) = KernelAbstractions.get_backend(x) isa JLBackend
 end
 
 @testset "_mul with a structured weight on a JLArray: forward and storage gradient" begin
-    for T in (Float32, Float64)
+    for T in REAL_ELTYPES
         x = rand(T, 4, 6, 3)
         for TT in (SymmetricMatrix, SkewSymMatrix, StrictlyLowerTriangular, StrictlyUpperTriangular)
             W = rand(TT{T}, 4)
@@ -54,7 +55,7 @@ end
 end
 
 @testset "assign_q_and_p on a JLArray and on a view of one" begin
-    for T in (Float32, Float64)
+    for T in REAL_ELTYPES
         x = rand(T, 6, 3)
         for v in (JLArray(x), view(JLArray(x), :, 1:2))
             qp = assign_q_and_p(v, 3)
@@ -68,7 +69,7 @@ end
 # the device and matches the per-slice solve on the host at the bound of its orthogonality rows, and
 # its pullback is the derivative of that value.
 @testset "tensor_cayley and its pullback on a JLArray" begin
-    for T in (Float32, Float64), n in 2:8
+    for T in REAL_ELTYPES, n in 2:8
 
         C = skew_batch(T, n, 4)
         seed = rand(T, n, n, 4)

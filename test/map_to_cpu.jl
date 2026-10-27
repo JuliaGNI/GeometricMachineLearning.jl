@@ -16,6 +16,8 @@ using Test
 import GeometricOptimizers: StiefelManifold, SymmetricMatrix, SkewSymMatrix,
                             StrictlyLowerTriangular, StrictlyUpperTriangular
 
+include("helpers/eltypes.jl")
+
 Random.seed!(1234)
 
 # Scalar indexing is off for the whole file, so a `_to_host` that read a device array one element at
@@ -93,7 +95,7 @@ end
 # The copy is a network of the host, in its backend and in its fourth type parameter alike: the
 # leaves are host arrays, so a backend left on the device would send the next forward pass there
 # with data it cannot read.
-@testset "a device network comes back on the CPU ($T)" for T in (Float32, Float64)
+@testset "a device network comes back on the CPU ($T)" for T in REAL_ELTYPES
     nn = NeuralNetwork(Chain(Dense(N, 3, tanh)), JLBackend(), T)
     back = map_to_cpu(nn)
 
@@ -108,7 +110,7 @@ end
 
 # A host backend is a property of the caller's own network, and a copy does not change it: `CPU()`
 # comes back `CPU()`, and `CPU(; static = true)` comes back static.
-@testset "a host network keeps its backend and its type parameter ($T)" for T in (Float32, Float64)
+@testset "a host network keeps its backend and its type parameter ($T)" for T in REAL_ELTYPES
     for backend in (CPU(), CPU(; static = true))
         nn = NeuralNetwork(Chain(Dense(N, 3, tanh)), backend, T)
         back = map_to_cpu(nn)

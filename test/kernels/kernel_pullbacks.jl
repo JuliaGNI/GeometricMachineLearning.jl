@@ -6,6 +6,8 @@ using FiniteDifferences: central_fdm, j′vp
 using Test
 import Random
 
+include("../helpers/eltypes.jl")
+
 Random.seed!(1234)
 
 const verbose = false
@@ -49,7 +51,7 @@ function rules(T)
 end
 
 @testset "a zero seed gives a zero cotangent for every argument" begin
-    for T in (Float32, Float64), (f, args) in rules(T),
+    for T in REAL_ELTYPES, (f, args) in rules(T),
         seed in (ZeroTangent(), NoTangent(),
             @thunk(ZeroTangent()))
         c̄ = rrule(f, args...)[2](seed)

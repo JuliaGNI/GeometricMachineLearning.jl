@@ -2,6 +2,8 @@ using Test, KernelAbstractions, GeometricMachineLearning, Zygote, LinearAlgebra
 using GeometricMachineLearning: ResNetLayer
 import Random
 
+include("../helpers/eltypes.jl")
+
 Random.seed!(1234)
 
 @doc raw"""
@@ -24,10 +26,13 @@ function transformer_gradient_test(T, dim, n_heads, L, seq_length = 8, batch_siz
     grad₃ = Zygote.gradient(ps -> loss₂(ps, input₁), ps₂)[1]
     grad₄ = Zygote.gradient(ps -> loss₂(ps, input₂), ps₂)[1]
 
+    @test eltype(model₁(input₁, ps₁)) === T
     @test typeof(grad₁) == typeof(ps₁)
     @test typeof(grad₂) == typeof(ps₁)
     @test typeof(grad₃) != typeof(ps₂)
     @test typeof(grad₄) != typeof(ps₂)
 end
 
-transformer_gradient_test(Float32, 10, 5, 4)
+for T in REAL_ELTYPES
+    transformer_gradient_test(T, 10, 5, 4)
+end

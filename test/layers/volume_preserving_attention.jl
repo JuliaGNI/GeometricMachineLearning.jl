@@ -16,6 +16,8 @@ using Zygote: gradient
 using Test
 import Random
 
+include("../helpers/eltypes.jl")
+
 # The bound `10 n eps(T) (1 + ‖Cₖ‖₂²)` of the kernel's orthogonality and value rows, which the
 # forward pass below is compared against, scaled by the data; the dense reference
 # `cayley_reference`; and `arbitrary_C`, the host form of the `:arbitrary` path's `C`.
@@ -67,7 +69,7 @@ function case(SL, seq_length, T; skew_sym)
     d, ps, x
 end
 
-@testset "VolumePreservingAttention runs at every sequence length, T = $T" for T in (Float32, Float64)
+@testset "VolumePreservingAttention runs at every sequence length, T = $T" for T in REAL_ELTYPES
     for N in 2:8, skew_sym in (false, true)
 
         d, ps, x = case(N, N, T; skew_sym)
@@ -99,8 +101,7 @@ end
     end
 end
 
-@testset "VolumePreservingAttention with SL = 0 runs every sequence length, T = $T" for T in (Float32,
-    Float64)
+@testset "VolumePreservingAttention with SL = 0 runs every sequence length, T = $T" for T in REAL_ELTYPES
     for seq_length in (3, 7), skew_sym in (false, true)
 
         d, ps, x = case(0, seq_length, T; skew_sym)

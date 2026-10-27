@@ -7,7 +7,9 @@
 using GeometricMachineLearning
 using Test
 
-@testset "MatrixSoftmax is finite and normalised for $T" for T in (Float32, Float64)
+include("../helpers/eltypes.jl")
+
+@testset "MatrixSoftmax is finite and normalised for $T" for T in REAL_ELTYPES
     x = T[100 0; 0 0]
     y = MatrixSoftmax()(x)
 
@@ -16,8 +18,7 @@ using Test
     @test eltype(y) == T
 end
 
-@testset "MatrixSoftmax does not move the answer for well-scaled input, $T" for T in (
-    Float32, Float64)
+@testset "MatrixSoftmax does not move the answer for well-scaled input, $T" for T in REAL_ELTYPES
     x = T[1 2; 3 4]
     y = MatrixSoftmax()(x)
 
@@ -31,8 +32,7 @@ end
     @test eltype(y) == T
 end
 
-@testset "MatrixSoftmax 3-tensor method is finite and normalised for $T" for T in (
-    Float32, Float64)
+@testset "MatrixSoftmax 3-tensor method is finite and normalised for $T" for T in REAL_ELTYPES
     x = cat(T[100 0; 0 0], T[1 2; 3 4]; dims = 3)
     y = MatrixSoftmax()(x)
 
@@ -41,8 +41,7 @@ end
     @test eltype(y) == T
 end
 
-@testset "MatrixSoftmax 3-tensor method does not move the answer for well-scaled input, $T" for T in (
-    Float32, Float64)
+@testset "MatrixSoftmax 3-tensor method does not move the answer for well-scaled input, $T" for T in REAL_ELTYPES
     x = cat(T[1 2; 3 4], T[5 1; 2 3]; dims = 3)
     y = MatrixSoftmax()(x)
 

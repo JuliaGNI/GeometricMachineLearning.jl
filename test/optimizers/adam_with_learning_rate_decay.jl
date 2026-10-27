@@ -10,7 +10,12 @@ include("../helpers/eltypes.jl")
 Random.seed!(123)
 
 const sin_vector = sin.(0:0.1:2π)
-const dl = DataLoader(reshape(sin_vector, 1, length(sin_vector), 1))
+
+# The loader of one element type: the same sine curve, drawn in `T`, so that the two training
+# functions below take their element type from their caller and not from a `Float64` vector.
+function sample_loader(::Type{T}) where {T}
+    DataLoader(reshape(T.(sin_vector), 1, length(sin_vector), 1); suppress_info = true)
+end
 
 function setup_network(dl::DataLoader{T}) where {T}
     arch = Chain(Dense(1, 20, tanh), ResNetLayer(20, tanh), Dense(20, 1, identity))
@@ -18,10 +23,11 @@ function setup_network(dl::DataLoader{T}) where {T}
 end
 
 # tests checks if Adam with decay achieves a lower loss value than regular Adam and the two converge reasonably well
-function train_network(; n_epochs = 2048)
-    # Seeded per call, as in `svd_optim.jl`: three of these run off one top-level seed, so
+function train_network(::Type{T}; n_epochs = 2048) where {T}
+    # Seeded per call, as in `svd_optim.jl`: the two precisions run off one top-level seed, so
     # without it each one starts from whatever RNG state its predecessor left behind.
     Random.seed!(123)
+    dl = sample_loader(T)
     nn₁ = setup_network(dl)
     nn₂ = setup_network(dl)
 
@@ -37,7 +43,8 @@ function train_network(; n_epochs = 2048)
     loss_array₁ = train!(nn₁, o₁, dl, batch, n_epochs; loss, show_progress = false)
     loss_array₂ = train!(nn₂, o₂, dl, batch, n_epochs; loss, show_progress = false)
 
-    T = eltype(dl)
+    @test eltype(loss_array₁) === T
+    @test eltype(loss_array₂) === T
     @test loss_array₂[end] < loss_array₁[end] < T(1.6e-1)
 end
 
@@ -50,15 +57,17 @@ an ordinary `Adam` and the manifold weights take GeometricOptimizers' Adam cache
 # `n_epochs = 128` and not 32: `AdamOptimizerWithDecay(n_epochs)` fixes
 # γ = exp(log(η₂/η₁)/n_epochs), so a 32-epoch budget drives the learning rate to η₂ = 1e-6 almost
 # at once and the run barely trains. Over 128 epochs the decay is gentle enough that the run trains.
-function train_manifold_network(; n_epochs = 128)
+function train_manifold_network(::Type{T}; n_epochs = 128) where {T}
     Random.seed!(123)
+    dl = sample_loader(T)
     arch = Chain(StiefelLayer(1, 20), Dense(20, 20, tanh), Dense(20, 1, identity))
-    nn = NeuralNetwork(arch, CPU(), eltype(dl))
+    nn = NeuralNetwork(arch, CPU(), T)
 
     o = TrainingOptimizer(nn.params; AdamOptimizerWithDecay(n_epochs)...)
     loss_array = train!(nn, o, dl, Batch(5, 1), n_epochs; loss = FeedForwardLoss(),
         show_progress = false)
 
+    @test eltype(loss_array) === T
     @test all(isfinite, loss_array)
     @test loss_array[end] < loss_array[1]
     # the Stiefel weight has to still be on the manifold
@@ -77,8 +86,9 @@ counts, because `GeometricOptimizers.solve!` calls `increase_iteration_number!` 
 function schedule_starts_at_one(T; n_epochs = 100, η₁ = 1e-2, η₂ = 1e-6)
     γ = exp(log(η₂ / η₁) / n_epochs)
 
-    # One step of a Euclidean parameter with a gradient of `1` moves it by `α₁ / (√1 + δ) ≈ α₁`, so
-    # the distance travelled reports the α used.
+    # One step of a Euclidean parameter with a gradient of `1` moves it by `α₁ / (√1 + δ)`, so the
+    # distance travelled reports the α used. It differs from `α₁` by the relative `δ / (1 + δ) < δ`,
+    # which `10δ` bounds, and by the round-off of the step in `T`, which `8 eps(T)` bounds.
     ps = NetworkParameters((weight = zeros(T, 2, 2),))
     opt = TrainingOptimizer(ps; AdamOptimizerWithDecay(n_epochs; η₁, η₂)...)
     @test opt.linesearch isa DecayingStatic
@@ -86,11 +96,14 @@ function schedule_starts_at_one(T; n_epochs = 100, η₁ = 1e-2, η₂ = 1e-6)
     optimization_step!(ps, opt, NetworkParameters((weight = ones(T, 2, 2),)))
     @test opt.state.iterations == 1
     @test eltype(ps.weight) === T
-    @test abs(ps.weight[1, 1]) ≈ η₁ * γ rtol = 1e-6
+    @test abs(ps.weight[1, 1]) ≈ η₁ * γ rtol = 10 * opt.method.δ + 8 * eps(T)
 end
 
-train_network()
-train_manifold_network()
-@testset "the decay schedule starts at t = 1 ($T)" for T in REAL_ELTYPES
+@testset "Adam with learning-rate decay, and its schedule ($T)" for T in REAL_ELTYPES
+    train_network(T)
     schedule_starts_at_one(T)
+end
+
+@testset "the manifold network trains under the decayed schedule ($T)" for T in REAL_ELTYPES
+    train_manifold_network(T)
 end

@@ -2,9 +2,11 @@ using GeometricMachineLearning
 using Test
 import Random
 
+include("../helpers/eltypes.jl")
+
 Random.seed!(123)
 
-function test_application_of_lsa(n::Integer = 4, seq_length::Integer = 5, T = Float64)
+function test_application_of_lsa(n::Integer, seq_length::Integer, ::Type{T}) where {T}
     l₁ = LinearSymplecticAttentionQ(n, seq_length)
     l₂ = LinearSymplecticAttentionP(n, seq_length)
     ps₁ = NeuralNetwork(Chain(l₁), CPU(), T).params.L1
@@ -12,17 +14,22 @@ function test_application_of_lsa(n::Integer = 4, seq_length::Integer = 5, T = Fl
 
     # test for NamedTuple as input
     nt = (q = rand(T, n, seq_length), p = rand(T, n, seq_length))
+    @test eltype(l₁(nt, ps₁).q) === T
+    @test eltype(l₂(nt, ps₂).p) === T
     @test l₁(nt, ps₁).q ≈ nt.q + nt.p * ps₁.A
     @test l₂(nt, ps₂).p ≈ nt.p + nt.q * ps₂.A
 
     # test for Array as input
     arr = rand(T, 2 * n, seq_length)
+    @test eltype(l₁(arr, ps₁)) === T
     @test l₁(arr, ps₁) ≈
           vcat(arr[1:n, :] + arr[(n + 1):(2 * n), :] * ps₁.A, arr[(n + 1):(2 * n), :])
     @test l₂(arr, ps₂) ≈ vcat(arr[1:n, :], arr[(n + 1):(2 * n), :] + arr[1:n, :] * ps₂.A)
 end
 
-test_application_of_lsa()
+for T in REAL_ELTYPES
+    test_application_of_lsa(4, 5, T)
+end
 
 l = LinearSymplecticAttentionQ(3, 5)
 @test NeuralNetwork(Chain(l)).params.L1.A isa SymmetricMatrix

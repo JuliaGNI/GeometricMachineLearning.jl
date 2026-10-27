@@ -14,6 +14,8 @@ using LinearAlgebra: BLAS, I, opnorm
 using Test
 import Random
 
+include("../helpers/eltypes.jl")
+
 # The bound `10 n eps(T) (1 + ‖Cₖ‖₂²)` of the orthogonality and value rows, and the dense reference
 # `cayley_reference`, shared with the device rows of the kernel and with the layer's tests.
 include("../helpers/cayley.jl")
@@ -134,7 +136,7 @@ function cayley_rows(::Type{T}, n::Int, s) where {T}
 end
 
 @testset "tensor_cayley: the input of the layer is always skew" begin
-    for T in (Float32, Float64), n in (2, 3, 5)
+    for T in REAL_ELTYPES, n in (2, 3, 5)
 
         x = randn(T, n, n, 7)
         A = randn(T, n, n)
@@ -151,13 +153,13 @@ end
     end
 end
 
-@testset "tensor_cayley: the orthogonality error and the value, N = $n, s = $s" for T in (Float32, Float64),
+@testset "tensor_cayley: the orthogonality error and the value, N = $n, s = $s" for T in REAL_ELTYPES,
     s in SCALES, n in 2:8
 
     cayley_rows(T, n, s)
 end
 
-@testset "tensor_cayley: the pullback, N = $n" for T in (Float32, Float64), n in 2:8
+@testset "tensor_cayley: the pullback, N = $n" for T in REAL_ELTYPES, n in 2:8
 
     C = skew_tensor(T, n, 1, 7)
     Λ̄ = randn(T, n, n, 7)
@@ -186,7 +188,7 @@ end
 end
 
 @testset "tensor_cayley: the result's element type, backend and shape" begin
-    for T in (Float32, Float64), n in 2:8
+    for T in REAL_ELTYPES, n in 2:8
 
         C = skew_tensor(T, n, 1)
         Λ = @inferred tensor_cayley(C)
@@ -194,7 +196,7 @@ end
         @test size(Λ) == size(C)
         @test @inferred(tensor_cayley(C))[1, 1, 1] isa T
     end
-    for T in (Float32, Float64)
+    for T in REAL_ELTYPES
         @test_throws DimensionMismatch tensor_cayley(rand(T, 3, 4, 2))
         @test_throws DimensionMismatch tensor_cayley(rand(T, 4, 3, 2))
     end

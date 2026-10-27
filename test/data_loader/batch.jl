@@ -7,6 +7,8 @@ using GeometricMachineLearning: convert_input_and_batch_indices_to_array, number
 using Test
 import Random
 
+include("../helpers/eltypes.jl")
+
 Random.seed!(1234)
 
 # The kind of a loader is its fourth type parameter.
@@ -19,7 +21,7 @@ gathered(dl, batch) = map(batch(dl)) do indices
     convert_input_and_batch_indices_to_array(dl, batch, indices)
 end
 
-@testset "a supervised loader samples every pair, the last included ($T)" for T in (Float32, Float64)
+@testset "a supervised loader samples every pair, the last included ($T)" for T in REAL_ELTYPES
     x = samples(T)
     y = 3 .* x
     loaders = ("input and output" => DataLoader(x, y; suppress_info = true),
@@ -55,7 +57,7 @@ end
 
 # The `(q, p)` loader of the same ten samples: `autoencoder = true` reads the second axis of a
 # matrix pair as the parameter index, so its one time step carries all ten samples.
-@testset "a (q, p) loader of samples draws every pair ($T)" for T in (Float32, Float64)
+@testset "a (q, p) loader of samples draws every pair ($T)" for T in REAL_ELTYPES
     x = samples(T)
     dl = DataLoader((q = x, p = 3 .* x); autoencoder = true, suppress_info = true)
     @test kind(dl) === :RegularData
@@ -85,7 +87,7 @@ end
 end
 
 # One sample is a loader the training loop can draw from.
-@testset "one sample is one minibatch ($T)" for T in (Float32, Float64)
+@testset "one sample is one minibatch ($T)" for T in REAL_ELTYPES
     x = T.(reshape(1:2, 2, 1))
     dl = DataLoader(x, x; suppress_info = true)
     batch = Batch(1)
@@ -146,7 +148,7 @@ end
 
 # The classifier's loader, and `Batch(batch_size, dl)` — one draw per sample with the whole
 # sequence and the whole output, which is what GMLDatasets calls.
-@testset "Batch(batch_size, dl) draws every sample with the whole sequence ($T)" for T in (Float32, Float64)
+@testset "Batch(batch_size, dl) draws every sample with the whole sequence ($T)" for T in REAL_ELTYPES
     n_classes, n_patches, n_images = 10, 4, 10
     input = rand(T, 9, n_patches, n_images)
     output = zeros(Int, n_classes, 1, n_images)
@@ -178,7 +180,7 @@ end
 # The target is the output when there is one, whatever kind the loader is typed as. A
 # `DataLoader{T, A3, Array{Int, 3}, :TimeSeries}` is what GMLDatasets and two tests build by naming
 # the type, and it must batch like the `:RegularData` loader of the same data.
-@testset "a loader with an output is samples whatever its kind ($T)" for T in (Float32, Float64)
+@testset "a loader with an output is samples whatever its kind ($T)" for T in REAL_ELTYPES
     input = rand(T, 9, 4, 10)
     output = zeros(Int, 10, 1, 10)
     for (k, c) in pairs(rand(1:10, 10))
@@ -209,7 +211,7 @@ end
 # 5 on a four-column input takes two predictions of two columns for `n_points = 8`, where the
 # default window takes one of four columns. Both forms carry the input's element type, so a
 # trajectory copied to the host or plotted keeps its precision.
-@testset "the Batch method of integrate forwards its prediction window ($T)" for T in (Float32, Float64)
+@testset "the Batch method of integrate forwards its prediction window ($T)" for T in REAL_ELTYPES
     nn = NeuralNetwork(StandardTransformerIntegrator(5), CPU(), T)
     ics = rand(T, 5, 4)
 

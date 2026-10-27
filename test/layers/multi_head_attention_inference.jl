@@ -11,6 +11,8 @@ using GeometricMachineLearning
 using Test
 import Random, KernelAbstractions
 
+include("../helpers/eltypes.jl")
+
 GML = GeometricMachineLearning
 
 Random.seed!(1234)
@@ -18,21 +20,22 @@ Random.seed!(1234)
 mha_parameters(d, T) = GML.params(NeuralNetwork(
     Chain(d), KernelAbstractions.CPU(), T))[1]
 
-@testset "compute_output_of_mha infers concretely, $n_heads heads, Stiefel = $Stiefel" for n_heads in (
+@testset "compute_output_of_mha infers concretely, $n_heads heads, Stiefel = $Stiefel, $T" for n_heads in (
         4, 32),
-    Stiefel in (false, true)
-
+    Stiefel in (false, true),
+    T in REAL_ELTYPES
     dim, seq_length, n_data = 2n_heads, 6, 3
     d = MultiHeadAttention(dim, n_heads; Stiefel = Stiefel)
-    ps = mha_parameters(d, Float32)
+    ps = mha_parameters(d, T)
 
-    x_matrix = rand(Float32, dim, seq_length)
-    x_tensor = rand(Float32, dim, seq_length, n_data)
+    x_matrix = rand(T, dim, seq_length)
+    x_tensor = rand(T, dim, seq_length, n_data)
 
-    @test (@inferred GML.compute_output_of_mha(d, x_matrix, ps)) isa Matrix{Float32}
-    @test (@inferred GML.compute_output_of_mha(d, x_tensor, ps)) isa Array{Float32, 3}
+    @test (@inferred GML.compute_output_of_mha(d, x_matrix, ps)) isa Matrix{T}
+    @test (@inferred GML.compute_output_of_mha(d, x_tensor, ps)) isa Array{T, 3}
+    @test eltype(GML.compute_output_of_mha(d, x_matrix, ps)) === T
 
     # The functor is what the rest of the network calls, so it is the type that actually propagates.
-    @test (@inferred d(x_matrix, ps)) isa Matrix{Float32}
-    @test (@inferred d(x_tensor, ps)) isa Array{Float32, 3}
+    @test (@inferred d(x_matrix, ps)) isa Matrix{T}
+    @test (@inferred d(x_tensor, ps)) isa Array{T, 3}
 end

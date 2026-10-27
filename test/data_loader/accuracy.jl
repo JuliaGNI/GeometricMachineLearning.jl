@@ -11,6 +11,8 @@ using Random
 using Test
 using Zygote
 
+include("../helpers/eltypes.jl")
+
 Random.seed!(1234)
 
 const input_dim = 4
@@ -52,7 +54,7 @@ end
 # The fraction is read in the element type of the loader's input, so a `Float32` run of the model
 # gives a `Float32` measure and does not silently widen at the last step. A loader of the model's own
 # element type cannot tell the loader's type from the model's output's; the mixed pair below does.
-@testset "the accuracy has the element type of the loader's input ($T)" for T in (Float32, Float64)
+@testset "the accuracy has the element type of the loader's input ($T)" for T in REAL_ELTYPES
     dl = classification_loader(predicted, T)
     @test eltype(dl) === T
     @test GeometricMachineLearning.accuracy(model, ps, dl) isa T
@@ -90,7 +92,7 @@ end
 # A sample that carries no label is half an error: the difference between the target and the
 # prediction is 1 in its one-hot column, where a wrong label gives 2, and the count is halved rather
 # than floored. A floored count drops that sample and reports every label as correct.
-@testset "a sample with no label halves the error count ($T)" for T in (Float32, Float64)
+@testset "a sample with no label halves the error count ($T)" for T in REAL_ELTYPES
     classes = copy(predicted)
     classes[1] = 0
     a = GeometricMachineLearning.accuracy(model, ps, classification_loader(classes, T))
@@ -151,14 +153,14 @@ end
 # The crop of `assign_output_estimate` is the last `prediction_window` columns, and its gradient is
 # Zygote's `getindex` adjoint — zero on the cropped columns, and a cotangent of the primal's element
 # type whatever the seed's.
-@testset "assign_output_estimate crops the last columns ($T)" for T in (Float32, Float64)
+@testset "assign_output_estimate crops the last columns ($T)" for T in REAL_ELTYPES
     x = T.(reshape(1:(3 * 5 * 4), 3, 5, 4))
     @test GeometricMachineLearning.assign_output_estimate(x, 2) == x[:, 4:5, :]
     @test GeometricMachineLearning.assign_output_estimate(x, 5) == x
     @test eltype(GeometricMachineLearning.assign_output_estimate(x, 2)) === T
 end
 
-@testset "the gradient of assign_output_estimate is Zygote's ($T)" for T in (Float32, Float64)
+@testset "the gradient of assign_output_estimate is Zygote's ($T)" for T in REAL_ELTYPES
     x = T.(reshape(1:(3 * 5 * 4), 3, 5, 4))
     crop(z) = GeometricMachineLearning.assign_output_estimate(z, 2)
     gradient = only(Zygote.gradient(z -> sum(abs2, crop(z)), x))
