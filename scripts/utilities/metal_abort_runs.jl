@@ -552,16 +552,18 @@ function selftest()
     M8-TRAIN compile_time=1.0e9 recompile_time=0.0 time=1.0 bytes=1 eltype=Float32 finite=true history=0.5
     M8-END status=ok elapsed=1.0
     """
-    function fixture(dir, index, pid, exit; layer = "1", device = true, compile = "1.0e9",
-            endline = "M8-END status=ok", validation = true, extra = "")
+    function fixture(dir, index, pid, exit; arm = "lasympnet", layer = "1", device = true,
+            compile = "1.0e9", endline = "M8-END status=ok", finite = "true",
+            validation = true, extra = "")
         path = joinpath(dir, "run-" * lpad(index, 3, '0') * ".log")
         text = replace(body, "MTL_DEBUG_LAYER=\"1\"" => "MTL_DEBUG_LAYER=\"$layer\"",
-            "compile_time=1.0e9" => "compile_time=$compile", "M8-END status=ok" => endline)
+            "compile_time=1.0e9" => "compile_time=$compile", "M8-END status=ok" => endline,
+            "finite=true" => "finite=$finite")
         device ||
             (text = replace(text, "M8-DEVICE functional=true" => "M8-DEVICE functional=false"))
         validation || (text = replace(text, "Metal API Validation Enabled\n" => ""))
         open(path, "w") do io
-            emit(io, "RUN", :arm => "lasympnet", :pid => pid,
+            emit(io, "RUN", :arm => arm, :pid => pid,
                 :time => 0.0, :concurrent => false)
             print(io, text)
             print(io, extra)
@@ -584,6 +586,7 @@ function selftest()
     mkpath(one)
     fixture(one, 1, 1001, 0)
     check("clean", verdict_of(one, 1).status, :ok)
+    check("pid from the log", run_pid(joinpath(one, "run-001.log")), 1001)
 
     two = joinpath(root, "device")
     mkpath(two)
@@ -615,8 +618,10 @@ function selftest()
 
     six = joinpath(root, "decoy")
     mkpath(six)
+    # The parent's own `match=` field is not trusted: a report whose `pid` is not this run's is not
+    # this run's, whatever the line says.
     fixture(six, 1, 1006, 134;
-        extra = "M8-IPS-AFTER count=2 new=1 files=julia-2026-01-01-000000.ips\nM8-IPS run=1 report=999 file=julia-2026-01-01-000000.ips match=false signature=other symbols=-\n")
+        extra = "M8-IPS-AFTER count=2 new=1 files=julia-2026-01-01-000000.ips\nM8-IPS run=1 report=999 file=julia-2026-01-01-000000.ips match=true signature=other symbols=-\n")
     check("decoy report", verdict_of(six, 1).status, :void)
     check("decoy is no abort", length(audit_arm(six; reports = reports).aborts), 0)
 
@@ -624,10 +629,21 @@ function selftest()
     mkpath(seven)
     write(joinpath(seven, "run-001.julia-2026-01-02-000000.ips"),
         "{\n  \"pid\" : 1007,\n  \"message\" : \"BUG IN CLIENT OF LIBMALLOC: memory corruption of free block\"\n}\n")
-    fixture(seven, 1, 1007, 134;
+    fixture(seven, 1, 1007, 134; arm = "vpff",
         extra = "M8-IPS-AFTER count=2 new=1 files=julia-2026-01-02-000000.ips\nM8-IPS run=1 report=1007 file=julia-2026-01-02-000000.ips match=true signature=malloc symbols=-\n")
     check("abort", verdict_of(seven, 1).status, :abort)
     check("abort counted", length(audit_arm(seven; reports = reports).aborts), 1)
+    check("malloc reproduces", audit_arm(seven; reports = reports).state, "reproduced")
+
+    eleven = joinpath(root, "not finite")
+    mkpath(eleven)
+    fixture(eleven, 1, 1012, 0; finite = "false")
+    check("not finite", verdict_of(eleven, 1).status, :void)
+
+    twelve = joinpath(root, "status")
+    mkpath(twelve)
+    fixture(twelve, 1, 1013, 0; endline = "M8-END status=error reason=-")
+    check("error status", verdict_of(twelve, 1).status, :void)
 
     eight = joinpath(root, "short")
     mkpath(eight)
@@ -645,6 +661,17 @@ function selftest()
     write(joinpath(reports, "julia-2026-01-03-000000.ips"),
         "{\n  \"pid\" : 1009,\n  \"message\" : \"BUG IN CLIENT OF LIBMALLOC: memory corruption of free block\"\n}\n")
     check("late report", verdict_of(nine, 1).status, :abort)
+
+    # A command-encoder fault of a `lasympnet` run reproduces that arm's abort, which no count of
+    # aborts says: the signature is what decides it.
+    ten = joinpath(root, "encoder")
+    mkpath(ten)
+    write(joinpath(ten, "run-001.julia-2026-01-04-000000.ips"),
+        "{\n  \"pid\" : 1011,\n  \"symbols\" : \"MTLReleaseAssertionFailure -[IOGPUMetalCommandBuffer setCurrentCommandEncoder:]\"\n}\n")
+    fixture(ten, 1, 1011, 134;
+        extra = "M8-IPS-AFTER count=2 new=1 files=julia-2026-01-04-000000.ips\nM8-IPS run=1 report=1011 file=julia-2026-01-04-000000.ips match=true signature=encoder symbols=-\n")
+    check("encoder signature", verdict_of(ten, 1).signature, :encoder)
+    check("encoder reproduces", audit_arm(ten; reports = reports).state, "reproduced")
 
     rm(root; recursive = true, force = true)
     isempty(failures) && (println("selftest: PASS, $(checks[]) checks"); return 0)
