@@ -30,6 +30,30 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   deliberately, and the resolution is upstream declaring them `public`. Each check's reason is
   written beside it in the test file.
 
+### C21 · "An untrained autoencoder projects worse than PSD" is not a property, and the suite asserts it on one draw.
+
+- **location:** `test/reduced_system/reduced_system.jl`
+- **kind:** missing test
+- **found:** 2026-09-21
+- **evidence:**
+  `test_reduced_vector_fields` asserts `projection_error(rs1) < projection_error(rs2)` under
+  `ImplicitMidpoint()` and under `ExplicitMidpoint()`, in `Float32` and in `Float64`, with `rs1` a
+  `PSDArch` and `rs2` an untrained 20-encoder-layer `SymplecticAutoencoder` over a softplus. The
+  file seeds its stream once, with `Random.seed!(123)`, so the four assertions rest on the draws
+  that seed gives in the order the file makes them. With the seed set before each call of
+  `set_up_reduced_systems`, over seeds 1 to 12:
+
+  | element type | `ImplicitMidpoint` | `ExplicitMidpoint` |
+  |:--|:--|:--|
+  | `Float64` | 12 / 12 | 11 / 12 |
+  | `Float32` | 11 / 12 | 9 / 12 |
+
+  The reduction errors are asserted finite under `ImplicitMidpoint()` and are not ordered: the
+  reduced vector field of an untrained network is one an explicit method diverges on, and
+  `reduction_error(rs2)` then comes back `NaN`, which is not ordered against anything. Closing this
+  entry means deciding what of an untrained network is worth testing at all — training the two
+  networks first would make the comparison mean something, at a cost the suite does not pay.
+
 ## Found late
 
 ### K17 · `assign_q_and_p` drops the rows from `2N + 1` on without an error.
@@ -200,7 +224,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   structured leaf around `JLArray` storage. A `MetalBackend` has no such gap —
   `changebackend(get_backend(MtlArray(zeros(Float32, 1))), params(nn))` returns the set with every
   leaf's storage on the device and its type kept, `StiefelManifold` and `NamedTuple` leaves included —
-  so `scripts/metal_check.jl` uses it. The fix is a `copyto!` method in `JLArrays`, or a device-array
+  so `test/devices/metal_check.jl` uses it. The fix is a `copyto!` method in `JLArrays`, or a device-array
   path through `Base.copyto!` in `AbstractNeuralNetworks`.
 
 ### K34 · A `StiefelManifold` weight of one column gives an empty skew block, and a Metal `rmul!` of an empty array raises.
@@ -239,7 +263,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   A CPU- or `JLArray`-backed launch over an empty range is a no-op, which is why
   `test/devices/jlarray_autoencoder.jl` trains this network and no test sees the defect. The fix is a
   `rmul!` that skips an empty array on the device side, or a horizontal lift that allocates no block
-  for `n = 1`. Until then `scripts/metal_check.jl` sweeps `SymplecticAutoencoder(8, 4)`, whose
+  for `n = 1`. Until then `test/devices/metal_check.jl` sweeps `SymplecticAutoencoder(8, 4)`, whose
   manifold weights have two and three columns.
 
 ### K33 · An epoch of `train!` on a Metal array advances the CPU random stream, so a two-epoch run draws its second epoch's minibatches differently from the host's.
@@ -262,7 +286,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   moves the stream, and so does a single `optimization_step!`, while the same calls on the host move
   it not at all. Two epochs inside one `train!` therefore hand the device and the host different
   minibatches from the second epoch on, which reads as a disagreement of `1e-2` in the loss history.
-  `scripts/metal_check.jl` works around it by calling `train!` once per epoch with the stream reseeded
+  `test/devices/metal_check.jl` works around it by calling `train!` once per epoch with the stream reseeded
   before each. Which of `Metal`, `GPUArrays`, `GeometricOptimizers` or `Zygote` draws is not
   established.
 

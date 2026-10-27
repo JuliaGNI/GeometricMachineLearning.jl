@@ -113,4 +113,5 @@ if "doctests" in GROUPS
 end
 if "metal" in GROUPS
     @safetestset "Metal: the tensor products and the Cayley kernel on an Apple GPU" include("devices/metal.jl")
+    @safetestset "Metal: eight architectures against their host twins" include("devices/metal_check.jl")
 end

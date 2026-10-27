@@ -35,7 +35,8 @@ function set_up_reduced_systems(reduced_dim::Integer, integrator, ::Type{T}) whe
 end
 
 # We expect the neural network projection error to be higher than the PSD projection error if we
-# don't train.
+# don't train. That is not a property: the comparison rests on the draws of the seed above, and it
+# fails for some seeds in each element type. That is *C21* in `KNOWN_ISSUES.md`.
 #
 # The reduction errors are asserted finite and not ordered. `projection_error` compares the two
 # autoencoders on the *full* solution, but `reduction_error` integrates the *reduced* system, and the

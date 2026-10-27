@@ -86,9 +86,9 @@ counts, because `GeometricOptimizers.solve!` calls `increase_iteration_number!` 
 function schedule_starts_at_one(T; n_epochs = 100, η₁ = 1e-2, η₂ = 1e-6)
     γ = exp(log(η₂ / η₁) / n_epochs)
 
-    # One step of a Euclidean parameter with a gradient of `1` moves it by `α₁ / (√1 + δ) ≈ α₁`, so
-    # the distance travelled reports the α used. The bound is the model's own `δ` and the round-off
-    # of the two arithmetics, so it is read in `T` and not as a `Float64` literal.
+    # One step of a Euclidean parameter with a gradient of `1` moves it by `α₁ / (√1 + δ)`, so the
+    # distance travelled reports the α used. It differs from `α₁` by the relative `δ / (1 + δ) < δ`,
+    # which `10δ` bounds, and by the round-off of the step in `T`, which `8 eps(T)` bounds.
     ps = NetworkParameters((weight = zeros(T, 2, 2),))
     opt = TrainingOptimizer(ps; AdamOptimizerWithDecay(n_epochs; η₁, η₂)...)
     @test opt.linesearch isa DecayingStatic
@@ -96,7 +96,7 @@ function schedule_starts_at_one(T; n_epochs = 100, η₁ = 1e-2, η₂ = 1e-6)
     optimization_step!(ps, opt, NetworkParameters((weight = ones(T, 2, 2),)))
     @test opt.state.iterations == 1
     @test eltype(ps.weight) === T
-    @test abs(ps.weight[1, 1]) ≈ η₁ * γ rtol = sqrt(eps(T))
+    @test abs(ps.weight[1, 1]) ≈ η₁ * γ rtol = 10 * opt.method.δ + 8 * eps(T)
 end
 
 @testset "Adam with learning-rate decay, and its schedule ($T)" for T in REAL_ELTYPES

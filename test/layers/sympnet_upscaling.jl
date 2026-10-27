@@ -16,9 +16,10 @@ Random.seed!(1234)
 # `𝕁_{N2}`; see the `sympnet_upscaling.jl` entry under `[0.8.0]`, `### Infrastructure`, in
 # `CHANGELOG.md` for the measured round-trip error).
 #
-# The bound of each row is `10 N2 eps(T)`: the identities are structural, so nothing but the
-# arithmetic of the two products separates the two sides, and each entry of `G' 𝕁 G` is a sum of
-# `N2` terms, so the round-off of the identity grows with `N2` as well as with `eps(T)`.
+# The bound of each row is the smaller of `10 N2 eps(T)` and `1e-5`: the identities are structural,
+# so nothing but the arithmetic of the two products separates the two sides, and each entry of
+# `G' 𝕁 G` is a sum of `N2` terms, so the round-off of the identity grows with `N2` as well as with
+# `eps(T)`. In `Float32` from `N2 = 10` on, `10 N2 eps(T)` is above `1e-5`, and `1e-5` holds there.
 function test_symplecticity(::Type{T}, N = 4, N2 = 20) where {T}
     model = Chain(PSDLayer(N, N2), GradientLayerQ(N2, 2*N2, tanh),
         GradientLayerP(N2, 2*N2, tanh), PSDLayer(N2, N))
@@ -27,7 +28,7 @@ function test_symplecticity(::Type{T}, N = 4, N2 = 20) where {T}
 
     𝕁_N = poisson_matrix(N, T)
     𝕁_N2 = poisson_matrix(N2, T)
-    bound = 10 * N2 * eps(T)
+    bound = min(10 * N2 * eps(T), T(1e-5))
 
     # Encoder identity: PSDLayer is linear, so its Jacobian is the map itself.
     E = Zygote.jacobian(x -> layer(model, 1)(x, ps[1]), x)[1]
