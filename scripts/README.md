@@ -8,6 +8,11 @@ Three directories, each with one purpose.
 | `reproduction/` | the runs that produced the committed weights and the manual's figures | in smoke mode |
 | `utilities/` | what the other two include, plus the standalone tools | not run |
 
+A tool that needs hardware the runner does not have sits at the top of `scripts/`, beside the
+driver, and is run by hand: `metal_check.jl` sweeps the eight architectures on an Apple GPU from a
+session with a Metal device. The driver runs neither it nor anything else at that level, so CI does
+not reach it.
+
 `scripts/runscripts.jl` is the driver, and `.github/workflows/Scripts.yml` is the job that calls
 it. Every `.jl` file under `verification/` and `reproduction/` is an entry point and is run, each
 in its own process. There is no list of what to run, so a script added to either directory is
