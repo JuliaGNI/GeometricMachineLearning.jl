@@ -16,10 +16,7 @@ using GeometricMachineLearning: NetworkParameters, params, SymmetricMatrix, Skew
                                 StrictlyLowerTriangular, StrictlyUpperTriangular,
                                 StiefelManifold
 using JLArrays: JLArray, JLBackend
-# `mapparameters` comes through `AbstractNeuralNetworks`, which re-uses it for its own static backend,
-# and not from `NeuralNetworkParameters` directly: a check that activates a scratch environment adds
-# the packages it names, and `head_facts.jl` names this one.
-using AbstractNeuralNetworks: mapparameters
+using NeuralNetworkParameters: mapparameters
 import KernelAbstractions
 import Random
 

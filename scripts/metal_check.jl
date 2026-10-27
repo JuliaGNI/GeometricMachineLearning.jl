@@ -2,7 +2,7 @@
 # under `Adam` and under `GradientMethod`, each against a host twin, under `allowscalar(false)`. One
 # line per row, with the distance it measured, marked pass or fail, and the rows are returned.
 #
-# Run it by hand through a Kaimon session: Metal is unreachable from a sandboxed shell, where
+# Run it by hand in a Julia session that reaches the GPU: in a sandboxed shell
 # `Metal.functional()` is `false`. Activate a scratch environment that develops this tree and the
 # local GeometricOptimizers, and restart the session after the last edit of `src/`:
 #
