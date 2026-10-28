@@ -2,6 +2,7 @@ using GeometricMachineLearning
 using GeometricMachineLearning: ForwardDiff, SymplecticCompression,
                                 compute_decoder_iterations,
                                 decoder_layers_from_iteration, params
+using GeometricOptimizers: Static, optimization_step!
 using KernelAbstractions
 using LinearAlgebra
 using NeuralNetworkParameters: flatten, unflatten
@@ -55,7 +56,7 @@ Random.seed!(1234)
     @test compute_decoder_iterations(WeightTiedSymplecticAutoencoder(10, 4; n_blocks = 3)) ==
           [4, 6, 8, 10]
 
-    # Multi-block weight tying and leaf identity (catches M2 and M4)
+    # Multi-block weight tying and leaf identity
     arch2 = WeightTiedSymplecticAutoencoder(
         6, 2; n_blocks = 2, n_layers = 2, n_ambient_layers = 0,
         sympnet_upscale = 1, init_q = false)
@@ -89,21 +90,29 @@ end
     ξnt_v = (q = ξv[1:1], p = ξv[2:2])
     ξnt_m = (q = ξm[1:1, :], p = ξm[2:2, :])
 
-    @test norm(enc(dec(ξv)) - ξv) <= 50 * eps(T) * norm(ξv)
-    @test norm(enc(dec(ξm)) - ξm) <= 50 * eps(T) * norm(ξm)
+    rec_vec = enc(dec(ξv))
+    rec_mat = enc(dec(ξm))
+    @test eltype(rec_vec) === T
+    @test eltype(rec_mat) === T
+    @test norm(rec_vec - ξv) <= 50 * eps(T) * norm(ξv)
+    @test norm(rec_mat - ξm) <= 50 * eps(T) * norm(ξm)
 
     rec_v = enc(dec(ξnt_v))
+    @test eltype(rec_v.q) === T && eltype(rec_v.p) === T
     err_v = hypot(norm(rec_v.q - ξnt_v.q), norm(rec_v.p - ξnt_v.p))
     nrm_v = hypot(norm(ξnt_v.q), norm(ξnt_v.p))
     @test err_v <= 50 * eps(T) * nrm_v
 
     rec_m = enc(dec(ξnt_m))
+    @test eltype(rec_m.q) === T && eltype(rec_m.p) === T
     err_m = hypot(norm(rec_m.q - ξnt_m.q), norm(rec_m.p - ξnt_m.p))
     nrm_m = hypot(norm(ξnt_m.q), norm(ξnt_m.p))
     @test err_m <= 50 * eps(T) * nrm_m
 
     zv = dec(ξv)
     zm = dec(ξm)
+    @test eltype(zv) === T && eltype(zm) === T
+    @test eltype(nn(zv)) === T && eltype(nn(zm)) === T
     @test norm(nn(zv) - zv) <= 50 * eps(T) * norm(zv)
     @test norm(nn(zm) - zm) <= 50 * eps(T) * norm(zm)
 
@@ -121,6 +130,44 @@ end
     @test norm(enc2(dec2(ξv)) - ξv) <= 50 * eps(T) * norm(ξv)
     z2 = dec2(ξv)
     @test norm(nn2(z2) - z2) <= 50 * eps(T) * norm(z2)
+
+    # (2N, 2n) = (10, 4) round-trip, Jacobian symplecticity, and 5-step training
+    arch10 = WeightTiedSymplecticAutoencoder(
+        10, 4; n_blocks = 2, n_layers = 2, n_ambient_layers = 2, sympnet_upscale = 3)
+    nn10 = NeuralNetwork(arch10, CPU(), T)
+    enc10 = encoder(nn10)
+    dec10 = decoder(nn10)
+    for shape in ((4,), (4, 5), (4, 5, 2))
+        ξ10 = randn(T, shape...)
+        rec10 = enc10(dec10(ξ10))
+        @test eltype(rec10) === T
+        @test norm(rec10 - ξ10) <= 100 * eps(T) * max(one(T), norm(ξ10))
+    end
+    ξ10_v = randn(T, 4)
+    D10 = ForwardDiff.jacobian(x -> dec10(x), ξ10_v)
+    J10 = poisson_matrix(10, T)
+    @test norm(transpose(D10) * J10 * D10 - J4) <= 100 * eps(T)
+
+    t_grid = range(zero(T), T(2π); length = 32)
+    q_ho = zeros(T, 5, 32)
+    p_ho = zeros(T, 5, 32)
+    for k in 1:32
+        q_ho[1, k] = cos(t_grid[k])
+        p_ho[1, k] = -sin(t_grid[k])
+        q_ho[2, k] = T(0.5) * sin(2 * t_grid[k])
+        p_ho[2, k] = cos(2 * t_grid[k])
+    end
+    batch = vcat(q_ho, p_ho)
+    loss = AutoEncoderLoss()
+    loss_init = loss(nn10, batch)
+    opt = TrainingOptimizer(params(nn10); algorithm = Adam(), linesearch = Static(T(1e-2)))
+    for _ in 1:5
+        gs = Zygote.gradient(p -> loss(nn10.model, p, batch), params(nn10))[1]
+        optimization_step!(params(nn10), opt, gs)
+    end
+    loss_final = loss(nn10, batch)
+    @test eltype(loss_init) === T && eltype(loss_final) === T
+    @test loss_final < loss_init
 end
 
 @testset "WeightTiedSymplecticAutoencoder Zygote gradient and @inferred" begin
@@ -151,21 +198,36 @@ end
     end
     @test isapprox(v_zyg, v_fd; rtol = 10 * sqrt(eps(Float64)))
 
+    # @inferred checks
     for T in REAL_ELTYPES
-        nn_T = NeuralNetwork(arch, CPU(), T)
-        enc_T = encoder(nn_T)
-        dec_T = decoder(nn_T)
+        nn = NeuralNetwork(arch, CPU(), T)
+        enc = encoder(nn)
+        dec = decoder(nn)
+        nn_T = nn
+        enc_T = enc
+        dec_T = dec
         zv = randn(T, 4)
+        zm = randn(T, 4, 3)
         ξv = randn(T, 2)
+        ξm = randn(T, 2, 3)
         znt = (q = zv[1:2], p = zv[3:4])
         ξnt = (q = ξv[1:1], p = ξv[2:2])
 
-        y_enc = @inferred enc_T(zv)
-        y_dec = @inferred dec_T(ξv)
-        y_nn = @inferred nn_T(zv)
+        y_enc = @inferred enc(zv)
+        y_dec = @inferred dec(ξv)
+        y_nn = @inferred nn(zv)
+        ym_enc = @inferred enc(zm)
+        ym_dec = @inferred dec(ξm)
+        ym_nn = @inferred nn(zm)
+        @inferred enc_T(zm)
+        @inferred dec_T(ξm)
+        @inferred nn_T(zm)
         @test y_enc isa Vector{T}
         @test y_dec isa Vector{T}
         @test y_nn isa Vector{T}
+        @test ym_enc isa Matrix{T}
+        @test ym_dec isa Matrix{T}
+        @test ym_nn isa Matrix{T}
 
         nt_enc = @inferred enc_T(znt)
         nt_dec = @inferred dec_T(ξnt)

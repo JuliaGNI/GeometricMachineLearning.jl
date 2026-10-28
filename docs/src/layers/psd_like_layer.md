@@ -5,6 +5,12 @@ Cotangent-lift [`PSDLayer`](@ref) and [`TransposePSDLayer`](@ref) layers change 
 ## Library Functions
 
 ```@docs
-PSDLayer
 TransposePSDLayer
+inverse_layer
+InverseGradientLayer
+InverseGradientLayerQ
+InverseGradientLayerP
+InverseSymplecticAttention
+InverseSymplecticAttentionQ
+InverseSymplecticAttentionP
 ```

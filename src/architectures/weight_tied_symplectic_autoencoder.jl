@@ -121,20 +121,18 @@ function _reverse_params(ps::NetworkParameters)
     NetworkParameters(NamedTuple{keys(ps)}(_reverse_tuple(values(ps))))
 end
 
-struct WeightTiedAutoencoderLayer{M, ET <: Tuple, DT <: Tuple, LT <: Tuple} <:
+struct WeightTiedAutoencoderLayer{M, ET <: Tuple, DT <: Tuple} <:
        AbstractExplicitLayer{M, M}
     encoder_layers::ET
     decoder_layers::DT
-    layers::LT
 end
 
 function WeightTiedAutoencoderLayer(arch::WeightTiedSymplecticAutoencoder)
     dec_layers = decoder_layers_from_iteration(arch, compute_decoder_iterations(arch))
     enc_layers = reverse(map(inverse_layer, dec_layers))
-    all_layers = (enc_layers..., dec_layers...)
     M = arch.full_dim
-    ET, DT, LT = typeof(enc_layers), typeof(dec_layers), typeof(all_layers)
-    WeightTiedAutoencoderLayer{M, ET, DT, LT}(enc_layers, dec_layers, all_layers)
+    ET, DT = typeof(enc_layers), typeof(dec_layers)
+    WeightTiedAutoencoderLayer{M, ET, DT}(enc_layers, dec_layers)
 end
 
 function parameterlength(l::WeightTiedAutoencoderLayer)

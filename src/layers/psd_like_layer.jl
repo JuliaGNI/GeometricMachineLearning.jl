@@ -88,6 +88,7 @@ end
 
 function (::TransposePSDLayer{M, N})(qp::NamedTuple{(:q, :p), Tuple{AT1, AT2}},
         ps::NamedTuple) where {M, N, AT1 <: AbstractArray, AT2 <: AbstractArray}
+    size(qp.q, 1) == size(qp.p, 1) == M ÷ 2 || error("Dimension mismatch.")
     M > N ? (q = _mul(ps.weight', qp.q), p = _mul(ps.weight', qp.p)) :
     (q = _mul(ps.weight, qp.q), p = _mul(ps.weight, qp.p))
 end

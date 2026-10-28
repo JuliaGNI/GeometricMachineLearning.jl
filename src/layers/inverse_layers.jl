@@ -44,15 +44,35 @@ function InverseGradientLayerP{M, N}(activation = identity) where {M, N}
 end
 
 function GradientLayerQ{M, N}(activation = identity) where {M, N}
-    GradientLayerQ(M, N, activation)
+    @assert iseven(M) && iseven(N)
+    GradientLayer{Int(M), Int(N), typeof(activation), :Q}(Int(N), activation)
 end
 
 function GradientLayerP{M, N}(activation = identity) where {M, N}
-    GradientLayerP(M, N, activation)
+    @assert iseven(M) && iseven(N)
+    GradientLayer{Int(M), Int(N), typeof(activation), :P}(Int(N), activation)
 end
 
-function parameterlength(d::InverseGradientLayer{M, N}) where {M, N}
+function Base.:(==)(a::GradientLayer{M, N1, TA, C},
+        b::GradientLayer{M, N2, TA, C}) where {M, N1, N2, TA, C}
+    a.second_dim == b.second_dim && a.activation == b.activation
+end
+
+function parameterlength(d::GradientLayer{M, N}) where {M, N}
     d.second_dim ÷ 2 * (M ÷ 2 + 2)
+end
+
+function initialparameters(
+        rng::AbstractRNG, init_weight::AbstractNeuralNetworks.Initializer,
+        d::GradientLayer{M, N}, backend::Backend, ::Type{T};
+        init_bias = ZeroInitializer(), init_scale = GlorotUniform()) where {M, N, T}
+    initialparameters(
+        rng, init_weight, GradientLayerQ(M, d.second_dim, d.activation), backend, T;
+        init_bias = init_bias, init_scale = init_scale)
+end
+
+function parameterlength(d::InverseGradientLayer)
+    parameterlength(inverse_layer(d))
 end
 
 function initialparameters(
@@ -65,36 +85,45 @@ end
 _shift_inv(::Val{:Q}, z::NamedTuple, f) = (q = z.q - f(z.p), p = z.p)
 _shift_inv(::Val{:P}, z::NamedTuple, f) = (q = z.q, p = z.p - f(z.q))
 
-const _WeightBiasScaleParams = NamedTuple{(:weight, :bias, :scale)}
-const _WeightBiasParams = NamedTuple{(:weight, :bias)}
-const _KbaParams = NamedTuple{(:K, :b, :a)}
-const _KbParams = NamedTuple{(:K, :b)}
-const _AltGradPS = Union{_WeightBiasParams, _KbaParams, _KbParams}
-
-function _gradient_layer_delta(σ, y::AbstractArray, ps::_WeightBiasScaleParams)
-    _mul(ps.weight', ps.scale .* σ.(_mul(ps.weight, y) .+ ps.bias))
+@inline function _gradient_layer_delta(σ, y::AbstractArray, ps::NamedTuple)
+    K = haskey(ps, :weight) ? ps.weight : ps.K
+    b = haskey(ps, :bias) ? ps.bias : ps.b
+    act = σ.(_mul(K, y) .+ b)
+    scaled = if haskey(ps, :scale)
+        ps.scale .* act
+    elseif haskey(ps, :a)
+        ps.a .* act
+    else
+        act
+    end
+    _mul(K', scaled)
 end
 
-function _gradient_layer_delta(σ, y::AbstractArray, ps::_WeightBiasParams)
-    _mul(ps.weight', σ.(_mul(ps.weight, y) .+ ps.bias))
-end
-
-function _gradient_layer_delta(σ, y::AbstractArray, ps::_KbaParams)
-    _mul(ps.K', ps.a .* σ.(_mul(ps.K, y) .+ ps.b))
-end
-
-function _gradient_layer_delta(σ, y::AbstractArray, ps::_KbParams)
-    _mul(ps.K', σ.(_mul(ps.K, y) .+ ps.b))
-end
-
-function (d::GradientLayer{M, M, TA, C})(x::NamedTuple, ps::_AltGradPS) where {M, TA, C}
+@inline function (d::GradientLayer{M, M, TA, C})(
+        x::NamedTuple, ps::NamedTuple) where {M, TA, C}
     size(x.q, 1) == size(x.p, 1) == M ÷ 2 || error("Dimension mismatch.")
     _shift(Val(C), x, y -> _gradient_layer_delta(d.activation, y, ps))
 end
 
-function (d::InverseGradientLayer{M, N, TA, C})(x::NamedTuple, ps) where {M, N, TA, C}
+@inline function (d::GradientLayer{M, N, TA, C})(x::NamedTuple, ps) where {M, N, TA, C}
+    size(x.q, 1) == size(x.p, 1) == M ÷ 2 || error("Dimension mismatch.")
+    _shift(Val(C), x, y -> _gradient_layer_delta(d.activation, y, ps))
+end
+
+@inline function (d::InverseGradientLayer{M, N, TA, C})(
+        x::NamedTuple, ps) where {M, N, TA, C}
     size(x.q, 1) == size(x.p, 1) == M ÷ 2 || error("Dimension mismatch.")
     _shift_inv(Val(C), x, y -> _gradient_layer_delta(d.activation, y, ps))
+end
+
+@inline function (d::GradientLayer{M})(x::AbstractArray, ps::NamedTuple) where {M}
+    size(x, 1) == M || error("Dimension mismatch.")
+    apply_layer_to_nt_and_return_array(x, d, ps)
+end
+
+@inline function (d::InverseGradientLayer{M})(x::AbstractArray, ps::NamedTuple) where {M}
+    size(x, 1) == M || error("Dimension mismatch.")
+    apply_layer_to_nt_and_return_array(x, d, ps)
 end
 
 @doc raw"""
@@ -180,27 +209,32 @@ end
 (d::_SAArb)(z::_VQP, ps::NamedTuple) = _apply_attention_vector(d, z, ps)
 (d::_SASym)(z::_VQP, ps::NamedTuple) = _apply_attention_vector(d, z, ps)
 
-function (d::InverseSymplecticAttention{M, M, LayerType, :arbitrary})(
-        z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {M, LayerType, AT}
-    _shift_inv(Val(LayerType), z,
-        function (x)
-            XAX = _mul(_mul(_custom_transpose(x), ps.A), x)
-            σXAX = d.activation(XAX)
-            _mul(_mul(ps.A, x), _custom_transpose(σXAX)) + _mul(_mul(ps.A', x), σXAX)
-        end)
+function _attention_displacement(
+        d::InverseSymplecticAttention{M, M, LayerType, :arbitrary},
+        x::AbstractArray, ps::NamedTuple) where {M, LayerType}
+    XAX = _mul(_mul(_custom_transpose(x), ps.A), x)
+    σXAX = d.activation(XAX)
+    _mul(_mul(ps.A, x), _custom_transpose(σXAX)) + _mul(_mul(ps.A', x), σXAX)
 end
 
-function (d::InverseSymplecticAttention{M, M, LayerType, :symmetric})(
-        z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {M, LayerType, AT}
+function _attention_displacement(
+        d::InverseSymplecticAttention{M, M, LayerType, :symmetric},
+        x::AbstractArray, ps::NamedTuple) where {M, LayerType}
     A = ps.A
-    _shift_inv(Val(LayerType), z,
-        x -> _mul(_mul(A, x), 2 * d.activation(_mul(_mul(_custom_transpose(x), A), x))))
+    _mul(_mul(A, x), 2 * d.activation(_mul(_mul(_custom_transpose(x), A), x)))
+end
+
+function (d::InverseSymplecticAttention{M, M, LayerType})(
+        z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {M, LayerType, AT}
+    size(z.q, 1) == size(z.p, 1) == M ÷ 2 || error("Dimension mismatch.")
+    _shift_inv(Val(LayerType), z, x -> _attention_displacement(d, x, ps))
 end
 
 (d::_ISAArb)(z::_VQP, ps::NamedTuple) = _apply_attention_vector(d, z, ps)
 (d::_ISASym)(z::_VQP, ps::NamedTuple) = _apply_attention_vector(d, z, ps)
 
-function (d::InverseSymplecticAttention)(z::AbstractArray, ps::NamedTuple)
+function (d::InverseSymplecticAttention{M})(z::AbstractArray, ps::NamedTuple) where {M}
+    size(z, 1) == M || error("Dimension mismatch.")
     apply_layer_to_nt_and_return_array(z, d, ps)
 end
 
@@ -215,26 +249,46 @@ Return the analytic symplectic inverse (or Stiefel transpose for [`PSDLayer`](@r
 - `SymplecticAttentionP` ``\leftrightarrow`` [`InverseSymplecticAttentionP`](@ref)
 - `PSDLayer{2n, 2N}` ``\leftrightarrow`` [`TransposePSDLayer`](@ref)`{2N, 2n}`
 """
-function inverse_layer(d::GradientLayer{M, M, TA, :Q}) where {M, TA}
+function inverse_layer(d::GradientLayer{M, N, TA, :Q}) where {M, N, TA}
     InverseGradientLayerQ(M, d.second_dim, d.activation)
 end
 
-function inverse_layer(d::GradientLayer{M, M, TA, :P}) where {M, TA}
+function inverse_layer(d::GradientLayer{M, N, TA, :P}) where {M, N, TA}
     InverseGradientLayerP(M, d.second_dim, d.activation)
 end
 
 function inverse_layer(d::InverseGradientLayer{M, N, TA, :Q}) where {M, N, TA}
-    GradientLayerQ(M, d.second_dim, d.activation)
+    GradientLayer{M, d.second_dim, TA, :Q}(d.second_dim, d.activation)
 end
 
 function inverse_layer(d::InverseGradientLayer{M, N, TA, :P}) where {M, N, TA}
-    GradientLayerP(M, d.second_dim, d.activation)
+    GradientLayer{M, d.second_dim, TA, :P}(d.second_dim, d.activation)
 end
 
 inverse_layer(::Type{GradientLayerQ}) = InverseGradientLayerQ
 inverse_layer(::Type{InverseGradientLayerQ}) = GradientLayerQ
 inverse_layer(::Type{GradientLayerP}) = InverseGradientLayerP
 inverse_layer(::Type{InverseGradientLayerP}) = GradientLayerP
+inverse_layer(::Type{GradientLayerQ{M, N}}) where {M, N} = InverseGradientLayerQ{M, N}
+inverse_layer(::Type{InverseGradientLayerQ{M, N}}) where {M, N} = GradientLayerQ{M, N}
+inverse_layer(::Type{GradientLayerP{M, N}}) where {M, N} = InverseGradientLayerP{M, N}
+inverse_layer(::Type{InverseGradientLayerP{M, N}}) where {M, N} = GradientLayerP{M, N}
+function inverse_layer(::Type{GradientLayerQ{M, N, TA}}) where {M, N, TA}
+    InverseGradientLayerQ{
+        M, N, TA}
+end
+function inverse_layer(::Type{InverseGradientLayerQ{M, N, TA}}) where {M, N, TA}
+    GradientLayerQ{
+        M, N, TA}
+end
+function inverse_layer(::Type{GradientLayerP{M, N, TA}}) where {M, N, TA}
+    InverseGradientLayerP{
+        M, N, TA}
+end
+function inverse_layer(::Type{InverseGradientLayerP{M, N, TA}}) where {M, N, TA}
+    GradientLayerP{
+        M, N, TA}
+end
 
 function inverse_layer(l::SymplecticAttention{M, M, L, S, AT}) where {M, L, S, AT}
     InverseSymplecticAttention{M, M, L, S, AT}(l.activation)
@@ -248,6 +302,22 @@ inverse_layer(::Type{SymplecticAttentionQ}) = InverseSymplecticAttentionQ
 inverse_layer(::Type{InverseSymplecticAttentionQ}) = SymplecticAttentionQ
 inverse_layer(::Type{SymplecticAttentionP}) = InverseSymplecticAttentionP
 inverse_layer(::Type{InverseSymplecticAttentionP}) = SymplecticAttentionP
+function inverse_layer(::Type{SymplecticAttentionQ{M, N}}) where {M, N}
+    InverseSymplecticAttentionQ{
+        M, N}
+end
+function inverse_layer(::Type{InverseSymplecticAttentionQ{M, N}}) where {M, N}
+    SymplecticAttentionQ{
+        M, N}
+end
+function inverse_layer(::Type{SymplecticAttentionP{M, N}}) where {M, N}
+    InverseSymplecticAttentionP{
+        M, N}
+end
+function inverse_layer(::Type{InverseSymplecticAttentionP{M, N}}) where {M, N}
+    SymplecticAttentionP{
+        M, N}
+end
 
 inverse_layer(::PSDLayer{M, N}) where {M, N} = TransposePSDLayer{N, M}()
 inverse_layer(::TransposePSDLayer{M, N}) where {M, N} = PSDLayer{N, M}()
