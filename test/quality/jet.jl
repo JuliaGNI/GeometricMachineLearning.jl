@@ -13,9 +13,9 @@ const rrule = GML.ChainRulesCore.rrule
 # backend, the pullbacks among them. A launcher line analyses one entry point at the argument types
 # of one element type. Where a test outside `test/quality/` calls the entry point directly, the
 # element types are those of the direct calls; an element type that reaches the entry point only
-# through another function gets no line. Where no test
-# calls the entry point directly, the element types are those at which the tests reach it through
-# its callers. Another container type at the same element type gets no line.
+# through another function gets no line. Where no test calls the entry point directly, the element
+# types are those at which the tests reach it through its callers. Another container type at the
+# same element type gets no line.
 #
 # JET drops the reports of a kernel body when it analyses the launcher, so each `@kernel` method
 # also gets a line per element type of its launchers, which analyses the generated

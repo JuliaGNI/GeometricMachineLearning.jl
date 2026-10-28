@@ -29,7 +29,7 @@ end
 Turn a `NamedTuple` of ``(q, p)`` data into the two tensors of the correct format.
 
 This is the tricky part, as the structure of the arrays has to conform to the structure of the
-parameters. A [`ParametricDataLoader`](@ref) reads a ``(\mathrm{dim}, nt, m)`` tensor as `m`
+parameters. A `ParametricDataLoader` reads a ``(\mathrm{dim}, nt, m)`` tensor as `m`
 trajectories of `nt` time steps and takes *one* parameter for each of the `m` trajectories, so a
 parameter that depends on the time -- as the time does here -- has to make every sample a trajectory
 of its own: a pair of consecutive states.
@@ -60,7 +60,7 @@ end
 """
     load_time_dependent_harmonic_oscillator_with_parametric_data_loader(qp, t, IC)
 
-The [`ParametricDataLoader`](@ref) of a harmonic oscillator whose parameters depend on the time,
+The `ParametricDataLoader` of a harmonic oscillator whose parameters depend on the time,
 with one `(t = …,)` per sample: `qp` is the `(q, p)` data of the trajectories in `IC`, and `t` their
 time grid.
 """
