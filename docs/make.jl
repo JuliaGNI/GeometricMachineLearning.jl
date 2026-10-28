@@ -419,10 +419,10 @@ end
 
 # The tutorials' `@setup` blocks read pre-trained parameters from `docs/src/tutorials/*.h5` so that
 # building the manual does not have to retrain the networks. Documenter copies every non-Markdown
-# file under `src/` into the output, so those weights were published along with the manual — ~3.8 MB
-# per release, and `gh-pages` accumulates a copy for every version. No page links to them (the
-# `load` calls all live in hidden `@setup` blocks), so they are build *inputs* only. Drop them from
-# `build/` here rather than earlier: `makedocs` needs them on disk while it evaluates the blocks.
+# file under `src/` into the output, and no page links to these weights — the `load` calls all live
+# in hidden `@setup` blocks — so they are build *inputs* only, and they are dropped from `build/`
+# here rather than earlier: `makedocs` needs them on disk while it evaluates the blocks, and
+# `deploydocs` below publishes `build/`.
 const _build_only_data_extensions = (".h5", ".jld2")
 
 for (root, _, files) in walkdir(joinpath(@__DIR__, "build"))

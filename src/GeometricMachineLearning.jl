@@ -95,9 +95,9 @@ export NetworkParameters
 export σ, sigmoid, softmax
 
 # `GeometricBase` defines `description` and does not export it, so re-exporting it needs the import.
-# `StateVariable` is taken from here, its owner, and not from `GeometricSolutions`, which only
-# re-binds it: importing a name from a non-owner is what `check_all_explicit_imports_via_owners`
-# reports.
+# `StateVariable` is taken from here, its owner: `GeometricSolutions` holds it only through a bare
+# `using GeometricBase`, and importing a name from a module that does not own it is what
+# `check_all_explicit_imports_via_owners` reports.
 import GeometricBase: description, StateVariable
 export description
 
