@@ -161,9 +161,10 @@ Here the sampling is performed over the second axis (the *time step dimension*) 
 
 `DataLoader`, `Batch` and the loader's routines — `number_of_batches`,
 `convert_input_and_batch_indices_to_array`, `accuracy`, `assign_output_estimate` and
-`ParametricDataLoader` — are `ReducedComplexityModeling`'s, and their docstrings are in
-[that package's manual](https://juliarcm.github.io/ReducedComplexityModeling.jl/stable/). This
-package re-exports the first two, so `using GeometricMachineLearning` alone gives both.
+`ParametricDataLoader` — are `ReducedComplexityModeling`'s, and
+[that package's manual](https://juliarcm.github.io/ReducedComplexityModeling.jl/stable/) documents
+them. This package re-exports the first two, so `using GeometricMachineLearning` alone gives both.
 
-[`train!`](@ref) is this package's own: the methods that train a network, on a `DataLoader` or a
-`ParametricDataLoader`, are defined here.
+[`train!`](@ref) is that package's generic as well, re-exported here: this package defines the
+methods that train a network, on a `DataLoader` or a `ParametricDataLoader`, and the generic's
+docstring is rendered with the optimizers.

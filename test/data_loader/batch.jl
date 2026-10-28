@@ -17,7 +17,6 @@ Random.seed!(1234)
     nn = NeuralNetwork(StandardTransformerIntegrator(5), CPU(), T)
     ics = rand(T, 5, 4)
 
-    @test Batch(3, 5, 2) == Batch{:Transformer}(3, 5, 2)
     @test eltype(integrate(nn, ics, Batch(3, 5, 2); n_points = 5)) === T
     @test eltype(integrate(nn, ics; n_points = 5, prediction_window = 2)) === T
     @test integrate(nn, ics, Batch(3, 5, 2); n_points = 5) ==

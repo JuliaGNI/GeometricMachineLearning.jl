@@ -276,7 +276,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
 ### K33 · An epoch of `train!` on a Metal array advances the CPU random stream, so a two-epoch run draws its second epoch's minibatches differently from the host's.
 
-- **location:** `ReducedComplexityModeling` `src/data_loader/batch.jl:195`
+- **location:** `ReducedComplexityModeling` `src/data_loader/batch.jl:186`
 - **kind:** not verified
 - **found:** 2026-10-26, part M7
 - **evidence:**
@@ -385,18 +385,21 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 - **found:** 2026-10-01
 - **evidence:**
   Julia 1.13.2, `mutate.jl <repository> <file> <from> <to> quality/jet.jl`, one mutant per run.
-  Three mutants that put `Base.inferencebarrier` on an argument of a kernel launch SURVIVED, each
-  with 50 pass, 0 fail: `kernel!(c, Base.inferencebarrier(a), b, ndrange = size(c))` in
-  `src/kernels/tensor_tensor_mul.jl`; `tensor_mat_skew_sym_assign_k!(C,
+  Two mutants that put `Base.inferencebarrier` on an argument of a kernel launch SURVIVED, with no
+  assertion failing: `kernel!(c, Base.inferencebarrier(a), b, ndrange = size(c))` in
+  `src/kernels/tensor_tensor_mul.jl`, and `tensor_mat_skew_sym_assign_k!(C,
   Base.inferencebarrier(Z), A, ndrange = size(C))` in
-  `src/kernels/inverses/tensor_mat_skew_sym_assign.jl`; and `gather_kernel!(backend)(gathered,
-  Base.inferencebarrier(data), indices, offset, ndrange = size(gathered))` in
-  `ReducedComplexityModeling`'s `src/data_loader/batch.jl`. At
+  `src/kernels/inverses/tensor_mat_skew_sym_assign.jl`. At
   `target_modules = (GeometricMachineLearning,)` a barrier on a launch argument gives 0 reports, and
-  the same barrier in an `@assert` of the same launcher is CAUGHT with 3 reports (47 pass, 3 fail):
-  the kernel functor takes `args...`, so the dispatch sits in KernelAbstractions' frames, which the
-  filter drops. A barrier on a value inside the kernel
-  body of `tensor_tensor_mul_kernel!` is CAUGHT (47 pass, 3 fail).
+  the same barrier in an `@assert` of the same launcher is CAUGHT: the kernel functor takes
+  `args...`, so the dispatch sits in KernelAbstractions' frames, which the filter drops. A barrier
+  on a value inside the kernel body of `tensor_tensor_mul_kernel!` is CAUGHT.
+
+  The loader's gather launch is outside this file's reach. Its launcher,
+  `gather_kernel!(backend)(gathered, data, indices, offset, ndrange = size(gathered))`, is
+  `ReducedComplexityModeling`'s `src/data_loader/batch.jl`, which `target_modules =
+  (GeometricMachineLearning,)` filters out, and gating it belongs to that package's
+  `test/quality/jet.jl`.
 
 ### K14 · `train!` infers its history as an abstract `Vector`, although the run-time history is `Vector{T}`.
 

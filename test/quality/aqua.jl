@@ -13,14 +13,16 @@ using Test
 # own, and it is also what lets the count at the end be a further assertion rather than a
 # top-level `@test` that aborts the file the moment it fails.
 #
-# `piracies` is off in `test_all`, and the assertion below replaces it, for the reason the loader
-# moved: `DataLoader`, `Batch` and `train!` are `ReducedComplexityModeling`'s and `NeuralNetwork`
-# is `AbstractNeuralNetworks`', so this package's method of `train!` on a network has no type of its
-# own in its signature, and neither has the `NetworkLoss` method that raises for an architecture and
-# a batch with no default. Both are deliberate: the training loop is this package's, and the other
-# package owns the loader and the generic. The list is exact, so a piracy this package does not mean
-# to commit fails here. This check does not see every piracy: Aqua treats a symbol type parameter
-# as a type of the package's own, so `Batch{:Transformer}` reads as local, and the method of
+# `piracies` runs through `test_all` with `treat_as_own = [DataLoader, Batch]`, the two types this
+# package re-exports from `ReducedComplexityModeling`. The two methods this package means to define
+# on another package's function take one of them: its `train!` on a network and a loader, and the
+# `NetworkLoss` method that raises for an architecture and a batch with no default. Both are
+# deliberate: the training loop is this package's, and the other package owns the loader and the
+# generic. Naming the two types as this package's own keeps Aqua's check on and passing rather than
+# switching it off, so a piracy of any other foreign function still fails here, and so does a
+# further method of `train!` or `NetworkLoss` that names neither type. The check is blind to a
+# signature that names only a treated-as-own type, and to a symbol type parameter, which Aqua reads
+# as a type of the package's own: `Batch{:Transformer}` is such a parameter, so the method of
 # `integrate` on that batch is gated in `test/data_loader/batch.jl` instead.
 #
 # `ambiguities` stays off, and the assertion below replaces it. Aqua's check runs in a process of its
@@ -30,15 +32,10 @@ using Test
 # switch stays off rather than becoming a gate on an upstream count that no line of this package
 # controls.
 @testset "Aqua" begin
-    Aqua.test_all(GeometricMachineLearning; ambiguities = false, piracies = false)
+    Aqua.test_all(GeometricMachineLearning; ambiguities = false,
+        piracies = (treat_as_own = [DataLoader, Batch],))
 
     @test isempty(Test.detect_ambiguities(GeometricMachineLearning; recursive = true))
-
-    piracies = sort!([method.name for method in Aqua.Piracy.hunt(GeometricMachineLearning)])
-    @test unique(piracies) == [:NetworkLoss, :train!]
-    # Julia keeps a keyword wrapper beside a method that takes keywords, and it is a piracy of its
-    # own; whether it reaches the method table is the Julia version's business, not this test's.
-    @test length(piracies) in (2, 3)
 end
 
 # `ExplicitImports` answers a question Aqua does not ask, and the reason to gate on it is not
