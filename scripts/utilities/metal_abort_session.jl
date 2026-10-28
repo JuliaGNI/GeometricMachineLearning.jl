@@ -118,8 +118,8 @@ end
 The reading half: wait for `M8_T0`, then read a host `Vector{Float32}` of 10⁶ entries and `yield()`
 in a loop until `M8_T1` is set. Return `R0`, `R1`, the number of reads and this thread's id.
 
-`R0` is the instant the first read finished, which is what edge 5 asks for: a run is concurrent when
-`M8_T0 < R0 < M8_T1`, at least one read finished before `T1`, and the two `threadid()`s differ.
+`R0` is the instant the first read finished: a run is concurrent when `M8_T0 < R0 < M8_T1`, at
+least one read finished before `T1`, and the two `threadid()`s differ.
 """
 function reader(n::Int = 10^6)
     v = rand(Float32, n)

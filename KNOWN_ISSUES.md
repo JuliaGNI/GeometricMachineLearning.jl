@@ -304,7 +304,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   Neither recurred in the 24 warm runs that followed them, and the arms below ask whether either
   recurs in a fresh process.
 
-  `scripts/utilities/metal_abort_runs.jl`, at the commit `7fdc3f8` that the runs used, runs one
+  `scripts/utilities/metal_abort_runs.jl`, at the commit `553ba5c` that the runs used, runs one
   counted run per OS process: it
   prints its pid, `MTL_DEBUG_LAYER`, `Threads.nthreads()`, the version and path of every package of
   the stack, `Metal.functional()` and the device's name before the first call; it takes a forward
@@ -339,7 +339,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   **The third arm reproduces the `LASympNet(4)` item.** Its concurrency is a second request to one
   session, which no script can make: `scripts/utilities/metal_abort_session.jl` holds its two halves,
   the second being the reading half, which reads a host `Vector{Float32}` of 10⁶ entries in a loop,
-  and `Tasks/Evidence/…/m8/concurrent-arm.md` gives the procedure. Seventeen of its runs are
+  and the script's header gives the procedure. Seventeen of its runs are
   counted: sixteen clean, and one — run 18, in a private Kaimon session — died with `SIGSEGV` and
   left `julia-2026-10-28-103001.ips` under that run's pid, 49451. The death is on the task that
   called `device_synchronize`: `AGX::ComputeContext…::endComputePass`,
@@ -356,19 +356,17 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   stack, so the cause is outside this package and no workaround belongs here.
 
   The arm stops at the reproducer, as its procedure says, and its record is runs 2 to 18 of the
-  plan's `lasympnet-concurrent` arm: 17 counted, 16 clean, 1 abort, none void, about five minutes a
+  `lasympnet-concurrent` arm: 17 counted, 16 clean, 1 abort, none void, about five minutes a
   run. Run 18 died before it printed a stamp line, so its log records
   `concurrent=crash_before_stamps` and rebuilds its `M8-DEVICE` line from the crash report. The
   abort came while another Julia process compiled in this package on the same machine, which the
-  record states because the load can change how the two tasks interleave, so the rate is a lower
-  bound.
+  record states because the load can change how the two tasks interleave.
 
-  An upstream issue for Metal.jl is drafted at `Tasks/Evidence/…/m8/upstream-metal.md`. Filing it
-  needs the user's approval: `JuliaGPU/Metal.jl` is outside the user's own organisations.
+  An upstream issue for Metal.jl, on the unlocked `flush_batched_queues!`, is drafted and not filed.
 
   A no-reproduction holds for the two arms a shell process runs, on that stack, and says nothing
   about a true rate below one in twenty, nor about the `VolumePreservingFeedForward(4)` item under a
-  second evaluation, which this part did not test.
+  second evaluation, which these runs did not test.
 
 ## The test suite
 

@@ -4,8 +4,8 @@
 # network: `LASympNet(4)` with a `SIGABRT` from `MTLReleaseAssertionFailure` in
 # `-[IOGPUMetalCommandBuffer setCurrentCommandEncoder:]` while a second `ex` read a Julia vector,
 # and `VolumePreservingFeedForward(4)` with a `SIGTRAP` from `BUG IN CLIENT OF LIBMALLOC: memory
-# corruption of free block` inside the host LLVM JIT, with no second `ex`. Neither recurred in a
-# fresh process or in 24 warm runs.
+# corruption of free block` inside the host LLVM JIT, with no second `ex`. `KNOWN_ISSUES.md` K35
+# records the counts.
 #
 # This script is the procedure that asks whether either recurs. Every mode is one program, so that
 # the number of runs, the fields of a run's log and the rule that turns logs into a count are fixed
@@ -17,8 +17,8 @@
 # * `vpff` — `VolumePreservingFeedForward(4)`, no concurrent evaluation.
 # * `lasympnet-concurrent` — `LASympNet(4)` with a second `ex` reading a host `Vector{Float32}`
 #   while the training call runs. Only a Kaimon session can run it, because the concurrency is two
-#   requests to one session: `single --arm lasympnet --concurrent` is the training half, and the
-#   reading half is the session's second `ex`. `run` cannot start it.
+#   requests to one session: `metal_abort_session.jl` holds its training half and its reading half.
+#   `run` cannot start it.
 #
 # ## A run
 #
@@ -38,7 +38,7 @@
 # from other Julia processes, so a count of new files alone miscounts: every run records the report
 # files that existed before it and after it, and only a report whose pid is the run's own is
 # attached to it. Each attached report is copied beside the run's log, because macOS deletes these
-# reports and the two of the aborts above are already gone.
+# reports.
 #
 # A report reproduces the `LASympNet` abort when it carries `setCurrentCommandEncoder`,
 # `commitEncoder`, `endEncoding` or `endComputePass`, and the `VolumePreservingFeedForward` abort
@@ -92,7 +92,8 @@ end
 """
 Which of the two aborts a crash report shows, from its text: `:malloc` for the host-heap corruption
 of the `VolumePreservingFeedForward` run, `:encoder` for a command-buffer or command-encoder frame
-of the `LASympNet` run, and `:other` for a fault of neither kind.
+of the `LASympNet` run in a report that names Metal anywhere (in practice the `Metal.framework`
+image path, since no frame symbol carries the word), and `:other` for a fault of neither kind.
 
 Both are read from the whole report, because a fault on any thread is a fault of the process and the
 report's faulting thread is not always the one that matters.
@@ -134,20 +135,20 @@ function value_of(line::AbstractString, key::AbstractString)
 end
 
 """
-The fields of one run's log, as this script reads them back. `reports` holds the crash reports that
-carry this run's pid, either as the parent attached them or as `audit` found them later.
+The fields of one run's log, as this script reads them back. `concurrent` is whether an `M8-READ`
+line of the session arm says that its reads overlapped the training call. `reports` holds the crash
+reports that carry this run's pid, either as the parent attached them or as `audit` found them later.
 """
 struct RunLog
-    path::String
     arm::String
     index::Int
     pid::Int
     exit::Int
-    elapsed::Float64
     endline::Union{Nothing, String}
     functional::Bool
     layer::String
     validation::Bool
+    concurrent::Bool
     compile_time::Float64
     finite::Bool
     reports::Vector{NamedTuple{
@@ -182,10 +183,10 @@ end
 One counted run, in the process that started for it: the device and its name, the stack, the forward
 pass and the pullback on one network, and the first training call of a new one, timed.
 """
-function single(arm::AbstractString; concurrent::Bool = false)
+function single(arm::AbstractString)
     t0 = time()
     emit(stdout, "RUN", :arm => arm, :pid => getpid(),
-        :time => t0, :concurrent => concurrent)
+        :time => t0, :concurrent => false)
     layer = get(ENV, "MTL_DEBUG_LAYER", "-")
     emit(stdout, "ENV", :MTL_DEBUG_LAYER => "\"$layer\"", :julia => VERSION,
         :nthreads => Threads.nthreads(), :project => _no_space(Base.active_project()))
@@ -270,12 +271,18 @@ function read_run(path::AbstractString; reports::AbstractString = REPORTS)
     status = findlast(l -> startswith(l, "M8-ARM-RUN "), lines)
     exitcode = status === nothing ? 0 :
                parse(Int, something(value_of(lines[status], "exit"), "0"))
-    elapsed = status === nothing ? 0.0 :
-              parse(Float64, something(value_of(lines[status], "elapsed"), "0"))
+    reads = findlast(l -> startswith(l, "M8-READ "), lines)
+    concurrent = reads !== nothing &&
+                 something(value_of(lines[reads], "concurrent"), "false") == "true"
 
     attached = NamedTuple{
         (:file, :pid, :match, :signature), Tuple{String, Int, Bool, Symbol}}[]
+    # A report that existed before the run is not the run's, even when a reused pid matches it.
     seen = Set{String}()
+    for line in lines
+        startswith(line, "M8-IPS-BEFORE ") || continue
+        union!(seen, filter(!isempty, split(something(value_of(line, "files"), ""), ",")))
+    end
     for line in lines
         startswith(line, "M8-IPS ") || continue
         file = something(value_of(line, "file"), "-")
@@ -296,9 +303,9 @@ function read_run(path::AbstractString; reports::AbstractString = REPORTS)
     end
 
     RunLog(
-        path, arm, index, pid, exitcode, elapsed, endline, functional, layer,
-        any(l -> occursin("Metal API Validation Enabled", l), lines), compile_time, finite,
-        attached)
+        arm, index, pid, exitcode, endline, functional, layer,
+        any(l -> occursin("Metal API Validation Enabled", l), lines), concurrent,
+        compile_time, finite, attached)
 end
 
 "The pid a run printed of itself, or 0 for a process that printed none."
@@ -319,7 +326,8 @@ end
 """
 The rule, over what a log holds: `:abort` when a report of this run's own pid exists, `:ok` when the
 run trained a cold first call on a functional device with the debug layer set and shown active and
-exited with 0, and `:void` with the reason for anything else.
+exited with 0 — and, in the `lasympnet-concurrent` arm, when its `M8-READ` line says that the reads
+overlapped the training call — and `:void` with the reason for anything else.
 """
 function verdict(run::RunLog)
     matched = filter(r -> r.match, run.reports)
@@ -343,17 +351,25 @@ function verdict(run::RunLog)
         reason = "compile_time is $(run.compile_time), a warm call")
     !run.finite &&
         return (status = :void, signature = :none, reason = "loss history is not finite")
+    run.arm == "lasympnet-concurrent" && !run.concurrent &&
+        return (status = :void, signature = :none,
+            reason = "no M8-READ line says the reads overlapped the training call")
     (status = :ok, reason = "trained", signature = :none)
 end
 
 # ---------------------------------------------------------------- the parent
 
 "The command that starts one run in a process of its own."
-function child_cmd(arm::AbstractString, threads::Int, concurrent::Bool)
+function child_cmd(arm::AbstractString, threads::Int)
     cmd = `$(Base.julia_cmd()) --startup-file=no --project=$(Base.active_project()) --threads=$(threads) $(@__FILE__) single --arm $(arm)`
-    concurrent && (cmd = `$cmd --concurrent`)
     addenv(cmd, "MTL_DEBUG_LAYER" => "1")
 end
+
+"""
+The exit code of a finished process as a shell gives it: `128 + n` for a death by signal `n`, whose
+`exitcode` field is 0.
+"""
+exit_code(p::Base.Process) = p.termsignal == 0 ? p.exitcode : 128 + p.termsignal
 
 """
 Run the counted runs `from:to` of one arm, each in a new process, and record each in its own log
@@ -361,11 +377,12 @@ beside the crash reports that carry its pid. The arm stops at the first report t
 own abort.
 
 The parent waits `CRASH_REPORTER_WAIT` seconds for the crash reporter only when the process did not
-exit with 0. A report for a process that exited cleanly cannot exist, and `audit` scans the reports
-directory again for every run's pid, which finds a file that the reporter wrote late.
+exit with 0; a death by a signal is recorded as `128 + n`, see `exit_code`. A report for a process
+that exited cleanly cannot exist, and `audit` scans the reports directory again for every run's pid,
+which finds a file that the reporter wrote late.
 """
 function run_arm(arm::AbstractString, from::Int, to::Int, out::AbstractString;
-        threads::Int = THREADS, concurrent::Bool = false, reports::AbstractString = REPORTS)
+        threads::Int = THREADS, reports::AbstractString = REPORTS)
     arm in ARMS || error("unknown arm $arm; the arms are $(ARMS)")
     arm == "lasympnet-concurrent" &&
         error("the concurrent arm needs the session's second ex; run it by hand, see the report")
@@ -384,10 +401,10 @@ function run_arm(arm::AbstractString, from::Int, to::Int, out::AbstractString;
         open(logpath, "a") do io
             t0 = time()
             p = run(
-                pipeline(ignorestatus(child_cmd(arm, threads, concurrent)); stdout = io,
+                pipeline(ignorestatus(child_cmd(arm, threads)); stdout = io,
                     stderr = io);
                 wait = true)
-            code = p.exitcode
+            code = exit_code(p)
             elapsed = time() - t0
         end
         # The run's own pid, which it prints before any Metal work: the parent's handle on a
@@ -516,9 +533,11 @@ device. A layer that is set but not shown to be active is reported as such.
 function calibrate(out::AbstractString; threads::Int = THREADS, reports::AbstractString = REPORTS)
     mkpath(out)
     path = joinpath(out, "calibration-" * string(round(Int, time())) * ".log")
-    run(
-        pipeline(ignorestatus(child_cmd("lasympnet", threads, false)); stdout = path, stderr = path);
-        wait = true)
+    open(path, "w") do io
+        run(
+            pipeline(ignorestatus(child_cmd("lasympnet", threads)); stdout = io, stderr = io);
+            wait = true)
+    end
     text = read(path, String)
     visible = occursin("Metal API Validation Enabled", text) || occursin("MTLDebug", text)
     functional = occursin("M8-DEVICE functional=true", text)
@@ -535,9 +554,11 @@ end
 The audit's own test, over logs that this function writes: a clean run, a run on a non-functional
 device, a warm run, a run without the debug layer, a run whose validation layer left no line, a
 reused pid, a death whose only new report carries another pid, a death with a report of its own
-pid, a report of a run's pid that the parent did not attach, and an arm of fewer than
-`RUNS_PER_ARM` clean runs. Each is one way of reporting a run that did not happen, and each must
-come back as the verdict it is, never as `:ok`.
+pid, a report of a run's pid that the parent did not attach, a report of a run's pid that existed
+before the run, a session-arm run whose reads did not overlap the training call, and an arm of fewer
+than `RUNS_PER_ARM` clean runs. Each must come back as the verdict it is: a clean run, and a clean
+run beside an older report of its pid, as `:ok`, and every other case never as `:ok`. It also checks
+the exit code of a process that died by a signal.
 """
 function selftest()
     root = mktempdir()
@@ -673,6 +694,30 @@ function selftest()
     check("encoder signature", verdict_of(ten, 1).signature, :encoder)
     check("encoder reproduces", audit_arm(ten; reports = reports).state, "reproduced")
 
+    # A report that was in the directory before the run is not the run's, even with its pid.
+    thirteen = joinpath(root, "reused report pid")
+    mkpath(thirteen)
+    write(joinpath(reports, "julia-2026-01-05-000000.ips"),
+        "{\n  \"pid\" : 1014,\n  \"message\" : \"BUG IN CLIENT OF LIBMALLOC: memory corruption of free block\"\n}\n")
+    fixture(thirteen, 1, 1014, 0;
+        extra = "M8-IPS-BEFORE count=1 files=julia-2026-01-05-000000.ips\n")
+    check("report from before the run", verdict_of(thirteen, 1).status, :ok)
+
+    # The session arm counts a clean run only when its reads overlapped the training call.
+    fourteen = joinpath(root, "concurrent")
+    mkpath(fourteen)
+    fixture(fourteen, 1, 1015, 0; arm = "lasympnet-concurrent")
+    fixture(fourteen, 2, 1016, 0; arm = "lasympnet-concurrent",
+        extra = "M8-READ R0=2 R1=3 T0=1 T1=4 reads=9 reader_thread=2 trainer_thread=1 concurrent=false\n")
+    fixture(fourteen, 3, 1017, 0; arm = "lasympnet-concurrent",
+        extra = "M8-READ R0=2 R1=3 T0=1 T1=4 reads=9 reader_thread=2 trainer_thread=1 concurrent=true\n")
+    check("no read line", verdict_of(fourteen, 1).status, :void)
+    check("reads did not overlap", verdict_of(fourteen, 2).status, :void)
+    check("reads overlapped", verdict_of(fourteen, 3).status, :ok)
+
+    # A death by a signal leaves `exitcode` 0; the parent records `128 + n`.
+    check("signal exit code", exit_code(run(ignorestatus(`sh -c "kill -ABRT \$\$"`))), 134)
+
     rm(root; recursive = true, force = true)
     isempty(failures) && (println("selftest: PASS, $(checks[]) checks"); return 0)
     foreach(f -> println("selftest: FAIL ", f), failures)
@@ -686,20 +731,14 @@ function main(args)
         error("usage: metal_abort_runs.jl calibrate | run | audit | selftest [options]")
     mode = args[1]
     options = Dict{String, String}()
-    flags = Set{String}()
     i = 2
     while i <= length(args)
         arg = args[i]
         startswith(arg, "--") || error("unexpected argument $arg")
         key = arg[3:end]
-        if key in ("concurrent",)
-            push!(flags, key)
-            i += 1
-        else
-            i + 1 <= length(args) || error("--$key needs a value")
-            options[key] = args[i + 1]
-            i += 2
-        end
+        i + 1 <= length(args) || error("--$key needs a value")
+        options[key] = args[i + 1]
+        i += 2
     end
     out = get(options, "out", joinpath(pwd(), "m8-runs"))
     threads = parse(Int, get(options, "threads", string(THREADS)))
@@ -711,14 +750,13 @@ function main(args)
         @eval using Metal, GeometricMachineLearning, GeometricOptimizers,
                     KernelAbstractions,
                     Zygote, Random, LinearAlgebra
-        Base.invokelatest(single, get(options, "arm", "lasympnet");
-            concurrent = "--concurrent" in flags)
+        Base.invokelatest(single, get(options, "arm", "lasympnet"))
     elseif mode == "calibrate"
         calibrate(out; threads = threads, reports = reports)
     elseif mode == "run"
         from, to = split(get(options, "runs", "1:$(RUNS_PER_ARM)"), ":")
         run_arm(get(options, "arm", "lasympnet"), parse(Int, from), parse(Int, to), out;
-            threads = threads, concurrent = "--concurrent" in flags, reports = reports)
+            threads = threads, reports = reports)
     elseif mode == "audit"
         audit(out; reports = reports)
     elseif mode == "selftest"
