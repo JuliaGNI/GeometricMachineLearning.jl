@@ -114,19 +114,8 @@ function initialparameters(rng::AbstractRNG,
     initialparameters(rng, initializer, inverse_layer(l), backend, T)
 end
 
-const _VQP{AT <: AbstractVector} = NamedTuple{(:q, :p), Tuple{AT, AT}}
-const _SAArb{M, L} = SymplecticAttention{M, M, L, :arbitrary}
-const _SASym{M, L} = SymplecticAttention{M, M, L, :symmetric}
 const _ISAArb{M, L} = InverseSymplecticAttention{M, M, L, :arbitrary}
 const _ISASym{M, L} = InverseSymplecticAttention{M, M, L, :symmetric}
-
-function _apply_attention_vector(d::AbstractExplicitLayer, z::_VQP, ps::NamedTuple)
-    out = d((q = reshape(z.q, :, 1), p = reshape(z.p, :, 1)), ps)
-    (q = vec(out.q), p = vec(out.p))
-end
-
-(d::_SAArb)(z::_VQP, ps::NamedTuple) = _apply_attention_vector(d, z, ps)
-(d::_SASym)(z::_VQP, ps::NamedTuple) = _apply_attention_vector(d, z, ps)
 
 function _attention_displacement(
         d::InverseSymplecticAttention{M, M, LayerType, :arbitrary},

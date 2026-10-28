@@ -126,7 +126,7 @@ function compute_decoder_iterations(arch::SymplecticAutoencoder)
 end
 
 function encoder_or_decoder_layers_from_iteration(
-        arch::SymplecticAutoencoder, encoder_iterations::AbstractVector{<:Integer},
+        arch::SymplecticCompression, encoder_iterations::AbstractVector{<:Integer},
         n_encoder_layers::Integer, _determine_layer_type)
     encoder_layers = ()
     encoder_iterations_reduced = encoder_iterations[1:(end - 1)]
@@ -154,8 +154,9 @@ function encoder_layers_from_iteration(arch::SymplecticAutoencoder{:EncoderInitP
     encoder_or_decoder_layers_from_iteration(arch, encoder_iterations, arch.n_encoder_layers, iseven)
 end
 
-function _append_decoder_output_layers(arch::SymplecticAutoencoder, layers::Tuple, _determine_layer_type)
-    for layer_index in 1:arch.n_decoder_output_layers
+function _append_decoder_output_layers(
+        arch::SymplecticCompression, layers::Tuple, n_output_layers::Integer, _determine_layer_type)
+    for layer_index in 1:n_output_layers
         layers = _determine_layer_type(layer_index) ?
                  (layers...,
             GradientLayerQ(arch.full_dim, arch.sympnet_upscale * arch.full_dim, arch.activation)) :
@@ -168,13 +169,13 @@ end
 function decoder_layers_from_iteration(arch::SymplecticAutoencoder{<:Any, :DecoderInitQ},
         decoder_iterations::AbstractVector{<:Integer})
     layers = encoder_or_decoder_layers_from_iteration(arch, decoder_iterations, arch.n_decoder_layers, isodd)
-    _append_decoder_output_layers(arch, layers, isodd)
+    _append_decoder_output_layers(arch, layers, arch.n_decoder_output_layers, isodd)
 end
 
 function decoder_layers_from_iteration(arch::SymplecticAutoencoder{<:Any, :DecoderInitP},
         decoder_iterations::AbstractVector{<:Integer})
     layers = encoder_or_decoder_layers_from_iteration(arch, decoder_iterations, arch.n_decoder_layers, iseven)
-    _append_decoder_output_layers(arch, layers, iseven)
+    _append_decoder_output_layers(arch, layers, arch.n_decoder_output_layers, iseven)
 end
 
 function encoder(nn::NeuralNetwork{<:SymplecticAutoencoder})

@@ -80,6 +80,7 @@ if "core" in GROUPS
     @safetestset "Optimizers with structured (non-manifold) weights" include("optimizers/structured_array_parameters.jl")
     @safetestset "_mul: NetworkParameters gradient structure" include("layers/double_multiplication_network_parameters_gradient.jl")
     @safetestset "Symplectic attention: NetworkParameters gradient structure" include("layers/symplectic_attention_network_parameters_gradient.jl")
+    @safetestset "Symplectic attention on a single sample" include("layers/symplectic_attention.jl")
     @safetestset "ZygotePullback returns a NetworkParameters" include("pullbacks/zygote_pullback.jl")
     @safetestset "AutoEncoderLoss and a loss's NetworkParameters" include("loss/losses.jl")
     @safetestset "apply_parametric and the concatenation of the system parameters" include("parametric.jl")

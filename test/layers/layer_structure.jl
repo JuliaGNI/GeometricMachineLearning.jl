@@ -42,8 +42,9 @@ end
     attention_layers = (SymplecticAttentionQ(4; symmetric = true),
         SymplecticAttentionP(4; symmetric = true), SymplecticAttentionQ(4; symmetric = false),
         SymplecticAttentionP(4; symmetric = false))
+    # One method per weight kind, for a pair of arrays and for a pair of vectors (a single sample)
     @test length(qp_forward_methods(attention_layers,
-        joinpath("layers", "symplectic_attention.jl"))) == 2
+        joinpath("layers", "symplectic_attention.jl"))) == 4
 
     linear_attention_layers = (
         LinearSymplecticAttentionQ(4, 3), LinearSymplecticAttentionP(4, 3))

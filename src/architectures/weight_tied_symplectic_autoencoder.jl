@@ -52,37 +52,13 @@ function compute_decoder_iterations(arch::WeightTiedSymplecticAutoencoder)
     compute_iterations_for_symplectic_system(arch.full_dim, arch.reduced_dim, arch.n_blocks)
 end
 
-function compute_encoder_iterations(arch::WeightTiedSymplecticAutoencoder)
-    compute_decoder_iterations(arch)
-end
-
 function _weight_tied_decoder_layers(
         arch::WeightTiedSymplecticAutoencoder,
         decoder_iterations::AbstractVector{<:Integer},
         _determine_layer_type)
-    layers = ()
-    decoder_iterations_reduced = decoder_iterations[1:(end - 1)]
-    for (i, it) in zip(axes(decoder_iterations_reduced, 1), decoder_iterations_reduced)
-        u = arch.sympnet_upscale * it
-        for layer_index in 1:arch.n_layers
-            if _determine_layer_type(layer_index)
-                layers = (layers..., GradientLayerQ(it, u, arch.activation))
-            else
-                layers = (layers..., GradientLayerP(it, u, arch.activation))
-            end
-        end
-        layers = (layers..., PSDLayer(it, decoder_iterations[i + 1]))
-    end
-    d_full = arch.full_dim
-    u_full = arch.sympnet_upscale * d_full
-    for layer_index in 1:arch.n_ambient_layers
-        if _determine_layer_type(layer_index)
-            layers = (layers..., GradientLayerQ(d_full, u_full, arch.activation))
-        else
-            layers = (layers..., GradientLayerP(d_full, u_full, arch.activation))
-        end
-    end
-    layers
+    layers = encoder_or_decoder_layers_from_iteration(
+        arch, decoder_iterations, arch.n_layers, _determine_layer_type)
+    _append_decoder_output_layers(arch, layers, arch.n_ambient_layers, _determine_layer_type)
 end
 
 function decoder_layers_from_iteration(arch::WeightTiedSymplecticAutoencoder{:InitQ},
@@ -95,19 +71,10 @@ function decoder_layers_from_iteration(arch::WeightTiedSymplecticAutoencoder{:In
     _weight_tied_decoder_layers(arch, decoder_iterations, iseven)
 end
 
-function encoder_layers_from_iteration(arch::WeightTiedSymplecticAutoencoder,
-        decoder_iterations::AbstractVector{<:Integer})
-    reverse(map(inverse_layer, decoder_layers_from_iteration(arch, decoder_iterations)))
-end
-
-function encoder_model(arch::WeightTiedSymplecticAutoencoder)
-    decoder_iterations = compute_decoder_iterations(arch)
-    Chain(encoder_layers_from_iteration(arch, decoder_iterations)...)
-end
-
-function decoder_model(arch::WeightTiedSymplecticAutoencoder)
-    decoder_iterations = compute_decoder_iterations(arch)
-    Chain(decoder_layers_from_iteration(arch, decoder_iterations)...)
+# The model is a `WeightTiedAutoencoderLayer`, whose encoder and decoder share one parameter tree; a
+# `Chain` of the two halves would give each half its own parameters.
+function Chain(::WeightTiedSymplecticAutoencoder)
+    throw(ArgumentError("A WeightTiedSymplecticAutoencoder has no Chain of untied layers: build it with NeuralNetwork(arch) and take encoder(nn) and decoder(nn)."))
 end
 
 _reverse_tuple(::Tuple{}) = ()

@@ -138,6 +138,24 @@ function (d::SymplecticAttention{M, M, LayerType, :symmetric})(
         x -> _mul(_mul(A, x), 2 * d.activation(_mul(_mul(_custom_transpose(x), A), x))))
 end
 
+# A single sample, a `(q, p)` pair of vectors, goes through the matrix method as one column.
+const _VQP{AT <: AbstractVector} = NamedTuple{(:q, :p), Tuple{AT, AT}}
+
+function _apply_attention_vector(d::AbstractExplicitLayer, z::_VQP, ps::NamedTuple)
+    out = d((q = reshape(z.q, :, 1), p = reshape(z.p, :, 1)), ps)
+    (q = vec(out.q), p = vec(out.p))
+end
+
+function (d::SymplecticAttention{M, M, LayerType, :arbitrary})(
+        z::_VQP, ps::NamedTuple) where {M, LayerType}
+    _apply_attention_vector(d, z, ps)
+end
+
+function (d::SymplecticAttention{M, M, LayerType, :symmetric})(
+        z::_VQP, ps::NamedTuple) where {M, LayerType}
+    _apply_attention_vector(d, z, ps)
+end
+
 function (d::SymplecticAttention)(z::AbstractArray, ps::NamedTuple)
     apply_layer_to_nt_and_return_array(z, d, ps)
 end

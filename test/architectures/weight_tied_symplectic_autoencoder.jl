@@ -63,6 +63,10 @@ Random.seed!(1234)
           WeightTiedSymplecticAutoencoder{:InitP}
     @test GeometricMachineLearning._reverse_tuple((1, 2, 3)) === (3, 2, 1)
 
+    # The model is the tied layer; a Chain of untied halves is refused
+    re9 = r"^(?:ArgumentError: )?A WeightTiedSymplecticAutoencoder has no Chain of untied layers: build it with NeuralNetwork\(arch\) and take encoder\(nn\) and decoder\(nn\)\.$"
+    @test_throws re9 Chain(WeightTiedSymplecticAutoencoder(8, 4))
+
     # A spacing that rounds to zero is refused
     re8 = r"^(?:ArgumentError: )?n_blocks \(5\) must be at most 2 for full_dim \(6\) and reduced_dim \(4\)\.$"
     arch_wide = WeightTiedSymplecticAutoencoder(6, 4; n_blocks = 5)
