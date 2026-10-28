@@ -290,10 +290,10 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   before each. Which of `Metal`, `GPUArrays`, `GeometricOptimizers` or `Zygote` draws is not
   established.
 
-### K35 · Neither of the two Metal process aborts of 2026-09-22 reproduces in 59 fresh processes per arm, and neither run was ever shown to abort on demand.
+### K35 · The `LASympNet(4)` abort of 2026-09-22 reproduces with a second evaluation running, inside Metal.jl's batched-queue flush; the `VolumePreservingFeedForward(4)` abort does not reproduce in 59 fresh processes.
 
 - **location:** `scripts/utilities/metal_abort_runs.jl`
-- **kind:** not verified
+- **kind:** upstream
 - **found:** 2026-10-27
 - **evidence:**
   A `LASympNet(4)` process died once from `MTLReleaseAssertionFailure` in
@@ -301,7 +301,8 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   vector, and a `VolumePreservingFeedForward(4)` process once from
   `BUG IN CLIENT OF LIBMALLOC: memory corruption of free block` inside the host LLVM JIT with no
   second `ex`. Both ran `Float32` on `MetalBackend()`, Adam, and died in the first training call.
-  Neither recurred in a fresh process or in 24 warm runs, and the cause is not known.
+  Neither recurred in the 24 warm runs that followed them, and the arms below ask whether either
+  recurs in a fresh process.
 
   `scripts/utilities/metal_abort_runs.jl`, at the commit `7fdc3f8` that the runs used, runs one
   counted run per OS process: it
@@ -318,12 +319,12 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   |:--|:--|:--|:--|:--|:--|
   | `LASympNet(4)`, no concurrent evaluation | `julia --project=<scratch> --threads=16`, one per run | 59 | 59 | 0 | 0 |
   | `VolumePreservingFeedForward(4)`, no concurrent evaluation | the same | 59 | 59 | 0 | 0 |
-  | `LASympNet(4)` with a concurrent evaluation | two `ex` calls in a private Kaimon session | 59 | — | — | — |
+  | `LASympNet(4)` with a concurrent evaluation | two `ex` calls in a private Kaimon session | 17 counted | 16 | 1 | 0 |
 
-  Every counted run compiled inside the timer (`compile_time` 15.6 s to 25.3 s for `LASympNet(4)`,
-  11.6 s to 29.1 s for `VolumePreservingFeedForward(4)`), reported a finite `Float32` loss history,
-  showed `Metal API Validation Enabled`, and had a pid no other run used. The crash reporter wrote no
-  new `julia-*.ips` at any point in the 118 runs.
+  Every counted run of the two arms a shell process runs compiled inside the timer (`compile_time`
+  15.6 s to 25.3 s for `LASympNet(4)`, 11.6 s to 29.1 s for `VolumePreservingFeedForward(4)`),
+  reported a finite `Float32` loss history, showed `Metal API Validation Enabled`, and had a pid no
+  other run used. The crash reporter wrote no new `julia-*.ips` at any point in the 118 runs.
 
   The stack of the runs is Julia 1.13.3, this package at `1d2faead`, `GeometricOptimizers` 0.9.1,
   Metal.jl 1.11.1, GPUCompiler 2.10.0, KernelAbstractions 0.9.45 and LLVM.jl 9.13.2. The stack of the
@@ -335,14 +336,39 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   (<v0.10.3)` restricted by this package, `GeometricOptimizers`, `AbstractNeuralNetworks` and
   Metal.jl, and which of the two holds the other down is not established.
 
-  The third arm is not counted here. Its concurrency is a second request to one session, which no
-  script can make: `scripts/utilities/metal_abort_session.jl` holds its two halves, and
-  `Tasks/Evidence/…/m8/concurrent-arm.md` gives the procedure and the shape of its log, which
-  `metal_abort_runs.jl audit` counts by the same rule. Two of the three arms are clean at 59 of 59;
-  the third is that run.
+  **The third arm reproduces the `LASympNet(4)` item.** Its concurrency is a second request to one
+  session, which no script can make: `scripts/utilities/metal_abort_session.jl` holds its two halves,
+  the second being the reading half, which reads a host `Vector{Float32}` of 10⁶ entries in a loop,
+  and `Tasks/Evidence/…/m8/concurrent-arm.md` gives the procedure. Seventeen of its runs are
+  counted: sixteen clean, and one — run 18, in a private Kaimon session — died with `SIGSEGV` and
+  left `julia-2026-10-28-103001.ips` under that run's pid, 49451. The death is on the task that
+  called `device_synchronize`: `AGX::ComputeContext…::endComputePass`,
+  `-[AGXG16XFamilyBlitContext deferredEndEncoding]`,
+  `-[AGXG16XFamilyCommandBuffer commitEncoder]` and
+  `-[AGXG16XFamilyCommandBuffer commit]` under Metal.jl's `commit_with_queue_key!`
+  (`lib/mtl/command_buf.jl:258`), `flush!` (`src/command_batching.jl:377`) and
+  `flush_batched_queues!` (`:392`, `:395`), called from `device_synchronize`
+  (`src/synchronization.jl:166`). That is the signature of the `LASympNet(4)` item — a
+  command-encoder frame below a Metal.jl frame, as the 2026-09-22 assertion's
+  `setCurrentCommandEncoder` was — and the code path of the `julia-2026-10-26-225001.ips` report: a
+  task's `device_synchronize` flushes every active batched queue, another task's open command buffer
+  among them, and Metal.jl 1.11.1 takes no lock there. No GeometricMachineLearning frame is in the
+  stack, so the cause is outside this package and no workaround belongs here.
 
-  A no-reproduction holds for the two arms counted, on that stack, and says nothing about a true rate
-  below one in twenty, nor about the session arm.
+  The arm stops at the reproducer, as its procedure says, and its record is runs 2 to 18 of the
+  plan's `lasympnet-concurrent` arm: 17 counted, 16 clean, 1 abort, none void, about five minutes a
+  run. Run 18 died before it printed a stamp line, so its log records
+  `concurrent=crash_before_stamps` and rebuilds its `M8-DEVICE` line from the crash report. The
+  abort came while another Julia process compiled in this package on the same machine, which the
+  record states because the load can change how the two tasks interleave, so the rate is a lower
+  bound.
+
+  An upstream issue for Metal.jl is drafted at `Tasks/Evidence/…/m8/upstream-metal.md`. Filing it
+  needs the user's approval: `JuliaGPU/Metal.jl` is outside the user's own organisations.
+
+  A no-reproduction holds for the two arms a shell process runs, on that stack, and says nothing
+  about a true rate below one in twenty, nor about the `VolumePreservingFeedForward(4)` item under a
+  second evaluation, which this part did not test.
 
 ## The test suite
 
