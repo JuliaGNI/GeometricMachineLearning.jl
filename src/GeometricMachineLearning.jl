@@ -37,9 +37,9 @@ import DiffResults
 # through `using` warns on every such method — "Constructor for type … was extended in
 # `GeometricMachineLearning` without explicit qualification or import". The re-exports below are
 # what keep `using GeometricMachineLearning` alone sufficient. Of these imports, `update!`,
-# `solve!`, `optimization_step!` and `orthonormal_columns` are not re-exported: a caller reaches
-# `update!` and `solve!` from `GeometricOptimizers`, which exports both, and the other two are
-# internal.
+# `solve!`, `optimization_step!` and `orthonormal_columns` are not re-exported. All four are
+# exported by `GeometricOptimizers`, so a caller reaches any of them there; this package uses
+# `optimization_step!` and `orthonormal_columns` itself.
 import GeometricOptimizers
 import GeometricOptimizers: Manifold, StiefelManifold, GrassmannManifold
 import GeometricOptimizers: SkewSymMatrix, SymmetricMatrix,
