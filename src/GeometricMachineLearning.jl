@@ -1,28 +1,22 @@
 module GeometricMachineLearning
 
 using AbstractNeuralNetworks
-# The parameter container lives in `NeuralNetworkParameters` as of `AbstractNeuralNetworks` 0.7,
-# under the name `NetworkParameters`. The import is selective rather than a bare `using`: that
-# package also exports `flatten`/`unflatten` and the leaf protocol, none of which this package
-# extends — `GeometricOptimizers` carries the protocol for the structured matrices.
-#
-# `mapstorage` comes from there rather than being written again here: it reaches the storage of a
-# structured leaf and rebuilds the leaf around the result (`src/map_to_cpu.jl`). A plain
-# `NamedTuple` of layers is walked with `Base.map`, which needs nothing from anybody.
+# `NetworkParameters` is `NeuralNetworkParameters`' parameter container, and `mapstorage` its walk
+# of a structured leaf's storage, which rebuilds the leaf around the result (`src/map_to_cpu.jl`).
+# The import is selective rather than a bare `using`: that package also exports `flatten`/
+# `unflatten` and the leaf protocol, none of which this package extends — `GeometricOptimizers`
+# carries the protocol for the structured matrices.
 import NeuralNetworkParameters: NetworkParameters
 using NeuralNetworkParameters: mapstorage
-# `flatten` puts the parameters of a system into the input of a network that takes them
-# (`src/parametric.jl`); `parameter_eltype` checks their element type against the data's, and
-# `parameterlayout` their shape against each other's. `map_cotangent` and `storage_gradient` turn the
-# cotangent of a parameter set into its gradient in the reverse rule of a batch.
+# `flatten` puts a system's parameters into the input of a network that takes them
+# (`src/parametric.jl`); `parameter_eltype` and `parameterlayout` check their element type and
+# shape, and `map_cotangent` and `storage_gradient` turn a cotangent into a gradient.
 using NeuralNetworkParameters: flatten, parameter_eltype, parameterlayout, map_cotangent,
                                storage_gradient
 using ChainRulesCore
 using GeometricBase
-# `integrate` is GeometricBase's generic, and the trajectory methods are methods of it. The import is
-# what makes the definitions below add methods to that function: written against a name that only a
-# `using` supplied, they would start a function of this module's own, and a caller who loads this
-# package and `GeometricIntegrators` would then hold two verbs instead of one.
+# `integrate` is GeometricBase's generic, and importing it is what makes the trajectory methods
+# below methods of that function rather than of a second one of the name.
 import GeometricBase: integrate
 using GeometricSolutions: GeometricSolution, EnsembleSolution, TimeSeries
 using GeometricEquations: HODEProblem, HODEEnsemble
@@ -36,15 +30,16 @@ using ForwardDiff
 import DiffResults
 
 # The manifolds, the structured matrix types, the global sections and the retractions are
-# `GeometricOptimizers`': the same objects, so upstream's generic machinery dispatches on them and
-# the retraction pipeline is written once, there.
+# `GeometricOptimizers`': the same objects, so upstream's machinery dispatches on them and the
+# retraction pipeline is written once, there.
 #
-# `import` and not `using ...: ...`: GML adds constructor methods to several of these types (in
-# `layers/` and the kernels), and extending a *type* reached through `using` warns on every such
-# method since Julia 1.12 — "Constructor for type … was extended in `GeometricMachineLearning`
-# without explicit qualification or import". Everything imported here is re-exported below, except
-# `orthonormal_columns` and `optimization_step!`; the re-exports are what keep
-# `using GeometricMachineLearning` alone sufficient.
+# `import` and not `using ...: ...`, because a constructor method added to a *type* reached
+# through `using` warns on every such method — "Constructor for type … was extended in
+# `GeometricMachineLearning` without explicit qualification or import". The re-exports below are
+# what keep `using GeometricMachineLearning` alone sufficient. Of these imports, `update!`,
+# `solve!`, `optimization_step!` and `orthonormal_columns` are not re-exported: a caller reaches
+# `update!` and `solve!` from `GeometricOptimizers`, which exports both, and the other two are
+# internal.
 import GeometricOptimizers
 import GeometricOptimizers: Manifold, StiefelManifold, GrassmannManifold
 import GeometricOptimizers: SkewSymMatrix, SymmetricMatrix,
@@ -52,22 +47,19 @@ import GeometricOptimizers: SkewSymMatrix, SymmetricMatrix,
                             StiefelProjection
 import GeometricOptimizers: StiefelLieAlgHorMatrix, GrassmannLieAlgHorMatrix
 import GeometricOptimizers: rgrad, metric, check, global_section
-# `orthonormal_columns(draw)` orthonormalizes `draw()` with CholeskyQR2, which runs on whatever
-# backend `draw` allocated on. The three manifold layers below initialise their weights with it,
-# because `LinearAlgebra.qr!` is a host factorization and `Metal` implements no `qr` at all.
+# `orthonormal_columns(draw)` orthonormalizes `draw()` with CholeskyQR2 on `draw`'s own backend; the
+# manifold layers draw through it, because `LinearAlgebra.qr!` is host-only and `Metal` has no `qr`.
 import GeometricOptimizers: orthonormal_columns
 import GeometricOptimizers: GlobalSection, global_rep, apply_section, apply_section!,
                             update_section!
 import GeometricOptimizers: Geodesic, Cayley, geodesic, cayley, retraction
 import GeometricOptimizers: GradientMethod, MomentumMethod, Adam, AdamWithEuclideanDecay,
                             AdamOptimizerWithDecay, DecayingStatic
-# The training step. `train!` takes a `TrainingOptimizer` and calls `optimization_step!`, which is
-# not re-exported.
+# The training step: `train!` takes a `TrainingOptimizer` and calls `optimization_step!`.
 import GeometricOptimizers: TrainingOptimizer, optimization_step!
 import GeometricOptimizers: update!
-# `solve!` is imported rather than started afresh so that GML's `solve!(::NeuralNetwork{<:PSDArch},
-# …)` — solve for the parameters directly, by SVD, instead of training for them — is a method of the
-# same verb a caller already has from GeometricOptimizers, and not a second function of the name.
+# `solve!` is imported rather than started afresh, so that GML's `solve!` on a `PSDArch` network is
+# a method of the verb a caller already has from GeometricOptimizers, not a second one of the name.
 import GeometricOptimizers: solve!
 
 import AbstractNeuralNetworks: Architecture, AbstractExplicitLayer, NeuralNetwork,
@@ -75,9 +67,8 @@ import AbstractNeuralNetworks: Architecture, AbstractExplicitLayer, NeuralNetwor
 import AbstractNeuralNetworks: Chain
 import AbstractNeuralNetworks: input_dimension, output_dimension
 import AbstractNeuralNetworks: Dense, Linear
-# `update!` is deliberately not among these: `AbstractNeuralNetworks`' is a different generic
-# function from `GeometricOptimizers.update!` — which is `GeometricBase.update!`, the one with
-# methods for the optimizer caches. GML imports that one, from GeometricOptimizers, above.
+# `update!` is not among these: `AbstractNeuralNetworks.update!` is a different generic from
+# `GeometricOptimizers.update!`, which is `GeometricBase.update!`, the one with the cache methods.
 import AbstractNeuralNetworks: initialparameters
 import AbstractNeuralNetworks: parameterlength
 import AbstractNeuralNetworks: GlorotUniform
@@ -87,8 +78,8 @@ import AbstractNeuralNetworks: networkbackend
 # The input and output types of a network: `NamedTupleOfArrays{T, (:q, :p)}` is data in `(q, p)`
 # form, and `ArrayOrNamedTuple{T}` is an array or a named tuple of arrays with any keys.
 using AbstractNeuralNetworks: NamedTupleOfArrays, ArrayOrNamedTuple
-# `save` and `load` are `NeuralNetworkParameters`' generics; `AbstractNeuralNetworks` 0.7 only
-# re-binds them. Reach for them where they are defined.
+# `save` and `load` are `NeuralNetworkParameters`' generics, which `AbstractNeuralNetworks`
+# re-binds; reach for them where they are defined.
 import NeuralNetworkParameters: save, load
 export dim
 import NNlib: σ, sigmoid, softmax
@@ -103,10 +94,10 @@ export NetworkParameters
 
 export σ, sigmoid, softmax
 
-# `GeometricBase` defines `description` but does not export it, so `using GeometricBase` alone does
-# not bring it into scope and re-exporting it needs the explicit import. `StateVariable` is reached
-# from here rather than from `GeometricSolutions`, which only re-exports it: importing a name from a
-# module that does not own it is what `check_all_explicit_imports_via_owners` reports.
+# `GeometricBase` defines `description` and does not export it, so re-exporting it needs the import.
+# `StateVariable` is taken from here, its owner, and not from `GeometricSolutions`, which only
+# re-binds it: importing a name from a non-owner is what `check_all_explicit_imports_via_owners`
+# reports.
 import GeometricBase: description, StateVariable
 export description
 

@@ -4,16 +4,17 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
 ## C. Follow-ups and cleanups
 
-### C6 · Three generated MNIST PDFs are in this branch's history
+### C6 · Three generated MNIST PDFs are in the history of `main`
 
 - **location:** `docs/src`
 - **kind:** defect
 - **found:** 2026-08-16
 - **evidence:**
-  for three commits, from a
-  `git add docs/src` that swept them in. They are untracked again and `.gitignore` now covers the
-  pattern, so the working tree and the net diff are clean, but the blobs are still reachable.
-  Rewriting the branch would remove them.
+  `git log --all --diff-filter=A --name-only -- 'docs/src/tutorials/mnist/*.pdf'` names the three of
+  them, swept in by a `git add docs/src`; `b0010737` untracked them again. The blobs are still
+  reachable in the history of `main`, for three commits, though the MNIST material has since moved
+  to GMLDatasets (`8e3dbc29`) and took the `.gitignore` rule with it, so no build of this tree
+  compiles them a second time. Rewriting the history would remove the blobs.
 
 ### C16 · One of `ExplicitImports`' seven checks is switched off in `test/quality/aqua.jl`, and two run with a list of names.
 
@@ -24,7 +25,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   `no_implicit_imports` is off: **33** names arrive through a bare `using` across twelve packages,
   and naming them is a rewrite of the module header with a judgement per name.
   `all_explicit_imports_are_public` and `all_qualified_accesses_are_public` run with a list of the
-  names this package reaches in other packages that those packages do not declare `public`: **9**
+  names this package reaches in other packages that those packages do not declare `public`: **7**
   explicit imports and **7** qualified accesses, none of them in `GeometricOptimizers`.
   `Architecture`, `AbstractExplicitLayer`, `_compute_loss`, `dim` and the rest are used
   deliberately, and the resolution is upstream declaring them `public`. Each check's reason is
@@ -177,7 +178,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
 ### K4 · Metal.jl 1.11.1 needs a Metal device to precompile, so a sandboxed run with no Metal cache fails before the tests
 
-- **location:** `test/Project.toml:16`
+- **location:** `test/Project.toml:19`
 - **kind:** upstream
 - **found:** 2026-10-02
 - **evidence:**
