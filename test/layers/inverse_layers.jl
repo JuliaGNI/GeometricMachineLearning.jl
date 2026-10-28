@@ -224,7 +224,6 @@ end
     @test GeometricMachineLearning._reverse_tuple((1, 2, 3)) === (3, 2, 1)
 
     igl = InverseGradientLayerQ(6, 12, tanh)
-    gl = GradientLayerQ(6, 12, tanh)
     ps_gl = (weight = randn(6, 3), bias = randn(6), scale = randn(6))
     @test_throws Exception igl(randn(7, 3), ps_gl)
     @test_throws Exception igl((q = randn(4, 3), p = randn(3, 3)), ps_gl)
