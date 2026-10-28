@@ -1,5 +1,5 @@
 using GeometricMachineLearning
-using GeometricMachineLearning: ForwardDiff, params
+using GeometricMachineLearning: ForwardDiff, output_dimension, params
 using KernelAbstractions
 using LinearAlgebra
 using Test
@@ -16,38 +16,35 @@ Random.seed!(1234)
     igl_q = inverse_layer(gl_q)
     igl_p = inverse_layer(gl_p)
 
-    @test igl_q isa InverseGradientLayerQ{6, 12, typeof(tanh)}
-    @test igl_p isa InverseGradientLayerP{6, 12, typeof(tanh)}
+    @test igl_q isa InverseGradientLayerQ{6, 6, typeof(tanh)}
+    @test igl_p isa InverseGradientLayerP{6, 6, typeof(tanh)}
+    @test igl_q.second_dim == igl_p.second_dim == 12
     @test igl_q === InverseGradientLayerQ(6, 12, tanh)
     @test igl_p === InverseGradientLayerP(6, 12, tanh)
-    @test GradientLayerQ{6, 12}(tanh) isa GradientLayerQ{6, 12, typeof(tanh)}
-    @test GradientLayerP{6, 12}(tanh) isa GradientLayerP{6, 12, typeof(tanh)}
-    @test GradientLayerQ{6, 12}(tanh) == gl_q
-    @test GradientLayerP{6, 12}(tanh) == gl_p
-    @test InverseGradientLayerQ{6, 12}(tanh) === igl_q
-    @test InverseGradientLayerP{6, 12}(tanh) === igl_p
-    @test inverse_layer(igl_q) === GradientLayerQ{6, 12}(tanh)
-    @test inverse_layer(igl_p) === GradientLayerP{6, 12}(tanh)
-    @test inverse_layer(igl_q) == gl_q
-    @test inverse_layer(igl_p) == gl_p
+    @test inverse_layer(igl_q) === gl_q
+    @test inverse_layer(igl_p) === gl_p
+    @test hash(inverse_layer(igl_q)) == hash(gl_q)
+    @test output_dimension(igl_q) == output_dimension(inverse_layer(igl_q)) == 6
     @test inverse_layer(GradientLayerQ) === InverseGradientLayerQ
     @test inverse_layer(InverseGradientLayerQ) === GradientLayerQ
     @test inverse_layer(GradientLayerP) === InverseGradientLayerP
     @test inverse_layer(InverseGradientLayerP) === GradientLayerP
-    @test inverse_layer(GradientLayerQ{6, 12}) === InverseGradientLayerQ{6, 12}
-    @test inverse_layer(InverseGradientLayerQ{6, 12}) === GradientLayerQ{6, 12}
-    @test inverse_layer(GradientLayerP{6, 12}) === InverseGradientLayerP{6, 12}
-    @test inverse_layer(InverseGradientLayerP{6, 12}) === GradientLayerP{6, 12}
+    @test inverse_layer(GradientLayerQ{6, 6}) === InverseGradientLayerQ{6, 6}
+    @test inverse_layer(InverseGradientLayerQ{6, 6}) === GradientLayerQ{6, 6}
+    @test inverse_layer(GradientLayerP{6, 6}) === InverseGradientLayerP{6, 6}
+    @test inverse_layer(InverseGradientLayerP{6, 6}) === GradientLayerP{6, 6}
+    @test inverse_layer(typeof(gl_q)) === typeof(igl_q)
+    @test inverse_layer(typeof(igl_p)) === typeof(gl_p)
 
-    sa_q = SymplecticAttentionQ(6, 3)
-    sa_p = SymplecticAttentionP(6, 3)
+    sa_q = SymplecticAttentionQ(6)
+    sa_p = SymplecticAttentionP(6)
     isa_q = inverse_layer(sa_q)
     isa_p = inverse_layer(sa_p)
 
     @test isa_q isa InverseSymplecticAttentionQ{6, 6}
     @test isa_p isa InverseSymplecticAttentionP{6, 6}
-    @test isa_q === InverseSymplecticAttentionQ(6, 3)
-    @test isa_p === InverseSymplecticAttentionP(6, 3)
+    @test isa_q === InverseSymplecticAttentionQ(6)
+    @test isa_p === InverseSymplecticAttentionP(6)
     @test inverse_layer(isa_q) === sa_q
     @test inverse_layer(isa_p) === sa_p
     @test inverse_layer(SymplecticAttentionQ) === InverseSymplecticAttentionQ
@@ -87,10 +84,8 @@ end
     layers = (
         GradientLayerQ(6, 12, tanh),
         GradientLayerP(6, 12, tanh),
-        GradientLayerQ{6, 12}(tanh),
-        GradientLayerP{6, 12}(tanh),
-        SymplecticAttentionQ(6, 3),
-        SymplecticAttentionP(6, 3),
+        SymplecticAttentionQ(6),
+        SymplecticAttentionP(6),
         SymplecticAttentionQ(6; symmetric = false),
         SymplecticAttentionP(6; symmetric = false))
     zv = randn(T, 6)
@@ -130,32 +125,6 @@ end
             @test norm(nt_rec1.p - nt.p) <= 10 * eps(T) * max(one(T), norm(nt.p))
             @test norm(nt_rec2.q - nt.q) <= 10 * eps(T) * max(one(T), norm(nt.q))
             @test norm(nt_rec2.p - nt.p) <= 10 * eps(T) * max(one(T), norm(nt.p))
-        end
-    end
-
-    # Check hand-built NamedTuple ps in arbitrary key orders for GradientLayerQ/P and inverses
-    K = randn(T, 6, 3)
-    b = randn(T, 6)
-    a = randn(T, 6)
-    tol_v = 10 * eps(T) * max(one(T), norm(zv))
-    gl_pairs = (
-        (GradientLayerQ{6, 12}(tanh), InverseGradientLayerQ{6, 12}(tanh)),
-        (GradientLayerP{6, 12}(tanh), InverseGradientLayerP{6, 12}(tanh)))
-    ps_variants = (
-        (K = K, b = b),
-        (b = b, K = K),
-        (K = K, b = b, a = a),
-        (a = a, b = b, K = K),
-        (weight = K, bias = b),
-        (bias = b, weight = K),
-        (scale = a, bias = b, weight = K))
-    for (gl, igl) in gl_pairs
-        for ps_kb in ps_variants
-            y_fwd = @inferred gl(zv, ps_kb)
-            y_rec = @inferred igl(y_fwd, ps_kb)
-            @test eltype(y_fwd) === T && eltype(y_rec) === T
-            @test norm(y_rec - zv) <= tol_v
-            @test norm(gl(igl(zv, ps_kb), ps_kb) - zv) <= tol_v
         end
     end
 end
@@ -227,12 +196,11 @@ end
     ps_gl = (weight = randn(6, 3), bias = randn(6), scale = randn(6))
     @test_throws Exception igl(randn(7, 3), ps_gl)
     @test_throws Exception igl((q = randn(4, 3), p = randn(3, 3)), ps_gl)
-    @test_throws AssertionError GradientLayerQ{5, 12}(tanh)
-    @test_throws AssertionError GradientLayerQ{6, 11}(tanh)
-    @test_throws AssertionError GradientLayerP{5, 12}(tanh)
-    @test_throws AssertionError GradientLayerP{6, 11}(tanh)
-    @test GradientLayerQ{6, 12}(tanh) != GradientLayerQ{6, 8}(tanh)
-    @test GradientLayerQ{6, 12}(tanh) != GradientLayerQ{6, 12}(identity)
+    @test_throws AssertionError InverseGradientLayerQ(5, 12, tanh)
+    @test_throws AssertionError InverseGradientLayerP(6, 11, tanh)
+    @test inverse_layer(InverseGradientLayerQ(6, 12, tanh)) != GradientLayerQ(6, 8, tanh)
+    @test_throws MethodError SymplecticAttentionQ(6, 3)
+    @test_throws MethodError InverseSymplecticAttentionQ(6, 3)
 
     isa_l = InverseSymplecticAttentionQ(6; symmetric = false)
     ps_sa = (A = randn(3, 3),)

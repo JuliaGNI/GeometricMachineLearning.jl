@@ -15,60 +15,24 @@ const InverseGradientLayerP{M, N, TA} = InverseGradientLayer{M, N, TA, :P}
 
 @doc raw"""
     InverseGradientLayerQ(n, upscaling_dimension, activation = identity)
-    InverseGradientLayerQ{M, N}(activation = identity)
 
 Make an instance of [`InverseGradientLayer`](@ref) that subtracts the gradient shift from the ``q`` coordinate (analytic inverse of [`GradientLayerQ`](@ref)).
 """
-function InverseGradientLayerQ(M::Integer, N::Integer, activation = identity)
-    @assert iseven(M) && iseven(N)
-    InverseGradientLayer{Int(M), Int(N), typeof(activation), :Q}(Int(N), activation)
+function InverseGradientLayerQ(M::Integer, upscaling_dimension::Integer, activation = identity)
+    @assert iseven(M) && iseven(upscaling_dimension)
+    InverseGradientLayer{Int(M), Int(M), typeof(activation), :Q}(
+        Int(upscaling_dimension), activation)
 end
 
 @doc raw"""
     InverseGradientLayerP(n, upscaling_dimension, activation = identity)
-    InverseGradientLayerP{M, N}(activation = identity)
 
 Make an instance of [`InverseGradientLayer`](@ref) that subtracts the gradient shift from the ``p`` coordinate (analytic inverse of [`GradientLayerP`](@ref)).
 """
-function InverseGradientLayerP(M::Integer, N::Integer, activation = identity)
-    @assert iseven(M) && iseven(N)
-    InverseGradientLayer{Int(M), Int(N), typeof(activation), :P}(Int(N), activation)
-end
-
-function InverseGradientLayerQ{M, N}(activation = identity) where {M, N}
-    InverseGradientLayerQ(M, N, activation)
-end
-
-function InverseGradientLayerP{M, N}(activation = identity) where {M, N}
-    InverseGradientLayerP(M, N, activation)
-end
-
-function GradientLayerQ{M, N}(activation = identity) where {M, N}
-    @assert iseven(M) && iseven(N)
-    GradientLayer{Int(M), Int(N), typeof(activation), :Q}(Int(N), activation)
-end
-
-function GradientLayerP{M, N}(activation = identity) where {M, N}
-    @assert iseven(M) && iseven(N)
-    GradientLayer{Int(M), Int(N), typeof(activation), :P}(Int(N), activation)
-end
-
-function Base.:(==)(a::GradientLayer{M, N1, TA, C},
-        b::GradientLayer{M, N2, TA, C}) where {M, N1, N2, TA, C}
-    a.second_dim == b.second_dim && a.activation == b.activation
-end
-
-function parameterlength(d::GradientLayer{M, N}) where {M, N}
-    d.second_dim ÷ 2 * (M ÷ 2 + 2)
-end
-
-function initialparameters(
-        rng::AbstractRNG, init_weight::AbstractNeuralNetworks.Initializer,
-        d::GradientLayer{M, N}, backend::Backend, ::Type{T};
-        init_bias = ZeroInitializer(), init_scale = GlorotUniform()) where {M, N, T}
-    initialparameters(
-        rng, init_weight, GradientLayerQ(M, d.second_dim, d.activation), backend, T;
-        init_bias = init_bias, init_scale = init_scale)
+function InverseGradientLayerP(M::Integer, upscaling_dimension::Integer, activation = identity)
+    @assert iseven(M) && iseven(upscaling_dimension)
+    InverseGradientLayer{Int(M), Int(M), typeof(activation), :P}(
+        Int(upscaling_dimension), activation)
 end
 
 function parameterlength(d::InverseGradientLayer)
@@ -85,34 +49,11 @@ end
 _shift_inv(::Val{:Q}, z::NamedTuple, f) = (q = z.q - f(z.p), p = z.p)
 _shift_inv(::Val{:P}, z::NamedTuple, f) = (q = z.q, p = z.p - f(z.q))
 
-@inline function _gradient_layer_delta(σ, y::AbstractArray, ps::NamedTuple)
-    K = haskey(ps, :weight) ? ps.weight : ps.K
-    b = haskey(ps, :bias) ? ps.bias : ps.b
-    scaled = if haskey(ps, :scale)
-        ps.scale .* σ.(_mul(K, y) .+ b)
-    elseif haskey(ps, :a)
-        ps.a .* σ.(_mul(K, y) .+ b)
-    else
-        σ.(_mul(K, y) .+ b)
-    end
-    _mul(K', scaled)
-end
-
-@inline function (d::GradientLayer{M, M, TA, C})(
-        x::NamedTuple, ps::NamedTuple) where {M, TA, C}
+@inline function (d::InverseGradientLayer{M, M, TA, C})(
+        x::NamedTuple, ps) where {M, TA, C}
     size(x.q, 1) == size(x.p, 1) == M ÷ 2 || error("Dimension mismatch.")
-    _shift(Val(C), x, y -> _gradient_layer_delta(d.activation, y, ps))
-end
-
-@inline function (d::GradientLayer{M, N, TA, C})(x::NamedTuple, ps) where {M, N, TA, C}
-    size(x.q, 1) == size(x.p, 1) == M ÷ 2 || error("Dimension mismatch.")
-    _shift(Val(C), x, y -> _gradient_layer_delta(d.activation, y, ps))
-end
-
-@inline function (d::InverseGradientLayer{M, N, TA, C})(
-        x::NamedTuple, ps) where {M, N, TA, C}
-    size(x.q, 1) == size(x.p, 1) == M ÷ 2 || error("Dimension mismatch.")
-    _shift_inv(Val(C), x, y -> _gradient_layer_delta(d.activation, y, ps))
+    _shift_inv(Val(C), x,
+        y -> _mul(ps.weight', ps.scale .* d.activation.(_mul(ps.weight, y) .+ ps.bias)))
 end
 
 @inline function (d::InverseGradientLayer{M})(x::AbstractArray, ps::NamedTuple) where {M}
@@ -159,22 +100,6 @@ function InverseSymplecticAttentionP(M::Integer; symmetric::Bool = sa_symmetric_
     @assert iseven(M) "Dimension must be even!"
     S = symmetric ? :symmetric : :arbitrary
     InverseSymplecticAttention{Int(M), Int(M), :P, S, typeof(activation)}(activation)
-end
-
-function InverseSymplecticAttentionQ(M::Integer, ::Integer; kwargs...)
-    InverseSymplecticAttentionQ(M; kwargs...)
-end
-
-function InverseSymplecticAttentionP(M::Integer, ::Integer; kwargs...)
-    InverseSymplecticAttentionP(M; kwargs...)
-end
-
-function SymplecticAttentionQ(M::Integer, ::Integer; kwargs...)
-    SymplecticAttentionQ(M; kwargs...)
-end
-
-function SymplecticAttentionP(M::Integer, ::Integer; kwargs...)
-    SymplecticAttentionP(M; kwargs...)
 end
 
 function parameterlength(l::InverseSymplecticAttention)
@@ -243,20 +168,12 @@ Return the analytic symplectic inverse (or Stiefel transpose for [`PSDLayer`](@r
 - `SymplecticAttentionP` ``\leftrightarrow`` [`InverseSymplecticAttentionP`](@ref)
 - `PSDLayer{2n, 2N}` ``\leftrightarrow`` [`TransposePSDLayer`](@ref)`{2N, 2n}`
 """
-function inverse_layer(d::GradientLayer{M, N, TA, :Q}) where {M, N, TA}
-    InverseGradientLayerQ(M, d.second_dim, d.activation)
+function inverse_layer(d::GradientLayer{M, M, TA, C}) where {M, TA, C}
+    InverseGradientLayer{M, M, TA, C}(d.second_dim, d.activation)
 end
 
-function inverse_layer(d::GradientLayer{M, N, TA, :P}) where {M, N, TA}
-    InverseGradientLayerP(M, d.second_dim, d.activation)
-end
-
-function inverse_layer(d::InverseGradientLayer{M, N, TA, :Q}) where {M, N, TA}
-    GradientLayer{M, d.second_dim, TA, :Q}(d.second_dim, d.activation)
-end
-
-function inverse_layer(d::InverseGradientLayer{M, N, TA, :P}) where {M, N, TA}
-    GradientLayer{M, d.second_dim, TA, :P}(d.second_dim, d.activation)
+function inverse_layer(d::InverseGradientLayer{M, M, TA, C}) where {M, TA, C}
+    GradientLayer{M, M, TA, C}(d.second_dim, d.activation)
 end
 
 inverse_layer(::Type{GradientLayerQ}) = InverseGradientLayerQ
