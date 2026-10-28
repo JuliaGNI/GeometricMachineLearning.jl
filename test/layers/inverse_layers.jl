@@ -182,21 +182,27 @@ end
 @testset "Error cases" begin
     igl = InverseGradientLayerQ(6, 12, tanh)
     ps_gl = (weight = randn(6, 3), bias = randn(6), scale = randn(6))
-    @test_throws ErrorException igl(randn(7, 3), ps_gl)
-    @test_throws ErrorException igl((q = randn(4, 3), p = randn(3, 3)), ps_gl)
-    @test_throws AssertionError InverseGradientLayerQ(5, 12, tanh)
-    @test_throws AssertionError InverseGradientLayerP(6, 11, tanh)
+    @test_throws ErrorException("Dimension mismatch.") igl(randn(7, 3), ps_gl)
+    @test_throws ErrorException("Dimension mismatch.") igl(
+        (q = randn(4, 3), p = randn(3, 3)), ps_gl)
+    even_gl = AssertionError("iseven(M) && iseven(upscaling_dimension)")
+    @test_throws even_gl InverseGradientLayerQ(5, 12, tanh)
+    @test_throws even_gl InverseGradientLayerP(6, 11, tanh)
     @test inverse_layer(InverseGradientLayerQ(6, 12, tanh)) != GradientLayerQ(6, 8, tanh)
     @test_throws MethodError SymplecticAttentionQ(6, 3)
     @test_throws MethodError InverseSymplecticAttentionQ(6, 3)
+    @test_throws AssertionError("Dimension must be even!") InverseSymplecticAttentionQ(5)
+    @test_throws AssertionError("Dimension must be even!") InverseSymplecticAttentionP(5)
 
     isa_l = InverseSymplecticAttentionQ(6; symmetric = false)
     ps_sa = (A = randn(3, 3),)
-    @test_throws ErrorException isa_l(randn(7, 3), ps_sa)
-    @test_throws ErrorException isa_l((q = randn(4, 3), p = randn(3, 3)), ps_sa)
+    @test_throws ErrorException("Dimension mismatch.") isa_l(randn(7, 3), ps_sa)
+    @test_throws ErrorException("Dimension mismatch.") isa_l(
+        (q = randn(4, 3), p = randn(3, 3)), ps_sa)
 
     tpsd = TransposePSDLayer(10, 4)
     ps_psd = params(NeuralNetwork(Chain(tpsd), CPU(), Float64)).L1
-    @test_throws AssertionError tpsd(randn(7, 3), ps_psd)
-    @test_throws ErrorException tpsd((q = randn(4, 3), p = randn(5, 3)), ps_psd)
+    @test_throws AssertionError("M == dim") tpsd(randn(7, 3), ps_psd)
+    @test_throws ErrorException("Dimension mismatch.") tpsd(
+        (q = randn(4, 3), p = randn(5, 3)), ps_psd)
 end

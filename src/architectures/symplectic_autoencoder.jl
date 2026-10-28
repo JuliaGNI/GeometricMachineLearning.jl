@@ -104,6 +104,7 @@ end
 # The intermediate steps from the full dimension to the reduced dimension, in ascending order. Only
 # even steps are allowed here.
 function compute_iterations_for_symplectic_system(full_dim::Integer, reduced_dim::Integer, n_blocks::Integer)
+    n_blocks >= 1 || throw(ArgumentError("n_blocks ($n_blocks) must be at least 1."))
     n_blocks == 1 && return Int[reduced_dim, full_dim]
     full_dim == reduced_dim && return fill(Int(full_dim), n_blocks + 1)
     full_dim2 = full_dim ÷ 2
