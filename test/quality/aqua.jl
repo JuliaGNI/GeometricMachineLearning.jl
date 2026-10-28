@@ -13,17 +13,24 @@ using Test
 # own, and it is also what lets the count at the end be a further assertion rather than a
 # top-level `@test` that aborts the file the moment it fails.
 #
-# `piracies` runs through `test_all` with `treat_as_own = [DataLoader, Batch]`, the two types this
-# package re-exports from `ReducedComplexityModeling`. The two methods this package means to define
-# on another package's function take one of them: its `train!` on a network and a loader, and the
-# `NetworkLoss` method that raises for an architecture and a batch with no default. Both are
-# deliberate: the training loop is this package's, and the other package owns the loader and the
-# generic. Naming the two types as this package's own keeps Aqua's check on and passing rather than
-# switching it off, so a piracy of any other foreign function still fails here, and so does a
-# further method of `train!` or `NetworkLoss` that names neither type. The check is blind to a
-# signature that names only a treated-as-own type, and to a symbol type parameter, which Aqua reads
-# as a type of the package's own: `Batch{:Transformer}` is such a parameter, so the method of
-# `integrate` on that batch is gated in `test/data_loader/batch.jl` instead.
+# `piracies` runs through `test_all` with `treat_as_own = [Batch]`, the one type this package
+# re-exports from `ReducedComplexityModeling` that its deliberate methods on another package's
+# function need. Three methods are reported without the list, and each names a `Batch`: this
+# package's `train!` on a network (`src/data_loader/train.jl:34-35`), the keyword wrapper Julia
+# derives from that method, and the `NetworkLoss` fallback that raises for an architecture and a
+# batch with no default (`:88`). All three are deliberate -- the training loop is this package's, and
+# the other package owns the loader and the generic -- so naming `Batch` as this package's own keeps
+# Aqua's check on and passing rather than switching it off.
+#
+# `Batch` alone is the whole list. `train!` names `DataLoader` too, in a `Union` whose other member
+# is foreign to Aqua whatever the list holds, so `DataLoader` bought no method the exemption and cost
+# a real one: a `Base.zero(::DataLoader)` fails this file under `[Batch]` and passes under
+# `[DataLoader, Batch]`. The check stays blind to a signature that names only `Batch`, and to a
+# symbol type parameter, which Aqua reads as a type of the package's own: `Batch{:Transformer}` is
+# such a parameter, so the method of `integrate` on that batch is gated in
+# `test/data_loader/batch.jl` instead. A piracy of any other foreign function, and a further method
+# of `train!` or `NetworkLoss` that names neither `Batch` nor a type of this package, still fails
+# here.
 #
 # `ambiguities` stays off, and the assertion below replaces it. Aqua's check runs in a process of its
 # own and asks about whatever that process loaded, so its count moves with the versions of the
@@ -33,7 +40,7 @@ using Test
 # controls.
 @testset "Aqua" begin
     Aqua.test_all(GeometricMachineLearning; ambiguities = false,
-        piracies = (treat_as_own = [DataLoader, Batch],))
+        piracies = (treat_as_own = [Batch],))
 
     @test isempty(Test.detect_ambiguities(GeometricMachineLearning; recursive = true))
 end

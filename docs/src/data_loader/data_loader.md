@@ -165,6 +165,7 @@ Here the sampling is performed over the second axis (the *time step dimension*) 
 [that package's manual](https://juliarcm.github.io/ReducedComplexityModeling.jl/stable/) documents
 them. This package re-exports the first two, so `using GeometricMachineLearning` alone gives both.
 
-[`train!`](@ref) is that package's generic as well, re-exported here: this package defines the
-methods that train a network, on a `DataLoader` or a `ParametricDataLoader`, and the generic's
-docstring is rendered with the optimizers.
+[`train!`](@ref) is that package's generic as well, re-exported here. This package defines the
+methods that train a network on a `DataLoader` or a `ParametricDataLoader`, and this manual's
+`train!` entry is their docstring; the generic's own docstring, `train!(model, …)`, is in that
+package's manual.
