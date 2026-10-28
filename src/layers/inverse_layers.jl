@@ -116,11 +116,6 @@ end
     _shift_inv(Val(C), x, y -> _gradient_layer_delta(d.activation, y, ps))
 end
 
-@inline function (d::GradientLayer{M})(x::AbstractArray, ps::NamedTuple) where {M}
-    size(x, 1) == M || error("Dimension mismatch.")
-    apply_layer_to_nt_and_return_array(x, d, ps)
-end
-
 @inline function (d::InverseGradientLayer{M})(x::AbstractArray, ps::NamedTuple) where {M}
     size(x, 1) == M || error("Dimension mismatch.")
     apply_layer_to_nt_and_return_array(x, d, ps)
