@@ -35,7 +35,7 @@ solution = integrate(ho_problem, ImplicitMidpoint())
 nothing # hide
 ```
 
-We call [`DataLoader`](@ref) in order to conveniently handle the data:
+We call `DataLoader` in order to conveniently handle the data:
 
 ```@example sympnet
 using GeometricMachineLearning # hide

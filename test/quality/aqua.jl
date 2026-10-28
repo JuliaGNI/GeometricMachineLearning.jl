@@ -13,8 +13,15 @@ using Test
 # own, and it is also what lets the count at the end be a further assertion rather than a
 # top-level `@test` that aborts the file the moment it fails.
 #
-# `piracies` runs. The 3-tensor functors of `AbstractNeuralNetworks`' `Dense` and `Linear`, and the
-# `save`/`load` methods on `NeuralNetwork`, are `AbstractNeuralNetworks`' own.
+# `piracies` is off in `test_all`, and the assertion below replaces it, for the reason the loader
+# moved: `DataLoader`, `Batch` and `train!` are `ReducedComplexityModeling`'s and `NeuralNetwork`
+# is `AbstractNeuralNetworks`', so this package's method of `train!` on a network has no type of its
+# own in its signature, and neither has the `NetworkLoss` method that raises for an architecture and
+# a batch with no default. Both are deliberate: the training loop is this package's, and the other
+# package owns the loader and the generic. The list is exact, so a piracy this package does not mean
+# to commit fails here. This check does not see every piracy: Aqua treats a symbol type parameter
+# as a type of the package's own, so `Batch{:Transformer}` reads as local, and the method of
+# `integrate` on that batch is gated in `test/data_loader/batch.jl` instead.
 #
 # `ambiguities` stays off, and the assertion below replaces it. Aqua's check runs in a process of its
 # own and asks about whatever that process loaded, so its count moves with the versions of the
@@ -23,9 +30,15 @@ using Test
 # switch stays off rather than becoming a gate on an upstream count that no line of this package
 # controls.
 @testset "Aqua" begin
-    Aqua.test_all(GeometricMachineLearning; ambiguities = false)
+    Aqua.test_all(GeometricMachineLearning; ambiguities = false, piracies = false)
 
     @test isempty(Test.detect_ambiguities(GeometricMachineLearning; recursive = true))
+
+    piracies = sort!([method.name for method in Aqua.Piracy.hunt(GeometricMachineLearning)])
+    @test unique(piracies) == [:NetworkLoss, :train!]
+    # Julia keeps a keyword wrapper beside a method that takes keywords, and it is a piracy of its
+    # own; whether it reaches the method table is the Julia version's business, not this test's.
+    @test length(piracies) in (2, 3)
 end
 
 # `ExplicitImports` answers a question Aqua does not ask, and the reason to gate on it is not
@@ -77,7 +90,12 @@ const NON_PUBLIC_QUALIFIED = (
     :JacobianResult, :jacobian, :value)                          # DiffResults
 const NON_PUBLIC_IMPORTS = (
     :AbstractExplicitLayer, :Architecture, :_compute_loss, :dim, :model, # AbstractNeuralNetworks
-    :load, :save)                                                        # NeuralNetworkParameters
+    :load, :save,                                                       # NeuralNetworkParameters
+    # The loader's routines this package calls, and the one that turns a solution into the tensors
+    # the reduced system's errors are computed on. ReducedComplexityModeling does not declare them
+    # public; the fix is there, not here.
+    :assign_output_estimate, :convert_input_and_batch_indices_to_array,
+    :data_tensors_from_geometric_solution)                              # ReducedComplexityModeling
 
 @testset "every name reached in GeometricOptimizers is public" begin
     @test check_all_qualified_accesses_are_public(GeometricMachineLearning;

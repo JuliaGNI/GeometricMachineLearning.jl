@@ -58,7 +58,6 @@ StandardTransformerIntegrator
 Transformer
 ClassificationTransformer
 ClassificationLayer
-GeometricMachineLearning.assign_output_estimate
 ```
 
 ```@raw latex

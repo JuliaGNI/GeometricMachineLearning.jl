@@ -4,6 +4,7 @@ using CairoMakie
 using GeometricProblems.TodaLattice: hodeensemble
 using GeometricMachineLearning
 using GeometricMachineLearning: solve!
+using ReducedComplexityModeling: number_of_batches
 using JLD2
 import Random
 
@@ -41,7 +42,7 @@ const batch_size = 4096
 sae_pairing = AdamOptimizerWithDecay(n_epochs)
 o = TrainingOptimizer(sae_nn.params; sae_pairing...)
 
-println("Number of batches: ", GeometricMachineLearning.number_of_batches(dl, Batch(batch_size)))
+println("Number of batches: ", number_of_batches(dl, Batch(batch_size)))
 
 psd_error = solve!(psd_nn, dl)
 sae_error = train!(sae_nn, o, dl, Batch(batch_size), n_epochs)

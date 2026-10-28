@@ -105,13 +105,13 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
 ### K20 · The `DataLoader((q = …, p = …))` constructors require one array type for `q` and `p`.
 
-- **location:** `src/data_loader/data_loader.jl:216`
+- **location:** `ReducedComplexityModeling` `src/data_loader/data_loader.jl:216`
 - **kind:** defect
 - **found:** #353 (2026-10-23); the constructors are older than that pull request
 - **evidence:**
-  The three methods at `src/data_loader/data_loader.jl:216-245` take
-  `NamedTuple{(:q, :p), Tuple{AT, AT}}` (and `Tuple{VT, VT}`), so `q` and `p` must have one
-  array type, while the `TransformerLoss` method at `src/loss/losses.jl:92` and the
+  The three methods at `ReducedComplexityModeling` `src/data_loader/data_loader.jl:216-245`
+  take `NamedTuple{(:q, :p), Tuple{AT, AT}}` (and `Tuple{VT, VT}`), so `q` and `p` must have one
+  array type, while the `TransformerLoss` method at `src/loss/losses.jl:98` and the
   `MultiHeadAttention` call take `NamedTupleOfArrays`, which admits two. A view for `q` and a
   `Matrix` for `p` raises:
 
@@ -122,10 +122,10 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   ```
 
   The same call with `q = A` gives a `DataLoader` with `input_dim == 4`. The docstring at
-  `src/data_loader/data_loader.jl:205` states the one-type signature. Closing it means widening the
-  three signatures to `NamedTupleOfArrays{T, (:q, :p)}`, and the docstring with them.
-  `ParametricDataLoader`'s `(q, p)` constructor has the same one-type restriction and widens with
-  it.
+  `ReducedComplexityModeling` `src/data_loader/data_loader.jl:205` states the one-type signature.
+  Closing it means widening the three signatures to `NamedTupleOfArrays{T, (:q, :p)}`, and the
+  docstring with them. `ParametricDataLoader`'s `(q, p)` constructor has the same one-type
+  restriction and widens with it.
 
 ## Upstream
 
@@ -276,7 +276,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
 ### K33 · An epoch of `train!` on a Metal array advances the CPU random stream, so a two-epoch run draws its second epoch's minibatches differently from the host's.
 
-- **location:** `src/data_loader/batch.jl:195`
+- **location:** `ReducedComplexityModeling` `src/data_loader/batch.jl:195`
 - **kind:** not verified
 - **found:** 2026-10-26, part M7
 - **evidence:**
@@ -391,10 +391,11 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   Base.inferencebarrier(Z), A, ndrange = size(C))` in
   `src/kernels/inverses/tensor_mat_skew_sym_assign.jl`; and `gather_kernel!(backend)(gathered,
   Base.inferencebarrier(data), indices, offset, ndrange = size(gathered))` in
-  `src/data_loader/batch.jl`. At `target_modules = (GeometricMachineLearning,)` a barrier on a
-  launch argument gives 0 reports, and the same barrier in an `@assert` of the same launcher is
-  CAUGHT with 3 reports (47 pass, 3 fail): the kernel functor takes `args...`, so the dispatch sits
-  in KernelAbstractions' frames, which the filter drops. A barrier on a value inside the kernel
+  `ReducedComplexityModeling`'s `src/data_loader/batch.jl`. At
+  `target_modules = (GeometricMachineLearning,)` a barrier on a launch argument gives 0 reports, and
+  the same barrier in an `@assert` of the same launcher is CAUGHT with 3 reports (47 pass, 3 fail):
+  the kernel functor takes `args...`, so the dispatch sits in KernelAbstractions' frames, which the
+  filter drops. A barrier on a value inside the kernel
   body of `tensor_tensor_mul_kernel!` is CAUGHT (47 pass, 3 fail).
 
 ### K14 · `train!` infers its history as an abstract `Vector`, although the run-time history is `Vector{T}`.

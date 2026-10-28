@@ -132,3 +132,13 @@ function integrate(nn::NeuralNetwork{<:TransformerIntegrator},
 
     valuation[:, 1:n_points]
 end
+
+# The three-argument form a training script writes: the prediction window comes from the `Batch`,
+# so that `integrate(nn, ics, batch)` gives the trajectory `integrate(nn, ics; prediction_window =
+# batch.prediction_window)` gives. `Batch` is `ReducedComplexityModeling`'s, so the annotation on
+# `nn` is what keeps this a method of this package's and not piracy on another package's type.
+function integrate(
+        nn::NeuralNetwork{<:TransformerIntegrator}, ics, batch::Batch{:Transformer};
+        n_points = 100)
+    integrate(nn, ics; n_points = n_points, prediction_window = batch.prediction_window)
+end

@@ -179,7 +179,7 @@ end
 end
 
 @testset "the parametric names are public and not exported" begin
-    for name in (:apply_parametric, :ParametricLoss, :ParametricDataLoader)
+    for name in (:apply_parametric, :ParametricLoss)
         @test Base.ispublic(GeometricMachineLearning, name)
         @test !Base.isexported(GeometricMachineLearning, name)
     end

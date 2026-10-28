@@ -58,6 +58,12 @@ end
 
 TransformerLoss(seq_length::Int) = TransformerLoss(seq_length, seq_length)
 
+# The loss a `Batch{:Transformer}` implies: `NetworkLoss(arch, batch)` reads the sequence length and
+# the prediction window off the batch instead of taking the two numbers.
+function TransformerLoss(batch::Batch{:Transformer})
+    TransformerLoss(batch.seq_length, batch.prediction_window)
+end
+
 # This crops the output array of the neural network so that it conforms with the output it should be compared to. This is needed for the transformer loss.
 function crop_array_for_transformer_loss(nn_output::AT,
         output::BT) where {T, T2, AT <: AbstractArray{T, 3}, BT <: AbstractArray{T2, 3}}
@@ -242,7 +248,7 @@ system beside its input.
 
 This is `FeedForwardLoss` with the system parameters passed to the network. `μ` is one
 `OptionalParameters` for one sample, or a vector of them, one per sample of a batch, as a
-[`ParametricDataLoader`](@ref) draws it. `train!` on a `ParametricDataLoader` trains on this loss
+`ParametricDataLoader` draws it. `train!` on a `ParametricDataLoader` trains on this loss
 when no `loss` is given.
 """
 struct ParametricLoss <: NetworkLoss end

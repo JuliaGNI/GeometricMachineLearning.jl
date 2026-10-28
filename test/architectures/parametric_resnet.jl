@@ -5,8 +5,8 @@
 
 using GeometricMachineLearning
 using GeometricMachineLearning: ParametricResNet, ParametricResNetLayer, NullParameters,
-                                ParametricDataLoader, params, parameterlength,
-                                apply_parametric
+                                params, parameterlength, apply_parametric
+using ReducedComplexityModeling: ParametricDataLoader
 using Test
 import Random
 

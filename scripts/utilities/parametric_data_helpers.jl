@@ -7,12 +7,12 @@
 # `GMLDatasets`' job, https://github.com/JuliaGNI/GMLDatasets.jl/issues/5 tracks moving them there --
 # so treat this file as a staging post.
 
-using GeometricMachineLearning: ParametricDataLoader
+using ReducedComplexityModeling: ParametricDataLoader
 
 """
     turn_parameters_into_correct_format(t, IC)
 
-The vector of `NamedTuple`s to be used by [`ParametricDataLoader`](@ref): one `(t = …,)` per time
+The vector of `NamedTuple`s to be used by `ParametricDataLoader`: one `(t = …,)` per time
 step of the trajectory, repeated once per initial condition of `IC`.
 
 There is one entry fewer than there are time steps in `t`, because a sample is a pair of consecutive

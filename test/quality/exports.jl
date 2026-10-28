@@ -1,5 +1,6 @@
 using GeometricMachineLearning
 using Test
+import ReducedComplexityModeling
 
 # Julia only errors on a dangling `export` when the name is actually *resolved*, so an exported name
 # that nothing defines is silent: the package loads, the docs build, the suite passes, and
@@ -55,4 +56,43 @@ end
     for alias in (:GradientOptimizer, :MomentumOptimizer, :AdamOptimizer)
         @test !isdefined(GeometricMachineLearning, alias)
     end
+end
+
+# The data loader is `ReducedComplexityModeling`'s, and this package re-exports the three names a
+# training loop is written with. Each of them is that package's object and not a second binding of
+# the name, so a caller who loads both resolves one `DataLoader`, one `Batch` and one `train!`, and
+# the method this package defines on `train!` lands on the generic that package owns.
+# `ParametricDataLoader` is the one loader name this package does not hand to `using`: the
+# parametric family is this package's, the loader is not, so a caller names it
+# `GeometricMachineLearning.ParametricDataLoader` or takes it from its owner.
+@testset "DataLoader, Batch and train! are ReducedComplexityModeling's" begin
+    for name in (:DataLoader, :Batch, :train!)
+        @test getfield(GeometricMachineLearning, name) ===
+              getfield(ReducedComplexityModeling, name)
+        @test parentmodule(getfield(GeometricMachineLearning, name)) ===
+              ReducedComplexityModeling
+        @test Base.isexported(GeometricMachineLearning, name)
+        @test name in names(GeometricMachineLearning)
+    end
+
+    # a caller who loads this package alone reaches all three
+    m = Module()
+    Core.eval(m, :(using GeometricMachineLearning))
+    for name in (:DataLoader, :Batch, :train!)
+        @test Core.eval(m, name) === getfield(ReducedComplexityModeling, name)
+    end
+
+    @test GeometricMachineLearning.ParametricDataLoader ===
+          ReducedComplexityModeling.ParametricDataLoader
+    @test !Base.isexported(GeometricMachineLearning, :ParametricDataLoader)
+    @test !Base.ispublic(GeometricMachineLearning, :ParametricDataLoader)
+    @test !(:ParametricDataLoader in names(GeometricMachineLearning))
+
+    # `networkbackend` is `AbstractNeuralNetworks`' generic, and the loader's method of it is the
+    # other package's too
+    @test nameof(parentmodule(GeometricMachineLearning.networkbackend)) ===
+          :AbstractNeuralNetworks
+    @test GeometricMachineLearning.networkbackend(
+        ReducedComplexityModeling.DataLoader(reshape(Float32.(1:20), 2, 10);
+        suppress_info = true)) == CPU()
 end

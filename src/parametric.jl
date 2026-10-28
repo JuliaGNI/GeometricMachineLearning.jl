@@ -46,7 +46,7 @@ of the system.
 `x` is one sample — a vector, or a `(q, p)` named tuple of vectors — with one `μ`, an
 `OptionalParameters`. Or `x` is a batch of `k` samples — a `2d × 1 × k` tensor, or a `(q, p)` named
 tuple of `d × 1 × k` tensors — with a vector of `k` values of `μ`, one per sample, as a
-[`ParametricDataLoader`](@ref) draws them. A batch holds at least one sample. The output has the
+`ParametricDataLoader` draws them. A batch holds at least one sample. The output has the
 shape of the input.
 
 The `Chain` receives the pair `(x, μ)`, so its first layer takes one sample and its `μ`, and a layer

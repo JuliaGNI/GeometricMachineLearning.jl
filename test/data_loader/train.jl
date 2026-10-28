@@ -2,6 +2,7 @@ using GeometricMachineLearning
 using GeometricMachineLearning: NetworkLoss, params, ZygotePullback
 using AbstractNeuralNetworks: ArrayOrNamedTuple
 using NeuralNetworkParameters: NetworkParameters
+import ReducedComplexityModeling
 using Test
 import Random
 
@@ -97,7 +98,7 @@ end
     p₀ = deepcopy(params(nn))
     Random.seed!(8)
     losses = map(batch(dl)) do indices
-        data = GeometricMachineLearning.convert_input_and_batch_indices_to_array(
+        data = ReducedComplexityModeling.convert_input_and_batch_indices_to_array(
             dl, batch, indices)
         loss(nn.model, params(nn), data...)
     end
