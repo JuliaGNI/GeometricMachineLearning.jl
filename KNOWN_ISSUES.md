@@ -11,10 +11,12 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 - **found:** 2026-08-16
 - **evidence:**
   `git log --all --diff-filter=A --name-only -- 'docs/src/tutorials/mnist/*.pdf'` names the three of
-  them, swept in by a `git add docs/src`; `b0010737` untracked them again. The blobs are still
-  reachable in the history of `main`, for three commits, though the MNIST material has since moved
-  to GMLDatasets (`8e3dbc29`) and took the `.gitignore` rule with it, so no build of this tree
-  compiles them a second time. Rewriting the history would remove the blobs.
+  them, swept in by a `git add docs/src`, and the same command with `--diff-filter=D` names the two
+  commits that untracked them again: added in `8dc9b831` and `33882583`, deleted in `a69f4641` and
+  `b0010737`. Eight commits of `origin/main` carry the three files in their tree, so the blobs are
+  still reachable in the history of `main`. The MNIST material has since moved to GMLDatasets
+  (`8e3dbc29`) and took the `.gitignore` rule with it, so no build of this tree compiles them a
+  second time. Rewriting the history would remove the blobs.
 
 ### C16 · One of `ExplicitImports`' seven checks is switched off in `test/quality/aqua.jl`, and two run with a list of names.
 
@@ -22,8 +24,10 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 - **kind:** upstream
 - **found:** 2026-09-18
 - **evidence:**
-  `no_implicit_imports` is off: **33** names arrive through a bare `using` across twelve packages,
-  and naming them is a rewrite of the module header with a judgement per name.
+  `no_implicit_imports` is off: **33** names arrive through the ten bare `using` statements in the
+  module header. Ten modules export them — the ten packages those statements name — and eleven own
+  them: `ZygoteRules` owns one of the 33, which `Zygote` re-exports. Naming them all is a rewrite of
+  the module header with a judgement per name.
   `all_explicit_imports_are_public` and `all_qualified_accesses_are_public` run with a list of the
   names this package reaches in other packages that those packages do not declare `public`: **7**
   explicit imports and **7** qualified accesses, none of them in `GeometricOptimizers`.
