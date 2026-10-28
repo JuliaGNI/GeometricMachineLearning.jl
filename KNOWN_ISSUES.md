@@ -319,7 +319,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   |:--|:--|:--|:--|:--|:--|
   | `LASympNet(4)`, no concurrent evaluation | `julia --project=<scratch> --threads=16`, one per run | 59 | 59 | 0 | 0 |
   | `VolumePreservingFeedForward(4)`, no concurrent evaluation | the same | 59 | 59 | 0 | 0 |
-  | `LASympNet(4)` with a concurrent evaluation | two `ex` calls in a private Kaimon session | 16 counted, open | 16 | 0 | 0 |
+  | `LASympNet(4)` with a concurrent evaluation | two `ex` calls in a private Kaimon session | 16 counted, open | 16 | 0 | 1, the death of run 18 |
 
   Every counted run of the two arms a shell process runs compiled inside the timer (`compile_time`
   15.6 s to 25.3 s for `LASympNet(4)`, 11.6 s to 29.1 s for `VolumePreservingFeedForward(4)`),
@@ -361,13 +361,15 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   stack, so the cause is outside this package and no workaround belongs here.
 
   The arm stays open, and its record is runs 2 to 18 of the `lasympnet-concurrent` arm: 16 counted,
-  16 clean, 0 aborts counted, none void, plus the one recorded death of run 18, about five minutes a
-  run. Run 18 died before it printed a stamp line, so its log records
-  `concurrent=crash_before_stamps` and rebuilds its `M8-DEVICE` line from the crash report. The
-  death came while another Julia process compiled in this package on the same machine, which the
-  record states because the load can change how the two tasks interleave. The session script now
-  writes `M8-TRAIN-START` and `M8-READ-START` before the timed call can finish, and `audit` counts a
-  death of this arm as its abort only when the two records show the overlap.
+  16 clean, 0 aborts counted, and 1 void, the recorded death of run 18, which `audit` gives as
+  `death with a report of this pid and no record of overlap`; about five minutes a run. Run 18 died
+  before it printed a stamp line, so its log records `concurrent=crash_before_stamps` and rebuilds
+  its `M8-DEVICE` line from the crash report. The death came while another Julia process compiled
+  in this package on the same machine, which the record states because the load can change how the
+  two tasks interleave. The session script appends `M8-TRAIN-START` and `M8-READ-START` to the run's
+  log file before the timed call can finish, because a session's output is lost when it dies, and
+  `audit` counts a death of this arm as its abort only when the two
+  records show the overlap.
 
   An upstream issue for Metal.jl, on the unlocked `flush_batched_queues!`, is drafted and not filed.
 

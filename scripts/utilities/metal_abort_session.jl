@@ -15,8 +15,8 @@
 #     manage_repl(command = "restart", session = key)                  # before each run
 #     ex: ENV["MTL_DEBUG_LAYER"] = "1"                                 # before Metal is loaded
 #     ex: include("<tree>/scripts/utilities/metal_abort_session.jl")   # once per process
-#     ex: training()                                                   # returns a job id at 30 s
-#     ex: reader()                                                     # sent at once, while the
+#     ex: training(log = "<out>/lasympnet-concurrent/run-<NNN>.log")  # returns a job id at 30 s
+#     ex: reader(log = "<out>/lasympnet-concurrent/run-<NNN>.log")     # sent at once, while the
 #                                                                      # training call still runs
 #
 # The training `ex` must still be running when the tool returns the job id, which it does after 30 s;
@@ -28,9 +28,10 @@
 # `threadid()` differs from the trainer's. Any other run is void and is replaced, and three void runs
 # in a row stop the arm.
 #
-# The two halves write a flushed record before the timed call can finish: `M8-TRAIN-START` with `T0`
-# at the start of the call, and `M8-READ-START` with `R0` when the first read has finished. A run
-# that dies leaves them, and `metal_abort_runs.jl audit` counts a death in this arm as the arm's
+# The two halves append a record to the run's log file before the timed call can finish:
+# `M8-TRAIN-START` with `T0` at the start of the call, and `M8-READ-START` with `R0` when the first
+# read has finished. They go to the file and not to `stdout`, because a session's output is lost
+# when the session dies. A run that dies leaves them, and `metal_abort_runs.jl audit` counts a death in this arm as the arm's
 # abort only when the two records show `T0 < R0` on different threads.
 #
 # ## The log of a run
@@ -38,8 +39,10 @@
 # Each run's `M8-` lines go into `<out>/lasympnet-concurrent/run-<NNN>.log`, which is the layout
 # `metal_abort_runs.jl audit` reads for the other two arms, so that the three arms are counted by one
 # rule. The session writes the lines that begin `M8-RUN`, `M8-ENV`, `M8-PKG`, `M8-DEVICE`,
-# `M8-FORWARD`, `M8-PULLBACK`, `M8-TRAIN-START`, `M8-READ-START`, `M8-TRAIN`, `M8-READ` and `M8-END`; the person running it adds the
-# two lines that a session cannot write:
+# `M8-FORWARD`, `M8-PULLBACK`, `M8-TRAIN-START`, `M8-READ-START`, `M8-TRAIN`, `M8-READ` and
+# `M8-END`, of which the two `-START` records go straight into the file and the others are the
+# session's output, which the person running it appends to the same file, with the two lines that
+# a session cannot write:
 #
 #     M8-IPS run=<N> report=<pid> file=<julia-*.ips> match=<true|false> signature=<encoder|malloc|other> symbols=<a|b|c>
 #     M8-ARM-RUN run=<N> pid=<pid> exit=<code> elapsed=<s> matched=<n> concurrent=<true|false>
@@ -64,15 +67,24 @@ state_get(k::Symbol) = @lock M8_LOCK M8_STATE[k]
 state_snapshot() = @lock M8_LOCK copy(M8_STATE)
 
 """
+One `M8-` record appended to the run's log file and closed, so that it reaches the kernel and
+survives a death of the process. A session's `flush(stdout)` does not: inside a Kaimon `ex` the
+output goes through a channel, and the reading half's `ex` has no terminal at all.
+"""
+function emit_record(log::AbstractString, tag::AbstractString, fields::Pair...)
+    open(io -> emit(io, tag, fields...), log, "a")
+end
+
+"""
 The training half of one run: the device and the stack, a forward pass and a pullback on one
 network, then the first training call of a new network between the stamps `:t0` and `:t1` of
 `M8_STATE`.
 
-It prints an `M8-TRAIN-START` line with `T0` before the timed call can finish, and ends by printing
+It appends an `M8-TRAIN-START` line with `T0` to the file `log` before the timed call can finish, and ends by printing
 the stamps `T0` and `T1` and this thread's `threadid()` in its `M8-TRAIN` line. The reading half's
 `M8-READ-START` and `M8-READ` lines are read against them to say whether the two overlapped.
 """
-function training(arm::AbstractString = "lasympnet")
+function training(arm::AbstractString = "lasympnet"; log::AbstractString)
     t0 = time()
     layer = get(ENV, "MTL_DEBUG_LAYER", "-")
     emit(stdout, "RUN", :arm => arm * "-concurrent", :pid => getpid(), :time => t0,
@@ -117,7 +129,7 @@ function training(arm::AbstractString = "lasympnet")
     trainer = Threads.threadid()
     state_set!(:t1 => 0, :trainer => trainer, :t0 => time_ns())
     # Flushed before the timed call can finish, so that a crash leaves the record of its start.
-    emit(stdout, "TRAIN-START", :T0 => state_get(:t0), :trainer_thread => trainer)
+    emit_record(log, "TRAIN-START", :T0 => state_get(:t0), :trainer_thread => trainer)
     stats = @timed Base.invokelatest(call)
     state_set!(:t1 => time_ns())
     s = state_snapshot()
@@ -132,13 +144,16 @@ function training(arm::AbstractString = "lasympnet")
 end
 
 """
-The reading half: wait for `M8_T0`, then read a host `Vector{Float32}` of 10⁶ entries and `yield()`
-in a loop until `M8_T1` is set. Return `R0`, `R1`, the number of reads and this thread's id.
+The reading half: wait for `:t0` of `M8_STATE`, then read a host `Vector{Float32}` of 10⁶ entries
+and `yield()` in a loop until `:t1` is set. Return `R0`, `R1`, the number of reads and this thread's
+id.
 
-`R0` is the instant the first read finished: a run is concurrent when `M8_T0 < R0 < M8_T1`, at
-least one read finished before `T1`, and the two `threadid()`s differ.
+`R0` is the instant the first read finished, which the `M8-READ-START` line records in the file
+`log`: a run is
+concurrent when `T0 < R0 < T1`, at least one read finished before `T1`, and the two `threadid()`s
+differ.
 """
-function reader(n::Int = 10^6)
+function reader(n::Int = 10^6; log::AbstractString)
     v = rand(Float32, n)
     deadline = time() + 600
     while state_get(:t0) == 0
@@ -155,7 +170,7 @@ function reader(n::Int = 10^6)
             R0 = time_ns()
             # Flushed at the first finished read, so that a crash leaves the record of the overlap.
             s = state_snapshot()
-            emit(stdout, "READ-START", :R0 => R0, :T0 => s[:t0],
+            emit_record(log, "READ-START", :R0 => R0, :T0 => s[:t0],
                 :reader_thread => Threads.threadid(), :trainer_thread => s[:trainer])
         end
         time() > deadline && error("no T1 after 600 s")

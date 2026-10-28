@@ -38,7 +38,9 @@
 # from other Julia processes, so a count of new files alone miscounts: every run records the report
 # files that existed before it and after it, and only a report whose pid is the run's own is
 # attached to it. Each attached report is copied beside the run's log, because macOS deletes these
-# reports.
+# reports. In the `lasympnet-concurrent` arm such a death is an abort only when the log also holds
+# the `M8-TRAIN-START` and `M8-READ-START` records of an overlap, see `overlap_evidence`; without
+# them it is void.
 #
 # A report reproduces the `LASympNet` abort when it carries `setCurrentCommandEncoder`,
 # `commitEncoder`, `endEncoding` or `endComputePass`, and the `VolumePreservingFeedForward` abort
@@ -137,8 +139,9 @@ end
 """
 The fields of one run's log, as this script reads them back. `concurrent` is whether an `M8-READ`
 line of the session arm says that its reads overlapped the training call, and `overlap` is whether
-the records written before the timed call finished show it, see `overlap_evidence`. `reports` holds the crash
-reports that carry this run's pid, either as the parent attached them or as `audit` found them later.
+the records written before the timed call finished show it, see `overlap_evidence`. `reports` holds
+the crash reports that carry this run's pid, either as the parent attached them or as `audit` found
+them later.
 """
 struct RunLog
     arm::String
@@ -587,9 +590,9 @@ reused pid, a death whose only new report carries another pid, a death with a re
 pid, a report of a run's pid that the parent did not attach, a report of a run's pid that existed
 before the run, a child that died before `M8-RUN`, a foreign report that is gone, a session-arm run
 whose reads did not overlap the training call, a session-arm death with and without the overlap
-records, and an arm of fewer than `RUNS_PER_ARM` clean runs. Each must come back as the verdict it is: a clean run, and a clean
-run beside an older report of its pid, as `:ok`, and every other case never as `:ok`. It also checks
-the exit code of a process that died by a signal.
+records, and an arm of fewer than `RUNS_PER_ARM` clean runs. Each must come back as the verdict it
+is: a clean run, and a clean run beside an older report of its pid, as `:ok`, and every other case
+never as `:ok`. It also checks the exit code of a process that died by a signal.
 """
 function selftest()
     root = mktempdir()
