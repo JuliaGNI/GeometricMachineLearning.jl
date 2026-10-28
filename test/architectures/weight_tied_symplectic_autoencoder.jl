@@ -120,6 +120,8 @@ end
     J4 = poisson_matrix(4, T)
     J2 = poisson_matrix(2, T)
     @test norm(transpose(D) * J4 * D - J2) <= 100 * eps(T)
+    E = ForwardDiff.jacobian(x -> enc(x), zv)
+    @test norm(E * J4 * transpose(E) - J2) <= 100 * eps(T)
 
     arch2 = WeightTiedSymplecticAutoencoder(
         6, 2; n_blocks = 2, n_layers = 2, n_ambient_layers = 0,
@@ -147,6 +149,8 @@ end
     D10 = ForwardDiff.jacobian(x -> dec10(x), ξ10_v)
     J10 = poisson_matrix(10, T)
     @test norm(transpose(D10) * J10 * D10 - J4) <= 100 * eps(T)
+    E10 = ForwardDiff.jacobian(x -> enc10(x), dec10(ξ10_v))
+    @test norm(E10 * J10 * transpose(E10) - J4) <= 100 * eps(T)
 
     t_grid = range(zero(T), T(2π); length = 32)
     q_ho = zeros(T, 5, 32)

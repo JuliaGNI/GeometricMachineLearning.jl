@@ -88,13 +88,12 @@ _shift_inv(::Val{:P}, z::NamedTuple, f) = (q = z.q, p = z.p - f(z.q))
 @inline function _gradient_layer_delta(σ, y::AbstractArray, ps::NamedTuple)
     K = haskey(ps, :weight) ? ps.weight : ps.K
     b = haskey(ps, :bias) ? ps.bias : ps.b
-    act = σ.(_mul(K, y) .+ b)
     scaled = if haskey(ps, :scale)
-        ps.scale .* act
+        ps.scale .* σ.(_mul(K, y) .+ b)
     elseif haskey(ps, :a)
-        ps.a .* act
+        ps.a .* σ.(_mul(K, y) .+ b)
     else
-        act
+        σ.(_mul(K, y) .+ b)
     end
     _mul(K', scaled)
 end

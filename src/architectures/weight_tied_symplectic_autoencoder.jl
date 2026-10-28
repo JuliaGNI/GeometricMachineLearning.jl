@@ -10,7 +10,7 @@ Unlike [`SymplecticAutoencoder`](@ref), which maintains independent parameter tr
 # Arguments
 
 Besides the required even integer arguments `full_dim` and `reduced_dim` (`full_dim >= reduced_dim`), the following keyword arguments are supported:
-- `n_blocks::Integer = 2`: Number of stage blocks between `reduced_dim` and `full_dim` (`n_blocks >= 1`).
+- `n_blocks::Integer = 2`: Sets the spacing of the intermediate dimensions between `reduced_dim` and `full_dim` (`n_blocks >= 1`). The decoder has one stage block per pair of adjacent dimensions, and their number can differ from `n_blocks`: `WeightTiedSymplecticAutoencoder(12, 2; n_blocks = 4)` has five stage blocks, and `WeightTiedSymplecticAutoencoder(6, 4; n_blocks = 5)` has one.
 - `n_layers::Integer = 3`: Number of gradient layers preceding each stage `PSDLayer`.
 - `n_ambient_layers::Integer = 2`: Number of ambient gradient layers at `full_dim` following the final `PSDLayer`.
 - `sympnet_upscale::Integer = 5`: Upscaling factor of each [`GradientLayer`](@ref).
