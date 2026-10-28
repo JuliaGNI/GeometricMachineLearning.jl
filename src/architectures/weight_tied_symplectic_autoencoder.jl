@@ -110,12 +110,15 @@ function decoder_model(arch::WeightTiedSymplecticAutoencoder)
     Chain(decoder_layers_from_iteration(arch, decoder_iterations)...)
 end
 
+_reverse_tuple(::Tuple{}) = ()
+_reverse_tuple(t::Tuple) = (_reverse_tuple(Base.tail(t))..., first(t))
+
 function _reverse_params(ps::NamedTuple{names}) where {names}
-    NamedTuple{names}(reverse(values(ps)))
+    NamedTuple{names}(_reverse_tuple(values(ps)))
 end
 
 function _reverse_params(ps::NetworkParameters)
-    NetworkParameters(NamedTuple{keys(ps)}(reverse(values(ps))))
+    NetworkParameters(NamedTuple{keys(ps)}(_reverse_tuple(values(ps))))
 end
 
 struct WeightTiedAutoencoderLayer{M, ET <: Tuple, DT <: Tuple, LT <: Tuple} <:
@@ -146,9 +149,8 @@ function initialparameters(
 end
 
 function (l::WeightTiedAutoencoderLayer)(z, ps::Union{NamedTuple, NetworkParameters})
-    vals = values(ps)
-    ξ = AbstractNeuralNetworks.applychain(l.encoder_layers, z, reverse(vals))
-    AbstractNeuralNetworks.applychain(l.decoder_layers, ξ, vals)
+    ξ = Chain(l.encoder_layers...)(z, _reverse_params(ps))
+    Chain(l.decoder_layers...)(ξ, ps)
 end
 
 function NeuralNetwork(

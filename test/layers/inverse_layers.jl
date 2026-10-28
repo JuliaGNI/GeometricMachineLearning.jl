@@ -57,12 +57,12 @@ Random.seed!(1234)
 end
 
 @testset "TransposePSDLayer input validation" begin
-    r1 = r"^TransposePSDLayer dimensions \(3, 4\) must be positive even integers\.$"
-    r2 = r"^TransposePSDLayer dimensions \(4, 5\) must be positive even integers\.$"
-    r3 = r"^TransposePSDLayer dimensions \(0, 4\) must be positive even integers\.$"
-    r4 = r"^TransposePSDLayer dimensions \(-2, 4\) must be positive even integers\.$"
-    r5 = r"^TransposePSDLayer dimensions \(4, 0\) must be positive even integers\.$"
-    r6 = r"^TransposePSDLayer dimensions \(:a, 4\) must be integers\.$"
+    r1 = r"^(?:ArgumentError: )?TransposePSDLayer dimensions \(3, 4\) must be positive even integers\.$"
+    r2 = r"^(?:ArgumentError: )?TransposePSDLayer dimensions \(4, 5\) must be positive even integers\.$"
+    r3 = r"^(?:ArgumentError: )?TransposePSDLayer dimensions \(0, 4\) must be positive even integers\.$"
+    r4 = r"^(?:ArgumentError: )?TransposePSDLayer dimensions \(-2, 4\) must be positive even integers\.$"
+    r5 = r"^(?:ArgumentError: )?TransposePSDLayer dimensions \(4, 0\) must be positive even integers\.$"
+    r6 = r"^(?:ArgumentError: )?TransposePSDLayer dimensions \(:?a, 4\) must be integers\.$"
     @test_throws r1 TransposePSDLayer(3, 4)
     @test_throws r2 TransposePSDLayer(4, 5)
     @test_throws r3 TransposePSDLayer(0, 4)
@@ -152,8 +152,8 @@ end
     end
 
     ∇l = ForwardDiff.jacobian(ξ -> l(ξ, ps), ξv)
-    J10 = poisson_matrix(T, 5)
-    J4 = poisson_matrix(T, 2)
+    J10 = poisson_matrix(10, T)
+    J4 = poisson_matrix(4, T)
     @test norm(transpose(∇l) * J10 * ∇l - J4) <= 20 * eps(T)
 
     # Square n == N case (catches O3 where PSDLayer{M, M} takes the else branch ps.weight')
@@ -169,4 +169,18 @@ end
     l_down = PSDLayer(10, 4)
     l_down_inv = inverse_layer(l_down)
     @test norm(l_down(l_down_inv(ξv, ps), ps) - ξv) <= 20 * eps(T) * norm(ξv)
+end
+
+@testset "Symplectic iteration and parameter reversal helpers" begin
+    @test GeometricMachineLearning.compute_iterations_for_symplectic_system(10, 4, 1) ==
+          [4, 10]
+    @test GeometricMachineLearning.compute_iterations_for_symplectic_system(6, 6, 2) ==
+          [6, 6, 6]
+    @test_throws ArgumentError WeightTiedSymplecticAutoencoder(0, 4)
+    @test_throws ArgumentError WeightTiedSymplecticAutoencoder(10, 4; n_blocks = 0)
+    @test WeightTiedSymplecticAutoencoder(4, 4; n_layers = 0) isa
+          WeightTiedSymplecticAutoencoder{:InitQ}
+    @test WeightTiedSymplecticAutoencoder(4, 2; init_q = false) isa
+          WeightTiedSymplecticAutoencoder{:InitP}
+    @test GeometricMachineLearning._reverse_tuple((1, 2, 3)) === (3, 2, 1)
 end

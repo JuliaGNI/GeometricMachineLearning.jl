@@ -7,11 +7,4 @@ Cotangent-lift [`PSDLayer`](@ref) and [`TransposePSDLayer`](@ref) layers change 
 ```@docs
 PSDLayer
 TransposePSDLayer
-inverse_layer
-InverseGradientLayer
-InverseGradientLayerQ
-InverseGradientLayerP
-InverseSymplecticAttention
-InverseSymplecticAttentionQ
-InverseSymplecticAttentionP
 ```
