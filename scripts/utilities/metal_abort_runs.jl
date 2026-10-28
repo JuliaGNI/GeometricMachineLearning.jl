@@ -136,7 +136,8 @@ end
 
 """
 The fields of one run's log, as this script reads them back. `concurrent` is whether an `M8-READ`
-line of the session arm says that its reads overlapped the training call. `reports` holds the crash
+line of the session arm says that its reads overlapped the training call, and `overlap` is whether
+the records written before the timed call finished show it, see `overlap_evidence`. `reports` holds the crash
 reports that carry this run's pid, either as the parent attached them or as `audit` found them later.
 """
 struct RunLog
@@ -149,6 +150,7 @@ struct RunLog
     layer::String
     validation::Bool
     concurrent::Bool
+    overlap::Bool
     compile_time::Float64
     finite::Bool
     reports::Vector{NamedTuple{
@@ -250,9 +252,15 @@ the crash reporter wrote after the parent had stopped waiting.
 function read_run(path::AbstractString; reports::AbstractString = REPORTS)
     lines = readlines(path; keep = true)
     header = findfirst(l -> startswith(l, "M8-RUN "), lines)
-    header === nothing && return nothing
-    arm = something(value_of(lines[header], "arm"), "-")
-    pid = parse(Int, something(value_of(lines[header], "pid"), "0"))
+    status = findlast(l -> startswith(l, "M8-ARM-RUN "), lines)
+    # A child that died before it printed `M8-RUN` (package load, Metal initialisation) leaves only
+    # the parent's lines: its pid is then the one the parent took from the process handle, and its
+    # arm is its directory's.
+    header === nothing && status === nothing && return nothing
+    source = header === nothing ? status : header
+    arm = header === nothing ? basename(dirname(abspath(path))) :
+          something(value_of(lines[header], "arm"), "-")
+    pid = parse(Int, something(value_of(lines[source], "pid"), "0"))
     index = parse(Int, match(r"run-(\d+)\.log$", basename(path)).captures[1])
 
     endline = findlast(l -> startswith(l, "M8-END "), lines)
@@ -268,12 +276,12 @@ function read_run(path::AbstractString; reports::AbstractString = REPORTS)
                    parse(Float64, something(value_of(lines[train], "compile_time"), "-1"))
     finite = train !== nothing &&
              something(value_of(lines[train], "finite"), "false") == "true"
-    status = findlast(l -> startswith(l, "M8-ARM-RUN "), lines)
     exitcode = status === nothing ? 0 :
                parse(Int, something(value_of(lines[status], "exit"), "0"))
     reads = findlast(l -> startswith(l, "M8-READ "), lines)
     concurrent = reads !== nothing &&
                  something(value_of(lines[reads], "concurrent"), "false") == "true"
+    overlap = overlap_evidence(lines)
 
     attached = NamedTuple{
         (:file, :pid, :match, :signature), Tuple{String, Int, Bool, Symbol}}[]
@@ -288,9 +296,13 @@ function read_run(path::AbstractString; reports::AbstractString = REPORTS)
         file = something(value_of(line, "file"), "-")
         push!(seen, file)
         other = parse(Int, something(value_of(line, "report"), "0"))
-        push!(attached,
-            (file = file, pid = other, match = other == pid,
-                signature = report_signature(report_path(path, index, file, reports))))
+        # The signature is read from a report of this run's pid that still exists; any other
+        # report, which macOS may have deleted, keeps the signature the parent logged.
+        mine = other == pid
+        src = report_path(path, index, file, reports)
+        signature = mine && isfile(src) ? report_signature(src) :
+                    Symbol(something(value_of(line, "signature"), "other"))
+        push!(attached, (file = file, pid = other, match = mine, signature = signature))
     end
     # A report of this run's pid that appeared after the parent stopped waiting.
     for file in report_files(reports)
@@ -304,17 +316,26 @@ function read_run(path::AbstractString; reports::AbstractString = REPORTS)
 
     RunLog(
         arm, index, pid, exitcode, endline, functional, layer,
-        any(l -> occursin("Metal API Validation Enabled", l), lines), concurrent,
+        any(l -> occursin("Metal API Validation Enabled", l), lines), concurrent, overlap,
         compile_time, finite, attached)
 end
 
-"The pid a run printed of itself, or 0 for a process that printed none."
-function run_pid(path::AbstractString)
-    for line in readlines(path)
-        startswith(line, "M8-RUN ") || continue
-        return parse(Int, something(value_of(line, "pid"), "0"))
-    end
-    0
+"""
+Whether a session-arm log holds the records that the two halves write before the timed call can
+finish: an `M8-TRAIN-START` line and an `M8-READ-START` line whose first read finished after the
+trainer's `T0`, on another thread, and — when an `M8-TRAIN` line holds a `T1` — before it.
+"""
+function overlap_evidence(lines)
+    train = findfirst(l -> startswith(l, "M8-TRAIN-START "), lines)
+    read = findfirst(l -> startswith(l, "M8-READ-START "), lines)
+    (train === nothing || read === nothing) && return false
+    field(l, k) = parse(Int, something(value_of(l, k), "0"))
+    t0 = field(lines[train], "T0")
+    r0 = field(lines[read], "R0")
+    done = findfirst(l -> startswith(l, "M8-TRAIN ") && value_of(l, "T1") !== nothing, lines)
+    t1 = done === nothing ? typemax(Int) : field(lines[done], "T1")
+    t0 > 0 && t0 < r0 < t1 &&
+        field(lines[train], "trainer_thread") != field(lines[read], "reader_thread")
 end
 
 "The copied crash report of a run, or the one in the reports directory."
@@ -324,7 +345,8 @@ function report_path(log::AbstractString, index::Int, file::AbstractString, repo
 end
 
 """
-The rule, over what a log holds: `:abort` when a report of this run's own pid exists, `:ok` when the
+The rule, over what a log holds: `:abort` when a report of this run's own pid exists (in the
+`lasympnet-concurrent` arm, only with a record of overlap), `:ok` when the
 run trained a cold first call on a functional device with the debug layer set and shown active and
 exited with 0 — and, in the `lasympnet-concurrent` arm, when its `M8-READ` line says that the reads
 overlapped the training call — and `:void` with the reason for anything else.
@@ -332,6 +354,11 @@ overlapped the training call — and `:void` with the reason for anything else.
 function verdict(run::RunLog)
     matched = filter(r -> r.match, run.reports)
     if !isempty(matched)
+        # A death in the session arm is the arm's abort only with a record that the reads and the
+        # training call overlapped; without one it is a recorded death outside the counted window.
+        run.arm == "lasympnet-concurrent" && !run.overlap &&
+            return (status = :void, signature = first(matched).signature,
+                reason = "death with a report of this pid and no record of overlap")
         return (status = :abort, reason = "report of this pid",
             signature = first(matched).signature)
     end
@@ -398,18 +425,21 @@ function run_arm(arm::AbstractString, from::Int, to::Int, out::AbstractString;
         end
         code = 0
         elapsed = 0.0
+        pid = 0
         open(logpath, "a") do io
             t0 = time()
             p = run(
                 pipeline(ignorestatus(child_cmd(arm, threads)); stdout = io,
                     stderr = io);
-                wait = true)
+                wait = false)
+            # The run's own pid, from the handle while the process runs: a handle of a process
+            # that has exited no longer answers `getpid`, and a child that dies before it prints
+            # `M8-RUN` prints none.
+            pid = getpid(p)
+            wait(p)
             code = exit_code(p)
             elapsed = time() - t0
         end
-        # The run's own pid, which it prints before any Metal work: the parent's handle on a
-        # process that has exited no longer answers `getpid`.
-        pid = run_pid(logpath)
         code == 0 || sleep(CRASH_REPORTER_WAIT)
         after = report_files(reports)
         new = setdiff(after, before)
@@ -555,8 +585,9 @@ The audit's own test, over logs that this function writes: a clean run, a run on
 device, a warm run, a run without the debug layer, a run whose validation layer left no line, a
 reused pid, a death whose only new report carries another pid, a death with a report of its own
 pid, a report of a run's pid that the parent did not attach, a report of a run's pid that existed
-before the run, a session-arm run whose reads did not overlap the training call, and an arm of fewer
-than `RUNS_PER_ARM` clean runs. Each must come back as the verdict it is: a clean run, and a clean
+before the run, a child that died before `M8-RUN`, a foreign report that is gone, a session-arm run
+whose reads did not overlap the training call, a session-arm death with and without the overlap
+records, and an arm of fewer than `RUNS_PER_ARM` clean runs. Each must come back as the verdict it is: a clean run, and a clean
 run beside an older report of its pid, as `:ok`, and every other case never as `:ok`. It also checks
 the exit code of a process that died by a signal.
 """
@@ -607,7 +638,6 @@ function selftest()
     mkpath(one)
     fixture(one, 1, 1001, 0)
     check("clean", verdict_of(one, 1).status, :ok)
-    check("pid from the log", run_pid(joinpath(one, "run-001.log")), 1001)
 
     two = joinpath(root, "device")
     mkpath(two)
@@ -714,6 +744,55 @@ function selftest()
     check("no read line", verdict_of(fourteen, 1).status, :void)
     check("reads did not overlap", verdict_of(fourteen, 2).status, :void)
     check("reads overlapped", verdict_of(fourteen, 3).status, :ok)
+
+    # A child that died before `M8-RUN` leaves only the parent's lines. Its pid is the parent's, and
+    # the run is void, or an abort when a report of that pid exists.
+    fifteen = joinpath(root, "before M8-RUN")
+    mkpath(fifteen)
+    for (i, pid) in ((1, 1020), (2, 1021))
+        write(joinpath(fifteen, "run-" * lpad(i, 3, '0') * ".log"),
+            "M8-IPS-BEFORE count=0 files=\nM8-IPS-AFTER count=0 new=0 files=\nM8-ARM-RUN run=$i pid=$pid exit=134 elapsed=1.0 matched=0\n")
+    end
+    write(joinpath(reports, "julia-2026-01-06-000000.ips"),
+        "{\n  \"pid\" : 1021,\n  \"message\" : \"BUG IN CLIENT OF LIBMALLOC: memory corruption of free block\"\n}\n")
+    check("death before M8-RUN", verdict_of(fifteen, 1).status, :void)
+    check("death before M8-RUN, pid", read_run(joinpath(fifteen, "run-001.log"); reports).pid, 1020)
+    check("death before M8-RUN with a report", verdict_of(fifteen, 2).status, :abort)
+    check("death before M8-RUN, counted", audit_arm(fifteen; reports = reports).runs, 2)
+
+    # A foreign report that the parent logged and macOS has since deleted is not read.
+    sixteen = joinpath(root, "foreign report gone")
+    mkpath(sixteen)
+    fixture(sixteen, 1, 1022, 0;
+        extra = "M8-IPS-AFTER count=1 new=1 files=julia-gone.ips\nM8-IPS run=1 report=7777 file=julia-gone.ips match=false signature=other symbols=-\n")
+    check("foreign report gone", verdict_of(sixteen, 1).status, :ok)
+
+    # In the session arm, a death with a report of the run's pid is the arm's abort only with the
+    # records that the two halves write before the timed call ends.
+    seventeen = joinpath(root, "session death")
+    mkpath(seventeen)
+    for (i, pid) in ((1, 1023), (2, 1024))
+        write(
+            joinpath(seventeen, "run-" * lpad(i, 3, '0') * ".julia-2026-01-07-00000$i.ips"),
+            "{\n  \"pid\" : $pid,\n  \"symbols\" : \"endComputePass Metal\"\n}\n")
+    end
+    died(i, pid, extra) = fixture(seventeen, i, pid, 139; arm = "lasympnet-concurrent",
+        extra = extra *
+                "M8-IPS-AFTER count=1 new=1 files=julia-2026-01-07-00000$i.ips\nM8-IPS run=$i report=$pid file=julia-2026-01-07-00000$i.ips match=true signature=encoder symbols=-\n")
+    died(1, 1023, "")
+    died(2, 1024,
+        "M8-TRAIN-START T0=10 trainer_thread=1\nM8-READ-START R0=20 T0=10 reader_thread=2 trainer_thread=1\n")
+    check("session death without overlap record", verdict_of(seventeen, 1).status, :void)
+    check("session death without overlap record, signature",
+        verdict_of(seventeen, 1).signature, :encoder)
+    check("session death with overlap record", verdict_of(seventeen, 2).status, :abort)
+    rm(joinpath(seventeen, "run-002.log"))
+    check("no overlap record, not reproduced",
+        audit_arm(seventeen; reports = reports).state, "0 of $(RUNS_PER_ARM), not done")
+    died(2, 1024,
+        "M8-TRAIN-START T0=10 trainer_thread=1\nM8-READ-START R0=20 T0=10 reader_thread=2 trainer_thread=1\n")
+    check("overlap record, reproduced",
+        audit_arm(seventeen; reports = reports).state, "reproduced")
 
     # A death by a signal leaves `exitcode` 0; the parent records `128 + n`.
     check("signal exit code", exit_code(run(ignorestatus(`sh -c "kill -ABRT \$\$"`))), 134)

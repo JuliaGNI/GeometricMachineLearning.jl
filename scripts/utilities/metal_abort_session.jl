@@ -28,12 +28,17 @@
 # `threadid()` differs from the trainer's. Any other run is void and is replaced, and three void runs
 # in a row stop the arm.
 #
+# The two halves write a flushed record before the timed call can finish: `M8-TRAIN-START` with `T0`
+# at the start of the call, and `M8-READ-START` with `R0` when the first read has finished. A run
+# that dies leaves them, and `metal_abort_runs.jl audit` counts a death in this arm as the arm's
+# abort only when the two records show `T0 < R0` on different threads.
+#
 # ## The log of a run
 #
 # Each run's `M8-` lines go into `<out>/lasympnet-concurrent/run-<NNN>.log`, which is the layout
 # `metal_abort_runs.jl audit` reads for the other two arms, so that the three arms are counted by one
 # rule. The session writes the lines that begin `M8-RUN`, `M8-ENV`, `M8-PKG`, `M8-DEVICE`,
-# `M8-FORWARD`, `M8-PULLBACK`, `M8-TRAIN`, `M8-READ` and `M8-END`; the person running it adds the
+# `M8-FORWARD`, `M8-PULLBACK`, `M8-TRAIN-START`, `M8-READ-START`, `M8-TRAIN`, `M8-READ` and `M8-END`; the person running it adds the
 # two lines that a session cannot write:
 #
 #     M8-IPS run=<N> report=<pid> file=<julia-*.ips> match=<true|false> signature=<encoder|malloc|other> symbols=<a|b|c>
@@ -50,12 +55,22 @@ using Metal, GeometricMachineLearning, GeometricOptimizers, KernelAbstractions, 
       Random,
       LinearAlgebra
 
+# The stamps and the trainer's thread, shared by the two halves. Every read and write holds
+# `M8_LOCK`, and the state exists from the `include`, before either request is sent.
+const M8_LOCK = ReentrantLock()
+const M8_STATE = Dict{Symbol, Int}(:t0 => 0, :t1 => 0, :trainer => 0)
+state_set!(kv::Pair{Symbol}...) = @lock M8_LOCK merge!(M8_STATE, Dict(kv))
+state_get(k::Symbol) = @lock M8_LOCK M8_STATE[k]
+state_snapshot() = @lock M8_LOCK copy(M8_STATE)
+
 """
 The training half of one run: the device and the stack, a forward pass and a pullback on one
-network, then the first training call of a new network between the stamps `M8_T0` and `M8_T1`.
+network, then the first training call of a new network between the stamps `:t0` and `:t1` of
+`M8_STATE`.
 
-It ends by printing the stamps `T0` and `T1` and this thread's `threadid()` in its `M8-TRAIN` line,
-which the reading half's `M8-READ` line is read against to say whether the two overlapped.
+It prints an `M8-TRAIN-START` line with `T0` before the timed call can finish, and ends by printing
+the stamps `T0` and `T1` and this thread's `threadid()` in its `M8-TRAIN` line. The reading half's
+`M8-READ-START` and `M8-READ` lines are read against them to say whether the two overlapped.
 """
 function training(arm::AbstractString = "lasympnet")
     t0 = time()
@@ -99,19 +114,21 @@ function training(arm::AbstractString = "lasympnet")
     batch = Batch(8)
     call = () -> train!(trained, optimizer, loader, batch, 2; show_progress = false)
 
-    global M8_T1 = 0
-    global M8_TRAINER = Threads.threadid()
-    global M8_T0 = time_ns()
+    trainer = Threads.threadid()
+    state_set!(:t1 => 0, :trainer => trainer, :t0 => time_ns())
+    # Flushed before the timed call can finish, so that a crash leaves the record of its start.
+    emit(stdout, "TRAIN-START", :T0 => state_get(:t0), :trainer_thread => trainer)
     stats = @timed Base.invokelatest(call)
-    global M8_T1 = time_ns()
+    state_set!(:t1 => time_ns())
+    s = state_snapshot()
     history = stats.value
     emit(stdout, "TRAIN", :compile_time => stats.compile_time,
         :recompile_time => stats.recompile_time, :time => stats.time, :bytes => stats.bytes,
         :eltype => eltype(history), :finite => all(isfinite, history),
         :history => _no_space(join(round.(history; digits = 6), ",")),
-        :trainer_thread => Threads.threadid(), :T0 => M8_T0, :T1 => M8_T1)
+        :trainer_thread => Threads.threadid(), :T0 => s[:t0], :T1 => s[:t1])
     emit(stdout, "END", :status => "ok", :elapsed => round(time() - t0; digits = 1))
-    (T0 = M8_T0, T1 = M8_T1, trainer = Threads.threadid(), history = history)
+    (T0 = s[:t0], T1 = s[:t1], trainer = Threads.threadid(), history = history)
 end
 
 """
@@ -124,22 +141,28 @@ least one read finished before `T1`, and the two `threadid()`s differ.
 function reader(n::Int = 10^6)
     v = rand(Float32, n)
     deadline = time() + 600
-    while !isdefined(Main, :M8_T0) || M8_T0 == 0
+    while state_get(:t0) == 0
         time() > deadline && error("no T0 after 600 s")
         yield()
     end
     R0 = 0
     reads = 0
-    while !isdefined(Main, :M8_T1) || M8_T1 == 0
+    while state_get(:t1) == 0
         sum(v)
         yield()
         reads += 1
-        R0 == 0 && (R0 = time_ns())
+        if R0 == 0
+            R0 = time_ns()
+            # Flushed at the first finished read, so that a crash leaves the record of the overlap.
+            s = state_snapshot()
+            emit(stdout, "READ-START", :R0 => R0, :T0 => s[:t0],
+                :reader_thread => Threads.threadid(), :trainer_thread => s[:trainer])
+        end
         time() > deadline && error("no T1 after 600 s")
     end
     R1 = time_ns()
-    T0, T1 = M8_T0, M8_T1
-    trainer = isdefined(Main, :M8_TRAINER) ? M8_TRAINER : 0
+    s = state_snapshot()
+    T0, T1, trainer = s[:t0], s[:t1], s[:trainer]
     emit(stdout, "READ", :R0 => R0, :R1 => R1, :T0 => T0, :T1 => T1, :reads => reads,
         :reader_thread => Threads.threadid(), :trainer_thread => trainer,
         :concurrent => T0 < R0 < T1 && trainer != Threads.threadid())
