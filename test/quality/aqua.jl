@@ -22,12 +22,12 @@ using Test
 # the other package owns the loader and the generic -- so naming `Batch` as this package's own keeps
 # Aqua's check on and passing rather than switching it off.
 #
-# `Batch` alone is the whole list. `train!` names `DataLoader` too, in a `Union` whose other member
-# is foreign to Aqua whatever the list holds, so `DataLoader` bought no method the exemption and cost
-# a real one: a `Base.zero(::DataLoader)` fails this file under `[Batch]` and passes under
-# `[DataLoader, Batch]`. The check stays blind to a signature that names only `Batch`, and to a
-# symbol type parameter, which Aqua reads as a type of the package's own: `Batch{:Transformer}` is
-# such a parameter, so the method of `integrate` on that batch is gated in
+# `Batch` alone is the whole list. `train!` also names `DataLoader`, but in a `Union` with
+# `ParametricDataLoader`, which the list does not hold, so `DataLoader` in the list exempts no
+# method and hides a real piracy: a `Base.zero(::DataLoader)` fails this file under `[Batch]` and
+# passes under `[DataLoader, Batch]`. The check stays blind to a signature that names only
+# `Batch`, and to a symbol type parameter, which Aqua reads as a type of the package's own:
+# `Batch{:Transformer}` is such a parameter, so the method of `integrate` on that batch is gated in
 # `test/data_loader/batch.jl` instead. A piracy of any other foreign function, and a further method
 # of `train!` or `NetworkLoss` that names neither `Batch` nor a type of this package, still fails
 # here.
