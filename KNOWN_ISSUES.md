@@ -357,8 +357,10 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   command-encoder frame below a Metal.jl frame, as the 2026-09-22 assertion's
   `setCurrentCommandEncoder` was — and the code path of the `julia-2026-10-26-225001.ips` report: a
   task's `device_synchronize` flushes every active batched queue, another task's open command buffer
-  among them, and Metal.jl 1.11.1 takes no lock there. No GeometricMachineLearning frame is in the
-  stack, so the cause is outside this package and no workaround belongs here.
+  among them, and Metal.jl 1.11.1 takes no lock there. That reading is a hypothesis: the stack shows
+  where the process died and not which task owned the command buffer, and no evidence of queue
+  ownership or of the calls before the death exists. No GeometricMachineLearning frame is in the
+  stack, which does not by itself place the cause outside this package.
 
   The arm stays open, and its record is runs 2 to 18 of the `lasympnet-concurrent` arm: 16 counted,
   16 clean, 0 aborts counted, and 1 void, the recorded death of run 18, which `audit` gives as
