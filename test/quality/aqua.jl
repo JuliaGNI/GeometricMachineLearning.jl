@@ -39,9 +39,9 @@ end
 #
 #   no_implicit_imports              33 names arrive through the ten bare `using` statements in the
 #                                    module header: ten modules export them, eleven own them --
-#                                    `norm`, `@kernel`, `rrule`, `pullback` and the rest. Naming
-#                                    every one is a change to the whole module header and a judgement
-#                                    per name, not a by-product of a dead-code pass.
+#                                    `norm`, `@kernel`, `NoTangent`, `pullback` and the rest.
+#                                    Naming every one is a change to the whole module header and a
+#                                    judgement per name, not a by-product of a dead-code pass.
 #
 # WHAT THIS GATE DOES NOT CATCH, and one way it can go red on its own.
 #

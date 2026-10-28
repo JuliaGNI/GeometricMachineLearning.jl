@@ -6,7 +6,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
 ### C6 · Three generated MNIST PDFs are in the history of `main`
 
-- **location:** `docs/src`
+- **location:** `docs/src/tutorials/mnist/*.pdf`
 - **kind:** defect
 - **found:** 2026-08-16
 - **evidence:**
@@ -14,11 +14,12 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   them, swept in by a `git add docs/src`, and the same command with `--diff-filter=D` names the two
   commits that untracked them again: added in `8dc9b831` and `33882583`, deleted in `a69f4641` and
   `b0010737`. Eight commits of `origin/main` carry the three files in their tree, so the blobs are
-  still reachable in the history of `main`. The MNIST material has since moved to GMLDatasets
-  (`8e3dbc29`) and took the `.gitignore` rule with it, so no build of this tree compiles them a
-  second time. Rewriting the history would remove the blobs.
+  still reachable in the history of `main`. `8e3dbc29`, which moved the MNIST material to
+  GMLDatasets, deleted the `.tex` sources, their `Makefile` and the `.gitignore` rule for their
+  PDFs, so no build of this tree compiles them a second time. Rewriting the history would remove
+  the blobs.
 
-### C16 · One of `ExplicitImports`' seven checks is switched off in `test/quality/aqua.jl`, and two run with a list of names.
+### C16 · One of `ExplicitImports`' seven checks is switched off in `test/quality/aqua.jl`, and three run with a list of names.
 
 - **location:** `test/quality/aqua.jl`
 - **kind:** upstream
@@ -32,8 +33,10 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   names this package reaches in other packages that those packages do not declare `public`: **7**
   explicit imports and **7** qualified accesses, none of them in `GeometricOptimizers`.
   `Architecture`, `AbstractExplicitLayer`, `_compute_loss`, `dim` and the rest are used
-  deliberately, and the resolution is upstream declaring them `public`. Each check's reason is
-  written beside it in the test file.
+  deliberately, and the resolution is upstream declaring them `public`.
+  `no_stale_explicit_imports` runs with `update!` on its ignore list: the import has no use in
+  `src/`, and it keeps `GeometricMachineLearning.update!` the binding of the `GeometricOptimizers`
+  verb. Each check's reason is written beside it in the test file.
 
 ### C21 · "An untrained autoencoder projects worse than PSD" is not a property, and the suite asserts it on one draw.
 
