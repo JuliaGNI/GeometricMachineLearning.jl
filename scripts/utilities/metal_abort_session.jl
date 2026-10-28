@@ -152,8 +152,8 @@ end
 
 """
 The reading half: wait for `:t0` of `M8_STATE`, then read a host `Vector{Float32}` of 10⁶ entries
-and `yield()` in a loop until `:t1` is set. Return `R0`, `R1`, the number of reads and this thread's
-id.
+and `yield()` in a loop until `:t1` is set. Return `R0`, `R1`, the number of reads and the
+`threadid()` of the first read.
 
 `R0` is the instant the first read finished, which the `M8-READ-START` line records in the file
 `log`: a run is concurrent when `T0 < R0 < T1`, at least one read finished before `T1`, and the two
