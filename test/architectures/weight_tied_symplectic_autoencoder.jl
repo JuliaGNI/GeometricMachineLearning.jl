@@ -63,6 +63,14 @@ Random.seed!(1234)
           WeightTiedSymplecticAutoencoder{:InitP}
     @test GeometricMachineLearning._reverse_tuple((1, 2, 3)) === (3, 2, 1)
 
+    # A spacing that rounds to zero is refused, not clamped
+    re8 = r"^(?:ArgumentError: )?n_blocks \(5\) must be at most 2 for full_dim \(6\) and reduced_dim \(4\)\.$"
+    arch_wide = WeightTiedSymplecticAutoencoder(6, 4; n_blocks = 5)
+    @test_throws re8 compute_decoder_iterations(arch_wide)
+    @test_throws re8 NeuralNetwork(arch_wide, CPU(), Float64)
+    @test compute_decoder_iterations(WeightTiedSymplecticAutoencoder(6, 4; n_blocks = 2)) ==
+          [4, 6]
+
     # Multi-block weight tying and leaf identity
     arch2 = WeightTiedSymplecticAutoencoder(
         6, 2; n_blocks = 2, n_layers = 2, n_ambient_layers = 0,

@@ -108,7 +108,9 @@ function compute_iterations_for_symplectic_system(full_dim::Integer, reduced_dim
     full_dim == reduced_dim && return fill(Int(full_dim), n_blocks + 1)
     full_dim2 = full_dim ÷ 2
     reduced_dim2 = reduced_dim ÷ 2
-    step = max(1, (full_dim2 - reduced_dim2) ÷ (n_blocks - 1))
+    step = (full_dim2 - reduced_dim2) ÷ (n_blocks - 1)
+    step > 0 ||
+        throw(ArgumentError("n_blocks ($n_blocks) must be at most $(full_dim2 - reduced_dim2 + 1) for full_dim ($full_dim) and reduced_dim ($reduced_dim)."))
     iterations = Vector{Int}(reduced_dim2:step:full_dim2)
     iterations[end] = full_dim2
     iterations * 2

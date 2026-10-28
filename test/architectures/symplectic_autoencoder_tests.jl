@@ -94,3 +94,11 @@ for T in REAL_ELTYPES
     test_decoder_output_layers(T, 10, 6, 2)
     test_decoder_output_layers(T, 20, 10, 3)
 end
+
+@testset "block counts at the edges" begin
+    # One block builds; a spacing that rounds to zero is refused
+    @test NeuralNetwork(SymplecticAutoencoder(8, 4; n_encoder_blocks = 1), Float64) isa
+          NeuralNetwork
+    re = r"^(?:ArgumentError: )?n_blocks \(4\) must be at most 3 for full_dim \(8\) and reduced_dim \(4\)\.$"
+    @test_throws re NeuralNetwork(SymplecticAutoencoder(8, 4; n_decoder_blocks = 4), Float64)
+end
