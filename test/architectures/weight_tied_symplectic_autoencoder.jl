@@ -55,6 +55,13 @@ Random.seed!(1234)
           4
     @test compute_decoder_iterations(WeightTiedSymplecticAutoencoder(10, 4; n_blocks = 3)) ==
           [4, 6, 8, 10]
+    @test GeometricMachineLearning.compute_iterations_for_symplectic_system(10, 4, 1) ==
+          [4, 10]
+    @test WeightTiedSymplecticAutoencoder(4, 4; n_layers = 0) isa
+          WeightTiedSymplecticAutoencoder{:InitQ}
+    @test WeightTiedSymplecticAutoencoder(4, 2; init_q = false) isa
+          WeightTiedSymplecticAutoencoder{:InitP}
+    @test GeometricMachineLearning._reverse_tuple((1, 2, 3)) === (3, 2, 1)
 
     # Multi-block weight tying and leaf identity
     arch2 = WeightTiedSymplecticAutoencoder(
@@ -207,9 +214,6 @@ end
         nn = NeuralNetwork(arch, CPU(), T)
         enc = encoder(nn)
         dec = decoder(nn)
-        nn_T = nn
-        enc_T = enc
-        dec_T = dec
         zv = randn(T, 4)
         zm = randn(T, 4, 3)
         ξv = randn(T, 2)
@@ -223,9 +227,6 @@ end
         ym_enc = @inferred enc(zm)
         ym_dec = @inferred dec(ξm)
         ym_nn = @inferred nn(zm)
-        @inferred enc_T(zm)
-        @inferred dec_T(ξm)
-        @inferred nn_T(zm)
         @test y_enc isa Vector{T}
         @test y_dec isa Vector{T}
         @test y_nn isa Vector{T}
@@ -233,9 +234,9 @@ end
         @test ym_dec isa Matrix{T}
         @test ym_nn isa Matrix{T}
 
-        nt_enc = @inferred enc_T(znt)
-        nt_dec = @inferred dec_T(ξnt)
-        nt_nn = @inferred nn_T(znt)
+        nt_enc = @inferred enc(znt)
+        nt_dec = @inferred dec(ξnt)
+        nt_nn = @inferred nn(znt)
         @test nt_enc isa NamedTuple{(:q, :p), Tuple{Vector{T}, Vector{T}}}
         @test nt_dec isa NamedTuple{(:q, :p), Tuple{Vector{T}, Vector{T}}}
         @test nt_nn isa NamedTuple{(:q, :p), Tuple{Vector{T}, Vector{T}}}

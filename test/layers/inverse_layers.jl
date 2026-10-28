@@ -180,22 +180,10 @@ end
 end
 
 @testset "Error cases" begin
-    @test GeometricMachineLearning.compute_iterations_for_symplectic_system(10, 4, 1) ==
-          [4, 10]
-    @test GeometricMachineLearning.compute_iterations_for_symplectic_system(6, 6, 2) ==
-          [6, 6, 6]
-    @test_throws ArgumentError WeightTiedSymplecticAutoencoder(0, 4)
-    @test_throws ArgumentError WeightTiedSymplecticAutoencoder(10, 4; n_blocks = 0)
-    @test WeightTiedSymplecticAutoencoder(4, 4; n_layers = 0) isa
-          WeightTiedSymplecticAutoencoder{:InitQ}
-    @test WeightTiedSymplecticAutoencoder(4, 2; init_q = false) isa
-          WeightTiedSymplecticAutoencoder{:InitP}
-    @test GeometricMachineLearning._reverse_tuple((1, 2, 3)) === (3, 2, 1)
-
     igl = InverseGradientLayerQ(6, 12, tanh)
     ps_gl = (weight = randn(6, 3), bias = randn(6), scale = randn(6))
-    @test_throws Exception igl(randn(7, 3), ps_gl)
-    @test_throws Exception igl((q = randn(4, 3), p = randn(3, 3)), ps_gl)
+    @test_throws ErrorException igl(randn(7, 3), ps_gl)
+    @test_throws ErrorException igl((q = randn(4, 3), p = randn(3, 3)), ps_gl)
     @test_throws AssertionError InverseGradientLayerQ(5, 12, tanh)
     @test_throws AssertionError InverseGradientLayerP(6, 11, tanh)
     @test inverse_layer(InverseGradientLayerQ(6, 12, tanh)) != GradientLayerQ(6, 8, tanh)
@@ -204,11 +192,11 @@ end
 
     isa_l = InverseSymplecticAttentionQ(6; symmetric = false)
     ps_sa = (A = randn(3, 3),)
-    @test_throws Exception isa_l(randn(7, 3), ps_sa)
-    @test_throws Exception isa_l((q = randn(4, 3), p = randn(3, 3)), ps_sa)
+    @test_throws ErrorException isa_l(randn(7, 3), ps_sa)
+    @test_throws ErrorException isa_l((q = randn(4, 3), p = randn(3, 3)), ps_sa)
 
     tpsd = TransposePSDLayer(10, 4)
     ps_psd = params(NeuralNetwork(Chain(tpsd), CPU(), Float64)).L1
-    @test_throws Exception tpsd(randn(7, 3), ps_psd)
-    @test_throws Exception tpsd((q = randn(4, 3), p = randn(5, 3)), ps_psd)
+    @test_throws AssertionError tpsd(randn(7, 3), ps_psd)
+    @test_throws ErrorException tpsd((q = randn(4, 3), p = randn(5, 3)), ps_psd)
 end
