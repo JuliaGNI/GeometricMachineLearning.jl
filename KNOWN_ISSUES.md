@@ -290,6 +290,60 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   before each. Which of `Metal`, `GPUArrays`, `GeometricOptimizers` or `Zygote` draws is not
   established.
 
+### K35 · Neither of the two Metal process aborts of 2026-09-22 reproduces in 59 fresh processes per arm, and neither run was ever shown to abort on demand.
+
+- **location:** `scripts/utilities/metal_abort_runs.jl`
+- **kind:** not verified
+- **found:** 2026-10-27
+- **evidence:**
+  A `LASympNet(4)` process died once from `MTLReleaseAssertionFailure` in
+  `-[IOGPUMetalCommandBuffer setCurrentCommandEncoder:]` while a second session `ex` read a Julia
+  vector, and a `VolumePreservingFeedForward(4)` process once from
+  `BUG IN CLIENT OF LIBMALLOC: memory corruption of free block` inside the host LLVM JIT with no
+  second `ex`. Both ran `Float32` on `MetalBackend()`, Adam, and died in the first training call.
+  Neither recurred in a fresh process or in 24 warm runs, and the cause is not known.
+
+  `scripts/utilities/metal_abort_runs.jl`, at the commit `7fdc3f8` that the runs used, runs one
+  counted run per OS process: it
+  prints its pid, `MTL_DEBUG_LAYER`, `Threads.nthreads()`, the version and path of every package of
+  the stack, `Metal.functional()` and the device's name before the first call; it takes a forward
+  pass and a Zygote pullback on one network and then times the *first* training call of a new one
+  with `@timed Base.invokelatest`, so that the compilation is inside the timer; and it attaches a
+  `julia-*.ips` to a run only when the report's `"pid"` is the run's own, so that the sixteen reports
+  of other Julia processes in `~/Library/Logs/DiagnosticReports` are not counted. `N = 59` per arm,
+  fixed before the first run: at a rate of one abort in twenty training calls, 59 clean runs happen
+  with probability at most `0.95^59 = 0.0485`.
+
+  | arm | process | N | clean | aborts | void |
+  |:--|:--|:--|:--|:--|:--|
+  | `LASympNet(4)`, no concurrent evaluation | `julia --project=<scratch> --threads=16`, one per run | 59 | 59 | 0 | 0 |
+  | `VolumePreservingFeedForward(4)`, no concurrent evaluation | the same | 59 | 59 | 0 | 0 |
+  | `LASympNet(4)` with a concurrent evaluation | two `ex` calls in a private Kaimon session | 59 | — | — | — |
+
+  Every counted run compiled inside the timer (`compile_time` 15.6 s to 25.3 s for `LASympNet(4)`,
+  11.6 s to 29.1 s for `VolumePreservingFeedForward(4)`), reported a finite `Float32` loss history,
+  showed `Metal API Validation Enabled`, and had a pid no other run used. The crash reporter wrote no
+  new `julia-*.ips` at any point in the 118 runs.
+
+  The stack of the runs is Julia 1.13.3, this package at `1d2faead`, `GeometricOptimizers` 0.9.1,
+  Metal.jl 1.11.1, GPUCompiler 2.10.0, KernelAbstractions 0.9.45 and LLVM.jl 9.13.2. The stack of the
+  2026-09-22 aborts was Julia 1.13.0, Metal.jl 1.11.1, GPUCompiler 2.8.1, KernelAbstractions 0.9.42
+  and LLVM.jl 9.13.1: **the same Metal.jl**, whose `flush_batched_queues!` commits another task's open
+  command buffer with no lock, and which 1.12.0 changed. Metal.jl 1.12.0 is not selectable from this
+  environment: `Pkg.status(; outdated = true)` prints `Metal v1.11.1 (<v1.12.0)` with no constraint
+  beside it and `KernelAbstractions v0.9.45 (<v0.10.3)` restricted by this package,
+  `GeometricOptimizers`, `AbstractNeuralNetworks` and Metal.jl, and which of the two holds the other
+  down is not established.
+
+  The third arm is not counted here. Its concurrency is a second request to one session, which no
+  script can make: `scripts/utilities/metal_abort_session.jl` holds its two halves, and
+  `Tasks/Evidence/…/m8/concurrent-arm.md` gives the procedure and the shape of its log, which
+  `metal_abort_runs.jl audit` counts by the same rule. Two of the three arms are clean at 59 of 59;
+  the third is that run.
+
+  A no-reproduction holds for the two arms counted, on that stack, and says nothing about a true rate
+  below one in twenty, nor about the session arm.
+
 ## The test suite
 
 ### K3 · `test/quality/jet.jl` does not see an unstable kernel-launch argument
