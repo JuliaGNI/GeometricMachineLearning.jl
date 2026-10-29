@@ -4,31 +4,39 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
 ## C. Follow-ups and cleanups
 
-### C6 · Three generated MNIST PDFs are in this branch's history
+### C6 · Three generated MNIST PDFs are in the history of `main`
 
-- **location:** `docs/src`
+- **location:** `docs/src/tutorials/mnist/*.pdf`
 - **kind:** defect
 - **found:** 2026-08-16
 - **evidence:**
-  for three commits, from a
-  `git add docs/src` that swept them in. They are untracked again and `.gitignore` now covers the
-  pattern, so the working tree and the net diff are clean, but the blobs are still reachable.
-  Rewriting the branch would remove them.
+  `git log --all --diff-filter=A --name-only -- 'docs/src/tutorials/mnist/*.pdf'` names the three of
+  them, swept in by a `git add docs/src`, and the same command with `--diff-filter=D` names the two
+  commits that untracked them again: added in `8dc9b831` and `33882583`, deleted in `a69f4641` and
+  `b0010737`. Eight commits of `origin/main` carry the three files in their tree, so the blobs are
+  still reachable in the history of `main`. `8e3dbc29`, which moved the MNIST material to
+  GMLDatasets, deleted the `.tex` sources, their `Makefile` and the `.gitignore` rule for their
+  PDFs, so no build of this tree compiles them a second time. Rewriting the history would remove
+  the blobs.
 
-### C16 · One of `ExplicitImports`' seven checks is switched off in `test/quality/aqua.jl`, and two run with a list of names.
+### C16 · One of `ExplicitImports`' seven checks is switched off in `test/quality/aqua.jl`, and three run with a list of names.
 
 - **location:** `test/quality/aqua.jl`
 - **kind:** upstream
 - **found:** 2026-09-18
 - **evidence:**
-  `no_implicit_imports` is off: **33** names arrive through a bare `using` across twelve packages,
-  and naming them is a rewrite of the module header with a judgement per name.
+  `no_implicit_imports` is off: **33** names arrive through the ten bare `using` statements in the
+  module header. Ten modules export them — the ten packages those statements name — and eleven own
+  them: `ZygoteRules` owns one of the 33, which `Zygote` re-exports. Naming them all is a rewrite of
+  the module header with a judgement per name.
   `all_explicit_imports_are_public` and `all_qualified_accesses_are_public` run with a list of the
-  names this package reaches in other packages that those packages do not declare `public`: **9**
+  names this package reaches in other packages that those packages do not declare `public`: **7**
   explicit imports and **7** qualified accesses, none of them in `GeometricOptimizers`.
   `Architecture`, `AbstractExplicitLayer`, `_compute_loss`, `dim` and the rest are used
-  deliberately, and the resolution is upstream declaring them `public`. Each check's reason is
-  written beside it in the test file.
+  deliberately, and the resolution is upstream declaring them `public`.
+  `no_stale_explicit_imports` runs with `update!` on its ignore list: the import has no use in
+  `src/`, and it keeps `GeometricMachineLearning.update!` the binding of the `GeometricOptimizers`
+  verb. Each check's reason is written beside it in the test file.
 
 ### C21 · "An untrained autoencoder projects worse than PSD" is not a property, and the suite asserts it on one draw.
 
@@ -97,13 +105,13 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
 ### K20 · The `DataLoader((q = …, p = …))` constructors require one array type for `q` and `p`.
 
-- **location:** `src/data_loader/data_loader.jl:216`
+- **location:** `ReducedComplexityModeling` `src/data_loader/data_loader.jl:220`
 - **kind:** defect
 - **found:** #353 (2026-10-23); the constructors are older than that pull request
 - **evidence:**
-  The three methods at `src/data_loader/data_loader.jl:216-245` take
-  `NamedTuple{(:q, :p), Tuple{AT, AT}}` (and `Tuple{VT, VT}`), so `q` and `p` must have one
-  array type, while the `TransformerLoss` method at `src/loss/losses.jl:92` and the
+  The three methods at `ReducedComplexityModeling` `src/data_loader/data_loader.jl:220-249`
+  take `NamedTuple{(:q, :p), Tuple{AT, AT}}` (and `Tuple{VT, VT}`), so `q` and `p` must have one
+  array type, while the `TransformerLoss` method at `src/loss/losses.jl:98` and the
   `MultiHeadAttention` call take `NamedTupleOfArrays`, which admits two. A view for `q` and a
   `Matrix` for `p` raises:
 
@@ -114,10 +122,47 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   ```
 
   The same call with `q = A` gives a `DataLoader` with `input_dim == 4`. The docstring at
-  `src/data_loader/data_loader.jl:205` states the one-type signature. Closing it means widening the
-  three signatures to `NamedTupleOfArrays{T, (:q, :p)}`, and the docstring with them.
-  `ParametricDataLoader`'s `(q, p)` constructor has the same one-type restriction and widens with
-  it.
+  `ReducedComplexityModeling` `src/data_loader/data_loader.jl:208` states the one-type signature.
+  Closing it means widening the three signatures to `NamedTupleOfArrays{T, (:q, :p)}`, and the
+  docstring with them. `ParametricDataLoader`'s `(q, p)` constructor has the same one-type
+  restriction and widens with it.
+
+### K37 · `metal_abort_runs.jl audit` throws when a run's crash report is gone, although its log records the signature.
+
+- **location:** `scripts/utilities/metal_abort_runs.jl:293`
+- **kind:** defect
+- **found:** #365
+- **evidence:**
+  `read_run` calls `report_signature(report_path(path, index, file, reports))` for every `M8-IPS` line.
+  `report_path` returns the copy beside the log when it exists and else `joinpath(reports, file)`, and
+  `report_signature` is `read(path, String)` on it (`:101-102`), so a copy that is missing with the
+  original deleted from `~/Library/Logs/DiagnosticReports` raises a `SystemError` and the audit of the
+  arm stops. Each `M8-IPS` line already holds `signature=` (`:426-427`), which the audit could use when
+  the file is absent. Read from the code; the failure is not reproduced.
+
+### K38 · The session arm's reader stamps `R0` after `yield()`, so `R0` is not the instant its first read finished.
+
+- **location:** `scripts/utilities/metal_abort_session.jl:134-137`
+- **kind:** defect
+- **found:** #365
+- **evidence:**
+  The docstring of `reader` (`:117-123`) says that `R0` is the instant the first read finished, and the
+  loop assigns it after `sum(v)`, `yield()` and `reads += 1`. When `yield()` hands the thread to another
+  task for a long stretch, `R0` lies later than the read, and `T0 < R0 < T1` can fail for a run whose
+  first read overlapped the training call, so the run counts as void and not as concurrent. The error
+  is on the side of a void run. Read from the code; not measured.
+
+### K39 · The session arm shares `M8_T0`, `M8_T1` and `M8_TRAINER` between two threads with no synchronization.
+
+- **location:** `scripts/utilities/metal_abort_session.jl:102-106`
+- **kind:** not verified
+- **found:** #365
+- **evidence:**
+  `training()` assigns the three globals and `reader()` polls and reads them (`:127`, `:133`,
+  `:141-142`) on another thread, with no lock and no atomic. Julia gives no guarantee for such reads of
+  a global that another thread writes. CodeRabbit marks the finding as one it could not verify, and no
+  wrong value has been observed: each global is a single `Int`, assigned around the training
+  call.
 
 ## Upstream
 
@@ -177,7 +222,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
 ### K4 · Metal.jl 1.11.1 needs a Metal device to precompile, so a sandboxed run with no Metal cache fails before the tests
 
-- **location:** `test/Project.toml:16`
+- **location:** `test/Project.toml:19`
 - **kind:** upstream
 - **found:** 2026-10-02
 - **evidence:**
@@ -268,7 +313,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
 ### K33 · An epoch of `train!` on a Metal array advances the CPU random stream, so a two-epoch run draws its second epoch's minibatches differently from the host's.
 
-- **location:** `src/data_loader/batch.jl:195`
+- **location:** `ReducedComplexityModeling` `src/data_loader/batch.jl:186`
 - **kind:** not verified
 - **found:** 2026-10-26, part M7
 - **evidence:**
@@ -388,17 +433,38 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 - **found:** 2026-10-01
 - **evidence:**
   Julia 1.13.2, `mutate.jl <repository> <file> <from> <to> quality/jet.jl`, one mutant per run.
-  Three mutants that put `Base.inferencebarrier` on an argument of a kernel launch SURVIVED, each
-  with 50 pass, 0 fail: `kernel!(c, Base.inferencebarrier(a), b, ndrange = size(c))` in
-  `src/kernels/tensor_tensor_mul.jl`; `tensor_mat_skew_sym_assign_k!(C,
+  Two mutants that put `Base.inferencebarrier` on an argument of a kernel launch SURVIVED, with no
+  assertion failing: `kernel!(c, Base.inferencebarrier(a), b, ndrange = size(c))` in
+  `src/kernels/tensor_tensor_mul.jl`, and `tensor_mat_skew_sym_assign_k!(C,
   Base.inferencebarrier(Z), A, ndrange = size(C))` in
-  `src/kernels/inverses/tensor_mat_skew_sym_assign.jl`; and `gather_kernel!(backend)(gathered,
-  Base.inferencebarrier(data), indices, offset, ndrange = size(gathered))` in
-  `src/data_loader/batch.jl`. At `target_modules = (GeometricMachineLearning,)` a barrier on a
-  launch argument gives 0 reports, and the same barrier in an `@assert` of the same launcher is
-  CAUGHT with 3 reports (47 pass, 3 fail): the kernel functor takes `args...`, so the dispatch sits
-  in KernelAbstractions' frames, which the filter drops. A barrier on a value inside the kernel
-  body of `tensor_tensor_mul_kernel!` is CAUGHT (47 pass, 3 fail).
+  `src/kernels/inverses/tensor_mat_skew_sym_assign.jl`. At
+  `target_modules = (GeometricMachineLearning,)` a barrier on a launch argument gives 0 reports, and
+  the same barrier in an `@assert` of the same launcher is CAUGHT: the kernel functor takes
+  `args...`, so the dispatch sits in KernelAbstractions' frames, which the filter drops. A barrier
+  on a value inside the kernel body of `tensor_tensor_mul_kernel!` is CAUGHT.
+
+  The loader's gather launch is outside this file's reach. Its launcher,
+  `gather_kernel!(backend)(gathered, data, indices, offset, ndrange = size(gathered))`, is
+  `ReducedComplexityModeling`'s `src/data_loader/batch.jl`, which `target_modules =
+  (GeometricMachineLearning,)` filters out, and gating it belongs to that package's
+  `test/quality/jet.jl`.
+
+### K36 · Three files of `test/data_loader/` test code that is no longer in `src/data_loader/`.
+
+- **location:** `test/data_loader/batch.jl`
+- **kind:** defect
+- **found:** #365
+- **evidence:**
+  `src/data_loader/` holds `train.jl` alone, since the loader is `ReducedComplexityModeling`'s. Three
+  test files of `test/data_loader/` have no source file of that name:
+  `batch.jl` tests the `Batch{:Transformer}` method of `integrate`, which is in
+  `src/architectures/transformer_integrator.jl`; `data_loader.jl` tests `solve!` of a `PSDArch`,
+  which is in `src/architectures/psd.jl`; and `parametric_data_loader.jl` tests `train!` on a
+  `ParametricDataLoader`, which is in `src/data_loader/train.jl`. The layout rule is that
+  `test/<path>.jl` tests `src/<path>.jl`; `test-layout.jl --check` prints nothing for the branch, so
+  the check does not see the three. Moving them to `test/architectures/transformer_integrator.jl`,
+  `test/architectures/psd.jl` and `test/data_loader/train.jl` also changes the lines that list them
+  in `test/runtests.jl`.
 
 ### K14 · `train!` infers its history as an abstract `Vector`, although the run-time history is `Vector{T}`.
 

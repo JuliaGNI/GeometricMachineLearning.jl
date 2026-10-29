@@ -30,8 +30,8 @@ width, and the linear output layer applies the identity activation.
 ParametricResNet(dl, n_blocks, width)
 ```
 
-where `dl` is an instance of [`DataLoader`](@ref) and `width` defaults to `dl.input_dim`, or an
-instance of [`ParametricDataLoader`](@ref). The latter gives the system dimension, the rows of its
+where `dl` is an instance of `DataLoader` and `width` defaults to `dl.input_dim`, or an
+instance of `ParametricDataLoader`. The latter gives the system dimension, the rows of its
 data or of `q` and `p` together, which is also the default of `width`, and the system parameters,
 whose first `μ` the architecture keeps for its shape; it therefore takes no `parameters` keyword.
 

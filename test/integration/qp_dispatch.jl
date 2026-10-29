@@ -6,8 +6,8 @@
 # `networkbackend`, which only map over a named tuple or read its first array, take any keys.
 
 using GeometricMachineLearning
-using GeometricMachineLearning: ResNetLayer, map_to_type, map_to_new_backend, _diff,
-                                ZygotePullback
+using GeometricMachineLearning: ResNetLayer, _diff, ZygotePullback
+using ReducedComplexityModeling: map_to_type, map_to_new_backend
 using AbstractNeuralNetworks: networkbackend, params
 using Test
 import Random

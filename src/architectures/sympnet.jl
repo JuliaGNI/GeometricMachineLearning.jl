@@ -22,7 +22,7 @@ const la_activation_default = tanh
 
 Make an ``LA``-SympNet with dimension ``d.``
 
-There exists an additional constructor that can be called by supplying an instance of [`DataLoader`](@ref).
+There exists an additional constructor that can be called by supplying an instance of `DataLoader`.
 
 # Examples
 
@@ -79,7 +79,7 @@ const g_init_upper_default = true
 
 Make a ``G``-SympNet with dimension ``d.``
 
-There exists an additional constructor that can be called by supplying an instance of [`DataLoader`](@ref) (see [`LASympNet`](@ref) for an example of using this constructor).
+There exists an additional constructor that can be called by supplying an instance of `DataLoader` (see [`LASympNet`](@ref) for an example of using this constructor).
 
 # Arguments
 

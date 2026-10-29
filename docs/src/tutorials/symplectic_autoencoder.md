@@ -15,7 +15,7 @@ Main.remark(raw"As with any neural network we have to make the following choices
 " * Main.indentation * raw"5. choose a *number of epochs*,
 " * Main.indentation * raw"where points 1 and 3 depend on a variable number of hyperparameters.")
 ```
-For the symplectic autoencoder point 1 is done by calling [`SymplecticAutoencoder`](@ref), point 2 is done by calling `NeuralNetwork`, point 3 is done by calling [`TrainingOptimizer`](@extref GeometricOptimizers GeometricOptimizers.TrainingOptimizer) and point 4 is done by calling [`Batch`](@ref).
+For the symplectic autoencoder point 1 is done by calling [`SymplecticAutoencoder`](@ref), point 2 is done by calling `NeuralNetwork`, point 3 is done by calling [`TrainingOptimizer`](@extref GeometricOptimizers GeometricOptimizers.TrainingOptimizer) and point 4 is done by calling `Batch`.
 
 ## The system
 
@@ -85,16 +85,16 @@ sol = integrate(pr, ImplicitMidpoint())
 nothing # hide
 ```
 
-We then put the data in the correct format by calling [`DataLoader`](@ref)[^1]:
+We then put the data in the correct format by calling `DataLoader`[^1]:
 
-[^1]: For more information on [`DataLoader`](@ref) see the [corresponding section](@ref "The Data Loader").
+[^1]: For more information on `DataLoader` see the [corresponding section](@ref "The Data Loader").
 
 ```@example toda_lattice
 dl_cpu = DataLoader(sol; autoencoder = true, suppress_info = true)
 nothing # hide
 ```
 
-Also note that the keyword `autoencoder` was set to true when calling [`DataLoader`](@ref). The keyword argument `supress_info` determines whether data loader provides some additional information on the data it is called on.
+Also note that the keyword `autoencoder` was set to true when calling `DataLoader`. The keyword argument `supress_info` determines whether data loader provides some additional information on the data it is called on.
 
 ## Train the network 
 

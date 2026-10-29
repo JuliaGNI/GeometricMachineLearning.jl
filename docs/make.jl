@@ -26,20 +26,19 @@ Downloads.download(
     "https://juliagni.github.io/GeometricFigures.jl/figures/logos/logo-with-name/logo-with-name_dark.svg",
     joinpath(@__DIR__, "src", "assets", "logo-dark.svg"))
 
-# The manifold, special-matrix and optimizer chapters moved to `GeometricOptimizers` along with the
-# types they describe (see the changelog), and the chapters that stayed refer to them constantly.
-# This is what keeps those references *references* rather than prose. Closes issue C3, which asked
-# for the same thing for `𝔄`, `cayley` and `update!`.
+# The manifold, special-matrix and optimizer chapters are `GeometricOptimizers`' documentation, along
+# with the types they describe, and the chapters here refer to them constantly. `InterLinks` keeps
+# those references *references* rather than prose.
 #
-# The inventory is given as a *committed file* as well as a URL. The URL is fetched and takes
-# precedence; the committed copy is what makes this build work offline, and what keeps a docs build
-# from failing because upstream happened to be mid-deploy. Regenerate it after an upstream docs
-# release — from the *deployed* inventory of the version `[compat]` requires, pinned rather than
-# `stable/`, so the command reproduces the same file after the next release:
+# The inventory is a *committed file*: `InterLinks` opens it and takes every object from it, and
+# nothing about the references is fetched. The URL in the tuple below is the root that the file's
+# relative URIs resolve against — not an inventory, and not a fallback. Regenerate it after an
+# upstream docs release — from the *deployed* inventory of the version `[compat]` requires, pinned
+# rather than `stable/`, so the command reproduces the same file after the next release:
 #
 #     julia --project=docs -e 'using DocInventories; DocInventories.save(
 #         "docs/inventories/GeometricOptimizers.toml",
-#         Inventory("https://juliagni.github.io/GeometricOptimizers.jl/v0.9.0/objects.inv";
+#         Inventory("https://juliagni.github.io/GeometricOptimizers.jl/v0.9.1/objects.inv";
 #                   root_url = "https://juliagni.github.io/GeometricOptimizers.jl/stable/"))'
 #
 # `save` is not exported — it has to be qualified. `root_url` is not written to the TOML either; it
@@ -170,10 +169,9 @@ _introduction = output_type == :html ? ("HOME" => "index.md") :
         "introduction.md"]
 )
 
-# The `Manifolds` chapter — general topology through homogeneous spaces — moved to
-# `GeometricOptimizers` with the manifold types it describes, as did `Symmetric and Skew-Symmetric
-# Matrices` and `Global Tangent Spaces` below and the whole `Optimizer` chapter. They are linked
-# into from here through `InterLinks`.
+# The `Manifolds` chapter — general topology through homogeneous spaces — is `GeometricOptimizers`'
+# documentation, as are the *Symmetric, Skew-Symmetric and Triangular Matrices* and *Global Tangent
+# Spaces* pages. This book links to them, and to the optimizer framework, through `InterLinks`.
 
 _special_arrays = "Special Arrays and AD" => [
     "Tensors" => "arrays/tensors.md",
@@ -186,8 +184,8 @@ _structure_preservation = "Structure-Preservation" => [
     "Structure-Preserving Neural Networks" => "structure_preservation/structure_preserving_neural_networks.md"
 ]
 
-# What is left of the optimizer chapter: the framework belongs to `GeometricOptimizers`, and this
-# page covers the part that is about neural networks — the parameter tree and the training loop.
+# The optimizer framework belongs to `GeometricOptimizers`, and this page covers the part about
+# neural networks — the parameter tree and the training loop.
 _optimizers = "Optimizer" => "optimizers/optimizer.md"
 
 _special_layers = "Special Neural Network Layers" => [
@@ -326,9 +324,9 @@ end
 
 _latex_pages = [
     _introduction,
-    # The `Manifolds` chapter this part opened with, and the `Optimizers` part that followed it,
-    # are `GeometricOptimizers`' documentation now. The book therefore starts from the geometric
-    # structure and takes the manifold optimizers as given; see the changelog.
+    # The `Manifolds` chapter is `GeometricOptimizers`' documentation; the `Optimizer` chapter here
+    # is the one page about neural networks. The book starts from the geometric structure and takes
+    # the manifold optimizers as given.
     "Background" => [
         "Geometric Structure" => reduce_to_second_factors(_structure_preservation),
         "Reduced Order Modeling" => reduce_to_second_factors(_reduced_order_modeling)
@@ -419,12 +417,12 @@ if output_type == :latex
     end
 end
 
-# The tutorials' `@setup` blocks read pre-trained parameters from `docs/src/tutorials/*.h5` so that
-# building the manual does not have to retrain the networks. Documenter copies every non-Markdown
-# file under `src/` into the output, so those weights were published along with the manual — ~3.8 MB
-# per release, and `gh-pages` accumulates a copy for every version. No page links to them (the
-# `load` calls all live in hidden `@setup` blocks), so they are build *inputs* only. Drop them from
-# `build/` here rather than earlier: `makedocs` needs them on disk while it evaluates the blocks.
+# The tutorials read pre-trained parameters from `docs/src/tutorials/*.h5` so that building the
+# manual does not have to retrain the networks. Documenter copies every non-Markdown file under
+# `src/` into the output, and no page links to these weights — every `load` call is hidden, in a
+# `@setup` block or on a `# hide` line — so they are build *inputs* only, and they are dropped from
+# `build/` here rather than earlier: `makedocs` needs them on disk while it evaluates the blocks,
+# and `deploydocs` below publishes `build/`.
 const _build_only_data_extensions = (".h5", ".jld2")
 
 for (root, _, files) in walkdir(joinpath(@__DIR__, "build"))

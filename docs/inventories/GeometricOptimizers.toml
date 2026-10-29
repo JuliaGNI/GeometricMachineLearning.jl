@@ -1,6 +1,6 @@
 # DocInventory version 1
 project = "GeometricOptimizers.jl"
-version = "0.9.0"
+version = "0.9.1"
 
 [[jl.constant]]
 name = "GeometricOptimizers.CURVATURE_TOLERANCE"
@@ -30,6 +30,9 @@ uri = "api/#GeometricOptimizers.symplectic_gram_schmidt%21"
 [[jl.function]]
 name = "GeometricOptimizers.trial_iterate!"
 uri = "api/#GeometricOptimizers.trial_iterate%21"
+[[jl.function]]
+name = "GeometricOptimizers.trial_slope"
+uri = "api/#$"
 
 [[jl.method]]
 name = "Base.:*-Tuple{AbstractLieAlgHorMatrix, AbstractMatrix}"
@@ -353,9 +356,6 @@ uri = "api/#GeometricOptimizers.symplectic_normalize-Tuple%7BAbstractVector%2C%2
 name = "GeometricOptimizers.trace-Tuple{GeometricOptimizers.OptimizerResult}"
 uri = "api/#GeometricOptimizers.trace-Tuple%7BGeometricOptimizers.OptimizerResult%7D"
 [[jl.method]]
-name = "GeometricOptimizers.trial_slope-Tuple{Gradient, GeometricOptimizers.OptimizerCache, Vararg{Any, 4}}"
-uri = "api/#GeometricOptimizers.trial_slope-Tuple%7BGradient%2C%20GeometricOptimizers.OptimizerCache%2C%20Vararg%7BAny%2C%204%7D%7D"
-[[jl.method]]
 name = "GeometricOptimizers.unit_matrix-Union{Tuple{T}, Tuple{KernelAbstractions.Backend, Type{T}, Integer}} where T"
 uri = "api/#GeometricOptimizers.unit_matrix-Union%7BTuple%7BT%7D%2C%20Tuple%7BKernelAbstractions.Backend%2C%20Type%7BT%7D%2C%20Integer%7D%7D%20where%20T"
 [[jl.method]]
@@ -440,6 +440,9 @@ name = "GeometricOptimizers.BFGSState"
 uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.Cayley"
+uri = "api/#$"
+[[jl.type]]
+name = "GeometricOptimizers.CompositeMethod"
 uri = "api/#$"
 [[jl.type]]
 name = "GeometricOptimizers.DFP"
@@ -807,6 +810,10 @@ uri = "retractions/#$"
 dispname = "Complete Metric Spaces"
 name = "Complete-Metric-Spaces"
 uri = "manifolds/metric_and_vector_spaces/#$"
+[[std.label]]
+dispname = "Composing methods over a mixed parameter set"
+name = "Composing-methods-over-a-mixed-parameter-set"
+uri = "optimizer_methods/#$"
 [[std.label]]
 name = "Coverage"
 uri = "observers/#$"

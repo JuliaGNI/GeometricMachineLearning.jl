@@ -1,9 +1,9 @@
 @doc raw"""
     ClassificationTransformer(dl)
 
-Make an instance of the `ClassificationTransformer` based on an instance of [`DataLoader`](@ref).
+Make an instance of the `ClassificationTransformer` based on an instance of `DataLoader`.
 
-This is a transformer neural network for classification purposes. `dl` has to store its input as a tensor and its target as a tensor of labels; [`GMLDatasets`](https://github.com/JuliaGNI/GMLDatasets.jl) builds such a [`DataLoader`](@ref) from an image data set, but any classification problem works.
+This is a transformer neural network for classification purposes. `dl` has to store its input as a tensor and its target as a tensor of labels; [`GMLDatasets`](https://github.com/JuliaGNI/GMLDatasets.jl) builds such a `DataLoader` from an image data set, but any classification problem works.
 
 # Arguments
 
