@@ -401,6 +401,23 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   (GeometricMachineLearning,)` filters out, and gating it belongs to that package's
   `test/quality/jet.jl`.
 
+### K36 · Three files of `test/data_loader/` test code that is no longer in `src/data_loader/`.
+
+- **location:** `test/data_loader/batch.jl`
+- **kind:** defect
+- **found:** #365
+- **evidence:**
+  `src/data_loader/` holds `train.jl` alone, since the loader is `ReducedComplexityModeling`'s. Three
+  test files of `test/data_loader/` have no source file of that name:
+  `batch.jl` tests the `Batch{:Transformer}` method of `integrate`, which is in
+  `src/architectures/transformer_integrator.jl`; `data_loader.jl` tests `solve!` of a `PSDArch`,
+  which is in `src/architectures/psd.jl`; and `parametric_data_loader.jl` tests `train!` on a
+  `ParametricDataLoader`, which is in `src/data_loader/train.jl`. The layout rule is that
+  `test/<path>.jl` tests `src/<path>.jl`; `test-layout.jl --check` prints nothing for the branch, so
+  the check does not see the three. Moving them to `test/architectures/transformer_integrator.jl`,
+  `test/architectures/psd.jl` and `test/data_loader/train.jl` also changes the lines that list them
+  in `test/runtests.jl`.
+
 ### K14 · `train!` infers its history as an abstract `Vector`, although the run-time history is `Vector{T}`.
 
 - **location:** `NeuralNetworkParameters ext/ZygoteRulesExt.jl:25`
