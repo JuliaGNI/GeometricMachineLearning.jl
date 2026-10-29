@@ -197,7 +197,8 @@ _special_layers = "Special Neural Network Layers" => [
     "Linear Symplectic Attention" => "layers/linear_symplectic_attention.md",
     "Symplectic Attention" => "layers/symplectic_attention.md",
     "PSD-Like Layers and Inversion" => "layers/psd_like_layer.md",
-    "Symmetric Particle Layers" => "layers/symmetric_particle_layers.md"
+    "Symmetric Particle Layers" => "layers/symmetric_particle_layers.md",
+    "Stiefel Layers" => "layers/stiefel_layer.md"
 ]
 
 _reduced_order_modeling = "Reduced Order Modeling" => [

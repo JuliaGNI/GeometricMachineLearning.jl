@@ -25,6 +25,7 @@ if "core" in GROUPS
     @safetestset "Gradient Layer" include("layers/gradient_layer_tests.jl")
     @safetestset "Analytic inverse layers" include("layers/inverse_layers.jl")
     @safetestset "Permutation-symmetric particle layers" include("layers/symmetric_particle_layers.jl")
+    @safetestset "Bilinear and low-rank Stiefel layers" include("layers/bilinear_and_low_rank_stiefel.jl")
     @safetestset "Forcing layers add to p and leave q" include("layers/forcing_layer.jl")
     @safetestset "Test tensor-slice consistency of sympnet layers" include("layers/sympnet_layers_test.jl")
     @safetestset "Manifold Neural Network Layers" include("layers/manifold_layers.jl")
