@@ -264,32 +264,19 @@ function (l::SymmetricAutoencoderLayer{M, d, Frontend, Axis})(
         core_dec = Chain(Base.front(l.decoder_layers)...)
         ps_core_enc = NamedTuple{Base.tail(keys(ps_enc))}(Base.tail(values(ps_enc)))
         ps_core_dec = NamedTuple{Base.front(keys(ps))}(Base.front(values(ps)))
-        if z isa AbstractVector
-            q_in = reshape(@view(z[1:N]), d, Mp)
-            p_in = reshape(@view(z[(N + 1):M]), d, Mp)
-            sorted = sort_l((q = q_in, p = p_in), NamedTuple())
-            z_sorted = vcat(vec(sorted.q), vec(sorted.p))
-            ξ = core_enc(z_sorted, ps_core_enc)
-            z_hat_sorted = core_dec(ξ, ps_core_dec)
-            q_hat_s = reshape(@view(z_hat_sorted[1:N]), d, Mp)
-            p_hat_s = reshape(@view(z_hat_sorted[(N + 1):M]), d, Mp)
-            unsorted = inv_sort_l(
-                (q = q_hat_s, p = p_hat_s, perm = sorted.perm), NamedTuple())
-            return vcat(vec(unsorted.q), vec(unsorted.p))
-        else
-            B = size(z, 2)
-            q_in = reshape(@view(z[1:N, :]), d, Mp, B)
-            p_in = reshape(@view(z[(N + 1):M, :]), d, Mp, B)
-            sorted = sort_l((q = q_in, p = p_in), NamedTuple())
-            z_sorted = vcat(reshape(sorted.q, N, B), reshape(sorted.p, N, B))
-            ξ = core_enc(z_sorted, ps_core_enc)
-            z_hat_sorted = core_dec(ξ, ps_core_dec)
-            q_hat_s = reshape(@view(z_hat_sorted[1:N, :]), d, Mp, B)
-            p_hat_s = reshape(@view(z_hat_sorted[(N + 1):M, :]), d, Mp, B)
-            unsorted = inv_sort_l(
-                (q = q_hat_s, p = p_hat_s, perm = sorted.perm), NamedTuple())
-            return vcat(reshape(unsorted.q, N, B), reshape(unsorted.p, N, B))
-        end
+        z_mat = reshape(z, M, :)
+        sorted = sort_l(
+            (q = reshape(@view(z_mat[1:N, :]), d, Mp, :),
+                p = reshape(@view(z_mat[(N + 1):M, :]), d, Mp, :)),
+            NamedTuple())
+        z_sorted = vcat(reshape(sorted.q, N, :), reshape(sorted.p, N, :))
+        z_hat_sorted = core_dec(core_enc(z_sorted, ps_core_enc), ps_core_dec)
+        unsorted = inv_sort_l(
+            (q = reshape(@view(z_hat_sorted[1:N, :]), d, Mp, :),
+                p = reshape(@view(z_hat_sorted[(N + 1):M, :]), d, Mp, :),
+                perm = sorted.perm),
+            NamedTuple())
+        return reshape(vcat(reshape(unsorted.q, N, :), reshape(unsorted.p, N, :)), size(z))
     else
         ξ = Chain(l.encoder_layers...)(z, ps_enc)
         return Chain(l.decoder_layers...)(ξ, ps)
