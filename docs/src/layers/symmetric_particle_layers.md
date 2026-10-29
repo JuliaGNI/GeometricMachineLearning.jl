@@ -11,7 +11,7 @@ P_\sigma^T \mathbb{J}_{2Md} P_\sigma = \mathbb{J}_{2Md}, \qquad
 P_\sigma = \begin{bmatrix} \Pi_\sigma \otimes I_d & \mathbb{O} \\ \mathbb{O} & \Pi_\sigma \otimes I_d \end{bmatrix}.
 ```
 
-A standard [`PSDLayer`](@ref), [`GradientLayerQ`](@ref), or [`GradientLayerP`](@ref) breaks ``S_M`` symmetry unless the particle state is canonicalized or processed by ``S_M``-equivariant symplectic layers. `GeometricMachineLearning` provides three permutation-symmetric particle frontends and the composite architecture [`SymmetricSymplecticAutoencoder`](@ref).
+A standard [`PSDLayer`](@ref), [`GradientLayerQ`](@ref), or [`GradientLayerP`](@ref) breaks ``S_M`` symmetry unless the particle state is canonicalized or processed by ``S_M``-equivariant symplectic layers. `GeometricMachineLearning` provides three particle frontends and the composite architecture [`SymmetricSymplecticAutoencoder`](@ref). The sorting and slot frontends are ``S_M``-invariant; the pairwise shears are ``S_M``-equivariant.
 
 ## Canonical Weyl-Chamber Sorting
 
@@ -36,7 +36,7 @@ InversePairwiseSymplecticLayerP
 
 ## Canonical Slot Reduction
 
-[`CanonicalSlotLayer`](@ref) separates the center-of-mass mode ``(Q_{\mathrm{cm}}, P_{\mathrm{cm}})`` from the ``M - 1`` zero-sum relative modes via the orthogonal Helmert / Jacobi transformation, sorts the ``M - 1`` relative modes canonically by descending squared phase-space norm ``\|q_{\mathrm{rel}, k}\|_2^2 + \|p_{\mathrm{rel}, k}\|_2^2``, and projects onto ``N_{\mathrm{slots}} - 1`` relative slots via a learned Stiefel matrix ``\Phi_{\mathrm{rel}} \in \mathrm{St}(N_{\mathrm{slots}} - 1, M - 1)``. Its analytic decoder lift is [`InverseCanonicalSlotLayer`](@ref).
+[`CanonicalSlotLayer`](@ref) sorts the particles along coordinate row 1 of ``q`` with [`CanonicalSortLayer`](@ref), separates the center-of-mass mode ``(Q_{\mathrm{cm}}, P_{\mathrm{cm}})`` from the ``M - 1`` zero-sum relative modes via the orthogonal Helmert / Jacobi transformation, sorts the ``M - 1`` relative modes canonically by descending squared phase-space norm ``\|q_{\mathrm{rel}, k}\|_2^2 + \|p_{\mathrm{rel}, k}\|_2^2``, and projects onto ``N_{\mathrm{slots}} - 1`` relative slots via a learned Stiefel matrix ``\Phi_{\mathrm{rel}} \in \mathrm{St}(N_{\mathrm{slots}} - 1, M - 1)``. Its analytic decoder lift is [`InverseCanonicalSlotLayer`](@ref).
 
 ```@docs
 CanonicalSlotLayer
@@ -45,7 +45,7 @@ InverseCanonicalSlotLayer
 
 ## Symmetric Symplectic Autoencoder
 
-[`SymmetricSymplecticAutoencoder`](@ref) combines a chosen particle frontend (`:sort`, `:pairwise`, or `:slot`) with [`WeightTiedSymplecticAutoencoder`](@ref).
+[`SymmetricSymplecticAutoencoder`](@ref) combines a chosen particle frontend (`:sort`, `:pairwise`, or `:slot`) with [`WeightTiedSymplecticAutoencoder`](@ref). Only `:sort` and `:slot` give a permutation-invariant latent state; `:pairwise` is equivariant only in its frontend, because the core is not equivariant.
 
 ```@docs
 SymmetricSymplecticAutoencoder
