@@ -387,9 +387,18 @@ end
             rt_mat = @inferred inv_layer(out_mat, ps)
             @test norm(rt_mat - z_mat) <= 20 * eps(T) * norm(z_mat)
 
-            g_z, g_ps = Zygote.gradient((x, p) -> sum(abs2, layer(x, p)), z_mat, ps)
+            # Zygote gradients against forward-mode ForwardDiff gradients
+            loss(x, p) = sum(abs2, layer(x, p))
+            g_z, g_ps = Zygote.gradient(loss, z_mat, ps)
             @test eltype(g_z) === T
             @test eltype(g_ps.K_self) === T && eltype(g_ps.K_pair) === T
+            @test isapprox(g_z, ForwardDiff.gradient(x -> loss(x, ps), z_mat);
+                rtol = 50 * eps(T))
+            for key in (:K_self, :b_self, :K_pair)
+                g_fd = ForwardDiff.gradient(
+                    w -> loss(z_mat, merge(ps, NamedTuple{(key,)}((w,)))), ps[key])
+                @test isapprox(g_ps[key], g_fd; rtol = 50 * eps(T))
+            end
         end
     end
 end
