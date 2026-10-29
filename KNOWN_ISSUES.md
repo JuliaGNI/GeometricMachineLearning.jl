@@ -4,31 +4,39 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
 ## C. Follow-ups and cleanups
 
-### C6 · Three generated MNIST PDFs are in this branch's history
+### C6 · Three generated MNIST PDFs are in the history of `main`
 
-- **location:** `docs/src`
+- **location:** `docs/src/tutorials/mnist/*.pdf`
 - **kind:** defect
 - **found:** 2026-08-16
 - **evidence:**
-  for three commits, from a
-  `git add docs/src` that swept them in. They are untracked again and `.gitignore` now covers the
-  pattern, so the working tree and the net diff are clean, but the blobs are still reachable.
-  Rewriting the branch would remove them.
+  `git log --all --diff-filter=A --name-only -- 'docs/src/tutorials/mnist/*.pdf'` names the three of
+  them, swept in by a `git add docs/src`, and the same command with `--diff-filter=D` names the two
+  commits that untracked them again: added in `8dc9b831` and `33882583`, deleted in `a69f4641` and
+  `b0010737`. Eight commits of `origin/main` carry the three files in their tree, so the blobs are
+  still reachable in the history of `main`. `8e3dbc29`, which moved the MNIST material to
+  GMLDatasets, deleted the `.tex` sources, their `Makefile` and the `.gitignore` rule for their
+  PDFs, so no build of this tree compiles them a second time. Rewriting the history would remove
+  the blobs.
 
-### C16 · One of `ExplicitImports`' seven checks is switched off in `test/quality/aqua.jl`, and two run with a list of names.
+### C16 · One of `ExplicitImports`' seven checks is switched off in `test/quality/aqua.jl`, and three run with a list of names.
 
 - **location:** `test/quality/aqua.jl`
 - **kind:** upstream
 - **found:** 2026-09-18
 - **evidence:**
-  `no_implicit_imports` is off: **33** names arrive through a bare `using` across twelve packages,
-  and naming them is a rewrite of the module header with a judgement per name.
+  `no_implicit_imports` is off: **33** names arrive through the ten bare `using` statements in the
+  module header. Ten modules export them — the ten packages those statements name — and eleven own
+  them: `ZygoteRules` owns one of the 33, which `Zygote` re-exports. Naming them all is a rewrite of
+  the module header with a judgement per name.
   `all_explicit_imports_are_public` and `all_qualified_accesses_are_public` run with a list of the
-  names this package reaches in other packages that those packages do not declare `public`: **9**
+  names this package reaches in other packages that those packages do not declare `public`: **7**
   explicit imports and **7** qualified accesses, none of them in `GeometricOptimizers`.
   `Architecture`, `AbstractExplicitLayer`, `_compute_loss`, `dim` and the rest are used
-  deliberately, and the resolution is upstream declaring them `public`. Each check's reason is
-  written beside it in the test file.
+  deliberately, and the resolution is upstream declaring them `public`.
+  `no_stale_explicit_imports` runs with `update!` on its ignore list: the import has no use in
+  `src/`, and it keeps `GeometricMachineLearning.update!` the binding of the `GeometricOptimizers`
+  verb. Each check's reason is written beside it in the test file.
 
 ### C21 · "An untrained autoencoder projects worse than PSD" is not a property, and the suite asserts it on one draw.
 
@@ -177,7 +185,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
 ### K4 · Metal.jl 1.11.1 needs a Metal device to precompile, so a sandboxed run with no Metal cache fails before the tests
 
-- **location:** `test/Project.toml:16`
+- **location:** `test/Project.toml:19`
 - **kind:** upstream
 - **found:** 2026-10-02
 - **evidence:**
