@@ -1,5 +1,6 @@
 using GeometricMachineLearning
-using GeometricMachineLearning: params, convert_input_and_batch_indices_to_array
+using GeometricMachineLearning: params
+using ReducedComplexityModeling: convert_input_and_batch_indices_to_array
 using Test
 import Random
 import Zygote

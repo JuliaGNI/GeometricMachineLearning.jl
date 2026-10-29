@@ -2,10 +2,10 @@
     train!(nn, opt, dl, batch, n_epochs; loss, show_progress = true)
 
 Train the neural network `nn` with the `GeometricOptimizers.TrainingOptimizer` `opt` on the data of
-the [`DataLoader`](@ref) or [`ParametricDataLoader`](@ref) `dl` for `n_epochs` epochs, and return
+the `DataLoader` or `ParametricDataLoader` `dl` for `n_epochs` epochs, and return
 the loss history.
 
-Each epoch draws the minibatches of `dl` with the [`Batch`](@ref) `batch` and takes one step per
+Each epoch draws the minibatches of `dl` with the `Batch` `batch` and takes one step per
 minibatch: `loss` computes the loss on the minibatch and its gradient, and
 `GeometricOptimizers.optimization_step!` writes the new parameters into `params(nn)`, with the whole
 gradient, a zero leaf included. Entry `i` of the history is the mean of the minibatch losses of epoch
@@ -70,13 +70,19 @@ _as_pullback(p::AbstractPullback) = p
 
 # A `DataLoader` takes the default loss of the architecture and the batch; a `ParametricDataLoader`
 # draws the system parameters of each sample, which `ParametricLoss` hands to the network.
+# An architecture and a batch with no `NetworkLoss` method below have no default, and `default_loss`
+# says so: a method of `NetworkLoss` that raises for every other pair would name only foreign types.
 function default_loss(nn::NeuralNetwork, ::DataLoader, batch::Batch)
-    NetworkLoss(nn.architecture, batch)
+    arch = nn.architecture
+    applicable(NetworkLoss, arch, batch) ||
+        throw(ArgumentError("`train!` has no default loss for a $(nameof(typeof(arch))) with a " *
+                            "$(typeof(batch)); pass the loss as the keyword `loss`."))
+    NetworkLoss(arch, batch)
 end
 default_loss(::NeuralNetwork, ::ParametricDataLoader, ::Batch) = ParametricLoss()
 
-# The default loss of an architecture and a batch. The two-argument methods live here and not beside
-# `NetworkLoss(::AutoEncoder)` in `src/loss/losses.jl`, because `Batch` is included after `src/loss/`.
+# The default loss of an architecture and a batch: what `default_loss` above builds for a network
+# trained on a `DataLoader`.
 function AbstractNeuralNetworks.NetworkLoss(
         ::TransformerIntegrator, batch::Batch{:Transformer})
     TransformerLoss(batch)
@@ -84,8 +90,4 @@ end
 function AbstractNeuralNetworks.NetworkLoss(
         arch::Union{NeuralNetworkIntegrator, AutoEncoder}, ::Batch{:FeedForward})
     NetworkLoss(arch)
-end
-function AbstractNeuralNetworks.NetworkLoss(arch::Architecture, batch::Batch)
-    throw(ArgumentError("`train!` has no default loss for a $(nameof(typeof(arch))) with a " *
-                        "$(typeof(batch)); pass the loss as the keyword `loss`."))
 end

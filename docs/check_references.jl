@@ -43,9 +43,8 @@ function resolve(text::AbstractString, mod::Module = Main; exact_signature::Bool
     DocSystem.iskeyword(binding) && return (true, "")
     DocSystem.defined(binding) || return (false, "undefined binding `$binding`")
     # A `@docs` entry has to match a specific method, but a `@ref` resolves to whatever anchor the
-    # manual created for the binding -- `[`accuracy(::Chain, ::Tuple, ::DataLoader)`](@ref)` links to
-    # `@docs accuracy` even though no method has that exact signature. Checking a `@ref` against the
-    # signature would reject those.
+    # manual created for the binding, so a `@ref` whose signature no method has exactly still links
+    # to the binding's `@docs` block. Checking a `@ref` against the signature would reject those.
     typesig = if exact_signature
         try
             Core.eval(mod, DocSystem.signature(ex, String(text)))

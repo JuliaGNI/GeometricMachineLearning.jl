@@ -1,6 +1,8 @@
 # The Data Loader 
 
-The `DataLoader` in `GeometricMachineLearning` is designed to make training convenient. 
+The `DataLoader` that `GeometricMachineLearning` re-exports from
+[ReducedComplexityModeling.jl](https://github.com/JuliaRCM/ReducedComplexityModeling.jl) is designed
+to make training convenient. 
 
 The data loader can be called with various types of arrays as input, for example a [snapshot matrix](@ref "Snapshot Matrix"):
 
@@ -49,7 +51,7 @@ dl.input_dim
 
 ## Drawing Batches with `GeometricMachineLearning` 
 
-If we want to draw mini batches from a data set, we need to allocate an instance of [`Batch`](@ref). If we call the corresponding functor on an instance of [`DataLoader`](@ref) we get the following result[^1]:
+If we want to draw mini batches from a data set, we need to allocate an instance of `Batch`. If we call the corresponding functor on an instance of `DataLoader` we get the following result[^1]:
 
 [^1]: We first demonstrate how to sample data on the example of a matrix. The case of sampling from a tensor is slightly more complicated and is explained below.
 
@@ -146,7 +148,7 @@ Sampling from a tensor is done the following way (``\mathcal{I}_i`` again denote
 3. ``\mathcal{I}_i \leftarrow \mathtt{complete\_indices[}(i - 1) \cdot \mathtt{batch\_size} + 1 : i \cdot \mathtt{batch\_size]}\text{ for }i=1, \ldots, (\mathrm{last} -1),``
 4. ``\mathcal{I}_\mathrm{last} \leftarrow \mathtt{complete\_indices[}(\mathrm{last} - 1) \cdot \mathtt{batch\_size} + 1\mathtt{:end]}.``
 
-Note that we supplied two additional arguments to the [`Batch`](@ref) constructor here: `seq_length` and `prediction_window`. These two arguments specify how many time are considered in one mini batch and how long the prediction runs into the future respectively. These two numbers are explained when we talk about [structure on product spaces](@ref "How is Structure Preserved?").
+Note that we supplied two additional arguments to the `Batch` constructor here: `seq_length` and `prediction_window`. These two arguments specify how many time are considered in one mini batch and how long the prediction runs into the future respectively. These two numbers are explained when we talk about [structure on product spaces](@ref "How is Structure Preserved?").
 
 This algorithm can be visualized the following way (here `batch_size = 4`):
 
@@ -157,13 +159,13 @@ Here the sampling is performed over the second axis (the *time step dimension*) 
 
 ## Library Functions
 
-```@docs
-DataLoader
-Batch
-Batch(::Int)
-Batch(::Int, ::Int, ::Int)
-GeometricMachineLearning.number_of_batches
-GeometricMachineLearning.convert_input_and_batch_indices_to_array
-GeometricMachineLearning.accuracy
-GeometricMachineLearning.ParametricDataLoader
-```
+`DataLoader`, `Batch` and the loader's routines — `number_of_batches`,
+`convert_input_and_batch_indices_to_array`, `accuracy`, `assign_output_estimate` and
+`ParametricDataLoader` — are `ReducedComplexityModeling`'s, and
+[that package's manual](https://juliarcm.github.io/ReducedComplexityModeling.jl/stable/) documents
+them. This package re-exports the first two, so `using GeometricMachineLearning` alone gives both.
+
+[`train!`](@ref) is that package's generic as well, re-exported here. This package defines the
+method that trains a network on a `DataLoader` or a `ParametricDataLoader`, and this manual's
+`train!` entry is its docstring; the generic's own docstring, `train!(model, …)`, is in that
+package's manual.

@@ -29,7 +29,7 @@ gradient layers and one forcing layer per step that changes ``p``.
 dimension raises an `ArgumentError` at construction.
 
 There exists an additional constructor that can be called by supplying an instance of
-[`DataLoader`](@ref).
+`DataLoader`.
 
 # Arguments
 

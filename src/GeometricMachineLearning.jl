@@ -9,16 +9,14 @@ using AbstractNeuralNetworks
 import NeuralNetworkParameters: NetworkParameters
 using NeuralNetworkParameters: mapstorage
 # `flatten` puts a system's parameters into the input of a network that takes them
-# (`src/parametric.jl`); `parameter_eltype` and `parameterlayout` check their element type and
-# shape, and `map_cotangent` and `storage_gradient` turn a cotangent into a gradient.
-using NeuralNetworkParameters: flatten, parameter_eltype, parameterlayout, map_cotangent,
-                               storage_gradient
+# (`src/parametric.jl`), and `map_cotangent` and `storage_gradient` turn a cotangent into a
+# gradient.
+using NeuralNetworkParameters: flatten, map_cotangent, storage_gradient
 using ChainRulesCore
 using GeometricBase
 # `integrate` is GeometricBase's generic, and importing it is what makes the trajectory methods
 # below methods of that function rather than of a second one of the name.
 import GeometricBase: integrate
-using GeometricSolutions: GeometricSolution, EnsembleSolution, TimeSeries
 using GeometricEquations: HODEProblem, HODEEnsemble
 using KernelAbstractions
 using LinearAlgebra
@@ -78,6 +76,19 @@ import AbstractNeuralNetworks: networkbackend
 # The input and output types of a network: `NamedTupleOfArrays{T, (:q, :p)}` is data in `(q, p)`
 # form, and `ArrayOrNamedTuple{T}` is an array or a named tuple of arrays with any keys.
 using AbstractNeuralNetworks: NamedTupleOfArrays, ArrayOrNamedTuple
+# The data loader is `ReducedComplexityModeling`'s, and this package defines no second `DataLoader`,
+# `Batch` or `train!`: the three names are imported, so that `using GeometricMachineLearning`
+# reaches the objects the other package exports and the `train!` below is a method of that generic.
+# `ParametricDataLoader` is imported and not re-exported: the parametric family is this package's,
+# the loader is not, so a caller names it here or takes it from its owner.
+import ReducedComplexityModeling: DataLoader, Batch, train!, ParametricDataLoader
+# The loader's routines this package calls: `assign_output_estimate` crops a classifier's output,
+# `convert_input_and_batch_indices_to_array` gathers one minibatch for `train!`, and
+# `data_tensors_from_geometric_solution` puts a solution into the tensors that the reduced system's
+# errors are computed on.
+using ReducedComplexityModeling: assign_output_estimate,
+                                 convert_input_and_batch_indices_to_array,
+                                 data_tensors_from_geometric_solution
 # `save` and `load` are `NeuralNetworkParameters`' generics, which `AbstractNeuralNetworks`
 # re-binds; reach for them where they are defined.
 import NeuralNetworkParameters: save, load
@@ -95,15 +106,12 @@ export NetworkParameters
 export σ, sigmoid, softmax
 
 # `GeometricBase` defines `description` and does not export it, so re-exporting it needs the import.
-# `StateVariable` is taken from here, its owner: `GeometricSolutions` holds it only through a bare
-# `using GeometricBase`, and importing a name from a module that does not own it is what
-# `check_all_explicit_imports_via_owners` reports.
+# `StateVariable` is imported from here too, from the module that defines it, which is what
+# `check_all_explicit_imports_via_owners` asks of an explicit import.
 import GeometricBase: description, StateVariable
 export description
 
 include("utils.jl")
-
-include("data_loader/data_loader.jl")
 
 # The structured matrix types come from GeometricOptimizers, which also carries every method GML
 # needs on them; this package defines none of its own. They are re-exported here, so that `using
@@ -219,17 +227,15 @@ include("loss/losses.jl")
 export AbstractPullback, ZygotePullback
 include("pullbacks/zygote_pullback.jl")
 
-export DataLoader
-export Batch, train!
-include("data_loader/tensor_assign.jl")
-include("data_loader/batch.jl")
-include("data_loader/parametric_data_loader.jl")
+# The three names a training loop is written with, re-exported from their owner: `DataLoader`,
+# `Batch` and `train!` are `ReducedComplexityModeling`'s, and the method below on `train!` extends
+# that generic.
+export DataLoader, Batch, train!
 include("data_loader/train.jl")
-# after the loader, because a constructor of `ParametricResNet` takes a `ParametricDataLoader`
 include("architectures/parametric_resnet.jl")
 
 # The training of a network that takes the parameters of the system beside its input.
-public apply_parametric, ParametricLoss, ParametricDataLoader
+public apply_parametric, ParametricLoss
 
 include("reduced_system/reduced_system.jl")
 
