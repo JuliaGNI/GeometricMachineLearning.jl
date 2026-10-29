@@ -105,11 +105,11 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
 ### K20 · The `DataLoader((q = …, p = …))` constructors require one array type for `q` and `p`.
 
-- **location:** `ReducedComplexityModeling` `src/data_loader/data_loader.jl:216`
+- **location:** `ReducedComplexityModeling` `src/data_loader/data_loader.jl:220`
 - **kind:** defect
 - **found:** #353 (2026-10-23); the constructors are older than that pull request
 - **evidence:**
-  The three methods at `ReducedComplexityModeling` `src/data_loader/data_loader.jl:216-245`
+  The three methods at `ReducedComplexityModeling` `src/data_loader/data_loader.jl:220-249`
   take `NamedTuple{(:q, :p), Tuple{AT, AT}}` (and `Tuple{VT, VT}`), so `q` and `p` must have one
   array type, while the `TransformerLoss` method at `src/loss/losses.jl:98` and the
   `MultiHeadAttention` call take `NamedTupleOfArrays`, which admits two. A view for `q` and a
@@ -122,7 +122,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   ```
 
   The same call with `q = A` gives a `DataLoader` with `input_dim == 4`. The docstring at
-  `ReducedComplexityModeling` `src/data_loader/data_loader.jl:205` states the one-type signature.
+  `ReducedComplexityModeling` `src/data_loader/data_loader.jl:208` states the one-type signature.
   Closing it means widening the three signatures to `NamedTupleOfArrays{T, (:q, :p)}`, and the
   docstring with them. `ParametricDataLoader`'s `(q, p)` constructor has the same one-type
   restriction and widens with it.
