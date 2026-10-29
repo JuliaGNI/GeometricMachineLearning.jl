@@ -149,12 +149,13 @@ function _validate_dlra_factors(
     return r_in, B
 end
 
-function _parity_split_v(V::AbstractMatrix{T}) where {T}
+function _parity_split_v(V::AbstractArray{T, N}) where {T, N}
     Nv = size(V, 1)
     half_Nv = Nv ÷ 2
     inv_sqrt2 = inv(sqrt(T(2)))
-    V_top = @view V[1:half_Nv, :]
-    V_bot = @view V[Nv:-1:(half_Nv + 1), :]
+    colons = ntuple(_ -> (:), Val(N - 1))
+    V_top = @view V[1:half_Nv, colons...]
+    V_bot = @view V[Nv:-1:(half_Nv + 1), colons...]
     return inv_sqrt2 .* (V_top .+ V_bot), inv_sqrt2 .* (V_top .- V_bot)
 end
 
@@ -186,30 +187,81 @@ function _encode_dlra_2d(
     return (q = reshape(Q_red, Mx * Mv), p = reshape(P_red, Mx * Mv))
 end
 
+function _encode_dlra_3d(
+        X::AbstractArray{<:Any, 3}, S::AbstractArray{<:Any, 3}, V::AbstractArray{<:Any, 3},
+        Φx::AbstractMatrix, Φv::AbstractMatrix,
+        Nx::Int, Nv::Int, Mx::Int, Mv::Int, metric_factors)
+    r_in, B = size(X, 2), size(X, 3)
+    half_Nv = Nv ÷ 2
+    if metric_factors === nothing
+        X_2d = reshape(X, Nx, r_in * B)
+        Vp, Vm = _parity_split_v(V)
+        Vp_2d = reshape(Vp, half_Nv, r_in * B)
+        Vm_2d = reshape(Vm, half_Nv, r_in * B)
+    else
+        Rx, Rv = metric_factors
+        X_2d = Rx * reshape(X, Nx, r_in * B)
+        if size(Rv, 1) == half_Nv
+            Vp0, Vm0 = _parity_split_v(V)
+            Vp_2d = Rv * reshape(Vp0, half_Nv, r_in * B)
+            Vm_2d = Rv * reshape(Vm0, half_Nv, r_in * B)
+        else
+            V_w = reshape(Rv * reshape(V, Nv, r_in * B), Nv, r_in, B)
+            Vp, Vm = _parity_split_v(V_w)
+            Vp_2d = reshape(Vp, half_Nv, r_in * B)
+            Vm_2d = reshape(Vm, half_Nv, r_in * B)
+        end
+    end
+    Hx = reshape(Φx' * X_2d, Mx, r_in, B)
+    Hv_plus = permutedims(reshape(Φv' * Vp_2d, Mv, r_in, B), (2, 1, 3))
+    Hv_minus = permutedims(reshape(Φv' * Vm_2d, Mv, r_in, B), (2, 1, 3))
+    T = promote_type(eltype(Hx), eltype(S), eltype(Hv_plus), eltype(Hv_minus))
+    Hx_T = eltype(Hx) === T ? Hx : T.(Hx)
+    S_T = eltype(S) === T ? S : T.(S)
+    Hvp_T = eltype(Hv_plus) === T ? Hv_plus : T.(Hv_plus)
+    Hvm_T = eltype(Hv_minus) === T ? Hv_minus : T.(Hv_minus)
+    HxS = tensor_tensor_mul(Hx_T, S_T)
+    Q_red = reshape(tensor_tensor_mul(HxS, Hvp_T), Mx * Mv, B)
+    P_red = reshape(tensor_tensor_mul(HxS, Hvm_T), Mx * Mv, B)
+    return (q = Q_red, p = P_red)
+end
+
 function (l::LowRankStiefelLayer{Nx, Nv, Mx, Mv})(
         x::NamedTuple{(:X, :S, :V)}, ps::NamedTuple) where {Nx, Nv, Mx, Mv}
+    ndims(x.X) == ndims(x.S) == ndims(x.V) ||
+        throw(DimensionMismatch("DLRA factors X, S, and V must have the same number of dimensions; got ($(ndims(x.X)), $(ndims(x.S)), $(ndims(x.V)))"))
     if ndims(x.X) == 2
         _validate_dlra_factors(x.X, x.S, x.V, Nx, Nv)
         return _encode_dlra_2d(
             x.X, x.S, x.V, ps.Φx, ps.Φv, Mx, Mv, l.metric_factors)
     elseif ndims(x.X) == 3
-        _, B = _validate_dlra_factors(x.X, x.S, x.V, Nx, Nv)
-        n_lat = Mx * Mv
-        T = promote_type(
-            eltype(x.X), eltype(x.S), eltype(x.V), eltype(ps.Φx), eltype(ps.Φv))
-        q_out = Matrix{T}(undef, n_lat, B)
-        p_out = Matrix{T}(undef, n_lat, B)
-        for b in 1:B
-            qp_b = _encode_dlra_2d(
-                @view(x.X[:, :, b]), @view(x.S[:, :, b]), @view(x.V[:, :, b]),
-                ps.Φx, ps.Φv, Mx, Mv, l.metric_factors)
-            q_out[:, b] = qp_b.q
-            p_out[:, b] = qp_b.p
-        end
-        return (q = q_out, p = p_out)
+        _validate_dlra_factors(x.X, x.S, x.V, Nx, Nv)
+        return _encode_dlra_3d(
+            x.X, x.S, x.V, ps.Φx, ps.Φv, Nx, Nv, Mx, Mv, l.metric_factors)
     else
         throw(DimensionMismatch("DLRA factors must be 2D or 3D arrays; got ndims = $(ndims(x.X))"))
     end
+end
+
+function _thin_qr_cgs(A::AbstractMatrix{T}) where {T}
+    r = size(A, 2)
+    q1_unnorm = A[:, 1]
+    r11 = norm(q1_unnorm)
+    q1 = r11 > zero(T) ? q1_unnorm ./ r11 : q1_unnorm
+    Q_cols = [q1]
+    for j in 2:r
+        v = A[:, j]
+        for i in 1:(j - 1)
+            qi = Q_cols[i]
+            v = v .- qi .* (qi' * v)
+        end
+        rjj = norm(v)
+        qj = rjj > zero(T) ? v ./ rjj : v
+        Q_cols = vcat(Q_cols, [qj])
+    end
+    Q = reduce(hcat, Q_cols)
+    R = Q' * A
+    return Q, R
 end
 
 function _decode_dlra_2d(
@@ -249,13 +301,8 @@ function _decode_dlra_2d(
     end
 
     # Unconditional QR re-orthonormalization so X_hat ∈ St(r, Nx) and V_hat ∈ St(r, Nv)
-    qr_X = qr(X_tilde)
-    X_hat = Matrix{T}(qr_X.Q)[:, 1:r]
-    R_X = Matrix{T}(qr_X.R)[1:r, 1:r]
-
-    qr_V = qr(V_tilde)
-    V_hat = Matrix{T}(qr_V.Q)[:, 1:r]
-    R_V = Matrix{T}(qr_V.R)[1:r, 1:r]
+    X_hat, R_X = _thin_qr_cgs(X_tilde)
+    V_hat, R_V = _thin_qr_cgs(V_tilde)
 
     S_hat = R_X * Diagonal(s_vec) * R_V'
     return (X = X_hat, S = S_hat, V = V_hat)
@@ -275,18 +322,13 @@ function (l::DecodeLowRankStiefelLayer{Nx, Nv, Mx, Mv, ROut})(
     Q_red, P_red = _reshape_latent_qp_3d(x.q, x.p, Mx, Mv)
     B = size(Q_red, 3)
     r = min(ROut, Mx, 2 * Mv)
-    T = promote_type(eltype(Q_red), eltype(P_red), eltype(ps.Φx), eltype(ps.Φv))
-    X_out = Array{T, 3}(undef, Nx, r, B)
-    S_out = Array{T, 3}(undef, r, r, B)
-    V_out = Array{T, 3}(undef, Nv, r, B)
-    for b in 1:B
-        dec_b = _decode_dlra_2d(
-            @view(Q_red[:, :, b]), @view(P_red[:, :, b]),
-            ps.Φx, ps.Φv, Mv, ROut, l.metric_factors)
-        X_out[:, :, b] = dec_b.X
-        S_out[:, :, b] = dec_b.S
-        V_out[:, :, b] = dec_b.V
+    decoded_slices = map(1:B) do b
+        _decode_dlra_2d(
+            Q_red[:, :, b], P_red[:, :, b], ps.Φx, ps.Φv, Mv, ROut, l.metric_factors)
     end
+    X_out = reshape(reduce(hcat, map(d -> d.X, decoded_slices)), Nx, r, B)
+    S_out = reshape(reduce(hcat, map(d -> d.S, decoded_slices)), r, r, B)
+    V_out = reshape(reduce(hcat, map(d -> d.V, decoded_slices)), Nv, r, B)
     return (X = X_out, S = S_out, V = V_out)
 end
 

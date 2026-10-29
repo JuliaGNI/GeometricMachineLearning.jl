@@ -43,7 +43,8 @@ end
 Construct the right-inverse decoder layer corresponding to [`BilinearStiefelLayer`](@ref).
 
 Given canonical coordinates `(q = q, p = p)` of length ``n = m_x m_v`` (or shape
-`(mx, mv)`, or batched along the last axis), the layer reshapes ``(q, p)`` to
+`(mx * mv, B)` for batched input, or as a 2-tuple `(Q_red, P_red)` of shape `(mx, mv)`),
+the layer reshapes ``(q, p)`` to
 ``Q_{\mathrm{red}}, P_{\mathrm{red}} \in \mathbb{R}^{m_x \times m_v}``, reconstructs the
 even and odd velocity components
 
@@ -155,41 +156,25 @@ function initialparameters(
     return initialparameters(rng, init, inverse_layer(l), backend, T)
 end
 
-function _parity_split(F::AbstractMatrix{T}) where {T}
+function _parity_split(F::AbstractArray{T, N}) where {T, N}
     Nv = size(F, 2)
     half_Nv = Nv ÷ 2
     inv_sqrt2 = inv(sqrt(T(2)))
-    F_top = @view F[:, 1:half_Nv]
-    F_bot = @view F[:, Nv:-1:(half_Nv + 1)]
+    colons = ntuple(_ -> (:), Val(N - 2))
+    F_top = @view F[:, 1:half_Nv, colons...]
+    F_bot = @view F[:, Nv:-1:(half_Nv + 1), colons...]
     F_plus = inv_sqrt2 .* (F_top .+ F_bot)
     F_minus = inv_sqrt2 .* (F_top .- F_bot)
     return F_plus, F_minus
-end
-
-function _parity_split(F::AbstractArray{T, 3}) where {T}
-    Nv = size(F, 2)
-    half_Nv = Nv ÷ 2
-    inv_sqrt2 = inv(sqrt(T(2)))
-    F_top = @view F[:, 1:half_Nv, :]
-    F_bot = @view F[:, Nv:-1:(half_Nv + 1), :]
-    F_plus = inv_sqrt2 .* (F_top .+ F_bot)
-    F_minus = inv_sqrt2 .* (F_top .- F_bot)
-    return F_plus, F_minus
-end
-
-function _parity_recombine(F_plus::AbstractMatrix{T}, F_minus::AbstractMatrix{T}) where {T}
-    inv_sqrt2 = inv(sqrt(T(2)))
-    F_top = inv_sqrt2 .* (F_plus .+ F_minus)
-    F_bot_rev = inv_sqrt2 .* (F_plus .- F_minus)
-    return hcat(F_top, @view(F_bot_rev[:, end:-1:1]))
 end
 
 function _parity_recombine(
-        F_plus::AbstractArray{T, 3}, F_minus::AbstractArray{T, 3}) where {T}
+        F_plus::AbstractArray{T, N}, F_minus::AbstractArray{T, N}) where {T, N}
     inv_sqrt2 = inv(sqrt(T(2)))
+    colons = ntuple(_ -> (:), Val(N - 2))
     F_top = inv_sqrt2 .* (F_plus .+ F_minus)
     F_bot_rev = inv_sqrt2 .* (F_plus .- F_minus)
-    return cat(F_top, @view(F_bot_rev[:, end:-1:1, :]); dims = 2)
+    return cat(F_top, @view(F_bot_rev[:, end:-1:1, colons...]); dims = 2)
 end
 
 function _apply_metric_forward_2d(
@@ -359,7 +344,7 @@ function _reshape_latent_qp_2d(
         throw(DimensionMismatch("q and p must have the same size; got $(size(q)) and $(size(p))"))
     n_lat = Mx * Mv
     length(q) == n_lat ||
-        throw(DimensionMismatch("latent (q, p) must have size ($n_lat,) or ($Mx, $Mv) (or batched); got $(size(q))"))
+        throw(DimensionMismatch("latent (q, p) must have size ($n_lat,); got $(size(q))"))
     return reshape(q, Mx, Mv), reshape(p, Mx, Mv)
 end
 
@@ -369,18 +354,14 @@ function _reshape_latent_qp_3d(
         throw(DimensionMismatch("q and p must have the same size; got $(size(q)) and $(size(p))"))
     n_lat = Mx * Mv
     size(q, 1) == n_lat ||
-        throw(DimensionMismatch("latent (q, p) must have size ($n_lat,) or ($Mx, $Mv) (or batched); got $(size(q))"))
+        throw(DimensionMismatch("latent (q, p) must have size ($n_lat, B); got $(size(q))"))
     B = size(q, 2)
     return reshape(q, Mx, Mv, B), reshape(p, Mx, Mv, B)
 end
 
 function _reshape_latent_qp_3d(
-        q::AbstractArray{<:Any, 3}, p::AbstractArray{<:Any, 3}, Mx::Int, Mv::Int)
-    size(q) == size(p) ||
-        throw(DimensionMismatch("q and p must have the same size; got $(size(q)) and $(size(p))"))
-    (size(q, 1) == Mx && size(q, 2) == Mv) ||
-        throw(DimensionMismatch("latent (q, p) must have size ($(Mx * Mv),) or ($Mx, $Mv) (or batched); got $(size(q))"))
-    return q, p
+        q::AbstractArray, p::AbstractArray, Mx::Int, Mv::Int)
+    throw(DimensionMismatch("latent (q, p) must have size ($(Mx * Mv),) or ($(Mx * Mv), B); got $(size(q)) and $(size(p))"))
 end
 
 function _decode_bilinear_2d(
@@ -471,14 +452,14 @@ function solve!(
 
     # Spatial mode-1 unfolding: Nx × (Nv * n_snaps)
     M_x = hcat(reshape(Fp_w, Nx, half_Nv * n_snaps), reshape(Fm_w, Nx, half_Nv * n_snaps))
-    svd_x = svd(M_x)
+    svd_x = svd(M_x; full = true)
     _copy_stiefel!(ps.Φx, @view(svd_x.U[:, 1:Mx]))
 
     # Parity-velocity mode-2 unfolding: (Nv ÷ 2) × (2 * Nx * n_snaps)
     M_v = hcat(
         reshape(permutedims(Fp_w, (2, 1, 3)), half_Nv, Nx * n_snaps),
         reshape(permutedims(Fm_w, (2, 1, 3)), half_Nv, Nx * n_snaps))
-    svd_v = svd(M_v)
+    svd_v = svd(M_v; full = true)
     _copy_stiefel!(ps.Φv, @view(svd_v.U[:, 1:Mv]))
     return ps
 end
