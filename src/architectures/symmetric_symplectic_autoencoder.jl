@@ -1,7 +1,7 @@
 @doc raw"""
     SymmetricSymplecticAutoencoder(M, d, reduced_dim; frontend = :pairwise, kwargs...)
 
-Make an instance of a permutation-symmetric symplectic autoencoder for `M` particles in ``d`` spatial dimensions (ambient dimension ``2Md``) and latent dimension `reduced_dim` (``2n``).
+Make an instance of a symplectic autoencoder with a particle frontend for `M` particles in ``d`` spatial dimensions (ambient dimension ``2Md``) and latent dimension `reduced_dim` (``2n``).
 
 `SymmetricSymplecticAutoencoder` combines a particle frontend (`frontend = :sort`, `:pairwise`, or `:slot`) with the weight-tied symplectic core [`WeightTiedSymplecticAutoencoder`](@ref) so that [`encoder`](@ref)`(nn)` and [`decoder`](@ref)`(nn)` share a single parameter tree.
 

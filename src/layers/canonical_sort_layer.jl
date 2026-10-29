@@ -70,9 +70,9 @@ function _check_sort_dims(
     nothing
 end
 
-function _check_first_dim(name::String, N::Int, N2::Int)
+function _check_first_dim(name::Function, N::Int, N2::Int)
     N2 == N ||
-        throw(DimensionMismatch("$name expects first dimension $N, got $N2."))
+        throw(DimensionMismatch("$(name()) expects first dimension $N, got $N2."))
     nothing
 end
 
@@ -91,7 +91,7 @@ end
 
 function (l::CanonicalSortLayer{N, M, Axis})(
         z::AbstractVector, ps::NamedTuple = NamedTuple()) where {N, M, Axis}
-    _check_first_dim("CanonicalSortLayer{$N, $M, $Axis}", N, length(z))
+    _check_first_dim(() -> "CanonicalSortLayer{$N, $M, $Axis}", N, length(z))
     d = N ÷ (2 * M)
     Nq = M * d
     q = reshape(@view(z[1:Nq]), d, M)
@@ -102,7 +102,7 @@ end
 
 function (l::CanonicalSortLayer{N, M, Axis})(
         z::AbstractMatrix, ps::NamedTuple = NamedTuple()) where {N, M, Axis}
-    _check_first_dim("CanonicalSortLayer{$N, $M, $Axis}", N, size(z, 1))
+    _check_first_dim(() -> "CanonicalSortLayer{$N, $M, $Axis}", N, size(z, 1))
     B = size(z, 2)
     d = N ÷ (2 * M)
     Nq = M * d
@@ -188,7 +188,7 @@ end
 
 function (::InvertCanonicalSortLayer{N, M})(
         z::AbstractVecOrMat, ::NamedTuple = NamedTuple()) where {N, M}
-    _check_first_dim("InvertCanonicalSortLayer{$N, $M}", N, size(z, 1))
+    _check_first_dim(() -> "InvertCanonicalSortLayer{$N, $M}", N, size(z, 1))
     z
 end
 

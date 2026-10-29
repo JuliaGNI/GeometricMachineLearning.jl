@@ -725,7 +725,7 @@ end
         )
         nn = NeuralNetwork(arch, CPU(), T)
         if fe === :slot
-            # With n_layers = 0 and n_ambient_layers = 0, the core Stiefel leaf Φ ∈ St(1, 2 n_slots d)
+            # With n_layers = 0 and n_ambient_layers = 0, the core Stiefel leaf Φ ∈ St(1, n_slots d)
             # puts ξ_q into row 1 of q in slot 2 (index d + 1), and ξ_p into the same entry of p.
             # The slot Stiefel leaf Φ_rel = H_rel^T w / ||H_rel^T w|| for the ascending zero-sum
             # w = [-3, 0.9, 1, 1.1] lifts slot 2 to particle offsets proportional to w, so for

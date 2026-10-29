@@ -156,7 +156,7 @@ end
 
 function (l::CanonicalSlotLayer{N, NOut, M, NSlots})(
         z::AbstractVector, ps::NamedTuple) where {N, NOut, M, NSlots}
-    _check_first_dim("CanonicalSlotLayer{$N, $NOut, $M, $NSlots}", N, length(z))
+    _check_first_dim(() -> "CanonicalSlotLayer{$N, $NOut, $M, $NSlots}", N, length(z))
     d = N ÷ (2 * M)
     Nq = M * d
     q = reshape(@view(z[1:Nq]), d, M)
@@ -167,7 +167,7 @@ end
 
 function (l::CanonicalSlotLayer{N, NOut, M, NSlots})(
         z::AbstractMatrix, ps::NamedTuple) where {N, NOut, M, NSlots}
-    _check_first_dim("CanonicalSlotLayer{$N, $NOut, $M, $NSlots}", N, size(z, 1))
+    _check_first_dim(() -> "CanonicalSlotLayer{$N, $NOut, $M, $NSlots}", N, size(z, 1))
     B = size(z, 2)
     d = N ÷ (2 * M)
     Nq = M * d
@@ -264,7 +264,8 @@ end
 
 function (l::InverseCanonicalSlotLayer{N, NOut, M, NSlots})(
         z::AbstractVector, ps::NamedTuple) where {N, NOut, M, NSlots}
-    _check_first_dim("InverseCanonicalSlotLayer{$N, $NOut, $M, $NSlots}", NOut, length(z))
+    _check_first_dim(
+        () -> "InverseCanonicalSlotLayer{$N, $NOut, $M, $NSlots}", NOut, length(z))
     d = N ÷ (2 * M)
     N_in = NSlots * d
     q = reshape(@view(z[1:N_in]), d, NSlots)
@@ -275,7 +276,8 @@ end
 
 function (l::InverseCanonicalSlotLayer{N, NOut, M, NSlots})(
         z::AbstractMatrix, ps::NamedTuple) where {N, NOut, M, NSlots}
-    _check_first_dim("InverseCanonicalSlotLayer{$N, $NOut, $M, $NSlots}", NOut, size(z, 1))
+    _check_first_dim(
+        () -> "InverseCanonicalSlotLayer{$N, $NOut, $M, $NSlots}", NOut, size(z, 1))
     B = size(z, 2)
     d = N ÷ (2 * M)
     N_in = NSlots * d
