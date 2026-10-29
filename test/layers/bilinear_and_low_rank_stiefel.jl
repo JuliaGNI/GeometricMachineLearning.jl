@@ -801,8 +801,8 @@ end
             end
         end
 
-        # Two-batch-size forward and backward allocation scaling (B1 = 16 vs B2 = 64)
-        B1, B2 = 16, 64
+        # Batch-size forward and backward allocation scaling (B0 = 16, B1 = 32, B2 = 64)
+        B0, B1, B2 = 16, 32, 64
         F_b1 = randn(rng, T, Nx, Nv, B1)
         F_b2 = randn(rng, T, Nx, Nv, B2)
         l(F_b1, ps_nt)
@@ -817,6 +817,8 @@ end
         alloc_bwd2 = @allocated Zygote.gradient(_bilin_bwd_obj, l, inv_l, F_b2, ps_nt)
         @test n_independent(alloc_bwd2 / B2, alloc_bwd1 / B1)
 
+        dlra_b0 = (
+            X = repeat(X, 1, 1, B0), S = repeat(S, 1, 1, B0), V = repeat(V, 1, 1, B0))
         dlra_b1 = (
             X = repeat(X, 1, 1, B1), S = repeat(S, 1, 1, B1), V = repeat(V, 1, 1, B1))
         dlra_b2 = (
@@ -845,12 +847,18 @@ end
         alloc_loss_bwd2 = @allocated Zygote.gradient(loss, dlra_b2, dlra_b2_ref)
         @test n_independent(alloc_loss_bwd2 / B2, alloc_loss_bwd1 / B1)
 
+        Zygote.gradient(_dlra_full_bwd_obj, l_dlra, inv_dlra, loss, dlra_b0, ps_nt)
         Zygote.gradient(_dlra_full_bwd_obj, l_dlra, inv_dlra, loss, dlra_b1, ps_nt)
         Zygote.gradient(_dlra_full_bwd_obj, l_dlra, inv_dlra, loss, dlra_b2, ps_nt)
+        alloc_full_bwd0 = @allocated Zygote.gradient(
+            _dlra_full_bwd_obj, l_dlra, inv_dlra, loss, dlra_b0, ps_nt)
         alloc_full_bwd1 = @allocated Zygote.gradient(
             _dlra_full_bwd_obj, l_dlra, inv_dlra, loss, dlra_b1, ps_nt)
         alloc_full_bwd2 = @allocated Zygote.gradient(
             _dlra_full_bwd_obj, l_dlra, inv_dlra, loss, dlra_b2, ps_nt)
         @test n_independent(alloc_full_bwd2 / B2, alloc_full_bwd1 / B1)
+        @test n_independent(
+            (alloc_full_bwd2 - alloc_full_bwd1) / (B2 - B1),
+            (alloc_full_bwd1 - alloc_full_bwd0) / (B1 - B0))
     end
 end
