@@ -335,7 +335,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   before each. Which of `Metal`, `GPUArrays`, `GeometricOptimizers` or `Zygote` draws is not
   established.
 
-### K35 · The `LASympNet(4)` abort of 2026-09-22 reproduces with a second evaluation running, inside Metal.jl's batched-queue flush; the `VolumePreservingFeedForward(4)` abort does not reproduce in 59 fresh processes.
+### K35 · Neither Metal abort of 2026-09-22 reproduces in a counted run: the `LASympNet(4)` arm with a second evaluation holds one death with the item's signature outside its counted window and stays open, and the `VolumePreservingFeedForward(4)` abort does not reproduce in 59 fresh processes.
 
 - **location:** `scripts/utilities/metal_abort_runs.jl`
 - **kind:** upstream
@@ -364,7 +364,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   |:--|:--|:--|:--|:--|:--|
   | `LASympNet(4)`, no concurrent evaluation | `julia --project=<scratch> --threads=16`, one per run | 59 | 59 | 0 | 0 |
   | `VolumePreservingFeedForward(4)`, no concurrent evaluation | the same | 59 | 59 | 0 | 0 |
-  | `LASympNet(4)` with a concurrent evaluation | two `ex` calls in a private Kaimon session | 17 counted | 16 | 1 | 0 |
+  | `LASympNet(4)` with a concurrent evaluation | two `ex` calls in a private Kaimon session | 16 counted, open | 16 | 0 | 1, the death of run 18 |
 
   Every counted run of the two arms a shell process runs compiled inside the timer (`compile_time`
   15.6 s to 25.3 s for `LASympNet(4)`, 11.6 s to 29.1 s for `VolumePreservingFeedForward(4)`),
@@ -381,13 +381,18 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   (<v0.10.3)` restricted by this package, `GeometricOptimizers`, `AbstractNeuralNetworks` and
   Metal.jl, and which of the two holds the other down is not established.
 
-  **The third arm reproduces the `LASympNet(4)` item.** Its concurrency is a second request to one
+  **The third arm is open.** Its concurrency is a second request to one
   session, which no script can make: `scripts/utilities/metal_abort_session.jl` holds its two halves,
   the second being the reading half, which reads a host `Vector{Float32}` of 10⁶ entries in a loop,
-  and the script's header gives the procedure. Seventeen of its runs are
-  counted: sixteen clean, and one — run 18, in a private Kaimon session — died with `SIGSEGV` and
-  left `julia-2026-10-28-103001.ips` under that run's pid, 49451. The death is on the task that
-  called `device_synchronize`: `AGX::ComputeContext…::endComputePass`,
+  and the script's header gives the procedure. Sixteen of its runs are
+  counted, all clean. Run 18, in a private Kaimon session, died with `SIGSEGV` and
+  left `julia-2026-10-28-103001.ips` under that run's pid, 49451. It is recorded as one death with
+  the item's signature in the load phase, outside the arm's counted window, and not as an abort of
+  the arm: the report holds no training frame and no reader frame, one thread is in
+  `typeinf_ext_toplevel` under nested top-level evaluations, and the run died before the
+  `T0 < R0 < T1` stamps, so nothing shows that a read overlapped the training call. The death is on
+  the task that called `device_synchronize` from a top-level evaluation:
+  `AGX::ComputeContext…::endComputePass`,
   `-[AGXG16XFamilyBlitContext deferredEndEncoding]`,
   `-[AGXG16XFamilyCommandBuffer commitEncoder]` and
   `-[AGXG16XFamilyCommandBuffer commit]` under Metal.jl's `commit_with_queue_key!`
@@ -397,15 +402,21 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   command-encoder frame below a Metal.jl frame, as the 2026-09-22 assertion's
   `setCurrentCommandEncoder` was — and the code path of the `julia-2026-10-26-225001.ips` report: a
   task's `device_synchronize` flushes every active batched queue, another task's open command buffer
-  among them, and Metal.jl 1.11.1 takes no lock there. No GeometricMachineLearning frame is in the
-  stack, so the cause is outside this package and no workaround belongs here.
+  among them, and Metal.jl 1.11.1 takes no lock there. That reading is a hypothesis: the stack shows
+  where the process died and not which task owned the command buffer, and no evidence of queue
+  ownership or of the calls before the death exists. No GeometricMachineLearning frame is in the
+  stack, which does not by itself place the cause outside this package.
 
-  The arm stops at the reproducer, as its procedure says, and its record is runs 2 to 18 of the
-  `lasympnet-concurrent` arm: 17 counted, 16 clean, 1 abort, none void, about five minutes a
-  run. Run 18 died before it printed a stamp line, so its log records
-  `concurrent=crash_before_stamps` and rebuilds its `M8-DEVICE` line from the crash report. The
-  abort came while another Julia process compiled in this package on the same machine, which the
-  record states because the load can change how the two tasks interleave.
+  The arm stays open, and its record is runs 2 to 18 of the `lasympnet-concurrent` arm: 16 counted,
+  16 clean, 0 aborts counted, and 1 void, the recorded death of run 18, which `audit` gives as
+  `death with a report of this pid and no record of overlap`; about five minutes a run. Run 18 died
+  before it printed a stamp line, so its log records `concurrent=crash_before_stamps` and rebuilds
+  its `M8-DEVICE` line from the crash report. The death came while another Julia process compiled
+  in this package on the same machine, which the record states because the load can change how the
+  two tasks interleave. The session script appends `M8-TRAIN-START` and `M8-READ-START` to the run's
+  log file before the timed call can finish, because a session's output is lost when it dies, and
+  `audit` counts a death of this arm as its abort only when the two
+  records show the overlap.
 
   An upstream issue for Metal.jl, on the unlocked `flush_batched_queues!`, is drafted and not filed.
 
