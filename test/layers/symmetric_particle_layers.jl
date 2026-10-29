@@ -1,5 +1,6 @@
 using GeometricMachineLearning
-using GeometricMachineLearning: ForwardDiff, SymplecticCompression, params
+using GeometricMachineLearning: ForwardDiff, SymplecticCompression, params,
+                                input_dimension, output_dimension
 using GeometricMachineLearning.AbstractNeuralNetworks: GlorotUniform
 using KernelAbstractions
 using LinearAlgebra
@@ -45,49 +46,63 @@ act_biased(x) = tanh(x) + oftype(x, 0.35) * cos(x)
 
 @testset "Clause 1: CanonicalSortLayer and InvertCanonicalSortLayer" begin
     # Constructor validation
-    re_sort_m = r"^(?:ArgumentError: )?CanonicalSortLayer requires M >= 1 and Axis >= 1, got M = 0, Axis = 1\.$"
-    re_sort_ax = r"^(?:ArgumentError: )?CanonicalSortLayer requires M >= 1 and Axis >= 1, got M = 4, Axis = 0\.$"
-    re_inv_m = r"^(?:ArgumentError: )?InvertCanonicalSortLayer requires M >= 1, got M = 0\.$"
-    @test_throws re_sort_m CanonicalSortLayer(0, 1)
-    @test_throws re_sort_ax CanonicalSortLayer(4, 0)
-    @test_throws re_inv_m InvertCanonicalSortLayer(0)
+    re_sort_m = r"^(?:ArgumentError: )?CanonicalSortLayer requires M >= 1, d >= 1 and 1 <= axis <= d, got M = 0, d = 2, axis = 1\.$"
+    re_sort_ax = r"^(?:ArgumentError: )?CanonicalSortLayer requires M >= 1, d >= 1 and 1 <= axis <= d, got M = 4, d = 2, axis = 3\.$"
+    re_sort_tp = r"^(?:ArgumentError: )?CanonicalSortLayer\{N, M, Axis\} requires M >= 1, Axis >= 1 and N = 2Md with d >= Axis, got N = 10, M = 4, Axis = 1\.$"
+    re_inv_m = r"^(?:ArgumentError: )?InvertCanonicalSortLayer requires M >= 1 and d >= 1, got M = 0, d = 2\.$"
+    re_inv_tp = r"^(?:ArgumentError: )?InvertCanonicalSortLayer\{N, M\} requires M >= 1 and N = 2Md with d >= 1, got N = 10, M = 4\.$"
+    @test_throws re_sort_m CanonicalSortLayer(0, 2)
+    @test_throws re_sort_ax CanonicalSortLayer(4, 2, 3)
+    @test_throws re_sort_tp CanonicalSortLayer{10, 4, 1}()
+    @test_throws re_inv_m InvertCanonicalSortLayer(0, 2)
+    @test_throws re_inv_tp InvertCanonicalSortLayer{10, 4}()
 
-    @test CanonicalSortLayer(4) === CanonicalSortLayer{4, 1}()
-    @test CanonicalSortLayer{4}() === CanonicalSortLayer{4, 1}()
-    @test CanonicalSortLayer(4, 2) === CanonicalSortLayer{4, 2}()
-    @test InvertCanonicalSortLayer(4) === InvertCanonicalSortLayer{4}()
-    @test inverse_layer(CanonicalSortLayer{4, 1}()) === InvertCanonicalSortLayer{4}()
-    @test inverse_layer(CanonicalSortLayer{4, 2}()) === InvertCanonicalSortLayer{4}()
-    @test inverse_layer(InvertCanonicalSortLayer{4}()) === CanonicalSortLayer{4, 1}()
-    @test inverse_layer(CanonicalSortLayer{4, 1}) === InvertCanonicalSortLayer{4}
-    @test inverse_layer(InvertCanonicalSortLayer{4}) === CanonicalSortLayer{4, 1}
+    @test CanonicalSortLayer(4, 2) === CanonicalSortLayer{16, 4, 1}()
+    @test CanonicalSortLayer(4, 2, 2) === CanonicalSortLayer{16, 4, 2}()
+    @test InvertCanonicalSortLayer(4, 2) === InvertCanonicalSortLayer{16, 4}()
+    @test inverse_layer(CanonicalSortLayer{16, 4, 1}()) ===
+          InvertCanonicalSortLayer{16, 4}()
+    @test inverse_layer(CanonicalSortLayer{16, 4, 2}()) ===
+          InvertCanonicalSortLayer{16, 4}()
+    @test inverse_layer(InvertCanonicalSortLayer{16, 4}()) ===
+          CanonicalSortLayer{16, 4, 1}()
+    @test inverse_layer(CanonicalSortLayer{16, 4, 1}) === InvertCanonicalSortLayer{16, 4}
+    @test inverse_layer(InvertCanonicalSortLayer{16, 4}) === CanonicalSortLayer{16, 4, 1}
     @test inverse_layer(CanonicalSortLayer) === InvertCanonicalSortLayer
     @test inverse_layer(InvertCanonicalSortLayer) === CanonicalSortLayer
-    @test parameterlength(CanonicalSortLayer{4, 1}()) == 0
-    @test parameterlength(InvertCanonicalSortLayer{4}()) == 0
+    @test parameterlength(CanonicalSortLayer(4, 2)) == 0
+    @test parameterlength(InvertCanonicalSortLayer(4, 2)) == 0
     @test initialparameters(Random.default_rng(), GlorotUniform(),
-        CanonicalSortLayer{4, 1}(), CPU(), Float64) === NamedTuple()
+        CanonicalSortLayer(4, 2), CPU(), Float64) === NamedTuple()
     @test initialparameters(Random.default_rng(), GlorotUniform(),
-        InvertCanonicalSortLayer{4}(), CPU(), Float64) === NamedTuple()
+        InvertCanonicalSortLayer(4, 2), CPU(), Float64) === NamedTuple()
+
+    # input_dimension and output_dimension are the length of the flattened (q, p) state
+    for layer in (CanonicalSortLayer(4, 2), CanonicalSortLayer(4, 3, 2),
+        InvertCanonicalSortLayer(4, 2), InvertCanonicalSortLayer(3, 1))
+        z = randn(input_dimension(layer))
+        @test input_dimension(layer) == output_dimension(layer)
+        @test length(layer(z, NamedTuple())) == output_dimension(layer)
+        @test_throws DimensionMismatch layer(randn(input_dimension(layer) + 2), NamedTuple())
+    end
 
     # DimensionMismatch guards with anchored patterns
-    l4_1 = CanonicalSortLayer{4, 1}()
-    l4_3 = CanonicalSortLayer{4, 3}()
-    inv4 = InvertCanonicalSortLayer{4}()
+    l4_1 = CanonicalSortLayer(4, 2)
+    inv4 = InvertCanonicalSortLayer(4, 2)
     ps_empty = NamedTuple()
 
-    re_qp_size = r"^(?:DimensionMismatch: )?CanonicalSortLayer\{4, 1\} expects q and p of matching size \(d, 4\) or \(d, 4, B\) with d >= 1, got \(2, 3\) and \(2, 3\)\.$"
-    re_qp_mismatch = r"^(?:DimensionMismatch: )?CanonicalSortLayer\{4, 1\} expects q and p of matching size \(d, 4\) or \(d, 4, B\) with d >= 1, got \(2, 4\) and \(2, 3\)\.$"
-    re_qp_axis = r"^(?:DimensionMismatch: )?CanonicalSortLayer\{4, 3\} expects q and p of matching size \(d, 4\) or \(d, 4, B\) with d >= 3, got \(2, 4\) and \(2, 4\)\.$"
-    re_vec_dim = r"^(?:DimensionMismatch: )?CanonicalSortLayer\{4, 1\} expects first dimension divisible by 8 with d >= 1, got 10\.$"
-    re_inv_size = r"^(?:DimensionMismatch: )?InvertCanonicalSortLayer\{4\} expects q and p of matching size \(d, 4\) or \(d, 4, B\), got \(2, 3\) and \(2, 3\)\.$"
-    re_inv_perm = r"^(?:DimensionMismatch: )?InvertCanonicalSortLayer\{4\} expects perm of size \(4,\), got \(3,\)\.$"
-    re_inv_perm_b = r"^(?:DimensionMismatch: )?InvertCanonicalSortLayer\{4\} expects perm of size \(4, 2\), got \(4, 3\)\.$"
-    re_inv_vec = r"^(?:DimensionMismatch: )?InvertCanonicalSortLayer\{4\} expects first dimension divisible by 8, got 10\.$"
+    re_qp_size = r"^(?:DimensionMismatch: )?CanonicalSortLayer\{16, 4, 1\} expects q and p of matching size \(2, 4\) or \(2, 4, B\), got \(2, 3\) and \(2, 3\)\.$"
+    re_qp_mismatch = r"^(?:DimensionMismatch: )?CanonicalSortLayer\{16, 4, 1\} expects q and p of matching size \(2, 4\) or \(2, 4, B\), got \(2, 4\) and \(2, 3\)\.$"
+    re_qp_d = r"^(?:DimensionMismatch: )?CanonicalSortLayer\{16, 4, 1\} expects q and p of matching size \(2, 4\) or \(2, 4, B\), got \(3, 4\) and \(3, 4\)\.$"
+    re_vec_dim = r"^(?:DimensionMismatch: )?CanonicalSortLayer\{16, 4, 1\} expects first dimension 16, got 10\.$"
+    re_inv_size = r"^(?:DimensionMismatch: )?InvertCanonicalSortLayer\{16, 4\} expects q and p of matching size \(2, 4\) or \(2, 4, B\), got \(2, 3\) and \(2, 3\)\.$"
+    re_inv_perm = r"^(?:DimensionMismatch: )?InvertCanonicalSortLayer\{16, 4\} expects perm of size \(4,\), got \(3,\)\.$"
+    re_inv_perm_b = r"^(?:DimensionMismatch: )?InvertCanonicalSortLayer\{16, 4\} expects perm of size \(4, 2\), got \(4, 3\)\.$"
+    re_inv_vec = r"^(?:DimensionMismatch: )?InvertCanonicalSortLayer\{16, 4\} expects first dimension 16, got 10\.$"
 
     @test_throws re_qp_size l4_1((q = zeros(2, 3), p = zeros(2, 3)), ps_empty)
     @test_throws re_qp_mismatch l4_1((q = zeros(2, 4), p = zeros(2, 3)), ps_empty)
-    @test_throws re_qp_axis l4_3((q = zeros(2, 4), p = zeros(2, 4)), ps_empty)
+    @test_throws re_qp_d l4_1((q = zeros(3, 4), p = zeros(3, 4)), ps_empty)
     @test_throws re_vec_dim l4_1(zeros(10), ps_empty)
     @test_throws re_inv_size inv4(
         (q = zeros(2, 3), p = zeros(2, 3), perm = [1, 2, 3]), ps_empty)
@@ -100,8 +115,8 @@ act_biased(x) = tanh(x) + oftype(x, 0.35) * cos(x)
     @testset "Precision $T" for T in REAL_ELTYPES
         M = 4
         d = 2
-        l = CanonicalSortLayer{M, 1}()
-        inv_l = InvertCanonicalSortLayer{M}()
+        l = CanonicalSortLayer(M, d)
+        inv_l = InvertCanonicalSortLayer(M, d)
 
         # Distinct particle positions placed so the sorting permutation is a 4-cycle
         # σ = [2, 3, 4, 1] with σ^2 = [3, 4, 1, 2] != id (catches M2!).
@@ -148,7 +163,7 @@ act_biased(x) = tanh(x) + oftype(x, 0.35) * cos(x)
         @test transpose(D_sort) * J_2Md * D_sort == J_2Md
 
         # Axis = 2 sorting
-        l_ax2 = CanonicalSortLayer{M, 2}()
+        l_ax2 = CanonicalSortLayer(M, d, 2)
         out_ax2 = @inferred l_ax2(qp_single, ps_empty)
         @test issorted(@view(out_ax2.q[2, :]))
         @test inv_l(out_ax2, ps_empty) == qp_single
@@ -244,6 +259,12 @@ end
         Random.default_rng(), GlorotUniform(), lq_chk, CPU(), Float64)
     @test parameterlength(lq_chk) == 6 * 2 + 6 + 6 * 2
     @test parameterlength(inverse_layer(lq_chk)) == parameterlength(lq_chk)
+    # input_dimension and output_dimension are the length of the flattened (q, p) state
+    for layer in (lq_chk, lp_chk, inverse_layer(lq_chk), inverse_layer(lp_chk))
+        @test input_dimension(layer) == output_dimension(layer) == 16
+        @test length(layer(randn(input_dimension(layer)), ps_chk)) ==
+              output_dimension(layer)
+    end
     re_pw_qp = r"^(?:DimensionMismatch: )?PairwiseSymplecticLayer expects q and p of matching size \(2, 4\), \(2, 4, B\), or \(8,\), got \(2, 3\) and \(2, 3\)\.$"
     re_pw_vec = r"^(?:DimensionMismatch: )?PairwiseSymplecticLayer expects first dimension 16, got 10\.$"
     @test_throws re_pw_qp lq_chk((q = zeros(2, 3), p = zeros(2, 3)), ps_chk)
@@ -405,42 +426,77 @@ end
 
 @testset "Clause 3: CanonicalSlotLayer and InverseCanonicalSlotLayer" begin
     # Constructor edge guards from Decided at the edges
-    re_slot_m = r"^(?:ArgumentError: )?CanonicalSlotLayer requires M >= 2 and 1 <= NSlots <= M, got M = 1, NSlots = 1\.$"
-    re_slot_n0 = r"^(?:ArgumentError: )?CanonicalSlotLayer requires M >= 2 and 1 <= NSlots <= M, got M = 4, NSlots = 0\.$"
-    re_slot_nm = r"^(?:ArgumentError: )?CanonicalSlotLayer requires M >= 2 and 1 <= NSlots <= M, got M = 4, NSlots = 5\.$"
-    re_inv_slot = r"^(?:ArgumentError: )?InverseCanonicalSlotLayer requires M >= 2 and 1 <= NSlots <= M, got M = 1, NSlots = 1\.$"
-    @test_throws re_slot_m CanonicalSlotLayer(1, 1)
-    @test_throws re_slot_n0 CanonicalSlotLayer(4, 0)
-    @test_throws re_slot_nm CanonicalSlotLayer(4, 5)
-    @test_throws re_inv_slot InverseCanonicalSlotLayer(1, 1)
+    re_slot_m = r"^(?:ArgumentError: )?CanonicalSlotLayer requires M >= 2, d >= 1 and 1 <= NSlots <= M, got M = 1, d = 2, NSlots = 1\.$"
+    re_slot_d = r"^(?:ArgumentError: )?CanonicalSlotLayer requires M >= 2, d >= 1 and 1 <= NSlots <= M, got M = 4, d = 0, NSlots = 2\.$"
+    re_slot_n0 = r"^(?:ArgumentError: )?CanonicalSlotLayer requires M >= 2, d >= 1 and 1 <= NSlots <= M, got M = 4, d = 2, NSlots = 0\.$"
+    re_slot_nm = r"^(?:ArgumentError: )?CanonicalSlotLayer requires M >= 2, d >= 1 and 1 <= NSlots <= M, got M = 4, d = 2, NSlots = 5\.$"
+    re_inv_slot = r"^(?:ArgumentError: )?InverseCanonicalSlotLayer requires M >= 2, d >= 1 and 1 <= NSlots <= M, got M = 1, d = 2, NSlots = 1\.$"
+    re_slot_tp = r"^(?:ArgumentError: )?CanonicalSlotLayer\{N, NOut, M, NSlots\} requires M >= 2, 1 <= NSlots <= M, N = 2Md and NOut = 2 NSlots d with d >= 1, got N = 16, NOut = 6, M = 4, NSlots = 2\.$"
+    @test_throws re_slot_m CanonicalSlotLayer(1, 2, 1)
+    @test_throws re_slot_d CanonicalSlotLayer(4, 0, 2)
+    @test_throws re_slot_n0 CanonicalSlotLayer(4, 2, 0)
+    @test_throws re_slot_nm CanonicalSlotLayer(4, 2, 5)
+    @test_throws re_inv_slot InverseCanonicalSlotLayer(1, 2, 1)
+    @test_throws re_slot_tp CanonicalSlotLayer{16, 6, 4, 2}()
 
-    l_slot = CanonicalSlotLayer(4, 2)
+    l_slot = CanonicalSlotLayer(4, 2, 2)
     inv_slot = inverse_layer(l_slot)
-    @test l_slot === CanonicalSlotLayer{4, 2}()
-    @test inv_slot === InverseCanonicalSlotLayer{4, 2}()
+    @test l_slot === CanonicalSlotLayer{16, 8, 4, 2}()
+    @test inv_slot === InverseCanonicalSlotLayer{16, 8, 4, 2}()
+    @test InverseCanonicalSlotLayer(4, 2, 2) === inv_slot
     @test inverse_layer(inv_slot) === l_slot
-    @test inverse_layer(CanonicalSlotLayer{4, 2}) === InverseCanonicalSlotLayer{4, 2}
-    @test inverse_layer(InverseCanonicalSlotLayer{4, 2}) === CanonicalSlotLayer{4, 2}
+    @test inverse_layer(CanonicalSlotLayer{16, 8, 4, 2}) ===
+          InverseCanonicalSlotLayer{16, 8, 4, 2}
+    @test inverse_layer(InverseCanonicalSlotLayer{16, 8, 4, 2}) ===
+          CanonicalSlotLayer{16, 8, 4, 2}
     @test inverse_layer(CanonicalSlotLayer) === InverseCanonicalSlotLayer
     @test inverse_layer(InverseCanonicalSlotLayer) === CanonicalSlotLayer
+
+    # input_dimension and output_dimension are the lengths of the flattened particle and
+    # slot states
+    for (M, d, NSlots) in ((4, 2, 2), (5, 3, 3), (3, 1, 1))
+        enc_l = CanonicalSlotLayer(M, d, NSlots)
+        dec_l = inverse_layer(enc_l)
+        ps_l = initialparameters(
+            Random.default_rng(), GlorotUniform(), enc_l, CPU(), Float64)
+        @test input_dimension(enc_l) == output_dimension(dec_l) == 2 * M * d
+        @test output_dimension(enc_l) == input_dimension(dec_l) == 2 * NSlots * d
+        @test length(enc_l(randn(input_dimension(enc_l)), ps_l)) == output_dimension(enc_l)
+        @test length(dec_l(randn(input_dimension(dec_l)), ps_l)) == output_dimension(dec_l)
+    end
 
     # DimensionMismatch guards with anchored patterns
     ps_slot_chk = initialparameters(
         Random.default_rng(), GlorotUniform(), l_slot, CPU(), Float64)
-    re_slot_qp = r"^(?:DimensionMismatch: )?CanonicalSlotLayer\{4, 2\} expects q and p of matching size \(d, 4\) or \(d, 4, B\) with d >= 1, got \(2, 3\) and \(2, 3\)\.$"
-    re_slot_vec = r"^(?:DimensionMismatch: )?CanonicalSlotLayer\{4, 2\} expects first dimension divisible by 8 with d >= 1, got 10\.$"
-    re_inv_slot_qp = r"^(?:DimensionMismatch: )?InverseCanonicalSlotLayer\{4, 2\} expects q and p of matching size \(d, 2\) or \(d, 2, B\) with d >= 1, got \(2, 3\) and \(2, 3\)\.$"
-    re_inv_slot_vec = r"^(?:DimensionMismatch: )?InverseCanonicalSlotLayer\{4, 2\} expects first dimension divisible by 4 with d >= 1, got 10\.$"
+    re_slot_qp = r"^(?:DimensionMismatch: )?CanonicalSlotLayer\{16, 8, 4, 2\} expects q and p of matching size \(2, 4\) or \(2, 4, B\), got \(2, 3\) and \(2, 3\)\.$"
+    re_slot_vec = r"^(?:DimensionMismatch: )?CanonicalSlotLayer\{16, 8, 4, 2\} expects first dimension 16, got 10\.$"
+    re_inv_slot_qp = r"^(?:DimensionMismatch: )?InverseCanonicalSlotLayer\{16, 8, 4, 2\} expects q and p of matching size \(2, 2\) or \(2, 2, B\), got \(2, 3\) and \(2, 3\)\.$"
+    re_inv_slot_vec = r"^(?:DimensionMismatch: )?InverseCanonicalSlotLayer\{16, 8, 4, 2\} expects first dimension 8, got 10\.$"
     @test_throws re_slot_qp l_slot((q = zeros(2, 3), p = zeros(2, 3)), ps_slot_chk)
     @test_throws re_slot_vec l_slot(zeros(10), ps_slot_chk)
     @test_throws re_inv_slot_qp inv_slot((q = zeros(2, 3), p = zeros(2, 3)), ps_slot_chk)
     @test_throws re_inv_slot_vec inv_slot(zeros(10), ps_slot_chk)
 
+    # The slots are invariant under a relabelling of the particles
+    for (M, NSlots) in ((2, 2), (3, 3), (4, 3), (5, 2))
+        d = 2
+        l_inv = CanonicalSlotLayer(M, d, NSlots)
+        ps_inv = initialparameters(
+            Random.default_rng(), GlorotUniform(), l_inv, CPU(), Float64)
+        q_r = randn(d, M)
+        p_r = randn(d, M)
+        out_r = l_inv((q = q_r, p = p_r), ps_inv)
+        for π_r in [[collect(M:-1:1)]; [Random.randperm(M) for _ in 1:10]]
+            out_π = l_inv((q = q_r[:, π_r], p = p_r[:, π_r]), ps_inv)
+            @test out_π.q == out_r.q && out_π.p == out_r.p
+        end
+    end
+
     @testset "Precision $T" for T in REAL_ELTYPES
         M = 5
         NSlots = 3
         d = 2
-        layer = CanonicalSlotLayer(M, NSlots)
+        layer = CanonicalSlotLayer(M, d, NSlots)
         dec_layer = inverse_layer(layer)
 
         ps = initialparameters(Random.default_rng(), GlorotUniform(), layer, CPU(), T)
@@ -450,8 +506,8 @@ end
         @test parameterlength(dec_layer) == parameterlength(layer)
 
         # Single-snapshot (d, M) with unordered relative mode squared norms (catches M5!)
-        # Construct relative modes directly via H_rel so that the M - 1 = 4 modes have
-        # unordered squared norms (e.g., mode 2 > mode 4 > mode 1 > mode 3) and distinct q_rel, p_rel:
+        # Construct relative modes directly via H_rel so that the particles are already sorted
+        # along row 1 of q and the M - 1 = 4 modes have unordered squared norms:
         H_rel_ref = zeros(T, M, M - 1)
         for k in 1:(M - 1)
             s = inv(sqrt(T(k * (k + 1))))
@@ -460,30 +516,26 @@ end
         end
         q_cm_ref = reshape(T[1.2, -0.7], d, 1)
         p_cm_ref = reshape(T[-0.4, 0.9], d, 1)
+        # Row 1 of q_rel is H_rel^T v for the ascending zero-sum offsets v = [-2, -1, 0, 1, 2],
+        # so the particles are in the sorted chamber; its squared entries are [0.5, 1.5, 3, 5].
         # Mode squared norms:
-        # k = 1: ||q||^2 + ||p||^2 = (1.0^2 + 0.0^2) + (0.0^2 + 0.5^2) = 1.25
-        # k = 2: ||q||^2 + ||p||^2 = (3.0^2 + 1.0^2) + (0.5^2 + 2.0^2) = 14.25
-        # k = 3: ||q||^2 + ||p||^2 = (0.2^2 + 0.1^2) + (0.3^2 + 0.1^2) = 0.15
-        # k = 4: ||q||^2 + ||p||^2 = (0.5^2 + 2.0^2) + (2.5^2 + 0.5^2) = 10.75
-        # Descending order of (||q_rel,k||^2 + ||p_rel,k||^2) is σ_rel = [2, 4, 1, 3],
-        # whereas sorting q_rel alone gives [2, 4, 1, 3] vs p_rel alone gives [4, 2, 1, 3]!
-        # Let's make q_rel alone and p_rel alone have DIFFERENT permutations from σ_rel:
-        # k = 1: ||q||^2 = 4.0, ||p||^2 = 0.25 -> total = 4.25
-        # k = 2: ||q||^2 = 1.0, ||p||^2 = 16.0 -> total = 17.0
-        # k = 3: ||q||^2 = 0.25, ||p||^2 = 1.0 -> total = 1.25
-        # k = 4: ||q||^2 = 9.0, ||p||^2 = 1.0  -> total = 10.0
+        # k = 1: ||q||^2 = 0.5, ||p||^2 = 1.0  -> total = 1.5
+        # k = 2: ||q||^2 = 1.5, ||p||^2 = 16.0 -> total = 17.5
+        # k = 3: ||q||^2 = 3.0, ||p||^2 = 0.0  -> total = 3.0
+        # k = 4: ||q||^2 = 5.0, ||p||^2 = 9.0  -> total = 14.0
         # Here:
-        # - total norm order: σ_rel = [2, 4, 1, 3] (17.0 > 10.0 > 4.25 > 1.25)
-        # - q_rel norm order: [4, 1, 2, 3] (9.0 > 4.0 > 1.0 > 0.25)
-        # - p_rel norm order: [2, 3, 4, 1] (16.0 > 1.0 = 1.0 > 0.25)
+        # - total norm order: σ_rel = [2, 4, 3, 1] (17.5 > 14.0 > 3.0 > 1.5)
+        # - q_rel norm order: [4, 3, 2, 1] (5.0 > 3.0 > 1.5 > 0.5)
+        # - p_rel norm order: [2, 4, 1, 3] (16.0 > 9.0 > 1.0 > 0.0)
         # - unsorted order:   [1, 2, 3, 4]
-        q_rel_in = T[2.0 1.0 0.5 3.0;
-                     0.0 0.0 0.0 0.0]
-        p_rel_in = T[0.0 0.0 1.0 0.0;
-                     0.5 4.0 0.0 1.0]
+        v_sorted = T[-2, -1, 0, 1, 2]
+        q_rel_in = vcat(transpose(transpose(H_rel_ref) * v_sorted), zeros(T, 1, M - 1))
+        p_rel_in = T[1.0 0.0 0.0 3.0;
+                     0.0 4.0 0.0 0.0]
         ones_cm = fill(inv(sqrt(T(M))), 1, M)
         q0 = q_cm_ref * ones_cm .+ q_rel_in * transpose(H_rel_ref)
         p0 = p_cm_ref * ones_cm .+ p_rel_in * transpose(H_rel_ref)
+        @test issorted(q0[1, :])
         qp0 = (q = q0, p = p0)
 
         slots_qp = @inferred layer(qp0, ps)
@@ -500,7 +552,7 @@ end
                                                                                    eps(T))
 
         # Relative slots 2:NSlots match the sorted oracle (q_rel[:, σ_rel] * Φ_rel, p_rel[:, σ_rel] * Φ_rel) (catches M5!)
-        σ_rel_oracle = [2, 4, 1, 3]
+        σ_rel_oracle = [2, 4, 3, 1]
         q_slot_rel_oracle = q_rel_in[:, σ_rel_oracle] * Matrix(ps.Φ_rel)
         p_slot_rel_oracle = p_rel_in[:, σ_rel_oracle] * Matrix(ps.Φ_rel)
         @test isapprox(slots_qp.q[:, 2:NSlots], q_slot_rel_oracle;
@@ -543,14 +595,16 @@ end
 
         # Exact right-inversion on the canonical chamber where Φ_rel embeds into descending relative modes:
         # Use Φ_rel = I_{M-1, NSlots-1} and slot inputs with descending squared norms so the lifted
-        # relative modes are already in the canonical chamber (σ_rel = id).
+        # relative modes are already in the canonical chamber (σ_rel = id). The relative slots have
+        # a zero first q row, so the lifted particles tie on row 1 of q and the stable particle
+        # sort keeps their order.
         Φ_id = zeros(T, M - 1, NSlots - 1)
         for k in 1:(NSlots - 1)
             Φ_id[k, k] = one(T)
         end
         ps_chamber = (Φ_rel = StiefelManifold(Φ_id),)
-        q_slot_ch = T[0.5 3.0 1.0;
-                      -0.3 2.0 0.5]
+        q_slot_ch = T[0.5 0.0 0.0;
+                      -0.3 3.0 1.0]
         p_slot_ch = T[0.2 -1.5 0.4;
                       0.7 1.0 -0.2]
         z_slot_ch = vcat(vec(q_slot_ch), vec(p_slot_ch))
@@ -564,7 +618,7 @@ end
               50 * eps(T) * hypot(norm(q_slot_ch), norm(p_slot_ch))
 
         # Degenerate NSlots == 1 edge case: only center-of-mass slot kept, no Φ_rel allocated
-        l_cm = CanonicalSlotLayer(M, 1)
+        l_cm = CanonicalSlotLayer(M, d, 1)
         inv_cm = inverse_layer(l_cm)
         ps_cm = initialparameters(Random.default_rng(), GlorotUniform(), l_cm, CPU(), T)
         @test ps_cm === NamedTuple()
@@ -651,9 +705,10 @@ end
         M = 4
         d = 2
         reduced_dim = 2
-        # For :sort and :slot, standalone right-inversion encoder(nn)(decoder(nn)(ξ)) ≈ ξ holds on the
-        # canonical chamber where the sorting permutation on the decoded state is σ = id (and globally on R^{2n}
-        # for :pairwise; for :sort, encoder(nn)(D_π * decoder(nn)(ξ)) ≈ ξ also holds for every π ∈ S_M).
+        # For :sort and :slot, standalone right-inversion encoder(nn)(decoder(nn)(ξ)) ≈ ξ holds for ξ
+        # whose decoded state lies in the canonical chamber, where the sorting permutations on the decoded
+        # state are the identity (and globally on R^{2n} for :pairwise; for :sort and :slot,
+        # encoder(nn)(D_π * decoder(nn)(ξ)) ≈ ξ also holds for every π ∈ S_M).
         # With n_layers = 0, n_ambient_layers = 0 and Stiefel blocks set to identity embeddings, we can
         # also test on an explicit canonical-chamber latent state, as well as with general random weights
         # on a chamber-aligned latent state!
@@ -670,13 +725,36 @@ end
         )
         nn = NeuralNetwork(arch, CPU(), T)
         if fe === :slot
-            # Set the slot Stiefel leaf Φ_rel to the canonical first-column basis e_1 ∈ St(1, M - 1)
-            # so any non-zero slot 2 mode lifts into relative mode 1 (norm > 0 vs 0 for modes 2..M-1),
-            # placing decoder(nn)(ξ) in the canonical relative-mode chamber σ_rel = id!
-            Φ_rel_mat = zeros(T, M - 1, 1)
-            Φ_rel_mat[1, 1] = one(T)
-            ps_last = last(values(params(nn)))
-            copyto!(parent(ps_last.Φ_rel), Φ_rel_mat)
+            # With n_layers = 0 and n_ambient_layers = 0, the core Stiefel leaf Φ ∈ St(1, 2 n_slots d)
+            # puts ξ_q into row 1 of q in slot 2 (index d + 1), and ξ_p into the same entry of p.
+            # The slot Stiefel leaf Φ_rel = H_rel^T w / ||H_rel^T w|| for the ascending zero-sum
+            # w = [-3, 0.9, 1, 1.1] lifts slot 2 to particle offsets proportional to w, so for
+            # ξ_q > 0 the decoded particles are sorted along row 1 of q (σ = id), and the entries
+            # of Φ_rel have descending magnitudes, so the relative modes are in the canonical
+            # chamber σ_rel = id!
+            arch_ch = SymmetricSymplecticAutoencoder(
+                M, d, reduced_dim;
+                frontend = :slot,
+                n_slots = 2,
+                n_blocks = 1,
+                n_layers = 0,
+                n_ambient_layers = 0,
+                sympnet_upscale = 2
+            )
+            nn = NeuralNetwork(arch_ch, CPU(), T)
+            Φ_core = zeros(T, 2 * d, reduced_dim ÷ 2)
+            Φ_core[d + 1, 1] = one(T)
+            copyto!(parent(first(values(params(nn))).weight), Φ_core)
+            H_rel_4 = zeros(T, M, M - 1)
+            for k in 1:(M - 1)
+                s = inv(sqrt(T(k * (k + 1))))
+                H_rel_4[1:k, k] .= s
+                H_rel_4[k + 1, k] = -T(k) * s
+            end
+            Φ_rel_mat = reshape(transpose(H_rel_4) * T[-3.0, 0.9, 1.0, 1.1], M - 1, 1)
+            Φ_rel_mat ./= norm(Φ_rel_mat)
+            @test issorted(abs.(vec(Φ_rel_mat)); rev = true)
+            copyto!(parent(last(values(params(nn))).Φ_rel), Φ_rel_mat)
         elseif fe === :sort
             # Set the core Stiefel leaf Φ ∈ St(1, M*d) to have strictly increasing particle-axis-1 components
             # and zero out the small SympNet shear biases/weights so decoder(nn)(ξ) for ξ_1 > 0 lands inside
@@ -722,6 +800,14 @@ end
         @test length(ξ_s.q) == reduced_dim ÷ 2 && length(ξ_s.p) == reduced_dim ÷ 2
         @test size(ξ_b.q) == (reduced_dim ÷ 2, B) && size(ξ_b.p) == (reduced_dim ÷ 2, B)
 
+        # The latent of :sort and :slot is invariant under a relabelling of the particles
+        if fe !== :pairwise
+            for π_perm in S4_PERMS
+                ξ_π = enc(_apply_particle_perm(qp_s, π_perm))
+                @test ξ_π.q == ξ_s.q && ξ_π.p == ξ_s.p
+            end
+        end
+
         rec_qp_s = @inferred nn(qp_s)
         rec_qp_b = @inferred nn(qp_b)
         @test eltype(rec_qp_s.q) === T && eltype(rec_qp_s.p) === T
@@ -760,14 +846,15 @@ end
         @test norm(ξ_rt_vec - ξ_vec) <= 50 * eps(T) * norm(ξ_vec)
         @test norm(ξ_rt_mat - ξ_mat) <= 50 * eps(T) * norm(ξ_mat)
 
-        # For frontend = :sort, also verify encoder(nn)(D_π * decoder(nn)(ξ)) ≈ ξ
-        # and perm-threaded reconstruction nn(D_π * decoder(nn)(ξ)) ≈ D_π * decoder(nn)(ξ) for every π ∈ S_4!
-        if fe === :sort
+        # For frontend = :sort and :slot, also verify encoder(nn)(D_π * decoder(nn)(ξ)) ≈ ξ for
+        # every π ∈ S_4, and for :sort the perm-threaded reconstruction
+        # nn(D_π * decoder(nn)(ξ)) ≈ D_π * decoder(nn)(ξ)!
+        if fe !== :pairwise
             for π_perm in S4_PERMS
                 P_π = _particle_perm_matrix(π_perm, d, T)
                 z_π = P_π * z_dec_vec
                 @test norm(enc(z_π) - ξ_vec) <= 50 * eps(T) * norm(ξ_vec)
-                @test norm(nn(z_π) - z_π) <= 50 * eps(T) * norm(z_π)
+                fe === :sort && @test norm(nn(z_π) - z_π) <= 50 * eps(T) * norm(z_π)
             end
         end
 

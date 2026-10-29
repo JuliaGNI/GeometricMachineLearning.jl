@@ -3,7 +3,11 @@
 
 Make an instance of a permutation-symmetric symplectic autoencoder for `M` particles in ``d`` spatial dimensions (ambient dimension ``2Md``) and latent dimension `reduced_dim` (``2n``).
 
-`SymmetricSymplecticAutoencoder` combines a particle-symmetric canonical frontend (`frontend = :sort`, `:pairwise`, or `:slot`) with the weight-tied symplectic core [`WeightTiedSymplecticAutoencoder`](@ref) so that [`encoder`](@ref)`(nn)` and [`decoder`](@ref)`(nn)` share a single parameter tree and satisfy exact latent right-inversion ``\mathrm{encoder}(nn)(\mathrm{decoder}(nn)(\xi)) = \xi`` to machine precision (globally on ``\mathbb{R}^{2n}`` for `frontend = :pairwise` and on the canonical chamber where the sorting permutation on the decoded state is the identity for `frontend = :sort` and `frontend = :slot`).
+`SymmetricSymplecticAutoencoder` combines a particle frontend (`frontend = :sort`, `:pairwise`, or `:slot`) with the weight-tied symplectic core [`WeightTiedSymplecticAutoencoder`](@ref) so that [`encoder`](@ref)`(nn)` and [`decoder`](@ref)`(nn)` share a single parameter tree.
+
+With `frontend = :sort` or `frontend = :slot`, the latent state is invariant under a relabelling of particles with distinct coordinates along the sorting axis (`sort_axis` for `:sort`, coordinate 1 for `:slot`). With `frontend = :pairwise`, only the frontend is permutation-equivariant: the core is not, so the latent state is not invariant.
+
+The latent right-inversion ``\mathrm{encoder}(nn)(\mathrm{decoder}(nn)(\xi)) = \xi`` holds to machine precision for every ``\xi \in \mathbb{R}^{2n}`` with `frontend = :pairwise`. With `frontend = :sort` and `frontend = :slot`, it holds for ``\xi`` whose decoded state lies in the canonical chamber, where the sorting permutations on the decoded state are the identity; the decoder does not map into this chamber in general.
 
 # Arguments
 
@@ -96,11 +100,11 @@ function _core_architecture(arch::SymmetricSymplecticAutoencoder{
 end
 
 function _frontend_decoder_layers(arch::SymmetricSymplecticAutoencoder{:sort})
-    (InvertCanonicalSortLayer{arch.n_particles}(),)
+    (InvertCanonicalSortLayer(arch.n_particles, arch.particle_dim),)
 end
 
 function _frontend_decoder_layers(arch::SymmetricSymplecticAutoencoder{:slot})
-    (InverseCanonicalSlotLayer{arch.n_particles, arch.n_slots}(),)
+    (InverseCanonicalSlotLayer(arch.n_particles, arch.particle_dim, arch.n_slots),)
 end
 
 function _frontend_decoder_layers(arch::SymmetricSymplecticAutoencoder{
@@ -191,7 +195,7 @@ function SymmetricAutoencoderLayer(
     dec_layers = decoder_layers_from_iteration(arch)
     enc_rest = reverse(map(inverse_layer, Base.front(dec_layers)))
     enc_first = Frontend === :sort ?
-                CanonicalSortLayer{arch.n_particles, arch.sort_axis}() :
+                CanonicalSortLayer(arch.n_particles, arch.particle_dim, arch.sort_axis) :
                 inverse_layer(last(dec_layers))
     enc_layers = (enc_first, enc_rest...)
     M = arch.full_dim

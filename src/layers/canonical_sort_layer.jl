@@ -26,25 +26,31 @@ function _permute_particles_batch(
 end
 
 @doc raw"""
-    CanonicalSortLayer{M, Axis}()
-    CanonicalSortLayer(M::Integer, axis::Integer = 1)
+    CanonicalSortLayer{N, M, Axis}()
+    CanonicalSortLayer(M::Integer, d::Integer, axis::Integer = 1)
 
-Make an instance of a cotangent-lifted canonical Weyl-chamber particle sorting layer for `M` particles sorting along coordinate row `Axis` (default `1`).
+Make an instance of a cotangent-lifted canonical Weyl-chamber particle sorting layer for `M` particles in ``d`` spatial dimensions, sorting along coordinate row `Axis` (`1 <= Axis <= d`, default `1`).
 
-Given a `(q, p)` `NamedTuple` with `q, p` of shape `(d, M)` (single snapshot) or `(d, M, B)` (batch of ``B`` snapshots), `CanonicalSortLayer{M, Axis}()` sorts the `M` particles along coordinate row `Axis` of `q` using a stable merge sort (`MergeSort`), applies the **identical** permutation ``\sigma_b \in S_M`` to both `q` and `p` in each batch sample ``b``, and returns `(q = q_sorted, p = p_sorted, perm = σ)`.
+The first type parameter is the phase-space dimension `N = 2Md`, which `input_dimension` and `output_dimension` return.
+Given a `(q, p)` `NamedTuple` with `q, p` of shape `(d, M)` (single snapshot) or `(d, M, B)` (batch of ``B`` snapshots), `CanonicalSortLayer{N, M, Axis}()` sorts the `M` particles along coordinate row `Axis` of `q` using a stable merge sort (`MergeSort`), applies the **identical** permutation ``\sigma_b \in S_M`` to both `q` and `p` in each batch sample ``b``, and returns `(q = q_sorted, p = p_sorted, perm = σ)`.
 On a flattened phase-space vector of length ``2Md`` or snapshot matrix of shape ``(2Md, B)``, it reshapes each half to `(d, M)` or `(d, M, B)` and returns the sorted flattened state.
 """
-struct CanonicalSortLayer{M, Axis} <: AbstractExplicitLayer{M, M}
-    function CanonicalSortLayer{M, Axis}() where {M, Axis}
-        (M isa Integer && Axis isa Integer && M >= 1 && Axis >= 1) ||
+struct CanonicalSortLayer{N, M, Axis} <: AbstractExplicitLayer{N, N}
+    function CanonicalSortLayer{N, M, Axis}() where {N, M, Axis}
+        (N isa Integer && M isa Integer && Axis isa Integer && M >= 1 && Axis >= 1 &&
+         N >= 2 * M * Axis && mod(N, 2 * M) == 0) ||
             throw(ArgumentError(
-                "CanonicalSortLayer requires M >= 1 and Axis >= 1, got M = $M, Axis = $Axis."))
-        new{Int(M), Int(Axis)}()
+                "CanonicalSortLayer{N, M, Axis} requires M >= 1, Axis >= 1 and N = 2Md with d >= Axis, got N = $N, M = $M, Axis = $Axis."))
+        new{Int(N), Int(M), Int(Axis)}()
     end
 end
 
-CanonicalSortLayer{M}() where {M} = CanonicalSortLayer{M, 1}()
-CanonicalSortLayer(M::Integer, axis::Integer = 1) = CanonicalSortLayer{Int(M), Int(axis)}()
+function CanonicalSortLayer(M::Integer, d::Integer, axis::Integer = 1)
+    (M >= 1 && d >= 1 && 1 <= axis <= d) ||
+        throw(ArgumentError(
+            "CanonicalSortLayer requires M >= 1, d >= 1 and 1 <= axis <= d, got M = $M, d = $d, axis = $axis."))
+    CanonicalSortLayer{2 * Int(M) * Int(d), Int(M), Int(axis)}()
+end
 
 parameterlength(::CanonicalSortLayer) = 0
 
@@ -55,18 +61,24 @@ function initialparameters(
 end
 
 function _check_sort_dims(
-        ::Type{CanonicalSortLayer{M, Axis}}, q::AbstractArray, p::AbstractArray) where {
-        M, Axis}
-    nd = ndims(q)
-    (nd in (2, 3) && size(q) == size(p) && size(q, 2) == M && size(q, 1) >= Axis) ||
+        ::Type{CanonicalSortLayer{N, M, Axis}}, q::AbstractArray, p::AbstractArray) where {
+        N, M, Axis}
+    d = N ÷ (2 * M)
+    (ndims(q) in (2, 3) && size(q) == size(p) && size(q, 1) == d && size(q, 2) == M) ||
         throw(DimensionMismatch(
-            "CanonicalSortLayer{$M, $Axis} expects q and p of matching size (d, $M) or (d, $M, B) with d >= $Axis, got $(size(q)) and $(size(p))."))
+            "CanonicalSortLayer{$N, $M, $Axis} expects q and p of matching size ($d, $M) or ($d, $M, B), got $(size(q)) and $(size(p))."))
     nothing
 end
 
-function (::CanonicalSortLayer{M, Axis})(
-        qp::NamedTuple{(:q, :p)}, ::NamedTuple = NamedTuple()) where {M, Axis}
-    _check_sort_dims(CanonicalSortLayer{M, Axis}, qp.q, qp.p)
+function _check_first_dim(name::String, N::Int, N2::Int)
+    N2 == N ||
+        throw(DimensionMismatch("$name expects first dimension $N, got $N2."))
+    nothing
+end
+
+function (::CanonicalSortLayer{N, M, Axis})(
+        qp::NamedTuple{(:q, :p)}, ::NamedTuple = NamedTuple()) where {N, M, Axis}
+    _check_sort_dims(CanonicalSortLayer{N, M, Axis}, qp.q, qp.p)
     if ndims(qp.q) == 2
         σ = _sort_perm_single(qp.q, Axis)
         (q = qp.q[:, σ], p = qp.p[:, σ], perm = σ)
@@ -77,51 +89,52 @@ function (::CanonicalSortLayer{M, Axis})(
     end
 end
 
-function (l::CanonicalSortLayer{M, Axis})(
-        z::AbstractVector, ps::NamedTuple = NamedTuple()) where {M, Axis}
-    N2 = length(z)
-    (N2 >= 2 * M * Axis && mod(N2, 2 * M) == 0) ||
-        throw(DimensionMismatch(
-            "CanonicalSortLayer{$M, $Axis} expects first dimension divisible by $(2 * M) with d >= $Axis, got $N2."))
-    d = N2 ÷ (2 * M)
-    N = M * d
-    q = reshape(@view(z[1:N]), d, M)
-    p = reshape(@view(z[(N + 1):N2]), d, M)
+function (l::CanonicalSortLayer{N, M, Axis})(
+        z::AbstractVector, ps::NamedTuple = NamedTuple()) where {N, M, Axis}
+    _check_first_dim("CanonicalSortLayer{$N, $M, $Axis}", N, length(z))
+    d = N ÷ (2 * M)
+    Nq = M * d
+    q = reshape(@view(z[1:Nq]), d, M)
+    p = reshape(@view(z[(Nq + 1):N]), d, M)
     out = l((q = q, p = p), ps)
     vcat(vec(out.q), vec(out.p))
 end
 
-function (l::CanonicalSortLayer{M, Axis})(
-        z::AbstractMatrix, ps::NamedTuple = NamedTuple()) where {M, Axis}
-    N2, B = size(z)
-    (N2 >= 2 * M * Axis && mod(N2, 2 * M) == 0) ||
-        throw(DimensionMismatch(
-            "CanonicalSortLayer{$M, $Axis} expects first dimension divisible by $(2 * M) with d >= $Axis, got $N2."))
-    d = N2 ÷ (2 * M)
-    N = M * d
-    q = reshape(@view(z[1:N, :]), d, M, B)
-    p = reshape(@view(z[(N + 1):N2, :]), d, M, B)
+function (l::CanonicalSortLayer{N, M, Axis})(
+        z::AbstractMatrix, ps::NamedTuple = NamedTuple()) where {N, M, Axis}
+    _check_first_dim("CanonicalSortLayer{$N, $M, $Axis}", N, size(z, 1))
+    B = size(z, 2)
+    d = N ÷ (2 * M)
+    Nq = M * d
+    q = reshape(@view(z[1:Nq, :]), d, M, B)
+    p = reshape(@view(z[(Nq + 1):N, :]), d, M, B)
     out = l((q = q, p = p), ps)
-    vcat(reshape(out.q, N, B), reshape(out.p, N, B))
+    vcat(reshape(out.q, Nq, B), reshape(out.p, Nq, B))
 end
 
 @doc raw"""
-    InvertCanonicalSortLayer{M}()
-    InvertCanonicalSortLayer(M::Integer)
+    InvertCanonicalSortLayer{N, M}()
+    InvertCanonicalSortLayer(M::Integer, d::Integer)
 
-Make an instance of the analytic inverse of [`CanonicalSortLayer`](@ref) for `M` particles.
+Make an instance of the analytic inverse of [`CanonicalSortLayer`](@ref) for `M` particles in ``d`` spatial dimensions; the first type parameter is the phase-space dimension `N = 2Md`.
 
-Given `(q = q̂, p = p̂, perm = σ)`, `InvertCanonicalSortLayer{M}()` applies ``\sigma_b^{-1}`` (`invperm(σ_b)`) to both `q̂` and `p̂` in each batch sample ``b`` and returns `(q = q_unsorted, p = p_unsorted)`. When called on `(q, p)` or a flattened array without a stored `perm`, it acts as the identity on the canonical Weyl chamber.
+Given `(q = q̂, p = p̂, perm = σ)`, `InvertCanonicalSortLayer{N, M}()` applies ``\sigma_b^{-1}`` (`invperm(σ_b)`) to both `q̂` and `p̂` in each batch sample ``b`` and returns `(q = q_unsorted, p = p_unsorted)`. When called on `(q, p)` or a flattened array without a stored `perm`, it acts as the identity on the canonical Weyl chamber.
 """
-struct InvertCanonicalSortLayer{M} <: AbstractExplicitLayer{M, M}
-    function InvertCanonicalSortLayer{M}() where {M}
-        (M isa Integer && M >= 1) ||
-            throw(ArgumentError("InvertCanonicalSortLayer requires M >= 1, got M = $M."))
-        new{Int(M)}()
+struct InvertCanonicalSortLayer{N, M} <: AbstractExplicitLayer{N, N}
+    function InvertCanonicalSortLayer{N, M}() where {N, M}
+        (N isa Integer && M isa Integer && M >= 1 && N >= 2 * M && mod(N, 2 * M) == 0) ||
+            throw(ArgumentError(
+                "InvertCanonicalSortLayer{N, M} requires M >= 1 and N = 2Md with d >= 1, got N = $N, M = $M."))
+        new{Int(N), Int(M)}()
     end
 end
 
-InvertCanonicalSortLayer(M::Integer) = InvertCanonicalSortLayer{Int(M)}()
+function InvertCanonicalSortLayer(M::Integer, d::Integer)
+    (M >= 1 && d >= 1) ||
+        throw(ArgumentError(
+            "InvertCanonicalSortLayer requires M >= 1 and d >= 1, got M = $M, d = $d."))
+    InvertCanonicalSortLayer{2 * Int(M) * Int(d), Int(M)}()
+end
 
 parameterlength(::InvertCanonicalSortLayer) = 0
 
@@ -132,28 +145,29 @@ function initialparameters(
 end
 
 function _check_inv_sort_dims(
-        ::Type{InvertCanonicalSortLayer{M}}, q::AbstractArray, p::AbstractArray) where {M}
-    nd = ndims(q)
-    (nd in (2, 3) && size(q) == size(p) && size(q, 2) == M) ||
+        ::Type{InvertCanonicalSortLayer{N, M}}, q::AbstractArray, p::AbstractArray) where {
+        N, M}
+    d = N ÷ (2 * M)
+    (ndims(q) in (2, 3) && size(q) == size(p) && size(q, 1) == d && size(q, 2) == M) ||
         throw(DimensionMismatch(
-            "InvertCanonicalSortLayer{$M} expects q and p of matching size (d, $M) or (d, $M, B), got $(size(q)) and $(size(p))."))
+            "InvertCanonicalSortLayer{$N, $M} expects q and p of matching size ($d, $M) or ($d, $M, B), got $(size(q)) and $(size(p))."))
     nothing
 end
 
-function (::InvertCanonicalSortLayer{M})(
-        qpp::NamedTuple{(:q, :p, :perm)}, ::NamedTuple = NamedTuple()) where {M}
-    _check_inv_sort_dims(InvertCanonicalSortLayer{M}, qpp.q, qpp.p)
+function (::InvertCanonicalSortLayer{N, M})(
+        qpp::NamedTuple{(:q, :p, :perm)}, ::NamedTuple = NamedTuple()) where {N, M}
+    _check_inv_sort_dims(InvertCanonicalSortLayer{N, M}, qpp.q, qpp.p)
     if ndims(qpp.q) == 2
         (ndims(qpp.perm) == 1 && length(qpp.perm) == M) ||
             throw(DimensionMismatch(
-                "InvertCanonicalSortLayer{$M} expects perm of size ($M,), got $(size(qpp.perm))."))
+                "InvertCanonicalSortLayer{$N, $M} expects perm of size ($M,), got $(size(qpp.perm))."))
         inv_σ = ChainRulesCore.ignore_derivatives(() -> invperm(qpp.perm))
         (q = qpp.q[:, inv_σ], p = qpp.p[:, inv_σ])
     else
         B = size(qpp.q, 3)
         (ndims(qpp.perm) == 2 && size(qpp.perm) == (M, B)) ||
             throw(DimensionMismatch(
-                "InvertCanonicalSortLayer{$M} expects perm of size ($M, $B), got $(size(qpp.perm))."))
+                "InvertCanonicalSortLayer{$N, $M} expects perm of size ($M, $B), got $(size(qpp.perm))."))
         inv_σ = ChainRulesCore.ignore_derivatives() do
             inv_perms = Matrix{Int}(undef, M, B)
             for b in 1:B
@@ -166,27 +180,27 @@ function (::InvertCanonicalSortLayer{M})(
     end
 end
 
-function (::InvertCanonicalSortLayer{M})(
-        qp::NamedTuple{(:q, :p)}, ::NamedTuple = NamedTuple()) where {M}
-    _check_inv_sort_dims(InvertCanonicalSortLayer{M}, qp.q, qp.p)
+function (::InvertCanonicalSortLayer{N, M})(
+        qp::NamedTuple{(:q, :p)}, ::NamedTuple = NamedTuple()) where {N, M}
+    _check_inv_sort_dims(InvertCanonicalSortLayer{N, M}, qp.q, qp.p)
     qp
 end
 
-function (::InvertCanonicalSortLayer{M})(
-        z::AbstractVecOrMat, ::NamedTuple = NamedTuple()) where {M}
-    N2 = size(z, 1)
-    (N2 >= 2 * M && mod(N2, 2 * M) == 0) ||
-        throw(DimensionMismatch(
-            "InvertCanonicalSortLayer{$M} expects first dimension divisible by $(2 * M), got $N2."))
+function (::InvertCanonicalSortLayer{N, M})(
+        z::AbstractVecOrMat, ::NamedTuple = NamedTuple()) where {N, M}
+    _check_first_dim("InvertCanonicalSortLayer{$N, $M}", N, size(z, 1))
     z
 end
 
-inverse_layer(::CanonicalSortLayer{M, Axis}) where {M, Axis} = InvertCanonicalSortLayer{M}()
-inverse_layer(::InvertCanonicalSortLayer{M}) where {M} = CanonicalSortLayer{M, 1}()
-function inverse_layer(::Type{CanonicalSortLayer{M, Axis}}) where {M, Axis}
-    InvertCanonicalSortLayer{M}
+function inverse_layer(::CanonicalSortLayer{N, M, Axis}) where {N, M, Axis}
+    InvertCanonicalSortLayer{N, M}()
 end
-inverse_layer(::Type{CanonicalSortLayer{M}}) where {M} = InvertCanonicalSortLayer{M}
-inverse_layer(::Type{InvertCanonicalSortLayer{M}}) where {M} = CanonicalSortLayer{M, 1}
+inverse_layer(::InvertCanonicalSortLayer{N, M}) where {N, M} = CanonicalSortLayer{N, M, 1}()
+function inverse_layer(::Type{CanonicalSortLayer{N, M, Axis}}) where {N, M, Axis}
+    InvertCanonicalSortLayer{N, M}
+end
+function inverse_layer(::Type{InvertCanonicalSortLayer{N, M}}) where {N, M}
+    CanonicalSortLayer{N, M, 1}
+end
 inverse_layer(::Type{CanonicalSortLayer}) = InvertCanonicalSortLayer
 inverse_layer(::Type{InvertCanonicalSortLayer}) = CanonicalSortLayer
