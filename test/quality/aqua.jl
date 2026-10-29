@@ -15,12 +15,13 @@ using Test
 #
 # `piracies` runs through `test_all` with `treat_as_own = [Batch]`, the one type this package
 # re-exports from `ReducedComplexityModeling` that its deliberate methods on another package's
-# function need. Three methods are reported without the list, and each names a `Batch`: this
-# package's `train!` on a network (`src/data_loader/train.jl:34-35`), the keyword wrapper Julia
-# derives from that method, and the `NetworkLoss` fallback that raises for an architecture and a
-# batch with no default (`:88`). All three are deliberate -- the training loop is this package's, and
-# the other package owns the loader and the generic -- so naming `Batch` as this package's own keeps
-# Aqua's check on and passing rather than switching it off.
+# function need. Two methods are reported without the list, and each names a `Batch`: this
+# package's `train!` on a network (`src/data_loader/train.jl:34-35`) and the keyword wrapper Julia
+# derives from that method. Both are deliberate -- the training loop is this package's, and the
+# other package owns the loader and the generic -- so naming `Batch` as this package's own keeps
+# Aqua's check on and passing rather than switching it off. An architecture and a batch with no
+# default loss are reported by `default_loss`, this package's own function, and not by a
+# `NetworkLoss` method that names only foreign types.
 #
 # `Batch` alone is the whole list. `train!` also names `DataLoader`, but in a `Union` with
 # `ParametricDataLoader`, which the list does not hold, so `DataLoader` in the list exempts no

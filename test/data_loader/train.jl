@@ -126,14 +126,23 @@ end
     @test NetworkLoss(GSympNet(4; n_layers = 2), Batch(4)) isa FeedForwardLoss
     autoencoder = SymplecticAutoencoder(10, 4)
     @test NetworkLoss(autoencoder, Batch(4)) isa AutoEncoderLoss
-    # a transformer with a `Batch{:FeedForward}` and an unknown architecture both reach the fallback
+    # a transformer with a `Batch{:FeedForward}` and an unknown architecture have no `NetworkLoss`
+    # method; `train!` turns that into an `ArgumentError` that names the keyword
     for (arch, batch) in ((transformer, Batch(4)),
         (NeuralNetwork(Chain(Dense(2, 2, identity))).architecture, Batch(4)))
-        @test_throws ArgumentError NetworkLoss(arch, batch)
+        @test_throws MethodError NetworkLoss(arch, batch)
     end
 
     nn = NeuralNetwork(Chain(Dense(2, 2, identity)))
     dl = DataLoader(rand(2, 10), rand(2, 10); suppress_info = true)
+    raised = try
+        train!(nn, TrainingOptimizer(params(nn)), dl, Batch(5), 1; show_progress = false)
+    catch e
+        e
+    end
+    @test raised isa ArgumentError
+    @test occursin("`loss`", raised.msg)
+    nn = NeuralNetwork(transformer)
     raised = try
         train!(nn, TrainingOptimizer(params(nn)), dl, Batch(5), 1; show_progress = false)
     catch e
