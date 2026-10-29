@@ -764,42 +764,41 @@ end
         @test all(isfinite, gs_dlra_3d.Φx) && all(isfinite, gs_dlra_3d.Φv)
 
         if T === Float64
-            dlra_ref_3d = (
-                X = copy(X_3d), S = T(1.5) .* S_3d, V = copy(V_3d))
-            g_x, g_xh = Zygote.gradient(loss, dlra_3d, dlra_ref_3d)
+            r1_fd, r2_fd = 2, 3
+            X_fd = randn(rng, T, Nx, r1_fd, B)
+            S_fd = randn(rng, T, r1_fd, r1_fd, B)
+            V_fd = randn(rng, T, Nv, r1_fd, B)
+            X_hat_fd = randn(rng, T, Nx, r2_fd, B)
+            S_hat_fd = randn(rng, T, r2_fd, r2_fd, B)
+            V_hat_fd = randn(rng, T, Nv, r2_fd, B)
+            dlra_x_fd = (X = X_fd, S = S_fd, V = V_fd)
+            dlra_xh_fd = (X = X_hat_fd, S = S_hat_fd, V = V_hat_fd)
+            g_x, g_xh = Zygote.gradient(loss, dlra_x_fd, dlra_xh_fd)
             eps_fd = 1e-6
-            X_p = copy(X_3d)
-            X_p[2, 1, 2] += eps_fd
-            X_m = copy(X_3d)
-            X_m[2, 1, 2] -= eps_fd
-            fd_X = (loss((X = X_p, S = S_3d, V = V_3d), dlra_ref_3d) -
-                    loss((X = X_m, S = S_3d, V = V_3d), dlra_ref_3d)) / (2 * eps_fd)
-            @test isapprox(g_x.X[2, 1, 2], fd_X; rtol = 1e-5, atol = 1e-7)
-
-            S_p = copy(S_3d)
-            S_p[2, 1, 2] += eps_fd
-            S_m = copy(S_3d)
-            S_m[2, 1, 2] -= eps_fd
-            fd_S = (loss((X = X_3d, S = S_p, V = V_3d), dlra_ref_3d) -
-                    loss((X = X_3d, S = S_m, V = V_3d), dlra_ref_3d)) / (2 * eps_fd)
-            @test isapprox(g_x.S[2, 1, 2], fd_S; rtol = 1e-5, atol = 1e-7)
-
-            V_p = copy(V_3d)
-            V_p[2, 1, 2] += eps_fd
-            V_m = copy(V_3d)
-            V_m[2, 1, 2] -= eps_fd
-            fd_V = (loss((X = X_3d, S = S_3d, V = V_p), dlra_ref_3d) -
-                    loss((X = X_3d, S = S_3d, V = V_m), dlra_ref_3d)) / (2 * eps_fd)
-            @test isapprox(g_x.V[2, 1, 2], fd_V; rtol = 1e-5, atol = 1e-7)
-
-            Sh_p = copy(dlra_ref_3d.S)
-            Sh_p[2, 1, 2] += eps_fd
-            Sh_m = copy(dlra_ref_3d.S)
-            Sh_m[2, 1, 2] -= eps_fd
-            fd_Sh = (loss(dlra_3d, (X = dlra_ref_3d.X, S = Sh_p, V = dlra_ref_3d.V)) -
-                     loss(dlra_3d, (X = dlra_ref_3d.X, S = Sh_m, V = dlra_ref_3d.V))) /
-                    (2 * eps_fd)
-            @test isapprox(g_xh.S[2, 1, 2], fd_Sh; rtol = 1e-5, atol = 1e-7)
+            for (arr, grad_arr, is_first, field) in (
+                (X_fd, g_x.X, true, :X),
+                (S_fd, g_x.S, true, :S),
+                (V_fd, g_x.V, true, :V),
+                (X_hat_fd, g_xh.X, false, :X),
+                (S_hat_fd, g_xh.S, false, :S),
+                (V_hat_fd, g_xh.V, false, :V)
+            )
+                idx = CartesianIndex(2, 1, 2)
+                arr_p = copy(arr)
+                arr_p[idx] += eps_fd
+                arr_m = copy(arr)
+                arr_m[idx] -= eps_fd
+                if is_first
+                    nt_p = merge(dlra_x_fd, NamedTuple{(field,)}((arr_p,)))
+                    nt_m = merge(dlra_x_fd, NamedTuple{(field,)}((arr_m,)))
+                    fd = (loss(nt_p, dlra_xh_fd) - loss(nt_m, dlra_xh_fd)) / (2 * eps_fd)
+                else
+                    nt_p = merge(dlra_xh_fd, NamedTuple{(field,)}((arr_p,)))
+                    nt_m = merge(dlra_xh_fd, NamedTuple{(field,)}((arr_m,)))
+                    fd = (loss(dlra_x_fd, nt_p) - loss(dlra_x_fd, nt_m)) / (2 * eps_fd)
+                end
+                @test isapprox(grad_arr[idx], fd; rtol = 1e-5, atol = 1e-7)
+            end
         end
 
         # Two-batch-size forward and backward allocation scaling (B1 = 16 vs B2 = 64)
@@ -834,8 +833,10 @@ end
 
         Zygote.gradient(_dlra_enc_bwd_obj, l_dlra, dlra_b1, ps_nt)
         Zygote.gradient(_dlra_enc_bwd_obj, l_dlra, dlra_b2, ps_nt)
-        alloc_dlra_bwd1 = @allocated Zygote.gradient(_dlra_enc_bwd_obj, l_dlra, dlra_b1, ps_nt)
-        alloc_dlra_bwd2 = @allocated Zygote.gradient(_dlra_enc_bwd_obj, l_dlra, dlra_b2, ps_nt)
+        alloc_dlra_bwd1 = @allocated Zygote.gradient(
+            _dlra_enc_bwd_obj, l_dlra, dlra_b1, ps_nt)
+        alloc_dlra_bwd2 = @allocated Zygote.gradient(
+            _dlra_enc_bwd_obj, l_dlra, dlra_b2, ps_nt)
         @test n_independent(alloc_dlra_bwd2 / B2, alloc_dlra_bwd1 / B1)
 
         Zygote.gradient(loss, dlra_b1, dlra_b1_ref)
@@ -843,5 +844,13 @@ end
         alloc_loss_bwd1 = @allocated Zygote.gradient(loss, dlra_b1, dlra_b1_ref)
         alloc_loss_bwd2 = @allocated Zygote.gradient(loss, dlra_b2, dlra_b2_ref)
         @test n_independent(alloc_loss_bwd2 / B2, alloc_loss_bwd1 / B1)
+
+        Zygote.gradient(_dlra_full_bwd_obj, l_dlra, inv_dlra, loss, dlra_b1, ps_nt)
+        Zygote.gradient(_dlra_full_bwd_obj, l_dlra, inv_dlra, loss, dlra_b2, ps_nt)
+        alloc_full_bwd1 = @allocated Zygote.gradient(
+            _dlra_full_bwd_obj, l_dlra, inv_dlra, loss, dlra_b1, ps_nt)
+        alloc_full_bwd2 = @allocated Zygote.gradient(
+            _dlra_full_bwd_obj, l_dlra, inv_dlra, loss, dlra_b2, ps_nt)
+        @test n_independent(alloc_full_bwd2 / B2, alloc_full_bwd1 / B1)
     end
 end

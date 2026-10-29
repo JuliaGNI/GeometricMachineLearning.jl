@@ -321,10 +321,13 @@ function (l::DecodeLowRankStiefelLayer{Nx, Nv, Mx, Mv, ROut})(
         ps::NamedTuple) where {Nx, Nv, Mx, Mv, ROut}
     Q_red, P_red = _reshape_latent_qp_3d(x.q, x.p, Mx, Mv)
     B = size(Q_red, 3)
+    n_lat = Mx * Mv
     r = min(ROut, Mx, 2 * Mv)
-    decoded_slices = map(1:B) do b
-        _decode_dlra_2d(
-            Q_red[:, :, b], P_red[:, :, b], ps.Φx, ps.Φv, Mv, ROut, l.metric_factors)
+    QP_mat = vcat(reshape(Q_red, n_lat, B), reshape(P_red, n_lat, B))
+    decoded_slices = map(eachcol(QP_mat)) do qp_col
+        Q_b = reshape(@view(qp_col[1:n_lat]), Mx, Mv)
+        P_b = reshape(@view(qp_col[(n_lat + 1):(2 * n_lat)]), Mx, Mv)
+        _decode_dlra_2d(Q_b, P_b, ps.Φx, ps.Φv, Mv, ROut, l.metric_factors)
     end
     X_out = reshape(reduce(hcat, map(d -> d.X, decoded_slices)), Nx, r, B)
     S_out = reshape(reduce(hcat, map(d -> d.S, decoded_slices)), r, r, B)
