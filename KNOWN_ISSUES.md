@@ -127,6 +127,43 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   docstring with them. `ParametricDataLoader`'s `(q, p)` constructor has the same one-type
   restriction and widens with it.
 
+### K37 · `metal_abort_runs.jl audit` throws when a run's crash report is gone, although its log records the signature.
+
+- **location:** `scripts/utilities/metal_abort_runs.jl:293`
+- **kind:** defect
+- **found:** #365
+- **evidence:**
+  `read_run` calls `report_signature(report_path(path, index, file, reports))` for every `M8-IPS` line.
+  `report_path` returns the copy beside the log when it exists and else `joinpath(reports, file)`, and
+  `report_signature` is `read(path, String)` on it (`:101-102`), so a copy that is missing with the
+  original deleted from `~/Library/Logs/DiagnosticReports` raises a `SystemError` and the audit of the
+  arm stops. Each `M8-IPS` line already holds `signature=` (`:426-427`), which the audit could use when
+  the file is absent. Read from the code; the failure is not reproduced.
+
+### K38 · The session arm's reader stamps `R0` after `yield()`, so `R0` is not the instant its first read finished.
+
+- **location:** `scripts/utilities/metal_abort_session.jl:134-137`
+- **kind:** defect
+- **found:** #365
+- **evidence:**
+  The docstring of `reader` (`:117-123`) says that `R0` is the instant the first read finished, and the
+  loop assigns it after `sum(v)`, `yield()` and `reads += 1`. When `yield()` hands the thread to another
+  task for a long stretch, `R0` lies later than the read, and `T0 < R0 < T1` can fail for a run whose
+  first read overlapped the training call, so the run counts as void and not as concurrent. The error
+  is on the side of a void run. Read from the code; not measured.
+
+### K39 · The session arm shares `M8_T0`, `M8_T1` and `M8_TRAINER` between two threads with no synchronization.
+
+- **location:** `scripts/utilities/metal_abort_session.jl:102-106`
+- **kind:** not verified
+- **found:** #365
+- **evidence:**
+  `training()` assigns the three globals and `reader()` polls and reads them (`:127`, `:133`,
+  `:141-142`) on another thread, with no lock and no atomic. Julia gives no guarantee for such reads of
+  a global that another thread writes. CodeRabbit marks the finding as one it could not verify, and no
+  wrong value has been observed: each global is a single `Int`, assigned around the training
+  call.
+
 ## Upstream
 
 ### K2 · Revise prints EMFILE errors in the test log
