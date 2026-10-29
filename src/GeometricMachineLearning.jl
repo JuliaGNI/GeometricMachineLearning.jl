@@ -248,6 +248,9 @@ include("layers/inverse_layers.jl")
 include("layers/canonical_sort_layer.jl")
 include("layers/pairwise_symplectic_layer.jl")
 include("layers/canonical_slot_layer.jl")
+include("layers/bilinear_stiefel_layer.jl")
+include("layers/low_rank_stiefel_layer.jl")
+include("loss/dlra_trace_loss.jl")
 include("architectures/linear_symplectic_transformer.jl")
 include("architectures/symplectic_transformer.jl")
 include("architectures/weight_tied_symplectic_autoencoder.jl")
@@ -266,6 +269,9 @@ export CanonicalSortLayer, InvertCanonicalSortLayer
 export PairwiseSymplecticLayer, PairwiseSymplecticLayerQ, PairwiseSymplecticLayerP
 export InversePairwiseSymplecticLayerQ, InversePairwiseSymplecticLayerP
 export CanonicalSlotLayer, InverseCanonicalSlotLayer
+export BilinearStiefelLayer, TransposeBilinearStiefelLayer
+export LowRankStiefelLayer, DecodeLowRankStiefelLayer
+export FastDLRATraceLoss
 export SymmetricSymplecticAutoencoder
 
 include("map_to_cpu.jl")
