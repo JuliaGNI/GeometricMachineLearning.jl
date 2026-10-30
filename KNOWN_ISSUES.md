@@ -62,6 +62,43 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   entry means deciding what of an untrained network is worth testing at all — training the two
   networks first would make the comparison mean something, at a cost the suite does not pay.
 
+### K40 · `HRedSys` carries a cache's buffers and its `pullback_mode` in fields that no code in `src/` reads.
+
+- **location:** `src/reduced_system/reduced_system.jl:93`
+- **kind:** dead code
+- **found:** #370
+- **evidence:**
+  The constructor sets `pullback_mode`, `ξ_buf`, `v_intermediate`, `f_intermediate`, `jac_result`
+  and `dual_cache`, and the type parameter `JR` carries the type of `jac_result`. `v_reduced` and
+  `f_reduced` hold the `ReducedVFCache` and the mode in their closures, and every read of
+  `.ξ_buf`, `.v_intermediate`, `.f_intermediate`, `.jac_result` and `.dual_cache` in `src/` is a read
+  of a `ReducedVFCache`, never of an `HRedSys`. `test/reduced_system/reference_shift_and_vjp.jl`
+  asserts the fields with `hasfield`. The fields stay because code outside this package may need
+  them; removing them changes the type's parameters, its layout and those tests.
+
+### K41 · `CrossModalCycleLoss(nn, x_a, x_b)` with a mixed-component `NamedTuple` raises a `MethodError`, not the documented `ArgumentError`.
+
+- **location:** `src/loss/multimodal_losses.jl:323`
+- **kind:** defect
+- **found:** #370
+- **evidence:**
+  The three `(nn, x_a, x_b)` methods (lines 323, 329 and 335) annotate `x_a` and `x_b` with
+  `ArrayOrNamedTuple`, and AbstractNeuralNetworks defines that as
+  `Union{AbstractArray{T}, NamedTupleOfArrays{T}}`, with one element type `T` for every component.
+  A `NamedTuple` whose `q` and `p` differ in element type matches no `T`, so dispatch fails before
+  `_check_eltype` (line 204) runs. In a fresh `julia --startup-file=no --project=.` process:
+
+  ```julia
+  T = typeof((q = zeros(Float32, 2, 3), p = zeros(Float64, 2, 3)))
+  T <: AbstractNeuralNetworks.ArrayOrNamedTuple   # false
+  ```
+
+  The pair form `CrossModalCycleLoss(nn, (x_a, x_b))` takes `Tuple{Any, Any}`, reaches
+  `_check_eltype`, and is tested. The docstring says that another element type raises an
+  `ArgumentError`. Closing this entry means widening the `x_a` and `x_b` annotations of the three
+  methods, for example to `Union{AbstractArray, NamedTuple}`. That is a design call about what the
+  method accepts, and the pull request does not make it.
+
 ## Found late
 
 ### K17 · `assign_q_and_p` drops the rows from `2N + 1` on without an error.
