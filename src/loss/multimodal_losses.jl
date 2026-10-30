@@ -16,7 +16,9 @@ end
 # A batch of DLRA states, one per slice along axis 3: the sum of the slices' squared norms.
 function _frob_sq_norm(x::NamedTuple{(:X, :S, :V), <:NTuple{3, AbstractArray{<:Any, 3}}})
     T = _state_eltype(x)
-    X, S, V = T.(x.X), T.(x.S), T.(x.V)
+    X = eltype(x.X) === T ? x.X : T.(x.X)
+    S = eltype(x.S) === T ? x.S : T.(x.S)
+    V = eltype(x.V) === T ? x.V : T.(x.V)
     G_X = tensor_transpose_tensor_mul(X, X)
     G_V = tensor_transpose_tensor_mul(V, V)
     M = tensor_tensor_mul(tensor_transpose_tensor_mul(S, G_X), S)
@@ -194,10 +196,16 @@ end
 
 ChainRulesCore.@non_differentiable _check_traj_len(::Any)
 
+_component_eltypes(x::Number) = (typeof(x),)
+_component_eltypes(x::AbstractArray) = (eltype(x),)
+_component_eltypes(x::NamedTuple{(:q, :p)}) = (eltype(x.q), eltype(x.p))
+_component_eltypes(x::NamedTuple{(:X, :S, :V)}) = (eltype(x.X), eltype(x.S), eltype(x.V))
+
 function _check_eltype(loss_name::String, what::String, x, ::Type{T}) where {T}
-    S = x isa Number ? typeof(x) : _state_eltype(x)
-    S === T || throw(ArgumentError(
-        "$loss_name: $what has element type $S, but the network has element type $T."))
+    for S in _component_eltypes(x)
+        S === T || throw(ArgumentError(
+            "$loss_name: $what has element type $S, but the network has element type $T."))
+    end
     nothing
 end
 

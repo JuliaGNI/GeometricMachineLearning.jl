@@ -429,6 +429,19 @@ end
         @test_throws msg("IsometricRolloutLoss", "the data") loss_iso(
             nn, :grid, [S.(F_k) for F_k in F_traj])
         @test_throws msg("CrossModalCycleLoss", "x_b") loss_cyc(nn, x_p, S.(F))
+
+        # A particle state with one component of another precision than the network's raises
+        # the same ArgumentError, whichever component it is.
+        x_p_qS = (q = x_p.q, p = S.(x_p.p))
+        x_p_pS = (q = S.(x_p.q), p = x_p.p)
+        for x_mixed in (x_p_qS, x_p_pS)
+            @test_throws msg("IsometricRolloutLoss", "the data") loss_iso(
+                nn, :particles, [x_mixed, x_p])
+            @test_throws msg("IsometricRolloutLoss", "the data") loss_iso(
+                nn, :particles, [x_p, x_mixed])
+            @test_throws msg("CrossModalCycleLoss", "x_a") loss_cyc(nn, (x_mixed, F))
+            @test_throws msg("CrossModalCycleLoss", "x_b") loss_cyc_rev(nn, (F, x_mixed))
+        end
     end
 
     @testset "Analytical Zygote gradients match central finite differences in Float64" begin
@@ -596,6 +609,24 @@ end
         @test isapprox(GeometricMachineLearning._frob_sq_norm(x_dlra_batch),
             sum(b -> sum(abs2, X_b[:, :, b] * S_b[:, :, b] * V_b[:, :, b]'), 1:B);
             rtol = 8 * eps(T))
+        # Factors that already have the element type of the batch are reused, not modified:
+        # value and gradient agree with the sum over the slices, which takes the 2D path.
+        for Tb in (Float32, Float64)
+            Xb, Sb, Vb = randn(rng, Tb, nx, 2, B), randn(rng, Tb, 2, 2, B),
+            randn(rng, Tb, nv, 2, B)
+            Xb0, Sb0, Vb0 = copy(Xb), copy(Sb), copy(Vb)
+            slice(b, X, S, V) = (X = X[:, :, b], S = S[:, :, b], V = V[:, :, b])
+            f_batch(X, S, V) = GeometricMachineLearning._frob_sq_norm((X = X, S = S, V = V))
+            f_slices(X, S, V) = sum(
+                b -> GeometricMachineLearning._frob_sq_norm(slice(b, X, S, V)), 1:B)
+            val_b = f_batch(Xb, Sb, Vb)
+            @test val_b isa Tb
+            @test isapprox(val_b, f_slices(Xb, Sb, Vb); rtol = 32 * eps(Tb))
+            g_b = Zygote.gradient(f_batch, Xb, Sb, Vb)
+            g_s = Zygote.gradient(f_slices, Xb, Sb, Vb)
+            @test all(isapprox.(g_b, g_s; rtol = 64 * eps(Tb)))
+            @test Xb == Xb0 && Sb == Sb0 && Vb == Vb0
+        end
         @test loss_c(nn_can, :dlra, x_dlra_batch) > zero(T)
         calls_mm, calls_fe, calls_core = Ref(0), Ref(0), Ref(0)
         NeuralNetwork(

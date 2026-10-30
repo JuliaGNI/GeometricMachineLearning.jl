@@ -459,3 +459,50 @@ end
           T(1e-3) * proj_expected
     @test abs(relative_error(reduced, zero(z_ref)) - red_expected) > T(1e-3) * red_expected
 end
+
+@testset "build_v_reduced and build_f_reduced with one reference only ($mode, $which)" for mode in (:jacobian, :vjp),
+    which in (:q_ref, :p_ref)
+
+    rng = Random.MersenneTwister(707)
+    T = Float64
+    N = 6
+    n = 2
+    arch = WeightTiedSymplecticAutoencoder(
+        2 * N, 2 * n; n_blocks = 1, n_layers = 1, n_ambient_layers = 0, sympnet_upscale = 2)
+    nn = NeuralNetwork(arch, CPU(), T; rng = rng)
+    ref = randn(rng, T, N)
+    # Both fields depend on q and on p, so a shift of the wrong component changes the result.
+    v_nl!(v, t, q, p, params) = (v .= p .+ T(0.5) .* q .^ 2; nothing)
+    f_nl!(f, t, q, p, params) = (f .= .-q .- p .^ 2; nothing)
+
+    q̃, p̃ = randn(rng, T, n), randn(rng, T, n)
+    ξ = vcat(q̃, p̃)
+    # The expected values come from the decoder, its Jacobian from ForwardDiff, and a loop that
+    # adds the reference to the component it belongs to.
+    z = Vector(decoder(nn)(ξ))
+    ∇Ψ = ForwardDiff.jacobian(x -> decoder(nn)(x), ξ)
+    for i in 1:N
+        which === :q_ref ? (z[i] += ref[i]) : (z[N + i] += ref[i])
+    end
+    v_z, f_z = zeros(T, N), zeros(T, N)
+    v_nl!(v_z, zero(T), z[1:N], z[(N + 1):(2 * N)], nothing)
+    f_nl!(f_z, zero(T), z[1:N], z[(N + 1):(2 * N)], nothing)
+    v_expected = ∇Ψ[(N + 1):(2 * N), (n + 1):(2 * n)]' * v_z .-
+                 ∇Ψ[1:N, (n + 1):(2 * n)]' * f_z
+    f_expected = ∇Ψ[1:N, 1:n]' * f_z .- ∇Ψ[(N + 1):(2 * N), 1:n]' * v_z
+
+    kw = (; which => ref)
+    v_red = build_v_reduced(v_nl!, f_nl!, decoder(nn); pullback_mode = mode, kw...)
+    f_red = build_f_reduced(v_nl!, f_nl!, decoder(nn); pullback_mode = mode, kw...)
+    v_out, f_out = zeros(T, n), zeros(T, n)
+    v_red(v_out, zero(T), q̃, p̃, nothing)
+    f_red(f_out, zero(T), q̃, p̃, nothing)
+    @test isapprox(v_out, v_expected; rtol = 1e-10, atol = 1e-12)
+    @test isapprox(f_out, f_expected; rtol = 1e-10, atol = 1e-12)
+
+    # The shift is not trivial: the unshifted fields differ from the shifted ones.
+    v_red0 = build_v_reduced(v_nl!, f_nl!, decoder(nn); pullback_mode = mode)
+    v_out0 = zeros(T, n)
+    v_red0(v_out0, zero(T), q̃, p̃, nothing)
+    @test norm(v_out0 .- v_expected) > 1e-3 * norm(v_expected)
+end

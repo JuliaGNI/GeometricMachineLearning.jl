@@ -50,6 +50,20 @@ function _add_ref!(
     z
 end
 
+function _add_ref!(z::AbstractVector, q_ref::AbstractVector, ::Nothing, N2::Int)
+    @inbounds for i in 1:N2
+        z[i] += q_ref[i]
+    end
+    z
+end
+
+function _add_ref!(z::AbstractVector, ::Nothing, p_ref::AbstractVector, N2::Int)
+    @inbounds for i in 1:N2
+        z[N2 + i] += p_ref[i]
+    end
+    z
+end
+
 _add_ref!(z::AbstractVector, ::Nothing, ::Nothing, ::Int) = z
 
 @doc raw"""
