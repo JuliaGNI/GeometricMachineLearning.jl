@@ -281,5 +281,45 @@ Random.seed!(42)
             h_quad(zero(T), dec_unshifted.q, dec_unshifted.p, nothing);
             atol = 10 * eps(T), rtol = 10 * eps(T)
         )
+
+        if T === Float32
+            q_ref_f64 = Float64.(q_ref)
+            p_ref_f64 = Float64.(p_ref)
+            h_quad_generic(t, q, p, params) = eltype(q)(0.5) *
+                                              (sum(abs2, q .- rs_neq.q_ref) +
+                                               sum(abs2, p .- rs_neq.p_ref))
+            rs_mixed_ref = HRedSys(
+                full_dim, reduced_dim, encoder(nn), decoder(nn),
+                v_quad!, f_quad!, h_quad_generic,
+                (zero(T), T(0.2)), T(0.05),
+                (q = StateVariable(q_init), p = StateVariable(p_init));
+                integrator = ImplicitMidpoint(),
+                q_ref = q_ref_f64,
+                p_ref = p_ref_f64,
+                pullback_mode = :vjp
+            )
+            @test eltype(rs_mixed_ref.q_ref) === Float32
+            @test eltype(rs_mixed_ref.p_ref) === Float32
+            h_val = @inferred rs_mixed_ref.h_reduced(
+                zero(Float32), q̃_test, p̃_test, nothing)
+            @test h_val isa Float32
+            @test isapprox(
+                h_val,
+                rs_neq.h_reduced(zero(Float32), q̃_test, p̃_test, nothing);
+                atol = 10 * eps(Float32), rtol = 10 * eps(Float32)
+            )
+            v_mixed = zeros(Float32, n)
+            f_mixed = zeros(Float32, n)
+            rs_mixed_ref.v_reduced(v_mixed, zero(Float32), q̃_test, p̃_test, nothing)
+            rs_mixed_ref.f_reduced(f_mixed, zero(Float32), q̃_test, p̃_test, nothing)
+            v_expected = zeros(Float32, n)
+            f_expected = zeros(Float32, n)
+            rs_neq.v_reduced(v_expected, zero(Float32), q̃_test, p̃_test, nothing)
+            rs_neq.f_reduced(f_expected, zero(Float32), q̃_test, p̃_test, nothing)
+            @test isapprox(
+                v_mixed, v_expected; atol = 50 * eps(Float32), rtol = 50 * eps(Float32))
+            @test isapprox(
+                f_mixed, f_expected; atol = 50 * eps(Float32), rtol = 50 * eps(Float32))
+        end
     end
 end

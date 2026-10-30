@@ -159,14 +159,13 @@ end
     S_in = randn(rng, T, r_in, r_in)
     x_dlra = (X = X_in, S = S_in, V = V_in)
 
-    _enc_grid(net, x) = encode(net, :grid, x)
-    _enc_spline(net, x) = encode(net, :spline, x)
-    _dec_grid(net, ξ) = decode(net, :grid, ξ)
-
     ξ_part = @inferred encode(nn, :particles, x_part)
-    ξ_grid = @inferred _enc_grid(nn, F_grid)
-    ξ_spline = @inferred _enc_spline(nn, F_spline)
+    ξ_grid = @inferred encode(nn, Val(:grid), F_grid)
+    ξ_spline = @inferred encode(nn, Val(:spline), F_spline)
     ξ_dlra = @inferred encode(nn, :dlra, x_dlra)
+    @test isapprox(ξ_grid, encode(nn, :grid, F_grid); atol = 8 * eps(T), rtol = 8 * eps(T))
+    @test isapprox(
+        ξ_spline, encode(nn, :spline, F_spline); atol = 8 * eps(T), rtol = 8 * eps(T))
 
     @test eltype(ξ_part) === T && length(ξ_part) == reduced_dim
     @test eltype(ξ_grid) === T && length(ξ_grid) == reduced_dim
@@ -184,7 +183,9 @@ end
         (q = z_dec_manual[1:N], p = z_dec_manual[(N + 1):full_dim]),
         params(nn).frontends.grid
     )
-    F_grid_dec = @inferred _dec_grid(nn, ξ_grid)
+    F_grid_dec = @inferred decode(nn, Val(:grid), ξ_grid)
+    @test isapprox(
+        F_grid_dec, decode(nn, :grid, ξ_grid); atol = 8 * eps(T), rtol = 8 * eps(T))
     @test isapprox(F_grid_dec, F_grid_manual; atol = 8 * eps(T), rtol = 8 * eps(T))
 
     # NamedTuple (q, p) latent input to decode
@@ -196,6 +197,8 @@ end
     # translate(nn, from, to, x) == decode(nn, to, encode(nn, from, x))
     @test translate(nn, :particles, :grid, x_part) ==
           decode(nn, :grid, encode(nn, :particles, x_part))
+    @test (@inferred translate(nn, Val(:particles), Val(:grid), x_part)) ==
+          translate(nn, :particles, :grid, x_part)
     @test translate(nn, :grid, :dlra, F_grid) ==
           decode(nn, :dlra, encode(nn, :grid, F_grid))
     @test translate(nn, :dlra, :spline, x_dlra) ==
@@ -247,11 +250,8 @@ end
     Φ_rel_mat ./= norm(Φ_rel_mat)
     copyto!(parent(params(nn_ch).frontends.slot.Φ_rel), Φ_rel_mat)
 
-    _dec_slot(net, ξ) = decode(net, :slot, ξ)
-    _dec_part(net, ξ) = decode(net, :particles, ξ)
-
     ξ_slot_test = T[0.8, -0.5]
-    x_slot_rec = @inferred _dec_slot(nn_ch, ξ_slot_test)
+    x_slot_rec = @inferred decode(nn_ch, :slot, ξ_slot_test)
     ξ_slot_rt = @inferred encode(nn_ch, :slot, x_slot_rec)
     @test norm(ξ_slot_rt - ξ_slot_test) <= 50 * eps(T) * norm(ξ_slot_test)
 
@@ -260,7 +260,7 @@ end
     Φ_core_sort = T[-inv(sqrt(T(2))), zero(T), inv(sqrt(T(2))), zero(T)]
     copyto!(parent(first(values(params(nn_ch).core)).weight), reshape(Φ_core_sort, N, 1))
     ξ_sort_test = T[0.9, -0.4]
-    x_sort_rec = @inferred _dec_part(nn_ch, ξ_sort_test)
+    x_sort_rec = @inferred decode(nn_ch, :particles, ξ_sort_test)
     ξ_sort_rt = @inferred encode(nn_ch, :particles, x_sort_rec)
     @test norm(ξ_sort_rt - ξ_sort_test) <= 50 * eps(T) * norm(ξ_sort_test)
 end
@@ -469,131 +469,131 @@ end
     @testset "Chain particle frontends, SymmetricSymplecticAutoencoder core, and batched @inferred" begin
         rng = Random.MersenneTwister(404)
         T = Float64
-        nx, nv = 6, 6
-        mx, mv = 2, 1
-
-        # 1. Exact-inverse Chain frontend (PairwiseSymplecticLayerQ + PairwiseSymplecticLayerP)
+        nx, nv, mx, mv, B = 6, 6, 2, 1, 3
+        _grad_vec(x::AbstractArray) = vec(Float64.(parent(x)))
+        _grad_vec(::Nothing) = Float64[]
+        _grad_vec(nt) = isempty(nt) ? Float64[] : mapreduce(_grad_vec, vcat, values(nt))
         fe_pw_chain = Chain(
-            PairwiseSymplecticLayerQ(2, 1; hidden_dim = 4),
-            PairwiseSymplecticLayerP(2, 1; hidden_dim = 4)
-        )
+            PairwiseSymplecticLayerQ(2, 1, 4), PairwiseSymplecticLayerP(2, 1, 4))
         fe_grid = BilinearStiefelLayer(nx, nv, mx, mv)
-        fe_dlra = LowRankStiefelLayer(nx, nv, 2, 1)
-        core_id = SymplecticAutoencoder(
-            4, 4; n_encoder_layers = 1, n_decoder_layers = 1, upscale = 2)
-        arch_pw = MultiModalSymplecticAutoencoder(
-            (particle = fe_pw_chain, grid = fe_grid, dlra = fe_dlra), core_id)
-        nn_pw = NeuralNetwork(arch_pw, CPU(), T; rng = rng)
-        for (_, lyr_p) in pairs(nn_pw.params.params.core)
-            for (_, arr) in pairs(lyr_p)
-                fill!(arr, zero(T))
-            end
-        end
-
+        fe_dlra = LowRankStiefelLayer(nx, nv, 2, 1; r_out = 2)
+        core_id = WeightTiedSymplecticAutoencoder(
+            4, 4; n_blocks = 1, n_layers = 1, n_ambient_layers = 0, sympnet_upscale = 2)
+        nn_pw = NeuralNetwork(
+            MultiModalSymplecticAutoencoder(
+                (particle = fe_pw_chain, grid = fe_grid, dlra = fe_dlra), core_id),
+            CPU(), T; rng = rng)
         @test params(nn_pw).frontends.particle isa NamedTuple
         x_qp2 = (q = randn(rng, T, 1, 2), p = randn(rng, T, 1, 2))
         x_vec2 = vcat(vec(x_qp2.q), vec(x_qp2.p))
         z_pw_qp = @inferred encode(nn_pw, :particle, x_qp2)
         z_pw_vec = @inferred encode(nn_pw, :particle, x_vec2)
         @test isapprox(z_pw_qp, z_pw_vec; atol = 10 * eps(T), rtol = 10 * eps(T))
-        x_pw_rec = decode(nn_pw, :particle, z_pw_qp)
-        @test isapprox(x_pw_rec, x_vec2; atol = 10 * eps(T), rtol = 10 * eps(T))
-
-        # 2. Canonical 4-layer Chain frontend (CanonicalSortLayer -> Pairwise Q/P -> CanonicalSlotLayer)
+        x_pw_rec = @inferred decode(nn_pw, Val(:particle), z_pw_qp)
+        @test isapprox(x_pw_rec, x_vec2; atol = 50 * eps(T), rtol = 50 * eps(T))
+        core_sa = SymplecticAutoencoder(
+            4, 2; n_encoder_blocks = 1, n_decoder_blocks = 1,
+            n_encoder_layers = 1, n_decoder_layers = 1,
+            n_decoder_output_layers = 1, sympnet_upscale = 2)
+        nn_sa_part = NeuralNetwork(
+            MultiModalSymplecticAutoencoder((particle = fe_pw_chain,), core_sa),
+            CPU(), T; rng = rng)
+        z_sa_vec = @inferred encode(nn_sa_part, :particle, x_vec2)
+        @test z_sa_vec isa Vector{T} && length(z_sa_vec) == 2
+        @test (@inferred encode(nn_sa_part, :particle, randn(rng, T, 4, 3))) isa Matrix{T}
+        @test (@inferred decode(nn_sa_part, :particle, z_sa_vec)) isa Vector{T}
+        @test (@inferred translate(nn_sa_part, :particle, :particle, x_vec2)) isa Vector{T}
         fe_can_chain = Chain(
-            CanonicalSortLayer(3, 1, 1),
-            PairwiseSymplecticLayerQ(3, 1; hidden_dim = 4),
-            PairwiseSymplecticLayerP(3, 1; hidden_dim = 4),
-            CanonicalSlotLayer(3, 1, 2)
-        )
+            CanonicalSortLayer(3, 1, 1), PairwiseSymplecticLayerQ(3, 1, 4),
+            PairwiseSymplecticLayerP(3, 1, 4), CanonicalSlotLayer(3, 1, 2))
         core_wt = WeightTiedSymplecticAutoencoder(
             4, 2; n_blocks = 1, n_layers = 1, n_ambient_layers = 0, sympnet_upscale = 2)
-        arch_can = MultiModalSymplecticAutoencoder(
-            (particle = fe_can_chain, grid = fe_grid, dlra = fe_dlra), core_wt)
-        nn_can = NeuralNetwork(arch_can, CPU(), T; rng = rng)
-
+        nn_can = NeuralNetwork(
+            MultiModalSymplecticAutoencoder(
+                (particle = fe_can_chain, grid = fe_grid, dlra = fe_dlra), core_wt),
+            CPU(), T; rng = rng)
         @test params(nn_can).frontends.particle isa NamedTuple
         x_qp3 = (q = T[-2.0 0.1 2.5], p = T[0.4 -1.3 0.9])
         x_vec3 = vcat(vec(x_qp3.q), vec(x_qp3.p))
         z_can_qp = @inferred encode(nn_can, :particle, x_qp3)
         z_can_vec = @inferred encode(nn_can, :particle, x_vec3)
         @test isapprox(z_can_qp, z_can_vec; atol = 10 * eps(T), rtol = 10 * eps(T))
-        x_can_rec = @inferred _dec_part(nn_can, z_can_qp)
-        @test length(x_can_rec) == 6
-
-        # Batched @inferred for encode, decode, translate across all modalities
-        B = 3
+        x_can_rec = @inferred decode(nn_can, Val(:particle), z_can_qp)
+        @test length(x_can_rec) == 6 &&
+              isapprox(x_can_rec, decode(nn_can, :particle, z_can_qp); atol = 10 * eps(T))
+        fe_can_d2 = Chain(
+            CanonicalSortLayer(3, 2, 1), PairwiseSymplecticLayerQ(3, 2, 4),
+            PairwiseSymplecticLayerP(3, 2, 4), CanonicalSlotLayer(3, 2, 2))
+        core_wt_d2 = WeightTiedSymplecticAutoencoder(
+            8, 4; n_blocks = 1, n_layers = 1, n_ambient_layers = 0, sympnet_upscale = 2)
+        nn_d2 = NeuralNetwork(
+            MultiModalSymplecticAutoencoder((particle = fe_can_d2,), core_wt_d2),
+            CPU(), T; rng = rng)
+        x_qp_d2 = (
+            q = T[3.0 -1.0 2.0; -2.0 4.0 0.5], p = T[0.2 -0.5 0.8; 1.1 -0.3 0.4])
+        x_vec_d2 = vcat(vec(x_qp_d2.q), vec(x_qp_d2.p))
+        ps_d2 = params(nn_d2).frontends.particle
+        s1_d2 = fe_can_d2.layers[1](x_qp_d2, ps_d2.L1)
+        s2_d2 = fe_can_d2.layers[2]((q = s1_d2.q, p = s1_d2.p), ps_d2.L2)
+        s4_d2 = fe_can_d2.layers[4](fe_can_d2.layers[3](s2_d2, ps_d2.L3), ps_d2.L4)
+        z_exp_d2 = encoder(nn_d2)(vcat(vec(s4_d2.q), vec(s4_d2.p)))
+        tol = 10 * eps(T)
+        @test isapprox(@inferred(encode(nn_d2, :particle, x_qp_d2)), z_exp_d2; atol = tol)
+        @test isapprox(@inferred(encode(nn_d2, :particle, x_vec_d2)), z_exp_d2; atol = tol)
         x_qp3_batch = (q = randn(rng, T, 1, 3, B), p = randn(rng, T, 1, 3, B))
         x_mat3_batch = vcat(reshape(x_qp3_batch.q, 3, B), reshape(x_qp3_batch.p, 3, B))
         F_batch = randn(rng, T, nx, nv, B)
         x_dlra = (
             X = Matrix(qr(randn(rng, T, nx, 2)).Q),
             S = randn(rng, T, 2, 2),
-            V = Matrix(qr(randn(rng, T, nv, 2)).Q)
-        )
-        X_b = zeros(T, nx, 2, B)
-        S_b = randn(rng, T, 2, 2, B)
-        V_b = zeros(T, nv, 2, B)
+            V = Matrix(qr(randn(rng, T, nv, 2)).Q))
+        X_b, S_b, V_b = zeros(T, nx, 2, B), randn(rng, T, 2, 2, B), zeros(T, nv, 2, B)
         for b in 1:B
             X_b[:, :, b] .= Matrix(qr(randn(rng, T, nx, 2)).Q)
             V_b[:, :, b] .= Matrix(qr(randn(rng, T, nv, 2)).Q)
         end
         x_dlra_batch = (X = X_b, S = S_b, V = V_b)
-
         z_b_qp = @inferred encode(nn_can, :particle, x_qp3_batch)
-        z_b_mat = @inferred _enc_part(nn_can, x_mat3_batch)
-        @test size(z_b_qp) == (2, B)
-        @test isapprox(z_b_qp, z_b_mat; atol = 10 * eps(T), rtol = 10 * eps(T))
-        @test size(@inferred _dec_part(nn_can, z_b_qp)) == (6, B)
-
+        z_b_mat = @inferred encode(nn_can, Val(:particle), x_mat3_batch)
+        @test size(z_b_qp) == (2, B) && isapprox(z_b_qp, z_b_mat; atol = tol)
+        @test size(@inferred decode(nn_can, Val(:particle), z_b_qp)) == (6, B)
         z_b_grid = @inferred encode(nn_can, :grid, F_batch)
         @test size(z_b_grid) == (2, B)
-        @test size(@inferred _dec_grid(nn_can, z_b_grid)) == (nx, nv, B)
-
+        @test size(@inferred decode(nn_can, Val(:grid), z_b_grid)) == (nx, nv, B)
         z_dlra_1 = @inferred encode(nn_can, :dlra, x_dlra)
-        @test length(z_dlra_1) == 2
         z_b_dlra = @inferred encode(nn_can, :dlra, x_dlra_batch)
-        @test size(z_b_dlra) == (2, B)
-        dec_b_dlra = @inferred _dec_dlra(nn_can, z_b_dlra)
-        @test size(dec_b_dlra.X) == (nx, 2, B) && size(dec_b_dlra.S) == (2, 2, B) &&
-              size(dec_b_dlra.V) == (nv, 2, B)
-
-        F_from_p_b = @inferred _trans_p2g(nn_can, x_mat3_batch)
+        dec_b_dlra = @inferred decode(nn_can, Val(:dlra), z_b_dlra)
+        @test length(z_dlra_1) == 2 && size(z_b_dlra) == (2, B) &&
+              size(dec_b_dlra.X) == (nx, 2, B)
+        F_from_p_b = @inferred translate(nn_can, Val(:particle), Val(:grid), x_mat3_batch)
         @test size(F_from_p_b) == (nx, nv, B)
-
-        # Loss + Zygote gradients on :particle ((q, p) NamedTuple on Chain) and :dlra ((X, S, V) NamedTuple)
         loss_c = CharbonnierRelativeLoss(; ε = 1e-2, λ_lat = 5e-2)
-        val_c_part = @inferred loss_c(nn_can, :particle, x_qp3)
-        @test isfinite(val_c_part) && val_c_part > zero(T)
-        g_part = Zygote.gradient(
-            ps -> loss_c(nn_can.model, ps, :particle, x_qp3), nn_can.params)[1]
-        @test all(isfinite, _extract_grad_vec(g_part))
-
-        val_c_dlra = @inferred loss_c(nn_can, :dlra, x_dlra)
-        @test isfinite(val_c_dlra) && val_c_dlra > zero(T)
-        g_dlra = Zygote.gradient(
-            ps -> loss_c(nn_can.model, ps, :dlra, x_dlra), nn_can.params)[1]
-        @test all(isfinite, _extract_grad_vec(g_dlra))
-
-        # 3. SymmetricSymplecticAutoencoder as core
+        @test (@inferred loss_c(nn_can, :particle, x_qp3)) > zero(T)
+        @test (@inferred loss_c(nn_can, :dlra, x_dlra)) > zero(T)
+        g_enc_pw = GeometricMachineLearning.Zygote.gradient(
+            ps -> sum(encode(nn_pw.model, ps, :particle, x_qp2)), params(nn_pw))[1]
+        g_dec_pw = GeometricMachineLearning.Zygote.gradient(
+            ps -> sum(decode(nn_pw.model, ps, :particle, z_pw_qp)), params(nn_pw))[1]
+        x_dlra_hat = @inferred decode(nn_can, Val(:dlra), z_dlra_1)
+        g_dlra = GeometricMachineLearning.Zygote.gradient(
+            ps -> loss_c(nn_can.model, ps, :dlra, x_dlra_hat, x_dlra), params(nn_can))[1]
+        @test all(isfinite, _grad_vec(g_enc_pw)) && all(isfinite, _grad_vec(g_dec_pw)) &&
+              all(isfinite, _grad_vec(g_dlra))
         core_sym = SymmetricSymplecticAutoencoder(
-            4, 2, 1; n_Encoder = 1, n_Decoder = 1, n_sympnet = 1,
-            hidden_dim = 4, sympnet_upscale = 2)
-        arch_sym = MultiModalSymplecticAutoencoder(
-            (particle = fe_can_chain, grid = fe_grid), core_sym)
-        nn_sym = NeuralNetwork(arch_sym, CPU(), T; rng = rng)
-
+            2, 1, 2; n_pairwise_layers = 1, pairwise_upscale = 2,
+            n_blocks = 1, n_layers = 1, n_ambient_layers = 0, sympnet_upscale = 2)
+        nn_sym = NeuralNetwork(
+            MultiModalSymplecticAutoencoder(
+                (particle = fe_can_chain, grid = fe_grid), core_sym),
+            CPU(), T; rng = rng)
         F_single = randn(rng, T, nx, nv)
         z_sym_p = @inferred encode(nn_sym, :particle, x_qp3)
-        z_sym_g = @inferred _enc_grid(nn_sym, F_single)
-        @test length(z_sym_p) == 2 && length(z_sym_g) == 2
-        F_sym_rec = @inferred _dec_grid(nn_sym, z_sym_g)
-        @test size(F_sym_rec) == (nx, nv)
-        F_sym_tr = @inferred _trans_p2g(nn_sym, x_qp3)
-        @test size(F_sym_tr) == (nx, nv)
-
-        g_sym = Zygote.gradient(
-            ps -> loss_c(nn_sym.model, ps, :grid, F_single), nn_sym.params)[1]
-        @test all(isfinite, _extract_grad_vec(g_sym))
+        z_sym_g = @inferred encode(nn_sym, Val(:grid), F_single)
+        F_sym_rec = @inferred decode(nn_sym, Val(:grid), z_sym_g)
+        F_sym_tr = @inferred translate(nn_sym, Val(:particle), Val(:grid), x_qp3)
+        @test length(z_sym_p) == 2 && size(F_sym_rec) == size(F_sym_tr) == (nx, nv)
+        g_sym = GeometricMachineLearning.Zygote.gradient(
+            ps -> sum(encode(nn_sym.model, ps, :grid, F_single)), params(nn_sym))[1]
+        @test all(isfinite, _grad_vec(g_sym))
     end
 end

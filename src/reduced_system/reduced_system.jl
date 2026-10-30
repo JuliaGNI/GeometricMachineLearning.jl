@@ -137,13 +137,9 @@ function HRedSys(N::Integer, n::Integer, encoder::NeuralNetwork{<:SymplecticEnco
         cache::ReducedVFCache = ReducedVFCache(
             eltype(ics.q), decoder.architecture.full_dim ÷ 2,
             decoder.architecture.reduced_dim ÷ 2),
-        v_reduced = build_v_reduced(
-            v_full, f_full, decoder;
-            pullback_mode = pullback_mode, q_ref = q_ref, p_ref = p_ref, cache = cache),
-        f_reduced = build_f_reduced(
-            v_full, f_full, decoder;
-            pullback_mode = pullback_mode, q_ref = q_ref, p_ref = p_ref, cache = cache),
-        h_reduced = build_h_reduced(h_full, decoder; q_ref = q_ref, p_ref = p_ref),
+        v_reduced = nothing,
+        f_reduced = nothing,
+        h_reduced = nothing,
         integrator) where {T <: Real}
     _check_pullback_mode(pullback_mode)
     N_ics = length(ics.q)
@@ -156,12 +152,27 @@ function HRedSys(N::Integer, n::Integer, encoder::NeuralNetwork{<:SymplecticEnco
     T_state = eltype(ics.q)
     q_ref_vec = Vector{T_state}(q_ref)
     p_ref_vec = Vector{T_state}(p_ref)
+    v_red = isnothing(v_reduced) ?
+            build_v_reduced(
+        v_full, f_full, decoder;
+        pullback_mode = pullback_mode, q_ref = q_ref_vec, p_ref = p_ref_vec,
+        cache = cache) :
+            v_reduced
+    f_red = isnothing(f_reduced) ?
+            build_f_reduced(
+        v_full, f_full, decoder;
+        pullback_mode = pullback_mode, q_ref = q_ref_vec, p_ref = p_ref_vec,
+        cache = cache) :
+            f_reduced
+    h_red = isnothing(h_reduced) ?
+            build_h_reduced(h_full, decoder; q_ref = q_ref_vec, p_ref = p_ref_vec) :
+            h_reduced
     HRedSys{typeof(timestep), typeof(encoder), typeof(decoder), typeof(v_full),
-        typeof(f_full), typeof(h_full), typeof(v_reduced), typeof(f_reduced),
-        typeof(h_reduced), typeof(integrator), typeof(parameters), typeof(ics),
+        typeof(f_full), typeof(h_full), typeof(v_red), typeof(f_red),
+        typeof(h_red), typeof(integrator), typeof(parameters), typeof(ics),
         typeof(timespan), typeof(q_ref_vec), typeof(cache.jac_result)}(
-        N, n, encoder, decoder, v_full, f_full, h_full, v_reduced, f_reduced,
-        h_reduced, integrator, parameters, timespan, timestep, ics,
+        N, n, encoder, decoder, v_full, f_full, h_full, v_red, f_red,
+        h_red, integrator, parameters, timespan, timestep, ics,
         q_ref_vec, p_ref_vec, pullback_mode,
         cache.ξ_buf, cache.v_intermediate, cache.f_intermediate,
         cache.jac_result, cache.dual_cache)

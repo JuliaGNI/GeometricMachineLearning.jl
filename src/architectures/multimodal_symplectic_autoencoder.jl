@@ -205,6 +205,9 @@ function _narrow_core_vec(z_vec, ::AbstractArray{<:Any, 3}, ::Type{T}) where {T}
 end
 _narrow_core_vec(z_vec, ::Any, ::Type{T}) where {T} = z_vec
 
+_narrow_latent_decode(z_mid, ::AbstractVector, ::Type{T}) where {T} = z_mid::Vector{T}
+_narrow_latent_decode(z_mid, ::AbstractMatrix, ::Type{T}) where {T} = z_mid::Matrix{T}
+
 function _narrow_fe_vec(z_vec, ::Any, x::NamedTuple, ::Type{T}) where {T}
     _narrow_core_vec(z_vec, x, T)
 end
@@ -239,62 +242,85 @@ function _core_vec_to_fe_inv_input(
     z_mid
 end
 
-_apply_frontend(fe::AbstractExplicitLayer, x, ps_fe::NamedTuple) = fe(x, ps_fe)
-_apply_frontend(fe::Chain, x::AbstractVecOrMat, ps_fe::NamedTuple) = fe(x, ps_fe)
-function _apply_frontend(fe::Chain, x::NamedTuple{(:q, :p)}, ps_fe::NamedTuple)
-    fe(_fe_output_to_core_vec(fe, x), ps_fe)
+@inline _strip_perm(z::NamedTuple{(:q, :p, :perm)}) = (q = z.q, p = z.p)
+@inline _strip_perm(z) = z
+
+@inline _apply_chain_layers(::Tuple{}, z, ::Tuple) = z
+@inline function _apply_chain_layers(layers::Tuple, z, ps::Tuple)
+    z_next = _strip_perm(first(layers)(z, first(ps)))
+    return _apply_chain_layers(Base.tail(layers), z_next, Base.tail(ps))
+end
+@inline function _apply_chain_layers(layers::Tuple, z, ps::NamedTuple)
+    _apply_chain_layers(layers, z, values(ps))
 end
 
-function _apply_inv_frontend(
+@inline _drop_encoder_params(::Tuple{}, ps::Tuple) = ps
+@inline function _drop_encoder_params(enc_layers::Tuple, ps::Tuple)
+    _drop_encoder_params(Base.tail(enc_layers), Base.tail(ps))
+end
+@inline function _drop_encoder_params(enc_layers::Tuple, ps::NamedTuple)
+    _drop_encoder_params(enc_layers, values(ps))
+end
+@inline function _drop_encoder_params(
+        ::NTuple{N, Any}, ::NTuple{N, Any}, ps::Tuple) where {N}
+    ps
+end
+@inline function _drop_encoder_params(
+        full_layers::Tuple, dec_layers::Tuple, ps::Tuple)
+    _drop_encoder_params(Base.tail(full_layers), dec_layers, Base.tail(ps))
+end
+@inline function _drop_encoder_params(
+        full_layers::Tuple, dec_layers::Tuple, ps::NamedTuple)
+    _drop_encoder_params(full_layers, dec_layers, values(ps))
+end
+
+@inline _apply_frontend(fe::AbstractExplicitLayer, x, ps_fe::NamedTuple) = fe(x, ps_fe)
+@inline function _apply_frontend(fe::Chain, x::NamedTuple{(:q, :p)}, ps_fe::NamedTuple)
+    _apply_chain_layers(fe.layers, x, ps_fe)
+end
+@inline function _apply_frontend(fe::Chain, x::AbstractArray, ps_fe::NamedTuple)
+    _apply_chain_layers(fe.layers, x, ps_fe)
+end
+
+@inline function _apply_inv_frontend(
         ::Chain, inv_fe::Chain, z_in, ps_fe::NamedTuple)
-    inv_fe(z_in, _reverse_params(ps_fe))
+    _apply_chain_layers(inv_fe.layers, z_in, _reverse_params(ps_fe))
 end
 
-function _apply_inv_frontend(
+@inline function _apply_inv_frontend(
         ::AbstractExplicitLayer, inv_fe::AbstractExplicitLayer, z_in, ps_fe::NamedTuple)
     inv_fe(z_in, ps_fe)
 end
 
-function _core_encode_vec(
+@inline function _core_encode_vec(
         ::Union{WeightTiedAutoencoderLayer, SymmetricAutoencoderLayer},
-        core_encoder::Union{Chain, AbstractExplicitLayer},
-        ps_core::NamedTuple, z_vec::AbstractVecOrMat)
+        core_encoder, ps_core::NamedTuple, z_vec::AbstractVecOrMat)
     core_encoder(z_vec, _reverse_params(ps_core))
 end
 
-function _core_decode_vec(
+@inline function _core_decode_vec(
         ::Union{WeightTiedAutoencoderLayer, SymmetricAutoencoderLayer},
-        core_decoder::Union{Chain, AbstractExplicitLayer},
-        ps_core::NamedTuple, ξ_vec::AbstractVecOrMat)
+        core_decoder, ps_core::NamedTuple, ξ_vec::AbstractVecOrMat)
     core_decoder(ξ_vec, ps_core)
 end
 
-function _core_encode_vec(
-        ::Any, core_encoder::Chain, ps_core::NamedTuple, z_vec::AbstractVecOrMat)
-    names = keys(ps_core)
-    M = length(core_encoder.layers)
-    enc_names = names[1:M]
-    ps_enc = NamedTuple{enc_names}(map(k -> getfield(ps_core, k), enc_names))
-    core_encoder(z_vec, ps_enc)
+@inline function _core_encode_vec(
+        ::Chain, core_encoder, ps_core::NamedTuple, z_vec::AbstractVecOrMat)
+    _apply_chain_layers(core_encoder.layers, z_vec, ps_core)
 end
 
-function _core_decode_vec(
-        ::Any, core_decoder::Chain, ps_core::NamedTuple, ξ_vec::AbstractVecOrMat)
-    names = keys(ps_core)
-    K = length(core_decoder.layers)
-    M = length(names) - K
-    dec_names = names[1:K]
-    src_names = names[(M + 1):end]
-    ps_dec = NamedTuple{dec_names}(map(k -> getfield(ps_core, k), src_names))
-    core_decoder(ξ_vec, ps_dec)
+@inline function _core_decode_vec(
+        core_model::Chain, core_decoder, ps_core::NamedTuple, ξ_vec::AbstractVecOrMat)
+    ps_dec = _drop_encoder_params(core_model.layers, core_decoder.layers, ps_core)
+    _apply_chain_layers(core_decoder.layers, ξ_vec, ps_dec)
 end
 
 _latent_to_vec(ξ::AbstractVecOrMat) = ξ
 _latent_to_vec(ξ::NamedTuple) = vcat(ξ.q, ξ.p)
 
-function _encode_active(
+@inline function _encode_active(
         fe, ps_fe::NamedTuple, core_model,
-        core_encoder::Union{Chain, AbstractExplicitLayer}, ps_core::NamedTuple, x)
+        core_encoder, ps_core::NamedTuple, x)
     z_fe = _apply_frontend(fe, x, ps_fe)
     T = promote_type(_leaf_eltype(x), _leaf_eltype(ps_core))
     z_vec = _narrow_fe_vec(_fe_output_to_core_vec(fe, z_fe), fe, x, T)
@@ -302,12 +328,13 @@ function _encode_active(
     _narrow_fe_vec(ξ, fe, x, T)
 end
 
-function _decode_active(
+@inline function _decode_active(
         fe, inv_fe, ps_fe::NamedTuple, core_model,
-        core_decoder::Union{Chain, AbstractExplicitLayer},
-        ps_core::NamedTuple, full_dim::Int, ξ)
+        core_decoder, ps_core::NamedTuple, full_dim::Int, ξ)
     ξ_vec = _latent_to_vec(ξ)
-    z_mid = _core_decode_vec(core_model, core_decoder, ps_core, ξ_vec)
+    T = promote_type(_leaf_eltype(ξ_vec), _leaf_eltype(ps_core))
+    z_mid = _narrow_latent_decode(
+        _core_decode_vec(core_model, core_decoder, ps_core, ξ_vec), ξ_vec, T)
     z_in = _core_vec_to_fe_inv_input(fe, z_mid, full_dim)
     _apply_inv_frontend(fe, inv_fe, z_in, ps_fe)
 end
@@ -329,13 +356,24 @@ end
 
 @doc raw"""
     encode(nn::NeuralNetwork{<:MultiModalSymplecticAutoencoder}, modality::Symbol, x)
+    encode(nn::NeuralNetwork{<:MultiModalSymplecticAutoencoder}, ::Val{modality}, x)
     encode(model::MultiModalSymplecticLayer, ps, modality::Symbol, x)
+    encode(model::MultiModalSymplecticLayer, ps, ::Val{modality}, x)
 
 Apply `frontends[modality]` followed by `encoder(core)` to map an input `x` in modality `modality` into the shared canonical latent space ``(\tilde{q}, \tilde{p}) \in \mathbb{R}^{2n}``.
 
 Throws an `ArgumentError` naming `modality` and `keys(frontends)` if `modality` is not present in `frontends`.
 """
-Base.@constprop :aggressive function encode(
+@inline Base.@constprop :aggressive function encode(
+        model::MultiModalSymplecticLayer, ps::NamedTuple, ::Val{modality}, x
+) where {modality}
+    _check_modality(model.frontends, modality)
+    fe = getfield(model.frontends, modality)
+    ps_fe = getfield(ps.frontends, modality)
+    _encode_active(fe, ps_fe, model.core_model, model.core_encoder, ps.core, x)
+end
+
+@inline Base.@constprop :aggressive function encode(
         model::MultiModalSymplecticLayer, ps::NamedTuple, modality::Symbol, x)
     _check_modality(model.frontends, modality)
     fe = getfield(model.frontends, modality)
@@ -348,7 +386,7 @@ end
 @noinline function _rrule_encode_active(
         config::ChainRulesCore.RuleConfig{>:ChainRulesCore.HasReverseMode},
         fe, ps_fe::NamedTuple, core_model,
-        core_encoder::Union{Chain, AbstractExplicitLayer}, ps_core::NamedTuple, x)
+        core_encoder, ps_core::NamedTuple, x)
     ChainRulesCore.rrule_via_ad(
         config, _encode_active, fe, ps_fe, core_model, core_encoder, ps_core, x)
 end
@@ -356,8 +394,7 @@ end
 @noinline function _rrule_decode_active(
         config::ChainRulesCore.RuleConfig{>:ChainRulesCore.HasReverseMode},
         fe, inv_fe, ps_fe::NamedTuple, core_model,
-        core_decoder::Union{Chain, AbstractExplicitLayer},
-        ps_core::NamedTuple, full_dim::Int, ξ)
+        core_decoder, ps_core::NamedTuple, full_dim::Int, ξ)
     ChainRulesCore.rrule_via_ad(
         config, _decode_active, fe, inv_fe, ps_fe, core_model, core_decoder,
         ps_core, full_dim, ξ)
@@ -399,25 +436,51 @@ function ChainRulesCore.rrule(
     return y, encode_pullback
 end
 
-Base.@constprop :aggressive function encode(
-        model::MultiModalSymplecticLayer, ps::NetworkParameters, modality::Symbol, x)
+function ChainRulesCore.rrule(
+        config::ChainRulesCore.RuleConfig{>:ChainRulesCore.HasReverseMode},
+        ::typeof(encode),
+        model::MultiModalSymplecticLayer,
+        ps::NamedTuple,
+        ::Val{modality},
+        x) where {modality}
+    ChainRulesCore.rrule(config, encode, model, ps, modality, x)
+end
+
+@inline Base.@constprop :aggressive function encode(
+        model::MultiModalSymplecticLayer, ps::NetworkParameters,
+        modality::Union{Symbol, Val}, x)
     encode(model, params(ps), modality, x)
 end
 
-Base.@constprop :aggressive function encode(
-        nn::NeuralNetwork{<:MultiModalSymplecticAutoencoder}, modality::Symbol, x)
+@inline Base.@constprop :aggressive function encode(
+        nn::NeuralNetwork{<:MultiModalSymplecticAutoencoder},
+        modality::Union{Symbol, Val}, x)
     encode(nn.model, params(nn), modality, x)
 end
 
 @doc raw"""
     decode(nn::NeuralNetwork{<:MultiModalSymplecticAutoencoder}, modality::Symbol, ξ)
+    decode(nn::NeuralNetwork{<:MultiModalSymplecticAutoencoder}, ::Val{modality}, ξ)
     decode(model::MultiModalSymplecticLayer, ps, modality::Symbol, ξ)
+    decode(model::MultiModalSymplecticLayer, ps, ::Val{modality}, ξ)
 
 Apply `decoder(core)` followed by `inverse_layer(frontends[modality])` to reconstruct a latent state ``\xi`` in modality `modality`.
 
 Throws an `ArgumentError` naming `modality` and `keys(frontends)` if `modality` is not present in `frontends`.
 """
-Base.@constprop :aggressive function decode(
+@inline Base.@constprop :aggressive function decode(
+        model::MultiModalSymplecticLayer, ps::NamedTuple, ::Val{modality}, ξ
+) where {modality}
+    _check_modality(model.frontends, modality)
+    fe = getfield(model.frontends, modality)
+    inv_fe = getfield(model.inverse_frontends, modality)
+    ps_fe = getfield(ps.frontends, modality)
+    _decode_active(
+        fe, inv_fe, ps_fe, model.core_model, model.core_decoder,
+        ps.core, model.full_dim, ξ)
+end
+
+@inline Base.@constprop :aggressive function decode(
         model::MultiModalSymplecticLayer, ps::NamedTuple, modality::Symbol, ξ)
     _check_modality(model.frontends, modality)
     fe = getfield(model.frontends, modality)
@@ -466,36 +529,51 @@ function ChainRulesCore.rrule(
     return y, decode_pullback
 end
 
-Base.@constprop :aggressive function decode(
-        model::MultiModalSymplecticLayer, ps::NetworkParameters, modality::Symbol, ξ)
+function ChainRulesCore.rrule(
+        config::ChainRulesCore.RuleConfig{>:ChainRulesCore.HasReverseMode},
+        ::typeof(decode),
+        model::MultiModalSymplecticLayer,
+        ps::NamedTuple,
+        ::Val{modality},
+        ξ) where {modality}
+    ChainRulesCore.rrule(config, decode, model, ps, modality, ξ)
+end
+
+@inline Base.@constprop :aggressive function decode(
+        model::MultiModalSymplecticLayer, ps::NetworkParameters,
+        modality::Union{Symbol, Val}, ξ)
     decode(model, params(ps), modality, ξ)
 end
 
-Base.@constprop :aggressive function decode(
-        nn::NeuralNetwork{<:MultiModalSymplecticAutoencoder}, modality::Symbol, ξ)
+@inline Base.@constprop :aggressive function decode(
+        nn::NeuralNetwork{<:MultiModalSymplecticAutoencoder},
+        modality::Union{Symbol, Val}, ξ)
     decode(nn.model, params(nn), modality, ξ)
 end
 
 @doc raw"""
     translate(nn::NeuralNetwork{<:MultiModalSymplecticAutoencoder}, from::Symbol, to::Symbol, x)
+    translate(nn::NeuralNetwork{<:MultiModalSymplecticAutoencoder}, ::Val{from}, ::Val{to}, x)
     translate(model::MultiModalSymplecticLayer, ps, from::Symbol, to::Symbol, x)
+    translate(model::MultiModalSymplecticLayer, ps, ::Val{from}, ::Val{to}, x)
 
 Map an input `x` in modality `from` into modality `to` through the shared canonical latent space via `decode(nn, to, encode(nn, from, x))`.
 """
-Base.@constprop :aggressive function translate(
-        model::MultiModalSymplecticLayer, ps::NamedTuple, from::Symbol, to::Symbol, x)
+@inline Base.@constprop :aggressive function translate(
+        model::MultiModalSymplecticLayer, ps::NamedTuple,
+        from::Union{Symbol, Val}, to::Union{Symbol, Val}, x)
     decode(model, ps, to, encode(model, ps, from, x))
 end
 
-Base.@constprop :aggressive function translate(
+@inline Base.@constprop :aggressive function translate(
         model::MultiModalSymplecticLayer, ps::NetworkParameters,
-        from::Symbol, to::Symbol, x)
+        from::Union{Symbol, Val}, to::Union{Symbol, Val}, x)
     translate(model, params(ps), from, to, x)
 end
 
-Base.@constprop :aggressive function translate(
+@inline Base.@constprop :aggressive function translate(
         nn::NeuralNetwork{<:MultiModalSymplecticAutoencoder},
-        from::Symbol, to::Symbol, x)
+        from::Union{Symbol, Val}, to::Union{Symbol, Val}, x)
     translate(nn.model, params(nn), from, to, x)
 end
 
