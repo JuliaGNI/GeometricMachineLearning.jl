@@ -857,7 +857,8 @@ end
 
 @testset "Docstrings state the limits of the frontends and the losses" begin
     # The source text of every docstring of X, with its line breaks as spaces. `Docs.doc` has
-    # no method outside an interactive session, so the text comes from the module's metadata.
+    # no method until the REPL standard library loads, so the text comes from the module's
+    # metadata.
     function docstring(X)
         binding = Base.Docs.Binding(GeometricMachineLearning, nameof(X))
         multidoc = Base.Docs.meta(GeometricMachineLearning)[binding]
