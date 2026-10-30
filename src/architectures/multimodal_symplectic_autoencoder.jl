@@ -38,6 +38,9 @@ Given `nn = NeuralNetwork(arch, backend, T)`:
 - [`encode`](@ref)`(nn, modality::Symbol, x)` applies `frontends[modality]` followed by `encoder(core)` to map modality input `x` into ``(\tilde{q}, \tilde{p}) \in \mathbb{R}^{2n}``;
 - [`decode`](@ref)`(nn, modality::Symbol, ξ)` applies `decoder(core)` followed by `inverse_layer(frontends[modality])` to reconstruct in `modality`;
 - [`translate`](@ref)`(nn, from::Symbol, to::Symbol, x)` computes `decode(nn, to, encode(nn, from, x))`.
+
+!!! note "`nn(x)` uses the first modality only"
+    The call `nn(x)` on a network of this architecture makes a round trip through the first modality of `frontends` only: it computes `decode(nn, m, encode(nn, m, x))` for `m = first(keys(frontends))`. Use `encode`, `decode` and `translate` to select another modality.
 """
 struct MultiModalSymplecticAutoencoder{
     FT <: NamedTuple,

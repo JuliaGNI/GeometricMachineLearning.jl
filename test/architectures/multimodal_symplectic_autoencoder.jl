@@ -80,7 +80,7 @@ end
 
 _extract_grad_vec(g::NetworkParameters) = _extract_grad_vec(params(g))
 
-@testset "Clause 1: MultiModalSymplecticAutoencoder construction and edge cases" begin
+@testset "MultiModalSymplecticAutoencoder construction and edge cases" begin
     @test isdefined(GeometricMachineLearning, :MultiModalSymplecticAutoencoder)
     @test isdefined(GeometricMachineLearning, :encode)
     @test isdefined(GeometricMachineLearning, :decode)
@@ -119,7 +119,7 @@ _extract_grad_vec(g::NetworkParameters) = _extract_grad_vec(params(g))
     @test_throws re_unknown translate(nn, :grid, :unknown, zeros(4, 4))
 end
 
-@testset "Clause 1: encode, decode, translate and right-invertible round-trip ($T)" for T in REAL_ELTYPES
+@testset "encode, decode, translate and right-invertible round-trip ($T)" for T in REAL_ELTYPES
     rng = Random.MersenneTwister(101)
     nx, nv = 5, 4
     mx, mv = 2, 2
@@ -275,7 +275,7 @@ end
     @test norm(ξ_sort_rt - ξ_sort_test) <= 50 * eps(T) * norm(ξ_sort_test)
 end
 
-@testset "Clause 2: Multi-modal losses, zero-input edge case, M1, and Zygote vs FD gradients" begin
+@testset "Multi-modal losses, zero-input edge case, exact-zero loss, and Zygote vs FD gradients" begin
     @test isdefined(GeometricMachineLearning, :CharbonnierRelativeLoss)
     @test isdefined(GeometricMachineLearning, :IsometricRolloutLoss)
     @test isdefined(GeometricMachineLearning, :CrossModalCycleLoss)
@@ -312,7 +312,7 @@ end
     re_cyc = r"^(?:ArgumentError: )?CrossModalCycleLoss requires non-negative weights β_align and β_cycle, got β_align = 1\.0, β_cycle = -0\.1\.$"
     @test_throws re_cyc CrossModalCycleLoss(:particles, :grid; β_cycle = -0.1)
 
-    @testset "Forward evaluation, @inferred, zero edge case, and M1 ($T)" for T in REAL_ELTYPES
+    @testset "Forward evaluation, @inferred, zero edge case, and exact-zero loss ($T)" for T in REAL_ELTYPES
         rng = Random.MersenneTwister(202)
         nx, nv = 4, 4
         mx, mv = 2, 1
@@ -343,7 +343,7 @@ end
         @test isapprox(val_c1, expected_c; atol = 10 * eps(T), rtol = 10 * eps(T))
         @test isapprox(val_c2, expected_c; atol = 10 * eps(T), rtol = 10 * eps(T))
 
-        # Independent perturbation F_pert != F_hat so z_hat != z and the latent penalty term is active (catches O3)
+        # Independent perturbation F_pert != F_hat so z_hat != z and the latent penalty term is active (catches a dropped latent penalty)
         F_pert = F .+ T(0.5) .* ones(T, nx, nv)
         z_pert = encode(nn, :grid, F_pert)
         expected_c_pert = (sqrt(sum(abs2, F_pert .- F) + eps_T^2) - eps_T) /
@@ -352,7 +352,7 @@ end
         val_c_pert = @inferred loss_c(nn, :grid, F_pert, F)
         @test isapprox(val_c_pert, expected_c_pert; atol = 10 * eps(T), rtol = 10 * eps(T))
 
-        # Mutant M1 check: when x̂ == x != 0, CharbonnierRelativeLoss MUST be exact zero(T)!
+        # Exact-zero check: when x̂ == x != 0, CharbonnierRelativeLoss MUST be exact zero(T)!
         # Omitting `- ε` in the numerator yields ε / sqrt(||x||_F^2 + ε^2) > 0.
         val_identical = @inferred loss_c(nn, :grid, F, F)
         @test val_identical === zero(T)
@@ -405,7 +405,7 @@ end
         expected_cyc = T(1.2) * sum(abs2, z_a .- z_b) + T(0.3) * sum(abs2, z_a_cyc .- z_a)
         @test isapprox(val_cyc, expected_cyc; atol = 10 * eps(T), rtol = 10 * eps(T))
 
-        # Reverse direction CrossModalCycleLoss(:grid, :particles) where :particles is only chamber-wise right-invertible (catches O5)
+        # Reverse direction CrossModalCycleLoss(:grid, :particles) where :particles is only chamber-wise right-invertible (checks the cycle term against the explicit encode-decode round trip)
         loss_cyc_rev = CrossModalCycleLoss(
             :grid, :particles; β_align = T(1.2), β_cycle = T(0.5))
         val_cyc_rev = @inferred loss_cyc_rev(nn, F, x_p)

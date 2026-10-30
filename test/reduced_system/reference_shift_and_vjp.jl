@@ -1,6 +1,7 @@
 using GeometricMachineLearning
 using GeometricMachineLearning: HRedSys, build_v_reduced, build_f_reduced,
-                                integrate_reduced_system, evaluate_vf_and_compute_∇Ψ,
+                                integrate_reduced_system, integrate_full_system,
+                                evaluate_vf_and_compute_∇Ψ,
                                 evaluate_vf_and_vjp, ReducedVFCache,
                                 ForwardDiff, StateVariable
 using GeometricIntegrators: ImplicitMidpoint
@@ -13,7 +14,7 @@ include("../helpers/eltypes.jl")
 
 Random.seed!(42)
 
-@testset "Clause 3: HRedSys reference-state shifting, pullback_mode = :jacobian | :vjp, and work buffers" begin
+@testset "HRedSys reference-state shifting, pullback_mode = :jacobian | :vjp, and work buffers" begin
     model_chk = WeightTiedSymplecticAutoencoder(
         6, 2; n_blocks = 1, n_layers = 1, n_ambient_layers = 0, sympnet_upscale = 2)
     nn_chk = NeuralNetwork(model_chk, CPU(), Float64)
@@ -126,7 +127,7 @@ Random.seed!(42)
         @test isapprox(qp_pert.q, qp_pert_exp.q; atol = 10 * eps(T), rtol = 10 * eps(T))
         @test isapprox(qp_pert.p, qp_pert_exp.p; atol = 10 * eps(T), rtol = 10 * eps(T))
 
-        # 2. VJP vs Jacobian agreement to 50 eps(T) for 2N = 12, 2n = 4 in Float32 and Float64 (catches M2!)
+        # 2. VJP vs Jacobian agreement to 50 eps(T) for 2N = 12, 2n = 4 in Float32 and Float64 (catches a sign error or a swapped block in the pullback)
         for trial in 1:5
             q̃ = randn(rng, T, n)
             p̃ = randn(rng, T, n)
@@ -140,7 +141,7 @@ Random.seed!(42)
             rs_vjp.v_reduced(v_vjp, zero(T), q̃, p̃, nothing)
             rs_vjp.f_reduced(f_vjp, zero(T), q̃, p̃, nothing)
 
-            # Verify non-zero vector field so a sign flip (M2) or zeroing is caught
+            # Verify non-zero vector field so a sign flip or zeroing is caught
             @test norm(v_jac) > T(1e-2)
             @test norm(f_jac) > T(1e-2)
             @test norm(v_vjp - v_jac) <= 50 * eps(T) * max(one(T), norm(v_jac))
@@ -194,6 +195,45 @@ Random.seed!(42)
         @test size(J_v_dual) == (n, n) && all(isfinite, J_v_dual)
         @test !isempty(rs_jac.dual_cache)
 
+        # The Jacobian of the reduced field ξ = (q̃, p̃) ↦ (v, f) through the Dual path, with the
+        # non-zero reference shift (q_ref, p_ref) above, equals the central finite differences of
+        # that field. The finite differences run on Float64 states only, which the Float32 cache of
+        # `rs_jac` does not take; they use `h = cbrt(eps)`, the step that balances the truncation
+        # error `O(h^2)` (measured: about 0.2 h^2 relative at h = 1e-4) and the round-off error
+        # `O(eps / h)` (about 4e-11 relative). The mismatch is relative to `max(1, ‖J‖)`, and
+        # `1e-9` is 25 times the largest of 5 mismatches that were measured with this setup (3.8e-11),
+        # and 9 orders below the mismatch of a transposed or a sign-flipped Jacobian (at least 1.6).
+        if T === Float64
+            rng_fd = Random.MersenneTwister(505)
+            function reduced_field(ξ)
+                out_v = zeros(eltype(ξ), n)
+                out_f = zeros(eltype(ξ), n)
+                rs_jac.v_reduced(
+                    out_v, zero(eltype(ξ)), ξ[1:n], ξ[(n + 1):(2 * n)], nothing)
+                rs_jac.f_reduced(
+                    out_f, zero(eltype(ξ)), ξ[1:n], ξ[(n + 1):(2 * n)], nothing)
+                vcat(out_v, out_f)
+            end
+            h_fd = cbrt(eps(T))
+            for trial in 1:5
+                ξ_fd = randn(rng_fd, T, reduced_dim)
+                J_dual = ForwardDiff.jacobian(reduced_field, ξ_fd)
+                J_fd = similar(J_dual)
+                for j in 1:reduced_dim
+                    e_j = zeros(T, reduced_dim)
+                    e_j[j] = h_fd
+                    J_fd[:, j] = (reduced_field(ξ_fd + e_j) - reduced_field(ξ_fd - e_j)) /
+                                 (2 * h_fd)
+                end
+                mismatch(J) = norm(J - J_fd) / max(one(T), norm(J_fd))
+                @test size(J_dual) == (reduced_dim, reduced_dim)
+                @test mismatch(J_dual) <= 1e-9
+                # The comparison can fail: a transposed and a sign-flipped Jacobian are rejected.
+                @test mismatch(transpose(J_dual)) > 1e-3
+                @test mismatch(-J_dual) > 1e-3
+            end
+        end
+
         # A state of another floating-point type than the default cache's (the decoder's
         # element type) raises an ArgumentError that names both types.
         S = T === Float32 ? Float64 : Float32
@@ -223,7 +263,7 @@ Random.seed!(42)
         # 4. Quadratic Hamiltonian H(q, p) = 1/2 ||(q - q_ref)^2 + (p - p_ref)^2||
         # with equilibrium (q_ref, p_ref) and integrator = ImplicitMidpoint():
         # integrate_reduced_system starting at ics = (q = q_ref, p = p_ref) keeps
-        # ξ(t) = (0, 0) and (q(t), p(t)) = (q_ref, p_ref) to 10 eps(T) for 20 steps (catches M3!).
+        # ξ(t) = (0, 0) and (q(t), p(t)) = (q_ref, p_ref) to 10 eps(T) for 20 steps (catches a lift or an encoding that ignores the reference shift).
         function v_quad!(v, t, q, p, params)
             @inbounds for i in eachindex(v, p)
                 v[i] = p[i] - p_ref[i]
@@ -349,4 +389,73 @@ Random.seed!(42)
                 f_mixed, f_expected; atol = 50 * eps(Float32), rtol = 50 * eps(Float32))
         end
     end
+end
+
+@testset "reduction_error and projection_error with a non-zero reference shift ($T)" for T in REAL_ELTYPES
+    rng = Random.MersenneTwister(606)
+    N = 6
+    n = 2
+    arch = WeightTiedSymplecticAutoencoder(
+        2 * N, 2 * n; n_blocks = 1, n_layers = 1, n_ambient_layers = 0, sympnet_upscale = 2)
+    nn = NeuralNetwork(arch, CPU(), T; rng = rng)
+    q_ref = randn(rng, T, N)
+    p_ref = randn(rng, T, N)
+    z_ref = vcat(q_ref, p_ref)
+
+    v_quad!(v, t, q, p, params) = (v .= p .- p_ref; nothing)
+    f_quad!(f, t, q, p, params) = (f .= .-(q .- q_ref); nothing)
+    h_quad(t, q, p, params) = T(0.5) * (sum(abs2, q .- q_ref) + sum(abs2, p .- p_ref))
+
+    ics = (q = StateVariable(q_ref .+ T(0.3) .* randn(rng, T, N)),
+        p = StateVariable(p_ref .+ T(0.3) .* randn(rng, T, N)))
+    rs = HRedSys(
+        2 * N, 2 * n, encoder(nn), decoder(nn), v_quad!, f_quad!, h_quad,
+        (zero(T), T(0.25)), T(0.05), ics;
+        integrator = ImplicitMidpoint(), q_ref = q_ref, p_ref = p_ref)
+    sol_full = integrate_full_system(rs)
+    sol_red = integrate_reduced_system(rs)
+
+    # 5 steps store 6 states, as many as N = 6: a shift broadcast along the time axis instead of
+    # the axis of the degrees of freedom runs without a dimension error, so only the value shows it.
+    @test length(sol_full.q) == N
+    @test length(sol_red.q) == N
+
+    # The expected errors come from a loop over the stored states, with the shift added to and
+    # subtracted from each state as a vector, not from the broadcasts of `decode` and `encode`.
+    # `_norm` of a `(q, p)` pair is `(‖q‖ + ‖p‖) / √2`, and the `√2` cancels in the ratio.
+    function relative_error(reconstruct, shift)
+        dq, dp, nq, np = zero(T), zero(T), zero(T), zero(T)
+        for k in 0:(N - 1)
+            q_k = Vector(sol_full.q[k])
+            p_k = Vector(sol_full.p[k])
+            ẑ = reconstruct(k, shift)
+            dq += sum(abs2, ẑ[1:N] .- q_k)
+            dp += sum(abs2, ẑ[(N + 1):(2 * N)] .- p_k)
+            nq += sum(abs2, q_k)
+            np += sum(abs2, p_k)
+        end
+        (sqrt(dq) + sqrt(dp)) / (sqrt(nq) + sqrt(np))
+    end
+    projected(k, shift) = decoder(nn)(encoder(nn)(
+        vcat(Vector(sol_full.q[k]), Vector(sol_full.p[k])) .- shift)) .+ shift
+    reduced(k, shift) = decoder(nn)(vcat(Vector(sol_red.q[k]), Vector(sol_red.p[k]))) .+
+                        shift
+
+    proj_expected = relative_error(projected, z_ref)
+    red_expected = relative_error(reduced, z_ref)
+    @test projection_error(rs, sol_full) isa T
+    @test reduction_error(rs, sol_full, sol_red) isa T
+    @test isapprox(projection_error(rs, sol_full), proj_expected; rtol = 50 * eps(T))
+    @test isapprox(reduction_error(rs, sol_full, sol_red), red_expected; rtol = 50 * eps(T))
+    # The one-argument forms integrate the systems themselves and agree.
+    @test isapprox(projection_error(rs), proj_expected; rtol = 50 * eps(T))
+    @test isapprox(reduction_error(rs), red_expected; rtol = 50 * eps(T))
+
+    # The check can fail: the errors are not trivial, and the errors without the shift differ
+    # from the shifted ones, so a dropped or misplaced shift changes the result.
+    @test proj_expected > T(1e-2)
+    @test red_expected > T(1e-2)
+    @test abs(relative_error(projected, zero(z_ref)) - proj_expected) >
+          T(1e-3) * proj_expected
+    @test abs(relative_error(reduced, zero(z_ref)) - red_expected) > T(1e-3) * red_expected
 end

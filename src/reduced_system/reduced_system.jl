@@ -305,6 +305,9 @@ We then get
 When `pullback_mode = :jacobian` (default), `ForwardDiff.jacobian!` with `DiffResults.MutableDiffResult` computes ``\Psi^{\mathrm{dec}}(\xi)`` and ``\nabla_\xi \Psi^{\mathrm{dec}}`` in one pass.
 When `pullback_mode = :vjp`, `(v(z), f(z))` is evaluated once at ``z = \Psi^{\mathrm{dec}}(\xi)`` and ``(\nabla_\xi \Psi^{\mathrm{dec}})^T \mathbb{J}_{2N}^T [v(z); f(z)]`` is computed via `Zygote.pullback(decoder, ξ)`.
 The default `cache` has the element type of the decoder's parameters. A state of another floating-point element type than the cache's raises an `ArgumentError`.
+
+!!! note "`:vjp` is not faster than `:jacobian` for small problems"
+    Each of the two fields, `v_reduced` and `f_reduced`, has its own pullback, so `:vjp` runs the decoder forward and backward once per field, where `:jacobian` pays one forward pass in dual numbers per call. For `2n = 4` and a decoder of `WeightTiedSymplecticAutoencoder(2N, 4; n_blocks = 1, n_layers = 1, n_ambient_layers = 0, sympnet_upscale = 2)` in `Float64`, one call of `v_reduced` allocates 4448 B (`:jacobian`) against 27968 B (`:vjp`) for `2N = 12`, 8160 B against 29376 B for `2N = 40`, and 29728 B against 37248 B for `2N = 200`. A call takes 0.7 μs against 99 μs for `2N = 12`, 0.8 μs against 104 μs for `2N = 40`, and 2.5 μs against 106 μs for `2N = 200`. The allocation of both modes grows with `N`, and the figures are minima of warm calls in a fresh process with `--check-bounds=auto` on one machine. Use `:jacobian` unless a measurement of your own problem says otherwise.
 """
 function build_v_reduced(v_full, f_full, decoder::NeuralNetwork{<:SymplecticDecoder};
         pullback_mode::Symbol = :jacobian,
@@ -344,6 +347,9 @@ Builds the reduced vector field (``p`` part) based on the full vector field for 
 `build_f_reduced` outputs the second half of the entries of this vector field.
 
 See [`build_v_reduced`](@ref) for more information.
+
+!!! note "`:vjp` is not faster than `:jacobian` for small problems"
+    Each field has its own pullback, so `pullback_mode = :vjp` allocates more and runs slower than `:jacobian` for small problems. For `2n = 4` in `Float64`, one call of `f_reduced` allocates 4272 B (`:jacobian`) against 27968 B (`:vjp`) for `2N = 12`, 7744 B against 29376 B for `2N = 40`, and 28048 B against 37248 B for `2N = 200`, and takes 0.7 μs against 99 μs, 0.8 μs against 98 μs, and 2.6 μs against 105 μs. [`build_v_reduced`](@ref) states the setup of these measurements.
 """
 function build_f_reduced(v_full, f_full, decoder::NeuralNetwork{<:SymplecticDecoder};
         pullback_mode::Symbol = :jacobian,
@@ -377,14 +383,10 @@ end
 
 function build_h_reduced(
         h_full, decoder::NeuralNetwork{<:SymplecticDecoder};
-        q_ref = nothing, p_ref = nothing)
+        q_ref, p_ref)
     function h_reduced(t, q, p, params)
         dec = decoder((q = q, p = p))
-        if q_ref === nothing || p_ref === nothing
-            h_full(t, dec.q, dec.p, params)
-        else
-            h_full(t, dec.q .+ q_ref, dec.p .+ p_ref, params)
-        end
+        h_full(t, dec.q .+ q_ref, dec.p .+ p_ref, params)
     end
     h_reduced
 end
