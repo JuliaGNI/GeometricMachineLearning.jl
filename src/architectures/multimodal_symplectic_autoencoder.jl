@@ -132,7 +132,8 @@ function NeuralNetwork(
     end
     inv_frontends = NamedTuple{names}(inv_fe_vals)
 
-    core_nn = NeuralNetwork(arch.core, backend, T; rng = rng, kwargs...)
+    core_nn = NeuralNetwork(
+        arch.core, backend, T; rng = rng, initializer = initializer, kwargs...)
     core_enc_nn = encoder(core_nn)
     core_dec_nn = decoder(core_nn)
 

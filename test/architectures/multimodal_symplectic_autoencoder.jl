@@ -2,7 +2,8 @@ using GeometricMachineLearning
 using GeometricMachineLearning:
                                 SymplecticCompression, AutoEncoder, Architecture,
                                 NetworkLoss, params
-using GeometricMachineLearning.AbstractNeuralNetworks: GlorotUniform
+using GeometricMachineLearning.AbstractNeuralNetworks: GlorotUniform, Initializer,
+                                                       initialparameters
 using KernelAbstractions
 using LinearAlgebra
 using Test
@@ -12,6 +13,15 @@ using Zygote: Zygote
 include("../helpers/eltypes.jl")
 
 Random.seed!(42)
+
+# A Glorot-uniform initializer that counts its calls, to see which networks it reaches.
+struct CountingInitializer <: Initializer
+    calls::Base.RefValue{Int}
+end
+function (c::CountingInitializer)(rng, x)
+    c.calls[] += 1
+    GlorotUniform()(rng, x)
+end
 
 # Helper to flatten and unflatten nested NamedTuple/Array parameters for finite differences
 function _flatten_params(x::AbstractArray{T}) where {T <: Real}
@@ -570,6 +580,18 @@ end
         loss_c = CharbonnierRelativeLoss(; ε = 1e-2, λ_lat = 5e-2)
         @test (@inferred loss_c(nn_can, :particle, x_qp3)) > zero(T)
         @test (@inferred loss_c(nn_can, :dlra, x_dlra)) > zero(T)
+        @test isapprox(GeometricMachineLearning._frob_sq_norm(x_dlra_batch),
+            sum(b -> sum(abs2, X_b[:, :, b] * S_b[:, :, b] * V_b[:, :, b]'), 1:B);
+            rtol = 8 * eps(T))
+        @test loss_c(nn_can, :dlra, x_dlra_batch) > zero(T)
+        calls_mm, calls_fe, calls_core = Ref(0), Ref(0), Ref(0)
+        NeuralNetwork(
+            MultiModalSymplecticAutoencoder((grid = fe_grid,), core_wt), CPU(), T;
+            rng = rng, initializer = CountingInitializer(calls_mm))
+        initialparameters(rng, CountingInitializer(calls_fe), fe_grid, CPU(), T)
+        NeuralNetwork(
+            core_wt, CPU(), T; rng = rng, initializer = CountingInitializer(calls_core))
+        @test calls_core[] > 0 && calls_mm[] == calls_fe[] + calls_core[]
         g_enc_pw = GeometricMachineLearning.Zygote.gradient(
             ps -> sum(encode(nn_pw.model, ps, :particle, x_qp2)), params(nn_pw))[1]
         g_dec_pw = GeometricMachineLearning.Zygote.gradient(

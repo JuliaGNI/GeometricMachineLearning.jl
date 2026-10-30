@@ -1,9 +1,9 @@
-struct ReducedVFCache{T}
+struct ReducedVFCache{T, JR}
     ξ_buf::Vector{T}
     v_intermediate::Vector{T}
     f_intermediate::Vector{T}
     z_bar_buf::Vector{T}
-    jac_result::DiffResults.MutableDiffResult{1, Vector{T}, Tuple{Matrix{T}}}
+    jac_result::JR
     dual_cache::IdDict{DataType, Any}
 end
 
@@ -13,7 +13,7 @@ function ReducedVFCache(::Type{T}, N2::Int, n2::Int) where {T}
     f_int = zeros(T, N2)
     z_bar = zeros(T, 2 * N2)
     jac_res = DiffResults.JacobianResult(zeros(T, 2 * N2), ξ_buf)
-    ReducedVFCache{T}(
+    ReducedVFCache{T, typeof(jac_res)}(
         ξ_buf, v_int, f_int, z_bar, jac_res, IdDict{DataType, Any}())
 end
 
@@ -242,14 +242,14 @@ function evaluate_vf_and_compute_∇Ψ(t, q̃::AbstractVector{Tq}, p̃::Abstract
     copyto!(@view(ξ_buf[1:n2]), q̃)
     copyto!(@view(ξ_buf[(n2 + 1):(2 * n2)]), p̃)
     result = ForwardDiff.jacobian!(c.jac_result, decoder, ξ_buf)
-    z = DiffResults.value(result)
+    z = DiffResults.value(result)::Vector{T}
     _add_ref!(z, q_ref, p_ref, N2)
     q, p = @views z[1:N2], z[(N2 + 1):(2 * N2)]
     fill!(v_intermediate, zero(T))
     fill!(f_intermediate, zero(T))
     v_full(v_intermediate, t, q, p, parameters)
     f_full(f_intermediate, t, q, p, parameters)
-    v_intermediate, f_intermediate, DiffResults.jacobian(result)
+    v_intermediate, f_intermediate, DiffResults.jacobian(result)::Matrix{T}
 end
 
 function evaluate_vf_and_vjp(t, q̃::AbstractVector{Tq}, p̃::AbstractVector{Tp},

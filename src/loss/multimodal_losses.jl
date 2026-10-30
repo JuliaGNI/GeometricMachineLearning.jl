@@ -13,6 +13,15 @@ function _frob_sq_norm(x::NamedTuple{(:X, :S, :V)})
     T = _state_eltype(x)
     max(zero(T), tr(G_X * S_GV * transpose(x.S)))
 end
+# A batch of DLRA states, one per slice along axis 3: the sum of the slices' squared norms.
+function _frob_sq_norm(x::NamedTuple{(:X, :S, :V), <:NTuple{3, AbstractArray{<:Any, 3}}})
+    T = _state_eltype(x)
+    X, S, V = T.(x.X), T.(x.S), T.(x.V)
+    G_X = tensor_transpose_tensor_mul(X, X)
+    G_V = tensor_transpose_tensor_mul(V, V)
+    M = tensor_tensor_mul(tensor_transpose_tensor_mul(S, G_X), S)
+    sum(max.(zero(T), sum(M .* permutedims(G_V, (2, 1, 3)); dims = (1, 2))))
+end
 
 _frob_sq_diff(x̂::AbstractArray, x::AbstractArray) = sum(abs2, x̂ .- x)
 function _frob_sq_diff(x̂::NamedTuple{(:q, :p)}, x::NamedTuple{(:q, :p)})
