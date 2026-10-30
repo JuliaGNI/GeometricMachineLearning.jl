@@ -416,6 +416,19 @@ end
             val_cyc_rev, expected_cyc_rev; atol = 10 * eps(T), rtol = 10 *
                                                                       eps(T)
         )
+
+        # Another precision than the network's raises an ArgumentError that names both.
+        S = T === Float32 ? Float64 : Float32
+        msg(name, what) = "$name: $what has element type $S, but the network has element type $T."
+        loss_iso_int = IsometricRolloutLoss(ξ -> S.(step_lin(ξ)); H = H_lat)
+        @test_throws msg("IsometricRolloutLoss", "the integrator's output") loss_iso_int(
+            nn, :grid, F_traj)
+        loss_iso_H = IsometricRolloutLoss(step_lin; H = ξ -> S(0.5) * S(sum(abs2, ξ)))
+        @test_throws msg("IsometricRolloutLoss", "the value of H") loss_iso_H(
+            nn, :grid, F_traj)
+        @test_throws msg("IsometricRolloutLoss", "the data") loss_iso(
+            nn, :grid, [S.(F_k) for F_k in F_traj])
+        @test_throws msg("CrossModalCycleLoss", "x_b") loss_cyc(nn, x_p, S.(F))
     end
 
     @testset "Analytical Zygote gradients match central finite differences in Float64" begin

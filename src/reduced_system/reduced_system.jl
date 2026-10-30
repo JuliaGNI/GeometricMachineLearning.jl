@@ -22,6 +22,11 @@ function _get_vf_cache(
     if T === T0
         return cache
     end
+    T <: AbstractFloat && throw(
+        ArgumentError(
+        "The reduced vector field got a state of element type $T, but its cache has element type $T0."
+    ),
+    )
     get!(cache.dual_cache, T) do
         ReducedVFCache(T, N2, n2)
     end::ReducedVFCache{T}
@@ -249,7 +254,9 @@ function evaluate_vf_and_compute_∇Ψ(t, q̃::AbstractVector{Tq}, p̃::Abstract
     fill!(f_intermediate, zero(T))
     v_full(v_intermediate, t, q, p, parameters)
     f_full(f_intermediate, t, q, p, parameters)
-    v_intermediate, f_intermediate, DiffResults.jacobian(result)::Matrix{T}
+    # Copies, so that no caller holds memory of the cache.
+    copy(v_intermediate), copy(f_intermediate),
+    copy(DiffResults.jacobian(result)::Matrix{T})
 end
 
 function evaluate_vf_and_vjp(t, q̃::AbstractVector{Tq}, p̃::AbstractVector{Tp},
@@ -297,13 +304,14 @@ We then get
 `build_v_reduced` outputs the first half of the entries of this vector field.
 When `pullback_mode = :jacobian` (default), `ForwardDiff.jacobian!` with `DiffResults.MutableDiffResult` computes ``\Psi^{\mathrm{dec}}(\xi)`` and ``\nabla_\xi \Psi^{\mathrm{dec}}`` in one pass.
 When `pullback_mode = :vjp`, `(v(z), f(z))` is evaluated once at ``z = \Psi^{\mathrm{dec}}(\xi)`` and ``(\nabla_\xi \Psi^{\mathrm{dec}})^T \mathbb{J}_{2N}^T [v(z); f(z)]`` is computed via `Zygote.pullback(decoder, ξ)`.
+The default `cache` has the element type of the decoder's parameters. A state of another floating-point element type than the cache's raises an `ArgumentError`.
 """
 function build_v_reduced(v_full, f_full, decoder::NeuralNetwork{<:SymplecticDecoder};
         pullback_mode::Symbol = :jacobian,
         q_ref = nothing,
         p_ref = nothing,
         cache::ReducedVFCache = ReducedVFCache(
-            Float64, decoder.architecture.full_dim ÷ 2,
+            _leaf_eltype(params(params(decoder))), decoder.architecture.full_dim ÷ 2,
             decoder.architecture.reduced_dim ÷ 2))
     _check_pullback_mode(pullback_mode)
     N2 = decoder.architecture.full_dim ÷ 2
@@ -342,7 +350,7 @@ function build_f_reduced(v_full, f_full, decoder::NeuralNetwork{<:SymplecticDeco
         q_ref = nothing,
         p_ref = nothing,
         cache::ReducedVFCache = ReducedVFCache(
-            Float64, decoder.architecture.full_dim ÷ 2,
+            _leaf_eltype(params(params(decoder))), decoder.architecture.full_dim ÷ 2,
             decoder.architecture.reduced_dim ÷ 2))
     _check_pullback_mode(pullback_mode)
     N2 = decoder.architecture.full_dim ÷ 2

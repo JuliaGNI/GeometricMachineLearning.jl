@@ -62,6 +62,20 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   entry means deciding what of an untrained network is worth testing at all — training the two
   networks first would make the comparison mean something, at a cost the suite does not pay.
 
+### K40 · `HRedSys` carries a cache's buffers and its `pullback_mode` in fields that no code in `src/` reads.
+
+- **location:** `src/reduced_system/reduced_system.jl:93`
+- **kind:** dead code
+- **found:** #370
+- **evidence:**
+  The constructor sets `pullback_mode`, `ξ_buf`, `v_intermediate`, `f_intermediate`, `jac_result`
+  and `dual_cache`, and the type parameter `JR` carries the type of `jac_result`. `v_reduced` and
+  `f_reduced` hold the `ReducedVFCache` and the mode in their closures, and every read of
+  `.ξ_buf`, `.v_intermediate`, `.f_intermediate`, `.jac_result` and `.dual_cache` in `src/` is a read
+  of a `ReducedVFCache`, never of an `HRedSys`. `test/reduced_system/reference_shift_and_vjp.jl`
+  asserts the fields with `hasfield`. The fields stay because code outside this package may need
+  them; removing them changes the type's parameters, its layout and those tests.
+
 ## Found late
 
 ### K17 · `assign_q_and_p` drops the rows from `2N + 1` on without an error.

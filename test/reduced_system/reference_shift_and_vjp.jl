@@ -1,6 +1,7 @@
 using GeometricMachineLearning
 using GeometricMachineLearning: HRedSys, build_v_reduced, build_f_reduced,
                                 integrate_reduced_system, evaluate_vf_and_compute_∇Ψ,
+                                evaluate_vf_and_vjp, ReducedVFCache,
                                 ForwardDiff, StateVariable
 using GeometricIntegrators: ImplicitMidpoint
 using KernelAbstractions
@@ -192,6 +193,32 @@ Random.seed!(42)
         )
         @test size(J_v_dual) == (n, n) && all(isfinite, J_v_dual)
         @test !isempty(rs_jac.dual_cache)
+
+        # A state of another floating-point type than the default cache's (the decoder's
+        # element type) raises an ArgumentError that names both types.
+        S = T === Float32 ? Float64 : Float32
+        msg_cache = "got a state of element type $S, but its cache has element type $T."
+        @test_throws msg_cache v_red_j(
+            zeros(S, n), zero(S), S.(q̃_test), S.(p̃_test), nothing)
+        @test_throws msg_cache f_red_v(
+            zeros(S, n), zero(S), S.(q̃_test), S.(p̃_test), nothing)
+
+        # No result holds memory of the cache: mutating a result does not change the next
+        # call, and a later call does not change an earlier result.
+        cache_a = ReducedVFCache(T, N, n)
+        q̃_other, p̃_other = randn(rng, T, n), randn(rng, T, n)
+        for helper in (evaluate_vf_and_compute_∇Ψ, evaluate_vf_and_vjp)
+            call(q, p) = helper(zero(T), q, p, nothing, decoder(nn), v_field!, f_field!,
+                cache_a, q_ref, p_ref)
+            r1 = call(q̃_test, p̃_test)
+            r1_saved = deepcopy(r1)
+            foreach(x -> fill!(x, T(NaN)), r1 isa Tuple ? r1 : (r1,))
+            r2 = call(q̃_test, p̃_test)
+            @test all(map((a, b) -> isapprox(a, b; rtol = 8 * eps(T)),
+                r2 isa Tuple ? r2 : (r2,), r1_saved isa Tuple ? r1_saved : (r1_saved,)))
+            call(q̃_other, p̃_other)
+            @test all(x -> all(isnan, x), r1 isa Tuple ? r1 : (r1,))
+        end
 
         # 4. Quadratic Hamiltonian H(q, p) = 1/2 ||(q - q_ref)^2 + (p - p_ref)^2||
         # with equilibrium (q_ref, p_ref) and integrator = ImplicitMidpoint():

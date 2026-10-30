@@ -160,6 +160,7 @@ Multi-step latent rollout, decoded trajectory reconstruction, and latent Hamilto
 
 where ``z_k = \mathrm{encode}(nn, m, x_k)``, ``\hat{z}_1 = z_1``, ``\hat{z}_{k+1} = \mathrm{integrator}(\hat{z}_k)`` for ``k = 1, \dots, K - 1``, and `H` is a callable latent Hamiltonian (default `nothing`, which uses the canonical quadratic energy ``\frac{1}{2}\|\hat{z}\|_2^2``).
 The weights default to `α_lat = 1.0`, `α_rec = 1.0`, and `α_H = 0.1`.
+The data, the output of `integrator` and the value of `H` have the element type of the network's parameters; another element type raises an `ArgumentError`.
 """
 struct IsometricRolloutLoss{IT, HT, T <: Real} <: NetworkLoss
     integrator::IT
@@ -193,25 +194,39 @@ end
 
 ChainRulesCore.@non_differentiable _check_traj_len(::Any)
 
+function _check_eltype(loss_name::String, what::String, x, ::Type{T}) where {T}
+    S = x isa Number ? typeof(x) : _state_eltype(x)
+    S === T || throw(ArgumentError(
+        "$loss_name: $what has element type $S, but the network has element type $T."))
+    nothing
+end
+
+ChainRulesCore.@non_differentiable _check_eltype(::Any, ::Any, ::Any, ::Any)
+
 Base.@constprop :aggressive function (loss::IsometricRolloutLoss)(
         model::MultiModalSymplecticLayer, ps::NamedTuple,
         modality::Symbol, xs::AbstractVector)
     K = length(xs)
     _check_traj_len(K)
-    T = promote_type(_state_eltype(xs[1]), _leaf_eltype(ps.core))
+    T = _leaf_eltype(ps.core)
+    _check_eltype("IsometricRolloutLoss", "the data", xs[1], T)
     z1 = encode(model, ps, modality, xs[1])
     H1 = _eval_latent_H(loss.H, z1)
+    _check_eltype("IsometricRolloutLoss", "the value of H", H1, T)
     z_curr = z1
     err_lat = zero(T)
     err_rec = zero(T)
     err_H = zero(T)
     for k in 2:K
+        _check_eltype("IsometricRolloutLoss", "the data", xs[k], T)
         z_k = encode(model, ps, modality, xs[k])
         z_curr = loss.integrator(z_curr)
+        _check_eltype("IsometricRolloutLoss", "the integrator's output", z_curr, T)
         err_lat = err_lat + _frob_sq_diff(z_curr, z_k)
         x_rec_k = decode(model, ps, modality, z_curr)
         err_rec = err_rec + _frob_sq_diff(x_rec_k, xs[k])
         Hk = _eval_latent_H(loss.H, z_curr)
+        _check_eltype("IsometricRolloutLoss", "the value of H", Hk, T)
         err_H = err_H + abs2(Hk - H1)
     end
     inv_steps = inv(T(K - 1))
@@ -262,6 +277,7 @@ Cross-modal paired latent alignment and cycle consistency loss between modalitie
 
 where ``z_a = \mathrm{encode}(nn, a, x_a)`` and ``z_b = \mathrm{encode}(nn, b, x_b)``.
 The weights default to `β_align = 1.0` and `β_cycle = 0.1`.
+`x_a` and `x_b` have the element type of the network's parameters; another element type raises an `ArgumentError`.
 """
 struct CrossModalCycleLoss{T <: Real} <: NetworkLoss
     mod_a::Symbol
@@ -282,7 +298,9 @@ end
 Base.@constprop :aggressive function _cross_modal_eval(
         loss::CrossModalCycleLoss, model::MultiModalSymplecticLayer,
         ps::NamedTuple, x_a, x_b)
-    T = promote_type(_state_eltype(x_a), _state_eltype(x_b), _leaf_eltype(ps.core))
+    T = _leaf_eltype(ps.core)
+    _check_eltype("CrossModalCycleLoss", "x_a", x_a, T)
+    _check_eltype("CrossModalCycleLoss", "x_b", x_b, T)
     z_a = encode(model, ps, loss.mod_a, x_a)
     z_b = encode(model, ps, loss.mod_b, x_b)
     x_b_rec = decode(model, ps, loss.mod_b, z_a)
