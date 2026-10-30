@@ -255,6 +255,8 @@ include("architectures/linear_symplectic_transformer.jl")
 include("architectures/symplectic_transformer.jl")
 include("architectures/weight_tied_symplectic_autoencoder.jl")
 include("architectures/symmetric_symplectic_autoencoder.jl")
+include("architectures/multimodal_symplectic_autoencoder.jl")
+include("loss/multimodal_losses.jl")
 
 export LinearSymplecticAttention, LinearSymplecticAttentionQ, LinearSymplecticAttentionP
 export LinearSymplecticTransformer
@@ -273,6 +275,8 @@ export BilinearStiefelLayer, TransposeBilinearStiefelLayer
 export LowRankStiefelLayer, DecodeLowRankStiefelLayer
 export FastDLRATraceLoss
 export SymmetricSymplecticAutoencoder
+export MultiModalSymplecticAutoencoder, encode, decode, translate
+export CharbonnierRelativeLoss, IsometricRolloutLoss, CrossModalCycleLoss
 
 include("map_to_cpu.jl")
 

@@ -46,6 +46,9 @@ where ``\mathbf{x}^{(t)}`` is the solution of the FOM at point ``t`` and ``\math
 TransformerLoss
 AutoEncoderLoss
 ReducedLoss
+CharbonnierRelativeLoss
+IsometricRolloutLoss
+CrossModalCycleLoss
 GeometricMachineLearning.ParametricLoss
 GeometricMachineLearning.apply_parametric
 projection_error
