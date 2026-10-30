@@ -1,12 +1,13 @@
 using GeometricMachineLearning
-using GeometricMachineLearning: SymplecticCompression, AutoEncoder, Architecture,
+using GeometricMachineLearning:
+                                SymplecticCompression, AutoEncoder, Architecture,
                                 NetworkLoss, params
 using GeometricMachineLearning.AbstractNeuralNetworks: GlorotUniform
 using KernelAbstractions
 using LinearAlgebra
 using Test
-import Random
-import Zygote
+using Random: Random
+using Zygote: Zygote
 
 include("../helpers/eltypes.jl")
 
@@ -381,7 +382,9 @@ end
         @test isapprox(val_iso, expected_iso; atol = 15 * eps(T), rtol = 15 * eps(T))
 
         # CrossModalCycleLoss forward & @inferred
-        loss_cyc = CrossModalCycleLoss(:particles, :grid; β_align = T(1.2), β_cycle = T(0.3))
+        loss_cyc = CrossModalCycleLoss(
+            :particles, :grid; β_align = T(1.2), β_cycle = T(0.3)
+        )
         x_p = (q = randn(rng, T, 1, 3), p = randn(rng, T, 1, 3))
         val_cyc = @inferred loss_cyc(nn, x_p, F)
         @test eltype(val_cyc) === T && val_cyc > zero(T)
@@ -399,8 +402,10 @@ end
         z_b_cyc = encode(nn, :particles, decode(nn, :particles, z_b))
         expected_cyc_rev = T(1.2) * sum(abs2, z_b .- z_a) +
                            T(0.5) * sum(abs2, z_b_cyc .- z_b)
-        @test isapprox(val_cyc_rev, expected_cyc_rev; atol = 10 * eps(T), rtol = 10 *
-                                                                                 eps(T))
+        @test isapprox(
+            val_cyc_rev, expected_cyc_rev; atol = 10 * eps(T), rtol = 10 *
+                                                                      eps(T)
+        )
     end
 
     @testset "Analytical Zygote gradients match central finite differences in Float64" begin
@@ -459,5 +464,136 @@ end
             end
             @test isapprox(g_vec, g_fd; atol = tol, rtol = tol)
         end
+    end
+
+    @testset "Chain particle frontends, SymmetricSymplecticAutoencoder core, and batched @inferred" begin
+        rng = Random.MersenneTwister(404)
+        T = Float64
+        nx, nv = 6, 6
+        mx, mv = 2, 1
+
+        # 1. Exact-inverse Chain frontend (PairwiseSymplecticLayerQ + PairwiseSymplecticLayerP)
+        fe_pw_chain = Chain(
+            PairwiseSymplecticLayerQ(2, 1; hidden_dim = 4),
+            PairwiseSymplecticLayerP(2, 1; hidden_dim = 4)
+        )
+        fe_grid = BilinearStiefelLayer(nx, nv, mx, mv)
+        fe_dlra = LowRankStiefelLayer(nx, nv, 2, 1)
+        core_id = SymplecticAutoencoder(
+            4, 4; n_encoder_layers = 1, n_decoder_layers = 1, upscale = 2)
+        arch_pw = MultiModalSymplecticAutoencoder(
+            (particle = fe_pw_chain, grid = fe_grid, dlra = fe_dlra), core_id)
+        nn_pw = NeuralNetwork(arch_pw, CPU(), T; rng = rng)
+        for (_, lyr_p) in pairs(nn_pw.params.params.core)
+            for (_, arr) in pairs(lyr_p)
+                fill!(arr, zero(T))
+            end
+        end
+
+        @test params(nn_pw).frontends.particle isa NamedTuple
+        x_qp2 = (q = randn(rng, T, 1, 2), p = randn(rng, T, 1, 2))
+        x_vec2 = vcat(vec(x_qp2.q), vec(x_qp2.p))
+        z_pw_qp = @inferred encode(nn_pw, :particle, x_qp2)
+        z_pw_vec = @inferred encode(nn_pw, :particle, x_vec2)
+        @test isapprox(z_pw_qp, z_pw_vec; atol = 10 * eps(T), rtol = 10 * eps(T))
+        x_pw_rec = decode(nn_pw, :particle, z_pw_qp)
+        @test isapprox(x_pw_rec, x_vec2; atol = 10 * eps(T), rtol = 10 * eps(T))
+
+        # 2. Canonical 4-layer Chain frontend (CanonicalSortLayer -> Pairwise Q/P -> CanonicalSlotLayer)
+        fe_can_chain = Chain(
+            CanonicalSortLayer(3, 1, 1),
+            PairwiseSymplecticLayerQ(3, 1; hidden_dim = 4),
+            PairwiseSymplecticLayerP(3, 1; hidden_dim = 4),
+            CanonicalSlotLayer(3, 1, 2)
+        )
+        core_wt = WeightTiedSymplecticAutoencoder(
+            4, 2; n_blocks = 1, n_layers = 1, n_ambient_layers = 0, sympnet_upscale = 2)
+        arch_can = MultiModalSymplecticAutoencoder(
+            (particle = fe_can_chain, grid = fe_grid, dlra = fe_dlra), core_wt)
+        nn_can = NeuralNetwork(arch_can, CPU(), T; rng = rng)
+
+        @test params(nn_can).frontends.particle isa NamedTuple
+        x_qp3 = (q = T[-2.0 0.1 2.5], p = T[0.4 -1.3 0.9])
+        x_vec3 = vcat(vec(x_qp3.q), vec(x_qp3.p))
+        z_can_qp = @inferred encode(nn_can, :particle, x_qp3)
+        z_can_vec = @inferred encode(nn_can, :particle, x_vec3)
+        @test isapprox(z_can_qp, z_can_vec; atol = 10 * eps(T), rtol = 10 * eps(T))
+        x_can_rec = @inferred _dec_part(nn_can, z_can_qp)
+        @test length(x_can_rec) == 6
+
+        # Batched @inferred for encode, decode, translate across all modalities
+        B = 3
+        x_qp3_batch = (q = randn(rng, T, 1, 3, B), p = randn(rng, T, 1, 3, B))
+        x_mat3_batch = vcat(reshape(x_qp3_batch.q, 3, B), reshape(x_qp3_batch.p, 3, B))
+        F_batch = randn(rng, T, nx, nv, B)
+        x_dlra = (
+            X = Matrix(qr(randn(rng, T, nx, 2)).Q),
+            S = randn(rng, T, 2, 2),
+            V = Matrix(qr(randn(rng, T, nv, 2)).Q)
+        )
+        X_b = zeros(T, nx, 2, B)
+        S_b = randn(rng, T, 2, 2, B)
+        V_b = zeros(T, nv, 2, B)
+        for b in 1:B
+            X_b[:, :, b] .= Matrix(qr(randn(rng, T, nx, 2)).Q)
+            V_b[:, :, b] .= Matrix(qr(randn(rng, T, nv, 2)).Q)
+        end
+        x_dlra_batch = (X = X_b, S = S_b, V = V_b)
+
+        z_b_qp = @inferred encode(nn_can, :particle, x_qp3_batch)
+        z_b_mat = @inferred _enc_part(nn_can, x_mat3_batch)
+        @test size(z_b_qp) == (2, B)
+        @test isapprox(z_b_qp, z_b_mat; atol = 10 * eps(T), rtol = 10 * eps(T))
+        @test size(@inferred _dec_part(nn_can, z_b_qp)) == (6, B)
+
+        z_b_grid = @inferred encode(nn_can, :grid, F_batch)
+        @test size(z_b_grid) == (2, B)
+        @test size(@inferred _dec_grid(nn_can, z_b_grid)) == (nx, nv, B)
+
+        z_dlra_1 = @inferred encode(nn_can, :dlra, x_dlra)
+        @test length(z_dlra_1) == 2
+        z_b_dlra = @inferred encode(nn_can, :dlra, x_dlra_batch)
+        @test size(z_b_dlra) == (2, B)
+        dec_b_dlra = @inferred _dec_dlra(nn_can, z_b_dlra)
+        @test size(dec_b_dlra.X) == (nx, 2, B) && size(dec_b_dlra.S) == (2, 2, B) &&
+              size(dec_b_dlra.V) == (nv, 2, B)
+
+        F_from_p_b = @inferred _trans_p2g(nn_can, x_mat3_batch)
+        @test size(F_from_p_b) == (nx, nv, B)
+
+        # Loss + Zygote gradients on :particle ((q, p) NamedTuple on Chain) and :dlra ((X, S, V) NamedTuple)
+        loss_c = CharbonnierRelativeLoss(; ε = 1e-2, λ_lat = 5e-2)
+        val_c_part = @inferred loss_c(nn_can, :particle, x_qp3)
+        @test isfinite(val_c_part) && val_c_part > zero(T)
+        g_part = Zygote.gradient(
+            ps -> loss_c(nn_can.model, ps, :particle, x_qp3), nn_can.params)[1]
+        @test all(isfinite, _extract_grad_vec(g_part))
+
+        val_c_dlra = @inferred loss_c(nn_can, :dlra, x_dlra)
+        @test isfinite(val_c_dlra) && val_c_dlra > zero(T)
+        g_dlra = Zygote.gradient(
+            ps -> loss_c(nn_can.model, ps, :dlra, x_dlra), nn_can.params)[1]
+        @test all(isfinite, _extract_grad_vec(g_dlra))
+
+        # 3. SymmetricSymplecticAutoencoder as core
+        core_sym = SymmetricSymplecticAutoencoder(
+            4, 2, 1; n_Encoder = 1, n_Decoder = 1, n_sympnet = 1,
+            hidden_dim = 4, sympnet_upscale = 2)
+        arch_sym = MultiModalSymplecticAutoencoder(
+            (particle = fe_can_chain, grid = fe_grid), core_sym)
+        nn_sym = NeuralNetwork(arch_sym, CPU(), T; rng = rng)
+
+        F_single = randn(rng, T, nx, nv)
+        z_sym_p = @inferred encode(nn_sym, :particle, x_qp3)
+        z_sym_g = @inferred _enc_grid(nn_sym, F_single)
+        @test length(z_sym_p) == 2 && length(z_sym_g) == 2
+        F_sym_rec = @inferred _dec_grid(nn_sym, z_sym_g)
+        @test size(F_sym_rec) == (nx, nv)
+        F_sym_tr = @inferred _trans_p2g(nn_sym, x_qp3)
+        @test size(F_sym_tr) == (nx, nv)
+
+        g_sym = Zygote.gradient(
+            ps -> loss_c(nn_sym.model, ps, :grid, F_single), nn_sym.params)[1]
+        @test all(isfinite, _extract_grad_vec(g_sym))
     end
 end

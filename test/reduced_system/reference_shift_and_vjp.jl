@@ -6,7 +6,7 @@ using GeometricIntegrators: ImplicitMidpoint
 using KernelAbstractions
 using LinearAlgebra
 using Test
-import Random
+using Random: Random
 
 include("../helpers/eltypes.jl")
 
@@ -249,10 +249,37 @@ Random.seed!(42)
         )
         sol_red_neq = integrate_reduced_system(rs_neq)
         @test norm(Vector(sol_red_neq.q[1]) - Vector(sol_red_neq.q[0])) > T(1e-4)
-        lifted_0 = decode(rs_neq, (
-            q = Vector(sol_red_neq.q[0]), p = Vector(sol_red_neq.p[0])))
-        lifted_1 = decode(rs_neq, (
-            q = Vector(sol_red_neq.q[1]), p = Vector(sol_red_neq.p[1])))
+        lifted_0 = decode(
+            rs_neq, (
+                q = Vector(sol_red_neq.q[0]), p = Vector(sol_red_neq.p[0]))
+        )
+        lifted_1 = decode(
+            rs_neq, (
+                q = Vector(sol_red_neq.q[1]), p = Vector(sol_red_neq.p[1]))
+        )
         @test norm(lifted_1.q - lifted_0.q) > T(1e-4)
+
+        # Verify build_h_reduced evaluates decoder((q = q̃, p = p̃)) with and without reference shift
+        q̃_test = Vector(sol_red_neq.q[1])
+        p̃_test = Vector(sol_red_neq.p[1])
+        @test isapprox(
+            rs_neq.h_reduced(zero(T), q̃_test, p̃_test, nothing),
+            h_quad(zero(T), lifted_1.q, lifted_1.p, nothing);
+            atol = 10 * eps(T), rtol = 10 * eps(T)
+        )
+        rs_unshifted = HRedSys(
+            full_dim, reduced_dim, encoder(nn), decoder(nn),
+            v_quad!, f_quad!, h_quad,
+            (zero(T), T(0.2)), T(0.05),
+            (q = StateVariable(q_init), p = StateVariable(p_init));
+            integrator = ImplicitMidpoint(),
+            pullback_mode = :jacobian
+        )
+        dec_unshifted = decoder(nn)((q = q̃_test, p = p̃_test))
+        @test isapprox(
+            rs_unshifted.h_reduced(zero(T), q̃_test, p̃_test, nothing),
+            h_quad(zero(T), dec_unshifted.q, dec_unshifted.p, nothing);
+            atol = 10 * eps(T), rtol = 10 * eps(T)
+        )
     end
 end

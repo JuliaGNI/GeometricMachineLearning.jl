@@ -29,8 +29,10 @@ end
 
 function _check_pullback_mode(pullback_mode::Symbol)
     (pullback_mode === :jacobian || pullback_mode === :vjp) ||
-        throw(ArgumentError(
-            "pullback_mode must be :jacobian or :vjp, got :$pullback_mode."))
+        throw(
+            ArgumentError(
+            "pullback_mode must be :jacobian or :vjp, got :$pullback_mode."),
+        )
     nothing
 end
 
@@ -146,8 +148,11 @@ function HRedSys(N::Integer, n::Integer, encoder::NeuralNetwork{<:SymplecticEnco
     _check_pullback_mode(pullback_mode)
     N_ics = length(ics.q)
     (length(q_ref) == N_ics && length(p_ref) == N_ics) ||
-        throw(DimensionMismatch(
-            "q_ref and p_ref must have length N = $N_ics, got $(length(q_ref)) and $(length(p_ref))."))
+        throw(
+            DimensionMismatch(
+            "q_ref and p_ref must have length N = $N_ics, got $(length(q_ref)) and $(length(p_ref))."
+        ),
+        )
     T_state = eltype(ics.q)
     q_ref_vec = Vector{T_state}(q_ref)
     p_ref_vec = Vector{T_state}(p_ref)
@@ -355,7 +360,7 @@ function build_h_reduced(
         h_full, decoder::NeuralNetwork{<:SymplecticDecoder};
         q_ref = nothing, p_ref = nothing)
     function h_reduced(t, q, p, params)
-        dec = decoder(q, p)
+        dec = decoder((q = q, p = p))
         if q_ref === nothing || p_ref === nothing
             h_full(t, dec.q, dec.p, params)
         else

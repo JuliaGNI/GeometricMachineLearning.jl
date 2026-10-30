@@ -50,23 +50,32 @@ struct MultiModalSymplecticAutoencoder{
 
     function MultiModalSymplecticAutoencoder(
             frontends::NamedTuple{names}, core::SymplecticCompression) where {names}
-        isempty(names) && throw(ArgumentError(
-            "MultiModalSymplecticAutoencoder requires a non-empty frontends NamedTuple."))
+        isempty(names) && throw(
+            ArgumentError(
+            "MultiModalSymplecticAutoencoder requires a non-empty frontends NamedTuple."
+        ),
+        )
         N2 = core.full_dim
         n2 = core.reduced_dim
         for mod in names
             fe = getfield(frontends, mod)
             fe_dim = _frontend_output_dimension(fe)
-            fe_dim == N2 || throw(ArgumentError(
-                "Frontend :$mod has output dimension $fe_dim, expected core.full_dim = $N2."))
+            fe_dim == N2 || throw(
+                ArgumentError(
+                "Frontend :$mod has output dimension $fe_dim, expected core.full_dim = $N2."
+            ),
+            )
         end
         new{typeof(frontends), typeof(core)}(frontends, core, N2, n2)
     end
 end
 
 function AbstractNeuralNetworks.Chain(::MultiModalSymplecticAutoencoder)
-    throw(ArgumentError(
-        "A MultiModalSymplecticAutoencoder has no single Chain: build it with NeuralNetwork(arch) and use encode(nn, modality, x), decode(nn, modality, ξ), and translate(nn, from, to, x)."))
+    throw(
+        ArgumentError(
+        "A MultiModalSymplecticAutoencoder has no single Chain: build it with NeuralNetwork(arch) and use encode(nn, modality, x), decode(nn, modality, ξ), and translate(nn, from, to, x)."
+    ),
+    )
 end
 
 struct MultiModalSymplecticLayer{
@@ -87,7 +96,9 @@ struct MultiModalSymplecticLayer{
 end
 
 function parameterlength(l::MultiModalSymplecticLayer)
-    fe_len = sum(mod -> parameterlength(getfield(l.frontends, mod)), keys(l.frontends); init = 0)
+    fe_len = sum(
+        mod -> parameterlength(getfield(l.frontends, mod)), keys(l.frontends); init = 0
+    )
     fe_len + parameterlength(l.core_model)
 end
 
@@ -100,7 +111,7 @@ end
 function _init_frontend_params(
         rng::AbstractRNG, initializer::AbstractNeuralNetworks.Initializer,
         fe::Chain, backend::NeuralNetworkBackend, ::Type{T}) where {T}
-    initialparameters(rng, initializer, fe, backend, T)
+    params(initialparameters(rng, initializer, fe, backend, T))
 end
 
 function NeuralNetwork(
@@ -194,6 +205,21 @@ function _narrow_core_vec(z_vec, ::AbstractArray{<:Any, 3}, ::Type{T}) where {T}
 end
 _narrow_core_vec(z_vec, ::Any, ::Type{T}) where {T} = z_vec
 
+function _narrow_fe_vec(z_vec, ::Any, x::NamedTuple, ::Type{T}) where {T}
+    _narrow_core_vec(z_vec, x, T)
+end
+_narrow_fe_vec(z_vec, ::Any, ::AbstractVector, ::Type{T}) where {T} = z_vec::Vector{T}
+function _narrow_fe_vec(
+        z_vec, ::BilinearStiefelLayer, ::AbstractMatrix, ::Type{T}
+) where {T}
+    z_vec::Vector{T}
+end
+_narrow_fe_vec(z_vec, ::Any, ::AbstractMatrix, ::Type{T}) where {T} = z_vec::Matrix{T}
+function _narrow_fe_vec(z_vec, ::Any, ::AbstractArray{<:Any, 3}, ::Type{T}) where {T}
+    z_vec::Matrix{T}
+end
+_narrow_fe_vec(z_vec, ::Any, ::Any, ::Type{T}) where {T} = z_vec
+
 function _core_vec_to_fe_inv_input(
         ::Union{BilinearStiefelLayer, LowRankStiefelLayer},
         z_mid::AbstractVector, full_dim::Int)
@@ -213,6 +239,12 @@ function _core_vec_to_fe_inv_input(
     z_mid
 end
 
+_apply_frontend(fe::AbstractExplicitLayer, x, ps_fe::NamedTuple) = fe(x, ps_fe)
+_apply_frontend(fe::Chain, x::AbstractVecOrMat, ps_fe::NamedTuple) = fe(x, ps_fe)
+function _apply_frontend(fe::Chain, x::NamedTuple{(:q, :p)}, ps_fe::NamedTuple)
+    fe(_fe_output_to_core_vec(fe, x), ps_fe)
+end
+
 function _apply_inv_frontend(
         ::Chain, inv_fe::Chain, z_in, ps_fe::NamedTuple)
     inv_fe(z_in, _reverse_params(ps_fe))
@@ -225,13 +257,15 @@ end
 
 function _core_encode_vec(
         ::Union{WeightTiedAutoencoderLayer, SymmetricAutoencoderLayer},
-        core_encoder::Chain, ps_core::NamedTuple, z_vec::AbstractVecOrMat)
+        core_encoder::Union{Chain, AbstractExplicitLayer},
+        ps_core::NamedTuple, z_vec::AbstractVecOrMat)
     core_encoder(z_vec, _reverse_params(ps_core))
 end
 
 function _core_decode_vec(
         ::Union{WeightTiedAutoencoderLayer, SymmetricAutoencoderLayer},
-        core_decoder::Chain, ps_core::NamedTuple, ξ_vec::AbstractVecOrMat)
+        core_decoder::Union{Chain, AbstractExplicitLayer},
+        ps_core::NamedTuple, ξ_vec::AbstractVecOrMat)
     core_decoder(ξ_vec, ps_core)
 end
 
@@ -259,15 +293,18 @@ _latent_to_vec(ξ::AbstractVecOrMat) = ξ
 _latent_to_vec(ξ::NamedTuple) = vcat(ξ.q, ξ.p)
 
 function _encode_active(
-        fe, ps_fe::NamedTuple, core_model, core_encoder::Chain, ps_core::NamedTuple, x)
-    z_fe = fe(x, ps_fe)
+        fe, ps_fe::NamedTuple, core_model,
+        core_encoder::Union{Chain, AbstractExplicitLayer}, ps_core::NamedTuple, x)
+    z_fe = _apply_frontend(fe, x, ps_fe)
     T = promote_type(_leaf_eltype(x), _leaf_eltype(ps_core))
-    z_vec = _narrow_core_vec(_fe_output_to_core_vec(fe, z_fe), x, T)
-    _core_encode_vec(core_model, core_encoder, ps_core, z_vec)
+    z_vec = _narrow_fe_vec(_fe_output_to_core_vec(fe, z_fe), fe, x, T)
+    ξ = _core_encode_vec(core_model, core_encoder, ps_core, z_vec)
+    _narrow_fe_vec(ξ, fe, x, T)
 end
 
 function _decode_active(
-        fe, inv_fe, ps_fe::NamedTuple, core_model, core_decoder::Chain,
+        fe, inv_fe, ps_fe::NamedTuple, core_model,
+        core_decoder::Union{Chain, AbstractExplicitLayer},
         ps_core::NamedTuple, full_dim::Int, ξ)
     ξ_vec = _latent_to_vec(ξ)
     z_mid = _core_decode_vec(core_model, core_decoder, ps_core, ξ_vec)
@@ -284,8 +321,10 @@ _resolve_param_grad(g::AbstractArray, ::AbstractArray) = g
 function _resolve_param_grad(
         g::Union{ChainRulesCore.Tangent, NamedTuple},
         p_ref::NamedTuple{names}) where {names}
-    NamedTuple{names}(map(
-        k -> _resolve_param_grad(getproperty(g, k), getfield(p_ref, k)), names))
+    NamedTuple{names}(
+        map(
+        k -> _resolve_param_grad(getproperty(g, k), getfield(p_ref, k)), names),
+    )
 end
 
 @doc raw"""
@@ -301,19 +340,23 @@ Base.@constprop :aggressive function encode(
     _check_modality(model.frontends, modality)
     fe = getfield(model.frontends, modality)
     ps_fe = getfield(ps.frontends, modality)
-    _encode_active(fe, ps_fe, model.core_model, model.core_encoder, ps.core, x)
+    T = promote_type(_leaf_eltype(x), _leaf_eltype(ps.core))
+    ξ = _encode_active(fe, ps_fe, model.core_model, model.core_encoder, ps.core, x)
+    _narrow_core_vec(ξ, x, T)
 end
 
 @noinline function _rrule_encode_active(
         config::ChainRulesCore.RuleConfig{>:ChainRulesCore.HasReverseMode},
-        fe, ps_fe::NamedTuple, core_model, core_encoder::Chain, ps_core::NamedTuple, x)
+        fe, ps_fe::NamedTuple, core_model,
+        core_encoder::Union{Chain, AbstractExplicitLayer}, ps_core::NamedTuple, x)
     ChainRulesCore.rrule_via_ad(
         config, _encode_active, fe, ps_fe, core_model, core_encoder, ps_core, x)
 end
 
 @noinline function _rrule_decode_active(
         config::ChainRulesCore.RuleConfig{>:ChainRulesCore.HasReverseMode},
-        fe, inv_fe, ps_fe::NamedTuple, core_model, core_decoder::Chain,
+        fe, inv_fe, ps_fe::NamedTuple, core_model,
+        core_decoder::Union{Chain, AbstractExplicitLayer},
         ps_core::NamedTuple, full_dim::Int, ξ)
     ChainRulesCore.rrule_via_ad(
         config, _decode_active, fe, inv_fe, ps_fe, core_model, core_decoder,
@@ -335,12 +378,14 @@ function ChainRulesCore.rrule(
     function encode_pullback(Δy)
         _, _, d_ps_fe, _, _, d_ps_core, d_x = pb(ChainRulesCore.unthunk(Δy))
         fe_keys = keys(ps.frontends)
-        d_frontends = NamedTuple{fe_keys}(map(
+        d_frontends = NamedTuple{fe_keys}(
+            map(
             k -> k === modality ?
                  _resolve_param_grad(
                 ChainRulesCore.unthunk(d_ps_fe), getfield(ps.frontends, k)) :
                  _zero_param_tree(getfield(ps.frontends, k)),
-            fe_keys))
+            fe_keys),
+        )
         d_core = _resolve_param_grad(ChainRulesCore.unthunk(d_ps_core), ps.core)
         d_ps = (frontends = d_frontends, core = d_core)
         return (
@@ -400,12 +445,14 @@ function ChainRulesCore.rrule(
     function decode_pullback(Δy)
         _, _, _, d_ps_fe, _, _, d_ps_core, _, d_ξ = pb(ChainRulesCore.unthunk(Δy))
         fe_keys = keys(ps.frontends)
-        d_frontends = NamedTuple{fe_keys}(map(
+        d_frontends = NamedTuple{fe_keys}(
+            map(
             k -> k === modality ?
                  _resolve_param_grad(
                 ChainRulesCore.unthunk(d_ps_fe), getfield(ps.frontends, k)) :
                  _zero_param_tree(getfield(ps.frontends, k)),
-            fe_keys))
+            fe_keys),
+        )
         d_core = _resolve_param_grad(ChainRulesCore.unthunk(d_ps_core), ps.core)
         d_ps = (frontends = d_frontends, core = d_core)
         return (
