@@ -29,7 +29,8 @@ ChainRulesCore.@non_differentiable _check_modality(::Any, ::Any)
 
 Make an instance of a multi-modal symplectic autoencoder mapping a non-empty `NamedTuple` of modality frontends into a shared canonical latent space ``\xi = (\tilde{q}, \tilde{p}) \in \mathbb{R}^{2n}`` via `core`.
 
-Each entry of `frontends` maps a modality symbol (such as `:particles`, `:spline`, `:grid`, or `:dlra`) to a symplectic or Poisson frontend layer whose canonical output dimension equals `core.full_dim = 2N`:
+Each entry of `frontends` maps a modality symbol (such as `:particles`, `:spline`, `:grid`, or `:dlra`) to a frontend layer whose output dimension equals `core.full_dim = 2N`.
+The latent state is canonical for the structure that each frontend declares; for the two parity frontends, [`BilinearStiefelLayer`](@ref) and [`LowRankStiefelLayer`](@ref), that structure is the ``\mathbb{J}_{2N}`` that they declare on the parity coordinates, not the Vlasov bracket. The frontends are:
 - [`CanonicalSortLayer`](@ref), [`CanonicalSlotLayer`](@ref), [`PairwiseSymplecticLayerQ`](@ref), [`PairwiseSymplecticLayerP`](@ref), or a `Chain` of particle layers with output dimension ``2N``;
 - [`BilinearStiefelLayer`](@ref)`(Nx, Nv, Mx, Mv)` with ``2 M_x M_v = 2N`` (with or without `metric_factors` for spline vs grid modalities);
 - [`LowRankStiefelLayer`](@ref)`(Nx, Nv, Mx, Mv; r_out = ...)` with ``2 M_x M_v = 2N``.

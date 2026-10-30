@@ -11,7 +11,7 @@ P_\sigma^T \mathbb{J}_{2Md} P_\sigma = \mathbb{J}_{2Md}, \qquad
 P_\sigma = \begin{bmatrix} \Pi_\sigma \otimes I_d & \mathbb{O} \\ \mathbb{O} & \Pi_\sigma \otimes I_d \end{bmatrix}.
 ```
 
-A standard [`PSDLayer`](@ref), [`GradientLayerQ`](@ref), or [`GradientLayerP`](@ref) breaks ``S_M`` symmetry unless the particle state is canonicalized or processed by ``S_M``-equivariant symplectic layers. `GeometricMachineLearning` provides three particle frontends and the composite architecture [`SymmetricSymplecticAutoencoder`](@ref). The sorting and slot frontends are ``S_M``-invariant; the pairwise shears are ``S_M``-equivariant.
+A standard [`PSDLayer`](@ref), [`GradientLayerQ`](@ref), or [`GradientLayerP`](@ref) breaks ``S_M`` symmetry unless the particle state is canonicalized or processed by ``S_M``-equivariant symplectic layers. `GeometricMachineLearning` provides three particle frontends and the composite architecture [`SymmetricSymplecticAutoencoder`](@ref). The sorting and slot frontends are invariant under a relabelling of particles with distinct coordinates along the sorting axis; the pairwise shears are ``S_M``-equivariant. Sorting is discontinuous in ``p`` where two particles cross along the sorting axis, so the Jacobian identity of a sorting frontend holds only away from those crossings. The sorting and slot frontends suit systems that keep their particle order, not a collisionless plasma, whose sorted snapshots are not low-rank.
 
 ## Canonical Weyl-Chamber Sorting
 
@@ -36,7 +36,7 @@ InversePairwiseSymplecticLayerP
 
 ## Canonical Slot Reduction
 
-[`CanonicalSlotLayer`](@ref) sorts the particles along coordinate row 1 of ``q`` with [`CanonicalSortLayer`](@ref), separates the center-of-mass mode ``(Q_{\mathrm{cm}}, P_{\mathrm{cm}})`` from the ``M - 1`` zero-sum relative modes via the orthogonal Helmert / Jacobi transformation, sorts the ``M - 1`` relative modes canonically by descending squared phase-space norm ``\|q_{\mathrm{rel}, k}\|_2^2 + \|p_{\mathrm{rel}, k}\|_2^2``, and projects onto ``N_{\mathrm{slots}} - 1`` relative slots via a learned Stiefel matrix ``\Phi_{\mathrm{rel}} \in \mathrm{St}(N_{\mathrm{slots}} - 1, M - 1)``. Its analytic decoder lift is [`InverseCanonicalSlotLayer`](@ref).
+[`CanonicalSlotLayer`](@ref) sorts the particles along coordinate row 1 of ``q`` with [`CanonicalSortLayer`](@ref), separates the center-of-mass mode ``(Q_{\mathrm{cm}}, P_{\mathrm{cm}})`` from the ``M - 1`` zero-sum relative modes via the orthogonal Helmert / Jacobi transformation, sorts the ``M - 1`` relative modes by descending squared phase-space norm ``\|q_{\mathrm{rel}, k}\|_2^2 + \|p_{\mathrm{rel}, k}\|_2^2``, and projects onto ``N_{\mathrm{slots}} - 1`` relative slots via a learned Stiefel matrix ``\Phi_{\mathrm{rel}} \in \mathrm{St}(N_{\mathrm{slots}} - 1, M - 1)``. Its analytic decoder lift is [`InverseCanonicalSlotLayer`](@ref). The particles are already sorted, so the second sort removes no symmetry, and it makes the output discontinuous where two relative-mode norms cross. The layer is a linear projection of sorted states for a fixed particle count ``M``; it takes no variable particle count and has no Löwdin-orthogonalised affinity slots.
 
 ```@docs
 CanonicalSlotLayer

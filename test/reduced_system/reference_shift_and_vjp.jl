@@ -506,3 +506,70 @@ end
     v_red0(v_out0, zero(T), q̃, p̃, nothing)
     @test norm(v_out0 .- v_expected) > 1e-3 * norm(v_expected)
 end
+
+@testset "HRedSys with a reference that is not an equilibrium, against the unshifted system in shifted coordinates ($T, $mode)" for T in REAL_ELTYPES,
+    mode in (:jacobian, :vjp)
+
+    rng = Random.MersenneTwister(808)
+    N = 6
+    n = 2
+    arch = WeightTiedSymplecticAutoencoder(
+        2 * N, 2 * n; n_blocks = 1, n_layers = 1, n_ambient_layers = 0, sympnet_upscale = 2)
+    nn = NeuralNetwork(arch, CPU(), T; rng = rng)
+
+    # H(q, p) = ½‖p‖² + ½‖q‖² + ¼ Σ qᵢ⁴, centred at the origin.
+    v_field!(v, t, q, p, params) = (v .= p; nothing)
+    f_field!(f, t, q, p, params) = (f .= .-q .- q .^ 3; nothing)
+    h_field(t, q, p, params) = T(0.5) * (sum(abs2, p) + sum(abs2, q)) +
+                               T(0.25) * sum(x -> x^4, q)
+
+    q_ref = randn(rng, T, N)
+    p_ref = randn(rng, T, N)
+    z_ref = vcat(q_ref, p_ref)
+    # The full vector field (∂H/∂p, -∂H/∂q) does not vanish at the reference.
+    @test norm(vcat(p_ref, q_ref .+ q_ref .^ 3)) >= 0.1
+    q0 = q_ref .+ T(0.3) .* randn(rng, T, N)
+    p0 = p_ref .+ T(0.3) .* randn(rng, T, N)
+
+    rs = HRedSys(
+        2 * N, 2 * n, encoder(nn), decoder(nn), v_field!, f_field!, h_field,
+        (zero(T), one(T)), T(0.05), (q = StateVariable(q0), p = StateVariable(p0));
+        integrator = ImplicitMidpoint(), q_ref = q_ref, p_ref = p_ref,
+        pullback_mode = mode)
+
+    # The oracle: the system without a reference, with the fields translated by the reference
+    # and the initial state written in shifted coordinates.
+    v̂!(v, t, y_q, y_p, params) = v_field!(v, t, y_q .+ q_ref, y_p .+ p_ref, params)
+    f̂!(f, t, y_q, y_p, params) = f_field!(f, t, y_q .+ q_ref, y_p .+ p_ref, params)
+    ĥ(t, y_q, y_p, params) = h_field(t, y_q .+ q_ref, y_p .+ p_ref, params)
+    rs_oracle = HRedSys(
+        2 * N, 2 * n, encoder(nn), decoder(nn), v̂!, f̂!, ĥ,
+        (zero(T), one(T)), T(0.05),
+        (q = StateVariable(q0 .- q_ref), p = StateVariable(p0 .- p_ref));
+        integrator = ImplicitMidpoint(), pullback_mode = mode)
+
+    sol = integrate_reduced_system(rs)
+    sol_oracle = integrate_reduced_system(rs_oracle)
+    @test length(sol.q) == 21 # initial state + 20 steps
+    for k in 0:20
+        q̃_k, p̃_k = Vector(sol.q[k]), Vector(sol.p[k])
+        ξ_k = vcat(q̃_k, p̃_k)
+        ξ̂_k = vcat(Vector(sol_oracle.q[k]), Vector(sol_oracle.p[k]))
+        bound = 50 * eps(T) * max(one(T), norm(ξ̂_k))
+        @test norm(ξ_k - ξ̂_k) <= bound
+        @test norm(decode(rs, ξ_k) - (decoder(nn)(ξ̂_k) .+ z_ref)) <= bound
+        @test abs(rs.h_reduced(zero(T), q̃_k, p̃_k, nothing) -
+                  rs_oracle.h_reduced(zero(T), q̃_k, p̃_k, nothing)) <= bound
+    end
+    # The trajectory moves.
+    @test norm(vcat(Vector(sol.q[20]), Vector(sol.p[20])) -
+               vcat(Vector(sol.q[0]), Vector(sol.p[0]))) > T(1e-2)
+
+    # The check can fail: at ξ_0 the shifted reduced field differs from the unshifted one.
+    q̃_0, p̃_0 = Vector(sol.q[0]), Vector(sol.p[0])
+    v_shifted, v_unshifted = zeros(T, n), zeros(T, n)
+    rs.v_reduced(v_shifted, zero(T), q̃_0, p̃_0, nothing)
+    build_v_reduced(v_field!, f_field!, decoder(nn); pullback_mode = mode)(
+        v_unshifted, zero(T), q̃_0, p̃_0, nothing)
+    @test norm(v_shifted - v_unshifted) > 1e-3 * norm(v_shifted)
+end

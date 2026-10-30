@@ -289,16 +289,26 @@ end
     @test l_charb_def.λ_lat == 1e-2
 
     step_id = z -> z
-    l_iso_def = IsometricRolloutLoss(step_id)
+    H_lat_def = z -> sum(abs2, z) / 2
+    l_iso_def = IsometricRolloutLoss(step_id; H = H_lat_def)
     @test l_iso_def.α_lat == 1.0
     @test l_iso_def.α_rec == 1.0
     @test l_iso_def.α_H == 0.1
+    @test l_iso_def.H === H_lat_def
+
+    # There is no default latent Hamiltonian: α_H > 0 requires H, and α_H = 0 needs none.
+    re_iso_H = r"^(?:ArgumentError: )?IsometricRolloutLoss requires a latent Hamiltonian H when α_H > 0, got α_H = 0\.1 and H = nothing\. Pass H, or set α_H = 0\.$"
+    @test_throws re_iso_H IsometricRolloutLoss(step_id)
+    @test_throws re_iso_H IsometricRolloutLoss(step_id; α_H = 0.1, H = nothing)
+    @test IsometricRolloutLoss(step_id; α_H = 0.0).H === nothing
 
     l_cyc_def = CrossModalCycleLoss(:particles, :grid)
     @test l_cyc_def.mod_a === :particles
     @test l_cyc_def.mod_b === :grid
     @test l_cyc_def.β_align == 1.0
-    @test l_cyc_def.β_cycle == 0.1
+    @test l_cyc_def.β_cross == 1.0
+    @test !hasfield(typeof(l_cyc_def), :β_cycle)
+    @test_throws MethodError CrossModalCycleLoss(:particles, :grid; β_cycle = 0.1)
 
     # Edge validation for loss hyperparameters
     re_charb_eps = r"^(?:ArgumentError: )?CharbonnierRelativeLoss requires ε > 0 and λ_lat >= 0, got ε = 0\.0, λ_lat = 0\.01\.$"
@@ -309,8 +319,12 @@ end
     re_iso = r"^(?:ArgumentError: )?IsometricRolloutLoss requires non-negative weights α_lat, α_rec, α_H, got α_lat = -1\.0, α_rec = 1\.0, α_H = 0\.1\.$"
     @test_throws re_iso IsometricRolloutLoss(step_id; α_lat = -1.0)
 
-    re_cyc = r"^(?:ArgumentError: )?CrossModalCycleLoss requires non-negative weights β_align and β_cycle, got β_align = 1\.0, β_cycle = -0\.1\.$"
-    @test_throws re_cyc CrossModalCycleLoss(:particles, :grid; β_cycle = -0.1)
+    re_cross = r"^(?:ArgumentError: )?CrossModalCycleLoss requires non-negative weights β_align and β_cross, got β_align = 1\.0, β_cross = -0\.1\.$"
+    @test_throws re_cross CrossModalCycleLoss(:particles, :grid; β_cross = -0.1)
+    re_cross_nan = r"^(?:ArgumentError: )?CrossModalCycleLoss requires non-negative weights β_align and β_cross, got β_align = 1\.0, β_cross = NaN\.$"
+    @test_throws re_cross_nan CrossModalCycleLoss(:particles, :grid; β_cross = NaN)
+    re_align = r"^(?:ArgumentError: )?CrossModalCycleLoss requires non-negative weights β_align and β_cross, got β_align = -0\.1, β_cross = 1\.0\.$"
+    @test_throws re_align CrossModalCycleLoss(:particles, :grid; β_align = -0.1)
 
     @testset "Forward evaluation, @inferred, zero edge case, and exact-zero loss ($T)" for T in REAL_ELTYPES
         rng = Random.MersenneTwister(202)
@@ -333,15 +347,25 @@ end
         z_hat = encode(nn, :grid, F_hat)
         eps_T = T(1e-2)
         lam_T = T(5e-2)
-        expected_c = (sqrt(sum(abs2, F_hat .- F) + eps_T^2) - eps_T) /
-                     sqrt(sum(abs2, F) + eps_T^2) +
+        expected_c_rec = (sqrt(sum(abs2, F_hat .- F) + eps_T^2) - eps_T) /
+                         sqrt(sum(abs2, F) + eps_T^2)
+        expected_c = expected_c_rec +
                      lam_T * sum(abs2, z_hat .- z) / (sum(abs2, F) + eps_T^2)
 
+        # The self-reconstruction form has no latent term; the form with an external x̂ has it.
         val_c1 = @inferred loss_c(nn, :grid, F)
         val_c2 = @inferred loss_c(nn, :grid, F_hat, F)
         @test eltype(val_c1) === T && eltype(val_c2) === T
-        @test isapprox(val_c1, expected_c; atol = 10 * eps(T), rtol = 10 * eps(T))
+        @test isapprox(val_c1, expected_c_rec; atol = 10 * eps(T), rtol = 10 * eps(T))
         @test isapprox(val_c2, expected_c; atol = 10 * eps(T), rtol = 10 * eps(T))
+
+        # In the self-reconstruction form, a pre-split field (q = F⁺, p = F⁻) gives the value of
+        # the full field F: the decoded field is compared with F⁺ and F⁻ recombined.
+        F_plus = (F[:, 1:(nv ÷ 2)] .+ F[:, nv:-1:(nv ÷ 2 + 1)]) ./ sqrt(T(2))
+        F_minus = (F[:, 1:(nv ÷ 2)] .- F[:, nv:-1:(nv ÷ 2 + 1)]) ./ sqrt(T(2))
+        F_split = (q = F_plus, p = F_minus)
+        @test isapprox(@inferred(loss_c(nn, :grid, F_split)), val_c1;
+            atol = 10 * eps(T), rtol = 10 * eps(T))
 
         # Independent perturbation F_pert != F_hat so z_hat != z and the latent penalty term is active (catches a dropped latent penalty)
         F_pert = F .+ T(0.5) .* ones(T, nx, nv)
@@ -391,9 +415,27 @@ end
         expected_iso = T(1.0) * err_lat + T(0.5) * err_rec + T(0.2) * err_H
         @test isapprox(val_iso, expected_iso; atol = 15 * eps(T), rtol = 15 * eps(T))
 
-        # CrossModalCycleLoss forward & @inferred
+        # With α_H = 0 and no H, the loss is the α_lat and α_rec terms alone.
+        loss_iso_noH = IsometricRolloutLoss(step_lin; α_lat = T(1.0), α_rec = T(0.5), α_H = 0)
+        val_iso_noH = @inferred loss_iso_noH(nn, :grid, F_traj)
+        @test eltype(val_iso_noH) === T
+        @test isapprox(val_iso_noH, T(1.0) * err_lat + T(0.5) * err_rec;
+            atol = 15 * eps(T), rtol = 15 * eps(T))
+
+        # A trajectory of pre-split fields gives the value of the trajectory of full fields.
+        split_traj = [(
+                          q = (F_k[:, 1:(nv ÷ 2)] .+ F_k[:, nv:-1:(nv ÷ 2 + 1)]) ./
+                              sqrt(T(2)),
+                          p = (F_k[:, 1:(nv ÷ 2)] .- F_k[:, nv:-1:(nv ÷ 2 + 1)]) ./
+                              sqrt(T(2)))
+                      for F_k in F_traj]
+        @test isapprox(@inferred(loss_iso(nn, :grid, split_traj)), val_iso;
+            atol = 15 * eps(T), rtol = 15 * eps(T))
+
+        # CrossModalCycleLoss forward & @inferred: the alignment term and the
+        # cross-reconstruction term ‖decode(b, z_a) - x_b‖².
         loss_cyc = CrossModalCycleLoss(
-            :particles, :grid; β_align = T(1.2), β_cycle = T(0.3)
+            :particles, :grid; β_align = T(1.2), β_cross = T(0.3)
         )
         x_p = (q = randn(rng, T, 1, 3), p = randn(rng, T, 1, 3))
         val_cyc = @inferred loss_cyc(nn, x_p, F)
@@ -401,21 +443,69 @@ end
 
         z_a = encode(nn, :particles, x_p)
         z_b = encode(nn, :grid, F)
-        z_a_cyc = encode(nn, :grid, decode(nn, :grid, z_a))
-        expected_cyc = T(1.2) * sum(abs2, z_a .- z_b) + T(0.3) * sum(abs2, z_a_cyc .- z_a)
+        expected_cyc = T(1.2) * sum(abs2, z_a .- z_b) +
+                       T(0.3) * sum(abs2, decode(nn, :grid, z_a) .- F)
         @test isapprox(val_cyc, expected_cyc; atol = 10 * eps(T), rtol = 10 * eps(T))
 
-        # Reverse direction CrossModalCycleLoss(:grid, :particles) where :particles is only chamber-wise right-invertible (checks the cycle term against the explicit encode-decode round trip)
+        # Reverse direction CrossModalCycleLoss(:grid, :particles): the particle decoder returns
+        # the flat state [vec(q); vec(p)].
         loss_cyc_rev = CrossModalCycleLoss(
-            :grid, :particles; β_align = T(1.2), β_cycle = T(0.5))
+            :grid, :particles; β_align = T(1.2), β_cross = T(0.5))
         val_cyc_rev = @inferred loss_cyc_rev(nn, F, x_p)
-        z_b_cyc = encode(nn, :particles, decode(nn, :particles, z_b))
         expected_cyc_rev = T(1.2) * sum(abs2, z_b .- z_a) +
-                           T(0.5) * sum(abs2, z_b_cyc .- z_b)
+                           T(0.5) * sum(
+            abs2, decode(nn, :particles, z_b) .- vcat(vec(x_p.q), vec(x_p.p)))
         @test isapprox(
-            val_cyc_rev, expected_cyc_rev; atol = 10 * eps(T), rtol = 10 *
-                                                                      eps(T)
-        )
+            val_cyc_rev, expected_cyc_rev; atol = 10 * eps(T), rtol = 10 * eps(T))
+
+        # The three receivers, each with x_a and x_b and with the pair (x_a, x_b).
+        ps_nt, ps_np = params(nn), nn.params
+        @test (@inferred loss_cyc(nn, (x_p, F))) == val_cyc
+        @test (@inferred loss_cyc(nn.model, ps_nt, x_p, F)) == val_cyc
+        @test (@inferred loss_cyc(nn.model, ps_nt, (x_p, F))) == val_cyc
+        @test (@inferred loss_cyc(nn.model, ps_np, x_p, F)) == val_cyc
+        @test (@inferred loss_cyc(nn.model, ps_np, (x_p, F))) == val_cyc
+
+        # A batch is the sum over its samples, with no division by B.
+        B = 3
+        x_p_b = (q = randn(rng, T, 1, 3, B), p = randn(rng, T, 1, 3, B))
+        F_b = randn(rng, T, nx, nv, B)
+        val_cyc_b = @inferred loss_cyc(nn, x_p_b, F_b)
+        @test eltype(val_cyc_b) === T
+        val_cyc_sum = sum(
+            b -> loss_cyc(nn, (q = x_p_b.q[:, :, b], p = x_p_b.p[:, :, b]), F_b[:, :, b]),
+            1:B)
+        @test isapprox(val_cyc_b, val_cyc_sum; rtol = 10 * eps(T))
+        @test (@inferred loss_cyc(nn, (x_p_b, F_b))) == val_cyc_b
+
+        # x_a and x_b with different numbers of samples raise a DimensionMismatch.
+        re_samples = r"^(?:DimensionMismatch: )?CrossModalCycleLoss: x_a and x_b hold different numbers of samples: their latent states have sizes \(2,\) and \(2, 3\)\.$"
+        @test_throws re_samples loss_cyc(nn, x_p, F_b)
+        re_samples_rev = r"^(?:DimensionMismatch: )?CrossModalCycleLoss: x_a and x_b hold different numbers of samples: their latent states have sizes \(2, 3\) and \(2,\)\.$"
+        @test_throws re_samples_rev loss_cyc(nn, x_p_b, F)
+
+        # A pre-split field (q = F⁺, p = F⁻) for x_b gives the value of the full field F. The
+        # parity components come from explicit parity matrices: vec(F⁺) = P₊ vec(F).
+        half = nv ÷ 2
+        P_plus = zeros(T, nx * half, nx * nv)
+        P_minus = zeros(T, nx * half, nx * nv)
+        for j in 1:half, i in 1:nx
+
+            row = (j - 1) * nx + i
+            col_top = (j - 1) * nx + i
+            col_bot = (nv - j) * nx + i
+            P_plus[row, col_top] = P_plus[row, col_bot] = inv(sqrt(T(2)))
+            P_minus[row, col_top] = inv(sqrt(T(2)))
+            P_minus[row, col_bot] = -inv(sqrt(T(2)))
+        end
+        split_of(F2) = (q = reshape(P_plus * vec(F2), nx, half),
+            p = reshape(P_minus * vec(F2), nx, half))
+        @test isapprox(@inferred(loss_cyc(nn, x_p, split_of(F))), val_cyc;
+            rtol = 10 * eps(T))
+        F_b_split = (q = cat((split_of(F_b[:, :, b]).q for b in 1:B)...; dims = 3),
+            p = cat((split_of(F_b[:, :, b]).p for b in 1:B)...; dims = 3))
+        @test isapprox(@inferred(loss_cyc(nn, x_p_b, F_b_split)), val_cyc_b;
+            rtol = 10 * eps(T))
 
         # Another precision than the network's raises an ArgumentError that names both.
         S = T === Float32 ? Float64 : Float32
@@ -473,7 +563,7 @@ end
         H_fn = ξ -> 0.5 * sum(abs2, ξ) + 0.05 * sum(ξ .^ 4)
         loss_iso = IsometricRolloutLoss(
             step_fn; α_lat = 1.0, α_rec = 0.8, α_H = 0.25, H = H_fn)
-        loss_cyc = CrossModalCycleLoss(:particles, :grid; β_align = 1.0, β_cycle = 0.2)
+        loss_cyc = CrossModalCycleLoss(:particles, :grid; β_align = 1.0, β_cross = 0.2)
 
         flat0, rebuild_ps = _flatten_params(nn.params)
         h = 1e-6
@@ -662,4 +752,139 @@ end
             ps -> sum(encode(nn_sym.model, ps, :grid, F_single)), params(nn_sym))[1]
         @test all(isfinite, _grad_vec(g_sym))
     end
+end
+
+# The untied core of the control networks below.
+function _untied_core()
+    SymplecticAutoencoder(
+        4, 2; n_encoder_blocks = 1, n_decoder_blocks = 1, n_encoder_layers = 1,
+        n_decoder_layers = 1, n_decoder_output_layers = 1, sympnet_upscale = 2)
+end
+
+@testset "Cross-reconstruction term against a dense linear oracle ($T)" for T in REAL_ELTYPES
+    rng = Random.MersenneTwister(505)
+    Nx, Nv, mx, mv = 4, 4, 2, 1
+    half = Nv ÷ 2
+    s = inv(sqrt(T(2)))
+    # Exactly orthonormal leaves, with entries 0, ±1 and ±1/√2.
+    Φx = T[s 0; -s 0; 0 1; 0 0]
+    Φv = reshape(T[s, s], half, mv)
+    Φc = reshape(T[s, -s], 2, 1)
+
+    fe = BilinearStiefelLayer(Nx, Nv, mx, mv)
+    core = WeightTiedSymplecticAutoencoder(
+        4, 2; n_blocks = 1, n_layers = 0, n_ambient_layers = 0, sympnet_upscale = 2)
+    nn = NeuralNetwork(
+        MultiModalSymplecticAutoencoder((a = fe, b = fe), core), CPU(), T; rng = rng)
+    nn_sa = NeuralNetwork(
+        MultiModalSymplecticAutoencoder((a = fe, b = fe), _untied_core()), CPU(), T;
+        rng = rng)
+    for net in (nn, nn_sa), m in (:a, :b)
+
+        copyto!(parent(getfield(params(net).frontends, m).Φx), Φx)
+        copyto!(parent(getfield(params(net).frontends, m).Φv), Φv)
+    end
+    @test length(params(nn).core) == 1
+    copyto!(parent(params(nn).core.L1.weight), Φc)
+
+    # Dense encoder and decoder from the leaves and explicit parity matrices, vec(F) x-fastest:
+    # vec(F⁺) = P₊ vec(F), vec(F⁻) = P₋ vec(F), vec(Φxᵀ G Φv) = kron(Φv, Φx)ᵀ vec(G), and the
+    # weight-tied core with no SympNet layers is (q, p) ↦ (Φcᵀ q, Φcᵀ p).
+    P_plus = zeros(T, Nx * half, Nx * Nv)
+    P_minus = zeros(T, Nx * half, Nx * Nv)
+    for j in 1:half, i in 1:Nx
+
+        row = (j - 1) * Nx + i
+        col_top = (j - 1) * Nx + i
+        col_bot = (Nv - j) * Nx + i
+        P_plus[row, col_top] = P_plus[row, col_bot] = s
+        P_minus[row, col_top] = s
+        P_minus[row, col_bot] = -s
+    end
+    K = kron(Φv, Φx)
+    O = zeros(T, 1, 2)
+    C_enc = [transpose(Φc) O; O transpose(Φc)]
+    Enc = C_enc * vcat(transpose(K) * P_plus, transpose(K) * P_minus)
+    Dec = hcat(transpose(P_plus) * K, transpose(P_minus) * K) * transpose(C_enc)
+
+    x_a = T(3.7) .* randn(rng, T, Nx, Nv)
+    x_b = T(3.7) .* randn(rng, T, Nx, Nv)
+    z_a = Enc * vec(x_a)
+    z_b = Enc * vec(x_b)
+    @test isapprox(encode(nn, :a, x_a), z_a; rtol = 10 * eps(T))
+    @test isapprox(vec(decode(nn, :b, z_a)), Dec * z_a; rtol = 10 * eps(T))
+
+    β_align, β_cross = T(0.7), T(1.3)
+    loss = CrossModalCycleLoss(:a, :b; β_align = β_align, β_cross = β_cross)
+    expected = β_align * sum(abs2, z_a - z_b) + β_cross * sum(abs2, Dec * z_a - vec(x_b))
+    val = @inferred loss(nn, x_a, x_b)
+    @test val isa T
+    @test isapprox(val, expected; rtol = 10 * eps(T))
+
+    # With β_align = 0 the loss is the cross term alone, which is not small and depends on x_b.
+    loss_cross = CrossModalCycleLoss(:a, :b; β_align = 0, β_cross = 1)
+    cross = sum(abs2, Dec * z_a - vec(x_b))
+    @test isapprox(loss_cross(nn, x_a, x_b), cross; rtol = 10 * eps(T))
+    @test cross > 1e-2
+    x_b2 = x_b .+ T(0.5)
+    cross2 = sum(abs2, Dec * z_a - vec(x_b2))
+    @test isapprox(loss_cross(nn, x_a, x_b2), cross2; rtol = 10 * eps(T))
+    @test abs(loss_cross(nn, x_a, x_b2) - loss_cross(nn, x_a, x_b)) > T(1e-2) * cross
+
+    # The cycle term ‖encode(b, decode(b, z_a)) - z_a‖ is zero for the weight-tied core with a
+    # right-invertible frontend, and not zero for the untied core.
+    z_a_nn = encode(nn, :a, x_a)
+    cycle = norm(encode(nn, :b, decode(nn, :b, z_a_nn)) - z_a_nn)
+    @test cycle <= 10 * eps(T) * max(one(T), norm(z_a_nn))
+    z_a_sa = encode(nn_sa, :a, x_a)
+    cycle_sa = norm(encode(nn_sa, :b, decode(nn_sa, :b, z_a_sa)) - z_a_sa)
+    @test cycle_sa > T(1e-3) * norm(z_a_sa)
+
+    # The self-reconstruction form of CharbonnierRelativeLoss has no latent term: on the untied
+    # core, where that term is not zero, the value is the reconstruction term alone. The form
+    # with an external x̂ = decode(encode(x)) keeps the latent term.
+    ε = T(1e-2)
+    loss_c = CharbonnierRelativeLoss(; ε = ε, λ_lat = 1)
+    x̂_a = decode(nn_sa, :a, encode(nn_sa, :a, x_a))
+    rec = (sqrt(sum(abs2, x̂_a - x_a) + ε^2) - ε) / sqrt(sum(abs2, x_a) + ε^2)
+    lat = sum(abs2, encode(nn_sa, :a, x̂_a) - z_a_sa) / (sum(abs2, x_a) + ε^2)
+    @test lat > T(1e-3) * rec
+    val_self = @inferred loss_c(nn_sa, :a, x_a)
+    @test val_self isa T
+    @test isapprox(val_self, rec; rtol = 10 * eps(T))
+    @test isapprox(loss_c(nn_sa, :a, x̂_a, x_a), rec + lat; rtol = 10 * eps(T))
+end
+
+@testset "Docstrings state the limits of the frontends and the losses" begin
+    # The source text of every docstring of X, with its line breaks as spaces. `Docs.doc` has
+    # no method outside an interactive session, so the text comes from the module's metadata.
+    function docstring(X)
+        binding = Base.Docs.Binding(GeometricMachineLearning, nameof(X))
+        multidoc = Base.Docs.meta(GeometricMachineLearning)[binding]
+        replace(join((join(d.text) for d in values(multidoc.docs)), "\n"), '\n' => ' ')
+    end
+    documented = (CanonicalSortLayer, CanonicalSlotLayer, InverseCanonicalSlotLayer,
+        SymmetricSymplecticAutoencoder, BilinearStiefelLayer, LowRankStiefelLayer,
+        MultiModalSymplecticAutoencoder, CharbonnierRelativeLoss, IsometricRolloutLoss,
+        CrossModalCycleLoss)
+    absent = ("collective canonical slots", "relative modes canonically",
+        "canonical quadratic energy", "β_cycle", "symplectic or Poisson frontend")
+    for X in documented
+        str = docstring(X)
+        for phrase in absent
+            @test !occursin(phrase, str)
+        end
+        @test !occursin(r"(Proposition|Theorem|Corollary|Section) \d", str)
+    end
+    for X in (CanonicalSortLayer, CanonicalSlotLayer, SymmetricSymplecticAutoencoder)
+        @test occursin("keep their particle order", docstring(X))
+    end
+    @test occursin("fixed particle count", docstring(CanonicalSlotLayer))
+    for X in (BilinearStiefelLayer, LowRankStiefelLayer, MultiModalSymplecticAutoencoder)
+        @test occursin("declare on the parity coordinates", docstring(X))
+    end
+    @test occursin("requires a latent Hamiltonian", docstring(IsometricRolloutLoss))
+    @test occursin("same physical state", docstring(CrossModalCycleLoss))
+    @test occursin("not symmetric", docstring(CrossModalCycleLoss))
+    @test occursin("skips", docstring(CharbonnierRelativeLoss))
 end

@@ -51,18 +51,42 @@ function _frob_sq_diff(x̂::NamedTuple{(:X, :S, :V)}, x::NamedTuple{(:X, :S, :V)
     FastDLRATraceLoss()(x̂, x)
 end
 
+# The data that a decoded state of a frontend is compared with, in the form that `decode`
+# returns for it. `decode` through a `BilinearStiefelLayer` returns the full field, so a pre-split
+# pair `(q = F⁺, p = F⁻)` is recombined into that field; every other input is compared as it is.
+function _reconstruction_target(::BilinearStiefelLayer, x::NamedTuple{(:q, :p)})
+    _parity_recombine(x.q, x.p)
+end
+_reconstruction_target(::Any, x) = x
+function _reconstruction_target(model::MultiModalSymplecticLayer, modality::Symbol, x)
+    _reconstruction_target(getfield(model.frontends, modality), x)
+end
+
 @doc raw"""
     CharbonnierRelativeLoss(; ε = 1e-3, λ_lat = 1e-2)
 
-Smooth Charbonnier relative reconstruction and latent consistency loss:
+Smooth Charbonnier relative reconstruction loss, with a latent consistency term when the reconstruction ``\hat{x}`` is passed.
+
+Called as `loss(nn, m, x̂, x)` with an external ``\hat{x}`` of the same form as ``x``, it evaluates
 
 ```math
 \mathcal{L}_{\mathrm{Charb}}(\hat{x}, x) =
 \frac{\sqrt{\|\hat{x} - x\|_F^2 + \varepsilon^2} - \varepsilon}{\sqrt{\|x\|_F^2 + \varepsilon^2}}
-+ \lambda_{\mathrm{lat}}\,\frac{\|\mathrm{encode}(nn, m, \hat{x}) - \mathrm{encode}(nn, m, x)\|_F^2}{\|x\|_F^2 + \varepsilon^2},
++ \lambda_{\mathrm{lat}}\,\frac{\|\mathrm{encode}(nn, m, \hat{x}) - \mathrm{encode}(nn, m, x)\|_F^2}{\|x\|_F^2 + \varepsilon^2}.
 ```
 
-where ``\varepsilon > 0`` (default `1e-3`) regularizes the Frobenius norm at ``\hat{x} = x`` and ``x = 0``, and ``\lambda_{\mathrm{lat}} \ge 0`` (default `1e-2`) weights the latent re-encoding consistency penalty.
+Called as `loss(nn, m, x)` (or `loss(nn, x)` for the first modality), it evaluates the reconstruction term alone,
+
+```math
+\mathcal{L}_{\mathrm{Charb}}(x) =
+\frac{\sqrt{\|\hat{x} - x\|_F^2 + \varepsilon^2} - \varepsilon}{\sqrt{\|x\|_F^2 + \varepsilon^2}},
+\qquad \hat{x} = \mathrm{decode}(nn, m, \mathrm{encode}(nn, m, x)),
+```
+
+and compares ``\hat{x}`` with ``x`` in the form that `decode` returns: a pre-split pair `(q = F⁺, p = F⁻)` of a [`BilinearStiefelLayer`](@ref) modality is recombined into the full field.
+In this form the latent term is zero for a weight-tied core with a right-invertible frontend, because then ``\mathrm{encode}(nn, m, \hat{x}) = \mathrm{encode}(nn, m, x)``, so the method skips it and `λ_lat` has no effect. For any other core, pass ``\hat{x} = \mathrm{decode}(nn, m, \mathrm{encode}(nn, m, x))`` to the form with an external ``\hat{x}`` to get the latent term.
+
+Here ``\varepsilon > 0`` (default `1e-3`) regularizes the Frobenius norm at ``\hat{x} = x`` and ``x = 0``, and ``\lambda_{\mathrm{lat}} \ge 0`` (default `1e-2`) weights the latent re-encoding consistency penalty.
 
 When ``x = 0`` and ``\hat{x} = 0``, the loss returns exact `zero(T)` (not `NaN`), and its gradient at ``\hat{x} = x`` is finite and zero (`0 / ε = 0`).
 """
@@ -92,6 +116,15 @@ function _charbonnier_eval(
     (term_rec + term_lat)::T
 end
 
+# The reconstruction term alone, with `x̂` compared with `target` and normalised by `x`.
+function _charbonnier_rec_eval(
+        loss::CharbonnierRelativeLoss, x̂, target, x, ::Type{T}) where {T}
+    eps_T = T(loss.ε)
+    eps_sq = eps_T * eps_T
+    num_rec = sqrt(_frob_sq_diff(x̂, target) + eps_sq) - eps_T
+    (num_rec / sqrt(_frob_sq_norm(x) + eps_sq))::T
+end
+
 Base.@constprop :aggressive function (loss::CharbonnierRelativeLoss)(
         model::MultiModalSymplecticLayer, ps::NamedTuple, modality::Symbol, x̂, x)
     T = promote_type(_state_eltype(x̂), _state_eltype(x), _leaf_eltype(ps.core))
@@ -113,10 +146,8 @@ end
 Base.@constprop :aggressive function (loss::CharbonnierRelativeLoss)(
         model::MultiModalSymplecticLayer, ps::NamedTuple, modality::Symbol, x)
     T = promote_type(_state_eltype(x), _leaf_eltype(ps.core))
-    z = encode(model, ps, modality, x)
-    x̂ = decode(model, ps, modality, z)
-    z_hat = encode(model, ps, modality, x̂)
-    _charbonnier_eval(loss, x̂, x, z_hat, z)::T
+    x̂ = decode(model, ps, modality, encode(model, ps, modality, x))
+    _charbonnier_rec_eval(loss, x̂, _reconstruction_target(model, modality, x), x, T)
 end
 
 Base.@constprop :aggressive function (loss::CharbonnierRelativeLoss)(
@@ -160,8 +191,12 @@ Multi-step latent rollout, decoded trajectory reconstruction, and latent Hamilto
 \right),
 ```
 
-where ``z_k = \mathrm{encode}(nn, m, x_k)``, ``\hat{z}_1 = z_1``, ``\hat{z}_{k+1} = \mathrm{integrator}(\hat{z}_k)`` for ``k = 1, \dots, K - 1``, and `H` is a callable latent Hamiltonian (default `nothing`, which uses the canonical quadratic energy ``\frac{1}{2}\|\hat{z}\|_2^2``).
+where ``z_k = \mathrm{encode}(nn, m, x_k)``, ``\hat{z}_1 = z_1``, ``\hat{z}_{k+1} = \mathrm{integrator}(\hat{z}_k)`` for ``k = 1, \dots, K - 1``, and `H` is a callable latent Hamiltonian.
+`H(ẑ)` takes the latent state as `encode` and `integrator` give it, a vector of length ``2n`` or a matrix of size ``(2n, B)`` for a batched snapshot, and returns one scalar, one value for a whole batch.
+The decoded state is compared with ``x_k`` in the form that `decode` returns: a pre-split pair `(q = F⁺, p = F⁻)` of a [`BilinearStiefelLayer`](@ref) modality is recombined into the full field.
 The weights default to `α_lat = 1.0`, `α_rec = 1.0`, and `α_H = 0.1`.
+
+`H` has no default: the loss requires a latent Hamiltonian `H` when `α_H > 0`, and the constructor raises an `ArgumentError` without one. A fixed latent energy such as ``\frac{1}{2}\|\hat{z}\|_2^2`` is not the energy of the system. With `α_H = 0`, `H` can be `nothing`, and the loss then has no energy term.
 The data, the output of `integrator` and the value of `H` have the element type of the network's parameters; another element type raises an `ArgumentError`.
 """
 struct IsometricRolloutLoss{IT, HT, T <: Real} <: NetworkLoss
@@ -179,14 +214,29 @@ struct IsometricRolloutLoss{IT, HT, T <: Real} <: NetworkLoss
             H = nothing)
         (α_lat >= 0 && α_rec >= 0 && α_H >= 0) || throw(ArgumentError(
             "IsometricRolloutLoss requires non-negative weights α_lat, α_rec, α_H, got α_lat = $α_lat, α_rec = $α_rec, α_H = $α_H."))
+        (iszero(α_H) || H !== nothing) || throw(ArgumentError(
+            "IsometricRolloutLoss requires a latent Hamiltonian H when α_H > 0, got α_H = $α_H and H = nothing. Pass H, or set α_H = 0."))
         T = promote_type(typeof(float(α_lat)), typeof(float(α_rec)), typeof(float(α_H)))
         new{typeof(integrator), typeof(H), T}(
             integrator, H, T(α_lat), T(α_rec), T(α_H))
     end
 end
 
-_eval_latent_H(::Nothing, z::AbstractArray{T}) where {T} = T(0.5) * sum(abs2, z)
-_eval_latent_H(H_fn, z::AbstractArray) = H_fn(z)
+# The value of `H` at the first latent state, and the penalty `|H(ẑ) - H(ẑ₁)|²` of a later one.
+# `H = nothing` occurs only with `α_H = 0`, and then `H` is never called.
+_initial_latent_H(::Nothing, z, ::Type{T}) where {T} = nothing
+function _initial_latent_H(H, z, ::Type{T}) where {T}
+    H1 = H(z)
+    _check_eltype("IsometricRolloutLoss", "the value of H", H1, T)
+    H1
+end
+
+_latent_H_penalty(::Nothing, z, ::Nothing, ::Type{T}) where {T} = zero(T)
+function _latent_H_penalty(H, z, H1, ::Type{T}) where {T}
+    Hk = H(z)
+    _check_eltype("IsometricRolloutLoss", "the value of H", Hk, T)
+    abs2(Hk - H1)
+end
 
 function _check_traj_len(K::Int)
     K >= 2 || throw(ArgumentError(
@@ -219,8 +269,7 @@ Base.@constprop :aggressive function (loss::IsometricRolloutLoss)(
     T = _leaf_eltype(ps.core)
     _check_eltype("IsometricRolloutLoss", "the data", xs[1], T)
     z1 = encode(model, ps, modality, xs[1])
-    H1 = _eval_latent_H(loss.H, z1)
-    _check_eltype("IsometricRolloutLoss", "the value of H", H1, T)
+    H1 = _initial_latent_H(loss.H, z1, T)
     z_curr = z1
     err_lat = zero(T)
     err_rec = zero(T)
@@ -232,10 +281,9 @@ Base.@constprop :aggressive function (loss::IsometricRolloutLoss)(
         _check_eltype("IsometricRolloutLoss", "the integrator's output", z_curr, T)
         err_lat = err_lat + _frob_sq_diff(z_curr, z_k)
         x_rec_k = decode(model, ps, modality, z_curr)
-        err_rec = err_rec + _frob_sq_diff(x_rec_k, xs[k])
-        Hk = _eval_latent_H(loss.H, z_curr)
-        _check_eltype("IsometricRolloutLoss", "the value of H", Hk, T)
-        err_H = err_H + abs2(Hk - H1)
+        err_rec = err_rec +
+                  _frob_sq_diff(x_rec_k, _reconstruction_target(model, modality, xs[k]))
+        err_H = err_H + _latent_H_penalty(loss.H, z_curr, H1, T)
     end
     inv_steps = inv(T(K - 1))
     res = T(loss.α_lat) * err_lat * inv_steps +
@@ -273,35 +321,48 @@ Base.@constprop :aggressive function (loss::IsometricRolloutLoss)(
 end
 
 @doc raw"""
-    CrossModalCycleLoss(mod_a::Symbol, mod_b::Symbol; β_align = 1.0, β_cycle = 0.1)
+    CrossModalCycleLoss(mod_a::Symbol, mod_b::Symbol; β_align = 1.0, β_cross = 1.0)
 
-Cross-modal paired latent alignment and cycle consistency loss between modalities `mod_a` and `mod_b`:
+Cross-modal paired latent alignment and cross-reconstruction loss between modalities `mod_a` and `mod_b`:
 
 ```math
 \mathcal{L}_{\mathrm{cross}}(x_a, x_b) =
 \beta_{\mathrm{align}}\,\|z_a - z_b\|_F^2
-+ \beta_{\mathrm{cycle}}\,\|\mathrm{encode}(nn, b, \mathrm{decode}(nn, b, z_a)) - z_a\|_F^2,
++ \beta_{\mathrm{cross}}\,\|\mathrm{decode}(nn, b, z_a) - x_b\|_F^2,
 ```
 
 where ``z_a = \mathrm{encode}(nn, a, x_a)`` and ``z_b = \mathrm{encode}(nn, b, x_b)``.
-The weights default to `β_align = 1.0` and `β_cycle = 0.1`.
+The pair ``(x_a, x_b)`` is the same physical state in two modalities: the alignment term asks that both encode to one latent state, and the cross-reconstruction term asks that the latent state of ``x_a`` decodes to ``x_b``.
+The loss is not symmetric in ``a`` and ``b``: the cross-reconstruction term decodes only into modality `mod_b`, so `CrossModalCycleLoss(mod_b, mod_a)` is another loss.
+`decode(nn, b, z_a)` is compared with ``x_b`` in the form that `decode` returns: a pre-split pair `(q = F⁺, p = F⁻)` of a [`BilinearStiefelLayer`](@ref) modality is recombined into the full field.
+A batch is the sum of its samples' losses; `x_a` and `x_b` with different numbers of samples raise a `DimensionMismatch`.
+
+The weights are non-negative and default to `β_align = 1.0` and `β_cross = 1.0`; a negative or `NaN` weight raises an `ArgumentError`.
 `x_a` and `x_b` have the element type of the network's parameters; another element type raises an `ArgumentError`.
 """
 struct CrossModalCycleLoss{T <: Real} <: NetworkLoss
     mod_a::Symbol
     mod_b::Symbol
     β_align::T
-    β_cycle::T
+    β_cross::T
 
     function CrossModalCycleLoss(
             mod_a::Symbol, mod_b::Symbol;
-            β_align::Real = 1.0, β_cycle::Real = 0.1)
-        (β_align >= 0 && β_cycle >= 0) || throw(ArgumentError(
-            "CrossModalCycleLoss requires non-negative weights β_align and β_cycle, got β_align = $β_align, β_cycle = $β_cycle."))
-        T = promote_type(typeof(float(β_align)), typeof(float(β_cycle)))
-        new{T}(mod_a, mod_b, T(β_align), T(β_cycle))
+            β_align::Real = 1.0, β_cross::Real = 1.0)
+        (β_align >= 0 && β_cross >= 0) || throw(ArgumentError(
+            "CrossModalCycleLoss requires non-negative weights β_align and β_cross, got β_align = $β_align, β_cross = $β_cross."))
+        T = promote_type(typeof(float(β_align)), typeof(float(β_cross)))
+        new{T}(mod_a, mod_b, T(β_align), T(β_cross))
     end
 end
+
+function _check_sample_count(z_a, z_b)
+    size(z_a) == size(z_b) || throw(DimensionMismatch(
+        "CrossModalCycleLoss: x_a and x_b hold different numbers of samples: their latent states have sizes $(size(z_a)) and $(size(z_b))."))
+    nothing
+end
+
+ChainRulesCore.@non_differentiable _check_sample_count(::Any, ::Any)
 
 Base.@constprop :aggressive function _cross_modal_eval(
         loss::CrossModalCycleLoss, model::MultiModalSymplecticLayer,
@@ -311,10 +372,11 @@ Base.@constprop :aggressive function _cross_modal_eval(
     _check_eltype("CrossModalCycleLoss", "x_b", x_b, T)
     z_a = encode(model, ps, loss.mod_a, x_a)
     z_b = encode(model, ps, loss.mod_b, x_b)
-    x_b_rec = decode(model, ps, loss.mod_b, z_a)
-    z_a_cyc = encode(model, ps, loss.mod_b, x_b_rec)
+    _check_sample_count(z_a, z_b)
+    x̂_b = decode(model, ps, loss.mod_b, z_a)
+    target = _reconstruction_target(model, loss.mod_b, x_b)
     res = T(loss.β_align) * _frob_sq_diff(z_a, z_b) +
-          T(loss.β_cycle) * _frob_sq_diff(z_a_cyc, z_a)
+          T(loss.β_cross) * _frob_sq_diff(x̂_b, target)
     res::T
 end
 

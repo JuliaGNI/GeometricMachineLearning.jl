@@ -6,6 +6,7 @@ Make an instance of a symplectic autoencoder with a particle frontend for `M` pa
 `SymmetricSymplecticAutoencoder` combines a particle frontend (`frontend = :sort`, `:pairwise`, or `:slot`) with the weight-tied symplectic core [`WeightTiedSymplecticAutoencoder`](@ref) so that [`encoder`](@ref)`(nn)` and [`decoder`](@ref)`(nn)` share a single parameter tree.
 
 With `frontend = :sort` or `frontend = :slot`, the latent state is invariant under a relabelling of particles with distinct coordinates along the sorting axis (`sort_axis` for `:sort`, coordinate 1 for `:slot`). With `frontend = :pairwise`, only the frontend is permutation-equivariant: the core is not, so the latent state is not invariant.
+The sort of `:sort` and `:slot` is discontinuous in `p` where two particles cross along the sorting axis, so the Jacobian identity of the frontend holds only away from those crossings. `:sort` and `:slot` suit systems that keep their particle order, not a collisionless plasma, whose sorted snapshots are not low-rank.
 
 The latent right-inversion ``\mathrm{encoder}(nn)(\mathrm{decoder}(nn)(\xi)) = \xi`` holds to machine precision for every ``\xi \in \mathbb{R}^{2n}`` with `frontend = :pairwise`. With `frontend = :sort` and `frontend = :slot`, it holds for ``\xi`` whose decoded state lies in the canonical chamber, where the sorting permutations on the decoded state are the identity; the decoder does not map into this chamber in general.
 

@@ -78,15 +78,15 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
 ### K41 · `CrossModalCycleLoss(nn, x_a, x_b)` with a mixed-component `NamedTuple` raises a `MethodError`, not the documented `ArgumentError`.
 
-- **location:** `src/loss/multimodal_losses.jl:323`
+- **location:** `src/loss/multimodal_losses.jl:385`
 - **kind:** defect
 - **found:** #370
 - **evidence:**
-  The three `(nn, x_a, x_b)` methods (lines 323, 329 and 335) annotate `x_a` and `x_b` with
+  The three `(nn, x_a, x_b)` methods (lines 385, 391 and 397) annotate `x_a` and `x_b` with
   `ArrayOrNamedTuple`, and AbstractNeuralNetworks defines that as
   `Union{AbstractArray{T}, NamedTupleOfArrays{T}}`, with one element type `T` for every component.
   A `NamedTuple` whose `q` and `p` differ in element type matches no `T`, so dispatch fails before
-  `_check_eltype` (line 204) runs. In a fresh `julia --startup-file=no --project=.` process:
+  `_check_eltype` (line 254) runs. In a fresh `julia --startup-file=no --project=.` process:
 
   ```julia
   T = typeof((q = zeros(Float32, 2, 3), p = zeros(Float64, 2, 3)))

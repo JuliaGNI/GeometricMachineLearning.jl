@@ -24,6 +24,11 @@ which produces the exact same canonical coordinates `(q = vec(Q_red), p = vec(P_
 orthogonal gauge transformations ``(X, S, V) \mapsto (X O_x, O_x^T S O_v, V O_v)`` for all
 ``O_x, O_v \in O(r_{\mathrm{in}})``.
 
+The coordinates ``(q, p)`` are canonical only for the structure ``\mathbb{J}_{2n}`` that the layer and
+[`BilinearStiefelLayer`](@ref) declare on the parity coordinates. A frontend that is linear in
+``f = X S V^T`` is not a Poisson map for the Vlasov bracket: with ``L^2``-orthonormal even and
+odd bases, the bracket linearised at ``f_0`` gives a singular ``\{Q, P\}``, not the identity.
+
 See also [`DecodeLowRankStiefelLayer`](@ref), [`BilinearStiefelLayer`](@ref),
 [`FastDLRATraceLoss`](@ref), and [`inverse_layer`](@ref).
 """
