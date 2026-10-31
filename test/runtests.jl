@@ -114,6 +114,7 @@ end
 if "slow" in GROUPS
     @safetestset "Test symplecticity of the sympnet upscaling layer" include("layers/sympnet_upscaling.jl")
     @safetestset "train! trains every architecture of the manual" include("integration/train_manual_architectures.jl")
+    @safetestset "The three-stage multi-modal pipeline and its mutants" include("integration/multimodal_pipeline.jl")
 end
 if "doctests" in GROUPS
     @safetestset "Doctests" include("quality/doctests.jl")
