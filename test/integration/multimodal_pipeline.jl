@@ -59,6 +59,17 @@ end
     @test result.decoded_error <= result.ε_I
 end
 
+# One leaf off the manifold is enough: scaling the two columns of `Φx` by `1 + δ` gives
+# `‖YᵀY - I‖_F = ((1 + δ)² - 1) √2`, and every other leaf stays orthonormal.
+@testset "The orthonormality defect is that of the worst leaf ($T)" for T in REAL_ELTYPES
+    nn = multimodal_network(T)
+    @test orthonormality_defect(nn) <= ORTHONORMALITY_EPS * eps(T)
+    δ = T(1e-3)
+    parent(params(nn).frontends.grid.Φx) .*= 1 + δ
+    @test orthonormality_defect(nn) isa T
+    @test isapprox(orthonormality_defect(nn), ((1 + δ)^2 - 1) * sqrt(T(2)); rtol = 1e-3)
+end
+
 @testset "M1: without Stage I the projection error is not below the tolerance ($T)" for T in REAL_ELTYPES
     @test_throws r"^AssertionError: Stage I: the projection error \S+ is not below 0\.01\.$" run_pipeline(
         T; verbose = false, initialize! = (nn, data) -> nn)
