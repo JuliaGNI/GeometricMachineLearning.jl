@@ -72,9 +72,8 @@ returns in Stage III as the reference state.
 ## Stage I: subspaces from the SVD
 
 [`solve!`](@ref) sets the linear parts of the network from singular value decompositions, with
-no training: the Stiefel bases of the grid frontend, which the DLRA frontend copies, and the
-cotangent lift in the core's last [`PSDLayer`](@ref), from the frontend coordinates of the
-snapshots:
+no training: the Stiefel bases of the grid frontend, and the cotangent lift in the core's last
+[`PSDLayer`](@ref), from the frontend coordinates of the snapshots:
 
 ```julia
 using GeometricMachineLearning: params
@@ -82,16 +81,17 @@ using GeometricOptimizers: solve!
 
 ps = params(nn)
 solve!(nn.architecture.frontends.grid, ps.frontends.grid, δF)   # Φx and Φv of the grid
-copyto!(parent(ps.frontends.dlra.Φx), parent(ps.frontends.grid.Φx))
-copyto!(parent(ps.frontends.dlra.Φv), parent(ps.frontends.grid.Φv))
 
-psd = NeuralNetwork(PSDArch(8, 4), CPU(), Float64)
+psd = NeuralNetwork(PSDArch(8, 4), CPU(), Float64; rng = Xoshiro(42))
 solve!(psd, Z)                                                    # the cotangent lift of Z
 copyto!(parent(ps.core[end].weight), parent(params(psd)[1].weight))
 ```
 
 Here `δF` holds the fluctuations, of size `(16, 16, B)`, and `Z` holds their frontend
-coordinates, one column per snapshot. The script asserts that the projection error
+coordinates, one column per snapshot. Stage I does not fit the DLRA frontend. Its bases
+``\Phi_x`` and ``\Phi_v`` are those of the grid frontend plus ``0.1`` times a random matrix,
+orthonormalized, so that Stage II has the two modalities to align. The script asserts that the
+projection error
 
 ```math
 \varepsilon_I = \max_b \frac{\|F_b - (f_0 + \Pi(F_b - f_0))\|}{\|F_b\|},
@@ -109,8 +109,10 @@ DLRA modality to the grid modality, and the relative squared error of the partic
 the particle frontend sorts its input, and a decoded particle state need not be in the order that
 the sort keeps.
 
-The particle states of the synthetic dataset are built with a relative basis that is not the
-network's, so Stage II has to learn ``\Phi_{\mathrm{rel}}``. The optimizer steps the Stiefel leaves
+The `CrossModalLoss` aligns the DLRA frontend, which Stage I does not fit, with the grid
+frontend. The particle states of the synthetic dataset are built with a relative basis that is
+not the network's, so Stage II also has to learn ``\Phi_{\mathrm{rel}}``. The optimizer steps the
+Stiefel leaves
 with
 [`FactoredStiefelAdam`](@extref GeometricOptimizers GeometricOptimizers.FactoredStiefelAdam),
 a direct tangent-space Adam of `GeometricOptimizers` that keeps each leaf on the manifold, and
@@ -134,8 +136,9 @@ end
 
 See [`TrainingOptimizer`](@extref GeometricOptimizers GeometricOptimizers.TrainingOptimizer) and
 [`CompositeMethod`](@extref GeometricOptimizers GeometricOptimizers.CompositeMethod). The script
-prints the loss after every step and asserts two things: that the loss of the last step is at
-most half the loss after Stage I, and that every
+prints, after every step, the sum of the reconstruction and the `CrossModalLoss` terms, without
+the particle term. It asserts two things: that this sum after the last step is at most half its
+value after Stage I, and that every
 [`StiefelManifold`](@extref GeometricOptimizers GeometricOptimizers.StiefelManifold) leaf
 ``Y`` satisfies ``\|Y^T Y - I\|_F \le 50\,\mathrm{eps}(T)``. Adam is not a descent method, so the
 loss need not fall at every step, and the script does not assert that it does. Euclidean Adam on
@@ -168,8 +171,9 @@ Here `frontend_coordinates(F)` is the output `(q, p)` of the grid frontend as on
   order in the time step. Over the interval ``(0, 2)``, the largest error of the reduced energy in
   20 steps is between 3 and 5 times the error in 40 steps.
 - The decoded initial field ``f_0 + \mathrm{field}(\mathrm{decode}(\mathrm{encode}(z_0)) - z_{\mathrm{ref}})``
-  equals ``F_0`` to ``\varepsilon_I \|F_0\|``. Without `q_ref, p_ref`, the background is not in
-  the range of the rank-``2n`` decoder, and the relative error is about 1.
+  equals ``F_0`` to ``\varepsilon_I \|F_0\|``. Without the shift, with no `q_ref, p_ref` and no
+  ``f_0`` added on decoding, the background is not in the range of the rank-``2n`` decoder, and
+  the relative error is about 1.
 
 The script integrates a fixed latent Hamiltonian and trains no latent dynamics. To fine-tune a
 latent integrator on decoded trajectories, use [`IsometricRolloutLoss`](@ref).

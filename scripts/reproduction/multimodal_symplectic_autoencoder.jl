@@ -3,11 +3,12 @@
 #
 #   Stage I    `solve!` sets the grid frontend's Stiefel bases from the SVD of the fluctuation
 #              snapshots and the core's symplectic lift from the cotangent lift of their frontend
-#              coordinates; the DLRA frontend takes the grid frontend's bases.
+#              coordinates; the DLRA frontend's bases start at a distance from the grid frontend's.
 #   Stage II   joint training: the reconstruction loss of the grid modality,
 #              `CrossModalLoss(:dlra, :grid)` and the error of the particle states translated from
 #              the grid modality, stepped with
-#              `CompositeMethod(; manifold = FactoredStiefelAdam(), array = Adam())`.
+#              `CompositeMethod(; manifold = FactoredStiefelAdam(), array = Adam())`. The
+#              assertion is on the first two terms.
 #   Stage III  the reduced system `HRedSys` of a pendulum Hamiltonian on the frontend
 #              coordinates, shifted by the background, integrated with `ImplicitMidpoint`.
 #
@@ -48,7 +49,9 @@ const N_PARTICLES = 8
 const N_SNAPSHOTS = smoke_size(32, 8)
 const N_STAGE_II_STEPS = smoke_size(1000, 400)
 const STEP_SIZE = 1e-3
-const PARTICLE_DISTANCE = 0.3
+# The distance of the DLRA frontend's bases from the grid frontend's, and of the particle states'
+# relative basis from the network's; see `perturbed_basis`.
+const BASIS_DISTANCE = 0.1
 const NOISE = 1e-3
 # Stage III integrates over `(0, TIME_INTERVAL)` in each of `N_STAGE_III_STEPS` steps.
 const TIME_INTERVAL = 2.0
@@ -148,24 +151,42 @@ function grid_coordinates(nn, data::NamedTuple)
     stack(b -> grid_coordinates(nn, data.δF[:, :, b]), axes(data.δF, 3))
 end
 
+# The orthonormal basis of the columns of `Y + BASIS_DISTANCE P` that QR gives, with each column's
+# sign chosen so that the diagonal of `R` is positive: each column then stays near that of `Y`.
+# Adam moves each parameter by about the step size per step, so the distance is one that the steps
+# of Stage II cover.
+function perturbed_basis(Y::AbstractMatrix{T}, P::AbstractMatrix{T}) where {T}
+    factors = qr(Y + T(BASIS_DISTANCE) * P)
+    Matrix(factors.Q) * Diagonal(sign.(diag(factors.R)))
+end
+
 """
     stage_I!(nn, data)
 
 Set the linear parts of the network from SVDs with `solve!`: the Stiefel bases of the grid
 frontend from the fluctuations `data.δF`, and the core's symplectic lift from the cotangent lift
-of the snapshots' frontend coordinates. The DLRA frontend takes the grid frontend's bases.
+of the snapshots' frontend coordinates.
 
 The core is weight-tied, so its decode–encode is the projection of its lift whatever the
 gradient layers between; after this stage the network reconstructs the fluctuations to their
 SVD truncation error.
+
+The DLRA frontend's bases are the grid frontend's perturbed by `perturbed_basis` with
+`Random.Xoshiro(42)`, as a frontend that Stage I does not fit: the cross-reconstruction and
+alignment of `CrossModalLoss(:dlra, :grid)` are then not at their minimum, and Stage II aligns
+the two modalities.
 """
 function stage_I!(nn, data)
     T = eltype(data.δF)
     ps = params(nn)
+    rng = Xoshiro(SEED)
     solve!(nn.architecture.frontends.grid, ps.frontends.grid, data.δF)
-    copyto!(parent(ps.frontends.dlra.Φx), parent(ps.frontends.grid.Φx))
-    copyto!(parent(ps.frontends.dlra.Φv), parent(ps.frontends.grid.Φv))
-    psd = NeuralNetwork(PSDArch(N_FRONTEND, N_LATENT), CPU(), T)
+    for Φ in (:Φx, :Φv)
+        Y = parent(getfield(ps.frontends.grid, Φ))
+        copyto!(parent(getfield(ps.frontends.dlra, Φ)),
+            perturbed_basis(Y, randn(rng, T, size(Y))))
+    end
+    psd = NeuralNetwork(PSDArch(N_FRONTEND, N_LATENT), CPU(), T; rng = Xoshiro(SEED))
     solve!(psd, grid_coordinates(nn, data))
     copyto!(parent(ps.core[end].weight), parent(params(psd)[1].weight))
     nn
@@ -191,16 +212,12 @@ Return the particle states, `(q, p)` of size `(1, N_PARTICLES, B)`, of the snaps
 inverse of the particle frontend applied to the grid snapshots' frontend coordinates. The three
 modalities of a snapshot then describe one latent state.
 
-The relative basis of these states is not the network's: it is the network's basis plus
-`PARTICLE_DISTANCE` times `data.particle_perturbation`, orthonormalized, and Stage II learns it.
-Adam moves each parameter by about the step size per step, so the distance is one that the steps
-of Stage II cover.
+The relative basis of these states is not the network's: it is the network's basis perturbed by
+`perturbed_basis` with `data.particle_perturbation`, and Stage II learns it.
 """
 function particle_snapshots(nn, data)
-    T = eltype(data.δF)
     Φ_rel = parent(params(nn).frontends.particles.Φ_rel)
-    factors = qr(Φ_rel + T(PARTICLE_DISTANCE) * data.particle_perturbation)
-    basis = Matrix(factors.Q) * Diagonal(sign.(diag(factors.R)))
+    basis = perturbed_basis(Φ_rel, data.particle_perturbation)
     inv_slots = inverse_layer(nn.architecture.frontends.particles)
     x = inv_slots(grid_coordinates(nn, data), (Φ_rel = basis,))
     Nq = size(x, 1) ÷ 2
@@ -214,9 +231,10 @@ particle_matrix(x) = vcat(reshape(x.q, N_PARTICLES, :), reshape(x.p, N_PARTICLES
 """
     joint_loss(data, particles)
 
-Return the Stage II loss `(model, ps) -> L` over the whole batch: the `CharbonnierRelativeLoss`
-of the grid modality, `CrossModalLoss(:dlra, :grid)`, and the relative squared error of the
-particle states translated from the grid modality.
+Return the two parts `(; loss, extra)` of the Stage II loss over the whole batch, each a function
+`(model, ps) -> L`. `loss` is the `CharbonnierRelativeLoss` of the grid modality plus
+`CrossModalLoss(:dlra, :grid)`, the loss that Stage II asserts on. `extra` is the relative squared
+error of the particle states translated from the grid modality, which Stage II trains on as well.
 
 The particle term translates and does not encode the particle states: the particle frontend sorts
 its input, and a decoded particle state need not be in the order that the sort keeps.
@@ -228,9 +246,12 @@ function joint_loss(data, particles)
     target_norm² = sum(abs2, target)
     function loss(model, ps)
         reconstruction(model, ps, :grid, data.δF) +
-        dlra_to_grid(model, ps, data.dlra, data.δF) +
+        dlra_to_grid(model, ps, data.dlra, data.δF)
+    end
+    function extra(model, ps)
         sum(abs2, translate(model, ps, :grid, :particles, data.δF) .- target) / target_norm²
     end
+    (; loss, extra)
 end
 
 parameter_eltype(::NetworkParameters{T}) where {T} = T
@@ -246,17 +267,21 @@ function composite_step(nn)
 end
 
 """
-    stage_II!(nn, loss; n_steps = N_STAGE_II_STEPS, step! = composite_step(nn), verbose = false)
+    stage_II!(nn, (; loss, extra); n_steps = N_STAGE_II_STEPS, step! = composite_step(nn),
+        verbose = false)
 
-Take `n_steps` steps of `step!(params(nn), gradient)` on `loss(nn.model, params(nn))`, and
-return the loss before the first step and after each step.
+Take `n_steps` steps of `step!(params(nn), gradient)` on `loss(nn.model, params(nn))` plus
+`extra(nn.model, params(nn))`, or on `loss` alone where `extra` is `nothing`, and return `loss`
+before the first step and after each step.
 """
-function stage_II!(nn, loss; n_steps::Integer = N_STAGE_II_STEPS,
+function stage_II!(nn, (; loss, extra); n_steps::Integer = N_STAGE_II_STEPS,
         step! = composite_step(nn), verbose::Bool = false)
     ps = params(nn)
+    training_loss = extra === nothing ? loss :
+                    (model, p) -> loss(model, p) + extra(model, p)
     losses = [loss(nn.model, ps)]
     for k in 1:n_steps
-        dp = Zygote.gradient(p -> loss(nn.model, p), ps)[1]
+        dp = Zygote.gradient(p -> training_loss(nn.model, p), ps)[1]
         step!(ps, dp)
         push!(losses, loss(nn.model, ps))
         verbose && println("  step ", k, ": loss ", losses[end])
@@ -330,12 +355,15 @@ end
     run_pipeline(T; verbose = true, initialize! = stage_I!, stage_II_loss = joint_loss,
         stage_II_step = composite_step, shift = true)
 
-Run the three stages in precision `T`, assert each stage's claim, and return what they measured.
+Run the three stages in precision `T`, assert each stage's claim, and return what they measured
+and the trained network `nn`.
 
 The keywords name the parts of the stages: `initialize!(nn, data)` is Stage I,
-`stage_II_loss(data, particles)` returns the loss of Stage II and `stage_II_step(nn)` its step,
+`stage_II_loss(data, particles)` returns the loss of Stage II as `stage_II!` takes it, and
+`stage_II_step(nn)` its step,
 and `shift` is passed to `stage_III`. The test of this script replaces each of them by a
-defect and asserts that the matching assertion fails.
+defect and asserts that the matching assertion fails, and replaces the Stage II loss by the
+cross-reconstruction term alone and asserts that it passes.
 """
 function run_pipeline(::Type{T}; verbose::Bool = true, initialize! = stage_I!,
         stage_II_loss = joint_loss, stage_II_step = composite_step,
@@ -370,7 +398,7 @@ function run_pipeline(::Type{T}; verbose::Bool = true, initialize! = stage_I!,
     @assert ENERGY_RATIO_RANGE[1] <= ratio <= ENERGY_RATIO_RANGE[2] "Stage III: halving the time step divides the energy error by $ratio, outside $ENERGY_RATIO_RANGE."
     @assert stage.decoded_error <= ε_I "Stage III: the decoded initial field has relative error $(stage.decoded_error), more than the Stage I projection error $ε_I."
 
-    (; ε_I, losses, defect, stage..., ratio)
+    (; nn, ε_I, losses, defect, stage..., ratio)
 end
 
 seconds(started) = string(round(time() - started; digits = 1), " s")

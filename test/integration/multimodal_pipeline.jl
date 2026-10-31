@@ -42,6 +42,21 @@ function cycle_loss(data, particles)
         z = encode(model, ps, :dlra, data.dlra)
         T(0.1) * sum(abs2, encode(model, ps, :grid, decode(model, ps, :grid, z)) .- z)
     end
+    (; loss, extra = nothing)
+end
+
+# The cross-reconstruction term in the setting of `cycle_loss`: `β_align = 0`, no
+# reconstruction term and no further term.
+function cross_reconstruction_loss(data, particles)
+    cross = CrossModalLoss(:dlra, :grid; β_align = 0.0)
+    (; loss = (model, ps) -> cross(model, ps, data.dlra, data.δF), extra = nothing)
+end
+
+# The loss that Stage II asserts on, computed from the library's losses: the
+# `CharbonnierRelativeLoss` of the grid modality plus `CrossModalLoss(:dlra, :grid)`.
+function clause_loss(nn, data)
+    reconstruction = CharbonnierRelativeLoss()(nn.model, params(nn), :grid, data.δF)
+    reconstruction + CrossModalLoss(:dlra, :grid)(nn.model, params(nn), data.dlra, data.δF)
 end
 
 @testset "The three stages meet their assertions ($T)" for T in REAL_ELTYPES
@@ -51,6 +66,13 @@ end
     @test eltype(result.losses) === T
     @test length(result.losses) == N_STAGE_II_STEPS + 1
     @test result.losses[end] <= LOSS_REDUCTION * result.losses[1]
+    # The losses are reconstruction plus `CrossModalLoss`, without the particle term, after Stage I
+    # and after the last step.
+    data = synthetic_dataset(T)
+    @test isapprox(
+        result.losses[1], clause_loss(stage_I!(multimodal_network(T), data), data);
+        rtol = 8 * eps(T))
+    @test isapprox(result.losses[end], clause_loss(result.nn, data); rtol = 8 * eps(T))
     @test result.defect <= ORTHONORMALITY_EPS * eps(T)
     # The implicit midpoint rule has order 2: halving the step divides the energy error by 4.
     @test eltype(result.energy_errors) === T
@@ -88,4 +110,9 @@ end
 @testset "M4: the cycle term does not move the loss ($T)" for T in REAL_ELTYPES
     @test_throws r"^AssertionError: Stage II: the loss went from \S+ to \S+, more than 0\.5 of its value after Stage I\.$" run_pipeline(
         T; verbose = false, stage_II_loss = cycle_loss)
+end
+
+@testset "M4 contrast: the cross-reconstruction term halves the loss ($T)" for T in REAL_ELTYPES
+    result = run_pipeline(T; verbose = false, stage_II_loss = cross_reconstruction_loss)
+    @test result.losses[end] <= LOSS_REDUCTION * result.losses[1]
 end
