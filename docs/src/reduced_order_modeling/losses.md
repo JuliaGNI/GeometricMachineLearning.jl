@@ -48,7 +48,7 @@ AutoEncoderLoss
 ReducedLoss
 CharbonnierRelativeLoss
 IsometricRolloutLoss
-CrossModalCycleLoss
+CrossModalLoss
 GeometricMachineLearning.ParametricLoss
 GeometricMachineLearning.apply_parametric
 projection_error

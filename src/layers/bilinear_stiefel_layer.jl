@@ -30,6 +30,12 @@ When `metric_factors = (Rx, Rv)` is supplied with Cholesky or square-root mass f
 `Rx` of size `(Nx, Nx)` and `Rv` of size `(Nv ÷ 2, Nv ÷ 2)` or `(Nv, Nv)`, the field is
 mapped into the Euclidean metric by `(Rx, Rv)` prior to Stiefel projection.
 
+The coordinates ``(q, p)`` are canonical only for the structure ``\mathbb{J}_{2n}`` that the
+layer and [`LowRankStiefelLayer`](@ref) declare on the parity coordinates. A frontend that is
+linear in ``F`` is not a Poisson map for the Vlasov bracket: with ``L^2``-orthonormal even and
+odd bases, the bracket linearised at ``f_0`` gives a ``\{Q, P\}`` that is not the identity
+and can be singular.
+
 See also [`TransposeBilinearStiefelLayer`](@ref), [`LowRankStiefelLayer`](@ref), and
 [`inverse_layer`](@ref).
 """

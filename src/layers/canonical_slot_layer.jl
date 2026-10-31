@@ -41,7 +41,7 @@ end
     CanonicalSlotLayer{N, NOut, M, NSlots}()
     CanonicalSlotLayer(M::Integer, d::Integer, NSlots::Integer)
 
-Make an instance of a canonical slot reduction layer mapping `M` particles in ``d`` spatial dimensions to `NSlots` collective canonical slots (`M >= 2`, `1 <= NSlots <= M`).
+Make an instance of a canonical slot reduction layer mapping `M` particles in ``d`` spatial dimensions to `NSlots` canonical slots (`M >= 2`, `1 <= NSlots <= M`).
 
 The first two type parameters are the phase-space dimensions `N = 2Md` of the particles and `NOut = 2 NSlots d` of the slots, which `input_dimension` and `output_dimension` return.
 The layer first sorts the particles along coordinate row 1 of `q` with [`CanonicalSortLayer`](@ref), so that its output is invariant under a relabelling of particles with distinct first coordinates. It then applies the orthogonal Helmert / Jacobi transformation separating the center-of-mass mode
@@ -49,7 +49,12 @@ The layer first sorts the particles along coordinate row 1 of `q` with [`Canonic
 ```math
 (Q_{\mathrm{cm}}, P_{\mathrm{cm}}) = \frac{1}{\sqrt{M}}\sum_{i=1}^M (q_i, p_i)
 ```
-from the ``M - 1`` zero-sum relative modes ``(q_{\mathrm{rel}}, p_{\mathrm{rel}}) \in \mathbb{R}^{d \times (M - 1)}``, sorts the ``M - 1`` relative modes canonically by descending squared phase-space norm ``\|q_{\mathrm{rel}, k}\|_2^2 + \|p_{\mathrm{rel}, k}\|_2^2`` (`sortperm` with `rev = true, alg = MergeSort`, applying the identical permutation ``\sigma_{\mathrm{rel}} \in S_{M - 1}`` to both ``q_{\mathrm{rel}}`` and ``p_{\mathrm{rel}}``), and projects the sorted relative modes onto ``N_{\mathrm{slots}} - 1`` relative slots via a learned [`StiefelManifold`](@extref GeometricOptimizers GeometricOptimizers.StiefelManifold) parameter ``\Phi_{\mathrm{rel}} \in \mathrm{St}(N_{\mathrm{slots}} - 1, M - 1)`` while keeping ``(Q_{\mathrm{cm}}, P_{\mathrm{cm}})`` intact as slot 1.
+from the ``M - 1`` zero-sum relative modes ``(q_{\mathrm{rel}}, p_{\mathrm{rel}}) \in \mathbb{R}^{d \times (M - 1)}``, sorts the ``M - 1`` relative modes by descending squared phase-space norm ``\|q_{\mathrm{rel}, k}\|_2^2 + \|p_{\mathrm{rel}, k}\|_2^2`` (`sortperm` with `rev = true, alg = MergeSort`, applying the identical permutation ``\sigma_{\mathrm{rel}} \in S_{M - 1}`` to both ``q_{\mathrm{rel}}`` and ``p_{\mathrm{rel}}``), and projects the sorted relative modes onto ``N_{\mathrm{slots}} - 1`` relative slots via a learned [`StiefelManifold`](@extref GeometricOptimizers GeometricOptimizers.StiefelManifold) parameter ``\Phi_{\mathrm{rel}} \in \mathrm{St}(N_{\mathrm{slots}} - 1, M - 1)`` while keeping ``(Q_{\mathrm{cm}}, P_{\mathrm{cm}})`` intact as slot 1.
+The particles are already sorted, so this second sort removes no symmetry, and it makes the output discontinuous where two relative-mode norms cross.
+
+The layer is a linear projection of sorted states for a fixed particle count `M`; it takes no variable particle count and has no Löwdin-orthogonalised affinity slots.
+The sort of the particles is discontinuous in `p` where two particles cross along coordinate row 1, so the identities of the layer's Jacobian hold only away from those crossings.
+The layer suits systems that keep their particle order, not a collisionless plasma, whose sorted snapshots are not low-rank.
 """
 struct CanonicalSlotLayer{N, NOut, M, NSlots} <: AbstractExplicitLayer{N, NOut}
     function CanonicalSlotLayer{N, NOut, M, NSlots}() where {N, NOut, M, NSlots}
@@ -181,7 +186,7 @@ end
     InverseCanonicalSlotLayer{N, NOut, M, NSlots}()
     InverseCanonicalSlotLayer(M::Integer, d::Integer, NSlots::Integer)
 
-Analytic symplectic decoder lift (`inverse_layer(CanonicalSlotLayer(M, d, NSlots))`) mapping `NSlots` collective canonical slots back to `M` particles via ``\Phi_{\mathrm{rel}} \in \mathrm{St}(N_{\mathrm{slots}} - 1, M - 1)`` and the inverse Helmert matrix.
+Analytic symplectic decoder lift (`inverse_layer(CanonicalSlotLayer(M, d, NSlots))`) mapping `NSlots` canonical slots back to `M` particles via ``\Phi_{\mathrm{rel}} \in \mathrm{St}(N_{\mathrm{slots}} - 1, M - 1)`` and the inverse Helmert matrix.
 
 It takes the type parameters of [`CanonicalSlotLayer`](@ref), so its input dimension is `NOut = 2 NSlots d` and its output dimension is `N = 2Md`.
 For any ``\Phi_{\mathrm{rel}} \in \mathrm{St}(N_{\mathrm{slots}} - 1, M - 1)``, the decoder lift satisfies ``(\nabla \Psi_{\mathrm{slot}}^{\mathrm{dec}})^T \mathbb{J}_{2Md} \nabla \Psi_{\mathrm{slot}}^{\mathrm{dec}} = \mathbb{J}_{2 N_{\mathrm{slots}} d}`` and preserves ``(Q_{\mathrm{cm}}, P_{\mathrm{cm}})``.
