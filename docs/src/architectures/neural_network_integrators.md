@@ -61,6 +61,8 @@ GeometricMachineLearning.WideResNetLayer
 GeometricMachineLearning.ResNetLayer
 GeometricMachineLearning.ParametricResNet
 GeometricMachineLearning.ParametricResNetLayer
+GeometricMachineLearning.flatten_system_parameters
+GeometricMachineLearning.concatenate_array_with_parameters
 integrate(::NeuralNetwork{<:NeuralNetworkIntegrator}, ::NamedTuple{(:q, :p), Tuple{AT, AT}}) where {T, AT<:AbstractVector{T}}
 TransformerIntegrator
 integrate(::NeuralNetwork{<:TransformerIntegrator}, ::NamedTuple{(:q, :p), Tuple{AT, AT}}) where {T, AT<:AbstractMatrix{T}}

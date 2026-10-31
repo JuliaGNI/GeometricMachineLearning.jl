@@ -96,3 +96,23 @@ end
         ReducedComplexityModeling.DataLoader(reshape(Float32.(1:20), 2, 10);
         suppress_info = true)) == CPU()
 end
+
+# HamiltonianNeuralNetworks reaches these four names by qualified access, so they are public, not
+# exported, and documented. The docstring text comes from the module's metadata: `Docs.doc` has no
+# method until the REPL standard library loads, and with it returns a non-empty "No documentation
+# found" text for a name without a docstring.
+const QUALIFIED_BY_HNN = (:flatten_system_parameters, :concatenate_array_with_parameters,
+    :assign_q_and_p, :check_forcing_type)
+
+@testset "the names HamiltonianNeuralNetworks reaches are public, not exported, documented" begin
+    meta = Base.Docs.meta(GeometricMachineLearning)
+    for name in QUALIFIED_BY_HNN
+        @test Base.ispublic(GeometricMachineLearning, name)
+        @test !Base.isexported(GeometricMachineLearning, name)
+        @test Docs.hasdoc(GeometricMachineLearning, name)
+        binding = Docs.Binding(GeometricMachineLearning, name)
+        text = haskey(meta, binding) ?
+               join((join(d.text) for d in values(meta[binding].docs)), "\n") : ""
+        @test !isempty(strip(text))
+    end
+end
