@@ -301,6 +301,8 @@ end
     @test_throws re_iso_H IsometricRolloutLoss(step_id)
     @test_throws re_iso_H IsometricRolloutLoss(step_id; α_H = 0.1, H = nothing)
     @test IsometricRolloutLoss(step_id; α_H = 0.0).H === nothing
+    # With α_H = 0 a given H is not stored, so it is never called.
+    @test IsometricRolloutLoss(step_id; α_H = 0.0, H = H_lat_def).H === nothing
 
     l_cyc_def = CrossModalCycleLoss(:particles, :grid)
     @test l_cyc_def.mod_a === :particles
@@ -366,6 +368,10 @@ end
         F_split = (q = F_plus, p = F_minus)
         @test isapprox(@inferred(loss_c(nn, :grid, F_split)), val_c1;
             atol = 10 * eps(T), rtol = 10 * eps(T))
+        # The form with an external x̂ recombines a pre-split x and a pre-split x̂ in the same way.
+        @test isapprox(@inferred(loss_c(nn, :grid, F_hat, F_split)), val_c2;
+            atol = 10 * eps(T), rtol = 10 * eps(T))
+        @test @inferred(loss_c(nn, :grid, F_split, F_split)) === zero(T)
 
         # Independent perturbation F_pert != F_hat so z_hat != z and the latent penalty term is active (catches a dropped latent penalty)
         F_pert = F .+ T(0.5) .* ones(T, nx, nv)
@@ -479,9 +485,9 @@ end
         @test (@inferred loss_cyc(nn, (x_p_b, F_b))) == val_cyc_b
 
         # x_a and x_b with different numbers of samples raise a DimensionMismatch.
-        re_samples = r"^(?:DimensionMismatch: )?CrossModalCycleLoss: x_a and x_b hold different numbers of samples: their latent states have sizes \(2,\) and \(2, 3\)\.$"
+        re_samples = r"^(?:DimensionMismatch: )?CrossModalCycleLoss: the latent states of x_a and x_b have different sizes, \(2,\) and \(2, 3\)\.$"
         @test_throws re_samples loss_cyc(nn, x_p, F_b)
-        re_samples_rev = r"^(?:DimensionMismatch: )?CrossModalCycleLoss: x_a and x_b hold different numbers of samples: their latent states have sizes \(2, 3\) and \(2,\)\.$"
+        re_samples_rev = r"^(?:DimensionMismatch: )?CrossModalCycleLoss: the latent states of x_a and x_b have different sizes, \(2, 3\) and \(2,\)\.$"
         @test_throws re_samples_rev loss_cyc(nn, x_p_b, F)
 
         # A pre-split field (q = F⁺, p = F⁻) for x_b gives the value of the full field F. The

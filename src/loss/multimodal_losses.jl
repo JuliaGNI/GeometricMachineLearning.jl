@@ -67,7 +67,7 @@ end
 
 Smooth Charbonnier relative reconstruction loss, with a latent consistency term when the reconstruction ``\hat{x}`` is passed.
 
-Called as `loss(nn, m, x̂, x)` with an external ``\hat{x}`` of the same form as ``x``, it evaluates
+Called as `loss(nn, m, x̂, x)` with an external ``\hat{x}``, it evaluates
 
 ```math
 \mathcal{L}_{\mathrm{Charb}}(\hat{x}, x) =
@@ -83,8 +83,8 @@ Called as `loss(nn, m, x)` (or `loss(nn, x)` for the first modality), it evaluat
 \qquad \hat{x} = \mathrm{decode}(nn, m, \mathrm{encode}(nn, m, x)),
 ```
 
-and compares ``\hat{x}`` with ``x`` in the form that `decode` returns: a pre-split pair `(q = F⁺, p = F⁻)` of a [`BilinearStiefelLayer`](@ref) modality is recombined into the full field.
-In this form the latent term is zero for a weight-tied core with a right-invertible frontend, because then ``\mathrm{encode}(nn, m, \hat{x}) = \mathrm{encode}(nn, m, x)``, so the method skips it and `λ_lat` has no effect. For any other core, pass ``\hat{x} = \mathrm{decode}(nn, m, \mathrm{encode}(nn, m, x))`` to the form with an external ``\hat{x}`` to get the latent term.
+Both forms compare ``\hat{x}`` with ``x`` in the form that `decode` returns: a pre-split pair `(q = F⁺, p = F⁻)` of a [`BilinearStiefelLayer`](@ref) modality, passed as ``x`` or as ``\hat{x}``, is recombined into the full field.
+The form without ``\hat{x}`` skips the latent term, so `λ_lat` has no effect there. The term is zero for a weight-tied core with a right-invertible frontend, because then ``\mathrm{encode}(nn, m, \hat{x}) = \mathrm{encode}(nn, m, x)``. It need not be zero for any other core, nor for a [`CanonicalSortLayer`](@ref) or [`CanonicalSlotLayer`](@ref) frontend, whose decoder does not map into the chamber of sorted states in general. To get the latent term there, pass ``\hat{x} = \mathrm{decode}(nn, m, \mathrm{encode}(nn, m, x))`` to the form with an external ``\hat{x}``.
 
 Here ``\varepsilon > 0`` (default `1e-3`) regularizes the Frobenius norm at ``\hat{x} = x`` and ``x = 0``, and ``\lambda_{\mathrm{lat}} \ge 0`` (default `1e-2`) weights the latent re-encoding consistency penalty.
 
@@ -130,7 +130,8 @@ Base.@constprop :aggressive function (loss::CharbonnierRelativeLoss)(
     T = promote_type(_state_eltype(x̂), _state_eltype(x), _leaf_eltype(ps.core))
     z = encode(model, ps, modality, x)
     z_hat = encode(model, ps, modality, x̂)
-    _charbonnier_eval(loss, x̂, x, z_hat, z)::T
+    _charbonnier_eval(loss, _reconstruction_target(model, modality, x̂),
+        _reconstruction_target(model, modality, x), z_hat, z)::T
 end
 
 Base.@constprop :aggressive function (loss::CharbonnierRelativeLoss)(
@@ -196,7 +197,7 @@ where ``z_k = \mathrm{encode}(nn, m, x_k)``, ``\hat{z}_1 = z_1``, ``\hat{z}_{k+1
 The decoded state is compared with ``x_k`` in the form that `decode` returns: a pre-split pair `(q = F⁺, p = F⁻)` of a [`BilinearStiefelLayer`](@ref) modality is recombined into the full field.
 The weights default to `α_lat = 1.0`, `α_rec = 1.0`, and `α_H = 0.1`.
 
-`H` has no default: the loss requires a latent Hamiltonian `H` when `α_H > 0`, and the constructor raises an `ArgumentError` without one. A fixed latent energy such as ``\frac{1}{2}\|\hat{z}\|_2^2`` is not the energy of the system. With `α_H = 0`, `H` can be `nothing`, and the loss then has no energy term.
+`H` has no default: the loss requires a latent Hamiltonian `H` when `α_H > 0`, and the constructor raises an `ArgumentError` without one. A fixed latent energy such as ``\frac{1}{2}\|\hat{z}\|_2^2`` is not the energy of the system. With `α_H = 0`, `H` can be `nothing`, and the loss then has no energy term: it stores `nothing` in place of a given `H` and never calls it.
 The data, the output of `integrator` and the value of `H` have the element type of the network's parameters; another element type raises an `ArgumentError`.
 """
 struct IsometricRolloutLoss{IT, HT, T <: Real} <: NetworkLoss
@@ -217,8 +218,9 @@ struct IsometricRolloutLoss{IT, HT, T <: Real} <: NetworkLoss
         (iszero(α_H) || H !== nothing) || throw(ArgumentError(
             "IsometricRolloutLoss requires a latent Hamiltonian H when α_H > 0, got α_H = $α_H and H = nothing. Pass H, or set α_H = 0."))
         T = promote_type(typeof(float(α_lat)), typeof(float(α_rec)), typeof(float(α_H)))
-        new{typeof(integrator), typeof(H), T}(
-            integrator, H, T(α_lat), T(α_rec), T(α_H))
+        H_used = iszero(α_H) ? nothing : H
+        new{typeof(integrator), typeof(H_used), T}(
+            integrator, H_used, T(α_lat), T(α_rec), T(α_H))
     end
 end
 
@@ -358,7 +360,7 @@ end
 
 function _check_sample_count(z_a, z_b)
     size(z_a) == size(z_b) || throw(DimensionMismatch(
-        "CrossModalCycleLoss: x_a and x_b hold different numbers of samples: their latent states have sizes $(size(z_a)) and $(size(z_b))."))
+        "CrossModalCycleLoss: the latent states of x_a and x_b have different sizes, $(size(z_a)) and $(size(z_b))."))
     nothing
 end
 

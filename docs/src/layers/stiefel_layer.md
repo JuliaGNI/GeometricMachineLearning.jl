@@ -8,7 +8,7 @@ dynamical low-rank approximation (DLRA) states ``(X, S, V)``.
 Their ``(q, p)`` is canonical only for the structure ``\mathbb{J}`` that they declare on the
 parity coordinates. A frontend that is linear in ``f`` is not a Poisson map for the Vlasov
 bracket: with ``L^2``-orthonormal even and odd bases, the bracket linearised at ``f_0`` gives a
-singular ``\{Q, P\}``, not the identity.
+``\{Q, P\}`` that is not the identity and can be singular.
 
 ## Bilinear Grid and Spline Stiefel Layers
 
