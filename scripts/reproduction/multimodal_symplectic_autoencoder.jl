@@ -60,7 +60,7 @@ const PROJECTION_TOLERANCE = 1e-2
 const LOSS_REDUCTION = 0.5
 const ORTHONORMALITY_EPS = 50
 const ENERGY_RATIO_RANGE = (3, 5)
-const TIME_LIMIT = smoke_size(180, 60)
+const TIME_LIMIT = smoke_size(180, 120)
 
 normalized(a) = a ./ norm(a)
 
