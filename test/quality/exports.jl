@@ -101,8 +101,8 @@ end
 # exported, and documented. The docstring text comes from the module's metadata: `Docs.doc` has no
 # method until the REPL standard library loads, and with it returns a non-empty "No documentation
 # found" text for a name without a docstring.
-const QUALIFIED_BY_HNN = (:_flatten_system_parameters, :concatenate_array_with_parameters,
-    :assign_q_and_p, :_check_forcing_type)
+const QUALIFIED_BY_HNN = (:flatten_system_parameters, :concatenate_array_with_parameters,
+    :assign_q_and_p, :check_forcing_type)
 
 @testset "the names HamiltonianNeuralNetworks reaches are public, not exported, documented" begin
     meta = Base.Docs.meta(GeometricMachineLearning)

@@ -3,10 +3,10 @@
 # `NullParameters()` for a system without any.
 
 """
-    _flatten_system_parameters(μ::NamedTuple)
-    _flatten_system_parameters(::NullParameters)
-    _flatten_system_parameters(::Type{T}, μ::NamedTuple)
-    _flatten_system_parameters(::Type{T}, ::NullParameters)
+    flatten_system_parameters(μ::NamedTuple)
+    flatten_system_parameters(::NullParameters)
+    flatten_system_parameters(::Type{T}, μ::NamedTuple)
+    flatten_system_parameters(::Type{T}, ::NullParameters)
 
 Return the tuple `(v, layout)` of the flat `Vector` `v` of the system parameters `μ` and the
 `ParameterLayout` that puts such a vector back into the shape of `μ`. It is the `flatten` of
@@ -21,10 +21,10 @@ The function throws no error of its own; the errors of `flatten` propagate. It t
 for leaves of two element types. With `T`, it throws an `InexactError` for a value that `T` cannot
 hold, such as `0.5` for `T = Int`.
 """
-_flatten_system_parameters(μ::NamedTuple) = flatten(μ)
-_flatten_system_parameters(::NullParameters) = flatten(NamedTuple())
-_flatten_system_parameters(::Type{T}, μ::NamedTuple) where {T} = flatten(T, μ)
-_flatten_system_parameters(::Type{T}, ::NullParameters) where {T} = flatten(T, NamedTuple())
+flatten_system_parameters(μ::NamedTuple) = flatten(μ)
+flatten_system_parameters(::NullParameters) = flatten(NamedTuple())
+flatten_system_parameters(::Type{T}, μ::NamedTuple) where {T} = flatten(T, μ)
+flatten_system_parameters(::Type{T}, ::NullParameters) where {T} = flatten(T, NamedTuple())
 
 """
     concatenate_array_with_parameters(x::AbstractArray, ::NullParameters)
@@ -37,7 +37,7 @@ Return the input of a parametric layer: the state `x` with the flattened system 
 it, in the element type of `x`.
 
 - With `NullParameters()`, return `x` itself.
-- With one `μ`, flatten it with `_flatten_system_parameters(eltype(x), μ)`, and put it below a
+- With one `μ`, flatten it with `flatten_system_parameters(eltype(x), μ)`, and put it below a
   vector, below every column of a matrix, and below every column of every slice of a 3-tensor. The
   result has as many more rows than `x` as the flat `μ` has entries.
 - With a vector `μs`, put `μs[i]` below column `i` of the matrix `x`, and return the columns side
@@ -46,23 +46,23 @@ it, in the element type of `x`.
 Throws a `DimensionMismatch` when the number of columns of `x` is not `length(μs)`, an
 `ArgumentError` for an empty `μs` with a matrix of no columns, and an `InexactError` when a
 parameter has no value in the element type of `x`, such as `0.5` below an integer state. An error
-of `_flatten_system_parameters` propagates. An array of more than three dimensions with a
+of `flatten_system_parameters` propagates. An array of more than three dimensions with a
 `NamedTuple`, and a vector or an array of three or more dimensions with a vector of parameters,
 have no method.
 """
 concatenate_array_with_parameters(x::AbstractArray, ::NullParameters) = x
 
 function concatenate_array_with_parameters(x::AbstractVector, μ::NamedTuple)
-    vcat(x, first(_flatten_system_parameters(eltype(x), μ)))
+    vcat(x, first(flatten_system_parameters(eltype(x), μ)))
 end
 
 function concatenate_array_with_parameters(x::AbstractMatrix, μ::NamedTuple)
-    flat = first(_flatten_system_parameters(eltype(x), μ))
+    flat = first(flatten_system_parameters(eltype(x), μ))
     vcat(x, repeat(flat, 1, size(x, 2)))
 end
 
 function concatenate_array_with_parameters(x::AbstractArray{<:Any, 3}, μ::NamedTuple)
-    flat = first(_flatten_system_parameters(eltype(x), μ))
+    flat = first(flatten_system_parameters(eltype(x), μ))
     cat(x, repeat(reshape(flat, :, 1, 1), 1, size(x, 2), size(x, 3)); dims = 1)
 end
 
