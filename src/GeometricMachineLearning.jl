@@ -276,7 +276,7 @@ export LowRankStiefelLayer, DecodeLowRankStiefelLayer
 export FastDLRATraceLoss
 export SymmetricSymplecticAutoencoder
 export MultiModalSymplecticAutoencoder, encode, decode, translate
-export CharbonnierRelativeLoss, IsometricRolloutLoss, CrossModalCycleLoss
+export CharbonnierRelativeLoss, IsometricRolloutLoss, CrossModalLoss
 
 include("map_to_cpu.jl")
 

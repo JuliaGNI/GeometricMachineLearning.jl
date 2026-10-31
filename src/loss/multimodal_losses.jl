@@ -54,7 +54,17 @@ end
 # The data that a decoded state of a frontend is compared with, in the form that `decode`
 # returns for it. `decode` through a `BilinearStiefelLayer` returns the full field, so a pre-split
 # pair `(q = F⁺, p = F⁻)` is recombined into that field; every other input is compared as it is.
+# The two halves of a pre-split pair must have one element type.
+function _check_split_eltypes(q, p)
+    eltype(q) === eltype(p) || throw(ArgumentError(
+        "A pre-split pair (q = F⁺, p = F⁻) needs one element type, got q of element type $(eltype(q)) and p of element type $(eltype(p))."))
+    nothing
+end
+
+ChainRulesCore.@non_differentiable _check_split_eltypes(::Any, ::Any)
+
 function _reconstruction_target(::BilinearStiefelLayer, x::NamedTuple{(:q, :p)})
+    _check_split_eltypes(x.q, x.p)
     _parity_recombine(x.q, x.p)
 end
 _reconstruction_target(::Any, x) = x
@@ -65,9 +75,7 @@ end
 @doc raw"""
     CharbonnierRelativeLoss(; ε = 1e-3, λ_lat = 1e-2)
 
-Smooth Charbonnier relative reconstruction loss, with a latent consistency term when the reconstruction ``\hat{x}`` is passed.
-
-Called as `loss(nn, m, x̂, x)` with an external ``\hat{x}``, it evaluates
+Smooth Charbonnier relative reconstruction and latent consistency loss:
 
 ```math
 \mathcal{L}_{\mathrm{Charb}}(\hat{x}, x) =
@@ -75,16 +83,9 @@ Called as `loss(nn, m, x̂, x)` with an external ``\hat{x}``, it evaluates
 + \lambda_{\mathrm{lat}}\,\frac{\|\mathrm{encode}(nn, m, \hat{x}) - \mathrm{encode}(nn, m, x)\|_F^2}{\|x\|_F^2 + \varepsilon^2}.
 ```
 
-Called as `loss(nn, m, x)` (or `loss(nn, x)` for the first modality), it evaluates the reconstruction term alone,
+Called as `loss(nn, m, x̂, x)`, it takes an external reconstruction ``\hat{x}``. Called as `loss(nn, m, x)` (or `loss(nn, x)` for the first modality), it uses ``\hat{x} = \mathrm{decode}(nn, m, \mathrm{encode}(nn, m, x))``.
 
-```math
-\mathcal{L}_{\mathrm{Charb}}(x) =
-\frac{\sqrt{\|\hat{x} - x\|_F^2 + \varepsilon^2} - \varepsilon}{\sqrt{\|x\|_F^2 + \varepsilon^2}},
-\qquad \hat{x} = \mathrm{decode}(nn, m, \mathrm{encode}(nn, m, x)),
-```
-
-Both forms compare ``\hat{x}`` with ``x`` in the form that `decode` returns: a pre-split pair `(q = F⁺, p = F⁻)` of a [`BilinearStiefelLayer`](@ref) modality, passed as ``x`` or as ``\hat{x}``, is recombined into the full field.
-The form without ``\hat{x}`` skips the latent term, so `λ_lat` has no effect there. The term is zero for a weight-tied core with a right-invertible frontend, because then ``\mathrm{encode}(nn, m, \hat{x}) = \mathrm{encode}(nn, m, x)``. It need not be zero for any other core, nor for a [`CanonicalSortLayer`](@ref) or [`CanonicalSlotLayer`](@ref) frontend, whose decoder does not map into the chamber of sorted states in general. To get the latent term there, pass ``\hat{x} = \mathrm{decode}(nn, m, \mathrm{encode}(nn, m, x))`` to the form with an external ``\hat{x}``.
+Both forms compare ``\hat{x}`` with ``x`` in the form that `decode` returns: a pre-split pair `(q = F⁺, p = F⁻)` of a [`BilinearStiefelLayer`](@ref) modality, passed as ``x`` or as ``\hat{x}``, is recombined into the full field. The two halves of such a pair have one element type; halves of different element types raise an `ArgumentError`.
 
 Here ``\varepsilon > 0`` (default `1e-3`) regularizes the Frobenius norm at ``\hat{x} = x`` and ``x = 0``, and ``\lambda_{\mathrm{lat}} \ge 0`` (default `1e-2`) weights the latent re-encoding consistency penalty.
 
@@ -116,15 +117,6 @@ function _charbonnier_eval(
     (term_rec + term_lat)::T
 end
 
-# The reconstruction term alone, with `x̂` compared with `target` and normalised by `x`.
-function _charbonnier_rec_eval(
-        loss::CharbonnierRelativeLoss, x̂, target, x, ::Type{T}) where {T}
-    eps_T = T(loss.ε)
-    eps_sq = eps_T * eps_T
-    num_rec = sqrt(_frob_sq_diff(x̂, target) + eps_sq) - eps_T
-    (num_rec / sqrt(_frob_sq_norm(x) + eps_sq))::T
-end
-
 Base.@constprop :aggressive function (loss::CharbonnierRelativeLoss)(
         model::MultiModalSymplecticLayer, ps::NamedTuple, modality::Symbol, x̂, x)
     T = promote_type(_state_eltype(x̂), _state_eltype(x), _leaf_eltype(ps.core))
@@ -147,8 +139,10 @@ end
 Base.@constprop :aggressive function (loss::CharbonnierRelativeLoss)(
         model::MultiModalSymplecticLayer, ps::NamedTuple, modality::Symbol, x)
     T = promote_type(_state_eltype(x), _leaf_eltype(ps.core))
-    x̂ = decode(model, ps, modality, encode(model, ps, modality, x))
-    _charbonnier_rec_eval(loss, x̂, _reconstruction_target(model, modality, x), x, T)
+    z = encode(model, ps, modality, x)
+    x̂ = decode(model, ps, modality, z)
+    z_hat = encode(model, ps, modality, x̂)
+    _charbonnier_eval(loss, x̂, _reconstruction_target(model, modality, x), z_hat, z)::T
 end
 
 Base.@constprop :aggressive function (loss::CharbonnierRelativeLoss)(
@@ -178,7 +172,7 @@ Base.@constprop :aggressive function (loss::CharbonnierRelativeLoss)(
 end
 
 @doc raw"""
-    IsometricRolloutLoss(integrator; α_lat = 1.0, α_rec = 1.0, α_H = 0.1, H = nothing)
+    IsometricRolloutLoss(integrator; α_lat = 1.0, α_rec = 1.0, α_H = 0.0, H = nothing)
 
 Multi-step latent rollout, decoded trajectory reconstruction, and latent Hamiltonian conservation loss:
 
@@ -195,10 +189,10 @@ Multi-step latent rollout, decoded trajectory reconstruction, and latent Hamilto
 where ``z_k = \mathrm{encode}(nn, m, x_k)``, ``\hat{z}_1 = z_1``, ``\hat{z}_{k+1} = \mathrm{integrator}(\hat{z}_k)`` for ``k = 1, \dots, K - 1``, and `H` is a callable latent Hamiltonian.
 `H(ẑ)` takes the latent state as `encode` and `integrator` give it, a vector of length ``2n`` or a matrix of size ``(2n, B)`` for a batched snapshot, and returns one scalar, one value for a whole batch.
 The decoded state is compared with ``x_k`` in the form that `decode` returns: a pre-split pair `(q = F⁺, p = F⁻)` of a [`BilinearStiefelLayer`](@ref) modality is recombined into the full field.
-The weights default to `α_lat = 1.0`, `α_rec = 1.0`, and `α_H = 0.1`.
+The weights default to `α_lat = 1.0`, `α_rec = 1.0`, and `α_H = 0.0`, so `IsometricRolloutLoss(integrator)` has no energy term.
 
 `H` has no default: the loss requires a latent Hamiltonian `H` when `α_H > 0`, and the constructor raises an `ArgumentError` without one. A fixed latent energy such as ``\frac{1}{2}\|\hat{z}\|_2^2`` is not the energy of the system. With `α_H = 0`, `H` can be `nothing`, and the loss then has no energy term: it stores `nothing` in place of a given `H` and never calls it.
-The data, the output of `integrator` and the value of `H` have the element type of the network's parameters; another element type raises an `ArgumentError`.
+The data, the output of `integrator` and, with `α_H > 0`, the value of `H` have the element type of the network's parameters; another element type raises an `ArgumentError`.
 """
 struct IsometricRolloutLoss{IT, HT, T <: Real} <: NetworkLoss
     integrator::IT
@@ -211,7 +205,7 @@ struct IsometricRolloutLoss{IT, HT, T <: Real} <: NetworkLoss
             integrator;
             α_lat::Real = 1.0,
             α_rec::Real = 1.0,
-            α_H::Real = 0.1,
+            α_H::Real = 0.0,
             H = nothing)
         (α_lat >= 0 && α_rec >= 0 && α_H >= 0) || throw(ArgumentError(
             "IsometricRolloutLoss requires non-negative weights α_lat, α_rec, α_H, got α_lat = $α_lat, α_rec = $α_rec, α_H = $α_H."))
@@ -323,7 +317,7 @@ Base.@constprop :aggressive function (loss::IsometricRolloutLoss)(
 end
 
 @doc raw"""
-    CrossModalCycleLoss(mod_a::Symbol, mod_b::Symbol; β_align = 1.0, β_cross = 1.0)
+    CrossModalLoss(mod_a::Symbol, mod_b::Symbol; β_align = 1.0, β_cross = 1.0)
 
 Cross-modal paired latent alignment and cross-reconstruction loss between modalities `mod_a` and `mod_b`:
 
@@ -335,24 +329,24 @@ Cross-modal paired latent alignment and cross-reconstruction loss between modali
 
 where ``z_a = \mathrm{encode}(nn, a, x_a)`` and ``z_b = \mathrm{encode}(nn, b, x_b)``.
 The pair ``(x_a, x_b)`` is the same physical state in two modalities: the alignment term asks that both encode to one latent state, and the cross-reconstruction term asks that the latent state of ``x_a`` decodes to ``x_b``.
-The loss is not symmetric in ``a`` and ``b``: the cross-reconstruction term decodes only into modality `mod_b`, so `CrossModalCycleLoss(mod_b, mod_a)` is another loss.
+The loss is not symmetric in ``a`` and ``b``: the cross-reconstruction term decodes only into modality `mod_b`, so `CrossModalLoss(mod_b, mod_a)` is another loss.
 `decode(nn, b, z_a)` is compared with ``x_b`` in the form that `decode` returns: a pre-split pair `(q = F⁺, p = F⁻)` of a [`BilinearStiefelLayer`](@ref) modality is recombined into the full field.
 A batch is the sum of its samples' losses; `x_a` and `x_b` with different numbers of samples raise a `DimensionMismatch`.
 
 The weights are non-negative and default to `β_align = 1.0` and `β_cross = 1.0`; a negative or `NaN` weight raises an `ArgumentError`.
 `x_a` and `x_b` have the element type of the network's parameters; another element type raises an `ArgumentError`.
 """
-struct CrossModalCycleLoss{T <: Real} <: NetworkLoss
+struct CrossModalLoss{T <: Real} <: NetworkLoss
     mod_a::Symbol
     mod_b::Symbol
     β_align::T
     β_cross::T
 
-    function CrossModalCycleLoss(
+    function CrossModalLoss(
             mod_a::Symbol, mod_b::Symbol;
             β_align::Real = 1.0, β_cross::Real = 1.0)
         (β_align >= 0 && β_cross >= 0) || throw(ArgumentError(
-            "CrossModalCycleLoss requires non-negative weights β_align and β_cross, got β_align = $β_align, β_cross = $β_cross."))
+            "CrossModalLoss requires non-negative weights β_align and β_cross, got β_align = $β_align, β_cross = $β_cross."))
         T = promote_type(typeof(float(β_align)), typeof(float(β_cross)))
         new{T}(mod_a, mod_b, T(β_align), T(β_cross))
     end
@@ -360,18 +354,18 @@ end
 
 function _check_sample_count(z_a, z_b)
     size(z_a) == size(z_b) || throw(DimensionMismatch(
-        "CrossModalCycleLoss: the latent states of x_a and x_b have different sizes, $(size(z_a)) and $(size(z_b))."))
+        "CrossModalLoss: the latent states of x_a and x_b have different sizes, $(size(z_a)) and $(size(z_b))."))
     nothing
 end
 
 ChainRulesCore.@non_differentiable _check_sample_count(::Any, ::Any)
 
 Base.@constprop :aggressive function _cross_modal_eval(
-        loss::CrossModalCycleLoss, model::MultiModalSymplecticLayer,
+        loss::CrossModalLoss, model::MultiModalSymplecticLayer,
         ps::NamedTuple, x_a, x_b)
     T = _leaf_eltype(ps.core)
-    _check_eltype("CrossModalCycleLoss", "x_a", x_a, T)
-    _check_eltype("CrossModalCycleLoss", "x_b", x_b, T)
+    _check_eltype("CrossModalLoss", "x_a", x_a, T)
+    _check_eltype("CrossModalLoss", "x_b", x_b, T)
     z_a = encode(model, ps, loss.mod_a, x_a)
     z_b = encode(model, ps, loss.mod_b, x_b)
     _check_sample_count(z_a, z_b)
@@ -382,35 +376,35 @@ Base.@constprop :aggressive function _cross_modal_eval(
     res::T
 end
 
-Base.@constprop :aggressive function (loss::CrossModalCycleLoss)(
+Base.@constprop :aggressive function (loss::CrossModalLoss)(
         model::MultiModalSymplecticLayer, ps::NamedTuple,
         x_a::ArrayOrNamedTuple, x_b::ArrayOrNamedTuple)
     _cross_modal_eval(loss, model, ps, x_a, x_b)
 end
 
-Base.@constprop :aggressive function (loss::CrossModalCycleLoss)(
+Base.@constprop :aggressive function (loss::CrossModalLoss)(
         model::MultiModalSymplecticLayer, ps::NetworkParameters,
         x_a::ArrayOrNamedTuple, x_b::ArrayOrNamedTuple)
     _cross_modal_eval(loss, model, params(ps), x_a, x_b)
 end
 
-Base.@constprop :aggressive function (loss::CrossModalCycleLoss)(
+Base.@constprop :aggressive function (loss::CrossModalLoss)(
         nn::NeuralNetwork{<:MultiModalSymplecticAutoencoder},
         x_a::ArrayOrNamedTuple, x_b::ArrayOrNamedTuple)
     loss(nn.model, params(nn), x_a, x_b)
 end
 
-Base.@constprop :aggressive function (loss::CrossModalCycleLoss)(
+Base.@constprop :aggressive function (loss::CrossModalLoss)(
         model::MultiModalSymplecticLayer, ps::NamedTuple, pair::Tuple{Any, Any})
     _cross_modal_eval(loss, model, ps, pair[1], pair[2])
 end
 
-Base.@constprop :aggressive function (loss::CrossModalCycleLoss)(
+Base.@constprop :aggressive function (loss::CrossModalLoss)(
         model::MultiModalSymplecticLayer, ps::NetworkParameters, pair::Tuple{Any, Any})
     _cross_modal_eval(loss, model, params(ps), pair[1], pair[2])
 end
 
-Base.@constprop :aggressive function (loss::CrossModalCycleLoss)(
+Base.@constprop :aggressive function (loss::CrossModalLoss)(
         nn::NeuralNetwork{<:MultiModalSymplecticAutoencoder}, pair::Tuple{Any, Any})
     loss(nn.model, params(nn), pair)
 end

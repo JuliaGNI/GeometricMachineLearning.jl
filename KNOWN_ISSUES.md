@@ -76,24 +76,24 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   asserts the fields with `hasfield`. The fields stay because code outside this package may need
   them; removing them changes the type's parameters, its layout and those tests.
 
-### K41 · `CrossModalCycleLoss(nn, x_a, x_b)` with a mixed-component `NamedTuple` raises a `MethodError`, not the documented `ArgumentError`.
+### K41 · `CrossModalLoss(nn, x_a, x_b)` with a mixed-component `NamedTuple` raises a `MethodError`, not the documented `ArgumentError`.
 
-- **location:** `src/loss/multimodal_losses.jl:385`
+- **location:** `src/loss/multimodal_losses.jl:381`
 - **kind:** defect
 - **found:** #370
 - **evidence:**
-  The three `(nn, x_a, x_b)` methods (lines 385, 391 and 397) annotate `x_a` and `x_b` with
+  The three `(nn, x_a, x_b)` methods (lines 381, 387 and 393) annotate `x_a` and `x_b` with
   `ArrayOrNamedTuple`, and AbstractNeuralNetworks defines that as
   `Union{AbstractArray{T}, NamedTupleOfArrays{T}}`, with one element type `T` for every component.
   A `NamedTuple` whose `q` and `p` differ in element type matches no `T`, so dispatch fails before
-  `_check_eltype` (line 254) runs. In a fresh `julia --startup-file=no --project=.` process:
+  `_check_eltype` (line 250) runs. In a fresh `julia --startup-file=no --project=.` process:
 
   ```julia
   T = typeof((q = zeros(Float32, 2, 3), p = zeros(Float64, 2, 3)))
   T <: AbstractNeuralNetworks.ArrayOrNamedTuple   # false
   ```
 
-  The pair form `CrossModalCycleLoss(nn, (x_a, x_b))` takes `Tuple{Any, Any}`, reaches
+  The pair form `CrossModalLoss(nn, (x_a, x_b))` takes `Tuple{Any, Any}`, reaches
   `_check_eltype`, and is tested. The docstring says that another element type raises an
   `ArgumentError`. Closing this entry means widening the `x_a` and `x_b` annotations of the three
   methods, for example to `Union{AbstractArray, NamedTuple}`. That is a design call about what the
