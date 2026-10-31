@@ -38,7 +38,7 @@ Downloads.download(
 #
 #     julia --project=docs -e 'using DocInventories; DocInventories.save(
 #         "docs/inventories/GeometricOptimizers.toml",
-#         Inventory("https://juliagni.github.io/GeometricOptimizers.jl/v0.9.1/objects.inv";
+#         Inventory("https://juliagni.github.io/GeometricOptimizers.jl/v0.9.2/objects.inv";
 #                   root_url = "https://juliagni.github.io/GeometricOptimizers.jl/stable/"))'
 #
 # `save` is not exported — it has to be qualified. `root_url` is not written to the TOML either; it
@@ -228,6 +228,7 @@ _data_loader = "Data Loader" => [
 _tutorials = "Tutorials" => [
     "SympNets" => "tutorials/sympnet_tutorial.md",
     "Symplectic Autoencoders" => "tutorials/symplectic_autoencoder.md",
+    "Multi-Modal Symplectic Autoencoders" => "tutorials/multimodal_symplectic_autoencoder.md",
     "Grassmann Manifold" => "tutorials/grassmann_layer.md",
     "Volume-Preserving Attention" => "tutorials/volume_preserving_attention.md",
     "Matrix Attention" => "tutorials/matrix_softmax.md",
