@@ -29,6 +29,7 @@ using GeometricOptimizers: solve!, CompositeMethod, FactoredStiefelAdam, Adam,
                            TrainingOptimizer, optimization_step!
 using GeometricIntegrators: ImplicitMidpoint, StateVariable
 using LinearAlgebra: I, norm, qr, svd, Diagonal, diag, dot
+using NeuralNetworkParameters: parameter_eltype
 using Random: Xoshiro
 using Zygote: Zygote
 
@@ -172,7 +173,7 @@ gradient layers between; after this stage the network reconstructs the fluctuati
 SVD truncation error.
 
 The DLRA frontend's bases are the grid frontend's perturbed by `perturbed_basis` with
-`Random.Xoshiro(42)`, as a frontend that Stage I does not fit: the cross-reconstruction and
+`Random.Xoshiro(SEED)`, as a frontend that Stage I does not fit: the cross-reconstruction and
 alignment of `CrossModalLoss(:dlra, :grid)` are then not at their minimum, and Stage II aligns
 the two modalities.
 """
@@ -253,8 +254,6 @@ function joint_loss(data, particles)
     end
     (; loss, extra)
 end
-
-parameter_eltype(::NetworkParameters{T}) where {T} = T
 
 # The default step of Stage II: the manifold leaves under `FactoredStiefelAdam`, the others under
 # `Adam`, both with the step size `STEP_SIZE`.

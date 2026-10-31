@@ -39,15 +39,16 @@ core, and the core maps them to ``2n = 4`` latent coordinates.
   projects both onto Stiefel bases ``\Phi_x`` and ``\Phi_v``. A spline modality is the same layer
   with `metric_factors = (Rx, Rv)`, the factors of the mass matrices of the spline bases.
 - **The DLRA frontend**, [`LowRankStiefelLayer`](@ref), takes a factored state ``(X, S, V)``
-  with ``F = X S V^T`` and gives the coordinates that the grid frontend gives for ``F``, without
-  assembling ``F``.
+  with ``F = X S V^T`` and, with the same bases ``\Phi_x`` and ``\Phi_v``, gives the coordinates
+  that the grid frontend gives for ``F``, without assembling ``F``.
 - **The particle frontend**, [`CanonicalSlotLayer`](@ref)`(M, d, NSlots)`, takes ``M`` particles
   in ``d`` dimensions, sorts them, and keeps their centre of mass and the projection of their
   sorted relative modes onto ``N_{\mathrm{slots}} - 1`` slots with a Stiefel basis
   ``\Phi_{\mathrm{rel}}``.
 
-The latent coordinates are canonical for the structure ``\mathbb{J}_{2N}`` that each frontend
-declares on its coordinates. The two parity frontends are linear in ``F``, so they are not Poisson
+The frontend coordinates are canonical for the structure ``\mathbb{J}_{2N}`` that each frontend
+declares on them, and the symplectic core relates them to latent coordinates canonical for
+``\mathbb{J}_{2n}``. The two parity frontends are linear in ``F``, so they are not Poisson
 maps for the Vlasov bracket; the docstring of [`BilinearStiefelLayer`](@ref) says more.
 
 [`encode`](@ref)`(nn, modality, x)` applies a frontend and the core's encoder,

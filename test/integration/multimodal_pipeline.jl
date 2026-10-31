@@ -33,20 +33,24 @@ function euclidean_adam_step(nn; β₁ = 0.9, β₂ = 0.99, δ = 1e-8)
     end
 end
 
-# A cycle term in place of the cross-reconstruction term, with `β_align = 0` and no reconstruction
-# term: `β_cycle ‖encode(grid, decode(grid, z)) - z‖²`, with `z` the latent state of the DLRA
-# snapshots and `β_cycle = 0.1`. The core is weight-tied, so the term is round-off.
+# The Stage II loss with a cycle term in place of `CrossModalLoss` and no particle term: the
+# reconstruction term plus `β_cycle ‖encode(grid, decode(grid, z)) - z‖²`, with `z` the latent
+# state of the DLRA snapshots and `β_cycle = 0.1`. The core is weight-tied, so the cycle term is
+# round-off, and Stage I leaves the reconstruction term at its SVD truncation error: the sum
+# stays near its value after Stage I. Without the reconstruction term, the assertion would compare
+# two round-off values.
 function cycle_loss(data, particles)
     T = eltype(data.δF)
+    reconstruction = CharbonnierRelativeLoss()
     function loss(model, ps)
         z = encode(model, ps, :dlra, data.dlra)
+        reconstruction(model, ps, :grid, data.δF) +
         T(0.1) * sum(abs2, encode(model, ps, :grid, decode(model, ps, :grid, z)) .- z)
     end
     (; loss, extra = nothing)
 end
 
-# The cross-reconstruction term in the setting of `cycle_loss`: `β_align = 0`, no
-# reconstruction term and no further term.
+# The cross-reconstruction term alone: `β_align = 0`, no reconstruction term and no further term.
 function cross_reconstruction_loss(data, particles)
     cross = CrossModalLoss(:dlra, :grid; β_align = 0.0)
     (; loss = (model, ps) -> cross(model, ps, data.dlra, data.δF), extra = nothing)
