@@ -191,7 +191,7 @@ where ``z_k = \mathrm{encode}(nn, m, x_k)``, ``\hat{z}_1 = z_1``, ``\hat{z}_{k+1
 The decoded state is compared with ``x_k`` in the form that `decode` returns: a pre-split pair `(q = F⁺, p = F⁻)` of a [`BilinearStiefelLayer`](@ref) modality is recombined into the full field.
 The weights default to `α_lat = 1.0`, `α_rec = 1.0`, and `α_H = 0.0`, so `IsometricRolloutLoss(integrator)` has no energy term.
 
-`H` has no default: the loss requires a latent Hamiltonian `H` when `α_H > 0`, and the constructor raises an `ArgumentError` without one. A fixed latent energy such as ``\frac{1}{2}\|\hat{z}\|_2^2`` is not the energy of the system. With `α_H = 0`, `H` can be `nothing`, and the loss then has no energy term: it stores `nothing` in place of a given `H` and never calls it.
+`H` has no default: the loss requires a latent Hamiltonian `H` when `α_H > 0`, and the constructor raises an `ArgumentError` without one. A fixed latent energy such as ``\frac{1}{2}\|\hat{z}\|_2^2`` is not the energy of the system. With `α_H = 0`, the loss has no energy term and takes no `H`: a given `H` would have no effect, so the constructor raises an `ArgumentError`.
 The data, the output of `integrator` and, with `α_H > 0`, the value of `H` have the element type of the network's parameters; another element type raises an `ArgumentError`.
 """
 struct IsometricRolloutLoss{IT, HT, T <: Real} <: NetworkLoss
@@ -211,10 +211,11 @@ struct IsometricRolloutLoss{IT, HT, T <: Real} <: NetworkLoss
             "IsometricRolloutLoss requires non-negative weights α_lat, α_rec, α_H, got α_lat = $α_lat, α_rec = $α_rec, α_H = $α_H."))
         (iszero(α_H) || H !== nothing) || throw(ArgumentError(
             "IsometricRolloutLoss requires a latent Hamiltonian H when α_H > 0, got α_H = $α_H and H = nothing. Pass H, or set α_H = 0."))
+        (!iszero(α_H) || H === nothing) || throw(ArgumentError(
+            "IsometricRolloutLoss: H has no effect when α_H = 0, got α_H = $α_H and a latent Hamiltonian H. Set α_H > 0, or pass no H."))
         T = promote_type(typeof(float(α_lat)), typeof(float(α_rec)), typeof(float(α_H)))
-        H_used = iszero(α_H) ? nothing : H
-        new{typeof(integrator), typeof(H_used), T}(
-            integrator, H_used, T(α_lat), T(α_rec), T(α_H))
+        new{typeof(integrator), typeof(H), T}(
+            integrator, H, T(α_lat), T(α_rec), T(α_H))
     end
 end
 

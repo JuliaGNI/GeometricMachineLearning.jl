@@ -302,8 +302,10 @@ end
     @test_throws re_iso_H IsometricRolloutLoss(step_id; α_H = 0.1)
     @test_throws re_iso_H IsometricRolloutLoss(step_id; α_H = 0.1, H = nothing)
     @test IsometricRolloutLoss(step_id; α_H = 0.0).H === nothing
-    # With α_H = 0 a given H is not stored, so it is never called.
-    @test IsometricRolloutLoss(step_id; α_H = 0.0, H = H_lat_def).H === nothing
+    # With α_H = 0 a given H has no effect, so the constructor refuses it.
+    re_iso_H0 = r"^(?:ArgumentError: )?IsometricRolloutLoss: H has no effect when α_H = 0, got α_H = 0\.0 and a latent Hamiltonian H\. Set α_H > 0, or pass no H\.$"
+    @test_throws re_iso_H0 IsometricRolloutLoss(step_id; H = H_lat_def)
+    @test_throws re_iso_H0 IsometricRolloutLoss(step_id; α_H = 0.0, H = H_lat_def)
 
     l_cyc_def = CrossModalLoss(:particles, :grid)
     @test l_cyc_def.mod_a === :particles
