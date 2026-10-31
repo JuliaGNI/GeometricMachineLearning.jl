@@ -306,6 +306,10 @@ end
     re_iso_H0 = r"^(?:ArgumentError: )?IsometricRolloutLoss: H has no effect when α_H = 0, got α_H = 0\.0 and a latent Hamiltonian H\. Set α_H > 0, or pass no H\.$"
     @test_throws re_iso_H0 IsometricRolloutLoss(step_id; H = H_lat_def)
     @test_throws re_iso_H0 IsometricRolloutLoss(step_id; α_H = 0.0, H = H_lat_def)
+    # A negative zero is zero: it is refused with an H and accepted without one.
+    re_iso_H0_neg = r"^(?:ArgumentError: )?IsometricRolloutLoss: H has no effect when α_H = 0, got α_H = -0\.0 and a latent Hamiltonian H\. Set α_H > 0, or pass no H\.$"
+    @test_throws re_iso_H0_neg IsometricRolloutLoss(step_id; α_H = -0.0, H = H_lat_def)
+    @test IsometricRolloutLoss(step_id; α_H = -0.0).H === nothing
 
     l_cyc_def = CrossModalLoss(:particles, :grid)
     @test l_cyc_def.mod_a === :particles
