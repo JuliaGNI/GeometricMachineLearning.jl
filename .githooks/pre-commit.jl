@@ -107,7 +107,11 @@ function formatting(files)
         id = Base.identify_package("JuliaFormatter")
         id === nothing &&
             error("JuliaFormatter is in no environment of the load path; $env is first")
-        format = Base.require(id).format
+        formatter = Base.require(id)
+        version = pkgversion(formatter)
+        version !== nothing && version >= v"2.14" ||
+            error("JuliaFormatter $version is older than 2.14, which the hook needs; $env pins it")
+        format = formatter.format
         filter(f -> !Base.invokelatest(format, f; overwrite = false, throw_on_error = true), files)
     catch e
         println(stderr, sprint(showerror, e))
@@ -245,7 +249,7 @@ function main()
     end
     cd(root)
 
-    jl = staged("--diff-filter=ACMR", "--", "*.jl")
+    jl = staged("--diff-filter=ACMRT", "--", "*.jl")
     jl === nothing && refuse_unlisted()
     tests = staged("--", "test/")
     tests === nothing && refuse_unlisted()

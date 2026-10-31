@@ -10,7 +10,7 @@
 if ! command -v julia >/dev/null 2>&1; then
     # A commit with no staged .jl file and no change below test/ runs no stage, so it needs no
     # julia. A git that cannot list the staged files refuses, as pre-commit.jl does.
-    if ! jl=$(git diff --cached --name-only --diff-filter=ACMR -- '*.jl') ||
+    if ! jl=$(git diff --cached --name-only --diff-filter=ACMRT -- '*.jl') ||
         ! tests=$(git diff --cached --name-only -- test/); then
         printf 'pre-commit: could not list staged files.\n' >&2
         exit 1
