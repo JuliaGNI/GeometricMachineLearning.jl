@@ -1,8 +1,10 @@
 """
     assign_q_and_p(x::AbstractArray, N::Integer)
 
-Split `x` along its first axis, and return the `(q, p)` `NamedTuple` of copies of its first `N` rows
-and of the `N` rows after them. Rows from `2N + 1` on are ignored, and the other axes are kept.
+Split `x` along its first axis, and return the `(q, p)` `NamedTuple` of its first `N` rows and of
+the `N` rows after them, as indexing `x` returns them: copies for an `Array`, and ranges for a
+range. Rows from `2N + 1` on are ignored, and the other axes are kept. For `N ≤ 0` both halves are
+empty.
 
 Throws a `BoundsError` when `x` has fewer than `2N` rows, and an `ArgumentError` when `x` has no
 axis.
