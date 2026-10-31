@@ -20,8 +20,6 @@ The function throws no error of its own; the errors of `flatten` propagate. It t
 `ArgumentError` for a leaf of `μ` that `flatten` cannot copy, such as a `String`, and, without `T`,
 for leaves of two element types. With `T`, it throws an `InexactError` for a value that `T` cannot
 hold, such as `0.5` for `T = Int`.
-
-`HamiltonianNeuralNetworks` calls this function by its qualified name, so it is public.
 """
 _flatten_system_parameters(μ::NamedTuple) = flatten(μ)
 _flatten_system_parameters(::NullParameters) = flatten(NamedTuple())
@@ -49,9 +47,8 @@ Throws a `DimensionMismatch` when the number of columns of `x` is not `length(μ
 `ArgumentError` for an empty `μs` with a matrix of no columns, and an `InexactError` when a
 parameter has no value in the element type of `x`, such as `0.5` below an integer state. An error
 of `_flatten_system_parameters` propagates. An array of more than three dimensions with a
-`NamedTuple`, and a vector with a vector of parameters, have no method.
-
-`HamiltonianNeuralNetworks` calls this function by its qualified name, so it is public.
+`NamedTuple`, and a vector or an array of three or more dimensions with a vector of parameters,
+have no method.
 """
 concatenate_array_with_parameters(x::AbstractArray, ::NullParameters) = x
 
