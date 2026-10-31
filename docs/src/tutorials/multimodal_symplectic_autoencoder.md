@@ -112,8 +112,7 @@ the sort keeps.
 The `CrossModalLoss` aligns the DLRA frontend, which Stage I does not fit, with the grid
 frontend. The particle states of the synthetic dataset are built with a relative basis that is
 not the network's, so Stage II also has to learn ``\Phi_{\mathrm{rel}}``. The optimizer steps the
-Stiefel leaves
-with
+Stiefel leaves with
 [`FactoredStiefelAdam`](@extref GeometricOptimizers GeometricOptimizers.FactoredStiefelAdam),
 a direct tangent-space Adam of `GeometricOptimizers` that keeps each leaf on the manifold, and
 all other leaves with

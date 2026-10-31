@@ -67,7 +67,7 @@ const TIME_LIMIT = smoke_size(180, 120)
 
 normalized(a) = a ./ norm(a)
 
-# The full field of an even part `Fp` and an odd part `Fm` on the positive half of the velocity
+# The full field of an even part `Fp` and an odd part `Fm` on the first half of the velocity
 # grid: `F[:, j] = (Fp + Fm) / √2` and `F[:, NV + 1 - j] = (Fp - Fm) / √2` for `j ≤ NV / 2`.
 function recombine(Fp::AbstractMatrix{T}, Fm::AbstractMatrix{T}) where {T}
     h = NV ÷ 2
@@ -359,11 +359,10 @@ Run the three stages in precision `T`, assert each stage's claim, and return wha
 and the trained network `nn`.
 
 The keywords name the parts of the stages: `initialize!(nn, data)` is Stage I,
-`stage_II_loss(data, particles)` returns the loss of Stage II as `stage_II!` takes it, and
-`stage_II_step(nn)` its step,
-and `shift` is passed to `stage_III`. The test of this script replaces each of them by a
-defect and asserts that the matching assertion fails, and replaces the Stage II loss by the
-cross-reconstruction term alone and asserts that it passes.
+`stage_II_loss(data, particles)` returns the loss of Stage II as `stage_II!` takes it,
+`stage_II_step(nn)` returns its step, and `shift` is passed to `stage_III`. The test of this
+script replaces each of them by a defect and asserts that the matching assertion fails, and
+replaces the Stage II loss by the cross-reconstruction term alone and asserts that it passes.
 """
 function run_pipeline(::Type{T}; verbose::Bool = true, initialize! = stage_I!,
         stage_II_loss = joint_loss, stage_II_step = composite_step,
