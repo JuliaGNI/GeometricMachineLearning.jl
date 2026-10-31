@@ -49,8 +49,8 @@ const N_PARTICLES = 8
 const N_SNAPSHOTS = smoke_size(32, 8)
 const N_STAGE_II_STEPS = smoke_size(1000, 400)
 const STEP_SIZE = 1e-3
-# The distance of the DLRA frontend's bases from the grid frontend's, and of the particle states'
-# relative basis from the network's; see `perturbed_basis`.
+# The factor of the random matrix that perturbs the grid frontend's bases into the DLRA frontend's,
+# and the network's relative basis into that of the particle states; see `perturbed_basis`.
 const BASIS_DISTANCE = 0.1
 const NOISE = 1e-3
 # Stage III integrates over `(0, TIME_INTERVAL)` in each of `N_STAGE_III_STEPS` steps.
@@ -153,8 +153,8 @@ end
 
 # The orthonormal basis of the columns of `Y + BASIS_DISTANCE P` that QR gives, with each column's
 # sign chosen so that the diagonal of `R` is positive: each column then stays near that of `Y`.
-# Adam moves each parameter by about the step size per step, so the distance is one that the steps
-# of Stage II cover.
+# Adam moves each parameter by about the step size per step, so the perturbation is one that the
+# steps of Stage II cover.
 function perturbed_basis(Y::AbstractMatrix{T}, P::AbstractMatrix{T}) where {T}
     factors = qr(Y + T(BASIS_DISTANCE) * P)
     Matrix(factors.Q) * Diagonal(sign.(diag(factors.R)))
