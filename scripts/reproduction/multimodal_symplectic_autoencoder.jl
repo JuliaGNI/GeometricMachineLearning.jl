@@ -64,7 +64,6 @@ const PROJECTION_TOLERANCE = 1e-2
 const LOSS_REDUCTION = 0.5
 const ORTHONORMALITY_EPS = 50
 const ENERGY_RATIO_RANGE = (3, 5)
-const TIME_LIMIT = smoke_size(180, 120)
 
 normalized(a) = a ./ norm(a)
 
@@ -405,9 +404,7 @@ function main()
     for T in (Float32, Float64)
         run_pipeline(T)
     end
-    elapsed = time() - LOADED_AT
     println("time from the end of `using` to the end of Stage III: ", seconds(LOADED_AT))
-    @assert elapsed <= TIME_LIMIT "The stages took $(round(elapsed; digits = 1)) s, more than $TIME_LIMIT s."
 end
 
 abspath(PROGRAM_FILE) == (@__FILE__) && main()

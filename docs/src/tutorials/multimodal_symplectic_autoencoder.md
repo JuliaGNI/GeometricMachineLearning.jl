@@ -180,7 +180,6 @@ latent integrator on decoded trajectories, use [`IsometricRolloutLoss`](@ref).
 
 ## Run time
 
-The script prints the time from the end of `using` to the end of Stage III, compilation included,
-and asserts a limit on it: 120 seconds in smoke mode and 180 seconds in full mode. Almost all of
-the time is compilation: the first gradient of the Stage II loss and the first integration of each
-precision.
+The script prints the time from the end of `using` to the end of Stage III, compilation included.
+It asserts no limit on it. Almost all of the time is compilation: the first gradient of the Stage II
+loss and the first integration of each precision.
