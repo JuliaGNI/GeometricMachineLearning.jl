@@ -8,7 +8,17 @@
 # gate and the suite. git's ref lines reach it on stdin.
 
 if ! command -v julia >/dev/null 2>&1; then
-    printf 'pre-push: julia is not on the PATH.\n' >&2
-    exit 1
+    # A push that updates no main or master runs no suite, so it needs no julia. The remote ref
+    # is the third field of each line, as in pre-push.jl's gate.
+    while read -r _ _ remote_ref _; do
+        case $remote_ref in
+            refs/heads/main | refs/heads/master)
+                printf 'pre-push: julia is not on the PATH.\n' >&2
+                exit 1
+                ;;
+        esac
+    done
+    printf '\npre-push  not main/master — skipping the suite, CI will run it.\n\n'
+    exit 0
 fi
 exec julia --startup-file=no "$(dirname "$0")/pre-push.jl" "$@"

@@ -30,9 +30,9 @@ the caller refuses on `nothing`.
 """
 function staged(args...)
     out = IOBuffer()
-    p = run(pipeline(ignorestatus(`git diff --cached --name-only $args`); stdout = out))
+    p = run(pipeline(ignorestatus(`git diff --cached --name-only -z $args`); stdout = out))
     success(p) || return nothing
-    return filter(!isempty, split(String(take!(out)), '\n'))
+    return filter(!isempty, split(String(take!(out)), '\0'))
 end
 
 """
@@ -108,7 +108,7 @@ function formatting(files)
         id === nothing &&
             error("JuliaFormatter is in no environment of the load path; $env is first")
         format = Base.require(id).format
-        filter(f -> !Base.invokelatest(format, f; overwrite = false), files)
+        filter(f -> !Base.invokelatest(format, f; overwrite = false, throw_on_error = true), files)
     catch e
         println(stderr, sprint(showerror, e))
         files
@@ -245,7 +245,7 @@ function main()
     end
     cd(root)
 
-    jl = staged("--diff-filter=ACM", "--", "*.jl")
+    jl = staged("--diff-filter=ACMR", "--", "*.jl")
     jl === nothing && refuse_unlisted()
     tests = staged("--", "test/")
     tests === nothing && refuse_unlisted()
