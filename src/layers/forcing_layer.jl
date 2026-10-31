@@ -5,6 +5,14 @@ const f_activation_default = tanh
 # dissipation enters; the `Q` and `P` suffixes name the component the forcing *reads*.
 const FORCING_TYPES = (:Q, :P, :QP)
 
+"""
+    _check_forcing_type(type::Symbol)
+
+Return `type` when it is one of the forcing types `:Q`, `:P` and `:QP`, and throw an `ArgumentError`
+otherwise. The type names the component that the forcing reads; every type adds to `p`.
+
+`HamiltonianNeuralNetworks` calls this function by its qualified name, so it is public.
+"""
 function _check_forcing_type(type::Symbol)
     type in FORCING_TYPES || throw(ArgumentError(
         "the forcing type is `:$(type)`; it is `:Q`, `:P` or `:QP`."))

@@ -6,4 +6,5 @@ We typically store training data as *tensors with three axes* in `GeometricMachi
 
 ```@docs
 GeometricMachineLearning._mul
+GeometricMachineLearning.assign_q_and_p
 ```

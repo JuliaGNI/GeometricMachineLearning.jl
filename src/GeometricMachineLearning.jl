@@ -236,6 +236,10 @@ include("architectures/parametric_resnet.jl")
 
 # The training of a network that takes the parameters of the system beside its input.
 public apply_parametric, ParametricLoss
+# `HamiltonianNeuralNetworks` calls these four functions by their qualified names, so they keep
+# their names and are public and documented. They are not exported.
+public _flatten_system_parameters, concatenate_array_with_parameters, assign_q_and_p,
+       _check_forcing_type
 
 include("reduced_system/reduced_system.jl")
 
