@@ -42,8 +42,9 @@ core, and the core maps them to ``2n = 4`` latent coordinates.
   with ``F = X S V^T`` and gives the coordinates that the grid frontend gives for ``F``, without
   assembling ``F``.
 - **The particle frontend**, [`CanonicalSlotLayer`](@ref)`(M, d, NSlots)`, takes ``M`` particles
-  in ``d`` dimensions, sorts them, and keeps their centre of mass and ``N_{\mathrm{slots}} - 1``
-  relative modes in a Stiefel basis ``\Phi_{\mathrm{rel}}``.
+  in ``d`` dimensions, sorts them, and keeps their centre of mass and the projection of their
+  sorted relative modes onto ``N_{\mathrm{slots}} - 1`` slots with a Stiefel basis
+  ``\Phi_{\mathrm{rel}}``.
 
 The latent coordinates are canonical for the structure ``\mathbb{J}_{2N}`` that each frontend
 declares on its coordinates. The two parity frontends are linear in ``F``, so they are not Poisson
@@ -110,7 +111,8 @@ The particle states of the synthetic dataset are built with a relative basis tha
 network's, so Stage II has to learn ``\Phi_{\mathrm{rel}}``. The optimizer steps the Stiefel leaves
 with `FactoredStiefelAdam`, a direct tangent-space Adam of `GeometricOptimizers` that keeps each
 leaf on the manifold, and all other leaves with
-[`Adam`](@extref GeometricOptimizers GeometricOptimizers.Adam):
+[`Adam`](@extref GeometricOptimizers GeometricOptimizers.Adam). With `loss(model, ps)` the sum of
+the three terms, the training loop of the smoke mode is:
 
 ```julia
 using GeometricOptimizers: TrainingOptimizer, CompositeMethod, FactoredStiefelAdam, Adam,

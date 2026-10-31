@@ -33,10 +33,9 @@ function euclidean_adam_step(nn; β₁ = 0.9, β₂ = 0.99, δ = 1e-8)
     end
 end
 
-# The cross-modal term that `CrossModalLoss` replaced, with `β_align = 0` and no reconstruction
-# term: `β_cycle ‖encode(grid, decode(grid, z)) - z‖²` with `z` the latent state of the DLRA
-# snapshots and the weight `β_cycle = 0.1` that the term had. The core is weight-tied, so the term
-# is round-off.
+# A cycle term in place of the cross-reconstruction term, with `β_align = 0` and no reconstruction
+# term: `β_cycle ‖encode(grid, decode(grid, z)) - z‖²`, with `z` the latent state of the DLRA
+# snapshots and `β_cycle = 0.1`. The core is weight-tied, so the term is round-off.
 function cycle_loss(data, particles)
     T = eltype(data.δF)
     function loss(model, ps)
