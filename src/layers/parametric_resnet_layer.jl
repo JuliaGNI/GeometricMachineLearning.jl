@@ -36,7 +36,7 @@ end
 
 function ParametricResNetLayer(dim::Integer, width::Integer, activation = identity;
         parameters::OptionalParameters = NullParameters(), return_parameters::Bool = false)
-    flat_parameters, layout = _flatten_system_parameters(parameters)
+    flat_parameters, layout = flatten_system_parameters(parameters)
     ParametricResNetLayer{dim, dim, typeof(activation), typeof(layout), return_parameters}(
         width, activation, length(flat_parameters), layout)
 end
