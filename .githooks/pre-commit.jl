@@ -153,7 +153,16 @@ function lint(files)
         println("$(YELLOW)fatou lint: skipped — fatou is not on the PATH$(NC)")
         return
     end
-    code, out = run_boxed(`fatou lint --force-exclude --output concise $files`, 60)
+    # A fatou on the PATH that the system cannot start, such as a script whose interpreter is
+    # missing, makes the start throw; the stage is advisory, so it is skipped.
+    code, out = try
+        run_boxed(`fatou lint --force-exclude --output concise $files`, 60)
+    catch e
+        e isa Base.IOError || rethrow()
+        println("$(YELLOW)fatou lint: could not start — stage skipped, not a failure$(NC)")
+        println(indent(split(sprint(showerror, e), '\n')))
+        return
+    end
     if code === nothing
         println("$(YELLOW)fatou lint: timed out after 60s — stage skipped, not a failure$(NC)")
         println("    A staged file is pathological for fatou.")
