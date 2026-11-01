@@ -5,7 +5,13 @@ const f_activation_default = tanh
 # dissipation enters; the `Q` and `P` suffixes name the component the forcing *reads*.
 const FORCING_TYPES = (:Q, :P, :QP)
 
-function _check_forcing_type(type::Symbol)
+"""
+    check_forcing_type(type::Symbol)
+
+Return `type` when it is one of the forcing types `:Q`, `:P` and `:QP`, and throw an `ArgumentError`
+otherwise. The type names the component that the forcing reads; every type adds to `p`.
+"""
+function check_forcing_type(type::Symbol)
     type in FORCING_TYPES || throw(ArgumentError(
         "the forcing type is `:$(type)`; it is `:Q`, `:P` or `:QP`."))
     type
@@ -76,10 +82,10 @@ function ForcingLayer(dim::Integer, width::Integer = dim,
         parameters::OptionalParameters = NullParameters(),
         return_parameters::Bool = false, type::Symbol = :P)
     _check_forcing_dimension(dim)
-    _check_forcing_type(type)
+    check_forcing_type(type)
     # The parameters of the system fix the length of the flat vector the layer takes beside its
     # state. They are not stored: the `μ` the layer is called with is the one that enters.
-    parameter_length = length(first(_flatten_system_parameters(parameters)))
+    parameter_length = length(first(flatten_system_parameters(parameters)))
     model = _forcing_model(
         Int(dim), Int(width), Int(nhidden), parameter_length, activation, type)
     ForcingLayer{Int(dim), Int(dim), type, return_parameters, typeof(model)}(

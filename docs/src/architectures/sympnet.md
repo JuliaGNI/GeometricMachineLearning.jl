@@ -247,6 +247,7 @@ LASympNet
 GSympNet
 GeometricMachineLearning.ForcedSympNet
 GeometricMachineLearning.ForcingLayer
+GeometricMachineLearning.check_forcing_type
 GeometricMachineLearning.ForcingLayerQ
 GeometricMachineLearning.ForcingLayerP
 GeometricMachineLearning.ForcingLayerQP
