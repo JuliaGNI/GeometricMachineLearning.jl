@@ -50,9 +50,10 @@ a program that signal `n` ended, or `nothing` when the time ran out; and the out
 
 The limit covers the output too: a child of `cmd` can hold the stream open after `cmd` ends.
 After a time-out, the output is not read, since a process that left the group can hold the
-stream for ever; the box returns once the group is gone, or 6 s after the SIGTERM. The box
-closes its SIGKILL timer before it returns, so no signal reaches the group ID once it is free
-for reuse.
+stream for ever; the box returns once the group is gone, or 6 s after the SIGTERM, measured on
+the monotonic clock. The box closes its timers before it returns. A timer whose callback is
+already queued when `close` runs still runs it, so a signal can still reach the group ID after
+the box returns, when the ID can belong to another group.
 """
 function run_boxed(cmd, seconds)
     out = Pipe()
@@ -65,13 +66,13 @@ function run_boxed(cmd, seconds)
     push!(BOXED, group)
     close(out.in)
     reader = @async read(out, String)
-    stopped = Ref{Union{Nothing, Float64}}(nothing)
+    stopped = Ref{Union{Nothing, UInt64}}(nothing)
     killer = Ref{Union{Nothing, Timer}}(nothing)
     # `stopped` is set last, so the box finds the SIGKILL timer whenever it sees the stop.
     stop = Timer(seconds) do _
         killer[] = Timer(_ -> signal_group(group, Base.SIGKILL), 5)
         signal_group(group, Base.SIGTERM)
-        stopped[] = time()
+        stopped[] = time_ns()
     end
     wait(p)
     while stopped[] === nothing && !istaskdone(reader)
@@ -79,7 +80,7 @@ function run_boxed(cmd, seconds)
     end
     close(stop)
     if stopped[] !== nothing
-        while signal_group(group, 0) == 0 && time() < stopped[] + 6
+        while signal_group(group, 0) == 0 && time_ns() - stopped[] < 6_000_000_000
             sleep(0.1)
         end
         close(killer[])
@@ -123,11 +124,22 @@ end
 
 """
 The first two lines of the error `e`, joined with ` — `: its message and, for a parse error of
-TOML or of JuliaFormatter, the line that gives the location. `showerror` runs in the latest
-world, so the method of a package that the hook loads at run time, such as JuliaFormatter's
-parser, prints the error.
+TOML or of JuliaFormatter, the line that gives the location. A `ParseError` of Julia, Base's or
+the one that JuliaFormatter's parser throws, prints its reason after ` ── ` on a line below
+those two, behind the marker of the span, such as `#└────┘`, which holds no space; the text
+after the first ` ── ` of the last such line follows. `showerror` runs in the latest world, so
+the method of a package that the hook loads at run time, such as JuliaFormatter's parser, prints
+the error.
 """
-headline(e) = join(first(split(Base.invokelatest(sprint, showerror, e), '\n'), 2), " — ")
+function headline(e)
+    lines = split(Base.invokelatest(sprint, showerror, e), '\n')
+    parts = first(lines, 2)
+    nameof(typeof(e)) === :ParseError || return join(parts, " — ")
+    marked = findlast(l -> occursin(" ── ", l), lines[3:end])
+    marked === nothing ||
+        push!(parts, strip(last(split(lines[2 + marked], " ── "; limit = 2))))
+    return join(parts, " — ")
+end
 
 """
 Whether JuliaFormatter's `format` finds the file `f` formatted. A throw counts as not formatted,
@@ -272,12 +284,17 @@ end
 """
 The `name` of `Project.toml` in the current directory, of any type, when the file has both a
 `name` and a `uuid`; `nothing` when it has no file, no `name` or no `uuid`, which is no package.
-Throws `TOML.ParserError` for a `Project.toml` that does not parse.
+For a `name` with no `uuid`, it prints the line that says no load test runs, since a `name`
+reads as a package. Throws `TOML.ParserError` for a `Project.toml` that does not parse.
 """
 function package_name()
     isfile("Project.toml") || return nothing
     project = TOML.parsefile("Project.toml")
-    haskey(project, "name") && haskey(project, "uuid") || return nothing
+    haskey(project, "name") || return nothing
+    if !haskey(project, "uuid")
+        println("$(YELLOW)loads: skipped$(NC) — Project.toml has a `name` and no `uuid`, so no load test runs.")
+        return nothing
+    end
     return project["name"]
 end
 

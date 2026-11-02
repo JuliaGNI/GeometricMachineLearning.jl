@@ -44,9 +44,19 @@ end
 
 """
 The first two lines of the error `e`, joined with ` — `: its message and, for a parse error of
-TOML, the line that gives the location.
+TOML, the line that gives the location. A `ParseError` of Julia prints its reason after ` ── `
+on a line below those two, behind the marker of the span, such as `#└────┘`, which holds no
+space; the text after the first ` ── ` of the last such line follows.
 """
-headline(e) = join(first(split(sprint(showerror, e), '\n'), 2), " — ")
+function headline(e)
+    lines = split(sprint(showerror, e), '\n')
+    parts = first(lines, 2)
+    nameof(typeof(e)) === :ParseError || return join(parts, " — ")
+    marked = findlast(l -> occursin(" ── ", l), lines[3:end])
+    marked === nothing ||
+        push!(parts, strip(last(split(lines[2 + marked], " ── "; limit = 2))))
+    return join(parts, " — ")
+end
 
 """
 The suite's command, or `nothing` when there is nothing to run.
@@ -73,48 +83,54 @@ An interrupt of this program goes on to the whole group, the suite and the test 
 `Pkg.test` starts, and the program waits until no process of the group is left before it
 exits: a test process that outlives its hook survives as an orphan, and such processes
 accumulate over days. A group that still has a process `grace` seconds after the interrupt
-gets SIGKILL, also when the suite itself has ended. A further interrupt during that wait does
-not end it.
+gets SIGKILL, also when the suite itself has ended. A group that still answers `group_alive`
+`linger` seconds after the SIGKILL, such as one with a process that SIGKILL cannot end, ends
+the wait: the program says that processes of the suite are left, with the group ID, and exits
+with status 130 as for every interrupt. A further interrupt does not end the wait.
 
-The suite starts, and its PID is read, with SIGINT deferred, inside the `try`: an interrupt
-that comes during the start is thrown when the deferral ends, and finds `p` and `group` set.
+SIGINT is deferred for the whole call except the wait for the suite. The suite starts, and its
+PID is read, before an interrupt can be thrown, so the handler finds `p` and `group` set. The
+handler runs with SIGINT deferred, because the `try` restores the deferral of its start, so a
+further interrupt from its first line to `exit(130)` does not end it.
 """
-function run_suite(cmd; grace = 30)
-    flush(stdout)
-    p = nothing
-    group = Cint(0)
-    signal(s) = ccall(:kill, Cint, (Cint, Cint), -group, s)
-    try
-        disable_sigint() do
-            p = run(
-                pipeline(ignorestatus(Cmd(cmd; detach = true)); stdin = devnull, stdout, stderr);
-                wait = false)
-            # `detach` starts a new session, whose group ID is the PID of `p`. Read before
-            # anything yields: once a program that ends at once is reaped, `getpid` throws.
-            group = getpid(p)
-        end
-        wait(p)
-    catch e
-        e isa InterruptException || rethrow()
-        # `p` is `nothing` for an interrupt that comes before the start.
-        if p !== nothing
+function run_suite(cmd; grace = 30, linger = 10,
+        group_alive = group -> ccall(:kill, Cint, (Cint, Cint), -group, 0) == 0)
+    disable_sigint() do
+        flush(stdout)
+        p = run(
+            pipeline(ignorestatus(Cmd(cmd; detach = true)); stdin = devnull, stdout, stderr);
+            wait = false)
+        # `detach` starts a new session, whose group ID is the PID of `p`. Read before
+        # anything yields: once a program that ends at once is reaped, `getpid` throws.
+        group = getpid(p)
+        signal(s) = ccall(:kill, Cint, (Cint, Cint), -group, s)
+        try
+            reenable_sigint(() -> wait(p))
+        catch e
+            e isa InterruptException || rethrow()
+            started = time_ns()
             signal(Base.SIGINT)
             killer = Timer(_ -> signal(Base.SIGKILL), grace)
             # `kill(-group, 0)` fails once the group is gone, and on macOS also for a group
             # whose only processes are zombies that nobody has reaped yet.
-            while process_running(p) || signal(0) == 0
-                try
-                    process_running(p) ? wait(p) : sleep(0.1)
-                catch e
-                    e isa InterruptException || rethrow()
+            left = false
+            while process_running(p) || group_alive(group)
+                if time_ns() - started >= (grace + linger) * 1e9
+                    left = true
+                    break
                 end
+                sleep(0.1)
             end
             close(killer)
+            if left
+                println("\n$(RED)pre-push: interrupted; processes of the suite are left in process group $group.$(NC)\n")
+            else
+                println("\n$(RED)pre-push: interrupted; the suite has stopped.$(NC)\n")
+            end
+            exit(130)
         end
-        println("\n$(RED)pre-push: interrupted; the suite has stopped.$(NC)\n")
-        exit(130)
+        return success(p)
     end
-    return success(p)
 end
 
 function main()
