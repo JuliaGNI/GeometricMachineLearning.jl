@@ -119,11 +119,16 @@ jobs:
         # The `[compat]` lower bounds. `min` tests the lowest Julia with the newest dependencies,
         # which leaves every dependency floor untested: a floor can name a version that cannot be
         # installed at all, or that conflicts with a sibling's floor, and nothing notices. This job
-        # resolves every direct dependency of the root Project.toml to exactly its lower bound on
-        # the lowest Julia, and `forcedeps` fails, naming the entry, when one cannot sit at its
-        # bound. Then it runs the suite there, so a floor that installs but lacks something the
-        # package calls fails too. `projects` is left at `.`, so the floors in test/Project.toml
-        # and the test-only dependencies are not floor-tested.
+        # resolves every direct dependency of the root Project.toml and of test/Project.toml to
+        # exactly its lower bound on the lowest Julia, and `forcedeps` fails, naming the entry, when
+        # one cannot sit at its bound. Then it runs the suite there, so a floor that installs but
+        # lacks something the package calls fails too.
+        #
+        # `projects: ., test` resolves the two projects together, into one manifest. A resolve of
+        # the root alone takes each indirect dependency at its newest version, and the test run,
+        # which keeps that manifest, then cannot add a test-only dependency that caps it: Documenter
+        # 1.19 allows no DocStringExtensions 0.10, CairoMakie no FreeType that CEnum 1.0 allows.
+        # The action stops when test/Project.toml is missing.
         #
         # The stdlibs are skipped because their version is fixed by the Julia version. The list is
         # every stdlib a repository here depends on, and the common rest; add one when a
@@ -148,6 +153,7 @@ jobs:
               with:
                   mode: forcedeps
                   julia_version: min
+                  projects: ., test
                   skip: ArgTools,Artifacts,Base64,CRC32c,Dates,DelimitedFiles,Distributed,Downloads,FileWatching,Future,InteractiveUtils,LazyArtifacts,LibCURL,LibGit2,Libdl,LinearAlgebra,Logging,Markdown,Mmap,NetworkOptions,Pkg,Printf,Profile,REPL,Random,SHA,Serialization,SharedArrays,Sockets,SparseArrays,Statistics,TOML,Tar,Test,UUIDs,Unicode
             - uses: julia-actions/julia-buildpkg@v1
             - uses: julia-actions/julia-runtest@v1

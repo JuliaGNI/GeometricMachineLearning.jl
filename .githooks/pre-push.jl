@@ -21,13 +21,32 @@ function gated(line)
 end
 
 """
-The `name` of `Project.toml` in the current directory, or `nothing` for none. Throws
-`TOML.ParserError` for a `Project.toml` that does not parse.
+The `name` of `Project.toml` in the current directory, of any type, when the file has both a
+`name` and a `uuid`; `nothing` when it has no file, no `name` or no `uuid`, which is no package.
+Throws `TOML.ParserError` for a `Project.toml` that does not parse.
 """
 function package_name()
     isfile("Project.toml") || return nothing
-    return get(TOML.parsefile("Project.toml"), "name", nothing)
+    project = TOML.parsefile("Project.toml")
+    haskey(project, "name") && haskey(project, "uuid") || return nothing
+    return project["name"]
 end
+
+"""
+Whether the package name `name` is a Julia identifier that the parser reads as exactly that name.
+The suite's command puts the name into Julia source, so any other name could run code of its own.
+`Base.isidentifier` accepts a keyword such as `end`; the parser of the running Julia refuses it.
+"""
+function identifier(name)
+    name isa AbstractString && Base.isidentifier(name) &&
+        Meta.parse(name; raise = false) === Symbol(name)
+end
+
+"""
+The first two lines of the error `e`, joined with ` — `: its message and, for a parse error of
+TOML, the line that gives the location.
+"""
+headline(e) = join(first(split(sprint(showerror, e), '\n'), 2), " — ")
 
 """
 The suite's command, or `nothing` when there is nothing to run.
@@ -51,32 +70,47 @@ end
 Run `cmd` in a process group of its own and wait for it; return whether it passed.
 
 An interrupt of this program goes on to the whole group, the suite and the test process that
-`Pkg.test` starts, and the program waits for the suite before it exits: a test process that
-outlives its hook survives as an orphan, and such processes accumulate over days. A group that
-still runs `grace` seconds after the interrupt gets SIGKILL. A further interrupt during that
-wait does not end it.
+`Pkg.test` starts, and the program waits until no process of the group is left before it
+exits: a test process that outlives its hook survives as an orphan, and such processes
+accumulate over days. A group that still has a process `grace` seconds after the interrupt
+gets SIGKILL, also when the suite itself has ended. A further interrupt during that wait does
+not end it.
+
+The suite starts, and its PID is read, with SIGINT deferred, inside the `try`: an interrupt
+that comes during the start is thrown when the deferral ends, and finds `p` and `group` set.
 """
 function run_suite(cmd; grace = 30)
     flush(stdout)
-    p = run(
-        pipeline(ignorestatus(Cmd(cmd; detach = true)); stdin = devnull, stdout, stderr);
-        wait = false)
-    group = getpid(p)  # `detach` starts a new session, whose group ID is the PID of `p`
+    p = nothing
+    group = Cint(0)
     signal(s) = ccall(:kill, Cint, (Cint, Cint), -group, s)
     try
+        disable_sigint() do
+            p = run(
+                pipeline(ignorestatus(Cmd(cmd; detach = true)); stdin = devnull, stdout, stderr);
+                wait = false)
+            # `detach` starts a new session, whose group ID is the PID of `p`. Read before
+            # anything yields: once a program that ends at once is reaped, `getpid` throws.
+            group = getpid(p)
+        end
         wait(p)
     catch e
         e isa InterruptException || rethrow()
-        signal(Base.SIGINT)
-        killer = Timer(_ -> signal(Base.SIGKILL), grace)
-        while process_running(p)
-            try
-                wait(p)
-            catch e
-                e isa InterruptException || rethrow()
+        # `p` is `nothing` for an interrupt that comes before the start.
+        if p !== nothing
+            signal(Base.SIGINT)
+            killer = Timer(_ -> signal(Base.SIGKILL), grace)
+            # `kill(-group, 0)` fails once the group is gone, and on macOS also for a group
+            # whose only processes are zombies that nobody has reaped yet.
+            while process_running(p) || signal(0) == 0
+                try
+                    process_running(p) ? wait(p) : sleep(0.1)
+                catch e
+                    e isa InterruptException || rethrow()
+                end
             end
+            close(killer)
         end
-        close(killer)
         println("\n$(RED)pre-push: interrupted; the suite has stopped.$(NC)\n")
         exit(130)
     end
@@ -102,8 +136,11 @@ function main()
         package_name()
     catch e
         e isa TOML.ParserError || rethrow()
-        println("\n$(RED)pre-push: Project.toml does not parse$(NC) — ",
-            first(split(sprint(showerror, e), '\n')), "\n")
+        println("\n$(RED)pre-push: Project.toml does not parse$(NC) — ", headline(e), "\n")
+        exit(1)
+    end
+    if pkg !== nothing && !identifier(pkg)
+        println("\n$(RED)pre-push: the name $(repr(pkg)) in Project.toml is not a Julia identifier$(NC)\n")
         exit(1)
     end
     println("\n$(DIM)pre-push$(NC)  pushing to main/master — running the full suite for ",
