@@ -7,15 +7,16 @@
 # The launcher of pre-commit.jl, which harness githooks installs beside it and which holds the
 # stages. One Julia process runs them all; only the load test starts a child.
 
+# A commit with no staged .jl path, a deletion too, and no change below test/ runs no stage, so
+# it passes without starting julia. A git that cannot list the staged files refuses, as
+# pre-commit.jl does.
+if ! jl=$(git diff --cached --name-only --diff-filter=ACDMRT -- '*.jl') ||
+    ! tests=$(git diff --cached --name-only -- test/); then
+    printf 'pre-commit: could not list staged files.\n' >&2
+    exit 1
+fi
+[ -z "$jl$tests" ] && exit 0
 if ! command -v julia >/dev/null 2>&1; then
-    # A commit with no staged .jl file and no change below test/ runs no stage, so it needs no
-    # julia. A git that cannot list the staged files refuses, as pre-commit.jl does.
-    if ! jl=$(git diff --cached --name-only --diff-filter=ACMRT -- '*.jl') ||
-        ! tests=$(git diff --cached --name-only -- test/); then
-        printf 'pre-commit: could not list staged files.\n' >&2
-        exit 1
-    fi
-    [ -z "$jl$tests" ] && exit 0
     printf 'pre-commit: julia is not on the PATH.\n' >&2
     exit 1
 fi

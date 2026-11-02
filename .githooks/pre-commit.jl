@@ -11,11 +11,13 @@
 #   2.5 unicode NFC             BLOCKS   the tree is NFC, so a non-NFC file is a regression
 #   3. package load             BLOCKS   catches a syntax error or a broken include
 #
-# Stages 1–3 run on STAGED .jl files only. A whole-tree JuliaFormatter run is not sure to end:
-# one has died inside SciML's `nest!` after 62 minutes of CPU.
+# Stages 1–2.5 run on STAGED .jl files only, and stage 3 runs when a .jl file is staged or its
+# deletion is. A whole-tree JuliaFormatter run is not sure to end: one has died inside SciML's
+# `nest!` after 62 minutes of CPU.
 #
 # Included rather than run as the program file, this file defines its functions and runs nothing.
 
+using TOML
 using Unicode
 
 const RED, YELLOW, GREEN, DIM, NC = "\e[0;31m", "\e[0;33m", "\e[0;32m", "\e[2m", "\e[0m"
@@ -35,28 +37,52 @@ function staged(args...)
     return filter(!isempty, split(String(take!(out)), '\0'))
 end
 
+"The process groups that `run_boxed` runs at the moment; the exit hook of `main` kills them."
+const BOXED = Set{Cint}()
+
+"Send `signal` to the process group `group`; returns 0 when the group exists."
+signal_group(group, signal) = ccall(:kill, Cint, (Cint, Cint), -group, signal)
+
 """
-Run `cmd` with its stdout and stderr in one stream. After `seconds`, send it SIGTERM, and
-SIGKILL 5 s later if it still runs. Returns the exit code, or `nothing` when the time ran out,
-and the output.
+Run `cmd` in a process group of its own, with its stdout and stderr in one stream. After
+`seconds`, send the group SIGTERM, and SIGKILL 5 s later. Returns the exit code, `128 + n` for
+a program that signal `n` ended, or `nothing` when the time ran out; and the output.
+
+The limit covers the output too: a child of `cmd` can hold the stream open after `cmd` ends.
+After a time-out, the output is not read, since a process that left the group can hold the
+stream for ever; the box returns once the group is gone, or 6 s after the SIGTERM.
 """
 function run_boxed(cmd, seconds)
     out = Pipe()
-    p = run(pipeline(ignorestatus(cmd); stdin = devnull, stdout = out, stderr = out); wait = false)
+    p = run(
+        pipeline(ignorestatus(Cmd(cmd; detach = true)); stdin = devnull, stdout = out, stderr = out);
+        wait = false)
+    # `detach` starts a new session, whose group ID is the PID of `p`. Read before anything
+    # yields: once a program that ends at once is reaped, `getpid` throws.
+    group = getpid(p)
+    push!(BOXED, group)
     close(out.in)
     reader = @async read(out, String)
-    timedout = Ref(false)
+    stopped = Ref{Union{Nothing, Float64}}(nothing)
     stop = Timer(seconds) do _
-        timedout[] = true
-        kill(p)
-        Timer(5) do _
-            process_running(p) && kill(p, Base.SIGKILL)
-        end
+        stopped[] = time()
+        signal_group(group, Base.SIGTERM)
+        Timer(_ -> signal_group(group, Base.SIGKILL), 5)
     end
     wait(p)
+    while stopped[] === nothing && !istaskdone(reader)
+        sleep(0.05)
+    end
     close(stop)
-    text = fetch(reader)
-    return timedout[] ? nothing : p.exitcode, text
+    if stopped[] !== nothing
+        while signal_group(group, 0) == 0 && time() < stopped[] + 6
+            sleep(0.1)
+        end
+        delete!(BOXED, group)
+        return nothing, ""
+    end
+    delete!(BOXED, group)
+    return p.termsignal == 0 ? p.exitcode : 128 + p.termsignal, fetch(reader)
 end
 
 """
@@ -91,16 +117,31 @@ function test_layout(root)
 end
 
 """
+Whether JuliaFormatter's `format` finds the file `f` formatted. A throw counts as not formatted,
+with `f` and the first line of the error on stderr.
+"""
+function formatted(format, f)
+    try
+        return Base.invokelatest(format, f; overwrite = false, throw_on_error = true)
+    catch e
+        println(stderr, f, ": ", first(split(sprint(showerror, e), '\n')))
+        return false
+    end
+end
+
+"""
 Stage 1. Honours this repository's own .JuliaFormatter.toml. A hook cannot reach an MCP
 server, so this calls JuliaFormatter directly, from the harness Julia environment.
 
 Checked one file at a time: `format(files)` returns a single Bool for the whole batch, so its
 message could only name every staged file. Per file costs nothing: the batch call formats each
 file on its own anyway, and `.JuliaFormatter.toml` is found by searching upward from the file
-either way.
+either way. A file whose `format` throws, such as one that does not parse, is not formatted: its
+name and the first line of the error go to stderr, and the other files are still checked. A
+JuliaFormatter that does not load, or is older than 2.14, marks every file.
 """
 function formatting(files)
-    bad = try
+    format = try
         env = get(ENV, "RESEARCH_HARNESS_JULIA",
             joinpath(homedir(), ".local", "share", "research-harness", "julia"))
         pushfirst!(LOAD_PATH, env)
@@ -111,12 +152,12 @@ function formatting(files)
         version = pkgversion(formatter)
         version !== nothing && version >= v"2.14" ||
             error("JuliaFormatter $version is older than 2.14, which the hook needs; $env pins it")
-        format = formatter.format
-        filter(f -> !Base.invokelatest(format, f; overwrite = false, throw_on_error = true), files)
+        formatter.format
     catch e
         println(stderr, sprint(showerror, e))
-        files
+        nothing
     end
+    bad = format === nothing ? files : filter(f -> !formatted(format, f), files)
     if isempty(bad)
         println("$(GREEN)formatting: ok$(NC)")
         return true
@@ -207,14 +248,13 @@ function nfc(files)
     return false
 end
 
-"The `name` of `Project.toml` in the current directory, or `nothing` for none."
+"""
+The `name` of `Project.toml` in the current directory, or `nothing` for none. Throws
+`TOML.ParserError` for a `Project.toml` that does not parse.
+"""
 function package_name()
     isfile("Project.toml") || return nothing
-    for line in eachline("Project.toml")
-        m = match(r"^name\s*=\s*\"(.*)\"", line)
-        m === nothing || return m[1]
-    end
-    return nothing
+    return get(TOML.parsefile("Project.toml"), "name", nothing)
 end
 
 """
@@ -230,17 +270,22 @@ stage exists to catch, the cause — `ERROR: LoadError` and the file:line — is
 tail keeps backtrace frames and the "Failed to precompile" summary while it drops the cause.
 Dropping the ` [n] frame` and `  @ Module` lines leaves the message and its location in the
 first lines.
+
+The child runs in `run_boxed`, so a load that does not end within `seconds` is a refusal.
 """
-function load(pkg)
-    out = IOBuffer()
+function load(pkg; seconds = 600)
     cmd = `$(Base.julia_cmd()) --startup-file=no --project=. -e "using $pkg"`
-    p = run(pipeline(ignorestatus(cmd); stdin = devnull, stdout = out, stderr = out))
-    if success(p)
+    code, out = run_boxed(cmd, seconds)
+    if code == 0
         println("$(GREEN)loads: ok$(NC)")
         return true
     end
+    if code === nothing
+        println("$(RED)loads: FAILED$(NC) — `using $pkg` timed out after $(seconds)s.")
+        return false
+    end
     println("$(RED)loads: FAILED$(NC) — `using $pkg` errors:")
-    lines = filter(l -> !occursin(r"^\s*\[\d+\]\s|^\s*@ ", l), split(String(take!(out)), '\n'))
+    lines = filter(l -> !occursin(r"^\s*\[\d+\]\s|^\s*@ ", l), split(out, '\n'))
     println(indent(first(lines, 20)))
     return false
 end
@@ -257,24 +302,51 @@ function main()
         exit(1)
     end
     cd(root)
+    # An interrupt ends this process at once; the boxed children run in groups of their own,
+    # which the interrupt does not reach, so they are killed on the way out.
+    atexit(() -> foreach(group -> signal_group(group, Base.SIGKILL), BOXED))
 
     jl = staged("--diff-filter=ACMRT", "--", "*.jl")
     jl === nothing && refuse_unlisted()
+    deleted = staged("--diff-filter=D", "--", "*.jl")
+    deleted === nothing && refuse_unlisted()
     tests = staged("--", "test/")
     tests === nothing && refuse_unlisted()
 
+    # Every stage reads each staged path as a file; a symlink to a missing file or to a
+    # directory would make the first stage that reads it throw.
+    notfiles = filter(!isfile, jl)
+    if !isempty(notfiles)
+        for f in notfiles
+            println("$(RED)pre-commit: $f is not a file$(NC) — stage a file in its place.")
+        end
+        println("\n$(RED)pre-commit failed.$(NC) Use --no-verify only if you know why.\n")
+        exit(1)
+    end
+
     ok = isempty(tests) || test_layout(root)
-    if isempty(jl)
+    if isempty(jl) && isempty(deleted)
         ok ||
             println("\n$(RED)pre-commit failed.$(NC) Use --no-verify only if you know why.\n")
         exit(ok ? 0 : 1)
     end
 
-    println("\n$(DIM)pre-commit$(NC)  $(length(jl)) staged .jl file(s)")
-    ok &= formatting(jl)
-    lint(jl)
-    ok &= nfc(jl)
-    pkg = package_name()
+    println("\n$(DIM)pre-commit$(NC)  $(length(jl)) staged .jl file(s), $(length(deleted)) deleted")
+    # A deletion has no file to check; it can still break an `include`, so it runs the load test.
+    if !isempty(jl)
+        ok &= formatting(jl)
+        lint(jl)
+        ok &= nfc(jl)
+    end
+    pkg = try
+        package_name()
+    catch e
+        e isa TOML.ParserError || rethrow()
+        println("$(RED)Project.toml: does not parse$(NC) — ",
+            first(split(sprint(showerror, e), '\n')))
+        ok = false
+        nothing
+    end
     pkg === nothing || (ok &= load(pkg))
 
     if !ok
