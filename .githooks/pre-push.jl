@@ -7,6 +7,8 @@
 # branch makes a push take 10-30 minutes with no output, which looks exactly like a network
 # hang. A topic branch does not need the gate; CI has it.
 
+using TOML
+
 const RED, GREEN, DIM, NC = "\e[0;31m", "\e[0;32m", "\e[2m", "\e[0m"
 
 """
@@ -18,14 +20,13 @@ function gated(line)
     return length(fields) >= 3 && fields[3] in ("refs/heads/main", "refs/heads/master")
 end
 
-"The `name` of `Project.toml` in the current directory, or `nothing` for none."
+"""
+The `name` of `Project.toml` in the current directory, or `nothing` for none. Throws
+`TOML.ParserError` for a `Project.toml` that does not parse.
+"""
 function package_name()
     isfile("Project.toml") || return nothing
-    for line in eachline("Project.toml")
-        m = match(r"^name\s*=\s*\"(.*)\"", line)
-        m === nothing || return m[1]
-    end
-    return nothing
+    return get(TOML.parsefile("Project.toml"), "name", nothing)
 end
 
 """
@@ -51,19 +52,31 @@ Run `cmd` in a process group of its own and wait for it; return whether it passe
 
 An interrupt of this program goes on to the whole group, the suite and the test process that
 `Pkg.test` starts, and the program waits for the suite before it exits: a test process that
-outlives its hook survives as an orphan, and such processes accumulate over days.
+outlives its hook survives as an orphan, and such processes accumulate over days. A group that
+still runs `grace` seconds after the interrupt gets SIGKILL. A further interrupt during that
+wait does not end it.
 """
-function run_suite(cmd)
+function run_suite(cmd; grace = 30)
     flush(stdout)
     p = run(
         pipeline(ignorestatus(Cmd(cmd; detach = true)); stdin = devnull, stdout, stderr);
         wait = false)
+    group = getpid(p)  # `detach` starts a new session, whose group ID is the PID of `p`
+    signal(s) = ccall(:kill, Cint, (Cint, Cint), -group, s)
     try
         wait(p)
     catch e
         e isa InterruptException || rethrow()
-        ccall(:kill, Cint, (Cint, Cint), -getpid(p), Base.SIGINT)
-        wait(p)
+        signal(Base.SIGINT)
+        killer = Timer(_ -> signal(Base.SIGKILL), grace)
+        while process_running(p)
+            try
+                wait(p)
+            catch e
+                e isa InterruptException || rethrow()
+            end
+        end
+        close(killer)
         println("\n$(RED)pre-push: interrupted; the suite has stopped.$(NC)\n")
         exit(130)
     end
@@ -85,7 +98,14 @@ function main()
         exit(0)
     end
 
-    pkg = package_name()
+    pkg = try
+        package_name()
+    catch e
+        e isa TOML.ParserError || rethrow()
+        println("\n$(RED)pre-push: Project.toml does not parse$(NC) — ",
+            first(split(sprint(showerror, e), '\n')), "\n")
+        exit(1)
+    end
     println("\n$(DIM)pre-push$(NC)  pushing to main/master — running the full suite for ",
         something(pkg, basename(root)), ".")
     println("$(DIM)This takes 10-30 minutes and prints nothing until it finishes. That is not a hang.$(NC)\n")
@@ -96,7 +116,7 @@ function main()
         exit(0)
     end
     if !run_suite(cmd)
-        println("\n$(RED)ERROR — tests must pass before pushing to main.$(NC)\n")
+        println("\n$(RED)ERROR — tests must pass before pushing to main or master.$(NC)\n")
         exit(1)
     end
     println("\n$(GREEN)Suite passed.$(NC)\n")
