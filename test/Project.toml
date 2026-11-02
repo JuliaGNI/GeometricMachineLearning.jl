@@ -31,15 +31,17 @@ GeometricMachineLearning = {path = ".."}
 [compat]
 Aqua = "0.8"
 ChainRulesTestUtils = "1"
+Documenter = "1"
 # A tight lower bound. `test/quality/aqua.jl` names three of `test_explicit_imports`' seven keyword switches,
 # and 1.15 is the version those switches were read from; a wider bound would be a guess about
 # earlier ones.
 ExplicitImports = "1.15"
-FiniteDifferences = "0.12"
+FiniteDifferences = "0.12.31"
 GPUArraysCore = "0.2"
-GeometricIntegrators = "0.18.2"
-GeometricProblems = "0.8, 0.9"
-HDF5 = "0.16, 0.17"
+GeometricIntegrators = "0.18.6"
+GeometricProblems = "0.9.1"
+HDF5 = "0.17"
+JET = "0.10, 0.11, 0.12, 0.13"
 JLArrays = "0.3"
 Metal = "1.10"
 Printf = "1"
