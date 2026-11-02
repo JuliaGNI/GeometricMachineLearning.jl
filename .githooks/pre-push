@@ -7,18 +7,24 @@
 # The launcher of pre-push.jl, which harness githooks installs beside it and which holds the
 # gate and the suite. git's ref lines reach it on stdin.
 
-if ! command -v julia >/dev/null 2>&1; then
-    # A push that updates no main or master runs no suite, so it needs no julia. The remote ref
-    # is the third field of each line, as in pre-push.jl's gate.
-    while read -r _ _ remote_ref _; do
-        case $remote_ref in
-            refs/heads/main | refs/heads/master)
-                printf 'pre-push: julia is not on the PATH.\n' >&2
-                exit 1
-                ;;
-        esac
-    done
+# A push that updates no main or master runs no suite, so it passes without starting julia. The
+# remote ref is the third field of each line, as in pre-push.jl's gate. Every line is read, so
+# git never writes to a closed pipe, and the lines go on to pre-push.jl on its stdin.
+refs=
+gated=
+while IFS= read -r line || [ -n "$line" ]; do
+    refs+="$line"$'\n'
+    read -r _ _ remote_ref _ <<<"$line"
+    case $remote_ref in
+        refs/heads/main | refs/heads/master) gated=1 ;;
+    esac
+done
+if [ -z "$gated" ]; then
     printf '\npre-push  not main/master — skipping the suite, CI will run it.\n\n'
     exit 0
 fi
-exec julia --startup-file=no "$(dirname "$0")/pre-push.jl" "$@"
+if ! command -v julia >/dev/null 2>&1; then
+    printf 'pre-push: julia is not on the PATH.\n' >&2
+    exit 1
+fi
+exec julia --startup-file=no "$(dirname "$0")/pre-push.jl" "$@" <<<"$refs"
