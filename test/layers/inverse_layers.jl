@@ -89,7 +89,9 @@ end
         SymplecticAttentionQ(6; symmetric = false),
         SymplecticAttentionP(6; symmetric = false),
         SymplecticAttentionQ(6; activation = VectorSoftmax()),
-        SymplecticAttentionP(6; activation = VectorSoftmax()))
+        SymplecticAttentionP(6; activation = VectorSoftmax()),
+        SymplecticAttentionQ(6; symmetric = false, activation = VectorSoftmax()),
+        SymplecticAttentionP(6; symmetric = false, activation = VectorSoftmax()))
     zv = randn(T, 6)
     zm = randn(T, 6, 3)
     zt = randn(T, 6, 3, 2)
