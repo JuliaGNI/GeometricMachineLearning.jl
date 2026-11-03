@@ -203,7 +203,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
 ### K42 · With small weights a `ResNetLayer` integrates only an affine field, and its docstring does not say so.
 
-- **location:** `src/layers/resnet.jl:48`
+- **location:** `src/layers/resnet.jl:6`
 - **kind:** docs
 - **found:** 2026-11-04
 - **evidence:**
@@ -242,11 +242,12 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
   `WideResNetLayer` has a second matrix outside the inner activation, and it is consistent with a
   nonlinear field. With `upscale_weight = U`, `upscale_bias = u`, `downscale_weight = hV` and
-  `bias = hc`, the layer converges with order one to the flow of `V σ(Ux + u) + c`: for `tanh` the
-  error at `T = 3` is `3.9e-3` at `L = 2^8` and `6.2e-5` at `L = 2^14`, and the flow of the field
-  linearised at `x₀` misses that flow by `4.5`. `ResNet(dim, n_blocks, activation)` takes the
-  plain `ResNetLayer`, because its `width` is `dim`. Closing this entry means a sentence in the
-  docstring of `ResNetLayer` that points to `WideResNetLayer`.
+  `bias = hc`, the layer converges with order one to the flow of `V σ(Ux + u) + c`: for `tanh`, with
+  `U, u, V = randn(8, 4), randn(8), randn(4, 8) / 2` drawn after the snippet's `x₀`, the error at
+  `T = 3` is `3.9e-3` at `L = 2^8` and `6.2e-5` at `L = 2^14`, and the flow of the field linearised
+  at `x₀` misses that flow by `4.5`. `ResNet(dim, n_blocks, activation)` takes the plain
+  `ResNetLayer`, because its `width` is `dim`. Closing this entry means a sentence in the docstring
+  of `ResNetLayer` that points to `WideResNetLayer`.
 
 ## Upstream
 
@@ -672,15 +673,16 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
   | what | Jacobian check |
   |:--|:--|
-  | `GradientLayerQ`, `GradientLayerP` | a shear pair in `test/layers/sympnet_upscaling.jl:39` (group `slow`), and the decoders of `test/architectures/symplectic_autoencoder_tests.jl` |
+  | `GradientLayerQ`, `GradientLayerP` | a shear pair in `test/layers/sympnet_upscaling.jl:39` (group `slow`), and the decoders of `test/architectures/symplectic_autoencoder_tests.jl` and `test/architectures/weight_tied_symplectic_autoencoder.jl` |
   | `SymplecticAttentionQ`, `SymplecticAttentionP` | `test/layers/symplectic_attention.jl:46` |
   | `GSympNet`, `LASympNet` | none |
   | `LinearLayerQ`, `LinearLayerP`, `ActivationLayerQ`, `ActivationLayerP` | none: `test/layers/sympnet_layers_test.jl` checks tensor slices |
   | `LinearSymplecticAttentionQ`, `LinearSymplecticAttentionP` | none: `test/layers/linear_symplectic_attention.jl` compares the output with its formula |
+  | `BiasLayer`, `InverseSymplecticAttentionQ`, `InverseSymplecticAttentionP`, `LinearSymplecticTransformer`, `SymplecticTransformer` | none |
 
-  The pinned outputs of `test/architectures/architecture_pins.jl` see a change of a layer and not
-  the property. The layers are symplectic, so this entry is a gap in the suite and not a defect of
-  the code:
+  The pinned outputs of `test/layers/layer_pins.jl` and `test/architectures/architecture_pins.jl`
+  see a change of a layer and not the property. The layers of the snippet below are symplectic, so
+  for them this entry is a gap in the suite and not a defect of the code:
 
   ```julia
   using GeometricMachineLearning, ForwardDiff, LinearAlgebra
@@ -705,6 +707,11 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   Chain 0.0
   Chain 0.0
   ```
+
+  The snippet does not reach the two linear attention layers, which take a sequence. With the
+  sequence form of `test/layers/symplectic_attention.jl:37` the check gives `0.0` for both.
+  `LASympNet` holds a `BiasLayer`. The inverse attention layers and the two transformers are not
+  measured.
 
   Closing this entry means replacing the assertion of `test/architectures/sympnet_integrator.jl`
   with a check of this form for each row marked none.
