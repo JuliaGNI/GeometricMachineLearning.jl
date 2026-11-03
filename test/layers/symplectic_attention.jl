@@ -1,7 +1,9 @@
 using GeometricMachineLearning
 using GeometricMachineLearning: params
 using KernelAbstractions
+using LinearAlgebra: I
 using Test
+using Zygote: jacobian
 import Random
 
 include("../helpers/eltypes.jl")
@@ -27,5 +29,31 @@ Random.seed!(1234)
         @test nt isa NamedTuple{(:q, :p), Tuple{Vector{T}, Vector{T}}}
         @test vcat(nt.q, nt.p) ≈ vec(ym) rtol = 8 * eps(T)
         @test !(y ≈ z)
+    end
+end
+
+# The Jacobian of the layer on a sequence `(Q, P)` of `L` vectors preserves the canonical form
+# that pairs `vec(Q)` with `vec(P)`, for either activation.
+function sequence_jacobian(l, ps, Q::AbstractMatrix, P::AbstractMatrix)
+    n = length(Q)
+    function f(w)
+        out = l((q = reshape(w[1:n], size(Q)), p = reshape(w[(n + 1):end], size(P))), ps)
+        vcat(vec(out.q), vec(out.p))
+    end
+    jacobian(f, vcat(vec(Q), vec(P)))[1]
+end
+
+@testset "symplecticity ($(nameof(typeof(activation))), symmetric = $symmetric)" for activation in (
+        MatrixSoftmax(), VectorSoftmax()),
+    symmetric in (true, false)
+
+    d, L = 2, 4
+    Ω = [zeros(d * L, d * L) I; -I zeros(d * L, d * L)]
+    for l in (SymplecticAttentionQ(2d; symmetric = symmetric, activation = activation),
+        SymplecticAttentionP(2d; symmetric = symmetric, activation = activation))
+        ps = params(NeuralNetwork(Chain(l), CPU(), Float64)).L1
+        J = sequence_jacobian(l, ps, randn(d, L), randn(d, L))
+        @test J' * Ω * J ≈ Ω atol = 1e-12
+        @test !(J ≈ I)
     end
 end

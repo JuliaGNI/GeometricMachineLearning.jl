@@ -15,6 +15,10 @@ breaking release).
 
 ## [Unreleased]
 
+### Fixed
+
+- **`SymplecticAttentionQ` and `SymplecticAttentionP` with `symmetric = true` are symplectic with `VectorSoftmax`.** The shear increment was `2 A X σ(XᵀAX)`, which is the gradient of the attention potential only when `σ(XᵀAX)` is symmetric. `MatrixSoftmax`, the default, gives a symmetric matrix, so it was correct; the column-wise `VectorSoftmax` does not, and with it the Jacobian of the layer was not symplectic (`JᵀΩJ − Ω` is of order one at the default initialisation). The increment is now `A X (σ + σᵀ)`, the gradient for both activations. With `MatrixSoftmax` the output is unchanged up to round-off. With `VectorSoftmax` and `symmetric = true` a trained model keeps its parameters but gives different outputs. `InverseSymplecticAttentionQ` and `InverseSymplecticAttentionP` use the same formula, so they still invert the layer. The `symmetric = false` layers were already correct and are unchanged. The symplectic attention documentation page carries the corrected formula.
+
 ### Changed
 
 - **The `[compat]` lower bounds of `Project.toml` and `test/Project.toml` are the versions the CI Downgrade job resolves when it resolves both projects together at Julia 1.12.** Each old bound named a version that no resolution at the floors reaches:
