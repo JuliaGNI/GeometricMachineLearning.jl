@@ -201,6 +201,53 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   wrong value has been observed: each global is a single `Int`, assigned around the training
   call.
 
+### K42 · With small weights a `ResNetLayer` integrates only an affine field, and its docstring does not say so.
+
+- **location:** `src/layers/resnet.jl:48`
+- **kind:** docs
+- **found:** 2026-11-04
+- **evidence:**
+  This is a property of the form of the layer and not a defect. `x + σ(Wx + b)` has one affine map,
+  and it sits inside the activation. For `σ ∈ C²` with `σ(0) = 0` and `σ'(0) = 1`, `W = hA` and
+  `b = hc`, the argument of `σ` is small, so `σ` is linear there and each layer is an Euler step of
+  `Ax + c`. The iteration over `L = T / h` layers converges with order one to the flow of that
+  field, and the limit does not depend on `σ`:
+
+  ```julia
+  using GeometricMachineLearning, LinearAlgebra
+  using GeometricMachineLearning: ResNetLayer
+  import Random
+  Random.seed!(1)
+  d, T = 4, 1.0
+  A, c, x₀ = randn(d, d) / 2, randn(d), randn(d)
+  flow = (exp([A c; zeros(1, d + 1)] * T) * vcat(x₀, 1))[1:d]
+  function residual_iteration(σ, L)
+      l, h, x = ResNetLayer(d, σ), T / L, x₀
+      ps = (weight = h * A, bias = h * c)
+      for _ in 1:L
+          x = l(x, ps)
+      end
+      x
+  end
+  [norm(residual_iteration(tanh, L) - flow) for L in (2^10, 2^12, 2^14)]
+  # identity [0.00129, 0.000321, 8.03e-5]
+  # tanh     [0.00129, 0.000322, 8.04e-5]
+  # sin      [0.00129, 0.000322, 8.04e-5]
+  ```
+
+  The hypotheses on `σ` carry the statement. `softplus` has `σ(0) ≠ 0` and diverges from the flow
+  (`1240`, `4950`, `19800` for the same `L`). With `σ'(0) = 2` the limit is the flow of `2(Ax + c)`.
+  `relu` is not differentiable at `0`; it is homogeneous, so the limit is the flow of the
+  field `relu.(Ax + c)`, which is piecewise affine (`2.5e-5` at `L = 2^14`).
+
+  `WideResNetLayer` has a second matrix outside the inner activation, and it is consistent with a
+  nonlinear field. With `upscale_weight = U`, `upscale_bias = u`, `downscale_weight = hV` and
+  `bias = hc`, the layer converges with order one to the flow of `V σ(Ux + u) + c`: for `tanh` the
+  error at `T = 3` is `3.9e-3` at `L = 2^8` and `6.2e-5` at `L = 2^14`, and the flow of the field
+  linearised at `x₀` misses that flow by `4.5`. `ResNet(dim, n_blocks, activation)` takes the
+  plain `ResNetLayer`, because its `width` is `dim`. Closing this entry means a sentence in the
+  docstring of `ResNetLayer` that points to `WideResNetLayer`.
+
 ## Upstream
 
 ### K2 · Revise prints EMFILE errors in the test log
@@ -461,6 +508,60 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   about a true rate below one in twenty, nor about the `VolumePreservingFeedForward(4)` item under a
   second evaluation, which these runs did not test.
 
+### K43 · On a batch of more than one sample, `FeedForwardLoss` through a `SymbolicPullback` and through a `ZygotePullback` descends two objectives.
+
+- **location:** `src/data_loader/train.jl:36`
+- **kind:** upstream
+- **found:** 2026-11-04
+- **evidence:**
+  `train!` takes any `AbstractPullback` as `loss`, so a `SymbolicPullback` reaches it, and a
+  `SymbolicPullback` of SymbolicNeuralNetworks 0.9.1 trains a network here. This package does not
+  define or re-export that type. `FeedForwardLoss` is `_norm(prediction - output) / _norm(output)`
+  over the whole batch (AbstractNeuralNetworks 0.9.3, `src/losses.jl:86`), which is not a sum over
+  samples. `SymbolicPullback` differentiates the loss of one sample and sums over the batch, and
+  the page `limitations.md` of SymbolicNeuralNetworks says so.
+
+  ```julia
+  using GeometricMachineLearning, LinearAlgebra, SymbolicNeuralNetworks
+  using GeometricMachineLearning: params, ZygotePullback
+  using AbstractNeuralNetworks: Dense, FeedForwardLoss
+  import Random
+  Random.seed!(2)
+  nn = NeuralNetwork(Chain(Dense(2, 4, tanh), Dense(4, 2, identity)), CPU(), Float64)
+  ps = params(nn)
+  symbolic = SymbolicPullback(SymbolicNeuralNetwork(nn), FeedForwardLoss())
+  zygote = ZygotePullback(FeedForwardLoss())
+  x, y = randn(2, 1, 8), randn(2, 1, 8)
+  flat(g) = vcat(vec(g.L1.W), vec(g.L1.b), vec(g.L2.W), vec(g.L2.b))
+  gradient(pb, r) = flat(pb(ps, nn.model, (x[:, :, r], y[:, :, r]))[2](1.0))
+  per_sample(r) = sum(gradient(zygote, i:i) for i in r)
+  r = 1:8
+  gs, gz = gradient(symbolic, r), gradient(zygote, r)
+  norm(gs) / norm(gz), norm(gs - gz) / norm(gz), norm(gs - per_sample(r)) / norm(gs)
+  ```
+
+  | `b` | `‖gs‖ / ‖gz‖` | `‖gs - gz‖ / ‖gz‖` | `‖gs - Σ per sample‖ / ‖gs‖` |
+  |:--|:--|:--|:--|
+  | 1 | 1.0 | 0.0 | 0.0 |
+  | 2 | 3.33 | 2.41 | 5.98e-17 |
+  | 8 | 31.9 | 31.0 | 1.49e-16 |
+
+  So the two agree at `Batch(1)`, and above it `gs` is the gradient of `Σᵢ ‖eᵢ‖ / ‖yᵢ‖`, the
+  objective with `b = 1`, while `gz` is the gradient of `‖E‖ / ‖Y‖`. Three things follow for a
+  caller of `train!`:
+
+  - The value of the pullback stays the loss of the whole batch: `1.3648…` from both in the snippet.
+    The history of `train!` with a `SymbolicPullback` therefore reports an objective that the steps
+    do not descend.
+  - The gradient is a sum and not a mean, so its size grows with `b`, and a step size tuned at one
+    batch size does not carry over to another.
+  - The minimisers differ. For a constant prediction `c` and the targets `1` and `100`, the whole
+    batch has its minimum at `c = 50.5` and the sum over samples at `c = 1`, because the second
+    weighs each residual by its own target.
+
+  `train!` with a `NetworkLoss` trains through a `ZygotePullback`, which is the whole-batch
+  objective. The `SymbolicPullback` methods of HamiltonianNeuralNetworks are not checked here.
+
 ## The test suite
 
 ### K3 · `test/quality/jet.jl` does not see an unstable kernel-launch argument
@@ -557,3 +658,53 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   and the same widening reaches a caller that builds its own loop on `ZygotePullback` without
   `train!`. The fix belongs to Zygote, whose adjoint of `AbstractNeuralNetworks`' `Dense` on a
   3-tensor gives the `Any`.
+
+### K44 · No test checks the Jacobian symplecticity of `GSympNet`, `LASympNet`, the linear and activation layers or linear symplectic attention.
+
+- **location:** `test/architectures/sympnet_integrator.jl:28`
+- **kind:** missing test
+- **found:** 2026-11-04
+- **evidence:**
+  `test/architectures/sympnet_integrator.jl:28` asserts `product_final ≉ 0 ≉ product₀`, with the
+  product the bilinear form `𝕁` of two points. A symplectic map preserves that form on tangent
+  vectors and, unless it is linear, not on points, and the test only asserts that both values are
+  not zero. A map that is not symplectic passes it.
+
+  | what | Jacobian check |
+  |:--|:--|
+  | `GradientLayerQ`, `GradientLayerP` | a shear pair in `test/layers/sympnet_upscaling.jl:39` (group `slow`), and the decoders of `test/architectures/symplectic_autoencoder_tests.jl` |
+  | `SymplecticAttentionQ`, `SymplecticAttentionP` | `test/layers/symplectic_attention.jl:46` |
+  | `GSympNet`, `LASympNet` | none |
+  | `LinearLayerQ`, `LinearLayerP`, `ActivationLayerQ`, `ActivationLayerP` | none: `test/layers/sympnet_layers_test.jl` checks tensor slices |
+  | `LinearSymplecticAttentionQ`, `LinearSymplecticAttentionP` | none: `test/layers/linear_symplectic_attention.jl` compares the output with its formula |
+
+  The pinned outputs of `test/architectures/architecture_pins.jl` see a change of a layer and not
+  the property. The layers are symplectic, so this entry is a gap in the suite and not a defect of
+  the code:
+
+  ```julia
+  using GeometricMachineLearning, ForwardDiff, LinearAlgebra
+  using GeometricMachineLearning: params, LinearLayerQ, LinearLayerP, ActivationLayerQ,
+                                  ActivationLayerP
+  import Random
+  Random.seed!(4)
+  Ω = [zeros(2, 2) I; -I zeros(2, 2)]
+  for c in (GSympNet(4), LASympNet(4), Chain(LinearLayerQ(4)), Chain(LinearLayerP(4)),
+      Chain(ActivationLayerQ(4, tanh)), Chain(ActivationLayerP(4, tanh)))
+      nn = NeuralNetwork(c, CPU(), Float64)
+      J = ForwardDiff.jacobian(x -> nn.model(x, params(nn)), randn(4))
+      println(nameof(typeof(c)), " ", maximum(abs, J' * Ω * J - Ω))
+  end
+  ```
+
+  ```
+  GSympNet 5.847383476376134e-17
+  LASympNet 4.440892098500626e-16
+  Chain 0.0
+  Chain 0.0
+  Chain 0.0
+  Chain 0.0
+  ```
+
+  Closing this entry means replacing the assertion of `test/architectures/sympnet_integrator.jl`
+  with a check of this form for each row marked none.
