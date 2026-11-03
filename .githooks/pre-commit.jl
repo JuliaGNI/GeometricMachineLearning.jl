@@ -50,7 +50,10 @@ a program that signal `n` ended, or `nothing` when the time ran out; and the out
 
 The limit covers the output too: a child of `cmd` can hold the stream open after `cmd` ends.
 After a time-out, the output is not read, since a process that left the group can hold the
-stream for ever; the box returns once the group is gone, or 6 s after the SIGTERM.
+stream for ever; the box returns once the group is gone, or 6 s after the SIGTERM, measured on
+the monotonic clock. The box closes its timers before it returns. A timer whose callback is
+already queued when `close` runs still runs it, so a signal can still reach the group ID after
+the box returns, when the ID can belong to another group.
 """
 function run_boxed(cmd, seconds)
     out = Pipe()
@@ -63,11 +66,13 @@ function run_boxed(cmd, seconds)
     push!(BOXED, group)
     close(out.in)
     reader = @async read(out, String)
-    stopped = Ref{Union{Nothing, Float64}}(nothing)
+    stopped = Ref{Union{Nothing, UInt64}}(nothing)
+    killer = Ref{Union{Nothing, Timer}}(nothing)
+    # `stopped` is set last, so the box finds the SIGKILL timer whenever it sees the stop.
     stop = Timer(seconds) do _
-        stopped[] = time()
+        killer[] = Timer(_ -> signal_group(group, Base.SIGKILL), 5)
         signal_group(group, Base.SIGTERM)
-        Timer(_ -> signal_group(group, Base.SIGKILL), 5)
+        stopped[] = time_ns()
     end
     wait(p)
     while stopped[] === nothing && !istaskdone(reader)
@@ -75,9 +80,10 @@ function run_boxed(cmd, seconds)
     end
     close(stop)
     if stopped[] !== nothing
-        while signal_group(group, 0) == 0 && time() < stopped[] + 6
+        while signal_group(group, 0) == 0 && time_ns() - stopped[] < 6_000_000_000
             sleep(0.1)
         end
+        close(killer[])
         delete!(BOXED, group)
         return nothing, ""
     end
@@ -117,14 +123,33 @@ function test_layout(root)
 end
 
 """
+The first two lines of the error `e`, joined with ` — `: its message and, for a parse error of
+TOML or of JuliaFormatter, the line that gives the location. A `ParseError` of Julia, Base's or
+the one that JuliaFormatter's parser throws, prints its reason after ` ── ` on a line below
+those two, behind the marker of the span, such as `#└────┘`, which holds no space; the text
+after the first ` ── ` of the last such line follows. `showerror` runs in the latest world, so
+the method of a package that the hook loads at run time, such as JuliaFormatter's parser, prints
+the error.
+"""
+function headline(e)
+    lines = split(Base.invokelatest(sprint, showerror, e), '\n')
+    parts = first(lines, 2)
+    nameof(typeof(e)) === :ParseError || return join(parts, " — ")
+    marked = findlast(l -> occursin(" ── ", l), lines[3:end])
+    marked === nothing ||
+        push!(parts, strip(last(split(lines[2 + marked], " ── "; limit = 2))))
+    return join(parts, " — ")
+end
+
+"""
 Whether JuliaFormatter's `format` finds the file `f` formatted. A throw counts as not formatted,
-with `f` and the first line of the error on stderr.
+with `f` and the `headline` of the error on stderr.
 """
 function formatted(format, f)
     try
         return Base.invokelatest(format, f; overwrite = false, throw_on_error = true)
     catch e
-        println(stderr, f, ": ", first(split(sprint(showerror, e), '\n')))
+        println(stderr, f, ": ", headline(e))
         return false
     end
 end
@@ -137,7 +162,7 @@ Checked one file at a time: `format(files)` returns a single Bool for the whole 
 message could only name every staged file. Per file costs nothing: the batch call formats each
 file on its own anyway, and `.JuliaFormatter.toml` is found by searching upward from the file
 either way. A file whose `format` throws, such as one that does not parse, is not formatted: its
-name and the first line of the error go to stderr, and the other files are still checked. A
+name and the error's message and location go to stderr, and the other files are still checked. A
 JuliaFormatter that does not load, or is older than 2.14, marks every file.
 """
 function formatting(files)
@@ -181,8 +206,11 @@ constructs that Julia parses: a parenthesised macro call whose body is a `for` b
 `(@allocated for ... end) ÷ n`, and a `const` whose assignment is on the next line.
 
 fatou writes its findings and its summary to stderr, not stdout, and exits 1 when it has any,
-so the verdict comes from the exit status and both streams are read. With findings there is no
-summary line, so every line is one finding.
+so the verdict comes from the exit status and both streams are read. The exit status does not
+tell a finding from an error: fatou exits 1 for a path it cannot walk too, and 2 for an unknown
+option. So a finding is a line of the form `<path>:<line>:<col>: …`, which `--output concise`
+prints, and a non-zero exit with no such line is a failure of fatou, which skips the stage. The
+paths follow `--`, so a staged path that starts with `-` is no option.
 
 Time-boxed: `fatou lint` does not always end. On a generated source file of 25 MB and 91 625
 lines, two runs each burned a core for six and a half hours. An advisory stage that hangs is
@@ -197,7 +225,7 @@ function lint(files)
     # A fatou on the PATH that the system cannot start, such as a script whose interpreter is
     # missing, makes the start throw; the stage is advisory, so it is skipped.
     code, out = try
-        run_boxed(`fatou lint --force-exclude --output concise $files`, 60)
+        run_boxed(`fatou lint --force-exclude --output concise -- $files`, 60)
     catch e
         e isa Base.IOError || rethrow()
         println("$(YELLOW)fatou lint: could not start — stage skipped, not a failure$(NC)")
@@ -210,9 +238,14 @@ function lint(files)
     elseif code == 0
         println("$(GREEN)fatou lint: clean$(NC)")
     else
-        findings = filter(!isempty, split(out, '\n'))
-        println("$(YELLOW)fatou lint: $(length(findings)) finding(s) — advisory, not blocking$(NC)")
-        isempty(findings) || println(indent(findings))
+        lines = filter(!isempty, split(out, '\n'))
+        findings = count(l -> occursin(r"^.+:\d+:\d+: ", l), lines)
+        if findings == 0
+            println("$(YELLOW)fatou lint: fatou failed with exit status $code — stage skipped, not a failure$(NC)")
+        else
+            println("$(YELLOW)fatou lint: $findings finding(s) — advisory, not blocking$(NC)")
+        end
+        isempty(lines) || println(indent(lines))
     end
 end
 
@@ -249,16 +282,35 @@ function nfc(files)
 end
 
 """
-The `name` of `Project.toml` in the current directory, or `nothing` for none. Throws
-`TOML.ParserError` for a `Project.toml` that does not parse.
+The `name` of `Project.toml` in the current directory, of any type, when the file has both a
+`name` and a `uuid`; `nothing` when it has no file, no `name` or no `uuid`, which is no package.
+For a `name` with no `uuid`, it prints the line that says no load test runs, since a `name`
+reads as a package. Throws `TOML.ParserError` for a `Project.toml` that does not parse.
 """
 function package_name()
     isfile("Project.toml") || return nothing
-    return get(TOML.parsefile("Project.toml"), "name", nothing)
+    project = TOML.parsefile("Project.toml")
+    haskey(project, "name") || return nothing
+    if !haskey(project, "uuid")
+        println("$(YELLOW)loads: skipped$(NC) — Project.toml has a `name` and no `uuid`, so no load test runs.")
+        return nothing
+    end
+    return project["name"]
 end
 
 """
-Stage 3, only for an actual package: an experiment repository has a Project.toml without a name.
+Whether the package name `name` is a Julia identifier that the parser reads as exactly that name.
+The load test puts the name into Julia source, so any other name could run code of its own.
+`Base.isidentifier` accepts a keyword such as `end`; the parser of the running Julia refuses it.
+"""
+function identifier(name)
+    name isa AbstractString && Base.isidentifier(name) &&
+        Meta.parse(name; raise = false) === Symbol(name)
+end
+
+"""
+Stage 3, only for an actual package, whose Project.toml has a name and a uuid: an experiment
+repository has a Project.toml without a name.
 
 The package loads in a child process started with `Base.julia_cmd()`, the binary of this
 process, in the repository's own environment: JuliaFormatter and most packages share
@@ -269,7 +321,8 @@ The output is captured from the one run and filtered rather than tailed: for the
 stage exists to catch, the cause — `ERROR: LoadError` and the file:line — is at the top, and a
 tail keeps backtrace frames and the "Failed to precompile" summary while it drops the cause.
 Dropping the ` [n] frame` and `  @ Module` lines leaves the message and its location in the
-first lines.
+first lines. The report starts at the first line that holds `ERROR:`, else at the first line,
+and shows at most 20 lines: a package that prints while it loads would push the cause past them.
 
 The child runs in `run_boxed`, so a load that does not end within `seconds` is a refusal.
 """
@@ -286,7 +339,8 @@ function load(pkg; seconds = 600)
     end
     println("$(RED)loads: FAILED$(NC) — `using $pkg` errors:")
     lines = filter(l -> !occursin(r"^\s*\[\d+\]\s|^\s*@ ", l), split(out, '\n'))
-    println(indent(first(lines, 20)))
+    start = something(findfirst(l -> occursin("ERROR:", l), lines), 1)
+    println(indent(first(lines[start:end], 20)))
     return false
 end
 
@@ -342,10 +396,14 @@ function main()
         package_name()
     catch e
         e isa TOML.ParserError || rethrow()
-        println("$(RED)Project.toml: does not parse$(NC) — ",
-            first(split(sprint(showerror, e), '\n')))
+        println("$(RED)Project.toml: does not parse$(NC) — ", headline(e))
         ok = false
         nothing
+    end
+    if pkg !== nothing && !identifier(pkg)
+        println("$(RED)Project.toml: the name $(repr(pkg)) is not a Julia identifier$(NC) — no load test runs.")
+        ok = false
+        pkg = nothing
     end
     pkg === nothing || (ok &= load(pkg))
 
