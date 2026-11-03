@@ -29,7 +29,10 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 GeometricMachineLearning = {path = ".."}
 
 [compat]
-Aqua = "0.8"
+# 0.8.14 is the first Aqua whose piracy check runs on Julia 1.12, which has no `TypeName.mt`; 0.8.17
+# gives the persistent-tasks subprocess the versions the tests load, and 0.8.18 passes where the
+# manifest lists a weak dependency that is not installed.
+Aqua = "0.8.18"
 ChainRulesTestUtils = "1"
 Documenter = "1"
 # A tight lower bound. `test/quality/aqua.jl` names three of `test_explicit_imports`' seven keyword switches,
