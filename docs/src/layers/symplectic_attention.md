@@ -75,8 +75,10 @@ The first term is equivalent to:
 If we again assume that the matrix `A` is a [`SymmetricMatrix`](@extref GeometricOptimizers GeometricOptimizers.SymmetricMatrix) then the expression simplifies to:
 
 ```math
-\nabla_Z\Sigma(Z) = AZ\mathrm{softmax}_1(C).
+\nabla_Z\Sigma(Z) = AZ\left(\mathrm{softmax}_1(C) + \mathrm{softmax}_1(C)^T\right).
 ```
+
+Unlike in the matrix case, the two terms do not merge into one: ``C`` is symmetric, but its column-wise softmax is not.
 
 !!! info
     Note that we used the "one softmax" here instead of the standard softmax. The one softmax has been shown to be favorable to the standard softmax in some cases.

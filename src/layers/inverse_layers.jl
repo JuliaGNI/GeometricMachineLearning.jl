@@ -129,7 +129,8 @@ function _attention_displacement(
         d::InverseSymplecticAttention{M, M, LayerType, :symmetric},
         x::AbstractArray, ps::NamedTuple) where {M, LayerType}
     A = ps.A
-    _mul(_mul(A, x), 2 * d.activation(_mul(_mul(_custom_transpose(x), A), x)))
+    σXAX = d.activation(_mul(_mul(_custom_transpose(x), A), x))
+    _mul(_mul(A, x), σXAX + _custom_transpose(σXAX))
 end
 
 function (d::InverseSymplecticAttention{M, M, LayerType})(

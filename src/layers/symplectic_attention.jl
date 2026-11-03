@@ -131,11 +131,17 @@ end
 # to a plain `Matrix` -- `test/layers/symplectic_attention_network_parameters_gradient.jl`
 # asserts both halves of that, and the last testset there covers this method. The binding costs no
 # allocation; it is the number of accesses that decides the structure.
+#
+# The increment is the gradient `A X (σ + σᵀ)` of the attention potential, and not `2 A X σ`: the
+# column-wise `VectorSoftmax` of the symmetric `XᵀAX` is not symmetric.
 function (d::SymplecticAttention{M, M, LayerType, :symmetric})(
         z::NamedTuple{(:q, :p), Tuple{AT, AT}}, ps::NamedTuple) where {M, LayerType, AT}
     A = ps.A
     _shift(Val(LayerType), z,
-        x -> _mul(_mul(A, x), 2 * d.activation(_mul(_mul(_custom_transpose(x), A), x))))
+        function (x)
+            σXAX = d.activation(_mul(_mul(_custom_transpose(x), A), x))
+            _mul(_mul(A, x), σXAX + _custom_transpose(σXAX))
+        end)
 end
 
 # A single sample, a `(q, p)` pair of vectors, goes through the matrix method as one column.
