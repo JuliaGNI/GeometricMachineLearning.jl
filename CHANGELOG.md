@@ -13,6 +13,12 @@ breaking release).
 > alongside the work. Where a release removed exported names the list is given; where it is a
 > reconstruction of intent, it says so.
 
+## [Unreleased]
+
+### Fixed
+
+- **`SymplecticAttentionQ` and `SymplecticAttentionP` with `symmetric = true` are symplectic with `VectorSoftmax`.** The shear increment was `2 A X σ(XᵀAX)`, which is the gradient of the attention potential only when `σ(XᵀAX)` is symmetric. `MatrixSoftmax`, the default, gives a symmetric matrix, so it was correct; the column-wise `VectorSoftmax` does not, and with it the Jacobian of the layer was not symplectic (entries of `JᵀΩJ − Ω` up to about 2e-2 at the default initialisation). The increment is now `A X (σ + σᵀ)`, the gradient for both activations. With `MatrixSoftmax` the output is unchanged up to round-off. With `VectorSoftmax` and `symmetric = true` a trained model keeps its parameters but gives different outputs. `InverseSymplecticAttentionQ` and `InverseSymplecticAttentionP` use the same formula, so they still invert the layer. The `symmetric = false` layers were already correct and are unchanged. The symplectic attention documentation page carries the corrected formula.
+
 ## [0.9.0] — 2026-10-31
 
 ### Removed (breaking)
