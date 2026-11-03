@@ -97,7 +97,7 @@ end
 nothing # hide
 ```
 
-Looking at the first and the second batch together, we see that we sample with replacement, i.e. all indices ``b^p_{1i} = 1, 2, 3, 4, 5`` appear. This also works if the data are in ``(q, p)`` form:
+Looking at the first and the second batch together, we see that we sample without replacement, i.e. all indices ``b^p_{1i} = 1, 2, 3, 4, 5`` appear. This also works if the data are in ``(q, p)`` form:
 
 ```@example
 using GeometricMachineLearning # hide
