@@ -20,7 +20,7 @@ search; the step size is a number or a `GeometricOptimizers.DecayingStatic` sche
 
 ```julia
 opt = TrainingOptimizer(nn.params; algorithm = Adam(), linesearch = 1e-3)
-opt = TrainingOptimizer(nn.params; AdamOptimizerWithDecay(n_steps)...)
+opt = TrainingOptimizer(nn.params; AdamOptimizerWithDecay(n_epochs)...)
 history = train!(nn, opt, dl, Batch(batch_size), n_epochs)
 ```
 

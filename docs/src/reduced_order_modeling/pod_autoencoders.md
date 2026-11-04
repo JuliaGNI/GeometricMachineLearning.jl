@@ -9,7 +9,7 @@ Main.theorem(raw"Given a snapshot matrix ``M = [u_1, \ldots, u_\mathtt{nts}] \in
 " * Main.indentation * raw"```
 " * Main.indentation * raw"or as a minimization problem:
 " * Main.indentation * raw"```math
-" * Main.indentation * raw"    \min_{\psi_1, \ldots, \psi_n\in\mathbb{R}^N} \sum_{j = 1}^{\mathtt{nts}} | u_j - \sum_{i = 1}^n \psi_i\langle u_j, u_i \rangle |^2\text{ s.t. $\langle \psi_i, \psi_j \rangle = \delta_{ij}$ for $1 \leq i$, $j \leq n$.}
+" * Main.indentation * raw"    \min_{\psi_1, \ldots, \psi_n\in\mathbb{R}^N} \sum_{j = 1}^{\mathtt{nts}} | u_j - \sum_{i = 1}^n \psi_i\langle u_j, \psi_i \rangle |^2\text{ s.t. $\langle \psi_i, \psi_j \rangle = \delta_{ij}$ for $1 \leq i$, $j \leq n$.}
 " * Main.indentation * raw"```
 " * Main.indentation * raw"In both these cases we have 
 " * Main.indentation * raw"```math

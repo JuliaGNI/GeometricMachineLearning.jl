@@ -181,7 +181,7 @@ nothing
 ![Validation of the different networks.](lst_validation_light.png)
 ![Validation of the different networks.](lst_validation_dark.png)
 
-We can see that the standard transformer is not able to stay close to the trajectory coming from implicit midpoint very well. The linear symplectic transformer outperforms the standard transformer while needing fewer parameters: 
+The plot shows the first component of ``q`` over thirty time steps for the first of the five trajectories of the training data. The two transformers start from its first `seq_length` points and the SympNet from its first point. The transformer and SympNet curves come from one draw of the initial conditions and of the network parameters, with the architectures and the training settings above, and they change with each of these. The implicit midpoint curve changes only with the initial conditions. The numbers of parameters of the standard transformer, the linear symplectic transformer and the SympNet are:
 
 ```@example lin_sympl_tran_tut
 parameterlength(nn_standard), parameterlength(nn_symplectic), parameterlength(nn_sympnet)
@@ -192,7 +192,7 @@ We also note that the linear symplectic transformer can be made *nonlinear* by u
 ```@raw latex
 \section*{Chapter Summary}
 
-In this chapter we demonstrated the efficacy of neural network-based symplectic integrators. We showed two examples: SympNets as an example of a symplectic one-step method and linear symplectic transformers as an example of a symplectic multi-step method. We compared the two different SympNet architectures ($LA$-SympNets and $G$-SympNets) with a standard ResNet and gave an example where symplecticity is important to achieve long-term stability: the ResNet was shown to fail on longer time scales even though it outperforms the $LA$-SympNet on smaller ones; this is because the ResNet does not have any structure encoded into it. The linear symplectic transformer was compared to the standard transformer and a SympNet (on the example of a complex coupled harmonic oscillator) and shown to outperform these two networks.
+In this chapter we demonstrated the efficacy of neural network-based symplectic integrators. We showed two examples: SympNets as an example of a symplectic one-step method and linear symplectic transformers as an example of a symplectic multi-step method. We compared the two different SympNet architectures ($LA$-SympNets and $G$-SympNets) with a standard ResNet, which has no structure encoded into it, on shorter and on longer time scales. The linear symplectic transformer was compared to the standard transformer and a SympNet on the example of a complex coupled harmonic oscillator.
 
 Of the two symplectic neural networks shown here the linear symplectic transformer constitutes a novel neural network architecture which was introduced in this dissertation.
 ```

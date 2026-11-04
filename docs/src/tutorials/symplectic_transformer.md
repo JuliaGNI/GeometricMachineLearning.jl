@@ -124,8 +124,8 @@ CairoMakie.save("lst_light.png", fig_light; px_per_unit = 1.2)
 nothing
 ```
 
-![Training loss for linear symplectic transformer.](lst_light.png)
-![Training loss for linear symplectic transformer.](lst_dark.png)
+![Training loss of the standard transformer, the symplectic transformer and the SympNet over the epochs.](lst_light.png)
+![Training loss of the standard transformer, the symplectic transformer and the SympNet over the epochs.](lst_dark.png)
 
 
 We further evaluate a trajectory with the trained networks for thirty time steps: 
@@ -178,13 +178,11 @@ CairoMakie.save("lst_validation_dark.png", fig_dark; px_per_unit = 1.2)
 nothing
 ```
 
-![Validation for linear symplectic transformer.](lst_validation_light.png)
-![Validation for linear symplectic transformer.](lst_validation_dark.png)
+![First component of q from implicit midpoint and from the three networks over thirty time steps.](lst_validation_light.png)
+![First component of q from implicit midpoint and from the three networks over thirty time steps.](lst_validation_dark.png)
 
-We can see that the standard transformer is not able to stay close to the trajectory coming from implicit midpoint very well. The linear symplectic transformer outperforms the standard transformer as well as the SympNet while needing fewer parameters than the standard transformer: 
+The plot shows the first component of ``q`` over thirty time steps for the first of the five trajectories of the training data. The two transformers start from its first `seq_length` points and the SympNet from its first point. The transformer and SympNet curves come from one draw of the initial conditions and of the network parameters, with the architectures and the training settings above, and they change with each of these. The implicit midpoint curve changes only with the initial conditions. The numbers of parameters of the standard transformer, the symplectic transformer and the SympNet are:
 
 ```@example sympl_tran_tut
 parameterlength(nn_standard), parameterlength(nn_symplectic), parameterlength(nn_sympnet)
 ```
-
-It is also interesting to note that the training error for the SympNet gets lower than the one for the symplectic transformer, but it does not manage to outperform it when looking at the validation.

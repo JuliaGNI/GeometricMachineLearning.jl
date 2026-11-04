@@ -9,7 +9,7 @@ In the figure we indicate that we leave out the *add connection*. When talking a
 
 Note that the volume-preserving transformer preserves the volume in the sense of the product spaces. That the [`VolumePreservingAttention`](@ref) layer preserves this structure was discussed when we [introduced it](@ref "Volume-Preserving Attention"). That the [`VolumePreservingFeedForwardLayer`](@ref)s preserve this structure on the product space is also easy to see. We take a [`VolumePreservingFeedForwardLayer`](@ref), e.g. 
 ```math
-    \psi: z \mapsto \sigma(Lz + b),
+    \psi: z \mapsto z + \sigma(Lz + b),
 ```
 and look at its action on the element of the product space ``[z^{(1)}, \ldots, z^{(T)}] = Z\in\mathbb{R}^{d\times{}T}``:
 ```math
