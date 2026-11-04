@@ -249,11 +249,11 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   `ResNetLayer`, because its `width` is `dim`. Closing this entry means a sentence in the docstring
   of `ResNetLayer` that points to `WideResNetLayer`.
 
-### K45 · Eight call sites in tutorials and scripts and three in the tests give `AdamOptimizerWithDecay` a horizon in epochs, so the schedule ends before the training does.
+### K45 · The schedule of `AdamOptimizerWithDecay` advances per minibatch, and ten call sites in tutorials and scripts and three in the tests give it a horizon in epochs, so it ends before the training does.
 
 - **location:** `docs/src/tutorials/symplectic_autoencoder.md:149`
 - **kind:** defect
-- **found:** 2026-11-04, from JuliaGNI/GeometricOptimizers.jl#178
+- **found:** 2026-11-04
 - **evidence:**
   The positional argument of `AdamOptimizerWithDecay` is the horizon `n` of `DecayingStatic`, in
   optimization steps, and `train!` takes one step per minibatch. The schedule is
@@ -266,6 +266,8 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   | `docs/src/tutorials/symplectic_autoencoder.md:149` | 65536 | 262144 | 2 | 32768 | `1e-34` |
   | `docs/src/tutorials/symplectic_autoencoder.md:284`, `:480` | 65536 | 65536 | 2 | 32768 | `1e-10` |
   | `docs/src/tutorials/volume_preserving_transformer_rigid_body.md:202` | 500000 | 500000 | 8 | 62500 | `1e-34` |
+  | `docs/src/tutorials/symplectic_transformer.md:66` | 2000 | 2000 | 2 | 1000 | `1e-10` |
+  | `docs/src/tutorials/linear_symplectic_transformer.md:66` | 2000 | 2000 | 2 | 1000 | `1e-10` |
   | `scripts/reproduction/volume_preserving_transformer/rigid_body.jl:54` | 500000 | 500000 | 8 | 62500 | `1e-34` |
   | `scripts/reproduction/symplectic_autoencoders/online_transformer_for_sae.jl:54` | 65536 | 65536 | 2 | 32768 | `1e-10` |
   | `scripts/reproduction/symplectic_autoencoders/online_sympnet.jl:42`, `:110` | 262144 | 262144 | 2 | 131072 | `1e-10` |
@@ -273,13 +275,16 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   | `test/optimizers/adam_with_learning_rate_decay.jl:66` | 128 | 128 | 13 | 10 | `1e-54` |
   | `test/optimizers/structured_array_parameters.jl:37` | 2 | 2 | 19 for `Batch(5)`, 15 for `Batch(5, 3)` | 1 | `1e-78`, `1e-62` |
 
-  These sites stay as they are. A change at any of them but the last moves a stored or a tested
-  result:
+  `docs/src/optimizers/optimizer.md:23` shows the same call with no data set, so it has no row.
 
-  - The tutorial pages show the runs behind the committed weights of `docs/src/tutorials/*.h5`, and
-    the scripts are the record of those runs. A new horizon on a page shows a run that did not
-    produce the weights, and in a script it gives other weights at the next run, which takes hours
-    on a GPU.
+  The fix is in the schedule and not at these sites. A planned pair of pull requests makes the
+  schedule advance per epoch, so that `n_epochs` is the horizon and no call site changes. These
+  results depend on it:
+
+  - The autoencoder and rigid-body pages show the runs behind the committed weights of
+    `docs/src/tutorials/*.h5`, and the scripts are the record of those runs. After the fix a script
+    gives other weights at its next run, which takes hours on a GPU. The two transformer pages
+    retrain at each build, so their figures change at the next build.
   - The page and the scripts do not agree on the runs. For the autoencoder, line 149 names
     `integrator_train_epochs`, a constant the page defines at line 271, and
     `online_sympnet.jl:42` passes `n_epochs`. For the integrator, line 284 and
@@ -288,43 +293,12 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
     `online_sympnet.jl:67` saves, and both scripts save `integrator_parameters.jld2`. The `.jld2`
     files are not in the repository, and nothing in the tree records the schedule of those runs.
   - `test/optimizers/adam_with_learning_rate_decay.jl:48` orders the final losses of the decayed and
-    the plain run, so its bound and its comment at lines 57 to 59, which reason in epochs, move with
-    the horizon. `test/optimizers/structured_array_parameters.jl:41` asserts only finite losses, so
-    a change at its line 37 moves no result, and that site stays only to go with the others in one
-    fix.
+    the plain run, so that test runs again after the fix and its bound can move. The comment at
+    lines 57 to 59 reasons in epochs, which is true after the fix.
+    `test/optimizers/structured_array_parameters.jl:41` asserts only finite losses.
 
-  Closing this entry means passing `n_epochs * length(batch(dl))`, as the two transformer tutorials
-  do, training again, committing the new weights, and setting the bounds of the test again.
-
-### K46 · The tutorial of the symplectic transformer says that it beats the SympNet in validation, and it does not.
-
-- **location:** `docs/src/tutorials/symplectic_transformer.md:185`
-- **kind:** docs
-- **found:** 2026-11-04
-- **evidence:**
-  Lines 185 and 191 say that the transformer "outperforms" the SympNet and that the SympNet "does
-  not manage to outperform it when looking at the validation". Line 185, and the captions at lines
-  128 and 182, also call it the *linear* symplectic transformer. These sentences are committed
-  while the figure beside them is computed at each build. The training blocks of the page, run in a
-  process of their own at the seed of the build, `123`, give this for the maximum of `|q̂₁ - q₁|`
-  over the thirty steps of the figure:
-
-  | page | horizon | standard transformer | symplectic transformer | SympNet |
-  |:--|:--|:--|:--|:--|
-  | `symplectic_transformer.md` | epochs | 2.69e-1 | 9.98e-2 | 4.77e-2 |
-  | `symplectic_transformer.md` | steps | 7.91e-2 | 3.43e-2 | 1.60e-2 |
-  | `linear_symplectic_transformer.md` | epochs | 2.80e-1 | 3.90e-2 | 9.35e-2 |
-  | `linear_symplectic_transformer.md` | steps | 1.65e-1 | 2.36e-2 | 3.45e-2 |
-
-  So the SympNet wins on the symplectic page with either horizon, and the claims of the linear page
-  hold at this seed with either horizon. The horizon changes no ordering here.
-
-  These orderings rest on the seed. Seeds `1` and `2` draw one more shuffle than the page does: the
-  SympNet beats the symplectic transformer on all four runs of the symplectic page, and the linear
-  transformer loses to the standard one on three of the four runs of the linear page, which the
-  chapter summary of that page also states as a result. One draw of five initial conditions cannot
-  carry these sentences, so closing this entry means stating what a sweep over seeds shows, or
-  removing the comparison.
+  Closing this entry means the per-epoch schedule, the test run again, and a correction of line 149
+  of the page.
 
 ## Upstream
 
