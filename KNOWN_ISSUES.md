@@ -277,16 +277,17 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
   `docs/src/optimizers/optimizer.md:23` shows the same call with no data set, so it has no row.
 
-  The fix is in the schedule and not at these sites. A planned pair of pull requests makes the
-  schedule advance per epoch, so that `n_epochs` is the horizon and no call site changes. These
-  results depend on it:
+  The fix is in the schedule. A planned pair of pull requests makes the schedule advance per epoch,
+  so that `n_epochs` is the horizon. No call site changes but
+  `docs/src/tutorials/symplectic_autoencoder.md:149`, which gives 65536 for a run of 262144 epochs.
+  These results depend on the fix:
 
   - The autoencoder and rigid-body pages show the runs behind the committed weights of
     `docs/src/tutorials/*.h5`, and the scripts are the record of those runs. After the fix a script
     gives other weights at its next run, which takes hours on a GPU. The two transformer pages
     retrain at each build, so their figures change at the next build.
-  - The page and the scripts do not agree on the runs. For the autoencoder, line 149 names
-    `integrator_train_epochs`, a constant the page defines at line 271, and
+  - The autoencoder page and the scripts do not agree on the runs. For the autoencoder, line 149
+    names `integrator_train_epochs`, a constant the page defines at line 271, and
     `online_sympnet.jl:42` passes `n_epochs`. For the integrator, line 284 and
     `online_transformer_for_sae.jl:54` give 65536, and `online_sympnet.jl:110` gives 262144.
     `scripts/utilities/convert_jld2_to_h5.jl:32` converts `sae_parameters.jld2`, which only
@@ -294,11 +295,12 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
     files are not in the repository, and nothing in the tree records the schedule of those runs.
   - `test/optimizers/adam_with_learning_rate_decay.jl:48` orders the final losses of the decayed and
     the plain run, so that test runs again after the fix and its bound can move. The comment at
-    lines 57 to 59 reasons in epochs, which is true after the fix.
+    lines 57 to 59 says that a 32-epoch budget reaches `η₂` almost at once, which holds per
+    minibatch and not per epoch, so it changes with the fix.
     `test/optimizers/structured_array_parameters.jl:41` asserts only finite losses.
 
-  Closing this entry means the per-epoch schedule, the test run again, and a correction of line 149
-  of the page.
+  Closing this entry means the per-epoch schedule, the test run again, a correction of that comment,
+  and a correction of `docs/src/tutorials/symplectic_autoencoder.md:149`.
 
 ## Upstream
 
