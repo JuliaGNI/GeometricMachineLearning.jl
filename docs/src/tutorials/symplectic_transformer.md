@@ -63,14 +63,15 @@ nn_standard = NeuralNetwork(arch_standard)
 nn_symplectic = NeuralNetwork(arch_symplectic)
 nn_sympnet = NeuralNetwork(arch_sympnet)
 
-o_pairing = AdamOptimizerWithDecay(n_epochs)
+batch = Batch(batch_size, seq_length)
+batch2 = Batch(batch_size)
+
+# the schedule counts optimization steps, one per minibatch
+o_pairing = AdamOptimizerWithDecay(n_epochs * length(batch(dl)))
 
 o_standard = TrainingOptimizer(nn_standard.params; o_pairing...)
 o_symplectic = TrainingOptimizer(nn_symplectic.params; o_pairing...)
 o_sympnet = TrainingOptimizer(nn_sympnet.params; o_pairing...)
-
-batch = Batch(batch_size, seq_length)
-batch2 = Batch(batch_size)
 
 loss_array_standard = train!(nn_standard, o_standard, dl, batch, n_epochs; show_progress = false)
 loss_array_symplectic = train!(nn_symplectic, o_symplectic, dl, batch, n_epochs; show_progress = false)
