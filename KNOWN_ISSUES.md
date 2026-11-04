@@ -271,9 +271,10 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   | `scripts/reproduction/symplectic_autoencoders/online_sympnet.jl:42`, `:110` | 262144 | 262144 | 2 | 131072 | `1e-10` |
   | `test/optimizers/adam_with_learning_rate_decay.jl:38` | 2048 | 2048 | 13 | 158 | `1e-54` |
   | `test/optimizers/adam_with_learning_rate_decay.jl:66` | 128 | 128 | 13 | 10 | `1e-54` |
-  | `test/optimizers/structured_array_parameters.jl:37` | 2 | 2 | 19 | 1 | `1e-78` |
+  | `test/optimizers/structured_array_parameters.jl:37` | 2 | 2 | 19 for `Batch(5)`, 15 for `Batch(5, 3)` | 1 | `1e-78`, `1e-62` |
 
-  These sites stay as they are, because a change at each of them moves a stored or a tested result:
+  These sites stay as they are. A change at any of them but the last moves a stored or a tested
+  result:
 
   - The tutorial pages show the runs behind the committed weights of `docs/src/tutorials/*.h5`, and
     the scripts are the record of those runs. A new horizon on a page shows a run that did not
@@ -282,11 +283,15 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   - The page and the scripts do not agree on the runs. For the autoencoder, line 149 names
     `integrator_train_epochs`, a constant the page defines at line 271, and
     `online_sympnet.jl:42` passes `n_epochs`. For the integrator, line 284 and
-    `online_transformer_for_sae.jl:54` give 65536, and `online_sympnet.jl:110` gives 262144. Nothing
-    in the tree says which run gave `sae_parameters.h5` or `integrator_parameters.h5`.
+    `online_transformer_for_sae.jl:54` give 65536, and `online_sympnet.jl:110` gives 262144.
+    `scripts/utilities/convert_jld2_to_h5.jl:32` converts `sae_parameters.jld2`, which only
+    `online_sympnet.jl:67` saves, and both scripts save `integrator_parameters.jld2`. The `.jld2`
+    files are not in the repository, and nothing in the tree records the schedule of those runs.
   - `test/optimizers/adam_with_learning_rate_decay.jl:48` orders the final losses of the decayed and
     the plain run, so its bound and its comment at lines 57 to 59, which reason in epochs, move with
-    the horizon. `test/optimizers/structured_array_parameters.jl:41` asserts only finite losses.
+    the horizon. `test/optimizers/structured_array_parameters.jl:41` asserts only finite losses, so
+    a change at its line 37 moves no result, and that site stays only to go with the others in one
+    fix.
 
   Closing this entry means passing `n_epochs * length(batch(dl))`, as the two transformer tutorials
   do, training again, committing the new weights, and setting the bounds of the test again.
