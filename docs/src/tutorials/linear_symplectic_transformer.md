@@ -181,7 +181,7 @@ nothing
 ![Validation of the different networks.](lst_validation_light.png)
 ![Validation of the different networks.](lst_validation_dark.png)
 
-The plot shows the first component of ``q`` over thirty time steps for the first of the five trajectories of the training data. The two transformers start from its first `seq_length` points and the SympNet from its first point. The curves come from one draw of the initial conditions and of the network parameters, with the architectures and the training settings above, and they change with each of these. The numbers of parameters of the standard transformer, the linear symplectic transformer and the SympNet are:
+The plot shows the first component of ``q`` over thirty time steps for the first of the five trajectories of the training data. The two transformers start from its first `seq_length` points and the SympNet from its first point. The transformer and SympNet curves come from one draw of the initial conditions and of the network parameters, with the architectures and the training settings above, and they change with each of these. The implicit midpoint curve changes only with the initial conditions. The numbers of parameters of the standard transformer, the linear symplectic transformer and the SympNet are:
 
 ```@example lin_sympl_tran_tut
 parameterlength(nn_standard), parameterlength(nn_symplectic), parameterlength(nn_sympnet)
