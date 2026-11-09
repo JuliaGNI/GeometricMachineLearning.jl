@@ -64,7 +64,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
 ### K40 · `HRedSys` carries a cache's buffers and its `pullback_mode` in fields that no code in `src/` reads.
 
-- **location:** `src/reduced_system/reduced_system.jl:93`
+- **location:** `src/reduced_system/reduced_system.jl:107`
 - **kind:** dead code
 - **found:** #370
 - **evidence:**
