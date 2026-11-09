@@ -99,6 +99,32 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   methods, for example to `Union{AbstractArray, NamedTuple}`. That is a design call about what the
   method accepts, and the pull request does not make it.
 
+### K46 · The dual-number caches of `ReducedVFCache` and `HRedSys` are fields of the abstract type `IdDict{DataType, Any}`.
+
+- **location:** `src/reduced_system/reduced_system.jl:7`
+- **kind:** defect
+- **found:** 2026-11-09
+- **evidence:**
+  `julia --startup-file=no concrete-fields.jl <package>` (Julia 1.13, at `d9cebdef`) reports two
+  of its fields:
+
+  ```
+  GeometricMachineLearning.HRedSys.dual_cache::IdDict{DataType, Any}
+  GeometricMachineLearning.ReducedVFCache.dual_cache::IdDict{DataType, Any}
+  ```
+
+  `ReducedVFCache.dual_cache` (line 7) maps the element type `T` of a state that is not an
+  `AbstractFloat`, such as a `ForwardDiff.Dual`, to a `ReducedVFCache(T, N2, n2)`, which
+  `_get_vf_cache` builds on first use (lines 30–32). The read asserts `::ReducedVFCache{T}`, which
+  leaves the parameter `JR` open, so the buffers infer as `Vector{T}` and `c.jac_result`, the
+  first argument of `ForwardDiff.jacobian!` (line 263), does not infer. The `::Vector{T}` and
+  `::Matrix{T}` assertions at lines 264 and 273 restore the types after that call. The two
+  callers are `evaluate_vf_and_compute_∇Ψ` (line 257) and `evaluate_vf_and_vjp` (line 282).
+  `HRedSys.dual_cache` (line 146) holds the same dictionary (line 197), and no code in `src/`
+  reads it. A fix is a design decision: a dual cache whose element type is a type parameter
+  that the caller fixes, or the dictionary with the full concrete type asserted at the read. The
+  second makes the read infer and still leaves the field flagged.
+
 ## Found late
 
 ### K17 · `assign_q_and_p` drops the rows from `2N + 1` on without an error.
