@@ -29,9 +29,8 @@ breaking release).
   - The kernels of this package (`tensor_cayley`, `tensor_tensor_mul` and its two transposed
     products, `tensor_mat_skew_sym_assign` and its pullback) compile for a host array too, so their
     element type must be `isbits`. A `BigFloat` tensor, which went through them on 0.9, raises a
-    `GPUCompiler.InvalidIRError` when the kernel compiles.
-    The `BigFloat` reference of `test/kernels/cayley.jl` is a host solve and does not reach a
-    kernel.
+    `GPUCompiler.InvalidIRError` when the kernel compiles. The `BigFloat` reference of
+    `test/kernels/cayley.jl` is a host solve and does not reach a kernel.
   - The kernel-backed operations of the structured matrices of GeometricOptimizers 0.10 refuse an
     element type that is not `isbits` with an `ArgumentError`; its CHANGELOG lists them.
 
