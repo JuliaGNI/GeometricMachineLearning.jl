@@ -119,7 +119,8 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   leaves the parameter `JR` open, so the buffers infer as `Vector{T}` and `c.jac_result`, the
   first argument of `ForwardDiff.jacobian!` (line 263), does not infer. The `::Vector{T}` and
   `::Matrix{T}` assertions at lines 264 and 273 restore the types after that call. The two
-  callers are `evaluate_vf_and_compute_∇Ψ` (line 257) and `evaluate_vf_and_vjp` (line 282).
+  callers of `_get_vf_cache` are `evaluate_vf_and_compute_∇Ψ` (line 257) and
+  `evaluate_vf_and_vjp` (line 282).
   `HRedSys.dual_cache` (line 146) holds the same dictionary (line 197), and no code in `src/`
   reads it. A fix is a design decision: a dual cache whose element type is a type parameter
   that the caller fixes, or the dictionary with the full concrete type asserted at the read. The
