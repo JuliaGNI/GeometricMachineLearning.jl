@@ -20,6 +20,9 @@ using NeuralNetworkParameters: mapparameters
 import KernelAbstractions
 import Random
 
+# The global section of a `StiefelManifold` leaf factorizes on the device.
+include("jlarray_cholesky.jl")
+
 to_device(x::AbstractArray) = JLArray(x)
 to_device(x::StiefelManifold) = StiefelManifold(JLArray(x.A))
 to_device(x::SymmetricMatrix) = SymmetricMatrix(JLArray(x.S), x.n)

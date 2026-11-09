@@ -175,16 +175,18 @@ end
             # A broadcast on a JLArray also reads a host matrix, so the output alone cannot show
             # where the encoding lives: the encoding itself must be a JLArray.
             P = GeometricMachineLearning._positional_encoding_like(x_device, 4)
+            # A `JLArray` broadcast is a compiled kernel, whose `sin` and `cos` may differ from
+            # the host's in the last bit, so the device rows compare within a few ULPs.
             @test P isa JLArray{T, 2}
-            @test Array(P) == positional_encoding(T, 4, 3)
+            @test isapprox(Array(P), positional_encoding(T, 4, 3); rtol = 8 * eps(T))
             y = l(x_device, NamedTuple())
             @test y isa JLArray{T, 2}
             @test KernelAbstractions.get_backend(y) isa JLBackend
-            @test Array(y) == l(x, NamedTuple())
+            @test isapprox(Array(y), l(x, NamedTuple()); rtol = 8 * eps(T))
 
             y = l(JLArray(reshape(x, 4, 3, 1)), NamedTuple())
             @test y isa JLArray{T, 3}
-            @test Array(y)[:, :, 1] == l(x, NamedTuple())
+            @test isapprox(Array(y)[:, :, 1], l(x, NamedTuple()); rtol = 8 * eps(T))
         end
     end
 end

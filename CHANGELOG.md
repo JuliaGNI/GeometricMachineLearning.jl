@@ -13,7 +13,40 @@ breaking release).
 > alongside the work. Where a release removed exported names the list is given; where it is a
 > reconstruction of intent, it says so.
 
-## [Unreleased]
+## [Unreleased] — targeting 0.10.0
+
+### Breaking Changes
+
+- **KernelAbstractions 0.10.** `[compat]` takes `KernelAbstractions = "0.10.5"` and no 0.9 release,
+  together with `AbstractNeuralNetworks = "0.10"` and `GeometricOptimizers = "0.10"`, their first
+  releases on KernelAbstractions 0.10. An environment that holds KernelAbstractions 0.9 does not
+  resolve this version. On 0.10 the `CPU()` backend is PoCL, which compiles every kernel to SPIR-V.
+  For a caller:
+  - `GPU` is no longer exported. KernelAbstractions 0.10 deprecates `GPU` as an alias of `Backend`,
+    the supertype of `CPU`, so `CPU() isa GPU` is `true`, and AbstractNeuralNetworks 0.10 no longer
+    exports it. Test for a device backend with `!(backend isa CPU)`. `CPU` stays exported.
+  - `CPU(; static = true)` does not exist on 0.10: `CPU()` takes no keyword.
+  - The kernels of this package (`tensor_cayley`, `tensor_tensor_mul` and its two transposed
+    products, `tensor_mat_skew_sym_assign` and its pullback) compile for a host array too, so their
+    element type must be `isbits`. A `BigFloat` tensor, which went through them on 0.9, raises a
+    `GPUCompiler.InvalidIRError` when the kernel compiles.
+    The `BigFloat` reference of `test/kernels/cayley.jl` is a host solve and does not reach a
+    kernel.
+  - The kernel-backed operations of the structured matrices of GeometricOptimizers 0.10 refuse an
+    element type that is not `isbits` with an `ArgumentError`; its CHANGELOG lists them.
+
+### Changed
+
+- **The test environment takes the GPU stack of KernelAbstractions 0.10.** `test/Project.toml` has
+  `JLArrays = "0.5"`, `Metal = "1.12"` and `GPUArraysCore = "0.2.1"`, the first releases that accept
+  KernelAbstractions 0.10. JLArrays 0.5 refuses to hand a `JLArray` to LAPACK, as a device array
+  does, so `test/helpers/jlarray_cholesky.jl` gives the stand-in device the Cholesky factorization
+  that a real device has from its vendor library; the `JLArray` training tests of a `StiefelLayer`
+  chain and of a `SymplecticAutoencoder` build their global section through it. A `JLArray`
+  broadcast is a compiled kernel too, so the device rows of `test/layers/positional_encoding.jl`
+  compare with the host within `8 eps(T)` rather than exactly. `KernelAbstractions.zeros` is owned
+  by `KernelInterface` on 0.10, so `test/quality/aqua.jl` exempts that one qualified access from
+  the owner check.
 
 ### Fixed
 
