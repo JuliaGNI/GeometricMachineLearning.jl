@@ -63,6 +63,7 @@ if "core" in GROUPS
     @safetestset "PSD tests" include("architectures/psd_architecture_tests.jl")
     @safetestset "SymplecticAutoencoder tests" include("architectures/symplectic_autoencoder_tests.jl")
     @safetestset "WeightTiedSymplecticAutoencoder" include("architectures/weight_tied_symplectic_autoencoder.jl")
+    @safetestset "EquivariantSymplecticAutoencoder and ParticlePSDLayer" include("architectures/equivariant_symplectic_autoencoder.jl")
     @safetestset "MultiModalSymplecticAutoencoder and multimodal losses" include("architectures/multimodal_symplectic_autoencoder.jl")
     @safetestset "Check if autoencoder error is lower than PSD error" include("architectures/sae_error_lower_than_psd_error.jl")
     @safetestset "Architecture forward passes against the recorded outputs" include("architectures/architecture_pins.jl")
