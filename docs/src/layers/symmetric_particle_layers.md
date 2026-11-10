@@ -59,7 +59,7 @@ SymmetricSymplecticAutoencoder
 \Psi^e \circ P_\sigma = R_\sigma \circ \Psi^e, \qquad \Psi^d \circ R_\sigma = P_\sigma \circ \Psi^d, \qquad \Psi^e \circ \Psi^d = \mathrm{id}
 ```
 
-for all ``\sigma \in S_M`` and all parameters, and the decoder is a symplectic embedding. A pooling over particles, as in Deep Sets, does not fit a symplectic encoder: a sum over particles is a Poisson submersion only in the linear case (the center of mass).
+for all ``\sigma \in S_M`` and all parameters, and the decoder is a symplectic embedding.
 
 ```@docs
 ParticlePSDLayer
