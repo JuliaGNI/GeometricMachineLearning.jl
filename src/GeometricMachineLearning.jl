@@ -257,7 +257,7 @@ include("layers/low_rank_stiefel_layer.jl")
 include("loss/dlra_trace_loss.jl")
 include("architectures/linear_symplectic_transformer.jl")
 include("architectures/symplectic_transformer.jl")
-include("architectures/weight_tied_symplectic_autoencoder.jl")
+include("architectures/left_inverse_symplectic_autoencoder.jl")
 include("architectures/symmetric_symplectic_autoencoder.jl")
 include("architectures/multimodal_symplectic_autoencoder.jl")
 include("loss/multimodal_losses.jl")
@@ -270,7 +270,9 @@ export inverse_layer
 export InverseGradientLayer, InverseGradientLayerQ, InverseGradientLayerP
 export InverseSymplecticAttention, InverseSymplecticAttentionQ, InverseSymplecticAttentionP
 export TransposePSDLayer
-export WeightTiedSymplecticAutoencoder
+export LeftInverseSymplecticAutoencoder
+# The name of 0.9.0; `@deprecate_binding` exports it and warns under `--depwarn=yes`.
+Base.@deprecate_binding WeightTiedSymplecticAutoencoder LeftInverseSymplecticAutoencoder
 export CanonicalSortLayer, InvertCanonicalSortLayer
 export PairwiseSymplecticLayer, PairwiseSymplecticLayerQ, PairwiseSymplecticLayerP
 export InversePairwiseSymplecticLayerQ, InversePairwiseSymplecticLayerP

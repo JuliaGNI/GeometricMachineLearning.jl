@@ -62,7 +62,7 @@ if "core" in GROUPS
     @safetestset "ForcedSympNet: layers, forcing and training" include("architectures/forced_sympnet.jl")
     @safetestset "PSD tests" include("architectures/psd_architecture_tests.jl")
     @safetestset "SymplecticAutoencoder tests" include("architectures/symplectic_autoencoder_tests.jl")
-    @safetestset "WeightTiedSymplecticAutoencoder" include("architectures/weight_tied_symplectic_autoencoder.jl")
+    @safetestset "LeftInverseSymplecticAutoencoder" include("architectures/left_inverse_symplectic_autoencoder.jl")
     @safetestset "MultiModalSymplecticAutoencoder and multimodal losses" include("architectures/multimodal_symplectic_autoencoder.jl")
     @safetestset "Check if autoencoder error is lower than PSD error" include("architectures/sae_error_lower_than_psd_error.jl")
     @safetestset "Architecture forward passes against the recorded outputs" include("architectures/architecture_pins.jl")

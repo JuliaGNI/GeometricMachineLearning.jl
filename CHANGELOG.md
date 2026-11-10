@@ -64,6 +64,8 @@ breaking release).
 
 ### Changed
 
+- **`WeightTiedSymplecticAutoencoder` is renamed `LeftInverseSymplecticAutoencoder`, after what it guarantees and not how it is built.** Its encoder is an exact left inverse of its decoder, `encoder(nn)(decoder(nn)(ξ)) == ξ` to floating-point round-off for every value of the parameters, because the encoder applies the analytic inverses of the decoder's layers with the decoder's weights. `LeftInverseSymplecticAutoencoder` is exported, and `WeightTiedSymplecticAutoencoder`, the name 0.9.0 exported, remains as an exported deprecated binding (`Base.@deprecate_binding`) that is the same type and warns under `--depwarn=yes`; it will be removed in a later breaking release. The source and test files are `src/architectures/left_inverse_symplectic_autoencoder.jl` and `test/architectures/left_inverse_symplectic_autoencoder.jl`, the internal model layer is `LeftInverseAutoencoderLayer` (was `WeightTiedAutoencoderLayer`), and the documentation calls the architecture a left-inverse SAE. The test of the deprecated name is in `test/architectures/left_inverse_symplectic_autoencoder.jl`.
+
 - **The `[compat]` lower bounds of `Project.toml` and `test/Project.toml` are the versions the CI Downgrade job resolves when it resolves both projects together at Julia 1.12.** Each old bound named a version that no resolution at the floors reaches:
   - `ChainRulesCore` 1 → 1.25.1, because `GeometricOptimizers` 0.9.2 requires it;
   - `KernelAbstractions` 0.9 → 0.9.38, because `GeometricOptimizers` 0.9.2 requires it; the move to KernelAbstractions 0.10 under Breaking Changes then raises it to 0.10.5;
