@@ -3,6 +3,7 @@ using GeometricMachineLearning: ForwardDiff, SymplecticCompression,
                                 compute_decoder_iterations,
                                 decoder_layers_from_iteration, params
 using GeometricOptimizers: Static, optimization_step!
+using HDF5: HDF5
 using KernelAbstractions
 using LinearAlgebra
 using NeuralNetworkParameters: flatten, unflatten
@@ -253,4 +254,22 @@ end
         @test nt_dec isa NamedTuple{(:q, :p), Tuple{Vector{T}, Vector{T}}}
         @test nt_nn isa NamedTuple{(:q, :p), Tuple{Vector{T}, Vector{T}}}
     end
+end
+
+# `load(NeuralNetwork, file, arch)` builds `Chain(arch)` for other architectures, which this one does not
+# have; the HDF5 extension rebuilds its tied layer, so a saved network loads with the same parameters and
+# the same encoder and decoder.
+@testset "WeightTiedSymplecticAutoencoder save/load round trip" begin
+    arch = WeightTiedSymplecticAutoencoder(6, 2; n_blocks = 2, n_layers = 2, n_ambient_layers = 2)
+    nn = NeuralNetwork(arch, CPU(), Float64)
+    path = tempname() * ".h5"
+    HDF5.h5open(f -> save(f, nn), path, "w")
+    nn2 = load(NeuralNetwork, path, arch)
+    @test nn2.model isa GeometricMachineLearning.WeightTiedAutoencoderLayer
+    @test first(flatten(params(nn2))) ≈ first(flatten(params(nn)))
+    z, ξ = randn(6, 5), randn(2, 5)
+    @test encoder(nn2)(z) ≈ encoder(nn)(z)
+    @test decoder(nn2)(ξ) ≈ decoder(nn)(ξ)
+    @test encoder(nn2)(decoder(nn2)(ξ)) ≈ ξ rtol = 1e-10
+    rm(path)
 end

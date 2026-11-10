@@ -73,6 +73,7 @@ if "core" in GROUPS
     @safetestset "Check reduced model" include("reduced_system/reduced_system.jl")
     @safetestset "HRedSys reference-state shifting and VJP pullback mode" include("reduced_system/reference_shift_and_vjp.jl")
     @safetestset "_norm keeps the element type of its argument" include("utils.jl")
+    @safetestset "LatentVectorFieldLoss" include("loss/latent_vector_field_loss.jl")
     @safetestset "Test NetworkLoss + Optimizer" include("integration/losses_and_optimization.jl")
     @safetestset "ReducedLoss through train!" include("integration/reduced_loss_optimization.jl")
     @safetestset "Optimizer #2" include("optimizers/optimization_step.jl")

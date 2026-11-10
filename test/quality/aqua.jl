@@ -96,10 +96,12 @@ const NON_PUBLIC_QUALIFIED = (
     :Initializer, :dim,                                          # AbstractNeuralNetworks
     :zeros,                                                      # KernelAbstractions
     :jacobian!,                                                  # ForwardDiff
-    :JacobianResult, :jacobian, :value)                          # DiffResults
+    :JacobianResult, :jacobian, :value,                          # DiffResults
+    :H5DataStore)                                                # HDF5, the store `load` dispatches on in AbstractNeuralNetworks too
 const NON_PUBLIC_IMPORTS = (
     :AbstractExplicitLayer, :Architecture, :_compute_loss, :dim, :model, # AbstractNeuralNetworks
-    :load, :save)                                                       # NeuralNetworkParameters
+    :load, :save,                                                       # NeuralNetworkParameters
+    :WeightTiedAutoencoderLayer)                                        # this package's own, for its HDF5 extension
 
 @testset "every name reached in GeometricOptimizers is public" begin
     @test check_all_qualified_accesses_are_public(GeometricMachineLearning;

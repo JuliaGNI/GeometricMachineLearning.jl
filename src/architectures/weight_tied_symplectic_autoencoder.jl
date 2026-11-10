@@ -118,6 +118,14 @@ function (l::WeightTiedAutoencoderLayer)(z, ps::Union{NamedTuple, NetworkParamet
     Chain(l.decoder_layers...)(ξ, ps)
 end
 
+# `LatentVectorFieldLoss`: the model is one `WeightTiedAutoencoderLayer`, not a chain of the encoder's
+# and the decoder's layers. The decoder takes the parameter tree, the encoder its reversal, as in the
+# forward pass above.
+_latent_vf_n_encoder_layers(::WeightTiedSymplecticAutoencoder) = 0
+function _split_autoencoder(::LatentVectorFieldLoss, model::WeightTiedAutoencoderLayer, ps)
+    Chain(model.encoder_layers...), _reverse_params(ps), Chain(model.decoder_layers...), ps
+end
+
 function NeuralNetwork(
         arch::WeightTiedSymplecticAutoencoder, backend::NeuralNetworkBackend,
         ::Type{T}; kwargs...) where {T <: Number}
