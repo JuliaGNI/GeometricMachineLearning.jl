@@ -60,6 +60,8 @@ breaking release).
 
 - **The two transformer tutorials say what their figures show and name no winner.** `symplectic_transformer.md` and `linear_symplectic_transformer.md` said which network outperforms which, on one draw of the initial conditions and of the parameters. The text states what is plotted and under which conditions, and the chapter summary lists the comparisons without a result. The symplectic page calls its network the symplectic transformer in the captions, where it said linear symplectic transformer. `docs/src/optimizers/optimizer.md` passes `n_epochs` to `AdamOptimizerWithDecay`, as its `train!` line does; known issue K45 records what the horizon counts.
 
+- **A sandboxed `Pkg.test` on an Apple-silicon Mac with no Metal cache built outside the sandbox reaches the tests, and the `metal` group records its device skip.** Metal.jl 1.11.1 ran its precompile workload where the device list is empty, as in a sandbox, and stopped with `BoundsError: attempt to access 0-element Vector{Metal.MTL.MTLDevice} at index [1]`. Metal is a test dependency, and `Pkg.test` precompiles the whole test environment first, so a run of any group failed before the first test. Metal.jl 1.12, which `test/Project.toml` requires, runs the workload only where a device exists (JuliaGPU/Metal.jl#1000). This closes known issue K4, which leaves `KNOWN_ISSUES.md`.
+
 ### Changed
 
 - **The `[compat]` lower bounds of `Project.toml` and `test/Project.toml` are the versions the CI Downgrade job resolves when it resolves both projects together at Julia 1.12.** Each old bound named a version that no resolution at the floors reaches:
