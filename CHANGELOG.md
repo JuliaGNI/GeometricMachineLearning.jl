@@ -19,7 +19,8 @@ breaking release).
 
 - **KernelAbstractions 0.10.** `[compat]` takes `KernelAbstractions = "0.10.5"` and no 0.9 release,
   together with `AbstractNeuralNetworks = "0.10"` and `GeometricOptimizers = "0.10"`, their first
-  releases on KernelAbstractions 0.10. An environment that holds KernelAbstractions 0.9 does not
+  releases on KernelAbstractions 0.10, and `NNlib = "0.9.52"`, the first NNlib release that admits
+  KernelAbstractions 0.10, so the Downgrade resolve cannot reach a lower one. An environment that holds KernelAbstractions 0.9 does not
   resolve this version. On 0.10 the `CPU()` backend is PoCL, which compiles every kernel to SPIR-V.
   For a caller:
   - `GPU` is no longer exported. KernelAbstractions 0.10 deprecates `GPU` as an alias of `Backend`,
@@ -59,9 +60,9 @@ breaking release).
 
 - **The `[compat]` lower bounds of `Project.toml` and `test/Project.toml` are the versions the CI Downgrade job resolves when it resolves both projects together at Julia 1.12.** Each old bound named a version that no resolution at the floors reaches:
   - `ChainRulesCore` 1 → 1.25.1, because `GeometricOptimizers` 0.9.2 requires it;
-  - `KernelAbstractions` 0.9 → 0.9.38, because `GeometricOptimizers` 0.9.2 requires it;
+  - `KernelAbstractions` 0.9 → 0.9.38, because `GeometricOptimizers` 0.9.2 requires it; the move to KernelAbstractions 0.10 under Breaking Changes then raises it to 0.10.5;
   - `NeuralNetworkParameters` 0.5 → 0.5.3, because `GeometricOptimizers` 0.9.2 requires it;
-  - `NNlib` "0.8, 0.9" → 0.9.30, the version the resolution reaches: 0.9.30 is the first release whose `ForwardDiff` weak-dependency bound admits `ForwardDiff` 1, and 0.8.21, the last 0.8 release, requires `GPUArraysCore` 0.1 where `AbstractNeuralNetworks` 0.9.2 requires 0.2;
+  - `NNlib` "0.8, 0.9" → 0.9.30, the version the resolution reaches: 0.9.30 is the first release whose `ForwardDiff` weak-dependency bound admits `ForwardDiff` 1, and 0.8.21, the last 0.8 release, requires `GPUArraysCore` 0.1 where `AbstractNeuralNetworks` 0.9.2 requires 0.2; the move to KernelAbstractions 0.10 then raises it to 0.9.52;
   - `Zygote` 0.7 → 0.7.5, the first 0.7 release that admits `ForwardDiff` 1;
   - `ProgressMeter` 1 → 1.5, the first release whose `Progress` takes the `enabled` keyword that `train!` passes;
   - in `test/Project.toml`, `GeometricIntegrators` 0.18.2 → 0.18.6 and `GeometricProblems` "0.8, 0.9" → 0.9.1, the first releases that admit `GeometricBase` 0.15;
