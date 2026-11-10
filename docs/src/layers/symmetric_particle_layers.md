@@ -19,7 +19,7 @@ The permutation matrix of ``\sigma \in S_M`` has the entries ``(\Pi_\sigma)_{ij}
 
 A state ``x`` and its relabelled copies ``P_\sigma x`` describe the same physical state, so model reduction has to be viewed modulo relabelling: the physical states are the classes ``[x] = \{P_\sigma x : \sigma \in S_M\}``, the points of ``\mathbb{R}^{2Md}/S_M``.
 
-On the latent space ``\mathbb{R}^{2n}``, ``\sigma`` acts by a map ``R_\sigma`` that depends on the architecture. ``R_\sigma = \mathrm{id}`` is the trivial action. If ``n = M\tilde{d}``, the canonical coordinates of the latent space can be grouped into ``M`` latent positions and momenta in ``\mathbb{R}^{\tilde{d}}`` as ``(q, p)`` is, and ``R_\sigma`` can be ``P_\sigma`` with ``I_d`` replaced by ``I_{\tilde{d}}``. Let ``U \subseteq \mathbb{R}^{2Md}`` be ``S_M``-invariant, i.e. ``P_\sigma(U) = U`` for all ``\sigma \in S_M``. Then:
+On the latent space ``\mathbb{R}^{2n}``, ``\sigma`` acts by a map ``R_\sigma`` that depends on the architecture. ``R_\sigma = \mathrm{id}`` is the trivial action. If ``n = M\tilde{d}``, the canonical coordinates of the latent space can be grouped into ``M`` latent positions and momenta in ``\mathbb{R}^{\tilde{d}}`` in the same way as ``(q, p)``, and ``R_\sigma`` can be ``P_\sigma`` with ``I_d`` replaced by ``I_{\tilde{d}}``. Let ``U \subseteq \mathbb{R}^{2Md}`` be ``S_M``-invariant, i.e. ``P_\sigma(U) = U`` for all ``\sigma \in S_M``. Then:
 - an encoder ``\Psi^e`` is *permutation-symmetric* on ``U`` if ``\Psi^e(P_\sigma x) = R_\sigma(\Psi^e(x))`` for all ``x \in U`` and ``\sigma \in S_M``, and *permutation-invariant* if, in addition, ``R_\sigma = \mathrm{id}``;
 - a decoder ``\Psi^d`` is *permutation-symmetric* if ``\Psi^d(R_\sigma\xi) = P_\sigma\Psi^d(\xi)`` for all ``\xi \in \mathbb{R}^{2n}`` and ``\sigma \in S_M``.
 
@@ -29,7 +29,7 @@ The sorting and the slot frontends make the encoder permutation-invariant on the
 
 ## Canonical Weyl-Chamber Sorting
 
-Sorting the particles into a canonical order makes any function of the sorted state invariant under relabelling [murphy2019janossy, kaba2023equivariance](@cite). [`CanonicalSortLayer`](@ref) sorts the ``M`` particles in ascending order of coordinate row `Axis` of ``q`` using a stable merge sort (`MergeSort`) and applies the **identical** permutation ``\sigma_b \in S_M`` to both ``q`` and ``p`` in each snapshot ``b``. [`InvertCanonicalSortLayer`](@ref) applies the inverse permutation ``\sigma_b^{-1}``.
+Sorting the particles into a canonical order makes any function of the sorted state invariant under relabelling [murphy2019janossy, kaba2023equivariance](@cite). With the sort below, this holds for particles with distinct coordinates along the sorting axis: the stable sort keeps particles with equal coordinates in their input order, so relabelling them can change the sorted state. [`CanonicalSortLayer`](@ref) sorts the ``M`` particles in ascending order of coordinate row `Axis` of ``q`` using a stable merge sort (`MergeSort`) and applies the **identical** permutation ``\sigma_b \in S_M`` to both ``q`` and ``p`` in each snapshot ``b``. [`InvertCanonicalSortLayer`](@ref) applies the inverse permutation ``\sigma_b^{-1}``.
 
 ```@docs
 CanonicalSortLayer
