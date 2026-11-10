@@ -64,7 +64,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
 ### K40 · `HRedSys` carries a cache's buffers and its `pullback_mode` in fields that no code in `src/` reads.
 
-- **location:** `src/reduced_system/reduced_system.jl:93`
+- **location:** `src/reduced_system/reduced_system.jl:107`
 - **kind:** dead code
 - **found:** #370
 - **evidence:**
@@ -98,6 +98,36 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   `ArgumentError`. Closing this entry means widening the `x_a` and `x_b` annotations of the three
   methods, for example to `Union{AbstractArray, NamedTuple}`. That is a design call about what the
   method accepts, and the pull request does not make it.
+
+### K46 · The dual-number caches of `ReducedVFCache` and `HRedSys` are fields of type `IdDict{DataType, Any}`, whose value type is `Any`.
+
+- **location:** `src/reduced_system/reduced_system.jl:7`
+- **kind:** defect
+- **found:** 2026-11-09
+- **evidence:**
+  `julia --startup-file=no concrete-fields.jl <package>` (Julia 1.13, at `d9cebdef`) reports two
+  of its fields:
+
+  ```
+  GeometricMachineLearning.HRedSys.dual_cache::IdDict{DataType, Any}
+  GeometricMachineLearning.ReducedVFCache.dual_cache::IdDict{DataType, Any}
+  ```
+
+  `ReducedVFCache.dual_cache` (line 7) maps the element type `T` of a state that is not an
+  `AbstractFloat`, such as a `ForwardDiff.Dual`, to a `ReducedVFCache(T, N2, n2)`, which
+  `_get_vf_cache` builds on first use (lines 30–32). The read asserts `::ReducedVFCache{T}`, which
+  leaves the parameter `JR` open, so the buffers infer as `Vector{T}` and `c.jac_result`, the
+  first argument of `ForwardDiff.jacobian!` (line 263), does not infer. The `::Vector{T}` and
+  `::Matrix{T}` assertions at lines 264 and 273 restore the types after that call. Of the two
+  callers of `_get_vf_cache`, only `evaluate_vf_and_compute_∇Ψ` (line 257) reaches the
+  dictionary: `evaluate_vf_and_vjp` (line 282) runs only for an `AbstractFloat` element type
+  (lines 339 and 381), for which `_get_vf_cache` returns at line 23 or throws at line 25.
+  `HRedSys.dual_cache` (line 146) holds the same dictionary (line 197), and no code in `src/`
+  reads it. `test/reduced_system/reference_shift_and_vjp.jl` asserts its type at line 184 and
+  reads it at line 196. A fix is a design decision: a dual cache whose element type is a type
+  parameter that the caller fixes, or the dictionary with the full concrete type asserted at the
+  read. The first changes the type that the test asserts. The second makes the read infer and
+  still leaves the field flagged.
 
 ## Found late
 
