@@ -29,7 +29,7 @@ The sorting and the slot frontends make the encoder permutation-invariant on the
 
 ## Canonical Weyl-Chamber Sorting
 
-Sorting the particles into a canonical order makes any function of the sorted state invariant under relabelling [murphy2019janossy, kaba2023equivariance](@cite). [`CanonicalSortLayer`](@ref) sorts the ``M`` particles along coordinate row `Axis` of ``q`` using a stable merge sort (`MergeSort`) and applies the **identical** permutation ``\sigma_b \in S_M`` to both ``q`` and ``p`` in each snapshot ``b``. [`InvertCanonicalSortLayer`](@ref) applies the inverse permutation ``\sigma_b^{-1}``.
+Sorting the particles into a canonical order makes any function of the sorted state invariant under relabelling [murphy2019janossy, kaba2023equivariance](@cite). [`CanonicalSortLayer`](@ref) sorts the ``M`` particles in ascending order of coordinate row `Axis` of ``q`` using a stable merge sort (`MergeSort`) and applies the **identical** permutation ``\sigma_b \in S_M`` to both ``q`` and ``p`` in each snapshot ``b``. [`InvertCanonicalSortLayer`](@ref) applies the inverse permutation ``\sigma_b^{-1}``.
 
 ```@docs
 CanonicalSortLayer
