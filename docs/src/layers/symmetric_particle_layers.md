@@ -13,9 +13,23 @@ P_\sigma = \begin{bmatrix} \Pi_\sigma \otimes I_d & \mathbb{O} \\ \mathbb{O} & \
 
 A standard [`PSDLayer`](@ref), [`GradientLayerQ`](@ref), or [`GradientLayerP`](@ref) breaks ``S_M`` symmetry unless the particle state is canonicalized or processed by ``S_M``-equivariant symplectic layers. `GeometricMachineLearning` provides three particle frontends and the composite architecture [`SymmetricSymplecticAutoencoder`](@ref). The sorting and slot frontends are invariant under a relabelling of particles with distinct coordinates along the sorting axis; the pairwise shears are ``S_M``-equivariant. Sorting is discontinuous in ``p`` where two particles cross along the sorting axis, so the Jacobian identity of a sorting frontend holds only away from those crossings. The sorting and slot frontends suit systems that keep their particle order, not a collisionless plasma, whose sorted snapshots are not low-rank.
 
+## Relabelling, Symmetric Encoders and Decoders
+
+The permutation matrix of ``\sigma \in S_M`` has the entries ``(\Pi_\sigma)_{ij} = \delta_{i\,\sigma(j)}``. It moves the ``j``-th entry of a vector to position ``\sigma(j)``, ``(\Pi_\sigma w)_{\sigma(j)} = w_j``, and ``\Pi_\sigma^T = \Pi_\sigma^{-1} = \Pi_{\sigma^{-1}}``. ``P_\sigma`` thus relabels the particles [zaheer2017deep](@cite): ``P_\sigma(q, p)`` has ``q_j`` and ``p_j`` in place of ``q_{\sigma(j)}`` and ``p_{\sigma(j)}``. In this convention, the permutation `perm = σ` that [`CanonicalSortLayer`](@ref) returns, with `q_sorted[:, i] = q[:, σ[i]]`, is the relabelling ``P_{\sigma^{-1}}``.
+
+A state ``x`` and its relabelled copies ``P_\sigma x`` describe the same physical state, so model reduction has to be viewed modulo relabelling: the physical states are the classes ``[x] = \{P_\sigma x : \sigma \in S_M\}``, the points of ``\mathbb{R}^{2Md}/S_M``. ``S_M`` acts freely on the states in which no two particles share position and momentum, and since every ``P_\sigma`` is symplectic, the quotient of this set is a symplectic manifold of dimension ``2Md``.
+
+On the latent space ``\mathbb{R}^{2n}``, ``\sigma`` acts by a map ``R_\sigma`` that depends on the architecture. ``R_\sigma = \mathrm{id}`` is the trivial action. If ``n = M\tilde{d}``, the canonical coordinates of the latent space can be grouped into ``M`` latent positions and momenta in ``\mathbb{R}^{\tilde{d}}`` as ``(q, p)`` is, and ``R_\sigma`` can be ``P_\sigma`` with ``I_d`` replaced by ``I_{\tilde{d}}``. Let ``U \subseteq \mathbb{R}^{2Md}`` be ``S_M``-invariant, i.e. ``P_\sigma(U) = U`` for all ``\sigma \in S_M``. Then:
+- an encoder ``\Psi^e`` is *permutation-symmetric* on ``U`` if ``\Psi^e(P_\sigma x) = R_\sigma(\Psi^e(x))`` for all ``x \in U`` and ``\sigma \in S_M``, and *permutation-invariant* if, in addition, ``R_\sigma = \mathrm{id}``;
+- a decoder ``\Psi^d`` is *permutation-symmetric* if ``\Psi^d(R_\sigma\xi) = P_\sigma\Psi^d(\xi)`` for all ``\xi \in \mathbb{R}^{2n}`` and ``\sigma \in S_M``.
+
+For ``R_\sigma = \mathrm{id}`` the decoder condition reads ``P_\sigma \circ \Psi^d = \Psi^d``, so the decoder would map into the states in which all particles share position and momentum. With a permutation-invariant encoder, an autoencoder can therefore only reconstruct a state *modulo relabelling*, ``\Psi^d(\Psi^e(x)) \in [x]``; since ``\Psi^d \circ \Psi^e`` is constant on every class in ``U``, it reproduces at most one representative of ``[x]`` exactly.
+
+The sorting and the slot frontends make the encoder permutation-invariant on the states with distinct coordinates along the sorting axis. The pairwise shears are permutation-symmetric maps of ``\mathbb{R}^{2Md}`` with ``R_\sigma = P_\sigma``, but the weight-tied core after them is not, so that encoder is in general not permutation-symmetric. This is why the architecture is called *symmetric* and not *invariant*: only two of its three frontends give an invariant encoder, and its decoder is not permutation-symmetric for the trivial action.
+
 ## Canonical Weyl-Chamber Sorting
 
-[`CanonicalSortLayer`](@ref) sorts the ``M`` particles along coordinate row `Axis` of ``q`` using a stable merge sort (`MergeSort`) and applies the **identical** permutation ``\sigma_b \in S_M`` to both ``q`` and ``p`` in each snapshot ``b``. [`InvertCanonicalSortLayer`](@ref) applies the inverse permutation ``\sigma_b^{-1}``.
+Sorting the particles into a canonical order makes any function of the sorted state invariant under relabelling [murphy2019janossy, kaba2023equivariance](@cite). [`CanonicalSortLayer`](@ref) sorts the ``M`` particles along coordinate row `Axis` of ``q`` using a stable merge sort (`MergeSort`) and applies the **identical** permutation ``\sigma_b \in S_M`` to both ``q`` and ``p`` in each snapshot ``b``. [`InvertCanonicalSortLayer`](@ref) applies the inverse permutation ``\sigma_b^{-1}``.
 
 ```@docs
 CanonicalSortLayer
@@ -24,7 +38,7 @@ InvertCanonicalSortLayer
 
 ## Pairwise Symplectic Shears
 
-[`PairwiseSymplecticLayerQ`](@ref) and [`PairwiseSymplecticLayerP`](@ref) apply ``S_M``-equivariant canonical gradient shears generated by one-body (self) and two-body (pairwise relative) potentials, with exact analytic inverses [`InversePairwiseSymplecticLayerQ`](@ref) and [`InversePairwiseSymplecticLayerP`](@ref).
+[`PairwiseSymplecticLayerQ`](@ref) and [`PairwiseSymplecticLayerP`](@ref) apply ``S_M``-equivariant canonical gradient shears generated by one-body (self) and two-body (pairwise relative) potentials, i.e. interactions of order two in the sense of [murphy2019janossy](@cite), with exact analytic inverses [`InversePairwiseSymplecticLayerQ`](@ref) and [`InversePairwiseSymplecticLayerP`](@ref).
 
 ```@docs
 PairwiseSymplecticLayer
@@ -36,7 +50,7 @@ InversePairwiseSymplecticLayerP
 
 ## Canonical Slot Reduction
 
-[`CanonicalSlotLayer`](@ref) sorts the particles along coordinate row 1 of ``q`` with [`CanonicalSortLayer`](@ref), separates the center-of-mass mode ``(Q_{\mathrm{cm}}, P_{\mathrm{cm}})`` from the ``M - 1`` zero-sum relative modes via the orthogonal Helmert / Jacobi transformation, sorts the ``M - 1`` relative modes by descending squared phase-space norm ``\|q_{\mathrm{rel}, k}\|_2^2 + \|p_{\mathrm{rel}, k}\|_2^2``, and projects onto ``N_{\mathrm{slots}} - 1`` relative slots via a learned Stiefel matrix ``\Phi_{\mathrm{rel}} \in \mathrm{St}(N_{\mathrm{slots}} - 1, M - 1)``. Its analytic decoder lift is [`InverseCanonicalSlotLayer`](@ref). The particles are already sorted, so the second sort removes no symmetry, and it makes the output discontinuous where two relative-mode norms cross. The layer is a linear projection of sorted states for a fixed particle count ``M``; it takes no variable particle count and has no Löwdin-orthogonalised affinity slots.
+[`CanonicalSlotLayer`](@ref) sorts the particles along coordinate row 1 of ``q`` with [`CanonicalSortLayer`](@ref), separates the center-of-mass mode ``(Q_{\mathrm{cm}}, P_{\mathrm{cm}})`` from the ``M - 1`` zero-sum relative modes via the orthogonal Helmert / Jacobi transformation [lancaster1965helmert](@cite), sorts the ``M - 1`` relative modes by descending squared phase-space norm ``\|q_{\mathrm{rel}, k}\|_2^2 + \|p_{\mathrm{rel}, k}\|_2^2``, and projects onto ``N_{\mathrm{slots}} - 1`` relative slots, a term taken from [locatello2020object](@cite), via a learned Stiefel matrix ``\Phi_{\mathrm{rel}} \in \mathrm{St}(N_{\mathrm{slots}} - 1, M - 1)``. Its analytic decoder lift is [`InverseCanonicalSlotLayer`](@ref). The particles are already sorted, so the second sort removes no symmetry, and it makes the output discontinuous where two relative-mode norms cross. The layer is a linear projection of sorted states for a fixed particle count ``M``; it takes no variable particle count and has no Löwdin-orthogonalised affinity slots.
 
 ```@docs
 CanonicalSlotLayer
@@ -49,4 +63,25 @@ InverseCanonicalSlotLayer
 
 ```@docs
 SymmetricSymplecticAutoencoder
+```
+
+```@raw latex
+\begin{comment}
+```
+
+## References
+
+```@bibliography
+Canonical = false
+Pages = []
+
+zaheer2017deep
+murphy2019janossy
+kaba2023equivariance
+lancaster1965helmert
+locatello2020object
+```
+
+```@raw latex
+\end{comment}
 ```
