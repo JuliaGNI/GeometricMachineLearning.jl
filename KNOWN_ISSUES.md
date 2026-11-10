@@ -402,29 +402,6 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   Base.return_types(pb, (typeof(v),))    # Tuple{Union{Nothing, NetworkParameters}}
   ```
 
-### K4 · Metal.jl 1.11.1 needs a Metal device to precompile, so a sandboxed run with no Metal cache fails before the tests
-
-- **location:** `test/Project.toml:19`
-- **kind:** upstream
-- **found:** 2026-10-02
-- **evidence:**
-  Metal.jl 1.11.1's precompile workload calls `mtlfunction(identity, Tuple{Nothing})`
-  (`src/precompile.jl:18`), which calls `device()`. Inside the macOS sandbox the device list is
-  empty. On Julia 1.11.9, where no precompiled Metal cache exists for these flags, a sandboxed
-  `run-tests.jl <repository> full` stops before the first test:
-
-  ```
-  ERROR: LoadError: BoundsError: attempt to access 0-element Vector{Metal.MTL.MTLDevice} at index [1]
-      @ ~/.julia/packages/Metal/oQt6k/lib/mtl/device.jl:29 [inlined]
-      @ ~/.julia/packages/Metal/oQt6k/src/precompile.jl:18 [inlined]
-  in expression starting at ~/.julia/packages/Metal/oQt6k/src/precompile.jl:3
-  ```
-
-  On Julia 1.13.1 the same run is green, because a Metal cache that was precompiled outside the
-  sandbox (`compiled/v1.13/Metal/` in the depot) matches the flags of `Pkg.test()`. The test file
-  itself records a skip where `Metal.functional()` is false; only the precompile fails. Closing this
-  is a Metal.jl change: a workload that does not run where no device exists.
-
 ### K31 · `changebackend` cannot move a parameter set onto a `JLBackend`.
 
 - **location:** `AbstractNeuralNetworks` `src/utils/changebackend.jl:3`
