@@ -96,7 +96,8 @@ const NON_PUBLIC_QUALIFIED = (
     :Initializer, :dim,                                          # AbstractNeuralNetworks
     :zeros,                                                      # KernelAbstractions
     :jacobian!,                                                  # ForwardDiff
-    :JacobianResult, :jacobian, :value)                          # DiffResults
+    :JacobianResult, :jacobian, :value,                          # DiffResults
+    Symbol("@deprecate_binding"))                                # Base
 const NON_PUBLIC_IMPORTS = (
     :AbstractExplicitLayer, :Architecture, :_compute_loss, :dim, :model, # AbstractNeuralNetworks
     :load, :save)                                                       # NeuralNetworkParameters

@@ -271,7 +271,8 @@ export InverseGradientLayer, InverseGradientLayerQ, InverseGradientLayerP
 export InverseSymplecticAttention, InverseSymplecticAttentionQ, InverseSymplecticAttentionP
 export TransposePSDLayer
 export LeftInverseSymplecticAutoencoder
-# The name of 0.9.0; `@deprecate_binding` exports it and warns under `--depwarn=yes`.
+# The name of 0.9.0; `@deprecate_binding` exports it. Under `--depwarn=yes` a qualified use and an
+# explicit import warn; an unqualified use after `using GeometricMachineLearning` does not.
 Base.@deprecate_binding WeightTiedSymplecticAutoencoder LeftInverseSymplecticAutoencoder
 export CanonicalSortLayer, InvertCanonicalSortLayer
 export PairwiseSymplecticLayer, PairwiseSymplecticLayerQ, PairwiseSymplecticLayerP
