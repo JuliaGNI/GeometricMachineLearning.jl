@@ -24,6 +24,7 @@ const ARCHITECTURES = (
     ("VolumePreservingFeedForward", VolumePreservingFeedForward(4), 4, 3),
     ("SymplecticAutoencoder", SymplecticAutoencoder(8, 4), 8, 3),
     ("WeightTiedSymplecticAutoencoder", WeightTiedSymplecticAutoencoder(8, 4), 8, 3),
+    ("EquivariantSymplecticAutoencoder", EquivariantSymplecticAutoencoder(2, 2, 1), 8, 3),
     ("PSDArch", PSDArch(8, 4), 8, 3),
     ("LinearSymplecticTransformer", LinearSymplecticTransformer(4, 3), 4, 3),
     ("SymplecticTransformer", SymplecticTransformer(4), 4, 3))

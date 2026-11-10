@@ -45,8 +45,24 @@ InverseCanonicalSlotLayer
 
 ## Symmetric Symplectic Autoencoder
 
-[`SymmetricSymplecticAutoencoder`](@ref) combines a chosen particle frontend (`:sort`, `:pairwise`, or `:slot`) with [`WeightTiedSymplecticAutoencoder`](@ref). Only `:sort` and `:slot` give a latent state that is invariant under a relabelling of particles with distinct coordinates along the sorting axis; `:pairwise` is equivariant only in its frontend, because the core is not equivariant.
+[`SymmetricSymplecticAutoencoder`](@ref) combines a chosen particle frontend (`:sort`, `:pairwise`, or `:slot`) with [`WeightTiedSymplecticAutoencoder`](@ref). Only `:sort` and `:slot` give a latent state that is invariant under a relabelling of particles with distinct coordinates along the sorting axis; `:pairwise` is equivariant only in its frontend, because the core is not equivariant. [`EquivariantSymplecticAutoencoder`](@ref) below replaces the core by one that is.
 
 ```@docs
 SymmetricSymplecticAutoencoder
+```
+
+## Equivariant Symplectic Autoencoder
+
+[`EquivariantSymplecticAutoencoder`](@ref) is a weight-tied symplectic autoencoder in which every layer acts on the particles with shared weights, so that the encoder and the decoder are ``S_M``-equivariant and not only the frontend. Its latent space consists of ``M`` latent particles in ``\mathbb{R}^{\tilde d}``, ``2n = 2M\tilde d``, on which ``\sigma \in S_M`` acts by the same relabelling ``R_\sigma`` (with ``I_d`` replaced by ``I_{\tilde d}``). The dimension is raised by [`ParticlePSDLayer`](@ref), the cotangent lift ``(q_i, p_i) \mapsto (\Phi q_i, \Phi p_i)`` of ``I_M \otimes \Phi`` with one ``\Phi \in \mathrm{St}(d_k, d_{k+1})`` shared by all particles, and the nonlinear layers are the pairwise shears at every intermediate per-particle dimension. The encoder applies the exact inverses, [`TransposeParticlePSDLayer`](@ref) and the sign-flipped shears, in reverse order with the same parameters, so that
+
+```math
+\Psi^e \circ P_\sigma = R_\sigma \circ \Psi^e, \qquad \Psi^d \circ R_\sigma = P_\sigma \circ \Psi^d, \qquad \Psi^e \circ \Psi^d = \mathrm{id}
+```
+
+for all ``\sigma \in S_M`` and all parameters, and the decoder is a symplectic embedding.
+
+```@docs
+ParticlePSDLayer
+TransposeParticlePSDLayer
+EquivariantSymplecticAutoencoder
 ```
