@@ -48,8 +48,8 @@ function test_training()
     x = randn(4, 200); v = XH(x)
     loss = LatentVectorFieldLoss(arch, H)
     before = loss(nn, x, v)
-    o = Optimizer(Adam(), nn)
-    o(nn, DataLoader(x, v; suppress_info = true), Batch(50), 200, loss; show_progress = false)
+    o = TrainingOptimizer(params(nn); algorithm = Adam())
+    train!(nn, o, DataLoader(x, v; suppress_info = true), Batch(50), 200; loss, show_progress = false)
     @test loss(nn, x, v) < before / 2
 end
 
@@ -70,7 +70,46 @@ function test_energy()
     @test LatentVectorFieldLoss(arch, H; reconstruction = false, energy = true)(nn, x, v) ≈ vf + norm(Hd - H(x)) / norm(H(x)) rtol = 1e-8
 end
 
+# A WeightTiedSymplecticAutoencoder is one layer whose encoder and decoder share a parameter tree, not a
+# chain of the two; the loss splits it into the encoder with the reversed tree and the decoder with the tree.
+const tied = WeightTiedSymplecticAutoencoder(4, 2; n_blocks = 2, n_layers = 3, n_ambient_layers = 2)
+
+# The loss agrees with the same expression evaluated with encoder(nn), decoder(nn) and Zygote's derivatives.
+function test_weight_tied_against_autodiff()
+    nn = NeuralNetwork(tied)
+    enc, dec = encoder(nn), decoder(nn)
+    x = randn(4, 30); v = XH(x)
+    ξ = enc(x)
+    pushed = reduce(hcat, [Zygote.jacobian(enc, x[:, i])[1] * v[:, i] for i in axes(x, 2)])
+    g = reduce(hcat, [Zygote.gradient(ζ -> H(reshape(dec(ζ), 4, 1))[1], ξ[:, i])[1] for i in axes(x, 2)])
+    reduced = vcat(g[2:2, :], -g[1:1, :])
+    Hd = H(dec(ξ))
+    expected = norm(dec(ξ) - x) / norm(x) + norm(Hd - H(x)) / norm(H(x)) + norm(reduced - pushed) / norm(pushed)
+    @test LatentVectorFieldLoss(tied, H; energy = true)(nn, x, v) ≈ expected rtol = 1e-6
+end
+
+# Reverse mode gives a gradient for every leaf of the tied tree, and one step of train! changes the loss.
+function test_weight_tied_training()
+    Random.seed!(2026)
+    nn = NeuralNetwork(tied)
+    x = randn(4, 50); v = XH(x)
+    loss = LatentVectorFieldLoss(tied, H)
+    dp = Zygote.gradient(ps -> loss(nn.model, ps, x, v), params(nn))[1]
+    @test dp !== nothing
+    @test keys(dp) == keys(params(nn))
+    before = loss(nn, x, v)
+    o = TrainingOptimizer(params(nn); algorithm = Adam())
+    history = train!(nn, o, DataLoader(x, v; suppress_info = true), Batch(50), 1; loss, show_progress = false)
+    @test length(history) == 1 && isfinite(history[1])
+    @test loss(nn, x, v) != before
+    # the encoder is still the decoder's left inverse after the step
+    z = randn(2, 20)
+    @test encoder(nn)(decoder(nn)(z)) ≈ z rtol = 1e-10
+end
+
 test_against_autodiff()
+test_weight_tied_against_autodiff()
+test_weight_tied_training()
 test_without_reconstruction()
 test_energy()
 test_weight()
