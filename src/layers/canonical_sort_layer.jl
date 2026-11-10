@@ -32,7 +32,7 @@ end
 Make an instance of a cotangent-lifted canonical Weyl-chamber particle sorting layer for `M` particles in ``d`` spatial dimensions, sorting along coordinate row `Axis` (`1 <= Axis <= d`, default `1`).
 
 The first type parameter is the phase-space dimension `N = 2Md`, which `input_dimension` and `output_dimension` return.
-Given a `(q, p)` `NamedTuple` with `q, p` of shape `(d, M)` (single snapshot) or `(d, M, B)` (batch of ``B`` snapshots), `CanonicalSortLayer{N, M, Axis}()` sorts the `M` particles along coordinate row `Axis` of `q` using a stable merge sort (`MergeSort`), applies the **identical** permutation ``\sigma_b \in S_M`` to both `q` and `p` in each batch sample ``b``, and returns `(q = q_sorted, p = p_sorted, perm = σ)`.
+Given a `(q, p)` `NamedTuple` with `q, p` of shape `(d, M)` (single snapshot) or `(d, M, B)` (batch of ``B`` snapshots), `CanonicalSortLayer{N, M, Axis}()` sorts the `M` particles in ascending order of coordinate row `Axis` of `q` using a stable merge sort (`MergeSort`), applies the **identical** permutation ``\sigma_b \in S_M`` to both `q` and `p` in each batch sample ``b``, and returns `(q = q_sorted, p = p_sorted, perm = σ)`.
 On a flattened phase-space vector of length ``2Md`` or snapshot matrix of shape ``(2Md, B)``, it reshapes each half to `(d, M)` or `(d, M, B)` and returns the sorted flattened state.
 
 The sort is discontinuous in `p` where two particles cross along the sorting axis, because the permutation changes there, so the Jacobian identity ``(\nabla\Psi)^T \mathbb{J}_{2Md} \nabla\Psi = \mathbb{J}_{2Md}`` holds only away from those crossings.

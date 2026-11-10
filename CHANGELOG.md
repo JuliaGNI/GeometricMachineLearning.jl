@@ -48,6 +48,10 @@ breaking release).
   by `KernelInterface` on 0.10, so `test/quality/aqua.jl` exempts that one qualified access from
   the owner check.
 
+### Added
+
+- **The documentation states what the particle frontends are symmetric under, and cites their sources.** The page on permutation-symmetric particle layers defines the permutation matrix and the relabelling ``P_σ`` (with the convention of the `perm` that `CanonicalSortLayer` returns), the latent action ``R_σ``, permutation-symmetric and permutation-invariant encoders, permutation-symmetric decoders and reconstruction modulo relabelling, and says why `SymmetricSymplecticAutoencoder` is called symmetric and not invariant. It cites Deep Sets for relabelling, Janossy pooling and learned canonicalization for sorting, Janossy pooling for the pairwise (order-two) shears, Lancaster for the Helmert matrices and Slot Attention for the term slot. The symplectic autoencoder page describes `WeightTiedSymplecticAutoencoder` and cites the constrained autoencoders of Otto, Macchio and Rowley, whose encoder is also a left inverse of the decoder. No code changes.
+
 ### Fixed
 
 - **`SymplecticAttentionQ` and `SymplecticAttentionP` with `symmetric = true` are symplectic with `VectorSoftmax`.** The shear increment was `2 A X σ(XᵀAX)`, which is the gradient of the attention potential only when `σ(XᵀAX)` is symmetric. `MatrixSoftmax`, the default, gives a symmetric matrix, so it was correct; the column-wise `VectorSoftmax` does not, and with it the Jacobian of the layer was not symplectic (`JᵀΩJ − Ω` is of order one at the default initialisation). The increment is now `A X (σ + σᵀ)`, the gradient for both activations. With `MatrixSoftmax` the output is unchanged up to round-off. With `VectorSoftmax` and `symmetric = true` a trained model keeps its parameters but gives different outputs. `InverseSymplecticAttentionQ` and `InverseSymplecticAttentionP` use the same formula, so they still invert the layer. The `symmetric = false` layers were already correct and are unchanged. The symplectic attention documentation page carries the corrected formula.
