@@ -77,11 +77,15 @@ end
 
 function LatentVectorFieldLoss(arch::AutoEncoder, hamiltonian; λ::Real = 1, h::Real = 1e-4, reconstruction::Bool = true, energy::Bool = false)
     T = float(promote_type(typeof(λ), typeof(h)))
-    N = length(encoder_model(arch).layers)
+    N = _latent_vf_n_encoder_layers(arch)
     LatentVectorFieldLoss{N}(hamiltonian, T(λ), T(h), reconstruction, energy)
 end
 
 n_encoder_layers(::LatentVectorFieldLoss{N}) where {N} = N
+
+# Where the encoder ends in the chain of the model; an autoencoder whose model is not a chain of the
+# encoder's and the decoder's layers (`WeightTiedSymplecticAutoencoder`) splits its model itself.
+_latent_vf_n_encoder_layers(arch::AutoEncoder) = length(encoder_model(arch).layers)
 
 # The relative error, and the absolute one where the target vanishes.
 _relative_vf_error(prediction, target) = (n = norm(target); iszero(n) ? norm(prediction) : norm(prediction - target) / n)
@@ -112,7 +116,7 @@ end
 # 𝕁_{2n} g = (g_p, -g_q) for g = (g_q, g_p).
 _poisson_latent(g::AbstractMatrix) = (n = size(g, 1) ÷ 2; vcat(g[(n + 1):end, :], -g[1:n, :]))
 
-function (loss::LatentVectorFieldLoss)(model::Chain, ps, input::AbstractMatrix, output::AbstractMatrix)
+function (loss::LatentVectorFieldLoss)(model::Union{Chain, AbstractExplicitLayer}, ps, input::AbstractMatrix, output::AbstractMatrix)
     enc, ps_enc, dec, ps_dec = _split_autoencoder(loss, model, ps)
     h = convert(eltype(input), loss.h)
     ξ = enc(input, ps_enc)
@@ -126,6 +130,6 @@ end
 
 # A `DataLoader` built from an input and an output matrix holds them as tensors with a trailing
 # dimension of one; the columns are independent states either way.
-function (loss::LatentVectorFieldLoss)(model::Chain, ps, input::AbstractArray{T, 3}, output::AbstractArray{T, 3}) where {T}
+function (loss::LatentVectorFieldLoss)(model::Union{Chain, AbstractExplicitLayer}, ps, input::AbstractArray{T, 3}, output::AbstractArray{T, 3}) where {T}
     loss(model, ps, reshape(input, size(input, 1), :), reshape(output, size(output, 1), :))
 end
