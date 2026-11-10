@@ -96,7 +96,7 @@ export dim
 import NNlib: σ, sigmoid, softmax
 import Base: eltype
 
-export CPU, GPU
+export CPU
 export Chain, NeuralNetwork
 export Dense, Linear
 export initialparameters

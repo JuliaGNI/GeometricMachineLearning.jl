@@ -129,6 +129,20 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   read. The first changes the type that the test asserts. The second makes the read infer and
   still leaves the field flagged.
 
+### K47 · The section "GPU Support" of the manual reports device results measured on versions that `[compat]` no longer admits.
+
+- **location:** `docs/src/index.md:55`
+- **kind:** docs
+- **found:** #381
+- **evidence:**
+  The page says that what follows "was measured by hand, before the move to
+  `KernelAbstractions.jl` 0.10, on an Apple M4 Max through `Metal.jl` 1.11.1, in `Float32`, … and
+  against `GeometricOptimizers` 0.9.0". `test/Project.toml` takes
+  `Metal = "1.12"` and `Project.toml` takes `GeometricOptimizers = "0.10"`, so no environment of
+  this version holds either. The list of architectures that ran on the device is not measured on
+  Metal 1.12 and GeometricOptimizers 0.10. Closing this entry means running that list again by hand
+  on a Metal device and updating the paragraph.
+
 ## Found late
 
 ### K17 · `assign_q_and_p` drops the rows from `2N + 1` on without an error.

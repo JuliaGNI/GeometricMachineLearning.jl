@@ -109,14 +109,12 @@ end
 end
 
 # A host backend is a property of the caller's own network, and a copy does not change it: `CPU()`
-# comes back `CPU()`, and `CPU(; static = true)` comes back static.
+# comes back `CPU()`.
 @testset "a host network keeps its backend and its type parameter ($T)" for T in REAL_ELTYPES
-    for backend in (CPU(), CPU(; static = true))
-        nn = NeuralNetwork(Chain(Dense(N, 3, tanh)), backend, T)
-        back = map_to_cpu(nn)
+    nn = NeuralNetwork(Chain(Dense(N, 3, tanh)), CPU(), T)
+    back = map_to_cpu(nn)
 
-        @test back.backend === nn.backend
-        @test typeof(back).parameters[4] === CPU
-        @test eltype(params(back).L1.W) === T
-    end
+    @test back.backend === nn.backend
+    @test typeof(back).parameters[4] === CPU
+    @test eltype(params(back).L1.W) === T
 end

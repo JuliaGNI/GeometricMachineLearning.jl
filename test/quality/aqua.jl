@@ -78,9 +78,13 @@ end
 # is the binding a caller reaches the `GeometricOptimizers`/`GeometricBase` verb under, and
 # `test/quality/exports.jl` asserts it is that object. Nothing here defines a method on it, which is
 # what leaves the import with no use to find.
+#
+# `KernelAbstractions.zeros` is owned by `KernelInterface`, which KernelAbstractions 0.10 builds on
+# and this package does not depend on, so the access stays through KernelAbstractions.
 test_explicit_imports(GeometricMachineLearning;
     no_implicit_imports = false,
     no_stale_explicit_imports = (ignore = (:update!,),),
+    all_qualified_accesses_via_owners = (ignore = (:zeros,),),
     all_explicit_imports_are_public = false,
     all_qualified_accesses_are_public = false)
 
