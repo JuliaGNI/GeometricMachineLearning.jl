@@ -127,7 +127,7 @@ end
 
 function encoder_or_decoder_layers_from_iteration(
         arch::SymplecticCompression, encoder_iterations::AbstractVector{<:Integer},
-        n_encoder_layers::Integer, _determine_layer_type)
+        n_encoder_layers::Integer, _determine_layer_type, lift_layer = PSDLayer)
     encoder_layers = ()
     encoder_iterations_reduced = encoder_iterations[1:(end - 1)]
     for (i, it) in zip(axes(encoder_iterations_reduced, 1), encoder_iterations_reduced)
@@ -138,7 +138,7 @@ function encoder_or_decoder_layers_from_iteration(
                              (encoder_layers...,
                 GradientLayerP(it, arch.sympnet_upscale * it, arch.activation))
         end
-        encoder_layers = (encoder_layers..., PSDLayer(it, encoder_iterations[i + 1]))
+        encoder_layers = (encoder_layers..., lift_layer(it, encoder_iterations[i + 1]))
     end
 
     encoder_layers
