@@ -13,7 +13,7 @@ The pair is parametrized by ``U \in St(n, N)`` (`weight`), ``R \in \mathbb{R}^{n
 ```math
 \Phi = UR, \qquad \Psi = UR^{-T} + (\mathbb{I}_N - UU^T)W,
 ```
-which satisfies ``\Psi^T\Phi = \mathbb{I}_n`` for every invertible ``R`` and every ``W``, and reaches every biorthogonal pair: ``U`` spans the columns of ``\Phi``, and the part of ``\Psi`` orthogonal to them is free. Only ``U`` is constrained; ``R`` and ``W`` are trained as Euclidean weights. `parameterlength` is the dimension ``2Nn - n^2`` of the manifold of biorthogonal pairs (see the documentation page on biorthogonal pairs). The initial parameters are ``R = \mathbb{I}_n`` and ``W = \mathbb{O}``, so a new layer is the `PSDLayer` with weight ``U``.
+the parametrization of the manifold of biorthogonal pairs derived in [The bundle over the first factor](@extref GeometricOptimizers The-bundle-over-the-first-factor). Only ``U`` is constrained; ``R`` and ``W`` are trained as Euclidean weights. `parameterlength` is the dimension ``2Nn - n^2`` of that manifold, [`BiorthogonalManifold`](@extref GeometricOptimizers GeometricOptimizers.BiorthogonalManifold). The initial parameters are ``R = \mathbb{I}_n`` and ``W = \mathbb{O}``, so a new layer is the `PSDLayer` with weight ``U``.
 
 Its symplectic inverse ``A^+ = \mathbb{J}_{2n}^TA^T\mathbb{J}_{2N}`` is [`TransposeBiorthogonalPSDLayer`](@ref), returned by [`inverse_layer`](@ref).
 """
