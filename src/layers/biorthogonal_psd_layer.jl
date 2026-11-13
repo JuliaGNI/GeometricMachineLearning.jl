@@ -43,11 +43,11 @@ end
 # `(M, N)` are the layer's input and output dimensions, `latent` and `ambient` those of the lift.
 function _validate_biorthogonal_psd_dims(L, M, N, latent, ambient)
     M isa Integer && N isa Integer ||
-        throw(ArgumentError("$L dimensions ($M, $N) must be integers."))
+        throw(ArgumentError("$(nameof(L)) dimensions ($M, $N) must be integers."))
     (M > 0 && N > 0 && iseven(M) && iseven(N)) ||
-        throw(ArgumentError("$L dimensions ($M, $N) must be positive even integers."))
+        throw(ArgumentError("$(nameof(L)) dimensions ($M, $N) must be positive even integers."))
     latent <= ambient ||
-        throw(ArgumentError("$L dimensions ($M, $N): the latent dimension $latent must not exceed the ambient dimension $ambient."))
+        throw(ArgumentError("$(nameof(L)) dimensions ($M, $N): the latent dimension $latent must not exceed the ambient dimension $ambient."))
     nothing
 end
 

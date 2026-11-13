@@ -4,15 +4,15 @@
 Make an instance of a left-inverse symplectic autoencoder (left-inverse SAE) for ambient dimension `full_dim` (``2N``) and latent dimension `reduced_dim` (``2n``). Its encoder is an exact left inverse of its decoder, ``\Psi^e \circ \Psi^d = \mathrm{id}_{\mathbb{R}^{2n}}``, for every value of the parameters. The encoder is built from the analytic inverses of the decoder's layers, with the decoder's weights shared ("tied"), and this is what makes it a left inverse.
 
 Unlike [`SymplecticAutoencoder`](@ref), which maintains independent parameter trees for the encoder and decoder, `LeftInverseSymplecticAutoencoder` stores a single parameter tree `ps` for the stage blocks from `reduced_dim` up to `full_dim`:
-- [`decoder`](@ref)`(nn)(ξ)` applies the stage blocks in forward order (from `reduced_dim` to `full_dim`), embedding ``\mathbb{R}^{2n} \to \mathbb{R}^{2N}`` via alternating [`GradientLayerQ`](@ref)/[`GradientLayerP`](@ref) layers and Stiefel [`PSDLayer`](@ref) lifts;
+- [`decoder`](@ref)`(nn)(ξ)` applies the stage blocks in forward order (from `reduced_dim` to `full_dim`), embedding ``\mathbb{R}^{2n} \to \mathbb{R}^{2N}`` via alternating [`GradientLayerQ`](@ref)/[`GradientLayerP`](@ref) layers and [`PSDLayer`](@ref) lifts (with `biorthogonal = true`, [`BiorthogonalPSDLayer`](@ref) lifts);
 - [`encoder`](@ref)`(nn)(z)` applies `reverse(map(inverse_layer, ...))` with the reversed parameter tree, sharing the exact same leaf arrays with zero duplicated parameters and satisfying ``\Psi^e(\Psi^d(\xi)) = \xi`` to machine precision for all parameters `ps`.
 
 # Arguments
 
 Besides the required even integer arguments `full_dim` and `reduced_dim` (`full_dim >= reduced_dim`), the following keyword arguments are supported:
 - `n_blocks::Integer = 2`: Sets the spacing of the intermediate dimensions between `reduced_dim` and `full_dim` (`n_blocks >= 1`, and `n_blocks <= (full_dim - reduced_dim) ÷ 2 + 1` when `full_dim > reduced_dim`; a larger value raises an `ArgumentError` when the network is built). The decoder has one stage block per pair of adjacent dimensions, and their number can differ from `n_blocks`: `LeftInverseSymplecticAutoencoder(12, 2; n_blocks = 4)` has five stage blocks, and `LeftInverseSymplecticAutoencoder(6, 4; n_blocks = 2)` has one.
-- `n_layers::Integer = 3`: Number of gradient layers preceding each stage `PSDLayer`.
-- `n_ambient_layers::Integer = 2`: Number of ambient gradient layers at `full_dim` following the final `PSDLayer`.
+- `n_layers::Integer = 3`: Number of gradient layers preceding each stage lift.
+- `n_ambient_layers::Integer = 2`: Number of ambient gradient layers at `full_dim` following the final lift.
 - `sympnet_upscale::Integer = 5`: Upscaling factor of each [`GradientLayer`](@ref).
 - `activation = tanh`: Activation function in the gradient layers.
 - `init_q::Bool = true`: Whether the first gradient layer in each block is of `Q` type.
