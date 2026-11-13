@@ -48,6 +48,13 @@ breaking release).
   by `KernelInterface` on 0.10, so `test/quality/aqua.jl` exempts that one qualified access from
   the owner check.
 
+- **The tests run in CI as the groups `core`, `layers`, `architectures`, `reducedsystem`,
+  `training` and `slow`, one job each.** `test/ci-groups.toml` lists them, and `Pkg.test()` with no
+  arguments still runs all six (and `metal` on Apple silicon). No CI.yml job runs the `metal`
+  group any more; the jobs of `Metal.yml` run it and are required checks.
+  `.github/workflows/CI.yml`, `codecov.yml` and the git hooks in `.githooks/` follow the Harness
+  template, which runs one CI job per group and checks the group files.
+
 ### Added
 
 - **The documentation states what the particle frontends are symmetric under, and cites their sources.** The page on permutation-symmetric particle layers defines the permutation matrix and the relabelling ``P_σ`` (with the convention of the `perm` that `CanonicalSortLayer` returns), the latent action ``R_σ``, permutation-symmetric and permutation-invariant encoders, permutation-symmetric decoders and reconstruction modulo relabelling, and says why `SymmetricSymplecticAutoencoder` is called symmetric and not invariant. It cites Deep Sets for relabelling, Janossy pooling and learned canonicalization for sorting, Janossy pooling for the pairwise (order-two) shears, Lancaster for the Helmert matrices and Slot Attention for the term slot. The symplectic autoencoder page describes `WeightTiedSymplecticAutoencoder` and cites the constrained autoencoders of Otto, Macchio and Rowley, whose encoder is also a left inverse of the decoder. No code changes.
