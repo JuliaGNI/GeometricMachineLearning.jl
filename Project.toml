@@ -20,6 +20,9 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 ReducedComplexityModeling = "abb4722c-1d8e-48eb-a3bd-45b3116bfaba"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
+[sources]
+GeometricOptimizers = {rev = "biorthogonal/manifold", url = "https://github.com/JuliaGNI/GeometricOptimizers.jl.git"}
+
 [compat]
 AbstractNeuralNetworks = "0.10"
 ChainRulesCore = "1.25.1"
