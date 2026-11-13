@@ -39,7 +39,7 @@ import DiffResults
 # exported by `GeometricOptimizers`, so a caller reaches any of them there; this package uses
 # `optimization_step!` and `orthonormal_columns` itself.
 import GeometricOptimizers
-import GeometricOptimizers: Manifold, StiefelManifold, GrassmannManifold
+import GeometricOptimizers: Manifold, StiefelManifold, GrassmannManifold, BiorthogonalManifold
 import GeometricOptimizers: SkewSymMatrix, SymmetricMatrix,
                             StrictlyLowerTriangular, StrictlyUpperTriangular,
                             StiefelProjection
@@ -249,6 +249,7 @@ export HRedSys, reduction_error, projection_error, integrate_reduced_system,
 include("layers/linear_symplectic_attention.jl")
 include("layers/symplectic_attention.jl")
 include("layers/inverse_layers.jl")
+include("layers/biorthogonal_psd_layer.jl")
 include("layers/canonical_sort_layer.jl")
 include("layers/pairwise_symplectic_layer.jl")
 include("layers/canonical_slot_layer.jl")
@@ -270,6 +271,7 @@ export inverse_layer
 export InverseGradientLayer, InverseGradientLayerQ, InverseGradientLayerP
 export InverseSymplecticAttention, InverseSymplecticAttentionQ, InverseSymplecticAttentionP
 export TransposePSDLayer
+export BiorthogonalPSDLayer, TransposeBiorthogonalPSDLayer
 export LeftInverseSymplecticAutoencoder
 # The name of 0.9.0; `@deprecate_binding` exports it. Under `--depwarn=yes` a qualified use and an
 # explicit import warn; an unqualified use after `using GeometricMachineLearning` does not.
