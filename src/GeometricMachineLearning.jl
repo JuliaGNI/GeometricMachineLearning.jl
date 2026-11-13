@@ -39,7 +39,7 @@ import DiffResults
 # exported by `GeometricOptimizers`, so a caller reaches any of them there; this package uses
 # `optimization_step!` and `orthonormal_columns` itself.
 import GeometricOptimizers
-import GeometricOptimizers: Manifold, StiefelManifold, GrassmannManifold
+import GeometricOptimizers: Manifold, StiefelManifold, GrassmannManifold, BiorthogonalManifold
 import GeometricOptimizers: SkewSymMatrix, SymmetricMatrix,
                             StrictlyLowerTriangular, StrictlyUpperTriangular,
                             StiefelProjection
