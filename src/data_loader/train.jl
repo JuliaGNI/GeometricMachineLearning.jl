@@ -25,7 +25,7 @@ A network of HamiltonianNeuralNetworks.jl trains on vector-field data with
 `SymplecticEulerLoss(arch, timestep)`; see its
 [manual](https://juliagml.github.io/HamiltonianNeuralNetworks.jl/latest/).
 
-`opt` is built for `params(nn)`, with `TrainingOptimizer(params(nn); algorithm, linesearch,
+`opt` is built for `nn.params`, with `TrainingOptimizer(nn.params; algorithm, linesearch,
 retraction)`. It keeps the iteration number, the moments and the global sections, so a second call
 with the same `opt` resumes the training where the first one stopped; the only random numbers
 `train!` draws are those of the minibatch shuffle. `n_epochs < 1` is an `ArgumentError`, raised
