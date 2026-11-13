@@ -7,6 +7,7 @@
 export TrainingOptimizer
 export GradientMethod, MomentumMethod, Adam, AdamWithEuclideanDecay
 export AdamOptimizerWithDecay, DecayingStatic
+export CompositeMethod, FactoredStiefelAdam
 export GlobalSection, global_section, apply_section, apply_section!, update_section!
 export global_rep
 export Geodesic, Cayley

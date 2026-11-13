@@ -50,6 +50,7 @@ breaking release).
 
 ### Added
 
+- **`CompositeMethod` and `FactoredStiefelAdam` of GeometricOptimizers are re-exported**, beside `Adam` and the other methods. `using GeometricMachineLearning` alone now builds `TrainingOptimizer(params(nn); algorithm = CompositeMethod(; manifold = FactoredStiefelAdam(), array = Adam()))`, which trains the Stiefel leaves of a network on the manifold and its other leaves with `Adam`. Both names are the objects of GeometricOptimizers, so a caller who loads both packages has one binding of each.
 - **The documentation states what the particle frontends are symmetric under, and cites their sources.** The page on permutation-symmetric particle layers defines the permutation matrix and the relabelling ``P_σ`` (with the convention of the `perm` that `CanonicalSortLayer` returns), the latent action ``R_σ``, permutation-symmetric and permutation-invariant encoders, permutation-symmetric decoders and reconstruction modulo relabelling, and says why `SymmetricSymplecticAutoencoder` is called symmetric and not invariant. It cites Deep Sets for relabelling, Janossy pooling and learned canonicalization for sorting, Janossy pooling for the pairwise (order-two) shears, Lancaster for the Helmert matrices and Slot Attention for the term slot. The symplectic autoencoder page describes `WeightTiedSymplecticAutoencoder` and cites the constrained autoencoders of Otto, Macchio and Rowley, whose encoder is also a left inverse of the decoder. No code changes.
 
 ### Fixed
