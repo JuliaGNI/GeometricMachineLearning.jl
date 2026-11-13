@@ -15,7 +15,7 @@
 # NOT set: the check should still be able to fail on genuinely untested methods.
 #
 # Coverage is instrumented and uploaded from a single matrix entry (see the COVERAGE expression in
-# CI.yml). Where a repository has a second job whose tests reach code the main suite does not, that
+# CI.yml), once per test group where the repository has test/ci-groups.toml. Where a repository has a second job whose tests reach code the main suite does not, that
 # job uploads too and Codecov merges the reports, as an extra Symbolic.yml does.
 
 coverage:
