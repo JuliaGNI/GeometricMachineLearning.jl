@@ -13,8 +13,9 @@
 #   3. package load             BLOCKS   catches a syntax error or a broken include
 #
 # Stages 1–2.7 run on STAGED .jl files only, and stage 3 runs when a .jl file is staged or its
-# deletion is. A whole-tree JuliaFormatter run is not sure to end: one has died inside SciML's
-# `nest!` after 62 minutes of CPU.
+# deletion is. The stages read the files on disk, so a staged .jl file with unstaged changes is
+# refused before any stage runs. A whole-tree JuliaFormatter run is not sure to end: one has
+# died inside SciML's `nest!` after 62 minutes of CPU.
 #
 # Included rather than run as the program file, this file defines its functions and runs nothing.
 
@@ -34,6 +35,26 @@ the caller refuses on `nothing`.
 function staged(args...)
     out = IOBuffer()
     p = run(pipeline(ignorestatus(`git diff --cached --name-only -z $args`); stdout = out))
+    success(p) || return nothing
+    return filter(!isempty, split(String(take!(out)), '\0'))
+end
+
+"""
+The paths of `files` that have changes in the working tree that are not staged, from
+`git diff --name-only`, or `nothing` when git fails. The stages read the files on disk, so such a
+file would be judged on content that the commit does not hold. As in `added_lines`, the paths are
+literal, no external diff program or textconv driver runs, and the diff runs without
+`GIT_DIFF_OPTS`, `GIT_ICASE_PATHSPECS` and `GIT_GLOB_PATHSPECS`; `GIT_INDEX_FILE` stays, so a
+`git commit <path>` compares with the index that it commits.
+"""
+function unstaged(files)
+    isempty(files) && return String[]
+    out = IOBuffer()
+    cmd = addenv(
+        `git --literal-pathspecs diff --name-only -z --no-ext-diff --no-textconv -- $files`,
+        "GIT_DIFF_OPTS" => nothing, "GIT_ICASE_PATHSPECS" => nothing,
+        "GIT_GLOB_PATHSPECS" => nothing)
+    p = run(pipeline(ignorestatus(cmd); stdout = out))
     success(p) || return nothing
     return filter(!isempty, split(String(take!(out)), '\0'))
 end
@@ -101,7 +122,9 @@ end
 Stage 0. A commit that touches test/ — any file, a deletion too — must leave the tests in the
 layout of the test convention. `test-layout.jl` is installed beside this program by harness
 githooks; a missing copy blocks rather than skips, because a stage that skips itself reports
-"clean" when it checked nothing. It checks the working tree, not the index.
+"clean" when it checked nothing. It checks the working tree, not the index: a staged `.jl` file
+with unstaged changes is refused before any stage runs (see `unstaged`), and every other file
+that it reads, staged or not, is checked as it is on disk.
 
 The script goes into a module of its own and its `violations` runs here: its command-line block
 calls `exit`, and runs only when the script is the program file.
@@ -381,7 +404,9 @@ cannot start, a run that the time box ends, an exit code other than 0 and 1 (3 f
 `sgconfig.yml`), a run that applies no rule to any staged file, an output that is not one JSON
 object per line, and a JSON that does not load. The time box is that of stage 2.
 
-The scan reads the working tree, and the added lines come from the index.
+The scan reads the working tree, and the added lines come from the index. The two hold the same
+text, because a staged `.jl` file with unstaged changes is refused before any stage runs (see
+`unstaged`).
 """
 function ast_grep(files; seconds = 60)
     skip(why) = (println("$(YELLOW)ast-grep: skipped — $why$(NC)"); true)
@@ -536,6 +561,23 @@ function main()
         for f in notfiles
             println("$(RED)pre-commit: $f is not a file$(NC) — stage a file in its place.")
         end
+        println("\n$(RED)pre-commit failed.$(NC) Use --no-verify only if you know why.\n")
+        exit(1)
+    end
+
+    # Every stage reads the files on disk, so a staged .jl file with unstaged changes would be
+    # judged on content that the commit does not hold; it is refused before any stage runs.
+    partly = unstaged(jl)
+    if partly === nothing
+        println("\n$(RED)pre-commit: could not list unstaged changes.$(NC) Refusing to pass silently.\n")
+        exit(1)
+    end
+    if !isempty(partly)
+        for f in partly
+            println("$(RED)pre-commit: $f has changes that are not staged$(NC)")
+        end
+        println("    The stages check the files on disk, not the staged content. Stage the rest of")
+        println("    each file above, or move its unstaged edits aside, then commit again.")
         println("\n$(RED)pre-commit failed.$(NC) Use --no-verify only if you know why.\n")
         exit(1)
     end

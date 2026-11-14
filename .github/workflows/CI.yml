@@ -70,6 +70,7 @@ jobs:
               with:
                   sparse-checkout: test/ci-groups.toml
                   sparse-checkout-cone-mode: false
+                  persist-credentials: false
             - id: read
               shell: python
               run: |
@@ -138,6 +139,8 @@ jobs:
                       experimental: true
         steps:
             - uses: actions/checkout@v7
+              with:
+                  persist-credentials: false
             - uses: julia-actions/setup-julia@v3
               with:
                   version: ${{ matrix.version }}
@@ -207,6 +210,8 @@ jobs:
                 group: ${{ fromJSON(needs.groups.outputs.list) }}
         steps:
             - uses: actions/checkout@v7
+              with:
+                  persist-credentials: false
             - uses: julia-actions/setup-julia@v3
               with:
                   version: min
@@ -250,6 +255,8 @@ jobs:
                     - ubuntu-latest
         steps:
             - uses: actions/checkout@v7
+              with:
+                  persist-credentials: false
             - uses: julia-actions/setup-julia@v3
               with:
                   version: "1"
