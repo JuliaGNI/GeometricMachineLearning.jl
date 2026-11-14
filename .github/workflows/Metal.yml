@@ -7,9 +7,8 @@
 #
 # WHAT THIS ADDS TO CI.yml.
 #
-# CI.yml's `macOS-latest` entry already runs the Metal tests, because with no test arguments
-# `test/runtests.jl` selects the `metal` group, `test/devices/metal.jl`, on every Apple-silicon Mac.
-# There the file records a skip if the device is not functional, and the job stays green. This job
+# CI.yml's macOS jobs do not run the Metal tests: `test/ci-groups.toml` lists the test groups, and
+# each CI.yml job runs its group alone, never the `metal` group. This job
 # runs the `metal` group alone (`test_args: metal`), on macOS 15 rather than on whatever
 # `macos-latest` points to. Its step "Metal is functional" fails the job before the tests if Metal
 # is not functional, so it cannot pass without having run them.
@@ -18,7 +17,8 @@
 # later only; on `macos-14` Metal is not functional. It is good for correctness and for nothing
 # timed.
 #
-# This job is deliberately NOT a required status check -- its name does not begin with `Julia `.
+# The jobs of this workflow are required status checks: `test/ci-groups.toml` names this file in
+# its `workflows` key, and `harness ci-protection` requires its jobs.
 
 name: Metal
 

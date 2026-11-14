@@ -4,7 +4,13 @@
 #
 # `--check` prints one line per violation, `<repository>: [<rule>] <what>`, and exits 1 if there
 # is any; a repository in form prints nothing and exits 0. The rule tags are the decisions D1–D10
-# of the convention, and `using`, `seed`, `label` and `compat` for the rules that have no number.
+# of the convention, and `using`, `seed`, `label`, `compat` and `ci-groups` for the rules that have
+# no number.
+#
+# The rule `ci-groups` judges test/ci-groups.toml, the optional list of the groups that CI runs as
+# one job each (`ci_groups`). Its groups are the groups that an empty ARGS runs, in place of
+# `core` and `slow`: GROUPS lists them, each has an `if` in runtests.jl, and they may be names
+# outside the convention's.
 #
 # Two rules are not checked here, because no layout shows them: D6, the 60 s budget of a `core`
 # file, cold, and the JET half of D4, `test/quality/jet.jl` where the package has a hot or kernel
@@ -35,6 +41,16 @@ struct Entry
 end
 
 const GROUP_NAMES = ("core", "slow", "doctests", "metal", "cuda", "broken")
+# the groups that an empty ARGS runs where test/ci-groups.toml does not list them
+const DEFAULT_GROUPS = ["core", "slow"]
+# the groups that run outside the CI test jobs, so a group file names none of them
+const OWN_JOB_GROUPS = ("doctests", "metal", "cuda", "broken")
+# a group of test/ci-groups.toml, as it ends a job name
+const CI_GROUP_NAME = r"^[a-z][a-z0-9]*$"
+# an extra workflow of test/ci-groups.toml, and the installed ones it may not name, in lower case
+# because APFS finds `ci.yml` as CI.yml
+const CI_WORKFLOW_NAME = r"^[A-Za-z0-9_-]+\.yml$"
+const INSTALLED_WORKFLOWS = ("ci.yml", "documenter.yml", "tagbot.yml")
 const GATE = r"\b(ARGS|ENV)\b"
 const ISSUE = r"#\d+|issues/\d+"
 # the top-level directories of test/ that mirror no directory of src/
@@ -129,6 +145,142 @@ function separate_suites(t, entries)
         any(((_, _, fs),) -> "Project.toml" in fs, walkdir(d)) &&
             !any(e -> startswith(e.path, joinpath(d, "")), entries)
     end
+end
+
+"""
+    ci_groups(repo) -> (groups, problems)
+
+The groups of `test/ci-groups.toml`, which CI runs as one job each, and the reasons the file is not
+in form. `groups` is `nothing` where the file is absent, or where it gives no list of names.
+
+The file is `groups = [...]`, the groups that an empty `ARGS` runs: `core`, `slow` and the
+repository's own groups, each a name of lower-case letters and digits, and none of the groups that
+run outside the CI test jobs. An optional `workflows = [...]` names extra workflow files of
+`.github/workflows/`, such as `Metal.yml`, whose jobs are required checks too (`ci_workflows`).
+"""
+function ci_groups(repo)
+    f = joinpath(repo, "test", "ci-groups.toml")
+    isfile(f) || return (nothing, String[])
+    toml = try
+        TOML.parsefile(f)
+    catch e
+        e isa TOML.ParserError || rethrow()
+        return (nothing, ["test/ci-groups.toml does not parse as TOML"])
+    end
+    gs = get(toml, "groups", nothing)
+    gs isa Vector && !isempty(gs) && all(g -> g isa String, gs) ||
+        return (nothing, ["test/ci-groups.toml has no `groups` list of names"])
+    gs = Vector{String}(gs)
+    problems = String[]
+    for k in sort!(collect(setdiff(keys(toml), ["groups", "workflows"])))
+        push!(problems,
+            "test/ci-groups.toml has the key `$k`; it has `groups` and `workflows` only")
+    end
+    append!(problems, last(ci_workflows(repo, toml)))
+    for g in unique(gs)
+        occursin(CI_GROUP_NAME, g) ||
+            push!(problems, "group \"$g\" of test/ci-groups.toml is not lower-case letters and digits")
+        count(==(g), gs) > 1 &&
+            push!(problems, "group \"$g\" is in test/ci-groups.toml more than once")
+        g in OWN_JOB_GROUPS &&
+            push!(problems, "group \"$g\" is in test/ci-groups.toml, and it runs outside the CI test jobs")
+    end
+    for g in DEFAULT_GROUPS
+        g in gs || push!(problems, "test/ci-groups.toml does not list the group \"$g\"")
+    end
+    return (gs, problems)
+end
+
+"""
+    ci_workflows(repo, toml) -> (workflows, problems)
+
+The `workflows` of the parsed `test/ci-groups.toml` `toml` of `repo`: extra workflow files whose
+jobs `harness ci-protection` requires besides those of `CI.yml`, and the reasons the list is not
+in form. Each is the name of a file in `.github/workflows/` other than the installed ones.
+"""
+function ci_workflows(repo, toml)
+    ws = get(toml, "workflows", String[])
+    ws isa Vector && all(w -> w isa String, ws) ||
+        return (
+            String[], ["`workflows` of test/ci-groups.toml is not a list of file names"])
+    problems = String[]
+    for w in unique(ws)
+        occursin(CI_WORKFLOW_NAME, w) && !(lowercase(w) in INSTALLED_WORKFLOWS) ||
+            push!(problems,
+                "workflow \"$w\" of test/ci-groups.toml is not an extra workflow file name")
+        count(==(w), ws) > 1 &&
+            push!(problems, "workflow \"$w\" is in test/ci-groups.toml more than once")
+        isfile(joinpath(repo, ".github", "workflows", w)) ||
+            push!(problems, "workflow \"$w\" of test/ci-groups.toml is not in .github/workflows/")
+    end
+    return (Vector{String}(ws), problems)
+end
+
+"The groups that an empty `ARGS` runs in `repo`, outside the platform groups."
+default_groups(repo) = something(first(ci_groups(repo)), DEFAULT_GROUPS)
+
+"The group names that `repo` may use: the convention's, and those of its `test/ci-groups.toml`."
+group_names(repo) = union(GROUP_NAMES, default_groups(repo))
+
+"The groups that the top-level statements of `runtests` gate with an `if`, in order."
+function group_ifs(runtests)
+    [group_of(s.args[1])
+     for s in runtests.args
+     if s isa Expr && s.head === :if && group_of(s.args[1]) !== nothing]
+end
+
+"The definitions of `GROUPS` among the statements of `runtests`, without line numbers."
+function groups_defs(runtests)
+    [Base.remove_linenums!(deepcopy(s))
+     for s in runtests.args
+     if s isa Expr && s.head === :const && s.args[1] isa Expr &&
+            s.args[1].head === :(=) && s.args[1].args[1] === :GROUPS]
+end
+
+"""
+    groups_violations(repo, runtests) -> Vector{Tuple{String, String}}
+
+The violations, as `(rule, what)`, of the groups of `repo`, whose parsed `runtests.jl` is
+`runtests`: the form of `test/ci-groups.toml`, a group of `runtests.jl` that is not a name of the
+convention or of that file, a group of that file without an `if`, and a `GROUPS` that does not run
+those groups for an empty `ARGS`. A repository with a `metal` group has the platform form of
+`GROUPS`, and only it. `verify-workflows.jl` reads the same function.
+"""
+function groups_violations(repo, runtests)
+    out = Tuple{String, String}[]
+    groups, problems = ci_groups(repo)
+    foreach(p -> push!(out, ("ci-groups", p)), problems)
+    default = something(groups, DEFAULT_GROUPS)
+    ifs = group_ifs(runtests)
+    plain = :(const GROUPS = isempty(ARGS) ? $(Expr(:vect, default...)) : ARGS)
+    platform = :(const GROUPS = isempty(ARGS) ?
+                                (Sys.isapple() && Sys.ARCH === :aarch64 ?
+                                 $(Expr(:vect, default..., "metal")) :
+                                 $(Expr(:vect, default...))) :
+                                ARGS)
+    for def in groups_defs(runtests)
+        if "metal" in ifs
+            def == platform || push!(out,
+                ("D5",
+                    "GROUPS is not the platform form, `isempty(ARGS) ? (Sys.isapple() && Sys.ARCH === :aarch64 ? $(repr([default; "metal"])) : $(repr(default))) : ARGS`, which a repository with a `metal` group has"))
+        elseif def == platform
+            push!(out, ("D5",
+                "GROUPS has the platform form, and the repository has no `metal` group"))
+        else
+            def == plain ||
+                push!(out, (
+                    "D5", "GROUPS is not `isempty(ARGS) ? $(repr(default)) : ARGS`"))
+        end
+    end
+    names = union(GROUP_NAMES, default)
+    for g in unique(ifs)
+        g in names || push!(out, ("D5", "group \"$g\" is not one of $(join(names, ", "))"))
+    end
+    for g in something(groups, String[])
+        g in ifs || push!(out, ("ci-groups",
+            "group \"$g\" of test/ci-groups.toml has no `if` in runtests.jl"))
+    end
+    return out
 end
 
 "Every sub-expression of `ex` for which `pred` holds."
@@ -267,15 +419,11 @@ function violations(repo)
     end
     isempty(L.parse_errors) || return out
 
-    # D2, D5: runtests.jl is `using SafeTestsets`, GROUPS, and one `if` per group of @safetestset
-    # A repository with a `metal` group has the platform form of GROUPS, and only it
-    groups_plain = :(const GROUPS = isempty(ARGS) ? ["core", "slow"] : ARGS)
-    groups_platform = :(const GROUPS = isempty(ARGS) ?
-                                       (Sys.isapple() && Sys.ARCH === :aarch64 ?
-                                        ["core", "slow", "metal"] : ["core", "slow"]) :
-                                       ARGS)
-    metal = any(s -> s isa Expr && s.head === :if && group_of(s.args[1]) == "metal",
-        L.runtests.args)
+    # D2, D5: runtests.jl is `using SafeTestsets`, GROUPS, and one `if` per group of @safetestset;
+    # D5, ci-groups: the groups and the form of GROUPS, as `groups_violations` judges them
+    for (rule, what) in groups_violations(repo, L.runtests)
+        v(rule, what)
+    end
     seen = String[]
     line = 0
     for s in L.runtests.args
@@ -286,23 +434,10 @@ function violations(repo)
             push!(seen, "using")
         elseif s isa Expr && s.head === :const && s.args[1] isa Expr &&
                s.args[1].head === :(=) && s.args[1].args[1] === :GROUPS
-            def = Base.remove_linenums!(deepcopy(s))
-            if metal
-                def == groups_platform ||
-                    v("D5",
-                        "GROUPS is not the platform form, `isempty(ARGS) ? (Sys.isapple() && Sys.ARCH === :aarch64 ? [\"core\", \"slow\", \"metal\"] : [\"core\", \"slow\"]) : ARGS`, which a repository with a `metal` group has")
-            elseif def == groups_platform
-                v("D5", "GROUPS has the platform form, and the repository has no `metal` group")
-            else
-                def == groups_plain ||
-                    v("D5", "GROUPS is not `isempty(ARGS) ? [\"core\", \"slow\"] : ARGS`")
-            end
             "GROUPS" in seen && v("D5", "runtests.jl:$line: GROUPS is defined again")
             push!(seen, "GROUPS")
         elseif s isa Expr && s.head === :if && group_of(s.args[1]) !== nothing
             g = group_of(s.args[1])
-            g in GROUP_NAMES ||
-                v("D5", "group \"$g\" is not one of $(join(GROUP_NAMES, ", "))")
             g in seen && v("D2", "group \"$g\" has more than one `if`")
             push!(seen, g)
             length(s.args) > 2 && v("D2", "the `if` of group \"$g\" has an `else`")

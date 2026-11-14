@@ -17,7 +17,8 @@
 # `min` resolves the lower bound of *this* package's `[compat] julia` entry and `1` the current
 # stable release, so one identical matrix still tests the right versions in a tree whose compat
 # floors are 1.10, 1.11 and 1.12. The check names therefore never change — not when a package raises its
-# floor, and not when Julia releases. That is what lets harness ci-protection use one static list.
+# floor, and not when Julia releases. That is what lets harness ci-protection use one static list
+# for every repository without test groups.
 #
 # `pre` and `nightly` are advisory (`experimental: true` + `continue-on-error`): a failure in an
 # unreleased Julia is information, not a broken build. They are deliberately NOT required checks.
@@ -25,6 +26,17 @@
 # `downgrade` is advisory too, for a different reason: it tests the `[compat]` lower bounds, which
 # no other job tests, so it is red wherever a floor is false. It becomes a required check only once
 # it is green in every repository.
+#
+# TEST GROUPS: ONE FILE PER REPOSITORY, NOT AN EDIT HERE.
+#
+# A suite too long for one job lists its groups in test/ci-groups.toml, `groups = ["core", ...]`,
+# the groups of `runtests.jl` that an empty ARGS runs. The `groups` job reads that list, and the
+# `test` and `downgrade` jobs then run one job per group, with the group as the test argument and
+# ` - <group>` at the end of the job name. Without the file the list is one empty group: the jobs
+# run the whole suite, and their names are those of a repository without groups. harness
+# ci-protection reads the same file for the required checks, and verify-workflows.jl checks it
+# against `runtests.jl`. `pre` and `nightly` are `include` entries, so they run the whole suite in
+# one job either way.
 
 name: CI
 
@@ -44,8 +56,41 @@ concurrency:
     cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 
 jobs:
+    groups:
+        # The test groups of test/ci-groups.toml as a JSON list, or `[""]` where the file is absent.
+        name: Test groups
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        permissions:
+            contents: read
+        outputs:
+            list: ${{ steps.read.outputs.list }}
+        steps:
+            - uses: actions/checkout@v7
+              with:
+                  sparse-checkout: test/ci-groups.toml
+                  sparse-checkout-cone-mode: false
+            - id: read
+              shell: python
+              run: |
+                  import json, os, pathlib, re, tomllib
+                  path = pathlib.Path("test/ci-groups.toml")
+                  groups = tomllib.loads(path.read_text()).get("groups") if path.is_file() else [""]
+                  if path.is_file() and not (
+                      isinstance(groups, list) and groups
+                      and all(isinstance(g, str) and re.fullmatch("[a-z][a-z0-9]*", g) for g in groups)
+                      and len(set(groups)) == len(groups)
+                  ):
+                      raise SystemExit(f"{path}: `groups` is not a list of distinct group names: {groups!r}")
+                  print("groups:", groups)
+                  with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+                      out.write(f"list={json.dumps(groups)}\n")
+
     test:
-        name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }}
+        # ` - <group>` only for a non-empty group, so a repository without test/ci-groups.toml
+        # keeps the names of the required checks.
+        name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }}${{ matrix.group && format(' - {0}', matrix.group) || '' }}
+        needs: groups
         runs-on: ${{ matrix.os }}
         timeout-minutes: 120
         # A pre-release or nightly failure is information, not a broken build.
@@ -59,7 +104,8 @@ jobs:
             # makes Codecov merge six reports of the same scope per run, and the merged percentage
             # then moves for reasons that are not code changes. The entry is `1`, not `min`:
             # instrumentation makes the job that carries the coverage the slowest of the matrix,
-            # and `min` is already the slowest Julia.
+            # and `min` is already the slowest Julia. With test groups, the entry of each group
+            # uploads its own part of the suite, and Codecov merges the parts into one report.
             COVERAGE: ${{ matrix.version == '1' && matrix.os == 'ubuntu-latest' }}
             # Two threads, everywhere: a runner has more than one core, and a suite with a threading
             # test is otherwise silently single-threaded.
@@ -80,6 +126,7 @@ jobs:
                     - default
                 experimental:
                     - false
+                group: ${{ fromJSON(needs.groups.outputs.list) }}
                 include:
                     - version: "pre"
                       os: ubuntu-latest
@@ -104,7 +151,14 @@ jobs:
             - uses: julia-actions/julia-buildpkg@v1
             - uses: julia-actions/julia-runtest@v1
               with:
+                  # `auto`, not the action's default `yes`. A bounds check defeats `@inbounds`, so
+                  # the local `MMatrix` and `MVector` of a static kernel escape to the heap, and a
+                  # kernel that a compiled backend runs cannot allocate: with `yes`, every such
+                  # testset throws `KernelException` on a host backend that compiles kernels. The
+                  # pre-commit probes run with `auto` too.
+                  check_bounds: auto
                   coverage: ${{ env.COVERAGE }}
+                  test_args: ${{ matrix.group }}
             - uses: julia-actions/julia-processcoverage@v1
               if: env.COVERAGE == 'true'
             - uses: codecov/codecov-action@v7
@@ -133,7 +187,11 @@ jobs:
         # The stdlibs are skipped because their version is fixed by the Julia version. The list is
         # every stdlib a repository here depends on, and the common rest; add one when a
         # repository takes a stdlib that is not on it.
-        name: Downgrade - ubuntu-latest
+        #
+        # One job per test group, as the `test` job: the whole suite on the lowest Julia takes as
+        # long as the longest entry of the matrix.
+        name: Downgrade - ubuntu-latest${{ matrix.group && format(' - {0}', matrix.group) || '' }}
+        needs: groups
         runs-on: ubuntu-latest
         timeout-minutes: 120
         # Advisory: see the header.
@@ -143,6 +201,10 @@ jobs:
             contents: read
         env:
             JULIA_NUM_THREADS: 2
+        strategy:
+            fail-fast: false
+            matrix:
+                group: ${{ fromJSON(needs.groups.outputs.list) }}
         steps:
             - uses: actions/checkout@v7
             - uses: julia-actions/setup-julia@v3
@@ -158,10 +220,14 @@ jobs:
             - uses: julia-actions/julia-buildpkg@v1
             - uses: julia-actions/julia-runtest@v1
               with:
+                  # The same `auto` as the matrix job above, and for the same reason: a kernel
+                  # that a compiled backend runs cannot allocate.
+                  check_bounds: auto
                   # Keep the resolved floors: a re-resolve would move them back up, and the
                   # Dependabot default would force the newest version of the bumped entry.
                   allow_reresolve: false
                   force_latest_compatible_version: false
+                  test_args: ${{ matrix.group }}
 
     doctest:
         # Doctests run here rather than across the test matrix, and rather than only inside the

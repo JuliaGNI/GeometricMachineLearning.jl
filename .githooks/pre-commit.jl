@@ -9,9 +9,10 @@
 #   1. JuliaFormatter           BLOCKS   formatting is mechanical and always fixable
 #   2. fatou lint               WARNS    see `lint`
 #   2.5 unicode NFC             BLOCKS   the tree is NFC, so a non-NFC file is a regression
+#   2.7 ast-grep                BLOCKS   a hit on a line that the commit adds; see `ast_grep`
 #   3. package load             BLOCKS   catches a syntax error or a broken include
 #
-# Stages 1–2.5 run on STAGED .jl files only, and stage 3 runs when a .jl file is staged or its
+# Stages 1–2.7 run on STAGED .jl files only, and stage 3 runs when a .jl file is staged or its
 # deletion is. A whole-tree JuliaFormatter run is not sure to end: one has died inside SciML's
 # `nest!` after 62 minutes of CPU.
 #
@@ -44,28 +45,32 @@ const BOXED = Set{Cint}()
 signal_group(group, signal) = ccall(:kill, Cint, (Cint, Cint), -group, signal)
 
 """
-Run `cmd` in a process group of its own, with its stdout and stderr in one stream. After
-`seconds`, send the group SIGTERM, and SIGKILL 5 s later. Returns the exit code, `128 + n` for
-a program that signal `n` ended, or `nothing` when the time ran out; and the output.
+Run `cmd` in a process group of its own, with its stdout and stderr in one stream, or in two
+with `apart`. After `seconds`, send the group SIGTERM, and SIGKILL 5 s later. Returns the exit
+code, `128 + n` for a program that signal `n` ended, or `nothing` when the time ran out; and the
+output, or with `apart` the stdout and the stderr.
 
-The limit covers the output too: a child of `cmd` can hold the stream open after `cmd` ends.
-After a time-out, the output is not read, since a process that left the group can hold the
+The limit covers the output too: a child of `cmd` can hold a stream open after `cmd` ends.
+After a time-out, the output is not read, since a process that left the group can hold a
 stream for ever; the box returns once the group is gone, or 6 s after the SIGTERM, measured on
 the monotonic clock. The box closes its timers before it returns. A timer whose callback is
 already queued when `close` runs still runs it, so a signal can still reach the group ID after
 the box returns, when the ID can belong to another group.
 """
-function run_boxed(cmd, seconds)
+function run_boxed(cmd, seconds; apart = false)
     out = Pipe()
+    err = apart ? Pipe() : out
     p = run(
-        pipeline(ignorestatus(Cmd(cmd; detach = true)); stdin = devnull, stdout = out, stderr = out);
+        pipeline(ignorestatus(Cmd(cmd; detach = true)); stdin = devnull, stdout = out, stderr = err);
         wait = false)
     # `detach` starts a new session, whose group ID is the PID of `p`. Read before anything
     # yields: once a program that ends at once is reaped, `getpid` throws.
     group = getpid(p)
     push!(BOXED, group)
     close(out.in)
+    apart && close(err.in)
     reader = @async read(out, String)
+    errors = apart ? @async(read(err, String)) : reader
     stopped = Ref{Union{Nothing, UInt64}}(nothing)
     killer = Ref{Union{Nothing, Timer}}(nothing)
     # `stopped` is set last, so the box finds the SIGKILL timer whenever it sees the stop.
@@ -75,7 +80,7 @@ function run_boxed(cmd, seconds)
         stopped[] = time_ns()
     end
     wait(p)
-    while stopped[] === nothing && !istaskdone(reader)
+    while stopped[] === nothing && !(istaskdone(reader) && istaskdone(errors))
         sleep(0.05)
     end
     close(stop)
@@ -85,10 +90,11 @@ function run_boxed(cmd, seconds)
         end
         close(killer[])
         delete!(BOXED, group)
-        return nothing, ""
+        return apart ? (nothing, "", "") : (nothing, "")
     end
     delete!(BOXED, group)
-    return p.termsignal == 0 ? p.exitcode : 128 + p.termsignal, fetch(reader)
+    code = p.termsignal == 0 ? p.exitcode : 128 + p.termsignal
+    return apart ? (code, fetch(reader), fetch(errors)) : (code, fetch(reader))
 end
 
 """
@@ -154,6 +160,12 @@ function formatted(format, f)
     end
 end
 
+"The harness Julia environment, which holds the packages that the stages load."
+function harness_environment()
+    get(ENV, "RESEARCH_HARNESS_JULIA",
+        joinpath(homedir(), ".local", "share", "research-harness", "julia"))
+end
+
 """
 Stage 1. Honours this repository's own .JuliaFormatter.toml. A hook cannot reach an MCP
 server, so this calls JuliaFormatter directly, from the harness Julia environment.
@@ -167,8 +179,7 @@ JuliaFormatter that does not load, or is older than 2.14, marks every file.
 """
 function formatting(files)
     format = try
-        env = get(ENV, "RESEARCH_HARNESS_JULIA",
-            joinpath(homedir(), ".local", "share", "research-harness", "julia"))
+        env = harness_environment()
         pushfirst!(LOAD_PATH, env)
         id = Base.identify_package("JuliaFormatter")
         id === nothing &&
@@ -282,6 +293,157 @@ function nfc(files)
 end
 
 """
+The package `name` of the harness environment, loaded. Throws when no environment of the load
+path holds it.
+"""
+function harness_package(name)
+    env = harness_environment()
+    env in LOAD_PATH || pushfirst!(LOAD_PATH, env)
+    id = Base.identify_package(name)
+    id === nothing && error("$name is in no environment of the load path, which holds $env")
+    return Base.require(id)
+end
+
+"The path before the rename of each staged file that the commit renames, by its new path."
+function renamed()
+    out = read(`git diff --cached --name-status -z -M --diff-filter=R`, String)
+    fields = split(out, '\0'; keepempty = false)
+    return Dict(fields[i + 2] => fields[i + 1] for i in 1:3:length(fields))
+end
+
+"""
+The lines, counted from 1, that the commit adds to the staged file `file`, whose path before a
+rename is `old` (`nothing` for a file that the commit does not rename): one range per hunk, from
+the `+c,d` side of each hunk header of `git diff --cached -U0`. A header with no `,d` adds one
+line, and one with `,0` adds none.
+
+Rename detection pairs two paths only when both are in the pathspec, so `old` goes in beside
+`file`, and a pure rename adds no line. `-M` asks for the detection whatever `diff.renames`
+says. The other options keep the repository's configuration from changing the hunks: an
+external diff program, a textconv driver, a `-diff` attribute and `diff.interHunkContext`. The
+paths are literal, so a name such as `a[b].jl` matches no other file. The diff runs without
+`GIT_DIFF_OPTS`, which sets the context of each hunk, and without `GIT_ICASE_PATHSPECS` and
+`GIT_GLOB_PATHSPECS`, with which git refuses literal paths; every other variable, such as
+`GIT_DIR` and `GIT_INDEX_FILE`, stays.
+"""
+function added_lines(file, old)
+    paths = old === nothing ? [file] : [file, old]
+    options = `--no-color --no-ext-diff --no-textconv --text --inter-hunk-context=0 -M`
+    cmd = `git --literal-pathspecs diff --cached -U0 $options -- $paths`
+    diff = read(
+        addenv(cmd, "GIT_DIFF_OPTS" => nothing, "GIT_ICASE_PATHSPECS" => nothing,
+            "GIT_GLOB_PATHSPECS" => nothing),
+        String)
+    return map(eachmatch(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@"m, diff)) do m
+        c = parse(Int, m[1])
+        return c:(c + (m[2] === nothing ? 1 : parse(Int, m[2])) - 1)
+    end
+end
+
+"""
+The hit that the line `line` of `ast-grep scan --json=stream` describes, with its lines counted
+from 1, or `nothing` for a line that is no JSON object with the fields of a hit. `JSON` is the
+package, loaded at run time, so the caller calls this in the latest world.
+"""
+function hit(JSON, line)
+    try
+        o = JSON.parse(line)
+        range = o["range"]
+        return (file = o["file"]::String, first = range["start"]["line"]::Int + 1,
+            last = range["end"]["line"]::Int + 1, rule = o["ruleId"]::String,
+            severity = o["severity"]::String, message = o["message"]::String)
+    catch e
+        # A line that does not parse, a value that is no object, a missing key or a wrong type.
+        e isa Union{ArgumentError, MethodError, KeyError, TypeError} || rethrow()
+        return nothing
+    end
+end
+
+"""
+Stage 2.7. `ast-grep scan` runs, once over the staged files, the rules of the `sgconfig.yml`
+that it finds in the repository's root or a directory above it, such as
+`~/Research/sgconfig.yml`. A hit of severity `error` blocks when a line of its range is one that
+the commit adds, and is advisory otherwise, so the hits that a file already holds do not block
+an unrelated commit. A hit of severity `warning` or `hint` never blocks: it is printed as
+advisory, after the hits of severity `error`. A hit of severity `info`, such as one of the rule
+`parse-error`, is not printed. `ast-grep: clean` means no hit of severity `error`, `warning` or
+`hint`. `# ast-grep-ignore: <rule-id>` at the end of the hit's line or on the line above
+silences a hit: ast-grep drops it.
+
+Julia is a custom language of ast-grep, whose parser is a native library, and ast-grep loads it
+only with `--custom-languages allow`. With `--inspect entity`, ast-grep prints on stderr the
+number of rules that it applies to each file; with `--json=stream`, stdout holds one JSON object
+per hit, which JSON of the harness environment reads.
+
+ast-grep and its parser are installed on each machine, so a run that gives no verdict skips the
+stage with one line and passes, as stage 2 does for fatou: no ast-grep on the PATH, one that
+cannot start, a run that the time box ends, an exit code other than 0 and 1 (3 for no
+`sgconfig.yml`), a run that applies no rule to any staged file, an output that is not one JSON
+object per line, and a JSON that does not load. The time box is that of stage 2.
+
+The scan reads the working tree, and the added lines come from the index.
+"""
+function ast_grep(files; seconds = 60)
+    skip(why) = (println("$(YELLOW)ast-grep: skipped — $why$(NC)"); true)
+    Sys.which("ast-grep") === nothing && return skip("ast-grep is not on the PATH")
+    cmd = `ast-grep scan --custom-languages allow --inspect entity --json=stream -- $files`
+    code, out, err = try
+        run_boxed(cmd, seconds; apart = true)
+    catch e
+        e isa Base.IOError || rethrow()
+        return skip("ast-grep could not start")
+    end
+    code === nothing && return skip("ast-grep timed out after $(seconds)s")
+    if code ∉ (0, 1)
+        occursin("No ast-grep project configuration", err) &&
+            return skip("no sgconfig.yml in the repository or a directory above it")
+        said = filter(l -> !isempty(l) && !startswith(l, "sg: "), strip.(split(err, '\n')))
+        return skip("ast-grep exited with status $code" *
+                    (isempty(said) ? "" : ": " * first(said)))
+    end
+    any(m -> parse(Int, m[1]) > 0, eachmatch(r"appliedRuleCount=(\d+)", err)) ||
+        return skip("ast-grep applied no rule to the staged files")
+    lines = filter(!isempty, split(out, '\n'))
+    if isempty(lines)
+        println("$(GREEN)ast-grep: clean$(NC)")
+        return true
+    end
+    JSON = try
+        harness_package("JSON")
+    catch e
+        e isa InterruptException && rethrow()
+        return skip("JSON does not load: " * first(split(sprint(showerror, e), '\n')))
+    end
+    hits = [Base.invokelatest(hit, JSON, l) for l in lines]
+    any(isnothing, hits) && return skip("its output is not one JSON object per line")
+    found = filter(h -> h.severity == "error", hits)
+    others = filter(h -> h.severity in ("warning", "hint"), hits)
+    olds = renamed()
+    added = Dict{String, Vector{UnitRange{Int}}}()
+    function adds(h)
+        ranges = get!(() -> added_lines(h.file, get(olds, h.file, nothing)), added, h.file)
+        return any(r -> !isempty(intersect(r, h.first:h.last)), ranges)
+    end
+    blocking = filter(adds, found)
+    advisory = filter(!adds, found)
+    report(hs) = indent(["$(h.file):$(h.first): $(h.rule): $(h.message)" for h in hs])
+    if !isempty(blocking)
+        println("$(RED)ast-grep: FAILED$(NC) — fix each hit below, or silence it with `# ast-grep-ignore: <rule-id>`:")
+        println(report(blocking))
+    end
+    if !isempty(advisory)
+        println("$(YELLOW)ast-grep: $(length(advisory)) hit(s) on lines this commit does not add — advisory$(NC)")
+        println(report(advisory))
+    end
+    if !isempty(others)
+        println("$(YELLOW)ast-grep: $(length(others)) hit(s) of severity warning or hint — advisory$(NC)")
+        println(report(others))
+    end
+    isempty(found) && isempty(others) && println("$(GREEN)ast-grep: clean$(NC)")
+    return isempty(blocking)
+end
+
+"""
 The `name` of `Project.toml` in the current directory, of any type, when the file has both a
 `name` and a `uuid`; `nothing` when it has no file, no `name` or no `uuid`, which is no package.
 For a `name` with no `uuid`, it prints the line that says no load test runs, since a `name`
@@ -391,6 +553,7 @@ function main()
         ok &= formatting(jl)
         lint(jl)
         ok &= nfc(jl)
+        ok &= ast_grep(jl)
     end
     pkg = try
         package_name()
