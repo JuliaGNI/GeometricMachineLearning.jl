@@ -298,13 +298,13 @@ end
 end
 
 @inline function _core_encode_vec(
-        ::Union{WeightTiedAutoencoderLayer, SymmetricAutoencoderLayer},
+        ::Union{LeftInverseAutoencoderLayer, SymmetricAutoencoderLayer},
         core_encoder, ps_core::NamedTuple, z_vec::AbstractVecOrMat)
     core_encoder(z_vec, _reverse_params(ps_core))
 end
 
 @inline function _core_decode_vec(
-        ::Union{WeightTiedAutoencoderLayer, SymmetricAutoencoderLayer},
+        ::Union{LeftInverseAutoencoderLayer, SymmetricAutoencoderLayer},
         core_decoder, ps_core::NamedTuple, ξ_vec::AbstractVecOrMat)
     core_decoder(ξ_vec, ps_core)
 end

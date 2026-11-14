@@ -15,7 +15,7 @@ include("../helpers/eltypes.jl")
 Random.seed!(42)
 
 @testset "HRedSys reference-state shifting, pullback_mode = :jacobian | :vjp, and work buffers" begin
-    model_chk = WeightTiedSymplecticAutoencoder(
+    model_chk = LeftInverseSymplecticAutoencoder(
         6, 2; n_blocks = 1, n_layers = 1, n_ambient_layers = 0, sympnet_upscale = 2)
     nn_chk = NeuralNetwork(model_chk, CPU(), Float64)
     v_dummy!(v, t, q, p, ps) = (v .= p; nothing)
@@ -45,7 +45,7 @@ Random.seed!(42)
         full_dim = 2 * N # 12
         reduced_dim = 2 * n # 4
 
-        arch = WeightTiedSymplecticAutoencoder(
+        arch = LeftInverseSymplecticAutoencoder(
             full_dim, reduced_dim;
             n_blocks = 1,
             n_layers = 1,
@@ -99,7 +99,7 @@ Random.seed!(42)
         )
 
         # 1. Reference-state shifting (Proposition 13.1):
-        # For WeightTiedSymplecticAutoencoder, Ψ^dec(0) = 0 and Ψ^enc(0) = 0, so with
+        # For LeftInverseSymplecticAutoencoder, Ψ^dec(0) = 0 and Ψ^enc(0) = 0, so with
         # reference shift (q_ref, p_ref), ξ = (0, 0) lifts identically to (q_ref, p_ref)
         # and (q_ref, p_ref) encodes identically to ξ = (0, 0).
         ξ_zero = zeros(T, reduced_dim)
@@ -395,7 +395,7 @@ end
     rng = Random.MersenneTwister(606)
     N = 6
     n = 2
-    arch = WeightTiedSymplecticAutoencoder(
+    arch = LeftInverseSymplecticAutoencoder(
         2 * N, 2 * n; n_blocks = 1, n_layers = 1, n_ambient_layers = 0, sympnet_upscale = 2)
     nn = NeuralNetwork(arch, CPU(), T; rng = rng)
     q_ref = randn(rng, T, N)
@@ -467,7 +467,7 @@ end
     T = Float64
     N = 6
     n = 2
-    arch = WeightTiedSymplecticAutoencoder(
+    arch = LeftInverseSymplecticAutoencoder(
         2 * N, 2 * n; n_blocks = 1, n_layers = 1, n_ambient_layers = 0, sympnet_upscale = 2)
     nn = NeuralNetwork(arch, CPU(), T; rng = rng)
     ref = randn(rng, T, N)
@@ -513,7 +513,7 @@ end
     rng = Random.MersenneTwister(808)
     N = 6
     n = 2
-    arch = WeightTiedSymplecticAutoencoder(
+    arch = LeftInverseSymplecticAutoencoder(
         2 * N, 2 * n; n_blocks = 1, n_layers = 1, n_ambient_layers = 0, sympnet_upscale = 2)
     nn = NeuralNetwork(arch, CPU(), T; rng = rng)
 

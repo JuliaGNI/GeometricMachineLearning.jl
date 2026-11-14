@@ -747,7 +747,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
   | what | Jacobian check |
   |:--|:--|
-  | `GradientLayerQ`, `GradientLayerP` | a shear pair in `test/layers/sympnet_upscaling.jl:39` (group `slow`), and the decoders of `test/architectures/symplectic_autoencoder_tests.jl` and `test/architectures/weight_tied_symplectic_autoencoder.jl` |
+  | `GradientLayerQ`, `GradientLayerP` | a shear pair in `test/layers/sympnet_upscaling.jl:39` (group `slow`), and the decoders of `test/architectures/symplectic_autoencoder_tests.jl` and `test/architectures/left_inverse_symplectic_autoencoder.jl` |
   | `SymplecticAttentionQ`, `SymplecticAttentionP` | `test/layers/symplectic_attention.jl:46` |
   | `GSympNet`, `LASympNet` | none |
   | `LinearLayerQ`, `LinearLayerP`, `ActivationLayerQ`, `ActivationLayerP` | none: `test/layers/sympnet_layers_test.jl` checks tensor slices |
