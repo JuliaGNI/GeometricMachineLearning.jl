@@ -52,7 +52,8 @@ import GeometricOptimizers: GlobalSection, global_rep, apply_section, apply_sect
                             update_section!
 import GeometricOptimizers: Geodesic, Cayley, geodesic, cayley, retraction
 import GeometricOptimizers: GradientMethod, MomentumMethod, Adam, AdamWithEuclideanDecay,
-                            AdamOptimizerWithDecay, DecayingStatic
+                            AdamOptimizerWithDecay, DecayingStatic,
+                            CompositeMethod, FactoredStiefelAdam
 # The training step: `train!` takes a `TrainingOptimizer` and calls `optimization_step!`.
 import GeometricOptimizers: TrainingOptimizer, optimization_step!
 import GeometricOptimizers: update!

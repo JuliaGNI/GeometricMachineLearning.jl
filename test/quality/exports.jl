@@ -49,6 +49,9 @@ end
     GO = Core.eval(m, :GeometricOptimizers)
     shared = intersect(names(GO), names(GeometricMachineLearning))
     @test :Adam in shared
+    # a network with Stiefel leaves trains on `using GeometricMachineLearning` alone
+    @test :CompositeMethod in shared
+    @test :FactoredStiefelAdam in shared
     @test filter(n -> getfield(GO, n) !== getfield(GeometricMachineLearning, n), shared) ==
           Symbol[]
 
