@@ -1,8 +1,11 @@
 using SafeTestsets
 
 const GROUPS = isempty(ARGS) ?
-               (Sys.isapple() && Sys.ARCH === :aarch64 ? ["core", "slow", "metal"] :
-                ["core", "slow"]) : ARGS
+               (Sys.isapple() && Sys.ARCH === :aarch64 ?
+                ["core", "layers", "architectures", "reducedsystem", "training", "slow",
+    "metal"] :
+                ["core", "layers", "architectures", "reducedsystem", "training", "slow"]) :
+               ARGS
 
 if "core" in GROUPS
     @safetestset "Reachability of every file under test/" include("quality/reachability.jl")
@@ -22,6 +25,25 @@ if "core" in GROUPS
     @safetestset "A Stiefel network trains on data of the other precision" include("integration/mixed_precision_training.jl")
     @safetestset "tensor_cayley: skew inputs, the orthogonality bound and the pullback" include("kernels/cayley.jl")
     @safetestset "Volume-Preserving Transformer (skew-symmetric tests)" include("kernels/test_skew_map.jl")
+    @safetestset "Documented keyword defaults are the constructed ones" include("integration/documented_defaults.jl")
+    @safetestset "_norm keeps the element type of its argument" include("utils.jl")
+    @safetestset "ZygotePullback returns a NetworkParameters" include("pullbacks/zygote_pullback.jl")
+    @safetestset "AutoEncoderLoss and a loss's NetworkParameters" include("loss/losses.jl")
+    @safetestset "apply_parametric and the concatenation of the system parameters" include("parametric.jl")
+    @safetestset "ParametricLoss and its ZygotePullback" include("loss/parametric_loss.jl")
+    @safetestset "map_to_cpu" include("map_to_cpu.jl")
+    @safetestset "changebackend" include("integration/changebackend_tests.jl")
+    @safetestset "HDF5 save/load for GML special array types" include("integration/hdf5_support.jl")
+    @safetestset "Layer and architecture docstring examples" include("integration/docstrings/layers_and_architectures.jl")
+    @safetestset "Loss docstring examples" include("integration/docstrings/losses.jl")
+    @safetestset "Manifold docstring examples" include("integration/docstrings/manifolds.jl")
+    @safetestset "Utility and pullback docstring examples" include("integration/docstrings/utilities.jl")
+    @safetestset "The (q, p) methods dispatch on NamedTupleOfArrays" include("integration/qp_dispatch.jl")
+    @safetestset "Aqua's package-level checks" include("quality/aqua.jl")
+    @safetestset "JET" include("quality/jet.jl")
+    @safetestset "docs/make.jl stops on a bad @ref before makedocs" include("quality/docs_make_checks_references.jl")
+end
+if "layers" in GROUPS
     @safetestset "Gradient Layer" include("layers/gradient_layer_tests.jl")
     @safetestset "Analytic inverse layers" include("layers/inverse_layers.jl")
     @safetestset "Permutation-symmetric particle layers" include("layers/symmetric_particle_layers.jl")
@@ -48,12 +70,16 @@ if "core" in GROUPS
     @safetestset "MultiHeadAttention builds no head key per forward pass" include("layers/multi_head_attention_allocation.jl")
     @safetestset "Layer forward passes against the recorded outputs" include("layers/layer_pins.jl")
     @safetestset "Layer type parameters, shared methods and type arguments" include("layers/layer_structure.jl")
-    @safetestset "Documented keyword defaults are the constructed ones" include("integration/documented_defaults.jl")
     @safetestset "Test setup of transformer with Stiefel weights" include("layers/transformer_setup.jl")
     @safetestset "Sinusoidal positional encoding" include("layers/positional_encoding.jl")
     @safetestset "Check if the transformer can be applied to a tensor." include("layers/transformer_application.jl")
     @safetestset "Check if the gradient/pullback of MultiHeadAttention changes type in St case" include("layers/transformer_gradient.jl")
     @safetestset "Check if the optimization_step! changes the parameters of the transformer" include("layers/transformer_optimizer.jl")
+    @safetestset "_mul: NetworkParameters gradient structure" include("layers/double_multiplication_network_parameters_gradient.jl")
+    @safetestset "Symplectic attention: NetworkParameters gradient structure" include("layers/symplectic_attention_network_parameters_gradient.jl")
+    @safetestset "Symplectic attention: single sample and symplecticity" include("layers/symplectic_attention.jl")
+end
+if "architectures" in GROUPS
     @safetestset "Regular transformer integrator" include("architectures/standard_transformer_integrator.jl")
     @safetestset "Linear Symplectic Transformer" include("architectures/linear_symplectic_transformer.jl")
     @safetestset "Symplectic Transformer chain construction" include("architectures/symplectic_transformer_chain.jl")
@@ -70,11 +96,14 @@ if "core" in GROUPS
     @safetestset "ResNet blocks by width" include("architectures/resnet.jl")
     @safetestset "ParametricResNet" include("architectures/parametric_resnet.jl")
     @safetestset "The forward pass of every exported architecture infers" include("architectures/forward_inference.jl")
+end
+if "reducedsystem" in GROUPS
     @safetestset "Check reduced model" include("reduced_system/reduced_system.jl")
     @safetestset "HRedSys reference-state shifting and VJP pullback mode" include("reduced_system/reference_shift_and_vjp.jl")
-    @safetestset "_norm keeps the element type of its argument" include("utils.jl")
-    @safetestset "Test NetworkLoss + Optimizer" include("integration/losses_and_optimization.jl")
     @safetestset "ReducedLoss through train!" include("integration/reduced_loss_optimization.jl")
+end
+if "training" in GROUPS
+    @safetestset "Test NetworkLoss + Optimizer" include("integration/losses_and_optimization.jl")
     @safetestset "Optimizer #2" include("optimizers/optimization_step.jl")
     @safetestset "Optimizer #3" include("optimizers/svd_optim.jl")
     @safetestset "Optimizer #4" include("optimizers/psd_optim.jl")
@@ -82,16 +111,6 @@ if "core" in GROUPS
     @safetestset "Gradient optimizer tests" include("optimizers/gradient_optimizer.jl")
     @safetestset "Momentum optimizer tests" include("optimizers/momentum_optimizer.jl")
     @safetestset "Optimizers with structured (non-manifold) weights" include("optimizers/structured_array_parameters.jl")
-    @safetestset "_mul: NetworkParameters gradient structure" include("layers/double_multiplication_network_parameters_gradient.jl")
-    @safetestset "Symplectic attention: NetworkParameters gradient structure" include("layers/symplectic_attention_network_parameters_gradient.jl")
-    @safetestset "Symplectic attention: single sample and symplecticity" include("layers/symplectic_attention.jl")
-    @safetestset "ZygotePullback returns a NetworkParameters" include("pullbacks/zygote_pullback.jl")
-    @safetestset "AutoEncoderLoss and a loss's NetworkParameters" include("loss/losses.jl")
-    @safetestset "apply_parametric and the concatenation of the system parameters" include("parametric.jl")
-    @safetestset "ParametricLoss and its ZygotePullback" include("loss/parametric_loss.jl")
-    @safetestset "map_to_cpu" include("map_to_cpu.jl")
-    @safetestset "changebackend" include("integration/changebackend_tests.jl")
-    @safetestset "HDF5 save/load for GML special array types" include("integration/hdf5_support.jl")
     @safetestset "Test data loader for q and p data" include("data_loader/batch_data_loader_qp_test.jl")
     @safetestset "Test the data loader in combination with optimization_step!" include("data_loader/data_loader_optimization_step.jl")
     @safetestset "One epoch of train! with Adam on a data loader" include("data_loader/optimizer_functor_with_adam.jl")
@@ -102,14 +121,6 @@ if "core" in GROUPS
     @safetestset "The Batch method of integrate forwards its prediction window" include("data_loader/batch.jl")
     @safetestset "solve! of a PSD architecture needs a samples loader" include("data_loader/data_loader.jl")
     @safetestset "train! on a ParametricDataLoader trains on ParametricLoss" include("data_loader/parametric_data_loader.jl")
-    @safetestset "Layer and architecture docstring examples" include("integration/docstrings/layers_and_architectures.jl")
-    @safetestset "Loss docstring examples" include("integration/docstrings/losses.jl")
-    @safetestset "Manifold docstring examples" include("integration/docstrings/manifolds.jl")
-    @safetestset "Utility and pullback docstring examples" include("integration/docstrings/utilities.jl")
-    @safetestset "The (q, p) methods dispatch on NamedTupleOfArrays" include("integration/qp_dispatch.jl")
-    @safetestset "Aqua's package-level checks" include("quality/aqua.jl")
-    @safetestset "JET" include("quality/jet.jl")
-    @safetestset "docs/make.jl stops on a bad @ref before makedocs" include("quality/docs_make_checks_references.jl")
 end
 if "slow" in GROUPS
     @safetestset "Test symplecticity of the sympnet upscaling layer" include("layers/sympnet_upscaling.jl")

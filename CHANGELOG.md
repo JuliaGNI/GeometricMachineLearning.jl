@@ -48,6 +48,13 @@ breaking release).
   by `KernelInterface` on 0.10, so `test/quality/aqua.jl` exempts that one qualified access from
   the owner check.
 
+- **The tests run in CI as the groups `core`, `layers`, `architectures`, `reducedsystem`,
+  `training` and `slow`, one job each.** `test/ci-groups.toml` lists them, and `Pkg.test()` with no
+  arguments still runs all six (and `metal` on Apple silicon). No CI.yml job runs the `metal`
+  group any more; the jobs of `Metal.yml` run it and are required checks.
+  `.github/workflows/CI.yml`, `codecov.yml` and the git hooks in `.githooks/` follow the Harness
+  template, which runs one CI job per group and checks the group files.
+
 ### Added
 
 - **`CompositeMethod` and `FactoredStiefelAdam` of GeometricOptimizers are re-exported**, beside `Adam` and the other methods. `using GeometricMachineLearning` alone now builds `TrainingOptimizer(nn.params; algorithm = CompositeMethod(; manifold = FactoredStiefelAdam(), array = Adam()))`, which trains the Stiefel leaves of a network on the manifold and its other leaves with `Adam`. Both names are the objects of GeometricOptimizers, so a caller who loads both packages has one binding of each.
