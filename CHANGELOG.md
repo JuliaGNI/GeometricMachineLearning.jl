@@ -48,6 +48,13 @@ breaking release).
   by `KernelInterface` on 0.10, so `test/quality/aqua.jl` exempts that one qualified access from
   the owner check.
 
+- **The documentation links resolve against the GeometricOptimizers 0.10.0 manual.**
+  `docs/inventories/GeometricOptimizers.toml` is the deployed inventory of v0.10.0, where it was
+  v0.9.2, and the regeneration command in `docs/make.jl` names v0.10.0. Two anchors change: the
+  docstrings of `unit_matrix` and of `rand` on a manifold type print their backend argument as
+  `KernelInterface.Backend`, where 0.9.2 printed `KernelAbstractions.Backend`. No page of this
+  manual links to either anchor.
+
 ### Added
 
 - **`CompositeMethod` and `FactoredStiefelAdam` of GeometricOptimizers are re-exported**, beside `Adam` and the other methods. `using GeometricMachineLearning` alone now builds `TrainingOptimizer(nn.params; algorithm = CompositeMethod(; manifold = FactoredStiefelAdam(), array = Adam()))`, which trains the Stiefel leaves of a network on the manifold and its other leaves with `Adam`. Both names are the objects of GeometricOptimizers, so a caller who loads both packages has one binding of each.
