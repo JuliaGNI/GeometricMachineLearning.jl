@@ -27,8 +27,8 @@
 # have a different answer on a second operating system. The scripts environment is large — CairoMakie,
 # CUDA, Lux — and six copies of it buy nothing.
 #
-# Deliberately not a required status check: its name does not begin with `Julia `, and the required
-# list in ci-protection.sh is static across the tree.
+# Deliberately not a required status check: `test/ci-groups.toml` does not name this file in its
+# `workflows` key, so `harness ci-protection` does not require its job.
 
 name: Scripts
 
