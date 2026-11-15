@@ -1,5 +1,6 @@
-# Canonical TagBot workflow. Copied verbatim into every package repository under Packages/ by
-# harness workflows — edit this file and re-run the installer, never a copy in a repository.
+# Canonical TagBot workflow of the ResearchHarness. `harness workflows --apply` copies it verbatim
+# into every package repository. Edit the template, githooks/workflows/TagBot.yml, and re-run the
+# installer; never edit an installed copy.
 # Byte-identical everywhere it is installed; verify-workflows.jl asserts it.
 #
 # The `if:` guard is what keeps this from firing on ordinary issue comments: TagBot is driven by a

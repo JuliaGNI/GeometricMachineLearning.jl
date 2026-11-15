@@ -1,5 +1,6 @@
-# Canonical CI workflow. Copied verbatim into every repository under Packages/ and Experiments/
-# by harness workflows — edit this file and re-run the installer, never a copy in a repository.
+# Canonical CI workflow of the ResearchHarness. `harness workflows --apply` copies it verbatim into
+# every package and experiment repository. Edit the template, githooks/workflows/CI.yml, and re-run
+# the installer; never edit an installed copy.
 #
 # THIS FILE IS BYTE-IDENTICAL IN EVERY REPOSITORY. That is the whole point, and it is what
 # verify-workflows.jl asserts. Nothing here is parameterised by the package: the jobs read the
@@ -15,10 +16,10 @@
 # every pull request sits permanently pending with no error shown anywhere.
 #
 # `min` resolves the lower bound of *this* package's `[compat] julia` entry and `1` the current
-# stable release, so one identical matrix still tests the right versions in a tree whose compat
-# floors are 1.10, 1.11 and 1.12. The check names therefore never change — not when a package raises its
-# floor, and not when Julia releases. That is what lets harness ci-protection use one static list
-# for every repository without test groups.
+# stable release, so one identical matrix tests the right versions in every repository, whatever
+# its floor. The check names therefore never change — not when a package raises its floor, and not
+# when Julia releases. That is what lets harness ci-protection use one static list for every
+# repository without test groups.
 #
 # `pre` and `nightly` are advisory (`experimental: true` + `continue-on-error`): a failure in an
 # unreleased Julia is information, not a broken build. They are deliberately NOT required checks.

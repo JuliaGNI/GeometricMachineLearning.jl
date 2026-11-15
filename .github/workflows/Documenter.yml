@@ -1,6 +1,6 @@
-# Canonical documentation workflow. Copied verbatim into every repository that has a tracked
-# docs/make.jl, by harness workflows — edit this file and re-run the installer, never a copy in a
-# repository.
+# Canonical documentation workflow of the ResearchHarness. `harness workflows --apply` copies it
+# verbatim into every repository that has a tracked docs/make.jl. Edit the template,
+# githooks/workflows/Documenter.yml, and re-run the installer; never edit an installed copy.
 #
 # The file name is Documenter.yml everywhere. Three repositories called it Documentation.yml and one
 # Documentation.yaml; nothing depends on the file name, but a tree in which the same workflow has

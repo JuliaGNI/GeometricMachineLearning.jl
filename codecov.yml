@@ -1,6 +1,6 @@
-# Canonical Codecov configuration. Copied verbatim into the root of every repository under
-# Packages/ and Experiments/ by harness workflows — edit this file and re-run the installer,
-# never a copy in a repository.
+# Canonical Codecov configuration of the ResearchHarness. `harness workflows --apply` copies it
+# verbatim into the root of every package and experiment repository. Edit the template,
+# githooks/workflows/codecov.yml, and re-run the installer; never edit an installed copy.
 #
 # WHY THIS FILE HAS TO EXIST AT ALL.
 #
