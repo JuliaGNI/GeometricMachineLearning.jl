@@ -59,9 +59,9 @@ breaking release).
   build ran for this repository, and its CUDA step passed `test_args: "--quickfail"`, which names no
   test group, so it would have run no test.
 
-- **The header of `.github/workflows/Metal.yml` names the command that installs `CI.yml`.** It
-  pointed to an installer script that does not exist, and to the directories of a local checkout.
-  The workflow itself is unchanged.
+- **The headers of `.github/workflows/Metal.yml` and `Scripts.yml` name the command that installs
+  `CI.yml`.** They pointed to an installer script that does not exist, and to the directories of a
+  local checkout. The workflows themselves are unchanged.
 
 ### Added
 
