@@ -1,9 +1,9 @@
 # The gate for `scripts/`, in its own workflow rather than as a second job in CI.yml.
 #
-# CI.yml is byte-identical in every repository under Packages/ and Experiments/ — that is what
-# keeps the required-status-check list static and stops branch protection going stale. A repository
-# that needs an extra job therefore gets an extra file, never a local edit to CI.yml. See
-# ~/Research/Environment/Harness/githooks/install-workflows.sh.
+# CI.yml is a byte-identical copy of the ResearchHarness template — that is what keeps the
+# required-status-check list static and stops branch protection going stale. A repository that
+# needs an extra job therefore gets an extra file, never a local edit to CI.yml.
+# `harness workflows --apply` installs CI.yml and leaves this file alone.
 #
 # WHY THIS EXISTS.
 #
@@ -27,8 +27,8 @@
 # have a different answer on a second operating system. The scripts environment is large — CairoMakie,
 # CUDA, Lux — and six copies of it buy nothing.
 #
-# Deliberately not a required status check: its name does not begin with `Julia `, and the required
-# list in ci-protection.sh is static across the tree.
+# Deliberately not a required status check: `test/ci-groups.toml` does not name this file in its
+# `workflows` key, so `harness ci-protection` does not require its job.
 
 name: Scripts
 
