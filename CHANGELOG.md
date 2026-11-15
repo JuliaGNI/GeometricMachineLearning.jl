@@ -55,6 +55,14 @@ breaking release).
   `.github/workflows/CI.yml`, `codecov.yml` and the git hooks in `.githooks/` follow the Harness
   template, which runs one CI job per group and checks the group files.
 
+- **The Buildkite pipeline `.buildkite/pipeline.yml` is removed.** It was never used: no Buildkite
+  build ran for this repository, and its CUDA step passed `test_args: "--quickfail"`, which names no
+  test group, so it would have run no test.
+
+- **The header of `.github/workflows/Metal.yml` names the command that installs `CI.yml`.** It
+  pointed to an installer script that does not exist, and to the directories of a local checkout.
+  The workflow itself is unchanged.
+
 ### Added
 
 - **`CompositeMethod` and `FactoredStiefelAdam` of GeometricOptimizers are re-exported**, beside `Adam` and the other methods. `using GeometricMachineLearning` alone now builds `TrainingOptimizer(nn.params; algorithm = CompositeMethod(; manifold = FactoredStiefelAdam(), array = Adam()))`, which trains the Stiefel leaves of a network on the manifold and its other leaves with `Adam`. Both names are the objects of GeometricOptimizers, so a caller who loads both packages has one binding of each.

@@ -1,9 +1,9 @@
 # Metal tests, in their own workflow rather than as a second job in CI.yml.
 #
-# CI.yml is byte-identical in every repository under Packages/ and Experiments/ -- that is what
-# makes the required-status-check list static and keeps branch protection from silently going stale.
+# CI.yml is a byte-identical copy of the ResearchHarness template -- that is what makes the
+# required-status-check list static and keeps branch protection from silently going stale.
 # A repository that needs an extra job therefore gets an extra file, never a local edit to CI.yml.
-# See ~/Research/Environment/Harness/githooks/install-workflows.sh.
+# `harness workflows --apply` installs CI.yml and leaves this file alone.
 #
 # WHAT THIS ADDS TO CI.yml.
 #
