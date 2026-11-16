@@ -5,7 +5,7 @@ Make an instance of a left-inverse symplectic autoencoder (left-inverse SAE) for
 
 Unlike [`SymplecticAutoencoder`](@ref), which maintains independent parameter trees for the encoder and decoder, `LeftInverseSymplecticAutoencoder` stores a single parameter tree `ps` for the stage blocks from `reduced_dim` up to `full_dim`:
 - [`decoder`](@ref)`(nn)(ξ)` applies the stage blocks in forward order (from `reduced_dim` to `full_dim`), embedding ``\mathbb{R}^{2n} \to \mathbb{R}^{2N}`` via alternating [`GradientLayerQ`](@ref)/[`GradientLayerP`](@ref) layers and [`PSDLayer`](@ref) lifts (with `biorthogonal = true`, [`BiorthogonalPSDLayer`](@ref) lifts);
-- [`encoder`](@ref)`(nn)(z)` applies `reverse(map(inverse_layer, ...))` with the reversed parameter tree, sharing the exact same leaf arrays with zero duplicated parameters and satisfying ``\Psi^e(\Psi^d(\xi)) = \xi`` to machine precision for all parameters `ps`.
+- [`encoder`](@ref)`(nn)(z)` applies `reverse(map(inverse_layer, ...))` with the reversed parameter tree, sharing the exact same leaf arrays with zero duplicated parameters and satisfying ``\Psi^e(\Psi^d(\xi)) = \xi`` for all parameters `ps`, to the accuracy with which each lift's weight lies on its manifold.
 
 # Arguments
 

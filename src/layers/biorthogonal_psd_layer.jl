@@ -83,11 +83,11 @@ function initialparameters(
     initialparameters(rng, initializer, BiorthogonalPSDLayer{N, M}(), backend, T)
 end
 
-# `(Φ, Ψ)`, the two halves of the stored matrix `[Φ Ψ]`, as matrices on the point's backend.
+# `(Φ, Ψ)`, the two halves of the stored matrix `[Φ Ψ]`, as views of the point's storage.
 function _biorthogonal_pair(B::BiorthogonalManifold)
     A = parent(B)
     n = size(A, 2) ÷ 2
-    A[:, 1:n], A[:, (n + 1):(2n)]
+    @views A[:, 1:n], A[:, (n + 1):(2n)]
 end
 
 # The cotangent of the point is the dense `[Φ̄ Ψ̄]`, the Euclidean gradient with respect to the stored

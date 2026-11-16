@@ -174,12 +174,15 @@ end
     batch = randn(T, 10, 32)
     loss = AutoEncoderLoss()
     loss_init = loss(nn, batch)
-    opt = TrainingOptimizer(params(nn); algorithm = Adam(), linesearch = Static(T(1e-2)))
+    weight_init = copy(parent(lift.weight))
+    # `GradientMethod`, because `Adam`'s step on this manifold depends on the section and need not descend
+    opt = TrainingOptimizer(params(nn); algorithm = GradientMethod(), linesearch = Static(T(1e-2)))
     for _ in 1:5
         gs = Zygote.gradient(p -> loss(nn.model, p, batch), params(nn))[1]
         optimization_step!(params(nn), opt, gs)
     end
     @test loss(nn, batch) < loss_init
+    @test parent(lift.weight) != weight_init
     # still a point of the manifold, and still a left inverse, after training
     Φ, Ψ = dense_pair(lift)
     @test check(lift.weight) <= 1000 * eps(T) * opnorm(Φ) * opnorm(Ψ)
