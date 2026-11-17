@@ -1,0 +1,185 @@
+# Canonical downgrade workflow of the ResearchHarness. `harness workflows --apply` copies it
+# verbatim into every package and experiment repository, beside CI.yml. Edit the template,
+# githooks/workflows/Downgrade.yml, and re-run the installer; never edit an installed copy.
+# verify-workflows.jl asserts that every copy is byte-identical to it.
+#
+# WHEN IT RUNS.
+#
+# The downgrade job tests the `[compat]` lower bounds, which change only with a Project.toml. So it
+# runs on a pull request and a push to `main` or `master` that change `Project.toml` or
+# `test/Project.toml`, the two projects that it resolves; on every tag, for which GitHub reads no
+# path filter; weekly, with the whole matrix of CI.yml; and by hand.
+#
+# It is advisory: it is red wherever a floor is false, and its path filter leaves most pull
+# requests without its checks, so harness ci-protection requires none of them.
+#
+# Its `groups` job is the one of CI.yml, so that both workflows read test/ci-groups.toml with one
+# script, and the downgrade job runs one job per test group, or one job of every group where the
+# file sets `split = false`. `once` does not change it: it runs every group on every event.
+
+name: Downgrade
+
+on:
+    push:
+        branches:
+            - main
+            - master
+        tags: ["*"]
+        paths:
+            - Project.toml
+            - test/Project.toml
+    pull_request:
+        paths:
+            - Project.toml
+            - test/Project.toml
+    workflow_dispatch:
+    # Weekly, Monday 03:17 UTC, with CI.yml.
+    schedule:
+        - cron: "17 3 * * 1"
+
+concurrency:
+    # The group of CI.yml: one run per ref and event; a pull request cancels its older run.
+    group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+    cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
+jobs:
+    groups:
+        # The test groups of the downgrade job as a JSON list, `[""]` for one job of the whole
+        # suite; and the matrix rows of the `test` and `test-other` jobs of CI.yml for this event,
+        # which this workflow does not read. The job is the `groups` job of CI.yml, so both read
+        # the file alike.
+        name: Test groups
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        permissions:
+            contents: read
+        outputs:
+            test: ${{ steps.read.outputs.test }}
+            other: ${{ steps.read.outputs.other }}
+            list: ${{ steps.read.outputs.list }}
+        steps:
+            - uses: actions/checkout@v7
+              with:
+                  sparse-checkout: test/ci-groups.toml
+                  sparse-checkout-cone-mode: false
+                  persist-credentials: false
+            - id: read
+              shell: python
+              run: |
+                  import json, os, pathlib, re, tomllib
+                  path = pathlib.Path("test/ci-groups.toml")
+                  data = tomllib.loads(path.read_text()) if path.is_file() else {}
+                  groups = data.get("groups") if path.is_file() else [""]
+                  if path.is_file() and not (
+                      isinstance(groups, list) and groups
+                      and all(isinstance(g, str) and re.fullmatch("[a-z][a-z0-9]*", g) for g in groups)
+                      and len(set(groups)) == len(groups)
+                  ):
+                      raise SystemExit(f"{path}: `groups` is not a list of distinct group names: {groups!r}")
+                  # `split = false` runs all groups of an entry in one job; `once` names the groups
+                  # that a pull request and a push to a branch run on Ubuntu with `1` alone.
+                  split, once = data.get("split", True), data.get("once", [])
+                  if not isinstance(split, bool):
+                      raise SystemExit(f"{path}: `split` is not true or false")
+                  if not (
+                      isinstance(once, list)
+                      and all(isinstance(g, str) and g in groups and g != "core" for g in once)
+                      and len(set(once)) == len(once)
+                  ):
+                      raise SystemExit(f"{path}: `once` is not a list of distinct groups of `groups` other than core")
+                  # macOS and Windows would run no group, or with `split = false` every group.
+                  if len(once) == len(groups):
+                      raise SystemExit(f"{path}: `once` holds every group of `groups`")
+                  # A pull request and a push to a branch are short: macOS and Windows on `1` alone,
+                  # and the groups of `once` on Ubuntu with `1` alone. A tag, the schedule, a run by
+                  # hand and every other event run every group on `min` and `1`, so a new trigger
+                  # never runs less.
+                  event, ref = os.environ["GITHUB_EVENT_NAME"], os.environ["GITHUB_REF"]
+                  short = event == "pull_request" or (event == "push" and ref.startswith("refs/heads/"))
+
+                  def rows(entries):
+                      found = []
+                      for version, system in entries:
+                          runs = groups
+                          if short and (version, system) != ("1", "ubuntu-latest"):
+                              runs = [g for g in groups if g not in once]
+                          row = {"version": version, "os": system, "arch": "default"}
+                          if split:
+                              found += [row | {"group": g, "args": g} for g in runs]
+                          else:
+                              # One job that names its groups, every group too: an empty ARGS adds
+                              # the device groups of the platform line of `runtests.jl`.
+                              found.append(row | {"group": "", "args": " ".join(runs)})
+                      return found
+
+                  test = rows([("min", "ubuntu-latest"), ("1", "ubuntu-latest")])
+                  versions = ["1"] if short else ["min", "1"]
+                  other = rows([(v, s) for v in versions for s in ("macOS-latest", "windows-latest")])
+                  listed = groups if split else [""]
+                  print("test:", test, "other:", other, "list:", listed, sep="\n")
+                  with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+                      out.write(f"test={json.dumps(test)}\n")
+                      out.write(f"other={json.dumps(other)}\n")
+                      out.write(f"list={json.dumps(listed)}\n")
+
+    downgrade:
+        # The `[compat]` lower bounds. `min` tests the lowest Julia with the newest dependencies,
+        # which leaves every dependency floor untested: a floor can name a version that cannot be
+        # installed at all, or that conflicts with a sibling's floor, and nothing notices. This job
+        # resolves every direct dependency of the root Project.toml and of test/Project.toml to
+        # exactly its lower bound on the lowest Julia, and `forcedeps` fails, naming the entry, when
+        # one cannot sit at its bound. Then it runs the suite there, so a floor that installs but
+        # lacks something the package calls fails too.
+        #
+        # `projects: ., test` resolves the two projects together, into one manifest. A resolve of
+        # the root alone takes each indirect dependency at its newest version, and the test run,
+        # which keeps that manifest, then cannot add a test-only dependency that caps it: Documenter
+        # 1.19 allows no DocStringExtensions 0.10, CairoMakie no FreeType that CEnum 1.0 allows.
+        # The action stops when test/Project.toml is missing.
+        #
+        # The stdlibs are skipped because their version is fixed by the Julia version. The list is
+        # every stdlib a repository here depends on, and the common rest; add one when a
+        # repository takes a stdlib that is not on it.
+        #
+        # One job per test group of the list of the `groups` job, as the `test` job of CI.yml: the
+        # whole suite on the lowest Julia takes as long as the longest entry of the matrix.
+        name: Downgrade - ubuntu-latest${{ matrix.group && format(' - {0}', matrix.group) || '' }}
+        needs: groups
+        runs-on: ubuntu-latest
+        timeout-minutes: 120
+        # Advisory: see the header.
+        continue-on-error: true
+        permissions:
+            actions: write
+            contents: read
+        env:
+            JULIA_NUM_THREADS: 2
+        strategy:
+            fail-fast: false
+            matrix:
+                group: ${{ fromJSON(needs.groups.outputs.list) }}
+        steps:
+            - uses: actions/checkout@v7
+              with:
+                  persist-credentials: false
+            - uses: julia-actions/setup-julia@v3
+              with:
+                  version: min
+            - uses: julia-actions/cache@v3
+            - uses: julia-actions/julia-downgrade-compat@v2
+              with:
+                  mode: forcedeps
+                  julia_version: min
+                  projects: ., test
+                  skip: ArgTools,Artifacts,Base64,CRC32c,Dates,DelimitedFiles,Distributed,Downloads,FileWatching,Future,InteractiveUtils,LazyArtifacts,LibCURL,LibGit2,Libdl,LinearAlgebra,Logging,Markdown,Mmap,NetworkOptions,Pkg,Printf,Profile,REPL,Random,SHA,Serialization,SharedArrays,Sockets,SparseArrays,Statistics,TOML,Tar,Test,UUIDs,Unicode
+            - uses: julia-actions/julia-buildpkg@v1
+            - uses: julia-actions/julia-runtest@v1
+              with:
+                  # The same `auto` as the `test` job of CI.yml, and for the same reason: a
+                  # kernel that a compiled backend runs cannot allocate.
+                  check_bounds: auto
+                  # Keep the resolved floors: a re-resolve would move them back up, and the
+                  # Dependabot default would force the newest version of the bumped entry.
+                  allow_reresolve: false
+                  force_latest_compatible_version: false
+                  test_args: ${{ matrix.group }}
