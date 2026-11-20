@@ -797,13 +797,16 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 - **found:** #393
 - **evidence:**
   Up to 3000 readings of each of the 13 measured expressions of the batch-scaling checks, after
-  lines 1–809 of the test file, fresh processes, `--check-bounds=auto`, 2 default threads and 1
+  lines 1–822 of the test file, fresh processes, `--check-bounds=auto`, 2 default threads and 1
   interactive thread. Julia 1.13.4: 1–2 extra readings in about 18000 readings of
   `_dlra_full_bwd_obj` per run, in 4 of 5 runs, only in `Float32` at batch sizes 16 and 32. Each
   carries 99456–104880 B more: about 1700–1775 extra pool allocations, 0 extra big allocations,
   1 extra `malloc`, and no garbage collection in the reading (`Base.gc_num()` deltas). Julia
-  1.12.7: none in 3 runs of 7800 readings each, although a single reading of 124640 B more failed
-  line 848 there before. One run with `--threads=1,0` on 1.13.4 gave none in 18000 readings. Team
+  1.12.7: none in 3 runs of 7800 readings each. With one reading per batch size, single readings of
+  124640 B more failed 3 of 12 runs of the file on 1.12.7 (the checks of `alloc_loss_bwd` and
+  `alloc_full_bwd`), one of 938976 B more failed 1 of 3 runs on 1.13.4 (the check of
+  `alloc_loss`), and CI on #393 failed the check of `alloc_loss_bwd` on Julia min, ubuntu and
+  windows. One run with `--threads=1,0` on 1.13.4 gave none in 18000 readings. Team
   launches of the PoCL backend of KernelAbstractions 0.10.8 occur in readings without the extra
   allocation too. An allocation profile with `sample_rate = 1` gave no output within 25 minutes on
   a loaded machine, so no stack frame is known. The checks take the minimum of five readings,
