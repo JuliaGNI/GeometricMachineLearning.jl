@@ -18,7 +18,7 @@ At its core every neural network comprises three components: a neural network ar
 
 Traditionally, physical properties have been encoded into the loss function (PINN approach), but in `GeometricMachineLearning.jl` this is exclusively done through the architectures and the optimizers of the neural network, thus giving theoretical guarantees that these properties are actually preserved.
 
-The optimizer methods themselves — `GradientMethod`, `MomentumMethod`, `Adam`, the manifold types they act on, and the caches, global sections and retractions that go with them — come from [`GeometricOptimizers.jl`](https://github.com/JuliaGNI/GeometricOptimizers.jl) and are re-exported here. `GeometricMachineLearning.jl` supplies the part that is specific to neural networks: the architectures, the layers, and walking the parameter tree of a network during training.
+The optimizer methods themselves (`GradientMethod`, `MomentumMethod`, `Adam`, the manifold types they act on, and the caches, global sections and retractions that go with them) come from [`GeometricOptimizers.jl`](https://github.com/JuliaGNI/GeometricOptimizers.jl) and are re-exported here. `GeometricMachineLearning.jl` supplies the part that is specific to neural networks: the architectures, the layers, and walking the parameter tree of a network during training.
 
 Using the package is very straightforward and is very flexible with respect to the device `(CPU, CUDA, Metal, ...)` and the type `(Float16, Float32, Float64, ...)` you want to use. The following is a simple example to learn a SympNet on data coming from a pendulum:
 ```julia
@@ -66,17 +66,17 @@ fig
 More examples like this can be found in the docs.
 
 ## References
-- Brantner B. Generalizing Adam To Manifolds For Efficiently Training Transformers. arXiv preprint arXiv:2305.16901, 2023.
-- Brantner B., Kraus M. Symplectic Autoencoders for Model Reduction of Hamiltonian Systems. arXiv preprint arXiv:2312.10004, 2023.
-- Brantner B., Romemont G., Kraus M., Li Z. Structure-Preserving Transformers for Learning Parametrized Hamiltonian Systems. arXiv preprint arXiv:2312.11166, 2023.
+- Brantner B. Generalizing Adam to Manifolds for Efficiently Training Transformers. arXiv preprint [arXiv:2305.16901](https://arxiv.org/abs/2305.16901), 2023.
+- Brantner B., Kraus M. Symplectic Autoencoders for Model Reduction of Hamiltonian Systems. arXiv preprint [arXiv:2312.10004](https://arxiv.org/abs/2312.10004), 2023.
+- Brantner B., Kraus M., Li Z., de Romemont G. Volume-preserving transformers for learning time series data with structure. ESAIM: Proceedings and Surveys 81, 123–144, 2025. [doi:10.1051/proc/202581123](https://doi.org/10.1051/proc/202581123)
 
 
 ## Development
 
 ### Git hooks
 
-Two hooks live in `.githooks`. They are **not active in a fresh clone** — `core.hooksPath` is local
-configuration and does not travel with a push — so enable them once per clone:
+Two hooks live in `.githooks`. They are **not active in a fresh clone** (`core.hooksPath` is local
+configuration and does not travel with a push), so enable them once per clone:
 
 ```sh
 git config core.hooksPath .githooks
@@ -85,12 +85,12 @@ git config core.hooksPath .githooks
 **`pre-commit`** acts on **staged `.jl` files only**, and exits immediately when a commit stages
 none, so a documentation- or workflow-only commit is not slowed down by it:
 
-- **JuliaFormatter `--check`**, honouring this repository's own `.JuliaFormatter.toml` — **blocks**
+- **JuliaFormatter `--check`**, honouring this repository's own `.JuliaFormatter.toml`: **blocks**
   the commit. Formatting is mechanical and always fixable.
-- **`fatou lint`**, when `fatou` is installed — **advisory only**, and deliberately so: its
+- **`fatou lint`**, when `fatou` is installed: **advisory only**, and deliberately so: its
   `unused-import` rule does not follow `include`, so it flags the load-bearing imports of every
   module file.
-- **`using <Package>`**, which catches a syntax error or a broken `include` — **blocks**.
+- **`using <Package>`**, which catches a syntax error or a broken `include`: **blocks**.
 
 **`pre-push`** runs the full test suite with `--check-bounds=auto`, but **only when pushing to
 `main` or `master`**; a topic branch is left to CI. It prints nothing for **10–30 minutes**, which
@@ -106,5 +106,5 @@ git push --no-verify
 ```
 
 The hooks are generated from one shared copy and are byte-identical across the related
-repositories, so edit them there rather than here — a local edit is silently undone by the next
+repositories, so edit them there rather than here: a local edit is silently undone by the next
 install.
