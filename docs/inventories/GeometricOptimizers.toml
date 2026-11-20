@@ -1,6 +1,6 @@
 # DocInventory version 1
 project = "GeometricOptimizers.jl"
-version = "0.9.2"
+version = "0.10.0"
 
 [[jl.constant]]
 name = "GeometricOptimizers.CURVATURE_TOLERANCE"
@@ -56,8 +56,8 @@ uri = "api/#Base.one-Union%7BTuple%7BAbstractLieAlgHorMatrix%7BT%7D%7D%2C%20Tupl
 name = "Base.parent-Tuple{AbstractLieAlgHorMatrix}"
 uri = "api/#Base.parent-Tuple%7BAbstractLieAlgHorMatrix%7D"
 [[jl.method]]
-name = "Base.rand-Tuple{KernelAbstractions.Backend, Type{<:Manifold}, Integer, Integer}"
-uri = "api/#Base.rand-Tuple%7BKernelAbstractions.Backend%2C%20Type%7B%3C%3AManifold%7D%2C%20Integer%2C%20Integer%7D"
+name = "Base.rand-Tuple{KernelInterface.Backend, Type{<:Manifold}, Integer, Integer}"
+uri = "api/#Base.rand-Tuple%7BKernelInterface.Backend%2C%20Type%7B%3C%3AManifold%7D%2C%20Integer%2C%20Integer%7D"
 [[jl.method]]
 name = "Base.rand-Tuple{Type{<:Manifold}, Integer, Integer}"
 uri = "api/#Base.rand-Tuple%7BType%7B%3C%3AManifold%7D%2C%20Integer%2C%20Integer%7D"
@@ -374,8 +374,8 @@ uri = "api/#GeometricOptimizers.transport%21-Tuple%7BAbstractMatrix%2C%20Stiefel
 name = "GeometricOptimizers.transport-Tuple{StiefelManifold, StiefelManifold, AbstractMatrix, AbstractMatrix, AbstractVectorTransport}"
 uri = "api/#GeometricOptimizers.transport-Tuple%7BStiefelManifold%2C%20StiefelManifold%2C%20AbstractMatrix%2C%20AbstractMatrix%2C%20AbstractVectorTransport%7D"
 [[jl.method]]
-name = "GeometricOptimizers.unit_matrix-Union{Tuple{T}, Tuple{KernelAbstractions.Backend, Type{T}, Integer}} where T"
-uri = "api/#GeometricOptimizers.unit_matrix-Union%7BTuple%7BT%7D%2C%20Tuple%7BKernelAbstractions.Backend%2C%20Type%7BT%7D%2C%20Integer%7D%7D%20where%20T"
+name = "GeometricOptimizers.unit_matrix-Union{Tuple{T}, Tuple{KernelInterface.Backend, Type{T}, Integer}} where T"
+uri = "api/#GeometricOptimizers.unit_matrix-Union%7BTuple%7BT%7D%2C%20Tuple%7BKernelInterface.Backend%2C%20Type%7BT%7D%2C%20Integer%7D%7D%20where%20T"
 [[jl.method]]
 name = "GeometricOptimizers.update_section!-Union{Tuple{MT}, Tuple{T}, Tuple{GlobalSection{T, MT, λT} where λT<:Union{Nothing, AbstractArray{T}}, GlobalSection{T, MT, λT} where λT<:Union{Nothing, AbstractArray{T}}, AbstractLieAlgHorMatrix{T}, Any}, Tuple{GlobalSection{T, MT, λT} where λT<:Union{Nothing, AbstractArray{T}}, GlobalSection{T, MT, λT} where λT<:Union{Nothing, AbstractArray{T}}, AbstractLieAlgHorMatrix{T}, Any, Any}} where {T, MT<:Manifold{T}}"
 uri = "api/#GeometricOptimizers.update_section%21-Union%7BTuple%7BMT%7D%2C%20Tuple%7BT%7D%2C%20Tuple%7BGlobalSection%7BT%2C%20MT%2C%20%CE%BBT%7D%20where%20%CE%BBT%3C%3AUnion%7BNothing%2C%20AbstractArray%7BT%7D%7D%2C%20GlobalSection%7BT%2C%20MT%2C%20%CE%BBT%7D%20where%20%CE%BBT%3C%3AUnion%7BNothing%2C%20AbstractArray%7BT%7D%7D%2C%20AbstractLieAlgHorMatrix%7BT%7D%2C%20Any%7D%2C%20Tuple%7BGlobalSection%7BT%2C%20MT%2C%20%CE%BBT%7D%20where%20%CE%BBT%3C%3AUnion%7BNothing%2C%20AbstractArray%7BT%7D%7D%2C%20GlobalSection%7BT%2C%20MT%2C%20%CE%BBT%7D%20where%20%CE%BBT%3C%3AUnion%7BNothing%2C%20AbstractArray%7BT%7D%7D%2C%20AbstractLieAlgHorMatrix%7BT%7D%2C%20Any%2C%20Any%7D%7D%20where%20%7BT%2C%20MT%3C%3AManifold%7BT%7D%7D"
