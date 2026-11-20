@@ -789,3 +789,22 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
 
   Closing this entry means replacing the assertion of `test/architectures/sympnet_integrator.jl`
   with a check of this form for each row marked none.
+
+### K47 · An `@allocated` reading of a warm gradient call can carry about 100 KB of extra small allocations, whose source is not found.
+
+- **location:** `test/layers/bilinear_and_low_rank_stiefel.jl` (`min_allocated`)
+- **kind:** not verified
+- **found:** #393
+- **evidence:**
+  Up to 3000 readings of each of the 13 measured expressions of the batch-scaling checks, after
+  lines 1–809 of the test file, fresh processes, `--check-bounds=auto`, 2 default threads and 1
+  interactive thread. Julia 1.13.4: 1–2 extra readings in about 18000 readings of
+  `_dlra_full_bwd_obj` per run, in 4 of 5 runs, only in `Float32` at batch sizes 16 and 32. Each
+  carries 99456–104880 B more: about 1700–1775 extra pool allocations, 0 extra big allocations,
+  1 extra `malloc`, and no garbage collection in the reading (`Base.gc_num()` deltas). Julia
+  1.12.7: none in 3 runs of 7800 readings each, although a single reading of 124640 B more failed
+  line 848 there before. One run with `--threads=1,0` on 1.13.4 gave none in 18000 readings. Team
+  launches of the PoCL backend of KernelAbstractions 0.10.8 occur in readings without the extra
+  allocation too. An allocation profile with `sample_rate = 1` gave no output within 25 minutes on
+  a loaded machine, so no stack frame is known. The checks take the minimum of five readings,
+  which a single extra reading does not change.
