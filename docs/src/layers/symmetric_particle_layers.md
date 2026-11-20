@@ -59,7 +59,7 @@ InverseCanonicalSlotLayer
 
 ## Symmetric Symplectic Autoencoder
 
-[`SymmetricSymplecticAutoencoder`](@ref) combines a chosen particle frontend (`:sort`, `:pairwise`, or `:slot`) with [`WeightTiedSymplecticAutoencoder`](@ref). Only `:sort` and `:slot` give a latent state that is invariant under a relabelling of particles with distinct coordinates along the sorting axis; `:pairwise` is equivariant only in its frontend, because the core is not equivariant.
+[`SymmetricSymplecticAutoencoder`](@ref) combines a chosen particle frontend (`:sort`, `:pairwise`, or `:slot`) with [`LeftInverseSymplecticAutoencoder`](@ref). Only `:sort` and `:slot` give a latent state that is invariant under a relabelling of particles with distinct coordinates along the sorting axis; `:pairwise` is equivariant only in its frontend, because the core is not equivariant.
 
 ```@docs
 SymmetricSymplecticAutoencoder

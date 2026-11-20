@@ -35,7 +35,7 @@ end
 
 # The Stage II loss with a cycle term in place of `CrossModalLoss` and no particle term: the
 # reconstruction term plus `β_cycle ‖encode(grid, decode(grid, z)) - z‖²`, with `z` the latent
-# state of the DLRA snapshots and `β_cycle = 0.1`. The core is weight-tied, so the cycle term is
+# state of the DLRA snapshots and `β_cycle = 0.1`. The core is a left-inverse SAE, so the cycle term is
 # round-off, and Stage I leaves the reconstruction term at its SVD truncation error: the sum
 # stays near its value after Stage I. Without the reconstruction term, the assertion would compare
 # two round-off values.

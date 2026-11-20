@@ -25,7 +25,7 @@ using Random: Xoshiro
 frontends = (grid = BilinearStiefelLayer(16, 16, 2, 2),
     dlra = LowRankStiefelLayer(16, 16, 2, 2; r_out = 4),
     particles = CanonicalSlotLayer(8, 1, 4))
-core = WeightTiedSymplecticAutoencoder(8, 4; n_blocks = 1, n_layers = 2,
+core = LeftInverseSymplecticAutoencoder(8, 4; n_blocks = 1, n_layers = 2,
     n_ambient_layers = 0, sympnet_upscale = 4)
 nn = NeuralNetwork(MultiModalSymplecticAutoencoder(frontends, core), CPU(), Float64;
     rng = Xoshiro(42))
@@ -55,7 +55,7 @@ maps for the Vlasov bracket; the docstring of [`BilinearStiefelLayer`](@ref) say
 [`decode`](@ref)`(nn, modality, ξ)` applies the core's decoder and the inverse of a frontend, and
 [`translate`](@ref)`(nn, from, to, x)` is `decode(nn, to, encode(nn, from, x))`.
 
-The core is a [`WeightTiedSymplecticAutoencoder`](@ref): its encoder is the exact inverse of its
+The core is a [`LeftInverseSymplecticAutoencoder`](@ref): its encoder is the exact inverse of its
 decoder layers, applied to the same parameters. Its decode–encode is therefore the projection of
 its last [`PSDLayer`](@ref), whatever the gradient layers between, and the reconstruction error of
 the network is set by its linear parts: the bases of the frontend and the symplectic lift of the
