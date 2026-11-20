@@ -13,6 +13,19 @@ include("../helpers/eltypes.jl")
 const N_INDEPENDENCE_TOLERANCE = 4096
 n_independent(a::Real, b::Real) = abs(a - b) <= N_INDEPENDENCE_TOLERANCE
 
+# A single `@allocated` reading of a warm call can carry an extra allocation that the call does
+# not make: about 100 KB, as some 1700 small objects, in one of several thousand readings, with no
+# garbage collection in the reading. Its source is not found. It is enough to fail a check of
+# `n_independent` wherever it lands, so each check compares the minimum of `k` readings, which is
+# the steady value of the call.
+function min_allocated(f, k::Int = 5)
+    a = typemax(Int)
+    for _ in 1:k
+        a = min(a, @allocated f())
+    end
+    return a
+end
+
 function _random_stiefel(rng, ::Type{T}, N::Int, m::Int) where {T <: Real}
     A = randn(rng, T, N, m)
     return Matrix{T}(qr(A).Q)[:, 1:m]
@@ -807,14 +820,16 @@ end
         F_b2 = randn(rng, T, Nx, Nv, B2)
         l(F_b1, ps_nt)
         l(F_b2, ps_nt)
-        alloc_l1 = @allocated l(F_b1, ps_nt)
-        alloc_l2 = @allocated l(F_b2, ps_nt)
+        alloc_l1 = min_allocated(() -> l(F_b1, ps_nt))
+        alloc_l2 = min_allocated(() -> l(F_b2, ps_nt))
         @test n_independent(alloc_l2 / B2, alloc_l1 / B1)
 
         Zygote.gradient(_bilin_bwd_obj, l, inv_l, F_b1, ps_nt)
         Zygote.gradient(_bilin_bwd_obj, l, inv_l, F_b2, ps_nt)
-        alloc_bwd1 = @allocated Zygote.gradient(_bilin_bwd_obj, l, inv_l, F_b1, ps_nt)
-        alloc_bwd2 = @allocated Zygote.gradient(_bilin_bwd_obj, l, inv_l, F_b2, ps_nt)
+        alloc_bwd1 = min_allocated(() -> Zygote.gradient(
+            _bilin_bwd_obj, l, inv_l, F_b1, ps_nt))
+        alloc_bwd2 = min_allocated(() -> Zygote.gradient(
+            _bilin_bwd_obj, l, inv_l, F_b2, ps_nt))
         @test n_independent(alloc_bwd2 / B2, alloc_bwd1 / B1)
 
         dlra_b0 = (
@@ -829,33 +844,33 @@ end
             X = repeat(X, 1, 1, B2), S = repeat(2 .* S, 1, 1, B2), V = repeat(V, 1, 1, B2))
         loss(dlra_b1, dlra_b1_ref)
         loss(dlra_b2, dlra_b2_ref)
-        alloc_loss1 = @allocated loss(dlra_b1, dlra_b1_ref)
-        alloc_loss2 = @allocated loss(dlra_b2, dlra_b2_ref)
+        alloc_loss1 = min_allocated(() -> loss(dlra_b1, dlra_b1_ref))
+        alloc_loss2 = min_allocated(() -> loss(dlra_b2, dlra_b2_ref))
         @test n_independent(alloc_loss2 / B2, alloc_loss1 / B1)
 
         Zygote.gradient(_dlra_enc_bwd_obj, l_dlra, dlra_b1, ps_nt)
         Zygote.gradient(_dlra_enc_bwd_obj, l_dlra, dlra_b2, ps_nt)
-        alloc_dlra_bwd1 = @allocated Zygote.gradient(
-            _dlra_enc_bwd_obj, l_dlra, dlra_b1, ps_nt)
-        alloc_dlra_bwd2 = @allocated Zygote.gradient(
-            _dlra_enc_bwd_obj, l_dlra, dlra_b2, ps_nt)
+        alloc_dlra_bwd1 = min_allocated(() -> Zygote.gradient(
+            _dlra_enc_bwd_obj, l_dlra, dlra_b1, ps_nt))
+        alloc_dlra_bwd2 = min_allocated(() -> Zygote.gradient(
+            _dlra_enc_bwd_obj, l_dlra, dlra_b2, ps_nt))
         @test n_independent(alloc_dlra_bwd2 / B2, alloc_dlra_bwd1 / B1)
 
         Zygote.gradient(loss, dlra_b1, dlra_b1_ref)
         Zygote.gradient(loss, dlra_b2, dlra_b2_ref)
-        alloc_loss_bwd1 = @allocated Zygote.gradient(loss, dlra_b1, dlra_b1_ref)
-        alloc_loss_bwd2 = @allocated Zygote.gradient(loss, dlra_b2, dlra_b2_ref)
+        alloc_loss_bwd1 = min_allocated(() -> Zygote.gradient(loss, dlra_b1, dlra_b1_ref))
+        alloc_loss_bwd2 = min_allocated(() -> Zygote.gradient(loss, dlra_b2, dlra_b2_ref))
         @test n_independent(alloc_loss_bwd2 / B2, alloc_loss_bwd1 / B1)
 
         Zygote.gradient(_dlra_full_bwd_obj, l_dlra, inv_dlra, loss, dlra_b0, ps_nt)
         Zygote.gradient(_dlra_full_bwd_obj, l_dlra, inv_dlra, loss, dlra_b1, ps_nt)
         Zygote.gradient(_dlra_full_bwd_obj, l_dlra, inv_dlra, loss, dlra_b2, ps_nt)
-        alloc_full_bwd0 = @allocated Zygote.gradient(
-            _dlra_full_bwd_obj, l_dlra, inv_dlra, loss, dlra_b0, ps_nt)
-        alloc_full_bwd1 = @allocated Zygote.gradient(
-            _dlra_full_bwd_obj, l_dlra, inv_dlra, loss, dlra_b1, ps_nt)
-        alloc_full_bwd2 = @allocated Zygote.gradient(
-            _dlra_full_bwd_obj, l_dlra, inv_dlra, loss, dlra_b2, ps_nt)
+        alloc_full_bwd0 = min_allocated(() -> Zygote.gradient(
+            _dlra_full_bwd_obj, l_dlra, inv_dlra, loss, dlra_b0, ps_nt))
+        alloc_full_bwd1 = min_allocated(() -> Zygote.gradient(
+            _dlra_full_bwd_obj, l_dlra, inv_dlra, loss, dlra_b1, ps_nt))
+        alloc_full_bwd2 = min_allocated(() -> Zygote.gradient(
+            _dlra_full_bwd_obj, l_dlra, inv_dlra, loss, dlra_b2, ps_nt))
         @test n_independent(alloc_full_bwd2 / B2, alloc_full_bwd1 / B1)
         @test n_independent(
             (alloc_full_bwd2 - alloc_full_bwd1) / (B2 - B1),
