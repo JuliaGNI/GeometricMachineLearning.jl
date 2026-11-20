@@ -32,21 +32,22 @@ Downloads.download(
 #
 # The inventory is a *committed file*: `InterLinks` opens it and takes every object from it, and
 # nothing about the references is fetched. The URL in the tuple below is the root that the file's
-# relative URIs resolve against — not an inventory, and not a fallback. Regenerate it after an
-# upstream docs release — from the *deployed* inventory of the version `[compat]` requires, pinned
-# rather than `stable/`, so the command reproduces the same file after the next release:
+# relative URIs resolve against — not an inventory, and not a fallback. The root and the inventory
+# name the same version, so every link goes to the manual that the inventory describes, whatever
+# `stable/` serves. They change together: regenerate the file from the *deployed* inventory of the
+# version `[compat]` requires, and set the root in the tuple below to that version:
 #
 #     julia --project=docs -e 'using DocInventories; DocInventories.save(
 #         "docs/inventories/GeometricOptimizers.toml",
-#         Inventory("https://juliagni.github.io/GeometricOptimizers.jl/v0.10.0/objects.inv";
-#                   root_url = "https://juliagni.github.io/GeometricOptimizers.jl/stable/"))'
+#         Inventory("https://juliagni.github.io/GeometricOptimizers.jl/v0.10.1/objects.inv";
+#                   root_url = "https://juliagni.github.io/GeometricOptimizers.jl/v0.10.1/"))'
 #
 # `save` is not exported — it has to be qualified. `root_url` is not written to the TOML either; it
 # is `InterLinks` below that supplies the root at build time.
 #
 links = InterLinks(
     "GeometricOptimizers" => (
-    "https://juliagni.github.io/GeometricOptimizers.jl/stable/",
+    "https://juliagni.github.io/GeometricOptimizers.jl/v0.10.1/",
     joinpath(@__DIR__, "inventories", "GeometricOptimizers.toml")
 ),
 )
