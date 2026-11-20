@@ -30,32 +30,20 @@ function plot_curves(number_of_params::Int = 3, time_instances::Int = 3)
     param_indices = indices(n_params, number_of_params)
     time_indices = indices(number_time_indices, time_instances)
 
-    time_labels = reshape((0:(1 / (number_time_indices - 1)):1)[time_indices], 1, time_instances)
-
     N = size(data, 1)÷2
 
     Ω = -0.5:(1 / (N - 1)):0.5
 
     fig = Figure()
-    # one row per time instance, stacked vertically
-    axs = [Axis(fig[i, 1]; title = "", titlealign = :left, titlesize = 12)
-           for i in 1:time_instances]
+    # one row per time instance, stacked vertically, earliest on top. No titles: the paper's caption
+    # gives the time of each row.
+    axs = [Axis(fig[i, 1]) for i in 1:time_instances]
     index_number = 0
-
-    function title_gen(t::Real)
-        output = try
-            "t="*string(t)[1:4]
-        catch
-            "t="*string(t)
-        end
-        output
-    end
 
     for param_index in param_indices
         index_number += 1
         data_to_plot = data[1:N, (param_index - 1) * number_time_indices .+ time_indices]
         for (i, ax) in pairs(axs)
-            ax.title = title_gen(time_labels[i])
             lines!(ax, Ω, data_to_plot[:, i];
                 color = Makie.wong_colors()[3 + index_number],
                 label = "μ="*string(μ_collection[param_index])[1:5])
