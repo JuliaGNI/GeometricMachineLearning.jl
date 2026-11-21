@@ -2,7 +2,8 @@ using Test
 
 # A test file under `test/` that nothing includes is never run, and nothing says so: it keeps
 # compiling in a reader's head, it is repaired by hand from time to time, and it regresses in
-# silence. This guard walks the transitive `include` closure of `runtests.jl` and requires every
+# silence. This guard walks the transitive `include` closure of `runtests.jl` and of each path of
+# its table `TESTS`, which ParallelTestRunner includes by that path in a worker, and requires every
 # `test/**/*.jl` to be either inside that closure or named in `ALLOWED_ORPHANS` below with a
 # reason. Adding a test file without wiring it in therefore fails the suite, and a file that is
 # deliberately not run has to say why in one line. The allowlist is closed in both directions: an
@@ -44,12 +45,35 @@ function included_files(file::AbstractString)
 end
 
 """
-Return the transitive `include` closure of `entry`, as paths relative to `test/`.
+Return the paths of the table `const TESTS = [...]` at the top level of `entry`, relative to
+`test/`. A file without that table, such as one in the serial form, gives none.
+
+The table is the literal `["<group>" => ["<label>" => "<path>", ...], ...]` that the layout check
+of the convention requires, so it is read by position: a table of another shape raises an error
+here rather than reaching fewer files.
+"""
+function tests_table_paths(entry::AbstractString)
+    file = joinpath(TEST_ROOT, entry)
+    ast = Meta.parseall(read(file, String); filename = file)
+    paths = String[]
+    for ex in ast.args
+        Meta.isexpr(ex, :const) && ex.args[1].args[1] === :TESTS || continue
+        for group in ex.args[1].args[2].args
+            for pair in group.args[3].args
+                push!(paths, pair.args[3])
+            end
+        end
+    end
+    return paths
+end
+
+"""
+Return the transitive `include` closure of the files `entries`, as paths relative to `test/`.
 Files included from outside `test/` are dropped.
 """
-function include_closure(entry::AbstractString)
+function include_closure(entries::AbstractVector{<:AbstractString})
     reached = Set{String}()
-    stack = [normpath(joinpath(TEST_ROOT, entry))]
+    stack = [normpath(joinpath(TEST_ROOT, entry)) for entry in entries]
     while !isempty(stack)
         file = pop!(stack)
         (file in reached || !isfile(file)) && continue
@@ -74,7 +98,7 @@ function test_files()
     return sort!(files)
 end
 
-const REACHABLE = include_closure("runtests.jl")
+const REACHABLE = include_closure(["runtests.jl"; tests_table_paths("runtests.jl")])
 
 @testset "every test file is reachable from runtests.jl or allowlisted" begin
     files = test_files()

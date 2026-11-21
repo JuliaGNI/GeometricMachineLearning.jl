@@ -55,6 +55,21 @@ breaking release).
   `.github/workflows/CI.yml`, `codecov.yml` and the git hooks in `.githooks/` follow the Harness
   template, which runs one CI job per group and checks the group files.
 
+- **ParallelTestRunner runs the test files, each in a worker process, and each CI matrix entry
+  runs all its groups in one job.** This replaces the one CI job per group of the entry above.
+  `test/runtests.jl` is the parallel form of the Harness convention: one table `TESTS` of
+  group, label and path, with the 111 files and labels of the serial form. `test/Project.toml`
+  takes `ParallelTestRunner = "2.10"` in place of `SafeTestsets`. The five files under
+  `test/quality/` other than `doctests.jl` (Aqua, JET, the exports, the reachability guard and the
+  `@ref` check of `docs/make.jl`) leave `core` for a new group `quality`.
+  `test/ci-groups.toml` sets `split = false`, so the required checks are the five of a repository
+  without groups and the two jobs of `Metal.yml`, and `once = ["quality"]`, so a pull request and
+  a push run `quality` on Ubuntu with Julia 1 only. `Pkg.test()` with no arguments runs every
+  group of `groups` and, on Apple silicon, `metal` after them, one file at a time;
+  `Pkg.test(; test_args = ["quality"])` runs one group, and an argument that starts with `--`,
+  such as `--jobs=4`, goes to the runner. `test/quality/reachability.jl` counts a path of `TESTS`
+  as reached, with its own `include` closure.
+
 - **The Buildkite pipeline `.buildkite/pipeline.yml` is removed.** It was never used. Its CUDA step
   passed `test_args: "--quickfail"`, which names no test group, so it would have run no test.
 
