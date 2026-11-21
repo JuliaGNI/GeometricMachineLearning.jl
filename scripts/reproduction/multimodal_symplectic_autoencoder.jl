@@ -121,13 +121,13 @@ end
 
 Return the network: the frontends `:grid` (`BilinearStiefelLayer`), `:dlra`
 (`LowRankStiefelLayer`) and `:particles` (`CanonicalSlotLayer`) on a
-`WeightTiedSymplecticAutoencoder` core from `N_FRONTEND` to `N_LATENT`.
+`LeftInverseSymplecticAutoencoder` core from `N_FRONTEND` to `N_LATENT`.
 """
 function multimodal_network(::Type{T}) where {T}
     frontends = (grid = BilinearStiefelLayer(NX, NV, MX, MV),
         dlra = LowRankStiefelLayer(NX, NV, MX, MV; r_out = MX * MV),
         particles = CanonicalSlotLayer(N_PARTICLES, 1, N_FRONTEND ÷ 2))
-    core = WeightTiedSymplecticAutoencoder(N_FRONTEND, N_LATENT; n_blocks = 1,
+    core = LeftInverseSymplecticAutoencoder(N_FRONTEND, N_LATENT; n_blocks = 1,
         n_layers = 2, n_ambient_layers = 0, sympnet_upscale = 4)
     NeuralNetwork(MultiModalSymplecticAutoencoder(frontends, core), CPU(), T;
         rng = Xoshiro(SEED))
@@ -167,7 +167,7 @@ Set the linear parts of the network from SVDs with `solve!`: the Stiefel bases o
 frontend from the fluctuations `data.δF`, and the core's symplectic lift from the cotangent lift
 of the snapshots' frontend coordinates.
 
-The core is weight-tied, so its decode–encode is the projection of its lift whatever the
+The core is a left-inverse SAE, so its decode–encode is the projection of its lift whatever the
 gradient layers between; after this stage the network reconstructs the fluctuations to their
 SVD truncation error.
 
