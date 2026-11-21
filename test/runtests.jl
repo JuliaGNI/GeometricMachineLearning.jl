@@ -46,6 +46,7 @@ end
 if "layers" in GROUPS
     @safetestset "Gradient Layer" include("layers/gradient_layer_tests.jl")
     @safetestset "Analytic inverse layers" include("layers/inverse_layers.jl")
+    @safetestset "BiorthogonalPSDLayer" include("layers/biorthogonal_psd_layer.jl")
     @safetestset "Permutation-symmetric particle layers" include("layers/symmetric_particle_layers.jl")
     @safetestset "Bilinear and low-rank Stiefel layers" include("layers/bilinear_and_low_rank_stiefel.jl")
     @safetestset "Forcing layers add to p and leave q" include("layers/forcing_layer.jl")

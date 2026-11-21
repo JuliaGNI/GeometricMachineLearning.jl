@@ -38,7 +38,7 @@ Downloads.download(
 #
 #     julia --project=docs -e 'using DocInventories; DocInventories.save(
 #         "docs/inventories/GeometricOptimizers.toml",
-#         Inventory("https://juliagni.github.io/GeometricOptimizers.jl/v0.9.2/objects.inv";
+#         Inventory("https://juliagni.github.io/GeometricOptimizers.jl/v0.10.1/objects.inv";
 #                   root_url = "https://juliagni.github.io/GeometricOptimizers.jl/stable/"))'
 #
 # `save` is not exported — it has to be qualified. `root_url` is not written to the TOML either; it
@@ -197,6 +197,7 @@ _special_layers = "Special Neural Network Layers" => [
     "Linear Symplectic Attention" => "layers/linear_symplectic_attention.md",
     "Symplectic Attention" => "layers/symplectic_attention.md",
     "PSD-Like Layers and Inversion" => "layers/psd_like_layer.md",
+    "Biorthogonal PSD-Like Layers" => "layers/biorthogonal_psd_layer.md",
     "Symmetric Particle Layers" => "layers/symmetric_particle_layers.md",
     "Stiefel Layers" => "layers/stiefel_layer.md"
 ]
