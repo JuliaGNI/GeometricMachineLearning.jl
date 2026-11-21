@@ -89,7 +89,7 @@ _extract_grad_vec(g::NetworkParameters) = _extract_grad_vec(params(g))
     @test MultiModalSymplecticAutoencoder <: AutoEncoder
     @test MultiModalSymplecticAutoencoder <: Architecture
 
-    core = WeightTiedSymplecticAutoencoder(
+    core = LeftInverseSymplecticAutoencoder(
         8, 4; n_blocks = 1, n_layers = 1, n_ambient_layers = 0, sympnet_upscale = 2)
 
     re_empty = r"^(?:ArgumentError: )?MultiModalSymplecticAutoencoder requires a non-empty frontends NamedTuple\.$"
@@ -140,7 +140,7 @@ end
     fe_grid = BilinearStiefelLayer(nx, nv, mx, mv)
     fe_dlra = LowRankStiefelLayer(nx, nv, mx, mv; r_out = mx * mv)
 
-    core = WeightTiedSymplecticAutoencoder(
+    core = LeftInverseSymplecticAutoencoder(
         full_dim, reduced_dim;
         n_blocks = 1,
         n_layers = 1,
@@ -239,7 +239,7 @@ end
     end
 
     # Particles with :sort and :slot (NSlots > 1) on the canonical Weyl chamber:
-    core_ch = WeightTiedSymplecticAutoencoder(
+    core_ch = LeftInverseSymplecticAutoencoder(
         full_dim, 2;
         n_blocks = 1,
         n_layers = 0,
@@ -341,7 +341,7 @@ end
         mx, mv = 2, 1
         fe_part = CanonicalSlotLayer(3, 1, 2) # output dim = 4
         fe_grid = BilinearStiefelLayer(nx, nv, mx, mv) # output dim = 4
-        core = WeightTiedSymplecticAutoencoder(
+        core = LeftInverseSymplecticAutoencoder(
             4, 2; n_blocks = 1, n_layers = 1, n_ambient_layers = 0, sympnet_upscale = 2)
         arch = MultiModalSymplecticAutoencoder(
             (particles = fe_part, grid = fe_grid), core)
@@ -579,7 +579,7 @@ end
         # Full dim = 2 * 2 * 1 = 4, reduced_dim = 2
         fe_part = CanonicalSlotLayer(3, 1, 2) # M = 3, d = 1, NSlots = 2 -> NOut = 4
         fe_grid = BilinearStiefelLayer(nx, nv, mx, mv) # NOut = 4
-        core = WeightTiedSymplecticAutoencoder(
+        core = LeftInverseSymplecticAutoencoder(
             4, 2; n_blocks = 1, n_layers = 1, n_ambient_layers = 0, sympnet_upscale = 2)
         arch = MultiModalSymplecticAutoencoder((particles = fe_part, grid = fe_grid), core)
         nn = NeuralNetwork(arch, CPU(), T; rng = rng)
@@ -640,7 +640,7 @@ end
             PairwiseSymplecticLayerQ(2, 1, 4), PairwiseSymplecticLayerP(2, 1, 4))
         fe_grid = BilinearStiefelLayer(nx, nv, mx, mv)
         fe_dlra = LowRankStiefelLayer(nx, nv, 2, 1; r_out = 2)
-        core_id = WeightTiedSymplecticAutoencoder(
+        core_id = LeftInverseSymplecticAutoencoder(
             4, 4; n_blocks = 1, n_layers = 1, n_ambient_layers = 0, sympnet_upscale = 2)
         nn_pw = NeuralNetwork(
             MultiModalSymplecticAutoencoder(
@@ -669,11 +669,11 @@ end
         fe_can_chain = Chain(
             CanonicalSortLayer(3, 1, 1), PairwiseSymplecticLayerQ(3, 1, 4),
             PairwiseSymplecticLayerP(3, 1, 4), CanonicalSlotLayer(3, 1, 2))
-        core_wt = WeightTiedSymplecticAutoencoder(
+        core_li = LeftInverseSymplecticAutoencoder(
             4, 2; n_blocks = 1, n_layers = 1, n_ambient_layers = 0, sympnet_upscale = 2)
         nn_can = NeuralNetwork(
             MultiModalSymplecticAutoencoder(
-                (particle = fe_can_chain, grid = fe_grid, dlra = fe_dlra), core_wt),
+                (particle = fe_can_chain, grid = fe_grid, dlra = fe_dlra), core_li),
             CPU(), T; rng = rng)
         @test params(nn_can).frontends.particle isa NamedTuple
         x_qp3 = (q = T[-2.0 0.1 2.5], p = T[0.4 -1.3 0.9])
@@ -687,10 +687,10 @@ end
         fe_can_d2 = Chain(
             CanonicalSortLayer(3, 2, 1), PairwiseSymplecticLayerQ(3, 2, 4),
             PairwiseSymplecticLayerP(3, 2, 4), CanonicalSlotLayer(3, 2, 2))
-        core_wt_d2 = WeightTiedSymplecticAutoencoder(
+        core_li_d2 = LeftInverseSymplecticAutoencoder(
             8, 4; n_blocks = 1, n_layers = 1, n_ambient_layers = 0, sympnet_upscale = 2)
         nn_d2 = NeuralNetwork(
-            MultiModalSymplecticAutoencoder((particle = fe_can_d2,), core_wt_d2),
+            MultiModalSymplecticAutoencoder((particle = fe_can_d2,), core_li_d2),
             CPU(), T; rng = rng)
         x_qp_d2 = (
             q = T[3.0 -1.0 2.0; -2.0 4.0 0.5], p = T[0.2 -0.5 0.8; 1.1 -0.3 0.4])
@@ -757,11 +757,11 @@ end
         @test loss_c(nn_can, :dlra, x_dlra_batch) > zero(T)
         calls_mm, calls_fe, calls_core = Ref(0), Ref(0), Ref(0)
         NeuralNetwork(
-            MultiModalSymplecticAutoencoder((grid = fe_grid,), core_wt), CPU(), T;
+            MultiModalSymplecticAutoencoder((grid = fe_grid,), core_li), CPU(), T;
             rng = rng, initializer = CountingInitializer(calls_mm))
         initialparameters(rng, CountingInitializer(calls_fe), fe_grid, CPU(), T)
         NeuralNetwork(
-            core_wt, CPU(), T; rng = rng, initializer = CountingInitializer(calls_core))
+            core_li, CPU(), T; rng = rng, initializer = CountingInitializer(calls_core))
         @test calls_core[] > 0 && calls_mm[] == calls_fe[] + calls_core[]
         g_enc_pw = GeometricMachineLearning.Zygote.gradient(
             ps -> sum(encode(nn_pw.model, ps, :particle, x_qp2)), params(nn_pw))[1]
@@ -809,7 +809,7 @@ end
     Φc = reshape(T[s, -s], 2, 1)
 
     fe = BilinearStiefelLayer(Nx, Nv, mx, mv)
-    core = WeightTiedSymplecticAutoencoder(
+    core = LeftInverseSymplecticAutoencoder(
         4, 2; n_blocks = 1, n_layers = 0, n_ambient_layers = 0, sympnet_upscale = 2)
     nn = NeuralNetwork(
         MultiModalSymplecticAutoencoder((a = fe, b = fe), core), CPU(), T; rng = rng)
@@ -826,7 +826,7 @@ end
 
     # Dense encoder and decoder from the leaves and explicit parity matrices, vec(F) x-fastest:
     # vec(F⁺) = P₊ vec(F), vec(F⁻) = P₋ vec(F), vec(Φxᵀ G Φv) = kron(Φv, Φx)ᵀ vec(G), and the
-    # weight-tied core with no SympNet layers is (q, p) ↦ (Φcᵀ q, Φcᵀ p).
+    # left-inverse core with no SympNet layers is (q, p) ↦ (Φcᵀ q, Φcᵀ p).
     P_plus = zeros(T, Nx * half, Nx * Nv)
     P_minus = zeros(T, Nx * half, Nx * Nv)
     for j in 1:half, i in 1:Nx
@@ -868,7 +868,7 @@ end
     @test isapprox(loss_cross(nn, x_a, x_b2), cross2; rtol = 10 * eps(T))
     @test abs(loss_cross(nn, x_a, x_b2) - loss_cross(nn, x_a, x_b)) > T(1e-2) * cross
 
-    # The cycle term ‖encode(b, decode(b, z_a)) - z_a‖ is zero for the weight-tied core with a
+    # The cycle term ‖encode(b, decode(b, z_a)) - z_a‖ is zero for the left-inverse core with a
     # right-invertible frontend, and not zero for the untied core.
     z_a_nn = encode(nn, :a, x_a)
     cycle = norm(encode(nn, :b, decode(nn, :b, z_a_nn)) - z_a_nn)

@@ -3,7 +3,7 @@
 
 Make an instance of a symplectic autoencoder with a particle frontend for `M` particles in ``d`` spatial dimensions (ambient dimension ``2Md``) and latent dimension `reduced_dim` (``2n``).
 
-`SymmetricSymplecticAutoencoder` combines a particle frontend (`frontend = :sort`, `:pairwise`, or `:slot`) with the weight-tied symplectic core [`WeightTiedSymplecticAutoencoder`](@ref) so that [`encoder`](@ref)`(nn)` and [`decoder`](@ref)`(nn)` share a single parameter tree.
+`SymmetricSymplecticAutoencoder` combines a particle frontend (`frontend = :sort`, `:pairwise`, or `:slot`) with the left-inverse symplectic core [`LeftInverseSymplecticAutoencoder`](@ref) so that [`encoder`](@ref)`(nn)` and [`decoder`](@ref)`(nn)` share a single parameter tree.
 
 With `frontend = :sort` or `frontend = :slot`, the latent state is invariant under a relabelling of particles with distinct coordinates along the sorting axis (`sort_axis` for `:sort`, coordinate 1 for `:slot`). With `frontend = :pairwise`, only the frontend is permutation-equivariant: the core is not, so the latent state is not invariant.
 The sort of `:sort` and `:slot` is discontinuous in `p` where two particles cross along the sorting axis, so the Jacobian identity of the frontend holds only away from those crossings. `:sort` and `:slot` suit systems that keep their particle order, not a collisionless plasma, whose sorted snapshots are not low-rank.
@@ -18,7 +18,7 @@ Besides `M::Integer`, `d::Integer`, and even integer `reduced_dim::Integer`:
 - `n_pairwise_layers::Integer = 2`: Number of alternating [`PairwiseSymplecticLayerQ`](@ref) / [`PairwiseSymplecticLayerP`](@ref) shears when `frontend == :pairwise`.
 - `pairwise_upscale::Integer = 3`: Per-particle upscaling factor in the pairwise symplectic layers.
 - `n_slots::Integer = max(1, M - 1)`: Number of canonical slots (`1 <= n_slots <= M`) in [`CanonicalSlotLayer`](@ref) when `frontend == :slot`.
-- `n_blocks::Integer = 2`, `n_layers::Integer = 3`, `n_ambient_layers::Integer = 2`, `sympnet_upscale::Integer = 5`, `activation = tanh`, `init_q::Bool = true`: Forwarded to the [`WeightTiedSymplecticAutoencoder`](@ref) core.
+- `n_blocks::Integer = 2`, `n_layers::Integer = 3`, `n_ambient_layers::Integer = 2`, `sympnet_upscale::Integer = 5`, `activation = tanh`, `init_q::Bool = true`: Forwarded to the [`LeftInverseSymplecticAutoencoder`](@ref) core.
 """
 struct SymmetricSymplecticAutoencoder{Frontend, Init, AT} <: SymplecticCompression
     n_particles::Int
@@ -67,8 +67,8 @@ function SymmetricSymplecticAutoencoder(
                 "frontend = :slot requires M >= 2 and 1 <= n_slots <= M, got M = $M, n_slots = $n_slots."))
     end
     core_full_dim = frontend === :slot ? 2 * Int(n_slots) * Int(d) : 2 * Int(M) * Int(d)
-    # Validate core arguments through WeightTiedSymplecticAutoencoder
-    WeightTiedSymplecticAutoencoder(
+    # Validate core arguments through LeftInverseSymplecticAutoencoder
+    LeftInverseSymplecticAutoencoder(
         core_full_dim, reduced_dim;
         n_blocks = n_blocks, n_layers = n_layers,
         n_ambient_layers = n_ambient_layers,
@@ -90,7 +90,7 @@ end
 function _core_architecture(arch::SymmetricSymplecticAutoencoder{
         Frontend, Init}) where {Frontend, Init}
     core_dim = Frontend === :slot ? 2 * arch.n_slots * arch.particle_dim : arch.full_dim
-    WeightTiedSymplecticAutoencoder(
+    LeftInverseSymplecticAutoencoder(
         core_dim, arch.reduced_dim;
         n_blocks = arch.n_blocks,
         n_layers = arch.n_layers,
