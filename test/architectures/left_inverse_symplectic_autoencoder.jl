@@ -15,8 +15,15 @@ include("../helpers/poisson.jl")
 
 Random.seed!(1234)
 
-@testset "WeightTiedSymplecticAutoencoder validation and structure" begin
-    @test WeightTiedSymplecticAutoencoder <: SymplecticCompression
+@testset "WeightTiedSymplecticAutoencoder is the deprecated name of LeftInverseSymplecticAutoencoder" begin
+    @test GeometricMachineLearning.WeightTiedSymplecticAutoencoder ===
+          LeftInverseSymplecticAutoencoder
+    @test Base.isexported(GeometricMachineLearning, :WeightTiedSymplecticAutoencoder)
+    @test Base.isdeprecated(GeometricMachineLearning, :WeightTiedSymplecticAutoencoder)
+end
+
+@testset "LeftInverseSymplecticAutoencoder validation and structure" begin
+    @test LeftInverseSymplecticAutoencoder <: SymplecticCompression
 
     re1 = r"^(?:ArgumentError: )?full_dim \(9\) and reduced_dim \(4\) must be positive even integers\.$"
     re2 = r"^(?:ArgumentError: )?full_dim \(10\) and reduced_dim \(3\) must be positive even integers\.$"
@@ -27,16 +34,16 @@ Random.seed!(1234)
     s7a = "^(?:ArgumentError: )?n_layers \\(-1\\) and n_ambient_layers \\(2\\) must be non-negative "
     s7b = "and sympnet_upscale \\(5\\) must be at least 1\\.\$"
     re7 = Regex(s7a * s7b)
-    @test_throws re1 WeightTiedSymplecticAutoencoder(9, 4)
-    @test_throws re2 WeightTiedSymplecticAutoencoder(10, 3)
-    @test_throws re3 WeightTiedSymplecticAutoencoder(0, 4)
-    @test_throws re4 WeightTiedSymplecticAutoencoder(10, 0)
-    @test_throws re5 WeightTiedSymplecticAutoencoder(4, 6)
-    @test_throws re6 WeightTiedSymplecticAutoencoder(10, 4; n_blocks = 0)
-    @test_throws re7 WeightTiedSymplecticAutoencoder(10, 4; n_layers = -1)
+    @test_throws re1 LeftInverseSymplecticAutoencoder(9, 4)
+    @test_throws re2 LeftInverseSymplecticAutoencoder(10, 3)
+    @test_throws re3 LeftInverseSymplecticAutoencoder(0, 4)
+    @test_throws re4 LeftInverseSymplecticAutoencoder(10, 0)
+    @test_throws re5 LeftInverseSymplecticAutoencoder(4, 6)
+    @test_throws re6 LeftInverseSymplecticAutoencoder(10, 4; n_blocks = 0)
+    @test_throws re7 LeftInverseSymplecticAutoencoder(10, 4; n_layers = -1)
 
     # Single-block case (n_blocks == 1) and equal-dimension case (full_dim == reduced_dim)
-    arch1 = WeightTiedSymplecticAutoencoder(
+    arch1 = LeftInverseSymplecticAutoencoder(
         4, 2; n_blocks = 1, n_layers = 1, n_ambient_layers = 2,
         sympnet_upscale = 1, init_q = true)
     nn1 = NeuralNetwork(arch1, CPU(), Float64)
@@ -49,34 +56,34 @@ Random.seed!(1234)
     @test dec1.model.layers[4] isa GradientLayerP{4, 4}
     @test enc1.model.layers == reverse(map(inverse_layer, dec1.model.layers))
 
-    arch_eq = WeightTiedSymplecticAutoencoder(6, 6; n_blocks = 2, n_layers = 0)
+    arch_eq = LeftInverseSymplecticAutoencoder(6, 6; n_blocks = 2, n_layers = 0)
     @test compute_decoder_iterations(arch_eq) == [6, 6, 6]
     @test length(decoder_layers_from_iteration(arch_eq, compute_decoder_iterations(arch_eq))) ==
           4
-    @test compute_decoder_iterations(WeightTiedSymplecticAutoencoder(10, 4; n_blocks = 3)) ==
+    @test compute_decoder_iterations(LeftInverseSymplecticAutoencoder(10, 4; n_blocks = 3)) ==
           [4, 6, 8, 10]
     @test GeometricMachineLearning.compute_iterations_for_symplectic_system(10, 4, 1) ==
           [4, 10]
-    @test WeightTiedSymplecticAutoencoder(4, 4; n_layers = 0) isa
-          WeightTiedSymplecticAutoencoder{:InitQ}
-    @test WeightTiedSymplecticAutoencoder(4, 2; init_q = false) isa
-          WeightTiedSymplecticAutoencoder{:InitP}
+    @test LeftInverseSymplecticAutoencoder(4, 4; n_layers = 0) isa
+          LeftInverseSymplecticAutoencoder{:InitQ}
+    @test LeftInverseSymplecticAutoencoder(4, 2; init_q = false) isa
+          LeftInverseSymplecticAutoencoder{:InitP}
     @test GeometricMachineLearning._reverse_tuple((1, 2, 3)) === (3, 2, 1)
 
-    # The model is the tied layer; a Chain of untied halves is refused
-    re9 = r"^(?:ArgumentError: )?A WeightTiedSymplecticAutoencoder has no Chain of untied layers: build it with NeuralNetwork\(arch\) and take encoder\(nn\) and decoder\(nn\)\.$"
-    @test_throws re9 Chain(WeightTiedSymplecticAutoencoder(8, 4))
+    # The model is the layer that holds both halves; a Chain of untied halves is refused
+    re9 = r"^(?:ArgumentError: )?A LeftInverseSymplecticAutoencoder has no Chain of untied layers: build it with NeuralNetwork\(arch\) and take encoder\(nn\) and decoder\(nn\)\.$"
+    @test_throws re9 Chain(LeftInverseSymplecticAutoencoder(8, 4))
 
     # A spacing that rounds to zero is refused
     re8 = r"^(?:ArgumentError: )?n_blocks \(5\) must be at most 2 for full_dim \(6\) and reduced_dim \(4\)\.$"
-    arch_wide = WeightTiedSymplecticAutoencoder(6, 4; n_blocks = 5)
+    arch_wide = LeftInverseSymplecticAutoencoder(6, 4; n_blocks = 5)
     @test_throws re8 compute_decoder_iterations(arch_wide)
     @test_throws re8 NeuralNetwork(arch_wide, CPU(), Float64)
-    @test compute_decoder_iterations(WeightTiedSymplecticAutoencoder(6, 4; n_blocks = 2)) ==
+    @test compute_decoder_iterations(LeftInverseSymplecticAutoencoder(6, 4; n_blocks = 2)) ==
           [4, 6]
 
     # Multi-block weight tying and leaf identity
-    arch2 = WeightTiedSymplecticAutoencoder(
+    arch2 = LeftInverseSymplecticAutoencoder(
         6, 2; n_blocks = 2, n_layers = 2, n_ambient_layers = 0,
         sympnet_upscale = 1, init_q = false)
     nn = NeuralNetwork(arch2, CPU(), Float64)
@@ -97,7 +104,7 @@ Random.seed!(1234)
 end
 
 @testset "Round-trip and symplecticity ($T)" for T in REAL_ELTYPES
-    arch1 = WeightTiedSymplecticAutoencoder(
+    arch1 = LeftInverseSymplecticAutoencoder(
         4, 2; n_blocks = 1, n_layers = 1, n_ambient_layers = 2,
         sympnet_upscale = 1, init_q = true)
     nn = NeuralNetwork(arch1, CPU(), T)
@@ -142,7 +149,7 @@ end
     E = ForwardDiff.jacobian(x -> enc(x), zv)
     @test norm(E * J4 * transpose(E) - J2) <= 100 * eps(T)
 
-    arch2 = WeightTiedSymplecticAutoencoder(
+    arch2 = LeftInverseSymplecticAutoencoder(
         6, 2; n_blocks = 2, n_layers = 2, n_ambient_layers = 0,
         sympnet_upscale = 1, init_q = false)
     nn2 = NeuralNetwork(arch2, CPU(), T)
@@ -153,7 +160,7 @@ end
     @test norm(nn2(z2) - z2) <= 50 * eps(T) * norm(z2)
 
     # (2N, 2n) = (10, 4) round-trip, Jacobian symplecticity, and 5-step training
-    arch10 = WeightTiedSymplecticAutoencoder(
+    arch10 = LeftInverseSymplecticAutoencoder(
         10, 4; n_blocks = 2, n_layers = 2, n_ambient_layers = 2, sympnet_upscale = 3)
     nn10 = NeuralNetwork(arch10, CPU(), T)
     enc10 = encoder(nn10)
@@ -193,8 +200,8 @@ end
     @test loss_final < loss_init
 end
 
-@testset "WeightTiedSymplecticAutoencoder Zygote gradient and @inferred" begin
-    arch = WeightTiedSymplecticAutoencoder(
+@testset "LeftInverseSymplecticAutoencoder Zygote gradient and @inferred" begin
+    arch = LeftInverseSymplecticAutoencoder(
         4, 2; n_blocks = 1, n_layers = 1, n_ambient_layers = 1,
         sympnet_upscale = 1, init_q = true)
     nn = NeuralNetwork(arch, CPU(), Float64)
