@@ -111,6 +111,8 @@ breaking release).
 
 - **The batch-scaling allocation checks of `test/layers/bilinear_and_low_rank_stiefel.jl` take the minimum of five `@allocated` readings per batch size.** A single reading of a warm call can carry an extra allocation that the call does not make — about 100 KB of small objects, in one of several thousand readings on Julia 1.13.4, with no garbage collection in the reading — and one such reading failed a check of `n_independent` at random. Its source is not found. The minimum is the steady value of the call: in the context of the test file it equals the single reading of a steady state for each of the 13 measured expressions, on Julia 1.12.7. The tolerance stays 4096 B, and every check stays. Known issue K47 records the extra allocation, whose source is open.
 
+- **`README.md` no longer lists the caches among what this package re-exports from GeometricOptimizers.** No cache type is imported or exported here; the methods, the manifold types, the global sections and the retractions are. No code changes.
+
 ## [0.9.0] — 2026-10-31
 
 ### Removed (breaking)
