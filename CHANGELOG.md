@@ -64,6 +64,32 @@ breaking release).
   `test/ci-groups.toml` does not name the file. It named a `ci-protection.sh` that does not exist.
   The workflows themselves are unchanged.
 
+- **The documentation links resolve against the GeometricOptimizers 0.10.1 manual.**
+  `docs/inventories/GeometricOptimizers.toml` is the deployed inventory of v0.10.1, where it was
+  v0.9.2. The `InterLinks` root in `docs/make.jl` is the v0.10.1 manual, where it was `stable/`,
+  and the regeneration command names v0.10.1 for both the inventory and the root, so a later
+  release of GeometricOptimizers does not move a link. 0.10.1 splits the API page into sub-pages
+  and moves each docstring anchor from `api/` to its sub-page: the 32 links of this manual to ten
+  docstrings, among them `StiefelManifold`, `SymmetricMatrix` and `TrainingOptimizer`, go to
+  `api/manifolds/`, `api/special_matrices/`, `api/optimizers/` and `api/optimizer_methods/`. The
+  docstrings of `unit_matrix` and of `rand` on a manifold type print their backend argument as
+  `KernelInterface.Backend`, where 0.9.2 printed `KernelAbstractions.Backend`. No page of this
+  manual links to either anchor, or to an entry that 0.10.1 removes.
+
+- **The `[compat]` lower bounds of `Project.toml` and `test/Project.toml` are the versions the CI Downgrade job resolves when it resolves both projects together at Julia 1.12.** Each old bound named a version that no resolution at the floors reaches:
+  - `ChainRulesCore` 1 → 1.25.1, because `GeometricOptimizers` 0.9.2 requires it;
+  - `KernelAbstractions` 0.9 → 0.9.38, because `GeometricOptimizers` 0.9.2 requires it; the move to KernelAbstractions 0.10 under Breaking Changes then raises it to 0.10.5;
+  - `NeuralNetworkParameters` 0.5 → 0.5.3, because `GeometricOptimizers` 0.9.2 requires it;
+  - `NNlib` "0.8, 0.9" → 0.9.30, the version the resolution reaches: 0.9.30 is the first release whose `ForwardDiff` weak-dependency bound admits `ForwardDiff` 1, and 0.8.21, the last 0.8 release, requires `GPUArraysCore` 0.1 where `AbstractNeuralNetworks` 0.9.2 requires 0.2; the move to KernelAbstractions 0.10 then raises it to 0.9.52;
+  - `Zygote` 0.7 → 0.7.5, the first 0.7 release that admits `ForwardDiff` 1;
+  - `ProgressMeter` 1 → 1.5, the first release whose `Progress` takes the `enabled` keyword that `train!` passes;
+  - in `test/Project.toml`, `GeometricIntegrators` 0.18.2 → 0.18.6 and `GeometricProblems` "0.8, 0.9" → 0.9.1, the first releases that admit `GeometricBase` 0.15;
+  - in `test/Project.toml`, `FiniteDifferences` 0.12 → 0.12.31, because the `FiniteDifferences` extension of `DifferentiationInterface` requires it;
+  - in `test/Project.toml`, `HDF5` "0.16, 0.17" → 0.17, because `AbstractNeuralNetworks` 0.9.2, `NeuralNetworkParameters` 0.5.3 and `GeometricSolutions` 0.6.8 require it for their `HDF5` extensions;
+  - in `test/Project.toml`, `Aqua` 0.8 → 0.8.18. At 0.8.0 the Downgrade job failed two Aqua checks: the piracy check reads the field `mt` of `Core.TypeName`, which Julia 1.12 does not have, and the persistent-tasks check resolves its subprocess's environment anew, so it gets newer versions than the tests load. 0.8.14 fixes the first and 0.8.17 the second; 0.8.18 also passes where the manifest lists a weak dependency that is not installed, which made 0.8.17 fail in the Downgrade jobs of other packages with the same `LogExpFunctions` 0.3.29. The Aqua testset passes at the floors with 0.8.18.
+
+- **`test/Project.toml` gives `Documenter` and `JET` a `[compat]` entry.** Without one the downgrade resolution takes their oldest release. `Documenter` = "1" is the bound `GeometricProblems` 0.9.1 sets, and 1.0 has `doctest` and `DocMeta.setdocmeta!`, which `test/quality/doctests.jl` calls. `JET` = "0.10.1, 0.11, 0.12, 0.13" starts at 0.10.1: JET 0.10.0, the release the Julia 1.12 resolution reaches, raises `unhandled LimitedAccuracy` in 18 of the 34 assertions of `test/quality/jet.jl`, and 0.10.1 is the bound that `ReducedComplexityModeling` 0.6.0 sets for the same error.
+
 ### Added
 
 - **`CompositeMethod` and `FactoredStiefelAdam` of GeometricOptimizers are re-exported**, beside `Adam` and the other methods. `using GeometricMachineLearning` alone now builds `TrainingOptimizer(nn.params; algorithm = CompositeMethod(; manifold = FactoredStiefelAdam(), array = Adam()))`, which trains the Stiefel leaves of a network on the manifold and its other leaves with `Adam`. Both names are the objects of GeometricOptimizers, so a caller who loads both packages has one binding of each.
@@ -82,22 +108,6 @@ breaking release).
 - **A sandboxed `Pkg.test` on an Apple-silicon Mac with no Metal cache built outside the sandbox reaches the tests, and the `metal` group records its device skip.** Metal.jl 1.11.1 ran its precompile workload where the device list is empty, as in a sandbox, and stopped with `BoundsError: attempt to access 0-element Vector{Metal.MTL.MTLDevice} at index [1]`. Metal is a test dependency, and `Pkg.test` precompiles the whole test environment first, so a run of any group failed before the first test. Metal.jl 1.12, which `test/Project.toml` requires, runs the workload only where a device exists (JuliaGPU/Metal.jl#1000). This closes known issue K4, which leaves `KNOWN_ISSUES.md`.
 
 - **The batch-scaling allocation checks of `test/layers/bilinear_and_low_rank_stiefel.jl` take the minimum of five `@allocated` readings per batch size.** A single reading of a warm call can carry an extra allocation that the call does not make — about 100 KB of small objects, in one of several thousand readings on Julia 1.13.4, with no garbage collection in the reading — and one such reading failed a check of `n_independent` at random. Its source is not found. The minimum is the steady value of the call: in the context of the test file it equals the single reading of a steady state for each of the 13 measured expressions, on Julia 1.12.7. The tolerance stays 4096 B, and every check stays. Known issue K47 records the extra allocation, whose source is open.
-
-### Changed
-
-- **The `[compat]` lower bounds of `Project.toml` and `test/Project.toml` are the versions the CI Downgrade job resolves when it resolves both projects together at Julia 1.12.** Each old bound named a version that no resolution at the floors reaches:
-  - `ChainRulesCore` 1 → 1.25.1, because `GeometricOptimizers` 0.9.2 requires it;
-  - `KernelAbstractions` 0.9 → 0.9.38, because `GeometricOptimizers` 0.9.2 requires it; the move to KernelAbstractions 0.10 under Breaking Changes then raises it to 0.10.5;
-  - `NeuralNetworkParameters` 0.5 → 0.5.3, because `GeometricOptimizers` 0.9.2 requires it;
-  - `NNlib` "0.8, 0.9" → 0.9.30, the version the resolution reaches: 0.9.30 is the first release whose `ForwardDiff` weak-dependency bound admits `ForwardDiff` 1, and 0.8.21, the last 0.8 release, requires `GPUArraysCore` 0.1 where `AbstractNeuralNetworks` 0.9.2 requires 0.2; the move to KernelAbstractions 0.10 then raises it to 0.9.52;
-  - `Zygote` 0.7 → 0.7.5, the first 0.7 release that admits `ForwardDiff` 1;
-  - `ProgressMeter` 1 → 1.5, the first release whose `Progress` takes the `enabled` keyword that `train!` passes;
-  - in `test/Project.toml`, `GeometricIntegrators` 0.18.2 → 0.18.6 and `GeometricProblems` "0.8, 0.9" → 0.9.1, the first releases that admit `GeometricBase` 0.15;
-  - in `test/Project.toml`, `FiniteDifferences` 0.12 → 0.12.31, because the `FiniteDifferences` extension of `DifferentiationInterface` requires it;
-  - in `test/Project.toml`, `HDF5` "0.16, 0.17" → 0.17, because `AbstractNeuralNetworks` 0.9.2, `NeuralNetworkParameters` 0.5.3 and `GeometricSolutions` 0.6.8 require it for their `HDF5` extensions;
-  - in `test/Project.toml`, `Aqua` 0.8 → 0.8.18. At 0.8.0 the Downgrade job failed two Aqua checks: the piracy check reads the field `mt` of `Core.TypeName`, which Julia 1.12 does not have, and the persistent-tasks check resolves its subprocess's environment anew, so it gets newer versions than the tests load. 0.8.14 fixes the first and 0.8.17 the second; 0.8.18 also passes where the manifest lists a weak dependency that is not installed, which made 0.8.17 fail in the Downgrade jobs of other packages with the same `LogExpFunctions` 0.3.29. The Aqua testset passes at the floors with 0.8.18.
-
-- **`test/Project.toml` gives `Documenter` and `JET` a `[compat]` entry.** Without one the downgrade resolution takes their oldest release. `Documenter` = "1" is the bound `GeometricProblems` 0.9.1 sets, and 1.0 has `doctest` and `DocMeta.setdocmeta!`, which `test/quality/doctests.jl` calls. `JET` = "0.10.1, 0.11, 0.12, 0.13" starts at 0.10.1: JET 0.10.0, the release the Julia 1.12 resolution reaches, raises `unhandled LimitedAccuracy` in 18 of the 34 assertions of `test/quality/jet.jl`, and 0.10.1 is the bound that `ReducedComplexityModeling` 0.6.0 sets for the same error.
 
 ## [0.9.0] — 2026-10-31
 
