@@ -18,7 +18,7 @@ At its core every neural network comprises three components: a neural network ar
 
 Traditionally, physical properties have been encoded into the loss function (PINN approach), but in `GeometricMachineLearning.jl` this is exclusively done through the architectures and the optimizers of the neural network, thus giving theoretical guarantees that these properties are actually preserved.
 
-The optimizer methods themselves — `GradientMethod`, `MomentumMethod`, `Adam`, the manifold types they act on, and the caches, global sections and retractions that go with them — come from [`GeometricOptimizers.jl`](https://github.com/JuliaGNI/GeometricOptimizers.jl) and are re-exported here. `GeometricMachineLearning.jl` supplies the part that is specific to neural networks: the architectures, the layers, and walking the parameter tree of a network during training.
+The optimizer methods themselves (`GradientMethod`, `MomentumMethod`, `Adam`, the manifold types they act on, and the caches, global sections and retractions that go with them) come from [`GeometricOptimizers.jl`](https://github.com/JuliaGNI/GeometricOptimizers.jl) and are re-exported here. `GeometricMachineLearning.jl` supplies the part that is specific to neural networks: the architectures, the layers, and walking the parameter tree of a network during training.
 
 Using the package is very straightforward and is very flexible with respect to the device `(CPU, CUDA, Metal, ...)` and the type `(Float16, Float32, Float64, ...)` you want to use. The following is a simple example to learn a SympNet on data coming from a pendulum:
 ```julia
@@ -66,9 +66,9 @@ fig
 More examples like this can be found in the docs.
 
 ## References
-- Brantner B. Generalizing Adam To Manifolds For Efficiently Training Transformers. arXiv preprint arXiv:2305.16901, 2023.
-- Brantner B., Kraus M. Symplectic Autoencoders for Model Reduction of Hamiltonian Systems. arXiv preprint arXiv:2312.10004, 2023.
-- Brantner B., Romemont G., Kraus M., Li Z. Structure-Preserving Transformers for Learning Parametrized Hamiltonian Systems. arXiv preprint arXiv:2312.11166, 2023.
+- Brantner B. Generalizing Adam to Manifolds for Efficiently Training Transformers. arXiv preprint [arXiv:2305.16901](https://arxiv.org/abs/2305.16901), 2023.
+- Brantner B., Kraus M. Symplectic Autoencoders for Model Reduction of Hamiltonian Systems. arXiv preprint [arXiv:2312.10004](https://arxiv.org/abs/2312.10004), 2023.
+- Brantner B., Kraus M., Li Z., de Romemont G. Volume-preserving transformers for learning time series data with structure. ESAIM: Proceedings and Surveys 81, 123–144, 2025. [doi:10.1051/proc/202581123](https://doi.org/10.1051/proc/202581123)
 
 
 ## Development
