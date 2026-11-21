@@ -65,7 +65,7 @@ breaking release).
   `test/ci-groups.toml` sets `split = false`, so the required checks are the five of a repository
   without groups and the two jobs of `Metal.yml`, and `once = ["quality"]`, so a pull request and
   a push run `quality` on Ubuntu with Julia 1 only. `Pkg.test()` with no arguments runs every
-  group of `groups` and, on Apple silicon, `metal` after them, one file at a time;
+  group of `groups` and, on Apple silicon, `metal` after them, its files one at a time;
   `Pkg.test(; test_args = ["quality"])` runs one group, and an argument that starts with `--`,
   such as `--jobs=4`, goes to the runner. `test/quality/reachability.jl` counts a path of `TESTS`
   as reached, with its own `include` closure.
