@@ -18,7 +18,7 @@ At its core every neural network comprises three components: a neural network ar
 
 Traditionally, physical properties have been encoded into the loss function (PINN approach), but in `GeometricMachineLearning.jl` this is exclusively done through the architectures and the optimizers of the neural network, thus giving theoretical guarantees that these properties are actually preserved.
 
-The optimizer methods themselves (`GradientMethod`, `MomentumMethod`, `Adam`, the manifold types they act on, and the caches, global sections and retractions that go with them) come from [`GeometricOptimizers.jl`](https://github.com/JuliaGNI/GeometricOptimizers.jl) and are re-exported here. `GeometricMachineLearning.jl` supplies the part that is specific to neural networks: the architectures, the layers, and walking the parameter tree of a network during training.
+The optimizer methods themselves (`GradientMethod`, `MomentumMethod`, `Adam`, the manifold types they act on, and the global sections and retractions that go with them) come from [`GeometricOptimizers.jl`](https://github.com/JuliaGNI/GeometricOptimizers.jl) and are re-exported here. `GeometricMachineLearning.jl` supplies the part that is specific to neural networks: the architectures, the layers, and walking the parameter tree of a network during training.
 
 Using the package is very straightforward and is very flexible with respect to the device `(CPU, CUDA, Metal, ...)` and the type `(Float16, Float32, Float64, ...)` you want to use. The following is a simple example to learn a SympNet on data coming from a pendulum:
 ```julia
