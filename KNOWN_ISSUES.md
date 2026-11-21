@@ -790,28 +790,24 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   Closing this entry means replacing the assertion of `test/architectures/sympnet_integrator.jl`
   with a check of this form for each row marked none.
 
-### K47 · A single `@allocated` reading in the batch-scaling checks can carry a stray allocation, so the checks fail at random.
+### K47 · An `@allocated` reading of a warm gradient call can carry about 100 KB of extra small allocations, whose source is not found.
 
-- **location:** `test/layers/bilinear_and_low_rank_stiefel.jl:848`
-- **kind:** defect
+- **location:** `test/layers/bilinear_and_low_rank_stiefel.jl` (`min_allocated`)
+- **kind:** not verified
 - **found:** #393
 - **evidence:**
-  The 13 `@allocated` readings of lines 810–855 are one reading per batch size, and
-  `n_independent` compares them with a tolerance of 4096 B. Now and then one reading carries an
-  extra allocation of fixed size: 124640 B on Julia 1.12.7, 938976 B on Julia 1.13.4. That is
-  enough to fail a check wherever it lands. In 12 fresh runs of the file on 1.12.7 with
-  `--check-bounds=auto` on macOS, 3 failed (lines 848, and 859 with 861); in 3 runs on 1.13.4, 1
-  failed (line 834). CI on #393 failed line 848 on Julia min, ubuntu and windows:
-
-  ```
-  Batched Zygote differentiation and allocation scaling: Test Failed at test/layers/bilinear_and_low_rank_stiefel.jl:848
-    Expression: n_independent(alloc_loss_bwd2 / B2, alloc_loss_bwd1 / B1)
-  ```
-
-  In a steady state every check passes with room, the same on 1.12.7 with `yes` and `auto` and on
-  1.13.4: line 848 gives 563 B (Float32) and 612 B (Float64), and the largest value is 1186 B
-  (line 859, Float64). So neither the bounds-check setting nor the code under test causes the
-  failure; 80000 readings of the `loss` gradient alone show no spike. A comparison of slopes over
-  three sizes fails on the spike too. The minimum of a few readings per size passes in every run
-  measured. Allocation checks of the same form in other packages of this tree can fail the same
-  way, and their fix is to be decided together.
+  Up to 3000 readings of each of the 13 measured expressions of the batch-scaling checks, after
+  lines 1–822 of the test file, fresh processes, `--check-bounds=auto`, 2 default threads and 1
+  interactive thread. Julia 1.13.4: 1–2 extra readings in about 18000 readings of
+  `_dlra_full_bwd_obj` per run, in 4 of 5 runs, only in `Float32` at batch sizes 16 and 32. Each
+  carries 99456–104880 B more: about 1700–1775 extra pool allocations, 0 extra big allocations,
+  1 extra `malloc`, and no garbage collection in the reading (`Base.gc_num()` deltas). Julia
+  1.12.7: none in 3 runs of 7800 readings each. With one reading per batch size, single readings of
+  124640 B more failed 3 of 12 runs of the file on 1.12.7 (the checks of `alloc_loss_bwd` and
+  `alloc_full_bwd`), one of 938976 B more failed 1 of 3 runs on 1.13.4 (the check of
+  `alloc_loss`), and CI on #393 failed the check of `alloc_loss_bwd` on Julia min, ubuntu and
+  windows. One run with `--threads=1,0` on 1.13.4 gave none in 18000 readings. Team
+  launches of the PoCL backend of KernelAbstractions 0.10.8 occur in readings without the extra
+  allocation too. An allocation profile with `sample_rate = 1` gave no output within 25 minutes on
+  a loaded machine, so no stack frame is known. The checks take the minimum of five readings,
+  which a single extra reading does not change.
