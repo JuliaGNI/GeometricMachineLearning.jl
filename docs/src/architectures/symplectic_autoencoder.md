@@ -131,15 +131,15 @@ end
 
 We also see that the intermediate dimension in the decoder is `54`  for the specified dimensions and `n_decoder_blocks = 3` as was outlined before.
 
-## Weight-Tied Symplectic Autoencoder
+## Left-Inverse Symplectic Autoencoder
 
-[`WeightTiedSymplecticAutoencoder`](@ref) builds its encoder from the inverses of the decoder layers, with the same weights and in reverse order: a gradient layer is inverted by flipping the sign of its increment, and a [`PSDLayer`](@ref) by its transpose. Its encoder is therefore a left inverse of its decoder for all parameters, as in the constrained autoencoders of [otto2023learning](@cite), which use invertible activation functions and biorthogonal weight matrices.
+[`LeftInverseSymplecticAutoencoder`](@ref) builds its encoder from the inverses of the decoder layers, with the same weights and in reverse order: a gradient layer is inverted by flipping the sign of its increment, and a [`PSDLayer`](@ref) by its transpose. Its encoder is therefore a left inverse of its decoder for all parameters, as in the constrained autoencoders of [otto2023learning](@cite), which use invertible activation functions and biorthogonal weight matrices.
 
 ## Library Functions
 
 ```@docs
 SymplecticAutoencoder
-WeightTiedSymplecticAutoencoder
+LeftInverseSymplecticAutoencoder
 MultiModalSymplecticAutoencoder
 encode
 decode

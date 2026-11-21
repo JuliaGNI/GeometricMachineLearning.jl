@@ -25,7 +25,7 @@ On the latent space ``\mathbb{R}^{2n}``, ``\sigma`` acts by a map ``R_\sigma`` t
 
 For ``R_\sigma = \mathrm{id}`` the decoder condition reads ``P_\sigma \circ \Psi^d = \Psi^d``, so the decoder would map into the states in which all particles share position and momentum. With a permutation-invariant encoder, an autoencoder can therefore only reconstruct a state *modulo relabelling*, ``\Psi^d(\Psi^e(x)) \in [x]``; since ``\Psi^d \circ \Psi^e`` is constant on every class in ``U``, it reproduces at most one representative of ``[x]`` exactly.
 
-The sorting and the slot frontends make the encoder permutation-invariant on the states with distinct coordinates along the sorting axis. The pairwise shears are permutation-symmetric maps of ``\mathbb{R}^{2Md}`` with ``R_\sigma = P_\sigma``, but the weight-tied core after them is not, so that encoder is in general not permutation-symmetric. This is why the architecture is called *symmetric* and not *invariant*: only two of its three frontends give an invariant encoder, and its decoder is not permutation-symmetric for the trivial action.
+The sorting and the slot frontends make the encoder permutation-invariant on the states with distinct coordinates along the sorting axis. The pairwise shears are permutation-symmetric maps of ``\mathbb{R}^{2Md}`` with ``R_\sigma = P_\sigma``, but the left-inverse core after them is not, so that encoder is in general not permutation-symmetric. This is why the architecture is called *symmetric* and not *invariant*: only two of its three frontends give an invariant encoder, and its decoder is not permutation-symmetric for the trivial action.
 
 ## Canonical Weyl-Chamber Sorting
 
@@ -59,7 +59,7 @@ InverseCanonicalSlotLayer
 
 ## Symmetric Symplectic Autoencoder
 
-[`SymmetricSymplecticAutoencoder`](@ref) combines a chosen particle frontend (`:sort`, `:pairwise`, or `:slot`) with [`WeightTiedSymplecticAutoencoder`](@ref). Only `:sort` and `:slot` give a latent state that is invariant under a relabelling of particles with distinct coordinates along the sorting axis; `:pairwise` is equivariant only in its frontend, because the core is not equivariant.
+[`SymmetricSymplecticAutoencoder`](@ref) combines a chosen particle frontend (`:sort`, `:pairwise`, or `:slot`) with [`LeftInverseSymplecticAutoencoder`](@ref). Only `:sort` and `:slot` give a latent state that is invariant under a relabelling of particles with distinct coordinates along the sorting axis; `:pairwise` is equivariant only in its frontend, because the core is not equivariant.
 
 ```@docs
 SymmetricSymplecticAutoencoder
