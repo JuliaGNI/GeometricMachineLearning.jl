@@ -86,6 +86,7 @@ const TESTS = [
         "PSD tests" => "architectures/psd_architecture_tests.jl",
         "SymplecticAutoencoder tests" => "architectures/symplectic_autoencoder_tests.jl",
         "LeftInverseSymplecticAutoencoder" => "architectures/left_inverse_symplectic_autoencoder.jl",
+        "EquivariantSymplecticAutoencoder and ParticlePSDLayer" => "architectures/equivariant_symplectic_autoencoder.jl",
         "MultiModalSymplecticAutoencoder and multimodal losses" => "architectures/multimodal_symplectic_autoencoder.jl",
         "Check if autoencoder error is lower than PSD error" => "architectures/sae_error_lower_than_psd_error.jl",
         "Architecture forward passes against the recorded outputs" => "architectures/architecture_pins.jl",

@@ -157,6 +157,7 @@ Return the analytic symplectic inverse (or Stiefel transpose for [`PSDLayer`](@r
 - `SymplecticAttentionQ` ``\leftrightarrow`` [`InverseSymplecticAttentionQ`](@ref)
 - `SymplecticAttentionP` ``\leftrightarrow`` [`InverseSymplecticAttentionP`](@ref)
 - `PSDLayer{2n, 2N}` ``\leftrightarrow`` [`TransposePSDLayer`](@ref)`{2N, 2n}`
+- [`ParticlePSDLayer`](@ref)`(M, d_in, d_out)` ``\leftrightarrow`` [`TransposeParticlePSDLayer`](@ref)`(M, d_out, d_in)`
 """
 function inverse_layer(d::GradientLayer{M, M, TA, C}) where {M, TA, C}
     InverseGradientLayer{M, M, TA, C}(d.second_dim, d.activation)

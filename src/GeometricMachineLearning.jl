@@ -252,6 +252,7 @@ include("layers/symplectic_attention.jl")
 include("layers/inverse_layers.jl")
 include("layers/canonical_sort_layer.jl")
 include("layers/pairwise_symplectic_layer.jl")
+include("layers/particle_psd_layer.jl")
 include("layers/canonical_slot_layer.jl")
 include("layers/bilinear_stiefel_layer.jl")
 include("layers/low_rank_stiefel_layer.jl")
@@ -260,6 +261,7 @@ include("architectures/linear_symplectic_transformer.jl")
 include("architectures/symplectic_transformer.jl")
 include("architectures/left_inverse_symplectic_autoencoder.jl")
 include("architectures/symmetric_symplectic_autoencoder.jl")
+include("architectures/equivariant_symplectic_autoencoder.jl")
 include("architectures/multimodal_symplectic_autoencoder.jl")
 include("loss/multimodal_losses.jl")
 
@@ -278,11 +280,13 @@ Base.@deprecate_binding WeightTiedSymplecticAutoencoder LeftInverseSymplecticAut
 export CanonicalSortLayer, InvertCanonicalSortLayer
 export PairwiseSymplecticLayer, PairwiseSymplecticLayerQ, PairwiseSymplecticLayerP
 export InversePairwiseSymplecticLayerQ, InversePairwiseSymplecticLayerP
+export ParticlePSDLayer, TransposeParticlePSDLayer
 export CanonicalSlotLayer, InverseCanonicalSlotLayer
 export BilinearStiefelLayer, TransposeBilinearStiefelLayer
 export LowRankStiefelLayer, DecodeLowRankStiefelLayer
 export FastDLRATraceLoss
 export SymmetricSymplecticAutoencoder
+export EquivariantSymplecticAutoencoder
 export MultiModalSymplecticAutoencoder, encode, decode, translate
 export CharbonnierRelativeLoss, IsometricRolloutLoss, CrossModalLoss
 
