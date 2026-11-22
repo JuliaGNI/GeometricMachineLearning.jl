@@ -1,11 +1,11 @@
 @doc raw"""
-    PODArch <: AutoEncoder
+    PODArch(full_dim, reduced_dim)
 
 `PODArch` is the architecture for proper orthogonal decomposition (POD).
 
 ## The architecture
 
-POD can be seen as an [`AutoEncoder`](@ref) whose encoder and decoder each consist of a single [`StiefelLayer`](@ref): the decoder is ``x \mapsto Vx`` and the encoder is ``x \mapsto V^Tx`` for some ``V \in St(n, N)``.
+POD can be seen as an [`AutoEncoder`](@ref) whose encoder and decoder each consist of a single `StiefelLayer`: the decoder is ``x \mapsto Vx`` and the encoder is ``x \mapsto V^Tx`` for some ``V \in St(n, N)``.
 
 ## Training
 
