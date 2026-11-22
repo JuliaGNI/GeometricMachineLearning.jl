@@ -73,11 +73,10 @@ dl = DataLoader(data; autoencoder = true)
 n_time_steps = size(data, 2) / n_params
 N = size(data, 1)÷2
 
-# Both reductions are neural networks now, because that is what `HRedSys` takes: every one of its
-# constructors wants a `NeuralNetwork{<:SymplecticEncoder}` and a `NeuralNetwork{<:SymplecticDecoder}`,
-# where this script used to build a pair of closures. `PSDArch` is the proper orthogonal
-# decomposition this script used to compute with a hand-written `svd`, and `solve!` is how it is
-# fitted -- there is nothing to train.
+# Both reductions are neural networks, because that is what `HRedSys` takes: every one of its
+# constructors wants a `NeuralNetwork{<:SymplecticEncoder}` and a `NeuralNetwork{<:SymplecticDecoder}`.
+# `PSDArch` is the proper symplectic decomposition (the cotangent lift), and `solve!` fits it;
+# there is nothing to train.
 function get_psd_encoder_decoder(; n = 5)
     psd_nn = NeuralNetwork(PSDArch(2 * N, 2 * n), backend, T)
     solve!(psd_nn, dl)
