@@ -17,7 +17,7 @@ Unlike for a [`SymplecticAutoencoder`](@ref), ``\nabla\Psi^\mathrm{dec}`` is in 
 
 # Arguments
 
-Besides the required arguments `full_dim` and `reduced_dim` you can provide the following keyword arguments:
+Besides the required arguments `full_dim` and `reduced_dim` (`full_dim >= reduced_dim >= 1`) you can provide the following keyword arguments, of which `width`, `n_encoder_layers` and `n_decoder_layers` must be at least 1:
 - `width::Integer = 2full_dim`: the hidden width ``w``.
 - `n_encoder_layers::Integer = 2`: the number of nonlinear layers in the encoder.
 - `n_decoder_layers::Integer = 2`: the number of nonlinear layers in the decoder.
@@ -29,7 +29,6 @@ The two parts compose to the whole network, and the number of parameters follows
 
 ```jldoctest
 using GeometricMachineLearning
-using GeometricMachineLearning: params
 
 arch = StandardAutoencoder(4, 2; width = 10, n_encoder_layers = 2, n_decoder_layers = 3)
 nn = NeuralNetwork(arch)
@@ -60,8 +59,13 @@ function StandardAutoencoder(full_dim::Integer, reduced_dim::Integer;
         n_encoder_layers::Integer = 2,
         n_decoder_layers::Integer = 2,
         activation = tanh)
-    @assert full_dim ≥ reduced_dim "The dimension of the full-order model has to be at least that of the reduced-order model!"
-    @assert n_encoder_layers ≥ 1 && n_decoder_layers ≥ 1 "Encoder and decoder need at least one nonlinear layer each!"
+    reduced_dim >= 1 ||
+        throw(ArgumentError("reduced_dim ($reduced_dim) must be at least 1."))
+    full_dim >= reduced_dim ||
+        throw(ArgumentError("full_dim ($full_dim) must be greater than or equal to reduced_dim ($reduced_dim)."))
+    width >= 1 || throw(ArgumentError("width ($width) must be at least 1."))
+    (n_encoder_layers >= 1 && n_decoder_layers >= 1) ||
+        throw(ArgumentError("n_encoder_layers ($n_encoder_layers) and n_decoder_layers ($n_decoder_layers) must be at least 1."))
     # The dimension changes once in each direction, from `full_dim` to `reduced_dim`; the hidden
     # layers are not blocks in the sense of `compute_iterations`.
     StandardAutoencoder{typeof(activation)}(full_dim, reduced_dim, width, n_encoder_layers,
