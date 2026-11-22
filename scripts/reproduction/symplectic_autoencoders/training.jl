@@ -83,10 +83,9 @@ function get_psd_encoder_decoder(; n = 5)
     psd_nn
 end
 
-# `SymplecticAutoencoder` is the architecture the hand-built encoder/decoder chain was spelling out:
-# gradient layers around a `PSDLayer` that changes dimension, in both directions. Building it as an
-# architecture rather than a bare `Chain` is what makes `encoder(nn)` and `decoder(nn)` available,
-# and those are what `HRedSys` needs.
+# `SymplecticAutoencoder` is gradient layers around a `PSDLayer` that changes dimension, in both
+# directions. As an architecture, rather than a bare `Chain`, it gives `encoder(nn)` and
+# `decoder(nn)`, and those are what `HRedSys` needs.
 #
 # Training is `DataLoader` + `Batch` + `TrainingOptimizer`, and the loop is `train!`: the batch is a
 # `Batch`, and a failed step raises its error.
