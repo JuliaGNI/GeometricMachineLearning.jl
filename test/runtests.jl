@@ -85,6 +85,7 @@ const TESTS = [
         "ForcedSympNet: layers, forcing and training" => "architectures/forced_sympnet.jl",
         "PSD tests" => "architectures/psd_architecture_tests.jl",
         "SymplecticAutoencoder tests" => "architectures/symplectic_autoencoder_tests.jl",
+        "StandardAutoencoder" => "architectures/standard_autoencoder.jl",
         "LeftInverseSymplecticAutoencoder" => "architectures/left_inverse_symplectic_autoencoder.jl",
         "EquivariantSymplecticAutoencoder and ParticlePSDLayer" => "architectures/equivariant_symplectic_autoencoder.jl",
         "MultiModalSymplecticAutoencoder and multimodal losses" => "architectures/multimodal_symplectic_autoencoder.jl",

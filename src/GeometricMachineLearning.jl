@@ -202,6 +202,7 @@ include("architectures/forced_sympnet.jl")
 include("architectures/autoencoder.jl")
 include("architectures/symplectic_autoencoder.jl")
 include("architectures/psd.jl")
+include("architectures/standard_autoencoder.jl")
 include("architectures/transformer_neural_network.jl")
 include("architectures/volume_preserving_feedforward.jl")
 include("architectures/volume_preserving_transformer.jl")
@@ -212,7 +213,7 @@ export SympNet, LASympNet, GSympNet
 public ForcedSympNet, ForcingLayer, ForcingLayerQ, ForcingLayerP, ForcingLayerQP
 export ClassificationTransformer, ClassificationLayer
 export VolumePreservingFeedForward
-export SymplecticAutoencoder, PSDArch
+export SymplecticAutoencoder, PSDArch, StandardAutoencoder
 
 # `solve!` is not here: it is `SimpleSolvers`', this package adds methods to it, and a caller who
 # wants it takes it from there or from `GeometricOptimizers`.
