@@ -1,3 +1,9 @@
-# The test groups that CI runs as separate jobs. GROUPS in runtests.jl lists the same groups.
-groups = ["core", "layers", "architectures", "reducedsystem", "training", "slow"]
+# The test groups that CI runs. GROUPS in runtests.jl lists the same groups.
+# `groups`: the groups that an empty selection runs; on Apple silicon it runs `metal` after them.
+# `split = false`: each matrix entry runs all its groups in one job, which names them in ARGS.
+# `once`: the groups that a pull request and a push to a branch run on Ubuntu with Julia 1 only.
+# `workflows`: the device workflow, whose jobs are required checks; it runs the group `metal`.
+groups = ["core", "quality", "layers", "architectures", "reducedsystem", "training", "slow"]
+split = false
+once = ["quality"]
 workflows = ["Metal.yml"]

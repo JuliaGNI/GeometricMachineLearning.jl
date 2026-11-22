@@ -8,10 +8,10 @@ using Test
 #
 # `Aqua.test_all` wraps each of its checks in a `@testset` of its own and adds no enclosing one, and
 # a testset with no parent finalises as soon as it closes -- so called bare, the first failing check
-# throws a `TestSetException` and the rest never run. On the suite path the `@safetestset` in
-# `runtests.jl` is that parent. The `@testset` below is that parent when this file is run on its
-# own, and it is also what lets the count at the end be a further assertion rather than a
-# top-level `@test` that aborts the file the moment it fails.
+# throws a `TestSetException` and the rest never run. On the suite path the test set in which
+# ParallelTestRunner runs this file is that parent. The `@testset` below is that parent when this
+# file is run on its own, and it is also what lets the count at the end be a further assertion
+# rather than a top-level `@test` that aborts the file the moment it fails.
 #
 # `piracies` runs through `test_all` with `treat_as_own = [Batch]`, the one type this package
 # re-exports from `ReducedComplexityModeling` that its deliberate methods on another package's
