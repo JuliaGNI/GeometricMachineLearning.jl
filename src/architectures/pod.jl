@@ -83,18 +83,3 @@ function solve!(nn::NeuralNetwork{<:PODArch}, input::AbstractMatrix)
 
     AutoEncoderLoss()(nn, input)
 end
-
-function solve!(nn::NeuralNetwork{<:PODArch}, input::AbstractArray{T, 3}) where {T}
-    solve!(nn, reshape(input, size(input, 1), size(input, 2) * size(input, 3)))
-end
-
-function solve!(nn::NeuralNetwork{<:PODArch},
-        dl::DataLoader{T, AT, <:Any, :RegularData}) where {T, AT <: AbstractArray{T}}
-    solve!(nn, dl.input)
-end
-
-function solve!(nn::NeuralNetwork{<:PODArch},
-        dl::DataLoader{T, NT, <:Any, :RegularData}) where {
-        T, AT <: AbstractArray{T}, NT <: NamedTuple{(:q, :p), Tuple{AT, AT}}}
-    solve!(nn, vcat(dl.input.q, dl.input.p))
-end

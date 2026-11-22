@@ -64,16 +64,18 @@ function solve!(nn::NeuralNetwork{<:PSDArch}, input::AbstractMatrix)
     AutoEncoderLoss()(nn, input)
 end
 
-function solve!(nn::NeuralNetwork{<:PSDArch}, input::AbstractArray{T, 3}) where {T}
+# The SVD of each architecture is in its matrix method; the other inputs reduce to a matrix.
+function solve!(nn::NeuralNetwork{<:Union{PSDArch, PODArch}},
+        input::AbstractArray{T, 3}) where {T}
     solve!(nn, reshape(input, size(input, 1), size(input, 2) * size(input, 3)))
 end
 
-function solve!(nn::NeuralNetwork{<:PSDArch},
+function solve!(nn::NeuralNetwork{<:Union{PSDArch, PODArch}},
         dl::DataLoader{T, AT, <:Any, :RegularData}) where {T, AT <: AbstractArray{T}}
     solve!(nn, dl.input)
 end
 
-function solve!(nn::NeuralNetwork{<:PSDArch},
+function solve!(nn::NeuralNetwork{<:Union{PSDArch, PODArch}},
         dl::DataLoader{T, NT, <:Any, :RegularData}) where {
         T, AT <: AbstractArray{T}, NT <: NamedTuple{(:q, :p), Tuple{AT, AT}}}
     solve!(nn, vcat(dl.input.q, dl.input.p))
