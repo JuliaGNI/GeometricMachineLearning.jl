@@ -58,7 +58,7 @@ end
 Solve the cotangent lift problem for an input.
 
 [`PSDArch`](@ref) does not require neural network training since it is a strictly linear operation that can be solved with singular value decomposition (SVD).
-The SVD is that of the cotangent lift ``[q\ p]``, which has two columns per snapshot of `input`; it must have at least `reduced_dim ÷ 2` columns, so `input` needs at least `reduced_dim ÷ 4` snapshots, rounded up. Otherwise `solve!` throws an `ArgumentError`.
+The SVD is that of the cotangent lift ``[q\ p]``, which has two columns per snapshot of `input`; it must have at least `reduced_dim ÷ 2` columns, so `input` needs at least `cld(reduced_dim, 4)` snapshots. Otherwise `solve!` throws an `ArgumentError`.
 """
 function solve!(nn::NeuralNetwork{<:PSDArch}, input::AbstractMatrix)
     n_half = nn.architecture.reduced_dim ÷ 2
