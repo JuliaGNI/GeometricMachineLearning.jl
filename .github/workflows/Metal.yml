@@ -64,7 +64,7 @@ jobs:
                   julia --color=yes -e '
                       using Pkg
                       Pkg.activate(; temp = true)
-                      Pkg.add(name = "Metal", version = "1.10 - 1")
+                      Pkg.add(name = "Metal", version = "1.12 - 1")
                       using Metal
                       Metal.functional() || error("Metal is not functional on this runner")
                       Metal.versioninfo()'

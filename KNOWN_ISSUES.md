@@ -790,7 +790,7 @@ What is known to be wrong in GeometricMachineLearning and is not fixed.
   Closing this entry means replacing the assertion of `test/architectures/sympnet_integrator.jl`
   with a check of this form for each row marked none.
 
-### K47 · An `@allocated` reading of a warm gradient call can carry about 100 KB of extra small allocations, whose source is not found.
+### K48 · An `@allocated` reading of a warm gradient call can carry about 100 KB of extra small allocations, whose source is not found.
 
 - **location:** `test/layers/bilinear_and_low_rank_stiefel.jl` (`min_allocated`)
 - **kind:** not verified
