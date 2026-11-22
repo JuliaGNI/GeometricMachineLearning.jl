@@ -80,10 +80,14 @@ function _standard_autoencoder_layers(arch::StandardAutoencoder, input_dim::Inte
         Dense(arch.width, output_dim, identity))
 end
 
-function encoder_layers_from_iteration(arch::StandardAutoencoder, ::AbstractVector{<:Integer})
-    _standard_autoencoder_layers(arch, arch.full_dim, arch.reduced_dim, arch.n_encoder_layers)
+function encoder_layers_from_iteration(arch::StandardAutoencoder,
+        iterations::AbstractVector{<:Integer})
+    _standard_autoencoder_layers(
+        arch, first(iterations), last(iterations), arch.n_encoder_layers)
 end
 
-function decoder_layers_from_iteration(arch::StandardAutoencoder, ::AbstractVector{<:Integer})
-    _standard_autoencoder_layers(arch, arch.reduced_dim, arch.full_dim, arch.n_decoder_layers)
+function decoder_layers_from_iteration(arch::StandardAutoencoder,
+        iterations::AbstractVector{<:Integer})
+    _standard_autoencoder_layers(
+        arch, first(iterations), last(iterations), arch.n_decoder_layers)
 end
