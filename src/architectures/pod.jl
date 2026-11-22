@@ -23,7 +23,7 @@ For two uncoupled harmonic oscillators ``H = (p_1^2 + p_2^2)/2 + (\phi_1q_1^2 + 
 
 ```jldoctest
 using GeometricMachineLearning
-using GeometricMachineLearning: params
+using GeometricMachineLearning: params, solve!
 
 ϕ₁, ϕ₂ = 0.05, π
 t = 0.0:0.05:500.0

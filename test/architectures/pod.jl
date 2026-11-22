@@ -1,5 +1,5 @@
 using GeometricMachineLearning
-using GeometricMachineLearning: params
+using GeometricMachineLearning: params, solve!
 using GeometricIntegrators: integrate, ImplicitMidpoint
 using GeometricProblems: CoupledHarmonicOscillator
 using LinearAlgebra: svd, norm, I
