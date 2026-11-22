@@ -16,6 +16,8 @@ For optimizing the parameters in this architecture no neural network training is
 The constructor only takes two arguments as input:
 - `full_dim::Integer`
 - `reduced_dim::Integer`
+
+with `full_dim > reduced_dim >= 1` and both even; otherwise it throws an `ArgumentError`.
 """
 struct PSDArch <: SymplecticCompression
     full_dim::Int
@@ -25,8 +27,12 @@ struct PSDArch <: SymplecticCompression
 end
 
 function PSDArch(full_dim::Integer, reduced_dim::Integer)
-    @assert full_dim ≥ reduced_dim "Full order dim has to be greater than reduced order dim!"
-    @assert iseven(full_dim) && iseven(reduced_dim) "Full order and reduced dimension have to be even!"
+    reduced_dim >= 1 ||
+        throw(ArgumentError("reduced_dim ($reduced_dim) must be at least 1."))
+    full_dim > reduced_dim ||
+        throw(ArgumentError("full_dim ($full_dim) must be greater than reduced_dim ($reduced_dim)."))
+    iseven(full_dim) && iseven(reduced_dim) ||
+        throw(ArgumentError("full_dim ($full_dim) and reduced_dim ($reduced_dim) must be even."))
     PSDArch(full_dim, reduced_dim, 2, 2)
 end
 

@@ -17,6 +17,8 @@ The constructor only takes two arguments as input:
 - `full_dim::Integer`
 - `reduced_dim::Integer`
 
+with `full_dim > reduced_dim >= 1`; otherwise it throws an `ArgumentError`.
+
 # Examples
 
 For two uncoupled harmonic oscillators ``H = (p_1^2 + p_2^2)/2 + (\phi_1q_1^2 + \phi_2q_2^2)/2`` with ``\phi_1 = 0.05``, ``\phi_2 = \pi`` and initial condition ``(q_1, q_2, p_1, p_2) = (0, 0, 1, 3)``, the coordinates with the largest amplitudes are ``q_1`` (amplitude ``1/\sqrt{0.05} = 2\sqrt{5}``) and ``p_2`` (amplitude ``3``). The POD basis is therefore ``[e_1, e_4]`` up to sign:
@@ -48,7 +50,10 @@ struct PODArch <: AutoEncoder
 end
 
 function PODArch(full_dim::Integer, reduced_dim::Integer)
-    @assert full_dim ≥ reduced_dim "Full order dim has to be greater than reduced order dim!"
+    reduced_dim >= 1 ||
+        throw(ArgumentError("reduced_dim ($reduced_dim) must be at least 1."))
+    full_dim > reduced_dim ||
+        throw(ArgumentError("full_dim ($full_dim) must be greater than reduced_dim ($reduced_dim)."))
     PODArch(full_dim, reduced_dim, 2, 2)
 end
 
