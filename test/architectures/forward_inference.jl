@@ -26,6 +26,7 @@ const ARCHITECTURES = (
     ("LeftInverseSymplecticAutoencoder", LeftInverseSymplecticAutoencoder(8, 4), 8, 3),
     ("EquivariantSymplecticAutoencoder", EquivariantSymplecticAutoencoder(2, 2, 1), 8, 3),
     ("PSDArch", PSDArch(8, 4), 8, 3),
+    ("StandardAutoencoder", StandardAutoencoder(8, 4), 8, 3),
     ("LinearSymplecticTransformer", LinearSymplecticTransformer(4, 3), 4, 3),
     ("SymplecticTransformer", SymplecticTransformer(4), 4, 3))
 
