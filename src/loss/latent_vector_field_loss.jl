@@ -171,15 +171,17 @@ function (loss::LatentVectorFieldLoss)(
     # the root-mean-square errors over the B columns, in the scales fixed by the loss
     rms = sqrt(T(size(input, 2)))
     reconstruction_error = loss.reconstruction ? _compute_loss(decoded, input) : zero(T)
-    energy_error = loss.energy ?
-                   _energy_difference_error(
-        loss, enc, ps_enc, dec, ps_dec, input, decoded) /
-                   (rms * T(loss.energy_scale)) : zero(T)
+    energy_error = if loss.energy
+        E = _energy_difference_error(loss, enc, ps_enc, dec, ps_dec, input, decoded)
+        E / (rms * T(loss.energy_scale))
+    else
+        zero(T)
+    end
     pushed_forward = (enc(input .+ h .* output, ps_enc) .-
                       enc(input .- h .* output, ps_enc)) ./ (2h)
-    reduced = _poisson_latent(_reduced_hamiltonian_gradient(
-        loss.hamiltonian, h, dec, ps_dec, ξ))
-    vector_field_error = norm(reduced - pushed_forward) / (rms * T(loss.vector_field_scale))
+    gradient = _reduced_hamiltonian_gradient(loss.hamiltonian, h, dec, ps_dec, ξ)
+    vector_field_error = norm(_poisson_latent(gradient) - pushed_forward) /
+                         (rms * T(loss.vector_field_scale))
     reconstruction_error + energy_error + T(loss.λ) * vector_field_error
 end
 
