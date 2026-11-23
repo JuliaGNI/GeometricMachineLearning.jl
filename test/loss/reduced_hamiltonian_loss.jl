@@ -133,9 +133,10 @@ function test_parameter_gradient()
     fm = f(ps)
     shift!(ε)
     fd = (fp - fm) / (2ε)
-    # the central difference in ε has a truncation error of order ε², and the round-off of the
-    # loss's own central differences in z, of order eps / h with h = cbrt(eps), divided by ε
-    @test ad ≈ fd rtol = 10 * (ε^2 + eps() / (cbrt(eps()) * ε))
+    # the central difference in ε has a relative truncation error of order ε², and an absolute
+    # error from the round-off of the loss's own central differences in z, of order eps / h with
+    # h = cbrt(eps), divided by ε; the loss is a sum of relative errors, of order one
+    @test ad ≈ fd rtol=10*ε^2 atol=10*eps()/(cbrt(eps())*ε)
 end
 
 # One `train!` step on a `DataLoader` of the latent points and the targets gives a finite loss of
