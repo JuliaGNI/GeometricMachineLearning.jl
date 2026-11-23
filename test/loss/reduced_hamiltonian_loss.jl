@@ -88,13 +88,62 @@ function test_terms(::Type{T}) where {T}
     end
 end
 
-# Where every target gradient of the batch vanishes, the loss is finite.
-function test_zero_target_gradient(::Type{T}) where {T}
+# The loss is the relative error of the states plus λ times the root-mean-square error of the
+# gradient over the batch, divided by gradient_scale; the reference takes the gradient by Zygote.
+# The central differences add at most λ * fd_rtol * ‖G‖ / (√B * s) to the gradient term.
+function test_value(::Type{T}) where {T}
+    dec = make_decoder(T)
+    B = 30
+    z = randn(T, 2, B)
+    x, G = dec(z), reduced_gradient(dec, z)
+    x_target = x .+ T(0.1) .* randn(T, size(x))
+    g_target = G .+ T(0.1) .* randn(T, size(G))
+    λ, s = 0.7, 2.5
+    l = ReducedHamiltonianLoss(H; λ = λ, gradient_scale = s)(dec, z, vcat(x_target, g_target))
+    reference = norm(x - x_target) / norm(x_target) +
+                T(λ) * norm(G - g_target) / (sqrt(T(B)) * T(s))
+    @test l isa T
+    @test l ≈ reference atol = T(λ) * fd_rtol(T) * norm(G) / (sqrt(T(B)) * T(s))
+end
+
+# The gradient term is continuous in g*, also at g* = 0: for g* = σ·1, the triangle inequality
+# bounds the change from σ = 0 by λ σ √(2n) / s.
+function test_continuity_at_zero_target(::Type{T}) where {T}
     dec = make_decoder(T)
     z = randn(T, 2, 10)
-    l = ReducedHamiltonianLoss(H)(dec, z, vcat(dec(z), zeros(T, 2, 10)))
-    @test l isa T
-    @test isfinite(l)
+    λ, s = 0.7, 2.5
+    loss = ReducedHamiltonianLoss(H; λ = λ, gradient_scale = s)
+    l(σ) = loss(dec, z, vcat(dec(z), fill(T(σ), 2, 10)))
+    l0 = l(0)
+    @test l0 isa T
+    @test isfinite(l0) && l0 > 0
+    for σ in (1e-6, 1e-12)
+        @test abs(l(σ) - l0) <= T(λ) * T(σ) * sqrt(T(2)) / T(s) + 8 * eps(T) * l0
+    end
+end
+
+# The value does not depend on the size of the batch: the batch [z z] has the loss of z.
+function test_duplicated_batch(::Type{T}) where {T}
+    dec = make_decoder(T)
+    z = randn(T, 2, 30)
+    out = targets(dec, z) .+ T(0.1) .* randn(T, 6, 30)
+    loss = ReducedHamiltonianLoss(H; λ = 0.7, gradient_scale = 2.5)
+    @test loss(dec, hcat(z, z), hcat(out, out)) ≈ loss(dec, z, out) rtol = 8 * eps(T)
+end
+
+# gradient_scale divides the gradient term and nothing else: the loss is l0 + (λ / s) (l1 - l0)
+# for the loss l0 at λ = 0 and l1 at λ = 1, s = 1.
+function test_gradient_scale(::Type{T}) where {T}
+    dec = make_decoder(T)
+    z = randn(T, 2, 30)
+    out = targets(dec, z) .+ T(0.1) .* randn(T, 6, 30)
+    l0 = ReducedHamiltonianLoss(H; λ = 0, gradient_scale = 2.5)(dec, z, out)
+    l1 = ReducedHamiltonianLoss(H)(dec, z, out)
+    @test l1 - l0 > 10 * fd_rtol(T)
+    for (λ, s) in Iterators.product((0.7, 3.0), (0.4, 2.5))
+        lλs = ReducedHamiltonianLoss(H; λ = λ, gradient_scale = s)(dec, z, out)
+        @test lλs ≈ l0 + T(λ) / T(s) * (l1 - l0) rtol = 8 * eps(T)
+    end
 end
 
 # The 3-tensors of a `DataLoader` give the loss of the matrices.
@@ -135,7 +184,7 @@ function test_parameter_gradient()
     fd = (fp - fm) / (2ε)
     # the central difference in ε has a relative truncation error of order ε², and an absolute
     # error from the round-off of the loss's own central differences in z, of order eps / h with
-    # h = cbrt(eps), divided by ε; the loss is a sum of relative errors, of order one
+    # h = cbrt(eps), divided by ε; the loss is of order one
     @test ad ≈ fd rtol=10*ε^2 atol=10*eps()/(cbrt(eps())*ε)
 end
 
@@ -167,6 +216,13 @@ end
     @test_throws re_h("-0.0001") ReducedHamiltonianLoss(H; h = -1e-4)
     @test_throws re_h("NaN") ReducedHamiltonianLoss(H; h = NaN)
     @test_throws re_h("Inf") ReducedHamiltonianLoss(H; h = Inf)
+    re_s(s) = Regex("^ArgumentError: ReducedHamiltonianLoss requires a finite gradient_scale > 0, got gradient_scale = $s\\.\$")
+    @test_throws re_s("0") ReducedHamiltonianLoss(H; gradient_scale = 0)
+    @test_throws re_s("-1.0") ReducedHamiltonianLoss(H; gradient_scale = -1.0)
+    @test_throws re_s("NaN") ReducedHamiltonianLoss(H; gradient_scale = NaN)
+    @test_throws re_s("Inf") ReducedHamiltonianLoss(H; gradient_scale = Inf)
+    @test ReducedHamiltonianLoss(H; gradient_scale = 2).gradient_scale === 2.0
+    @test ReducedHamiltonianLoss(H).gradient_scale === 1.0
     # the guards cannot be bypassed by a positional constructor
     @test_throws r"^MethodError: no method matching (GeometricMachineLearning\.)?ReducedHamiltonianLoss\(::typeof\(\S*H\), ::Float64, ::Float64\)\n" ReducedHamiltonianLoss(
         H, -1.0, 0.0)
@@ -185,7 +241,10 @@ end
     test_step(T)
     test_self_consistency(T)
     test_terms(T)
-    test_zero_target_gradient(T)
+    test_value(T)
+    test_continuity_at_zero_target(T)
+    test_duplicated_batch(T)
+    test_gradient_scale(T)
     test_tensor_method(T)
     test_one_training_step(T)
 end
