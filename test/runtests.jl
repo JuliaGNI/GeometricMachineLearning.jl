@@ -84,6 +84,7 @@ const TESTS = [
         "SympNet integrator" => "architectures/sympnet_integrator.jl",
         "ForcedSympNet: layers, forcing and training" => "architectures/forced_sympnet.jl",
         "PSD tests" => "architectures/psd_architecture_tests.jl",
+        "PODArch" => "architectures/pod.jl",
         "SymplecticAutoencoder tests" => "architectures/symplectic_autoencoder_tests.jl",
         "StandardAutoencoder" => "architectures/standard_autoencoder.jl",
         "LeftInverseSymplecticAutoencoder" => "architectures/left_inverse_symplectic_autoencoder.jl",

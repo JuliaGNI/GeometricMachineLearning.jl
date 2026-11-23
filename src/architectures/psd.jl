@@ -16,6 +16,8 @@ For optimizing the parameters in this architecture no neural network training is
 The constructor only takes two arguments as input:
 - `full_dim::Integer`
 - `reduced_dim::Integer`
+
+with `full_dim > reduced_dim >= 1` and both even; otherwise it throws an `ArgumentError`.
 """
 struct PSDArch <: SymplecticCompression
     full_dim::Int
@@ -25,8 +27,12 @@ struct PSDArch <: SymplecticCompression
 end
 
 function PSDArch(full_dim::Integer, reduced_dim::Integer)
-    @assert full_dim ≥ reduced_dim "Full order dim has to be greater than reduced order dim!"
-    @assert iseven(full_dim) && iseven(reduced_dim) "Full order and reduced dimension have to be even!"
+    reduced_dim >= 1 ||
+        throw(ArgumentError("reduced_dim ($reduced_dim) must be at least 1."))
+    full_dim > reduced_dim ||
+        throw(ArgumentError("full_dim ($full_dim) must be greater than reduced_dim ($reduced_dim)."))
+    iseven(full_dim) && iseven(reduced_dim) ||
+        throw(ArgumentError("full_dim ($full_dim) and reduced_dim ($reduced_dim) must be even."))
     PSDArch(full_dim, reduced_dim, 2, 2)
 end
 
@@ -52,8 +58,12 @@ end
 Solve the cotangent lift problem for an input.
 
 [`PSDArch`](@ref) does not require neural network training since it is a strictly linear operation that can be solved with singular value decomposition (SVD).
+The SVD is that of the cotangent lift ``[q\ p]``, which has two columns per snapshot of `input`; it must have at least `reduced_dim ÷ 2` columns, so `input` needs at least `cld(reduced_dim, 4)` snapshots. Otherwise `solve!` throws an `ArgumentError`.
 """
 function solve!(nn::NeuralNetwork{<:PSDArch}, input::AbstractMatrix)
+    n_half = nn.architecture.reduced_dim ÷ 2
+    2 * size(input, 2) >= n_half ||
+        throw(ArgumentError("the cotangent lift of input has $(2 * size(input, 2)) columns, fewer than reduced_dim ÷ 2 ($n_half)."))
     half_of_dimension_in_big_space = nn.architecture.full_dim ÷ 2
     @views input_qp = hcat(input[1:half_of_dimension_in_big_space, :],
         input[(half_of_dimension_in_big_space + 1):end, :])
@@ -64,16 +74,18 @@ function solve!(nn::NeuralNetwork{<:PSDArch}, input::AbstractMatrix)
     AutoEncoderLoss()(nn, input)
 end
 
-function solve!(nn::NeuralNetwork{<:PSDArch}, input::AbstractArray{T, 3}) where {T}
+# The SVD of each architecture is in its matrix method; the other inputs reduce to a matrix.
+function solve!(nn::NeuralNetwork{<:Union{PSDArch, PODArch}},
+        input::AbstractArray{T, 3}) where {T}
     solve!(nn, reshape(input, size(input, 1), size(input, 2) * size(input, 3)))
 end
 
-function solve!(nn::NeuralNetwork{<:PSDArch},
+function solve!(nn::NeuralNetwork{<:Union{PSDArch, PODArch}},
         dl::DataLoader{T, AT, <:Any, :RegularData}) where {T, AT <: AbstractArray{T}}
     solve!(nn, dl.input)
 end
 
-function solve!(nn::NeuralNetwork{<:PSDArch},
+function solve!(nn::NeuralNetwork{<:Union{PSDArch, PODArch}},
         dl::DataLoader{T, NT, <:Any, :RegularData}) where {
         T, AT <: AbstractArray{T}, NT <: NamedTuple{(:q, :p), Tuple{AT, AT}}}
     solve!(nn, vcat(dl.input.q, dl.input.p))

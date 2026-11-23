@@ -56,6 +56,19 @@ function all_tests(::Type{T}, N::Integer, n::Integer; kwargs...) where {T}
     test_symplecticity(T, N, n)
 end
 
+# Each guard of the constructor. `PSDArch(N, N)` would build `PSDLayer{N, N}` twice, whose
+# composition is not the identity, and `compute_iterations` a range of step zero.
+@test_throws r"^ArgumentError: reduced_dim \(0\) must be at least 1\.$" PSDArch(4, 0)
+@test_throws r"^ArgumentError: full_dim \(4\) must be greater than reduced_dim \(4\)\.$" PSDArch(
+    4, 4)
+@test_throws r"^ArgumentError: full_dim \(4\) must be greater than reduced_dim \(6\)\.$" PSDArch(
+    4, 6)
+@test_throws r"^ArgumentError: full_dim \(5\) and reduced_dim \(2\) must be even\.$" PSDArch(5, 2)
+@test_throws r"^ArgumentError: full_dim \(6\) and reduced_dim \(3\) must be even\.$" PSDArch(6, 3)
+# One snapshot gives a cotangent lift of 2 columns, too few for 3 = reduced_dim ÷ 2 basis vectors.
+@test_throws r"^ArgumentError: the cotangent lift of input has 2 columns, fewer than reduced_dim ÷ 2 \(3\)\.$" solve!(
+    NeuralNetwork(PSDArch(10, 6)), rand(10, 1))
+
 for T in REAL_ELTYPES
     all_tests(T, 10, 6)
     all_tests(T, 20, 10)
