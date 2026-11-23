@@ -24,6 +24,7 @@ const TESTS = [
         "AutoEncoderLoss and a loss's NetworkParameters" => "loss/losses.jl",
         "apply_parametric and the concatenation of the system parameters" => "parametric.jl",
         "ParametricLoss and its ZygotePullback" => "loss/parametric_loss.jl",
+        "ReducedHamiltonianLoss" => "loss/reduced_hamiltonian_loss.jl",
         "map_to_cpu" => "map_to_cpu.jl",
         "changebackend" => "integration/changebackend_tests.jl",
         "HDF5 save/load for GML special array types" => "integration/hdf5_support.jl",
