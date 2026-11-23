@@ -188,7 +188,7 @@ export TransformerIntegrator, StandardTransformerIntegrator
 include("optimizers/optimizer.jl")
 
 export NetworkLoss, TransformerLoss, FeedForwardLoss, AutoEncoderLoss, ReducedLoss,
-       ReducedHamiltonianLoss
+       ReducedHamiltonianLoss, LatentVectorFieldLoss
 
 #INCLUDE ARCHITECTURES
 include("architectures/neural_network_integrator.jl")
@@ -228,6 +228,7 @@ export integrate
 include("parametric.jl")
 include("loss/losses.jl")
 include("loss/reduced_hamiltonian_loss.jl")
+include("loss/latent_vector_field_loss.jl")
 
 export AbstractPullback, ZygotePullback
 include("pullbacks/zygote_pullback.jl")

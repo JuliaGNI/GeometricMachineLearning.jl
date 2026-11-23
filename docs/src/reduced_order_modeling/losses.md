@@ -42,6 +42,8 @@ where ``\mathbf{x}^{(t)}`` is the solution of the FOM at point ``t`` and ``\math
 
 For a decoder whose reduced dynamics matter more than the pointwise reconstruction, [`ReducedHamiltonianLoss`](@ref) fits the states together with the gradient of the reduced Hamiltonian ``H\circ\Psi^\mathrm{dec}``, which for a symplectic decoder is the reduced vector field up to ``\mathbb{J}``.
 
+[`LatentVectorFieldLoss`](@ref) trains encoder and decoder on states of the full system and on its vector field there: besides the reconstruction it compares the reduced vector field ``\mathbb{J}_{2n}\nabla_\xi(H\circ\Psi^\mathrm{dec})`` at ``\xi=\Psi^\mathrm{enc}(x)`` with the full vector field pushed forward by the encoder.
+
 ## Library Functions
 
 ```@docs
@@ -49,6 +51,7 @@ TransformerLoss
 AutoEncoderLoss
 ReducedLoss
 ReducedHamiltonianLoss
+LatentVectorFieldLoss
 CharbonnierRelativeLoss
 IsometricRolloutLoss
 CrossModalLoss

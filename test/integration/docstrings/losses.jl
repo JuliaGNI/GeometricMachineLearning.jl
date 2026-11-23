@@ -1,5 +1,6 @@
 using Test
 using GeometricMachineLearning
+using GeometricMachineLearning: solve!
 using LinearAlgebra: norm
 using Zygote: Zygote
 import Random
@@ -46,4 +47,14 @@ import Random
          for ζ in eachcol(z)])
     loss = ReducedHamiltonianLoss(H)
     @test loss(dec, z, vcat(x, g)) < 1e-6
+
+    Random.seed!(123)
+    H₁(X) = vec(sum(abs2, X[3:4, :]; dims = 1)) ./ 2 .+ cos.(X[1, :])
+    XH₁(X) = vcat(X[3:4, :], sin.(X[1:1, :]), zero(X[2:2, :]))
+    arch = PSDArch(4, 2)
+    nn = NeuralNetwork(arch)
+    solve!(nn, randn(4, 20))
+    x = decoder(nn)(randn(2, 10))
+    loss = LatentVectorFieldLoss(arch, H₁)
+    @test loss(nn, x, XH₁(x)) < 1e-8
 end
