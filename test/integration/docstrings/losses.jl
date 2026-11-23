@@ -1,6 +1,7 @@
 using Test
 using GeometricMachineLearning
 using LinearAlgebra: norm
+using Zygote: Zygote
 import Random
 
 @testset "Loss docstring examples" begin
@@ -33,4 +34,16 @@ import Random
     output_prediction = Ψᵈ(transformer(Ψᵉ(input_mat)))
     @test loss(transformer, input_mat, output_mat) ≈
           norm(output_mat - output_prediction) / norm(output_mat)
+
+    Random.seed!(123)
+    H(X) = vec(sum(abs2, X[3:4, :]; dims = 1)) ./ 2 .+ X[2, :]
+    dec = decoder(NeuralNetwork(SymplecticAutoencoder(
+        4, 2; n_encoder_blocks = 2, n_decoder_blocks = 2)))
+    z = randn(2, 20)
+    x = dec(z)
+    g = reduce(hcat,
+        [Zygote.gradient(ζ -> H(reshape(dec(ζ), 4, 1))[1], collect(ζ))[1]
+         for ζ in eachcol(z)])
+    loss = ReducedHamiltonianLoss(H)
+    @test loss(dec, z, vcat(x, g)) < 1e-6
 end

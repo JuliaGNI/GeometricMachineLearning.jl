@@ -187,7 +187,8 @@ export TransformerIntegrator, StandardTransformerIntegrator
 # INCLUDE OPTIMIZERS — the methods, sections and retractions come from GeometricOptimizers.
 include("optimizers/optimizer.jl")
 
-export NetworkLoss, TransformerLoss, FeedForwardLoss, AutoEncoderLoss, ReducedLoss
+export NetworkLoss, TransformerLoss, FeedForwardLoss, AutoEncoderLoss, ReducedLoss,
+       ReducedHamiltonianLoss
 
 #INCLUDE ARCHITECTURES
 include("architectures/neural_network_integrator.jl")
@@ -226,6 +227,7 @@ export integrate
 
 include("parametric.jl")
 include("loss/losses.jl")
+include("loss/reduced_hamiltonian_loss.jl")
 
 export AbstractPullback, ZygotePullback
 include("pullbacks/zygote_pullback.jl")
