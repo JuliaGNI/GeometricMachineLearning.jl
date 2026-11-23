@@ -222,6 +222,84 @@ end
 end
 
 # ---------------------------------------------------------------------------
+# LeftInverseSymplecticAutoencoder: one parameter tree for the encoder and the decoder
+# ---------------------------------------------------------------------------
+
+# Its model is one `LeftInverseAutoencoderLayer` and not `Chain(arch)`, which the architecture
+# refuses; the package's HDF5 extension rebuilds the layer around the parameters read back.
+const LEFT_INVERSE = LeftInverseSymplecticAutoencoder(
+    6, 2; n_blocks = 2, n_layers = 2, n_ambient_layers = 2)
+
+@testset "save/load roundtrip: LeftInverseSymplecticAutoencoder in $T" for T in (
+    Float32, Float64)
+    nn = NeuralNetwork(LEFT_INVERSE, CPU(), T)
+    z, ξ = rand(T, 6, 5), rand(T, 2, 5)
+
+    mktempdir() do dir
+        path = joinpath(dir, "left_inverse.h5")
+        save(path, nn)
+        nn2 = load(NeuralNetwork, path, LEFT_INVERSE)
+
+        @test nn2.model isa GeometricMachineLearning.LeftInverseAutoencoderLayer
+        @test _ps_eq(params(nn), params(nn2))
+        @test nn2(z) isa Matrix{T}
+        @test encoder(nn2)(z) ≈ encoder(nn)(z)
+        @test decoder(nn2)(ξ) ≈ decoder(nn)(ξ)
+
+        # and on an already-open store
+        nn3 = HDF5.h5open(path, "r") do h5
+            load(NeuralNetwork, h5, LEFT_INVERSE)
+        end
+        @test nn3.model isa GeometricMachineLearning.LeftInverseAutoencoderLayer
+        @test nn3(z) ≈ nn(z)
+    end
+end
+
+# Renames the stored type of every structured leaf under `g` to one that no package registered, so
+# that only a load against a prototype can rebuild the leaves; returns the number of leaves renamed.
+function _unregister_leaf_types!(g)
+    n = 0
+    for k in keys(g)
+        c = g[k]
+        c isa HDF5.Group || continue
+        if haskey(HDF5.attributes(c), "parameter_type")
+            HDF5.delete_attribute(c, "parameter_type")
+            HDF5.attributes(c)["parameter_type"] = "UnregisteredLeaf"
+            n += 1
+        end
+        n += _unregister_leaf_types!(c)
+    end
+    n
+end
+
+# The prototype reaches the parameters: the file names a leaf type that the registry does not know,
+# so the load without a prototype fails, and the load against one rebuilds the Stiefel leaves.
+@testset "save/load roundtrip: LeftInverseSymplecticAutoencoder against a prototype" begin
+    nn = NeuralNetwork(LEFT_INVERSE)
+    z = rand(6, 5)
+    prototype = params(NeuralNetwork(LEFT_INVERSE))
+
+    mktempdir() do dir
+        path = joinpath(dir, "left_inverse_prototype.h5")
+        save(path, nn)
+        renamed = HDF5.h5open(_unregister_leaf_types!, path, "r+")
+        @test renamed > 0
+        @test_throws r"^ArgumentError: the file contains a parameter of type `UnregisteredLeaf`, which is not registered\." load(
+            NeuralNetwork, path, LEFT_INVERSE)
+
+        nn2 = load(NeuralNetwork, path, LEFT_INVERSE, prototype)
+        @test nn2.model isa GeometricMachineLearning.LeftInverseAutoencoderLayer
+        @test _ps_eq(params(nn), params(nn2))
+        @test nn2(z) ≈ nn(z)
+
+        nn3 = HDF5.h5open(path, "r") do h5
+            load(NeuralNetwork, h5, LEFT_INVERSE, prototype)
+        end
+        @test nn3(z) ≈ nn(z)
+    end
+end
+
+# ---------------------------------------------------------------------------
 # Files written before the traversal moved out of this package
 # ---------------------------------------------------------------------------
 
