@@ -264,6 +264,9 @@ end
         LeftInverseSymplecticAutoencoder(4, 2), H)
     @test_throws re_arch("SymmetricSymplecticAutoencoder") LatentVectorFieldLoss(
         SymmetricSymplecticAutoencoder(2, 1, 2), H)
+    # the architecture is checked before the reference state, which is measured against it
+    @test_throws re_arch("LeftInverseSymplecticAutoencoder") LatentVectorFieldLoss(
+        LeftInverseSymplecticAutoencoder(4, 2), H; reference_state = zeros(6))
     @test_throws r"^MethodError: no method matching (GeometricMachineLearning\.)?LatentVectorFieldLoss\(::(GeometricMachineLearning\.)?StandardAutoencoder" LatentVectorFieldLoss(
         StandardAutoencoder(4, 2), H)
 

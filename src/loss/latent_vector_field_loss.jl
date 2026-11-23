@@ -106,14 +106,14 @@ struct LatentVectorFieldLoss{
             "LatentVectorFieldLoss requires a finite energy_scale > 0, got energy_scale = $energy_scale."))
         (energy && reference_state === nothing) && throw(ArgumentError(
             "LatentVectorFieldLoss with energy = true requires a reference_state, the full state x_ref at which the energies are compared."))
+        N = _latent_vf_n_encoder_layers(arch)
+        n_layers = N + length(decoder_model(arch).layers)
         if reference_state !== nothing
             length(reference_state) == arch.full_dim || throw(ArgumentError(
                 "LatentVectorFieldLoss requires a reference_state of length $(arch.full_dim), the full dimension of the architecture, got length $(length(reference_state))."))
             all(isfinite, reference_state) || throw(ArgumentError(
                 "LatentVectorFieldLoss requires a reference_state with finite entries."))
         end
-        N = _latent_vf_n_encoder_layers(arch)
-        n_layers = N + length(decoder_model(arch).layers)
         T = float(promote_type(typeof(λ), typeof(vector_field_scale), typeof(energy_scale)))
         h_float = h === nothing ? nothing : float(h)
         x_ref = reference_state === nothing ? nothing : float.(collect(reference_state))
