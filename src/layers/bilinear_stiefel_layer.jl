@@ -495,7 +495,8 @@ function solve!(
 end
 
 function solve!(
-        nn::NeuralNetwork{<:PSDArch, <:Chain{<:Tuple{BilinearStiefelLayer, Vararg}}},
+        nn::NeuralNetwork{
+            <:Union{PSDArch, PODArch}, <:Chain{<:Tuple{BilinearStiefelLayer, Vararg}}},
         F_snapshots::AbstractArray{T, 3}
 ) where {T}
     return _solve_bilinear_stiefel!(nn, F_snapshots)
