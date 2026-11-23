@@ -36,7 +36,8 @@ relerr(a, b) = norm(a - b) / norm(b)
 function test_gradient(::Type{T}) where {T}
     dec = make_decoder(T)
     z = randn(T, 2, 30)
-    G = _reduced_hamiltonian_gradient(ReducedHamiltonianLoss(H), dec.model, params(dec), z)
+    G = @inferred _reduced_hamiltonian_gradient(
+        ReducedHamiltonianLoss(H), dec.model, params(dec), z)
     @test eltype(G) === T
     @test relerr(G, reduced_gradient(dec, z)) < fd_rtol(T)
 end
@@ -132,9 +133,9 @@ function test_parameter_gradient()
     fm = f(ps)
     shift!(ε)
     fd = (fp - fm) / (2ε)
-    # the central difference has a truncation error of order ε² and a round-off error of order
-    # eps / ε relative to the loss
-    @test ad ≈ fd rtol = 1e-6
+    # the central difference in ε has a truncation error of order ε², and the round-off of the
+    # loss's own central differences in z, of order eps / h with h = cbrt(eps), divided by ε
+    @test ad ≈ fd rtol = 10 * (ε^2 + eps() / (cbrt(eps()) * ε))
 end
 
 # One `train!` step on a `DataLoader` of the latent points and the targets gives a finite loss of

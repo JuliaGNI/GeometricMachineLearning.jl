@@ -89,14 +89,13 @@ end
 function _reduced_hamiltonian_gradient(loss::ReducedHamiltonianLoss, model, ps, z::AbstractMatrix)
     n = size(z, 1)
     h = _difference_step(loss.h, eltype(z))
-    rows = map(1:n) do i
+    mapreduce(vcat, 1:n) do i
         # the shift is a column broadcast over the batch; built without mutation for Zygote
         δ = map(j -> j == i ? h : zero(h), 1:n)
         Hp = loss.hamiltonian(model(z .+ δ, ps))
         Hm = loss.hamiltonian(model(z .- δ, ps))
         reshape((Hp .- Hm) ./ (2h), 1, :)
     end
-    reduce(vcat, rows)
 end
 
 function (loss::ReducedHamiltonianLoss)(model::Union{Chain, AbstractExplicitLayer}, ps,
