@@ -15,9 +15,13 @@ H(X) = vec(sum(abs2, X[3:4, :]; dims = 1)) ./ 2 .+ cos.(X[1, :]) .+ X[2, :] .^ 2
 XH(X) = vcat(X[3:4, :], sin.(X[1:1, :]), -X[2:2, :])
 
 const ARCH = SymplecticAutoencoder(4, 2; n_encoder_blocks = 2, n_decoder_blocks = 2)
+# its encoder and decoder share one parameter tree, which the loss reverses for the encoder
+const LEFT_INVERSE = LeftInverseSymplecticAutoencoder(
+    4, 2; n_blocks = 2, n_layers = 3, n_ambient_layers = 2)
+const ARCHITECTURES = (ARCH, LEFT_INVERSE)
 const X_REF = [0.3, -0.2, 0.1, 0.4]
 
-make_network(::Type{T}) where {T} = NeuralNetwork(ARCH, T)
+make_network(arch, ::Type{T}) where {T} = NeuralNetwork(arch, T)
 
 # The references take every derivative by Zygote, one state at a time: the encoder's Jacobian times
 # the vector field, and the gradient of H∘Ψ^dec at the encoded state.
@@ -53,15 +57,15 @@ fd_rtol(::Type{T}) where {T} = 20 * cbrt(eps(T))^2
 # latent vector field over the batch divided by vector_field_scale, plus the root-mean-square
 # energy error against the reference state divided by energy_scale, for each combination of the
 # two flags. The central differences add at most λ * fd_rtol * (‖reduced‖ + ‖pushed‖) / (√B * s).
-function test_value(::Type{T}) where {T}
-    nn = make_network(T)
+function test_value(arch, ::Type{T}) where {T}
+    nn = make_network(arch, T)
     B = 30
     x = randn(T, 4, B)
     v = XH(x)
     R, E, V, size_V = terms(nn, x, v)
     λ, s, s_E = 0.7, 2.5, 1.5
     for (reconstruction, energy) in Iterators.product((false, true), (false, true))
-        loss = LatentVectorFieldLoss(ARCH, H; λ = λ, vector_field_scale = s,
+        loss = LatentVectorFieldLoss(arch, H; λ = λ, vector_field_scale = s,
             reconstruction = reconstruction, energy = energy, reference_state = X_REF,
             energy_scale = s_E)
         l = @inferred loss(nn.model, params(nn), x, v)
@@ -75,28 +79,28 @@ end
 
 # A given step reaches both central differences: their error is of order h², so halving a large
 # step divides the error of the vector-field term by four. The default step is cbrt(eps(T)).
-function test_step(::Type{T}) where {T}
-    nn = make_network(T)
+function test_step(arch, ::Type{T}) where {T}
+    nn = make_network(arch, T)
     B = 30
     x = randn(T, 4, B)
     v = XH(x)
     _, _, V, _ = terms(nn, x, v)
-    l(h) = LatentVectorFieldLoss(ARCH, H; h = h, reconstruction = false)(nn, x, v)
+    l(h) = LatentVectorFieldLoss(arch, H; h = h, reconstruction = false)(nn, x, v)
     err(h) = abs(l(h) - V / sqrt(T(B)))
     @test err(0.2) / err(0.1) ≈ 4 rtol = 0.1
-    @test LatentVectorFieldLoss(ARCH, H; reconstruction = false)(nn, x, v) ≈ l(cbrt(eps(T))) rtol = 8 *
+    @test LatentVectorFieldLoss(arch, H; reconstruction = false)(nn, x, v) ≈ l(cbrt(eps(T))) rtol = 8 *
                                                                                                     eps(T)
 end
 
 # The vector-field term is continuous in the vector field, also where it vanishes: for X_H = σ·1,
 # the triangle inequality bounds the change from σ = 0 by λ/(√B s) times the norm of the pushed-
 # forward field, σ‖∇Ψ^enc 1‖ plus the round-off of the central difference, eps(T)‖ξ‖/h.
-function test_continuity_at_zero_target(::Type{T}) where {T}
-    nn = make_network(T)
+function test_continuity_at_zero_target(arch, ::Type{T}) where {T}
+    nn = make_network(arch, T)
     B = 10
     x = randn(T, 4, B)
     λ, s = 0.7, 2.5
-    loss = LatentVectorFieldLoss(ARCH, H; λ = λ, vector_field_scale = s)
+    loss = LatentVectorFieldLoss(arch, H; λ = λ, vector_field_scale = s)
     l(σ) = loss(nn, x, fill(T(σ), 4, B))
     l0 = l(0)
     @test l0 isa T
@@ -110,11 +114,11 @@ function test_continuity_at_zero_target(::Type{T}) where {T}
 end
 
 # The value does not depend on the size of the batch: the batch [x x] has the loss of x.
-function test_duplicated_batch(::Type{T}) where {T}
-    nn = make_network(T)
+function test_duplicated_batch(arch, ::Type{T}) where {T}
+    nn = make_network(arch, T)
     x = randn(T, 4, 30)
     v = XH(x)
-    loss = LatentVectorFieldLoss(ARCH, H; λ = 0.7, vector_field_scale = 2.5, energy = true,
+    loss = LatentVectorFieldLoss(arch, H; λ = 0.7, vector_field_scale = 2.5, energy = true,
         reference_state = X_REF, energy_scale = 1.5)
     @test loss(nn, hcat(x, x), hcat(v, v)) ≈ loss(nn, x, v) rtol = 8 * eps(T)
 end
@@ -122,13 +126,13 @@ end
 # The loss does not depend on the additive constant of H. The constant c enters the round-off of
 # the central differences of H∘Ψ^dec, eps(T)(|H| + c)/h per entry, and that of the energy
 # differences, eps(T)(|H| + c) per entry.
-function test_additive_constant(::Type{T}) where {T}
-    nn = make_network(T)
+function test_additive_constant(arch, ::Type{T}) where {T}
+    nn = make_network(arch, T)
     B = 30
     x = randn(T, 4, B)
     v = XH(x)
     λ, s, s_E = 0.7, 2.5, 1.5
-    loss(H) = LatentVectorFieldLoss(ARCH, H; λ = λ, vector_field_scale = s, energy = true,
+    loss(H) = LatentVectorFieldLoss(arch, H; λ = λ, vector_field_scale = s, energy = true,
         reference_state = X_REF, energy_scale = s_E)
     l = loss(H)(nn, x, v)
     H_max = maximum(abs, H(x))
@@ -143,11 +147,11 @@ end
 # λ, vector_field_scale and energy_scale weigh their own term and nothing else: the loss is
 # l0 + (λ / s) (lV - l0) + (lE - l0) / s_E for the loss l0 with neither term, lV with the
 # vector-field term at λ = s = 1 and lE with the energy term at s_E = 1.
-function test_scales(::Type{T}) where {T}
-    nn = make_network(T)
+function test_scales(arch, ::Type{T}) where {T}
+    nn = make_network(arch, T)
     x = randn(T, 4, 30)
     v = XH(x)
-    loss(λ, s, energy, s_E) = LatentVectorFieldLoss(ARCH, H; λ = λ, vector_field_scale = s,
+    loss(λ, s, energy, s_E) = LatentVectorFieldLoss(arch, H; λ = λ, vector_field_scale = s,
         energy = energy, reference_state = X_REF, energy_scale = s_E)(nn, x, v)
     l0 = loss(0, 1, false, 1)
     lV = loss(1, 1, false, 1)
@@ -161,24 +165,24 @@ function test_scales(::Type{T}) where {T}
 end
 
 # The 3-tensors of a `DataLoader` give the loss of the matrices.
-function test_tensor_method(::Type{T}) where {T}
-    nn = make_network(T)
+function test_tensor_method(arch, ::Type{T}) where {T}
+    nn = make_network(arch, T)
     x = randn(T, 4, 30)
     v = XH(x)
-    loss = LatentVectorFieldLoss(ARCH, H; λ = 0.7, energy = true, reference_state = X_REF)
+    loss = LatentVectorFieldLoss(arch, H; λ = 0.7, energy = true, reference_state = X_REF)
     @test loss(nn.model, params(nn), reshape(x, 4, 30, 1), reshape(v, 4, 30, 1)) ≈
           loss(nn.model, params(nn), x, v) rtol = 8 * eps(T)
 end
 
 # One `train!` step on a `DataLoader` of the states and the vector field gives a finite loss of the
 # network's element type and moves every parameter.
-function test_one_training_step(::Type{T}) where {T}
-    nn = make_network(T)
+function test_one_training_step(arch, ::Type{T}) where {T}
+    nn = make_network(arch, T)
     x = randn(T, 4, 40)
     dl = DataLoader(x, XH(x); suppress_info = true)
     before = deepcopy(nn.params)
     o = TrainingOptimizer(nn.params; algorithm = Adam())
-    loss = LatentVectorFieldLoss(ARCH, H; energy = true, reference_state = X_REF)
+    loss = LatentVectorFieldLoss(arch, H; energy = true, reference_state = X_REF)
     history = train!(nn, o, dl, Batch(40), 1; loss = loss, show_progress = false)
     @test eltype(history) === T
     @test all(isfinite, history)
@@ -189,11 +193,11 @@ end
 
 # The Zygote gradient with respect to the parameters agrees with a central difference of the loss
 # in a random direction of the array leaves.
-function test_parameter_gradient()
-    nn = make_network(Float64)
+function test_parameter_gradient(arch)
+    nn = make_network(arch, Float64)
     x = randn(4, 30)
     v = XH(x)
-    loss = LatentVectorFieldLoss(ARCH, H; λ = 0.7, energy = true, reference_state = X_REF)
+    loss = LatentVectorFieldLoss(arch, H; λ = 0.7, energy = true, reference_state = X_REF)
     ps = params(nn)
     f(p) = loss(nn.model, p, x, v)
     dp = Zygote.gradient(f, ps)[1]
@@ -269,7 +273,7 @@ end
         StandardAutoencoder(4, 2), H)
 
     # the network and the output
-    nn = make_network(Float64)
+    nn = make_network(ARCH, Float64)
     x = randn(4, 5)
     loss = LatentVectorFieldLoss(ARCH, H)
     re_out(s) = re("requires an output of the size of the input, the vector field X_H\\(x\\) at each state x, got an output of size $s for an input of size \\(4, 5\\)\\.")
@@ -278,23 +282,40 @@ end
     @test_throws re_out("\\(6, 5\\)") loss(nn, x, vcat(XH(x), zeros(2, 5)))
     other = SymplecticAutoencoder(
         4, 2; n_encoder_layers = 2, n_encoder_blocks = 2, n_decoder_blocks = 2)
-    @test_throws re("requires a network of 5 layers, those of its architecture, got 7 layers; build the loss from the architecture of the network\\.") LatentVectorFieldLoss(
-        other, H)(nn, x, XH(x))
-    @test_throws re("requires an encoder with 2 output rows, the latent dimension of its architecture, got 4 rows; build the loss from the architecture of the network\\.") LatentVectorFieldLoss(
-        PSDArch(6, 2), H)(NeuralNetwork(PSDArch(6, 4)), randn(6, 5), randn(6, 5))
+    function re_layers(n, m)
+        re("requires a network of $n layers, those of its architecture, got $m layers; " *
+           "build the loss from the architecture of the network\\.")
+    end
+    @test_throws re_layers(5, 7) LatentVectorFieldLoss(other, H)(nn, x, XH(x))
+    # a left-inverse network has the 6 + 6 layers of its encoder and its decoder, and 5 + 5 with
+    # n_layers = 2; the network of ARCH has 7
+    tied = make_network(LEFT_INVERSE, Float64)
+    @test_throws re_layers(12, 7) LatentVectorFieldLoss(LEFT_INVERSE, H)(nn, x, XH(x))
+    @test_throws re_layers(7, 12) loss(tied, x, XH(x))
+    shorter = LeftInverseSymplecticAutoencoder(
+        4, 2; n_blocks = 2, n_layers = 2, n_ambient_layers = 2)
+    @test_throws re_layers(10, 12) LatentVectorFieldLoss(shorter, H)(tied, x, XH(x))
+    re_latent(n) = re("requires an encoder with 2 output rows, the latent dimension of its architecture, got $n rows; build the loss from the architecture of the network\\.")
+    @test_throws re_latent(4) LatentVectorFieldLoss(PSDArch(6, 2), H)(
+        NeuralNetwork(PSDArch(6, 4)), randn(6, 5), randn(6, 5))
+    # LeftInverseSymplecticAutoencoder(6, 2) and (6, 4) have the same number of layers
+    @test_throws re_latent(4) LatentVectorFieldLoss(LeftInverseSymplecticAutoencoder(6, 2), H)(
+        NeuralNetwork(LeftInverseSymplecticAutoencoder(6, 4)), randn(6, 5), randn(6, 5))
 end
 
-@testset "LatentVectorFieldLoss in $T" for T in REAL_ELTYPES
-    test_value(T)
-    test_step(T)
-    test_continuity_at_zero_target(T)
-    test_duplicated_batch(T)
-    test_additive_constant(T)
-    test_scales(T)
-    test_tensor_method(T)
-    test_one_training_step(T)
+@testset "LatentVectorFieldLoss on a $(nameof(typeof(arch))) in $T" for arch in ARCHITECTURES,
+    T in REAL_ELTYPES
+
+    test_value(arch, T)
+    test_step(arch, T)
+    test_continuity_at_zero_target(arch, T)
+    test_duplicated_batch(arch, T)
+    test_additive_constant(arch, T)
+    test_scales(arch, T)
+    test_tensor_method(arch, T)
+    test_one_training_step(arch, T)
 end
 
-@testset "LatentVectorFieldLoss parameter gradient" begin
-    test_parameter_gradient()
+@testset "LatentVectorFieldLoss parameter gradient on a $(nameof(typeof(arch)))" for arch in ARCHITECTURES
+    test_parameter_gradient(arch)
 end
