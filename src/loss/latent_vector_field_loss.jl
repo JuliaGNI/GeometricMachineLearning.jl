@@ -32,7 +32,7 @@ Both derivatives are central differences with the step `h`. The gradient ``\nabl
 
 # Arguments
 
-- `arch`: the architecture whose network is trained, a [`SymplecticAutoencoder`](@ref) or a [`PSDArch`](@ref). It fixes where the encoder ends in the chain and the latent dimension ``2n``. Another symplectic architecture raises an `ArgumentError`, and an architecture that is not symplectic has no method.
+- `arch`: the architecture whose network is trained, a [`SymplecticAutoencoder`](@ref), a [`PSDArch`](@ref) or a [`LeftInverseSymplecticAutoencoder`](@ref). It fixes the number of layers of the encoder and of the decoder, and the latent dimension ``2n``. The decoder of a `LeftInverseSymplecticAutoencoder` takes the parameter tree of the network and its encoder the reversed tree, as in its forward pass. Another symplectic architecture raises an `ArgumentError`, and an architecture that is not symplectic has no method.
 - `hamiltonian`: a function that maps a matrix of states in ``\mathbb{R}^{2N}``, one per column, to the vector of their energies. It has to be differentiable by Zygote.
 - `λ = 1`: the weight of the vector-field term, finite and ``\geq 0``.
 - `h = nothing`: the step of the central differences, finite and ``> 0``. With `nothing`, the step is `cbrt(eps(T))` for the element type `T` of the data, which balances the truncation and the round-off error of the central differences.
@@ -51,7 +51,7 @@ loss(model, ps, input, output)
 loss(nn, input, output)
 ```
 
-`input` holds the states ``x``, one per column (``2N`` rows), and `output` the vector field ``X_H(x)`` at them, of the same size; another size raises an `ArgumentError`, and so does a network that does not have the number of layers of `arch` or whose encoder does not give its latent dimension. The model is the whole autoencoder. The loss has the element type of the data, for a network of the same element type. Both forms also take the 3-tensors of a `DataLoader` built from an input and an output matrix; ``B`` then counts the columns of all batches.
+`input` holds the states ``x``, one per column (``2N`` rows), and `output` the vector field ``X_H(x)`` at them, of the same size; another size raises an `ArgumentError`, and so does a network that does not have the number of layers of `arch`, those of its encoder and its decoder together, or whose encoder does not give its latent dimension. The model is the whole autoencoder. The loss has the element type of the data, for a network of the same element type. Both forms also take the 3-tensors of a `DataLoader` built from an input and an output matrix; ``B`` then counts the columns of all batches.
 
 # Examples
 
@@ -123,12 +123,21 @@ struct LatentVectorFieldLoss{
     end
 end
 
-# The number of layers of the encoder in the chain of the network of `arch`.
+# The number of layers of the encoder of the network of `arch`.
 function _latent_vf_n_encoder_layers(arch::Union{SymplecticAutoencoder, PSDArch})
     length(encoder_model(arch).layers)
 end
+function _latent_vf_n_encoder_layers(arch::LeftInverseSymplecticAutoencoder)
+    length(LeftInverseAutoencoderLayer(arch).encoder_layers)
+end
 function _latent_vf_n_encoder_layers(arch::SymplecticCompression)
-    throw(ArgumentError("LatentVectorFieldLoss takes a SymplecticAutoencoder or a PSDArch, got a $(nameof(typeof(arch)))."))
+    throw(ArgumentError("LatentVectorFieldLoss takes a SymplecticAutoencoder, a PSDArch or a LeftInverseSymplecticAutoencoder, got a $(nameof(typeof(arch)))."))
+end
+
+# The number of layers of the model, those of the encoder and of the decoder together.
+_latent_vf_n_layers(model::Chain) = length(model.layers)
+function _latent_vf_n_layers(model::LeftInverseAutoencoderLayer)
+    length(model.encoder_layers) + length(model.decoder_layers)
 end
 
 # The encoder and the decoder of the chain, each with its parameters.
@@ -138,6 +147,12 @@ function _split_autoencoder(loss::LatentVectorFieldLoss{N}, model::Chain, ps) wh
     enc = Chain(ntuple(i -> model.layers[i], Val(N))...)
     dec = Chain(ntuple(i -> model.layers[N + i], Val(M - N))...)
     enc, ntuple(i -> vals[i], Val(N)), dec, ntuple(i -> vals[N + i], Val(M - N))
+end
+
+# The encoder and the decoder of a left-inverse autoencoder share one parameter tree: the decoder
+# takes the tree, the encoder its reversal, as in the forward pass of the layer.
+function _split_autoencoder(::LatentVectorFieldLoss, model::LeftInverseAutoencoderLayer, ps)
+    Chain(model.encoder_layers...), _reverse_params(ps), Chain(model.decoder_layers...), ps
 end
 
 # 𝕁_{2n} g = (g_p, -g_q) for g = (g_q, g_p).
@@ -156,11 +171,12 @@ function _energy_difference_error(loss::LatentVectorFieldLoss, enc, ps_enc, dec,
 end
 
 function (loss::LatentVectorFieldLoss)(
-        model::Chain, ps, input::AbstractMatrix, output::AbstractMatrix)
+        model::Union{Chain, LeftInverseAutoencoderLayer}, ps,
+        input::AbstractMatrix, output::AbstractMatrix)
     size(output) == size(input) || throw(ArgumentError(
         "LatentVectorFieldLoss requires an output of the size of the input, the vector field X_H(x) at each state x, got an output of size $(size(output)) for an input of size $(size(input))."))
-    length(model.layers) == loss.n_layers || throw(ArgumentError(
-        "LatentVectorFieldLoss requires a network of $(loss.n_layers) layers, the chain of its architecture, got $(length(model.layers)) layers; build the loss from the architecture of the network."))
+    _latent_vf_n_layers(model) == loss.n_layers || throw(ArgumentError(
+        "LatentVectorFieldLoss requires a network of $(loss.n_layers) layers, those of its architecture, got $(_latent_vf_n_layers(model)) layers; build the loss from the architecture of the network."))
     T = promote_type(eltype(input), eltype(output))
     enc, ps_enc, dec, ps_dec = _split_autoencoder(loss, model, ps)
     h = _difference_step(loss.h, T)
@@ -188,6 +204,7 @@ end
 # A `DataLoader` built from an input and an output matrix holds them as tensors with a trailing
 # dimension of one; the columns are independent states either way.
 function (loss::LatentVectorFieldLoss)(
-        model::Chain, ps, input::AbstractArray{T, 3}, output::AbstractArray{T, 3}) where {T}
+        model::Union{Chain, LeftInverseAutoencoderLayer}, ps,
+        input::AbstractArray{T, 3}, output::AbstractArray{T, 3}) where {T}
     loss(model, ps, reshape(input, size(input, 1), :), reshape(output, size(output, 1), :))
 end

@@ -258,15 +258,13 @@ end
     @test_throws r"^MethodError: no method matching \(?(GeometricMachineLearning\.)?LatentVectorFieldLoss\{3\}\)?\(" LatentVectorFieldLoss{3}(
         H, -1.0, 0.0, 0.0, 0.0, true, false, 5, 2, nothing)
 
-    # the architecture: a symplectic autoencoder whose network is a chain of encoder and decoder
-    re_arch(name) = re("takes a SymplecticAutoencoder or a PSDArch, got a $name\\.")
-    @test_throws re_arch("LeftInverseSymplecticAutoencoder") LatentVectorFieldLoss(
-        LeftInverseSymplecticAutoencoder(4, 2), H)
-    @test_throws re_arch("SymmetricSymplecticAutoencoder") LatentVectorFieldLoss(
-        SymmetricSymplecticAutoencoder(2, 1, 2), H)
+    # the architecture: a symplectic autoencoder whose encoder and decoder the loss can split
+    re_arch(name) = re("takes a SymplecticAutoencoder, a PSDArch or a LeftInverseSymplecticAutoencoder, got a $name\\.")
+    symmetric = SymmetricSymplecticAutoencoder(2, 1, 2)
+    @test_throws re_arch("SymmetricSymplecticAutoencoder") LatentVectorFieldLoss(symmetric, H)
     # the architecture is checked before the reference state, which is measured against it
-    @test_throws re_arch("LeftInverseSymplecticAutoencoder") LatentVectorFieldLoss(
-        LeftInverseSymplecticAutoencoder(4, 2), H; reference_state = zeros(6))
+    @test_throws re_arch("SymmetricSymplecticAutoencoder") LatentVectorFieldLoss(
+        symmetric, H; reference_state = zeros(symmetric.full_dim + 2))
     @test_throws r"^MethodError: no method matching (GeometricMachineLearning\.)?LatentVectorFieldLoss\(::(GeometricMachineLearning\.)?StandardAutoencoder" LatentVectorFieldLoss(
         StandardAutoencoder(4, 2), H)
 
@@ -280,7 +278,7 @@ end
     @test_throws re_out("\\(6, 5\\)") loss(nn, x, vcat(XH(x), zeros(2, 5)))
     other = SymplecticAutoencoder(
         4, 2; n_encoder_layers = 2, n_encoder_blocks = 2, n_decoder_blocks = 2)
-    @test_throws re("requires a network of 5 layers, the chain of its architecture, got 7 layers; build the loss from the architecture of the network\\.") LatentVectorFieldLoss(
+    @test_throws re("requires a network of 5 layers, those of its architecture, got 7 layers; build the loss from the architecture of the network\\.") LatentVectorFieldLoss(
         other, H)(nn, x, XH(x))
     @test_throws re("requires an encoder with 2 output rows, the latent dimension of its architecture, got 4 rows; build the loss from the architecture of the network\\.") LatentVectorFieldLoss(
         PSDArch(6, 2), H)(NeuralNetwork(PSDArch(6, 4)), randn(6, 5), randn(6, 5))
