@@ -224,8 +224,8 @@ end
     @test ReducedHamiltonianLoss(H; gradient_scale = 2).gradient_scale === 2.0
     @test ReducedHamiltonianLoss(H).gradient_scale === 1.0
     # the guards cannot be bypassed by a positional constructor
-    @test_throws r"^MethodError: no method matching (GeometricMachineLearning\.)?ReducedHamiltonianLoss\(::typeof\(\S*H\), ::Float64, ::Float64\)\n" ReducedHamiltonianLoss(
-        H, -1.0, 0.0)
+    @test_throws r"^MethodError: no method matching (GeometricMachineLearning\.)?ReducedHamiltonianLoss\(::typeof\(\S*H\), ::Float64, ::Float64, ::Float64\)\n" ReducedHamiltonianLoss(
+        H, -1.0, 0.0, 0.0)
     @test ReducedHamiltonianLoss(H; λ = 0).λ == 0
 
     dec = make_decoder(Float64)
