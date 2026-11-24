@@ -3,6 +3,7 @@ using Test
 using HDF5
 import Random
 import AbstractNeuralNetworks: params
+using GeometricMachineLearning: BiorthogonalManifold
 
 Random.seed!(42)
 
@@ -252,6 +253,76 @@ const LEFT_INVERSE = LeftInverseSymplecticAutoencoder(
         end
         @test nn3.model isa GeometricMachineLearning.LeftInverseAutoencoderLayer
         @test nn3(z) ≈ nn(z)
+    end
+end
+
+# With biorthogonal lifts, at a point of the manifold drawn by `rand`, so that Φ ≠ Ψ and Φ is not
+# orthonormal: the leaf comes back as a `BiorthogonalManifold` with the same entries.
+const LEFT_INVERSE_BIORTHOGONAL = LeftInverseSymplecticAutoencoder(
+    6, 2; n_blocks = 2, n_layers = 2, n_ambient_layers = 2, biorthogonal = true)
+
+function _biorthogonal_network(::Type{T}) where {T}
+    nn = NeuralNetwork(LEFT_INVERSE_BIORTHOGONAL, CPU(), T)
+    lifts = [p.weight
+             for p in values(params(nn))
+             if haskey(p, :weight) && p.weight isa BiorthogonalManifold]
+    @test !isempty(lifts)
+    foreach(Y -> copyto!(Y, rand(BiorthogonalManifold{T}, size(Y)...)), lifts)
+    nn
+end
+
+@testset "save/load roundtrip: biorthogonal LeftInverseSymplecticAutoencoder in $T" for T in (
+    Float32, Float64)
+    nn = _biorthogonal_network(T)
+    z, ξ = rand(T, 6, 5), rand(T, 2, 5)
+
+    mktempdir() do dir
+        path = joinpath(dir, "left_inverse_biorthogonal.h5")
+        save(path, nn)
+        nn2 = load(NeuralNetwork, path, LEFT_INVERSE_BIORTHOGONAL)
+
+        @test _ps_eq(params(nn), params(nn2))
+        @test any(p -> haskey(p, :weight) && p.weight isa BiorthogonalManifold{T},
+            values(params(nn2)))
+        @test nn2(z) isa Matrix{T}
+        @test encoder(nn2)(z) ≈ encoder(nn)(z)
+        @test decoder(nn2)(ξ) ≈ decoder(nn)(ξ)
+    end
+end
+
+# A file read with an architecture other than the one that saved it fails in `load`, naming the
+# parameter, and not at the first call with a bare dimension mismatch.
+@testset "load rejects a file of another LeftInverseSymplecticAutoencoder" begin
+    re(found, expected) = Regex("^ArgumentError: the parameter `L\\d+\\.weight` in the file is a " *
+                                "$found, but the LeftInverseSymplecticAutoencoder expects a $expected; " *
+                                "load the file with the architecture it was saved with\\.")
+    mktempdir() do dir
+        biorthogonal, stiefel = joinpath(dir, "biorthogonal.h5"),
+        joinpath(dir, "stiefel.h5")
+        save(biorthogonal, _biorthogonal_network(Float64))
+        save(stiefel, NeuralNetwork(LEFT_INVERSE))
+
+        @test_throws re("\\d+×\\d+ BiorthogonalManifold", "\\d+×\\d+ StiefelManifold") load(
+            NeuralNetwork, biorthogonal, LEFT_INVERSE)
+        @test_throws re("\\d+×\\d+ StiefelManifold", "\\d+×\\d+ BiorthogonalManifold") load(
+            NeuralNetwork, stiefel, LEFT_INVERSE_BIORTHOGONAL)
+        @test_throws r"^ArgumentError: the file holds the layers .*, but the LeftInverseSymplecticAutoencoder has the layers .*; load the file with the architecture it was saved with\." load(
+            NeuralNetwork, stiefel, LeftInverseSymplecticAutoencoder(6, 2; n_blocks = 2))
+        # as many layers, but the lift one layer earlier than in LEFT_INVERSE, where the file has a
+        # gradient layer
+        lift_first = LeftInverseSymplecticAutoencoder(
+            6, 2; n_blocks = 2, n_layers = 1, n_ambient_layers = 3)
+        @test keys(params(NeuralNetwork(lift_first))) ==
+              keys(params(NeuralNetwork(LEFT_INVERSE)))
+        @test_throws r"^ArgumentError: the layer `L2` in the file has the parameters \(:weight, :bias, :scale\), but the LeftInverseSymplecticAutoencoder expects \(:weight,\); load the file with the architecture it was saved with\." load(
+            NeuralNetwork, stiefel, lift_first)
+
+        # the load draws no number from the global generator
+        Random.seed!(3)
+        a = rand()
+        Random.seed!(3)
+        load(NeuralNetwork, stiefel, LEFT_INVERSE)
+        @test rand() == a
     end
 end
 
