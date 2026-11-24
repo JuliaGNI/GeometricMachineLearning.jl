@@ -25,7 +25,6 @@ const TESTS = [
         "apply_parametric and the concatenation of the system parameters" => "parametric.jl",
         "ParametricLoss and its ZygotePullback" => "loss/parametric_loss.jl",
         "ReducedHamiltonianLoss" => "loss/reduced_hamiltonian_loss.jl",
-        "LatentVectorFieldLoss" => "loss/latent_vector_field_loss.jl",
         "map_to_cpu" => "map_to_cpu.jl",
         "changebackend" => "integration/changebackend_tests.jl",
         "HDF5 save/load for GML special array types" => "integration/hdf5_support.jl",
@@ -127,7 +126,8 @@ const TESTS = [
     "slow" => [
         "Test symplecticity of the sympnet upscaling layer" => "layers/sympnet_upscaling.jl",
         "train! trains every architecture of the manual" => "integration/train_manual_architectures.jl",
-        "The three-stage multi-modal pipeline and its mutants" => "integration/multimodal_pipeline.jl"
+        "The three-stage multi-modal pipeline and its mutants" => "integration/multimodal_pipeline.jl",
+        "LatentVectorFieldLoss" => "loss/latent_vector_field_loss.jl"
     ],
     "doctests" => [
         "Doctests" => "quality/doctests.jl"
