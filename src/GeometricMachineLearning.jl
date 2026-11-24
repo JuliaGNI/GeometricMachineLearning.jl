@@ -228,7 +228,6 @@ export integrate
 include("parametric.jl")
 include("loss/losses.jl")
 include("loss/reduced_hamiltonian_loss.jl")
-include("loss/latent_vector_field_loss.jl")
 
 export AbstractPullback, ZygotePullback
 include("pullbacks/zygote_pullback.jl")
@@ -265,6 +264,7 @@ include("loss/dlra_trace_loss.jl")
 include("architectures/linear_symplectic_transformer.jl")
 include("architectures/symplectic_transformer.jl")
 include("architectures/left_inverse_symplectic_autoencoder.jl")
+include("loss/latent_vector_field_loss.jl")
 include("architectures/symmetric_symplectic_autoencoder.jl")
 include("architectures/equivariant_symplectic_autoencoder.jl")
 include("architectures/multimodal_symplectic_autoencoder.jl")
