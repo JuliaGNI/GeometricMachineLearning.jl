@@ -14,7 +14,7 @@ where the norms are taken over the batch of ``B`` latent points and ``s`` is `gr
 
 For a symplectic decoder, as in a [`SymplecticAutoencoder`](@ref), the reduced vector field is ``\mathbb{J}_{2n}\nabla_z(H\circ\Psi^\mathrm{dec})``, so the second term fits the reduced vector field at the sampled points. A fit of the states alone can be small while this gradient is not, in particular where ``H\circ\Psi^\mathrm{dec}`` is steep.
 
-The gradient with respect to ``z`` is computed by central differences with step `h`, from ``2\cdot2n + 1`` evaluations of the decoder on the batch. This keeps the loss differentiable with respect to the parameters by the same reverse-mode pass as any other loss, without nesting automatic differentiation.
+The gradient with respect to ``z`` is computed by central differences with step `h`, from ``2\cdot2n + 1`` evaluations of the decoder on the batch; with `λ = 0` the gradient term is left out, and the loss evaluates the decoder once. This keeps the loss differentiable with respect to the parameters by the same reverse-mode pass as any other loss, without nesting automatic differentiation.
 
 # Arguments
 
@@ -122,11 +122,11 @@ function (loss::ReducedHamiltonianLoss)(model::Union{Chain, AbstractExplicitLaye
     x_target = output[1:N, :]
     g_target = output[(N + 1):end, :]
     state_error = _compute_loss(x_prediction, x_target)
-    # the step is checked also where the gradient term is left out
-    _difference_step(loss.h, eltype(input))
+    # the step, checked also where the gradient term is left out
+    h = _difference_step(loss.h, eltype(input))
     iszero(loss.λ) && return state_error
     # the root-mean-square error over the B columns, in the scale fixed by the loss
-    g_prediction = _reduced_hamiltonian_gradient(loss, model, ps, input)
+    g_prediction = _reduced_hamiltonian_gradient(loss.hamiltonian, h, model, ps, input)
     B = size(input, 2)
     gradient_error = norm(g_prediction - g_target) / (sqrt(T(B)) * T(loss.gradient_scale))
     state_error + T(loss.λ) * gradient_error
