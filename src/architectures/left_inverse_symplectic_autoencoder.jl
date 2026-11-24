@@ -16,7 +16,7 @@ Besides the required even integer arguments `full_dim` and `reduced_dim` (`full_
 - `sympnet_upscale::Integer = 5`: Upscaling factor of each [`GradientLayer`](@ref).
 - `activation = tanh`: Activation function in the gradient layers.
 - `init_q::Bool = true`: Whether the first gradient layer in each block is of `Q` type.
-- `biorthogonal::Bool = false`: Whether the lifts are [`BiorthogonalPSDLayer`](@ref)s, with a biorthogonal pair ``\Psi^T\Phi = \mathbb{I}_n`` in place of the single Stiefel matrix of a [`PSDLayer`](@ref). The encoder then applies ``\Psi^T`` to ``q`` and ``\Phi^T`` to ``p`` ([`TransposeBiorthogonalPSDLayer`](@ref)) and is still an exact left inverse. A new biorthogonal lift starts as the `PSDLayer` with the same Stiefel weight.
+- `biorthogonal::Bool = false`: Whether the lifts are [`BiorthogonalPSDLayer`](@ref)s, with a biorthogonal pair ``\Psi^T\Phi = \mathbb{I}_n`` in place of the single Stiefel matrix of a [`PSDLayer`](@ref). The encoder then applies ``\Psi^T`` to ``q`` and ``\Phi^T`` to ``p`` ([`TransposeBiorthogonalPSDLayer`](@ref)) and is still an exact left inverse. A new biorthogonal lift starts as the `PSDLayer` with the same Stiefel weight. On the manifold of the pair, the step of [`Adam`](@extref GeometricOptimizers GeometricOptimizers.Adam) depends on the global section and need not descend; the steps of [`GradientMethod`](@extref GeometricOptimizers GeometricOptimizers.GradientMethod) and [`MomentumMethod`](@extref GeometricOptimizers GeometricOptimizers.MomentumMethod) do not depend on it.
 """
 struct LeftInverseSymplecticAutoencoder{Init, AT, Lift} <: SymplecticCompression
     full_dim::Int
