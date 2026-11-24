@@ -58,21 +58,26 @@ product_tol(Φ, Ψ, T) = 100 * eps(T) * opnorm(Φ) * opnorm(Ψ)
     end
 end
 
-@testset "BiorthogonalPSDLayer starts as the PSDLayer of its Stiefel weight ($T)" for T in REAL_ELTYPES
-    l = BiorthogonalPSDLayer(4, 10)
+@testset "BiorthogonalPSDLayer starts as the PSDLayer of its Stiefel weight ($T, $M → $N)" for T in REAL_ELTYPES,
+    (M, N) in ((4, 10), (4, 4), (6, 6))
+
+    l = BiorthogonalPSDLayer(M, N)
     ps = initialparameters(Random.Xoshiro(1), GlorotUniform(), l, CPU(), T)
     @test keys(ps) == (:weight,)
     @test ps.weight isa BiorthogonalManifold{T}
-    @test size(ps.weight) == (5, 4)
-    # the point (U, U), with U the weight that PSDLayer draws from the same generator
-    U = initialparameters(Random.Xoshiro(1), GlorotUniform(), PSDLayer(4, 10), CPU(), T).weight
+    @test size(ps.weight) == (N ÷ 2, M)
+    # the point (U, U), with U the matrix that PSDLayer applies: its weight W, drawn from the same
+    # generator, for N > M, and Wᵀ for N == M. With this seed the 2×2 W is a reflection, symmetric up
+    # to rounding, so only (6, 6) tells W from Wᵀ in the map.
+    W = initialparameters(Random.Xoshiro(1), GlorotUniform(), PSDLayer(M, N), CPU(), T).weight
+    U = N > M ? W : W'
     Φ, Ψ = dense_pair(ps)
     @test Φ == Ψ == U
     @test initialparameters(
         Random.Xoshiro(1), GlorotUniform(), inverse_layer(l), CPU(), T).weight ==
           ps.weight
-    ξ = randn(T, 4, 3)
-    @test l(ξ, ps) ≈ PSDLayer(4, 10)(ξ, (weight = U,))
+    ξ = randn(T, M, 3)
+    @test l(ξ, ps) ≈ PSDLayer(M, N)(ξ, (weight = W,))
     @test inverse_layer(l)(l(ξ, ps), ps) ≈ ξ
 end
 

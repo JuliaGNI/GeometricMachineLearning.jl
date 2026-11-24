@@ -9,7 +9,7 @@ A = \begin{bmatrix} \Phi & \mathbb{O} \\ \mathbb{O} & \Psi \end{bmatrix}, \qquad
 ```
 with a *biorthogonal* pair ``\Phi, \Psi \in \mathbb{R}^{N\times{}n}``. The constraint ``\Psi^T\Phi = \mathbb{I}_n`` is equivalent to ``A^T\mathbb{J}_{2N}A = \mathbb{J}_{2n}``, so ``A`` is symplectic. [`PSDLayer`](@ref) is the case ``\Phi = \Psi \in St(n, N)``.
 
-The pair is the one parameter `weight`, a point of the manifold of biorthogonal pairs [`BiorthogonalManifold`](@extref GeometricOptimizers GeometricOptimizers.BiorthogonalManifold), which stores the ``N\times{}2n`` matrix ``[\Phi\ \ \Psi]``. `parameterlength` is the dimension ``2Nn - n^2`` of that manifold. The initial parameter is the pair ``(U, U)``, with ``U \in St(n, N)`` the weight that `PSDLayer(input_dim, output_dim)` draws with the same random number generator and initializer, so a new layer is the `PSDLayer` with weight ``U``.
+The pair is the one parameter `weight`, a point of the manifold of biorthogonal pairs [`BiorthogonalManifold`](@extref GeometricOptimizers GeometricOptimizers.BiorthogonalManifold), which stores the ``N\times{}2n`` matrix ``[\Phi\ \ \Psi]``. `parameterlength` is the dimension ``2Nn - n^2`` of that manifold. The initial parameter is the pair ``(U, U)``, with ``U \in St(n, N)`` the matrix that `PSDLayer(input_dim, output_dim)` applies to ``q`` and ``p`` when it draws its weight with the same random number generator and initializer: that weight for ``n < N``, its transpose for ``n = N``. So a new layer is that `PSDLayer`.
 
 Its symplectic inverse ``A^+ = \mathbb{J}_{2n}^TA^T\mathbb{J}_{2N}`` is [`TransposeBiorthogonalPSDLayer`](@ref), returned by [`inverse_layer`](@ref).
 """
@@ -82,7 +82,9 @@ function initialparameters(
         rng::AbstractRNG, initializer::AbstractNeuralNetworks.Initializer,
         ::BiorthogonalPSDLayer{M, N}, backend::KernelAbstractions.Backend,
         ::Type{T}) where {M, N, T}
-    U = parent(initialparameters(rng, initializer, PSDLayer{M, N}(), backend, T).weight)
+    W = parent(initialparameters(rng, initializer, PSDLayer{M, N}(), backend, T).weight)
+    # the matrix that `PSDLayer` applies: its weight for `N > M`, the transpose of it for `N == M`
+    U = N > M ? W : copy(W')
     (weight = BiorthogonalManifold(hcat(U, U)),)
 end
 
