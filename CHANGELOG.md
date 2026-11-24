@@ -20,14 +20,14 @@ breaking release).
 These are defects of the 0.10.0 code, found by review of pull request #390.
 
 - **`solve!(::NeuralNetwork{<:PODArch}, input)` checks the shape of `input` before it writes a
-  weight.** An `input` without `full_dim` rows throws an `ArgumentError`. Before, the wrong row count
-  raised a `DimensionMismatch` after the weights of the encoder and the decoder were already
-  overwritten.
+  weight.** An `input` without `full_dim` rows throws an `ArgumentError` and leaves the network
+  unchanged. Before, `solve!` did not check the row count, and a wrong one could overwrite the
+  weights of the encoder and the decoder.
 
 - **`ReducedHamiltonianLoss` and `LatentVectorFieldLoss` refuse a step `h` that the data cannot
   represent.** An `h` that rounds to 0 or `Inf` in the element type of the data, such as `h = 1e-50`
-  with `Float32` data, raises an `ArgumentError` when the loss is evaluated. Before, the loss was
-  `NaN`.
+  with `Float32` data, raises an `ArgumentError` when the loss is evaluated, at every `λ`. Before, a
+  step that rounds to 0 made the loss `NaN`.
 
 - **Both losses work on device arrays.** The central-difference shift is built on the device of the
   latent points; it was a host `Vector`, which raised `Scalar indexing is disallowed` on a `JLArray`.

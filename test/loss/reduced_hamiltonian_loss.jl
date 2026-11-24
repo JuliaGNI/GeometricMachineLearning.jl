@@ -244,6 +244,8 @@ end
     end
     @test_throws re_step("1.0e-50", "0.0") ReducedHamiltonianLoss(H; h = 1e-50)(dec32, z32, out32)
     @test_throws re_step("1.0e300", "Inf") ReducedHamiltonianLoss(H; h = 1e300)(dec32, z32, out32)
+    @test_throws re_step("1.0e-50", "0.0") ReducedHamiltonianLoss(H; λ = 0, h = 1e-50)(
+        dec32, z32, out32)
 end
 
 # With λ = 0 the loss does not evaluate the Hamiltonian, which only the gradient term needs.

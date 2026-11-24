@@ -122,6 +122,8 @@ function (loss::ReducedHamiltonianLoss)(model::Union{Chain, AbstractExplicitLaye
     x_target = output[1:N, :]
     g_target = output[(N + 1):end, :]
     state_error = _compute_loss(x_prediction, x_target)
+    # the step is checked also where the gradient term is left out
+    _difference_step(loss.h, eltype(input))
     iszero(loss.λ) && return state_error
     # the root-mean-square error over the B columns, in the scale fixed by the loss
     g_prediction = _reduced_hamiltonian_gradient(loss, model, ps, input)
