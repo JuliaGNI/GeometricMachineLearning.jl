@@ -13,7 +13,7 @@ breaking release).
 > alongside the work. Where a release removed exported names the list is given; where it is a
 > reconstruction of intent, it says so.
 
-## [Unreleased] — targeting 0.10.0
+## [0.10.0] — 2026-11-24
 
 ### Breaking Changes
 
@@ -35,6 +35,12 @@ breaking release).
   - The kernel-backed operations of the structured matrices of GeometricOptimizers 0.10 refuse an
     element type that is not `isbits` with an `ArgumentError`; its CHANGELOG lists them.
 
+- **The internal model layer `WeightTiedAutoencoderLayer` is renamed `LeftInverseAutoencoderLayer`,
+  with no deprecated binding.** It was not exported. Code that names
+  `GeometricMachineLearning.WeightTiedAutoencoderLayer` uses the new name. The exported
+  `WeightTiedSymplecticAutoencoder` remains as a deprecated binding of
+  `LeftInverseSymplecticAutoencoder` and takes the same keywords (see *Changed*).
+
 ### Changed
 
 - **The test environment takes the GPU stack of KernelAbstractions 0.10.** `test/Project.toml` has
@@ -48,16 +54,15 @@ breaking release).
   by `KernelInterface` on 0.10, so `test/quality/aqua.jl` exempts that one qualified access from
   the owner check.
 
-- **The tests run in CI as the groups `core`, `layers`, `architectures`, `reducedsystem`,
-  `training` and `slow`, one job each.** `test/ci-groups.toml` lists them, and `Pkg.test()` with no
-  arguments still runs all six (and `metal` on Apple silicon). No CI.yml job runs the `metal`
-  group any more; the jobs of `Metal.yml` run it and are required checks.
-  `.github/workflows/CI.yml`, `codecov.yml` and the git hooks in `.githooks/` follow the Harness
-  template, which runs one CI job per group and checks the group files.
+- **The tests are split into the groups `core`, `layers`, `architectures`, `reducedsystem`,
+  `training` and `slow`.** `test/ci-groups.toml` lists them, and `Pkg.test()` with no arguments
+  runs all of them (and `metal` on Apple silicon). No CI.yml job runs the `metal` group; the jobs of
+  `Metal.yml` run it and are required checks. `.github/workflows/CI.yml`, `codecov.yml` and the git
+  hooks in `.githooks/` follow the Harness template, which reads the group file and checks the
+  group files.
 
 - **ParallelTestRunner runs the test files, each in a worker process, and each CI matrix entry
-  runs all its groups in one job.** This replaces the one CI job per group of the entry above.
-  `test/runtests.jl` is the parallel form of the Harness convention: one table `TESTS` of
+  runs all its groups in one job.** `test/runtests.jl` is the parallel form of the Harness convention: one table `TESTS` of
   group, label and path, with the 111 files and labels of the serial form. `test/Project.toml`
   takes `ParallelTestRunner = "2.10"` in place of `SafeTestsets`. The five files under
   `test/quality/` other than `doctests.jl` (Aqua, JET, the exports, the reachability guard and the
