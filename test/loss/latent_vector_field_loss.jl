@@ -303,6 +303,16 @@ end
         NeuralNetwork(LeftInverseSymplecticAutoencoder(6, 4)), randn(6, 5), randn(6, 5))
 end
 
+# With λ = 0 and no energy term the loss does not evaluate the Hamiltonian, which only those two
+# terms need.
+@testset "LatentVectorFieldLoss with λ = 0 skips the vector-field term" begin
+    nn = make_network(ARCH, Float64)
+    x = randn(4, 5)
+    never(X) = error("the Hamiltonian is evaluated")
+    @test LatentVectorFieldLoss(ARCH, never; λ = 0)(nn, x, XH(x)) ==
+          LatentVectorFieldLoss(ARCH, H; λ = 0)(nn, x, XH(x))
+end
+
 @testset "LatentVectorFieldLoss on a $(nameof(typeof(arch))) in $T" for arch in ARCHITECTURES,
     T in REAL_ELTYPES
 

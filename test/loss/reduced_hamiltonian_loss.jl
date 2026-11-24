@@ -234,6 +234,26 @@ end
     re_rows(r) = Regex("^ArgumentError: ReducedHamiltonianLoss requires an output of 6 rows, the 4 rows of the target states x\\* over the 2 rows of the target gradients g\\*, got $r rows\\.\$")
     @test_throws re_rows(4) ReducedHamiltonianLoss(H)(dec, z, out[1:4, :])
     @test_throws re_rows(8) ReducedHamiltonianLoss(H)(dec, z, vcat(out, zeros(2, 5)))
+
+    # a step that is finite and positive in Float64 but not in the element type of the data
+    dec32 = make_decoder(Float32)
+    z32 = randn(Float32, 2, 5)
+    out32 = targets(dec32, z32)
+    function re_step(h, hT)
+        Regex("^ArgumentError: The step h = $h is $hT in the element type Float32 of the data; it has to be finite and > 0 there\\.\$")
+    end
+    @test_throws re_step("1.0e-50", "0.0") ReducedHamiltonianLoss(H; h = 1e-50)(dec32, z32, out32)
+    @test_throws re_step("1.0e300", "Inf") ReducedHamiltonianLoss(H; h = 1e300)(dec32, z32, out32)
+end
+
+# With λ = 0 the loss does not evaluate the Hamiltonian, which only the gradient term needs.
+@testset "ReducedHamiltonianLoss with λ = 0 skips the gradient term" begin
+    dec = make_decoder(Float64)
+    z = randn(2, 5)
+    out = targets(dec, z)
+    never(X) = error("the Hamiltonian is evaluated")
+    @test ReducedHamiltonianLoss(never; λ = 0)(dec, z, out) ==
+          ReducedHamiltonianLoss(H; λ = 0)(dec, z, out)
 end
 
 @testset "ReducedHamiltonianLoss in $T" for T in REAL_ELTYPES

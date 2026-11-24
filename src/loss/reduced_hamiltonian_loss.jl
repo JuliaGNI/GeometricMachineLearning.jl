@@ -20,7 +20,7 @@ The gradient with respect to ``z`` is computed by central differences with step 
 
 - `hamiltonian`: a function that maps a matrix of states in ``\mathbb{R}^{2N}``, one per column, to the vector of their energies. It has to be differentiable by Zygote.
 - `λ = 1`: the weight of the gradient term, finite and ``\geq 0``.
-- `h = nothing`: the step of the central differences, in latent coordinates, finite and ``> 0``. With `nothing`, the step is `cbrt(eps(T))` for the element type `T` of the data, which balances the truncation and the round-off error of the central differences.
+- `h = nothing`: the step of the central differences, in latent coordinates, finite and ``> 0``, also in the element type of the data; a step that rounds to zero or to infinity there raises an `ArgumentError` when the loss is evaluated. With `nothing`, the step is `cbrt(eps(T))` for the element type `T` of the data, which balances the truncation and the round-off error of the central differences.
 - `gradient_scale = 1`: the scale ``s`` of the gradient term, finite and ``> 0``.
 
 Another `λ`, `h` or `gradient_scale` raises an `ArgumentError`.
@@ -84,17 +84,24 @@ end
 # The step of the central differences in the element type `T` of the data: the given one, or
 # `cbrt(eps(T))`, which balances the truncation error O(h²) against the round-off O(eps(T)/h).
 _difference_step(::Nothing, ::Type{T}) where {T} = cbrt(eps(T))
-_difference_step(h::Real, ::Type{T}) where {T} = T(h)
+function _difference_step(h::Real, ::Type{T}) where {T}
+    hT = T(h)
+    (isfinite(hT) && hT > 0) || throw(ArgumentError(
+        "The step h = $h is $hT in the element type $T of the data; it has to be finite and > 0 there."))
+    hT
+end
+
+# `z` with `s` added to row `i`, on the device of `z` and without mutation for Zygote.
+function _shift_row(z::AbstractMatrix, i::Integer, s::Real)
+    vcat(z[1:(i - 1), :], z[i:i, :] .+ s, z[(i + 1):end, :])
+end
 
 # The gradient of `H∘model` with respect to each column of `z`, by central differences with the
 # step `h` of the element type of `z`.
 function _reduced_hamiltonian_gradient(hamiltonian, h::Real, model, ps, z::AbstractMatrix)
-    n = size(z, 1)
-    mapreduce(vcat, 1:n) do i
-        # the shift is a column broadcast over the batch; built without mutation for Zygote
-        δ = map(j -> j == i ? h : zero(h), 1:n)
-        Hp = hamiltonian(model(z .+ δ, ps))
-        Hm = hamiltonian(model(z .- δ, ps))
+    mapreduce(vcat, 1:size(z, 1)) do i
+        Hp = hamiltonian(model(_shift_row(z, i, h), ps))
+        Hm = hamiltonian(model(_shift_row(z, i, -h), ps))
         reshape((Hp .- Hm) ./ (2h), 1, :)
     end
 end
@@ -115,6 +122,7 @@ function (loss::ReducedHamiltonianLoss)(model::Union{Chain, AbstractExplicitLaye
     x_target = output[1:N, :]
     g_target = output[(N + 1):end, :]
     state_error = _compute_loss(x_prediction, x_target)
+    iszero(loss.λ) && return state_error
     # the root-mean-square error over the B columns, in the scale fixed by the loss
     g_prediction = _reduced_hamiltonian_gradient(loss, model, ps, input)
     B = size(input, 2)

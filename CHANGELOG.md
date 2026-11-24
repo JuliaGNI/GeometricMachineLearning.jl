@@ -13,6 +13,33 @@ breaking release).
 > alongside the work. Where a release removed exported names the list is given; where it is a
 > reconstruction of intent, it says so.
 
+## [Unreleased]
+
+### Fixed
+
+These are defects of the 0.10.0 code, found by review of pull request #390.
+
+- **`solve!(::NeuralNetwork{<:PODArch}, input)` checks the shape of `input` before it writes a
+  weight.** An `input` without `full_dim` rows throws an `ArgumentError`. Before, the wrong row count
+  raised a `DimensionMismatch` after the weights of the encoder and the decoder were already
+  overwritten.
+
+- **`ReducedHamiltonianLoss` and `LatentVectorFieldLoss` refuse a step `h` that the data cannot
+  represent.** An `h` that rounds to 0 or `Inf` in the element type of the data, such as `h = 1e-50`
+  with `Float32` data, raises an `ArgumentError` when the loss is evaluated. Before, the loss was
+  `NaN`.
+
+- **Both losses work on device arrays.** The central-difference shift is built on the device of the
+  latent points; it was a host `Vector`, which raised `Scalar indexing is disallowed` on a `JLArray`.
+  `LatentVectorFieldLoss` copies its reference state to the device of the input; it raised `Illegal
+  conversion of a JLArray to a Ptr`. `test/devices/jlarray_losses.jl` covers both on a `JLArray`.
+
+### Changed
+
+- **With `λ = 0`, `ReducedHamiltonianLoss` and `LatentVectorFieldLoss` skip the central differences
+  of the gradient and vector-field term.** The Hamiltonian is not evaluated for that term, so the
+  loss costs only its other terms. Where that term is finite, the value of the loss is unchanged.
+
 ## [0.10.0] — 2026-11-24
 
 ### Breaking Changes

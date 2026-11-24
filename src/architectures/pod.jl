@@ -80,10 +80,13 @@ Compute the POD basis of a snapshot matrix `input` and store it in the encoder a
 
 [`PODArch`](@ref) does not require neural network training: the basis consists of the leading `nn.architecture.reduced_dim` left singular vectors of `input`, obtained with singular value decomposition (SVD).
 Returns the [`AutoEncoderLoss`](@ref) of `nn` on `input`.
-`input` must have at least `reduced_dim` columns (snapshots); otherwise `solve!` throws an `ArgumentError`.
+`input` must have `full_dim` rows and at least `reduced_dim` columns (snapshots); otherwise `solve!` throws an `ArgumentError` and leaves `nn` unchanged.
 """
 function solve!(nn::NeuralNetwork{<:PODArch}, input::AbstractMatrix)
+    N = nn.architecture.full_dim
     n = nn.architecture.reduced_dim
+    size(input, 1) == N ||
+        throw(ArgumentError("input has $(size(input, 1)) rows, not full_dim ($N)."))
     size(input, 2) >= n ||
         throw(ArgumentError("input has $(size(input, 2)) snapshots, fewer than reduced_dim ($n)."))
     V = svd(input).U

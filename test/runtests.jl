@@ -14,6 +14,7 @@ const TESTS = [
         "train! on a JLArray: the symplectic autoencoder" => "devices/jlarray_autoencoder.jl",
         "train! on a JLArray: the standard transformer integrator" => "devices/jlarray_transformer.jl",
         "A pullback of a device network returns its gradient leaves on the device" => "devices/jlarray_gradient_backend.jl",
+        "ReducedHamiltonianLoss and LatentVectorFieldLoss on a JLArray" => "devices/jlarray_losses.jl",
         "Product gradients of structured and Stiefel weights" => "integration/product_gradients.jl",
         "A Stiefel network trains on data of the other precision" => "integration/mixed_precision_training.jl",
         "tensor_cayley: skew inputs, the orthogonality bound and the pullback" => "kernels/cayley.jl",
