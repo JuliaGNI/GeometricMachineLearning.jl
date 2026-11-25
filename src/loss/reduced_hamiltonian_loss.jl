@@ -14,7 +14,7 @@ where the norms are taken over the batch of ``B`` latent points and ``s`` is `gr
 
 For a symplectic decoder, as in a [`SymplecticAutoencoder`](@ref), the reduced vector field is ``\mathbb{J}_{2n}\nabla_z(H\circ\Psi^\mathrm{dec})``, so the second term fits the reduced vector field at the sampled points. A fit of the states alone can be small while this gradient is not, in particular where ``H\circ\Psi^\mathrm{dec}`` is steep.
 
-The gradient with respect to ``z`` is computed by central differences with step `h`, from ``2\cdot2n + 1`` evaluations of the decoder on the batch; with `λ = 0` the gradient term is left out, and the loss evaluates the decoder once. This keeps the loss differentiable with respect to the parameters by the same reverse-mode pass as any other loss, without nesting automatic differentiation.
+The gradient with respect to ``z`` is computed by central differences with step `h`, from one evaluation of the decoder on the batch and two on the ``2n`` shifted copies of the batch, one per sign of the step; with `λ = 0` the gradient term is left out, and the loss evaluates the decoder once. This keeps the loss differentiable with respect to the parameters by the same reverse-mode pass as any other loss, without nesting automatic differentiation.
 
 # Arguments
 
@@ -91,19 +91,20 @@ function _difference_step(h::Real, ::Type{T}) where {T}
     hT
 end
 
-# `z` with `s` added to row `i`, on the device of `z` and without mutation for Zygote.
-function _shift_row(z::AbstractMatrix, i::Integer, s::Real)
-    vcat(z[1:(i - 1), :], z[i:i, :] .+ s, z[(i + 1):end, :])
-end
-
 # The gradient of `H∘model` with respect to each column of `z`, by central differences with the
-# step `h` of the element type of `z`.
+# step `h` of the element type of `z`. Column `i + m(b - 1)` of the shifted batch is column `b` of
+# `z` shifted by `±h` in row `i`, so the model and the Hamiltonian run once per sign, on `m` times
+# the batch, and row `i` of the result is the difference in direction `i`.
 function _reduced_hamiltonian_gradient(hamiltonian, h::Real, model, ps, z::AbstractMatrix)
-    mapreduce(vcat, 1:size(z, 1)) do i
-        Hp = hamiltonian(model(_shift_row(z, i, h), ps))
-        Hm = hamiltonian(model(_shift_row(z, i, -h), ps))
-        reshape((Hp .- Hm) ./ (2h), 1, :)
+    m, B = size(z)
+    # the shifts h⋅I on the device of `z`; a constant of the loss
+    shifts = ChainRulesCore.ignore_derivatives() do
+        reshape(copyto!(similar(z, typeof(h), m, m), Matrix(h * I, m, m)), m, m, 1)
     end
+    z3 = reshape(z, m, 1, B)
+    Hp = hamiltonian(model(reshape(z3 .+ shifts, m, m * B), ps))
+    Hm = hamiltonian(model(reshape(z3 .- shifts, m, m * B), ps))
+    reshape((Hp .- Hm) ./ (2h), m, B)
 end
 
 function _reduced_hamiltonian_gradient(loss::ReducedHamiltonianLoss, model, ps, z::AbstractMatrix)

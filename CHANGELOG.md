@@ -25,6 +25,14 @@ breaking release).
   of the gradient and vector-field term.** The Hamiltonian is not evaluated for that term, so the
   loss costs only its other terms. Where that term is finite, the value of the loss is unchanged.
 
+- **The central differences of `ReducedHamiltonianLoss` and `LatentVectorFieldLoss` evaluate the
+  decoder twice, on all `2n` shifted copies of the batch at once.** Before, they evaluated it `4n`
+  times, once per direction and sign, on the batch. On the host, with a `SymplecticAutoencoder` and
+  `B` latent points, the parameter gradient of `ReducedHamiltonianLoss` allocates 2–10 % less and
+  takes 15–45 % less time than at `0a3740f4` at `(2N, 2n, B) = (20, 4, 50)` and `(100, 10, 200)`; the other figures
+  change by less than 10 %. A single decoder call now holds `2n` times the batch, so the peak memory
+  of the value without a gradient grows with `n`.
+
 ### Fixed
 
 - **`load(NeuralNetwork, path, arch)` for a `LeftInverseSymplecticAutoencoder` rejects a file saved from another architecture (#390).** It compares the file's parameter tree with the one `arch` builds, the layers, the names of each layer's parameters and the type and size of each parameter, and raises an `ArgumentError` that names the first layer or parameter that differs and says to load the file with the architecture it was saved with. Without the check, a file read with an architecture of other lift sizes, such as a biorthogonal network read with a Stiefel architecture or the reverse, loads and fails only at the first call, with a bare `DimensionMismatch`. The check draws no number from the global random generator.
