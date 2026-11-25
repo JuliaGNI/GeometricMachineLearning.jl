@@ -44,6 +44,7 @@ const TESTS = [
     "layers" => [
         "Gradient Layer" => "layers/gradient_layer_tests.jl",
         "Analytic inverse layers" => "layers/inverse_layers.jl",
+        "BiorthogonalPSDLayer" => "layers/biorthogonal_psd_layer.jl",
         "Permutation-symmetric particle layers" => "layers/symmetric_particle_layers.jl",
         "Bilinear and low-rank Stiefel layers" => "layers/bilinear_and_low_rank_stiefel.jl",
         "Forcing layers add to p and leave q" => "layers/forcing_layer.jl",

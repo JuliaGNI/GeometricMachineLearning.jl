@@ -1,5 +1,5 @@
 using GeometricMachineLearning
-using GeometricMachineLearning: params
+using GeometricMachineLearning: params, BiorthogonalManifold
 using Zygote: Zygote
 using Test
 using LinearAlgebra: norm, dot
@@ -18,10 +18,24 @@ const ARCH = SymplecticAutoencoder(4, 2; n_encoder_blocks = 2, n_decoder_blocks 
 # its encoder and decoder share one parameter tree, which the loss reverses for the encoder
 const LEFT_INVERSE = LeftInverseSymplecticAutoencoder(
     4, 2; n_blocks = 2, n_layers = 3, n_ambient_layers = 2)
-const ARCHITECTURES = (ARCH, LEFT_INVERSE)
+# with biorthogonal lifts, which `make_network` moves to a point drawn by `rand`, so that Φ ≠ Ψ
+const BIORTHOGONAL = LeftInverseSymplecticAutoencoder(
+    4, 2; n_blocks = 2, n_layers = 3, n_ambient_layers = 2, biorthogonal = true)
+const ARCHITECTURES = (ARCH, LEFT_INVERSE, BIORTHOGONAL)
 const X_REF = [0.3, -0.2, 0.1, 0.4]
 
-make_network(arch, ::Type{T}) where {T} = NeuralNetwork(arch, T)
+function make_network(arch, ::Type{T}) where {T}
+    nn = NeuralNetwork(arch, T)
+    foreach_leaf(params(nn)) do p
+        p isa BiorthogonalManifold && copyto!(p, rand(BiorthogonalManifold{T}, size(p)...))
+    end
+    nn
+end
+
+function label(arch)
+    arch === BIORTHOGONAL ? "biorthogonal LeftInverseSymplecticAutoencoder" :
+    string(nameof(typeof(arch)))
+end
 
 # The references take every derivative by Zygote, one state at a time: the encoder's Jacobian times
 # the vector field, and the gradient of H∘Ψ^dec at the encoded state.
@@ -192,7 +206,8 @@ function test_one_training_step(arch, ::Type{T}) where {T}
 end
 
 # The Zygote gradient with respect to the parameters agrees with a central difference of the loss
-# in a random direction of the array leaves.
+# in a random direction of the array leaves. A biorthogonal lift is a function of its stored matrix
+# [Φ Ψ], whose dense cotangent the gradient holds, so its storage is a leaf too.
 function test_parameter_gradient(arch)
     nn = make_network(arch, Float64)
     x = randn(4, 30)
@@ -203,6 +218,7 @@ function test_parameter_gradient(arch)
     dp = Zygote.gradient(f, ps)[1]
     leaves = Tuple{Array{Float64}, Any, Array{Float64}}[]
     foreach_leaf(ps, dp) do p, g
+        p isa BiorthogonalManifold && (p = parent(p))
         p isa Array{Float64} && push!(leaves, (p, g, randn(size(p))))
     end
     @test !isempty(leaves)
@@ -303,7 +319,7 @@ end
         NeuralNetwork(LeftInverseSymplecticAutoencoder(6, 4)), randn(6, 5), randn(6, 5))
 end
 
-@testset "LatentVectorFieldLoss on a $(nameof(typeof(arch))) in $T" for arch in ARCHITECTURES,
+@testset "LatentVectorFieldLoss on a $(label(arch)) in $T" for arch in ARCHITECTURES,
     T in REAL_ELTYPES
 
     test_value(arch, T)
@@ -316,6 +332,6 @@ end
     test_one_training_step(arch, T)
 end
 
-@testset "LatentVectorFieldLoss parameter gradient on a $(nameof(typeof(arch)))" for arch in ARCHITECTURES
+@testset "LatentVectorFieldLoss parameter gradient on a $(label(arch))" for arch in ARCHITECTURES
     test_parameter_gradient(arch)
 end
