@@ -2,6 +2,8 @@
 
 Cotangent-lift [`PSDLayer`](@ref) and [`TransposePSDLayer`](@ref) layers change the dimension of a canonical symplectic vector space using a single block matrix ``\Phi \in \mathrm{St}(n, N)``, while [`inverse_layer`](@ref) constructs the exact analytic inverse (or symplectic transpose) of [`GradientLayerQ`](@ref), [`GradientLayerP`](@ref), [`SymplecticAttentionQ`](@ref), [`SymplecticAttentionP`](@ref), and [`PSDLayer`](@ref) sharing the same parameter `NamedTuple`.
 
+A lift with two biorthogonal matrices in place of the one Stiefel matrix is the [`BiorthogonalPSDLayer`](@ref) of [Biorthogonal PSD-Like Layers](@ref).
+
 ## Library Functions
 
 ```@docs
