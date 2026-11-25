@@ -136,7 +136,8 @@ const TESTS = [
     ],
     "metal" => [
         "Metal: the tensor products and the Cayley kernel on an Apple GPU" => "devices/metal.jl",
-        "Metal: eight architectures against their host twins" => "devices/metal_check.jl"
+        "Metal: eight architectures against their host twins" => "devices/metal_check.jl",
+        "Metal: ReducedHamiltonianLoss and LatentVectorFieldLoss against the host" => "devices/metal_losses.jl"
     ]
 ]
 
