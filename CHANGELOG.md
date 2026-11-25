@@ -13,7 +13,7 @@ breaking release).
 > alongside the work. Where a release removed exported names the list is given; where it is a
 > reconstruction of intent, it says so.
 
-## [Unreleased]
+## [0.10.1] — 2026-11-25
 
 ### Added
 
@@ -39,6 +39,13 @@ breaking release).
   takes 15–45 % less time than at `0a3740f4` at `(2N, 2n, B) = (20, 4, 50)` and `(100, 10, 200)`; the other figures
   change by less than 10 %. A single decoder call now holds `2n` times the batch, so the peak memory
   of the value without a gradient grows with `n`.
+
+- **`LeftInverseSymplecticAutoencoder` has a third type parameter, `:Stiefel` or `:Biorthogonal`
+  (#390).** The undocumented positional constructor
+  `LeftInverseSymplecticAutoencoder{Init, AT}(full_dim, reduced_dim, n_blocks, n_layers,
+  n_ambient_layers, sympnet_upscale, activation)` is gone; it now takes the third parameter too.
+  The keyword constructor `LeftInverseSymplecticAutoencoder(full_dim, reduced_dim; kwargs...)`, and
+  every `isa` test and method on `LeftInverseSymplecticAutoencoder{Init, AT}`, work as before.
 
 ### Fixed
 
