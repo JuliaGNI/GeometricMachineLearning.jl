@@ -14,13 +14,13 @@ where the norms are taken over the batch of ``B`` latent points and ``s`` is `gr
 
 For a symplectic decoder, as in a [`SymplecticAutoencoder`](@ref), the reduced vector field is ``\mathbb{J}_{2n}\nabla_z(H\circ\Psi^\mathrm{dec})``, so the second term fits the reduced vector field at the sampled points. A fit of the states alone can be small while this gradient is not, in particular where ``H\circ\Psi^\mathrm{dec}`` is steep.
 
-The gradient with respect to ``z`` is computed by central differences with step `h`, from ``2\cdot2n + 1`` evaluations of the decoder on the batch. This keeps the loss differentiable with respect to the parameters by the same reverse-mode pass as any other loss, without nesting automatic differentiation.
+The gradient with respect to ``z`` is computed by central differences with step `h`, from one evaluation of the decoder on the batch and two on the ``2n`` shifted copies of the batch, one per sign of the step; with `λ = 0` the gradient term is left out, and the loss evaluates the decoder once. This keeps the loss differentiable with respect to the parameters by the same reverse-mode pass as any other loss, without nesting automatic differentiation.
 
 # Arguments
 
 - `hamiltonian`: a function that maps a matrix of states in ``\mathbb{R}^{2N}``, one per column, to the vector of their energies. It has to be differentiable by Zygote.
 - `λ = 1`: the weight of the gradient term, finite and ``\geq 0``.
-- `h = nothing`: the step of the central differences, in latent coordinates, finite and ``> 0``. With `nothing`, the step is `cbrt(eps(T))` for the element type `T` of the data, which balances the truncation and the round-off error of the central differences.
+- `h = nothing`: the step of the central differences, in latent coordinates, finite and ``> 0``, also in the element type of the data; a step that rounds to zero or to infinity there raises an `ArgumentError` when the loss is evaluated. With `nothing`, the step is `cbrt(eps(T))` for the element type `T` of the data, which balances the truncation and the round-off error of the central differences.
 - `gradient_scale = 1`: the scale ``s`` of the gradient term, finite and ``> 0``.
 
 Another `λ`, `h` or `gradient_scale` raises an `ArgumentError`.
@@ -84,19 +84,27 @@ end
 # The step of the central differences in the element type `T` of the data: the given one, or
 # `cbrt(eps(T))`, which balances the truncation error O(h²) against the round-off O(eps(T)/h).
 _difference_step(::Nothing, ::Type{T}) where {T} = cbrt(eps(T))
-_difference_step(h::Real, ::Type{T}) where {T} = T(h)
+function _difference_step(h::Real, ::Type{T}) where {T}
+    hT = T(h)
+    (isfinite(hT) && hT > 0) || throw(ArgumentError(
+        "The step h = $h is $hT in the element type $T of the data; it has to be finite and > 0 there."))
+    hT
+end
 
 # The gradient of `H∘model` with respect to each column of `z`, by central differences with the
-# step `h` of the element type of `z`.
+# step `h` of the element type of `z`. Column `i + m(b - 1)` of the shifted batch is column `b` of
+# `z` shifted by `±h` in row `i`, so the model and the Hamiltonian run once per sign, on `m` times
+# the batch, and row `i` of the result is the difference in direction `i`.
 function _reduced_hamiltonian_gradient(hamiltonian, h::Real, model, ps, z::AbstractMatrix)
-    n = size(z, 1)
-    mapreduce(vcat, 1:n) do i
-        # the shift is a column broadcast over the batch; built without mutation for Zygote
-        δ = map(j -> j == i ? h : zero(h), 1:n)
-        Hp = hamiltonian(model(z .+ δ, ps))
-        Hm = hamiltonian(model(z .- δ, ps))
-        reshape((Hp .- Hm) ./ (2h), 1, :)
+    m, B = size(z)
+    # the shifts h⋅I on the device of `z`; a constant of the loss
+    shifts = ChainRulesCore.ignore_derivatives() do
+        reshape(copyto!(similar(z, typeof(h), m, m), Matrix(h * I, m, m)), m, m, 1)
     end
+    z3 = reshape(z, m, 1, B)
+    Hp = hamiltonian(model(reshape(z3 .+ shifts, m, m * B), ps))
+    Hm = hamiltonian(model(reshape(z3 .- shifts, m, m * B), ps))
+    reshape((Hp .- Hm) ./ (2h), m, B)
 end
 
 function _reduced_hamiltonian_gradient(loss::ReducedHamiltonianLoss, model, ps, z::AbstractMatrix)
@@ -115,8 +123,11 @@ function (loss::ReducedHamiltonianLoss)(model::Union{Chain, AbstractExplicitLaye
     x_target = output[1:N, :]
     g_target = output[(N + 1):end, :]
     state_error = _compute_loss(x_prediction, x_target)
+    # the step, checked also where the gradient term is left out
+    h = _difference_step(loss.h, eltype(input))
+    iszero(loss.λ) && return state_error
     # the root-mean-square error over the B columns, in the scale fixed by the loss
-    g_prediction = _reduced_hamiltonian_gradient(loss, model, ps, input)
+    g_prediction = _reduced_hamiltonian_gradient(loss.hamiltonian, h, model, ps, input)
     B = size(input, 2)
     gradient_error = norm(g_prediction - g_target) / (sqrt(T(B)) * T(loss.gradient_scale))
     state_error + T(loss.λ) * gradient_error

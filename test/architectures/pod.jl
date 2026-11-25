@@ -22,6 +22,13 @@ basis(nn::NeuralNetwork) = Matrix(params(nn).L1.weight)
 @test_throws r"^ArgumentError: input has 4 snapshots, fewer than reduced_dim \(6\)\.$" solve!(
     NeuralNetwork(PODArch(10, 6)), rand(10, 4))
 
+# A snapshot matrix of the wrong number of rows raises the error before `solve!` writes a weight.
+let nn = NeuralNetwork(PODArch(4, 1))
+    W₀ = basis(nn)
+    @test_throws r"^ArgumentError: input has 1 rows, not full_dim \(4\)\.$" solve!(nn, ones(1, 3))
+    @test basis(nn) == W₀
+end
+
 # POD is the best rank-n linear projection, so its error is the norm of the discarded singular
 # values, and the encoder and the decoder hold the same basis.
 function test_error_is_optimal(::Type{T}, N::Integer, n::Integer) where {T}

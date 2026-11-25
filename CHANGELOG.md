@@ -19,9 +19,40 @@ breaking release).
 
 - **`BiorthogonalPSDLayer` and `TransposeBiorthogonalPSDLayer`: a symplectic lift with a biorthogonal pair, and `LeftInverseSymplecticAutoencoder(...; biorthogonal = true)` (#390).** The lift applies `Φ` to `q` and `Ψ` to `p` with `ΨᵀΦ = I`, in place of one Stiefel matrix for both, as the biorthogonal weights of Otto, Macchio and Rowley (2023) and Friedl et al. (2026); its symplectic inverse applies `Ψᵀ` to `q` and `Φᵀ` to `p`. The pair is the layer's one weight, a `GeometricOptimizers.BiorthogonalManifold` that stores `[Φ Ψ]`, and the manifold optimizers of GeometricOptimizers train it on the manifold of biorthogonal pairs; the layers invert no matrix. A new layer is the point `(U, U)`, with `U` the matrix that a `PSDLayer` drawn from the same generator applies, its Stiefel weight or, when the latent dimension equals the ambient one, the transpose of it, so it starts as that `PSDLayer`. `parameterlength` is the dimension `2Nn - n²` of the manifold of biorthogonal pairs. With `biorthogonal = true` every lift of the left-inverse SAE is a `BiorthogonalPSDLayer`, and the encoder is still an exact left inverse of the decoder. `LeftInverseSymplecticAutoencoder` gains a third type parameter, `:Stiefel` (the default) or `:Biorthogonal`. A biorthogonal left-inverse SAE saves and loads with `save` and `load(NeuralNetwork, path, arch)`, and `LatentVectorFieldLoss` takes it as it takes the Stiefel one; `test/integration/hdf5_support.jl` and `test/loss/latent_vector_field_loss.jl` check both at a point of the manifold where `Φ ≠ Ψ`, the latter also the parameter gradient of the lift against a central difference. The new documentation page *Biorthogonal PSD-Like Layers* describes the layers and links to the page *The Biorthogonal Manifold* of GeometricOptimizers (JuliaGNI/GeometricOptimizers.jl#187) for the symplecticity of the lift, the homogeneous space `GL(N)/GL(N - n)` and the optimizers on it, and says that `Adam`'s step on this manifold depends on the global section, where `GradientMethod`'s and `MomentumMethod`'s do not. `[compat]` takes `GeometricOptimizers = "0.10.1"`, the first release with `BiorthogonalManifold`.
 
+### Changed
+
+- **With `λ = 0`, `ReducedHamiltonianLoss` and `LatentVectorFieldLoss` skip the central differences
+  of the gradient and vector-field term.** The Hamiltonian is not evaluated for that term, so the
+  loss costs only its other terms. Where that term is finite, the value of the loss is unchanged.
+
+- **The central differences of `ReducedHamiltonianLoss` and `LatentVectorFieldLoss` evaluate the
+  decoder twice, on all `2n` shifted copies of the batch at once.** Before, they evaluated it `4n`
+  times, once per direction and sign, on the batch. On the host, with a `SymplecticAutoencoder` and
+  `B` latent points, the parameter gradient of `ReducedHamiltonianLoss` allocates 2–10 % less and
+  takes 15–45 % less time than at `0a3740f4` at `(2N, 2n, B) = (20, 4, 50)` and `(100, 10, 200)`; the other figures
+  change by less than 10 %. A single decoder call now holds `2n` times the batch, so the peak memory
+  of the value without a gradient grows with `n`.
+
 ### Fixed
 
 - **`load(NeuralNetwork, path, arch)` for a `LeftInverseSymplecticAutoencoder` rejects a file saved from another architecture (#390).** It compares the file's parameter tree with the one `arch` builds, the layers, the names of each layer's parameters and the type and size of each parameter, and raises an `ArgumentError` that names the first layer or parameter that differs and says to load the file with the architecture it was saved with. Without the check, a file read with an architecture of other lift sizes, such as a biorthogonal network read with a Stiefel architecture or the reverse, loads and fails only at the first call, with a bare `DimensionMismatch`. The check draws no number from the global random generator.
+
+The next three are defects of the 0.10.0 code, found by review of pull request #390.
+
+- **`solve!(::NeuralNetwork{<:PODArch}, input)` checks the shape of `input` before it writes a
+  weight.** An `input` without `full_dim` rows throws an `ArgumentError` and leaves the network
+  unchanged. Before, `solve!` did not check the row count, and a wrong one could overwrite the
+  weights of the encoder and the decoder.
+
+- **`ReducedHamiltonianLoss` and `LatentVectorFieldLoss` refuse a step `h` that the data cannot
+  represent.** An `h` that rounds to 0 or `Inf` in the element type of the data, such as `h = 1e-50`
+  with `Float32` data, raises an `ArgumentError` when the loss is evaluated, at every `λ`. Before, a
+  step that rounds to 0 made the loss `NaN`.
+
+- **Both losses work on device arrays.** The central-difference shift is built on the device of the
+  latent points; it was a host `Vector`, which raised `Scalar indexing is disallowed` on a `JLArray`.
+  `LatentVectorFieldLoss` copies its reference state to the device of the input; it raised `Illegal
+  conversion of a JLArray to a Ptr`. `test/devices/jlarray_losses.jl` covers both on a `JLArray`.
 
 ## [0.10.0] — 2026-11-24
 

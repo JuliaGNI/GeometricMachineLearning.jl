@@ -28,14 +28,14 @@ with the reduced Hamiltonian ``\tilde{H} = H\circ\Psi^\mathrm{dec}``, the refere
 !!! warning "The vector field has to be the one the data follow"
     When the states lie on a submanifold, as the states of a constrained system do, the target is the system's vector field there, which is tangent to it, and not ``\mathbb{J}_{2N}\nabla{}H`` of a Hamiltonian that merely restricts to the right energy on it. The push-forward of a field that leaves the submanifold involves the derivatives of the encoder off the data, which do not describe how encoded trajectories move.
 
-Both derivatives are central differences with the step `h`. The gradient ``\nabla_\xi(H\circ\Psi^\mathrm{dec})`` takes ``2\cdot2n`` decoder evaluations with the step `h` in latent coordinates. The push-forward is ``\nabla\Psi^\mathrm{enc}(x)X_H(x) \approx (\Psi^\mathrm{enc}(x + hX_H) - \Psi^\mathrm{enc}(x - hX_H))/(2h)``, from two encoder evaluations; its step in the full space is ``h\lVert X_H(x)\rVert``, so it scales with the vector field. This keeps the loss differentiable with respect to the parameters by the same reverse-mode pass as any other loss, without nesting automatic differentiation.
+Both derivatives are central differences with the step `h`. The gradient ``\nabla_\xi(H\circ\Psi^\mathrm{dec})`` takes two decoder evaluations on the ``2n`` shifted copies of the batch, one per sign of the step `h` in latent coordinates. The push-forward is ``\nabla\Psi^\mathrm{enc}(x)X_H(x) \approx (\Psi^\mathrm{enc}(x + hX_H) - \Psi^\mathrm{enc}(x - hX_H))/(2h)``, from two encoder evaluations; its step in the full space is ``h\lVert X_H(x)\rVert``, so it scales with the vector field. With `λ = 0` the vector-field term is left out, and neither derivative is computed. This keeps the loss differentiable with respect to the parameters by the same reverse-mode pass as any other loss, without nesting automatic differentiation.
 
 # Arguments
 
 - `arch`: the architecture whose network is trained, a [`SymplecticAutoencoder`](@ref), a [`PSDArch`](@ref) or a [`LeftInverseSymplecticAutoencoder`](@ref). It fixes the number of layers of the encoder and of the decoder, and the latent dimension ``2n``. The decoder of a `LeftInverseSymplecticAutoencoder` takes the parameter tree of the network and its encoder the reversed tree, as in its forward pass. Another symplectic architecture raises an `ArgumentError`, and an architecture that is not symplectic has no method.
 - `hamiltonian`: a function that maps a matrix of states in ``\mathbb{R}^{2N}``, one per column, to the vector of their energies. It has to be differentiable by Zygote.
 - `λ = 1`: the weight of the vector-field term, finite and ``\geq 0``.
-- `h = nothing`: the step of the central differences, finite and ``> 0``. With `nothing`, the step is `cbrt(eps(T))` for the element type `T` of the data, which balances the truncation and the round-off error of the central differences.
+- `h = nothing`: the step of the central differences, finite and ``> 0``, also in the element type of the data; a step that rounds to zero or to infinity there raises an `ArgumentError` when the loss is evaluated. With `nothing`, the step is `cbrt(eps(T))` for the element type `T` of the data, which balances the truncation and the round-off error of the central differences.
 - `vector_field_scale = 1`: the scale ``s`` of the vector-field term, finite and ``> 0``.
 - `reconstruction = true`: with `false` the reconstruction term is left out. Only the reduced dynamics (and, with `energy = true`, the energies) are then fitted; nothing ties ``\Psi^\mathrm{dec}(\xi)`` to ``x`` except through ``H\circ\Psi^\mathrm{dec}``.
 - `energy = false`: with `true` the loss has the energy term.
@@ -165,7 +165,10 @@ end
 function _energy_difference_error(loss::LatentVectorFieldLoss, enc, ps_enc, dec, ps_dec,
         input::AbstractMatrix{T}, decoded) where {T}
     H = loss.hamiltonian
-    x_ref = reshape(T.(loss.reference_state), :, 1)
+    # the reference state on the device of the input; a constant of the loss
+    x_ref = ChainRulesCore.ignore_derivatives() do
+        copyto!(similar(input, length(loss.reference_state), 1), loss.reference_state)
+    end
     decoded_ref = dec(enc(x_ref, ps_enc), ps_dec)
     norm((H(decoded) .- H(decoded_ref)) .- (H(input) .- H(x_ref)))
 end
@@ -193,6 +196,7 @@ function (loss::LatentVectorFieldLoss)(
     else
         zero(T)
     end
+    iszero(loss.λ) && return reconstruction_error + energy_error
     pushed_forward = (enc(input .+ h .* output, ps_enc) .-
                       enc(input .- h .* output, ps_enc)) ./ (2h)
     gradient = _reduced_hamiltonian_gradient(loss.hamiltonian, h, dec, ps_dec, ξ)
